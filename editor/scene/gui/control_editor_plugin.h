@@ -252,7 +252,6 @@ public:
 	ControlEditorToolbar();
 };
 
-
 class ControlOffsetTransformPreview : public Control {
 	GDCLASS(ControlOffsetTransformPreview, Control);
 
