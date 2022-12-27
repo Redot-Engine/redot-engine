@@ -252,12 +252,11 @@ public:
 	ControlEditorToolbar();
 };
 
-
 class ControlOffsetTransformPreview : public Control {
 	GDCLASS(ControlOffsetTransformPreview, Control);
 
 	EditorPlugin *plugin = nullptr;
-	Control *selected_control = nullptr;
+	ObjectID selected_control_id; ///< Invalid when no control is selected, or when it has been deleted.
 
 	friend class ControlEditorPlugin;
 
