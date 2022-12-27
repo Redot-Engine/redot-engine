@@ -1161,18 +1161,21 @@ ControlEditorToolbar *ControlEditorToolbar::singleton = nullptr;
 // Editor plugin.
 
 void ControlOffsetTransformPreview::edit(Control *p_control) {
-	if (p_control == selected_control) {
+	ObjectID new_control_id = p_control ? p_control->get_instance_id() : ObjectID();
+	if (new_control_id == selected_control_id) {
 		return;
 	}
 
 	const Callable update_overlays = callable_mp(plugin, &EditorPlugin::update_overlays);
 
+	Control *selected_control = ObjectDB::get_instance<Control>(selected_control_id);
 	if (selected_control) {
 		selected_control->disconnect(SceneStringName(draw), update_overlays);
 	}
 
-	selected_control = p_control;
+	selected_control_id = new_control_id;
 
+	selected_control = ObjectDB::get_instance<Control>(selected_control_id);
 	if (selected_control) {
 		selected_control->connect(SceneStringName(draw), update_overlays);
 	}
@@ -1181,6 +1184,7 @@ void ControlOffsetTransformPreview::edit(Control *p_control) {
 }
 
 void ControlOffsetTransformPreview::forward_canvas_draw_over_viewport(Control *p_overlay) const {
+	Control *selected_control = ObjectDB::get_instance<Control>(selected_control_id);
 	if (!selected_control || !selected_control->is_offset_transform_enabled() || selected_control->is_offset_transform_visual_only()) {
 		return;
 	}
@@ -1190,7 +1194,13 @@ void ControlOffsetTransformPreview::forward_canvas_draw_over_viewport(Control *p
 	Point2 top_right = Point2(bottom_right.x, top_left.y);
 	Point2 bottom_left = Point2(top_left.x, bottom_right.y);
 
-	Transform2D control_transform_without_offset = selected_control->get_global_transform() * selected_control->get_offset_transform().affine_inverse();
+	Transform2D offset_transform = selected_control->get_offset_transform();
+	// Skip drawing if the offset transform is singular (e.g., zero scale), as it cannot be inverted.
+	if (Math::abs(offset_transform.determinant()) < CMP_EPSILON) {
+		return;
+	}
+
+	Transform2D control_transform_without_offset = selected_control->get_global_transform() * offset_transform.affine_inverse();
 	top_left = control_transform_without_offset.xform(top_left);
 	bottom_right = control_transform_without_offset.xform(bottom_right);
 	top_right = control_transform_without_offset.xform(top_right);
