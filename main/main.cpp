@@ -2193,6 +2193,10 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	// for project settings. For example, a Linux user should be able to configure that they want
 	// to export for D3D12 on Windows and Metal on macOS even if their host platform can't use those.
 
+	if (GLOBAL_GET("application/run/disable_modified_security_assistance")) {
+		WARN_PRINT("Modified Security Assistance disabled, this application can perform unsafe behavior by default. Consider disabling application/run/disable_modified_security_assistance in the Project Settings.");
+	}
+
 	{
 		// RenderingDevice driver overrides per platform.
 		GLOBAL_DEF_RST("rendering/rendering_device/driver", "vulkan");
@@ -3003,7 +3007,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 						next_tag.fields.clear();
 						next_tag.name = String();
 
-						err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true);
+						err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true, true);
 						if (err == ERR_FILE_EOF) {
 							break;
 						}
