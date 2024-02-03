@@ -32,6 +32,7 @@
 
 #include "variant_parser.h"
 
+#include "core/config/project_settings.h"
 #include "core/crypto/crypto_core.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_uid.h"
@@ -675,10 +676,10 @@ Error VariantParser::_parse_byte_array(Stream *p_stream, Vector<uint8_t> &r_cons
 	return OK;
 }
 
-Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream, int &line, String &r_err_str, ResourceParser *p_res_parser) {
+Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream, int &line, String &r_err_str, ResourceParser *p_res_parser, bool p_allow_objects) {
 	if (token.type == TK_CURLY_BRACKET_OPEN) {
 		Dictionary d;
-		Error err = _parse_dictionary(d, p_stream, line, r_err_str, p_res_parser);
+		Error err = _parse_dictionary(d, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 		if (err) {
 			return err;
 		}
@@ -686,7 +687,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 		return OK;
 	} else if (token.type == TK_BRACKET_OPEN) {
 		Array a;
-		Error err = _parse_array(a, p_stream, line, r_err_str, p_res_parser);
+		Error err = _parse_array(a, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 		if (err) {
 			return err;
 		}
@@ -994,6 +995,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 				return ERR_PARSE_ERROR;
 			}
 		} else if (id == "Object") {
+			if (!p_allow_objects) {
+				r_err_str = R"(Object decoding is prevented because "allow_objects" is false)";
+				return ERR_UNAUTHORIZED;
+			}
+
 			get_token(p_stream, token, line, r_err_str);
 			if (token.type != TK_PARENTHESIS_OPEN) {
 				r_err_str = "Expected '('";
@@ -1079,7 +1085,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 					}
 
 					Variant v;
-					err = parse_value(token, v, p_stream, line, r_err_str, p_res_parser);
+					err = parse_value(token, v, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 					if (err) {
 						return err;
 					}
@@ -1089,6 +1095,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 				}
 			}
 		} else if (id == "Resource" || id == "SubResource" || id == "ExtResource") {
+			if (!p_allow_objects) {
+				r_err_str = R"(Object decoding is prevented because "allow_objects" is false)";
+				return ERR_UNAUTHORIZED;
+			}
+
 			get_token(p_stream, token, line, r_err_str);
 			if (token.type != TK_PARENTHESIS_OPEN) {
 				r_err_str = "Expected '('";
@@ -1353,8 +1364,13 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			if (builtin_types.has(token.value)) {
 				array.set_typed(builtin_types.get(token.value), StringName(), Variant());
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
+				if (!p_allow_objects) {
+					r_err_str = R"(Object decoding is prevented because "allow_objects" is false)";
+					return ERR_UNAUTHORIZED;
+				}
+
 				Variant resource;
-				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser);
+				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 				if (err) {
 					if (token.value == "Resource" && err == ERR_PARSE_ERROR && r_err_str == "Expected '('" && token.type == TK_BRACKET_CLOSE) {
 						err = OK;
@@ -1395,7 +1411,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			Array values;
-			err = _parse_array(values, p_stream, line, r_err_str, p_res_parser);
+			err = _parse_array(values, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 			if (err) {
 				return err;
 			}
@@ -1642,7 +1658,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 	}
 }
 
-Error VariantParser::_parse_array(Array &array, Stream *p_stream, int &line, String &r_err_str, ResourceParser *p_res_parser) {
+Error VariantParser::_parse_array(Array &array, Stream *p_stream, int &line, String &r_err_str, ResourceParser *p_res_parser, bool p_allow_objects) {
 	Token token;
 	bool need_comma = false;
 
@@ -1672,7 +1688,7 @@ Error VariantParser::_parse_array(Array &array, Stream *p_stream, int &line, Str
 		}
 
 		Variant v;
-		err = parse_value(token, v, p_stream, line, r_err_str, p_res_parser);
+		err = parse_value(token, v, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 		if (err) {
 			return err;
 		}
@@ -1682,7 +1698,7 @@ Error VariantParser::_parse_array(Array &array, Stream *p_stream, int &line, Str
 	}
 }
 
-Error VariantParser::_parse_dictionary(Dictionary &object, Stream *p_stream, int &line, String &r_err_str, ResourceParser *p_res_parser) {
+Error VariantParser::_parse_dictionary(Dictionary &object, Stream *p_stream, int &line, String &r_err_str, ResourceParser *p_res_parser, bool p_allow_objects) {
 	bool at_key = true;
 	Variant key;
 	Token token;
@@ -1714,7 +1730,7 @@ Error VariantParser::_parse_dictionary(Dictionary &object, Stream *p_stream, int
 				}
 			}
 
-			err = parse_value(token, key, p_stream, line, r_err_str, p_res_parser);
+			err = parse_value(token, key, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 
 			if (err) {
 				return err;
@@ -1737,7 +1753,7 @@ Error VariantParser::_parse_dictionary(Dictionary &object, Stream *p_stream, int
 			}
 
 			Variant v;
-			err = parse_value(token, v, p_stream, line, r_err_str, p_res_parser);
+			err = parse_value(token, v, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 			if (err && err != ERR_FILE_MISSING_DEPENDENCIES) {
 				return err;
 			}
@@ -1748,7 +1764,7 @@ Error VariantParser::_parse_dictionary(Dictionary &object, Stream *p_stream, int
 	}
 }
 
-Error VariantParser::_parse_tag(Token &token, Stream *p_stream, int &line, String &r_err_str, Tag &r_tag, ResourceParser *p_res_parser, bool p_simple_tag) {
+Error VariantParser::_parse_tag(Token &token, Stream *p_stream, int &line, String &r_err_str, Tag &r_tag, ResourceParser *p_res_parser, bool p_simple_tag, bool p_allow_objects) {
 	r_tag.fields.clear();
 
 	if (token.type != TK_BRACKET_OPEN) {
@@ -1862,7 +1878,7 @@ Error VariantParser::_parse_tag(Token &token, Stream *p_stream, int &line, Strin
 
 		get_token(p_stream, token, line, r_err_str);
 		Variant value;
-		Error err = parse_value(token, value, p_stream, line, r_err_str, p_res_parser);
+		Error err = parse_value(token, value, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 		if (err) {
 			return err;
 		}
@@ -1873,7 +1889,7 @@ Error VariantParser::_parse_tag(Token &token, Stream *p_stream, int &line, Strin
 	return OK;
 }
 
-Error VariantParser::parse_tag(Stream *p_stream, int &line, String &r_err_str, Tag &r_tag, ResourceParser *p_res_parser, bool p_simple_tag) {
+Error VariantParser::parse_tag(Stream *p_stream, int &line, String &r_err_str, Tag &r_tag, ResourceParser *p_res_parser, bool p_simple_tag, bool p_allow_objects) {
 	Token token;
 	get_token(p_stream, token, line, r_err_str);
 
@@ -1886,10 +1902,10 @@ Error VariantParser::parse_tag(Stream *p_stream, int &line, String &r_err_str, T
 		return ERR_PARSE_ERROR;
 	}
 
-	return _parse_tag(token, p_stream, line, r_err_str, r_tag, p_res_parser, p_simple_tag);
+	return _parse_tag(token, p_stream, line, r_err_str, r_tag, p_res_parser, p_simple_tag, p_allow_objects);
 }
 
-Error VariantParser::parse_tag_assign_eof(Stream *p_stream, int &line, String &r_err_str, Tag &r_tag, String &r_assign, Variant &r_value, ResourceParser *p_res_parser, bool p_simple_tag) {
+Error VariantParser::parse_tag_assign_eof(Stream *p_stream, int &line, String &r_err_str, Tag &r_tag, String &r_assign, Variant &r_value, ResourceParser *p_res_parser, bool p_simple_tag, bool p_allow_objects) {
 	//assign..
 	r_assign = "";
 	String what;
@@ -1926,7 +1942,7 @@ Error VariantParser::parse_tag_assign_eof(Stream *p_stream, int &line, String &r
 			//it's a tag!
 			p_stream->saved = '['; //go back one
 
-			Error err = parse_tag(p_stream, line, r_err_str, r_tag, p_res_parser, p_simple_tag);
+			Error err = parse_tag(p_stream, line, r_err_str, r_tag, p_res_parser, p_simple_tag, p_allow_objects);
 
 			return err;
 		}
@@ -1952,7 +1968,7 @@ Error VariantParser::parse_tag_assign_eof(Stream *p_stream, int &line, String &r
 				r_assign = what;
 				Token token;
 				get_token(p_stream, token, line, r_err_str);
-				Error err = parse_value(token, r_value, p_stream, line, r_err_str, p_res_parser);
+				Error err = parse_value(token, r_value, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 				return err;
 			}
 		} else if (c == '\n') {
@@ -1961,7 +1977,7 @@ Error VariantParser::parse_tag_assign_eof(Stream *p_stream, int &line, String &r
 	}
 }
 
-Error VariantParser::parse(Stream *p_stream, Variant &r_ret, String &r_err_str, int &r_err_line, ResourceParser *p_res_parser) {
+Error VariantParser::parse(Stream *p_stream, Variant &r_ret, String &r_err_str, int &r_err_line, ResourceParser *p_res_parser, bool p_allow_objects) {
 	Token token;
 	Error err = get_token(p_stream, token, r_err_line, r_err_str);
 	if (err) {
@@ -1972,7 +1988,7 @@ Error VariantParser::parse(Stream *p_stream, Variant &r_ret, String &r_err_str, 
 		return ERR_FILE_EOF;
 	}
 
-	return parse_value(token, r_ret, p_stream, r_err_line, r_err_str, p_res_parser);
+	return parse_value(token, r_ret, p_stream, r_err_line, r_err_str, p_res_parser, p_allow_objects);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -2015,7 +2031,10 @@ static String encode_resource_reference(const String &path) {
 	}
 }
 
-Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_string_func, void *p_store_string_ud, EncodeResourceFunc p_encode_res_func, void *p_encode_res_ud, int p_recursion_count, bool p_compat) {
+Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_string_func, void *p_store_string_ud, EncodeResourceFunc p_encode_res_func, void *p_encode_res_ud, int p_recursion_count, bool p_compat, bool p_full_objects) {
+	static bool modified_security_assistance_disabled = GLOBAL_GET("application/run/disable_modified_security_assistance");
+	p_full_objects = p_full_objects || modified_security_assistance_disabled;
+
 	switch (p_variant.get_type()) {
 		case Variant::NIL: {
 			p_store_string_func(p_store_string_ud, "null");
@@ -2185,10 +2204,16 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 		} break;
 
 		case Variant::OBJECT: {
+			if (!p_full_objects) {
+				ERR_PRINT(R"(Object encoding skipped because "full_objects" is false.)");
+				p_store_string_func(p_store_string_ud, "null");
+				break;
+			}
+
 			if (unlikely(p_recursion_count > MAX_RECURSION)) {
 				ERR_PRINT("Max recursion reached");
 				p_store_string_func(p_store_string_ud, "null");
-				return OK;
+				break;
 			}
 			p_recursion_count++;
 
@@ -2196,7 +2221,7 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 
 			if (!obj) {
 				p_store_string_func(p_store_string_ud, "null");
-				break; // don't save it
+				break;
 			}
 
 			Ref<Resource> res = p_variant;
@@ -2240,7 +2265,7 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 					}
 
 					p_store_string_func(p_store_string_ud, "\"" + E.name + "\":");
-					write(obj->get(E.name), p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat);
+					write(obj->get(E.name), p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
 				}
 			}
 
@@ -2329,9 +2354,9 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 
 					for (uint32_t i = 0; i < keys.size(); i++) {
 						const Variant &key = keys[i];
-						write(key, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat);
+						write(key, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
 						p_store_string_func(p_store_string_ud, ": ");
-						write(dict[key], p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat);
+						write(dict[key], p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
 						if (i + 1 < keys.size()) {
 							p_store_string_func(p_store_string_ud, ",\n");
 						} else {
@@ -2359,18 +2384,23 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 				Ref<Script> script = array.get_typed_script();
 
 				if (script.is_valid()) {
-					String resource_text = String();
-					if (p_encode_res_func) {
-						resource_text = p_encode_res_func(p_encode_res_ud, script);
-					}
-					if (resource_text.is_empty() && script->get_path().is_resource_file()) {
-						resource_text = encode_resource_reference(script->get_path());
-					}
+					if (p_full_objects) {
+						String resource_text = String();
+						if (p_encode_res_func) {
+							resource_text = p_encode_res_func(p_encode_res_ud, script);
+						}
+						if (resource_text.is_empty() && script->get_path().is_resource_file()) {
+							resource_text = encode_resource_reference(script->get_path());
+						}
 
-					if (!resource_text.is_empty()) {
-						p_store_string_func(p_store_string_ud, resource_text);
+						if (!resource_text.is_empty()) {
+							p_store_string_func(p_store_string_ud, resource_text);
+						} else {
+							ERR_PRINT("Failed to encode a path to a custom script for an array type.");
+							p_store_string_func(p_store_string_ud, class_name);
+						}
 					} else {
-						ERR_PRINT("Failed to encode a path to a custom script for an array type.");
+						ERR_PRINT(R"(Object encoding skipped because "full_objects" is false.)");
 						p_store_string_func(p_store_string_ud, class_name);
 					}
 				} else if (class_name != StringName()) {
@@ -2397,7 +2427,7 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 					} else {
 						p_store_string_func(p_store_string_ud, ", ");
 					}
-					write(var, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat);
+					write(var, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
 				}
 
 				p_store_string_func(p_store_string_ud, "]");
@@ -2580,8 +2610,8 @@ static Error _write_to_str(void *ud, const String &p_string) {
 	return OK;
 }
 
-Error VariantWriter::write_to_string(const Variant &p_variant, String &r_string, EncodeResourceFunc p_encode_res_func, void *p_encode_res_ud, bool p_compat) {
+Error VariantWriter::write_to_string(const Variant &p_variant, String &r_string, EncodeResourceFunc p_encode_res_func, void *p_encode_res_ud, bool p_compat, bool p_full_objects) {
 	r_string = String();
 
-	return write(p_variant, _write_to_str, &r_string, p_encode_res_func, p_encode_res_ud, 0, p_compat);
+	return write(p_variant, _write_to_str, &r_string, p_encode_res_func, p_encode_res_ud, 0, p_compat, p_full_objects);
 }

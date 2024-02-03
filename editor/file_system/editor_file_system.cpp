@@ -615,7 +615,7 @@ bool EditorFileSystem::_test_for_reimport(const String &p_path, const String &p_
 		next_tag.fields.clear();
 		next_tag.name = String();
 
-		err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, nullptr, true);
+		err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, nullptr, true, true);
 		if (err == ERR_FILE_EOF) {
 			break;
 		} else if (err != OK) {
@@ -700,7 +700,7 @@ bool EditorFileSystem::_test_for_reimport(const String &p_path, const String &p_
 		next_tag.fields.clear();
 		next_tag.name = String();
 
-		err = VariantParser::parse_tag_assign_eof(&md5_stream, lines, error_text, next_tag, assign, value, nullptr, true);
+		err = VariantParser::parse_tag_assign_eof(&md5_stream, lines, error_text, next_tag, assign, value, nullptr, true, true);
 
 		if (err == ERR_FILE_EOF) {
 			break;
@@ -2587,7 +2587,7 @@ Error EditorFileSystem::_reimport_group(const String &p_group_file, const Vector
 	for (int i = 0; i < p_files.size(); i++) {
 		Ref<ConfigFile> config;
 		config.instantiate();
-		Error err = config->load(p_files[i] + ".import");
+		Error err = config->load(p_files[i] + ".import", true);
 		ERR_CONTINUE(err != OK);
 		ERR_CONTINUE(!config->has_section_key("remap", "importer"));
 		String file_importer_name = config->get_value("remap", "importer");
@@ -2713,7 +2713,7 @@ Error EditorFileSystem::_reimport_group(const String &p_group_file, const Vector
 					v = source_file_options[file][base];
 				}
 				String value;
-				VariantWriter::write_to_string(v, value);
+				VariantWriter::write_to_string(v, value, nullptr, nullptr, true, true);
 				f->store_line(base + "=" + value);
 			}
 		}
@@ -2804,7 +2804,7 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 		//use existing
 		Ref<ConfigFile> cf;
 		cf.instantiate();
-		Error err = cf->load(p_file + ".import");
+		Error err = cf->load(p_file + ".import", true);
 		if (err == OK) {
 			if (cf->has_section("params")) {
 				Vector<String> sk = cf->get_section_keys("params");
@@ -2962,7 +2962,7 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 			}
 
 			String value;
-			VariantWriter::write_to_string(genf, value);
+			VariantWriter::write_to_string(genf, value, nullptr, nullptr, true, true);
 			f->store_line("files=" + value);
 			f->store_line("");
 		}
@@ -2986,7 +2986,7 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 		for (const ResourceImporter::ImportOption &E : opts) {
 			String base = E.option.name;
 			String value;
-			VariantWriter::write_to_string(params[base], value);
+			VariantWriter::write_to_string(params[base], value, nullptr, nullptr, true, true);
 			f->store_line(base + "=" + value);
 		}
 	}
@@ -3472,7 +3472,7 @@ void EditorFileSystem::_move_group_files(EditorFileSystemDirectory *efd, const S
 			Ref<ConfigFile> config;
 			config.instantiate();
 			String path = efd->get_file_path(i) + ".import";
-			Error err = config->load(path);
+			Error err = config->load(path, true);
 			if (err != OK) {
 				continue;
 			}
@@ -3489,7 +3489,7 @@ void EditorFileSystem::_move_group_files(EditorFileSystemDirectory *efd, const S
 				}
 			}
 
-			config->save(path);
+			config->save(path, true);
 		}
 	}
 
