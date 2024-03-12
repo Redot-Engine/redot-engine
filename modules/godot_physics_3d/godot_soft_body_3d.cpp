@@ -54,7 +54,7 @@
 #include "godot_space_3d.h"
 
 #include "core/math/geometry_3d.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 ///btSoftBody implementation by Nathanael Presson
 GodotSoftBody3D::GodotSoftBody3D() :
