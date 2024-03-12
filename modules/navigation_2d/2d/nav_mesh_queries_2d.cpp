@@ -44,7 +44,6 @@
 #include "nav_region_iteration_2d.h"
 
 #include "core/math/geometry_2d.h"
-#include "servers/navigation/navigation_utilities.h"
 
 using namespace Nav2D;
 
@@ -159,7 +158,7 @@ void NavMeshQueries2D::map_query_path(NavMap2D *p_map, const Ref<NavigationPathQ
 	ERR_FAIL_COND(p_query_parameters.is_null());
 	ERR_FAIL_COND(p_query_result.is_null());
 
-	using namespace NavigationUtilities;
+	using namespace NavigationDefaults2D;
 
 	NavMeshQueries2D::NavMeshPathQueryTask2D query_task;
 	query_task.start_position = p_query_parameters->get_start_position();
@@ -1164,7 +1163,7 @@ bool NavMeshQueries2D::_query_task_is_connection_owner_usable(const NavMeshPathQ
 
 	if (p_query_task.exclude_regions || p_query_task.include_regions) {
 		switch (p_owner->get_type()) {
-			case NavigationUtilities::PathSegmentType::PATH_SEGMENT_TYPE_REGION: {
+			case NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_REGION: {
 				if (p_query_task.exclude_regions && p_query_task.excluded_regions.has(p_owner->get_self())) {
 					// Not usable. Exclude region filter is active and this region is excluded.
 					owner_usable = false;
@@ -1173,7 +1172,7 @@ bool NavMeshQueries2D::_query_task_is_connection_owner_usable(const NavMeshPathQ
 					owner_usable = false;
 				}
 			} break;
-			case NavigationUtilities::PathSegmentType::PATH_SEGMENT_TYPE_LINK: {
+			case NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_LINK: {
 				const LocalVector<Polygon> &link_polygons = p_owner->get_navmesh_polygons();
 				if (link_polygons.size() != 2) {
 					// Not usable. Whatever this is, it is not a valid connected link.

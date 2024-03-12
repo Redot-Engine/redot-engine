@@ -38,7 +38,7 @@
  * [Add any documentation that applies to the entire file here!]
  */
 
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 #include "servers/movie_writer/movie_writer.h"
 
 #include <theora/theoraenc.h>

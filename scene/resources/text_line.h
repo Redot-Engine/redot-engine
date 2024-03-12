@@ -39,7 +39,7 @@
  */
 
 #include "scene/resources/font.h"
-#include "servers/text_server.h"
+#include "servers/text/text_server.h"
 
 /*************************************************************************/
 

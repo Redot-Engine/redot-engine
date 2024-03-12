@@ -48,7 +48,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/object/worker_thread_pool.h"
-#include "servers/navigation_server_3d.h"
+#include "servers/navigation_3d/navigation_server_3d.h"
 
 #include <Obstacle2d.h>
 
