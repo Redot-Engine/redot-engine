@@ -90,4 +90,12 @@ stdenv.mkDerivation {
   sconsFlags = lib.optionals stdenv.targetPlatform.isDarwin [
     "vulkan_sdk_path=${darwin.moltenvk}"
   ];
+
+  installPhase = ''
+    runHook preInstall
+    mkdir -p "$out/bin"
+    cp bin/godot.* $out/bin/redot
+
+    runHook postInstall
+  '';
 }
