@@ -49,7 +49,7 @@
                 packages =
                   with pkgs;
                   [
-                    pkgconf
+                    pkg-config
                     autoPatchelfHook
                     installShellFiles
                     python3

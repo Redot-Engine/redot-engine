@@ -7,7 +7,7 @@
   enableAlsa ? stdenv.targetPlatform.isLinux,
   enableSpeechd ? stdenv.targetPlatform.isLinux,
   enableVulkan ? true,
-  pkgconf,
+  pkg-config,
   autoPatchelfHook,
   installShellFiles,
   python3,
@@ -35,14 +35,17 @@ stdenv.mkDerivation {
   name = "redot-engine";
   src = ./.;
 
+  nativeBuildInputs = [
+    pkg-config
+    autoPatchelfHook
+    installShellFiles
+    makeWrapper
+    python3
+    scons
+  ];
+
   buildInputs =
     [
-      pkgconf
-      autoPatchelfHook
-      installShellFiles
-      python3
-      makeWrapper
-      scons
       fontconfig
     ]
     ++ lib.optionals enableSpeechd [ speechd ]
