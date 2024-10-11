@@ -32,28 +32,28 @@ def include_file_in_rd_header(filename: str, header_data: RDHeaderStruct, depth:
             if index != -1:
                 line = line[:index]
 
-            if line.find("#[vertex]") != -1:
+            if "#[vertex]" in line:
                 header_data.reading = "vertex"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.vertex_offset = header_data.line_offset
                 continue
 
-            if line.find("#[fragment]") != -1:
+            if "#[fragment]" in line:
                 header_data.reading = "fragment"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.fragment_offset = header_data.line_offset
                 continue
 
-            if line.find("#[compute]") != -1:
+            if "#[compute]" in line:
                 header_data.reading = "compute"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.compute_offset = header_data.line_offset
                 continue
 
-            while line.find("#include ") != -1:
+            while "#include " in line:
                 includeline = line.replace("#include ", "").strip()[1:-1]
 
                 if includeline.startswith("thirdparty/"):
@@ -162,7 +162,7 @@ def include_file_in_raw_header(filename: str, header_data: RAWHeaderStruct, dept
         line = fs.readline()
 
         while line:
-            while line.find("#include ") != -1:
+            while "#include " in line:
                 includeline = line.replace("#include ", "").strip()[1:-1]
 
                 included_file = os.path.relpath(os.path.dirname(filename) + "/" + includeline)
