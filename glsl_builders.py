@@ -98,10 +98,7 @@ def build_rd_header(
     header_data = header_data or RDHeaderStruct()
     include_file_in_rd_header(filename, header_data, 0)
 
-    if optional_output_filename is None:
-        out_file = filename + ".gen.h"
-    else:
-        out_file = optional_output_filename
+    out_file = optional_output_filename or filename + ".gen.h"
 
     out_file_base = out_file
     out_file_base = out_file_base[out_file_base.rfind("/") + 1 :]
@@ -180,10 +177,7 @@ def build_raw_header(
     header_data = header_data or RAWHeaderStruct()
     include_file_in_raw_header(filename, header_data, 0)
 
-    if optional_output_filename is None:
-        out_file = filename + ".gen.h"
-    else:
-        out_file = optional_output_filename
+    out_file = optional_output_filename or filename + ".gen.h"
 
     out_file_base = out_file.replace(".glsl.gen.h", "_shader_glsl")
     out_file_base = out_file_base[out_file_base.rfind("/") + 1 :]

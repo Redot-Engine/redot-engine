@@ -199,10 +199,7 @@ def build_gles3_header(
     header_data = header_data or GLES3HeaderStruct()
     include_file_in_gles3_header(filename, header_data, 0)
 
-    if optional_output_filename is None:
-        out_file = filename + ".gen.h"
-    else:
-        out_file = optional_output_filename
+    out_file = optional_output_filename or filename + ".gen.h"
 
     with open(out_file, "w", encoding="utf-8", newline="\n") as fd:
         defspec = 0
