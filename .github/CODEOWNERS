@@ -4,234 +4,234 @@
 
 # Buildsystem
 
-*                                             @godotengine/buildsystem
+*                                             @Redot-Engine/buildsystem
 
 # Core
 
-/core/                                        @godotengine/core
-/core/crypto/                                 @godotengine/network
-/core/debugger/                               @godotengine/debugger
-/core/extension/                              @godotengine/gdextension
-/core/input/                                  @godotengine/input
+/core/                                        @Redot-Engine/core
+/core/crypto/                                 @Redot-Engine/network
+/core/debugger/                               @Redot-Engine/debugger
+/core/extension/                              @Redot-Engine/gdextension
+/core/input/                                  @Redot-Engine/input
 
 # Doc
 
-/doc/                                         @godotengine/documentation
-**/doc_classes/                               @godotengine/documentation
+/doc/                                         @Redot-Engine/documentation
+**/doc_classes/                               @Redot-Engine/documentation
 
 # Drivers
 
 ## Audio
-/drivers/alsa/                                @godotengine/audio
-/drivers/alsamidi/                            @godotengine/audio
-/drivers/coreaudio/                           @godotengine/audio
-/drivers/coremidi/                            @godotengine/audio
-/drivers/pulseaudio/                          @godotengine/audio
-/drivers/wasapi/                              @godotengine/audio
-/drivers/winmidi/                             @godotengine/audio
-/drivers/xaudio2/                             @godotengine/audio
+/drivers/alsa/                                @Redot-Engine/audio
+/drivers/alsamidi/                            @Redot-Engine/audio
+/drivers/coreaudio/                           @Redot-Engine/audio
+/drivers/coremidi/                            @Redot-Engine/audio
+/drivers/pulseaudio/                          @Redot-Engine/audio
+/drivers/wasapi/                              @Redot-Engine/audio
+/drivers/winmidi/                             @Redot-Engine/audio
+/drivers/xaudio2/                             @Redot-Engine/audio
 
 ## Rendering
-/drivers/d3d12/                               @godotengine/rendering
-/drivers/dummy/                               @godotengine/rendering
-/drivers/gles3/                               @godotengine/rendering
-/drivers/spirv-reflect/                       @godotengine/rendering
-/drivers/vulkan/                              @godotengine/rendering
+/drivers/d3d12/                               @Redot-Engine/rendering
+/drivers/dummy/                               @Redot-Engine/rendering
+/drivers/gles3/                               @Redot-Engine/rendering
+/drivers/spirv-reflect/                       @Redot-Engine/rendering
+/drivers/vulkan/                              @Redot-Engine/rendering
 
 ## OS
-/drivers/unix/                                @godotengine/_platforms
-/drivers/windows/                             @godotengine/windows
+/drivers/unix/                                @Redot-Engine/_platforms
+/drivers/windows/                             @Redot-Engine/windows
 
 ## Misc
-/drivers/png/                                 @godotengine/import
+/drivers/png/                                 @Redot-Engine/import
 
 # Editor
 
-/editor/*debugger*                            @godotengine/debugger
-/editor/gui/                                  @godotengine/usability @godotengine/gui-nodes
-/editor/icons/                                @godotengine/usability
-/editor/import/                               @godotengine/import
-/editor/plugins/*2d_*.*                       @godotengine/2d-editor
-/editor/plugins/*3d_*.*                       @godotengine/3d-editor
-/editor/plugins/script_*.*                    @godotengine/script-editor
-/editor/plugins/*shader*.*                    @godotengine/shaders
-/editor/themes/                               @godotengine/usability @godotengine/gui-nodes
-/editor/code_editor.*                         @godotengine/script-editor
-/editor/*dock*.*                              @godotengine/docks
-/editor/*shader*.*                            @godotengine/shaders
+/editor/*debugger*                            @Redot-Engine/debugger
+/editor/gui/                                  @Redot-Engine/usability @Redot-Engine/gui-nodes
+/editor/icons/                                @Redot-Engine/usability
+/editor/import/                               @Redot-Engine/import
+/editor/plugins/*2d_*.*                       @Redot-Engine/2d-editor
+/editor/plugins/*3d_*.*                       @Redot-Engine/3d-editor
+/editor/plugins/script_*.*                    @Redot-Engine/script-editor
+/editor/plugins/*shader*.*                    @Redot-Engine/shaders
+/editor/themes/                               @Redot-Engine/usability @Redot-Engine/gui-nodes
+/editor/code_editor.*                         @Redot-Engine/script-editor
+/editor/*dock*.*                              @Redot-Engine/docks
+/editor/*shader*.*                            @Redot-Engine/shaders
 
 # Main
 
-/main/                                        @godotengine/core
+/main/                                        @Redot-Engine/core
 
 # Misc
 
-/misc/                                        @godotengine/buildsystem
-/misc/extension_api_validation/               @godotengine/gdextension @godotengine/dotnet
+/misc/                                        @Redot-Engine/buildsystem
+/misc/extension_api_validation/               @Redot-Engine/gdextension @Redot-Engine/dotnet
 
 # Modules
 
 ## Audio (+ video)
-/modules/interactive_music/                   @godotengine/audio
-/modules/interactive_music/doc_classes/       @godotengine/audio @godotengine/documentation
-/modules/minimp3/                             @godotengine/audio
-/modules/minimp3/doc_classes/                 @godotengine/audio @godotengine/documentation
-/modules/ogg/                                 @godotengine/audio
-/modules/ogg/doc_classes/                     @godotengine/audio @godotengine/documentation
-/modules/theora/                              @godotengine/audio
-/modules/theora/doc_classes/                  @godotengine/audio @godotengine/documentation
-/modules/vorbis/                              @godotengine/audio
-/modules/vorbis/doc_classes/                  @godotengine/audio @godotengine/documentation
+/modules/interactive_music/                   @Redot-Engine/audio
+/modules/interactive_music/doc_classes/       @Redot-Engine/audio @Redot-Engine/documentation
+/modules/minimp3/                             @Redot-Engine/audio
+/modules/minimp3/doc_classes/                 @Redot-Engine/audio @Redot-Engine/documentation
+/modules/ogg/                                 @Redot-Engine/audio
+/modules/ogg/doc_classes/                     @Redot-Engine/audio @Redot-Engine/documentation
+/modules/theora/                              @Redot-Engine/audio
+/modules/theora/doc_classes/                  @Redot-Engine/audio @Redot-Engine/documentation
+/modules/vorbis/                              @Redot-Engine/audio
+/modules/vorbis/doc_classes/                  @Redot-Engine/audio @Redot-Engine/documentation
 
 ## Import
-/modules/astcenc/                             @godotengine/import
-/modules/basis_universal/                     @godotengine/import
-/modules/betsy/                               @godotengine/import
-/modules/bmp/                                 @godotengine/import
-/modules/cvtt/                                @godotengine/import
-/modules/dds/                                 @godotengine/import
-/modules/etcpak/                              @godotengine/import
-/modules/fbx/                                 @godotengine/import
-/modules/fbx/doc_classes/                     @godotengine/import @godotengine/documentation
-/modules/gltf/                                @godotengine/import
-/modules/gltf/doc_classes/                    @godotengine/import @godotengine/documentation
-/modules/gltf/tests/                          @godotengine/import @godotengine/tests
-/modules/hdr/                                 @godotengine/import
-/modules/jpg/                                 @godotengine/import
-/modules/ktx/                                 @godotengine/import
-/modules/squish/                              @godotengine/import
-/modules/svg/                                 @godotengine/import
-/modules/tga/                                 @godotengine/import
-/modules/tinyexr/                             @godotengine/import
-/modules/webp/                                @godotengine/import
+/modules/astcenc/                             @Redot-Engine/import
+/modules/basis_universal/                     @Redot-Engine/import
+/modules/betsy/                               @Redot-Engine/import
+/modules/bmp/                                 @Redot-Engine/import
+/modules/cvtt/                                @Redot-Engine/import
+/modules/dds/                                 @Redot-Engine/import
+/modules/etcpak/                              @Redot-Engine/import
+/modules/fbx/                                 @Redot-Engine/import
+/modules/fbx/doc_classes/                     @Redot-Engine/import @Redot-Engine/documentation
+/modules/gltf/                                @Redot-Engine/import
+/modules/gltf/doc_classes/                    @Redot-Engine/import @Redot-Engine/documentation
+/modules/gltf/tests/                          @Redot-Engine/import @Redot-Engine/tests
+/modules/hdr/                                 @Redot-Engine/import
+/modules/jpg/                                 @Redot-Engine/import
+/modules/ktx/                                 @Redot-Engine/import
+/modules/squish/                              @Redot-Engine/import
+/modules/svg/                                 @Redot-Engine/import
+/modules/tga/                                 @Redot-Engine/import
+/modules/tinyexr/                             @Redot-Engine/import
+/modules/webp/                                @Redot-Engine/import
 
 ## Network
-/modules/enet/                                @godotengine/network
-/modules/enet/doc_classes/                    @godotengine/network @godotengine/documentation
-/modules/mbedtls/                             @godotengine/network
-/modules/mbedtls/tests/                       @godotengine/network @godotengine/tests
-/modules/multiplayer/                         @godotengine/network
-/modules/multiplayer/doc_classes/             @godotengine/network @godotengine/documentation
-/modules/upnp/                                @godotengine/network
-/modules/upnp/doc_classes/                    @godotengine/network @godotengine/documentation
-/modules/webrtc/                              @godotengine/network
-/modules/webrtc/doc_classes/                  @godotengine/network @godotengine/documentation
-/modules/websocket/                           @godotengine/network
-/modules/websocket/doc_classes/               @godotengine/network @godotengine/documentation
+/modules/enet/                                @Redot-Engine/network
+/modules/enet/doc_classes/                    @Redot-Engine/network @Redot-Engine/documentation
+/modules/mbedtls/                             @Redot-Engine/network
+/modules/mbedtls/tests/                       @Redot-Engine/network @Redot-Engine/tests
+/modules/multiplayer/                         @Redot-Engine/network
+/modules/multiplayer/doc_classes/             @Redot-Engine/network @Redot-Engine/documentation
+/modules/upnp/                                @Redot-Engine/network
+/modules/upnp/doc_classes/                    @Redot-Engine/network @Redot-Engine/documentation
+/modules/webrtc/                              @Redot-Engine/network
+/modules/webrtc/doc_classes/                  @Redot-Engine/network @Redot-Engine/documentation
+/modules/websocket/                           @Redot-Engine/network
+/modules/websocket/doc_classes/               @Redot-Engine/network @Redot-Engine/documentation
 
 ## Physics
-/modules/godot_physics_2d/                    @godotengine/physics
-/modules/godot_physics_3d/                    @godotengine/physics
+/modules/godot_physics_2d/                    @Redot-Engine/physics
+/modules/godot_physics_3d/                    @Redot-Engine/physics
 
 ## Rendering
-/modules/glslang/                             @godotengine/rendering
-/modules/lightmapper_rd/                      @godotengine/rendering
-/modules/meshoptimizer/                       @godotengine/rendering
-/modules/raycast/                             @godotengine/rendering
-/modules/vhacd/                               @godotengine/rendering
-/modules/xatlas_unwrap/                       @godotengine/rendering
+/modules/glslang/                             @Redot-Engine/rendering
+/modules/lightmapper_rd/                      @Redot-Engine/rendering
+/modules/meshoptimizer/                       @Redot-Engine/rendering
+/modules/raycast/                             @Redot-Engine/rendering
+/modules/vhacd/                               @Redot-Engine/rendering
+/modules/xatlas_unwrap/                       @Redot-Engine/rendering
 
 ## Scripting
-/modules/gdscript/                            @godotengine/gdscript
-/modules/gdscript/doc_classes/                @godotengine/gdscript @godotengine/documentation
-/modules/gdscript/icons/                      @godotengine/gdscript @godotengine/usability
-/modules/gdscript/tests/                      @godotengine/gdscript @godotengine/tests
-/modules/jsonrpc/                             @godotengine/gdscript @godotengine/network
-/modules/jsonrpc/tests                        @godotengine/gdscript @godotengine/network @godotengine/tests
-/modules/mono/                                @godotengine/dotnet
-/modules/mono/doc_classes/                    @godotengine/dotnet @godotengine/documentation
-/modules/mono/icons/                          @godotengine/dotnet @godotengine/usability
+/modules/gdscript/                            @Redot-Engine/gdscript
+/modules/gdscript/doc_classes/                @Redot-Engine/gdscript @Redot-Engine/documentation
+/modules/gdscript/icons/                      @Redot-Engine/gdscript @Redot-Engine/usability
+/modules/gdscript/tests/                      @Redot-Engine/gdscript @Redot-Engine/tests
+/modules/jsonrpc/                             @Redot-Engine/gdscript @Redot-Engine/network
+/modules/jsonrpc/tests                        @Redot-Engine/gdscript @Redot-Engine/network @Redot-Engine/tests
+/modules/mono/                                @Redot-Engine/dotnet
+/modules/mono/doc_classes/                    @Redot-Engine/dotnet @Redot-Engine/documentation
+/modules/mono/icons/                          @Redot-Engine/dotnet @Redot-Engine/usability
 
 ## Text
-/modules/freetype/                            @godotengine/buildsystem
-/modules/msdfgen/                             @godotengine/buildsystem
-/modules/text_server_adv/                     @godotengine/gui-nodes
-/modules/text_server_adv/doc_classes/         @godotengine/gui-nodes @godotengine/documentation
-/modules/text_server_fb/                      @godotengine/gui-nodes
-/modules/text_server_fb/doc_classes/          @godotengine/gui-nodes @godotengine/documentation
+/modules/freetype/                            @Redot-Engine/buildsystem
+/modules/msdfgen/                             @Redot-Engine/buildsystem
+/modules/text_server_adv/                     @Redot-Engine/gui-nodes
+/modules/text_server_adv/doc_classes/         @Redot-Engine/gui-nodes @Redot-Engine/documentation
+/modules/text_server_fb/                      @Redot-Engine/gui-nodes
+/modules/text_server_fb/doc_classes/          @Redot-Engine/gui-nodes @Redot-Engine/documentation
 
 ## XR
-/modules/camera/                              @godotengine/xr
-/modules/mobile_vr/                           @godotengine/xr
-/modules/mobile_vr/doc_classes/               @godotengine/xr @godotengine/documentation
-/modules/openxr/                              @godotengine/xr
-/modules/openxr/doc_classes/                  @godotengine/xr @godotengine/documentation
-/modules/webxr/                               @godotengine/xr
-/modules/webxr/doc_classes/                   @godotengine/xr @godotengine/documentation
+/modules/camera/                              @Redot-Engine/xr
+/modules/mobile_vr/                           @Redot-Engine/xr
+/modules/mobile_vr/doc_classes/               @Redot-Engine/xr @Redot-Engine/documentation
+/modules/openxr/                              @Redot-Engine/xr
+/modules/openxr/doc_classes/                  @Redot-Engine/xr @Redot-Engine/documentation
+/modules/webxr/                               @Redot-Engine/xr
+/modules/webxr/doc_classes/                   @Redot-Engine/xr @Redot-Engine/documentation
 
 ## Misc
-/modules/csg/                                 @godotengine/3d-nodes
-/modules/csg/doc_classes/                     @godotengine/3d-nodes @godotengine/documentation
-/modules/csg/icons/                           @godotengine/3d-nodes @godotengine/usability
-/modules/navigation/                          @godotengine/navigation
-/modules/gridmap/                             @godotengine/3d-nodes
-/modules/gridmap/doc_classes/                 @godotengine/3d-nodes @godotengine/documentation
-/modules/gridmap/icons/                       @godotengine/3d-nodes @godotengine/usability
-/modules/noise/                               @godotengine/core
-/modules/noise/doc_classes/                   @godotengine/core @godotengine/documentation
-/modules/noise/icons/                         @godotengine/core @godotengine/usability
-/modules/noise/tests/                         @godotengine/core @godotengine/tests
-/modules/regex/                               @godotengine/core
-/modules/regex/doc_classes/                   @godotengine/core @godotengine/documentation
-/modules/regex/icons/                         @godotengine/core @godotengine/usability
-/modules/regex/tests/                         @godotengine/core @godotengine/tests
-/modules/zip/                                 @godotengine/core
-/modules/zip/doc_classes/                     @godotengine/core @godotengine/documentation
+/modules/csg/                                 @Redot-Engine/3d-nodes
+/modules/csg/doc_classes/                     @Redot-Engine/3d-nodes @Redot-Engine/documentation
+/modules/csg/icons/                           @Redot-Engine/3d-nodes @Redot-Engine/usability
+/modules/navigation/                          @Redot-Engine/navigation
+/modules/gridmap/                             @Redot-Engine/3d-nodes
+/modules/gridmap/doc_classes/                 @Redot-Engine/3d-nodes @Redot-Engine/documentation
+/modules/gridmap/icons/                       @Redot-Engine/3d-nodes @Redot-Engine/usability
+/modules/noise/                               @Redot-Engine/core
+/modules/noise/doc_classes/                   @Redot-Engine/core @Redot-Engine/documentation
+/modules/noise/icons/                         @Redot-Engine/core @Redot-Engine/usability
+/modules/noise/tests/                         @Redot-Engine/core @Redot-Engine/tests
+/modules/regex/                               @Redot-Engine/core
+/modules/regex/doc_classes/                   @Redot-Engine/core @Redot-Engine/documentation
+/modules/regex/icons/                         @Redot-Engine/core @Redot-Engine/usability
+/modules/regex/tests/                         @Redot-Engine/core @Redot-Engine/tests
+/modules/zip/                                 @Redot-Engine/core
+/modules/zip/doc_classes/                     @Redot-Engine/core @Redot-Engine/documentation
 
 # Platform
 
-/platform/android/                            @godotengine/android
-/platform/android/doc_classes/                @godotengine/android @godotengine/documentation
-/platform/ios/                                @godotengine/ios
-/platform/ios/doc_classes/                    @godotengine/ios @godotengine/documentation
-/platform/linuxbsd/                           @godotengine/linux-bsd
-/platform/linuxbsd/doc_classes/               @godotengine/linux-bsd @godotengine/documentation
-/platform/macos/                              @godotengine/macos
-/platform/macos/doc_classes/                  @godotengine/macos @godotengine/documentation
-/platform/web/                                @godotengine/web
-/platform/web/doc_classes/                    @godotengine/web @godotengine/documentation
-/platform/windows/                            @godotengine/windows
-/platform/windows/doc_classes/                @godotengine/windows @godotengine/documentation
+/platform/android/                            @Redot-Engine/android
+/platform/android/doc_classes/                @Redot-Engine/android @Redot-Engine/documentation
+/platform/ios/                                @Redot-Engine/ios
+/platform/ios/doc_classes/                    @Redot-Engine/ios @Redot-Engine/documentation
+/platform/linuxbsd/                           @Redot-Engine/linux-bsd
+/platform/linuxbsd/doc_classes/               @Redot-Engine/linux-bsd @Redot-Engine/documentation
+/platform/macos/                              @Redot-Engine/macos
+/platform/macos/doc_classes/                  @Redot-Engine/macos @Redot-Engine/documentation
+/platform/web/                                @Redot-Engine/web
+/platform/web/doc_classes/                    @Redot-Engine/web @Redot-Engine/documentation
+/platform/windows/                            @Redot-Engine/windows
+/platform/windows/doc_classes/                @Redot-Engine/windows @Redot-Engine/documentation
 
 # Scene
 
-/scene/2d/                                    @godotengine/2d-nodes
-/scene/2d/physics/                            @godotengine/2d-nodes @godotengine/physics
-/scene/3d/                                    @godotengine/3d-nodes
-/scene/3d/physics/                            @godotengine/3d-nodes @godotengine/physics
-/scene/animation/                             @godotengine/animation
-/scene/audio/                                 @godotengine/audio
-/scene/debugger/                              @godotengine/debugger
-/scene/gui/                                   @godotengine/gui-nodes
-/scene/main/                                  @godotengine/core
-/scene/resources/font.*                       @godotengine/gui-nodes
-/scene/resources/text_line.*                  @godotengine/gui-nodes
-/scene/resources/text_paragraph.*             @godotengine/gui-nodes
-/scene/resources/visual_shader*.*             @godotengine/shaders
-/scene/theme/                                 @godotengine/gui-nodes
-/scene/theme/icons/                           @godotengine/gui-nodes @godotengine/usability
+/scene/2d/                                    @Redot-Engine/2d-nodes
+/scene/2d/physics/                            @Redot-Engine/2d-nodes @Redot-Engine/physics
+/scene/3d/                                    @Redot-Engine/3d-nodes
+/scene/3d/physics/                            @Redot-Engine/3d-nodes @Redot-Engine/physics
+/scene/animation/                             @Redot-Engine/animation
+/scene/audio/                                 @Redot-Engine/audio
+/scene/debugger/                              @Redot-Engine/debugger
+/scene/gui/                                   @Redot-Engine/gui-nodes
+/scene/main/                                  @Redot-Engine/core
+/scene/resources/font.*                       @Redot-Engine/gui-nodes
+/scene/resources/text_line.*                  @Redot-Engine/gui-nodes
+/scene/resources/text_paragraph.*             @Redot-Engine/gui-nodes
+/scene/resources/visual_shader*.*             @Redot-Engine/shaders
+/scene/theme/                                 @Redot-Engine/gui-nodes
+/scene/theme/icons/                           @Redot-Engine/gui-nodes @Redot-Engine/usability
 
 # Servers
 
-/servers/audio*                               @godotengine/audio
-/servers/camera*                              @godotengine/xr
-/servers/display_server.*                     @godotengine/_platforms
-/servers/navigation_server*.*                 @godotengine/navigation
-/servers/physics*                             @godotengine/physics
-/servers/rendering*                           @godotengine/rendering
-/servers/text_server.*                        @godotengine/gui-nodes
-/servers/xr*                                  @godotengine/xr
+/servers/audio*                               @Redot-Engine/audio
+/servers/camera*                              @Redot-Engine/xr
+/servers/display_server.*                     @Redot-Engine/_platforms
+/servers/navigation_server*.*                 @Redot-Engine/navigation
+/servers/physics*                             @Redot-Engine/physics
+/servers/rendering*                           @Redot-Engine/rendering
+/servers/text_server.*                        @Redot-Engine/gui-nodes
+/servers/xr*                                  @Redot-Engine/xr
 
 # Tests
 
-/tests/                                       @godotengine/tests
+/tests/                                       @Redot-Engine/tests
 
 # Thirdparty
 
-/thirdparty/                                  @godotengine/buildsystem
+/thirdparty/                                  @Redot-Engine/buildsystem
 
 # Buildsystem (After everything to catch all)
 
-*.py                                          @godotengine/buildsystem
-SConstruct                                    @godotengine/buildsystem
-SCsub                                         @godotengine/buildsystem
+*.py                                          @Redot-Engine/buildsystem
+SConstruct                                    @Redot-Engine/buildsystem
+SCsub                                         @Redot-Engine/buildsystem
