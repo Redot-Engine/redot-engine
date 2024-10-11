@@ -31,7 +31,7 @@ class GLES3HeaderStruct:
         self.specialization_values = []
 
 
-def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, depth: int):
+def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, depth: int) -> GLES3HeaderStruct:
     with open(filename, "r", encoding="utf-8") as fs:
         line = fs.readline()
 
@@ -195,7 +195,7 @@ def build_gles3_header(
     class_suffix: str,
     optional_output_filename: Optional[str] = None,
     header_data: Optional[GLES3HeaderStruct] = None,
-):
+) -> None:
     header_data = header_data or GLES3HeaderStruct()
     include_file_in_gles3_header(filename, header_data, 0)
 

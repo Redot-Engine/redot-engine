@@ -176,7 +176,7 @@ def include_file_in_raw_header(filename: str, header_data: RAWHeaderStruct, dept
 
 def build_raw_header(
     filename: str, optional_output_filename: Optional[str] = None, header_data: Optional[RAWHeaderStruct] = None
-):
+) -> None:
     header_data = header_data or RAWHeaderStruct()
     include_file_in_raw_header(filename, header_data, 0)
 
