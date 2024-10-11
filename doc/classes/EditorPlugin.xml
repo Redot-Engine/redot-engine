@@ -259,7 +259,7 @@
 		<method name="_get_plugin_name" qualifiers="virtual const">
 			<return type="String" />
 			<description>
-				Override this method in your plugin to provide the name of the plugin when displayed in the Godot editor.
+				Override this method in your plugin to provide the name of the plugin when displayed in the Redot editor.
 				For main screen plugins, this appears at the top of the screen, to the right of the "2D", "3D", "Script", and "AssetLib" buttons.
 			</description>
 		</method>

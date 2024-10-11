@@ -20,7 +20,7 @@
 		<method name="is_simulating_physics" qualifiers="const">
 			<return type="bool" />
 			<description>
-				Returns a boolean that indicates whether the [PhysicalBone2D] is running and simulating using the Godot 2D physics engine. When [code]true[/code], the PhysicalBone2D node is using physics.
+				Returns a boolean that indicates whether the [PhysicalBone2D] is running and simulating using the Redot 2D physics engine. When [code]true[/code], the PhysicalBone2D node is using physics.
 			</description>
 		</method>
 	</methods>

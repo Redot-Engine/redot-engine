@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="EditorInterface" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
 	<brief_description>
-		Godot editor's interface.
+		Redot editor's interface.
 	</brief_description>
 	<description>
-		[EditorInterface] gives you control over Godot editor's window. It allows customizing the window, saving and (re-)loading scenes, rendering mesh previews, inspecting and editing resources and objects, and provides access to [EditorSettings], [EditorFileSystem], [EditorResourcePreview], [ScriptEditor], the editor viewport, and information about scenes.
+		[EditorInterface] gives you control over Redot editor's window. It allows customizing the window, saving and (re-)loading scenes, rendering mesh previews, inspecting and editing resources and objects, and provides access to [EditorSettings], [EditorFileSystem], [EditorResourcePreview], [ScriptEditor], the editor viewport, and information about scenes.
 		[b]Note:[/b] This class shouldn't be instantiated directly. Instead, access the singleton directly by its name.
 		[codeblocks]
 		[gdscript]
@@ -46,7 +46,7 @@
 		<method name="get_base_control" qualifiers="const">
 			<return type="Control" />
 			<description>
-				Returns the main container of Godot editor's window. For example, you can use it to retrieve the size of the container and place your controls accordingly.
+				Returns the main container of Redot editor's window. For example, you can use it to retrieve the size of the container and place your controls accordingly.
 				[b]Warning:[/b] Removing and freeing this node will render the editor useless and may cause a crash.
 			</description>
 		</method>

@@ -16,7 +16,7 @@
 		</member>
 		<member name="normal_texture" type="Texture2D" setter="set_normal_texture" getter="get_normal_texture">
 			The normal map texture to use. Only has a visible effect if [Light2D]s are affecting this [CanvasTexture].
-			[b]Note:[/b] Godot expects the normal map to use X+, Y+, and Z+ coordinates. See [url=http://wiki.polycount.com/wiki/Normal_Map_Technical_Details#Common_Swizzle_Coordinates]this page[/url] for a comparison of normal map coordinates expected by popular engines.
+			[b]Note:[/b] Redot expects the normal map to use X+, Y+, and Z+ coordinates. See [url=http://wiki.polycount.com/wiki/Normal_Map_Technical_Details#Common_Swizzle_Coordinates]this page[/url] for a comparison of normal map coordinates expected by popular engines.
 		</member>
 		<member name="resource_local_to_scene" type="bool" setter="set_local_to_scene" getter="is_local_to_scene" overrides="Resource" default="false" />
 		<member name="specular_color" type="Color" setter="set_specular_color" getter="get_specular_color" default="Color(1, 1, 1, 1)">

@@ -6,7 +6,7 @@
 	<description>
 		The [JSON] class enables all data types to be converted to and from a JSON string. This is useful for serializing data, e.g. to save to a file or send over the network.
 		[method stringify] is used to convert any data type into a JSON string.
-		[method parse] is used to convert any existing JSON data into a [Variant] that can be used within Godot. If successfully parsed, use [member data] to retrieve the [Variant], and use [method @GlobalScope.typeof] to check if the Variant's type is what you expect. JSON Objects are converted into a [Dictionary], but JSON data can be used to store [Array]s, numbers, [String]s and even just a boolean.
+		[method parse] is used to convert any existing JSON data into a [Variant] that can be used within Redot. If successfully parsed, use [member data] to retrieve the [Variant], and use [method @GlobalScope.typeof] to check if the Variant's type is what you expect. JSON Objects are converted into a [Dictionary], but JSON data can be used to store [Array]s, numbers, [String]s and even just a boolean.
 		[codeblock]
 		var data_to_send = ["a", "b", "c"]
 		var json_string = JSON.stringify(data_to_send)
