@@ -35,10 +35,7 @@
 			<return type="Dictionary" />
 			<description>
 				Returns the engine author information as a [Dictionary], where each entry is an [Array] of strings with the names of notable contributors to the Redot Engine: [code]lead_developers[/code], [code]founders[/code], [code]project_managers[/code], and [code]developers[/code].
-<<<<<<< HEAD
 				See also [method get_godot_author_info] for Godot's author info.
-=======
->>>>>>> a7abb58f5e (Deref Godot: doc/ part 5)
 			</description>
 		</method>
 		<method name="get_copyright_info" qualifiers="const">
