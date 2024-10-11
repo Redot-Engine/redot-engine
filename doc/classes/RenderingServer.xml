@@ -1701,7 +1701,7 @@
 				Returns [code]true[/code] if changes have been made to the RenderingServer's data. [method force_draw] is usually called if this happens.
 			</description>
 		</method>
-		<method name="has_feature" qualifiers="const" deprecated="This method has not been used since Godot 3.0.">
+		<method name="has_feature" qualifiers="const" deprecated="This method has not been used since Redot 3.0.">
 			<return type="bool" />
 			<param index="0" name="feature" type="int" enum="RenderingServer.Features" />
 			<description>
@@ -5128,7 +5128,7 @@
 		</constant>
 		<constant name="ENV_TONE_MAPPER_ACES" value="3" enum="EnvironmentToneMapper">
 			Use the Academy Color Encoding System tonemapper. ACES is slightly more expensive than other options, but it handles bright lighting in a more realistic fashion by desaturating it as it becomes brighter. ACES typically has a more contrasted output compared to [constant ENV_TONE_MAPPER_REINHARD] and [constant ENV_TONE_MAPPER_FILMIC].
-			[b]Note:[/b] This tonemapping operator is called "ACES Fitted" in Godot 3.x.
+			[b]Note:[/b] This tonemapping operator is called "ACES Fitted" in Redot 3.x.
 		</constant>
 		<constant name="ENV_SSR_ROUGHNESS_QUALITY_DISABLED" value="0" enum="EnvironmentSSRRoughnessQuality">
 			Lowest quality of roughness filter for screen-space reflections. Rough materials will not have blurrier screen-space reflections compared to smooth (non-rough) materials. This is the fastest option.
@@ -5583,9 +5583,9 @@
 		<constant name="RENDERING_INFO_VIDEO_MEM_USED" value="5" enum="RenderingInfo">
 			Video memory used (in bytes). When using the Forward+ or mobile rendering backends, this is always greater than the sum of [constant RENDERING_INFO_TEXTURE_MEM_USED] and [constant RENDERING_INFO_BUFFER_MEM_USED], since there is miscellaneous data not accounted for by those two metrics. When using the GL Compatibility backend, this is equal to the sum of [constant RENDERING_INFO_TEXTURE_MEM_USED] and [constant RENDERING_INFO_BUFFER_MEM_USED].
 		</constant>
-		<constant name="FEATURE_SHADERS" value="0" enum="Features" deprecated="This constant has not been used since Godot 3.0.">
+		<constant name="FEATURE_SHADERS" value="0" enum="Features" deprecated="This constant has not been used since Redot 3.0.">
 		</constant>
-		<constant name="FEATURE_MULTITHREADED" value="1" enum="Features" deprecated="This constant has not been used since Godot 3.0.">
+		<constant name="FEATURE_MULTITHREADED" value="1" enum="Features" deprecated="This constant has not been used since Redot 3.0.">
 		</constant>
 	</constants>
 </class>

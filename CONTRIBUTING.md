@@ -3,7 +3,7 @@
 This document summarizes the most important points for people interested in
 contributing to Redot, especially via bug reports or pull requests.
 
-The [Redot Documentation](https://docs-stable.redotengine.org/contributing/development) has a dedicated Contributing section
+The [Redot Discord](https://discord.gg/redot) documentation has a dedicated Contributing section
 which details these points and more, and is a recommended read.
 
 ## Table of contents
@@ -16,11 +16,6 @@ which details these points and more, and is a recommended read.
 
 ## Reporting bugs
 
-If you are reporting a bug with an unstable development build, it helps us greatly
-if you open your project in Godot's current dev builds to ensure that it is not
-a bug we've inherited from their upstream work process, as we must let them
-work on those bugs to minimize merge conflicts on our end.
-
 Report bugs [here](https://github.com/Redot-Engine/redot-engine/issues/new?assignees=&labels=&template=bug_report.yml).
 Please follow the instructions in the template when you do.
 
@@ -30,8 +25,7 @@ Be sure to not include the `.godot` folder in the archive to save space.
 
 Make sure that the bug you are experiencing is reproducible in the latest Redot
 releases. It's worth testing against both the latest stable release and the
-latest dev snapshot for the next Redot release, as well as the latest Godot
-dev snapshot.
+latest dev snapshot for the next Redot release.
 
 If you run into a bug which wasn't present in an earlier Redot version (what we
 call a _regression_), please mention it and clarify which versions you tested
@@ -41,8 +35,7 @@ call a _regression_), please mention it and clarify which versions you tested
 
 **The main issue tracker is for bug reports and does not accept feature proposals.**
 
-Visit the [Redot Proposals Repo](https://github.com/Redot-Engine/redot-proposals)
-to suggest features or improvements to the engine.
+Instead, head to the [Redot Discord](https://discord.gg/redot).
 
 ## Contributing pull requests
 
@@ -69,8 +62,7 @@ Similar rules can be applied when contributing bug fixes - it's always best to
 discuss the implementation in the bug report first if you are not 100% about
 what would be the best fix.
 
-Read the [Redot Documentation](https://docs-stable.redotengine.org/contributing/development)
-for information and guides related to contribution and pull requests.
+Visit the [Redot Discord](https://discord.gg/redot) for information and guides related to contribution and pull requests.
 
 ### Be mindful of your commits
 
@@ -183,7 +175,7 @@ for information on writing tests in Redot's C++ codebase.
 You can contribute to Redot translations by leaving a volunteer application
 on the [Redot Discord](https://discord.gg/redot) for us to review.
 
-Please refer to Redot's [editor and documentation localization guidelines](https://docs.redotengine.org/en/latest/contributing/documentation/editor_and_docs_localization.html)
+Please refer to Godot's [editor and documentation localization guidelines](https://docs.godotengine.org/en/latest/contributing/documentation/editor_and_docs_localization.html)
 for an overview of the translation resources and what they correspond to.
 
 ## Communicating with developers
@@ -198,8 +190,7 @@ or a bug you want to fix), the following channels can be used:
   existing issue about a topic you want to discuss, you can participate directly.
   If not, you can open a new issue. Please mind the guidelines outlined above
   for bug reporting.
-- [Redot Proposals Repo](https://github.com/Redot-Engine/redot-proposals): Feature
-or improvement proposals.
+- Feature Proposals should be made on the [Redot Discord](https://discord.gg/redot) for now.
 - [Redot](https://x.com/redotengine) on Twitter
 
 Thanks for your interest in contributing!

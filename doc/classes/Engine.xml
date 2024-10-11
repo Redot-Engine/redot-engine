@@ -54,7 +54,7 @@
 				Returns a [Dictionary] of categorized donor names. Each entry is an [Array] of strings:
 				{[code]platinum_sponsors[/code], [code]gold_sponsors[/code], [code]silver_sponsors[/code], [code]bronze_sponsors[/code], [code]mini_sponsors[/code], [code]gold_donors[/code], [code]silver_donors[/code], [code]bronze_donors[/code]}
 				See also [method get_godot_donor_info] for Godot's donor info.
-				[b]Warning:[/b] All donor names are empty. This currently maintained for compatibility with Redot.
+				[b]Warning:[/b] All donor names are empty. This currently maintained for compatibility with Godot.
 			</description>
 		</method>
 		<method name="get_frames_drawn">
@@ -73,14 +73,14 @@
 		<method name="get_godot_author_info" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
-				Returns the engine author information for Redot as a [Dictionary], where each entry is an [Array] of strings with the names of notable contributors to the Redot Engine: [code]lead_developers[/code], [code]founders[/code], [code]project_managers[/code], and [code]developers[/code].
+				Returns the engine author information for Godot as a [Dictionary], where each entry is an [Array] of strings with the names of notable contributors to the Godot Engine: [code]lead_developers[/code], [code]founders[/code], [code]project_managers[/code], and [code]developers[/code].
 				See also [method get_author_info] for Redot's author info.
 			</description>
 		</method>
 		<method name="get_godot_compatible_version_info" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
-				Returns the current engine minimal version compatibility info in relation to Redot as a [Dictionary] containing the following entries:
+				Returns the current engine minimal version compatibility info in relation to Godot as a [Dictionary] containing the following entries:
 				- [code]major[/code] - Major version number as an int;
 				- [code]minor[/code] - Minor version number as an int;
 				- [code]patch[/code] - Patch version number as an int;
