@@ -4,7 +4,7 @@
 		A tracked hand in XR.
 	</brief_description>
 	<description>
-		A hand tracking system will create an instance of this object and add it to the [XRServer]. This tracking system will then obtain skeleton data, convert it to the Godot Humanoid hand skeleton and store this data on the [XRHandTracker] object.
+		A hand tracking system will create an instance of this object and add it to the [XRServer]. This tracking system will then obtain skeleton data, convert it to the Redot Humanoid hand skeleton and store this data on the [XRHandTracker] object.
 		Use [XRHandModifier3D] to animate a hand mesh using hand tracking data.
 	</description>
 	<tutorials>

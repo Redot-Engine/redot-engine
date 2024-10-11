@@ -97,7 +97,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Redot Engine class reference\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Report-Msgid-Bugs-To: https://github.com/redot-engine/godot-engine\n"
 "PO-Revision-Date: 2024-08-13 23:09+0000\n"
 "Last-Translator: Johannes Oskar Silvennoinen <johannes.silvennoinen44@gmail."
 "com>\n"

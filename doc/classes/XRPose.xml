@@ -29,7 +29,7 @@
 			The linear velocity of this pose.
 		</member>
 		<member name="name" type="StringName" setter="set_name" getter="get_name" default="&amp;&quot;&quot;">
-			The name of this pose. Usually, this name is derived from an action map set up by the user. Godot also suggests some pose names that [XRInterface] objects are expected to implement:
+			The name of this pose. Usually, this name is derived from an action map set up by the user. Redot also suggests some pose names that [XRInterface] objects are expected to implement:
 			- [code]root[/code] is the root location, often used for tracked objects that do not have further nodes.
 			- [code]aim[/code] is the tip of a controller with its orientation pointing outwards, often used for raycasts.
 			- [code]grip[/code] is the location where the user grips the controller.
