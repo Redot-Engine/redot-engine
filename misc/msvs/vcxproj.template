@@ -5,7 +5,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{%%UUID%%}</ProjectGuid>
-    <RootNamespace>godot</RootNamespace>
+    <RootNamespace>redot</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
     <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
   </PropertyGroup>
@@ -15,15 +15,15 @@
     <ConfigurationType>Makefile</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <PlatformToolset>v143</PlatformToolset>
-    <OutDir>$(SolutionDir)\bin\$(GodotPlatform)\$(GodotConfiguration)\</OutDir>
-    <IntDir>obj\$(GodotPlatform)\$(GodotConfiguration)\</IntDir>
+    <OutDir>$(SolutionDir)\bin\$(RedotPlatform)\$(RedotConfiguration)\</OutDir>
+    <IntDir>obj\$(RedotPlatform)\$(RedotConfiguration)\</IntDir>
     <LayoutDir>$(OutDir)\Layout</LayoutDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(GodotPlatform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(GodotPlatform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(RedotPlatform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(RedotPlatform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
