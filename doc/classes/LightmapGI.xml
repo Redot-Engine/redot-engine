@@ -117,7 +117,7 @@
 			Lightmap baking failed as the lightmap data resource is embedded in a foreign resource.
 		</constant>
 		<constant name="BAKE_ERROR_NO_LIGHTMAPPER" value="3" enum="BakeError">
-			Lightmap baking failed as there is no lightmapper available in this Godot build.
+			Lightmap baking failed as there is no lightmapper available in this Redot build.
 		</constant>
 		<constant name="BAKE_ERROR_NO_SAVE_PATH" value="4" enum="BakeError">
 			Lightmap baking failed as the [LightmapGIData] save path isn't configured in the resource.
@@ -129,7 +129,7 @@
 			Lightmap baking failed as the lightmapper failed to analyze some of the meshes marked as static for baking.
 		</constant>
 		<constant name="BAKE_ERROR_CANT_CREATE_IMAGE" value="7" enum="BakeError">
-			Lightmap baking failed as the resulting image couldn't be saved or imported by Godot after it was saved.
+			Lightmap baking failed as the resulting image couldn't be saved or imported by Redot after it was saved.
 		</constant>
 		<constant name="BAKE_ERROR_USER_ABORTED" value="8" enum="BakeError">
 			The user aborted the lightmap baking operation (typically by clicking the [b]Cancel[/b] button in the progress dialog).

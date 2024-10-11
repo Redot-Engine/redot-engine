@@ -4,7 +4,7 @@
 		Provides access to the Java Native Interface.
 	</brief_description>
 	<description>
-		The JavaClassWrapper singleton provides a way for the Godot application to send and receive data through the [url=https://developer.android.com/training/articles/perf-jni]Java Native Interface[/url] (JNI).
+		The JavaClassWrapper singleton provides a way for the Redot application to send and receive data through the [url=https://developer.android.com/training/articles/perf-jni]Java Native Interface[/url] (JNI).
 		[b]Note:[/b] This singleton is only available in Android builds.
 		[codeblock]
 		var LocalDateTime = JavaClassWrapper.wrap("java.time.LocalDateTime")
@@ -23,7 +23,7 @@
 			<return type="JavaClass" />
 			<param index="0" name="name" type="String" />
 			<description>
-				Wraps a class defined in Java, and returns it as a [JavaClass] [Object] type that Godot can interact with.
+				Wraps a class defined in Java, and returns it as a [JavaClass] [Object] type that Redot can interact with.
 				[b]Note:[/b] This method only works on Android. On every other platform, this method does nothing and returns an empty [JavaClass].
 			</description>
 		</method>
