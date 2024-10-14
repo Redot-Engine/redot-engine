@@ -314,7 +314,7 @@ private:
 	struct Skeleton {
 		bool use_2d = false;
 		int size = 0;
-		Vector<float> data;
+		LocalVector<float> data;
 		RID buffer;
 
 		bool dirty = false;
