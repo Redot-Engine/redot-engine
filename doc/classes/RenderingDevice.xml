@@ -4,8 +4,8 @@
 		Abstraction for working with modern low-level graphics APIs.
 	</brief_description>
 	<description>
-		[RenderingDevice] is an abstraction for working with modern low-level graphics APIs such as Vulkan. Compared to [RenderingServer] (which works with Godot's own rendering subsystems), [RenderingDevice] is much lower-level and allows working more directly with the underlying graphics APIs. [RenderingDevice] is used in Godot to provide support for several modern low-level graphics APIs while reducing the amount of code duplication required. [RenderingDevice] can also be used in your own projects to perform things that are not exposed by [RenderingServer] or high-level nodes, such as using compute shaders.
-		On startup, Godot creates a global [RenderingDevice] which can be retrieved using [method RenderingServer.get_rendering_device]. This global [RenderingDevice] performs drawing to the screen.
+		[RenderingDevice] is an abstraction for working with modern low-level graphics APIs such as Vulkan. Compared to [RenderingServer] (which works with Godot's own rendering subsystems), [RenderingDevice] is much lower-level and allows working more directly with the underlying graphics APIs. [RenderingDevice] is used in Redot to provide support for several modern low-level graphics APIs while reducing the amount of code duplication required. [RenderingDevice] can also be used in your own projects to perform things that are not exposed by [RenderingServer] or high-level nodes, such as using compute shaders.
+		On startup, Redot creates a global [RenderingDevice] which can be retrieved using [method RenderingServer.get_rendering_device]. This global [RenderingDevice] performs drawing to the screen.
 		[b]Local RenderingDevices:[/b] Using [method RenderingServer.create_local_rendering_device], you can create "secondary" rendering devices to perform drawing and GPU compute operations on separate threads.
 		[b]Note:[/b] [RenderingDevice] assumes intermediate knowledge of modern graphics APIs such as Vulkan, Direct3D 12, Metal or WebGPU. These graphics APIs are lower-level than OpenGL or Direct3D 11, requiring you to perform what was previously done by the graphics driver itself. If you have difficulty understanding the concepts used in this class, follow the [url=https://vulkan-tutorial.com/]Vulkan Tutorial[/url] or [url=https://vkguide.dev/]Vulkan Guide[/url]. It's recommended to have existing modern OpenGL or Direct3D 11 knowledge before attempting to learn a low-level graphics API.
 		[b]Note:[/b] [RenderingDevice] is not available when running in headless mode or when using the Compatibility rendering method.
@@ -116,7 +116,7 @@
 			<param index="0" name="compute_list" type="int" />
 			<param index="1" name="compute_pipeline" type="RID" />
 			<description>
-				Tells the GPU what compute pipeline to use when processing the compute list. If the shader has changed since the last time this function was called, Godot will unbind all descriptor sets and will re-bind them inside [method compute_list_dispatch].
+				Tells the GPU what compute pipeline to use when processing the compute list. If the shader has changed since the last time this function was called, Redot will unbind all descriptor sets and will re-bind them inside [method compute_list_dispatch].
 			</description>
 		</method>
 		<method name="compute_list_bind_uniform_set">
@@ -125,7 +125,7 @@
 			<param index="1" name="uniform_set" type="RID" />
 			<param index="2" name="set_index" type="int" />
 			<description>
-				Binds the [param uniform_set] to this [param compute_list]. Godot ensures that all textures in the uniform set have the correct Vulkan access masks. If Godot had to change access masks of textures, it will raise a Vulkan image memory barrier.
+				Binds the [param uniform_set] to this [param compute_list]. Redot ensures that all textures in the uniform set have the correct Vulkan access masks. If Redot had to change access masks of textures, it will raise a Vulkan image memory barrier.
 			</description>
 		</method>
 		<method name="compute_list_dispatch">
@@ -241,7 +241,7 @@
 
 				rd.draw_list_end()
 				[/codeblock]
-				The [param breadcrumb] parameter can be an arbitrary 32-bit integer that is useful to diagnose GPU crashes. If Godot is built in dev or debug mode; when the GPU crashes Godot will dump all shaders that were being executed at the time of the crash and the breadcrumb is useful to diagnose what passes did those shaders belong to.
+				The [param breadcrumb] parameter can be an arbitrary 32-bit integer that is useful to diagnose GPU crashes. If Redot is built in dev or debug mode; when the GPU crashes Redot will dump all shaders that were being executed at the time of the crash and the breadcrumb is useful to diagnose what passes did those shaders belong to.
 				It does not affect rendering behavior and can be set to 0. It is recommended to use [enum BreadcrumbMarker] enumerations for consistency but it's not required. It is also possible to use bitwise operations to add extra data. e.g.
 				[codeblock]
 				rd.draw_list_begin(fb[i], RenderingDevice.INITIAL_ACTION_CLEAR, RenderingDevice.FINAL_ACTION_READ, RenderingDevice.INITIAL_ACTION_CLEAR, RenderingDevice.FINAL_ACTION_DISCARD, clear_colors, RenderingDevice.OPAQUE_PASS | 5)
@@ -573,7 +573,7 @@
 				- [method get_device_allocation_count]
 				- [method get_device_memory_by_object_type]
 				- [method get_device_allocs_by_object_type]
-				This is only used by Vulkan in debug builds. Godot must also be started with the [code]--extra-gpu-memory-tracking[/code] [url=$DOCS_URL/tutorials/editor/command_line_tutorial.html]command line argument[/url].
+				This is only used by Vulkan in debug builds. Redot must also be started with the [code]--extra-gpu-memory-tracking[/code] [url=$DOCS_URL/tutorials/editor/command_line_tutorial.html]command line argument[/url].
 			</description>
 		</method>
 		<method name="get_driver_memory_by_object_type" qualifiers="const">
@@ -631,14 +631,14 @@
 				- SWAPCHAIN_KHR
 				- COMMAND_POOL
 				Thus if e.g. [code]get_tracked_object_name(5)[/code] returns "COMMAND_POOL", then [code]get_device_memory_by_object_type(5)[/code] returns the bytes used by the GPU for command pools.
-				This is only used by Vulkan in debug builds. Godot must also be started with the [code]--extra-gpu-memory-tracking[/code] [url=$DOCS_URL/tutorials/editor/command_line_tutorial.html]command line argument[/url].
+				This is only used by Vulkan in debug builds. Redot must also be started with the [code]--extra-gpu-memory-tracking[/code] [url=$DOCS_URL/tutorials/editor/command_line_tutorial.html]command line argument[/url].
 			</description>
 		</method>
 		<method name="get_tracked_object_type_count" qualifiers="const">
 			<return type="int" />
 			<description>
 				Returns how many types of trackable objects are.
-				This is only used by Vulkan in debug builds. Godot must also be started with the [code]--extra-gpu-memory-tracking[/code] [url=$DOCS_URL/tutorials/editor/command_line_tutorial.html]command line argument[/url].
+				This is only used by Vulkan in debug builds. Redot must also be started with the [code]--extra-gpu-memory-tracking[/code] [url=$DOCS_URL/tutorials/editor/command_line_tutorial.html]command line argument[/url].
 			</description>
 		</method>
 		<method name="index_array_create">
@@ -885,7 +885,7 @@
 			<param index="7" name="depth" type="int" />
 			<param index="8" name="layers" type="int" />
 			<description>
-				Returns an RID for an existing [param image] ([code]VkImage[/code]) with the given [param type], [param format], [param samples], [param usage_flags], [param width], [param height], [param depth], and [param layers]. This can be used to allow Godot to render onto foreign images.
+				Returns an RID for an existing [param image] ([code]VkImage[/code]) with the given [param type], [param format], [param samples], [param usage_flags], [param width], [param height], [param depth], and [param layers]. This can be used to allow Redot to render onto foreign images.
 			</description>
 		</method>
 		<method name="texture_create_shared">
@@ -2020,28 +2020,28 @@
 		</constant>
 		<constant name="RENDER_PRIMITIVE_LINES_WITH_ADJACENCY" value="2" enum="RenderPrimitive">
 			[url=https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#drawing-line-lists-with-adjacency]Line list rendering primitive with adjacency.[/url]
-			[b]Note:[/b] Adjacency is only useful with geometry shaders, which Godot does not expose.
+			[b]Note:[/b] Adjacency is only useful with geometry shaders, which Redot does not expose.
 		</constant>
 		<constant name="RENDER_PRIMITIVE_LINESTRIPS" value="3" enum="RenderPrimitive">
 			Line strip rendering primitive. Lines drawn are connected to the previous vertex.
 		</constant>
 		<constant name="RENDER_PRIMITIVE_LINESTRIPS_WITH_ADJACENCY" value="4" enum="RenderPrimitive">
 			[url=https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#drawing-line-strips-with-adjacency]Line strip rendering primitive with adjacency.[/url]
-			[b]Note:[/b] Adjacency is only useful with geometry shaders, which Godot does not expose.
+			[b]Note:[/b] Adjacency is only useful with geometry shaders, which Redot does not expose.
 		</constant>
 		<constant name="RENDER_PRIMITIVE_TRIANGLES" value="5" enum="RenderPrimitive">
 			Triangle list rendering primitive. Triangles are drawn separated from each other.
 		</constant>
 		<constant name="RENDER_PRIMITIVE_TRIANGLES_WITH_ADJACENCY" value="6" enum="RenderPrimitive">
 			[url=https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#drawing-triangle-lists-with-adjacency]Triangle list rendering primitive with adjacency.[/url]
-			 [b]Note:[/b] Adjacency is only useful with geometry shaders, which Godot does not expose.
+			 [b]Note:[/b] Adjacency is only useful with geometry shaders, which Redot does not expose.
 		</constant>
 		<constant name="RENDER_PRIMITIVE_TRIANGLE_STRIPS" value="7" enum="RenderPrimitive">
 			Triangle strip rendering primitive. Triangles drawn are connected to the previous triangle.
 		</constant>
 		<constant name="RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_AJACENCY" value="8" enum="RenderPrimitive">
 			[url=https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#drawing-triangle-strips-with-adjacency]Triangle strip rendering primitive with adjacency.[/url]
-			[b]Note:[/b] Adjacency is only useful with geometry shaders, which Godot does not expose.
+			[b]Note:[/b] Adjacency is only useful with geometry shaders, which Redot does not expose.
 		</constant>
 		<constant name="RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX" value="9" enum="RenderPrimitive">
 			Triangle strip rendering primitive with [i]primitive restart[/i] enabled. Triangles drawn are connected to the previous triangle, but a primitive restart index can be specified before drawing to create a second triangle strip after the specified index.
@@ -2336,7 +2336,7 @@
 			Compute shader stage bit (see also [constant SHADER_STAGE_COMPUTE]).
 		</constant>
 		<constant name="SHADER_LANGUAGE_GLSL" value="0" enum="ShaderLanguage">
-			Khronos' GLSL shading language (used natively by OpenGL and Vulkan). This is the language used for core Godot shaders.
+			Khronos' GLSL shading language (used natively by OpenGL and Vulkan). This is the language used for core Godot Shaders.
 		</constant>
 		<constant name="SHADER_LANGUAGE_HLSL" value="1" enum="ShaderLanguage">
 			Microsoft's High-Level Shading Language (used natively by Direct3D, but can also be used in Vulkan).

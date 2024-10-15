@@ -20,7 +20,7 @@
 			<description>
 				Calls [param method] on each node inside this tree added to the given [param group]. You can pass arguments to [param method] by specifying them at the end of this method call. Nodes that cannot call [param method] (either because the method doesn't exist or the arguments do not match) are ignored. See also [method set_group] and [method notify_group].
 				[b]Note:[/b] This method acts immediately on all selected nodes at once, which may cause stuttering in some performance-intensive situations.
-				[b]Note:[/b] In C#, [param method] must be in snake_case when referring to built-in Godot methods. Prefer using the names exposed in the [code]MethodName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Note:[/b] In C#, [param method] must be in snake_case when referring to built-in Redot methods. Prefer using the names exposed in the [code]MethodName[/code] class to avoid allocating a new [StringName] on each call.
 			</description>
 		</method>
 		<method name="call_group_flags" qualifiers="vararg">
@@ -36,7 +36,7 @@
 				        SceneTree.GROUP_CALL_DEFERRED | SceneTree.GROUP_CALL_REVERSE,
 				        "enemies", "hide")
 				[/codeblock]
-				[b]Note:[/b] In C#, [param method] must be in snake_case when referring to built-in Godot methods. Prefer using the names exposed in the [code]MethodName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Note:[/b] In C#, [param method] must be in snake_case when referring to built-in Redot methods. Prefer using the names exposed in the [code]MethodName[/code] class to avoid allocating a new [StringName] on each call.
 			</description>
 		</method>
 		<method name="change_scene_to_file">
@@ -156,7 +156,7 @@
 			<param index="0" name="group" type="StringName" />
 			<param index="1" name="notification" type="int" />
 			<description>
-				Calls [method Object.notification] with the given [param notification] to all nodes inside this tree added to the [param group]. See also [url=$DOCS_URL/tutorials/best_practices/godot_notifications.html]Godot notifications[/url] and [method call_group] and [method set_group].
+				Calls [method Object.notification] with the given [param notification] to all nodes inside this tree added to the [param group]. See also [url=$DOCS_URL/tutorials/best_practices/godot_notifications.html]Redot notifications[/url] and [method call_group] and [method set_group].
 				[b]Note:[/b] This method acts immediately on all selected nodes at once, which may cause stuttering in some performance-intensive situations.
 			</description>
 		</method>
@@ -200,7 +200,7 @@
 			<description>
 				Sets the given [param property] to [param value] on all nodes inside this tree added to the given [param group]. Nodes that do not have the [param property] are ignored. See also [method call_group] and [method notify_group].
 				[b]Note:[/b] This method acts immediately on all selected nodes at once, which may cause stuttering in some performance-intensive situations.
-				[b]Note:[/b] In C#, [param property] must be in snake_case when referring to built-in Godot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Note:[/b] In C#, [param property] must be in snake_case when referring to built-in Redot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
 			</description>
 		</method>
 		<method name="set_group_flags">
@@ -211,7 +211,7 @@
 			<param index="3" name="value" type="Variant" />
 			<description>
 				Sets the given [param property] to [param value] on all nodes inside this tree added to the given [param group]. Nodes that do not have the [param property] are ignored. Use [param call_flags] to customize this method's behavior (see [enum GroupCallFlags]).
-				[b]Note:[/b] In C#, [param property] must be in snake_case when referring to built-in Godot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Note:[/b] In C#, [param property] must be in snake_case when referring to built-in Redot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
 			</description>
 		</method>
 		<method name="set_multiplayer">

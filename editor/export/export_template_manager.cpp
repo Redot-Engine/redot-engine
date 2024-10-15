@@ -36,6 +36,7 @@
 #include "core/io/json.h"
 #include "core/io/zip_io.h"
 #include "core/version.h"
+#include "editor/editor_file_system.h"
 #include "editor/editor_node.h"
 #include "editor/editor_paths.h"
 #include "editor/editor_settings.h"
@@ -878,7 +879,7 @@ Error ExportTemplateManager::install_android_template_from_file(const String &p_
 
 	ProgressDialog::get_singleton()->end_task("uncompress_src");
 	unzClose(pkg);
-
+	EditorFileSystem::get_singleton()->scan_changes();
 	return OK;
 }
 

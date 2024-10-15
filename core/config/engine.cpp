@@ -126,6 +126,8 @@ Dictionary Engine::get_version_info() const {
 	dict["status"] = VERSION_STATUS;
 	dict["build"] = VERSION_BUILD;
 
+	dict["status_version"] = dict["status"] != "stable" ? VERSION_STATUS_VERSION : 0;
+
 	String hash = String(VERSION_HASH);
 	dict["hash"] = hash.is_empty() ? String("unknown") : hash;
 
@@ -135,7 +137,13 @@ Dictionary Engine::get_version_info() const {
 	if ((int)dict["patch"] != 0) {
 		stringver += "." + String(dict["patch"]);
 	}
-	stringver += "-" + String(dict["status"]) + " (" + String(dict["build"]) + ")";
+	stringver += "-" + String(dict["status"]);
+
+	if ((int)dict["status_version"] != 0) {
+		stringver += "." + String(dict["status_version"]);
+	}
+
+	stringver += " (" + String(dict["build"]) + ")";
 	dict["string"] = stringver;
 
 	return dict;

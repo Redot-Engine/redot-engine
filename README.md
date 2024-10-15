@@ -34,7 +34,7 @@ Redot was forked from Godot in [September 2024](https://github.com/Redot-Engine/
 intending to improve upon Godot in order to fulfill its potential and contribute to the shared
 codebase of both through a more genuinely community-driven model than Godot.
 
-[Keatram - 2D Pixel Cross-Platform MMORPG by Keros](https://kaetram.com)
+[Kaetram - 2D Pixel Cross-Platform MMORPG by Keros](https://kaetram.com)
 <p align="center">
 	<img src="screenshot.jpg" width="900" alt="Redot Engine screenshot!">
 </p>
