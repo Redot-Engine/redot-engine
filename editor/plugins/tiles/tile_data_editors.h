@@ -129,6 +129,7 @@ private:
 	enum Snap {
 		SNAP_NONE,
 		SNAP_HALF_PIXEL,
+		SNAP_ONE_PIXEL,
 		SNAP_GRID,
 	};
 	int current_snap_option = SNAP_HALF_PIXEL;
