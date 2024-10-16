@@ -207,7 +207,7 @@
 		<method name="_get_resource_type" qualifiers="virtual const">
 			<return type="String" />
 			<description>
-				Gets the Godot resource type associated with this loader. e.g. [code]"Mesh"[/code] or [code]"Animation"[/code].
+				Gets the Redot resource type associated with this loader. e.g. [code]"Mesh"[/code] or [code]"Animation"[/code].
 			</description>
 		</method>
 		<method name="_get_save_extension" qualifiers="virtual const">

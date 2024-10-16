@@ -624,7 +624,7 @@
 			Marks the option as a function.
 		</constant>
 		<constant name="KIND_SIGNAL" value="2" enum="CodeCompletionKind">
-			Marks the option as a Godot signal.
+			Marks the option as a Redot signal.
 		</constant>
 		<constant name="KIND_VARIABLE" value="3" enum="CodeCompletionKind">
 			Marks the option as a variable.
@@ -639,7 +639,7 @@
 			Marks the option as a constant.
 		</constant>
 		<constant name="KIND_NODE_PATH" value="7" enum="CodeCompletionKind">
-			Marks the option as a Godot node path.
+			Marks the option as a Redot node path.
 		</constant>
 		<constant name="KIND_FILE_PATH" value="8" enum="CodeCompletionKind">
 			Marks the option as a file path.

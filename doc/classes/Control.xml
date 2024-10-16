@@ -7,7 +7,7 @@
 		Base class for all UI-related nodes. [Control] features a bounding rectangle that defines its extents, an anchor position relative to its parent control or the current viewport, and offsets relative to the anchor. The offsets update automatically when the node, any of its parents, or the screen size change.
 		For more information on Godot's UI system, anchors, offsets, and containers, see the related tutorials in the manual. To build flexible UIs, you'll need a mix of UI elements that inherit from [Control] and [Container] nodes.
 		[b]User Interface nodes and input[/b]
-		Godot propagates input events via viewports. Each [Viewport] is responsible for propagating [InputEvent]s to their child nodes. As the [member SceneTree.root] is a [Window], this already happens automatically for all UI elements in your game.
+		Redot propagates input events via viewports. Each [Viewport] is responsible for propagating [InputEvent]s to their child nodes. As the [member SceneTree.root] is a [Window], this already happens automatically for all UI elements in your game.
 		Input events are propagated through the [SceneTree] from the root node to all child nodes by calling [method Node._input]. For UI elements specifically, it makes more sense to override the virtual method [method _gui_input], which filters out unrelated input events, such as by checking z-order, [member mouse_filter], focus, or if the event was inside of the control's bounding box.
 		Call [method accept_event] so no other node receives the event. Once you accept an input, it becomes handled so [method Node._unhandled_input] will not process it.
 		Only one [Control] node can be in focus. Only the node in focus will receive events. To get the focus, call [method grab_focus]. [Control] nodes lose focus when another node grabs it, or if you hide the node in focus.
@@ -28,7 +28,7 @@
 			<param index="0" name="at_position" type="Vector2" />
 			<param index="1" name="data" type="Variant" />
 			<description>
-				Godot calls this method to test if [param data] from a control's [method _get_drag_data] can be dropped at [param at_position]. [param at_position] is local to this control.
+				Redot calls this method to test if [param data] from a control's [method _get_drag_data] can be dropped at [param at_position]. [param at_position] is local to this control.
 				This method should only be used to test the data. Process the data in [method _drop_data].
 				[codeblocks]
 				[gdscript]
@@ -53,7 +53,7 @@
 			<param index="0" name="at_position" type="Vector2" />
 			<param index="1" name="data" type="Variant" />
 			<description>
-				Godot calls this method to pass you the [param data] from a control's [method _get_drag_data] result. Godot first calls [method _can_drop_data] to test if [param data] is allowed to drop at [param at_position] where [param at_position] is local to this control.
+				Redot calls this method to pass you the [param data] from a control's [method _get_drag_data] result. Redot first calls [method _can_drop_data] to test if [param data] is allowed to drop at [param at_position] where [param at_position] is local to this control.
 				[codeblocks]
 				[gdscript]
 				func _can_drop_data(position, data):
@@ -80,7 +80,7 @@
 			<return type="Variant" />
 			<param index="0" name="at_position" type="Vector2" />
 			<description>
-				Godot calls this method to get data that can be dragged and dropped onto controls that expect drop data. Returns [code]null[/code] if there is no data to drag. Controls that want to receive drop data should implement [method _can_drop_data] and [method _drop_data]. [param at_position] is local to this control. Drag may be forced with [method force_drag].
+				Redot calls this method to get data that can be dragged and dropped onto controls that expect drop data. Returns [code]null[/code] if there is no data to drag. Controls that want to receive drop data should implement [method _can_drop_data] and [method _drop_data]. [param at_position] is local to this control. Drag may be forced with [method force_drag].
 				A preview that will follow the mouse that should represent the data can be set with [method set_drag_preview]. A good time to set the preview is in this method.
 				[codeblocks]
 				[gdscript]
@@ -950,24 +950,24 @@
 			The focus access mode for the control (None, Click or All). Only one Control can be focused at the same time, and it will receive keyboard, gamepad, and mouse signals.
 		</member>
 		<member name="focus_neighbor_bottom" type="NodePath" setter="set_focus_neighbor" getter="get_focus_neighbor" default="NodePath(&quot;&quot;)" keywords="focus_neighbour_bottom">
-			Tells Godot which node it should give focus to if the user presses the down arrow on the keyboard or down on a gamepad by default. You can change the key by editing the [member ProjectSettings.input/ui_down] input action. The node must be a [Control]. If this property is not set, Godot will give focus to the closest [Control] to the bottom of this one.
+			Tells Redot which node it should give focus to if the user presses the down arrow on the keyboard or down on a gamepad by default. You can change the key by editing the [member ProjectSettings.input/ui_down] input action. The node must be a [Control]. If this property is not set, Redot will give focus to the closest [Control] to the bottom of this one.
 		</member>
 		<member name="focus_neighbor_left" type="NodePath" setter="set_focus_neighbor" getter="get_focus_neighbor" default="NodePath(&quot;&quot;)" keywords="focus_neighbour_left">
-			Tells Godot which node it should give focus to if the user presses the left arrow on the keyboard or left on a gamepad by default. You can change the key by editing the [member ProjectSettings.input/ui_left] input action. The node must be a [Control]. If this property is not set, Godot will give focus to the closest [Control] to the left of this one.
+			Tells Redot which node it should give focus to if the user presses the left arrow on the keyboard or left on a gamepad by default. You can change the key by editing the [member ProjectSettings.input/ui_left] input action. The node must be a [Control]. If this property is not set, Redot will give focus to the closest [Control] to the left of this one.
 		</member>
 		<member name="focus_neighbor_right" type="NodePath" setter="set_focus_neighbor" getter="get_focus_neighbor" default="NodePath(&quot;&quot;)" keywords="focus_neighbour_right">
-			Tells Godot which node it should give focus to if the user presses the right arrow on the keyboard or right on a gamepad by default. You can change the key by editing the [member ProjectSettings.input/ui_right] input action. The node must be a [Control]. If this property is not set, Godot will give focus to the closest [Control] to the right of this one.
+			Tells Redot which node it should give focus to if the user presses the right arrow on the keyboard or right on a gamepad by default. You can change the key by editing the [member ProjectSettings.input/ui_right] input action. The node must be a [Control]. If this property is not set, Redot will give focus to the closest [Control] to the right of this one.
 		</member>
 		<member name="focus_neighbor_top" type="NodePath" setter="set_focus_neighbor" getter="get_focus_neighbor" default="NodePath(&quot;&quot;)" keywords="focus_neighbour_top">
-			Tells Godot which node it should give focus to if the user presses the top arrow on the keyboard or top on a gamepad by default. You can change the key by editing the [member ProjectSettings.input/ui_up] input action. The node must be a [Control]. If this property is not set, Godot will give focus to the closest [Control] to the top of this one.
+			Tells Redot which node it should give focus to if the user presses the top arrow on the keyboard or top on a gamepad by default. You can change the key by editing the [member ProjectSettings.input/ui_up] input action. The node must be a [Control]. If this property is not set, Redot will give focus to the closest [Control] to the top of this one.
 		</member>
 		<member name="focus_next" type="NodePath" setter="set_focus_next" getter="get_focus_next" default="NodePath(&quot;&quot;)">
-			Tells Godot which node it should give focus to if the user presses [kbd]Tab[/kbd] on a keyboard by default. You can change the key by editing the [member ProjectSettings.input/ui_focus_next] input action.
-			If this property is not set, Godot will select a "best guess" based on surrounding nodes in the scene tree.
+			Tells Redot which node it should give focus to if the user presses [kbd]Tab[/kbd] on a keyboard by default. You can change the key by editing the [member ProjectSettings.input/ui_focus_next] input action.
+			If this property is not set, Redot will select a "best guess" based on surrounding nodes in the scene tree.
 		</member>
 		<member name="focus_previous" type="NodePath" setter="set_focus_previous" getter="get_focus_previous" default="NodePath(&quot;&quot;)">
-			Tells Godot which node it should give focus to if the user presses [kbd]Shift + Tab[/kbd] on a keyboard by default. You can change the key by editing the [member ProjectSettings.input/ui_focus_prev] input action.
-			If this property is not set, Godot will select a "best guess" based on surrounding nodes in the scene tree.
+			Tells Redot which node it should give focus to if the user presses [kbd]Shift + Tab[/kbd] on a keyboard by default. You can change the key by editing the [member ProjectSettings.input/ui_focus_prev] input action.
+			If this property is not set, Redot will select a "best guess" based on surrounding nodes in the scene tree.
 		</member>
 		<member name="global_position" type="Vector2" setter="_set_global_position" getter="get_global_position">
 			The node's global position, relative to the world (usually to the [CanvasLayer]).
@@ -986,7 +986,7 @@
 			[b]Note:[/b] Numbers within the text are not automatically converted, it can be done manually, using [method TextServer.format_number].
 		</member>
 		<member name="mouse_default_cursor_shape" type="int" setter="set_default_cursor_shape" getter="get_default_cursor_shape" enum="Control.CursorShape" default="0">
-			The default cursor shape for this control. Useful for Godot plugins and applications or games that use the system's mouse cursors.
+			The default cursor shape for this control. Useful for Redot plugins and applications or games that use the system's mouse cursors.
 			[b]Note:[/b] On Linux, shapes may vary depending on the cursor theme of the system.
 		</member>
 		<member name="mouse_filter" type="int" setter="set_mouse_filter" getter="get_mouse_filter" enum="Control.MouseFilter" default="0">

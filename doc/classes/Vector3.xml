@@ -346,7 +346,7 @@
 			<param index="0" name="n" type="Vector3" />
 			<description>
 				Returns the result of reflecting the vector through a plane defined by the given normal vector [param n].
-				[b]Note:[/b] [method reflect] differs from what other engines and frameworks call [code skip-lint]reflect()[/code]. In other engines, [code skip-lint]reflect()[/code] returns the result of the vector reflected by the given plane. The reflection thus passes through the given normal. While in Godot the reflection passes through the plane and can be thought of as bouncing off the normal. See also [method bounce] which does what most engines call [code skip-lint]reflect()[/code].
+				[b]Note:[/b] [method reflect] differs from what other engines and frameworks call [code skip-lint]reflect()[/code]. In other engines, [code skip-lint]reflect()[/code] returns the result of the vector reflected by the given plane. The reflection thus passes through the given normal. While in Redot the reflection passes through the plane and can be thought of as bouncing off the normal. See also [method bounce] which does what most engines call [code skip-lint]reflect()[/code].
 			</description>
 		</method>
 		<method name="rotated" qualifiers="const">

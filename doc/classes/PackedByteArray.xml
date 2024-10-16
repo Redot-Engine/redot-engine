@@ -458,7 +458,7 @@
 		<method name="to_float64_array" qualifiers="const">
 			<return type="PackedFloat64Array" />
 			<description>
-				Returns a copy of the data converted to a [PackedFloat64Array], where each block of 8 bytes has been converted to a 64-bit float (C++ [code]double[/code], Godot [float]).
+				Returns a copy of the data converted to a [PackedFloat64Array], where each block of 8 bytes has been converted to a 64-bit float (C++ [code]double[/code], Redot [float]).
 				The size of the input array must be a multiple of 8 (size of 64-bit double). The size of the new array will be [code]byte_array.size() / 8[/code].
 				If the original data can't be converted to 64-bit floats, the resulting data is undefined.
 			</description>
@@ -474,7 +474,7 @@
 		<method name="to_int64_array" qualifiers="const">
 			<return type="PackedInt64Array" />
 			<description>
-				Returns a copy of the data converted to a [PackedInt64Array], where each block of 8 bytes has been converted to a signed 64-bit integer (C++ [code]int64_t[/code], Godot [int]).
+				Returns a copy of the data converted to a [PackedInt64Array], where each block of 8 bytes has been converted to a signed 64-bit integer (C++ [code]int64_t[/code], Redot [int]).
 				The size of the input array must be a multiple of 8 (size of 64-bit integer). The size of the new array will be [code]byte_array.size() / 8[/code].
 				If the original data can't be converted to signed 64-bit integers, the resulting data is undefined.
 			</description>
