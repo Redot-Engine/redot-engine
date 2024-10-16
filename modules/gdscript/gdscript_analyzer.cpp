@@ -324,7 +324,7 @@ bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode
 			return false;
 		}
 		if (member_node->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && is_from_non_derived) {
-			push_error(vformat(R"(Could not access external %s "%s", because it is protected by class "%s".)", is_from_non_derived ? "external" : "super", member_type, p_member.get_name(), p_super_class->fqcn), p_source);
+			push_error(vformat(R"(Could not access external %s "%s", because it is protected by class "%s".)", member_type, p_member.get_name(), p_super_class->fqcn), p_source);
 			return false;
 		}
 	}
@@ -4108,6 +4108,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 					p_identifier->reduced_value = member.constant->initializer->reduced_value;
 					p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CONSTANT;
 					p_identifier->constant_source = member.constant;
+					execute_access_protection(member, parser->current_class, script_class, p_identifier);
 					return;
 				}
 
@@ -4133,6 +4134,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = member.variable->is_static ? GDScriptParser::IdentifierNode::STATIC_VARIABLE : GDScriptParser::IdentifierNode::MEMBER_VARIABLE;
 						p_identifier->variable_source = member.variable;
 						member.variable->usages += 1;
+						execute_access_protection(member, parser->current_class, script_class, p_identifier);
 						return;
 					}
 				} break;
@@ -4143,6 +4145,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_SIGNAL;
 						p_identifier->signal_source = member.signal;
 						member.signal->usages += 1;
+						execute_access_protection(member, parser->current_class, script_class, p_identifier);
 						return;
 					}
 				} break;
@@ -4153,6 +4156,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_FUNCTION;
 						p_identifier->function_source = member.function;
 						p_identifier->function_source_is_static = member.function->is_static;
+						execute_access_protection(member, parser->current_class, script_class, p_identifier);
 						return;
 					}
 				} break;
