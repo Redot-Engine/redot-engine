@@ -237,36 +237,25 @@ void ConnectDialog::_remove_bind() {
  */
 StringName ConnectDialog::generate_method_callback_name(Node *p_source, const String &p_signal_name, Node *p_target) {
 	String node_name = p_source->get_name();
-	for (int i = 0; i < node_name.length(); i++) { // TODO: Regex filter may be cleaner.
-		char32_t c = node_name[i];
-		if ((i == 0 && !is_unicode_identifier_start(c)) || (i > 0 && !is_unicode_identifier_continue(c))) {
-			if (c == ' ') {
-				// Replace spaces with underlines.
-				c = '_';
-			} else {
-				// Remove any other characters.
-				node_name.remove_at(i);
-				i--;
-				continue;
-			}
-		}
-		node_name[i] = c;
-	}
-
-	Dictionary subst;
-	subst["NodeName"] = node_name.to_pascal_case();
-	subst["nodeName"] = node_name.to_camel_case();
-	subst["node_name"] = node_name.to_snake_case();
-
-	subst["SignalName"] = p_signal_name.to_pascal_case();
-	subst["signalName"] = p_signal_name.to_camel_case();
-	subst["signal_name"] = p_signal_name.to_snake_case();
 
 	String dst_method;
+	String prefix;
+	String f_signal_name, f_node_name; // Formatted Names
+
+	#ifdef MODULE_MONO_ENABLED
+	f_signal_name = p_signal_name.to_pascal_case();
+	f_node_name = node_name.to_pascal_case();
+	prefix = "On";
+	#else
+	f_signal_name = p_signal_name.to_camel_case();
+	f_node_name = node_name.to_camel_case() + "_";
+	prefix = "_on_";
+	#endif
+
 	if (p_source == p_target) {
-		dst_method = String(GLOBAL_GET("editor/naming/default_signal_callback_to_self_name")).format(subst);
+		dst_method = prefix + f_signal_name;
 	} else {
-		dst_method = String(GLOBAL_GET("editor/naming/default_signal_callback_name")).format(subst);
+		dst_method = prefix + f_node_name + f_signal_name;
 	}
 
 	return dst_method;
