@@ -70,6 +70,8 @@ public:
 	StringName sleeping_state_changed;
 	StringName update;
 	StringName updated;
+	
+	StringName _unhandled_picking_input;
 
 	StringName line_separation;
 	StringName font;
