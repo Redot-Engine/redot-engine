@@ -296,6 +296,42 @@ Error GDScriptAnalyzer::check_class_member_name_conflict(const GDScriptParser::C
 	return OK;
 }
 
+bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode::Member &p_member, const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::ClassNode *p_super_class, const GDScriptParser::Node *p_source) {
+	ERR_FAIL_COND_V_MSG(!p_derived_class || !p_super_class, false, R"(Could not resolve the derived or super class node...)");
+
+	StringName member_type = "property";
+
+	switch (p_member.type) {
+		case GDScriptParser::ClassNode::Member::Type::CONSTANT:
+		case GDScriptParser::ClassNode::Member::Type::VARIABLE:
+			break;
+		case GDScriptParser::ClassNode::Member::Type::FUNCTION:
+			member_type = "method";
+			break;
+		case GDScriptParser::ClassNode::Member::Type::SIGNAL:
+			member_type = "signal";
+			break;
+		default:
+			return true; // If this is not a protected element, returns `true` and continues the codeflow.
+	}
+
+	GDScriptParser::Node *member_node = p_member.get_source_node();
+	if (member_node) {
+		const bool are_different_classes = !p_derived_class->is_same_as(p_super_class->identifier->name);
+		const bool is_from_non_derived = !p_derived_class->is_derived_from(p_super_class->identifier->name);
+		if (member_node->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE && are_different_classes) {
+			push_error(vformat(R"(Could not access %s %s "%s", because it is private.)", is_from_non_derived ? "external" : "super", member_type, p_member.get_name()), p_source);
+			return false;
+		}
+		if (member_node->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && is_from_non_derived) {
+			push_error(vformat(R"(Could not access external %s "%s", because it is protected by class "%s".)", is_from_non_derived ? "external" : "super", member_type, p_member.get_name(), p_super_class->fqcn), p_source);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void GDScriptAnalyzer::get_class_node_current_scope_classes(GDScriptParser::ClassNode *p_node, List<GDScriptParser::ClassNode *> *p_list, GDScriptParser::Node *p_source) {
 	ERR_FAIL_NULL(p_node);
 	ERR_FAIL_NULL(p_list);
