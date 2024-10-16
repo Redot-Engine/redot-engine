@@ -477,6 +477,10 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 
 			case GDP::ClassNode::Member::VARIABLE: {
 				const GDP::VariableNode *m_var = member.variable;
+				if (!m_var->exported && m_var->access_restriction != GDP::Node::ACCESS_RESTRICTION_PUBLIC) {
+					break;
+				}
+
 				const StringName &var_name = m_var->identifier->name;
 
 				p_script->member_lines[var_name] = m_var->start_line;

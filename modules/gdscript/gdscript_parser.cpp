@@ -4229,7 +4229,7 @@ bool GDScriptParser::access_protected_annotation(AnnotationNode *p_annotation, N
 
 	AssignableNode *member = static_cast<AssignableNode *>(p_target);
 	if (member->access_restriction == Node::ACCESS_RESTRICTION_PROTECTED) {
-		push_error(vformat(R"(@private" annotation can only be used once per private variable)"), p_annotation);
+		push_error(vformat(R"(@protected" annotation can only be used once per protected variable)"), p_annotation);
 		return false;
 	}
 

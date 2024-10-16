@@ -814,7 +814,7 @@ public:
 		}
 		bool is_derived_from(const StringName &p_super_class_name) const {
 			for (IdentifierNode *E : extends) {
-				if (identifier->name == p_super_class_name || p_super_class_name == identifier->name) {
+				if (E->name == p_super_class_name || p_super_class_name == E->name) {
 					return true;
 				}
 			}
