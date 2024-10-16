@@ -323,6 +323,8 @@ public:
 			PASS,
 			PATTERN,
 			PRELOAD,
+			PRIVATE,
+			PROTECTED,
 			RETURN,
 			SELF,
 			SIGNAL,
