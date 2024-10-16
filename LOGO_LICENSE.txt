@@ -1,5 +1,21 @@
-Godot Engine Logo
-Copyright (c) 2017 Andrea Calabró
+-----------
 
-This work is licensed under the Creative Commons Attribution 4.0 International
-license (CC BY 4.0 International): https://creativecommons.org/licenses/by/4.0/
+LOGO LICENSE
+
+- You MAY NOT use Redot Logo on merchandise for sale (e.g., selling t-shirts, mugs, etc.).
+
+- You MAY use Redot Logo in your games, videos, social media and any platform of yours. We encourage you to do so to promote the engine to the world.
+
+- You MAY make modification to the logo such as changing its design, shape, colour or composition. Such alteration will be considered as fan art.
+
+- If you use Redot Logo in formal documents, you MAY resize the logo as needed but DO NOT  make changes to its original design, shape, colour, or composition.
+
+If you have any questions about these Guidelines or you would like to speak to someone about the use of Redot Marks in ways not described in these Guidelines, please contact the Redot core team.
+
+-----------
+
+Redot Logos are made using Inkscape. We recommend you to use the same program to maintain compatibility.
+
+-----------
+
+Logo and Brandkit produced by Joey Wheeler
