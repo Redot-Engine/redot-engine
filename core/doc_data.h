@@ -387,6 +387,7 @@ public:
 		String description;
 		String setter, getter;
 		String default_value;
+		String qualifiers;
 		bool overridden = false;
 		String overrides;
 		bool is_deprecated = false;
@@ -437,6 +438,10 @@ public:
 
 			if (p_dict.has("overrides")) {
 				doc.overrides = p_dict["overrides"];
+			}
+
+			if (p_dict.has("qualifiers")) {
+				doc.overrides = p_dict["qualifiers"];
 			}
 
 #ifndef DISABLE_DEPRECATED
@@ -501,6 +506,10 @@ public:
 
 			if (!p_doc.overrides.is_empty()) {
 				dict["overrides"] = p_doc.overrides;
+			}
+
+			if (!p_doc.qualifiers.is_empty()) {
+				dict["qualifiers"] = p_doc.qualifiers;
 			}
 
 			if (p_doc.is_deprecated) {
