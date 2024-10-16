@@ -31,12 +31,12 @@ class GLES3HeaderStruct:
         self.specialization_values = []
 
 
-def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, depth: int):
+def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, depth: int) -> GLES3HeaderStruct:
     with open(filename, "r", encoding="utf-8") as fs:
         line = fs.readline()
 
         while line:
-            if line.find("=") != -1 and header_data.reading == "":
+            if "=" in line and header_data.reading == "":
                 # Mode
                 eqpos = line.find("=")
                 defname = line[:eqpos].strip().upper()
@@ -48,7 +48,7 @@ def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, 
                 header_data.vertex_offset = header_data.line_offset
                 continue
 
-            if line.find("=") != -1 and header_data.reading == "specializations":
+            if "=" in line and header_data.reading == "specializations":
                 # Specialization
                 eqpos = line.find("=")
                 specname = line[:eqpos].strip()
@@ -60,35 +60,35 @@ def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, 
                 header_data.vertex_offset = header_data.line_offset
                 continue
 
-            if line.find("#[modes]") != -1:
+            if "#[modes]" in line:
                 # Nothing really, just skip
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.vertex_offset = header_data.line_offset
                 continue
 
-            if line.find("#[specializations]") != -1:
+            if "#[specializations]" in line:
                 header_data.reading = "specializations"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.vertex_offset = header_data.line_offset
                 continue
 
-            if line.find("#[vertex]") != -1:
+            if "#[vertex]" in line:
                 header_data.reading = "vertex"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.vertex_offset = header_data.line_offset
                 continue
 
-            if line.find("#[fragment]") != -1:
+            if "#[fragment]" in line:
                 header_data.reading = "fragment"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.fragment_offset = header_data.line_offset
                 continue
 
-            while line.find("#include ") != -1:
+            while "#include " in line:
                 includeline = line.replace("#include ", "").strip()[1:-1]
 
                 included_file = os.path.relpath(os.path.dirname(filename) + "/" + includeline)
@@ -103,7 +103,7 @@ def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, 
 
                 line = fs.readline()
 
-            if line.find("uniform") != -1 and line.lower().find("texunit:") != -1:
+            if "uniform" in line and "texunit:" in line.lower():
                 # texture unit
                 texunitstr = line[line.find(":") + 1 :].strip()
                 if texunitstr == "auto":
@@ -126,7 +126,7 @@ def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, 
                         header_data.texunits += [(x, texunit)]
                         header_data.texunit_names += [x]
 
-            elif line.find("uniform") != -1 and line.lower().find("ubo:") != -1:
+            elif "uniform" in line and "ubo:" in line.lower():
                 # uniform buffer object
                 ubostr = line[line.find(":") + 1 :].strip()
                 ubo = str(int(ubostr))
@@ -147,7 +147,7 @@ def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, 
                         header_data.ubos += [(x, ubo)]
                         header_data.ubo_names += [x]
 
-            elif line.find("uniform") != -1 and line.find("{") == -1 and line.find(";") != -1:
+            elif "uniform" in line and "{" in line and ";" in line:
                 uline = line.replace("uniform", "")
                 uline = uline.replace(";", "")
                 lines = uline.split(",")
@@ -161,7 +161,7 @@ def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, 
                     if x not in header_data.uniforms:
                         header_data.uniforms += [x]
 
-            if (line.strip().find("out ") == 0 or line.strip().find("flat ") == 0) and line.find("tfb:") != -1:
+            if (line.strip().startswith("out ") or line.strip().startswith("flat ")) and "tfb:" in line:
                 uline = line.replace("flat ", "")
                 uline = uline.replace("out ", "")
                 uline = uline.replace("highp ", "")
@@ -195,14 +195,11 @@ def build_gles3_header(
     class_suffix: str,
     optional_output_filename: Optional[str] = None,
     header_data: Optional[GLES3HeaderStruct] = None,
-):
+) -> None:
     header_data = header_data or GLES3HeaderStruct()
     include_file_in_gles3_header(filename, header_data, 0)
 
-    if optional_output_filename is None:
-        out_file = filename + ".gen.h"
-    else:
-        out_file = optional_output_filename
+    out_file = optional_output_filename or filename + ".gen.h"
 
     with open(out_file, "w", encoding="utf-8", newline="\n") as fd:
         defspec = 0
