@@ -137,7 +137,11 @@ def detect_mvk(env, osname):
         )
 
     for mvk_path in mvk_list:
+        # FIXME: Iterate over all files in the sdk path
         if mvk_path and os.path.isfile(os.path.join(mvk_path, f"{osname}/libMoltenVK.a")):
+            print(f"MoltenVK found at: {mvk_path}")
+            return mvk_path
+        elif mvk_path and os.path.isfile(os.path.join(mvk_path, f"lib/libMoltenVK.dylib")):
             print(f"MoltenVK found at: {mvk_path}")
             return mvk_path
 
