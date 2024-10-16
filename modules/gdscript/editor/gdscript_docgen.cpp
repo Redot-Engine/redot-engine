@@ -453,7 +453,12 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 				signal_doc.deprecated_message = m_signal->doc_data.deprecated_message;
 				signal_doc.is_experimental = m_signal->doc_data.is_experimental;
 				signal_doc.experimental_message = m_signal->doc_data.experimental_message;
-
+				for (const GDP::ParameterNode *p : m_signal->parameters) {
+					DocData::ArgumentDoc arg_doc;
+					arg_doc.name = p->identifier->name;
+					_doctype_from_gdtype(p->get_datatype(), arg_doc.type, arg_doc.enumeration);
+					signal_doc.arguments.push_back(arg_doc);
+				}
 				switch (m_signal->access_restriction) {
 					case GDP::Node::ACCESS_RESTRICTION_PRIVATE:
 						signal_doc.qualifiers = "private_signal";
@@ -463,13 +468,6 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 						break;
 					default:
 						break;
-				}
-
-				for (const GDP::ParameterNode *p : m_signal->parameters) {
-					DocData::ArgumentDoc arg_doc;
-					arg_doc.name = p->identifier->name;
-					_doctype_from_gdtype(p->get_datatype(), arg_doc.type, arg_doc.enumeration);
-					signal_doc.arguments.push_back(arg_doc);
 				}
 
 				doc.signals.push_back(signal_doc);
@@ -492,8 +490,6 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 				prop_doc.deprecated_message = m_var->doc_data.deprecated_message;
 				prop_doc.is_experimental = m_var->doc_data.is_experimental;
 				prop_doc.experimental_message = m_var->doc_data.experimental_message;
-				_doctype_from_gdtype(m_var->get_datatype(), prop_doc.type, prop_doc.enumeration);
-
 				if (m_var->exported) {
 					switch (m_var->access_restriction) {
 						case GDP::Node::ACCESS_RESTRICTION_PRIVATE:
@@ -506,6 +502,7 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 							break;
 					}
 				}
+				_doctype_from_gdtype(m_var->get_datatype(), prop_doc.type, prop_doc.enumeration);
 
 				switch (m_var->property) {
 					case GDP::VariableNode::PROP_NONE:

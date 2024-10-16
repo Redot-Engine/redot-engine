@@ -63,12 +63,12 @@ BASE_STRINGS = [
     "This method accepts any number of arguments after the ones described here.",
     "This method is used to construct a type.",
     "This method doesn't need an instance to be called, so it can be called directly using the class name.",
-    "This method describes a valid operator to use with this type as left-hand operand.",
     "This exported signal can only be accessed from the inspector or the class that contains the signal.",
     "This exported signal can only be accessed from the inspector or the class that contains the signal, or whose derived classes.",
     "This exported property can only be accessed from the inspector or the class that contains the signal.",
     "This exported property can only be accessed from the inspector or the class that contains the signal, or whose derived classes.",
     "This value is an integer composed as a bitmask of the following flags.",
+    "This method describes a valid operator to use with this type as left-hand operand.",
     "No return value.",
     "There is currently no description for this class. Please help us by :ref:`contributing one <doc_updating_the_class_reference>`!",
     "There is currently no description for this signal. Please help us by :ref:`contributing one <doc_updating_the_class_reference>`!",
@@ -207,6 +207,8 @@ class State:
                 assert property.tag == "member"
 
                 property_name = property.attrib["name"]
+                qualifiers = property.get("qualifiers")
+
                 if property_name in class_def.properties:
                     print_error(f'{class_name}.xml: Duplicate property "{property_name}".', self)
                     continue
@@ -373,6 +375,7 @@ class State:
                 assert signal.tag == "signal"
 
                 signal_name = signal.attrib["name"]
+                qualifiers = property.get("qualifiers")
 
                 if signal_name in class_def.signals:
                     print_error(f'{class_name}.xml: Duplicate signal "{signal_name}".', self)
@@ -1063,6 +1066,11 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                 else:
                     ref = f":ref:`{property_def.name}<class_{class_name}_property_{property_def.name}>`"
                     ml.append((type_rst, ref, default))
+            
+                qualifiers = property_def.qualifiers
+                if qualifiers is not None:
+                    for q in qualifiers.split():
+                        ml.append((f" |{q}|"))
 
             format_table(f, ml, True)
 
@@ -1585,7 +1593,7 @@ def make_method_signature(
         ret_type = definition.return_type.to_rst(state)
 
     qualifiers = None
-    if isinstance(definition, (MethodDef, AnnotationDef)):
+    if isinstance(definition, (MethodDef, AnnotationDef, SignalDef)):
         qualifiers = definition.qualifiers
 
     out = ""
