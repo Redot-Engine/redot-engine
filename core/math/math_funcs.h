@@ -759,6 +759,20 @@ public:
 		}
 		return p_target;
 	}
+
+	static _ALWAYS_INLINE_ double sigmoid_affine(double p_x, double p_amplitude, double p_y_translation) {
+		return p_amplitude / (1.0 + ::exp(-p_x)) + p_y_translation;
+	}
+	static _ALWAYS_INLINE_ float sigmoid_affine(float p_x, float p_amplitude, float p_y_translation) {
+		return p_amplitude / (1.0f + expf(-p_x)) + p_y_translation;
+	}
+
+	static _ALWAYS_INLINE_ double sigmoid_affine_approx(double p_x, double p_amplitude, double p_y_translation) {
+		return p_amplitude * (0.5 + p_x / (4.0 + fabs(p_x))) + p_y_translation;
+	}
+	static _ALWAYS_INLINE_ float sigmoid_affine_approx(float p_x, float p_amplitude, float p_y_translation) {
+		return p_amplitude * (0.5f + p_x / (4.0f + fabsf(p_x))) + p_y_translation;
+	}
 };
 
 #endif // MATH_FUNCS_H
