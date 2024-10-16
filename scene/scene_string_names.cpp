@@ -83,6 +83,8 @@ SceneStringNames::SceneStringNames() {
 	update = StaticCString::create("update");
 	updated = StaticCString::create("updated");
 
+	_unhandled_picking_input = StaticCString::create("_unhandled_picking_input");
+
 	_ready = StaticCString::create("_ready");
 
 	screen_entered = StaticCString::create("screen_entered");
