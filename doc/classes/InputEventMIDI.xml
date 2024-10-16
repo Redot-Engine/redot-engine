@@ -6,7 +6,7 @@
 	<description>
 		InputEventMIDI stores information about messages from [url=https://en.wikipedia.org/wiki/MIDI]MIDI[/url] (Musical Instrument Digital Interface) devices. These may include musical keyboards, synthesizers, and drum machines.
 		MIDI messages can be received over a 5-pin MIDI connector or over USB. If your device supports both be sure to check the settings in the device to see which output it is using.
-		By default, Godot does not detect MIDI devices. You need to call [method OS.open_midi_inputs], first. You can check which devices are detected with [method OS.get_connected_midi_inputs], and close the connection with [method OS.close_midi_inputs].
+		By default, Redot does not detect MIDI devices. You need to call [method OS.open_midi_inputs], first. You can check which devices are detected with [method OS.get_connected_midi_inputs], and close the connection with [method OS.close_midi_inputs].
 		[codeblocks]
 		[gdscript]
 		func _ready():
@@ -57,7 +57,7 @@
 		}
 		[/csharp]
 		[/codeblocks]
-		[b]Note:[/b] Godot does not support MIDI output, so there is no way to emit MIDI messages from Godot. Only MIDI input is supported.
+		[b]Note:[/b] Redot does not support MIDI output, so there is no way to emit MIDI messages from Godot. Only MIDI input is supported.
 	</description>
 	<tutorials>
 		<link title="MIDI Message Status Byte List">https://www.midi.org/specifications-old/item/table-2-expanded-messages-list-status-bytes</link>

@@ -21,7 +21,7 @@
 			<param index="1" name="normal" type="Vector3" />
 			<description>
 				Called by the [PhysicsServer3D] to set the normal for the [SoftBody3D] vertex at the index specified by [param vertex_id].
-				[b]Note:[/b] The [param normal] parameter used to be of type [code]const void*[/code] prior to Godot 4.2.
+				[b]Note:[/b] The [param normal] parameter used to be of type [code]const void*[/code] prior to Redot 4.2.
 			</description>
 		</method>
 		<method name="_set_vertex" qualifiers="virtual">

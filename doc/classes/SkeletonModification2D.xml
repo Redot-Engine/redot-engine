@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		This resource provides an interface that can be expanded so code that operates on [Bone2D] nodes in a [Skeleton2D] can be mixed and matched together to create complex interactions.
-		This is used to provide Godot with a flexible and powerful Inverse Kinematics solution that can be adapted for many different uses.
+		This is used to provide Redot with a flexible and powerful Inverse Kinematics solution that can be adapted for many different uses.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -13,7 +13,7 @@
 		<method name="_draw_editor_gizmo" qualifiers="virtual">
 			<return type="void" />
 			<description>
-				Used for drawing [b]editor-only[/b] modification gizmos. This function will only be called in the Godot editor and can be overridden to draw custom gizmos.
+				Used for drawing [b]editor-only[/b] modification gizmos. This function will only be called in the Redot editor and can be overridden to draw custom gizmos.
 				[b]Note:[/b] You will need to use the Skeleton2D from [method SkeletonModificationStack2D.get_skeleton] and it's draw functions, as the [SkeletonModification2D] resource cannot draw on its own.
 			</description>
 		</method>
@@ -44,7 +44,7 @@
 		<method name="get_editor_draw_gizmo" qualifiers="const">
 			<return type="bool" />
 			<description>
-				Returns whether this modification will call [method _draw_editor_gizmo] in the Godot editor to draw modification-specific gizmos.
+				Returns whether this modification will call [method _draw_editor_gizmo] in the Redot editor to draw modification-specific gizmos.
 			</description>
 		</method>
 		<method name="get_is_setup" qualifiers="const">
@@ -63,7 +63,7 @@
 			<return type="void" />
 			<param index="0" name="draw_gizmo" type="bool" />
 			<description>
-				Sets whether this modification will call [method _draw_editor_gizmo] in the Godot editor to draw modification-specific gizmos.
+				Sets whether this modification will call [method _draw_editor_gizmo] in the Redot editor to draw modification-specific gizmos.
 			</description>
 		</method>
 		<method name="set_is_setup">

@@ -1179,15 +1179,15 @@
 		</constant>
 		<constant name="JOINT_PARAM_BIAS" value="0" enum="JointParam">
 			Constant to set/get how fast the joint pulls the bodies back to satisfy the joint constraint. The lower the value, the more the two bodies can pull on the joint. The default value of this parameter is [code]0.0[/code].
-			[b]Note:[/b] In Godot Physics, this parameter is only used for pin joints and groove joints.
+			[b]Note:[/b] In Redot Physics, this parameter is only used for pin joints and groove joints.
 		</constant>
 		<constant name="JOINT_PARAM_MAX_BIAS" value="1" enum="JointParam">
 			Constant to set/get the maximum speed with which the joint can apply corrections. The default value of this parameter is [code]3.40282e+38[/code].
-			[b]Note:[/b] In Godot Physics, this parameter is only used for groove joints.
+			[b]Note:[/b] In Redot Physics, this parameter is only used for groove joints.
 		</constant>
 		<constant name="JOINT_PARAM_MAX_FORCE" value="2" enum="JointParam">
 			Constant to set/get the maximum force that the joint can use to act on the two bodies. The default value of this parameter is [code]3.40282e+38[/code].
-			[b]Note:[/b] In Godot Physics, this parameter is only used for groove joints.
+			[b]Note:[/b] In Redot Physics, this parameter is only used for groove joints.
 		</constant>
 		<constant name="PIN_JOINT_SOFTNESS" value="0" enum="PinJointParam">
 			Constant to set/get a how much the bond of the pin joint can flex. The default value of this parameter is [code]0.0[/code].

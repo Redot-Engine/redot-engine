@@ -56,7 +56,7 @@
 				GD.Print(absolute.Size);     // Prints (20, 10, 5)
 				[/csharp]
 				[/codeblocks]
-				[b]Note:[/b] It's recommended to use this method when [member size] is negative, as most other methods in Godot assume that the [member size]'s components are greater than [code]0[/code].
+				[b]Note:[/b] It's recommended to use this method when [member size] is negative, as most other methods in Redot assume that the [member size]'s components are greater than [code]0[/code].
 			</description>
 		</method>
 		<method name="encloses" qualifiers="const">
@@ -352,7 +352,7 @@
 		</member>
 		<member name="size" type="Vector3" setter="" getter="" default="Vector3(0, 0, 0)">
 			The bounding box's width, height, and depth starting from [member position]. Setting this value also affects the [member end] point.
-			[b]Note:[/b] It's recommended setting the width, height, and depth to non-negative values. This is because most methods in Godot assume that the [member position] is the bottom-left-back corner, and the [member end] is the top-right-forward corner. To get an equivalent bounding box with non-negative size, use [method abs].
+			[b]Note:[/b] It's recommended setting the width, height, and depth to non-negative values. This is because most methods in Redot assume that the [member position] is the bottom-left-back corner, and the [member end] is the top-right-forward corner. To get an equivalent bounding box with non-negative size, use [method abs].
 		</member>
 	</members>
 	<operators>
