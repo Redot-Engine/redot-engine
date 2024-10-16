@@ -105,6 +105,13 @@ public:
 		AUTOWRAP_WORD_SMART
 	};
 
+	enum CodingLanguageStyle {
+		SNAKE_CASE_LEADING_UNDERSCORE,
+		SNAKE_CASE,
+		PASCAL_CASE,
+		CAMEL_CASE
+	};
+
 	enum LineBreakFlag {
 		BREAK_NONE = 0,
 		BREAK_MANDATORY = 1 << 0,
