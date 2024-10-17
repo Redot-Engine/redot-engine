@@ -40,57 +40,42 @@ const GodotIME = {
 	$GodotIME: {
 		ime: null,
 		active: false,
-		focusTimerIntervalId: -1,
 
 		getModifiers: function (evt) {
 			return (evt.shiftKey + 0) + ((evt.altKey + 0) << 1) + ((evt.ctrlKey + 0) << 2) + ((evt.metaKey + 0) << 3);
 		},
 
 		ime_active: function (active) {
-			function clearFocusTimerInterval() {
-				clearInterval(GodotIME.focusTimerIntervalId);
-				GodotIME.focusTimerIntervalId = -1;
-			}
-
-			function focusTimer() {
-				if (GodotIME.ime == null) {
-					clearFocusTimerInterval();
-					return;
-				}
+			function focus_timer() {
+				if (!GodotIME.ime) return;
+				GodotIME.active = true;
 				GodotIME.ime.focus();
 			}
 
-			if (GodotIME.focusTimerIntervalId > -1) {
-				clearFocusTimerInterval();
-			}
-
-			if (GodotIME.ime == null) {
-				return;
-			}
-
-			GodotIME.active = active;
-			if (active) {
-				GodotIME.ime.style.display = 'block';
-				GodotIME.focusTimerIntervalId = setInterval(focusTimer, 100);
-			} else {
-				GodotIME.ime.style.display = 'none';
-				GodotConfig.canvas.focus();
+			if (GodotIME.ime) {
+				if (active) {
+					GodotIME.ime.style.display = 'block';
+					setTimeout(focus_timer, 100);
+				} else {
+					GodotIME.ime.style.display = 'none';
+					GodotConfig.canvas.focus();
+					GodotIME.active = false;
+				}
 			}
 		},
 
 		ime_position: function (x, y) {
-			if (GodotIME.ime == null) {
-				return;
-			}
-			const canvas = GodotConfig.canvas;
-			const rect = canvas.getBoundingClientRect();
-			const rw = canvas.width / rect.width;
-			const rh = canvas.height / rect.height;
-			const clx = (x / rw) + rect.x;
-			const cly = (y / rh) + rect.y;
+			if (GodotIME.ime) {
+				const canvas = GodotConfig.canvas;
+				const rect = canvas.getBoundingClientRect();
+				const rw = canvas.width / rect.width;
+				const rh = canvas.height / rect.height;
+				const clx = (x / rw) + rect.x;
+				const cly = (y / rh) + rect.y;
 
-			GodotIME.ime.style.left = `${clx}px`;
-			GodotIME.ime.style.top = `${cly}px`;
+				GodotIME.ime.style.left = `${clx}px`;
+				GodotIME.ime.style.top = `${cly}px`;
+			}
 		},
 
 		init: function (ime_cb, key_cb, code, key) {
@@ -102,7 +87,7 @@ const GodotIME = {
 				evt.preventDefault();
 			}
 			function ime_event_cb(event) {
-				if (GodotIME.ime == null) {
+				if (!GodotIME.ime) {
 					return;
 				}
 				switch (event.type) {
@@ -158,15 +143,10 @@ const GodotIME = {
 		},
 
 		clear: function () {
-			if (GodotIME.ime == null) {
-				return;
+			if (GodotIME.ime) {
+				GodotIME.ime.remove();
+				GodotIME.ime = null;
 			}
-			if (GodotIME.focusTimerIntervalId > -1) {
-				clearInterval(GodotIME.focusTimerIntervalId);
-				GodotIME.focusTimerIntervalId = -1;
-			}
-			GodotIME.ime.remove();
-			GodotIME.ime = null;
 		},
 	},
 };
