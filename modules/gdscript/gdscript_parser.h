@@ -323,6 +323,8 @@ public:
 			PASS,
 			PATTERN,
 			PRELOAD,
+			PRIVATE,
+			PROTECTED,
 			RETURN,
 			SELF,
 			SIGNAL,
@@ -335,8 +337,16 @@ public:
 			VARIABLE,
 			WHILE,
 		};
-
 		Type type = NONE;
+
+		enum AccessRestriction {
+			ACCESS_RESTRICTION_PUBLIC,
+			ACCESS_RESTRICTION_PRIVATE,
+			ACCESS_RESTRICTION_PROTECTED,
+		};
+		AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
+		StringName accessible_class_name = "";
+
 		int start_line = 0, end_line = 0;
 		int start_column = 0, end_column = 0;
 		int leftmost_column = 0, rightmost_column = 0;
@@ -793,6 +803,23 @@ public:
 			StringName name = vformat("@group_%d_%s", members.size(), p_annotation_node->export_info.name);
 			members_indices[name] = members.size();
 			members.push_back(Member(p_annotation_node));
+		}
+
+		// Since the variable identifier of each class, if we need to check whether a class is derived from another one,
+		// or the current class is the same as another one, we need to call these methods.
+		// Due to the reason that we cannot have multiple classes with the same name, these methods are safe and accurate enough to call.
+
+		bool is_same_as(const StringName &p_another_class_name) const {
+			// This is very tricky because of tricky operator== defined in StringName
+			return identifier->name == p_another_class_name || p_another_class_name == identifier->name;
+		}
+		bool is_derived_from(const StringName &p_super_class_name) const {
+			for (IdentifierNode *E : extends) {
+				if (E->name == p_super_class_name || p_super_class_name == E->name) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		ClassNode() {
@@ -1505,6 +1532,8 @@ private:
 	bool tool_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool icon_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool onready_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
+	bool access_private_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
+	bool access_protected_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	template <PropertyHint t_hint, Variant::Type t_type>
 	bool export_annotations(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool export_storage_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
