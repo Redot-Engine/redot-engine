@@ -3201,6 +3201,8 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_call(ExpressionNode *p_pre
 			}
 			if (current_function->identifier) {
 				call->function_name = current_function->identifier->name;
+				call->access_restriction = current_function->access_restriction;
+				call->accessible_class_name = current_function->accessible_class_name;
 			} else {
 				call->function_name = SNAME("<anonymous>");
 			}
@@ -3218,6 +3220,8 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_call(ExpressionNode *p_pre
 			consume(GDScriptTokenizer::Token::PARENTHESIS_OPEN, R"(Expected "(" after function name.)");
 		}
 	} else {
+		// TODO: Get the FunctionNode from the current `call`
+
 		call->callee = p_previous_operand;
 
 		if (call->callee == nullptr) {
