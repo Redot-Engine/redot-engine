@@ -68,7 +68,9 @@ class GDScriptAnalyzer {
 	Error check_class_member_name_conflict(const GDScriptParser::ClassNode *p_class_node, const StringName &p_member_name, const GDScriptParser::Node *p_member_node);
 
 	bool execute_access_protection(const GDScriptParser::ClassNode::Member &p_member, const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::ClassNode *p_super_class, const GDScriptParser::Node *p_source);
-	bool execute_access_protection(const GDScriptParser::CallNode *p_call_node, const GDScriptParser::ClassNode *p_derived_class, const StringName &p_super_class_name);
+	bool execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_node, const StringName &p_protected_member_name, const StringName &p_protected_node_owner_name, const GDScriptParser::Node::AccessRestriction p_member_access_restriction);
+	bool execute_access_protection_private_only(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_node, const StringName &p_protected_member_name, const StringName &p_protected_node_owner_name, const GDScriptParser::Node::AccessRestriction p_member_access_restriction);
+	bool execute_access_protection_protected_only(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_node, const StringName &p_protected_member_name, const StringName &p_protected_node_owner_name, const GDScriptParser::Node::AccessRestriction p_member_access_restriction);
 
 	void get_class_node_current_scope_classes(GDScriptParser::ClassNode *p_node, List<GDScriptParser::ClassNode *> *p_list, GDScriptParser::Node *p_source);
 

@@ -529,29 +529,17 @@ class ParameterDef(DefinitionBase):
 
 
 class SignalDef(DefinitionBase):
-    def __init__(
-            self, 
-            name: str, 
-            parameters: List[ParameterDef], 
-            description: Optional[str],
-            qualifiers: Optional[str]
-        ) -> None:
-            super().__init__("signal", name)
+    def __init__(self, name: str, parameters: List[ParameterDef], description: Optional[str],qualifiers: Optional[str]) -> None:
+        super().__init__("signal", name)
 
-            self.parameters = parameters
-            self.description = description
-            self.qualifiers = qualifiers
+        self.parameters = parameters
+        self.description = description
+        self.qualifiers = qualifiers
         
 
 
 class AnnotationDef(DefinitionBase):
-    def __init__(
-        self,
-        name: str,
-        parameters: List[ParameterDef],
-        description: Optional[str],
-        qualifiers: Optional[str],
-    ) -> None:
+    def __init__(self, name: str, parameters: List[ParameterDef], description: Optional[str], qualifiers: Optional[str]) -> None:
         super().__init__("annotation", name)
 
         self.parameters = parameters
@@ -560,14 +548,7 @@ class AnnotationDef(DefinitionBase):
 
 
 class MethodDef(DefinitionBase):
-    def __init__(
-        self,
-        name: str,
-        return_type: TypeName,
-        parameters: List[ParameterDef],
-        description: Optional[str],
-        qualifiers: Optional[str],
-    ) -> None:
+    def __init__(self, name: str, return_type: TypeName, parameters: List[ParameterDef], description: Optional[str], qualifiers: Optional[str]) -> None:
         super().__init__("method", name)
 
         self.return_type = return_type
