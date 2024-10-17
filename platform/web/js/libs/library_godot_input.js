@@ -47,6 +47,7 @@ const GodotIME = {
 
 		ime_active: function (active) {
 			function focus_timer() {
+				if (!GodotIME.ime) return;
 				GodotIME.active = true;
 				GodotIME.ime.focus();
 			}
@@ -54,7 +55,7 @@ const GodotIME = {
 			if (GodotIME.ime) {
 				if (active) {
 					GodotIME.ime.style.display = 'block';
-					setInterval(focus_timer, 100);
+					setTimeout(focus_timer, 100);
 				} else {
 					GodotIME.ime.style.display = 'none';
 					GodotConfig.canvas.focus();
