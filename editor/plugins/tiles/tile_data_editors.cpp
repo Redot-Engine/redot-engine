@@ -893,8 +893,8 @@ void GenericTilePolygonEditor::_notification(int p_what) {
 			button_center_view->set_icon(get_editor_theme_icon(SNAME("CenterView")));
 			button_advanced_menu->set_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
 			button_pixel_snap->get_popup()->set_item_icon(0, get_editor_theme_icon(SNAME("SnapDisable")));
-			button_pixel_snap->get_popup()->set_item_icon(1, get_editor_theme_icon(SNAME("Snap")));
-			button_pixel_snap->get_popup()->set_item_icon(2, get_editor_theme_icon(SNAME("Snap")));
+			button_pixel_snap->get_popup()->set_item_icon(1, get_editor_theme_icon(SNAME("SnapHalf")));
+			button_pixel_snap->get_popup()->set_item_icon(2, get_editor_theme_icon(SNAME("SnapOne")));
 			button_pixel_snap->get_popup()->set_item_icon(3, get_editor_theme_icon(SNAME("SnapGrid")));
 			button_pixel_snap->set_icon(button_pixel_snap->get_popup()->get_item_icon(current_snap_option));
 
