@@ -345,6 +345,7 @@ public:
 			ACCESS_RESTRICTION_PROTECTED,
 		};
 		AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
+		StringName accessible_class_name = "";
 
 		int start_line = 0, end_line = 0;
 		int start_column = 0, end_column = 0;
