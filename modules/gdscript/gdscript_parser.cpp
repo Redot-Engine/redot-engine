@@ -4209,6 +4209,7 @@ bool GDScriptParser::access_private_annotation(AnnotationNode *p_annotation, Nod
 	}
 
 	member->access_restriction = Node::ACCESS_RESTRICTION_PRIVATE;
+	member->accessible_class_name = current_class->identifier->name;
 	return true;
 }
 
@@ -4234,6 +4235,7 @@ bool GDScriptParser::access_protected_annotation(AnnotationNode *p_annotation, N
 	}
 
 	member->access_restriction = Node::ACCESS_RESTRICTION_PROTECTED;
+	member->accessible_class_name = current_class->identifier->name;
 	return true;
 }
 

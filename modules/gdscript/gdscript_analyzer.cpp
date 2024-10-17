@@ -332,6 +332,25 @@ bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode
 	return true;
 }
 
+bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::CallNode *p_call_node, const GDScriptParser::ClassNode *p_derived_class, const StringName &p_super_class_name) {
+	ERR_FAIL_COND_V_MSG(!p_derived_class || p_super_class_name.is_empty(), false, R"(Could not resolve the derived or super class node...)");
+
+	if (p_call_node) {
+		const bool are_different_classes = !p_derived_class->is_same_as(p_super_class_name);
+		const bool is_from_non_derived = !p_derived_class->is_derived_from(p_super_class_name);
+		if (p_call_node->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE && are_different_classes) {
+			push_error(vformat(R"*(Could not call method "%s()" in %s class, because it is private.)*", p_call_node->function_name, is_from_non_derived ? "external" : "super"), p_call_node);
+			return false;
+		}
+		if (p_call_node->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && is_from_non_derived) {
+			push_error(vformat(R"*(Could not call method "%s()" in external class, because it is protected by class "%s".)*", p_call_node->function_name, p_super_class_name), p_call_node);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void GDScriptAnalyzer::get_class_node_current_scope_classes(GDScriptParser::ClassNode *p_node, List<GDScriptParser::ClassNode *> *p_list, GDScriptParser::Node *p_source) {
 	ERR_FAIL_NULL(p_node);
 	ERR_FAIL_NULL(p_list);
@@ -3492,6 +3511,8 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 					case Callable::CallError::CALL_OK:
 						p_call->is_constant = true;
 						p_call->reduced_value = value;
+						print_line(vformat(R"(Current call: %s; owner class: %s)", p_call->function_name, p_call->accessible_class_name));
+						execute_access_protection(p_call, parser->current_class, p_call->accessible_class_name);
 						break;
 				}
 			} else {
