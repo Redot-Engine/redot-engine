@@ -117,6 +117,10 @@ struct VariantUtilityFunctions {
 	static double clampf(double x, double min, double max);
 	static int64_t clampi(int64_t x, int64_t min, int64_t max);
 	static int64_t nearest_po2(int64_t x);
+	static double sigmoid(double x);
+	static double sigmoid_approx(double x);
+	static double sigmoid_affine(double x, double amplitude, double y_translation);
+	static double sigmoid_affine_approx(double x, double amplitude, double y_translation);
 	// Random
 	static void randomize();
 	static int64_t randi();
