@@ -154,7 +154,7 @@ self.addEventListener('message', (event) => {
 		if (msg === 'claim') {
 			self.skipWaiting().then(() => self.clients.claim());
 		} else if (msg === 'clear') {
-			void caches.delete(CACHE_NAME);
+			caches.delete(CACHE_NAME);
 		} else if (msg === 'update') {
 			self.skipWaiting().then(() => self.clients.claim()).then(() => self.clients.matchAll()).then((all) => all.forEach((c) => c.navigate(c.url)));
 		}

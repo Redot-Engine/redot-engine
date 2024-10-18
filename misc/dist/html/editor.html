@@ -151,7 +151,10 @@
 			</div>
 		</div>
 		<script>
-const byId = sel => document.getElementById(sel);
+function byId(sel) {
+	return document.getElementById(sel);
+}
+
 window.addEventListener('load', () => {
 	function notifyUpdate(sw) {
 		const btn = byId('btn-tab-update');
@@ -167,7 +170,7 @@ window.addEventListener('load', () => {
 	}
 	if ('serviceWorker' in navigator) {
 		navigator.serviceWorker.register('service.worker.js').then(
-			reg => {
+			(reg) => {
 				if (reg.waiting) {
 					notifyUpdate(reg.waiting);
 				}
@@ -220,9 +223,7 @@ function closeWelcomeModal(dontShowAgain) { // eslint-disable-line no-unused-var
 		localStorage.setItem('welcomeModalDismissed', 'true');
 	}
 }
-		</script>
-		<script src="redot.editor.js"></script>
-		<script>
+
 let editor = null;
 let game = null;
 let setStatusMode;
@@ -234,8 +235,8 @@ function clearPersistence() { // eslint-disable-line no-unused-vars
 		return new Promise((resolve, reject) => {
 			const req = indexedDB.deleteDatabase(path);
 			req.onsuccess = () => resolve();
-			req.onerror = err => reject(err);
-			req.onblocked = err => reject(err);
+			req.onerror = (err) => reject(err);
+			req.onblocked = (err) => reject(err);
 		});
 	}
 	if (!window.confirm('Are you sure you want to delete all the locally stored files?\nClicking "OK" will permanently remove your projects and editor settings!')) {
@@ -262,11 +263,11 @@ const tabsContent = [
 	byId('tab-game'),
 ];
 function showTab(name) {
-	tabsLink.forEach(elem => {
+	tabsLink.forEach((elem) => {
 		elem.parentElement.classList.toggle('active', elem.id === `btn-tab-${name}`);
 	});
 
-	tabsContent.forEach(elem => {
+	tabsContent.forEach((elem) => {
 		if (elem.id === `tab-${name}`) {
 			elem.style.display = '';
 
@@ -372,14 +373,14 @@ function startEditor(zip) {
 		}
 	}
 
-	setStatusMode = mode => {
+	setStatusMode = (mode) => {
 		if (statusMode === mode || !initializing) {
 			return;
 		}
 		[statusProgress, statusIndeterminate, statusNotice].forEach((elem) => {
 			elem.style.display = 'none';
 		});
-		animationCallbacks = animationCallbacks.filter(value => (value !== animateStatusIndeterminate));
+		animationCallbacks = animationCallbacks.filter((value) => (value !== animateStatusIndeterminate));
 		switch (mode) {
 		case 'progress':
 			statusProgress.style.display = 'block';
@@ -428,8 +429,8 @@ function startEditor(zip) {
 		setLoaderEnabled(true);
 	};
 	function Execute(args) {
-		const is_editor = args.filter(v => v === '--editor' || v === '-e').length !== 0;
-		const is_project_manager = args.filter(v => v === '--project-manager').length !== 0;
+		const is_editor = args.filter((v) => v === '--editor' || v === '-e').length !== 0;
+		const is_project_manager = args.filter((v) => v === '--project-manager').length !== 0;
 		const is_game = !is_editor && !is_project_manager;
 		if (video_driver) {
 			args.push('--rendering-driver', video_driver);
@@ -539,17 +540,19 @@ function startEditor(zip) {
 	}
 }
 
-async function preloadZip(target) {
+function preloadZip(target) {
 	if (target.files.length > 0) {
 		return target.files[0].arrayBuffer();
 	}
+	return Promise.resolve(null);
 }
 
 byId('startButton').onclick = () => {
-	preloadZip(byId('zip-file')).then(zip => {
+	preloadZip(byId('zip-file')).then((zip) => {
 		startEditor(zip);
 	});
 };
 		</script>
+		<script src="redot.editor.js"></script>
 	</body>
 </html>
