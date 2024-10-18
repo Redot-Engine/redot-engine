@@ -1988,6 +1988,7 @@ SpriteFramesEditor::SpriteFramesEditor() {
 	sub_vb->add_child(hfc);
 
 	playback_container = memnew(HBoxContainer);
+	playback_container->set_layout_direction(LAYOUT_DIRECTION_LTR);
 	hfc->add_child(playback_container);
 
 	play_bw_from = memnew(Button);
@@ -2015,7 +2016,7 @@ SpriteFramesEditor::SpriteFramesEditor() {
 	play_from->set_tooltip_text(TTR("Play selected animation from current pos. (D)"));
 	playback_container->add_child(play_from);
 
-	playback_container->add_child(memnew(VSeparator));
+	hfc->add_child(memnew(VSeparator));
 
 	autoplay->connect(SceneStringName(pressed), callable_mp(this, &SpriteFramesEditor::_autoplay_pressed));
 	autoplay->set_toggle_mode(true);
