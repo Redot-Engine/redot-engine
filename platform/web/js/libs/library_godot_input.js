@@ -47,7 +47,9 @@ const GodotIME = {
 
 		ime_active: function (active) {
 			function focus_timer() {
-				if (!GodotIME.ime) return;
+				if (!GodotIME.ime) {
+					return;
+				}
 				GodotIME.active = true;
 				GodotIME.ime.focus();
 			}
