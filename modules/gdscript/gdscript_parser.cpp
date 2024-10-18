@@ -101,6 +101,9 @@ GDScriptParser::GDScriptParser() {
 		register_annotation(MethodInfo("@static_unload"), AnnotationInfo::SCRIPT, &GDScriptParser::static_unload_annotation);
 
 		register_annotation(MethodInfo("@onready"), AnnotationInfo::VARIABLE, &GDScriptParser::onready_annotation);
+		// Access restriction
+		register_annotation(MethodInfo("@private"), AnnotationInfo::CONSTANT | AnnotationInfo::VARIABLE | AnnotationInfo::FUNCTION | AnnotationInfo::SIGNAL, &GDScriptParser::access_private_annotation);
+		register_annotation(MethodInfo("@protected"), AnnotationInfo::CONSTANT | AnnotationInfo::VARIABLE | AnnotationInfo::FUNCTION | AnnotationInfo::SIGNAL, &GDScriptParser::access_protected_annotation);
 		// Export annotations.
 		register_annotation(MethodInfo("@export"), AnnotationInfo::VARIABLE, &GDScriptParser::export_annotations<PROPERTY_HINT_NONE, Variant::NIL>);
 		register_annotation(MethodInfo("@export_enum", PropertyInfo(Variant::STRING, "names")), AnnotationInfo::VARIABLE, &GDScriptParser::export_annotations<PROPERTY_HINT_ENUM, Variant::NIL>, varray(), true);
@@ -3198,6 +3201,8 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_call(ExpressionNode *p_pre
 			}
 			if (current_function->identifier) {
 				call->function_name = current_function->identifier->name;
+				call->access_restriction = current_function->access_restriction;
+				call->accessible_class_name = current_function->accessible_class_name;
 			} else {
 				call->function_name = SNAME("<anonymous>");
 			}
@@ -3215,6 +3220,8 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_call(ExpressionNode *p_pre
 			consume(GDScriptTokenizer::Token::PARENTHESIS_OPEN, R"(Expected "(" after function name.)");
 		}
 	} else {
+		// TODO: Get the FunctionNode from the current `call`
+
 		call->callee = p_previous_operand;
 
 		if (call->callee == nullptr) {
@@ -3997,6 +4004,8 @@ GDScriptParser::ParseRule *GDScriptParser::get_rule(GDScriptTokenizer::Token::Ty
 		{ nullptr,                                          &GDScriptParser::parse_type_test,            	PREC_TYPE_TEST }, // IS,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // NAMESPACE,
 		{ &GDScriptParser::parse_preload,					nullptr,                                        PREC_NONE }, // PRELOAD,
+		{ nullptr,											nullptr,                                        PREC_NONE }, // PRIVATE,
+		{ nullptr,											nullptr,                                        PREC_NONE }, // PROTECTED,
 		{ &GDScriptParser::parse_self,                   	nullptr,                                        PREC_NONE }, // SELF,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // SIGNAL,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STATIC,
@@ -4177,6 +4186,60 @@ bool GDScriptParser::onready_annotation(AnnotationNode *p_annotation, Node *p_ta
 	}
 	variable->onready = true;
 	current_class->onready_used = true;
+	return true;
+}
+
+// Access restrictions
+
+bool GDScriptParser::access_private_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class) {
+	bool is_accessible_member = false;
+	switch (p_target->type) {
+		case Node::CONSTANT:
+		case Node::VARIABLE:
+		case Node::FUNCTION:
+		case Node::SIGNAL:
+			is_accessible_member = true;
+			break;
+		default:
+			break;
+	}
+
+	ERR_FAIL_COND_V_MSG(!is_accessible_member, false, R"("@private" annotation can only be applied to class variables.)");
+
+	AssignableNode *member = static_cast<AssignableNode *>(p_target);
+	if (member->access_restriction == Node::ACCESS_RESTRICTION_PRIVATE) {
+		push_error(vformat(R"(@private" annotation can only be used once per private variable)"), p_annotation);
+		return false;
+	}
+
+	member->access_restriction = Node::ACCESS_RESTRICTION_PRIVATE;
+	member->accessible_class_name = current_class->identifier->name;
+	return true;
+}
+
+bool GDScriptParser::access_protected_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class) {
+	bool is_accessible_member = false;
+	switch (p_target->type) {
+		case Node::CONSTANT:
+		case Node::VARIABLE:
+		case Node::FUNCTION:
+		case Node::SIGNAL:
+			is_accessible_member = true;
+			break;
+		default:
+			break;
+	}
+
+	ERR_FAIL_COND_V_MSG(!is_accessible_member, false, R"("@private" annotation can only be applied to class variables.)");
+
+	AssignableNode *member = static_cast<AssignableNode *>(p_target);
+	if (member->access_restriction == Node::ACCESS_RESTRICTION_PROTECTED) {
+		push_error(vformat(R"(@protected" annotation can only be used once per protected variable)"), p_annotation);
+		return false;
+	}
+
+	member->access_restriction = Node::ACCESS_RESTRICTION_PROTECTED;
+	member->accessible_class_name = current_class->identifier->name;
 	return true;
 }
 

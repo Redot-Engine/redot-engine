@@ -117,6 +117,8 @@ static const char *token_names[] = {
 	"is", // IS,
 	"namespace", // NAMESPACE
 	"preload", // PRELOAD,
+	"private", // PRELOAD,
+	"protected", // PRELOAD,
 	"self", // SELF,
 	"signal", // SIGNAL,
 	"static", // STATIC,
@@ -235,6 +237,8 @@ bool GDScriptTokenizer::Token::is_node_name() const {
 		case OR:
 		case PASS:
 		case PRELOAD:
+		case PRIVATE:
+		case PROTECTED:
 		case RETURN:
 		case SELF:
 		case SIGNAL:
@@ -522,6 +526,8 @@ GDScriptTokenizer::Token GDScriptTokenizerText::annotation() {
 	KEYWORD_GROUP('p')                       \
 	KEYWORD("pass", Token::PASS)             \
 	KEYWORD("preload", Token::PRELOAD)       \
+	KEYWORD("private", Token::PRELOAD)       \
+	KEYWORD("protected", Token::PRELOAD)     \
 	KEYWORD_GROUP('r')                       \
 	KEYWORD("return", Token::RETURN)         \
 	KEYWORD_GROUP('s')                       \
