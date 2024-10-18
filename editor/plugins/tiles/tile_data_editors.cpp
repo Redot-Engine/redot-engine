@@ -498,6 +498,10 @@ void GenericTilePolygonEditor::_snap_point(Point2 &r_point) {
 			r_point = r_point.snappedf(0.5);
 			break;
 
+		case SNAP_ONE_PIXEL:
+			r_point = r_point.snappedf(1.0);
+			break;
+
 		case SNAP_GRID: {
 			const Vector2 tile_size = tile_set->get_tile_size();
 			r_point = (r_point + tile_size / 2).snapped(tile_size / snap_subdivision->get_value()) - tile_size / 2;
@@ -889,8 +893,9 @@ void GenericTilePolygonEditor::_notification(int p_what) {
 			button_center_view->set_icon(get_editor_theme_icon(SNAME("CenterView")));
 			button_advanced_menu->set_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
 			button_pixel_snap->get_popup()->set_item_icon(0, get_editor_theme_icon(SNAME("SnapDisable")));
-			button_pixel_snap->get_popup()->set_item_icon(1, get_editor_theme_icon(SNAME("Snap")));
-			button_pixel_snap->get_popup()->set_item_icon(2, get_editor_theme_icon(SNAME("SnapGrid")));
+			button_pixel_snap->get_popup()->set_item_icon(1, get_editor_theme_icon(SNAME("SnapHalf")));
+			button_pixel_snap->get_popup()->set_item_icon(2, get_editor_theme_icon(SNAME("SnapOne")));
+			button_pixel_snap->get_popup()->set_item_icon(3, get_editor_theme_icon(SNAME("SnapGrid")));
 			button_pixel_snap->set_icon(button_pixel_snap->get_popup()->get_item_icon(current_snap_option));
 
 			PopupMenu *p = button_advanced_menu->get_popup();
@@ -975,6 +980,7 @@ GenericTilePolygonEditor::GenericTilePolygonEditor() {
 	button_pixel_snap->set_tooltip_text(TTR("Toggle Grid Snap"));
 	button_pixel_snap->get_popup()->add_item(TTR("Disable Snap"), SNAP_NONE);
 	button_pixel_snap->get_popup()->add_item(TTR("Half-Pixel Snap"), SNAP_HALF_PIXEL);
+	button_pixel_snap->get_popup()->add_item(TTR("Pixel Snap"), SNAP_ONE_PIXEL);
 	button_pixel_snap->get_popup()->add_item(TTR("Grid Snap"), SNAP_GRID);
 	button_pixel_snap->get_popup()->connect("index_pressed", callable_mp(this, &GenericTilePolygonEditor::_set_snap_option));
 
