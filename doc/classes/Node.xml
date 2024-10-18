@@ -4,7 +4,7 @@
 		Base class for all scene objects.
 	</brief_description>
 	<description>
-		Nodes are Godot's building blocks. They can be assigned as the child of another node, resulting in a tree arrangement. A given node can contain any number of nodes as children with the requirement that all siblings (direct children of a node) should have unique names.
+		Nodes are Redot's building blocks. They can be assigned as the child of another node, resulting in a tree arrangement. A given node can contain any number of nodes as children with the requirement that all siblings (direct children of a node) should have unique names.
 		A tree of nodes is called a [i]scene[/i]. Scenes can be saved to the disk and then instantiated into other scenes. This allows for very high flexibility in the architecture and data model of Redot projects.
 		[b]Scene tree:[/b] The [SceneTree] contains the active tree of nodes. When a node is added to the scene tree, it receives the [constant NOTIFICATION_ENTER_TREE] notification and its [method _enter_tree] callback is triggered. Child nodes are always added [i]after[/i] their parent node, i.e. the [method _enter_tree] callback of a parent node will be triggered before its child's.
 		Once all nodes have been added in the scene tree, they receive the [constant NOTIFICATION_READY] notification and their respective [method _ready] callbacks are triggered. For groups of nodes, the [method _ready] callback is called in reverse order, starting with the children and moving up to the parent nodes.
@@ -19,7 +19,7 @@
 	</description>
 	<tutorials>
 		<link title="Nodes and scenes">$DOCS_URL/getting_started/step_by_step/nodes_and_scenes.html</link>
-		<link title="All Demos">https://github.com/godotengine/godot-demo-projects/</link>
+		<link title="All Demos">https://github.com/redot-engine/redot-demo-projects/</link>
 	</tutorials>
 	<methods>
 		<method name="_enter_tree" qualifiers="virtual">
@@ -1235,7 +1235,7 @@
 			Implemented only on macOS.
 		</constant>
 		<constant name="NOTIFICATION_CRASH" value="2012">
-			Notification received from Godot's crash handler when the engine is about to crash.
+			Notification received from Redot's crash handler when the engine is about to crash.
 			Implemented on desktop platforms, if the crash handler is enabled.
 		</constant>
 		<constant name="NOTIFICATION_OS_IME_UPDATE" value="2013">

@@ -111,7 +111,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Redot Engine class reference\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Report-Msgid-Bugs-To: https://github.com/redot-engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2024-09-04 20:31+0000\n"
 "Last-Translator: Fontaine Nathan <nathan.fontaine53@gmail.com>\n"

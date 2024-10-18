@@ -359,7 +359,7 @@
 		<member name="editors/3d/navigation/navigation_scheme" type="int" setter="" getter="">
 			The navigation scheme preset to use in the 3D editor. Changing this setting will affect the mouse button and modifier controls used to navigate the 3D editor viewport.
 			All schemes can use [kbd]Mouse wheel[/kbd] to zoom.
-			- [b]Godot:[/b] [kbd]Middle mouse button[/kbd] to orbit. [kbd]Shift + Middle mouse button[/kbd] to pan. [kbd]Ctrl + Shift + Middle mouse button[/kbd] to zoom.
+			- [b]Redot:[/b] [kbd]Middle mouse button[/kbd] to orbit. [kbd]Shift + Middle mouse button[/kbd] to pan. [kbd]Ctrl + Shift + Middle mouse button[/kbd] to zoom.
 			- [b]Maya:[/b] [kbd]Alt + Left mouse button[/kbd] to orbit. [kbd]Middle mouse button[/kbd] to pan, [kbd]Shift + Middle mouse button[/kbd] to pan 10 times faster. [kbd]Alt + Right mouse button[/kbd] to zoom.
 			- [b]Modo:[/b] [kbd]Alt + Left mouse button[/kbd] to orbit. [kbd]Alt + Shift + Left mouse button[/kbd] to pan. [kbd]Ctrl + Alt + Left mouse button[/kbd] to zoom.
 			See also [member editors/3d/navigation/orbit_mouse_button], [member editors/3d/navigation/pan_mouse_button], [member editors/3d/navigation/zoom_mouse_button], and [member editors/3d/freelook/freelook_navigation_scheme].
@@ -696,7 +696,7 @@
 			To enable this feature for your specific project, use [member ProjectSettings.filesystem/import/blender/enabled].
 		</member>
 		<member name="filesystem/import/blender/rpc_port" type="int" setter="" getter="">
-			The port number used for Remote Procedure Call (RPC) communication with Godot's created process of the blender executable.
+			The port number used for Remote Procedure Call (RPC) communication with Redot's created process of the blender executable.
 			Setting this to 0 effectively disables communication with Redot and the blender process, making performance slower.
 		</member>
 		<member name="filesystem/import/blender/rpc_server_uptime" type="float" setter="" getter="">
@@ -1001,7 +1001,7 @@
 		<member name="interface/theme/icon_and_font_color" type="int" setter="" getter="">
 			The icon and font color scheme to use in the editor.
 			- [b]Auto[/b] determines the color scheme to use automatically based on [member interface/theme/base_color].
-			- [b]Dark[/b] makes fonts and icons dark (suitable for light themes). Icon colors are automatically converted by the editor following the set of rules defined in [url=https://github.com/godotengine/godot/blob/master/editor/themes/editor_theme_manager.cpp]this file[/url].
+			- [b]Dark[/b] makes fonts and icons dark (suitable for light themes). Icon colors are automatically converted by the editor following the set of rules defined in [url=https://github.com/redot-engine/redot-engine/blob/master/editor/themes/editor_theme_manager.cpp]this file[/url].
 			- [b]Light[/b] makes fonts and icons light (suitable for dark themes).
 		</member>
 		<member name="interface/theme/icon_saturation" type="float" setter="" getter="">
@@ -1063,7 +1063,7 @@
 			[b]Note:[/b] Redot currently doesn't automatically use system proxy settings, so you have to enter them manually here if needed.
 		</member>
 		<member name="network/tls/editor_tls_certificates" type="String" setter="" getter="">
-			The TLS certificate bundle to use for HTTP requests made within the editor (e.g. from the AssetLib tab). If left empty, the [url=https://github.com/godotengine/godot/blob/master/thirdparty/certs/ca-certificates.crt]included Mozilla certificate bundle[/url] will be used.
+			The TLS certificate bundle to use for HTTP requests made within the editor (e.g. from the AssetLib tab). If left empty, the [url=https://github.com/redot-engine/redot-engine/blob/master/thirdparty/certs/ca-certificates.crt]included Mozilla certificate bundle[/url] will be used.
 		</member>
 		<member name="project_manager/default_renderer" type="String" setter="" getter="">
 			The renderer type that will be checked off by default when creating a new project. Accepted strings are "forward_plus", "mobile" or "gl_compatibility".

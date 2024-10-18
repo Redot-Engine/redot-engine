@@ -314,6 +314,8 @@ void ImmediateMesh::surface_end() {
 	uses_uv2s = false;
 
 	surface_active = false;
+
+	emit_changed();
 }
 
 void ImmediateMesh::clear_surfaces() {

@@ -58,19 +58,19 @@
 			The SPIR-V bytecode for the vertex shader stage.
 		</member>
 		<member name="compile_error_compute" type="String" setter="set_stage_compile_error" getter="get_stage_compile_error" default="&quot;&quot;">
-			The compilation error message for the compute shader stage (set by the SPIR-V compiler and Godot). If empty, shader compilation was successful.
+			The compilation error message for the compute shader stage (set by the SPIR-V compiler and Redot). If empty, shader compilation was successful.
 		</member>
 		<member name="compile_error_fragment" type="String" setter="set_stage_compile_error" getter="get_stage_compile_error" default="&quot;&quot;">
-			The compilation error message for the fragment shader stage (set by the SPIR-V compiler and Godot). If empty, shader compilation was successful.
+			The compilation error message for the fragment shader stage (set by the SPIR-V compiler and Redot). If empty, shader compilation was successful.
 		</member>
 		<member name="compile_error_tesselation_control" type="String" setter="set_stage_compile_error" getter="get_stage_compile_error" default="&quot;&quot;">
-			The compilation error message for the tessellation control shader stage (set by the SPIR-V compiler and Godot). If empty, shader compilation was successful.
+			The compilation error message for the tessellation control shader stage (set by the SPIR-V compiler and Redot). If empty, shader compilation was successful.
 		</member>
 		<member name="compile_error_tesselation_evaluation" type="String" setter="set_stage_compile_error" getter="get_stage_compile_error" default="&quot;&quot;">
-			The compilation error message for the tessellation evaluation shader stage (set by the SPIR-V compiler and Godot). If empty, shader compilation was successful.
+			The compilation error message for the tessellation evaluation shader stage (set by the SPIR-V compiler and Redot). If empty, shader compilation was successful.
 		</member>
 		<member name="compile_error_vertex" type="String" setter="set_stage_compile_error" getter="get_stage_compile_error" default="&quot;&quot;">
-			The compilation error message for the vertex shader stage (set by the SPIR-V compiler and Godot). If empty, shader compilation was successful.
+			The compilation error message for the vertex shader stage (set by the SPIR-V compiler and Redot). If empty, shader compilation was successful.
 		</member>
 	</members>
 </class>

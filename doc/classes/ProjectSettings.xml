@@ -992,8 +992,8 @@
 			When generating script file names from the selected node, set the type of casing to use in this project. This is mostly an editor setting.
 		</member>
 		<member name="editor/run/main_run_args" type="String" setter="" getter="" default="&quot;&quot;">
-			The command-line arguments to append to Godot's own command line when running the project. This doesn't affect the editor itself.
-			It is possible to make another executable run Redot by using the [code]%command%[/code] placeholder. The placeholder will be replaced with Godot's own command line. Program-specific arguments should be placed [i]before[/i] the placeholder, whereas Godot-specific arguments should be placed [i]after[/i] the placeholder.
+			The command-line arguments to append to Redot's own command line when running the project. This doesn't affect the editor itself.
+			It is possible to make another executable run Redot by using the [code]%command%[/code] placeholder. The placeholder will be replaced with Redot's own command line. Program-specific arguments should be placed [i]before[/i] the placeholder, whereas Redot-specific arguments should be placed [i]after[/i] the placeholder.
 			For example, this can be used to force the project to run on the dedicated GPU in an NVIDIA Optimus system on Linux:
 			[codeblock lang=text]
 			prime-run %command%
@@ -2167,7 +2167,7 @@
 			Maximum size (in kiB) for the [WebRTCDataChannel] input buffer.
 		</member>
 		<member name="network/tls/certificate_bundle_override" type="String" setter="" getter="" default="&quot;&quot;">
-			The CA certificates bundle to use for TLS connections. If this is set to a non-empty value, this will [i]override[/i] Godot's default [url=https://github.com/godotengine/godot/blob/master/thirdparty/certs/ca-certificates.crt]Mozilla certificate bundle[/url]. If left empty, the default certificate bundle will be used.
+			The CA certificates bundle to use for TLS connections. If this is set to a non-empty value, this will [i]override[/i] Redot's default [url=https://github.com/redot-engine/godot-engine/blob/master/thirdparty/certs/ca-certificates.crt]Mozilla certificate bundle[/url]. If left empty, the default certificate bundle will be used.
 			If in doubt, leave this setting empty.
 		</member>
 		<member name="physics/2d/default_angular_damp" type="float" setter="" getter="" default="1.0">
@@ -2175,7 +2175,7 @@
 			Suggested values are in the range [code]0[/code] to [code]30[/code]. At value [code]0[/code] objects will keep moving with the same velocity. Greater values will stop the object faster. A value equal to or greater than the physics tick rate ([member physics/common/physics_ticks_per_second]) will bring the object to a stop in one iteration.
 			[b]Note:[/b] Redot damping calculations are velocity-dependent, meaning bodies moving faster will take a longer time to come to rest. They do not simulate inertia, friction, or air resistance. Therefore heavier or larger bodies will lose speed at the same proportional rate as lighter or smaller bodies.
 			During each physics tick, Redot will multiply the linear velocity of RigidBodies by [code]1.0 - combined_damp / physics_ticks_per_second[/code]. By default, bodies combine damp factors: [code]combined_damp[/code] is the sum of the damp value of the body and this value or the area's value the body is in. See [enum RigidBody2D.DampMode].
-			[b]Warning:[/b] Godot's damping calculations are simulation tick rate dependent. Changing [member physics/common/physics_ticks_per_second] may significantly change the outcomes and feel of your simulation. This is true for the entire range of damping values greater than 0. To get back to a similar feel, you also need to change your damp values. This needed change is not proportional and differs from case to case.
+			[b]Warning:[/b] Redot's damping calculations are simulation tick rate dependent. Changing [member physics/common/physics_ticks_per_second] may significantly change the outcomes and feel of your simulation. This is true for the entire range of damping values greater than 0. To get back to a similar feel, you also need to change your damp values. This needed change is not proportional and differs from case to case.
 		</member>
 		<member name="physics/2d/default_gravity" type="float" setter="" getter="" default="980.0">
 			The default gravity strength in 2D (in pixels per second squared).
@@ -2210,7 +2210,7 @@
 			Suggested values are in the range [code]0[/code] to [code]30[/code]. At value [code]0[/code] objects will keep moving with the same velocity. Greater values will stop the object faster. A value equal to or greater than the physics tick rate ([member physics/common/physics_ticks_per_second]) will bring the object to a stop in one iteration.
 			[b]Note:[/b] Redot damping calculations are velocity-dependent, meaning bodies moving faster will take a longer time to come to rest. They do not simulate inertia, friction, or air resistance. Therefore heavier or larger bodies will lose speed at the same proportional rate as lighter or smaller bodies.
 			During each physics tick, Redot will multiply the linear velocity of RigidBodies by [code]1.0 - combined_damp / physics_ticks_per_second[/code], where [code]combined_damp[/code] is the sum of the linear damp of the body and this value, or the area's value the body is in, assuming the body defaults to combine damp values. See [enum RigidBody2D.DampMode].
-			[b]Warning:[/b] Godot's damping calculations are simulation tick rate dependent. Changing [member physics/common/physics_ticks_per_second] may significantly change the outcomes and feel of your simulation. This is true for the entire range of damping values greater than 0. To get back to a similar feel, you also need to change your damp values. This needed change is not proportional and differs from case to case.
+			[b]Warning:[/b] Redot's damping calculations are simulation tick rate dependent. Changing [member physics/common/physics_ticks_per_second] may significantly change the outcomes and feel of your simulation. This is true for the entire range of damping values greater than 0. To get back to a similar feel, you also need to change your damp values. This needed change is not proportional and differs from case to case.
 		</member>
 		<member name="physics/2d/physics_engine" type="String" setter="" getter="" default="&quot;DEFAULT&quot;">
 			Sets which physics engine to use for 2D physics.
@@ -2254,7 +2254,7 @@
 			Suggested values are in the range [code]0[/code] to [code]30[/code]. At value [code]0[/code] objects will keep moving with the same velocity. Greater values will stop the object faster. A value equal to or greater than the physics tick rate ([member physics/common/physics_ticks_per_second]) will bring the object to a stop in one iteration.
 			[b]Note:[/b] Redot damping calculations are velocity-dependent, meaning bodies moving faster will take a longer time to come to rest. They do not simulate inertia, friction, or air resistance. Therefore heavier or larger bodies will lose speed at the same proportional rate as lighter or smaller bodies.
 			During each physics tick, Redot will multiply the angular velocity of RigidBodies by [code]1.0 - combined_damp / physics_ticks_per_second[/code]. By default, bodies combine damp factors: [code]combined_damp[/code] is the sum of the damp value of the body and this value or the area's value the body is in. See [enum RigidBody3D.DampMode].
-			[b]Warning:[/b] Godot's damping calculations are simulation tick rate dependent. Changing [member physics/common/physics_ticks_per_second] may significantly change the outcomes and feel of your simulation. This is true for the entire range of damping values greater than 0. To get back to a similar feel, you also need to change your damp values. This needed change is not proportional and differs from case to case.
+			[b]Warning:[/b] Redot's damping calculations are simulation tick rate dependent. Changing [member physics/common/physics_ticks_per_second] may significantly change the outcomes and feel of your simulation. This is true for the entire range of damping values greater than 0. To get back to a similar feel, you also need to change your damp values. This needed change is not proportional and differs from case to case.
 		</member>
 		<member name="physics/3d/default_gravity" type="float" setter="" getter="" default="9.8">
 			The default gravity strength in 3D (in meters per second squared).
@@ -2289,7 +2289,7 @@
 			Suggested values are in the range [code]0[/code] to [code]30[/code]. At value [code]0[/code] objects will keep moving with the same velocity. Greater values will stop the object faster. A value equal to or greater than the physics tick rate ([member physics/common/physics_ticks_per_second]) will bring the object to a stop in one iteration.
 			[b]Note:[/b] Redot damping calculations are velocity-dependent, meaning bodies moving faster will take a longer time to come to rest. They do not simulate inertia, friction, or air resistance. Therefore heavier or larger bodies will lose speed at the same proportional rate as lighter or smaller bodies.
 			During each physics tick, Redot will multiply the linear velocity of RigidBodies by [code]1.0 - combined_damp / physics_ticks_per_second[/code]. By default, bodies combine damp factors: [code]combined_damp[/code] is the sum of the damp value of the body and this value or the area's value the body is in. See [enum RigidBody3D.DampMode].
-			[b]Warning:[/b] Godot's damping calculations are simulation tick rate dependent. Changing [member physics/common/physics_ticks_per_second] may significantly change the outcomes and feel of your simulation. This is true for the entire range of damping values greater than 0. To get back to a similar feel, you also need to change your damp values. This needed change is not proportional and differs from case to case.
+			[b]Warning:[/b] Redot's damping calculations are simulation tick rate dependent. Changing [member physics/common/physics_ticks_per_second] may significantly change the outcomes and feel of your simulation. This is true for the entire range of damping values greater than 0. To get back to a similar feel, you also need to change your damp values. This needed change is not proportional and differs from case to case.
 		</member>
 		<member name="physics/3d/physics_engine" type="String" setter="" getter="" default="&quot;DEFAULT&quot;">
 			Sets which physics engine to use for 3D physics.
@@ -2668,7 +2668,7 @@
 			This can increase performance.
 		</member>
 		<member name="rendering/lights_and_shadows/use_physical_light_units" type="bool" setter="" getter="" default="false">
-			Enables the use of physically based units for light sources. Physically based units tend to be much larger than the arbitrary units used by Godot, but they can be used to match lighting within Redot to real-world lighting. Due to the large dynamic range of lighting conditions present in nature, Redot bakes exposure into the various lighting quantities before rendering. Most light sources bake exposure automatically at run time based on the active [CameraAttributes] resource, but [LightmapGI] and [VoxelGI] require a [CameraAttributes] resource to be set at bake time to reduce the dynamic range. At run time, Redot will automatically reconcile the baked exposure with the active exposure to ensure lighting remains consistent.
+			Enables the use of physically based units for light sources. Physically based units tend to be much larger than the arbitrary units used by Redot, but they can be used to match lighting within Redot to real-world lighting. Due to the large dynamic range of lighting conditions present in nature, Redot bakes exposure into the various lighting quantities before rendering. Most light sources bake exposure automatically at run time based on the active [CameraAttributes] resource, but [LightmapGI] and [VoxelGI] require a [CameraAttributes] resource to be set at bake time to reduce the dynamic range. At run time, Redot will automatically reconcile the baked exposure with the active exposure to ensure lighting remains consistent.
 		</member>
 		<member name="rendering/limits/cluster_builder/max_clustered_elements" type="float" setter="" getter="" default="512">
 			The maximum number of clustered elements ([OmniLight3D] + [SpotLight3D] + [Decal] + [ReflectionProbe]) that can be rendered at once in the camera view. If there are more clustered elements present in the camera view, some of them will not be rendered (leading to pop-in during camera movement). Enabling distance fade on lights and decals ([member Light3D.distance_fade_enabled], [member Decal.distance_fade_enabled]) can help avoid reaching this limit.
@@ -2900,8 +2900,8 @@
 		</member>
 		<member name="rendering/textures/vram_compression/compress_with_gpu" type="bool" setter="" getter="" default="true">
 			If [code]true[/code], the texture importer will utilize the GPU for compressing textures, improving the import time of large images.
-			[b]Note:[/b] This setting requires either Vulkan or D3D12 available as a rendering backend.
-			[b]Note:[/b] Currently this only affects BC1 and BC6H compression, which are used on Desktop and Console for fully opaque and HDR images respectively.
+			[b]Note:[/b] This only functions on a device which supports either Vulkan, D3D12, or Metal available as a rendering backend.
+			[b]Note:[/b] Currently this only affects certain compressed formats (BC1, BC4, and BC6), all of which are exclusive to desktop platforms and consoles.
 		</member>
 		<member name="rendering/textures/vram_compression/import_etc2_astc" type="bool" setter="" getter="" default="false">
 			If [code]true[/code], the texture importer will import VRAM-compressed textures using the Ericsson Texture Compression 2 algorithm for lower quality textures and normal maps and Adaptable Scalable Texture Compression algorithm for high quality textures (in 4×4 block size).

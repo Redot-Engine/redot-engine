@@ -26,11 +26,11 @@
     </screenshot>
   </screenshots>
   <url type="homepage">https://redotengine.org</url>
-  <url type="bugtracker">https://github.com/redotengine/redot/issues</url>
+  <url type="bugtracker">https://github.com/Redot-Engine/redot-engine/issues</url>
   <url type="faq">https://docs.godotengine.org/en/latest/about/faq.html</url>
   <url type="help">https://docs.godotengine.org</url>
   <url type="donation">https://www.savethechildren.org</url>
   <url type="translate">https://hosted.weblate.org/projects/godot-engine/godot</url>
   <developer_name>The Redot Engine Community</developer_name>
-  <update_contact>bioblazepayne_at_gmail_dot_com</update_contact>
+  <update_contact>redotengine@gmail.com</update_contact>
 </component>

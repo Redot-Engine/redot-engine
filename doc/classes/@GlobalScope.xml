@@ -377,7 +377,7 @@
 				- 1.0: Linear
 				- Greater than 1.0 (exclusive): Ease in
 				[/codeblock]
-				[url=https://raw.githubusercontent.com/godotengine/godot-docs/master/img/ease_cheatsheet.png]ease() curve values cheatsheet[/url]
+				[url=https://raw.githubusercontent.com/redot-engine/redot-docs/master/img/ease_cheatsheet.png]ease() curve values cheatsheet[/url]
 				See also [method smoothstep]. If you need to perform more advanced transitions, use [method Tween.interpolate_value].
 			</description>
 		</method>
@@ -945,7 +945,7 @@
 		</method>
 		<method name="push_error" qualifiers="vararg">
 			<description>
-				Pushes an error message to Godot's built-in debugger and to the OS terminal.
+				Pushes an error message to Redot's built-in debugger and to the OS terminal.
 				[codeblocks]
 				[gdscript]
 				push_error("test error") # Prints "test error" to debugger and terminal as error call
@@ -959,7 +959,7 @@
 		</method>
 		<method name="push_warning" qualifiers="vararg">
 			<description>
-				Pushes a warning message to Godot's built-in debugger and to the OS terminal.
+				Pushes a warning message to Redot's built-in debugger and to the OS terminal.
 				[codeblocks]
 				[gdscript]
 				push_warning("test warning") # Prints "test warning" to debugger and terminal as warning call
@@ -1157,7 +1157,7 @@
 				Sets the seed for the random number generator to [param base]. Setting the seed manually can ensure consistent, repeatable results for most random functions.
 				[codeblocks]
 				[gdscript]
-				var my_seed = "Godot Rocks".hash()
+				var my_seed = "Redot Rocks".hash()
 				seed(my_seed)
 				var a = randf() + randi()
 				seed(my_seed)
@@ -1165,7 +1165,7 @@
 				# a and b are now identical
 				[/gdscript]
 				[csharp]
-				ulong mySeed = (ulong)GD.Hash("Godot Rocks");
+				ulong mySeed = (ulong)GD.Hash("Redot Rocks");
 				GD.Seed(mySeed);
 				var a = GD.Randf() + GD.Randi();
 				GD.Seed(mySeed);
@@ -1256,8 +1256,8 @@
 				smoothstep(0, 2, 2.0) # Returns 1.0
 				[/codeblock]
 				Compared to [method ease] with a curve value of [code]-1.6521[/code], [method smoothstep] returns the smoothest possible curve with no sudden changes in the derivative. If you need to perform more advanced transitions, use [Tween] or [AnimationPlayer].
-				[url=https://raw.githubusercontent.com/godotengine/godot-docs/master/img/smoothstep_ease_comparison.png]Comparison between smoothstep() and ease(x, -1.6521) return values[/url]
-				[url=https://raw.githubusercontent.com/godotengine/godot-docs/master/img/smoothstep_range.webp]Smoothstep() return values with positive, zero, and negative ranges[/url]
+				[url=https://raw.githubusercontent.com/redot-engine/redot-docs/master/img/smoothstep_ease_comparison.png]Comparison between smoothstep() and ease(x, -1.6521) return values[/url]
+				[url=https://raw.githubusercontent.com/redot-engine/redot-docs/master/img/smoothstep_range.webp]Smoothstep() return values with positive, zero, and negative ranges[/url]
 			</description>
 		</method>
 		<method name="snapped">
@@ -2752,7 +2752,7 @@
 		</constant>
 		<constant name="ERR_BUG" value="47" enum="Error">
 			Bug error, caused by an implementation issue in the method.
-			[b]Note:[/b] If a built-in method returns this code, please open an issue on [url=https://github.com/godotengine/godot/issues]the GitHub Issue Tracker[/url].
+			[b]Note:[/b] If a built-in method returns this code, please open an issue on [url=https://github.com/redot-engine/redot-engine/issues]the GitHub Issue Tracker[/url].
 		</constant>
 		<constant name="ERR_PRINTER_ON_FIRE" value="48" enum="Error">
 			Printer on fire error (This is an easter egg, no built-in methods return this error code).

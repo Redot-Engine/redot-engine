@@ -43,7 +43,7 @@
 			If [code]true[/code], each depth value will be tested to see if it is between [member depth_range_min] and [member depth_range_max]. If it is outside of these values, it is discarded.
 		</member>
 		<member name="enable_depth_test" type="bool" setter="set_enable_depth_test" getter="get_enable_depth_test" default="false">
-			If [code]true[/code], enables depth testing which allows objects to be automatically occluded by other objects based on their depth. This also allows objects to be partially occluded by other objects. If [code]false[/code], objects will appear in the order they were drawn (like in Godot's 2D renderer).
+			If [code]true[/code], enables depth testing which allows objects to be automatically occluded by other objects based on their depth. This also allows objects to be partially occluded by other objects. If [code]false[/code], objects will appear in the order they were drawn (like in Redot's 2D renderer).
 		</member>
 		<member name="enable_depth_write" type="bool" setter="set_enable_depth_write" getter="get_enable_depth_write" default="false">
 			If [code]true[/code], writes to the depth buffer whenever the depth test returns true. Only works when enable_depth_test is also true.

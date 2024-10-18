@@ -48,12 +48,15 @@ Copyright: 2024-present, Redot Engine contributors
  2007-2014, Juan Linietsky, Ariel Manzur
 License: Expat
 
-Files: ./icon.png
- ./icon.svg
- ./logo.png
+Files: ./logo.png
  ./logo.svg
-Comment: Redot Engine logo
-Copyright: 2024, dev_airsyad (on X/Twitter)
+ ./logo_outlined.png
+ ./logo_outlined.svg
+ ./editor/icons/TitleBarLogo.svg
+ ./icon.png
+ ./icon.svg
+Comment: Redot Engine Logos and Icons
+Copyright: 2024, Asrorul Irsyad
 License: CC-BY-4.0
 
 Files: ./core/math/convex_hull.cpp

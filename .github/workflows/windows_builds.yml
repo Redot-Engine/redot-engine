@@ -32,18 +32,6 @@ jobs:
             bin: ./bin/redot.windows.editor.x86_64.exe
             compiler: msvc
 
-          - name: Editor w/ Mono (target=editor)
-            cache-name: windows-editor-mono
-            target: editor
-            sconsflags: module_mono_enabled=yes
-            bin: ./bin/redot.windows.editor.x86_64.mono.exe
-            build-mono: true
-            tests: false # Disabled due freeze caused by mix Mono build and CI
-            doc-test: true
-            proj-conv: true
-            api-compat: true
-            compiler: msvc
-
           - name: Editor w/ clang-cl (target=editor, tests=yes, use_llvm=yes)
             cache-name: windows-editor-clang
             target: editor

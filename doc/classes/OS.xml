@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		The [OS] class wraps the most common functionalities for communicating with the host operating system, such as the video driver, delays, environment variables, execution of binaries, command line, etc.
-		[b]Note:[/b] In Godot 4, [OS] functions related to window management, clipboard, and TTS were moved to the [DisplayServer] singleton (and the [Window] class). Functions related to time were removed and are only available in the [Time] class.
+		[b]Note:[/b] In Redot 4, [OS] functions related to window management, clipboard, and TTS were moved to the [DisplayServer] singleton (and the [Window] class). Functions related to time were removed and are only available in the [Time] class.
 	</description>
 	<tutorials>
 		<link title="Operating System Testing Demo">https://godotengine.org/asset-library/asset/2789</link>
@@ -50,7 +50,7 @@
 			<param index="1" name="arguments" type="PackedStringArray" />
 			<param index="2" name="open_console" type="bool" default="false" />
 			<description>
-				Creates a new process that runs independently of Godot. It will not terminate when Redot terminates. The path specified in [param path] must exist and be an executable file or macOS [code].app[/code] bundle. The path is resolved based on the current platform. The [param arguments] are used in the given order and separated by a space.
+				Creates a new process that runs independently of Redot. It will not terminate when Redot terminates. The path specified in [param path] must exist and be an executable file or macOS [code].app[/code] bundle. The path is resolved based on the current platform. The [param arguments] are used in the given order and separated by a space.
 				On Windows, if [param open_console] is [code]true[/code] and the process is a console app, a new terminal window will be opened.
 				If the process is successfully created, this method returns its process ID, which you can use to monitor the process (and potentially terminate it with [method kill]). Otherwise, this method returns [code]-1[/code].
 				For example, running another instance of the project:
@@ -223,7 +223,7 @@
 			<description>
 				Returns the command-line user arguments passed to the engine. User arguments are ignored by the engine and reserved for the user. They are passed after the double dash [code]--[/code] argument. [code]++[/code] may be used when [code]--[/code] is intercepted by another program (such as [code]startx[/code]).
 				[codeblock]
-				# redot has been executed with the following command:
+				# Redot has been executed with the following command:
 				# redot --fullscreen -- --level=2 --hardcore
 
 				OS.get_cmdline_args()      # Returns ["--fullscreen", "--level=2", "--hardcore"]
@@ -285,7 +285,7 @@
 			<return type="String" />
 			<description>
 				Returns the file path to the current engine executable.
-				[b]Note:[/b] On macOS, if you want to launch another instance of Godot, always use [method create_instance] instead of relying on the executable path.
+				[b]Note:[/b] On macOS, if you want to launch another instance of Redot, always use [method create_instance] instead of relying on the executable path.
 			</description>
 		</method>
 		<method name="get_granted_permissions" qualifiers="const">
@@ -537,7 +537,7 @@
 		<method name="get_user_data_dir" qualifiers="const">
 			<return type="String" />
 			<description>
-				Returns the absolute directory path where user data is written (the [code]user://[/code] directory in Godot). The path depends on the project name and [member ProjectSettings.application/config/use_custom_user_dir].
+				Returns the absolute directory path where user data is written (the [code]user://[/code] directory in Redot). The path depends on the project name and [member ProjectSettings.application/config/use_custom_user_dir].
 				- On Windows, this is [code]%AppData%\Godot\app_userdata\[project_name][/code], or [code]%AppData%\[custom_name][/code] if [code]use_custom_user_dir[/code] is set. [code]%AppData%[/code] expands to [code]%UserProfile%\AppData\Roaming[/code].
 				- On macOS, this is [code]~/Library/Application Support/Godot/app_userdata/[project_name][/code], or [code]~/Library/Application Support/[custom_name][/code] if [code]use_custom_user_dir[/code] is set.
 				- On Linux and BSD, this is [code]~/.local/share/godot/app_userdata/[project_name][/code], or [code]~/.local/share/[custom_name][/code] if [code]use_custom_user_dir[/code] is set.
@@ -753,7 +753,7 @@
 			<description>
 				Requests the OS to open a resource identified by [param uri] with the most appropriate program. For example:
 				- [code]OS.shell_open("C:\\Users\name\Downloads")[/code] on Windows opens the file explorer at the user's Downloads folder.
-				- [code]OS.shell_open("https://godotengine.org")[/code] opens the default web browser on the official Redot website.
+				- [code]OS.shell_open("https://www.redotengine.org")[/code] opens the default web browser on the official Redot website.
 				- [code]OS.shell_open("mailto:example@example.com")[/code] opens the default email client with the "To" field set to [code]example@example.com[/code]. See [url=https://datatracker.ietf.org/doc/html/rfc2368]RFC 2368 - The [code]mailto[/code] URL scheme[/url] for a list of fields that can be added.
 				Use [method ProjectSettings.globalize_path] to convert a [code]res://[/code] or [code]user://[/code] project path into a system path for use with this method.
 				[b]Note:[/b] Use [method String.uri_encode] to encode characters within URLs in a URL-safe, portable way. This is especially required for line breaks. Otherwise, [method shell_open] may not work correctly in a project exported to the Web platform.

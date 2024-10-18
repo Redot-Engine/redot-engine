@@ -341,7 +341,7 @@
 			<param index="0" name="buffer" type="PackedByteArray" />
 			<description>
 				Loads an image from the binary contents of a BMP file.
-				[b]Note:[/b] Godot's BMP module doesn't support 16-bit per pixel images. Only 1-bit, 4-bit, 8-bit, 24-bit, and 32-bit per pixel images are supported.
+				[b]Note:[/b] Redot's BMP module doesn't support 16-bit per pixel images. Only 1-bit, 4-bit, 8-bit, 24-bit, and 32-bit per pixel images are supported.
 				[b]Note:[/b] This method is only available in engine builds with the BMP module enabled. By default, the BMP module is enabled, but it can be disabled at build-time using the [code]module_bmp_enabled=no[/code] SCons option.
 			</description>
 		</method>
@@ -364,7 +364,7 @@
 			<param index="0" name="buffer" type="PackedByteArray" />
 			<description>
 				Loads an image from the binary contents of a [url=https://github.com/KhronosGroup/KTX-Software]KTX[/url] file. Unlike most image formats, KTX can store VRAM-compressed data and embed mipmaps.
-				[b]Note:[/b] Godot's libktx implementation only supports 2D images. Cubemaps, texture arrays, and de-padding are not supported.
+				[b]Note:[/b] Redot's libktx implementation only supports 2D images. Cubemaps, texture arrays, and de-padding are not supported.
 				[b]Note:[/b] This method is only available in engine builds with the KTX module enabled. By default, the KTX module is enabled, but it can be disabled at build-time using the [code]module_ktx_enabled=no[/code] SCons option.
 			</description>
 		</method>

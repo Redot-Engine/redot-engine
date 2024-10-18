@@ -57,7 +57,7 @@
 		}
 		[/csharp]
 		[/codeblocks]
-		[b]Note:[/b] Redot does not support MIDI output, so there is no way to emit MIDI messages from Godot. Only MIDI input is supported.
+		[b]Note:[/b] Redot does not support MIDI output, so there is no way to emit MIDI messages from Redot. Only MIDI input is supported.
 	</description>
 	<tutorials>
 		<link title="MIDI Message Status Byte List">https://www.midi.org/specifications-old/item/table-2-expanded-messages-list-status-bytes</link>

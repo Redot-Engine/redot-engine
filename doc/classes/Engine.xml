@@ -4,7 +4,7 @@
 		Provides access to engine properties.
 	</brief_description>
 	<description>
-		The [Engine] singleton allows you to query and modify the project's run-time parameters, such as frames per second, time scale, and others. It also stores information about the current build of Godot, such as the current version.
+		The [Engine] singleton allows you to query and modify the project's run-time parameters, such as frames per second, time scale, and others. It also stores information about the current build of Redot, such as the current version.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -17,15 +17,15 @@
 				[codeblocks]
 				[gdscript]
 				if "64" in Engine.get_architecture_name():
-				    print("Running a 64-bit build of Godot.")
+				    print("Running a 64-bit build of Redot.")
 				else:
-				    print("Running a 32-bit build of Godot.")
+				    print("Running a 32-bit build of Redot.")
 				[/gdscript]
 				[csharp]
 				if (Engine.GetArchitectureName().Contains("64"))
-				    GD.Print("Running a 64-bit build of Godot.");
+				    GD.Print("Running a 64-bit build of Redot.");
 				else
-				    GD.Print("Running a 32-bit build of Godot.");
+				    GD.Print("Running a 32-bit build of Redot.");
 				[/csharp]
 				[/codeblocks]
 				[b]Note:[/b] This method does [i]not[/i] return the name of the system's CPU architecture (like [method OS.get_processor_name]). For example, when running an [code]x86_32[/code] Redot binary on an [code]x86_64[/code] system, the returned value will still be [code]"x86_32"[/code].
@@ -41,7 +41,7 @@
 		<method name="get_copyright_info" qualifiers="const">
 			<return type="Dictionary[]" />
 			<description>
-				Returns an [Array] of dictionaries with copyright information for every component of Godot's source code.
+				Returns an [Array] of dictionaries with copyright information for every component of Redot's source code.
 				Every [Dictionary] contains a [code]name[/code] identifier, and a [code]parts[/code] array of dictionaries. It describes the component in detail with the following entries:
 				- [code]files[/code] - [Array] of file paths from the source code affected by this component;
 				- [code]copyright[/code] - [Array] of owners of this component;

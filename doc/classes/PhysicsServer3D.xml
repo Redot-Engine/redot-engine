@@ -1141,7 +1141,7 @@
 			<param index="1" name="state" type="int" enum="PhysicsServer3D.BodyState" />
 			<description>
 				Returns the given soft body state (see [enum BodyState] constants).
-				[b]Note:[/b] Godot's default physics implementation does not support [constant BODY_STATE_LINEAR_VELOCITY], [constant BODY_STATE_ANGULAR_VELOCITY], [constant BODY_STATE_SLEEPING], or [constant BODY_STATE_CAN_SLEEP].
+				[b]Note:[/b] Redot's default physics implementation does not support [constant BODY_STATE_LINEAR_VELOCITY], [constant BODY_STATE_ANGULAR_VELOCITY], [constant BODY_STATE_SLEEPING], or [constant BODY_STATE_CAN_SLEEP].
 			</description>
 		</method>
 		<method name="soft_body_get_total_mass" qualifiers="const">
@@ -1223,7 +1223,7 @@
 			<param index="1" name="drag_coefficient" type="float" />
 			<description>
 				Sets the drag coefficient of the given soft body. Higher values increase this body's air resistance.
-				[b]Note:[/b] This value is currently unused by Godot's default physics implementation.
+				[b]Note:[/b] This value is currently unused by Redot's default physics implementation.
 			</description>
 		</method>
 		<method name="soft_body_set_linear_stiffness">
@@ -1281,7 +1281,7 @@
 			<param index="2" name="variant" type="Variant" />
 			<description>
 				Sets the given body state for the given body (see [enum BodyState] constants).
-				[b]Note:[/b] Godot's default physics implementation does not support [constant BODY_STATE_LINEAR_VELOCITY], [constant BODY_STATE_ANGULAR_VELOCITY], [constant BODY_STATE_SLEEPING], or [constant BODY_STATE_CAN_SLEEP].
+				[b]Note:[/b] Redot's default physics implementation does not support [constant BODY_STATE_LINEAR_VELOCITY], [constant BODY_STATE_ANGULAR_VELOCITY], [constant BODY_STATE_SLEEPING], or [constant BODY_STATE_CAN_SLEEP].
 			</description>
 		</method>
 		<method name="soft_body_set_total_mass">

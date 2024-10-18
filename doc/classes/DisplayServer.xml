@@ -1846,7 +1846,7 @@
 			Display server supports spawning text dialogs using the operating system's native look-and-feel. See [method dialog_show]. [b]Windows, macOS[/b]
 		</constant>
 		<constant name="FEATURE_IME" value="10" enum="Feature">
-			Display server supports [url=https://en.wikipedia.org/wiki/Input_method]Input Method Editor[/url], which is commonly used for inputting Chinese/Japanese/Korean text. This is handled by the operating system, rather than by Godot. [b]Windows, macOS, Linux (X11)[/b]
+			Display server supports [url=https://en.wikipedia.org/wiki/Input_method]Input Method Editor[/url], which is commonly used for inputting Chinese/Japanese/Korean text. This is handled by the operating system, rather than by Redot. [b]Windows, macOS, Linux (X11)[/b]
 		</constant>
 		<constant name="FEATURE_WINDOW_TRANSPARENCY" value="11" enum="Feature">
 			Display server supports windows can use per-pixel transparency to make windows behind them partially or fully visible. [b]Windows, macOS, Linux (X11/Wayland)[/b]
