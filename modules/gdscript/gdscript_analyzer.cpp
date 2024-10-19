@@ -3571,17 +3571,6 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 			base_type = subscript->base->get_datatype();
 			is_self = subscript->base->type == GDScriptParser::Node::SELF;
 		}
-
-		const GDScriptParser::ClassNode *base_class = parser->find_class(base_id->name);
-		if (base_class) {
-			print_line(vformat(R"(Base class: %s)", base_class->fqcn));
-			GDScriptParser::FunctionNode *method = dynamic_cast<GDScriptParser::FunctionNode *>(base_class->get_member(p_call->function_name).get_source_node());
-			print_line(vformat(R"(Base method: %s)", method));
-			if (method) {
-				execute_access_protection(parser->current_class, method->identifier->name, method->accessible_class_name, method->access_restriction, p_call->type, p_call);
-			}
-		}
-
 	} else {
 		// Invalid call. Error already sent in parser.
 		// TODO: Could check if Callable here too.
@@ -3589,6 +3578,30 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 		mark_node_unsafe(p_call);
 		return;
 	}
+
+
+	// Access protection for calling a method
+	// It's very tricky to do so in this method
+	GDScriptParser::ClassNode *base_class = base_type.class_type;
+	if (base_class && base_class->type) {
+		GDScriptParser::FunctionNode *method = nullptr;
+		if (base_class->has_member(p_call->function_name)) {
+			method = static_cast<GDScriptParser::FunctionNode *>(base_class->get_member(p_call->function_name).get_source_node());
+		} else {
+			for (GDScriptParser::IdentifierNode *E : base_class->extends) {
+				GDScriptParser::ClassNode *super_class = make_global_class_meta_type(E->name, E).class_type;
+				if (super_class->has_member(p_call->function_name)) {
+					resolve_class_member(super_class, p_call->function_name, p_call);
+					method = static_cast<GDScriptParser::FunctionNode *>(super_class->get_member(p_call->function_name).get_source_node());
+					break;
+				}
+			}
+		}
+		if (method) {
+			execute_access_protection(parser->current_class, method->identifier->name, method->accessible_class_name, method->access_restriction, p_call->type, p_call);
+		}
+	}
+
 
 	int default_arg_count = 0;
 	BitField<MethodFlags> method_flags;
