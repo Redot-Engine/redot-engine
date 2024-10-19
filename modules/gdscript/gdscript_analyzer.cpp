@@ -4154,9 +4154,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 					p_identifier->reduced_value = member.constant->initializer->reduced_value;
 					p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CONSTANT;
 					p_identifier->constant_source = member.constant;
-					if (member_source->identifier) {
-						execute_access_protection(parser->current_class, member.get_name(), member_source->accessible_class_name, member_source->identifier->access_restriction, member_source->type, p_identifier);
-					}
+					execute_access_protection(parser->current_class, member.get_name(), member_source->accessible_class_name, member_source->access_restriction, member_source->type, p_identifier);
 					return;
 				}
 
@@ -4182,9 +4180,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = member.variable->is_static ? GDScriptParser::IdentifierNode::STATIC_VARIABLE : GDScriptParser::IdentifierNode::MEMBER_VARIABLE;
 						p_identifier->variable_source = member.variable;
 						member.variable->usages += 1;
-						if (member_source->identifier) {
-							execute_access_protection(parser->current_class, member.get_name(), member_source->accessible_class_name, member_source->identifier->access_restriction, member_source->type, p_identifier);
-						}
+						execute_access_protection(parser->current_class, member.get_name(), member_source->accessible_class_name, member_source->access_restriction, member_source->type, p_identifier);
 						return;
 					}
 				} break;
@@ -4195,9 +4191,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_SIGNAL;
 						p_identifier->signal_source = member.signal;
 						member.signal->usages += 1;
-						if (member_source->identifier) {
-							execute_access_protection(parser->current_class, member.get_name(), member_source->accessible_class_name, member_source->identifier->access_restriction, member_source->type, p_identifier);
-						}
+						execute_access_protection(parser->current_class, member.get_name(), member_source->accessible_class_name, member_source->access_restriction, member_source->type, p_identifier);
 						return;
 					}
 				} break;
@@ -4208,9 +4202,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_FUNCTION;
 						p_identifier->function_source = member.function;
 						p_identifier->function_source_is_static = member.function->is_static;
-						if (member_source->identifier) {
-							execute_access_protection(parser->current_class, member.get_name(), member_source->accessible_class_name, member_source->identifier->access_restriction, member_source->type, p_identifier);
-						}
+						execute_access_protection(parser->current_class, member.get_name(), member_source->accessible_class_name, member_source->access_restriction, member_source->type, p_identifier);
 						return;
 					}
 				} break;
