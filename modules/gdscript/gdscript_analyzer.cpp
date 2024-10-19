@@ -3572,10 +3572,14 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 			is_self = subscript->base->type == GDScriptParser::Node::SELF;
 		}
 
-		if (p_call->callee) {
-			GDScriptParser::IdentifierNode *callee_id = static_cast<GDScriptParser::IdentifierNode *>(p_call->callee);
-			std::shared_ptr<GDScriptParser::IdentifierNode> safe_callee_id = std::make_shared<GDScriptParser::IdentifierNode>(*callee_id);
-			print_line(vformat(R"(Current call: %s, callee id: %s)", p_call->function_name, safe_callee_id->name));
+		const GDScriptParser::ClassNode *base_class = parser->find_class(base_id->name);
+		if (base_class) {
+			print_line(vformat(R"(Base class: %s)", base_class->fqcn));
+			GDScriptParser::FunctionNode *method = dynamic_cast<GDScriptParser::FunctionNode *>(base_class->get_member(p_call->function_name).get_source_node());
+			print_line(vformat(R"(Base method: %s)", method));
+			if (method) {
+				execute_access_protection(parser->current_class, method->identifier->name, method->accessible_class_name, method->access_restriction, p_call->type, p_call);
+			}
 		}
 
 	} else {
