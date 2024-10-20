@@ -1736,6 +1736,7 @@ bool GDScriptInstance::set(const StringName &p_name, const Variant &p_value) {
 }
 
 bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
+	print_line(vformat(R"(Current member: %s 1)", p_name));
 	{
 		HashMap<StringName, GDScript::MemberInfo>::ConstIterator E = script->member_indices.find(p_name);
 		if (E) {
@@ -1746,16 +1747,19 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 				return true;
 			}
 			r_ret = members[E->value.index];
+			print_line(vformat(R"(Return member: %s 1)", p_name));
 			return true;
 		}
 	}
 
+	print_line(vformat(R"(Current member: %s 2)", p_name));
 	const GDScript *sptr = script.ptr();
 	while (sptr) {
 		{
 			HashMap<StringName, Variant>::ConstIterator E = sptr->constants.find(p_name);
 			if (E) {
 				r_ret = E->value;
+				print_line(vformat(R"(Return member: %s 2)", p_name));
 				return true;
 			}
 		}
@@ -1769,8 +1773,9 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 					r_ret = (ce.error == Callable::CallError::CALL_OK) ? ret : Variant();
 					return true;
 				}
+				print_line(vformat(R"(Current variable: %s)", p_name));
 				r_ret = sptr->static_variables[E->value.index];
-				return true;
+				return execute_access_restriction(p_name, script->member_access_restrictions[p_name], script->get_global_name());
 			}
 		}
 
@@ -1778,6 +1783,7 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 			HashMap<StringName, MethodInfo>::ConstIterator E = sptr->_signals.find(p_name);
 			if (E) {
 				r_ret = Signal(owner, E->key);
+				print_line(vformat(R"(Current signal: %s)", p_name));
 				return true;
 			}
 		}
@@ -1790,6 +1796,7 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 				} else {
 					r_ret = Callable(owner, E->key);
 				}
+				print_line(vformat(R"(Current function: %s)", p_name));
 				return true;
 			}
 		}
@@ -1798,6 +1805,7 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 			HashMap<StringName, Ref<GDScript>>::ConstIterator E = sptr->subclasses.find(p_name);
 			if (E) {
 				r_ret = E->value;
+				print_line(vformat(R"(Current subclass: %s)", p_name));
 				return true;
 			}
 		}
@@ -1815,6 +1823,7 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 					return true;
 				}
 			}
+			print_line(vformat(R"(Current function (special): %s)", p_name));
 		}
 		sptr = sptr->_base;
 	}
@@ -2033,6 +2042,24 @@ void GDScriptInstance::_call_implicit_ready_recursively(GDScript *p_script) {
 		Callable::CallError err;
 		p_script->implicit_ready->call(this, nullptr, 0, err);
 	}
+}
+
+bool GDScriptInstance::execute_access_restriction(const StringName &p_member_name, const GDScript::MemberAccessRestriction &p_member_access_restriction, const StringName &p_current_class) const {
+	const bool are_different_classes = p_current_class != p_member_access_restriction.access_member_owner || p_member_access_restriction.access_member_owner != p_current_class;
+	const bool is_from_non_derived = !p_member_access_restriction.access_member_owner_extends.has(p_current_class);
+
+	print_line(vformat(R"(Current member: %s; current class: %s; member owner: %s; are different classes: %s; is from non derived: %s)", p_member_name, p_current_class, p_member_access_restriction.access_member_owner, are_different_classes, is_from_non_derived));
+
+	if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE && are_different_classes) {
+		print_line(vformat(R"(Error private)"));
+		ERR_FAIL_V_MSG(false, vformat("Invalid access to %s (access level: private, owner: %s)", p_member_name, p_member_access_restriction.access_member_owner));
+	}
+	if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && is_from_non_derived) {
+		print_line(vformat(R"(Error protected)"));
+		ERR_FAIL_V_MSG(false, vformat("Invalid access to %s (access level: protected, owner: %s)", p_member_name, p_member_access_restriction.access_member_owner));
+	}
+
+	return true;
 }
 
 Variant GDScriptInstance::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
@@ -2747,8 +2774,8 @@ void GDScriptLanguage::get_reserved_words(List<String> *p_words) const {
 		"extends",
 		"func",
 		"namespace", // Reserved for potential future use.
-		"private", // Reserved for potential replacement of @private.
-		"protected", // Reserved for potential replacement of @protected.
+		"private",
+		"protected",
 		"signal",
 		"static",
 		"trait", // Reserved for potential future use.

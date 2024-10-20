@@ -726,36 +726,6 @@
 				[/codeblock]
 			</description>
 		</annotation>
-		<annotation name="@private">
-			<return type="void" />
-			<description>
-				[i][b][color=orange]WARNING:[/color][/b] This annotation is an experimental feature and its behavior may casue issues and affect the performance on your device. Use this with caution.[/i]
-				Modifies the accessibility of the following member(constants, variables and functions) to [b]private[/b], which means that it can only be accessed from within the same script.
-				[codeblock]
-				# In Class A:
-				@private static var a = 10
-				# In Class B:
-				var b = A.a # Error: Cannot access private property 'a' from outside the class.
-				# In Class C that inherits from A:
-				var c = A.a # Error: Cannot access private property 'a' from outside the class.
-				[/codeblock]
-			</description>
-		</annotation>
-		<annotation name="@protected", experimental="This is still an experimental feature with unstability and potential performace issues. Be careful when using it in your code.">
-			<return type="void" />
-			<description>
-				[i][b][color=orange]WARNING:[/color][/b] This annotation is an experimental feature and its behavior may casue issues and affect the performance on your device. Use this with caution.[/i]
-				Modifies the accessibility of the following member(constants, variables and functions) to [b]protected[/b], which means that it can only be accessed from within the same script or a child of the same script.
-				[codeblock]
-				# In Class A:
-				@private static var a = 10
-				# In Class B:
-				var b = A.a # Error: Cannot access private property 'a' from outside the class.
-				# In Class C that inherits from A:
-				var c = A.a # OK: Can access protected property 'a' from the parent class.
-				[/codeblock]
-			</description>
-		</annotation>
 		<annotation name="@rpc">
 			<return type="void" />
 			<param index="0" name="mode" type="String" default="&quot;authority&quot;" />

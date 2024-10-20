@@ -2824,6 +2824,8 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 					p_script->members.insert(name);
 				}
 
+				p_script->member_access_restrictions.insert(name, GDScript::MemberAccessRestriction(GDScript::MemberAccessRestriction::AccessRestriction(variable->access_restriction), variable->access_member_owner, variable->access_member_owner_extends));
+
 #ifdef TOOLS_ENABLED
 				if (variable->initializer != nullptr && variable->initializer->is_constant) {
 					p_script->member_default_values[name] = variable->initializer->reduced_value;
@@ -2839,6 +2841,7 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 				StringName name = constant->identifier->name;
 
 				p_script->constants.insert(name, constant->initializer->reduced_value);
+				p_script->constants_access_restrictions.insert(name, GDScript::MemberAccessRestriction(GDScript::MemberAccessRestriction::AccessRestriction(constant->access_restriction), constant->access_member_owner, constant->access_member_owner_extends));
 			} break;
 
 			case GDScriptParser::ClassNode::Member::ENUM_VALUE: {
@@ -2853,6 +2856,7 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 				StringName name = signal->identifier->name;
 
 				p_script->_signals[name] = signal->method_info;
+				p_script->_signals_access_restrictions.insert(name, GDScript::MemberAccessRestriction(GDScript::MemberAccessRestriction::AccessRestriction(signal->access_restriction), signal->access_member_owner, signal->access_member_owner_extends));
 			} break;
 
 			case GDScriptParser::ClassNode::Member::ENUM: {
@@ -2888,6 +2892,8 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 				if (config.get_type() != Variant::NIL) {
 					p_script->rpc_config[function_n->identifier->name] = config;
 				}
+
+				p_script->member_functions_access_restrictions.insert(function_n->identifier->name, GDScript::MemberAccessRestriction(GDScript::MemberAccessRestriction::AccessRestriction(function_n->access_restriction), function_n->access_member_owner, function_n->access_member_owner_extends));
 			} break;
 			default:
 				break; // Nothing to do here.
