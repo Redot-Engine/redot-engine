@@ -67,7 +67,7 @@ class GDScriptAnalyzer {
 	Error check_native_member_name_conflict(const StringName &p_member_name, const GDScriptParser::Node *p_member_node, const StringName &p_native_type_string);
 	Error check_class_member_name_conflict(const GDScriptParser::ClassNode *p_class_node, const StringName &p_member_name, const GDScriptParser::Node *p_member_node);
 
-	bool execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, GDScriptParser::Node *p_protected_member, const GDScriptParser::Node *p_node);
+	bool execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const GDScriptParser::Node *p_node);
 
 	void get_class_node_current_scope_classes(GDScriptParser::ClassNode *p_node, List<GDScriptParser::ClassNode *> *p_list, GDScriptParser::Node *p_source);
 
@@ -160,6 +160,13 @@ class GDScriptAnalyzer {
 #endif
 
 public:
+	enum AccessRestrictionError {
+		ACCESS_OK,
+		ACCESS_PRIVATE,
+		ACCESS_PROTECTED,
+		ACCESS_OTHER_ERR,
+	};
+
 	Error resolve_inheritance();
 	Error resolve_interface();
 	Error resolve_body();
@@ -168,6 +175,8 @@ public:
 
 	Variant make_variable_default_value(GDScriptParser::VariableNode *p_variable);
 	static bool check_type_compatibility(const GDScriptParser::DataType &p_target, const GDScriptParser::DataType &p_source, bool p_allow_implicit_conversion = false, const GDScriptParser::Node *p_source_node = nullptr);
+
+	static AccessRestrictionError execute_access_protection_global(const StringName &p_derived_class, const GDScriptParser::Node *p_protected_member, const GDScriptParser::Node *p_node);
 
 	GDScriptAnalyzer(GDScriptParser *p_parser);
 };

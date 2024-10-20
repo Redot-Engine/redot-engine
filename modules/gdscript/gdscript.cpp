@@ -2045,9 +2045,10 @@ void GDScriptInstance::_call_implicit_ready_recursively(GDScript *p_script) {
 }
 
 bool GDScriptInstance::execute_access_restriction(const StringName &p_member_name, const GDScript::MemberAccessRestriction &p_member_access_restriction, const StringName &p_current_class) const {
-	const bool are_different_classes = p_current_class != p_member_access_restriction.access_member_owner || p_member_access_restriction.access_member_owner != p_current_class;
+	const bool are_different_classes = p_current_class != p_member_access_restriction.access_member_owner && p_member_access_restriction.access_member_owner != p_current_class;
 	const bool is_from_non_derived = !p_member_access_restriction.access_member_owner_extends.has(p_current_class);
 
+	print_line(vformat(R"(Current member restriction: %s)", p_member_access_restriction.access_restriction));
 	print_line(vformat(R"(Current member: %s; current class: %s; member owner: %s; are different classes: %s; is from non derived: %s)", p_member_name, p_current_class, p_member_access_restriction.access_member_owner, are_different_classes, is_from_non_derived));
 
 	if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE && are_different_classes) {
