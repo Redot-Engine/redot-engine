@@ -1669,6 +1669,9 @@ bool GDScriptInstance::set(const StringName &p_name, const Variant &p_value) {
 			const GDScript::MemberInfo *member = &E->value;
 			Variant value = p_value;
 			if (member->data_type.has_type && !member->data_type.is_type(value)) {
+				if (!execute_access_restriction(p_name, script, script->member_access_restrictions[p_name])) {
+					return false;
+				}
 				const Variant *args = &p_value;
 				Callable::CallError err;
 				Variant::construct(member->data_type.builtin_type, value, &args, 1, err);
@@ -1677,10 +1680,15 @@ bool GDScriptInstance::set(const StringName &p_name, const Variant &p_value) {
 				}
 			}
 			if (likely(script->valid) && member->setter) {
+				if (!execute_access_restriction(member->setter, script, script->member_access_restrictions[p_name])) {
+					return false;
+				}
 				const Variant *args = &value;
 				Callable::CallError err;
 				callp(member->setter, &args, 1, err);
 				return err.error == Callable::CallError::CALL_OK;
+			} else if (!execute_access_restriction(member->setter, script, script->member_access_restrictions[p_name])) {
+				return false;
 			} else {
 				members.write[member->index] = value;
 				return true;
@@ -1696,13 +1704,13 @@ bool GDScriptInstance::set(const StringName &p_name, const Variant &p_value) {
 				const GDScript::MemberInfo *member = &E->value;
 				Variant value = p_value;
 				if (member->data_type.has_type && !member->data_type.is_type(value)) {
+					if (!execute_access_restriction(p_name, script, sptr->member_access_restrictions[p_name])) {
+						return false;
+					}
 					const Variant *args = &p_value;
 					Callable::CallError err;
 					Variant::construct(member->data_type.builtin_type, value, &args, 1, err);
 					if (err.error != Callable::CallError::CALL_OK || !member->data_type.is_type(value)) {
-						return false;
-					}
-					if (!execute_access_restriction(p_name, script, sptr->member_access_restrictions[p_name])) {
 						return false;
 					}
 				}
@@ -1714,9 +1722,11 @@ bool GDScriptInstance::set(const StringName &p_name, const Variant &p_value) {
 					Callable::CallError err;
 					callp(member->setter, &args, 1, err);
 					return err.error == Callable::CallError::CALL_OK;
+				} else if (!execute_access_restriction(member->setter, script, script->member_access_restrictions[p_name])) {
+					return false;
 				} else {
 					sptr->static_variables.write[member->index] = value;
-					return true;
+					return execute_access_restriction(member->setter, script, script->member_access_restrictions[p_name]);
 				}
 			}
 		}

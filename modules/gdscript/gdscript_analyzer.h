@@ -67,7 +67,7 @@ class GDScriptAnalyzer {
 	Error check_native_member_name_conflict(const StringName &p_member_name, const GDScriptParser::Node *p_member_node, const StringName &p_native_type_string);
 	Error check_class_member_name_conflict(const GDScriptParser::ClassNode *p_class_node, const StringName &p_member_name, const GDScriptParser::Node *p_member_node);
 
-	bool execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const Vector<StringName> &p_super_classes, const GDScriptParser::Node *p_node);
+	bool execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const Vector<StringName> &p_super_classes, const GDScriptParser::Node *p_node, const bool p_is_call = false);
 
 	void get_class_node_current_scope_classes(GDScriptParser::ClassNode *p_node, List<GDScriptParser::ClassNode *> *p_list, GDScriptParser::Node *p_source);
 

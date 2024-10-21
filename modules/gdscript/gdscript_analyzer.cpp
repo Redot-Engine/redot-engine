@@ -296,7 +296,7 @@ Error GDScriptAnalyzer::check_class_member_name_conflict(const GDScriptParser::C
 	return OK;
 }
 
-bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const Vector<StringName> &p_super_classes, const GDScriptParser::Node *p_node) {
+bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const Vector<StringName> &p_super_classes, const GDScriptParser::Node *p_node, const bool p_is_call) {
 	if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC) {
 		return true;
 	}
@@ -304,9 +304,8 @@ bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode
 	ERR_FAIL_COND_V_MSG(!p_derived_class, false, R"(Could not resolve the null derived class node...)");
 	ERR_FAIL_COND_V_MSG(!p_protected_member, false, R"(Could not resolve the null member node...)");
 
-	const bool is_call = p_protected_member->type == GDScriptParser::Node::CALL;
-	const String member_type = (is_call || p_protected_member->type == GDScriptParser::Node::FUNCTION) ? "method" : (p_protected_member->type == GDScriptParser::Node::Type::SIGNAL ? "signal" : "property");
-	const String action = is_call ? "call" : "access";
+	const String member_type = p_protected_member->type == GDScriptParser::Node::FUNCTION ? "method" : (p_protected_member->type == GDScriptParser::Node::Type::SIGNAL ? "signal" : "property");
+	const String action = p_is_call ? "call" : "access";
 
 	const bool is_from_non_derived = !p_super_classes.has(p_derived_class->identifier->name);
 
@@ -315,10 +314,10 @@ bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode
 
 	switch (execute_access_protection_global(p_derived_class->identifier->name, p_protected_member, p_super_classes, p_node)) {
 		case GDScriptAnalyzer::AccessRestrictionError::ACCESS_PRIVATE:
-			push_error(vformat(R"*(Could not %s %s "%s%s" in %s class, because it is private.)*", action, member_type, member_name, is_call ? "()" : "", is_from_non_derived ? "external" : "super"), p_node);
+			push_error(vformat(R"*(Could not %s %s "%s%s" in %s class, because it is private.)*", action, member_type, member_name, p_is_call ? "()" : "", is_from_non_derived ? "external" : "super"), p_node);
 			return false;
 		case GDScriptAnalyzer::AccessRestrictionError::ACCESS_PROTECTED:
-			push_error(vformat(R"*(Could not %s %s "%s%s" in external class, because it is protected by class "%s".)*", action, member_type, member_name, is_call ? "()" : "", p_protected_member->access_member_owner), p_node);
+			push_error(vformat(R"*(Could not %s %s "%s%s" in external class, because it is protected by class "%s".)*", action, member_type, member_name, p_is_call ? "()" : "", p_protected_member->access_member_owner), p_node);
 			return false;
 		default:
 			break; // GDScriptAnalyzer::AccessRestrictionError::ACCESS_OTHER_ERR was thrown, so skip this here.
@@ -3577,30 +3576,28 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 	}
 
 	// Access protection for calling a method
-	// It's very tricky to do so in this method
-	GDScriptParser::ClassNode *base_class = base_type.class_type;
-	if (base_class) {
-		GDScriptParser::FunctionNode *method = nullptr;
-		// For calling an external method, including ClassName.method(), or super.method().
-		if (base_class->has_member(p_call->function_name)) {
-			method = static_cast<GDScriptParser::FunctionNode *>(base_class->get_member(p_call->function_name).get_source_node());
-		} else {
-			// For calling a method that is declared in the super class of the base class.
-			for (GDScriptParser::IdentifierNode *E : base_class->extends) {
-				if (!ScriptServer::is_global_class(E->name)) {
-					continue; // Skip because it is native or undefined.
-				}
-				GDScriptParser::ClassNode *super_class = make_global_class_meta_type(E->name, E).class_type;
-				if (super_class->has_member(p_call->function_name)) {
-					resolve_class_member(super_class, p_call->function_name, p_call);
-					method = static_cast<GDScriptParser::FunctionNode *>(super_class->get_member(p_call->function_name).get_source_node());
-					break;
-				}
+	// It's very hacky to do so in this method
+	// TODO: Performance boost
+	GDScriptParser::FunctionNode *method = nullptr;
+	// For calling an external method, including ClassName.method(), or super.method().
+	if (parser->current_class->has_member(p_call->function_name)) {
+		method = static_cast<GDScriptParser::FunctionNode *>(parser->current_class->get_member(p_call->function_name).get_source_node());
+	} else {
+		// For calling a method that is declared in the super class of the base class.
+		const GDScriptParser::ClassNode *current_super_class = base_type.class_type;
+		while (current_super_class) {
+			if (!ScriptServer::is_global_class(current_super_class->identifier->name)) {
+				continue;
+			} else if (current_super_class->has_member(p_call->function_name)) {
+				method = static_cast<GDScriptParser::FunctionNode *>(current_super_class->get_member(p_call->function_name).get_source_node());
+				break;
 			}
+			current_super_class = current_super_class->base_type.class_type;
 		}
-		if (method) {
-			execute_access_protection(parser->current_class, method, parser->current_class->get_access_member_owner_extends_names(), p_call);
-		}
+		print_line(vformat(R"(Method: %s, owner: %s)", method->identifier->name, method->access_member_owner));
+	}
+	if (method) {
+		execute_access_protection(parser->current_class, method, parser->current_class->get_access_member_owner_extends_names(), p_call, true);
 	}
 
 	int default_arg_count = 0;

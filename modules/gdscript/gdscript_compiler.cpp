@@ -2822,12 +2822,14 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 				if (variable->is_static) {
 					minfo.index = p_script->static_variables_indices.size();
 					p_script->static_variables_indices[name] = minfo;
+
 					GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(variable->access_restriction);
 					p_script->script_static_access_restrictions[name] = GDScript::MemberAccessRestriction(access_restriction, variable->access_member_owner);
 				} else {
 					minfo.index = p_script->member_indices.size();
 					p_script->member_indices[name] = minfo;
 					p_script->members.insert(name);
+
 					GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(variable->access_restriction);
 					p_script->member_access_restrictions[name] = GDScript::MemberAccessRestriction(access_restriction, variable->access_member_owner);
 				}

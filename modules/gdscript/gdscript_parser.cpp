@@ -989,6 +989,7 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 
 	while (!class_end && !is_at_end()) {
 		GDScriptTokenizer::Token token = current;
+		// Token functions
 		switch (token.type) {
 			case GDScriptTokenizer::Token::VAR:
 				parse_class_member(&GDScriptParser::parse_variable, AnnotationInfo::VARIABLE, "variable", next_is_static, next_is_access_restricted);
@@ -997,10 +998,10 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 				}
 				break;
 			case GDScriptTokenizer::Token::CONST:
-				parse_class_member(&GDScriptParser::parse_constant, AnnotationInfo::CONSTANT, "constant");
+				parse_class_member(&GDScriptParser::parse_constant, AnnotationInfo::CONSTANT, "constant", false, next_is_access_restricted); // Static-not-modifiable
 				break;
 			case GDScriptTokenizer::Token::SIGNAL:
-				parse_class_member(&GDScriptParser::parse_signal, AnnotationInfo::SIGNAL, "signal"); // Static-not-modifiable
+				parse_class_member(&GDScriptParser::parse_signal, AnnotationInfo::SIGNAL, "signal", false, next_is_access_restricted); // Static-not-modifiable
 				break;
 			case GDScriptTokenizer::Token::FUNC:
 				parse_class_member(&GDScriptParser::parse_function, AnnotationInfo::FUNCTION, "function", next_is_static, next_is_access_restricted);
@@ -1090,9 +1091,14 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 				advance();
 				break;
 		}
+		// Clear modifier status
 		if (token.type != GDScriptTokenizer::Token::STATIC) {
 			next_is_static = false;
 		}
+		if (token.type != GDScriptTokenizer::Token::PRIVATE && token.type != GDScriptTokenizer::Token::PROTECTED) {
+			next_is_access_restricted = GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC;
+		}
+		// Others
 		if (panic_mode) {
 			synchronize();
 		}
