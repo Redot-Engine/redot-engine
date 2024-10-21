@@ -296,20 +296,24 @@ Error GDScriptAnalyzer::check_class_member_name_conflict(const GDScriptParser::C
 	return OK;
 }
 
-bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const GDScriptParser::Node *p_node) {
+bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const Vector<StringName> &p_super_classes, const GDScriptParser::Node *p_node) {
+	if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC) {
+		return true;
+	}
+
 	ERR_FAIL_COND_V_MSG(!p_derived_class, false, R"(Could not resolve the null derived class node...)");
 	ERR_FAIL_COND_V_MSG(!p_protected_member, false, R"(Could not resolve the null member node...)");
 
-	const bool is_call = p_protected_member->type == GDScriptParser::Node::CALL || p_protected_member->type == GDScriptParser::Node::FUNCTION;
-	const String member_type = is_call ? "method" : (p_protected_member->type == GDScriptParser::Node::Type::SIGNAL ? "signal" : "property");
-	const String action = p_protected_member->type == GDScriptParser::Node::CALL ? "call" : "access";
+	const bool is_call = p_protected_member->type == GDScriptParser::Node::CALL;
+	const String member_type = (is_call || p_protected_member->type == GDScriptParser::Node::FUNCTION) ? "method" : (p_protected_member->type == GDScriptParser::Node::Type::SIGNAL ? "signal" : "property");
+	const String action = is_call ? "call" : "access";
 
-	const bool is_from_non_derived = !p_protected_member->access_member_owner_extends.has(p_derived_class->identifier->name);
+	const bool is_from_non_derived = !p_super_classes.has(p_derived_class->identifier->name);
 
 	const GDScriptParser::AssignableNode *member_assignable = static_cast<const GDScriptParser::AssignableNode *>(p_protected_member);
 	const StringName member_name = member_assignable ? member_assignable->identifier->name : "";
 
-	switch (execute_access_protection_global(p_derived_class->identifier->name, p_protected_member, p_node)) {
+	switch (execute_access_protection_global(p_derived_class->identifier->name, p_protected_member, p_super_classes, p_node)) {
 		case GDScriptAnalyzer::AccessRestrictionError::ACCESS_PRIVATE:
 			push_error(vformat(R"*(Could not %s %s "%s%s" in %s class, because it is private.)*", action, member_type, member_name, is_call ? "()" : "", is_from_non_derived ? "external" : "super"), p_node);
 			return false;
@@ -323,17 +327,19 @@ bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode
 	return true;
 }
 
-GDScriptAnalyzer::AccessRestrictionError GDScriptAnalyzer::execute_access_protection_global(const StringName &p_derived_class, const GDScriptParser::Node *p_protected_member, const GDScriptParser::Node *p_node) {
+GDScriptAnalyzer::AccessRestrictionError GDScriptAnalyzer::execute_access_protection_global(const StringName &p_derived_class, const GDScriptParser::Node *p_protected_member, const Vector<StringName> &p_super_classes, const GDScriptParser::Node *p_node) {
+	if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC) {
+		return GDScriptAnalyzer::AccessRestrictionError::ACCESS_OK;
+	}
+
 	ERR_FAIL_COND_V_MSG(!p_derived_class, GDScriptAnalyzer::AccessRestrictionError::ACCESS_OTHER_ERR, R"(Could not resolve the null derived class node...)");
 	ERR_FAIL_COND_V_MSG(!p_protected_member, GDScriptAnalyzer::AccessRestrictionError::ACCESS_OTHER_ERR, R"(Could not resolve the null member node...)");
 
-	const bool are_different_classes = p_derived_class != p_protected_member->access_member_owner || p_protected_member->access_member_owner != p_derived_class;
-	const bool is_from_non_derived = !p_protected_member->access_member_owner_extends.has(p_derived_class);
-
-	if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE && are_different_classes) {
+	if (p_derived_class == p_protected_member->access_member_owner || p_protected_member->access_member_owner == p_derived_class) {
+		return GDScriptAnalyzer::AccessRestrictionError::ACCESS_OK;
+	} else if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE) {
 		return GDScriptAnalyzer::AccessRestrictionError::ACCESS_PRIVATE;
-	}
-	if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && is_from_non_derived) {
+	} else if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && !p_super_classes.has(p_derived_class)) {
 		return GDScriptAnalyzer::AccessRestrictionError::ACCESS_PROTECTED;
 	}
 
@@ -3575,10 +3581,15 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 	GDScriptParser::ClassNode *base_class = base_type.class_type;
 	if (base_class) {
 		GDScriptParser::FunctionNode *method = nullptr;
+		// For calling an external method, including ClassName.method(), or super.method().
 		if (base_class->has_member(p_call->function_name)) {
 			method = static_cast<GDScriptParser::FunctionNode *>(base_class->get_member(p_call->function_name).get_source_node());
 		} else {
+			// For calling a method that is declared in the super class of the base class.
 			for (GDScriptParser::IdentifierNode *E : base_class->extends) {
+				if (!ScriptServer::is_global_class(E->name)) {
+					continue; // Skip because it is native or undefined.
+				}
 				GDScriptParser::ClassNode *super_class = make_global_class_meta_type(E->name, E).class_type;
 				if (super_class->has_member(p_call->function_name)) {
 					resolve_class_member(super_class, p_call->function_name, p_call);
@@ -3588,7 +3599,7 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 			}
 		}
 		if (method) {
-			execute_access_protection(parser->current_class, method, p_call);
+			execute_access_protection(parser->current_class, method, parser->current_class->get_access_member_owner_extends_names(), p_call);
 		}
 	}
 
@@ -3863,6 +3874,7 @@ GDScriptParser::DataType GDScriptAnalyzer::make_global_class_meta_type(const Str
 
 	String path = ScriptServer::get_global_class_path(p_class_name);
 	String ext = path.get_extension();
+
 	if (ext == GDScriptLanguage::get_singleton()->get_extension()) {
 		Ref<GDScriptParserRef> ref = parser->get_depended_parser_for(path);
 		if (ref.is_null()) {
@@ -3884,6 +3896,8 @@ GDScriptParser::DataType GDScriptAnalyzer::make_global_class_meta_type(const Str
 	} else {
 		return make_script_meta_type(ResourceLoader::load(path, "Script"));
 	}
+
+	return type;
 }
 
 Ref<GDScriptParserRef> GDScriptAnalyzer::ensure_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const GDScriptParser::ClassNode *p_from_class, const char *p_context, const GDScriptParser::Node *p_source) {
@@ -4143,7 +4157,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 					p_identifier->reduced_value = member.constant->initializer->reduced_value;
 					p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CONSTANT;
 					p_identifier->constant_source = member.constant;
-					execute_access_protection(parser->current_class, member.get_source_node(), p_identifier);
+					execute_access_protection(parser->current_class, member.get_source_node(), parser->current_class->get_access_member_owner_extends_names(), p_identifier);
 					return;
 				}
 
@@ -4169,7 +4183,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = member.variable->is_static ? GDScriptParser::IdentifierNode::STATIC_VARIABLE : GDScriptParser::IdentifierNode::MEMBER_VARIABLE;
 						p_identifier->variable_source = member.variable;
 						member.variable->usages += 1;
-						execute_access_protection(parser->current_class, member.get_source_node(), p_identifier);
+						execute_access_protection(parser->current_class, member.get_source_node(), parser->current_class->get_access_member_owner_extends_names(), p_identifier);
 						return;
 					}
 				} break;
@@ -4180,7 +4194,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_SIGNAL;
 						p_identifier->signal_source = member.signal;
 						member.signal->usages += 1;
-						execute_access_protection(parser->current_class, member.get_source_node(), p_identifier);
+						execute_access_protection(parser->current_class, member.get_source_node(), parser->current_class->get_access_member_owner_extends_names(), p_identifier);
 						return;
 					}
 				} break;
@@ -4191,7 +4205,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 						p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_FUNCTION;
 						p_identifier->function_source = member.function;
 						p_identifier->function_source_is_static = member.function->is_static;
-						execute_access_protection(parser->current_class, member.get_source_node(), p_identifier);
+						execute_access_protection(parser->current_class, member.get_source_node(), parser->current_class->get_access_member_owner_extends_names(), p_identifier);
 						return;
 					}
 				} break;

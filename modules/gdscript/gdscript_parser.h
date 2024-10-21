@@ -344,7 +344,6 @@ public:
 		};
 		AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
 		StringName access_member_owner;
-		Vector<StringName> access_member_owner_extends;
 
 		int start_line = 0, end_line = 0;
 		int start_column = 0, end_column = 0;
@@ -804,7 +803,7 @@ public:
 			members.push_back(Member(p_annotation_node));
 		}
 
-		Vector<StringName> get_access_member_owner_extends_names() {
+		Vector<StringName> get_access_member_owner_extends_names() const {
 			Vector<StringName> ret = Vector<StringName>();
 			for (IdentifierNode *Id : extends) {
 				ret.push_back(Id->name);

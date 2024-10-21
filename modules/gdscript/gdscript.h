@@ -107,39 +107,29 @@ class GDScript : public Script {
 			ACCESS_RESTRICTION_PROTECTED
 		};
 		AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
+
 		StringName access_member_owner;
-		Vector<StringName> access_member_owner_extends;
 
 		MemberAccessRestriction() {}
 
-		MemberAccessRestriction(const AccessRestriction p_access_restriction, StringName p_access_member_owner, Vector<StringName> p_access_member_owner_extends) {
+		MemberAccessRestriction(const AccessRestriction p_access_restriction, const StringName &p_access_member_owner) {
 			access_restriction = p_access_restriction;
-			access_member_owner = p_access_member_owner;
-			access_member_owner_extends = p_access_member_owner_extends;
+			access_member_owner = p_access_member_owner;;
 		};
 	};
 
 	// Members are just indices to the instantiated script.
 	HashMap<StringName, MemberInfo> member_indices; // Includes member info of all base GDScript classes.
 	HashSet<StringName> members; // Only members of the current class.
-	HashMap<StringName, MemberInfo> static_variables_indices; // Only static variables of the current class.
-	Vector<Variant> static_variables; // Static variable values. Only static variables of the current class.
 	HashMap<StringName, MemberAccessRestriction> member_access_restrictions;
 
-	// Constants
+	HashMap<StringName, MemberInfo> static_variables_indices; // Only static variables of the current class.
+	Vector<Variant> static_variables; // Static variable values. Only static variables of the current class.
 	HashMap<StringName, Variant> constants;
-	HashMap<StringName, MemberAccessRestriction> constants_access_restrictions;
-
-	// Functions
 	HashMap<StringName, GDScriptFunction *> member_functions;
-	HashMap<StringName, MemberAccessRestriction> member_functions_access_restrictions;
-
-	// Subclasses
 	HashMap<StringName, Ref<GDScript>> subclasses;
-
-	// Signals
 	HashMap<StringName, MethodInfo> _signals;
-	HashMap<StringName, MemberAccessRestriction> _signals_access_restrictions;
+	HashMap<StringName, MemberAccessRestriction> script_static_access_restrictions;
 
 	/// Members end ///
 
@@ -404,7 +394,7 @@ class GDScriptInstance : public ScriptInstance {
 	void _call_implicit_ready_recursively(GDScript *p_script);
 
 private:
-	bool execute_access_restriction(const StringName &p_member_name, const GDScript::MemberAccessRestriction &p_member_access_restriction, const StringName &p_current_class) const;
+	bool execute_access_restriction(const StringName &p_member_name, const Ref<GDScript> &p_current_script, const GDScript::MemberAccessRestriction &p_member_access_restriction) const;
 
 public:
 	virtual Object *get_owner() { return owner; }

@@ -1119,7 +1119,6 @@ GDScriptParser::VariableNode *GDScriptParser::parse_variable(bool p_is_static, b
 	variable->is_static = p_is_static;
 	variable->access_restriction = p_access_restriction;
 	variable->access_member_owner = current_class->identifier->name;
-	variable->access_member_owner_extends = current_class->get_access_member_owner_extends_names();
 
 	if (match(GDScriptTokenizer::Token::COLON)) {
 		if (check(GDScriptTokenizer::Token::NEWLINE)) {
@@ -1356,7 +1355,6 @@ GDScriptParser::ConstantNode *GDScriptParser::parse_constant(bool p_is_static, c
 	constant->identifier = parse_identifier();
 	constant->access_restriction = p_access_restriction;
 	constant->access_member_owner = current_class->identifier->name;
-	constant->access_member_owner_extends = current_class->get_access_member_owner_extends_names();
 
 	if (match(GDScriptTokenizer::Token::COLON)) {
 		if (check((GDScriptTokenizer::Token::EQUAL))) {
@@ -1427,7 +1425,6 @@ GDScriptParser::SignalNode *GDScriptParser::parse_signal(bool p_is_static, const
 	signal->identifier = parse_identifier();
 	signal->access_restriction = p_access_restriction;
 	signal->access_member_owner = current_class->identifier->name;
-	signal->access_member_owner_extends = current_class->get_access_member_owner_extends_names();
 
 	if (check(GDScriptTokenizer::Token::PARENTHESIS_OPEN)) {
 		push_multiline(true);
@@ -1634,7 +1631,6 @@ GDScriptParser::FunctionNode *GDScriptParser::parse_function(bool p_is_static, c
 	function->is_static = p_is_static;
 	function->access_restriction = p_access_restriction;
 	function->access_member_owner = current_class->identifier->name;
-	function->access_member_owner_extends = current_class->get_access_member_owner_extends_names();
 
 	SuiteNode *body = alloc_node<SuiteNode>();
 	SuiteNode *previous_suite = current_suite;
