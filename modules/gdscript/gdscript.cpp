@@ -2055,14 +2055,19 @@ bool GDScriptInstance::execute_access_restriction(const StringName &p_member_nam
 	if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC) {
 		return true;
 	}
+
+	ERR_FAIL_NULL_V_EDMSG(p_current_script, false, R"(Trying to execute access protection on a null script...)");
+
 	if (p_current_script->local_name == p_member_access_restriction.access_member_owner || p_member_access_restriction.access_member_owner == p_current_script->local_name) {
 		return true;
 	} else if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE) {
-		print_line(vformat(R"(Error private)"));
-		ERR_FAIL_V_MSG(false, vformat("Invalid access to %s (access level: private, owner: %s)", p_member_name, p_member_access_restriction.access_member_owner));
+		String err = vformat("Invalid access to %s (access level: private, owner: %s)", p_member_name, p_member_access_restriction.access_member_owner);
+		print_error(err);
+		ERR_FAIL_V_MSG(false, err);
 	} else if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && !ClassDB::is_parent_class(p_current_script->local_name, p_member_access_restriction.access_member_owner)) {
-		print_line(vformat(R"(Error protected)"));
-		ERR_FAIL_V_MSG(false, vformat("Invalid access to %s (access level: protected, owner: %s)", p_member_name, p_member_access_restriction.access_member_owner));
+		String err = vformat("Invalid access to %s (access level: protected, owner: %s)", p_member_name, p_member_access_restriction.access_member_owner);
+		print_error(err);
+		ERR_FAIL_V_MSG(false, err);
 	}
 
 	return true;

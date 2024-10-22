@@ -296,7 +296,7 @@ Error GDScriptAnalyzer::check_class_member_name_conflict(const GDScriptParser::C
 	return OK;
 }
 
-bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const Vector<StringName> &p_super_classes, const GDScriptParser::Node *p_node, const bool p_is_call) {
+bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode *p_derived_class, const GDScriptParser::Node *p_protected_member, const GDScriptParser::Node *p_node, const bool p_is_call) {
 	if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC) {
 		return true;
 	}
@@ -307,12 +307,12 @@ bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode
 	const String member_type = p_protected_member->type == GDScriptParser::Node::FUNCTION ? "method" : (p_protected_member->type == GDScriptParser::Node::Type::SIGNAL ? "signal" : "property");
 	const String action = p_is_call ? "call" : "access";
 
-	const bool is_from_non_derived = !p_super_classes.has(p_derived_class->identifier->name);
+	const bool is_from_non_derived = !ClassDB::is_parent_class(p_derived_class->identifier->name, p_protected_member->access_member_owner);
 
 	const GDScriptParser::AssignableNode *member_assignable = static_cast<const GDScriptParser::AssignableNode *>(p_protected_member);
 	const StringName member_name = member_assignable ? member_assignable->identifier->name : "";
 
-	switch (execute_access_protection_global(p_derived_class->identifier->name, p_protected_member, p_super_classes, p_node)) {
+	switch (execute_access_protection_global(p_derived_class->identifier->name, p_protected_member, p_node)) {
 		case GDScriptAnalyzer::AccessRestrictionError::ACCESS_PRIVATE:
 			push_error(vformat(R"*(Could not %s %s "%s%s" in %s class, because it is private.)*", action, member_type, member_name, p_is_call ? "()" : "", is_from_non_derived ? "external" : "super"), p_node);
 			return false;
@@ -326,7 +326,7 @@ bool GDScriptAnalyzer::execute_access_protection(const GDScriptParser::ClassNode
 	return true;
 }
 
-GDScriptAnalyzer::AccessRestrictionError GDScriptAnalyzer::execute_access_protection_global(const StringName &p_derived_class, const GDScriptParser::Node *p_protected_member, const Vector<StringName> &p_super_classes, const GDScriptParser::Node *p_node) {
+GDScriptAnalyzer::AccessRestrictionError GDScriptAnalyzer::execute_access_protection_global(const StringName &p_derived_class, const GDScriptParser::Node *p_protected_member, const GDScriptParser::Node *p_node) {
 	if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC) {
 		return GDScriptAnalyzer::AccessRestrictionError::ACCESS_OK;
 	}
@@ -338,7 +338,7 @@ GDScriptAnalyzer::AccessRestrictionError GDScriptAnalyzer::execute_access_protec
 		return GDScriptAnalyzer::AccessRestrictionError::ACCESS_OK;
 	} else if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE) {
 		return GDScriptAnalyzer::AccessRestrictionError::ACCESS_PRIVATE;
-	} else if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && !p_super_classes.has(p_derived_class)) {
+	} else if (p_protected_member->access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && !ClassDB::is_parent_class(p_derived_class, p_protected_member->access_member_owner)) {
 		return GDScriptAnalyzer::AccessRestrictionError::ACCESS_PROTECTED;
 	}
 
