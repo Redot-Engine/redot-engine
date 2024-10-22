@@ -98,8 +98,7 @@ class GDScript : public Script {
 	GDScript *_base = nullptr; //fast pointer access
 	GDScript *_owner = nullptr; //for subclasses
 
-	/// Members ///
-
+	/*
 	struct MemberAccessRestriction {
 		enum AccessRestriction {
 			ACCESS_RESTRICTION_PUBLIC,
@@ -107,7 +106,6 @@ class GDScript : public Script {
 			ACCESS_RESTRICTION_PROTECTED
 		};
 		AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
-
 		StringName access_member_owner;
 
 		MemberAccessRestriction() {}
@@ -117,11 +115,12 @@ class GDScript : public Script {
 			access_member_owner = p_access_member_owner;;
 		};
 	};
+	*/
 
 	// Members are just indices to the instantiated script.
 	HashMap<StringName, MemberInfo> member_indices; // Includes member info of all base GDScript classes.
 	HashSet<StringName> members; // Only members of the current class.
-	HashMap<StringName, MemberAccessRestriction> member_access_restrictions;
+	// HashMap<StringName, MemberAccessRestriction> member_access_restrictions;
 
 	HashMap<StringName, MemberInfo> static_variables_indices; // Only static variables of the current class.
 	Vector<Variant> static_variables; // Static variable values. Only static variables of the current class.
@@ -129,9 +128,7 @@ class GDScript : public Script {
 	HashMap<StringName, GDScriptFunction *> member_functions;
 	HashMap<StringName, Ref<GDScript>> subclasses;
 	HashMap<StringName, MethodInfo> _signals;
-	HashMap<StringName, MemberAccessRestriction> script_static_access_restrictions;
-
-	/// Members end ///
+	// HashMap<StringName, MemberAccessRestriction> script_static_access_restrictions;
 
 	Dictionary rpc_config;
 
@@ -301,6 +298,8 @@ public:
 	StringName debug_get_member_by_index(int p_idx) const;
 	StringName debug_get_static_var_by_index(int p_idx) const;
 
+	// MemberAccessRestriction get_member_access_restriction(const StringName &p_member_name) const;
+
 	Variant _new(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 	virtual bool can_instantiate() const override;
 
@@ -428,7 +427,7 @@ public:
 
 	virtual const Variant get_rpc_config() const;
 
-	static bool execute_access_restriction_runtime(const StringName &p_member_name, const Ref<GDScript> &p_current_script, const GDScript::MemberAccessRestriction &p_member_access_restriction);
+	// static bool execute_access_restriction_runtime(const StringName &p_member_name, const Ref<Script> &p_current_script, const GDScript::MemberAccessRestriction &p_member_access_restriction);
 
 	GDScriptInstance();
 	~GDScriptInstance();

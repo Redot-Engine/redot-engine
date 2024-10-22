@@ -43,6 +43,12 @@
 #include "core/templates/local_vector.h"
 #include "core/variant/typed_array.h"
 
+#ifdef MODULE_GDSCRIPT_ENABLED
+
+#include "modules/gdscript/gdscript.h"
+
+#endif
+
 #ifdef DEBUG_ENABLED
 
 struct _ObjectDebugLock {

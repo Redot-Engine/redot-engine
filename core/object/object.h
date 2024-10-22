@@ -148,6 +148,15 @@ enum PropertyUsageFlags {
 #define MAKE_RESOURCE_TYPE_HINT(m_type) vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
 
 struct PropertyInfo {
+	/*
+	enum AccessRestriction {
+		ACCESS_RESTRICTION_PUBLIC,
+		ACCESS_RESTRICTION_PRIVATE,
+		ACCESS_RESTRICTION_PROTECTED
+	};
+	AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
+	*/
+
 	Variant::Type type = Variant::NIL;
 	String name;
 	StringName class_name; // For classes
@@ -704,8 +713,6 @@ protected:
 	bool _property_can_revert(const StringName &p_name) const { return false; };
 	bool _property_get_revert(const StringName &p_name, Variant &r_property) const { return false; };
 	void _notification(int p_notification) {}
-
-	bool execute_access_protection_runtime(const StringName &p_member_name, const StringName &p_derived_class, const Variant::AccessRestriction p_access_restriction, const StringName &p_member_owner_class, const Vector<StringName> &p_super_classes) const;
 
 	_FORCE_INLINE_ static void (*_get_bind_methods())() {
 		return &Object::_bind_methods;

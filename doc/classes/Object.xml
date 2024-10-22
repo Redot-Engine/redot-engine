@@ -448,6 +448,7 @@
 				[/csharp]
 				[/codeblocks]
 				[b]Note:[/b] In C#, [param method] must be in snake_case when referring to built-in Redot methods. Prefer using the names exposed in the [code]MethodName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Warning:[/b] This method is a kind of reflection, and a reflection is allowed to call a private or protected method. Be careful when you use this method to call a method unless you know what you are doing.
 			</description>
 		</method>
 		<method name="call_deferred" qualifiers="vararg">
@@ -478,6 +479,7 @@
 				# CONNECT_ONE_SHOT makes sure it only gets called once instead of every frame.
 				get_tree().process_frame.connect(callable, CONNECT_ONE_SHOT)
 				[/codeblock]
+				[b]Warning:[/b] This method is a kind of reflection, and a reflection is allowed to call a private or protected method. Be careful when you use this method to call a method unless you know what you are doing.
 			</description>
 		</method>
 		<method name="callv">
@@ -497,6 +499,7 @@
 				[/csharp]
 				[/codeblocks]
 				[b]Note:[/b] In C#, [param method] must be in snake_case when referring to built-in Redot methods. Prefer using the names exposed in the [code]MethodName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Warning:[/b] This method is a kind of reflection, and a reflection is allowed to call a private or protected method. Be careful when you use this method to call a method unless you know what you are doing.
 			</description>
 		</method>
 		<method name="can_translate_messages" qualifiers="const">
@@ -696,6 +699,7 @@
 				[/csharp]
 				[/codeblocks]
 				[b]Note:[/b] In C#, [param property] must be in snake_case when referring to built-in Redot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Warning:[/b] This method is a kind of reflection, and a reflection is allowed to access a private or protected member. Be careful when you use this method to get a member unless you know what you are doing.
 			</description>
 		</method>
 		<method name="get_class" qualifiers="const">
@@ -736,6 +740,7 @@
 				[/codeblocks]
 				[b]Note:[/b] In C#, [param property_path] must be in snake_case when referring to built-in Redot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
 				[b]Note:[/b] This method does not support actual paths to nodes in the [SceneTree], only sub-property paths. In the context of nodes, use [method Node.get_node_and_resource] instead.
+				[b]Warning:[/b] This method is a kind of reflection, and a reflection is allowed to access a private or protected member. Be careful when you use this method to get a member unless you know what you are doing.
 			</description>
 		</method>
 		<method name="get_instance_id" qualifiers="const">
@@ -995,6 +1000,7 @@
 				[/csharp]
 				[/codeblocks]
 				[b]Note:[/b] In C#, [param property] must be in snake_case when referring to built-in Redot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Warning:[/b] This method is a kind of reflection, and a reflection is allowed to access a private or protected member. Be careful when you use this method to set a member unless you know what you are doing.
 			</description>
 		</method>
 		<method name="set_block_signals">
@@ -1033,6 +1039,7 @@
 				[/csharp]
 				[/codeblocks]
 				[b]Note:[/b] In C#, [param property] must be in snake_case when referring to built-in Redot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Warning:[/b] This method is a kind of reflection, and a reflection is allowed to access a private or protected member. Be careful when you use this method to set a member unless you know what you are doing.
 			</description>
 		</method>
 		<method name="set_indexed">
@@ -1056,6 +1063,7 @@
 				[/csharp]
 				[/codeblocks]
 				[b]Note:[/b] In C#, [param property_path] must be in snake_case when referring to built-in Redot properties. Prefer using the names exposed in the [code]PropertyName[/code] class to avoid allocating a new [StringName] on each call.
+				[b]Warning:[/b] This method is a kind of reflection, and a reflection is allowed to access a private or protected member. Be careful when you use this method to set a member unless you know what you are doing.
 			</description>
 		</method>
 		<method name="set_message_translation">

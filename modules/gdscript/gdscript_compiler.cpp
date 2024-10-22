@@ -2689,8 +2689,8 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 	p_script->member_indices.clear();
 	p_script->static_variables_indices.clear();
 	p_script->static_variables.clear();
-	p_script->member_access_restrictions.clear();
-	p_script->script_static_access_restrictions.clear();
+	// p_script->member_access_restrictions.clear();
+	// p_script->script_static_access_restrictions.clear();
 	p_script->_signals.clear();
 	p_script->initializer = nullptr;
 	p_script->implicit_initializer = nullptr;
@@ -2760,7 +2760,7 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 			p_script->base = base;
 			p_script->_base = base.ptr();
 			p_script->member_indices = base->member_indices;
-			p_script->member_access_restrictions = base->member_access_restrictions;
+			// p_script->member_access_restrictions = base->member_access_restrictions;
 		} break;
 		default: {
 			_set_error("Parser bug: invalid inheritance.", nullptr);
@@ -2823,15 +2823,15 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 					minfo.index = p_script->static_variables_indices.size();
 					p_script->static_variables_indices[name] = minfo;
 
-					GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(variable->access_restriction);
-					p_script->script_static_access_restrictions[name] = GDScript::MemberAccessRestriction(access_restriction, variable->access_member_owner);
+					// GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(variable->access_restriction);
+					// p_script->script_static_access_restrictions[name] = GDScript::MemberAccessRestriction(access_restriction, variable->access_member_owner);
 				} else {
 					minfo.index = p_script->member_indices.size();
 					p_script->member_indices[name] = minfo;
 					p_script->members.insert(name);
 
-					GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(variable->access_restriction);
-					p_script->member_access_restrictions[name] = GDScript::MemberAccessRestriction(access_restriction, variable->access_member_owner);
+					// GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(variable->access_restriction);
+					// p_script->member_access_restrictions[name] = GDScript::MemberAccessRestriction(access_restriction, variable->access_member_owner);
 				}
 
 #ifdef TOOLS_ENABLED
@@ -2850,25 +2850,25 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 
 				p_script->constants.insert(name, constant->initializer->reduced_value);
 
-				GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(constant->access_restriction);
-				p_script->script_static_access_restrictions.insert(name, GDScript::MemberAccessRestriction(access_restriction, constant->access_member_owner));
+				// GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(constant->access_restriction);
+				// p_script->script_static_access_restrictions.insert(name, GDScript::MemberAccessRestriction(access_restriction, constant->access_member_owner));
 			} break;
 
 			case GDScriptParser::ClassNode::Member::ENUM_VALUE: {
 				const GDScriptParser::EnumNode::Value &enum_value = member.enum_value;
 				StringName name = enum_value.identifier->name;
 
-				p_script->constants.insert(name, enum_value.value);
+				// p_script->constants.insert(name, enum_value.value);
 			} break;
 
 			case GDScriptParser::ClassNode::Member::SIGNAL: {
 				const GDScriptParser::SignalNode *signal = member.signal;
 				StringName name = signal->identifier->name;
 
-				p_script->_signals[name] = signal->method_info;
+				// p_script->_signals[name] = signal->method_info;
 
-				GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(signal->access_restriction);
-				p_script->script_static_access_restrictions.insert(name, GDScript::MemberAccessRestriction(access_restriction, signal->access_member_owner));
+				// GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(signal->access_restriction);
+				// p_script->script_static_access_restrictions.insert(name, GDScript::MemberAccessRestriction(access_restriction, signal->access_member_owner));
 			} break;
 
 			case GDScriptParser::ClassNode::Member::ENUM: {
@@ -2905,8 +2905,8 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 					p_script->rpc_config[function_n->identifier->name] = config;
 				}
 
-				GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(function_n->access_restriction);
-				p_script->script_static_access_restrictions.insert(function_n->identifier->name, GDScript::MemberAccessRestriction(access_restriction, function_n->access_member_owner));
+				// GDScript::MemberAccessRestriction::AccessRestriction access_restriction = GDScript::MemberAccessRestriction::AccessRestriction(function_n->access_restriction);
+				// p_script->script_static_access_restrictions.insert(function_n->identifier->name, GDScript::MemberAccessRestriction(access_restriction, function_n->access_member_owner));
 			} break;
 			default:
 				break; // Nothing to do here.
