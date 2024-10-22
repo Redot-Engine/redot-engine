@@ -269,6 +269,7 @@ public:
 	virtual bool is_abstract() const override { return false; } // GDScript does not support abstract classes.
 
 	bool inherits_script(const Ref<Script> &p_script) const override;
+	bool inherits_class(const StringName &p_super_class) const;
 
 	GDScript *find_class(const String &p_qualified_name);
 	bool has_class(const GDScript *p_script);
@@ -393,9 +394,6 @@ class GDScriptInstance : public ScriptInstance {
 
 	void _call_implicit_ready_recursively(GDScript *p_script);
 
-private:
-	bool execute_access_restriction(const StringName &p_member_name, const Ref<GDScript> &p_current_script, const GDScript::MemberAccessRestriction &p_member_access_restriction) const;
-
 public:
 	virtual Object *get_owner() { return owner; }
 
@@ -429,6 +427,8 @@ public:
 	void reload_members();
 
 	virtual const Variant get_rpc_config() const;
+
+	static bool execute_access_restriction_runtime(const StringName &p_member_name, const Ref<GDScript> &p_current_script, const GDScript::MemberAccessRestriction &p_member_access_restriction);
 
 	GDScriptInstance();
 	~GDScriptInstance();

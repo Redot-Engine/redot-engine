@@ -705,6 +705,8 @@ protected:
 	bool _property_get_revert(const StringName &p_name, Variant &r_property) const { return false; };
 	void _notification(int p_notification) {}
 
+	bool execute_access_protection_runtime(const StringName &p_member_name, const StringName &p_derived_class, const Variant::AccessRestriction p_access_restriction, const StringName &p_member_owner_class, const Vector<StringName> &p_super_classes) const;
+
 	_FORCE_INLINE_ static void (*_get_bind_methods())() {
 		return &Object::_bind_methods;
 	}
