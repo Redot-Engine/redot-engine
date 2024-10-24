@@ -302,6 +302,10 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 				preset_accent_color = Color(0.44, 0.73, 0.98);
 				preset_base_color = Color(0.24, 0.24, 0.24);
 				preset_contrast = config.default_contrast;
+			} else if (config.preset == "Dark Gray") {
+				preset_accent_color = Color(1, 1, 1);
+				preset_base_color = Color(0.15, 0.15, 0.15);
+				preset_contrast = config.default_contrast;
 			} else if (config.preset == "Light") {
 				preset_accent_color = Color(0.87, 0.22, 0.29);
 				preset_base_color = Color(0.9, 0.9, 0.9);
