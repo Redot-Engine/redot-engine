@@ -121,7 +121,6 @@ public:
 	virtual Color get_color() const override;
 
 	virtual void slider_draw(int p_which) override;
-	virtual bool apply_theme() const override;
 
 	ColorModeRAW(ColorPicker *p_color_picker) :
 			ColorMode(p_color_picker){};
