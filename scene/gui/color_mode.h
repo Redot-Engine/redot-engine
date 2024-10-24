@@ -146,7 +146,6 @@ public:
 	virtual void _value_changed() override;
 
 	virtual void slider_draw(int p_which) override;
-	virtual ColorPicker::PickerShapeType get_shape_override() const override { return ColorPicker::SHAPE_OKHSL_CIRCLE; }
 
 	ColorModeOKHSL(ColorPicker *p_color_picker) :
 			ColorMode(p_color_picker){};
