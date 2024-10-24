@@ -1220,14 +1220,10 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 
 		col.set_hsv(h, 1, 1);
 		if (actual_shape == SHAPE_HSV_WHEEL) {
-			points.resize(4);
-			double h1 = h - (0.5 / 360);
-			double h2 = h + (0.5 / 360);
-			points.set(0, Point2(center.x + (center.x * Math::cos(h1 * Math_TAU)), center.y + (center.y * Math::sin(h1 * Math_TAU))));
-			points.set(1, Point2(center.x + (center.x * Math::cos(h1 * Math_TAU) * 0.84), center.y + (center.y * Math::sin(h1 * Math_TAU) * 0.84)));
-			points.set(2, Point2(center.x + (center.x * Math::cos(h2 * Math_TAU)), center.y + (center.y * Math::sin(h2 * Math_TAU))));
-			points.set(3, Point2(center.x + (center.x * Math::cos(h2 * Math_TAU) * 0.84), center.y + (center.y * Math::sin(h2 * Math_TAU) * 0.84)));
-			c->draw_multiline(points, col.inverted());
+			static constexpr float to_multiplier = 0.84;
+			Point2 from = Point2(center.x + (center.x * Math::cos(h * Math_TAU)), center.y + (center.y * Math::sin(h * Math_TAU)));
+			Point2 to = Point2(center.x + (center.x * Math::cos(h * Math_TAU) * to_multiplier), center.y + (center.y * Math::sin(h * Math_TAU) * to_multiplier));
+			c->draw_line(from, to, col.inverted());
 		}
 
 	} else if (p_which == 1) {
