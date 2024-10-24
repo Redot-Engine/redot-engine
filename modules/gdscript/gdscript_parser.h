@@ -335,8 +335,16 @@ public:
 			VARIABLE,
 			WHILE,
 		};
-
 		Type type = NONE;
+
+		enum AccessRestriction {
+			ACCESS_RESTRICTION_PUBLIC,
+			ACCESS_RESTRICTION_PRIVATE,
+			ACCESS_RESTRICTION_PROTECTED,
+		};
+		AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
+		StringName access_member_owner;
+
 		int start_line = 0, end_line = 0;
 		int start_column = 0, end_column = 0;
 		int leftmost_column = 0, rightmost_column = 0;
@@ -793,6 +801,14 @@ public:
 			StringName name = vformat("@group_%d_%s", members.size(), p_annotation_node->export_info.name);
 			members_indices[name] = members.size();
 			members.push_back(Member(p_annotation_node));
+		}
+
+		Vector<StringName> get_access_member_owner_extends_names() const {
+			Vector<StringName> ret = Vector<StringName>();
+			for (IdentifierNode *Id : extends) {
+				ret.push_back(Id->name);
+			}
+			return ret;
 		}
 
 		ClassNode() {
@@ -1485,16 +1501,16 @@ private:
 
 	// Main blocks.
 	void parse_program();
-	ClassNode *parse_class(bool p_is_static);
+	ClassNode *parse_class(bool p_is_static, const Node::AccessRestriction p_access_restriction);
 	void parse_class_name();
 	void parse_extends();
 	void parse_class_body(bool p_is_multiline);
 	template <typename T>
-	void parse_class_member(T *(GDScriptParser::*p_parse_function)(bool), AnnotationInfo::TargetKind p_target, const String &p_member_kind, bool p_is_static = false);
-	SignalNode *parse_signal(bool p_is_static);
-	EnumNode *parse_enum(bool p_is_static);
+	void parse_class_member(T *(GDScriptParser::*p_parse_function)(bool, const Node::AccessRestriction p_access_restriction), AnnotationInfo::TargetKind p_target, const String &p_member_kind, bool p_is_static = false, const Node::AccessRestriction p_access_restriction = Node::ACCESS_RESTRICTION_PUBLIC);
+	SignalNode *parse_signal(bool p_is_static, const Node::AccessRestriction p_access_restriction);
+	EnumNode *parse_enum(bool p_is_static, const Node::AccessRestriction p_access_restriction);
 	ParameterNode *parse_parameter();
-	FunctionNode *parse_function(bool p_is_static);
+	FunctionNode *parse_function(bool p_is_static, const Node::AccessRestriction p_access_restriction);
 	void parse_function_signature(FunctionNode *p_function, SuiteNode *p_body, const String &p_type);
 	SuiteNode *parse_suite(const String &p_context, SuiteNode *p_suite = nullptr, bool p_for_lambda = false);
 	// Annotations
@@ -1517,12 +1533,12 @@ private:
 	bool static_unload_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	// Statements.
 	Node *parse_statement();
-	VariableNode *parse_variable(bool p_is_static);
-	VariableNode *parse_variable(bool p_is_static, bool p_allow_property);
+	VariableNode *parse_variable(bool p_is_static, const Node::AccessRestriction p_access_restriction);
+	VariableNode *parse_variable(bool p_is_static, bool p_allow_property, const Node::AccessRestriction p_access_restriction);
 	VariableNode *parse_property(VariableNode *p_variable, bool p_need_indent);
 	void parse_property_getter(VariableNode *p_variable);
 	void parse_property_setter(VariableNode *p_variable);
-	ConstantNode *parse_constant(bool p_is_static);
+	ConstantNode *parse_constant(bool p_is_static, const Node::AccessRestriction p_access_restriction);
 	AssertNode *parse_assert();
 	BreakNode *parse_break();
 	ContinueNode *parse_continue();

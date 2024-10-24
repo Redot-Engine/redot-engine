@@ -63,8 +63,12 @@ BASE_STRINGS = [
     "This method accepts any number of arguments after the ones described here.",
     "This method is used to construct a type.",
     "This method doesn't need an instance to be called, so it can be called directly using the class name.",
-    "This method describes a valid operator to use with this type as left-hand operand.",
+    "This exported signal can only be accessed from the inspector or the class that contains the signal.",
+    "This exported signal can only be accessed from the inspector or the class that contains the signal, or whose derived classes.",
+    "This exported property can only be accessed from the inspector or the class that contains the signal.",
+    "This exported property can only be accessed from the inspector or the class that contains the signal, or whose derived classes.",
     "This value is an integer composed as a bitmask of the following flags.",
+    "This method describes a valid operator to use with this type as left-hand operand.",
     "No return value.",
     "There is currently no description for this class. Please help us by :ref:`contributing one <doc_updating_the_class_reference>`!",
     "There is currently no description for this signal. Please help us by :ref:`contributing one <doc_updating_the_class_reference>`!",
@@ -203,6 +207,8 @@ class State:
                 assert property.tag == "member"
 
                 property_name = property.attrib["name"]
+                qualifiers = property.get("qualifiers")
+
                 if property_name in class_def.properties:
                     print_error(f'{class_name}.xml: Duplicate property "{property_name}".', self)
                     continue
@@ -216,7 +222,7 @@ class State:
                 overrides = property.get("overrides") or None
 
                 property_def = PropertyDef(
-                    property_name, type_name, setter, getter, property.text, default_value, overrides
+                    property_name, type_name, setter, getter, property.text, default_value, overrides, qualifiers
                 )
                 property_def.deprecated = property.get("deprecated")
                 property_def.experimental = property.get("experimental")
@@ -369,6 +375,7 @@ class State:
                 assert signal.tag == "signal"
 
                 signal_name = signal.attrib["name"]
+                qualifiers = property.get("qualifiers")
 
                 if signal_name in class_def.signals:
                     print_error(f'{class_name}.xml: Duplicate signal "{signal_name}".', self)
@@ -381,7 +388,7 @@ class State:
                 if desc_element is not None:
                     signal_desc = desc_element.text
 
-                signal_def = SignalDef(signal_name, params, signal_desc)
+                signal_def = SignalDef(signal_name, params, signal_desc, qualifiers)
                 signal_def.deprecated = signal.get("deprecated")
                 signal_def.experimental = signal.get("experimental")
                 class_def.signals[signal_name] = signal_def
@@ -500,6 +507,7 @@ class PropertyDef(DefinitionBase):
         text: Optional[str],
         default_value: Optional[str],
         overrides: Optional[str],
+        qualifiers: Optional[str],
     ) -> None:
         super().__init__("property", name)
 
@@ -509,6 +517,7 @@ class PropertyDef(DefinitionBase):
         self.text = text
         self.default_value = default_value
         self.overrides = overrides
+        self.qualifiers = qualifiers
 
 
 class ParameterDef(DefinitionBase):
@@ -520,21 +529,17 @@ class ParameterDef(DefinitionBase):
 
 
 class SignalDef(DefinitionBase):
-    def __init__(self, name: str, parameters: List[ParameterDef], description: Optional[str]) -> None:
+    def __init__(self, name: str, parameters: List[ParameterDef], description: Optional[str],qualifiers: Optional[str]) -> None:
         super().__init__("signal", name)
 
         self.parameters = parameters
         self.description = description
+        self.qualifiers = qualifiers
+        
 
 
 class AnnotationDef(DefinitionBase):
-    def __init__(
-        self,
-        name: str,
-        parameters: List[ParameterDef],
-        description: Optional[str],
-        qualifiers: Optional[str],
-    ) -> None:
+    def __init__(self, name: str, parameters: List[ParameterDef], description: Optional[str], qualifiers: Optional[str]) -> None:
         super().__init__("annotation", name)
 
         self.parameters = parameters
@@ -543,14 +548,7 @@ class AnnotationDef(DefinitionBase):
 
 
 class MethodDef(DefinitionBase):
-    def __init__(
-        self,
-        name: str,
-        return_type: TypeName,
-        parameters: List[ParameterDef],
-        description: Optional[str],
-        qualifiers: Optional[str],
-    ) -> None:
+    def __init__(self, name: str, return_type: TypeName, parameters: List[ParameterDef], description: Optional[str], qualifiers: Optional[str]) -> None:
         super().__init__("method", name)
 
         self.return_type = return_type
@@ -1049,6 +1047,11 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                 else:
                     ref = f":ref:`{property_def.name}<class_{class_name}_property_{property_def.name}>`"
                     ml.append((type_rst, ref, default))
+            
+                qualifiers = property_def.qualifiers
+                if qualifiers is not None:
+                    for q in qualifiers.split():
+                        ml.append((f" |{q}|"))
 
             format_table(f, ml, True)
 
@@ -1571,7 +1574,7 @@ def make_method_signature(
         ret_type = definition.return_type.to_rst(state)
 
     qualifiers = None
-    if isinstance(definition, (MethodDef, AnnotationDef)):
+    if isinstance(definition, (MethodDef, AnnotationDef, SignalDef)):
         qualifiers = definition.qualifiers
 
     out = ""
@@ -1695,6 +1698,18 @@ def make_footer() -> str:
     static_msg = translate(
         "This method doesn't need an instance to be called, so it can be called directly using the class name."
     )
+    private_signal_msg = translate(
+        "This exported signal can only be accessed from the inspector or the class that contains the signal."
+    )
+    protected_signal_msg = translate(
+        "This exported signal can only be accessed from the inspector or the class that contains the signal, or whose derived classes."
+    )
+    private_exported_property_msg = translate(
+        "This exported property can only be accessed from the inspector or the class that contains the signal."
+    )
+    protected_exported_property_msg = translate(
+        "This exported property can only be accessed from the inspector or the class that contains the signal, or whose derived classes."
+    )
     operator_msg = translate("This method describes a valid operator to use with this type as left-hand operand.")
     bitfield_msg = translate("This value is an integer composed as a bitmask of the following flags.")
     void_msg = translate("No return value.")
@@ -1705,6 +1720,10 @@ def make_footer() -> str:
         f".. |vararg| replace:: :abbr:`vararg ({vararg_msg})`\n"
         f".. |constructor| replace:: :abbr:`constructor ({constructor_msg})`\n"
         f".. |static| replace:: :abbr:`static ({static_msg})`\n"
+        f".. |private_signal| replace:: :abbr:`private ({private_signal_msg})`\n"
+        f".. |protected_signal| replace:: :abbr:`protected ({protected_signal_msg})`\n"
+        f".. |private_exported_property| replace:: :abbr:`private ({private_exported_property_msg})`\n"
+        f".. |protected_exported_property| replace:: :abbr:`protected ({protected_exported_property_msg})`\n"
         f".. |operator| replace:: :abbr:`operator ({operator_msg})`\n"
         f".. |bitfield| replace:: :abbr:`BitField ({bitfield_msg})`\n"
         f".. |void| replace:: :abbr:`void ({void_msg})`\n"

@@ -98,18 +98,38 @@ class GDScript : public Script {
 	GDScript *_base = nullptr; //fast pointer access
 	GDScript *_owner = nullptr; //for subclasses
 
+	/*
+	struct MemberAccessRestriction {
+		enum AccessRestriction {
+			ACCESS_RESTRICTION_PUBLIC,
+			ACCESS_RESTRICTION_PRIVATE,
+			ACCESS_RESTRICTION_PROTECTED
+		};
+		AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
+		StringName access_member_owner;
+
+		MemberAccessRestriction() {}
+
+		MemberAccessRestriction(const AccessRestriction p_access_restriction, const StringName &p_access_member_owner) {
+			access_restriction = p_access_restriction;
+			access_member_owner = p_access_member_owner;;
+		};
+	};
+	*/
+
 	// Members are just indices to the instantiated script.
 	HashMap<StringName, MemberInfo> member_indices; // Includes member info of all base GDScript classes.
 	HashSet<StringName> members; // Only members of the current class.
+	// HashMap<StringName, MemberAccessRestriction> member_access_restrictions;
 
-	// Only static variables of the current class.
-	HashMap<StringName, MemberInfo> static_variables_indices;
-	Vector<Variant> static_variables; // Static variable values.
-
+	HashMap<StringName, MemberInfo> static_variables_indices; // Only static variables of the current class.
+	Vector<Variant> static_variables; // Static variable values. Only static variables of the current class.
 	HashMap<StringName, Variant> constants;
 	HashMap<StringName, GDScriptFunction *> member_functions;
 	HashMap<StringName, Ref<GDScript>> subclasses;
 	HashMap<StringName, MethodInfo> _signals;
+	// HashMap<StringName, MemberAccessRestriction> script_static_access_restrictions;
+
 	Dictionary rpc_config;
 
 	struct LambdaInfo {
@@ -246,6 +266,7 @@ public:
 	virtual bool is_abstract() const override { return false; } // GDScript does not support abstract classes.
 
 	bool inherits_script(const Ref<Script> &p_script) const override;
+	bool inherits_class(const StringName &p_super_class) const;
 
 	GDScript *find_class(const String &p_qualified_name);
 	bool has_class(const GDScript *p_script);
@@ -276,6 +297,8 @@ public:
 	const HashMap<StringName, GDScriptFunction *> &debug_get_member_functions() const; //this is debug only
 	StringName debug_get_member_by_index(int p_idx) const;
 	StringName debug_get_static_var_by_index(int p_idx) const;
+
+	// MemberAccessRestriction get_member_access_restriction(const StringName &p_member_name) const;
 
 	Variant _new(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 	virtual bool can_instantiate() const override;
@@ -403,6 +426,8 @@ public:
 	void reload_members();
 
 	virtual const Variant get_rpc_config() const;
+
+	// static bool execute_access_restriction_runtime(const StringName &p_member_name, const Ref<Script> &p_current_script, const GDScript::MemberAccessRestriction &p_member_access_restriction);
 
 	GDScriptInstance();
 	~GDScriptInstance();

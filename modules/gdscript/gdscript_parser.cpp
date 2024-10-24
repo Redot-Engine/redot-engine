@@ -811,7 +811,7 @@ bool GDScriptParser::has_class(const GDScriptParser::ClassNode *p_class) const {
 	return false;
 }
 
-GDScriptParser::ClassNode *GDScriptParser::parse_class(bool p_is_static) {
+GDScriptParser::ClassNode *GDScriptParser::parse_class(bool p_is_static, const Node::AccessRestriction p_access_restriction) {
 	ClassNode *n_class = alloc_node<ClassNode>();
 
 	ClassNode *previous_class = current_class;
@@ -912,7 +912,7 @@ void GDScriptParser::parse_extends() {
 }
 
 template <typename T>
-void GDScriptParser::parse_class_member(T *(GDScriptParser::*p_parse_function)(bool), AnnotationInfo::TargetKind p_target, const String &p_member_kind, bool p_is_static) {
+void GDScriptParser::parse_class_member(T *(GDScriptParser::*p_parse_function)(bool, const Node::AccessRestriction p_access_restriction), AnnotationInfo::TargetKind p_target, const String &p_member_kind, bool p_is_static, const Node::AccessRestriction p_access_restriction) {
 	advance();
 
 	// Consume annotations.
@@ -928,7 +928,7 @@ void GDScriptParser::parse_class_member(T *(GDScriptParser::*p_parse_function)(b
 		}
 	}
 
-	T *member = (this->*p_parse_function)(p_is_static);
+	T *member = (this->*p_parse_function)(p_is_static, p_access_restriction);
 	if (member == nullptr) {
 		return;
 	}
@@ -985,35 +985,64 @@ void GDScriptParser::parse_class_member(T *(GDScriptParser::*p_parse_function)(b
 void GDScriptParser::parse_class_body(bool p_is_multiline) {
 	bool class_end = false;
 	bool next_is_static = false;
+	Node::AccessRestriction next_is_access_restricted = Node::ACCESS_RESTRICTION_PUBLIC;
+
 	while (!class_end && !is_at_end()) {
 		GDScriptTokenizer::Token token = current;
+		// Token functions
 		switch (token.type) {
 			case GDScriptTokenizer::Token::VAR:
-				parse_class_member(&GDScriptParser::parse_variable, AnnotationInfo::VARIABLE, "variable", next_is_static);
+				parse_class_member(&GDScriptParser::parse_variable, AnnotationInfo::VARIABLE, "variable", next_is_static, next_is_access_restricted);
 				if (next_is_static) {
 					current_class->has_static_data = true;
 				}
 				break;
 			case GDScriptTokenizer::Token::CONST:
-				parse_class_member(&GDScriptParser::parse_constant, AnnotationInfo::CONSTANT, "constant");
+				parse_class_member(&GDScriptParser::parse_constant, AnnotationInfo::CONSTANT, "constant", false, next_is_access_restricted); // Static-not-modifiable
 				break;
 			case GDScriptTokenizer::Token::SIGNAL:
-				parse_class_member(&GDScriptParser::parse_signal, AnnotationInfo::SIGNAL, "signal");
+				parse_class_member(&GDScriptParser::parse_signal, AnnotationInfo::SIGNAL, "signal", false, next_is_access_restricted); // Static-not-modifiable
 				break;
 			case GDScriptTokenizer::Token::FUNC:
-				parse_class_member(&GDScriptParser::parse_function, AnnotationInfo::FUNCTION, "function", next_is_static);
+				parse_class_member(&GDScriptParser::parse_function, AnnotationInfo::FUNCTION, "function", next_is_static, next_is_access_restricted);
 				break;
 			case GDScriptTokenizer::Token::CLASS:
-				parse_class_member(&GDScriptParser::parse_class, AnnotationInfo::CLASS, "class");
+				parse_class_member(&GDScriptParser::parse_class, AnnotationInfo::CLASS, "class"); // Static-not-modifiable, unprotectable
 				break;
 			case GDScriptTokenizer::Token::ENUM:
-				parse_class_member(&GDScriptParser::parse_enum, AnnotationInfo::NONE, "enum");
+				parse_class_member(&GDScriptParser::parse_enum, AnnotationInfo::NONE, "enum"); // Static-not-modifiable, unprotectable
 				break;
 			case GDScriptTokenizer::Token::STATIC: {
 				advance();
 				next_is_static = true;
-				if (!check(GDScriptTokenizer::Token::FUNC) && !check(GDScriptTokenizer::Token::VAR)) {
+				if (!check(GDScriptTokenizer::Token::FUNC) && !check(GDScriptTokenizer::Token::VAR) && !check(GDScriptTokenizer::Token::STATIC) && !check(GDScriptTokenizer::Token::PRIVATE) && !check(GDScriptTokenizer::Token::PROTECTED)) {
 					push_error(R"(Expected "func" or "var" after "static".)");
+				} else if (check(GDScriptTokenizer::Token::STATIC)) {
+					push_error(R"(Keyword "static" can be used only once per member.)");
+				} else if (check(GDScriptTokenizer::Token::PRIVATE) || check(GDScriptTokenizer::Token::PROTECTED)) {
+					push_error(R"(Access modifiers should be moved before "static".)");
+				}
+			} break;
+			case GDScriptTokenizer::Token::PRIVATE: {
+				advance();
+				next_is_access_restricted = Node::ACCESS_RESTRICTION_PRIVATE;
+				if (!check(GDScriptTokenizer::Token::FUNC) && !check(GDScriptTokenizer::Token::VAR) && !check(GDScriptTokenizer::Token::CONST) && !check(GDScriptTokenizer::Token::SIGNAL) && !check(GDScriptTokenizer::Token::STATIC) && !check(GDScriptTokenizer::Token::PRIVATE) && !check(GDScriptTokenizer::Token::PROTECTED)) {
+					push_error(R"(Expected "static", "func", "var", "const", or "signal" after "private".)");
+				} else if (check(GDScriptTokenizer::Token::PRIVATE)) {
+					push_error(R"(Access modifier "private" can be used only once per member")");
+				} else if (check(GDScriptTokenizer::Token::PROTECTED)) {
+					push_error(R"(Access modifier "private" cannot be used together with "protected")");
+				}
+			} break;
+			case GDScriptTokenizer::Token::PROTECTED: {
+				advance();
+				next_is_access_restricted = Node::ACCESS_RESTRICTION_PROTECTED;
+				if (!check(GDScriptTokenizer::Token::FUNC) && !check(GDScriptTokenizer::Token::VAR) && !check(GDScriptTokenizer::Token::CONST) && !check(GDScriptTokenizer::Token::SIGNAL) && !check(GDScriptTokenizer::Token::STATIC) && !check(GDScriptTokenizer::Token::PRIVATE) && !check(GDScriptTokenizer::Token::PROTECTED)) {
+					push_error(R"(Expected "static", "func", "var", "const", or "signal" after "protected".)");
+				} else if (check(GDScriptTokenizer::Token::PROTECTED)) {
+					push_error(R"(Access modifier "protected" can be used only once per member")");
+				} else if (check(GDScriptTokenizer::Token::PRIVATE)) {
+					push_error(R"(Access modifier "protected" cannot be used together with "private")");
 				}
 			} break;
 			case GDScriptTokenizer::Token::ANNOTATION: {
@@ -1062,9 +1091,14 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 				advance();
 				break;
 		}
+		// Clear modifier status
 		if (token.type != GDScriptTokenizer::Token::STATIC) {
 			next_is_static = false;
 		}
+		if (token.type != GDScriptTokenizer::Token::PRIVATE && token.type != GDScriptTokenizer::Token::PROTECTED) {
+			next_is_access_restricted = GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC;
+		}
+		// Others
 		if (panic_mode) {
 			synchronize();
 		}
@@ -1074,11 +1108,11 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 	}
 }
 
-GDScriptParser::VariableNode *GDScriptParser::parse_variable(bool p_is_static) {
-	return parse_variable(p_is_static, true);
+GDScriptParser::VariableNode *GDScriptParser::parse_variable(bool p_is_static, const Node::AccessRestriction p_access_restriction) {
+	return parse_variable(p_is_static, true, p_access_restriction);
 }
 
-GDScriptParser::VariableNode *GDScriptParser::parse_variable(bool p_is_static, bool p_allow_property) {
+GDScriptParser::VariableNode *GDScriptParser::parse_variable(bool p_is_static, bool p_allow_property, const Node::AccessRestriction p_access_restriction) {
 	VariableNode *variable = alloc_node<VariableNode>();
 
 	if (!consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected variable name after "var".)")) {
@@ -1089,6 +1123,8 @@ GDScriptParser::VariableNode *GDScriptParser::parse_variable(bool p_is_static, b
 	variable->identifier = parse_identifier();
 	variable->export_info.name = variable->identifier->name;
 	variable->is_static = p_is_static;
+	variable->access_restriction = p_access_restriction;
+	variable->access_member_owner = current_class->identifier->name;
 
 	if (match(GDScriptTokenizer::Token::COLON)) {
 		if (check(GDScriptTokenizer::Token::NEWLINE)) {
@@ -1314,7 +1350,7 @@ void GDScriptParser::parse_property_getter(VariableNode *p_variable) {
 	}
 }
 
-GDScriptParser::ConstantNode *GDScriptParser::parse_constant(bool p_is_static) {
+GDScriptParser::ConstantNode *GDScriptParser::parse_constant(bool p_is_static, const Node::AccessRestriction p_access_restriction) {
 	ConstantNode *constant = alloc_node<ConstantNode>();
 
 	if (!consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected constant name after "const".)")) {
@@ -1323,6 +1359,8 @@ GDScriptParser::ConstantNode *GDScriptParser::parse_constant(bool p_is_static) {
 	}
 
 	constant->identifier = parse_identifier();
+	constant->access_restriction = p_access_restriction;
+	constant->access_member_owner = current_class->identifier->name;
 
 	if (match(GDScriptTokenizer::Token::COLON)) {
 		if (check((GDScriptTokenizer::Token::EQUAL))) {
@@ -1382,7 +1420,7 @@ GDScriptParser::ParameterNode *GDScriptParser::parse_parameter() {
 	return parameter;
 }
 
-GDScriptParser::SignalNode *GDScriptParser::parse_signal(bool p_is_static) {
+GDScriptParser::SignalNode *GDScriptParser::parse_signal(bool p_is_static, const Node::AccessRestriction p_access_restriction) {
 	SignalNode *signal = alloc_node<SignalNode>();
 
 	if (!consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected signal name after "signal".)")) {
@@ -1391,6 +1429,8 @@ GDScriptParser::SignalNode *GDScriptParser::parse_signal(bool p_is_static) {
 	}
 
 	signal->identifier = parse_identifier();
+	signal->access_restriction = p_access_restriction;
+	signal->access_member_owner = current_class->identifier->name;
 
 	if (check(GDScriptTokenizer::Token::PARENTHESIS_OPEN)) {
 		push_multiline(true);
@@ -1427,7 +1467,7 @@ GDScriptParser::SignalNode *GDScriptParser::parse_signal(bool p_is_static) {
 	return signal;
 }
 
-GDScriptParser::EnumNode *GDScriptParser::parse_enum(bool p_is_static) {
+GDScriptParser::EnumNode *GDScriptParser::parse_enum(bool p_is_static, const Node::AccessRestriction p_access_restriction) {
 	EnumNode *enum_node = alloc_node<EnumNode>();
 	bool named = false;
 
@@ -1580,7 +1620,7 @@ void GDScriptParser::parse_function_signature(FunctionNode *p_function, SuiteNod
 	consume(GDScriptTokenizer::Token::COLON, vformat(R"(Expected ":" after %s declaration.)", p_type));
 }
 
-GDScriptParser::FunctionNode *GDScriptParser::parse_function(bool p_is_static) {
+GDScriptParser::FunctionNode *GDScriptParser::parse_function(bool p_is_static, const Node::AccessRestriction p_access_restriction) {
 	FunctionNode *function = alloc_node<FunctionNode>();
 
 	make_completion_context(COMPLETION_OVERRIDE_METHOD, function);
@@ -1595,6 +1635,8 @@ GDScriptParser::FunctionNode *GDScriptParser::parse_function(bool p_is_static) {
 
 	function->identifier = parse_identifier();
 	function->is_static = p_is_static;
+	function->access_restriction = p_access_restriction;
+	function->access_member_owner = current_class->identifier->name;
 
 	SuiteNode *body = alloc_node<SuiteNode>();
 	SuiteNode *previous_suite = current_suite;
@@ -1831,11 +1873,11 @@ GDScriptParser::Node *GDScriptParser::parse_statement() {
 			break;
 		case GDScriptTokenizer::Token::VAR:
 			advance();
-			result = parse_variable(false, false);
+			result = parse_variable(false, false, Node::ACCESS_RESTRICTION_PUBLIC);
 			break;
 		case GDScriptTokenizer::Token::CONST:
 			advance();
-			result = parse_constant(false);
+			result = parse_constant(false, Node::ACCESS_RESTRICTION_PUBLIC);
 			break;
 		case GDScriptTokenizer::Token::IF:
 			advance();
@@ -3217,6 +3259,7 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_call(ExpressionNode *p_pre
 			consume(GDScriptTokenizer::Token::PARENTHESIS_OPEN, R"(Expected "(" after function name.)");
 		}
 	} else {
+		// TODO: Get the FunctionNode from the current `call`
 		call->callee = p_previous_operand;
 
 		if (call->callee == nullptr) {
@@ -3999,6 +4042,8 @@ GDScriptParser::ParseRule *GDScriptParser::get_rule(GDScriptTokenizer::Token::Ty
 		{ nullptr,                                          &GDScriptParser::parse_type_test,            	PREC_TYPE_TEST }, // IS,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // NAMESPACE,
 		{ &GDScriptParser::parse_preload,					nullptr,                                        PREC_NONE }, // PRELOAD,
+		{ nullptr,											nullptr,                                        PREC_NONE }, // PRIVATE,
+		{ nullptr,											nullptr,                                        PREC_NONE }, // PROTECTED,
 		{ &GDScriptParser::parse_self,                   	nullptr,                                        PREC_NONE }, // SELF,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // SIGNAL,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STATIC,

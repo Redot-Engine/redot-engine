@@ -148,6 +148,15 @@ enum PropertyUsageFlags {
 #define MAKE_RESOURCE_TYPE_HINT(m_type) vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
 
 struct PropertyInfo {
+	/*
+	enum AccessRestriction {
+		ACCESS_RESTRICTION_PUBLIC,
+		ACCESS_RESTRICTION_PRIVATE,
+		ACCESS_RESTRICTION_PROTECTED
+	};
+	AccessRestriction access_restriction = ACCESS_RESTRICTION_PUBLIC;
+	*/
+
 	Variant::Type type = Variant::NIL;
 	String name;
 	StringName class_name; // For classes

@@ -1170,6 +1170,18 @@ StringName GDScript::debug_get_static_var_by_index(int p_idx) const {
 	return "<error>";
 }
 
+/*
+GDScript::MemberAccessRestriction GDScript::get_member_access_restriction(const StringName &p_member_name) const {
+	if (member_access_restrictions.has(p_member_name)) {
+		return member_access_restrictions[p_member_name];
+	} else if (script_static_access_restrictions.has(p_member_name)) {
+		return script_static_access_restrictions[p_member_name];
+	}
+
+	return MemberAccessRestriction();
+}
+*/
+
 Ref<GDScript> GDScript::get_base() const {
 	return base;
 }
@@ -1184,6 +1196,23 @@ bool GDScript::inherits_script(const Ref<Script> &p_script) const {
 
 	while (s) {
 		if (s == p_script.ptr()) {
+			return true;
+		}
+		s = s->_base;
+	}
+
+	return false;
+}
+
+bool GDScript::inherits_class(const StringName &p_super_class) const {
+	if (p_super_class.is_empty()) {
+		return false;
+	}
+
+	const GDScript *s = this;
+
+	while (s) {
+		if (s->local_name == p_super_class || p_super_class == s->local_name) {
 			return true;
 		}
 		s = s->_base;
@@ -1681,10 +1710,10 @@ bool GDScriptInstance::set(const StringName &p_name, const Variant &p_value) {
 				Callable::CallError err;
 				callp(member->setter, &args, 1, err);
 				return err.error == Callable::CallError::CALL_OK;
-			} else {
-				members.write[member->index] = value;
-				return true;
 			}
+
+			members.write[member->index] = value;
+			return true;
 		}
 	}
 
@@ -1708,10 +1737,10 @@ bool GDScriptInstance::set(const StringName &p_name, const Variant &p_value) {
 					Callable::CallError err;
 					callp(member->setter, &args, 1, err);
 					return err.error == Callable::CallError::CALL_OK;
-				} else {
-					sptr->static_variables.write[member->index] = value;
-					return true;
 				}
+
+				sptr->static_variables.write[member->index] = value;
+				return true;
 			}
 		}
 
@@ -1745,6 +1774,7 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 				r_ret = (err.error == Callable::CallError::CALL_OK) ? ret : Variant();
 				return true;
 			}
+
 			r_ret = members[E->value.index];
 			return true;
 		}
@@ -1769,6 +1799,7 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 					r_ret = (ce.error == Callable::CallError::CALL_OK) ? ret : Variant();
 					return true;
 				}
+
 				r_ret = sptr->static_variables[E->value.index];
 				return true;
 			}
@@ -1797,8 +1828,9 @@ bool GDScriptInstance::get(const StringName &p_name, Variant &r_ret) const {
 		{
 			HashMap<StringName, Ref<GDScript>>::ConstIterator E = sptr->subclasses.find(p_name);
 			if (E) {
+				// Subclasses are not access-protectable
 				r_ret = E->value;
-				return true;
+				return true; 
 			}
 		}
 
@@ -2034,6 +2066,43 @@ void GDScriptInstance::_call_implicit_ready_recursively(GDScript *p_script) {
 		p_script->implicit_ready->call(this, nullptr, 0, err);
 	}
 }
+
+/*
+bool GDScriptInstance::execute_access_restriction_runtime(const StringName &p_member_name, const Ref<Script> &p_current_script, const GDScript::MemberAccessRestriction &p_member_access_restriction) {
+	if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC) {
+		return true;
+	}
+
+	ERR_FAIL_NULL_V_EDMSG(p_current_script, false, R"(Trying to execute access protection on a null script...)");
+
+	Ref<GDScript> gdscript = static_cast<Ref<GDScript>>(p_current_script);
+	// Don't use ClassDB for checking if a class inherits a super class
+	// As this method doesn not work in this case.
+	// Use script->inherits_class() instead because this can access the target class successfully
+	if (gdscript.is_valid()) {
+		// If the accessor is running in GDScript, do full detection.
+		if (gdscript->get_local_name() == p_member_access_restriction.access_member_owner || p_member_access_restriction.access_member_owner == gdscript->get_local_name()) {
+			return true;
+		} else if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE) {
+			String err = vformat("Invalid access to %s (access level: private, owner: %s)", p_member_name, p_member_access_restriction.access_member_owner);
+			print_error(err);
+			ERR_FAIL_V_MSG(false, err);
+		} else if (p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PROTECTED && !gdscript->inherits_class(p_member_access_restriction.access_member_owner)) {
+			String err = vformat("Invalid access to %s (access level: protected, owner: %s)", p_member_name, p_member_access_restriction.access_member_owner);
+			print_error(err);
+			ERR_FAIL_V_MSG(false, err);
+		}
+	} else if (p_member_access_restriction.access_restriction != GDScriptParser::Node::ACCESS_RESTRICTION_PUBLIC) {
+		// Due to GDScript unable to inherit a script in other language, vice versa
+		// this is a quick solution for it
+		String err = vformat("Invalid access to %s (access level: %s, owner: %s) from a script in the language other than GDScript.", p_member_name, p_member_access_restriction.access_restriction == GDScriptParser::Node::ACCESS_RESTRICTION_PRIVATE ? "private" : "protected", p_member_access_restriction.access_member_owner);
+		print_error(err);
+		ERR_FAIL_V_MSG(false, err);
+	}
+
+	return true;
+}
+*/
 
 Variant GDScriptInstance::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 	GDScript *sptr = script.ptr();
@@ -2747,6 +2816,8 @@ void GDScriptLanguage::get_reserved_words(List<String> *p_words) const {
 		"extends",
 		"func",
 		"namespace", // Reserved for potential future use.
+		"private",
+		"protected",
 		"signal",
 		"static",
 		"trait", // Reserved for potential future use.

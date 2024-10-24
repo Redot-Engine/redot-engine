@@ -377,6 +377,10 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 			} break;
 
 			case GDP::ClassNode::Member::CONSTANT: {
+				if (member.get_source_node()->access_restriction != GDP::Node::ACCESS_RESTRICTION_PUBLIC) {
+					break;
+				}
+
 				const GDP::ConstantNode *m_const = member.constant;
 				const StringName &const_name = member.constant->identifier->name;
 
@@ -395,6 +399,10 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 			} break;
 
 			case GDP::ClassNode::Member::FUNCTION: {
+				if (member.get_source_node()->access_restriction != GDP::Node::ACCESS_RESTRICTION_PUBLIC) {
+					break;
+				}
+
 				const GDP::FunctionNode *m_func = member.function;
 				const StringName &func_name = m_func->identifier->name;
 
@@ -445,12 +453,21 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 				signal_doc.deprecated_message = m_signal->doc_data.deprecated_message;
 				signal_doc.is_experimental = m_signal->doc_data.is_experimental;
 				signal_doc.experimental_message = m_signal->doc_data.experimental_message;
-
 				for (const GDP::ParameterNode *p : m_signal->parameters) {
 					DocData::ArgumentDoc arg_doc;
 					arg_doc.name = p->identifier->name;
 					_doctype_from_gdtype(p->get_datatype(), arg_doc.type, arg_doc.enumeration);
 					signal_doc.arguments.push_back(arg_doc);
+				}
+				switch (m_signal->access_restriction) {
+					case GDP::Node::ACCESS_RESTRICTION_PRIVATE:
+						signal_doc.qualifiers = "private_signal";
+						break;
+					case GDP::Node::ACCESS_RESTRICTION_PROTECTED:
+						signal_doc.qualifiers = "protected_signal";
+						break;
+					default:
+						break;
 				}
 
 				doc.signals.push_back(signal_doc);
@@ -458,6 +475,10 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 
 			case GDP::ClassNode::Member::VARIABLE: {
 				const GDP::VariableNode *m_var = member.variable;
+				if (!m_var->exported && m_var->access_restriction != GDP::Node::ACCESS_RESTRICTION_PUBLIC) {
+					break;
+				}
+
 				const StringName &var_name = m_var->identifier->name;
 
 				p_script->member_lines[var_name] = m_var->start_line;
@@ -469,6 +490,18 @@ void GDScriptDocGen::_generate_docs(GDScript *p_script, const GDP::ClassNode *p_
 				prop_doc.deprecated_message = m_var->doc_data.deprecated_message;
 				prop_doc.is_experimental = m_var->doc_data.is_experimental;
 				prop_doc.experimental_message = m_var->doc_data.experimental_message;
+				if (m_var->exported) {
+					switch (m_var->access_restriction) {
+						case GDP::Node::ACCESS_RESTRICTION_PRIVATE:
+							prop_doc.qualifiers = "private_exported_property";
+							break;
+						case GDP::Node::ACCESS_RESTRICTION_PROTECTED:
+							prop_doc.qualifiers = "protected_exported_property";
+							break;
+						default:
+							break;
+					}
+				}
 				_doctype_from_gdtype(m_var->get_datatype(), prop_doc.type, prop_doc.enumeration);
 
 				switch (m_var->property) {
