@@ -1175,6 +1175,84 @@
 				[/codeblocks]
 			</description>
 		</method>
+		<method name="sigmoid">
+			<return type="float" />
+			<param index="0" name="x" type="float" />
+			<description>
+				Computes the sigmoid for [param x], which maps the input value into the range (0, 1).
+				The sigmoid function is defined as:
+				[codeblock]
+				sigmoid(x) = 1 / (1 + exp(-x))
+				[/codeblock]
+				This is the most accurate implementation of the sigmoid.
+				[codeblock]
+				var result = sigmoid(0.0)  # result is 0.5
+				var result = sigmoid(1.0)  # result is approximately 0.88
+				var result = sigmoid(-1.0) # result is approximately 0.27
+				var result = sigmoid(5.0)  # result is approximately 0.99
+				[/codeblock]
+				[b]Note:[/b] For faster but less accurate approximation, see [method sigmoid_approx].
+			</description>
+		</method>
+		<method name="sigmoid_affine">
+			<return type="float" />
+			<param index="0" name="x" type="float" />
+			<param index="1" name="amplitude" type="float" />
+			<param index="2" name="y_translation" type="float" />
+			<description>
+				Computes an affine-transformed sigmoid for [param x], which allows scaling by [param amplitude] and translation by [param y_translate].
+				The affine sigmoid function is defined as:
+				[codeblock]
+				affine_sigmoid(x, amplitude, y_translate) = (amplitude / (1 + exp(-x))) + y_translate
+				[/codeblock]
+				This function modifies the standard sigmoid by introducing scaling and vertical translation.
+				[codeblock]
+				var result = affine_sigmoid(0.0, 1.0, 0.0)  # result is 0.5
+				var result = affine_sigmoid(1.0, 2.0, -1.0) # result is approximately 0.46
+				var result = affine_sigmoid(-1.0, 3.0, 2.0) # result is approximately 2.81
+				var result = affine_sigmoid(1.0, 2.0, 2.5) # result is approximately 3.96
+				[/codeblock]
+				[b]Note:[/b] This is a more accurate but computationally heavier version of the affine sigmoid. For faster approximations, see [method sigmoid_affine_approx].
+			</description>
+		</method>
+		<method name="sigmoid_affine_approx">
+			<return type="float" />
+			<param index="0" name="x" type="float" />
+			<param index="1" name="amplitude" type="float" />
+			<param index="2" name="y_translation" type="float" />
+			<description>
+				Computes an approximation of the affine-transformed sigmoid function for [param x], allowing scaling by [param amplitude] and translation by [param y_translate].
+				The approximation function is defined as:
+				[codeblock]
+				affine_sigmoid_approx(x, amplitude, y_translate) = amplitude * (0.5 + (x / (4 + abs(x)))) + y_translate
+				[/codeblock]
+				This function approximates the affine sigmoid, offering faster computation at the cost of some precision. It is useful in performance-sensitive environments where both transformation and speed are needed.
+				[codeblock]
+				var result = affine_sigmoid_approx(0.0, 1.0, 0.0)  # result is 0.5
+				var result = affine_sigmoid_approx(2.0, 2.0, 1.0)  # result is approximately 2.67
+				var result = affine_sigmoid_approx(-1.0, 3.0, 0.5) # result is approximately 1.4
+				var result = affine_sigmoid_approx(1.0, 2.0, 2.5) # result is approximately 3.9
+				[/codeblock]
+			</description>
+		</method>
+		<method name="sigmoid_approx">
+			<return type="float" />
+			<param index="0" name="x" type="float" />
+			<description>
+				Computes an approximation of the sigmoid function for [param x], which maps the input value into the range (0, 1).
+				The approximation function is defined as:
+				[codeblock]
+				sigmoid_approx(x) = 0.5 + (x / (4 + abs(x)))
+				[/codeblock]
+				This function is faster than the standard [method sigmoid], especially useful in performance-sensitive environments where a balance between accuracy and speed is desired.
+				[codeblock]
+				var result = sigmoid_approx(0.0)  # result is 0.5
+				var result = sigmoid_approx(2.0)  # result is approximately 0.83
+				var result = sigmoid_approx(-1.0) # result is approximately 0.3
+				var result = sigmoid_approx(5.0)  # result is approximately 1.05
+				[/codeblock]
+			</description>
+		</method>
 		<method name="sign">
 			<return type="Variant" />
 			<param index="0" name="x" type="Variant" />
