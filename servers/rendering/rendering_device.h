@@ -1460,47 +1460,34 @@ public:
 		MEMORY_BUFFERS,
 		MEMORY_TOTAL
 	};
-
 	uint64_t get_memory_usage(MemoryType p_type) const;
-
 	RenderingDevice *create_local_device();
-
 	void set_resource_name(RID p_id, const String &p_name);
-
 	void draw_command_begin_label(String p_label_name, const Color &p_color = Color(1, 1, 1, 1));
 	void draw_command_end_label();
-
 	String get_device_vendor_name() const;
 	String get_device_name() const;
 	DeviceType get_device_type() const;
 	String get_device_api_name() const;
 	String get_device_api_version() const;
 	String get_device_pipeline_cache_uuid() const;
-
 	bool is_composite_alpha_supported() const;
-
 	uint64_t get_driver_resource(DriverResource p_resource, RID p_rid = RID(), uint64_t p_index = 0);
-
 	String get_driver_and_device_memory_report() const;
-
 	String get_tracked_object_name(uint32_t p_type_index) const;
 	uint64_t get_tracked_object_type_count() const;
-
 	uint64_t get_driver_total_memory() const;
 	uint64_t get_driver_allocation_count() const;
 	uint64_t get_driver_memory_by_object_type(uint32_t p_type) const;
 	uint64_t get_driver_allocs_by_object_type(uint32_t p_type) const;
-
 	uint64_t get_device_total_memory() const;
 	uint64_t get_device_allocation_count() const;
 	uint64_t get_device_memory_by_object_type(uint32_t p_type) const;
 	uint64_t get_device_allocs_by_object_type(uint32_t p_type) const;
-
 	static RenderingDevice *get_singleton();
-
+	void make_current();
 	RenderingDevice();
 	~RenderingDevice();
-
 private:
 	/*****************/
 	/**** BINDERS ****/
