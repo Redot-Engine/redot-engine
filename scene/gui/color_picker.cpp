@@ -1542,7 +1542,6 @@ void ColorPicker::_pick_finished() {
 	}
 	is_picking_color = false;
 	set_process_internal(false);
-	picker_window->hide();
 }
 
 void ColorPicker::_pick_button_pressed_legacy() {
