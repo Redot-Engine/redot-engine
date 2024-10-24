@@ -1911,17 +1911,10 @@ ColorPicker::ColorPicker() {
 	mode_popup->set_item_checked(current_mode, true);
 	mode_popup->set_item_checked(MODE_MAX + 1, true);
 	mode_popup->connect(SceneStringName(id_pressed), callable_mp(this, &ColorPicker::_set_mode_popup_value));
-	VBoxContainer *vbl = memnew(VBoxContainer);
-	real_vbox->add_child(vbl);
-
-	VBoxContainer *vbr = memnew(VBoxContainer);
-
-	real_vbox->add_child(vbr);
-	vbr->set_h_size_flags(SIZE_EXPAND_FILL);
 
 	slider_gc = memnew(GridContainer);
 
-	vbr->add_child(slider_gc);
+	real_vbox->add_child(slider_gc);
 	slider_gc->set_h_size_flags(SIZE_EXPAND_FILL);
 	slider_gc->set_columns(3);
 
@@ -1933,7 +1926,7 @@ ColorPicker::ColorPicker() {
 
 	hex_hbc = memnew(HBoxContainer);
 	hex_hbc->set_alignment(ALIGNMENT_BEGIN);
-	vbr->add_child(hex_hbc);
+	real_vbox->add_child(hex_hbc);
 
 	hex_hbc->add_child(memnew(Label("Hex")));
 
