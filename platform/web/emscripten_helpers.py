@@ -45,7 +45,7 @@ def create_engine_file(env, target, source, externs, threads_enabled):
 
 
 def create_template_zip(env, js, wasm, worker, side):
-    binary_name = "godot.editor" if env.editor_build else "godot"
+    binary_name = "redot.editor" if env.editor_build else "redot"
     zip_dir = env.Dir(env.GetTemplateZipPath())
     in_files = [
         js,
@@ -64,7 +64,7 @@ def create_template_zip(env, js, wasm, worker, side):
         out_files.append(zip_dir.File(binary_name + ".worker.js"))
     # Dynamic linking (extensions) specific.
     if env["dlink_enabled"]:
-        in_files.append(side)  # Side wasm (contains the actual Godot code).
+        in_files.append(side)  # Side wasm (contains the actual Redot code).
         out_files.append(zip_dir.File(binary_name + ".side.wasm"))
 
     service_worker = "#misc/dist/html/service-worker.js"
@@ -72,26 +72,27 @@ def create_template_zip(env, js, wasm, worker, side):
         # HTML
         html = "#misc/dist/html/editor.html"
         cache = [
-            "godot.editor.html",
+            "redot.editor.html",
+            "styles.css",
             "offline.html",
-            "godot.editor.js",
-            "godot.editor.audio.worklet.js",
-            "godot.editor.audio.position.worklet.js",
+            "redot.editor.js",
+            "redot.editor.audio.worklet.js",
+            "redot.editor.audio.position.worklet.js",
             "logo.svg",
             "favicon.png",
         ]
         if env["threads"]:
-            cache.append("godot.editor.worker.js")
-        opt_cache = ["godot.editor.wasm"]
+            cache.append("redot.editor.worker.js")
+        opt_cache = ["redot.editor.wasm"]
         subst_dict = {
             "___GODOT_VERSION___": get_build_version(),
-            "___GODOT_NAME___": "GodotEngine",
+            "___GODOT_NAME___": "RedotEngine",
             "___GODOT_CACHE___": json.dumps(cache),
             "___GODOT_OPT_CACHE___": json.dumps(opt_cache),
             "___GODOT_OFFLINE_PAGE___": "offline.html",
             "___GODOT_THREADS_ENABLED___": "true" if env["threads"] else "false",
         }
-        html = env.Substfile(target="#bin/godot${PROGSUFFIX}.html", source=html, SUBST_DICT=subst_dict)
+        html = env.Substfile(target="#bin/redot${PROGSUFFIX}.html", source=html, SUBST_DICT=subst_dict)
         in_files.append(html)
         out_files.append(zip_dir.File(binary_name + ".html"))
         # And logo/favicon
@@ -101,7 +102,7 @@ def create_template_zip(env, js, wasm, worker, side):
         out_files.append(zip_dir.File("favicon.png"))
         # PWA
         service_worker = env.Substfile(
-            target="#bin/godot${PROGSUFFIX}.service.worker.js",
+            target="#bin/redot${PROGSUFFIX}.service.worker.js",
             source=service_worker,
             SUBST_DICT=subst_dict,
         )
@@ -111,6 +112,8 @@ def create_template_zip(env, js, wasm, worker, side):
         out_files.append(zip_dir.File("manifest.json"))
         in_files.append("#misc/dist/html/offline.html")
         out_files.append(zip_dir.File("offline.html"))
+        in_files.append("#misc/dist/html/styles.css")
+        out_files.append(zip_dir.File("styles.css"))
     else:
         # HTML
         in_files.append("#misc/dist/html/full-size.html")
@@ -118,11 +121,13 @@ def create_template_zip(env, js, wasm, worker, side):
         in_files.append(service_worker)
         out_files.append(zip_dir.File(binary_name + ".service.worker.js"))
         in_files.append("#misc/dist/html/offline-export.html")
-        out_files.append(zip_dir.File("godot.offline.html"))
+        out_files.append(zip_dir.File("redot.offline.html"))
+        in_files.append("#misc/dist/html/styles.css")
+        out_files.append(zip_dir.File("styles.css"))
 
     zip_files = env.InstallAs(out_files, in_files)
     env.Zip(
-        "#bin/godot",
+        "#bin/redot",
         zip_files,
         ZIPROOT=zip_dir,
         ZIPSUFFIX="${PROGSUFFIX}${ZIPSUFFIX}",
