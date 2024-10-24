@@ -1138,16 +1138,13 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 	PickerShapeType actual_shape = _get_actual_shape();
 	if (p_which == 0) {
 		Vector<Point2> points;
-		Vector<Color> colors;
-		Vector<Color> colors2;
 		Color col = color;
 		Vector2 center = c->get_size() / 2.0;
 
-		switch (actual_shape) {
-			case SHAPE_HSV_WHEEL: {
-				points.resize(4);
-				colors.resize(4);
-				colors2.resize(4);
+		if (current_shape == SHAPE_HSV_RECTANGLE || current_shape == SHAPE_HSV_WHEEL) {
+			points.resize(4);
+			Vector<Color> colors2;
+			if (current_shape == SHAPE_HSV_WHEEL) {
 				real_t ring_radius_x = Math_SQRT12 * c->get_size().width * 0.42;
 				real_t ring_radius_y = Math_SQRT12 * c->get_size().height * 0.42;
 
@@ -1155,52 +1152,30 @@ void ColorPicker::_hsv_draw(int p_which, Control *c) {
 				points.set(1, center + Vector2(ring_radius_x, -ring_radius_y));
 				points.set(2, center + Vector2(ring_radius_x, ring_radius_y));
 				points.set(3, center + Vector2(-ring_radius_x, ring_radius_y));
-				colors.set(0, Color(1, 1, 1, 1));
-				colors.set(1, Color(1, 1, 1, 1));
-				colors.set(2, Color(0, 0, 0, 1));
-				colors.set(3, Color(0, 0, 0, 1));
-				c->draw_polygon(points, colors);
-
-				col.set_hsv(h, 1, 1);
-				col.a = 0;
-				colors2.set(0, col);
-				col.a = 1;
-				colors2.set(1, col);
-				col.set_hsv(h, 1, 0);
-				colors2.set(2, col);
-				col.a = 0;
-				colors2.set(3, col);
-				c->draw_polygon(points, colors2);
-				break;
-			}
-			case SHAPE_HSV_RECTANGLE: {
-				points.resize(4);
-				colors.resize(4);
-				colors2.resize(4);
+			} else {
 				points.set(0, Vector2());
 				points.set(1, Vector2(c->get_size().x, 0));
 				points.set(2, c->get_size());
 				points.set(3, Vector2(0, c->get_size().y));
-				colors.set(0, Color(1, 1, 1, 1));
-				colors.set(1, Color(1, 1, 1, 1));
-				colors.set(2, Color(0, 0, 0, 1));
-				colors.set(3, Color(0, 0, 0, 1));
-				c->draw_polygon(points, colors);
-				col = color;
-				col.set_hsv(h, 1, 1);
-				col.a = 0;
-				colors2.set(0, col);
-				col.a = 1;
-				colors2.set(1, col);
-				col.set_hsv(h, 1, 0);
-				colors2.set(2, col);
-				col.a = 0;
-				colors2.set(3, col);
-				c->draw_polygon(points, colors2);
-				break;
 			}
-			default: {
-			}
+			Vector<Color> colors = {
+				Color(1, 1, 1, 1),
+				Color(1, 1, 1, 1),
+				Color(0, 0, 0, 1),
+				Color(0, 0, 0, 1)
+			};
+			c->draw_polygon(points, colors);
+
+			col.set_hsv(h, 1, 1);
+			col.a = 0;
+			colors2.append(col);
+			col.a = 1;
+			colors2.append(col);
+			col.set_hsv(h, 1, 0);
+			colors2.append(col);
+			col.a = 0;
+			colors2.append(col);
+			c->draw_polygon(points, colors2);
 		}
 
 		int x;
