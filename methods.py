@@ -10,7 +10,7 @@ from io import StringIO, TextIOWrapper
 from pathlib import Path
 from typing import Generator, List, Optional, Union
 
-# Get the "Godot" folder name ahead of time
+# Get the "Redot" folder name ahead of time
 base_folder_path = str(os.path.abspath(Path(__file__).parent)) + "/"
 base_folder_only = os.path.basename(os.path.normpath(base_folder_path))
 # Listing all the folders we have converted
@@ -353,7 +353,7 @@ def detect_modules(search_path, recursive=False):
         version_path = os.path.join(path, "version.py")
         if os.path.exists(version_path):
             with open(version_path, "r", encoding="utf-8") as f:
-                if 'short_name = "godot"' in f.read():
+                if 'short_name = "redot"' in f.read():
                     return True
         return False
 
@@ -563,7 +563,7 @@ def detect_visual_c_compiler_version(tools_env):
     # "x86"           Native 32 bit compiler
     # "x86_amd64"     32 bit Cross Compiler for 64 bit
 
-    # There are other architectures, but Godot does not support them currently, so this function does not detect arm/amd64_arm
+    # There are other architectures, but Redot does not support them currently, so this function does not detect arm/amd64_arm
     # and similar architectures/compilers
 
     # Set chosen compiler to "not detected"
@@ -1376,7 +1376,7 @@ def generate_vs_project(env, original_args, project_name="redot"):
                 vsconf = f'{target}|{a["platform"]}'
                 break
 
-        condition = "'$(GodotConfiguration)|$(GodotPlatform)'=='" + vsconf + "'"
+        condition = "'$(RedotConfiguration)|$(RedotPlatform)'=='" + vsconf + "'"
         itemlist = {}
         for item in activeItems:
             key = os.path.dirname(item).replace("\\", "_")
@@ -1389,7 +1389,7 @@ def generate_vs_project(env, original_args, project_name="redot"):
             properties.append(
                 "<ActiveProjectItemList_%s>;%s;</ActiveProjectItemList_%s>" % (x, ";".join(itemlist[x]), x)
             )
-        output = f'bin\\godot{env["PROGSUFFIX"]}'
+        output = f'bin\\redot{env["PROGSUFFIX"]}'
 
         with open("misc/msvs/props.template", "r", encoding="utf-8") as file:
             props_template = file.read()
@@ -1482,43 +1482,43 @@ def generate_vs_project(env, original_args, project_name="redot"):
     section1 = []
     section2 = []
     for conf in confs:
-        godot_platform = conf["platform"]
+        redot_platform = conf["platform"]
         for p in conf["arches"]:
             sln_plat = p["platform"]
             proj_plat = sln_plat
-            godot_arch = p["architecture"]
+            redot_arch = p["architecture"]
 
             # Redirect editor configurations for non-Windows platforms to the Windows one, so the solution has all the permutations
             # and VS doesn't complain about missing project configurations.
             # These configurations are disabled, so they show up but won't build.
-            if godot_platform != "windows":
+            if redot_platform != "windows":
                 section1 += [f"editor|{sln_plat} = editor|{proj_plat}"]
                 section2 += [
                     f"{{{proj_uuid}}}.editor|{proj_plat}.ActiveCfg = editor|{proj_plat}",
                 ]
 
             for t in conf["targets"]:
-                godot_target = t
+                redot_target = t
 
                 # Windows x86 is a special little flower that requires a project platform == Win32 but a solution platform == x86.
-                if godot_platform == "windows" and godot_target == "editor" and godot_arch == "x86_32":
+                if redot_platform == "windows" and redot_target == "editor" and redot_arch == "x86_32":
                     sln_plat = "x86"
 
                 configurations += [
-                    f'<ProjectConfiguration Include="{godot_target}|{proj_plat}">',
-                    f"  <Configuration>{godot_target}</Configuration>",
+                    f'<ProjectConfiguration Include="{redot_target}|{proj_plat}">',
+                    f"  <Configuration>{redot_target}</Configuration>",
                     f"  <Platform>{proj_plat}</Platform>",
                     "</ProjectConfiguration>",
                 ]
 
                 properties += [
-                    f"<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='{godot_target}|{proj_plat}'\">",
-                    f"  <GodotConfiguration>{godot_target}</GodotConfiguration>",
-                    f"  <GodotPlatform>{proj_plat}</GodotPlatform>",
+                    f"<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='{redot_target}|{proj_plat}'\">",
+                    f"  <RedotConfiguration>{redot_target}</RedotConfiguration>",
+                    f"  <RedotPlatform>{proj_plat}</RedotPlatform>",
                     "</PropertyGroup>",
                 ]
 
-                if godot_platform != "windows":
+                if redot_platform != "windows":
                     configurations += [
                         f'<ProjectConfiguration Include="editor|{proj_plat}">',
                         "  <Configuration>editor</Configuration>",
@@ -1528,21 +1528,21 @@ def generate_vs_project(env, original_args, project_name="redot"):
 
                     properties += [
                         f"<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='editor|{proj_plat}'\">",
-                        "  <GodotConfiguration>editor</GodotConfiguration>",
-                        f"  <GodotPlatform>{proj_plat}</GodotPlatform>",
+                        "  <RedotConfiguration>editor</RedotConfiguration>",
+                        f"  <RedotPlatform>{proj_plat}</RedotPlatform>",
                         "</PropertyGroup>",
                     ]
 
-                p = f"{project_name}.{godot_platform}.{godot_target}.{godot_arch}.generated.props"
+                p = f"{project_name}.{redot_platform}.{redot_target}.{redot_arch}.generated.props"
                 imports += [
                     f'<Import Project="$(MSBuildProjectDirectory)\\{p}" Condition="Exists(\'$(MSBuildProjectDirectory)\\{p}\')"/>'
                 ]
 
-                section1 += [f"{godot_target}|{sln_plat} = {godot_target}|{sln_plat}"]
+                section1 += [f"{redot_target}|{sln_plat} = {redot_target}|{sln_plat}"]
 
                 section2 += [
-                    f"{{{proj_uuid}}}.{godot_target}|{sln_plat}.ActiveCfg = {godot_target}|{proj_plat}",
-                    f"{{{proj_uuid}}}.{godot_target}|{sln_plat}.Build.0 = {godot_target}|{proj_plat}",
+                    f"{{{proj_uuid}}}.{redot_target}|{sln_plat}.ActiveCfg = {redot_target}|{proj_plat}",
+                    f"{{{proj_uuid}}}.{redot_target}|{sln_plat}.Build.0 = {redot_target}|{proj_plat}",
                 ]
 
     # Add an extra import for a local user props file at the end, so users can add more overrides.

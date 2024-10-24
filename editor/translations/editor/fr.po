@@ -178,7 +178,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Redot Engine editor interface\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2024-08-13 23:09+0000\n"
 "Last-Translator: #Guigui <guillaume.grosjean@outlook.fr>\n"

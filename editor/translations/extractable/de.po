@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Redot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2024-02-23 21:51+0000\n"
 "Last-Translator: Cerno_b <cerno.b@gmail.com>\n"

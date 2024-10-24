@@ -50,7 +50,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Redot Engine editor interface\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2024-08-16 00:22+0000\n"
 "Last-Translator: Armin <Armin-KF@users.noreply.hosted.weblate.org>\n"
