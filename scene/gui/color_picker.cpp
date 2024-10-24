@@ -1074,6 +1074,9 @@ void ColorPicker::_update_text_value() {
 }
 
 void ColorPicker::_sample_input(const Ref<InputEvent> &p_event) {
+	if (!display_old_color) {
+		return;
+	}
 	const Ref<InputEventMouseButton> mb = p_event;
 	if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT) {
 		const Rect2 rect_old = Rect2(Point2(), Size2(sample->get_size().width * 0.5, sample->get_size().height * 0.95));
@@ -1126,7 +1129,7 @@ void ColorPicker::_sample_draw() {
 
 	if (color.r > 1 || color.g > 1 || color.b > 1) {
 		// Draw an indicator to denote that the new color is "overbright" and can't be displayed accurately in the preview.
-		sample->draw_texture(theme_cache.overbright_indicator, Point2(uv_edit->get_size().width * 0.5, 0));
+		sample->draw_texture(theme_cache.overbright_indicator, Point2(display_old_color ? sample->get_size().width * 0.5 : 0, 0));
 	}
 }
 
