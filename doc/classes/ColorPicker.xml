@@ -70,11 +70,17 @@
 		<member name="deferred_mode" type="bool" setter="set_deferred_mode" getter="is_deferred_mode" default="false">
 			If [code]true[/code], the color will apply only after the user releases the mouse button, otherwise it will apply immediately even in mouse motion event (which can cause performance issues).
 		</member>
+		<member name="display_old_color" type="bool" setter="set_display_old_color" getter="is_displaying_old_color" default="false">
+			If [code]true[/code], [member old_color] will be displayed instead of [member color].
+		</member>
 		<member name="edit_alpha" type="bool" setter="set_edit_alpha" getter="is_editing_alpha" default="true">
 			If [code]true[/code], shows an alpha channel slider (opacity).
 		</member>
 		<member name="hex_visible" type="bool" setter="set_hex_visible" getter="is_hex_visible" default="true">
 			If [code]true[/code], the hex color code input field is visible.
+		</member>
+		<member name="old_color" type="Color" setter="set_old_color" getter="get_old_color" default="Color(0, 0, 0, 1)">
+			The currently stored old color. See also [member display_old_color].
 		</member>
 		<member name="picker_shape" type="int" setter="set_picker_shape" getter="get_picker_shape" enum="ColorPicker.PickerShapeType" default="0">
 			The shape of the color space view. See [enum PickerShapeType].
