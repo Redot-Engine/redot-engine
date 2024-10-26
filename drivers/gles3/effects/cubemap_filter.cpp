@@ -56,8 +56,7 @@ CubemapFilter::CubemapFilter() {
 		cubemap_filter.shader_version = cubemap_filter.shader.version_create();
 	}
 
-	// Screen Triangle.
-	{
+	{ // Screen Triangle.
 		glGenBuffers(1, &screen_triangle);
 		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
 
