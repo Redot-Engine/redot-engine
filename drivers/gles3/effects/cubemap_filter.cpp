@@ -48,7 +48,6 @@ CubemapFilter::CubemapFilter() {
 	// to compensate.
 	ggx_samples = 4 * uint32_t(GLOBAL_GET("rendering/reflections/sky_reflections/ggx_samples"));
 
-	// Initialize shader with maximum sample count define
 	{
 		String defines;
 		defines += "\n#define MAX_SAMPLE_COUNT " + itos(ggx_samples) + "\n";
