@@ -2,8 +2,8 @@
 /*  cubemap_filter.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org/                         */
 /**************************************************************************/
 /* Copyright (c) 2024-present Redot Engine contributors                   */
 /*                                          (see REDOT_AUTHORS.md)        */
@@ -48,6 +48,7 @@ CubemapFilter::CubemapFilter() {
 	// to compensate.
 	ggx_samples = 4 * uint32_t(GLOBAL_GET("rendering/reflections/sky_reflections/ggx_samples"));
 
+	// Initialize shader with maximum sample count define
 	{
 		String defines;
 		defines += "\n#define MAX_SAMPLE_COUNT " + itos(ggx_samples) + "\n";
@@ -55,21 +56,19 @@ CubemapFilter::CubemapFilter() {
 		cubemap_filter.shader_version = cubemap_filter.shader.version_create();
 	}
 
-	{ // Screen Triangle.
+	// Setup Screen Triangle
+	{
 		glGenBuffers(1, &screen_triangle);
 		glBindBuffer(GL_ARRAY_BUFFER, screen_triangle);
 
 		const float qv[6] = {
-			-1.0f,
-			-1.0f,
-			-1.0f,
-			3.0f,
-			3.0f,
-			-1.0f,
+			-1.0f, -1.0f,
+			-1.0f, 3.0f,
+			3.0f, -1.0f,
 		};
 
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBufferData(GL_ARRAY_BUFFER, sizeof(qv), qv, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind buffer
 
 		glGenVertexArrays(1, &screen_triangle_array);
 		glBindVertexArray(screen_triangle_array);
@@ -77,7 +76,7 @@ CubemapFilter::CubemapFilter() {
 		glVertexAttribPointer(RS::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RS::ARRAY_VERTEX);
 		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind buffer
 	}
 }
 
