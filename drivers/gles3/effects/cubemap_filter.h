@@ -55,12 +55,15 @@ private:
 	uint32_t ggx_samples = 128;
 
 public:
-	static CubemapFilter *get_singleton() { return singleton; }
+	static CubemapFilter *get_singleton() {
+		return singleton;
+	}
 	CubemapFilter();
 	~CubemapFilter();
 
 	void filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap, GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer);
 };
+
 } //namespace GLES3
 
 #endif // GLES3_ENABLED
