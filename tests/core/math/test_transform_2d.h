@@ -112,6 +112,23 @@ TEST_CASE("[Transform2D] Affine inverse") {
 	CHECK(affine_inverted_again == orig);
 }
 
+TEST_CASE("[Transform2D] Set rotation") {
+	const real_t rot = 1.8;
+	const Vector2 scale = Vector2(2.5, 5);
+	const Vector2 useless_pos = Vector2();
+	Transform2D subject = Transform2D(0.2, scale, 0.0, useless_pos);
+
+	subject.set_rotation(rot);
+
+	const real_t res_rot = subject.get_rotation();
+	const Vector2 res_scale = subject.get_scale();
+	const real_t tol = 0.001;
+
+	CHECK(Math::is_equal_approx(rot, res_rot, tol));
+	CHECK(Math::is_equal_approx(scale.x, res_scale.x, tol));
+	CHECK(Math::is_equal_approx(scale.y, res_scale.y, tol));
+}
+
 TEST_CASE("[Transform2D] Orthonormalized") {
 	const Transform2D T = create_dummy_transform();
 	const Transform2D orthonormalized_T = T.orthonormalized();
