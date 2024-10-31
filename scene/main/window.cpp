@@ -1646,7 +1646,7 @@ void Window::_window_input(const Ref<InputEvent> &p_ev) {
 
 				String errs;
 				int line;
-				VariantParser::parse(&ss, shortcut_var, errs, line);
+				VariantParser::parse(&ss, shortcut_var, errs, line, nullptr, true);
 				debugger_stop_shortcut = shortcut_var;
 			}
 

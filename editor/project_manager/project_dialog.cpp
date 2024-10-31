@@ -686,14 +686,14 @@ void ProjectDialog::ok_pressed() {
 		// Load project.godot as ConfigFile to set the new name.
 		ConfigFile cfg;
 		String project_godot = path.path_join("project.godot");
-		Error err = cfg.load(project_godot);
+		Error err = cfg.load(project_godot, true);
 		if (err != OK) {
 			dialog_error->set_text(vformat(TTR("Couldn't load project at '%s' (error %d). It may be missing or corrupted."), project_godot, err));
 			dialog_error->popup_centered();
 			return;
 		}
 		cfg.set_value("application", "config/name", project_name->get_text().strip_edges());
-		err = cfg.save(project_godot);
+		err = cfg.save(project_godot, true);
 		if (err != OK) {
 			dialog_error->set_text(vformat(TTR("Couldn't save project at '%s' (error %d)."), project_godot, err));
 			dialog_error->popup_centered();

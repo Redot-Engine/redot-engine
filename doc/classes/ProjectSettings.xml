@@ -313,6 +313,19 @@
 			[b]Note:[/b] Delta smoothing is only attempted when [member display/window/vsync/vsync_mode] is set to [code]enabled[/code], as it does not work well without V-Sync.
 			It may take several seconds at a stable frame rate before the smoothing is initially activated. It will only be active on machines where performance is adequate to render frames at the refresh rate.
 		</member>
+		<member name="application/run/disable_modified_security_assistance" type="bool" setter="" getter="" default="false">
+			If [code]false[/code], enables security features intended to reduce exploit attack vectors which:
+			- Prevents [method @GlobalScope.var_to_str] from accepting [Object]s. Use [method @GlobalScope.var_to_str_with_objects] instead.
+			- Prevents [method @GlobalScope.str_to_var] from parsing [Object]s. Use [method @GlobalScope.str_to_var_with_objects] instead.
+			- Prevents [method ConfigFile.encode_to_text] from encoding [Object]s by default. Call with [code]allow_objects[/code] set to [code]true[/code] instead.
+			- Prevents [method ConfigFile.load] from loading [Object]s by default. Call with [code]allow_objects[/code] set to [code]true[/code] instead.
+			- Prevents [method ConfigFile.load_encrypted] from loading [Object]s by default. Call with [code]allow_objects[/code] set to [code]true[/code] instead.
+			- Prevents [method ConfigFile.load_encrypted_pass] from loading [Object]s by default. Call with [code]allow_objects[/code] set to [code]true[/code] instead.
+			- Prevents [method ConfigFile.parse] from parsing [Object]s in the [ConfigFile] by default. Call with [code]allow_objects[/code] set to [code]true[/code] instead.
+			- Prevents [method ConfigFile.save] from saving [Object]s by default. Call with [code]allow_objects[/code] set to [code]true[/code] instead.
+			- Prevents [method ConfigFile.save_encrypted] from saving [Object]s by default. Call with [code]allow_objects[/code] set to [code]true[/code] instead.
+			- Prevents [method ConfigFile.save_encrypted_pass] from saving [Object]s by default. Call with [code]allow_objects[/code] set to [code]true[/code] instead.
+		</member>
 		<member name="application/run/disable_stderr" type="bool" setter="" getter="" default="false">
 			If [code]true[/code], disables printing to standard error. If [code]true[/code], this also hides error and warning messages printed by [method @GlobalScope.push_error] and [method @GlobalScope.push_warning]. See also [member application/run/disable_stdout].
 			Changes to this setting will only be applied upon restarting the application. To control this at runtime, use [member Engine.print_error_messages].
