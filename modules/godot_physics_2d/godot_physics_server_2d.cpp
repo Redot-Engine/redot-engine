@@ -1286,7 +1286,7 @@ void GodotPhysicsServer2D::set_active(bool p_active) {
 
 void GodotPhysicsServer2D::init() {
 	doing_sync = false;
-	stepper = memnew(GodotStep2D);
+	stepper = memnew(RedotStep2D);
 }
 
 void GodotPhysicsServer2D::step(real_t p_step) {

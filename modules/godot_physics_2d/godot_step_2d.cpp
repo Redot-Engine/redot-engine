@@ -41,7 +41,7 @@
 #define ISLAND_SIZE_RESERVE 512
 #define CONSTRAINT_COUNT_RESERVE 1024
 
-void GodotStep2D::_populate_island(GodotBody2D *p_body, LocalVector<GodotBody2D *> &p_body_island, LocalVector<GodotConstraint2D *> &p_constraint_island) {
+void RedotStep2D::_populate_island(GodotBody2D *p_body, LocalVector<GodotBody2D *> &p_body_island, LocalVector<GodotConstraint2D *> &p_constraint_island) {
 	p_body->set_island_step(_step);
 
 	if (p_body->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC) {
@@ -74,12 +74,12 @@ void GodotStep2D::_populate_island(GodotBody2D *p_body, LocalVector<GodotBody2D 
 	}
 }
 
-void GodotStep2D::_setup_constraint(uint32_t p_constraint_index, void *p_userdata) {
+void RedotStep2D::_setup_constraint(uint32_t p_constraint_index, void *p_userdata) {
 	GodotConstraint2D *constraint = all_constraints[p_constraint_index];
 	constraint->setup(delta);
 }
 
-void GodotStep2D::_pre_solve_island(LocalVector<GodotConstraint2D *> &p_constraint_island) const {
+void RedotStep2D::_pre_solve_island(LocalVector<GodotConstraint2D *> &p_constraint_island) const {
 	uint32_t constraint_count = p_constraint_island.size();
 	uint32_t valid_constraint_count = 0;
 	for (uint32_t constraint_index = 0; constraint_index < constraint_count; ++constraint_index) {
@@ -92,7 +92,7 @@ void GodotStep2D::_pre_solve_island(LocalVector<GodotConstraint2D *> &p_constrai
 	p_constraint_island.resize(valid_constraint_count);
 }
 
-void GodotStep2D::_solve_island(uint32_t p_island_index, void *p_userdata) const {
+void RedotStep2D::_solve_island(uint32_t p_island_index, void *p_userdata) const {
 	const LocalVector<GodotConstraint2D *> &constraint_island = constraint_islands[p_island_index];
 
 	for (int i = 0; i < iterations; i++) {
@@ -103,7 +103,7 @@ void GodotStep2D::_solve_island(uint32_t p_island_index, void *p_userdata) const
 	}
 }
 
-void GodotStep2D::_check_suspend(LocalVector<GodotBody2D *> &p_body_island) const {
+void RedotStep2D::_check_suspend(LocalVector<GodotBody2D *> &p_body_island) const {
 	bool can_sleep = true;
 
 	uint32_t body_count = p_body_island.size();
@@ -127,7 +127,7 @@ void GodotStep2D::_check_suspend(LocalVector<GodotBody2D *> &p_body_island) cons
 	}
 }
 
-void GodotStep2D::step(GodotSpace2D *p_space, real_t p_delta) {
+void RedotStep2D::step(GodotSpace2D *p_space, real_t p_delta) {
 	p_space->lock(); // can't access space during this
 
 	p_space->setup(); //update inertias, etc
@@ -242,7 +242,7 @@ void GodotStep2D::step(GodotSpace2D *p_space, real_t p_delta) {
 	/* SETUP CONSTRAINTS / PROCESS COLLISIONS */
 
 	uint32_t total_constraint_count = all_constraints.size();
-	WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &GodotStep2D::_setup_constraint, nullptr, total_constraint_count, -1, true, SNAME("Physics2DConstraintSetup"));
+	WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &RedotStep2D::_setup_constraint, nullptr, total_constraint_count, -1, true, SNAME("Physics2DConstraintSetup"));
 	WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
 
 	{ //profile
@@ -262,7 +262,7 @@ void GodotStep2D::step(GodotSpace2D *p_space, real_t p_delta) {
 
 	// WARNING: `_solve_island` modifies the constraint islands for optimization purpose,
 	// their content is not reliable after these calls and shouldn't be used anymore.
-	group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &GodotStep2D::_solve_island, nullptr, island_count, -1, true, SNAME("Physics2DConstraintSolveIslands"));
+	group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &RedotStep2D::_solve_island, nullptr, island_count, -1, true, SNAME("Physics2DConstraintSolveIslands"));
 	WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
 
 	{ //profile
@@ -298,11 +298,11 @@ void GodotStep2D::step(GodotSpace2D *p_space, real_t p_delta) {
 	_step++;
 }
 
-GodotStep2D::GodotStep2D() {
+RedotStep2D::RedotStep2D() {
 	body_islands.reserve(BODY_ISLAND_COUNT_RESERVE);
 	constraint_islands.reserve(ISLAND_COUNT_RESERVE);
 	all_constraints.reserve(CONSTRAINT_COUNT_RESERVE);
 }
 
-GodotStep2D::~GodotStep2D() {
+RedotStep2D::~RedotStep2D() {
 }

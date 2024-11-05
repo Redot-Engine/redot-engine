@@ -37,7 +37,7 @@
 
 #include "core/templates/local_vector.h"
 
-class GodotStep2D {
+class RedotStep2D {
 	uint64_t _step = 1;
 
 	int iterations = 0;
@@ -55,8 +55,8 @@ class GodotStep2D {
 
 public:
 	void step(GodotSpace2D *p_space, real_t p_delta);
-	GodotStep2D();
-	~GodotStep2D();
+	RedotStep2D();
+	~RedotStep2D();
 };
 
 #endif // GODOT_STEP_2D_H
