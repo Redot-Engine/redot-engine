@@ -792,8 +792,9 @@ void GDScriptFunction::disassemble(const Vector<String> &p_code_lines) const {
 				text += method->get_name();
 				text += "(";
 				for (int i = 0; i < argc; i++) {
-					if (i > 0)
+					if (i > 0) {
 						text += ", ";
+					}
 					text += DADDR(1 + i);
 				}
 				text += ")";
@@ -835,8 +836,9 @@ void GDScriptFunction::disassemble(const Vector<String> &p_code_lines) const {
 				text += method->get_name();
 				text += "(";
 				for (int i = 0; i < argc; i++) {
-					if (i > 0)
+					if (i > 0) {
 						text += ", ";
+					}
 					text += DADDR(1 + i);
 				}
 				text += ")";

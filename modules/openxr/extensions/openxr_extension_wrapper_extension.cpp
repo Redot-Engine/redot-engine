@@ -300,8 +300,7 @@ void OpenXRExtensionWrapperExtension::register_extension_wrapper() {
 	OpenXRAPI::register_extension_wrapper(this);
 }
 
-OpenXRExtensionWrapperExtension::OpenXRExtensionWrapperExtension() :
-		Object(), OpenXRExtensionWrapper() {
+OpenXRExtensionWrapperExtension::OpenXRExtensionWrapperExtension() {
 	openxr_api.instantiate();
 }
 

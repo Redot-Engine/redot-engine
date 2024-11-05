@@ -35,6 +35,7 @@
 
 #include "core/io/resource.h"
 
+class GLTFObjectModelProperty;
 class Light3D;
 
 // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual
@@ -56,6 +57,8 @@ private:
 	Dictionary additional_data;
 
 public:
+	static void set_cone_inner_attenuation_conversion_expressions(Ref<GLTFObjectModelProperty> &r_obj_model_prop);
+
 	Color get_color();
 	void set_color(Color p_color);
 
