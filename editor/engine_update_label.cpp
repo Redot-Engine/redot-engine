@@ -298,7 +298,7 @@ void EngineUpdateLabel::pressed() {
 		} break;
 
 		case UpdateStatus::UPDATE_AVAILABLE: {
-			OS::get_singleton()->shell_open("https://redotengine.org/download/archive/" + available_newer_version);
+			OS::get_singleton()->shell_open("https://github.com/Redot-Engine/redot-engine/releases/tag/redot-" + available_newer_version);
 		} break;
 
 		default: {
