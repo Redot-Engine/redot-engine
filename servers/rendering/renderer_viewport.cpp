@@ -183,8 +183,8 @@ void RendererViewport::_configure_3d_render_buffers(Viewport *p_viewport) {
 				case RS::VIEWPORT_SCALING_3D_MODE_NEAREST:
 					target_width = p_viewport->size.width;
 					target_height = p_viewport->size.height;
-					render_width = target_width * scaling_3d_scale;
-					render_height = target_height * scaling_3d_scale;
+					render_width = CLAMP(target_width * scaling_3d_scale, 1, 16384);
+					render_height = CLAMP(target_width * scaling_3d_scale, 1, 16384);
 					break;
 				case RS::VIEWPORT_SCALING_3D_MODE_FSR:
 				case RS::VIEWPORT_SCALING_3D_MODE_FSR2:
