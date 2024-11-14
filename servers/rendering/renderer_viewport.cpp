@@ -180,6 +180,14 @@ void RendererViewport::_configure_3d_render_buffers(Viewport *p_viewport) {
 					render_width = CLAMP(target_width * scaling_3d_scale, 1, 16384);
 					render_height = CLAMP(target_height * scaling_3d_scale, 1, 16384);
 					break;
+				case RS::VIEWPORT_SCALING_3D_MODE_NEAREST:
+					target_width = p_viewport->size.width;
+					target_height = p_viewport->size.height;
+					render_width = int(target_width * scaling_3d_scale);
+					render_height = int(target_height * scaling_3d_scale);
+					
+					RSG::texture_storage->set_filter_mode(p_viewport->render_target, RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST);
+					break;
 				case RS::VIEWPORT_SCALING_3D_MODE_FSR:
 				case RS::VIEWPORT_SCALING_3D_MODE_FSR2:
 					target_width = p_viewport->size.width;

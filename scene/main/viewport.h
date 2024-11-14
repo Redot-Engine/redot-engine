@@ -100,6 +100,7 @@ class Viewport : public Node {
 public:
 	enum Scaling3DMode {
 		SCALING_3D_MODE_BILINEAR,
+		SCALING_3D_MODE_NEAREST,
 		SCALING_3D_MODE_FSR,
 		SCALING_3D_MODE_FSR2,
 		SCALING_3D_MODE_MAX
