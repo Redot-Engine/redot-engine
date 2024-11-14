@@ -483,7 +483,7 @@
 		</constant>
 		<constant name="SCALING_3D_MODE_BILINEAR" value="0" enum="Scaling3DMode">
 			Use bilinear scaling for the viewport's 3D buffer. The amount of scaling can be set using [member scaling_3d_scale]. Values less than [code]1.0[/code] will result in undersampling, while values greater than [code]1.0[/code] will result in supersampling. A value of [code]1.0[/code] disables scaling.
- 		</constant>
+		</constant>
 		<constant name="SCALING_3D_MODE_NEAREST" value="1" enum="Scaling3DMode">
 			Use nearest neighbor scaling for the viewport's 3D buffer. The amount of scaling can be set using [member scaling_3d_scale]. Values less than [code]1.0[/code] will result in undersampling, while values greater than [code]1.0[/code] will result in supersampling. A value of [code]1.0[/code] disables scaling and applies the closest pixel without interpolation.
 		</constant>
@@ -496,7 +496,6 @@
 		<constant name="SCALING_3D_MODE_MAX" value="4" enum="Scaling3DMode">
 			Represents the size of the [enum Scaling3DMode] enum.
 		</constant>
-
 		<constant name="MSAA_DISABLED" value="0" enum="MSAA">
 			Multisample antialiasing mode disabled. This is the default value, and is also the fastest setting.
 		</constant>
