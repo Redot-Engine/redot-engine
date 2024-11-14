@@ -170,7 +170,6 @@ void RendererViewport::_configure_3d_render_buffers(Viewport *p_viewport) {
 			int target_height;
 			int render_width;
 			int render_height;
-			RenderSceneBuffersConfiguration rb_config;
 
 			switch (scaling_3d_mode) {
 				case RS::VIEWPORT_SCALING_3D_MODE_BILINEAR:
@@ -184,8 +183,8 @@ void RendererViewport::_configure_3d_render_buffers(Viewport *p_viewport) {
 				case RS::VIEWPORT_SCALING_3D_MODE_NEAREST:
 					target_width = p_viewport->size.width;
 					target_height = p_viewport->size.height;
-					render_width = CLAMP(int(target_width * scaling_3d_scale), 1, 16384);
-					render_height = CLAMP(int(target_height * scaling_3d_scale), 1, 16384);
+					render_width = target_width;
+					render_height = target_height;
 					rb_config.set_filter_mode(RenderSceneBuffersConfiguration::TEXTURE_FILTER_NEAREST);
 					break;
 				case RS::VIEWPORT_SCALING_3D_MODE_FSR:
@@ -229,6 +228,7 @@ void RendererViewport::_configure_3d_render_buffers(Viewport *p_viewport) {
 			// to compensate for the loss of sharpness.
 			const float texture_mipmap_bias = log2f(MIN(scaling_3d_scale, 1.0)) + p_viewport->texture_mipmap_bias;
 
+			RenderSceneBuffersConfiguration rb_config;
 			rb_config.set_render_target(p_viewport->render_target);
 			rb_config.set_internal_size(Size2i(render_width, render_height));
 			rb_config.set_target_size(Size2(target_width, target_height));
