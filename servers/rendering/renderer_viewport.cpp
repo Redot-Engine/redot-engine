@@ -185,7 +185,6 @@ void RendererViewport::_configure_3d_render_buffers(Viewport *p_viewport) {
 					target_height = p_viewport->size.height;
 					render_width = target_width;
 					render_height = target_height;
-					rb_config.set_filter_mode(RenderSceneBuffersConfiguration::TEXTURE_FILTER_NEAREST);
 					break;
 				case RS::VIEWPORT_SCALING_3D_MODE_FSR:
 				case RS::VIEWPORT_SCALING_3D_MODE_FSR2:
