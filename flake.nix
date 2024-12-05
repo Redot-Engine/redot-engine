@@ -28,10 +28,8 @@
           pkgs,
         }:
         {
-          default =
-            pkgs.callPackage ./package.nix
-              {
-              };
+          default = pkgs.callPackage ./package.nix {
+          };
         }
       );
       devShells = forEachSupportedSystem (

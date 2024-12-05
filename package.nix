@@ -94,7 +94,7 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/bin"
-    cp bin/godot.* $out/bin/redot
+    cp bin/redot*.* $out/bin/redot
 
     runHook postInstall
   '';
