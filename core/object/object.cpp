@@ -739,19 +739,33 @@ void Object::setvar(const Variant &p_key, const Variant &p_value, bool *r_valid)
 }
 
 Variant Object::callv(const StringName &p_method, const Array &p_args) {
-	const Variant **argptrs = nullptr;
-
-	if (p_args.size() > 0) {
-		argptrs = (const Variant **)alloca(sizeof(Variant *) * p_args.size());
-		for (int i = 0; i < p_args.size(); i++) {
-			argptrs[i] = &p_args[i];
-		}
-	}
-
+	Variant ret;
 	Callable::CallError ce;
-	const Variant ret = callp(p_method, argptrs, p_args.size(), ce);
+	const Variant **argptrs = nullptr;
+	const int argcount = p_args.size();
+	if (argcount) {
+		argptrs = (const Variant **)alloca(sizeof(Variant*) * argcount);
+		if (p_args.is_read_only() && argcount > 1) {
+			Variant *args = (Variant *)alloca(sizeof(Variant) * argcount);
+			for (int i = 0; i < argcount; i++) {
+				new (&args[i]) Variant(p_args[i]);
+				argptrs[i] = &args[i];
+			}
+			ret = callp(p_method, argptrs, argcount, ce);
+			for (int i = argcount - 1; i >= 0; i--) {
+				args[i].~Variant();
+			}
+		} else {
+			for (int i = 0; i < argcount; i++) {
+				argptrs[i] = &p_args[i];
+			}
+			ret = callp(p_method, argptrs, argcount, ce);
+		}
+	} else {
+		ret = callp(p_method, argptrs, argcount, ce);
+	}
 	if (ce.error != Callable::CallError::CALL_OK) {
-		ERR_FAIL_V_MSG(Variant(), vformat("Error calling method from 'callv': %s.", Variant::get_call_error_text(this, p_method, argptrs, p_args.size(), ce)));
+		ERR_FAIL_V_MSG(Variant(), vformat("Error calling method from 'callv': %s.", Variant::get_call_error_text(this, p_method, argptrs, argcount, ce)));
 	}
 	return ret;
 }
