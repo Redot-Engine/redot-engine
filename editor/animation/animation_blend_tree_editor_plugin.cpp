@@ -899,7 +899,7 @@ bool AnimationNodeBlendTreeEditor::_update_filters(const Ref<AnimationNode> &ano
 				//just a node, not a property track
 				String types_text = "[";
 				if (types.has(String(path))) {
-					RBSet<String>::Iterator F = types[String(path)].begin();
+					RBSet<String>::ConstIterator F = types[String(path)].begin();
 					types_text += *F;
 					while (F) {
 						types_text += " / " + *F;
