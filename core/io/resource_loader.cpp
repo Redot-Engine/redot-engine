@@ -1492,8 +1492,8 @@ void ResourceLoader::set_create_missing_resources_if_class_unavailable(bool p_en
 void ResourceLoader::add_custom_loaders() {
 	String custom_loader_base_class = ResourceFormatLoader::get_class_static();
 
-	List<StringName> global_classes;
-	ScriptServer::get_global_class_list(&global_classes);
+	LocalVector<StringName> global_classes;
+	ScriptServer::get_global_class_list(global_classes);
 
 	for (const StringName &class_name : global_classes) {
 		StringName base_class = ScriptServer::get_global_class_native_base(class_name);
