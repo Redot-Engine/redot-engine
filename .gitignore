@@ -380,3 +380,6 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 *.generated.props
+
+# Nix
+result

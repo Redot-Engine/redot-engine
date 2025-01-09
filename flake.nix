@@ -2,7 +2,7 @@
   description = "A Nix-flake-based C/C++ development environment";
 
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
+    nixpkgs.url = "github:nixos/nixpkgs/master";
     systems.url = "github:nix-systems/default";
   };
 
@@ -52,8 +52,8 @@
                     installShellFiles
                     python3
                     makeWrapper
-                    dotnet-sdk_8
-                    dotnet-runtime_8
+                    dotnet-sdk_9
+                    dotnet-runtime_9
                     vulkan-loader
                     vulkan-headers
                     fontconfig
