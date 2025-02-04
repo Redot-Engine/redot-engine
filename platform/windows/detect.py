@@ -676,6 +676,10 @@ def configure_mingw(env: "SConsEnvironment"):
 
     ## Build type
 
+    # Need this under Nix to find libraries like mcfgthread
+    if env["nix"]:
+        env.Append(LIBPATH=[os.environ.get("NIX_LIBS")])
+
     if not env["use_llvm"] and not try_cmd("gcc --version", env["mingw_prefix"], env["arch"]):
         env["use_llvm"] = True
 
