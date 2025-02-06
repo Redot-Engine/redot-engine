@@ -34,32 +34,45 @@
 
 #include "csharp_script.h"
 
-#include "core/config/engine.h"
+#ifdef TOOLS_ENABLED
+#include "editor/editor_translation_parser.h"
+
+#include "editor/csharp_translation_parser_plugin.h"
+#endif
 
 CSharpLanguage *script_language_cs = nullptr;
 Ref<ResourceFormatLoaderCSharpScript> resource_loader_cs;
 Ref<ResourceFormatSaverCSharpScript> resource_saver_cs;
 
+#ifdef TOOLS_ENABLED
+Ref<CSharpEditorTranslationParserPlugin> csharp_translation_parser_plugin;
+#endif
+
 mono_bind::GodotSharp *_godotsharp = nullptr;
 
 void initialize_mono_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+		GDREGISTER_CLASS(CSharpScript);
+
+		_godotsharp = memnew(mono_bind::GodotSharp);
+
+		script_language_cs = memnew(CSharpLanguage);
+		script_language_cs->set_language_index(ScriptServer::get_language_count());
+		ScriptServer::register_language(script_language_cs);
+
+		resource_loader_cs.instantiate();
+		ResourceLoader::add_resource_format_loader(resource_loader_cs);
+
+		resource_saver_cs.instantiate();
+		ResourceSaver::add_resource_format_saver(resource_saver_cs);
 	}
 
-	GDREGISTER_CLASS(CSharpScript);
-
-	_godotsharp = memnew(mono_bind::GodotSharp);
-
-	script_language_cs = memnew(CSharpLanguage);
-	script_language_cs->set_language_index(ScriptServer::get_language_count());
-	ScriptServer::register_language(script_language_cs);
-
-	resource_loader_cs.instantiate();
-	ResourceLoader::add_resource_format_loader(resource_loader_cs);
-
-	resource_saver_cs.instantiate();
-	ResourceSaver::add_resource_format_saver(resource_saver_cs);
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SERVERS) {
+		csharp_translation_parser_plugin.instantiate();
+		EditorTranslationParser::get_singleton()->add_parser(csharp_translation_parser_plugin, EditorTranslationParser::STANDARD);
+	}
+#endif // TOOLS_ENABLED
 }
 
 void uninitialize_mono_module(ModuleInitializationLevel p_level) {
@@ -78,6 +91,13 @@ void uninitialize_mono_module(ModuleInitializationLevel p_level) {
 
 	ResourceSaver::remove_resource_format_saver(resource_saver_cs);
 	resource_saver_cs.unref();
+
+#ifdef TOOLS_ENABLED
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		EditorTranslationParser::get_singleton()->remove_parser(csharp_translation_parser_plugin, EditorTranslationParser::STANDARD);
+		csharp_translation_parser_plugin.unref();
+	}
+#endif // TOOLS_ENABLED
 
 	if (_godotsharp) {
 		memdelete(_godotsharp);
