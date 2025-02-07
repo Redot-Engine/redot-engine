@@ -36,8 +36,8 @@
 #include "core/templates/vector.h"
 
 RandomPCG::RandomPCG(uint64_t p_seed, uint64_t p_inc) :
-		pcg(),
-		current_inc(p_inc) {
+pcg(),
+current_inc(p_inc) {
 	seed(p_seed);
 }
 
@@ -47,17 +47,18 @@ void RandomPCG::randomize() {
 
 int64_t RandomPCG::rand_weighted(const Vector<float> &p_weights) {
 	ERR_FAIL_COND_V_MSG(p_weights.is_empty(), -1, "Weights array is empty.");
-	int64_t weights_size = p_weights.size();
-	const float *weights = p_weights.ptr();
+	const int64_t weights_size = p_weights.size();
+	const float *const weights = p_weights.ptr();
 	float weights_sum = 0.0;
 	for (int64_t i = 0; i < weights_size; ++i) {
 		weights_sum += weights[i];
 	}
 
-	float remaining_distance = randf() * weights_sum;
+	const float remaining_distance = randf() * weights_sum;
+	float current_distance = remaining_distance;
 	for (int64_t i = 0; i < weights_size; ++i) {
-		remaining_distance -= weights[i];
-		if (remaining_distance < 0) {
+		current_distance -= weights[i];
+		if (current_distance < 0) {
 			return i;
 		}
 	}
@@ -82,5 +83,8 @@ int RandomPCG::random(int p_from, int p_to) {
 	if (p_from == p_to) {
 		return p_from;
 	}
-	return int(rand(uint32_t(Math::abs(p_from - p_to)) + 1U)) + MIN(p_from, p_to);
+	const int difference = Math::abs(p_from - p_to);
+	const uint32_t range = difference + 1U;
+	const int base = MIN(p_from, p_to);
+	return int(rand(range)) + base;
 }

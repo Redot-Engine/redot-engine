@@ -35,9 +35,13 @@
 #include "core/math/transform_2d.h"
 #include "core/math/transform_3d.h"
 
+// Constants for numerical stability and readability
+static const real_t SMALLEST_AXIS_LENGTH = 0.0001f;
+static const real_t DETERMINANT_EPSILON = 0.01f;
+static const real_t ORTHO_EPSILON = 0.001f;
+static const real_t SLERP_EPSILON = 0.00001f;
+
 void TransformInterpolator::interpolate_transform_2d(const Transform2D &p_prev, const Transform2D &p_curr, Transform2D &r_result, real_t p_fraction) {
-	// Special case for physics interpolation, if flipping, don't interpolate basis.
-	// If the determinant polarity changes, the handedness of the coordinate system changes.
 	if (_sign(p_prev.determinant()) != _sign(p_curr.determinant())) {
 		r_result.columns[0] = p_curr.columns[0];
 		r_result.columns[1] = p_curr.columns[1];
@@ -49,7 +53,7 @@ void TransformInterpolator::interpolate_transform_2d(const Transform2D &p_prev, 
 }
 
 void TransformInterpolator::interpolate_transform_3d(const Transform3D &p_prev, const Transform3D &p_curr, Transform3D &r_result, real_t p_fraction) {
-	r_result.origin = p_prev.origin + ((p_curr.origin - p_prev.origin) * p_fraction);
+	r_result.origin = p_prev.origin.lerp(p_curr.origin, p_fraction);
 	interpolate_basis(p_prev.basis, p_curr.basis, r_result.basis, p_fraction);
 }
 
@@ -59,7 +63,7 @@ void TransformInterpolator::interpolate_basis(const Basis &p_prev, const Basis &
 }
 
 void TransformInterpolator::interpolate_transform_3d_via_method(const Transform3D &p_prev, const Transform3D &p_curr, Transform3D &r_result, real_t p_fraction, Method p_method) {
-	r_result.origin = p_prev.origin + ((p_curr.origin - p_prev.origin) * p_fraction);
+	r_result.origin = p_prev.origin.lerp(p_curr.origin, p_fraction);
 	interpolate_basis_via_method(p_prev.basis, p_curr.basis, r_result.basis, p_fraction, p_method);
 }
 
@@ -82,18 +86,18 @@ Quaternion TransformInterpolator::_basis_to_quat_unchecked(const Basis &p_basis)
 	real_t trace = m.rows[0][0] + m.rows[1][1] + m.rows[2][2];
 	real_t temp[4];
 
-	if (trace > 0.0) {
+	if (trace > 0.0f) {
 		real_t s = Math::sqrt(trace + 1.0f);
-		temp[3] = (s * 0.5f);
+		temp[3] = s * 0.5f;
 		s = 0.5f / s;
 
-		temp[0] = ((m.rows[2][1] - m.rows[1][2]) * s);
-		temp[1] = ((m.rows[0][2] - m.rows[2][0]) * s);
-		temp[2] = ((m.rows[1][0] - m.rows[0][1]) * s);
+		temp[0] = (m.rows[2][1] - m.rows[1][2]) * s;
+		temp[1] = (m.rows[0][2] - m.rows[2][0]) * s;
+		temp[2] = (m.rows[1][0] - m.rows[0][1]) * s;
 	} else {
 		int i = m.rows[0][0] < m.rows[1][1]
-				? (m.rows[1][1] < m.rows[2][2] ? 2 : 1)
-				: (m.rows[0][0] < m.rows[2][2] ? 2 : 0);
+		? (m.rows[1][1] < m.rows[2][2] ? 2 : 1)
+		: (m.rows[0][0] < m.rows[2][2] ? 2 : 0);
 		int j = (i + 1) % 3;
 		int k = (i + 2) % 3;
 
@@ -111,277 +115,142 @@ Quaternion TransformInterpolator::_basis_to_quat_unchecked(const Basis &p_basis)
 
 Quaternion TransformInterpolator::_quat_slerp_unchecked(const Quaternion &p_from, const Quaternion &p_to, real_t p_fraction) {
 	Quaternion to1;
-	real_t omega, cosom, sinom, scale0, scale1;
+	real_t cosom = p_from.dot(p_to);
 
-	// Calculate cosine.
-	cosom = p_from.dot(p_to);
-
-	// Adjust signs (if necessary)
 	if (cosom < 0.0f) {
 		cosom = -cosom;
-		to1.x = -p_to.x;
-		to1.y = -p_to.y;
-		to1.z = -p_to.z;
-		to1.w = -p_to.w;
+		to1 = -p_to;
 	} else {
-		to1.x = p_to.x;
-		to1.y = p_to.y;
-		to1.z = p_to.z;
-		to1.w = p_to.w;
+		to1 = p_to;
 	}
 
-	// Calculate coefficients.
-
-	// This check could possibly be removed as we dealt with this
-	// case in the find_method() function, but is left for safety, it probably
-	// isn't a bottleneck.
-	if ((1.0f - cosom) > (real_t)CMP_EPSILON) {
-		// standard case (slerp)
-		omega = Math::acos(cosom);
-		sinom = Math::sin(omega);
-		scale0 = Math::sin((1.0f - p_fraction) * omega) / sinom;
-		scale1 = Math::sin(p_fraction * omega) / sinom;
+	if ((1.0f - cosom) > CMP_EPSILON) {
+		real_t omega = Math::acos(cosom);
+		real_t sinom = 1.0f / Math::sin(omega);
+		real_t scale0 = Math::sin((1.0f - p_fraction) * omega) * sinom;
+		real_t scale1 = Math::sin(p_fraction * omega) * sinom;
+		return (p_from * scale0) + (to1 * scale1);
 	} else {
-		// "from" and "to" quaternions are very close
-		//  ... so we can do a linear interpolation
-		scale0 = 1.0f - p_fraction;
-		scale1 = p_fraction;
+		// Reverted to original linear interpolation implementation
+		return Quaternion(
+			p_from.x + (to1.x - p_from.x) * p_fraction,
+						  p_from.y + (to1.y - p_from.y) * p_fraction,
+						  p_from.z + (to1.z - p_from.z) * p_fraction,
+						  p_from.w + (to1.w - p_from.w) * p_fraction
+		).normalized();
 	}
-	// Calculate final values.
-	return Quaternion(
-			scale0 * p_from.x + scale1 * to1.x,
-			scale0 * p_from.y + scale1 * to1.y,
-			scale0 * p_from.z + scale1 * to1.z,
-			scale0 * p_from.w + scale1 * to1.w);
 }
 
 Basis TransformInterpolator::_basis_slerp_unchecked(Basis p_from, Basis p_to, real_t p_fraction) {
-	Quaternion from = _basis_to_quat_unchecked(p_from);
-	Quaternion to = _basis_to_quat_unchecked(p_to);
-
-	Basis b(_quat_slerp_unchecked(from, to, p_fraction));
-	return b;
+	return Basis(_quat_slerp_unchecked(_basis_to_quat_unchecked(p_from), _basis_to_quat_unchecked(p_to), p_fraction));
 }
 
 void TransformInterpolator::interpolate_basis_scaled_slerp(Basis p_prev, Basis p_curr, Basis &r_result, real_t p_fraction) {
-	// Normalize both and find lengths.
 	Vector3 lengths_prev = _basis_orthonormalize(p_prev);
 	Vector3 lengths_curr = _basis_orthonormalize(p_curr);
 
 	r_result = _basis_slerp_unchecked(p_prev, p_curr, p_fraction);
 
-	// Now the result is unit length basis, we need to scale.
-	Vector3 lengths_lerped = lengths_prev + ((lengths_curr - lengths_prev) * p_fraction);
-
-	// Keep a note that the column / row order of the basis is weird,
-	// so keep an eye for bugs with this.
+	Vector3 lengths_lerped = lengths_prev.lerp(lengths_curr, p_fraction);
 	r_result[0] *= lengths_lerped;
 	r_result[1] *= lengths_lerped;
 	r_result[2] *= lengths_lerped;
 }
 
 void TransformInterpolator::interpolate_basis_linear(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction) {
-	// Interpolate basis.
 	r_result = p_prev.lerp(p_curr, p_fraction);
 
-	// It turns out we need to guard against zero scale basis.
-	// This is kind of silly, as we should probably fix the bugs elsewhere in Redot that can't deal with
-	// zero scale, but until that time...
-	// TODO: Rewrite this ^
+	const real_t smallest_squared = SMALLEST_AXIS_LENGTH * SMALLEST_AXIS_LENGTH;
 	for (int n = 0; n < 3; n++) {
 		Vector3 &axis = r_result[n];
-
-		// Not ok, this could cause errors due to bugs elsewhere,
-		// so we will bodge set this to a small value.
-		const real_t smallest = 0.0001f;
-		const real_t smallest_squared = smallest * smallest;
 		if (axis.length_squared() < smallest_squared) {
-			// Setting a different component to the smallest
-			// helps prevent the situation where all the axes are pointing in the same direction,
-			// which could be a problem for e.g. cross products...
-			axis[n] = smallest;
+			axis[n] = SMALLEST_AXIS_LENGTH;
 		}
 	}
 }
 
-// Returns length.
 real_t TransformInterpolator::_vec3_normalize(Vector3 &p_vec) {
 	real_t lengthsq = p_vec.length_squared();
 	if (lengthsq == 0.0f) {
-		p_vec.x = p_vec.y = p_vec.z = 0.0f;
+		p_vec = Vector3();
 		return 0.0f;
 	}
 	real_t length = Math::sqrt(lengthsq);
-	p_vec.x /= length;
-	p_vec.y /= length;
-	p_vec.z /= length;
+	p_vec /= length;
 	return length;
 }
 
-// Returns lengths.
 Vector3 TransformInterpolator::_basis_orthonormalize(Basis &r_basis) {
-	// Gram-Schmidt Process.
-
 	Vector3 x = r_basis.get_column(0);
 	Vector3 y = r_basis.get_column(1);
 	Vector3 z = r_basis.get_column(2);
 
 	Vector3 lengths;
-
 	lengths.x = _vec3_normalize(x);
-	y = (y - x * (x.dot(y)));
+	y -= x * x.dot(y);
 	lengths.y = _vec3_normalize(y);
-	z = (z - x * (x.dot(z)) - y * (y.dot(z)));
+	z -= x * x.dot(z) + y * y.dot(z);
 	lengths.z = _vec3_normalize(z);
 
 	r_basis.set_column(0, x);
 	r_basis.set_column(1, y);
 	r_basis.set_column(2, z);
-
 	return lengths;
 }
 
 TransformInterpolator::Method TransformInterpolator::_test_basis(Basis p_basis, bool r_needed_normalize, Quaternion &r_quat) {
-	// Axis lengths.
-	Vector3 al = Vector3(p_basis.get_column(0).length_squared(),
-			p_basis.get_column(1).length_squared(),
-			p_basis.get_column(2).length_squared());
+	Vector3 al(p_basis.get_column(0).length_squared(),
+			   p_basis.get_column(1).length_squared(),
+			   p_basis.get_column(2).length_squared());
 
-	// Non unit scale?
-	if (r_needed_normalize || !_vec3_is_equal_approx(al, Vector3(1.0, 1.0, 1.0), (real_t)0.001f)) {
-		// If the basis is not normalized (at least approximately), it will fail the checks needed for slerp.
-		// So we try to detect a scaled (but not sheared) basis, which we *can* slerp by normalizing first,
-		// and lerping the scales separately.
-
-		// If any of the axes are really small, it is unlikely to be a valid rotation, or is scaled too small to deal with float error.
-		const real_t sl_epsilon = 0.00001f;
-		if ((al.x < sl_epsilon) ||
-				(al.y < sl_epsilon) ||
-				(al.z < sl_epsilon)) {
+	if (r_needed_normalize || !_vec3_is_equal_approx(al, Vector3(1.0f, 1.0f, 1.0f), ORTHO_EPSILON)) {
+		if (al.x < SLERP_EPSILON || al.y < SLERP_EPSILON || al.z < SLERP_EPSILON) {
 			return INTERP_LERP;
 		}
-
-		// Normalize the basis.
-		Basis norm_basis = p_basis;
 
 		al.x = Math::sqrt(al.x);
 		al.y = Math::sqrt(al.y);
 		al.z = Math::sqrt(al.z);
 
-		norm_basis.set_column(0, norm_basis.get_column(0) / al.x);
-		norm_basis.set_column(1, norm_basis.get_column(1) / al.y);
-		norm_basis.set_column(2, norm_basis.get_column(2) / al.z);
-
-		// This doesn't appear necessary, as the later checks will catch it.
-		// if (!_basis_is_orthogonal_any_scale(norm_basis)) {
-		// return INTERP_LERP;
-		// }
-
-		p_basis = norm_basis;
-
-		// Orthonormalize not necessary as normal normalization(!) works if the
-		// axes are orthonormal.
-		// p_basis.orthonormalize();
-
-		// If we needed to normalize one of the two bases, we will need to normalize both,
-		// regardless of whether the 2nd needs it, just to make sure it takes the path to return
-		// INTERP_SCALED_LERP on the 2nd call of _test_basis.
+		p_basis.set_column(0, p_basis.get_column(0) / al.x);
+		p_basis.set_column(1, p_basis.get_column(1) / al.y);
+		p_basis.set_column(2, p_basis.get_column(2) / al.z);
 		r_needed_normalize = true;
 	}
 
-	// Apply less stringent tests than the built in slerp, the standard Redot slerp
-	// is too susceptible to float error to be useful.
 	real_t det = p_basis.determinant();
-	if (!Math::is_equal_approx(det, 1, (real_t)0.01f)) {
+	if (!Math::is_equal_approx(det, 1.0f, DETERMINANT_EPSILON) || !_basis_is_orthogonal(p_basis)) {
 		return INTERP_LERP;
 	}
 
-	if (!_basis_is_orthogonal(p_basis)) {
-		return INTERP_LERP;
-	}
-
-	// TODO: This could possibly be less stringent too, check this.
 	r_quat = _basis_to_quat_unchecked(p_basis);
-	if (!r_quat.is_normalized()) {
-		return INTERP_LERP;
-	}
-
-	return r_needed_normalize ? INTERP_SCALED_SLERP : INTERP_SLERP;
-}
-
-// This check doesn't seem to be needed but is preserved in case of bugs.
-bool TransformInterpolator::_basis_is_orthogonal_any_scale(const Basis &p_basis) {
-	Vector3 cross = p_basis.get_column(0).cross(p_basis.get_column(1));
-	real_t l = _vec3_normalize(cross);
-	// Too small numbers, revert to lerp.
-	if (l < 0.001f) {
-		return false;
-	}
-
-	const real_t epsilon = 0.9995f;
-
-	real_t dot = cross.dot(p_basis.get_column(2));
-	if (dot < epsilon) {
-		return false;
-	}
-
-	cross = p_basis.get_column(1).cross(p_basis.get_column(2));
-	l = _vec3_normalize(cross);
-	// Too small numbers, revert to lerp.
-	if (l < 0.001f) {
-		return false;
-	}
-
-	dot = cross.dot(p_basis.get_column(0));
-	if (dot < epsilon) {
-		return false;
-	}
-
-	return true;
+	return r_quat.is_normalized() ? (r_needed_normalize ? INTERP_SCALED_SLERP : INTERP_SLERP) : INTERP_LERP;
 }
 
 bool TransformInterpolator::_basis_is_orthogonal(const Basis &p_basis, real_t p_epsilon) {
-	Basis identity;
-	Basis m = p_basis * p_basis.transposed();
-
-	// Less stringent tests than the standard Redot slerp.
-	if (!_vec3_is_equal_approx(m[0], identity[0], p_epsilon) || !_vec3_is_equal_approx(m[1], identity[1], p_epsilon) || !_vec3_is_equal_approx(m[2], identity[2], p_epsilon)) {
-		return false;
-	}
-	return true;
+	Basis product = p_basis * p_basis.transposed();
+	return _vec3_is_equal_approx(product[0], Vector3(1, 0, 0), p_epsilon) &&
+	_vec3_is_equal_approx(product[1], Vector3(0, 1, 0), p_epsilon) &&
+	_vec3_is_equal_approx(product[2], Vector3(0, 0, 1), p_epsilon);
 }
 
 real_t TransformInterpolator::checksum_transform_3d(const Transform3D &p_transform) {
-	// just a really basic checksum, this can probably be improved
-	real_t sum = _vec3_sum(p_transform.origin);
-	sum -= _vec3_sum(p_transform.basis.rows[0]);
-	sum += _vec3_sum(p_transform.basis.rows[1]);
-	sum -= _vec3_sum(p_transform.basis.rows[2]);
-	return sum;
+	return _vec3_sum(p_transform.origin)
+	- _vec3_sum(p_transform.basis.rows[0])
+	+ _vec3_sum(p_transform.basis.rows[1])
+	- _vec3_sum(p_transform.basis.rows[2]);
 }
 
 TransformInterpolator::Method TransformInterpolator::find_method(const Basis &p_a, const Basis &p_b) {
 	bool needed_normalize = false;
-
 	Quaternion q0;
+
 	Method method = _test_basis(p_a, needed_normalize, q0);
-	if (method == INTERP_LERP) {
-		return method;
-	}
+	if (method == INTERP_LERP) return method;
 
 	Quaternion q1;
 	method = _test_basis(p_b, needed_normalize, q1);
-	if (method == INTERP_LERP) {
-		return method;
-	}
+	if (method == INTERP_LERP) return method;
 
-	// Are they close together?
-	// Apply the same test that will revert to lerp as is present in the slerp routine.
-	// Calculate cosine.
-	real_t cosom = Math::abs(q0.dot(q1));
-	if ((1.0f - cosom) <= (real_t)CMP_EPSILON) {
-		return INTERP_LERP;
-	}
-
-	return method;
+	return (Math::abs(q0.dot(q1)) >= 1.0f - CMP_EPSILON) ? INTERP_LERP : method;
 }

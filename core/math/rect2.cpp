@@ -45,78 +45,78 @@ bool Rect2::is_finite() const {
 }
 
 bool Rect2::intersects_segment(const Point2 &p_from, const Point2 &p_to, Point2 *r_pos, Point2 *r_normal) const {
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	if (unlikely(size.x < 0 || size.y < 0)) {
 		ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
 	}
-#endif
-	real_t min = 0, max = 1;
-	int axis = 0;
-	real_t sign = 0;
+	#endif
+	real_t t_min = 0.0f;
+	real_t t_max = 1.0f;
+	int intersecting_axis = -1;
+	real_t sign = 0.0f;
 
-	for (int i = 0; i < 2; i++) {
-		real_t seg_from = p_from[i];
-		real_t seg_to = p_to[i];
-		real_t box_begin = position[i];
-		real_t box_end = box_begin + size[i];
-		real_t cmin, cmax;
-		real_t csign;
+	Vector2 segment_dir = p_to - p_from;
+
+	for (int axis = 0; axis < 2; axis++) {
+		real_t seg_from = p_from[axis];
+		real_t seg_to = p_to[axis];
+		real_t rect_min = position[axis];
+		real_t rect_max = rect_min + size[axis];
+		real_t t_near, t_far;
+		real_t axis_sign = 0.0f;
 
 		if (seg_from < seg_to) {
-			if (seg_from > box_end || seg_to < box_begin) {
+			if (seg_from > rect_max || seg_to < rect_min) {
 				return false;
 			}
 			real_t length = seg_to - seg_from;
-			cmin = (seg_from < box_begin) ? ((box_begin - seg_from) / length) : 0;
-			cmax = (seg_to > box_end) ? ((box_end - seg_from) / length) : 1;
-			csign = -1.0;
-
+			t_near = (seg_from < rect_min) ? ((rect_min - seg_from) / length) : 0.0f;
+			t_far = (seg_to > rect_max) ? ((rect_max - seg_from) / length) : 1.0f;
+			axis_sign = -1.0f;
 		} else {
-			if (seg_to > box_end || seg_from < box_begin) {
+			if (seg_to > rect_max || seg_from < rect_min) {
 				return false;
 			}
 			real_t length = seg_to - seg_from;
-			cmin = (seg_from > box_end) ? (box_end - seg_from) / length : 0;
-			cmax = (seg_to < box_begin) ? (box_begin - seg_from) / length : 1;
-			csign = 1.0;
+			t_near = (seg_from > rect_max) ? (rect_max - seg_from) / length : 0.0f;
+			t_far = (seg_to < rect_min) ? (rect_min - seg_from) / length : 1.0f;
+			axis_sign = 1.0f;
 		}
 
-		if (cmin > min) {
-			min = cmin;
-			axis = i;
-			sign = csign;
+		if (t_near > t_min) {
+			t_min = t_near;
+			intersecting_axis = axis;
+			sign = axis_sign;
 		}
-		if (cmax < max) {
-			max = cmax;
+		if (t_far < t_max) {
+			t_max = t_far;
 		}
-		if (max < min) {
+		if (t_min > t_max) {
 			return false;
 		}
 	}
 
-	Vector2 rel = p_to - p_from;
-
 	if (r_normal) {
-		Vector2 normal;
-		normal[axis] = sign;
-		*r_normal = normal;
+		*r_normal = Vector2();
+		if (intersecting_axis != -1) {
+			(*r_normal)[intersecting_axis] = sign;
+		}
 	}
 
 	if (r_pos) {
-		*r_pos = p_from + rel * min;
+		*r_pos = p_from + segment_dir * t_min;
 	}
 
 	return true;
 }
 
 bool Rect2::intersects_transformed(const Transform2D &p_xform, const Rect2 &p_rect) const {
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
 		ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
 	}
-#endif
-	//SAT intersection between local and transformed rect2
-
+	#endif
+	// Transformed rect points
 	Vector2 xf_points[4] = {
 		p_xform.xform(p_rect.position),
 		p_xform.xform(Vector2(p_rect.position.x + p_rect.size.x, p_rect.position.y)),
@@ -124,82 +124,52 @@ bool Rect2::intersects_transformed(const Transform2D &p_xform, const Rect2 &p_re
 		p_xform.xform(Vector2(p_rect.position.x + p_rect.size.x, p_rect.position.y + p_rect.size.y)),
 	};
 
-	real_t low_limit;
+	// Check against the base rect using AABB quick reject
+	{
+		// Check top boundary
+		bool any_above = false;
+		for (const Vector2 &point : xf_points) {
+			if (point.y > position.y) {
+				any_above = true;
+				break;
+			}
+		}
+		if (!any_above) return false;
 
-	//base rect2 first (faster)
+		// Check bottom boundary
+		real_t bottom_limit = position.y + size.y;
+		bool any_below = false;
+		for (const Vector2 &point : xf_points) {
+			if (point.y < bottom_limit) {
+				any_below = true;
+				break;
+			}
+		}
+		if (!any_below) return false;
 
-	if (xf_points[0].y > position.y) {
-		goto next1;
-	}
-	if (xf_points[1].y > position.y) {
-		goto next1;
-	}
-	if (xf_points[2].y > position.y) {
-		goto next1;
-	}
-	if (xf_points[3].y > position.y) {
-		goto next1;
-	}
+		// Check left boundary
+		bool any_right = false;
+		for (const Vector2 &point : xf_points) {
+			if (point.x > position.x) {
+				any_right = true;
+				break;
+			}
+		}
+		if (!any_right) return false;
 
-	return false;
-
-next1:
-
-	low_limit = position.y + size.y;
-
-	if (xf_points[0].y < low_limit) {
-		goto next2;
-	}
-	if (xf_points[1].y < low_limit) {
-		goto next2;
-	}
-	if (xf_points[2].y < low_limit) {
-		goto next2;
-	}
-	if (xf_points[3].y < low_limit) {
-		goto next2;
-	}
-
-	return false;
-
-next2:
-
-	if (xf_points[0].x > position.x) {
-		goto next3;
-	}
-	if (xf_points[1].x > position.x) {
-		goto next3;
-	}
-	if (xf_points[2].x > position.x) {
-		goto next3;
-	}
-	if (xf_points[3].x > position.x) {
-		goto next3;
+		// Check right boundary
+		real_t right_limit = position.x + size.x;
+		bool any_left = false;
+		for (const Vector2 &point : xf_points) {
+			if (point.x < right_limit) {
+				any_left = true;
+				break;
+			}
+		}
+		if (!any_left) return false;
 	}
 
-	return false;
-
-next3:
-
-	low_limit = position.x + size.x;
-
-	if (xf_points[0].x < low_limit) {
-		goto next4;
-	}
-	if (xf_points[1].x < low_limit) {
-		goto next4;
-	}
-	if (xf_points[2].x < low_limit) {
-		goto next4;
-	}
-	if (xf_points[3].x < low_limit) {
-		goto next4;
-	}
-
-	return false;
-
-next4:
-
+	// SAT implementation using transformed axes
 	Vector2 xf_points2[4] = {
 		position,
 		Vector2(position.x + size.x, position.y),
@@ -207,78 +177,31 @@ next4:
 		Vector2(position.x + size.x, position.y + size.y),
 	};
 
-	real_t maxa = p_xform.columns[0].dot(xf_points2[0]);
-	real_t mina = maxa;
+	for (int axis = 0; axis < 2; axis++) {
+		Vector2 axis_vec = p_xform.columns[axis];
 
-	real_t dp = p_xform.columns[0].dot(xf_points2[1]);
-	maxa = MAX(dp, maxa);
-	mina = MIN(dp, mina);
+		// Project this rect's points onto the axis
+		real_t min_a = axis_vec.dot(xf_points2[0]);
+		real_t max_a = min_a;
+		for (int i = 1; i < 4; i++) {
+			real_t proj = axis_vec.dot(xf_points2[i]);
+			min_a = MIN(min_a, proj);
+			max_a = MAX(max_a, proj);
+		}
 
-	dp = p_xform.columns[0].dot(xf_points2[2]);
-	maxa = MAX(dp, maxa);
-	mina = MIN(dp, mina);
+		// Project the other rect's points onto the axis
+		real_t min_b = axis_vec.dot(xf_points[0]);
+		real_t max_b = min_b;
+		for (int i = 1; i < 4; i++) {
+			real_t proj = axis_vec.dot(xf_points[i]);
+			min_b = MIN(min_b, proj);
+			max_b = MAX(max_b, proj);
+		}
 
-	dp = p_xform.columns[0].dot(xf_points2[3]);
-	maxa = MAX(dp, maxa);
-	mina = MIN(dp, mina);
-
-	real_t maxb = p_xform.columns[0].dot(xf_points[0]);
-	real_t minb = maxb;
-
-	dp = p_xform.columns[0].dot(xf_points[1]);
-	maxb = MAX(dp, maxb);
-	minb = MIN(dp, minb);
-
-	dp = p_xform.columns[0].dot(xf_points[2]);
-	maxb = MAX(dp, maxb);
-	minb = MIN(dp, minb);
-
-	dp = p_xform.columns[0].dot(xf_points[3]);
-	maxb = MAX(dp, maxb);
-	minb = MIN(dp, minb);
-
-	if (mina > maxb) {
-		return false;
-	}
-	if (minb > maxa) {
-		return false;
-	}
-
-	maxa = p_xform.columns[1].dot(xf_points2[0]);
-	mina = maxa;
-
-	dp = p_xform.columns[1].dot(xf_points2[1]);
-	maxa = MAX(dp, maxa);
-	mina = MIN(dp, mina);
-
-	dp = p_xform.columns[1].dot(xf_points2[2]);
-	maxa = MAX(dp, maxa);
-	mina = MIN(dp, mina);
-
-	dp = p_xform.columns[1].dot(xf_points2[3]);
-	maxa = MAX(dp, maxa);
-	mina = MIN(dp, mina);
-
-	maxb = p_xform.columns[1].dot(xf_points[0]);
-	minb = maxb;
-
-	dp = p_xform.columns[1].dot(xf_points[1]);
-	maxb = MAX(dp, maxb);
-	minb = MIN(dp, minb);
-
-	dp = p_xform.columns[1].dot(xf_points[2]);
-	maxb = MAX(dp, maxb);
-	minb = MIN(dp, minb);
-
-	dp = p_xform.columns[1].dot(xf_points[3]);
-	maxb = MAX(dp, maxb);
-	minb = MIN(dp, minb);
-
-	if (mina > maxb) {
-		return false;
-	}
-	if (minb > maxa) {
-		return false;
+		// Check for overlap
+		if (min_a > max_b || min_b > max_a) {
+			return false;
+		}
 	}
 
 	return true;

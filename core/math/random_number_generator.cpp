@@ -33,12 +33,13 @@
 #include "random_number_generator.h"
 
 void RandomNumberGenerator::_bind_methods() {
+	// Seed and state management.
 	ClassDB::bind_method(D_METHOD("set_seed", "seed"), &RandomNumberGenerator::set_seed);
 	ClassDB::bind_method(D_METHOD("get_seed"), &RandomNumberGenerator::get_seed);
-
 	ClassDB::bind_method(D_METHOD("set_state", "state"), &RandomNumberGenerator::set_state);
 	ClassDB::bind_method(D_METHOD("get_state"), &RandomNumberGenerator::get_state);
 
+	// Random number generation methods.
 	ClassDB::bind_method(D_METHOD("randi"), &RandomNumberGenerator::randi);
 	ClassDB::bind_method(D_METHOD("randf"), &RandomNumberGenerator::randf);
 	ClassDB::bind_method(D_METHOD("randfn", "mean", "deviation"), &RandomNumberGenerator::randfn, DEFVAL(0.0), DEFVAL(1.0));
@@ -47,9 +48,10 @@ void RandomNumberGenerator::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("rand_weighted", "weights"), &RandomNumberGenerator::rand_weighted);
 	ClassDB::bind_method(D_METHOD("randomize"), &RandomNumberGenerator::randomize);
 
+	// Properties with documentation defaults.
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "seed"), "set_seed", "get_seed");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "state"), "set_state", "get_state");
-	// Default values are non-deterministic, override for doc generation purposes.
+	// Override defaults for consistent documentation (actual defaults are runtime-generated).
 	ADD_PROPERTY_DEFAULT("seed", 0);
 	ADD_PROPERTY_DEFAULT("state", 0);
 }

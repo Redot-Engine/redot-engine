@@ -52,7 +52,7 @@ real_t Vector2::length_squared() const {
 }
 
 void Vector2::normalize() {
-	real_t l = x * x + y * y;
+	real_t l = length_squared();
 	if (l != 0) {
 		l = Math::sqrt(l);
 		x /= l;
@@ -67,7 +67,6 @@ Vector2 Vector2::normalized() const {
 }
 
 bool Vector2::is_normalized() const {
-	// use length_squared() instead of length() to avoid sqrt(), makes it more stringent.
 	return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON);
 }
 
@@ -115,8 +114,8 @@ Vector2 Vector2::rotated(real_t p_by) const {
 	real_t sine = Math::sin(p_by);
 	real_t cosi = Math::cos(p_by);
 	return Vector2(
-			x * cosi - y * sine,
-			x * sine + y * cosi);
+		x * cosi - y * sine,
+		x * sine + y * cosi);
 }
 
 Vector2 Vector2::posmod(real_t p_mod) const {
@@ -133,26 +132,26 @@ Vector2 Vector2::project(const Vector2 &p_to) const {
 
 Vector2 Vector2::clamp(const Vector2 &p_min, const Vector2 &p_max) const {
 	return Vector2(
-			CLAMP(x, p_min.x, p_max.x),
-			CLAMP(y, p_min.y, p_max.y));
+		CLAMP(x, p_min.x, p_max.x),
+				   CLAMP(y, p_min.y, p_max.y));
 }
 
 Vector2 Vector2::clampf(real_t p_min, real_t p_max) const {
 	return Vector2(
-			CLAMP(x, p_min, p_max),
-			CLAMP(y, p_min, p_max));
+		CLAMP(x, p_min, p_max),
+				   CLAMP(y, p_min, p_max));
 }
 
 Vector2 Vector2::snapped(const Vector2 &p_step) const {
 	return Vector2(
-			Math::snapped(x, p_step.x),
-			Math::snapped(y, p_step.y));
+		Math::snapped(x, p_step.x),
+				   Math::snapped(y, p_step.y));
 }
 
 Vector2 Vector2::snappedf(real_t p_step) const {
 	return Vector2(
-			Math::snapped(x, p_step),
-			Math::snapped(y, p_step));
+		Math::snapped(x, p_step),
+				   Math::snapped(y, p_step));
 }
 
 Vector2 Vector2::limit_length(real_t p_len) const {
@@ -173,11 +172,10 @@ Vector2 Vector2::move_toward(const Vector2 &p_to, real_t p_delta) const {
 	return len <= p_delta || len < (real_t)CMP_EPSILON ? p_to : v + vd / len * p_delta;
 }
 
-// slide returns the component of the vector along the given plane, specified by its normal vector.
 Vector2 Vector2::slide(const Vector2 &p_normal) const {
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	ERR_FAIL_COND_V_MSG(!p_normal.is_normalized(), Vector2(), "The normal Vector2 " + p_normal.operator String() + "must be normalized.");
-#endif
+	#endif
 	return *this - p_normal * dot(p_normal);
 }
 
@@ -186,10 +184,10 @@ Vector2 Vector2::bounce(const Vector2 &p_normal) const {
 }
 
 Vector2 Vector2::reflect(const Vector2 &p_normal) const {
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	ERR_FAIL_COND_V_MSG(!p_normal.is_normalized(), Vector2(), "The normal Vector2 " + p_normal.operator String() + "must be normalized.");
-#endif
-	return 2.0f * p_normal * dot(p_normal) - *this;
+	#endif
+	return (real_t)2.0 * p_normal * dot(p_normal) - *this;
 }
 
 bool Vector2::is_equal_approx(const Vector2 &p_v) const {
@@ -209,5 +207,5 @@ Vector2::operator String() const {
 }
 
 Vector2::operator Vector2i() const {
-	return Vector2i(x, y);
+	return Vector2i(static_cast<int>(x), static_cast<int>(y));
 }

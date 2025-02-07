@@ -37,26 +37,26 @@
 
 Vector2i Vector2i::clamp(const Vector2i &p_min, const Vector2i &p_max) const {
 	return Vector2i(
-			CLAMP(x, p_min.x, p_max.x),
-			CLAMP(y, p_min.y, p_max.y));
+		CLAMP(x, p_min.x, p_max.x),
+					CLAMP(y, p_min.y, p_max.y));
 }
 
 Vector2i Vector2i::clampi(int32_t p_min, int32_t p_max) const {
 	return Vector2i(
-			CLAMP(x, p_min, p_max),
-			CLAMP(y, p_min, p_max));
+		CLAMP(x, p_min, p_max),
+					CLAMP(y, p_min, p_max));
 }
 
 Vector2i Vector2i::snapped(const Vector2i &p_step) const {
 	return Vector2i(
-			Math::snapped(x, p_step.x),
-			Math::snapped(y, p_step.y));
+		Math::snapped(x, p_step.x),
+					Math::snapped(y, p_step.y));
 }
 
 Vector2i Vector2i::snappedi(int32_t p_step) const {
 	return Vector2i(
-			Math::snapped(x, p_step),
-			Math::snapped(y, p_step));
+		Math::snapped(x, p_step),
+					Math::snapped(y, p_step));
 }
 
 int64_t Vector2i::length_squared() const {
@@ -141,5 +141,5 @@ Vector2i::operator String() const {
 }
 
 Vector2i::operator Vector2() const {
-	return Vector2((int32_t)x, (int32_t)y);
+	return Vector2(x, y);
 }

@@ -49,9 +49,9 @@ Transform2D Transform2D::inverse() const {
 
 void Transform2D::affine_invert() {
 	real_t det = determinant();
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	ERR_FAIL_COND(det == 0);
-#endif
+	#endif
 	real_t idet = 1.0f / det;
 
 	SWAP(columns[0][0], columns[1][1]);
@@ -107,10 +107,16 @@ Transform2D::Transform2D(real_t p_rot, const Vector2 &p_pos) {
 }
 
 Transform2D::Transform2D(real_t p_rot, const Size2 &p_scale, real_t p_skew, const Vector2 &p_pos) {
-	columns[0][0] = Math::cos(p_rot) * p_scale.x;
-	columns[1][1] = Math::cos(p_rot + p_skew) * p_scale.y;
-	columns[1][0] = -Math::sin(p_rot + p_skew) * p_scale.y;
-	columns[0][1] = Math::sin(p_rot) * p_scale.x;
+	real_t rot_skew = p_rot + p_skew;
+	real_t cr = Math::cos(p_rot);
+	real_t sr = Math::sin(p_rot);
+	real_t crs = Math::cos(rot_skew);
+	real_t srs = Math::sin(rot_skew);
+
+	columns[0][0] = cr * p_scale.x;
+	columns[0][1] = sr * p_scale.x;
+	columns[1][0] = -srs * p_scale.y;
+	columns[1][1] = crs * p_scale.y;
 	columns[2] = p_pos;
 }
 
@@ -279,10 +285,10 @@ real_t Transform2D::determinant() const {
 
 Transform2D Transform2D::interpolate_with(const Transform2D &p_transform, real_t p_weight) const {
 	return Transform2D(
-			Math::lerp_angle(get_rotation(), p_transform.get_rotation(), p_weight),
-			get_scale().lerp(p_transform.get_scale(), p_weight),
-			Math::lerp_angle(get_skew(), p_transform.get_skew(), p_weight),
-			get_origin().lerp(p_transform.get_origin(), p_weight));
+		Math::lerp_angle(get_rotation(), p_transform.get_rotation(), p_weight),
+					   get_scale().lerp(p_transform.get_scale(), p_weight),
+					   Math::lerp_angle(get_skew(), p_transform.get_skew(), p_weight),
+					   get_origin().lerp(p_transform.get_origin(), p_weight));
 }
 
 void Transform2D::operator*=(real_t p_val) {
@@ -311,6 +317,6 @@ Transform2D Transform2D::operator/(real_t p_val) const {
 
 Transform2D::operator String() const {
 	return "[X: " + columns[0].operator String() +
-			", Y: " + columns[1].operator String() +
-			", O: " + columns[2].operator String() + "]";
+	", Y: " + columns[1].operator String() +
+	", O: " + columns[2].operator String() + "]";
 }

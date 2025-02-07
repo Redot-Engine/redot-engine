@@ -635,10 +635,10 @@ void RaycastOcclusionCull::set_build_quality(RS::ViewportOcclusionCullingBuildQu
 }
 
 void RaycastOcclusionCull::_init_embree() {
-#ifdef __SSE2__
+	#ifdef __SSE2__
 	_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 	_MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
-#endif
+	#endif
 
 	String settings = vformat("threads=%d", MAX(1, OS::get_singleton()->get_processor_count() - 2));
 	ebr_device = rtcNewDevice(settings.utf8().ptr());

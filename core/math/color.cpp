@@ -39,155 +39,114 @@
 
 #include "thirdparty/misc/ok_color.h"
 
-uint32_t Color::to_argb32() const {
-	uint32_t c = (uint8_t)Math::round(a * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(r * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(g * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(b * 255.0f);
+// Hex parsing lookup table
+namespace {
+	constexpr int8_t HEX_DIGIT_TABLE[256] = {
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,
+		-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+	};
+}
 
+uint32_t Color::to_argb32() const {
+	uint32_t c = (uint8_t)(a * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(r * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(g * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(b * 255.0f + 0.5f);
 	return c;
 }
 
 uint32_t Color::to_abgr32() const {
-	uint32_t c = (uint8_t)Math::round(a * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(b * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(g * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(r * 255.0f);
-
+	uint32_t c = (uint8_t)(a * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(b * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(g * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(r * 255.0f + 0.5f);
 	return c;
 }
 
 uint32_t Color::to_rgba32() const {
-	uint32_t c = (uint8_t)Math::round(r * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(g * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(b * 255.0f);
-	c <<= 8;
-	c |= (uint8_t)Math::round(a * 255.0f);
-
+	uint32_t c = (uint8_t)(r * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(g * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(b * 255.0f + 0.5f);
+	c = (c << 8) | (uint8_t)(a * 255.0f + 0.5f);
 	return c;
 }
 
 uint64_t Color::to_abgr64() const {
-	uint64_t c = (uint16_t)Math::round(a * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(b * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(g * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(r * 65535.0f);
-
+	uint64_t c = (uint16_t)(a * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(b * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(g * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(r * 65535.0f + 0.5f);
 	return c;
 }
 
 uint64_t Color::to_argb64() const {
-	uint64_t c = (uint16_t)Math::round(a * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(r * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(g * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(b * 65535.0f);
-
+	uint64_t c = (uint16_t)(a * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(r * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(g * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(b * 65535.0f + 0.5f);
 	return c;
 }
 
 uint64_t Color::to_rgba64() const {
-	uint64_t c = (uint16_t)Math::round(r * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(g * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(b * 65535.0f);
-	c <<= 16;
-	c |= (uint16_t)Math::round(a * 65535.0f);
-
+	uint64_t c = (uint16_t)(r * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(g * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(b * 65535.0f + 0.5f);
+	c = (c << 16) | (uint16_t)(a * 65535.0f + 0.5f);
 	return c;
 }
 
 String _to_hex(float p_val) {
-	int v = Math::round(p_val * 255.0f);
+	int v = (int)(p_val * 255.0f + 0.5f);
 	v = CLAMP(v, 0, 255);
-	String ret;
-
-	for (int i = 0; i < 2; i++) {
-		char32_t c[2] = { 0, 0 };
-		int lv = v & 0xF;
-		if (lv < 10) {
-			c[0] = '0' + lv;
-		} else {
-			c[0] = 'a' + lv - 10;
-		}
-
-		v >>= 4;
-		String cs = (const char32_t *)c;
-		ret = cs + ret;
-	}
-
-	return ret;
+	static const char hex_digits[] = "0123456789abcdef";
+	char chars[2] = { hex_digits[v >> 4], hex_digits[v & 0xF] };
+	return String(chars, 2);
 }
 
 String Color::to_html(bool p_alpha) const {
-	String txt;
-	txt += _to_hex(r);
-	txt += _to_hex(g);
-	txt += _to_hex(b);
-	if (p_alpha) {
-		txt += _to_hex(a);
-	}
+	String txt = _to_hex(r) + _to_hex(g) + _to_hex(b);
+	if (p_alpha) txt += _to_hex(a);
 	return txt;
 }
 
 float Color::get_h() const {
-	float min = MIN(r, g);
-	min = MIN(min, b);
-	float max = MAX(r, g);
-	max = MAX(max, b);
-
+	float min = (r < g) ? (r < b ? r : b) : (g < b ? g : b);
+	float max = (r > g) ? (r > b ? r : b) : (g > b ? g : b);
 	float delta = max - min;
 
-	if (delta == 0.0f) {
-		return 0.0f;
-	}
+	if (delta <= 0.0f) return 0.0f;
 
 	float h;
-	if (r == max) {
-		h = (g - b) / delta; // between yellow & magenta
-	} else if (g == max) {
-		h = 2 + (b - r) / delta; // between cyan & yellow
-	} else {
-		h = 4 + (r - g) / delta; // between magenta & cyan
-	}
+	if (r == max) h = (g - b) / delta;
+	else if (g == max) h = 2.0f + (b - r) / delta;
+	else h = 4.0f + (r - g) / delta;
 
-	h /= 6.0f;
-	if (h < 0.0f) {
-		h += 1.0f;
-	}
-
+	h = Math::fmod(h / 6.0f + 1.0f, 1.0f);
 	return h;
 }
 
 float Color::get_s() const {
-	float min = MIN(r, g);
-	min = MIN(min, b);
-	float max = MAX(r, g);
-	max = MAX(max, b);
-
-	float delta = max - min;
-
-	return (max != 0.0f) ? (delta / max) : 0.0f;
+	float max = (r > g) ? (r > b ? r : b) : (g > b ? g : b);
+	float min = (r < g) ? (r < b ? r : b) : (g < b ? g : b);
+	return (max > 0.0f) ? (max - min) / max : 0.0f;
 }
 
 float Color::get_v() const {
-	float max = MAX(r, g);
-	max = MAX(max, b);
-	return max;
+	return MAX(MAX(r, g), b);
 }
 
 void Color::set_hsv(float p_h, float p_s, float p_v, float p_alpha) {
@@ -299,21 +258,17 @@ Color Color::hex64(uint64_t p_hex) {
 	return Color(r, g, b, a);
 }
 
-static int _parse_col4(const String &p_str, int p_ofs) {
-	char character = p_str[p_ofs];
 
-	if (character >= '0' && character <= '9') {
-		return character - '0';
-	} else if (character >= 'a' && character <= 'f') {
-		return character + (10 - 'a');
-	} else if (character >= 'A' && character <= 'F') {
-		return character + (10 - 'A');
-	}
-	return -1;
+static int _parse_col4(const String &p_str, int p_ofs) {
+	if (p_ofs >= p_str.length()) return -1;
+	char32_t c = p_str[p_ofs];
+	return (c < 256) ? HEX_DIGIT_TABLE[(uint8_t)c] : -1;
 }
 
 static int _parse_col8(const String &p_str, int p_ofs) {
-	return _parse_col4(p_str, p_ofs) * 16 + _parse_col4(p_str, p_ofs + 1);
+	int high = _parse_col4(p_str, p_ofs);
+	int low = _parse_col4(p_str, p_ofs + 1);
+	return (high == -1 || low == -1) ? -1 : (high << 4) | low;
 }
 
 Color Color::inverted() const {
@@ -474,18 +429,15 @@ Color Color::from_rgbe9995(uint32_t p_rgbe) {
 	float r = p_rgbe & 0x1ff;
 	float g = (p_rgbe >> 9) & 0x1ff;
 	float b = (p_rgbe >> 18) & 0x1ff;
-	float e = (p_rgbe >> 27);
-	float m = Math::pow(2.0f, e - 15.0f - 9.0f);
+	int e = (p_rgbe >> 27);
+	float m = Math::pow(2.0f, e - 24.0f); // Consider replacing with ldexpf if available
 
-	float rd = r * m;
-	float gd = g * m;
-	float bd = b * m;
-
-	return Color(rd, gd, bd, 1.0f);
+	return Color(r * m, g * m, b * m, 1.0f);
 }
 
 Color Color::from_rgba8(int64_t p_r8, int64_t p_g8, int64_t p_b8, int64_t p_a8) {
-	return Color(p_r8 / 255.0f, p_g8 / 255.0f, p_b8 / 255.0f, p_a8 / 255.0f);
+	static const float inv_255 = 1.0f / 255.0f;
+	return Color(p_r8 * inv_255, p_g8 * inv_255, p_b8 * inv_255, p_a8 * inv_255);
 }
 
 Color::operator String() const {

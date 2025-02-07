@@ -149,7 +149,7 @@ void RendererSceneOcclusionCull::HZBuffer::update_mips() {
 				bool odd_w = (prev_w % 2) != 0;
 				bool odd_h = (prev_h % 2) != 0;
 
-#define CHECK_OFFSET(xx, yy) max_depth = MAX(max_depth, mips[mip - 1][MIN(prev_h - 1, prev_y + (yy)) * prev_w + MIN(prev_w - 1, prev_x + (xx))])
+				#define CHECK_OFFSET(xx, yy) max_depth = MAX(max_depth, mips[mip - 1][MIN(prev_h - 1, prev_y + (yy)) * prev_w + MIN(prev_w - 1, prev_x + (xx))])
 
 				float max_depth = mips[mip - 1][prev_y * sizes[mip - 1].x + prev_x];
 				CHECK_OFFSET(0, 1);
@@ -171,7 +171,7 @@ void RendererSceneOcclusionCull::HZBuffer::update_mips() {
 				}
 
 				mips[mip][y * sizes[mip].x + x] = max_depth;
-#undef CHECK_OFFSET
+				#undef CHECK_OFFSET
 			}
 		}
 	}

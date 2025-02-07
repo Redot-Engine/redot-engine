@@ -59,6 +59,7 @@ Array RenderingServer::_texture_debug_usage_bind() {
 	List<TextureInfo> list;
 	texture_debug_usage(&list);
 	Array arr;
+	arr.resize(list.size()); // Resize  space for efficiency
 	for (const TextureInfo &E : list) {
 		Dictionary dict;
 		dict["texture"] = E.texture;
@@ -75,9 +76,11 @@ Array RenderingServer::_texture_debug_usage_bind() {
 
 static PackedInt64Array to_int_array(const Vector<ObjectID> &ids) {
 	PackedInt64Array a;
-	a.resize(ids.size());
-	for (int i = 0; i < ids.size(); ++i) {
-		a.write[i] = ids[i];
+	const int64_t *src = reinterpret_cast<const int64_t*>(ids.ptr()); // Add explicit cast
+	int size = ids.size();
+	a.resize(size);
+	if (size > 0) {
+		memcpy(a.ptrw(), src, size * sizeof(int64_t)); // Bulk copy for efficiency
 	}
 	return a;
 }
@@ -94,6 +97,7 @@ PackedInt64Array RenderingServer::_instances_cull_ray_bind(const Vector3 &p_from
 
 PackedInt64Array RenderingServer::_instances_cull_convex_bind(const TypedArray<Plane> &p_convex, RID p_scenario) const {
 	Vector<Plane> planes;
+	planes.resize(p_convex.size());
 	for (int i = 0; i < p_convex.size(); ++i) {
 		const Variant &v = p_convex[i];
 		ERR_FAIL_COND_V(v.get_type() != Variant::PLANE, PackedInt64Array());
@@ -109,7 +113,7 @@ RID RenderingServer::get_test_texture() {
 		return test_texture;
 	};
 
-#define TEST_TEXTURE_SIZE 256
+	#define TEST_TEXTURE_SIZE 256
 
 	Vector<uint8_t> test_data;
 	test_data.resize(TEST_TEXTURE_SIZE * TEST_TEXTURE_SIZE * 3);
@@ -165,7 +169,7 @@ RID RenderingServer::_make_test_cube() {
 	Vector<float> tangents;
 	Vector<Vector3> uvs;
 
-#define ADD_VTX(m_idx)                           \
+	#define ADD_VTX(m_idx)                           \
 	vertices.push_back(face_points[m_idx]);      \
 	normals.push_back(normal_points[m_idx]);     \
 	tangents.push_back(normal_points[m_idx][1]); \
@@ -225,15 +229,15 @@ RID RenderingServer::_make_test_cube() {
 	mesh_add_surface_from_arrays(test_cube, PRIMITIVE_TRIANGLES, d);
 
 	/*
-	test_material = fixed_material_create();
-	//material_set_flag(material, MATERIAL_FLAG_BILLBOARD_TOGGLE,true);
-	fixed_material_set_texture( test_material, FIXED_MATERIAL_PARAM_DIFFUSE, get_test_texture() );
-	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_SPECULAR_EXP, 70 );
-	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_EMISSION, Color(0.2,0.2,0.2) );
-
-	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_DIFFUSE, Color(1, 1, 1) );
-	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_SPECULAR, Color(1,1,1) );
-*/
+	 *   test_material = fixed_material_create();
+	 *   //material_set_flag(material, MATERIAL_FLAG_BILLBOARD_TOGGLE,true);
+	 *   fixed_material_set_texture( test_material, FIXED_MATERIAL_PARAM_DIFFUSE, get_test_texture() );
+	 *   fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_SPECULAR_EXP, 70 );
+	 *   fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_EMISSION, Color(0.2,0.2,0.2) );
+	 *
+	 *   fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_DIFFUSE, Color(1, 1, 1) );
+	 *   fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_SPECULAR, Color(1,1,1) );
+	 */
 	mesh_surface_set_material(test_cube, 0, test_material);
 
 	return test_cube;
@@ -270,9 +274,9 @@ RID RenderingServer::make_sphere_mesh(int p_lats, int p_lons, real_t p_radius) {
 				Vector3(x0 * zr0, z0, y0 * zr0)
 			};
 
-#define ADD_POINT(m_idx)         \
-	normals.push_back(v[m_idx]); \
-	vertices.push_back(v[m_idx] * p_radius);
+			#define ADD_POINT(m_idx)         \
+			normals.push_back(v[m_idx]); \
+			vertices.push_back(v[m_idx] * p_radius);
 
 			ADD_POINT(0);
 			ADD_POINT(1);
@@ -305,9 +309,7 @@ RID RenderingServer::get_white_texture() {
 	wt.resize(16 * 3);
 	{
 		uint8_t *w = wt.ptrw();
-		for (int i = 0; i < 16 * 3; i++) {
-			w[i] = 255;
-		}
+		memset(w, 255, 16 * 3); // Use memset for efficiency
 	}
 	Ref<Image> white = memnew(Image(4, 4, false, Image::FORMAT_RGB8, wt));
 	white_texture = texture_2d_create(white);

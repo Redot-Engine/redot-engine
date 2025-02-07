@@ -48,30 +48,19 @@ bool AABB::operator!=(const AABB &p_rval) const {
 }
 
 void AABB::merge_with(const AABB &p_aabb) {
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0 || p_aabb.size.x < 0 || p_aabb.size.y < 0 || p_aabb.size.z < 0)) {
 		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
 	}
-#endif
-	Vector3 beg_1, beg_2;
-	Vector3 end_1, end_2;
-	Vector3 min, max;
+	#endif
+	Vector3 end_1 = position + size;
+	Vector3 end_2 = p_aabb.position + p_aabb.size;
 
-	beg_1 = position;
-	beg_2 = p_aabb.position;
-	end_1 = size + beg_1;
-	end_2 = p_aabb.size + beg_2;
+	Vector3 min_pos = position.min(p_aabb.position);
+	Vector3 max_end = end_1.max(end_2);
 
-	min.x = (beg_1.x < beg_2.x) ? beg_1.x : beg_2.x;
-	min.y = (beg_1.y < beg_2.y) ? beg_1.y : beg_2.y;
-	min.z = (beg_1.z < beg_2.z) ? beg_1.z : beg_2.z;
-
-	max.x = (end_1.x > end_2.x) ? end_1.x : end_2.x;
-	max.y = (end_1.y > end_2.y) ? end_1.y : end_2.y;
-	max.z = (end_1.z > end_2.z) ? end_1.z : end_2.z;
-
-	position = min;
-	size = max - min;
+	position = min_pos;
+	size = max_end - min_pos;
 }
 
 bool AABB::is_equal_approx(const AABB &p_aabb) const {
@@ -83,11 +72,11 @@ bool AABB::is_finite() const {
 }
 
 AABB AABB::intersection(const AABB &p_aabb) const {
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0 || p_aabb.size.x < 0 || p_aabb.size.y < 0 || p_aabb.size.z < 0)) {
 		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
 	}
-#endif
+	#endif
 	Vector3 src_min = position;
 	Vector3 src_max = position + size;
 	Vector3 dst_min = p_aabb.position;
@@ -95,58 +84,39 @@ AABB AABB::intersection(const AABB &p_aabb) const {
 
 	Vector3 min, max;
 
-	if (src_min.x > dst_max.x || src_max.x < dst_min.x) {
-		return AABB();
-	} else {
-		min.x = (src_min.x > dst_min.x) ? src_min.x : dst_min.x;
-		max.x = (src_max.x < dst_max.x) ? src_max.x : dst_max.x;
-	}
+	min.x = MAX(src_min.x, dst_min.x);
+	max.x = MIN(src_max.x, dst_max.x);
+	if (min.x > max.x) return AABB();
 
-	if (src_min.y > dst_max.y || src_max.y < dst_min.y) {
-		return AABB();
-	} else {
-		min.y = (src_min.y > dst_min.y) ? src_min.y : dst_min.y;
-		max.y = (src_max.y < dst_max.y) ? src_max.y : dst_max.y;
-	}
+	min.y = MAX(src_min.y, dst_min.y);
+	max.y = MIN(src_max.y, dst_max.y);
+	if (min.y > max.y) return AABB();
 
-	if (src_min.z > dst_max.z || src_max.z < dst_min.z) {
-		return AABB();
-	} else {
-		min.z = (src_min.z > dst_min.z) ? src_min.z : dst_min.z;
-		max.z = (src_max.z < dst_max.z) ? src_max.z : dst_max.z;
-	}
+	min.z = MAX(src_min.z, dst_min.z);
+	max.z = MIN(src_max.z, dst_max.z);
+	if (min.z > max.z) return AABB();
 
 	return AABB(min, max - min);
 }
 
-// Note that this routine returns the BACKTRACKED (i.e. behind the ray origin)
-// intersection point + normal if INSIDE the AABB.
-// The caller can therefore decide when INSIDE whether to use the
-// backtracked intersection, or use p_from as the intersection, and
-// carry on progressing without e.g. reflecting against the normal.
 bool AABB::find_intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, bool &r_inside, Vector3 *r_intersection_point, Vector3 *r_normal) const {
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0)) {
 		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
 	}
-#endif
+	#endif
 	Vector3 end = position + size;
 	real_t tmin = -1e20;
 	real_t tmax = 1e20;
 	int axis = 0;
 
-	// Make sure r_inside is always initialized,
-	// to prevent reading uninitialized data in the client code.
 	r_inside = false;
 
 	for (int i = 0; i < 3; i++) {
-		if (p_dir[i] == 0) {
-			if ((p_from[i] < position[i]) || (p_from[i] > end[i])) {
-				return false;
-			}
-		} else { // ray not parallel to planes in this direction
-			real_t t1 = (position[i] - p_from[i]) / p_dir[i];
-			real_t t2 = (end[i] - p_from[i]) / p_dir[i];
+		if (p_dir[i] != 0) {
+			real_t inv_dir = 1.0 / p_dir[i];
+			real_t t1 = (position[i] - p_from[i]) * inv_dir;
+			real_t t2 = (end[i] - p_from[i]) * inv_dir;
 
 			if (t1 > t2) {
 				SWAP(t1, t2);
@@ -164,19 +134,15 @@ bool AABB::find_intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, bool
 			if (tmin > tmax) {
 				return false;
 			}
+		} else if ((p_from[i] < position[i]) || (p_from[i] > end[i])) {
+			return false;
 		}
 	}
 
-	// Did the ray start from inside the box?
-	// In which case the intersection returned is the point of entry
-	// (behind the ray start) or the calling routine can use the ray origin as intersection point.
 	r_inside = tmin < 0;
 
 	if (r_intersection_point) {
 		*r_intersection_point = p_from + p_dir * tmin;
-
-		// Prevent float error by making sure the point is exactly
-		// on the AABB border on the relevant axis.
 		r_intersection_point->coord[axis] = (p_dir[axis] >= 0) ? position.coord[axis] : end.coord[axis];
 	}
 	if (r_normal) {
@@ -188,11 +154,11 @@ bool AABB::find_intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, bool
 }
 
 bool AABB::intersects_segment(const Vector3 &p_from, const Vector3 &p_to, Vector3 *r_intersection_point, Vector3 *r_normal) const {
-#ifdef MATH_CHECKS
+	#ifdef MATH_CHECKS
 	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0)) {
 		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
 	}
-#endif
+	#endif
 	real_t min = 0, max = 1;
 	int axis = 0;
 	real_t sign = 0;
@@ -210,17 +176,18 @@ bool AABB::intersects_segment(const Vector3 &p_from, const Vector3 &p_to, Vector
 				return false;
 			}
 			real_t length = seg_to - seg_from;
-			cmin = (seg_from < box_begin) ? ((box_begin - seg_from) / length) : 0;
-			cmax = (seg_to > box_end) ? ((box_end - seg_from) / length) : 1;
+			real_t inv_length = 1.0 / length;
+			cmin = (seg_from < box_begin) ? ((box_begin - seg_from) * inv_length) : 0;
+			cmax = (seg_to > box_end) ? ((box_end - seg_from) * inv_length) : 1;
 			csign = -1.0;
-
 		} else {
 			if (seg_to > box_end || seg_from < box_begin) {
 				return false;
 			}
 			real_t length = seg_to - seg_from;
-			cmin = (seg_from > box_end) ? (box_end - seg_from) / length : 0;
-			cmax = (seg_to < box_begin) ? (box_begin - seg_from) / length : 1;
+			real_t inv_length = 1.0 / length;
+			cmin = (seg_from > box_end) ? (box_end - seg_from) * inv_length : 0;
+			cmax = (seg_to < box_begin) ? (box_begin - seg_from) * inv_length : 1;
 			csign = 1.0;
 		}
 
@@ -253,29 +220,25 @@ bool AABB::intersects_segment(const Vector3 &p_from, const Vector3 &p_to, Vector
 }
 
 bool AABB::intersects_plane(const Plane &p_plane) const {
-	Vector3 points[8] = {
-		Vector3(position.x, position.y, position.z),
-		Vector3(position.x, position.y, position.z + size.z),
-		Vector3(position.x, position.y + size.y, position.z),
-		Vector3(position.x, position.y + size.y, position.z + size.z),
-		Vector3(position.x + size.x, position.y, position.z),
-		Vector3(position.x + size.x, position.y, position.z + size.z),
-		Vector3(position.x + size.x, position.y + size.y, position.z),
-		Vector3(position.x + size.x, position.y + size.y, position.z + size.z),
-	};
+	Vector3 normal = p_plane.normal;
+	real_t d = p_plane.d;
 
-	bool over = false;
-	bool under = false;
-
-	for (int i = 0; i < 8; i++) {
-		if (p_plane.distance_to(points[i]) > 0) {
-			over = true;
+	real_t min_proj = 0, max_proj = 0;
+	for (int i = 0; i < 3; ++i) {
+		real_t pos = position[i];
+		real_t size_i = size[i];
+		if (normal[i] >= 0) {
+			min_proj += pos * normal[i];
+			max_proj += (pos + size_i) * normal[i];
 		} else {
-			under = true;
+			min_proj += (pos + size_i) * normal[i];
+			max_proj += pos * normal[i];
 		}
 	}
+	min_proj += d;
+	max_proj += d;
 
-	return under && over;
+	return (min_proj <= 0) && (max_proj >= 0);
 }
 
 Vector3 AABB::get_longest_axis() const {
@@ -435,12 +398,9 @@ Variant AABB::intersects_ray_bind(const Vector3 &p_from, const Vector3 &p_dir) c
 	bool inside = false;
 
 	if (find_intersects_ray(p_from, p_dir, inside, &inters)) {
-		// When inside the intersection point may be BEHIND the ray,
-		// so for general use we return the ray origin.
 		if (inside) {
 			return p_from;
 		}
-
 		return inters;
 	}
 	return Variant();

@@ -33,10 +33,10 @@
 #include "triangulate.h"
 
 real_t Triangulate::get_area(const Vector<Vector2> &contour) {
-	int n = contour.size();
-	const Vector2 *c = &contour[0];
+	const int n = contour.size();
+	const Vector2 *c = contour.ptr();
 
-	real_t A = 0.0;
+	real_t A = 0.0f;
 
 	for (int p = n - 1, q = 0; q < n; p = q++) {
 		A += c[p].cross(c[q]);
@@ -44,166 +44,131 @@ real_t Triangulate::get_area(const Vector<Vector2> &contour) {
 	return A * 0.5f;
 }
 
-/* `is_inside_triangle` decides if a point P is inside the triangle
- * defined by A, B, C. */
 bool Triangulate::is_inside_triangle(real_t Ax, real_t Ay,
-		real_t Bx, real_t By,
-		real_t Cx, real_t Cy,
-		real_t Px, real_t Py,
-		bool include_edges) {
-	real_t ax, ay, bx, by, cx, cy, apx, apy, bpx, bpy, cpx, cpy;
-	real_t cCROSSap, bCROSScp, aCROSSbp;
+									 real_t Bx, real_t By,
+									 real_t Cx, real_t Cy,
+									 real_t Px, real_t Py,
+									 bool include_edges) {
+	const real_t ax = Cx - Bx;
+	const real_t ay = Cy - By;
+	const real_t bx = Ax - Cx;
+	const real_t by = Ay - Cy;
+	const real_t cx = Bx - Ax;
+	const real_t cy = By - Ay;
 
-	ax = Cx - Bx;
-	ay = Cy - By;
-	bx = Ax - Cx;
-	by = Ay - Cy;
-	cx = Bx - Ax;
-	cy = By - Ay;
-	apx = Px - Ax;
-	apy = Py - Ay;
-	bpx = Px - Bx;
-	bpy = Py - By;
-	cpx = Px - Cx;
-	cpy = Py - Cy;
+	const real_t apx = Px - Ax;
+	const real_t apy = Py - Ay;
+	const real_t bpx = Px - Bx;
+	const real_t bpy = Py - By;
+	const real_t cpx = Px - Cx;
+	const real_t cpy = Py - Cy;
 
-	aCROSSbp = ax * bpy - ay * bpx;
-	cCROSSap = cx * apy - cy * apx;
-	bCROSScp = bx * cpy - by * cpx;
+	const real_t aCROSSbp = ax * bpy - ay * bpx;
+	const real_t cCROSSap = cx * apy - cy * apx;
+	const real_t bCROSScp = bx * cpy - by * cpx;
 
-	if (include_edges) {
-		return ((aCROSSbp > 0.0f) && (bCROSScp > 0.0f) && (cCROSSap > 0.0f));
-	} else {
-		return ((aCROSSbp >= 0.0f) && (bCROSScp >= 0.0f) && (cCROSSap >= 0.0f));
-	}
-}
+	return include_edges ?
+	(aCROSSbp > 0.0f && bCROSScp > 0.0f && cCROSSap > 0.0f) :
+	(aCROSSbp >= 0.0f && bCROSScp >= 0.0f && cCROSSap >= 0.0f);
+									 }
 
-bool Triangulate::snip(const Vector<Vector2> &p_contour, int u, int v, int w, int n, const Vector<int> &V, bool relaxed) {
-	int p;
-	real_t Ax, Ay, Bx, By, Cx, Cy, Px, Py;
-	const Vector2 *contour = &p_contour[0];
+									 bool Triangulate::snip(const Vector<Vector2> &p_contour, int u, int v, int w, int n, const Vector<int> &V, bool relaxed) {
+										 const Vector2 *contour = p_contour.ptr();
 
-	Ax = contour[V[u]].x;
-	Ay = contour[V[u]].y;
+										 const real_t Ax = contour[V[u]].x;
+										 const real_t Ay = contour[V[u]].y;
 
-	Bx = contour[V[v]].x;
-	By = contour[V[v]].y;
+										 const real_t Bx = contour[V[v]].x;
+										 const real_t By = contour[V[v]].y;
 
-	Cx = contour[V[w]].x;
-	Cy = contour[V[w]].y;
+										 const real_t Cx = contour[V[w]].x;
+										 const real_t Cy = contour[V[w]].y;
 
-	// It can happen that the triangulation ends up with three aligned vertices to deal with.
-	// In this scenario, making the check below strict may reject the possibility of
-	// forming a last triangle with these aligned vertices, preventing the triangulation
-	// from completing.
-	// To avoid that we allow zero-area triangles if all else failed.
-	float threshold = relaxed ? -CMP_EPSILON : CMP_EPSILON;
+										 const float threshold = relaxed ? -CMP_EPSILON : CMP_EPSILON;
 
-	if (threshold > (((Bx - Ax) * (Cy - Ay)) - ((By - Ay) * (Cx - Ax)))) {
-		return false;
-	}
+										 if (threshold > ((Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax))) {
+											 return false;
+										 }
 
-	for (p = 0; p < n; p++) {
-		if ((p == u) || (p == v) || (p == w)) {
-			continue;
-		}
-		Px = contour[V[p]].x;
-		Py = contour[V[p]].y;
-		if (is_inside_triangle(Ax, Ay, Bx, By, Cx, Cy, Px, Py, relaxed)) {
-			return false;
-		}
-	}
+										 for (int p = 0; p < n; ++p) {
+											 if ((p == u) || (p == v) || (p == w)) {
+												 continue;
+											 }
+											 const real_t Px = contour[V[p]].x;
+											 const real_t Py = contour[V[p]].y;
+											 if (is_inside_triangle(Ax, Ay, Bx, By, Cx, Cy, Px, Py, relaxed)) {
+												 return false;
+											 }
+										 }
 
-	return true;
-}
+										 return true;
+									 }
 
-bool Triangulate::triangulate(const Vector<Vector2> &contour, Vector<int> &result) {
-	/* allocate and initialize list of Vertices in polygon */
+									 bool Triangulate::triangulate(const Vector<Vector2> &contour, Vector<int> &result) {
+										 const int n = contour.size();
+										 if (n < 3) {
+											 return false;
+										 }
 
-	int n = contour.size();
-	if (n < 3) {
-		return false;
-	}
+										 Vector<int> V;
+										 V.resize(n);
 
-	Vector<int> V;
-	V.resize(n);
+										 if (0.0f < get_area(contour)) {
+											 for (int v = 0; v < n; ++v) {
+												 V.write[v] = v;
+											 }
+										 } else {
+											 for (int v = 0; v < n; ++v) {
+												 V.write[v] = (n - 1) - v;
+											 }
+										 }
 
-	/* we want a counter-clockwise polygon in V */
+										 bool relaxed = false;
+										 int nv = n;
 
-	if (0.0f < get_area(contour)) {
-		for (int v = 0; v < n; v++) {
-			V.write[v] = v;
-		}
-	} else {
-		for (int v = 0; v < n; v++) {
-			V.write[v] = (n - 1) - v;
-		}
-	}
+										 int count = 2 * nv;
 
-	bool relaxed = false;
+										 for (int v = nv - 1; nv > 2;) {
+											 if (0 >= (count--)) {
+												 if (relaxed) {
+													 return false;
+												 } else {
+													 count = 2 * nv;
+													 relaxed = true;
+												 }
+											 }
 
-	int nv = n;
+											 int u = v;
+											 if (nv <= u) {
+												 u = 0;
+											 }
+											 v = u + 1;
+											 if (nv <= v) {
+												 v = 0;
+											 }
+											 int w = v + 1;
+											 if (nv <= w) {
+												 w = 0;
+											 }
 
-	/*  remove nv-2 Vertices, creating 1 triangle every time */
-	int count = 2 * nv; /* error detection */
+											 if (snip(contour, u, v, w, nv, V, relaxed)) {
+												 const int a = V[u];
+												 const int b = V[v];
+												 const int c = V[w];
 
-	for (int v = nv - 1; nv > 2;) {
-		/* if we loop, it is probably a non-simple polygon */
-		if (0 >= (count--)) {
-			if (relaxed) {
-				//** Triangulate: ERROR - probable bad polygon!
-				return false;
-			} else {
-				// There may be aligned vertices that the strict
-				// checks prevent from triangulating. In this situation
-				// we are better off adding flat triangles than
-				// failing, so we relax the checks and try one last
-				// round.
-				// Only relaxing the constraints as a last resort avoids
-				// degenerate triangles when they aren't necessary.
-				count = 2 * nv;
-				relaxed = true;
-			}
-		}
+												 result.push_back(a);
+												 result.push_back(b);
+												 result.push_back(c);
 
-		/* three consecutive vertices in current polygon, <u,v,w> */
-		int u = v;
-		if (nv <= u) {
-			u = 0; /* previous */
-		}
-		v = u + 1;
-		if (nv <= v) {
-			v = 0; /* new v    */
-		}
-		int w = v + 1;
-		if (nv <= w) {
-			w = 0; /* next     */
-		}
+												 int s = v;
+												 for (int t = v + 1; t < nv; ++s, ++t) {
+													 V.write[s] = V[t];
+												 }
 
-		if (snip(contour, u, v, w, nv, V, relaxed)) {
-			int a, b, c, s, t;
+												 nv--;
+												 count = 2 * nv;
+											 }
+										 }
 
-			/* true names of the vertices */
-			a = V[u];
-			b = V[v];
-			c = V[w];
-
-			/* output Triangle */
-			result.push_back(a);
-			result.push_back(b);
-			result.push_back(c);
-
-			/* remove v from remaining polygon */
-			for (s = v, t = v + 1; t < nv; s++, t++) {
-				V.write[s] = V[t];
-			}
-
-			nv--;
-
-			/* reset error detection counter */
-			count = 2 * nv;
-		}
-	}
-
-	return true;
-}
+										 return true;
+									 }

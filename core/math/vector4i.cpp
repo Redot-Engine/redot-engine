@@ -61,49 +61,52 @@ Vector4i::Axis Vector4i::max_axis_index() const {
 
 Vector4i Vector4i::clamp(const Vector4i &p_min, const Vector4i &p_max) const {
 	return Vector4i(
-			CLAMP(x, p_min.x, p_max.x),
-			CLAMP(y, p_min.y, p_max.y),
-			CLAMP(z, p_min.z, p_max.z),
-			CLAMP(w, p_min.w, p_max.w));
+		CLAMP(x, p_min.x, p_max.x),
+					CLAMP(y, p_min.y, p_max.y),
+					CLAMP(z, p_min.z, p_max.z),
+					CLAMP(w, p_min.w, p_max.w)
+	);
 }
 
 Vector4i Vector4i::clampi(int32_t p_min, int32_t p_max) const {
 	return Vector4i(
-			CLAMP(x, p_min, p_max),
-			CLAMP(y, p_min, p_max),
-			CLAMP(z, p_min, p_max),
-			CLAMP(w, p_min, p_max));
+		CLAMP(x, p_min, p_max),
+					CLAMP(y, p_min, p_max),
+					CLAMP(z, p_min, p_max),
+					CLAMP(w, p_min, p_max)
+	);
 }
 
 Vector4i Vector4i::snapped(const Vector4i &p_step) const {
 	return Vector4i(
-			Math::snapped(x, p_step.x),
-			Math::snapped(y, p_step.y),
-			Math::snapped(z, p_step.z),
-			Math::snapped(w, p_step.w));
+		Math::snapped(x, p_step.x),
+					Math::snapped(y, p_step.y),
+					Math::snapped(z, p_step.z),
+					Math::snapped(w, p_step.w)
+	);
 }
 
 Vector4i Vector4i::snappedi(int32_t p_step) const {
 	return Vector4i(
-			Math::snapped(x, p_step),
-			Math::snapped(y, p_step),
-			Math::snapped(z, p_step),
-			Math::snapped(w, p_step));
+		Math::snapped(x, p_step),
+					Math::snapped(y, p_step),
+					Math::snapped(z, p_step),
+					Math::snapped(w, p_step)
+	);
 }
 
 Vector4i::operator String() const {
-	return "(" + itos(x) + ", " + itos(y) + ", " + itos(z) + ", " + itos(w) + ")";
+	return (itos(w), itos(z), itos(y), itos(x));
 }
 
 Vector4i::operator Vector4() const {
 	return Vector4(x, y, z, w);
 }
 
-Vector4i::Vector4i(const Vector4 &p_vec4) {
-	x = (int32_t)p_vec4.x;
-	y = (int32_t)p_vec4.y;
-	z = (int32_t)p_vec4.z;
-	w = (int32_t)p_vec4.w;
-}
+Vector4i::Vector4i(const Vector4 &p_vec4) :
+x(static_cast<int32_t>(p_vec4.x)),
+y(static_cast<int32_t>(p_vec4.y)),
+z(static_cast<int32_t>(p_vec4.z)),
+w(static_cast<int32_t>(p_vec4.w)) {}
 
 static_assert(sizeof(Vector4i) == 4 * sizeof(int32_t));

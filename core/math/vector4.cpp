@@ -81,11 +81,11 @@ void Vector4::normalize() {
 	if (lengthsq == 0) {
 		x = y = z = w = 0;
 	} else {
-		real_t length = Math::sqrt(lengthsq);
-		x /= length;
-		y /= length;
-		z /= length;
-		w /= length;
+		real_t ilength = real_t(1) / Math::sqrt(lengthsq);
+		x *= ilength;
+		y *= ilength;
+		z *= ilength;
+		w *= ilength;
 	}
 }
 
@@ -96,7 +96,7 @@ Vector4 Vector4::normalized() const {
 }
 
 bool Vector4::is_normalized() const {
-	return Math::is_equal_approx(length_squared(), (real_t)1, (real_t)UNIT_EPSILON);
+	return Math::is_equal_approx(length_squared(), real_t(1), real_t(UNIT_EPSILON));
 }
 
 real_t Vector4::distance_to(const Vector4 &p_to) const {
@@ -195,23 +195,23 @@ Vector4 Vector4::snappedf(real_t p_step) const {
 }
 
 Vector4 Vector4::inverse() const {
-	return Vector4(1.0f / x, 1.0f / y, 1.0f / z, 1.0f / w);
+	return Vector4(real_t(1) / x, real_t(1) / y, real_t(1) / z, real_t(1) / w);
 }
 
 Vector4 Vector4::clamp(const Vector4 &p_min, const Vector4 &p_max) const {
 	return Vector4(
-			CLAMP(x, p_min.x, p_max.x),
-			CLAMP(y, p_min.y, p_max.y),
-			CLAMP(z, p_min.z, p_max.z),
-			CLAMP(w, p_min.w, p_max.w));
+		CLAMP(x, p_min.x, p_max.x),
+				   CLAMP(y, p_min.y, p_max.y),
+				   CLAMP(z, p_min.z, p_max.z),
+				   CLAMP(w, p_min.w, p_max.w));
 }
 
 Vector4 Vector4::clampf(real_t p_min, real_t p_max) const {
 	return Vector4(
-			CLAMP(x, p_min, p_max),
-			CLAMP(y, p_min, p_max),
-			CLAMP(z, p_min, p_max),
-			CLAMP(w, p_min, p_max));
+		CLAMP(x, p_min, p_max),
+				   CLAMP(y, p_min, p_max),
+				   CLAMP(z, p_min, p_max),
+				   CLAMP(w, p_min, p_max));
 }
 
 Vector4::operator String() const {
@@ -221,5 +221,5 @@ Vector4::operator String() const {
 static_assert(sizeof(Vector4) == 4 * sizeof(real_t));
 
 Vector4::operator Vector4i() const {
-	return Vector4i(x, y, z, w);
+	return Vector4i(static_cast<int>(x), static_cast<int>(y), static_cast<int>(z), static_cast<int>(w));
 }

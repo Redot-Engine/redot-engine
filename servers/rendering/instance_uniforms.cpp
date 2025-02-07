@@ -62,10 +62,10 @@ void InstanceUniforms::materials_append(RID p_material) {
 				_init_param(*ptr, srcp);
 			} else if (ptr->index != srcp.index) {
 				WARN_PRINT("More than one material in instance export the same instance shader uniform '" + srcp.info.name +
-						"', but they do it with different indices. Only the first one (in order) will display correctly.");
+				"', but they do it with different indices. Only the first one (in order) will display correctly.");
 			} else if (ptr->info.type != srcp.info.type) {
 				WARN_PRINT("More than one material in instance export the same instance shader uniform '" + srcp.info.name +
-						"', but they do it with different data types. Only the first one (in order) will display correctly.");
+				"', but they do it with different data types. Only the first one (in order) will display correctly.");
 			}
 		} else {
 			Item i;
@@ -166,18 +166,8 @@ void InstanceUniforms::_init_param(Item &r_item, const RendererMaterialStorage::
 	}
 
 	if (r_item.info.hint == PROPERTY_HINT_FLAGS) {
-		// HACK: Detect boolean flags count and prevent overhead.
-		switch (r_item.info.hint_string.length()) {
-			case 3: // "x,y"
-				r_item.flags = 1;
-				break;
-			case 5: // "x,y,z"
-				r_item.flags = 2;
-				break;
-			case 7: // "x,y,z,w"
-				r_item.flags = 3;
-				break;
-		}
+		// Calculate the number of flags based on the hint string length.
+		r_item.flags = (r_item.info.hint_string.length() - 1) / 2;
 	}
 }
 
