@@ -73,17 +73,31 @@ void Callable::callp(const Variant **p_arguments, int p_argcount, Variant &r_ret
 }
 
 Variant Callable::callv(const Array &p_arguments) const {
-	int argcount = p_arguments.size();
+	Variant ret;
+	CallError ce;
 	const Variant **argptrs = nullptr;
+	const int argcount = p_arguments.size();
 	if (argcount) {
 		argptrs = (const Variant **)alloca(sizeof(Variant *) * argcount);
-		for (int i = 0; i < argcount; i++) {
-			argptrs[i] = &p_arguments[i];
+		if (p_arguments.is_read_only() && argcount > 1) {
+			Variant *args = (Variant *)alloca(sizeof(Variant) * argcount);
+			for (int i = 0; i < argcount; i++) {
+				new (&args[i]) Variant(p_arguments[i]);
+				argptrs[i] = &args[i];
+			}
+			callp(argptrs, argcount, ret, ce);
+			for (int i = argcount - 1; i >= 0; i--) {
+				args[i].~Variant();
+			}
+		} else {
+			for (int i = 0; i < argcount; i++) {
+				argptrs[i] = &p_arguments[i];
+			}
+			callp(argptrs, argcount, ret, ce);
 		}
+	} else {
+		callp(argptrs, argcount, ret, ce);
 	}
-	CallError ce;
-	Variant ret;
-	callp(argptrs, argcount, ret, ce);
 	return ret;
 }
 
