@@ -827,6 +827,7 @@ if env.msvc and not methods.using_clang(env):  # MSVC
         "/wd4514",  # C4514 (unreferenced inline function has been removed)
         "/wd4714",  # C4714 (function marked as __forceinline not inlined)
         "/wd4820",  # C4820 (padding added after construct)
+        "/wd4611",  # C4611 (interaction between '_setjmp' and C++ object destruction is non-portable): libpng uses setjmp use for error handling
     ]
 
     if env["warnings"] == "extra":
