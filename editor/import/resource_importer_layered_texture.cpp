@@ -83,7 +83,7 @@ String ResourceImporterLayeredTexture::get_visible_name() const {
 }
 
 void ResourceImporterLayeredTexture::get_recognized_extensions(List<String> *p_extensions) const {
-	ImageLoader::get_recognized_extensions(p_extensions);
+	ImageLoader::get_recognized_extensions(p_extensions, get_resource_type());
 }
 
 String ResourceImporterLayeredTexture::get_save_extension() const {
