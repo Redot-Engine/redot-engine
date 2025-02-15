@@ -76,7 +76,7 @@ antiAliasing = false
 			Color(config_file.get_value("player", "color")).is_equal_approx(Color(0, 0.5, 1)),
 			"Reading `player/color` should return the expected value.");
 	CHECK_MESSAGE(
-			Vector2(config_file.get_value("player", "position")).is_equal_approx(Vector2(3, 4)),
+			Vector2((const Vector2&)config_file.get_value("player", "position")).is_equal_approx(Vector2(3, 4)),
 			"Reading `player/position` should return the expected value.");
 	CHECK_MESSAGE(
 			bool(config_file.get_value("graphics", "antialiasing")),

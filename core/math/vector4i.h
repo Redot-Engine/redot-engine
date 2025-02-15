@@ -144,6 +144,12 @@ struct [[nodiscard]] Vector4i {
 		z = p_z;
 		w = p_w;
 	}
+	_FORCE_INLINE_ Vector4i(int32_t value) {
+		x = value;
+		y = value;
+		z = value;
+		w = value;
+	}
 };
 
 int64_t Vector4i::length_squared() const {

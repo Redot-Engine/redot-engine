@@ -153,6 +153,12 @@ struct [[nodiscard]] Vector4 {
 		z = p_z;
 		w = p_w;
 	}
+	_FORCE_INLINE_ Vector4(real_t value) {
+		x = value;
+		y = value;
+		z = value;
+		w = value;
+	}
 };
 
 real_t Vector4::dot(const Vector4 &p_vec4) const {

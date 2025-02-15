@@ -478,12 +478,12 @@ void JoltArea3D::set_param(PhysicsServer3D::AreaParameter p_param, const Variant
 			}
 		} break;
 		case PhysicsServer3D::AREA_PARAM_WIND_SOURCE: {
-			if (!((Vector3)p_value).is_equal_approx(DEFAULT_WIND_SOURCE)) {
+			if (!((const Vector3&)p_value).is_equal_approx(DEFAULT_WIND_SOURCE)) {
 				WARN_PRINT(vformat("Invalid wind source for '%s'. Area wind source is not supported when using Jolt Physics. Any such value will be ignored.", to_string()));
 			}
 		} break;
 		case PhysicsServer3D::AREA_PARAM_WIND_DIRECTION: {
-			if (!((Vector3)p_value).is_equal_approx(DEFAULT_WIND_DIRECTION)) {
+			if (!((const Vector3&)p_value).is_equal_approx(DEFAULT_WIND_DIRECTION)) {
 				WARN_PRINT(vformat("Invalid wind direction for '%s'. Area wind direction is not supported when using Jolt Physics. Any such value will be ignored.", to_string()));
 			}
 		} break;
