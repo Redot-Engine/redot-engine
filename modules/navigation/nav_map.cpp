@@ -672,7 +672,6 @@ Vector3 NavMap::get_closest_point_to_segment(const Vector3 &p_from, const Vector
 }
 
 Vector3 NavMap::get_closest_point(const Vector3 &p_point) const {
-	RWLockRead read_lock(map_rwlock);
 	if (iteration_id == 0) {
 		NAVMAP_ITERATION_ZERO_ERROR_MSG();
 		return Vector3();
@@ -682,7 +681,6 @@ Vector3 NavMap::get_closest_point(const Vector3 &p_point) const {
 }
 
 Vector3 NavMap::get_closest_point_normal(const Vector3 &p_point) const {
-	RWLockRead read_lock(map_rwlock);
 	if (iteration_id == 0) {
 		NAVMAP_ITERATION_ZERO_ERROR_MSG();
 		return Vector3();
@@ -692,7 +690,6 @@ Vector3 NavMap::get_closest_point_normal(const Vector3 &p_point) const {
 }
 
 RID NavMap::get_closest_point_owner(const Vector3 &p_point) const {
-	RWLockRead read_lock(map_rwlock);
 	if (iteration_id == 0) {
 		NAVMAP_ITERATION_ZERO_ERROR_MSG();
 		return RID();
