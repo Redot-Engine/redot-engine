@@ -62,6 +62,8 @@ bool BoneAttachment3D::_set(const StringName &p_path, const Variant &p_value) {
 		set_external_skeleton(p_value);
 	}
 
+	update_configuration_warnings();
+
 	return true;
 }
 
