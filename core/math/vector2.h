@@ -191,6 +191,10 @@ struct [[nodiscard]] Vector2 {
 		x = p_x;
 		y = p_y;
 	}
+	_FORCE_INLINE_ Vector2(real_t value) {
+		x = value;
+		y = value;
+	}
 };
 
 _FORCE_INLINE_ Vector2 Vector2::plane_project(real_t p_d, const Vector2 &p_vec) const {

@@ -202,12 +202,12 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 							if (anim->track_get_type(i) == Animation::TYPE_POSITION_3D) {
 								if (bones_to_process.has(bone_idx)) {
 									for (int j = 0; j < key_len; j++) {
-										Vector3 ps = static_cast<Vector3>(anim->track_get_key_value(i, j));
+										Vector3 ps = static_cast<const Vector3&>(anim->track_get_key_value(i, j));
 										anim->track_set_key_value(i, j, global_transform.basis.xform(ps) + global_transform.origin);
 									}
 								} else {
 									for (int j = 0; j < key_len; j++) {
-										Vector3 ps = static_cast<Vector3>(anim->track_get_key_value(i, j));
+										Vector3 ps = static_cast<const Vector3&>(anim->track_get_key_value(i, j));
 										anim->track_set_key_value(i, j, ps * scl);
 									}
 								}
@@ -219,7 +219,7 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 									}
 								} else {
 									for (int j = 0; j < key_len; j++) {
-										Basis sc = Basis().scaled(static_cast<Vector3>(anim->track_get_key_value(i, j)));
+										Basis sc = Basis().scaled(static_cast<const Vector3&>(anim->track_get_key_value(i, j)));
 										anim->track_set_key_value(i, j, (global_transform.orthonormalized().basis * sc).get_scale());
 									}
 								}
@@ -446,7 +446,7 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 
 							int key_len = anim->track_get_key_count(i);
 							for (int j = 0; j < key_len; j++) {
-								Vector3 pos = static_cast<Vector3>(anim->track_get_key_value(i, j));
+								Vector3 pos = static_cast<const Vector3&>(anim->track_get_key_value(i, j));
 								pos.y += base_adjustment;
 								anim->track_set_key_value(i, j, pos);
 							}
@@ -792,7 +792,7 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 								Basis old_pg_b_inv = old_pg.basis.inverse();
 								Basis new_pg_b_inv = new_pg.basis.inverse();
 								for (int j = 0; j < key_len; j++) {
-									Basis sc = Basis().scaled(static_cast<Vector3>(anim->track_get_key_value(i, j)));
+									Basis sc = Basis().scaled(static_cast<const Vector3&>(anim->track_get_key_value(i, j)));
 									anim->track_set_key_value(i, j, (new_pg_b_inv * old_pg_b * sc * old_rest_b_inv * old_pg_b_inv * new_pg_b * new_rest_b).get_scale());
 								}
 							} else {
@@ -801,7 +801,7 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 								Basis old_pg_b = old_pg.basis;
 								Basis new_pg_b = new_pg.basis;
 								for (int j = 0; j < key_len; j++) {
-									Vector3 ps = static_cast<Vector3>(anim->track_get_key_value(i, j));
+									Vector3 ps = static_cast<const Vector3&>(anim->track_get_key_value(i, j));
 									anim->track_set_key_value(i, j, new_pg_b.xform_inv(old_pg_b.xform(ps - old_rest_o)) + new_rest_o);
 								}
 							}
@@ -882,7 +882,7 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 						real_t mlt = 1 / src_skeleton->get_motion_scale();
 						int key_len = anim->track_get_key_count(i);
 						for (int j = 0; j < key_len; j++) {
-							Vector3 pos = static_cast<Vector3>(anim->track_get_key_value(i, j));
+							Vector3 pos = static_cast<const Vector3&>(anim->track_get_key_value(i, j));
 							anim->track_set_key_value(i, j, pos * mlt);
 						}
 					}

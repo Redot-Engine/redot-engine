@@ -106,7 +106,7 @@ void GPUParticlesCollisionBox3D::_bind_methods() {
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesCollisionBox3D::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
+		set_size((Vector3&)p_value * 2);
 		return true;
 	}
 	return false;
@@ -571,7 +571,7 @@ void GPUParticlesCollisionSDF3D::_bind_methods() {
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesCollisionSDF3D::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
+		set_size((Vector3&)p_value * 2);
 		return true;
 	}
 	return false;
@@ -753,7 +753,7 @@ void GPUParticlesCollisionHeightField3D::_bind_methods() {
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesCollisionHeightField3D::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
+		set_size((Vector3&)p_value * 2);
 		return true;
 	}
 	return false;
@@ -957,7 +957,7 @@ void GPUParticlesAttractorBox3D::_bind_methods() {
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesAttractorBox3D::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
+		set_size((Vector3&)p_value * 2);
 		return true;
 	}
 	return false;
@@ -1009,7 +1009,7 @@ void GPUParticlesAttractorVectorField3D::_bind_methods() {
 #ifndef DISABLE_DEPRECATED
 bool GPUParticlesAttractorVectorField3D::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
+		set_size((Vector3&)p_value * 2);
 		return true;
 	}
 	return false;
