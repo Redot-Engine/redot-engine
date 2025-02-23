@@ -48,6 +48,8 @@
 #include "core/string/translation_server.h"
 #include "core/version.h"
 #include "editor/editor_string_names.h"
+#include "editor/import/resource_importer_animated_texture.h"
+#include "editor/import/resource_importer_image_frames.h"
 #include "editor/plugins/editor_context_menu_plugin.h"
 #include "main/main.h"
 #include "scene/2d/node_2d.h"
@@ -7026,6 +7028,14 @@ EditorNode::EditorNode() {
 		Ref<ResourceImporterTextureAtlas> import_texture_atlas;
 		import_texture_atlas.instantiate();
 		ResourceFormatImporter::get_singleton()->add_importer(import_texture_atlas);
+
+		Ref<ResourceImporterAnimatedTexture> import_animated_texture;
+		import_animated_texture.instantiate();
+		ResourceFormatImporter::get_singleton()->add_importer(import_animated_texture);
+
+		Ref<ResourceImporterImageFrames> import_image_frames;
+		import_image_frames.instantiate();
+		ResourceFormatImporter::get_singleton()->add_importer(import_image_frames);
 
 		Ref<ResourceImporterDynamicFont> import_font_data_dynamic;
 		import_font_data_dynamic.instantiate();
