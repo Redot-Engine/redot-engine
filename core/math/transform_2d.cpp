@@ -93,7 +93,8 @@ void Transform2D::set_rotation(real_t p_rot) {
 	columns[0][1] = sr;
 	columns[1][0] = -sr;
 	columns[1][1] = cr;
-	set_scale(scale);
+	columns[0] *= scale.x;
+	columns[1] *= scale.y;
 }
 
 Transform2D::Transform2D(real_t p_rot, const Vector2 &p_pos) {
