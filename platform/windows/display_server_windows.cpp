@@ -1510,6 +1510,8 @@ void DisplayServerWindows::show_window(WindowID p_id) {
 	ERR_FAIL_COND(!windows.has(p_id));
 
 	WindowData &wd = windows[p_id];
+
+	wd.visible = true;
 	popup_open(p_id);
 
 	if (p_id != MAIN_WINDOW_ID) {
@@ -1536,6 +1538,15 @@ void DisplayServerWindows::show_window(WindowID p_id) {
 	if (wd.always_on_top) {
 		SetWindowPos(wd.hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | ((wd.no_focus || wd.is_popup) ? SWP_NOACTIVATE : 0));
 	}
+}
+
+void DisplayServerWindows::hide_window(WindowID p_id) {
+	ERR_FAIL_COND(!windows.has(p_id));
+
+	WindowData &wd = windows[p_id];
+
+	wd.visible = false;
+	ShowWindow(wd.hWnd, SW_HIDE);
 }
 
 void DisplayServerWindows::delete_sub_window(WindowID p_window) {
@@ -2050,7 +2061,6 @@ void DisplayServerWindows::_get_window_style(bool p_main_window, bool p_fullscre
 	r_style_ex = WS_EX_WINDOWEDGE;
 	if (p_main_window) {
 		r_style_ex |= WS_EX_APPWINDOW;
-		r_style |= WS_VISIBLE;
 	}
 
 	if (p_fullscreen || p_borderless) {
@@ -2084,10 +2094,6 @@ void DisplayServerWindows::_get_window_style(bool p_main_window, bool p_fullscre
 		r_style_ex |= WS_EX_TOPMOST | WS_EX_NOACTIVATE;
 	}
 
-	if (!p_borderless && !p_no_activate_focus) {
-		r_style |= WS_VISIBLE;
-	}
-
 	r_style |= WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 	r_style_ex |= WS_EX_ACCEPTFILES;
 }
@@ -2102,6 +2108,9 @@ void DisplayServerWindows::_update_window_style(WindowID p_window, bool p_repain
 	DWORD style_ex = 0;
 
 	_get_window_style(p_window == MAIN_WINDOW_ID, wd.fullscreen, wd.multiwindow_fs, wd.borderless, wd.resizable, wd.maximized, wd.maximized_fs, wd.no_focus || wd.is_popup, style, style_ex);
+	if (wd.visible && ((!wd.borderless && !(wd.no_focus || wd.is_popup)) || (p_window == MAIN_WINDOW_ID))) {
+		style |= WS_VISIBLE;
+	}
 
 	SetWindowLongPtr(wd.hWnd, GWL_STYLE, style);
 	SetWindowLongPtr(wd.hWnd, GWL_EXSTYLE, style_ex);
@@ -2144,7 +2153,9 @@ void DisplayServerWindows::window_set_mode(WindowMode p_mode, WindowID p_window)
 			wd.pre_fs_valid = true;
 		}
 
-		ShowWindow(wd.hWnd, SW_RESTORE);
+		if (wd.visible) {
+			ShowWindow(wd.hWnd, SW_RESTORE);
+		}
 		MoveWindow(wd.hWnd, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, TRUE);
 
 		if (restore_mouse_trails > 1) {
@@ -2154,19 +2165,25 @@ void DisplayServerWindows::window_set_mode(WindowMode p_mode, WindowID p_window)
 	}
 
 	if (p_mode == WINDOW_MODE_WINDOWED) {
-		ShowWindow(wd.hWnd, SW_NORMAL);
+		if (wd.visible) {
+			ShowWindow(wd.hWnd, SW_NORMAL);
+		}
 		wd.maximized = false;
 		wd.minimized = false;
 	}
 
 	if (p_mode == WINDOW_MODE_MAXIMIZED) {
-		ShowWindow(wd.hWnd, SW_MAXIMIZE);
+		if (wd.visible) {
+			ShowWindow(wd.hWnd, SW_MAXIMIZE);
+		}
 		wd.maximized = true;
 		wd.minimized = false;
 	}
 
 	if (p_mode == WINDOW_MODE_MINIMIZED) {
-		ShowWindow(wd.hWnd, SW_MINIMIZE);
+		if (wd.visible) {
+			ShowWindow(wd.hWnd, SW_MINIMIZE);
+		}
 		wd.maximized = false;
 		wd.minimized = true;
 	}
@@ -2180,7 +2197,7 @@ void DisplayServerWindows::window_set_mode(WindowMode p_mode, WindowID p_window)
 	}
 
 	if ((p_mode == WINDOW_MODE_FULLSCREEN || p_mode == WINDOW_MODE_EXCLUSIVE_FULLSCREEN) && !wd.fullscreen) {
-		if (wd.minimized || wd.maximized) {
+		if (wd.visible && (wd.minimized || wd.maximized)) {
 			ShowWindow(wd.hWnd, SW_RESTORE);
 		}
 		wd.was_maximized = wd.maximized;
@@ -2255,7 +2272,9 @@ void DisplayServerWindows::window_set_flag(WindowFlags p_flag, bool p_enabled, W
 			wd.borderless = p_enabled;
 			_update_window_style(p_window);
 			_update_window_mouse_passthrough(p_window);
-			ShowWindow(wd.hWnd, (wd.no_focus || wd.is_popup) ? SW_SHOWNOACTIVATE : SW_SHOW); // Show the window.
+			if (wd.visible) {
+				ShowWindow(wd.hWnd, (wd.no_focus || wd.is_popup) ? SW_SHOWNOACTIVATE : SW_SHOW); // Show the window.
+			}
 		} break;
 		case WINDOW_FLAG_ALWAYS_ON_TOP: {
 			ERR_FAIL_COND_MSG(wd.transient_parent != INVALID_WINDOW_ID && p_enabled, "Transient windows can't become on top");
@@ -2362,7 +2381,7 @@ void DisplayServerWindows::window_move_to_foreground(WindowID p_window) {
 	ERR_FAIL_COND(!windows.has(p_window));
 	WindowData &wd = windows[p_window];
 
-	if (!wd.no_focus && !wd.is_popup) {
+	if (!wd.no_focus && !wd.is_popup && wd.visible) {
 		SetForegroundWindow(wd.hWnd);
 	}
 }
@@ -5938,7 +5957,7 @@ void DisplayServerWindows::tablet_set_current_driver(const String &p_driver) {
 	}
 }
 
-DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, Error &r_error) {
+DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, bool p_visible, Error &r_error) {
 	KeyMappingWindows::initialize();
 
 	drop_events = false;
@@ -6309,7 +6328,9 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 		}
 	}
 
-	show_window(MAIN_WINDOW_ID);
+	if (p_visible) {
+		show_window(MAIN_WINDOW_ID);
+	}
 
 #if defined(RD_ENABLED)
 	if (rendering_context) {
@@ -6372,8 +6393,8 @@ Vector<String> DisplayServerWindows::get_rendering_drivers_func() {
 	return drivers;
 }
 
-DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, Error &r_error) {
-	DisplayServer *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, r_error));
+DisplayServer *DisplayServerWindows::create_func(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, bool p_visible, Error &r_error) {
+	DisplayServer *ds = memnew(DisplayServerWindows(p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen, p_context, p_visible, r_error));
 	if (r_error != OK) {
 		if (p_rendering_driver == "vulkan") {
 			String executable_name = OS::get_singleton()->get_executable_path().get_file();
