@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animated_texture.h                                                    */
+/*  resource_importer_image_frames.cpp                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,89 +30,70 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ANIMATED_TEXTURE_H
-#define ANIMATED_TEXTURE_H
+#include "resource_importer_image_frames.h"
 
-#include "core/io/image_frames.h"
-#include "scene/resources/texture.h"
+#include "core/io/file_access.h"
+#include "core/io/image_frames_loader.h"
 
-class AnimatedTexture : public Texture2D {
-	GDCLASS(AnimatedTexture, Texture2D);
+String ResourceImporterImageFrames::get_importer_name() const {
+	return "image_frames";
+}
 
-	// Use readers writers lock for this, since its far more times read than written to.
-	RWLock rw_lock;
+String ResourceImporterImageFrames::get_visible_name() const {
+	return "ImageFrames";
+}
 
-public:
-	enum {
-		MAX_FRAMES = 256
-	};
+void ResourceImporterImageFrames::get_recognized_extensions(List<String> *p_extensions) const {
+	ImageFramesLoader::get_recognized_extensions(p_extensions);
+}
 
-private:
-	RID proxy_ph;
-	RID proxy;
+String ResourceImporterImageFrames::get_save_extension() const {
+	return "image_frames";
+}
 
-	struct Frame {
-		Ref<Texture2D> texture;
-		float duration = 1.0;
-	};
+String ResourceImporterImageFrames::get_resource_type() const {
+	return "ImageFrames";
+}
 
-	Frame frames[MAX_FRAMES];
-	int frame_count = 1.0;
-	int current_frame = 0;
-	bool pause = false;
-	bool one_shot = false;
-	float speed_scale = 1.0;
+bool ResourceImporterImageFrames::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+	return true;
+}
 
-	float time = 0.0;
+int ResourceImporterImageFrames::get_preset_count() const {
+	return 0;
+}
 
-	uint64_t prev_ticks = 0;
+String ResourceImporterImageFrames::get_preset_name(int p_idx) const {
+	return String();
+}
 
-	void _update_proxy();
-	void _finish_non_thread_safe_setup();
+void ResourceImporterImageFrames::get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset) const {
+}
 
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
+Error ResourceImporterImageFrames::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	Ref<FileAccess> f = FileAccess::open(p_source_file, FileAccess::READ);
 
-public:
-	void set_frames(int p_frames);
-	int get_frames() const;
+	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_CANT_OPEN, "Cannot open file from path '" + p_source_file + "'.");
+	uint64_t len = f->get_length();
 
-	void set_current_frame(int p_frame);
-	int get_current_frame() const;
+	Vector<uint8_t> data;
+	data.resize(len);
 
-	void set_pause(bool p_pause);
-	bool get_pause() const;
+	f->get_buffer(data.ptrw(), len);
 
-	void set_one_shot(bool p_one_shot);
-	bool get_one_shot() const;
+	f = FileAccess::open(p_save_path + ".image_frames", FileAccess::WRITE);
+	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_CANT_CREATE, "Cannot create file in path '" + p_save_path + ".image_frames'.");
 
-	void set_frame_texture(int p_frame, const Ref<Texture2D> &p_texture);
-	Ref<Texture2D> get_frame_texture(int p_frame) const;
+	//save the header RDIM
+	const uint8_t header[5] = { 'R', 'D', 'I', 'M', 'F' };
+	f->store_buffer(header, 5);
+	//SAVE the extension (so it can be recognized by the loader later
+	f->store_pascal_string(p_source_file.get_extension().to_lower());
+	//SAVE the actual image
+	f->store_buffer(data.ptr(), len);
 
-	void set_frame_duration(int p_frame, float p_duration);
-	float get_frame_duration(int p_frame) const;
+	return OK;
+}
 
-	void set_speed_scale(float p_scale);
-	float get_speed_scale() const;
-
-	virtual int get_width() const override;
-	virtual int get_height() const override;
-	virtual RID get_rid() const override;
-
-	virtual bool has_alpha() const override;
-
-	virtual Ref<Image> get_image() const override;
-
-	bool is_pixel_opaque(int p_x, int p_y) const override;
-
-	void set_from_image_frames(const Ref<ImageFrames> &p_image_frames);
-	static Ref<AnimatedTexture> create_from_image_frames(const Ref<ImageFrames> &p_image_frames);
-
-	Ref<ImageFrames> make_image_frames() const;
-
-	AnimatedTexture();
-	~AnimatedTexture();
-};
-
-#endif // ANIMATED_TEXTURE_H
+ResourceImporterImageFrames::ResourceImporterImageFrames() {
+}
