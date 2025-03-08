@@ -139,6 +139,7 @@
 #include "scene/resources/physics_material.h"
 #include "scene/resources/placeholder_textures.h"
 #include "scene/resources/portable_compressed_texture.h"
+#include "scene/resources/resource_format_animated_texture.h"
 #include "scene/resources/resource_format_text.h"
 #include "scene/resources/shader_include.h"
 #include "scene/resources/skeleton_profile.h"
@@ -324,6 +325,7 @@ static Ref<ResourceFormatLoaderText> resource_loader_text;
 static Ref<ResourceFormatLoaderCompressedTexture2D> resource_loader_stream_texture;
 static Ref<ResourceFormatLoaderCompressedTextureLayered> resource_loader_texture_layered;
 static Ref<ResourceFormatLoaderCompressedTexture3D> resource_loader_texture_3d;
+static Ref<ResourceFormatLoaderAnimatedTexture> resource_loader_animated_texture;
 
 static Ref<ResourceFormatSaverShader> resource_saver_shader;
 static Ref<ResourceFormatLoaderShader> resource_loader_shader;
@@ -348,6 +350,9 @@ void register_scene_types() {
 
 	resource_loader_texture_3d.instantiate();
 	ResourceLoader::add_resource_format_loader(resource_loader_texture_3d);
+
+	resource_loader_animated_texture.instantiate();
+	ResourceLoader::add_resource_format_loader(resource_loader_animated_texture);
 
 	resource_saver_text.instantiate();
 	ResourceSaver::add_resource_format_saver(resource_saver_text, true);
@@ -953,6 +958,7 @@ void register_scene_types() {
 	GDREGISTER_VIRTUAL_CLASS(Texture3D);
 	GDREGISTER_CLASS(ImageTexture3D);
 	GDREGISTER_CLASS(CompressedTexture3D);
+	GDREGISTER_CLASS(ImageFrames);
 	GDREGISTER_CLASS(Cubemap);
 	GDREGISTER_CLASS(CubemapArray);
 	GDREGISTER_CLASS(Texture2DArray);
@@ -1287,6 +1293,9 @@ void unregister_scene_types() {
 
 	ResourceLoader::remove_resource_format_loader(resource_loader_texture_3d);
 	resource_loader_texture_3d.unref();
+
+	ResourceLoader::remove_resource_format_loader(resource_loader_animated_texture);
+	resource_loader_animated_texture.unref();
 
 	ResourceLoader::remove_resource_format_loader(resource_loader_stream_texture);
 	resource_loader_stream_texture.unref();
