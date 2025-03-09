@@ -282,6 +282,9 @@ opts.Add("asflags", "Custom flags for the assembler")
 opts.Add("arflags", "Custom flags for the archive tool")
 opts.Add("rcflags", "Custom flags for Windows resource compiler")
 
+# Nix
+opts.Add(BoolVariable("nix", "Whether the project is built using Nix.", False))
+
 # Update the environment to have all above options defined
 # in following code (especially platform and custom_modules).
 opts.Update(env)
