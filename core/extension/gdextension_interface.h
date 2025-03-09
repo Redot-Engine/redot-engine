@@ -792,6 +792,19 @@ typedef struct {
 	const char *string;
 } GDExtensionGodotVersion;
 
+typedef struct {
+	uint32_t major;
+	uint32_t minor;
+	uint32_t patch;
+	uint32_t hex; // Full version encoded as hexadecimal with one byte (2 hex digits) per number (e.g. for "3.1.12" it would be 0x03010C)
+	const char *status; // (e.g. "stable", "beta", "rc")
+	uint32_t status_version;
+	const char *build; // (e.g. "custom_build")
+	const char *hash; // Full Git commit hash.
+	uint64_t timestamp; // Git commit date UNIX timestamp in seconds, or 0 if unavailable.
+	const char *string; // (e.g. "Redot v3.1.4.stable.official.mono")
+} GDExtensionRedotVersion;
+
 /**
  * @name get_godot_version
  * @since 4.1
@@ -801,6 +814,16 @@ typedef struct {
  * @param r_godot_version A pointer to the structure to write the version information into.
  */
 typedef void (*GDExtensionInterfaceGetGodotVersion)(GDExtensionGodotVersion *r_godot_version);
+
+/**
+ * @name get_redot_version
+ * @since 4.3
+ *
+ * Gets the Redot version that the GDExtension was loaded into.
+ *
+ * @param r_redot_version A pointer to the structure to write the version information into.
+ */
+typedef void (*GDExtensionInterfaceGetRedotVersion)(GDExtensionRedotVersion *r_redot_version);
 
 /* INTERFACE: Memory */
 

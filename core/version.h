@@ -59,6 +59,14 @@
 #define VERSION_NUMBER VERSION_BRANCH
 #endif // VERSION_PATCH
 
+#define GODOT_VERSION_BRANCH _MKSTR(GODOT_VERSION_MAJOR) "." _MKSTR(GODOT_VERSION_MINOR)
+#if GODOT_VERSION_PATCH
+// Example: "3.1.4"
+#define GODOT_VERSION_NUMBER GODOT_VERSION_BRANCH "." _MKSTR(GODOT_VERSION_PATCH)
+#else // patch is 0, we don't include it in the "pretty" version number.
+#define GODOT_VERSION_NUMBER GODOT_VERSION_BRANCH
+#endif // GODOT_VERSION_PATCH
+
 // Version number encoded as hexadecimal int with one byte for each number,
 // for easy comparison from code.
 // Example: 3.1.4 will be 0x030104, making comparison easy from script.
@@ -73,14 +81,22 @@
 #define VERSION_FULL_CONFIG VERSION_NUMBER "." VERSION_STATUS "." _MKSTR(VERSION_STATUS_VERSION) VERSION_MODULE_CONFIG
 #endif
 
+#define GODOT_VERSION_FULL_CONFIG GODOT_VERSION_NUMBER "." GODOT_VERSION_STATUS VERSION_MODULE_CONFIG
+
 // Similar to VERSION_FULL_CONFIG, but also includes the (potentially custom) VERSION_BUILD
 // description (e.g. official, custom_build, etc.).
 // Example: "3.1.4.stable.mono.official"
 #define VERSION_FULL_BUILD VERSION_FULL_CONFIG "." VERSION_BUILD
 
+#define GODOT_VERSION_BUILD "redot." VERSION_BUILD
+#define GODOT_VERSION_FULL_BUILD GODOT_VERSION_FULL_CONFIG "." GODOT_VERSION_BUILD
+
 // Same as above, but prepended with Redot's name and a cosmetic "v" for "version".
 // Example: "Redot v3.1.4.stable.official.mono"
 #define VERSION_FULL_NAME VERSION_NAME " v" VERSION_FULL_BUILD
+
+#define GODOT_VERSION_NAME "Godot Engine"
+#define GODOT_VERSION_FULL_NAME GODOT_VERSION_NAME " v" GODOT_VERSION_FULL_BUILD
 
 // Git commit hash, generated at build time in `core/version_hash.gen.cpp`.
 extern const char *const VERSION_HASH;
@@ -107,20 +123,6 @@ extern const uint64_t VERSION_TIMESTAMP;
 #define GODOT_VERSION_HEX 0x10000 * GODOT_VERSION_MAJOR + 0x100 * GODOT_VERSION_MINOR + GODOT_VERSION_PATCH
 
 // TODO: determine how to deal with godot compatible versioning behavior
-
-// Describes the full configuration of that Redot version, including the version number,
-// the status (beta, stable, etc.) and potential module-specific features (e.g. mono).
-// Example: "3.1.4.stable.mono"
-// #define GODOT_VERSION_FULL_CONFIG VERSION_NUMBER "." GODOT_VERSION_STATUS VERSION_MODULE_CONFIG
-
-// Similar to GODOT_VERSION_FULL_CONFIG, but also includes the (potentially custom) VERSION_BUILD
-// description (e.g. official, custom_build, etc.).
-// Example: "3.1.4.stable.mono.official"
-// #define GODOT_VERSION_FULL_BUILD GODOT_VERSION_FULL_CONFIG "." GODOT_VERSION_BUILD
-
-// Same as above, but prepended with Redot's name and a cosmetic "v" for "version".
-// Example: "Godot v3.1.4.stable.official.mono"
-// #define GODOT_VERSION_FULL_NAME GODOT_VERSION_NAME " v" GODOT_VERSION_FULL_BUILD
 
 // Git commit hash, generated at build time in `core/version_hash.gen.cpp`.
 // extern const char *const GODOT_VERSION_HASH;
