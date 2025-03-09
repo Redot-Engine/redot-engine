@@ -140,6 +140,11 @@ struct [[nodiscard]] Vector3i {
 		y = p_y;
 		z = p_z;
 	}
+	_FORCE_INLINE_ Vector3i(int32_t value) {
+		x = value;
+		y = value;
+		z = value;
+	}
 };
 
 int64_t Vector3i::length_squared() const {
