@@ -155,13 +155,13 @@ Dictionary Engine::get_godot_compatible_version_info() const {
 	dict["patch"] = GODOT_VERSION_PATCH;
 	dict["hex"] = GODOT_VERSION_HEX;
 	dict["status"] = GODOT_VERSION_STATUS;
+	dict["build"] = GODOT_VERSION_BUILD;
 
 	String stringver = String(dict["major"]) + "." + String(dict["minor"]);
 	if ((int)dict["patch"] != 0) {
 		stringver += "." + String(dict["patch"]);
 	}
-	// stringver += "-" + String(dict["status"]) + " (" + String(dict["build"]) + ")"; TODO: add godot automated build identification?
-	stringver += "-" + String(dict["status"]);
+	stringver += "-" + String(dict["status"]) + " (" + String(dict["build"]) + ")";
 	dict["string"] = stringver;
 
 	return dict;
