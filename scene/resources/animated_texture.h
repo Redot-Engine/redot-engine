@@ -33,6 +33,7 @@
 #ifndef ANIMATED_TEXTURE_H
 #define ANIMATED_TEXTURE_H
 
+#include "core/io/image_frames.h"
 #include "scene/resources/texture.h"
 
 class AnimatedTexture : public Texture2D {
@@ -104,6 +105,11 @@ public:
 	virtual Ref<Image> get_image() const override;
 
 	bool is_pixel_opaque(int p_x, int p_y) const override;
+
+	void set_from_image_frames(const Ref<ImageFrames> &p_image_frames);
+	static Ref<AnimatedTexture> create_from_image_frames(const Ref<ImageFrames> &p_image_frames);
+
+	Ref<ImageFrames> make_image_frames() const;
 
 	AnimatedTexture();
 	~AnimatedTexture();
