@@ -281,7 +281,7 @@ void Window::set_title(const String &p_title) {
 	title = p_title;
 	tr_title = atr(p_title);
 #ifdef DEBUG_ENABLED
-	if (window_id == DisplayServer::MAIN_WINDOW_ID) {
+	if (main_window) {
 		// Append a suffix to the window title to denote that the project is running
 		// from a debug build (including the editor). Since this results in lower performance,
 		// this should be clearly presented to the user.
@@ -624,40 +624,50 @@ bool Window::is_in_edited_scene_root() const {
 void Window::_make_window() {
 	ERR_FAIL_COND(window_id != DisplayServer::INVALID_WINDOW_ID);
 
-	if (transient && transient_to_focused) {
-		_make_transient();
-	}
+	if (main_window) {
+		window_id = DisplayServer::MAIN_WINDOW_ID;
+	} else {
+		if (transient && transient_to_focused) {
+			_make_transient();
+		}
 
-	uint32_t f = 0;
-	for (int i = 0; i < FLAG_MAX; i++) {
-		if (flags[i]) {
-			f |= (1 << i);
+		uint32_t f = 0;
+		for (int i = 0; i < FLAG_MAX; i++) {
+			if (flags[i]) {
+				f |= (1 << i);
+			}
+		}
+
+		DisplayServer::VSyncMode vsync_mode = DisplayServer::get_singleton()->window_get_vsync_mode(DisplayServer::MAIN_WINDOW_ID);
+		Rect2i window_rect;
+		if (initial_position == WINDOW_INITIAL_POSITION_ABSOLUTE) {
+			window_rect = Rect2i(position, size);
+		} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN) {
+			window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(DisplayServer::SCREEN_PRIMARY) + (DisplayServer::get_singleton()->screen_get_size(DisplayServer::SCREEN_PRIMARY) - size) / 2, size);
+		} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN) {
+			window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(DisplayServer::SCREEN_OF_MAIN_WINDOW) + (DisplayServer::get_singleton()->screen_get_size(DisplayServer::SCREEN_OF_MAIN_WINDOW) - size) / 2, size);
+		} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_OTHER_SCREEN) {
+			window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(current_screen) + (DisplayServer::get_singleton()->screen_get_size(current_screen) - size) / 2, size);
+		} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_SCREEN_WITH_MOUSE_FOCUS) {
+			window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(DisplayServer::SCREEN_WITH_MOUSE_FOCUS) + (DisplayServer::get_singleton()->screen_get_size(DisplayServer::SCREEN_WITH_MOUSE_FOCUS) - size) / 2, size);
+		} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_SCREEN_WITH_KEYBOARD_FOCUS) {
+			window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(DisplayServer::SCREEN_WITH_KEYBOARD_FOCUS) + (DisplayServer::get_singleton()->screen_get_size(DisplayServer::SCREEN_WITH_KEYBOARD_FOCUS) - size) / 2, size);
+		}
+
+		window_id = DisplayServer::get_singleton()->create_sub_window(DisplayServer::WindowMode(mode), vsync_mode, f, window_rect, is_in_edited_scene_root() ? false : exclusive, transient_parent ? transient_parent->window_id : DisplayServer::INVALID_WINDOW_ID);
+		ERR_FAIL_COND(window_id == DisplayServer::INVALID_WINDOW_ID);
+		DisplayServer::get_singleton()->window_set_max_size(Size2i(), window_id);
+		DisplayServer::get_singleton()->window_set_min_size(Size2i(), window_id);
+		DisplayServer::get_singleton()->window_set_mouse_passthrough(mpath, window_id);
+		DisplayServer::get_singleton()->window_set_title(tr_title, window_id);
+		DisplayServer::get_singleton()->window_attach_instance_id(get_instance_id(), window_id);
+
+		if (is_in_edited_scene_root()) {
+			DisplayServer::get_singleton()->window_set_exclusive(window_id, false);
+		} else {
+			DisplayServer::get_singleton()->window_set_exclusive(window_id, exclusive);
 		}
 	}
-
-	DisplayServer::VSyncMode vsync_mode = DisplayServer::get_singleton()->window_get_vsync_mode(DisplayServer::MAIN_WINDOW_ID);
-	Rect2i window_rect;
-	if (initial_position == WINDOW_INITIAL_POSITION_ABSOLUTE) {
-		window_rect = Rect2i(position, size);
-	} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN) {
-		window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(DisplayServer::SCREEN_PRIMARY) + (DisplayServer::get_singleton()->screen_get_size(DisplayServer::SCREEN_PRIMARY) - size) / 2, size);
-	} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN) {
-		window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(DisplayServer::SCREEN_OF_MAIN_WINDOW) + (DisplayServer::get_singleton()->screen_get_size(DisplayServer::SCREEN_OF_MAIN_WINDOW) - size) / 2, size);
-	} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_OTHER_SCREEN) {
-		window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(current_screen) + (DisplayServer::get_singleton()->screen_get_size(current_screen) - size) / 2, size);
-	} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_SCREEN_WITH_MOUSE_FOCUS) {
-		window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(DisplayServer::SCREEN_WITH_MOUSE_FOCUS) + (DisplayServer::get_singleton()->screen_get_size(DisplayServer::SCREEN_WITH_MOUSE_FOCUS) - size) / 2, size);
-	} else if (initial_position == WINDOW_INITIAL_POSITION_CENTER_SCREEN_WITH_KEYBOARD_FOCUS) {
-		window_rect = Rect2i(DisplayServer::get_singleton()->screen_get_position(DisplayServer::SCREEN_WITH_KEYBOARD_FOCUS) + (DisplayServer::get_singleton()->screen_get_size(DisplayServer::SCREEN_WITH_KEYBOARD_FOCUS) - size) / 2, size);
-	}
-
-	window_id = DisplayServer::get_singleton()->create_sub_window(DisplayServer::WindowMode(mode), vsync_mode, f, window_rect, is_in_edited_scene_root() ? false : exclusive, transient_parent ? transient_parent->window_id : DisplayServer::INVALID_WINDOW_ID);
-	ERR_FAIL_COND(window_id == DisplayServer::INVALID_WINDOW_ID);
-	DisplayServer::get_singleton()->window_set_max_size(Size2i(), window_id);
-	DisplayServer::get_singleton()->window_set_min_size(Size2i(), window_id);
-	DisplayServer::get_singleton()->window_set_mouse_passthrough(mpath, window_id);
-	DisplayServer::get_singleton()->window_set_title(tr_title, window_id);
-	DisplayServer::get_singleton()->window_attach_instance_id(get_instance_id(), window_id);
 
 	_update_window_size();
 
@@ -700,7 +710,11 @@ void Window::_clear_window() {
 
 	_update_from_window();
 
-	DisplayServer::get_singleton()->delete_sub_window(window_id);
+	if (main_window) {
+		DisplayServer::get_singleton()->hide_window(window_id);
+	} else {
+		DisplayServer::get_singleton()->delete_sub_window(window_id);
+	}
 	window_id = DisplayServer::INVALID_WINDOW_ID;
 
 	// If closing window was focused and has a parent, return focus.
@@ -853,8 +867,6 @@ void Window::set_visible(bool p_visible) {
 		visible = p_visible;
 		return;
 	}
-
-	ERR_FAIL_NULL_MSG(get_parent(), "Can't change visibility of main window.");
 
 	visible = p_visible;
 
@@ -1236,7 +1248,7 @@ void Window::_update_viewport_size() {
 		RenderingServer::get_singleton()->viewport_attach_to_screen(get_viewport_rid(), Rect2i(), DisplayServer::INVALID_WINDOW_ID);
 	}
 
-	if (window_id == DisplayServer::MAIN_WINDOW_ID) {
+	if (main_window) {
 		if (!use_font_oversampling) {
 			font_oversampling = 1.0;
 		}
@@ -1354,8 +1366,9 @@ void Window::_notification(int p_what) {
 			} else {
 				if (!get_parent()) {
 					// It's the root window!
-					visible = true; // Always visible.
+					visible = GLOBAL_GET("display/window/size/visible").operator bool();
 					window_id = DisplayServer::MAIN_WINDOW_ID;
+					main_window = true;
 					DisplayServer::get_singleton()->window_attach_instance_id(get_instance_id(), window_id);
 					_update_from_window();
 					// Since this window already exists (created on start), we must update pos and size from it.
@@ -1371,9 +1384,16 @@ void Window::_notification(int p_what) {
 					if (!mouse_in_window && Rect2(position, size).has_point(DisplayServer::get_singleton()->mouse_get_position())) {
 						_event_callback(DisplayServer::WINDOW_EVENT_MOUSE_ENTER);
 					}
-					RS::get_singleton()->viewport_set_update_mode(get_viewport_rid(), RS::VIEWPORT_UPDATE_WHEN_VISIBLE);
+					if (visible) {
+						RS::get_singleton()->viewport_set_update_mode(get_viewport_rid(), RS::VIEWPORT_UPDATE_WHEN_VISIBLE);
+					} else {
+						RS::get_singleton()->viewport_set_update_mode(get_viewport_rid(), RS::VIEWPORT_UPDATE_DISABLED);
+					}
 					if (DisplayServer::get_singleton()->window_get_flag(DisplayServer::WindowFlags(FLAG_TRANSPARENT), window_id)) {
 						set_transparent_background(true);
+					}
+					if (!visible) {
+						window_id = DisplayServer::INVALID_WINDOW_ID;
 					}
 				} else {
 					// Create.
@@ -1415,7 +1435,7 @@ void Window::_notification(int p_what) {
 
 			tr_title = atr(title);
 #ifdef DEBUG_ENABLED
-			if (window_id == DisplayServer::MAIN_WINDOW_ID) {
+			if (main_window) {
 				// Append a suffix to the window title to denote that the project is running
 				// from a debug build (including the editor). Since this results in lower performance,
 				// this should be clearly presented to the user.
@@ -1456,7 +1476,7 @@ void Window::_notification(int p_what) {
 			}
 
 			if (!is_embedded() && window_id != DisplayServer::INVALID_WINDOW_ID) {
-				if (window_id == DisplayServer::MAIN_WINDOW_ID) {
+				if (main_window) {
 					RS::get_singleton()->viewport_set_update_mode(get_viewport_rid(), RS::VIEWPORT_UPDATE_DISABLED);
 					_update_window_callbacks();
 				} else {
@@ -1556,7 +1576,7 @@ real_t Window::get_content_scale_factor() const {
 
 void Window::set_use_font_oversampling(bool p_oversampling) {
 	ERR_MAIN_THREAD_GUARD;
-	if (is_inside_tree() && window_id != DisplayServer::MAIN_WINDOW_ID) {
+	if (is_inside_tree() && !main_window) {
 		ERR_FAIL_MSG("Only the root window can set and use font oversampling.");
 	}
 	use_font_oversampling = p_oversampling;
@@ -1739,7 +1759,7 @@ Window *Window::get_parent_visible_window() const {
 void Window::popup_on_parent(const Rect2i &p_parent_rect) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_COND(!is_inside_tree());
-	ERR_FAIL_COND_MSG(window_id == DisplayServer::MAIN_WINDOW_ID, "Can't popup the main window.");
+	ERR_FAIL_COND_MSG(main_window, "Can't popup the main window.");
 
 	if (!is_embedded()) {
 		Window *window = get_parent_visible_window();
@@ -1757,7 +1777,7 @@ void Window::popup_on_parent(const Rect2i &p_parent_rect) {
 void Window::popup_centered_clamped(const Size2i &p_size, float p_fallback_ratio) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_COND(!is_inside_tree());
-	ERR_FAIL_COND_MSG(window_id == DisplayServer::MAIN_WINDOW_ID, "Can't popup the main window.");
+	ERR_FAIL_COND_MSG(main_window, "Can't popup the main window.");
 
 	// Consider the current size when calling with the default value.
 	Size2i expected_size = p_size == Size2i() ? size : p_size;
@@ -1789,7 +1809,7 @@ void Window::popup_centered_clamped(const Size2i &p_size, float p_fallback_ratio
 void Window::popup_centered(const Size2i &p_minsize) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_COND(!is_inside_tree());
-	ERR_FAIL_COND_MSG(window_id == DisplayServer::MAIN_WINDOW_ID, "Can't popup the main window.");
+	ERR_FAIL_COND_MSG(main_window, "Can't popup the main window.");
 
 	// Consider the current size when calling with the default value.
 	Size2i expected_size = p_minsize == Size2i() ? size : p_minsize;
@@ -1818,7 +1838,7 @@ void Window::popup_centered(const Size2i &p_minsize) {
 void Window::popup_centered_ratio(float p_ratio) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_COND(!is_inside_tree());
-	ERR_FAIL_COND_MSG(window_id == DisplayServer::MAIN_WINDOW_ID, "Can't popup the main window.");
+	ERR_FAIL_COND_MSG(main_window, "Can't popup the main window.");
 	ERR_FAIL_COND_MSG(p_ratio <= 0.0 || p_ratio > 1.0, "Ratio must be between 0.0 and 1.0!");
 
 	Rect2 parent_rect;
