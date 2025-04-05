@@ -177,6 +177,31 @@ void BoneAttachment3D::_check_unbind() {
 	}
 }
 
+void BoneAttachment3D::_snap_to_bone() {
+	if (updating) {
+		return;
+	}
+	updating = true;
+	if (bone_idx >= 0) {
+		Skeleton3D *sk = get_skeleton();
+		if (sk) {
+			if (!override_pose) {
+				if (use_external_skeleton) {
+					set_global_transform(sk->get_global_transform() * sk->get_bone_global_pose(bone_idx));
+				} else {
+					set_transform(sk->get_bone_global_pose(bone_idx));
+				}
+			} else {
+				if (!_override_dirty) {
+					_transform_changed();
+					_override_dirty = true;
+				}
+			}
+		}
+	}
+	updating = false;
+}
+
 void BoneAttachment3D::_transform_changed() {
 	if (!is_inside_tree()) {
 		return;
@@ -228,6 +253,8 @@ void BoneAttachment3D::set_bone_idx(const int &p_idx) {
 			bone_name = sk->get_bone_name(bone_idx);
 		}
 	}
+
+	_snap_to_bone();
 
 	if (is_inside_tree()) {
 		_check_bind();
@@ -315,29 +342,9 @@ void BoneAttachment3D::_notification(int p_what) {
 }
 
 void BoneAttachment3D::on_skeleton_update() {
-	if (updating) {
-		return;
-	}
-	updating = true;
-	if (bone_idx >= 0) {
-		Skeleton3D *sk = get_skeleton();
-		if (sk) {
-			if (!override_pose) {
-				if (use_external_skeleton) {
-					set_global_transform(sk->get_global_transform() * sk->get_bone_global_pose(bone_idx));
-				} else {
-					set_transform(sk->get_bone_global_pose(bone_idx));
-				}
-			} else {
-				if (!_override_dirty) {
-					_transform_changed();
-					_override_dirty = true;
-				}
-			}
-		}
-	}
-	updating = false;
+	_snap_to_bone();
 }
+
 #ifdef TOOLS_ENABLED
 void BoneAttachment3D::notify_skeleton_bones_renamed(Node *p_base_scene, Skeleton3D *p_skeleton, Dictionary p_rename_map) {
 	const Skeleton3D *parent = nullptr;
