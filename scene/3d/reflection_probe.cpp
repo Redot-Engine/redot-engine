@@ -285,7 +285,7 @@ void ReflectionProbe::_bind_methods() {
 #ifndef DISABLE_DEPRECATED
 bool ReflectionProbe::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "extents") { // Compatibility with Godot 3.x.
-		set_size((Vector3)p_value * 2);
+		set_size((Vector3&)p_value * 2);
 		return true;
 	}
 	return false;

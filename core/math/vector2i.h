@@ -149,6 +149,10 @@ struct [[nodiscard]] Vector2i {
 		x = p_x;
 		y = p_y;
 	}
+	inline Vector2i(int32_t p_value) {
+		x = p_value;
+		y = p_value;
+	}
 };
 
 // Multiplication operators required to workaround issues with LLVM using implicit conversion.
