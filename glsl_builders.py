@@ -32,28 +32,28 @@ def include_file_in_rd_header(filename: str, header_data: RDHeaderStruct, depth:
             if index != -1:
                 line = line[:index]
 
-            if line.find("#[vertex]") != -1:
+            if "#[vertex]" in line:
                 header_data.reading = "vertex"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.vertex_offset = header_data.line_offset
                 continue
 
-            if line.find("#[fragment]") != -1:
+            if "#[fragment]" in line:
                 header_data.reading = "fragment"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.fragment_offset = header_data.line_offset
                 continue
 
-            if line.find("#[compute]") != -1:
+            if "#[compute]" in line:
                 header_data.reading = "compute"
                 line = fs.readline()
                 header_data.line_offset += 1
                 header_data.compute_offset = header_data.line_offset
                 continue
 
-            while line.find("#include ") != -1:
+            while "#include " in line:
                 includeline = line.replace("#include ", "").strip()[1:-1]
 
                 if includeline.startswith("thirdparty/"):
@@ -98,10 +98,7 @@ def build_rd_header(
     header_data = header_data or RDHeaderStruct()
     include_file_in_rd_header(filename, header_data, 0)
 
-    if optional_output_filename is None:
-        out_file = filename + ".gen.h"
-    else:
-        out_file = optional_output_filename
+    out_file = optional_output_filename or filename + ".gen.h"
 
     out_file_base = out_file
     out_file_base = out_file_base[out_file_base.rfind("/") + 1 :]
@@ -163,7 +160,7 @@ def include_file_in_raw_header(filename: str, header_data: RAWHeaderStruct, dept
         line = fs.readline()
 
         while line:
-            while line.find("#include ") != -1:
+            while "#include " in line:
                 includeline = line.replace("#include ", "").strip()[1:-1]
 
                 included_file = os.path.relpath(os.path.dirname(filename) + "/" + includeline)
@@ -177,14 +174,11 @@ def include_file_in_raw_header(filename: str, header_data: RAWHeaderStruct, dept
 
 def build_raw_header(
     filename: str, optional_output_filename: Optional[str] = None, header_data: Optional[RAWHeaderStruct] = None
-):
+) -> None:
     header_data = header_data or RAWHeaderStruct()
     include_file_in_raw_header(filename, header_data, 0)
 
-    if optional_output_filename is None:
-        out_file = filename + ".gen.h"
-    else:
-        out_file = optional_output_filename
+    out_file = optional_output_filename or filename + ".gen.h"
 
     out_file_base = out_file.replace(".glsl.gen.h", "_shader_glsl")
     out_file_base = out_file_base[out_file_base.rfind("/") + 1 :]
