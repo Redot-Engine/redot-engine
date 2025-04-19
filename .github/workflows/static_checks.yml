@@ -2,6 +2,9 @@ name: 📊 Static Checks
 on:
   workflow_call:
 
+env:
+  DISABLE_REDOT_GET_CHANGED_FILES: true
+
 jobs:
   static-checks:
     name: Code style, file formatting, and docs
@@ -43,9 +46,14 @@ jobs:
           bash ./misc/scripts/gitignore_check.sh
 
       - name: Style checks via pre-commit
+        if: ${{ env.DISABLE_REDOT_GET_CHANGED_FILES != 'true' }}
         uses: pre-commit/action@v3.0.1
         with:
           extra_args: --files ${{ env.CHANGED_FILES }}
+
+      - name: Style checks via pre-commit
+        if: ${{ env.DISABLE_REDOT_GET_CHANGED_FILES == 'true' }}
+        uses: pre-commit/action@v3.0.1
 
       - name: Python builders checks via pytest
         run: |
