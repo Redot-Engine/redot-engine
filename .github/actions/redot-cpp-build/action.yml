@@ -2,7 +2,7 @@ name: Build redot-cpp
 description: Build redot-cpp with the provided options.
 
 env:
-  REDOT_CPP_BRANCH: 4.3
+  REDOT_CPP_BRANCH: 4.4
 
 inputs:
   bin:
