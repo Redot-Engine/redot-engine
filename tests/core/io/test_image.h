@@ -201,6 +201,19 @@ TEST_CASE("[Image] Saving and loading") {
 			image_tga->load_tga_from_buffer(data_tga) == OK,
 			"The TGA image should load successfully.");
 #endif // MODULE_TGA_ENABLED
+
+#ifdef MODULE_GIF_ENABLED
+	// Load GIF
+	Ref<Image> image_gif = memnew(Image());
+	Ref<FileAccess> f_gif = FileAccess::open(TestUtils::get_data_path("images/icon.gif"), FileAccess::READ, &err);
+	REQUIRE(f_gif.is_valid());
+	PackedByteArray data_gif;
+	data_gif.resize(f_gif->get_length() + 1);
+	f_gif->get_buffer(data_gif.ptrw(), f_gif->get_length());
+	CHECK_MESSAGE(
+			image_gif->load_gif_from_buffer(data_gif) == OK,
+			"The GIF image should load successfully.");
+#endif // MODULE_GIF_ENABLED
 }
 
 TEST_CASE("[Image] Basic getters") {
