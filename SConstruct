@@ -693,6 +693,13 @@ elif methods.using_clang(env):
         print_warning("Clang < 10 doesn't support -ffile-prefix-map, disabling `debug_paths_relative` option.")
         env["debug_paths_relative"] = False
 
+# Default architecture flags.
+if env["arch"] == "x86_32":
+    if env.msvc:
+        env.Append(CCFLAGS=["/arch:SSE2"])
+    else:
+        env.Append(CCFLAGS=["-msse2"])
+
 # Set optimize and debug_symbols flags.
 # "custom" means do nothing and let users set their own optimization flags.
 # Needs to happen after configure to have `env.msvc` defined.
