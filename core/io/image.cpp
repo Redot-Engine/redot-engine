@@ -3608,6 +3608,7 @@ void Image::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("load_bmp_from_buffer", "buffer"), &Image::load_bmp_from_buffer);
 	ClassDB::bind_method(D_METHOD("load_ktx_from_buffer", "buffer"), &Image::load_ktx_from_buffer);
 	ClassDB::bind_method(D_METHOD("load_dds_from_buffer", "buffer"), &Image::load_dds_from_buffer);
+	ClassDB::bind_method(D_METHOD("load_gif_from_buffer", "buffer"), &Image::load_gif_from_buffer);
 
 	ClassDB::bind_method(D_METHOD("load_svg_from_buffer", "buffer", "scale"), &Image::load_svg_from_buffer, DEFVAL(1.0));
 	ClassDB::bind_method(D_METHOD("load_svg_from_string", "svg_str", "scale"), &Image::load_svg_from_string, DEFVAL(1.0));
@@ -4139,6 +4140,14 @@ Error Image::load_ktx_from_buffer(const Vector<uint8_t> &p_array) {
 			ERR_UNAVAILABLE,
 			"The KTX module isn't enabled. Recompile the Redot editor or export template binary with the `module_ktx_enabled=yes` SCons option.");
 	return _load_from_buffer(p_array, _ktx_mem_loader_func);
+}
+
+Error Image::load_gif_from_buffer(const Vector<uint8_t> &p_array) {
+	ERR_FAIL_NULL_V_MSG(
+			_gif_mem_loader_func,
+			ERR_UNAVAILABLE,
+			"The GIF module isn't enabled. Recompile the Redot editor or export template binary with the `module_gif_enabled=yes` SCons option.");
+	return _load_from_buffer(p_array, _gif_mem_loader_func);
 }
 
 void Image::convert_rg_to_ra_rgba8() {
