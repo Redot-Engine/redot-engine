@@ -284,6 +284,11 @@ Comment: The FreeType Project
 Copyright: 1996-2023, David Turner, Robert Wilhelm, and Werner Lemberg.
 License: FTL
 
+Files: thirdparty/giflib/*
+Comment: giflib
+Copyright: 1997-2024, Eric S. Raymond
+License: Expat
+
 Files: thirdparty/glad/*
 Comment: glad
 Copyright: 2013-2022, David Herberth

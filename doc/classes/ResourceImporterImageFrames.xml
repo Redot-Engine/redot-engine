@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ResourceImporterImageFrames" inherits="ResourceImporter" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Imports an image sequence for use in scripting, with no rendering capabilities.
+	</brief_description>
+	<description>
+		This importer imports [ImageFrames] resources.
+	</description>
+	<tutorials>
+	</tutorials>
+</class>
