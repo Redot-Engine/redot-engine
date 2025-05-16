@@ -33,6 +33,7 @@
 #pragma once
 
 #include "core/io/image.h"
+#include "core/io/image_frames.h"
 
 namespace PNGDriverCommon {
 
@@ -42,4 +43,7 @@ Error png_to_image(const uint8_t *p_source, size_t p_size, bool p_force_linear, 
 // Append p_image, as a png, to p_buffer.
 // Contents of p_buffer is unspecified if error returned.
 Error image_to_png(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer);
+
+// Attempt to load apng from buffer (p_source, p_size) into p_frames
+Error apng_to_image_frames(const uint8_t *p_source, size_t p_size, bool p_force_linear, uint32_t p_frame_limit, Ref<ImageFrames> p_frames);
 } // namespace PNGDriverCommon
