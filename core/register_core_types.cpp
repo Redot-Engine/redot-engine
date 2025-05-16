@@ -49,6 +49,8 @@
 #include "core/io/dtls_server.h"
 #include "core/io/file_access_encrypted.h"
 #include "core/io/http_client.h"
+#include "core/io/image_frames.h"
+#include "core/io/image_frames_loader.h"
 #include "core/io/image_loader.h"
 #include "core/io/json.h"
 #include "core/io/marshalls.h"
@@ -90,6 +92,7 @@ static Ref<ResourceFormatLoaderBinary> resource_loader_binary;
 static Ref<ResourceFormatImporter> resource_format_importer;
 static Ref<ResourceFormatImporterSaver> resource_format_importer_saver;
 static Ref<ResourceFormatLoaderImage> resource_format_image;
+static Ref<ResourceFormatLoaderImageFrames> resource_loader_image_frames;
 static Ref<TranslationLoaderPO> resource_format_po;
 static Ref<ResourceFormatSaverCrypto> resource_format_saver_crypto;
 static Ref<ResourceFormatLoaderCrypto> resource_format_loader_crypto;
@@ -163,6 +166,11 @@ void register_core_types() {
 		ResourceLoader::add_resource_format_loader(resource_format_image);
 	}
 
+	if (GD_IS_CLASS_ENABLED(ImageFrames)) {
+		resource_loader_image_frames.instantiate();
+		ResourceLoader::add_resource_format_loader(resource_loader_image_frames);
+	}
+
 	GDREGISTER_CLASS(Object);
 
 	GDREGISTER_ABSTRACT_CLASS(Script);
@@ -176,6 +184,7 @@ void register_core_types() {
 	GDREGISTER_CLASS(Resource);
 	GDREGISTER_VIRTUAL_CLASS(MissingResource);
 	GDREGISTER_CLASS(Image);
+	GDREGISTER_CLASS(ImageFrames);
 
 	GDREGISTER_CLASS(Shortcut);
 	GDREGISTER_ABSTRACT_CLASS(InputEvent);
@@ -280,6 +289,8 @@ void register_core_types() {
 
 	GDREGISTER_ABSTRACT_CLASS(ImageFormatLoader);
 	GDREGISTER_CLASS(ImageFormatLoaderExtension);
+	GDREGISTER_ABSTRACT_CLASS(ImageFramesFormatLoader);
+	GDREGISTER_CLASS(ImageFramesFormatLoaderExtension);
 	GDREGISTER_ABSTRACT_CLASS(ResourceImporter);
 
 	GDREGISTER_CLASS(GDExtension);
@@ -431,6 +442,11 @@ void unregister_core_types() {
 	if (GD_IS_CLASS_ENABLED(Image)) {
 		ResourceLoader::remove_resource_format_loader(resource_format_image);
 		resource_format_image.unref();
+	}
+
+	if (GD_IS_CLASS_ENABLED(ImageFrames)) {
+		ResourceLoader::remove_resource_format_loader(resource_loader_image_frames);
+		resource_loader_image_frames.unref();
 	}
 
 	ResourceSaver::remove_resource_format_saver(resource_saver_binary);
