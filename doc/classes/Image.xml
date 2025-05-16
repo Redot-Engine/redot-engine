@@ -361,6 +361,14 @@
 				Creates a new [Image] and loads data from the specified file.
 			</description>
 		</method>
+		<method name="load_gif_from_buffer">
+			<return type="int" enum="Error" />
+			<param index="0" name="buffer" type="PackedByteArray" />
+			<description>
+				Loads an image from the binary contents of a GIF file.
+				[b]Note:[/b] This method is only available in engine builds with the GIF module enabled. By default, the GIF module is enabled, but it can be disabled at build-time using the [code]module_gif_enabled=no[/code] SCons option.
+			</description>
+		</method>
 		<method name="load_jpg_from_buffer">
 			<return type="int" enum="Error" />
 			<param index="0" name="buffer" type="PackedByteArray" />

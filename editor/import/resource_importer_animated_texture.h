@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animated_texture.h                                                    */
+/*  resource_importer_animated_texture.h                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -32,84 +32,25 @@
 
 #pragma once
 
-#include "core/io/image_frames.h"
-#include "scene/resources/texture.h"
+#include "core/io/resource_importer.h"
 
-class AnimatedTexture : public Texture2D {
-	GDCLASS(AnimatedTexture, Texture2D);
-
-	// Use readers writers lock for this, since its far more times read than written to.
-	RWLock rw_lock;
+class ResourceImporterAnimatedTexture : public ResourceImporter {
+	GDCLASS(ResourceImporterAnimatedTexture, ResourceImporter);
 
 public:
-	enum {
-		MAX_FRAMES = 256
-	};
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
 
-private:
-	RID proxy_ph;
-	RID proxy;
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
 
-	struct Frame {
-		Ref<Texture2D> texture;
-		float duration = 1.0;
-	};
+	virtual void get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset = 0) const override;
+	virtual bool get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const override;
 
-	Frame frames[MAX_FRAMES];
-	int frame_count = 1.0;
-	int current_frame = 0;
-	bool pause = false;
-	bool one_shot = false;
-	float speed_scale = 1.0;
+	virtual Error import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files = nullptr, Variant *r_metadata = nullptr) override;
 
-	float time = 0.0;
-
-	uint64_t prev_ticks = 0;
-
-	void _update_proxy();
-	void _finish_non_thread_safe_setup();
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
-
-public:
-	void set_frames(int p_frames);
-	int get_frames() const;
-
-	void set_current_frame(int p_frame);
-	int get_current_frame() const;
-
-	void set_pause(bool p_pause);
-	bool get_pause() const;
-
-	void set_one_shot(bool p_one_shot);
-	bool get_one_shot() const;
-
-	void set_frame_texture(int p_frame, const Ref<Texture2D> &p_texture);
-	Ref<Texture2D> get_frame_texture(int p_frame) const;
-
-	void set_frame_duration(int p_frame, float p_duration);
-	float get_frame_duration(int p_frame) const;
-
-	void set_speed_scale(float p_scale);
-	float get_speed_scale() const;
-
-	virtual int get_width() const override;
-	virtual int get_height() const override;
-	virtual RID get_rid() const override;
-
-	virtual bool has_alpha() const override;
-
-	virtual Ref<Image> get_image() const override;
-
-	bool is_pixel_opaque(int p_x, int p_y) const override;
-
-	void set_from_image_frames(const Ref<ImageFrames> &p_image_frames);
-	static Ref<AnimatedTexture> create_from_image_frames(const Ref<ImageFrames> &p_image_frames);
-
-	Ref<ImageFrames> make_image_frames() const;
-
-	AnimatedTexture();
-	~AnimatedTexture();
+	ResourceImporterAnimatedTexture();
 };

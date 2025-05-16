@@ -350,6 +350,25 @@ Files extracted from upstream source:
 - `LICENSE.TXT` and `docs/FTL.TXT`
 
 
+## giflib
+
+- Upstream: http://sourceforge.net/projects/giflib
+- Version: 5.2.2 (7cad0c7f5aaf5723b814549c024cac8c7d735077, 2024)
+- License: MIT
+
+Files extracted from upstream source:
+
+- gif_err.c
+- gif_lib.h
+- dgif_lib.c
+- egif_lib.c
+- gifalloc.c
+- gif_hash.{c,h}
+- gif_lib_private.h
+- openbsd-reallocarray.c
+- COPYING
+
+
 ## glad
 
 - Upstream: https://github.com/Dav1dde/glad

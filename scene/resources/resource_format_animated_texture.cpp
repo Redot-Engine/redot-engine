@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animated_texture.h                                                    */
+/*  resource_format_animated_texture.cpp                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,86 +30,69 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+#include "resource_format_animated_texture.h"
 
-#include "core/io/image_frames.h"
-#include "scene/resources/texture.h"
+#include "scene/resources/animated_texture.h"
+#include "scene/resources/image_texture.h"
 
-class AnimatedTexture : public Texture2D {
-	GDCLASS(AnimatedTexture, Texture2D);
+Ref<Resource> ResourceFormatLoaderAnimatedTexture::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
+	if (!f->is_open()) {
+		if (r_error) {
+			*r_error = ERR_CANT_OPEN;
+		}
+		return Ref<Resource>();
+	}
 
-	// Use readers writers lock for this, since its far more times read than written to.
-	RWLock rw_lock;
+	uint8_t header[4] = { 0, 0, 0, 0 };
+	f->get_buffer(header, 4);
 
-public:
-	enum {
-		MAX_FRAMES = 256
-	};
+	bool unrecognized = header[0] != 'R' || header[1] != 'D' || header[2] != 'A' || header[3] != 'T';
+	if (unrecognized) {
+		if (r_error) {
+			*r_error = ERR_FILE_UNRECOGNIZED;
+		}
+		ERR_FAIL_V(Ref<Resource>());
+	}
 
-private:
-	RID proxy_ph;
-	RID proxy;
+	Ref<AnimatedTexture> atex;
+	atex.instantiate();
 
-	struct Frame {
-		Ref<Texture2D> texture;
-		float duration = 1.0;
-	};
+	[[maybe_unused]] uint32_t tex_flags = f->get_32();
+	uint32_t frame_count = f->get_32();
+	atex->set_frames(frame_count);
 
-	Frame frames[MAX_FRAMES];
-	int frame_count = 1.0;
-	int current_frame = 0;
-	bool pause = false;
-	bool one_shot = false;
-	float speed_scale = 1.0;
+	uint32_t width = f->get_32();
+	uint32_t height = f->get_32();
 
-	float time = 0.0;
+	for (size_t current_frame = 0; current_frame < frame_count; current_frame++) {
+		// Frame image data.
+		LocalVector<uint8_t> data;
+		uint32_t frame_byte_length = f->get_32();
+		data.resize(frame_byte_length);
+		f->get_buffer(data.ptr(), frame_byte_length);
 
-	uint64_t prev_ticks = 0;
+		Ref<Image> image;
+		image.instantiate();
+		image->set_data(width, height, false, Image::FORMAT_RGBA8, data);
+		Ref<ImageTexture> frame = ImageTexture::create_from_image(image);
+		atex->set_frame_texture(current_frame, frame);
 
-	void _update_proxy();
-	void _finish_non_thread_safe_setup();
+		// Frame delay data.
+		atex->set_frame_duration(current_frame, f->get_real());
+	}
 
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
+	return atex;
+}
 
-public:
-	void set_frames(int p_frames);
-	int get_frames() const;
+void ResourceFormatLoaderAnimatedTexture::get_recognized_extensions(List<String> *p_extensions) const {
+	p_extensions->push_back("atex");
+}
 
-	void set_current_frame(int p_frame);
-	int get_current_frame() const;
+bool ResourceFormatLoaderAnimatedTexture::handles_type(const String &p_type) const {
+	return p_type == "AnimatedTexture";
+}
 
-	void set_pause(bool p_pause);
-	bool get_pause() const;
-
-	void set_one_shot(bool p_one_shot);
-	bool get_one_shot() const;
-
-	void set_frame_texture(int p_frame, const Ref<Texture2D> &p_texture);
-	Ref<Texture2D> get_frame_texture(int p_frame) const;
-
-	void set_frame_duration(int p_frame, float p_duration);
-	float get_frame_duration(int p_frame) const;
-
-	void set_speed_scale(float p_scale);
-	float get_speed_scale() const;
-
-	virtual int get_width() const override;
-	virtual int get_height() const override;
-	virtual RID get_rid() const override;
-
-	virtual bool has_alpha() const override;
-
-	virtual Ref<Image> get_image() const override;
-
-	bool is_pixel_opaque(int p_x, int p_y) const override;
-
-	void set_from_image_frames(const Ref<ImageFrames> &p_image_frames);
-	static Ref<AnimatedTexture> create_from_image_frames(const Ref<ImageFrames> &p_image_frames);
-
-	Ref<ImageFrames> make_image_frames() const;
-
-	AnimatedTexture();
-	~AnimatedTexture();
-};
+String ResourceFormatLoaderAnimatedTexture::get_resource_type(const String &p_path) const {
+	return p_path.get_extension().to_lower() == "atex" ? "AnimatedTexture" : String();
+}

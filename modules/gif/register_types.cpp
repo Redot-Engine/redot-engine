@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animated_texture.h                                                    */
+/*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,86 +30,34 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+#include "register_types.h"
 
-#include "core/io/image_frames.h"
-#include "scene/resources/texture.h"
+#include "image_frames_loader_gif.h"
+#include "image_loader_gif.h"
 
-class AnimatedTexture : public Texture2D {
-	GDCLASS(AnimatedTexture, Texture2D);
+static Ref<ImageLoaderGIF> image_loader_gif;
+static Ref<ImageFramesLoaderGIF> image_frames_loader_gif;
 
-	// Use readers writers lock for this, since its far more times read than written to.
-	RWLock rw_lock;
+void initialize_gif_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
 
-public:
-	enum {
-		MAX_FRAMES = 256
-	};
+	image_loader_gif.instantiate();
+	ImageLoader::add_image_format_loader(image_loader_gif);
 
-private:
-	RID proxy_ph;
-	RID proxy;
+	image_frames_loader_gif.instantiate();
+	ImageFramesLoader::add_image_frames_format_loader(image_frames_loader_gif);
+}
 
-	struct Frame {
-		Ref<Texture2D> texture;
-		float duration = 1.0;
-	};
+void uninitialize_gif_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
 
-	Frame frames[MAX_FRAMES];
-	int frame_count = 1.0;
-	int current_frame = 0;
-	bool pause = false;
-	bool one_shot = false;
-	float speed_scale = 1.0;
+	ImageLoader::remove_image_format_loader(image_loader_gif);
+	image_loader_gif.unref();
 
-	float time = 0.0;
-
-	uint64_t prev_ticks = 0;
-
-	void _update_proxy();
-	void _finish_non_thread_safe_setup();
-
-protected:
-	static void _bind_methods();
-	void _validate_property(PropertyInfo &p_property) const;
-
-public:
-	void set_frames(int p_frames);
-	int get_frames() const;
-
-	void set_current_frame(int p_frame);
-	int get_current_frame() const;
-
-	void set_pause(bool p_pause);
-	bool get_pause() const;
-
-	void set_one_shot(bool p_one_shot);
-	bool get_one_shot() const;
-
-	void set_frame_texture(int p_frame, const Ref<Texture2D> &p_texture);
-	Ref<Texture2D> get_frame_texture(int p_frame) const;
-
-	void set_frame_duration(int p_frame, float p_duration);
-	float get_frame_duration(int p_frame) const;
-
-	void set_speed_scale(float p_scale);
-	float get_speed_scale() const;
-
-	virtual int get_width() const override;
-	virtual int get_height() const override;
-	virtual RID get_rid() const override;
-
-	virtual bool has_alpha() const override;
-
-	virtual Ref<Image> get_image() const override;
-
-	bool is_pixel_opaque(int p_x, int p_y) const override;
-
-	void set_from_image_frames(const Ref<ImageFrames> &p_image_frames);
-	static Ref<AnimatedTexture> create_from_image_frames(const Ref<ImageFrames> &p_image_frames);
-
-	Ref<ImageFrames> make_image_frames() const;
-
-	AnimatedTexture();
-	~AnimatedTexture();
-};
+	ImageFramesLoader::remove_image_frames_format_loader(image_frames_loader_gif);
+	image_frames_loader_gif.unref();
+}

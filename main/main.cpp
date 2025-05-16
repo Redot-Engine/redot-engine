@@ -45,6 +45,7 @@
 #include "core/io/file_access_pack.h"
 #include "core/io/file_access_zip.h"
 #include "core/io/image.h"
+#include "core/io/image_frames_loader.h"
 #include "core/io/image_loader.h"
 #include "core/io/ip.h"
 #include "core/io/resource_loader.h"
@@ -4961,6 +4962,7 @@ void Main::cleanup(bool p_force) {
 #endif
 
 	ImageLoader::cleanup();
+	ImageFramesLoader::cleanup();
 
 	GDExtensionManager::get_singleton()->deinitialize_extensions(GDExtension::INITIALIZATION_LEVEL_SCENE);
 	uninitialize_modules(MODULE_INITIALIZATION_LEVEL_SCENE);
