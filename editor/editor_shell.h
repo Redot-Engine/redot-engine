@@ -56,6 +56,7 @@ class EditorAbout;
 class EditorBuildProfileManager;
 class EditorBottomPanel;
 class EditorData;
+class EditorDockManager;
 class EditorFileDialog;
 class ExportTemplateManager;
 class Label;
@@ -648,6 +649,8 @@ public:
 	virtual bool validate_custom_directory() = 0;
 
 	// ── Plugin dock integration ───────────────────────────────────────────
+
+	virtual EditorDockManager *get_dock_manager() const { return nullptr; }
 
 	/// Adds a plugin dock control to the given dock slot (see the dock slot
 	/// enum of the shell's dock system).
