@@ -432,8 +432,9 @@ public:
 				option.location = op["location"];
 				if (op.has("matches")) {
 					PackedInt32Array matches = op["matches"];
-					ERR_CONTINUE(matches.size() & 1);
-					for (int j = 0; j < matches.size(); j += 2) {
+					size_t matches_size = matches.size();
+					ERR_CONTINUE(matches_size & 1);
+					for (size_t j = 0; j < matches_size; j += 2) {
 						option.matches.push_back(Pair<int, int>(matches[j], matches[j + 1]));
 					}
 				}

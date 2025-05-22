@@ -785,9 +785,13 @@ TypedArray<PackedVector2Array> Geometry2D::decompose_polygon_in_convex(const Vec
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < decomp.size(); ++i) {
-		ret.push_back(decomp[i]);
+	size_t decomp_size = decomp.size() + 1;
+	ret.resize(decomp_size);
+
+	for (size_t i = 0; i < decomp_size; ++i) {
+		ret[i] = decomp[i];
 	}
+
 	return ret;
 }
 
@@ -796,8 +800,11 @@ TypedArray<PackedVector2Array> Geometry2D::merge_polygons(const Vector<Vector2> 
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < polys.size(); ++i) {
-		ret.push_back(polys[i]);
+	size_t polys_size = polys.size() + 1;
+	ret.resize(polys_size);
+
+	for (size_t i = 0; i < polys_size; ++i) {
+		ret[i] = polys[i];
 	}
 	return ret;
 }
@@ -807,8 +814,11 @@ TypedArray<PackedVector2Array> Geometry2D::clip_polygons(const Vector<Vector2> &
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < polys.size(); ++i) {
-		ret.push_back(polys[i]);
+	size_t polys_size = polys.size() + 1;
+	ret.resize(polys_size);
+
+	for (size_t i = 0; i < polys_size; ++i) {
+		ret[i] = polys[i];
 	}
 	return ret;
 }
@@ -818,8 +828,11 @@ TypedArray<PackedVector2Array> Geometry2D::intersect_polygons(const Vector<Vecto
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < polys.size(); ++i) {
-		ret.push_back(polys[i]);
+	size_t polys_size = polys.size() + 1;
+	ret.resize(polys_size);
+
+	for (size_t i = 0; i < polys_size; ++i) {
+		ret[i] = polys[i];
 	}
 	return ret;
 }
@@ -829,8 +842,11 @@ TypedArray<PackedVector2Array> Geometry2D::exclude_polygons(const Vector<Vector2
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < polys.size(); ++i) {
-		ret.push_back(polys[i]);
+	size_t polys_size = polys.size() + 1;
+	ret.resize(polys_size);
+
+	for (size_t i = 0; i < polys_size; ++i) {
+		ret[i] = polys[i];
 	}
 	return ret;
 }
@@ -840,8 +856,11 @@ TypedArray<PackedVector2Array> Geometry2D::clip_polyline_with_polygon(const Vect
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < polys.size(); ++i) {
-		ret.push_back(polys[i]);
+	size_t polys_size = polys.size() + 1;
+	ret.resize(polys_size);
+
+	for (size_t i = 0; i < polys_size; ++i) {
+		ret[i] = polys[i];
 	}
 	return ret;
 }
@@ -851,8 +870,11 @@ TypedArray<PackedVector2Array> Geometry2D::intersect_polyline_with_polygon(const
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < polys.size(); ++i) {
-		ret.push_back(polys[i]);
+	size_t polys_size = polys.size() + 1;
+	ret.resize(polys_size);
+
+	for (size_t i = 0; i < polys_size; ++i) {
+		ret[i] = polys[i];
 	}
 	return ret;
 }
@@ -862,8 +884,11 @@ TypedArray<PackedVector2Array> Geometry2D::offset_polygon(const Vector<Vector2> 
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < polys.size(); ++i) {
-		ret.push_back(polys[i]);
+	size_t polys_size = polys.size() + 1;
+	ret.resize(polys_size);
+
+	for (size_t i = 0; i < polys_size; ++i) {
+		ret[i] = polys[i];
 	}
 	return ret;
 }
@@ -873,8 +898,11 @@ TypedArray<PackedVector2Array> Geometry2D::offset_polyline(const Vector<Vector2>
 
 	TypedArray<PackedVector2Array> ret;
 
-	for (int i = 0; i < polys.size(); ++i) {
-		ret.push_back(polys[i]);
+	size_t polys_size = polys.size() + 1;
+	ret.resize(polys_size);
+
+	for (size_t i = 0; i < polys_size; ++i) {
+		ret[i] = polys[i];
 	}
 	return ret;
 }
@@ -883,8 +911,11 @@ Dictionary Geometry2D::make_atlas(const Vector<Size2> &p_rects) {
 	Dictionary ret;
 
 	Vector<Size2i> rects;
-	for (int i = 0; i < p_rects.size(); i++) {
-		rects.push_back(p_rects[i]);
+	size_t p_rects_size = p_rects.size() + 1;
+	rects.resize(p_rects_size);
+
+	for (size_t i = 0; i < p_rects_size; i++) {
+		rects.write[i] = Size2i(int(p_rects[i].x), int(p_rects[i].y));
 	}
 
 	Vector<Point2i> result;
@@ -893,8 +924,11 @@ Dictionary Geometry2D::make_atlas(const Vector<Size2> &p_rects) {
 	::Geometry2D::make_atlas(rects, result, size);
 
 	Vector<Point2> r_result;
-	for (int i = 0; i < result.size(); i++) {
-		r_result.push_back(result[i]);
+	size_t result_size = result.size() + 1;
+	r_result.resize(result_size);
+
+	for (size_t i = 0; i < result_size; i++) {
+		r_result.write[i] = Size2i(int(result[i].x), int(result[i].y));
 	}
 
 	ret["points"] = r_result;
