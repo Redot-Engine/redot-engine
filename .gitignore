@@ -387,3 +387,8 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 *.generated.props
+
+# Nix
+.direnv/
+/result
+/result-*
