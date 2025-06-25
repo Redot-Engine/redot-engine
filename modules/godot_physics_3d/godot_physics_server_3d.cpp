@@ -349,8 +349,9 @@ ObjectID GodotPhysicsServer3D::area_get_object_instance_id(RID p_area) const {
 }
 
 void GodotPhysicsServer3D::area_set_param(RID p_area, AreaParameter p_param, const Variant &p_value) {
-	if (space_owner.owns(p_area)) {
-		GodotSpace3D *space = space_owner.get_or_null(p_area);
+	// caching prevents multiple lookups.
+	GodotSpace3D *space = space_owner.get_or_null(p_area);
+	if (space) {
 		p_area = space->get_default_area()->get_self();
 	}
 	GodotArea3D *area = area_owner.get_or_null(p_area);
