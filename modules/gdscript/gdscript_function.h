@@ -61,6 +61,7 @@ public:
 		NATIVE,
 		SCRIPT,
 		GDSCRIPT,
+		GDTRAIT,
 	};
 
 	Kind kind = UNINITIALIZED;
@@ -77,6 +78,8 @@ public:
 		}
 
 		switch (kind) {
+			case GDTRAIT:
+				break;
 			case UNINITIALIZED:
 				break;
 			case BUILTIN: {
