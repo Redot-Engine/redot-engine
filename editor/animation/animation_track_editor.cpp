@@ -7342,6 +7342,13 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 			goto_prev_step(false);
 		} break;
 
+		case EDIT_GOTO_NEXT_KEYFRAME: {
+			AnimationPlayerEditor::get_singleton()->go_to_nearest_keyframe(false);
+		} break;
+		case EDIT_GOTO_PREV_KEYFRAME: {
+			AnimationPlayerEditor::get_singleton()->go_to_nearest_keyframe(true);
+		} break;
+
 		case EDIT_APPLY_RESET: {
 			AnimationPlayerEditor::get_singleton()->get_player()->apply_reset(true);
 		} break;
