@@ -35,6 +35,9 @@
 #include "servers/audio_server.h"
 
 void Area3D::set_gravity_space_override_mode(SpaceOverride p_mode) {
+	if (gravity_space_override == p_mode) {
+		return;
+	}
 	gravity_space_override = p_mode;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_GRAVITY_OVERRIDE_MODE, p_mode);
 }
@@ -44,6 +47,9 @@ Area3D::SpaceOverride Area3D::get_gravity_space_override_mode() const {
 }
 
 void Area3D::set_gravity_is_point(bool p_enabled) {
+	if (gravity_is_point == p_enabled) {
+		return;
+	}
 	gravity_is_point = p_enabled;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_GRAVITY_IS_POINT, p_enabled);
 }
@@ -53,6 +59,9 @@ bool Area3D::is_gravity_a_point() const {
 }
 
 void Area3D::set_gravity_point_unit_distance(real_t p_scale) {
+	if (gravity_point_unit_distance == p_scale) {
+		return;
+	}
 	gravity_point_unit_distance = p_scale;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_GRAVITY_POINT_UNIT_DISTANCE, p_scale);
 }
@@ -62,6 +71,9 @@ real_t Area3D::get_gravity_point_unit_distance() const {
 }
 
 void Area3D::set_gravity_point_center(const Vector3 &p_center) {
+	if (gravity_vec == p_center) {
+		return;
+	}
 	gravity_vec = p_center;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_GRAVITY_VECTOR, p_center);
 }
@@ -71,6 +83,9 @@ const Vector3 &Area3D::get_gravity_point_center() const {
 }
 
 void Area3D::set_gravity_direction(const Vector3 &p_direction) {
+	if (gravity_vec == p_direction) {
+		return;
+	}
 	gravity_vec = p_direction;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_GRAVITY_VECTOR, p_direction);
 }
@@ -80,6 +95,9 @@ const Vector3 &Area3D::get_gravity_direction() const {
 }
 
 void Area3D::set_gravity(real_t p_gravity) {
+	if (gravity == p_gravity) {
+		return;
+	}
 	gravity = p_gravity;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_GRAVITY, p_gravity);
 }
@@ -89,6 +107,9 @@ real_t Area3D::get_gravity() const {
 }
 
 void Area3D::set_linear_damp_space_override_mode(SpaceOverride p_mode) {
+	if (linear_damp_space_override == p_mode) {
+		return;
+	}
 	linear_damp_space_override = p_mode;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_LINEAR_DAMP_OVERRIDE_MODE, p_mode);
 }
@@ -98,6 +119,9 @@ Area3D::SpaceOverride Area3D::get_linear_damp_space_override_mode() const {
 }
 
 void Area3D::set_angular_damp_space_override_mode(SpaceOverride p_mode) {
+	if (angular_damp_space_override == p_mode) {
+		return;
+	}
 	angular_damp_space_override = p_mode;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_ANGULAR_DAMP_OVERRIDE_MODE, p_mode);
 }
@@ -107,6 +131,9 @@ Area3D::SpaceOverride Area3D::get_angular_damp_space_override_mode() const {
 }
 
 void Area3D::set_linear_damp(real_t p_linear_damp) {
+	if (linear_damp == p_linear_damp) {
+		return;
+	}
 	linear_damp = p_linear_damp;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_LINEAR_DAMP, p_linear_damp);
 }
@@ -116,6 +143,9 @@ real_t Area3D::get_linear_damp() const {
 }
 
 void Area3D::set_angular_damp(real_t p_angular_damp) {
+	if (angular_damp == p_angular_damp) {
+		return;
+	}
 	angular_damp = p_angular_damp;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_ANGULAR_DAMP, p_angular_damp);
 }
@@ -125,6 +155,9 @@ real_t Area3D::get_angular_damp() const {
 }
 
 void Area3D::set_priority(int p_priority) {
+	if (priority == p_priority) {
+		return;
+	}
 	priority = p_priority;
 	PhysicsServer3D::get_singleton()->area_set_param(get_rid(), PhysicsServer3D::AREA_PARAM_PRIORITY, p_priority);
 }
@@ -134,6 +167,9 @@ int Area3D::get_priority() const {
 }
 
 void Area3D::set_wind_force_magnitude(real_t p_wind_force_magnitude) {
+	if (wind_force_magnitude == p_wind_force_magnitude) {
+		return;
+	}
 	wind_force_magnitude = p_wind_force_magnitude;
 	if (is_inside_tree()) {
 		_initialize_wind();
@@ -145,6 +181,9 @@ real_t Area3D::get_wind_force_magnitude() const {
 }
 
 void Area3D::set_wind_attenuation_factor(real_t p_wind_force_attenuation_factor) {
+	if (wind_attenuation_factor == p_wind_force_attenuation_factor) {
+		return;
+	}
 	wind_attenuation_factor = p_wind_force_attenuation_factor;
 	if (is_inside_tree()) {
 		_initialize_wind();
@@ -156,6 +195,9 @@ real_t Area3D::get_wind_attenuation_factor() const {
 }
 
 void Area3D::set_wind_source_path(const NodePath &p_wind_source_path) {
+	if (wind_source_path == p_wind_source_path) {
+		return;
+	}
 	wind_source_path = p_wind_source_path;
 	if (is_inside_tree()) {
 		_initialize_wind();
