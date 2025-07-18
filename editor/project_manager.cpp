@@ -108,7 +108,7 @@ void ProjectManager::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_TRANSLATION_CHANGED: {
-			// TRANSLATORS: This refers to the application where users manage their Godot projects.
+			// TRANSLATORS: This refers to the application where users manage their Redot projects.
 			SceneTree::get_singleton()->get_root()->set_title(REDOT_VERSION_NAME + String(" - ") + TTR("Project Manager", "Application"));
 
 			const String line1 = TTR("You don't have any projects yet.");
