@@ -218,7 +218,6 @@ internal abstract class DataAccess {
 		override fun seek(position: Long) {
 			try {
 				fileChannel.position(position)
-				endOfFile = position >= fileChannel.size()
 			} catch (e: Exception) {
 				Log.w(TAG, "Exception when seeking file $filePath.", e)
 			}
@@ -262,8 +261,8 @@ internal abstract class DataAccess {
 		override fun read(buffer: ByteBuffer): Int {
 			return try {
 				val readBytes = fileChannel.read(buffer)
-				endOfFile = readBytes == -1 || (fileChannel.position() >= fileChannel.size())
 				if (readBytes == -1) {
+					endOfFile = true
 					0
 				} else {
 					readBytes
