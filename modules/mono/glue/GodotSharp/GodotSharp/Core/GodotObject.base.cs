@@ -203,7 +203,7 @@ namespace Godot
 
             if (ReflectionUtils.IsEditorHintCached)
             {
-                return t.Assembly.GetName().Name == "GodotSharpEditor";
+                return t.Assembly.GetName().Name == "RedotSharpEditor";
             }
 
             return false;

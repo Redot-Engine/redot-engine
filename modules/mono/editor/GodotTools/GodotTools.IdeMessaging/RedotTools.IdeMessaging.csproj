@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>9</LangVersion>
     <Nullable>enable</Nullable>
-    <PackageId>GodotTools.IdeMessaging</PackageId>
+    <PackageId>RedotTools.IdeMessaging</PackageId>
     <Version>1.1.2</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <Authors>Godot Engine contributors</Authors>
@@ -19,6 +19,7 @@ It's intended for use in IDEs/editors plugins for a better experience working wi
 
 A client using this library is only compatible with servers of the same major version and of a lower or equal minor version.
     </Description>
+    <RootNamespace>GodotTools.IdeMessaging</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

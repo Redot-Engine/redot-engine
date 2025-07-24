@@ -18,7 +18,7 @@
     <Description>Godot C# Core API.</Description>
     <Authors>Godot Engine contributors</Authors>
 
-    <PackageId>GodotSharp</PackageId>
+    <PackageId>RedotSharp</PackageId>
     <Version>4.4.1</Version>
     <PackageVersion>$(PackageVersion_GodotSharp)</PackageVersion>
     <RepositoryUrl>https://github.com/godotengine/godot/tree/master/modules/mono/glue/GodotSharp/GodotSharp</RepositoryUrl>
@@ -49,7 +49,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Godot.SourceGenerators.Internal\Godot.SourceGenerators.Internal.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Godot.SourceGenerators.Internal\Redot.SourceGenerators.Internal.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <!-- Sources -->

@@ -5,6 +5,7 @@
     <LangVersion>10</LangVersion>
     <Nullable>enable</Nullable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <RootNamespace>Godot.SourceGenerators.Internal</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

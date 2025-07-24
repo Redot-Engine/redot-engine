@@ -1061,7 +1061,7 @@ void CSharpLanguage::_editor_init_callback() {
 	const void **interop_funcs = godotsharp::get_editor_interop_funcs(interop_funcs_size);
 
 	Object *editor_plugin_obj = GDMono::get_singleton()->get_plugin_callbacks().LoadToolsAssemblyCallback(
-			GodotSharpDirs::get_data_editor_tools_dir().path_join("GodotTools.dll").utf16(),
+			GodotSharpDirs::get_data_editor_tools_dir().path_join("RedotTools.dll").utf16(),
 			interop_funcs, interop_funcs_size);
 	CRASH_COND(editor_plugin_obj == nullptr);
 

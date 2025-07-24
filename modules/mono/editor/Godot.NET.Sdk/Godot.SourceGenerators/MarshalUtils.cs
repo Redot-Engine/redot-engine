@@ -125,7 +125,7 @@ namespace Godot.SourceGenerators
 
                     if (typeKind == TypeKind.Struct)
                     {
-                        if (type.ContainingAssembly?.Name == "GodotSharp" &&
+                        if (type.ContainingAssembly?.Name == "RedotSharp" &&
                             type.ContainingNamespace?.Name == "Godot")
                         {
                             return type switch
@@ -182,7 +182,7 @@ namespace Godot.SourceGenerators
                         if (elementType.SimpleDerivesFrom(typeCache.GodotObjectType))
                             return MarshalType.GodotObjectOrDerivedArray;
 
-                        if (elementType.ContainingAssembly?.Name == "GodotSharp" &&
+                        if (elementType.ContainingAssembly?.Name == "RedotSharp" &&
                             elementType.ContainingNamespace?.Name == "Godot")
                         {
                             switch (elementType)
@@ -211,7 +211,7 @@ namespace Godot.SourceGenerators
                         if (type.SimpleDerivesFrom(typeCache.GodotObjectType))
                             return MarshalType.GodotObjectOrDerived;
 
-                        if (type.ContainingAssembly?.Name == "GodotSharp")
+                        if (type.ContainingAssembly?.Name == "RedotSharp")
                         {
                             switch (type.ContainingNamespace?.Name)
                             {

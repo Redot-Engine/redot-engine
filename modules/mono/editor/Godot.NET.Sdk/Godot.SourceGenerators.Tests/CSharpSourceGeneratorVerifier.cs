@@ -77,6 +77,6 @@ where TSourceGenerator : ISourceGenerator, new()
     private static string FullGeneratedSourceName(string name)
     {
         var generatorType = typeof(TSourceGenerator);
-        return Path.Combine(generatorType.Namespace!, generatorType.FullName!, name);
+        return Path.Combine(generatorType.Namespace!.Replace("Godot", "Redot"), generatorType.FullName!, name);
     }
 }

@@ -294,7 +294,7 @@ namespace Godot.Bridge
             }
         }
 
-        // Called from GodotPlugins
+        // Called from RedotPlugins
         // ReSharper disable once UnusedMember.Local
         public static void LookupScriptsInAssembly(Assembly assembly)
         {

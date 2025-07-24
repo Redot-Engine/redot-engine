@@ -5,6 +5,7 @@
       <LangVersion>12</LangVersion>
       <!-- Specify compile items manually to avoid including dangling generated items. -->
       <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+      <RootNamespace>GodotTools.Shared</RootNamespace>
     </PropertyGroup>
 
     <Import Project="GenerateGodotNupkgsVersions.targets" />

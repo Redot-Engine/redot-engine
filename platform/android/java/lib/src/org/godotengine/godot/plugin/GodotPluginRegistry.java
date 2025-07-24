@@ -58,11 +58,20 @@ public final class GodotPluginRegistry {
 	/**
 	 * Prefix used for version 1 of the Godot plugin, mostly compatible with Godot 3.x
 	 */
-	private static final String GODOT_PLUGIN_V1_NAME_PREFIX = "org.redotengine.plugin.v1.";
+	private static final String GODOT_PLUGIN_V1_NAME_PREFIX = "org.godotengine.plugin.v1.";
 	/**
 	 * Prefix used for version 2 of the Godot plugin, compatible with Godot 4.2+
 	 */
-	private static final String GODOT_PLUGIN_V2_NAME_PREFIX = "org.redotengine.plugin.v2.";
+	private static final String GODOT_PLUGIN_V2_NAME_PREFIX = "org.godotengine.plugin.v2.";
+	/**
+	 * Prefix used for version 1 of the Godot plugin, mostly compatible with Godot 3.x
+	 * Although there isn't any REDOT prior version 4.2, someone may refit old-styled plugins.
+	 */
+	private static final String REDOT_PLUGIN_V1_NAME_PREFIX = "org.redotengine.plugin.v1.";
+	/**
+	 * Prefix used for version 2 of the Redot plugin, compatible with Redot 4.2+
+	 */
+	private static final String REDOT_PLUGIN_V2_NAME_PREFIX = "org.redotengine.plugin.v2.";
 
 	private static GodotPluginRegistry instance;
 	private final ConcurrentHashMap<String, GodotPlugin> registry;
@@ -151,9 +160,15 @@ public final class GodotPluginRegistry {
 				String pluginName = null;
 				if (metaDataName.startsWith(GODOT_PLUGIN_V2_NAME_PREFIX)) {
 					pluginName = metaDataName.substring(GODOT_PLUGIN_V2_NAME_PREFIX.length()).trim();
+				} else if (metaDataName.startsWith(REDOT_PLUGIN_V2_NAME_PREFIX)) {
+					pluginName = metaDataName.substring(REDOT_PLUGIN_V2_NAME_PREFIX.length()).trim();
 				} else if (metaDataName.startsWith(GODOT_PLUGIN_V1_NAME_PREFIX)) {
 					pluginName = metaDataName.substring(GODOT_PLUGIN_V1_NAME_PREFIX.length()).trim();
-					Log.w(TAG, "Redot v1 plugin are deprecated in Redot 4.2 and higher: " + pluginName);
+					Log.w(TAG, "Godot v1 plugins in Redot are deprecated in Redot 4.2 and higher: " + pluginName);
+				} else if (metaDataName.startsWith(REDOT_PLUGIN_V1_NAME_PREFIX)) {
+					// Although there isn't any REDOT prior version 4.2, someone may refit old-styled plugins.
+					pluginName = metaDataName.substring(REDOT_PLUGIN_V1_NAME_PREFIX.length()).trim();
+					Log.w(TAG, "Redot v1 plugins are deprecated in Redot 4.2 and higher: " + pluginName);
 				}
 
 				if (!TextUtils.isEmpty(pluginName)) {

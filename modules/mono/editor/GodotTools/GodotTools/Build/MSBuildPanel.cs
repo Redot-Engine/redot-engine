@@ -290,7 +290,7 @@ namespace GodotTools.Build
             UpdateBuildLogText();
 
             // NOTE:
-            // Currently, GodotTools is loaded in its own load context. This load context is not reloaded, but the script still are.
+            // Currently, RedotTools is loaded in its own load context. This load context is not reloaded, but the script still are.
             // Until that changes, we need workarounds like this one because events keep strong references to disposed objects.
             BuildManager.BuildLaunchFailed -= BuildLaunchFailed;
             BuildManager.BuildStarted -= BuildStarted;
