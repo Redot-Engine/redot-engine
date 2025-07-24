@@ -259,7 +259,7 @@ namespace GodotTools
 
                     var args = new List<string>
                     {
-                        Path.Combine(GodotSharpDirs.DataEditorToolsDir, "GodotTools.OpenVisualStudio.dll"),
+                        Path.Combine(GodotSharpDirs.DataEditorToolsDir, "RedotTools.OpenVisualStudio.dll"),
                         GodotSharpDirs.ProjectSlnPath,
                         line >= 0 ? $"{scriptPath};{line + 1};{col + 1}" : scriptPath
                     };

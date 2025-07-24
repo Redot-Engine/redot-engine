@@ -24,7 +24,7 @@ namespace GodotTools.OpenVisualStudio
             Console.WriteLine("If an existing instance for the solution is not found, a new one is created.");
             Console.WriteLine();
             Console.WriteLine("Usage:");
-            Console.WriteLine(@"  GodotTools.OpenVisualStudio.exe solution [file[;line[;col]]...]");
+            Console.WriteLine(@"  RedotTools.OpenVisualStudio.exe solution [file[;line[;col]]...]");
             Console.WriteLine();
             Console.WriteLine("Lines and columns begin at one. Zero or lower will result in an error.");
             Console.WriteLine("If a line is specified but a column is not, the line is selected in the text editor.");

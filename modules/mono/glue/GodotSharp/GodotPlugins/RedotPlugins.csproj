@@ -9,10 +9,11 @@
     <!-- To generate the .runtimeconfig.json file-->
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RollForward>LatestMajor</RollForward>
+    <RootNamespace>GodotPlugins</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GodotSharp\GodotSharp.csproj" />
+    <ProjectReference Include="..\GodotSharp\RedotSharp.csproj" />
   </ItemGroup>
 
 </Project>

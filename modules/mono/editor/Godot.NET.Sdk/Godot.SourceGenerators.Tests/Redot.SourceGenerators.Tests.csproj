@@ -8,6 +8,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <RootNamespace>Godot.SourceGenerators.Tests</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -34,8 +35,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\glue\GodotSharp\GodotSharp\GodotSharp.csproj" />
-    <ProjectReference Include="..\Godot.SourceGenerators\Godot.SourceGenerators.csproj" />
+    <ProjectReference Include="..\..\..\glue\GodotSharp\GodotSharp\RedotSharp.csproj" />
+    <ProjectReference Include="..\Godot.SourceGenerators\Redot.SourceGenerators.csproj" />
   </ItemGroup>
 
   <ItemGroup>

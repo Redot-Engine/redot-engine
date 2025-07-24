@@ -1,6 +1,6 @@
 <Project>
   <ItemGroup>
-    <TrimmerRootAssembly Include="GodotSharp" />
+    <TrimmerRootAssembly Include="RedotSharp" />
     <TrimmerRootAssembly Include="$(TargetName)" />
     <LinkerArg Include="-install_name '@rpath/$(TargetName)$(NativeBinaryExt)'" />
   </ItemGroup>

@@ -264,7 +264,7 @@ namespace GodotTools.Build
         private static void AddLoggerArgument(BuildInfo buildInfo, Collection<string> arguments)
         {
             string buildLoggerPath = Path.Combine(Internals.GodotSharpDirs.DataEditorToolsDir,
-                "GodotTools.BuildLogger.dll");
+                "RedotTools.BuildLogger.dll");
 
             arguments.Add(
                 $"-l:{typeof(GodotBuildLogger).FullName},{buildLoggerPath};{buildInfo.LogsDirPath}");

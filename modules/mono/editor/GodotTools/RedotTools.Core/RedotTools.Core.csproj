@@ -4,5 +4,6 @@
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>10</LangVersion>
     <Nullable>enable</Nullable>
+    <RootNamespace>GodotTools.Core</RootNamespace>
   </PropertyGroup>
 </Project>

@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>11</LangVersion>
+    <RootNamespace>Godot.SourceGenerators.Sample</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -22,14 +23,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\glue\GodotSharp\GodotSharp\GodotSharp.csproj">
+    <ProjectReference Include="..\..\..\glue\GodotSharp\GodotSharp\RedotSharp.csproj">
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Godot.SourceGenerators\Godot.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Godot.SourceGenerators\Redot.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <!-- This file is imported automatically when using PackageReference to
   reference Godot.SourceGenerators, but not when using ProjectReference -->
-  <Import Project="..\Godot.SourceGenerators\Godot.SourceGenerators.props" />
+  <Import Project="..\Godot.SourceGenerators\Redot.SourceGenerators.props" />
 
 </Project>

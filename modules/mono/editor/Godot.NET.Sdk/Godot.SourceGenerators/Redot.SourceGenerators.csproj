@@ -3,12 +3,13 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>10</LangVersion>
     <Nullable>enable</Nullable>
+    <RootNamespace>Godot.SourceGenerators</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <Description>Core C# source generator for Redot projects.</Description>
     <Authors>Godot Engine contributors;Redot Engine contributors</Authors>
 
-    <PackageId>Godot.SourceGenerators</PackageId>
+    <PackageId>Redot.SourceGenerators</PackageId>
     <Version>4.3.0</Version>
     <PackageVersion>$(PackageVersion_Godot_SourceGenerators)</PackageVersion>
     <RepositoryUrl>https://github.com/Redot-Engine/redot-engine/tree/master/modules/mono/editor/Godot.NET.Sdk/Godot.SourceGenerators</RepositoryUrl>
@@ -34,6 +35,6 @@
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
     <!-- Package the props file -->
-    <None Include="Godot.SourceGenerators.props" Pack="true" PackagePath="build" Visible="true" />
+    <None Include="Redot.SourceGenerators.props" Pack="true" PackagePath="build" Visible="true" />
   </ItemGroup>
 </Project>

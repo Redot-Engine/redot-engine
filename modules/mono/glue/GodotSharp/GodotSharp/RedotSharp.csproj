@@ -16,7 +16,7 @@
     <Description>Redot C# Core API.</Description>
     <Authors>Godot Engine contributors;Redot Engine contributors</Authors>
 
-    <PackageId>GodotSharp</PackageId>
+    <PackageId>RedotSharp</PackageId>
     <Version>4.3.0</Version>
     <PackageVersion>$(PackageVersion_GodotSharp)</PackageVersion>
     <RepositoryUrl>https://github.com/Redot-Engine/redot-engine/tree/master/modules/mono/glue/GodotSharp/GodotSharp</RepositoryUrl>
@@ -43,7 +43,7 @@
     <!--PackageReference Include="IDisposableAnalyzers" Version="3.4.13" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers" /-->
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Godot.SourceGenerators.Internal\Godot.SourceGenerators.Internal.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Godot.SourceGenerators.Internal\Redot.SourceGenerators.Internal.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <!-- Sources -->
   <ItemGroup>

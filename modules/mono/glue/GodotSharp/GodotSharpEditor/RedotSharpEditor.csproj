@@ -14,7 +14,7 @@
     <Description>Redot C# Editor API.</Description>
     <Authors>Godot Engine contributors;Redot Engine contributors</Authors>
 
-    <PackageId>GodotSharpEditor</PackageId>
+    <PackageId>RedotSharpEditor</PackageId>
     <Version>4.3.0</Version>
     <PackageVersion>$(PackageVersion_GodotSharp)</PackageVersion>
     <RepositoryUrl>https://github.com/Redot-Engine/redot-engine/tree/master/modules/mono/glue/GodotSharp/GodotSharpEditor</RepositoryUrl>
@@ -31,7 +31,7 @@
     <DefineConstants Condition=" '$(GodotFloat64)' == 'true' ">REAL_T_IS_DOUBLE;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GodotSharp\GodotSharp.csproj">
+    <ProjectReference Include="..\GodotSharp\RedotSharp.csproj">
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>

@@ -6,7 +6,7 @@
     <Description>MSBuild .NET Sdk for Redot projects.</Description>
     <Authors>Godot Engine contributors;Redot Engine contributors</Authors>
 
-    <PackageId>Godot.NET.Sdk</PackageId>
+    <PackageId>Redot.NET.Sdk</PackageId>
     <Version>4.3.0</Version>
     <PackageVersion>$(PackageVersion_Godot_NET_Sdk)</PackageVersion>
     <RepositoryUrl>https://github.com/Redot-Engine/redot-engine/tree/master/modules/mono/editor/Godot.NET.Sdk</RepositoryUrl>
@@ -20,6 +20,7 @@
     <!-- Exclude target framework from the package dependencies as we don't include the build output -->
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <IncludeBuildOutput>false</IncludeBuildOutput>
+    <RootNamespace>Godot.NET.Sdk</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
