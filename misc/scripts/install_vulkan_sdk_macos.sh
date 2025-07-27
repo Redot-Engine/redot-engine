@@ -4,9 +4,9 @@ set -euo pipefail
 IFS=$'\n\t'
 new_ver_full=''
 
-# Check currently installed and latest available Vulkan SDK versions.
+# Versions past 1.4.313.1 require Mac 10.5, we need to support 10.3 in Redot 4.4 and older.
 if command -v jq 2>&1 >/dev/null; then
-	curl -L "https://sdk.lunarg.com/sdk/download/latest/mac/config.json" -o /tmp/vulkan-sdk.json
+	curl -L "https://sdk.lunarg.com/sdk/download/1.4.313.1/mac/config.json" -o /tmp/vulkan-sdk.json
 
 	new_ver_full=`jq -r '.version' /tmp/vulkan-sdk.json`
 	new_ver=`echo "$new_ver_full" | awk -F. '{ printf("%d%02d%04d%02d\n", $1,$2,$3,$4); }';`
@@ -27,8 +27,8 @@ else
 	exit 1
 fi
 
-# Download and install the Vulkan SDK.
-curl -L "https://sdk.lunarg.com/sdk/download/latest/mac/vulkan-sdk.zip" -o /tmp/vulkan-sdk.zip
+# Versions past 1.4.313.1 require Mac 10.5, we need to support 10.3 in Redot 4.4 and older.
+curl -L "https://sdk.lunarg.com/sdk/download/1.4.313.1/mac/vulkan-sdk.zip" -o /tmp/vulkan-sdk.zip
 unzip /tmp/vulkan-sdk.zip -d /tmp
 
 if [ -d "/tmp/vulkansdk-macOS-$new_ver_full.app" ]; then
