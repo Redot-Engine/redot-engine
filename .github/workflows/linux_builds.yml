@@ -150,7 +150,14 @@ jobs:
         run: |
           sudo rm -rf /usr/share/dotnet/sdk/*
 
-      - name: Setup older .NET SDK as baseline
+      - name: Setup older .NET 6 SDK as baseline
+        if: matrix.build-mono
+        uses: actions/setup-dotnet@v4
+        with:
+          # Targeting the oldest version we want to support to ensure it still builds.
+          dotnet-version: 6.0.428
+
+      - name: Setup older .NET 8 SDK as baseline
         if: matrix.build-mono
         uses: actions/setup-dotnet@v4
         with:
