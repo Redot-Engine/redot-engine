@@ -71,6 +71,7 @@ ignore-words-list = """\
 	ot,
 	outin,
 	requestor,
+	streamin,
 	te,
 	textin,
 	thirdparty,

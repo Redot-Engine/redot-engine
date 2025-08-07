@@ -68,6 +68,13 @@ Copyright: 2011, Ole Kniemeyer, MAXON, www.maxon.net
  2007-2014, Juan Linietsky, Ariel Manzur
 License: Expat and Zlib
 
+Files: ./modules/jolt_physics/spaces/jolt_temp_allocator.cpp
+Comment: Jolt Physics
+Copyright: 2021, Jorrit Rouwe
+ 2014-present, Godot Engine contributors
+ 2007-2014, Juan Linietsky, Ariel Manzur
+License: Expat
+
 Files: ./modules/lightmapper_rd/lm_compute.glsl
 Comment: Joint Non-Local Means (JNLM) denoiser
 Copyright: 2020, Manuel Prandini
@@ -296,6 +303,11 @@ Files: ./thirdparty/icu4c/
 Comment: International Components for Unicode
 Copyright: 2016-2024, Unicode, Inc.
 License: Unicode
+
+Files: ./thirdparty/jolt_physics/
+Comment: Jolt Physics
+Copyright: 2021, Jorrit Rouwe
+License: Expat
 
 Files: ./thirdparty/jpeg-compressor/
 Comment: jpeg-compressor
