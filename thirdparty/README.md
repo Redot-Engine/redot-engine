@@ -421,6 +421,18 @@ Files generated from upstream source:
 5. Copy `source/data/out/icudt75l.dat` to the `{GODOT_SOURCE}/thirdparty/icu4c/icudt75l.dat`
 
 
+## jolt_physics
+
+- Upstream: https://github.com/jrouwe/JoltPhysics
+- Version: 5.3.0 (0373ec0dd762e4bc2f6acdb08371ee84fa23c6db, 2025)
+- License: MIT
+
+Files extracted from upstream source:
+
+- All files in `Jolt/`, except `Jolt/Jolt.cmake` and any files dependent on `ENABLE_OBJECT_STREAM`, as seen in `Jolt/Jolt.cmake`
+- `LICENSE`
+
+
 ## jpeg-compressor
 
 - Upstream: https://github.com/richgel999/jpeg-compressor
