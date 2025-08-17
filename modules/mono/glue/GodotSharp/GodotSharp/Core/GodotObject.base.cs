@@ -183,7 +183,7 @@ namespace Godot
         {
             var name = t.Assembly.GetName().Name;
 
-            if (name == "GodotSharp" || name == "GodotSharpEditor")
+            if (name == "RedotSharp" || name == "RedotSharpEditor")
                 return t;
 
             Debug.Assert(t.BaseType is not null, "Script types must derive from a native Redot type.");

@@ -325,7 +325,7 @@ namespace Godot.Bridge
             if (wrapperType == null)
             {
                 var editorAssembly = AppDomain.CurrentDomain.GetAssemblies()
-                    .FirstOrDefault(a => a.GetName().Name == "GodotSharpEditor");
+                    .FirstOrDefault(a => a.GetName().Name == "RedotSharpEditor");
 
                 if (editorAssembly != null)
                 {
