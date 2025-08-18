@@ -466,7 +466,9 @@ bool Animation::_get(const StringName &p_name, Variant &r_ret) const {
 	String prop_name = p_name;
 
 	if (p_name == SNAME("_compression")) {
-		ERR_FAIL_COND_V(!compression.enabled, false);
+		if (!compression.enabled) {
+			return false;
+		}
 		Dictionary comp;
 		comp["fps"] = compression.fps;
 		Array bounds;
@@ -2441,7 +2443,7 @@ int Animation::_find(const Vector<K> &p_keys, double p_time, bool p_backward, bo
 		}
 	}
 
-	if (p_limit) {
+	if (p_limit && middle > -1 && middle < len) {
 		double diff = length - keys[middle].time;
 		if ((signbit(keys[middle].time) && !Math::is_zero_approx(keys[middle].time)) || (signbit(diff) && !Math::is_zero_approx(diff))) {
 			ERR_PRINT_ONCE_ED("Found the key outside the animation range. Consider using the clean-up option in AnimationTrackEditor to fix it.");

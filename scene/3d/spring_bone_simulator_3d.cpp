@@ -1215,6 +1215,23 @@ void SpringBoneSimulator3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(ROTATION_AXIS_ALL);
 }
 
+void SpringBoneSimulator3D::_validate_bone_names() {
+	for (int i = 0; i < settings.size(); i++) {
+		// Prior bone name.
+		if (!settings[i]->root_bone_name.is_empty()) {
+			set_root_bone_name(i, settings[i]->root_bone_name);
+		} else if (settings[i]->root_bone != -1) {
+			set_root_bone(i, settings[i]->root_bone);
+		}
+		// Prior bone name.
+		if (!settings[i]->end_bone_name.is_empty()) {
+			set_end_bone_name(i, settings[i]->end_bone_name);
+		} else if (settings[i]->end_bone != -1) {
+			set_end_bone(i, settings[i]->end_bone);
+		}
+	}
+}
+
 void SpringBoneSimulator3D::_make_joints_dirty(int p_index) {
 	ERR_FAIL_INDEX(p_index, settings.size());
 	settings[p_index]->joints_dirty = true;
@@ -1346,6 +1363,9 @@ void SpringBoneSimulator3D::_find_collisions() {
 }
 
 void SpringBoneSimulator3D::_process_collisions() {
+	if (!is_inside_tree()) {
+		return;
+	}
 	for (const ObjectID &oid : collisions) {
 		Object *t_obj = ObjectDB::get_instance(oid);
 		if (!t_obj) {
@@ -1469,6 +1489,10 @@ void SpringBoneSimulator3D::_set_active(bool p_active) {
 }
 
 void SpringBoneSimulator3D::_process_modification() {
+	if (!is_inside_tree()) {
+		return;
+	}
+
 	Skeleton3D *skeleton = get_skeleton();
 	if (!skeleton) {
 		return;
@@ -1490,6 +1514,9 @@ void SpringBoneSimulator3D::_process_modification() {
 }
 
 void SpringBoneSimulator3D::reset() {
+	if (!is_inside_tree()) {
+		return;
+	}
 	Skeleton3D *skeleton = get_skeleton();
 	if (!skeleton) {
 		return;
