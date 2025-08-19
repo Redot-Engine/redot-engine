@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot;
+package org.godotengine.godot;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

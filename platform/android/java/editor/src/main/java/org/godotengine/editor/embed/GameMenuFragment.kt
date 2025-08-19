@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.editor.embed
+package org.godotengine.editor.embed
 
 import android.content.Context
 import android.os.Build
@@ -45,10 +45,10 @@ import android.widget.RadioButton
 import androidx.core.content.edit
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import org.redotengine.editor.BaseGodotEditor
-import org.redotengine.editor.BaseGodotEditor.Companion.SNACKBAR_SHOW_DURATION_MS
-import org.redotengine.editor.R
-import org.redotengine.godot.utils.DialogUtils
+import org.godotengine.editor.BaseGodotEditor
+import org.godotengine.editor.BaseGodotEditor.Companion.SNACKBAR_SHOW_DURATION_MS
+import org.godotengine.editor.R
+import org.godotengine.godot.utils.DialogUtils
 
 /**
  * Implements the game menu interface for the Android editor.

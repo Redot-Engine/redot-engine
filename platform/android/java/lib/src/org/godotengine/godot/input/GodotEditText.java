@@ -30,7 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.input;
+package org.godotengine.godot.input;
+
+import org.godotengine.godot.*;
 
 import android.content.Context;
 import android.content.res.Configuration;
@@ -49,8 +51,6 @@ import android.widget.EditText;
 
 import java.lang.ref.WeakReference;
 import java.util.Locale;
-
-import org.redotengine.godot.*;
 
 public class GodotEditText extends EditText {
 	// ===========================================================

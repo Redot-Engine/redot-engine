@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.tts;
+package org.godotengine.godot.tts;
 
 /**
  * A speech request for GodotTTS.
