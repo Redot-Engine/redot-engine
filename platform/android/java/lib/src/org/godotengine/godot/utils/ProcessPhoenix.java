@@ -20,7 +20,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.redotengine.godot.utils;
+package org.godotengine.godot.utils;
 
 import android.app.Activity;
 import android.app.ActivityManager;

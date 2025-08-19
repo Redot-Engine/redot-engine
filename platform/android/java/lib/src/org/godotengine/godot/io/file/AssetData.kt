@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.io.file
+package org.godotengine.godot.io.file
 
 import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
-import org.redotengine.godot.error.Error
-import org.redotengine.godot.io.directory.AssetsDirectoryAccess
+import org.godotengine.godot.error.Error
+import org.godotengine.godot.io.directory.AssetsDirectoryAccess
 import java.io.IOException
 import java.io.InputStream
 import java.lang.UnsupportedOperationException

@@ -30,15 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.editor
+package org.godotengine.editor
 
 import android.Manifest
 import android.util.Log
 import androidx.annotation.CallSuper
-import org.redotengine.godot.GodotLib
-import org.redotengine.godot.utils.GameMenuUtils
-import org.redotengine.godot.utils.PermissionsUtil
-import org.redotengine.godot.utils.ProcessPhoenix
+import org.godotengine.godot.GodotLib
+import org.godotengine.godot.utils.GameMenuUtils
+import org.godotengine.godot.utils.PermissionsUtil
+import org.godotengine.godot.utils.ProcessPhoenix
 
 /**
  * Base class for the Godot play windows.

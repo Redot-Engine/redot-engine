@@ -1,4 +1,4 @@
-package org.redotengine.godot
+package org.godotengine.godot
 
 import android.app.Service
 import android.content.Intent
