@@ -32,14 +32,14 @@
 
 @file:JvmName("ApkSignerUtil")
 
-package org.redotengine.editor.utils
+package org.godotengine.editor.utils
 
 import android.util.Log
 import com.android.apksig.ApkSigner
 import com.android.apksig.ApkVerifier
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.redotengine.godot.error.Error
-import org.redotengine.godot.io.file.FileAccessHandler
+import org.godotengine.godot.error.Error
+import org.godotengine.godot.io.file.FileAccessHandler
 import java.io.File
 import java.security.KeyStore
 import java.security.PrivateKey

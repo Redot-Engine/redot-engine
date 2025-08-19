@@ -30,9 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.input;
+package org.godotengine.godot.input;
 
-import static org.redotengine.godot.utils.GLUtils.DEBUG;
+import static org.godotengine.godot.utils.GLUtils.DEBUG;
+
+import org.godotengine.godot.Godot;
+import org.godotengine.godot.GodotLib;
+import org.godotengine.godot.GodotRenderView;
 
 import android.content.Context;
 import android.content.res.Configuration;
@@ -58,10 +62,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.redotengine.godot.Godot;
-import org.redotengine.godot.GodotLib;
-import org.redotengine.godot.GodotRenderView;
 
 /**
  * Handles input related events for the {@link GodotRenderView} view.

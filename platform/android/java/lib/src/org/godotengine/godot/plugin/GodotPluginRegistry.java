@@ -30,7 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.plugin;
+package org.godotengine.godot.plugin;
+
+import org.godotengine.godot.Godot;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -46,8 +48,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.redotengine.godot.Godot;
 
 /**
  * Registry used to load and access the registered Godot Android plugins.

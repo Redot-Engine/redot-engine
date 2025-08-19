@@ -749,7 +749,7 @@ if env["platform"] == "macos":
     methods.write_macos_plist(
         f"./bin/libtextserver_advanced.macos.{env['target']}.framework",
         f"libtextserver_advanced.macos.{env['target']}",
-        "org.redotengine.textserver_advanced",
+        "org.godotengine.textserver_advanced",
         "ICU / HarfBuzz / Graphite Text Server",
     )
     library = env.SharedLibrary(

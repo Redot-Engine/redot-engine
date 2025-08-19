@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.editor.embed
+package org.godotengine.editor.embed
 
 import android.content.pm.ActivityInfo
 import android.os.Bundle
@@ -40,9 +40,9 @@ import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND
 import android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
 import android.view.WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-import org.redotengine.editor.GodotGame
-import org.redotengine.editor.R
-import org.redotengine.godot.editor.utils.GameMenuUtils
+import org.godotengine.editor.GodotGame
+import org.godotengine.editor.R
+import org.godotengine.godot.utils.GameMenuUtils
 
 /**
  * Host the Godot game from the editor when the embedded mode is enabled.

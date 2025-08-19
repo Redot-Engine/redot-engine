@@ -30,7 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot;
+package org.godotengine.godot;
+
+import org.godotengine.godot.error.Error;
+import org.godotengine.godot.plugin.GodotPlugin;
+import org.godotengine.godot.utils.BenchmarkUtils;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -68,10 +72,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
-import org.redotengine.godot.error.Error;
-import org.redotengine.godot.plugin.GodotPlugin;
-import org.redotengine.godot.utils.BenchmarkUtils;
 
 /**
  * Base fragment for Android apps intending to use Godot for part of the app's UI.

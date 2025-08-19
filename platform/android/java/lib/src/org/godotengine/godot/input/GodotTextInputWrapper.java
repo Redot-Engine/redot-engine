@@ -30,7 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.input;
+package org.godotengine.godot.input;
+
+import org.godotengine.godot.*;
 
 import android.content.Context;
 import android.text.Editable;
@@ -40,8 +42,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-
-import org.redotengine.godot.*;
 
 public class GodotTextInputWrapper implements TextWatcher, OnEditorActionListener {
 	// ===========================================================

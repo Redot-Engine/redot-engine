@@ -30,10 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.editor
+package org.godotengine.editor
 
-import org.redotengine.godot.GodotLib
-import org.redotengine.godot.xr.XRMode
+import org.godotengine.godot.GodotLib
+import org.godotengine.godot.xr.XRMode
 
 /**
  * Provide support for running XR apps / games from the editor window.
