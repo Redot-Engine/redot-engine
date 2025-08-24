@@ -856,12 +856,6 @@ void TileMapLayer::_physics_update(bool p_force_cleanup) {
 								if (transpose) {//Modify the transform's columns, one One-way collision
 									xform.set_rotation((real_t)M_PI * 0.5f);
 								}
-								if (flip_v) {
-									xform.columns[1] *= -1;
-								}
-								if (flip_h) {
-									xform.columns[0] *= -1;
-								}
 								xform = gl_transform * xform;
 								ps->body_set_state(body, PhysicsServer2D::BODY_STATE_TRANSFORM, xform);
 
