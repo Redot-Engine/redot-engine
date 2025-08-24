@@ -1414,25 +1414,7 @@ void Window::_notification(int p_what) {
 			_update_theme_item_cache();
 
 			tr_title = atr(title);
-#ifdef DEBUG_ENABLED
-			if (window_id == DisplayServer::MAIN_WINDOW_ID) {
-				// Append a suffix to the window title to denote that the project is running
-				// from a debug build (including the editor). Since this results in lower performance,
-				// this should be clearly presented to the user.
-				tr_title = vformat("%s (DEBUG)", tr_title);
-			}
-#endif
 
-			if (!embedder && window_id != DisplayServer::INVALID_WINDOW_ID) {
-				DisplayServer::get_singleton()->window_set_title(tr_title, window_id);
-				if (keep_title_visible) {
-					Size2i title_size = DisplayServer::get_singleton()->window_get_title_size(tr_title, window_id);
-					Size2i size_limit = get_clamped_minimum_size();
-					if (title_size.x > size_limit.x || title_size.y > size_limit.y) {
-						_update_window_size();
-					}
-				}
-			}
 		} break;
 
 		case NOTIFICATION_VISIBILITY_CHANGED: {
