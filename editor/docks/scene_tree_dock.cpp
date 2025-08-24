@@ -1968,7 +1968,6 @@ void SceneTreeDock::fill_path_renames(Node *p_node, Node *p_new_parent, HashMap<
 		base_path.push_back(n->get_name());
 		n = n->get_parent();
 	}
-	base_path.reverse();
 
 	Vector<StringName> new_base_path;
 	if (p_new_parent) {
@@ -1978,8 +1977,14 @@ void SceneTreeDock::fill_path_renames(Node *p_node, Node *p_new_parent, HashMap<
 			n = n->get_parent();
 		}
 
+		// For the case Reparent to New Node, the new parent has not yet been added to the tree.
+		if (!p_new_parent->is_inside_tree()) {
+			new_base_path.append_array(base_path);
+		}
+
 		new_base_path.reverse();
 	}
+	base_path.reverse();
 
 	_fill_path_renames(base_path, new_base_path, p_node, p_renames);
 }
@@ -2927,12 +2932,9 @@ void SceneTreeDock::_selection_changed() {
 	}
 
 	// Untrack script changes in previously selected nodes.
-	for (Node *node : node_previous_selection) {
-		node->disconnect(CoreStringName(script_changed), callable_mp(this, &SceneTreeDock::_queue_update_script_button));
-	}
+	clear_previous_node_selection();
 
 	// Track script changes in newly selected nodes.
-	node_previous_selection.clear();
 	node_previous_selection.reserve(editor_selection->get_selection().size());
 	for (const KeyValue<Node *, Object *> &E : editor_selection->get_selection()) {
 		Node *node = E.key;
@@ -3373,6 +3375,13 @@ static bool _is_same_selection(const Vector<Node *> &p_first, const List<Node *>
 		}
 	}
 	return true;
+}
+
+void SceneTreeDock::clear_previous_node_selection() {
+	for (Node *node : node_previous_selection) {
+		node->disconnect(CoreStringName(script_changed), callable_mp(this, &SceneTreeDock::_queue_update_script_button));
+	}
+	node_previous_selection.clear();
 }
 
 void SceneTreeDock::set_selection(const Vector<Node *> &p_nodes) {

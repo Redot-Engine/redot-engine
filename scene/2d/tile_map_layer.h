@@ -107,6 +107,9 @@ struct CellData {
 	Vector2i coords;
 	TileMapCell cell;
 
+	// Debug
+	SelfList<CellData> debug_quadrant_list_element;
+
 	// Rendering.
 	Ref<RenderingQuadrant> rendering_quadrant;
 	SelfList<CellData> rendering_quadrant_list_element;
@@ -145,6 +148,7 @@ struct CellData {
 	}
 
 	CellData(const CellData &p_other) :
+			debug_quadrant_list_element(this),
 			rendering_quadrant_list_element(this),
 #ifndef PHYSICS_2D_DISABLED
 			physics_quadrant_list_element(this),
@@ -159,6 +163,7 @@ struct CellData {
 	}
 
 	CellData() :
+			debug_quadrant_list_element(this),
 			rendering_quadrant_list_element(this),
 #ifndef PHYSICS_2D_DISABLED
 			physics_quadrant_list_element(this),

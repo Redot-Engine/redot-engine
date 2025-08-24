@@ -906,6 +906,7 @@ public:
 			MEMBER_CLASS,
 			INHERITED_VARIABLE,
 			STATIC_VARIABLE,
+			NATIVE_CLASS,
 		};
 		Source source = UNDEFINED_SOURCE;
 
