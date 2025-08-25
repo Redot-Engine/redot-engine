@@ -264,8 +264,7 @@ public:
 	/// @name Render Buffers
 	/// @{
 
-	virtual float _render_buffers_get_luminance_multiplier();
-	virtual RD::DataFormat _render_buffers_get_color_format();
+	virtual RD::DataFormat _render_buffers_get_preferred_color_format();
 	virtual bool _render_buffers_can_be_storage();
 	virtual Ref<RenderSceneBuffers> render_buffers_create() override;
 	virtual void gi_set_use_half_resolution(bool p_enable) override;
