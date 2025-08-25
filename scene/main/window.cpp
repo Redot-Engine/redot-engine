@@ -1419,6 +1419,8 @@ void Window::_notification(int p_what) {
 				// Append a suffix to the window title to denote that the project is running
 				// from a debug build (including the editor). Since this results in lower performance,
 				// this should be clearly presented to the user.
+				if (tr_title.is_empty())
+					break;
 				tr_title = vformat("%s (DEBUG)", tr_title);
 			}
 #endif
