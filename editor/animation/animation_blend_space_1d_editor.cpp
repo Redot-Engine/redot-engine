@@ -169,7 +169,6 @@ void AnimationNodeBlendSpace1DEditor::_blend_space_gui_input(const Ref<InputEven
 				undo_redo->add_undo_method(this, "_update_edited_point_pos");
 				undo_redo->commit_action();
 				updating = false;
-				_update_edited_point_pos();
 			}
 
 			dragging_selected_attempt = false;
@@ -189,11 +188,6 @@ void AnimationNodeBlendSpace1DEditor::_blend_space_gui_input(const Ref<InputEven
 	}
 
 	Ref<InputEventMouseMotion> mm = p_event;
-
-	if (mm.is_valid() && !blend_space_draw->has_focus()) {
-		blend_space_draw->grab_focus();
-		blend_space_draw->queue_redraw();
-	}
 
 	if (mm.is_valid() && dragging_selected_attempt) {
 		dragging_selected = true;
@@ -803,6 +797,7 @@ AnimationNodeBlendSpace1DEditor::AnimationNodeBlendSpace1DEditor() {
 	error_label = memnew(Label);
 	error_label->set_focus_mode(FOCUS_ACCESSIBILITY);
 	error_panel->add_child(error_label);
+	error_panel->hide();
 
 	menu = memnew(PopupMenu);
 	add_child(menu);
