@@ -645,6 +645,7 @@ class SampleNode {
 				'godot-position-reporting-processor'
 			);
 		}
+		this._playbackPosition = this.offset;
 		this._positionWorklet.port.onmessage = (event) => {
 			switch (event.data['type']) {
 			case 'position':
@@ -654,7 +655,11 @@ class SampleNode {
 				// Do nothing.
 			}
 		};
-		this._positionWorklet.port.postMessage('reset');
+
+		const resetParameter = this._positionWorklet.parameters.get('reset');
+		resetParameter.setValueAtTime(1, GodotAudio.ctx.currentTime);
+		resetParameter.setValueAtTime(0, GodotAudio.ctx.currentTime + 1);
+
 		return this._positionWorklet;
 	}
 

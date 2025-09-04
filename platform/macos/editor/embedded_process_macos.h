@@ -42,6 +42,7 @@ class LayerHost final : public Control {
 
 	ScriptEditorDebugger *script_debugger = nullptr;
 	EmbeddedProcessMacOS *process = nullptr;
+	bool window_focused = true;
 
 	struct CustomCursor {
 		Ref<Image> image;
