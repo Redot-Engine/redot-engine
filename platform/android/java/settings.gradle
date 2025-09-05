@@ -18,7 +18,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "Godot"
+rootProject.name = "Redot"
 
 include ':app'
 include ':lib'

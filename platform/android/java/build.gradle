@@ -145,7 +145,7 @@ def generateBuildTasks(String flavor = "template", String edition = "standard", 
                     buildTasks += tasks.create(name: copyAARTaskName, type: Copy) {
                         dependsOn ":lib:assembleTemplate${capitalizedTarget}"
                         from('lib/build/outputs/aar')
-                        include("godot-lib.template_${targetSuffix}.aar")
+                        include("redot-lib.template_${targetSuffix}.aar")
                         into("app/libs/${target}")
                     }
                 }

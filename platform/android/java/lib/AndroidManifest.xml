@@ -8,9 +8,9 @@
         <!-- Records the version of the Godot library -->
         <meta-data
             android:name="org.redotengine.library.version"
-            android:value="${godotLibraryVersion}" />
+            android:value="${redotLibraryVersion}" />
 
-        <service android:name=".GodotDownloaderService" />
+        <service android:name=".RedotDownloaderService" />
 
         <activity
             android:name=".utils.ProcessPhoenix"
@@ -26,7 +26,7 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/godot_provider_paths" />
+                android:resource="@xml/redot_provider_paths" />
         </provider>
 
     </application>

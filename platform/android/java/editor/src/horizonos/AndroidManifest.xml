@@ -40,7 +40,7 @@
     <application>
 
         <activity
-            android:name=".GodotEditor"
+            android:name=".RedotEditor"
             android:exported="true"
             android:screenOrientation="landscape"
             tools:node="merge"
@@ -56,7 +56,7 @@
         </activity>
 
         <activity
-            android:name=".GodotXRGame"
+            android:name=".RedotXRGame"
             android:exported="false"
             tools:node="merge">
             <intent-filter>
@@ -81,8 +81,8 @@
         manager and editor windows.
          -->
         <meta-data
-            android:name="org.godotengine.plugin.v2.GodotOpenXRMeta"
-            android:value="org.godotengine.openxr.vendors.meta.GodotOpenXRMeta"
+            android:name="org.redotengine.plugin.v2.GodotOpenXRMeta"
+            android:value="org.redotengine.openxr.vendors.meta.GodotOpenXRMeta"
             tools:node="remove" />
 
         <!-- Enable system splash screen -->

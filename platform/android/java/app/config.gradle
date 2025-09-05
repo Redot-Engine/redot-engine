@@ -22,7 +22,7 @@ ext.getExportPackageName = { ->
     String appId = project.hasProperty("export_package_name") ? project.property("export_package_name") : ""
     // Check if the app id is valid, otherwise use the default.
     if (appId == null || appId.isEmpty()) {
-        appId = "com.godot.game"
+        appId = "com.redot.game"
     }
     return appId
 }
@@ -72,12 +72,12 @@ ext.getExportTargetSdkVersion = { ->
 }
 
 ext.getGodotRenderingMethod = { ->
-    String renderingMethod = project.hasProperty("godot_rendering_method") ? project.property("godot_rendering_method") : ""
+    String renderingMethod = project.hasProperty("redot_rendering_method") ? project.property("redot_rendering_method") : ""
     return renderingMethod
 }
 
 ext.getGodotEditorVersion = { ->
-    String editorVersion = project.hasProperty("godot_editor_version") ? project.property("godot_editor_version") : ""
+    String editorVersion = project.hasProperty("redot_editor_version") ? project.property("redot_editor_version") : ""
     if (editorVersion == null || editorVersion.isEmpty()) {
         // Try the library version first
         editorVersion = getGodotLibraryVersionName()

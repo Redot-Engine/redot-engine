@@ -19,12 +19,12 @@ afterEvaluate {
                 // Mostly self-explanatory metadata
                 pom {
                     name = PUBLISH_ARTIFACT_ID
-                    description = 'Godot Engine Android Library'
-                    url = 'https://godotengine.org/'
+                    description = 'Redot Engine Android Library'
+                    url = 'https://redotengine.org/'
                     licenses {
                         license {
                             name = 'MIT License'
-                            url = 'https://github.com/godotengine/godot/blob/master/LICENSE.txt'
+                            url = 'https://github.com/redotengine/godot/blob/master/LICENSE.txt'
                         }
                     }
                     developers {

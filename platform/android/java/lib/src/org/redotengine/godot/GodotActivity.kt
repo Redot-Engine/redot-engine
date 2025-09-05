@@ -85,14 +85,14 @@ abstract class GodotActivity : FragmentActivity(), GodotHost {
 
 		handleStartIntent(intent, true)
 
-		val currentFragment = supportFragmentManager.findFragmentById(R.id.godot_fragment_container)
+		val currentFragment = supportFragmentManager.findFragmentById(R.id.redot_fragment_container)
 		if (currentFragment is GodotFragment) {
 			Log.v(TAG, "Reusing existing Redot fragment instance.")
 			godotFragment = currentFragment
 		} else {
 			Log.v(TAG, "Creating new Redot fragment instance.")
 			godotFragment = initGodotInstance()
-			supportFragmentManager.beginTransaction().replace(R.id.godot_fragment_container, godotFragment!!).setPrimaryNavigationFragment(godotFragment).commitNowAllowingStateLoss()
+			supportFragmentManager.beginTransaction().replace(R.id.redot_fragment_container, godotFragment!!).setPrimaryNavigationFragment(godotFragment).commitNowAllowingStateLoss()
 		}
 	}
 
@@ -120,7 +120,7 @@ abstract class GodotActivity : FragmentActivity(), GodotHost {
 	}
 
 	@LayoutRes
-	protected open fun getGodotAppLayout() = R.layout.godot_app_layout
+	protected open fun getGodotAppLayout() = R.layout.redot_app_layout
 
 	override fun onDestroy() {
 		Log.v(TAG, "Destroying RedotActivity $this...")
