@@ -926,9 +926,9 @@ void PopupMenu::_draw_items() {
 		// Submenu arrow on right hand side.
 		if (items[i].submenu) {
 			if (rtl) {
-				submenu->draw(ci, Point2(theme_cache.panel_style->get_margin(SIDE_LEFT) + theme_cache.item_end_padding, item_ofs.y + Math::floor(h - submenu->get_height()) / 2), icon_color);
+				submenu->draw(ci, Point2(theme_cache.item_end_padding, item_ofs.y + Math::floor(h - submenu->get_height()) / 2), icon_color);
 			} else {
-				submenu->draw(ci, Point2(display_width - theme_cache.panel_style->get_margin(SIDE_RIGHT) - submenu->get_width() - theme_cache.item_end_padding, item_ofs.y + Math::floor(h - submenu->get_height()) / 2), icon_color);
+				submenu->draw(ci, Point2(display_width - submenu->get_width() - theme_cache.item_end_padding, item_ofs.y + Math::floor(h - submenu->get_height()) / 2), icon_color);
 			}
 		}
 
@@ -963,9 +963,9 @@ void PopupMenu::_draw_items() {
 		// Accelerator / Shortcut
 		if (items[i].accel != Key::NONE || (items[i].shortcut.is_valid() && items[i].shortcut->has_valid_event())) {
 			if (rtl) {
-				item_ofs.x = theme_cache.panel_style->get_margin(SIDE_LEFT) + theme_cache.item_end_padding;
+				item_ofs.x = theme_cache.item_end_padding;
 			} else {
-				item_ofs.x = display_width - theme_cache.panel_style->get_margin(SIDE_RIGHT) - items[i].accel_text_buf->get_size().x - theme_cache.item_end_padding;
+				item_ofs.x = display_width - items[i].accel_text_buf->get_size().x - theme_cache.item_end_padding;
 			}
 			Vector2 text_pos = item_ofs + Point2(0, Math::floor((h - items[i].accel_text_buf->get_size().y) / 2.0));
 			if (theme_cache.font_outline_size > 0 && theme_cache.font_outline_color.a > 0) {
@@ -3249,7 +3249,7 @@ void PopupMenu::set_visible(bool p_visible) {
 			_native_popup(Rect2i(get_position(), get_size()));
 		}
 	} else {
-		if (is_inside_tree()) {
+		if (p_visible && is_inside_tree()) {
 			set_flag(FLAG_POPUP, true);
 			set_flag(FLAG_NO_FOCUS, !is_embedded());
 		}

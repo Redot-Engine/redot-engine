@@ -2963,7 +2963,7 @@ typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass2)(GDExtensionCl
  * @param p_library A pointer the library received by the GDExtension's entry point function.
  * @param p_class_name A pointer to a StringName with the class name.
  * @param p_parent_class_name A pointer to a StringName with the parent class name.
- * @param p_extension_funcs A pointer to a GDExtensionClassCreationInfo2 struct.
+ * @param p_extension_funcs A pointer to a GDExtensionClassCreationInfo3 struct.
  */
 typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass3)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo3 *p_extension_funcs);
 
@@ -2979,7 +2979,7 @@ typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass3)(GDExtensionCl
  * @param p_library A pointer the library received by the GDExtension's entry point function.
  * @param p_class_name A pointer to a StringName with the class name.
  * @param p_parent_class_name A pointer to a StringName with the parent class name.
- * @param p_extension_funcs A pointer to a GDExtensionClassCreationInfo2 struct.
+ * @param p_extension_funcs A pointer to a GDExtensionClassCreationInfo4 struct.
  */
 typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass4)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo4 *p_extension_funcs);
 
@@ -2994,7 +2994,7 @@ typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass4)(GDExtensionCl
  * @param p_library A pointer the library received by the GDExtension's entry point function.
  * @param p_class_name A pointer to a StringName with the class name.
  * @param p_parent_class_name A pointer to a StringName with the parent class name.
- * @param p_extension_funcs A pointer to a GDExtensionClassCreationInfo2 struct.
+ * @param p_extension_funcs A pointer to a GDExtensionClassCreationInfo5 struct.
  */
 typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass5)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo5 *p_extension_funcs);
 
