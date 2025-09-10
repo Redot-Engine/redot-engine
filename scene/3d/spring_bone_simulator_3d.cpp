@@ -37,6 +37,7 @@
  */
 
 #include "spring_bone_simulator_3d.h"
+#include "spring_bone_simulator_3d.compat.inc"
 
 #include "scene/3d/spring_bone_collision_3d.h"
 
@@ -304,14 +305,14 @@ void SpringBoneSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const
 		props.push_back(PropertyInfo(Variant::STRING, path + "end_bone_name", PROPERTY_HINT_ENUM_SUGGESTION, enum_hint));
 		props.push_back(PropertyInfo(Variant::INT, path + "end_bone", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
 		props.push_back(PropertyInfo(Variant::BOOL, path + "extend_end_bone"));
-		props.push_back(PropertyInfo(Variant::INT, path + "end_bone/direction", PROPERTY_HINT_ENUM, "+X,-X,+Y,-Y,+Z,-Z,FromParent"));
+		props.push_back(PropertyInfo(Variant::INT, path + "end_bone/direction", PROPERTY_HINT_ENUM, SkeletonModifier3D::get_hint_bone_direction()));
 		props.push_back(PropertyInfo(Variant::FLOAT, path + "end_bone/length", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"));
 		props.push_back(PropertyInfo(Variant::INT, path + "center_from", PROPERTY_HINT_ENUM, "WorldOrigin,Node,Bone"));
 		props.push_back(PropertyInfo(Variant::NODE_PATH, path + "center_node"));
 		props.push_back(PropertyInfo(Variant::STRING, path + "center_bone_name", PROPERTY_HINT_ENUM_SUGGESTION, enum_hint));
 		props.push_back(PropertyInfo(Variant::INT, path + "center_bone", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
 		props.push_back(PropertyInfo(Variant::BOOL, path + "individual_config"));
-		props.push_back(PropertyInfo(Variant::INT, path + "rotation_axis", PROPERTY_HINT_ENUM, "X,Y,Z,All,Custom"));
+		props.push_back(PropertyInfo(Variant::INT, path + "rotation_axis", PROPERTY_HINT_ENUM, SkeletonModifier3D::get_hint_rotation_axis()));
 		props.push_back(PropertyInfo(Variant::VECTOR3, path + "rotation_axis_vector"));
 		props.push_back(PropertyInfo(Variant::FLOAT, path + "radius/value", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"));
 		props.push_back(PropertyInfo(Variant::OBJECT, path + "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"));
@@ -325,9 +326,9 @@ void SpringBoneSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const
 		props.push_back(PropertyInfo(Variant::INT, path + "joint_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Joints," + path + "joints/,static,const"));
 		for (int j = 0; j < settings[i]->joints.size(); j++) {
 			String joint_path = path + "joints/" + itos(j) + "/";
-			props.push_back(PropertyInfo(Variant::STRING, joint_path + "bone_name", PROPERTY_HINT_ENUM_SUGGESTION, enum_hint, PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_STORAGE));
+			props.push_back(PropertyInfo(Variant::STRING, joint_path + "bone_name", PROPERTY_HINT_ENUM_SUGGESTION, enum_hint, PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY));
 			props.push_back(PropertyInfo(Variant::INT, joint_path + "bone", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_READ_ONLY));
-			props.push_back(PropertyInfo(Variant::INT, joint_path + "rotation_axis", PROPERTY_HINT_ENUM, "X,Y,Z,All,Custom"));
+			props.push_back(PropertyInfo(Variant::INT, joint_path + "rotation_axis", PROPERTY_HINT_ENUM, SkeletonModifier3D::get_hint_rotation_axis()));
 			props.push_back(PropertyInfo(Variant::VECTOR3, joint_path + "rotation_axis_vector"));
 			props.push_back(PropertyInfo(Variant::FLOAT, joint_path + "radius", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"));
 			props.push_back(PropertyInfo(Variant::FLOAT, joint_path + "stiffness", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
@@ -360,7 +361,12 @@ void SpringBoneSimulator3D::_validate_dynamic_prop(PropertyInfo &p_property) con
 		int which = split[1].to_int();
 
 		// Extended end bone option.
-		if (split[2] == "end_bone" && !is_end_bone_extended(which) && split.size() > 3) {
+		bool force_hide = false;
+		if (split[2] == "extend_end_bone" && get_end_bone(which) == -1) {
+			p_property.usage = PROPERTY_USAGE_NONE;
+			force_hide = true;
+		}
+		if (force_hide || (split[2] == "end_bone" && !is_end_bone_extended(which) && split.size() > 3)) {
 			p_property.usage = PROPERTY_USAGE_NONE;
 		}
 
@@ -508,6 +514,7 @@ void SpringBoneSimulator3D::set_end_bone(int p_index, int p_bone) {
 	if (changed) {
 		_update_joint_array(p_index);
 	}
+	notify_property_list_changed();
 }
 
 int SpringBoneSimulator3D::get_end_bone(int p_index) const {
@@ -533,8 +540,8 @@ void SpringBoneSimulator3D::set_end_bone_direction(int p_index, BoneDirection p_
 	_make_joints_dirty(p_index);
 }
 
-SpringBoneSimulator3D::BoneDirection SpringBoneSimulator3D::get_end_bone_direction(int p_index) const {
-	ERR_FAIL_INDEX_V(p_index, settings.size(), BONE_DIRECTION_FROM_PARENT);
+SkeletonModifier3D::BoneDirection SpringBoneSimulator3D::get_end_bone_direction(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), BONE_DIRECTION_FROM_PARENT);
 	return settings[p_index]->end_bone_direction;
 }
 
@@ -790,8 +797,8 @@ void SpringBoneSimulator3D::set_rotation_axis(int p_index, RotationAxis p_axis) 
 	notify_property_list_changed();
 }
 
-SpringBoneSimulator3D::RotationAxis SpringBoneSimulator3D::get_rotation_axis(int p_index) const {
-	ERR_FAIL_INDEX_V(p_index, settings.size(), ROTATION_AXIS_ALL);
+SkeletonModifier3D::RotationAxis SpringBoneSimulator3D::get_rotation_axis(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), ROTATION_AXIS_ALL);
 	return settings[p_index]->rotation_axis;
 }
 
@@ -833,7 +840,8 @@ void SpringBoneSimulator3D::set_setting_count(int p_count) {
 	int delta = p_count - settings.size();
 	if (delta < 0) {
 		for (int i = delta; i < 0; i++) {
-			memdelete(settings[settings.size() + i]);
+			memdelete(settings[(int)settings.size() + i]);
+			settings[(int)settings.size() + i] = nullptr;
 		}
 	}
 	settings.resize(p_count);
@@ -869,9 +877,10 @@ bool SpringBoneSimulator3D::is_config_individual(int p_index) const {
 }
 
 void SpringBoneSimulator3D::set_joint_bone_name(int p_index, int p_joint, const String &p_bone_name) {
-	ERR_FAIL_INDEX(p_index, settings.size());
-	Vector<SpringBone3DJointSetting *> &joints = settings[p_index]->joints;
-	ERR_FAIL_INDEX(p_joint, joints.size());
+	// Exists only for indicate bone name on the inspector, no needs to make dirty joint array.
+	ERR_FAIL_INDEX(p_index, (int)settings.size());
+	LocalVector<SpringBone3DJointSetting *> &joints = settings[p_index]->joints;
+	ERR_FAIL_INDEX(p_joint, (int)joints.size());
 	joints[p_joint]->bone_name = p_bone_name;
 	Skeleton3D *sk = get_skeleton();
 	if (sk) {
@@ -1017,10 +1026,10 @@ void SpringBoneSimulator3D::set_joint_rotation_axis(int p_index, int p_joint, Ro
 #endif // TOOLS_ENABLED
 }
 
-SpringBoneSimulator3D::RotationAxis SpringBoneSimulator3D::get_joint_rotation_axis(int p_index, int p_joint) const {
-	ERR_FAIL_INDEX_V(p_index, settings.size(), ROTATION_AXIS_ALL);
-	Vector<SpringBone3DJointSetting *> joints = settings[p_index]->joints;
-	ERR_FAIL_INDEX_V(p_joint, joints.size(), ROTATION_AXIS_ALL);
+SkeletonModifier3D::RotationAxis SpringBoneSimulator3D::get_joint_rotation_axis(int p_index, int p_joint) const {
+	ERR_FAIL_INDEX_V(p_index, (int)settings.size(), ROTATION_AXIS_ALL);
+	const LocalVector<SpringBone3DJointSetting *> &joints = settings[p_index]->joints;
+	ERR_FAIL_INDEX_V(p_joint, (int)joints.size(), ROTATION_AXIS_ALL);
 	return joints[p_joint]->rotation_axis;
 }
 
@@ -1057,6 +1066,7 @@ void SpringBoneSimulator3D::set_joint_count(int p_index, int p_count) {
 	if (delta < 0) {
 		for (int i = delta; i < 0; i++) {
 			memdelete(joints[joints.size() + i]);
+			joints[joints.size() + i] = nullptr;
 		}
 	}
 	joints.resize(p_count);
@@ -1321,23 +1331,9 @@ void SpringBoneSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "external_force", PROPERTY_HINT_RANGE, "-99999,99999,or_greater,or_less,hide_slider,suffix:m/s"), "set_external_force", "get_external_force");
 	ADD_ARRAY_COUNT("Settings", "setting_count", "set_setting_count", "get_setting_count", "settings/");
 
-	BIND_ENUM_CONSTANT(BONE_DIRECTION_PLUS_X);
-	BIND_ENUM_CONSTANT(BONE_DIRECTION_MINUS_X);
-	BIND_ENUM_CONSTANT(BONE_DIRECTION_PLUS_Y);
-	BIND_ENUM_CONSTANT(BONE_DIRECTION_MINUS_Y);
-	BIND_ENUM_CONSTANT(BONE_DIRECTION_PLUS_Z);
-	BIND_ENUM_CONSTANT(BONE_DIRECTION_MINUS_Z);
-	BIND_ENUM_CONSTANT(BONE_DIRECTION_FROM_PARENT);
-
 	BIND_ENUM_CONSTANT(CENTER_FROM_WORLD_ORIGIN);
 	BIND_ENUM_CONSTANT(CENTER_FROM_NODE);
 	BIND_ENUM_CONSTANT(CENTER_FROM_BONE);
-
-	BIND_ENUM_CONSTANT(ROTATION_AXIS_X);
-	BIND_ENUM_CONSTANT(ROTATION_AXIS_Y);
-	BIND_ENUM_CONSTANT(ROTATION_AXIS_Z);
-	BIND_ENUM_CONSTANT(ROTATION_AXIS_ALL);
-	BIND_ENUM_CONSTANT(ROTATION_AXIS_CUSTOM);
 }
 
 void SpringBoneSimulator3D::_skeleton_changed(Skeleton3D *p_old, Skeleton3D *p_new) {
@@ -1426,7 +1422,7 @@ void SpringBoneSimulator3D::_validate_rotation_axis(Skeleton3D *p_skeleton, int 
 	}
 	fwd.normalize();
 	if (Math::is_equal_approx(Math::abs(rot.dot(fwd)), 1)) {
-		WARN_PRINT_ED("Setting: " + itos(p_index) + " Joint: " + itos(p_joint) + ": Rotation axis and forward vectors are colinear. This is not advised as it may cause unwanted rotation.");
+		WARN_PRINT_ED("Setting: " + itos(p_index) + " Joint: " + itos(p_joint) + ": Rotation axis and forward vector are colinear. This is not advised as it may cause unwanted rotation.");
 	}
 }
 
@@ -1498,9 +1494,6 @@ void SpringBoneSimulator3D::_find_collisions() {
 }
 
 void SpringBoneSimulator3D::_process_collisions() {
-	if (!is_inside_tree()) {
-		return;
-	}
 	for (const ObjectID &oid : collisions) {
 		Object *t_obj = ObjectDB::get_instance(oid);
 		if (!t_obj) {
@@ -1541,7 +1534,7 @@ void SpringBoneSimulator3D::_update_joint_array(int p_index) {
 
 	if (!valid) {
 		set_joint_count(p_index, 0);
-		ERR_FAIL_EDMSG("End bone must be the same as or a child of root bone.");
+		ERR_FAIL_EDMSG("End bone must be the same as or a child of the root bone.");
 	}
 
 	Vector<int> new_joints;
@@ -1625,10 +1618,6 @@ void SpringBoneSimulator3D::_set_active(bool p_active) {
 }
 
 void SpringBoneSimulator3D::_process_modification(double p_delta) {
-	if (!is_inside_tree()) {
-		return;
-	}
-
 	Skeleton3D *skeleton = get_skeleton();
 	if (!skeleton) {
 		return;
@@ -1640,7 +1629,7 @@ void SpringBoneSimulator3D::_process_modification(double p_delta) {
 	if (saving) {
 		return; // Collision position has been reset but we don't want to process simulating on saving. Abort.
 	}
-#endif //TOOLS_ENABLED
+#endif // TOOLS_ENABLED
 
 	for (int i = 0; i < settings.size(); i++) {
 		_init_joints(skeleton, settings[i]);
