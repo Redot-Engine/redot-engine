@@ -3,7 +3,7 @@
 This document summarizes the most important points for people interested in
 contributing to Redot, especially via bug reports or pull requests.
 
-The [Redot Documentation](https://docs-stable.redotengine.org/contributing/development) has a dedicated Contributing section
+Godot has a dedicated [Contributing documentation](https://contributing.godotengine.org/en/latest/organization/how_to_contribute.html)
 which details these points and more, and is a recommended read.
 
 ## Table of contents
@@ -69,8 +69,18 @@ Similar rules can be applied when contributing bug fixes - it's always best to
 discuss the implementation in the bug report first if you are not 100% about
 what would be the best fix.
 
-Read the [Redot Documentation](https://docs-stable.redotengine.org/contributing/development)
-for information and guides related to contribution and pull requests.
+You can refer to the [Pull request review process](https://contributing.godotengine.org/en/latest/organization/pull_requests/review_guidelines.html)
+for insights into the intended lifecycle of pull requests. This should help you
+ensure that your pull request fulfills the requirements.
+
+In addition to the following tips, also take a look at the
+[Engine development guide](https://docs.godotengine.org/en/latest/engine_details/development/index.html)
+for an introduction to developing on Godot.
+
+The [Contributing docs](https://contributing.godotengine.org/en/latest/organization/how_to_contribute.html)
+also have important information on the [PR workflow](https://contributing.godotengine.org/en/latest/organization/pull_requests/creating_pull_requests.html)
+(with a helpful guide for Git usage), and our [Code style guidelines](https://contributing.godotengine.org/en/latest/engine/guidelines/code_style.html)
+which all contributions need to follow.
 
 ### Be mindful of your commits
 
@@ -87,6 +97,9 @@ Also try to make commits that bring the engine from one stable state to another
 stable state, i.e. if your first commit has a bug that you fixed in the second
 commit, try to merge them together before making your pull request. This
 includes fixing build issues or typos, adding documentation, etc.
+
+See our [PR workflow](https://contributing.godotengine.org/en/latest/organization/pull_requests/creating_pull_requests.html)
+documentation for tips on using Git, amending commits and rebasing branches.
 
 This [Git style guide](https://github.com/agis-/git-style-guide) also has some
 good practices to have in mind.
@@ -146,10 +159,10 @@ scripting APIs, you **must** update the class reference to document those.
 This is to ensure the documentation coverage doesn't decrease as contributions
 are merged.
 
-[Update documentation XML files](https://docs.redotengine.org/en/latest/contributing/documentation/updating_the_class_reference.html)
+[Update documentation XML files](https://contributing.godotengine.org/en/latest/documentation/class_reference.html)
 using your compiled binary, then fill in the descriptions.
 Follow the style guide described in the
-[Documentation writing guidelines](https://docs.redotengine.org/en/latest/contributing/documentation/docs_writing_guidelines.html).
+[Documentation writing guidelines](https://contributing.godotengine.org/en/latest/documentation/guidelines/docs_writing_guidelines.html).
 
 If your pull request modifies parts of the code in a non-obvious way, make sure
 to add comments in the code as well. This helps other people understand the
@@ -175,15 +188,15 @@ applicable.
 Feel free to contribute standalone pull requests to add new tests or improve
 existing tests as well.
 
-See [Unit testing](https://docs.redotengine.org/en/latest/contributing/development/core_and_modules/unit_testing.html)
-for information on writing tests in Redot's C++ codebase.
+See [Unit testing](https://contributing.godotengine.org/en/latest/engine/unit_tests.html)
+for information on writing tests in Godot's C++ codebase.
 
 ## Contributing to Redot translations
 
 You can contribute to Redot translations by leaving a volunteer application
 on the [Redot Discord](https://discord.gg/redot) for us to review.
 
-Please refer to Redot's [editor and documentation localization guidelines](https://docs.redotengine.org/en/latest/contributing/documentation/editor_and_docs_localization.html)
+Please refer to our [editor and documentation localization guidelines](https://contributing.godotengine.org/en/latest/documentation/translation/index.html)
 for an overview of the translation resources and what they correspond to.
 
 ## Communicating with developers
