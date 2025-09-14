@@ -285,6 +285,9 @@ void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started) {
 	// Finally, if not end the animation, do blending.
 	if (end_reached) {
 		playback.blend.clear();
+		if (end_notify) {
+			finished_anim = playback.assigned;
+		}
 		return;
 	}
 	List<List<Blend>::Element *> to_erase;
@@ -314,6 +317,8 @@ bool AnimationPlayer::_blend_pre_process(double p_delta, int p_track_count, cons
 	end_reached = false;
 	end_notify = false;
 
+	finished_anim = StringName();
+
 	bool started = playback.started; // The animation may be changed during process, so it is safer that the state is changed before process.
 	if (playback.started) {
 		playback.started = false;
@@ -334,6 +339,10 @@ void AnimationPlayer::_blend_capture(double p_delta) {
 }
 
 void AnimationPlayer::_blend_post_process() {
+	if (!finished_anim.is_empty()) {
+		emit_signal(SceneStringName(animation_finished), finished_anim);
+	}
+
 	if (end_reached) {
 		// If the method track changes current animation, the animation is not finished.
 		if (tmp_from == playback.current.from->animation->get_instance_id()) {
