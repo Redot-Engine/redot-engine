@@ -479,11 +479,15 @@ static void _collision_segment_rectangle(const GodotShape2D *p_a, const Transfor
 		return;
 	}
 
-	if (!separator.test_axis(p_transform_b.columns[0].normalized())) {
+	const Vector2 rect_fn = p_transform_b.columns[0].normalized();
+
+	if (!separator.test_axis(rect_fn)) {
 		return;
 	}
 
-	if (!separator.test_axis(p_transform_b.columns[1].normalized())) {
+	const Vector2 nd_rect_fn = Vector2(-rect_fn[1], rect_fn[0]);
+
+	if (!separator.test_axis(nd_rect_fn)) {
 		return;
 	}
 
@@ -652,11 +656,14 @@ static void _collision_circle_rectangle(const GodotShape2D *p_a, const Transform
 	const Vector2 *axis = &p_transform_b.columns[0];
 	//const Vector2& half_extents = rectangle_B->get_half_extents();
 
-	if (!separator.test_axis(axis[0].normalized())) {
+	const Vector2 rect_fn = axis[0].normalized();
+	if (!separator.test_axis(rect_fn)) {
 		return;
 	}
 
-	if (!separator.test_axis(axis[1].normalized())) {
+	const Vector2 nd_rect_fn = Vector2(-rect_fn[1], rect_fn[0]);
+
+	if (!separator.test_axis(nd_rect_fn)) {
 		return;
 	}
 
@@ -770,21 +777,31 @@ static void _collision_rectangle_rectangle(const GodotShape2D *p_a, const Transf
 		return;
 	}
 
+	//It's the same normal for both axis tests,
+	//but the second one is just inverted and has the x as inverse.
+	const Vector2 rect_fn = p_transform_a.columns[0].normalized();
+
 	//box faces A
-	if (!separator.test_axis(p_transform_a.columns[0].normalized())) {
+	if (!separator.test_axis(rect_fn)) {
 		return;
 	}
 
-	if (!separator.test_axis(p_transform_a.columns[1].normalized())) {
+	const Vector2 nd_rect_fn = Vector2(-rect_fn[1], rect_fn[0]);
+
+	if (!separator.test_axis(nd_rect_fn)) {
 		return;
 	}
+
+	const Vector2 rect_fn2 = p_transform_b.columns[0].normalized();
 
 	//box faces B
-	if (!separator.test_axis(p_transform_b.columns[0].normalized())) {
+	if (!separator.test_axis(rect_fn2)) {
 		return;
 	}
 
-	if (!separator.test_axis(p_transform_b.columns[1].normalized())) {
+	const Vector2 nd_rect_fn2 = Vector2(-rect_fn2[1], rect_fn2[0]);
+
+	if (!separator.test_axis(nd_rect_fn2)) {
 		return;
 	}
 
@@ -844,12 +861,18 @@ static void _collision_rectangle_capsule(const GodotShape2D *p_a, const Transfor
 		return;
 	}
 
+	//It's the same normal for both axis tests,
+	//but the second one is just inverted and has the x as inverse.
+	const Vector2 rect_fn = p_transform_a.columns[0].normalized();
+
 	//box faces
-	if (!separator.test_axis(p_transform_a.columns[0].normalized())) {
+	if (!separator.test_axis(rect_fn)) {
 		return;
 	}
 
-	if (!separator.test_axis(p_transform_a.columns[1].normalized())) {
+	const Vector2 nd_rect_fn = Vector2(-rect_fn[1], rect_fn[0]);
+
+	if (!separator.test_axis(nd_rect_fn)) {
 		return;
 	}
 
@@ -922,12 +945,18 @@ static void _collision_rectangle_convex_polygon(const GodotShape2D *p_a, const T
 		return;
 	}
 
+	//It's the same normal for both axis tests,
+	//but the second one is just inverted and has the x as inverse.
+	const Vector2 rect_fn = p_transform_a.columns[0].normalized();
+
 	//box faces
-	if (!separator.test_axis(p_transform_a.columns[0].normalized())) {
+	if (!separator.test_axis(rect_fn)) {
 		return;
 	}
 
-	if (!separator.test_axis(p_transform_a.columns[1].normalized())) {
+	const Vector2 nd_rect_fn = Vector2(-rect_fn[1], rect_fn[0]);
+
+	if (!separator.test_axis(nd_rect_fn)) {
 		return;
 	}
 
