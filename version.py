@@ -1,9 +1,9 @@
-short_name = "redot"
-name = "Redot Engine LTS"
-major = 26
-minor = 1
-patch = 0
-status = "stable"
+short_name = "godot"
+name = "Godot Engine"
+major = 4
+minor = 5
+patch = 1
+status = "rc"
 module_config = ""
 website = "https://godotengine.org"
 docs = "4.5"
