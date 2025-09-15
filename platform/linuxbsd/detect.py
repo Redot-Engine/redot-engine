@@ -279,6 +279,9 @@ def configure(env: "SConsEnvironment"):
         env.ParseConfig("pkg-config libwebp --cflags --libs")
         env.ParseConfig("pkg-config libwebpdemux --cflags --libs")
 
+    if not env["builtin_libjpeg_turbo"]:
+        env.ParseConfig("pkg-config libturbojpeg --cflags --libs")
+
     if not env["builtin_mbedtls"]:
         # mbedTLS only provides a pkgconfig file since 3.6.0, but we still support 2.28.x,
         # so fallback to manually specifying LIBS if it fails.
