@@ -26,7 +26,7 @@ ext {
 
     // Return the keystore file used for signing the release build.
     getGodotKeystoreFile = { ->
-        def keyStore = System.getenv("GODOT_ANDROID_SIGN_KEYSTORE")
+        def keyStore = System.getenv("REDOT_ANDROID_SIGN_KEYSTORE")
         if (keyStore == null || keyStore.isEmpty()) {
             return null
         }
@@ -35,13 +35,13 @@ ext {
 
     // Return the key alias used for signing the release build.
     getGodotKeyAlias = { ->
-        def kAlias = System.getenv("GODOT_ANDROID_KEYSTORE_ALIAS")
+        def kAlias = System.getenv("REDOT_ANDROID_KEYSTORE_ALIAS")
         return kAlias
     }
 
     // Return the password for the key used for signing the release build.
     getGodotSigningPassword = { ->
-        def signingPassword = System.getenv("GODOT_ANDROID_SIGN_PASSWORD")
+        def signingPassword = System.getenv("REDOT_ANDROID_SIGN_PASSWORD")
         return signingPassword
     }
 

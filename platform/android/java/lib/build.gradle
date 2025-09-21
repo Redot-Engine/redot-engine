@@ -4,7 +4,7 @@ plugins {
 }
 
 ext {
-    PUBLISH_ARTIFACT_ID = 'godot'
+    PUBLISH_ARTIFACT_ID = 'redot'
 }
 
 apply from: "../scripts/publish-module.gradle"
@@ -26,7 +26,7 @@ android {
         minSdkVersion versions.minSdk
         targetSdkVersion versions.targetSdk
 
-        manifestPlaceholders = [godotLibraryVersion: getGodotLibraryVersionName()]
+        manifestPlaceholders = [redotLibraryVersion: getGodotLibraryVersionName()]
     }
 
     namespace = "org.redotengine.godot"
@@ -131,7 +131,7 @@ android {
             outputSuffix = "${outputSuffix}.dev"
         }
         variant.outputs.all { output ->
-            output.outputFileName = "godot-lib.${outputSuffix}.aar"
+            output.outputFileName = "redot-lib.${outputSuffix}.aar"
         }
 
         // Find scons' executable path

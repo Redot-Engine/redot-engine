@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="godot_project_name_string">godot-project-name</string>
+    <string name="redot_project_name_string">redot-project-name</string>
     <string name="text_paused_cellular">Would you like to enable downloading over cellular connections? Depending on your data plan, this may cost you money.</string>
     <string name="text_paused_cellular_2">If you choose not to enable downloading over cellular connections, the download will automatically resume when wi-fi is available.</string>
     <string name="text_button_resume_cellular">Resume download</string>
@@ -13,7 +13,7 @@
     <string name="text_button_cancel">Cancel</string>
     <string name="text_button_cancel_verify">Cancel Verification</string>
     <string name="text_error_title">Error!</string>
-    <string name="error_engine_setup_message">Unable to setup the Godot Engine! Aborting…</string>
+    <string name="error_engine_setup_message">Unable to setup the Redot Engine! Aborting…</string>
     <string name="error_missing_vulkan_requirements_message">Warning - this device does not meet the requirements for Vulkan support</string>
 
     <!-- APK Expansion Strings -->
