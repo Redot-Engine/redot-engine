@@ -4,8 +4,8 @@
 #define RT_MANIFEST 24
 #endif
 
-GODOT_ICON ICON platform/windows/redot_console.ico
-1 RT_MANIFEST "godot.manifest"
+GODOT_ICON ICON platform/windows/godot_console.ico
+1 RT_MANIFEST "platform/windows/godot.manifest"
 
 1 VERSIONINFO
 FILEVERSION     REDOT_VERSION_MAJOR,REDOT_VERSION_MINOR,REDOT_VERSION_PATCH,0
