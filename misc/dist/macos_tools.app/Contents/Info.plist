@@ -11,7 +11,7 @@
 	<key>CFBundleIconFile</key>
 	<string>Redot.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.redotengine.redot</string>
+	<string>org.godotengine.redot</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>

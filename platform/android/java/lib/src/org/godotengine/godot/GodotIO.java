@@ -30,7 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot;
+package org.godotengine.godot;
+
+import org.godotengine.godot.error.Error;
+import org.godotengine.godot.input.GodotEditText;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -52,9 +55,6 @@ import androidx.core.content.FileProvider;
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
-
-import org.redotengine.godot.error.Error;
-import org.redotengine.godot.input.GodotEditText;
 
 // Wrapper for native library
 

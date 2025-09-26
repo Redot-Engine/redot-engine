@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.utils
+package org.godotengine.godot.utils
 
 import java.io.InputStream
 import java.nio.charset.StandardCharsets

@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.editor
+package org.godotengine.editor
 
 import android.app.PictureInPictureParams
 import android.content.pm.PackageManager
@@ -40,10 +40,10 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.core.view.isVisible
-import org.redotengine.editor.embed.GameMenuFragment
-import org.redotengine.godot.utils.GameMenuUtils
-import org.redotengine.godot.utils.ProcessPhoenix
-import org.redotengine.godot.utils.isNativeXRDevice
+import org.godotengine.editor.embed.GameMenuFragment
+import org.godotengine.godot.utils.GameMenuUtils
+import org.godotengine.godot.utils.ProcessPhoenix
+import org.godotengine.godot.utils.isNativeXRDevice
 
 /**
  * Drives the 'run project' window of the Godot Editor.

@@ -30,15 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.io.directory
+package org.godotengine.godot.io.directory
 
 import android.content.Context
 import android.util.Log
 import android.util.SparseArray
-import org.redotengine.godot.io.StorageScope
-import org.redotengine.godot.io.directory.DirectoryAccessHandler.Companion.INVALID_DIR_ID
-import org.redotengine.godot.io.directory.DirectoryAccessHandler.Companion.STARTING_DIR_ID
-import org.redotengine.godot.io.file.AssetData
+import org.godotengine.godot.io.StorageScope
+import org.godotengine.godot.io.directory.DirectoryAccessHandler.Companion.INVALID_DIR_ID
+import org.godotengine.godot.io.directory.DirectoryAccessHandler.Companion.STARTING_DIR_ID
+import org.godotengine.godot.io.file.AssetData
 import java.io.File
 import java.io.IOException
 
