@@ -2253,6 +2253,8 @@ Dictionary TextServerAdvanced::_font_get_ot_name_strings(const RID &p_font_rid) 
 	FontAdvanced *fd = _get_font_data(p_font_rid);
 	ERR_FAIL_NULL_V(fd, Dictionary());
 
+	Dictionary out;
+#ifdef MODULE_FREETYPE_ENABLED
 	MutexLock lock(fd->mutex);
 	Vector2i size = _get_size(fd, 16);
 	FontForSizeAdvanced *ffsd = nullptr;
@@ -2355,11 +2357,10 @@ Dictionary TextServerAdvanced::_font_get_ot_name_strings(const RID &p_font_rid) 
 		}
 	}
 
-	Dictionary out;
 	for (const KeyValue<String, Dictionary> &E : names_for_lang) {
 		out[E.key] = E.value;
 	}
-
+#endif
 	return out;
 }
 
@@ -5723,6 +5724,7 @@ RID TextServerAdvanced::_find_sys_font_for_text(const RID &p_fdef, const String 
 			}
 
 			bool fb_use_msdf = key.msdf;
+#ifdef MODULE_FREETYPE_ENABLED
 			if (fb_use_msdf) {
 				FontAdvanced *fd = _get_font_data(sysf.rid);
 				if (fd) {
@@ -5736,6 +5738,7 @@ RID TextServerAdvanced::_find_sys_font_for_text(const RID &p_fdef, const String 
 					}
 				}
 			}
+#endif
 
 			_font_set_antialiasing(sysf.rid, key.antialiasing);
 			_font_set_disable_embedded_bitmaps(sysf.rid, key.disable_embedded_bitmaps);
