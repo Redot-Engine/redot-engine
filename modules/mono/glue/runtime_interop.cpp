@@ -1775,7 +1775,7 @@ static const void *unmanaged_callbacks[]{
 	(void *)godotsharp_node_path_get_name_count,
 	(void *)godotsharp_node_path_get_subname,
 	(void *)godotsharp_node_path_get_subname_count,
-    (void *)godotsharp_node_path_slice,
+	(void *)godotsharp_node_path_slice,
 	(void *)godotsharp_node_path_is_absolute,
 	(void *)godotsharp_node_path_equals,
 	(void *)godotsharp_node_path_hash,
