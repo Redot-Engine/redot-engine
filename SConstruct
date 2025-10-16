@@ -315,6 +315,9 @@ opts.Add("rcflags", "Custom flags for Windows resource compiler")
 opts.Add("c_compiler_launcher", "C compiler launcher (e.g. `ccache`)")
 opts.Add("cpp_compiler_launcher", "C++ compiler launcher (e.g. `ccache`)")
 
+# Nix
+opts.Add(BoolVariable("nix", "Whether the project is built using Nix.", False))
+
 # Update the environment to have all above options defined
 # in following code (especially platform and custom_modules).
 opts.Update(env)
