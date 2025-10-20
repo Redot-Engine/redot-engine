@@ -102,7 +102,7 @@ Array DebuggerMarshalls::OutputError::serialize() {
 
 	unsigned int callstack_size = callstack.size();
 	unsigned int w_index = 11; // A friendly write index.
-	arr.resize(callstack_size + w_index); // callstack.size() + the next 11 headers.
+	arr.resize(callstack_size * 3 + w_index); // callstack.size() * 3 (due to the use of file, func, and line) + the next 11 headers.
 
 	arr[0] = hr;
 	arr[1] = min;
