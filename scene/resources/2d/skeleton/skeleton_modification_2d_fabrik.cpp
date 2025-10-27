@@ -162,7 +162,7 @@ void SkeletonModification2DFABRIK::_execute(float p_delta) {
 		final_bone2d_angle = target_global_pose.get_rotation();
 	}
 	Vector2 final_bone2d_direction = Vector2(Math::cos(final_bone2d_angle), Math::sin(final_bone2d_angle));
-	float final_bone2d_length = final_bone2d_node->get_length() * MIN(final_bone2d_node->get_global_scale().x, final_bone2d_node->get_global_scale().y);
+	float final_bone2d_length = final_bone2d_node->get_length() * MIN(final_bone2d_node->get_global_scale().abs().x, final_bone2d_node->get_global_scale().abs().y);
 	float target_distance = (final_bone2d_node->get_global_position() + (final_bone2d_direction * final_bone2d_length)).distance_to(target->get_global_position());
 	chain_iterations = 0;
 
@@ -231,6 +231,9 @@ void SkeletonModification2DFABRIK::chain_backwards() {
 	float final_bone2d_angle = final_bone2d_trans.get_rotation();
 	if (fabrik_data_chain[final_joint_index].use_target_rotation) {
 		final_bone2d_angle = target_global_pose.get_rotation();
+	}
+	if (final_bone2d_node->get_global_scale().sign().x != final_bone2d_node->get_global_scale().sign().y) {
+		final_bone2d_angle *= -1;
 	}
 	Vector2 final_bone2d_direction = Vector2(Math::cos(final_bone2d_angle), Math::sin(final_bone2d_angle));
 	float final_bone2d_length = final_bone2d_node->get_length() * MIN(final_bone2d_node->get_global_scale().x, final_bone2d_node->get_global_scale().y);
