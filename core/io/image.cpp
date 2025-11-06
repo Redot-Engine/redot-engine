@@ -2359,9 +2359,11 @@ void Image::initialize_data(const char **p_xpm) {
 			} break;
 			case READING_PIXELS: {
 				int y = line - colormap_size - 1;
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wstringop-overflow=0"
+#ifdef __MINGW32__
+				// False positive only with MinGW-GCC. Don't silence for regular GCC/Clang
+				// as this is code that _could_ exhibit actual overflow bugs.
+				GODOT_GCC_WARNING_PUSH
+				GODOT_GCC_PRAGMA(GCC diagnostic warning "-Wstringop-overflow=0")
 #endif
 				for (int x = 0; x < size_width; x++) {
 					char pixelstr[6] = { 0, 0, 0, 0, 0, 0 };
@@ -2377,8 +2379,8 @@ void Image::initialize_data(const char **p_xpm) {
 					}
 					_put_pixelb(x, y, pixel_size, data_write, pixel);
 				}
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
+#ifdef __MINGW32__
+				GODOT_GCC_WARNING_POP
 #endif
 
 				if (y == (size_height - 1)) {
