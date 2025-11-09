@@ -392,7 +392,7 @@ class Godot private constructor(val context: Context) {
 			}
 		} else {
 			if (rootView.rootWindowInsets != null) {
-				if (!useImmersive.get() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)) {
+				if (!useImmersive.get()) {
 					val windowInsets = WindowInsetsCompat.toWindowInsetsCompat(rootView.rootWindowInsets)
 					val insets = windowInsets.getInsets(getInsetType())
 					rootView.setPadding(insets.left, insets.top, insets.right, insets.bottom)
@@ -401,8 +401,7 @@ class Godot private constructor(val context: Context) {
 
 			ViewCompat.setOnApplyWindowInsetsListener(rootView) { v: View, insets: WindowInsetsCompat ->
 				v.post {
-					if (useImmersive.get() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-						// Fixes issue where padding remained visible in immersive mode on some devices.
+					if (useImmersive.get()) {
 						v.setPadding(0, 0, 0, 0)
 					} else {
 						val windowInsets = insets.getInsets(getInsetType())
