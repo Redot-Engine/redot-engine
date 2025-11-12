@@ -52,7 +52,7 @@ class AnimationLibrary : public Resource {
 
 	void _animation_changed(const StringName &p_name);
 
-	friend class AnimationMixer; ///< For faster access.
+	friend class AnimationMixer; // For faster access.
 	RBMap<StringName, Ref<Animation>, StringName::AlphCompare> animations;
 
 protected:
