@@ -2847,6 +2847,10 @@ void fragment_shader(in SceneData scene_data) {
 	frag_color.rgb = mix(frag_color.rgb, fog.rgb, fog.a);
 #endif //!FOG_DISABLED
 
+#if defined(PREMUL_ALPHA_USED) && !defined(MODE_RENDER_DEPTH)
+	frag_color.rgb *= premul_alpha;
+#endif //PREMUL_ALPHA_USED
+
 #endif //MODE_SEPARATE_SPECULAR
 
 #endif //MODE_RENDER_DEPTH
@@ -2859,10 +2863,6 @@ void fragment_shader(in SceneData scene_data) {
 
 	motion_vector = prev_position_uv - position_uv;
 #endif
-
-#if defined(PREMUL_ALPHA_USED) && !defined(MODE_RENDER_DEPTH)
-	frag_color.rgb *= premul_alpha;
-#endif //PREMUL_ALPHA_USED
 }
 
 void main() {
