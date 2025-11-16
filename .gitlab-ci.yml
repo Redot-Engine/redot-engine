@@ -1,13 +1,11 @@
 stages:
   - build
-  - merge_mac
-  - sign
-  - push_nuget
+  - package
 
 .template-build:
   tags: [ docker ]
   rules:
-    - if: $DO_RELEASE == "True"
+    - if: $DO_RELEASE == "true"
   before_script:
     - export SCONS="scons -j$(nproc) verbose=no warnings=no progress=no"
     - export BUILD_NAME="official"
@@ -17,7 +15,8 @@ stages:
     - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS target=$TARGET
     - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE/
   artifacts:
-    expire_in: 3 hours
+    expire_in: 3 days
+    public: false
     paths:
       - out/$PLATFORM/$ARCH/$TYPE
 
@@ -93,18 +92,21 @@ stages:
   script:
     - !reference [.build-release-template, script]
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates
 
 .Template-Release-Template-Linux-Mono:
   extends: .Template-Linux
+  needs: [ linux-editor-x64-mono ]
   rules:
     - if: $DO_RELEASE == "true"
   script:
     - !reference [.build-release-template-mono, script]
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates-mono
 
@@ -143,7 +145,8 @@ stages:
   variables:
     PLATFORM: "windows"
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates
 
@@ -160,7 +163,8 @@ stages:
   variables:
     PLATFORM: "windows"
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates-mono
 
@@ -168,7 +172,7 @@ stages:
 .Template-macos:
   extends: .template-build
   rules:
-    - if: $DO_RELEASE == "True"
+    - if: $DO_RELEASE == "true"
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
   before_script:
     - !reference [ .template-build, before_script ]
@@ -179,7 +183,7 @@ stages:
 .Template-macos-mono:
   extends: .template-build-mono
   rules:
-    - if: $DO_RELEASE == "True"
+    - if: $DO_RELEASE == "true"
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
   before_script:
     - !reference [ .template-build-mono, before_script ]
@@ -190,7 +194,7 @@ stages:
 .Template-Release-Template-macos:
   extends: .template-build
   rules:
-    - if: $DO_RELEASE == "True"
+    - if: $DO_RELEASE == "true"
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
   before_script:
     - !reference [ .template-build, before_script ]
@@ -200,14 +204,15 @@ stages:
   variables:
     PLATFORM: "macos"
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates
 
 .Template-Release-Template-macos-mono:
   extends: .template-build-mono
   rules:
-    - if: $DO_RELEASE == "True"
+    - if: $DO_RELEASE == "true"
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
   before_script:
     - !reference [ .template-build-mono, before_script ]
@@ -217,7 +222,8 @@ stages:
   variables:
     PLATFORM: "macos"
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates-mono
 
@@ -250,7 +256,8 @@ stages:
   script:
     - !reference [ .build-release-template, script ]
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates/
 
@@ -282,7 +289,8 @@ stages:
   script:
     - !reference [ .build-release-template-mono, script ]
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates-mono/
 
@@ -300,7 +308,8 @@ stages:
     - ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=$PLATFORM
     - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE-mono/
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/$PLATFORM/$ARCH/$TYPE-mono
       - mono-glue/
@@ -310,7 +319,7 @@ linux-editor-x64-mono:
   tags: [ docker ]
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
   rules:
-    - if: $DO_RELEASE == "True"
+    - when: always
   stage: build
   before_script:
     - export SCONS="scons -j$(nproc) verbose=no warnings=no progress=no"
@@ -356,7 +365,8 @@ linux-editor-x64-mono:
     TARGET: "editor"
     MONO: "-mono"
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/$PLATFORM/$ARCH/$TYPE-mono
       - mono-glue/
@@ -846,19 +856,58 @@ build-Macos-Debug-Template-arm64-Mono:
     TYPE: "template"
     TARGET: "template_debug"
 
+Merge-Mac-Editor:
+  stage: build
+  needs: [macos-editor-x64, macos-editor-arm64, macos-editor-arm64-mono, macos-editor-x64-mono]
+  tags: [docker]
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - LOCTOOLS="out/macos/universal/tools"
+    - LOCMONO="out/macos/universal/tools-mono"
+    - mkdir -p $LOCTOOLS
+    - mkdir -p "out/macos/universal/tools-mono"
+    - lipo -create "out/macos/x86_64/tools/redot.macos.editor.x86_64" "out/macos/arm64/tools/redot.macos.editor.arm64" -output "$LOCTOOLS/redot.macos.editor.universal"
+    - lipo -create "out/macos/x86_64/tools-mono/redot.macos.editor.x86_64.mono" "out/macos/arm64/tools-mono/redot.macos.editor.arm64.mono" -output "$LOCMONO/redot.macos.editor.universal.mono"
+    - cp -r out/macos/arm64/tools-mono/GodotSharp "$LOCMONO/"
+  artifacts:
+    public: false
+    paths:
+      - out/macos/*
+
+Merge-Mac-Templates:
+  stage: build
+  needs: [build-Macos-Debug-Template-arm64, build-Macos-Debug-Template-arm64-Mono, build-Macos-Debug-Template-x64, build-Macos-Debug-Template-x64-Mono, build-Macos-Release-Template-arm64, build-Macos-Release-Template-arm64-Mono, build-Macos-Release-Template-x64, build-Macos-Release-Template-x64-Mono]
+  tags: [docker]
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
+  script:
+    - lipo -create out/templates/redot.macos.template_debug.x86_64 out/templates/redot.macos.template_debug.arm64 -output out/templates/redot.macos.template_debug.universal
+    - lipo -create out/templates/redot.macos.template_release.x86_64 out/templates/redot.macos.template_release.arm64 -output out/templates/redot.macos.template_release.universal
+    - lipo -create out/templates-mono/redot.macos.template_debug.x86_64.mono out/templates-mono/redot.macos.template_debug.arm64.mono -output out/templates-mono/redot.macos.template_debug.universal.mono
+    - lipo -create out/templates-mono/redot.macos.template_release.x86_64.mono out/templates-mono/redot.macos.template_release.arm64.mono -output out/templates-mono/redot.macos.template_release.universal.mono
+  artifacts:
+    public: false
+    paths:
+      - out/templates/*
+      - out/templates-mono/*
+
 # -- Build Web Template
 
 Web-Release-Template:
   stage: build
   tags: [docker]
   rules:
-    - if: $DO_RELEASE == "True"
+    - if: $DO_RELEASE == "true"
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-web:latest
   script:
     - export BUILD_NAME="official"
     - /root/scripts/buildWeb.sh
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates/
 # --Build Android Targets --
@@ -895,7 +944,8 @@ Android-Release-Template:
     - cp bin/*.apk out/templates/
     - cp bin/*.aar out/templates/
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates
 
@@ -936,7 +986,8 @@ Android-Release-Template-Mono:
     - cp bin/*.apk out/templates-mono/
     - cp bin/*.aar out/templates-mono/
   artifacts:
-    expire_in: 3 hours
+    public: false
+    expire_in: 3 days
     paths:
       - out/templates-mono
 
@@ -1006,48 +1057,18 @@ build-ios-Release-Template-arm64-Mono:
 
 build-ios-Debug-Template-arm64-Mono:
   stage: build
-  extends: .Template-Ios
+  extends: .Template-Ios-Mono
   variables:
     ARCH: "arm64"
     TYPE: "iPhoneOS"
     TARGET: "template_debug"
-# MERGE STAGE
 
-Merge-Mac-Editor:
-  stage: merge_mac
-  tags: [docker]
-  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
-  script:
-    - LOCTOOLS="out/macos/universal/tools"
-    - LOCMONO="out/macos/universal/tools-mono"
-    - mkdir -p $LOCTOOLS
-    - mkdir -p "out/macos/universal/tools-mono"
-    - lipo -create "out/macos/x86_64/tools/redot.macos.editor.x86_64" "out/macos/arm64/tools/redot.macos.editor.arm64" -output "$LOCTOOLS/redot.macos.editor.universal"
-    - lipo -create "out/macos/x86_64/tools-mono/redot.macos.editor.x86_64.mono" "out/macos/arm64/tools-mono/redot.macos.editor.arm64.mono" -output "$LOCMONO/redot.macos.editor.universal.mono"
-    - cp -r out/macos/arm64/tools-mono/GodotSharp "$LOCMONO/"
-  artifacts:
-    paths:
-      - out/macos/*
-
-Merge-Mac-Templates:
-  stage: merge_mac
-  tags: [docker]
-  rules:
-    - if: $DO_RELEASE == "true"
-  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
-  script:
-    - lipo -create out/templates/redot.macos.template_debug.x86_64 out/templates/redot.macos.template_debug.arm64 -output out/templates/redot.macos.template_debug.universal
-    - lipo -create out/templates/redot.macos.template_release.x86_64 out/templates/redot.macos.template_release.arm64 -output out/templates/redot.macos.template_release.universal
-    - lipo -create out/templates-mono/redot.macos.template_debug.x86_64.mono out/templates-mono/redot.macos.template_debug.arm64.mono -output out/templates-mono/redot.macos.template_debug.universal.mono
-    - lipo -create out/templates-mono/redot.macos.template_release.x86_64.mono out/templates-mono/redot.macos.template_release.arm64.mono -output out/templates-mono/redot.macos.template_release.universal.mono
-  artifacts:
-    paths:
-      - out/templates/*
-      - out/templates-mono/*
 
 sign-mac-editor:
-  stage: sign
+  stage: build
+  needs: [Merge-Mac-Editor]
   rules:
+    - if: $DO_RELEASE == "true"
     - if: $SIGN_MAC == "true"
   tags: [macos]
   script:
@@ -1133,18 +1154,20 @@ sign-mac-editor:
         echo "✅ ${_app_path} signed and notarized."
       }
 
-    # Example: sign the universal binaries
     - sign_macos "$(pwd)/out/macos/universal/tools" "redot.macos.editor.universal" 0
 
   artifacts:
+    public: false
     paths:
-      - out/macos/*
-    expire_in: 3 hours
+      - out/macos/universal/tools/signed/*
+    expire_in: 3 days
 
 sign-mac-editor-mono:
-  stage: sign
+  stage: build
+  needs: [Merge-Mac-Editor]
   rules:
-     - if: $SIGN_MAC == "true"
+    - if: $DO_RELEASE == "true"
+    - if: $SIGN_MAC == "true"
   tags: [macos]
   script:
     - set -e
@@ -1236,14 +1259,17 @@ sign-mac-editor-mono:
     - sign_macos "$(pwd)/out/macos/universal/tools-mono" "redot.macos.editor.universal.mono" 1
 
   artifacts:
+    public: false
     paths:
-      - out/macos/*
-    expire_in: 3 hours
+      - out/macos/universal/tools-mono/signed/*
+    expire_in: 3 days
 
 sign-mac-templates:
-  stage: sign
+  stage: build
+  needs: [Merge-Mac-Templates]
   rules:
-     - if: $SIGN_MAC == "true"
+    - if: $DO_RELEASE == "true"
+    - if: $SIGN_MAC == "true"
   tags: [ macos ]
   script:
     - set -e
@@ -1281,14 +1307,84 @@ sign-mac-templates:
     - sign_macos 1
 
   artifacts:
+    public: false
     paths:
-      - out/macos/*
-    expire_in: 3 hours
+      - out/templates/*
+      - out/templates-mono/*
+    expire_in: 3 days
 
-pushNuget:
-  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+package-builds:
+  stage: package
   rules:
     - if: $DO_RELEASE == "true"
-  before_script:
-    - cd out/linuxbsd/x86_64/tools-mono/GodotSharp/Tools
-    - dotnet nuget push YourPackage.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+  tags:
+    - docker
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  script:
+    - mkdir releases/
+    - export RELEASE_DIR="$(pwd)/releases"
+    - pushd out/linuxbsd/x86_64/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_x64.zip" ./*
+    - popd
+    - pushd out/linuxbsd/arm64/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_arm64.zip" ./*
+    - popd
+    - pushd out/linuxbsd/x86_32/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_x86.zip" ./*
+    - popd
+    - pushd out/linuxbsd/arm32/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_arm32.zip" ./*
+    - popd
+    - pushd out/linuxbsd/x86_64/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_mono_x64.zip" ./*
+    - popd
+    - pushd out/linuxbsd/arm64/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_mono_arm64.zip" ./*
+    - popd
+    - pushd out/linuxbsd/x86_32/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_mono_x86.zip" ./*
+    - popd
+    - pushd out/linuxbsd/arm32/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_mono_arm32.zip" ./*
+    - popd
+    - pushd out/windows/x86_64/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_windows_win64.zip" ./*
+    - popd
+    - pushd out/windows/arm64/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_windows_arm64.zip" ./*
+    - popd
+    - pushd out/windows/x86_32/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_windows_win32.zip" ./*
+    - popd
+    - pushd out/windows/x86_64/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_windows_mono_win64.zip" ./*
+    - popd
+    - pushd out/windows/arm64/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_windows_mono_arm64.zip" ./*
+    - popd
+    - pushd out/windows/x86_32/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_windows_mono_win32.zip" ./*
+    - popd
+    - mv out/macos/universal/tools/signed/redot.macos.editor.universal_stapled.zip releases/Redot_v${VERSIONSTRING}_macos_universal.zip
+    - mv out/macos/universal/tools-mono/signed/redot.macos.editor.universal.mono_stapled.zip releases/Redot_v${VERSIONSTRING}_macos_mono_universal.zip
+    - pushd out/templates-mono/
+    - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_mono_export_templates.zip ./*
+    - popd
+    - pushd out/templates/
+    - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_export_templates.zip ./*
+    - popd
+    - mv releases/Redot_v${VERSIONSTRING}_mono_export_templates.zip releases/Redot_v${VERSIONSTRING}_mono_export_templates.tpz
+    - mv releases/Redot_v${VERSIONSTRING}_export_templates.zip releases/Redot_v${VERSIONSTRING}_export_templates.tpz
+  artifacts:
+    expire_in: 3 days
+    paths:
+      - releases/*
+pushNuget:
+  stage: package
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  tags: [docker]
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - cd out/linuxbsd/x86_64/tools-mono/GodotSharp/Tools/nupkgs
+    - dotnet nuget push "./*.nupkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
