@@ -285,6 +285,9 @@ def generate_sdk_package_versions():
         if match:
             pos = match.start()
             version_status = version_status[:pos] + "." + version_status[pos:]
+        else:
+            version_status = f"{version_status}.{version_info['status_version']}"
+
         version_str += "-" + version_status
 
     import version
