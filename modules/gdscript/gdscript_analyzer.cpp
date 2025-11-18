@@ -2017,7 +2017,7 @@ void GDScriptAnalyzer::resolve_class_uses(GDScriptParser::ClassNode *p_class, co
 
 		// Store references to used traits for type checks.
 		p_class->traits_fqtn.append(trait->fqcn);
-		for (String other_trait_fqcn : trait->traits_fqtn) {
+		for (StringName other_trait_fqcn : trait->traits_fqtn) {
 			if (!p_class->traits_fqtn.has(other_trait_fqcn)) {
 				p_class->traits_fqtn.append(other_trait_fqcn);
 			}
@@ -3239,6 +3239,8 @@ void GDScriptAnalyzer::update_const_expression_builtin_type(GDScriptParser::Expr
 	p_expression->set_datatype(p_type);
 }
 
+// When an array literal is stored (or passed as function argument) to a typed context, we then assume the array is typed.
+// This function determines which type is that (if any).
 void GDScriptAnalyzer::update_array_literal_element_type(GDScriptParser::ArrayNode *p_array, const GDScriptParser::DataType &p_element_type) {
 	GDScriptParser::DataType expected_type = p_element_type;
 	expected_type.container_element_types.clear(); // Nested types (like `Array[Array[int]]`) are not currently supported.
@@ -3268,6 +3270,8 @@ void GDScriptAnalyzer::update_array_literal_element_type(GDScriptParser::ArrayNo
 	p_array->set_datatype(array_type);
 }
 
+// When a dictionary literal is stored (or passed as function argument) to a typed context, we then assume the dictionary is typed.
+// This function determines which type is that (if any).
 void GDScriptAnalyzer::update_dictionary_literal_element_type(GDScriptParser::DictionaryNode *p_dictionary, const GDScriptParser::DataType &p_key_element_type, const GDScriptParser::DataType &p_value_element_type) {
 	GDScriptParser::DataType expected_key_type = p_key_element_type;
 	GDScriptParser::DataType expected_value_type = p_value_element_type;
@@ -3575,7 +3579,13 @@ void GDScriptAnalyzer::reduce_binary_op(GDScriptParser::BinaryOpNode *p_binary_o
 	}
 
 #ifdef DEBUG_ENABLED
-	if (p_binary_op->variant_op == Variant::OP_DIVIDE && left_type.builtin_type == Variant::INT && right_type.builtin_type == Variant::INT) {
+	if (p_binary_op->variant_op == Variant::OP_DIVIDE &&
+			(left_type.builtin_type == Variant::INT ||
+					left_type.builtin_type == Variant::VECTOR2I ||
+					left_type.builtin_type == Variant::VECTOR3I ||
+					left_type.builtin_type == Variant::VECTOR4I) &&
+			(right_type.builtin_type == Variant::INT ||
+					right_type.builtin_type == left_type.builtin_type)) {
 		parser->push_warning(p_binary_op, GDScriptWarning::INTEGER_DIVISION);
 	}
 #endif // DEBUG_ENABLED
@@ -4271,8 +4281,22 @@ void GDScriptAnalyzer::reduce_cast(GDScriptParser::CastNode *p_cast) {
 				cast_type.get_container_element_type_or_variant(0), cast_type.get_container_element_type_or_variant(1));
 	}
 
-	if (p_cast->operand->get_datatype().kind == GDScriptParser::DataType::TRAIT || cast_type.kind == GDScriptParser::DataType::TRAIT) {
-		push_error(vformat(R"(Invalid cast. Cannot convert from "%s" to "%s".)", p_cast->operand->get_datatype().to_string(), cast_type.to_string()), p_cast->cast_type);
+	if ((p_cast->operand->get_datatype().kind == GDScriptParser::DataType::CLASS || p_cast->operand->get_datatype().kind == GDScriptParser::DataType::TRAIT) && cast_type.kind == GDScriptParser::DataType::TRAIT) {
+		if (p_cast->operand->is_constant) {
+			push_error(vformat(R"(Invalid cast. Cannot convert from "%s" to "%s".)", p_cast->operand->get_datatype().to_string(), cast_type.to_string()), p_cast->cast_type);
+		} else {
+			GDScriptParser::DataType operand_type = p_cast->operand->get_datatype();
+			bool is_using_trait = false;
+			if (operand_type.class_type && cast_type.class_type) {
+				is_using_trait = operand_type.class_type->traits_fqtn.has(cast_type.class_type->fqcn);
+			}
+			if (operand_type.is_hard_type() && !is_using_trait && operand_type.kind != GDScriptParser::DataType::VARIANT) {
+				push_error(vformat(R"(Invalid cast. Cannot convert from "%s" to "%s".)", p_cast->operand->get_datatype().to_string(), cast_type.to_string()), p_cast->cast_type);
+			} else {
+				mark_node_unsafe(p_cast);
+			}
+		}
+		return;
 	}
 
 	if (!cast_type.is_variant()) {
@@ -4291,9 +4315,6 @@ void GDScriptAnalyzer::reduce_cast(GDScriptParser::CastNode *p_cast) {
 				valid = true;
 			} else if (op_type.kind == GDScriptParser::DataType::BUILTIN && cast_type.kind == GDScriptParser::DataType::BUILTIN) {
 				valid = Variant::can_convert_strict(op_type.builtin_type, cast_type.builtin_type);
-			} else if (cast_type.kind == GDScriptParser::DataType::TRAIT) {
-				mark_node_unsafe(p_cast);
-				valid = true;
 			} else if (op_type.kind != GDScriptParser::DataType::BUILTIN && cast_type.kind != GDScriptParser::DataType::BUILTIN) {
 				valid = is_type_compatible(cast_type, op_type) || is_type_compatible(op_type, cast_type);
 			}
@@ -5693,7 +5714,25 @@ void GDScriptAnalyzer::reduce_type_test(GDScriptParser::TypeTestNode *p_type_tes
 	}
 
 	if (test_type.kind == GDScriptParser::DataType::TRAIT) {
-		push_error("Can't test for traits.", p_type_test->operand);
+		bool is_using_trait = false;
+		if (operand_type.class_type && test_type.class_type) {
+			is_using_trait = operand_type.class_type->traits_fqtn.has(test_type.class_type->fqcn);
+		}
+
+		if (p_type_test->operand->is_constant) {
+			p_type_test->is_constant = true;
+			p_type_test->reduced_value = is_using_trait;
+
+			if (!p_type_test->reduced_value) {
+				push_error(vformat(R"(Expression is of type "%s" so it can't be of type "%s".)", operand_type.to_string(), test_type.to_string()), p_type_test->operand);
+			}
+		} else {
+			if (operand_type.is_hard_type() && !is_using_trait && operand_type.kind != GDScriptParser::DataType::VARIANT) {
+				push_error(vformat(R"(Expression is of type "%s" so it can't be of type "%s".)", operand_type.to_string(), test_type.to_string()), p_type_test->operand);
+			} else {
+				downgrade_node_type_source(p_type_test->operand);
+			}
+		}
 		return;
 	}
 
