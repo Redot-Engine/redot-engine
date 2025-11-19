@@ -1371,11 +1371,13 @@ package-builds:
     - pushd out/
     - touch ./templates/version.txt
     - echo "${VERSIONSTRING}-mono" | cat >> ./templates/version.txt
+    - rm ./templates/redot.macos.template*
     - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_export_templates.zip ./templates/*
     - rm -rf ./templates/
     - mv ./templates-mono ./templates/
     - touch ./templates/version.txt
     - echo "${VERSIONSTRING}" | cat >> ./templates/version.txt
+    - rm ./templates/redot.macos.template*
     - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_mono_export_templates.zip ./templates/*
     - popd
     - mv releases/Redot_v${VERSIONSTRING}_mono_export_templates.zip releases/Redot_v${VERSIONSTRING}_mono_export_templates.tpz
