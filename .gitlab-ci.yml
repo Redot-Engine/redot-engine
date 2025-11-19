@@ -340,6 +340,26 @@ stages:
       - out/$PLATFORM/$ARCH/$TYPE-mono
       - mono-glue/
 
+# create tarball for release
+create-tarball:
+  tags: [ docker ]
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  rules:
+    - when: always
+  script:
+    - TARBALL_NAME="redot-${VERSION_STRING}.tar.xz"
+    - FOLDER_NAME="redot-${VERSION_STRING}"
+    - mkdir $FOLDER_NAME
+    - cp -a . ./$FOLDER_NAME/
+    - rm -rf "${FOLDER_NAME}/${FOLDER_NAME}"
+    - mkdir -p out/
+    - tar -cJf "out/${TARBALL_NAME}" "${FOLDER_NAME}"
+    - sha256sum "out/${TARBALL_NAME}" > "out/${TARBALL_NAME}.sha256"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/
 # -- Build the Linux Editors --
 linux-editor-x64-mono:
   tags: [ docker ]
@@ -1356,7 +1376,10 @@ package-builds:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
   script:
     - mkdir releases/
-    - export RELEASE_DIR="$(pwd)/releases"
+    - RELEASE_DIR="$(pwd)/releases"
+    - TARBALL_NAME="redot-${VERSION_STRING}.tar.xz"
+    - cp "out/${TARBALL_NAME}" "${RELEASE_DIR}/${TARBALL_NAME}"
+    - cp "out/${TARBALL_NAME}.sha256" "${RELEASE_DIR}/${TARBALL_NAME}.sha256"
     - pushd out/linuxbsd/x86_64/tools/
     - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_x64.zip" ./*
     - popd
