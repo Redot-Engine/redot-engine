@@ -1368,9 +1368,13 @@ package-builds:
     - mv out/macos/universal/tools/signed/redot.macos.editor.universal_stapled.zip releases/Redot_v${VERSIONSTRING}_macos_universal.zip
     - mv out/macos/universal/tools-mono/signed/redot.macos.editor.universal.mono_stapled.zip releases/Redot_v${VERSIONSTRING}_macos_mono_universal.zip
     - pushd out/templates-mono/
+    - touch version.txt
+    - echo "${VERSIONSTRING}" | cat >> version.txt
     - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_mono_export_templates.zip ./*
     - popd
     - pushd out/templates/
+    - touch version.txt
+    - echo "${VERSIONSTRING}-mono" | cat >> version.txt
     - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_export_templates.zip ./*
     - popd
     - mv releases/Redot_v${VERSIONSTRING}_mono_export_templates.zip releases/Redot_v${VERSIONSTRING}_mono_export_templates.tpz
