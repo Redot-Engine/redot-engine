@@ -1439,6 +1439,16 @@ package-builds:
     - popd
     - mv releases/Redot_v${VERSIONSTRING}_mono_export_templates.zip releases/Redot_v${VERSIONSTRING}_mono_export_templates.tpz
     - mv releases/Redot_v${VERSIONSTRING}_export_templates.zip releases/Redot_v${VERSIONSTRING}_export_templates.tpz
+    - touch SHA512-SUMS.txt
+    - |
+      for f in releases/*; do
+          # Only process regular files
+          [ -f "$f" ] || continue
+
+          # Compute the hash and append it
+          sha512sum "$f" >> SHA512-SUMS.txt
+      done
+     - mv SHA512-SUMS.txt releases/SHA512-SUMS.txt
   artifacts:
     expire_in: 3 days
     paths:
