@@ -91,6 +91,9 @@ stages:
     - if: $DO_RELEASE == "true"
   script:
     - !reference [.build-release-template, script]
+  after_script:
+    - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
+    - mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}" "out/templates/linux_${FRIENDLY_TARGET}.${ARCH}"
   artifacts:
     public: false
     expire_in: 3 days
@@ -104,6 +107,9 @@ stages:
     - if: $DO_RELEASE == "true"
   script:
     - !reference [.build-release-template-mono, script]
+  after_script:
+    - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
+    - mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.mono" "out/templates/linux_${FRIENDLY_TARGET}.${ARCH}"
   artifacts:
     public: false
     expire_in: 3 days
@@ -142,6 +148,16 @@ stages:
     - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
   script:
     - !reference [ .build-release-template, script ]
+  after_script:
+    - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
+    - |
+      if [ "$ARCH" == "arm64" ]; then
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.exe" "out/templates/windows_${FRIENDLY_TARGET}.${ARCH}.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.console.exe" "out/templates/windows_${FRIENDLY_TARGET}.${ARCH}.console.exe"
+      else
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.exe" "out/templates/linux.${FRIENDLY_TARGET}.${ARCH}.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.console.exe" "out/templates/linux.${FRIENDLY_TARGET}.${ARCH}.console.exe"
+      fi
   variables:
     PLATFORM: "windows"
   artifacts:
@@ -160,6 +176,16 @@ stages:
     - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
   script:
     - !reference [ .build-release-template-mono, script ]
+  after_script:
+    - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
+    - |
+      if [ "$ARCH" == "arm64" ]; then
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.exe" "out/templates/windows_${FRIENDLY_TARGET}.${ARCH}.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.console.exe" "out/templates/windows_${FRIENDLY_TARGET}.${ARCH}.console.exe"
+      else
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.exe" "out/templates/linux.${FRIENDLY_TARGET}.${ARCH}.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.console.exe" "out/templates/linux.${FRIENDLY_TARGET}.${ARCH}.console.exe"
+      fi
   variables:
     PLATFORM: "windows"
   artifacts:
@@ -905,6 +931,14 @@ Web-Release-Template:
   script:
     - export BUILD_NAME="official"
     - /root/scripts/buildWeb.sh
+    - mv "out/templates/godot.web.template_debug.wasm32.zip" "out/templates/web_debug.zip"
+    - mv "out/templates/godot.web.template_release.wasm32.zip" "out/templates/web_release.zip"
+    - mv "out/templates/godot.web.template_debug.wasm32.dlink.zip" "out/templates/web_dlink_debug.zip"
+    - mv "out/templates/godot.web.template_release.wasm32.dlink.zip" "out/templates/web_dlink_release.zip"
+    - mv "out/templates/godot.web.template_debug.wasm32.nothreads.zip" "out/templates/web_nothreads_debug.zip"
+    - mv "out/templates/godot.web.template_release.wasm32.nothreads.zip" "out/templates/web_nothreads_release.zip"
+    - mv "out/templates/godot.web.template_debug.wasm32.nothreads.dlink.zip" "out/templates/web_dlink_nothreads_debug.zip"
+    - mv "out/templates/godot.web.template_release.wasm32.nothreads.dlink.zip" "out/templates/web_dlink_nothreads_release.zip"
   artifacts:
     public: false
     expire_in: 3 days
@@ -1297,7 +1331,7 @@ sign-mac-templates:
         codesign --force -s - \
         --options=linker-signed \
         -v macos_template.app/Contents/MacOS/*
-        zip -r ../out/templates${_mono_prefix}/macos_signed.zip macos_template.app
+        zip -r ../out/templates${_mono_prefix}/macos.zip macos_template.app
         popd
         rm -rf tmp/
       }
