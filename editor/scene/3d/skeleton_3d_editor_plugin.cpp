@@ -453,14 +453,13 @@ void Skeleton3DEditor::reset_pose(const bool p_all_bones) {
 	ur->commit_action();
 }
 
-void Skeleton3DEditor::insert_keys(const bool p_all_bones) {
+void Skeleton3DEditor::insert_keys(const bool p_all_bones, const bool p_enable_modifier) {
+	ERR_FAIL_COND(!skeleton);
+
 	AnimationTrackEditor *te = AnimationPlayerEditor::get_singleton()->get_track_editor();
 	bool is_read_only = te->is_read_only();
 	if (is_read_only) {
 		te->popup_read_only_dialog();
-		return;
-	}
-	if (!skeleton) {
 		return;
 	}
 	if (p_enable_modifier) {
@@ -491,6 +490,7 @@ void Skeleton3DEditor::_insert_keys(const bool p_all_bones) {
 	Node *root = EditorNode::get_singleton()->get_tree()->get_root();
 	String path = String(root->get_path_to(skeleton));
 
+	AnimationTrackEditor *te = AnimationPlayerEditor::get_singleton()->get_track_editor();
 	te->make_insert_queue();
 	for (int i = 0; i < bone_len; i++) {
 		const String name = skeleton->get_bone_name(i);
