@@ -109,7 +109,7 @@ stages:
     - !reference [.build-release-template-mono, script]
   after_script:
     - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
-    - mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.mono" "out/templates/linux_${FRIENDLY_TARGET}.${ARCH}"
+    - mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.mono" "out/templates-mono/linux_${FRIENDLY_TARGET}.${ARCH}"
   artifacts:
     public: false
     expire_in: 3 days
@@ -152,11 +152,11 @@ stages:
     - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
     - |
       if [ "$ARCH" == "arm64" ]; then
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.exe" "out/templates/windows_${FRIENDLY_TARGET}.${ARCH}.exe"
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.console.exe" "out/templates/windows_${FRIENDLY_TARGET}.${ARCH}.console.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.console.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
       else
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.exe" "out/templates/linux.${FRIENDLY_TARGET}.${ARCH}.exe"
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.console.exe" "out/templates/linux.${FRIENDLY_TARGET}.${ARCH}.console.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.console.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
       fi
   variables:
     PLATFORM: "windows"
@@ -180,11 +180,11 @@ stages:
     - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
     - |
       if [ "$ARCH" == "arm64" ]; then
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.exe" "out/templates/windows_${FRIENDLY_TARGET}.${ARCH}.exe"
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.console.exe" "out/templates/windows_${FRIENDLY_TARGET}.${ARCH}.console.exe"
+      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.console.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
       else
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.exe" "out/templates/linux.${FRIENDLY_TARGET}.${ARCH}.exe"
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.console.exe" "out/templates/linux.${FRIENDLY_TARGET}.${ARCH}.console.exe"
+      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.console.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
       fi
   variables:
     PLATFORM: "windows"
@@ -343,15 +343,43 @@ stages:
 # create tarball for release
 create-tarball:
   tags: [ docker ]
+  stage: build
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
   rules:
     - when: always
   script:
-    - TARBALL_NAME="redot-${VERSION_STRING}.tar.xz"
-    - FOLDER_NAME="redot-${VERSION_STRING}"
+    - major=$(grep -E '^major\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - minor=$(grep -E '^minor\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - patch=$(grep -E '^patch\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - status=$(grep -E '^status\s*=' version.py | sed -E "s/.*=\s*\"([^\"]+)\".*/\1/")
+    - status_version=$(grep -E '^status_version\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - echo "$major.$minor.$patch-$status.$status_version"
+    - |
+       if [ "$status" == "stable" ]
+         then
+         if [ "$patch" == "0" ]
+           then
+           export VERSIONSTRING="${major}.${minor}-stable"
+           export VERSIONTXT="${major}.${minor}.stable"
+         else
+           export VERSIONSTRING="${major}.${minor}.${patch}-stable"
+           export VERSIONTXT="${major}.${minor}.${patch}.stable"
+         fi
+        else
+         if [ "$patch" == "0" ]
+         then
+           export VERSIONSTRING="${major}.${minor}-${status}.${status_version}"
+           export VERSIONTXT="${major}.${minor}.${status}.${status_version}"
+         else
+           export VERSIONSTRING="${major}.${minor}.${patch}-${status}.${status_version}"
+           export VERSIONTXT="${major}.${minor}.${patch}.${status}.${status_version}"
+         fi
+       fi
+    - echo $VERSIONSTRING
+    - TARBALL_NAME="redot-${VERSIONSTRING}.tar.xz"
+    - FOLDER_NAME="redot-${VERSIONSTRING}"
     - mkdir $FOLDER_NAME
-    - cp -a . ./$FOLDER_NAME/
-    - rm -rf "${FOLDER_NAME}/${FOLDER_NAME}"
+    - rsync -a --exclude="${FOLDER_NAME}" ./ "${FOLDER_NAME}/"
     - mkdir -p out/
     - tar -cJf "out/${TARBALL_NAME}" "${FOLDER_NAME}"
     - sha256sum "out/${TARBALL_NAME}" > "out/${TARBALL_NAME}.sha256"
@@ -1037,7 +1065,8 @@ Android-Release-Template-Mono:
     - popd
     - ls bin/
     - cp bin/*.zip out/templates-mono/
-    - cp bin/*.apk out/templates-mono/
+    - cp bin/android_monoDebug.apk out/templates-mono/android_debug.apk
+    - cp bin/android_monoRelease.apk out/templates-mono/android_release.apk
     - cp bin/*.aar out/templates-mono/
   artifacts:
     public: false
@@ -1117,6 +1146,51 @@ build-ios-Debug-Template-arm64-Mono:
     TYPE: "iPhoneOS"
     TARGET: "template_debug"
 
+package-ios:
+  stage: build
+  tags: [docker]
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  needs:
+    - build-ios-Release-Template-arm64
+    - build-ios-Release-Template-arm64-Mono
+    - build-ios-Release-Template-x64
+    - build-ios-Release-Template-x64-Mono
+    - build-ios-Debug-Template-arm64
+    - build-ios-Debug-Template-arm64-Mono
+    - build-ios-Debug-Template-x64
+    - build-ios-Debug-Template-x64-Mono
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - /root/scripts/Fetch_Deps.sh "ios"
+    - echo "Packaging IOS"
+    - cp -r misc/dist/ios_xcode ios_xcode
+    - cp out/templates/libgodot.ios.template_release.x86_64.simulator.a ios_xcode/libgodot.ios.release.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+    - cp out/templates/libgodot.ios.template_debug.x86_64.simulator.a ios_xcode/libgodot.ios.debug.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+    - cp out/templates/libgodot.ios.template_release.arm64.a ios_xcode/libgodot.ios.release.xcframework/ios-arm64/libgodot.a
+    - cp out/templates/libgodot.ios.template_debug.arm64.a ios_xcode/libgodot.ios.debug.xcframework/ios-arm64/libgodot.a
+    - cp -r deps/moltenvk/MoltenVK/MoltenVK.xcframework ios_xcode/
+    - rm -rf ios_xcode/MoltenVK.xcframework/{macos,tvos}*
+    - cd ios_xcode
+    - zip -q -9 -r "../out/templates/ios.zip" *
+    - cd ..
+    - rm -rf ios_xcode
+    - echo "Done packaging IOS"
+    - echo "Packaging IOS Mono"
+    - cp -r misc/dist/ios_xcode ios_xcode
+    - cp out/templates-mono/libgodot.ios.template_release.x86_64.simulator.a ios_xcode/libgodot.ios.release.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+    - cp out/templates-mono/libgodot.ios.template_debug.x86_64.simulator.a ios_xcode/libgodot.ios.debug.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+    - cp out/templates-mono/libgodot.ios.template_release.arm64.a ios_xcode/libgodot.ios.release.xcframework/ios-arm64/libgodot.a
+    - cp out/templates-mono/libgodot.ios.template_debug.arm64.a ios_xcode/libgodot.ios.debug.xcframework/ios-arm64/libgodot.a
+    - cp -r deps/moltenvk/MoltenVK/MoltenVK.xcframework ios_xcode/
+    - rm -rf ios_xcode/MoltenVK.xcframework/{macos,tvos}*
+    - cd ios_xcode
+    - zip -q -9 -r "../out/templates-mono/ios.zip" *
+    - cd ..
+    - rm -rf ios_xcode
+  artifacts:
+    expire_in: 3 days,
+    paths: [ out/templates/ios.zip, out/templates-mono/ios.zip ]
 
 sign-mac-editor:
   stage: build
@@ -1149,12 +1223,12 @@ sign-mac-editor:
         _macos_tmpdir="$(pwd)/tmp"
         _app_path="${_macos_tmpdir}/${_appname}"
         echo $_macos_tmpdir
-        echo $__app_path
+        echo $_app_path
         cp -r "misc/dist/macos/editor.entitlements" "${_macos_tmpdir}/"
         rm -rf "${_macos_tmpdir}/${_appname}"
         cp -r "misc/dist/macos_tools.app" "${_macos_tmpdir}/${_appname}"
         if [[ "${_is_mono}" == "1" ]]; then
-          cp -r "${_reldir}/GodotSharp/ " "${_macos_tmpdir}/${_appname}/Contents/Resources/GodotSharp"
+          cp -r "${_reldir}/GodotSharp/" "${_macos_tmpdir}/${_appname}/Contents/Resources/GodotSharp"
         fi
         ls "${_reldir}/"
         ls "${_macos_tmpdir}/${_appname}/"
@@ -1375,9 +1449,35 @@ package-builds:
     - docker
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
   script:
+    - major=$(grep -E '^major\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - minor=$(grep -E '^minor\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - patch=$(grep -E '^patch\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - status=$(grep -E '^status\s*=' version.py | sed -E "s/.*=\s*\"([^\"]+)\".*/\1/")
+    - status_version=$(grep -E '^status_version\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - |
+      if [ "$status" == "stable" ]
+      then
+        if [ "$patch" == "0" ]
+        then
+          export VERSIONSTRING="${major}.${minor}-stable"
+          export VERSIONTXT="${major}.${minor}.stable"
+        else
+          export VERSIONSTRING="${major}.${minor}.${patch}-stable"
+          export VERSIONTXT="${major}.${minor}.${patch}.stable"
+        fi
+      else
+        if [ "$patch" == "0" ]
+          then
+            export VERSIONSTRING="${major}.${minor}-${status}.${status_version}"
+            export VERSIONTXT="${major}.${minor}.${status}.${status_version}"
+          else
+            export VERSIONSTRING="${major}.${minor}.${patch}-${status}.${status_version}"
+            export VERSIONTXT="${major}.${minor}.${patch}.${status}.${status_version}"
+        fi
+      fi
     - mkdir releases/
     - RELEASE_DIR="$(pwd)/releases"
-    - TARBALL_NAME="redot-${VERSION_STRING}.tar.xz"
+    - TARBALL_NAME="redot-${VERSIONSTRING}.tar.xz"
     - cp "out/${TARBALL_NAME}" "${RELEASE_DIR}/${TARBALL_NAME}"
     - cp "out/${TARBALL_NAME}.sha256" "${RELEASE_DIR}/${TARBALL_NAME}.sha256"
     - pushd out/linuxbsd/x86_64/tools/
@@ -1424,17 +1524,18 @@ package-builds:
     - popd
     - mv out/macos/universal/tools/signed/redot.macos.editor.universal_stapled.zip releases/Redot_v${VERSIONSTRING}_macos_universal.zip
     - mv out/macos/universal/tools-mono/signed/redot.macos.editor.universal.mono_stapled.zip releases/Redot_v${VERSIONSTRING}_macos_mono_universal.zip
-    - popd
     - pushd out/
     - touch ./templates/version.txt
-    - echo "${VERSIONSTRING}-mono" | cat >> ./templates/version.txt
+    - echo "${VERSIONTXT}" | cat >> ./templates/version.txt
     - rm ./templates/redot.macos.template*
+    - rm ./templates/libgodot.ios*
     - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_export_templates.zip ./templates/*
     - rm -rf ./templates/
     - mv ./templates-mono ./templates/
     - touch ./templates/version.txt
-    - echo "${VERSIONSTRING}" | cat >> ./templates/version.txt
+    - echo "${VERSIONTXT}.mono" | cat >> ./templates/version.txt
     - rm ./templates/redot.macos.template*
+    - rm ./templates/libgodot.ios*
     - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_mono_export_templates.zip ./templates/*
     - popd
     - mv releases/Redot_v${VERSIONSTRING}_mono_export_templates.zip releases/Redot_v${VERSIONSTRING}_mono_export_templates.tpz
@@ -1448,7 +1549,7 @@ package-builds:
           # Compute the hash and append it
           sha512sum "$f" >> SHA512-SUMS.txt
       done
-     - mv SHA512-SUMS.txt releases/SHA512-SUMS.txt
+    - mv SHA512-SUMS.txt releases/SHA512-SUMS.txt
   artifacts:
     expire_in: 3 days
     paths:
