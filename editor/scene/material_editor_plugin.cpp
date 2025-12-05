@@ -456,7 +456,6 @@ bool StandardMaterial3DConversionPlugin::handles(const Ref<Resource> &p_resource
 Ref<Resource> StandardMaterial3DConversionPlugin::convert(const Ref<Resource> &p_resource) const {
 	Ref<StandardMaterial3D> mat = p_resource;
 	ERR_FAIL_COND_V(mat.is_null(), Ref<Resource>());
-	ERR_FAIL_COND_V(!mat->_is_initialized(), Ref<Resource>());
 
 	Ref<ShaderMaterial> smat;
 	smat.instantiate();
@@ -503,7 +502,6 @@ bool ORMMaterial3DConversionPlugin::handles(const Ref<Resource> &p_resource) con
 Ref<Resource> ORMMaterial3DConversionPlugin::convert(const Ref<Resource> &p_resource) const {
 	Ref<ORMMaterial3D> mat = p_resource;
 	ERR_FAIL_COND_V(mat.is_null(), Ref<Resource>());
-	ERR_FAIL_COND_V(!mat->_is_initialized(), Ref<Resource>());
 
 	Ref<ShaderMaterial> smat;
 	smat.instantiate();
@@ -550,7 +548,6 @@ bool ParticleProcessMaterialConversionPlugin::handles(const Ref<Resource> &p_res
 Ref<Resource> ParticleProcessMaterialConversionPlugin::convert(const Ref<Resource> &p_resource) const {
 	Ref<ParticleProcessMaterial> mat = p_resource;
 	ERR_FAIL_COND_V(mat.is_null(), Ref<Resource>());
-	ERR_FAIL_COND_V(!mat->_is_initialized(), Ref<Resource>());
 
 	Ref<ShaderMaterial> smat;
 	smat.instantiate();
