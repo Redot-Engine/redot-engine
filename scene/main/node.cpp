@@ -70,7 +70,7 @@ void Node::_notification(int p_notification) {
 				for (int i = 0; i < get_child_count(); i++) {
 					Node *child_node = get_child(i);
 					Window *child_wnd = Object::cast_to<Window>(child_node);
-					if (child_wnd && !child_wnd->is_embedded()) {
+					if (child_wnd && !(child_wnd->is_visible() && (child_wnd->is_embedded() || child_wnd->is_popup()))) {
 						continue;
 					}
 					if (child_node->is_part_of_edited_scene()) {
@@ -958,7 +958,7 @@ void Node::set_physics_interpolation_mode(PhysicsInterpolationMode p_mode) {
 }
 
 void Node::reset_physics_interpolation() {
-	if (is_inside_tree()) {
+	if (SceneTree::is_fti_enabled() && is_inside_tree()) {
 		propagate_notification(NOTIFICATION_RESET_PHYSICS_INTERPOLATION);
 
 		// If `reset_physics_interpolation()` is called explicitly by the user
@@ -1443,20 +1443,21 @@ void Node::_set_name_nocheck(const StringName &p_name) {
 
 void Node::set_name(const StringName &p_name) {
 	ERR_FAIL_COND_MSG(data.tree && !Thread::is_main_thread(), "Changing the name to nodes inside the SceneTree is only allowed from the main thread. Use `set_name.call_deferred(new_name)`.");
+	ERR_FAIL_COND(p_name.is_empty());
+
 	const StringName old_name = data.name;
+	if (data.unique_name_in_owner && data.owner) {
+		_release_unique_name_in_owner();
+	}
+
 	{
 		const String input_name_str = String(p_name);
-		ERR_FAIL_COND(input_name_str.is_empty());
 		const String validated_node_name_string = input_name_str.validate_node_name();
 		if (input_name_str == validated_node_name_string) {
 			data.name = p_name;
 		} else {
 			data.name = StringName(validated_node_name_string);
 		}
-	}
-
-	if (data.unique_name_in_owner && data.owner) {
-		_release_unique_name_in_owner();
 	}
 
 	if (data.parent) {
@@ -2108,6 +2109,14 @@ Window *Node::get_window() const {
 		return vp->get_base_window();
 	}
 	return nullptr;
+}
+
+Window *Node::get_non_popup_window() const {
+	Window *w = get_window();
+	while (w && w->is_popup()) {
+		w = w->get_parent_visible_window();
+	}
+	return w;
 }
 
 Window *Node::get_last_exclusive_window() const {
@@ -3755,8 +3764,9 @@ RID Node::get_accessibility_element() const {
 		return RID();
 	}
 	if (unlikely(data.accessibility_element.is_null())) {
-		if (get_window() && get_window()->get_window_id() != DisplayServer::INVALID_WINDOW_ID) {
-			data.accessibility_element = DisplayServer::get_singleton()->accessibility_create_element(get_window()->get_window_id(), DisplayServer::ROLE_CONTAINER);
+		Window *w = get_non_popup_window();
+		if (w && w->get_window_id() != DisplayServer::INVALID_WINDOW_ID && get_window()->is_visible()) {
+			data.accessibility_element = DisplayServer::get_singleton()->accessibility_create_element(w->get_window_id(), DisplayServer::ROLE_CONTAINER);
 		}
 	}
 	return data.accessibility_element;

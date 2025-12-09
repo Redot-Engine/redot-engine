@@ -954,6 +954,8 @@ public:
 		// If not supported, a fragment shader with only side effects (i.e., writes  to buffers, but doesn't output to attachments), may be optimized down to no-op by the GPU driver.
 		SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS,
 		SUPPORTS_BUFFER_DEVICE_ADDRESS,
+		SUPPORTS_IMAGE_ATOMIC_32_BIT,
+		SUPPORTS_VULKAN_MEMORY_MODEL,
 	};
 
 	enum SubgroupOperations {
@@ -987,7 +989,6 @@ protected:
 
 	static const uint32_t TEXTURE_SAMPLES_COUNT[TEXTURE_SAMPLES_MAX];
 
-	static uint32_t get_image_format_pixel_size(DataFormat p_format);
 	static void get_compressed_image_format_block_dimensions(DataFormat p_format, uint32_t &r_w, uint32_t &r_h);
 	uint32_t get_compressed_image_format_block_byte_size(DataFormat p_format) const;
 	static uint32_t get_compressed_image_format_pixel_rshift(DataFormat p_format);
@@ -1009,6 +1010,12 @@ protected:
 	static uint32_t get_format_vertex_size(DataFormat p_format);
 
 public:
+	/*****************/
+	/**** TEXTURE ****/
+	/*****************/
+
+	static uint32_t get_image_format_pixel_size(DataFormat p_format);
+
 	/****************/
 	/**** SHADER ****/
 	/****************/

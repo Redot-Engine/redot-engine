@@ -1067,13 +1067,14 @@ RID RenderingDevice::texture_create(const TextureFormat &p_format, const Texture
 #endif
 
 	if (data.size()) {
+		const bool use_general_in_copy_queues = driver->api_trait_get(RDD::API_TRAIT_USE_GENERAL_IN_COPY_QUEUES);
+		const RDD::TextureLayout dst_layout = use_general_in_copy_queues ? RDD::TEXTURE_LAYOUT_GENERAL : RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL;
 		for (uint32_t i = 0; i < format.array_layers; i++) {
-			_texture_initialize(id, i, data[i], immediate_flush);
+			_texture_initialize(id, i, data[i], dst_layout, immediate_flush);
 		}
 
 		if (texture.draw_tracker != nullptr) {
-			// Draw tracker can assume the texture will be in copy destination.
-			texture.draw_tracker->usage = RDG::RESOURCE_USAGE_COPY_TO;
+			texture.draw_tracker->usage = use_general_in_copy_queues ? RDG::RESOURCE_USAGE_GENERAL : RDG::RESOURCE_USAGE_COPY_TO;
 		}
 	}
 
@@ -1393,16 +1394,36 @@ uint32_t RenderingDevice::_texture_layer_count(Texture *p_texture) const {
 	}
 }
 
+uint32_t greatest_common_denominator(uint32_t a, uint32_t b) {
+	// Euclidean algorithm.
+	uint32_t t;
+	while (b != 0) {
+		t = b;
+		b = a % b;
+		a = t;
+	}
+
+	return a;
+}
+
+uint32_t least_common_multiple(uint32_t a, uint32_t b) {
+	if (a == 0 || b == 0) {
+		return 0;
+	}
+
+	return (a / greatest_common_denominator(a, b)) * b;
+}
+
 uint32_t RenderingDevice::_texture_alignment(Texture *p_texture) const {
 	uint32_t alignment = get_compressed_image_format_block_byte_size(p_texture->format);
 	if (alignment == 1) {
 		alignment = get_image_format_pixel_size(p_texture->format);
 	}
 
-	return STEPIFY(alignment, driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT));
+	return least_common_multiple(alignment, driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT));
 }
 
-Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer, const Vector<uint8_t> &p_data, bool p_immediate_flush) {
+Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer, const Vector<uint8_t> &p_data, RDD::TextureLayout p_dst_layout, bool p_immediate_flush) {
 	Texture *texture = texture_owner.get_or_null(p_texture);
 	ERR_FAIL_NULL_V(texture, ERR_INVALID_PARAMETER);
 
@@ -1436,7 +1457,6 @@ Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer, cons
 	TransferWorker *transfer_worker = nullptr;
 	const uint8_t *read_ptr = p_data.ptr();
 	uint8_t *write_ptr = nullptr;
-	const RDD::TextureLayout copy_dst_layout = driver->api_trait_get(RDD::API_TRAIT_USE_GENERAL_IN_COPY_QUEUES) ? RDD::TEXTURE_LAYOUT_GENERAL : RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL;
 	for (uint32_t pass = 0; pass < 2; pass++) {
 		const bool copy_pass = (pass == 1);
 		if (copy_pass) {
@@ -1459,7 +1479,7 @@ Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer, cons
 				tb.texture = texture->driver_id;
 				tb.dst_access = RDD::BARRIER_ACCESS_COPY_WRITE_BIT;
 				tb.prev_layout = RDD::TEXTURE_LAYOUT_UNDEFINED;
-				tb.next_layout = copy_dst_layout;
+				tb.next_layout = p_dst_layout;
 				tb.subresources.aspect = texture->barrier_aspect_flags;
 				tb.subresources.mipmap_count = texture->mipmaps;
 				tb.subresources.base_layer = p_layer;
@@ -1506,7 +1526,7 @@ Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer, cons
 					copy_region.texture_subresources.layer_count = 1;
 					copy_region.texture_offset = Vector3i(0, 0, z);
 					copy_region.texture_region_size = Vector3i(logic_width, logic_height, 1);
-					driver->command_copy_buffer_to_texture(transfer_worker->command_buffer, transfer_worker->staging_buffer, texture->driver_id, copy_dst_layout, copy_region);
+					driver->command_copy_buffer_to_texture(transfer_worker->command_buffer, transfer_worker->staging_buffer, texture->driver_id, p_dst_layout, copy_region);
 				}
 
 				staging_local_offset += to_allocate;
@@ -1525,7 +1545,7 @@ Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer, cons
 				RDD::TextureBarrier tb;
 				tb.texture = texture->driver_id;
 				tb.src_access = RDD::BARRIER_ACCESS_COPY_WRITE_BIT;
-				tb.prev_layout = copy_dst_layout;
+				tb.prev_layout = p_dst_layout;
 				tb.next_layout = RDD::TEXTURE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				tb.subresources.aspect = texture->barrier_aspect_flags;
 				tb.subresources.mipmap_count = texture->mipmaps;
@@ -3579,6 +3599,7 @@ RID RenderingDevice::uniform_set_create(const VectorView<RD::Uniform> &p_uniform
 
 		const Uniform &uniform = uniforms[uniform_idx];
 
+		ERR_FAIL_INDEX_V(uniform.uniform_type, RD::UNIFORM_TYPE_MAX, RID());
 		ERR_FAIL_COND_V_MSG(uniform.uniform_type != set_uniform.type, RID(),
 				"Mismatch uniform type for binding (" + itos(set_uniform.binding) + "), set (" + itos(p_shader_set) + "). Expected '" + SHADER_UNIFORM_NAMES[set_uniform.type] + "', supplied: '" + SHADER_UNIFORM_NAMES[uniform.uniform_type] + "'.");
 
@@ -6689,7 +6710,6 @@ Error RenderingDevice::initialize(RenderingContextDriver *p_context, DisplayServ
 	}
 
 	frame = 0;
-	frames.resize(frame_count);
 	max_timestamp_query_elements = GLOBAL_GET("debug/settings/profiler/max_timestamp_query_elements");
 
 	device = context->device_get(device_index);
@@ -6757,6 +6777,8 @@ Error RenderingDevice::initialize(RenderingContextDriver *p_context, DisplayServ
 
 	// Use the processor count as the max amount of transfer workers that can be created.
 	transfer_worker_pool_max_size = OS::get_singleton()->get_processor_count();
+
+	frames.resize(frame_count);
 
 	// Create data for all the frames.
 	for (uint32_t i = 0; i < frames.size(); i++) {
@@ -7981,6 +8003,7 @@ void RenderingDevice::_bind_methods() {
 	BIND_ENUM_CONSTANT(SUPPORTS_METALFX_SPATIAL);
 	BIND_ENUM_CONSTANT(SUPPORTS_METALFX_TEMPORAL);
 	BIND_ENUM_CONSTANT(SUPPORTS_BUFFER_DEVICE_ADDRESS);
+	BIND_ENUM_CONSTANT(SUPPORTS_IMAGE_ATOMIC_32_BIT);
 
 	BIND_ENUM_CONSTANT(LIMIT_MAX_BOUND_UNIFORM_SETS);
 	BIND_ENUM_CONSTANT(LIMIT_MAX_FRAMEBUFFER_COLOR_ATTACHMENTS);
@@ -8386,4 +8409,5 @@ static_assert(ENUM_MEMBERS_EQUAL(RD::CALLBACK_RESOURCE_USAGE_STORAGE_IMAGE_READ,
 static_assert(ENUM_MEMBERS_EQUAL(RD::CALLBACK_RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE, RDG::RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE));
 static_assert(ENUM_MEMBERS_EQUAL(RD::CALLBACK_RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE, RDG::RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE));
 static_assert(ENUM_MEMBERS_EQUAL(RD::CALLBACK_RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE, RDG::RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE));
+static_assert(ENUM_MEMBERS_EQUAL(RD::CALLBACK_RESOURCE_USAGE_GENERAL, RDG::RESOURCE_USAGE_GENERAL));
 static_assert(ENUM_MEMBERS_EQUAL(RD::CALLBACK_RESOURCE_USAGE_MAX, RDG::RESOURCE_USAGE_MAX));

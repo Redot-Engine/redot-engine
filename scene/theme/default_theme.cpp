@@ -33,12 +33,12 @@
 #include "default_theme.h"
 
 #include "core/io/image.h"
+#include "scene/resources/dpi_texture.h"
 #include "scene/resources/font.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/style_box_flat.h"
 #include "scene/resources/style_box_line.h"
-#include "scene/resources/svg_texture.h"
 #include "scene/resources/theme.h"
 #include "scene/scene_string_names.h"
 #include "scene/theme/default_theme_icons.gen.h"
@@ -81,8 +81,8 @@ static Ref<StyleBoxFlat> sb_expand(Ref<StyleBoxFlat> p_sbox, float p_left, float
 }
 
 // See also `editor_generate_icon()` in `editor/themes/editor_icons.cpp`.
-static Ref<SVGTexture> generate_icon(int p_index) {
-	return SVGTexture::create_from_string(default_theme_icons_sources[p_index], scale);
+static Ref<DPITexture> generate_icon(int p_index) {
+	return DPITexture::create_from_string(default_theme_icons_sources[p_index], scale);
 }
 
 static Ref<StyleBox> make_empty_stylebox(float p_margin_left = -1, float p_margin_top = -1, float p_margin_right = -1, float p_margin_bottom = -1) {
@@ -1132,7 +1132,7 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	preset_sb->set_anti_aliased(false);
 
 	theme->set_stylebox("preset_fg", "ColorPresetButton", preset_sb);
-	theme->set_stylebox("preset_focus", "ColorPicker", focus);
+	theme->set_stylebox("preset_focus", "ColorPresetButton", focus);
 	theme->set_icon("preset_bg", "ColorPresetButton", icons["mini_checkerboard"]);
 	theme->set_icon("overbright_indicator", "ColorPresetButton", icons["color_picker_overbright"]);
 
@@ -1206,6 +1206,10 @@ void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const 
 	theme->set_constant("strikethrough_alpha", "RichTextLabel", 50);
 
 	// Containers
+
+	theme->set_color("touch_dragger_color", "SplitContainer", Color(1, 1, 1, 0.3));
+	theme->set_color("touch_dragger_pressed_color", "SplitContainer", Color(1, 1, 1, 1));
+	theme->set_color("touch_dragger_hover_color", "SplitContainer", Color(1, 1, 1, 0.6));
 
 	theme->set_icon("h_touch_dragger", "SplitContainer", icons["h_dragger"]);
 	theme->set_icon("v_touch_dragger", "SplitContainer", icons["v_dragger"]);

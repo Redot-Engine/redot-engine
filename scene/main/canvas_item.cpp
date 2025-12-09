@@ -407,7 +407,7 @@ void CanvasItem::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_RESET_PHYSICS_INTERPOLATION: {
-			if (is_visible_in_tree() && is_physics_interpolated()) {
+			if (is_visible_in_tree() && is_physics_interpolated_and_enabled()) {
 				RenderingServer::get_singleton()->canvas_item_reset_physics_interpolation(canvas_item);
 			}
 		} break;
@@ -521,6 +521,7 @@ void CanvasItem::set_as_top_level(bool p_top_level) {
 	if (get_viewport()) {
 		get_viewport()->canvas_item_top_level_changed();
 	}
+	reset_physics_interpolation();
 }
 
 void CanvasItem::_top_level_changed() {

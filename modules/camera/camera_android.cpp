@@ -370,8 +370,6 @@ void CameraFeedAndroid::onImage(void *context, AImageReader *p_reader) {
 
 	// Release image
 	AImage_delete(image);
-
-	feed->emit_signal(SNAME("frame_changed"));
 }
 
 void CameraFeedAndroid::onSessionReady(void *context, ACameraCaptureSession *session) {
@@ -476,6 +474,7 @@ void CameraAndroid::update_feeds() {
 	}
 
 	ACameraManager_deleteCameraIdList(cameraIds);
+	emit_signal(SNAME(CameraServer::feeds_updated_signal_name));
 }
 
 void CameraAndroid::remove_all_feeds() {

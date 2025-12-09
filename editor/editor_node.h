@@ -35,8 +35,8 @@
 #include "core/object/script_language.h"
 #include "core/templates/safe_refcount.h"
 #include "editor/editor_data.h"
-#include "editor/editor_folding.h"
 #include "editor/plugins/editor_plugin.h"
+#include "editor/settings/editor_folding.h"
 
 typedef void (*EditorNodeInitCallback)();
 typedef void (*EditorPluginInitializeCallback)();
@@ -378,6 +378,7 @@ private:
 	Node *_last_instantiated_scene = nullptr;
 
 	ConfirmationDialog *confirmation = nullptr;
+	bool stop_project_confirmation = false;
 	Button *confirmation_button = nullptr;
 	ConfirmationDialog *save_confirmation = nullptr;
 	ConfirmationDialog *import_confirmation = nullptr;
@@ -452,7 +453,7 @@ private:
 	bool immediate_dialog_confirmed = false;
 	bool restoring_scenes = false;
 	bool settings_overrides_changed = false;
-	bool unsaved_cache = true;
+	bool unsaved_cache = false;
 
 	bool requested_first_scan = false;
 	bool waiting_for_first_scan = true;
@@ -600,6 +601,7 @@ private:
 	void _discard_changes(const String &p_str = String());
 	void _scene_tab_closed(int p_tab);
 	void _cancel_close_scene_tab();
+	void _cancel_confirmation();
 
 	void _prepare_save_confirmation_popup();
 
@@ -773,6 +775,7 @@ public:
 
 	static bool immediate_confirmation_dialog(const String &p_text, const String &p_ok_text = TTR("Ok"), const String &p_cancel_text = TTR("Cancel"), uint32_t p_wrap_width = 0);
 
+	static bool is_cmdline_mode();
 	static void cleanup();
 
 	EditorPluginList *get_editor_plugins_force_input_forwarding() { return editor_plugins_force_input_forwarding; }

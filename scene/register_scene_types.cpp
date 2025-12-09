@@ -137,6 +137,7 @@
 #if !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
 #include "scene/resources/navigation_mesh.h"
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
+#include "scene/resources/dpi_texture.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/particle_process_material.h"
 #include "scene/resources/placeholder_textures.h"
@@ -150,7 +151,6 @@
 #include "scene/resources/style_box_line.h"
 #include "scene/resources/style_box_texture.h"
 #include "scene/resources/surface_tool.h"
-#include "scene/resources/svg_texture.h"
 #include "scene/resources/syntax_highlighter.h"
 #include "scene/resources/text_line.h"
 #include "scene/resources/text_paragraph.h"
@@ -248,6 +248,11 @@
 #include "scene/3d/retarget_modifier_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/3d/skeleton_modifier_3d.h"
+#include "scene/3d/spring_bone_collision_3d.h"
+#include "scene/3d/spring_bone_collision_capsule_3d.h"
+#include "scene/3d/spring_bone_collision_plane_3d.h"
+#include "scene/3d/spring_bone_collision_sphere_3d.h"
+#include "scene/3d/spring_bone_simulator_3d.h"
 #include "scene/3d/sprite_3d.h"
 #include "scene/3d/visible_on_screen_notifier_3d.h"
 #include "scene/3d/voxel_gi.h"
@@ -336,11 +341,6 @@
 #include "scene/3d/physics/spring_arm_3d.h"
 #include "scene/3d/physics/static_body_3d.h"
 #include "scene/3d/physics/vehicle_body_3d.h"
-#include "scene/3d/spring_bone_collision_3d.h"
-#include "scene/3d/spring_bone_collision_capsule_3d.h"
-#include "scene/3d/spring_bone_collision_plane_3d.h"
-#include "scene/3d/spring_bone_collision_sphere_3d.h"
-#include "scene/3d/spring_bone_simulator_3d.h"
 #include "scene/resources/3d/box_shape_3d.h"
 #include "scene/resources/3d/capsule_shape_3d.h"
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
@@ -1059,7 +1059,7 @@ void register_scene_types() {
 	GDREGISTER_CLASS(PlaceholderTexture2DArray);
 	GDREGISTER_CLASS(PlaceholderCubemap);
 	GDREGISTER_CLASS(PlaceholderCubemapArray);
-	GDREGISTER_CLASS(SVGTexture);
+	GDREGISTER_CLASS(DPITexture);
 #ifndef DISABLE_DEPRECATED
 	GDREGISTER_CLASS(AnimatedTexture);
 #endif

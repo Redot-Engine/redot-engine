@@ -108,7 +108,6 @@ public:
 			MATCH,
 			WHEN,
 			// Keywords
-			ABSTRACT,
 			AS,
 			ASSERT,
 			AWAIT,

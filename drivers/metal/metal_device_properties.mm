@@ -123,6 +123,14 @@ void MetalDeviceProperties::init_features(id<MTLDevice> p_device) {
 	features.simdPermute = [p_device supportsFamily:MTLGPUFamilyApple6];
 	features.simdReduction = [p_device supportsFamily:MTLGPUFamilyApple7];
 	features.argument_buffers_tier = p_device.argumentBuffersSupport;
+	features.supports_image_atomic_32_bit = [p_device supportsFamily:MTLGPUFamilyApple6];
+	features.supports_image_atomic_64_bit = [p_device supportsFamily:MTLGPUFamilyApple9] || ([p_device supportsFamily:MTLGPUFamilyApple8] && [p_device supportsFamily:MTLGPUFamilyMac2]);
+	if (@available(macOS 14.0, iOS 17.0, tvOS 17.0, visionOS 1.0, *)) {
+		features.supports_native_image_atomics = true;
+	}
+	if (OS::get_singleton()->get_environment("GODOT_MTL_DISABLE_IMAGE_ATOMICS") == "1") {
+		features.supports_native_image_atomics = false;
+	}
 
 	if (@available(macOS 13.0, iOS 16.0, tvOS 16.0, *)) {
 		features.needs_arg_encoders = !([p_device supportsFamily:MTLGPUFamilyMetal3] && features.argument_buffers_tier == MTLArgumentBuffersTier2);
@@ -305,9 +313,15 @@ void MetalDeviceProperties::init_limits(id<MTLDevice> p_device) {
 #endif
 }
 
+void MetalDeviceProperties::init_os_props() {
+	NSOperatingSystemVersion ver = NSProcessInfo.processInfo.operatingSystemVersion;
+	os_version = (uint32_t)ver.majorVersion * 10000 + (uint32_t)ver.minorVersion * 100 + (uint32_t)ver.patchVersion;
+}
+
 MetalDeviceProperties::MetalDeviceProperties(id<MTLDevice> p_device) {
 	init_features(p_device);
 	init_limits(p_device);
+	init_os_props();
 }
 
 MetalDeviceProperties::~MetalDeviceProperties() {

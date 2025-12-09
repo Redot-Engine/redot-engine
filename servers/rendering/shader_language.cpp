@@ -2005,7 +2005,7 @@ bool ShaderLanguage::_validate_operator(const BlockNode *p_block, const Function
 			DataType nb = p_op->arguments[1]->get_datatype();
 			DataType nc = p_op->arguments[2]->get_datatype();
 
-			valid = na == TYPE_BOOL && (nb == nc);
+			valid = na == TYPE_BOOL && (nb == nc) && !is_sampler_type(nb);
 			ret_type = nb;
 			ret_size = sa;
 		} break;
@@ -3867,9 +3867,17 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 	int last_arg_count = 0;
 	bool exists = false;
 	String arg_list = "";
+	bool overload_fail = false;
+	struct OverloadErrorInfo {
+		String arg_list;
+		int index = 0;
+		String func_arg_name;
+		String arg_name;
+	};
+	Vector<OverloadErrorInfo> overload_errors;
 
 	for (int i = 0; i < shader->vfunctions.size(); i++) {
-		if (name != shader->vfunctions[i].name) {
+		if (rname != shader->vfunctions[i].rname) {
 			continue;
 		}
 		exists = true;
@@ -3880,24 +3888,23 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 		}
 
 		FunctionNode *pfunc = shader->vfunctions[i].function;
-		if (arg_list.is_empty()) {
-			for (int j = 0; j < pfunc->arguments.size(); j++) {
-				if (j > 0) {
-					arg_list += ", ";
-				}
-				String func_arg_name;
-				if (pfunc->arguments[j].type == TYPE_STRUCT) {
-					func_arg_name = pfunc->arguments[j].struct_name;
-				} else {
-					func_arg_name = get_datatype_name(pfunc->arguments[j].type);
-				}
-				if (pfunc->arguments[j].array_size > 0) {
-					func_arg_name += "[";
-					func_arg_name += itos(pfunc->arguments[j].array_size);
-					func_arg_name += "]";
-				}
-				arg_list += func_arg_name;
+		arg_list.clear();
+		for (int j = 0; j < pfunc->arguments.size(); j++) {
+			if (j > 0) {
+				arg_list += ", ";
 			}
+			String func_arg_name;
+			if (pfunc->arguments[j].type == TYPE_STRUCT) {
+				func_arg_name = pfunc->arguments[j].struct_name;
+			} else {
+				func_arg_name = get_datatype_name(pfunc->arguments[j].type);
+			}
+			if (pfunc->arguments[j].array_size > 0) {
+				func_arg_name += "[";
+				func_arg_name += itos(pfunc->arguments[j].array_size);
+				func_arg_name += "]";
+			}
+			arg_list += func_arg_name;
 		}
 
 		if (pfunc->arguments.size() != args.size()) {
@@ -3935,9 +3942,17 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 					arg_name += "]";
 				}
 
-				_set_error(vformat(RTR("Invalid argument for \"%s(%s)\" function: argument %d should be %s but is %s."), String(rname), arg_list, j + 1, func_arg_name, arg_name));
 				fail = true;
+				OverloadErrorInfo err_info;
+				err_info.arg_list = arg_list;
+				err_info.index = j + 1;
+				err_info.func_arg_name = func_arg_name;
+				err_info.arg_name = arg_name;
+				overload_errors.push_back(err_info);
+				overload_fail = true;
 				break;
+			} else {
+				overload_fail = false;
 			}
 		}
 
@@ -3972,6 +3987,19 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 			}
 			return true;
 		}
+	}
+	if (overload_fail) {
+		String err_str;
+		if (overload_errors.size() == 1) {
+			const OverloadErrorInfo &err_info = overload_errors[0];
+			err_str = vformat("No matching function for \"%s(%s)\" call: argument %d should be %s but is %s.", String(rname), err_info.arg_list, err_info.index, err_info.func_arg_name, err_info.arg_name);
+		} else {
+			err_str = vformat(RTR("No matching function for \"%s\" call:"), String(rname));
+			for (const OverloadErrorInfo &err_info : overload_errors) {
+				err_str += "\n\t" + vformat(RTR("candidate function \"%s(%s)\" not viable, argument %d should be %s but is %s."), String(rname), err_info.arg_list, err_info.index, err_info.func_arg_name, err_info.arg_name);
+			}
+		}
+		_set_error(err_str);
 	}
 
 	if (exists) {
@@ -6157,10 +6185,13 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 						bnode = bnode->parent_block;
 					}
 
+					int64_t arg_count = func->arguments.size();
+					int64_t arg_count2 = func->arguments.size() - 1;
+
 					// Test if function was parsed first.
 					int function_index = -1;
 					for (int i = 0, max_valid_args = 0; i < shader->vfunctions.size(); i++) {
-						if (!shader->vfunctions[i].callable || shader->vfunctions[i].rname != rname) {
+						if (!shader->vfunctions[i].callable || shader->vfunctions[i].rname != rname || arg_count2 != shader->vfunctions[i].function->arguments.size()) {
 							continue;
 						}
 
@@ -6168,12 +6199,7 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 						int valid_args = 0;
 
 						// Search for correct overload.
-						for (int j = 1; j < func->arguments.size(); j++) {
-							if (j - 1 == shader->vfunctions[i].function->arguments.size()) {
-								found = false;
-								break;
-							}
-
+						for (int j = 1; j < arg_count; j++) {
 							const FunctionNode::Argument &a = shader->vfunctions[i].function->arguments[j - 1];
 							Node *b = func->arguments[j];
 
@@ -6315,7 +6341,7 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 
 							for (int i = 0; i < call_function->arguments.size(); i++) {
 								int argidx = i + 1;
-								if (argidx < func->arguments.size()) {
+								if (argidx < arg_count) {
 									bool error = false;
 									Node *n = func->arguments[argidx];
 									ArgumentQualifier arg_qual = call_function->arguments[i].qualifier;

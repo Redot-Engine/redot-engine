@@ -33,9 +33,9 @@
 #include "editor_profiler.h"
 
 #include "core/io/image.h"
-#include "editor/editor_settings.h"
 #include "editor/editor_string_names.h"
-#include "editor/gui/editor_run_bar.h"
+#include "editor/run/editor_run_bar.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/flow_container.h"
@@ -695,7 +695,7 @@ EditorProfiler::EditorProfiler() {
 	hb_measure->add_child(memnew(Label(TTR("Measure:"))));
 
 	display_mode = memnew(OptionButton);
-	display_mode->set_accessibility_name(TTRC("Measure"));
+	display_mode->set_accessibility_name(TTRC("Measure:"));
 	display_mode->add_item(TTR("Frame Time (ms)"));
 	display_mode->add_item(TTR("Average Time (ms)"));
 	display_mode->add_item(TTR("Frame %"));
@@ -711,7 +711,7 @@ EditorProfiler::EditorProfiler() {
 	hb_time->add_child(memnew(Label(TTR("Time:"))));
 
 	display_time = memnew(OptionButton);
-	display_time->set_accessibility_name(TTRC("Time"));
+	display_time->set_accessibility_name(TTRC("Time:"));
 	// TRANSLATORS: This is an option in the profiler to display the time spent in a function, including the time spent in other functions called by that function.
 	display_time->add_item(TTR("Inclusive"));
 	// TRANSLATORS: This is an option in the profiler to display the time spent in a function, exincluding the time spent in other functions called by that function.
@@ -734,7 +734,7 @@ EditorProfiler::EditorProfiler() {
 	hb_frame->add_child(memnew(Label(TTR("Frame #:"))));
 
 	cursor_metric_edit = memnew(SpinBox);
-	cursor_metric_edit->set_accessibility_name(TTRC("Frame"));
+	cursor_metric_edit->set_accessibility_name(TTRC("Frame #:"));
 	cursor_metric_edit->set_h_size_flags(SIZE_FILL);
 	cursor_metric_edit->set_value(0);
 	cursor_metric_edit->set_editable(false);

@@ -38,8 +38,8 @@
 #include "core/object/script_language.h"
 #include "editor/editor_interface.h"
 #include "editor/editor_node.h"
-#include "editor/editor_settings.h"
 #include "editor/import/3d/scene_import_settings.h"
+#include "editor/settings/editor_settings.h"
 #include "scene/3d/importer_mesh_instance_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/navigation/navigation_region_3d.h"
@@ -1388,6 +1388,13 @@ Node *ResourceImporterScene::_replace_node_with_type_and_script(Node *p_node, St
 			p_script = ResourceLoader::load(ScriptServer::get_global_class_path(p_node_type));
 		}
 		p_node_type = ScriptServer::get_global_class_base(p_node_type);
+		while (!p_node_type.is_empty()) {
+			if (ScriptServer::is_global_class(p_node_type)) {
+				p_node_type = ScriptServer::get_global_class_base(p_node_type);
+			} else {
+				break;
+			}
+		}
 	}
 	if (!p_node_type.is_empty() && p_node->get_class_name() != p_node_type) {
 		// If the user specified a Godot node type that does not match
@@ -2073,6 +2080,7 @@ void ResourceImporterScene::_create_slices(AnimationPlayer *ap, Ref<Animation> a
 			}
 		}
 
+		new_anim->set_name(name);
 		new_anim->set_loop_mode(loop_mode);
 		new_anim->set_length(to - from);
 		new_anim->set_step(anim->get_step());
@@ -2602,9 +2610,10 @@ Node *ResourceImporterScene::_generate_meshes(Node *p_node, const Dictionary &p_
 		mesh_node->set_skeleton_path(src_mesh_node->get_skeleton_path());
 		mesh_node->merge_meta_from(src_mesh_node);
 
-		if (src_mesh_node->get_mesh().is_valid()) {
+		Ref<ImporterMesh> importer_mesh = src_mesh_node->get_mesh();
+		if (importer_mesh.is_valid()) {
 			Ref<ArrayMesh> mesh;
-			if (!src_mesh_node->get_mesh()->has_mesh()) {
+			if (!importer_mesh->has_mesh()) {
 				//do mesh processing
 
 				bool generate_lods = p_generate_lods;
@@ -2613,7 +2622,7 @@ Node *ResourceImporterScene::_generate_meshes(Node *p_node, const Dictionary &p_
 				bool bake_lightmaps = p_light_bake_mode == LIGHT_BAKE_STATIC_LIGHTMAPS;
 				String save_to_file;
 
-				String mesh_id = src_mesh_node->get_mesh()->get_meta("import_id", src_mesh_node->get_mesh()->get_name());
+				String mesh_id = importer_mesh->get_meta("import_id", importer_mesh->get_name());
 
 				if (!mesh_id.is_empty() && p_mesh_data.has(mesh_id)) {
 					Dictionary mesh_settings = p_mesh_data[mesh_id];
@@ -2667,7 +2676,7 @@ Node *ResourceImporterScene::_generate_meshes(Node *p_node, const Dictionary &p_
 					}
 
 					for (int i = 0; i < post_importer_plugins.size(); i++) {
-						post_importer_plugins.write[i]->internal_process(EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_MESH, nullptr, src_mesh_node, src_mesh_node->get_mesh(), mesh_settings);
+						post_importer_plugins.write[i]->internal_process(EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_MESH, nullptr, src_mesh_node, importer_mesh, mesh_settings);
 					}
 				}
 
@@ -2680,7 +2689,7 @@ Node *ResourceImporterScene::_generate_meshes(Node *p_node, const Dictionary &p_
 					}
 
 					Vector<uint8_t> lightmap_cache;
-					src_mesh_node->get_mesh()->lightmap_unwrap_cached(xf, p_lightmap_texel_size, p_src_lightmap_cache, lightmap_cache);
+					importer_mesh->lightmap_unwrap_cached(xf, p_lightmap_texel_size, p_src_lightmap_cache, lightmap_cache);
 
 					if (!lightmap_cache.is_empty()) {
 						if (r_lightmap_caches.is_empty()) {
@@ -2705,14 +2714,14 @@ Node *ResourceImporterScene::_generate_meshes(Node *p_node, const Dictionary &p_
 
 				if (generate_lods) {
 					Array skin_pose_transform_array = _get_skinned_pose_transforms(src_mesh_node);
-					src_mesh_node->get_mesh()->generate_lods(merge_angle, skin_pose_transform_array);
+					importer_mesh->generate_lods(merge_angle, skin_pose_transform_array);
 				}
 
 				if (create_shadow_meshes) {
-					src_mesh_node->get_mesh()->create_shadow_mesh();
+					importer_mesh->create_shadow_mesh();
 				}
 
-				src_mesh_node->get_mesh()->optimize_indices();
+				importer_mesh->optimize_indices();
 
 				if (!save_to_file.is_empty()) {
 					String save_res_path = ResourceUID::ensure_path(save_to_file);
@@ -2721,7 +2730,7 @@ Node *ResourceImporterScene::_generate_meshes(Node *p_node, const Dictionary &p_
 						//if somehow an existing one is useful, create
 						existing->reset_state();
 					}
-					mesh = src_mesh_node->get_mesh()->get_mesh(existing);
+					mesh = importer_mesh->get_mesh(existing);
 
 					Error err = ResourceSaver::save(mesh, save_res_path); //override
 					if (err != OK) {
@@ -2735,19 +2744,19 @@ Node *ResourceImporterScene::_generate_meshes(Node *p_node, const Dictionary &p_
 					mesh->set_path(save_res_path, true); //takeover existing, if needed
 
 				} else {
-					mesh = src_mesh_node->get_mesh()->get_mesh();
+					mesh = importer_mesh->get_mesh();
 				}
 			} else {
-				mesh = src_mesh_node->get_mesh()->get_mesh();
+				mesh = importer_mesh->get_mesh();
 			}
 
 			if (mesh.is_valid()) {
-				_copy_meta(src_mesh_node->get_mesh().ptr(), mesh.ptr());
+				_copy_meta(importer_mesh.ptr(), mesh.ptr());
 				mesh_node->set_mesh(mesh);
 				for (int i = 0; i < mesh->get_surface_count(); i++) {
 					mesh_node->set_surface_override_material(i, src_mesh_node->get_surface_material(i));
 				}
-				mesh->merge_meta_from(*src_mesh_node->get_mesh());
+				mesh->merge_meta_from(*importer_mesh);
 			}
 		}
 
@@ -2956,15 +2965,6 @@ void ResourceImporterScene::_optimize_track_usage(AnimationPlayer *p_player, Ani
 			}
 		}
 	}
-}
-
-void ResourceImporterScene::_generate_editor_preview_for_scene(const String &p_path, Node *p_scene) {
-	if (!Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-	ERR_FAIL_COND_MSG(p_path.is_empty(), "Path is empty, cannot generate preview.");
-	ERR_FAIL_NULL_MSG(p_scene, "Scene is null, cannot generate preview.");
-	EditorInterface::get_singleton()->make_scene_preview(p_path, p_scene, 1024);
 }
 
 Node *ResourceImporterScene::pre_import(const String &p_source_file, const HashMap<StringName, Variant> &p_options) {
@@ -3354,7 +3354,7 @@ Error ResourceImporterScene::import(ResourceUID::ID p_source_id, const String &p
 		print_verbose("Saving scene to: " + p_save_path + ".scn");
 		err = ResourceSaver::save(packer, p_save_path + ".scn", flags); //do not take over, let the changed files reload themselves
 		ERR_FAIL_COND_V_MSG(err != OK, err, "Cannot save scene to file '" + p_save_path + ".scn'.");
-		_generate_editor_preview_for_scene(p_source_file, scene);
+		EditorInterface::get_singleton()->make_scene_preview(p_source_file, scene, 1024);
 	} else {
 		ERR_FAIL_V_MSG(ERR_FILE_UNRECOGNIZED, "Unknown scene import type: " + _scene_import_type);
 	}

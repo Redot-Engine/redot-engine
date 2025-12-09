@@ -58,7 +58,7 @@
 #endif // XR_DISABLED
 
 #ifdef TOOLS_ENABLED
-#include "editor/editor_settings.h"
+#include "editor/settings/editor_settings.h"
 #endif
 
 #include <android/asset_manager_jni.h>
@@ -121,6 +121,8 @@ static void _terminate(JNIEnv *env, bool p_restart = false) {
 	FileAccessFilesystemJAndroid::terminate();
 	NetSocketAndroid::terminate();
 
+	cleanup_android_class_loader();
+
 	if (godot_java) {
 		godot_java->on_godot_terminating(env);
 		if (!restart_on_cleanup) {
@@ -146,11 +148,12 @@ JNIEXPORT jboolean JNICALL Java_org_redotengine_godot_GodotLib_initialize(JNIEnv
 	JavaVM *jvm;
 	env->GetJavaVM(&jvm);
 
+	init_thread_jandroid(jvm, env);
+	setup_android_class_loader();
+
 	// create our wrapper classes
 	godot_java = new GodotJavaWrapper(env, p_godot_instance);
 	godot_io_java = new GodotIOJavaWrapper(env, p_godot_io);
-
-	init_thread_jandroid(jvm, env);
 
 	FileAccessAndroid::setup(p_asset_manager);
 	DirAccessJAndroid::setup(p_directory_access_handler);
@@ -480,7 +483,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_redotengine_godot_GodotLib_getRendererIn
 	String rendering_driver = RenderingServer::get_singleton()->get_current_rendering_driver_name();
 	String rendering_method = RenderingServer::get_singleton()->get_current_rendering_method();
 
-	jobjectArray result = env->NewObjectArray(2, env->FindClass("java/lang/String"), nullptr);
+	jobjectArray result = env->NewObjectArray(2, jni_find_class(env, "java/lang/String"), nullptr);
 	env->SetObjectArrayElement(result, 0, env->NewStringUTF(rendering_driver.utf8().get_data()));
 	env->SetObjectArrayElement(result, 1, env->NewStringUTF(rendering_method.utf8().get_data()));
 

@@ -50,7 +50,7 @@
 #include "core/string/string_name.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/editor_file_system.h"
+#include "editor/file_system/editor_file_system.h"
 #endif
 
 #ifdef __cplusplus
@@ -205,6 +205,11 @@ void godotsharp_internal_refcounted_disposed(Object *p_ptr, GCHandleIntPtr p_gch
 			CSharpScriptBinding &script_binding = ((RBMap<Object *, CSharpScriptBinding>::Element *)data)->get();
 			if (script_binding.inited) {
 				if (!script_binding.gchandle.is_released()) {
+					if (rc->get_reference_count() == 1 && script_binding.gchandle.is_weak()) {
+						// The GCHandle is just swapped, so get the swapped handle to release
+						// See: CSharpLanguage::_instance_binding_reference_callback(void *p_token, void *p_binding, GDExtensionBool p_reference)
+						p_gchandle_to_free = script_binding.gchandle.get_intptr();
+					}
 					CSharpLanguage::release_binding_gchandle_thread_safe(p_gchandle_to_free, script_binding);
 				}
 			}
@@ -1380,6 +1385,10 @@ int32_t godotsharp_node_path_get_subname_count(const NodePath *p_self) {
 	return p_self->get_subname_count();
 }
 
+void godotsharp_node_path_slice(const NodePath *p_self, int32_t p_begin, int32_t p_end, NodePath *r_result) {
+	memnew_placement(r_result, NodePath(p_self->slice(p_begin, p_end)));
+}
+
 bool godotsharp_node_path_is_absolute(const NodePath *p_self) {
 	return p_self->is_absolute();
 }
@@ -1766,6 +1775,7 @@ static const void *unmanaged_callbacks[]{
 	(void *)godotsharp_node_path_get_name_count,
 	(void *)godotsharp_node_path_get_subname,
 	(void *)godotsharp_node_path_get_subname_count,
+	(void *)godotsharp_node_path_slice,
 	(void *)godotsharp_node_path_is_absolute,
 	(void *)godotsharp_node_path_equals,
 	(void *)godotsharp_node_path_hash,

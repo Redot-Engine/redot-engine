@@ -69,7 +69,7 @@ namespace Godot.SourceGenerators
                 : string.Empty;
             bool hasNamespace = classNs.Length != 0;
 
-            bool isNode = symbol.InheritsFrom("GodotSharp", GodotClasses.Node);
+            bool isNode = symbol.InheritsFrom("RedotSharp", GodotClasses.Node);
 
             bool isInnerClass = symbol.ContainingType != null;
 
@@ -100,13 +100,13 @@ namespace Godot.SourceGenerators
                     source.Append("partial ");
                     source.Append(containingType.GetDeclarationKeyword());
                     source.Append(" ");
-                    source.Append(containingType.NameWithTypeParameters());
+                    source.Append(containingType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
                     source.Append("\n{\n");
                 }
             }
 
             source.Append("partial class ");
-            source.Append(symbol.NameWithTypeParameters());
+            source.Append(symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
             source.Append("\n{\n");
 
             var exportedMembers = new List<ExportedPropertyMetadata>();
@@ -533,18 +533,18 @@ namespace Godot.SourceGenerators
         {
             if (marshalType == MarshalType.GodotObjectOrDerived)
             {
-                return memberType.InheritsFrom("GodotSharp", GodotClasses.Node);
+                return memberType.InheritsFrom("RedotSharp", GodotClasses.Node);
             }
             if (marshalType == MarshalType.GodotObjectOrDerivedArray)
             {
                 var elementType = ((IArrayTypeSymbol)memberType).ElementType;
-                return elementType.InheritsFrom("GodotSharp", GodotClasses.Node);
+                return elementType.InheritsFrom("RedotSharp", GodotClasses.Node);
             }
             if (memberType is INamedTypeSymbol { IsGenericType: true } genericType)
             {
                 return genericType.TypeArguments
                     .Any(static typeArgument
-                        => typeArgument.InheritsFrom("GodotSharp", GodotClasses.Node));
+                        => typeArgument.InheritsFrom("RedotSharp", GodotClasses.Node));
             }
 
             return false;

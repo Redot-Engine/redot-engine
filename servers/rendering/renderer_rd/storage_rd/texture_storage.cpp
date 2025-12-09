@@ -483,9 +483,10 @@ TextureStorage::TextureStorage() {
 		tformat.usage_bits = RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT | (vrs_supported ? RD::TEXTURE_USAGE_VRS_ATTACHMENT_BIT : 0);
 		tformat.texture_type = RD::TEXTURE_TYPE_2D;
 
+		uint32_t pixel_size = RD::get_image_format_pixel_size(tformat.format);
 		Vector<uint8_t> pv;
-		pv.resize(4 * 4);
-		for (int i = 0; i < 4 * 4; i++) {
+		pv.resize(4 * 4 * pixel_size);
+		for (int i = 0; i < pv.size(); i++) {
 			pv.set(i, 0);
 		}
 
@@ -3709,6 +3710,20 @@ bool TextureStorage::render_target_is_using_hdr(RID p_render_target) const {
 	ERR_FAIL_NULL_V(rt, false);
 
 	return rt->use_hdr;
+}
+
+void TextureStorage::render_target_set_use_debanding(RID p_render_target, bool p_use_debanding) {
+	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL(rt);
+
+	rt->use_debanding = p_use_debanding;
+}
+
+bool TextureStorage::render_target_is_using_debanding(RID p_render_target) const {
+	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL_V(rt, false);
+
+	return rt->use_debanding;
 }
 
 RID TextureStorage::render_target_get_rd_framebuffer(RID p_render_target) {

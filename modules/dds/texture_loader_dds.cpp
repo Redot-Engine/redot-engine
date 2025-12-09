@@ -174,10 +174,6 @@ static Ref<Image> _dds_load_layer(Ref<FileAccess> p_file, DDSFormat p_dds_format
 
 		// Calculate the space these formats will take up after decoding.
 		switch (p_dds_format) {
-			case DDS_BGR565:
-				size = size * 3 / 2;
-				break;
-
 			case DDS_BGR5A1:
 			case DDS_B2GR3A8:
 			case DDS_LUMINANCE_ALPHA_4:
@@ -214,24 +210,6 @@ static Ref<Image> _dds_load_layer(Ref<FileAccess> p_file, DDSFormat p_dds_format
 					wb[dst_ofs + 1] = g << 3;
 					wb[dst_ofs + 2] = b << 3;
 					wb[dst_ofs + 3] = a ? 255 : 0;
-				}
-
-			} break;
-			case DDS_BGR565: {
-				// To RGB8.
-				int colcount = size / 3;
-
-				for (int i = colcount - 1; i >= 0; i--) {
-					int src_ofs = i * 2;
-					int dst_ofs = i * 3;
-
-					uint8_t b = wb[src_ofs] & 0x1F;
-					uint8_t g = (wb[src_ofs] >> 5) | ((wb[src_ofs + 1] & 0x7) << 3);
-					uint8_t r = wb[src_ofs + 1] >> 3;
-
-					wb[dst_ofs + 0] = r << 3;
-					wb[dst_ofs + 1] = g << 2;
-					wb[dst_ofs + 2] = b << 3;
 				}
 
 			} break;
@@ -446,7 +424,7 @@ static Ref<Resource> _dds_create_texture(const Vector<Ref<Image>> &p_images, uin
 			return ImageTexture::create_from_image(p_images[0]);
 		}
 
-	} else if ((p_layer_count & DDST_TYPE_MASK) == DDST_CUBEMAP) {
+	} else if ((p_dds_type & DDST_TYPE_MASK) == DDST_CUBEMAP) {
 		ERR_FAIL_COND_V(p_layer_count % 6 != 0, Ref<Resource>());
 
 		if (p_dds_type & DDST_ARRAY) {

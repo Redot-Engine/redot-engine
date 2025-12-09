@@ -37,6 +37,7 @@
 #include "core/os/time.h"
 
 #include <fileapi.h>
+#include <shellapi.h>
 
 // Helpers
 

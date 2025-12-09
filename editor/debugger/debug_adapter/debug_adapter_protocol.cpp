@@ -39,8 +39,8 @@
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/editor_log.h"
 #include "editor/editor_node.h"
-#include "editor/editor_settings.h"
-#include "editor/gui/editor_run_bar.h"
+#include "editor/run/editor_run_bar.h"
+#include "editor/settings/editor_settings.h"
 
 DebugAdapterProtocol *DebugAdapterProtocol::singleton = nullptr;
 
@@ -853,6 +853,11 @@ bool DebugAdapterProtocol::process_message(const String &p_text) {
 	Dictionary params = json.get_data();
 	bool completed = true;
 
+	// While JSON does not distinguish floats and ints, "seq" is an integer by specification. See https://github.com/godotengine/godot/issues/108288
+	if (params.has("seq")) {
+		params["seq"] = (int)params["seq"];
+	}
+
 	if (OS::get_singleton()->get_ticks_msec() - _current_peer->timestamp > _request_timeout) {
 		Dictionary response = parser->prepare_error_response(params, DAP::ErrorType::TIMEOUT);
 		_current_peer->res_queue.push_front(response);
@@ -1173,6 +1178,16 @@ void DebugAdapterProtocol::on_debug_data(const String &p_msg, const Array &p_dat
 
 			parse_object(remote_obj);
 		}
+#ifndef DISABLE_DEPRECATED
+	} else if (p_msg == "scene:inspect_object") {
+		if (!p_data.is_empty()) {
+			// Legacy single object response format.
+			SceneDebuggerObject remote_obj;
+			remote_obj.deserialize(p_data);
+
+			parse_object(remote_obj);
+		}
+#endif // DISABLE_DEPRECATED
 	} else if (p_msg == "evaluation_return") {
 		// An evaluation was requested from the debuggee; parse it.
 		DebuggerMarshalls::ScriptStackVariable remote_evaluation;

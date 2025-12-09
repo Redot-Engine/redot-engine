@@ -327,6 +327,8 @@ protected:
 
 	virtual void _unhide_carets() override;
 
+	virtual void _draw_guidelines() override;
+
 	/* Text manipulation */
 
 	// Overridable actions

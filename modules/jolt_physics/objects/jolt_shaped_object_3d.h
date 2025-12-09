@@ -70,7 +70,7 @@ protected:
 	void _dequeue_needs_optimization();
 
 	virtual void _shapes_changed();
-	virtual void _shapes_committed() {}
+	virtual void _shapes_committed();
 	virtual void _space_changing() override;
 
 public:

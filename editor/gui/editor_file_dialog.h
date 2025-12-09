@@ -33,7 +33,7 @@
 #pragma once
 
 #include "core/io/dir_access.h"
-#include "editor/file_info.h"
+#include "editor/file_system/file_info.h"
 #include "scene/gui/dialogs.h"
 #include "scene/property_list_helper.h"
 

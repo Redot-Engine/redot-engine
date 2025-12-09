@@ -260,7 +260,7 @@ namespace GodotTools
 
                     var args = new List<string>
                     {
-                        Path.Combine(GodotSharpDirs.DataEditorToolsDir, "GodotTools.OpenVisualStudio.dll"),
+                        Path.Combine(GodotSharpDirs.DataEditorToolsDir, "RedotTools.OpenVisualStudio.dll"),
                         GodotSharpDirs.ProjectSlnPath,
                         line >= 0 ? $"{scriptPath};{line + 1};{col + 1}" : scriptPath
                     };
@@ -741,7 +741,7 @@ namespace GodotTools
             var populateConstructorMethod =
                 AppDomain.CurrentDomain
                     .GetAssemblies()
-                    .First(x => x.GetName().Name == "GodotSharpEditor")
+                    .First(x => x.GetName().Name == "RedotSharpEditor")
                     .GetType("Godot.EditorConstructors")?
                     .GetMethod("AddEditorConstructors",
                         BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);

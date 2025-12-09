@@ -61,11 +61,11 @@
 
 #ifdef TOOLS_ENABLED
 #include "core/os/keyboard.h"
-#include "editor/editor_file_system.h"
+#include "editor/docks/inspector_dock.h"
+#include "editor/docks/node_dock.h"
 #include "editor/editor_node.h"
-#include "editor/editor_settings.h"
-#include "editor/inspector_dock.h"
-#include "editor/node_dock.h"
+#include "editor/file_system/editor_file_system.h"
+#include "editor/settings/editor_settings.h"
 #endif
 
 // Types that will be skipped over (in favor of their base types) when setting up instance bindings.
@@ -842,6 +842,25 @@ void CSharpLanguage::reload_assemblies(bool p_soft_reload) {
 		return;
 	}
 
+	// Add all script types to script bridge before reloading exports,
+	// so typed collections can be reconstructed correctly regardless of script load order.
+	for (Ref<CSharpScript> &scr : to_reload) {
+		if (!scr->get_path().is_empty() && !scr->get_path().begins_with("csharp://")) {
+			String script_path = scr->get_path();
+
+			bool valid = GDMonoCache::managed_callbacks.ScriptManagerBridge_AddScriptBridge(scr.ptr(), &script_path);
+
+			if (valid) {
+				scr->valid = true;
+
+				CSharpScript::update_script_class_info(scr);
+
+				// Ensure that the next call to CSharpScript::reload will refresh the exports
+				scr->reload_invalidated = true;
+			}
+		}
+	}
+
 	List<Ref<CSharpScript>> to_reload_state;
 
 	for (Ref<CSharpScript> &scr : to_reload) {
@@ -1062,7 +1081,7 @@ void CSharpLanguage::_editor_init_callback() {
 	const void **interop_funcs = godotsharp::get_editor_interop_funcs(interop_funcs_size);
 
 	Object *editor_plugin_obj = GDMono::get_singleton()->get_plugin_callbacks().LoadToolsAssemblyCallback(
-			GodotSharpDirs::get_data_editor_tools_dir().path_join("GodotTools.dll").utf16().get_data(),
+			GodotSharpDirs::get_data_editor_tools_dir().path_join("RedotTools.dll").utf16().get_data(),
 			interop_funcs, interop_funcs_size);
 	CRASH_COND(editor_plugin_obj == nullptr);
 
@@ -1110,7 +1129,7 @@ void CSharpLanguage::release_binding_gchandle_thread_safe(GCHandleIntPtr p_gchan
 }
 
 CSharpLanguage::CSharpLanguage() {
-	ERR_FAIL_COND_MSG(singleton, "C# singleton already exist.");
+	ERR_FAIL_COND_MSG(singleton, "C# singleton already exists.");
 	singleton = this;
 }
 

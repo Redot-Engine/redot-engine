@@ -334,6 +334,8 @@ public:
 	void set_flag(Flags p_flag, bool p_enabled);
 	bool get_flag(Flags p_flag) const;
 
+	bool is_popup() const;
+
 	bool is_maximize_allowed() const;
 
 	void request_attention();
@@ -401,6 +403,7 @@ public:
 	Window *get_exclusive_child() const { return exclusive_child; }
 	HashSet<Window *> get_transient_children() const { return transient_children; }
 	Window *get_parent_visible_window() const;
+	Window *get_non_popup_window() const;
 	Viewport *get_parent_viewport() const;
 
 	virtual void popup(const Rect2i &p_screen_rect = Rect2i());
@@ -421,6 +424,7 @@ public:
 
 	void grab_focus();
 	bool has_focus() const;
+	bool has_focus_or_active_popup() const;
 
 	void start_drag();
 	void start_resize(DisplayServer::WindowResizeEdge p_edge);

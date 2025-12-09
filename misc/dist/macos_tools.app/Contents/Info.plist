@@ -9,7 +9,9 @@
 	<key>CFBundleName</key>
 	<string>Redot</string>
 	<key>CFBundleIconFile</key>
-	<string>Redot.icns</string>
+	<string>RedotLG.icns</string>
+	<key>CFBundleIconName</key>
+	<string>RedotLG</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.redotengine.redot</string>
 	<key>CFBundleInfoDictionaryVersion</key>

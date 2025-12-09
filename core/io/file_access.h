@@ -60,6 +60,7 @@ public:
 		WRITE = 2,
 		READ_WRITE = 3,
 		WRITE_READ = 7,
+		SKIP_PACK = 16,
 	};
 
 	enum UnixPermissionFlags : int32_t {

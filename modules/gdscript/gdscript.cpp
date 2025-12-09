@@ -58,7 +58,7 @@
 
 #ifdef TOOLS_ENABLED
 #include "core/extension/gdextension_manager.h"
-#include "editor/editor_paths.h"
+#include "editor/file_system/editor_paths.h"
 #endif
 
 ///////////////////////////
@@ -189,9 +189,9 @@ GDScriptInstance *GDScript::_create_instance(const Variant **p_args, int p_argco
 		return instance;
 	}
 
-	initializer = _super_constructor(this);
-	if (initializer != nullptr) {
-		initializer->call(instance, p_args, p_argcount, r_error);
+	GDScriptFunction *applicable_initializer = _super_constructor(this);
+	if (applicable_initializer != nullptr) {
+		applicable_initializer->call(instance, p_args, p_argcount, r_error);
 		if (r_error.error != Callable::CallError::CALL_OK) {
 			String error_text = Variant::get_call_error_text(instance->owner, "_init", p_args, p_argcount, r_error);
 			instance->script = Ref<GDScript>();
@@ -757,7 +757,12 @@ Error GDScript::reload(bool p_keep_state) {
 		has_instances = instances.size();
 	}
 
-	ERR_FAIL_COND_V(!p_keep_state && has_instances, ERR_ALREADY_IN_USE);
+	// Check condition but reset flag before early return
+	if (!p_keep_state && has_instances) {
+		reloading = false; // Reset flag before returning
+
+		ERR_FAIL_V_MSG(ERR_ALREADY_IN_USE, "Cannot reload script while instances exist.");
+	}
 
 	String basedir = path;
 
@@ -2331,8 +2336,6 @@ void GDScriptLanguage::finish() {
 	}
 	finishing = true;
 
-	_call_stack.free();
-
 	// Clear the cache before parsing the script_list
 	GDScriptCache::clear();
 
@@ -2751,7 +2754,6 @@ Vector<String> GDScriptLanguage::get_reserved_words() const {
 		"when",
 		"while",
 		// Declarations.
-		"abstract",
 		"class",
 		"class_name",
 		"const",
@@ -2917,7 +2919,7 @@ String GDScriptLanguage::get_global_class_name(const String &p_path, String *r_b
 		*r_icon_path = c->simplified_icon_path;
 	}
 	if (r_is_abstract) {
-		*r_is_abstract = false;
+		*r_is_abstract = c->is_abstract;
 	}
 	if (r_is_tool) {
 		*r_is_tool = parser.is_tool();
@@ -2925,7 +2927,19 @@ String GDScriptLanguage::get_global_class_name(const String &p_path, String *r_b
 	return c->identifier != nullptr ? String(c->identifier->name) : String();
 }
 
-thread_local GDScriptLanguage::CallStack GDScriptLanguage::_call_stack;
+thread_local GDScriptLanguage::CallLevel *GDScriptLanguage::_call_stack = nullptr;
+thread_local uint32_t GDScriptLanguage::_call_stack_size = 0;
+
+GDScriptLanguage::CallLevel *GDScriptLanguage::_get_stack_level(uint32_t p_level) {
+	ERR_FAIL_UNSIGNED_INDEX_V(p_level, _call_stack_size, nullptr);
+	CallLevel *level = _call_stack; // Start from top
+	uint32_t level_index = 0;
+	while (p_level > level_index) {
+		level_index++;
+		level = level->prev;
+	}
+	return level;
+}
 
 GDScriptLanguage::GDScriptLanguage() {
 	ERR_FAIL_COND(singleton);
@@ -2966,6 +2980,12 @@ GDScriptLanguage::GDScriptLanguage() {
 		String path = GDScriptWarning::get_settings_path_from_code(code);
 		GLOBAL_DEF(GDScriptWarning::get_property_info(code), default_enabled);
 	}
+
+#ifndef DISABLE_DEPRECATED
+	ProjectSettings::get_singleton()->set_as_internal("debug/gdscript/warnings/property_used_as_function", true);
+	ProjectSettings::get_singleton()->set_as_internal("debug/gdscript/warnings/constant_used_as_function", true);
+	ProjectSettings::get_singleton()->set_as_internal("debug/gdscript/warnings/function_used_as_property", true);
+#endif
 #endif // DEBUG_ENABLED
 }
 

@@ -589,6 +589,12 @@ void GraphEdit::_graph_element_deselected(Node *p_node) {
 	emit_signal(SNAME("node_deselected"), graph_element);
 }
 
+void GraphEdit::_graph_element_visibility_changed(GraphElement *p_graph_element) {
+	if (p_graph_element->is_selected() && !p_graph_element->is_visible()) {
+		p_graph_element->set_selected(false);
+	}
+}
+
 void GraphEdit::_graph_element_resize_request(const Vector2 &p_new_minsize, Node *p_node) {
 	GraphElement *graph_element = Object::cast_to<GraphElement>(p_node);
 	ERR_FAIL_NULL(graph_element);
@@ -702,6 +708,7 @@ void GraphEdit::add_child_notify(Node *p_child) {
 		graph_element->connect("position_offset_changed", callable_mp(this, &GraphEdit::_graph_element_moved).bind(graph_element));
 		graph_element->connect("node_selected", callable_mp(this, &GraphEdit::_graph_element_selected).bind(graph_element));
 		graph_element->connect("node_deselected", callable_mp(this, &GraphEdit::_graph_element_deselected).bind(graph_element));
+		graph_element->connect(SceneStringName(visibility_changed), callable_mp(this, &GraphEdit::_graph_element_visibility_changed).bind(graph_element));
 
 		GraphNode *graph_node = Object::cast_to<GraphNode>(graph_element);
 		if (graph_node) {
@@ -758,6 +765,7 @@ void GraphEdit::remove_child_notify(Node *p_child) {
 		graph_element->disconnect("position_offset_changed", callable_mp(this, &GraphEdit::_graph_element_moved));
 		graph_element->disconnect("node_selected", callable_mp(this, &GraphEdit::_graph_element_selected));
 		graph_element->disconnect("node_deselected", callable_mp(this, &GraphEdit::_graph_element_deselected));
+		graph_element->disconnect(SceneStringName(visibility_changed), callable_mp(this, &GraphEdit::_graph_element_visibility_changed));
 
 		GraphNode *graph_node = Object::cast_to<GraphNode>(graph_element);
 		if (graph_node) {
@@ -2043,6 +2051,10 @@ void GraphEdit::gui_input(const Ref<InputEvent> &p_ev) {
 				continue;
 			}
 
+			if (!graph_element->is_visible()) {
+				continue;
+			}
+
 			// Only select frames when the box selection is fully enclosing them.
 			bool is_frame = Object::cast_to<GraphFrame>(graph_element);
 			Rect2 r = graph_element->get_rect();
@@ -2173,6 +2185,10 @@ void GraphEdit::gui_input(const Ref<InputEvent> &p_ev) {
 				GraphElement *selected_element = Object::cast_to<GraphElement>(get_child(i));
 
 				if (!selected_element) {
+					continue;
+				}
+
+				if (!selected_element->is_visible()) {
 					continue;
 				}
 
@@ -3241,7 +3257,6 @@ GraphEdit::GraphEdit() {
 	zoom_minus_button->set_theme_type_variation(SceneStringName(FlatButton));
 	zoom_minus_button->set_visible(show_zoom_buttons);
 	zoom_minus_button->set_tooltip_text(ETR("Zoom Out"));
-	zoom_minus_button->set_accessibility_name(ETR("Zoom Out"));
 	zoom_minus_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	menu_hbox->add_child(zoom_minus_button);
 	zoom_minus_button->connect(SceneStringName(pressed), callable_mp(this, &GraphEdit::_zoom_minus));
@@ -3250,7 +3265,6 @@ GraphEdit::GraphEdit() {
 	zoom_reset_button->set_theme_type_variation(SceneStringName(FlatButton));
 	zoom_reset_button->set_visible(show_zoom_buttons);
 	zoom_reset_button->set_tooltip_text(ETR("Zoom Reset"));
-	zoom_reset_button->set_accessibility_name(ETR("Zoom Reset"));
 	zoom_reset_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	menu_hbox->add_child(zoom_reset_button);
 	zoom_reset_button->connect(SceneStringName(pressed), callable_mp(this, &GraphEdit::_zoom_reset));
@@ -3259,7 +3273,6 @@ GraphEdit::GraphEdit() {
 	zoom_plus_button->set_theme_type_variation(SceneStringName(FlatButton));
 	zoom_plus_button->set_visible(show_zoom_buttons);
 	zoom_plus_button->set_tooltip_text(ETR("Zoom In"));
-	zoom_plus_button->set_accessibility_name(ETR("Zoom In"));
 	zoom_plus_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	menu_hbox->add_child(zoom_plus_button);
 	zoom_plus_button->connect(SceneStringName(pressed), callable_mp(this, &GraphEdit::_zoom_plus));
@@ -3272,7 +3285,6 @@ GraphEdit::GraphEdit() {
 	toggle_grid_button->set_toggle_mode(true);
 	toggle_grid_button->set_pressed(true);
 	toggle_grid_button->set_tooltip_text(ETR("Toggle the visual grid."));
-	toggle_grid_button->set_accessibility_name(ETR("Grid"));
 	toggle_grid_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	menu_hbox->add_child(toggle_grid_button);
 	toggle_grid_button->connect(SceneStringName(pressed), callable_mp(this, &GraphEdit::_show_grid_toggled));
@@ -3282,7 +3294,6 @@ GraphEdit::GraphEdit() {
 	toggle_snapping_button->set_visible(show_grid_buttons);
 	toggle_snapping_button->set_toggle_mode(true);
 	toggle_snapping_button->set_tooltip_text(ETR("Toggle snapping to the grid."));
-	toggle_snapping_button->set_accessibility_name(ETR("Snap to Grid"));
 	toggle_snapping_button->set_pressed(snapping_enabled);
 	toggle_snapping_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	menu_hbox->add_child(toggle_snapping_button);
@@ -3295,7 +3306,6 @@ GraphEdit::GraphEdit() {
 	snapping_distance_spinbox->set_step(1);
 	snapping_distance_spinbox->set_value(snapping_distance);
 	snapping_distance_spinbox->set_tooltip_text(ETR("Change the snapping distance."));
-	snapping_distance_spinbox->set_accessibility_name(ETR("Snapping Distance"));
 	menu_hbox->add_child(snapping_distance_spinbox);
 	snapping_distance_spinbox->connect(SceneStringName(value_changed), callable_mp(this, &GraphEdit::_snapping_distance_changed));
 
@@ -3306,7 +3316,6 @@ GraphEdit::GraphEdit() {
 	minimap_button->set_visible(show_minimap_button);
 	minimap_button->set_toggle_mode(true);
 	minimap_button->set_tooltip_text(ETR("Toggle the graph minimap."));
-	minimap_button->set_accessibility_name(ETR("Minimap"));
 	minimap_button->set_pressed(show_grid);
 	minimap_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	menu_hbox->add_child(minimap_button);
@@ -3315,11 +3324,10 @@ GraphEdit::GraphEdit() {
 	arrange_button = memnew(Button);
 	arrange_button->set_theme_type_variation(SceneStringName(FlatButton));
 	arrange_button->set_visible(show_arrange_button);
-	arrange_button->set_accessibility_name(ETR("Auto Arrange"));
+	arrange_button->set_tooltip_text(ETR("Automatically arrange selected nodes."));
 	arrange_button->connect(SceneStringName(pressed), callable_mp(this, &GraphEdit::arrange_nodes));
 	arrange_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	menu_hbox->add_child(arrange_button);
-	arrange_button->set_tooltip_text(ETR("Automatically arrange selected nodes."));
 
 	// Minimap.
 

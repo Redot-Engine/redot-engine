@@ -103,13 +103,13 @@ namespace Godot.SourceGenerators
                     source.Append("partial ");
                     source.Append(containingType.GetDeclarationKeyword());
                     source.Append(" ");
-                    source.Append(containingType.NameWithTypeParameters());
+                    source.Append(containingType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
                     source.Append("\n{\n");
                 }
             }
 
             source.Append("partial class ");
-            source.Append(symbol.NameWithTypeParameters());
+            source.Append(symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
             source.Append("\n{\n");
 
             var members = symbol.GetMembers();
@@ -716,7 +716,7 @@ namespace Godot.SourceGenerators
                     return true;
                 }
 
-                if (memberNamedType.InheritsFrom("GodotSharp", "Godot.Resource"))
+                if (memberNamedType.InheritsFrom("RedotSharp", "Godot.Resource"))
                 {
                     hint = PropertyHint.ResourceType;
                     hintString = GetTypeName(memberNamedType);
@@ -724,7 +724,7 @@ namespace Godot.SourceGenerators
                     return true;
                 }
 
-                if (memberNamedType.InheritsFrom("GodotSharp", "Godot.Node"))
+                if (memberNamedType.InheritsFrom("RedotSharp", "Godot.Node"))
                 {
                     hint = PropertyHint.NodeType;
                     hintString = GetTypeName(memberNamedType);
