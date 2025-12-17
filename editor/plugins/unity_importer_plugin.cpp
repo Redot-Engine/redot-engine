@@ -36,7 +36,14 @@
 #include "editor/editor_node.h"
 #include "editor/gui/editor_toaster.h"
 #include "editor/file_system/editor_file_system.h"
-// Self-contained payloads embedded below.
+#include "core/os/os.h"
+
+#if __has_include("editor/vendor/unity_vendor.gen.h")
+#include "editor/vendor/unity_vendor.gen.h"
+#define UNITY_VENDOR_PRESENT 1
+#else
+#define UNITY_VENDOR_PRESENT 0
+#endif
 
 void UnityImporterPlugin::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_import_unity_packages"), &UnityImporterPlugin::_import_unity_packages);
@@ -56,12 +63,18 @@ void UnityImporterPlugin::_notification(int p_what) {
 
 struct _PayloadFile { const char *path; const uint8_t *data; unsigned int size; };
 
-// NOTE: Embed actual payloads here (generated offline) for full offline install.
-// Minimal placeholders below; the plugin warns if empty.
+#if UNITY_VENDOR_PRESENT
+static const _PayloadFile *_UNIDOT_IMPORTER = reinterpret_cast<const _PayloadFile *>(UnityVendor::UNIDOT_IMPORTER);
+static const unsigned _UNIDOT_IMPORTER_COUNT = UnityVendor::UNIDOT_IMPORTER_COUNT;
+static const _PayloadFile *_UNITYTOGODOT = reinterpret_cast<const _PayloadFile *>(UnityVendor::UNITYTOGODOT);
+static const unsigned _UNITYTOGODOT_COUNT = UnityVendor::UNITYTOGODOT_COUNT;
+#else
+// Placeholders when no embedded header is present.
 static const _PayloadFile _UNIDOT_IMPORTER[] = { { nullptr, nullptr, 0 } };
 static const unsigned _UNIDOT_IMPORTER_COUNT = 0;
 static const _PayloadFile _UNITYTOGODOT[] = { { nullptr, nullptr, 0 } };
 static const unsigned _UNITYTOGODOT_COUNT = 0;
+#endif
 
 static Error _extract_bundle(const _PayloadFile *files, unsigned count, const String &dest_dir_res) {
     Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
@@ -118,8 +131,22 @@ void UnityImporterPlugin::_import_unity_packages() {
     unsigned count = _UNIDOT_IMPORTER_COUNT;
     Error err = _extract_bundle(_UNIDOT_IMPORTER, count, "res://addons/unidot_importer");
     if (err != OK || count == 0) {
-        EditorToaster::get_singleton()->popup_str(TTR("Unidot bundle not embedded. Populate editor/vendor_sources/unidot_importer and rebuild."));
-        return;
+        // Fallback: git clone if available.
+        if (_git_available()) {
+            Vector<String> extra_args;
+            extra_args.push_back("--depth");
+            extra_args.push_back("1");
+            extra_args.push_back("--recurse-submodules");
+            extra_args.push_back("--shallow-submodules");
+            Error gerr = _git_clone("https://github.com/V-Sekai/unidot_importer", "addons/unidot_importer", extra_args);
+            if (gerr != OK) {
+                EditorToaster::get_singleton()->popup_str(TTR("Unidot not embedded and git clone failed. Populate editor/vendor_sources/unidot_importer and rebuild."));
+                return;
+            }
+        } else {
+            EditorToaster::get_singleton()->popup_str(TTR("Unidot bundle not embedded. Populate editor/vendor_sources/unidot_importer and rebuild (or install git)."));
+            return;
+        }
     }
     // Enable plugin.
     ProjectSettings *ps = ProjectSettings::get_singleton();
@@ -147,8 +174,21 @@ void UnityImporterPlugin::_install_unity_to_godot() {
     unsigned count = _UNITYTOGODOT_COUNT;
     Error err = _extract_bundle(_UNITYTOGODOT, count, "res://addons/UnityToGodot");
     if (err != OK || count == 0) {
-        EditorToaster::get_singleton()->popup_str(TTR("UnityToGodot bundle not embedded. Populate editor/vendor_sources/UnityToGodot and rebuild."));
-        return;
+        if (_git_available()) {
+            Vector<String> extra_args;
+            extra_args.push_back("--depth");
+            extra_args.push_back("1");
+            extra_args.push_back("--recurse-submodules");
+            extra_args.push_back("--shallow-submodules");
+            Error gerr = _git_clone("https://github.com/Anthogonyst/UnityToGodot", "addons/UnityToGodot", extra_args);
+            if (gerr != OK) {
+                EditorToaster::get_singleton()->popup_str(TTR("UnityToGodot not embedded and git clone failed. Populate editor/vendor_sources/UnityToGodot and rebuild."));
+                return;
+            }
+        } else {
+            EditorToaster::get_singleton()->popup_str(TTR("UnityToGodot bundle not embedded. Populate editor/vendor_sources/UnityToGodot and rebuild (or install git)."));
+            return;
+        }
     }
     EditorToaster::get_singleton()->popup_str(TTR("UnityToGodot toolkit installed locally under res://addons/UnityToGodot."));
 }
@@ -235,4 +275,49 @@ Error UnityImporterPlugin::_ensure_unidot_installed() {
     return OK;
 }
 
-// Network and git helpers removed for local-only bundling.
+bool UnityImporterPlugin::_git_available(String *r_version) const {
+    List<String> args;
+    args.push_back("--version");
+    String output;
+    int exit_code = 0;
+    Error e = OS::get_singleton()->execute("git", args, &output, &exit_code, true);
+    if (e != OK || exit_code != 0) {
+        return false;
+    }
+    if (r_version) {
+        *r_version = output;
+    }
+    return true;
+}
+
+Error UnityImporterPlugin::_git_clone(const String &p_url, const String &p_dest_rel_res, const Vector<String> &p_extra_args) {
+    Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+    if (d.is_null()) {
+        return ERR_CANT_CREATE;
+    }
+    if (!d->dir_exists("res://addons")) {
+        Error mk = d->make_dir("res://addons");
+        if (mk != OK && mk != ERR_ALREADY_EXISTS) {
+            return mk;
+        }
+    }
+
+    String project_dir = ProjectSettings::get_singleton()->globalize_path("res://");
+    List<String> args;
+    args.push_back("-C");
+    args.push_back(project_dir);
+    args.push_back("clone");
+    for (int i = 0; i < p_extra_args.size(); i++) {
+        args.push_back(p_extra_args[i]);
+    }
+    args.push_back(p_url);
+    args.push_back(p_dest_rel_res);
+
+    String out;
+    int exit_code = 0;
+    Error e = OS::get_singleton()->execute("git", args, &out, &exit_code, true);
+    if (e != OK || exit_code != 0) {
+        return FAILED;
+    }
+    return OK;
+}
