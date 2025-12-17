@@ -90,7 +90,11 @@ if env.editor_build:
     # Embedded vendor assets for Unity importer.
     env.CommandNoCache(
         "#editor/vendor/unity_vendor.gen.h",
-        ["#editor/vendor_sources/unidot_importer", "#editor/vendor_sources/UnityToGodot"],
+        [
+            "#editor/vendor_sources/unidot_importer",
+            "#editor/vendor_sources/UnityToGodot",
+            "#editor/vendor_sources/Shaderlab2GodotSL",
+        ],
         env.Run(editor_builders.unity_vendor_builder),
     )
 

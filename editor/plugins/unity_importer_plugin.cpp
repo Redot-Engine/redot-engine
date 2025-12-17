@@ -36,47 +36,8 @@
 #include "editor/editor_node.h"
 #include "editor/gui/editor_toaster.h"
 #include "editor/file_system/editor_file_system.h"
-#include "core/os/os.h"
 
-#if __has_include("editor/vendor/unity_vendor.gen.h")
-#include "editor/vendor/unity_vendor.gen.h"
-#define UNITY_VENDOR_PRESENT 1
-#else
-#define UNITY_VENDOR_PRESENT 0
-#endif
-
-void UnityImporterPlugin::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("_import_unity_packages"), &UnityImporterPlugin::_import_unity_packages);
-    ClassDB::bind_method(D_METHOD("_install_unity_to_godot"), &UnityImporterPlugin::_install_unity_to_godot);
-}
-
-void UnityImporterPlugin::_notification(int p_what) {
-    if (p_what == NOTIFICATION_ENTER_TREE) {
-        add_tool_menu_item(TTR("Import Unity Project..."), callable_mp(this, &UnityImporterPlugin::_import_unity_packages));
-        add_tool_menu_item(TTR("Install UnityToGodot Toolkit..."), callable_mp(this, &UnityImporterPlugin::_install_unity_to_godot));
-    }
-    if (p_what == NOTIFICATION_EXIT_TREE) {
-        remove_tool_menu_item(TTR("Import Unity Project..."));
-        remove_tool_menu_item(TTR("Install UnityToGodot Toolkit..."));
-    }
-}
-
-struct _PayloadFile { const char *path; const uint8_t *data; unsigned int size; };
-
-#if UNITY_VENDOR_PRESENT
-static const _PayloadFile *_UNIDOT_IMPORTER = reinterpret_cast<const _PayloadFile *>(UnityVendor::UNIDOT_IMPORTER);
-static const unsigned _UNIDOT_IMPORTER_COUNT = UnityVendor::UNIDOT_IMPORTER_COUNT;
-static const _PayloadFile *_UNITYTOGODOT = reinterpret_cast<const _PayloadFile *>(UnityVendor::UNITYTOGODOT);
-static const unsigned _UNITYTOGODOT_COUNT = UnityVendor::UNITYTOGODOT_COUNT;
-#else
-// Placeholders when no embedded header is present.
-static const _PayloadFile _UNIDOT_IMPORTER[] = { { nullptr, nullptr, 0 } };
-static const unsigned _UNIDOT_IMPORTER_COUNT = 0;
-static const _PayloadFile _UNITYTOGODOT[] = { { nullptr, nullptr, 0 } };
-static const unsigned _UNITYTOGODOT_COUNT = 0;
-#endif
-
-static Error _extract_bundle(const _PayloadFile *files, unsigned count, const String &dest_dir_res) {
+static Error _ensure_dir(const String &p_dir_res) {
     Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
     if (d.is_null()) {
         return ERR_CANT_CREATE;
@@ -87,66 +48,109 @@ static Error _extract_bundle(const _PayloadFile *files, unsigned count, const St
             return mk;
         }
     }
-    if (!d->dir_exists(dest_dir_res)) {
-        Error mk2 = d->make_dir(dest_dir_res);
-        if (mk2 != OK && mk2 != ERR_ALREADY_EXISTS) {
-            return mk2;
-        }
-    }
-    for (unsigned i = 0; i < count; i++) {
-        String rel_path = String(files[i].path);
-        if (rel_path.is_empty()) {
+    Vector<String> parts = String(p_dir_res).replace("res://", "").split("/");
+    String path = "res://";
+    for (int i = 0; i < parts.size(); i++) {
+        if (parts[i].is_empty()) {
             continue;
         }
-        // Ensure subdirs exist
-        Vector<String> parts = rel_path.split("/");
-        String subdir = dest_dir_res;
-        for (int pi = 0; pi < parts.size() - 1; ++pi) {
-            subdir += "/" + parts[pi];
-            if (!d->dir_exists(subdir)) {
-                Error mk3 = d->make_dir(subdir);
-                if (mk3 != OK && mk3 != ERR_ALREADY_EXISTS) {
-                    return mk3;
-                }
+        path += parts[i];
+        if (!d->dir_exists(path)) {
+            Error mk = d->make_dir(path);
+            if (mk != OK && mk != ERR_ALREADY_EXISTS) {
+                return mk;
             }
         }
-        String out_path = dest_dir_res + "/" + rel_path;
-        Ref<FileAccess> f = FileAccess::open(out_path, FileAccess::WRITE);
-        if (f.is_null()) {
-            return ERR_CANT_CREATE;
-        }
-        PackedByteArray pba;
-        pba.resize(files[i].size);
-        // Copy bytes
-        for (unsigned j = 0; j < files[i].size; j++) {
-            pba.set(j, files[i].data[j]);
-        }
-        f->store_buffer(pba);
-        f->close();
+        path += "/";
     }
     return OK;
 }
 
-void UnityImporterPlugin::_import_unity_packages() {
-    unsigned count = _UNIDOT_IMPORTER_COUNT;
-    Error err = _extract_bundle(_UNIDOT_IMPORTER, count, "res://addons/unidot_importer");
-    if (err != OK || count == 0) {
-        // Fallback: git clone if available.
-        if (_git_available()) {
-            Vector<String> extra_args;
-            extra_args.push_back("--depth");
-            extra_args.push_back("1");
-            extra_args.push_back("--recurse-submodules");
-            extra_args.push_back("--shallow-submodules");
-            Error gerr = _git_clone("https://github.com/V-Sekai/unidot_importer", "addons/unidot_importer", extra_args);
-            if (gerr != OK) {
-                EditorToaster::get_singleton()->popup_str(TTR("Unidot not embedded and git clone failed. Populate editor/vendor_sources/unidot_importer and rebuild."));
-                return;
+static Error _copy_dir_recursive(const String &p_src_res, const String &p_dst_res) {
+    Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+    if (d.is_null()) {
+        return ERR_CANT_OPEN;
+    }
+    if (!d->dir_exists(p_src_res)) {
+        return ERR_DOES_NOT_EXIST;
+    }
+    Error err = _ensure_dir(p_dst_res);
+    if (err != OK) {
+        return err;
+    }
+
+    List<String> stack;
+    stack.push_back(p_src_res);
+
+    while (!stack.is_empty()) {
+        String cur_src = stack.front()->get();
+        stack.pop_front();
+        String rel = cur_src.trim_prefix(p_src_res);
+        String cur_dst = p_dst_res + rel;
+        if (!d->dir_exists(cur_dst)) {
+            Error mk = d->make_dir(cur_dst);
+            if (mk != OK && mk != ERR_ALREADY_EXISTS) {
+                return mk;
             }
-        } else {
-            EditorToaster::get_singleton()->popup_str(TTR("Unidot bundle not embedded. Populate editor/vendor_sources/unidot_importer and rebuild (or install git)."));
-            return;
         }
+
+        Ref<DirAccess> sub = DirAccess::open(cur_src);
+        if (sub.is_null()) {
+            return ERR_CANT_OPEN;
+        }
+        sub->list_dir_begin();
+        String name = sub->get_next();
+        while (!name.is_empty()) {
+            if (name == "." || name == "..") {
+                name = sub->get_next();
+                continue;
+            }
+            String src_path = cur_src.plus_file(name);
+            String dst_path = cur_dst.plus_file(name);
+            if (sub->current_is_dir()) {
+                stack.push_back(src_path);
+            } else {
+                PackedByteArray buf = FileAccess::get_file_as_bytes(src_path);
+                Ref<FileAccess> f = FileAccess::open(dst_path, FileAccess::WRITE);
+                if (f.is_null()) {
+                    sub->list_dir_end();
+                    return ERR_CANT_CREATE;
+                }
+                f->store_buffer(buf);
+            }
+            name = sub->get_next();
+        }
+        sub->list_dir_end();
+    }
+    return OK;
+}
+
+void UnityImporterPlugin::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("_import_unity_packages"), &UnityImporterPlugin::_import_unity_packages);
+    ClassDB::bind_method(D_METHOD("_install_unity_to_godot"), &UnityImporterPlugin::_install_unity_to_godot);
+    ClassDB::bind_method(D_METHOD("_install_shaderlab2godotsl"), &UnityImporterPlugin::_install_shaderlab2godotsl);
+}
+
+void UnityImporterPlugin::_notification(int p_what) {
+    if (p_what == NOTIFICATION_ENTER_TREE) {
+        add_tool_menu_item(TTR("Import Unity Project..."), callable_mp(this, &UnityImporterPlugin::_import_unity_packages));
+        add_tool_menu_item(TTR("Install UnityToGodot Toolkit..."), callable_mp(this, &UnityImporterPlugin::_install_unity_to_godot));
+        add_tool_menu_item(TTR("Install Shaderlab2GodotSL..."), callable_mp(this, &UnityImporterPlugin::_install_shaderlab2godotsl));
+    }
+    if (p_what == NOTIFICATION_EXIT_TREE) {
+        remove_tool_menu_item(TTR("Import Unity Project..."));
+        remove_tool_menu_item(TTR("Install UnityToGodot Toolkit..."));
+        remove_tool_menu_item(TTR("Install Shaderlab2GodotSL..."));
+    }
+}
+
+void UnityImporterPlugin::_import_unity_packages() {
+    const String src_dir = "res://addons/_unity_bundled/unidot_importer";
+    const String dst_dir = "res://addons/unidot_importer";
+    Error err = _copy_dir_recursive(src_dir, dst_dir);
+    if (err != OK) {
+        EditorToaster::get_singleton()->popup_str(TTR("Bundled Unidot importer not found. Populate addons/_unity_bundled/unidot_importer inside the editor install."));
+        return;
     }
     // Enable plugin.
     ProjectSettings *ps = ProjectSettings::get_singleton();
@@ -171,153 +175,24 @@ void UnityImporterPlugin::_import_unity_packages() {
 }
 
 void UnityImporterPlugin::_install_unity_to_godot() {
-    unsigned count = _UNITYTOGODOT_COUNT;
-    Error err = _extract_bundle(_UNITYTOGODOT, count, "res://addons/UnityToGodot");
-    if (err != OK || count == 0) {
-        if (_git_available()) {
-            Vector<String> extra_args;
-            extra_args.push_back("--depth");
-            extra_args.push_back("1");
-            extra_args.push_back("--recurse-submodules");
-            extra_args.push_back("--shallow-submodules");
-            Error gerr = _git_clone("https://github.com/Anthogonyst/UnityToGodot", "addons/UnityToGodot", extra_args);
-            if (gerr != OK) {
-                EditorToaster::get_singleton()->popup_str(TTR("UnityToGodot not embedded and git clone failed. Populate editor/vendor_sources/UnityToGodot and rebuild."));
-                return;
-            }
-        } else {
-            EditorToaster::get_singleton()->popup_str(TTR("UnityToGodot bundle not embedded. Populate editor/vendor_sources/UnityToGodot and rebuild (or install git)."));
-            return;
-        }
+    const String src_dir = "res://addons/_unity_bundled/UnityToGodot";
+    const String dst_dir = "res://addons/UnityToGodot";
+    Error err = _copy_dir_recursive(src_dir, dst_dir);
+    if (err != OK) {
+        EditorToaster::get_singleton()->popup_str(TTR("Bundled UnityToGodot toolkit not found. Populate addons/_unity_bundled/UnityToGodot inside the editor install."));
+        return;
     }
     EditorToaster::get_singleton()->popup_str(TTR("UnityToGodot toolkit installed locally under res://addons/UnityToGodot."));
 }
 
-static const char *unidot_files[] = {
-    "aligned_byte_buffer.gd",
-    "asset_adapter.gd",
-    "asset_database.gd",
-    "asset_meta.gd",
-    "bone_map_editor_plugin.gd",
-    "convert_scene.gd",
-    "import_worker.gd",
-    "meta_worker.gd",
-    "monoscript.gd",
-    "object_adapter.gd",
-    "package_file.gd",
-    "package_import_dialog.gd",
-    "plugin.cfg",
-    "plugin.gd",
-    "post_import_model.gd",
-    "queue_lib.gd",
-    "raw_parsed_asset.gd",
-    "scene_node_state.gd",
-    "static_preload.gd",
-    "tarfile.gd",
-    "unidot_utils.gd",
-    "vrm_integration.gd",
-    "yaml_parser.gd",
-};
-
-Error UnityImporterPlugin::_ensure_unidot_installed() {
-    // Create addon directory.
-    const String addon_dir = "res://addons/unidot_importer";
-    Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-    if (d.is_null()) {
-        return ERR_CANT_CREATE;
+void UnityImporterPlugin::_install_shaderlab2godotsl() {
+    const String src_dir = "res://addons/_unity_bundled/Shaderlab2GodotSL";
+    const String dst_dir = "res://addons/Shaderlab2GodotSL";
+    Error err = _copy_dir_recursive(src_dir, dst_dir);
+    if (err != OK) {
+        EditorToaster::get_singleton()->popup_str(TTR("Bundled Shaderlab2GodotSL not found. Populate addons/_unity_bundled/Shaderlab2GodotSL inside the editor install."));
+        return;
     }
-    if (!d->dir_exists("res://addons")) {
-        Error mk = d->make_dir("res://addons");
-        if (mk != OK && mk != ERR_ALREADY_EXISTS) {
-            return mk;
-        }
-    }
-    if (!d->dir_exists(addon_dir)) {
-        Error mk2 = d->make_dir(addon_dir);
-        if (mk2 != OK && mk2 != ERR_ALREADY_EXISTS) {
-            return mk2;
-        }
-    }
-
-    // Download files from GitHub raw.
-    const String base_url = "https://raw.githubusercontent.com/V-Sekai/unidot_importer/master/";
-    for (size_t i = 0; i < sizeof(unidot_files) / sizeof(unidot_files[0]); ++i) {
-        String fn = unidot_files[i];
-        String url = base_url + fn;
-        String path = addon_dir + "/" + fn;
-        Error derr = _download_to_file(url, path);
-        if (derr != OK) {
-            return derr;
-        }
-    }
-
-    // Enable plugin in project settings.
-    ProjectSettings *ps = ProjectSettings::get_singleton();
-    PackedStringArray enabled_plugins;
-    if (ps->has_setting("editor_plugins/enabled")) {
-        enabled_plugins = ps->get("editor_plugins/enabled");
-    }
-    const String plugin_cfg_path = addon_dir + "/plugin.cfg";
-    bool already = false;
-    for (int i = 0; i < enabled_plugins.size(); i++) {
-        if (enabled_plugins[i] == plugin_cfg_path) {
-            already = true;
-            break;
-        }
-    }
-    if (!already) {
-        enabled_plugins.append(plugin_cfg_path);
-        ps->set("editor_plugins/enabled", enabled_plugins);
-    }
-
-    // Refresh scripts so the plugin is loaded.
-    EditorFileSystem::get_singleton()->scan();
-    return OK;
+    EditorToaster::get_singleton()->popup_str(TTR("Shaderlab2GodotSL installed locally under res://addons/Shaderlab2GodotSL."));
 }
 
-bool UnityImporterPlugin::_git_available(String *r_version) const {
-    List<String> args;
-    args.push_back("--version");
-    String output;
-    int exit_code = 0;
-    Error e = OS::get_singleton()->execute("git", args, &output, &exit_code, true);
-    if (e != OK || exit_code != 0) {
-        return false;
-    }
-    if (r_version) {
-        *r_version = output;
-    }
-    return true;
-}
-
-Error UnityImporterPlugin::_git_clone(const String &p_url, const String &p_dest_rel_res, const Vector<String> &p_extra_args) {
-    Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-    if (d.is_null()) {
-        return ERR_CANT_CREATE;
-    }
-    if (!d->dir_exists("res://addons")) {
-        Error mk = d->make_dir("res://addons");
-        if (mk != OK && mk != ERR_ALREADY_EXISTS) {
-            return mk;
-        }
-    }
-
-    String project_dir = ProjectSettings::get_singleton()->globalize_path("res://");
-    List<String> args;
-    args.push_back("-C");
-    args.push_back(project_dir);
-    args.push_back("clone");
-    for (int i = 0; i < p_extra_args.size(); i++) {
-        args.push_back(p_extra_args[i]);
-    }
-    args.push_back(p_url);
-    args.push_back(p_dest_rel_res);
-
-    String out;
-    int exit_code = 0;
-    Error e = OS::get_singleton()->execute("git", args, &out, &exit_code, true);
-    if (e != OK || exit_code != 0) {
-        return FAILED;
-    }
-    return OK;
-}

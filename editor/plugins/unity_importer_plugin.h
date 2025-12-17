@@ -33,7 +33,6 @@
 #pragma once
 
 #include "editor/plugins/editor_plugin.h"
-#include "core/io/http_client.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/config/project_settings.h"
@@ -43,8 +42,7 @@ class UnityImporterPlugin : public EditorPlugin {
 
     void _import_unity_packages();
     void _install_unity_to_godot();
-    bool _git_available(String *r_version = nullptr) const;
-    Error _git_clone(const String &p_url, const String &p_dest_rel_res, const Vector<String> &p_extra_args = Vector<String>());
+    void _install_shaderlab2godotsl();
 
 protected:
     void _notification(int p_what) override;
