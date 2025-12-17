@@ -32,10 +32,55 @@
 
 #include "unity_importer_plugin.h"
 
+#include "core/io/file_access.h"
+#include "core/io/image.h"
+#include "core/io/json.h"
 #include "core/os/os.h"
 #include "editor/editor_node.h"
-#include "editor/gui/editor_toaster.h"
 #include "editor/file_system/editor_file_system.h"
+#include "editor/gui/editor_file_dialog.h"
+#include "editor/gui/editor_toaster.h"
+#include "scene/gui/progress_bar.h"
+#include "scene/resources/image_texture.h"
+
+UnityAssetDatabase *UnityAssetDatabase::singleton = nullptr;
+
+UnityAssetDatabase *UnityAssetDatabase::get_singleton() {
+	if (!singleton) {
+		singleton = memnew(UnityAssetDatabase);
+	}
+	return singleton;
+}
+
+void UnityAssetDatabase::insert_meta(const String &p_guid, const Ref<UnityMetadata> &p_meta) {
+	guid_to_meta[p_guid] = p_meta;
+	if (!p_meta->path.is_empty()) {
+		path_to_meta[p_meta->path] = p_meta;
+	}
+}
+
+Ref<UnityMetadata> UnityAssetDatabase::get_meta_by_guid(const String &p_guid) {
+	return guid_to_meta.has(p_guid) ? guid_to_meta[p_guid] : Ref<UnityMetadata>();
+}
+
+Ref<UnityMetadata> UnityAssetDatabase::get_meta_at_path(const String &p_path) {
+	return path_to_meta.has(p_path) ? path_to_meta[p_path] : Ref<UnityMetadata>();
+}
+
+void UnityAssetDatabase::clear() {
+	guid_to_meta.clear();
+	path_to_meta.clear();
+}
+
+UnityAssetDatabase::UnityAssetDatabase() {
+	singleton = this;
+}
+
+UnityAssetDatabase::~UnityAssetDatabase() {
+	if (singleton == this) {
+		singleton = nullptr;
+	}
+}
 
 static Error _ensure_dir(const String &p_dir_res) {
     Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
@@ -148,34 +193,132 @@ void UnityImporterPlugin::_notification(int p_what) {
 }
 
 void UnityImporterPlugin::_import_unity_packages() {
-    const String src_dir = "res://addons/_unity_bundled/unidot_importer";
-    const String dst_dir = "res://addons/unidot_importer";
-    Error err = _copy_dir_recursive(src_dir, dst_dir);
-    if (err != OK) {
-        EditorToaster::get_singleton()->popup_str(TTR("Bundled Unidot importer not found. Populate addons/_unity_bundled/unidot_importer inside the editor install."));
-        return;
-    }
-    // Enable plugin.
-    ProjectSettings *ps = ProjectSettings::get_singleton();
-    PackedStringArray enabled_plugins;
-    if (ps->has_setting("editor_plugins/enabled")) {
-        enabled_plugins = ps->get("editor_plugins/enabled");
-    }
-    const String plugin_cfg_path = String("res://addons/unidot_importer/plugin.cfg");
-    bool already = false;
-    for (int i = 0; i < enabled_plugins.size(); i++) {
-        if (enabled_plugins[i] == plugin_cfg_path) {
-            already = true;
-            break;
-        }
-    }
-    if (!already) {
-        enabled_plugins.append(plugin_cfg_path);
-        ps->set("editor_plugins/enabled", enabled_plugins);
-    }
-    EditorFileSystem::get_singleton()->scan();
-    EditorToaster::get_singleton()->popup_str(TTR("Unidot Importer installed locally and enabled."));
+	_show_package_dialog();
 }
+
+void UnityImporterPlugin::_show_package_dialog() {
+	if (!file_dialog) {
+		file_dialog = memnew(EditorFileDialog);
+		file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_FILE);
+		file_dialog->clear_filters();
+		file_dialog->add_filter("*.unitypackage", TTR("Unity Package"));
+		file_dialog->set_title(TTR("Select Unity Package"));
+		file_dialog->connect("file_selected", callable_mp(this, &UnityImporterPlugin::_file_selected));
+		EditorNode::get_singleton()->get_gui_base()->add_child(file_dialog);
+	}
+	file_dialog->popup_file_dialog();
+}
+
+void UnityImporterPlugin::_file_selected(const String &p_path) {
+	current_package_path = p_path;
+	Error err = _parse_unity_package(p_path);
+	if (err != OK) {
+		EditorToaster::get_singleton()->popup_str(vformat(TTR("Failed to parse Unity package: %s"), error_names[err]), EditorToaster::SEVERITY_ERROR);
+		return;
+	}
+	_populate_asset_tree();
+}
+
+Error UnityImporterPlugin::_parse_unity_package(const String &p_path) {
+	guid_to_asset.clear();
+	assets_to_import.clear();
+
+	// Unity packages are tar.gz archives
+	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::READ);
+	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_FILE_CANT_OPEN, "Cannot open Unity package file.");
+
+	PackedByteArray compressed_data = file->get_buffer(file->get_length());
+	file.unref();
+
+	// Decompress gzip
+	PackedByteArray tar_data = compressed_data.decompress_dynamic(-1, FileAccess::COMPRESSION_GZIP);
+	ERR_FAIL_COND_V_MSG(tar_data.is_empty(), ERR_FILE_CORRUPT, "Failed to decompress Unity package.");
+
+	// Parse tar archive
+	int offset = 0;
+	while (offset + 512 <= tar_data.size()) {
+		// Read tar header (512 bytes)
+		const uint8_t *header = tar_data.ptr() + offset;
+		
+		// Check for end of archive (empty header)
+		bool is_empty = true;
+		for (int i = 0; i < 512; i++) {
+			if (header[i] != 0) {
+				is_empty = false;
+				break;
+			}
+		}
+		if (is_empty) {
+			break;
+		}
+
+		// Parse filename (offset 0, 100 bytes)
+		char name_buf[101] = {};
+		memcpy(name_buf, header, 100);
+		String entry_name = String::utf8(name_buf);
+
+		// Parse file size (offset 124, 12 bytes octal)
+		char size_buf[13] = {};
+		memcpy(size_buf, header + 124, 12);
+		int64_t file_size = String(size_buf).hex_to_int(); // Unity uses octal
+		
+		offset += 512; // Move past header
+
+		// Extract file data
+		if (file_size > 0 && offset + file_size <= tar_data.size()) {
+			PackedByteArray entry_data;
+			entry_data.resize(file_size);
+			memcpy(entry_data.ptrw(), tar_data.ptr() + offset, file_size);
+			
+			_parse_tar_entry(entry_data, entry_name);
+			
+			// Move to next 512-byte boundary
+			offset += ((file_size + 511) / 512) * 512;
+		}
+	}
+
+	return OK;
+}
+
+Error UnityImporterPlugin::_parse_tar_entry(const PackedByteArray &p_data, const String &p_entry_path) {
+	// Unity package structure: <guid>/asset, <guid>/pathname, <guid>/asset.meta
+	Vector<String> parts = p_entry_path.split("/");
+	if (parts.size() < 2) {
+		return OK; // Skip invalid entries
+	}
+
+	String guid = parts[0];
+	String entry_type = parts[1];
+
+	if (!guid_to_asset.has(guid)) {
+		Ref<UnityAsset> asset;
+		asset.instantiate();
+		asset->guid = guid;
+		guid_to_asset[guid] = asset;
+	}
+
+	Ref<UnityAsset> asset = guid_to_asset[guid];
+
+	if (entry_type == "asset") {
+		asset->asset_data = p_data;
+	} else if (entry_type == "pathname") {
+		asset->orig_pathname = String::utf8((const char *)p_data.ptr(), p_data.size());
+		asset->pathname = _convert_unity_path_to_godot(asset->orig_pathname);
+	} else if (entry_type == "asset.meta") {
+		asset->meta_bytes = p_data;
+		asset->meta_data = String::utf8((const char *)p_data.ptr(), p_data.size());
+		Ref<UnityMetadata> meta = _parse_meta_file(asset->meta_data, asset->orig_pathname);
+		if (meta.is_valid()) {
+			meta->guid = guid;
+			meta->path = asset->pathname;
+			if (!asset_database) {
+				asset_database = UnityAssetDatabase::get_singleton();
+			}
+			asset_database->insert_meta(guid, meta);
+		}
+	}
+
+	return OK;
 
 void UnityImporterPlugin::_install_unity_to_godot() {
     const String src_dir = "res://addons/_unity_bundled/UnityToGodot";

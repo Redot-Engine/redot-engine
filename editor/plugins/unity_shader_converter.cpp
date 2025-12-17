@@ -525,3 +525,203 @@ ShaderLabToken *UnityShaderConverter::_strip_whitespace(ShaderLabToken *p_tokens
 
 	return head;
 }
+
+String UnityShaderConverter::_translate_unity_function(const String &p_function_call) {
+	for (const KeyValue<String, String> &E : unity_to_godot_functions) {
+		if (p_function_call.contains(E.key)) {
+			return p_function_call.replace(E.key, E.value);
+		}
+	}
+	return p_function_call;
+}
+
+String UnityShaderConverter::_translate_unity_type(const String &p_type) {
+	if (hlsl_to_glsl_types.has(p_type)) {
+		return hlsl_to_glsl_types[p_type];
+	}
+	if (p_type.contains("2D")) {
+		return "sampler2D";
+	}
+	if (p_type.contains("Color")) {
+		return "vec4";
+	}
+	return "vec4";
+}
+
+String UnityShaderConverter::_translate_semantic(const String &p_semantic) {
+	if (unity_semantics.has(p_semantic)) {
+		return unity_semantics[p_semantic];
+	}
+	return p_semantic;
+}
+
+void UnityShaderConverter::_parse_properties(ShaderLabToken *&p_current, ShaderPropertiesNode *p_properties) {
+	ShaderPropertyNode *last_prop = nullptr;
+	int brace_depth = 1;
+	
+	while (p_current && brace_depth > 0) {
+		if (p_current->type == ShaderLabTokenType::OPEN_CURLY) {
+			brace_depth++;
+		} else if (p_current->type == ShaderLabTokenType::CLOSE_CURLY) {
+			brace_depth--;
+			if (brace_depth == 0) {
+				break;
+			}
+		}
+		
+		// Parse property: _Name("Display Name", Type) = default
+		if (p_current->original_data.begins_with("_")) {
+			ShaderPropertyNode *prop = memnew(ShaderPropertyNode);
+			prop->name = p_current->original_data;
+			
+			// Skip to type (after opening paren and string)
+			while (p_current && p_current->type != ShaderLabTokenType::COMMA) {
+				p_current = p_current->next;
+			}
+			if (p_current && p_current->next) {
+				p_current = p_current->next;
+				prop->type_name = p_current->original_data;
+			}
+			
+			if (!p_properties->properties) {
+				p_properties->properties = prop;
+			} else {
+				last_prop->next_property = prop;
+			}
+			last_prop = prop;
+		}
+		
+		p_current = p_current->next;
+	}
+}
+
+void UnityShaderConverter::_parse_struct(ShaderLabToken *&p_current, ShaderStruct &r_struct) {
+	p_current = p_current->next; // Skip 'struct'
+	if (p_current) {
+		r_struct.name = p_current->original_data;
+		p_current = p_current->next;
+	}
+	
+	// Skip to opening brace
+	while (p_current && p_current->type != ShaderLabTokenType::OPEN_CURLY) {
+		p_current = p_current->next;
+	}
+	if (p_current) {
+		p_current = p_current->next;
+	}
+	
+	ShaderStructMember *last_member = nullptr;
+	
+	// Parse members until closing brace
+	while (p_current && p_current->type != ShaderLabTokenType::CLOSE_CURLY) {
+		ShaderStructMember *member = memnew(ShaderStructMember);
+		member->type = p_current->original_data;
+		p_current = p_current->next;
+		
+		if (p_current) {
+			member->name = p_current->original_data;
+			p_current = p_current->next;
+		}
+		
+		// Check for semantic
+		if (p_current && p_current->type == ShaderLabTokenType::INHERITANCE) {
+			p_current = p_current->next;
+			if (p_current) {
+				member->semantic = p_current->original_data;
+				p_current = p_current->next;
+			}
+		}
+		
+		if (!r_struct.members) {
+			r_struct.members = member;
+		} else {
+			last_member->next = member;
+		}
+		last_member = member;
+		
+		// Skip semicolon
+		if (p_current && p_current->type == ShaderLabTokenType::SEMICOLON) {
+			p_current = p_current->next;
+		}
+	}
+}
+
+void UnityShaderConverter::_parse_function(ShaderLabToken *&p_current, ShaderFunction &r_function) {
+	r_function.return_type = p_current->original_data;
+	p_current = p_current->next;
+	
+	if (p_current) {
+		r_function.name = p_current->original_data;
+		p_current = p_current->next;
+	}
+	
+	// Parse parameters
+	if (p_current && p_current->type == ShaderLabTokenType::OPEN_BRACKET) {
+		p_current = p_current->next;
+		while (p_current && p_current->type != ShaderLabTokenType::CLOSE_BRACKET) {
+			r_function.parameters += p_current->original_data + " ";
+			p_current = p_current->next;
+		}
+		if (p_current) {
+			p_current = p_current->next;
+		}
+	}
+	
+	// Check for return semantic
+	if (p_current && p_current->type == ShaderLabTokenType::INHERITANCE) {
+		p_current = p_current->next;
+		if (p_current) {
+			r_function.return_semantic = p_current->original_data;
+			p_current = p_current->next;
+		}
+	}
+	
+	// Parse body
+	if (p_current && p_current->type == ShaderLabTokenType::OPEN_CURLY) {
+		p_current = p_current->next;
+		int brace_depth = 1;
+		while (p_current && brace_depth > 0) {
+			if (p_current->type == ShaderLabTokenType::OPEN_CURLY) {
+				brace_depth++;
+			} else if (p_current->type == ShaderLabTokenType::CLOSE_CURLY) {
+				brace_depth--;
+				if (brace_depth == 0) {
+					break;
+				}
+			}
+			r_function.body += p_current->original_data + " ";
+			p_current = p_current->next;
+		}
+	}
+}
+
+String UnityShaderConverter::_convert_hlsl_to_glsl(const String &p_hlsl_code, bool p_is_vertex) {
+	String glsl_code = p_hlsl_code;
+	
+	// Translate HLSL types to GLSL
+	for (const KeyValue<String, String> &E : hlsl_to_glsl_types) {
+		glsl_code = glsl_code.replace(E.key, E.value);
+	}
+	
+	// Translate Unity functions
+	for (const KeyValue<String, String> &E : unity_to_godot_functions) {
+		glsl_code = glsl_code.replace(E.key, E.value);
+	}
+	
+	// Translate semantics
+	for (const KeyValue<String, String> &E : unity_semantics) {
+		glsl_code = glsl_code.replace(E.key, E.value);
+	}
+	
+	// Add proper indentation
+	Vector<String> lines = glsl_code.split("\n");
+	String result;
+	for (int i = 0; i < lines.size(); i++) {
+		String line = lines[i].strip_edges();
+		if (!line.is_empty()) {
+			result += "\t" + line + "\n";
+		}
+	}
+	
+	return result;
+}
