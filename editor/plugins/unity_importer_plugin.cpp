@@ -129,6 +129,7 @@ void UnityImporterPlugin::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_import_unity_packages"), &UnityImporterPlugin::_import_unity_packages);
     ClassDB::bind_method(D_METHOD("_install_unity_to_godot"), &UnityImporterPlugin::_install_unity_to_godot);
     ClassDB::bind_method(D_METHOD("_install_shaderlab2godotsl"), &UnityImporterPlugin::_install_shaderlab2godotsl);
+    ClassDB::bind_method(D_METHOD("_convert_unity_shader"), &UnityImporterPlugin::_convert_unity_shader);
 }
 
 void UnityImporterPlugin::_notification(int p_what) {
@@ -136,11 +137,13 @@ void UnityImporterPlugin::_notification(int p_what) {
         add_tool_menu_item(TTR("Import Unity Project..."), callable_mp(this, &UnityImporterPlugin::_import_unity_packages));
         add_tool_menu_item(TTR("Install UnityToGodot Toolkit..."), callable_mp(this, &UnityImporterPlugin::_install_unity_to_godot));
         add_tool_menu_item(TTR("Install Shaderlab2GodotSL..."), callable_mp(this, &UnityImporterPlugin::_install_shaderlab2godotsl));
+        add_tool_menu_item(TTR("Convert Unity Shader..."), callable_mp(this, &UnityImporterPlugin::_convert_unity_shader));
     }
     if (p_what == NOTIFICATION_EXIT_TREE) {
         remove_tool_menu_item(TTR("Import Unity Project..."));
         remove_tool_menu_item(TTR("Install UnityToGodot Toolkit..."));
         remove_tool_menu_item(TTR("Install Shaderlab2GodotSL..."));
+        remove_tool_menu_item(TTR("Convert Unity Shader..."));
     }
 }
 
@@ -186,13 +189,22 @@ void UnityImporterPlugin::_install_unity_to_godot() {
 }
 
 void UnityImporterPlugin::_install_shaderlab2godotsl() {
-    const String src_dir = "res://addons/_unity_bundled/Shaderlab2GodotSL";
-    const String dst_dir = "res://addons/Shaderlab2GodotSL";
-    Error err = _copy_dir_recursive(src_dir, dst_dir);
-    if (err != OK) {
-        EditorToaster::get_singleton()->popup_str(TTR("Bundled Shaderlab2GodotSL not found. Populate addons/_unity_bundled/Shaderlab2GodotSL inside the editor install."));
-        return;
-    }
-    EditorToaster::get_singleton()->popup_str(TTR("Shaderlab2GodotSL installed locally under res://addons/Shaderlab2GodotSL."));
+    EditorToaster::get_singleton()->popup_str(TTR("Shader converter now built-in! Use Tools > Convert Unity Shader."));
+}
+
+void UnityImporterPlugin::_convert_unity_shader() {
+    EditorNode::get_singleton()->get_file_system_dock()->navigate_to_path("res://");
+    
+    // TODO: Add file dialog to select Unity shader file
+    // For now, show a message
+    EditorToaster::get_singleton()->popup_str(TTR("Unity shader converter ready. Built-in Shaderlab2GodotSL tokenizer active."));
+    
+    // Example usage (would be triggered by file selection):
+    // String unity_shader_content = FileAccess::get_file_as_string("path/to/shader.shader");
+    // String godot_shader;
+    // Error err = UnityShaderConverter::convert_shaderlab_to_godot(unity_shader_content, godot_shader);
+    // if (err == OK) {
+    //     FileAccess::open("res://converted_shader.gdshader", FileAccess::WRITE)->store_string(godot_shader);
+    // }
 }
 

@@ -36,6 +36,7 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/config/project_settings.h"
+#include "unity_shader_converter.h"
 
 class UnityImporterPlugin : public EditorPlugin {
     GDCLASS(UnityImporterPlugin, EditorPlugin);
@@ -43,6 +44,7 @@ class UnityImporterPlugin : public EditorPlugin {
     void _import_unity_packages();
     void _install_unity_to_godot();
     void _install_shaderlab2godotsl();
+    void _convert_unity_shader();
 
 protected:
     void _notification(int p_what) override;
