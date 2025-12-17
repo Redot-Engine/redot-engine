@@ -87,6 +87,13 @@ if env.editor_build:
     env.add_source_files(env.editor_sources, "*.cpp")
     env.add_source_files(env.editor_sources, gen_exporters)
 
+    # Generate embedded vendor addons header (Unidot + UnityToGodot)
+    env.CommandNoCache(
+        "#editor/vendor/unity_vendor.gen.h",
+        ["#editor/vendor_sources/unidot_importer", "#editor/vendor_sources/UnityToGodot"],
+        env.Run(editor_builders.unity_vendor_builder),
+    )
+
     SConscript("animation/SCsub")
     SConscript("asset_library/SCsub")
     SConscript("audio/SCsub")

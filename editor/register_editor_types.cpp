@@ -134,6 +134,7 @@
 #include "editor/shader/shader_editor_plugin.h"
 #include "editor/shader/shader_file_editor_plugin.h"
 #include "editor/translations/editor_translation_parser.h"
+#include "editor/plugins/unity_importer_plugin.h"
 #include "editor/version_control/editor_vcs_interface.h"
 #ifndef DISABLE_DEPRECATED
 #include "editor/scene/2d/parallax_background_editor_plugin.h"
@@ -266,6 +267,9 @@ void register_editor_types() {
 	EditorPlugins::add_by_type<ThemeEditorPlugin>();
 	EditorPlugins::add_by_type<ToolButtonEditorPlugin>();
 	EditorPlugins::add_by_type<VoxelGIEditorPlugin>();
+#ifdef TOOLS_ENABLED
+	EditorPlugins::add_by_type<UnityImporterPlugin>();
+#endif
 #ifndef DISABLE_DEPRECATED
 	EditorPlugins::add_by_type<SkeletonIK3DEditorPlugin>();
 #endif
