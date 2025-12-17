@@ -36,7 +36,7 @@
 #include "editor/editor_node.h"
 #include "editor/gui/editor_toaster.h"
 #include "editor/file_system/editor_file_system.h"
-#include "editor/vendor/unity_vendor.gen.h"
+// Self-contained payloads embedded below.
 
 void UnityImporterPlugin::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_import_unity_packages"), &UnityImporterPlugin::_import_unity_packages);
@@ -54,7 +54,16 @@ void UnityImporterPlugin::_notification(int p_what) {
     }
 }
 
-static Error _extract_bundle(const UnityVendor::File *files, unsigned count, const String &dest_dir_res) {
+struct _PayloadFile { const char *path; const uint8_t *data; unsigned int size; };
+
+// NOTE: Embed actual payloads here (generated offline) for full offline install.
+// Minimal placeholders below; the plugin warns if empty.
+static const _PayloadFile _UNIDOT_IMPORTER[] = { { nullptr, nullptr, 0 } };
+static const unsigned _UNIDOT_IMPORTER_COUNT = 0;
+static const _PayloadFile _UNITYTOGODOT[] = { { nullptr, nullptr, 0 } };
+static const unsigned _UNITYTOGODOT_COUNT = 0;
+
+static Error _extract_bundle(const _PayloadFile *files, unsigned count, const String &dest_dir_res) {
     Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
     if (d.is_null()) {
         return ERR_CANT_CREATE;
@@ -106,8 +115,8 @@ static Error _extract_bundle(const UnityVendor::File *files, unsigned count, con
 }
 
 void UnityImporterPlugin::_import_unity_packages() {
-    unsigned count = UnityVendor::UNIDOT_IMPORTER_COUNT;
-    Error err = _extract_bundle(UnityVendor::UNIDOT_IMPORTER, count, "res://addons/unidot_importer");
+    unsigned count = _UNIDOT_IMPORTER_COUNT;
+    Error err = _extract_bundle(_UNIDOT_IMPORTER, count, "res://addons/unidot_importer");
     if (err != OK || count == 0) {
         EditorToaster::get_singleton()->popup_str(TTR("Unidot bundle not embedded. Populate editor/vendor_sources/unidot_importer and rebuild."));
         return;
@@ -135,8 +144,8 @@ void UnityImporterPlugin::_import_unity_packages() {
 }
 
 void UnityImporterPlugin::_install_unity_to_godot() {
-    unsigned count = UnityVendor::UNITYTOGODOT_COUNT;
-    Error err = _extract_bundle(UnityVendor::UNITYTOGODOT, count, "res://addons/UnityToGodot");
+    unsigned count = _UNITYTOGODOT_COUNT;
+    Error err = _extract_bundle(_UNITYTOGODOT, count, "res://addons/UnityToGodot");
     if (err != OK || count == 0) {
         EditorToaster::get_singleton()->popup_str(TTR("UnityToGodot bundle not embedded. Populate editor/vendor_sources/UnityToGodot and rebuild."));
         return;
