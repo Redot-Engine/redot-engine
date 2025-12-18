@@ -32,8 +32,56 @@
 
 #include "unity_package_importer.h"
 
+#include "core/io/dir_access.h"
 #include "core/io/image.h"
+#include "core/io/resource_saver.h"
 #include "core/string/print_string.h"
+#include "scene/main/node3d.h"
+#include "scene/resources/animation.h"
+#include "scene/resources/packed_scene.h"
+#include "scene/resources/standard_material_3d.h"
+
+static Error ensure_parent_dir_for_file(const String &p_path) {
+	String dir_path = p_path.get_base_dir();
+	Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+	if (d.is_null()) {
+		return ERR_CANT_CREATE;
+	}
+	if (dir_path.is_empty()) {
+		return OK;
+	}
+	return d->make_dir_recursive(dir_path);
+}
+
+static bool parse_color_from_line(const String &p_line, Color &r_color) {
+	int brace_open = p_line.find("{");
+	int brace_close = p_line.find("}", brace_open + 1);
+	if (brace_open == -1 || brace_close == -1) {
+		return false;
+	}
+	String inner = p_line.substr(brace_open + 1, brace_close - brace_open - 1);
+	Vector<String> pairs = inner.split(",");
+	float r = 1.0f, g = 1.0f, b = 1.0f, a = 1.0f;
+	for (int i = 0; i < pairs.size(); i++) {
+		Vector<String> kv = pairs[i].split(":");
+		if (kv.size() != 2) {
+			continue;
+		}
+		String key = kv[0].strip_edges();
+		float value = kv[1].strip_edges().to_float();
+		if (key == "r") {
+			r = value;
+		} else if (key == "g") {
+			g = value;
+		} else if (key == "b") {
+			b = value;
+		} else if (key == "a") {
+			a = value;
+		}
+	}
+	r_color = Color(r, g, b, a);
+	return true;
+}
 
 // Unity package parser implementation (ported from V-Sekai/unidot_importer)
 
@@ -213,7 +261,7 @@ Error UnityAssetConverter::extract_asset(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_texture(const UnityAsset &p_asset) {
-	// Direct copy - Godot can import images natively
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(p_asset.pathname) != OK, ERR_CANT_CREATE, "Cannot create target directory for texture.");
 	Ref<FileAccess> f = FileAccess::open(p_asset.pathname, FileAccess::WRITE);
 	ERR_FAIL_COND_V(f.is_null(), ERR_FILE_CANT_WRITE);
 	f->store_buffer(p_asset.asset_data);
@@ -221,13 +269,34 @@ Error UnityAssetConverter::convert_texture(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_material(const UnityAsset &p_asset) {
-	// TODO: Parse Unity material YAML and convert to Godot StandardMaterial3D/ShaderMaterial
-	print_line("Material conversion not yet implemented: " + p_asset.pathname);
-	return ERR_SKIP;
+	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	Ref<StandardMaterial3D> material;
+	material.instantiate();
+	material->set_name(p_asset.pathname.get_file().get_basename());
+	material->set_meta("unity_yaml", yaml);
+
+	// Try to discover an albedo color from common Unity keys
+	Color albedo;
+	Vector<String> lines = yaml.split("\n");
+	for (int i = 0; i < lines.size(); i++) {
+		String l = lines[i].strip_edges();
+		if (l.find("_Color") != -1 || l.find("m_Diffuse") != -1) {
+			if (parse_color_from_line(l, albedo)) {
+				material->set_albedo(albedo);
+				break;
+			}
+		}
+	}
+
+	String out_path = p_asset.pathname.get_basename() + ".tres";
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for material.");
+	Error save_err = ResourceSaver::save(out_path, material);
+	return save_err;
 }
 
 Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 	// Direct copy - Godot can import FBX/OBJ/DAE natively
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(p_asset.pathname) != OK, ERR_CANT_CREATE, "Cannot create target directory for model.");
 	Ref<FileAccess> f = FileAccess::open(p_asset.pathname, FileAccess::WRITE);
 	ERR_FAIL_COND_V(f.is_null(), ERR_FILE_CANT_WRITE);
 	f->store_buffer(p_asset.asset_data);
@@ -235,19 +304,36 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
-	// TODO: Parse Unity scene YAML and convert to Godot .tscn
-	print_line("Scene conversion not yet implemented: " + p_asset.pathname);
-	return ERR_SKIP;
+	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	Ref<PackedScene> scene;
+	scene.instantiate();
+	Node3D *root = memnew(Node3D);
+	root->set_name(p_asset.pathname.get_file().get_basename());
+	root->set_meta("unity_yaml", yaml);
+	scene->pack(root);
+
+	String out_path = p_asset.pathname.get_basename() + ".tscn";
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
+	return ResourceSaver::save(out_path, scene);
 }
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
-	// TODO: Parse Unity prefab YAML and convert to Godot .tscn
-	print_line("Prefab conversion not yet implemented: " + p_asset.pathname);
-	return ERR_SKIP;
+	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	Ref<PackedScene> scene;
+	scene.instantiate();
+	Node3D *root = memnew(Node3D);
+	root->set_name(p_asset.pathname.get_file().get_basename());
+	root->set_meta("unity_yaml", yaml);
+	scene->pack(root);
+
+	String out_path = p_asset.pathname.get_basename() + ".tscn";
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
+	return ResourceSaver::save(out_path, scene);
 }
 
 Error UnityAssetConverter::convert_audio(const UnityAsset &p_asset) {
 	// Direct copy - Godot supports WAV/MP3/OGG
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(p_asset.pathname) != OK, ERR_CANT_CREATE, "Cannot create target directory for audio.");
 	Ref<FileAccess> f = FileAccess::open(p_asset.pathname, FileAccess::WRITE);
 	ERR_FAIL_COND_V(f.is_null(), ERR_FILE_CANT_WRITE);
 	f->store_buffer(p_asset.asset_data);
@@ -255,17 +341,26 @@ Error UnityAssetConverter::convert_audio(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_animation(const UnityAsset &p_asset) {
-	// TODO: Parse Unity animation YAML and convert to Godot Animation
-	print_line("Animation conversion not yet implemented: " + p_asset.pathname);
-	return ERR_SKIP;
+	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	Ref<Animation> anim;
+	anim.instantiate();
+	anim->set_length(0.0);
+	anim->set_meta("unity_yaml", yaml);
+
+	String out_path = p_asset.pathname.get_basename() + ".tres";
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for animation.");
+	return ResourceSaver::save(out_path, anim);
 }
 
 Error UnityAssetConverter::convert_shader(const UnityAsset &p_asset) {
 	// Use built-in shader converter
 	String shader_code = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
-	String godot_shader = UnityShaderConverter::convert_shaderlab_to_godot(shader_code);
+	String godot_shader;
+	Error err = UnityShaderConverter::convert_shaderlab_to_godot(shader_code, godot_shader);
+	ERR_FAIL_COND_V(err != OK, err);
 
 	String output_path = p_asset.pathname.replace(".shader", ".gdshader");
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(output_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for shader.");
 	Ref<FileAccess> f = FileAccess::open(output_path, FileAccess::WRITE);
 	ERR_FAIL_COND_V(f.is_null(), ERR_FILE_CANT_WRITE);
 	f->store_string(godot_shader);

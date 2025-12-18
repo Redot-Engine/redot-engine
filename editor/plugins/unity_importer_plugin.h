@@ -32,19 +32,32 @@
 
 #pragma once
 
-#include "editor/plugins/editor_plugin.h"
+#include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/config/project_settings.h"
+#include "core/templates/hash_map.h"
+#include "editor/gui/editor_file_dialog.h"
+#include "editor/plugins/editor_plugin.h"
+#include "unity_package_importer.h"
 #include "unity_shader_converter.h"
 
 class UnityImporterPlugin : public EditorPlugin {
     GDCLASS(UnityImporterPlugin, EditorPlugin);
 
+    EditorFileDialog *package_dialog = nullptr;
+    EditorFileDialog *shader_dialog = nullptr;
+    HashMap<String, UnityAsset> parsed_assets;
+    String current_package_path;
+
     void _import_unity_packages();
+    void _show_package_dialog();
+    void _file_selected(const String &p_path);
+    Error _parse_unity_package(const String &p_path);
+    void _import_assets();
     void _install_unity_to_godot();
     void _install_shaderlab2godotsl();
     void _convert_unity_shader();
+    void _handle_shader_file(const String &p_path);
 
 protected:
     void _notification(int p_what) override;
