@@ -200,8 +200,9 @@ private:
 	static void _parse_function(ShaderLabToken *&p_current, ShaderFunction &r_function);
 	static String _convert_hlsl_to_glsl(const String &p_hlsl_code, bool p_is_vertex);
 
-	static const HashSet<String> rubbish_tokens;
-	static const HashMap<String, String> unity_to_godot_functions;
-	static const HashMap<String, String> hlsl_to_glsl_types;
-	static const HashMap<String, String> unity_semantics;
+	// Lazy-initialized getter methods for thread safety
+	static const HashSet<String> &_get_rubbish_tokens();
+	static const HashMap<String, String> &_get_unity_to_godot_functions();
+	static const HashMap<String, String> &_get_hlsl_to_glsl_types();
+	static const HashMap<String, String> &_get_unity_semantics();
 };

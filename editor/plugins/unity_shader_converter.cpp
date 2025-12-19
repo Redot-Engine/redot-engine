@@ -35,58 +35,71 @@
 #include "core/io/file_access.h"
 #include "core/string/print_string.h"
 
-const HashSet<String> UnityShaderConverter::rubbish_tokens = []() {
-	HashSet<String> set;
-	set.insert("CGPROGRAM");
-	set.insert("ENDCG");
-	set.insert("#pragma");
-	return set;
-}();
+// Lazy-initialized getters for thread safety
+const HashSet<String> &UnityShaderConverter::_get_rubbish_tokens() {
+	static const HashSet<String> rubbish_tokens = []() {
+		HashSet<String> set;
+		set.insert("CGPROGRAM");
+		set.insert("ENDCG");
+		set.insert("#pragma");
+		return set;
+	}();
+	return rubbish_tokens;
+}
 
-const HashMap<String, String> UnityShaderConverter::unity_to_godot_functions = []() {
-	HashMap<String, String> map;
-	map["UnityObjectToClipPos"] = "(PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4";
-	map["mul"] = "*";
-	map["tex2D"] = "texture";
-	map["lerp"] = "mix";
-	map["saturate"] = "clamp";
-	map["frac"] = "fract";
-	map["ddx"] = "dFdx";
-	map["ddy"] = "dFdy";
-	map["atan2"] = "atan";
-	map["rsqrt"] = "inversesqrt";
-	return map;
-}();
+const HashMap<String, String> &UnityShaderConverter::_get_unity_to_godot_functions() {
+	static const HashMap<String, String> unity_to_godot_functions = []() {
+		HashMap<String, String> map;
+		map["UnityObjectToClipPos"] = "(PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4";
+		map["mul"] = "*";
+		map["tex2D"] = "texture";
+		map["lerp"] = "mix";
+		map["saturate"] = "clamp";
+		map["frac"] = "fract";
+		map["ddx"] = "dFdx";
+		map["ddy"] = "dFdy";
+		map["atan2"] = "atan";
+		map["rsqrt"] = "inversesqrt";
+		return map;
+	}();
+	return unity_to_godot_functions;
+}
 
-const HashMap<String, String> UnityShaderConverter::hlsl_to_glsl_types = []() {
-	HashMap<String, String> map;
-	map["float4"] = "vec4";
-	map["float3"] = "vec3";
-	map["float2"] = "vec2";
-	map["fixed4"] = "vec4";
-	map["fixed3"] = "vec3";
-	map["fixed2"] = "vec2";
-	map["fixed"] = "float";
-	map["half4"] = "vec4";
-	map["half3"] = "vec3";
-	map["half2"] = "vec2";
-	map["half"] = "float";
-	map["sampler2D"] = "sampler2D";
-	map["samplerCUBE"] = "samplerCube";
-	return map;
-}();
+const HashMap<String, String> &UnityShaderConverter::_get_hlsl_to_glsl_types() {
+	static const HashMap<String, String> hlsl_to_glsl_types = []() {
+		HashMap<String, String> map;
+		map["float4"] = "vec4";
+		map["float3"] = "vec3";
+		map["float2"] = "vec2";
+		map["fixed4"] = "vec4";
+		map["fixed3"] = "vec3";
+		map["fixed2"] = "vec2";
+		map["fixed"] = "float";
+		map["half4"] = "vec4";
+		map["half3"] = "vec3";
+		map["half2"] = "vec2";
+		map["half"] = "float";
+		map["sampler2D"] = "sampler2D";
+		map["samplerCUBE"] = "samplerCube";
+		return map;
+	}();
+	return hlsl_to_glsl_types;
+}
 
-const HashMap<String, String> UnityShaderConverter::unity_semantics = []() {
-	HashMap<String, String> map;
-	map["POSITION"] = "VERTEX";
-	map["SV_POSITION"] = "VERTEX";
-	map["NORMAL"] = "NORMAL";
-	map["TEXCOORD0"] = "UV";
-	map["TEXCOORD1"] = "UV2";
-	map["COLOR"] = "COLOR";
-	map["SV_Target"] = "ALBEDO";
-	return map;
-}();
+const HashMap<String, String> &UnityShaderConverter::_get_unity_semantics() {
+	static const HashMap<String, String> unity_semantics = []() {
+		HashMap<String, String> map;
+		map["POSITION"] = "VERTEX";
+		map["SV_POSITION"] = "VERTEX";
+		map["NORMAL"] = "NORMAL";
+		map["TEXCOORD0"] = "UV";
+		map["TEXCOORD1"] = "UV2";
+		map["COLOR"] = "COLOR";
+		map["SV_Target"] = "ALBEDO";
+		return map;
+	}();
+	return unity_semantics;
+}
 
 Error UnityShaderConverter::convert_shaderlab_to_godot(const String &p_shaderlab_content, String &r_godot_shader) {
 	ShaderLabToken *tokens = tokenize_shaderlab(p_shaderlab_content);
@@ -500,7 +513,7 @@ bool UnityShaderConverter::_is_valid_integer(const String &p_str) {
 }
 
 bool UnityShaderConverter::_is_rubbish_token(const String &p_value) {
-	return rubbish_tokens.has(p_value);
+	return _get_rubbish_tokens().has(p_value);
 }
 
 ShaderLabToken *UnityShaderConverter::_strip_whitespace(ShaderLabToken *p_tokens) {
@@ -547,7 +560,7 @@ ShaderLabToken *UnityShaderConverter::_strip_whitespace(ShaderLabToken *p_tokens
 }
 
 String UnityShaderConverter::_translate_unity_function(const String &p_function_call) {
-	for (const KeyValue<String, String> &E : unity_to_godot_functions) {
+	for (const KeyValue<String, String> &E : _get_unity_to_godot_functions()) {
 		if (p_function_call.contains(E.key)) {
 			return p_function_call.replace(E.key, E.value);
 		}
@@ -556,8 +569,8 @@ String UnityShaderConverter::_translate_unity_function(const String &p_function_
 }
 
 String UnityShaderConverter::_translate_unity_type(const String &p_type) {
-	if (hlsl_to_glsl_types.has(p_type)) {
-		return hlsl_to_glsl_types[p_type];
+	if (_get_hlsl_to_glsl_types().has(p_type)) {
+		return _get_hlsl_to_glsl_types()[p_type];
 	}
 	if (p_type.contains("2D")) {
 		return "sampler2D";
@@ -569,8 +582,8 @@ String UnityShaderConverter::_translate_unity_type(const String &p_type) {
 }
 
 String UnityShaderConverter::_translate_semantic(const String &p_semantic) {
-	if (unity_semantics.has(p_semantic)) {
-		return unity_semantics[p_semantic];
+	if (_get_unity_semantics().has(p_semantic)) {
+		return _get_unity_semantics()[p_semantic];
 	}
 	return p_semantic;
 }
@@ -725,17 +738,17 @@ String UnityShaderConverter::_convert_hlsl_to_glsl(const String &p_hlsl_code, bo
 	String glsl_code = p_hlsl_code;
 
 	// Translate HLSL types to GLSL
-	for (const KeyValue<String, String> &E : hlsl_to_glsl_types) {
+	for (const KeyValue<String, String> &E : _get_hlsl_to_glsl_types()) {
 		glsl_code = glsl_code.replace(E.key, E.value);
 	}
 
 	// Translate Unity functions
-	for (const KeyValue<String, String> &E : unity_to_godot_functions) {
+	for (const KeyValue<String, String> &E : _get_unity_to_godot_functions()) {
 		glsl_code = glsl_code.replace(E.key, E.value);
 	}
 
 	// Translate semantics
-	for (const KeyValue<String, String> &E : unity_semantics) {
+	for (const KeyValue<String, String> &E : _get_unity_semantics()) {
 		glsl_code = glsl_code.replace(E.key, E.value);
 	}
 
