@@ -42,28 +42,28 @@
 #include "unity_shader_converter.h"
 
 class UnityImporterPlugin : public EditorPlugin {
-    GDCLASS(UnityImporterPlugin, EditorPlugin);
+	GDCLASS(UnityImporterPlugin, EditorPlugin);
 
-    EditorFileDialog *package_dialog = nullptr;
-    EditorFileDialog *shader_dialog = nullptr;
-    HashMap<String, UnityAsset> parsed_assets;
-    String current_package_path;
+	EditorFileDialog *package_dialog = nullptr;
+	EditorFileDialog *shader_dialog = nullptr;
+	HashMap<String, UnityAsset> parsed_assets;
+	String current_package_path;
 
-    void _import_unity_packages();
-    void _show_package_dialog();
-    void _file_selected(const String &p_path);
-    Error _parse_unity_package(const String &p_path);
-    void _import_assets();
-    void _install_unity_to_godot();
-    void _install_shaderlab2godotsl();
-    void _convert_unity_shader();
-    void _handle_shader_file(const String &p_path);
+	void _import_unity_packages();
+	void _show_package_dialog();
+	void _file_selected(const String &p_path);
+	Error _parse_unity_package(const String &p_path);
+	void _import_assets();
+	void _install_unity_to_godot();
+	void _install_shaderlab2godotsl();
+	void _convert_unity_shader();
+	void _handle_shader_file(const String &p_path);
 
 protected:
-    void _notification(int p_what);
-    static void _bind_methods();
+	void _notification(int p_what);
+	static void _bind_methods();
 
 public:
-    UnityImporterPlugin() = default;
-    ~UnityImporterPlugin() override = default;
+	UnityImporterPlugin() = default;
+	~UnityImporterPlugin() override = default;
 };

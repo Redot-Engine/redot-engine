@@ -30,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef UNITY_SHADER_CONVERTER_H
-#define UNITY_SHADER_CONVERTER_H
+#pragma once
 
 #include "core/string/ustring.h"
-#include "core/templates/hash_set.h"
 #include "core/templates/hash_map.h"
+#include "core/templates/hash_set.h"
 #include "core/templates/list.h"
 #include "core/templates/vector.h"
 
@@ -206,5 +205,3 @@ private:
 	static const HashMap<String, String> hlsl_to_glsl_types;
 	static const HashMap<String, String> unity_semantics;
 };
-
-#endif // UNITY_SHADER_CONVERTER_H

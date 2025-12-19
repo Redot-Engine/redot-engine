@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef UNITY_PACKAGE_IMPORTER_H
-#define UNITY_PACKAGE_IMPORTER_H
+#pragma once
 
 #include "core/io/file_access.h"
 #include "core/templates/hash_map.h"
@@ -82,5 +81,3 @@ public:
 	static Error convert_shader(const UnityAsset &p_asset);
 	static Error extract_asset(const UnityAsset &p_asset);
 };
-
-#endif // UNITY_PACKAGE_IMPORTER_H

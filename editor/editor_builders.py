@@ -187,18 +187,10 @@ namespace UnityVendor {
                     "#endif\n"
                     ";\n\n"
                 )
-            file.write(
-                f"UNITY_VENDOR_API File {bundle_name.upper()}[]\n"
-                "#ifdef UNITY_VENDOR_IMPLEMENTATION\n"
-                "=\n{\n"
-            )
+            file.write(f"UNITY_VENDOR_API File {bundle_name.upper()}[]\n#ifdef UNITY_VENDOR_IMPLEMENTATION\n=\n{{\n")
             for idx, (path, buf) in enumerate(items):
-                file.write(f"\t{{ \"{path}\", _{bundle_name}_data_{idx}, {len(buf)} }},\n")
-            file.write(
-                "\t{ nullptr, nullptr, 0 },\n"
-                "#endif\n"
-                "};\n"
-            )
+                file.write(f'\t{{ "{path}", _{bundle_name}_data_{idx}, {len(buf)} }},\n')
+            file.write("\t{ nullptr, nullptr, 0 },\n#endif\n};\n")
             file.write(
                 f"UNITY_VENDOR_API unsigned int {bundle_name.upper()}_COUNT\n"
                 "#ifdef UNITY_VENDOR_IMPLEMENTATION\n"
@@ -214,5 +206,3 @@ namespace UnityVendor {
         file.write("""
 } // namespace UnityVendor
 """)
-
-

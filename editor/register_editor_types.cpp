@@ -81,6 +81,7 @@
 #include "editor/inspector/input_event_editor_plugin.h"
 #include "editor/inspector/sub_viewport_preview_editor_plugin.h"
 #include "editor/inspector/tool_button_editor_plugin.h"
+#include "editor/plugins/unity_importer_plugin.h"
 #include "editor/scene/2d/camera_2d_editor_plugin.h"
 #include "editor/scene/2d/light_occluder_2d_editor_plugin.h"
 #include "editor/scene/2d/line_2d_editor_plugin.h"
@@ -134,7 +135,6 @@
 #include "editor/shader/shader_editor_plugin.h"
 #include "editor/shader/shader_file_editor_plugin.h"
 #include "editor/translations/editor_translation_parser.h"
-#include "editor/plugins/unity_importer_plugin.h"
 #include "editor/version_control/editor_vcs_interface.h"
 #ifndef DISABLE_DEPRECATED
 #include "editor/scene/2d/parallax_background_editor_plugin.h"

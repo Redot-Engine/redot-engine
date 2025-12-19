@@ -229,7 +229,7 @@ ShaderNode *UnityShaderConverter::parse_shader_ast(ShaderLabToken *p_tokens) {
 				ShaderLabToken *cg_tokens = tokenize_shaderlab(cgprogram_buffer);
 				ShaderLabToken *cg_stripped = _strip_whitespace(cg_tokens);
 				ShaderLabToken *cg_current = cg_stripped;
-				
+
 				while (cg_current && cg_current->next) {
 					// Parse structs
 					if (cg_current->original_data == "struct") {
@@ -238,19 +238,19 @@ ShaderNode *UnityShaderConverter::parse_shader_ast(ShaderLabToken *p_tokens) {
 						shader->structs.push_back(s);
 						continue;
 					}
-					
+
 					// Parse functions (detect by return type + name + parentheses)
 					if (cg_current->next && cg_current->next->next &&
-						cg_current->next->type == ShaderLabTokenType::OPEN_BRACKET) {
+							cg_current->next->type == ShaderLabTokenType::OPEN_BRACKET) {
 						ShaderFunction func;
 						_parse_function(cg_current, func);
 						shader->functions.push_back(func);
 						continue;
 					}
-					
+
 					cg_current = cg_current->next;
 				}
-				
+
 				delete cg_tokens;
 				cgprogram_buffer = "";
 			}
@@ -300,7 +300,7 @@ String UnityShaderConverter::generate_godot_shader(ShaderNode *p_shader_node) {
 	// Find vertex and fragment functions
 	const ShaderFunction *vertex_func = nullptr;
 	const ShaderFunction *fragment_func = nullptr;
-	
+
 	for (int i = 0; i < p_shader_node->functions.size(); i++) {
 		const ShaderFunction &func = p_shader_node->functions[i];
 		if (func.name == "vert" || func.return_semantic.contains("POSITION")) {
@@ -558,7 +558,7 @@ String UnityShaderConverter::_translate_semantic(const String &p_semantic) {
 void UnityShaderConverter::_parse_properties(ShaderLabToken *&p_current, ShaderPropertiesNode *p_properties) {
 	ShaderPropertyNode *last_prop = nullptr;
 	int brace_depth = 1;
-	
+
 	while (p_current && brace_depth > 0) {
 		if (p_current->type == ShaderLabTokenType::OPEN_CURLY) {
 			brace_depth++;
@@ -568,12 +568,12 @@ void UnityShaderConverter::_parse_properties(ShaderLabToken *&p_current, ShaderP
 				break;
 			}
 		}
-		
+
 		// Parse property: _Name("Display Name", Type) = default
 		if (p_current->original_data.begins_with("_")) {
 			ShaderPropertyNode *prop = memnew(ShaderPropertyNode);
 			prop->name = p_current->original_data;
-			
+
 			// Skip to type (after opening paren and string)
 			while (p_current && p_current->type != ShaderLabTokenType::COMMA) {
 				p_current = p_current->next;
@@ -582,7 +582,7 @@ void UnityShaderConverter::_parse_properties(ShaderLabToken *&p_current, ShaderP
 				p_current = p_current->next;
 				prop->type_name = p_current->original_data;
 			}
-			
+
 			if (!p_properties->properties) {
 				p_properties->properties = prop;
 			} else {
@@ -590,7 +590,7 @@ void UnityShaderConverter::_parse_properties(ShaderLabToken *&p_current, ShaderP
 			}
 			last_prop = prop;
 		}
-		
+
 		if (!p_current) {
 			break;
 		}
@@ -607,7 +607,7 @@ void UnityShaderConverter::_parse_struct(ShaderLabToken *&p_current, ShaderStruc
 		r_struct.name = p_current->original_data;
 		p_current = p_current->next;
 	}
-	
+
 	// Skip to opening brace
 	while (p_current && p_current->type != ShaderLabTokenType::OPEN_CURLY) {
 		p_current = p_current->next;
@@ -615,20 +615,20 @@ void UnityShaderConverter::_parse_struct(ShaderLabToken *&p_current, ShaderStruc
 	if (p_current) {
 		p_current = p_current->next;
 	}
-	
+
 	ShaderStructMember *last_member = nullptr;
-	
+
 	// Parse members until closing brace
 	while (p_current && p_current->type != ShaderLabTokenType::CLOSE_CURLY) {
 		ShaderStructMember *member = memnew(ShaderStructMember);
 		member->type = p_current->original_data;
 		p_current = p_current->next;
-		
+
 		if (p_current) {
 			member->name = p_current->original_data;
 			p_current = p_current->next;
 		}
-		
+
 		// Check for semantic
 		if (p_current && p_current->type == ShaderLabTokenType::INHERITANCE) {
 			p_current = p_current->next;
@@ -637,14 +637,14 @@ void UnityShaderConverter::_parse_struct(ShaderLabToken *&p_current, ShaderStruc
 				p_current = p_current->next;
 			}
 		}
-		
+
 		if (!r_struct.members) {
 			r_struct.members = member;
 		} else {
 			last_member->next = member;
 		}
 		last_member = member;
-		
+
 		// Skip semicolon
 		if (p_current && p_current->type == ShaderLabTokenType::SEMICOLON) {
 			p_current = p_current->next;
@@ -655,12 +655,12 @@ void UnityShaderConverter::_parse_struct(ShaderLabToken *&p_current, ShaderStruc
 void UnityShaderConverter::_parse_function(ShaderLabToken *&p_current, ShaderFunction &r_function) {
 	r_function.return_type = p_current->original_data;
 	p_current = p_current->next;
-	
+
 	if (p_current) {
 		r_function.name = p_current->original_data;
 		p_current = p_current->next;
 	}
-	
+
 	// Parse parameters
 	if (p_current && p_current->type == ShaderLabTokenType::OPEN_BRACKET) {
 		p_current = p_current->next;
@@ -672,7 +672,7 @@ void UnityShaderConverter::_parse_function(ShaderLabToken *&p_current, ShaderFun
 			p_current = p_current->next;
 		}
 	}
-	
+
 	// Check for return semantic
 	if (p_current && p_current->type == ShaderLabTokenType::INHERITANCE) {
 		p_current = p_current->next;
@@ -681,7 +681,7 @@ void UnityShaderConverter::_parse_function(ShaderLabToken *&p_current, ShaderFun
 			p_current = p_current->next;
 		}
 	}
-	
+
 	// Parse body
 	if (p_current && p_current->type == ShaderLabTokenType::OPEN_CURLY) {
 		p_current = p_current->next;
@@ -703,22 +703,22 @@ void UnityShaderConverter::_parse_function(ShaderLabToken *&p_current, ShaderFun
 
 String UnityShaderConverter::_convert_hlsl_to_glsl(const String &p_hlsl_code, bool p_is_vertex) {
 	String glsl_code = p_hlsl_code;
-	
+
 	// Translate HLSL types to GLSL
 	for (const KeyValue<String, String> &E : hlsl_to_glsl_types) {
 		glsl_code = glsl_code.replace(E.key, E.value);
 	}
-	
+
 	// Translate Unity functions
 	for (const KeyValue<String, String> &E : unity_to_godot_functions) {
 		glsl_code = glsl_code.replace(E.key, E.value);
 	}
-	
+
 	// Translate semantics
 	for (const KeyValue<String, String> &E : unity_semantics) {
 		glsl_code = glsl_code.replace(E.key, E.value);
 	}
-	
+
 	// Add proper indentation
 	Vector<String> lines = glsl_code.split("\n");
 	String result;
@@ -728,6 +728,6 @@ String UnityShaderConverter::_convert_hlsl_to_glsl(const String &p_hlsl_code, bo
 			result += "\t" + line + "\n";
 		}
 	}
-	
+
 	return result;
 }
