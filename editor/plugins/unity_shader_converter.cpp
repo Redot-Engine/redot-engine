@@ -591,11 +591,17 @@ void UnityShaderConverter::_parse_properties(ShaderLabToken *&p_current, ShaderP
 			last_prop = prop;
 		}
 		
+		if (!p_current) {
+			break;
+		}
 		p_current = p_current->next;
 	}
 }
 
 void UnityShaderConverter::_parse_struct(ShaderLabToken *&p_current, ShaderStruct &r_struct) {
+	if (!p_current) {
+		return;
+	}
 	p_current = p_current->next; // Skip 'struct'
 	if (p_current) {
 		r_struct.name = p_current->original_data;
