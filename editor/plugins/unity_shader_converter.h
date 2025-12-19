@@ -121,6 +121,12 @@ struct ShaderStructMember {
 	String name;
 	String semantic;
 	ShaderStructMember *next = nullptr;
+
+	~ShaderStructMember() {
+		if (next) {
+			delete next;
+		}
+	}
 };
 
 struct ShaderStruct {
