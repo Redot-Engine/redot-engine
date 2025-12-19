@@ -508,22 +508,42 @@ ShaderLabToken *UnityShaderConverter::_strip_whitespace(ShaderLabToken *p_tokens
 		return nullptr;
 	}
 
-	ShaderLabToken *head = memnew(ShaderLabToken);
-	ShaderLabToken *current_new = head;
-	ShaderLabToken *current_old = p_tokens;
+	// Build a new list that excludes whitespace and endline tokens.
+	// The original list (including any dummy head) is freed before returning.
+	ShaderLabToken *new_head = nullptr;
+	ShaderLabToken *new_tail = nullptr;
 
-	while (current_old && current_old->next) {
-		ShaderLabTokenType t = current_old->next->type;
+	// The previous implementation iterated starting from current_old->next,
+	// so we preserve that behavior by starting from p_tokens->next here.
+	ShaderLabToken *current_old = p_tokens->next;
+	while (current_old) {
+		ShaderLabTokenType t = current_old->type;
 		if (t != ShaderLabTokenType::SPACE && t != ShaderLabTokenType::ENDLINE) {
-			current_new->next = memnew(ShaderLabToken);
-			current_new->next->type = current_old->next->type;
-			current_new->next->original_data = current_old->next->original_data;
-			current_new = current_new->next;
+			ShaderLabToken *new_token = memnew(ShaderLabToken);
+			new_token->type = current_old->type;
+			new_token->original_data = current_old->original_data;
+			new_token->next = nullptr;
+
+			if (!new_head) {
+				new_head = new_token;
+				new_tail = new_token;
+			} else {
+				new_tail->next = new_token;
+				new_tail = new_token;
+			}
 		}
 		current_old = current_old->next;
 	}
 
-	return head;
+	// Free the original list, including any dummy head node.
+	ShaderLabToken *to_delete = p_tokens;
+	while (to_delete) {
+		ShaderLabToken *next = to_delete->next;
+		memdelete(to_delete);
+		to_delete = next;
+	}
+
+	return new_head;
 }
 
 String UnityShaderConverter::_translate_unity_function(const String &p_function_call) {
