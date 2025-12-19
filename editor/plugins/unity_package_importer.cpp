@@ -33,13 +33,14 @@
 #include "unity_package_importer.h"
 
 #include "core/io/dir_access.h"
+#include "core/io/compression.h"
 #include "core/io/image.h"
 #include "core/io/resource_saver.h"
 #include "core/string/print_string.h"
-#include "scene/main/node3d.h"
+#include "scene/3d/node_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/packed_scene.h"
-#include "scene/resources/standard_material_3d.h"
+#include "scene/resources/material.h"
 
 static Error ensure_parent_dir_for_file(const String &p_path) {
 	String dir_path = p_path.get_base_dir();
@@ -93,9 +94,12 @@ Error UnityPackageParser::parse_unitypackage(const String &p_path, HashMap<Strin
 	PackedByteArray compressed = file->get_buffer(file->get_length());
 	file.unref();
 
-	// Decompress gzip
-	PackedByteArray tar_data = compressed.decompress_dynamic(-1, FileAccess::COMPRESSION_GZIP);
-	ERR_FAIL_COND_V_MSG(tar_data.is_empty(), ERR_FILE_CORRUPT, "Failed to decompress Unity package.");
+	// Decompress gzip using engine Compression API
+	PackedByteArray tar_data;
+	{
+		int derr = Compression::decompress_dynamic(&tar_data, -1, compressed.ptr(), compressed.size(), Compression::MODE_GZIP);
+		ERR_FAIL_COND_V_MSG(derr != OK || tar_data.is_empty(), ERR_FILE_CORRUPT, "Failed to decompress Unity package.");
+	}
 
 	return parse_tar_archive(tar_data, r_assets);
 }
@@ -290,7 +294,7 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset) {
 
 	String out_path = p_asset.pathname.get_basename() + ".tres";
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for material.");
-	Error save_err = ResourceSaver::save(out_path, material);
+	Error save_err = ResourceSaver::save(material, out_path);
 	return save_err;
 }
 
@@ -314,7 +318,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 
 	String out_path = p_asset.pathname.get_basename() + ".tscn";
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
-	return ResourceSaver::save(out_path, scene);
+	return ResourceSaver::save(scene, out_path);
 }
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
@@ -328,7 +332,7 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 
 	String out_path = p_asset.pathname.get_basename() + ".tscn";
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
-	return ResourceSaver::save(out_path, scene);
+	return ResourceSaver::save(scene, out_path);
 }
 
 Error UnityAssetConverter::convert_audio(const UnityAsset &p_asset) {
@@ -349,7 +353,7 @@ Error UnityAssetConverter::convert_animation(const UnityAsset &p_asset) {
 
 	String out_path = p_asset.pathname.get_basename() + ".tres";
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for animation.");
-	return ResourceSaver::save(out_path, anim);
+	return ResourceSaver::save(anim, out_path);
 }
 
 Error UnityAssetConverter::convert_shader(const UnityAsset &p_asset) {

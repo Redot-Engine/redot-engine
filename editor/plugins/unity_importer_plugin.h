@@ -60,7 +60,7 @@ class UnityImporterPlugin : public EditorPlugin {
     void _handle_shader_file(const String &p_path);
 
 protected:
-    void _notification(int p_what) override;
+    void _notification(int p_what);
     static void _bind_methods();
 
 public:

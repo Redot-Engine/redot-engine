@@ -101,8 +101,8 @@ static Error copy_dir_recursive(const String &p_src_res, const String &p_dst_res
                 name = sub->get_next();
                 continue;
             }
-            String src_path = cur_src.plus_file(name);
-            String dst_path = cur_dst.plus_file(name);
+            String src_path = cur_src.path_join(name);
+            String dst_path = cur_dst.path_join(name);
             if (sub->current_is_dir()) {
                 stack.push_back(src_path);
             } else {
