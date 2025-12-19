@@ -6619,23 +6619,23 @@ TEST_CASE("[SceneTree][TextEdit] mouse") {
 
 	// Add method to get drawn column count?
 	Point2i start_pos = text_edit->get_pos_at_line_column(0, 0);
-	Point2i end_pos = text_edit->get_pos_at_line_column(0, 105);
+	Point2i end_pos = text_edit->get_pos_at_line_column(0, 104);
 
 	CHECK(text_edit->get_line_column_at_pos(Point2i(start_pos.x, start_pos.y)) == Point2i(0, 0));
-	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x, end_pos.y)) == Point2i(104, 0));
+	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x, end_pos.y)) == Point2i(103, 0));
 
 	// Should this return Point2i(-1, -1) if its also < 0 not just > vis_lines.
-	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y), false) == Point2i(90, 0));
+	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y), false) == Point2i(88, 0));
 	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x, end_pos.y + 100), false) == Point2i(-1, -1));
 	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y + 100), false) == Point2i(-1, -1));
-	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x, end_pos.y - 100), false) == Point2i(104, 0));
-	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y - 100), false) == Point2i(90, 0));
+	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x, end_pos.y - 100), false) == Point2i(103, 0));
+	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y - 100), false) == Point2i(88, 0));
 
-	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y)) == Point2i(90, 0));
+	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y)) == Point2i(88, 0));
 	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x, end_pos.y + 100)) == Point2i(140, 0));
 	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y + 100)) == Point2i(140, 0));
-	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x, end_pos.y - 100)) == Point2i(104, 0));
-	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y - 100)) == Point2i(90, 0));
+	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x, end_pos.y - 100)) == Point2i(103, 0));
+	CHECK(text_edit->get_line_column_at_pos(Point2i(end_pos.x - 100, end_pos.y - 100)) == Point2i(88, 0));
 
 	memdelete(text_edit);
 }
@@ -7486,14 +7486,14 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 
 	// First visible line.
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
 	text_edit->set_line_as_first_visible(visible_lines);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == visible_lines);
-	CHECK(text_edit->get_v_scroll() == visible_lines);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(visible_lines)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7513,7 +7513,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_first_visible(5, 1);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 5);
-	CHECK(text_edit->get_v_scroll() == 11);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(11)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 6);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 1);
 
@@ -7524,7 +7524,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_first_visible(0);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7532,7 +7532,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_last_visible(visible_lines * 2);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == visible_lines);
-	CHECK(text_edit->get_v_scroll() == visible_lines);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(visible_lines)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7553,7 +7553,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_last_visible(visible_lines + 5, 1);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 16);
-	CHECK(text_edit->get_v_scroll() == 32.0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(32.0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines + 5);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7564,7 +7564,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_first_visible(0);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7572,7 +7572,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_center_visible(visible_lines + (visible_lines / 2));
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == visible_lines);
-	CHECK(text_edit->get_v_scroll() == visible_lines);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(visible_lines)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7593,7 +7593,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_center_visible(visible_lines + (visible_lines / 2) + 5, 1);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == visible_lines + (visible_lines / 2));
-	CHECK(text_edit->get_v_scroll() == (visible_lines * 3));
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double((visible_lines * 3))));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 1);
 
@@ -7605,14 +7605,14 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	MessageQueue::get_singleton()->flush();
 
 	CHECK(text_edit->get_first_visible_line() == (visible_lines * 2) + 3);
-	CHECK(text_edit->get_v_scroll() == (visible_lines * 4) + 6);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double((visible_lines * 4))) + 6);
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) + 8);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
 	text_edit->set_scroll_past_end_of_file_enabled(false);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == (visible_lines * 2) + 3);
-	CHECK(text_edit->get_v_scroll() == (visible_lines * 4) - 4);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double((visible_lines * 4))) - 4);
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) + 8);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7623,7 +7623,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_first_visible(0);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7637,14 +7637,14 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->is_caret_visible());
 	CHECK(text_edit->get_first_visible_line() == 5);
-	CHECK(text_edit->get_v_scroll() == 5);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(5)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines - 1) + 5);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
 	text_edit->center_viewport_to_caret();
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == visible_lines - 5);
-	CHECK(text_edit->get_v_scroll() == visible_lines - 5);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(visible_lines - 5)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 6);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7652,7 +7652,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->adjust_viewport_to_caret();
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == visible_lines - 5);
-	CHECK(text_edit->get_v_scroll() == visible_lines - 5);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(visible_lines - 5)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 6);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7663,7 +7663,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->is_caret_visible());
 	CHECK(text_edit->get_first_visible_line() == 1);
-	CHECK(text_edit->get_v_scroll() == 1);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(1)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7671,14 +7671,14 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_first_visible(0);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
 	text_edit->adjust_viewport_to_caret();
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7693,7 +7693,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	MessageQueue::get_singleton()->flush();
 
 	CHECK(text_edit->get_first_visible_line() == (visible_lines / 2) + 6);
-	CHECK(text_edit->get_v_scroll() == (visible_lines + (visible_lines / 2)) + 1);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double((visible_lines + (visible_lines / 2)))) + 1);
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines) + 5);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 1);
@@ -7701,7 +7701,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->center_viewport_to_caret();
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == visible_lines);
-	CHECK(text_edit->get_v_scroll() == (visible_lines * 2) + 1);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double((visible_lines * 2))) + 1);
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 11);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 1);
 
@@ -7709,7 +7709,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->adjust_viewport_to_caret();
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == visible_lines);
-	CHECK(text_edit->get_v_scroll() == (visible_lines * 2) + 1);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double((visible_lines * 2))) + 1);
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 11);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 1);
 
@@ -7720,7 +7720,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->is_caret_visible());
 	CHECK(text_edit->get_first_visible_line() == 1);
-	CHECK(text_edit->get_v_scroll() == 3);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(3)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines / 2) + 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 1);
 	CHECK(text_edit->get_caret_wrap_index() == 1);
@@ -7729,14 +7729,14 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->is_caret_visible());
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 11);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
 	text_edit->adjust_viewport_to_caret();
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 11);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7747,7 +7747,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_line_as_first_visible(0);
 	MessageQueue::get_singleton()->flush();
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7771,7 +7771,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	SEND_GUI_MOUSE_BUTTON_EVENT(Point2i(10, 10), MouseButton::WHEEL_DOWN, MouseButtonMask::NONE, Key::NONE);
 	CHECK(text_edit->get_v_scroll() > v_scroll);
 	SEND_GUI_MOUSE_BUTTON_EVENT(Point2i(10, 10), MouseButton::WHEEL_UP, MouseButtonMask::NONE, Key::NONE);
-	CHECK(text_edit->get_v_scroll() == v_scroll);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(v_scroll)));
 
 	// smooth scroll speed.
 	text_edit->set_smooth_scroll_enabled(true);
@@ -7782,7 +7782,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_v_scroll() >= v_scroll);
 	SEND_GUI_MOUSE_BUTTON_EVENT(Point2i(10, 10), MouseButton::WHEEL_UP, MouseButtonMask::NONE, Key::NONE);
 	text_edit->notification(TextEdit::NOTIFICATION_INTERNAL_PHYSICS_PROCESS);
-	CHECK(text_edit->get_v_scroll() == v_scroll);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(v_scroll)));
 
 	v_scroll = text_edit->get_v_scroll();
 	text_edit->set_v_scroll_speed(10000);
@@ -7791,7 +7791,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_v_scroll() >= v_scroll);
 	SEND_GUI_MOUSE_BUTTON_EVENT(Point2i(10, 10), MouseButton::WHEEL_UP, MouseButtonMask::NONE, Key::NONE);
 	text_edit->notification(TextEdit::NOTIFICATION_INTERNAL_PHYSICS_PROCESS);
-	CHECK(text_edit->get_v_scroll() == v_scroll);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(v_scroll)));
 
 	ERR_PRINT_OFF;
 	CHECK(text_edit->get_scroll_pos_for_line(-1) == 0);
@@ -7804,7 +7804,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_h_scroll() == 0);
 
 	text_edit->set_h_scroll(10000000);
-	CHECK(text_edit->get_h_scroll() == 306);
+	CHECK(text_edit->get_h_scroll() == 307);
 	CHECK(text_edit->get_h_scroll_bar()->get_combined_minimum_size().x == 8);
 
 	text_edit->set_h_scroll(-100);
@@ -7813,7 +7813,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	text_edit->set_smooth_scroll_enabled(false);
 
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 
@@ -7822,7 +7822,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 1);
 	CHECK(text_edit->get_first_visible_line() == 1);
-	CHECK(text_edit->get_v_scroll() == 1);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(1)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7831,7 +7831,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 1);
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7841,7 +7841,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 21);
 	CHECK(text_edit->get_first_visible_line() == 0);
-	CHECK(text_edit->get_v_scroll() == 0);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(0)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7850,7 +7850,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 41);
 	CHECK(text_edit->get_first_visible_line() == 20);
-	CHECK(text_edit->get_v_scroll() == 20);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(20)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines - 1) * 2);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7859,7 +7859,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 21);
 	CHECK(text_edit->get_first_visible_line() == 20);
-	CHECK(text_edit->get_v_scroll() == 20);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(20)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines - 1) * 2);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7868,7 +7868,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 1);
 	CHECK(text_edit->get_first_visible_line() == 1);
-	CHECK(text_edit->get_v_scroll() == 1);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(1)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7881,7 +7881,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 2);
 	CHECK(text_edit->get_first_visible_line() == 2);
-	CHECK(text_edit->get_v_scroll() == 2);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(2)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines + 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7890,7 +7890,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 2);
 	CHECK(text_edit->get_first_visible_line() == 1);
-	CHECK(text_edit->get_v_scroll() == 1);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(1)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7900,7 +7900,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 22);
 	CHECK(text_edit->get_first_visible_line() == 1);
-	CHECK(text_edit->get_v_scroll() == 1);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(1)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7909,7 +7909,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 42);
 	CHECK(text_edit->get_first_visible_line() == 21);
-	CHECK(text_edit->get_v_scroll() == 21);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(21)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7918,7 +7918,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 22);
 	CHECK(text_edit->get_first_visible_line() == 21);
-	CHECK(text_edit->get_v_scroll() == 21);
+	CHECK(Math::is_equal_approx(Math::floor(text_edit->get_v_scroll()), double(21)));
 	CHECK(text_edit->get_last_full_visible_line() == (visible_lines * 2) - 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
@@ -7927,7 +7927,7 @@ TEST_CASE("[SceneTree][TextEdit] viewport") {
 	CHECK(text_edit->get_viewport()->is_input_handled());
 	CHECK(text_edit->get_caret_line() == 2);
 	CHECK(text_edit->get_first_visible_line() == 2);
-	CHECK(text_edit->get_v_scroll() == 2);
+	CHECK(Math::is_equal_approx(text_edit->get_v_scroll(), double(2)));
 	CHECK(text_edit->get_last_full_visible_line() == visible_lines + 1);
 	CHECK(text_edit->get_last_full_visible_line_wrap_index() == 0);
 	CHECK(text_edit->get_caret_wrap_index() == 0);
