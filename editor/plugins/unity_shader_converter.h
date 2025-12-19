@@ -149,6 +149,15 @@ struct ShaderNode : ShaderASTNode {
 	Vector<ShaderStruct> structs;
 	Vector<ShaderFunction> functions;
 	HashMap<String, String> variables;
+
+	~ShaderNode() {
+		if (properties) {
+			delete properties;
+		}
+		if (pass) {
+			delete pass;
+		}
+	}
 };
 
 class UnityShaderConverter {
