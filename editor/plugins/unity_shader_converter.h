@@ -108,6 +108,16 @@ struct ShaderPropertyNode : ShaderASTNode {
 
 struct ShaderPropertiesNode : ShaderASTNode {
 	ShaderPropertyNode *properties = nullptr;
+
+	virtual ~ShaderPropertiesNode() {
+		ShaderPropertyNode *current = properties;
+		while (current) {
+			ShaderPropertyNode *next = current->next_property;
+			delete current;
+			current = next;
+		}
+		properties = nullptr;
+	}
 };
 
 struct ShaderPassNode : ShaderASTNode {
