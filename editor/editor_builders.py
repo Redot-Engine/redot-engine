@@ -170,16 +170,42 @@ def unity_vendor_builder(target, source, env):
 
 namespace UnityVendor {
     struct File { const char* path; const uint8_t* data; unsigned int size; };
+
+#ifdef UNITY_VENDOR_IMPLEMENTATION
+#define UNITY_VENDOR_API
+#else
+#define UNITY_VENDOR_API extern
+#endif
 """)
 
         def _write_bundle(bundle_name, items):
             for idx, (path, buf) in enumerate(items):
-                file.write(f"inline constexpr unsigned char _{bundle_name}_data_{idx}[] = {{\n\t{methods.format_buffer(buf, 1)}\n}};\n\n")
-            file.write(f"inline constexpr File {bundle_name.upper()}[] = {{\n")
+                file.write(
+                    f"UNITY_VENDOR_API unsigned char _{bundle_name}_data_{idx}[]\n"
+                    "#ifdef UNITY_VENDOR_IMPLEMENTATION\n"
+                    f"= {{\n\t{methods.format_buffer(buf, 1)}\n}}\n"
+                    "#endif\n"
+                    ";\n\n"
+                )
+            file.write(
+                f"UNITY_VENDOR_API File {bundle_name.upper()}[]\n"
+                "#ifdef UNITY_VENDOR_IMPLEMENTATION\n"
+                "=\n{\n"
+            )
             for idx, (path, buf) in enumerate(items):
                 file.write(f"\t{{ \"{path}\", _{bundle_name}_data_{idx}, {len(buf)} }},\n")
-            file.write("\t{ nullptr, nullptr, 0 },\n};\n")
-            file.write(f"inline constexpr unsigned int {bundle_name.upper()}_COUNT = {len(items)};\n\n")
+            file.write(
+                "\t{ nullptr, nullptr, 0 },\n"
+                "#endif\n"
+                "};\n"
+            )
+            file.write(
+                f"UNITY_VENDOR_API unsigned int {bundle_name.upper()}_COUNT\n"
+                "#ifdef UNITY_VENDOR_IMPLEMENTATION\n"
+                f"= {len(items)}\n"
+                "#endif\n"
+                ";\n\n"
+            )
 
         _write_bundle("unidot_importer", bundles["unidot_importer"])
         _write_bundle("unitytogodot", bundles["UnityToGodot"])
