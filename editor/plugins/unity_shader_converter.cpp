@@ -298,15 +298,15 @@ String UnityShaderConverter::generate_godot_shader(ShaderNode *p_shader_node) {
 	}
 
 	// Find vertex and fragment functions
-	ShaderFunction *vertex_func = nullptr;
-	ShaderFunction *fragment_func = nullptr;
+	const ShaderFunction *vertex_func = nullptr;
+	const ShaderFunction *fragment_func = nullptr;
 	
 	for (int i = 0; i < p_shader_node->functions.size(); i++) {
 		const ShaderFunction &func = p_shader_node->functions[i];
 		if (func.name == "vert" || func.return_semantic.contains("POSITION")) {
-			vertex_func = const_cast<ShaderFunction *>(&func);
+			vertex_func = &func;
 		} else if (func.name == "frag" || func.return_semantic.contains("Target")) {
-			fragment_func = const_cast<ShaderFunction *>(&func);
+			fragment_func = &func;
 		}
 	}
 
