@@ -201,7 +201,6 @@ ShaderNode *UnityShaderConverter::parse_shader_ast(ShaderLabToken *p_tokens) {
 	ShaderNode *shader = memnew(ShaderNode);
 
 	ShaderLabToken *current = stripped;
-	bool in_properties = false;
 	bool in_cgprogram = false;
 	String cgprogram_buffer;
 
@@ -214,13 +213,11 @@ ShaderNode *UnityShaderConverter::parse_shader_ast(ShaderLabToken *p_tokens) {
 
 		// Parse properties section
 		if (current->original_data == "Properties" && current->next->type == ShaderLabTokenType::OPEN_CURLY) {
-			in_properties = true;
 			if (!shader->properties) {
 				shader->properties = memnew(ShaderPropertiesNode);
 			}
 			current = current->next;
 			_parse_properties(current, shader->properties);
-			in_properties = false;
 			continue;
 		}
 
