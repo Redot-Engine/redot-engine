@@ -218,6 +218,7 @@ protected:
 
 	virtual void _make_all_joints_dirty() override;
 	virtual void _update_joints(int p_index) override;
+	void _set_joint_bone(int p_index, int p_joint, int p_bone);
 
 	virtual void _process_ik(Skeleton3D *p_skeleton, double p_delta) override;
 
@@ -252,9 +253,7 @@ public:
 	float get_end_bone_length(int p_index) const;
 
 	// Individual joints.
-	void set_joint_bone_name(int p_index, int p_joint, const String &p_bone_name);
 	String get_joint_bone_name(int p_index, int p_joint) const;
-	void set_joint_bone(int p_index, int p_joint, int p_bone);
 	int get_joint_bone(int p_index, int p_joint) const;
 
 	void set_joint_count(int p_index, int p_count);
