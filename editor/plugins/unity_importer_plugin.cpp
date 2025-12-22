@@ -258,21 +258,3 @@ void UnityImporterPlugin::_convert_unity_shader() {
 	shader_dialog->popup_file_dialog();
 }
 
-void UnityImporterPlugin::_handle_shader_file(const String &p_path) {
-	String unity_shader_content = FileAccess::get_file_as_string(p_path);
-	String godot_shader;
-	Error err = UnityShaderConverter::convert_shaderlab_to_godot(unity_shader_content, godot_shader);
-	if (err != OK) {
-		EditorToaster::get_singleton()->popup_str(vformat(TTR("Shader conversion failed: %s"), error_names[err]), EditorToaster::SEVERITY_ERROR);
-		return;
-	}
-
-	String out_path = p_path.get_basename() + ".gdshader";
-	Ref<FileAccess> f = FileAccess::open(out_path, FileAccess::WRITE);
-	if (f.is_null()) {
-		EditorToaster::get_singleton()->popup_str(vformat(TTR("Cannot write converted shader to %s"), out_path), EditorToaster::SEVERITY_ERROR);
-		return;
-	}
-	f->store_string(godot_shader);
-	EditorToaster::get_singleton()->popup_str(vformat(TTR("Converted Unity shader to %s"), out_path));
-}
