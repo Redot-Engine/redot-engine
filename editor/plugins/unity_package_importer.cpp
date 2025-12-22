@@ -427,7 +427,7 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	String out_path = p_asset.pathname.get_basename() + ".tscn";
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
-	
+
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	Ref<PackedScene> scene;
 	scene.instantiate();
@@ -437,12 +437,12 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	scene->pack(root);
 
 	return ResourceSaver::save(scene, out_path);
-
+}
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	String out_path = p_asset.pathname.get_basename() + ".tscn";
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
-	
+
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	Ref<PackedScene> scene;
 	scene.instantiate();
@@ -452,7 +452,7 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	scene->pack(root);
 
 	return ResourceSaver::save(scene, out_path);
-
+}
 
 Error UnityAssetConverter::convert_audio(const UnityAsset &p_asset) {
 	// Direct copy - Godot supports WAV/MP3/OGG
