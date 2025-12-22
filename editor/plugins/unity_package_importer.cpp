@@ -41,8 +41,8 @@
 #include "scene/3d/node_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/material.h"
-#include "scene/resources/texture.h"
 #include "scene/resources/packed_scene.h"
+#include "scene/resources/texture.h"
 
 static Error ensure_parent_dir_for_file(const String &p_path) {
 	String dir_path = p_path.get_base_dir();
