@@ -72,12 +72,12 @@ public:
 class UnityAssetConverter {
 public:
 	static Error convert_texture(const UnityAsset &p_asset);
-	static Error convert_material(const UnityAsset &p_asset);
+	static Error convert_material(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets);
 	static Error convert_model(const UnityAsset &p_asset);
 	static Error convert_scene(const UnityAsset &p_asset);
 	static Error convert_prefab(const UnityAsset &p_asset);
 	static Error convert_audio(const UnityAsset &p_asset);
 	static Error convert_animation(const UnityAsset &p_asset);
 	static Error convert_shader(const UnityAsset &p_asset);
-	static Error extract_asset(const UnityAsset &p_asset);
+	static Error extract_asset(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets);
 };

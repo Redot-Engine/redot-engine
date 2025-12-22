@@ -182,20 +182,31 @@ void UnityImporterPlugin::_import_assets() {
 	int skipped = 0;
 	int failed = 0;
 
-	for (const KeyValue<String, UnityAsset> &E : parsed_assets) {
-		Error err = UnityAssetConverter::extract_asset(E.value);
-		switch (err) {
-			case OK:
-				imported++;
-				break;
-			case ERR_SKIP:
-				skipped++;
-				break;
-			default:
-				failed++;
-				break;
+	auto process_pass = [&](bool p_textures_only) {
+		for (const KeyValue<String, UnityAsset> &E : parsed_assets) {
+			String ext = E.value.pathname.get_extension().to_lower();
+			bool is_texture = (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "tga" || ext == "bmp" || ext == "tif" || ext == "tiff");
+			if (p_textures_only != is_texture) {
+				continue;
+			}
+
+			Error err = UnityAssetConverter::extract_asset(E.value, parsed_assets);
+			switch (err) {
+				case OK:
+					imported++;
+					break;
+				case ERR_SKIP:
+					skipped++;
+					break;
+				default:
+					failed++;
+					break;
+			}
 		}
-	}
+	};
+
+	process_pass(true); // Ensure textures are available before materials and models look them up.
+	process_pass(false);
 
 	String summary = vformat(TTR("Unity package import finished: %d imported, %d skipped, %d failed"), imported, skipped, failed);
 	EditorToaster::Severity sev = failed > 0 ? EditorToaster::SEVERITY_WARNING : EditorToaster::SEVERITY_INFO;

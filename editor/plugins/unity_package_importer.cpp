@@ -35,11 +35,13 @@
 #include "core/io/compression.h"
 #include "core/io/dir_access.h"
 #include "core/io/image.h"
+#include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/string/print_string.h"
 #include "scene/3d/node_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/material.h"
+#include "scene/resources/texture.h"
 #include "scene/resources/packed_scene.h"
 
 static Error ensure_parent_dir_for_file(const String &p_path) {
@@ -82,6 +84,103 @@ static bool parse_color_from_line(const String &p_line, Color &r_color) {
 	}
 	r_color = Color(r, g, b, a);
 	return true;
+}
+
+static int count_leading_whitespace(const String &p_line) {
+	int count = 0;
+	while (count < p_line.length()) {
+		char32_t c = p_line[count];
+		if (c != ' ' && c != '\t') {
+			break;
+		}
+		count++;
+	}
+	return count;
+}
+
+static String resolve_case_insensitive_path(const String &p_path) {
+	String dir_path = p_path.get_base_dir();
+	String filename = p_path.get_file();
+	Ref<DirAccess> d = DirAccess::open(dir_path);
+	if (d.is_null()) {
+		return p_path;
+	}
+
+	String found;
+	d->list_dir_begin();
+	String name = d->get_next();
+	while (!name.is_empty()) {
+		if (name == "." || name == ".." || d->current_is_dir()) {
+			name = d->get_next();
+			continue;
+		}
+
+		if (name.to_lower() == filename.to_lower()) {
+			found = name;
+			break;
+		}
+
+		name = d->get_next();
+	}
+	d->list_dir_end();
+
+	if (!found.is_empty()) {
+		return dir_path.path_join(found);
+	}
+
+	return p_path;
+}
+
+static String extract_albedo_texture_guid(const Vector<String> &p_lines) {
+	static const char *texture_keys[] = { "_MainTex:", "- _MainTex:", "_BaseMap:", "- _BaseMap:" };
+
+	for (int i = 0; i < p_lines.size(); i++) {
+		String line = p_lines[i];
+		String trimmed = line.strip_edges();
+		bool matches = false;
+		for (int j = 0; j < 4; j++) {
+			if (trimmed.begins_with(texture_keys[j])) {
+				matches = true;
+				break;
+			}
+		}
+		if (!matches) {
+			continue;
+		}
+
+		int base_indent = count_leading_whitespace(line);
+		for (int j = i + 1; j < p_lines.size(); j++) {
+			String inner_line = p_lines[j];
+			String inner_trimmed = inner_line.strip_edges();
+			if (inner_trimmed.is_empty()) {
+				continue;
+			}
+
+			int inner_indent = count_leading_whitespace(inner_line);
+			if (inner_trimmed.begins_with("- ") && inner_indent <= base_indent) {
+				break;
+			}
+
+			int guid_pos = inner_trimmed.find("guid:");
+			if (guid_pos == -1) {
+				continue;
+			}
+
+			String guid = inner_trimmed.substr(guid_pos + 5).strip_edges();
+			int comma = guid.find(",");
+			if (comma != -1) {
+				guid = guid.substr(0, comma);
+			}
+			int brace = guid.find("}");
+			if (brace != -1) {
+				guid = guid.substr(0, brace);
+			}
+
+			return guid.strip_edges();
+		}
+	}
+
+	return String();
 }
 
 // Unity package parser implementation (ported from V-Sekai/unidot_importer)
@@ -231,7 +330,7 @@ String UnityPackageParser::convert_unity_path_to_godot(const String &p_unity_pat
 
 // Asset conversion implementations
 
-Error UnityAssetConverter::extract_asset(const UnityAsset &p_asset) {
+Error UnityAssetConverter::extract_asset(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets) {
 	if (p_asset.asset_data.is_empty()) {
 		return ERR_FILE_MISSING_DEPENDENCIES;
 	}
@@ -242,7 +341,7 @@ Error UnityAssetConverter::extract_asset(const UnityAsset &p_asset) {
 	if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "tga" || ext == "bmp" || ext == "tif" || ext == "tiff") {
 		return convert_texture(p_asset);
 	} else if (ext == "mat") {
-		return convert_material(p_asset);
+		return convert_material(p_asset, p_all_assets);
 	} else if (ext == "fbx" || ext == "obj" || ext == "dae") {
 		return convert_model(p_asset);
 	} else if (ext == "unity" || ext == "scene") {
@@ -272,7 +371,7 @@ Error UnityAssetConverter::convert_texture(const UnityAsset &p_asset) {
 	return OK;
 }
 
-Error UnityAssetConverter::convert_material(const UnityAsset &p_asset) {
+Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets) {
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	Ref<StandardMaterial3D> material;
 	material.instantiate();
@@ -288,6 +387,18 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset) {
 			if (parse_color_from_line(l, albedo)) {
 				material->set_albedo(albedo);
 				break;
+			}
+		}
+	}
+
+	String albedo_guid = extract_albedo_texture_guid(lines);
+	if (!albedo_guid.is_empty() && p_all_assets.has(albedo_guid)) {
+		const UnityAsset &tex_asset = p_all_assets[albedo_guid];
+		String texture_path = resolve_case_insensitive_path(tex_asset.pathname);
+		if (FileAccess::exists(texture_path)) {
+			Ref<Texture2D> albedo_texture = ResourceLoader::load(texture_path);
+			if (albedo_texture.is_valid()) {
+				material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, albedo_texture);
 			}
 		}
 	}
