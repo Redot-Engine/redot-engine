@@ -259,11 +259,17 @@ void UnityImporterPlugin::_convert_unity_shader() {
 }
 
 void UnityImporterPlugin::_handle_shader_file(const String &p_path) {
-	String shader_code = FileAccess::get_file_as_string(p_path);
+	Error file_read_err = OK;
+	String shader_code = FileAccess::get_file_as_string(p_path, &file_read_err);
+	if (file_read_err != OK) {
+		EditorToaster::get_singleton()->popup_str(TTR("Failed to read shader file."), EditorToaster::SEVERITY_ERROR);
+		return;
+	}
+
 	String godot_shader;
 	Error err = UnityShaderConverter::convert_shaderlab_to_godot(shader_code, godot_shader);
 	if (err != OK) {
-		EditorToaster::get_singleton()->popup_str(vformat(TTR("Failed to convert shader: %s"), error_names[err]), EditorToaster::SEVERITY_ERROR);
+		EditorToaster::get_singleton()->popup_str(TTR("Failed to convert shader."), EditorToaster::SEVERITY_ERROR);
 		return;
 	}
 
