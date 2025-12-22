@@ -169,7 +169,7 @@ Error UnityImporterPlugin::_parse_unity_package(const String &p_path) {
 	if (result == OK) {
 		print_line(vformat("Successfully parsed Unity package with %d assets", parsed_assets.size()));
 	} else {
-		print_error("Failed to parse Unity package: " + error_names[result]);
+		print_error("Failed to parse Unity package");
 	}
 	return result;
 }
@@ -178,7 +178,7 @@ void UnityImporterPlugin::_file_selected(const String &p_path) {
 	current_package_path = p_path;
 	Error err = _parse_unity_package(p_path);
 	if (err != OK) {
-		EditorToaster::get_singleton()->popup_str(vformat(TTR("Failed to parse Unity package: %s"), error_names[err]), EditorToaster::SEVERITY_ERROR);
+		EditorToaster::get_singleton()->popup_str(TTR("Failed to parse Unity package"), EditorToaster::SEVERITY_ERROR);
 		return;
 	}
 	_import_assets();
@@ -208,7 +208,7 @@ void UnityImporterPlugin::_import_assets() {
 					break;
 				default:
 					failed++;
-					String error_msg = vformat("Failed to import '%s' (extension: .%s): %s", E.value.pathname, ext, error_names[err]);
+					String error_msg = vformat("Failed to import '%s' (extension: .%s)", E.value.pathname, ext);
 					print_error(error_msg);
 					if (!error_log.is_empty()) {
 						error_log += "\n";
