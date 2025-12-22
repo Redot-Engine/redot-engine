@@ -204,6 +204,11 @@ Error UnityPackageParser::parse_unitypackage(const String &p_path, HashMap<Strin
 }
 
 Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, HashMap<String, UnityAsset> &r_assets) {
+	if (p_tar_data.is_empty()) {
+		print_error("TAR archive is empty");
+		return ERR_FILE_CORRUPT;
+	}
+
 	int offset = 0;
 	HashMap<String, UnityAsset *> guid_map;
 	int total_files = 0;
@@ -212,7 +217,7 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 	while (offset + 512 <= p_tar_data.size()) {
 		const uint8_t *header = p_tar_data.ptr() + offset;
 
-		// Check for end of archive
+		// Check for end of archive (two consecutive 512-byte zero blocks)
 		bool is_empty = true;
 		for (int i = 0; i < 512; i++) {
 			if (header[i] != 0) {
@@ -224,18 +229,25 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 			break;
 		}
 
-		// Parse filename (offset 0, 100 bytes)
+		// Parse filename (offset 0, 100 bytes null-terminated)
 		char name_buf[101] = {};
 		memcpy(name_buf, header, 100);
-		String entry_name = String::utf8(name_buf);
+		String entry_name = String::utf8(name_buf).strip_edges();
+
+		if (entry_name.is_empty()) {
+			offset += 512;
+			continue;
+		}
+
 		total_files++;
 
 		// Parse file size (offset 124, 12 bytes octal)
 		char size_buf[13] = {};
 		memcpy(size_buf, header + 124, 12);
 		int64_t file_size = 0;
+
 		// Parse octal size
-		for (int i = 0; i < 12; i++) {
+		for (int i = 0; i < 12 && size_buf[i] != 0; i++) {
 			if (size_buf[i] >= '0' && size_buf[i] <= '7') {
 				file_size = file_size * 8 + (size_buf[i] - '0');
 			}
@@ -243,8 +255,13 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 
 		offset += 512;
 
-		// Extract file data
-		if (file_size > 0 && offset + file_size <= p_tar_data.size()) {
+		// Extract file data with boundary checking
+		if (file_size > 0) {
+			if (offset + file_size > p_tar_data.size()) {
+				print_error(vformat("TAR entry '%s' exceeds archive size", entry_name));
+				break;
+			}
+
 			PackedByteArray entry_data;
 			entry_data.resize(file_size);
 			memcpy(entry_data.ptrw(), p_tar_data.ptr() + offset, file_size);
@@ -252,27 +269,32 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 			// Parse entry structure: <guid>/asset, <guid>/pathname, <guid>/asset.meta
 			Vector<String> parts = entry_name.split("/");
 			if (parts.size() >= 2) {
-				guid_entries++;
 				String guid = parts[0];
 				String entry_type = parts[1];
 
-				if (!guid_map.has(guid)) {
-					UnityAsset asset;
-					asset.guid = guid;
-					r_assets[guid] = asset;
-					guid_map[guid] = &r_assets[guid];
-				}
+				// Validate GUID format (should be 32-character hex)
+				if (guid.length() == 32) {
+					guid_entries++;
 
-				UnityAsset *asset = guid_map[guid];
+					if (!guid_map.has(guid)) {
+						UnityAsset asset;
+						asset.guid = guid;
+						r_assets[guid] = asset;
+						guid_map[guid] = &r_assets[guid];
+					}
 
-				if (entry_type == "asset") {
-					asset->asset_data = entry_data;
-				} else if (entry_type == "pathname") {
-					asset->orig_pathname = String::utf8((const char *)entry_data.ptr(), entry_data.size()).strip_edges();
-					asset->pathname = convert_unity_path_to_godot(asset->orig_pathname);
-				} else if (entry_type == "asset.meta") {
-					asset->meta_bytes = entry_data;
-					asset->meta_data = String::utf8((const char *)entry_data.ptr(), entry_data.size());
+					UnityAsset *asset = guid_map[guid];
+					if (asset != nullptr) {
+						if (entry_type == "asset") {
+							asset->asset_data = entry_data;
+						} else if (entry_type == "pathname") {
+							asset->orig_pathname = String::utf8((const char *)entry_data.ptr(), entry_data.size()).strip_edges();
+							asset->pathname = convert_unity_path_to_godot(asset->orig_pathname);
+						} else if (entry_type == "asset.meta") {
+							asset->meta_bytes = entry_data;
+							asset->meta_data = String::utf8((const char *)entry_data.ptr(), entry_data.size());
+						}
+					}
 				}
 			}
 
@@ -336,6 +358,11 @@ String UnityPackageParser::convert_unity_path_to_godot(const String &p_unity_pat
 // Asset conversion implementations
 
 Error UnityAssetConverter::extract_asset(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets) {
+	if (p_asset.pathname.is_empty()) {
+		print_error(vformat("Asset GUID %s has no pathname", p_asset.guid));
+		return ERR_FILE_MISSING_DEPENDENCIES;
+	}
+
 	if (p_asset.asset_data.is_empty()) {
 		print_error(vformat("Asset '%s' (GUID: %s) has no asset data", p_asset.pathname, p_asset.guid));
 		return ERR_FILE_MISSING_DEPENDENCIES;
