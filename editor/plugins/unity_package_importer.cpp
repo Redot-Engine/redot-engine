@@ -206,6 +206,8 @@ Error UnityPackageParser::parse_unitypackage(const String &p_path, HashMap<Strin
 Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, HashMap<String, UnityAsset> &r_assets) {
 	int offset = 0;
 	HashMap<String, UnityAsset *> guid_map;
+	int total_files = 0;
+	int guid_entries = 0;
 
 	while (offset + 512 <= p_tar_data.size()) {
 		const uint8_t *header = p_tar_data.ptr() + offset;
@@ -226,6 +228,7 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 		char name_buf[101] = {};
 		memcpy(name_buf, header, 100);
 		String entry_name = String::utf8(name_buf);
+		total_files++;
 
 		// Parse file size (offset 124, 12 bytes octal)
 		char size_buf[13] = {};
@@ -249,6 +252,7 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 			// Parse entry structure: <guid>/asset, <guid>/pathname, <guid>/asset.meta
 			Vector<String> parts = entry_name.split("/");
 			if (parts.size() >= 2) {
+				guid_entries++;
 				String guid = parts[0];
 				String entry_type = parts[1];
 
@@ -277,6 +281,7 @@ Error UnityPackageParser::parse_tar_archive(const PackedByteArray &p_tar_data, H
 		}
 	}
 
+	print_line(vformat("TAR archive parsed: %d total files, %d GUID-based entries, %d unique assets", total_files, guid_entries, r_assets.size()));
 	return OK;
 }
 
@@ -332,6 +337,7 @@ String UnityPackageParser::convert_unity_path_to_godot(const String &p_unity_pat
 
 Error UnityAssetConverter::extract_asset(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets) {
 	if (p_asset.asset_data.is_empty()) {
+		print_error(vformat("Asset '%s' (GUID: %s) has no asset data", p_asset.pathname, p_asset.guid));
 		return ERR_FILE_MISSING_DEPENDENCIES;
 	}
 
@@ -419,20 +425,9 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
-	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
-	Ref<PackedScene> scene;
-	scene.instantiate();
-	Node3D *root = memnew(Node3D);
-	root->set_name(p_asset.pathname.get_file().get_basename());
-	root->set_meta("unity_yaml", yaml);
-	scene->pack(root);
-
 	String out_path = p_asset.pathname.get_basename() + ".tscn";
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
-	return ResourceSaver::save(scene, out_path);
-}
-
-Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
+	
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	Ref<PackedScene> scene;
 	scene.instantiate();
@@ -441,10 +436,23 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	root->set_meta("unity_yaml", yaml);
 	scene->pack(root);
 
+	return ResourceSaver::save(scene, out_path);
+
+
+Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	String out_path = p_asset.pathname.get_basename() + ".tscn";
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
+	
+	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	Ref<PackedScene> scene;
+	scene.instantiate();
+	Node3D *root = memnew(Node3D);
+	root->set_name(p_asset.pathname.get_file().get_basename());
+	root->set_meta("unity_yaml", yaml);
+	scene->pack(root);
+
 	return ResourceSaver::save(scene, out_path);
-}
+
 
 Error UnityAssetConverter::convert_audio(const UnityAsset &p_asset) {
 	// Direct copy - Godot supports WAV/MP3/OGG

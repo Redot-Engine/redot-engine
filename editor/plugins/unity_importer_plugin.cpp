@@ -164,7 +164,14 @@ void UnityImporterPlugin::_show_package_dialog() {
 
 Error UnityImporterPlugin::_parse_unity_package(const String &p_path) {
 	parsed_assets.clear();
-	return UnityPackageParser::parse_unitypackage(p_path, parsed_assets);
+	print_line("Parsing Unity package: " + p_path);
+	Error result = UnityPackageParser::parse_unitypackage(p_path, parsed_assets);
+	if (result == OK) {
+		print_line(vformat("Successfully parsed Unity package with %d assets", parsed_assets.size()));
+	} else {
+		print_error("Failed to parse Unity package: " + error_names[result]);
+	}
+	return result;
 }
 
 void UnityImporterPlugin::_file_selected(const String &p_path) {
@@ -181,6 +188,7 @@ void UnityImporterPlugin::_import_assets() {
 	int imported = 0;
 	int skipped = 0;
 	int failed = 0;
+	String error_log;
 
 	auto process_pass = [&](bool p_textures_only) {
 		for (const KeyValue<String, UnityAsset> &E : parsed_assets) {
@@ -200,6 +208,12 @@ void UnityImporterPlugin::_import_assets() {
 					break;
 				default:
 					failed++;
+					String error_msg = vformat("Failed to import '%s' (extension: .%s): %s", E.value.pathname, ext, error_names[err]);
+					print_error(error_msg);
+					if (!error_log.is_empty()) {
+						error_log += "\n";
+					}
+					error_log += error_msg;
 					break;
 			}
 		}
@@ -209,6 +223,9 @@ void UnityImporterPlugin::_import_assets() {
 	process_pass(false);
 
 	String summary = vformat(TTR("Unity package import finished: %d imported, %d skipped, %d failed"), imported, skipped, failed);
+	if (!error_log.is_empty()) {
+		print_line("Unity import errors:\n" + error_log);
+	}
 	EditorToaster::Severity sev = failed > 0 ? EditorToaster::SEVERITY_WARNING : EditorToaster::SEVERITY_INFO;
 	EditorToaster::get_singleton()->popup_str(summary, sev);
 }
