@@ -257,4 +257,3 @@ void UnityImporterPlugin::_convert_unity_shader() {
 	}
 	shader_dialog->popup_file_dialog();
 }
-
