@@ -536,10 +536,9 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	// p_asset.pathname is already the full output path with hash
-	print_line(vformat("convert_prefab called with pathname: %s", p_asset.pathname));
 	Error dir_result = ensure_parent_dir_for_file(p_asset.pathname);
 	if (dir_result != OK) {
-		print_error(vformat("Cannot create target directory for prefab. Path: %s, Error: %d", p_asset.pathname, dir_result));
+		print_error(vformat("Failed to create directory for prefab: %s", p_asset.pathname));
 		return ERR_CANT_CREATE;
 	}
 
