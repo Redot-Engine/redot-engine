@@ -139,7 +139,6 @@ class UnityImporterPlugin : public EditorPlugin {
 	void _install_shaderlab2godotsl();
 	void _convert_unity_shader();
 	void _handle_shader_file(const String &p_path);
-	void _browse_asset_stores();
 
 protected:
 	void _notification(int p_what);

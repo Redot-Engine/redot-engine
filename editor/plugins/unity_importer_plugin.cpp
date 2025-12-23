@@ -420,7 +420,6 @@ void UnityImporterPlugin::_notification(int p_what) {
 		add_tool_menu_item(TTR("Install UnityToGodot Toolkit..."), callable_mp(this, &UnityImporterPlugin::_install_unity_to_godot));
 		add_tool_menu_item(TTR("Install Shaderlab2GodotSL..."), callable_mp(this, &UnityImporterPlugin::_install_shaderlab2godotsl));
 		add_tool_menu_item(TTR("Convert Unity Shader..."), callable_mp(this, &UnityImporterPlugin::_convert_unity_shader));
-		add_tool_menu_item(TTR("Browse Asset Stores (Godot + Unity)..."), callable_mp(this, &UnityImporterPlugin::_browse_asset_stores));
 
 		anim_importer.instantiate();
 		scene_importer.instantiate();
