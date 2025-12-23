@@ -358,7 +358,10 @@ String UnityPackageParser::convert_unity_path_to_godot(const String &p_unity_pat
 // Helper functions for YAML Transform parsing
 Vector3 UnityAssetConverter::_parse_vector3_from_yaml(const String &p_yaml) {
 	// Parse format: {x: 0, y: 0, z: 0} or {x: 0.5, y: -1.2, z: 3.14}
-	Vector3 result = Vector3::ZERO;
+	Vector3 result;
+	result.x = 0;
+	result.y = 0;
+	result.z = 0;
 	
 	String content = p_yaml;
 	if (content.begins_with("{") && content.ends_with("}")) {
@@ -554,9 +557,23 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	String current_game_object_name = "GameObject";
 	String current_parent_ref = "";
 	String current_prefab_guid = "";
-	Vector3 current_position = Vector3::ZERO;
-	Quaternion current_rotation = Quaternion::IDENTITY;
-	Vector3 current_scale = Vector3::ONE;
+	
+	Vector3 current_position;
+	current_position.x = 0;
+	current_position.y = 0;
+	current_position.z = 0;
+	
+	Quaternion current_rotation;
+	current_rotation.x = 0;
+	current_rotation.y = 0;
+	current_rotation.z = 0;
+	current_rotation.w = 1;
+	
+	Vector3 current_scale;
+	current_scale.x = 1;
+	current_scale.y = 1;
+	current_scale.z = 1;
+	
 	bool in_game_object = false;
 	bool in_transform = false;
 	int game_object_count = 0;
