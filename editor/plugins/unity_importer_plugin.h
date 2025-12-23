@@ -104,9 +104,9 @@ class UnityScriptImportPlugin : public EditorImportPlugin {
 
 public:
 	virtual String get_importer_name() const override { return "unity_script_importer"; }
-	virtual String get_visible_name() const override { return "Unity Script (.cs -> GDScript)"; }
+	virtual String get_visible_name() const override { return "Unity C# Script"; }
 	virtual void get_recognized_extensions(List<String> *p_extensions) const override { p_extensions->push_back("cs"); }
-	virtual String get_save_extension() const override { return "gd"; }
+	virtual String get_save_extension() const override { return "cs"; }
 	virtual String get_resource_type() const override { return "Script"; }
 	virtual int get_import_order() const override { return 0; }
 	virtual float get_priority() const override { return 1.0f; }

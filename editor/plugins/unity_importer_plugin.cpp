@@ -381,31 +381,66 @@ Error UnityMatImportPlugin::import(ResourceUID::ID p_source_id, const String &p_
 }
 
 Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	print_line(vformat("UnityScriptImportPlugin::import called for %s -> %s", p_source_file, p_save_path));
+	
 	Error fe = OK;
-	String source_code = FileAccess::get_file_as_string(p_source_file, &fe);
+	String cs_code = FileAccess::get_file_as_string(p_source_file, &fe);
 	if (fe != OK) {
 		print_error(vformat("Failed to read C# script: %s", p_source_file));
 		return fe;
 	}
 
-	String gd_code = _convert_csharp_to_gd(source_code);
-	String out_path = p_save_path.get_basename() + ".gd";
+	// Convert Unity C# namespaces to Godot C# namespaces
+	// Keep it as C# but update the API calls
+	cs_code = cs_code.replace("using UnityEngine;", "using Godot;\nusing System;");
+	cs_code = cs_code.replace("using UnityEngine.UI;", "using Godot;");
+	cs_code = cs_code.replace("using UnityEngine.Events;", "using Godot;");
+	
+	// MonoBehaviour -> Node (most common base class)
+	cs_code = cs_code.replace("public class", "// Unity to Godot: Changed MonoBehaviour to Node3D\npublic partial class");
+	cs_code = cs_code.replace(": MonoBehaviour", ": Node3D");
+	
+	// Common Unity lifecycle methods to Godot equivalents
+	cs_code = cs_code.replace("void Awake()", "public override void _Ready() // Was Awake()");
+	cs_code = cs_code.replace("void Start()", "public override void _Ready() // Was Start()");
+	cs_code = cs_code.replace("void OnEnable()", "public override void _EnterTree() // Was OnEnable()");
+	cs_code = cs_code.replace("void OnDisable()", "public override void _ExitTree() // Was OnDisable()");
+	cs_code = cs_code.replace("void Update()", "public override void _Process(double delta) // Was Update()");
+	cs_code = cs_code.replace("void FixedUpdate()", "public override void _PhysicsProcess(double delta) // Was FixedUpdate()");
+	cs_code = cs_code.replace("void LateUpdate()", "public override void _Process(double delta) // Was LateUpdate()");
+	
+	// Common Unity API replacements
+	cs_code = cs_code.replace("Time.deltaTime", "(float)delta");
+	cs_code = cs_code.replace("GameObject", "Node");
+	cs_code = cs_code.replace("GetComponent<", "GetNode<");
+	cs_code = cs_code.replace("Debug.Log(", "GD.Print(");
+	cs_code = cs_code.replace("Instantiate(", "// TODO: Convert Instantiate to Godot equivalent\n\t\t// Instantiate(");
+	cs_code = cs_code.replace("Destroy(", "QueueFree() // Was Destroy(");
+	
+	// Save as .cs file
+	String out_path = p_save_path;
+	if (!out_path.ends_with(".cs")) {
+		out_path += ".cs";
+	}
+	
 	Error err = ensure_dir(out_path.get_base_dir());
 	if (err != OK) {
-		print_error(vformat("Failed to create directory for script: %s", out_path.get_base_dir()));
+		print_error(vformat("Failed to create directory for C# script: %s", out_path.get_base_dir()));
 		return err;
 	}
 
 	Ref<FileAccess> f = FileAccess::open(out_path, FileAccess::WRITE, &fe);
 	if (f.is_null() || fe != OK) {
-		print_error(vformat("Failed to open script file for writing: %s (error: %d)", out_path, fe));
+		print_error(vformat("Failed to open C# script file for writing: %s (error: %d)", out_path, fe));
 		return fe != OK ? fe : ERR_CANT_CREATE;
 	}
 
-	f->store_string(gd_code);
+	f->store_string(cs_code);
 	if (r_gen_files) {
 		r_gen_files->push_back(out_path);
 	}
+	
+	print_line(vformat("Converted Unity C# script to Godot C#: %s", out_path));
 	return OK;
 }
 
