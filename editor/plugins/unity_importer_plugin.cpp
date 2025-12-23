@@ -339,6 +339,8 @@ Error UnityAnimImportPlugin::import(ResourceUID::ID p_source_id, const String &p
 }
 
 Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	print_line(vformat("UnityYamlSceneImportPlugin::import called for %s -> %s", p_source_file, p_save_path));
+	
 	PackedByteArray bytes;
 	Error r = _read_file_bytes(p_source_file, bytes);
 	ERR_FAIL_COND_V(r != OK, r);
@@ -349,8 +351,10 @@ Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const Stri
 
 	String ext = p_source_file.get_extension().to_lower();
 	if (ext == "prefab") {
+		print_line(vformat("Converting prefab: %s", p_source_file));
 		return UnityAssetConverter::convert_prefab(asset);
 	}
+	print_line(vformat("Converting scene: %s", p_source_file));
 	return UnityAssetConverter::convert_scene(asset);
 }
 
