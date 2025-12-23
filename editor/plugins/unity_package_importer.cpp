@@ -464,6 +464,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	Ref<PackedScene> scene = memnew(PackedScene);
 	Node3D *root = memnew(Node3D);
 	root->set_name(p_asset.pathname.get_file().get_basename());
+	root->set_owner(root);  // Root node owns itself in Redot scenes
 	
 	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
@@ -515,7 +516,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		child->set_owner(root);
 	}
 	
-	// Pack the scene properly
+	// Pack the scene properly with root node
 	scene->pack(root);
 	
 	// Save and verify
@@ -539,6 +540,7 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	Ref<PackedScene> scene = memnew(PackedScene);
 	Node3D *root = memnew(Node3D);
 	root->set_name(p_asset.pathname.get_file().get_basename());
+	root->set_owner(root);  // Root node owns itself in Redot scenes
 	
 	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
