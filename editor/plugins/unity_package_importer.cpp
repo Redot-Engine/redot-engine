@@ -468,12 +468,13 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	Ref<PackedScene> scene = memnew(PackedScene);
 	Node3D *root = memnew(Node3D);
 	root->set_name(p_asset.pathname.get_file().get_basename());
-	root->set_owner(root);  // Root node owns itself in Redot scenes
+	// NOTE: Root node does NOT own itself in Godot! Only children own the root.
 	
 	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
 	String current_game_object_name = "GameObject";
 	bool in_game_object = false;
+	int game_object_count = 0;
 	
 	for (int i = 0; i < lines.size(); i++) {
 		String trimmed = lines[i].strip_edges();
@@ -485,7 +486,8 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 				Node3D *child = memnew(Node3D);
 				child->set_name(current_game_object_name);
 				root->add_child(child);
-				child->set_owner(root);
+				child->set_owner(root);  // Child owns root
+				game_object_count++;
 			}
 			
 			in_game_object = true;
@@ -517,7 +519,8 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		Node3D *child = memnew(Node3D);
 		child->set_name(current_game_object_name);
 		root->add_child(child);
-		child->set_owner(root);
+		child->set_owner(root);  // Child owns root
+		game_object_count++;
 	}
 	
 	// Pack the scene properly with root node
@@ -526,7 +529,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	// Save and verify
 	Error save_result = ResourceSaver::save(scene, p_asset.pathname);
 	if (save_result == OK) {
-		print_line(vformat("Scene conversion: packed %d nodes from %s", root->get_child_count() + 1, p_asset.pathname.get_file()));
+		print_line(vformat("Scene conversion: packed %d nodes (root + %d children) from %s", root->get_child_count() + 1, game_object_count, p_asset.pathname.get_file()));
 	} else {
 		print_error(vformat("Failed to save scene: %s (error: %d)", p_asset.pathname, save_result));
 	}
@@ -548,12 +551,13 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	Ref<PackedScene> scene = memnew(PackedScene);
 	Node3D *root = memnew(Node3D);
 	root->set_name(p_asset.pathname.get_file().get_basename());
-	root->set_owner(root);  // Root node owns itself in Redot scenes
+	// NOTE: Root node does NOT own itself! Only children own the root.
 	
 	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
 	String current_game_object_name = "GameObject";
 	bool in_game_object = false;
+	int game_object_count = 0;
 	
 	for (int i = 0; i < lines.size(); i++) {
 		String trimmed = lines[i].strip_edges();
@@ -565,7 +569,8 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 				Node3D *child = memnew(Node3D);
 				child->set_name(current_game_object_name);
 				root->add_child(child);
-				child->set_owner(root);
+				child->set_owner(root);  // Child owns root
+				game_object_count++;
 			}
 			
 			in_game_object = true;
@@ -597,7 +602,8 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		Node3D *child = memnew(Node3D);
 		child->set_name(current_game_object_name);
 		root->add_child(child);
-		child->set_owner(root);
+		child->set_owner(root);  // Child owns root
+		game_object_count++;
 	}
 	
 	// Pack the scene properly
@@ -606,7 +612,7 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	// Save and verify
 	Error save_result = ResourceSaver::save(scene, p_asset.pathname);
 	if (save_result == OK) {
-		print_line(vformat("Prefab conversion: packed %d nodes from %s", root->get_child_count() + 1, p_asset.pathname.get_file()));
+		print_line(vformat("Prefab conversion: packed %d nodes (root + %d children) from %s", root->get_child_count() + 1, game_object_count, p_asset.pathname.get_file()));
 	} else {
 		print_error(vformat("Failed to save prefab: %s (error: %d)", p_asset.pathname, save_result));
 	}
