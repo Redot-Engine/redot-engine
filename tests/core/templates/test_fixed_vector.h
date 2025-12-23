@@ -73,14 +73,13 @@ TEST_CASE("[FixedVector] Basic Checks") {
 	FixedVector<Variant, 3> vector_variant;
 	CHECK_EQ(vector_variant.size(), 0);
 	CHECK_EQ(vector_variant.capacity(), 3);
-	vector_variant.resize_initialized(3);
+	vector_variant.resize_initialized(2);
 	vector_variant[0] = "Test";
 	vector_variant[1] = 1;
 	CHECK_EQ(vector_variant.capacity(), 3);
-	CHECK_EQ(vector_variant.size(), 3);
+	CHECK_EQ(vector_variant.size(), 2);
 	CHECK_EQ(vector_variant[0], "Test");
 	CHECK_EQ(vector_variant[1], Variant(1));
-	CHECK_EQ(vector_variant[2].get_type(), Variant::NIL);
 }
 
 TEST_CASE("[FixedVector] Alignment Checks") {

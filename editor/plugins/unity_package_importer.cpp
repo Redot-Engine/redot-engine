@@ -785,7 +785,6 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	String current_game_object_name = "GameObject";
 	String current_parent_ref = "";
 	String current_prefab_guid = "";
-	bool in_prefab_instance = false;
 	String prefab_instance_guid = "";
 
 	Vector3 current_position;
@@ -1304,8 +1303,6 @@ Error UnityAssetConverter::convert_animation(const UnityAsset &p_asset) {
 	HashMap<String, Vector<float>> time_values; // curve_name -> times
 	HashMap<String, Vector<float>> curve_values; // curve_name -> values
 
-	int current_indent = 0;
-	bool in_curves = false;
 	String current_curve_name;
 
 	for (int i = 0; i < lines.size(); i++) {
