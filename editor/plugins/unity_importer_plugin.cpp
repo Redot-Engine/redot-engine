@@ -34,6 +34,7 @@
 
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
+#include "core/object/script_language.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "editor/editor_node.h"
@@ -425,6 +426,15 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 		return fe;
 	}
 
+	// Detect whether the engine was built with C# support; fallback to GDScript when unavailable
+	bool has_csharp = false;
+	for (int i = 0; i < ScriptServer::get_language_count(); i++) {
+		if (ScriptServer::get_language(i) && ScriptServer::get_language(i)->get_name() == "C#") {
+			has_csharp = true;
+			break;
+		}
+	}
+
 	// Convert Unity C# namespaces to Godot C# namespaces
 	// Keep it as C# but update the API calls
 	cs_code = cs_code.replace("using UnityEngine;", "using Godot;\nusing System;\nusing System.Collections.Generic;");
@@ -515,7 +525,35 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	cs_code = cs_code.replace("SphereCollider", "SphereShape3D");
 	cs_code = cs_code.replace("CapsuleCollider", "CapsuleShape3D");
 
-	// Save as .cs file
+	if (!has_csharp) {
+		// Fallback: convert to GDScript so the project still loads without the C# module
+		String gd_code = _convert_csharp_to_gd(cs_code);
+		String out_path = p_save_path;
+		if (!out_path.ends_with(".gd")) {
+			out_path += ".gd";
+		}
+
+		Error err = ensure_dir(out_path.get_base_dir());
+		if (err != OK) {
+			print_error(vformat("Failed to create directory for GDScript: %s", out_path.get_base_dir()));
+			return err;
+		}
+
+		Ref<FileAccess> f = FileAccess::open(out_path, FileAccess::WRITE, &fe);
+		if (f.is_null() || fe != OK) {
+			print_error(vformat("Failed to open GDScript file for writing: %s (error: %d)", out_path, fe));
+			return fe != OK ? fe : ERR_CANT_CREATE;
+		}
+
+		f->store_string(gd_code);
+		if (r_gen_files) {
+			r_gen_files->push_back(out_path);
+		}
+		print_line(vformat("Converted Unity C# script to GDScript fallback: %s", out_path));
+		return OK;
+	}
+
+	// Save as .cs file when C# is available
 	String out_path = p_save_path;
 	if (!out_path.ends_with(".cs")) {
 		out_path += ".cs";
