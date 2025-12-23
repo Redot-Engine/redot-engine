@@ -36,10 +36,10 @@
 #include "core/templates/hash_map.h"
 #include "core/templates/vector.h"
 #include "scene/3d/node_3d.h"
-#include "scene/resources/packed_scene.h"
 #include "scene/resources/animation.h"
-#include "scene/resources/mesh.h"
 #include "scene/resources/material.h"
+#include "scene/resources/mesh.h"
+#include "scene/resources/packed_scene.h"
 #include "unity_shader_converter.h"
 
 // Forward declarations
@@ -89,9 +89,9 @@ struct UnityMeshData {
 	Vector<Vector2> texcoords2;
 	Vector<Color> colors;
 	Vector<Vector4> tangents;
-	Vector<Vector<int>> bone_indices;      // Per-vertex bone indices
-	Vector<Vector<float>> bone_weights;    // Per-vertex bone weights
-	HashMap<int, Vector<int>> submesh_triangles;  // Submesh index -> triangle list
+	Vector<Vector<int>> bone_indices; // Per-vertex bone indices
+	Vector<Vector<float>> bone_weights; // Per-vertex bone weights
+	HashMap<int, Vector<int>> submesh_triangles; // Submesh index -> triangle list
 };
 
 // Animation track data
@@ -111,7 +111,7 @@ struct UnitySceneNode {
 	Transform3D transform;
 	Vector<int> children;
 	int parent_fileID;
-	HashMap<String, Variant> components;  // Component type -> fileID
+	HashMap<String, Variant> components; // Component type -> fileID
 	bool is_prefab_instance;
 	int prefab_source_id;
 };
@@ -140,17 +140,17 @@ private:
 	static Quaternion _parse_quaternion_from_yaml(const String &p_yaml);
 	static Transform3D _parse_transform_from_yaml(const String &p_yaml);
 	static Color _parse_color_from_yaml(const String &p_yaml);
-	
+
 	// Mesh data extraction (future implementations)
 	// static Error _extract_mesh_data(const HashMap<String, Variant> &p_yaml, UnityMeshData &r_mesh_data);
 	// static Error _extract_skin_data(const HashMap<String, Variant> &p_yaml, UnityMeshData &r_mesh_data);
-	
+
 	// Material property parsing (future implementations)
 	// static void _parse_material_properties(const HashMap<String, Variant> &p_yaml, HashMap<String, Variant> &r_properties);
-	
+
 	// Scene hierarchy building
 	// static Error _build_scene_hierarchy(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets, Vector<UnitySceneNode> &r_nodes);
-	
+
 	// Component converters (future implementations)
 	// static Node3D* _convert_transform_component(const UnitySceneNode &p_node);
 	// static Node3D* _convert_mesh_renderer(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets);

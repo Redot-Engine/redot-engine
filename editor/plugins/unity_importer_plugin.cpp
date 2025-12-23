@@ -320,7 +320,7 @@ static String _convert_csharp_to_gd(const String &p_source_code) {
 
 Error UnityAnimImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 	print_line(vformat("UnityAnimImportPlugin::import called for %s -> %s", p_source_file, p_save_path));
-	
+
 	PackedByteArray bytes;
 	Error r = _read_file_bytes(p_source_file, bytes);
 	if (r != OK) {
@@ -343,11 +343,11 @@ Error UnityAnimImportPlugin::import(ResourceUID::ID p_source_id, const String &p
 		print_error(vformat("Failed to convert animation: %s (error: %d)", p_source_file, convert_err));
 		return convert_err;
 	}
-	
+
 	if (r_gen_files) {
 		r_gen_files->push_back(asset.pathname);
 	}
-	
+
 	return OK;
 }
 
@@ -407,11 +407,11 @@ Error UnityMatImportPlugin::import(ResourceUID::ID p_source_id, const String &p_
 		print_error(vformat("Failed to convert material: %s (error: %d)", p_source_file, convert_err));
 		return convert_err;
 	}
-	
+
 	if (r_gen_files) {
 		r_gen_files->push_back(asset.pathname);
 	}
-	
+
 	print_line(vformat("Material import: %s -> %s", p_source_file, asset.pathname));
 	return OK;
 }

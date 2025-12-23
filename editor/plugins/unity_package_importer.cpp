@@ -511,7 +511,7 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 	material->set_meta("unity_yaml", yaml);
 
 	Vector<String> lines = yaml.split("\n");
-	
+
 	// Parse shader name to determine material type
 	String shader_name;
 	for (const String &line : lines) {
@@ -529,54 +529,58 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 	// Parse material properties from YAML
 	HashMap<String, Variant> properties;
 	bool in_saved_properties = false;
-	
+
 	for (int i = 0; i < lines.size(); i++) {
 		String line = lines[i].strip_edges();
-		
+
 		// Look for SavedProperties section
 		if (line.begins_with("m_SavedProperties:")) {
 			in_saved_properties = true;
 			continue;
 		}
-		
-		if (!in_saved_properties) continue;
-		
+
+		if (!in_saved_properties) {
+			continue;
+		}
+
 		// Parse textures: "name: 0" where 0 is GUID index
 		if (line.begins_with("- {") && line.contains("name:")) {
 			// Parse texture reference
 			if (line.contains("guid:")) {
 				int guid_start = line.find("guid:") + 5;
 				int guid_end = line.find(",", guid_start);
-				if (guid_end == -1) guid_end = line.find("}", guid_start);
+				if (guid_end == -1) {
+					guid_end = line.find("}", guid_start);
+				}
 				String guid = line.substr(guid_start, guid_end - guid_start).strip_edges();
-				
+
 				int name_start = line.find("name:") + 5;
 				int name_end = line.find(",", name_start);
 				String tex_name = line.substr(name_start, name_end - name_start).strip_edges();
 				properties[tex_name.trim_prefix("\"").trim_suffix("\"")] = guid.trim_prefix("\"").trim_suffix("\"");
 			}
 		}
-		
+
 		// Parse colors: "_Color: {r: 1, g: 1, b: 1, a: 1}"
 		if (line.begins_with("- _") && line.contains("{") && line.contains("r:")) {
 			int name_start = line.find("_");
 			int colon = line.find(":", name_start);
 			String prop_name = line.substr(name_start, colon - name_start).strip_edges();
-			
+
 			int brace_start = line.find("{");
 			int brace_end = line.rfind("}");
 			String color_data = line.substr(brace_start, brace_end - brace_start + 1);
 			Color color = _parse_color_from_yaml(color_data);
 			properties[prop_name] = color;
 		}
-		
+
 		// Parse floats: "_Metallic: 0.5"
 		if (line.begins_with("- _") && line.contains(":") && !line.contains("{")) {
 			int name_start = line.find("_");
 			int colon = line.find(":", name_start);
 			String prop_name = line.substr(name_start, colon - name_start).strip_edges();
 			String value_str = line.substr(colon + 1).strip_edges();
-			
+
 			if (value_str.is_valid_float()) {
 				properties[prop_name] = value_str.to_float();
 			}
@@ -588,7 +592,7 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 		Color color = properties["_Color"];
 		material->set_albedo(color);
 	}
-	
+
 	if (properties.has("_MainTex")) {
 		String tex_guid = properties["_MainTex"];
 		if (p_all_assets.has(tex_guid)) {
@@ -602,17 +606,17 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 			}
 		}
 	}
-	
+
 	if (properties.has("_Metallic")) {
 		float metallic = float(properties["_Metallic"]);
 		material->set_metallic(metallic);
 	}
-	
+
 	if (properties.has("_Glossiness")) {
 		float glossiness = float(properties["_Glossiness"]);
-		material->set_roughness(1.0f - glossiness);  // Glossiness -> Roughness conversion
+		material->set_roughness(1.0f - glossiness); // Glossiness -> Roughness conversion
 	}
-	
+
 	if (properties.has("_BumpMap")) {
 		String tex_guid = properties["_BumpMap"];
 		if (p_all_assets.has(tex_guid)) {
@@ -626,12 +630,12 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 			}
 		}
 	}
-	
+
 	if (properties.has("_BumpScale")) {
 		float bump_scale = float(properties["_BumpScale"]);
 		material->set_normal_scale(bump_scale);
 	}
-	
+
 	if (properties.has("_ParallaxMap")) {
 		String tex_guid = properties["_ParallaxMap"];
 		if (p_all_assets.has(tex_guid)) {
@@ -645,7 +649,7 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 			}
 		}
 	}
-	
+
 	if (properties.has("_OcclusionMap")) {
 		String tex_guid = properties["_OcclusionMap"];
 		if (p_all_assets.has(tex_guid)) {
@@ -659,12 +663,12 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 			}
 		}
 	}
-	
+
 	if (properties.has("_EmissionColor")) {
 		Color emission = properties["_EmissionColor"];
 		material->set_emission(emission);
 	}
-	
+
 	if (properties.has("_EmissionMap")) {
 		String tex_guid = properties["_EmissionMap"];
 		if (p_all_assets.has(tex_guid)) {
@@ -678,22 +682,22 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 			}
 		}
 	}
-	
+
 	// Handle transparency modes
 	if (shader_name.contains("Transparent") || shader_name.contains("Alpha")) {
 		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
 	}
-	
+
 	if (shader_name.contains("AlphaTest") || shader_name.contains("Cutout")) {
 		// Alpha scissor/cutout mode not directly supported - use alpha transparency
 		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
 	}
-	
+
 	// Handle shader keywords if present
 	for (const String &line : lines) {
 		if (line.contains("m_ShaderKeywords:")) {
 			String keyword_line = line.substr(line.find(":") + 1).strip_edges();
-			
+
 			if (keyword_line.contains("_ALPHABLEND_ON")) {
 				material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
 			}
@@ -771,7 +775,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	HashMap<String, String> fileID_to_name;
 	HashMap<String, String> fileID_to_parent;
 	HashMap<String, String> fileID_to_prefab_guid;
-	HashMap<String, String> fileID_to_prefab_instance_guid;  // For PrefabInstance GUIDs
+	HashMap<String, String> fileID_to_prefab_instance_guid; // For PrefabInstance GUIDs
 	HashMap<String, Vector3> fileID_to_position;
 	HashMap<String, Quaternion> fileID_to_rotation;
 	HashMap<String, Vector3> fileID_to_scale;
@@ -978,7 +982,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	for (const KeyValue<String, Node3D *> &E : fileID_to_node) {
 		String file_id = E.key;
 		Node3D *node = E.value;
-		
+
 		// Only add to root if not already added
 		if (!node->get_parent()) {
 			root->add_child(node);
@@ -1255,7 +1259,7 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	for (const KeyValue<String, Node3D *> &E : fileID_to_node) {
 		String file_id = E.key;
 		Node3D *node = E.value;
-		
+
 		// Only add to root if not already added
 		if (!node->get_parent()) {
 			root->add_child(node);
@@ -1291,23 +1295,23 @@ Error UnityAssetConverter::convert_animation(const UnityAsset &p_asset) {
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	Ref<Animation> anim;
 	anim.instantiate();
-	
+
 	Vector<String> lines = yaml.split("\n");
 	float anim_length = 1.0f;
 	String anim_name = "Animation";
-	
+
 	// Parse animation metadata and curves
-	HashMap<String, Vector<float>> time_values;  // curve_name -> times
+	HashMap<String, Vector<float>> time_values; // curve_name -> times
 	HashMap<String, Vector<float>> curve_values; // curve_name -> values
-	
+
 	int current_indent = 0;
 	bool in_curves = false;
 	String current_curve_name;
-	
+
 	for (int i = 0; i < lines.size(); i++) {
 		String line = lines[i];
 		String trimmed = line.strip_edges();
-		
+
 		// Extract animation name
 		if (trimmed.begins_with("m_Name:")) {
 			anim_name = trimmed.substr(7).strip_edges();
@@ -1315,7 +1319,7 @@ Error UnityAssetConverter::convert_animation(const UnityAsset &p_asset) {
 				anim_name = anim_name.substr(1, anim_name.length() - 2);
 			}
 		}
-		
+
 		// Look for animation length (start time to stop time)
 		if (trimmed.contains("m_StopTime:") || trimmed.contains("m_StartTime:")) {
 			Vector<String> parts = trimmed.split(":");
@@ -1327,23 +1331,23 @@ Error UnityAssetConverter::convert_animation(const UnityAsset &p_asset) {
 			}
 		}
 	}
-	
+
 	anim->set_name(anim_name);
 	anim->set_length(anim_length > 0 ? anim_length : 1.0f);
-	
+
 	// Store the original YAML for reference if full parsing fails
 	anim->set_meta("unity_yaml", yaml);
-	
+
 	// For now, create an empty animation with length metadata
 	// Full animation curve extraction would require parsing m_CompressedAnimationCurves
 	// This is marked for future enhancement after mesh and skeleton support
-	
+
 	String out_path = p_asset.pathname;
 	if (!out_path.ends_with(".tres")) {
 		out_path += ".tres";
 	}
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for animation.");
-	
+
 	Error save_err = ResourceSaver::save(anim, out_path);
 	if (save_err == OK) {
 		print_line(vformat("Animation conversion: created %s with length %.2f seconds", out_path, anim_length));
@@ -1373,7 +1377,7 @@ Error UnityAssetConverter::convert_shader(const UnityAsset &p_asset) {
 Transform3D UnityAssetConverter::_parse_transform_from_yaml(const String &p_yaml) {
 	Transform3D transform;
 	Vector<String> lines = p_yaml.split("\n");
-	
+
 	for (const String &line : lines) {
 		String trimmed = line.strip_edges();
 		if (trimmed.begins_with("m_LocalPosition:")) {
@@ -1398,12 +1402,12 @@ Transform3D UnityAssetConverter::_parse_transform_from_yaml(const String &p_yaml
 Color UnityAssetConverter::_parse_color_from_yaml(const String &p_yaml) {
 	// Parse format: {r: 1, g: 1, b: 1, a: 1}
 	float r = 1.0f, g = 1.0f, b = 1.0f, a = 1.0f;
-	
+
 	String content = p_yaml;
 	if (content.begins_with("{") && content.ends_with("}")) {
 		content = content.substr(1, content.length() - 2);
 	}
-	
+
 	Vector<String> parts = content.split(",");
 	for (const String &part : parts) {
 		String trimmed = part.strip_edges();
@@ -1429,11 +1433,10 @@ float UnityAssetConverter::_linear_to_srgb_single(float p_linear) {
 
 Color UnityAssetConverter::_linear_to_srgb(const Color &p_linear_color) {
 	return Color(
-		_linear_to_srgb_single(p_linear_color.r),
-		_linear_to_srgb_single(p_linear_color.g),
-		_linear_to_srgb_single(p_linear_color.b),
-		p_linear_color.a
-	);
+			_linear_to_srgb_single(p_linear_color.r),
+			_linear_to_srgb_single(p_linear_color.g),
+			_linear_to_srgb_single(p_linear_color.b),
+			p_linear_color.a);
 }
 
 String UnityAssetConverter::_translate_shader_keyword(const String &p_keyword) {
@@ -1453,7 +1456,7 @@ String UnityAssetConverter::_translate_shader_keyword(const String &p_keyword) {
 		map["_AMBIENTOCCLUSION"] = "AO_ENABLED";
 		return map;
 	}();
-	
+
 	if (keyword_map.has(p_keyword)) {
 		return keyword_map[p_keyword];
 	}
@@ -1465,15 +1468,15 @@ String UnityAssetConverter::_translate_shader_keyword(const String &p_keyword) {
 Ref<Mesh> UnityAssetConverter::convert_mesh_data(const UnityMeshData &p_mesh_data) {
 	Ref<ArrayMesh> mesh;
 	mesh.instantiate();
-	
+
 	if (p_mesh_data.vertices.is_empty()) {
 		return mesh;
 	}
-	
+
 	// Build surface arrays
 	Array surface_arrays;
 	surface_arrays.resize(Mesh::ARRAY_MAX);
-	
+
 	surface_arrays[Mesh::ARRAY_VERTEX] = p_mesh_data.vertices;
 	if (!p_mesh_data.normals.is_empty()) {
 		surface_arrays[Mesh::ARRAY_NORMAL] = p_mesh_data.normals;
@@ -1490,7 +1493,7 @@ Ref<Mesh> UnityAssetConverter::convert_mesh_data(const UnityMeshData &p_mesh_dat
 	if (!p_mesh_data.tangents.is_empty()) {
 		surface_arrays[Mesh::ARRAY_TANGENT] = p_mesh_data.tangents;
 	}
-	
+
 	// Add each submesh as a surface
 	for (const KeyValue<int, Vector<int>> &E : p_mesh_data.submesh_triangles) {
 		PackedInt32Array indices;
@@ -1498,13 +1501,13 @@ Ref<Mesh> UnityAssetConverter::convert_mesh_data(const UnityMeshData &p_mesh_dat
 			indices.append(idx);
 		}
 		surface_arrays[Mesh::ARRAY_INDEX] = indices;
-		
+
 		Ref<StandardMaterial3D> mat;
 		mat.instantiate();
 		mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface_arrays);
 		mesh->surface_set_material(mesh->get_surface_count() - 1, mat);
 	}
-	
+
 	return mesh;
 }
 
@@ -1512,42 +1515,42 @@ Ref<Mesh> UnityAssetConverter::convert_mesh_data(const UnityMeshData &p_mesh_dat
 Ref<Material> UnityAssetConverter::convert_standard_material(const HashMap<String, Variant> &p_properties) {
 	Ref<StandardMaterial3D> material;
 	material.instantiate();
-	
+
 	// Parse and apply material properties
 	if (p_properties.has("_Color")) {
 		Color color = p_properties["_Color"];
 		material->set_albedo(color);
 	}
-	
+
 	if (p_properties.has("_Metallic")) {
 		float metallic = float(p_properties["_Metallic"]);
 		material->set_metallic(metallic);
 	}
-	
+
 	if (p_properties.has("_Glossiness")) {
 		float glossiness = float(p_properties["_Glossiness"]);
 		material->set_roughness(1.0f - glossiness);
 	}
-	
+
 	if (p_properties.has("_BumpScale")) {
 		float bump_scale = float(p_properties["_BumpScale"]);
 		material->set_normal_scale(bump_scale);
 	}
-	
+
 	if (p_properties.has("_EmissionColor")) {
 		Color emission = p_properties["_EmissionColor"];
 		material->set_emission(emission);
 	}
-	
+
 	// Transparency handling
 	if (p_properties.has("_ALPHABLEND_ON")) {
 		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
 	}
-	
+
 	if (p_properties.has("_ALPHA_CUTOUT")) {
 		// Alpha scissor not available in this Godot version
 	}
-	
+
 	return material;
 }
 
@@ -1555,47 +1558,47 @@ Ref<Material> UnityAssetConverter::convert_standard_material(const HashMap<Strin
 Ref<Animation> UnityAssetConverter::convert_animation_clip(const UnityAnimationTrack &p_track_data) {
 	Ref<Animation> anim;
 	anim.instantiate();
-	
+
 	if (p_track_data.times.is_empty()) {
 		return anim;
 	}
-	
+
 	// Set animation length
 	float max_time = 0.0f;
 	for (float time : p_track_data.times) {
 		max_time = MAX(max_time, time);
 	}
 	anim->set_length(max_time);
-	
+
 	// Add tracks based on property type
 	if (!p_track_data.positions.is_empty()) {
 		int track_idx = anim->add_track(Animation::TYPE_POSITION_3D);
 		anim->track_set_path(track_idx, p_track_data.path + ":position");
-		
+
 		for (int i = 0; i < p_track_data.times.size(); i++) {
 			anim->position_track_insert_key(track_idx, p_track_data.times[i], p_track_data.positions[i]);
 		}
 	}
-	
+
 	if (!p_track_data.rotations.is_empty()) {
 		int track_idx = anim->add_track(Animation::TYPE_ROTATION_3D);
 		anim->track_set_path(track_idx, p_track_data.path + ":rotation");
-		
+
 		for (int i = 0; i < p_track_data.times.size(); i++) {
 			anim->rotation_track_insert_key(track_idx, p_track_data.times[i], p_track_data.rotations[i]);
 		}
 	}
-	
+
 	if (!p_track_data.scales.is_empty()) {
 		int track_idx = anim->add_track(Animation::TYPE_SCALE_3D);
 		anim->track_set_path(track_idx, p_track_data.path + ":scale");
-		
+
 		for (int i = 0; i < p_track_data.times.size(); i++) {
-			anim->scale_track_insert_key(track_idx, p_track_data.times[i], 
+			anim->scale_track_insert_key(track_idx, p_track_data.times[i],
 				Vector3(p_track_data.scales[i], p_track_data.scales[i], p_track_data.scales[i]));
 		}
 	}
-	
+
 	return anim;
 }
 
@@ -1603,28 +1606,28 @@ Ref<Animation> UnityAssetConverter::convert_animation_clip(const UnityAnimationT
 Ref<PackedScene> UnityAssetConverter::convert_scene_hierarchy(const Vector<UnitySceneNode> &p_nodes) {
 	Ref<PackedScene> scene;
 	scene.instantiate();
-	
+
 	if (p_nodes.is_empty()) {
 		return scene;
 	}
-	
+
 	// Create root node
 	Node3D *root = memnew(Node3D);
 	root->set_name("Root");
-	
+
 	// Build node map
 	HashMap<int, Node3D*> fileID_to_node;
 	for (const UnitySceneNode &node : p_nodes) {
 		Node3D *n = memnew(Node3D);
 		n->set_name(node.name);
 		n->set_position(node.transform.origin);
-		
+
 		Vector3 euler = node.transform.basis.get_euler();
 		n->set_rotation(euler);
-		
+
 		fileID_to_node[node.fileID] = n;
 	}
-	
+
 	// Establish parent-child relationships
 	for (const UnitySceneNode &node : p_nodes) {
 		if (node.parent_fileID == 0) {
@@ -1635,7 +1638,7 @@ Ref<PackedScene> UnityAssetConverter::convert_scene_hierarchy(const Vector<Unity
 			parent->add_child(fileID_to_node[node.fileID]);
 		}
 	}
-	
+
 	scene->pack(root);
 	return scene;
 }
