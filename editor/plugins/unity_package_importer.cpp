@@ -683,6 +683,30 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 				}
 			}
 		}
+		// Extract Transform position
+		else if (in_transform && trimmed.begins_with("m_LocalPosition:")) {
+			int colon = trimmed.find(":");
+			String pos_yaml = trimmed.substr(colon + 1).strip_edges();
+			current_position = _parse_vector3_from_yaml(pos_yaml);
+			fileID_to_position[current_file_id] = current_position;
+			print_verbose(vformat("Scene Transform: Position for '%s': (%f, %f, %f)", current_game_object_name, current_position.x, current_position.y, current_position.z));
+		}
+		// Extract Transform rotation
+		else if (in_transform && trimmed.begins_with("m_LocalRotation:")) {
+			int colon = trimmed.find(":");
+			String rot_yaml = trimmed.substr(colon + 1).strip_edges();
+			current_rotation = _parse_quaternion_from_yaml(rot_yaml);
+			fileID_to_rotation[current_file_id] = current_rotation;
+			print_verbose(vformat("Scene Transform: Rotation for '%s': (%f, %f, %f, %f)", current_game_object_name, current_rotation.x, current_rotation.y, current_rotation.z, current_rotation.w));
+		}
+		// Extract Transform scale
+		else if (in_transform && trimmed.begins_with("m_LocalScale:")) {
+			int colon = trimmed.find(":");
+			String scale_yaml = trimmed.substr(colon + 1).strip_edges();
+			current_scale = _parse_vector3_from_yaml(scale_yaml);
+			fileID_to_scale[current_file_id] = current_scale;
+			print_verbose(vformat("Scene Transform: Scale for '%s': (%f, %f, %f)", current_game_object_name, current_scale.x, current_scale.y, current_scale.z));
+		}
 		// Extract prefab GUID reference
 		else if (trimmed.begins_with("guid:") && (in_game_object || in_transform)) {
 			current_prefab_guid = trimmed.substr(5).strip_edges();
@@ -832,12 +856,33 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	HashMap<String, String> fileID_to_name;
 	HashMap<String, String> fileID_to_parent;
 	HashMap<String, String> fileID_to_prefab_guid;
+	// Transform data
+	HashMap<String, Vector3> fileID_to_position;
+	HashMap<String, Quaternion> fileID_to_rotation;
+	HashMap<String, Vector3> fileID_to_scale;
 
 	String current_section_type = "";
 	String current_file_id = "";
 	String current_game_object_name = "GameObject";
 	String current_parent_ref = "";
 	String current_prefab_guid = "";
+
+	Vector3 current_position;
+	current_position.x = 0;
+	current_position.y = 0;
+	current_position.z = 0;
+
+	Quaternion current_rotation;
+	current_rotation.x = 0;
+	current_rotation.y = 0;
+	current_rotation.z = 0;
+	current_rotation.w = 1;
+
+	Vector3 current_scale;
+	current_scale.x = 1;
+	current_scale.y = 1;
+	current_scale.z = 1;
+
 	bool in_game_object = false;
 	bool in_transform = false;
 	int game_object_count = 0;
@@ -901,6 +946,30 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 				}
 			}
 		}
+		// Extract Transform position
+		else if (in_transform && trimmed.begins_with("m_LocalPosition:")) {
+			int colon = trimmed.find(":");
+			String pos_yaml = trimmed.substr(colon + 1).strip_edges();
+			current_position = _parse_vector3_from_yaml(pos_yaml);
+			fileID_to_position[current_file_id] = current_position;
+			print_verbose(vformat("Prefab Transform: Position for '%s': (%f, %f, %f)", current_game_object_name, current_position.x, current_position.y, current_position.z));
+		}
+		// Extract Transform rotation
+		else if (in_transform && trimmed.begins_with("m_LocalRotation:")) {
+			int colon = trimmed.find(":");
+			String rot_yaml = trimmed.substr(colon + 1).strip_edges();
+			current_rotation = _parse_quaternion_from_yaml(rot_yaml);
+			fileID_to_rotation[current_file_id] = current_rotation;
+			print_verbose(vformat("Prefab Transform: Rotation for '%s': (%f, %f, %f, %f)", current_game_object_name, current_rotation.x, current_rotation.y, current_rotation.z, current_rotation.w));
+		}
+		// Extract Transform scale
+		else if (in_transform && trimmed.begins_with("m_LocalScale:")) {
+			int colon = trimmed.find(":");
+			String scale_yaml = trimmed.substr(colon + 1).strip_edges();
+			current_scale = _parse_vector3_from_yaml(scale_yaml);
+			fileID_to_scale[current_file_id] = current_scale;
+			print_verbose(vformat("Prefab Transform: Scale for '%s': (%f, %f, %f)", current_game_object_name, current_scale.x, current_scale.y, current_scale.z));
+		}
 		// Extract prefab GUID reference
 		else if (trimmed.begins_with("guid:") && (in_game_object || in_transform)) {
 			current_prefab_guid = trimmed.substr(5).strip_edges();
@@ -938,6 +1007,21 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		// Apply Unity terminology translation if setting is enabled
 		String display_name = _translate_unity_terminology(name);
 		node->set_name(display_name);
+
+		// Apply Transform data from extraction
+		if (fileID_to_position.has(file_id)) {
+			node->set_position(fileID_to_position[file_id]);
+			print_verbose(vformat("Prefab: Applied position to '%s': %v", name, fileID_to_position[file_id]));
+		}
+		if (fileID_to_rotation.has(file_id)) {
+			Vector3 euler = fileID_to_rotation[file_id].get_euler();
+			node->set_rotation(euler);
+			print_verbose(vformat("Prefab: Applied rotation to '%s': %v", name, euler));
+		}
+		if (fileID_to_scale.has(file_id)) {
+			node->set_scale(fileID_to_scale[file_id]);
+			print_verbose(vformat("Prefab: Applied scale to '%s': %v", name, fileID_to_scale[file_id]));
+		}
 
 		// Store prefab reference as metadata
 		if (fileID_to_prefab_guid.has(file_id)) {
