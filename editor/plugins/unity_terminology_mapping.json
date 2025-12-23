@@ -31,7 +31,7 @@
       "Tween": "DOTween/Animation",
       "SceneTree": "Scene Hierarchy"
     },
-    
+
     "editor_windows": {
       "Scene": "Hierarchy",
       "SceneTree": "Hierarchy",
@@ -50,7 +50,7 @@
       "Scene Tree Dock": "Hierarchy Window",
       "Bottom Panel": "Console/Build"
     },
-    
+
     "operations": {
       "instantiate": "Instantiate",
       "instance": "Instantiate",
@@ -77,7 +77,7 @@
       "connect": "AddListener",
       "disconnect": "RemoveListener"
     },
-    
+
     "file_extensions": {
       ".tscn": ".prefab / .unity",
       ".scn": ".unity",
@@ -90,7 +90,7 @@
       ".godot": "Library/Temp",
       "project.godot": "ProjectSettings.asset"
     },
-    
+
     "ui_strings": {
       "Add Child Node": "Create Empty/Add Component",
       "Instantiate Scene": "Instantiate Prefab",
@@ -117,7 +117,7 @@
       "Quick Open Scene": "Quick Open",
       "Reload Saved Scene": "Revert Prefab"
     },
-    
+
     "properties_and_concepts": {
       "ready": "Start",
       "process": "Update",
@@ -140,7 +140,7 @@
       "preload": "Resources.Load (compile-time)",
       "load": "Resources.Load (runtime)"
     },
-    
+
     "editor_actions": {
       "Run Project": "Play",
       "Run Current Scene": "Play (current scene)",
@@ -154,7 +154,7 @@
       "Editor Settings": "Preferences",
       "Manage Editor Features": "Preferences/Packages"
     },
-    
+
     "scene_hierarchy": {
       "root": "Scene Root",
       "scene": "Scene/Prefab Root",
@@ -164,7 +164,7 @@
       "tree": "Hierarchy",
       "branch": "Prefab/Subtree"
     },
-    
+
     "resource_handling": {
       "ResourceLoader.load": "Resources.Load",
       "ResourceSaver.save": "AssetDatabase.CreateAsset",
@@ -174,7 +174,7 @@
       "Resource.duplicate": "Instantiate (ScriptableObject)",
       "make_unique": "Break prefab/Create instance"
     },
-    
+
     "project_structure": {
       "res://": "Assets/",
       "user://": "Application.persistentDataPath",
@@ -185,7 +185,7 @@
       ".import files": ".meta files",
       "project.godot": "ProjectSettings.asset"
     },
-    
+
     "scene_states": {
       "SceneState": "Prefab State",
       "instance_state": "Prefab modifications",
@@ -193,7 +193,7 @@
       "editable_children": "Prefab unpacked",
       "scene instance": "Prefab instance"
     },
-    
+
     "additional_mappings": {
       "get_viewport": "Camera.main",
       "get_tree().root": "SceneManager",
@@ -207,7 +207,7 @@
       "Quick open": "Quick search (Ctrl+P)",
       "Orphan nodes": "DontDestroyOnLoad"
     },
-    
+
     "menu_items": {
       "Scene Menu": "GameObject Menu",
       "New Scene": "New Scene",
@@ -223,7 +223,7 @@
       "Editor": "Edit/Preferences",
       "Help": "Help"
     },
-    
+
     "common_nodes": {
       "Node": "GameObject (empty)",
       "Node2D": "GameObject (2D)",
@@ -268,7 +268,7 @@
       "TextureRect": "Image"
     }
   },
-  
+
   "notes": {
     "description": "Comprehensive mapping of Godot/Redot terminology to Unity equivalents",
     "usage": "This mapping can be used to translate UI strings and documentation for Unity developers",

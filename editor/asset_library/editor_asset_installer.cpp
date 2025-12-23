@@ -36,12 +36,12 @@
 #include "core/io/file_access.h"
 #include "core/io/zip_io.h"
 #include "editor/editor_node.h"
-#include "editor/plugins/unity_package_importer.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/gui/editor_toaster.h"
 #include "editor/gui/progress_dialog.h"
+#include "editor/plugins/unity_package_importer.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/label.h"
@@ -116,7 +116,7 @@ void EditorAssetInstaller::open_asset(const String &p_path, bool p_autoskip_topl
 	if (p_path.get_extension().to_lower() == "unitypackage") {
 		HashMap<String, UnityAsset> unity_assets;
 		Error err = UnityPackageParser::parse_unitypackage(p_path, unity_assets);
-		
+
 		if (err != OK) {
 			EditorToaster::get_singleton()->popup_str(vformat(TTR("Error opening asset file for \"%s\" (not in ZIP format)."), asset_name), EditorToaster::SEVERITY_ERROR);
 			print_error(vformat("Failed to parse Unity package: %s (error code %d)", p_path, (int)err));
@@ -539,7 +539,7 @@ void EditorAssetInstaller::_install_asset() {
 	if (package_path.get_extension().to_lower() == "unitypackage") {
 		HashMap<String, UnityAsset> unity_assets;
 		Error err = UnityPackageParser::parse_unitypackage(package_path, unity_assets);
-		
+
 		if (err != OK) {
 			EditorToaster::get_singleton()->popup_str(vformat(TTR("Error installing asset \"%s\": Failed to parse Unity package."), asset_name), EditorToaster::SEVERITY_ERROR);
 			return;

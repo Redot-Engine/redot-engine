@@ -19,7 +19,7 @@ UI panels and docks in the editor:
 - **Scene** / **SceneTree** → **Hierarchy** - Object tree view
 - **Inspector** → **Inspector** - Property editor (same name!)
 - **FileSystem** → **Project** - Asset browser
-- **Import** → **Import Settings** 
+- **Import** → **Import Settings**
 - **Output** / **Debugger** → **Console**
 - **Animation** → **Animation** window
 - **History** → **History** panel

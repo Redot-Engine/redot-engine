@@ -80,12 +80,12 @@ public:
 	static Error convert_animation(const UnityAsset &p_asset);
 	static Error convert_shader(const UnityAsset &p_asset);
 	static Error extract_asset(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets);
-	
+
 private:
 	// YAML parsing helpers for Transform data
 	static Vector3 _parse_vector3_from_yaml(const String &p_yaml);
 	static Quaternion _parse_quaternion_from_yaml(const String &p_yaml);
-	
+
 	// Unity terminology translation helper
 	static String _translate_unity_terminology(const String &p_text);
 };

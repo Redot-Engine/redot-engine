@@ -394,7 +394,7 @@ Error UnityMatImportPlugin::import(ResourceUID::ID p_source_id, const String &p_
 
 Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 	print_line(vformat("UnityScriptImportPlugin::import called for %s -> %s", p_source_file, p_save_path));
-	
+
 	Error fe = OK;
 	String cs_code = FileAccess::get_file_as_string(p_source_file, &fe);
 	if (fe != OK) {
@@ -408,11 +408,11 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	cs_code = cs_code.replace("using UnityEngine.UI;", "using Godot;");
 	cs_code = cs_code.replace("using UnityEngine.Events;", "using Godot;");
 	cs_code = cs_code.replace("using System.Collections;", "using System.Collections.Generic;");
-	
+
 	// MonoBehaviour -> Node (most common base class)
 	cs_code = cs_code.replace("public class", "// Unity to Godot: Changed MonoBehaviour to Node3D\npublic partial class");
 	cs_code = cs_code.replace(": MonoBehaviour", ": Node3D");
-	
+
 	// Common Unity lifecycle methods to Godot equivalents
 	cs_code = cs_code.replace("void Awake()", "public override void _Ready() // Was Awake()");
 	cs_code = cs_code.replace("void Start()", "public override void _Ready() // Was Start()");
@@ -421,14 +421,14 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	cs_code = cs_code.replace("void Update()", "public override void _Process(double delta) // Was Update()");
 	cs_code = cs_code.replace("void FixedUpdate()", "public override void _PhysicsProcess(double delta) // Was FixedUpdate()");
 	cs_code = cs_code.replace("void LateUpdate()", "public override void _Process(double delta) // Was LateUpdate()");
-	
+
 	// Unity Audio → Godot Audio (AudioSource → AudioStreamPlayer)
 	cs_code = cs_code.replace("AudioSource", "AudioStreamPlayer");
 	cs_code = cs_code.replace(".volume", ".VolumeDb");
 	cs_code = cs_code.replace(".Play()", ".Play()");
 	cs_code = cs_code.replace(".Stop()", ".Stop()");
 	cs_code = cs_code.replace(".clip", ".Stream");
-	
+
 	// PlayerPrefs → Godot ConfigFile (based on JSONConfigFile pattern)
 	cs_code = cs_code.replace("PlayerPrefs.GetFloat", "// TODO: Implement ConfigFile\n\t\tGetConfigFloat");
 	cs_code = cs_code.replace("PlayerPrefs.SetFloat", "// TODO: Implement ConfigFile\n\t\tSetConfigFloat");
@@ -437,7 +437,7 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	cs_code = cs_code.replace("PlayerPrefs.GetString", "// TODO: Implement ConfigFile\n\t\tGetConfigString");
 	cs_code = cs_code.replace("PlayerPrefs.SetString", "// TODO: Implement ConfigFile\n\t\tSetConfigString");
 	cs_code = cs_code.replace("PlayerPrefs.Save()", "// TODO: ConfigFile.Save()");
-	
+
 	// Transform → Transform3D / Node3D
 	cs_code = cs_code.replace(".transform.position", ".Position");
 	cs_code = cs_code.replace(".transform.rotation", ".Rotation");
@@ -447,7 +447,7 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	cs_code = cs_code.replace("transform.forward", "GlobalTransform.Basis.Z");
 	cs_code = cs_code.replace("transform.up", "GlobalTransform.Basis.Y");
 	cs_code = cs_code.replace("transform.right", "GlobalTransform.Basis.X");
-	
+
 	// Vector3 / Vector2 → Godot equivalents (Unity uses uppercase)
 	cs_code = cs_code.replace("Vector3.zero", "Vector3.Zero");
 	cs_code = cs_code.replace("Vector3.one", "Vector3.One");
@@ -456,16 +456,16 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	cs_code = cs_code.replace("Vector3.right", "Vector3.Right");
 	cs_code = cs_code.replace("Vector2.zero", "Vector2.Zero");
 	cs_code = cs_code.replace("Vector2.one", "Vector2.One");
-	
+
 	// Quaternion → Godot equivalents
 	cs_code = cs_code.replace("Quaternion.identity", "Quaternion.Identity");
 	cs_code = cs_code.replace("Quaternion.Euler", "Quaternion.FromEuler");
-	
+
 	// Mathf → Godot Mathf
 	cs_code = cs_code.replace("Mathf.Lerp", "Mathf.Lerp");
 	cs_code = cs_code.replace("Mathf.Clamp", "Mathf.Clamp");
 	cs_code = cs_code.replace("Mathf.Abs", "Mathf.Abs");
-	
+
 	// Common Unity API replacements
 	cs_code = cs_code.replace("Time.deltaTime", "(float)delta");
 	cs_code = cs_code.replace("Time.time", "(float)Time.GetTicksMsec() / 1000.0f");
@@ -479,25 +479,25 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	cs_code = cs_code.replace("Destroy(", "QueueFree() // Was Destroy(");
 	cs_code = cs_code.replace(".SetActive(", ".Visible = ");
 	cs_code = cs_code.replace(".activeSelf", ".Visible");
-	
+
 	// RigidBody → RigidBody3D
 	cs_code = cs_code.replace("Rigidbody", "RigidBody3D");
 	cs_code = cs_code.replace(".velocity", ".LinearVelocity");
 	cs_code = cs_code.replace(".angularVelocity", ".AngularVelocity");
 	cs_code = cs_code.replace(".AddForce(", ".ApplyCentralForce(");
-	
+
 	// Collider → CollisionShape3D
 	cs_code = cs_code.replace("Collider", "CollisionShape3D");
 	cs_code = cs_code.replace("BoxCollider", "BoxShape3D");
 	cs_code = cs_code.replace("SphereCollider", "SphereShape3D");
 	cs_code = cs_code.replace("CapsuleCollider", "CapsuleShape3D");
-	
+
 	// Save as .cs file
 	String out_path = p_save_path;
 	if (!out_path.ends_with(".cs")) {
 		out_path += ".cs";
 	}
-	
+
 	Error err = ensure_dir(out_path.get_base_dir());
 	if (err != OK) {
 		print_error(vformat("Failed to create directory for C# script: %s", out_path.get_base_dir()));
@@ -514,7 +514,7 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	if (r_gen_files) {
 		r_gen_files->push_back(out_path);
 	}
-	
+
 	print_line(vformat("Converted Unity C# script to Godot C#: %s", out_path));
 	return OK;
 }
@@ -540,7 +540,7 @@ void UnityImporterPlugin::_notification(int p_what) {
 		scene_importer.instantiate();
 		mat_importer.instantiate();
 		script_importer.instantiate();
-		
+
 		add_import_plugin(anim_importer);
 		add_import_plugin(scene_importer);
 		add_import_plugin(mat_importer);
@@ -707,5 +707,3 @@ void UnityImporterPlugin::_handle_shader_file(const String &p_path) {
 	f->store_string(godot_shader);
 	EditorToaster::get_singleton()->popup_str(vformat(TTR("Shader converted successfully: %s"), output_path), EditorToaster::SEVERITY_INFO);
 }
-
-
