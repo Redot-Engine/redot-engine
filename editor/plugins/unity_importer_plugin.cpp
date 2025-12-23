@@ -339,11 +339,17 @@ Error UnityAnimImportPlugin::import(ResourceUID::ID p_source_id, const String &p
 }
 
 Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
-	print_line(vformat("UnityYamlSceneImportPlugin::import called for %s -> %s", p_source_file, p_save_path));
+	print_line(vformat("===== SCENE IMPORT CALLED ====="));
+	print_line(vformat("Source: %s", p_source_file));
+	print_line(vformat("Save path: %s", p_save_path));
+	print_line(vformat("====================================="));
 	
 	PackedByteArray bytes;
 	Error r = _read_file_bytes(p_source_file, bytes);
-	ERR_FAIL_COND_V(r != OK, r);
+	if (r != OK) {
+		print_error(vformat("Failed to read file: %s (error code %d)", p_source_file, r));
+		return r;
+	}
 
 	UnityAsset asset;
 	asset.pathname = p_save_path;
@@ -352,10 +358,16 @@ Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const Stri
 	String ext = p_source_file.get_extension().to_lower();
 	if (ext == "prefab") {
 		print_line(vformat("Converting prefab: %s", p_source_file));
-		return UnityAssetConverter::convert_prefab(asset);
+		Error result = UnityAssetConverter::convert_prefab(asset);
+		print_line(vformat("Prefab conversion result: %d", result));
+		if (r_gen_files) r_gen_files->push_back(p_save_path);
+		return result;
 	}
 	print_line(vformat("Converting scene: %s", p_source_file));
-	return UnityAssetConverter::convert_scene(asset);
+	Error result = UnityAssetConverter::convert_scene(asset);
+	print_line(vformat("Scene conversion result: %d", result));
+	if (r_gen_files) r_gen_files->push_back(p_save_path);
+	return result;
 }
 
 Error UnityMatImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
@@ -465,11 +477,22 @@ void UnityImporterPlugin::_notification(int p_what) {
 		scene_importer.instantiate();
 		mat_importer.instantiate();
 		script_importer.instantiate();
+		
+		print_line(vformat("Registering anim_importer: %p", anim_importer.ptr()));
+		print_line(vformat("Registering scene_importer: %p", scene_importer.ptr()));
+		print_line(vformat("Registering mat_importer: %p", mat_importer.ptr()));
+		print_line(vformat("Registering script_importer: %p", script_importer.ptr()));
+		
 		add_import_plugin(anim_importer);
 		add_import_plugin(scene_importer);
 		add_import_plugin(mat_importer);
 		add_import_plugin(script_importer);
 		print_line("UnityImporterPlugin: Import plugins registered successfully");
+		
+		print_line(vformat("Scene importer recognizes: unity, prefab"));
+		print_line(vformat("Anim importer recognizes: anim"));
+		print_line(vformat("Mat importer recognizes: mat"));
+		print_line(vformat("Script importer recognizes: cs"));
 	}
 	if (p_what == NOTIFICATION_EXIT_TREE) {
 		remove_tool_menu_item(TTR("Import Unity Package..."));
