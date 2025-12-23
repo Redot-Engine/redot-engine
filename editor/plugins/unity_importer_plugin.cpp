@@ -136,12 +136,30 @@ void UnityImporterPlugin::_notification(int p_what) {
 		add_tool_menu_item(TTR("Install UnityToGodot Toolkit..."), callable_mp(this, &UnityImporterPlugin::_install_unity_to_godot));
 		add_tool_menu_item(TTR("Install Shaderlab2GodotSL..."), callable_mp(this, &UnityImporterPlugin::_install_shaderlab2godotsl));
 		add_tool_menu_item(TTR("Convert Unity Shader..."), callable_mp(this, &UnityImporterPlugin::_convert_unity_shader));
+
+		// Register import plugins for Unity YAML files.
+		anim_importer.instantiate();
+		scene_importer.instantiate();
+		mat_importer.instantiate();
+		add_import_plugin(anim_importer);
+		add_import_plugin(scene_importer);
+		add_import_plugin(mat_importer);
 	}
 	if (p_what == NOTIFICATION_EXIT_TREE) {
 		remove_tool_menu_item(TTR("Import Unity Package..."));
 		remove_tool_menu_item(TTR("Install UnityToGodot Toolkit..."));
 		remove_tool_menu_item(TTR("Install Shaderlab2GodotSL..."));
 		remove_tool_menu_item(TTR("Convert Unity Shader..."));
+
+		if (anim_importer.is_valid()) {
+			remove_import_plugin(anim_importer);
+		}
+		if (scene_importer.is_valid()) {
+			remove_import_plugin(scene_importer);
+		}
+		if (mat_importer.is_valid()) {
+			remove_import_plugin(mat_importer);
+		}
 	}
 }
 

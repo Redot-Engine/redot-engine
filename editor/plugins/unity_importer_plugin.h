@@ -40,6 +40,7 @@
 #include "editor/plugins/editor_plugin.h"
 #include "unity_package_importer.h"
 #include "unity_shader_converter.h"
+#include "unity_yaml_import_plugin.h"
 
 class UnityImporterPlugin : public EditorPlugin {
 	GDCLASS(UnityImporterPlugin, EditorPlugin);
@@ -48,6 +49,10 @@ class UnityImporterPlugin : public EditorPlugin {
 	EditorFileDialog *shader_dialog = nullptr;
 	HashMap<String, UnityAsset> parsed_assets;
 	String current_package_path;
+
+	Ref<UnityAnimImportPlugin> anim_importer;
+	Ref<UnityYamlSceneImportPlugin> scene_importer;
+	Ref<UnityMatImportPlugin> mat_importer;
 
 	void _import_unity_packages();
 	void _show_package_dialog();
