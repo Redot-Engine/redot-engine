@@ -35,6 +35,7 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
+#include "core/string/print_string.h"
 #include "editor/editor_node.h"
 #include "editor/gui/editor_toaster.h"
 #include "scene/gui/progress_bar.h"
@@ -121,6 +122,256 @@ static Error copy_dir_recursive(const String &p_src_res, const String &p_dst_res
 	return OK;
 }
 
+static Error _read_file_bytes(const String &p_path, PackedByteArray &r_bytes) {
+	Error fe = OK;
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &fe);
+	if (fe != OK || f.is_null()) {
+		return fe != OK ? fe : ERR_CANT_OPEN;
+	}
+	r_bytes = f->get_buffer(f->get_length());
+	return OK;
+}
+
+static String _strip_semicolon(const String &p_line) {
+	String l = p_line.strip_edges();
+	if (l.ends_with(";")) {
+		l = l.substr(0, l.length() - 1);
+	}
+	return l;
+}
+
+static String _convert_unity_call(const String &p_line) {
+	String l = p_line;
+	l = l.replace("Debug.Log", "print");
+	l = l.replace("Input.GetKeyDown", "Input.is_action_just_pressed");
+	l = l.replace("Input.GetKey", "Input.is_action_pressed");
+	l = l.replace("transform.position", "global_transform.origin");
+	l = l.replace("Time.deltaTime", "delta");
+	return l;
+}
+
+static String _default_value_for_type(const String &p_type) {
+	String t = p_type.strip_edges().to_lower();
+	if (t == "float" || t == "double") {
+		return "0.0";
+	}
+	if (t == "int" || t == "long" || t == "short") {
+		return "0";
+	}
+	if (t == "bool") {
+		return "false";
+	}
+	if (t == "string") {
+		return "\"\""; // empty string literal
+	}
+	if (t.contains("vector3")) {
+		return "Vector3.ZERO";
+	}
+	if (t.contains("vector2")) {
+		return "Vector2.ZERO";
+	}
+	return "null";
+}
+
+static String _convert_method_body(const Vector<String> &p_lines) {
+	String body;
+	for (int i = 0; i < p_lines.size(); i++) {
+		String l = _strip_semicolon(_convert_unity_call(p_lines[i]));
+		if (l.is_empty()) {
+			continue;
+		}
+		body += String("	") + l + "\n";
+	}
+	if (body.is_empty()) {
+		body = "\tpass\n";
+	}
+	return body;
+}
+
+static Vector<String> _extract_block(const Vector<String> &p_lines, int &r_index) {
+	Vector<String> body;
+	int depth = 0;
+	for (int i = r_index; i < p_lines.size(); i++) {
+		String l = p_lines[i];
+		if (l.find("{") != -1) {
+			depth++;
+			if (depth == 1) {
+				continue; // skip the opening brace
+			}
+		}
+		if (l.find("}") != -1) {
+			depth--;
+			if (depth == 0) {
+				r_index = i;
+				break;
+			}
+		}
+		if (depth >= 1) {
+			body.push_back(l);
+		}
+	}
+	return body;
+}
+
+static String _convert_csharp_to_gd(const String &p_source_code) {
+	Vector<String> lines = p_source_code.split("\n");
+	String class_name = "UnityScript";
+	Vector<String> fields;
+	HashMap<String, Vector<String>> method_map;
+	static const struct {
+		const char *unity;
+		const char *gd;
+	} method_pairs[] = {
+		{ "Awake", "_ready" },
+		{ "Start", "_ready" },
+		{ "OnEnable", "_enter_tree" },
+		{ "OnDisable", "_exit_tree" },
+		{ "Update", "_process" },
+		{ "FixedUpdate", "_physics_process" },
+	};
+
+	for (int i = 0; i < lines.size(); i++) {
+		String l = lines[i].strip_edges();
+		if (l.begins_with("using ") || l.begins_with("namespace ")) {
+			continue;
+		}
+		int class_pos = l.find("class ");
+		if (class_pos != -1) {
+			Vector<String> tokens = l.substr(class_pos + 6).split(" ");
+			if (!tokens.is_empty()) {
+				class_name = tokens[0].strip_edges().trim_suffix(":").strip_edges();
+			}
+			continue;
+		}
+
+		bool is_method = false;
+		for (unsigned int m = 0; m < sizeof(method_pairs) / sizeof(method_pairs[0]); m++) {
+			String method_sig = String(method_pairs[m].unity) + "(";
+			if (l.find(method_sig) != -1) {
+				Vector<String> body = _extract_block(lines, i);
+				String gd_name = method_pairs[m].gd;
+				if (!method_map.has(gd_name)) {
+					method_map[gd_name] = Vector<String>();
+				}
+				for (int b = 0; b < body.size(); b++) {
+					method_map[gd_name].push_back(body[b]);
+				}
+				is_method = true;
+				break;
+			}
+		}
+		if (is_method) {
+			continue;
+		}
+
+		// Field heuristic: has semicolon, no parentheses.
+		if (l.find(";") != -1 && l.find("(") == -1 && l.find(")") == -1) {
+			fields.push_back(l);
+		}
+	}
+
+	String out;
+	out += String("# Auto-converted from Unity C# script\n# Original class: ") + class_name + "\n";
+	out += "extends Node\n\n";
+	for (int f = 0; f < fields.size(); f++) {
+		String fld = fields[f];
+		Vector<String> bits = fld.replace(";", "").split(" ");
+		bits.erase_all("");
+		if (bits.size() >= 2) {
+			String type = bits[bits.size() - 2];
+			String name = bits[bits.size() - 1];
+			String def_val = _default_value_for_type(type);
+			out += vformat("var %s = %s\n", name, def_val);
+		}
+	}
+
+	if (method_map.has("_ready")) {
+		out += "\nfunc _ready():\n";
+		out += _convert_method_body(method_map["_ready"]);
+	}
+	if (method_map.has("_process")) {
+		out += "\nfunc _process(delta):\n";
+		out += _convert_method_body(method_map["_process"]);
+	}
+	if (method_map.has("_physics_process")) {
+		out += "\nfunc _physics_process(delta):\n";
+		out += _convert_method_body(method_map["_physics_process"]);
+	}
+	if (method_map.has("_enter_tree")) {
+		out += "\nfunc _enter_tree():\n";
+		out += _convert_method_body(method_map["_enter_tree"]);
+	}
+	if (method_map.has("_exit_tree")) {
+		out += "\nfunc _exit_tree():\n";
+		out += _convert_method_body(method_map["_exit_tree"]);
+	}
+
+	out += "\n# Original C# source (for reference):\n";
+	for (int i = 0; i < lines.size(); i++) {
+		out += "# " + lines[i] + "\n";
+	}
+
+	return out;
+}
+
+Error UnityAnimImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	PackedByteArray bytes;
+	Error r = _read_file_bytes(p_source_file, bytes);
+	ERR_FAIL_COND_V(r != OK, r);
+
+	UnityAsset asset;
+	asset.pathname = p_save_path; // converter appends .tres
+	asset.asset_data = bytes;
+
+	return UnityAssetConverter::convert_animation(asset);
+}
+
+Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	PackedByteArray bytes;
+	Error r = _read_file_bytes(p_source_file, bytes);
+	ERR_FAIL_COND_V(r != OK, r);
+
+	UnityAsset asset;
+	asset.pathname = p_save_path; // converter appends .tscn
+	asset.asset_data = bytes;
+
+	String ext = p_source_file.get_extension().to_lower();
+	if (ext == "prefab") {
+		return UnityAssetConverter::convert_prefab(asset);
+	}
+	return UnityAssetConverter::convert_scene(asset);
+}
+
+Error UnityMatImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	PackedByteArray bytes;
+	Error r = _read_file_bytes(p_source_file, bytes);
+	ERR_FAIL_COND_V(r != OK, r);
+
+	UnityAsset asset;
+	asset.pathname = p_save_path; // converter appends .tres
+	asset.asset_data = bytes;
+
+	HashMap<String, UnityAsset> dummy_all; // no cross-asset lookup in direct import
+	return UnityAssetConverter::convert_material(asset, dummy_all);
+}
+
+Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	Error fe = OK;
+	String source_code = FileAccess::get_file_as_string(p_source_file, &fe);
+	ERR_FAIL_COND_V(fe != OK, fe);
+
+	String gd_code = _convert_csharp_to_gd(source_code);
+	String out_path = p_save_path + ".gd";
+	ERR_FAIL_COND_V(ensure_dir(out_path.get_base_dir()) != OK, ERR_CANT_CREATE);
+	Ref<FileAccess> f = FileAccess::open(out_path, FileAccess::WRITE, &fe);
+	ERR_FAIL_COND_V(f.is_null() || fe != OK, fe != OK ? fe : ERR_CANT_CREATE);
+	f->store_string(gd_code);
+	if (r_gen_files) {
+		r_gen_files->push_back(out_path);
+	}
+	return OK;
+}
+
 void UnityImporterPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_import_unity_packages"), &UnityImporterPlugin::_import_unity_packages);
 	ClassDB::bind_method(D_METHOD("_install_unity_to_godot"), &UnityImporterPlugin::_install_unity_to_godot);
@@ -141,9 +392,11 @@ void UnityImporterPlugin::_notification(int p_what) {
 		anim_importer.instantiate();
 		scene_importer.instantiate();
 		mat_importer.instantiate();
+		script_importer.instantiate();
 		add_import_plugin(anim_importer);
 		add_import_plugin(scene_importer);
 		add_import_plugin(mat_importer);
+		add_import_plugin(script_importer);
 	}
 	if (p_what == NOTIFICATION_EXIT_TREE) {
 		remove_tool_menu_item(TTR("Import Unity Package..."));
@@ -159,6 +412,9 @@ void UnityImporterPlugin::_notification(int p_what) {
 		}
 		if (mat_importer.is_valid()) {
 			remove_import_plugin(mat_importer);
+		}
+		if (script_importer.is_valid()) {
+			remove_import_plugin(script_importer);
 		}
 	}
 }
