@@ -490,55 +490,152 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	
 	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
+	HashMap<String, Node3D *> fileID_to_node;
+	HashMap<String, String> fileID_to_name;
+	HashMap<String, String> fileID_to_parent;
+	HashMap<String, String> fileID_to_prefab_guid;
+	
+	String current_section_type = "";
+	String current_file_id = "";
 	String current_game_object_name = "GameObject";
+	String current_parent_ref = "";
+	String current_prefab_guid = "";
 	bool in_game_object = false;
+	bool in_transform = false;
 	int game_object_count = 0;
 	
 	for (int i = 0; i < lines.size(); i++) {
-		String trimmed = lines[i].strip_edges();
+		String line = lines[i];
+		String trimmed = line.strip_edges();
 		
-		// Detect GameObject sections (type ID 1)
-		if (trimmed.contains("--- !u!1")) {
-			// If we were in a previous GameObject, create node
-			if (in_game_object && !current_game_object_name.is_empty()) {
-				Node3D *child = memnew(Node3D);
-				child->set_name(current_game_object_name);
-				root->add_child(child);
-				child->set_owner(root);  // Child owns root
-				game_object_count++;
+		// Detect document sections with file IDs
+		if (trimmed.begins_with("--- !u!")) {
+			// Save previous GameObject if any
+			if (in_game_object && !current_file_id.is_empty() && !current_game_object_name.is_empty()) {
+				fileID_to_name[current_file_id] = current_game_object_name;
+				if (!current_parent_ref.is_empty()) {
+					fileID_to_parent[current_file_id] = current_parent_ref;
+				}
+				if (!current_prefab_guid.is_empty()) {
+					fileID_to_prefab_guid[current_file_id] = current_prefab_guid;
+				}
 			}
 			
-			in_game_object = true;
-			current_game_object_name = "GameObject";
-		}
-		// End of current GameObject section (any other --- marker)
-		else if (in_game_object && trimmed.begins_with("---")) {
+			// Reset state
 			in_game_object = false;
+			in_transform = false;
+			current_parent_ref = "";
+			current_prefab_guid = "";
+			
+			// Extract file ID from "--- !u!1 &123456789"
+			int amp_pos = trimmed.find("&");
+			if (amp_pos != -1) {
+				current_file_id = trimmed.substr(amp_pos + 1).strip_edges();
+			}
+			
+			// Detect section type
+			if (trimmed.contains("!u!1 ")) {
+				in_game_object = true;
+				current_game_object_name = "GameObject";
+			} else if (trimmed.contains("!u!4 ") || trimmed.contains("!u!224 ")) {
+				// Transform or RectTransform
+				in_transform = true;
+			}
 		}
-		
 		// Extract GameObject name
-		if (in_game_object && trimmed.begins_with("m_Name:")) {
+		else if (in_game_object && trimmed.begins_with("m_Name:")) {
 			int colon = trimmed.find(":");
 			String name_value = trimmed.substr(colon + 1).strip_edges();
-			
-			// Remove quotes if present
 			if (name_value.begins_with("\"") && name_value.ends_with("\"")) {
 				name_value = name_value.substr(1, name_value.length() - 2);
 			}
-			
 			if (!name_value.is_empty()) {
 				current_game_object_name = name_value;
 			}
 		}
+		// Extract parent reference from Transform
+		else if (in_transform && trimmed.begins_with("m_Father:")) {
+			// Look for "fileID: 123456789" in next line or same line
+			if (i + 1 < lines.size()) {
+				String next_line = lines[i + 1].strip_edges();
+				if (next_line.begins_with("fileID:")) {
+					current_parent_ref = next_line.substr(7).strip_edges();
+				}
+			}
+		}
+		// Extract prefab GUID reference
+		else if (trimmed.begins_with("guid:") && (in_game_object || in_transform)) {
+			current_prefab_guid = trimmed.substr(5).strip_edges();
+			// Remove quotes and commas
+			if (current_prefab_guid.begins_with("\"")) {
+				current_prefab_guid = current_prefab_guid.substr(1);
+			}
+			int comma = current_prefab_guid.find(",");
+			if (comma != -1) {
+				current_prefab_guid = current_prefab_guid.substr(0, comma);
+			}
+			if (current_prefab_guid.ends_with("\"")) {
+				current_prefab_guid = current_prefab_guid.substr(0, current_prefab_guid.length() - 1);
+			}
+		}
 	}
 	
-	// Add final GameObject if needed
-	if (in_game_object && !current_game_object_name.is_empty()) {
-		Node3D *child = memnew(Node3D);
-		child->set_name(current_game_object_name);
-		root->add_child(child);
-		child->set_owner(root);  // Child owns root
+	// Save last object
+	if (in_game_object && !current_file_id.is_empty() && !current_game_object_name.is_empty()) {
+		fileID_to_name[current_file_id] = current_game_object_name;
+		if (!current_parent_ref.is_empty()) {
+			fileID_to_parent[current_file_id] = current_parent_ref;
+		}
+		if (!current_prefab_guid.is_empty()) {
+			fileID_to_prefab_guid[current_file_id] = current_prefab_guid;
+		}
+	}
+	
+	// Build node hierarchy
+	for (const KeyValue<String, String> &E : fileID_to_name) {
+		String file_id = E.key;
+		String name = E.value;
+		
+		Node3D *node = memnew(Node3D);
+		node->set_name(name);
+		
+		// Store prefab reference as metadata
+		if (fileID_to_prefab_guid.has(file_id)) {
+			node->set_meta("unity_prefab_guid", fileID_to_prefab_guid[file_id]);
+		}
+		
+		fileID_to_node[file_id] = node;
 		game_object_count++;
+	}
+	
+	// Establish parent-child relationships
+	for (const KeyValue<String, String> &E : fileID_to_parent) {
+		String child_id = E.key;
+		String parent_id = E.value;
+		
+		if (fileID_to_node.has(child_id)) {
+			Node3D *child = fileID_to_node[child_id];
+			
+			if (parent_id == "0" || !fileID_to_node.has(parent_id)) {
+				// Root level child
+				root->add_child(child);
+				child->set_owner(root);
+			} else {
+				// Has a parent node
+				Node3D *parent = fileID_to_node[parent_id];
+				parent->add_child(child);
+				child->set_owner(root);
+			}
+		}
+	}
+	
+	// Add orphan nodes directly to root
+	for (const KeyValue<String, Node3D *> &E : fileID_to_node) {
+		Node3D *node = E.value;
+		if (!node->get_parent()) {
+			root->add_child(node);
+			node->set_owner(root);
+		}
 	}
 	
 	// Pack the scene properly with root node
@@ -589,55 +686,152 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	
 	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
+	HashMap<String, Node3D *> fileID_to_node;
+	HashMap<String, String> fileID_to_name;
+	HashMap<String, String> fileID_to_parent;
+	HashMap<String, String> fileID_to_prefab_guid;
+	
+	String current_section_type = "";
+	String current_file_id = "";
 	String current_game_object_name = "GameObject";
+	String current_parent_ref = "";
+	String current_prefab_guid = "";
 	bool in_game_object = false;
+	bool in_transform = false;
 	int game_object_count = 0;
 	
 	for (int i = 0; i < lines.size(); i++) {
-		String trimmed = lines[i].strip_edges();
+		String line = lines[i];
+		String trimmed = line.strip_edges();
 		
-		// Detect GameObject sections (type ID 1)
-		if (trimmed.contains("--- !u!1")) {
-			// If we were in a previous GameObject, create node
-			if (in_game_object && !current_game_object_name.is_empty()) {
-				Node3D *child = memnew(Node3D);
-				child->set_name(current_game_object_name);
-				root->add_child(child);
-				child->set_owner(root);  // Child owns root
-				game_object_count++;
+		// Detect document sections with file IDs
+		if (trimmed.begins_with("--- !u!")) {
+			// Save previous GameObject if any
+			if (in_game_object && !current_file_id.is_empty() && !current_game_object_name.is_empty()) {
+				fileID_to_name[current_file_id] = current_game_object_name;
+				if (!current_parent_ref.is_empty()) {
+					fileID_to_parent[current_file_id] = current_parent_ref;
+				}
+				if (!current_prefab_guid.is_empty()) {
+					fileID_to_prefab_guid[current_file_id] = current_prefab_guid;
+				}
 			}
 			
-			in_game_object = true;
-			current_game_object_name = "GameObject";
-		}
-		// End of current GameObject section (any other --- marker)
-		else if (in_game_object && trimmed.begins_with("---")) {
+			// Reset state
 			in_game_object = false;
+			in_transform = false;
+			current_parent_ref = "";
+			current_prefab_guid = "";
+			
+			// Extract file ID from "--- !u!1 &123456789"
+			int amp_pos = trimmed.find("&");
+			if (amp_pos != -1) {
+				current_file_id = trimmed.substr(amp_pos + 1).strip_edges();
+			}
+			
+			// Detect section type
+			if (trimmed.contains("!u!1 ")) {
+				in_game_object = true;
+				current_game_object_name = "GameObject";
+			} else if (trimmed.contains("!u!4 ") || trimmed.contains("!u!224 ")) {
+				// Transform or RectTransform
+				in_transform = true;
+			}
 		}
-		
 		// Extract GameObject name
-		if (in_game_object && trimmed.begins_with("m_Name:")) {
+		else if (in_game_object && trimmed.begins_with("m_Name:")) {
 			int colon = trimmed.find(":");
 			String name_value = trimmed.substr(colon + 1).strip_edges();
-			
-			// Remove quotes if present
 			if (name_value.begins_with("\"") && name_value.ends_with("\"")) {
 				name_value = name_value.substr(1, name_value.length() - 2);
 			}
-			
 			if (!name_value.is_empty()) {
 				current_game_object_name = name_value;
 			}
 		}
+		// Extract parent reference from Transform
+		else if (in_transform && trimmed.begins_with("m_Father:")) {
+			// Look for "fileID: 123456789" in next line or same line
+			if (i + 1 < lines.size()) {
+				String next_line = lines[i + 1].strip_edges();
+				if (next_line.begins_with("fileID:")) {
+					current_parent_ref = next_line.substr(7).strip_edges();
+				}
+			}
+		}
+		// Extract prefab GUID reference
+		else if (trimmed.begins_with("guid:") && (in_game_object || in_transform)) {
+			current_prefab_guid = trimmed.substr(5).strip_edges();
+			// Remove quotes and commas
+			if (current_prefab_guid.begins_with("\"")) {
+				current_prefab_guid = current_prefab_guid.substr(1);
+			}
+			int comma = current_prefab_guid.find(",");
+			if (comma != -1) {
+				current_prefab_guid = current_prefab_guid.substr(0, comma);
+			}
+			if (current_prefab_guid.ends_with("\"")) {
+				current_prefab_guid = current_prefab_guid.substr(0, current_prefab_guid.length() - 1);
+			}
+		}
 	}
 	
-	// Add final GameObject if needed
-	if (in_game_object && !current_game_object_name.is_empty()) {
-		Node3D *child = memnew(Node3D);
-		child->set_name(current_game_object_name);
-		root->add_child(child);
-		child->set_owner(root);  // Child owns root
+	// Save last object
+	if (in_game_object && !current_file_id.is_empty() && !current_game_object_name.is_empty()) {
+		fileID_to_name[current_file_id] = current_game_object_name;
+		if (!current_parent_ref.is_empty()) {
+			fileID_to_parent[current_file_id] = current_parent_ref;
+		}
+		if (!current_prefab_guid.is_empty()) {
+			fileID_to_prefab_guid[current_file_id] = current_prefab_guid;
+		}
+	}
+	
+	// Build node hierarchy
+	for (const KeyValue<String, String> &E : fileID_to_name) {
+		String file_id = E.key;
+		String name = E.value;
+		
+		Node3D *node = memnew(Node3D);
+		node->set_name(name);
+		
+		// Store prefab reference as metadata
+		if (fileID_to_prefab_guid.has(file_id)) {
+			node->set_meta("unity_prefab_guid", fileID_to_prefab_guid[file_id]);
+		}
+		
+		fileID_to_node[file_id] = node;
 		game_object_count++;
+	}
+	
+	// Establish parent-child relationships
+	for (const KeyValue<String, String> &E : fileID_to_parent) {
+		String child_id = E.key;
+		String parent_id = E.value;
+		
+		if (fileID_to_node.has(child_id)) {
+			Node3D *child = fileID_to_node[child_id];
+			
+			if (parent_id == "0" || !fileID_to_node.has(parent_id)) {
+				// Root level child
+				root->add_child(child);
+				child->set_owner(root);
+			} else {
+				// Has a parent node
+				Node3D *parent = fileID_to_node[parent_id];
+				parent->add_child(child);
+				child->set_owner(root);
+			}
+		}
+	}
+	
+	// Add orphan nodes directly to root
+	for (const KeyValue<String, Node3D *> &E : fileID_to_node) {
+		Node3D *node = E.value;
+		if (!node->get_parent()) {
+			root->add_child(node);
+			node->set_owner(root);
+		}
 	}
 	
 	// Pack the scene properly
