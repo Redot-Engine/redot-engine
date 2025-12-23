@@ -355,6 +355,57 @@ String UnityPackageParser::convert_unity_path_to_godot(const String &p_unity_pat
 	return "res://" + godot_path;
 }
 
+// Helper functions for YAML Transform parsing
+Vector3 UnityAssetConverter::_parse_vector3_from_yaml(const String &p_yaml) {
+	// Parse format: {x: 0, y: 0, z: 0} or {x: 0.5, y: -1.2, z: 3.14}
+	Vector3 result = Vector3::ZERO;
+	
+	String content = p_yaml;
+	if (content.begins_with("{") && content.ends_with("}")) {
+		content = content.substr(1, content.length() - 2); // Remove braces
+	}
+	
+	Vector<String> parts = content.split(",");
+	for (const String &part : parts) {
+		String trimmed = part.strip_edges();
+		if (trimmed.begins_with("x:")) {
+			result.x = trimmed.substr(2).strip_edges().to_float();
+		} else if (trimmed.begins_with("y:")) {
+			result.y = trimmed.substr(2).strip_edges().to_float();
+		} else if (trimmed.begins_with("z:")) {
+			result.z = trimmed.substr(2).strip_edges().to_float();
+		}
+	}
+	
+	return result;
+}
+
+Quaternion UnityAssetConverter::_parse_quaternion_from_yaml(const String &p_yaml) {
+	// Parse format: {x: 0, y: 0, z: 0, w: 1}
+	float x = 0, y = 0, z = 0, w = 1;
+	
+	String content = p_yaml;
+	if (content.begins_with("{") && content.ends_with("}")) {
+		content = content.substr(1, content.length() - 2); // Remove braces
+	}
+	
+	Vector<String> parts = content.split(",");
+	for (const String &part : parts) {
+		String trimmed = part.strip_edges();
+		if (trimmed.begins_with("x:")) {
+			x = trimmed.substr(2).strip_edges().to_float();
+		} else if (trimmed.begins_with("y:")) {
+			y = trimmed.substr(2).strip_edges().to_float();
+		} else if (trimmed.begins_with("z:")) {
+			z = trimmed.substr(2).strip_edges().to_float();
+		} else if (trimmed.begins_with("w:")) {
+			w = trimmed.substr(2).strip_edges().to_float();
+		}
+	}
+	
+	return Quaternion(x, y, z, w);
+}
+
 // Asset conversion implementations
 
 Error UnityAssetConverter::extract_asset(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets) {
@@ -494,12 +545,18 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	HashMap<String, String> fileID_to_name;
 	HashMap<String, String> fileID_to_parent;
 	HashMap<String, String> fileID_to_prefab_guid;
+	HashMap<String, Vector3> fileID_to_position;
+	HashMap<String, Quaternion> fileID_to_rotation;
+	HashMap<String, Vector3> fileID_to_scale;
 	
 	String current_section_type = "";
 	String current_file_id = "";
 	String current_game_object_name = "GameObject";
 	String current_parent_ref = "";
 	String current_prefab_guid = "";
+	Vector3 current_position = Vector3::ZERO;
+	Quaternion current_rotation = Quaternion::IDENTITY;
+	Vector3 current_scale = Vector3::ONE;
 	bool in_game_object = false;
 	bool in_transform = false;
 	int game_object_count = 0;
