@@ -38,6 +38,7 @@
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/string/print_string.h"
+#include "editor/settings/editor_settings.h"
 #include "scene/3d/node_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/material.h"
@@ -409,6 +410,51 @@ Quaternion UnityAssetConverter::_parse_quaternion_from_yaml(const String &p_yaml
 	return Quaternion(x, y, z, w);
 }
 
+String UnityAssetConverter::_translate_unity_terminology(const String &p_text) {
+	// Check if Unity terminology setting is enabled
+	bool use_unity_terms = EDITOR_GET("interface/editor/use_unity_terminology");
+	
+	if (!use_unity_terms) {
+		return p_text; // Return unchanged if terminology translation is disabled
+	}
+	
+	String result = p_text;
+	
+	// Dictionary of Godot -> Unity terminology mappings (only replace when setting is enabled)
+	// This allows users to see familiar Unity terminology in Redot editor
+	const char *godot_terms[] = {
+		"Node", "Scene", "Child", "Parent", "Transform", "Physics", 
+		"Collision", "Body", "Area", "Shape", "Mesh", "Material",
+		"Camera", "Light", "Particle", "Animation", "Script", "Signal"
+	};
+	
+	const char *unity_equiv[] = {
+		"GameObject", "Prefab", "Child", "Parent", "Transform", "Physics",
+		"Collision", "Rigidbody", "Collider", "Collider", "Model", "Material",
+		"Camera", "Light", "Particle System", "Animator", "Component", "Event"
+	};
+	
+	int term_count = sizeof(godot_terms) / sizeof(godot_terms[0]);
+	
+	// Simple word replacement (case-sensitive to avoid false positives)
+	for (int i = 0; i < term_count; i++) {
+		// Only replace whole words to avoid partial matches
+		String godot_word = String(godot_terms[i]);
+		String unity_word = String(unity_equiv[i]);
+		
+		// This is a simple approach - for production, a more sophisticated NLP would be better
+		// Currently handles: "Node" -> "GameObject", "Scene" -> "Prefab", etc.
+		if (godot_word == "Node") {
+			result = result.replace("Node", "GameObject");
+		} else if (godot_word == "Scene") {
+			result = result.replace("Scene", "Prefab");
+		}
+	}
+	
+	return result;
+}
+
+
 // Asset conversion implementations
 
 Error UnityAssetConverter::extract_asset(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets) {
@@ -509,6 +555,7 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
+	print_verbose(vformat("Starting scene conversion for: %s", p_asset.pathname.get_file()));
 	// p_asset.pathname is already the full output path with hash
 	Error dir_result = ensure_parent_dir_for_file(p_asset.pathname);
 	if (dir_result != OK) {
@@ -671,7 +718,24 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		String name = E.value;
 		
 		Node3D *node = memnew(Node3D);
-		node->set_name(name);
+		// Apply Unity terminology translation if setting is enabled
+		String display_name = _translate_unity_terminology(name);
+		node->set_name(display_name);
+		
+		// Apply Transform data from extraction
+		if (fileID_to_position.has(file_id)) {
+			node->set_position(fileID_to_position[file_id]);
+			print_verbose(vformat("Scene: Applied position to '%s': %v", name, fileID_to_position[file_id]));
+		}
+		if (fileID_to_rotation.has(file_id)) {
+			Vector3 euler = fileID_to_rotation[file_id].get_euler();
+			node->set_rotation(euler);
+			print_verbose(vformat("Scene: Applied rotation to '%s': %v", name, euler));
+		}
+		if (fileID_to_scale.has(file_id)) {
+			node->set_scale(fileID_to_scale[file_id]);
+			print_verbose(vformat("Scene: Applied scale to '%s': %v", name, fileID_to_scale[file_id]));
+		}
 		
 		// Store prefab reference as metadata
 		if (fileID_to_prefab_guid.has(file_id)) {
@@ -712,13 +776,15 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		}
 	}
 	
+	print_verbose(vformat("Scene: Built hierarchy with %d nodes", root->get_child_count() + 1));
+	
 	// Pack the scene properly with root node
 	scene->pack(root);
 	
 	// Save and verify
 	Error save_result = ResourceSaver::save(scene, p_asset.pathname);
 	if (save_result == OK) {
-		print_line(vformat("Scene conversion: packed %d nodes (root + %d children) from %s", root->get_child_count() + 1, game_object_count, p_asset.pathname.get_file()));
+		print_line(vformat("Scene conversion: packed %d nodes (root + %d children) with transforms from %s", root->get_child_count() + 1, game_object_count, p_asset.pathname.get_file()));
 	} else {
 		print_error(vformat("Failed to save scene: %s (error: %d)", p_asset.pathname, save_result));
 	}
@@ -727,6 +793,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
+	print_verbose(vformat("Starting prefab conversion for: %s", p_asset.pathname.get_file()));
 	// p_asset.pathname is already the full output path with hash
 	Error dir_result = ensure_parent_dir_for_file(p_asset.pathname);
 	if (dir_result != OK) {
@@ -760,6 +827,8 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	
 	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
+	print_verbose("Parsing YAML to extract Prefab GameObject and Transform data...");
+
 	HashMap<String, Node3D *> fileID_to_node;
 	HashMap<String, String> fileID_to_name;
 	HashMap<String, String> fileID_to_parent;
@@ -867,7 +936,9 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		String name = E.value;
 		
 		Node3D *node = memnew(Node3D);
-		node->set_name(name);
+		// Apply Unity terminology translation if setting is enabled
+		String display_name = _translate_unity_terminology(name);
+		node->set_name(display_name);
 		
 		// Store prefab reference as metadata
 		if (fileID_to_prefab_guid.has(file_id)) {

@@ -85,4 +85,7 @@ private:
 	// YAML parsing helpers for Transform data
 	static Vector3 _parse_vector3_from_yaml(const String &p_yaml);
 	static Quaternion _parse_quaternion_from_yaml(const String &p_yaml);
+	
+	// Unity terminology translation helper
+	static String _translate_unity_terminology(const String &p_text);
 };
