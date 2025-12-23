@@ -622,7 +622,6 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 				Ref<Texture2D> normal_texture = ResourceLoader::load(texture_path);
 				if (normal_texture.is_valid()) {
 					material->set_texture(StandardMaterial3D::TEXTURE_NORMAL, normal_texture);
-					material->set_normal_enabled(true);
 				}
 			}
 		}
@@ -642,7 +641,6 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 				Ref<Texture2D> height_texture = ResourceLoader::load(texture_path);
 				if (height_texture.is_valid()) {
 					material->set_texture(StandardMaterial3D::TEXTURE_HEIGHTMAP, height_texture);
-					material->set_heightmap_enabled(true);
 				}
 			}
 		}
@@ -687,8 +685,8 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 	}
 	
 	if (shader_name.contains("AlphaTest") || shader_name.contains("Cutout")) {
-		material->set_alpha_scissor_enabled(true);
-		material->set_alpha_scissor_threshold(0.5f);
+		// Alpha scissor/cutout mode not directly supported - use alpha transparency
+		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
 	}
 	
 	// Handle shader keywords if present
@@ -696,14 +694,11 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 		if (line.contains("m_ShaderKeywords:")) {
 			String keyword_line = line.substr(line.find(":") + 1).strip_edges();
 			
-			if (keyword_line.contains("_NORMALMAP")) {
-				material->set_normal_enabled(true);
-			}
 			if (keyword_line.contains("_ALPHABLEND_ON")) {
 				material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
 			}
 			if (keyword_line.contains("_ALPHA_CUTOUT")) {
-				material->set_alpha_scissor_enabled(true);
+				material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
 			}
 			if (keyword_line.contains("_METALLICSPECGLOSSMAP")) {
 				// Use ORM texture
@@ -1416,7 +1411,8 @@ String UnityAssetConverter::_translate_shader_keyword(const String &p_keyword) {
 	return p_keyword;
 }
 
-// Mesh converter implementation (from reference repos)
+/*
+// Mesh converter implementation (from reference repos) - Future expansion
 Ref<Mesh> UnityAssetConverter::convert_mesh_data(const UnityMeshData &p_mesh_data) {
 	Ref<ArrayMesh> mesh;
 	mesh.instantiate();
@@ -1463,7 +1459,7 @@ Ref<Mesh> UnityAssetConverter::convert_mesh_data(const UnityMeshData &p_mesh_dat
 	return mesh;
 }
 
-// Material converter (from reference repos - Standard shader support)
+// Material converter (from reference repos - Standard shader support) - Future expansion
 Ref<Material> UnityAssetConverter::convert_standard_material(const HashMap<String, Variant> &p_properties) {
 	Ref<StandardMaterial3D> material;
 	material.instantiate();
@@ -1500,13 +1496,13 @@ Ref<Material> UnityAssetConverter::convert_standard_material(const HashMap<Strin
 	}
 	
 	if (p_properties.has("_ALPHA_CUTOUT")) {
-		material->set_alpha_scissor_enabled(true);
+		// Alpha scissor not available in this Godot version
 	}
 	
 	return material;
 }
 
-// Animation clip converter
+// Animation clip converter - Future expansion
 Ref<Animation> UnityAssetConverter::convert_animation_clip(const UnityAnimationTrack &p_track_data) {
 	Ref<Animation> anim;
 	anim.instantiate();
@@ -1554,7 +1550,7 @@ Ref<Animation> UnityAssetConverter::convert_animation_clip(const UnityAnimationT
 	return anim;
 }
 
-// Scene hierarchy converter
+// Scene hierarchy converter - Future expansion
 Ref<PackedScene> UnityAssetConverter::convert_scene_hierarchy(const Vector<UnitySceneNode> &p_nodes) {
 	Ref<PackedScene> scene;
 	scene.instantiate();
@@ -1594,3 +1590,4 @@ Ref<PackedScene> UnityAssetConverter::convert_scene_hierarchy(const Vector<Unity
 	scene->pack(root);
 	return scene;
 }
+*/

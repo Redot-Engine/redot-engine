@@ -128,11 +128,11 @@ public:
 	static Error convert_shader(const UnityAsset &p_asset);
 	static Error extract_asset(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets);
 
-	// Advanced converters
-	static Ref<Mesh> convert_mesh_data(const UnityMeshData &p_mesh_data);
-	static Ref<Material> convert_standard_material(const HashMap<String, Variant> &p_properties);
-	static Ref<Animation> convert_animation_clip(const UnityAnimationTrack &p_track_data);
-	static Ref<PackedScene> convert_scene_hierarchy(const Vector<UnitySceneNode> &p_nodes);
+	// Advanced converters (future implementations)
+	// static Ref<Mesh> convert_mesh_data(const UnityMeshData &p_mesh_data);
+	// static Ref<Material> convert_standard_material(const HashMap<String, Variant> &p_properties);
+	// static Ref<Animation> convert_animation_clip(const UnityAnimationTrack &p_track_data);
+	// static Ref<PackedScene> convert_scene_hierarchy(const Vector<UnitySceneNode> &p_nodes);
 
 private:
 	// YAML parsing helpers
@@ -141,23 +141,23 @@ private:
 	static Transform3D _parse_transform_from_yaml(const String &p_yaml);
 	static Color _parse_color_from_yaml(const String &p_yaml);
 	
-	// Mesh data extraction
-	static Error _extract_mesh_data(const HashMap<String, Variant> &p_yaml, UnityMeshData &r_mesh_data);
-	static Error _extract_skin_data(const HashMap<String, Variant> &p_yaml, UnityMeshData &r_mesh_data);
+	// Mesh data extraction (future implementations)
+	// static Error _extract_mesh_data(const HashMap<String, Variant> &p_yaml, UnityMeshData &r_mesh_data);
+	// static Error _extract_skin_data(const HashMap<String, Variant> &p_yaml, UnityMeshData &r_mesh_data);
 	
-	// Material property parsing
-	static void _parse_material_properties(const HashMap<String, Variant> &p_yaml, HashMap<String, Variant> &r_properties);
+	// Material property parsing (future implementations)
+	// static void _parse_material_properties(const HashMap<String, Variant> &p_yaml, HashMap<String, Variant> &r_properties);
 	
 	// Scene hierarchy building
-	static Error _build_scene_hierarchy(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets, Vector<UnitySceneNode> &r_nodes);
+	// static Error _build_scene_hierarchy(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets, Vector<UnitySceneNode> &r_nodes);
 	
-	// Component converters
-	static Node3D* _convert_transform_component(const UnitySceneNode &p_node);
-	static Node3D* _convert_mesh_renderer(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets);
-	static Node3D* _convert_light_component(const HashMap<String, Variant> &p_props);
-	static Node3D* _convert_camera_component(const HashMap<String, Variant> &p_props);
-	static Node3D* _convert_rigidbody_component(const HashMap<String, Variant> &p_props);
-	static Node3D* _convert_collider_component(const HashMap<String, Variant> &p_props);
+	// Component converters (future implementations)
+	// static Node3D* _convert_transform_component(const UnitySceneNode &p_node);
+	// static Node3D* _convert_mesh_renderer(const UnityAsset &p_asset, const HashMap<String, UnityAsset> &p_all_assets);
+	// static Node3D* _convert_light_component(const HashMap<String, Variant> &p_props);
+	// static Node3D* _convert_camera_component(const HashMap<String, Variant> &p_props);
+	// static Node3D* _convert_rigidbody_component(const HashMap<String, Variant> &p_props);
+	// static Node3D* _convert_collider_component(const HashMap<String, Variant> &p_props);
 
 	// Utility
 	static String _translate_unity_terminology(const String &p_text);
