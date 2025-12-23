@@ -510,27 +510,206 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 	material->set_name(p_asset.pathname.get_file().get_basename());
 	material->set_meta("unity_yaml", yaml);
 
-	// Try to discover an albedo color from common Unity keys
-	Color albedo;
 	Vector<String> lines = yaml.split("\n");
+	
+	// Parse shader name to determine material type
+	String shader_name;
+	for (const String &line : lines) {
+		String trimmed = line.strip_edges();
+		if (trimmed.begins_with("m_Shader:")) {
+			int name_start = trimmed.find("name: ");
+			if (name_start != -1) {
+				shader_name = trimmed.substr(name_start + 6).strip_edges();
+				shader_name = shader_name.trim_prefix("\"").trim_suffix("\"");
+			}
+			break;
+		}
+	}
+
+	// Parse material properties from YAML
+	HashMap<String, Variant> properties;
+	bool in_saved_properties = false;
+	
 	for (int i = 0; i < lines.size(); i++) {
-		String l = lines[i].strip_edges();
-		if (l.find("_Color") != -1 || l.find("m_Diffuse") != -1) {
-			if (parse_color_from_line(l, albedo)) {
-				material->set_albedo(albedo);
-				break;
+		String line = lines[i].strip_edges();
+		
+		// Look for SavedProperties section
+		if (line.begins_with("m_SavedProperties:")) {
+			in_saved_properties = true;
+			continue;
+		}
+		
+		if (!in_saved_properties) continue;
+		
+		// Parse textures: "name: 0" where 0 is GUID index
+		if (line.begins_with("- {") && line.contains("name:")) {
+			// Parse texture reference
+			if (line.contains("guid:")) {
+				int guid_start = line.find("guid:") + 5;
+				int guid_end = line.find(",", guid_start);
+				if (guid_end == -1) guid_end = line.find("}", guid_start);
+				String guid = line.substr(guid_start, guid_end - guid_start).strip_edges();
+				
+				int name_start = line.find("name:") + 5;
+				int name_end = line.find(",", name_start);
+				String tex_name = line.substr(name_start, name_end - name_start).strip_edges();
+				properties[tex_name.trim_prefix("\"").trim_suffix("\"")] = guid.trim_prefix("\"").trim_suffix("\"");
+			}
+		}
+		
+		// Parse colors: "_Color: {r: 1, g: 1, b: 1, a: 1}"
+		if (line.begins_with("- _") && line.contains("{") && line.contains("r:")) {
+			int name_start = line.find("_");
+			int colon = line.find(":", name_start);
+			String prop_name = line.substr(name_start, colon - name_start).strip_edges();
+			
+			int brace_start = line.find("{");
+			int brace_end = line.rfind("}");
+			String color_data = line.substr(brace_start, brace_end - brace_start + 1);
+			Color color = _parse_color_from_yaml(color_data);
+			properties[prop_name] = color;
+		}
+		
+		// Parse floats: "_Metallic: 0.5"
+		if (line.begins_with("- _") && line.contains(":") && !line.contains("{")) {
+			int name_start = line.find("_");
+			int colon = line.find(":", name_start);
+			String prop_name = line.substr(name_start, colon - name_start).strip_edges();
+			String value_str = line.substr(colon + 1).strip_edges();
+			
+			if (value_str.is_valid_float()) {
+				properties[prop_name] = value_str.to_float();
 			}
 		}
 	}
 
-	String albedo_guid = extract_albedo_texture_guid(lines);
-	if (!albedo_guid.is_empty() && p_all_assets.has(albedo_guid)) {
-		const UnityAsset &tex_asset = p_all_assets[albedo_guid];
-		String texture_path = resolve_case_insensitive_path(tex_asset.pathname);
-		if (FileAccess::exists(texture_path)) {
-			Ref<Texture2D> albedo_texture = ResourceLoader::load(texture_path);
-			if (albedo_texture.is_valid()) {
-				material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, albedo_texture);
+	// Apply Standard Shader properties
+	if (properties.has("_Color")) {
+		Color color = properties["_Color"];
+		material->set_albedo(color);
+	}
+	
+	if (properties.has("_MainTex")) {
+		String tex_guid = properties["_MainTex"];
+		if (p_all_assets.has(tex_guid)) {
+			const UnityAsset &tex_asset = p_all_assets[tex_guid];
+			String texture_path = resolve_case_insensitive_path(tex_asset.pathname);
+			if (FileAccess::exists(texture_path)) {
+				Ref<Texture2D> albedo_texture = ResourceLoader::load(texture_path);
+				if (albedo_texture.is_valid()) {
+					material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, albedo_texture);
+				}
+			}
+		}
+	}
+	
+	if (properties.has("_Metallic")) {
+		float metallic = float(properties["_Metallic"]);
+		material->set_metallic(metallic);
+	}
+	
+	if (properties.has("_Glossiness")) {
+		float glossiness = float(properties["_Glossiness"]);
+		material->set_roughness(1.0f - glossiness);  // Glossiness -> Roughness conversion
+	}
+	
+	if (properties.has("_BumpMap")) {
+		String tex_guid = properties["_BumpMap"];
+		if (p_all_assets.has(tex_guid)) {
+			const UnityAsset &tex_asset = p_all_assets[tex_guid];
+			String texture_path = resolve_case_insensitive_path(tex_asset.pathname);
+			if (FileAccess::exists(texture_path)) {
+				Ref<Texture2D> normal_texture = ResourceLoader::load(texture_path);
+				if (normal_texture.is_valid()) {
+					material->set_texture(StandardMaterial3D::TEXTURE_NORMAL, normal_texture);
+					material->set_normal_enabled(true);
+				}
+			}
+		}
+	}
+	
+	if (properties.has("_BumpScale")) {
+		float bump_scale = float(properties["_BumpScale"]);
+		material->set_normal_scale(bump_scale);
+	}
+	
+	if (properties.has("_ParallaxMap")) {
+		String tex_guid = properties["_ParallaxMap"];
+		if (p_all_assets.has(tex_guid)) {
+			const UnityAsset &tex_asset = p_all_assets[tex_guid];
+			String texture_path = resolve_case_insensitive_path(tex_asset.pathname);
+			if (FileAccess::exists(texture_path)) {
+				Ref<Texture2D> height_texture = ResourceLoader::load(texture_path);
+				if (height_texture.is_valid()) {
+					material->set_texture(StandardMaterial3D::TEXTURE_HEIGHTMAP, height_texture);
+					material->set_heightmap_enabled(true);
+				}
+			}
+		}
+	}
+	
+	if (properties.has("_OcclusionMap")) {
+		String tex_guid = properties["_OcclusionMap"];
+		if (p_all_assets.has(tex_guid)) {
+			const UnityAsset &tex_asset = p_all_assets[tex_guid];
+			String texture_path = resolve_case_insensitive_path(tex_asset.pathname);
+			if (FileAccess::exists(texture_path)) {
+				Ref<Texture2D> ao_texture = ResourceLoader::load(texture_path);
+				if (ao_texture.is_valid()) {
+					material->set_texture(StandardMaterial3D::TEXTURE_ORM, ao_texture);
+				}
+			}
+		}
+	}
+	
+	if (properties.has("_EmissionColor")) {
+		Color emission = properties["_EmissionColor"];
+		material->set_emission(emission);
+	}
+	
+	if (properties.has("_EmissionMap")) {
+		String tex_guid = properties["_EmissionMap"];
+		if (p_all_assets.has(tex_guid)) {
+			const UnityAsset &tex_asset = p_all_assets[tex_guid];
+			String texture_path = resolve_case_insensitive_path(tex_asset.pathname);
+			if (FileAccess::exists(texture_path)) {
+				Ref<Texture2D> emission_texture = ResourceLoader::load(texture_path);
+				if (emission_texture.is_valid()) {
+					material->set_texture(StandardMaterial3D::TEXTURE_EMISSION, emission_texture);
+				}
+			}
+		}
+	}
+	
+	// Handle transparency modes
+	if (shader_name.contains("Transparent") || shader_name.contains("Alpha")) {
+		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
+	}
+	
+	if (shader_name.contains("AlphaTest") || shader_name.contains("Cutout")) {
+		material->set_alpha_scissor_enabled(true);
+		material->set_alpha_scissor_threshold(0.5f);
+	}
+	
+	// Handle shader keywords if present
+	for (const String &line : lines) {
+		if (line.contains("m_ShaderKeywords:")) {
+			String keyword_line = line.substr(line.find(":") + 1).strip_edges();
+			
+			if (keyword_line.contains("_NORMALMAP")) {
+				material->set_normal_enabled(true);
+			}
+			if (keyword_line.contains("_ALPHABLEND_ON")) {
+				material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
+			}
+			if (keyword_line.contains("_ALPHA_CUTOUT")) {
+				material->set_alpha_scissor_enabled(true);
+			}
+			if (keyword_line.contains("_METALLICSPECGLOSSMAP")) {
+				// Use ORM texture
+			}
+			if (keyword_line.contains("_SPECULARHIGHLIGHTS_OFF")) {
+				material->set_specular_mode(BaseMaterial3D::SPECULAR_DISABLED);
 			}
 		}
 	}
@@ -541,6 +720,9 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 	}
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for material.");
 	Error save_err = ResourceSaver::save(material, out_path);
+	if (save_err == OK) {
+		print_line(vformat("Material conversion: %s -> %s", p_asset.pathname.get_file(), out_path.get_file()));
+	}
 	return save_err;
 }
 
@@ -1140,4 +1322,275 @@ Error UnityAssetConverter::convert_shader(const UnityAsset &p_asset) {
 
 	print_line("Converted Unity shader: " + p_asset.pathname + " -> " + output_path);
 	return OK;
+}
+
+// Additional helper implementations from reference converters
+
+Transform3D UnityAssetConverter::_parse_transform_from_yaml(const String &p_yaml) {
+	Transform3D transform;
+	Vector<String> lines = p_yaml.split("\n");
+	
+	for (const String &line : lines) {
+		String trimmed = line.strip_edges();
+		if (trimmed.begins_with("m_LocalPosition:")) {
+			int colon = trimmed.find(":");
+			String pos_val = trimmed.substr(colon + 1).strip_edges();
+			transform.origin = _parse_vector3_from_yaml(pos_val);
+		} else if (trimmed.begins_with("m_LocalRotation:")) {
+			int colon = trimmed.find(":");
+			String rot_val = trimmed.substr(colon + 1).strip_edges();
+			Quaternion q = _parse_quaternion_from_yaml(rot_val);
+			transform.basis = Basis(q);
+		} else if (trimmed.begins_with("m_LocalScale:")) {
+			int colon = trimmed.find(":");
+			String scale_val = trimmed.substr(colon + 1).strip_edges();
+			Vector3 scale = _parse_vector3_from_yaml(scale_val);
+			transform.basis.scale(scale);
+		}
+	}
+	return transform;
+}
+
+Color UnityAssetConverter::_parse_color_from_yaml(const String &p_yaml) {
+	// Parse format: {r: 1, g: 1, b: 1, a: 1}
+	float r = 1.0f, g = 1.0f, b = 1.0f, a = 1.0f;
+	
+	String content = p_yaml;
+	if (content.begins_with("{") && content.ends_with("}")) {
+		content = content.substr(1, content.length() - 2);
+	}
+	
+	Vector<String> parts = content.split(",");
+	for (const String &part : parts) {
+		String trimmed = part.strip_edges();
+		if (trimmed.begins_with("r:")) {
+			r = trimmed.substr(2).strip_edges().to_float();
+		} else if (trimmed.begins_with("g:")) {
+			g = trimmed.substr(2).strip_edges().to_float();
+		} else if (trimmed.begins_with("b:")) {
+			b = trimmed.substr(2).strip_edges().to_float();
+		} else if (trimmed.begins_with("a:")) {
+			a = trimmed.substr(2).strip_edges().to_float();
+		}
+	}
+	return Color(r, g, b, a);
+}
+
+float UnityAssetConverter::_linear_to_srgb_single(float p_linear) {
+	if (p_linear <= 0.0031308f) {
+		return 12.92f * p_linear;
+	}
+	return (1.0f + 0.055f) * pow(p_linear, 1.0f / 2.4f) - 0.055f;
+}
+
+Color UnityAssetConverter::_linear_to_srgb(const Color &p_linear_color) {
+	return Color(
+		_linear_to_srgb_single(p_linear_color.r),
+		_linear_to_srgb_single(p_linear_color.g),
+		_linear_to_srgb_single(p_linear_color.b),
+		p_linear_color.a
+	);
+}
+
+String UnityAssetConverter::_translate_shader_keyword(const String &p_keyword) {
+	// Map Unity shader keywords to Godot shader features
+	static const HashMap<String, String> keyword_map = []() {
+		HashMap<String, String> map;
+		map["_NORMALMAP"] = "NORMAL_MAP";
+		map["_NORMALMAP_DETAIL"] = "NORMAL_ENABLED";
+		map["_ALPHA_CUTOUT"] = "ALPHA_SCISSOR";
+		map["_ALPHAPREMULTIPLY_ON"] = "ALPHA_PREMULTIPLY";
+		map["_ALPHABLEND_ON"] = "ALPHA_BLEND";
+		map["_SPECULARHIGHLIGHTS_OFF"] = "SPECULAR_OFF";
+		map["_ENVIRONMENTREFLECTIONS_OFF"] = "REFLECTION_OFF";
+		map["_METALLICSPECGLOSSMAP"] = "METALLIC_MAP";
+		map["_PARALLAXMAP"] = "HEIGHTMAP";
+		map["_EMISSION"] = "EMISSION_ENABLED";
+		map["_AMBIENTOCCLUSION"] = "AO_ENABLED";
+		return map;
+	}();
+	
+	if (keyword_map.has(p_keyword)) {
+		return keyword_map[p_keyword];
+	}
+	return p_keyword;
+}
+
+// Mesh converter implementation (from reference repos)
+Ref<Mesh> UnityAssetConverter::convert_mesh_data(const UnityMeshData &p_mesh_data) {
+	Ref<ArrayMesh> mesh;
+	mesh.instantiate();
+	
+	if (p_mesh_data.vertices.is_empty()) {
+		return mesh;
+	}
+	
+	// Build surface arrays
+	Array surface_arrays;
+	surface_arrays.resize(Mesh::ARRAY_MAX);
+	
+	surface_arrays[Mesh::ARRAY_VERTEX] = p_mesh_data.vertices;
+	if (!p_mesh_data.normals.is_empty()) {
+		surface_arrays[Mesh::ARRAY_NORMAL] = p_mesh_data.normals;
+	}
+	if (!p_mesh_data.texcoords.is_empty()) {
+		surface_arrays[Mesh::ARRAY_TEX_UV] = p_mesh_data.texcoords;
+	}
+	if (!p_mesh_data.texcoords2.is_empty()) {
+		surface_arrays[Mesh::ARRAY_TEX_UV2] = p_mesh_data.texcoords2;
+	}
+	if (!p_mesh_data.colors.is_empty()) {
+		surface_arrays[Mesh::ARRAY_COLOR] = p_mesh_data.colors;
+	}
+	if (!p_mesh_data.tangents.is_empty()) {
+		surface_arrays[Mesh::ARRAY_TANGENT] = p_mesh_data.tangents;
+	}
+	
+	// Add each submesh as a surface
+	for (const KeyValue<int, Vector<int>> &E : p_mesh_data.submesh_triangles) {
+		PackedInt32Array indices;
+		for (int idx : E.value) {
+			indices.append(idx);
+		}
+		surface_arrays[Mesh::ARRAY_INDEX] = indices;
+		
+		Ref<StandardMaterial3D> mat;
+		mat.instantiate();
+		mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, surface_arrays);
+		mesh->surface_set_material(mesh->get_surface_count() - 1, mat);
+	}
+	
+	return mesh;
+}
+
+// Material converter (from reference repos - Standard shader support)
+Ref<Material> UnityAssetConverter::convert_standard_material(const HashMap<String, Variant> &p_properties) {
+	Ref<StandardMaterial3D> material;
+	material.instantiate();
+	
+	// Parse and apply material properties
+	if (p_properties.has("_Color")) {
+		Color color = p_properties["_Color"];
+		material->set_albedo(color);
+	}
+	
+	if (p_properties.has("_Metallic")) {
+		float metallic = float(p_properties["_Metallic"]);
+		material->set_metallic(metallic);
+	}
+	
+	if (p_properties.has("_Glossiness")) {
+		float glossiness = float(p_properties["_Glossiness"]);
+		material->set_roughness(1.0f - glossiness);
+	}
+	
+	if (p_properties.has("_BumpScale")) {
+		float bump_scale = float(p_properties["_BumpScale"]);
+		material->set_normal_scale(bump_scale);
+	}
+	
+	if (p_properties.has("_EmissionColor")) {
+		Color emission = p_properties["_EmissionColor"];
+		material->set_emission(emission);
+	}
+	
+	// Transparency handling
+	if (p_properties.has("_ALPHABLEND_ON")) {
+		material->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
+	}
+	
+	if (p_properties.has("_ALPHA_CUTOUT")) {
+		material->set_alpha_scissor_enabled(true);
+	}
+	
+	return material;
+}
+
+// Animation clip converter
+Ref<Animation> UnityAssetConverter::convert_animation_clip(const UnityAnimationTrack &p_track_data) {
+	Ref<Animation> anim;
+	anim.instantiate();
+	
+	if (p_track_data.times.is_empty()) {
+		return anim;
+	}
+	
+	// Set animation length
+	float max_time = 0.0f;
+	for (float time : p_track_data.times) {
+		max_time = MAX(max_time, time);
+	}
+	anim->set_length(max_time);
+	
+	// Add tracks based on property type
+	if (!p_track_data.positions.is_empty()) {
+		int track_idx = anim->add_track(Animation::TYPE_POSITION_3D);
+		anim->track_set_path(track_idx, p_track_data.path + ":position");
+		
+		for (int i = 0; i < p_track_data.times.size(); i++) {
+			anim->position_track_insert_key(track_idx, p_track_data.times[i], p_track_data.positions[i]);
+		}
+	}
+	
+	if (!p_track_data.rotations.is_empty()) {
+		int track_idx = anim->add_track(Animation::TYPE_ROTATION_3D);
+		anim->track_set_path(track_idx, p_track_data.path + ":rotation");
+		
+		for (int i = 0; i < p_track_data.times.size(); i++) {
+			anim->rotation_track_insert_key(track_idx, p_track_data.times[i], p_track_data.rotations[i]);
+		}
+	}
+	
+	if (!p_track_data.scales.is_empty()) {
+		int track_idx = anim->add_track(Animation::TYPE_SCALE_3D);
+		anim->track_set_path(track_idx, p_track_data.path + ":scale");
+		
+		for (int i = 0; i < p_track_data.times.size(); i++) {
+			anim->scale_track_insert_key(track_idx, p_track_data.times[i], 
+				Vector3(p_track_data.scales[i], p_track_data.scales[i], p_track_data.scales[i]));
+		}
+	}
+	
+	return anim;
+}
+
+// Scene hierarchy converter
+Ref<PackedScene> UnityAssetConverter::convert_scene_hierarchy(const Vector<UnitySceneNode> &p_nodes) {
+	Ref<PackedScene> scene;
+	scene.instantiate();
+	
+	if (p_nodes.is_empty()) {
+		return scene;
+	}
+	
+	// Create root node
+	Node3D *root = memnew(Node3D);
+	root->set_name("Root");
+	
+	// Build node map
+	HashMap<int, Node3D*> fileID_to_node;
+	for (const UnitySceneNode &node : p_nodes) {
+		Node3D *n = memnew(Node3D);
+		n->set_name(node.name);
+		n->set_position(node.transform.origin);
+		
+		Vector3 euler = node.transform.basis.get_euler();
+		n->set_rotation(euler);
+		
+		fileID_to_node[node.fileID] = n;
+	}
+	
+	// Establish parent-child relationships
+	for (const UnitySceneNode &node : p_nodes) {
+		if (node.parent_fileID == 0) {
+			// Root child
+			root->add_child(fileID_to_node[node.fileID]);
+		} else if (fileID_to_node.has(node.parent_fileID)) {
+			Node3D *parent = fileID_to_node[node.parent_fileID];
+			parent->add_child(fileID_to_node[node.fileID]);
+		}
+	}
+	
+	scene->pack(root);
+	return scene;
 }
