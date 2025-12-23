@@ -603,6 +603,8 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	String current_game_object_name = "GameObject";
 	String current_parent_ref = "";
 	String current_prefab_guid = "";
+	bool in_prefab_instance = false;
+	String prefab_instance_guid = "";
 
 	Vector3 current_position;
 	current_position.x = 0;
@@ -808,6 +810,12 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	}
 
 	print_verbose(vformat("Scene: Built hierarchy with %d nodes", root->get_child_count() + 1));
+
+	// If no GameObjects were found but scene file had content, check for PrefabInstances
+	if (game_object_count == 0 && !yaml.is_empty()) {
+		print_verbose("Scene: No direct GameObjects found. Scene may contain only PrefabInstances.");
+		print_verbose(vformat("Scene: PrefabInstance support is currently limited - instantiate prefabs manually or enhance the converter."));
+	}
 
 	// Pack the scene properly with root node
 	scene->pack(root);
