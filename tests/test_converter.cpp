@@ -63,9 +63,9 @@ Transform:
 	// Split into lines
 	std::vector<std::string> lines;
 	std::stringstream ss(yaml_content);
-	std::string line;
-	while (std::getline(ss, line)) {
-		lines.push_back(line);
+	std::string ss_line;
+	while (std::getline(ss, ss_line)) {
+		lines.push_back(ss_line);
 	}
 
 	// Parse with state machine
@@ -75,14 +75,14 @@ Transform:
 	std::vector<std::string> found_objects;
 
 	for (size_t i = 0; i < lines.size(); i++) {
-		std::string line = lines[i];
+		std::string current_line = lines[i];
 
 		// Trim leading/trailing whitespace
-		line.erase(0, line.find_first_not_of(" \t\n\r"));
-		line.erase(line.find_last_not_of(" \t\n\r") + 1);
+		current_line.erase(0, current_line.find_first_not_of(" \t\n\r"));
+		current_line.erase(current_line.find_last_not_of(" \t\n\r") + 1);
 
 		// Detect gameObject sections (type ID 1)
-		if (line.find("--- !u!1") != std::string::npos) {
+		if (current_line.find("--- !u!1") != std::string::npos) {
 			in_game_object = true;
 			current_game_object_name = "GameObject";
 			game_object_count++;
@@ -90,10 +90,10 @@ Transform:
 		}
 
 		// Extract m_Name from gameObjects
-		if (in_game_object && line.find("m_Name:") == 0) {
+		if (in_game_object && current_line.find("m_Name:") == 0) {
 			// Extract the name value
-			size_t colon = line.find(":");
-			std::string name_value = line.substr(colon + 1);
+			size_t colon = current_line.find(":");
+			std::string name_value = current_line.substr(colon + 1);
 
 			// Trim
 			name_value.erase(0, name_value.find_first_not_of(" \t\n\r"));
@@ -111,7 +111,7 @@ Transform:
 		}
 
 		// Create node when transitioning out of gameObject section
-		if (in_game_object && line.find("---") == 0 && game_object_count > 1) {
+		if (in_game_object && current_line.find("---") == 0 && game_object_count > 1) {
 			found_objects.push_back(current_game_object_name);
 			std::cout << "  Created node: " << current_game_object_name << std::endl;
 			in_game_object = false;
