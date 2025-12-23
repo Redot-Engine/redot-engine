@@ -1291,15 +1291,64 @@ Error UnityAssetConverter::convert_animation(const UnityAsset &p_asset) {
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	Ref<Animation> anim;
 	anim.instantiate();
-	anim->set_length(0.0);
+	
+	Vector<String> lines = yaml.split("\n");
+	float anim_length = 1.0f;
+	String anim_name = "Animation";
+	
+	// Parse animation metadata and curves
+	HashMap<String, Vector<float>> time_values;  // curve_name -> times
+	HashMap<String, Vector<float>> curve_values; // curve_name -> values
+	
+	int current_indent = 0;
+	bool in_curves = false;
+	String current_curve_name;
+	
+	for (int i = 0; i < lines.size(); i++) {
+		String line = lines[i];
+		String trimmed = line.strip_edges();
+		
+		// Extract animation name
+		if (trimmed.begins_with("m_Name:")) {
+			anim_name = trimmed.substr(7).strip_edges();
+			if (anim_name.begins_with("\"")) {
+				anim_name = anim_name.substr(1, anim_name.length() - 2);
+			}
+		}
+		
+		// Look for animation length (start time to stop time)
+		if (trimmed.contains("m_StopTime:") || trimmed.contains("m_StartTime:")) {
+			Vector<String> parts = trimmed.split(":");
+			if (parts.size() > 1) {
+				float val = String(parts[1]).strip_edges().to_float();
+				if (val > anim_length) {
+					anim_length = val;
+				}
+			}
+		}
+	}
+	
+	anim->set_name(anim_name);
+	anim->set_length(anim_length > 0 ? anim_length : 1.0f);
+	
+	// Store the original YAML for reference if full parsing fails
 	anim->set_meta("unity_yaml", yaml);
-
+	
+	// For now, create an empty animation with length metadata
+	// Full animation curve extraction would require parsing m_CompressedAnimationCurves
+	// This is marked for future enhancement after mesh and skeleton support
+	
 	String out_path = p_asset.pathname;
 	if (!out_path.ends_with(".tres")) {
 		out_path += ".tres";
 	}
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for animation.");
-	return ResourceSaver::save(anim, out_path);
+	
+	Error save_err = ResourceSaver::save(anim, out_path);
+	if (save_err == OK) {
+		print_line(vformat("Animation conversion: created %s with length %.2f seconds", out_path, anim_length));
+	}
+	return save_err;
 }
 
 Error UnityAssetConverter::convert_shader(const UnityAsset &p_asset) {
