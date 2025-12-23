@@ -462,7 +462,25 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		return ERR_CANT_CREATE;
 	}
 
+	// Detect binary Unity files (binary format starts with specific signatures)
+	// Binary Unity files cannot be parsed as YAML text
+	if (p_asset.asset_data.size() > 20) {
+		const uint8_t *data = p_asset.asset_data.ptr();
+		// Check for Unity binary file magic numbers
+		// Unity 2019+ binary serialization format
+		if (data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x00 && data[3] == 0x00) {
+			print_error(vformat("Scene '%s' is in Unity BINARY format. Only YAML text format is supported. Re-export from Unity with 'Force Text' serialization.", p_asset.pathname.get_file()));
+			return ERR_FILE_UNRECOGNIZED;
+		}
+	}
+
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	
+	// Additional check: YAML files must start with %YAML directive
+	if (!yaml.begins_with("%YAML") && !yaml.begins_with("---")) {
+		print_error(vformat("Scene '%s' does not appear to be valid YAML text format. Ensure Unity is set to 'Force Text' serialization mode.", p_asset.pathname.get_file()));
+		return ERR_FILE_UNRECOGNIZED;
+	}
 	
 	// Create scene and root node
 	Ref<PackedScene> scene = memnew(PackedScene);
@@ -545,7 +563,23 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		return ERR_CANT_CREATE;
 	}
 
+	// Detect binary Unity files - prefabs can also be binary format
+	if (p_asset.asset_data.size() > 20) {
+		const uint8_t *data = p_asset.asset_data.ptr();
+		// Check for Unity binary file magic numbers
+		if (data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x00 && data[3] == 0x00) {
+			print_error(vformat("Prefab '%s' is in Unity BINARY format. Only YAML text format is supported. Re-export from Unity with 'Force Text' serialization.", p_asset.pathname.get_file()));
+			return ERR_FILE_UNRECOGNIZED;
+		}
+	}
+
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	
+	// Check for valid YAML format
+	if (!yaml.begins_with("%YAML") && !yaml.begins_with("---")) {
+		print_error(vformat("Prefab '%s' does not appear to be valid YAML text format. Ensure Unity is set to 'Force Text' serialization mode.", p_asset.pathname.get_file()));
+		return ERR_FILE_UNRECOGNIZED;
+	}
 	
 	// Create scene and root node
 	Ref<PackedScene> scene = memnew(PackedScene);

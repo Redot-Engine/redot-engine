@@ -404,9 +404,10 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 
 	// Convert Unity C# namespaces to Godot C# namespaces
 	// Keep it as C# but update the API calls
-	cs_code = cs_code.replace("using UnityEngine;", "using Godot;\nusing System;");
+	cs_code = cs_code.replace("using UnityEngine;", "using Godot;\nusing System;\nusing System.Collections.Generic;");
 	cs_code = cs_code.replace("using UnityEngine.UI;", "using Godot;");
 	cs_code = cs_code.replace("using UnityEngine.Events;", "using Godot;");
+	cs_code = cs_code.replace("using System.Collections;", "using System.Collections.Generic;");
 	
 	// MonoBehaviour -> Node (most common base class)
 	cs_code = cs_code.replace("public class", "// Unity to Godot: Changed MonoBehaviour to Node3D\npublic partial class");
@@ -421,13 +422,75 @@ Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String 
 	cs_code = cs_code.replace("void FixedUpdate()", "public override void _PhysicsProcess(double delta) // Was FixedUpdate()");
 	cs_code = cs_code.replace("void LateUpdate()", "public override void _Process(double delta) // Was LateUpdate()");
 	
+	// Unity Audio → Godot Audio (AudioSource → AudioStreamPlayer)
+	cs_code = cs_code.replace("AudioSource", "AudioStreamPlayer");
+	cs_code = cs_code.replace(".volume", ".VolumeDb");
+	cs_code = cs_code.replace(".Play()", ".Play()");
+	cs_code = cs_code.replace(".Stop()", ".Stop()");
+	cs_code = cs_code.replace(".clip", ".Stream");
+	
+	// PlayerPrefs → Godot ConfigFile (based on JSONConfigFile pattern)
+	cs_code = cs_code.replace("PlayerPrefs.GetFloat", "// TODO: Implement ConfigFile\n\t\tGetConfigFloat");
+	cs_code = cs_code.replace("PlayerPrefs.SetFloat", "// TODO: Implement ConfigFile\n\t\tSetConfigFloat");
+	cs_code = cs_code.replace("PlayerPrefs.GetInt", "// TODO: Implement ConfigFile\n\t\tGetConfigInt");
+	cs_code = cs_code.replace("PlayerPrefs.SetInt", "// TODO: Implement ConfigFile\n\t\tSetConfigInt");
+	cs_code = cs_code.replace("PlayerPrefs.GetString", "// TODO: Implement ConfigFile\n\t\tGetConfigString");
+	cs_code = cs_code.replace("PlayerPrefs.SetString", "// TODO: Implement ConfigFile\n\t\tSetConfigString");
+	cs_code = cs_code.replace("PlayerPrefs.Save()", "// TODO: ConfigFile.Save()");
+	
+	// Transform → Transform3D / Node3D
+	cs_code = cs_code.replace(".transform.position", ".Position");
+	cs_code = cs_code.replace(".transform.rotation", ".Rotation");
+	cs_code = cs_code.replace(".transform.localPosition", ".Position");
+	cs_code = cs_code.replace(".transform.localRotation", ".Rotation");
+	cs_code = cs_code.replace(".transform.localScale", ".Scale");
+	cs_code = cs_code.replace("transform.forward", "GlobalTransform.Basis.Z");
+	cs_code = cs_code.replace("transform.up", "GlobalTransform.Basis.Y");
+	cs_code = cs_code.replace("transform.right", "GlobalTransform.Basis.X");
+	
+	// Vector3 / Vector2 → Godot equivalents (Unity uses uppercase)
+	cs_code = cs_code.replace("Vector3.zero", "Vector3.Zero");
+	cs_code = cs_code.replace("Vector3.one", "Vector3.One");
+	cs_code = cs_code.replace("Vector3.forward", "Vector3.Forward");
+	cs_code = cs_code.replace("Vector3.up", "Vector3.Up");
+	cs_code = cs_code.replace("Vector3.right", "Vector3.Right");
+	cs_code = cs_code.replace("Vector2.zero", "Vector2.Zero");
+	cs_code = cs_code.replace("Vector2.one", "Vector2.One");
+	
+	// Quaternion → Godot equivalents
+	cs_code = cs_code.replace("Quaternion.identity", "Quaternion.Identity");
+	cs_code = cs_code.replace("Quaternion.Euler", "Quaternion.FromEuler");
+	
+	// Mathf → Godot Mathf
+	cs_code = cs_code.replace("Mathf.Lerp", "Mathf.Lerp");
+	cs_code = cs_code.replace("Mathf.Clamp", "Mathf.Clamp");
+	cs_code = cs_code.replace("Mathf.Abs", "Mathf.Abs");
+	
 	// Common Unity API replacements
 	cs_code = cs_code.replace("Time.deltaTime", "(float)delta");
+	cs_code = cs_code.replace("Time.time", "(float)Time.GetTicksMsec() / 1000.0f");
 	cs_code = cs_code.replace("GameObject", "Node");
 	cs_code = cs_code.replace("GetComponent<", "GetNode<");
+	cs_code = cs_code.replace("AddComponent<", "AddChild(new ");
 	cs_code = cs_code.replace("Debug.Log(", "GD.Print(");
-	cs_code = cs_code.replace("Instantiate(", "// TODO: Convert Instantiate to Godot equivalent\n\t\t// Instantiate(");
+	cs_code = cs_code.replace("Debug.LogWarning(", "GD.PushWarning(");
+	cs_code = cs_code.replace("Debug.LogError(", "GD.PushError(");
+	cs_code = cs_code.replace("Instantiate(", "// TODO: Use PackedScene.Instantiate()\n\t\t// Instantiate(");
 	cs_code = cs_code.replace("Destroy(", "QueueFree() // Was Destroy(");
+	cs_code = cs_code.replace(".SetActive(", ".Visible = ");
+	cs_code = cs_code.replace(".activeSelf", ".Visible");
+	
+	// RigidBody → RigidBody3D
+	cs_code = cs_code.replace("Rigidbody", "RigidBody3D");
+	cs_code = cs_code.replace(".velocity", ".LinearVelocity");
+	cs_code = cs_code.replace(".angularVelocity", ".AngularVelocity");
+	cs_code = cs_code.replace(".AddForce(", ".ApplyCentralForce(");
+	
+	// Collider → CollisionShape3D
+	cs_code = cs_code.replace("Collider", "CollisionShape3D");
+	cs_code = cs_code.replace("BoxCollider", "BoxShape3D");
+	cs_code = cs_code.replace("SphereCollider", "SphereShape3D");
+	cs_code = cs_code.replace("CapsuleCollider", "CapsuleShape3D");
 	
 	// Save as .cs file
 	String out_path = p_save_path;
