@@ -592,9 +592,4 @@ void UnityImporterPlugin::_handle_shader_file(const String &p_path) {
 	EditorToaster::get_singleton()->popup_str(vformat(TTR("Shader converted successfully: %s"), output_path), EditorToaster::SEVERITY_INFO);
 }
 
-void UnityImporterPlugin::_browse_asset_stores() {
-	print_verbose("Opening asset store browsers...");
-	OS::get_singleton()->shell_open("https://assetstore.godotengine.org");
-	OS::get_singleton()->shell_open("https://assetstore.unity.com");
-	EditorToaster::get_singleton()->popup_str(TTR("Opening Godot and Unity asset stores in your browser..."), EditorToaster::SEVERITY_INFO);
-}
+
