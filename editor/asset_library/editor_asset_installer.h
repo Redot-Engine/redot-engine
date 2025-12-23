@@ -34,6 +34,7 @@
 
 #include "scene/gui/dialogs.h"
 #include "scene/gui/tree.h"
+#include "editor/plugins/unity_package_importer.h"
 
 class CheckBox;
 class EditorFileDialog;
