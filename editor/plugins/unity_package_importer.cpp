@@ -455,8 +455,13 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
+	print_line(vformat("convert_scene called with pathname: %s", p_asset.pathname));
 	// p_asset.pathname is already the full output path with hash
-	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(p_asset.pathname) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
+	Error dir_result = ensure_parent_dir_for_file(p_asset.pathname);
+	if (dir_result != OK) {
+		print_error(vformat("Cannot create target directory for scene. Path: %s, Error: %d", p_asset.pathname, dir_result));
+		return ERR_CANT_CREATE;
+	}
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	
@@ -532,7 +537,12 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	// p_asset.pathname is already the full output path with hash
-	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(p_asset.pathname) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
+	print_line(vformat("convert_prefab called with pathname: %s", p_asset.pathname));
+	Error dir_result = ensure_parent_dir_for_file(p_asset.pathname);
+	if (dir_result != OK) {
+		print_error(vformat("Cannot create target directory for prefab. Path: %s, Error: %d", p_asset.pathname, dir_result));
+		return ERR_CANT_CREATE;
+	}
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	
