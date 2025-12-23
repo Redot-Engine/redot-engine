@@ -480,12 +480,26 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		
 		// Detect gameObject sections (type ID 1)
 		if (trimmed.contains("--- !u!1")) {
+			// If we were in a previous GameObject, save it now
+			if (in_game_object && game_object_count > 0) {
+				Node3D *child = memnew(Node3D);
+				child->set_name(current_game_object_name);
+				root->add_child(child);
+				child->set_owner(root);
+			}
+			
+			// Start new GameObject
 			in_game_object = true;
 			current_game_object_name = "GameObject";
 			game_object_count++;
 		}
+		// Detect end of GameObject (any other section starting with ---)
+		else if (in_game_object && trimmed.begins_with("---")) {
+			// End of previous GameObject section, will be saved on next GameObject or at end
+			in_game_object = false;
+		}
 		
-		// Extract m_Name from gameObjects
+		// Extract m_Name only from WITHIN GameObject sections
 		if (in_game_object && trimmed.begins_with("m_Name:")) {
 			// Extract the name value after the colon
 			int colon = trimmed.find(":");
@@ -502,18 +516,9 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 				current_game_object_name = name_value;
 			}
 		}
-		
-		// Create node when transitioning out of gameObject section
-		if (in_game_object && trimmed.begins_with("---") && game_object_count > 1) {
-			Node3D *child = memnew(Node3D);
-			child->set_name(current_game_object_name);
-			root->add_child(child);
-			child->set_owner(root);
-			in_game_object = false;
-		}
 	}
 	
-	// Add any last node
+	// Add the last GameObject if we were in one
 	if (in_game_object && !current_game_object_name.is_empty()) {
 		Node3D *child = memnew(Node3D);
 		child->set_name(current_game_object_name);
@@ -536,9 +541,6 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	Ref<PackedScene> scene;
 	scene.instantiate();
 	
-	Node3D *root = memnew(Node3D);
-	root->set_name(p_asset.pathname.get_file().get_basename());
-	
 	// Parse YAML to extract gameObjects and their names
 	Vector<String> lines = yaml.split("\n");
 	String current_game_object_name = "GameObject";
@@ -551,12 +553,26 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		
 		// Detect gameObject sections (type ID 1)
 		if (trimmed.contains("--- !u!1")) {
+			// If we were in a previous GameObject, save it now
+			if (in_game_object && game_object_count > 0) {
+				Node3D *child = memnew(Node3D);
+				child->set_name(current_game_object_name);
+				root->add_child(child);
+				child->set_owner(root);
+			}
+			
+			// Start new GameObject
 			in_game_object = true;
 			current_game_object_name = "GameObject";
 			game_object_count++;
 		}
+		// Detect end of GameObject (any other section starting with ---)
+		else if (in_game_object && trimmed.begins_with("---")) {
+			// End of previous GameObject section, will be saved on next GameObject or at end
+			in_game_object = false;
+		}
 		
-		// Extract m_Name from gameObjects
+		// Extract m_Name only from WITHIN GameObject sections
 		if (in_game_object && trimmed.begins_with("m_Name:")) {
 			// Extract the name value after the colon
 			int colon = trimmed.find(":");
@@ -573,18 +589,9 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 				current_game_object_name = name_value;
 			}
 		}
-		
-		// Create node when transitioning out of gameObject section
-		if (in_game_object && trimmed.begins_with("---") && game_object_count > 1) {
-			Node3D *child = memnew(Node3D);
-			child->set_name(current_game_object_name);
-			root->add_child(child);
-			child->set_owner(root);
-			in_game_object = false;
-		}
 	}
 	
-	// Add any last node
+	// Add the last GameObject if we were in one
 	if (in_game_object && !current_game_object_name.is_empty()) {
 		Node3D *child = memnew(Node3D);
 		child->set_name(current_game_object_name);
