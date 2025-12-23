@@ -344,8 +344,7 @@ Error UnityAnimImportPlugin::import(ResourceUID::ID p_source_id, const String &p
 Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 	print_line(vformat("===== SCENE IMPORT CALLED ====="));
 	print_line(vformat("Source: %s", p_source_file));
-	print_line(vformat("Save path: %s", p_save_path));
-	print_line(vformat("====================================="));
+	print_line(vformat("Save path (provided): %s", p_save_path));
 	
 	PackedByteArray bytes;
 	Error r = _read_file_bytes(p_source_file, bytes);
@@ -355,21 +354,32 @@ Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const Stri
 	}
 
 	UnityAsset asset;
-	asset.pathname = p_save_path;
+	// Add .tscn extension to the save path
+	String final_path = p_save_path;
+	if (!final_path.ends_with(".tscn")) {
+		final_path += ".tscn";
+	}
+	asset.pathname = final_path;
 	asset.asset_data = bytes;
+	
+	print_line(vformat("Save path (final): %s", asset.pathname));
 
 	String ext = p_source_file.get_extension().to_lower();
 	if (ext == "prefab") {
 		print_line(vformat("Converting prefab: %s", p_source_file));
 		Error result = UnityAssetConverter::convert_prefab(asset);
 		print_line(vformat("Prefab conversion result: %d", result));
-		if (r_gen_files) r_gen_files->push_back(p_save_path);
+		if (result == OK && r_gen_files) {
+			r_gen_files->push_back(asset.pathname);
+		}
 		return result;
 	}
 	print_line(vformat("Converting scene: %s", p_source_file));
 	Error result = UnityAssetConverter::convert_scene(asset);
 	print_line(vformat("Scene conversion result: %d", result));
-	if (r_gen_files) r_gen_files->push_back(p_save_path);
+	if (result == OK && r_gen_files) {
+		r_gen_files->push_back(asset.pathname);
+	}
 	return result;
 }
 
