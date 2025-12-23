@@ -162,7 +162,7 @@ static String _default_value_for_type(const String &p_type) {
 		return "false";
 	}
 	if (t == "string") {
-		return "\"\""; // empty string literal
+		return "\"\"";
 	}
 	if (t.contains("vector3")) {
 		return "Vector3.ZERO";
@@ -196,7 +196,7 @@ static Vector<String> _extract_block(const Vector<String> &p_lines, int &r_index
 		if (l.find("{") != -1) {
 			depth++;
 			if (depth == 1) {
-				continue; // skip the opening brace
+				continue;
 			}
 		}
 		if (l.find("}") != -1) {
@@ -264,7 +264,6 @@ static String _convert_csharp_to_gd(const String &p_source_code) {
 			continue;
 		}
 
-		// Field heuristic: has semicolon, no parentheses.
 		if (l.find(";") != -1 && l.find("(") == -1 && l.find(")") == -1) {
 			fields.push_back(l);
 		}
@@ -321,11 +320,20 @@ static String _convert_csharp_to_gd(const String &p_source_code) {
 Error UnityAnimImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 	PackedByteArray bytes;
 	Error r = _read_file_bytes(p_source_file, bytes);
-	ERR_FAIL_COND_V(r != OK, r);
+	if (r != OK) {
+		print_error(vformat("Failed to read animation file: %s", p_source_file));
+		return r;
+	}
 
 	UnityAsset asset;
-	asset.pathname = p_save_path; // converter appends .tres
+	asset.pathname = p_save_path.get_basename() + ".tres";
 	asset.asset_data = bytes;
+
+	Error err = ensure_dir(asset.pathname.get_base_dir());
+	if (err != OK) {
+		print_error(vformat("Failed to create directory for animation: %s", asset.pathname.get_base_dir()));
+		return err;
+	}
 
 	return UnityAssetConverter::convert_animation(asset);
 }
@@ -336,7 +344,7 @@ Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const Stri
 	ERR_FAIL_COND_V(r != OK, r);
 
 	UnityAsset asset;
-	asset.pathname = p_save_path; // converter appends .tscn
+	asset.pathname = p_save_path;
 	asset.asset_data = bytes;
 
 	String ext = p_source_file.get_extension().to_lower();
@@ -349,26 +357,47 @@ Error UnityYamlSceneImportPlugin::import(ResourceUID::ID p_source_id, const Stri
 Error UnityMatImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 	PackedByteArray bytes;
 	Error r = _read_file_bytes(p_source_file, bytes);
-	ERR_FAIL_COND_V(r != OK, r);
+	if (r != OK) {
+		print_error(vformat("Failed to read material file: %s", p_source_file));
+		return r;
+	}
 
 	UnityAsset asset;
-	asset.pathname = p_save_path; // converter appends .tres
+	asset.pathname = p_save_path.get_basename() + ".tres";
 	asset.asset_data = bytes;
 
-	HashMap<String, UnityAsset> dummy_all; // no cross-asset lookup in direct import
+	Error err = ensure_dir(asset.pathname.get_base_dir());
+	if (err != OK) {
+		print_error(vformat("Failed to create directory for material: %s", asset.pathname.get_base_dir()));
+		return err;
+	}
+
+	HashMap<String, UnityAsset> dummy_all;
 	return UnityAssetConverter::convert_material(asset, dummy_all);
 }
 
 Error UnityScriptImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 	Error fe = OK;
 	String source_code = FileAccess::get_file_as_string(p_source_file, &fe);
-	ERR_FAIL_COND_V(fe != OK, fe);
+	if (fe != OK) {
+		print_error(vformat("Failed to read C# script: %s", p_source_file));
+		return fe;
+	}
 
 	String gd_code = _convert_csharp_to_gd(source_code);
-	String out_path = p_save_path + ".gd";
-	ERR_FAIL_COND_V(ensure_dir(out_path.get_base_dir()) != OK, ERR_CANT_CREATE);
+	String out_path = p_save_path.get_basename() + ".gd";
+	Error err = ensure_dir(out_path.get_base_dir());
+	if (err != OK) {
+		print_error(vformat("Failed to create directory for script: %s", out_path.get_base_dir()));
+		return err;
+	}
+
 	Ref<FileAccess> f = FileAccess::open(out_path, FileAccess::WRITE, &fe);
-	ERR_FAIL_COND_V(f.is_null() || fe != OK, fe != OK ? fe : ERR_CANT_CREATE);
+	if (f.is_null() || fe != OK) {
+		print_error(vformat("Failed to open script file for writing: %s (error: %d)", out_path, fe));
+		return fe != OK ? fe : ERR_CANT_CREATE;
+	}
+
 	f->store_string(gd_code);
 	if (r_gen_files) {
 		r_gen_files->push_back(out_path);
@@ -391,8 +420,8 @@ void UnityImporterPlugin::_notification(int p_what) {
 		add_tool_menu_item(TTR("Install UnityToGodot Toolkit..."), callable_mp(this, &UnityImporterPlugin::_install_unity_to_godot));
 		add_tool_menu_item(TTR("Install Shaderlab2GodotSL..."), callable_mp(this, &UnityImporterPlugin::_install_shaderlab2godotsl));
 		add_tool_menu_item(TTR("Convert Unity Shader..."), callable_mp(this, &UnityImporterPlugin::_convert_unity_shader));
+		add_tool_menu_item(TTR("Browse Asset Stores (Godot + Unity)..."), callable_mp(this, &UnityImporterPlugin::_browse_asset_stores));
 
-		// Register import plugins for Unity YAML files.
 		anim_importer.instantiate();
 		scene_importer.instantiate();
 		mat_importer.instantiate();
@@ -407,6 +436,7 @@ void UnityImporterPlugin::_notification(int p_what) {
 		remove_tool_menu_item(TTR("Install UnityToGodot Toolkit..."));
 		remove_tool_menu_item(TTR("Install Shaderlab2GodotSL..."));
 		remove_tool_menu_item(TTR("Convert Unity Shader..."));
+		remove_tool_menu_item(TTR("Browse Asset Stores (Godot + Unity)..."));
 
 		if (anim_importer.is_valid()) {
 			remove_import_plugin(anim_importer);
@@ -497,7 +527,7 @@ void UnityImporterPlugin::_import_assets() {
 		}
 	};
 
-	process_pass(true); // Ensure textures are available before materials and models look them up.
+	process_pass(true);
 	process_pass(false);
 
 	String summary = vformat(TTR("Unity package import finished: %d imported, %d skipped, %d failed"), imported, skipped, failed);
@@ -560,4 +590,11 @@ void UnityImporterPlugin::_handle_shader_file(const String &p_path) {
 
 	f->store_string(godot_shader);
 	EditorToaster::get_singleton()->popup_str(vformat(TTR("Shader converted successfully: %s"), output_path), EditorToaster::SEVERITY_INFO);
+}
+
+void UnityImporterPlugin::_browse_asset_stores() {
+	print_verbose("Opening asset store browsers...");
+	OS::get_singleton()->shell_open("https://assetstore.godotengine.org");
+	OS::get_singleton()->shell_open("https://assetstore.unity.com");
+	EditorToaster::get_singleton()->popup_str(TTR("Opening Godot and Unity asset stores in your browser..."), EditorToaster::SEVERITY_INFO);
 }
