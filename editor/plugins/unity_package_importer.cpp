@@ -454,6 +454,119 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 	return OK;
 }
 
+static void parse_yaml_objects(const String &p_yaml, HashMap<int, Dictionary> &r_objects) {
+	Vector<String> lines = p_yaml.split("\n");
+	Dictionary current_object;
+	int current_id = 0;
+	int current_indent = 0;
+
+	for (const String &line : lines) {
+		if (line.is_empty() || line.strip_edges().is_empty()) {
+			continue;
+		}
+
+		String trimmed = line.strip_edges();
+
+		// Parse object separator "--- !u!ID objectid:NUMBER"
+		if (trimmed.begins_with("---")) {
+			if (current_id > 0) {
+				r_objects[current_id] = current_object;
+			}
+			current_object = Dictionary();
+			Vector<String> parts = trimmed.split(" ");
+			if (parts.size() >= 3 && parts[2].begins_with("objectid:")) {
+				current_id = parts[2].substr(9).to_int();
+			}
+		}
+		// Parse key-value pairs
+		else if (trimmed.find(":") >= 0) {
+			int colon = trimmed.find(":");
+			String key = trimmed.substr(0, colon).strip_edges();
+			String value = trimmed.substr(colon + 1).strip_edges();
+
+			if (key == "m_Name") {
+				// Remove quotes
+				if (value.begins_with("\"") && value.ends_with("\"")) {
+					value = value.substr(1, value.length() - 2);
+				}
+				current_object["m_Name"] = value;
+			} else if (key == "m_LocalPosition") {
+				// Parse as Vector3 {x: 0, y: 0, z: 0}
+				current_object["m_LocalPosition"] = value;
+			} else if (key == "m_LocalRotation") {
+				current_object["m_LocalRotation"] = value;
+			} else if (key == "m_LocalScale") {
+				current_object["m_LocalScale"] = value;
+			} else if (key == "m_Children" || key == "m_Component") {
+				// These are arrays, store them
+				current_object[key] = value;
+			}
+		}
+	}
+
+	if (current_id > 0) {
+		r_objects[current_id] = current_object;
+	}
+}
+
+static Vector3 parse_vector3(const String &p_str) {
+	// Parse "{x: 0.5, y: 1, z: -0.5}"
+	Vector3 result = Vector3();
+	if (p_str.contains("x:")) {
+		int x_idx = p_str.find("x:");
+		int comma = p_str.find(",", x_idx);
+		String x_str = p_str.substr(x_idx + 2, comma - x_idx - 2).strip_edges();
+		result.x = x_str.to_float();
+	}
+	if (p_str.contains("y:")) {
+		int y_idx = p_str.find("y:");
+		int comma = p_str.find(",", y_idx);
+		if (comma == -1) comma = p_str.find("}", y_idx);
+		String y_str = p_str.substr(y_idx + 2, comma - y_idx - 2).strip_edges();
+		result.y = y_str.to_float();
+	}
+	if (p_str.contains("z:")) {
+		int z_idx = p_str.find("z:");
+		int comma = p_str.find(",", z_idx);
+		if (comma == -1) comma = p_str.find("}", z_idx);
+		String z_str = p_str.substr(z_idx + 2, comma - z_idx - 2).strip_edges();
+		result.z = z_str.to_float();
+	}
+	return result;
+}
+
+static Node3D *build_scene_tree(const HashMap<int, Dictionary> &p_objects, const String &p_scene_name) {
+	// Create root node
+	Node3D *root = memnew(Node3D);
+	root->set_name(p_scene_name);
+
+	// Find all GameObjects and create nodes
+	for (const KeyValue<int, Dictionary> &kv : p_objects) {
+		Dictionary obj = kv.value;
+		String name = obj.get("m_Name", "GameObject");
+
+		Node3D *node = memnew(Node3D);
+		node->set_name(name);
+
+		// Parse transform
+		String pos_str = obj.get("m_LocalPosition", "{x: 0, y: 0, z: 0}");
+		String rot_str = obj.get("m_LocalRotation", "{x: 0, y: 0, z: 0, w: 1}");
+		String scale_str = obj.get("m_LocalScale", "{x: 1, y: 1, z: 1}");
+
+		Vector3 position = parse_vector3(pos_str);
+		Vector3 scale = parse_vector3(scale_str);
+
+		node->set_position(position);
+		node->set_scale(scale);
+
+		// Add to root
+		root->add_child(node);
+		node->set_owner(root);
+	}
+
+	return root;
+}
+
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	String out_path = p_asset.pathname;
 	if (!out_path.ends_with(".tscn")) {
@@ -462,11 +575,17 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	
+	// Parse YAML objects
+	HashMap<int, Dictionary> objects;
+	parse_yaml_objects(yaml, objects);
+
+	// Build scene tree from parsed objects
+	Node3D *root = build_scene_tree(objects, p_asset.pathname.get_file().get_basename());
+
+	// Create and save packed scene
 	Ref<PackedScene> scene;
 	scene.instantiate();
-	Node3D *root = memnew(Node3D);
-	root->set_name(p_asset.pathname.get_file().get_basename());
-	root->set_meta("unity_yaml", yaml);
 	scene->pack(root);
 
 	return ResourceSaver::save(scene, out_path);
@@ -480,11 +599,17 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
+	
+	// Parse YAML objects
+	HashMap<int, Dictionary> objects;
+	parse_yaml_objects(yaml, objects);
+
+	// Build scene tree from parsed objects
+	Node3D *root = build_scene_tree(objects, p_asset.pathname.get_file().get_basename());
+
+	// Create and save packed scene
 	Ref<PackedScene> scene;
 	scene.instantiate();
-	Node3D *root = memnew(Node3D);
-	root->set_name(p_asset.pathname.get_file().get_basename());
-	root->set_meta("unity_yaml", yaml);
 	scene->pack(root);
 
 	return ResourceSaver::save(scene, out_path);
