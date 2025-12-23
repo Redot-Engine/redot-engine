@@ -455,6 +455,7 @@ void UnityImporterPlugin::_bind_methods() {
 
 void UnityImporterPlugin::_notification(int p_what) {
 	if (p_what == NOTIFICATION_ENTER_TREE) {
+		print_line("UnityImporterPlugin::_notification ENTER_TREE - registering import plugins");
 		add_tool_menu_item(TTR("Import Unity Package..."), callable_mp(this, &UnityImporterPlugin::_import_unity_packages));
 		add_tool_menu_item(TTR("Install UnityToGodot Toolkit..."), callable_mp(this, &UnityImporterPlugin::_install_unity_to_godot));
 		add_tool_menu_item(TTR("Install Shaderlab2GodotSL..."), callable_mp(this, &UnityImporterPlugin::_install_shaderlab2godotsl));
@@ -468,6 +469,7 @@ void UnityImporterPlugin::_notification(int p_what) {
 		add_import_plugin(scene_importer);
 		add_import_plugin(mat_importer);
 		add_import_plugin(script_importer);
+		print_line("UnityImporterPlugin: Import plugins registered successfully");
 	}
 	if (p_what == NOTIFICATION_EXIT_TREE) {
 		remove_tool_menu_item(TTR("Import Unity Package..."));
