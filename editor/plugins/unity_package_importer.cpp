@@ -455,11 +455,9 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
-	String out_path = p_asset.pathname;
-	if (!out_path.ends_with(".tscn")) {
-		out_path += ".tscn";
-	}
-	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
+	// p_asset.pathname is already the full output path with hash, e.g.:
+	// res://.godot/imported/Demo1.unity-9c3dd8e47644ef2c75f549b228e2e25a.tscn
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(p_asset.pathname) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	
@@ -474,15 +472,17 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	Vector<String> lines = yaml.split("\n");
 	String current_game_object_name = "GameObject";
 	bool in_game_object = false;
+	int game_object_count = 0;
 	
 	for (int i = 0; i < lines.size(); i++) {
 		String line = lines[i];
 		String trimmed = line.strip_edges();
 		
-		// Detect gameObject sections
+		// Detect gameObject sections (type ID 1)
 		if (trimmed.contains("--- !u!1")) {
 			in_game_object = true;
 			current_game_object_name = "GameObject";
+			game_object_count++;
 		}
 		
 		// Extract m_Name from gameObjects
@@ -499,7 +499,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		}
 		
 		// Create node when transitioning out of gameObject section
-		if (in_game_object && trimmed.begins_with("---") && i > 0) {
+		if (in_game_object && trimmed.begins_with("---") && game_object_count > 1) {
 			Node3D *child = memnew(Node3D);
 			child->set_name(current_game_object_name);
 			root->add_child(child);
@@ -517,15 +517,13 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	}
 	
 	scene->pack(root);
-	return ResourceSaver::save(scene, out_path);
+	print_line(vformat("Scene conversion: packed %d nodes", root->get_child_count() + 1));
+	return ResourceSaver::save(scene, p_asset.pathname);
 }
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
-	String out_path = p_asset.pathname;
-	if (!out_path.ends_with(".tscn")) {
-		out_path += ".tscn";
-	}
-	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
+	// p_asset.pathname is already the full output path with hash
+	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(p_asset.pathname) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	
@@ -540,15 +538,17 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	Vector<String> lines = yaml.split("\n");
 	String current_game_object_name = "GameObject";
 	bool in_game_object = false;
+	int game_object_count = 0;
 	
 	for (int i = 0; i < lines.size(); i++) {
 		String line = lines[i];
 		String trimmed = line.strip_edges();
 		
-		// Detect gameObject sections
+		// Detect gameObject sections (type ID 1)
 		if (trimmed.contains("--- !u!1")) {
 			in_game_object = true;
 			current_game_object_name = "GameObject";
+			game_object_count++;
 		}
 		
 		// Extract m_Name from gameObjects
@@ -565,7 +565,7 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		}
 		
 		// Create node when transitioning out of gameObject section
-		if (in_game_object && trimmed.begins_with("---") && i > 0) {
+		if (in_game_object && trimmed.begins_with("---") && game_object_count > 1) {
 			Node3D *child = memnew(Node3D);
 			child->set_name(current_game_object_name);
 			root->add_child(child);
@@ -583,7 +583,8 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	}
 	
 	scene->pack(root);
-	return ResourceSaver::save(scene, out_path);
+	print_line(vformat("Prefab conversion: packed %d nodes", root->get_child_count() + 1));
+	return ResourceSaver::save(scene, p_asset.pathname);
 }
 
 Error UnityAssetConverter::convert_audio(const UnityAsset &p_asset) {
