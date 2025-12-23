@@ -318,6 +318,9 @@ static String _convert_csharp_to_gd(const String &p_source_code) {
 }
 
 Error UnityAnimImportPlugin::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	print_line("===== ANIM IMPORT CALLED =====");
+	print_line(vformat("Source: %s, Save: %s", p_source_file, p_save_path));
+	
 	PackedByteArray bytes;
 	Error r = _read_file_bytes(p_source_file, bytes);
 	if (r != OK) {
