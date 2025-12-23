@@ -62,7 +62,6 @@ class EditorAssetInstaller : public ConfirmationDialog {
 	HashSet<String> asset_files;
 	HashMap<String, String> mapped_files;
 	HashMap<String, TreeItem *> file_item_map;
-	HashMap<String, UnityAsset> unity_assets;  // For .unitypackage files
 
 	TreeItem *first_file_conflict = nullptr;
 

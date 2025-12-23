@@ -111,10 +111,10 @@ bool EditorAssetInstaller::_is_item_checked(const String &p_source_path) const {
 void EditorAssetInstaller::open_asset(const String &p_path, bool p_autoskip_toplevel) {
 	package_path = p_path;
 	asset_files.clear();
-	unity_assets.clear();
 
 	// Check if this is a .unitypackage file (tar.gz format)
 	if (p_path.get_extension().to_lower() == "unitypackage") {
+		HashMap<String, UnityAsset> unity_assets;
 		Error err = UnityPackageParser::parse_unitypackage(p_path, unity_assets);
 		
 		if (err != OK) {
@@ -536,7 +536,15 @@ void EditorAssetInstaller::_install_asset() {
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 
 	// Check if this is a Unity package installation
-	if (package_path.get_extension().to_lower() == "unitypackage" && !unity_assets.is_empty()) {
+	if (package_path.get_extension().to_lower() == "unitypackage") {
+		HashMap<String, UnityAsset> unity_assets;
+		Error err = UnityPackageParser::parse_unitypackage(package_path, unity_assets);
+		
+		if (err != OK) {
+			EditorToaster::get_singleton()->popup_str(vformat(TTR("Error installing asset \"%s\": Failed to parse Unity package."), asset_name), EditorToaster::SEVERITY_ERROR);
+			return;
+		}
+
 		ProgressDialog::get_singleton()->add_task("uncompress", TTR("Uncompressing Assets"), unity_assets.size());
 
 		int idx = 0;
@@ -558,26 +566,28 @@ void EditorAssetInstaller::_install_asset() {
 			String target_path = target_dir_path.path_join(E->value);
 
 			// Check if this is a directory (based on file_item_map metadata)
-			Dictionary asset_meta = file_item_map[source_name]->get_metadata(0);
-			bool is_dir = asset_meta.get("is_dir", false);
+			if (file_item_map.has(source_name)) {
+				Dictionary asset_meta = file_item_map[source_name]->get_metadata(0);
+				bool is_dir = asset_meta.get("is_dir", false);
 
-			if (is_dir) {
-				if (target_path.ends_with("/")) {
-					target_path = target_path.substr(0, target_path.length() - 1);
-				}
-				da->make_dir_recursive(target_path);
-			} else {
-				// Write the asset data to the target file
-				da->make_dir_recursive(target_path.get_base_dir());
-
-				Ref<FileAccess> f = FileAccess::open(target_path, FileAccess::WRITE);
-				if (f.is_valid()) {
-					f->store_buffer(asset.asset_data.ptr(), asset.asset_data.size());
+				if (is_dir) {
+					if (target_path.ends_with("/")) {
+						target_path = target_path.substr(0, target_path.length() - 1);
+					}
+					da->make_dir_recursive(target_path);
 				} else {
-					failed_files.push_back(target_path);
-				}
+					// Write the asset data to the target file
+					da->make_dir_recursive(target_path.get_base_dir());
 
-				ProgressDialog::get_singleton()->task_step("uncompress", target_path, idx);
+					Ref<FileAccess> f = FileAccess::open(target_path, FileAccess::WRITE);
+					if (f.is_valid()) {
+						f->store_buffer(asset.asset_data.ptr(), asset.asset_data.size());
+					} else {
+						failed_files.push_back(target_path);
+					}
+
+					ProgressDialog::get_singleton()->task_step("uncompress", target_path, idx);
+				}
 			}
 
 			idx++;
