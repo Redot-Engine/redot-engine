@@ -541,6 +541,9 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 	Ref<PackedScene> scene;
 	scene.instantiate();
 	
+	Node3D *root = memnew(Node3D);
+	root->set_name(p_asset.pathname.get_file().get_basename());
+	
 	// Parse YAML to extract gameObjects and their names
 	Vector<String> lines = yaml.split("\n");
 	String current_game_object_name = "GameObject";
