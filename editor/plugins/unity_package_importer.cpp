@@ -455,11 +455,10 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
-	print_line(vformat("convert_scene called with pathname: %s", p_asset.pathname));
 	// p_asset.pathname is already the full output path with hash
 	Error dir_result = ensure_parent_dir_for_file(p_asset.pathname);
 	if (dir_result != OK) {
-		print_error(vformat("Cannot create target directory for scene. Path: %s, Error: %d", p_asset.pathname, dir_result));
+		print_error(vformat("Failed to create directory for scene: %s", p_asset.pathname));
 		return ERR_CANT_CREATE;
 	}
 
