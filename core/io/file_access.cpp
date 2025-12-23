@@ -909,10 +909,7 @@ String FileAccess::get_multiple_md5(const Vector<String> &p_file) {
 
 	for (int i = 0; i < p_file.size(); i++) {
 		Ref<FileAccess> f = FileAccess::open(p_file[i], READ);
-		if (f.is_null()) {
-			// Silently skip files that don't exist yet (they may be imported resources)
-			continue;
-		}
+		
 
 		unsigned char step[32768];
 

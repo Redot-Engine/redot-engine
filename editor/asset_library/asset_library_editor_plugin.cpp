@@ -723,7 +723,7 @@ void EditorAssetLibrary::_update_repository_options() {
 	// Add Unity Asset Store as a repository option for Unity asset import
 	// Note: This is a placeholder - Unity Asset Store requires authentication
 	// Users should download .unitypackage files manually and import via FileSystem
-	default_urls["Unity Asset Store (Manual Download)"] = "https://assetstore.unity.com/";
+	// default_urls["Unity Asset Store (Manual Download)"] = "https://assetstore.unity.com/";
 	Dictionary available_urls = _EDITOR_DEF("asset_library/available_urls", default_urls, true);
 	repository->clear();
 	int i = 0;
