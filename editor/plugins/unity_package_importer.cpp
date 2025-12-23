@@ -487,12 +487,17 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		
 		// Extract m_Name from gameObjects
 		if (in_game_object && trimmed.begins_with("m_Name:")) {
-			// Extract the name value
+			// Extract the name value after the colon
 			int colon = trimmed.find(":");
 			String name_value = trimmed.substr(colon + 1).strip_edges();
+			
+			// Handle both quoted ("name") and unquoted (name) formats
 			if (name_value.begins_with("\"") && name_value.ends_with("\"")) {
+				// Remove quotes
 				name_value = name_value.substr(1, name_value.length() - 2);
 			}
+			
+			// Only use non-empty names
 			if (!name_value.is_empty()) {
 				current_game_object_name = name_value;
 			}
@@ -553,12 +558,17 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		
 		// Extract m_Name from gameObjects
 		if (in_game_object && trimmed.begins_with("m_Name:")) {
-			// Extract the name value
+			// Extract the name value after the colon
 			int colon = trimmed.find(":");
 			String name_value = trimmed.substr(colon + 1).strip_edges();
+			
+			// Handle both quoted ("name") and unquoted (name) formats
 			if (name_value.begins_with("\"") && name_value.ends_with("\"")) {
+				// Remove quotes
 				name_value = name_value.substr(1, name_value.length() - 2);
 			}
+			
+			// Only use non-empty names
 			if (!name_value.is_empty()) {
 				current_game_object_name = name_value;
 			}
