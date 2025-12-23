@@ -276,7 +276,11 @@ static String _convert_csharp_to_gd(const String &p_source_code) {
 	for (int f = 0; f < fields.size(); f++) {
 		String fld = fields[f];
 		Vector<String> bits = fld.replace(";", "").split(" ");
-		bits.erase_all("");
+		for (int bi = bits.size() - 1; bi >= 0; bi--) {
+			if (bits[bi].is_empty()) {
+				bits.remove_at(bi);
+			}
+		}
 		if (bits.size() >= 2) {
 			String type = bits[bits.size() - 2];
 			String name = bits[bits.size() - 1];
