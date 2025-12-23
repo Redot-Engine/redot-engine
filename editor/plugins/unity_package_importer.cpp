@@ -594,6 +594,7 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 	HashMap<String, String> fileID_to_name;
 	HashMap<String, String> fileID_to_parent;
 	HashMap<String, String> fileID_to_prefab_guid;
+	HashMap<String, String> fileID_to_prefab_instance_guid;  // For PrefabInstance GUIDs
 	HashMap<String, Vector3> fileID_to_position;
 	HashMap<String, Quaternion> fileID_to_rotation;
 	HashMap<String, Vector3> fileID_to_scale;
