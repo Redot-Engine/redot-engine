@@ -455,70 +455,59 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
-	// p_asset.pathname is already the full output path with hash, e.g.:
-	// res://.godot/imported/Demo1.unity-9c3dd8e47644ef2c75f549b228e2e25a.tscn
+	// p_asset.pathname is already the full output path with hash
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(p_asset.pathname) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	
-	// Create a proper scene with nodes from YAML parsing
-	Ref<PackedScene> scene;
-	scene.instantiate();
-	
+	// Create scene and root node
+	Ref<PackedScene> scene = memnew(PackedScene);
 	Node3D *root = memnew(Node3D);
 	root->set_name(p_asset.pathname.get_file().get_basename());
 	
-	// Parse YAML to extract gameObjects and their names
+	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
 	String current_game_object_name = "GameObject";
 	bool in_game_object = false;
-	int game_object_count = 0;
 	
 	for (int i = 0; i < lines.size(); i++) {
-		String line = lines[i];
-		String trimmed = line.strip_edges();
+		String trimmed = lines[i].strip_edges();
 		
-		// Detect gameObject sections (type ID 1)
+		// Detect GameObject sections (type ID 1)
 		if (trimmed.contains("--- !u!1")) {
-			// If we were in a previous GameObject, save it now
-			if (in_game_object && game_object_count > 0) {
+			// If we were in a previous GameObject, create node
+			if (in_game_object && !current_game_object_name.is_empty()) {
 				Node3D *child = memnew(Node3D);
 				child->set_name(current_game_object_name);
 				root->add_child(child);
 				child->set_owner(root);
 			}
 			
-			// Start new GameObject
 			in_game_object = true;
 			current_game_object_name = "GameObject";
-			game_object_count++;
 		}
-		// Detect end of GameObject (any other section starting with ---)
+		// End of current GameObject section (any other --- marker)
 		else if (in_game_object && trimmed.begins_with("---")) {
-			// End of previous GameObject section, will be saved on next GameObject or at end
 			in_game_object = false;
 		}
 		
-		// Extract m_Name only from WITHIN GameObject sections
+		// Extract GameObject name
 		if (in_game_object && trimmed.begins_with("m_Name:")) {
-			// Extract the name value after the colon
 			int colon = trimmed.find(":");
 			String name_value = trimmed.substr(colon + 1).strip_edges();
 			
-			// Handle both quoted ("name") and unquoted (name) formats
+			// Remove quotes if present
 			if (name_value.begins_with("\"") && name_value.ends_with("\"")) {
-				// Remove quotes
 				name_value = name_value.substr(1, name_value.length() - 2);
 			}
 			
-			// Only use non-empty names
 			if (!name_value.is_empty()) {
 				current_game_object_name = name_value;
 			}
 		}
 	}
 	
-	// Add the last GameObject if we were in one
+	// Add final GameObject if needed
 	if (in_game_object && !current_game_object_name.is_empty()) {
 		Node3D *child = memnew(Node3D);
 		child->set_name(current_game_object_name);
@@ -526,9 +515,18 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		child->set_owner(root);
 	}
 	
+	// Pack the scene properly
 	scene->pack(root);
-	print_line(vformat("Scene conversion: packed %d nodes", root->get_child_count() + 1));
-	return ResourceSaver::save(scene, p_asset.pathname);
+	
+	// Save and verify
+	Error save_result = ResourceSaver::save(scene, p_asset.pathname);
+	if (save_result == OK) {
+		print_line(vformat("Scene conversion: packed %d nodes from %s", root->get_child_count() + 1, p_asset.pathname.get_file()));
+	} else {
+		print_error(vformat("Failed to save scene: %s (error: %d)", p_asset.pathname, save_result));
+	}
+	
+	return save_result;
 }
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
@@ -537,64 +535,54 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
 	
-	// Create a proper scene with nodes from YAML parsing
-	Ref<PackedScene> scene;
-	scene.instantiate();
-	
+	// Create scene and root node
+	Ref<PackedScene> scene = memnew(PackedScene);
 	Node3D *root = memnew(Node3D);
 	root->set_name(p_asset.pathname.get_file().get_basename());
 	
-	// Parse YAML to extract gameObjects and their names
+	// Parse YAML to extract GameObjects and build node hierarchy
 	Vector<String> lines = yaml.split("\n");
 	String current_game_object_name = "GameObject";
 	bool in_game_object = false;
-	int game_object_count = 0;
 	
 	for (int i = 0; i < lines.size(); i++) {
-		String line = lines[i];
-		String trimmed = line.strip_edges();
+		String trimmed = lines[i].strip_edges();
 		
-		// Detect gameObject sections (type ID 1)
+		// Detect GameObject sections (type ID 1)
 		if (trimmed.contains("--- !u!1")) {
-			// If we were in a previous GameObject, save it now
-			if (in_game_object && game_object_count > 0) {
+			// If we were in a previous GameObject, create node
+			if (in_game_object && !current_game_object_name.is_empty()) {
 				Node3D *child = memnew(Node3D);
 				child->set_name(current_game_object_name);
 				root->add_child(child);
 				child->set_owner(root);
 			}
 			
-			// Start new GameObject
 			in_game_object = true;
 			current_game_object_name = "GameObject";
-			game_object_count++;
 		}
-		// Detect end of GameObject (any other section starting with ---)
+		// End of current GameObject section (any other --- marker)
 		else if (in_game_object && trimmed.begins_with("---")) {
-			// End of previous GameObject section, will be saved on next GameObject or at end
 			in_game_object = false;
 		}
 		
-		// Extract m_Name only from WITHIN GameObject sections
+		// Extract GameObject name
 		if (in_game_object && trimmed.begins_with("m_Name:")) {
-			// Extract the name value after the colon
 			int colon = trimmed.find(":");
 			String name_value = trimmed.substr(colon + 1).strip_edges();
 			
-			// Handle both quoted ("name") and unquoted (name) formats
+			// Remove quotes if present
 			if (name_value.begins_with("\"") && name_value.ends_with("\"")) {
-				// Remove quotes
 				name_value = name_value.substr(1, name_value.length() - 2);
 			}
 			
-			// Only use non-empty names
 			if (!name_value.is_empty()) {
 				current_game_object_name = name_value;
 			}
 		}
 	}
 	
-	// Add the last GameObject if we were in one
+	// Add final GameObject if needed
 	if (in_game_object && !current_game_object_name.is_empty()) {
 		Node3D *child = memnew(Node3D);
 		child->set_name(current_game_object_name);
@@ -602,9 +590,18 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		child->set_owner(root);
 	}
 	
+	// Pack the scene properly
 	scene->pack(root);
-	print_line(vformat("Prefab conversion: packed %d nodes", root->get_child_count() + 1));
-	return ResourceSaver::save(scene, p_asset.pathname);
+	
+	// Save and verify
+	Error save_result = ResourceSaver::save(scene, p_asset.pathname);
+	if (save_result == OK) {
+		print_line(vformat("Prefab conversion: packed %d nodes from %s", root->get_child_count() + 1, p_asset.pathname.get_file()));
+	} else {
+		print_error(vformat("Failed to save prefab: %s (error: %d)", p_asset.pathname, save_result));
+	}
+	
+	return save_result;
 }
 
 Error UnityAssetConverter::convert_audio(const UnityAsset &p_asset) {
