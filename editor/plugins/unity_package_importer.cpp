@@ -436,7 +436,10 @@ Error UnityAssetConverter::convert_material(const UnityAsset &p_asset, const Has
 		}
 	}
 
-	String out_path = p_asset.pathname.get_basename() + ".tres";
+	String out_path = p_asset.pathname;
+	if (!out_path.ends_with(".tres")) {
+		out_path += ".tres";
+	}
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for material.");
 	Error save_err = ResourceSaver::save(material, out_path);
 	return save_err;
@@ -452,7 +455,10 @@ Error UnityAssetConverter::convert_model(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
-	String out_path = p_asset.pathname.get_basename() + ".tscn";
+	String out_path = p_asset.pathname;
+	if (!out_path.ends_with(".tscn")) {
+		out_path += ".tscn";
+	}
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for scene.");
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
@@ -467,7 +473,10 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 }
 
 Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
-	String out_path = p_asset.pathname.get_basename() + ".tscn";
+	String out_path = p_asset.pathname;
+	if (!out_path.ends_with(".tscn")) {
+		out_path += ".tscn";
+	}
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for prefab.");
 
 	String yaml = String::utf8((const char *)p_asset.asset_data.ptr(), p_asset.asset_data.size());
@@ -497,7 +506,10 @@ Error UnityAssetConverter::convert_animation(const UnityAsset &p_asset) {
 	anim->set_length(0.0);
 	anim->set_meta("unity_yaml", yaml);
 
-	String out_path = p_asset.pathname.get_basename() + ".tres";
+	String out_path = p_asset.pathname;
+	if (!out_path.ends_with(".tres")) {
+		out_path += ".tres";
+	}
 	ERR_FAIL_COND_V_MSG(ensure_parent_dir_for_file(out_path) != OK, ERR_CANT_CREATE, "Cannot create target directory for animation.");
 	return ResourceSaver::save(anim, out_path);
 }
