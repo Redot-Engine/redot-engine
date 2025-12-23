@@ -777,25 +777,33 @@ Error UnityAssetConverter::convert_scene(const UnityAsset &p_asset) {
 		if (fileID_to_node.has(child_id)) {
 			Node3D *child = fileID_to_node[child_id];
 
-			if (parent_id == "0" || !fileID_to_node.has(parent_id)) {
-				// Root level child
-				root->add_child(child);
-				child->set_owner(root);
+			if (parent_id == "0" || parent_id.is_empty() || !fileID_to_node.has(parent_id)) {
+				// Root level child - add to root
+				if (!child->get_parent()) {
+					root->add_child(child);
+					child->set_owner(root);
+				}
 			} else {
 				// Has a parent node
 				Node3D *parent = fileID_to_node[parent_id];
-				parent->add_child(child);
-				child->set_owner(root);
+				if (!child->get_parent()) {
+					parent->add_child(child);
+					child->set_owner(root);
+				}
 			}
 		}
 	}
 
-	// Add orphan nodes directly to root
+	// Add any remaining orphan nodes (nodes without explicit parent entries) directly to root
 	for (const KeyValue<String, Node3D *> &E : fileID_to_node) {
+		String file_id = E.key;
 		Node3D *node = E.value;
+		
+		// Only add to root if not already added
 		if (!node->get_parent()) {
 			root->add_child(node);
 			node->set_owner(root);
+			print_verbose(vformat("Scene: Added orphan node '%s' to root", node->get_name()));
 		}
 	}
 
@@ -1040,25 +1048,33 @@ Error UnityAssetConverter::convert_prefab(const UnityAsset &p_asset) {
 		if (fileID_to_node.has(child_id)) {
 			Node3D *child = fileID_to_node[child_id];
 
-			if (parent_id == "0" || !fileID_to_node.has(parent_id)) {
-				// Root level child
-				root->add_child(child);
-				child->set_owner(root);
+			if (parent_id == "0" || parent_id.is_empty() || !fileID_to_node.has(parent_id)) {
+				// Root level child - add to root
+				if (!child->get_parent()) {
+					root->add_child(child);
+					child->set_owner(root);
+				}
 			} else {
 				// Has a parent node
 				Node3D *parent = fileID_to_node[parent_id];
-				parent->add_child(child);
-				child->set_owner(root);
+				if (!child->get_parent()) {
+					parent->add_child(child);
+					child->set_owner(root);
+				}
 			}
 		}
 	}
 
-	// Add orphan nodes directly to root
+	// Add any remaining orphan nodes (nodes without explicit parent entries) directly to root
 	for (const KeyValue<String, Node3D *> &E : fileID_to_node) {
+		String file_id = E.key;
 		Node3D *node = E.value;
+		
+		// Only add to root if not already added
 		if (!node->get_parent()) {
 			root->add_child(node);
 			node->set_owner(root);
+			print_verbose(vformat("Prefab: Added orphan node '%s' to root", node->get_name()));
 		}
 	}
 

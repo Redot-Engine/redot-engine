@@ -141,13 +141,13 @@ def add_transform_extraction():
                                 else:
                                     output_lines.append(lines[j])
                                 j += 1
-            
-            final_content = '\n'.join(output_lines)
-            
+
+            final_content = "\n".join(output_lines)
+
             # Write back
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 f.write(final_content)
-            
+
             print("✓ Successfully added transform extraction to convert_scene")
             if added_to_prefab:
                 print("✓ Successfully added transform extraction to convert_prefab")
@@ -158,5 +158,5 @@ def add_transform_extraction():
     else:
         print(f"Error: Expected 2+ occurrences, found {count}")
 
-if __name__ == '__main__':
-    add_transform_extraction()
+
+if __name__ == "__main__":
