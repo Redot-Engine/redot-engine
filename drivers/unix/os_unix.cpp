@@ -437,11 +437,11 @@ Dictionary OS_Unix::get_memory_info() const {
 	if (phy_mem != 0) {
 		meminfo["physical"] = phy_mem;
 	}
-	if (vmstat.free_count * (int64_t)pagesize != 0) {
-		meminfo["free"] = vmstat.free_count * (int64_t)pagesize;
+	if (((vmstat.free_count - vmstat.speculative_count) + vmstat.external_page_count) * (int64_t)pagesize != 0) {
+		meminfo["free"] = ((vmstat.free_count - vmstat.speculative_count) + vmstat.external_page_count) * (int64_t)pagesize;
 	}
-	if (swap_used.xsu_avail + vmstat.free_count * (int64_t)pagesize != 0) {
-		meminfo["available"] = swap_used.xsu_avail + vmstat.free_count * (int64_t)pagesize;
+	if (swap_used.xsu_avail + ((vmstat.free_count - vmstat.speculative_count) + vmstat.external_page_count) * (int64_t)pagesize != 0) {
+		meminfo["available"] = swap_used.xsu_avail + ((vmstat.free_count - vmstat.speculative_count) + vmstat.external_page_count) * (int64_t)pagesize;
 	}
 #elif defined(__FreeBSD__)
 	int pagesize = 0;
