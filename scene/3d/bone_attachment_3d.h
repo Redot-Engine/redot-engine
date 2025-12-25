@@ -98,5 +98,3 @@ public:
 
 	BoneAttachment3D();
 };
-
-#endif // BONE_ATTACHMENT_3D_H
