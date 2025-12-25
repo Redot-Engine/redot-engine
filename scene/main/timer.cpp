@@ -76,6 +76,7 @@ void Timer::_notification(int p_what) {
 				emit_signal(SNAME("timeout"));
 			}
 		} break;
+
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			if (!processing || timer_process_callback == TIMER_PROCESS_IDLE || !is_physics_processing_internal()) {
 				return;
@@ -94,6 +95,7 @@ void Timer::_notification(int p_what) {
 					}; break;
 				}
 			}
+
 			if (time_left < 0) {
 				if (!one_shot) {
 					time_left += wait_time;
@@ -102,8 +104,7 @@ void Timer::_notification(int p_what) {
 				}
 				emit_signal(SNAME("timeout"));
 			}
-			break;
-		}
+		} break;
 	}
 }
 
@@ -193,13 +194,13 @@ void Timer::set_timer_process_callback(TimerProcessCallback p_callback) {
 			if (is_physics_processing_internal()) {
 				set_physics_process_internal(false);
 				set_process_internal(true);
-			};
+			}
 			break;
 		case TIMER_PROCESS_IDLE:
 			if (is_processing_internal()) {
 				set_process_internal(false);
 				set_physics_process_internal(true);
-			};
+			}
 			break;
 	}
 	timer_process_callback = p_callback;

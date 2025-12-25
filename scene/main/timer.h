@@ -94,8 +94,6 @@ public:
 	void set_timer_process_type(TimerProcessType p_type);
 	TimerProcessType get_timer_process_type() const;
 
-	Timer();
-
 private:
 	TimerProcessCallback timer_process_callback = TIMER_PROCESS_IDLE;
 	TimerProcessType timer_process_type = TIMER_PROCESS_TYPE_TIME;
