@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PANEL_CONTAINER_H
-#define PANEL_CONTAINER_H
+#pragma once
 
 #include "scene/gui/container.h"
 
@@ -54,5 +53,3 @@ public:
 
 	PanelContainer();
 };
-
-#endif // PANEL_CONTAINER_H

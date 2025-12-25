@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_NETWORK_PROFILER_H
-#define EDITOR_NETWORK_PROFILER_H
+#pragma once
 
 #include "../multiplayer_debugger.h"
 
@@ -122,5 +121,3 @@ public:
 
 	EditorNetworkProfiler();
 };
-
-#endif // EDITOR_NETWORK_PROFILER_H

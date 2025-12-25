@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef HTTP_REQUEST_H
-#define HTTP_REQUEST_H
+#pragma once
 
 #include "core/io/http_client.h"
 #include "core/io/stream_peer_gzip.h"
@@ -169,5 +168,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(HTTPRequest::Result);
-
-#endif // HTTP_REQUEST_H

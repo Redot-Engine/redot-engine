@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef STRING_BUILDER_H
-#define STRING_BUILDER_H
+#pragma once
 
 #include "core/string/ustring.h"
 #include "core/templates/local_vector.h"
@@ -82,5 +81,3 @@ public:
 
 	StringBuilder() {}
 };
-
-#endif // STRING_BUILDER_H

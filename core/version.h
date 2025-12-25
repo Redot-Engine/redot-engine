@@ -30,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef VERSION_H
-#define VERSION_H
+#pragma once
 
-#include "core/version_generated.gen.h"
+#include "core/version_generated.gen.h" // IWYU pragma: export
 
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers) FIXME: MinGW compilation fails when changing to C++ Header.
 
 // Copied from typedefs.h to stay lean.
 #ifndef _STR
@@ -50,44 +49,69 @@
 // Defines the main "branch" version. Patch versions in this branch should be
 // forward-compatible.
 // Example: "3.1"
-#define VERSION_BRANCH _MKSTR(VERSION_MAJOR) "." _MKSTR(VERSION_MINOR)
-#if VERSION_PATCH
+#define REDOT_VERSION_BRANCH _MKSTR(REDOT_VERSION_MAJOR) "." _MKSTR(REDOT_VERSION_MINOR)
+#if REDOT_VERSION_PATCH
 // Example: "3.1.4"
-#define VERSION_NUMBER VERSION_BRANCH "." _MKSTR(VERSION_PATCH)
+#define REDOT_VERSION_NUMBER REDOT_VERSION_BRANCH "." _MKSTR(REDOT_VERSION_PATCH)
 #else // patch is 0, we don't include it in the "pretty" version number.
 // Example: "3.1" instead of "3.1.0"
-#define VERSION_NUMBER VERSION_BRANCH
-#endif // VERSION_PATCH
+#define REDOT_VERSION_NUMBER REDOT_VERSION_BRANCH
+#endif // REDOT_VERSION_PATCH
+
+#define GODOT_VERSION_BRANCH _MKSTR(GODOT_VERSION_MAJOR) "." _MKSTR(GODOT_VERSION_MINOR)
+#if GODOT_VERSION_PATCH
+// Example: "3.1.4"
+#define GODOT_VERSION_NUMBER GODOT_VERSION_BRANCH "." _MKSTR(GODOT_VERSION_PATCH)
+#else // patch is 0, we don't include it in the "pretty" version number.
+#define GODOT_VERSION_NUMBER GODOT_VERSION_BRANCH
+#endif // GODOT_VERSION_PATCH
 
 // Version number encoded as hexadecimal int with one byte for each number,
 // for easy comparison from code.
 // Example: 3.1.4 will be 0x030104, making comparison easy from script.
-#define VERSION_HEX 0x10000 * VERSION_MAJOR + 0x100 * VERSION_MINOR + VERSION_PATCH
+#define REDOT_VERSION_HEX 0x10000 * REDOT_VERSION_MAJOR + 0x100 * REDOT_VERSION_MINOR + REDOT_VERSION_PATCH
 
-// Describes the full configuration of that Redot version, including the version number,
-// the status (beta, stable, etc.) and potential module-specific features (e.g. mono).
-// Example: "3.1.4.stable.mono"
-#if VERSION_STATUS_VERSION == 0
-#define VERSION_FULL_CONFIG VERSION_NUMBER "." VERSION_STATUS VERSION_MODULE_CONFIG
+// Describes the full configuration of that Godot version, including the version number,
+// the status (beta, stable, etc.), potential module-specific features (e.g. mono)
+// and double-precision status.
+// Example: "3.1.4.stable.mono.double"
+#ifdef REAL_T_IS_DOUBLE
+#if REDOT_VERSION_STATUS_VERSION == 0
+#define REDOT_VERSION_FULL_CONFIG REDOT_VERSION_NUMBER "." REDOT_VERSION_STATUS REDOT_VERSION_MODULE_CONFIG ".double"
 #else
-#define VERSION_FULL_CONFIG VERSION_NUMBER "." VERSION_STATUS "." _MKSTR(VERSION_STATUS_VERSION) VERSION_MODULE_CONFIG
+#define REDOT_VERSION_FULL_CONFIG REDOT_VERSION_NUMBER "." REDOT_VERSION_STATUS "." _MKSTR(REDOT_VERSION_STATUS_VERSION) REDOT_VERSION_MODULE_CONFIG ".double"
+#endif
+#else
+#if REDOT_VERSION_STATUS_VERSION == 0
+#define REDOT_VERSION_FULL_CONFIG REDOT_VERSION_NUMBER "." REDOT_VERSION_STATUS REDOT_VERSION_MODULE_CONFIG
+#else
+#define REDOT_VERSION_FULL_CONFIG REDOT_VERSION_NUMBER "." REDOT_VERSION_STATUS "." _MKSTR(REDOT_VERSION_STATUS_VERSION) REDOT_VERSION_MODULE_CONFIG
+#endif
 #endif
 
-// Similar to VERSION_FULL_CONFIG, but also includes the (potentially custom) VERSION_BUILD
+#define GODOT_VERSION_FULL_CONFIG GODOT_VERSION_NUMBER "." GODOT_VERSION_STATUS REDOT_VERSION_MODULE_CONFIG
+
+// Similar to REDOT_VERSION_FULL_CONFIG, but also includes the (potentially custom) REDOT_VERSION_BUILD
 // description (e.g. official, custom_build, etc.).
-// Example: "3.1.4.stable.mono.official"
-#define VERSION_FULL_BUILD VERSION_FULL_CONFIG "." VERSION_BUILD
+// Example: "3.1.4.stable.mono.double.official"
+#define REDOT_VERSION_FULL_BUILD REDOT_VERSION_FULL_CONFIG "." REDOT_VERSION_BUILD
+
+#define GODOT_VERSION_BUILD "redot." REDOT_VERSION_BUILD
+#define GODOT_VERSION_FULL_BUILD GODOT_VERSION_FULL_CONFIG "." GODOT_VERSION_BUILD
 
 // Same as above, but prepended with Redot's name and a cosmetic "v" for "version".
 // Example: "Redot v3.1.4.stable.official.mono"
-#define VERSION_FULL_NAME VERSION_NAME " v" VERSION_FULL_BUILD
+#define REDOT_VERSION_FULL_NAME REDOT_VERSION_NAME " v" REDOT_VERSION_FULL_BUILD
+
+#define GODOT_VERSION_NAME "Godot Engine"
+#define GODOT_VERSION_FULL_NAME GODOT_VERSION_NAME " v" GODOT_VERSION_FULL_BUILD
 
 // Git commit hash, generated at build time in `core/version_hash.gen.cpp`.
-extern const char *const VERSION_HASH;
+extern const char *const REDOT_VERSION_HASH;
 
 // Git commit date UNIX timestamp (in seconds), generated at build time in `core/version_hash.gen.cpp`.
 // Set to 0 if unknown.
-extern const uint64_t VERSION_TIMESTAMP;
+extern const uint64_t REDOT_VERSION_TIMESTAMP;
 
 // Defines the main "branch" version. Patch versions in this branch should be
 // forward-compatible.
@@ -108,20 +132,6 @@ extern const uint64_t VERSION_TIMESTAMP;
 
 // TODO: determine how to deal with godot compatible versioning behavior
 
-// Describes the full configuration of that Redot version, including the version number,
-// the status (beta, stable, etc.) and potential module-specific features (e.g. mono).
-// Example: "3.1.4.stable.mono"
-// #define GODOT_VERSION_FULL_CONFIG VERSION_NUMBER "." GODOT_VERSION_STATUS VERSION_MODULE_CONFIG
-
-// Similar to GODOT_VERSION_FULL_CONFIG, but also includes the (potentially custom) VERSION_BUILD
-// description (e.g. official, custom_build, etc.).
-// Example: "3.1.4.stable.mono.official"
-// #define GODOT_VERSION_FULL_BUILD GODOT_VERSION_FULL_CONFIG "." GODOT_VERSION_BUILD
-
-// Same as above, but prepended with Redot's name and a cosmetic "v" for "version".
-// Example: "Godot v3.1.4.stable.official.mono"
-// #define GODOT_VERSION_FULL_NAME GODOT_VERSION_NAME " v" GODOT_VERSION_FULL_BUILD
-
 // Git commit hash, generated at build time in `core/version_hash.gen.cpp`.
 // extern const char *const GODOT_VERSION_HASH;
 
@@ -129,4 +139,25 @@ extern const uint64_t VERSION_TIMESTAMP;
 // Set to 0 if unknown.
 // extern const uint64_t GODOT_VERSION_TIMESTAMP;
 
-#endif // VERSION_H
+#ifndef DISABLE_DEPRECATED
+// Compatibility with pre-4.5 modules.
+#define VERSION_SHORT_NAME REDOT_VERSION_SHORT_NAME
+#define VERSION_NAME REDOT_VERSION_NAME
+#define VERSION_MAJOR REDOT_VERSION_MAJOR
+#define VERSION_MINOR REDOT_VERSION_MINOR
+#define VERSION_PATCH REDOT_VERSION_PATCH
+#define VERSION_STATUS REDOT_VERSION_STATUS
+#define VERSION_BUILD REDOT_VERSION_BUILD
+#define VERSION_MODULE_CONFIG REDOT_VERSION_MODULE_CONFIG
+#define VERSION_WEBSITE REDOT_VERSION_WEBSITE
+#define VERSION_DOCS_BRANCH REDOT_VERSION_DOCS_BRANCH
+#define VERSION_DOCS_URL REDOT_VERSION_DOCS_URL
+#define VERSION_BRANCH REDOT_VERSION_BRANCH
+#define VERSION_NUMBER REDOT_VERSION_NUMBER
+#define VERSION_HEX REDOT_VERSION_HEX
+#define VERSION_FULL_CONFIG REDOT_VERSION_FULL_CONFIG
+#define VERSION_FULL_BUILD REDOT_VERSION_FULL_BUILD
+#define VERSION_FULL_NAME REDOT_VERSION_FULL_NAME
+#define VERSION_HASH REDOT_VERSION_HASH
+#define VERSION_TIMESTAMP REDOT_VERSION_TIMESTAMP
+#endif // DISABLE_DEPRECATED

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef UTILITIES_RD_H
-#define UTILITIES_RD_H
+#pragma once
 
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/storage/utilities.h"
@@ -124,5 +123,3 @@ public:
 };
 
 } // namespace RendererRD
-
-#endif // UTILITIES_RD_H

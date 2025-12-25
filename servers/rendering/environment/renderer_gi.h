@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENDERER_GI_H
-#define RENDERER_GI_H
+#pragma once
 
 #include "servers/rendering_server.h"
 
@@ -84,5 +83,3 @@ public:
 
 	virtual void sdfgi_reset() = 0;
 };
-
-#endif // RENDERER_GI_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PAGED_ALLOCATOR_H
-#define PAGED_ALLOCATOR_H
+#pragma once
 
 #include "core/core_globals.h"
 #include "core/os/memory.h"
@@ -40,7 +39,7 @@
 #include "core/typedefs.h"
 
 #include <type_traits>
-#include <typeinfo>
+#include <typeinfo> // IWYU pragma: keep // Used in macro.
 
 template <typename T, bool thread_safe = false, uint32_t DEFAULT_PAGE_SIZE = 4096>
 class PagedAllocator {
@@ -179,5 +178,3 @@ public:
 		}
 	}
 };
-
-#endif // PAGED_ALLOCATOR_H

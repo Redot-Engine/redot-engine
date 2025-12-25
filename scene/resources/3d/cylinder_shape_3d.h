@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CYLINDER_SHAPE_3D_H
-#define CYLINDER_SHAPE_3D_H
+#pragma once
 
 #include "scene/resources/3d/shape_3d.h"
 
@@ -58,5 +57,3 @@ public:
 
 	CylinderShape3D();
 };
-
-#endif // CYLINDER_SHAPE_3D_H

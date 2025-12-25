@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXTURE_RD_H
-#define TEXTURE_RD_H
+#pragma once
 
 // Note, these classes are part of the Rendering Device based renderer.
 // They are included here to ensure the correct order of registration
@@ -160,5 +159,3 @@ public:
 	Texture3DRD();
 	~Texture3DRD();
 };
-
-#endif // TEXTURE_RD_H

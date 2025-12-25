@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_PLAYER_H
-#define AUDIO_STREAM_PLAYER_H
+#pragma once
 
 #include "scene/main/node.h"
 #include "servers/audio_server.h"
@@ -120,5 +119,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(AudioStreamPlayer::MixTarget)
-
-#endif // AUDIO_STREAM_PLAYER_H

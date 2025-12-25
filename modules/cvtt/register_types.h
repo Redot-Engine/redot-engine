@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CVTT_REGISTER_TYPES_H
-#define CVTT_REGISTER_TYPES_H
+#pragma once
 
 #ifdef TOOLS_ENABLED
 
@@ -41,5 +40,3 @@ void initialize_cvtt_module(ModuleInitializationLevel p_level);
 void uninitialize_cvtt_module(ModuleInitializationLevel p_level);
 
 #endif // TOOLS_ENABLED
-
-#endif // CVTT_REGISTER_TYPES_H

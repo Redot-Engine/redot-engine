@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXT_PARAGRAPH_H
-#define TEXT_PARAGRAPH_H
+#pragma once
 
 #include "core/templates/local_vector.h"
 #include "scene/resources/font.h"
@@ -67,6 +66,16 @@ private:
 	Vector<float> tab_stops;
 
 protected:
+#ifndef DISABLE_DEPRECATED
+	void _draw_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, const Color &p_color = Color(1, 1, 1), const Color &p_dc_color = Color(1, 1, 1)) const;
+	void _draw_outline_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1), const Color &p_dc_color = Color(1, 1, 1)) const;
+	void _draw_line_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, int p_line, const Color &p_color = Color(1, 1, 1)) const;
+	void _draw_line_outline_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, int p_line, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1)) const;
+	void _draw_dropcap_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, const Color &p_color = Color(1, 1, 1)) const;
+	void _draw_dropcap_outline_bind_compat_104872(RID p_canvas, const Vector2 &p_pos, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1)) const;
+
+	static void _bind_compatibility_methods();
+#endif
 	static void _bind_methods();
 
 	void _shape_lines() const;
@@ -80,6 +89,7 @@ public:
 
 	void set_direction(TextServer::Direction p_direction);
 	TextServer::Direction get_direction() const;
+	TextServer::Direction get_inferred_direction() const;
 
 	void set_orientation(TextServer::Orientation p_orientation);
 	TextServer::Orientation get_orientation() const;
@@ -132,6 +142,8 @@ public:
 
 	Size2 get_size() const;
 
+	Vector2i get_range() const;
+
 	int get_line_count() const;
 
 	Array get_line_objects(int p_line) const;
@@ -147,14 +159,14 @@ public:
 	Size2 get_dropcap_size() const;
 	int get_dropcap_lines() const;
 
-	void draw(RID p_canvas, const Vector2 &p_pos, const Color &p_color = Color(1, 1, 1), const Color &p_dc_color = Color(1, 1, 1)) const;
-	void draw_outline(RID p_canvas, const Vector2 &p_pos, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1), const Color &p_dc_color = Color(1, 1, 1)) const;
+	void draw(RID p_canvas, const Vector2 &p_pos, const Color &p_color = Color(1, 1, 1), const Color &p_dc_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
+	void draw_outline(RID p_canvas, const Vector2 &p_pos, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1), const Color &p_dc_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
 
-	void draw_line(RID p_canvas, const Vector2 &p_pos, int p_line, const Color &p_color = Color(1, 1, 1)) const;
-	void draw_line_outline(RID p_canvas, const Vector2 &p_pos, int p_line, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1)) const;
+	void draw_line(RID p_canvas, const Vector2 &p_pos, int p_line, const Color &p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
+	void draw_line_outline(RID p_canvas, const Vector2 &p_pos, int p_line, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
 
-	void draw_dropcap(RID p_canvas, const Vector2 &p_pos, const Color &p_color = Color(1, 1, 1)) const;
-	void draw_dropcap_outline(RID p_canvas, const Vector2 &p_pos, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1)) const;
+	void draw_dropcap(RID p_canvas, const Vector2 &p_pos, const Color &p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
+	void draw_dropcap_outline(RID p_canvas, const Vector2 &p_pos, int p_outline_size = 1, const Color &p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
 
 	int hit_test(const Point2 &p_coords) const;
 
@@ -166,5 +178,3 @@ public:
 	TextParagraph();
 	~TextParagraph();
 };
-
-#endif // TEXT_PARAGRAPH_H

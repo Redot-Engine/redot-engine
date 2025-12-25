@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_NODE_PATH_H
-#define TEST_NODE_PATH_H
+#pragma once
 
 #include "core/string/node_path.h"
 
@@ -226,5 +225,3 @@ TEST_CASE("[NodePath] Slice") {
 }
 
 } // namespace TestNodePath
-
-#endif // TEST_NODE_PATH_H

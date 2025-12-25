@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PLIST_H
-#define PLIST_H
+#pragma once
 
 // Property list file format (application/x-plist) parser, property list ASN-1 serialization.
 
@@ -86,6 +85,8 @@ public:
 /*************************************************************************/
 
 class PListNode : public RefCounted {
+	GDSOFTCLASS(PListNode, RefCounted);
+
 	static int _asn1_size_len(uint8_t p_len_octets);
 
 public:
@@ -124,5 +125,3 @@ public:
 	PListNode() {}
 	~PListNode() {}
 };
-
-#endif // PLIST_H

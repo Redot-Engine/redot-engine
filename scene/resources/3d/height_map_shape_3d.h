@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef HEIGHT_MAP_SHAPE_3D_H
-#define HEIGHT_MAP_SHAPE_3D_H
+#pragma once
 
 #include "scene/resources/3d/shape_3d.h"
 
@@ -70,5 +69,3 @@ public:
 
 	HeightMapShape3D();
 };
-
-#endif // HEIGHT_MAP_SHAPE_3D_H

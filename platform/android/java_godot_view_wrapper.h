@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef JAVA_GODOT_VIEW_WRAPPER_H
-#define JAVA_GODOT_VIEW_WRAPPER_H
+#pragma once
 
 #include "jni_utils.h"
 
@@ -68,5 +67,3 @@ public:
 
 	~GodotJavaViewWrapper();
 };
-
-#endif // JAVA_GODOT_VIEW_WRAPPER_H

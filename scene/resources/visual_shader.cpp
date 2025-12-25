@@ -33,7 +33,6 @@
 #include "visual_shader.h"
 
 #include "core/templates/rb_map.h"
-#include "core/templates/vmap.h"
 #include "core/variant/variant_utility.h"
 #include "servers/rendering/shader_types.h"
 #include "visual_shader_nodes.h"
@@ -825,14 +824,6 @@ VisualShaderNodeCustom::VisualShaderNodeCustom() {
 
 /////////////////////////////////////////////////////////
 
-void VisualShader::set_shader_type(Type p_type) {
-	current_type = p_type;
-}
-
-VisualShader::Type VisualShader::get_shader_type() const {
-	return current_type;
-}
-
 void VisualShader::add_varying(const String &p_name, VaryingMode p_mode, VaryingType p_type) {
 	ERR_FAIL_COND(!p_name.is_valid_ascii_identifier());
 	ERR_FAIL_INDEX((int)p_mode, (int)VARYING_MODE_MAX);
@@ -1469,14 +1460,6 @@ void VisualShader::set_mode(Mode p_mode) {
 	notify_property_list_changed();
 }
 
-void VisualShader::set_graph_offset(const Vector2 &p_offset) {
-	graph_offset = p_offset;
-}
-
-Vector2 VisualShader::get_graph_offset() const {
-	return graph_offset;
-}
-
 Shader::Mode VisualShader::get_mode() const {
 	return shader_mode;
 }
@@ -1484,6 +1467,17 @@ Shader::Mode VisualShader::get_mode() const {
 bool VisualShader::is_text_shader() const {
 	return false;
 }
+
+#ifndef DISABLE_DEPRECATED
+void VisualShader::set_graph_offset(const Vector2 &p_offset) {
+	WARN_DEPRECATED_MSG("graph_offset property is deprecated. Setting it has no effect.");
+}
+
+Vector2 VisualShader::get_graph_offset() const {
+	WARN_DEPRECATED_MSG("graph_offset property is deprecated. Getting it always returns Vector2().");
+	return Vector2();
+}
+#endif
 
 String VisualShader::generate_preview_shader(Type p_type, int p_node, int p_port, Vector<DefaultTextureParam> &default_tex_params) const {
 	Ref<VisualShaderNode> node = get_node(p_type, p_node);
@@ -1518,16 +1512,9 @@ String VisualShader::generate_preview_shader(Type p_type, int p_node, int p_port
 	global_code += global_expressions;
 
 	//make it faster to go around through shader
-	VMap<ConnectionKey, const List<Connection>::Element *> input_connections;
-	VMap<ConnectionKey, const List<Connection>::Element *> output_connections;
+	HashMap<ConnectionKey, const List<Connection>::Element *> input_connections;
 
 	for (const List<Connection>::Element *E = graph[p_type].connections.front(); E; E = E->next()) {
-		ConnectionKey from_key;
-		from_key.node = E->get().from_node;
-		from_key.port = E->get().from_port;
-
-		output_connections.insert(from_key, E);
-
 		ConnectionKey to_key;
 		to_key.node = E->get().to_node;
 		to_key.port = E->get().to_port;
@@ -1538,7 +1525,7 @@ String VisualShader::generate_preview_shader(Type p_type, int p_node, int p_port
 	shader_code += "\nvoid fragment() {\n";
 
 	HashSet<int> processed;
-	Error err = _write_node(p_type, &global_code, &global_code_per_node, &global_code_per_func, shader_code, default_tex_params, input_connections, output_connections, p_node, processed, true, classes);
+	Error err = _write_node(p_type, &global_code, &global_code_per_node, &global_code_per_func, shader_code, default_tex_params, input_connections, p_node, processed, true, classes);
 	ERR_FAIL_COND_V(err != OK, String());
 
 	switch (node->get_output_port_type(p_port)) {
@@ -1586,7 +1573,7 @@ String VisualShader::validate_port_name(const String &p_port_name, VisualShaderN
 	}
 
 	while (port_name.length() && !is_ascii_alphabet_char(port_name[0])) {
-		port_name = port_name.substr(1, port_name.length() - 1);
+		port_name = port_name.substr(1);
 	}
 
 	if (!port_name.is_empty()) {
@@ -1631,7 +1618,7 @@ String VisualShader::validate_port_name(const String &p_port_name, VisualShaderN
 String VisualShader::validate_parameter_name(const String &p_name, const Ref<VisualShaderNodeParameter> &p_parameter) const {
 	String param_name = p_name; //validate name first
 	while (param_name.length() && !is_ascii_alphabet_char(param_name[0])) {
-		param_name = param_name.substr(1, param_name.length() - 1);
+		param_name = param_name.substr(1);
 	}
 	if (!param_name.is_empty()) {
 		String valid_name;
@@ -1725,6 +1712,41 @@ bool VisualShader::_set(const StringName &p_name, const Variant &p_value) {
 		}
 		_queue_update();
 		return true;
+	} else if (prop_name == "stencil/enabled") {
+		stencil_enabled = bool(p_value);
+		_queue_update();
+		notify_property_list_changed();
+		return true;
+	} else if (prop_name == "stencil/reference") {
+		stencil_reference = int(p_value);
+		_queue_update();
+		return true;
+	} else if (prop_name.begins_with("stencil_flags/")) {
+		StringName flag = prop_name.get_slicec('/', 1);
+		bool enable = p_value;
+		if (enable) {
+			stencil_flags.insert(flag);
+			if (flag == "read") {
+				stencil_flags.erase("write");
+				stencil_flags.erase("write_depth_fail");
+			} else if (flag == "write" || flag == "write_depth_fail") {
+				stencil_flags.erase("read");
+			}
+		} else {
+			stencil_flags.erase(flag);
+		}
+		_queue_update();
+		return true;
+	} else if (prop_name.begins_with("stencil_modes/")) {
+		String mode_name = prop_name.get_slicec('/', 1);
+		int value = p_value;
+		if (value == 0) {
+			stencil_modes.erase(mode_name); // It's default anyway, so don't store it.
+		} else {
+			stencil_modes[mode_name] = value;
+		}
+		_queue_update();
+		return true;
 	} else if (prop_name.begins_with("varyings/")) {
 		String var_name = prop_name.get_slicec('/', 1);
 		Varying value = Varying();
@@ -1804,6 +1826,24 @@ bool VisualShader::_get(const StringName &p_name, Variant &r_ret) const {
 		String mode_name = prop_name.get_slicec('/', 1);
 		if (modes.has(mode_name)) {
 			r_ret = modes[mode_name];
+		} else {
+			r_ret = 0;
+		}
+		return true;
+	} else if (prop_name == "stencil/enabled") {
+		r_ret = stencil_enabled;
+		return true;
+	} else if (prop_name == "stencil/reference") {
+		r_ret = stencil_reference;
+		return true;
+	} else if (prop_name.begins_with("stencil_flags/")) {
+		StringName flag = prop_name.get_slicec('/', 1);
+		r_ret = stencil_flags.has(flag);
+		return true;
+	} else if (prop_name.begins_with("stencil_modes/")) {
+		String mode_name = prop_name.get_slicec('/', 1);
+		if (stencil_modes.has(mode_name)) {
+			r_ret = stencil_modes[mode_name];
 		} else {
 			r_ret = 0;
 		}
@@ -1896,6 +1936,29 @@ void VisualShader::_get_property_list(List<PropertyInfo> *p_list) const {
 	for (int i = 0; i < rmodes.size(); i++) {
 		const ShaderLanguage::ModeInfo &info = rmodes[i];
 
+		// Special handling for depth_test.
+		if (info.name == "depth_test") {
+			toggles.insert("depth_test_disabled");
+
+			const String begin = String(info.name);
+
+			for (int j = 0; j < info.options.size(); j++) {
+				if (info.options[j] == "disabled") {
+					continue;
+				}
+
+				const String option = String(info.options[j]).capitalize();
+
+				if (!blend_mode_enums.has(begin)) {
+					blend_mode_enums[begin] = vformat("%s:%s", option, j);
+				} else {
+					blend_mode_enums[begin] += "," + vformat("%s:%s", option, j);
+				}
+			}
+
+			continue;
+		}
+
 		if (!info.options.is_empty()) {
 			const String begin = String(info.name);
 
@@ -1919,6 +1982,45 @@ void VisualShader::_get_property_list(List<PropertyInfo> *p_list) const {
 
 	for (const String &E : toggles) {
 		p_list->push_back(PropertyInfo(Variant::BOOL, vformat("%s/%s", PNAME("flags"), E)));
+	}
+
+	const Vector<ShaderLanguage::ModeInfo> &smodes = ShaderTypes::get_singleton()->get_stencil_modes(RenderingServer::ShaderMode(shader_mode));
+
+	if (smodes.size() > 0) {
+		p_list->push_back(PropertyInfo(Variant::BOOL, vformat("%s/%s", PNAME("stencil"), PNAME("enabled"))));
+
+		uint32_t stencil_prop_usage = stencil_enabled ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_STORAGE;
+
+		p_list->push_back(PropertyInfo(Variant::INT, vformat("%s/%s", PNAME("stencil"), PNAME("reference")), PROPERTY_HINT_RANGE, "0,255,1", stencil_prop_usage));
+
+		HashMap<String, String> stencil_enums;
+		HashSet<String> stencil_toggles;
+
+		for (const ShaderLanguage::ModeInfo &info : smodes) {
+			if (!info.options.is_empty()) {
+				const String begin = String(info.name);
+
+				for (int j = 0; j < info.options.size(); j++) {
+					const String option = String(info.options[j]).capitalize();
+
+					if (!stencil_enums.has(begin)) {
+						stencil_enums[begin] = option;
+					} else {
+						stencil_enums[begin] += "," + option;
+					}
+				}
+			} else {
+				stencil_toggles.insert(String(info.name));
+			}
+		}
+
+		for (const KeyValue<String, String> &E : stencil_enums) {
+			p_list->push_back(PropertyInfo(Variant::INT, vformat("%s/%s", PNAME("stencil_modes"), E.key), PROPERTY_HINT_ENUM, E.value, stencil_prop_usage));
+		}
+
+		for (const String &E : stencil_toggles) {
+			p_list->push_back(PropertyInfo(Variant::BOOL, vformat("%s/%s", PNAME("stencil_flags"), E), PROPERTY_HINT_NONE, "", stencil_prop_usage));
+		}
 	}
 
 	for (const KeyValue<String, Varying> &E : varyings) {
@@ -1957,7 +2059,7 @@ void VisualShader::_get_property_list(List<PropertyInfo> *p_list) const {
 	}
 }
 
-Error VisualShader::_write_node(Type type, StringBuilder *p_global_code, StringBuilder *p_global_code_per_node, HashMap<Type, StringBuilder> *p_global_code_per_func, StringBuilder &r_code, Vector<VisualShader::DefaultTextureParam> &r_def_tex_params, const VMap<ConnectionKey, const List<Connection>::Element *> &p_input_connections, const VMap<ConnectionKey, const List<Connection>::Element *> &p_output_connections, int p_node, HashSet<int> &r_processed, bool p_for_preview, HashSet<StringName> &r_classes) const {
+Error VisualShader::_write_node(Type type, StringBuilder *p_global_code, StringBuilder *p_global_code_per_node, HashMap<Type, StringBuilder> *p_global_code_per_func, StringBuilder &r_code, Vector<VisualShader::DefaultTextureParam> &r_def_tex_params, const HashMap<ConnectionKey, const List<Connection>::Element *> &p_input_connections, int p_node, HashSet<int> &r_processed, bool p_for_preview, HashSet<StringName> &r_classes) const {
 	const Ref<VisualShaderNode> vsnode = graph[type].nodes[p_node].node;
 
 	if (vsnode->is_disabled()) {
@@ -1979,7 +2081,7 @@ Error VisualShader::_write_node(Type type, StringBuilder *p_global_code, StringB
 				continue;
 			}
 
-			Error err = _write_node(type, p_global_code, p_global_code_per_node, p_global_code_per_func, r_code, r_def_tex_params, p_input_connections, p_output_connections, from_node, r_processed, p_for_preview, r_classes);
+			Error err = _write_node(type, p_global_code, p_global_code_per_node, p_global_code_per_func, r_code, r_def_tex_params, p_input_connections, from_node, r_processed, p_for_preview, r_classes);
 			if (err) {
 				return err;
 			}
@@ -2560,6 +2662,23 @@ void VisualShader::_update_shader() const {
 			const ShaderLanguage::ModeInfo &info = rmodes[i];
 			const String temp = String(info.name);
 
+			// Special handling for depth_test.
+			if (temp == "depth_test") {
+				if (flags.has("depth_test_disabled")) {
+					flag_names.push_back("depth_test_disabled");
+				} else {
+					if (!render_mode.is_empty()) {
+						render_mode += ", ";
+					}
+					if (modes.has(temp) && modes[temp] < info.options.size()) {
+						render_mode += temp + "_" + info.options[modes[temp]];
+					} else {
+						render_mode += temp + "_" + info.options[0];
+					}
+				}
+				continue;
+			}
+
 			if (!info.options.is_empty()) {
 				if (!render_mode.is_empty()) {
 					render_mode += ", ";
@@ -2589,6 +2708,46 @@ void VisualShader::_update_shader() const {
 
 	if (!render_mode.is_empty()) {
 		global_code += "render_mode " + render_mode + ";\n\n";
+	}
+
+	const Vector<ShaderLanguage::ModeInfo> &smodes = ShaderTypes::get_singleton()->get_stencil_modes(RenderingServer::ShaderMode(shader_mode));
+
+	if (stencil_enabled && smodes.size() > 0 && (stencil_flags.has("read") || stencil_flags.has("write") || stencil_flags.has("write_depth_fail"))) {
+		String stencil_mode;
+
+		Vector<String> flag_names;
+
+		// Add enum modes first.
+		for (const ShaderLanguage::ModeInfo &info : smodes) {
+			const String temp = String(info.name);
+
+			if (!info.options.is_empty()) {
+				if (stencil_modes.has(temp) && stencil_modes[temp] < info.options.size()) {
+					if (!stencil_mode.is_empty()) {
+						stencil_mode += ", ";
+					}
+					stencil_mode += temp + "_" + info.options[stencil_modes[temp]];
+				}
+			} else if (stencil_flags.has(temp)) {
+				flag_names.push_back(temp);
+			}
+		}
+
+		// Add flags afterward.
+		for (const String &flag_name : flag_names) {
+			if (!stencil_mode.is_empty()) {
+				stencil_mode += ", ";
+			}
+			stencil_mode += flag_name;
+		}
+
+		// Add reference value.
+		if (!stencil_mode.is_empty()) {
+			stencil_mode += ", ";
+		}
+		stencil_mode += itos(stencil_reference);
+
+		global_code += "stencil_mode " + stencil_mode + ";\n\n";
 	}
 
 	static const char *func_name[TYPE_MAX] = { "vertex", "fragment", "light", "start", "process", "collide", "start_custom", "process_custom", "sky", "fog" };
@@ -2704,8 +2863,7 @@ void VisualShader::_update_shader() const {
 		}
 
 		//make it faster to go around through shader
-		VMap<ConnectionKey, const List<Connection>::Element *> input_connections;
-		VMap<ConnectionKey, const List<Connection>::Element *> output_connections;
+		HashMap<ConnectionKey, const List<Connection>::Element *> input_connections;
 
 		StringBuilder func_code;
 		HashSet<int> processed;
@@ -2766,12 +2924,6 @@ void VisualShader::_update_shader() const {
 		}
 
 		for (const List<Connection>::Element *E = graph[i].connections.front(); E; E = E->next()) {
-			ConnectionKey from_key;
-			from_key.node = E->get().from_node;
-			from_key.port = E->get().from_port;
-
-			output_connections.insert(from_key, E);
-
 			ConnectionKey to_key;
 			to_key.node = E->get().to_node;
 			to_key.port = E->get().to_port;
@@ -2793,19 +2945,19 @@ void VisualShader::_update_shader() const {
 		}
 		insertion_pos.insert(i, shader_code.get_string_length() + func_code.get_string_length());
 
-		Error err = _write_node(Type(i), &global_code, &global_code_per_node, &global_code_per_func, func_code, default_tex_params, input_connections, output_connections, NODE_ID_OUTPUT, processed, false, classes);
+		Error err = _write_node(Type(i), &global_code, &global_code_per_node, &global_code_per_func, func_code, default_tex_params, input_connections, NODE_ID_OUTPUT, processed, false, classes);
 		ERR_FAIL_COND(err != OK);
 
 		if (varying_setters.has(i)) {
 			for (int &E : varying_setters[i]) {
-				err = _write_node(Type(i), &global_code, &global_code_per_node, nullptr, func_code, default_tex_params, input_connections, output_connections, E, processed, false, classes);
+				err = _write_node(Type(i), &global_code, &global_code_per_node, nullptr, func_code, default_tex_params, input_connections, E, processed, false, classes);
 				ERR_FAIL_COND(err != OK);
 			}
 		}
 
 		if (emitters.has(i)) {
 			for (int &E : emitters[i]) {
-				err = _write_node(Type(i), &global_code, &global_code_per_node, &global_code_per_func, func_code, default_tex_params, input_connections, output_connections, E, processed, false, classes);
+				err = _write_node(Type(i), &global_code, &global_code_per_node, &global_code_per_func, func_code, default_tex_params, input_connections, E, processed, false, classes);
 				ERR_FAIL_COND(err != OK);
 			}
 		}
@@ -3002,9 +3154,6 @@ void VisualShader::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_node_connections", "type"), &VisualShader::_get_node_connections);
 
-	ClassDB::bind_method(D_METHOD("set_graph_offset", "offset"), &VisualShader::set_graph_offset);
-	ClassDB::bind_method(D_METHOD("get_graph_offset"), &VisualShader::get_graph_offset);
-
 	ClassDB::bind_method(D_METHOD("attach_node_to_frame", "type", "id", "frame"), &VisualShader::attach_node_to_frame);
 	ClassDB::bind_method(D_METHOD("detach_node_from_frame", "type", "id"), &VisualShader::detach_node_from_frame);
 
@@ -3018,7 +3167,11 @@ void VisualShader::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_update_shader"), &VisualShader::_update_shader);
 
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "graph_offset", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_graph_offset", "get_graph_offset");
+#ifndef DISABLE_DEPRECATED
+	ClassDB::bind_method(D_METHOD("set_graph_offset", "offset"), &VisualShader::set_graph_offset);
+	ClassDB::bind_method(D_METHOD("get_graph_offset"), &VisualShader::get_graph_offset);
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "graph_offset", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_graph_offset", "get_graph_offset");
+#endif
 
 	ADD_PROPERTY_DEFAULT("code", ""); // Inherited from Shader, prevents showing default code as override in docs.
 
@@ -3151,6 +3304,7 @@ const VisualShaderNodeInput::Port VisualShaderNodeInput::ports[] = {
 
 	// Node3D, Light
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_VECTOR_3D, "albedo", "ALBEDO" },
+	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_SCALAR, "alpha", "ALPHA" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_SCALAR, "attenuation", "ATTENUATION" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_VECTOR_3D, "backlight", "BACKLIGHT" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_LIGHT, VisualShaderNode::PORT_TYPE_SCALAR, "clip_space_far", "CLIP_SPACE_FAR" },
@@ -3202,6 +3356,7 @@ const VisualShaderNodeInput::Port VisualShaderNodeInput::ports[] = {
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "fragcoord", "FRAGCOORD" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_SAMPLER, "normal_texture", "NORMAL_TEXTURE" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_2D, "point_coord", "POINT_COORD" },
+	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "region_rect", "REGION_RECT" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_2D, "screen_pixel_size", "SCREEN_PIXEL_SIZE" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_2D, "screen_uv", "SCREEN_UV" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "specular_shininess", "SPECULAR_SHININESS" },
@@ -3373,6 +3528,7 @@ const VisualShaderNodeInput::Port VisualShaderNodeInput::preview_ports[] = {
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "color", "vec4(1.0)" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "fragcoord", "FRAGCOORD" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_3D, "normal", "vec3(0.0, 0.0, 1.0)" },
+	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "region_rect", "REGION_RECT" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_2D, "screen_uv", "SCREEN_UV" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_3D, "tangent", "vec3(0.0, 1.0, 0.0)" },
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_SCALAR, "time", "TIME" },
@@ -3400,6 +3556,7 @@ const VisualShaderNodeInput::Port VisualShaderNodeInput::preview_ports[] = {
 
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "color", "vec4(1.0)" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "fragcoord", "FRAGCOORD" },
+	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_4D, "region_rect", "REGION_RECT" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_2D, "screen_uv", "UV" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_SCALAR, "time", "TIME" },
 	{ Shader::MODE_CANVAS_ITEM, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_2D, "uv", "UV" },
@@ -3503,6 +3660,9 @@ String VisualShaderNodeInput::generate_code(Shader::Mode p_mode, VisualShader::T
 				case PORT_TYPE_SCALAR_INT: {
 					code = "	" + p_output_vars[0] + " = 0;\n";
 				} break;
+				case PORT_TYPE_SCALAR_UINT: {
+					code = "	" + p_output_vars[0] + " = 0u;\n";
+				} break;
 				case PORT_TYPE_VECTOR_2D: {
 					code = "	" + p_output_vars[0] + " = vec2(0.0);\n";
 				} break;
@@ -3514,6 +3674,9 @@ String VisualShaderNodeInput::generate_code(Shader::Mode p_mode, VisualShader::T
 				} break;
 				case PORT_TYPE_BOOLEAN: {
 					code = "	" + p_output_vars[0] + " = false;\n";
+				} break;
+				case PORT_TYPE_TRANSFORM: {
+					code = "	" + p_output_vars[0] + " = mat4(1.0);\n";
 				} break;
 				default:
 					break;
@@ -3631,6 +3794,9 @@ String VisualShaderNodeInput::get_input_index_name(int p_index) const {
 }
 
 void VisualShaderNodeInput::_validate_property(PropertyInfo &p_property) const {
+	if (!Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
 	if (p_property.name == "input_name") {
 		String port_list;
 
@@ -4005,6 +4171,7 @@ const VisualShaderNodeOutput::Port VisualShaderNodeOutput::ports[] = {
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_2D, "Alpha UV", "ALPHA_TEXTURE_COORDINATE" },
 
 	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_SCALAR, "Depth", "DEPTH" },
+	{ Shader::MODE_SPATIAL, VisualShader::TYPE_FRAGMENT, VisualShaderNode::PORT_TYPE_VECTOR_3D, "Bent Normal Map", "BENT_NORMAL_MAP" },
 
 	////////////////////////////////////////////////////////////////////////
 	// Spatial, Light.

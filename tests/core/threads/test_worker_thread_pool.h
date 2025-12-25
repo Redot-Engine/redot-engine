@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_WORKER_THREAD_POOL_H
-#define TEST_WORKER_THREAD_POOL_H
+#pragma once
 
 #include "core/object/worker_thread_pool.h"
 
@@ -176,5 +175,3 @@ TEST_CASE("[WorkerThreadPool] Run a yielding daemon as the only hope for other t
 }
 
 } // namespace TestWorkerThreadPool
-
-#endif // TEST_WORKER_THREAD_POOL_H

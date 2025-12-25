@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NATIVE_MENU_H
-#define NATIVE_MENU_H
+#pragma once
 
 #include "core/input/input.h"
 #include "core/variant/callable.h"
@@ -158,5 +157,3 @@ public:
 
 VARIANT_ENUM_CAST(NativeMenu::Feature);
 VARIANT_ENUM_CAST(NativeMenu::SystemMenus);
-
-#endif // NATIVE_MENU_H

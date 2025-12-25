@@ -35,9 +35,9 @@
 #include "core/config/project_settings.h"
 
 #include <webp/decode.h>
+#include <webp/demux.h>
 #include <webp/encode.h>
-
-#include <string.h>
+#include <webp/mux_types.h>
 
 namespace WebPCommon {
 Vector<uint8_t> _webp_lossy_pack(const Ref<Image> &p_image, float p_quality) {
@@ -64,7 +64,7 @@ Vector<uint8_t> _webp_packer(const Ref<Image> &p_image, float p_quality, bool p_
 		Error error = img->decompress();
 		ERR_FAIL_COND_V_MSG(error != OK, Vector<uint8_t>(), "Couldn't decompress image.");
 	}
-	if (img->detect_alpha()) {
+	if (img->detect_alpha() != Image::ALPHA_NONE) {
 		img->convert(Image::FORMAT_RGBA8);
 	} else {
 		img->convert(Image::FORMAT_RGB8);
@@ -167,17 +167,131 @@ Error webp_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer, int p
 	dst_image.resize(datasize);
 	uint8_t *dst_w = dst_image.ptrw();
 
-	bool errdec = false;
-	if (features.has_alpha) {
-		errdec = WebPDecodeRGBAInto(p_buffer, p_buffer_len, dst_w, datasize, 4 * features.width) == nullptr;
-	} else {
-		errdec = WebPDecodeRGBInto(p_buffer, p_buffer_len, dst_w, datasize, 3 * features.width) == nullptr;
-	}
+	if (!features.has_animation) {
+		bool errdec = false;
+		if (features.has_alpha) {
+			errdec = WebPDecodeRGBAInto(p_buffer, p_buffer_len, dst_w, datasize, 4 * features.width) == nullptr;
+		} else {
+			errdec = WebPDecodeRGBInto(p_buffer, p_buffer_len, dst_w, datasize, 3 * features.width) == nullptr;
+		}
 
-	ERR_FAIL_COND_V_MSG(errdec, ERR_FILE_CORRUPT, "Failed decoding WebP image.");
+		ERR_FAIL_COND_V_MSG(errdec, ERR_FILE_CORRUPT, "Failed decoding WebP image.");
+	} else {
+		WebPData webp_data;
+		WebPDataInit(&webp_data);
+		webp_data.bytes = p_buffer;
+		webp_data.size = p_buffer_len;
+
+		WebPAnimDecoder *anim_decoder = WebPAnimDecoderNew(&webp_data, nullptr);
+		if (anim_decoder == nullptr) {
+			WebPAnimDecoderDelete(anim_decoder);
+			ERR_FAIL_V_MSG(ERR_FILE_CORRUPT, "Failed decoding animated WebP image.");
+		}
+
+		WebPAnimInfo anim_info;
+		if (!WebPAnimDecoderGetInfo(anim_decoder, &anim_info)) {
+			WebPAnimDecoderDelete(anim_decoder);
+			ERR_FAIL_V_MSG(ERR_FILE_CORRUPT, "Failed decoding WebP animation info.");
+		}
+
+		uint8_t *frame_rgba;
+		int timestamp;
+
+		if (!WebPAnimDecoderGetNext(anim_decoder, &frame_rgba, &timestamp)) {
+			WebPAnimDecoderDelete(anim_decoder);
+			ERR_FAIL_V_MSG(ERR_FILE_CORRUPT, "Failed decoding animated WebP initial frame.");
+		}
+		memcpy(dst_image.ptrw(), frame_rgba, dst_image.size());
+
+		WebPAnimDecoderDelete(anim_decoder);
+	}
 
 	p_image->set_data(features.width, features.height, false, features.has_alpha ? Image::FORMAT_RGBA8 : Image::FORMAT_RGB8, dst_image);
 
+	return OK;
+}
+
+Error webp_load_image_frames_from_buffer(ImageFrames *p_frames, const uint8_t *p_buffer, int p_buffer_len, int p_max_frames) {
+	ERR_FAIL_NULL_V(p_frames, ERR_INVALID_PARAMETER);
+
+	WebPBitstreamFeatures features;
+	if (WebPGetFeatures(p_buffer, p_buffer_len, &features) != VP8_STATUS_OK) {
+		ERR_FAIL_V(ERR_FILE_CORRUPT);
+	}
+
+	if (!features.has_animation) {
+		p_frames->set_frame_count(1);
+		Ref<Image> image;
+		image.instantiate();
+		if (webp_load_image_from_buffer(image.ptr(), p_buffer, p_buffer_len) != OK) {
+			return ERR_FILE_CORRUPT;
+		}
+		p_frames->set_frame_image(0, image);
+		return OK;
+	}
+
+	WebPData webp_data;
+	WebPDataInit(&webp_data);
+	webp_data.bytes = p_buffer;
+	webp_data.size = p_buffer_len;
+
+#ifdef THREADS_ENABLED
+	const bool supports_threads = true;
+#else
+	const bool supports_threads = false;
+#endif
+
+	WebPAnimDecoderOptions anim_decoder_options;
+	WebPAnimDecoderOptionsInit(&anim_decoder_options);
+	anim_decoder_options.color_mode = MODE_RGBA;
+	anim_decoder_options.use_threads = supports_threads;
+
+	WebPAnimDecoder *anim_decoder = WebPAnimDecoderNew(&webp_data, &anim_decoder_options);
+	if (anim_decoder == nullptr) {
+		WebPAnimDecoderDelete(anim_decoder);
+		ERR_FAIL_V_MSG(ERR_FILE_CORRUPT, "Failed decoding animated WebP image.");
+	}
+
+	WebPAnimInfo anim_info;
+	if (!WebPAnimDecoderGetInfo(anim_decoder, &anim_info)) {
+		WebPAnimDecoderDelete(anim_decoder);
+		ERR_FAIL_V_MSG(ERR_FILE_CORRUPT, "Failed decoding WebP animation info.");
+	}
+
+	static const uint32_t NUM_CHANNELS = 4;
+	const uint64_t rgba_size = anim_info.canvas_width * NUM_CHANNELS * anim_info.canvas_height;
+
+	Vector<uint8_t> screen;
+	screen.resize_initialized(rgba_size);
+
+	const uint32_t frame_count = p_max_frames > 0 ? MIN(anim_info.frame_count, (uint32_t)p_max_frames) : anim_info.frame_count;
+	p_frames->set_frame_count(frame_count);
+	p_frames->set_loop_count(anim_info.loop_count);
+
+	int previous_timestamp = 0;
+	for (uint32_t frame_index = 0; p_max_frames > 0 ? frame_count : WebPAnimDecoderHasMoreFrames(anim_decoder); frame_index++) {
+		if (frame_index >= frame_count) {
+			WebPAnimDecoderDelete(anim_decoder);
+			ERR_FAIL_COND_V(frame_index >= frame_count, ERR_FILE_CORRUPT);
+		}
+
+		uint8_t *frame_rgba;
+		int timestamp;
+
+		if (!WebPAnimDecoderGetNext(anim_decoder, &frame_rgba, &timestamp)) {
+			WebPAnimDecoderDelete(anim_decoder);
+			ERR_FAIL_V_MSG(ERR_FILE_CORRUPT, vformat("Failed decoding WebP frame %d.", frame_index));
+		}
+		memcpy(screen.ptrw(), frame_rgba, screen.size());
+
+		Ref<Image> image = memnew(Image(anim_info.canvas_width, anim_info.canvas_height, false, Image::FORMAT_RGBA8, screen));
+		p_frames->set_frame_image(frame_index, image);
+		p_frames->set_frame_delay(frame_index, (timestamp - previous_timestamp) / 1000.0);
+
+		previous_timestamp = timestamp;
+	}
+
+	WebPAnimDecoderDelete(anim_decoder);
 	return OK;
 }
 } // namespace WebPCommon

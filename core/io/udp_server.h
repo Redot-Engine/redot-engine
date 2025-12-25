@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef UDP_SERVER_H
-#define UDP_SERVER_H
+#pragma once
 
 #include "core/io/net_socket.h"
 #include "core/io/packet_peer_udp.h"
@@ -78,5 +77,3 @@ public:
 	UDPServer();
 	~UDPServer();
 };
-
-#endif // UDP_SERVER_H

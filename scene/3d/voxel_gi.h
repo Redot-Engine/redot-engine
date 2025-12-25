@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef VOXEL_GI_H
-#define VOXEL_GI_H
+#pragma once
 
 #include "scene/3d/visual_instance_3d.h"
 
@@ -172,5 +171,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(VoxelGI::Subdiv)
-
-#endif // VOXEL_GI_H

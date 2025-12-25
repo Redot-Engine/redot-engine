@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_DRIVER_DUMMY_H
-#define AUDIO_DRIVER_DUMMY_H
+#pragma once
 
 #include "servers/audio_server.h"
 
@@ -87,5 +86,3 @@ public:
 	AudioDriverDummy();
 	~AudioDriverDummy() {}
 };
-
-#endif // AUDIO_DRIVER_DUMMY_H

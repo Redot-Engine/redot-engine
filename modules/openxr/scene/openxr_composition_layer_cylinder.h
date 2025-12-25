@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_COMPOSITION_LAYER_CYLINDER_H
-#define OPENXR_COMPOSITION_LAYER_CYLINDER_H
+#pragma once
 
 #include <openxr/openxr.h>
 
@@ -49,13 +48,13 @@ class OpenXRCompositionLayerCylinder : public OpenXRCompositionLayer {
 		{}, // subImage
 		{ { 0, 0, 0, 0 }, { 0, 0, 0 } }, // pose
 		1.0, // radius
-		Math_PI / 2.0, // centralAngle
+		Math::PI / 2.0, // centralAngle
 		1.0, // aspectRatio
 	};
 
 	float radius = 1.0;
 	float aspect_ratio = 1.0;
-	float central_angle = Math_PI / 2.0;
+	float central_angle = Math::PI / 2.0;
 	uint32_t fallback_segments = 10;
 
 protected:
@@ -85,5 +84,3 @@ public:
 	OpenXRCompositionLayerCylinder();
 	~OpenXRCompositionLayerCylinder();
 };
-
-#endif // OPENXR_COMPOSITION_LAYER_CYLINDER_H

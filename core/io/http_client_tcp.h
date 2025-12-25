@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef HTTP_CLIENT_TCP_H
-#define HTTP_CLIENT_TCP_H
+#pragma once
 
 #include "http_client.h"
 
@@ -102,5 +101,3 @@ public:
 	void set_https_proxy(const String &p_host, int p_port) override;
 	HTTPClientTCP();
 };
-
-#endif // HTTP_CLIENT_TCP_H

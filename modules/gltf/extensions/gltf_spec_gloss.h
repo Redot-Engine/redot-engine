@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLTF_SPEC_GLOSS_H
-#define GLTF_SPEC_GLOSS_H
+#pragma once
 
 #include "core/io/resource.h"
 
@@ -72,5 +71,3 @@ public:
 	Ref<Image> get_spec_gloss_img();
 	void set_spec_gloss_img(Ref<Image> p_spec_gloss_img);
 };
-
-#endif // GLTF_SPEC_GLOSS_H

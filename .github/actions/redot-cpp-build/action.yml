@@ -1,0 +1,38 @@
+name: Build redot-cpp
+description: Build redot-cpp with the provided options.
+
+inputs:
+  bin:
+    description: Path to the Redot binary.
+    required: true
+    type: string
+  scons-flags:
+    description: Additional SCons flags.
+    type: string
+  scons-cache:
+    description: The SCons cache path.
+    default: ${{ github.workspace }}/.scons_cache/
+    type: string
+  redot-cpp-branch:
+    description: The redot-cpp branch.
+    default: master
+    type: string
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        repository: Redot-Engine/redot-cpp
+        ref: ${{ inputs.redot-cpp-branch }}
+        path: redot-cpp
+
+    - name: Extract API
+      shell: sh
+      run: ${{ inputs.bin }} --headless --dump-gdextension-interface --dump-extension-api
+
+    - name: SCons Build
+      shell: sh
+      run: scons --directory=./redot-cpp/test "gdextension_dir=${{ github.workspace }}" ${{ inputs.scons-flags }}

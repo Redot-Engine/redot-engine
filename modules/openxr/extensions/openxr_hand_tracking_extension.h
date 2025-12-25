@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_HAND_TRACKING_EXTENSION_H
-#define OPENXR_HAND_TRACKING_EXTENSION_H
+#pragma once
 
 #include "../util.h"
 #include "core/math/quaternion.h"
@@ -39,6 +38,11 @@
 #include "servers/xr/xr_hand_tracker.h"
 
 class OpenXRHandTrackingExtension : public OpenXRExtensionWrapper {
+	GDCLASS(OpenXRHandTrackingExtension, OpenXRExtensionWrapper);
+
+protected:
+	static void _bind_methods() {}
+
 public:
 	enum HandTrackedHands {
 		OPENXR_TRACKED_LEFT_HAND,
@@ -124,5 +128,3 @@ private:
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyHandTrackerEXT, (XrHandTrackerEXT), p_handTracker)
 	EXT_PROTO_XRRESULT_FUNC3(xrLocateHandJointsEXT, (XrHandTrackerEXT), p_handTracker, (const XrHandJointsLocateInfoEXT *), p_locateInfo, (XrHandJointLocationsEXT *), p_locations)
 };
-
-#endif // OPENXR_HAND_TRACKING_EXTENSION_H

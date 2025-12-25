@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EXPRESSION_H
-#define EXPRESSION_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 
@@ -273,5 +272,3 @@ public:
 	Expression() {}
 	~Expression();
 };
-
-#endif // EXPRESSION_H

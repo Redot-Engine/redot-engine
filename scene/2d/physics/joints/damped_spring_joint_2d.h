@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DAMPED_SPRING_JOINT_2D_H
-#define DAMPED_SPRING_JOINT_2D_H
+#pragma once
 
 #include "scene/2d/physics/joints/joint_2d.h"
 
@@ -65,5 +64,3 @@ public:
 
 	DampedSpringJoint2D();
 };
-
-#endif // DAMPED_SPRING_JOINT_2D_H

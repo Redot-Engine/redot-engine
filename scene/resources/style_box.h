@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef STYLE_BOX_H
-#define STYLE_BOX_H
+#pragma once
 
 #include "core/io/resource.h"
 #include "core/object/gdvirtual.gen.inc"
@@ -81,7 +80,4 @@ class StyleBoxEmpty : public StyleBox {
 
 public:
 	virtual void draw(RID p_canvas_item, const Rect2 &p_rect) const override {}
-	StyleBoxEmpty() {}
 };
-
-#endif // STYLE_BOX_H

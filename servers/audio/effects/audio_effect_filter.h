@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_EFFECT_FILTER_H
-#define AUDIO_EFFECT_FILTER_H
+#pragma once
 
 #include "servers/audio/audio_effect.h"
 #include "servers/audio/audio_filter_sw.h"
@@ -168,5 +167,3 @@ public:
 	AudioEffectHighShelfFilter() :
 			AudioEffectFilter(AudioFilterSW::HIGHSHELF) {}
 };
-
-#endif // AUDIO_EFFECT_FILTER_H

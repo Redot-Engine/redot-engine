@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENDER_SCENE_DATA_H
-#define RENDER_SCENE_DATA_H
+#pragma once
 
 #include "core/object/class_db.h"
 #include "core/object/gdvirtual.gen.inc"
@@ -80,5 +79,3 @@ public:
 
 	GDVIRTUAL0RC(RID, _get_uniform_buffer)
 };
-
-#endif // RENDER_SCENE_DATA_H

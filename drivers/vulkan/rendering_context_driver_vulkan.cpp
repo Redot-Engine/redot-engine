@@ -688,8 +688,8 @@ Error RenderingContextDriverVulkan::_initialize_instance() {
 	VkApplicationInfo app_info = {};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	app_info.pApplicationName = cs.get_data();
-	app_info.pEngineName = VERSION_NAME;
-	app_info.engineVersion = VK_MAKE_VERSION(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+	app_info.pEngineName = REDOT_VERSION_NAME;
+	app_info.engineVersion = VK_MAKE_VERSION(REDOT_VERSION_MAJOR, REDOT_VERSION_MINOR, REDOT_VERSION_PATCH);
 	app_info.apiVersion = application_api_version;
 
 	TightLocalVector<const char *> enabled_layer_names;

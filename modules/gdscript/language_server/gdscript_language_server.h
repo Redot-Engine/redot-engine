@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDSCRIPT_LANGUAGE_SERVER_H
-#define GDSCRIPT_LANGUAGE_SERVER_H
+#pragma once
 
 #include "gdscript_language_protocol.h"
 
@@ -62,5 +61,3 @@ public:
 };
 
 void register_lsp_types();
-
-#endif // GDSCRIPT_LANGUAGE_SERVER_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GD_MONO_CACHE_H
-#define GD_MONO_CACHE_H
+#pragma once
 
 #include "../csharp_script.h"
 #include "../interop_types.h"
@@ -43,8 +42,6 @@
 #include "core/variant/callable.h"
 #include "core/variant/dictionary.h"
 #include "core/variant/variant.h"
-
-#include <stdint.h>
 
 class CSharpScript;
 
@@ -159,5 +156,3 @@ extern bool godot_api_cache_updated;
 void update_godot_api_cache(const ManagedCallbacks &p_managed_callbacks);
 
 } // namespace GDMonoCache
-
-#endif // GD_MONO_CACHE_H

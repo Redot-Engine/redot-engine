@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_VULKAN_EXTENSION_H
-#define OPENXR_VULKAN_EXTENSION_H
+#pragma once
 
 #include "../../openxr_api.h"
 #include "../../util.h"
@@ -65,6 +64,7 @@ public:
 	virtual void cleanup_swapchain_graphics_data(void **p_swapchain_graphics_data) override;
 	virtual bool create_projection_fov(const XrFovf p_fov, double p_z_near, double p_z_far, Projection &r_camera_matrix) override;
 	virtual RID get_texture(void *p_swapchain_graphics_data, int p_image_index) override;
+	virtual RID get_density_map(void *p_swapchain_graphics_data, int p_image_index) override;
 
 private:
 	static OpenXRVulkanExtension *singleton;
@@ -73,6 +73,7 @@ private:
 	struct SwapchainGraphicsData {
 		bool is_multiview;
 		Vector<RID> texture_rids;
+		Vector<RID> density_map_rids;
 	};
 
 	bool check_graphics_api_support(XrVersion p_desired_version);
@@ -89,5 +90,3 @@ private:
 	EXT_PROTO_XRRESULT_FUNC4(xrCreateVulkanDeviceKHR, (XrInstance), p_instance, (const XrVulkanDeviceCreateInfoKHR *), p_create_info, (VkDevice *), r_device, (VkResult *), r_result)
 	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSwapchainImages, (XrSwapchain), p_swapchain, (uint32_t), p_image_capacity_input, (uint32_t *), p_image_count_output, (XrSwapchainImageBaseHeader *), p_images)
 };
-
-#endif // OPENXR_VULKAN_EXTENSION_H

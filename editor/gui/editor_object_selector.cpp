@@ -101,10 +101,7 @@ void EditorObjectSelector::_show_popup() {
 	Point2 gp = get_screen_position();
 	gp.y += size.y;
 
-	sub_objects_menu->set_position(gp);
-	sub_objects_menu->set_size(Size2(size.width, 1));
-
-	sub_objects_menu->popup();
+	sub_objects_menu->popup(Rect2(gp, Size2(size.width, 0)));
 }
 
 void EditorObjectSelector::_about_to_show() {
@@ -130,7 +127,6 @@ void EditorObjectSelector::update_path() {
 		}
 
 		Ref<Texture2D> obj_icon = EditorNode::get_singleton()->get_object_icon(obj);
-
 		if (obj_icon.is_valid()) {
 			current_object_icon->set_texture(obj_icon);
 		}
@@ -150,7 +146,7 @@ void EditorObjectSelector::update_path() {
 				if (name.is_empty()) {
 					name = r->get_class();
 				}
-			} else if (obj->is_class("EditorDebuggerRemoteObject")) {
+			} else if (obj->is_class("EditorDebuggerRemoteObjects")) {
 				name = obj->call("get_title");
 			} else if (Object::cast_to<Node>(obj)) {
 				name = Object::cast_to<Node>(obj)->get_name();
@@ -193,7 +189,6 @@ void EditorObjectSelector::_id_pressed(int p_idx) {
 
 void EditorObjectSelector::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE:
 		case NOTIFICATION_THEME_CHANGED: {
 			update_path();
 
@@ -229,6 +224,7 @@ EditorObjectSelector::EditorObjectSelector(EditorSelectionHistory *p_history) {
 	main_hb->add_child(current_object_icon);
 
 	current_object_label = memnew(Label);
+	current_object_label->set_focus_mode(FOCUS_ACCESSIBILITY);
 	current_object_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
 	current_object_label->set_h_size_flags(SIZE_EXPAND_FILL);
 	current_object_label->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);

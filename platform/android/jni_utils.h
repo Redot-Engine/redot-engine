@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef JNI_UTILS_H
-#define JNI_UTILS_H
+#pragma once
 
 #include "thread_jandroid.h"
 
@@ -56,17 +55,17 @@ Variant _jobject_to_variant(JNIEnv *env, jobject obj);
 Variant::Type get_jni_type(const String &p_type);
 
 /**
- * Convert a Godot Callable to a org.godotengine.godot.variant.Callable java object.
+ * Convert a Godot Callable to a org.redotengine.godot.variant.Callable java object.
  * @param p_env JNI environment instance
  * @param p_callable Callable parameter to convert. If null or invalid type, a null jobject is returned.
- * @return org.godotengine.godot.variant.Callable jobject or null
+ * @return org.redotengine.godot.variant.Callable jobject or null
  */
 jobject callable_to_jcallable(JNIEnv *p_env, const Variant &p_callable);
 
 /**
- * Convert a org.godotengine.godot.variant.Callable java object to a Godot Callable variant.
+ * Convert a org.redotengine.godot.variant.Callable java object to a Godot Callable variant.
  * @param p_env JNI environment instance
- * @param p_jcallable_obj org.godotengine.godot.variant.Callable java object to convert.
+ * @param p_jcallable_obj org.redotengine.godot.variant.Callable java object to convert.
  * @return Callable variant
  */
 Callable jcallable_to_callable(JNIEnv *p_env, jobject p_jcallable_obj);
@@ -93,11 +92,24 @@ static inline String jstring_to_string(jstring source, JNIEnv *env = nullptr) {
 		}
 		const char *const source_utf8 = env->GetStringUTFChars(source, nullptr);
 		if (source_utf8) {
-			result.parse_utf8(source_utf8);
+			result.append_utf8(source_utf8);
 			env->ReleaseStringUTFChars(source, source_utf8);
 		}
 	}
 	return result;
 }
 
-#endif // JNI_UTILS_H
+/**
+ * Set up thread-safe Android ClassLoader (used by jni_find_class() below).
+ */
+void setup_android_class_loader();
+void cleanup_android_class_loader();
+
+/**
+ * Thread-safe JNI class finder using Android ClassLoader.
+ * Works on any thread, unlike standard FindClass which may fail on non-main threads.
+ * @param p_env JNI environment instance.
+ * @param p_class_name Class name to find.
+ * @return jclass reference or null if not found.
+ */
+jclass jni_find_class(JNIEnv *p_env, const char *p_class_name);

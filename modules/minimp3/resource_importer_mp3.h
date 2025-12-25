@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RESOURCE_IMPORTER_MP3_H
-#define RESOURCE_IMPORTER_MP3_H
+#pragma once
 
 #include "audio_stream_mp3.h"
 
@@ -64,5 +63,3 @@ public:
 
 	ResourceImporterMP3();
 };
-
-#endif // RESOURCE_IMPORTER_MP3_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef COLOR_RECT_H
-#define COLOR_RECT_H
+#pragma once
 
 #include "scene/gui/control.h"
 
@@ -48,5 +47,3 @@ public:
 	void set_color(const Color &p_color);
 	Color get_color() const;
 };
-
-#endif // COLOR_RECT_H

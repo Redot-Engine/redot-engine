@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_STREAM_PEER_H
-#define TEST_STREAM_PEER_H
+#pragma once
 
 #include "core/io/stream_peer.h"
 #include "tests/test_macros.h"
@@ -309,5 +308,3 @@ TEST_CASE("[StreamPeer] Get UTF8 string when there is no string") {
 }
 
 } // namespace TestStreamPeer
-
-#endif // TEST_STREAM_PEER_H

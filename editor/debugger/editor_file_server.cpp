@@ -32,9 +32,9 @@
 
 #include "editor_file_server.h"
 
-#include "../editor_settings.h"
 #include "editor/editor_node.h"
 #include "editor/export/editor_export_platform.h"
+#include "editor/settings/editor_settings.h"
 
 #define FILESYSTEM_PROTOCOL_VERSION 1
 #define PASSWORD_LENGTH 32
@@ -71,8 +71,7 @@ void EditorFileServer::_scan_files_changed(EditorFileSystemDirectory *efd, const
 				continue;
 			}
 
-			List<String> remaps;
-			cf->get_section_keys("remap", &remaps);
+			Vector<String> remaps = cf->get_section_keys("remap");
 
 			for (const String &remap : remaps) {
 				if (remap == "path") {
@@ -80,7 +79,7 @@ void EditorFileServer::_scan_files_changed(EditorFileSystemDirectory *efd, const
 					uint64_t mt = FileAccess::get_modified_time(remapped_path);
 					_add_file(remapped_path, mt, files_to_send, cached_files);
 				} else if (remap.begins_with("path.")) {
-					String feature = remap.get_slice(".", 1);
+					String feature = remap.get_slicec('.', 1);
 					if (p_tags.has(feature)) {
 						String remapped_path = cf->get_value("remap", remap);
 						uint64_t mt = FileAccess::get_modified_time(remapped_path);
@@ -176,7 +175,8 @@ void EditorFileServer::poll() {
 
 		ERR_FAIL_COND(err != OK);
 		// Decompress the text with all the files
-		Compression::decompress(file_buffer_decompressed.ptr(), file_buffer_decompressed.size(), file_buffer.ptr(), file_buffer.size(), Compression::MODE_ZSTD);
+		const int64_t decompressed_size = Compression::decompress(file_buffer_decompressed.ptr(), file_buffer_decompressed.size(), file_buffer.ptr(), file_buffer.size(), Compression::MODE_ZSTD);
+		ERR_FAIL_COND_MSG(decompressed_size != file_buffer_decompressed.size(), "Error decompressing file buffer. Decompressed size did not match the expected size.");
 		String files_text = String::utf8((const char *)file_buffer_decompressed.ptr(), file_buffer_decompressed.size());
 		Vector<String> files = files_text.split("\n");
 
@@ -202,7 +202,7 @@ void EditorFileServer::poll() {
 	// Scan files to send.
 	_scan_files_changed(EditorFileSystem::get_singleton()->get_filesystem(), tags, files_to_send, cached_files);
 	// Add forced export files
-	Vector<String> forced_export = EditorExportPlatform::get_forced_export_files();
+	Vector<String> forced_export = EditorExportPlatform::get_forced_export_files(Ref<EditorExportPreset>());
 	for (int i = 0; i < forced_export.size(); i++) {
 		_add_custom_file(forced_export[i], files_to_send, cached_files);
 	}

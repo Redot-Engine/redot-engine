@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CUBEMAP_FILTER_GLES3_H
-#define CUBEMAP_FILTER_GLES3_H
+#pragma once
 
 #ifdef GLES3_ENABLED
 
@@ -68,5 +67,3 @@ public:
 } //namespace GLES3
 
 #endif // GLES3_ENABLED
-
-#endif // CUBEMAP_FILTER_GLES3_H

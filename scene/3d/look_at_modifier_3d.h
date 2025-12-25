@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef LOOK_AT_MODIFIER_3D_H
-#define LOOK_AT_MODIFIER_3D_H
+#pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "scene/animation/tween.h"
@@ -74,18 +73,18 @@ private:
 	bool use_angle_limitation = false;
 	bool symmetry_limitation = true;
 
-	float primary_limit_angle = Math_TAU;
+	float primary_limit_angle = Math::TAU;
 	float primary_damp_threshold = 1.0f;
-	float primary_positive_limit_angle = Math_PI;
+	float primary_positive_limit_angle = Math::PI;
 	float primary_positive_damp_threshold = 1.0f;
-	float primary_negative_limit_angle = Math_PI;
+	float primary_negative_limit_angle = Math::PI;
 	float primary_negative_damp_threshold = 1.0f;
 
-	float secondary_limit_angle = Math_TAU;
+	float secondary_limit_angle = Math::TAU;
 	float secondary_damp_threshold = 1.0f;
-	float secondary_positive_limit_angle = Math_PI;
+	float secondary_positive_limit_angle = Math::PI;
 	float secondary_positive_damp_threshold = 1.0f;
-	float secondary_negative_limit_angle = Math_PI;
+	float secondary_negative_limit_angle = Math::PI;
 	float secondary_negative_damp_threshold = 1.0f;
 
 	bool is_within_limitations = false;
@@ -108,9 +107,11 @@ protected:
 	virtual PackedStringArray get_configuration_warnings() const override;
 	void _validate_property(PropertyInfo &p_property) const;
 
+	virtual void _validate_bone_names() override;
+
 	static void _bind_methods();
 
-	virtual void _process_modification() override;
+	virtual void _process_modification(double p_delta) override;
 
 public:
 	void set_bone_name(const String &p_bone_name);
@@ -192,5 +193,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(LookAtModifier3D::OriginFrom);
-
-#endif // LOOK_AT_MODIFIER_3D_H

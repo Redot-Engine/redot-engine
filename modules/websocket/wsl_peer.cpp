@@ -153,7 +153,7 @@ Error WSLPeer::accept_stream(Ref<StreamPeer> p_stream) {
 }
 
 bool WSLPeer::_parse_client_request() {
-	Vector<String> psa = String((const char *)handshake_buffer->get_data_array().ptr(), handshake_buffer->get_position() - 4).split("\r\n");
+	Vector<String> psa = String::ascii(Span((const char *)handshake_buffer->get_data_array().ptr(), handshake_buffer->get_position() - 4)).split("\r\n");
 	int len = psa.size();
 	ERR_FAIL_COND_V_MSG(len < 4, false, "Not enough response headers, got: " + itos(len) + ", expected >= 4.");
 
@@ -299,7 +299,7 @@ Error WSLPeer::_do_server_handshake() {
 			wslay_event_context_server_init(&wsl_ctx, &_wsl_callbacks, this);
 			wslay_event_config_set_no_buffering(wsl_ctx, 1);
 			wslay_event_config_set_max_recv_msg_length(wsl_ctx, inbound_buffer_size);
-			in_buffer.resize(nearest_shift(inbound_buffer_size), max_queued_packets);
+			in_buffer.resize(nearest_shift((uint32_t)inbound_buffer_size), max_queued_packets);
 			packet_buffer.resize(inbound_buffer_size);
 			ready_state = STATE_OPEN;
 		}
@@ -408,7 +408,7 @@ void WSLPeer::_do_client_handshake() {
 				wslay_event_context_client_init(&wsl_ctx, &_wsl_callbacks, this);
 				wslay_event_config_set_no_buffering(wsl_ctx, 1);
 				wslay_event_config_set_max_recv_msg_length(wsl_ctx, inbound_buffer_size);
-				in_buffer.resize(nearest_shift(inbound_buffer_size), max_queued_packets);
+				in_buffer.resize(nearest_shift((uint32_t)inbound_buffer_size), max_queued_packets);
 				packet_buffer.resize(inbound_buffer_size);
 				ready_state = STATE_OPEN;
 				break;
@@ -418,7 +418,7 @@ void WSLPeer::_do_client_handshake() {
 }
 
 bool WSLPeer::_verify_server_response() {
-	Vector<String> psa = String((const char *)handshake_buffer->get_data_array().ptr(), handshake_buffer->get_position() - 4).split("\r\n");
+	Vector<String> psa = String::ascii(Span((const char *)handshake_buffer->get_data_array().ptr(), handshake_buffer->get_position() - 4)).split("\r\n");
 	int len = psa.size();
 	ERR_FAIL_COND_V_MSG(len < 4, false, "Not enough response headers. Got: " + itos(len) + ", expected >= 4.");
 
@@ -453,7 +453,7 @@ bool WSLPeer::_verify_server_response() {
 	WSL_CHECK_NC("sec-websocket-accept", _compute_key_response(session_key));
 #undef WSL_CHECK_NC
 #undef WSL_CHECK
-	if (supported_protocols.size() == 0) {
+	if (supported_protocols.is_empty()) {
 		// We didn't request a custom protocol
 		ERR_FAIL_COND_V_MSG(headers.has("sec-websocket-protocol"), false, "Received unrequested sub-protocol -> " + headers["sec-websocket-protocol"]);
 	} else {
@@ -648,9 +648,9 @@ void WSLPeer::_wsl_msg_recv_callback(wslay_event_context_ptr ctx, const struct w
 		// Close request or confirmation.
 		peer->close_code = arg->status_code;
 		size_t len = arg->msg_length;
-		peer->close_reason = "";
+		peer->close_reason.clear();
 		if (len > 2 /* first 2 bytes = close code */) {
-			peer->close_reason.parse_utf8((char *)arg->msg + 2, len - 2);
+			peer->close_reason.append_utf8((char *)arg->msg + 2, len - 2);
 		}
 		if (peer->ready_state == STATE_OPEN) {
 			peer->ready_state = STATE_CLOSING;

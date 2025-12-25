@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ANIMATION_LIBRARY_H
-#define ANIMATION_LIBRARY_H
+#pragma once
 
 #include "core/variant/typed_array.h"
 #include "scene/resources/animation.h"
@@ -71,5 +70,3 @@ public:
 
 	AnimationLibrary();
 };
-
-#endif // ANIMATION_LIBRARY_H

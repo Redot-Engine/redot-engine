@@ -33,6 +33,7 @@
 package org.redotengine.godot.plugin;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -45,10 +46,8 @@ import androidx.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -109,6 +108,13 @@ public abstract class GodotPlugin {
 	@Nullable
 	protected Activity getActivity() {
 		return godot.getActivity();
+	}
+
+	/**
+	 * Provides access to the {@link Context}.
+	 */
+	protected Context getContext() {
+		return godot.getContext();
 	}
 
 	/**
@@ -181,7 +187,7 @@ public abstract class GodotPlugin {
 	 * @return the plugin's view to be included; null if no views should be included.
 	 */
 	@Nullable
-	public View onMainCreate(Activity activity) {
+	public View onMainCreate(@Nullable Activity activity) {
 		return null;
 	}
 
@@ -325,14 +331,24 @@ public abstract class GodotPlugin {
 	}
 
 	/**
-	 * Runs the specified action on the UI thread. If the current thread is the UI
-	 * thread, then the action is executed immediately. If the current thread is
-	 * not the UI thread, the action is posted to the event queue of the UI thread.
+	 * Runs the specified action on the host thread.
 	 *
-	 * @param action the action to run on the UI thread
+	 * @param action the action to run on the host thread
+	 *
+	 * @deprecated Use the {@link GodotPlugin#runOnHostThread} instead.
 	 */
+	@Deprecated
 	protected void runOnUiThread(Runnable action) {
-		godot.runOnUiThread(action);
+		runOnHostThread(action);
+	}
+
+	/**
+	 * Runs the specified action on the host thread.
+	 *
+	 * @param action the action to run on the host thread
+	 */
+	protected void runOnHostThread(Runnable action) {
+		godot.runOnHostThread(action);
 	}
 
 	/**

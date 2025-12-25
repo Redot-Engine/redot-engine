@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ENGINE_H
-#define ENGINE_H
+#pragma once
 
 #include "core/os/main_loop.h"
 #include "core/string/ustring.h"
@@ -93,7 +92,7 @@ private:
 
 	bool _print_header = true;
 
-	static Engine *singleton;
+	static inline Engine *singleton = nullptr;
 
 	String write_movie_path;
 	String shader_cache_path;
@@ -219,5 +218,3 @@ public:
 	Engine();
 	virtual ~Engine();
 };
-
-#endif // ENGINE_H

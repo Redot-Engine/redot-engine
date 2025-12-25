@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IP_WINDOWS_H
-#define IP_WINDOWS_H
+#pragma once
 
 #if defined(WINDOWS_ENABLED)
 
@@ -52,5 +51,3 @@ public:
 };
 
 #endif // WINDOWS_ENABLED
-
-#endif // IP_WINDOWS_H

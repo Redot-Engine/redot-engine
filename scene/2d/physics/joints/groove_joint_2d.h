@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GROOVE_JOINT_2D_H
-#define GROOVE_JOINT_2D_H
+#pragma once
 
 #include "scene/2d/physics/joints/joint_2d.h"
 
@@ -57,5 +56,3 @@ public:
 
 	GrooveJoint2D();
 };
-
-#endif // GROOVE_JOINT_2D_H

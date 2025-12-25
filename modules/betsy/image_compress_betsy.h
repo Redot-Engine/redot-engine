@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IMAGE_COMPRESS_BETSY_H
-#define IMAGE_COMPRESS_BETSY_H
+#pragma once
 
 #include "core/io/image.h"
 #include "core/object/worker_thread_pool.h"
@@ -130,5 +129,3 @@ public:
 		return err;
 	}
 };
-
-#endif // IMAGE_COMPRESS_BETSY_H

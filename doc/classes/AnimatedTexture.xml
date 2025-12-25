@@ -13,6 +13,13 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="create_from_image_frames" qualifiers="static">
+			<return type="AnimatedTexture" />
+			<param index="0" name="image_frames" type="ImageFrames" />
+			<description>
+				Creates a new [AnimatedTexture] and initializes it by allocating and setting the data from an [ImageFrames]. This function will ignore all frames beyond [constant MAX_FRAMES] - 1.
+			</description>
+		</method>
 		<method name="get_frame_duration" qualifiers="const">
 			<return type="float" />
 			<param index="0" name="frame" type="int" />
@@ -25,6 +32,12 @@
 			<param index="0" name="frame" type="int" />
 			<description>
 				Returns the given frame's [Texture2D].
+			</description>
+		</method>
+		<method name="make_image_frames" qualifiers="const">
+			<return type="ImageFrames" />
+			<description>
+				Creates a new [ImageFrames] object from contents.
 			</description>
 		</method>
 		<method name="set_frame_duration">
@@ -42,6 +55,13 @@
 			<description>
 				Assigns a [Texture2D] to the given frame. Frame IDs start at 0, so the first frame has ID 0, and the last frame of the animation has ID [member frames] - 1.
 				You can define any number of textures up to [constant MAX_FRAMES], but keep in mind that only frames from 0 to [member frames] - 1 will be part of the animation.
+			</description>
+		</method>
+		<method name="set_from_image_frames">
+			<return type="void" />
+			<param index="0" name="image_frames" type="ImageFrames" />
+			<description>
+				Replaces the texture's data with a new [ImageFrames]. This function will ignore all frames beyond [constant MAX_FRAMES] - 1.
 			</description>
 		</method>
 	</methods>

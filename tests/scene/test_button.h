@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_BUTTON_H
-#define TEST_BUTTON_H
+#pragma once
 
 #include "scene/gui/button.h"
 #include "scene/main/window.h"
@@ -65,4 +64,3 @@ TEST_CASE("[SceneTree][Button] is_hovered()") {
 }
 
 } //namespace TestButton
-#endif // TEST_BUTTON_H

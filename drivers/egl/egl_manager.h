@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EGL_MANAGER_H
-#define EGL_MANAGER_H
+#pragma once
 
 #ifdef EGL_ENABLED
 
@@ -121,5 +120,3 @@ public:
 };
 
 #endif // EGL_ENABLED
-
-#endif // EGL_MANAGER_H

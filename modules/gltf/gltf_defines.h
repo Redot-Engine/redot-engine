@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLTF_DEFINES_H
-#define GLTF_DEFINES_H
+#pragma once
 
 // This file should only be included by other headers.
 
@@ -68,5 +67,3 @@ using GLTFSkeletonIndex = int;
 using GLTFSkinIndex = int;
 using GLTFTextureIndex = int;
 using GLTFTextureSamplerIndex = int;
-
-#endif // GLTF_DEFINES_H

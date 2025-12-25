@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NET_SOCKET_ANDROID_H
-#define NET_SOCKET_ANDROID_H
+#pragma once
 
 #include "drivers/unix/net_socket_unix.h"
 
@@ -76,5 +75,3 @@ public:
 	NetSocketAndroid() {}
 	~NetSocketAndroid();
 };
-
-#endif // NET_SOCKET_ANDROID_H

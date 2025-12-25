@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef VISUAL_SHADER_PARTICLE_NODES_H
-#define VISUAL_SHADER_PARTICLE_NODES_H
+#pragma once
 
 #include "scene/resources/visual_shader.h"
 
@@ -370,5 +369,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(VisualShaderNodeParticleEmit::EmitFlags)
-
-#endif // VISUAL_SHADER_PARTICLE_NODES_H

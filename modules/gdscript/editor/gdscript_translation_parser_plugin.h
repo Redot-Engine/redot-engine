@@ -30,15 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDSCRIPT_TRANSLATION_PARSER_PLUGIN_H
-#define GDSCRIPT_TRANSLATION_PARSER_PLUGIN_H
+#pragma once
 
 #include "../gdscript_parser.h"
 #include "../gdscript_tokenizer.h"
 
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
-#include "editor/editor_translation_parser.h"
+#include "editor/translations/editor_translation_parser.h"
 
 class GDScriptEditorTranslationParserPlugin : public EditorTranslationParserPlugin {
 	GDCLASS(GDScriptEditorTranslationParserPlugin, EditorTranslationParserPlugin);
@@ -84,5 +83,3 @@ public:
 
 	GDScriptEditorTranslationParserPlugin();
 };
-
-#endif // GDSCRIPT_TRANSLATION_PARSER_PLUGIN_H

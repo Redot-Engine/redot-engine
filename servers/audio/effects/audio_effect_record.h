@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_EFFECT_RECORD_H
-#define AUDIO_EFFECT_RECORD_H
+#pragma once
 
 #include "core/os/thread.h"
 #include "scene/resources/audio_stream_wav.h"
@@ -96,5 +95,3 @@ public:
 	AudioEffectRecord();
 	~AudioEffectRecord();
 };
-
-#endif // AUDIO_EFFECT_RECORD_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_COLLISION_OBJECT_2D_H
-#define GODOT_COLLISION_OBJECT_2D_H
+#pragma once
 
 #include "godot_broad_phase_2d.h"
 #include "godot_shape_2d.h"
@@ -196,5 +195,3 @@ public:
 
 	virtual ~GodotCollisionObject2D() {}
 };
-
-#endif // GODOT_COLLISION_OBJECT_2D_H

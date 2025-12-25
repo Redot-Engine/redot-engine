@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBXR_INTERFACE_JS_H
-#define WEBXR_INTERFACE_JS_H
+#pragma once
 
 #ifdef WEB_ENABLED
 
@@ -265,5 +264,3 @@ private:
 };
 
 #endif // WEB_ENABLED
-
-#endif // WEBXR_INTERFACE_JS_H

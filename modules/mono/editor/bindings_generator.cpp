@@ -32,7 +32,7 @@
 
 #include "bindings_generator.h"
 
-#if defined(DEBUG_METHODS_ENABLED) && defined(TOOLS_ENABLED)
+#ifdef DEBUG_ENABLED
 
 #include "../godotsharp_defs.h"
 #include "../utils/naming_utils.h"
@@ -143,6 +143,7 @@ const Vector<String> prop_allowed_inherited_member_hiding = {
 	"MenuBar.TextDirection",
 	"RichTextLabel.TextDirection",
 	"TextEdit.TextDirection",
+	"FoldableContainer.TextDirection",
 	"VisualShaderNodeReroute.PortType",
 	// The following instances are uniquely egregious violations, hiding `GetType()` from `object`.
 	// Included for the sake of CI, with the understanding that they *deserve* warnings.
@@ -174,8 +175,7 @@ static String fix_doc_description(const String &p_bbcode) {
 	// This seems to be the correct way to do this. It's the same EditorHelp does.
 
 	return p_bbcode.dedent()
-			.replace("\t", "")
-			.replace("\r", "")
+			.remove_chars("\r")
 			.strip_edges();
 }
 
@@ -220,7 +220,7 @@ String BindingsGenerator::bbcode_to_text(const String &p_bbcode, const TypeInter
 		int brk_end = bbcode.find_char(']', brk_pos + 1);
 
 		if (brk_end == -1) {
-			String text = bbcode.substr(brk_pos, bbcode.length() - brk_pos);
+			String text = bbcode.substr(brk_pos);
 			if (code_tag || tag_stack.size() > 0) {
 				output.append("'" + text + "'");
 			}
@@ -231,7 +231,7 @@ String BindingsGenerator::bbcode_to_text(const String &p_bbcode, const TypeInter
 		String tag = bbcode.substr(brk_pos + 1, brk_end - brk_pos - 1);
 
 		if (tag.begins_with("/")) {
-			bool tag_ok = tag_stack.size() && tag_stack.front()->get() == tag.substr(1, tag.length());
+			bool tag_ok = tag_stack.size() && tag_stack.front()->get() == tag.substr(1);
 
 			if (!tag_ok) {
 				output.append("]");
@@ -248,11 +248,11 @@ String BindingsGenerator::bbcode_to_text(const String &p_bbcode, const TypeInter
 		} else if (tag.begins_with("method ") || tag.begins_with("constructor ") || tag.begins_with("operator ") || tag.begins_with("member ") || tag.begins_with("signal ") || tag.begins_with("enum ") || tag.begins_with("constant ") || tag.begins_with("theme_item ") || tag.begins_with("param ")) {
 			const int tag_end = tag.find_char(' ');
 			const String link_tag = tag.substr(0, tag_end);
-			const String link_target = tag.substr(tag_end + 1, tag.length()).lstrip(" ");
+			const String link_target = tag.substr(tag_end + 1).lstrip(" ");
 
 			const Vector<String> link_target_parts = link_target.split(".");
 
-			if (link_target_parts.size() <= 0 || link_target_parts.size() > 2) {
+			if (link_target_parts.is_empty() || link_target_parts.size() > 2) {
 				ERR_PRINT("Invalid reference format: '" + tag + "'.");
 
 				output.append(tag);
@@ -403,7 +403,7 @@ String BindingsGenerator::bbcode_to_text(const String &p_bbcode, const TypeInter
 			pos = brk_end + 1;
 			tag_stack.push_front(tag);
 		} else if (tag.begins_with("url=")) {
-			String url = tag.substr(4, tag.length());
+			String url = tag.substr(4);
 			// Not supported. Just append the url.
 			output.append(url);
 
@@ -499,7 +499,7 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 
 		if (brk_end == -1) {
 			if (!line_del) {
-				String text = bbcode.substr(brk_pos, bbcode.length() - brk_pos);
+				String text = bbcode.substr(brk_pos);
 				if (code_tag || tag_stack.size() > 0) {
 					xml_output.append(text.xml_escape());
 				} else {
@@ -524,7 +524,7 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 		String tag = bbcode.substr(brk_pos + 1, brk_end - brk_pos - 1);
 
 		if (tag.begins_with("/")) {
-			bool tag_ok = tag_stack.size() && tag_stack.front()->get() == tag.substr(1, tag.length());
+			bool tag_ok = tag_stack.size() && tag_stack.front()->get() == tag.substr(1);
 
 			if (!tag_ok) {
 				if (!line_del) {
@@ -560,11 +560,11 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 		} else if (tag.begins_with("method ") || tag.begins_with("constructor ") || tag.begins_with("operator ") || tag.begins_with("member ") || tag.begins_with("signal ") || tag.begins_with("enum ") || tag.begins_with("constant ") || tag.begins_with("theme_item ") || tag.begins_with("param ")) {
 			const int tag_end = tag.find_char(' ');
 			const String link_tag = tag.substr(0, tag_end);
-			const String link_target = tag.substr(tag_end + 1, tag.length()).lstrip(" ");
+			const String link_target = tag.substr(tag_end + 1).lstrip(" ");
 
 			const Vector<String> link_target_parts = link_target.split(".");
 
-			if (link_target_parts.size() <= 0 || link_target_parts.size() > 2) {
+			if (link_target_parts.is_empty() || link_target_parts.size() > 2) {
 				ERR_PRINT("Invalid reference format: '" + tag + "'.");
 
 				xml_output.append("<c>");
@@ -765,7 +765,7 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 			pos = brk_end + 1;
 			tag_stack.push_front(tag);
 		} else if (tag.begins_with("url=")) {
-			String url = tag.substr(4, tag.length());
+			String url = tag.substr(4);
 			xml_output.append("<a href=\"");
 			xml_output.append(url);
 			xml_output.append("\">");
@@ -966,7 +966,7 @@ void BindingsGenerator::_append_text_enum(StringBuilder &p_output, const TypeInt
 		p_output.append(target_enum_itype.proxy_name); // Includes nesting class if any
 		p_output.append("'");
 	} else {
-		if (!p_target_itype->is_intentionally_ignored(p_link_target)) {
+		if (p_target_itype == nullptr || !p_target_itype->is_intentionally_ignored(p_link_target)) {
 			ERR_PRINT("Cannot resolve enum reference in documentation: '" + p_link_target + "'.");
 		}
 
@@ -1260,7 +1260,7 @@ void BindingsGenerator::_append_xml_enum(StringBuilder &p_xml_output, const Type
 			p_xml_output.append("\"/>");
 		}
 	} else {
-		if (!p_target_itype->is_intentionally_ignored(p_link_target)) {
+		if (p_target_itype == nullptr || !p_target_itype->is_intentionally_ignored(p_link_target)) {
 			ERR_PRINT("Cannot resolve enum reference in documentation: '" + p_link_target + "'.");
 		}
 
@@ -1743,8 +1743,8 @@ Error BindingsGenerator::generate_cs_core_project(const String &p_proj_dir) {
 	da->make_dir("Generated");
 	da->make_dir("Generated/GodotObjects");
 
-	String base_gen_dir = path::join(p_proj_dir, "Generated");
-	String godot_objects_gen_dir = path::join(base_gen_dir, "GodotObjects");
+	String base_gen_dir = Path::join(p_proj_dir, "Generated");
+	String godot_objects_gen_dir = Path::join(base_gen_dir, "GodotObjects");
 
 	Vector<String> compile_items;
 
@@ -1752,7 +1752,7 @@ Error BindingsGenerator::generate_cs_core_project(const String &p_proj_dir) {
 	{
 		StringBuilder constants_source;
 		_generate_global_constants(constants_source);
-		String output_file = path::join(base_gen_dir, BINDINGS_GLOBAL_SCOPE_CLASS "_constants.cs");
+		String output_file = Path::join(base_gen_dir, BINDINGS_GLOBAL_SCOPE_CLASS "_constants.cs");
 		Error save_err = _save_file(output_file, constants_source);
 		if (save_err != OK) {
 			return save_err;
@@ -1765,7 +1765,7 @@ Error BindingsGenerator::generate_cs_core_project(const String &p_proj_dir) {
 	{
 		StringBuilder extensions_source;
 		_generate_array_extensions(extensions_source);
-		String output_file = path::join(base_gen_dir, BINDINGS_GLOBAL_SCOPE_CLASS "_extensions.cs");
+		String output_file = Path::join(base_gen_dir, BINDINGS_GLOBAL_SCOPE_CLASS "_extensions.cs");
 		Error save_err = _save_file(output_file, extensions_source);
 		if (save_err != OK) {
 			return save_err;
@@ -1781,7 +1781,7 @@ Error BindingsGenerator::generate_cs_core_project(const String &p_proj_dir) {
 			continue;
 		}
 
-		String output_file = path::join(godot_objects_gen_dir, itype.proxy_name + ".cs");
+		String output_file = Path::join(godot_objects_gen_dir, itype.proxy_name + ".cs");
 		Error err = _generate_cs_type(itype, output_file);
 
 		if (err == ERR_SKIP) {
@@ -1848,7 +1848,7 @@ Error BindingsGenerator::generate_cs_core_project(const String &p_proj_dir) {
 
 		cs_built_in_ctors_content.append(CLOSE_BLOCK);
 
-		String constructors_file = path::join(base_gen_dir, BINDINGS_CLASS_CONSTRUCTOR ".cs");
+		String constructors_file = Path::join(base_gen_dir, BINDINGS_CLASS_CONSTRUCTOR ".cs");
 		Error err = _save_file(constructors_file, cs_built_in_ctors_content);
 
 		if (err != OK) {
@@ -1891,7 +1891,7 @@ Error BindingsGenerator::generate_cs_core_project(const String &p_proj_dir) {
 
 	cs_icalls_content.append(CLOSE_BLOCK);
 
-	String internal_methods_file = path::join(base_gen_dir, BINDINGS_CLASS_NATIVECALLS ".cs");
+	String internal_methods_file = Path::join(base_gen_dir, BINDINGS_CLASS_NATIVECALLS ".cs");
 
 	Error err = _save_file(internal_methods_file, cs_icalls_content);
 	if (err != OK) {
@@ -1907,14 +1907,14 @@ Error BindingsGenerator::generate_cs_core_project(const String &p_proj_dir) {
 								  "  <ItemGroup>\n");
 
 	for (int i = 0; i < compile_items.size(); i++) {
-		String include = path::relative_to(compile_items[i], p_proj_dir).replace("/", "\\");
+		String include = Path::relative_to(compile_items[i], p_proj_dir).replace_char('/', '\\');
 		includes_props_content.append("    <Compile Include=\"" + include + "\" />\n");
 	}
 
 	includes_props_content.append("  </ItemGroup>\n"
 								  "</Project>\n");
 
-	String includes_props_file = path::join(base_gen_dir, "GeneratedIncludes.props");
+	String includes_props_file = Path::join(base_gen_dir, "GeneratedIncludes.props");
 
 	err = _save_file(includes_props_file, includes_props_content);
 	if (err != OK) {
@@ -1939,8 +1939,8 @@ Error BindingsGenerator::generate_cs_editor_project(const String &p_proj_dir) {
 	da->make_dir("Generated");
 	da->make_dir("Generated/GodotObjects");
 
-	String base_gen_dir = path::join(p_proj_dir, "Generated");
-	String godot_objects_gen_dir = path::join(base_gen_dir, "GodotObjects");
+	String base_gen_dir = Path::join(p_proj_dir, "Generated");
+	String godot_objects_gen_dir = Path::join(base_gen_dir, "GodotObjects");
 
 	Vector<String> compile_items;
 
@@ -1951,7 +1951,7 @@ Error BindingsGenerator::generate_cs_editor_project(const String &p_proj_dir) {
 			continue;
 		}
 
-		String output_file = path::join(godot_objects_gen_dir, itype.proxy_name + ".cs");
+		String output_file = Path::join(godot_objects_gen_dir, itype.proxy_name + ".cs");
 		Error err = _generate_cs_type(itype, output_file);
 
 		if (err == ERR_SKIP) {
@@ -2006,7 +2006,7 @@ Error BindingsGenerator::generate_cs_editor_project(const String &p_proj_dir) {
 
 		cs_built_in_ctors_content.append(CLOSE_BLOCK);
 
-		String constructors_file = path::join(base_gen_dir, BINDINGS_CLASS_CONSTRUCTOR_EDITOR ".cs");
+		String constructors_file = Path::join(base_gen_dir, BINDINGS_CLASS_CONSTRUCTOR_EDITOR ".cs");
 		Error err = _save_file(constructors_file, cs_built_in_ctors_content);
 
 		if (err != OK) {
@@ -2051,7 +2051,7 @@ Error BindingsGenerator::generate_cs_editor_project(const String &p_proj_dir) {
 
 	cs_icalls_content.append(CLOSE_BLOCK);
 
-	String internal_methods_file = path::join(base_gen_dir, BINDINGS_CLASS_NATIVECALLS_EDITOR ".cs");
+	String internal_methods_file = Path::join(base_gen_dir, BINDINGS_CLASS_NATIVECALLS_EDITOR ".cs");
 
 	Error err = _save_file(internal_methods_file, cs_icalls_content);
 	if (err != OK) {
@@ -2067,14 +2067,14 @@ Error BindingsGenerator::generate_cs_editor_project(const String &p_proj_dir) {
 								  "  <ItemGroup>\n");
 
 	for (int i = 0; i < compile_items.size(); i++) {
-		String include = path::relative_to(compile_items[i], p_proj_dir).replace("/", "\\");
+		String include = Path::relative_to(compile_items[i], p_proj_dir).replace_char('/', '\\');
 		includes_props_content.append("    <Compile Include=\"" + include + "\" />\n");
 	}
 
 	includes_props_content.append("  </ItemGroup>\n"
 								  "</Project>\n");
 
-	String includes_props_file = path::join(base_gen_dir, "GeneratedIncludes.props");
+	String includes_props_file = Path::join(base_gen_dir, "GeneratedIncludes.props");
 
 	err = _save_file(includes_props_file, includes_props_content);
 	if (err != OK) {
@@ -2087,7 +2087,7 @@ Error BindingsGenerator::generate_cs_editor_project(const String &p_proj_dir) {
 Error BindingsGenerator::generate_cs_api(const String &p_output_dir) {
 	ERR_FAIL_COND_V(!initialized, ERR_UNCONFIGURED);
 
-	String output_dir = path::abspath(path::realpath(p_output_dir));
+	String output_dir = Path::abspath(Path::realpath(p_output_dir));
 
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	ERR_FAIL_COND_V(da.is_null(), ERR_CANT_CREATE);
@@ -2734,11 +2734,7 @@ Error BindingsGenerator::_generate_cs_property(const BindingsGenerator::TypeInte
 	if (getter && setter) {
 		const ArgumentInterface &setter_first_arg = setter->arguments.back()->get();
 		if (getter->return_type.cname != setter_first_arg.type.cname) {
-			// Special case for Node::set_name
-			bool whitelisted = getter->return_type.cname == name_cache.type_StringName &&
-					setter_first_arg.type.cname == name_cache.type_String;
-
-			ERR_FAIL_COND_V_MSG(!whitelisted, ERR_BUG,
+			ERR_FAIL_V_MSG(ERR_BUG,
 					"Return type from getter doesn't match first argument of setter for property: '" +
 							p_itype.name + "." + String(p_iprop.cname) + "'.");
 		}
@@ -3013,7 +3009,7 @@ Error BindingsGenerator::_generate_cs_method(const BindingsGenerator::TypeInterf
 			}
 
 			// Apparently the name attribute must not include the @
-			String param_tag_name = iarg.name.begins_with("@") ? iarg.name.substr(1, iarg.name.length()) : iarg.name;
+			String param_tag_name = iarg.name.begins_with("@") ? iarg.name.substr(1) : iarg.name;
 			// Escape < and > in the attribute default value
 			String param_def_arg = def_arg.replacen("<", "&lt;").replacen(">", "&gt;");
 
@@ -3125,9 +3121,8 @@ Error BindingsGenerator::_generate_cs_method(const BindingsGenerator::TypeInterf
 		if (p_imethod.requires_object_call) {
 			// Fallback to Godot's object.Call(string, params)
 
-			p_output.append(INDENT2 CS_METHOD_CALL "(\"");
-			p_output.append(p_imethod.name);
-			p_output.append("\"");
+			p_output.append(INDENT2 CS_METHOD_CALL "(");
+			p_output.append("MethodName." + p_imethod.proxy_name);
 
 			for (const ArgumentInterface &iarg : p_imethod.arguments) {
 				p_output.append(", ");
@@ -3203,7 +3198,7 @@ Error BindingsGenerator::_generate_cs_signal(const BindingsGenerator::TypeInterf
 
 	// Generate signal
 	{
-		bool is_parameterless = p_isignal.arguments.size() == 0;
+		bool is_parameterless = p_isignal.arguments.is_empty();
 
 		// Delegate name is [SignalName]EventHandler
 		String delegate_name = is_parameterless ? "Action" : p_isignal.proxy_name + "EventHandler";
@@ -3802,6 +3797,8 @@ bool BindingsGenerator::_arg_default_value_is_assignable_to_type(const Variant &
 		case Variant::VECTOR2:
 		case Variant::RECT2:
 		case Variant::VECTOR3:
+		case Variant::VECTOR4:
+		case Variant::PROJECTION:
 		case Variant::RID:
 		case Variant::PACKED_BYTE_ARRAY:
 		case Variant::PACKED_INT32_ARRAY:
@@ -3831,7 +3828,10 @@ bool BindingsGenerator::_arg_default_value_is_assignable_to_type(const Variant &
 		case Variant::VECTOR3I:
 			return p_arg_type.name == name_cache.type_Vector3 ||
 					p_arg_type.name == Variant::get_type_name(p_val.get_type());
-		default:
+		case Variant::VECTOR4I:
+			return p_arg_type.name == name_cache.type_Vector4 ||
+					p_arg_type.name == Variant::get_type_name(p_val.get_type());
+		case Variant::VARIANT_MAX:
 			CRASH_NOW_MSG("Unexpected Variant type: " + itos(p_val.get_type()));
 			break;
 	}
@@ -4011,7 +4011,7 @@ bool BindingsGenerator::_populate_object_type_interfaces() {
 
 		List<Pair<MethodInfo, uint32_t>> method_list_with_hashes;
 		ClassDB::get_method_list_with_compatibility(type_cname, &method_list_with_hashes, true);
-		method_list_with_hashes.sort_custom_inplace<SortMethodWithHashes>();
+		method_list_with_hashes.sort_custom<SortMethodWithHashes>();
 
 		List<MethodInterface> compat_methods;
 		for (const Pair<MethodInfo, uint32_t> &E : method_list_with_hashes) {
@@ -4114,9 +4114,8 @@ bool BindingsGenerator::_populate_object_type_interfaces() {
 				imethod.return_type.cname = _get_type_name_from_meta(return_info.type, m ? m->get_argument_meta(-1) : (GodotTypeInfo::Metadata)method_info.return_val_metadata);
 			}
 
-			int idx = 0;
-			for (List<PropertyInfo>::ConstIterator itr = method_info.arguments.begin(); itr != method_info.arguments.end(); ++itr, ++idx) {
-				const PropertyInfo &arginfo = *itr;
+			for (int64_t idx = 0; idx < method_info.arguments.size(); ++idx) {
+				const PropertyInfo &arginfo = method_info.arguments[idx];
 
 				String orig_arg_name = arginfo.name;
 
@@ -4206,6 +4205,18 @@ bool BindingsGenerator::_populate_object_type_interfaces() {
 			// after all the non-compat methods have been added. The compat methods are added in
 			// reverse so the most recently added ones take precedence over older compat methods.
 			if (imethod.is_compat) {
+				// If the method references deprecated types, mark the method as deprecated as well.
+				for (const ArgumentInterface &iarg : imethod.arguments) {
+					String arg_type_name = iarg.type.cname;
+					String doc_name = arg_type_name.begins_with("_") ? arg_type_name.substr(1) : arg_type_name;
+					const DocData::ClassDoc &class_doc = EditorHelp::get_doc_data()->class_list[doc_name];
+					if (class_doc.is_deprecated) {
+						imethod.is_deprecated = true;
+						imethod.deprecation_message = "This method overload is deprecated.";
+						break;
+					}
+				}
+
 				imethod.is_hidden = true;
 				compat_methods.push_front(imethod);
 				continue;
@@ -4246,9 +4257,8 @@ bool BindingsGenerator::_populate_object_type_interfaces() {
 			isignal.name = method_info.name;
 			isignal.cname = method_info.name;
 
-			int idx = 0;
-			for (List<PropertyInfo>::ConstIterator itr = method_info.arguments.begin(); itr != method_info.arguments.end(); ++itr, ++idx) {
-				const PropertyInfo &arginfo = *itr;
+			for (int64_t idx = 0; idx < method_info.arguments.size(); ++idx) {
+				const PropertyInfo &arginfo = method_info.arguments[idx];
 
 				String orig_arg_name = arginfo.name;
 
@@ -4700,7 +4710,7 @@ bool BindingsGenerator::_arg_default_value_from_variant(const Variant &p_val, Ar
 					"Parameter of type '" + String(r_iarg.type.cname) + "' can only have null/zero as the default value.");
 			r_iarg.default_argument = "default";
 			break;
-		default:
+		case Variant::VARIANT_MAX:
 			ERR_FAIL_V_MSG(false, "Unexpected Variant type: " + itos(p_val.get_type()));
 			break;
 	}
@@ -5292,4 +5302,4 @@ void BindingsGenerator::handle_cmdline_args(const List<String> &p_cmdline_args) 
 	}
 }
 
-#endif
+#endif // DEBUG_ENABLED

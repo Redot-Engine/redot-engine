@@ -95,5 +95,3 @@ void CenterContainer::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_top_left"), "set_use_top_left", "is_using_top_left");
 }
-
-CenterContainer::CenterContainer() {}

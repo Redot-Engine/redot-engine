@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DEBUG_ADAPTER_SERVER_H
-#define DEBUG_ADAPTER_SERVER_H
+#pragma once
 
 #include "debug_adapter_protocol.h"
 #include "editor/plugins/editor_plugin.h"
@@ -56,5 +55,3 @@ public:
 	void start();
 	void stop();
 };
-
-#endif // DEBUG_ADAPTER_SERVER_H

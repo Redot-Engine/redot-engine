@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef UNDO_REDO_H
-#define UNDO_REDO_H
+#pragma once
 
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
@@ -153,5 +152,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(UndoRedo::MergeMode);
-
-#endif // UNDO_REDO_H
