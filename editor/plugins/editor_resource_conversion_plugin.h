@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_RESOURCE_CONVERSION_PLUGIN_H
-#define EDITOR_RESOURCE_CONVERSION_PLUGIN_H
+#pragma once
 
 #include "core/io/resource.h"
 #include "core/object/gdvirtual.gen.inc"
@@ -51,5 +50,3 @@ public:
 	virtual bool handles(const Ref<Resource> &p_resource) const;
 	virtual Ref<Resource> convert(const Ref<Resource> &p_resource) const;
 };
-
-#endif // EDITOR_RESOURCE_CONVERSION_PLUGIN_H

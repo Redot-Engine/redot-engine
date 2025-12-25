@@ -1,7 +1,7 @@
 short_name = "redot"
 name = "Redot Engine"
 major = 4
-minor = 4
+minor = 5
 patch = 0
 status = "alpha"
 status_version = 0
@@ -9,6 +9,6 @@ module_config = ""
 website = "https://redotengine.org"
 docs = "latest"
 godot_major = 4
-godot_minor = 4
+godot_minor = 5
 godot_patch = 0
 godot_status = "beta"

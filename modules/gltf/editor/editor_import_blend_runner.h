@@ -30,10 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_IMPORT_BLEND_RUNNER_H
-#define EDITOR_IMPORT_BLEND_RUNNER_H
-
-#ifdef TOOLS_ENABLED
+#pragma once
 
 #include "core/io/http_client.h"
 #include "core/os/os.h"
@@ -68,7 +65,3 @@ public:
 
 	EditorImportBlendRunner();
 };
-
-#endif // TOOLS_ENABLED
-
-#endif // EDITOR_IMPORT_BLEND_RUNNER_H

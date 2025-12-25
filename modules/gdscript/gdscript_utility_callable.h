@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDSCRIPT_UTILITY_CALLABLE_H
-#define GDSCRIPT_UTILITY_CALLABLE_H
+#pragma once
 
 #include "gdscript_utility_functions.h"
 
@@ -64,5 +63,3 @@ public:
 
 	GDScriptUtilityCallable(const StringName &p_function_name);
 };
-
-#endif // GDSCRIPT_UTILITY_CALLABLE_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef REFLECTION_PROBE_H
-#define REFLECTION_PROBE_H
+#pragma once
 
 #include "scene/3d/visual_instance_3d.h"
 
@@ -134,5 +133,3 @@ public:
 
 VARIANT_ENUM_CAST(ReflectionProbe::AmbientMode);
 VARIANT_ENUM_CAST(ReflectionProbe::UpdateMode);
-
-#endif // REFLECTION_PROBE_H

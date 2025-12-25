@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_TOASTER_H
-#define EDITOR_TOASTER_H
+#pragma once
 
 #include "scene/gui/box_container.h"
 
@@ -127,5 +126,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(EditorToaster::Severity);
-
-#endif // EDITOR_TOASTER_H

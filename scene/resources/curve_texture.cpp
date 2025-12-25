@@ -165,8 +165,6 @@ RID CurveTexture::get_rid() const {
 	return _texture;
 }
 
-CurveTexture::CurveTexture() {}
-
 CurveTexture::~CurveTexture() {
 	if (_texture.is_valid()) {
 		ERR_FAIL_NULL(RenderingServer::get_singleton());
@@ -361,8 +359,6 @@ RID CurveXYZTexture::get_rid() const {
 	}
 	return _texture;
 }
-
-CurveXYZTexture::CurveXYZTexture() {}
 
 CurveXYZTexture::~CurveXYZTexture() {
 	if (_texture.is_valid()) {

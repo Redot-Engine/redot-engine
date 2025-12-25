@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_PAGED_ARRAY_H
-#define TEST_PAGED_ARRAY_H
+#pragma once
 
 #include "core/templates/paged_array.h"
 
@@ -202,5 +201,3 @@ TEST_CASE("[PagedArray] Extensive merge_unordered() test") {
 }
 
 } // namespace TestPagedArray
-
-#endif // TEST_PAGED_ARRAY_H

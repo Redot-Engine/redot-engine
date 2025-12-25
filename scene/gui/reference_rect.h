@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef REFERENCE_RECT_H
-#define REFERENCE_RECT_H
+#pragma once
 
 #include "scene/gui/control.h"
 
@@ -56,5 +55,3 @@ public:
 	void set_editor_only(const bool &p_enabled);
 	bool get_editor_only() const;
 };
-
-#endif // REFERENCE_RECT_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NAVIGATION_PATH_QUERY_RESULT_3D_H
-#define NAVIGATION_PATH_QUERY_RESULT_3D_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 #include "core/variant/typed_array.h"
@@ -44,6 +43,7 @@ class NavigationPathQueryResult3D : public RefCounted {
 	Vector<int32_t> path_types;
 	TypedArray<RID> path_rids;
 	Vector<int64_t> path_owner_ids;
+	float path_length = 0.0;
 
 protected:
 	static void _bind_methods();
@@ -66,11 +66,12 @@ public:
 	void set_path_owner_ids(const Vector<int64_t> &p_path_owner_ids);
 	const Vector<int64_t> &get_path_owner_ids() const;
 
+	void set_path_length(float p_length);
+	float get_path_length() const;
+
 	void reset();
 
 	void set_data(const LocalVector<Vector3> &p_path, const LocalVector<int32_t> &p_path_types, const LocalVector<RID> &p_path_rids, const LocalVector<int64_t> &p_path_owner_ids);
 };
 
 VARIANT_ENUM_CAST(NavigationPathQueryResult3D::PathSegmentType);
-
-#endif // NAVIGATION_PATH_QUERY_RESULT_3D_H

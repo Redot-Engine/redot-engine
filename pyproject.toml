@@ -78,6 +78,7 @@ ignore-words-list = [
 	"inout",
 	"labelin",
 	"lod",
+	"masia",
 	"mis",
 	"nd",
 	"numer",

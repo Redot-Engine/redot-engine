@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_TIME_H
-#define TEST_TIME_H
+#pragma once
 
 #include "core/os/time.h"
 
@@ -146,5 +145,3 @@ TEST_CASE("[Time] System time methods") {
 }
 
 } // namespace TestTime
-
-#endif // TEST_TIME_H

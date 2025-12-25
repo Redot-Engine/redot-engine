@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_XML_PARSER_H
-#define TEST_XML_PARSER_H
+#pragma once
 
 #include "core/io/xml_parser.h"
 
@@ -233,5 +232,3 @@ TEST_CASE("[XMLParser] CDATA") {
 	CHECK_EQ(parser.get_node_name(), "a");
 }
 } // namespace TestXMLParser
-
-#endif // TEST_XML_PARSER_H

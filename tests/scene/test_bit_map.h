@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_BIT_MAP_H
-#define TEST_BIT_MAP_H
+#pragma once
 
 #include "core/os/memory.h"
 #include "scene/resources/bit_map.h"
@@ -503,5 +502,3 @@ TEST_CASE("[BitMap] Clip to polygon") {
 }
 
 } // namespace TestBitmap
-
-#endif // TEST_BIT_MAP_H

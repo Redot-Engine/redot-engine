@@ -32,6 +32,7 @@
 
 package org.redotengine.editor.embed
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.Gravity
 import android.view.MotionEvent
@@ -41,7 +42,7 @@ import android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
 import android.view.WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
 import org.redotengine.editor.GodotGame
 import org.redotengine.editor.R
-import org.redotengine.godot.utils.GameMenuUtils
+import org.redotengine.godot.editor.utils.GameMenuUtils
 
 /**
  * Host the Godot game from the editor when the embedded mode is enabled.
@@ -65,6 +66,9 @@ class EmbeddedGodotGame : GodotGame() {
 	private var layoutWidthInPx = 0
 	private var layoutHeightInPx = 0
 
+	private var gameRequestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+	private var isFullscreen = false
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 
@@ -83,13 +87,26 @@ class EmbeddedGodotGame : GodotGame() {
 		window.attributes = layoutParams
 	}
 
+	override fun setRequestedOrientation(requestedOrientation: Int) {
+		// Allow orientation change only if fullscreen mode is active
+		// or if the requestedOrientation is unspecified (i.e switching to default).
+		if (isFullscreen || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+			super.setRequestedOrientation(requestedOrientation)
+		} else {
+			// Cache the requestedOrientation to apply when switching to fullscreen.
+			gameRequestedOrientation = requestedOrientation
+		}
+	}
+
 	override fun dispatchTouchEvent(event: MotionEvent): Boolean {
 		when (event.actionMasked) {
 			MotionEvent.ACTION_OUTSIDE -> {
-				if (gameMenuFragment?.isAlwaysOnTop() == true) {
-					enterPiPMode()
-				} else {
-					minimizeGameWindow()
+				if (!isFullscreen) {
+					if (gameMenuFragment?.isAlwaysOnTop() == true) {
+						enterPiPMode()
+					} else {
+						minimizeGameWindow()
+					}
 				}
 			}
 
@@ -129,12 +146,18 @@ class EmbeddedGodotGame : GodotGame() {
 
 	override fun onFullScreenUpdated(enabled: Boolean) {
 		godot?.enableImmersiveMode(enabled)
+		isFullscreen = enabled
 		if (enabled) {
 			layoutWidthInPx = FULL_SCREEN_WIDTH
 			layoutHeightInPx = FULL_SCREEN_HEIGHT
+			requestedOrientation = gameRequestedOrientation
 		} else {
 			layoutWidthInPx = defaultWidthInPx
 			layoutHeightInPx = defaultHeightInPx
+
+			// Cache the last used orientation in fullscreen to reapply when re-entering fullscreen.
+			gameRequestedOrientation = requestedOrientation
+			requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 		}
 		updateWindowDimensions(layoutWidthInPx, layoutHeightInPx)
 	}

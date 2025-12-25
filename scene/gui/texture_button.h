@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXTURE_BUTTON_H
-#define TEXTURE_BUTTON_H
+#pragma once
 
 #include "scene/gui/base_button.h"
 #include "scene/resources/bit_map.h"
@@ -101,10 +100,6 @@ public:
 
 	void set_flip_v(bool p_flip);
 	bool is_flipped_v() const;
-
-	TextureButton();
 };
 
 VARIANT_ENUM_CAST(TextureButton::StretchMode);
-
-#endif // TEXTURE_BUTTON_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLTF_OBJECT_MODEL_PROPERTY_H
-#define GLTF_OBJECT_MODEL_PROPERTY_H
+#pragma once
 
 #include "core/math/expression.h"
 #include "core/variant/typed_array.h"
@@ -102,5 +101,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(GLTFObjectModelProperty::GLTFObjectModelType);
-
-#endif // GLTF_OBJECT_MODEL_PROPERTY_H

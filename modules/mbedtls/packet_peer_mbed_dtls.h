@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PACKET_PEER_MBED_DTLS_H
-#define PACKET_PEER_MBED_DTLS_H
+#pragma once
 
 #include "tls_context_mbedtls.h"
 
@@ -85,5 +84,3 @@ public:
 	PacketPeerMbedDTLS();
 	~PacketPeerMbedDTLS();
 };
-
-#endif // PACKET_PEER_MBED_DTLS_H

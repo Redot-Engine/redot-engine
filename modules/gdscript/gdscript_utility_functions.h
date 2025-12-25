@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDSCRIPT_UTILITY_FUNCTIONS_H
-#define GDSCRIPT_UTILITY_FUNCTIONS_H
+#pragma once
 
 #include "core/string/string_name.h"
 #include "core/variant/variant.h"
@@ -59,5 +58,3 @@ public:
 	static void register_functions();
 	static void unregister_functions();
 };
-
-#endif // GDSCRIPT_UTILITY_FUNCTIONS_H

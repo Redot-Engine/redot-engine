@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CAPSULE_SHAPE_3D_H
-#define CAPSULE_SHAPE_3D_H
+#pragma once
 
 #include "scene/resources/3d/shape_3d.h"
 
@@ -52,6 +51,8 @@ public:
 	float get_radius() const;
 	void set_height(float p_height);
 	float get_height() const;
+	void set_mid_height(real_t p_mid_height);
+	real_t get_mid_height() const;
 
 	virtual Vector<Vector3> get_debug_mesh_lines() const override;
 	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color &p_modulate) const override;
@@ -59,5 +60,3 @@ public:
 
 	CapsuleShape3D();
 };
-
-#endif // CAPSULE_SHAPE_3D_H

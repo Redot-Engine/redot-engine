@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_COLOR_PICKER_H
-#define TEST_COLOR_PICKER_H
+#pragma once
 
 #include "scene/gui/color_picker.h"
 
@@ -59,5 +58,3 @@ TEST_CASE("[SceneTree][ColorPicker]") {
 }
 
 } // namespace TestColorPicker
-
-#endif // TEST_COLOR_PICKER_H

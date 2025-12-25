@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MULTIPLAYER_SYNCHRONIZER_H
-#define MULTIPLAYER_SYNCHRONIZER_H
+#pragma once
 
 #include "scene_replication_config.h"
 
@@ -127,5 +126,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(MultiplayerSynchronizer::VisibilityUpdateMode);
-
-#endif // MULTIPLAYER_SYNCHRONIZER_H

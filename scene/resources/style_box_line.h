@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef STYLE_BOX_LINE_H
-#define STYLE_BOX_LINE_H
+#pragma once
 
 #include "scene/resources/style_box.h"
 
@@ -64,9 +63,4 @@ public:
 	float get_grow_end() const;
 
 	virtual void draw(RID p_canvas_item, const Rect2 &p_rect) const override;
-
-	StyleBoxLine();
-	~StyleBoxLine();
 };
-
-#endif // STYLE_BOX_LINE_H

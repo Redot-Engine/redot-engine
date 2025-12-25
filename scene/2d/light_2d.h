@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef LIGHT_2D_H
-#define LIGHT_2D_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 
@@ -199,5 +198,3 @@ public:
 
 	DirectionalLight2D();
 };
-
-#endif // LIGHT_2D_H

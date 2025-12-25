@@ -1,0 +1,218 @@
+name: 📜 Changelog Builder
+on:
+  push:
+    tags:
+      - redot-*
+      - '!redot-4.3*'
+      - '!redot-4.4*'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          configurationJson: |
+            {
+              "base_branches": ["master", "4.3", "4.4"],
+              "tag_resolver": {
+                "method": "sort",
+                "filter": {
+                  "method": "regexr",
+                  "pattern": "redot-(\\d+\\.\\d+(?:\\.\\d+)?)-(?:(alpha|beta|rc)\\.(\\d+)|(stable))"
+                },
+                "transformer": {
+                  "method": "regexr",
+                  "pattern": "redot-(\\d+\\.\\d+(?:\\.\\d+)?-(?:(alpha|beta|rc)\\.(\\d+)|(stable)))",
+                  "target": "$1"
+                }
+              },
+              "custom_placeholders": [
+                {
+                  "name": "RELEASE_VERSION",
+                  "source": "TO_TAG",
+                  "transformer": {
+                    "method": "regexr",
+                    "pattern": "redot-(\\d+\\.\\d+(?:\\.\\d+)?)-(?:(alpha|beta|rc)\\.(\\d+)|(stable))",
+                    "target": "$1 $2$4 $3"
+                  }
+                },
+                {
+                  "name": "SIMPLIFIED_TITLE",
+                  "source": "TITLE",
+                  "transformer": {
+                    "method": "regexr",
+                    "pattern": "^(\\[\\d+\\.\\d+\\] )?(.*)",
+                    "target": "$2"
+                  }
+                }
+              ],
+              "categories": [
+                {
+                  "title": "### Enhancements & Features",
+                  "labels": ["enhancement"],
+                  "exhaustive": true,
+                  "rules": [
+                      {
+                        "on_property": "title",
+                        "pattern": "^(?!(\\[\\d+\\.\\d+\\] )?Cherry-picks.*)"
+                      }
+                  ],
+                  "consume": true
+                },
+                {
+                  "title": "### Bug Fixes",
+                  "labels": ["bug"],
+                  "exhaustive": true,
+                  "rules": [
+                      {
+                        "on_property": "title",
+                        "pattern": "^(?!(\\[\\d+\\.\\d+\\] )?Cherry-picks.*)"
+                      }
+                  ],
+                  "consume": true
+                },
+                {
+                  "title": "### Cherry-picks",
+                  "rules": [
+                    {
+                      "on_property": "title",
+                      "pattern": "^(\\[\\d+\\.\\d+\\] )?Cherry-picks"
+                    },
+                    {
+                      "on_property": "body",
+                      "pattern": "\\(cherry picked from commit "
+                    }
+                  ],
+                  "consume": true
+                },
+                {
+                  "title": "### Godot Syncs",
+                  "labels": ["merge:godot"],
+                  "consume": true
+                }
+              ],
+              "template": "## Release Notes for Redot #{{RELEASE_VERSION}}\nWe're excited to announce the release of our latest version, featuring a host of enhancements and fixes. Here's what's new:\n\n#{{CHANGELOG}}\n**Full Changelog**: #{{RELEASE_DIFF}}",
+              "pr_template": "* #{{SIMPLIFIED_TITLE}} by @#{{AUTHOR}} in #{{URL}}",
+              "max_pull_requests": 1000,
+              "max_back_track_time_days": 365
+            }
+
+      - name: Build Stable Changelog
+        if: endsWith(github.ref, '-stable')
+        id: build_stable_changelog
+        uses: mikepenz/release-changelog-builder-action@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          configurationJson: |
+            {
+              "base_branches": ["master", "4.3", "4.4"],
+              "tag_resolver": {
+                "method": "sort",
+                "filter": {
+                  "method": "regexr",
+                  "pattern": "redot-(\\d+\\.\\d+(?:\\.\\d+)?)-(stable)"
+                },
+                "transformer": {
+                  "method": "regexr",
+                  "pattern": "redot-(\\d+\\.\\d+(?:\\.\\d+)?-stable)",
+                  "target": "$1"
+                }
+              },
+              "custom_placeholders": [
+                {
+                  "name": "RELEASE_VERSION",
+                  "source": "TO_TAG",
+                  "transformer": {
+                    "method": "regexr",
+                    "pattern": "redot-(\\d+\\.\\d+(?:\\.\\d+)?)-(?:(alpha|beta|rc)\\.(\\d+)|(stable))",
+                    "target": "$1 $2$4 $3"
+                  }
+                },
+                {
+                  "name": "SINCE_VERSION",
+                  "source": "FROM_TAG",
+                  "transformer": {
+                    "method": "regexr",
+                    "pattern": "redot-(\\d+\\.\\d+(?:\\.\\d+)?)-(?:(alpha|beta|rc)\\.(\\d+)|(stable))",
+                    "target": "$1"
+                  }
+                },
+                {
+                  "name": "SIMPLIFIED_TITLE",
+                  "source": "TITLE",
+                  "transformer": {
+                    "method": "regexr",
+                    "pattern": "^(\\[\\d+\\.\\d+\\] )?(.*)",
+                    "target": "$2"
+                  }
+                }
+              ],
+              "categories": [
+                {
+                  "title": "### Enhancements & Features",
+                  "labels": ["enhancement"],
+                  "exhaustive": true,
+                  "rules": [
+                      {
+                        "on_property": "title",
+                        "pattern": "^(?!(\\[\\d+\\.\\d+\\] )?Cherry-picks.*)"
+                      }
+                  ],
+                  "consume": true
+                },
+                {
+                  "title": "### Bug Fixes",
+                  "labels": ["bug"],
+                  "exhaustive": true,
+                  "rules": [
+                      {
+                        "on_property": "title",
+                        "pattern": "^(?!(\\[\\d+\\.\\d+\\] )?Cherry-picks.*)"
+                      }
+                  ],
+                  "consume": true
+                },
+                {
+                  "title": "### Cherry-picks",
+                  "rules": [
+                    {
+                      "on_property": "title",
+                      "pattern": "^(\\[\\d+\\.\\d+\\] )?Cherry-picks"
+                    },
+                    {
+                      "on_property": "body",
+                      "pattern": "\\(cherry picked from commit "
+                    }
+                  ],
+                  "consume": true
+                },
+                {
+                  "title": "### Godot Syncs",
+                  "labels": ["merge:godot"],
+                  "consume": true
+                }
+              ],
+              "template": "## Since Redot #{{SINCE_VERSION}}\n\n#{{CHANGELOG}}\n**Full Changelog**: #{{RELEASE_DIFF}}",
+              "pr_template": "* #{{SIMPLIFIED_TITLE}} by @#{{AUTHOR}} in #{{URL}}",
+              "max_pull_requests": 1000,
+              "max_back_track_time_days": 365
+            }
+
+      - name: Create Release Draft
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            ${{steps.build_changelog.outputs.changelog}}
+            ${{steps.build_stable_changelog.outputs.changelog}}
+          draft: true

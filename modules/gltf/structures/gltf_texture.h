@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLTF_TEXTURE_H
-#define GLTF_TEXTURE_H
+#pragma once
 
 #include "../gltf_defines.h"
 
@@ -53,5 +52,3 @@ public:
 	GLTFTextureSamplerIndex get_sampler() const;
 	void set_sampler(GLTFTextureSamplerIndex val);
 };
-
-#endif // GLTF_TEXTURE_H

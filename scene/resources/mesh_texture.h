@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MESH_TEXTURE_H
-#define MESH_TEXTURE_H
+#pragma once
 
 #include "scene/resources/texture.h"
 
@@ -73,5 +72,3 @@ public:
 
 	MeshTexture();
 };
-
-#endif // MESH_TEXTURE_H

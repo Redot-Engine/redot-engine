@@ -30,10 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBP_COMMON_H
-#define WEBP_COMMON_H
+#pragma once
 
 #include "core/io/image.h"
+#include "core/io/image_frames.h"
 
 namespace WebPCommon {
 // Given an image, pack this data into a WebP file.
@@ -44,6 +44,6 @@ Vector<uint8_t> _webp_packer(const Ref<Image> &p_image, float p_quality, bool p_
 // Given a WebP file, unpack it into an image.
 Ref<Image> _webp_unpack(const Vector<uint8_t> &p_buffer);
 Error webp_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer, int p_buffer_len);
+// Given a WebP file, unpack it into image frames.
+Error webp_load_image_frames_from_buffer(ImageFrames *p_frames, const uint8_t *p_buffer, int p_buffer_len, int p_max_frames);
 } //namespace WebPCommon
-
-#endif // WEBP_COMMON_H

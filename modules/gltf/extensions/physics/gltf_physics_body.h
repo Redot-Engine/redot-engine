@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLTF_PHYSICS_BODY_H
-#define GLTF_PHYSICS_BODY_H
+#pragma once
 
 #include "scene/3d/physics/physics_body_3d.h"
 
@@ -105,5 +104,3 @@ public:
 	static Ref<GLTFPhysicsBody> from_dictionary(const Dictionary p_dictionary);
 	Dictionary to_dictionary() const;
 };
-
-#endif // GLTF_PHYSICS_BODY_H

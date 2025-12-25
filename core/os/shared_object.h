@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SHARED_OBJECT_H
-#define SHARED_OBJECT_H
+#pragma once
 
 #include "core/string/ustring.h"
 #include "core/templates/vector.h"
@@ -49,5 +48,3 @@ struct SharedObject {
 
 	SharedObject() {}
 };
-
-#endif // SHARED_OBJECT_H

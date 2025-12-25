@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXT_FILE_H
-#define TEXT_FILE_H
+#pragma once
 
 #include "core/io/resource.h"
 
@@ -54,5 +53,3 @@ public:
 	void set_file_path(const String &p_path) { path = p_path; }
 	Error load_text(const String &p_path);
 };
-
-#endif // TEXT_FILE_H

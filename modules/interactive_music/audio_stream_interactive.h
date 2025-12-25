@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_INTERACTIVE_H
-#define AUDIO_STREAM_INTERACTIVE_H
+#pragma once
 
 #include "servers/audio/audio_stream.h"
 
@@ -185,6 +184,8 @@ public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 	virtual String get_stream_name() const override;
 	virtual double get_length() const override { return 0; }
+	virtual bool is_meta_stream() const override { return true; }
+
 	AudioStreamInteractive();
 
 protected:
@@ -269,5 +270,3 @@ public:
 	AudioStreamPlaybackInteractive();
 	~AudioStreamPlaybackInteractive();
 };
-
-#endif // AUDIO_STREAM_INTERACTIVE_H

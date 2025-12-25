@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_DATA_H
-#define EDITOR_DATA_H
+#pragma once
 
 #include "core/templates/list.h"
 #include "scene/resources/texture.h"
@@ -149,7 +148,7 @@ private:
 
 	HashMap<StringName, String> _script_class_icon_paths;
 	HashMap<String, StringName> _script_class_file_to_path;
-	HashMap<String, Ref<Texture>> _script_icon_cache;
+	HashMap<String, Ref<Texture2D>> _script_icon_cache;
 
 	Ref<Texture2D> _load_script_icon(const String &p_path) const;
 
@@ -253,7 +252,7 @@ public:
 	String script_class_get_icon_path(const String &p_class, bool *r_valid = nullptr) const;
 	void script_class_set_icon_path(const String &p_class, const String &p_icon_path);
 	void script_class_clear_icon_paths() { _script_class_icon_paths.clear(); }
-	void script_class_save_icon_paths();
+	void script_class_save_global_classes();
 	void script_class_load_icon_paths();
 
 	Ref<Texture2D> extension_class_get_icon(const String &p_class) const;
@@ -289,10 +288,9 @@ class EditorSelection : public Object {
 
 	// Editor plugins which are related to selection.
 	List<Object *> editor_plugins;
-	List<Node *> selected_node_list;
+	List<Node *> top_selected_node_list;
 
 	void _update_node_list();
-	TypedArray<Node> _get_transformable_selected_nodes();
 	void _emit_change();
 
 protected:
@@ -317,18 +315,17 @@ public:
 	void update();
 	void clear();
 
-	// Returns all the selected nodes.
-	TypedArray<Node> get_selected_nodes();
 	// Returns only the top level selected nodes.
 	// That is, if the selection includes some node and a child of that node, only the parent is returned.
-	List<Node *> &get_selected_node_list();
+	const List<Node *> &get_top_selected_node_list();
+	// Same as get_top_selected_node_list but returns a copy in a TypedArray for binding to scripts.
+	TypedArray<Node> get_top_selected_nodes();
 	// Returns all the selected nodes (list version of "get_selected_nodes").
 	List<Node *> get_full_selected_node_list();
+	// Same as get_full_selected_node_list but returns a copy in a TypedArray for binding to scripts.
+	TypedArray<Node> get_selected_nodes();
 	// Returns the map of selected objects and their metadata.
 	HashMap<Node *, Object *> &get_selection() { return selection; }
 
-	EditorSelection();
 	~EditorSelection();
 };
-
-#endif // EDITOR_DATA_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef POST_EFFECTS_GLES3_H
-#define POST_EFFECTS_GLES3_H
+#pragma once
 
 #ifdef GLES3_ENABLED
 
@@ -67,5 +66,3 @@ public:
 } //namespace GLES3
 
 #endif // GLES3_ENABLED
-
-#endif // POST_EFFECTS_GLES3_H

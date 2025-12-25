@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_IP_H
-#define TEST_IP_H
+#pragma once
 
 #include "core/io/ip.h"
 
@@ -49,5 +48,3 @@ TEST_CASE("[IP] resolve_hostname") {
 }
 
 } // namespace TestIP
-
-#endif // TEST_IP_H

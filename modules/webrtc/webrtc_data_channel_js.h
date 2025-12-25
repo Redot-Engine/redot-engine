@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBRTC_DATA_CHANNEL_JS_H
-#define WEBRTC_DATA_CHANNEL_JS_H
+#pragma once
 
 #ifdef WEB_ENABLED
 
@@ -92,5 +91,3 @@ public:
 };
 
 #endif // WEB_ENABLED
-
-#endif // WEBRTC_DATA_CHANNEL_JS_H

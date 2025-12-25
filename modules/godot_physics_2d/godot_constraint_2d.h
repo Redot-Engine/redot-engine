@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_CONSTRAINT_2D_H
-#define GODOT_CONSTRAINT_2D_H
+#pragma once
 
 #include "godot_body_2d.h"
 
@@ -68,5 +67,3 @@ public:
 
 	virtual ~GodotConstraint2D() {}
 };
-
-#endif // GODOT_CONSTRAINT_2D_H

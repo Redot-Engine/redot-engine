@@ -4,7 +4,8 @@
 		A class information repository.
 	</brief_description>
 	<description>
-		Provides access to metadata stored for every available class.
+		Provides access to metadata stored for every available engine class.
+		[b]Note:[/b] Script-defined classes with [code]class_name[/code] are not part of [ClassDB], so they will not return reflection data such as a method or property list. However, [GDExtension]-defined classes [i]are[/i] part of [ClassDB], so they will return reflection data.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -35,7 +36,7 @@
 			<return type="int" enum="ClassDB.APIType" />
 			<param index="0" name="class" type="StringName" />
 			<description>
-				Returns the API type of [param class]. See [enum APIType].
+				Returns the API type of the specified [param class].
 			</description>
 		</method>
 		<method name="class_get_enum_constants" qualifiers="const">
@@ -188,6 +189,15 @@
 				Returns whether [param class] or its ancestry has a signal called [param signal] or not.
 			</description>
 		</method>
+		<method name="class_override_api_type" qualifiers="const">
+			<return type="int" enum="Error" />
+			<param index="0" name="class" type="StringName" />
+			<param index="1" name="api" type="int" enum="ClassDB.APIType" />
+			<description>
+				Overrides the API type of [param class] to [param api]. See [enum ClassDB.APIType].
+				[b]Note:[/b] This should only be used with a thorough understanding of its implications.
+			</description>
+		</method>
 		<method name="class_set_property" qualifiers="const">
 			<return type="int" enum="Error" />
 			<param index="0" name="object" type="Object" />
@@ -200,14 +210,21 @@
 		<method name="get_class_list" qualifiers="const">
 			<return type="PackedStringArray" />
 			<description>
-				Returns the names of all the classes available.
+				Returns the names of all engine classes available.
+				[b]Note:[/b] Script-defined classes with [code]class_name[/code] are not included in this list. Use [method ProjectSettings.get_global_class_list] to get a list of script-defined classes instead.
+			</description>
+		</method>
+		<method name="get_current_api" qualifiers="const">
+			<return type="int" enum="ClassDB.APIType" />
+			<description>
+				Returns the currently active API type. See [enum ClassDB.APIType].
 			</description>
 		</method>
 		<method name="get_inheriters_from_class" qualifiers="const">
 			<return type="PackedStringArray" />
 			<param index="0" name="class" type="StringName" />
 			<description>
-				Returns the names of all the classes that directly or indirectly inherit from [param class].
+				Returns the names of all engine classes that directly or indirectly inherit from [param class].
 			</description>
 		</method>
 		<method name="get_parent_class" qualifiers="const">
@@ -246,6 +263,14 @@
 			<param index="1" name="inherits" type="StringName" />
 			<description>
 				Returns whether [param inherits] is an ancestor of [param class] or not.
+			</description>
+		</method>
+		<method name="set_current_api" qualifiers="const">
+			<return type="void" />
+			<param index="0" name="api" type="int" enum="ClassDB.APIType" />
+			<description>
+				Sets the globally active API type to [param api]. See [enum ClassDB.APIType].
+				[b]Note:[/b] This should only be used with a thorough understanding of its implications.
 			</description>
 		</method>
 	</methods>

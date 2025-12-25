@@ -35,9 +35,10 @@ package com.godot.game;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.activity.EdgeToEdge;
 import androidx.core.splashscreen.SplashScreen;
 
-import com.godot.game.BuildConfig;
+import org.redotengine.godot.Godot;
 import org.redotengine.godot.GodotActivity;
 
 /**
@@ -57,9 +58,31 @@ public class GodotApp extends GodotActivity {
 		}
 	}
 
+	private final Runnable updateWindowAppearance = () -> {
+		Godot godot = getGodot();
+		if (godot != null) {
+			godot.enableImmersiveMode(godot.isInImmersiveMode(), true);
+			godot.enableEdgeToEdge(godot.isInEdgeToEdgeMode(), true);
+			godot.setSystemBarsAppearance();
+		}
+	};
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		SplashScreen.installSplashScreen(this);
+		EdgeToEdge.enable(this);
 		super.onCreate(savedInstanceState);
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		updateWindowAppearance.run();
+	}
+
+	@Override
+	public void onGodotMainLoopStarted() {
+		super.onGodotMainLoopStarted();
+		runOnUiThread(updateWindowAppearance);
 	}
 }

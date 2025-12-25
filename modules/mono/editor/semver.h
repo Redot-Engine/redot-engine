@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SEMVER_H
-#define SEMVER_H
+#pragma once
 
 #include "core/string/ustring.h"
 
@@ -105,5 +104,3 @@ public:
 };
 
 } //namespace godotsharp
-
-#endif // SEMVER_H

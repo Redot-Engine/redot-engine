@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef JOLT_CUSTOM_DECORATED_SHAPE_H
-#define JOLT_CUSTOM_DECORATED_SHAPE_H
+#pragma once
 
 #include "jolt_custom_shape_type.h"
 
@@ -93,5 +92,3 @@ public:
 
 	virtual float GetVolume() const override { return mInnerShape->GetVolume(); }
 };
-
-#endif // JOLT_CUSTOM_DECORATED_SHAPE_H

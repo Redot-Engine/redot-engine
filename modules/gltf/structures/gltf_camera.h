@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLTF_CAMERA_H
-#define GLTF_CAMERA_H
+#pragma once
 
 #include "core/io/resource.h"
 
@@ -76,5 +75,3 @@ public:
 	static Ref<GLTFCamera> from_dictionary(const Dictionary p_dictionary);
 	virtual Dictionary to_dictionary() const;
 };
-
-#endif // GLTF_CAMERA_H

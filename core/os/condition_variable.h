@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CONDITION_VARIABLE_H
-#define CONDITION_VARIABLE_H
+#pragma once
 
 #include "core/os/mutex.h"
 #include "core/os/safe_binary_mutex.h"
@@ -87,5 +86,3 @@ public:
 };
 
 #endif // THREADS_ENABLED
-
-#endif // CONDITION_VARIABLE_H

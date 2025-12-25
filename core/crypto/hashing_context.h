@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef HASHING_CONTEXT_H
-#define HASHING_CONTEXT_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 
@@ -64,5 +63,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(HashingContext::HashType);
-
-#endif // HASHING_CONTEXT_H

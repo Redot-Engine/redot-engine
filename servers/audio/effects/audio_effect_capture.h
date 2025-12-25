@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_EFFECT_CAPTURE_H
-#define AUDIO_EFFECT_CAPTURE_H
+#pragma once
 
 #include "core/math/audio_frame.h"
 #include "core/object/ref_counted.h"
@@ -78,5 +77,3 @@ public:
 	int get_buffer_length_frames() const;
 	int64_t get_pushed_frames() const;
 };
-
-#endif // AUDIO_EFFECT_CAPTURE_H

@@ -50,15 +50,22 @@ void CPUParticles3D::set_emitting(bool p_emitting) {
 		return;
 	}
 
+	if (p_emitting && !use_fixed_seed && one_shot) {
+		set_seed(Math::rand());
+	}
+
 	emitting = p_emitting;
 	if (emitting) {
-		active = true;
-		set_process_internal(true);
+		_set_emitting();
+	}
+}
 
-		// first update before rendering to avoid one frame delay after emitting starts
-		if (time == 0) {
-			_update_internal();
-		}
+void CPUParticles3D::_set_emitting() {
+	active = true;
+	set_process_internal(true);
+	// first update before rendering to avoid one frame delay after emitting starts
+	if (time == 0) {
+		_update_internal();
 	}
 }
 
@@ -253,7 +260,8 @@ void CPUParticles3D::restart(bool p_keep_seed) {
 		seed = Math::rand();
 	}
 
-	set_emitting(true);
+	emitting = true;
+	_set_emitting();
 }
 
 void CPUParticles3D::set_direction(Vector3 p_direction) {
@@ -581,7 +589,7 @@ void CPUParticles3D::request_particles_process(real_t p_requested_process_time) 
 }
 
 void CPUParticles3D::_validate_property(PropertyInfo &p_property) const {
-	if (p_property.name == "emitting") {
+	if (Engine::get_singleton()->is_editor_hint() && p_property.name == "emitting") {
 		p_property.hint = one_shot ? PROPERTY_HINT_ONESHOT : PROPERTY_HINT_NONE;
 	}
 
@@ -641,7 +649,7 @@ static real_t rand_from_seed(uint32_t &seed) {
 }
 
 void CPUParticles3D::_update_internal() {
-	if (particles.size() == 0 || !is_visible_in_tree()) {
+	if (particles.is_empty() || !is_visible_in_tree()) {
 		_set_redraw(false);
 		return;
 	}
@@ -732,7 +740,7 @@ void CPUParticles3D::_particles_process(double p_delta) {
 	Transform3D emission_xform;
 	Basis velocity_xform;
 	if (!local_coords) {
-		emission_xform = get_global_transform();
+		emission_xform = get_global_transform_interpolated();
 		velocity_xform = emission_xform.basis;
 	}
 
@@ -880,14 +888,14 @@ void CPUParticles3D::_particles_process(double p_delta) {
 				} break;
 				case EMISSION_SHAPE_SPHERE: {
 					real_t s = 2.0 * rng->randf() - 1.0;
-					real_t t = Math_TAU * rng->randf();
+					real_t t = Math::TAU * rng->randf();
 					real_t x = rng->randf();
 					real_t radius = emission_sphere_radius * Math::sqrt(1.0 - s * s);
 					p.transform.origin = Vector3(0, 0, 0).lerp(Vector3(radius * Math::cos(t), radius * Math::sin(t), emission_sphere_radius * s), x);
 				} break;
 				case EMISSION_SHAPE_SPHERE_SURFACE: {
 					real_t s = 2.0 * rng->randf() - 1.0;
-					real_t t = Math_TAU * rng->randf();
+					real_t t = Math::TAU * rng->randf();
 					real_t radius = emission_sphere_radius * Math::sqrt(1.0 - s * s);
 					p.transform.origin = Vector3(radius * Math::cos(t), radius * Math::sin(t), emission_sphere_radius * s);
 				} break;
@@ -939,7 +947,7 @@ void CPUParticles3D::_particles_process(double p_delta) {
 					real_t y_pos = rng->randf();
 					real_t skew = MAX(MIN(radius_clamped, top_radius) / MAX(radius_clamped, top_radius), 0.5);
 					y_pos = radius_clamped < top_radius ? Math::pow(y_pos, skew) : 1.0 - Math::pow(y_pos, skew);
-					real_t ring_random_angle = rng->randf() * Math_TAU;
+					real_t ring_random_angle = rng->randf() * Math::TAU;
 					real_t ring_random_radius = Math::sqrt(rng->randf() * (radius_clamped * radius_clamped - emission_ring_inner_radius * emission_ring_inner_radius) + emission_ring_inner_radius * emission_ring_inner_radius);
 					ring_random_radius = Math::lerp(ring_random_radius, ring_random_radius * (top_radius / radius_clamped), y_pos);
 					Vector3 axis = emission_ring_axis == Vector3(0.0, 0.0, 0.0) ? Vector3(0.0, 0.0, 1.0) : emission_ring_axis.normalized();
@@ -1058,7 +1066,7 @@ void CPUParticles3D::_particles_process(double p_delta) {
 			if (particle_flags[PARTICLE_FLAG_DISABLE_Z]) {
 				real_t orbit_amount = tex_orbit_velocity * Math::lerp(parameters_min[PARAM_ORBIT_VELOCITY], parameters_max[PARAM_ORBIT_VELOCITY], rand_from_seed(alt_seed));
 				if (orbit_amount != 0.0) {
-					real_t ang = orbit_amount * local_delta * Math_TAU;
+					real_t ang = orbit_amount * local_delta * Math::TAU;
 					// Not sure why the ParticleProcessMaterial code uses a clockwise rotation matrix,
 					// but we use -ang here to reproduce its behavior.
 					Transform2D rot = Transform2D(-ang, Vector2());
@@ -1120,7 +1128,7 @@ void CPUParticles3D::_particles_process(double p_delta) {
 			tex_hue_variation = curve_parameters[PARAM_HUE_VARIATION]->sample(tv);
 		}
 
-		real_t hue_rot_angle = (tex_hue_variation)*Math_TAU * Math::lerp(parameters_min[PARAM_HUE_VARIATION], parameters_max[PARAM_HUE_VARIATION], p.hue_rot_rand);
+		real_t hue_rot_angle = (tex_hue_variation)*Math::TAU * Math::lerp(parameters_min[PARAM_HUE_VARIATION], parameters_max[PARAM_HUE_VARIATION], p.hue_rot_rand);
 		real_t hue_rot_c = Math::cos(hue_rot_angle);
 		real_t hue_rot_s = Math::sin(hue_rot_angle);
 

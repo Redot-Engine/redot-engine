@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_MAIN_SCREEN_H
-#define EDITOR_MAIN_SCREEN_H
+#pragma once
 
 #include "scene/gui/panel_container.h"
 
@@ -84,6 +83,7 @@ public:
 	int get_plugin_index(EditorPlugin *p_editor) const;
 	EditorPlugin *get_selected_plugin() const;
 	EditorPlugin *get_plugin_by_name(const String &p_plugin_name) const;
+	bool can_auto_switch_screens() const;
 
 	VBoxContainer *get_control() const;
 
@@ -92,5 +92,3 @@ public:
 
 	EditorMainScreen();
 };
-
-#endif // EDITOR_MAIN_SCREEN_H

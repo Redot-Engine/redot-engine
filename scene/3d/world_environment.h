@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WORLD_ENVIRONMENT_H
-#define WORLD_ENVIRONMENT_H
+#pragma once
 
 #include "scene/main/node.h"
 #include "scene/resources/camera_attributes.h"
@@ -67,5 +66,3 @@ public:
 
 	WorldEnvironment();
 };
-
-#endif // WORLD_ENVIRONMENT_H

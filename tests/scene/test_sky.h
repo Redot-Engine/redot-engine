@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_SKY_H
-#define TEST_SKY_H
+#pragma once
 
 #include "scene/resources/sky.h"
 
@@ -220,5 +219,3 @@ TEST_CASE("[SceneTree][Sky] RID generation") {
 }
 
 } // namespace TestSky
-
-#endif // TEST_SKY_H

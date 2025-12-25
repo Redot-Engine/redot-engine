@@ -68,6 +68,8 @@ internal class AssetData(context: Context, private val filePath: String, accessF
 		}
 
 		fun fileLastModified(path: String) = 0L
+		fun fileLastAccessed(path: String) = 0L
+		fun fileSize(path: String) = -1L
 
 		fun delete(path: String) = false
 
@@ -138,7 +140,6 @@ internal class AssetData(context: Context, private val filePath: String, accessF
 				0
 			} else {
 				position += readBytes
-				endOfFile = position() >= size()
 				readBytes
 			}
 		} catch (e: IOException) {

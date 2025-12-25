@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef STREAM_PEER_MBEDTLS_H
-#define STREAM_PEER_MBEDTLS_H
+#pragma once
 
 #include "tls_context_mbedtls.h"
 
@@ -78,5 +77,3 @@ public:
 	StreamPeerMbedTLS();
 	~StreamPeerMbedTLS();
 };
-
-#endif // STREAM_PEER_MBEDTLS_H

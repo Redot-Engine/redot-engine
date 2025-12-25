@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CAMERA_ATTRIBUTES_STORAGE_H
-#define CAMERA_ATTRIBUTES_STORAGE_H
+#pragma once
 
 #include "core/templates/rid_owner.h"
 #include "servers/rendering_server.h"
@@ -127,5 +126,3 @@ public:
 		return dof_blur_use_jitter;
 	}
 };
-
-#endif // CAMERA_ATTRIBUTES_STORAGE_H

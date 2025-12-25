@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GI_DUMMY_H
-#define GI_DUMMY_H
+#pragma once
 
 #include "servers/rendering/environment/renderer_gi.h"
 
@@ -85,5 +84,3 @@ public:
 };
 
 } // namespace RendererDummy
-
-#endif // GI_DUMMY_H

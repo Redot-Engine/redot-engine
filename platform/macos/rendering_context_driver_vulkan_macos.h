@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENDERING_CONTEXT_DRIVER_VULKAN_MACOS_H
-#define RENDERING_CONTEXT_DRIVER_VULKAN_MACOS_H
+#pragma once
 
 #ifdef VULKAN_ENABLED
 
@@ -56,5 +55,3 @@ public:
 };
 
 #endif // VULKAN_ENABLED
-
-#endif // RENDERING_CONTEXT_DRIVER_VULKAN_MACOS_H

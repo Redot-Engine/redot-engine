@@ -30,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FREEDESKTOP_SCREENSAVER_H
-#define FREEDESKTOP_SCREENSAVER_H
+#pragma once
 
 #ifdef DBUS_ENABLED
 
-#include <stdint.h>
+#include <cstdint>
 
 class FreeDesktopScreenSaver {
 private:
@@ -49,5 +48,3 @@ public:
 };
 
 #endif // DBUS_ENABLED
-
-#endif // FREEDESKTOP_SCREENSAVER_H

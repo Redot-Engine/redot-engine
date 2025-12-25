@@ -30,12 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_PICO_CONTROLLER_EXTENSION_H
-#define OPENXR_PICO_CONTROLLER_EXTENSION_H
+#pragma once
 
 #include "openxr_extension_wrapper.h"
 
 class OpenXRPicoControllerExtension : public OpenXRExtensionWrapper {
+	GDCLASS(OpenXRPicoControllerExtension, OpenXRExtensionWrapper);
+
+protected:
+	static void _bind_methods() {}
+
 public:
 	virtual HashMap<String, bool *> get_requested_extensions() override;
 
@@ -46,5 +50,3 @@ public:
 private:
 	bool available = false;
 };
-
-#endif // OPENXR_PICO_CONTROLLER_EXTENSION_H

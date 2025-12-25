@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SHAPE_3D_H
-#define SHAPE_3D_H
+#pragma once
 
 #include "core/io/resource.h"
 
@@ -47,7 +46,6 @@ class Shape3D : public Resource {
 	real_t margin = 0.04;
 
 	Ref<ArrayMesh> debug_mesh_cache;
-	Ref<Material> collision_material;
 
 	// Not wrapped in `#ifdef DEBUG_ENABLED` as it is used for rendering.
 	Color debug_color = Color(0.0, 0.0, 0.0, 0.0);
@@ -61,8 +59,6 @@ protected:
 
 	_FORCE_INLINE_ RID get_shape() const { return shape; }
 	Shape3D(RID p_shape);
-
-	Ref<Material> get_debug_collision_material();
 
 	virtual void _update_shape();
 
@@ -96,5 +92,3 @@ public:
 	Shape3D();
 	~Shape3D();
 };
-
-#endif // SHAPE_3D_H

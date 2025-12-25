@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MATERIAL_STORAGE_DUMMY_H
-#define MATERIAL_STORAGE_DUMMY_H
+#pragma once
 
 #include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/shader_language.h"
@@ -53,6 +52,7 @@ private:
 	mutable RID_Owner<DummyShader> shader_owner;
 
 	ShaderCompiler dummy_compiler;
+	HashSet<RID> dummy_embedded_set;
 
 	struct DummyMaterial {
 		RID shader;
@@ -90,7 +90,7 @@ public:
 	bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
 
 	virtual RID shader_allocate() override;
-	virtual void shader_initialize(RID p_rid) override;
+	virtual void shader_initialize(RID p_rid, bool p_embedded) override;
 	virtual void shader_free(RID p_rid) override;
 
 	virtual void shader_set_code(RID p_shader, const String &p_code) override;
@@ -104,6 +104,9 @@ public:
 	virtual Variant shader_get_parameter_default(RID p_material, const StringName &p_param) const override { return Variant(); }
 
 	virtual RS::ShaderNativeSourceCode shader_get_native_source_code(RID p_shader) const override { return RS::ShaderNativeSourceCode(); }
+	virtual void shader_embedded_set_lock() override {}
+	virtual const HashSet<RID> &shader_embedded_set_get() const override { return dummy_embedded_set; }
+	virtual void shader_embedded_set_unlock() override {}
 
 	/* MATERIAL API */
 
@@ -130,5 +133,3 @@ public:
 };
 
 } // namespace RendererDummy
-
-#endif // MATERIAL_STORAGE_DUMMY_H

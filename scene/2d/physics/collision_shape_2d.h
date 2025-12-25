@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef COLLISION_SHAPE_2D_H
-#define COLLISION_SHAPE_2D_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 #include "scene/resources/2d/shape_2d.h"
@@ -93,5 +92,3 @@ public:
 
 	CollisionShape2D();
 };
-
-#endif // COLLISION_SHAPE_2D_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef HINGE_JOINT_3D_H
-#define HINGE_JOINT_3D_H
+#pragma once
 
 #include "scene/3d/physics/joints/joint_3d.h"
 
@@ -75,5 +74,3 @@ public:
 
 VARIANT_ENUM_CAST(HingeJoint3D::Param);
 VARIANT_ENUM_CAST(HingeJoint3D::Flag);
-
-#endif // HINGE_JOINT_3D_H

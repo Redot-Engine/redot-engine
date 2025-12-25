@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef UPNP_H
-#define UPNP_H
+#pragma once
 
 #include "upnp_device.h"
 
@@ -115,5 +114,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(UPNP::UPNPResult)
-
-#endif // UPNP_H

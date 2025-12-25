@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TAA_RD_H
-#define TAA_RD_H
+#pragma once
 
 #include "servers/rendering/renderer_rd/shaders/effects/taa_resolve.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
@@ -61,5 +60,3 @@ private:
 };
 
 } // namespace RendererRD
-
-#endif // TAA_RD_H

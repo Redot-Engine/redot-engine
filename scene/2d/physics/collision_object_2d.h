@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef COLLISION_OBJECT_2D_H
-#define COLLISION_OBJECT_2D_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 #include "scene/main/viewport.h"
@@ -177,5 +176,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(CollisionObject2D::DisableMode);
-
-#endif // COLLISION_OBJECT_2D_H

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBRTC_PEER_CONNECTION_EXTENSION_H
-#define WEBRTC_PEER_CONNECTION_EXTENSION_H
+#pragma once
 
 #include "webrtc_peer_connection.h"
 
@@ -60,5 +59,3 @@ public:
 
 	WebRTCPeerConnectionExtension() {}
 };
-
-#endif // WEBRTC_PEER_CONNECTION_EXTENSION_H

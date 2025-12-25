@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IMMEDIATE_MESH_H
-#define IMMEDIATE_MESH_H
+#pragma once
 
 #include "core/templates/local_vector.h"
 #include "scene/resources/mesh.h"
@@ -116,5 +115,3 @@ public:
 	ImmediateMesh();
 	~ImmediateMesh();
 };
-
-#endif // IMMEDIATE_MESH_H
