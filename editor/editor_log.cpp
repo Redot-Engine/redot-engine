@@ -43,6 +43,8 @@
 #include "scene/gui/separator.h"
 #include "scene/resources/font.h"
 
+#define MAX_MESSAGES_BEFORE_COLLAPSE 10
+
 void EditorLog::_error_handler(void *p_self, const char *p_func, const char *p_file, int p_line, const char *p_error, const char *p_errorexp, bool p_editor_notify, ErrorHandlerType p_type) {
 	EditorLog *self = static_cast<EditorLog *>(p_self);
 
@@ -230,6 +232,14 @@ void EditorLog::_process_message(const String &p_msg, MessageType p_type, bool p
 		// instance to the messages list.
 		LogMessage &previous = messages.write[messages.size() - 1];
 		previous.count++;
+
+		if (!collapse && previous.count == MAX_MESSAGES_BEFORE_COLLAPSE) {
+			if (!Thread::is_main_thread()) {
+				MessageQueue::get_main_singleton()->push_callable(callable_mp(this, &EditorLog::_set_collapse), true);
+			} else {
+				_set_collapse(true);
+			}
+		}
 
 		_add_log_line(previous, collapse);
 	} else {
