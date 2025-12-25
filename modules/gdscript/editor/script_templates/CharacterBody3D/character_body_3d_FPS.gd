@@ -21,7 +21,7 @@ func _ready() -> void:
 	if camera_3d != null:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
-# this methos runs every circle in the main loop:
+# this method runs every circle in the main loop:
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		# Add the gravity\falling if in air:
