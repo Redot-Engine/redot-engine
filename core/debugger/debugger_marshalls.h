@@ -30,9 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DEBUGGER_MARSHALLS_H
-#define DEBUGGER_MARSHALLS_H
+#pragma once
 
+#include "core/input/shortcut.h"
 #include "core/object/script_language.h"
 
 struct DebuggerMarshalls {
@@ -70,6 +70,7 @@ struct DebuggerMarshalls {
 		Array serialize();
 		bool deserialize(const Array &p_arr);
 	};
-};
 
-#endif // DEBUGGER_MARSHALLS_H
+	static Array serialize_key_shortcut(const Ref<Shortcut> &p_shortcut);
+	static Ref<Shortcut> deserialize_key_shortcut(const Array &p_keys);
+};

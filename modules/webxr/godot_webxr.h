@@ -30,14 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_WEBXR_H
-#define GODOT_WEBXR_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stddef.h>
 
 enum WebXRInputEvent {
 	WEBXR_INPUT_EVENT_SELECTSTART,
@@ -102,5 +99,3 @@ extern int godot_webxr_get_supported_frame_rates(float **r_frame_rates);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // GODOT_WEBXR_H

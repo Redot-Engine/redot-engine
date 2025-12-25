@@ -30,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SHAPE_CAST_2D_H
-#define SHAPE_CAST_2D_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 #include "scene/resources/2d/shape_2d.h"
-#include "scene/resources/world_2d.h"
+#include "servers/physics_server_2d.h"
 
 class CollisionObject2D;
 
@@ -124,5 +123,3 @@ public:
 
 	ShapeCast2D();
 };
-
-#endif // SHAPE_CAST_2D_H

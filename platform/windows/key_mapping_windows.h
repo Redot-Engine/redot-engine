@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef KEY_MAPPING_WINDOWS_H
-#define KEY_MAPPING_WINDOWS_H
+#pragma once
 
 #include "core/os/keyboard.h"
 
@@ -51,5 +50,3 @@ public:
 	static bool is_extended_key(unsigned int p_code);
 	static KeyLocation get_location(unsigned int p_code, bool p_extended);
 };
-
-#endif // KEY_MAPPING_WINDOWS_H

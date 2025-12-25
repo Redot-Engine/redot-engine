@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PACKET_BUFFER_H
-#define PACKET_BUFFER_H
+#pragma once
 
 #include "core/templates/ring_buffer.h"
 
@@ -106,6 +105,14 @@ public:
 		return _queued;
 	}
 
+	int payload_space_left() const {
+		return _payload.space_left();
+	}
+
+	int packets_space_left() const {
+		return _packets.size() - _queued;
+	}
+
 	void clear() {
 		_payload.resize(0);
 		_packets.resize(0);
@@ -122,5 +129,3 @@ public:
 		clear();
 	}
 };
-
-#endif // PACKET_BUFFER_H

@@ -30,14 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.xr.regular;
-
-import org.godotengine.godot.gl.GLSurfaceView;
-import org.godotengine.godot.utils.GLUtils;
+package org.redotengine.godot.xr.regular;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLDisplay;
+
+import org.redotengine.godot.gl.GLSurfaceView;
+import org.redotengine.godot.utils.GLUtils;
 
 /**
  * Used to select the egl config for pancake games.

@@ -171,7 +171,7 @@ void GodotPhysicsServer3D::space_set_active(RID p_space, bool p_active) {
 }
 
 bool GodotPhysicsServer3D::space_is_active(RID p_space) const {
-	const GodotSpace3D *space = space_owner.get_or_null(p_space);
+	GodotSpace3D *space = space_owner.get_or_null(p_space);
 	ERR_FAIL_NULL_V(space, false);
 
 	return active_spaces.has(space);
@@ -349,8 +349,9 @@ ObjectID GodotPhysicsServer3D::area_get_object_instance_id(RID p_area) const {
 }
 
 void GodotPhysicsServer3D::area_set_param(RID p_area, AreaParameter p_param, const Variant &p_value) {
-	if (space_owner.owns(p_area)) {
-		GodotSpace3D *space = space_owner.get_or_null(p_area);
+	// caching prevents multiple lookups.
+	GodotSpace3D *space = space_owner.get_or_null(p_area);
+	if (space) {
 		p_area = space->get_default_area()->get_self();
 	}
 	GodotArea3D *area = area_owner.get_or_null(p_area);
@@ -739,6 +740,34 @@ void GodotPhysicsServer3D::body_apply_force(RID p_body, const Vector3 &p_force, 
 	body->wakeup();
 }
 
+void GodotPhysicsServer3D::soft_body_apply_point_impulse(RID p_body, int p_point_index, const Vector3 &p_impulse) {
+	GodotSoftBody3D *soft_body = soft_body_owner.get_or_null(p_body);
+	ERR_FAIL_NULL(soft_body);
+
+	soft_body->apply_node_impulse(p_point_index, p_impulse);
+}
+
+void GodotPhysicsServer3D::soft_body_apply_point_force(RID p_body, int p_point_index, const Vector3 &p_force) {
+	GodotSoftBody3D *soft_body = soft_body_owner.get_or_null(p_body);
+	ERR_FAIL_NULL(soft_body);
+
+	soft_body->apply_node_force(p_point_index, p_force);
+}
+
+void GodotPhysicsServer3D::soft_body_apply_central_impulse(RID p_body, const Vector3 &p_impulse) {
+	GodotSoftBody3D *soft_body = soft_body_owner.get_or_null(p_body);
+	ERR_FAIL_NULL(soft_body);
+
+	soft_body->apply_central_impulse(p_impulse);
+}
+
+void GodotPhysicsServer3D::soft_body_apply_central_force(RID p_body, const Vector3 &p_force) {
+	GodotSoftBody3D *soft_body = soft_body_owner.get_or_null(p_body);
+	ERR_FAIL_NULL(soft_body);
+
+	soft_body->apply_central_force(p_force);
+}
+
 void GodotPhysicsServer3D::body_apply_torque(RID p_body, const Vector3 &p_torque) {
 	GodotBody3D *body = body_owner.get_or_null(p_body);
 	ERR_FAIL_NULL(body);
@@ -828,7 +857,7 @@ void GodotPhysicsServer3D::body_set_axis_lock(RID p_body, BodyAxis p_axis, bool 
 
 bool GodotPhysicsServer3D::body_is_axis_locked(RID p_body, BodyAxis p_axis) const {
 	const GodotBody3D *body = body_owner.get_or_null(p_body);
-	ERR_FAIL_NULL_V(body, 0);
+	ERR_FAIL_NULL_V(body, false);
 	return body->is_axis_locked(p_axis);
 }
 
@@ -1104,6 +1133,20 @@ real_t GodotPhysicsServer3D::soft_body_get_linear_stiffness(RID p_body) const {
 	ERR_FAIL_NULL_V(soft_body, 0.f);
 
 	return soft_body->get_linear_stiffness();
+}
+
+void GodotPhysicsServer3D::soft_body_set_shrinking_factor(RID p_body, real_t p_shrinking_factor) {
+	GodotSoftBody3D *soft_body = soft_body_owner.get_or_null(p_body);
+	ERR_FAIL_NULL(soft_body);
+
+	soft_body->set_shrinking_factor(p_shrinking_factor);
+}
+
+real_t GodotPhysicsServer3D::soft_body_get_shrinking_factor(RID p_body) const {
+	GodotSoftBody3D *soft_body = soft_body_owner.get_or_null(p_body);
+	ERR_FAIL_NULL_V(soft_body, 0.f);
+
+	return soft_body->get_shrinking_factor();
 }
 
 void GodotPhysicsServer3D::soft_body_set_pressure_coefficient(RID p_body, real_t p_pressure_coefficient) {
@@ -1640,8 +1683,8 @@ void GodotPhysicsServer3D::step(real_t p_step) {
 	island_count = 0;
 	active_objects = 0;
 	collision_pairs = 0;
-	for (const GodotSpace3D *E : active_spaces) {
-		stepper->step(const_cast<GodotSpace3D *>(E), p_step);
+	for (GodotSpace3D *E : active_spaces) {
+		stepper->step(E, p_step);
 		island_count += E->get_island_count();
 		active_objects += E->get_active_objects();
 		collision_pairs += E->get_collision_pairs();
@@ -1661,8 +1704,8 @@ void GodotPhysicsServer3D::flush_queries() {
 
 	uint64_t time_beg = OS::get_singleton()->get_ticks_usec();
 
-	for (const GodotSpace3D *E : active_spaces) {
-		GodotSpace3D *space = const_cast<GodotSpace3D *>(E);
+	for (GodotSpace3D *E : active_spaces) {
+		GodotSpace3D *space = E;
 		space->call_queries();
 	}
 

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef REGISTER_MODULE_TYPES_H
-#define REGISTER_MODULE_TYPES_H
+#pragma once
 
 #include "core/extension/gdextension_interface.h"
 
@@ -44,5 +43,3 @@ enum ModuleInitializationLevel {
 
 void initialize_modules(ModuleInitializationLevel p_level);
 void uninitialize_modules(ModuleInitializationLevel p_level);
-
-#endif // REGISTER_MODULE_TYPES_H

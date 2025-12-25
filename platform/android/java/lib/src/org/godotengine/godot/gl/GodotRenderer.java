@@ -30,16 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.gl;
-
-import org.godotengine.godot.GodotLib;
-import org.godotengine.godot.plugin.GodotPlugin;
-import org.godotengine.godot.plugin.GodotPluginRegistry;
+package org.redotengine.godot.gl;
 
 import android.util.Log;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+import org.redotengine.godot.GodotLib;
+import org.redotengine.godot.plugin.GodotPlugin;
+import org.redotengine.godot.plugin.GodotPluginRegistry;
 
 /**
  * Godot's GL renderer implementation.

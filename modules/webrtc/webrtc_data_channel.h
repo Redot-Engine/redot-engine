@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBRTC_DATA_CHANNEL_H
-#define WEBRTC_DATA_CHANNEL_H
+#pragma once
 
 #include "core/io/packet_peer.h"
 
@@ -81,5 +80,3 @@ public:
 
 VARIANT_ENUM_CAST(WebRTCDataChannel::WriteMode);
 VARIANT_ENUM_CAST(WebRTCDataChannel::ChannelState);
-
-#endif // WEBRTC_DATA_CHANNEL_H

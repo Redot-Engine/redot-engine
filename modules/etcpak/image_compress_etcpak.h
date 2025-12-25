@@ -30,8 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IMAGE_COMPRESS_ETCPAK_H
-#define IMAGE_COMPRESS_ETCPAK_H
+#pragma once
+
+#ifdef TOOLS_ENABLED
 
 #include "core/io/image.h"
 
@@ -55,4 +56,4 @@ void _compress_bc(Image *r_img, Image::UsedChannels p_channels);
 
 void _compress_etcpak(EtcpakType p_compress_type, Image *r_img);
 
-#endif // IMAGE_COMPRESS_ETCPAK_H
+#endif // TOOLS_ENABLED

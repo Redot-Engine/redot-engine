@@ -105,7 +105,7 @@ namespace GodotPlugins
 
                 if (_editorHint)
                 {
-                    _editorApiAssembly = Assembly.Load("GodotSharpEditor");
+                    _editorApiAssembly = Assembly.Load("RedotSharpEditor");
                     SharedAssemblies.Add(_editorApiAssembly.GetName());
                     NativeLibrary.SetDllImportResolver(_editorApiAssembly, _dllImportResolver);
                 }
@@ -183,7 +183,7 @@ namespace GodotPlugins
 
                 if (method == null)
                 {
-                    throw new MissingMethodException("GodotTools.GodotSharpEditor",
+                    throw new MissingMethodException("GodotTools.RedotSharpEditor",
                         "InternalCreateInstance");
                 }
 

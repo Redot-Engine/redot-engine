@@ -30,21 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef STRING_BUILDER_H
-#define STRING_BUILDER_H
+#pragma once
 
 #include "core/string/ustring.h"
-#include "core/templates/vector.h"
+#include "core/templates/local_vector.h"
 
 class StringBuilder {
 	uint32_t string_length = 0;
 
-	Vector<String> strings;
-	Vector<const char *> c_strings;
+	LocalVector<String> strings;
+	LocalVector<const char *> c_strings;
 
 	// -1 means it's a Redot String
 	// a natural number means C string.
-	Vector<int32_t> appended_strings;
+	LocalVector<int32_t> appended_strings;
 
 public:
 	StringBuilder &append(const String &p_string);
@@ -82,5 +81,3 @@ public:
 
 	StringBuilder() {}
 };
-
-#endif // STRING_BUILDER_H

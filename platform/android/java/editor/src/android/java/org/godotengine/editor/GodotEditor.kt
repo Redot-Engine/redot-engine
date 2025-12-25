@@ -2,8 +2,8 @@
 /*  GodotEditor.kt                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
 /* Copyright (c) 2024-present Redot Engine contributors                   */
 /*                                          (see REDOT_AUTHORS.md)        */
@@ -30,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.editor
+package org.redotengine.editor
 
 /**
  * Primary window of the Godot Editor.
  *
  * This is the implementation of the editor used when running on regular Android devices.
  */
-open class GodotEditor : BaseGodotEditor() {
-}
+open class GodotEditor : BaseGodotEditor()

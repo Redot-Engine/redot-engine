@@ -32,12 +32,10 @@
 
 #include "noise_editor_plugin.h"
 
-#ifdef TOOLS_ENABLED
-
 #include "../noise.h"
 #include "../noise_texture_2d.h"
 
-#include "editor/editor_inspector.h"
+#include "editor/inspector/editor_inspector.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/button.h"
 #include "scene/gui/texture_rect.h"
@@ -141,7 +139,7 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////////
 
-String NoiseEditorPlugin::get_name() const {
+String NoiseEditorPlugin::get_plugin_name() const {
 	return Noise::get_class_static();
 }
 
@@ -150,5 +148,3 @@ NoiseEditorPlugin::NoiseEditorPlugin() {
 	plugin.instantiate();
 	add_inspector_plugin(plugin);
 }
-
-#endif // TOOLS_ENABLED

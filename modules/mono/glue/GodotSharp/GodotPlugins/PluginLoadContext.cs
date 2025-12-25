@@ -37,7 +37,7 @@ namespace GodotPlugins
                 }
                 else
                 {
-                    // TODO: How to log from GodotPlugins? (delegate pointer?)
+                    // TODO: How to log from RedotPlugins? (delegate pointer?)
                     Console.Error.WriteLine("Failed to set AppContext.BaseDirectory. Dynamic loading of libraries may fail.");
                 }
             }

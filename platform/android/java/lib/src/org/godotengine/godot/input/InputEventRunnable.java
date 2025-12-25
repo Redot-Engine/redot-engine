@@ -30,9 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.input;
-
-import org.godotengine.godot.GodotLib;
+package org.redotengine.godot.input;
 
 import android.hardware.Sensor;
 import android.util.Log;
@@ -44,6 +42,8 @@ import androidx.core.util.Pools;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.redotengine.godot.GodotLib;
 
 /**
  * Used to dispatch input events.

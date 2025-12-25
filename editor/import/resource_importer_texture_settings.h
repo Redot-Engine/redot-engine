@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RESOURCE_IMPORTER_TEXTURE_SETTINGS_H
-#define RESOURCE_IMPORTER_TEXTURE_SETTINGS_H
+#pragma once
 
 // ResourceImporterTextureSettings contains code used by
 // multiple texture importers and the export dialog.
@@ -39,5 +38,3 @@ namespace ResourceImporterTextureSettings {
 bool should_import_s3tc_bptc();
 bool should_import_etc2_astc();
 } //namespace ResourceImporterTextureSettings
-
-#endif // RESOURCE_IMPORTER_TEXTURE_SETTINGS_H

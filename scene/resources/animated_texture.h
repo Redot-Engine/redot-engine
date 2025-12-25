@@ -30,9 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ANIMATED_TEXTURE_H
-#define ANIMATED_TEXTURE_H
+#pragma once
 
+#include "core/io/image_frames.h"
+#include "core/io/resource_loader.h"
 #include "scene/resources/texture.h"
 
 class AnimatedTexture : public Texture2D {
@@ -105,8 +106,19 @@ public:
 
 	bool is_pixel_opaque(int p_x, int p_y) const override;
 
+	void set_from_image_frames(const Ref<ImageFrames> &p_image_frames);
+	static Ref<AnimatedTexture> create_from_image_frames(const Ref<ImageFrames> &p_image_frames);
+
+	Ref<ImageFrames> make_image_frames() const;
+
 	AnimatedTexture();
 	~AnimatedTexture();
 };
 
-#endif // ANIMATED_TEXTURE_H
+class ResourceFormatLoaderAnimatedTexture : public ResourceFormatLoader {
+public:
+	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
+	virtual bool handles_type(const String &p_type) const override;
+	virtual String get_resource_type(const String &p_path) const override;
+};

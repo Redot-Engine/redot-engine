@@ -313,7 +313,7 @@ bool GodotPinJoint2D::get_flag(PhysicsServer2D::PinJointFlag p_flag) const {
 			return motor_enabled;
 		}
 	}
-	ERR_FAIL_V(0);
+	ERR_FAIL_V(false);
 }
 
 GodotPinJoint2D::GodotPinJoint2D(const Vector2 &p_pos, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
@@ -360,7 +360,7 @@ k_tensor(GodotBody2D *a, GodotBody2D *b, Vector2 r1, Vector2 r2, Vector2 *k1, Ve
 	k21 += r1nxy;
 	k22 += r1xsq;
 
-	// add the influnce from r2
+	// add the influence from r2
 	real_t b_i_inv = b->get_inv_inertia();
 	real_t r2xsq = r2.x * r2.x * b_i_inv;
 	real_t r2ysq = r2.y * r2.y * b_i_inv;

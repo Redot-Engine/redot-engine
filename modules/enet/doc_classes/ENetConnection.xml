@@ -90,14 +90,14 @@
 			<param index="0" name="hostname" type="String" />
 			<param index="1" name="client_options" type="TLSOptions" default="null" />
 			<description>
-				Configure this ENetHost to use the custom Godot extension allowing DTLS encryption for ENet clients. Call this before [method connect_to_host] to have ENet connect using DTLS validating the server certificate against [param hostname]. You can pass the optional [param client_options] parameter to customize the trusted certification authorities, or disable the common name verification. See [method TLSOptions.client] and [method TLSOptions.client_unsafe].
+				Configure this ENetHost to use the custom Redot extension allowing DTLS encryption for ENet clients. Call this before [method connect_to_host] to have ENet connect using DTLS validating the server certificate against [param hostname]. You can pass the optional [param client_options] parameter to customize the trusted certification authorities, or disable the common name verification. See [method TLSOptions.client] and [method TLSOptions.client_unsafe].
 			</description>
 		</method>
 		<method name="dtls_server_setup">
 			<return type="int" enum="Error" />
 			<param index="0" name="server_options" type="TLSOptions" />
 			<description>
-				Configure this ENetHost to use the custom Godot extension allowing DTLS encryption for ENet servers. Call this right after [method create_host_bound] to have ENet expect peers to connect using DTLS. See [method TLSOptions.server].
+				Configure this ENetHost to use the custom Redot extension allowing DTLS encryption for ENet servers. Call this right after [method create_host_bound] to have ENet expect peers to connect using DTLS. See [method TLSOptions.server].
 			</description>
 		</method>
 		<method name="flush">
@@ -129,7 +129,7 @@
 			<return type="float" />
 			<param index="0" name="statistic" type="int" enum="ENetConnection.HostStatistic" />
 			<description>
-				Returns and resets host statistics. See [enum HostStatistic] for more info.
+				Returns and resets host statistics.
 			</description>
 		</method>
 		<method name="refuse_new_connections">

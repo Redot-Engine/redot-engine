@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_HASHING_CONTEXT_H
-#define TEST_HASHING_CONTEXT_H
+#pragma once
 
 #include "core/crypto/hashing_context.h"
 
@@ -163,5 +162,3 @@ TEST_CASE("[HashingContext] Invalid use of finish") {
 	ERR_PRINT_ON;
 }
 } // namespace TestHashingContext
-
-#endif // TEST_HASHING_CONTEXT_H

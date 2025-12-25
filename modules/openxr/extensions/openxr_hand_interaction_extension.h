@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_HAND_INTERACTION_EXTENSION_H
-#define OPENXR_HAND_INTERACTION_EXTENSION_H
+#pragma once
 
 #include "openxr_extension_wrapper.h"
 
@@ -53,6 +52,11 @@
 // for more information.
 
 class OpenXRHandInteractionExtension : public OpenXRExtensionWrapper {
+	GDCLASS(OpenXRHandInteractionExtension, OpenXRExtensionWrapper);
+
+protected:
+	static void _bind_methods() {}
+
 public:
 	static OpenXRHandInteractionExtension *get_singleton();
 
@@ -70,5 +74,3 @@ private:
 
 	bool available = false;
 };
-
-#endif // OPENXR_HAND_INTERACTION_EXTENSION_H

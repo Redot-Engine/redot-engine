@@ -30,10 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef THEME_DB_H
-#define THEME_DB_H
+#pragma once
 
-#include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
 #include "scene/resources/theme.h"
 
@@ -208,5 +206,3 @@ public:
 	const Vector<Ref<Theme>> get_themes() const;
 	Ref<Theme> get_fallback_theme() const;
 };
-
-#endif // THEME_DB_H

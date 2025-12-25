@@ -155,6 +155,9 @@ int64_t InputEventFromWindow::get_window_id() const {
 ///////////////////////////////////
 
 void InputEventWithModifiers::set_command_or_control_autoremap(bool p_enabled) {
+	if (command_or_control_autoremap == p_enabled) {
+		return;
+	}
 	command_or_control_autoremap = p_enabled;
 	if (command_or_control_autoremap) {
 		if (OS::get_singleton()->has_feature("macos") || OS::get_singleton()->has_feature("web_macos") || OS::get_singleton()->has_feature("web_ios")) {
@@ -168,6 +171,7 @@ void InputEventWithModifiers::set_command_or_control_autoremap(bool p_enabled) {
 		ctrl_pressed = false;
 		meta_pressed = false;
 	}
+	notify_property_list_changed();
 	emit_changed();
 }
 
@@ -229,7 +233,7 @@ void InputEventWithModifiers::set_modifiers_from_event(const InputEventWithModif
 }
 
 BitField<KeyModifierMask> InputEventWithModifiers::get_modifiers_mask() const {
-	BitField<KeyModifierMask> mask;
+	BitField<KeyModifierMask> mask = {};
 	if (is_ctrl_pressed()) {
 		mask.set_flag(KeyModifierMask::CTRL);
 	}
@@ -311,9 +315,11 @@ void InputEventWithModifiers::_validate_property(PropertyInfo &p_property) const
 		// Cannot be used with Meta/Command or Control!
 		if (p_property.name == "meta_pressed") {
 			p_property.usage ^= PROPERTY_USAGE_STORAGE;
+			p_property.usage ^= PROPERTY_USAGE_EDITOR;
 		}
 		if (p_property.name == "ctrl_pressed") {
 			p_property.usage ^= PROPERTY_USAGE_STORAGE;
+			p_property.usage ^= PROPERTY_USAGE_EDITOR;
 		}
 	} else {
 		if (p_property.name == "command_or_control_autoremap") {
@@ -384,11 +390,11 @@ bool InputEventKey::is_echo() const {
 }
 
 Key InputEventKey::get_keycode_with_modifiers() const {
-	return keycode | (int64_t)get_modifiers_mask();
+	return keycode | get_modifiers_mask();
 }
 
 Key InputEventKey::get_physical_keycode_with_modifiers() const {
-	return physical_keycode | (int64_t)get_modifiers_mask();
+	return physical_keycode | get_modifiers_mask();
 }
 
 Key InputEventKey::get_key_label_with_modifiers() const {
@@ -753,6 +759,8 @@ Ref<InputEvent> InputEventMouseButton::xformed_by(const Transform2D &p_xform, co
 	mb->set_factor(factor);
 	mb->set_button_index(button_index);
 
+	mb->merge_meta_from(this);
+
 	return mb;
 }
 
@@ -973,6 +981,8 @@ Ref<InputEvent> InputEventMouseMotion::xformed_by(const Transform2D &p_xform, co
 	mm->set_velocity(p_xform.basis_xform(get_velocity()));
 	mm->set_screen_velocity(get_screen_velocity());
 
+	mm->merge_meta_from(this);
+
 	return mm;
 }
 
@@ -1099,7 +1109,7 @@ JoyAxis InputEventJoypadMotion::get_axis() const {
 
 void InputEventJoypadMotion::set_axis_value(float p_value) {
 	axis_value = p_value;
-	pressed = Math::abs(axis_value) >= 0.5f;
+	pressed = Math::abs(axis_value) >= InputMap::DEFAULT_TOGGLE_DEADZONE;
 	emit_changed();
 }
 
@@ -1365,6 +1375,8 @@ Ref<InputEvent> InputEventScreenTouch::xformed_by(const Transform2D &p_xform, co
 	st->set_canceled(canceled);
 	st->set_double_tap(double_tap);
 
+	st->merge_meta_from(this);
+
 	return st;
 }
 
@@ -1492,6 +1504,8 @@ Ref<InputEvent> InputEventScreenDrag::xformed_by(const Transform2D &p_xform, con
 	sd->set_relative_screen_position(get_relative_screen_position());
 	sd->set_velocity(p_xform.basis_xform(velocity));
 	sd->set_screen_velocity(get_screen_velocity());
+
+	sd->merge_meta_from(this);
 
 	return sd;
 }
@@ -1659,7 +1673,7 @@ void InputEventAction::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_event_index", "index"), &InputEventAction::set_event_index);
 	ClassDB::bind_method(D_METHOD("get_event_index"), &InputEventAction::get_event_index);
 
-	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "action"), "set_action", "get_action");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "action", PROPERTY_HINT_INPUT_NAME, "show_builtin,loose_mode"), "set_action", "get_action");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "pressed"), "set_pressed", "is_pressed");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "strength", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_strength", "get_strength");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "event_index", PROPERTY_HINT_RANGE, "-1,31,1"), "set_event_index", "get_event_index"); // The max value equals to Input::MAX_EVENT - 1.
@@ -1704,6 +1718,8 @@ Ref<InputEvent> InputEventMagnifyGesture::xformed_by(const Transform2D &p_xform,
 	ev->set_position(p_xform.xform(get_position() + p_local_ofs));
 	ev->set_factor(get_factor());
 
+	ev->merge_meta_from(this);
+
 	return ev;
 }
 
@@ -1743,6 +1759,8 @@ Ref<InputEvent> InputEventPanGesture::xformed_by(const Transform2D &p_xform, con
 
 	ev->set_position(p_xform.xform(get_position() + p_local_ofs));
 	ev->set_delta(get_delta());
+
+	ev->merge_meta_from(this);
 
 	return ev;
 }

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MISSING_RESOURCE_H
-#define MISSING_RESOURCE_H
+#pragma once
 
 #include "core/io/resource.h"
 
@@ -59,7 +58,7 @@ public:
 	void set_recording_properties(bool p_enable);
 	bool is_recording_properties() const;
 
+	virtual String get_save_class() const override;
+
 	MissingResource();
 };
-
-#endif // MISSING_RESOURCE_H

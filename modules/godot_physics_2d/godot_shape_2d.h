@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_SHAPE_2D_H
-#define GODOT_SHAPE_2D_H
+#pragma once
 
 #include "servers/physics_server_2d.h"
 
@@ -537,5 +536,3 @@ public:
 };
 
 #undef DEFAULT_PROJECT_RANGE_CAST
-
-#endif // GODOT_SHAPE_2D_H

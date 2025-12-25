@@ -30,11 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_OPEN_SAVE_DELEGATE_H
-#define GODOT_OPEN_SAVE_DELEGATE_H
+#pragma once
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 #include "core/templates/hash_map.h"
 #include "core/variant/typed_array.h"
@@ -64,5 +64,3 @@
 - (void)setRootPath:(const String &)p_root_path;
 
 @end
-
-#endif // GODOT_OPEN_SAVE_DELEGATE_H

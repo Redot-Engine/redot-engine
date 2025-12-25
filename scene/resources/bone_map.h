@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef BONE_MAP_H
-#define BONE_MAP_H
+#pragma once
 
 #include "skeleton_profile.h"
 
@@ -66,5 +65,3 @@ public:
 	BoneMap();
 	~BoneMap();
 };
-
-#endif // BONE_MAP_H

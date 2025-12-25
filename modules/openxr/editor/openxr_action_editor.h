@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_ACTION_EDITOR_H
-#define OPENXR_ACTION_EDITOR_H
+#pragma once
 
 #include "../action_map/openxr_action.h"
 
@@ -73,5 +72,3 @@ public:
 	Ref<OpenXRAction> get_action() { return action; }
 	OpenXRActionEditor(Ref<OpenXRAction> p_action);
 };
-
-#endif // OPENXR_ACTION_EDITOR_H

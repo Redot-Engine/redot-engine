@@ -30,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXT_FILE_H
-#define TEXT_FILE_H
+#pragma once
 
-#include "core/io/resource_loader.h"
-#include "core/io/resource_saver.h"
+#include "core/io/resource.h"
 
 class TextFile : public Resource {
 	GDCLASS(TextFile, Resource);
@@ -55,5 +53,3 @@ public:
 	void set_file_path(const String &p_path) { path = p_path; }
 	Error load_text(const String &p_path);
 };
-
-#endif // TEXT_FILE_H

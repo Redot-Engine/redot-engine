@@ -2,8 +2,8 @@
 /*  AndroidRuntimePlugin.kt                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
 /* Copyright (c) 2024-present Redot Engine contributors                   */
 /*                                          (see REDOT_AUTHORS.md)        */
@@ -30,36 +30,44 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.plugin
+package org.redotengine.godot.plugin
 
-import org.godotengine.godot.Godot
+import org.redotengine.godot.Godot
+import org.redotengine.godot.variant.Callable
 
 /**
- * Provides access to the Android runtime capabilities.
+ * Built-in Godot Android plugin used to provide access to the Android runtime capabilities.
  *
- * For example, from gdscript, developers can use [getApplicationContext] to access system services
- * and check if the device supports vibration.
- *
- * var android_runtime = Engine.get_singleton("AndroidRuntime")
- * 	if android_runtime:
- * 		print("Checking if the device supports vibration")
- * 		var vibrator_service = android_runtime.getApplicationContext().getSystemService("vibrator")
- * 		if vibrator_service:
- * 			if vibrator_service.hasVibrator():
- * 				print("Vibration is supported on device!")
- * 			else:
- * 				printerr("Vibration is not supported on device")
- * 		else:
- * 			printerr("Unable to retrieve the vibrator service")
- * 	else:
- * 		printerr("Couldn't find AndroidRuntime singleton")
+ * @see <a href="https://docs.godotengine.org/en/latest/tutorials/platform/android/javaclasswrapper_and_androidruntimeplugin.html">Integrating with Android APIs</a>
  */
 class AndroidRuntimePlugin(godot: Godot) : GodotPlugin(godot) {
 	override fun getPluginName() = "AndroidRuntime"
 
+	/**
+	 * Provides access to the application [android.content.Context] to GDScript
+	 */
 	@UsedByGodot
 	fun getApplicationContext() = activity?.applicationContext
 
+	/**
+	 * Provides access to the host [android.app.Activity] to GDScript
+	 */
 	@UsedByGodot
 	override fun getActivity() = super.getActivity()
+
+	/**
+	 * Utility method used to create [Runnable] from Godot [Callable].
+	 */
+	@UsedByGodot
+	fun createRunnableFromGodotCallable(godotCallable: Callable): Runnable {
+		return Runnable { godotCallable.call() }
+	}
+
+	/**
+	 * Utility method used to create [java.util.concurrent.Callable] from Godot [Callable].
+	 */
+	@UsedByGodot
+	fun createCallableFromGodotCallable(godotCallable: Callable): java.util.concurrent.Callable<Any> {
+		return java.util.concurrent.Callable { godotCallable.call() }
+	}
 }

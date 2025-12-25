@@ -30,10 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FORWARD_ID_STORAGE_H
-#define FORWARD_ID_STORAGE_H
+#pragma once
 
-#include "servers/rendering/storage/utilities.h"
+#include <cstdint>
 
 class RendererSceneRenderRD;
 
@@ -66,5 +65,3 @@ public:
 };
 
 } // namespace RendererRD
-
-#endif // FORWARD_ID_STORAGE_H

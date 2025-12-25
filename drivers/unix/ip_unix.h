@@ -30,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IP_UNIX_H
-#define IP_UNIX_H
+#pragma once
+
+#if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)
 
 #include "core/io/ip.h"
-
-#if defined(UNIX_ENABLED) || defined(WINDOWS_ENABLED)
 
 class IPUnix : public IP {
 	GDCLASS(IPUnix, IP);
@@ -51,6 +50,4 @@ public:
 	IPUnix();
 };
 
-#endif
-
-#endif // IP_UNIX_H
+#endif // UNIX_ENABLED

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef JAVA_CLASS_WRAPPER_H
-#define JAVA_CLASS_WRAPPER_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 #include "core/variant/typed_array.h"
@@ -60,6 +59,8 @@ class JavaClass : public RefCounted {
 		ARG_TYPE_FLOAT,
 		ARG_TYPE_DOUBLE,
 		ARG_TYPE_STRING, //special case
+		ARG_TYPE_CHARSEQUENCE,
+		ARG_TYPE_CALLABLE,
 		ARG_TYPE_CLASS,
 		ARG_ARRAY_BIT = 1 << 16,
 		ARG_NUMBER_CLASS_BIT = 1 << 17,
@@ -125,7 +126,11 @@ class JavaClass : public RefCounted {
 				likelihood = 0.5;
 				break;
 			case ARG_TYPE_STRING:
+			case ARG_TYPE_CHARSEQUENCE:
 				r_type = Variant::STRING;
+				break;
+			case ARG_TYPE_CALLABLE:
+				r_type = Variant::CALLABLE;
 				break;
 			case ARG_TYPE_CLASS:
 				r_type = Variant::OBJECT;
@@ -165,9 +170,11 @@ class JavaClass : public RefCounted {
 				likelihood = 0.5;
 				break;
 			case ARG_ARRAY_BIT | ARG_TYPE_STRING:
+			case ARG_ARRAY_BIT | ARG_TYPE_CHARSEQUENCE:
 				r_type = Variant::PACKED_STRING_ARRAY;
 				break;
 			case ARG_ARRAY_BIT | ARG_TYPE_CLASS:
+			case ARG_ARRAY_BIT | ARG_TYPE_CALLABLE:
 				r_type = Variant::ARRAY;
 				break;
 		}
@@ -187,6 +194,7 @@ class JavaClass : public RefCounted {
 
 protected:
 	static void _bind_methods();
+	bool _get(const StringName &p_name, Variant &r_ret) const;
 
 public:
 	virtual Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) override;
@@ -264,6 +272,8 @@ class JavaClassWrapper : public Object {
 	bool _get_type_sig(JNIEnv *env, jobject obj, uint32_t &sig, String &strsig);
 #endif
 
+	Ref<JavaObject> exception;
+
 	Ref<JavaClass> _wrap(const String &p_class, bool p_allow_private_methods_access);
 
 	static JavaClassWrapper *singleton;
@@ -278,10 +288,12 @@ public:
 		return _wrap(p_class, false);
 	}
 
+	Ref<JavaObject> get_exception() {
+		return exception;
+	}
+
 #ifdef ANDROID_ENABLED
 	Ref<JavaClass> wrap_jclass(jclass p_class, bool p_allow_private_methods_access = false);
 #endif
 	JavaClassWrapper();
 };
-
-#endif // JAVA_CLASS_WRAPPER_H

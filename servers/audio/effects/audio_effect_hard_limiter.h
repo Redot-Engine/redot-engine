@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_EFFECT_HARD_LIMITER_H
-#define AUDIO_EFFECT_HARD_LIMITER_H
+#pragma once
 
 #include "servers/audio/audio_effect.h"
 
@@ -87,5 +86,3 @@ public:
 
 	Ref<AudioEffectInstance> instantiate() override;
 };
-
-#endif // AUDIO_EFFECT_HARD_LIMITER_H

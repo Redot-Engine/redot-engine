@@ -30,14 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef KINEMATIC_COLLISION_3D_H
-#define KINEMATIC_COLLISION_3D_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 #include "servers/physics_server_3d.h"
-
-class CharacterBody3D;
-class PhysicsBody3D;
 
 class KinematicCollision3D : public RefCounted {
 	GDCLASS(KinematicCollision3D, RefCounted);
@@ -66,5 +62,3 @@ public:
 	int get_collider_shape_index(int p_collision_index = 0) const;
 	Vector3 get_collider_velocity(int p_collision_index = 0) const;
 };
-
-#endif // KINEMATIC_COLLISION_3D_H

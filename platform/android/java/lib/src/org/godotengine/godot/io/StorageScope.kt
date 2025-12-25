@@ -2,8 +2,8 @@
 /*  StorageScope.kt                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
 /* Copyright (c) 2024-present Redot Engine contributors                   */
 /*                                          (see REDOT_AUTHORS.md)        */
@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.io
+package org.redotengine.godot.io
 
 import android.content.Context
 import android.os.Build
 import android.os.Environment
 import java.io.File
-import org.godotengine.godot.GodotLib
+import org.redotengine.godot.GodotLib
 
 /**
  * Represents the different storage scopes.

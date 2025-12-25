@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_METHOD_BIND_H
-#define TEST_METHOD_BIND_H
+#pragma once
 
 #include "core/object/class_db.h"
 
@@ -58,6 +57,8 @@ public:
 	};
 
 	class ObjectSubclass : public Object {
+		GDSOFTCLASS(ObjectSubclass, Object);
+
 	public:
 		int value = 1;
 	};
@@ -173,5 +174,3 @@ TEST_CASE("[MethodBind] check all method binds") {
 	memdelete(mbt);
 }
 } // namespace TestMethodBind
-
-#endif // TEST_METHOD_BIND_H

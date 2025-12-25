@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef XR_FACE_TRACKER_H
-#define XR_FACE_TRACKER_H
+#pragma once
 
 #include "servers/xr/xr_tracker.h"
 
@@ -215,5 +214,3 @@ private:
 };
 
 VARIANT_ENUM_CAST(XRFaceTracker::BlendShapeEntry);
-
-#endif // XR_FACE_TRACKER_H

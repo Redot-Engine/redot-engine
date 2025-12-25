@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ImageFrames" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		A container for sequence of [Image]s.
+	</brief_description>
+	<description>
+		A container of [Image]s used to load and arrange a sequence of frames. Each frame can specify a delay for animated images.
+		Can be used to load animated image formats externally.
+		Supported animated image formats are [url=https://www.w3.org/Graphics/GIF/spec-gif89a.txt]GIF[/url] ([code].gif[/code]), [url=https://wiki.mozilla.org/APNG_Specification]APNG[/url] ([code].png[/code] and [code].apng[/code]), [url=https://developers.google.com/speed/webp/docs/riff_container]WepP[/url] ([code].webp[/code]), and any format exposed via a GDExtension plugin.
+		An [ImageTexture] is not meant to be operated from within the editor interface directly, and is mostly useful for rendering images on screen dynamically via code. If you need to generate images procedurally from within the editor, consider saving and importing images as custom texture resources implementing a new [EditorImportPlugin].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_frame_delay" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="frame" type="int" />
+			<description>
+				Returns the given frame's duration, in seconds.
+			</description>
+		</method>
+		<method name="get_frame_image" qualifiers="const">
+			<return type="Image" />
+			<param index="0" name="frame" type="int" />
+			<description>
+				Returns the given frame's [Image].
+			</description>
+		</method>
+		<method name="is_empty" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] if the [member frame_count] is [code]0[/code].
+			</description>
+		</method>
+		<method name="load">
+			<return type="int" enum="Error" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Loads a sequence of image frames from file [param path].
+				[b]Warning:[/b] This method should only be used in the editor or in cases when you need to load external images at run-time, such as images located at the [code]user://[/code] directory, and may not work in exported projects.
+				[codeblock]
+				var frames = ImageFrames.load_from_file("res://animated.gif")
+				var animated_texture = AnimatedTexture.create_from_image_frames(frames)
+				$Sprite2D.texture = animated_texture
+				[/codeblock]
+				This way, textures can be created at run-time by loading images both from within the editor and externally.
+				[b]Warning:[/b] Prefer to load imported textures with [method @GDScript.load] over loading them from within the filesystem dynamically with [method ImageFrames.load], as it may not work in exported projects:
+				[codeblock]
+				var animated_texture = load("res://animated.gif")
+				$Sprite2D.texture = texture
+				[/codeblock]
+				This is because images have to be imported as an [AnimatedTexture] first to be loaded with [method @GDScript.load]. If you'd still like to load an animated image file just like any other [Resource], import it as an [ImageFrames] resource instead, and then load it normally using the [method @GDScript.load] method.
+				[b]Note:[/b] The image frame can be create from an imported texture using the [method AnimatedTexture.create_from_image_frames] method:
+				[codeblock]
+				var texture = load("res://animated.gif")
+				var image: AnimatedTexture = AnimatedTexture.create_from_image_frames(texture)
+				[/codeblock]
+			</description>
+		</method>
+		<method name="load_apng_from_buffer">
+			<return type="int" enum="Error" />
+			<param index="0" name="buffer" type="PackedByteArray" />
+			<param index="1" name="max_frames" type="int" />
+			<description>
+				Loads image frames from the binary contents of an APNG file.
+				[b]Note:[/b] This function will read standard PNG files just like [method Image.load_png_from_buffer]. If libpng is not compiled with support for reading APNG files, APNG files are treated as PNG files.
+			</description>
+		</method>
+		<method name="load_from_file" qualifiers="static">
+			<return type="ImageFrames" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Creates a new [ImageFrames] and loads data from the specified file.
+			</description>
+		</method>
+		<method name="load_gif_from_buffer">
+			<return type="int" enum="Error" />
+			<param index="0" name="buffer" type="PackedByteArray" />
+			<param index="1" name="max_frames" type="int" />
+			<description>
+				Loads image frames from the binary contents of a GIF file.
+			</description>
+		</method>
+		<method name="load_webp_from_buffer">
+			<return type="int" enum="Error" />
+			<param index="0" name="buffer" type="PackedByteArray" />
+			<param index="1" name="max_frames" type="int" />
+			<description>
+				Loads image frames from the binary contents of a WebP file.
+			</description>
+		</method>
+		<method name="set_frame_delay">
+			<return type="void" />
+			<param index="0" name="frame" type="int" />
+			<param index="1" name="delay" type="float" />
+			<description>
+				Sets the delay of any given frame. If set to [code]0[/code], the frame may be skipped if converted into an [AnimatedTexture].
+			</description>
+		</method>
+		<method name="set_frame_image">
+			<return type="void" />
+			<param index="0" name="frame" type="int" />
+			<param index="1" name="image" type="Image" />
+			<description>
+				Assigns an [Image] to the given frame. Frame IDs start at 0, so the first frame has ID 0, and the last frame has ID [member frame_count] - 1.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="frame_count" type="int" setter="set_frame_count" getter="get_frame_count" default="0">
+			Number of frames to use in the animation. While you can create the frames independently with [method set_frame_image], you need to set this value for the animation to take new frames into account.
+		</member>
+		<member name="loop_count" type="int" setter="set_loop_count" getter="get_loop_count" default="0">
+			Number of times the animation loops. A value of [code]0[/code] represents infinity.
+		</member>
+	</members>
+</class>

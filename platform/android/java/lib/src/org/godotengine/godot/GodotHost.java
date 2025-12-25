@@ -30,18 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot;
-
-import org.godotengine.godot.error.Error;
-import org.godotengine.godot.plugin.GodotPlugin;
+package org.redotengine.godot;
 
 import android.app.Activity;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import org.redotengine.godot.error.Error;
+import org.redotengine.godot.plugin.GodotPlugin;
 
 /**
  * Denotate a component (e.g: Activity, Fragment) that hosts the {@link Godot} engine.
@@ -94,12 +95,13 @@ public interface GodotHost {
 	 * @return the id of the new instance. See {@code onGodotForceQuit}
 	 */
 	default int onNewGodotInstanceRequested(String[] args) {
-		return 0;
+		return -1;
 	}
 
 	/**
-	 * Provide access to the Activity hosting the {@link Godot} engine.
+	 * Provide access to the Activity hosting the {@link Godot} engine if any.
 	 */
+	@Nullable
 	Activity getActivity();
 
 	/**
@@ -146,5 +148,24 @@ public interface GodotHost {
 	 */
 	default boolean supportsFeature(String featureTag) {
 		return false;
+	}
+
+	/**
+	 * Invoked on the render thread when an editor workspace has been selected.
+	 */
+	default void onEditorWorkspaceSelected(String workspace) {}
+
+	/**
+	 * Runs the specified action on a host provided thread.
+	 */
+	default void runOnHostThread(Runnable action) {
+		if (action == null) {
+			return;
+		}
+
+		Activity activity = getActivity();
+		if (activity != null) {
+			activity.runOnUiThread(action);
+		}
 	}
 }

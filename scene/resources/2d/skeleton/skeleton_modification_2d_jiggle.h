@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SKELETON_MODIFICATION_2D_JIGGLE_H
-#define SKELETON_MODIFICATION_2D_JIGGLE_H
+#pragma once
 
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
@@ -137,5 +136,3 @@ public:
 	SkeletonModification2DJiggle();
 	~SkeletonModification2DJiggle();
 };
-
-#endif // SKELETON_MODIFICATION_2D_JIGGLE_H

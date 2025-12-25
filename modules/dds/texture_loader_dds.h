@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXTURE_LOADER_DDS_H
-#define TEXTURE_LOADER_DDS_H
+#pragma once
 
 #include "core/io/resource_loader.h"
 
@@ -42,7 +41,6 @@ public:
 	virtual bool handles_type(const String &p_type) const override;
 	virtual String get_resource_type(const String &p_path) const override;
 
+	ResourceFormatDDS();
 	virtual ~ResourceFormatDDS() {}
 };
-
-#endif // TEXTURE_LOADER_DDS_H

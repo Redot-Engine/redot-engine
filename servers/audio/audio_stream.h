@@ -30,13 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_H
-#define AUDIO_STREAM_H
+#pragma once
 
-#include "core/io/image.h"
 #include "core/io/resource.h"
 #include "scene/property_list_helper.h"
-#include "servers/audio/audio_filter_sw.h"
 #include "servers/audio_server.h"
 
 #include "core/object/gdvirtual.gen.inc"
@@ -183,6 +180,7 @@ protected:
 	GDVIRTUAL0RC(bool, _has_loop)
 	GDVIRTUAL0RC(int, _get_bar_beats)
 	GDVIRTUAL0RC(int, _get_beat_count)
+	GDVIRTUAL0RC(Dictionary, _get_tags);
 	GDVIRTUAL0RC(TypedArray<Dictionary>, _get_parameter_list)
 
 public:
@@ -193,6 +191,7 @@ public:
 	virtual bool has_loop() const;
 	virtual int get_bar_beats() const;
 	virtual int get_beat_count() const;
+	virtual Dictionary get_tags() const;
 
 	virtual double get_length() const;
 	virtual bool is_monophonic() const;
@@ -377,5 +376,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(AudioStreamRandomizer::PlaybackMode);
-
-#endif // AUDIO_STREAM_H

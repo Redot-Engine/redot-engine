@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CRASH_HANDLER_WINDOWS_H
-#define CRASH_HANDLER_WINDOWS_H
+#pragma once
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -58,5 +57,3 @@ public:
 	CrashHandler();
 	~CrashHandler();
 };
-
-#endif // CRASH_HANDLER_WINDOWS_H

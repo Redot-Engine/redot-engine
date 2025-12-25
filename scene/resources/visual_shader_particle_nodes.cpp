@@ -463,7 +463,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Vector2> 
 	Ref<Image> image;
 	image.instantiate();
 
-	if (p_array.size() == 0) {
+	if (p_array.is_empty()) {
 		image->initialize_data(1, 1, false, Image::Format::FORMAT_RGBF);
 	} else {
 		image->initialize_data(p_array.size(), 1, false, Image::Format::FORMAT_RGBF);
@@ -473,7 +473,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Vector2> 
 		Vector2 v = p_array[i];
 		image->set_pixel(i, 0, Color(v.x, v.y, 0));
 	}
-	if (r_texture->get_width() != p_array.size() || p_array.size() == 0) {
+	if (r_texture->get_width() != p_array.size() || p_array.is_empty()) {
 		r_texture->set_image(image);
 	} else {
 		r_texture->update(image);
@@ -484,7 +484,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Vector3> 
 	Ref<Image> image;
 	image.instantiate();
 
-	if (p_array.size() == 0) {
+	if (p_array.is_empty()) {
 		image->initialize_data(1, 1, false, Image::Format::FORMAT_RGBF);
 	} else {
 		image->initialize_data(p_array.size(), 1, false, Image::Format::FORMAT_RGBF);
@@ -494,7 +494,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Vector3> 
 		Vector3 v = p_array[i];
 		image->set_pixel(i, 0, Color(v.x, v.y, v.z));
 	}
-	if (r_texture->get_width() != p_array.size() || p_array.size() == 0) {
+	if (r_texture->get_width() != p_array.size() || p_array.is_empty()) {
 		r_texture->set_image(image);
 	} else {
 		r_texture->update(image);
@@ -505,7 +505,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Color> &p
 	Ref<Image> image;
 	image.instantiate();
 
-	if (p_array.size() == 0) {
+	if (p_array.is_empty()) {
 		image->initialize_data(1, 1, false, Image::Format::FORMAT_RGBA8);
 	} else {
 		image->initialize_data(p_array.size(), 1, false, Image::Format::FORMAT_RGBA8);
@@ -514,7 +514,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Color> &p
 	for (int i = 0; i < p_array.size(); i++) {
 		image->set_pixel(i, 0, p_array[i]);
 	}
-	if (r_texture->get_width() != p_array.size() || p_array.size() == 0) {
+	if (r_texture->get_width() != p_array.size() || p_array.is_empty()) {
 		r_texture->set_image(image);
 	} else {
 		r_texture->update(image);
@@ -522,7 +522,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Color> &p
 }
 
 void VisualShaderNodeParticleMeshEmitter::_update_textures() {
-	if (!mesh.is_valid()) {
+	if (mesh.is_null()) {
 		return;
 	}
 

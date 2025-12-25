@@ -30,12 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot;
-
-import org.godotengine.godot.input.GodotInputHandler;
-import org.godotengine.godot.utils.DeviceUtils;
+package org.redotengine.godot;
 
 import android.view.SurfaceView;
+
+import org.redotengine.godot.input.GodotInputHandler;
+import org.redotengine.godot.utils.DeviceUtils;
 
 public interface GodotRenderView {
 	SurfaceView getView();
@@ -70,7 +70,7 @@ public interface GodotRenderView {
 	 * @return true if pointer capture is supported.
 	 */
 	default boolean canCapturePointer() {
-		// Pointer capture is not supported on Horizon OS
-		return !DeviceUtils.isHorizonOSDevice() && getInputHandler().canCapturePointer();
+		// Pointer capture is not supported on native XR devices.
+		return !DeviceUtils.isNativeXRDevice(getView().getContext()) && getInputHandler().canCapturePointer();
 	}
 }

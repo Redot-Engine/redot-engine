@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef STATUS_INDICATOR_H
-#define STATUS_INDICATOR_H
+#pragma once
 
 #include "scene/main/node.h"
 #include "servers/display_server.h"
@@ -66,5 +65,3 @@ public:
 
 	Rect2 get_rect() const;
 };
-
-#endif // STATUS_INDICATOR_H

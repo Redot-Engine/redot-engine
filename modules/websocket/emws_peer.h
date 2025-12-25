@@ -30,15 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EMWS_PEER_H
-#define EMWS_PEER_H
+#pragma once
 
 #ifdef WEB_ENABLED
 
 #include "packet_buffer.h"
 #include "websocket_peer.h"
 
-#include "core/error/error_list.h"
 #include "core/io/packet_peer.h"
 #include "core/templates/ring_buffer.h"
 
@@ -113,5 +111,3 @@ public:
 };
 
 #endif // WEB_ENABLED
-
-#endif // EMWS_PEER_H

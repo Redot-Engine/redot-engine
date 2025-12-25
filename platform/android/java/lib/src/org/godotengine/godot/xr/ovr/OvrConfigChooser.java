@@ -30,15 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.xr.ovr;
-
-import org.godotengine.godot.gl.GLSurfaceView;
+package org.redotengine.godot.xr.ovr;
 
 import android.opengl.EGLExt;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLDisplay;
+
+import org.redotengine.godot.gl.GLSurfaceView;
 
 /**
  * EGL config chooser for the Oculus Mobile VR SDK.

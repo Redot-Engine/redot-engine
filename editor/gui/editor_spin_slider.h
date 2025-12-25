@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_SPIN_SLIDER_H
-#define EDITOR_SPIN_SLIDER_H
+#pragma once
 
 #include "scene/gui/line_edit.h"
 #include "scene/gui/range.h"
@@ -73,6 +72,7 @@ class EditorSpinSlider : public Range {
 
 	bool hide_slider = false;
 	bool flat = false;
+	bool editing_integer = false;
 
 	void _grab_start();
 	void _grab_end();
@@ -115,6 +115,9 @@ public:
 	void set_hide_slider(bool p_hide);
 	bool is_hiding_slider() const;
 
+	void set_editing_integer(bool p_editing_integer);
+	bool is_editing_integer() const;
+
 	void set_read_only(bool p_enable);
 	bool is_read_only() const;
 
@@ -129,5 +132,3 @@ public:
 	virtual Size2 get_minimum_size() const override;
 	EditorSpinSlider();
 };
-
-#endif // EDITOR_SPIN_SLIDER_H

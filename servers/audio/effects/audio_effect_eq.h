@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_EFFECT_EQ_H
-#define AUDIO_EFFECT_EQ_H
+#pragma once
 
 #include "servers/audio/audio_effect.h"
 #include "servers/audio/effects/eq_filter.h"
@@ -99,5 +98,3 @@ public:
 	AudioEffectEQ21() :
 			AudioEffectEQ(EQ::PRESET_21_BANDS) {}
 };
-
-#endif // AUDIO_EFFECT_EQ_H

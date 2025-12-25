@@ -30,12 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBRTC_PEER_CONNECTION_H
-#define WEBRTC_PEER_CONNECTION_H
+#pragma once
 
 #include "webrtc_data_channel.h"
-
-#include "core/io/packet_peer.h"
 
 class WebRTCPeerConnection : public RefCounted {
 	GDCLASS(WebRTCPeerConnection, RefCounted);
@@ -96,5 +93,3 @@ public:
 VARIANT_ENUM_CAST(WebRTCPeerConnection::ConnectionState);
 VARIANT_ENUM_CAST(WebRTCPeerConnection::GatheringState);
 VARIANT_ENUM_CAST(WebRTCPeerConnection::SignalingState);
-
-#endif // WEBRTC_PEER_CONNECTION_H

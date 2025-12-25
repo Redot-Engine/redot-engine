@@ -2,8 +2,8 @@
 /*  FilesystemDirectoryAccess.kt                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
 /* Copyright (c) 2024-present Redot Engine contributors                   */
 /*                                          (see REDOT_AUTHORS.md)        */
@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.io.directory
+package org.redotengine.godot.io.directory
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -38,10 +38,10 @@ import android.os.Build
 import android.os.storage.StorageManager
 import android.util.Log
 import android.util.SparseArray
-import org.godotengine.godot.io.StorageScope
-import org.godotengine.godot.io.directory.DirectoryAccessHandler.Companion.INVALID_DIR_ID
-import org.godotengine.godot.io.directory.DirectoryAccessHandler.Companion.STARTING_DIR_ID
-import org.godotengine.godot.io.file.FileAccessHandler
+import org.redotengine.godot.io.StorageScope
+import org.redotengine.godot.io.directory.DirectoryAccessHandler.Companion.INVALID_DIR_ID
+import org.redotengine.godot.io.directory.DirectoryAccessHandler.Companion.STARTING_DIR_ID
+import org.redotengine.godot.io.file.FileAccessHandler
 import java.io.File
 
 /**
@@ -152,24 +152,20 @@ internal class FilesystemDirectoryAccess(private val context: Context, private v
 	}
 
 	override fun getDriveCount(): Int {
-		return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-			storageManager.storageVolumes.size
-		} else {
-			0
-		}
+		return storageManager.storageVolumes.size
 	}
 
 	override fun getDrive(drive: Int): String {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-			return ""
-		}
-
 		if (drive < 0 || drive >= storageManager.storageVolumes.size) {
 			return ""
 		}
 
 		val storageVolume = storageManager.storageVolumes[drive]
-		return storageVolume.getDescription(context)
+		return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+			storageVolume.directory?.absolutePath ?: ""
+		} else {
+			""
+		}
 	}
 
 	override fun makeDir(dir: String): Boolean {

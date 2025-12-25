@@ -25,27 +25,27 @@
 		var thread = null
 
 		func _upnp_setup(server_port):
-		    # UPNP queries take some time.
-		    var upnp = UPNP.new()
-		    var err = upnp.discover()
+			# UPNP queries take some time.
+			var upnp = UPNP.new()
+			var err = upnp.discover()
 
-		    if err != OK:
-		        push_error(str(err))
-		        upnp_completed.emit(err)
-		        return
+			if err != OK:
+				push_error(str(err))
+				upnp_completed.emit(err)
+				return
 
-		    if upnp.get_gateway() and upnp.get_gateway().is_valid_gateway():
-		        upnp.add_port_mapping(server_port, server_port, ProjectSettings.get_setting("application/config/name"), "UDP")
-		        upnp.add_port_mapping(server_port, server_port, ProjectSettings.get_setting("application/config/name"), "TCP")
-		        upnp_completed.emit(OK)
+			if upnp.get_gateway() and upnp.get_gateway().is_valid_gateway():
+				upnp.add_port_mapping(server_port, server_port, ProjectSettings.get_setting("application/config/name"), "UDP")
+				upnp.add_port_mapping(server_port, server_port, ProjectSettings.get_setting("application/config/name"), "TCP")
+				upnp_completed.emit(OK)
 
 		func _ready():
-		    thread = Thread.new()
-		    thread.start(_upnp_setup.bind(SERVER_PORT))
+			thread = Thread.new()
+			thread.start(_upnp_setup.bind(SERVER_PORT))
 
 		func _exit_tree():
-		    # Wait for thread finish here to handle game exit while the thread is running.
-		    thread.wait_to_finish()
+			# Wait for thread finish here to handle game exit while the thread is running.
+			thread.wait_to_finish()
 		[/codeblock]
 		[b]Terminology:[/b] In the context of UPnP networking, "gateway" (or "internet gateway device", short IGD) refers to network devices that allow computers in the local network to access the internet ("wide area network", WAN). These gateways are often also called "routers".
 		[b]Pitfalls:[/b]
@@ -54,7 +54,7 @@
 		- Port mappings may change (and be removed) at any time, and the remote/external IP address of the gateway can change likewise. You should consider re-querying the external IP and try to update/refresh the port mapping periodically (for example, every 5 minutes and on networking failures).
 		- Not all devices support UPnP, and some users disable UPnP support. You need to handle this (e.g. documenting and requiring the user to manually forward ports, or adding alternative methods of NAT traversal, like a relay/mirror server, or NAT hole punching, STUN/TURN, etc.).
 		- Consider what happens on mapping conflicts. Maybe multiple users on the same network would like to play your game at the same time, or maybe another application uses the same port. Make the port configurable, and optimally choose a port automatically (re-trying with a different port on failure).
-		[b]Further reading:[/b] If you want to know more about UPnP (and the Internet Gateway Device (IGD) and Port Control Protocol (PCP) specifically), [url=https://en.wikipedia.org/wiki/Universal_Plug_and_Play]Wikipedia[/url] is a good first stop, the specification can be found at the [url=https://openconnectivity.org/developer/specifications/upnp-resources/upnp/]Open Connectivity Foundation[/url] and Godot's implementation is based on the [url=https://github.com/miniupnp/miniupnp]MiniUPnP client[/url].
+		[b]Further reading:[/b] If you want to know more about UPnP (and the Internet Gateway Device (IGD) and Port Control Protocol (PCP) specifically), [url=https://en.wikipedia.org/wiki/Universal_Plug_and_Play]Wikipedia[/url] is a good first stop, the specification can be found at the [url=https://openconnectivity.org/developer/specifications/upnp-resources/upnp/]Open Connectivity Foundation[/url] and Redot's implementation is based on the [url=https://github.com/miniupnp/miniupnp]MiniUPnP client[/url].
 	</description>
 	<tutorials>
 	</tutorials>
@@ -173,7 +173,7 @@
 			Inconsistent parameters.
 		</constant>
 		<constant name="UPNP_RESULT_NO_SUCH_ENTRY_IN_ARRAY" value="4" enum="UPNPResult">
-			No such entry in array. May be returned if a given port, protocol combination is not found on an [UPNPDevice].
+			No such entry in array. May be returned if a given port, protocol combination is not found on a [UPNPDevice].
 		</constant>
 		<constant name="UPNP_RESULT_ACTION_FAILED" value="5" enum="UPNPResult">
 			The action failed.

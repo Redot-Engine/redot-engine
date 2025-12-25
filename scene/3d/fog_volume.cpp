@@ -31,6 +31,8 @@
 /**************************************************************************/
 
 #include "fog_volume.h"
+
+#include "scene/main/viewport.h"
 #include "scene/resources/environment.h"
 
 ///////////////////////////
@@ -123,7 +125,7 @@ PackedStringArray FogVolume::get_configuration_warnings() const {
 	Ref<Environment> environment = get_viewport()->find_world_3d()->get_environment();
 
 	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
-		warnings.push_back(RTR("Fog Volumes are only visible when using the Forward+ backend."));
+		warnings.push_back(RTR("Fog Volumes are only visible when using the Forward+ renderer."));
 		return warnings;
 	}
 

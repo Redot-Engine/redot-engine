@@ -32,7 +32,6 @@
 
 #include "java_godot_io_wrapper.h"
 
-#include "core/error/error_list.h"
 #include "core/math/rect2.h"
 #include "core/variant/variant.h"
 
@@ -54,6 +53,7 @@ GodotIOJavaWrapper::GodotIOJavaWrapper(JNIEnv *p_env, jobject p_godot_io_instanc
 
 		_open_URI = p_env->GetMethodID(cls, "openURI", "(Ljava/lang/String;)I");
 		_get_cache_dir = p_env->GetMethodID(cls, "getCacheDir", "()Ljava/lang/String;");
+		_get_temp_dir = p_env->GetMethodID(cls, "getTempDir", "()Ljava/lang/String;");
 		_get_data_dir = p_env->GetMethodID(cls, "getDataDir", "()Ljava/lang/String;");
 		_get_display_cutouts = p_env->GetMethodID(cls, "getDisplayCutouts", "()[I"),
 		_get_display_safe_area = p_env->GetMethodID(cls, "getDisplaySafeArea", "()[I"),
@@ -68,8 +68,8 @@ GodotIOJavaWrapper::GodotIOJavaWrapper(JNIEnv *p_env, jobject p_godot_io_instanc
 		_has_hardware_keyboard = p_env->GetMethodID(cls, "hasHardwareKeyboard", "()Z");
 		_set_screen_orientation = p_env->GetMethodID(cls, "setScreenOrientation", "(I)V");
 		_get_screen_orientation = p_env->GetMethodID(cls, "getScreenOrientation", "()I");
-		_get_internal_current_screen_rotation = p_env->GetMethodID(cls, "getInternalCurrentScreenRotation", "()I");
 		_get_system_dir = p_env->GetMethodID(cls, "getSystemDir", "(IZ)Ljava/lang/String;");
+		_get_display_rotation = p_env->GetMethodID(cls, "getDisplayRotation", "()I");
 	}
 }
 
@@ -109,7 +109,18 @@ String GodotIOJavaWrapper::get_cache_dir() {
 	}
 }
 
-String GodotIOJavaWrapper::get_user_data_dir() {
+String GodotIOJavaWrapper::get_temp_dir() {
+	if (_get_temp_dir) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, String());
+		jstring s = (jstring)env->CallObjectMethod(godot_io_instance, _get_temp_dir);
+		return jstring_to_string(s, env);
+	} else {
+		return String();
+	}
+}
+
+String GodotIOJavaWrapper::get_user_data_dir(const String &p_user_dir) {
 	if (_get_data_dir) {
 		JNIEnv *env = get_jni_env();
 		ERR_FAIL_NULL_V(env, String());
@@ -270,16 +281,6 @@ int GodotIOJavaWrapper::get_screen_orientation() {
 	}
 }
 
-int GodotIOJavaWrapper::get_internal_current_screen_rotation() {
-	if (_get_internal_current_screen_rotation) {
-		JNIEnv *env = get_jni_env();
-		ERR_FAIL_NULL_V(env, 0);
-		return env->CallIntMethod(godot_io_instance, _get_internal_current_screen_rotation);
-	} else {
-		return 0;
-	}
-}
-
 String GodotIOJavaWrapper::get_system_dir(int p_dir, bool p_shared_storage) {
 	if (_get_system_dir) {
 		JNIEnv *env = get_jni_env();
@@ -288,6 +289,16 @@ String GodotIOJavaWrapper::get_system_dir(int p_dir, bool p_shared_storage) {
 		return jstring_to_string(s, env);
 	} else {
 		return String(".");
+	}
+}
+
+int GodotIOJavaWrapper::get_display_rotation() {
+	if (_get_display_rotation) {
+		JNIEnv *env = get_jni_env();
+		ERR_FAIL_NULL_V(env, 0);
+		return env->CallIntMethod(godot_io_instance, _get_display_rotation);
+	} else {
+		return 0;
 	}
 }
 

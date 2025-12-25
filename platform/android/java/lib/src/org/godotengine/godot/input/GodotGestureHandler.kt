@@ -2,8 +2,8 @@
 /*  GodotGestureHandler.kt                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
 /* Copyright (c) 2024-present Redot Engine contributors                   */
 /*                                          (see REDOT_AUTHORS.md)        */
@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.input
+package org.redotengine.godot.input
 
 import android.os.Build
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -38,7 +38,7 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.OnScaleGestureListener
-import org.godotengine.godot.GodotLib
+import org.redotengine.godot.GodotLib
 
 /**
  * Handles regular and scale gesture input related events for the [GodotView] view.
@@ -56,6 +56,8 @@ internal class GodotGestureHandler(private val inputHandler: GodotInputHandler) 
 	 * Enable pan and scale gestures
 	 */
 	var panningAndScalingEnabled = false
+
+	var scrollDeadzoneDisabled = false
 
 	private var nextDownIsDoubleTap = false
 	private var dragInProgress = false
@@ -155,7 +157,7 @@ internal class GodotGestureHandler(private val inputHandler: GodotInputHandler) 
 		if (contextClickInProgress) {
 			inputHandler.handleMouseEvent(event, event.actionMasked, MotionEvent.BUTTON_SECONDARY, false)
 			return true
-		} else if (!scaleInProgress) {
+		} else if (scrollDeadzoneDisabled && !scaleInProgress) {
 			// The 'onScroll' event is triggered with a long delay.
 			// Force the 'InputEventScreenDrag' event earlier here.
 			// We don't toggle 'dragInProgress' here so that the scaling logic can override the drag operation if needed.
@@ -193,7 +195,7 @@ internal class GodotGestureHandler(private val inputHandler: GodotInputHandler) 
 		distanceY: Float
 	): Boolean {
 		if (scaleInProgress) {
-			if (dragInProgress || lastDragX != 0.0f || lastDragY != 0.0f) {
+			if (dragInProgress || (scrollDeadzoneDisabled && (lastDragX != 0.0f || lastDragY != 0.0f))) {
 				if (originEvent != null) {
 					// Cancel the drag
 					inputHandler.handleMotionEvent(originEvent, MotionEvent.ACTION_CANCEL)

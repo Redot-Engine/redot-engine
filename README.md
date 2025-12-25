@@ -59,7 +59,13 @@ developers. Please visit our [Discord server](https://discord.gg/redot)!
 To get started contributing to the project, see the [contributing guide](CONTRIBUTING.md).
 This document also includes guidelines for reporting bugs.
 
-Follow [Redot on Twitter](https://x.com/redotengine)!
+Follow [Redot on X/Twitter](https://x.com/Redot_Engine)!
 ## Documentation and demos
 
 The class reference is accessible from the Redot editor.
+
+## ReX Engine
+
+Looking to try out new features that aren't backwards compatible with Godot, or would you like to create new features for Redot Engine that can't be added here due to compatibility issues?
+
+Meet us over at the [ReX Engine Repo](https://github.com/redot-rex/rex-engine) Where we aim to create a modern engine using Redot Engine as a starting point, free from godots choices and shortcomings, and innovate in ways not currently possible here within Redot Engine.

@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPTIMIZED_TRANSLATION_H
-#define OPTIMIZED_TRANSLATION_H
+#pragma once
 
 #include "core/string/translation.h"
 
@@ -67,7 +66,7 @@ class OptimizedTranslation : public Translation {
 			d = 0x1000193;
 		}
 		while (*p_str) {
-			d = (d * 0x1000193) ^ uint32_t(*p_str);
+			d = (d * 0x1000193) ^ static_cast<uint8_t>(*p_str);
 			p_str++;
 		}
 
@@ -88,5 +87,3 @@ public:
 
 	OptimizedTranslation() {}
 };
-
-#endif // OPTIMIZED_TRANSLATION_H

@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.utils;
+package org.redotengine.godot.utils;
 
 import android.app.Activity;
 import android.content.Context;
@@ -71,7 +71,7 @@ public class GodotNetUtils {
 		try {
 			multicastLock.acquire();
 		} catch (RuntimeException e) {
-			Log.e("Godot", "Exception during multicast lock acquire: " + e);
+			Log.e("Redot", "Exception during multicast lock acquire: " + e);
 		}
 	}
 
@@ -85,7 +85,7 @@ public class GodotNetUtils {
 		try {
 			multicastLock.release();
 		} catch (RuntimeException e) {
-			Log.e("Godot", "Exception during multicast lock release: " + e);
+			Log.e("Redot", "Exception during multicast lock release: " + e);
 		}
 	}
 
@@ -114,7 +114,7 @@ public class GodotNetUtils {
 			}
 			return writer.toString();
 		} catch (Exception e) {
-			Log.e("Godot", "Exception while reading CA certificates: " + e);
+			Log.e("Redot", "Exception while reading CA certificates: " + e);
 			return "";
 		}
 	}

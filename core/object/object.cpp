@@ -40,7 +40,6 @@
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/string/translation_server.h"
-#include "core/templates/local_vector.h"
 #include "core/variant/typed_array.h"
 
 #ifdef DEBUG_ENABLED
@@ -67,6 +66,23 @@ struct _ObjectDebugLock {
 #define OBJ_DEBUG_LOCK
 
 #endif
+
+struct _ObjectSignalLock {
+	Mutex *mutex;
+	_ObjectSignalLock(const Object *const p_obj) {
+		mutex = p_obj->signal_mutex;
+		if (mutex) {
+			mutex->lock();
+		}
+	}
+	~_ObjectSignalLock() {
+		if (mutex) {
+			mutex->unlock();
+		}
+	}
+};
+
+#define OBJ_SIGNAL_LOCK _ObjectSignalLock _signal_lock(this);
 
 PropertyInfo::operator Dictionary() const {
 	Dictionary d;
@@ -118,10 +134,19 @@ TypedArray<Dictionary> convert_property_list(const List<PropertyInfo> *p_list) {
 	return va;
 }
 
+TypedArray<Dictionary> convert_property_list(const Vector<PropertyInfo> &p_vector) {
+	TypedArray<Dictionary> va;
+	for (const PropertyInfo &E : p_vector) {
+		va.push_back(Dictionary(E));
+	}
+
+	return va;
+}
+
 MethodInfo::operator Dictionary() const {
 	Dictionary d;
 	d["name"] = name;
-	d["args"] = convert_property_list(&arguments);
+	d["args"] = convert_property_list(arguments);
 	Array da;
 	for (int i = 0; i < default_arguments.size(); i++) {
 		da.push_back(default_arguments[i]);
@@ -168,6 +193,37 @@ MethodInfo MethodInfo::from_dict(const Dictionary &p_dict) {
 	return mi;
 }
 
+uint32_t MethodInfo::get_compatibility_hash() const {
+	bool has_return = (return_val.type != Variant::NIL) || (return_val.usage & PROPERTY_USAGE_NIL_IS_VARIANT);
+
+	uint32_t hash = hash_murmur3_one_32(has_return);
+	hash = hash_murmur3_one_32(arguments.size(), hash);
+
+	if (has_return) {
+		hash = hash_murmur3_one_32(return_val.type, hash);
+		if (return_val.class_name != StringName()) {
+			hash = hash_murmur3_one_32(return_val.class_name.hash(), hash);
+		}
+	}
+
+	for (const PropertyInfo &arg : arguments) {
+		hash = hash_murmur3_one_32(arg.type, hash);
+		if (arg.class_name != StringName()) {
+			hash = hash_murmur3_one_32(arg.class_name.hash(), hash);
+		}
+	}
+
+	hash = hash_murmur3_one_32(default_arguments.size(), hash);
+	for (const Variant &v : default_arguments) {
+		hash = hash_murmur3_one_32(v.hash(), hash);
+	}
+
+	hash = hash_murmur3_one_32(flags & METHOD_FLAG_CONST ? 1 : 0, hash);
+	hash = hash_murmur3_one_32(flags & METHOD_FLAG_VARARG ? 1 : 0, hash);
+
+	return hash_fmix32(hash);
+}
+
 Object::Connection::operator Variant() const {
 	Dictionary d;
 	d["signal"] = signal;
@@ -212,19 +268,16 @@ void Object::cancel_free() {
 }
 
 void Object::_initialize() {
-	_class_name_ptr = _get_class_namev(); // Set the direct pointer, which is much faster to obtain, but can only happen after _initialize.
+	// Cache the class name in the object for quick reference.
+	_class_name_ptr = _get_class_namev();
 	_initialize_classv();
-	_class_name_ptr = nullptr; // May have been called from a constructor.
 }
 
 void Object::_postinitialize() {
+	if (_uses_signal_mutex()) {
+		signal_mutex = memnew(Mutex);
+	}
 	notification(NOTIFICATION_POSTINITIALIZE);
-}
-
-void Object::get_valid_parents_static(List<String> *p_parents) {
-}
-
-void Object::_get_valid_parents_static(List<String> *p_parents) {
 }
 
 void Object::set(const StringName &p_name, const Variant &p_value, bool *r_valid) {
@@ -523,7 +576,13 @@ void Object::get_property_list(List<PropertyInfo> *p_list, bool p_reversed) cons
 		PropertyInfo pi = PropertyInfo(K.value.get_type(), "metadata/" + K.key.operator String());
 		if (K.value.get_type() == Variant::OBJECT) {
 			pi.hint = PROPERTY_HINT_RESOURCE_TYPE;
-			pi.hint_string = "Resource";
+			Object *obj = K.value;
+			if (Object::cast_to<Script>(obj)) {
+				pi.hint_string = "Script";
+				pi.usage |= PROPERTY_USAGE_NEVER_DUPLICATE;
+			} else {
+				pi.hint_string = "Resource";
+			}
 		}
 		p_list->push_back(pi);
 	}
@@ -752,7 +811,7 @@ Variant Object::callv(const StringName &p_method, const Array &p_args) {
 	Callable::CallError ce;
 	const Variant ret = callp(p_method, argptrs, p_args.size(), ce);
 	if (ce.error != Callable::CallError::CALL_OK) {
-		ERR_FAIL_V_MSG(Variant(), "Error calling method from 'callv': " + Variant::get_call_error_text(this, p_method, argptrs, p_args.size(), ce) + ".");
+		ERR_FAIL_V_MSG(Variant(), vformat("Error calling method from 'callv': %s.", Variant::get_call_error_text(this, p_method, argptrs, p_args.size(), ce)));
 	}
 	return ret;
 }
@@ -868,18 +927,14 @@ Variant Object::call_const(const StringName &p_method, const Variant **p_args, i
 	return ret;
 }
 
-void Object::notification(int p_notification, bool p_reversed) {
-	if (p_reversed) {
-		if (script_instance) {
-			script_instance->notification(p_notification, p_reversed);
-		}
-	} else {
-		_notificationv(p_notification, p_reversed);
-	}
+void Object::_notification_forward(int p_notification) {
+	// Notify classes starting with Object and ending with most derived subclass.
+	// e.g. Object -> Node -> Node3D
+	_notification_forwardv(p_notification);
 
 	if (_extension) {
 		if (_extension->notification2) {
-			_extension->notification2(_extension_instance, p_notification, static_cast<GDExtensionBool>(p_reversed));
+			_extension->notification2(_extension_instance, p_notification, static_cast<GDExtensionBool>(false));
 #ifndef DISABLE_DEPRECATED
 		} else if (_extension->notification) {
 			_extension->notification(_extension_instance, p_notification);
@@ -887,13 +942,29 @@ void Object::notification(int p_notification, bool p_reversed) {
 		}
 	}
 
-	if (p_reversed) {
-		_notificationv(p_notification, p_reversed);
-	} else {
-		if (script_instance) {
-			script_instance->notification(p_notification, p_reversed);
+	if (script_instance) {
+		script_instance->notification(p_notification, false);
+	}
+}
+
+void Object::_notification_backward(int p_notification) {
+	if (script_instance) {
+		script_instance->notification(p_notification, true);
+	}
+
+	if (_extension) {
+		if (_extension->notification2) {
+			_extension->notification2(_extension_instance, p_notification, static_cast<GDExtensionBool>(true));
+#ifndef DISABLE_DEPRECATED
+		} else if (_extension->notification) {
+			_extension->notification(_extension_instance, p_notification);
+#endif // DISABLE_DEPRECATED
 		}
 	}
+
+	// Notify classes starting with most derived subclass and ending in Object.
+	// e.g. Node3D -> Node -> Object
+	_notification_backwardv(p_notification);
 }
 
 String Object::to_string() {
@@ -909,7 +980,9 @@ String Object::to_string() {
 		String ret;
 		GDExtensionBool is_valid;
 		_extension->to_string(_extension_instance, &is_valid, &ret);
-		return ret;
+		if (is_valid) {
+			return ret;
+		}
 	}
 	return "<" + get_class() + "#" + itos(get_instance_id()) + ">";
 }
@@ -942,7 +1015,7 @@ void Object::set_script(const Variant &p_script) {
 		script_instance = nullptr;
 	}
 
-	if (!s.is_null()) {
+	if (s.is_valid()) {
 		if (s->can_instantiate()) {
 			OBJ_DEBUG_LOCK
 			script_instance = s->instance_create(this);
@@ -1001,7 +1074,7 @@ void Object::set_meta(const StringName &p_name, const Variant &p_value) {
 	if (E) {
 		E->value = p_value;
 	} else {
-		ERR_FAIL_COND_MSG(!p_name.operator String().is_valid_ascii_identifier(), "Invalid metadata identifier: '" + p_name + "'.");
+		ERR_FAIL_COND_MSG(!p_name.operator String().is_valid_ascii_identifier(), vformat("Invalid metadata identifier: '%s'.", p_name));
 		Variant *V = &metadata.insert(p_name, p_value)->value;
 
 		const String &sname = p_name;
@@ -1017,7 +1090,7 @@ Variant Object::get_meta(const StringName &p_name, const Variant &p_default) con
 		if (p_default != Variant()) {
 			return p_default;
 		} else {
-			ERR_FAIL_V_MSG(Variant(), "The object does not have any 'meta' values with the key '" + p_name + "'.");
+			ERR_FAIL_V_MSG(Variant(), vformat("The object does not have any 'meta' values with the key '%s'.", p_name));
 		}
 	}
 	return metadata[p_name];
@@ -1046,8 +1119,8 @@ TypedArray<Dictionary> Object::_get_method_list_bind() const {
 	get_method_list(&ml);
 	TypedArray<Dictionary> ret;
 
-	for (List<MethodInfo>::Element *E = ml.front(); E; E = E->next()) {
-		Dictionary d = E->get();
+	for (const MethodInfo &mi : ml) {
+		Dictionary d = mi;
 		//va.push_back(d);
 		ret.push_back(d);
 	}
@@ -1073,14 +1146,19 @@ void Object::get_meta_list(List<StringName> *p_list) const {
 
 void Object::add_user_signal(const MethodInfo &p_signal) {
 	ERR_FAIL_COND_MSG(p_signal.name.is_empty(), "Signal name cannot be empty.");
-	ERR_FAIL_COND_MSG(ClassDB::has_signal(get_class_name(), p_signal.name), "User signal's name conflicts with a built-in signal of '" + get_class_name() + "'.");
-	ERR_FAIL_COND_MSG(signal_map.has(p_signal.name), "Trying to add already existing signal '" + p_signal.name + "'.");
+	ERR_FAIL_COND_MSG(ClassDB::has_signal(get_class_name(), p_signal.name), vformat("User signal's name conflicts with a built-in signal of '%s'.", get_class_name()));
+
+	OBJ_SIGNAL_LOCK
+
+	ERR_FAIL_COND_MSG(signal_map.has(p_signal.name), vformat("Trying to add already existing signal '%s'.", p_signal.name));
 	SignalData s;
 	s.user = p_signal;
 	signal_map[p_signal.name] = s;
 }
 
 bool Object::_has_user_signal(const StringName &p_name) const {
+	OBJ_SIGNAL_LOCK
+
 	if (!signal_map.has(p_name)) {
 		return false;
 	}
@@ -1088,6 +1166,8 @@ bool Object::_has_user_signal(const StringName &p_name) const {
 }
 
 void Object::_remove_user_signal(const StringName &p_name) {
+	OBJ_SIGNAL_LOCK
+
 	SignalData *s = signal_map.getptr(p_name);
 	ERR_FAIL_NULL_MSG(s, "Provided signal does not exist.");
 	ERR_FAIL_COND_MSG(!s->removable, "Signal is not removable (not added with add_user_signal).");
@@ -1134,50 +1214,67 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 		return ERR_CANT_ACQUIRE_RESOURCE; //no emit, signals blocked
 	}
 
-	SignalData *s = signal_map.getptr(p_name);
-	if (!s) {
-#ifdef DEBUG_ENABLED
-		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_name);
-		//check in script
-		ERR_FAIL_COND_V_MSG(!signal_is_valid && !script.is_null() && !Ref<Script>(script)->has_script_signal(p_name), ERR_UNAVAILABLE, "Can't emit non-existing signal " + String("\"") + p_name + "\".");
-#endif
-		//not connected? just return
-		return ERR_UNAVAILABLE;
-	}
+	constexpr int MAX_SLOTS_ON_STACK = 5;
+	// Don't default initialize the Callable objects on the stack, just reserve the space - we'll memnew_placement() them later.
+	alignas(Callable) uint8_t slot_callable_stack[sizeof(Callable) * MAX_SLOTS_ON_STACK];
+	uint32_t slot_flags_stack[MAX_SLOTS_ON_STACK];
 
-	// If this is a ref-counted object, prevent it from being destroyed during signal emission,
-	// which is needed in certain edge cases; e.g., https://github.com/godotengine/godot/issues/73889.
-	Ref<RefCounted> rc = Ref<RefCounted>(Object::cast_to<RefCounted>(this));
-
-	// Ensure that disconnecting the signal or even deleting the object
-	// will not affect the signal calling.
-	Callable *slot_callables = (Callable *)alloca(sizeof(Callable) * s->slot_map.size());
-	uint32_t *slot_flags = (uint32_t *)alloca(sizeof(uint32_t) * s->slot_map.size());
+	Callable *slot_callables = (Callable *)slot_callable_stack;
+	uint32_t *slot_flags = slot_flags_stack;
 	uint32_t slot_count = 0;
 
-	for (const KeyValue<Callable, SignalData::Slot> &slot_kv : s->slot_map) {
-		memnew_placement(&slot_callables[slot_count], Callable(slot_kv.value.conn.callable));
-		slot_flags[slot_count] = slot_kv.value.conn.flags;
-		++slot_count;
-	}
+	{
+		OBJ_SIGNAL_LOCK
 
-	DEV_ASSERT(slot_count == s->slot_map.size());
-
-	// Disconnect all one-shot connections before emitting to prevent recursion.
-	for (uint32_t i = 0; i < slot_count; ++i) {
-		bool disconnect = slot_flags[i] & CONNECT_ONE_SHOT;
-#ifdef TOOLS_ENABLED
-		if (disconnect && (slot_flags[i] & CONNECT_PERSIST) && Engine::get_singleton()->is_editor_hint()) {
-			// This signal was connected from the editor, and is being edited. Just don't disconnect for now.
-			disconnect = false;
-		}
+		SignalData *s = signal_map.getptr(p_name);
+		if (!s) {
+#ifdef DEBUG_ENABLED
+			bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_name);
+			//check in script
+			ERR_FAIL_COND_V_MSG(!signal_is_valid && !script.is_null() && !Ref<Script>(script)->has_script_signal(p_name), ERR_UNAVAILABLE, vformat("Can't emit non-existing signal \"%s\".", p_name));
 #endif
-		if (disconnect) {
-			_disconnect(p_name, slot_callables[i]);
+			//not connected? just return
+			return ERR_UNAVAILABLE;
+		}
+
+		if (s->slot_map.size() > MAX_SLOTS_ON_STACK) {
+			slot_callables = (Callable *)memalloc(sizeof(Callable) * s->slot_map.size());
+			slot_flags = (uint32_t *)memalloc(sizeof(uint32_t) * s->slot_map.size());
+		}
+
+		// Ensure that disconnecting the signal or even deleting the object
+		// will not affect the signal calling.
+		for (const KeyValue<Callable, SignalData::Slot> &slot_kv : s->slot_map) {
+			memnew_placement(&slot_callables[slot_count], Callable(slot_kv.value.conn.callable));
+			slot_flags[slot_count] = slot_kv.value.conn.flags;
+			++slot_count;
+		}
+
+		DEV_ASSERT(slot_count == s->slot_map.size());
+
+		// Disconnect all one-shot connections before emitting to prevent recursion.
+		for (uint32_t i = 0; i < slot_count; ++i) {
+			bool disconnect = slot_flags[i] & CONNECT_ONE_SHOT;
+#ifdef TOOLS_ENABLED
+			if (disconnect && (slot_flags[i] & CONNECT_PERSIST) && Engine::get_singleton()->is_editor_hint()) {
+				// This signal was connected from the editor, and is being edited. Just don't disconnect for now.
+				disconnect = false;
+			}
+#endif
+			if (disconnect) {
+				_disconnect(p_name, slot_callables[i]);
+			}
 		}
 	}
 
 	OBJ_DEBUG_LOCK
+
+	// If this is a ref-counted object, prevent it from being destroyed during signal
+	// emission, which is needed in certain edge cases; e.g., GH-73889 and GH-109471.
+	// Moreover, since signals can be emitted from constructors (classic example being
+	// notify_property_list_changed), we must be careful not to do the ref init ourselves,
+	// which would lead to the object being destroyed at the end of this function.
+	bool pending_unref = Object::cast_to<RefCounted>(this) ? ((RefCounted *)this)->reference() : false;
 
 	Error err = OK;
 
@@ -1212,7 +1309,7 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 				if (ce.error == Callable::CallError::CALL_ERROR_INVALID_METHOD && target && !ClassDB::class_exists(target->get_class_name())) {
 					//most likely object is not initialized yet, do not throw error.
 				} else {
-					ERR_PRINT("Error calling from signal '" + String(p_name) + "' to callable: " + Variant::get_callable_error_text(callable, args, argc, ce) + ".");
+					ERR_PRINT(vformat("Error calling from signal '%s' to callable: %s.", String(p_name), Variant::get_callable_error_text(callable, args, argc, ce)));
 					err = ERR_METHOD_NOT_FOUND;
 				}
 			}
@@ -1223,6 +1320,20 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 		slot_callables[i].~Callable();
 	}
 
+	if (slot_callables != (Callable *)slot_callable_stack) {
+		memfree(slot_callables);
+		memfree(slot_flags);
+	}
+
+	if (pending_unref) {
+		// We have to do the same Ref<T> would do. We can't just use Ref<T>
+		// because it would do the init ref logic, which is something this function
+		// shouldn't do, as explained above.
+		if (((RefCounted *)this)->unreference()) {
+			memdelete(this);
+		}
+	}
+
 	return err;
 }
 
@@ -1230,6 +1341,8 @@ void Object::_add_user_signal(const String &p_name, const Array &p_args) {
 	// this version of add_user_signal is meant to be used from scripts or external apis
 	// without access to ADD_SIGNAL in bind_methods
 	// added events are per instance, as opposed to the other ones, which are global
+
+	OBJ_SIGNAL_LOCK
 
 	MethodInfo mi;
 	mi.name = p_name;
@@ -1311,6 +1424,8 @@ bool Object::has_signal(const StringName &p_name) const {
 }
 
 void Object::get_signal_list(List<MethodInfo> *p_signals) const {
+	OBJ_SIGNAL_LOCK
+
 	if (!script.is_null()) {
 		Ref<Script> scr = script;
 		if (scr.is_valid()) {
@@ -1330,6 +1445,8 @@ void Object::get_signal_list(List<MethodInfo> *p_signals) const {
 }
 
 void Object::get_all_signal_connections(List<Connection> *p_connections) const {
+	OBJ_SIGNAL_LOCK
+
 	for (const KeyValue<StringName, SignalData> &E : signal_map) {
 		const SignalData *s = &E.value;
 
@@ -1340,6 +1457,8 @@ void Object::get_all_signal_connections(List<Connection> *p_connections) const {
 }
 
 void Object::get_signal_connection_list(const StringName &p_signal, List<Connection> *p_connections) const {
+	OBJ_SIGNAL_LOCK
+
 	const SignalData *s = signal_map.getptr(p_signal);
 	if (!s) {
 		return; //nothing
@@ -1351,6 +1470,7 @@ void Object::get_signal_connection_list(const StringName &p_signal, List<Connect
 }
 
 int Object::get_persistent_signal_connection_count() const {
+	OBJ_SIGNAL_LOCK
 	int count = 0;
 
 	for (const KeyValue<StringName, SignalData> &E : signal_map) {
@@ -1367,21 +1487,24 @@ int Object::get_persistent_signal_connection_count() const {
 }
 
 void Object::get_signals_connected_to_this(List<Connection> *p_connections) const {
+	OBJ_SIGNAL_LOCK
+
 	for (const Connection &E : connections) {
 		p_connections->push_back(E);
 	}
 }
 
 Error Object::connect(const StringName &p_signal, const Callable &p_callable, uint32_t p_flags) {
-	ERR_FAIL_COND_V_MSG(p_callable.is_null(), ERR_INVALID_PARAMETER, "Cannot connect to '" + p_signal + "': the provided callable is null.");
+	ERR_FAIL_COND_V_MSG(p_callable.is_null(), ERR_INVALID_PARAMETER, vformat("Cannot connect to '%s': the provided callable is null.", p_signal));
+	OBJ_SIGNAL_LOCK
 
 	if (p_callable.is_standard()) {
 		// FIXME: This branch should probably removed in favor of the `is_valid()` branch, but there exist some classes
 		// that call `connect()` before they are fully registered with ClassDB. Until all such classes can be found
 		// and registered soon enough this branch is needed to allow `connect()` to succeed.
-		ERR_FAIL_NULL_V_MSG(p_callable.get_object(), ERR_INVALID_PARAMETER, "Cannot connect to '" + p_signal + "' to callable '" + p_callable + "': the callable object is null.");
+		ERR_FAIL_NULL_V_MSG(p_callable.get_object(), ERR_INVALID_PARAMETER, vformat("Cannot connect to '%s' to callable '%s': the callable object is null.", p_signal, p_callable));
 	} else {
-		ERR_FAIL_COND_V_MSG(!p_callable.is_valid(), ERR_INVALID_PARAMETER, "Cannot connect to '" + p_signal + "': the provided callable is not valid: " + p_callable);
+		ERR_FAIL_COND_V_MSG(!p_callable.is_valid(), ERR_INVALID_PARAMETER, vformat("Cannot connect to '%s': the provided callable is not valid: '%s'.", p_signal, p_callable));
 	}
 
 	SignalData *s = signal_map.getptr(p_signal);
@@ -1402,7 +1525,7 @@ Error Object::connect(const StringName &p_signal, const Callable &p_callable, ui
 #endif
 		}
 
-		ERR_FAIL_COND_V_MSG(!signal_is_valid, ERR_INVALID_PARAMETER, "In Object of type '" + String(get_class()) + "': Attempt to connect nonexistent signal '" + p_signal + "' to callable '" + p_callable + "'.");
+		ERR_FAIL_COND_V_MSG(!signal_is_valid, ERR_INVALID_PARAMETER, vformat("In Object of type '%s': Attempt to connect nonexistent signal '%s' to callable '%s'.", String(get_class()), p_signal, p_callable));
 
 		signal_map[p_signal] = SignalData();
 		s = &signal_map[p_signal];
@@ -1414,7 +1537,7 @@ Error Object::connect(const StringName &p_signal, const Callable &p_callable, ui
 			s->slot_map[*p_callable.get_base_comparator()].reference_count++;
 			return OK;
 		} else {
-			ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Signal '" + p_signal + "' is already connected to given callable '" + p_callable + "' in that object.");
+			ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, vformat("Signal '%s' is already connected to given callable '%s' in that object.", p_signal, p_callable));
 		}
 	}
 
@@ -1441,7 +1564,9 @@ Error Object::connect(const StringName &p_signal, const Callable &p_callable, ui
 }
 
 bool Object::is_connected(const StringName &p_signal, const Callable &p_callable) const {
-	ERR_FAIL_COND_V_MSG(p_callable.is_null(), false, "Cannot determine if connected to '" + p_signal + "': the provided callable is null."); // Should use `is_null`, see note in `connect` about the use of `is_valid`.
+	ERR_FAIL_COND_V_MSG(p_callable.is_null(), false, vformat("Cannot determine if connected to '%s': the provided callable is null.", p_signal)); // Should use `is_null`, see note in `connect` about the use of `is_valid`.
+	OBJ_SIGNAL_LOCK
+
 	const SignalData *s = signal_map.getptr(p_signal);
 	if (!s) {
 		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_signal);
@@ -1453,13 +1578,15 @@ bool Object::is_connected(const StringName &p_signal, const Callable &p_callable
 			return false;
 		}
 
-		ERR_FAIL_V_MSG(false, "Nonexistent signal: " + p_signal + ".");
+		ERR_FAIL_V_MSG(false, vformat("Nonexistent signal: '%s'.", p_signal));
 	}
 
 	return s->slot_map.has(*p_callable.get_base_comparator());
 }
 
 bool Object::has_connections(const StringName &p_signal) const {
+	OBJ_SIGNAL_LOCK
+
 	const SignalData *s = signal_map.getptr(p_signal);
 	if (!s) {
 		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_signal);
@@ -1471,7 +1598,7 @@ bool Object::has_connections(const StringName &p_signal) const {
 			return false;
 		}
 
-		ERR_FAIL_V_MSG(false, "Nonexistent signal: " + p_signal + ".");
+		ERR_FAIL_V_MSG(false, vformat("Nonexistent signal: '%s'.", p_signal));
 	}
 
 	return !s->slot_map.is_empty();
@@ -1482,17 +1609,18 @@ void Object::disconnect(const StringName &p_signal, const Callable &p_callable) 
 }
 
 bool Object::_disconnect(const StringName &p_signal, const Callable &p_callable, bool p_force) {
-	ERR_FAIL_COND_V_MSG(p_callable.is_null(), false, "Cannot disconnect from '" + p_signal + "': the provided callable is null."); // Should use `is_null`, see note in `connect` about the use of `is_valid`.
+	ERR_FAIL_COND_V_MSG(p_callable.is_null(), false, vformat("Cannot disconnect from '%s': the provided callable is null.", p_signal)); // Should use `is_null`, see note in `connect` about the use of `is_valid`.
+	OBJ_SIGNAL_LOCK
 
 	SignalData *s = signal_map.getptr(p_signal);
 	if (!s) {
 		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_signal) ||
 				(!script.is_null() && Ref<Script>(script)->has_script_signal(p_signal));
-		ERR_FAIL_COND_V_MSG(signal_is_valid, false, "Attempt to disconnect a nonexistent connection from '" + to_string() + "'. Signal: '" + p_signal + "', callable: '" + p_callable + "'.");
+		ERR_FAIL_COND_V_MSG(signal_is_valid, false, vformat("Attempt to disconnect a nonexistent connection from '%s'. Signal: '%s', callable: '%s'.", to_string(), p_signal, p_callable));
 	}
-	ERR_FAIL_NULL_V_MSG(s, false, vformat("Disconnecting nonexistent signal '%s' in %s.", p_signal, to_string()));
+	ERR_FAIL_NULL_V_MSG(s, false, vformat("Disconnecting nonexistent signal '%s' in '%s'.", p_signal, to_string()));
 
-	ERR_FAIL_COND_V_MSG(!s->slot_map.has(*p_callable.get_base_comparator()), false, "Attempt to disconnect a nonexistent connection from '" + to_string() + "'. Signal: '" + p_signal + "', callable: '" + p_callable + "'.");
+	ERR_FAIL_COND_V_MSG(!s->slot_map.has(*p_callable.get_base_comparator()), false, vformat("Attempt to disconnect a nonexistent connection from '%s'. Signal: '%s', callable: '%s'.", to_string(), p_signal, p_callable));
 
 	SignalData::Slot *slot = &s->slot_map[*p_callable.get_base_comparator()];
 
@@ -1520,6 +1648,10 @@ bool Object::_disconnect(const StringName &p_signal, const Callable &p_callable,
 	return true;
 }
 
+bool Object::_uses_signal_mutex() const {
+	return true;
+}
+
 void Object::_set_bind(const StringName &p_set, const Variant &p_value) {
 	set(p_set, p_value);
 }
@@ -1541,7 +1673,7 @@ void Object::initialize_class() {
 	if (initialized) {
 		return;
 	}
-	ClassDB::_add_class<Object>();
+	_add_class_to_classdb(get_class_static(), StringName());
 	_bind_methods();
 	_bind_compatibility_methods();
 	initialized = true;
@@ -1581,7 +1713,7 @@ void Object::_clear_internal_resource_paths(const Variant &p_var) {
 	switch (p_var.get_type()) {
 		case Variant::OBJECT: {
 			Ref<Resource> r = p_var;
-			if (!r.is_valid()) {
+			if (r.is_null()) {
 				return;
 			}
 
@@ -1606,12 +1738,10 @@ void Object::_clear_internal_resource_paths(const Variant &p_var) {
 		} break;
 		case Variant::DICTIONARY: {
 			Dictionary d = p_var;
-			List<Variant> keys;
-			d.get_key_list(&keys);
 
-			for (const Variant &E : keys) {
-				_clear_internal_resource_paths(E);
-				_clear_internal_resource_paths(d[E]);
+			for (const KeyValue<Variant, Variant> &kv : d) {
+				_clear_internal_resource_paths(kv.key);
+				_clear_internal_resource_paths(kv.value);
 			}
 		} break;
 		default: {
@@ -1619,9 +1749,20 @@ void Object::_clear_internal_resource_paths(const Variant &p_var) {
 	}
 }
 
+void Object::_add_class_to_classdb(const StringName &p_class, const StringName &p_inherits) {
+	ClassDB::_add_class(p_class, p_inherits);
+}
+
+void Object::_get_property_list_from_classdb(const StringName &p_class, List<PropertyInfo> *p_list, bool p_no_inheritance, const Object *p_validator) {
+	ClassDB::get_property_list(p_class, p_list, p_no_inheritance, p_validator);
+}
+
 #ifdef TOOLS_ENABLED
-void Object::editor_set_section_unfold(const String &p_section, bool p_unfolded) {
-	set_edited(true);
+void Object::editor_set_section_unfold(const String &p_section, bool p_unfolded, bool p_initializing) {
+	if (!p_initializing) {
+		set_edited(true);
+	}
+
 	if (p_unfolded) {
 		editor_section_folding.insert(p_section);
 	} else {
@@ -1809,6 +1950,7 @@ void Object::_bind_methods() {
 	BIND_ENUM_CONSTANT(CONNECT_PERSIST);
 	BIND_ENUM_CONSTANT(CONNECT_ONE_SHOT);
 	BIND_ENUM_CONSTANT(CONNECT_REFERENCE_COUNTED);
+	BIND_ENUM_CONSTANT(CONNECT_APPEND_SOURCE_OBJECT);
 }
 
 void Object::set_deferred(const StringName &p_property, const Variant &p_value) {
@@ -1844,7 +1986,7 @@ Variant::Type Object::get_static_property_type(const StringName &p_property, boo
 }
 
 Variant::Type Object::get_static_property_type_indexed(const Vector<StringName> &p_path, bool *r_valid) const {
-	if (p_path.size() == 0) {
+	if (p_path.is_empty()) {
 		if (r_valid) {
 			*r_valid = false;
 		}
@@ -1910,6 +2052,20 @@ uint32_t Object::get_edited_version() const {
 	return _edited_version;
 }
 #endif
+
+const StringName &Object::get_class_name() const {
+	if (_extension) {
+		// Can't put inside the unlikely as constructor can run it.
+		return _extension->class_name;
+	}
+
+	if (unlikely(!_class_name_ptr)) {
+		// While class is initializing / deinitializing, constructors and destructors
+		// need access to the proper class at the proper stage.
+		return *_get_class_namev();
+	}
+	return *_class_name_ptr;
+}
 
 StringName Object::get_class_name_for_extension(const GDExtension *p_library) const {
 #ifdef TOOLS_ENABLED
@@ -2058,7 +2214,6 @@ void Object::clear_internal_extension() {
 	// Clear the virtual methods.
 	while (virtual_method_list) {
 		(*virtual_method_list->method) = nullptr;
-		(*virtual_method_list->initialized) = false;
 		virtual_method_list = virtual_method_list->next;
 	}
 }
@@ -2098,6 +2253,16 @@ void Object::detach_from_objectdb() {
 	}
 }
 
+void Object::assign_class_name_static(const Span<char> &p_name, StringName &r_target) {
+	static BinaryMutex _mutex;
+	MutexLock lock(_mutex);
+	if (r_target) {
+		// Already assigned while we were waiting for the mutex.
+		return;
+	}
+	r_target = StringName(p_name.ptr(), true);
+}
+
 Object::~Object() {
 	if (script_instance) {
 		memdelete(script_instance);
@@ -2130,36 +2295,39 @@ Object::~Object() {
 
 	if (_emitting) {
 		//@todo this may need to actually reach the debugger prioritarily somehow because it may crash before
-		ERR_PRINT("Object " + to_string() + " was freed or unreferenced while a signal is being emitted from it. Try connecting to the signal using 'CONNECT_DEFERRED' flag, or use queue_free() to free the object (if this object is a Node) to avoid this error and potential crashes.");
+		ERR_PRINT(vformat("Object '%s' was freed or unreferenced while a signal is being emitted from it. Try connecting to the signal using 'CONNECT_DEFERRED' flag, or use queue_free() to free the object (if this object is a Node) to avoid this error and potential crashes.", to_string()));
 	}
 
-	// Drop all connections to the signals of this object.
-	while (signal_map.size()) {
-		// Avoid regular iteration so erasing is safe.
-		KeyValue<StringName, SignalData> &E = *signal_map.begin();
-		SignalData *s = &E.value;
+	{
+		OBJ_SIGNAL_LOCK
+		// Drop all connections to the signals of this object.
+		while (signal_map.size()) {
+			// Avoid regular iteration so erasing is safe.
+			KeyValue<StringName, SignalData> &E = *signal_map.begin();
+			SignalData *s = &E.value;
 
-		for (const KeyValue<Callable, SignalData::Slot> &slot_kv : s->slot_map) {
-			Object *target = slot_kv.value.conn.callable.get_object();
-			if (likely(target)) {
-				target->connections.erase(slot_kv.value.cE);
+			for (const KeyValue<Callable, SignalData::Slot> &slot_kv : s->slot_map) {
+				Object *target = slot_kv.value.conn.callable.get_object();
+				if (likely(target)) {
+					target->connections.erase(slot_kv.value.cE);
+				}
 			}
+
+			signal_map.erase(E.key);
 		}
 
-		signal_map.erase(E.key);
-	}
-
-	// Disconnect signals that connect to this object.
-	while (connections.size()) {
-		Connection c = connections.front()->get();
-		Object *obj = c.callable.get_object();
-		bool disconnected = false;
-		if (likely(obj)) {
-			disconnected = c.signal.get_object()->_disconnect(c.signal.get_name(), c.callable, true);
-		}
-		if (unlikely(!disconnected)) {
-			// If the disconnect has failed, abandon the connection to avoid getting trapped in an infinite loop here.
-			connections.pop_front();
+		// Disconnect signals that connect to this object.
+		while (connections.size()) {
+			Connection c = connections.front()->get();
+			Object *obj = c.callable.get_object();
+			bool disconnected = false;
+			if (likely(obj)) {
+				disconnected = c.signal.get_object()->_disconnect(c.signal.get_name(), c.callable, true);
+			}
+			if (unlikely(!disconnected)) {
+				// If the disconnect has failed, abandon the connection to avoid getting trapped in an infinite loop here.
+				connections.pop_front();
+			}
 		}
 	}
 
@@ -2177,6 +2345,10 @@ Object::~Object() {
 		}
 		memfree(_instance_bindings);
 	}
+
+	if (signal_mutex) {
+		memdelete(signal_mutex);
+	}
 }
 
 bool predelete_handler(Object *p_object) {
@@ -2189,15 +2361,16 @@ void postinitialize_handler(Object *p_object) {
 }
 
 void ObjectDB::debug_objects(DebugFunc p_func) {
-	spin_lock.lock();
-
-	for (uint32_t i = 0, count = slot_count; i < slot_max && count != 0; i++) {
-		if (object_slots[i].validator) {
-			p_func(object_slots[i].object);
-			count--;
+	mutex.lock();
+	for (uint32_t i = 1; i < block_count; i++) {
+		for (uint32_t j = 0; j < blocks_max_sizes[i]; j++) {
+			if (blocks[i][j].validator) {
+				Object *obj = blocks[i][j].object;
+				p_func(obj);
+			}
 		}
 	}
-	spin_lock.unlock();
+	mutex.unlock();
 }
 
 #ifdef TOOLS_ENABLED
@@ -2246,48 +2419,96 @@ void Object::get_argument_options(const StringName &p_function, int p_idx, List<
 }
 #endif
 
-SpinLock ObjectDB::spin_lock;
+BinaryMutex ObjectDB::mutex;
 uint32_t ObjectDB::slot_count = 0;
+uint32_t ObjectDB::block_count = 0;
 uint32_t ObjectDB::slot_max = 0;
-ObjectDB::ObjectSlot *ObjectDB::object_slots = nullptr;
+uint32_t ObjectDB::block_max = 0;
 uint64_t ObjectDB::validator_counter = 0;
+
+const uint32_t ObjectDB::blocks_max_sizes[OBJECTDB_MAX_BLOCKS] = {
+	0,
+	128,
+	256,
+	512,
+	1024,
+	1536,
+	2304,
+	3456,
+	5184,
+	7776,
+	11664,
+	17496,
+	26244,
+	39366,
+	59049,
+	88573,
+	132859,
+	199288,
+	298932,
+	448398,
+	672597,
+	1008895,
+	1513342,
+	2270013,
+	3405019,
+	5107528,
+	7661292,
+	11491938,
+	17237907,
+	25856860,
+	38785290,
+	67108864,
+};
+
+ObjectDB::ObjectSlot *ObjectDB::blocks[OBJECTDB_MAX_BLOCKS] = { nullptr };
 
 int ObjectDB::get_object_count() {
 	return slot_count;
 }
 
 ObjectID ObjectDB::add_instance(Object *p_object) {
-	spin_lock.lock();
-	if (unlikely(slot_count == slot_max)) {
+	mutex.lock();
+	if (slot_count == blocks_max_sizes[block_count] && blocks[block_count + 1] != nullptr) {
+		slot_count = 0;
+		block_count++;
+	}
+	if (unlikely(slot_count == blocks_max_sizes[block_max])) {
+		block_max++;
+		CRASH_COND(block_max == OBJECTDB_MAX_BLOCKS);
 		CRASH_COND(slot_count == (1 << OBJECTDB_SLOT_MAX_COUNT_BITS));
 
-		uint32_t new_slot_max = slot_max > 0 ? slot_max * 2 : 1;
-		object_slots = (ObjectSlot *)memrealloc(object_slots, sizeof(ObjectSlot) * new_slot_max);
-		for (uint32_t i = slot_max; i < new_slot_max; i++) {
-			object_slots[i].object = nullptr;
-			object_slots[i].is_ref_counted = false;
-			object_slots[i].next_free = i;
-			object_slots[i].validator = 0;
+		blocks[block_max] = (ObjectSlot *)memalloc(sizeof(ObjectSlot) * blocks_max_sizes[block_max]);
+		uint32_t new_slot_max = blocks_max_sizes[block_max];
+		for (uint32_t i = 0; i < new_slot_max; i++) {
+			blocks[block_max][i].object = nullptr;
+			blocks[block_max][i].is_ref_counted = false;
+			blocks[block_max][i].next_free.block_number = block_max;
+			blocks[block_max][i].next_free.block_position = i;
+			blocks[block_max][i].validator = 0;
 		}
 		slot_max = new_slot_max;
+		block_count = block_max;
+		slot_count = 0;
 	}
 
-	uint32_t slot = object_slots[slot_count].next_free;
-	if (object_slots[slot].object != nullptr) {
-		spin_lock.unlock();
-		ERR_FAIL_COND_V(object_slots[slot].object != nullptr, ObjectID());
+	NextFree slot = blocks[block_count][slot_count].next_free;
+	Object *o = blocks[slot.block_number][slot.block_position].object;
+	if (o != nullptr) {
+		mutex.unlock();
+		ERR_FAIL_COND_V(o != nullptr, ObjectID());
 	}
-	object_slots[slot].object = p_object;
-	object_slots[slot].is_ref_counted = p_object->is_ref_counted();
+	blocks[slot.block_number][slot.block_position].object = p_object;
+	blocks[slot.block_number][slot.block_position].is_ref_counted = p_object->is_ref_counted();
 	validator_counter = (validator_counter + 1) & OBJECTDB_VALIDATOR_MASK;
 	if (unlikely(validator_counter == 0)) {
 		validator_counter = 1;
 	}
-	object_slots[slot].validator = validator_counter;
+	blocks[slot.block_number][slot.block_position].validator = validator_counter;
 
 	uint64_t id = validator_counter;
-	id <<= OBJECTDB_SLOT_MAX_COUNT_BITS;
-	id |= uint64_t(slot);
+	id <<= OBJECTDB_SLOT_MAX_POSITION_BITS;
+	id |= uint64_t(slot.position);
 
 	if (p_object->is_ref_counted()) {
 		id |= OBJECTDB_REFERENCE_BIT;
@@ -2295,42 +2516,47 @@ ObjectID ObjectDB::add_instance(Object *p_object) {
 
 	slot_count++;
 
-	spin_lock.unlock();
+	mutex.unlock();
 
 	return ObjectID(id);
 }
 
 void ObjectDB::remove_instance(Object *p_object) {
 	uint64_t t = p_object->get_instance_id();
-	uint32_t slot = t & OBJECTDB_SLOT_MAX_COUNT_MASK; //slot is always valid on valid object
+	NextFree slot;
+	slot.position = t & OBJECTDB_SLOT_MAX_POSITION_MASK;
 
-	spin_lock.lock();
+	mutex.lock();
 
 #ifdef DEBUG_ENABLED
 
-	if (object_slots[slot].object != p_object) {
-		spin_lock.unlock();
-		ERR_FAIL_COND(object_slots[slot].object != p_object);
+	if (blocks[slot.block_number][slot.block_position].object != p_object) {
+		mutex.unlock();
+		ERR_FAIL_COND(blocks[slot.block_number][slot.block_position].object != p_object);
 	}
 	{
-		uint64_t validator = (t >> OBJECTDB_SLOT_MAX_COUNT_BITS) & OBJECTDB_VALIDATOR_MASK;
-		if (object_slots[slot].validator != validator) {
-			spin_lock.unlock();
-			ERR_FAIL_COND(object_slots[slot].validator != validator);
+		uint64_t validator = (t >> OBJECTDB_SLOT_MAX_POSITION_BITS) & OBJECTDB_VALIDATOR_MASK;
+		if (blocks[slot.block_number][slot.block_position].validator != validator) {
+			mutex.unlock();
+			ERR_FAIL_COND(blocks[slot.block_number][slot.block_position].validator != validator);
 		}
 	}
 
 #endif
 	//decrease slot count
+	if (slot_count == 0) {
+		block_count--;
+		slot_count = blocks_max_sizes[block_count];
+	}
 	slot_count--;
 	//set the free slot properly
-	object_slots[slot_count].next_free = slot;
+	blocks[block_count][slot_count].next_free = slot;
 	//invalidate, so checks against it fail
-	object_slots[slot].validator = 0;
-	object_slots[slot].is_ref_counted = false;
-	object_slots[slot].object = nullptr;
+	blocks[slot.block_number][slot.block_position].validator = 0;
+	blocks[slot.block_number][slot.block_position].is_ref_counted = false;
+	blocks[slot.block_number][slot.block_position].object = nullptr;
 
-	spin_lock.unlock();
+	mutex.unlock();
 }
 
 void ObjectDB::setup() {
@@ -2338,7 +2564,7 @@ void ObjectDB::setup() {
 }
 
 void ObjectDB::cleanup() {
-	spin_lock.lock();
+	mutex.lock();
 
 	if (slot_count > 0) {
 		WARN_PRINT("ObjectDB instances leaked at exit (run with --verbose for details).");
@@ -2350,32 +2576,50 @@ void ObjectDB::cleanup() {
 			MethodBind *resource_get_path = ClassDB::get_method("Resource", "get_path");
 			Callable::CallError call_error;
 
-			for (uint32_t i = 0, count = slot_count; i < slot_max && count != 0; i++) {
-				if (object_slots[i].validator) {
-					Object *obj = object_slots[i].object;
+			for (uint32_t i = 1; i < block_count; i++) {
+				for (uint32_t j = 0; j < blocks_max_sizes[i]; j++) {
+					if (blocks[i][j].validator) {
+						Object *obj = blocks[i][j].object;
 
-					String extra_info;
-					if (obj->is_class("Node")) {
-						extra_info = " - Node path: " + String(node_get_path->call(obj, nullptr, 0, call_error));
+						String extra_info;
+						if (obj->is_class("Node")) {
+							extra_info = " - Node path: " + String(node_get_path->call(obj, nullptr, 0, call_error));
+						}
+						if (obj->is_class("Resource")) {
+							extra_info = " - Resource path: " + String(resource_get_path->call(obj, nullptr, 0, call_error));
+						}
+
+						uint64_t id = uint64_t(i) | (uint64_t(blocks[i][j].validator) << OBJECTDB_SLOT_MAX_COUNT_BITS) | (blocks[i][j].is_ref_counted ? OBJECTDB_REFERENCE_BIT : 0);
+						DEV_ASSERT(id == (uint64_t)obj->get_instance_id()); // We could just use the id from the object, but this check may help catching memory corruption catastrophes.
+						print_line("Leaked instance: " + String(obj->get_class()) + ":" + uitos(id) + extra_info);
 					}
-					if (obj->is_class("Resource")) {
-						extra_info = " - Resource path: " + String(resource_get_path->call(obj, nullptr, 0, call_error));
-					}
-
-					uint64_t id = uint64_t(i) | (uint64_t(object_slots[i].validator) << OBJECTDB_SLOT_MAX_COUNT_BITS) | (object_slots[i].is_ref_counted ? OBJECTDB_REFERENCE_BIT : 0);
-					DEV_ASSERT(id == (uint64_t)obj->get_instance_id()); // We could just use the id from the object, but this check may help catching memory corruption catastrophes.
-					print_line("Leaked instance: " + String(obj->get_class()) + ":" + uitos(id) + extra_info);
-
-					count--;
 				}
 			}
 			print_line("Hint: Leaked instances typically happen when nodes are removed from the scene tree (with `remove_child()`) but not freed (with `free()` or `queue_free()`).");
 		}
 	}
 
-	if (object_slots) {
-		memfree(object_slots);
+	for (uint32_t i = 1; i < block_count; i++) {
+		memfree(blocks[i]);
 	}
+	mutex.unlock();
+}
+Object *ObjectDB::get_instance(ObjectID p_instance_id) {
+	uint64_t id = p_instance_id;
+	NextFree slot;
+	slot.position = id & OBJECTDB_SLOT_MAX_POSITION_MASK;
 
-	spin_lock.unlock();
+	ERR_FAIL_COND_V(slot.block_number > block_max, nullptr); // This should never happen unless RID is corrupted.
+	ERR_FAIL_COND_V(slot.block_position >= slot_max, nullptr); // Same here.
+
+	if (unlikely(slot.block_number == 0)) { // Null Object.
+		return nullptr;
+	}
+	uint64_t validator = (id >> OBJECTDB_SLOT_MAX_POSITION_BITS) & OBJECTDB_VALIDATOR_MASK;
+	if (unlikely(blocks[slot.block_number][slot.block_position].validator != validator)) {
+		return nullptr;
+	}
+	Object *object = blocks[slot.block_number][slot.block_position].object;
+
+	return object;
 }

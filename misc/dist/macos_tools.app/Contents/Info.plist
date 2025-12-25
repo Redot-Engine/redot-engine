@@ -9,7 +9,9 @@
 	<key>CFBundleName</key>
 	<string>Redot</string>
 	<key>CFBundleIconFile</key>
-	<string>Redot.icns</string>
+	<string>RedotLG.icns</string>
+	<key>CFBundleIconName</key>
+	<string>RedotLG</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.redotengine.redot</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -17,11 +19,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>4.4</string>
+	<string>4.5</string>
 	<key>CFBundleSignature</key>
 	<string>GODO</string>
 	<key>CFBundleVersion</key>
-	<string>4.4</string>
+	<string>4.5</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access is required to capture audio.</string>
 	<key>NSCameraUsageDescription</key>

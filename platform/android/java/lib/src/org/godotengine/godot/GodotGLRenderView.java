@@ -30,25 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot;
-
-import org.godotengine.godot.gl.GLSurfaceView;
-import org.godotengine.godot.gl.GodotRenderer;
-import org.godotengine.godot.input.GodotInputHandler;
-import org.godotengine.godot.xr.XRMode;
-import org.godotengine.godot.xr.ovr.OvrConfigChooser;
-import org.godotengine.godot.xr.ovr.OvrContextFactory;
-import org.godotengine.godot.xr.ovr.OvrWindowSurfaceFactory;
-import org.godotengine.godot.xr.regular.RegularConfigChooser;
-import org.godotengine.godot.xr.regular.RegularContextFactory;
-import org.godotengine.godot.xr.regular.RegularFallbackConfigChooser;
+package org.redotengine.godot;
 
 import android.annotation.SuppressLint;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.SparseArray;
 import android.view.KeyEvent;
@@ -59,6 +47,17 @@ import android.view.SurfaceView;
 import androidx.annotation.Keep;
 
 import java.io.InputStream;
+
+import org.redotengine.godot.gl.GLSurfaceView;
+import org.redotengine.godot.gl.GodotRenderer;
+import org.redotengine.godot.input.GodotInputHandler;
+import org.redotengine.godot.xr.XRMode;
+import org.redotengine.godot.xr.ovr.OvrConfigChooser;
+import org.redotengine.godot.xr.ovr.OvrContextFactory;
+import org.redotengine.godot.xr.ovr.OvrWindowSurfaceFactory;
+import org.redotengine.godot.xr.regular.RegularConfigChooser;
+import org.redotengine.godot.xr.regular.RegularContextFactory;
+import org.redotengine.godot.xr.regular.RegularFallbackConfigChooser;
 
 /**
  * A simple GLSurfaceView sub-class that demonstrate how to perform
@@ -79,23 +78,19 @@ import java.io.InputStream;
  *   bit depths). Failure to do so would result in an EGL_BAD_MATCH error.
  */
 class GodotGLRenderView extends GLSurfaceView implements GodotRenderView {
-	private final GodotHost host;
 	private final Godot godot;
 	private final GodotInputHandler inputHandler;
 	private final GodotRenderer godotRenderer;
 	private final SparseArray<PointerIcon> customPointerIcons = new SparseArray<>();
 
-	public GodotGLRenderView(GodotHost host, Godot godot, GodotInputHandler inputHandler, XRMode xrMode, boolean useDebugOpengl) {
-		super(host.getActivity());
+	public GodotGLRenderView(Godot godot, GodotInputHandler inputHandler, XRMode xrMode, boolean useDebugOpengl, boolean shouldBeTranslucent) {
+		super(godot.getContext());
 
-		this.host = host;
 		this.godot = godot;
 		this.inputHandler = inputHandler;
 		this.godotRenderer = new GodotRenderer();
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-			setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_DEFAULT));
-		}
-		init(xrMode, false, useDebugOpengl);
+		setPointerIcon(PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_DEFAULT));
+		init(xrMode, shouldBeTranslucent, useDebugOpengl);
 	}
 
 	@Override
@@ -201,27 +196,25 @@ class GodotGLRenderView extends GLSurfaceView implements GodotRenderView {
 	@Keep
 	@Override
 	public void configurePointerIcon(int pointerType, String imagePath, float hotSpotX, float hotSpotY) {
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-			try {
-				Bitmap bitmap = null;
-				if (!TextUtils.isEmpty(imagePath)) {
-					if (godot.getDirectoryAccessHandler().filesystemFileExists(imagePath)) {
-						// Try to load the bitmap from the file system
-						bitmap = BitmapFactory.decodeFile(imagePath);
-					} else if (godot.getDirectoryAccessHandler().assetsFileExists(imagePath)) {
-						// Try to load the bitmap from the assets directory
-						AssetManager am = getContext().getAssets();
-						InputStream imageInputStream = am.open(imagePath);
-						bitmap = BitmapFactory.decodeStream(imageInputStream);
-					}
+		try {
+			Bitmap bitmap = null;
+			if (!TextUtils.isEmpty(imagePath)) {
+				if (godot.getDirectoryAccessHandler().filesystemFileExists(imagePath)) {
+					// Try to load the bitmap from the file system
+					bitmap = BitmapFactory.decodeFile(imagePath);
+				} else if (godot.getDirectoryAccessHandler().assetsFileExists(imagePath)) {
+					// Try to load the bitmap from the assets directory
+					AssetManager am = getContext().getAssets();
+					InputStream imageInputStream = am.open(imagePath);
+					bitmap = BitmapFactory.decodeStream(imageInputStream);
 				}
-
-				PointerIcon customPointerIcon = PointerIcon.create(bitmap, hotSpotX, hotSpotY);
-				customPointerIcons.put(pointerType, customPointerIcon);
-			} catch (Exception e) {
-				// Reset the custom pointer icon
-				customPointerIcons.delete(pointerType);
 			}
+
+			PointerIcon customPointerIcon = PointerIcon.create(bitmap, hotSpotX, hotSpotY);
+			customPointerIcons.put(pointerType, customPointerIcon);
+		} catch (Exception e) {
+			// Reset the custom pointer icon
+			customPointerIcons.delete(pointerType);
 		}
 	}
 
@@ -231,21 +224,16 @@ class GodotGLRenderView extends GLSurfaceView implements GodotRenderView {
 	@Keep
 	@Override
 	public void setPointerIcon(int pointerType) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-			PointerIcon pointerIcon = customPointerIcons.get(pointerType);
-			if (pointerIcon == null) {
-				pointerIcon = PointerIcon.getSystemIcon(getContext(), pointerType);
-			}
-			setPointerIcon(pointerIcon);
+		PointerIcon pointerIcon = customPointerIcons.get(pointerType);
+		if (pointerIcon == null) {
+			pointerIcon = PointerIcon.getSystemIcon(getContext(), pointerType);
 		}
+		setPointerIcon(pointerIcon);
 	}
 
 	@Override
 	public PointerIcon onResolvePointerIcon(MotionEvent me, int pointerIndex) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-			return getPointerIcon();
-		}
-		return super.onResolvePointerIcon(me, pointerIndex);
+		return getPointerIcon();
 	}
 
 	private void init(XRMode xrMode, boolean translucent, boolean useDebugOpengl) {

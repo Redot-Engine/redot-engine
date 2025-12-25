@@ -30,10 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MUTEX_H
-#define MUTEX_H
+#pragma once
 
-#include "core/error/error_macros.h"
 #include "core/typedefs.h"
 
 #ifdef MINGW_ENABLED
@@ -130,5 +128,3 @@ using Mutex = MutexImpl;
 using BinaryMutex = MutexImpl;
 
 #endif // THREADS_ENABLED
-
-#endif // MUTEX_H

@@ -86,7 +86,7 @@ NetSocketAndroid::~NetSocketAndroid() {
 }
 
 void NetSocketAndroid::close() {
-	NetSocketPosix::close();
+	NetSocketUnix::close();
 	if (wants_broadcast) {
 		multicast_lock_release();
 	}
@@ -98,7 +98,7 @@ void NetSocketAndroid::close() {
 }
 
 Error NetSocketAndroid::set_broadcasting_enabled(bool p_enabled) {
-	Error err = NetSocketPosix::set_broadcasting_enabled(p_enabled);
+	Error err = NetSocketUnix::set_broadcasting_enabled(p_enabled);
 	if (err != OK) {
 		return err;
 	}
@@ -117,7 +117,7 @@ Error NetSocketAndroid::set_broadcasting_enabled(bool p_enabled) {
 }
 
 Error NetSocketAndroid::join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
-	Error err = NetSocketPosix::join_multicast_group(p_multi_address, p_if_name);
+	Error err = NetSocketUnix::join_multicast_group(p_multi_address, p_if_name);
 	if (err != OK) {
 		return err;
 	}
@@ -131,7 +131,7 @@ Error NetSocketAndroid::join_multicast_group(const IPAddress &p_multi_address, c
 }
 
 Error NetSocketAndroid::leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
-	Error err = NetSocketPosix::leave_multicast_group(p_multi_address, p_if_name);
+	Error err = NetSocketUnix::leave_multicast_group(p_multi_address, p_if_name);
 	if (err != OK) {
 		return err;
 	}

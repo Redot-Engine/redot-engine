@@ -192,7 +192,7 @@ void AtlasTexture::draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, cons
 }
 
 bool AtlasTexture::get_rect_region(const Rect2 &p_rect, const Rect2 &p_src_rect, Rect2 &r_rect, Rect2 &r_src_rect) const {
-	if (!atlas.is_valid()) {
+	if (atlas.is_null()) {
 		return false;
 	}
 
@@ -255,5 +255,3 @@ Ref<Image> AtlasTexture::get_image() const {
 
 	return atlas_image->get_region(_get_region_rect());
 }
-
-AtlasTexture::AtlasTexture() {}

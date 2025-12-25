@@ -191,6 +191,18 @@ RS::EnvironmentReflectionSource RendererEnvironmentStorage::environment_get_refl
 	return env->reflection_source;
 }
 
+void RendererEnvironmentStorage::environment_set_camera_feed_id(RID p_env, int p_camera_feed_id) {
+	Environment *env = environment_owner.get_or_null(p_env);
+	ERR_FAIL_NULL(env);
+	env->camera_feed_id = p_camera_feed_id;
+}
+
+int RendererEnvironmentStorage::environment_get_camera_feed_id(RID p_env) const {
+	Environment *env = environment_owner.get_or_null(p_env);
+	ERR_FAIL_NULL_V(env, -1);
+	return env->camera_feed_id;
+}
+
 // Tonemap
 
 void RendererEnvironmentStorage::environment_set_tonemap(RID p_env, RS::EnvironmentToneMapper p_tone_mapper, float p_exposure, float p_white) {
@@ -331,7 +343,7 @@ void RendererEnvironmentStorage::environment_set_volumetric_fog(RID p_env, bool 
 	ERR_FAIL_NULL(env);
 #ifdef DEBUG_ENABLED
 	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus" && p_enable) {
-		WARN_PRINT_ONCE_ED("Volumetric fog can only be enabled when using the Forward+ rendering backend.");
+		WARN_PRINT_ONCE_ED("Volumetric fog can only be enabled when using the Forward+ renderer.");
 	}
 #endif
 	env->volumetric_fog_enabled = p_enable;
@@ -526,7 +538,7 @@ void RendererEnvironmentStorage::environment_set_ssr(RID p_env, bool p_enable, i
 	ERR_FAIL_NULL(env);
 #ifdef DEBUG_ENABLED
 	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus" && p_enable) {
-		WARN_PRINT_ONCE_ED("Screen-space reflections (SSR) can only be enabled when using the Forward+ rendering backend.");
+		WARN_PRINT_ONCE_ED("Screen-space reflections (SSR) can only be enabled when using the Forward+ renderer.");
 	}
 #endif
 	env->ssr_enabled = p_enable;
@@ -573,7 +585,7 @@ void RendererEnvironmentStorage::environment_set_ssao(RID p_env, bool p_enable, 
 	ERR_FAIL_NULL(env);
 #ifdef DEBUG_ENABLED
 	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus" && p_enable) {
-		WARN_PRINT_ONCE_ED("Screen-space ambient occlusion (SSAO) can only be enabled when using the Forward+ rendering backend.");
+		WARN_PRINT_ONCE_ED("Screen-space ambient occlusion (SSAO) can only be enabled when using the Forward+ renderer.");
 	}
 #endif
 	env->ssao_enabled = p_enable;
@@ -648,7 +660,7 @@ void RendererEnvironmentStorage::environment_set_ssil(RID p_env, bool p_enable, 
 	ERR_FAIL_NULL(env);
 #ifdef DEBUG_ENABLED
 	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus" && p_enable) {
-		WARN_PRINT_ONCE_ED("Screen-space indirect lighting (SSIL) can only be enabled when using the Forward+ rendering backend.");
+		WARN_PRINT_ONCE_ED("Screen-space indirect lighting (SSIL) can only be enabled when using the Forward+ renderer.");
 	}
 #endif
 	env->ssil_enabled = p_enable;
@@ -695,7 +707,7 @@ void RendererEnvironmentStorage::environment_set_sdfgi(RID p_env, bool p_enable,
 	ERR_FAIL_NULL(env);
 #ifdef DEBUG_ENABLED
 	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus" && p_enable) {
-		WARN_PRINT_ONCE_ED("SDFGI can only be enabled when using the Forward+ rendering backend.");
+		WARN_PRINT_ONCE_ED("SDFGI can only be enabled when using the Forward+ renderer.");
 	}
 #endif
 	env->sdfgi_enabled = p_enable;

@@ -30,10 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NET_SOCKET_ANDROID_H
-#define NET_SOCKET_ANDROID_H
+#pragma once
 
-#include "drivers/unix/net_socket_posix.h"
+#include "drivers/unix/net_socket_unix.h"
 
 #include <jni.h>
 
@@ -46,7 +45,7 @@
  * the lock when broadcasting is enabled/disabled on a socket, or that socket
  * joins/leaves a multicast group.
  */
-class NetSocketAndroid : public NetSocketPosix {
+class NetSocketAndroid : public NetSocketUnix {
 private:
 	static jobject net_utils;
 	static jclass cls;
@@ -76,5 +75,3 @@ public:
 	NetSocketAndroid() {}
 	~NetSocketAndroid();
 };
-
-#endif // NET_SOCKET_ANDROID_H

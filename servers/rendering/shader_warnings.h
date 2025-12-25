@@ -30,15 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SHADER_WARNINGS_H
-#define SHADER_WARNINGS_H
+#pragma once
 
 #ifdef DEBUG_ENABLED
 
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/list.h"
-#include "core/templates/rb_map.h"
 #include "core/variant/variant.h"
 
 class ShaderWarning {
@@ -93,5 +90,3 @@ public:
 };
 
 #endif // DEBUG_ENABLED
-
-#endif // SHADER_WARNINGS_H

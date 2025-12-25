@@ -30,13 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot;
-
-import org.godotengine.godot.gl.GodotRenderer;
-import org.godotengine.godot.io.directory.DirectoryAccessHandler;
-import org.godotengine.godot.io.file.FileAccessHandler;
-import org.godotengine.godot.tts.GodotTTS;
-import org.godotengine.godot.utils.GodotNetUtils;
+package org.redotengine.godot;
 
 import android.app.Activity;
 import android.content.res.AssetManager;
@@ -44,6 +38,13 @@ import android.hardware.SensorEvent;
 import android.view.Surface;
 
 import javax.microedition.khronos.opengles.GL10;
+
+import org.redotengine.godot.gl.GodotRenderer;
+import org.redotengine.godot.io.directory.DirectoryAccessHandler;
+import org.redotengine.godot.io.file.FileAccessHandler;
+import org.redotengine.godot.tts.GodotTTS;
+import org.redotengine.godot.utils.GodotNetUtils;
+import org.redotengine.godot.variant.Callable;
 
 /**
  * Wrapper for native library
@@ -56,7 +57,7 @@ public class GodotLib {
 	/**
 	 * Invoked on the main thread to initialize Godot native layer.
 	 */
-	public static native boolean initialize(Activity activity,
+	public static native boolean initialize(
 			Godot p_instance,
 			AssetManager p_asset_manager,
 			GodotIO godotIO,
@@ -82,7 +83,7 @@ public class GodotLib {
 	 * @param p_surface
 	 * @param p_width
 	 * @param p_height
-	 * @see org.godotengine.godot.gl.GLSurfaceView.Renderer#onSurfaceChanged(GL10, int, int)
+	 * @see org.redotengine.godot.gl.GLSurfaceView.Renderer#onSurfaceChanged(GL10, int, int)
 	 */
 	public static native void resize(Surface p_surface, int p_width, int p_height);
 
@@ -99,7 +100,7 @@ public class GodotLib {
 
 	/**
 	 * Invoked on the GL thread to draw the current frame.
-	 * @see org.godotengine.godot.gl.GLSurfaceView.Renderer#onDrawFrame(GL10)
+	 * @see org.redotengine.godot.gl.GLSurfaceView.Renderer#onDrawFrame(GL10)
 	 */
 	public static native boolean step();
 
@@ -191,6 +192,15 @@ public class GodotLib {
 	public static native String getGlobal(String p_key);
 
 	/**
+	 * Used to get info about the current rendering system.
+	 *
+	 * @return A String array with two elements:
+	 *         [0] Rendering driver name.
+	 *         [1] Rendering method.
+	 */
+	public static native String[] getRendererInfo();
+
+	/**
 	 * Used to access Godot's editor settings.
 	 * @param settingKey Setting key
 	 * @return String value of the setting
@@ -198,20 +208,54 @@ public class GodotLib {
 	public static native String getEditorSetting(String settingKey);
 
 	/**
+	 * Update the 'key' editor setting with the given data. Must be called on the render thread.
+	 * @param key
+	 * @param data
+	 */
+	public static native void setEditorSetting(String key, Object data);
+
+	/**
+	 * Used to access project metadata from the editor settings. Must be accessed on the render thread.
+	 * @param section
+	 * @param key
+	 * @param defaultValue
+	 * @return
+	 */
+	public static native Object getEditorProjectMetadata(String section, String key, Object defaultValue);
+
+	/**
+	 * Set the project metadata to the editor settings. Must be accessed on the render thread.
+	 * @param section
+	 * @param key
+	 * @param data
+	 */
+	public static native void setEditorProjectMetadata(String section, String key, Object data);
+
+	/**
 	 * Invoke method |p_method| on the Godot object specified by |p_id|
 	 * @param p_id Id of the Godot object to invoke
 	 * @param p_method Name of the method to invoke
 	 * @param p_params Parameters to use for method invocation
+	 *
+	 * @deprecated Use {@link Callable#call(long, String, Object...)} instead.
 	 */
-	public static native void callobject(long p_id, String p_method, Object[] p_params);
+	@Deprecated
+	public static void callobject(long p_id, String p_method, Object[] p_params) {
+		Callable.call(p_id, p_method, p_params);
+	}
 
 	/**
 	 * Invoke method |p_method| on the Godot object specified by |p_id| during idle time.
 	 * @param p_id Id of the Godot object to invoke
 	 * @param p_method Name of the method to invoke
 	 * @param p_params Parameters to use for method invocation
+	 *
+	 * @deprecated Use {@link Callable#callDeferred(long, String, Object...)} instead.
 	 */
-	public static native void calldeferred(long p_id, String p_method, Object[] p_params);
+	@Deprecated
+	public static void calldeferred(long p_id, String p_method, Object[] p_params) {
+		Callable.callDeferred(p_id, p_method, p_params);
+	}
 
 	/**
 	 * Forward the results from a permission request.
@@ -227,9 +271,14 @@ public class GodotLib {
 	public static native void onNightModeChanged();
 
 	/**
-	 * Invoked on the input dialog submitted.
+	 * Invoked on the hardware keyboard connected/disconnected.
 	 */
-	public static native void inputDialogCallback(String p_text);
+	public static native void hardwareKeyboardConnected(boolean connected);
+
+	/**
+	 * Invoked on the file picker closed.
+	 */
+	public static native void filePickerCallback(boolean p_ok, String[] p_selected_paths);
 
 	/**
 	 * Invoked on the GL thread to configure the height of the virtual keyboard.
@@ -258,4 +307,8 @@ public class GodotLib {
 	 * @return the project resource directory
 	 */
 	public static native String getProjectResourceDir();
+
+	static native boolean isEditorHint();
+
+	static native boolean isProjectManagerHint();
 }

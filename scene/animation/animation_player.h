@@ -30,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ANIMATION_PLAYER_H
-#define ANIMATION_PLAYER_H
+#pragma once
 
 #include "animation_mixer.h"
-#include "scene/2d/node_2d.h"
 #include "scene/resources/animation.h"
 
 class AnimationPlayer : public AnimationMixer {
@@ -72,6 +70,18 @@ private:
 		float speed_scale = 1.0;
 		double start_time = 0.0;
 		double end_time = 0.0;
+		double get_start_time() const {
+			if (from && (Animation::is_less_approx(start_time, 0) || Animation::is_greater_approx(start_time, from->animation->get_length()))) {
+				return 0;
+			}
+			return start_time;
+		}
+		double get_end_time() const {
+			if (from && (Animation::is_less_approx(end_time, 0) || Animation::is_greater_approx(end_time, from->animation->get_length()))) {
+				return from->animation->get_length();
+			}
+			return end_time;
+		}
 	};
 
 	struct Blend {
@@ -180,6 +190,10 @@ public:
 	void set_auto_capture_ease_type(Tween::EaseType p_auto_capture_ease_type);
 	Tween::EaseType get_auto_capture_ease_type() const;
 
+#ifdef TOOLS_ENABLED
+	void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
+#endif
+
 	void play(const StringName &p_name = StringName(), double p_custom_blend = -1, float p_custom_scale = 1.0, bool p_from_end = false);
 	void play_section_with_markers(const StringName &p_name = StringName(), const StringName &p_start_marker = StringName(), const StringName &p_end_marker = StringName(), double p_custom_blend = -1, float p_custom_scale = 1.0, bool p_from_end = false);
 	void play_section(const StringName &p_name = StringName(), double p_start_time = -1, double p_end_time = -1, double p_custom_blend = -1, float p_custom_scale = 1.0, bool p_from_end = false);
@@ -233,5 +247,3 @@ public:
 VARIANT_ENUM_CAST(AnimationPlayer::AnimationProcessCallback);
 VARIANT_ENUM_CAST(AnimationPlayer::AnimationMethodCallMode);
 #endif // DISABLE_DEPRECATED
-
-#endif // ANIMATION_PLAYER_H

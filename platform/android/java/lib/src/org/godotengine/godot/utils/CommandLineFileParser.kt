@@ -2,8 +2,8 @@
 /*  CommandLineFileParser.kt                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
 /* Copyright (c) 2024-present Redot Engine contributors                   */
 /*                                          (see REDOT_AUTHORS.md)        */
@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.utils
+package org.redotengine.godot.utils
 
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
@@ -42,7 +42,7 @@ import java.util.ArrayList
  *
  * Returns a mutable list of command lines
  */
-internal class CommandLineFileParser {
+internal object CommandLineFileParser {
 	fun parseCommandLine(inputStream: InputStream): MutableList<String> {
 		return try {
 			val headerBytes = ByteArray(4)

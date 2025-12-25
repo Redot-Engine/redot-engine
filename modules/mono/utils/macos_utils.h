@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MONO_MACOS_UTILS_H
-#define MONO_MACOS_UTILS_H
+#pragma once
 
 #ifdef MACOS_ENABLED
 
@@ -40,5 +39,3 @@
 bool macos_is_app_bundle_installed(const String &p_bundle_id);
 
 #endif
-
-#endif // MONO_MACOS_UTILS_H

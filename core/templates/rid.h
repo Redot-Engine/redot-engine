@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RID_H
-#define RID_H
+#pragma once
 
 #include "core/typedefs.h"
 
@@ -75,4 +74,5 @@ public:
 	_ALWAYS_INLINE_ RID() {}
 };
 
-#endif // RID_H
+template <>
+struct is_zero_constructible<RID> : std::true_type {};

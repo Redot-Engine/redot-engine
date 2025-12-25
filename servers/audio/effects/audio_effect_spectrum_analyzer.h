@@ -30,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_EFFECT_SPECTRUM_ANALYZER_H
-#define AUDIO_EFFECT_SPECTRUM_ANALYZER_H
+#pragma once
 
 #include "servers/audio/audio_effect.h"
 
@@ -105,5 +104,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(AudioEffectSpectrumAnalyzer::FFTSize);
-
-#endif // AUDIO_EFFECT_SPECTRUM_ANALYZER_H

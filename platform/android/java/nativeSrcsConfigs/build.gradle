@@ -9,7 +9,7 @@ android {
     buildToolsVersion versions.buildTools
     ndkVersion versions.ndkVersion
 
-    namespace = "org.godotengine.godot"
+    namespace = "org.redotengine.godot"
 
     defaultConfig {
         minSdkVersion versions.minSdk

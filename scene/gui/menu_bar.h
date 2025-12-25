@@ -30,10 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MENU_BAR_H
-#define MENU_BAR_H
+#pragma once
 
-#include "scene/gui/button.h"
 #include "scene/gui/popup_menu.h"
 
 class MenuBar : public Control {
@@ -137,6 +135,8 @@ class MenuBar : public Control {
 		return -1;
 	}
 
+	void _popup_changed(ObjectID p_menu);
+
 	void bind_global_menu();
 	void unbind_global_menu();
 
@@ -196,5 +196,3 @@ public:
 	MenuBar();
 	~MenuBar();
 };
-
-#endif // MENU_BAR_H
