@@ -100,4 +100,3 @@ public:
 };
 
 #endif // BONE_ATTACHMENT_3D_H
-
