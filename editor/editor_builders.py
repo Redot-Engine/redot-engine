@@ -137,3 +137,72 @@ inline constexpr {category.capitalize()}TranslationList _{category}_translations
 	{ nullptr, 0, 0, nullptr },
 };
 """)
+
+
+# Builds an embedded header containing Unidot, UnityToGodot, and Shaderlab2GodotSL assets.
+# Source inputs are three directories: editor/vendor_sources/unidot_importer, editor/vendor_sources/UnityToGodot, editor/vendor_sources/Shaderlab2GodotSL.
+def unity_vendor_builder(target, source, env):
+    src_dirs = [str(s) for s in source]
+    bundles = {"unidot_importer": [], "UnityToGodot": [], "Shaderlab2GodotSL": []}
+
+    def _scan_dir(dir_path):
+        files = []
+        for root, _, filenames in os.walk(dir_path):
+            for fname in filenames:
+                rel = os.path.relpath(os.path.join(root, fname), dir_path).replace("\\", "/")
+                abspath = os.path.join(root, fname)
+                try:
+                    buf = methods.get_buffer(abspath)
+                    files.append((rel, buf))
+                except Exception:
+                    continue
+        return files
+
+    for d in src_dirs:
+        name = os.path.basename(d)
+        if name in bundles and os.path.isdir(d):
+            bundles[name] = _scan_dir(d)
+
+    with methods.generated_wrapper(str(target[0])) as file:
+        file.write("""
+#pragma once
+#include <stdint.h>
+
+namespace UnityVendor {
+    struct File { const char* path; const uint8_t* data; unsigned int size; };
+
+#ifdef UNITY_VENDOR_IMPLEMENTATION
+#define UNITY_VENDOR_API
+#else
+#define UNITY_VENDOR_API extern
+#endif
+""")
+
+        def _write_bundle(bundle_name, items):
+            for idx, (path, buf) in enumerate(items):
+                file.write(
+                    f"UNITY_VENDOR_API unsigned char _{bundle_name}_data_{idx}[]\n"
+                    "#ifdef UNITY_VENDOR_IMPLEMENTATION\n"
+                    f"= {{\n\t{methods.format_buffer(buf, 1)}\n}}\n"
+                    "#endif\n"
+                    ";\n\n"
+                )
+            file.write(f"UNITY_VENDOR_API File {bundle_name.upper()}[]\n#ifdef UNITY_VENDOR_IMPLEMENTATION\n=\n{{\n")
+            for idx, (path, buf) in enumerate(items):
+                file.write(f'\t{{ "{path}", _{bundle_name}_data_{idx}, {len(buf)} }},\n')
+            file.write("\t{ nullptr, nullptr, 0 },\n#endif\n};\n")
+            file.write(
+                f"UNITY_VENDOR_API unsigned int {bundle_name.upper()}_COUNT\n"
+                "#ifdef UNITY_VENDOR_IMPLEMENTATION\n"
+                f"= {len(items)}\n"
+                "#endif\n"
+                ";\n\n"
+            )
+
+        _write_bundle("unidot_importer", bundles["unidot_importer"])
+        _write_bundle("unitytogodot", bundles["UnityToGodot"])
+        _write_bundle("shaderlab2godotsl", bundles["Shaderlab2GodotSL"])
+
+        file.write("""
+} // namespace UnityVendor
+""")

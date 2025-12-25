@@ -35,6 +35,9 @@
 #include "scene/gui/dialogs.h"
 #include "scene/gui/tree.h"
 
+// Forward declarations
+struct UnityAsset;
+
 class CheckBox;
 class EditorFileDialog;
 class Label;

@@ -87,6 +87,8 @@ if env.editor_build:
     env.add_source_files(env.editor_sources, "*.cpp")
     env.add_source_files(env.editor_sources, gen_exporters)
 
+    # Unity importer vendor embedding removed; importer is self-contained.
+
     SConscript("animation/SCsub")
     SConscript("asset_library/SCsub")
     SConscript("audio/SCsub")

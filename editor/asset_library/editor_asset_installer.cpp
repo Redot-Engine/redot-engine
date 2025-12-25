@@ -41,6 +41,7 @@
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/gui/editor_toaster.h"
 #include "editor/gui/progress_dialog.h"
+#include "editor/plugins/unity_package_importer.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/label.h"
@@ -111,45 +112,78 @@ void EditorAssetInstaller::open_asset(const String &p_path, bool p_autoskip_topl
 	package_path = p_path;
 	asset_files.clear();
 
-	Ref<FileAccess> io_fa;
-	zlib_filefunc_def io = zipio_create_io(&io_fa);
+	// Check if this is a .unitypackage file (tar.gz format)
+	if (p_path.get_extension().to_lower() == "unitypackage") {
+		HashMap<String, UnityAsset> unity_assets;
+		Error err = UnityPackageParser::parse_unitypackage(p_path, unity_assets);
 
-	unzFile pkg = unzOpen2(p_path.utf8().get_data(), &io);
-	if (!pkg) {
-		EditorToaster::get_singleton()->popup_str(vformat(TTR("Error opening asset file for \"%s\" (not in ZIP format)."), asset_name), EditorToaster::SEVERITY_ERROR);
-		return;
-	}
+		if (err != OK) {
+			EditorToaster::get_singleton()->popup_str(vformat(TTR("Error opening asset file for \"%s\" (not in ZIP format)."), asset_name), EditorToaster::SEVERITY_ERROR);
+			print_error(vformat("Failed to parse Unity package: %s (error code %d)", p_path, (int)err));
+			return;
+		}
 
-	int ret = unzGoToFirstFile(pkg);
+		// Convert Unity assets to file list format
+		for (const KeyValue<String, UnityAsset> &kv : unity_assets) {
+			String asset_path = kv.value.pathname;
+			if (!asset_path.is_empty()) {
+				// Create intermediate directories
+				int separator = asset_path.find_char('/', 1);
+				while (separator != -1) {
+					String dir_name = asset_path.substr(0, separator + 1);
+					if (!dir_name.is_empty() && !asset_files.has(dir_name)) {
+						asset_files.insert(dir_name);
+					}
+					separator = asset_path.find_char('/', separator + 1);
+				}
 
-	while (ret == UNZ_OK) {
-		//get filename
-		unz_file_info info;
-		char fname[16384];
-		unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
+				if (!asset_files.has(asset_path)) {
+					asset_files.insert(asset_path);
+				}
+			}
+		}
+	} else {
+		// Standard ZIP format handling
+		Ref<FileAccess> io_fa;
+		zlib_filefunc_def io = zipio_create_io(&io_fa);
 
-		String source_name = String::utf8(fname);
+		unzFile pkg = unzOpen2(p_path.utf8().get_data(), &io);
+		if (!pkg) {
+			EditorToaster::get_singleton()->popup_str(vformat(TTR("Error opening asset file for \"%s\" (not in ZIP format)."), asset_name), EditorToaster::SEVERITY_ERROR);
+			return;
+		}
 
-		// Create intermediate directories if they aren't reported by unzip.
-		// We are only interested in subfolders, so skip the root slash.
-		int separator = source_name.find_char('/', 1);
-		while (separator != -1) {
-			String dir_name = source_name.substr(0, separator + 1);
-			if (!dir_name.is_empty() && !asset_files.has(dir_name)) {
-				asset_files.insert(dir_name);
+		int ret = unzGoToFirstFile(pkg);
+
+		while (ret == UNZ_OK) {
+			//get filename
+			unz_file_info info;
+			char fname[16384];
+			unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
+
+			String source_name = String::utf8(fname);
+
+			// Create intermediate directories if they aren't reported by unzip.
+			// We are only interested in subfolders, so skip the root slash.
+			int separator = source_name.find_char('/', 1);
+			while (separator != -1) {
+				String dir_name = source_name.substr(0, separator + 1);
+				if (!dir_name.is_empty() && !asset_files.has(dir_name)) {
+					asset_files.insert(dir_name);
+				}
+
+				separator = source_name.find_char('/', separator + 1);
 			}
 
-			separator = source_name.find_char('/', separator + 1);
+			if (!source_name.is_empty() && !asset_files.has(source_name)) {
+				asset_files.insert(source_name);
+			}
+
+			ret = unzGoToNextFile(pkg);
 		}
 
-		if (!source_name.is_empty() && !asset_files.has(source_name)) {
-			asset_files.insert(source_name);
-		}
-
-		ret = unzGoToNextFile(pkg);
+		unzClose(pkg);
 	}
-
-	unzClose(pkg);
 
 	asset_title_label->set_text(asset_name);
 
@@ -498,73 +532,135 @@ void EditorAssetInstaller::ok_pressed() {
 }
 
 void EditorAssetInstaller::_install_asset() {
-	Ref<FileAccess> io_fa;
-	zlib_filefunc_def io = zipio_create_io(&io_fa);
-
-	unzFile pkg = unzOpen2(package_path.utf8().get_data(), &io);
-	if (!pkg) {
-		EditorToaster::get_singleton()->popup_str(vformat(TTR("Error opening asset file for \"%s\" (not in ZIP format)."), asset_name), EditorToaster::SEVERITY_ERROR);
-		return;
-	}
-
 	Vector<String> failed_files;
-	int ret = unzGoToFirstFile(pkg);
-
-	ProgressDialog::get_singleton()->add_task("uncompress", TTR("Uncompressing Assets"), file_item_map.size());
-
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	for (int idx = 0; ret == UNZ_OK; ret = unzGoToNextFile(pkg), idx++) {
-		unz_file_info info;
-		char fname[16384];
-		ret = unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
-		if (ret != UNZ_OK) {
-			break;
+
+	// Check if this is a Unity package installation
+	if (package_path.get_extension().to_lower() == "unitypackage") {
+		HashMap<String, UnityAsset> unity_assets;
+		Error err = UnityPackageParser::parse_unitypackage(package_path, unity_assets);
+
+		if (err != OK) {
+			EditorToaster::get_singleton()->popup_str(vformat(TTR("Error installing asset \"%s\": Failed to parse Unity package."), asset_name), EditorToaster::SEVERITY_ERROR);
+			return;
 		}
 
-		String source_name = String::utf8(fname);
-		if (!_is_item_checked(source_name)) {
-			continue;
-		}
+		ProgressDialog::get_singleton()->add_task("uncompress", TTR("Uncompressing Assets"), unity_assets.size());
 
-		HashMap<String, String>::Iterator E = mapped_files.find(source_name);
-		if (!E) {
-			continue; // No remapped path means we don't want it; most likely the root.
-		}
+		int idx = 0;
+		for (const KeyValue<String, UnityAsset> &kv : unity_assets) {
+			const UnityAsset &asset = kv.value;
+			String source_name = asset.pathname;
 
-		String target_path = target_dir_path.path_join(E->value);
-
-		Dictionary asset_meta = file_item_map[source_name]->get_metadata(0);
-		bool is_dir = asset_meta.get("is_dir", false);
-		if (is_dir) {
-			if (target_path.ends_with("/")) {
-				target_path = target_path.substr(0, target_path.length() - 1);
+			if (!_is_item_checked(source_name)) {
+				idx++;
+				continue;
 			}
 
-			da->make_dir_recursive(target_path);
-		} else {
-			Vector<uint8_t> uncomp_data;
-			uncomp_data.resize(info.uncompressed_size);
+			HashMap<String, String>::Iterator E = mapped_files.find(source_name);
+			if (!E) {
+				idx++;
+				continue; // No remapped path means we don't want it
+			}
 
-			unzOpenCurrentFile(pkg);
-			unzReadCurrentFile(pkg, uncomp_data.ptrw(), uncomp_data.size());
-			unzCloseCurrentFile(pkg);
+			String target_path = target_dir_path.path_join(E->value);
 
-			// Ensure that the target folder exists.
-			da->make_dir_recursive(target_path.get_base_dir());
+			// Check if this is a directory (based on file_item_map metadata)
+			if (file_item_map.has(source_name)) {
+				Dictionary asset_meta = file_item_map[source_name]->get_metadata(0);
+				bool is_dir = asset_meta.get("is_dir", false);
 
-			Ref<FileAccess> f = FileAccess::open(target_path, FileAccess::WRITE);
-			if (f.is_valid()) {
-				f->store_buffer(uncomp_data.ptr(), uncomp_data.size());
+				if (is_dir) {
+					if (target_path.ends_with("/")) {
+						target_path = target_path.substr(0, target_path.length() - 1);
+					}
+					da->make_dir_recursive(target_path);
+				} else {
+					// Write the asset data to the target file
+					da->make_dir_recursive(target_path.get_base_dir());
+
+					Ref<FileAccess> f = FileAccess::open(target_path, FileAccess::WRITE);
+					if (f.is_valid()) {
+						f->store_buffer(asset.asset_data.ptr(), asset.asset_data.size());
+					} else {
+						failed_files.push_back(target_path);
+					}
+
+					ProgressDialog::get_singleton()->task_step("uncompress", target_path, idx);
+				}
+			}
+
+			idx++;
+		}
+
+		ProgressDialog::get_singleton()->end_task("uncompress");
+	} else {
+		// Standard ZIP package handling
+		Ref<FileAccess> io_fa;
+		zlib_filefunc_def io = zipio_create_io(&io_fa);
+
+		unzFile pkg = unzOpen2(package_path.utf8().get_data(), &io);
+		if (!pkg) {
+			EditorToaster::get_singleton()->popup_str(vformat(TTR("Error opening asset file for \"%s\" (not in ZIP format)."), asset_name), EditorToaster::SEVERITY_ERROR);
+			return;
+		}
+
+		int ret = unzGoToFirstFile(pkg);
+		ProgressDialog::get_singleton()->add_task("uncompress", TTR("Uncompressing Assets"), file_item_map.size());
+
+		for (int idx = 0; ret == UNZ_OK; ret = unzGoToNextFile(pkg), idx++) {
+			unz_file_info info;
+			char fname[16384];
+			ret = unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
+			if (ret != UNZ_OK) {
+				break;
+			}
+
+			String source_name = String::utf8(fname);
+			if (!_is_item_checked(source_name)) {
+				continue;
+			}
+
+			HashMap<String, String>::Iterator E = mapped_files.find(source_name);
+			if (!E) {
+				continue; // No remapped path means we don't want it; most likely the root.
+			}
+
+			String target_path = target_dir_path.path_join(E->value);
+
+			Dictionary asset_meta = file_item_map[source_name]->get_metadata(0);
+			bool is_dir = asset_meta.get("is_dir", false);
+			if (is_dir) {
+				if (target_path.ends_with("/")) {
+					target_path = target_path.substr(0, target_path.length() - 1);
+				}
+
+				da->make_dir_recursive(target_path);
 			} else {
-				failed_files.push_back(target_path);
+				Vector<uint8_t> uncomp_data;
+				uncomp_data.resize(info.uncompressed_size);
+
+				unzOpenCurrentFile(pkg);
+				unzReadCurrentFile(pkg, uncomp_data.ptrw(), uncomp_data.size());
+				unzCloseCurrentFile(pkg);
+
+				// Ensure that the target folder exists.
+				da->make_dir_recursive(target_path.get_base_dir());
+
+				Ref<FileAccess> f = FileAccess::open(target_path, FileAccess::WRITE);
+				if (f.is_valid()) {
+					f->store_buffer(uncomp_data.ptr(), uncomp_data.size());
+				} else {
+					failed_files.push_back(target_path);
+				}
+
+				ProgressDialog::get_singleton()->task_step("uncompress", target_path, idx);
 			}
-
-			ProgressDialog::get_singleton()->task_step("uncompress", target_path, idx);
 		}
-	}
 
-	ProgressDialog::get_singleton()->end_task("uncompress");
-	unzClose(pkg);
+		ProgressDialog::get_singleton()->end_task("uncompress");
+		unzClose(pkg);
+	}
 
 	if (failed_files.size()) {
 		String msg = vformat(TTR("The following files failed extraction from asset \"%s\":"), asset_name) + "\n\n";
