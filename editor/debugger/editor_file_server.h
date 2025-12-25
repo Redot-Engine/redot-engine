@@ -2,9 +2,11 @@
 /*  editor_file_server.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_FILE_SERVER_H
-#define EDITOR_FILE_SERVER_H
+#pragma once
 
-#include "core/io/packet_peer.h"
 #include "core/io/tcp_server.h"
-#include "core/object/class_db.h"
 #include "core/os/thread.h"
-#include "editor/editor_file_system.h"
+#include "editor/file_system/editor_file_system.h"
 
 class EditorFileServer : public Object {
 	GDCLASS(EditorFileServer, Object);
@@ -57,5 +56,3 @@ public:
 	EditorFileServer();
 	~EditorFileServer();
 };
-
-#endif // EDITOR_FILE_SERVER_H

@@ -2,9 +2,11 @@
 /*  xr_tracker.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -42,24 +44,24 @@ void XRTracker::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_tracker_desc"), &XRTracker::get_tracker_desc);
 	ClassDB::bind_method(D_METHOD("set_tracker_desc", "description"), &XRTracker::set_tracker_desc);
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "description"), "set_tracker_desc", "get_tracker_desc");
-};
+}
 
 void XRTracker::set_tracker_type(XRServer::TrackerType p_type) {
 	type = p_type;
-};
+}
 
 XRServer::TrackerType XRTracker::get_tracker_type() const {
 	return type;
-};
+}
 
 void XRTracker::set_tracker_name(const StringName &p_name) {
 	// Note: this should not be changed after the tracker is registered with the XRServer!
 	name = p_name;
-};
+}
 
 StringName XRTracker::get_tracker_name() const {
 	return name;
-};
+}
 
 void XRTracker::set_tracker_desc(const String &p_desc) {
 	description = p_desc;

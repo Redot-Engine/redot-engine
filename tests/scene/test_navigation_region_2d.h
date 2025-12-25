@@ -2,9 +2,11 @@
 /*  test_navigation_region_2d.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,17 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_NAVIGATION_REGION_2D_H
-#define TEST_NAVIGATION_REGION_2D_H
+#pragma once
 
-#include "scene/2d/navigation_region_2d.h"
+#include "scene/2d/navigation/navigation_region_2d.h"
 #include "scene/main/window.h"
 
 #include "tests/test_macros.h"
 
 namespace TestNavigationRegion2D {
 
-TEST_SUITE("[Navigation]") {
+TEST_SUITE("[Navigation2D]") {
 	TEST_CASE("[SceneTree][NavigationRegion2D] New region should have valid RID") {
 		NavigationRegion2D *region_node = memnew(NavigationRegion2D);
 		CHECK(region_node->get_rid().is_valid());
@@ -47,5 +48,3 @@ TEST_SUITE("[Navigation]") {
 }
 
 } //namespace TestNavigationRegion2D
-
-#endif // TEST_NAVIGATION_REGION_2D_H

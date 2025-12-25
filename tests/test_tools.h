@@ -2,9 +2,11 @@
 /*  test_tools.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_TOOLS_H
-#define TEST_TOOLS_H
+#pragma once
 
 struct ErrorDetector {
 	ErrorDetector() {
@@ -55,5 +56,3 @@ struct ErrorDetector {
 	ErrorHandlerList eh;
 	bool has_error = false;
 };
-
-#endif // TEST_TOOLS_H

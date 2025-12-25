@@ -2,9 +2,11 @@
 /*  convex_hull.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CONVEX_HULL_H
-#define CONVEX_HULL_H
+#pragma once
 
 /*
 Copyright (c) 2011 Ole Kniemeyer, MAXON, www.maxon.net
@@ -112,5 +113,3 @@ public:
 
 	static Error convex_hull(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_mesh);
 };
-
-#endif // CONVEX_HULL_H

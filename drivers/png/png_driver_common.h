@@ -2,9 +2,11 @@
 /*  png_driver_common.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PNG_DRIVER_COMMON_H
-#define PNG_DRIVER_COMMON_H
+#pragma once
 
 #include "core/io/image.h"
+#include "core/io/image_frames.h"
 
 namespace PNGDriverCommon {
 
@@ -41,6 +43,7 @@ Error png_to_image(const uint8_t *p_source, size_t p_size, bool p_force_linear, 
 // Append p_image, as a png, to p_buffer.
 // Contents of p_buffer is unspecified if error returned.
 Error image_to_png(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer);
-} // namespace PNGDriverCommon
 
-#endif // PNG_DRIVER_COMMON_H
+// Attempt to load apng from buffer (p_source, p_size) into p_frames
+Error apng_to_image_frames(const uint8_t *p_source, size_t p_size, bool p_force_linear, uint32_t p_frame_limit, Ref<ImageFrames> p_frames);
+} // namespace PNGDriverCommon

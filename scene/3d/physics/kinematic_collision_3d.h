@@ -2,9 +2,11 @@
 /*  kinematic_collision_3d.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef KINEMATIC_COLLISION_3D_H
-#define KINEMATIC_COLLISION_3D_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 #include "servers/physics_server_3d.h"
-
-class CharacterBody3D;
-class PhysicsBody3D;
 
 class KinematicCollision3D : public RefCounted {
 	GDCLASS(KinematicCollision3D, RefCounted);
@@ -64,5 +62,3 @@ public:
 	int get_collider_shape_index(int p_collision_index = 0) const;
 	Vector3 get_collider_velocity(int p_collision_index = 0) const;
 };
-
-#endif // KINEMATIC_COLLISION_3D_H

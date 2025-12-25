@@ -2,9 +2,11 @@
 /*  shader_preprocessor.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,20 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SHADER_PREPROCESSOR_H
-#define SHADER_PREPROCESSOR_H
+#pragma once
 
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
-#include "core/typedefs.h"
 
-#include "core/io/resource_loader.h"
 #include "core/object/script_language.h"
-#include "core/os/os.h"
-#include "scene/resources/shader.h"
 #include "scene/resources/shader_include.h"
 
 class ShaderPreprocessor {
@@ -132,6 +129,7 @@ private:
 	struct Define {
 		Vector<String> arguments;
 		String body;
+		bool is_builtin = false;
 	};
 
 	struct Branch {
@@ -191,6 +189,7 @@ private:
 	void process_elif(Tokenizer *p_tokenizer);
 	void process_else(Tokenizer *p_tokenizer);
 	void process_endif(Tokenizer *p_tokenizer);
+	void process_error(Tokenizer *p_tokenizer);
 	void process_if(Tokenizer *p_tokenizer);
 	void process_ifdef(Tokenizer *p_tokenizer);
 	void process_ifndef(Tokenizer *p_tokenizer);
@@ -213,6 +212,7 @@ private:
 	void set_error(const String &p_error, int p_line);
 
 	static Define *create_define(const String &p_body);
+	void insert_builtin_define(String p_name, String p_value, State &p_state);
 
 	void clear_state();
 
@@ -229,5 +229,3 @@ public:
 	ShaderPreprocessor();
 	~ShaderPreprocessor();
 };
-
-#endif // SHADER_PREPROCESSOR_H

@@ -2,9 +2,11 @@
 /*  GodotNetUtils.java                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.utils;
+package org.redotengine.godot.utils;
 
 import android.app.Activity;
 import android.content.Context;
@@ -69,7 +71,7 @@ public class GodotNetUtils {
 		try {
 			multicastLock.acquire();
 		} catch (RuntimeException e) {
-			Log.e("Godot", "Exception during multicast lock acquire: " + e);
+			Log.e("Redot", "Exception during multicast lock acquire: " + e);
 		}
 	}
 
@@ -83,7 +85,7 @@ public class GodotNetUtils {
 		try {
 			multicastLock.release();
 		} catch (RuntimeException e) {
-			Log.e("Godot", "Exception during multicast lock release: " + e);
+			Log.e("Redot", "Exception during multicast lock release: " + e);
 		}
 	}
 
@@ -112,7 +114,7 @@ public class GodotNetUtils {
 			}
 			return writer.toString();
 		} catch (Exception e) {
-			Log.e("Godot", "Exception while reading CA certificates: " + e);
+			Log.e("Redot", "Exception while reading CA certificates: " + e);
 			return "";
 		}
 	}

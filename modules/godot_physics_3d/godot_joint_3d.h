@@ -2,9 +2,11 @@
 /*  godot_joint_3d.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_JOINT_3D_H
-#define GODOT_JOINT_3D_H
+#pragma once
 
 #include "godot_body_3d.h"
 #include "godot_constraint_3d.h"
@@ -40,7 +41,7 @@ protected:
 	bool dynamic_B = false;
 
 	void plane_space(const Vector3 &n, Vector3 &p, Vector3 &q) {
-		if (Math::abs(n.z) > Math_SQRT12) {
+		if (Math::abs(n.z) > Math::SQRT12) {
 			// choose p in y-z plane
 			real_t a = n[1] * n[1] + n[2] * n[2];
 			real_t k = 1.0 / Math::sqrt(a);
@@ -58,7 +59,7 @@ protected:
 	}
 
 	_FORCE_INLINE_ real_t atan2fast(real_t y, real_t x) {
-		real_t coeff_1 = Math_PI / 4.0f;
+		real_t coeff_1 = Math::PI / 4.0f;
 		real_t coeff_2 = 3.0f * coeff_1;
 		real_t abs_y = Math::abs(y);
 		real_t angle;
@@ -97,5 +98,3 @@ public:
 		}
 	}
 };
-
-#endif // GODOT_JOINT_3D_H

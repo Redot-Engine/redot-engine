@@ -2,9 +2,11 @@
 /*  gdextension_loader.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDEXTENSION_LOADER_H
-#define GDEXTENSION_LOADER_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 
 class GDExtension;
 
 class GDExtensionLoader : public RefCounted {
+	GDSOFTCLASS(GDExtensionLoader, RefCounted);
+
 public:
 	virtual Error open_library(const String &p_path) = 0;
 	virtual Error initialize(GDExtensionInterfaceGetProcAddress p_get_proc_address, const Ref<GDExtension> &p_extension, GDExtensionInitialization *r_initialization) = 0;
@@ -44,5 +47,3 @@ public:
 	virtual bool has_library_changed() const = 0;
 	virtual bool library_exists() const = 0;
 };
-
-#endif // GDEXTENSION_LOADER_H

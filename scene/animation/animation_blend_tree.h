@@ -2,9 +2,11 @@
 /*  animation_blend_tree.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ANIMATION_BLEND_TREE_H
-#define ANIMATION_BLEND_TREE_H
+#pragma once
 
 #include "scene/animation/animation_tree.h"
 
 class AnimationNodeAnimation : public AnimationRootNode {
 	GDCLASS(AnimationNodeAnimation, AnimationRootNode);
 
+	StringName backward = "backward"; // Only used by pingpong animation.
+
 	StringName animation;
+
+	bool advance_on_start = false;
 
 	bool use_custom_timeline = false;
 	double timeline_length = 1.0;
@@ -54,6 +59,7 @@ public:
 	};
 
 	void get_parameter_list(List<PropertyInfo> *r_list) const override;
+	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
 
 	virtual NodeTimeInfo get_node_time_info() const override; // Wrapper of get_parameter().
 
@@ -72,13 +78,16 @@ public:
 	void set_backward(bool p_backward);
 	bool is_backward() const;
 
+	void set_advance_on_start(bool p_advance_on_start);
+	bool is_advance_on_start() const;
+
 	void set_use_custom_timeline(bool p_use_custom_timeline);
 	bool is_using_custom_timeline() const;
 
 	void set_timeline_length(double p_length);
 	double get_timeline_length() const;
 
-	void set_stretch_time_scale(bool p_strech_time_scale);
+	void set_stretch_time_scale(bool p_stretch_time_scale);
 	bool is_stretching_time_scale() const;
 
 	void set_start_offset(double p_offset);
@@ -95,7 +104,6 @@ protected:
 
 private:
 	PlayMode play_mode = PLAY_MODE_FORWARD;
-	bool backward = false; // Only used by pingpong animation.
 };
 
 VARIANT_ENUM_CAST(AnimationNodeAnimation::PlayMode)
@@ -297,6 +305,10 @@ class AnimationNodeTimeSeek : public AnimationNode {
 	GDCLASS(AnimationNodeTimeSeek, AnimationNode);
 
 	StringName seek_pos_request = PNAME("seek_request");
+	bool explicit_elapse = true;
+
+protected:
+	static void _bind_methods();
 
 public:
 	virtual void get_parameter_list(List<PropertyInfo> *r_list) const override;
@@ -305,6 +317,9 @@ public:
 	virtual String get_caption() const override;
 
 	virtual NodeTimeInfo _process(const AnimationMixer::PlaybackInfo p_playback_info, bool p_test_only = false) override;
+
+	void set_explicit_elapse(bool p_enable);
+	bool is_explicit_elapse() const;
 
 	AnimationNodeTimeSeek();
 };
@@ -317,7 +332,7 @@ class AnimationNodeTransition : public AnimationNodeSync {
 		bool break_loop_at_end = false;
 		bool reset = true;
 	};
-	Vector<InputData> input_data;
+	LocalVector<InputData> input_data;
 
 	StringName prev_xfading = "prev_xfading";
 	StringName prev_index = "prev_index";
@@ -396,7 +411,7 @@ class AnimationNodeBlendTree : public AnimationRootNode {
 		Vector<StringName> connections;
 	};
 
-	RBMap<StringName, Node, StringName::AlphCompare> nodes;
+	AHashMap<StringName, Node> nodes;
 
 	Vector2 graph_offset;
 
@@ -455,7 +470,8 @@ public:
 	virtual String get_caption() const override;
 	virtual NodeTimeInfo _process(const AnimationMixer::PlaybackInfo p_playback_info, bool p_test_only = false) override;
 
-	void get_node_list(List<StringName> *r_list);
+	LocalVector<StringName> get_node_list() const;
+	TypedArray<StringName> get_node_list_as_typed_array() const;
 
 	void set_graph_offset(const Vector2 &p_graph_offset);
 	Vector2 get_graph_offset() const;
@@ -471,5 +487,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(AnimationNodeBlendTree::ConnectionError)
-
-#endif // ANIMATION_BLEND_TREE_H

@@ -2,9 +2,11 @@
 /*  openxr_select_action_dialog.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_SELECT_ACTION_DIALOG_H
-#define OPENXR_SELECT_ACTION_DIALOG_H
+#pragma once
 
 #include "../action_map/openxr_action_map.h"
 
@@ -64,5 +65,3 @@ public:
 
 	OpenXRSelectActionDialog(Ref<OpenXRActionMap> p_action_map);
 };
-
-#endif // OPENXR_SELECT_ACTION_DIALOG_H

@@ -4,7 +4,7 @@
 		Texture with 2 dimensions, optionally compressed.
 	</brief_description>
 	<description>
-		A texture that is loaded from a [code].ctex[/code] file. This file format is internal to Godot; it is created by importing other image formats with the import system. [CompressedTexture2D] can use one of 4 compression methods (including a lack of any compression):
+		A texture that is loaded from a [code].ctex[/code] file. This file format is internal to Redot; it is created by importing other image formats with the import system. [CompressedTexture2D] can use one of 4 compression methods (including a lack of any compression):
 		- Lossless (WebP or PNG, uncompressed on the GPU)
 		- Lossy (WebP, uncompressed on the GPU)
 		- VRAM Compressed (compressed on the GPU)

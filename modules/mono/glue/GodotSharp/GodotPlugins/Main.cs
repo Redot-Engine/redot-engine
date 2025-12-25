@@ -105,7 +105,7 @@ namespace GodotPlugins
 
                 if (_editorHint)
                 {
-                    _editorApiAssembly = Assembly.Load("GodotSharpEditor");
+                    _editorApiAssembly = Assembly.Load("RedotSharpEditor");
                     SharedAssemblies.Add(_editorApiAssembly.GetName());
                     NativeLibrary.SetDllImportResolver(_editorApiAssembly, _dllImportResolver);
                 }
@@ -171,7 +171,7 @@ namespace GodotPlugins
                 string assemblyPath = new(nAssemblyPath);
 
                 if (_editorApiAssembly == null)
-                    throw new InvalidOperationException("The Godot editor API assembly is not loaded.");
+                    throw new InvalidOperationException("The Redot editor API assembly is not loaded.");
 
                 var (assembly, _) = LoadPlugin(assemblyPath, isCollectible: false);
 
@@ -183,7 +183,7 @@ namespace GodotPlugins
 
                 if (method == null)
                 {
-                    throw new MissingMethodException("GodotTools.GodotSharpEditor",
+                    throw new MissingMethodException("GodotTools.RedotSharpEditor",
                         "InternalCreateInstance");
                 }
 

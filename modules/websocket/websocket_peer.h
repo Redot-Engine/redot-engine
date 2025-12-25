@@ -2,9 +2,11 @@
 /*  websocket_peer.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBSOCKET_PEER_H
-#define WEBSOCKET_PEER_H
+#pragma once
 
 #include "core/crypto/crypto.h"
-#include "core/error/error_list.h"
 #include "core/io/packet_peer.h"
 
 class WebSocketPeer : public PacketPeer {
@@ -71,7 +71,8 @@ protected:
 
 	int outbound_buffer_size = DEFAULT_BUFFER_SIZE;
 	int inbound_buffer_size = DEFAULT_BUFFER_SIZE;
-	int max_queued_packets = 2048;
+	int max_queued_packets = 4096;
+	uint64_t heartbeat_interval_msec = 0;
 
 public:
 	static WebSocketPeer *create(bool p_notify_postinitialize = true) {
@@ -117,11 +118,12 @@ public:
 	void set_max_queued_packets(int p_max_queued_packets);
 	int get_max_queued_packets() const;
 
+	double get_heartbeat_interval() const;
+	void set_heartbeat_interval(double p_interval);
+
 	WebSocketPeer();
 	~WebSocketPeer();
 };
 
 VARIANT_ENUM_CAST(WebSocketPeer::WriteMode);
 VARIANT_ENUM_CAST(WebSocketPeer::State);
-
-#endif // WEBSOCKET_PEER_H

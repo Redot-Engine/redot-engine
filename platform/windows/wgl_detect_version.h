@@ -2,9 +2,11 @@
 /*  wgl_detect_version.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WGL_DETECT_VERSION_H
-#define WGL_DETECT_VERSION_H
+#pragma once
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -38,5 +39,3 @@ class Dictionary;
 Dictionary detect_wgl();
 
 #endif // WINDOWS_ENABLED && GLES3_ENABLED
-
-#endif // WGL_DETECT_VERSION_H

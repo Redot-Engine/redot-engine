@@ -2,9 +2,11 @@
 /*  test_method_bind.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_METHOD_BIND_H
-#define TEST_METHOD_BIND_H
+#pragma once
 
 #include "core/object/class_db.h"
 
@@ -56,6 +57,8 @@ public:
 	};
 
 	class ObjectSubclass : public Object {
+		GDSOFTCLASS(ObjectSubclass, Object);
+
 	public:
 		int value = 1;
 	};
@@ -171,5 +174,3 @@ TEST_CASE("[MethodBind] check all method binds") {
 	memdelete(mbt);
 }
 } // namespace TestMethodBind
-
-#endif // TEST_METHOD_BIND_H

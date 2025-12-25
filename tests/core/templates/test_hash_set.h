@@ -2,9 +2,11 @@
 /*  test_hash_set.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_HASH_SET_H
-#define TEST_HASH_SET_H
+#pragma once
 
 #include "core/templates/hash_set.h"
 
 #include "tests/test_macros.h"
 
 namespace TestHashSet {
+
+TEST_CASE("[HashSet] List initialization") {
+	HashSet<int> set{ 0, 1, 2, 3, 4 };
+
+	CHECK(set.size() == 5);
+	CHECK(set.has(0));
+	CHECK(set.has(1));
+	CHECK(set.has(2));
+	CHECK(set.has(3));
+	CHECK(set.has(4));
+}
+
+TEST_CASE("[HashSet] List initialization with existing elements") {
+	HashSet<int> set{ 0, 0, 0, 0, 0 };
+
+	CHECK(set.size() == 1);
+	CHECK(set.has(0));
+}
 
 TEST_CASE("[HashSet] Insert element") {
 	HashSet<int> set;
@@ -221,6 +240,20 @@ TEST_CASE("[HashSet] Copy") {
 	}
 }
 
-} // namespace TestHashSet
+TEST_CASE("[HashSet] Equality") {
+	// Empty sets.
+	CHECK(HashSet<int>{} == HashSet<int>{});
+	CHECK(HashSet<int>{} != HashSet<int>{ 1, 2, 3 });
+	CHECK(HashSet<int>{ 1, 2, 3 } != HashSet<int>{});
 
-#endif // TEST_HASH_SET_H
+	// Different length.
+	CHECK(HashSet<int>{ 1, 2, 3 } != HashSet<int>{ 1, 2, 3, 4 });
+	CHECK(HashSet<int>{ 1, 2, 3, 4 } != HashSet<int>{ 4, 3, 2 });
+
+	// Same length.
+	CHECK(HashSet<int>{ 1, 2, 3 } == HashSet<int>{ 1, 2, 3 });
+	CHECK(HashSet<int>{ 1, 2, 3 } == HashSet<int>{ 3, 2, 1 });
+	CHECK(HashSet<int>{ 1, 2, 3 } != HashSet<int>{ 1, 2, 8 });
+}
+
+} // namespace TestHashSet

@@ -2,9 +2,11 @@
 /*  resource_importer_bmfont.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -67,7 +69,7 @@ void ResourceImporterBMFont::get_import_options(const String &p_path, List<Impor
 	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "scaling_mode", PROPERTY_HINT_ENUM, "Disabled,Enabled (Integer),Enabled (Fractional)"), TextServer::FIXED_SIZE_SCALE_ENABLED));
 }
 
-Error ResourceImporterBMFont::import(const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+Error ResourceImporterBMFont::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 	print_verbose("Importing BMFont font from: " + p_source_file);
 
 	Array fallbacks = p_options["fallbacks"];
@@ -81,16 +83,16 @@ Error ResourceImporterBMFont::import(const String &p_source_file, const String &
 	ERR_FAIL_COND_V_MSG(err != OK, err, "Cannot load font to file \"" + p_source_file + "\".");
 
 	// Update import settings for the image files used by font.
-	for (List<String>::Element *E = image_files.front(); E; E = E->next()) {
+	for (const String &file : image_files) {
 		Ref<ConfigFile> config;
 		config.instantiate();
 
-		err = config->load(E->get() + ".import");
+		err = config->load(file + ".import");
 		if (err == OK) {
 			config->clear();
 			config->set_value("remap", "importer", "skip");
 
-			config->save(E->get() + ".import");
+			config->save(file + ".import");
 		}
 	}
 
@@ -108,7 +110,4 @@ Error ResourceImporterBMFont::import(const String &p_source_file, const String &
 	ERR_FAIL_COND_V_MSG(err != OK, err, "Cannot save font to file \"" + p_save_path + ".res\".");
 	print_verbose("Done saving to: " + p_save_path + ".fontdata");
 	return OK;
-}
-
-ResourceImporterBMFont::ResourceImporterBMFont() {
 }

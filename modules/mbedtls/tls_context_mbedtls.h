@@ -2,9 +2,11 @@
 /*  tls_context_mbedtls.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TLS_CONTEXT_MBEDTLS_H
-#define TLS_CONTEXT_MBEDTLS_H
+#pragma once
 
 #include "crypto_mbedtls.h"
 
-#include "core/io/file_access.h"
 #include "core/object/ref_counted.h"
 
 #include <mbedtls/ctr_drbg.h>
@@ -58,7 +58,7 @@ public:
 	void clear();
 
 	CookieContextMbedTLS();
-	~CookieContextMbedTLS();
+	~CookieContextMbedTLS() override;
 };
 
 class TLSContextMbedTLS : public RefCounted {
@@ -85,7 +85,5 @@ public:
 	mbedtls_ssl_context *get_context();
 
 	TLSContextMbedTLS();
-	~TLSContextMbedTLS();
+	~TLSContextMbedTLS() override;
 };
-
-#endif // TLS_CONTEXT_MBEDTLS_H

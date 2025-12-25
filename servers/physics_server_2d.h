@@ -2,9 +2,11 @@
 /*  physics_server_2d.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PHYSICS_SERVER_2D_H
-#define PHYSICS_SERVER_2D_H
+#pragma once
 
 #include "core/io/resource.h"
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
+
+constexpr int MAX_CONTACTS_REPORTED_2D_MAX = 4096;
 
 class PhysicsDirectSpaceState2D;
 template <typename T>
@@ -86,6 +89,12 @@ public:
 
 	virtual void set_sleep_state(bool p_enable) = 0;
 	virtual bool is_sleeping() const = 0;
+
+	virtual void set_collision_layer(uint32_t p_layer) = 0;
+	virtual uint32_t get_collision_layer() const = 0;
+
+	virtual void set_collision_mask(uint32_t p_mask) = 0;
+	virtual uint32_t get_collision_mask() const = 0;
 
 	virtual int get_contact_count() const = 0;
 
@@ -760,7 +769,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	PhysicsServer2D::MotionResult *get_result_ptr() const { return const_cast<PhysicsServer2D::MotionResult *>(&result); }
+	PhysicsServer2D::MotionResult *get_result_ptr() { return &result; }
 
 	Vector2 get_travel() const;
 	Vector2 get_remainder() const;
@@ -845,5 +854,3 @@ VARIANT_ENUM_CAST(PhysicsServer2D::PinJointFlag);
 VARIANT_ENUM_CAST(PhysicsServer2D::DampedSpringParam);
 VARIANT_ENUM_CAST(PhysicsServer2D::AreaBodyStatus);
 VARIANT_ENUM_CAST(PhysicsServer2D::ProcessInfo);
-
-#endif // PHYSICS_SERVER_2D_H

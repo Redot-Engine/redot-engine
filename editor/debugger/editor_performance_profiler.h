@@ -2,9 +2,11 @@
 /*  editor_performance_profiler.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_PERFORMANCE_PROFILER_H
-#define EDITOR_PERFORMANCE_PROFILER_H
+#pragma once
 
 #include "core/templates/hash_map.h"
-#include "core/templates/rb_map.h"
 #include "main/performance.h"
 #include "scene/gui/control.h"
 #include "scene/gui/label.h"
@@ -53,7 +53,7 @@ private:
 		Performance::MonitorType type = Performance::MONITOR_TYPE_QUANTITY;
 		int frame_index = 0;
 
-		Monitor();
+		Monitor() {}
 		Monitor(const String &p_name, const String &p_base, int p_frame_index, Performance::MonitorType p_type, TreeItem *p_item);
 		void update_value(float p_value);
 		void reset();
@@ -89,5 +89,3 @@ public:
 	List<float> *get_monitor_data(const StringName &p_name);
 	EditorPerformanceProfiler();
 };
-
-#endif // EDITOR_PERFORMANCE_PROFILER_H

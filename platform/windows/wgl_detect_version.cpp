@@ -2,9 +2,11 @@
 /*  wgl_detect_version.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -40,8 +42,8 @@
 #include <windows.h>
 
 #include <dwmapi.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
@@ -52,11 +54,6 @@
 #define WGL_VENDOR 0x1F00
 #define WGL_RENDERER 0x1F01
 #define WGL_VERSION 0x1F02
-
-#if defined(__GNUC__)
-// Workaround GCC warning from -Wcast-function-type.
-#define GetProcAddress (void *)GetProcAddress
-#endif
 
 typedef HGLRC(APIENTRY *PFNWGLCREATECONTEXT)(HDC);
 typedef BOOL(APIENTRY *PFNWGLDELETECONTEXT)(HGLRC);
@@ -80,10 +77,10 @@ Dictionary detect_wgl() {
 	if (!module) {
 		return gl_info;
 	}
-	gd_wglCreateContext = (PFNWGLCREATECONTEXT)GetProcAddress(module, "wglCreateContext");
-	gd_wglMakeCurrent = (PFNWGLMAKECURRENT)GetProcAddress(module, "wglMakeCurrent");
-	gd_wglDeleteContext = (PFNWGLDELETECONTEXT)GetProcAddress(module, "wglDeleteContext");
-	gd_wglGetProcAddress = (PFNWGLGETPROCADDRESS)GetProcAddress(module, "wglGetProcAddress");
+	gd_wglCreateContext = (PFNWGLCREATECONTEXT)(void *)GetProcAddress(module, "wglCreateContext");
+	gd_wglMakeCurrent = (PFNWGLMAKECURRENT)(void *)GetProcAddress(module, "wglMakeCurrent");
+	gd_wglDeleteContext = (PFNWGLDELETECONTEXT)(void *)GetProcAddress(module, "wglDeleteContext");
+	gd_wglGetProcAddress = (PFNWGLGETPROCADDRESS)(void *)GetProcAddress(module, "wglGetProcAddress");
 	if (!gd_wglCreateContext || !gd_wglMakeCurrent || !gd_wglDeleteContext || !gd_wglGetProcAddress) {
 		return gl_info;
 	}
@@ -143,7 +140,7 @@ Dictionary detect_wgl() {
 						HGLRC new_hRC = gd_wglCreateContextAttribsARB(hDC, nullptr, attribs);
 						if (new_hRC) {
 							if (gd_wglMakeCurrent(hDC, new_hRC)) {
-								PFNWGLGETSTRINGPROC gd_wglGetString = (PFNWGLGETSTRINGPROC)GetProcAddress(module, "glGetString");
+								PFNWGLGETSTRINGPROC gd_wglGetString = (PFNWGLGETSTRINGPROC)(void *)GetProcAddress(module, "glGetString");
 								if (gd_wglGetString) {
 									const char *prefixes[] = {
 										"OpenGL ES-CM ",

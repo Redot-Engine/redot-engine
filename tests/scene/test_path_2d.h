@@ -2,9 +2,11 @@
 /*  test_path_2d.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_PATH_2D_H
-#define TEST_PATH_2D_H
+#pragma once
 
 #include "scene/2d/path_2d.h"
 
@@ -105,5 +106,3 @@ TEST_CASE("[SceneTree][Path2D] Curve setter and getter") {
 }
 
 } // namespace TestPath2D
-
-#endif // TEST_PATH_2D_H

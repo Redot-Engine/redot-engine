@@ -2,9 +2,11 @@
 /*  camera_win.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -64,13 +66,13 @@ CameraFeedWindows::~CameraFeedWindows() {
 	};
 
 	///@TODO free up anything used by this
-};
+}
 
 bool CameraFeedWindows::activate_feed() {
 	///@TODO this should activate our camera and start the process of capturing frames
 
 	return true;
-};
+}
 
 ///@TODO we should probably have a callback method here that is being called by the
 // camera API which provides frames and call back into the CameraServer to update our texture
@@ -91,4 +93,4 @@ CameraWindows::CameraWindows() {
 	add_active_cameras();
 
 	// need to add something that will react to devices being connected/removed...
-};
+}

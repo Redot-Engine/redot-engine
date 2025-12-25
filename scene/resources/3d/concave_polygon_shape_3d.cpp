@@ -2,9 +2,11 @@
 /*  concave_polygon_shape_3d.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,6 +32,7 @@
 
 #include "concave_polygon_shape_3d.h"
 
+#include "scene/resources/mesh.h"
 #include "servers/physics_server_3d.h"
 
 Vector<Vector3> ConcavePolygonShape3D::get_debug_mesh_lines() const {
@@ -57,6 +60,23 @@ Vector<Vector3> ConcavePolygonShape3D::get_debug_mesh_lines() const {
 	}
 
 	return points;
+}
+
+Ref<ArrayMesh> ConcavePolygonShape3D::get_debug_arraymesh_faces(const Color &p_modulate) const {
+	Vector<Color> colors;
+
+	for (int i = 0; i < faces.size(); i++) {
+		colors.push_back(p_modulate);
+	}
+
+	Ref<ArrayMesh> mesh = memnew(ArrayMesh);
+	Array a;
+	a.resize(Mesh::ARRAY_MAX);
+	a[RS::ARRAY_VERTEX] = faces;
+	a[RS::ARRAY_COLOR] = colors;
+	mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, a);
+
+	return mesh;
 }
 
 real_t ConcavePolygonShape3D::get_enclosing_radius() const {

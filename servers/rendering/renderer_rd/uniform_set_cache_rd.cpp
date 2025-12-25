@@ -2,9 +2,11 @@
 /*  uniform_set_cache_rd.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -37,7 +39,8 @@ void UniformSetCacheRD::_bind_methods() {
 }
 
 RID UniformSetCacheRD::get_cache_array(RID p_shader, uint32_t p_set, const TypedArray<RDUniform> &p_uniforms) {
-	Vector<RD::Uniform> uniforms;
+	thread_local LocalVector<RD::Uniform> uniforms;
+	uniforms.clear();
 
 	for (int i = 0; i < p_uniforms.size(); i++) {
 		Ref<RDUniform> uniform = p_uniforms[i];

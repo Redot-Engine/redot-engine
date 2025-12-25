@@ -2,9 +2,11 @@
 /*  openxr_composition_layer_equirect.h                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_COMPOSITION_LAYER_EQUIRECT_H
-#define OPENXR_COMPOSITION_LAYER_EQUIRECT_H
+#pragma once
 
 #include <openxr/openxr.h>
 
@@ -47,15 +48,15 @@ class OpenXRCompositionLayerEquirect : public OpenXRCompositionLayer {
 		{}, // subImage
 		{ { 0, 0, 0, 0 }, { 0, 0, 0 } }, // pose
 		1.0, // radius
-		Math_PI / 2.0, // centralHorizontalAngle
-		Math_PI / 4.0, // upperVerticalAngle
-		-Math_PI / 4.0, // lowerVerticalAngle
+		Math::PI / 2.0, // centralHorizontalAngle
+		Math::PI / 4.0, // upperVerticalAngle
+		-Math::PI / 4.0, // lowerVerticalAngle
 	};
 
 	float radius = 1.0;
-	float central_horizontal_angle = Math_PI / 2.0;
-	float upper_vertical_angle = Math_PI / 4.0;
-	float lower_vertical_angle = Math_PI / 4.0;
+	float central_horizontal_angle = Math::PI / 2.0;
+	float upper_vertical_angle = Math::PI / 4.0;
+	float lower_vertical_angle = Math::PI / 4.0;
 	uint32_t fallback_segments = 10;
 
 protected:
@@ -88,5 +89,3 @@ public:
 	OpenXRCompositionLayerEquirect();
 	~OpenXRCompositionLayerEquirect();
 };
-
-#endif // OPENXR_COMPOSITION_LAYER_EQUIRECT_H

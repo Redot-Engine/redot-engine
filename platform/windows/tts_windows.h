@@ -2,9 +2,11 @@
 /*  tts_windows.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TTS_WINDOWS_H
-#define TTS_WINDOWS_H
+#pragma once
 
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
@@ -39,8 +40,8 @@
 
 #include <objbase.h>
 #include <sapi.h>
-#include <wchar.h>
 #include <winnls.h>
+#include <cwchar>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -55,9 +56,9 @@ class TTS_Windows {
 		int id;
 	};
 	HashMap<uint32_t, UTData> ids;
+	bool update_requested = false;
 
 	static void __stdcall speech_event_callback(WPARAM wParam, LPARAM lParam);
-	void _update_tts();
 
 	static TTS_Windows *singleton;
 
@@ -73,8 +74,8 @@ public:
 	void resume();
 	void stop();
 
+	void process_events();
+
 	TTS_Windows();
 	~TTS_Windows();
 };
-
-#endif // TTS_WINDOWS_H

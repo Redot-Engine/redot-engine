@@ -4,7 +4,7 @@
 		A tracked hand in XR.
 	</brief_description>
 	<description>
-		A hand tracking system will create an instance of this object and add it to the [XRServer]. This tracking system will then obtain skeleton data, convert it to the Godot Humanoid hand skeleton and store this data on the [XRHandTracker] object.
+		A hand tracking system will create an instance of this object and add it to the [XRServer]. This tracking system will then obtain skeleton data, convert it to the Redot Humanoid hand skeleton and store this data on the [XRHandTracker] object.
 		Use [XRHandModifier3D] to animate a hand mesh using hand tracking data.
 	</description>
 	<tutorials>
@@ -22,7 +22,7 @@
 			<return type="int" enum="XRHandTracker.HandJointFlags" is_bitfield="true" />
 			<param index="0" name="joint" type="int" enum="XRHandTracker.HandJoint" />
 			<description>
-				Returns flags about the validity of the tracking data for the given hand joint (see [enum XRHandTracker.HandJointFlags]).
+				Returns flags about the validity of the tracking data for the given hand joint.
 			</description>
 		</method>
 		<method name="get_hand_joint_linear_velocity" qualifiers="const">

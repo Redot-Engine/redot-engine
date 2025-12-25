@@ -2,9 +2,11 @@
 /*  skeleton_modification_2d_physicalbones.cpp                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -36,7 +38,7 @@ bool SkeletonModification2DPhysicalBones::_set(const StringName &p_path, const V
 	String path = p_path;
 
 #ifdef TOOLS_ENABLED
-	// Exposes a way to fetch the PhysicalBone2D nodes from the Godot editor.
+	// Exposes a way to fetch the PhysicalBone2D nodes from the Redot editor.
 	if (is_setup) {
 		if (Engine::get_singleton()->is_editor_hint()) {
 			if (path.begins_with("fetch_bones")) {
@@ -67,7 +69,8 @@ bool SkeletonModification2DPhysicalBones::_get(const StringName &p_path, Variant
 #ifdef TOOLS_ENABLED
 	if (Engine::get_singleton()->is_editor_hint()) {
 		if (path.begins_with("fetch_bones")) {
-			return true; // Do nothing!
+			// Do nothing!
+			return false;
 		}
 	}
 #endif //TOOLS_ENABLED
@@ -118,7 +121,7 @@ void SkeletonModification2DPhysicalBones::_execute(float p_delta) {
 			continue;
 		}
 
-		PhysicalBone2D *physical_bone = Object::cast_to<PhysicalBone2D>(ObjectDB::get_instance(bone_data.physical_bone_node_cache));
+		PhysicalBone2D *physical_bone = ObjectDB::get_instance<PhysicalBone2D>(bone_data.physical_bone_node_cache);
 		if (!physical_bone) {
 			ERR_PRINT_ONCE("PhysicalBone2D not found at index " + itos(i) + "!");
 			return;
@@ -238,7 +241,7 @@ void SkeletonModification2DPhysicalBones::_update_simulation_state() {
 	}
 	_simulation_state_dirty = false;
 
-	if (_simulation_state_dirty_names.size() <= 0) {
+	if (_simulation_state_dirty_names.is_empty()) {
 		for (int i = 0; i < physical_bone_chain.size(); i++) {
 			PhysicalBone2D *physical_bone = Object::cast_to<PhysicalBone2D>(stack->skeleton->get_node(physical_bone_chain[i].physical_bone_node));
 			if (!physical_bone) {
@@ -249,7 +252,7 @@ void SkeletonModification2DPhysicalBones::_update_simulation_state() {
 		}
 	} else {
 		for (int i = 0; i < physical_bone_chain.size(); i++) {
-			PhysicalBone2D *physical_bone = Object::cast_to<PhysicalBone2D>(ObjectDB::get_instance(physical_bone_chain[i].physical_bone_node_cache));
+			PhysicalBone2D *physical_bone = ObjectDB::get_instance<PhysicalBone2D>(physical_bone_chain[i].physical_bone_node_cache);
 			if (!physical_bone) {
 				continue;
 			}

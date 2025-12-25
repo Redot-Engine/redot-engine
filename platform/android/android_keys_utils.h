@@ -2,9 +2,11 @@
 /*  android_keys_utils.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ANDROID_KEYS_UTILS_H
-#define ANDROID_KEYS_UTILS_H
+#pragma once
 
 #include "core/os/keyboard.h"
 
@@ -196,5 +197,3 @@ static AndroidGodotLocationPair android_godot_location_pairs[] = {
 };
 
 KeyLocation godot_location_from_android_code(unsigned int p_code);
-
-#endif // ANDROID_KEYS_UTILS_H

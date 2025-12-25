@@ -2,9 +2,11 @@
 /*  gdscript_highlighter.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDSCRIPT_HIGHLIGHTER_H
-#define GDSCRIPT_HIGHLIGHTER_H
+#pragma once
 
-#include "editor/plugins/script_editor_plugin.h"
-#include "scene/gui/text_edit.h"
+#include "editor/script/script_editor_plugin.h"
 
 class GDScriptSyntaxHighlighter : public EditorSyntaxHighlighter {
 	GDCLASS(GDScriptSyntaxHighlighter, EditorSyntaxHighlighter)
@@ -89,7 +89,7 @@ private:
 	Color function_definition_color;
 	Color built_in_type_color;
 	Color number_color;
-	Color member_color;
+	Color member_variable_color;
 	Color string_color;
 	Color node_path_color;
 	Color node_ref_color;
@@ -117,5 +117,3 @@ public:
 
 	virtual Ref<EditorSyntaxHighlighter> _create() const override;
 };
-
-#endif // GDSCRIPT_HIGHLIGHTER_H

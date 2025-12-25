@@ -2,9 +2,11 @@
 /*  fsr2.h                                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FSR2_RD_H
-#define FSR2_RD_H
+#pragma once
 
 #include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_accumulate_pass.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_autogen_reactive_pass.glsl.gen.h"
@@ -41,7 +42,7 @@
 #include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_tcr_autogen_pass.glsl.gen.h"
 
 // This flag doesn't actually control anything GCC specific in FSR2. It determines
-// if symbols should be exported, which is not required for Godot.
+// if symbols should be exported, which is not required for Redot.
 #ifndef FFX_GCC
 #define FFX_GCC
 #endif
@@ -195,5 +196,3 @@ private:
 };
 
 } // namespace RendererRD
-
-#endif // FSR2_RD_H

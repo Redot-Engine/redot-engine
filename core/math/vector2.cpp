@@ -2,9 +2,11 @@
 /*  vector2.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -194,6 +196,10 @@ bool Vector2::is_equal_approx(const Vector2 &p_v) const {
 	return Math::is_equal_approx(x, p_v.x) && Math::is_equal_approx(y, p_v.y);
 }
 
+bool Vector2::is_same(const Vector2 &p_v) const {
+	return Math::is_same(x, p_v.x) && Math::is_same(y, p_v.y);
+}
+
 bool Vector2::is_zero_approx() const {
 	return Math::is_zero_approx(x) && Math::is_zero_approx(y);
 }
@@ -203,7 +209,7 @@ bool Vector2::is_finite() const {
 }
 
 Vector2::operator String() const {
-	return "(" + String::num_real(x, false) + ", " + String::num_real(y, false) + ")";
+	return "(" + String::num_real(x, true) + ", " + String::num_real(y, true) + ")";
 }
 
 Vector2::operator Vector2i() const {

@@ -2,9 +2,11 @@
 /*  node_2d.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -374,7 +376,9 @@ void Node2D::set_transform(const Transform2D &p_transform) {
 	transform = p_transform;
 	_set_xform_dirty(true);
 
-	RenderingServer::get_singleton()->canvas_item_set_transform(get_canvas_item(), transform);
+	if (!_is_using_identity_transform()) {
+		RenderingServer::get_singleton()->canvas_item_set_transform(get_canvas_item(), transform);
+	}
 
 	_notify_transform();
 }
@@ -427,6 +431,13 @@ Point2 Node2D::to_global(Point2 p_local) const {
 
 void Node2D::_notification(int p_notification) {
 	switch (p_notification) {
+		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
+			RID ae = get_accessibility_element();
+			ERR_FAIL_COND(ae.is_null());
+
+			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_CONTAINER);
+		} break;
+
 		case NOTIFICATION_ENTER_TREE: {
 			ERR_MAIN_THREAD_GUARD;
 
@@ -487,7 +498,7 @@ void Node2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_relative_transform_to_parent", "parent"), &Node2D::get_relative_transform_to_parent);
 
 	ADD_GROUP("Transform", "");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "position", PROPERTY_HINT_RANGE, "-99999,99999,0.001,or_less,or_greater,hide_slider,suffix:px"), "set_position", "get_position");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "position", PROPERTY_HINT_RANGE, "-99999,99999,or_less,or_greater,hide_slider,suffix:px"), "set_position", "get_position");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation", PROPERTY_HINT_RANGE, "-360,360,0.1,or_less,or_greater,radians_as_degrees"), "set_rotation", "get_rotation");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_degrees", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_rotation_degrees", "get_rotation_degrees");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "scale", PROPERTY_HINT_LINK), "set_scale", "get_scale");

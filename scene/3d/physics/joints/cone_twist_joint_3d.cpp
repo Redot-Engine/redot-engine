@@ -2,9 +2,11 @@
 /*  cone_twist_joint_3d.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -87,8 +89,8 @@ void ConeTwistJoint3D::_configure_joint(RID p_joint, PhysicsBody3D *body_a, Phys
 }
 
 ConeTwistJoint3D::ConeTwistJoint3D() {
-	params[PARAM_SWING_SPAN] = Math_PI * 0.25;
-	params[PARAM_TWIST_SPAN] = Math_PI;
+	params[PARAM_SWING_SPAN] = Math::PI * 0.25;
+	params[PARAM_TWIST_SPAN] = Math::PI;
 	params[PARAM_BIAS] = 0.3;
 	params[PARAM_SOFTNESS] = 0.8;
 	params[PARAM_RELAXATION] = 1.0;

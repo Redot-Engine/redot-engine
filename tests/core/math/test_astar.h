@@ -2,9 +2,11 @@
 /*  test_astar.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_ASTAR_H
-#define TEST_ASTAR_H
+#pragma once
 
 #include "core/math/a_star.h"
 
@@ -215,7 +216,7 @@ TEST_CASE("[AStar3D] Add/Remove") {
 
 TEST_CASE("[Stress][AStar3D] Find paths") {
 	// Random stress tests with Floyd-Warshall.
-	const int N = 30;
+	constexpr int N = 30;
 	Math::seed(0);
 
 	for (int test = 0; test < 1000; test++) {
@@ -281,7 +282,7 @@ TEST_CASE("[Stress][AStar3D] Find paths") {
 		float d[N][N];
 		for (int u = 0; u < N; u++) {
 			for (int v = 0; v < N; v++) {
-				d[u][v] = (u == v || adj[u][v]) ? p[u].distance_to(p[v]) : INFINITY;
+				d[u][v] = (u == v || adj[u][v]) ? p[u].distance_to(p[v]) : Math::INF;
 			}
 		}
 		for (int w = 0; w < N; w++) {
@@ -358,5 +359,3 @@ TEST_CASE("[Stress][AStar3D] Find paths") {
 	}
 }
 } // namespace TestAStar
-
-#endif // TEST_ASTAR_H

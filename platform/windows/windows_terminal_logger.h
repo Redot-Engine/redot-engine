@@ -2,9 +2,11 @@
 /*  windows_terminal_logger.h                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WINDOWS_TERMINAL_LOGGER_H
-#define WINDOWS_TERMINAL_LOGGER_H
+#pragma once
 
 #ifdef WINDOWS_ENABLED
 
@@ -38,10 +39,8 @@
 class WindowsTerminalLogger : public StdLogger {
 public:
 	virtual void logv(const char *p_format, va_list p_list, bool p_err) override;
-	virtual void log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify = false, ErrorType p_type = ERR_ERROR) override;
+	virtual void log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify = false, ErrorType p_type = ERR_ERROR, const Vector<Ref<ScriptBacktrace>> &p_script_backtraces = {}) override;
 	virtual ~WindowsTerminalLogger();
 };
 
 #endif // WINDOWS_ENABLED
-
-#endif // WINDOWS_TERMINAL_LOGGER_H

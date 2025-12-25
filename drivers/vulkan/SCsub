@@ -8,11 +8,11 @@ thirdparty_dir = "#thirdparty/vulkan"
 thirdparty_volk_dir = "#thirdparty/volk"
 
 # Use bundled Vulkan headers
-env.Prepend(CPPPATH=[thirdparty_dir, thirdparty_dir + "/include"])
+env.Prepend(CPPEXTPATH=[thirdparty_dir, thirdparty_dir + "/include"])
 
 if env["use_volk"]:
     env.AppendUnique(CPPDEFINES=["USE_VOLK"])
-    env.Prepend(CPPPATH=[thirdparty_volk_dir])
+    env.Prepend(CPPEXTPATH=[thirdparty_volk_dir])
 
 if env["platform"] == "android":
     env.AppendUnique(CPPDEFINES=["VK_USE_PLATFORM_ANDROID_KHR"])
@@ -54,7 +54,7 @@ env_thirdparty_vma.add_source_files(thirdparty_obj, thirdparty_sources_vma)
 env.drivers_sources += thirdparty_obj
 
 
-# Godot source files
+# Redot source files
 
 driver_obj = []
 

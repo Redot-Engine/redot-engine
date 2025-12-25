@@ -2,9 +2,11 @@
 /*  dxil_hash.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -96,7 +98,7 @@ void compute_dxil_hash(const BYTE *pData, UINT byteCount, BYTE *pOutHash) {
 	UINT NextEndState = bTwoRowsPadding ? N - 2 : N - 1;
 	const BYTE *pCurrData = pData;
 	for (UINT i = 0; i < N; i++, offset += 64, pCurrData += 64) {
-		UINT x[16];
+		UINT x[16] = {};
 		const UINT *pX;
 		if (i == NextEndState) {
 			if (!bTwoRowsPadding && i == N - 1) {

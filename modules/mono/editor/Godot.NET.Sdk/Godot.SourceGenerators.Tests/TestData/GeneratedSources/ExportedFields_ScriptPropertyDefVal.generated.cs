@@ -4,7 +4,7 @@ partial class ExportedFields
 #if TOOLS
     /// <summary>
     /// Get the default values for all properties declared in this class.
-    /// This method is used by Godot to determine the value that will be
+    /// This method is used by Redot to determine the value that will be
     /// used by the inspector when resetting properties.
     /// Do not call this method.
     /// </summary>
@@ -22,7 +22,7 @@ partial class ExportedFields
         values.Add(PropertyName.@_fieldInt16, global::Godot.Variant.From<short>(___fieldInt16_default_value));
         int ___fieldInt32_default_value = 10;
         values.Add(PropertyName.@_fieldInt32, global::Godot.Variant.From<int>(___fieldInt32_default_value));
-        long ___fieldInt64_default_value = 10;
+        long ___fieldInt64_default_value = -10_000;
         values.Add(PropertyName.@_fieldInt64, global::Godot.Variant.From<long>(___fieldInt64_default_value));
         byte ___fieldByte_default_value = 10;
         values.Add(PropertyName.@_fieldByte, global::Godot.Variant.From<byte>(___fieldByte_default_value));

@@ -2,9 +2,11 @@
 /*  midi_driver.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MIDI_DRIVER_H
-#define MIDI_DRIVER_H
+#pragma once
 
 #include "core/typedefs.h"
 #include "core/variant/variant.h"
@@ -110,5 +111,3 @@ public:
 
 	PackedStringArray get_connected_inputs() const;
 };
-
-#endif // MIDI_DRIVER_H

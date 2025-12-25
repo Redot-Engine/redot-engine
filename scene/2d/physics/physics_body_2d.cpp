@@ -2,9 +2,11 @@
 /*  physics_body_2d.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -126,8 +128,7 @@ bool PhysicsBody2D::test_move(const Transform2D &p_from, const Vector2 &p_motion
 	PhysicsServer2D::MotionResult *r = nullptr;
 	PhysicsServer2D::MotionResult temp_result;
 	if (r_collision.is_valid()) {
-		// Needs const_cast because method bindings don't support non-const Ref.
-		r = const_cast<PhysicsServer2D::MotionResult *>(&r_collision->result);
+		r = &r_collision->result;
 	} else {
 		r = &temp_result;
 	}
@@ -169,4 +170,14 @@ void PhysicsBody2D::remove_collision_exception_with(Node *p_node) {
 	PhysicsBody2D *physics_body = Object::cast_to<PhysicsBody2D>(p_node);
 	ERR_FAIL_NULL_MSG(physics_body, "Collision exception only works between two nodes that inherit from PhysicsBody2D.");
 	PhysicsServer2D::get_singleton()->body_remove_collision_exception(get_rid(), physics_body->get_rid());
+}
+
+PackedStringArray PhysicsBody2D::get_configuration_warnings() const {
+	PackedStringArray warnings = CollisionObject2D::get_configuration_warnings();
+
+	if (SceneTree::is_fti_enabled_in_project() && !is_physics_interpolated()) {
+		warnings.push_back(RTR("PhysicsBody2D will not work correctly on a non-interpolated branch of the SceneTree.\nCheck the node's inherited physics_interpolation_mode."));
+	}
+
+	return warnings;
 }

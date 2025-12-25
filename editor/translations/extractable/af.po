@@ -4,8 +4,8 @@
 # This file is distributed under the same license as the Godot source code.
 msgid ""
 msgstr ""
-"Project-Id-Version: Godot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Project-Id-Version: Redot Engine extractable strings\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2023-11-19 00:26+0000\n"
 "Last-Translator: Mad Murdock <madmurdock011@gmail.com>\n"
@@ -18,11 +18,14 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.2\n"
 
+msgid "All Recognized"
+msgstr "Alle Erkende"
+
 msgid "Open"
 msgstr "Oop"
 
-msgid "All Recognized"
-msgstr "Alle Erkende"
+msgid "Save"
+msgstr "Stoor"
 
 msgid "Open a File"
 msgstr "Open 'n Lêer"
@@ -35,9 +38,6 @@ msgstr "Open 'n Gids"
 
 msgid "Open a File or Directory"
 msgstr "Open 'n Lêer of Gids"
-
-msgid "Save"
-msgstr "Stoor"
 
 msgid "Save a File"
 msgstr "Stoor 'n Lêer"

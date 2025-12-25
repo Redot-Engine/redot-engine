@@ -2,9 +2,11 @@
 /*  editor_plugin_settings.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_PLUGIN_SETTINGS_H
-#define EDITOR_PLUGIN_SETTINGS_H
+#pragma once
 
-#include "editor/editor_data.h"
 #include "editor/plugins/plugin_config_dialog.h"
 
+class TextureRect;
 class Tree;
 
 class EditorPluginSettings : public VBoxContainer {
@@ -55,6 +56,7 @@ class EditorPluginSettings : public VBoxContainer {
 	};
 
 	PluginConfigDialog *plugin_config_dialog = nullptr;
+	TextureRect *recovery_mode_icon = nullptr;
 	Tree *plugin_list = nullptr;
 	bool updating = false;
 
@@ -72,5 +74,3 @@ public:
 
 	EditorPluginSettings();
 };
-
-#endif // EDITOR_PLUGIN_SETTINGS_H

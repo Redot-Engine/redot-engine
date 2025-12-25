@@ -114,13 +114,13 @@ namespace Godot.SourceGenerators
                     source.Append("partial ");
                     source.Append(containingType.GetDeclarationKeyword());
                     source.Append(" ");
-                    source.Append(containingType.NameWithTypeParameters());
+                    source.Append(containingType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
                     source.Append("\n{\n");
                 }
             }
 
             source.Append("partial class ");
-            source.Append(symbol.NameWithTypeParameters());
+            source.Append(symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
             source.Append("\n{\n");
 
             var members = symbol.GetMembers();
@@ -175,7 +175,7 @@ namespace Godot.SourceGenerators
 
                 source.Append("    /// <summary>\n")
                     .Append("    /// Get the method information for all the methods declared in this class.\n")
-                    .Append("    /// This method is used by Godot to register the available methods in the editor.\n")
+                    .Append("    /// This method is used by Redot to register the available methods in the editor.\n")
                     .Append("    /// Do not call this method.\n")
                     .Append("    /// </summary>\n");
 

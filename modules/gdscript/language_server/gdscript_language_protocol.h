@@ -2,9 +2,11 @@
 /*  gdscript_language_protocol.h                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,23 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDSCRIPT_LANGUAGE_PROTOCOL_H
-#define GDSCRIPT_LANGUAGE_PROTOCOL_H
+#pragma once
 
 #include "gdscript_text_document.h"
 #include "gdscript_workspace.h"
-#include "godot_lsp.h"
 
-#include "core/io/stream_peer.h"
 #include "core/io/stream_peer_tcp.h"
 #include "core/io/tcp_server.h"
 
-#include "modules/modules_enabled.gen.h" // For jsonrpc.
-#ifdef MODULE_JSONRPC_ENABLED
 #include "modules/jsonrpc/jsonrpc.h"
-#else
-#error "Can't build GDScript LSP without JSONRPC module."
-#endif
 
 #define LSP_MAX_BUFFER_SIZE 4194304
 #define LSP_MAX_CLIENTS 8
@@ -117,5 +111,3 @@ public:
 
 	GDScriptLanguageProtocol();
 };
-
-#endif // GDSCRIPT_LANGUAGE_PROTOCOL_H

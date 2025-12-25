@@ -2,9 +2,11 @@
 /*  physics_material.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PHYSICS_MATERIAL_H
-#define PHYSICS_MATERIAL_H
+#pragma once
 
+#if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 #include "core/io/resource.h"
-#include "servers/physics_server_3d.h"
 
 class PhysicsMaterial : public Resource {
 	GDCLASS(PhysicsMaterial, Resource);
@@ -67,8 +68,5 @@ public:
 	_FORCE_INLINE_ real_t computed_bounce() const {
 		return absorbent ? -bounce : bounce;
 	}
-
-	PhysicsMaterial() {}
 };
-
-#endif // PHYSICS_MATERIAL_H
+#endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)

@@ -2,9 +2,11 @@
 /*  audio_effect_chorus.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -72,7 +74,7 @@ void AudioEffectChorusInstance::_process_chunk(const AudioFrame *p_src_frames, A
 		float max_depth_frames = (v.depth / 1000.0) * mix_rate;
 
 		uint64_t local_cycles = cycles[vc];
-		uint64_t increment = llrint(cycles_to_mix / (double)p_frame_count * (double)(1 << AudioEffectChorus::CYCLES_FRAC));
+		uint64_t increment = std::rint(cycles_to_mix / (double)p_frame_count * (double)(1 << AudioEffectChorus::CYCLES_FRAC));
 
 		//check the LFO doesn't read ahead of the write pos
 		if ((((unsigned int)max_depth_frames) + 10) > delay_frames) { //10 as some threshold to avoid precision stuff
@@ -84,7 +86,7 @@ void AudioEffectChorusInstance::_process_chunk(const AudioFrame *p_src_frames, A
 		if (v.cutoff == 0) {
 			continue;
 		}
-		float auxlp = expf(-Math_TAU * v.cutoff / mix_rate);
+		float auxlp = std::exp(-Math::TAU * v.cutoff / mix_rate);
 		float c1 = 1.0 - auxlp;
 		float c2 = auxlp;
 		AudioFrame h = filter_h[vc];
@@ -104,9 +106,9 @@ void AudioEffectChorusInstance::_process_chunk(const AudioFrame *p_src_frames, A
 
 			float phase = (float)(local_cycles & AudioEffectChorus::CYCLES_MASK) / (float)(1 << AudioEffectChorus::CYCLES_FRAC);
 
-			float wave_delay = sinf(phase * Math_TAU) * max_depth_frames;
+			float wave_delay = std::sin(phase * Math::TAU) * max_depth_frames;
 
-			int wave_delay_frames = lrint(floor(wave_delay));
+			int wave_delay_frames = std::rint(std::floor(wave_delay));
 			float wave_delay_frac = wave_delay - (float)wave_delay_frames;
 
 			/** COMPUTE RINGBUFFER POS**/
@@ -274,7 +276,7 @@ float AudioEffectChorus::get_dry() const {
 
 void AudioEffectChorus::_validate_property(PropertyInfo &p_property) const {
 	if (p_property.name.begins_with("voice/")) {
-		int voice_idx = p_property.name.get_slice("/", 1).to_int();
+		int voice_idx = p_property.name.get_slicec('/', 1).to_int();
 		if (voice_idx > voice_count) {
 			p_property.usage = PROPERTY_USAGE_NONE;
 		}

@@ -2,9 +2,11 @@
 /*  ip.h                                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IP_H
-#define IP_H
+#pragma once
 
 #include "core/io/ip_address.h"
 #include "core/os/os.h"
@@ -68,7 +69,7 @@ private:
 	_IP_ResolverPrivate *resolver = nullptr;
 
 protected:
-	static IP *singleton;
+	static inline IP *singleton = nullptr;
 	static void _bind_methods();
 
 	PackedStringArray _get_local_addresses() const;
@@ -110,5 +111,3 @@ public:
 
 VARIANT_ENUM_CAST(IP::Type);
 VARIANT_ENUM_CAST(IP::ResolverStatus);
-
-#endif // IP_H

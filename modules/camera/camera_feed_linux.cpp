@@ -2,9 +2,11 @@
 /*  camera_feed_linux.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,6 +32,8 @@
 
 #include "camera_feed_linux.h"
 
+#include "servers/rendering_server.h"
+
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -50,7 +54,7 @@ void CameraFeedLinux::_update_buffer() {
 }
 
 void CameraFeedLinux::_query_device(const String &p_device_name) {
-	file_descriptor = open(p_device_name.ascii(), O_RDWR | O_NONBLOCK, 0);
+	file_descriptor = open(p_device_name.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 	ERR_FAIL_COND_MSG(file_descriptor == -1, vformat("Cannot open file descriptor for %s. Error: %d.", p_device_name, errno));
 
 	struct v4l2_capability capability;
@@ -145,7 +149,7 @@ bool CameraFeedLinux::_request_buffers() {
 		}
 
 		buffers[i].length = buffer.length;
-		buffers[i].start = mmap(NULL, buffer.length, PROT_READ | PROT_WRITE, MAP_SHARED, file_descriptor, buffer.m.offset);
+		buffers[i].start = mmap(nullptr, buffer.length, PROT_READ | PROT_WRITE, MAP_SHARED, file_descriptor, buffer.m.offset);
 
 		if (buffers[i].start == MAP_FAILED) {
 			for (unsigned int b = 0; b < i; b++) {
@@ -202,8 +206,6 @@ void CameraFeedLinux::_read_frame() {
 	if (ioctl(file_descriptor, VIDIOC_QBUF, &buffer) == -1) {
 		print_error(vformat("ioctl(VIDIOC_QBUF) error: %d.", errno));
 	}
-
-	emit_signal(SNAME("frame_changed"));
 }
 
 void CameraFeedLinux::_stop_capturing() {
@@ -233,7 +235,7 @@ String CameraFeedLinux::get_device_name() const {
 
 bool CameraFeedLinux::activate_feed() {
 	ERR_FAIL_COND_V_MSG(selected_format == -1, false, "CameraFeed format needs to be set before activating.");
-	file_descriptor = open(device_name.ascii(), O_RDWR | O_NONBLOCK, 0);
+	file_descriptor = open(device_name.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 	if (_request_buffers() && _start_capturing()) {
 		buffer_decoder = _create_buffer_decoder();
 		_start_thread();
@@ -313,7 +315,7 @@ bool CameraFeedLinux::set_format(int p_index, const Dictionary &p_parameters) {
 
 	FeedFormat feed_format = formats[p_index];
 
-	file_descriptor = open(device_name.ascii(), O_RDWR | O_NONBLOCK, 0);
+	file_descriptor = open(device_name.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 
 	struct v4l2_format format;
 	memset(&format, 0, sizeof(format));

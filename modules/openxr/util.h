@@ -2,9 +2,11 @@
 /*  util.h                                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef UTIL_H
-#define UTIL_H
+#pragma once
 
 #define UNPACK(...) __VA_ARGS__
 
@@ -127,5 +128,3 @@
 		}                                                                                                                                                                                                              \
 		return (*func_name##_ptr)(p_##arg1, p_##arg2, p_##arg3, p_##arg4, p_##arg5, p_##arg6);                                                                                                                         \
 	}
-
-#endif // UTIL_H

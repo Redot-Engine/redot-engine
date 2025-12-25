@@ -2,9 +2,11 @@
 /*  godot_area_pair_3d.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_AREA_PAIR_3D_H
-#define GODOT_AREA_PAIR_3D_H
+#pragma once
 
 #include "godot_area_3d.h"
 #include "godot_body_3d.h"
@@ -94,5 +95,3 @@ public:
 	GodotAreaSoftBodyPair3D(GodotSoftBody3D *p_sof_body, int p_soft_body_shape, GodotArea3D *p_area, int p_area_shape);
 	~GodotAreaSoftBodyPair3D();
 };
-
-#endif // GODOT_AREA_PAIR_3D_H

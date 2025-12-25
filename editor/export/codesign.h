@@ -2,9 +2,11 @@
 /*  codesign.h                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CODESIGN_H
-#define CODESIGN_H
+#pragma once
 
 // macOS code signature creation utility.
 //
@@ -41,18 +42,8 @@
 //  - Requirements code generator is not implemented (only hard-coded requirements for the ad-hoc signing is supported).
 //  - RFC5652/CMS blob generation is not implemented, supports ad-hoc signing only.
 
-#include "core/crypto/crypto_core.h"
-#include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/plist.h"
 #include "core/object/ref_counted.h"
-
-#include "modules/modules_enabled.gen.h" // For regex.
-#ifdef MODULE_REGEX_ENABLED
-#include "modules/regex/regex.h"
-#endif
-
-#ifdef MODULE_REGEX_ENABLED
 
 /*************************************************************************/
 /* CodeSignCodeResources                                                 */
@@ -124,6 +115,8 @@ public:
 /*************************************************************************/
 
 class CodeSignBlob : public RefCounted {
+	GDSOFTCLASS(CodeSignBlob, RefCounted);
+
 public:
 	virtual PackedByteArray get_hash_sha1() const = 0;
 	virtual PackedByteArray get_hash_sha256() const = 0;
@@ -166,7 +159,7 @@ public:
 
 	virtual int get_size() const override;
 
-	virtual uint32_t get_index_type() const override { return 0x00000002; };
+	virtual uint32_t get_index_type() const override { return 0x00000002; }
 	virtual void write_to_file(Ref<FileAccess> p_file) const override;
 };
 
@@ -188,7 +181,7 @@ public:
 
 	virtual int get_size() const override;
 
-	virtual uint32_t get_index_type() const override { return 0x00000005; };
+	virtual uint32_t get_index_type() const override { return 0x00000005; }
 	virtual void write_to_file(Ref<FileAccess> p_file) const override;
 };
 
@@ -210,7 +203,7 @@ public:
 
 	virtual int get_size() const override;
 
-	virtual uint32_t get_index_type() const override { return 0x00000007; };
+	virtual uint32_t get_index_type() const override { return 0x00000007; }
 	virtual void write_to_file(Ref<FileAccess> p_file) const override;
 };
 
@@ -285,7 +278,7 @@ private:
 		uint32_t spare3; // Not used.
 		uint64_t code_limit_64; // Set to 0 and ignore.
 		// Version 0x20400
-		uint64_t exec_seg_base; // Start of the signed code segmet.
+		uint64_t exec_seg_base; // Start of the signed code segment.
 		uint64_t exec_seg_limit; // Code segment (__TEXT) vmsize.
 		uint64_t exec_seg_flags; // Executable segment flags.
 		// Version 0x20500
@@ -311,7 +304,7 @@ public:
 	virtual PackedByteArray get_hash_sha256() const override;
 
 	virtual int get_size() const override;
-	virtual uint32_t get_index_type() const override { return 0x00000000; };
+	virtual uint32_t get_index_type() const override { return 0x00000000; }
 
 	virtual void write_to_file(Ref<FileAccess> p_file) const override;
 };
@@ -330,7 +323,7 @@ public:
 	virtual PackedByteArray get_hash_sha256() const override;
 
 	virtual int get_size() const override;
-	virtual uint32_t get_index_type() const override { return 0x00010000; };
+	virtual uint32_t get_index_type() const override { return 0x00010000; }
 
 	virtual void write_to_file(Ref<FileAccess> p_file) const override;
 };
@@ -361,7 +354,3 @@ class CodeSign {
 public:
 	static Error codesign(bool p_use_hardened_runtime, bool p_force, const String &p_path, const String &p_ent_path, String &r_error_msg);
 };
-
-#endif // MODULE_REGEX_ENABLED
-
-#endif // CODESIGN_H

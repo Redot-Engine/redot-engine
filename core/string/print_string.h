@@ -2,9 +2,11 @@
 /*  print_string.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PRINT_STRING_H
-#define PRINT_STRING_H
+#pragma once
 
 #include "core/variant/variant.h"
 
@@ -58,6 +59,7 @@ void remove_print_handler(const PrintHandlerList *p_handler);
 
 extern void __print_line(const String &p_string);
 extern void __print_line_rich(const String &p_string);
+extern void print_raw(const String &p_string);
 extern void print_error(const String &p_string);
 extern bool is_print_verbose_enabled();
 
@@ -86,5 +88,3 @@ template <typename... Args>
 void print_line_rich(const Variant &p_var, Args... p_args) {
 	__print_line_rich(stringify_variants(p_var, p_args...));
 }
-
-#endif // PRINT_STRING_H

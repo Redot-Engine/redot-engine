@@ -2,9 +2,11 @@
 /*  hostfxr_resolver.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef HOSTFXR_RESOLVER_H
-#define HOSTFXR_RESOLVER_H
+#pragma once
 
 #include "core/string/ustring.h"
 
@@ -41,5 +42,3 @@ bool try_get_path(String &r_out_dotnet_root, String &r_out_fxr_path);
 
 } //namespace hostfxr_resolver
 } //namespace godotsharp
-
-#endif // HOSTFXR_RESOLVER_H

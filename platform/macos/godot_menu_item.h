@@ -2,9 +2,11 @@
 /*  godot_menu_item.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_MENU_ITEM_H
-#define GODOT_MENU_ITEM_H
+#pragma once
 
 #include "servers/display_server.h"
 
@@ -51,6 +52,7 @@ enum GlobalMenuCheckType {
 	Callable key_callback;
 	Callable hover_callback;
 	Variant meta;
+	Key accel;
 	GlobalMenuCheckType checkable_type;
 	bool checked;
 	int max_states;
@@ -59,5 +61,3 @@ enum GlobalMenuCheckType {
 }
 
 @end
-
-#endif // GODOT_MENU_ITEM_H

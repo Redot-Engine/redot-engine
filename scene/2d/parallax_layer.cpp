@@ -2,9 +2,11 @@
 /*  parallax_layer.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -118,12 +120,12 @@ void ParallaxLayer::set_base_offset_and_scale(const Point2 &p_offset, real_t p_s
 
 	if (mirroring.x) {
 		real_t den = mirroring.x * p_scale;
-		new_ofs.x -= den * ceil(new_ofs.x / den);
+		new_ofs.x -= den * std::ceil(new_ofs.x / den);
 	}
 
 	if (mirroring.y) {
 		real_t den = mirroring.y * p_scale;
-		new_ofs.y -= den * ceil(new_ofs.y / den);
+		new_ofs.y -= den * std::ceil(new_ofs.y / den);
 	}
 
 	set_position(new_ofs);

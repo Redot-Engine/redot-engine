@@ -2,9 +2,11 @@
 /*  ring_buffer.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RING_BUFFER_H
-#define RING_BUFFER_H
+#pragma once
 
-#include "core/templates/vector.h"
+#include "core/templates/local_vector.h"
 
 template <typename T>
 class RingBuffer {
-	Vector<T> data;
+	LocalVector<T> data;
 	int read_pos = 0;
 	int write_pos = 0;
 	int size_mask;
@@ -143,7 +144,7 @@ public:
 
 	Error write(const T &p_v) {
 		ERR_FAIL_COND_V(space_left() < 1, FAILED);
-		data.write[inc(write_pos, 1)] = p_v;
+		data[inc(write_pos, 1)] = p_v;
 		return OK;
 	}
 
@@ -160,7 +161,7 @@ public:
 			int total = end - pos;
 
 			for (int i = 0; i < total; i++) {
-				data.write[pos + i] = p_buf[src++];
+				data[pos + i] = p_buf[src++];
 			}
 			to_write -= total;
 			pos = 0;
@@ -200,7 +201,7 @@ public:
 		data.resize(int64_t(1) << int64_t(p_power));
 		if (old_size < new_size && read_pos > write_pos) {
 			for (int i = 0; i < write_pos; i++) {
-				data.write[(old_size + i) & mask] = data[i];
+				data[(old_size + i) & mask] = data[i];
 			}
 			write_pos = (old_size + write_pos) & mask;
 		} else {
@@ -216,5 +217,3 @@ public:
 	}
 	~RingBuffer() {}
 };
-
-#endif // RING_BUFFER_H

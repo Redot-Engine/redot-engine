@@ -2,9 +2,11 @@
 /*  multiplayer_peer.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MULTIPLAYER_PEER_H
-#define MULTIPLAYER_PEER_H
+#pragma once
 
 #include "core/io/packet_peer.h"
 
@@ -93,8 +94,6 @@ public:
 	virtual ConnectionStatus get_connection_status() const = 0;
 
 	uint32_t generate_unique_id() const;
-
-	MultiplayerPeer() {}
 };
 
 VARIANT_ENUM_CAST(MultiplayerPeer::ConnectionStatus);
@@ -146,5 +145,3 @@ public:
 	EXBIND0RC(int, get_unique_id);
 	EXBIND0RC(ConnectionStatus, get_connection_status);
 };
-
-#endif // MULTIPLAYER_PEER_H

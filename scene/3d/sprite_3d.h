@@ -2,9 +2,11 @@
 /*  sprite_3d.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SPRITE_3D_H
-#define SPRITE_3D_H
+#pragma once
 
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/sprite_frames.h"
@@ -172,7 +173,7 @@ public:
 
 	virtual AABB get_aabb() const override;
 
-	Ref<TriangleMesh> generate_triangle_mesh() const;
+	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
 
 	SpriteBase3D();
 	~SpriteBase3D();
@@ -231,7 +232,7 @@ class AnimatedSprite3D : public SpriteBase3D {
 	String autoplay;
 
 	bool playing = false;
-	StringName animation = "default";
+	StringName animation = SceneStringName(default_);
 	int frame = 0;
 	float speed_scale = 1.0;
 	float custom_speed_scale = 1.0;
@@ -296,5 +297,3 @@ public:
 
 VARIANT_ENUM_CAST(SpriteBase3D::DrawFlags);
 VARIANT_ENUM_CAST(SpriteBase3D::AlphaCutMode);
-
-#endif // SPRITE_3D_H

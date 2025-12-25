@@ -2,9 +2,11 @@
 /*  openxr_palm_pose_extension.h                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_PALM_POSE_EXTENSION_H
-#define OPENXR_PALM_POSE_EXTENSION_H
+#pragma once
 
 #include "openxr_extension_wrapper.h"
 
 class OpenXRPalmPoseExtension : public OpenXRExtensionWrapper {
+	GDCLASS(OpenXRPalmPoseExtension, OpenXRExtensionWrapper);
+
+protected:
+	static void _bind_methods() {}
+
 public:
 	static OpenXRPalmPoseExtension *get_singleton();
 
@@ -49,5 +55,3 @@ private:
 
 	bool available = false;
 };
-
-#endif // OPENXR_PALM_POSE_EXTENSION_H

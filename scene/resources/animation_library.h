@@ -2,9 +2,11 @@
 /*  animation_library.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ANIMATION_LIBRARY_H
-#define ANIMATION_LIBRARY_H
+#pragma once
 
 #include "core/variant/typed_array.h"
 #include "scene/resources/animation.h"
@@ -61,6 +62,7 @@ public:
 	bool has_animation(const StringName &p_name) const;
 	Ref<Animation> get_animation(const StringName &p_name) const;
 	void get_animation_list(List<StringName> *p_animations) const;
+	int get_animation_list_size() const;
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
@@ -68,5 +70,3 @@ public:
 
 	AnimationLibrary();
 };
-
-#endif // ANIMATION_LIBRARY_H

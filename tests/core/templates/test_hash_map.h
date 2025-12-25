@@ -2,9 +2,11 @@
 /*  test_hash_map.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_HASH_MAP_H
-#define TEST_HASH_MAP_H
+#pragma once
 
 #include "core/templates/hash_map.h"
 
 #include "tests/test_macros.h"
 
 namespace TestHashMap {
+
+TEST_CASE("[HashMap] List initialization") {
+	HashMap<int, String> map{ { 0, "A" }, { 1, "B" }, { 2, "C" }, { 3, "D" }, { 4, "E" } };
+
+	CHECK(map.size() == 5);
+	CHECK(map[0] == "A");
+	CHECK(map[1] == "B");
+	CHECK(map[2] == "C");
+	CHECK(map[3] == "D");
+	CHECK(map[4] == "E");
+}
+
+TEST_CASE("[HashMap] List initialization with existing elements") {
+	HashMap<int, String> map{ { 0, "A" }, { 0, "B" }, { 0, "C" }, { 0, "D" }, { 0, "E" } };
+
+	CHECK(map.size() == 1);
+	CHECK(map[0] == "E");
+}
 
 TEST_CASE("[HashMap] Insert element") {
 	HashMap<int, int> map;
@@ -128,6 +147,32 @@ TEST_CASE("[HashMap] Const iteration") {
 		++idx;
 	}
 }
-} // namespace TestHashMap
 
-#endif // TEST_HASH_MAP_H
+TEST_CASE("[HashMap] Sort") {
+	HashMap<int, int> hashmap;
+	int shuffled_ints[]{ 6, 1, 9, 8, 3, 0, 4, 5, 7, 2 };
+
+	for (int i : shuffled_ints) {
+		hashmap[i] = i;
+	}
+	hashmap.sort();
+
+	int i = 0;
+	for (const KeyValue<int, int> &kv : hashmap) {
+		CHECK_EQ(kv.key, i);
+		i++;
+	}
+
+	struct ReverseSort {
+		bool operator()(const KeyValue<int, int> &p_a, const KeyValue<int, int> &p_b) {
+			return p_a.key > p_b.key;
+		}
+	};
+	hashmap.sort_custom<ReverseSort>();
+
+	for (const KeyValue<int, int> &kv : hashmap) {
+		i--;
+		CHECK_EQ(kv.key, i);
+	}
+}
+} // namespace TestHashMap

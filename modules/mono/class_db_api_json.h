@@ -2,9 +2,11 @@
 /*  class_db_api_json.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,19 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CLASS_DB_API_JSON_H
-#define CLASS_DB_API_JSON_H
+#pragma once
 
-// 'core/object/method_bind.h' defines DEBUG_METHODS_ENABLED, but it looks like we
-// cannot include it here. That's why we include it through 'core/object/class_db.h'.
+#ifdef DEBUG_ENABLED
+
 #include "core/object/class_db.h"
-
-#ifdef DEBUG_METHODS_ENABLED
-
-#include "core/string/ustring.h"
 
 void class_db_api_to_json(const String &p_output_file, ClassDB::APIType p_api);
 
-#endif // DEBUG_METHODS_ENABLED
-
-#endif // CLASS_DB_API_JSON_H
+#endif // DEBUG_ENABLED

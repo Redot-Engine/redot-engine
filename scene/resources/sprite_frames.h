@@ -2,9 +2,11 @@
 /*  sprite_frames.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,16 +30,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SPRITE_FRAMES_H
-#define SPRITE_FRAMES_H
+#pragma once
 
+#include "core/io/image_frames.h"
+#include "core/io/resource_loader.h"
 #include "scene/resources/texture.h"
+#include "scene/scene_string_names.h"
 
 static const float SPRITE_FRAME_MINIMUM_DURATION = 0.01;
 
 class SpriteFrames : public Resource {
 	GDCLASS(SpriteFrames, Resource);
 
+public:
+	static constexpr int FORMAT_VERSION = 1;
+
+private:
 	struct Frame {
 		Ref<Texture2D> texture;
 		float duration = 1.0;
@@ -58,6 +66,8 @@ protected:
 	static void _bind_methods();
 
 public:
+	Error load(const String &p_path);
+
 	void add_animation(const StringName &p_anim);
 	bool has_animation(const StringName &p_anim) const;
 	void duplicate_animation(const StringName &p_from, const StringName &p_to);
@@ -108,7 +118,18 @@ public:
 	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
 #endif
 
+	void set_from_image_frames(const Ref<ImageFrames> &p_image_frames, const StringName &p_anim = SceneStringName(default_));
+	static Ref<SpriteFrames> create_from_image_frames(const Ref<ImageFrames> &p_image_frames);
+
+	Ref<ImageFrames> make_image_frames(const StringName &p_anim = SceneStringName(default_)) const;
+
 	SpriteFrames();
 };
 
-#endif // SPRITE_FRAMES_H
+class ResourceFormatLoaderSpriteFrames : public ResourceFormatLoader {
+public:
+	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
+	virtual bool handles_type(const String &p_type) const override;
+	virtual String get_resource_type(const String &p_path) const override;
+};

@@ -2,9 +2,11 @@
 /*  zip_io.h                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ZIP_IO_H
-#define ZIP_IO_H
+#pragma once
 
 #include "core/io/file_access.h"
 
@@ -61,5 +62,3 @@ voidpf zipio_alloc(voidpf opaque, uInt items, uInt size);
 void zipio_free(voidpf opaque, voidpf address);
 
 zlib_filefunc_def zipio_create_io(Ref<FileAccess> *p_data);
-
-#endif // ZIP_IO_H

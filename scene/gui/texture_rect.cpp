@@ -2,9 +2,11 @@
 /*  texture_rect.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,8 +31,6 @@
 /**************************************************************************/
 
 #include "texture_rect.h"
-
-#include "servers/rendering_server.h"
 
 void TextureRect::_notification(int p_what) {
 	switch (p_what) {
@@ -107,7 +107,7 @@ void TextureRect::_notification(int p_what) {
 }
 
 Size2 TextureRect::get_minimum_size() const {
-	if (!texture.is_null()) {
+	if (texture.is_valid()) {
 		switch (expand_mode) {
 			case EXPAND_KEEP_SIZE: {
 				return texture->get_size();

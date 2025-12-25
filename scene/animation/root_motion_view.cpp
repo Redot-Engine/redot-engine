@@ -2,9 +2,11 @@
 /*  root_motion_view.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -32,7 +34,7 @@
 
 #include "root_motion_view.h"
 
-#include "scene/animation/animation_tree.h"
+#include "scene/animation/animation_mixer.h"
 #include "scene/resources/material.h"
 
 void RootMotionView::set_animation_mixer(const NodePath &p_path) {
@@ -94,7 +96,6 @@ void RootMotionView::_notification(int p_what) {
 
 			if (has_node(path)) {
 				Node *node = get_node(path);
-
 				AnimationMixer *mixer = Object::cast_to<AnimationMixer>(node);
 				if (mixer && mixer->is_active() && mixer->get_root_motion_track() != NodePath()) {
 					if (is_processing_internal() && mixer->get_callback_mode_process() == AnimationMixer::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS) {
@@ -106,12 +107,12 @@ void RootMotionView::_notification(int p_what) {
 						set_process_internal(true);
 						set_physics_process_internal(false);
 					}
+
 					transform.origin = mixer->get_root_motion_position();
 					transform.basis = mixer->get_root_motion_rotation(); // Scale is meaningless.
-					diff = mixer->get_root_motion_rotation_accumulator();
+					diff = mixer->is_root_motion_local() ? Quaternion() : mixer->get_root_motion_rotation_accumulator();
 				}
 			}
-
 			if (!first && transform == Transform3D()) {
 				return;
 			}

@@ -2,9 +2,11 @@
 /*  animation_player.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -106,9 +108,7 @@ bool AnimationPlayer::_get(const StringName &p_name, Variant &r_ret) const {
 }
 
 void AnimationPlayer::_validate_property(PropertyInfo &p_property) const {
-	AnimationMixer::_validate_property(p_property);
-
-	if (p_property.name == "current_animation") {
+	if (Engine::get_singleton()->is_editor_hint() && p_property.name == "current_animation") {
 		List<String> names;
 
 		for (const KeyValue<StringName, AnimationData> &E : animation_set) {
@@ -133,7 +133,7 @@ void AnimationPlayer::_get_property_list(List<PropertyInfo> *p_list) const {
 	List<PropertyInfo> anim_names;
 
 	for (const KeyValue<StringName, AnimationData> &E : animation_set) {
-		HashMap<StringName, StringName>::ConstIterator F = animation_next_set.find(E.key);
+		AHashMap<StringName, StringName>::ConstIterator F = animation_next_set.find(E.key);
 		if (F && F->value != StringName()) {
 			anim_names.push_back(PropertyInfo(Variant::STRING, "next/" + String(E.key), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
 		}
@@ -160,12 +160,12 @@ void AnimationPlayer::_notification(int p_what) {
 
 void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, float p_blend, bool p_seeked, bool p_internal_seeked, bool p_started, bool p_is_current) {
 	double speed = speed_scale * cd.speed_scale;
-	bool backwards = signbit(speed); // Negative zero means playing backwards too.
+	bool backwards = std::signbit(speed); // Negative zero means playing backwards too.
 	double delta = p_started ? 0 : p_delta * speed;
 	double next_pos = cd.pos + delta;
 
-	double start = get_section_start_time();
-	double end = get_section_end_time();
+	double start = cd.get_start_time();
+	double end = cd.get_end_time();
 
 	Animation::LoopedFlag looped_flag = Animation::LOOPED_FLAG_NONE;
 
@@ -256,8 +256,7 @@ void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, f
 float AnimationPlayer::get_current_blend_amount() {
 	Playback &c = playback;
 	float blend = 1.0;
-	for (List<Blend>::Element *E = c.blend.front(); E; E = E->next()) {
-		Blend &b = E->get();
+	for (const Blend &b : c.blend) {
 		blend = blend - b.blend_left;
 	}
 	return MAX(0, blend);
@@ -285,7 +284,7 @@ void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started) {
 	List<List<Blend>::Element *> to_erase;
 	for (List<Blend>::Element *E = c.blend.front(); E; E = E->next()) {
 		Blend &b = E->get();
-		b.blend_left = MAX(0, b.blend_left - Math::absf(speed_scale * p_delta) / b.blend_time);
+		b.blend_left = MAX(0, b.blend_left - Math::abs(speed_scale * p_delta) / b.blend_time);
 		if (Animation::is_less_or_equal_approx(b.blend_left, 0)) {
 			to_erase.push_back(E);
 			b.blend_left = CMP_EPSILON; // May want to play last frame.
@@ -299,7 +298,7 @@ void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started) {
 	}
 }
 
-bool AnimationPlayer::_blend_pre_process(double p_delta, int p_track_count, const HashMap<NodePath, int> &p_track_map) {
+bool AnimationPlayer::_blend_pre_process(double p_delta, int p_track_count, const AHashMap<NodePath, int> &p_track_map) {
 	if (!playback.current.from) {
 		_set_process(false);
 		return false;
@@ -346,6 +345,7 @@ void AnimationPlayer::_blend_post_process() {
 				_set_process(false);
 				if (end_notify) {
 					emit_signal(SceneStringName(animation_finished), playback.assigned);
+					emit_signal(SNAME("current_animation_changed"), "");
 					if (movie_quit_on_finish && OS::get_singleton()->has_feature("movie")) {
 						print_line(vformat("Movie Maker mode is enabled. Quitting on animation finish as requested by: %s", get_path()));
 						get_tree()->quit();
@@ -389,7 +389,7 @@ void AnimationPlayer::play_section_with_markers_backwards(const StringName &p_na
 }
 
 void AnimationPlayer::play_section_backwards(const StringName &p_name, double p_start_time, double p_end_time, double p_custom_blend) {
-	play_section(p_name, p_start_time, p_end_time, -1, true);
+	play_section(p_name, p_start_time, p_end_time, p_custom_blend, -1, true);
 }
 
 void AnimationPlayer::play(const StringName &p_name, double p_custom_blend, float p_custom_scale, bool p_from_end) {
@@ -495,8 +495,8 @@ void AnimationPlayer::play_section(const StringName &p_name, double p_start_time
 	c.current.start_time = p_start_time;
 	c.current.end_time = p_end_time;
 
-	double start = get_section_start_time();
-	double end = get_section_end_time();
+	double start = playback.current.get_start_time();
+	double end = playback.current.get_end_time();
 
 	if (!end_reached) {
 		playback_queue.clear();
@@ -546,7 +546,7 @@ void AnimationPlayer::_capture(const StringName &p_name, bool p_from_end, double
 	if (anim.is_null() || !anim->is_capture_included()) {
 		return;
 	}
-	if (signbit(p_duration)) {
+	if (std::signbit(p_duration)) {
 		double max_dur = 0;
 		double current_pos = playback.current.pos;
 		if (playback.assigned != name) {
@@ -588,7 +588,7 @@ void AnimationPlayer::set_current_animation(const String &p_animation) {
 		play(p_animation);
 	} else if (playback.assigned != p_animation) {
 		float speed = playback.current.speed_scale;
-		play(p_animation, -1.0, speed, signbit(speed));
+		play(p_animation, -1.0, speed, std::signbit(speed));
 	} else {
 		// Same animation, do not replay from start.
 	}
@@ -601,7 +601,7 @@ String AnimationPlayer::get_current_animation() const {
 void AnimationPlayer::set_assigned_animation(const String &p_animation) {
 	if (is_playing()) {
 		float speed = playback.current.speed_scale;
-		play(p_animation, -1.0, speed, signbit(speed));
+		play(p_animation, -1.0, speed, std::signbit(speed));
 	} else {
 		ERR_FAIL_COND_MSG(!animation_set.has(p_animation), vformat("Animation not found: %s.", p_animation));
 		playback.current.pos = 0;
@@ -660,8 +660,8 @@ void AnimationPlayer::seek_internal(double p_time, bool p_update, bool p_update_
 		}
 	}
 
-	double start = get_section_start_time();
-	double end = get_section_end_time();
+	double start = playback.current.get_start_time();
+	double end = playback.current.get_end_time();
 
 	// Clamp the seek position.
 	p_time = CLAMP(p_time, start, end);
@@ -725,7 +725,7 @@ void AnimationPlayer::set_section(double p_start_time, double p_end_time) {
 	ERR_FAIL_COND_MSG(Animation::is_greater_or_equal_approx(p_start_time, 0) && Animation::is_greater_or_equal_approx(p_end_time, 0) && Animation::is_greater_or_equal_approx(p_start_time, p_end_time), vformat("Start time %f is greater than end time %f.", p_start_time, p_end_time));
 	playback.current.start_time = p_start_time;
 	playback.current.end_time = p_end_time;
-	playback.current.pos = CLAMP(playback.current.pos, get_section_start_time(), get_section_end_time());
+	playback.current.pos = CLAMP(playback.current.pos, playback.current.get_start_time(), playback.current.get_end_time());
 }
 
 void AnimationPlayer::reset_section() {
@@ -735,18 +735,12 @@ void AnimationPlayer::reset_section() {
 
 double AnimationPlayer::get_section_start_time() const {
 	ERR_FAIL_NULL_V_MSG(playback.current.from, playback.current.start_time, "AnimationPlayer has no current animation.");
-	if (Animation::is_less_approx(playback.current.start_time, 0) || playback.current.start_time > playback.current.from->animation->get_length()) {
-		return 0;
-	}
-	return playback.current.start_time;
+	return playback.current.get_start_time();
 }
 
 double AnimationPlayer::get_section_end_time() const {
 	ERR_FAIL_NULL_V_MSG(playback.current.from, playback.current.end_time, "AnimationPlayer has no current animation.");
-	if (Animation::is_less_approx(playback.current.end_time, 0) || playback.current.end_time > playback.current.from->animation->get_length()) {
-		return playback.current.from->animation->get_length();
-	}
-	return playback.current.end_time;
+	return playback.current.get_end_time();
 }
 
 bool AnimationPlayer::has_section() const {
@@ -777,7 +771,7 @@ void AnimationPlayer::_stop_internal(bool p_reset, bool p_keep_state) {
 	_clear_caches();
 	Playback &c = playback;
 	// c.blend.clear();
-	double start = c.current.from ? get_section_start_time() : 0;
+	double start = c.current.from ? playback.current.get_start_time() : 0;
 	if (p_reset) {
 		c.blend.clear();
 		if (p_keep_state) {
@@ -875,6 +869,20 @@ void AnimationPlayer::set_auto_capture_ease_type(Tween::EaseType p_auto_capture_
 Tween::EaseType AnimationPlayer::get_auto_capture_ease_type() const {
 	return auto_capture_ease_type;
 }
+
+#ifdef TOOLS_ENABLED
+void AnimationPlayer::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
+	const String pf = p_function;
+	if (p_idx == 0 && (pf == "play" || pf == "play_backwards" || pf == "has_animation" || pf == "queue")) {
+		List<StringName> al;
+		get_animation_list(&al);
+		for (const StringName &name : al) {
+			r_options->push_back(String(name).quote());
+		}
+	}
+	AnimationMixer::get_argument_options(p_function, p_idx, r_options);
+}
+#endif
 
 void AnimationPlayer::_animation_removed(const StringName &p_name, const StringName &p_library) {
 	AnimationMixer::_animation_removed(p_name, p_library);

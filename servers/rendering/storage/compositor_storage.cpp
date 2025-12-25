@@ -2,9 +2,11 @@
 /*  compositor_storage.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -57,9 +59,7 @@ void RendererCompositorStorage::compositor_effect_free(RID p_rid) {
 	ERR_FAIL_NULL(effect);
 
 	// Remove this RID from any compositor that uses it.
-	List<RID> compositor_rids;
-	compositor_owner.get_owned_list(&compositor_rids);
-	for (const RID &compositor_rid : compositor_rids) {
+	for (const RID &compositor_rid : compositor_owner.get_owned_list()) {
 		Compositor *compositor = compositor_owner.get_or_null(compositor_rid);
 		if (compositor) {
 			compositor->compositor_effects.erase(p_rid);

@@ -2,9 +2,11 @@
 /*  utilities.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -39,8 +41,6 @@
 #include "mesh_storage.h"
 #include "particles_storage.h"
 #include "texture_storage.h"
-
-#include "servers/rendering/rendering_server_globals.h"
 
 using namespace GLES3;
 
@@ -423,6 +423,9 @@ bool Utilities::has_os_feature(const String &p_feature) const {
 	if (p_feature == "etc2") {
 		return config->etc2_supported;
 	}
+	if (p_feature == "astc_hdr") {
+		return config->astc_hdr_supported;
+	}
 
 	return false;
 }
@@ -465,6 +468,18 @@ Size2i Utilities::get_maximum_viewport_size() const {
 	Config *config = Config::get_singleton();
 	ERR_FAIL_NULL_V(config, Size2i());
 	return Size2i(config->max_viewport_size[0], config->max_viewport_size[1]);
+}
+
+uint32_t Utilities::get_maximum_shader_varyings() const {
+	Config *config = Config::get_singleton();
+	ERR_FAIL_NULL_V(config, 31);
+	return config->max_shader_varyings;
+}
+
+uint64_t Utilities::get_maximum_uniform_buffer_size() const {
+	Config *config = Config::get_singleton();
+	ERR_FAIL_NULL_V(config, 65536);
+	return uint64_t(config->max_uniform_buffer_size);
 }
 
 #endif // GLES3_ENABLED

@@ -2,9 +2,11 @@
 /*  audio_stream_interactive_editor_plugin.h                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_INTERACTIVE_EDITOR_PLUGIN_H
-#define AUDIO_STREAM_INTERACTIVE_EDITOR_PLUGIN_H
+#pragma once
 
-#include "editor/editor_inspector.h"
+#include "editor/inspector/editor_inspector.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/dialogs.h"
 
@@ -102,9 +103,7 @@ class AudioStreamInteractiveEditorPlugin : public EditorPlugin {
 	GDCLASS(AudioStreamInteractiveEditorPlugin, EditorPlugin);
 
 public:
-	virtual String get_name() const override { return "AudioStreamInteractive"; }
+	virtual String get_plugin_name() const override { return "AudioStreamInteractive"; }
 
 	AudioStreamInteractiveEditorPlugin();
 };
-
-#endif // AUDIO_STREAM_INTERACTIVE_EDITOR_PLUGIN_H

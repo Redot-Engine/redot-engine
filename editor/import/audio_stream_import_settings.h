@@ -2,9 +2,11 @@
 /*  audio_stream_import_settings.h                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_IMPORT_SETTINGS_H
-#define AUDIO_STREAM_IMPORT_SETTINGS_H
+#pragma once
 
 #include "editor/plugins/editor_plugin.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/gui/color_rect.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/spin_box.h"
-#include "scene/resources/texture.h"
 
 class CheckBox;
 
@@ -113,5 +113,3 @@ public:
 
 	AudioStreamImportSettingsDialog();
 };
-
-#endif // AUDIO_STREAM_IMPORT_SETTINGS_H

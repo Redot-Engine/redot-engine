@@ -2,9 +2,11 @@
 /*  string_utils.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MONO_STRING_UTILS_H
-#define MONO_STRING_UTILS_H
+#pragma once
 
 #include "core/string/ustring.h"
 #include "core/variant/variant.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 
 String sformat(const String &p_text, const String &p1 = String(), const String &p2 = String(),
 		const String &p3 = String(), const String &p4 = String(), const String &p5 = String(), const String &p6 = String());
@@ -59,5 +60,3 @@ String str_format(const char *p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_1_2;
 String str_format(const char *p_format, va_list p_list) _PRINTF_FORMAT_ATTRIBUTE_1_0;
 char *str_format_new(const char *p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_1_2;
 char *str_format_new(const char *p_format, va_list p_list) _PRINTF_FORMAT_ATTRIBUTE_1_0;
-
-#endif // MONO_STRING_UTILS_H

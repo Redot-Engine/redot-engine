@@ -2,9 +2,11 @@
 /*  physics_material.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,6 +32,7 @@
 
 #include "physics_material.h"
 
+#if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 void PhysicsMaterial::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_friction", "friction"), &PhysicsMaterial::set_friction);
 	ClassDB::bind_method(D_METHOD("get_friction"), &PhysicsMaterial::get_friction);
@@ -68,3 +71,4 @@ void PhysicsMaterial::set_absorbent(bool p_val) {
 	absorbent = p_val;
 	emit_changed();
 }
+#endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)

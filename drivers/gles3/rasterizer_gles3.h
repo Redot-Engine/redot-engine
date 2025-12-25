@@ -2,9 +2,11 @@
 /*  rasterizer_gles3.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RASTERIZER_GLES3_H
-#define RASTERIZER_GLES3_H
+#pragma once
 
 #ifdef GLES3_ENABLED
 
 #include "effects/copy_effects.h"
 #include "effects/cubemap_filter.h"
+#include "effects/feed_effects.h"
 #include "effects/glow.h"
 #include "effects/post_effects.h"
 #include "environment/fog.h"
@@ -56,7 +58,10 @@ private:
 	float delta = 0;
 
 	double time_total = 0.0;
-	bool flip_xy_workaround = false;
+
+#ifdef WINDOWS_ENABLED
+	static bool screen_flipped_y;
+#endif
 
 	static bool gles_over_gl;
 
@@ -74,11 +79,12 @@ protected:
 	GLES3::CubemapFilter *cubemap_filter = nullptr;
 	GLES3::Glow *glow = nullptr;
 	GLES3::PostEffects *post_effects = nullptr;
+	GLES3::FeedEffects *feed_effects = nullptr;
 	RasterizerCanvasGLES3 *canvas = nullptr;
 	RasterizerSceneGLES3 *scene = nullptr;
 	static RasterizerGLES3 *singleton;
 
-	void _blit_render_target_to_screen(RID p_render_target, DisplayServer::WindowID p_screen, const Rect2 &p_screen_rect, uint32_t p_layer, bool p_first = true);
+	void _blit_render_target_to_screen(DisplayServer::WindowID p_screen, const BlitToScreen &p_blit, bool p_first = true);
 
 public:
 	RendererUtilities *get_utilities() { return utilities; }
@@ -99,6 +105,7 @@ public:
 
 	void blit_render_targets_to_screen(DisplayServer::WindowID p_screen, const BlitToScreen *p_render_targets, int p_amount);
 
+	bool is_opengl() { return true; }
 	void gl_end_frame(bool p_swap_buffers);
 	void end_frame(bool p_swap_buffers);
 
@@ -110,6 +117,7 @@ public:
 
 	static bool is_gles_over_gl() { return gles_over_gl; }
 	static void clear_depth(float p_depth);
+	static void clear_stencil(int32_t p_stencil);
 
 	static void make_current(bool p_gles_over_gl) {
 		gles_over_gl = p_gles_over_gl;
@@ -117,6 +125,12 @@ public:
 		_create_func = _create_current;
 		low_end = true;
 	}
+
+#ifdef WINDOWS_ENABLED
+	static void set_screen_flipped_y(bool p_flipped) {
+		screen_flipped_y = p_flipped;
+	}
+#endif
 
 	_ALWAYS_INLINE_ uint64_t get_frame_number() const { return frame; }
 	_ALWAYS_INLINE_ double get_frame_delta_time() const { return delta; }
@@ -129,5 +143,3 @@ public:
 };
 
 #endif // GLES3_ENABLED
-
-#endif // RASTERIZER_GLES3_H

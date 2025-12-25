@@ -2,9 +2,11 @@
 /*  shader.cpp                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -32,13 +34,14 @@
 #include "shader.compat.inc"
 
 #include "core/io/file_access.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_preprocessor.h"
 #include "servers/rendering_server.h"
 #include "texture.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/editor_help.h"
+#include "editor/doc/editor_help.h"
 
 #include "modules/modules_enabled.gen.h" // For regex.
 #ifdef MODULE_REGEX_ENABLED
@@ -138,6 +141,14 @@ String Shader::get_code() const {
 	return code;
 }
 
+void Shader::inspect_native_shader_code() {
+	SceneTree *st = SceneTree::get_singleton();
+	RID _shader = get_rid();
+	if (st && _shader.is_valid()) {
+		st->call_group_flags(SceneTree::GROUP_CALL_DEFERRED, "_native_shader_source_visualizer", "_inspect_shader", _shader);
+	}
+}
+
 void Shader::get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_groups) const {
 	_update_shader();
 	_check_shader_rid();
@@ -189,8 +200,8 @@ void Shader::get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_gr
 		}
 	}
 #ifdef TOOLS_ENABLED
-	if (EditorHelp::get_doc_data() != nullptr && Engine::get_singleton()->is_editor_hint() && !class_doc.name.is_empty() && p_params) {
-		EditorHelp::get_doc_data()->add_doc(class_doc);
+	if (Engine::get_singleton()->is_editor_hint() && !class_doc.name.is_empty() && p_params) {
+		EditorHelp::add_doc(class_doc);
 	}
 #endif
 }
@@ -267,6 +278,9 @@ void Shader::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_shader_uniform_list", "get_groups"), &Shader::_get_shader_uniform_list, DEFVAL(false));
 
+	ClassDB::bind_method(D_METHOD("inspect_native_shader_code"), &Shader::inspect_native_shader_code);
+	ClassDB::set_method_flags(get_class_static(), StringName("inspect_native_shader_code"), METHOD_FLAGS_DEFAULT | METHOD_FLAG_EDITOR);
+
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "code", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_code", "get_code");
 
 	BIND_ENUM_CONSTANT(MODE_SPATIAL);
@@ -300,7 +314,7 @@ Ref<Resource> ResourceFormatLoaderShader::load(const String &p_path, const Strin
 
 	String str;
 	if (buffer.size() > 0) {
-		error = str.parse_utf8((const char *)buffer.ptr(), buffer.size());
+		error = str.append_utf8((const char *)buffer.ptr(), buffer.size());
 		ERR_FAIL_COND_V_MSG(error, nullptr, "Cannot parse shader: " + p_path);
 	}
 

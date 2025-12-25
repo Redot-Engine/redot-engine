@@ -2,9 +2,11 @@
 /*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -48,8 +50,10 @@ void initialize_multiplayer_module(ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(MultiplayerSynchronizer);
 		GDREGISTER_CLASS(OfflineMultiplayerPeer);
 		GDREGISTER_CLASS(SceneMultiplayer);
-		MultiplayerAPI::set_default_interface("SceneMultiplayer");
-		MultiplayerDebugger::initialize();
+		if (GD_IS_CLASS_ENABLED(MultiplayerAPI)) {
+			MultiplayerAPI::set_default_interface("SceneMultiplayer");
+			MultiplayerDebugger::initialize();
+		}
 	}
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
@@ -59,5 +63,7 @@ void initialize_multiplayer_module(ModuleInitializationLevel p_level) {
 }
 
 void uninitialize_multiplayer_module(ModuleInitializationLevel p_level) {
-	MultiplayerDebugger::deinitialize();
+	if (GD_IS_CLASS_ENABLED(MultiplayerAPI)) {
+		MultiplayerDebugger::deinitialize();
+	}
 }

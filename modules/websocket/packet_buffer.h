@@ -2,9 +2,11 @@
 /*  packet_buffer.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PACKET_BUFFER_H
-#define PACKET_BUFFER_H
+#pragma once
 
 #include "core/templates/ring_buffer.h"
 
@@ -104,6 +105,14 @@ public:
 		return _queued;
 	}
 
+	int payload_space_left() const {
+		return _payload.space_left();
+	}
+
+	int packets_space_left() const {
+		return _packets.size() - _queued;
+	}
+
 	void clear() {
 		_payload.resize(0);
 		_packets.resize(0);
@@ -120,5 +129,3 @@ public:
 		clear();
 	}
 };
-
-#endif // PACKET_BUFFER_H

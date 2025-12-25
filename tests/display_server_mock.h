@@ -2,9 +2,11 @@
 /*  display_server_mock.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DISPLAY_SERVER_MOCK_H
-#define DISPLAY_SERVER_MOCK_H
+#pragma once
 
 #include "servers/display_server_headless.h"
 
@@ -38,6 +39,8 @@
 // Specialized DisplayServer for unittests based on DisplayServerHeadless, that
 // additionally supports things like mouse enter/exit events and clipboard.
 class DisplayServerMock : public DisplayServerHeadless {
+	GDSOFTCLASS(DisplayServerMock, DisplayServerHeadless);
+
 private:
 	friend class DisplayServer;
 
@@ -55,7 +58,7 @@ private:
 		return drivers;
 	}
 
-	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServer::WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, Error &r_error) {
+	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServer::WindowMode p_mode, DisplayServer::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, int64_t p_parent_window, Error &r_error) {
 		r_error = OK;
 		RasterizerDummy::make_current();
 		return memnew(DisplayServerMock());
@@ -101,7 +104,7 @@ public:
 	String get_name() const override { return "mock"; }
 
 	// You can simulate DisplayServer-events by calling this function.
-	// The events will be deliverd to Godot's Input-system.
+	// The events will be delivered to Redot's Input-system.
 	// Mouse-events (Button & Motion) will additionally update the DisplayServer's mouse position.
 	// For Mouse motion events, the `relative`-property is set based on the distance to the previous mouse position.
 	void simulate_event(Ref<InputEvent> p_event) {
@@ -146,5 +149,3 @@ public:
 		register_create_function("mock", create_func, get_rendering_drivers_func);
 	}
 };
-
-#endif // DISPLAY_SERVER_MOCK_H

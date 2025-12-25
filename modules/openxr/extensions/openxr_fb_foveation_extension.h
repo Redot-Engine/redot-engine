@@ -2,9 +2,11 @@
 /*  openxr_fb_foveation_extension.h                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,18 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_FB_FOVEATION_EXTENSION_H
-#define OPENXR_FB_FOVEATION_EXTENSION_H
+#pragma once
 
 // This extension implements the FB Foveation extension.
 // This is an extension Meta added due to VRS being unavailable on Android.
 // Other Android based devices are implementing this as well, see:
 // https://github.khronos.org/OpenXR-Inventory/extension_support.html#XR_FB_foveation
-
-// Note: Currently we only support this for OpenGL.
-// This extension works on enabling foveated rendering on the swapchain.
-// Vulkan does not render 3D content directly to the swapchain image
-// hence this extension can't be used.
 
 #include "../openxr_api.h"
 #include "../util.h"
@@ -47,6 +43,11 @@
 #include "openxr_fb_update_swapchain_extension.h"
 
 class OpenXRFBFoveationExtension : public OpenXRExtensionWrapper {
+	GDCLASS(OpenXRFBFoveationExtension, OpenXRExtensionWrapper);
+
+protected:
+	static void _bind_methods() {}
+
 public:
 	static OpenXRFBFoveationExtension *get_singleton();
 
@@ -77,6 +78,7 @@ private:
 	String rendering_driver;
 	bool fb_foveation_ext = false;
 	bool fb_foveation_configuration_ext = false;
+	bool fb_foveation_vulkan_ext = false;
 
 	// Configuration
 	XrFoveationLevelFB foveation_level = XR_FOVEATION_LEVEL_NONE_FB;
@@ -100,5 +102,3 @@ private:
 	EXT_PROTO_XRRESULT_FUNC3(xrCreateFoveationProfileFB, (XrSession), session, (const XrFoveationProfileCreateInfoFB *), create_info, (XrFoveationProfileFB *), profile);
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyFoveationProfileFB, (XrFoveationProfileFB), profile);
 };
-
-#endif // OPENXR_FB_FOVEATION_EXTENSION_H

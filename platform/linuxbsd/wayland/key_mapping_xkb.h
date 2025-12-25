@@ -2,9 +2,11 @@
 /*  key_mapping_xkb.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef KEY_MAPPING_XKB_H
-#define KEY_MAPPING_XKB_H
+#pragma once
 
 #include "core/os/keyboard.h"
 #include "core/templates/hash_map.h"
@@ -61,5 +62,3 @@ public:
 	static Key get_scancode(unsigned int p_code);
 	static KeyLocation get_location(unsigned int p_code);
 };
-
-#endif // KEY_MAPPING_XKB_H

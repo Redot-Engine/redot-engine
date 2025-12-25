@@ -2,9 +2,11 @@
 /*  texture_loader_ktx.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -208,32 +210,33 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error *r_error) {
 				case GL_COMPRESSED_RGBA_BPTC_UNORM:
 					format = Image::FORMAT_BPTC_RGBA;
 					break;
-#if 0 // TODO: ETC compression is bogus.
 				case GL_ETC1_RGB8_OES:
 					format = Image::FORMAT_ETC;
 					break;
 				case GL_COMPRESSED_R11_EAC:
 					format = Image::FORMAT_ETC2_R11;
 					break;
-				case GL_COMPRESSED_SIGNED_R11_EAC:
+				// Decompression is not supported for this format.
+				/*case GL_COMPRESSED_SIGNED_R11_EAC:
 					format = Image::FORMAT_ETC2_R11S;
-					break;
+					break;*/
 				case GL_COMPRESSED_RG11_EAC:
 					format = Image::FORMAT_ETC2_RG11;
 					break;
-				case GL_COMPRESSED_SIGNED_RG11_EAC:
+				// Decompression is not supported for this format.
+				/*case GL_COMPRESSED_SIGNED_RG11_EAC:
 					format = Image::FORMAT_ETC2_RG11S;
-					break;
+					break;*/
 				case GL_COMPRESSED_RGB8_ETC2:
 					format = Image::FORMAT_ETC2_RGB8;
 					break;
 				case GL_COMPRESSED_RGBA8_ETC2_EAC:
 					format = Image::FORMAT_ETC2_RGBA8;
 					break;
-				case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+				// Decompression is not supported for this format.
+				/*case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
 					format = Image::FORMAT_ETC2_RGB8A1;
-					break;
-#endif
+					break;*/
 				case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR:
 					format = Image::FORMAT_ASTC_4x4;
 					break;
@@ -406,29 +409,30 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error *r_error) {
 				case VK_FORMAT_BC7_UNORM_BLOCK:
 					format = Image::FORMAT_BPTC_RGBA;
 					break;
-#if 0 // TODO: ETC compression is bogus.
 				case VK_FORMAT_EAC_R11_UNORM_BLOCK:
 					format = Image::FORMAT_ETC2_R11;
 					break;
-				case VK_FORMAT_EAC_R11_SNORM_BLOCK:
+				// Decompression is not supported for this format.
+				/*case VK_FORMAT_EAC_R11_SNORM_BLOCK:
 					format = Image::FORMAT_ETC2_R11S;
-					break;
+					break;*/
 				case VK_FORMAT_EAC_R11G11_UNORM_BLOCK:
 					format = Image::FORMAT_ETC2_RG11;
 					break;
-				case VK_FORMAT_EAC_R11G11_SNORM_BLOCK:
+				// Decompression is not supported for this format.
+				/*case VK_FORMAT_EAC_R11G11_SNORM_BLOCK:
 					format = Image::FORMAT_ETC2_RG11S;
-					break;
+					break;*/
 				case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK:
 					format = Image::FORMAT_ETC2_RGB8;
 					break;
 				case VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK:
 					format = Image::FORMAT_ETC2_RGBA8;
 					break;
-				case VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK:
+				// Decompression is not supported for this format.
+				/*case VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK:
 					format = Image::FORMAT_ETC2_RGB8A1;
-					break;
-#endif
+					break;*/
 				case VK_FORMAT_ASTC_4x4_SRGB_BLOCK:
 					format = Image::FORMAT_ASTC_4x4;
 					break;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="EditorCommandPalette" inherits="ConfirmationDialog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
 	<brief_description>
-		Godot editor's command palette.
+		Redot editor's command palette.
 	</brief_description>
 	<description>
 		Object that holds all the available Commands and their shortcuts text. These Commands can be accessed through [b]Editor &gt; Command Palette[/b] menu.

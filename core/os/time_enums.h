@@ -2,9 +2,11 @@
 /*  time_enums.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TIME_ENUMS_H
-#define TIME_ENUMS_H
+#pragma once
 
 #include <cstdint>
 
@@ -59,5 +60,3 @@ enum Weekday : uint8_t {
 	WEEKDAY_FRIDAY,
 	WEEKDAY_SATURDAY,
 };
-
-#endif // TIME_ENUMS_H

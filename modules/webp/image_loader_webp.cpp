@@ -2,9 +2,11 @@
 /*  image_loader_webp.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -32,15 +34,8 @@
 
 #include "webp_common.h"
 
-#include "core/config/project_settings.h"
-#include "core/io/marshalls.h"
-#include "core/os/os.h"
-#include "core/string/print_string.h"
-
 #include <webp/decode.h>
 #include <webp/encode.h>
-
-#include <stdlib.h>
 
 static Ref<Image> _webp_mem_loader_func(const uint8_t *p_webp_data, int p_size) {
 	Ref<Image> img;

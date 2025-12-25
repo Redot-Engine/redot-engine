@@ -2,9 +2,11 @@
 /*  skeleton_ik_3d.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SKELETON_IK_3D_H
-#define SKELETON_IK_3D_H
+#pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
 
@@ -91,8 +92,6 @@ public:
 		Vector<EndEffector> end_effectors;
 
 		Transform3D goal_global_transform;
-
-		Task() {}
 	};
 
 private:
@@ -131,7 +130,7 @@ class SkeletonIK3D : public SkeletonModifier3D {
 	real_t min_distance = 0.01;
 	int max_iterations = 10;
 
-	Variant target_node_override_ref = Variant();
+	Variant target_node_override_ref;
 	FabrikInverseKinematic::Task *task = nullptr;
 
 #ifndef DISABLE_DEPRECATED
@@ -145,7 +144,7 @@ protected:
 	static void _bind_methods();
 	virtual void _notification(int p_what);
 
-	virtual void _process_modification() override;
+	virtual void _process_modification(double p_delta) override;
 
 public:
 	SkeletonIK3D();
@@ -191,5 +190,3 @@ private:
 	void reload_goal();
 	void _solve_chain();
 };
-
-#endif // SKELETON_IK_3D_H

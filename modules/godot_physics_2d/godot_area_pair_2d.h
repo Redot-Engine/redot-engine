@@ -2,9 +2,11 @@
 /*  godot_area_pair_2d.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_AREA_PAIR_2D_H
-#define GODOT_AREA_PAIR_2D_H
+#pragma once
 
 #include "godot_area_2d.h"
 #include "godot_body_2d.h"
@@ -74,5 +75,3 @@ public:
 	GodotArea2Pair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b);
 	~GodotArea2Pair2D();
 };
-
-#endif // GODOT_AREA_PAIR_2D_H

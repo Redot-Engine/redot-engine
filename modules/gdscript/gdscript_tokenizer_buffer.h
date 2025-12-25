@@ -2,9 +2,11 @@
 /*  gdscript_tokenizer_buffer.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDSCRIPT_TOKENIZER_BUFFER_H
-#define GDSCRIPT_TOKENIZER_BUFFER_H
+#pragma once
 
 #include "gdscript_tokenizer.h"
 
@@ -40,11 +41,10 @@ public:
 		COMPRESS_ZSTD,
 	};
 
-	enum {
-		TOKEN_BYTE_MASK = 0x80,
-		TOKEN_BITS = 8,
-		TOKEN_MASK = (1 << (TOKEN_BITS - 1)) - 1,
-	};
+	static constexpr uint32_t TOKENIZER_VERSION = 101;
+	static constexpr uint32_t TOKEN_BYTE_MASK = 0x80;
+	static constexpr uint32_t TOKEN_BITS = 8;
+	static constexpr uint32_t TOKEN_MASK = (1 << (TOKEN_BITS - 1)) - 1;
 
 	Vector<StringName> identifiers;
 	Vector<Variant> constants;
@@ -79,7 +79,7 @@ public:
 	virtual bool is_past_cursor() const override;
 	virtual void push_expression_indented_block() override; // For lambdas, or blocks inside expressions.
 	virtual void pop_expression_indented_block() override; // For lambdas, or blocks inside expressions.
-	virtual bool is_text() override { return false; };
+	virtual bool is_text() override { return false; }
 
 #ifdef TOOLS_ENABLED
 	virtual const HashMap<int, CommentData> &get_comments() const override {
@@ -89,5 +89,3 @@ public:
 
 	virtual Token scan() override;
 };
-
-#endif // GDSCRIPT_TOKENIZER_BUFFER_H

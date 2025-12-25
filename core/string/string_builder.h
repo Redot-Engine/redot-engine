@@ -2,9 +2,11 @@
 /*  string_builder.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,21 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef STRING_BUILDER_H
-#define STRING_BUILDER_H
+#pragma once
 
 #include "core/string/ustring.h"
-#include "core/templates/vector.h"
+#include "core/templates/local_vector.h"
 
 class StringBuilder {
 	uint32_t string_length = 0;
 
-	Vector<String> strings;
-	Vector<const char *> c_strings;
+	LocalVector<String> strings;
+	LocalVector<const char *> c_strings;
 
-	// -1 means it's a Godot String
+	// -1 means it's a Redot String
 	// a natural number means C string.
-	Vector<int32_t> appended_strings;
+	LocalVector<int32_t> appended_strings;
 
 public:
 	StringBuilder &append(const String &p_string);
@@ -80,5 +81,3 @@ public:
 
 	StringBuilder() {}
 };
-
-#endif // STRING_BUILDER_H

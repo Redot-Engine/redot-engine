@@ -2,9 +2,11 @@
 /*  midi_driver_winmidi.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MIDI_DRIVER_WINMIDI_H
-#define MIDI_DRIVER_WINMIDI_H
+#pragma once
 
 #ifdef WINMIDI_ENABLED
 
 #include "core/os/midi_driver.h"
 #include "core/templates/vector.h"
 
-#include <stdio.h>
+#include <cstdio>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -56,5 +57,3 @@ public:
 };
 
 #endif // WINMIDI_ENABLED
-
-#endif // MIDI_DRIVER_WINMIDI_H

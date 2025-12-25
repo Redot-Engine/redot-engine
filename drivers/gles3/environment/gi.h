@@ -2,9 +2,11 @@
 /*  gi.h                                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,17 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GI_GLES3_H
-#define GI_GLES3_H
+#pragma once
 
 #ifdef GLES3_ENABLED
 
-#include "core/templates/local_vector.h"
-#include "core/templates/rid_owner.h"
-#include "core/templates/self_list.h"
 #include "servers/rendering/environment/renderer_gi.h"
-
-#include "platform_gl.h"
 
 namespace GLES3 {
 
@@ -92,5 +88,3 @@ public:
 }; // namespace GLES3
 
 #endif // GLES3_ENABLED
-
-#endif // GI_GLES3_H

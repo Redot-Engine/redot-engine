@@ -2,9 +2,11 @@
 /*  multiplayer_editor_plugin.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -34,10 +36,10 @@
 #include "editor_network_profiler.h"
 #include "replication_editor.h"
 
-#include "editor/editor_command_palette.h"
 #include "editor/editor_interface.h"
 #include "editor/editor_node.h"
 #include "editor/gui/editor_bottom_panel.h"
+#include "editor/settings/editor_command_palette.h"
 
 void MultiplayerEditorDebugger::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("open_request", PropertyInfo(Variant::STRING, "path")));
@@ -116,7 +118,7 @@ void MultiplayerEditorDebugger::setup_session(int p_session_id) {
 
 MultiplayerEditorPlugin::MultiplayerEditorPlugin() {
 	repl_editor = memnew(ReplicationEditor);
-	button = EditorNode::get_bottom_panel()->add_item(TTR("Replication"), repl_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_replication_bottom_panel", TTR("Toggle Replication Bottom Panel")));
+	button = EditorNode::get_bottom_panel()->add_item(TTRC("Replication"), repl_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_replication_bottom_panel", TTRC("Toggle Replication Bottom Panel")));
 	button->hide();
 	repl_editor->get_pin()->connect(SceneStringName(pressed), callable_mp(this, &MultiplayerEditorPlugin::_pinned));
 	debugger.instantiate();

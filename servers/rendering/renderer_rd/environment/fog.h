@@ -2,9 +2,11 @@
 /*  fog.h                                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FOG_RD_H
-#define FOG_RD_H
+#pragma once
 
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
@@ -48,6 +49,10 @@ namespace RendererRD {
 class Fog : public RendererFog {
 private:
 	static Fog *singleton;
+
+	static int _get_fog_shader_group();
+	static int _get_fog_variant();
+	static int _get_fog_process_variant(int p_idx);
 
 	/* FOG VOLUMES */
 
@@ -74,6 +79,13 @@ private:
 
 	/* Volumetric Fog */
 	struct VolumetricFogShader {
+		enum ShaderGroup {
+			SHADER_GROUP_BASE,
+			SHADER_GROUP_NO_ATOMICS,
+			SHADER_GROUP_VULKAN_MEMORY_MODEL,
+			SHADER_GROUP_VULKAN_MEMORY_MODEL_NO_ATOMICS,
+		};
+
 		enum FogSet {
 			FOG_SET_BASE,
 			FOG_SET_UNIFORMS,
@@ -203,6 +215,7 @@ private:
 		virtual bool is_animated() const;
 		virtual bool casts_shadows() const;
 		virtual RS::ShaderNativeSourceCode get_native_source_code() const;
+		virtual Pair<ShaderRD *, RID> get_native_shader_and_version() const;
 
 		FogShaderData() {}
 		virtual ~FogShaderData();
@@ -233,7 +246,7 @@ public:
 
 	/* FOG VOLUMES */
 
-	bool owns_fog_volume(RID p_rid) { return fog_volume_owner.owns(p_rid); };
+	bool owns_fog_volume(RID p_rid) { return fog_volume_owner.owns(p_rid); }
 
 	virtual RID fog_volume_allocate() override;
 	virtual void fog_volume_initialize(RID p_rid) override;
@@ -250,7 +263,7 @@ public:
 
 	/* FOG VOLUMES INSTANCE */
 
-	bool owns_fog_volume_instance(RID p_rid) { return fog_volume_instance_owner.owns(p_rid); };
+	bool owns_fog_volume_instance(RID p_rid) { return fog_volume_instance_owner.owns(p_rid); }
 
 	RID fog_volume_instance_create(RID p_fog_volume);
 	void fog_instance_free(RID p_rid);
@@ -316,6 +329,9 @@ public:
 
 		int last_shadow_filter = -1;
 
+		// If the device doesn't support image atomics, use storage buffers instead.
+		RD::UniformType atomic_type = RD::UNIFORM_TYPE_IMAGE;
+
 		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override {}
 		virtual void free_data() override {}
 
@@ -355,5 +371,3 @@ public:
 };
 
 } // namespace RendererRD
-
-#endif // FOG_RD_H

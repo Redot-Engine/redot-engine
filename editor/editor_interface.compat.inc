@@ -2,9 +2,11 @@
 /*  editor_interface.compat.inc                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -40,9 +42,14 @@ void EditorInterface::_popup_property_selector_bind_compat_94323(Object *p_objec
 	popup_property_selector(p_object, p_callback, p_type_filter, String());
 }
 
+void EditorInterface::_open_scene_from_path_bind_compat_90057(const String &scene_path) {
+	return open_scene_from_path(scene_path, false);
+}
+
 void EditorInterface::_bind_compatibility_methods() {
 	ClassDB::bind_compatibility_method(D_METHOD("popup_node_selector", "callback", "valid_types"), &EditorInterface::_popup_node_selector_bind_compat_94323, DEFVAL(TypedArray<StringName>()));
 	ClassDB::bind_compatibility_method(D_METHOD("popup_property_selector", "object", "callback", "type_filter"), &EditorInterface::_popup_property_selector_bind_compat_94323, DEFVAL(PackedInt32Array()));
+	ClassDB::bind_compatibility_method(D_METHOD("open_scene_from_path", "scene_path"), &EditorInterface::_open_scene_from_path_bind_compat_90057);
 }
 
 #endif

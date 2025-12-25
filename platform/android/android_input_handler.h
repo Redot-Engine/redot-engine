@@ -2,9 +2,11 @@
 /*  android_input_handler.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ANDROID_INPUT_HANDLER_H
-#define ANDROID_INPUT_HANDLER_H
+#pragma once
 
 #include "core/input/input.h"
 
@@ -63,7 +64,7 @@ public:
 		int index = 0; // Can be either JoyAxis or JoyButton.
 		bool pressed = false;
 		float value = 0;
-		BitField<HatMask> hat;
+		BitField<HatMask> hat = HatMask::CENTER;
 	};
 
 private:
@@ -72,7 +73,7 @@ private:
 	bool control_mem = false;
 	bool meta_mem = false;
 
-	BitField<MouseButtonMask> buttons_state;
+	BitField<MouseButtonMask> buttons_state = MouseButtonMask::NONE;
 
 	Vector<TouchPos> touch;
 	MouseEventInfo mouse_event_info;
@@ -105,5 +106,3 @@ public:
 	void process_joy_event(JoypadEvent p_event);
 	void process_key_event(int p_physical_keycode, int p_unicode, int p_key_label, bool p_pressed, bool p_echo);
 };
-
-#endif // ANDROID_INPUT_HANDLER_H

@@ -2,9 +2,11 @@
 /*  fog_volume.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,6 +31,8 @@
 /**************************************************************************/
 
 #include "fog_volume.h"
+
+#include "scene/main/viewport.h"
 #include "scene/resources/environment.h"
 
 ///////////////////////////
@@ -121,7 +125,7 @@ PackedStringArray FogVolume::get_configuration_warnings() const {
 	Ref<Environment> environment = get_viewport()->find_world_3d()->get_environment();
 
 	if (OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
-		warnings.push_back(RTR("Fog Volumes are only visible when using the Forward+ backend."));
+		warnings.push_back(RTR("Fog Volumes are only visible when using the Forward+ renderer."));
 		return warnings;
 	}
 

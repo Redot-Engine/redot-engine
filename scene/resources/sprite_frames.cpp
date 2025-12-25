@@ -2,9 +2,11 @@
 /*  sprite_frames.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,74 @@
 
 #include "sprite_frames.h"
 
+#include "scene/resources/compressed_texture.h"
+#include "scene/resources/image_texture.h"
 #include "scene/scene_string_names.h"
+
+Error SpriteFrames::load(const String &p_path) {
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
+	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_CANT_OPEN, vformat("Unable to open file: %s.", p_path));
+
+	uint8_t header[4];
+	f->get_buffer(header, 4);
+	if (header[0] != 'R' || header[1] != 'S' || header[2] != 'S' || header[3] != 'F') {
+		ERR_FAIL_V_MSG(ERR_FILE_CORRUPT, "Compressed SpriteFrames file is corrupt (Bad header).");
+	}
+
+	uint32_t version = f->get_32();
+
+	if (version > FORMAT_VERSION) {
+		ERR_FAIL_V_MSG(ERR_FILE_CORRUPT, "Compressed SpriteFrames file is too new.");
+	}
+
+	f->get_32(); // file width
+	f->get_32(); // file height
+	uint32_t data_flags = f->get_32();
+	int frame_count = f->get_32();
+	float frame_speed_multiplier = f->get_float();
+	bool will_loop = f->get_8();
+
+	//reserved
+	f->get_32();
+	f->get_32();
+	f->get_32();
+
+	int size_limit = 0;
+	if (!(data_flags & CompressedTexture2D::FORMAT_BIT_STREAM)) {
+		size_limit = 0;
+	}
+
+	Ref<Image> image;
+
+	HashMap<StringName, Anim>::Iterator E = animations.find(SceneStringName(default_));
+	ERR_FAIL_COND_V_MSG(!E, ERR_BUG, "BUG: Animation '" + SceneStringName(default_) + "' doesn't exist.");
+
+	E->value.frames.resize(frame_count);
+	Frame *frame = E->value.frames.ptrw();
+
+	for (int current_frame = 0; current_frame < frame_count; current_frame++, frame++) {
+		//reserved
+		f->get_32();
+		f->get_32();
+		f->get_32();
+
+		float delay = MAX(SPRITE_FRAME_MINIMUM_DURATION, f->get_float());
+		image = CompressedTexture2D::load_image_from_file(f, size_limit);
+
+		if (image.is_null() || image->is_empty()) {
+			return ERR_CANT_OPEN;
+		}
+
+		*frame = { ImageTexture::create_from_image(image), delay };
+	}
+
+	set_animation_loop(SceneStringName(default_), will_loop);
+	set_animation_speed(SceneStringName(default_), frame_speed_multiplier);
+
+	emit_changed();
+	notify_property_list_changed();
+	return OK;
+}
 
 void SpriteFrames::add_frame(const StringName &p_anim, const Ref<Texture2D> &p_texture, float p_duration, int p_at_pos) {
 	HashMap<StringName, Anim>::Iterator E = animations.find(p_anim);
@@ -93,7 +162,7 @@ void SpriteFrames::clear(const StringName &p_anim) {
 
 void SpriteFrames::clear_all() {
 	animations.clear();
-	add_animation("default");
+	add_animation(SceneStringName(default_));
 }
 
 void SpriteFrames::add_animation(const StringName &p_anim) {
@@ -249,6 +318,67 @@ void SpriteFrames::get_argument_options(const StringName &p_function, int p_idx,
 }
 #endif
 
+void SpriteFrames::set_from_image_frames(const Ref<ImageFrames> &p_image_frames, const StringName &p_anim) {
+	ERR_FAIL_COND_MSG(p_image_frames.is_null(), "Invalid image frames");
+
+	HashMap<StringName, Anim>::Iterator E;
+	if (!animations.has(p_anim)) {
+		E = animations.insert(p_anim, Anim());
+	} else {
+		E = animations.find(p_anim);
+	}
+
+	Ref<Image> image;
+
+	const int frame_count = p_image_frames->get_frame_count();
+
+	E->value.frames.resize(frame_count);
+	Frame *frame = E->value.frames.ptrw();
+
+	for (int current_frame = 0; current_frame < frame_count; current_frame++, frame++) {
+		float delay = MAX(SPRITE_FRAME_MINIMUM_DURATION, p_image_frames->get_frame_delay(current_frame));
+
+		image = p_image_frames->get_frame_image(current_frame);
+		*frame = { ImageTexture::create_from_image(image), delay };
+	}
+
+	int loop_count = p_image_frames->get_loop_count();
+	set_animation_loop(p_anim, loop_count > 1 || loop_count == 0);
+
+	emit_changed();
+	notify_property_list_changed();
+}
+
+Ref<SpriteFrames> SpriteFrames::create_from_image_frames(const Ref<ImageFrames> &p_image_frames) {
+	ERR_FAIL_COND_V_MSG(p_image_frames.is_null(), Ref<SpriteFrames>(), "Invalid image frames: null");
+
+	Ref<SpriteFrames> sprite_frames;
+	sprite_frames.instantiate();
+	sprite_frames->set_from_image_frames(p_image_frames);
+	return sprite_frames;
+}
+
+Ref<ImageFrames> SpriteFrames::make_image_frames(const StringName &p_anim) const {
+	ERR_FAIL_COND_V_MSG(!animations.has(p_anim), Ref<ImageFrames>(), vformat("SpriteFrames doesn't have animation '%s'.", p_anim));
+
+	Anim const &anim = animations.find(p_anim)->value;
+	int frame_count = anim.frames.size();
+
+	Ref<ImageFrames> image_frames;
+	image_frames.instantiate();
+	image_frames->set_frame_count(frame_count);
+	image_frames->set_loop_count(anim.loop ? 0 : 1);
+
+	const Frame *frame = anim.frames.ptr();
+
+	for (int frame_index = 0; frame_index < frame_count; frame_index++, frame++) {
+		ERR_CONTINUE(frame->texture.is_null());
+		image_frames->set_frame_image(frame_index, frame->texture->get_image());
+		image_frames->set_frame_delay(frame_index, frame->duration);
+	}
+	return image_frames;
+}
+
 void SpriteFrames::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_animation", "anim"), &SpriteFrames::add_animation);
 	ClassDB::bind_method(D_METHOD("has_animation", "anim"), &SpriteFrames::has_animation);
@@ -275,6 +405,10 @@ void SpriteFrames::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("clear", "anim"), &SpriteFrames::clear);
 	ClassDB::bind_method(D_METHOD("clear_all"), &SpriteFrames::clear_all);
 
+	ClassDB::bind_static_method("SpriteFrames", D_METHOD("create_from_image_frames", "image_frames"), &SpriteFrames::create_from_image_frames);
+	ClassDB::bind_method(D_METHOD("set_from_image_frames", "image_frames", "anim"), &SpriteFrames::set_from_image_frames, DEFVAL(SceneStringName(default_)));
+	ClassDB::bind_method(D_METHOD("make_image_frames", "anim"), &SpriteFrames::make_image_frames, DEFVAL(SceneStringName(default_)));
+
 	// `animations` property is for serialization.
 
 	ClassDB::bind_method(D_METHOD("_set_animations", "animations"), &SpriteFrames::_set_animations);
@@ -285,4 +419,30 @@ void SpriteFrames::_bind_methods() {
 
 SpriteFrames::SpriteFrames() {
 	add_animation(SceneStringName(default_));
+}
+
+Ref<Resource> ResourceFormatLoaderSpriteFrames::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
+	Ref<SpriteFrames> st;
+	st.instantiate();
+	Error err = st->load(p_path);
+	if (r_error) {
+		*r_error = err;
+	}
+	if (err != OK) {
+		return Ref<Resource>();
+	}
+
+	return st;
+}
+
+void ResourceFormatLoaderSpriteFrames::get_recognized_extensions(List<String> *p_extensions) const {
+	p_extensions->push_back("csfm");
+}
+
+bool ResourceFormatLoaderSpriteFrames::handles_type(const String &p_type) const {
+	return p_type == "SpriteFrames";
+}
+
+String ResourceFormatLoaderSpriteFrames::get_resource_type(const String &p_path) const {
+	return p_path.get_extension().to_lower() == "csfm" ? "SpriteFrames" : String();
 }

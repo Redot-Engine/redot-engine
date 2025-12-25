@@ -2,9 +2,11 @@
 /*  line_builder.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -112,6 +114,11 @@ void LineBuilder::build() {
 		}
 	}
 
+	if (point_count < 2 || (distance_required && Math::is_zero_approx(total_distance))) {
+		// Zero-length line, nothing to build.
+		return;
+	}
+
 	if (_interpolate_color) {
 		color0 = gradient->get_color(0);
 	} else {
@@ -139,7 +146,7 @@ void LineBuilder::build() {
 			} else if (texture_mode == Line2D::LINE_TEXTURE_STRETCH) {
 				uvx0 = width * width_factor / total_distance;
 			}
-			new_arc(pos0, pos_up0 - pos0, -Math_PI, color0, Rect2(0.f, 0.f, uvx0 * 2, 1.f));
+			new_arc(pos0, pos_up0 - pos0, -Math::PI, color0, Rect2(0.f, 0.f, uvx0 * 2, 1.f));
 			current_distance0 += modified_hw;
 			current_distance1 = current_distance0;
 		}
@@ -362,7 +369,7 @@ void LineBuilder::build() {
 				float dot_product = vbegin.dot(vend);
 				// Note that we're comparing against -0.f for clarity but 0.f would
 				// match as well, therefore we need the explicit signbit check too.
-				if (cross_product == -0.f && signbit(cross_product)) {
+				if (cross_product == -0.f && std::signbit(cross_product)) {
 					cross_product = 0.f;
 				}
 				float angle_delta = Math::atan2(cross_product, dot_product);
@@ -370,7 +377,7 @@ void LineBuilder::build() {
 			}
 
 			if (!is_intersecting) {
-				// In this case the joint is too corrupted to be re-used,
+				// In this case the joint is too corrupted to be reused,
 				// start again the strip with fallback points
 				strip_begin(pos_up0, pos_down0, color1, uvx1);
 			}
@@ -421,7 +428,7 @@ void LineBuilder::build() {
 			} else if (texture_mode == Line2D::LINE_TEXTURE_STRETCH) {
 				dist = width * width_factor / total_distance;
 			}
-			new_arc(pos1, pos_up1 - pos1, Math_PI, color, Rect2(uvx1 - 0.5f * dist, 0.f, dist, 1.f));
+			new_arc(pos1, pos_up1 - pos1, Math::PI, color, Rect2(uvx1 - 0.5f * dist, 0.f, dist, 1.f));
 		}
 	}
 }
@@ -504,7 +511,7 @@ void LineBuilder::strip_add_arc(Vector2 center, float angle_delta, Orientation o
 	Orientation opposite_orientation = orientation == UP ? DOWN : UP;
 	Vector2 vbegin = vertices[_last_index[opposite_orientation]] - center;
 	float radius = vbegin.length();
-	float angle_step = Math_PI / static_cast<float>(round_precision);
+	float angle_step = Math::PI / static_cast<float>(round_precision);
 	float steps = Math::abs(angle_delta) / angle_step;
 
 	if (angle_delta < 0.f) {
@@ -531,7 +538,7 @@ void LineBuilder::new_arc(Vector2 center, Vector2 vbegin, float angle_delta, Col
 	// with undistorted UVs from within a square section
 
 	float radius = vbegin.length();
-	float angle_step = Math_PI / static_cast<float>(round_precision);
+	float angle_step = Math::PI / static_cast<float>(round_precision);
 	float steps = Math::abs(angle_delta) / angle_step;
 
 	if (angle_delta < 0.f) {
@@ -541,7 +548,7 @@ void LineBuilder::new_arc(Vector2 center, Vector2 vbegin, float angle_delta, Col
 	float t = Vector2(1, 0).angle_to(vbegin);
 	float end_angle = t + angle_delta;
 	Vector2 rpos(0, 0);
-	float tt_begin = -Math_PI / 2.0f;
+	float tt_begin = -Math::PI / 2.0f;
 	float tt = tt_begin;
 
 	// Center vertice

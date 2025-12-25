@@ -2,9 +2,11 @@
 /*  keyboard.h                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef KEYBOARD_H
-#define KEYBOARD_H
+#pragma once
 
 #include "core/string/ustring.h"
 
@@ -249,7 +250,7 @@ enum class Key {
 
 enum class KeyModifierMask {
 	CODE_MASK = ((1 << 23) - 1), ///< Apply this mask to any keycode to remove modifiers.
-	MODIFIER_MASK = (0x7F << 22), ///< Apply this mask to isolate modifiers.
+	MODIFIER_MASK = (0x7F << 24), ///< Apply this mask to isolate modifiers.
 	//RESERVED = (1 << 23),
 	CMD_OR_CTRL = (1 << 24),
 	SHIFT = (1 << 25),
@@ -347,5 +348,3 @@ const char *keycode_get_name_by_index(int p_index);
 char32_t fix_unicode(char32_t p_char);
 Key fix_keycode(char32_t p_char, Key p_key);
 Key fix_key_label(char32_t p_char, Key p_key);
-
-#endif // KEYBOARD_H

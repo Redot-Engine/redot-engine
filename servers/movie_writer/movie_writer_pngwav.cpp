@@ -2,9 +2,11 @@
 /*  movie_writer_pngwav.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -140,7 +142,7 @@ Error MovieWriterPNGWAV::write_begin(const Size2i &p_movie_size, uint32_t p_fps,
 }
 
 Error MovieWriterPNGWAV::write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) {
-	ERR_FAIL_COND_V(!f_wav.is_valid(), ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V(f_wav.is_null(), ERR_UNCONFIGURED);
 
 	Vector<uint8_t> png_buffer = p_image->save_png_to_buffer();
 

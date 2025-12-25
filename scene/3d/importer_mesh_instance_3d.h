@@ -2,9 +2,11 @@
 /*  importer_mesh_instance_3d.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IMPORTER_MESH_INSTANCE_3D_H
-#define IMPORTER_MESH_INSTANCE_3D_H
+#pragma once
 
 #include "scene/3d/node_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/3d/skin.h"
-#include "scene/resources/immediate_mesh.h"
 
 class ImporterMesh;
 
@@ -90,5 +90,3 @@ public:
 	void set_visibility_range_fade_mode(GeometryInstance3D::VisibilityRangeFadeMode p_mode);
 	GeometryInstance3D::VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
 };
-
-#endif // IMPORTER_MESH_INSTANCE_3D_H

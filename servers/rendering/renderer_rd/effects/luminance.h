@@ -2,9 +2,11 @@
 /*  luminance.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,16 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef LUMINANCE_RD_H
-#define LUMINANCE_RD_H
+#pragma once
 
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
 #include "servers/rendering/renderer_rd/shaders/effects/luminance_reduce.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/luminance_reduce_raster.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
-#include "servers/rendering/renderer_scene_render.h"
-
-#include "servers/rendering_server.h"
 
 #define RB_LUMINANCE_BUFFERS SNAME("luminance_buffers")
 
@@ -116,5 +114,3 @@ public:
 };
 
 } // namespace RendererRD
-
-#endif // LUMINANCE_RD_H

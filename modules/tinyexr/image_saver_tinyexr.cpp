@@ -2,9 +2,11 @@
 /*  image_saver_tinyexr.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,6 +32,7 @@
 
 #include "image_saver_tinyexr.h"
 
+#include "core/io/file_access.h"
 #include "core/math/math_funcs.h"
 
 #include <zlib.h> // Should come before including tinyexr.
@@ -284,7 +287,7 @@ Vector<uint8_t> save_exr_buffer(const Ref<Image> &p_img, bool p_grayscale) {
 
 Error save_exr(const String &p_path, const Ref<Image> &p_img, bool p_grayscale) {
 	const Vector<uint8_t> buffer = save_exr_buffer(p_img, p_grayscale);
-	if (buffer.size() == 0) {
+	if (buffer.is_empty()) {
 		print_error(String("Saving EXR failed."));
 		return ERR_FILE_CANT_WRITE;
 	} else {

@@ -2,9 +2,11 @@
 /*  java_godot_view_wrapper.h                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef JAVA_GODOT_VIEW_WRAPPER_H
-#define JAVA_GODOT_VIEW_WRAPPER_H
+#pragma once
 
-#include "string_android.h"
+#include "jni_utils.h"
 
 #include "core/math/vector2.h"
 
@@ -66,5 +67,3 @@ public:
 
 	~GodotJavaViewWrapper();
 };
-
-#endif // JAVA_GODOT_VIEW_WRAPPER_H

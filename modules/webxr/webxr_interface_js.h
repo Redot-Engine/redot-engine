@@ -2,9 +2,11 @@
 /*  webxr_interface_js.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBXR_INTERFACE_JS_H
-#define WEBXR_INTERFACE_JS_H
+#pragma once
 
 #ifdef WEB_ENABLED
 
@@ -263,5 +264,3 @@ private:
 };
 
 #endif // WEB_ENABLED
-
-#endif // WEBXR_INTERFACE_JS_H

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Godot.Bridge;
 using Godot.NativeInterop;
@@ -12,6 +14,8 @@ namespace Godot
     {
         private bool _disposed;
         private static readonly Type _cachedType = typeof(GodotObject);
+
+        private static readonly Dictionary<Type, StringName?> _nativeNames = new Dictionary<Type, StringName?>();
 
         internal IntPtr NativePtr;
         private bool _memoryOwn;
@@ -86,8 +90,7 @@ namespace Godot
             // NativePtr is assigned, that would result in UB or crashes when calling
             // native functions that receive the pointer, which can happen because the
             // debugger calls ToString() and tries to get the value of properties.
-            if (instance._disposed || instance.NativePtr == IntPtr.Zero)
-                throw new ObjectDisposedException(instance.GetType().FullName);
+            ObjectDisposedException.ThrowIf(instance._disposed || instance.NativePtr == IntPtr.Zero, instance);
 
             return instance.NativePtr;
         }
@@ -191,22 +194,62 @@ namespace Godot
             return new SignalAwaiter(source, signal, this);
         }
 
+        internal static bool IsNativeClass(Type t)
+        {
+            if (ReferenceEquals(t.Assembly, typeof(GodotObject).Assembly))
+            {
+                return true;
+            }
+
+            if (ReflectionUtils.IsEditorHintCached)
+            {
+                return t.Assembly.GetName().Name == "RedotSharpEditor";
+            }
+
+            return false;
+        }
+
         internal static Type InternalGetClassNativeBase(Type t)
         {
-            var name = t.Assembly.GetName().Name;
+            while (!IsNativeClass(t))
+            {
+                Debug.Assert(t.BaseType is not null, "Script types must derive from a native Redot type.");
 
-            if (name == "GodotSharp" || name == "GodotSharpEditor")
-                return t;
+                t = t.BaseType;
+            }
 
-            Debug.Assert(t.BaseType is not null, "Script types must derive from a native Godot type.");
+            return t;
+        }
 
-            return InternalGetClassNativeBase(t.BaseType);
+        internal static StringName? InternalGetClassNativeBaseName(Type t)
+        {
+            if (_nativeNames.TryGetValue(t, out var name))
+            {
+                return name;
+            }
+
+            var baseType = InternalGetClassNativeBase(t);
+
+            if (_nativeNames.TryGetValue(baseType, out name))
+            {
+                return name;
+            }
+
+            var field = baseType.GetField("NativeName",
+                BindingFlags.DeclaredOnly | BindingFlags.Static |
+                BindingFlags.Public | BindingFlags.NonPublic);
+
+            name = field?.GetValue(null) as StringName;
+
+            _nativeNames[baseType] = name;
+
+            return name;
         }
 
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         /// <summary>
         /// Set the value of a property contained in this class.
-        /// This method is used by Godot to assign property values.
+        /// This method is used by Redot to assign property values.
         /// Do not call or override this method.
         /// </summary>
         /// <param name="name">Name of the property to set.</param>
@@ -221,7 +264,7 @@ namespace Godot
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         /// <summary>
         /// Get the value of a property contained in this class.
-        /// This method is used by Godot to retrieve property values.
+        /// This method is used by Redot to retrieve property values.
         /// Do not call or override this method.
         /// </summary>
         /// <param name="name">Name of the property to get.</param>
@@ -237,7 +280,7 @@ namespace Godot
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         /// <summary>
         /// Raises the signal with the given name, using the given arguments.
-        /// This method is used by Godot to raise signals from the engine side.\n"
+        /// This method is used by Redot to raise signals from the engine side.\n"
         /// Do not call or override this method.
         /// </summary>
         /// <param name="signal">Name of the signal to raise.</param>

@@ -2,9 +2,11 @@
 /*  gi.h                                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GI_RD_H
-#define GI_RD_H
+#pragma once
 
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
@@ -189,7 +190,7 @@ private:
 		uint32_t cell_offset;
 		uint32_t cell_count;
 		float aniso_strength;
-		uint32_t pad;
+		float cell_size;
 	};
 
 	struct VoxelGIDynamicPushConstant {
@@ -210,7 +211,8 @@ private:
 		float dynamic_range;
 		uint32_t on_mipmap;
 		float propagation;
-		float pad[3];
+		float cell_size;
+		float pad[2];
 	};
 
 	VoxelGILight *voxel_gi_lights = nullptr;
@@ -392,9 +394,9 @@ private:
 		};
 		struct IntegratePushConstant {
 			enum {
-				SKY_MODE_DISABLED,
-				SKY_MODE_COLOR,
-				SKY_MODE_SKY,
+				SKY_FLAGS_MODE_COLOR = 0x01,
+				SKY_FLAGS_MODE_SKY = 0x02,
+				SKY_FLAGS_ORIENTATION_SIGN = 0x04,
 			};
 
 			float grid_size[3];
@@ -410,12 +412,12 @@ private:
 			int32_t image_size[2];
 
 			int32_t world_offset[3];
-			uint32_t sky_mode;
+			uint32_t sky_flags;
 
 			int32_t scroll[3];
 			float sky_energy;
 
-			float sky_color[3];
+			float sky_color_or_orientation[3];
 			float y_mult;
 
 			uint32_t store_ambient_texture;
@@ -467,7 +469,7 @@ public:
 
 	/* VOXEL GI API */
 
-	bool owns_voxel_gi(RID p_rid) { return voxel_gi_owner.owns(p_rid); };
+	bool owns_voxel_gi(RID p_rid) { return voxel_gi_owner.owns(p_rid); }
 
 	virtual RID voxel_gi_allocate() override;
 	virtual void voxel_gi_free(RID p_voxel_gi) override;
@@ -524,14 +526,14 @@ public:
 		VoxelGIInstance *voxel_gi = voxel_gi_instance_owner.get_or_null(p_probe);
 		ERR_FAIL_NULL_V(voxel_gi, RID());
 		return voxel_gi->texture;
-	};
+	}
 
 	_FORCE_INLINE_ void voxel_gi_instance_set_render_index(RID p_probe, uint32_t p_index) {
 		VoxelGIInstance *voxel_gi = voxel_gi_instance_owner.get_or_null(p_probe);
 		ERR_FAIL_NULL(voxel_gi);
 
 		voxel_gi->render_index = p_index;
-	};
+	}
 
 	bool voxel_gi_instance_owns(RID p_rid) const {
 		return voxel_gi_instance_owner.owns(p_rid);
@@ -789,10 +791,17 @@ public:
 
 	RID sdfgi_ubo;
 
+	enum Group {
+		GROUP_NORMAL,
+		GROUP_VRS,
+	};
+
 	enum Mode {
 		MODE_VOXEL_GI,
+		MODE_VOXEL_GI_WITHOUT_SAMPLER,
 		MODE_SDFGI,
 		MODE_COMBINED,
+		MODE_COMBINED_WITHOUT_SAMPLER,
 		MODE_MAX
 	};
 
@@ -826,8 +835,8 @@ public:
 	bool voxel_gi_needs_update(RID p_probe) const;
 	void voxel_gi_update(RID p_probe, bool p_update_light_instances, const Vector<RID> &p_light_instances, const PagedArray<RenderGeometryInstance *> &p_dynamic_objects);
 	void debug_voxel_gi(RID p_voxel_gi, RD::DrawListID p_draw_list, RID p_framebuffer, const Projection &p_camera_with_transform, bool p_lighting, bool p_emission, float p_alpha);
+
+	void enable_vrs_shader_group();
 };
 
 } // namespace RendererRD
-
-#endif // GI_RD_H

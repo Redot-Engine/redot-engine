@@ -2,9 +2,11 @@
 /*  marker_2d.cpp                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -61,7 +63,7 @@ void Marker2D::_draw_cross() {
 	draw_multiline_colors(points, colors);
 }
 
-#ifdef TOOLS_ENABLED
+#ifdef DEBUG_ENABLED
 Rect2 Marker2D::_edit_get_rect() const {
 	real_t extents = get_gizmo_extents();
 	return Rect2(Point2(-extents, -extents), Size2(extents * 2, extents * 2));
@@ -70,7 +72,7 @@ Rect2 Marker2D::_edit_get_rect() const {
 bool Marker2D::_edit_use_rect() const {
 	return false;
 }
-#endif
+#endif // DEBUG_ENABLED
 
 void Marker2D::_notification(int p_what) {
 	switch (p_what) {

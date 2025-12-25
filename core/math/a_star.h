@@ -2,9 +2,11 @@
 /*  a_star.h                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef A_STAR_H
-#define A_STAR_H
+#pragma once
 
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
-#include "core/templates/oa_hash_map.h"
+#include "core/templates/a_hash_map.h"
 
 /**
 	A* pathfinding algorithm.
@@ -51,8 +52,8 @@ class AStar3D : public RefCounted {
 		real_t weight_scale = 0;
 		bool enabled = false;
 
-		OAHashMap<int64_t, Point *> neighbors = 4u;
-		OAHashMap<int64_t, Point *> unlinked_neighbours = 4u;
+		AHashMap<int64_t, Point *> neighbors = 4u;
+		AHashMap<int64_t, Point *> unlinked_neighbours = 4u;
 
 		// Used for pathfinding.
 		Point *prev_point = nullptr;
@@ -90,7 +91,7 @@ class AStar3D : public RefCounted {
 		unsigned char direction = NONE;
 
 		static uint32_t hash(const Segment &p_seg) {
-			return PairHash<int64_t, int64_t>().hash(p_seg.key);
+			return HashMapHasherDefault::hash(p_seg.key);
 		}
 		bool operator==(const Segment &p_s) const { return key == p_s.key; }
 
@@ -108,12 +109,13 @@ class AStar3D : public RefCounted {
 		}
 	};
 
-	int64_t last_free_id = 0;
+	mutable int64_t last_free_id = 0;
 	uint64_t pass = 1;
 
-	OAHashMap<int64_t, Point *> points;
+	AHashMap<int64_t, Point *> points;
 	HashSet<Segment, Segment> segments;
 	Point *last_closest_point = nullptr;
+	bool neighbor_filter_enabled = false;
 
 	bool _solve(Point *begin_point, Point *end_point, bool p_allow_partial_path);
 
@@ -123,6 +125,7 @@ protected:
 	virtual real_t _estimate_cost(int64_t p_from_id, int64_t p_end_id);
 	virtual real_t _compute_cost(int64_t p_from_id, int64_t p_to_id);
 
+	GDVIRTUAL2RC(bool, _filter_neighbor, int64_t, int64_t)
 	GDVIRTUAL2RC(real_t, _estimate_cost, int64_t, int64_t)
 	GDVIRTUAL2RC(real_t, _compute_cost, int64_t, int64_t)
 
@@ -144,6 +147,9 @@ public:
 	bool has_point(int64_t p_id) const;
 	Vector<int64_t> get_point_connections(int64_t p_id);
 	PackedInt64Array get_point_ids();
+
+	bool is_neighbor_filter_enabled() const;
+	void set_neighbor_filter_enabled(bool p_enabled);
 
 	void set_point_disabled(int64_t p_id, bool p_disabled = true);
 	bool is_point_disabled(int64_t p_id) const;
@@ -179,6 +185,7 @@ protected:
 	virtual real_t _estimate_cost(int64_t p_from_id, int64_t p_end_id);
 	virtual real_t _compute_cost(int64_t p_from_id, int64_t p_to_id);
 
+	GDVIRTUAL2RC(bool, _filter_neighbor, int64_t, int64_t)
 	GDVIRTUAL2RC(real_t, _estimate_cost, int64_t, int64_t)
 	GDVIRTUAL2RC(real_t, _compute_cost, int64_t, int64_t)
 
@@ -201,6 +208,9 @@ public:
 	Vector<int64_t> get_point_connections(int64_t p_id);
 	PackedInt64Array get_point_ids();
 
+	bool is_neighbor_filter_enabled() const;
+	void set_neighbor_filter_enabled(bool p_enabled);
+
 	void set_point_disabled(int64_t p_id, bool p_disabled = true);
 	bool is_point_disabled(int64_t p_id) const;
 
@@ -222,5 +232,3 @@ public:
 	AStar2D() {}
 	~AStar2D() {}
 };
-
-#endif // A_STAR_H

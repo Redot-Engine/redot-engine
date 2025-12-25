@@ -2,9 +2,11 @@
 /*  test_local_vector.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_LOCAL_VECTOR_H
-#define TEST_LOCAL_VECTOR_H
+#pragma once
 
 #include "core/templates/local_vector.h"
 
@@ -179,6 +180,23 @@ TEST_CASE("[LocalVector] Remove Unordered.") {
 	CHECK(vector.size() == 0);
 }
 
+TEST_CASE("[LocalVector] Erase Unordered.") {
+	LocalVector<int> vector;
+	vector.push_back(1);
+	vector.push_back(3);
+	vector.push_back(0);
+	vector.push_back(2);
+	vector.push_back(4);
+
+	CHECK(vector.find(1) == 0);
+
+	vector.erase_unordered(1);
+
+	CHECK(vector.find(1) == -1);
+	CHECK(vector.size() == 4);
+	CHECK(vector[0] == 4);
+}
+
 TEST_CASE("[LocalVector] Erase.") {
 	LocalVector<int> vector;
 	vector.push_back(1);
@@ -245,5 +263,3 @@ TEST_CASE("[LocalVector] Size / Resize / Reserve.") {
 	CHECK(vector.get_capacity() >= 4);
 }
 } // namespace TestLocalVector
-
-#endif // TEST_LOCAL_VECTOR_H

@@ -2,9 +2,11 @@
 /*  text_file.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXT_FILE_H
-#define TEXT_FILE_H
+#pragma once
 
-#include "core/io/resource_loader.h"
-#include "core/io/resource_saver.h"
+#include "core/io/resource.h"
 
 class TextFile : public Resource {
 	GDCLASS(TextFile, Resource);
@@ -53,5 +53,3 @@ public:
 	void set_file_path(const String &p_path) { path = p_path; }
 	Error load_text(const String &p_path);
 };
-
-#endif // TEXT_FILE_H

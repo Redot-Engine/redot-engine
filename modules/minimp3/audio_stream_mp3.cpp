@@ -2,9 +2,11 @@
 /*  audio_stream_mp3.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -33,8 +35,6 @@
 #define MINIMP3_NO_STDIO
 
 #include "audio_stream_mp3.h"
-
-#include "core/io/file_access.h"
 
 int AudioStreamPlaybackMP3::_mix_internal(AudioFrame *p_buffer, int p_frames) {
 	if (!active) {
@@ -314,7 +314,24 @@ Ref<AudioSample> AudioStreamMP3::generate_sample() const {
 	return sample;
 }
 
+Ref<AudioStreamMP3> AudioStreamMP3::load_from_buffer(const Vector<uint8_t> &p_stream_data) {
+	Ref<AudioStreamMP3> mp3_stream;
+	mp3_stream.instantiate();
+	mp3_stream->set_data(p_stream_data);
+	ERR_FAIL_COND_V_MSG(mp3_stream->get_data().is_empty(), Ref<AudioStreamMP3>(), "MP3 decoding failed. Check that your data is a valid MP3 audio stream.");
+	return mp3_stream;
+}
+
+Ref<AudioStreamMP3> AudioStreamMP3::load_from_file(const String &p_path) {
+	const Vector<uint8_t> stream_data = FileAccess::get_file_as_bytes(p_path);
+	ERR_FAIL_COND_V_MSG(stream_data.is_empty(), Ref<AudioStreamMP3>(), vformat("Cannot open file '%s'.", p_path));
+	return load_from_buffer(stream_data);
+}
+
 void AudioStreamMP3::_bind_methods() {
+	ClassDB::bind_static_method("AudioStreamMP3", D_METHOD("load_from_buffer", "stream_data"), &AudioStreamMP3::load_from_buffer);
+	ClassDB::bind_static_method("AudioStreamMP3", D_METHOD("load_from_file", "path"), &AudioStreamMP3::load_from_file);
+
 	ClassDB::bind_method(D_METHOD("set_data", "data"), &AudioStreamMP3::set_data);
 	ClassDB::bind_method(D_METHOD("get_data"), &AudioStreamMP3::get_data);
 

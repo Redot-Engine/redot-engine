@@ -2,9 +2,11 @@
 /*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -45,8 +47,10 @@ void initialize_webxr_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_ABSTRACT_CLASS(WebXRInterface);
 
 #ifdef WEB_ENABLED
-	webxr.instantiate();
-	XRServer::get_singleton()->add_interface(webxr);
+	if (XRServer::get_singleton()) {
+		webxr.instantiate();
+		XRServer::get_singleton()->add_interface(webxr);
+	}
 #endif
 }
 

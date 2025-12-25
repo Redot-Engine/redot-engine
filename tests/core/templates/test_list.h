@@ -2,9 +2,11 @@
 /*  test_list.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_LIST_H
-#define TEST_LIST_H
+#pragma once
 
 #include "core/templates/list.h"
 
@@ -43,6 +44,17 @@ static void populate_integers(List<int> &p_list, List<int>::Element *r_elements[
 		List<int>::Element *n = p_list.push_back(i);
 		r_elements[i] = n;
 	}
+}
+
+TEST_CASE("[List] List initialization") {
+	List<int> list{ 0, 1, 2, 3, 4 };
+
+	CHECK(list.size() == 5);
+	CHECK(list.get(0) == 0);
+	CHECK(list.get(1) == 1);
+	CHECK(list.get(2) == 2);
+	CHECK(list.get(3) == 3);
+	CHECK(list.get(4) == 4);
 }
 
 TEST_CASE("[List] Push/pop back") {
@@ -300,19 +312,64 @@ TEST_CASE("[List] Move before") {
 	CHECK(list.front()->next()->get() == n[3]->get());
 }
 
+template <typename T>
+static void compare_lists(const List<T> &p_result, const List<T> &p_expected) {
+	CHECK_EQ(p_result.size(), p_expected.size());
+	const typename List<T>::Element *result_it = p_result.front();
+	const typename List<T>::Element *expected_it = p_expected.front();
+	for (int i = 0; i < p_result.size(); i++) {
+		CHECK(result_it);
+		CHECK(expected_it);
+		CHECK_EQ(result_it->get(), expected_it->get());
+		result_it = result_it->next();
+		expected_it = expected_it->next();
+	}
+	CHECK(!result_it);
+	CHECK(!expected_it);
+
+	result_it = p_result.back();
+	expected_it = p_expected.back();
+	for (int i = 0; i < p_result.size(); i++) {
+		CHECK(result_it);
+		CHECK(expected_it);
+		CHECK_EQ(result_it->get(), expected_it->get());
+		result_it = result_it->prev();
+		expected_it = expected_it->prev();
+	}
+	CHECK(!result_it);
+	CHECK(!expected_it);
+}
+
 TEST_CASE("[List] Sort") {
-	List<String> list;
-	list.push_back("D");
-	list.push_back("B");
-	list.push_back("A");
-	list.push_back("C");
+	List<String> result{ "D", "B", "A", "C" };
+	result.sort();
+	List<String> expected{ "A", "B", "C", "D" };
+	compare_lists(result, expected);
 
-	list.sort();
+	List<int> empty_result{};
+	empty_result.sort();
+	List<int> empty_expected{};
+	compare_lists(empty_result, empty_expected);
 
-	CHECK(list.front()->get() == "A");
-	CHECK(list.front()->next()->get() == "B");
-	CHECK(list.back()->prev()->get() == "C");
-	CHECK(list.back()->get() == "D");
+	List<int> one_result{ 1 };
+	one_result.sort();
+	List<int> one_expected{ 1 };
+	compare_lists(one_result, one_expected);
+
+	List<float> reversed_result{ 2.0, 1.5, 1.0 };
+	reversed_result.sort();
+	List<float> reversed_expected{ 1.0, 1.5, 2.0 };
+	compare_lists(reversed_result, reversed_expected);
+
+	List<int> already_sorted_result{ 1, 2, 3, 4, 5 };
+	already_sorted_result.sort();
+	List<int> already_sorted_expected{ 1, 2, 3, 4, 5 };
+	compare_lists(already_sorted_result, already_sorted_expected);
+
+	List<int> with_duplicates_result{ 1, 2, 3, 1, 2, 3 };
+	with_duplicates_result.sort();
+	List<int> with_duplicates_expected{ 1, 1, 2, 2, 3, 3 };
+	compare_lists(with_duplicates_result, with_duplicates_expected);
 }
 
 TEST_CASE("[List] Swap adjacent front and back") {
@@ -441,15 +498,15 @@ TEST_CASE("[List] Swap middle (values check)") {
 	List<String>::Element *n_str1 = list.push_back("Still");
 	List<String>::Element *n_str2 = list.push_back("waiting");
 	List<String>::Element *n_str3 = list.push_back("for");
-	List<String>::Element *n_str4 = list.push_back("Godot.");
+	List<String>::Element *n_str4 = list.push_back("Redot.");
 
 	CHECK(n_str1->get() == "Still");
-	CHECK(n_str4->get() == "Godot.");
+	CHECK(n_str4->get() == "Redot.");
 
 	CHECK(list.front()->get() == "Still");
 	CHECK(list.front()->next()->get() == "waiting");
 	CHECK(list.back()->prev()->get() == "for");
-	CHECK(list.back()->get() == "Godot.");
+	CHECK(list.back()->get() == "Redot.");
 
 	list.swap(n_str2, n_str3);
 
@@ -459,18 +516,18 @@ TEST_CASE("[List] Swap middle (values check)") {
 
 TEST_CASE("[List] Swap front and back (values check)") {
 	List<Variant> list;
-	Variant str = "Godot";
+	Variant str = "Redot";
 	List<Variant>::Element *n_str = list.push_back(str);
 	Variant color = Color(0, 0, 1);
 	List<Variant>::Element *n_color = list.push_back(color);
 
-	CHECK(list.front()->get() == "Godot");
+	CHECK(list.front()->get() == "Redot");
 	CHECK(list.back()->get() == Color(0, 0, 1));
 
 	list.swap(n_str, n_color);
 
 	CHECK(list.front()->get() == Color(0, 0, 1));
-	CHECK(list.back()->get() == "Godot");
+	CHECK(list.back()->get() == "Redot");
 }
 
 TEST_CASE("[List] Swap adjacent back and front (reverse order of elements)") {
@@ -544,5 +601,3 @@ TEST_CASE("[Stress][List] Swap random 10 elements, 1000 iterations.") {
 	swap_random(list, n, 10, 1000);
 }
 } // namespace TestList
-
-#endif // TEST_LIST_H

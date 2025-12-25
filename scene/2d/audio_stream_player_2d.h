@@ -2,9 +2,11 @@
 /*  audio_stream_player_2d.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_PLAYER_2D_H
-#define AUDIO_STREAM_PLAYER_2D_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 #include "servers/audio_server.h"
@@ -104,6 +105,9 @@ public:
 	void set_volume_db(float p_volume);
 	float get_volume_db() const;
 
+	void set_volume_linear(float p_volume);
+	float get_volume_linear() const;
+
 	void set_pitch_scale(float p_pitch_scale);
 	float get_pitch_scale() const;
 
@@ -146,5 +150,3 @@ public:
 	AudioStreamPlayer2D();
 	~AudioStreamPlayer2D();
 };
-
-#endif // AUDIO_STREAM_PLAYER_2D_H

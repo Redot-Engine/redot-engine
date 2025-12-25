@@ -2,9 +2,11 @@
 /*  skeleton_modification_2d_lookat.cpp                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,10 +32,6 @@
 
 #include "skeleton_modification_2d_lookat.h"
 #include "scene/2d/skeleton_2d.h"
-
-#ifdef TOOLS_ENABLED
-#include "editor/editor_settings.h"
-#endif // TOOLS_ENABLED
 
 bool SkeletonModification2DLookAt::_set(const StringName &p_path, const Variant &p_value) {
 	String path = p_path;
@@ -128,7 +126,7 @@ void SkeletonModification2DLookAt::_execute(float p_delta) {
 	}
 
 	if (target_node_reference == nullptr) {
-		target_node_reference = Object::cast_to<Node2D>(ObjectDB::get_instance(target_node_cache));
+		target_node_reference = ObjectDB::get_instance<Node2D>(target_node_cache);
 	}
 	if (!target_node_reference || !target_node_reference->is_inside_tree()) {
 		ERR_PRINT_ONCE("Target node is not in the scene tree. Cannot execute modification!");
@@ -403,7 +401,7 @@ SkeletonModification2DLookAt::SkeletonModification2DLookAt() {
 	additional_rotation = 0;
 	enable_constraint = false;
 	constraint_angle_min = 0;
-	constraint_angle_max = Math_PI * 2;
+	constraint_angle_max = Math::PI * 2;
 	constraint_angle_invert = false;
 	enabled = true;
 

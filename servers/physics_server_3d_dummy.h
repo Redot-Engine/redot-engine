@@ -2,9 +2,11 @@
 /*  physics_server_3d_dummy.h                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PHYSICS_SERVER_3D_DUMMY_H
-#define PHYSICS_SERVER_3D_DUMMY_H
+#pragma once
 
 #include "servers/physics_server_3d.h"
 
@@ -81,6 +82,12 @@ public:
 
 	virtual void set_sleep_state(bool p_sleep) override {}
 	virtual bool is_sleeping() const override { return false; }
+
+	virtual void set_collision_layer(uint32_t p_layer) override {}
+	virtual uint32_t get_collision_layer() const override { return 0; }
+
+	virtual void set_collision_mask(uint32_t p_mask) override {}
+	virtual uint32_t get_collision_mask() const override { return 0; }
 
 	virtual int get_contact_count() const override { return 0; }
 
@@ -342,6 +349,9 @@ public:
 	virtual void soft_body_set_linear_stiffness(RID p_body, real_t p_stiffness) override {}
 	virtual real_t soft_body_get_linear_stiffness(RID p_body) const override { return 0; }
 
+	virtual void soft_body_set_shrinking_factor(RID p_body, real_t p_shrinking_factor) override {}
+	virtual real_t soft_body_get_shrinking_factor(RID p_body) const override { return 0; }
+
 	virtual void soft_body_set_pressure_coefficient(RID p_body, real_t p_pressure_coefficient) override {}
 	virtual real_t soft_body_get_pressure_coefficient(RID p_body) const override { return 0; }
 
@@ -357,6 +367,11 @@ public:
 	virtual void soft_body_remove_all_pinned_points(RID p_body) override {}
 	virtual void soft_body_pin_point(RID p_body, int p_point_index, bool p_pin) override {}
 	virtual bool soft_body_is_point_pinned(RID p_body, int p_point_index) const override { return false; }
+
+	virtual void soft_body_apply_point_impulse(RID p_body, int p_point_index, const Vector3 &p_impulse) override {}
+	virtual void soft_body_apply_point_force(RID p_body, int p_point_index, const Vector3 &p_force) override {}
+	virtual void soft_body_apply_central_impulse(RID p_body, const Vector3 &p_impulse) override {}
+	virtual void soft_body_apply_central_force(RID p_body, const Vector3 &p_force) override {}
 
 	/* JOINT API */
 
@@ -432,5 +447,3 @@ public:
 
 	virtual int get_process_info(ProcessInfo p_info) override { return 0; }
 };
-
-#endif // PHYSICS_SERVER_3D_DUMMY_H

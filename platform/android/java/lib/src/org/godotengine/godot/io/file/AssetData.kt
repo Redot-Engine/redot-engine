@@ -2,9 +2,11 @@
 /*  AssetData.kt                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.io.file
+package org.redotengine.godot.io.file
 
 import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
-import org.godotengine.godot.error.Error
-import org.godotengine.godot.io.directory.AssetsDirectoryAccess
+import org.redotengine.godot.error.Error
+import org.redotengine.godot.io.directory.AssetsDirectoryAccess
 import java.io.IOException
 import java.io.InputStream
 import java.lang.UnsupportedOperationException
@@ -66,6 +68,8 @@ internal class AssetData(context: Context, private val filePath: String, accessF
 		}
 
 		fun fileLastModified(path: String) = 0L
+		fun fileLastAccessed(path: String) = 0L
+		fun fileSize(path: String) = -1L
 
 		fun delete(path: String) = false
 
@@ -136,7 +140,6 @@ internal class AssetData(context: Context, private val filePath: String, accessF
 				0
 			} else {
 				position += readBytes
-				endOfFile = position() >= size()
 				readBytes
 			}
 		} catch (e: IOException) {
@@ -145,7 +148,8 @@ internal class AssetData(context: Context, private val filePath: String, accessF
 		}
 	}
 
-	override fun write(buffer: ByteBuffer) {
+	override fun write(buffer: ByteBuffer): Boolean {
 		Log.w(TAG, "write() is not supported.")
+		return false
 	}
 }

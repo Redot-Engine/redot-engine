@@ -2,9 +2,11 @@
 /*  remote_filesystem_client.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef REMOTE_FILESYSTEM_CLIENT_H
-#define REMOTE_FILESYSTEM_CLIENT_H
+#pragma once
 
-#include "core/io/ip_address.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/local_vector.h"
@@ -61,5 +61,3 @@ public:
 	Error synchronize_with_server(const String &p_host, int p_port, const String &p_password, String &r_cache_path);
 	virtual ~RemoteFilesystemClient() {}
 };
-
-#endif // REMOTE_FILESYSTEM_CLIENT_H

@@ -2,9 +2,11 @@
 /*  multiplayer_editor_plugin.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MULTIPLAYER_EDITOR_PLUGIN_H
-#define MULTIPLAYER_EDITOR_PLUGIN_H
+#pragma once
 
-#include "editor/plugins/editor_debugger_plugin.h"
+#include "editor/debugger/editor_debugger_plugin.h"
 #include "editor/plugins/editor_plugin.h"
 
 class EditorNetworkProfiler;
@@ -51,8 +52,6 @@ public:
 	virtual bool has_capture(const String &p_capture) const override;
 	virtual bool capture(const String &p_message, const Array &p_data, int p_index) override;
 	virtual void setup_session(int p_session_id) override;
-
-	MultiplayerEditorDebugger() {}
 };
 
 class ReplicationEditor;
@@ -80,5 +79,3 @@ public:
 
 	MultiplayerEditorPlugin();
 };
-
-#endif // MULTIPLAYER_EDITOR_PLUGIN_H

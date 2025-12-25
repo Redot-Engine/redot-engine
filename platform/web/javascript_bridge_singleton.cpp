@@ -2,9 +2,11 @@
 /*  javascript_bridge_singleton.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -64,6 +66,8 @@ extern int godot_js_wrapper_object_transfer_buffer(int p_id, void *p_byte_arr, v
 };
 
 class JavaScriptObjectImpl : public JavaScriptObject {
+	GDSOFTCLASS(JavaScriptObjectImpl, JavaScriptObject);
+
 private:
 	friend class JavaScriptBridge;
 

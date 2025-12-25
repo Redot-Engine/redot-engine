@@ -2,9 +2,11 @@
 /*  skeleton_modification_stack_2d.cpp                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -71,7 +73,7 @@ void SkeletonModificationStack2D::setup() {
 	if (skeleton != nullptr) {
 		is_setup = true;
 		for (int i = 0; i < modifications.size(); i++) {
-			if (!modifications[i].is_valid()) {
+			if (modifications[i].is_null()) {
 				continue;
 			}
 			modifications.get(i)->_setup_modification(this);
@@ -100,7 +102,7 @@ void SkeletonModificationStack2D::execute(float p_delta, int p_execution_mode) {
 	}
 
 	for (int i = 0; i < modifications.size(); i++) {
-		if (!modifications[i].is_valid()) {
+		if (modifications[i].is_null()) {
 			continue;
 		}
 
@@ -117,7 +119,7 @@ void SkeletonModificationStack2D::draw_editor_gizmos() {
 
 	if (editor_gizmo_dirty) {
 		for (int i = 0; i < modifications.size(); i++) {
-			if (!modifications[i].is_valid()) {
+			if (modifications[i].is_null()) {
 				continue;
 			}
 
@@ -147,7 +149,7 @@ void SkeletonModificationStack2D::set_editor_gizmos_dirty(bool p_dirty) {
 
 void SkeletonModificationStack2D::enable_all_modifications(bool p_enabled) {
 	for (int i = 0; i < modifications.size(); i++) {
-		if (!modifications[i].is_valid()) {
+		if (modifications[i].is_null()) {
 			continue;
 		}
 		modifications.get(i)->set_enabled(p_enabled);
@@ -160,7 +162,7 @@ Ref<SkeletonModification2D> SkeletonModificationStack2D::get_modification(int p_
 }
 
 void SkeletonModificationStack2D::add_modification(Ref<SkeletonModification2D> p_mod) {
-	ERR_FAIL_COND(!p_mod.is_valid());
+	ERR_FAIL_COND(p_mod.is_null());
 
 	p_mod->_setup_modification(this);
 	modifications.push_back(p_mod);

@@ -2,9 +2,11 @@
 /*  mesh_storage.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -53,8 +55,15 @@ void MeshStorage::mesh_initialize(RID p_rid) {
 void MeshStorage::mesh_free(RID p_rid) {
 	DummyMesh *mesh = mesh_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(mesh);
-
+	mesh->dependency.deleted_notify(p_rid);
 	mesh_owner.free(p_rid);
+}
+
+void MeshStorage::mesh_surface_remove(RID p_mesh, int p_surface) {
+	DummyMesh *m = mesh_owner.get_or_null(p_mesh);
+	ERR_FAIL_NULL(m);
+	m->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MESH);
+	m->surfaces.remove_at(p_surface);
 }
 
 void MeshStorage::mesh_clear(RID p_mesh) {

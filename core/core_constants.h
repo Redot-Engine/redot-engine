@@ -2,9 +2,11 @@
 /*  core_constants.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CORE_CONSTANTS_H
-#define CORE_CONSTANTS_H
+#pragma once
 
 #include "core/string/string_name.h"
-#include "core/templates/hash_set.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/list.h"
 
 class CoreConstants {
 public:
@@ -45,7 +47,8 @@ public:
 	static bool is_global_constant(const StringName &p_name);
 	static int get_global_constant_index(const StringName &p_name);
 	static bool is_global_enum(const StringName &p_enum);
-	static void get_enum_values(const StringName &p_enum, HashMap<StringName, int64_t> *p_values);
+	static void get_enum_values(const StringName &p_enum, HashMap<StringName, int64_t> *r_values);
+#ifdef TOOLS_ENABLED
+	static void get_global_enums(List<StringName> *r_values);
+#endif
 };
-
-#endif // CORE_CONSTANTS_H

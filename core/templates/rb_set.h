@@ -2,9 +2,11 @@
 /*  rb_set.h                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RB_SET_H
-#define RB_SET_H
+#pragma once
 
 #include "core/os/memory.h"
 #include "core/typedefs.h"
+
+#include <initializer_list>
 
 // based on the very nice implementation of rb-trees by:
 // https://web.archive.org/web/20120507164830/https://web.mit.edu/~emin/www/source_code/red_black_tree/index.html
@@ -76,7 +79,7 @@ public:
 		}
 		const T &get() const {
 			return value;
-		};
+		}
 		Element() {}
 	};
 
@@ -701,11 +704,15 @@ public:
 		_copy_from(p_set);
 	}
 
+	RBSet(std::initializer_list<T> p_init) {
+		for (const T &E : p_init) {
+			insert(E);
+		}
+	}
+
 	_FORCE_INLINE_ RBSet() {}
 
 	~RBSet() {
 		clear();
 	}
 };
-
-#endif // RB_SET_H

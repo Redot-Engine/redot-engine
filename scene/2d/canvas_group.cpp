@@ -2,9 +2,11 @@
 /*  canvas_group.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -62,6 +64,38 @@ void CanvasGroup::set_use_mipmaps(bool p_use_mipmaps) {
 }
 bool CanvasGroup::is_using_mipmaps() const {
 	return use_mipmaps;
+}
+
+PackedStringArray CanvasGroup::get_configuration_warnings() const {
+	PackedStringArray warnings = Node2D::get_configuration_warnings();
+
+	if (is_inside_tree()) {
+		bool warned_about_ancestor_clipping = false;
+		bool warned_about_canvasgroup_ancestor = false;
+		Node *n = get_parent();
+		while (n) {
+			CanvasItem *as_canvas_item = Object::cast_to<CanvasItem>(n);
+			if (!warned_about_ancestor_clipping && as_canvas_item && as_canvas_item->get_clip_children_mode() != CLIP_CHILDREN_DISABLED) {
+				warnings.push_back(vformat(RTR("Ancestor \"%s\" clips its children, so this CanvasGroup will not function properly."), as_canvas_item->get_name()));
+				warned_about_ancestor_clipping = true;
+			}
+
+			CanvasGroup *as_canvas_group = Object::cast_to<CanvasGroup>(n);
+			if (!warned_about_canvasgroup_ancestor && as_canvas_group) {
+				warnings.push_back(vformat(RTR("Ancestor \"%s\" is a CanvasGroup, so this CanvasGroup will not function properly."), as_canvas_group->get_name()));
+				warned_about_canvasgroup_ancestor = true;
+			}
+
+			// Only break out early once both warnings have been triggered, so
+			// that the user is aware of both possible reasons for clipping not working.
+			if (warned_about_ancestor_clipping && warned_about_canvasgroup_ancestor) {
+				break;
+			}
+			n = n->get_parent();
+		}
+	}
+
+	return warnings;
 }
 
 void CanvasGroup::_bind_methods() {

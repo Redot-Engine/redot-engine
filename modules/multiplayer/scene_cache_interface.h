@@ -2,9 +2,11 @@
 /*  scene_cache_interface.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SCENE_CACHE_INTERFACE_H
-#define SCENE_CACHE_INTERFACE_H
+#pragma once
 
-#include "scene/main/multiplayer_api.h"
+#include "core/object/ref_counted.h"
 
 class Node;
 class SceneMultiplayer;
@@ -89,5 +90,3 @@ public:
 
 	SceneCacheInterface(SceneMultiplayer *p_multiplayer) { multiplayer = p_multiplayer; }
 };
-
-#endif // SCENE_CACHE_INTERFACE_H

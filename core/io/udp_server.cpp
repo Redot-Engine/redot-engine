@@ -2,9 +2,11 @@
 /*  udp_server.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -44,7 +46,7 @@ void UDPServer::_bind_methods() {
 }
 
 Error UDPServer::poll() {
-	ERR_FAIL_COND_V(!_sock.is_valid(), ERR_UNAVAILABLE);
+	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
 	if (!_sock->is_open()) {
 		return ERR_UNCONFIGURED;
 	}
@@ -88,7 +90,7 @@ Error UDPServer::poll() {
 }
 
 Error UDPServer::listen(uint16_t p_port, const IPAddress &p_bind_address) {
-	ERR_FAIL_COND_V(!_sock.is_valid(), ERR_UNAVAILABLE);
+	ERR_FAIL_COND_V(_sock.is_null(), ERR_UNAVAILABLE);
 	ERR_FAIL_COND_V(_sock->is_open(), ERR_ALREADY_IN_USE);
 	ERR_FAIL_COND_V(!p_bind_address.is_valid() && !p_bind_address.is_wildcard(), ERR_INVALID_PARAMETER);
 
@@ -123,13 +125,13 @@ int UDPServer::get_local_port() const {
 }
 
 bool UDPServer::is_listening() const {
-	ERR_FAIL_COND_V(!_sock.is_valid(), false);
+	ERR_FAIL_COND_V(_sock.is_null(), false);
 
 	return _sock->is_open();
 }
 
 bool UDPServer::is_connection_available() const {
-	ERR_FAIL_COND_V(!_sock.is_valid(), false);
+	ERR_FAIL_COND_V(_sock.is_null(), false);
 
 	if (!_sock->is_open()) {
 		return false;

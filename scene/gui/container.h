@@ -2,9 +2,11 @@
 /*  container.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CONTAINER_H
-#define CONTAINER_H
+#pragma once
 
 #include "scene/gui/control.h"
 
@@ -41,14 +42,14 @@ class Container : public Control {
 	void _child_minsize_changed();
 
 protected:
-	enum class SortableVisbilityMode {
+	enum class SortableVisibilityMode {
 		VISIBLE,
 		VISIBLE_IN_TREE,
 		IGNORE,
 	};
 
 	void queue_sort();
-	Control *as_sortable_control(Node *p_node, SortableVisbilityMode p_visibility_mode = SortableVisbilityMode::VISIBLE_IN_TREE) const;
+	Control *as_sortable_control(Node *p_node, SortableVisibilityMode p_visibility_mode = SortableVisibilityMode::VISIBLE_IN_TREE) const;
 
 	virtual void add_child_notify(Node *p_child) override;
 	virtual void move_child_notify(Node *p_child) override;
@@ -75,5 +76,3 @@ public:
 
 	Container();
 };
-
-#endif // CONTAINER_H

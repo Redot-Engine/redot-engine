@@ -2,9 +2,11 @@
 /*  navigation_mesh_source_geometry_data_2d.h                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NAVIGATION_MESH_SOURCE_GEOMETRY_DATA_2D_H
-#define NAVIGATION_MESH_SOURCE_GEOMETRY_DATA_2D_H
+#pragma once
 
+#include "core/io/resource.h"
 #include "core/os/rw_lock.h"
-#include "scene/2d/node_2d.h"
-#include "scene/resources/2d/navigation_polygon.h"
 
 class NavigationMeshSourceGeometryData2D : public Resource {
+	friend class NavMeshGenerator2D;
+
 	GDCLASS(NavigationMeshSourceGeometryData2D, Resource);
 	RWLock geometry_rwlock;
 
@@ -108,8 +110,5 @@ public:
 
 	Rect2 get_bounds();
 
-	NavigationMeshSourceGeometryData2D() {}
 	~NavigationMeshSourceGeometryData2D() { clear(); }
 };
-
-#endif // NAVIGATION_MESH_SOURCE_GEOMETRY_DATA_2D_H

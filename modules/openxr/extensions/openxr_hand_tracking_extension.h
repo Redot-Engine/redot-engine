@@ -2,9 +2,11 @@
 /*  openxr_hand_tracking_extension.h                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_HAND_TRACKING_EXTENSION_H
-#define OPENXR_HAND_TRACKING_EXTENSION_H
+#pragma once
 
 #include "../util.h"
 #include "core/math/quaternion.h"
@@ -37,6 +38,11 @@
 #include "servers/xr/xr_hand_tracker.h"
 
 class OpenXRHandTrackingExtension : public OpenXRExtensionWrapper {
+	GDCLASS(OpenXRHandTrackingExtension, OpenXRExtensionWrapper);
+
+protected:
+	static void _bind_methods() {}
+
 public:
 	enum HandTrackedHands {
 		OPENXR_TRACKED_LEFT_HAND,
@@ -122,5 +128,3 @@ private:
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyHandTrackerEXT, (XrHandTrackerEXT), p_handTracker)
 	EXT_PROTO_XRRESULT_FUNC3(xrLocateHandJointsEXT, (XrHandTrackerEXT), p_handTracker, (const XrHandJointsLocateInfoEXT *), p_locateInfo, (XrHandJointLocationsEXT *), p_locations)
 };
-
-#endif // OPENXR_HAND_TRACKING_EXTENSION_H

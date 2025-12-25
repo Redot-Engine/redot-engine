@@ -2,9 +2,11 @@
 /*  http_client_web.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -49,11 +51,11 @@ Error HTTPClientWeb::connect_to_host(const String &p_host, int p_port, Ref<TLSOp
 
 	String host_lower = host.to_lower();
 	if (host_lower.begins_with("http://")) {
-		host = host.substr(7, host.length() - 7);
+		host = host.substr(7);
 		use_tls = false;
 	} else if (host_lower.begins_with("https://")) {
 		use_tls = true;
-		host = host.substr(8, host.length() - 8);
+		host = host.substr(8);
 	}
 
 	ERR_FAIL_COND_V(host.length() < HOST_MIN_LEN, ERR_INVALID_PARAMETER);

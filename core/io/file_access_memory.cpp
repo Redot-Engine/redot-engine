@@ -2,9 +2,11 @@
 /*  file_access_memory.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -31,8 +33,6 @@
 #include "file_access_memory.h"
 
 #include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
-#include "core/templates/rb_map.h"
 
 static HashMap<String, Vector<uint8_t>> *files = nullptr;
 
@@ -85,7 +85,7 @@ Error FileAccessMemory::open_internal(const String &p_path, int p_mode_flags) {
 	//name = DirAccess::normalize_path(name);
 
 	HashMap<String, Vector<uint8_t>>::Iterator E = files->find(name);
-	ERR_FAIL_COND_V_MSG(!E, ERR_FILE_NOT_FOUND, "Can't find file '" + p_path + "'.");
+	ERR_FAIL_COND_V_MSG(!E, ERR_FILE_NOT_FOUND, vformat("Can't find file '%s'.", p_path));
 
 	data = E->value.ptrw();
 	length = E->value.size();
@@ -123,7 +123,11 @@ bool FileAccessMemory::eof_reached() const {
 }
 
 uint64_t FileAccessMemory::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
-	ERR_FAIL_COND_V(!p_dst && p_length > 0, -1);
+	if (!p_length) {
+		return 0;
+	}
+
+	ERR_FAIL_NULL_V(p_dst, -1);
 	ERR_FAIL_NULL_V(data, -1);
 
 	uint64_t left = length - pos;
@@ -147,16 +151,20 @@ void FileAccessMemory::flush() {
 	ERR_FAIL_NULL(data);
 }
 
-void FileAccessMemory::store_buffer(const uint8_t *p_src, uint64_t p_length) {
-	ERR_FAIL_COND(!p_src && p_length > 0);
+bool FileAccessMemory::store_buffer(const uint8_t *p_src, uint64_t p_length) {
+	if (!p_length) {
+		return true;
+	}
+
+	ERR_FAIL_NULL_V(p_src, false);
 
 	uint64_t left = length - pos;
 	uint64_t write = MIN(p_length, left);
 
-	if (write < p_length) {
-		WARN_PRINT("Writing less data than requested");
-	}
-
 	memcpy(&data[pos], p_src, write);
 	pos += write;
+
+	ERR_FAIL_COND_V_MSG(write < p_length, false, "Writing less data than requested.");
+
+	return true;
 }

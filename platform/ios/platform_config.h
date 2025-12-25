@@ -2,9 +2,11 @@
 /*  platform_config.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include <alloca.h>
+#pragma once
 
-#define PTHREAD_RENAME_SELF
-
-#define _weakify(var) __weak typeof(var) GDWeak_##var = var;
-#define _strongify(var)                                      \
-	_Pragma("clang diagnostic push")                         \
-			_Pragma("clang diagnostic ignored \"-Wshadow\"") \
-					__strong typeof(var) var = GDWeak_##var; \
-	_Pragma("clang diagnostic pop")
+#import "drivers/apple_embedded/platform_config.h"

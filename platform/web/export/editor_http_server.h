@@ -2,9 +2,11 @@
 /*  editor_http_server.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEB_EDITOR_HTTP_SERVER_H
-#define WEB_EDITOR_HTTP_SERVER_H
+#pragma once
 
 #include "core/io/image_loader.h"
 #include "core/io/stream_peer_tls.h"
 #include "core/io/tcp_server.h"
 #include "core/io/zip_io.h"
-#include "editor/editor_paths.h"
+#include "editor/file_system/editor_paths.h"
 
 class EditorHTTPServer : public RefCounted {
 private:
@@ -70,5 +71,3 @@ public:
 	Error listen(int p_port, IPAddress p_address, bool p_use_tls, String p_tls_key, String p_tls_cert);
 	bool is_listening() const;
 };
-
-#endif // WEB_EDITOR_HTTP_SERVER_H

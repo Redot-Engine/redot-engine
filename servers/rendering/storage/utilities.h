@@ -2,9 +2,11 @@
 /*  utilities.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENDERER_UTILITIES_H
-#define RENDERER_UTILITIES_H
+#pragma once
 
 #include "servers/rendering_server.h"
 
@@ -51,6 +52,7 @@ public:
 		DEPENDENCY_CHANGED_LIGHT,
 		DEPENDENCY_CHANGED_LIGHT_SOFT_SHADOW_AND_PROJECTOR,
 		DEPENDENCY_CHANGED_REFLECTION_PROBE,
+		DEPENDENCY_CHANGED_CULL_MASK,
 	};
 
 	void changed_notify(DependencyChangedNotification p_notification);
@@ -184,6 +186,6 @@ public:
 	virtual String get_video_adapter_api_version() const = 0;
 
 	virtual Size2i get_maximum_viewport_size() const = 0;
+	virtual uint32_t get_maximum_shader_varyings() const = 0;
+	virtual uint64_t get_maximum_uniform_buffer_size() const = 0;
 };
-
-#endif // RENDERER_UTILITIES_H

@@ -2,9 +2,11 @@
 /*  multiplayer_api.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MULTIPLAYER_API_H
-#define MULTIPLAYER_API_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 #include "scene/main/multiplayer_peer.h"
@@ -75,7 +76,6 @@ public:
 	bool has_multiplayer_peer() { return get_multiplayer_peer().is_valid(); }
 	bool is_server() { return get_unique_id() == MultiplayerPeer::TARGET_PEER_SERVER; }
 
-	MultiplayerAPI() {}
 	virtual ~MultiplayerAPI() {}
 };
 
@@ -111,5 +111,3 @@ public:
 	GDVIRTUAL2R(Error, _object_configuration_add, Object *, Variant);
 	GDVIRTUAL2R(Error, _object_configuration_remove, Object *, Variant);
 };
-
-#endif // MULTIPLAYER_API_H

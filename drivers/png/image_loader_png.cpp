@@ -2,9 +2,11 @@
 /*  image_loader_png.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,11 +32,7 @@
 
 #include "image_loader_png.h"
 
-#include "core/os/os.h"
-#include "core/string/print_string.h"
 #include "drivers/png/png_driver_common.h"
-
-#include <string.h>
 
 Error ImageLoaderPNG::load_image(Ref<Image> p_image, Ref<FileAccess> f, BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale) {
 	const uint64_t buffer_size = f->get_length();
@@ -79,7 +77,7 @@ Ref<Image> ImageLoaderPNG::lossless_unpack_png(const Vector<uint8_t> &p_data) {
 Vector<uint8_t> ImageLoaderPNG::lossless_pack_png(const Ref<Image> &p_image) {
 	Vector<uint8_t> out_buffer;
 
-	// add Godot's own "PNG " prefix
+	// add Redot's own "PNG " prefix
 	if (out_buffer.resize(4) != OK) {
 		ERR_FAIL_V(Vector<uint8_t>());
 	}

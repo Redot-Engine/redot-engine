@@ -2,9 +2,11 @@
 /*  egl_manager.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,18 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EGL_MANAGER_H
-#define EGL_MANAGER_H
+#pragma once
 
 #ifdef EGL_ENABLED
 
 // These must come first to avoid windows.h mess.
 #include "platform_gl.h"
 
-#include "core/config/project_settings.h"
-#include "core/crypto/crypto_core.h"
-#include "core/io/dir_access.h"
-#include "core/io/file_access.h"
 #include "core/templates/local_vector.h"
 #include "servers/display_server.h"
 
@@ -53,11 +50,18 @@ private:
 		EGLDisplay egl_display = EGL_NO_DISPLAY;
 		EGLContext egl_context = EGL_NO_CONTEXT;
 		EGLConfig egl_config = nullptr;
+
+#ifdef WINDOWS_ENABLED
+		bool has_EGL_ANGLE_surface_orientation = false;
+#endif
 	};
 
 	// EGL specific window data.
 	struct GLWindow {
 		bool initialized = false;
+#ifdef WINDOWS_ENABLED
+		bool flipped_y = false;
+#endif
 
 		// An handle to the GLDisplay associated with this window.
 		int gldisplay_id = -1;
@@ -106,6 +110,8 @@ public:
 	bool is_using_vsync() const;
 
 	EGLContext get_context(DisplayServer::WindowID p_window_id);
+	EGLDisplay get_display(DisplayServer::WindowID p_window_id);
+	EGLConfig get_config(DisplayServer::WindowID p_window_id);
 
 	Error initialize(void *p_native_display = nullptr);
 
@@ -114,5 +120,3 @@ public:
 };
 
 #endif // EGL_ENABLED
-
-#endif // EGL_MANAGER_H

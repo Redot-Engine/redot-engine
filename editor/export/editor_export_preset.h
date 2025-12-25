@@ -2,9 +2,11 @@
 /*  editor_export_preset.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_EXPORT_PRESET_H
-#define EDITOR_EXPORT_PRESET_H
+#pragma once
 
 class EditorExportPlatform;
 
@@ -92,6 +93,7 @@ private:
 	String enc_ex_filters;
 	bool enc_pck = false;
 	bool enc_directory = false;
+	uint64_t seed = 0;
 
 	String script_key;
 	int script_mode = MODE_SCRIPT_BINARY_TOKENS_COMPRESSED;
@@ -124,6 +126,8 @@ public:
 
 	void set_file_export_mode(const String &p_path, FileExportMode p_mode);
 	FileExportMode get_file_export_mode(const String &p_path, FileExportMode p_default = MODE_FILE_NOT_CUSTOMIZED) const;
+
+	Variant get_project_setting(const StringName &p_name);
 
 	void set_name(const String &p_name);
 	String get_name() const;
@@ -165,6 +169,9 @@ public:
 	void set_enc_ex_filter(const String &p_filter);
 	String get_enc_ex_filter() const;
 
+	void set_seed(uint64_t p_seed);
+	uint64_t get_seed() const;
+
 	void set_enc_pck(bool p_enabled);
 	bool get_enc_pck() const;
 
@@ -191,12 +198,8 @@ public:
 
 	const HashMap<StringName, PropertyInfo> &get_properties() const { return properties; }
 	const HashMap<StringName, Variant> &get_values() const { return values; }
-
-	EditorExportPreset();
 };
 
 VARIANT_ENUM_CAST(EditorExportPreset::ExportFilter);
 VARIANT_ENUM_CAST(EditorExportPreset::FileExportMode);
 VARIANT_ENUM_CAST(EditorExportPreset::ScriptExportMode);
-
-#endif // EDITOR_EXPORT_PRESET_H

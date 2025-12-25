@@ -2,9 +2,11 @@
 /*  skeleton_modification_stack_2d.h                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SKELETON_MODIFICATION_STACK_2D_H
-#define SKELETON_MODIFICATION_STACK_2D_H
+#pragma once
 
-#include "scene/2d/skeleton_2d.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
+#include "core/io/resource.h"
 
 ///////////////////////////////////////
 // SkeletonModificationStack2D
@@ -64,7 +64,7 @@ public:
 		execution_mode_physics_process
 	};
 
-	Vector<Ref<SkeletonModification2D>> modifications = Vector<Ref<SkeletonModification2D>>();
+	Vector<Ref<SkeletonModification2D>> modifications;
 
 	void setup();
 	void execute(float p_delta, int p_execution_mode);
@@ -95,5 +95,3 @@ public:
 
 	SkeletonModificationStack2D();
 };
-
-#endif // SKELETON_MODIFICATION_STACK_2D_H

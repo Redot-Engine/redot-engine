@@ -2,9 +2,11 @@
 /*  collision_object_2d.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -51,7 +53,7 @@ void CollisionObject2D::_notification(int p_what) {
 
 			if (!disabled || (disable_mode != DISABLE_MODE_REMOVE)) {
 				Ref<World2D> world_ref = get_world_2d();
-				ERR_FAIL_COND(!world_ref.is_valid());
+				ERR_FAIL_COND(world_ref.is_null());
 				RID space = world_ref->get_space();
 				if (area) {
 					PhysicsServer2D::get_singleton()->area_set_space(rid, space);
@@ -295,7 +297,7 @@ uint32_t CollisionObject2D::create_shape_owner(Object *p_owner) {
 	ShapeData sd;
 	uint32_t id;
 
-	if (shapes.size() == 0) {
+	if (shapes.is_empty()) {
 		id = 0;
 	} else {
 		id = shapes.back()->key() + 1;

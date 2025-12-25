@@ -2,9 +2,11 @@
 /*  editor_expression_evaluator.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -34,6 +36,7 @@
 #include "editor/debugger/script_editor_debugger.h"
 #include "scene/gui/button.h"
 #include "scene/gui/check_box.h"
+#include "scene/gui/line_edit.h"
 
 void EditorExpressionEvaluator::on_start() {
 	expression_input->set_editable(false);
@@ -74,7 +77,8 @@ void EditorExpressionEvaluator::_clear() {
 }
 
 void EditorExpressionEvaluator::_remote_object_selected(ObjectID p_id) {
-	editor_debugger->emit_signal(SNAME("remote_object_requested"), p_id);
+	Array arr = { p_id };
+	editor_debugger->emit_signal(SNAME("remote_objects_requested"), arr);
 }
 
 void EditorExpressionEvaluator::_on_expression_input_changed(const String &p_expression) {
@@ -109,8 +113,9 @@ EditorExpressionEvaluator::EditorExpressionEvaluator() {
 	expression_input = memnew(LineEdit);
 	expression_input->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	expression_input->set_placeholder(TTR("Expression to evaluate"));
+	expression_input->set_accessibility_name(TTRC("Expression to evaluate"));
 	expression_input->set_clear_button_enabled(true);
-	expression_input->connect("text_submitted", callable_mp(this, &EditorExpressionEvaluator::_evaluate).unbind(1));
+	expression_input->connect(SceneStringName(text_submitted), callable_mp(this, &EditorExpressionEvaluator::_evaluate).unbind(1));
 	expression_input->connect(SceneStringName(text_changed), callable_mp(this, &EditorExpressionEvaluator::_on_expression_input_changed));
 	hb->add_child(expression_input);
 

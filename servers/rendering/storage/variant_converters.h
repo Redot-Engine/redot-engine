@@ -2,9 +2,11 @@
 /*  variant_converters.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef VARIANT_CONVERTERS_H
-#define VARIANT_CONVERTERS_H
+#pragma once
 
 #include "core/error/error_macros.h"
 #include "core/variant/array.h"
@@ -319,5 +320,3 @@ void write_array_std140(const Vector<From> &p_values, To *p_write, int p_array_s
 		}
 	}
 }
-
-#endif // VARIANT_CONVERTERS_H

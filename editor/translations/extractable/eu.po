@@ -4,8 +4,8 @@
 # This file is distributed under the same license as the Godot source code.
 msgid ""
 msgstr ""
-"Project-Id-Version: Godot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Project-Id-Version: Redot Engine extractable strings\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "PO-Revision-Date: 2023-11-06 00:35+0000\n"
 "Last-Translator: Pablo Mori <pablomcando2008@gmail.com>\n"
 "Language-Team: Basque <https://hosted.weblate.org/projects/godot-engine/godot/"
@@ -25,6 +25,9 @@ msgstr "Ireki"
 msgid "Select Current Folder"
 msgstr "Hautatu uneko karpeta"
 
+msgid "Save"
+msgstr "Gorde"
+
 msgid "Select This Folder"
 msgstr "Hautatu karpeta hau"
 
@@ -39,9 +42,6 @@ msgstr "Ireki direktorioa"
 
 msgid "Open a File or Directory"
 msgstr "Ireki fitxategia edo direktorioa"
-
-msgid "Save"
-msgstr "Gorde"
 
 msgid "Save a File"
 msgstr "Gorde fitxategia"

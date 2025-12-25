@@ -2,9 +2,11 @@
 /*  godot_space_2d.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,18 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_SPACE_2D_H
-#define GODOT_SPACE_2D_H
+#pragma once
 
 #include "godot_area_2d.h"
-#include "godot_area_pair_2d.h"
 #include "godot_body_2d.h"
-#include "godot_body_pair_2d.h"
 #include "godot_broad_phase_2d.h"
 #include "godot_collision_object_2d.h"
 
-#include "core/config/project_settings.h"
-#include "core/templates/hash_map.h"
 #include "core/typedefs.h"
 
 class GodotPhysicsDirectSpaceState2D : public PhysicsDirectSpaceState2D {
@@ -210,5 +207,3 @@ public:
 	GodotSpace2D();
 	~GodotSpace2D();
 };
-
-#endif // GODOT_SPACE_2D_H

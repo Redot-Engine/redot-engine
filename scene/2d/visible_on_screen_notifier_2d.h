@@ -2,9 +2,11 @@
 /*  visible_on_screen_notifier_2d.h                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef VISIBLE_ON_SCREEN_NOTIFIER_2D_H
-#define VISIBLE_ON_SCREEN_NOTIFIER_2D_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 
@@ -40,6 +41,7 @@ class VisibleOnScreenNotifier2D : public Node2D {
 	HashSet<Viewport *> viewports;
 
 	Rect2 rect;
+	bool show_rect = true;
 
 private:
 	bool on_screen = false;
@@ -55,12 +57,25 @@ protected:
 
 public:
 #ifdef TOOLS_ENABLED
+	virtual Dictionary _edit_get_state() const override;
+	virtual void _edit_set_state(const Dictionary &p_state) override;
+
+	virtual Vector2 _edit_get_minimum_size() const override { return Vector2(); }
+
+	virtual void _edit_set_rect(const Rect2 &p_edit_rect) override;
+#endif // TOOLS_ENABLED
+
+#ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
+
 	virtual bool _edit_use_rect() const override;
-#endif
+#endif // DEBUG_ENABLED
 
 	void set_rect(const Rect2 &p_rect);
 	Rect2 get_rect() const;
+
+	void set_show_rect(bool p_show_rect);
+	bool is_showing_rect() const;
 
 	bool is_on_screen() const;
 
@@ -101,5 +116,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(VisibleOnScreenEnabler2D::EnableMode);
-
-#endif // VISIBLE_ON_SCREEN_NOTIFIER_2D_H

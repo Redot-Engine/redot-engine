@@ -2,9 +2,11 @@
 /*  webrtc_data_channel_js.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -198,12 +200,14 @@ WebRTCDataChannelJS::WebRTCDataChannelJS(int js_id) {
 	// Parse label
 	char *label = godot_js_rtc_datachannel_label_get(js_id);
 	if (label) {
-		_label.parse_utf8(label);
+		_label.clear();
+		_label.append_utf8(label);
 		free(label);
 	}
 	char *protocol = godot_js_rtc_datachannel_protocol_get(js_id);
 	if (protocol) {
-		_protocol.parse_utf8(protocol);
+		_protocol.clear();
+		_protocol.append_utf8(protocol);
 		free(protocol);
 	}
 }

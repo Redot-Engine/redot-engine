@@ -2,9 +2,11 @@
 /*  rendering_light_culler.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -643,7 +645,7 @@ uint8_t RenderingLightCuller::Data::LUT_entries[LUT_SIZE][8] = {
 
 // See e.g. http://lspiroengine.com/?p=153 for reference.
 // Principles are the same, but differences to the article:
-// * Order of planes / points is different in Godot.
+// * Order of planes / points is different in Redot.
 // * We use a lookup table at runtime.
 void RenderingLightCuller::create_LUT() {
 	// Each pair of planes that are opposite can have an edge.
@@ -696,10 +698,11 @@ void RenderingLightCuller::debug_print_LUT_as_table() {
 		int s = entry.size();
 
 		for (int p = 0; p < 8; p++) {
-			if (p < s)
+			if (p < s) {
 				sz += itos(entry[p]);
-			else
+			} else {
 				sz += "0"; // just a spacer
+			}
 
 			sz += ", ";
 		}
@@ -765,12 +768,14 @@ void RenderingLightCuller::add_LUT(int p_plane_0, int p_plane_1, PointOrder p_pt
 	// All entries of the LUT that have plane 0 set and plane 1 not set.
 	for (uint32_t n = 0; n < 64; n++) {
 		// If bit0 not set...
-		if (!(n & bit0))
+		if (!(n & bit0)) {
 			continue;
+		}
 
 		// If bit1 set...
-		if (n & bit1)
+		if (n & bit1) {
 			continue;
+		}
 
 		// Meets criteria.
 		add_LUT_entry(n, p_pts);
@@ -791,8 +796,9 @@ void RenderingLightCuller::compact_LUT_entry(uint32_t p_entry_id) {
 
 	int num_pairs = entry.size() / 2;
 
-	if (num_pairs == 0)
+	if (num_pairs == 0) {
 		return;
+	}
 
 	LocalVector<uint8_t> temp;
 
@@ -816,8 +822,9 @@ void RenderingLightCuller::compact_LUT_entry(uint32_t p_entry_id) {
 		for (int p = 1; p < num_pairs; p++) {
 			unsigned int bit = 1 << p;
 			// Is it done already?
-			if (BFpairs & bit)
+			if (BFpairs & bit) {
 				continue;
+			}
 
 			// There must be at least 1 free pair.
 			// Attempt to add.

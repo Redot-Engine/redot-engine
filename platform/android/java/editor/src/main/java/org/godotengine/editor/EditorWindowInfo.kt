@@ -2,9 +2,11 @@
 /*  EditorWindowInfo.kt                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.editor
+package org.redotengine.editor
 
 /**
  * Specifies the policy for launches.
@@ -48,12 +50,7 @@ enum class LaunchPolicy {
 	/**
 	 * Adjacent launches are enabled.
 	 */
-	ADJACENT,
-
-	/**
-	 * Launches happen in the same window but start in PiP mode.
-	 */
-	SAME_AND_LAUNCH_IN_PIP_MODE
+	ADJACENT
 }
 
 /**
@@ -63,14 +60,12 @@ data class EditorWindowInfo(
 	val windowClassName: String,
 	val windowId: Int,
 	val processNameSuffix: String,
-	val launchPolicy: LaunchPolicy = LaunchPolicy.SAME,
-	val supportsPiPMode: Boolean = false
+	val launchPolicy: LaunchPolicy = LaunchPolicy.SAME
 ) {
 	constructor(
 		windowClass: Class<*>,
 		windowId: Int,
 		processNameSuffix: String,
-		launchPolicy: LaunchPolicy = LaunchPolicy.SAME,
-		supportsPiPMode: Boolean = false
-	) : this(windowClass.name, windowId, processNameSuffix, launchPolicy, supportsPiPMode)
+		launchPolicy: LaunchPolicy = LaunchPolicy.SAME
+	) : this(windowClass.name, windowId, processNameSuffix, launchPolicy)
 }

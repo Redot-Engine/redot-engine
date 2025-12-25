@@ -2,9 +2,11 @@
 /*  naming_utils.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MONO_NAMING_UTILS_H
-#define MONO_NAMING_UTILS_H
+#pragma once
 
 #include "core/string/ustring.h"
 
@@ -38,5 +39,3 @@ String pascal_to_pascal_case(const String &p_identifier);
 String snake_to_pascal_case(const String &p_identifier, bool p_input_is_upper = false);
 
 String snake_to_camel_case(const String &p_identifier, bool p_input_is_upper = false);
-
-#endif // MONO_NAMING_UTILS_H

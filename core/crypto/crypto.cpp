@@ -2,9 +2,11 @@
 /*  crypto.cpp                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,10 +31,6 @@
 /**************************************************************************/
 
 #include "crypto.h"
-
-#include "core/config/engine.h"
-#include "core/io/certs_compressed.gen.h"
-#include "core/io/compression.h"
 
 /// Resources
 
@@ -240,7 +238,7 @@ Error ResourceFormatSaverCrypto::save(const Ref<Resource> &p_resource, const Str
 	} else {
 		ERR_FAIL_V(ERR_INVALID_PARAMETER);
 	}
-	ERR_FAIL_COND_V_MSG(err != OK, err, "Cannot save Crypto resource to file '" + p_path + "'.");
+	ERR_FAIL_COND_V_MSG(err != OK, err, vformat("Cannot save Crypto resource to file '%s'.", p_path));
 	return OK;
 }
 

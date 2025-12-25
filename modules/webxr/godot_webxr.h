@@ -2,9 +2,11 @@
 /*  godot_webxr.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_WEBXR_H
-#define GODOT_WEBXR_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stddef.h>
 
 enum WebXRInputEvent {
 	WEBXR_INPUT_EVENT_SELECTSTART,
@@ -100,5 +99,3 @@ extern int godot_webxr_get_supported_frame_rates(float **r_frame_rates);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // GODOT_WEBXR_H

@@ -2,9 +2,11 @@
 /*  godot_joints_2d.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_JOINTS_2D_H
-#define GODOT_JOINTS_2D_H
+#pragma once
 
 #include "godot_body_2d.h"
 #include "godot_constraint_2d.h"
@@ -70,7 +71,7 @@ public:
 				body->remove_constraint(this, i);
 			}
 		}
-	};
+	}
 };
 
 class GodotPinJoint2D : public GodotJoint2D {
@@ -188,5 +189,3 @@ public:
 
 	GodotDampedSpringJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
 };
-
-#endif // GODOT_JOINTS_2D_H

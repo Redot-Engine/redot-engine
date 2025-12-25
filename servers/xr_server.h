@@ -2,9 +2,11 @@
 /*  xr_server.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef XR_SERVER_H
-#define XR_SERVER_H
+#pragma once
 
 #include "core/object/ref_counted.h"
-#include "core/os/os.h"
 #include "core/os/thread_safe.h"
-#include "core/templates/rid.h"
 #include "core/variant/variant.h"
 #include "rendering_server.h"
 
@@ -96,6 +95,7 @@ private:
 	double world_scale = 1.0; /* scale by which we multiply our tracker positions */
 	Transform3D world_origin; /* our world origin point, maps a location in our virtual world to the origin point in our real world tracking volume */
 	Transform3D reference_frame; /* our reference frame */
+	bool camera_locked_to_origin = false;
 
 	// As we may be updating our main state for our next frame while we're still rendering our previous frame,
 	// we need to keep copies around.
@@ -198,8 +198,11 @@ public:
 	*/
 	Transform3D get_hmd_transform();
 
+	void set_camera_locked_to_origin(bool p_enable);
+	inline bool is_camera_locked_to_origin() const { return camera_locked_to_origin; }
+
 	/*
-		Interfaces are objects that 'glue' Godot to an AR or VR SDK such as the Oculus SDK, OpenVR, OpenHMD, etc.
+		Interfaces are objects that 'glue' Redot to an AR or VR SDK such as the Oculus SDK, OpenVR, OpenHMD, etc.
 	*/
 	void add_interface(const Ref<XRInterface> &p_interface);
 	void remove_interface(const Ref<XRInterface> &p_interface);
@@ -239,7 +242,7 @@ public:
 	// Many of these interfaces will also do a predictive sync which ensures we run at a steady framerate.
 	void pre_render();
 
-	// End-frame is called right after Godot has finished its rendering bits.
+	// End-frame is called right after Redot has finished its rendering bits.
 	void end_frame();
 
 	XRServer();
@@ -250,5 +253,3 @@ public:
 
 VARIANT_ENUM_CAST(XRServer::TrackerType);
 VARIANT_ENUM_CAST(XRServer::RotationMode);
-
-#endif // XR_SERVER_H

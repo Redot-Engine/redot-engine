@@ -2,9 +2,11 @@
 /*  crash_handler_macos.mm                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "crash_handler_macos.h"
+#import "crash_handler_macos.h"
 
 #include "core/config/project_settings.h"
+#include "core/object/script_language.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/version.h"
 #include "main/main.h"
 
-#include <string.h>
 #include <unistd.h>
 
 #if defined(DEBUG_ENABLED)
@@ -47,11 +49,11 @@
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <execinfo.h>
-#include <signal.h>
-#include <stdlib.h>
+#include <csignal>
+#include <cstdlib>
 
-#include <mach-o/dyld.h>
-#include <mach-o/getsect.h>
+#import <mach-o/dyld.h>
+#import <mach-o/getsect.h>
 
 static uint64_t load_address() {
 	const struct segment_command_64 *cmd = getsegbyname("__TEXT");
@@ -81,14 +83,17 @@ static void handle_crash(int sig) {
 		abort();
 	}
 
+	if (OS::get_singleton()->is_crash_handler_silent()) {
+		std::_Exit(0);
+	}
+
 	void *bt_buffer[256];
 	size_t size = backtrace(bt_buffer, 256);
 	String _execpath = OS::get_singleton()->get_executable_path();
 
 	String msg;
-	const ProjectSettings *proj_settings = ProjectSettings::get_singleton();
-	if (proj_settings) {
-		msg = proj_settings->get("debug/settings/crash_handler/message");
+	if (ProjectSettings::get_singleton()) {
+		msg = GLOBAL_GET("debug/settings/crash_handler/message");
 	}
 
 	// Tell MainLoop about the crash. This can be handled by users too in Node.
@@ -101,10 +106,10 @@ static void handle_crash(int sig) {
 	print_error(vformat("%s: Program crashed with signal %d", __FUNCTION__, sig));
 
 	// Print the engine version just before, so that people are reminded to include the version in backtrace reports.
-	if (String(VERSION_HASH).is_empty()) {
-		print_error(vformat("Engine version: %s", VERSION_FULL_NAME));
+	if (String(REDOT_VERSION_HASH).is_empty()) {
+		print_error(vformat("Engine version: %s", REDOT_VERSION_FULL_NAME));
 	} else {
-		print_error(vformat("Engine version: %s (%s)", VERSION_FULL_NAME, VERSION_HASH));
+		print_error(vformat("Engine version: %s (%s)", REDOT_VERSION_FULL_NAME, REDOT_VERSION_HASH));
 	}
 	print_error(vformat("Dumping the backtrace. %s", msg));
 	char **strings = backtrace_symbols(bt_buffer, size);
@@ -149,6 +154,7 @@ static void handle_crash(int sig) {
 				args.push_back("-arch");
 				args.push_back("arm64");
 #endif
+				args.push_back("--fullPath");
 				args.push_back("-l");
 				snprintf(str, 1024, "%p", load_addr);
 				args.push_back(str);
@@ -169,8 +175,16 @@ static void handle_crash(int sig) {
 
 		free(strings);
 	}
-	print_error("-- END OF BACKTRACE --");
+	print_error("-- END OF C++ BACKTRACE --");
 	print_error("================================================================");
+
+	for (const Ref<ScriptBacktrace> &backtrace : ScriptServer::capture_script_backtraces(false)) {
+		if (!backtrace->is_empty()) {
+			print_error(backtrace->format());
+			print_error(vformat("-- END OF %s BACKTRACE --", backtrace->get_language_name().to_upper()));
+			print_error("================================================================");
+		}
+	}
 
 	// Abort to pass the error to the OS
 	abort();

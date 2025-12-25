@@ -4,8 +4,8 @@
 # This file is distributed under the same license as the Godot source code.
 msgid ""
 msgstr ""
-"Project-Id-Version: Godot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Project-Id-Version: Redot Engine extractable strings\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "PO-Revision-Date: 2023-09-29 19:03+0000\n"
 "Last-Translator: Andreas Kuuskaru <andrku@tlu.ee>\n"
 "Language-Team: Estonian <https://hosted.weblate.org/projects/godot-engine/"
@@ -15,6 +15,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8-bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.1-dev\n"
+
+msgid "All Recognized"
+msgstr "Kõik tuvastatud"
+
+msgid "Save"
+msgstr "Salvesta"
+
+msgid "Clear"
+msgstr "Puhasta"
 
 msgid "Network"
 msgstr "Võrk"
@@ -35,9 +44,6 @@ msgstr "Valige praegune kaust"
 msgid "Select This Folder"
 msgstr "Vali see kaust"
 
-msgid "All Recognized"
-msgstr "Kõik tuvastatud"
-
 msgid "Open a File"
 msgstr "Ava fail"
 
@@ -49,9 +55,6 @@ msgstr "Ava kataloog"
 
 msgid "Open a File or Directory"
 msgstr "Ava kaust või kataloog"
-
-msgid "Save"
-msgstr "Salvesta"
 
 msgid "Save a File"
 msgstr "Salvesta fail"
@@ -71,11 +74,11 @@ msgstr "Failitee:"
 msgid "Refresh files."
 msgstr "Värskenda faile."
 
-msgid "Toggle the visibility of hidden files."
-msgstr "Näita peidetud faile."
-
 msgid "Directories & Files:"
 msgstr "Kataloogid ja failid:"
+
+msgid "Toggle the visibility of hidden files."
+msgstr "Näita peidetud faile."
 
 msgid "File:"
 msgstr "Fail:"
@@ -109,9 +112,6 @@ msgstr "Kleebi"
 
 msgid "Select All"
 msgstr "Vali Kõik"
-
-msgid "Clear"
-msgstr "Puhasta"
 
 msgid "Undo"
 msgstr "Võta tagasi"

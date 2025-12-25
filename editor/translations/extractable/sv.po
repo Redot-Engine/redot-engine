@@ -4,8 +4,8 @@
 # This file is distributed under the same license as the Godot source code.
 msgid ""
 msgstr ""
-"Project-Id-Version: Godot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Project-Id-Version: Redot Engine extractable strings\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2024-02-24 22:50+0000\n"
 "Last-Translator: Henrik Nilsson <nsmoooose@gmail.com>\n"
@@ -17,6 +17,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.5-dev\n"
+
+msgid "All Recognized"
+msgstr "Alla Erkända"
+
+msgid "Save"
+msgstr "Spara"
+
+msgid "Clear"
+msgstr "Rensa"
 
 msgid "Add current color as a preset."
 msgstr "Lägg till nuvarande färg som en förinställning."
@@ -40,9 +49,6 @@ msgstr "Välj Nuvarande Mapp"
 msgid "Select This Folder"
 msgstr "Välj denna mapp"
 
-msgid "All Recognized"
-msgstr "Alla Erkända"
-
 msgid "Open a File"
 msgstr "Öppna en Fil"
 
@@ -54,9 +60,6 @@ msgstr "Öppna en Katalog"
 
 msgid "Open a File or Directory"
 msgstr "Öppna en Fil eller Katalog"
-
-msgid "Save"
-msgstr "Spara"
 
 msgid "Save a File"
 msgstr "Spara en Fil"
@@ -76,11 +79,11 @@ msgstr "Sökväg:"
 msgid "Refresh files."
 msgstr "Uppdatera filer."
 
-msgid "Toggle the visibility of hidden files."
-msgstr "Växla synligheten av dolda filer."
-
 msgid "Directories & Files:"
 msgstr "Kataloger & Filer:"
+
+msgid "Toggle the visibility of hidden files."
+msgstr "Växla synligheten av dolda filer."
 
 msgid "File:"
 msgstr "Fil:"
@@ -114,9 +117,6 @@ msgstr "Klistra in"
 
 msgid "Select All"
 msgstr "Välj Alla"
-
-msgid "Clear"
-msgstr "Rensa"
 
 msgid "Undo"
 msgstr "Ångra"

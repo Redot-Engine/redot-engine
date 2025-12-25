@@ -2,9 +2,11 @@
 /*  test_sprite_frames.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_SPRITE_FRAMES_H
-#define TEST_SPRITE_FRAMES_H
+#pragma once
 
+#include "core/io/image_frames.h"
 #include "scene/resources/sprite_frames.h"
 
 #include "tests/test_macros.h"
 
 namespace TestSpriteFrames {
-const String test_animation_name = "GodotTest";
+const String test_animation_name = "RedotTest";
 
 TEST_CASE("[SpriteFrames] Constructor methods") {
 	const SpriteFrames frames;
@@ -243,6 +245,61 @@ TEST_CASE("[SpriteFrames] Frame addition, removal, and retrieval") {
 			frames.get_frame_count(test_animation_name) == 0,
 			"Clears frames.");
 }
-} // namespace TestSpriteFrames
 
-#endif // TEST_SPRITE_FRAMES_H
+TEST_CASE("[SpriteFrames] ImageFrames Animation getter and setter") {
+	Ref<Texture2D> dummy_frame1;
+	dummy_frame1.instantiate();
+
+	SpriteFrames frames;
+	frames.add_animation(test_animation_name);
+
+	frames.add_frame(test_animation_name, dummy_frame1, 1.0, 0);
+	frames.add_frame(test_animation_name, dummy_frame1, 2.0, 1);
+	frames.add_frame(test_animation_name, dummy_frame1, 3.0, 2);
+
+	Ref<ImageFrames> image_frames = frames.make_image_frames(test_animation_name);
+
+	CHECK_MESSAGE(
+			image_frames->get_frame_count() == 3,
+			"ImageFrames frame count is set");
+
+	CHECK_MESSAGE(
+			image_frames->get_loop_count() == 0,
+			"ImageFrames loop count is set");
+
+	for (int i = 0; i < image_frames->get_frame_count(); i++) {
+		CHECK_MESSAGE(
+				image_frames->get_frame_image(i) == dummy_frame1,
+				"ImageFrames image is set");
+		CHECK_MESSAGE(
+				image_frames->get_frame_delay(i) == float(i + 1),
+				"ImageFrames delay is set");
+	}
+
+	Ref<SpriteFrames> new_frames;
+	new_frames.instantiate();
+
+	// These error handling cases should not crash.
+	ERR_PRINT_OFF;
+	new_frames->set_from_image_frames(image_frames, test_animation_name);
+	ERR_PRINT_ON;
+
+	CHECK_MESSAGE(
+			new_frames->has_animation(test_animation_name),
+			"SpriteFrames Animation is set");
+
+	CHECK_MESSAGE(
+			new_frames->get_frame_count(test_animation_name) == 3,
+			"SpriteFrames frame count is set");
+
+	CHECK_MESSAGE(
+			new_frames->get_animation_loop(test_animation_name),
+			"SpriteFrames loop is set");
+
+	for (int i = 0; i < image_frames->get_frame_count(); i++) {
+		CHECK_MESSAGE(
+				new_frames->get_frame_duration(test_animation_name, i) == float(i + 1),
+				"SpriteFrames delay is set");
+	}
+}
+} // namespace TestSpriteFrames

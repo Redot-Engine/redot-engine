@@ -2,9 +2,11 @@
 /*  godot_shape_2d.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -37,8 +39,7 @@ void GodotShape2D::configure(const Rect2 &p_aabb) {
 	aabb = p_aabb;
 	configured = true;
 	for (const KeyValue<GodotShapeOwner2D *, int> &E : owners) {
-		GodotShapeOwner2D *co = const_cast<GodotShapeOwner2D *>(E.key);
-		co->_shape_changed();
+		E.key->_shape_changed();
 	}
 }
 
@@ -666,7 +667,7 @@ bool GodotConcavePolygonShape2D::contains_point(const Vector2 &p_point) const {
 }
 
 bool GodotConcavePolygonShape2D::intersect_segment(const Vector2 &p_begin, const Vector2 &p_end, Vector2 &r_point, Vector2 &r_normal) const {
-	if (segments.size() == 0 || points.size() == 0) {
+	if (segments.is_empty() || points.is_empty()) {
 		return false;
 	}
 
@@ -920,7 +921,7 @@ void GodotConcavePolygonShape2D::cull(const Rect2 &p_local_aabb, QueryCallback p
 		stack[i]=0;
 	*/
 
-	if (segments.size() == 0 || points.size() == 0 || bvh.size() == 0) {
+	if (segments.is_empty() || points.is_empty() || bvh.is_empty()) {
 		return;
 	}
 

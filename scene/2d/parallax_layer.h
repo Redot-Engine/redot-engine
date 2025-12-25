@@ -2,9 +2,11 @@
 /*  parallax_layer.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PARALLAX_LAYER_H
-#define PARALLAX_LAYER_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 
@@ -62,5 +63,3 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 	ParallaxLayer();
 };
-
-#endif // PARALLAX_LAYER_H

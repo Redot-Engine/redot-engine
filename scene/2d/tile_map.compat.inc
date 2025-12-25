@@ -2,9 +2,11 @@
 /*  tile_map.compat.inc                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -46,16 +48,20 @@ TileMap::VisibilityMode TileMap::_get_collision_visibility_mode_bind_compat_8711
 	return get_collision_visibility_mode();
 }
 
+#ifndef NAVIGATION_2D_DISABLED
 TileMap::VisibilityMode TileMap::_get_navigation_visibility_mode_bind_compat_87115() {
 	return get_navigation_visibility_mode();
 }
+#endif // NAVIGATION_2D_DISABLED
 
 void TileMap::_bind_compatibility_methods() {
 	ClassDB::bind_compatibility_method(D_METHOD("get_used_rect"), &TileMap::_get_used_rect_bind_compat_78328);
 	ClassDB::bind_compatibility_method(D_METHOD("set_quadrant_size", "quadrant_size"), &TileMap::_set_quadrant_size_compat_81070);
 	ClassDB::bind_compatibility_method(D_METHOD("get_quadrant_size"), &TileMap::_get_quadrant_size_compat_81070);
 	ClassDB::bind_compatibility_method(D_METHOD("get_collision_visibility_mode"), &TileMap::_get_collision_visibility_mode_bind_compat_87115);
+#ifndef NAVIGATION_2D_DISABLED
 	ClassDB::bind_compatibility_method(D_METHOD("get_navigation_visibility_mode"), &TileMap::_get_navigation_visibility_mode_bind_compat_87115);
+#endif // NAVIGATION_2D_DISABLED
 }
 
 #endif

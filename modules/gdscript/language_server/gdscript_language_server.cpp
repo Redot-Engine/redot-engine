@@ -2,9 +2,11 @@
 /*  gdscript_language_server.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,11 +32,10 @@
 
 #include "gdscript_language_server.h"
 
-#include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "editor/editor_log.h"
 #include "editor/editor_node.h"
-#include "editor/editor_settings.h"
+#include "editor/settings/editor_settings.h"
 
 int GDScriptLanguageServer::port_override = -1;
 
@@ -46,19 +47,21 @@ GDScriptLanguageServer::GDScriptLanguageServer() {
 	_EDITOR_DEF("network/language_server/show_native_symbols_in_editor", false);
 	_EDITOR_DEF("network/language_server/use_thread", use_thread);
 	_EDITOR_DEF("network/language_server/poll_limit_usec", poll_limit_usec);
+
+	set_process_internal(true);
 }
 
 void GDScriptLanguageServer::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE: {
-			start();
-		} break;
-
 		case NOTIFICATION_EXIT_TREE: {
 			stop();
 		} break;
 
 		case NOTIFICATION_INTERNAL_PROCESS: {
+			if (!started && EditorNode::get_singleton()->is_editor_ready()) {
+				start();
+			}
+
 			if (started && !use_thread) {
 				protocol.poll(poll_limit_usec);
 			}

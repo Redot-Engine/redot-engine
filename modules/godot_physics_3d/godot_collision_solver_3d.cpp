@@ -2,9 +2,11 @@
 /*  godot_collision_solver_3d.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -61,8 +63,8 @@ bool GodotCollisionSolver3D::solve_static_world_boundary(const GodotShape3D *p_s
 		// Use 3 equidistant points on the circle.
 		for (int i = 0; i < 3; ++i) {
 			Vector3 vertex_pos = circle_pos;
-			vertex_pos += circle_axis_1 * Math::cos(2.0 * Math_PI * i / 3.0);
-			vertex_pos += circle_axis_2 * Math::sin(2.0 * Math_PI * i / 3.0);
+			vertex_pos += circle_axis_1 * Math::cos(2.0 * Math::PI * i / 3.0);
+			vertex_pos += circle_axis_2 * Math::sin(2.0 * Math::PI * i / 3.0);
 			supports[i] = vertex_pos;
 		}
 	}
@@ -488,8 +490,8 @@ bool GodotCollisionSolver3D::solve_distance_world_boundary(const GodotShape3D *p
 		// Use 3 equidistant points on the circle.
 		for (int i = 0; i < 3; ++i) {
 			Vector3 vertex_pos = circle_pos;
-			vertex_pos += circle_axis_1 * Math::cos(2.0 * Math_PI * i / 3.0);
-			vertex_pos += circle_axis_2 * Math::sin(2.0 * Math_PI * i / 3.0);
+			vertex_pos += circle_axis_1 * Math::cos(2.0 * Math::PI * i / 3.0);
+			vertex_pos += circle_axis_2 * Math::sin(2.0 * Math::PI * i / 3.0);
 			supports[i] = vertex_pos;
 		}
 	}

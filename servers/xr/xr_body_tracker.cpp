@@ -2,9 +2,11 @@
 /*  xr_body_tracker.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -126,6 +128,17 @@ void XRBodyTracker::_bind_methods() {
 	BIND_ENUM_CONSTANT(JOINT_RIGHT_PINKY_FINGER_PHALANX_INTERMEDIATE);
 	BIND_ENUM_CONSTANT(JOINT_RIGHT_PINKY_FINGER_PHALANX_DISTAL);
 	BIND_ENUM_CONSTANT(JOINT_RIGHT_PINKY_FINGER_TIP);
+	BIND_ENUM_CONSTANT(JOINT_LOWER_CHEST);
+	BIND_ENUM_CONSTANT(JOINT_LEFT_SCAPULA);
+	BIND_ENUM_CONSTANT(JOINT_LEFT_WRIST_TWIST);
+	BIND_ENUM_CONSTANT(JOINT_RIGHT_SCAPULA);
+	BIND_ENUM_CONSTANT(JOINT_RIGHT_WRIST_TWIST);
+	BIND_ENUM_CONSTANT(JOINT_LEFT_FOOT_TWIST);
+	BIND_ENUM_CONSTANT(JOINT_LEFT_HEEL);
+	BIND_ENUM_CONSTANT(JOINT_LEFT_MIDDLE_FOOT);
+	BIND_ENUM_CONSTANT(JOINT_RIGHT_FOOT_TWIST);
+	BIND_ENUM_CONSTANT(JOINT_RIGHT_HEEL);
+	BIND_ENUM_CONSTANT(JOINT_RIGHT_MIDDLE_FOOT);
 	BIND_ENUM_CONSTANT(JOINT_MAX);
 
 	BIND_BITFIELD_FLAG(JOINT_FLAG_ORIENTATION_VALID);

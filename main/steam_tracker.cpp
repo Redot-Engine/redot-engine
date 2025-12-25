@@ -2,9 +2,11 @@
 /*  steam_tracker.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -92,14 +94,14 @@ SteamTracker::SteamTracker() {
 
 	if (steam_init_flat_function) {
 		char err_msg[1024] = {};
-		steam_initalized = (steam_init_flat_function(&err_msg[0]) == SteamAPIInitResult_OK);
+		steam_initialized = (steam_init_flat_function(&err_msg[0]) == SteamAPIInitResult_OK);
 	} else if (steam_init_function) {
-		steam_initalized = steam_init_function();
+		steam_initialized = steam_init_function();
 	}
 }
 
 SteamTracker::~SteamTracker() {
-	if (steam_shutdown_function && steam_initalized) {
+	if (steam_shutdown_function && steam_initialized) {
 		steam_shutdown_function();
 	}
 	if (steam_library_handle) {

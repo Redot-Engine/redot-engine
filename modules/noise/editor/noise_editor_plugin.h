@@ -2,9 +2,11 @@
 /*  noise_editor_plugin.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NOISE_EDITOR_PLUGIN_H
-#define NOISE_EDITOR_PLUGIN_H
-
-#ifdef TOOLS_ENABLED
+#pragma once
 
 #include "editor/plugins/editor_plugin.h"
 
@@ -39,11 +38,7 @@ class NoiseEditorPlugin : public EditorPlugin {
 	GDCLASS(NoiseEditorPlugin, EditorPlugin)
 
 public:
-	String get_name() const override;
+	String get_plugin_name() const override;
 
 	NoiseEditorPlugin();
 };
-
-#endif // TOOLS_ENABLED
-
-#endif // NOISE_EDITOR_PLUGIN_H

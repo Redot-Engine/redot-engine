@@ -2,9 +2,11 @@
 /*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -37,7 +39,10 @@ void initialize_astcenc_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
+#ifdef TOOLS_ENABLED
 	Image::_image_compress_astc_func = _compress_astc;
+#endif
+
 	Image::_image_decompress_astc = _decompress_astc;
 }
 

@@ -2,9 +2,11 @@
 /*  fbx_document.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FBX_DOCUMENT_H
-#define FBX_DOCUMENT_H
+#pragma once
 
 #include "fbx_state.h"
 
@@ -40,6 +41,8 @@
 
 class FBXDocument : public GLTFDocument {
 	GDCLASS(FBXDocument, GLTFDocument);
+
+	int _naming_version = 2;
 
 public:
 	enum {
@@ -60,6 +63,9 @@ public:
 	Node *generate_scene(Ref<GLTFState> p_state, float p_bake_fps = 30.0f, bool p_trimming = false, bool p_remove_immutable_tracks = true) override;
 	PackedByteArray generate_buffer(Ref<GLTFState> p_state) override;
 	Error write_to_filesystem(Ref<GLTFState> p_state, const String &p_path) override;
+
+	void set_naming_version(int p_version);
+	int get_naming_version() const;
 
 private:
 	String _get_texture_path(const String &p_base_directory, const String &p_source_file_path) const;
@@ -99,5 +105,3 @@ public:
 			const GLTFAnimationIndex p_index, const bool p_trimming, const bool p_remove_immutable_tracks);
 	Error _parse(Ref<FBXState> p_state, String p_path, Ref<FileAccess> p_file);
 };
-
-#endif // FBX_DOCUMENT_H

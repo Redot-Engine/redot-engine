@@ -2,9 +2,11 @@
 /*  test_timer.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_TIMER_H
-#define TEST_TIMER_H
+#pragma once
 
 #include "scene/main/timer.h"
 
@@ -157,9 +158,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 
 		SceneTree::get_singleton()->process(0.2);
 
-		Array signal_args;
-		signal_args.push_back(Array());
-
+		Array signal_args = { {} };
 		SIGNAL_CHECK(SNAME("timeout"), signal_args);
 
 		SIGNAL_UNWATCH(test_timer, SNAME("timeout"));
@@ -171,9 +170,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 
 		SceneTree::get_singleton()->process(0.05);
 
-		Array signal_args;
-		signal_args.push_back(Array());
-
+		Array signal_args = { {} };
 		SIGNAL_CHECK_FALSE(SNAME("timeout"));
 
 		SIGNAL_UNWATCH(test_timer, SNAME("timeout"));
@@ -187,9 +184,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 
 		SceneTree::get_singleton()->physics_process(0.2);
 
-		Array signal_args;
-		signal_args.push_back(Array());
-
+		Array signal_args = { {} };
 		SIGNAL_CHECK(SNAME("timeout"), signal_args);
 
 		SIGNAL_UNWATCH(test_timer, SNAME("timeout"));
@@ -201,9 +196,7 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 
 		SceneTree::get_singleton()->physics_process(0.05);
 
-		Array signal_args;
-		signal_args.push_back(Array());
-
+		Array signal_args = { {} };
 		SIGNAL_CHECK_FALSE(SNAME("timeout"));
 
 		SIGNAL_UNWATCH(test_timer, SNAME("timeout"));
@@ -213,5 +206,3 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 }
 
 } // namespace TestTimer
-
-#endif // TEST_TIMER_H

@@ -2,9 +2,11 @@
 /*  test_pck_packer.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_PCK_PACKER_H
-#define TEST_PCK_PACKER_H
+#pragma once
 
 #include "core/io/file_access_pack.h"
 #include "core/io/pck_packer.h"
@@ -111,12 +112,10 @@ TEST_CASE("[PCKPacker] Pack a PCK file with some files and directories") {
 			err == OK,
 			"The generated non-empty PCK file should be opened successfully.");
 	CHECK_MESSAGE(
-			f->get_length() >= 18000,
+			f->get_length() >= 12000,
 			"The generated non-empty PCK file should be large enough to actually hold the contents specified above.");
 	CHECK_MESSAGE(
 			f->get_length() <= 27000,
 			"The generated non-empty PCK file shouldn't be too large.");
 }
 } // namespace TestPCKPacker
-
-#endif // TEST_PCK_PACKER_H

@@ -2,9 +2,11 @@
 /*  gltf_camera.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLTF_CAMERA_H
-#define GLTF_CAMERA_H
+#pragma once
 
 #include "core/io/resource.h"
 
 class Camera3D;
+class GLTFObjectModelProperty;
 
 // Reference and test file:
 // https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_015_SimpleCameras.md
@@ -54,6 +56,8 @@ protected:
 	static void _bind_methods();
 
 public:
+	static void set_fov_conversion_expressions(Ref<GLTFObjectModelProperty> &r_obj_model_prop);
+
 	bool get_perspective() const { return perspective; }
 	void set_perspective(bool p_val) { perspective = p_val; }
 	real_t get_fov() const { return fov; }
@@ -71,5 +75,3 @@ public:
 	static Ref<GLTFCamera> from_dictionary(const Dictionary p_dictionary);
 	virtual Dictionary to_dictionary() const;
 };
-
-#endif // GLTF_CAMERA_H

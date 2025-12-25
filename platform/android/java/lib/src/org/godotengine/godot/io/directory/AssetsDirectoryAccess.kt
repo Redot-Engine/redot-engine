@@ -2,9 +2,11 @@
 /*  AssetsDirectoryAccess.kt                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.io.directory
+package org.redotengine.godot.io.directory
 
 import android.content.Context
 import android.util.Log
 import android.util.SparseArray
-import org.godotengine.godot.io.StorageScope
-import org.godotengine.godot.io.directory.DirectoryAccessHandler.Companion.INVALID_DIR_ID
-import org.godotengine.godot.io.directory.DirectoryAccessHandler.Companion.STARTING_DIR_ID
-import org.godotengine.godot.io.file.AssetData
+import org.redotengine.godot.io.StorageScope
+import org.redotengine.godot.io.directory.DirectoryAccessHandler.Companion.INVALID_DIR_ID
+import org.redotengine.godot.io.directory.DirectoryAccessHandler.Companion.STARTING_DIR_ID
+import org.redotengine.godot.io.file.AssetData
 import java.io.File
 import java.io.IOException
 

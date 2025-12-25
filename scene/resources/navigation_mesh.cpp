@@ -2,9 +2,11 @@
 /*  navigation_mesh.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -51,7 +53,7 @@ void NavigationMesh::create_from_mesh(const Ref<Mesh> &p_mesh) {
 
 		Vector<Vector3> varr = arr[Mesh::ARRAY_VERTEX];
 		Vector<int> iarr = arr[Mesh::ARRAY_INDEX];
-		if (varr.size() == 0 || iarr.size() == 0) {
+		if (varr.is_empty() || iarr.is_empty()) {
 			WARN_PRINT("A mesh surface was skipped when creating a NavigationMesh due to an empty vertex or index array.");
 			continue;
 		}
@@ -392,13 +394,13 @@ Ref<ArrayMesh> NavigationMesh::get_debug_mesh() {
 		return debug_mesh;
 	}
 
-	if (!debug_mesh.is_valid()) {
-		debug_mesh = Ref<ArrayMesh>(memnew(ArrayMesh));
+	if (debug_mesh.is_null()) {
+		debug_mesh.instantiate();
 	} else {
 		debug_mesh->clear_surfaces();
 	}
 
-	if (vertices.size() == 0) {
+	if (vertices.is_empty()) {
 		return debug_mesh;
 	}
 

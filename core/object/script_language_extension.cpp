@@ -2,9 +2,11 @@
 /*  script_language_extension.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -51,6 +53,7 @@ void ScriptExtension::_bind_methods() {
 	GDVIRTUAL_BIND(_set_source_code, "code");
 	GDVIRTUAL_BIND(_reload, "keep_state");
 
+	GDVIRTUAL_BIND(_get_doc_class_name);
 	GDVIRTUAL_BIND(_get_documentation);
 	GDVIRTUAL_BIND(_get_class_icon_path);
 
@@ -169,8 +172,10 @@ void ScriptLanguageExtension::_bind_methods() {
 	BIND_ENUM_CONSTANT(LOOKUP_RESULT_CLASS_METHOD);
 	BIND_ENUM_CONSTANT(LOOKUP_RESULT_CLASS_SIGNAL);
 	BIND_ENUM_CONSTANT(LOOKUP_RESULT_CLASS_ENUM);
-	BIND_ENUM_CONSTANT(LOOKUP_RESULT_CLASS_TBD_GLOBALSCOPE);
+	BIND_ENUM_CONSTANT(LOOKUP_RESULT_CLASS_TBD_GLOBALSCOPE); // Deprecated.
 	BIND_ENUM_CONSTANT(LOOKUP_RESULT_CLASS_ANNOTATION);
+	BIND_ENUM_CONSTANT(LOOKUP_RESULT_LOCAL_CONSTANT);
+	BIND_ENUM_CONSTANT(LOOKUP_RESULT_LOCAL_VARIABLE);
 	BIND_ENUM_CONSTANT(LOOKUP_RESULT_MAX);
 
 	BIND_ENUM_CONSTANT(LOCATION_LOCAL);

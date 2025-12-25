@@ -2,9 +2,11 @@
 /*  node_path.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NODE_PATH_H
-#define NODE_PATH_H
+#pragma once
 
 #include "core/string/string_name.h"
 #include "core/string/ustring.h"
 
-class NodePath {
+class [[nodiscard]] NodePath {
 	struct Data {
 		SafeRefCount refcount;
 		Vector<StringName> path;
@@ -79,7 +80,7 @@ public:
 		return data->hash_cache;
 	}
 
-	operator String() const;
+	explicit operator String() const;
 	bool is_empty() const;
 
 	bool operator==(const NodePath &p_path) const;
@@ -97,4 +98,6 @@ public:
 	~NodePath();
 };
 
-#endif // NODE_PATH_H
+// Zero-constructing NodePath initializes data to nullptr (and thus empty).
+template <>
+struct is_zero_constructible<NodePath> : std::true_type {};

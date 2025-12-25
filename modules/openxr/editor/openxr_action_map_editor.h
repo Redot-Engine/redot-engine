@@ -2,9 +2,11 @@
 /*  openxr_action_map_editor.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_ACTION_MAP_EDITOR_H
-#define OPENXR_ACTION_MAP_EDITOR_H
+#pragma once
 
 #include "../action_map/openxr_action_map.h"
 #include "openxr_action_set_editor.h"
 #include "openxr_interaction_profile_editor.h"
 #include "openxr_select_interaction_profile_dialog.h"
 
+#include "core/templates/hash_map.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
@@ -48,6 +50,9 @@ class OpenXRActionMapEditor : public VBoxContainer {
 	GDCLASS(OpenXRActionMapEditor, VBoxContainer);
 
 private:
+	static HashMap<String, String> interaction_profile_editors; // interaction profile path, interaction profile editor
+	static HashMap<String, String> binding_modifier_editors; // binding modifier class, binding modifiers editor
+
 	EditorUndoRedoManager *undo_redo;
 	String edited_path;
 	Ref<OpenXRActionMap> action_map;
@@ -100,10 +105,11 @@ protected:
 	void _do_remove_interaction_profile_editor(OpenXRInteractionProfileEditorBase *p_interaction_profile_editor);
 
 public:
+	static void register_interaction_profile_editor(const String &p_for_path, const String &p_editor_class);
+	static void register_binding_modifier_editor(const String &p_binding_modifier_class, const String &p_editor_class);
+	static String get_binding_modifier_editor_class(const String &p_binding_modifier_class);
+
 	void open_action_map(String p_path);
 
 	OpenXRActionMapEditor();
-	~OpenXRActionMapEditor();
 };
-
-#endif // OPENXR_ACTION_MAP_EDITOR_H

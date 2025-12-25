@@ -4,8 +4,8 @@
 # This file is distributed under the same license as the Godot source code.
 msgid ""
 msgstr ""
-"Project-Id-Version: Godot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Project-Id-Version: Redot Engine extractable strings\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2023-12-02 19:36+0000\n"
 "Last-Translator: Ellie Star <gender.thief.star@gmail.com>\n"
@@ -17,6 +17,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: Weblate 5.3-dev\n"
+
+msgid "All Recognized"
+msgstr "Všetko rozpoznané"
+
+msgid "Save"
+msgstr "Uložiť"
+
+msgid "Clear"
+msgstr "Vyčistiť"
 
 msgid "Network"
 msgstr "Sieť"
@@ -37,9 +46,6 @@ msgstr "Vybrať Aktuálny Priečinok"
 msgid "Select This Folder"
 msgstr "Vybrať Tento Priečinok"
 
-msgid "All Recognized"
-msgstr "Všetko rozpoznané"
-
 msgid "Open a File"
 msgstr "Otvoriť súbor"
 
@@ -51,9 +57,6 @@ msgstr "Otvorit priečinok"
 
 msgid "Open a File or Directory"
 msgstr "Otvoriť súbor / priečinok"
-
-msgid "Save"
-msgstr "Uložiť"
 
 msgid "Save a File"
 msgstr "Uložiť súbor"
@@ -73,11 +76,11 @@ msgstr "Cesta:"
 msgid "Refresh files."
 msgstr "Obnoviť súbory."
 
-msgid "Toggle the visibility of hidden files."
-msgstr "Prepnúť viditeľnosť skrytých súborov."
-
 msgid "Directories & Files:"
 msgstr "Priečinky a Súbory:"
+
+msgid "Toggle the visibility of hidden files."
+msgstr "Prepnúť viditeľnosť skrytých súborov."
 
 msgid "File:"
 msgstr "Súbor:"
@@ -111,9 +114,6 @@ msgstr "Vložiť"
 
 msgid "Select All"
 msgstr "Označiť všetko"
-
-msgid "Clear"
-msgstr "Vyčistiť"
 
 msgid "Undo"
 msgstr "Späť"

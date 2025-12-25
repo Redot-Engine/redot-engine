@@ -2,9 +2,11 @@
 /*  math_fieldwise.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifdef TOOLS_ENABLED
+#ifdef DEBUG_ENABLED
 
 #include "math_fieldwise.h"
 
@@ -242,4 +244,4 @@ Variant fieldwise_assign(const Variant &p_target, const Variant &p_source, const
 	/* clang-format on */
 }
 
-#endif // TOOLS_ENABLED
+#endif // DEBUG_ENABLED

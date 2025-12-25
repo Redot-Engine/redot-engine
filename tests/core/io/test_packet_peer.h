@@ -2,9 +2,11 @@
 /*  test_packet_peer.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_PACKET_PEER_H
-#define TEST_PACKET_PEER_H
+#pragma once
 
 #include "core/io/packet_peer.h"
 #include "tests/test_macros.h"
@@ -68,7 +69,7 @@ TEST_CASE("[PacketPeer][PacketPeerStream] Encode buffer max size") {
 }
 
 TEST_CASE("[PacketPeer][PacketPeerStream] Read a variant from peer") {
-	String godot_rules = "Godot Rules!!!";
+	String godot_rules = "Redot Rules!!!";
 
 	Ref<StreamPeerBuffer> spb;
 	spb.instantiate();
@@ -95,7 +96,7 @@ TEST_CASE("[PacketPeer][PacketPeerStream] Read a variant from peer fails") {
 }
 
 TEST_CASE("[PacketPeer][PacketPeerStream] Put a variant to peer") {
-	String godot_rules = "Godot Rules!!!";
+	String godot_rules = "Redot Rules!!!";
 
 	Ref<StreamPeerBuffer> spb;
 	spb.instantiate();
@@ -127,14 +128,14 @@ TEST_CASE("[PacketPeer][PacketPeerStream] Put a variant to peer out of memory fa
 }
 
 TEST_CASE("[PacketPeer][PacketPeerStream] Get packet buffer") {
-	String godot_rules = "Godot Rules!!!";
+	String godot_rules = "Redot Rules!!!";
 
 	Ref<StreamPeerBuffer> spb;
 	spb.instantiate();
 	// First 4 bytes are the length of the string.
 	CharString cs = godot_rules.ascii();
 	Vector<uint8_t> buffer = { (uint8_t)(cs.length() + 1), 0, 0, 0 };
-	buffer.resize_zeroed(4 + cs.length() + 1);
+	buffer.resize_initialized(4 + cs.length() + 1);
 	memcpy(buffer.ptrw() + 4, cs.get_data(), cs.length());
 	spb->set_data_array(buffer);
 
@@ -164,7 +165,7 @@ TEST_CASE("[PacketPeer][PacketPeerStream] Get packet buffer from an empty peer")
 }
 
 TEST_CASE("[PacketPeer][PacketPeerStream] Put packet buffer") {
-	String godot_rules = "Godot Rules!!!";
+	String godot_rules = "Redot Rules!!!";
 
 	Ref<StreamPeerBuffer> spb;
 	spb.instantiate();
@@ -200,5 +201,3 @@ TEST_CASE("[PacketPeer][PacketPeerStream] Put packet buffer when is empty") {
 }
 
 } // namespace TestPacketPeer
-
-#endif // TEST_PACKET_PEER_H

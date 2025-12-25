@@ -2,9 +2,11 @@
 /*  openxr_editor_plugin.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -32,9 +34,9 @@
 
 #include "../action_map/openxr_action_map.h"
 
-#include "editor/editor_command_palette.h"
 #include "editor/editor_node.h"
 #include "editor/gui/editor_bottom_panel.h"
+#include "editor/settings/editor_command_palette.h"
 
 void OpenXREditorPlugin::edit(Object *p_node) {
 	if (Object::cast_to<OpenXRActionMap>(p_node)) {
@@ -54,13 +56,13 @@ void OpenXREditorPlugin::make_visible(bool p_visible) {
 
 OpenXREditorPlugin::OpenXREditorPlugin() {
 	action_map_editor = memnew(OpenXRActionMapEditor);
-	EditorNode::get_bottom_panel()->add_item(TTR("OpenXR Action Map"), action_map_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_openxr_action_map_bottom_panel", TTR("Toggle OpenXR Action Map Bottom Panel")));
+	EditorNode::get_bottom_panel()->add_item(TTRC("OpenXR Action Map"), action_map_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_openxr_action_map_bottom_panel", TTRC("Toggle OpenXR Action Map Bottom Panel")));
+
+	binding_modifier_inspector_plugin = Ref<EditorInspectorPluginBindingModifier>(memnew(EditorInspectorPluginBindingModifier));
+	EditorInspector::add_inspector_plugin(binding_modifier_inspector_plugin);
 
 #ifndef ANDROID_ENABLED
 	select_runtime = memnew(OpenXRSelectRuntime);
 	add_control_to_container(CONTAINER_TOOLBAR, select_runtime);
 #endif
-}
-
-OpenXREditorPlugin::~OpenXREditorPlugin() {
 }

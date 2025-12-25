@@ -2,9 +2,11 @@
 /*  project_dialog.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PROJECT_DIALOG_H
-#define PROJECT_DIALOG_H
+#pragma once
 
 #include "scene/gui/dialogs.h"
 
 class Button;
+class CheckBox;
 class CheckButton;
 class EditorFileDialog;
 class LineEdit;
@@ -49,6 +51,7 @@ public:
 		MODE_IMPORT,
 		MODE_INSTALL,
 		MODE_RENAME,
+		MODE_DUPLICATE,
 	};
 
 private:
@@ -65,6 +68,7 @@ private:
 
 	Mode mode = MODE_NEW;
 	bool is_folder_empty = true;
+	ConfirmationDialog *nonempty_confirmation = nullptr;
 
 	CheckButton *create_dir = nullptr;
 	Button *project_browse = nullptr;
@@ -89,12 +93,17 @@ private:
 
 	OptionButton *vcs_metadata_selection = nullptr;
 
+	CheckBox *edit_check_box = nullptr;
+
 	EditorFileDialog *fdialog_project = nullptr;
 	EditorFileDialog *fdialog_install = nullptr;
 	AcceptDialog *dialog_error = nullptr;
 
 	String zip_path;
 	String zip_title;
+
+	String original_project_path;
+	bool duplicate_can_edit = false;
 
 	void _set_message(const String &p_msg, MessageType p_type, InputType input_type = PROJECT_PATH);
 	void _validate_path();
@@ -140,11 +149,11 @@ public:
 	void set_project_path(const String &p_path);
 	void set_zip_path(const String &p_path);
 	void set_zip_title(const String &p_title);
+	void set_original_project_path(const String &p_path);
+	void set_duplicate_can_edit(bool p_duplicate_can_edit);
 
 	void ask_for_path_and_show();
 	void show_dialog(bool p_reset_name = true);
 
 	ProjectDialog();
 };
-
-#endif // PROJECT_DIALOG_H

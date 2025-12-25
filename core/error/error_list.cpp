@@ -2,9 +2,11 @@
 /*  error_list.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,6 +31,8 @@
 /**************************************************************************/
 
 #include "error_list.h"
+
+#include <iterator>
 
 const char *error_names[] = {
 	"OK", // OK
@@ -82,4 +86,4 @@ const char *error_names[] = {
 	"Printer on fire", // ERR_PRINTER_ON_FIRE
 };
 
-static_assert(sizeof(error_names) / sizeof(*error_names) == ERR_MAX);
+static_assert(std::size(error_names) == ERR_MAX);

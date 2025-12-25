@@ -2,9 +2,11 @@
 /*  godot_body_3d.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_BODY_3D_H
-#define GODOT_BODY_3D_H
+#pragma once
 
 #include "godot_area_3d.h"
 #include "godot_collision_object_3d.h"
@@ -176,6 +177,7 @@ public:
 	}
 
 	_FORCE_INLINE_ void set_max_contacts_reported(int p_size) {
+		ERR_FAIL_INDEX(p_size, MAX_CONTACTS_REPORTED_3D_MAX);
 		contacts.resize(p_size);
 		contact_count = 0;
 		if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC && p_size) {
@@ -392,5 +394,3 @@ void GodotBody3D::add_contact(const Vector3 &p_local_pos, const Vector3 &p_local
 	c[idx].collider_velocity_at_pos = p_collider_velocity_at_pos;
 	c[idx].impulse = p_impulse;
 }
-
-#endif // GODOT_BODY_3D_H

@@ -2,9 +2,11 @@
 /*  api.cpp                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -31,14 +33,12 @@
 #include "api.h"
 
 #include "javascript_bridge_singleton.h"
-#include "web_tools_editor_plugin.h"
 
 #include "core/config/engine.h"
 
 static JavaScriptBridge *javascript_bridge_singleton;
 
 void register_web_api() {
-	WebToolsEditorPlugin::initialize();
 	GDREGISTER_ABSTRACT_CLASS(JavaScriptObject);
 	GDREGISTER_ABSTRACT_CLASS(JavaScriptBridge);
 	javascript_bridge_singleton = memnew(JavaScriptBridge);
@@ -56,7 +56,7 @@ JavaScriptBridge *JavaScriptBridge::get_singleton() {
 }
 
 JavaScriptBridge::JavaScriptBridge() {
-	ERR_FAIL_COND_MSG(singleton != nullptr, "JavaScriptBridge singleton already exist.");
+	ERR_FAIL_COND_MSG(singleton != nullptr, "JavaScriptBridge singleton already exists.");
 	singleton = this;
 }
 

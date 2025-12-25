@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="ScriptEditor" inherits="PanelContainer" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
 	<brief_description>
-		Godot editor's script editor.
+		Redot editor's script editor.
 	</brief_description>
 	<description>
-		Godot editor's script editor.
+		Redot editor's script editor.
 		[b]Note:[/b] This class shouldn't be instantiated directly. Instead, access the singleton using [method EditorInterface.get_script_editor].
 	</description>
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="clear_docs_from_script">
+			<return type="void" />
+			<param index="0" name="script" type="Script" />
+			<description>
+				Removes the documentation for the given [param script].
+				[b]Note:[/b] This should be called whenever the script is changed to keep the open documentation state up to date.
+			</description>
+		</method>
 		<method name="get_breakpoints">
 			<return type="PackedStringArray" />
 			<description>
@@ -103,7 +111,7 @@
 			<return type="void" />
 			<param index="0" name="script" type="Script" />
 			<description>
-				Updates the documentation for the given [param script] if the script's documentation is currently open.
+				Updates the documentation for the given [param script].
 				[b]Note:[/b] This should be called whenever the script is changed to keep the open documentation state up to date.
 			</description>
 		</method>

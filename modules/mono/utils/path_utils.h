@@ -2,9 +2,11 @@
 /*  path_utils.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MONO_PATH_UTILS_H
-#define MONO_PATH_UTILS_H
+#pragma once
 
 #include "core/string/ustring.h"
 
-namespace path {
+namespace Path {
 
 String find_executable(const String &p_name);
 
@@ -59,6 +60,4 @@ String realpath(const String &p_path);
 String relative_to(const String &p_path, const String &p_relative_to);
 
 String get_csharp_project_name();
-} // namespace path
-
-#endif // MONO_PATH_UTILS_H
+} // namespace Path

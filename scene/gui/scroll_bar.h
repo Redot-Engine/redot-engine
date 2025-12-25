@@ -2,9 +2,11 @@
 /*  scroll_bar.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SCROLL_BAR_H
-#define SCROLL_BAR_H
+#pragma once
 
 #include "scene/gui/range.h"
 
@@ -111,6 +112,8 @@ protected:
 	static void _bind_methods();
 
 public:
+	static inline const int PAGE_DIVISOR = 8;
+
 	void scroll(double p_amount);
 	void scroll_to(double p_position);
 
@@ -144,5 +147,3 @@ public:
 	VScrollBar() :
 			ScrollBar(VERTICAL) { set_h_size_flags(0); }
 };
-
-#endif // SCROLL_BAR_H

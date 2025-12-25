@@ -2,9 +2,11 @@
 /*  native_menu.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NATIVE_MENU_H
-#define NATIVE_MENU_H
+#pragma once
 
 #include "core/input/input.h"
-#include "core/io/resource.h"
-#include "core/os/os.h"
 #include "core/variant/callable.h"
 
 class Texture2D;
@@ -158,5 +157,3 @@ public:
 
 VARIANT_ENUM_CAST(NativeMenu::Feature);
 VARIANT_ENUM_CAST(NativeMenu::SystemMenus);
-
-#endif // NATIVE_MENU_H

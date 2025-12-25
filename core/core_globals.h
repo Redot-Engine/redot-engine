@@ -2,9 +2,11 @@
 /*  core_globals.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,17 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CORE_GLOBALS_H
-#define CORE_GLOBALS_H
+#pragma once
 
 // Home for state needed from global functions
 // that cannot be stored in Engine or OS due to e.g. circular includes
 
 class CoreGlobals {
 public:
-	static bool leak_reporting_enabled;
-	static bool print_line_enabled;
-	static bool print_error_enabled;
+	static inline bool leak_reporting_enabled = true;
+	static inline bool print_line_enabled = true;
+	static inline bool print_error_enabled = true;
 };
-
-#endif // CORE_GLOBALS_H

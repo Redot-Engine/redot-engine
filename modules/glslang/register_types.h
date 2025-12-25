@@ -2,9 +2,11 @@
 /*  register_types.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLSLANG_REGISTER_TYPES_H
-#define GLSLANG_REGISTER_TYPES_H
+#pragma once
 
 #define MODULE_GLSLANG_HAS_PREREGISTER
 
@@ -37,5 +38,3 @@
 
 void initialize_glslang_module(ModuleInitializationLevel p_level);
 void uninitialize_glslang_module(ModuleInitializationLevel p_level);
-
-#endif // GLSLANG_REGISTER_TYPES_H

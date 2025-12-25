@@ -2,9 +2,11 @@
 /*  test_http_client.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_HTTP_CLIENT_H
-#define TEST_HTTP_CLIENT_H
+#pragma once
 
 #include "core/io/http_client.h"
 
@@ -59,10 +60,7 @@ TEST_CASE("[HTTPClient] query_string_from_dict") {
 	Dictionary dict2;
 	dict2["key1"] = "value";
 	dict2["key2"] = 123;
-	Array values;
-	values.push_back(1);
-	values.push_back(2);
-	values.push_back(3);
+	Array values = { 1, 2, 3 };
 	dict2["key3"] = values;
 	dict2["key4"] = Variant();
 	String multiple_keys = client->query_string_from_dict(dict2);
@@ -106,5 +104,3 @@ TEST_CASE("[HTTPClient] connect_to_host") {
 #endif // MODULE_MBEDTLS_ENABLED || WEB_ENABLED
 
 } // namespace TestHTTPClient
-
-#endif // TEST_HTTP_CLIENT_H

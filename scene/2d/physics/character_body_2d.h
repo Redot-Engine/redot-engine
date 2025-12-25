@@ -2,9 +2,11 @@
 /*  character_body_2d.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CHARACTER_BODY_2D_H
-#define CHARACTER_BODY_2D_H
+#pragma once
 
 #include "scene/2d/physics/kinematic_collision_2d.h"
 #include "scene/2d/physics/physics_body_2d.h"
@@ -168,5 +169,3 @@ protected:
 
 VARIANT_ENUM_CAST(CharacterBody2D::MotionMode);
 VARIANT_ENUM_CAST(CharacterBody2D::PlatformOnLeave);
-
-#endif // CHARACTER_BODY_2D_H

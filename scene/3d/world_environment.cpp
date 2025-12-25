@@ -2,9 +2,11 @@
 /*  world_environment.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -31,7 +33,7 @@
 #include "world_environment.h"
 
 #include "scene/3d/node_3d.h"
-#include "scene/main/window.h"
+#include "scene/main/viewport.h"
 
 void WorldEnvironment::_notification(int p_what) {
 	switch (p_what) {
@@ -184,7 +186,7 @@ Ref<Compositor> WorldEnvironment::get_compositor() const {
 PackedStringArray WorldEnvironment::get_configuration_warnings() const {
 	PackedStringArray warnings = Node::get_configuration_warnings();
 
-	if (!environment.is_valid() && !camera_attributes.is_valid()) {
+	if (environment.is_null() && camera_attributes.is_null()) {
 		warnings.push_back(RTR("To have any visible effect, WorldEnvironment requires its \"Environment\" property to contain an Environment, its \"Camera Attributes\" property to contain a CameraAttributes resource, or both."));
 	}
 

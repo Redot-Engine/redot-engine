@@ -2,9 +2,11 @@
 /*  editor_scene_exporter_gltf_settings.h                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_SCENE_EXPORTER_GLTF_SETTINGS_H
-#define EDITOR_SCENE_EXPORTER_GLTF_SETTINGS_H
-
-#ifdef TOOLS_ENABLED
+#pragma once
 
 #include "../gltf_document.h"
 
@@ -55,7 +54,7 @@ protected:
 	bool _get_extension_setting(const String &p_name_str, Variant &r_ret) const;
 
 public:
-	void generate_property_list(Ref<GLTFDocument> p_document);
+	void generate_property_list(Ref<GLTFDocument> p_document, Node *p_root = nullptr);
 
 	String get_copyright() const;
 	void set_copyright(const String &p_copyright);
@@ -63,7 +62,3 @@ public:
 	double get_bake_fps() const;
 	void set_bake_fps(const double p_bake_fps);
 };
-
-#endif // TOOLS_ENABLED
-
-#endif // EDITOR_SCENE_EXPORTER_GLTF_SETTINGS_H

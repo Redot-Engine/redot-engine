@@ -2,9 +2,11 @@
 /*  kinematic_collision_3d.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,6 @@
 
 #include "kinematic_collision_3d.h"
 
-#include "scene/3d/physics/character_body_3d.h"
 #include "scene/3d/physics/physics_body_3d.h"
 
 Vector3 KinematicCollision3D::get_travel() const {
@@ -67,7 +68,7 @@ real_t KinematicCollision3D::get_angle(int p_collision_index, const Vector3 &p_u
 
 Object *KinematicCollision3D::get_local_shape(int p_collision_index) const {
 	ERR_FAIL_INDEX_V(p_collision_index, result.collision_count, nullptr);
-	PhysicsBody3D *owner = Object::cast_to<PhysicsBody3D>(ObjectDB::get_instance(owner_id));
+	PhysicsBody3D *owner = ObjectDB::get_instance<PhysicsBody3D>(owner_id);
 	if (!owner) {
 		return nullptr;
 	}

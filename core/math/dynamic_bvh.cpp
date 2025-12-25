@@ -2,9 +2,11 @@
 /*  dynamic_bvh.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -181,7 +183,7 @@ DynamicBVH::Volume DynamicBVH::_bounds(Node **leaves, int p_count) {
 
 void DynamicBVH::_bottom_up(Node **leaves, int p_count) {
 	while (p_count > 1) {
-		real_t minsize = INFINITY;
+		real_t minsize = Math::INF;
 		int minidx[2] = { -1, -1 };
 		for (int i = 0; i < p_count; ++i) {
 			for (int j = i + 1; j < p_count; ++j) {

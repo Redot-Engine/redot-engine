@@ -2,9 +2,11 @@
 /*  openxr_composition_layer_extension.cpp                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -35,6 +37,7 @@
 #include <openxr/openxr_platform.h>
 #endif
 
+#include "openxr_fb_update_swapchain_extension.h"
 #include "platform/android/api/java_class_wrapper.h"
 #include "servers/rendering/rendering_server_globals.h"
 
@@ -210,7 +213,7 @@ void OpenXRViewportCompositionLayerProvider::set_viewport(RID p_viewport, Size2i
 	if (subviewport.viewport != p_viewport) {
 		if (subviewport.viewport.is_valid()) {
 			RID rt = rs->viewport_get_render_target(subviewport.viewport);
-			RSG::texture_storage->render_target_set_override(rt, RID(), RID(), RID());
+			RSG::texture_storage->render_target_set_override(rt, RID(), RID(), RID(), RID());
 		}
 
 		subviewport.viewport = p_viewport;
@@ -227,6 +230,13 @@ void OpenXRViewportCompositionLayerProvider::set_viewport(RID p_viewport, Size2i
 void OpenXRViewportCompositionLayerProvider::set_use_android_surface(bool p_use_android_surface, Size2i p_size) {
 #ifdef ANDROID_ENABLED
 	if (p_use_android_surface == use_android_surface) {
+		if (use_android_surface && swapchain_size != p_size) {
+			OpenXRFBUpdateSwapchainExtension *fb_update_swapchain_ext = OpenXRFBUpdateSwapchainExtension::get_singleton();
+			if (fb_update_swapchain_ext && fb_update_swapchain_ext->is_android_ext_enabled()) {
+				swapchain_size = p_size;
+				fb_update_swapchain_ext->update_swapchain_surface_size(android_surface.swapchain, swapchain_size);
+			}
+		}
 		return;
 	}
 
@@ -280,8 +290,10 @@ void OpenXRViewportCompositionLayerProvider::create_android_surface() {
 	jobject surface;
 	composition_layer_extension->create_android_surface_swapchain(&info, &android_surface.swapchain, &surface);
 
+	swapchain_state.dirty = true;
+
 	if (surface) {
-		android_surface.surface = Ref<JavaObject>(memnew(JavaObject(JavaClassWrapper::get_singleton()->wrap("android.view.Surface"), surface)));
+		android_surface.surface.instantiate(JavaClassWrapper::get_singleton()->wrap("android.view.Surface"), surface);
 	}
 }
 #endif
@@ -323,9 +335,14 @@ void OpenXRViewportCompositionLayerProvider::on_pre_render() {
 			if (update_and_acquire_swapchain(update_mode == RS::VIEWPORT_UPDATE_ONCE)) {
 				// Render to our XR swapchain image.
 				RID rt = rs->viewport_get_render_target(subviewport.viewport);
-				RSG::texture_storage->render_target_set_override(rt, get_current_swapchain_texture(), RID(), RID());
+				RSG::texture_storage->render_target_set_override(rt, get_current_swapchain_texture(), RID(), RID(), RID());
 			}
 		}
+	}
+
+	if (swapchain_state.dirty) {
+		update_swapchain_state();
+		swapchain_state.dirty = false;
 	}
 }
 
@@ -341,7 +358,7 @@ XrCompositionLayerBaseHeader *OpenXRViewportCompositionLayerProvider::get_compos
 	}
 
 	XrSwapchainSubImage subimage = {
-		0, // swapchain
+		0, // swapchain // NOLINT(modernize-use-nullptr) - 32-bit uses non-pointer uint64
 		{ { 0, 0 }, { 0, 0 } }, // imageRect
 		0, // imageArrayIndex
 	};
@@ -391,6 +408,34 @@ XrCompositionLayerBaseHeader *OpenXRViewportCompositionLayerProvider::get_compos
 	}
 
 	return composition_layer;
+}
+
+void OpenXRViewportCompositionLayerProvider::update_swapchain_state() {
+	OpenXRFBUpdateSwapchainExtension *fb_update_swapchain_ext = OpenXRFBUpdateSwapchainExtension::get_singleton();
+	if (!fb_update_swapchain_ext) {
+		return;
+	}
+
+#ifdef ANDROID_ENABLED
+	if (use_android_surface) {
+		if (android_surface.swapchain == XR_NULL_HANDLE) {
+			return;
+		}
+
+		fb_update_swapchain_ext->update_swapchain_state(android_surface.swapchain, &swapchain_state);
+	} else
+#endif
+	{
+		if (subviewport.swapchain_info.get_swapchain() == XR_NULL_HANDLE) {
+			return;
+		}
+
+		fb_update_swapchain_ext->update_swapchain_state(subviewport.swapchain_info.get_swapchain(), &swapchain_state);
+	}
+}
+
+OpenXRViewportCompositionLayerProvider::SwapchainState *OpenXRViewportCompositionLayerProvider::get_swapchain_state() {
+	return &swapchain_state;
 }
 
 void OpenXRViewportCompositionLayerProvider::update_swapchain_sub_image(XrSwapchainSubImage &r_subimage) {
@@ -450,6 +495,8 @@ bool OpenXRViewportCompositionLayerProvider::update_and_acquire_swapchain(bool p
 		swapchain_size = Size2i();
 		return false;
 	}
+
+	swapchain_state.dirty = true;
 
 	// Acquire our image so we can start rendering into it,
 	// we can ignore should_render here, ret will be false.

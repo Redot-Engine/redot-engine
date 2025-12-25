@@ -2,9 +2,11 @@
 /*  vulkan_hooks.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef VULKAN_HOOKS_H
-#define VULKAN_HOOKS_H
+#pragma once
 
 #include "drivers/vulkan/godot_vulkan.h"
 
@@ -46,5 +47,3 @@ public:
 	virtual void set_direct_queue_family_and_index(uint32_t p_queue_family_index, uint32_t p_queue_index) = 0;
 	static VulkanHooks *get_singleton() { return singleton; }
 };
-
-#endif // VULKAN_HOOKS_H

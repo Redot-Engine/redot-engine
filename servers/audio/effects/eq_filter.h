@@ -2,9 +2,11 @@
 /*  eq_filter.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EQ_FILTER_H
-#define EQ_FILTER_H
+#pragma once
 
 #include "core/templates/vector.h"
-#include "core/typedefs.h"
 
 class EQ {
 public:
@@ -98,5 +98,3 @@ inline void EQ::BandProcess::process_one(float &p_data) {
 	history.b3 = history.b2;
 	history.b2 = history.b1;
 }
-
-#endif // EQ_FILTER_H

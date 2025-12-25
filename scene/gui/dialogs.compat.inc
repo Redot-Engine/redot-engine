@@ -2,9 +2,11 @@
 /*  dialogs.compat.inc                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,6 +31,8 @@
 /**************************************************************************/
 
 #ifndef DISABLE_DEPRECATED
+
+#include "scene/gui/line_edit.h"
 
 void AcceptDialog::_register_text_enter_bind_compat_89419(Control *p_line_edit) {
 	register_text_enter(Object::cast_to<LineEdit>(p_line_edit));

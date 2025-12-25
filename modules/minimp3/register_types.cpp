@@ -2,9 +2,11 @@
 /*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -33,39 +35,30 @@
 #include "audio_stream_mp3.h"
 
 #ifdef TOOLS_ENABLED
-#include "resource_importer_mp3.h"
-#endif
-
-#ifdef TOOLS_ENABLED
 #include "core/config/engine.h"
+#include "editor/editor_node.h"
+#include "resource_importer_mp3.h"
+
+static void _editor_init() {
+	Ref<ResourceImporterMP3> mp3_import;
+	mp3_import.instantiate();
+	ResourceFormatImporter::get_singleton()->add_importer(mp3_import);
+}
 #endif
 
 void initialize_minimp3_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+		GDREGISTER_CLASS(AudioStreamMP3);
 	}
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint()) {
-		Ref<ResourceImporterMP3> mp3_import;
-		mp3_import.instantiate();
-		ResourceFormatImporter::get_singleton()->add_importer(mp3_import);
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		GDREGISTER_CLASS(ResourceImporterMP3);
+
+		EditorNode::add_init_callback(_editor_init);
 	}
-
-	ClassDB::APIType prev_api = ClassDB::get_current_api();
-	ClassDB::set_current_api(ClassDB::API_EDITOR);
-
-	// Required to document import options in the class reference.
-	GDREGISTER_CLASS(ResourceImporterMP3);
-
-	ClassDB::set_current_api(prev_api);
 #endif
-
-	GDREGISTER_CLASS(AudioStreamMP3);
 }
 
 void uninitialize_minimp3_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
 }

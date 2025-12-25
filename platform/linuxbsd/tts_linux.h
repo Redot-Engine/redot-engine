@@ -2,9 +2,11 @@
 /*  tts_linux.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TTS_LINUX_H
-#define TTS_LINUX_H
+#pragma once
 
 #include "core/os/thread.h"
 #include "core/os/thread_safe.h"
@@ -59,8 +60,8 @@ class TTS_Linux : public Object {
 		String language;
 		String variant;
 	};
-	bool voices_loaded = false;
-	HashMap<String, VoiceInfo> voices;
+	mutable bool voices_loaded = false;
+	mutable HashMap<String, VoiceInfo> voices;
 
 	Thread init_thread;
 
@@ -71,7 +72,7 @@ class TTS_Linux : public Object {
 	static TTS_Linux *singleton;
 
 protected:
-	void _load_voices();
+	void _load_voices() const;
 	void _speech_event(int p_msg_id, int p_type);
 	void _speech_index_mark(int p_msg_id, int p_type, const String &p_index_mark);
 
@@ -90,5 +91,3 @@ public:
 	TTS_Linux();
 	~TTS_Linux();
 };
-
-#endif // TTS_LINUX_H

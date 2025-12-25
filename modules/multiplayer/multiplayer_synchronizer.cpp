@@ -2,9 +2,11 @@
 /*  multiplayer_synchronizer.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -100,7 +102,7 @@ void MultiplayerSynchronizer::_update_process() {
 }
 
 Node *MultiplayerSynchronizer::get_root_node() {
-	return root_node_cache.is_valid() ? Object::cast_to<Node>(ObjectDB::get_instance(root_node_cache)) : nullptr;
+	return root_node_cache.is_valid() ? ObjectDB::get_instance<Node>(root_node_cache) : nullptr;
 }
 
 void MultiplayerSynchronizer::reset() {
@@ -376,7 +378,7 @@ Error MultiplayerSynchronizer::_watch_changes(uint64_t p_usec) {
 	if (props.size() != watchers.size()) {
 		watchers.resize(props.size());
 	}
-	if (props.size() == 0) {
+	if (props.is_empty()) {
 		return OK;
 	}
 	Node *node = get_root_node();

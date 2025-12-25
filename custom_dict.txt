@@ -1,0 +1,5 @@
+Godot->Redot
+godot->redot
+GODOT->REDOT
+Godots->Redots
+Godot's->Redot's

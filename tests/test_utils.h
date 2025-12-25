@@ -2,9 +2,11 @@
 /*  test_utils.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_UTILS_H
-#define TEST_UTILS_H
+#pragma once
 
 class String;
 
@@ -39,5 +40,3 @@ String get_data_path(const String &p_file);
 String get_executable_dir();
 String get_temp_path(const String &p_suffix);
 } // namespace TestUtils
-
-#endif // TEST_UTILS_H

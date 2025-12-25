@@ -2,9 +2,11 @@
 /*  audio_effect_capture.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,6 +31,8 @@
 /**************************************************************************/
 
 #include "audio_effect_capture.h"
+
+#include "servers/audio_server.h"
 
 bool AudioEffectCapture::can_get_buffer(int p_frames) const {
 	return buffer.data_left() >= p_frames;
@@ -77,7 +81,7 @@ Ref<AudioEffectInstance> AudioEffectCapture::instantiate() {
 	if (!buffer_initialized) {
 		float target_buffer_size = AudioServer::get_singleton()->get_mix_rate() * buffer_length_seconds;
 		ERR_FAIL_COND_V(target_buffer_size <= 0 || target_buffer_size >= (1 << 27), Ref<AudioEffectInstance>());
-		buffer.resize(nearest_shift((int)target_buffer_size));
+		buffer.resize(nearest_shift((uint32_t)target_buffer_size));
 		buffer_initialized = true;
 	}
 

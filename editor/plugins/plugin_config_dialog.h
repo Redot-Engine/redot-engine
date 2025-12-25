@@ -2,9 +2,11 @@
 /*  plugin_config_dialog.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,16 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PLUGIN_CONFIG_DIALOG_H
-#define PLUGIN_CONFIG_DIALOG_H
+#pragma once
 
 #include "scene/gui/check_box.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/option_button.h"
-#include "scene/gui/panel_container.h"
 #include "scene/gui/text_edit.h"
-#include "scene/gui/texture_rect.h"
 
 class ConfigFile;
 class EditorValidationPanel;
@@ -84,7 +83,4 @@ public:
 	void config(const String &p_config_path);
 
 	PluginConfigDialog();
-	~PluginConfigDialog();
 };
-
-#endif // PLUGIN_CONFIG_DIALOG_H

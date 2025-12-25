@@ -2,9 +2,11 @@
 /*  audio_stream_player_internal.h                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_PLAYER_INTERNAL_H
-#define AUDIO_STREAM_PLAYER_INTERNAL_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 #include "core/templates/safe_refcount.h"
@@ -113,5 +114,3 @@ public:
 
 	AudioStreamPlayerInternal(Node *p_node, const Callable &p_play_callable, const Callable &p_stop_callable, bool p_physical);
 };
-
-#endif // AUDIO_STREAM_PLAYER_INTERNAL_H

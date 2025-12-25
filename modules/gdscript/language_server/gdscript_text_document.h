@@ -2,9 +2,11 @@
 /*  gdscript_text_document.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDSCRIPT_TEXT_DOCUMENT_H
-#define GDSCRIPT_TEXT_DOCUMENT_H
+#pragma once
 
 #include "godot_lsp.h"
 
 #include "core/io/file_access.h"
 #include "core/object/ref_counted.h"
+
+class GDScript;
 
 class GDScriptTextDocument : public RefCounted {
 	GDCLASS(GDScriptTextDocument, RefCounted)
@@ -43,23 +46,24 @@ protected:
 
 	Ref<FileAccess> file_checker;
 
+	Array native_member_completions;
+
+private:
+	Array find_symbols(const LSP::TextDocumentPositionParams &p_location, List<const LSP::DocumentSymbol *> &r_list);
+	LSP::TextDocumentItem load_document_item(const Variant &p_param);
+	void notify_client_show_symbol(const LSP::DocumentSymbol *symbol);
+
+public:
 	void didOpen(const Variant &p_param);
 	void didClose(const Variant &p_param);
 	void didChange(const Variant &p_param);
 	void willSaveWaitUntil(const Variant &p_param);
 	void didSave(const Variant &p_param);
 
+	void reload_script(Ref<GDScript> p_to_reload_script);
 	void sync_script_content(const String &p_path, const String &p_content);
 	void show_native_symbol_in_editor(const String &p_symbol_id);
 
-	Array native_member_completions;
-
-private:
-	Array find_symbols(const lsp::TextDocumentPositionParams &p_location, List<const lsp::DocumentSymbol *> &r_list);
-	lsp::TextDocumentItem load_document_item(const Variant &p_param);
-	void notify_client_show_symbol(const lsp::DocumentSymbol *symbol);
-
-public:
 	Variant nativeSymbol(const Dictionary &p_params);
 	Array documentSymbol(const Dictionary &p_params);
 	Array completion(const Dictionary &p_params);
@@ -80,5 +84,3 @@ public:
 
 	GDScriptTextDocument();
 };
-
-#endif // GDSCRIPT_TEXT_DOCUMENT_H

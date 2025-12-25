@@ -2,9 +2,11 @@
 /*  dir_access_windows.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DIR_ACCESS_WINDOWS_H
-#define DIR_ACCESS_WINDOWS_H
+#pragma once
 
 #ifdef WINDOWS_ENABLED
 
@@ -38,6 +39,7 @@
 struct DirAccessWindowsPrivate;
 
 class DirAccessWindows : public DirAccess {
+	GDSOFTCLASS(DirAccessWindows, DirAccess);
 	enum {
 		MAX_DRIVES = 26
 	};
@@ -85,11 +87,10 @@ public:
 
 	virtual String get_filesystem_type() const override;
 	virtual bool is_case_sensitive(const String &p_path) const override;
+	virtual bool is_equivalent(const String &p_path_a, const String &p_path_b) const override;
 
 	DirAccessWindows();
 	~DirAccessWindows();
 };
 
 #endif // WINDOWS_ENABLED
-
-#endif // DIR_ACCESS_WINDOWS_H

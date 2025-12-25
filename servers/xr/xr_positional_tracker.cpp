@@ -2,9 +2,11 @@
 /*  xr_positional_tracker.cpp                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,6 @@
 
 #include "xr_positional_tracker.h"
 
-#include "core/input/input.h"
 #include "xr_controller_tracker.h"
 
 void XRPositionalTracker::_bind_methods() {
@@ -61,7 +62,7 @@ void XRPositionalTracker::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("input_float_changed", PropertyInfo(Variant::STRING, "name"), PropertyInfo(Variant::FLOAT, "value")));
 	ADD_SIGNAL(MethodInfo("input_vector2_changed", PropertyInfo(Variant::STRING, "name"), PropertyInfo(Variant::VECTOR2, "vector")));
 	ADD_SIGNAL(MethodInfo("profile_changed", PropertyInfo(Variant::STRING, "role")));
-};
+}
 
 void XRPositionalTracker::set_tracker_profile(const String &p_profile) {
 	if (profile != p_profile) {
@@ -77,12 +78,12 @@ String XRPositionalTracker::get_tracker_profile() const {
 
 XRPositionalTracker::TrackerHand XRPositionalTracker::get_tracker_hand() const {
 	return tracker_hand;
-};
+}
 
 void XRPositionalTracker::set_tracker_hand(const XRPositionalTracker::TrackerHand p_hand) {
 	ERR_FAIL_INDEX(p_hand, TRACKER_HAND_MAX);
 	tracker_hand = p_hand;
-};
+}
 
 bool XRPositionalTracker::has_pose(const StringName &p_action_name) const {
 	return poses.has(p_action_name);

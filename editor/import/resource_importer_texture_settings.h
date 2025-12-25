@@ -2,9 +2,11 @@
 /*  resource_importer_texture_settings.h                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RESOURCE_IMPORTER_TEXTURE_SETTINGS_H
-#define RESOURCE_IMPORTER_TEXTURE_SETTINGS_H
+#pragma once
 
 // ResourceImporterTextureSettings contains code used by
 // multiple texture importers and the export dialog.
@@ -37,5 +38,3 @@ namespace ResourceImporterTextureSettings {
 bool should_import_s3tc_bptc();
 bool should_import_etc2_astc();
 } //namespace ResourceImporterTextureSettings
-
-#endif // RESOURCE_IMPORTER_TEXTURE_SETTINGS_H

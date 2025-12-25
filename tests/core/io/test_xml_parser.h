@@ -2,9 +2,11 @@
 /*  test_xml_parser.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_XML_PARSER_H
-#define TEST_XML_PARSER_H
+#pragma once
 
 #include "core/io/xml_parser.h"
 
@@ -231,5 +232,3 @@ TEST_CASE("[XMLParser] CDATA") {
 	CHECK_EQ(parser.get_node_name(), "a");
 }
 } // namespace TestXMLParser
-
-#endif // TEST_XML_PARSER_H

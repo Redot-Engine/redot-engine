@@ -2,9 +2,11 @@
 /*  rectangle_shape_2d.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -59,6 +61,9 @@ bool RectangleShape2D::_get(const StringName &p_name, Variant &r_property) const
 
 void RectangleShape2D::set_size(const Size2 &p_size) {
 	ERR_FAIL_COND_MSG(p_size.x < 0 || p_size.y < 0, "RectangleShape2D size cannot be negative.");
+	if (size == p_size) {
+		return;
+	}
 	size = p_size;
 	_update_shape();
 }

@@ -2,9 +2,11 @@
 /*  debug_adapter_protocol.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DEBUG_ADAPTER_PROTOCOL_H
-#define DEBUG_ADAPTER_PROTOCOL_H
+#pragma once
 
 #include "core/debugger/debugger_marshalls.h"
 #include "core/io/stream_peer_tcp.h"
@@ -68,7 +69,7 @@ struct DAPeer : RefCounted {
 
 	Error handle_data();
 	Error send_data();
-	String format_output(const Dictionary &p_params) const;
+	Vector<uint8_t> format_output(const Dictionary &p_params) const;
 };
 
 class DebugAdapterProtocol : public Object {
@@ -77,6 +78,7 @@ class DebugAdapterProtocol : public Object {
 	friend class DebugAdapterParser;
 
 	using DAPVarID = int;
+	using DAPStackFrameID = int;
 
 private:
 	static DebugAdapterProtocol *singleton;
@@ -110,6 +112,9 @@ private:
 	bool request_remote_object(const ObjectID &p_object_id);
 	bool request_remote_evaluate(const String &p_eval, int p_stack_frame);
 
+	const DAP::Source &fetch_source(const String &p_path);
+	void update_source(const String &p_path);
+
 	bool _initialized = false;
 	bool _processing_breakpoint = false;
 	bool _stepping = false;
@@ -126,7 +131,9 @@ private:
 	int stackframe_id = 0;
 	DAPVarID variable_id = 0;
 	List<DAP::Breakpoint> breakpoint_list;
-	HashMap<DAP::StackFrame, List<int>, DAP::StackFrame> stackframe_list;
+	HashMap<String, DAP::Source> breakpoint_source_list;
+	List<DAP::StackFrame> stackframe_list;
+	HashMap<DAPStackFrameID, Vector<int>> scope_list;
 	HashMap<DAPVarID, Array> variable_list;
 
 	HashMap<ObjectID, DAPVarID> object_list;
@@ -168,5 +175,3 @@ public:
 	DebugAdapterProtocol();
 	~DebugAdapterProtocol();
 };
-
-#endif // DEBUG_ADAPTER_PROTOCOL_H

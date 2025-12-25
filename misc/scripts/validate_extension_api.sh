@@ -2,7 +2,7 @@
 set -o pipefail
 
 if [ ! -f "version.py" ]; then
-  echo "Warning: This script is intended to be run from the root of the Godot repository."
+  echo "Warning: This script is intended to be run from the root of the Redot repository."
   echo "Some of the paths checks may not work as intended from a different folder."
 fi
 
@@ -58,8 +58,14 @@ while read -r file; do
     expected_errors="$(mktemp)"
     get_expected_output "$file"
 
-    # Download the reference extension_api.json
-    wget -nv --retry-on-http-error=503 --tries=5 --timeout=60 -cO "$reference_file" "https://raw.githubusercontent.com/godotengine/godot-cpp/godot-$reference_tag/gdextension/extension_api.json" || has_problems=1
+    if [[ $file == *redot* ]]; then
+      # Download the Redot reference extension_api.json
+      wget -nv --retry-on-http-error=503 --tries=5 --timeout=60 -cO "$reference_file" "https://raw.githubusercontent.com/Redot-Engine/redot-cpp/$reference_tag/gdextension/extension_api.json" || has_problems=1
+    else
+      # Download the Godot reference extension_api.json
+      wget -nv --retry-on-http-error=503 --tries=5 --timeout=60 -cO "$reference_file" "https://raw.githubusercontent.com/Redot-Engine/redot-cpp/godot-$reference_tag/gdextension/extension_api.json" || has_problems=1
+    fi
+
     # Validate the current API against the reference
     "$1" --headless --validate-extension-api "$reference_file" 2>&1 | tee "$validate" | awk '!/^Validate extension JSON:/' - || true
     # Collect the expected and actual validation errors

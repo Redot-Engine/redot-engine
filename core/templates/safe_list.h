@@ -2,9 +2,11 @@
 /*  safe_list.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SAFE_LIST_H
-#define SAFE_LIST_H
+#pragma once
 
 #include "core/os/memory.h"
 #include "core/typedefs.h"
 
 #include <atomic>
 #include <functional>
-#include <type_traits>
+#include <initializer_list>
 
 // Design goals for these classes:
 // - Accessing this list with an iterator will never result in a use-after free,
@@ -226,6 +227,13 @@ public:
 		return true;
 	}
 
+	_FORCE_INLINE_ SafeList() {}
+	_FORCE_INLINE_ SafeList(std::initializer_list<T> p_init) {
+		for (const T &E : p_init) {
+			insert(E);
+		}
+	}
+
 	~SafeList() {
 #ifdef DEBUG_ENABLED
 		if (!maybe_cleanup()) {
@@ -236,5 +244,3 @@ public:
 #endif
 	}
 };
-
-#endif // SAFE_LIST_H

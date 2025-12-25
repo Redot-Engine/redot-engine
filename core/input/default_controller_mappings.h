@@ -2,9 +2,11 @@
 /*  default_controller_mappings.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DEFAULT_CONTROLLER_MAPPINGS_H
-#define DEFAULT_CONTROLLER_MAPPINGS_H
+#pragma once
 
 class DefaultControllerMappings {
 public:
 	static const char *mappings[];
 };
-
-#endif // DEFAULT_CONTROLLER_MAPPINGS_H

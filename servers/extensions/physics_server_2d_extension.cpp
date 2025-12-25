@@ -2,9 +2,11 @@
 /*  physics_server_2d_extension.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -91,6 +93,12 @@ void PhysicsDirectBodyState2DExtension::_bind_methods() {
 
 	GDVIRTUAL_BIND(_set_sleep_state, "enabled");
 	GDVIRTUAL_BIND(_is_sleeping);
+
+	GDVIRTUAL_BIND(_set_collision_layer, "layer");
+	GDVIRTUAL_BIND(_get_collision_layer);
+
+	GDVIRTUAL_BIND(_set_collision_mask, "mask");
+	GDVIRTUAL_BIND(_get_collision_mask);
 
 	GDVIRTUAL_BIND(_get_contact_count);
 

@@ -2,9 +2,11 @@
 /*  macho.h                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MACHO_H
-#define MACHO_H
+#pragma once
 
 // Mach-O binary object file format parser and editor.
 
-#include "core/crypto/crypto.h"
-#include "core/crypto/crypto_core.h"
 #include "core/io/file_access.h"
 #include "core/object/ref_counted.h"
 
@@ -114,6 +113,8 @@ public:
 		PLATFORM_TVOSSIMULATOR = 8,
 		PLATFORM_WATCHOSSIMULATOR = 9,
 		PLATFORM_DRIVERKIT = 10,
+		PLATFORM_VISIONOS = 11,
+		PLATFORM_VISIONOSSIMULATOR = 12,
 	};
 
 	struct LoadCommandHeader {
@@ -224,5 +225,3 @@ public:
 	uint64_t get_signature_size();
 	bool set_signature_size(uint64_t p_size);
 };
-
-#endif // MACHO_H

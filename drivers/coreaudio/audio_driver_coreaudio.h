@@ -2,9 +2,11 @@
 /*  audio_driver_coreaudio.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_DRIVER_COREAUDIO_H
-#define AUDIO_DRIVER_COREAUDIO_H
+#pragma once
 
 #ifdef COREAUDIO_ENABLED
 
@@ -38,6 +39,8 @@
 #import <AudioUnit/AudioUnit.h>
 #ifdef MACOS_ENABLED
 #import <CoreAudio/AudioHardware.h>
+#else
+#import <AVFoundation/AVFoundation.h>
 #endif
 
 class AudioDriverCoreAudio : public AudioDriver {
@@ -51,12 +54,14 @@ class AudioDriverCoreAudio : public AudioDriver {
 	String input_device_name = "Default";
 
 	int mix_rate = 0;
+	int capture_mix_rate = 0;
 	unsigned int channels = 2;
 	unsigned int capture_channels = 2;
 	unsigned int buffer_frames = 0;
+	unsigned int capture_buffer_frames = 0;
 
 	Vector<int32_t> samples_in;
-	Vector<int16_t> input_buf;
+	unsigned int buffer_size = 0;
 
 #ifdef MACOS_ENABLED
 	PackedStringArray _get_device_list(bool capture = false);
@@ -89,11 +94,12 @@ class AudioDriverCoreAudio : public AudioDriver {
 public:
 	virtual const char *get_name() const override {
 		return "CoreAudio";
-	};
+	}
 
 	virtual Error init() override;
 	virtual void start() override;
 	virtual int get_mix_rate() const override;
+	virtual int get_input_mix_rate() const override;
 	virtual SpeakerMode get_speaker_mode() const override;
 
 	virtual void lock() override;
@@ -121,5 +127,3 @@ public:
 };
 
 #endif // COREAUDIO_ENABLED
-
-#endif // AUDIO_DRIVER_COREAUDIO_H

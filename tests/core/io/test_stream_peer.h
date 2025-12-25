@@ -2,9 +2,11 @@
 /*  test_stream_peer.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_STREAM_PEER_H
-#define TEST_STREAM_PEER_H
+#pragma once
 
 #include "core/io/stream_peer.h"
 #include "tests/test_macros.h"
@@ -125,6 +126,17 @@ TEST_CASE("[StreamPeer] Get and sets through StreamPeerBuffer") {
 		spb->seek(0);
 
 		CHECK_EQ(spb->get_u64(), value);
+	}
+
+	SUBCASE("A half-precision float value") {
+		float value = 3.1415927f;
+		float expected = 3.14062f;
+
+		spb->clear();
+		spb->put_half(value);
+		spb->seek(0);
+
+		CHECK(spb->get_half() == doctest::Approx(expected));
 	}
 
 	SUBCASE("A float value") {
@@ -255,6 +267,17 @@ TEST_CASE("[StreamPeer] Get and sets big endian through StreamPeerBuffer") {
 		CHECK_EQ(spb->get_float(), value);
 	}
 
+	SUBCASE("A half-precision float value") {
+		float value = 3.1415927f;
+		float expected = 3.14062f;
+
+		spb->clear();
+		spb->put_half(value);
+		spb->seek(0);
+
+		CHECK(spb->get_half() == doctest::Approx(expected));
+	}
+
 	SUBCASE("A double value") {
 		double value = 42.0;
 
@@ -285,5 +308,3 @@ TEST_CASE("[StreamPeer] Get UTF8 string when there is no string") {
 }
 
 } // namespace TestStreamPeer
-
-#endif // TEST_STREAM_PEER_H

@@ -2,9 +2,11 @@
 /*  kinematic_collision_2d.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,6 @@
 
 #include "kinematic_collision_2d.h"
 
-#include "scene/2d/physics/character_body_2d.h"
 #include "scene/2d/physics/physics_body_2d.h"
 
 Vector2 KinematicCollision2D::get_position() const {
@@ -59,7 +60,7 @@ real_t KinematicCollision2D::get_depth() const {
 }
 
 Object *KinematicCollision2D::get_local_shape() const {
-	PhysicsBody2D *owner = Object::cast_to<PhysicsBody2D>(ObjectDB::get_instance(owner_id));
+	PhysicsBody2D *owner = ObjectDB::get_instance<PhysicsBody2D>(owner_id);
 	if (!owner) {
 		return nullptr;
 	}

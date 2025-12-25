@@ -2,9 +2,11 @@
 /*  platform_config.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 #ifdef __linux__
 #include <alloca.h>
 #endif
 
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
-#include <stdlib.h> // alloca
+#include <cstdlib> // alloca
 // FreeBSD and OpenBSD use pthread_set_name_np, while other platforms,
 // include NetBSD, use pthread_setname_np. NetBSD's version however requires
 // a different format, we handle this directly in thread_posix.

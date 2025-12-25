@@ -2,9 +2,11 @@
 /*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -32,6 +34,8 @@
 
 #include "texture_loader_ktx.h"
 
+#include "scene/resources/image_texture.h"
+
 static Ref<ResourceFormatKTX> resource_loader_ktx;
 
 void initialize_ktx_module(ModuleInitializationLevel p_level) {
@@ -39,8 +43,10 @@ void initialize_ktx_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	resource_loader_ktx.instantiate();
-	ResourceLoader::add_resource_format_loader(resource_loader_ktx);
+	if (GD_IS_CLASS_ENABLED(ImageTexture)) {
+		resource_loader_ktx.instantiate();
+		ResourceLoader::add_resource_format_loader(resource_loader_ktx);
+	}
 }
 
 void uninitialize_ktx_module(ModuleInitializationLevel p_level) {
@@ -48,6 +54,8 @@ void uninitialize_ktx_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	ResourceLoader::remove_resource_format_loader(resource_loader_ktx);
-	resource_loader_ktx.unref();
+	if (GD_IS_CLASS_ENABLED(ImageTexture)) {
+		ResourceLoader::remove_resource_format_loader(resource_loader_ktx);
+		resource_loader_ktx.unref();
+	}
 }

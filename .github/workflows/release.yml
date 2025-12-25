@@ -1,0 +1,337 @@
+name: Build Redot Project
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Redot-Engine/redot-engine # Adjust this to the actual repo
+          ref: master
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            scons \
+            pkg-config \
+            libx11-dev \
+            libxcursor-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            build-essential \
+            gcc \
+            g++ \
+            python3
+
+      - name: Build Redot Project for Linux
+        run: |
+          scons platform=linuxbsd production=yes
+
+      - name: Upload Linux dev artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redot-linux-dev
+          path: bin
+
+  build-linux-template:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Redot-Engine/redot-engine
+          ref: master
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            scons \
+            pkg-config \
+            libx11-dev \
+            libxcursor-dev \
+            libxrandr-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            build-essential \
+            gcc \
+            g++ \
+            python3
+
+      - name: Build Redot Templates for Linux
+        run: |
+          scons platform=linuxbsd target=template_release
+
+      - name: Upload Linux Template Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redot-linux-template
+          path: bin
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Redot-Engine/redot-engine
+          ref: master
+
+      - name: Setup Scoop
+        uses: MinoruSekine/setup-scoop@v4.0.1
+        with:
+          buckets: extras
+          apps: gcc python scons make mingw
+
+      - name: Build Redot Project for Windows
+        run: |
+          scons platform=windows production=yes
+
+      - name: Upload Windows dev artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redot-windows-dev
+          path: bin
+
+  build-windows-template:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Redot-Engine/redot-engine
+          ref: master
+
+      - name: Setup Scoop
+        uses: MinoruSekine/setup-scoop@v4.0.1
+        with:
+          buckets: extras
+          apps: gcc python scons make mingw
+
+      - name: Build Redot Templates for Windows
+        run: |
+          scons platform=windows target=template_release
+
+      - name: Upload Windows Template Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redot-windows-template
+          path: bin
+
+  build-macos-x64:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Redot-Engine/redot-engine
+          ref: master
+      - name: Setup Vulkan SDK
+        run: |
+          sh misc/scripts/install_vulkan_sdk_macos.sh
+      - name: Install Dependencies
+        run: |
+          brew install scons pkg-config
+
+      - name: Build Redot Project for macOS x64
+        run: |
+          scons platform=macos arch=x64 production=yes
+
+      - name: Upload macOS x64 dev artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redot-macos-x64-dev
+          path: bin
+
+  build-macos-arm64:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Redot-Engine/redot-engine
+          ref: master
+
+      - name: Setup Vulkan SDK
+        run: |
+          sh misc/scripts/install_vulkan_sdk_macos.sh
+      - name: Install Dependencies
+        run: |
+          brew install scons pkg-config
+
+      - name: Build Redot Project for macOS arm64
+        run: |
+          scons platform=macos arch=arm64
+
+      - name: Upload macOS arm64 dev artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redot-macos-arm64-dev
+          path: bin
+
+  build-macos-x64-template:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Redot-Engine/redot-engine
+          ref: master
+      - name: Setup Vulkan SDK
+        run: |
+          sh misc/scripts/install_vulkan_sdk_macos.sh
+      - name: Install Dependencies
+        run: |
+          brew install scons pkg-config
+
+      - name: Build Redot Templates for macOS x64
+        run: |
+          scons platform=macos arch=x64 target=template_release
+
+      - name: Upload macOS x64 Template Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redot-macos-x64-template
+          path: bin
+
+  build-macos-arm64-template:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Redot-Engine/redot-engine
+          ref: master
+      - name: Setup Vulkan SDK
+        run: |
+          sh misc/scripts/install_vulkan_sdk_macos.sh
+      - name: Install Dependencies
+        run: |
+          brew install scons pkg-config
+
+      - name: Build Redot Templates for macOS arm64
+        run: |
+          scons platform=macos arch=arm64 target=template_release
+
+      - name: Upload macOS arm64 Template Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redot-macos-arm64-template
+          path: bin
+
+  release:
+    needs: [build-linux, build-windows, build-linux-template, build-windows-template, build-macos-x64, build-macos-arm64, build-macos-x64-template, build-macos-arm64-template]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Linux dev artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: redot-linux-dev
+          path: redot-linux-dev
+
+      - name: Download Windows dev artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: redot-windows-dev
+          path: redot-windows-dev
+
+      - name: Download Linux template artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: redot-linux-template
+          path: redot-linux-template
+
+      - name: Download Windows template artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: redot-windows-template
+          path: redot-windows-template
+
+      - name: Download macOS x64 dev artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: redot-macos-x64-dev
+          path: redot-macos-x64-dev
+
+      - name: Download macOS arm64 dev artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: redot-macos-arm64-dev
+          path: redot-macos-arm64-dev
+
+      - name: Download macOS x64 template artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: redot-macos-x64-template
+          path: redot-macos-x64-template
+
+      - name: Download macOS arm64 template artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: redot-macos-arm64-template
+          path: redot-macos-arm64-template
+
+      - name: Get the current date
+        id: date
+        run: echo "CURRENT_DATE=$(date +'%Y%m%d%H')" >> $GITHUB_ENV
+
+      - name: Zip the dev artifact
+        run: |
+          zip -r redot-linuxbsd.zip redot-linux-dev/*
+          zip -r redot-windowsx64.zip redot-windows-dev/*
+          zip -r redot-macos-x64.zip redot-macos-x64-dev/*
+          zip -r redot-macos-arm64.zip redot-macos-arm64-dev/*
+          zip -r redot-linux-template.zip redot-linux-template/*
+          zip -r redot-windows-template.zip redot-windows-template/*
+          zip -r redot-macos-x64-template.zip redot-macos-x64-template/*
+          zip -r redot-macos-arm64-template.zip redot-macos-arm64-template/*
+
+      # - name: Upload release artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: redot-release-${{ env.CURRENT_DATE }}
+      #     path: |
+      #       redot-linuxbsd.zip
+      #       redot-windowsx64.zip
+      #       redot-macos-x64.zip
+      #       redot-macos-arm64.zip
+      #       redot-linux-template.zip
+      #       redot-windows-template.zip
+      #       redot-macos-x64-template.zip
+      #       redot-macos-arm64-template.zip
+
+      - name: Upload dev build artifacts to GitHub dev
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.CURRENT_DATE }}
+          name: Build ${{ env.CURRENT_DATE }}
+          draft: false
+          make_latest: true
+          files: |
+            redot-linuxbsd.zip
+            redot-windowsx64.zip
+            redot-macos-x64.zip
+            redot-macos-arm64.zip
+            redot-linux-template.zip
+            redot-windows-template.zip
+            redot-macos-x64-template.zip
+            redot-macos-arm64-template.zip

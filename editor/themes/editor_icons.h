@@ -2,9 +2,11 @@
 /*  editor_icons.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_ICONS_H
-#define EDITOR_ICONS_H
+#pragma once
 
 #include "scene/resources/theme.h"
 
@@ -38,5 +39,3 @@ void editor_register_icons(const Ref<Theme> &p_theme, bool p_dark_theme, float p
 void editor_copy_icons(const Ref<Theme> &p_theme, const Ref<Theme> &p_old_theme);
 
 String get_default_project_icon();
-
-#endif // EDITOR_ICONS_H

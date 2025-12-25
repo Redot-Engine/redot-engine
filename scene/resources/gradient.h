@@ -2,9 +2,11 @@
 /*  gradient.h                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GRADIENT_H
-#define GRADIENT_H
+#pragma once
 
 #include "core/io/resource.h"
 
@@ -61,7 +62,7 @@ public:
 	};
 
 private:
-	Vector<Point> points;
+	LocalVector<Point> points;
 	bool is_sorted = true;
 	InterpolationMode interpolation_mode = GRADIENT_INTERPOLATE_LINEAR;
 	ColorSpace interpolation_color_space = GRADIENT_COLOR_SPACE_SRGB;
@@ -129,8 +130,6 @@ public:
 
 	void add_point(float p_offset, const Color &p_color);
 	void remove_point(int p_index);
-	void set_points(const Vector<Point> &p_points);
-	Vector<Point> &get_points();
 	void reverse();
 
 	void set_offset(int pos, const float offset);
@@ -187,7 +186,7 @@ public:
 		}
 		int first = middle;
 		int second = middle + 1;
-		if (second >= points.size()) {
+		if (second >= (int)points.size()) {
 			return points[points.size() - 1].color;
 		}
 		if (first < 0) {
@@ -212,7 +211,7 @@ public:
 			case GRADIENT_INTERPOLATE_CUBIC: {
 				int p0 = first - 1;
 				int p3 = second + 1;
-				if (p3 >= points.size()) {
+				if (p3 >= (int)points.size()) {
 					p3 = second;
 				}
 				if (p0 < 0) {
@@ -242,5 +241,3 @@ public:
 
 VARIANT_ENUM_CAST(Gradient::InterpolationMode);
 VARIANT_ENUM_CAST(Gradient::ColorSpace);
-
-#endif // GRADIENT_H

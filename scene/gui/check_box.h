@@ -2,9 +2,11 @@
 /*  check_box.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CHECK_BOX_H
-#define CHECK_BOX_H
+#pragma once
 
 #include "scene/gui/button.h"
 
@@ -49,6 +50,9 @@ class CheckBox : public Button {
 		Ref<Texture2D> unchecked_disabled;
 		Ref<Texture2D> radio_checked_disabled;
 		Ref<Texture2D> radio_unchecked_disabled;
+
+		Color checkbox_checked_color;
+		Color checkbox_unchecked_color;
 	} theme_cache;
 
 protected:
@@ -58,11 +62,9 @@ protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	bool is_radio();
+	bool is_radio() const;
 
 public:
 	CheckBox(const String &p_text = String());
 	~CheckBox();
 };
-
-#endif // CHECK_BOX_H

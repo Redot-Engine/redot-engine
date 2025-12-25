@@ -2,9 +2,11 @@
 /*  separation_ray_shape_3d.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,6 +32,7 @@
 
 #include "separation_ray_shape_3d.h"
 
+#include "scene/resources/mesh.h"
 #include "servers/physics_server_3d.h"
 
 Vector<Vector3> SeparationRayShape3D::get_debug_mesh_lines() const {
@@ -39,6 +42,10 @@ Vector<Vector3> SeparationRayShape3D::get_debug_mesh_lines() const {
 	};
 
 	return points;
+}
+
+Ref<ArrayMesh> SeparationRayShape3D::get_debug_arraymesh_faces(const Color &p_modulate) const {
+	return memnew(ArrayMesh);
 }
 
 real_t SeparationRayShape3D::get_enclosing_radius() const {

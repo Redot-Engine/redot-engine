@@ -2,9 +2,11 @@
 /*  renderer_scene_occlusion_cull.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -186,7 +188,7 @@ RID RendererSceneOcclusionCull::HZBuffer::get_debug_texture() {
 
 	unsigned char *ptrw = debug_data.ptrw();
 	for (int i = 0; i < debug_data.size(); i++) {
-		ptrw[i] = MIN(mips[0][i] / debug_tex_range, 1.0) * 255;
+		ptrw[i] = MIN(Math::log(1.0 + mips[0][i]) / Math::log(1.0 + debug_tex_range), 1.0) * 255;
 	}
 
 	debug_image->set_data(sizes[0].x, sizes[0].y, false, Image::FORMAT_L8, debug_data);

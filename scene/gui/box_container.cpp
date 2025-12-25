@@ -2,9 +2,11 @@
 /*  box_container.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -243,7 +245,7 @@ Size2 BoxContainer::get_minimum_size() const {
 	bool first = true;
 
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i), SortableVisbilityMode::VISIBLE);
+		Control *c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
 		if (!c) {
 			continue;
 		}
@@ -394,6 +396,7 @@ MarginContainer *VBoxContainer::add_margin_child(const String &p_label, Control 
 	if (p_expand) {
 		mc->set_v_size_flags(SIZE_EXPAND_FILL);
 	}
+	p_control->set_accessibility_name(p_label);
 
 	return mc;
 }

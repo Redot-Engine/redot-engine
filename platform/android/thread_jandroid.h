@@ -2,9 +2,11 @@
 /*  thread_jandroid.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef THREAD_JANDROID_H
-#define THREAD_JANDROID_H
+#pragma once
 
 #include <jni.h>
 
@@ -37,5 +38,3 @@ void init_thread_jandroid(JavaVM *p_jvm, JNIEnv *p_env);
 
 void setup_android_thread();
 JNIEnv *get_jni_env();
-
-#endif // THREAD_JANDROID_H

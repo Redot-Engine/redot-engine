@@ -2,9 +2,11 @@
 /*  audio_filter_sw.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,19 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_FILTER_SW_H
-#define AUDIO_FILTER_SW_H
+#pragma once
 
-#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
 
 class AudioFilterSW {
 public:
 	struct Coeffs {
-		float a1 = 0.0f;
-		float a2 = 0.0f;
-		float b0 = 0.0f;
-		float b1 = 0.0f;
-		float b2 = 0.0f;
+		double a1 = 0.0;
+		double a2 = 0.0;
+		double b0 = 0.0;
+		double b1 = 0.0;
+		double b2 = 0.0;
 	};
 
 	enum Mode {
@@ -122,5 +123,3 @@ void AudioFilterSW::Processor::process_one_interp(float &p_sample) {
 	coeffs.a1 += incr_coeffs.a1;
 	coeffs.a2 += incr_coeffs.a2;
 }
-
-#endif // AUDIO_FILTER_SW_H

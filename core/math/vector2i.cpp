@@ -2,9 +2,11 @@
 /*  vector2i.cpp                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -63,75 +65,6 @@ int64_t Vector2i::length_squared() const {
 
 double Vector2i::length() const {
 	return Math::sqrt((double)length_squared());
-}
-
-Vector2i Vector2i::operator+(const Vector2i &p_v) const {
-	return Vector2i(x + p_v.x, y + p_v.y);
-}
-
-void Vector2i::operator+=(const Vector2i &p_v) {
-	x += p_v.x;
-	y += p_v.y;
-}
-
-Vector2i Vector2i::operator-(const Vector2i &p_v) const {
-	return Vector2i(x - p_v.x, y - p_v.y);
-}
-
-void Vector2i::operator-=(const Vector2i &p_v) {
-	x -= p_v.x;
-	y -= p_v.y;
-}
-
-Vector2i Vector2i::operator*(const Vector2i &p_v1) const {
-	return Vector2i(x * p_v1.x, y * p_v1.y);
-}
-
-Vector2i Vector2i::operator*(int32_t p_rvalue) const {
-	return Vector2i(x * p_rvalue, y * p_rvalue);
-}
-
-void Vector2i::operator*=(int32_t p_rvalue) {
-	x *= p_rvalue;
-	y *= p_rvalue;
-}
-
-Vector2i Vector2i::operator/(const Vector2i &p_v1) const {
-	return Vector2i(x / p_v1.x, y / p_v1.y);
-}
-
-Vector2i Vector2i::operator/(int32_t p_rvalue) const {
-	return Vector2i(x / p_rvalue, y / p_rvalue);
-}
-
-void Vector2i::operator/=(int32_t p_rvalue) {
-	x /= p_rvalue;
-	y /= p_rvalue;
-}
-
-Vector2i Vector2i::operator%(const Vector2i &p_v1) const {
-	return Vector2i(x % p_v1.x, y % p_v1.y);
-}
-
-Vector2i Vector2i::operator%(int32_t p_rvalue) const {
-	return Vector2i(x % p_rvalue, y % p_rvalue);
-}
-
-void Vector2i::operator%=(int32_t p_rvalue) {
-	x %= p_rvalue;
-	y %= p_rvalue;
-}
-
-Vector2i Vector2i::operator-() const {
-	return Vector2i(-x, -y);
-}
-
-bool Vector2i::operator==(const Vector2i &p_vec2) const {
-	return x == p_vec2.x && y == p_vec2.y;
-}
-
-bool Vector2i::operator!=(const Vector2i &p_vec2) const {
-	return x != p_vec2.x || y != p_vec2.y;
 }
 
 Vector2i::operator String() const {

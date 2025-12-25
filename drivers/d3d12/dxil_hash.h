@@ -2,9 +2,11 @@
 /*  dxil_hash.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DXIL_HASH_H
-#define DXIL_HASH_H
+#pragma once
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 void compute_dxil_hash(const BYTE *pData, UINT byteCount, BYTE *pOutHash);
-
-#endif // DXIL_HASH_H

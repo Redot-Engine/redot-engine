@@ -2,9 +2,11 @@
 /*  macos_utils.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,9 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "macos_utils.h"
-
 #ifdef MACOS_ENABLED
+
+#import "macos_utils.h"
 
 #include "core/string/print_string.h"
 
@@ -38,7 +40,7 @@
 #import <CoreServices/CoreServices.h>
 
 bool macos_is_app_bundle_installed(const String &p_bundle_id) {
-	CFStringRef bundle_id = CFStringCreateWithCString(nullptr, p_bundle_id.utf8(), kCFStringEncodingUTF8);
+	CFStringRef bundle_id = CFStringCreateWithCString(nullptr, p_bundle_id.utf8().get_data(), kCFStringEncodingUTF8);
 	CFArrayRef result = LSCopyApplicationURLsForBundleIdentifier(bundle_id, nullptr);
 	CFRelease(bundle_id);
 

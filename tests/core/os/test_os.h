@@ -2,9 +2,11 @@
 /*  test_os.h                                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_OS_H
-#define TEST_OS_H
+#pragma once
 
 #include "core/os/os.h"
 
@@ -182,7 +183,7 @@ TEST_CASE("[OS] Execute") {
 	const Error err = OS::get_singleton()->execute("cmd", arguments, nullptr, &exit_code);
 	CHECK_MESSAGE(
 			err == OK,
-			"(Running the command `cmd /C \"dir > NUL\"` returns the expected Godot error code (OK).");
+			"(Running the command `cmd /C \"dir > NUL\"` returns the expected Redot error code (OK).");
 	CHECK_MESSAGE(
 			exit_code == 0,
 			"Running the command `cmd /C \"dir > NUL\"` returns a zero (successful) exit code.");
@@ -194,7 +195,7 @@ TEST_CASE("[OS] Execute") {
 	const Error err = OS::get_singleton()->execute("sh", arguments, nullptr, &exit_code);
 	CHECK_MESSAGE(
 			err == OK,
-			"(Running the command `sh -c \"ls > /dev/null\"` returns the expected Godot error code (OK).");
+			"(Running the command `sh -c \"ls > /dev/null\"` returns the expected Redot error code (OK).");
 	CHECK_MESSAGE(
 			exit_code == 0,
 			"Running the command `sh -c \"ls > /dev/null\"` returns a zero (successful) exit code.");
@@ -202,5 +203,3 @@ TEST_CASE("[OS] Execute") {
 }
 
 } // namespace TestOS
-
-#endif // TEST_OS_H

@@ -2,9 +2,11 @@
 /*  environment_storage.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ENVIRONMENT_STORAGE_H
-#define ENVIRONMENT_STORAGE_H
+#pragma once
 
 #include "core/templates/rid_owner.h"
 #include "servers/rendering_server.h"
@@ -40,7 +41,7 @@ private:
 
 	// Environment
 	struct Environment {
-		// Note, we capture and store all environment parameters received from Godot here.
+		// Note, we capture and store all environment parameters received from Redot here.
 		// Not all renderers support all effects and should just ignore the bits they don't support.
 
 		// Background
@@ -57,6 +58,7 @@ private:
 		float ambient_light_energy = 1.0;
 		float ambient_sky_contribution = 1.0;
 		RS::EnvironmentReflectionSource reflection_source = RS::ENV_REFLECTION_SOURCE_BG;
+		int camera_feed_id = 0;
 
 		// Tonemap
 		RS::EnvironmentToneMapper tone_mapper;
@@ -181,10 +183,8 @@ public:
 	void environment_set_bg_energy(RID p_env, float p_multiplier, float p_exposure_value);
 	void environment_set_canvas_max_layer(RID p_env, int p_max_layer);
 	void environment_set_ambient_light(RID p_env, const Color &p_color, RS::EnvironmentAmbientSource p_ambient = RS::ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0, float p_sky_contribution = 0.0, RS::EnvironmentReflectionSource p_reflection_source = RS::ENV_REFLECTION_SOURCE_BG);
-// FIXME: Disabled during Vulkan refactoring, should be ported.
-#if 0
 	void environment_set_camera_feed_id(RID p_env, int p_camera_feed_id);
-#endif
+	int environment_get_camera_feed_id(RID p_env) const;
 
 	RS::EnvironmentBG environment_get_background(RID p_env) const;
 	RID environment_get_sky(RID p_env) const;
@@ -306,5 +306,3 @@ public:
 	bool environment_get_use_1d_color_correction(RID p_env) const;
 	RID environment_get_color_correction(RID p_env) const;
 };
-
-#endif // ENVIRONMENT_STORAGE_H

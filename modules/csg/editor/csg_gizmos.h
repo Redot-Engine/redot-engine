@@ -2,9 +2,11 @@
 /*  csg_gizmos.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CSG_GIZMOS_H
-#define CSG_GIZMOS_H
-
-#ifdef TOOLS_ENABLED
+#pragma once
 
 #include "../csg_shape.h"
 
 #include "editor/plugins/editor_plugin.h"
-#include "editor/plugins/node_3d_editor_gizmos.h"
+#include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "scene/gui/control.h"
 
 class AcceptDialog;
@@ -62,7 +61,6 @@ public:
 	virtual void commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) override;
 
 	CSGShape3DGizmoPlugin();
-	~CSGShape3DGizmoPlugin();
 };
 
 class CSGShapeEditor : public Control {
@@ -98,13 +96,9 @@ class EditorPluginCSG : public EditorPlugin {
 	CSGShapeEditor *csg_shape_editor = nullptr;
 
 public:
-	virtual String get_name() const override { return "CSGShape3D"; }
+	virtual String get_plugin_name() const override { return "CSGShape3D"; }
 	virtual void edit(Object *p_object) override;
 	virtual bool handles(Object *p_object) const override;
 
 	EditorPluginCSG();
 };
-
-#endif // TOOLS_ENABLED
-
-#endif // CSG_GIZMOS_H

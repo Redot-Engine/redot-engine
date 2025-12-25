@@ -2,9 +2,11 @@
 /*  api.h                                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,15 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IOS_API_H
-#define IOS_API_H
+#pragma once
 
 #if defined(IOS_ENABLED)
-extern void godot_ios_plugins_initialize();
-extern void godot_ios_plugins_deinitialize();
+extern void godot_apple_embedded_plugins_initialize();
+extern void godot_apple_embedded_plugins_deinitialize();
 #endif
 
 void register_ios_api();
 void unregister_ios_api();
-
-#endif // IOS_API_H

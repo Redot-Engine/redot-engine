@@ -1,6 +1,6 @@
 # Metal Rendering Device
 
-This document aims to describe the Metal rendering device implementation in Godot.
+This document aims to describe the Metal rendering device implementation in Redot.
 
 ## Future work / ideas
 

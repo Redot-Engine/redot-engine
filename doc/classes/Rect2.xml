@@ -69,7 +69,7 @@
 				var absolute = rect.Abs(); // absolute is Rect2(-75, -25, 100, 50)
 				[/csharp]
 				[/codeblocks]
-				[b]Note:[/b] It's recommended to use this method when [member size] is negative, as most other methods in Godot assume that the [member position] is the top-left corner, and the [member end] is the bottom-right corner.
+				[b]Note:[/b] It's recommended to use this method when [member size] is negative, as most other methods in Redot assume that the [member position] is the top-left corner, and the [member end] is the bottom-right corner.
 			</description>
 		</method>
 		<method name="encloses" qualifiers="const">
@@ -228,7 +228,7 @@
 		</member>
 		<member name="size" type="Vector2" setter="" getter="" default="Vector2(0, 0)">
 			The rectangle's width and height, starting from [member position]. Setting this value also affects the [member end] point.
-			[b]Note:[/b] It's recommended setting the width and height to non-negative values, as most methods in Godot assume that the [member position] is the top-left corner, and the [member end] is the bottom-right corner. To get an equivalent rectangle with non-negative size, use [method abs].
+			[b]Note:[/b] It's recommended setting the width and height to non-negative values, as most methods in Redot assume that the [member position] is the top-left corner, and the [member end] is the bottom-right corner. To get an equivalent rectangle with non-negative size, use [method abs].
 		</member>
 	</members>
 	<operators>

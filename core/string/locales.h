@@ -2,9 +2,11 @@
 /*  locales.h                                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef LOCALES_H
-#define LOCALES_H
+#pragma once
 
 // Windows has some weird locale identifiers which do not honor the ISO 639-1
 // standardized nomenclature. Whenever those don't conflict with existing ISO
@@ -1111,7 +1112,7 @@ static const char *script_list[][2] = {
 	{ "Meitei Mayek", "Mtei" },
 	{ "Multani", "Mult" },
 	{ "Myanmar / Burmese", "Mymr" },
-	{ "​Nag Mundari", "Nagm" },
+	{ "Nag Mundari", "Nagm" },
 	{ "Nandinagari", "Nand" },
 	{ "Old North Arabian", "Narb" },
 	{ "Nabataean", "Nbat" },
@@ -1195,5 +1196,3 @@ static const char *script_list[][2] = {
 	{ "Zanabazar Square", "Zanb" },
 	{ nullptr, nullptr }
 };
-
-#endif // LOCALES_H

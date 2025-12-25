@@ -2,9 +2,11 @@
 /*  skeleton_modification_2d.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -31,12 +33,8 @@
 #include "skeleton_modification_2d.h"
 #include "scene/2d/skeleton_2d.h"
 
-#include "scene/2d/physics/collision_object_2d.h"
-#include "scene/2d/physics/collision_shape_2d.h"
-#include "scene/2d/physics/physical_bone_2d.h"
-
 #ifdef TOOLS_ENABLED
-#include "editor/editor_settings.h"
+#include "editor/settings/editor_settings.h"
 #endif // TOOLS_ENABLED
 
 ///////////////////////////////////////
@@ -85,15 +83,15 @@ bool SkeletonModification2D::get_enabled() {
 float SkeletonModification2D::clamp_angle(float p_angle, float p_min_bound, float p_max_bound, bool p_invert) {
 	// Map to the 0 to 360 range (in radians though) instead of the -180 to 180 range.
 	if (p_angle < 0) {
-		p_angle = Math_TAU + p_angle;
+		p_angle = Math::TAU + p_angle;
 	}
 
 	// Make min and max in the range of 0 to 360 (in radians), and make sure they are in the right order
 	if (p_min_bound < 0) {
-		p_min_bound = Math_TAU + p_min_bound;
+		p_min_bound = Math::TAU + p_min_bound;
 	}
 	if (p_max_bound < 0) {
-		p_max_bound = Math_TAU + p_max_bound;
+		p_max_bound = Math::TAU + p_max_bound;
 	}
 	if (p_min_bound > p_max_bound) {
 		SWAP(p_min_bound, p_max_bound);
@@ -134,10 +132,10 @@ void SkeletonModification2D::editor_draw_angle_constraints(Bone2D *p_operation_b
 	float arc_angle_min = p_min_bound;
 	float arc_angle_max = p_max_bound;
 	if (arc_angle_min < 0) {
-		arc_angle_min = (Math_PI * 2) + arc_angle_min;
+		arc_angle_min = (Math::PI * 2) + arc_angle_min;
 	}
 	if (arc_angle_max < 0) {
-		arc_angle_max = (Math_PI * 2) + arc_angle_max;
+		arc_angle_max = (Math::PI * 2) + arc_angle_max;
 	}
 	if (arc_angle_min > arc_angle_max) {
 		SWAP(arc_angle_min, arc_angle_max);
@@ -163,7 +161,7 @@ void SkeletonModification2D::editor_draw_angle_constraints(Bone2D *p_operation_b
 
 		if (p_constraint_inverted) {
 			stack->skeleton->draw_arc(Vector2(0, 0), p_operation_bone->get_length(),
-					arc_angle_min + (Math_PI * 2), arc_angle_max, 32, bone_ik_color, 1.0);
+					arc_angle_min + (Math::PI * 2), arc_angle_max, 32, bone_ik_color, 1.0);
 		} else {
 			stack->skeleton->draw_arc(Vector2(0, 0), p_operation_bone->get_length(),
 					arc_angle_min, arc_angle_max, 32, bone_ik_color, 1.0);
@@ -173,7 +171,7 @@ void SkeletonModification2D::editor_draw_angle_constraints(Bone2D *p_operation_b
 
 	} else {
 		stack->skeleton->draw_set_transform(stack->skeleton->to_local(p_operation_bone->get_global_position()));
-		stack->skeleton->draw_arc(Vector2(0, 0), p_operation_bone->get_length(), 0, Math_PI * 2, 32, bone_ik_color, 1.0);
+		stack->skeleton->draw_arc(Vector2(0, 0), p_operation_bone->get_length(), 0, Math::PI * 2, 32, bone_ik_color, 1.0);
 		stack->skeleton->draw_line(Vector2(0, 0), Vector2(1, 0) * p_operation_bone->get_length(), bone_ik_color, 1.0);
 	}
 }

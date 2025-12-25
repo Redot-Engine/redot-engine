@@ -2,9 +2,11 @@
 /*  camera_attributes_storage.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -67,7 +69,7 @@ void RendererCameraAttributes::camera_attributes_set_dof_blur(RID p_camera_attri
 	ERR_FAIL_NULL(cam_attributes);
 #ifdef DEBUG_ENABLED
 	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" && (p_far_enable || p_near_enable)) {
-		WARN_PRINT_ONCE_ED("DoF blur is only available when using the Forward+ or Mobile rendering backends.");
+		WARN_PRINT_ONCE_ED("DoF blur is only available when using the Forward+ or Mobile renderers.");
 	}
 #endif
 	cam_attributes->dof_blur_far_enabled = p_far_enable;
@@ -145,7 +147,7 @@ void RendererCameraAttributes::camera_attributes_set_auto_exposure(RID p_camera_
 	}
 #ifdef DEBUG_ENABLED
 	if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" && p_enable) {
-		WARN_PRINT_ONCE_ED("Auto exposure is only available when using the Forward+ or Mobile rendering backends.");
+		WARN_PRINT_ONCE_ED("Auto exposure is only available when using the Forward+ or Mobile renderers.");
 	}
 #endif
 	cam_attributes->use_auto_exposure = p_enable;

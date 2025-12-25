@@ -2,9 +2,11 @@
 /*  godot_pin_joint_3d.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -96,7 +98,7 @@ void GodotPinJoint3D::solve(real_t p_step) {
 
 		Vector3 rel_pos1 = pivotAInW - A->get_transform().origin;
 		Vector3 rel_pos2 = pivotBInW - B->get_transform().origin;
-		//this jacobian entry could be re-used for all iterations
+		//this jacobian entry could be reused for all iterations
 
 		Vector3 vel1 = A->get_velocity_in_local_point(rel_pos1);
 		Vector3 vel2 = B->get_velocity_in_local_point(rel_pos2);

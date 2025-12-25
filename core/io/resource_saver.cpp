@@ -2,9 +2,11 @@
 /*  resource_saver.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -98,7 +100,7 @@ void ResourceFormatSaver::_bind_methods() {
 }
 
 Error ResourceSaver::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
-	ERR_FAIL_COND_V_MSG(p_resource.is_null(), ERR_INVALID_PARAMETER, "Can't save empty resource to path '" + p_path + "'.");
+	ERR_FAIL_COND_V_MSG(p_resource.is_null(), ERR_INVALID_PARAMETER, vformat("Can't save empty resource to path '%s'.", p_path));
 	String path = p_path;
 	if (path.is_empty()) {
 		path = p_resource->get_path();

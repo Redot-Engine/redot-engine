@@ -2,9 +2,11 @@
 /*  theme_owner.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef THEME_OWNER_H
-#define THEME_OWNER_H
+#pragma once
 
 #include "core/object/object.h"
 #include "scene/resources/theme.h"
@@ -79,7 +80,4 @@ public:
 	int get_theme_default_font_size();
 
 	ThemeOwner(Node *p_holder) { holder = p_holder; }
-	~ThemeOwner() {}
 };
-
-#endif // THEME_OWNER_H

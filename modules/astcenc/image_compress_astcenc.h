@@ -2,9 +2,11 @@
 /*  image_compress_astcenc.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IMAGE_COMPRESS_ASTCENC_H
-#define IMAGE_COMPRESS_ASTCENC_H
+#pragma once
 
 #include "core/io/image.h"
 
+#ifdef TOOLS_ENABLED
 void _compress_astc(Image *r_img, Image::ASTCFormat p_format);
-void _decompress_astc(Image *r_img);
+#endif
 
-#endif // IMAGE_COMPRESS_ASTCENC_H
+void _decompress_astc(Image *r_img);

@@ -2,9 +2,11 @@
 /*  velocity_tracker_3d.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,6 +31,8 @@
 /**************************************************************************/
 
 #include "velocity_tracker_3d.h"
+
+#include "core/config/engine.h"
 
 void VelocityTracker3D::set_track_physics_step(bool p_track_physics_step) {
 	physics_step = p_track_physics_step;

@@ -194,17 +194,17 @@ def run_msbuild(tools: ToolsLocation, sln: str, chdir_to: str, msbuild_args: Opt
     return subprocess.call(args, env=msbuild_env, cwd=chdir_to)
 
 
-def build_godot_api(msbuild_tool, module_dir, output_dir, push_nupkgs_local, precision, no_deprecated):
+def build_godot_api(msbuild_tool, module_dir, output_dir, push_nupkgs_local, precision, no_deprecated, werror):
     target_filenames = [
-        "GodotSharp.dll",
-        "GodotSharp.pdb",
-        "GodotSharp.xml",
-        "GodotSharpEditor.dll",
-        "GodotSharpEditor.pdb",
-        "GodotSharpEditor.xml",
-        "GodotPlugins.dll",
-        "GodotPlugins.pdb",
-        "GodotPlugins.runtimeconfig.json",
+        "RedotSharp.dll",
+        "RedotSharp.pdb",
+        "RedotSharp.xml",
+        "RedotSharpEditor.dll",
+        "RedotSharpEditor.pdb",
+        "RedotSharpEditor.xml",
+        "RedotPlugins.dll",
+        "RedotPlugins.pdb",
+        "RedotPlugins.runtimeconfig.json",
     ]
 
     for build_config in ["Debug", "Release"]:
@@ -219,8 +219,10 @@ def build_godot_api(msbuild_tool, module_dir, output_dir, push_nupkgs_local, pre
             args += ["/p:GodotFloat64=true"]
         if no_deprecated:
             args += ["/p:GodotNoDeprecated=true"]
+        if werror:
+            args += ["/p:TreatWarningsAsErrors=true"]
 
-        sln = os.path.join(module_dir, "glue/GodotSharp/GodotSharp.sln")
+        sln = os.path.join(module_dir, "glue/GodotSharp/RedotSharp.sln")
         exit_code = run_msbuild(msbuild_tool, sln=sln, chdir_to=module_dir, msbuild_args=args)
         if exit_code != 0:
             return exit_code
@@ -229,7 +231,7 @@ def build_godot_api(msbuild_tool, module_dir, output_dir, push_nupkgs_local, pre
 
         core_src_dir = os.path.abspath(os.path.join(sln, os.pardir, "GodotSharp", "bin", build_config))
         editor_src_dir = os.path.abspath(os.path.join(sln, os.pardir, "GodotSharpEditor", "bin", build_config))
-        plugins_src_dir = os.path.abspath(os.path.join(sln, os.pardir, "GodotPlugins", "bin", build_config, "net6.0"))
+        plugins_src_dir = os.path.abspath(os.path.join(sln, os.pardir, "GodotPlugins", "bin", build_config, "net8.0"))
 
         if not os.path.isdir(editor_api_dir):
             assert not os.path.isfile(editor_api_dir)
@@ -339,18 +341,20 @@ def generate_sdk_package_versions():
 
 
 def build_all(
-    msbuild_tool, module_dir, output_dir, godot_platform, dev_debug, push_nupkgs_local, precision, no_deprecated
+    msbuild_tool, module_dir, output_dir, godot_platform, dev_debug, push_nupkgs_local, precision, no_deprecated, werror
 ):
     # Generate SdkPackageVersions.props and VersionDocsUrl constant
     generate_sdk_package_versions()
 
     # Godot API
-    exit_code = build_godot_api(msbuild_tool, module_dir, output_dir, push_nupkgs_local, precision, no_deprecated)
+    exit_code = build_godot_api(
+        msbuild_tool, module_dir, output_dir, push_nupkgs_local, precision, no_deprecated, werror
+    )
     if exit_code != 0:
         return exit_code
 
     # GodotTools
-    sln = os.path.join(module_dir, "editor/GodotTools/GodotTools.sln")
+    sln = os.path.join(module_dir, "editor/GodotTools/RedotTools.sln")
     args = ["/restore", "/t:Build", "/p:Configuration=" + ("Debug" if dev_debug else "Release")] + (
         ["/p:GodotPlatform=" + godot_platform] if godot_platform else []
     )
@@ -370,7 +374,7 @@ def build_all(
         args += ["/p:GodotFloat64=true"]
     if no_deprecated:
         args += ["/p:GodotNoDeprecated=true"]
-    sln = os.path.join(module_dir, "editor/Godot.NET.Sdk/Godot.NET.Sdk.sln")
+    sln = os.path.join(module_dir, "editor/Godot.NET.Sdk/Redot.NET.Sdk.sln")
     exit_code = run_msbuild(msbuild_tool, sln=sln, chdir_to=module_dir, msbuild_args=args)
     if exit_code != 0:
         return exit_code
@@ -382,13 +386,13 @@ def main():
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(description="Builds all Godot .NET solutions")
+    parser = argparse.ArgumentParser(description="Builds all Redot .NET solutions")
     parser.add_argument("--godot-output-dir", type=str, required=True)
     parser.add_argument(
         "--dev-debug",
         action="store_true",
         default=False,
-        help="Build GodotTools and Godot.NET.Sdk with 'Configuration=Debug'",
+        help="Build RedotTools and Redot.NET.Sdk with 'Configuration=Debug'",
     )
     parser.add_argument("--godot-platform", type=str, default="")
     parser.add_argument("--mono-prefix", type=str, default="")
@@ -400,8 +404,9 @@ def main():
         "--no-deprecated",
         action="store_true",
         default=False,
-        help="Build GodotSharp without using deprecated features. This is required, if the engine was built with 'deprecated=no'.",
+        help="Build RedotSharp without using deprecated features. This is required, if the engine was built with 'deprecated=no'.",
     )
+    parser.add_argument("--werror", action="store_true", default=False, help="Treat compiler warnings as errors.")
 
     args = parser.parse_args()
 
@@ -427,6 +432,7 @@ def main():
         push_nupkgs_local,
         args.precision,
         args.no_deprecated,
+        args.werror,
     )
     sys.exit(exit_code)
 

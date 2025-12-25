@@ -2,9 +2,11 @@
 /*  class_db_api_json.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,7 @@
 
 #include "class_db_api_json.h"
 
-#ifdef DEBUG_METHODS_ENABLED
+#ifdef DEBUG_ENABLED
 
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
@@ -232,4 +234,4 @@ void class_db_api_to_json(const String &p_output_file, ClassDB::APIType p_api) {
 	print_line(String() + "ClassDB API JSON written to: " + ProjectSettings::get_singleton()->globalize_path(p_output_file));
 }
 
-#endif // DEBUG_METHODS_ENABLED
+#endif // DEBUG_ENABLED

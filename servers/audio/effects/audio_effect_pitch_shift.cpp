@@ -2,9 +2,11 @@
 /*  audio_effect_pitch_shift.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -33,7 +35,7 @@
 #include "core/math/math_funcs.h"
 #include "servers/audio_server.h"
 
-/* Thirdparty code, so disable clang-format with Godot style */
+/* Thirdparty code, so disable clang-format with Redot style */
 /* clang-format off */
 
 /****************************************************************************
@@ -92,7 +94,7 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 	fftFrameSize2 = fftFrameSize/2;
 	stepSize = fftFrameSize/osamp;
 	freqPerBin = sampleRate/(double)fftFrameSize;
-	expct = 2.*Math_PI*(double)stepSize/(double)fftFrameSize;
+	expct = 2.*Math::PI*(double)stepSize/(double)fftFrameSize;
 	inFifoLatency = fftFrameSize-stepSize;
 	if (gRover == 0) { gRover = inFifoLatency;
 }
@@ -112,7 +114,7 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 
 			/* do windowing and re,im interleave */
 			for (k = 0; k < fftFrameSize;k++) {
-				window = -.5*cos(2.*Math_PI*(double)k/(double)fftFrameSize)+.5;
+				window = -.5*std::cos(2.*Math::PI*(double)k/(double)fftFrameSize)+.5;
 				gFFTworksp[2*k] = gInFIFO[k] * window;
 				gFFTworksp[2*k+1] = 0.;
 			}
@@ -129,8 +131,8 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 				imag = gFFTworksp[2*k+1];
 
 				/* compute magnitude and phase */
-				magn = 2.*sqrt(real*real + imag*imag);
-				phase = atan2(imag,real);
+				magn = 2.*std::sqrt(real*real + imag*imag);
+				phase = std::atan2(imag,real);
 
 				/* compute phase difference */
 				tmp = phase - gLastPhase[k];
@@ -140,14 +142,14 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 				tmp -= (double)k*expct;
 
 				/* map delta phase into +/- Pi interval */
-				qpd = tmp/Math_PI;
+				qpd = tmp/Math::PI;
 				if (qpd >= 0) { qpd += qpd&1;
 				} else { qpd -= qpd&1;
 }
-				tmp -= Math_PI*(double)qpd;
+				tmp -= Math::PI*(double)qpd;
 
 				/* get deviation from bin frequency from the +/- Pi interval */
-				tmp = osamp*tmp/(2.*Math_PI);
+				tmp = osamp*tmp/(2.*Math::PI);
 
 				/* compute the k-th partials' true frequency */
 				tmp = (double)k*freqPerBin + tmp*freqPerBin;
@@ -160,8 +162,13 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 
 			/* ***************** PROCESSING ******************* */
 			/* this does the actual pitch shifting */
-			memset(gSynMagn, 0, fftFrameSize*sizeof(float));
-			memset(gSynFreq, 0, fftFrameSize*sizeof(float));
+			size_t fftBufferSize = static_cast<size_t>(fftFrameSize) * sizeof(float);
+			if (unlikely(fftBufferSize > MAX_FRAME_LENGTH)) {
+				ERR_PRINT_ONCE("Invalid FFT frame size for PitchShift. This is a bug, please report.");
+				return;
+			}
+			memset(gSynMagn, 0, fftBufferSize);
+			memset(gSynFreq, 0, fftBufferSize);
 			for (k = 0; k <= fftFrameSize2; k++) {
 				index = k*pitchShift;
 				if (index <= fftFrameSize2) {
@@ -184,7 +191,7 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 				tmp /= freqPerBin;
 
 				/* take osamp into account */
-				tmp = 2.*Math_PI*tmp/osamp;
+				tmp = 2.*Math::PI*tmp/osamp;
 
 				/* add the overlap phase advance back in */
 				tmp += (double)k*expct;
@@ -194,8 +201,8 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 				phase = gSumPhase[k];
 
 				/* get real and imag part and re-interleave */
-				gFFTworksp[2*k] = magn*cos(phase);
-				gFFTworksp[2*k+1] = magn*sin(phase);
+				gFFTworksp[2*k] = magn*std::cos(phase);
+				gFFTworksp[2*k+1] = magn*std::sin(phase);
 			}
 
 			/* zero negative frequencies */
@@ -207,14 +214,14 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 
 			/* do windowing and add to output accumulator */
 			for(k=0; k < fftFrameSize; k++) {
-				window = -.5*cos(2.*Math_PI*(double)k/(double)fftFrameSize)+.5;
+				window = -.5*std::cos(2.*Math::PI*(double)k/(double)fftFrameSize)+.5;
 				gOutputAccum[k] += 2.*window*gFFTworksp[2*k]/(fftFrameSize2*osamp);
 			}
 			for (k = 0; k < stepSize; k++) { gOutFIFO[k] = gOutputAccum[k];
 }
 
 			/* shift accumulator */
-			memmove(gOutputAccum, gOutputAccum+stepSize, fftFrameSize*sizeof(float));
+			memmove(gOutputAccum, gOutputAccum+stepSize, fftBufferSize);
 
 			/* move input FIFO */
 			for (k = 0; k < inFifoLatency; k++) { gInFIFO[k] = gInFIFO[k+stepSize];
@@ -255,14 +262,14 @@ void SMBPitchShift::smbFft(float *fftBuffer, long fftFrameSize, long sign)
 			*p1 = *p2; *p2 = temp;
 		}
 	}
-	for (k = 0, le = 2; k < (long)(log((double)fftFrameSize)/log(2.)+.5); k++) {
+	for (k = 0, le = 2; k < (long)(std::log((double)fftFrameSize)/std::log(2.)+.5); k++) {
 		le <<= 1;
 		le2 = le>>1;
 		ur = 1.0;
 		ui = 0.0;
-		arg = Math_PI / (le2>>1);
-		wr = cos(arg);
-		wi = sign*sin(arg);
+		arg = Math::PI / (le2>>1);
+		wr = std::cos(arg);
+		wi = sign*std::sin(arg);
 		for (j = 0; j < le2; j += 2) {
 			p1r = fftBuffer+j; p1i = p1r+1;
 			p2r = p1r+le2; p2i = p2r+1;
@@ -282,12 +289,15 @@ void SMBPitchShift::smbFft(float *fftBuffer, long fftFrameSize, long sign)
 }
 
 
-/* Godot code again */
+/* Redot code again */
 /* clang-format on */
 
 void AudioEffectPitchShiftInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {
 	// Avoid distortion by skipping processing if pitch_scale is 1.0.
 	if (Math::is_equal_approx(base->pitch_scale, 1.0f)) {
+		for (int i = 0; i < p_frame_count; i++) {
+			p_dst_frames[i] = p_src_frames[i];
+		}
 		return;
 	}
 

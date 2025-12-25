@@ -2,9 +2,11 @@
 /*  debugger_marshalls.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -36,8 +38,7 @@
 #define CHECK_END(arr, expected, what) ERR_FAIL_COND_V_MSG((uint32_t)arr.size() > (uint32_t)expected, false, String("Malformed ") + what + " message from script debugger, message too long. Expected size: " + itos(expected) + ", actual size: " + itos(arr.size()))
 
 Array DebuggerMarshalls::ScriptStackDump::serialize() {
-	Array arr;
-	arr.push_back(frames.size() * 3);
+	Array arr = { frames.size() * 3 };
 	for (const ScriptLanguage::StackInfo &frame : frames) {
 		arr.push_back(frame.file);
 		arr.push_back(frame.line);
@@ -64,10 +65,7 @@ bool DebuggerMarshalls::ScriptStackDump::deserialize(const Array &p_arr) {
 }
 
 Array DebuggerMarshalls::ScriptStackVariable::serialize(int max_size) {
-	Array arr;
-	arr.push_back(name);
-	arr.push_back(type);
-	arr.push_back(value.get_type());
+	Array arr = { name, type, value.get_type() };
 
 	Variant var = value;
 	if (value.get_type() == Variant::OBJECT && value.get_validated_object() == nullptr) {
@@ -100,23 +98,28 @@ bool DebuggerMarshalls::ScriptStackVariable::deserialize(const Array &p_arr) {
 
 Array DebuggerMarshalls::OutputError::serialize() {
 	Array arr;
-	arr.push_back(hr);
-	arr.push_back(min);
-	arr.push_back(sec);
-	arr.push_back(msec);
-	arr.push_back(source_file);
-	arr.push_back(source_func);
-	arr.push_back(source_line);
-	arr.push_back(error);
-	arr.push_back(error_descr);
-	arr.push_back(warning);
-	unsigned int size = callstack.size();
 	const ScriptLanguage::StackInfo *r = callstack.ptr();
-	arr.push_back(size * 3);
-	for (int i = 0; i < callstack.size(); i++) {
-		arr.push_back(r[i].file);
-		arr.push_back(r[i].func);
-		arr.push_back(r[i].line);
+
+	unsigned int callstack_size = callstack.size();
+	unsigned int w_index = 11; // A friendly write index.
+	arr.resize(callstack_size * 3 + w_index); // callstack.size() * 3 (due to the use of file, func, and line) + the next 11 headers.
+
+	arr[0] = hr;
+	arr[1] = min;
+	arr[2] = sec;
+	arr[3] = msec;
+	arr[4] = source_file;
+	arr[5] = source_func;
+	arr[6] = source_line;
+	arr[7] = error;
+	arr[8] = error_descr;
+	arr[9] = warning;
+	arr[10] = callstack_size * 3;
+
+	for (unsigned int i = 0; i < callstack_size; i++) {
+		arr[w_index++] = (r[i].file);
+		arr[w_index++] = (r[i].func);
+		arr[w_index++] = (r[i].line);
 	}
 	return arr;
 }
@@ -146,4 +149,38 @@ bool DebuggerMarshalls::OutputError::deserialize(const Array &p_arr) {
 	}
 	CHECK_END(p_arr, idx, "OutputError");
 	return true;
+}
+
+Array DebuggerMarshalls::serialize_key_shortcut(const Ref<Shortcut> &p_shortcut) {
+	ERR_FAIL_COND_V(p_shortcut.is_null(), Array());
+	Array keys;
+	for (const Ref<InputEvent> ev : p_shortcut->get_events()) {
+		const Ref<InputEventKey> kev = ev;
+		ERR_CONTINUE(kev.is_null());
+		if (kev->get_physical_keycode() != Key::NONE) {
+			keys.push_back(true);
+			keys.push_back(kev->get_physical_keycode_with_modifiers());
+		} else {
+			keys.push_back(false);
+			keys.push_back(kev->get_keycode_with_modifiers());
+		}
+	}
+	return keys;
+}
+
+Ref<Shortcut> DebuggerMarshalls::deserialize_key_shortcut(const Array &p_keys) {
+	Array key_events;
+	ERR_FAIL_COND_V(p_keys.size() % 2 != 0, Ref<Shortcut>());
+	for (int i = 0; i < p_keys.size(); i += 2) {
+		ERR_CONTINUE(p_keys[i].get_type() != Variant::BOOL);
+		ERR_CONTINUE(p_keys[i + 1].get_type() != Variant::INT);
+		key_events.push_back(InputEventKey::create_reference((Key)p_keys[i + 1].operator int(), p_keys[i].operator bool()));
+	}
+	if (key_events.is_empty()) {
+		return Ref<Shortcut>();
+	}
+	Ref<Shortcut> shortcut;
+	shortcut.instantiate();
+	shortcut->set_events(key_events);
+	return shortcut;
 }

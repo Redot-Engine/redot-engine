@@ -2,9 +2,11 @@
 /*  freedesktop_screensaver.h                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FREEDESKTOP_SCREENSAVER_H
-#define FREEDESKTOP_SCREENSAVER_H
+#pragma once
 
 #ifdef DBUS_ENABLED
 
-#include <stdint.h>
+#include <cstdint>
 
 class FreeDesktopScreenSaver {
 private:
@@ -47,5 +48,3 @@ public:
 };
 
 #endif // DBUS_ENABLED
-
-#endif // FREEDESKTOP_SCREENSAVER_H

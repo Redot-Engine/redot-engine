@@ -2,9 +2,11 @@
 /*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -39,6 +41,9 @@
 #if defined(MACOS_ENABLED)
 #include "camera_macos.h"
 #endif
+#if defined(ANDROID_ENABLED)
+#include "camera_android.h"
+#endif
 
 void initialize_camera_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -53,6 +58,9 @@ void initialize_camera_module(ModuleInitializationLevel p_level) {
 #endif
 #if defined(MACOS_ENABLED)
 	CameraServer::make_default<CameraMacOS>();
+#endif
+#if defined(ANDROID_ENABLED)
+	CameraServer::make_default<CameraAndroid>();
 #endif
 }
 

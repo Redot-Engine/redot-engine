@@ -2,9 +2,11 @@
 /*  webrtc_peer_connection.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBRTC_PEER_CONNECTION_H
-#define WEBRTC_PEER_CONNECTION_H
+#pragma once
 
 #include "webrtc_data_channel.h"
-
-#include "core/io/packet_peer.h"
 
 class WebRTCPeerConnection : public RefCounted {
 	GDCLASS(WebRTCPeerConnection, RefCounted);
@@ -94,5 +93,3 @@ public:
 VARIANT_ENUM_CAST(WebRTCPeerConnection::ConnectionState);
 VARIANT_ENUM_CAST(WebRTCPeerConnection::GatheringState);
 VARIANT_ENUM_CAST(WebRTCPeerConnection::SignalingState);
-
-#endif // WEBRTC_PEER_CONNECTION_H

@@ -2,9 +2,11 @@
 /*  shader_warnings.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -85,19 +87,19 @@ String ShaderWarning::get_name_from_code(Code p_code) {
 	ERR_FAIL_INDEX_V(p_code, WARNING_MAX, String());
 
 	static const char *names[] = {
-		"FLOAT_COMPARISON",
-		"UNUSED_CONSTANT",
-		"UNUSED_FUNCTION",
-		"UNUSED_STRUCT",
-		"UNUSED_UNIFORM",
-		"UNUSED_VARYING",
-		"UNUSED_LOCAL_VARIABLE",
-		"FORMATTING_ERROR",
-		"DEVICE_LIMIT_EXCEEDED",
-		"MAGIC_POSITION_WRITE",
+		PNAME("FLOAT_COMPARISON"),
+		PNAME("UNUSED_CONSTANT"),
+		PNAME("UNUSED_FUNCTION"),
+		PNAME("UNUSED_STRUCT"),
+		PNAME("UNUSED_UNIFORM"),
+		PNAME("UNUSED_VARYING"),
+		PNAME("UNUSED_LOCAL_VARIABLE"),
+		PNAME("FORMATTING_ERROR"),
+		PNAME("DEVICE_LIMIT_EXCEEDED"),
+		PNAME("MAGIC_POSITION_WRITE"),
 	};
 
-	static_assert((sizeof(names) / sizeof(*names)) == WARNING_MAX, "Amount of warning types don't match the amount of warning names.");
+	static_assert(std::size(names) == WARNING_MAX, "Amount of warning types don't match the amount of warning names.");
 
 	return names[(int)p_code];
 }

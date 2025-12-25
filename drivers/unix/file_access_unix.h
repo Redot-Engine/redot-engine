@@ -2,9 +2,11 @@
 /*  file_access_unix.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,22 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef FILE_ACCESS_UNIX_H
-#define FILE_ACCESS_UNIX_H
+#pragma once
 
 #include "core/io/file_access.h"
 #include "core/os/memory.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #if defined(UNIX_ENABLED)
 
-typedef void (*CloseNotificationFunc)(const String &p_file, int p_flags);
-
 class FileAccessUnix : public FileAccess {
+	GDSOFTCLASS(FileAccessUnix, FileAccess);
 	FILE *f = nullptr;
 	int flags = 0;
-	void check_errors() const;
+	void check_errors(bool p_write = false) const;
 	mutable Error last_error = OK;
 	String save_path;
 	String path;
@@ -51,7 +51,12 @@ class FileAccessUnix : public FileAccess {
 
 	void _close();
 
+#if defined(TOOLS_ENABLED)
+	String get_real_path() const; // Returns the resolved real path for the current open file.
+#endif
+
 public:
+	typedef void (*CloseNotificationFunc)(const String &p_file, int p_flags);
 	static CloseNotificationFunc close_notification_func;
 
 	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
@@ -73,11 +78,13 @@ public:
 
 	virtual Error resize(int64_t p_length) override;
 	virtual void flush() override;
-	virtual void store_buffer(const uint8_t *p_src, uint64_t p_length) override; ///< store an array of bytes
+	virtual bool store_buffer(const uint8_t *p_src, uint64_t p_length) override; ///< store an array of bytes
 
 	virtual bool file_exists(const String &p_path) override; ///< return true if a file exists
 
 	virtual uint64_t _get_modified_time(const String &p_file) override;
+	virtual uint64_t _get_access_time(const String &p_file) override;
+	virtual int64_t _get_size(const String &p_file) override;
 	virtual BitField<FileAccess::UnixPermissionFlags> _get_unix_permissions(const String &p_file) override;
 	virtual Error _set_unix_permissions(const String &p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions) override;
 
@@ -93,5 +100,3 @@ public:
 };
 
 #endif // UNIX_ENABLED
-
-#endif // FILE_ACCESS_UNIX_H

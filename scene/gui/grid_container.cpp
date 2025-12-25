@@ -2,9 +2,11 @@
 /*  grid_container.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -74,7 +76,7 @@ void GridContainer::_notification(int p_what) {
 			}
 
 			int max_col = MIN(valid_controls_index, columns);
-			int max_row = ceil((float)valid_controls_index / (float)columns);
+			int max_row = std::ceil((float)valid_controls_index / (float)columns);
 
 			// Consider all empty columns expanded.
 			for (int i = valid_controls_index; i < columns; i++) {
@@ -279,7 +281,7 @@ Size2 GridContainer::get_minimum_size() const {
 
 	int valid_controls_index = 0;
 	for (int i = 0; i < get_child_count(); i++) {
-		Control *c = as_sortable_control(get_child(i), SortableVisbilityMode::VISIBLE);
+		Control *c = as_sortable_control(get_child(i), SortableVisibilityMode::VISIBLE);
 		if (!c) {
 			continue;
 		}
@@ -318,5 +320,3 @@ Size2 GridContainer::get_minimum_size() const {
 
 	return ms;
 }
-
-GridContainer::GridContainer() {}

@@ -2,9 +2,11 @@
 /*  scene_import_settings.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SCENE_IMPORT_SETTINGS_H
-#define SCENE_IMPORT_SETTINGS_H
+#pragma once
 
 #include "editor/import/3d/resource_importer_scene.h"
 #include "scene/3d/camera_3d.h"
@@ -37,13 +38,11 @@
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/gui/dialogs.h"
-#include "scene/gui/item_list.h"
 #include "scene/gui/menu_button.h"
 #include "scene/gui/option_button.h"
 #include "scene/gui/panel_container.h"
 #include "scene/gui/slider.h"
 #include "scene/gui/split_container.h"
-#include "scene/gui/subviewport_container.h"
 #include "scene/gui/tab_container.h"
 #include "scene/gui/tree.h"
 #include "scene/resources/3d/primitive_meshes.h"
@@ -131,8 +130,8 @@ class SceneImportSettingsDialog : public ConfirmationDialog {
 		TreeItem *mesh_node = nullptr;
 		TreeItem *material_node = nullptr;
 
-		float cam_rot_x = -Math_PI / 4;
-		float cam_rot_y = -Math_PI / 4;
+		float cam_rot_x = -Math::PI / 4;
+		float cam_rot_y = -Math::PI / 4;
 		float cam_zoom = 1;
 
 		HashMap<StringName, Variant> settings;
@@ -146,8 +145,8 @@ class SceneImportSettingsDialog : public ConfirmationDialog {
 		TreeItem *scene_node = nullptr;
 		TreeItem *mesh_node = nullptr;
 
-		float cam_rot_x = -Math_PI / 4;
-		float cam_rot_y = -Math_PI / 4;
+		float cam_rot_x = -Math::PI / 4;
+		float cam_rot_y = -Math::PI / 4;
 		float cam_zoom = 1;
 		HashMap<StringName, Variant> settings;
 	};
@@ -167,6 +166,8 @@ class SceneImportSettingsDialog : public ConfirmationDialog {
 	};
 	HashMap<String, NodeData> node_map;
 
+	bool _get_current(const StringName &p_name, Variant &r_ret) const;
+	void _set_default(const StringName &p_name, const Variant &p_value);
 	void _fill_material(Tree *p_tree, const Ref<Material> &p_material, TreeItem *p_parent);
 	void _fill_mesh(Tree *p_tree, const Ref<Mesh> &p_mesh, TreeItem *p_parent);
 	void _fill_animation(Tree *p_tree, const Ref<Animation> &p_anim, const String &p_name, TreeItem *p_parent);
@@ -253,5 +254,3 @@ public:
 	SceneImportSettingsDialog();
 	~SceneImportSettingsDialog();
 };
-
-#endif // SCENE_IMPORT_SETTINGS_H

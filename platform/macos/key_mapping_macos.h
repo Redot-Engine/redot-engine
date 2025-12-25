@@ -2,9 +2,11 @@
 /*  key_mapping_macos.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef KEY_MAPPING_MACOS_H
-#define KEY_MAPPING_MACOS_H
+#pragma once
 
 #include "core/os/keyboard.h"
 
@@ -51,5 +52,3 @@ public:
 	static String keycode_get_native_string(Key p_keycode);
 	static unsigned int keycode_get_native_mask(Key p_keycode);
 };
-
-#endif // KEY_MAPPING_MACOS_H

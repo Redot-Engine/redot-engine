@@ -2,9 +2,11 @@
 /*  fog_material.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -144,7 +146,7 @@ void FogMaterial::_update_shader() {
 
 		// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
 		RS::get_singleton()->shader_set_code(shader, R"(
-// NOTE: Shader automatically converted from )" VERSION_NAME " " VERSION_FULL_CONFIG R"('s FogMaterial.
+// NOTE: Shader automatically converted from )" REDOT_VERSION_NAME " " REDOT_VERSION_FULL_CONFIG R"('s FogMaterial.
 
 shader_type fog;
 

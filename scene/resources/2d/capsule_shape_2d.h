@@ -2,9 +2,11 @@
 /*  capsule_shape_2d.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CAPSULE_SHAPE_2D_H
-#define CAPSULE_SHAPE_2D_H
+#pragma once
 
 #include "scene/resources/2d/shape_2d.h"
 
@@ -54,11 +55,12 @@ public:
 	void set_radius(real_t p_radius);
 	real_t get_radius() const;
 
+	void set_mid_height(real_t p_mid_height);
+	real_t get_mid_height() const;
+
 	virtual void draw(const RID &p_to_rid, const Color &p_color) override;
 	virtual Rect2 get_rect() const override;
 	virtual real_t get_enclosing_radius() const override;
 
 	CapsuleShape2D();
 };
-
-#endif // CAPSULE_SHAPE_2D_H

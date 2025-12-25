@@ -2,9 +2,11 @@
 /*  audio_stream.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_H
-#define AUDIO_STREAM_H
+#pragma once
 
-#include "core/io/image.h"
 #include "core/io/resource.h"
 #include "scene/property_list_helper.h"
-#include "servers/audio/audio_filter_sw.h"
 #include "servers/audio_server.h"
 
 #include "core/object/gdvirtual.gen.inc"
@@ -83,6 +82,7 @@ class AudioStreamPlayback : public RefCounted {
 
 protected:
 	static void _bind_methods();
+	PackedVector2Array _mix_audio_bind(float p_rate_scale, int p_frames);
 	GDVIRTUAL1(_start, double)
 	GDVIRTUAL0(_stop)
 	GDVIRTUAL0RC(bool, _is_playing)
@@ -118,6 +118,11 @@ public:
 
 	AudioStreamPlayback();
 	~AudioStreamPlayback();
+
+	Vector<AudioFrame> mix_audio(float p_rate_scale, int p_frames);
+	void start_playback(double p_from_pos = 0.0);
+	void stop_playback();
+	void seek_playback(double p_time);
 };
 
 class AudioStreamPlaybackResampled : public AudioStreamPlayback {
@@ -175,6 +180,7 @@ protected:
 	GDVIRTUAL0RC(bool, _has_loop)
 	GDVIRTUAL0RC(int, _get_bar_beats)
 	GDVIRTUAL0RC(int, _get_beat_count)
+	GDVIRTUAL0RC(Dictionary, _get_tags);
 	GDVIRTUAL0RC(TypedArray<Dictionary>, _get_parameter_list)
 
 public:
@@ -185,6 +191,7 @@ public:
 	virtual bool has_loop() const;
 	virtual int get_bar_beats() const;
 	virtual int get_beat_count() const;
+	virtual Dictionary get_tags() const;
 
 	virtual double get_length() const;
 	virtual bool is_monophonic() const;
@@ -369,5 +376,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(AudioStreamRandomizer::PlaybackMode);
-
-#endif // AUDIO_STREAM_H

@@ -2,9 +2,11 @@
 /*  stream_peer_mbedtls.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,6 @@
 
 #include "stream_peer_mbedtls.h"
 
-#include "core/io/file_access.h"
 #include "core/io/stream_peer_tcp.h"
 
 int StreamPeerMbedTLS::bio_send(void *ctx, const unsigned char *buf, size_t len) {
@@ -166,21 +167,24 @@ Error StreamPeerMbedTLS::put_partial_data(const uint8_t *p_data, int p_bytes, in
 		return OK;
 	}
 
-	int ret = mbedtls_ssl_write(tls_ctx->get_context(), p_data, p_bytes);
-	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
-		// Non blocking IO
-		ret = 0;
-	} else if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-		// Clean close
-		disconnect_from_stream();
-		return ERR_FILE_EOF;
-	} else if (ret <= 0) {
-		TLSContextMbedTLS::print_mbedtls_error(ret);
-		disconnect_from_stream();
-		return ERR_CONNECTION_ERROR;
-	}
+	do {
+		int ret = mbedtls_ssl_write(tls_ctx->get_context(), &p_data[r_sent], p_bytes - r_sent);
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+			// Non blocking IO.
+			break;
+		} else if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+			// Clean close
+			disconnect_from_stream();
+			return ERR_FILE_EOF;
+		} else if (ret <= 0) {
+			TLSContextMbedTLS::print_mbedtls_error(ret);
+			disconnect_from_stream();
+			return ERR_CONNECTION_ERROR;
+		}
+		r_sent += ret;
 
-	r_sent = ret;
+	} while (r_sent < p_bytes);
+
 	return OK;
 }
 
@@ -209,26 +213,31 @@ Error StreamPeerMbedTLS::get_partial_data(uint8_t *p_buffer, int p_bytes, int &r
 
 	r_received = 0;
 
-	int ret = mbedtls_ssl_read(tls_ctx->get_context(), p_buffer, p_bytes);
-	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
-		ret = 0; // non blocking io
-	} else if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-		// Clean close
-		disconnect_from_stream();
-		return ERR_FILE_EOF;
-	} else if (ret <= 0) {
-		TLSContextMbedTLS::print_mbedtls_error(ret);
-		disconnect_from_stream();
-		return ERR_CONNECTION_ERROR;
-	}
+	do {
+		int ret = mbedtls_ssl_read(tls_ctx->get_context(), &p_buffer[r_received], p_bytes - r_received);
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+			// Non blocking IO.
+			break;
+		} else if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+			// Clean close
+			disconnect_from_stream();
+			return ERR_FILE_EOF;
+		} else if (ret <= 0) {
+			TLSContextMbedTLS::print_mbedtls_error(ret);
+			disconnect_from_stream();
+			return ERR_CONNECTION_ERROR;
+		}
 
-	r_received = ret;
+		r_received += ret;
+
+	} while (r_received < p_bytes);
+
 	return OK;
 }
 
 void StreamPeerMbedTLS::poll() {
 	ERR_FAIL_COND(status != STATUS_CONNECTED && status != STATUS_HANDSHAKING);
-	ERR_FAIL_COND(!base.is_valid());
+	ERR_FAIL_COND(base.is_null());
 
 	if (status == STATUS_HANDSHAKING) {
 		_do_handshake();

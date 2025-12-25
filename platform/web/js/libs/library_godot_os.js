@@ -5,6 +5,8 @@
 /*                             GODOT ENGINE                               */
 /*                        https://godotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -61,6 +63,7 @@ const GodotConfig = {
 		canvas_resize_policy: 2, // Adaptive
 		virtual_keyboard: false,
 		persistent_drops: false,
+		godot_pool_size: 4,
 		on_execute: null,
 		on_exit: null,
 
@@ -70,6 +73,7 @@ const GodotConfig = {
 			GodotConfig.locale = p_opts['locale'] || GodotConfig.locale;
 			GodotConfig.virtual_keyboard = p_opts['virtualKeyboard'];
 			GodotConfig.persistent_drops = !!p_opts['persistentDrops'];
+			GodotConfig.godot_pool_size = p_opts['godotPoolSize'];
 			GodotConfig.on_execute = p_opts['onExecute'];
 			GodotConfig.on_exit = p_opts['onExit'];
 			if (p_opts['focusCanvas']) {
@@ -346,6 +350,17 @@ const GodotOS = {
 		return concurrency < 2 ? concurrency : 2;
 	},
 
+	godot_js_os_thread_pool_size_get__proxy: 'sync',
+	godot_js_os_thread_pool_size_get__sig: 'i',
+	godot_js_os_thread_pool_size_get: function () {
+		if (typeof PThread === 'undefined') {
+			// Threads aren't supported, so default to `1`.
+			return 1;
+		}
+
+		return GodotConfig.godot_pool_size;
+	},
+
 	godot_js_os_download_buffer__proxy: 'sync',
 	godot_js_os_download_buffer__sig: 'viiii',
 	godot_js_os_download_buffer: function (p_ptr, p_size, p_name, p_mime) {
@@ -441,8 +456,12 @@ const GodotPWA = {
 	godot_js_pwa_cb__sig: 'vi',
 	godot_js_pwa_cb: function (p_update_cb) {
 		if ('serviceWorker' in navigator) {
-			const cb = GodotRuntime.get_func(p_update_cb);
-			navigator.serviceWorker.getRegistration().then(GodotPWA.updateState.bind(null, cb));
+			try {
+				const cb = GodotRuntime.get_func(p_update_cb);
+				navigator.serviceWorker.getRegistration().then(GodotPWA.updateState.bind(null, cb));
+			} catch (e) {
+				GodotRuntime.error('Failed to assign PWA callback', e);
+			}
 		}
 	},
 
@@ -450,12 +469,17 @@ const GodotPWA = {
 	godot_js_pwa_update__sig: 'i',
 	godot_js_pwa_update: function () {
 		if ('serviceWorker' in navigator && GodotPWA.hasUpdate) {
-			navigator.serviceWorker.getRegistration().then(function (reg) {
-				if (!reg || !reg.waiting) {
-					return;
-				}
-				reg.waiting.postMessage('update');
-			});
+			try {
+				navigator.serviceWorker.getRegistration().then(function (reg) {
+					if (!reg || !reg.waiting) {
+						return;
+					}
+					reg.waiting.postMessage('update');
+				});
+			} catch (e) {
+				GodotRuntime.error(e);
+				return 1;
+			}
 			return 0;
 		}
 		return 1;

@@ -2,9 +2,11 @@
 /*  openxr_fb_display_refresh_rate_extension.h                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_FB_DISPLAY_REFRESH_RATE_EXTENSION_H
-#define OPENXR_FB_DISPLAY_REFRESH_RATE_EXTENSION_H
+#pragma once
 
 // This extension gives us access to the possible display refresh rates
 // supported by the HMD.
@@ -41,6 +42,11 @@
 #include "openxr_extension_wrapper.h"
 
 class OpenXRDisplayRefreshRateExtension : public OpenXRExtensionWrapper {
+	GDCLASS(OpenXRDisplayRefreshRateExtension, OpenXRExtensionWrapper);
+
+protected:
+	static void _bind_methods() {}
+
 public:
 	static OpenXRDisplayRefreshRateExtension *get_singleton();
 
@@ -68,5 +74,3 @@ private:
 	EXT_PROTO_XRRESULT_FUNC2(xrGetDisplayRefreshRateFB, (XrSession), session, (float *), display_refresh_rate);
 	EXT_PROTO_XRRESULT_FUNC2(xrRequestDisplayRefreshRateFB, (XrSession), session, (float), display_refresh_rate);
 };
-
-#endif // OPENXR_FB_DISPLAY_REFRESH_RATE_EXTENSION_H

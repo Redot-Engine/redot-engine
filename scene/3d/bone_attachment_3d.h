@@ -2,9 +2,11 @@
 /*  bone_attachment_3d.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef BONE_ATTACHMENT_3D_H
-#define BONE_ATTACHMENT_3D_H
+#pragma once
 
 #include "scene/3d/skeleton_3d.h"
-#ifdef TOOLS_ENABLED
-#include "scene/resources/bone_map.h"
-#endif // TOOLS_ENABLED
 
 class BoneAttachment3D : public Node3D {
 	GDCLASS(BoneAttachment3D, Node3D);
@@ -53,6 +51,7 @@ class BoneAttachment3D : public Node3D {
 
 	void _check_bind();
 	void _check_unbind();
+	void _snap_to_bone();
 
 	bool updating = false;
 	void _transform_changed();
@@ -60,9 +59,6 @@ class BoneAttachment3D : public Node3D {
 
 protected:
 	void _validate_property(PropertyInfo &p_property) const;
-	bool _get(const StringName &p_path, Variant &r_ret) const;
-	bool _set(const StringName &p_path, const Variant &p_value);
-	void _get_property_list(List<PropertyInfo> *p_list) const;
 	void _notification(int p_what);
 
 	static void _bind_methods();
@@ -86,12 +82,12 @@ public:
 	void set_bone_idx(const int &p_idx);
 	int get_bone_idx() const;
 
-	void set_override_pose(bool p_override);
+	void set_override_pose(bool p_override_pose);
 	bool get_override_pose() const;
 
-	void set_use_external_skeleton(bool p_external_skeleton);
+	void set_use_external_skeleton(bool p_use_external_skeleton);
 	bool get_use_external_skeleton() const;
-	void set_external_skeleton(NodePath p_skeleton);
+	void set_external_skeleton(NodePath p_external_skeleton);
 	NodePath get_external_skeleton() const;
 
 	virtual void on_skeleton_update();
@@ -102,5 +98,3 @@ public:
 
 	BoneAttachment3D();
 };
-
-#endif // BONE_ATTACHMENT_3D_H

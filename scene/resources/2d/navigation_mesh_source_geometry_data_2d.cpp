@@ -2,9 +2,11 @@
 /*  navigation_mesh_source_geometry_data_2d.cpp                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,7 @@
 
 #include "navigation_mesh_source_geometry_data_2d.h"
 
-#include "scene/resources/mesh.h"
+#include "core/variant/typed_array.h"
 
 void NavigationMeshSourceGeometryData2D::clear() {
 	RWLockWrite write_lock(geometry_rwlock);
@@ -43,7 +45,7 @@ void NavigationMeshSourceGeometryData2D::clear() {
 bool NavigationMeshSourceGeometryData2D::has_data() {
 	RWLockRead read_lock(geometry_rwlock);
 	return traversable_outlines.size();
-};
+}
 
 void NavigationMeshSourceGeometryData2D::clear_projected_obstructions() {
 	RWLockWrite write_lock(geometry_rwlock);

@@ -2,9 +2,11 @@
 /*  performance.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PERFORMANCE_H
-#define PERFORMANCE_H
+#pragma once
 
 #include "core/object/class_db.h"
 #include "core/templates/hash_map.h"
@@ -106,6 +107,26 @@ public:
 		PIPELINE_COMPILATIONS_SURFACE,
 		PIPELINE_COMPILATIONS_DRAW,
 		PIPELINE_COMPILATIONS_SPECIALIZATION,
+		NAVIGATION_2D_ACTIVE_MAPS,
+		NAVIGATION_2D_REGION_COUNT,
+		NAVIGATION_2D_AGENT_COUNT,
+		NAVIGATION_2D_LINK_COUNT,
+		NAVIGATION_2D_POLYGON_COUNT,
+		NAVIGATION_2D_EDGE_COUNT,
+		NAVIGATION_2D_EDGE_MERGE_COUNT,
+		NAVIGATION_2D_EDGE_CONNECTION_COUNT,
+		NAVIGATION_2D_EDGE_FREE_COUNT,
+		NAVIGATION_2D_OBSTACLE_COUNT,
+		NAVIGATION_3D_ACTIVE_MAPS,
+		NAVIGATION_3D_REGION_COUNT,
+		NAVIGATION_3D_AGENT_COUNT,
+		NAVIGATION_3D_LINK_COUNT,
+		NAVIGATION_3D_POLYGON_COUNT,
+		NAVIGATION_3D_EDGE_COUNT,
+		NAVIGATION_3D_EDGE_MERGE_COUNT,
+		NAVIGATION_3D_EDGE_CONNECTION_COUNT,
+		NAVIGATION_3D_EDGE_FREE_COUNT,
+		NAVIGATION_3D_OBSTACLE_COUNT,
 		MONITOR_MAX
 	};
 
@@ -138,5 +159,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(Performance::Monitor);
-
-#endif // PERFORMANCE_H

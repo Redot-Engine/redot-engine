@@ -2,9 +2,11 @@
 /*  ip_address.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -33,9 +35,6 @@
 IPAddress::operator Variant() const {
 	return operator String();
 }*/
-
-#include <stdio.h>
-#include <string.h>
 
 IPAddress::operator String() const {
 	if (wildcard) {
@@ -149,7 +148,7 @@ void IPAddress::_parse_ipv6(const String &p_string) {
 void IPAddress::_parse_ipv4(const String &p_string, int p_start, uint8_t *p_ret) {
 	String ip;
 	if (p_start != 0) {
-		ip = p_string.substr(p_start, p_string.length() - p_start);
+		ip = p_string.substr(p_start);
 	} else {
 		ip = p_string;
 	}
@@ -202,7 +201,7 @@ IPAddress::IPAddress(const String &p_string) {
 		// Wildcard (not a valid IP)
 		wildcard = true;
 
-	} else if (p_string.contains(":")) {
+	} else if (p_string.contains_char(':')) {
 		// IPv6
 		_parse_ipv6(p_string);
 		valid = true;

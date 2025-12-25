@@ -2,9 +2,11 @@
 /*  canvas_item_material.cpp                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -78,7 +80,7 @@ void CanvasItemMaterial::_update_shader() {
 	//must create a shader!
 
 	// Add a comment to describe the shader origin (useful when converting to ShaderMaterial).
-	String code = "// NOTE: Shader automatically converted from " VERSION_NAME " " VERSION_FULL_CONFIG "'s CanvasItemMaterial.\n\n";
+	String code = "// NOTE: Shader automatically converted from " REDOT_VERSION_NAME " " REDOT_VERSION_FULL_CONFIG "'s CanvasItemMaterial.\n\n";
 
 	code += "shader_type canvas_item;\nrender_mode ";
 	switch (blend_mode) {
@@ -157,9 +159,13 @@ void CanvasItemMaterial::flush_changes() {
 }
 
 void CanvasItemMaterial::_queue_shader_change() {
+	if (!_is_initialized()) {
+		return;
+	}
+
 	MutexLock lock(material_mutex);
 
-	if (_is_initialized() && !element.in_list()) {
+	if (!element.in_list()) {
 		dirty_materials.add(&element);
 	}
 }

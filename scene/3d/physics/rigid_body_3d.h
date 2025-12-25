@@ -2,9 +2,11 @@
 /*  rigid_body_3d.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RIGID_BODY_3D_H
-#define RIGID_BODY_3D_H
+#pragma once
 
-#include "scene/3d/physics/static_body_3d.h"
+#include "core/templates/vset.h"
+#include "scene/3d/physics/physics_body_3d.h"
 
 class RigidBody3D : public PhysicsBody3D {
 	GDCLASS(RigidBody3D, PhysicsBody3D);
@@ -244,5 +246,3 @@ private:
 VARIANT_ENUM_CAST(RigidBody3D::FreezeMode);
 VARIANT_ENUM_CAST(RigidBody3D::CenterOfMassMode);
 VARIANT_ENUM_CAST(RigidBody3D::DampMode);
-
-#endif // RIGID_BODY_3D_H

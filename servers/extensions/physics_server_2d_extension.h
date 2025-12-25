@@ -2,9 +2,11 @@
 /*  physics_server_2d_extension.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,13 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PHYSICS_SERVER_2D_EXTENSION_H
-#define PHYSICS_SERVER_2D_EXTENSION_H
+#pragma once
 
 #include "core/extension/ext_wrappers.gen.inc"
 #include "core/object/gdvirtual.gen.inc"
 #include "core/variant/native_ptr.h"
-#include "core/variant/type_info.h"
 #include "core/variant/typed_array.h"
 #include "servers/physics_server_2d.h"
 
@@ -87,6 +87,12 @@ public:
 
 	EXBIND1(set_sleep_state, bool)
 	EXBIND0RC(bool, is_sleeping)
+
+	EXBIND1(set_collision_layer, uint32_t);
+	EXBIND0RC(uint32_t, get_collision_layer);
+
+	EXBIND1(set_collision_mask, uint32_t);
+	EXBIND0RC(uint32_t, get_collision_mask);
 
 	EXBIND0RC(int, get_contact_count)
 
@@ -452,5 +458,3 @@ public:
 	PhysicsServer2DExtension();
 	~PhysicsServer2DExtension();
 };
-
-#endif // PHYSICS_SERVER_2D_EXTENSION_H

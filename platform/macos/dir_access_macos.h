@@ -2,9 +2,11 @@
 /*  dir_access_macos.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DIR_ACCESS_MACOS_H
-#define DIR_ACCESS_MACOS_H
+#pragma once
 
 #if defined(UNIX_ENABLED)
 
@@ -42,6 +43,8 @@
 #include <unistd.h>
 
 class DirAccessMacOS : public DirAccessUnix {
+	GDSOFTCLASS(DirAccessMacOS, DirAccessUnix);
+
 protected:
 	virtual String fix_unicode_name(const char *p_name) const override;
 
@@ -50,8 +53,10 @@ protected:
 
 	virtual bool is_hidden(const String &p_name) override;
 	virtual bool is_case_sensitive(const String &p_path) const override;
+
+	virtual String get_filesystem_type() const override;
+
+	virtual bool is_bundle(const String &p_file) const override;
 };
 
 #endif // UNIX ENABLED
-
-#endif // DIR_ACCESS_MACOS_H

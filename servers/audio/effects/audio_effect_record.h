@@ -2,9 +2,11 @@
 /*  audio_effect_record.h                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_EFFECT_RECORD_H
-#define AUDIO_EFFECT_RECORD_H
+#pragma once
 
-#include "core/io/file_access.h"
-#include "core/io/marshalls.h"
-#include "core/os/os.h"
 #include "core/os/thread.h"
 #include "scene/resources/audio_stream_wav.h"
 #include "servers/audio/audio_effect.h"
@@ -97,5 +95,3 @@ public:
 	AudioEffectRecord();
 	~AudioEffectRecord();
 };
-
-#endif // AUDIO_EFFECT_RECORD_H

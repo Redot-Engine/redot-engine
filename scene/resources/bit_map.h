@@ -2,9 +2,11 @@
 /*  bit_map.h                                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef BIT_MAP_H
-#define BIT_MAP_H
+#pragma once
 
 #include "core/io/image.h"
 #include "core/io/resource.h"
-#include "core/io/resource_loader.h"
 
 template <typename T>
 class TypedArray;
@@ -78,8 +78,4 @@ public:
 	Ref<Image> convert_to_image() const;
 
 	Vector<Vector<Vector2>> clip_opaque_to_polygons(const Rect2i &p_rect, float p_epsilon = 2.0) const;
-
-	BitMap();
 };
-
-#endif // BIT_MAP_H

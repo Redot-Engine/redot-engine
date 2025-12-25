@@ -2,9 +2,11 @@
 /*  fastnoise_lite.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,6 +31,8 @@
 /**************************************************************************/
 
 #include "fastnoise_lite.h"
+
+#include "core/config/engine.h"
 
 _FastNoiseLite::FractalType FastNoiseLite::_convert_domain_warp_fractal_type_enum(DomainWarpFractalType p_domain_warp_fractal_type) {
 	_FastNoiseLite::FractalType type;
@@ -477,6 +481,9 @@ void FastNoiseLite::_bind_methods() {
 }
 
 void FastNoiseLite::_validate_property(PropertyInfo &p_property) const {
+	if (!Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
 	if (p_property.name.begins_with("cellular") && get_noise_type() != TYPE_CELLULAR) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 		return;

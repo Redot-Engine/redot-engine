@@ -54,7 +54,7 @@ namespace Godot.SourceGenerators
 
             while (symbol != null)
             {
-                if (symbol.ContainingAssembly?.Name == "GodotSharp")
+                if (symbol.ContainingAssembly?.Name == "RedotSharp")
                     return symbol;
 
                 symbol = symbol.BaseType;
@@ -91,7 +91,7 @@ namespace Godot.SourceGenerators
             var classTypeSymbol = sm.GetDeclaredSymbol(cds);
 
             if (classTypeSymbol?.BaseType == null
-                || !classTypeSymbol.BaseType.InheritsFrom("GodotSharp", GodotClasses.GodotObject))
+                || !classTypeSymbol.BaseType.InheritsFrom("RedotSharp", GodotClasses.GodotObject))
             {
                 symbol = null;
                 return false;
@@ -181,13 +181,6 @@ namespace Godot.SourceGenerators
             };
         }
 
-        public static string NameWithTypeParameters(this INamedTypeSymbol symbol)
-        {
-            return symbol.IsGenericType ?
-                string.Concat(symbol.Name, "<", string.Join(", ", symbol.TypeParameters), ">") :
-                symbol.Name;
-        }
-
         private static SymbolDisplayFormat FullyQualifiedFormatOmitGlobal { get; } =
             SymbolDisplayFormat.FullyQualifiedFormat
                 .WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.Omitted);
@@ -268,6 +261,8 @@ namespace Godot.SourceGenerators
 
         public static string SanitizeQualifiedNameForUniqueHint(this string qualifiedName)
             => qualifiedName
+                // AddSource() doesn't support @ prefix
+                .Replace("@", "")
                 // AddSource() doesn't support angle brackets
                 .Replace("<", "(Of ")
                 .Replace(">", ")");
@@ -286,6 +281,12 @@ namespace Godot.SourceGenerators
 
         public static bool IsGodotGlobalClassAttribute(this INamedTypeSymbol symbol)
             => symbol.FullQualifiedNameOmitGlobal() == GodotClasses.GlobalClassAttr;
+
+        public static bool IsGodotExportToolButtonAttribute(this INamedTypeSymbol symbol)
+            => symbol.FullQualifiedNameOmitGlobal() == GodotClasses.ExportToolButtonAttr;
+
+        public static bool IsGodotToolAttribute(this INamedTypeSymbol symbol)
+            => symbol.FullQualifiedNameOmitGlobal() == GodotClasses.ToolAttr;
 
         public static bool IsSystemFlagsAttribute(this INamedTypeSymbol symbol)
             => symbol.FullQualifiedNameOmitGlobal() == GodotClasses.SystemFlagsAttr;

@@ -2,9 +2,11 @@
 /*  a_star_grid_2d.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -34,27 +36,27 @@
 #include "core/variant/typed_array.h"
 
 static real_t heuristic_euclidean(const Vector2i &p_from, const Vector2i &p_to) {
-	real_t dx = (real_t)ABS(p_to.x - p_from.x);
-	real_t dy = (real_t)ABS(p_to.y - p_from.y);
+	real_t dx = (real_t)Math::abs(p_to.x - p_from.x);
+	real_t dy = (real_t)Math::abs(p_to.y - p_from.y);
 	return (real_t)Math::sqrt(dx * dx + dy * dy);
 }
 
 static real_t heuristic_manhattan(const Vector2i &p_from, const Vector2i &p_to) {
-	real_t dx = (real_t)ABS(p_to.x - p_from.x);
-	real_t dy = (real_t)ABS(p_to.y - p_from.y);
+	real_t dx = (real_t)Math::abs(p_to.x - p_from.x);
+	real_t dy = (real_t)Math::abs(p_to.y - p_from.y);
 	return dx + dy;
 }
 
 static real_t heuristic_octile(const Vector2i &p_from, const Vector2i &p_to) {
-	real_t dx = (real_t)ABS(p_to.x - p_from.x);
-	real_t dy = (real_t)ABS(p_to.y - p_from.y);
-	real_t F = Math_SQRT2 - 1;
+	real_t dx = (real_t)Math::abs(p_to.x - p_from.x);
+	real_t dy = (real_t)Math::abs(p_to.y - p_from.y);
+	real_t F = Math::SQRT2 - 1;
 	return (dx < dy) ? F * dx + dy : F * dy + dx;
 }
 
 static real_t heuristic_chebyshev(const Vector2i &p_from, const Vector2i &p_to) {
-	real_t dx = (real_t)ABS(p_to.x - p_from.x);
-	real_t dy = (real_t)ABS(p_to.y - p_from.y);
+	real_t dx = (real_t)Math::abs(p_to.x - p_from.x);
+	real_t dy = (real_t)Math::abs(p_to.y - p_from.y);
 	return MAX(dx, dy);
 }
 
@@ -186,6 +188,14 @@ void AStarGrid2D::set_jumping_enabled(bool p_enabled) {
 
 bool AStarGrid2D::is_jumping_enabled() const {
 	return jumping_enabled;
+}
+
+int64_t AStarGrid2D::get_max_traversals() const {
+	return max_traversals;
+}
+
+void AStarGrid2D::set_max_traversals(int64_t p_max_traversals) {
+	max_traversals = p_max_traversals;
 }
 
 void AStarGrid2D::set_diagonal_mode(DiagonalMode p_diagonal_mode) {
@@ -500,9 +510,11 @@ bool AStarGrid2D::_solve(Point *p_begin_point, Point *p_end_point, bool p_allow_
 	}
 
 	bool found_route = false;
+	int64_t traversal_count = 0;
 
 	LocalVector<Point *> open_list;
 	SortArray<Point *, SortPoints> sorter;
+	LocalVector<Point *> nbors;
 
 	p_begin_point->g_score = 0;
 	p_begin_point->f_score = _estimate_cost(p_begin_point->id, p_end_point->id);
@@ -524,11 +536,19 @@ bool AStarGrid2D::_solve(Point *p_begin_point, Point *p_end_point, bool p_allow_
 			break;
 		}
 
+		// If we have a limit on traversals, increment and stop once we reach the threshold.
+		if (max_traversals > 0 && traversal_count >= max_traversals) {
+			break;
+		}
+
+		// Increment traversals for each node we process.
+		traversal_count++;
+
 		sorter.pop_heap(0, open_list.size(), open_list.ptr()); // Remove the current point from the open list.
 		open_list.remove_at(open_list.size() - 1);
 		p->closed_pass = pass; // Mark the point as closed.
 
-		LocalVector<Point *> nbors;
+		nbors.clear();
 		_get_nbors(p, nbors);
 
 		for (Point *e : nbors) {
@@ -751,6 +771,8 @@ void AStarGrid2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("update"), &AStarGrid2D::update);
 	ClassDB::bind_method(D_METHOD("set_jumping_enabled", "enabled"), &AStarGrid2D::set_jumping_enabled);
 	ClassDB::bind_method(D_METHOD("is_jumping_enabled"), &AStarGrid2D::is_jumping_enabled);
+	ClassDB::bind_method(D_METHOD("set_max_traversals", "max_traversals"), &AStarGrid2D::set_max_traversals);
+	ClassDB::bind_method(D_METHOD("get_max_traversals"), &AStarGrid2D::get_max_traversals);
 	ClassDB::bind_method(D_METHOD("set_diagonal_mode", "mode"), &AStarGrid2D::set_diagonal_mode);
 	ClassDB::bind_method(D_METHOD("get_diagonal_mode"), &AStarGrid2D::get_diagonal_mode);
 	ClassDB::bind_method(D_METHOD("set_default_compute_heuristic", "heuristic"), &AStarGrid2D::set_default_compute_heuristic);
@@ -780,6 +802,7 @@ void AStarGrid2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "cell_shape", PROPERTY_HINT_ENUM, "Square,IsometricRight,IsometricDown"), "set_cell_shape", "get_cell_shape");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "jumping_enabled"), "set_jumping_enabled", "is_jumping_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_traversals", PROPERTY_HINT_RANGE, "0,65536,0"), "set_max_traversals", "get_max_traversals");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "default_compute_heuristic", PROPERTY_HINT_ENUM, "Euclidean,Manhattan,Octile,Chebyshev"), "set_default_compute_heuristic", "get_default_compute_heuristic");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "default_estimate_heuristic", PROPERTY_HINT_ENUM, "Euclidean,Manhattan,Octile,Chebyshev"), "set_default_estimate_heuristic", "get_default_estimate_heuristic");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "diagonal_mode", PROPERTY_HINT_ENUM, "Never,Always,At Least One Walkable,Only If No Obstacles"), "set_diagonal_mode", "get_diagonal_mode");

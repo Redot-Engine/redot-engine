@@ -2,9 +2,11 @@
 /*  enet_connection.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -72,8 +74,8 @@ Error ENetConnection::create_host(int p_max_peers, int p_max_channels, int p_in_
 
 void ENetConnection::destroy() {
 	ERR_FAIL_NULL_MSG(host, "Host already destroyed.");
-	for (List<Ref<ENetPacketPeer>>::Element *E = peers.front(); E; E = E->next()) {
-		E->get()->_on_disconnect();
+	for (const Ref<ENetPacketPeer> &peer : peers) {
+		peer->_on_disconnect();
 	}
 	peers.clear();
 	enet_host_destroy(host);
@@ -102,7 +104,7 @@ Ref<ENetPacketPeer> ENetConnection::connect_to_host(const String &p_address, int
 #ifdef GODOT_ENET
 	enet_address_set_ip(&address, ip.get_ipv6(), 16);
 #else
-	ERR_FAIL_COND_V_MSG(!ip.is_ipv4(), out, "Connecting to an IPv6 server isn't supported when using vanilla ENet. Recompile Godot with the bundled ENet library.");
+	ERR_FAIL_COND_V_MSG(!ip.is_ipv4(), out, "Connecting to an IPv6 server isn't supported when using vanilla ENet. Recompile Redot with the bundled ENet library.");
 	address.host = *(uint32_t *)ip.get_ipv4();
 #endif
 	address.port = p_port;
@@ -113,7 +115,7 @@ Ref<ENetPacketPeer> ENetConnection::connect_to_host(const String &p_address, int
 	if (peer == nullptr) {
 		return nullptr;
 	}
-	out = Ref<ENetPacketPeer>(memnew(ENetPacketPeer(peer)));
+	out.instantiate(peer);
 	peers.push_back(out);
 	return out;
 }
@@ -277,7 +279,7 @@ Error ENetConnection::dtls_server_setup(const Ref<TLSOptions> &p_options) {
 #ifdef GODOT_ENET
 	ERR_FAIL_NULL_V_MSG(host, ERR_UNCONFIGURED, "The ENetConnection instance isn't currently active.");
 	ERR_FAIL_COND_V(p_options.is_null() || !p_options->is_server(), ERR_INVALID_PARAMETER);
-	return enet_host_dtls_server_setup(host, const_cast<TLSOptions *>(p_options.ptr())) ? FAILED : OK;
+	return enet_host_dtls_server_setup(host, p_options.ptr()) ? FAILED : OK;
 #else
 	ERR_FAIL_V_MSG(ERR_UNAVAILABLE, "ENet DTLS support not available in this build.");
 #endif
@@ -296,7 +298,7 @@ Error ENetConnection::dtls_client_setup(const String &p_hostname, const Ref<TLSO
 #ifdef GODOT_ENET
 	ERR_FAIL_NULL_V_MSG(host, ERR_UNCONFIGURED, "The ENetConnection instance isn't currently active.");
 	ERR_FAIL_COND_V(p_options.is_null() || p_options->is_server(), ERR_INVALID_PARAMETER);
-	return enet_host_dtls_client_setup(host, p_hostname.utf8().get_data(), const_cast<TLSOptions *>(p_options.ptr())) ? FAILED : OK;
+	return enet_host_dtls_client_setup(host, p_hostname.utf8().get_data(), p_options.ptr()) ? FAILED : OK;
 #else
 	ERR_FAIL_V_MSG(ERR_UNAVAILABLE, "ENet DTLS support not available in this build.");
 #endif
@@ -320,14 +322,10 @@ Error ENetConnection::_create(ENetAddress *p_address, int p_max_peers, int p_max
 }
 
 Array ENetConnection::_service(int p_timeout) {
-	Array out;
 	Event event;
 	Ref<ENetPacketPeer> peer;
 	EventType ret = service(p_timeout, event);
-	out.push_back(ret);
-	out.push_back(event.peer);
-	out.push_back(event.data);
-	out.push_back(event.channel_id);
+	Array out = { ret, event.peer, event.data, event.channel_id };
 	if (event.packet && event.peer.is_valid()) {
 		event.peer->_queue_packet(event.packet);
 	}
@@ -363,7 +361,7 @@ void ENetConnection::socket_send(const String &p_address, int p_port, const Pack
 #ifdef GODOT_ENET
 	enet_address_set_ip(&address, ip.get_ipv6(), 16);
 #else
-	ERR_FAIL_COND_MSG(!ip.is_ipv4(), "Connecting to an IPv6 server isn't supported when using vanilla ENet. Recompile Godot with the bundled ENet library.");
+	ERR_FAIL_COND_MSG(!ip.is_ipv4(), "Connecting to an IPv6 server isn't supported when using vanilla ENet. Recompile Redot with the bundled ENet library.");
 	address.host = *(uint32_t *)ip.get_ipv4();
 #endif
 	address.port = p_port;
@@ -426,11 +424,11 @@ size_t ENetConnection::Compressor::enet_compress(void *context, const ENetBuffer
 		compressor->src_mem.resize(inLimit);
 	}
 
-	int total = inLimit;
-	int ofs = 0;
+	size_t total = inLimit;
+	size_t ofs = 0;
 	while (total) {
 		for (size_t i = 0; i < inBufferCount; i++) {
-			int to_copy = MIN(total, int(inBuffers[i].dataLength));
+			const size_t to_copy = MIN(total, inBuffers[i].dataLength);
 			memcpy(&compressor->src_mem.write[ofs], inBuffers[i].data, to_copy);
 			ofs += to_copy;
 			total -= to_copy;
@@ -454,28 +452,29 @@ size_t ENetConnection::Compressor::enet_compress(void *context, const ENetBuffer
 		}
 	}
 
-	int req_size = Compression::get_max_compressed_buffer_size(ofs, mode);
+	const int64_t req_size = Compression::get_max_compressed_buffer_size(ofs, mode);
 	if (compressor->dst_mem.size() < req_size) {
 		compressor->dst_mem.resize(req_size);
 	}
-	int ret = Compression::compress(compressor->dst_mem.ptrw(), compressor->src_mem.ptr(), ofs, mode);
+	const int64_t ret = Compression::compress(compressor->dst_mem.ptrw(), compressor->src_mem.ptr(), ofs, mode);
 
 	if (ret < 0) {
 		return 0;
 	}
 
-	if (ret > int(outLimit)) {
+	const size_t ret_size = size_t(ret);
+	if (ret_size > outLimit) {
 		return 0; // Do not bother
 	}
 
-	memcpy(outData, compressor->dst_mem.ptr(), ret);
+	memcpy(outData, compressor->dst_mem.ptr(), ret_size);
 
 	return ret;
 }
 
 size_t ENetConnection::Compressor::enet_decompress(void *context, const enet_uint8 *inData, size_t inLimit, enet_uint8 *outData, size_t outLimit) {
 	Compressor *compressor = (Compressor *)(context);
-	int ret = -1;
+	int64_t ret = -1;
 	switch (compressor->mode) {
 		case COMPRESS_FASTLZ: {
 			ret = Compression::decompress(outData, outLimit, inData, inLimit, Compression::MODE_FASTLZ);

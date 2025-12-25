@@ -2,9 +2,11 @@
 /*  editor_http_server.cpp                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -86,7 +88,7 @@ void EditorHTTPServer::_send_response() {
 
 	const String req_file = path.get_file();
 	const String req_ext = path.get_extension();
-	const String cache_path = EditorPaths::get_singleton()->get_cache_dir().path_join("web");
+	const String cache_path = EditorPaths::get_singleton()->get_temp_dir().path_join("web");
 	const String filepath = cache_path.path_join(req_file);
 
 	if (!mimes.has(req_ext) || !FileAccess::exists(filepath)) {

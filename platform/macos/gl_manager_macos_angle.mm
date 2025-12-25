@@ -2,9 +2,11 @@
 /*  gl_manager_macos_angle.mm                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,14 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "gl_manager_macos_angle.h"
+#import "gl_manager_macos_angle.h"
 
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
-#include <EGL/eglext_angle.h>
+#import <EGL/eglext_angle.h>
 
 const char *GLManagerANGLE_MacOS::_get_platform_extension_name() const {
 	return "EGL_ANGLE_platform_angle";
@@ -48,7 +50,7 @@ EGLenum GLManagerANGLE_MacOS::_get_platform_extension_enum() const {
 Vector<EGLAttrib> GLManagerANGLE_MacOS::_get_platform_display_attributes() const {
 	Vector<EGLAttrib> ret;
 	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_ANGLE);
-	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE);
+	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE);
 	ret.push_back(EGL_NONE);
 
 	return ret;

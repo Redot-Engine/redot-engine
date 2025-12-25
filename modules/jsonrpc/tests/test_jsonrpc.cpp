@@ -2,9 +2,11 @@
 /*  test_jsonrpc.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -57,10 +59,6 @@ String TestClassJSONRPC::something(const String &p_in) {
 	return p_in + ", please";
 }
 
-void TestClassJSONRPC::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("something", "in"), &TestClassJSONRPC::something);
-}
-
 void test_process_action(const Variant &p_in, const Variant &p_expected, bool p_process_array_elements) {
 	TestClassJSONRPC json_rpc = TestClassJSONRPC();
 	const Variant &observed = json_rpc.process_action(p_in, p_process_array_elements);
@@ -81,6 +79,12 @@ void test_process_action_bad_method(const Dictionary &p_in) {
 	TestClassJSONRPC json_rpc = TestClassJSONRPC();
 	const Dictionary &out_dict = json_rpc.process_action(p_in);
 	check_error_no_method(out_dict);
+}
+
+void test_no_response(const Variant &p_in) {
+	TestClassJSONRPC json_rpc = TestClassJSONRPC();
+	const Variant &res = json_rpc.process_action(p_in, true);
+	CHECK(res.get_type() == Variant::NIL);
 }
 
 } // namespace TestJSONRPC

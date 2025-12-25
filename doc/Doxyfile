@@ -32,7 +32,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = Godot
+PROJECT_NAME           = Redot
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -1475,7 +1475,7 @@ EXT_LINKS_IN_WINDOW    = NO
 
 FORMULA_FONTSIZE       = 10
 
-# Use the FORMULA_TRANPARENT tag to determine whether or not the images
+# Use the FORMULA_TRANSPARENT tag to determine whether or not the images
 # generated for formulas are transparent PNGs. Transparent PNGs are not
 # supported properly for IE 6.0, but are supported on all modern browsers.
 #

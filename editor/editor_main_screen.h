@@ -2,9 +2,11 @@
 /*  editor_main_screen.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_MAIN_SCREEN_H
-#define EDITOR_MAIN_SCREEN_H
+#pragma once
 
 #include "scene/gui/panel_container.h"
 
@@ -47,6 +48,7 @@ public:
 		EDITOR_2D = 0,
 		EDITOR_3D,
 		EDITOR_SCRIPT,
+		EDITOR_GAME,
 		EDITOR_ASSETLIB,
 	};
 
@@ -57,6 +59,7 @@ private:
 	HBoxContainer *button_hb = nullptr;
 	Vector<Button *> buttons;
 	Vector<EditorPlugin *> editor_table;
+	HashMap<String, EditorPlugin *> main_editor_plugins;
 
 	int _get_current_main_editor() const;
 
@@ -79,6 +82,8 @@ public:
 	int get_selected_index() const;
 	int get_plugin_index(EditorPlugin *p_editor) const;
 	EditorPlugin *get_selected_plugin() const;
+	EditorPlugin *get_plugin_by_name(const String &p_plugin_name) const;
+	bool can_auto_switch_screens() const;
 
 	VBoxContainer *get_control() const;
 
@@ -87,5 +92,3 @@ public:
 
 	EditorMainScreen();
 };
-
-#endif // EDITOR_MAIN_SCREEN_H

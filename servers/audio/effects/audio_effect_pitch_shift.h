@@ -2,9 +2,11 @@
 /*  audio_effect_pitch_shift.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_EFFECT_PITCH_SHIFT_H
-#define AUDIO_EFFECT_PITCH_SHIFT_H
+#pragma once
 
 #include "servers/audio/audio_effect.h"
 
@@ -77,7 +78,7 @@ class AudioEffectPitchShift : public AudioEffect {
 public:
 	friend class AudioEffectPitchShiftInstance;
 
-	enum FFTSize {
+	enum FFTSize : unsigned int {
 		FFT_SIZE_256,
 		FFT_SIZE_512,
 		FFT_SIZE_1024,
@@ -110,5 +111,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(AudioEffectPitchShift::FFTSize);
-
-#endif // AUDIO_EFFECT_PITCH_SHIFT_H

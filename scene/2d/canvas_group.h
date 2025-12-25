@@ -2,9 +2,11 @@
 /*  canvas_group.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CANVAS_GROUP_H
-#define CANVAS_GROUP_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 
@@ -52,8 +53,8 @@ public:
 	void set_use_mipmaps(bool p_use_mipmaps);
 	bool is_using_mipmaps() const;
 
+	virtual PackedStringArray get_configuration_warnings() const override;
+
 	CanvasGroup();
 	~CanvasGroup();
 };
-
-#endif // CANVAS_GROUP_H

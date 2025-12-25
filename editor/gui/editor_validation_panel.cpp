@@ -2,9 +2,11 @@
 /*  editor_validation_panel.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -64,6 +66,7 @@ void EditorValidationPanel::add_line(int p_id, const String &p_valid_message) {
 	ERR_FAIL_COND(valid_messages.has(p_id));
 
 	Label *label = memnew(Label);
+	label->set_focus_mode(FOCUS_ACCESSIBILITY);
 	message_container->add_child(label);
 	label->set_custom_minimum_size(Size2(200 * EDSCALE, 0));
 	label->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);

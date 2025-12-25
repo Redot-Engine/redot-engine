@@ -1,5 +1,5 @@
 """
-Load this file to your GDB session to enable pretty-printing of some Godot C++ types.
+Load this file to your GDB session to enable pretty-printing of some Redot C++ types.
 
 GDB command: `source misc/utility/godot_gdb_pretty_print.py`.
 
@@ -9,7 +9,7 @@ the `setupCommands` of your configuration in `launch.json`:
 "setupCommands": [
 ...
     {
-        "description": "Load custom pretty-printers for Godot types.",
+        "description": "Load custom pretty-printers for Redot types.",
         "text": "source ${workspaceFolder}/misc/utility/godot_gdb_pretty_print.py"
     }
 ]
@@ -25,9 +25,10 @@ From there you can figure out how to print it nicely.
 import re
 
 import gdb  # type: ignore
+import gdb.printing  # type: ignore
 
 
-# Printer for Godot StringName variables.
+# Printer for Redot StringName variables.
 class GodotStringNamePrinter:
     def __init__(self, value):
         self.value = value
@@ -40,7 +41,7 @@ class GodotStringNamePrinter:
         return "string"
 
 
-# Printer for Godot String variables.
+# Printer for Redot String variables.
 class GodotStringPrinter:
     def __init__(self, value):
         self.value = value
@@ -53,7 +54,7 @@ class GodotStringPrinter:
         return "string"
 
 
-# Printer for Godot Vector variables.
+# Printer for Redot Vector variables.
 class GodotVectorPrinter:
     def __init__(self, value):
         self.value = value

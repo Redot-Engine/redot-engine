@@ -10,7 +10,7 @@
 	</tutorials>
 	<members>
 		<member name="description" type="String" setter="set_description" getter="get_description" default="&quot;&quot;">
-			This property only exists to preserve data authored in earlier versions of Godot. It has currently no function.
+			This property only exists to preserve data authored in earlier versions of Redot. It has currently no function.
 		</member>
 	</members>
 </class>

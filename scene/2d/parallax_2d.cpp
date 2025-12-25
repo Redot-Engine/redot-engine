@@ -2,9 +2,11 @@
 /*  parallax_2d.cpp                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,6 @@
 
 #include "parallax_2d.h"
 
-#include "core/config/project_settings.h"
 #include "scene/main/viewport.h"
 
 void Parallax2D::_notification(int p_what) {
@@ -70,7 +71,9 @@ void Parallax2D::_notification(int p_what) {
 
 #ifdef TOOLS_ENABLED
 void Parallax2D::_edit_set_position(const Point2 &p_position) {
-	set_scroll_offset(p_position);
+	// Avoids early return for grid snap compatibility
+	scroll_offset = p_position;
+	_update_scroll();
 }
 #endif // TOOLS_ENABLED
 

@@ -2,9 +2,11 @@
 /*  marker_2d.h                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MARKER_2D_H
-#define MARKER_2D_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 
@@ -45,15 +46,13 @@ protected:
 	static void _bind_methods();
 
 public:
-#ifdef TOOLS_ENABLED
+#ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
-#endif
+#endif // DEBUG_ENABLED
 
 	void set_gizmo_extents(real_t p_extents);
 	real_t get_gizmo_extents() const;
 
 	Marker2D();
 };
-
-#endif // MARKER_2D_H

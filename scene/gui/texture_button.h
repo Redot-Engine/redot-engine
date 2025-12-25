@@ -2,9 +2,11 @@
 /*  texture_button.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXTURE_BUTTON_H
-#define TEXTURE_BUTTON_H
+#pragma once
 
 #include "scene/gui/base_button.h"
 #include "scene/resources/bit_map.h"
@@ -99,10 +100,6 @@ public:
 
 	void set_flip_v(bool p_flip);
 	bool is_flipped_v() const;
-
-	TextureButton();
 };
 
 VARIANT_ENUM_CAST(TextureButton::StretchMode);
-
-#endif // TEXTURE_BUTTON_H

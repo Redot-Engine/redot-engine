@@ -2,9 +2,11 @@
 /*  test_input_event.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_INPUT_EVENT_H
-#define TEST_INPUT_EVENT_H
+#pragma once
 
 #include "core/input/input_event.h"
 #include "core/math/rect2.h"
@@ -44,10 +45,8 @@ TEST_CASE("[InputEvent] Signal is emitted when device is changed") {
 	input_event.instantiate();
 
 	SIGNAL_WATCH(*input_event, CoreStringName(changed));
-	Array args1;
-	Array empty_args;
-	empty_args.push_back(args1);
 
+	Array empty_args = { {} };
 	input_event->set_device(1);
 
 	SIGNAL_CHECK("changed", empty_args);
@@ -111,5 +110,3 @@ TEST_CASE("[InputEvent] Test xformed_by") {
 	CHECK(iemm2->get_position().is_equal_approx(Vector2(2.0f, 3.0f)));
 }
 } // namespace TestInputEvent
-
-#endif // TEST_INPUT_EVENT_H

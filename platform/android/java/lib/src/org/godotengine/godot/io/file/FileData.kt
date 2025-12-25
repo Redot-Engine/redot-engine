@@ -2,9 +2,11 @@
 /*  FileData.kt                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.io.file
+package org.redotengine.godot.io.file
 
+import android.os.*
 import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
 import java.nio.channels.FileChannel
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.Files
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 
 /**
  * Implementation of [DataAccess] which handles regular (not scoped) file access and interactions.
@@ -56,6 +64,30 @@ internal class FileData(filePath: String, accessFlag: FileAccessFlags) : DataAcc
 				File(filepath).lastModified() / 1000L
 			} catch (e: SecurityException) {
 				0L
+			}
+		}
+
+		fun fileLastAccessed(filepath: String): Long {
+			return try {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+					Files.readAttributes<BasicFileAttributes>(FileSystems.getDefault().getPath(filepath), BasicFileAttributes::class.java).lastAccessTime().to(TimeUnit.SECONDS)
+				} else {
+					0L
+				}
+			} catch (e: SecurityException) {
+				0L
+			}
+		}
+
+		fun fileSize(filepath: String): Long {
+			return try {
+				if (File(filepath).isFile) {
+					File(filepath).length()
+				} else {
+					-1L
+				}
+			} catch (e: SecurityException) {
+				-1L
 			}
 		}
 

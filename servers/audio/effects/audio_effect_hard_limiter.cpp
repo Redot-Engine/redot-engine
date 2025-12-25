@@ -2,9 +2,11 @@
 /*  audio_effect_hard_limiter.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -47,7 +49,7 @@ void AudioEffectHardLimiterInstance::process(const AudioFrame *p_src_frames, Aud
 		sample_left *= pre_gain;
 		sample_right *= pre_gain;
 
-		float largest_sample = MAX(ABS(sample_left), ABS(sample_right));
+		float largest_sample = MAX(Math::abs(sample_left), Math::abs(sample_right));
 
 		release_factor = MAX(0.0, release_factor - 1.0 / sample_rate);
 		release_factor = MIN(release_factor, release);

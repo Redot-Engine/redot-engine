@@ -2,9 +2,11 @@
 /*  renderer_fog.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENDERER_FOG_H
-#define RENDERER_FOG_H
+#pragma once
 
 #include "servers/rendering_server.h"
 
@@ -49,5 +50,3 @@ public:
 	virtual AABB fog_volume_get_aabb(RID p_fog_volume) const = 0;
 	virtual RS::FogVolumeShape fog_volume_get_shape(RID p_fog_volume) const = 0;
 };
-
-#endif // RENDERER_FOG_H

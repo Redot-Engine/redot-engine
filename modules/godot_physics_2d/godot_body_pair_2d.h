@@ -2,9 +2,11 @@
 /*  godot_body_pair_2d.h                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_BODY_PAIR_2D_H
-#define GODOT_BODY_PAIR_2D_H
+#pragma once
 
 #include "godot_body_2d.h"
 #include "godot_constraint_2d.h"
@@ -97,5 +98,3 @@ public:
 	GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B);
 	~GodotBodyPair2D();
 };
-
-#endif // GODOT_BODY_PAIR_2D_H

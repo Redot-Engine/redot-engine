@@ -2,9 +2,11 @@
 /*  gdscript_utility_callable.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,8 +31,6 @@
 /**************************************************************************/
 
 #include "gdscript_utility_callable.h"
-
-#include "core/templates/hashfuncs.h"
 
 bool GDScriptUtilityCallable::compare_equal(const CallableCustom *p_a, const CallableCustom *p_b) {
 	return p_a->hash() == p_b->hash();
@@ -57,7 +57,7 @@ String GDScriptUtilityCallable::get_as_text() const {
 			scope = "@GDScript";
 			break;
 	}
-	return vformat("%s::%s (Callable)", scope, function_name);
+	return vformat("%s::%s", scope, function_name);
 }
 
 CallableCustom::CompareEqualFunc GDScriptUtilityCallable::get_compare_equal_func() const {

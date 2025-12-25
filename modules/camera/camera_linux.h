@@ -2,9 +2,11 @@
 /*  camera_linux.h                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CAMERA_LINUX_H
-#define CAMERA_LINUX_H
+#pragma once
 
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
@@ -53,8 +54,8 @@ private:
 	bool _can_query_format(int p_file_descriptor, int p_type);
 
 public:
-	CameraLinux();
+	CameraLinux() = default;
 	~CameraLinux();
-};
 
-#endif // CAMERA_LINUX_H
+	void set_monitoring_feeds(bool p_monitoring_feeds) override;
+};

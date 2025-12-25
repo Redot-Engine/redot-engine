@@ -2,9 +2,11 @@
 /*  renderer_compositor.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -31,7 +33,10 @@
 #include "renderer_compositor.h"
 
 #include "core/config/project_settings.h"
+
+#ifndef XR_DISABLED
 #include "servers/xr_server.h"
+#endif // XR_DISABLED
 
 RendererCompositor *RendererCompositor::singleton = nullptr;
 
@@ -50,13 +55,13 @@ RendererCompositor::RendererCompositor() {
 	ERR_FAIL_COND_MSG(singleton != nullptr, "A RendererCompositor singleton already exists.");
 	singleton = this;
 
-#ifndef _3D_DISABLED
+#ifndef XR_DISABLED
 	if (XRServer::get_xr_mode() == XRServer::XRMODE_DEFAULT) {
 		xr_enabled = GLOBAL_GET("xr/shaders/enabled");
 	} else {
 		xr_enabled = XRServer::get_xr_mode() == XRServer::XRMODE_ON;
 	}
-#endif // _3D_DISABLED
+#endif // XR_DISABLED
 }
 
 RendererCompositor::~RendererCompositor() {

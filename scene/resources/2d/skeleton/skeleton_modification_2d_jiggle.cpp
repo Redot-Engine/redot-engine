@@ -2,9 +2,11 @@
 /*  skeleton_modification_2d_jiggle.cpp                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -143,7 +145,7 @@ void SkeletonModification2DJiggle::_execute(float p_delta) {
 		update_target_cache();
 		return;
 	}
-	Node2D *target = Object::cast_to<Node2D>(ObjectDB::get_instance(target_node_cache));
+	Node2D *target = ObjectDB::get_instance<Node2D>(target_node_cache);
 	if (!target || !target->is_inside_tree()) {
 		ERR_PRINT_ONCE("Target node is not in the scene tree. Cannot execute modification!");
 		return;

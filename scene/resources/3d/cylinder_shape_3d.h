@@ -2,9 +2,11 @@
 /*  cylinder_shape_3d.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CYLINDER_SHAPE_3D_H
-#define CYLINDER_SHAPE_3D_H
+#pragma once
 
 #include "scene/resources/3d/shape_3d.h"
+
+class ArrayMesh;
 
 class CylinderShape3D : public Shape3D {
 	GDCLASS(CylinderShape3D, Shape3D);
@@ -49,9 +52,8 @@ public:
 	float get_height() const;
 
 	virtual Vector<Vector3> get_debug_mesh_lines() const override;
+	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color &p_modulate) const override;
 	virtual real_t get_enclosing_radius() const override;
 
 	CylinderShape3D();
 };
-
-#endif // CYLINDER_SHAPE_3D_H

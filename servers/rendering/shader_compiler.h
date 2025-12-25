@@ -2,9 +2,11 @@
 /*  shader_compiler.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SHADER_COMPILER_H
-#define SHADER_COMPILER_H
+#pragma once
 
 #include "core/templates/pair.h"
 #include "servers/rendering/shader_language.h"
@@ -51,6 +52,8 @@ public:
 		HashMap<StringName, bool *> render_mode_flags;
 		HashMap<StringName, bool *> usage_flag_pointers;
 		HashMap<StringName, bool *> write_flag_pointers;
+		HashMap<StringName, Pair<int *, int>> stencil_mode_values;
+		int *stencil_reference = nullptr;
 
 		HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> *uniforms = nullptr;
 	};
@@ -133,5 +136,3 @@ public:
 	void initialize(DefaultIdentifierActions p_actions);
 	ShaderCompiler();
 };
-
-#endif // SHADER_COMPILER_H

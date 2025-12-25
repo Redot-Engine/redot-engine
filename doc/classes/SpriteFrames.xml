@@ -39,6 +39,13 @@
 				Removes all animations. An empty [code]default[/code] animation will be created.
 			</description>
 		</method>
+		<method name="create_from_image_frames" qualifiers="static">
+			<return type="SpriteFrames" />
+			<param index="0" name="image_frames" type="ImageFrames" />
+			<description>
+				Creates new a [SpriteFrames] object and initializes it by allocating and setting the "default" animation from an [ImageFrames].
+			</description>
+		</method>
 		<method name="duplicate_animation">
 			<return type="void" />
 			<param index="0" name="anim_from" type="StringName" />
@@ -101,6 +108,13 @@
 				Returns [code]true[/code] if the [param anim] animation exists.
 			</description>
 		</method>
+		<method name="make_image_frames" qualifiers="const">
+			<return type="ImageFrames" />
+			<param index="0" name="anim" type="StringName" default="&amp;&quot;default&quot;" />
+			<description>
+				Creates a new [ImageFrames] object from contents in the [param anim] animation.
+			</description>
+		</method>
 		<method name="remove_animation">
 			<return type="void" />
 			<param index="0" name="anim" type="StringName" />
@@ -148,6 +162,14 @@
 			<param index="3" name="duration" type="float" default="1.0" />
 			<description>
 				Sets the [param texture] and the [param duration] of the frame [param idx] in the [param anim] animation. [param duration] specifies the relative duration, see [method get_frame_duration] for details.
+			</description>
+		</method>
+		<method name="set_from_image_frames">
+			<return type="void" />
+			<param index="0" name="image_frames" type="ImageFrames" />
+			<param index="1" name="anim" type="StringName" default="&amp;&quot;default&quot;" />
+			<description>
+				Replaces the animations's data with a new [ImageFrames] for the [param anim] animation.
 			</description>
 		</method>
 	</methods>

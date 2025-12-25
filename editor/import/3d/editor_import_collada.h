@@ -2,9 +2,11 @@
 /*  editor_import_collada.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_IMPORT_COLLADA_H
-#define EDITOR_IMPORT_COLLADA_H
+#pragma once
 
 #include "editor/import/3d/resource_importer_scene.h"
 
@@ -37,11 +38,6 @@ class EditorSceneFormatImporterCollada : public EditorSceneFormatImporter {
 	GDCLASS(EditorSceneFormatImporterCollada, EditorSceneFormatImporter);
 
 public:
-	virtual uint32_t get_import_flags() const override;
 	virtual void get_extensions(List<String> *r_extensions) const override;
 	virtual Node *import_scene(const String &p_path, uint32_t p_flags, const HashMap<StringName, Variant> &p_options, List<String> *r_missing_deps = nullptr, Error *r_err = nullptr) override;
-
-	EditorSceneFormatImporterCollada();
 };
-
-#endif // EDITOR_IMPORT_COLLADA_H

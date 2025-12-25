@@ -2,9 +2,11 @@
 /*  openxr_action_set.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -84,7 +86,7 @@ int OpenXRActionSet::get_action_count() const {
 
 void OpenXRActionSet::clear_actions() {
 	// Actions held within our action set should be released and destroyed but just in case they are still used some where else
-	if (actions.size() == 0) {
+	if (actions.is_empty()) {
 		return;
 	}
 
@@ -141,7 +143,7 @@ void OpenXRActionSet::remove_action(Ref<OpenXRAction> p_action) {
 	if (idx != -1) {
 		actions.remove_at(idx);
 
-		ERR_FAIL_COND_MSG(p_action->action_set != this, "Removing action that belongs to this action set but had incorrect action set pointer."); // this should never happen!
+		ERR_FAIL_COND_MSG(p_action->action_set != this, "Removing action that belongs to this action set but had incorrect action set pointer."); // This should never happen!
 		p_action->action_set = nullptr;
 
 		emit_changed();

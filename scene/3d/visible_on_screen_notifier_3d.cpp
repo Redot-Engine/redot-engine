@@ -2,9 +2,11 @@
 /*  visible_on_screen_notifier_3d.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -144,7 +146,7 @@ NodePath VisibleOnScreenEnabler3D::get_enable_node_path() {
 }
 
 void VisibleOnScreenEnabler3D::_update_enable_mode(bool p_enable) {
-	Node *node = static_cast<Node *>(ObjectDB::get_instance(node_id));
+	Node *node = ObjectDB::get_instance<Node>(node_id);
 	if (node) {
 		if (p_enable) {
 			switch (enable_mode) {

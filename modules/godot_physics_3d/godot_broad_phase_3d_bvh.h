@@ -2,9 +2,11 @@
 /*  godot_broad_phase_3d_bvh.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_BROAD_PHASE_3D_BVH_H
-#define GODOT_BROAD_PHASE_3D_BVH_H
+#pragma once
 
 #include "godot_broad_phase_3d.h"
 
@@ -96,5 +97,3 @@ public:
 	static GodotBroadPhase3D *_create();
 	GodotBroadPhase3DBVH();
 };
-
-#endif // GODOT_BROAD_PHASE_3D_BVH_H

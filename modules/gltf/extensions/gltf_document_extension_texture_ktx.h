@@ -2,9 +2,11 @@
 /*  gltf_document_extension_texture_ktx.h                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GLTF_DOCUMENT_EXTENSION_TEXTURE_KTX_H
-#define GLTF_DOCUMENT_EXTENSION_TEXTURE_KTX_H
+#pragma once
 
 #include "gltf_document_extension.h"
 
@@ -43,5 +44,3 @@ public:
 	Error parse_image_data(Ref<GLTFState> p_state, const PackedByteArray &p_image_data, const String &p_mime_type, Ref<Image> r_image) override;
 	Error parse_texture_json(Ref<GLTFState> p_state, const Dictionary &p_texture_json, Ref<GLTFTexture> r_gltf_texture) override;
 };
-
-#endif // GLTF_DOCUMENT_EXTENSION_TEXTURE_KTX_H

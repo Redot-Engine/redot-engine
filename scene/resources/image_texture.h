@@ -2,9 +2,11 @@
 /*  image_texture.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IMAGE_TEXTURE_H
-#define IMAGE_TEXTURE_H
+#pragma once
 
 #include "scene/resources/texture.h"
 
@@ -82,7 +83,6 @@ public:
 
 	virtual void set_path(const String &p_path, bool p_take_over = false) override;
 
-	ImageTexture();
 	~ImageTexture();
 };
 
@@ -136,6 +136,7 @@ class ImageTexture3D : public Texture3D {
 	int height = 1;
 	int depth = 1;
 	bool mipmaps = false;
+	bool images_stored = false;
 
 	TypedArray<Image> _get_images() const;
 	void _set_images(const TypedArray<Image> &p_images);
@@ -202,5 +203,3 @@ public:
 
 	virtual Ref<Resource> create_placeholder() const;
 };
-
-#endif // IMAGE_TEXTURE_H

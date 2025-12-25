@@ -2,9 +2,11 @@
 /*  camera_feed_linux.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef CAMERA_FEED_LINUX_H
-#define CAMERA_FEED_LINUX_H
+#pragma once
 
 #include "buffer_decoder.h"
 
@@ -41,6 +42,8 @@
 struct StreamingBuffer;
 
 class CameraFeedLinux : public CameraFeed {
+	GDSOFTCLASS(CameraFeedLinux, CameraFeed);
+
 private:
 	SafeFlag exit_flag;
 	Thread *thread = nullptr;
@@ -65,14 +68,12 @@ private:
 
 public:
 	String get_device_name() const;
-	bool activate_feed();
-	void deactivate_feed();
-	bool set_format(int p_index, const Dictionary &p_parameters);
-	Array get_formats() const;
-	FeedFormat get_format() const;
+	bool activate_feed() override;
+	void deactivate_feed() override;
+	bool set_format(int p_index, const Dictionary &p_parameters) override;
+	Array get_formats() const override;
+	FeedFormat get_format() const override;
 
 	CameraFeedLinux(const String &p_device_name);
-	virtual ~CameraFeedLinux();
+	~CameraFeedLinux() override;
 };
-
-#endif // CAMERA_FEED_LINUX_H

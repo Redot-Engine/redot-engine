@@ -2,9 +2,11 @@
 /*  environment.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ENVIRONMENT_H
-#define ENVIRONMENT_H
+#pragma once
 
 #include "core/io/resource.h"
 #include "scene/resources/sky.h"
@@ -67,6 +68,7 @@ public:
 		TONE_MAPPER_REINHARDT,
 		TONE_MAPPER_FILMIC,
 		TONE_MAPPER_ACES,
+		TONE_MAPPER_AGX,
 	};
 
 	enum SDFGIYScale {
@@ -453,5 +455,3 @@ VARIANT_ENUM_CAST(Environment::ToneMapper)
 VARIANT_ENUM_CAST(Environment::SDFGIYScale)
 VARIANT_ENUM_CAST(Environment::GlowBlendMode)
 VARIANT_ENUM_CAST(Environment::FogMode)
-
-#endif // ENVIRONMENT_H

@@ -4,8 +4,8 @@
 # This file is distributed under the same license as the Godot source code.
 msgid ""
 msgstr ""
-"Project-Id-Version: Godot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Project-Id-Version: Redot Engine extractable strings\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2024-02-23 09:02+0000\n"
 "Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
@@ -24,11 +24,11 @@ msgstr "ქსელი"
 msgid "Open"
 msgstr "გახსნა"
 
-msgid "Open a File"
-msgstr "ფაილის გახსნა"
-
 msgid "Save"
 msgstr "შენახვა"
+
+msgid "Open a File"
+msgstr "ფაილის გახსნა"
 
 msgid "Save a File"
 msgstr "ფაილის შენახვა"

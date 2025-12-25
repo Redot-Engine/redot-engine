@@ -2,9 +2,11 @@
 /*  thread_posix.cpp                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -34,6 +36,11 @@
 
 #include "core/os/thread.h"
 #include "core/string/ustring.h"
+
+#if defined(PLATFORM_THREAD_OVERRIDE) && defined(__APPLE__)
+void init_thread_posix() {
+}
+#else
 
 #ifdef PTHREAD_BSD_SET_NAME
 #include <pthread_np.h>
@@ -72,5 +79,7 @@ static Error set_name(const String &p_name) {
 void init_thread_posix() {
 	Thread::_set_platform_functions({ .set_name = set_name });
 }
+
+#endif // PLATFORM_THREAD_OVERRIDE && __APPLE__
 
 #endif // UNIX_ENABLED

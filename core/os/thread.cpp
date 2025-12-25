@@ -2,9 +2,11 @@
 /*  thread.cpp                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,17 +31,17 @@
 /**************************************************************************/
 
 #include "platform_config.h"
-#ifndef PLATFORM_THREAD_OVERRIDE // See details in thread.h
+
+#ifndef PLATFORM_THREAD_OVERRIDE // See details in thread.h.
 
 #include "thread.h"
 
 #ifdef THREADS_ENABLED
 #include "core/object/script_language.h"
-#include "core/templates/safe_refcount.h"
 
 SafeNumeric<uint64_t> Thread::id_counter(1); // The first value after .increment() is 2, hence by default the main thread ID should be 1.
+thread_local Thread::ID Thread::caller_id = Thread::id_counter.increment();
 
-thread_local Thread::ID Thread::caller_id = Thread::UNASSIGNED_ID;
 #endif
 
 Thread::PlatformFunctions Thread::platform_functions;

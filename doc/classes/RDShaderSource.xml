@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		Shader source code in text form.
-		See also [RDShaderFile]. [RDShaderSource] is only meant to be used with the [RenderingDevice] API. It should not be confused with Godot's own [Shader] resource, which is what Godot's various nodes use for high-level shader programming.
+		See also [RDShaderFile]. [RDShaderSource] is only meant to be used with the [RenderingDevice] API. It should not be confused with Redot's own [Shader] resource, which is what Redot's various nodes use for high-level shader programming.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -23,7 +23,7 @@
 			<param index="1" name="source" type="String" />
 			<description>
 				Sets [param source] code for the specified shader [param stage]. Equivalent to setting one of [member source_compute], [member source_fragment], [member source_tesselation_control], [member source_tesselation_evaluation] or [member source_vertex].
-				[b]Note:[/b] If you set the compute shader source code using this method directly, remember to remove the Godot-specific hint [code]#[compute][/code].
+				[b]Note:[/b] If you set the compute shader source code using this method directly, remember to remove the Redot-specific hint [code]#[compute][/code].
 			</description>
 		</method>
 	</methods>

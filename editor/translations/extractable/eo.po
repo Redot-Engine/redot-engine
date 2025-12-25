@@ -4,8 +4,8 @@
 # This file is distributed under the same license as the Godot source code.
 msgid ""
 msgstr ""
-"Project-Id-Version: Godot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Project-Id-Version: Redot Engine extractable strings\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "PO-Revision-Date: 2024-02-26 06:02+0000\n"
 "Last-Translator: casuallyblue <sierra@casuallyblue.dev>\n"
 "Language-Team: Esperanto <https://hosted.weblate.org/projects/godot-engine/"
@@ -16,6 +16,15 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.5-dev\n"
 
+msgid "All Recognized"
+msgstr "Ĉiaj rekonaj dosiertipoj"
+
+msgid "Save"
+msgstr "Konservi"
+
+msgid "Clear"
+msgstr "Vakigi"
+
 msgid "Open"
 msgstr "Malfermi"
 
@@ -24,9 +33,6 @@ msgstr "Elekti kurantan dosierujon"
 
 msgid "Select This Folder"
 msgstr "Elekti ĉi tiun dosierujon"
-
-msgid "All Recognized"
-msgstr "Ĉiaj rekonaj dosiertipoj"
 
 msgid "Open a File"
 msgstr "Malfermi dosieron"
@@ -39,9 +45,6 @@ msgstr "Malfermi dosierujon"
 
 msgid "Open a File or Directory"
 msgstr "Malfermi dosieron aŭ dosierujon"
-
-msgid "Save"
-msgstr "Konservi"
 
 msgid "Save a File"
 msgstr "Konservi dosieron"
@@ -61,11 +64,11 @@ msgstr "Vojo:"
 msgid "Refresh files."
 msgstr "Aktualigi dosieroj."
 
-msgid "Toggle the visibility of hidden files."
-msgstr "Baskuli videblo de kaŝitaj dosieroj."
-
 msgid "Directories & Files:"
 msgstr "Dosierujoj kaj dosieroj:"
+
+msgid "Toggle the visibility of hidden files."
+msgstr "Baskuli videblo de kaŝitaj dosieroj."
 
 msgid "File:"
 msgstr "Dosiero:"
@@ -99,9 +102,6 @@ msgstr "Alglui"
 
 msgid "Select All"
 msgstr "Elekti tutan"
-
-msgid "Clear"
-msgstr "Vakigi"
 
 msgid "Undo"
 msgstr "Malfari"

@@ -2,9 +2,11 @@
 /*  variant_construct.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef VARIANT_CONSTRUCT_H
-#define VARIANT_CONSTRUCT_H
+#pragma once
 
 #include "variant.h"
 
@@ -38,8 +39,8 @@
 #include "core/io/compression.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
+#include "core/templates/a_hash_map.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/oa_hash_map.h"
 
 template <typename T>
 struct PtrConstruct {};
@@ -105,11 +106,11 @@ class VariantConstructor {
 	static _FORCE_INLINE_ void construct_helper(T &base, const Variant **p_args, Callable::CallError &r_error, IndexSequence<Is...>) {
 		r_error.error = Callable::CallError::CALL_OK;
 
-#ifdef DEBUG_METHODS_ENABLED
+#ifdef DEBUG_ENABLED
 		base = T(VariantCasterAndValidate<P>::cast(p_args, Is, r_error)...);
 #else
 		base = T(VariantCaster<P>::cast(*p_args[Is])...);
-#endif
+#endif // DEBUG_ENABLED
 	}
 
 	template <size_t... Is>
@@ -813,5 +814,3 @@ public:
 		return Variant::OBJECT;
 	}
 };
-
-#endif // VARIANT_CONSTRUCT_H

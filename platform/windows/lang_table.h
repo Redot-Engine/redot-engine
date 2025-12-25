@@ -2,9 +2,11 @@
 /*  lang_table.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef LANG_TABLE_H
-#define LANG_TABLE_H
+#pragma once
 
 struct _WinLocale {
 	const char *locale;
@@ -187,5 +188,3 @@ static const _WinLocale _win_locales[] = {
 	{ "zh_TW", LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL },
 	{ 0, 0, 0 },
 };
-
-#endif // LANG_TABLE_H

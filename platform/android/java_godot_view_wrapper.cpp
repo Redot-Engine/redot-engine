@@ -2,9 +2,11 @@
 /*  java_godot_view_wrapper.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -40,11 +42,10 @@ GodotJavaViewWrapper::GodotJavaViewWrapper(jobject godot_view) {
 
 	_cls = (jclass)env->NewGlobalRef(env->GetObjectClass(godot_view));
 
+	_configure_pointer_icon = env->GetMethodID(_cls, "configurePointerIcon", "(ILjava/lang/String;FF)V");
+	_set_pointer_icon = env->GetMethodID(_cls, "setPointerIcon", "(I)V");
+
 	int android_device_api_level = android_get_device_api_level();
-	if (android_device_api_level >= __ANDROID_API_N__) {
-		_configure_pointer_icon = env->GetMethodID(_cls, "configurePointerIcon", "(ILjava/lang/String;FF)V");
-		_set_pointer_icon = env->GetMethodID(_cls, "setPointerIcon", "(I)V");
-	}
 	if (android_device_api_level >= __ANDROID_API_O__) {
 		_request_pointer_capture = env->GetMethodID(_cls, "requestPointerCapture", "()V");
 		_release_pointer_capture = env->GetMethodID(_cls, "releasePointerCapture", "()V");

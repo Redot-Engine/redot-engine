@@ -2,9 +2,11 @@
 /*  godot_collision_solver_3d_sat.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -76,8 +78,9 @@ struct _CollectorCallback {
 	Vector3 *prev_axis = nullptr;
 
 	_FORCE_INLINE_ void call(const Vector3 &p_point_A, const Vector3 &p_point_B, Vector3 p_normal) {
-		if (p_normal.dot(p_point_B - p_point_A) < 0)
+		if (p_normal.dot(p_point_B - p_point_A) < 0) {
 			p_normal = -p_normal;
+		}
 		if (swap) {
 			callback(p_point_B, 0, p_point_A, 0, -p_normal, userdata);
 		} else {
@@ -103,7 +106,7 @@ static void _generate_contacts_point_edge(const Vector3 *p_points_A, int p_point
 	ERR_FAIL_COND(p_point_count_B != 2);
 #endif
 
-	Vector3 closest_B = Geometry3D::get_closest_point_to_segment_uncapped(*p_points_A, p_points_B);
+	Vector3 closest_B = Geometry3D::get_closest_point_to_segment_uncapped(*p_points_A, p_points_B[0], p_points_B[1]);
 	p_callback->call(*p_points_A, closest_B, p_callback->normal);
 }
 
@@ -170,15 +173,16 @@ static void _generate_contacts_edge_edge(const Vector3 *p_points_A, int p_point_
 		d = 1.0;
 	}
 
-	Vector3 closest_A = p_points_A[0] + rel_A * d;
-	Vector3 closest_B = Geometry3D::get_closest_point_to_segment_uncapped(closest_A, p_points_B);
+	const Vector3 closest_A = p_points_A[0] + rel_A * d;
+	const Vector3 closest_B = Geometry3D::get_closest_point_to_segment_uncapped(closest_A, p_points_B[0], p_points_B[1]);
 	// The normal should be perpendicular to both edges.
 	Vector3 normal = rel_A.cross(rel_B);
 	real_t normal_len = normal.length();
-	if (normal_len > 1e-3)
+	if (normal_len > 1e-3) {
 		normal /= normal_len;
-	else
+	} else {
 		normal = p_callback->normal;
+	}
 	p_callback->call(closest_A, closest_B, normal);
 }
 
@@ -379,7 +383,7 @@ static void _generate_contacts_face_circle(const Vector3 *p_points_A, int p_poin
 	static const int circle_segments = 8;
 	Vector3 circle_points[circle_segments];
 
-	real_t angle_delta = 2.0 * Math_PI / circle_segments;
+	real_t angle_delta = 2.0 * Math::PI / circle_segments;
 
 	for (int i = 0; i < circle_segments; ++i) {
 		Vector3 point_pos = circle_B_pos;
@@ -509,8 +513,8 @@ static void _generate_contacts_circle_circle(const Vector3 *p_points_A, int p_po
 			// Circle A inside circle B.
 			for (int i = 0; i < 3; ++i) {
 				Vector3 circle_A_point = circle_A_pos;
-				circle_A_point += circle_A_line_1 * Math::cos(2.0 * Math_PI * i / 3.0);
-				circle_A_point += circle_A_line_2 * Math::sin(2.0 * Math_PI * i / 3.0);
+				circle_A_point += circle_A_line_1 * Math::cos(2.0 * Math::PI * i / 3.0);
+				circle_A_point += circle_A_line_2 * Math::sin(2.0 * Math::PI * i / 3.0);
 
 				contact_points[num_points] = circle_A_point;
 				++num_points;
@@ -519,8 +523,8 @@ static void _generate_contacts_circle_circle(const Vector3 *p_points_A, int p_po
 			// Circle B inside circle A.
 			for (int i = 0; i < 3; ++i) {
 				Vector3 circle_B_point = circle_B_pos;
-				circle_B_point += circle_B_line_1 * Math::cos(2.0 * Math_PI * i / 3.0);
-				circle_B_point += circle_B_line_2 * Math::sin(2.0 * Math_PI * i / 3.0);
+				circle_B_point += circle_B_line_1 * Math::cos(2.0 * Math::PI * i / 3.0);
+				circle_B_point += circle_B_line_2 * Math::sin(2.0 * Math::PI * i / 3.0);
 
 				Vector3 circle_A_point = circle_B_point - norm_proj;
 
@@ -784,8 +788,9 @@ static void analytic_sphere_collision(const Vector3 &p_origin_a, real_t p_radius
 
 	// Calculate the sphere overlap, and bail if not overlapping
 	real_t overlap = p_radius_a + p_radius_b - b_to_a_len;
-	if (overlap < 0)
+	if (overlap < 0) {
 		return;
+	}
 
 	// Report collision
 	p_collector->collided = true;
@@ -882,13 +887,12 @@ static void _collision_sphere_capsule(const GodotShape3D *p_a, const Transform3D
 	real_t scale_B = p_transform_b.basis[0].length();
 
 	// Construct the capsule segment (ball-center to ball-center)
-	Vector3 capsule_segment[2];
 	Vector3 capsule_axis = p_transform_b.basis.get_column(1) * (capsule_B->get_height() * 0.5 - capsule_B->get_radius());
-	capsule_segment[0] = p_transform_b.origin + capsule_axis;
-	capsule_segment[1] = p_transform_b.origin - capsule_axis;
+	const Vector3 capsule_segment_a = p_transform_b.origin + capsule_axis;
+	const Vector3 capsule_segment_b = p_transform_b.origin - capsule_axis;
 
 	// Get the capsules closest segment-point to the sphere
-	Vector3 capsule_closest = Geometry3D::get_closest_point_to_segment(p_transform_a.origin, capsule_segment);
+	Vector3 capsule_closest = Geometry3D::get_closest_point_to_segment(p_transform_a.origin, capsule_segment_a, capsule_segment_b);
 
 	// Perform an analytic sphere collision between the sphere and the sphere-collider in the capsule
 	analytic_sphere_collision<withMargin>(

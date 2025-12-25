@@ -2,9 +2,11 @@
 /*  shape_2d.cpp                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,7 +32,6 @@
 
 #include "shape_2d.h"
 
-#include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "servers/physics_server_2d.h"
 
@@ -111,7 +112,7 @@ void Shape2D::_bind_methods() {
 }
 
 bool Shape2D::is_collision_outline_enabled() {
-	return GLOBAL_GET("debug/shapes/collision/draw_2d_outlines");
+	return GLOBAL_GET_CACHED(bool, "debug/shapes/collision/draw_2d_outlines");
 }
 
 Shape2D::Shape2D(const RID &p_rid) {

@@ -2,9 +2,11 @@
 /*  concave_polygon_shape_2d.cpp                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -43,7 +45,7 @@ bool ConcavePolygonShape2D::_edit_is_selected_on_click(const Point2 &p_point, do
 
 	const Vector2 *r = s.ptr();
 	for (int i = 0; i < len; i += 2) {
-		Vector2 closest = Geometry2D::get_closest_point_to_segment(p_point, &r[i]);
+		Vector2 closest = Geometry2D::get_closest_point_to_segment(p_point, r[i], r[i + 1]);
 		if (p_point.distance_to(closest) < p_tolerance) {
 			return true;
 		}

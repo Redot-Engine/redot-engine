@@ -2,9 +2,11 @@
 /*  random_pcg.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -80,5 +82,15 @@ int RandomPCG::random(int p_from, int p_to) {
 	if (p_from == p_to) {
 		return p_from;
 	}
-	return rand(abs(p_from - p_to) + 1) + MIN(p_from, p_to);
+
+	int64_t min = MIN(p_from, p_to);
+	int64_t max = MAX(p_from, p_to);
+	uint32_t diff = static_cast<uint32_t>(max - min);
+
+	if (diff == UINT32_MAX) {
+		// Can't add 1 to max uint32_t value for inclusive range, so call rand without passing bounds.
+		return static_cast<int64_t>(rand()) + min;
+	}
+
+	return static_cast<int64_t>(rand(diff + 1U)) + min;
 }

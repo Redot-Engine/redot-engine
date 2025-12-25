@@ -2,9 +2,11 @@
 /*  godot_cone_twist_joint_3d.cpp                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -112,7 +114,7 @@ bool GodotConeTwistJoint3D::setup(real_t p_timestep) {
 	}
 
 	Vector3 b1Axis1, b1Axis2, b1Axis3;
-	Vector3 b2Axis1, b2Axis2;
+	Vector3 b2Axis1;
 
 	b1Axis1 = A->get_transform().basis.xform(m_rbAFrame.basis.get_column(0));
 	b2Axis1 = B->get_transform().basis.xform(m_rbBFrame.basis.get_column(0));

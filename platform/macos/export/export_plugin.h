@@ -2,9 +2,11 @@
 /*  export_plugin.h                                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,18 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MACOS_EXPORT_PLUGIN_H
-#define MACOS_EXPORT_PLUGIN_H
+#pragma once
 
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
+#include "core/io/image.h"
 #include "core/io/marshalls.h"
 #include "core/io/resource_saver.h"
 #include "core/os/os.h"
-#include "core/version.h"
-#include "editor/editor_settings.h"
 #include "editor/export/editor_export.h"
+#include "editor/settings/editor_settings.h"
 
 #include <sys/stat.h>
 
@@ -75,7 +76,7 @@ class EditorExportPlatformMacOS : public EditorExportPlatform {
 			ssh_args = p_ssh_arg;
 			cmd_args = p_cmd_args;
 			wait = p_wait;
-		};
+		}
 	};
 
 	Ref<ImageTexture> run_icon;
@@ -163,7 +164,7 @@ public:
 
 	virtual Ref<Texture2D> get_run_icon() const override;
 	virtual bool poll_export() override;
-	virtual Ref<ImageTexture> get_option_icon(int p_index) const override;
+	virtual Ref<Texture2D> get_option_icon(int p_index) const override;
 	virtual int get_options_count() const override;
 	virtual String get_option_label(int p_index) const override;
 	virtual String get_option_tooltip(int p_index) const override;
@@ -172,5 +173,3 @@ public:
 
 	EditorExportPlatformMacOS();
 };
-
-#endif // MACOS_EXPORT_PLUGIN_H

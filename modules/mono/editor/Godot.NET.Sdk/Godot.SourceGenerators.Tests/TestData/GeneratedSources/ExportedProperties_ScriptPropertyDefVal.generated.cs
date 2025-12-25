@@ -4,7 +4,7 @@ partial class ExportedProperties
 #if TOOLS
     /// <summary>
     /// Get the default values for all properties declared in this class.
-    /// This method is used by Godot to determine the value that will be
+    /// This method is used by Redot to determine the value that will be
     /// used by the inspector when resetting properties.
     /// Do not call this method.
     /// </summary>
@@ -36,7 +36,7 @@ partial class ExportedProperties
         values.Add(PropertyName.@PropertyInt16, global::Godot.Variant.From<short>(__PropertyInt16_default_value));
         int __PropertyInt32_default_value = 10;
         values.Add(PropertyName.@PropertyInt32, global::Godot.Variant.From<int>(__PropertyInt32_default_value));
-        long __PropertyInt64_default_value = 10;
+        long __PropertyInt64_default_value = -10_000;
         values.Add(PropertyName.@PropertyInt64, global::Godot.Variant.From<long>(__PropertyInt64_default_value));
         byte __PropertyByte_default_value = 10;
         values.Add(PropertyName.@PropertyByte, global::Godot.Variant.From<byte>(__PropertyByte_default_value));

@@ -2,9 +2,11 @@
 /*  joint_3d.h                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef JOINT_3D_H
-#define JOINT_3D_H
+#pragma once
 
 #include "scene/3d/node_3d.h"
 #include "scene/3d/physics/physics_body_3d.h"
@@ -81,5 +82,3 @@ public:
 	Joint3D();
 	~Joint3D();
 };
-
-#endif // JOINT_3D_H

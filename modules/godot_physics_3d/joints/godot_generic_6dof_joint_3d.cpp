@@ -2,9 +2,11 @@
 /*  godot_generic_6dof_joint_3d.cpp                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -647,7 +649,7 @@ void GodotGeneric6DOFJoint3D::set_flag(Vector3::Axis p_axis, PhysicsServer3D::G6
 }
 
 bool GodotGeneric6DOFJoint3D::get_flag(Vector3::Axis p_axis, PhysicsServer3D::G6DOFJointAxisFlag p_flag) const {
-	ERR_FAIL_INDEX_V(p_axis, 3, 0);
+	ERR_FAIL_INDEX_V(p_axis, 3, false);
 	switch (p_flag) {
 		case PhysicsServer3D::G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT: {
 			return m_linearLimits.enable_limit[p_axis];

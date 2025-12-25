@@ -2,9 +2,11 @@
 /*  theme_db.h                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,10 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef THEME_DB_H
-#define THEME_DB_H
+#pragma once
 
-#include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
 #include "scene/resources/theme.h"
 
@@ -206,5 +206,3 @@ public:
 	const Vector<Ref<Theme>> get_themes() const;
 	Ref<Theme> get_fallback_theme() const;
 };
-
-#endif // THEME_DB_H

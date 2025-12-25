@@ -2,9 +2,11 @@
 /*  VkRenderer.kt                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -29,12 +31,12 @@
 /**************************************************************************/
 
 @file:JvmName("VkRenderer")
-package org.godotengine.godot.vulkan
+package org.redotengine.godot.vulkan
 
 import android.util.Log
 import android.view.Surface
-import org.godotengine.godot.GodotLib
-import org.godotengine.godot.plugin.GodotPluginRegistry
+import org.redotengine.godot.GodotLib
+import org.redotengine.godot.plugin.GodotPluginRegistry
 
 /**
  * Responsible to setting up and driving the Vulkan rendering logic.
@@ -107,7 +109,7 @@ internal class VkRenderer {
 	 * Invoked when the render thread is in the process of shutting down.
 	 */
 	fun onRenderThreadExiting() {
-		Log.d(TAG, "Destroying Godot Engine")
+		Log.d(TAG, "Destroying Redot Engine")
 		GodotLib.ondestroy()
 	}
 }

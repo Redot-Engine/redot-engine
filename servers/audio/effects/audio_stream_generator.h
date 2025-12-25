@@ -2,9 +2,11 @@
 /*  audio_stream_generator.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef AUDIO_STREAM_GENERATOR_H
-#define AUDIO_STREAM_GENERATOR_H
+#pragma once
 
 #include "core/templates/ring_buffer.h"
 #include "servers/audio/audio_stream.h"
@@ -37,15 +38,30 @@
 class AudioStreamGenerator : public AudioStream {
 	GDCLASS(AudioStreamGenerator, AudioStream);
 
-	float mix_rate;
-	float buffer_len;
+public:
+	enum AudioStreamGeneratorMixRate {
+		MIX_RATE_OUTPUT,
+		MIX_RATE_INPUT,
+		MIX_RATE_CUSTOM,
+		MIX_RATE_MAX,
+	};
+
+private:
+	AudioStreamGeneratorMixRate mix_rate_mode = MIX_RATE_CUSTOM;
+	float mix_rate = 44100;
+	float buffer_len = 0.5;
 
 protected:
 	static void _bind_methods();
 
 public:
+	float _get_target_rate() const;
+
 	void set_mix_rate(float p_mix_rate);
 	float get_mix_rate() const;
+
+	void set_mix_rate_mode(AudioStreamGeneratorMixRate p_mix_rate_mode);
+	AudioStreamGeneratorMixRate get_mix_rate_mode() const;
 
 	void set_buffer_length(float p_seconds);
 	float get_buffer_length() const;
@@ -55,7 +71,7 @@ public:
 
 	virtual double get_length() const override;
 	virtual bool is_monophonic() const override;
-	AudioStreamGenerator();
+	AudioStreamGenerator() {}
 };
 
 class AudioStreamGeneratorPlayback : public AudioStreamPlaybackResampled {
@@ -96,4 +112,4 @@ public:
 	AudioStreamGeneratorPlayback();
 };
 
-#endif // AUDIO_STREAM_GENERATOR_H
+VARIANT_ENUM_CAST(AudioStreamGenerator::AudioStreamGeneratorMixRate);

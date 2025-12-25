@@ -2,9 +2,11 @@
 /*  vector3.cpp                                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -156,6 +158,10 @@ bool Vector3::is_equal_approx(const Vector3 &p_v) const {
 	return Math::is_equal_approx(x, p_v.x) && Math::is_equal_approx(y, p_v.y) && Math::is_equal_approx(z, p_v.z);
 }
 
+bool Vector3::is_same(const Vector3 &p_v) const {
+	return Math::is_same(x, p_v.x) && Math::is_same(y, p_v.y) && Math::is_same(z, p_v.z);
+}
+
 bool Vector3::is_zero_approx() const {
 	return Math::is_zero_approx(x) && Math::is_zero_approx(y) && Math::is_zero_approx(z);
 }
@@ -165,7 +171,7 @@ bool Vector3::is_finite() const {
 }
 
 Vector3::operator String() const {
-	return "(" + String::num_real(x, false) + ", " + String::num_real(y, false) + ", " + String::num_real(z, false) + ")";
+	return "(" + String::num_real(x, true) + ", " + String::num_real(y, true) + ", " + String::num_real(z, true) + ")";
 }
 
 Vector3::operator Vector3i() const {

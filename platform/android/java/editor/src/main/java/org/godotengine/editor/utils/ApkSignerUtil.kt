@@ -2,9 +2,11 @@
 /*  ApkSignerUtil.kt                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -30,14 +32,14 @@
 
 @file:JvmName("ApkSignerUtil")
 
-package org.godotengine.editor.utils
+package org.redotengine.editor.utils
 
 import android.util.Log
 import com.android.apksig.ApkSigner
 import com.android.apksig.ApkVerifier
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.godotengine.godot.error.Error
-import org.godotengine.godot.io.file.FileAccessHandler
+import org.redotengine.godot.error.Error
+import org.redotengine.godot.io.file.FileAccessHandler
 import java.io.File
 import java.security.KeyStore
 import java.security.PrivateKey

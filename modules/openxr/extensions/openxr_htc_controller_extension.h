@@ -2,9 +2,11 @@
 /*  openxr_htc_controller_extension.h                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_HTC_CONTROLLER_EXTENSION_H
-#define OPENXR_HTC_CONTROLLER_EXTENSION_H
+#pragma once
 
 #include "openxr_extension_wrapper.h"
 
 class OpenXRHTCControllerExtension : public OpenXRExtensionWrapper {
+	GDCLASS(OpenXRHTCControllerExtension, OpenXRExtensionWrapper);
+
+protected:
+	static void _bind_methods() {}
+
 public:
 	enum HTCControllers {
 		// Note, HTC Vive Wand controllers are part of the core spec and not part of our extension.
@@ -54,5 +60,3 @@ public:
 private:
 	bool available[HTC_MAX_CONTROLLERS] = { false, false };
 };
-
-#endif // OPENXR_HTC_CONTROLLER_EXTENSION_H

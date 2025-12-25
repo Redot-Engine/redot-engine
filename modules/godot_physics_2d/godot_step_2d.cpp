@@ -2,9 +2,11 @@
 /*  godot_step_2d.cpp                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -32,6 +34,7 @@
 
 #include "core/object/worker_thread_pool.h"
 #include "core/os/os.h"
+#include "godot_constraint_2d.h"
 
 #define BODY_ISLAND_COUNT_RESERVE 128
 #define BODY_ISLAND_SIZE_RESERVE 512
@@ -48,7 +51,7 @@ void GodotStep2D::_populate_island(GodotBody2D *p_body, LocalVector<GodotBody2D 
 	}
 
 	for (const Pair<GodotConstraint2D *, int> &E : p_body->get_constraint_list()) {
-		GodotConstraint2D *constraint = const_cast<GodotConstraint2D *>(E.first);
+		GodotConstraint2D *constraint = E.first;
 		if (constraint->get_island_step() == _step) {
 			continue; // Already processed.
 		}

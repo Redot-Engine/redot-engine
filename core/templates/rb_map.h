@@ -2,9 +2,11 @@
 /*  rb_map.h                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,12 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RB_MAP_H
-#define RB_MAP_H
+#pragma once
 
 #include "core/error/error_macros.h"
 #include "core/os/memory.h"
 #include "core/templates/pair.h"
+
+#include <initializer_list>
 
 // based on the very nice implementation of rb-trees by:
 // https://web.archive.org/web/20120507164830/https://web.mit.edu/~emin/www/source_code/red_black_tree/index.html
@@ -763,11 +766,15 @@ public:
 		_copy_from(p_map);
 	}
 
+	RBMap(std::initializer_list<KeyValue<K, V>> p_init) {
+		for (const KeyValue<K, V> &E : p_init) {
+			insert(E.key, E.value);
+		}
+	}
+
 	_FORCE_INLINE_ RBMap() {}
 
 	~RBMap() {
 		clear();
 	}
 };
-
-#endif // RB_MAP_H

@@ -2,9 +2,11 @@
 /*  base_button.h                                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef BASE_BUTTON_H
-#define BASE_BUTTON_H
+#pragma once
 
 #include "core/input/shortcut.h"
 #include "scene/gui/control.h"
@@ -61,7 +62,7 @@ private:
 		bool hovering = false;
 		bool press_attempt = false;
 		bool pressing_inside = false;
-
+		bool pressed_down_with_focus = false;
 		bool disabled = false;
 
 	} status;
@@ -87,6 +88,7 @@ protected:
 	void _notification(int p_what);
 
 	bool _was_pressed_by_mouse() const;
+	void _accessibility_action_click(const Variant &p_data);
 
 	GDVIRTUAL0(_pressed)
 	GDVIRTUAL1(_toggled, bool)
@@ -165,5 +167,3 @@ public:
 	bool is_allow_unpress();
 	ButtonGroup();
 };
-
-#endif // BASE_BUTTON_H

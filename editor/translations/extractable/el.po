@@ -4,8 +4,8 @@
 # This file is distributed under the same license as the Godot source code.
 msgid ""
 msgstr ""
-"Project-Id-Version: Godot Engine extractable strings\n"
-"Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
+"Project-Id-Version: Redot Engine extractable strings\n"
+"Report-Msgid-Bugs-To: https://github.com/Redot-Engine/redot-engine\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: 2023-10-01 21:58+0000\n"
 "Last-Translator: Marios1Gr <Marios1Gr@users.noreply.hosted.weblate.org>\n"
@@ -17,6 +17,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.1-dev\n"
+
+msgid "All Recognized"
+msgstr "Όλα τα αναγνωρισμένα"
+
+msgid "Save"
+msgstr "Αποθήκευση"
+
+msgid "Clear"
+msgstr "Εκκαθάριση"
 
 msgid "Add current color as a preset."
 msgstr "Προσθήκη τρέχοντος χρώματος στα προκαθορισμένα."
@@ -33,9 +42,6 @@ msgstr "Επιλογή τρέχοντα φακέλου"
 msgid "Select This Folder"
 msgstr "Επιλογή αυτού του φακέλου"
 
-msgid "All Recognized"
-msgstr "Όλα τα αναγνωρισμένα"
-
 msgid "Open a File"
 msgstr "Άνοιγμα αρχείου"
 
@@ -47,9 +53,6 @@ msgstr "Άνοιγμα φακέλου"
 
 msgid "Open a File or Directory"
 msgstr "Άνοιγμα αρχείου ή φακέλου"
-
-msgid "Save"
-msgstr "Αποθήκευση"
 
 msgid "Save a File"
 msgstr "Αποθήκευση αρχείου"
@@ -69,11 +72,11 @@ msgstr "Διαδρομή:"
 msgid "Refresh files."
 msgstr "Ανανέωση αρχείων."
 
-msgid "Toggle the visibility of hidden files."
-msgstr "Εναλλαγή ορατότητας κρυφών αρχείων."
-
 msgid "Directories & Files:"
 msgstr "Φάκελοι & Αρχεία:"
+
+msgid "Toggle the visibility of hidden files."
+msgstr "Εναλλαγή ορατότητας κρυφών αρχείων."
 
 msgid "File:"
 msgstr "Αρχείο:"
@@ -107,9 +110,6 @@ msgstr "Επικόλληση"
 
 msgid "Select All"
 msgstr "Επιλογή όλων"
-
-msgid "Clear"
-msgstr "Εκκαθάριση"
 
 msgid "Undo"
 msgstr "Αναίρεση"

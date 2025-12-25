@@ -2,9 +2,11 @@
 /*  editor_color_map.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_COLOR_MAP_H
-#define EDITOR_COLOR_MAP_H
+#pragma once
 
 #include "core/math/color.h"
 #include "core/string/string_name.h"
@@ -39,7 +40,7 @@
 // The default icon theme is designed to be used for a dark theme. This map stores
 // Color values to convert to other colors for better readability on a light theme.
 class EditorColorMap {
-	// Godot Color values are used to avoid the ambiguity of strings
+	// Redot Color values are used to avoid the ambiguity of strings
 	// (where "#ffffff", "fff", and "white" are all equivalent).
 	static HashMap<Color, Color> color_conversion_map;
 	// The names of the icons to never convert, even if one of their colors
@@ -50,11 +51,9 @@ public:
 	static void add_conversion_color_pair(const String &p_from_color, const String &p_to_color);
 	static void add_conversion_exception(const StringName &p_icon_name);
 
-	static HashMap<Color, Color> &get_color_conversion_map() { return color_conversion_map; };
-	static HashSet<StringName> &get_color_conversion_exceptions() { return color_conversion_exceptions; };
+	static HashMap<Color, Color> &get_color_conversion_map() { return color_conversion_map; }
+	static HashSet<StringName> &get_color_conversion_exceptions() { return color_conversion_exceptions; }
 
 	static void create();
 	static void finish();
 };
-
-#endif // EDITOR_COLOR_MAP_H

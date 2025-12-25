@@ -2,9 +2,11 @@
 /*  zip_io.cpp                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -76,8 +78,7 @@ void *zipio_open(voidpf opaque, const char *p_fname, int mode) {
 	Ref<FileAccess> *fa = reinterpret_cast<Ref<FileAccess> *>(opaque);
 	ERR_FAIL_NULL_V(fa, nullptr);
 
-	String fname;
-	fname.parse_utf8(p_fname);
+	String fname = String::utf8(p_fname);
 
 	int file_access_mode = 0;
 	if (mode & ZLIB_FILEFUNC_MODE_READ) {
@@ -162,8 +163,7 @@ int zipio_testerror(voidpf opaque, voidpf stream) {
 }
 
 voidpf zipio_alloc(voidpf opaque, uInt items, uInt size) {
-	voidpf ptr = memalloc((size_t)items * size);
-	memset(ptr, 0, items * size);
+	voidpf ptr = memalloc_zeroed((size_t)items * size);
 	return ptr;
 }
 

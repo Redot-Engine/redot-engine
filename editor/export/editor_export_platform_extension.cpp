@@ -2,9 +2,11 @@
 /*  editor_export_platform_extension.cpp                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -53,6 +55,10 @@ void EditorExportPlatformExtension::_bind_methods() {
 	GDVIRTUAL_BIND(_get_options_tooltip);
 
 	GDVIRTUAL_BIND(_get_option_icon, "device");
+#ifndef DISABLE_DEPRECATED
+	GDVIRTUAL_BIND_COMPAT(_get_option_icon_bind_compat_108825, "device");
+#endif
+
 	GDVIRTUAL_BIND(_get_option_label, "device");
 	GDVIRTUAL_BIND(_get_option_tooltip, "device");
 	GDVIRTUAL_BIND(_get_device_architecture, "device");
@@ -178,11 +184,17 @@ String EditorExportPlatformExtension::get_options_tooltip() const {
 	return ret;
 }
 
-Ref<ImageTexture> EditorExportPlatformExtension::get_option_icon(int p_index) const {
-	Ref<ImageTexture> ret;
+Ref<Texture2D> EditorExportPlatformExtension::get_option_icon(int p_index) const {
+	Ref<Texture2D> ret;
 	if (GDVIRTUAL_CALL(_get_option_icon, p_index, ret)) {
 		return ret;
 	}
+#ifndef DISABLE_DEPRECATED
+	Ref<ImageTexture> comp_ret;
+	if (GDVIRTUAL_CALL(_get_option_icon_bind_compat_108825, p_index, comp_ret)) {
+		return comp_ret;
+	}
+#endif
 	return EditorExportPlatform::get_option_icon(p_index);
 }
 

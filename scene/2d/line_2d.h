@@ -2,9 +2,11 @@
 /*  line_2d.h                                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef LINE_2D_H
-#define LINE_2D_H
+#pragma once
 
 #include "node_2d.h"
 
@@ -55,7 +56,7 @@ public:
 		LINE_TEXTURE_STRETCH
 	};
 
-#ifdef TOOLS_ENABLED
+#ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
 	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
@@ -146,5 +147,3 @@ private:
 VARIANT_ENUM_CAST(Line2D::LineJointMode)
 VARIANT_ENUM_CAST(Line2D::LineCapMode)
 VARIANT_ENUM_CAST(Line2D::LineTextureMode)
-
-#endif // LINE_2D_H

@@ -2,9 +2,11 @@
 /*  openxr_action_editor.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_ACTION_EDITOR_H
-#define OPENXR_ACTION_EDITOR_H
+#pragma once
 
 #include "../action_map/openxr_action.h"
 
@@ -68,8 +69,6 @@ protected:
 	void _do_set_action_type(OpenXRAction::ActionType p_action_type);
 
 public:
-	Ref<OpenXRAction> get_action() { return action; };
+	Ref<OpenXRAction> get_action() { return action; }
 	OpenXRActionEditor(Ref<OpenXRAction> p_action);
 };
-
-#endif // OPENXR_ACTION_EDITOR_H

@@ -2,9 +2,11 @@
 /*  dtls_server_mbedtls.cpp                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -47,7 +49,7 @@ Ref<PacketPeerDTLS> DTLSServerMbedTLS::take_connection(Ref<PacketPeerUDP> p_udp_
 	Ref<PacketPeerMbedDTLS> out;
 
 	ERR_FAIL_COND_V(tls_options.is_null(), out);
-	ERR_FAIL_COND_V(!p_udp_peer.is_valid(), out);
+	ERR_FAIL_COND_V(p_udp_peer.is_null(), out);
 
 	out.instantiate();
 	out->accept_peer(p_udp_peer, tls_options, cookies);

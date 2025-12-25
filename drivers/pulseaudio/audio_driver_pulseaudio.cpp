@@ -2,9 +2,11 @@
 /*  audio_driver_pulseaudio.cpp                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -138,21 +140,20 @@ Error AudioDriverPulseAudio::detect_channels(bool input) {
 		}
 	}
 
-	char dev[1024];
 	if (device == "Default") {
-		strcpy(dev, input ? default_input_device.utf8().get_data() : default_output_device.utf8().get_data());
-	} else {
-		strcpy(dev, device.utf8().get_data());
+		device = input ? default_input_device : default_output_device;
 	}
-	print_verbose("PulseAudio: Detecting channels for device: " + String(dev));
+	print_verbose("PulseAudio: Detecting channels for device: " + device);
+
+	CharString device_utf8 = device.utf8();
 
 	// Now using the device name get the amount of channels
 	pa_status = 0;
 	pa_operation *pa_op;
 	if (input) {
-		pa_op = pa_context_get_source_info_by_name(pa_ctx, dev, &AudioDriverPulseAudio::pa_source_info_cb, (void *)this);
+		pa_op = pa_context_get_source_info_by_name(pa_ctx, device_utf8.get_data(), &AudioDriverPulseAudio::pa_source_info_cb, (void *)this);
 	} else {
-		pa_op = pa_context_get_sink_info_by_name(pa_ctx, dev, &AudioDriverPulseAudio::pa_sink_info_cb, (void *)this);
+		pa_op = pa_context_get_sink_info_by_name(pa_ctx, device_utf8.get_data(), &AudioDriverPulseAudio::pa_sink_info_cb, (void *)this);
 	}
 
 	if (pa_op) {
@@ -192,7 +193,7 @@ Error AudioDriverPulseAudio::init_output_device() {
 	// Detect the amount of channels PulseAudio is using
 	// Note: If using an even amount of channels (2, 4, etc) channels and pa_map.channels will be equal,
 	// if not then pa_map.channels will have the real amount of channels PulseAudio is using and channels
-	// will have the amount of channels Godot is using (in this case it's pa_map.channels + 1)
+	// will have the amount of channels Redot is using (in this case it's pa_map.channels + 1)
 	Error err = detect_channels();
 	if (err != OK) {
 		// This most likely means there are no sinks.
@@ -312,11 +313,11 @@ Error AudioDriverPulseAudio::init() {
 
 	String context_name;
 	if (Engine::get_singleton()->is_editor_hint()) {
-		context_name = VERSION_NAME " Editor";
+		context_name = REDOT_VERSION_NAME " Editor";
 	} else {
 		context_name = GLOBAL_GET("application/config/name");
 		if (context_name.is_empty()) {
-			context_name = VERSION_NAME " Project";
+			context_name = REDOT_VERSION_NAME " Project";
 		}
 	}
 
@@ -725,7 +726,8 @@ Error AudioDriverPulseAudio::init_input_device() {
 	int input_buffer_frames = closest_power_of_2(input_latency * mix_rate / 1000);
 	int input_buffer_size = input_buffer_frames * spec.channels;
 
-	pa_buffer_attr attr;
+	pa_buffer_attr attr = {};
+	attr.maxlength = (uint32_t)-1;
 	attr.fragsize = input_buffer_size * sizeof(int16_t);
 
 	pa_rec_str = pa_stream_new(pa_ctx, "Record", &spec, &pa_rec_map);

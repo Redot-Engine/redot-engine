@@ -2,9 +2,11 @@
 /*  keyboard.cpp                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -387,6 +389,10 @@ String keycode_get_string(Key p_code) {
 	}
 
 	p_code &= KeyModifierMask::CODE_MASK;
+	if ((char32_t)p_code == 0) {
+		// The key was just a modifier without any code.
+		return codestr;
+	}
 
 	const _KeyCodeText *kct = &_keycodes[0];
 
@@ -406,7 +412,7 @@ String keycode_get_string(Key p_code) {
 Key find_keycode(const String &p_codestr) {
 	Key keycode = Key::NONE;
 	Vector<String> code_parts = p_codestr.split("+");
-	if (code_parts.size() < 1) {
+	if (code_parts.is_empty()) {
 		return keycode;
 	}
 

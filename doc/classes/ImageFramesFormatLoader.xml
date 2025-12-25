@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ImageFramesFormatLoader" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Base class to add support for specific image sequence formats.
+	</brief_description>
+	<description>
+		The engine supports multiple image sequence formats out of the box, but you can choose to implement support for additional image sequence formats by extending [ImageFramesFormatLoaderExtension].
+	</description>
+	<tutorials>
+	</tutorials>
+	<constants>
+		<constant name="FLAG_NONE" value="0" enum="LoaderFlags" is_bitfield="true">
+		</constant>
+		<constant name="FLAG_FORCE_LINEAR" value="1" enum="LoaderFlags" is_bitfield="true">
+		</constant>
+	</constants>
+</class>

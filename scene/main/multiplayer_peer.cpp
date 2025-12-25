@@ -2,9 +2,11 @@
 /*  multiplayer_peer.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -137,7 +139,7 @@ Error MultiplayerPeerExtension::get_packet(const uint8_t **r_buffer, int &r_buff
 			return FAILED;
 		}
 
-		if (script_buffer.size() == 0) {
+		if (script_buffer.is_empty()) {
 			return Error::ERR_UNAVAILABLE;
 		}
 
@@ -151,6 +153,7 @@ Error MultiplayerPeerExtension::get_packet(const uint8_t **r_buffer, int &r_buff
 }
 
 Error MultiplayerPeerExtension::put_packet(const uint8_t *p_buffer, int p_buffer_size) {
+	ERR_FAIL_COND_V(p_buffer_size < 0, ERR_INVALID_PARAMETER);
 	Error err;
 	if (GDVIRTUAL_CALL(_put_packet, p_buffer, p_buffer_size, err)) {
 		return err;

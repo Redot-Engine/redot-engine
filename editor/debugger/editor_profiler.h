@@ -2,9 +2,11 @@
 /*  editor_profiler.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_PROFILER_H
-#define EDITOR_PROFILER_H
+#pragma once
 
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
@@ -104,6 +105,11 @@ private:
 	TextureRect *graph = nullptr;
 	Ref<ImageTexture> graph_texture;
 	Vector<uint8_t> graph_image;
+
+	float graph_zoom = 0.0f;
+	float pan_accumulator = 0.0f;
+	int zoom_center = -1;
+
 	Tree *variables = nullptr;
 	HSplitContainer *h_split = nullptr;
 
@@ -155,6 +161,7 @@ private:
 	void _graph_tex_input(const Ref<InputEvent> &p_ev);
 
 	Color _get_color_from_signature(const StringName &p_signature) const;
+	int _get_zoom_left_border() const;
 
 	void _cursor_metric_changed(double);
 
@@ -180,5 +187,3 @@ public:
 
 	EditorProfiler();
 };
-
-#endif // EDITOR_PROFILER_H

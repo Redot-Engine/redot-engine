@@ -2,9 +2,11 @@
 /*  gdscript_cache.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -189,7 +191,7 @@ void GDScriptCache::remove_script(const String &p_path) {
 
 	if (HashMap<String, Vector<ObjectID>>::Iterator E = singleton->abandoned_parser_map.find(p_path)) {
 		for (ObjectID parser_ref_id : E->value) {
-			Ref<GDScriptParserRef> parser_ref{ ObjectDB::get_instance(parser_ref_id) };
+			Ref<GDScriptParserRef> parser_ref = { ObjectDB::get_instance(parser_ref_id) };
 			if (parser_ref.is_valid()) {
 				parser_ref->clear();
 			}
@@ -275,7 +277,7 @@ String GDScriptCache::get_source_code(const String &p_path) {
 	source_file.write[len] = 0;
 
 	String source;
-	if (source.parse_utf8((const char *)source_file.ptr()) != OK) {
+	if (source.append_utf8((const char *)source_file.ptr(), len) != OK) {
 		ERR_FAIL_V_MSG("", "Script '" + p_path + "' contains invalid unicode (UTF-8), so it was not loaded. Please ensure that scripts are saved in valid UTF-8 unicode.");
 	}
 	return source;
@@ -460,7 +462,7 @@ void GDScriptCache::clear() {
 
 	for (const KeyValue<String, Vector<ObjectID>> &KV : singleton->abandoned_parser_map) {
 		for (ObjectID parser_ref_id : KV.value) {
-			Ref<GDScriptParserRef> parser_ref{ ObjectDB::get_instance(parser_ref_id) };
+			Ref<GDScriptParserRef> parser_ref = { ObjectDB::get_instance(parser_ref_id) };
 			if (parser_ref.is_valid()) {
 				parser_ref->clear();
 			}
@@ -485,6 +487,7 @@ void GDScriptCache::clear() {
 	parser_map_refs.clear();
 	singleton->shallow_gdscript_cache.clear();
 	singleton->full_gdscript_cache.clear();
+	singleton->static_gdscript_cache.clear();
 }
 
 GDScriptCache::GDScriptCache() {

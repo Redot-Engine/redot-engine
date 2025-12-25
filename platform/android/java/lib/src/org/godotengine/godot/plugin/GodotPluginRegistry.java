@@ -2,9 +2,11 @@
 /*  GodotPluginRegistry.java                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,11 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.godotengine.godot.plugin;
+package org.redotengine.godot.plugin;
 
-import org.godotengine.godot.Godot;
-
-import android.app.Activity;
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -46,6 +46,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.redotengine.godot.Godot;
 
 /**
  * Registry used to load and access the registered Godot Android plugins.
@@ -61,6 +63,15 @@ public final class GodotPluginRegistry {
 	 * Prefix used for version 2 of the Godot plugin, compatible with Godot 4.2+
 	 */
 	private static final String GODOT_PLUGIN_V2_NAME_PREFIX = "org.godotengine.plugin.v2.";
+	/**
+	 * Prefix used for version 1 of the Godot plugin, mostly compatible with Godot 3.x
+	 * Although there isn't any REDOT prior version 4.2, someone may refit old-styled plugins.
+	 */
+	private static final String REDOT_PLUGIN_V1_NAME_PREFIX = "org.redotengine.plugin.v1.";
+	/**
+	 * Prefix used for version 2 of the Redot plugin, compatible with Redot 4.2+
+	 */
+	private static final String REDOT_PLUGIN_V2_NAME_PREFIX = "org.redotengine.plugin.v2.";
 
 	private static GodotPluginRegistry instance;
 	private final ConcurrentHashMap<String, GodotPlugin> registry;
@@ -134,10 +145,10 @@ public final class GodotPluginRegistry {
 
 		// Register the manifest plugins
 		try {
-			final Activity activity = godot.getActivity();
-			ApplicationInfo appInfo = activity
+			final Context context = godot.getContext();
+			ApplicationInfo appInfo = context
 											  .getPackageManager()
-											  .getApplicationInfo(activity.getPackageName(),
+											  .getApplicationInfo(context.getPackageName(),
 													  PackageManager.GET_META_DATA);
 			Bundle metaData = appInfo.metaData;
 			if (metaData == null || metaData.isEmpty()) {
@@ -149,13 +160,19 @@ public final class GodotPluginRegistry {
 				String pluginName = null;
 				if (metaDataName.startsWith(GODOT_PLUGIN_V2_NAME_PREFIX)) {
 					pluginName = metaDataName.substring(GODOT_PLUGIN_V2_NAME_PREFIX.length()).trim();
+				} else if (metaDataName.startsWith(REDOT_PLUGIN_V2_NAME_PREFIX)) {
+					pluginName = metaDataName.substring(REDOT_PLUGIN_V2_NAME_PREFIX.length()).trim();
 				} else if (metaDataName.startsWith(GODOT_PLUGIN_V1_NAME_PREFIX)) {
 					pluginName = metaDataName.substring(GODOT_PLUGIN_V1_NAME_PREFIX.length()).trim();
-					Log.w(TAG, "Godot v1 plugin are deprecated in Godot 4.2 and higher: " + pluginName);
+					Log.w(TAG, "Godot v1 plugins in Redot are deprecated in Redot 4.2 and higher: " + pluginName);
+				} else if (metaDataName.startsWith(REDOT_PLUGIN_V1_NAME_PREFIX)) {
+					// Although there isn't any REDOT prior version 4.2, someone may refit old-styled plugins.
+					pluginName = metaDataName.substring(REDOT_PLUGIN_V1_NAME_PREFIX.length()).trim();
+					Log.w(TAG, "Redot v1 plugins are deprecated in Redot 4.2 and higher: " + pluginName);
 				}
 
 				if (!TextUtils.isEmpty(pluginName)) {
-					Log.i(TAG, "Initializing Godot plugin " + pluginName);
+					Log.i(TAG, "Initializing Redot plugin " + pluginName);
 
 					// Retrieve the plugin class full name.
 					String pluginHandleClassFullName = metaData.getString(metaDataName);
@@ -175,9 +192,9 @@ public final class GodotPluginRegistry {
 										"Meta-data plugin name does not match the value returned by the plugin handle: " + pluginName + " =/= " + pluginHandle.getPluginName());
 							}
 							registry.put(pluginName, pluginHandle);
-							Log.i(TAG, "Completed initialization for Godot plugin " + pluginHandle.getPluginName());
+							Log.i(TAG, "Completed initialization for Redot plugin " + pluginHandle.getPluginName());
 						} catch (Exception e) {
-							Log.w(TAG, "Unable to load Godot plugin " + pluginName, e);
+							Log.w(TAG, "Unable to load Redot plugin " + pluginName, e);
 						}
 					} else {
 						Log.w(TAG, "Invalid plugin loader class for " + pluginName);
@@ -185,7 +202,7 @@ public final class GodotPluginRegistry {
 				}
 			}
 		} catch (Exception e) {
-			Log.e(TAG, "Unable load Godot Android plugins from the manifest file.", e);
+			Log.e(TAG, "Unable load Redot Android plugins from the manifest file.", e);
 		}
 	}
 }

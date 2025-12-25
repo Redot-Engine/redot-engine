@@ -2,9 +2,11 @@
 /*  resource_importer_ogg_vorbis.h                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RESOURCE_IMPORTER_OGG_VORBIS_H
-#define RESOURCE_IMPORTER_OGG_VORBIS_H
+#pragma once
 
 #include "audio_stream_ogg_vorbis.h"
 
@@ -37,10 +38,6 @@
 
 class ResourceImporterOggVorbis : public ResourceImporter {
 	GDCLASS(ResourceImporterOggVorbis, ResourceImporter);
-
-	enum {
-		OGG_SYNC_BUFFER_SIZE = 8192,
-	};
 
 protected:
 	static void _bind_methods();
@@ -51,8 +48,11 @@ public:
 	virtual void show_advanced_options(const String &p_path) override;
 #endif
 
+#ifndef DISABLE_DEPRECATED
 	static Ref<AudioStreamOggVorbis> load_from_file(const String &p_path);
-	static Ref<AudioStreamOggVorbis> load_from_buffer(const Vector<uint8_t> &file_data);
+	static Ref<AudioStreamOggVorbis> load_from_buffer(const Vector<uint8_t> &p_stream_data);
+#endif
+
 	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
 	virtual String get_save_extension() const override;
 	virtual String get_resource_type() const override;
@@ -63,9 +63,9 @@ public:
 	virtual void get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset = 0) const override;
 	virtual bool get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const override;
 
-	virtual Error import(const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files = nullptr, Variant *r_metadata = nullptr) override;
+	virtual Error import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files = nullptr, Variant *r_metadata = nullptr) override;
+
+	virtual bool can_import_threaded() const override { return true; }
 
 	ResourceImporterOggVorbis();
 };
-
-#endif // RESOURCE_IMPORTER_OGG_VORBIS_H

@@ -2,9 +2,11 @@
 /*  thorvg_svg_in_ot.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
-/*                             GODOT ENGINE                               */
-/*                        https://godotengine.org                         */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
 /**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
 /* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
 /* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
 /*                                                                        */
@@ -28,8 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef THORVG_SVG_IN_OT_H
-#define THORVG_SVG_IN_OT_H
+#pragma once
 
 #ifdef GDEXTENSION
 // Headers for building as GDExtension plug-in.
@@ -60,8 +61,6 @@ using namespace godot;
 
 struct GL_State {
 	bool ready = false;
-	float bmp_x = 0;
-	float bmp_y = 0;
 	float x = 0;
 	float y = 0;
 	float w = 0;
@@ -70,9 +69,22 @@ struct GL_State {
 	tvg::Matrix m;
 };
 
+struct TVG_NodeCache {
+	uint64_t document_offset;
+	uint64_t body_offset;
+};
+
+struct TVG_DocumentCache {
+	String xml_body;
+	double embox_x;
+	double embox_y;
+	HashMap<int64_t, Vector<TVG_NodeCache>> node_caches;
+};
+
 struct TVG_State {
 	Mutex mutex;
 	HashMap<uint32_t, GL_State> glyph_map;
+	HashMap<FT_Byte *, TVG_DocumentCache> document_map;
 };
 
 FT_Error tvg_svg_in_ot_init(FT_Pointer *p_state);
@@ -84,5 +96,3 @@ SVG_RendererHooks *get_tvg_svg_in_ot_hooks();
 
 #endif // MODULE_FREETYPE_ENABLED
 #endif // MODULE_SVG_ENABLED
-
-#endif // THORVG_SVG_IN_OT_H
