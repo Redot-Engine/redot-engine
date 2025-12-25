@@ -54,14 +54,16 @@ void Timer::_notification(int p_what) {
 			switch (timer_process_type) {
 				case TIMER_PROCESS_TYPE_TIME: {
 					if (ignore_time_scale) {
-				    time_left -= Engine::get_singleton()->get_process_step();
-			    } else {
-				    time_left -= get_process_delta_time();
-				}; break;
-				case TIMER_PROCESS_TYPE_FRAMES: {
-					time_left -= 1;
-				}; break;
+						time_left -= Engine::get_singleton()->get_process_step();
+					} else {
+						time_left -= get_process_delta_time();
+					}
+					break;
 
+					case TIMER_PROCESS_TYPE_FRAMES: {
+						time_left -= 1;
+					} break;
+				}
 			}
 
 			if (time_left < 0) {
@@ -82,15 +84,16 @@ void Timer::_notification(int p_what) {
 			switch (timer_process_type) {
 				case TIMER_PROCESS_TYPE_TIME: {
 					if (ignore_time_scale) {
-				    time_left -= Engine::get_singleton()->get_process_step();
-			    } else {
-				    time_left -= get_process_delta_time();
-				}; break;
-				case TIMER_PROCESS_TYPE_FRAMES: {
-					time_left -= 1;
-				}; break;
+						time_left -= Engine::get_singleton()->get_process_step();
+					} else {
+						time_left -= get_process_delta_time();
+					};
+					break;
+					case TIMER_PROCESS_TYPE_FRAMES: {
+						time_left -= 1;
+					}; break;
+				}
 			}
-
 			if (time_left < 0) {
 				if (!one_shot) {
 					time_left += wait_time;
@@ -99,7 +102,8 @@ void Timer::_notification(int p_what) {
 				}
 				emit_signal(SNAME("timeout"));
 			}
-		} break;
+			break;
+		}
 	}
 }
 
