@@ -58,12 +58,10 @@ void Timer::_notification(int p_what) {
 					} else {
 						time_left -= get_process_delta_time();
 					}
-					break;
-
-					case TIMER_PROCESS_TYPE_FRAMES: {
-						time_left -= 1;
-					} break;
-				}
+				} break;
+				case TIMER_PROCESS_TYPE_FRAMES: {
+					time_left -= 1;
+				} break;
 			}
 
 			if (time_left < 0) {
@@ -87,13 +85,12 @@ void Timer::_notification(int p_what) {
 					if (ignore_time_scale) {
 						time_left -= Engine::get_singleton()->get_process_step();
 					} else {
-						time_left -= get_process_delta_time();
-					};
-					break;
-					case TIMER_PROCESS_TYPE_FRAMES: {
-						time_left -= 1;
-					}; break;
-				}
+						time_left -= get_physics_process_delta_time();
+					}
+				} break;
+				case TIMER_PROCESS_TYPE_FRAMES: {
+					time_left -= 1;
+				} break;
 			}
 
 			if (time_left < 0) {
@@ -189,17 +186,17 @@ void Timer::set_timer_process_callback(TimerProcessCallback p_callback) {
 		return;
 	}
 
-	switch (timer_process_callback) {
+	switch (p_callback) {
 		case TIMER_PROCESS_PHYSICS:
-			if (is_physics_processing_internal()) {
-				set_physics_process_internal(false);
-				set_process_internal(true);
-			}
-			break;
-		case TIMER_PROCESS_IDLE:
 			if (is_processing_internal()) {
 				set_process_internal(false);
 				set_physics_process_internal(true);
+			}
+			break;
+		case TIMER_PROCESS_IDLE:
+			if (is_physics_processing_internal()) {
+				set_physics_process_internal(false);
+				set_process_internal(true);
 			}
 			break;
 	}
