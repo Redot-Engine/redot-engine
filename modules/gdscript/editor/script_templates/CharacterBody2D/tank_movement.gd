@@ -11,7 +11,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	# Get the input direction and handle the movement/deceleration.
 	# As good practice, you should replace UI actions with custom gameplay actions.
-	# see Project > Porject Settings ... > Input Map > Show Build In Actions.
+	# see Project > Project Settings ... > Input Map > Show Build In Actions.
 	# arrow keys up and down move the "tank" and left and right turns it.
 	var movement := Input.get_axis("ui_up", "ui_down")
 	var turning := Input.get_axis("ui_left", "ui_right")
@@ -24,8 +24,8 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.x = move_toward(velocity.x, 0, 10.0)
 		velocity.y = move_toward(velocity.y, 0, 10.0)
-	
+
 	if turning:
 		rotation += turning * TURN_SPEED * delta
-	
+
 	move_and_slide()
