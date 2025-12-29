@@ -476,6 +476,8 @@ private:
 		DescriptorSetPools::Iterator pool_sets_it;
 	};
 
+	bool adreno_5xx_empty_descriptor_set_layout_workaround = false;
+
 public:
 	virtual UniformSetID uniform_set_create(VectorView<BoundUniform> p_uniforms, ShaderID p_shader, uint32_t p_set_index, int p_linear_pool_index) override final;
 	virtual void linear_uniform_set_pools_reset(int p_linear_pool_index) override final;
