@@ -37,12 +37,11 @@
 	<tutorials>
 	</tutorials>
 	<methods>
-		<method name="set_tempo">
+		<method name="flush">
 			<return type="void" />
-			<param index="0" name="tempo" type="float" />
 			<description>
-				Sets the playback tempo multiplier.
-				A value of `1.0` keeps the original tempo, values greater than `1.0` speed up playback, and values less than `1.0` slow it down.
+				Flushes any internally buffered samples and finalizes processing.
+				Call this when no more input samples will be provided.
 			</description>
 		</method>
 		<method name="put_samples">
@@ -60,11 +59,12 @@
 				Returns an empty array if no samples are currently ready.
 			</description>
 		</method>
-		<method name="flush">
+		<method name="set_tempo">
 			<return type="void" />
+			<param index="0" name="tempo" type="float" />
 			<description>
-				Flushes any internally buffered samples and finalizes processing.
-				Call this when no more input samples will be provided.
+				Sets the playback tempo multiplier.
+				A value of `1.0` keeps the original tempo, values greater than `1.0` speed up playback, and values less than `1.0` slow it down.
 			</description>
 		</method>
 	</methods>
