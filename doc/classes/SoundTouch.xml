@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Crypto" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Performs real-time audio time-stretching by adjusting playback tempo without changing pitch
+	</brief_description>
+	<description>
+		SoundTouch is a lightweight audio processing utility that wraps the SoundTouch library to allow tempo adjustment on raw audio samples without affecting pitch. This class is useful for gameplay-driven audio effects, dynamic music systems, or any scenario where audio tempo needs to change at runtime.
+		[codeblocks]
+		[gdscript]
+		var st = SoundTouch.new()
+
+		# Slow playback to 50% speed
+		st.set_tempo(0.5)
+		# Set the sample to mono.
+		st.put_samples(mono)
+		# Finalize buffer input.
+		st.flush()
+
+		# Obtain processed samples.
+		var processed := st.receive_samples()
+
+		# Play processed audio using AudioStreamGenerator.
+		var generator := AudioStreamGenerator.new()
+		generator.mix_rate = sample_rate
+		generator.buffer_length = duration
+
+		var player := AudioStreamPlayer.new()
+		add_child(player)
+		player.stream = generator
+		player.play()
+
+		var playback := player.get_stream_playback()
+		playback.push_buffer(mono_to_stereo(processed))
+		[/gdscript]
+		[/codeblocks]
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="set_tempo">
+			<return type="void" />
+			<param index="0" name="tempo" type="float" />
+			<description>
+				Sets the playback tempo multiplier.
+				A value of `1.0` keeps the original tempo, values greater than `1.0` speed up playback, and values less than `1.0` slow it down.
+			</description>
+		</method>
+		<method name="put_samples">
+			<return type="void" />
+			<param index="0" name="samples" type="PackedFloat32Array" />
+			<description>
+				Submits raw audio samples to the processor.
+				The samples must be mono, 32-bit floating-point PCM data at the configured sample rate.
+			</description>
+		</method>
+		<method name="receive_samples">
+			<return type="PackedFloat32Array" />
+			<description>
+				Retrieves processed audio samples if available.
+				Returns an empty array if no samples are currently ready.
+			</description>
+		</method>
+		<method name="flush">
+			<return type="void" />
+			<description>
+				Flushes any internally buffered samples and finalizes processing.
+				Call this when no more input samples will be provided.
+			</description>
+		</method>
+	</methods>
+</class>
