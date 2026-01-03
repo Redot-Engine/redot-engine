@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.editor.utils
+package org.godotengine.godot.editor.utils
 
 /**
  * Utility class for accessing and using editor specific capabilities.

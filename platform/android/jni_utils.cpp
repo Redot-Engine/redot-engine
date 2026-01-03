@@ -466,7 +466,7 @@ Variant _jobject_to_variant(JNIEnv *env, jobject obj) {
 		return ret;
 	}
 
-	if (name == "org.redotengine.godot.variant.Callable") {
+	if (name == "org.godotengine.godot.variant.Callable") {
 		return jcallable_to_callable(env, obj);
 	}
 

@@ -32,6 +32,7 @@
 
 package com.godot.game;
 
+import org.godotengine.godot.Godot;
 import org.godotengine.godot.GodotActivity;
 
 import android.os.Bundle;

@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.service
+package org.godotengine.godot.service
 
 import android.content.ComponentName
 import android.content.Context
@@ -51,10 +51,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
-import org.redotengine.godot.GodotHost
-import org.redotengine.godot.R
-import org.redotengine.godot.service.GodotService.EngineStatus.*
-import org.redotengine.godot.service.GodotService.EngineError.*
+import org.godotengine.godot.GodotHost
+import org.godotengine.godot.R
+import org.godotengine.godot.service.GodotService.EngineStatus.*
+import org.godotengine.godot.service.GodotService.EngineError.*
 import java.lang.ref.WeakReference
 
 /**
