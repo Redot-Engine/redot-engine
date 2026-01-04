@@ -42,7 +42,7 @@
 #endif
 
 extern "C" {
-JNIEXPORT void JNICALL Java_org_redotengine_godot_editor_utils_EditorUtils_runScene(JNIEnv *p_env, jclass, jstring p_scene, jobjectArray p_scene_args) {
+JNIEXPORT void JNICALL Java_org_godotengine_godot_editor_utils_EditorUtils_runScene(JNIEnv *p_env, jclass, jstring p_scene, jobjectArray p_scene_args) {
 #ifdef TOOLS_ENABLED
 	Vector<String> scene_args;
 	jint length = p_env->GetArrayLength(p_scene_args);

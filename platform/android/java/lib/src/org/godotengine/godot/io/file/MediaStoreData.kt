@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.io.file
+package org.godotengine.godot.io.file
 
 import android.content.ContentUris
 import android.content.ContentValues

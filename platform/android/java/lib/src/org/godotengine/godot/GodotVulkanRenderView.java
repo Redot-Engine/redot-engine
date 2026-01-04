@@ -30,7 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot;
+package org.godotengine.godot;
+
+import org.godotengine.godot.input.GodotInputHandler;
+import org.godotengine.godot.vulkan.VkRenderer;
+import org.godotengine.godot.vulkan.VkSurfaceView;
 
 import android.annotation.SuppressLint;
 import android.content.res.AssetManager;
@@ -47,10 +51,6 @@ import android.view.SurfaceView;
 import androidx.annotation.Keep;
 
 import java.io.InputStream;
-
-import org.redotengine.godot.input.GodotInputHandler;
-import org.redotengine.godot.vulkan.VkRenderer;
-import org.redotengine.godot.vulkan.VkSurfaceView;
 
 class GodotVulkanRenderView extends VkSurfaceView implements GodotRenderView {
 	private final Godot godot;

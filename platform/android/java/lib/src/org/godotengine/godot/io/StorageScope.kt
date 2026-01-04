@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.io
+package org.godotengine.godot.io
 
 import android.content.Context
 import android.os.Build
 import android.os.Environment
 import java.io.File
-import org.redotengine.godot.GodotLib
+import org.godotengine.godot.GodotLib
 
 /**
  * Represents the different storage scopes.

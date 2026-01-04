@@ -30,7 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.xr.ovr;
+package org.godotengine.godot.xr.ovr;
+
+import org.godotengine.godot.gl.GLSurfaceView;
 
 import android.opengl.EGL14;
 
@@ -38,8 +40,6 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
-
-import org.redotengine.godot.gl.GLSurfaceView;
 
 /**
  * EGL Context factory for the Oculus mobile VR SDK.

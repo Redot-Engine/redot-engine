@@ -30,7 +30,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.tts;
+package org.godotengine.godot.tts;
+
+import org.godotengine.godot.GodotLib;
 
 import android.app.Activity;
 import android.content.Context;
@@ -44,8 +46,6 @@ import androidx.annotation.Keep;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
-
-import org.redotengine.godot.GodotLib;
 
 /**
  * Wrapper for Android Text to Speech API and custom utterance query implementation.

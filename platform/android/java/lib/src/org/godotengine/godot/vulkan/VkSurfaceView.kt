@@ -31,7 +31,7 @@
 /**************************************************************************/
 
 @file:JvmName("VkSurfaceView")
-package org.redotengine.godot.vulkan
+package org.godotengine.godot.vulkan
 
 import android.content.Context
 import android.view.SurfaceHolder

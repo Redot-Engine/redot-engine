@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.editor
+package org.godotengine.editor
 
 /**
  * Primary window of the Godot Editor.
