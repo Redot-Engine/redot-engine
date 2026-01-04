@@ -1,7 +1,7 @@
 {
   description = "A Nix-flake-based C/C++ development environment";
 
-  inputs.nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
   outputs = {
     self,
@@ -35,19 +35,14 @@
             xorg.libXfixes
             libxkbcommon
             alsa-lib
-            mono
-            wayland-scanner
             wayland
             libdecor
             libpulseaudio
             dbus
             dbus.lib
-            speechd
             fontconfig
             fontconfig.lib
             udev
-            dotnet-sdk_8
-            dotnet-runtime_8
             scons
           ];
         });
