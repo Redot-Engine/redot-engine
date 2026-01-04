@@ -966,7 +966,7 @@ package-ios:
     - cd ..
     - rm -rf ios_xcode
   artifacts:
-    expire_in: 3 days,
+    expire_in: 3 days
     paths: [ out/templates/ios.zip, out/templates-mono/ios.zip ]
 
 sign-mac-editor:
