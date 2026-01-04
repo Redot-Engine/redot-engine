@@ -1,4 +1,4 @@
-# Redot Engine authors
+# Redot Engine LTS authors
 
 Redot is a Fork of the Godot Engine that is developed by a community of
 voluntary contributors who contribute code, bug reports, documentation,
@@ -18,32 +18,25 @@ name is available.
 
 ## Project Founders
 
-    Nicholai
     Andevrs (tindrew)
     Red Otter
-    William (JohnnyThunder2)
 
 ## Lead Developer
 
-
+    Arctis Fireblight
 
 ## Project Manager
 
-
+    Arctis Fireblight
 
 ## Developers
 
     Adam Vondersaar (trashguy)
-    Bioblaze Payne (Bioblaze)
-    ChocolateChipAussie (RadenTheFolf)
-    Chris (Norrox)
-    Craptain (Adikhoff)
+    Andevrs (tindrew)
+    Arctis Fireblight
+    ChocolateChipAussie (Logan-ReXDev)
+    DAShoe1
     decryptedchaos
     George L Albany (spartan322)
     McDubh (mcdubhghlas)
     Skogi (SkogiB)
-    Starkium
-    Tekisasu-JohnK
-    verypleasentusername
-    zaftnotameni
-    Wesam Almasruri (wesamdev)
