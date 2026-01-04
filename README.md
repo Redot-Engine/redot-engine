@@ -64,14 +64,15 @@ For manual control over the build process:
 # Enter the Nix development environment
 nix develop
 
-# Build Redot
-scons platform=linuxbsd
+# Build Redot (use 'macos' on macOS, 'linuxbsd' on Linux)
+scons platform=linuxbsd  # or: scons platform=macos
 
-# Run the editor
-./bin/redot.linuxbsd.editor.x86_64
+# Run the editor - binary name reflects your platform and architecture
+# Examples: redot.linuxbsd.editor.x86_64, redot.macos.editor.arm64
+./bin/redot.<platform>.editor.<arch>
 ```
 
-Nix works on Linux and macOS, and is available at [nixos.org/download.html](https://nixos.org/download.html).
+Nix works on Linux and macOS, and is available at [nixos.org/download.html](https://nixos.org/download.html). The `nix run .` command automatically detects your platform and architecture.
 
 
 ## Community and contributing

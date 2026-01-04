@@ -13,6 +13,7 @@
         f rec {
           pkgs = import nixpkgs {inherit system;};
           isDarwin = pkgs.lib.hasSuffix system "darwin";
+          arch = if pkgs.stdenv.hostPlatform.isAarch64 then "arm64" else "x86_64";
 
           linuxDeps = with pkgs; [
             autoPatchelfHook
@@ -63,7 +64,7 @@
           deps = if isDarwin then darwinDeps ++ commonDeps else linuxDeps ++ commonDeps;
           libraryPathVar = if isDarwin then "DYLD_LIBRARY_PATH" else "LD_LIBRARY_PATH";
           platform = if isDarwin then "macos" else "linuxbsd";
-          binary = if isDarwin then "redot.macos.editor.x86_64" else "redot.linuxbsd.editor.x86_64";
+          binary = if isDarwin then "redot.macos.editor.${arch}" else "redot.linuxbsd.editor.${arch}";
         });
   in {
     apps = forEachSupportedSystem ({
@@ -72,6 +73,8 @@
       libraryPathVar,
       platform,
       binary,
+      arch,
+      ...
     }: let
       script = pkgs.writeShellScript "redot" ''
         export ${libraryPathVar}=${pkgs.lib.makeLibraryPath deps}
@@ -92,6 +95,7 @@
       pkgs,
       deps,
       libraryPathVar,
+      ...
     }: {
       default =
         pkgs.mkShell.override
