@@ -30,10 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.editor.utils
+package org.godotengine.godot.editor.utils
 
 import android.util.Log
-import org.redotengine.godot.GodotLib
+import org.godotengine.godot.GodotLib
 
 /**
  * Utility class for accessing and using game menu APIs.

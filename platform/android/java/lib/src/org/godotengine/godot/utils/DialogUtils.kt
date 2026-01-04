@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.utils
+package org.godotengine.godot.utils
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -48,7 +48,7 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
 
-import org.redotengine.godot.R
+import org.godotengine.godot.R
 import kotlin.math.abs
 
 /**

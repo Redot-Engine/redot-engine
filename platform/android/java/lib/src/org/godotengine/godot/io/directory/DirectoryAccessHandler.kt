@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.io.directory
+package org.godotengine.godot.io.directory
 
 import android.content.Context
 import android.util.Log
-import org.redotengine.godot.Godot
-import org.redotengine.godot.io.StorageScope
-import org.redotengine.godot.io.directory.DirectoryAccessHandler.AccessType.ACCESS_RESOURCES
+import org.godotengine.godot.Godot
+import org.godotengine.godot.io.StorageScope
+import org.godotengine.godot.io.directory.DirectoryAccessHandler.AccessType.ACCESS_RESOURCES
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 

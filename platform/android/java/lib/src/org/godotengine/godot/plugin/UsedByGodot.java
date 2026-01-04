@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.plugin;
+package org.godotengine.godot.plugin;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

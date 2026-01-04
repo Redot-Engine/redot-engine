@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.editor
+package org.godotengine.editor
 
 import android.app.PictureInPictureParams
 import android.content.pm.PackageManager
@@ -41,15 +41,15 @@ import android.util.Log
 import android.view.View
 import androidx.annotation.CallSuper
 import androidx.core.view.isVisible
-import org.redotengine.editor.embed.GameMenuFragment
-import org.redotengine.godot.GodotLib
-import org.redotengine.godot.editor.utils.GameMenuUtils
-import org.redotengine.godot.utils.ProcessPhoenix
-import org.redotengine.godot.utils.isHorizonOSDevice
-import org.redotengine.godot.utils.isNativeXRDevice
-import org.redotengine.godot.xr.HYBRID_APP_PANEL_FEATURE
-import org.redotengine.godot.xr.XRMode
-import org.redotengine.godot.xr.isHybridAppEnabled
+import org.godotengine.editor.embed.GameMenuFragment
+import org.godotengine.godot.GodotLib
+import org.godotengine.godot.editor.utils.GameMenuUtils
+import org.godotengine.godot.utils.ProcessPhoenix
+import org.godotengine.godot.utils.isHorizonOSDevice
+import org.godotengine.godot.utils.isNativeXRDevice
+import org.godotengine.godot.xr.HYBRID_APP_PANEL_FEATURE
+import org.godotengine.godot.xr.XRMode
+import org.godotengine.godot.xr.isHybridAppEnabled
 
 /**
  * Drives the 'run project' window of the Godot Editor.
