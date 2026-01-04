@@ -73,10 +73,6 @@ scons platform=linuxbsd
 
 Nix works on Linux and macOS, and is available at [nixos.org/download.html](https://nixos.org/download.html).
 
-#### Other platforms
-
-[For time being, see official Godot docs](https://docs.godotengine.org/en/latest/contributing/development/compiling)
-for compilation instructions for other platforms.
 
 ## Community and contributing
 
