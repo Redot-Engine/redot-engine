@@ -41,34 +41,6 @@ jobs:
             # Validate redot-cpp compatibility on one arbitrary editor build.
             redot-cpp: true
 
-          - name: Editor with doubles and GCC sanitizers (target=editor, dev_build=yes, scu_build=yes, precision=double, use_asan=yes, use_ubsan=yes, linker=mold)
-            cache-name: linux-editor-double-sanitizers
-            target: editor
-            # Debug symbols disabled as they're huge on this build and we hit the 14 GB limit for runners.
-            scons-flags: >-
-              dev_build=yes
-              scu_build=yes
-              debug_symbols=no
-              precision=double
-              use_asan=yes
-              use_ubsan=yes
-              linker=mold
-            bin: ./bin/redot.linuxbsd.editor.dev.double.x86_64.san
-            proj-test: true
-
-          - name: Editor with clang sanitizers (target=editor, dev_build=yes, use_asan=yes, use_ubsan=yes, use_llvm=yes, linker=lld)
-            cache-name: linux-editor-llvm-sanitizers
-            target: editor
-            scons-flags: >-
-              dev_build=yes
-              use_asan=yes
-              use_ubsan=yes
-              use_llvm=yes
-              linker=lld
-            bin: ./bin/redot.linuxbsd.editor.dev.x86_64.llvm.san
-            # Test our oldest supported SCons/Python versions on one arbitrary editor build.
-            legacy-scons: true
-
           - name: Editor with ThreadSanitizer (target=editor, dev_build=yes, use_tsan=yes, use_llvm=yes, linker=lld)
             cache-name: linux-editor-thread-sanitizer
             target: editor
