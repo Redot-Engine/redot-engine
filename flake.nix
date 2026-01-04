@@ -47,6 +47,23 @@
           ];
         });
   in {
+    apps = forEachSupportedSystem ({
+      pkgs,
+      deps,
+    }: {
+      default = {
+        type = "app";
+        program = pkgs.writeShellScript "redot" ''
+          export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath deps}
+          if [ ! -f ./bin/redot.linuxbsd.editor.x86_64 ]; then
+            echo "Building Redot..."
+            scons platform=linuxbsd
+          fi
+          exec ./bin/redot.linuxbsd.editor.x86_64 "$@"
+        '';
+      };
+    });
+
     devShells = forEachSupportedSystem ({
       pkgs,
       deps,
