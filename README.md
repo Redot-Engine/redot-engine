@@ -1,4 +1,4 @@
-# Redot Engine
+# Redot Engine LTS
 
 <p align="center">
   <a href="https://redotengine.org/">
@@ -8,7 +8,7 @@
 
 ## 2D and 3D cross-platform game engine
 
-**[Redot Engine](https://redotengine.org) is a feature-packed, cross-platform
+**[Redot Engine LTS](https://redotengine.org) is a feature-packed, cross-platform
 game engine to create 2D and 3D games from a unified interface.** It provides a
 comprehensive set of common tools, so that
 users can focus on making games without having to reinvent the wheel. Games can
