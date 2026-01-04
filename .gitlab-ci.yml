@@ -1,0 +1,1318 @@
+stages:
+  - build
+  - package
+
+.template-build:
+  tags: [ docker ]
+  rules:
+    - if: $DO_RELEASE == "true"
+  before_script:
+    - export SCONS="scons -j$(nproc) verbose=no warnings=no progress=no"
+    - export BUILD_NAME="official"
+  script:
+    - /root/scripts/Fetch_Deps.sh "$PLATFORM"
+    - mkdir  -p out/$PLATFORM/$ARCH/$TYPE
+    - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS target=$TARGET
+    - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE/
+  artifacts:
+    expire_in: 3 days
+    public: false
+    paths:
+      - out/$PLATFORM/$ARCH/$TYPE
+
+.build-release-template:
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - /root/scripts/Fetch_Deps.sh "$PLATFORM"
+    - mkdir  -p out/templates
+    - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS target=$TARGET
+    - cp -r bin/* out/templates
+
+.build-release-template-mono:
+  needs: [linux-editor-x64-mono]
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - /root/scripts/Fetch_Deps.sh "$PLATFORM"
+    - cp -r mono-glue/GodotSharp/GodotSharp/Generated modules/mono/glue/GodotSharp/GodotSharp/
+    - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
+    - mkdir  -p out/templates-mono
+    - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS module_mono_enabled=yes target=$TARGET
+    - cp -r bin/* out/templates-mono
+
+.Template-Linux:
+  extends: .template-build
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  rules:
+    - if: $DO_RELEASE == "true"
+  before_script:
+    # Detect the right SDK and compiler paths
+    - !reference [.template-build, before_script]
+    - |
+      case "$ARCH" in
+      x86_32)
+      export PATH="$GODOT_SDK_LINUX_X86_32/bin:$PATH"
+      export CC="i686-godot-linux-gnu-gcc"
+      export CXX="i686-godot-linux-gnu-g++"
+      ;;
+      x86_64)
+      export PATH="$GODOT_SDK_LINUX_X86_64/bin:$PATH"
+      export CC="x86_64-godot-linux-gnu-gcc"
+      export CXX="x86_64-godot-linux-gnu-g++"
+      ;;
+      arm64)
+      export PATH="$GODOT_SDK_LINUX_ARM64/bin:$PATH"
+      export CC="aarch64-godot-linux-gnu-gcc"
+      export CXX="aarch64-godot-linux-gnu-g++"
+      ;;
+      arm32)
+      export PATH="$GODOT_SDK_LINUX_ARM32/bin:$PATH"
+      export CC="arm-godot-linux-gnueabihf-gcc"
+      export CXX="arm-godot-linux-gnueabihf-g++"
+      ;;
+      esac
+  variables:
+    OPTIONS: "production=yes"
+    PLATFORM: "linuxbsd"
+
+.Template-Linux-Mono:
+  extends: .template-build-mono
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  before_script:
+    - !reference [.Template-Linux, before_script]
+  variables:
+    OPTIONS: "production=yes"
+    PLATFORM: "linuxbsd"
+
+.Template-Release-Template-Linux:
+  extends: .Template-Linux
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - !reference [.build-release-template, script]
+  after_script:
+    - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
+    - mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}" "out/templates/linux_${FRIENDLY_TARGET}.${ARCH}"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates
+
+.Template-Release-Template-Linux-Mono:
+  extends: .Template-Linux
+  needs: [ linux-editor-x64-mono ]
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - !reference [.build-release-template-mono, script]
+  after_script:
+    - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
+    - mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.mono" "out/templates-mono/linux_${FRIENDLY_TARGET}.${ARCH}"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates-mono
+
+.Template-Windows:
+  extends: .template-build
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
+  before_script:
+    - !reference [.template-build, before_script]
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+  variables:
+    PLATFORM: "windows"
+
+.Template-Windows-Mono:
+  extends: .template-build-mono
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
+  before_script:
+    - !reference [.template-build, before_script]
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+  variables:
+    PLATFORM: "windows"
+
+.Template-Release-Template-Windows:
+  extends: .template-build
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
+  before_script:
+    - !reference [.template-build, before_script]
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+  script:
+    - !reference [ .build-release-template, script ]
+  after_script:
+    - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
+    - |
+      if [ "$ARCH" == "arm64" ]; then
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.console.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
+      else
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.console.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
+      fi
+  variables:
+    PLATFORM: "windows"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates
+
+.Template-Release-Template-Windows-Mono:
+  extends: .template-build-mono
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
+  before_script:
+    - !reference [.template-build, before_script]
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+  script:
+    - !reference [ .build-release-template-mono, script ]
+  after_script:
+    - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
+    - |
+      if [ "$ARCH" == "arm64" ]; then
+      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.console.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
+      else
+      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.console.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
+      fi
+  variables:
+    PLATFORM: "windows"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates-mono
+
+
+.Template-macos:
+  extends: .template-build
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
+  before_script:
+    - !reference [ .template-build, before_script ]
+    - export OPTIONS="osxcross_sdk=darwin24.2 production=yes use_volk=no vulkan_sdk_path=$(pwd)/deps/moltenvk angle_libs=$(pwd)/deps/angle"
+  variables:
+    PLATFORM: "macos"
+
+.Template-macos-mono:
+  extends: .template-build-mono
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
+  before_script:
+    - !reference [ .template-build-mono, before_script ]
+    - export OPTIONS="osxcross_sdk=darwin24.2 production=yes use_volk=no vulkan_sdk_path=$(pwd)/deps/moltenvk angle_libs=$(pwd)/deps/angle"
+  variables:
+    PLATFORM: "macos"
+
+.Template-Release-Template-macos:
+  extends: .template-build
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
+  before_script:
+    - !reference [ .template-build, before_script ]
+    - export OPTIONS="osxcross_sdk=darwin24.2 production=yes use_volk=no vulkan_sdk_path=$(pwd)/deps/moltenvk angle_libs=$(pwd)/deps/angle"
+  script:
+    - !reference [ .build-release-template, script ]
+  variables:
+    PLATFORM: "macos"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates
+
+.Template-Release-Template-macos-mono:
+  extends: .template-build-mono
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
+  before_script:
+    - !reference [ .template-build-mono, before_script ]
+    - export OPTIONS="osxcross_sdk=darwin24.2 production=yes use_volk=no vulkan_sdk_path=$(pwd)/deps/moltenvk angle_libs=$(pwd)/deps/angle"
+  script:
+    - !reference [ .build-release-template-mono, script ]
+  variables:
+    PLATFORM: "macos"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates-mono
+
+
+.Template-Ios:
+  extends: .template-build
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-ios:latest
+  variables:
+    OPTIONS: "production=yes use_lto=no"
+    PLATFORM: "ios"
+  before_script:
+    - !reference [ .template-build, before_script ]
+    - export IOS_SDK="18.2"
+    - |
+      if [ "$TYPE" == "iPhoneSimulator" ]; then
+      if [ "$ARCH" == "x86_64" ]; then
+      export TOOLCHAIN_PATH="/root/ioscross/x86_64_sim/"
+      else
+      export TOOLCHAIN_PATH="/root/ioscross/arm64_sim/"
+      fi
+      export OPTIONS="production=yes use_lto=no IOS_SDK_PATH=${TOOLCHAIN_PATH}SDK/${TYPE}${IOS_SDK}.sdk IOS_TOOLCHAIN_PATH=${TOOLCHAIN_PATH} ios_triple=$ARCH-apple-darwin11- ios_simulator=yes"
+      else
+      export TOOLCHAIN_PATH="/root/ioscross/arm64/"
+      export OPTIONS="production=yes use_lto=no IOS_SDK_PATH=${TOOLCHAIN_PATH}SDK/${TYPE}${IOS_SDK}.sdk IOS_TOOLCHAIN_PATH=${TOOLCHAIN_PATH} ios_triple=arm-apple-darwin11- ios_simulator=no"
+      fi
+    - export TERM=xterm
+    - export IOS_LIPO="/root/ioscross/arm64/bin/arm-apple-darwin11-lipo"
+  script:
+    - !reference [ .build-release-template, script ]
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates/
+
+.Template-Ios-Mono:
+  extends: .template-build-mono
+  needs: [linux-editor-x64-mono]
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-ios:latest
+  variables:
+    PLATFORM: "ios"
+  before_script:
+    - !reference [.template-build, before_script]
+    - export IOS_SDK="18.2"
+    - |
+      if [ "$TYPE" == "iPhoneSimulator" ]; then
+      if [ "$ARCH" == "x86_64" ]; then
+      export TOOLCHAIN_PATH="/root/ioscross/x86_64_sim/"
+      else
+      export TOOLCHAIN_PATH="/root/ioscross/arm64_sim/"
+      fi
+      export OPTIONS="production=yes use_lto=no IOS_SDK_PATH=${TOOLCHAIN_PATH}SDK/${TYPE}${IOS_SDK}.sdk IOS_TOOLCHAIN_PATH=${TOOLCHAIN_PATH} ios_triple=$ARCH-apple-darwin11- ios_simulator=yes"
+      else
+      export TOOLCHAIN_PATH="/root/ioscross/arm64/"
+      export OPTIONS="production=yes use_lto=no IOS_SDK_PATH=${TOOLCHAIN_PATH}SDK/${TYPE}${IOS_SDK}.sdk IOS_TOOLCHAIN_PATH=${TOOLCHAIN_PATH} ios_triple=arm-apple-darwin11- ios_simulator=no"
+      fi
+    - export TERM=xterm
+    - export IOS_LIPO="/root/ioscross/arm64/bin/arm-apple-darwin11-lipo"
+  script:
+    - !reference [ .build-release-template-mono, script ]
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates-mono/
+
+
+
+.template-build-mono:
+  extends: .template-build
+  needs: [ linux-editor-x64-mono ]
+  script:
+    - /root/scripts/Fetch_Deps.sh "$PLATFORM"
+    - mkdir  -p out/$PLATFORM/$ARCH/$TYPE-mono
+    - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS module_mono_enabled=yes target=$TARGET
+    - cp -r mono-glue/GodotSharp/GodotSharp/Generated modules/mono/glue/GodotSharp/GodotSharp/
+    - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
+    - ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=$PLATFORM
+    - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE-mono/
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/$PLATFORM/$ARCH/$TYPE-mono
+      - mono-glue/
+
+# create tarball for release
+create-tarball:
+  tags: [ docker ]
+  stage: build
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  rules:
+    - when: always
+  script:
+    - major=$(grep -E '^major\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - minor=$(grep -E '^minor\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - patch=$(grep -E '^patch\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - status=$(grep -E '^status\s*=' version.py | sed -E "s/.*=\s*\"([^\"]+)\".*/\1/")
+    - status_version=$(grep -E '^status_version\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - echo "$major.$minor.$patch-$status.$status_version"
+    - |
+       if [ "$status" == "stable" ]
+         then
+         if [ "$patch" == "0" ]
+           then
+           export VERSIONSTRING="${major}.${minor}-stable"
+           export VERSIONTXT="${major}.${minor}.stable"
+         else
+           export VERSIONSTRING="${major}.${minor}.${patch}-stable"
+           export VERSIONTXT="${major}.${minor}.${patch}.stable"
+         fi
+        else
+         if [ "$patch" == "0" ]
+         then
+           export VERSIONSTRING="${major}.${minor}-${status}.${status_version}"
+           export VERSIONTXT="${major}.${minor}.${status}.${status_version}"
+         else
+           export VERSIONSTRING="${major}.${minor}.${patch}-${status}.${status_version}"
+           export VERSIONTXT="${major}.${minor}.${patch}.${status}.${status_version}"
+         fi
+       fi
+    - echo $VERSIONSTRING
+    - TARBALL_NAME="redot-${VERSIONSTRING}.tar.xz"
+    - FOLDER_NAME="redot-${VERSIONSTRING}"
+    - mkdir $FOLDER_NAME
+    - rsync -a --exclude="${FOLDER_NAME}" ./ "${FOLDER_NAME}/"
+    - mkdir -p out/
+    - tar -cJf "out/${TARBALL_NAME}" "${FOLDER_NAME}"
+    - sha256sum "out/${TARBALL_NAME}" > "out/${TARBALL_NAME}.sha256"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/
+# -- Build the Linux Editors --
+linux-editor-x64-mono:
+  tags: [ docker ]
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  rules:
+    - when: always
+  stage: build
+  before_script:
+    - export SCONS="scons -j$(nproc) verbose=no warnings=no progress=no"
+    - export BUILD_NAME="official"
+    - |
+      case "$ARCH" in
+      x86_32)
+      export PATH="$GODOT_SDK_LINUX_X86_32/bin:$PATH"
+      export CC="i686-godot-linux-gnu-gcc"
+      export CXX="i686-godot-linux-gnu-g++"
+      ;;
+      x86_64)
+      export PATH="$GODOT_SDK_LINUX_X86_64/bin:$PATH"
+      export CC="x86_64-godot-linux-gnu-gcc"
+      export CXX="x86_64-godot-linux-gnu-g++"
+      ;;
+      arm64)
+      export PATH="$GODOT_SDK_LINUX_ARM64/bin:$PATH"
+      export CC="aarch64-godot-linux-gnu-gcc"
+      export CXX="aarch64-godot-linux-gnu-g++"
+      ;;
+      arm32)
+      export PATH="$GODOT_SDK_LINUX_ARM32/bin:$PATH"
+      export CC="arm-godot-linux-gnueabihf-gcc"
+      export CXX="arm-godot-linux-gnueabihf-g++"
+      ;;
+      esac
+  script:
+    - /root/scripts/Fetch_Deps.sh "$PLATFORM"
+    - mkdir  -p out/$PLATFORM/$ARCH/$TYPE-mono
+    - mkdir -p mono-glue
+    - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS module_mono_enabled=yes target=$TARGET
+    - bin/redot.linuxbsd.editor.x86_64.mono --headless --generate-mono-glue "$(pwd)/mono-glue"
+    - cp -r mono-glue/GodotSharp/GodotSharp/Generated modules/mono/glue/GodotSharp/GodotSharp/
+    - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
+    - ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=$PLATFORM
+    - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE-mono/
+  variables:
+    OPTIONS: "production=yes"
+    PLATFORM: "linuxbsd"
+    ARCH: "x86_64"
+    TYPE: "tools"
+    TARGET: "editor"
+    MONO: "-mono"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/$PLATFORM/$ARCH/$TYPE-mono
+      - mono-glue/
+
+linux-editor-x64:
+  stage: build
+  extends: .Template-Linux
+  variables:
+    ARCH: "x86_64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+linux-editor-arm64:
+  stage: build
+  extends: .Template-Linux
+  variables:
+    ARCH: "arm64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+linux-editor-mono-arm64:
+  stage: build
+  extends: .Template-Linux-Mono
+  variables:
+    ARCH: "arm64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+
+# -- Build the Windows Editors --
+
+windows-editor-x64:
+  stage: build
+  extends: .Template-Windows
+  variables:
+    ARCH: "x86_64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+# -- Windows Editor Mono --
+
+windows-editor-x64-mono:
+  stage: build
+  extends: .Template-Windows-Mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+# -- Build Mac editor --
+macos-editor-x64:
+  stage: build
+  extends: .Template-macos
+  variables:
+    ARCH: "x86_64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+macos-editor-arm64:
+  stage: build
+  extends: .Template-macos
+  variables:
+    ARCH: "arm64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+# -- Build Mac Editor Mono --
+
+macos-editor-x64-mono:
+  stage: build
+  extends: .Template-macos-mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+macos-editor-arm64-mono:
+  stage: build
+  extends: .Template-macos-mono
+  variables:
+    ARCH: "arm64"
+    TYPE: "tools"
+    TARGET: "editor"
+
+
+
+# Release templates below this point.
+# -- 64 bit Linux --
+build-Linux-Release-Template-x64:
+  stage: build
+  extends: .Template-Release-Template-Linux
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Linux-Debug-Template-x64:
+  stage: build
+  extends: .Template-Release-Template-Linux
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+build-Linux-Release-Template-x64-Mono:
+  stage: build
+  extends: .Template-Release-Template-Linux-Mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Linux-Debug-Template-x64-Mono:
+  stage: build
+  extends: .Template-Release-Template-Linux-Mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+# -- ARM64 LINUX
+build-Linux-Release-Template-arm64:
+  stage: build
+  extends: .Template-Release-Template-Linux
+  variables:
+    ARCH: "arm64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Linux-Debug-Template-arm64:
+  stage: build
+  extends: .Template-Release-Template-Linux
+  variables:
+    ARCH: "arm64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+build-Linux-Release-Template-arm64-Mono:
+  stage: build
+  extends: .Template-Release-Template-Linux-Mono
+  variables:
+    ARCH: "arm64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Linux-Debug-Template-arm64-Mono:
+  stage: build
+  extends: .Template-Release-Template-Linux-Mono
+  variables:
+    ARCH: "arm64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+# -- WINDOWS TEMPLATES
+# -- 64 bit Windows --
+build-Windows-Release-Template-x64:
+  stage: build
+  extends: .Template-Release-Template-Windows
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Windows-Debug-Template-x64:
+  stage: build
+  extends: .Template-Release-Template-Windows
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+build-Windows-Release-Template-x64-Mono:
+  stage: build
+  extends: .Template-Release-Template-Windows-Mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Windows-Debug-Template-x64-Mono:
+  stage: build
+  extends: .Template-Release-Template-Windows-Mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+# --Release templates for Macos --
+
+# -- 64 bit Macos --
+build-Macos-Release-Template-x64:
+  stage: build
+  extends: .Template-Release-Template-macos
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Macos-Debug-Template-x64:
+  stage: build
+  extends: .Template-Release-Template-macos
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+build-Macos-Release-Template-x64-Mono:
+  stage: build
+  extends: .Template-Release-Template-macos-mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Macos-Debug-Template-x64-Mono:
+  stage: build
+  extends: .Template-Release-Template-macos-mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+
+# -- ARM64 Macos
+build-Macos-Release-Template-arm64:
+  stage: build
+  extends: .Template-Release-Template-macos
+  variables:
+    ARCH: "arm64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Macos-Debug-Template-arm64:
+  stage: build
+  extends: .Template-Release-Template-macos
+  variables:
+    ARCH: "arm64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+build-Macos-Release-Template-arm64-Mono:
+  stage: build
+  extends: .Template-Release-Template-macos-mono
+  variables:
+    ARCH: "arm64"
+    TYPE: "template"
+    TARGET: "template_release"
+
+
+build-Macos-Debug-Template-arm64-Mono:
+  stage: build
+  extends: .Template-Release-Template-macos-mono
+  variables:
+    ARCH: "arm64"
+    TYPE: "template"
+    TARGET: "template_debug"
+
+Merge-Mac-Editor:
+  stage: build
+  needs: [macos-editor-x64, macos-editor-arm64, macos-editor-arm64-mono, macos-editor-x64-mono]
+  tags: [docker]
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - LOCTOOLS="out/macos/universal/tools"
+    - LOCMONO="out/macos/universal/tools-mono"
+    - mkdir -p $LOCTOOLS
+    - mkdir -p "out/macos/universal/tools-mono"
+    - lipo -create "out/macos/x86_64/tools/redot.macos.editor.x86_64" "out/macos/arm64/tools/redot.macos.editor.arm64" -output "$LOCTOOLS/redot.macos.editor.universal"
+    - lipo -create "out/macos/x86_64/tools-mono/redot.macos.editor.x86_64.mono" "out/macos/arm64/tools-mono/redot.macos.editor.arm64.mono" -output "$LOCMONO/redot.macos.editor.universal.mono"
+    - cp -r out/macos/arm64/tools-mono/GodotSharp "$LOCMONO/"
+  artifacts:
+    public: false
+    paths:
+      - out/macos/*
+
+Merge-Mac-Templates:
+  stage: build
+  needs: [build-Macos-Debug-Template-arm64, build-Macos-Debug-Template-arm64-Mono, build-Macos-Debug-Template-x64, build-Macos-Debug-Template-x64-Mono, build-Macos-Release-Template-arm64, build-Macos-Release-Template-arm64-Mono, build-Macos-Release-Template-x64, build-Macos-Release-Template-x64-Mono]
+  tags: [docker]
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-osx:latest
+  script:
+    - lipo -create out/templates/redot.macos.template_debug.x86_64 out/templates/redot.macos.template_debug.arm64 -output out/templates/redot.macos.template_debug.universal
+    - lipo -create out/templates/redot.macos.template_release.x86_64 out/templates/redot.macos.template_release.arm64 -output out/templates/redot.macos.template_release.universal
+    - lipo -create out/templates-mono/redot.macos.template_debug.x86_64.mono out/templates-mono/redot.macos.template_debug.arm64.mono -output out/templates-mono/redot.macos.template_debug.universal.mono
+    - lipo -create out/templates-mono/redot.macos.template_release.x86_64.mono out/templates-mono/redot.macos.template_release.arm64.mono -output out/templates-mono/redot.macos.template_release.universal.mono
+  artifacts:
+    public: false
+    paths:
+      - out/templates/*
+      - out/templates-mono/*
+
+# -- Build Web Template
+
+Web-Release-Template:
+  stage: build
+  tags: [docker]
+  rules:
+    - if: $DO_RELEASE == "true"
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-web:latest
+  script:
+    - export BUILD_NAME="official"
+    - /root/scripts/buildWeb.sh
+    - mv "out/templates/godot.web.template_debug.wasm32.zip" "out/templates/web_debug.zip"
+    - mv "out/templates/godot.web.template_release.wasm32.zip" "out/templates/web_release.zip"
+    - mv "out/templates/godot.web.template_debug.wasm32.dlink.zip" "out/templates/web_dlink_debug.zip"
+    - mv "out/templates/godot.web.template_release.wasm32.dlink.zip" "out/templates/web_dlink_release.zip"
+    - mv "out/templates/godot.web.template_debug.wasm32.nothreads.zip" "out/templates/web_nothreads_debug.zip"
+    - mv "out/templates/godot.web.template_release.wasm32.nothreads.zip" "out/templates/web_nothreads_release.zip"
+    - mv "out/templates/godot.web.template_debug.wasm32.nothreads.dlink.zip" "out/templates/web_dlink_nothreads_debug.zip"
+    - mv "out/templates/godot.web.template_release.wasm32.nothreads.dlink.zip" "out/templates/web_dlink_nothreads_release.zip"
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates/
+# --Build Android Targets --
+
+Android-Release-Template:
+  extends: .template-build
+  stage: build
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-android:latest
+  before_script:
+    - !reference [ .template-build, before_script ]
+    - export OPTIONS="production=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+  variables:
+    PLATFORM: "android"
+  script:
+    - /root/scripts/Fetch_Deps.sh "$PLATFORM"
+    - 7za x -y deps/swappy/godot-swappy.7z -othirdparty/swappy-frame-pacing/
+    - mkdir  -p out/templates
+    - $SCONS platform=android arch=arm32 $OPTIONS target=template_debug
+    - $SCONS platform=android arch=arm32 $OPTIONS target=template_release
+
+    - $SCONS platform=android arch=arm64 $OPTIONS target=template_debug
+    - $SCONS platform=android arch=arm64 $OPTIONS target=template_release
+
+    - $SCONS platform=android arch=x86_32 $OPTIONS target=template_debug
+    - $SCONS platform=android arch=x86_32 $OPTIONS target=template_release
+
+    - $SCONS platform=android arch=x86_64 $OPTIONS target=template_debug
+    - $SCONS platform=android arch=x86_64 $OPTIONS target=template_release
+    - pushd platform/android/java
+    - ./gradlew generateGodotTemplates
+    - popd
+    - ls bin/
+    - cp bin/*.zip out/templates/
+    - cp bin/*.apk out/templates/
+    - cp bin/*.aar out/templates/
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates
+
+Android-Release-Template-Mono:
+  extends: .template-build
+  stage: build
+  needs: [ linux-editor-x64-mono ]
+  tags: [ docker ]
+
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-android:latest
+  before_script:
+    - !reference [ .template-build, before_script ]
+    - export OPTIONS="production=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+  variables:
+    PLATFORM: "android"
+  script:
+    - /root/scripts/Fetch_Deps.sh "$PLATFORM"
+    - 7za x -y deps/swappy/godot-swappy.7z -othirdparty/swappy-frame-pacing/
+    - mkdir  -p out/templates-mono
+    - cp -r mono-glue/GodotSharp/GodotSharp/Generated modules/mono/glue/GodotSharp/GodotSharp/
+    - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
+    - $SCONS platform=android arch=arm32 $OPTIONS module_mono_enabled=yes target=template_debug
+    - $SCONS platform=android arch=arm32 $OPTIONS module_mono_enabled=yes target=template_release
+
+    - $SCONS platform=android arch=arm64 $OPTIONS module_mono_enabled=yes target=template_debug
+    - $SCONS platform=android arch=arm64 $OPTIONS module_mono_enabled=yes target=template_release
+
+    - $SCONS platform=android arch=x86_32 $OPTIONS module_mono_enabled=yes target=template_debug
+    - $SCONS platform=android arch=x86_32 $OPTIONS module_mono_enabled=yes target=template_release
+
+    - $SCONS platform=android arch=x86_64 $OPTIONS module_mono_enabled=yes target=template_debug
+    - $SCONS platform=android arch=x86_64 $OPTIONS module_mono_enabled=yes target=template_release
+    - pushd platform/android/java
+    - ./gradlew generateGodotMonoTemplates
+    - popd
+    - ls bin/
+    - cp bin/*.zip out/templates-mono/
+    - cp bin/android_monoDebug.apk out/templates-mono/android_debug.apk
+    - cp bin/android_monoRelease.apk out/templates-mono/android_release.apk
+    - cp bin/*.aar out/templates-mono/
+  artifacts:
+    public: false
+    expire_in: 3 days
+    paths:
+      - out/templates-mono
+
+# -- Build IOS targets --
+# -- 64 bit Macos --
+build-ios-Release-Template-x64:
+  stage: build
+  extends: .Template-Ios
+  variables:
+    ARCH: "x86_64"
+    TYPE: "iPhoneSimulator"
+    TARGET: "template_release"
+
+
+build-ios-Debug-Template-x64:
+  stage: build
+  extends: .Template-Ios
+  variables:
+    ARCH: "x86_64"
+    TYPE: "iPhoneSimulator"
+    TARGET: "template_debug"
+
+build-ios-Release-Template-x64-Mono:
+  stage: build
+  extends: .Template-Ios-Mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "iPhoneSimulator"
+    TARGET: "template_release"
+
+
+build-ios-Debug-Template-x64-Mono:
+  stage: build
+  extends: .Template-Ios-Mono
+  variables:
+    ARCH: "x86_64"
+    TYPE: "iPhoneSimulator"
+    TARGET: "template_debug"
+
+
+# -- ARM64 Macos
+build-ios-Release-Template-arm64:
+  stage: build
+  extends: .Template-Ios
+  variables:
+    ARCH: "arm64"
+    TYPE: "iPhoneOS"
+    TARGET: "template_release"
+
+
+build-ios-Debug-Template-arm64:
+  stage: build
+  extends: .Template-Ios
+  variables:
+    ARCH: "arm64"
+    TYPE: "iPhoneOS"
+    TARGET: "template_debug"
+
+build-ios-Release-Template-arm64-Mono:
+  stage: build
+  extends: .Template-Ios-Mono
+  variables:
+    ARCH: "arm64"
+    TYPE: "iPhoneOS"
+    TARGET: "template_release"
+
+
+build-ios-Debug-Template-arm64-Mono:
+  stage: build
+  extends: .Template-Ios-Mono
+  variables:
+    ARCH: "arm64"
+    TYPE: "iPhoneOS"
+    TARGET: "template_debug"
+
+package-ios:
+  stage: build
+  tags: [docker]
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  needs:
+    - build-ios-Release-Template-arm64
+    - build-ios-Release-Template-arm64-Mono
+    - build-ios-Release-Template-x64
+    - build-ios-Release-Template-x64-Mono
+    - build-ios-Debug-Template-arm64
+    - build-ios-Debug-Template-arm64-Mono
+    - build-ios-Debug-Template-x64
+    - build-ios-Debug-Template-x64-Mono
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - /root/scripts/Fetch_Deps.sh "ios"
+    - echo "Packaging IOS"
+    - cp -r misc/dist/ios_xcode ios_xcode
+    - cp out/templates/libgodot.ios.template_release.x86_64.simulator.a ios_xcode/libgodot.ios.release.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+    - cp out/templates/libgodot.ios.template_debug.x86_64.simulator.a ios_xcode/libgodot.ios.debug.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+    - cp out/templates/libgodot.ios.template_release.arm64.a ios_xcode/libgodot.ios.release.xcframework/ios-arm64/libgodot.a
+    - cp out/templates/libgodot.ios.template_debug.arm64.a ios_xcode/libgodot.ios.debug.xcframework/ios-arm64/libgodot.a
+    - cp -r deps/moltenvk/MoltenVK/MoltenVK.xcframework ios_xcode/
+    - rm -rf ios_xcode/MoltenVK.xcframework/{macos,tvos}*
+    - cd ios_xcode
+    - zip -q -9 -r "../out/templates/ios.zip" *
+    - cd ..
+    - rm -rf ios_xcode
+    - echo "Done packaging IOS"
+    - echo "Packaging IOS Mono"
+    - cp -r misc/dist/ios_xcode ios_xcode
+    - cp out/templates-mono/libgodot.ios.template_release.x86_64.simulator.a ios_xcode/libgodot.ios.release.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+    - cp out/templates-mono/libgodot.ios.template_debug.x86_64.simulator.a ios_xcode/libgodot.ios.debug.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+    - cp out/templates-mono/libgodot.ios.template_release.arm64.a ios_xcode/libgodot.ios.release.xcframework/ios-arm64/libgodot.a
+    - cp out/templates-mono/libgodot.ios.template_debug.arm64.a ios_xcode/libgodot.ios.debug.xcframework/ios-arm64/libgodot.a
+    - cp -r deps/moltenvk/MoltenVK/MoltenVK.xcframework ios_xcode/
+    - rm -rf ios_xcode/MoltenVK.xcframework/{macos,tvos}*
+    - cd ios_xcode
+    - zip -q -9 -r "../out/templates-mono/ios.zip" *
+    - cd ..
+    - rm -rf ios_xcode
+  artifacts:
+    expire_in: 3 days,
+    paths: [ out/templates/ios.zip, out/templates-mono/ios.zip ]
+
+sign-mac-editor:
+  stage: build
+  needs: [Merge-Mac-Editor]
+  rules:
+    - if: $DO_RELEASE == "true"
+    - if: $SIGN_MAC == "true"
+  tags: [macos]
+  script:
+    - set -e
+    - echo "Signing macOS build on local runner..."
+    - |
+      sign_macos() {
+        _reldir="$1"
+        _binname="$2"
+        _is_mono="$3"
+
+        if [[ "${_is_mono}" == "1" ]]; then
+          _appname="Redot_mono.app"
+        else
+          _appname="Redot.app"
+        fi
+
+
+
+        echo "Preparing temp dir..."
+        rm -rf tmp/
+        mkdir tmp/
+        echo "made temp directory"
+        _macos_tmpdir="$(pwd)/tmp"
+        _app_path="${_macos_tmpdir}/${_appname}"
+        echo $_macos_tmpdir
+        echo $_app_path
+        cp -r "misc/dist/macos/editor.entitlements" "${_macos_tmpdir}/"
+        rm -rf "${_macos_tmpdir}/${_appname}"
+        cp -r "misc/dist/macos_tools.app" "${_macos_tmpdir}/${_appname}"
+        if [[ "${_is_mono}" == "1" ]]; then
+          cp -r "${_reldir}/GodotSharp/" "${_macos_tmpdir}/${_appname}/Contents/Resources/GodotSharp"
+        fi
+        ls "${_reldir}/"
+        ls "${_macos_tmpdir}/${_appname}/"
+        mkdir -p "${_macos_tmpdir}/${_appname}/Contents/MacOS/"
+        cp "${_reldir}/${_binname}" "${_macos_tmpdir}/${_appname}/Contents/MacOS/Redot"
+        cd "${_macos_tmpdir}"
+        chmod +x ${_macos_tmpdir}/${_appname}/Contents/MacOS/Redot
+
+        echo "Unlocking keychain..."
+        security list-keychains -s temp.keychain
+        security unlock-keychain -p "${APPLE_DEVICE_PASSWORD}" temp.keychain
+        security set-key-partition-list -S apple-tool:,apple: -s -k "${APPLE_DEVICE_PASSWORD}" temp.keychain
+
+        echo "Codesigning ${_app_path}..."
+        codesign --force --timestamp --verbose=4 \
+          --options=runtime --entitlements editor.entitlements \
+          -s "${OSX_KEY_ID}" -v --deep "${_app_path}"
+
+        # zip the app for notarization
+        echo "Zipping ${_app_path} for notarization..."
+        cd "${_macos_tmpdir}"
+        zip -r "${_binname}_signed.zip" "${_appname}"
+
+        echo "Submitting ${_app_path} for notarization..."
+             _request_uuid=$(xcrun notarytool submit "${_macos_tmpdir}/${_binname}_signed.zip" \
+        --team-id "${APPLE_TEAM}" --apple-id "${APPLE_ID}" --password "${APPLE_ID_PASSWORD}" \
+        --no-progress --output-format json | sed -e 's/.*"id":"\([^"]*\)".*/\1/')
+
+        echo "Waiting for notarization result..."
+        _result_json=$(xcrun notarytool wait "${_request_uuid}" \
+          --team-id "${APPLE_TEAM}" --apple-id "${APPLE_ID}" --password "${APPLE_ID_PASSWORD}" \
+          --output-format json)
+
+          _status=$(echo "$_result_json" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+
+          if [[ "$_status" != "Accepted" ]]; then
+        echo "Notarization failed for ${_appname}. Status: ${_status}"
+          echo "$_result_json"
+          exit 1
+          fi
+
+        echo "Stapling notarization..."
+        xcrun stapler staple "${_app_path}"
+        mkdir "${_reldir}/signed"
+        ls
+        zip -r ${_binname}_stapled.zip "${_appname}"
+        cp "${_macos_tmpdir}/${_binname}_stapled.zip" "${_reldir}/signed/"
+        echo "Cleaning up..."
+        rm -rf "${_macos_tmpdir}"
+
+        echo "✅ ${_app_path} signed and notarized."
+      }
+
+    - sign_macos "$(pwd)/out/macos/universal/tools" "redot.macos.editor.universal" 0
+
+  artifacts:
+    public: false
+    paths:
+      - out/macos/universal/tools/signed/*
+    expire_in: 3 days
+
+sign-mac-editor-mono:
+  stage: build
+  needs: [Merge-Mac-Editor]
+  rules:
+    - if: $DO_RELEASE == "true"
+    - if: $SIGN_MAC == "true"
+  tags: [macos]
+  script:
+    - set -e
+    - echo "Signing macOS build on local runner..."
+    - |
+      sign_macos() {
+        _reldir="$1"
+        _binname="$2"
+        _is_mono="$3"
+
+        if [[ "${_is_mono}" == "1" ]]; then
+          _appname="Redot_mono.app"
+        else
+          _appname="Redot.app"
+        fi
+
+
+
+        echo "Preparing temp dir..."
+        rm -rf tmp/
+        mkdir tmp/
+        echo "made temp directory"
+        _macos_tmpdir="$(pwd)/tmp"
+        _app_path="${_macos_tmpdir}/${_appname}"
+        echo "${_macos_tmpdir}"
+        echo "${_app_path}"
+        echo "${_reldir}"
+        ls -l "${_reldir}"
+        cp -r "misc/dist/macos/editor.entitlements" "${_macos_tmpdir}/"
+        rm -rf "${_macos_tmpdir}/${_appname}"
+        cp -r "misc/dist/macos_tools.app" "${_macos_tmpdir}/${_appname}"
+        if [[ "${_is_mono}" == "1" ]]; then
+          mkdir -p "${_macos_tmpdir}/${_appname}/Contents/Resources/GodotSharp/"
+          printf 'reldir=[%s]\n' "$_reldir" | od -c
+          cp -r "${_reldir}/GodotSharp/." "${_macos_tmpdir}/${_appname}/Contents/Resources/GodotSharp/"
+        fi
+        ls "${_reldir}/"
+        ls "${_macos_tmpdir}/${_appname}/"
+        mkdir -p "${_macos_tmpdir}/${_appname}/Contents/MacOS/"
+        cp "${_reldir}/${_binname}" "${_macos_tmpdir}/${_appname}/Contents/MacOS/Redot"
+        cd "${_macos_tmpdir}"
+        chmod +x ${_macos_tmpdir}/${_appname}/Contents/MacOS/Redot
+
+        echo "Unlocking keychain..."
+        security list-keychains -s temp.keychain
+        security unlock-keychain -p "${APPLE_DEVICE_PASSWORD}" temp.keychain
+        security set-key-partition-list -S apple-tool:,apple: -s -k "${APPLE_DEVICE_PASSWORD}" temp.keychain
+
+        echo "Codesigning ${_app_path}..."
+        codesign --force --timestamp --verbose=4 \
+          --options=runtime --entitlements editor.entitlements \
+          -s "${OSX_KEY_ID}" -v --deep "${_app_path}"
+
+        # zip the app for notarization
+        echo "Zipping ${_app_path} for notarization..."
+        cd "${_macos_tmpdir}"
+        zip -r "${_binname}_signed.zip" "${_appname}"
+
+        echo "Submitting ${_app_path} for notarization..."
+             _request_uuid=$(xcrun notarytool submit "${_macos_tmpdir}/${_binname}_signed.zip" \
+        --team-id "${APPLE_TEAM}" --apple-id "${APPLE_ID}" --password "${APPLE_ID_PASSWORD}" \
+        --no-progress --output-format json | sed -e 's/.*"id":"\([^"]*\)".*/\1/')
+
+        echo "Waiting for notarization result..."
+        _result_json=$(xcrun notarytool wait "${_request_uuid}" \
+          --team-id "${APPLE_TEAM}" --apple-id "${APPLE_ID}" --password "${APPLE_ID_PASSWORD}" \
+          --output-format json)
+
+          _status=$(echo "$_result_json" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4)
+
+          if [[ "$_status" != "Accepted" ]]; then
+        echo "Notarization failed for ${_appname}. Status: ${_status}"
+          echo "$_result_json"
+          exit 1
+          fi
+
+        echo "Stapling notarization..."
+        xcrun stapler staple "${_app_path}"
+        mkdir "${_reldir}/signed"
+        ls
+        zip -r ${_binname}_stapled.zip "${_appname}"
+        cp "${_macos_tmpdir}/${_binname}_stapled.zip" "${_reldir}/signed/"
+        echo "Cleaning up..."
+        rm -rf "${_macos_tmpdir}"
+
+        echo "✅ ${_app_path} signed and notarized."
+      }
+
+    - sign_macos "$(pwd)/out/macos/universal/tools-mono" "redot.macos.editor.universal.mono" 1
+
+  artifacts:
+    public: false
+    paths:
+      - out/macos/universal/tools-mono/signed/*
+    expire_in: 3 days
+
+sign-mac-templates:
+  stage: build
+  needs: [Merge-Mac-Templates]
+  rules:
+    - if: $DO_RELEASE == "true"
+    - if: $SIGN_MAC == "true"
+  tags: [ macos ]
+  script:
+    - set -e
+    - echo "Signing macOS build on local runner..."
+    - |
+      sign_macos() {
+        rm -rf tmp/
+        cp -r misc/dist/macos_template.app tmp/
+        mkdir -p tmp/macos_template.app/Contents/MacOS
+
+
+        _is_mono="$1"
+        _mono_prefix=""
+        _mono_suffix=""
+        if [ "$_is_mono" -eq 1 ]; then _mono_prefix="-mono"; _mono_suffix=".mono";fi
+
+
+        cp out/templates${_mono_prefix}/redot.macos.template_release.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_release.universal${_mono_suffix}
+        cp out/templates${_mono_prefix}/redot.macos.template_debug.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_debug.universal${_mono_suffix}
+        chmod +x tmp/macos_template.app/Contents/MacOS/redot_macos*
+
+
+        pushd tmp/
+
+        codesign --force -s - \
+        --options=linker-signed \
+        -v macos_template.app/Contents/MacOS/*
+        zip -r ../out/templates${_mono_prefix}/macos.zip macos_template.app
+        popd
+        rm -rf tmp/
+      }
+
+
+    - sign_macos 0
+    - sign_macos 1
+
+  artifacts:
+    public: false
+    paths:
+      - out/templates/*
+      - out/templates-mono/*
+    expire_in: 3 days
+
+package-builds:
+  stage: package
+  rules:
+    - if: $DO_RELEASE == "true"
+  tags:
+    - docker
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  script:
+    - major=$(grep -E '^major\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - minor=$(grep -E '^minor\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - patch=$(grep -E '^patch\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - status=$(grep -E '^status\s*=' version.py | sed -E "s/.*=\s*\"([^\"]+)\".*/\1/")
+    - status_version=$(grep -E '^status_version\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
+    - |
+      if [ "$status" == "stable" ]
+      then
+        if [ "$patch" == "0" ]
+        then
+          export VERSIONSTRING="${major}.${minor}-stable"
+          export VERSIONTXT="${major}.${minor}.stable"
+        else
+          export VERSIONSTRING="${major}.${minor}.${patch}-stable"
+          export VERSIONTXT="${major}.${minor}.${patch}.stable"
+        fi
+      else
+        if [ "$patch" == "0" ]
+          then
+            export VERSIONSTRING="${major}.${minor}-${status}.${status_version}"
+            export VERSIONTXT="${major}.${minor}.${status}.${status_version}"
+          else
+            export VERSIONSTRING="${major}.${minor}.${patch}-${status}.${status_version}"
+            export VERSIONTXT="${major}.${minor}.${patch}.${status}.${status_version}"
+        fi
+      fi
+    - mkdir releases/
+    - RELEASE_DIR="$(pwd)/releases"
+    - TARBALL_NAME="redot-${VERSIONSTRING}.tar.xz"
+    - cp "out/${TARBALL_NAME}" "${RELEASE_DIR}/${TARBALL_NAME}"
+    - cp "out/${TARBALL_NAME}.sha256" "${RELEASE_DIR}/${TARBALL_NAME}.sha256"
+    - pushd out/linuxbsd/x86_64/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_x64.zip" ./*
+    - popd
+    - pushd out/linuxbsd/arm64/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_arm64.zip" ./*
+    - popd
+    - pushd out/linuxbsd/x86_64/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_mono_x64.zip" ./*
+    - popd
+    - pushd out/linuxbsd/arm64/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_linux_mono_arm64.zip" ./*
+    - popd
+    - pushd out/windows/x86_64/tools/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_windows_win64.zip" ./*
+    - popd
+    - pushd out/windows/x86_64/tools-mono/
+    - zip -r "${RELEASE_DIR}/Redot_v${VERSIONSTRING}_windows_mono_win64.zip" ./*
+    - popd
+    - mv out/macos/universal/tools/signed/redot.macos.editor.universal_stapled.zip releases/Redot_v${VERSIONSTRING}_macos_universal.zip
+    - mv out/macos/universal/tools-mono/signed/redot.macos.editor.universal.mono_stapled.zip releases/Redot_v${VERSIONSTRING}_macos_mono_universal.zip
+    - pushd out/
+    - touch ./templates/version.txt
+    - echo "${VERSIONTXT}" | cat >> ./templates/version.txt
+    - rm ./templates/redot.macos.template*
+    - rm ./templates/libgodot.ios*
+    - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_export_templates.zip ./templates/*
+    - rm -rf ./templates/
+    - mv ./templates-mono ./templates/
+    - touch ./templates/version.txt
+    - echo "${VERSIONTXT}.mono" | cat >> ./templates/version.txt
+    - rm ./templates/redot.macos.template*
+    - rm ./templates/libgodot.ios*
+    - zip -r ${RELEASE_DIR}/Redot_v${VERSIONSTRING}_mono_export_templates.zip ./templates/*
+    - popd
+    - mv releases/Redot_v${VERSIONSTRING}_mono_export_templates.zip releases/Redot_v${VERSIONSTRING}_mono_export_templates.tpz
+    - mv releases/Redot_v${VERSIONSTRING}_export_templates.zip releases/Redot_v${VERSIONSTRING}_export_templates.tpz
+    - touch SHA512-SUMS.txt
+    - |
+      for f in releases/*; do
+          # Only process regular files
+          [ -f "$f" ] || continue
+
+          # Compute the hash and append it
+          sha512sum "$f" >> SHA512-SUMS.txt
+      done
+    - mv SHA512-SUMS.txt releases/SHA512-SUMS.txt
+  artifacts:
+    expire_in: 3 days
+    paths:
+      - releases/*
+pushNuget:
+  stage: package
+  image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
+  tags: [docker]
+  rules:
+    - if: $DO_RELEASE == "true"
+  script:
+    - cd out/linuxbsd/x86_64/tools-mono/GodotSharp/Tools/nupkgs
+    - dotnet nuget push "./*.nupkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
