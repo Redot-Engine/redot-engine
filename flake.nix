@@ -12,19 +12,10 @@
       nixpkgs.lib.genAttrs supportedSystems (system:
         f rec {
           pkgs = import nixpkgs {inherit system;};
-          deps = with pkgs; [
-            pkg-config
+          isDarwin = pkgs.lib.hasSuffix system "darwin";
+
+          linuxDeps = with pkgs; [
             autoPatchelfHook
-            installShellFiles
-            python3
-            speechd
-            wayland-scanner
-            makeWrapper
-            mono
-            dotnet-sdk_8
-            dotnet-runtime_8
-            vulkan-loader
-            libGL
             xorg.libX11
             xorg.libXcursor
             xorg.libXinerama
@@ -34,30 +25,61 @@
             xorg.libXi
             xorg.libXfixes
             libxkbcommon
-            alsa-lib
+            wayland-scanner
             wayland
             libdecor
+            alsa-lib
             libpulseaudio
+            udev
             dbus
             dbus.lib
+          ];
+
+          darwinDeps = with pkgs; [
+            Foundation
+            Cocoa
+            AudioToolbox
+            CoreAudio
+            CoreVideo
+            AVFoundation
+          ];
+
+          commonDeps = with pkgs; [
+            pkg-config
+            installShellFiles
+            python3
+            speechd
+            makeWrapper
+            mono
+            dotnet-sdk_8
+            dotnet-runtime_8
+            vulkan-loader
+            libGL
             fontconfig
             fontconfig.lib
-            udev
             scons
           ];
+
+          deps = if isDarwin then darwinDeps ++ commonDeps else linuxDeps ++ commonDeps;
+          libraryPathVar = if isDarwin then "DYLD_LIBRARY_PATH" else "LD_LIBRARY_PATH";
+          platform = if isDarwin then "macos" else "linuxbsd";
+          binary = if isDarwin then "redot.macos.editor.x86_64" else "redot.linuxbsd.editor.x86_64";
         });
   in {
     apps = forEachSupportedSystem ({
       pkgs,
       deps,
+      libraryPathVar,
+      platform,
+      binary,
     }: let
       script = pkgs.writeShellScript "redot" ''
-        export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath deps}
-        if [ ! -f ./bin/redot.linuxbsd.editor.x86_64 ]; then
+        export ${libraryPathVar}=${pkgs.lib.makeLibraryPath deps}
+        if [ ! -f ./bin/${binary} ]; then
           echo "Building Redot..."
-          scons platform=linuxbsd
+          scons platform=${platform}
         fi
-        exec ./bin/redot.linuxbsd.editor.x86_64 "$@"
+        exec ./bin/${binary} "$@"
       '';
     in {
       default = {
@@ -69,6 +91,7 @@
     devShells = forEachSupportedSystem ({
       pkgs,
       deps,
+      libraryPathVar,
     }: {
       default =
         pkgs.mkShell.override
@@ -78,7 +101,7 @@
         }
         {
           packages = deps;
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath deps;
+          ${libraryPathVar} = pkgs.lib.makeLibraryPath deps;
         };
     });
   };
