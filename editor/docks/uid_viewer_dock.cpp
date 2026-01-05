@@ -222,11 +222,11 @@ bool UIDViewerDock::_filter_tree_recursive(TreeItem *item, const String &search_
 	String path_text = item->get_text(1).to_lower();
 
 	bool matches = uid_text.contains(search_lower) || path_text.contains(search_lower);
-	bool visible = matches || has_visible_child;
+	bool result = matches || has_visible_child;
 
-	item->set_visible(visible);
+	item->set_visible(result);
 
-	return visible;
+	return result;
 }
 
 void UIDViewerDock::_on_tree_rmb_selected(const Vector2 &p_pos, MouseButton p_button) {
