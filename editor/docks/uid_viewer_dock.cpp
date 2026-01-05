@@ -34,12 +34,11 @@
 // Created by Andrew Martin on 1/2/26.
 //
 
-#include "uid_viewer_dock.h"
+#include "editor/docks/uid_viewer_dock.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_uid.h"
 #include "editor/docks/filesystem_dock.h"
 #include "editor/file_system/editor_file_system.h"
-#include "scene/main/viewport.h"
 #include "scene/main/window.h" // For MouseButton enum in Godot 4.3+
 #include "servers/display_server.h"
 
@@ -170,26 +169,6 @@ void UIDViewerDock::_on_item_activated() {
 	if (fs_dock) {
 		fs_dock->navigate_to_path(file_path);
 		fs_dock->select_file(file_path);
-	}
-}
-
-void UIDViewerDock::_gui_input(const Ref<InputEvent> &event) {
-	Ref<InputEventMouseButton> mb = event;
-	if (mb.is_valid() && mb->get_button_index() == MouseButton::RIGHT && mb->is_pressed()) {
-		Vector2 local_pos = mb->get_position();
-		if (uid_tree->get_rect().has_point(local_pos)) {
-			TreeItem *item = uid_tree->get_item_at_position(local_pos);
-			if (item) {
-				uid_tree->set_selected(item, 0);
-				last_selected_item = item;
-
-				if (context_menu) {
-					context_menu->set_position(get_screen_position() + local_pos);
-					context_menu->popup();
-				}
-			}
-		}
-		accept_event();
 	}
 }
 

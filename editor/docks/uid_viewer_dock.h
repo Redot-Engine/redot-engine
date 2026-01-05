@@ -32,13 +32,6 @@
 
 #pragma once
 
-//
-// Created by Andrew Martin on 1/2/26.
-//
-
-#ifndef UID_VIEWER_DOCK_H
-#define UID_VIEWER_DOCK_H
-
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/line_edit.h"
@@ -46,6 +39,7 @@
 #include "scene/gui/tree.h"
 
 class UIDViewerDock : public VBoxContainer {
+	GDCLASS(UIDViewerDock, VBoxContainer);
 private:
 	Tree *uid_tree = nullptr;
 	LineEdit *search_edit = nullptr;
@@ -58,14 +52,10 @@ private:
 	void _on_refresh_pressed();
 	void _on_item_activated();
 	void _on_context_menu_id_pressed(int id);
-	void _gui_input(const Ref<InputEvent> &event);
 	void _on_tree_rmb_selected(const Vector2 &p_pos, MouseButton p_button);
-
 	void _show_all_items(TreeItem *item);
 	bool _filter_tree_recursive(TreeItem *item, const String &search_lower);
 
 public:
 	UIDViewerDock();
 };
-
-#endif // UID_VIEWER_DOCK_H
