@@ -30,10 +30,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-//
-// Created by Andrew Martin on 1/2/26.
-//
-
 #include "editor/docks/uid_viewer_dock.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_uid.h"
