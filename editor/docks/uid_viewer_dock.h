@@ -40,6 +40,7 @@
 
 class UIDViewerDock : public VBoxContainer {
 	GDCLASS(UIDViewerDock, VBoxContainer);
+
 private:
 	Tree *uid_tree = nullptr;
 	LineEdit *search_edit = nullptr;
