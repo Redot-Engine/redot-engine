@@ -124,10 +124,6 @@
 #include "editor/settings/editor_settings.h"
 #include "editor/translations/editor_translation.h"
 
-#if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
-#include "main/splash_editor.gen.h"
-#endif
-
 #ifndef DISABLE_DEPRECATED
 #include "editor/project_upgrade/project_converter_3_to_4.h"
 #endif // DISABLE_DEPRECATED
@@ -138,6 +134,11 @@
 #endif
 
 #include "modules/modules_enabled.gen.h" // For mono.
+
+// Fallback definition for missing editor splash color
+#if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
+static const Color boot_splash_editor_bg_color = Color(0.06, 0.09, 0.14);
+#endif
 
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 #include "modules/mono/editor/bindings_generator.h"
@@ -2192,6 +2193,10 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	// for project settings. For example, a Linux user should be able to configure that they want
 	// to export for D3D12 on Windows and Metal on macOS even if their host platform can't use those.
 
+	if (GLOBAL_GET("application/run/disable_modified_security_assistance")) {
+		WARN_PRINT("Modified Security Assistance disabled, this application can perform unsafe behavior by default. Consider disabling application/run/disable_modified_security_assistance in the Project Settings.");
+	}
+
 	{
 		// RenderingDevice driver overrides per platform.
 		GLOBAL_DEF_RST("rendering/rendering_device/driver", "vulkan");
@@ -3002,7 +3007,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 						next_tag.fields.clear();
 						next_tag.name = String();
 
-						err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true);
+						err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true, true);
 						if (err == ERR_FILE_EOF) {
 							break;
 						}
@@ -3165,7 +3170,48 @@ Error Main::setup2(bool p_show_boot_logo) {
 			window_position = &position;
 		}
 
-		Color boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
+		Color boot_bg_color;
+#ifdef TOOLS_ENABLED
+		if (editor) {
+			// Read base color directly from settings file since EditorSettings isn't available yet
+			boot_bg_color = Color(0.06, 0.09, 0.14); // Default fallback
+			if (EditorPaths::get_singleton() && EditorPaths::get_singleton()->are_paths_valid()) {
+				String config_file_path = EditorSettings::get_existing_settings_path();
+				if (FileAccess::exists(config_file_path)) {
+					Ref<FileAccess> f = FileAccess::open(config_file_path, FileAccess::READ);
+					if (f.is_valid()) {
+						VariantParser::StreamFile stream;
+						stream.f = f;
+						String assign;
+						Variant value;
+						VariantParser::Tag next_tag;
+						int lines = 0;
+						String error_text;
+						VariantParser::ResourceParser rp_new;
+						rp_new.ext_func = _parse_resource_dummy;
+						rp_new.sub_func = _parse_resource_dummy;
+						while (true) {
+							assign = Variant();
+							next_tag.fields.clear();
+							next_tag.name = String();
+							Error err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true);
+							if (err == ERR_FILE_EOF) {
+								break;
+							}
+							if (err == OK && !assign.is_empty() && assign == "interface/theme/base_color") {
+								boot_bg_color = value;
+								break;
+							}
+						}
+					}
+				}
+			}
+		} else {
+			boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
+		}
+#else
+		boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
+#endif
 		DisplayServer::set_early_window_clear_color_override(true, boot_bg_color);
 
 		DisplayServer::Context context;
@@ -3806,10 +3852,47 @@ void Main::setup_boot_logo() {
 			boot_logo->set_pixel(0, 0, Color(0, 0, 0, 0));
 		}
 
-		Color boot_bg_color = GLOBAL_GET("application/boot_splash/bg_color");
-
-#if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
-		boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", (editor || project_manager) ? boot_splash_editor_bg_color : boot_splash_bg_color);
+		Color boot_bg_color;
+#ifdef TOOLS_ENABLED
+		if (editor) {
+			// Read base color directly from settings file since EditorSettings isn't available yet
+			boot_bg_color = Color(0.06, 0.09, 0.14); // Default fallback
+			if (EditorPaths::get_singleton() && EditorPaths::get_singleton()->are_paths_valid()) {
+				String config_file_path = EditorSettings::get_existing_settings_path();
+				if (FileAccess::exists(config_file_path)) {
+					Ref<FileAccess> f = FileAccess::open(config_file_path, FileAccess::READ);
+					if (f.is_valid()) {
+						VariantParser::StreamFile stream;
+						stream.f = f;
+						String assign;
+						Variant value;
+						VariantParser::Tag next_tag;
+						int lines = 0;
+						String error_text;
+						VariantParser::ResourceParser rp_new;
+						rp_new.ext_func = _parse_resource_dummy;
+						rp_new.sub_func = _parse_resource_dummy;
+						while (true) {
+							assign = Variant();
+							next_tag.fields.clear();
+							next_tag.name = String();
+							Error err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true);
+							if (err == ERR_FILE_EOF) {
+								break;
+							}
+							if (err == OK && !assign.is_empty() && assign == "interface/theme/base_color") {
+								boot_bg_color = value;
+								break;
+							}
+						}
+					}
+				}
+			}
+		} else {
+			boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
+		}
+#else
+		boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
 #endif
 		if (boot_logo.is_valid()) {
 			RenderingServer::get_singleton()->set_boot_image(boot_logo, boot_bg_color, boot_logo_scale, boot_logo_filter);

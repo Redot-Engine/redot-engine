@@ -30,7 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.xr.regular;
+package org.godotengine.godot.xr.regular;
+
+import org.godotengine.godot.gl.GLSurfaceView;
+import org.godotengine.godot.utils.GLUtils;
 
 import android.util.Log;
 
@@ -38,9 +41,6 @@ import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
-
-import org.redotengine.godot.gl.GLSurfaceView;
-import org.redotengine.godot.utils.GLUtils;
 
 /**
  * Factory used to setup the opengl context for pancake games.

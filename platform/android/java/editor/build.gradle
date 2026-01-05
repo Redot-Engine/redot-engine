@@ -74,11 +74,11 @@ android {
     buildToolsVersion versions.buildTools
     ndkVersion versions.ndkVersion
 
-    namespace = "org.redotengine.editor"
+    namespace = "org.godotengine.editor"
 
     defaultConfig {
         // The 'applicationId' suffix allows to install Redot 3.x(v3) and 4.x(v4) on the same device
-        applicationId "org.redotengine.editor.v4"
+        applicationId "org.godotengine.editor.v4"
         versionCode generateVersionCode()
         versionName generateVersionName()
         minSdkVersion versions.minSdk

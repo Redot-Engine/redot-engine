@@ -101,7 +101,7 @@ ImportDock *ImportDock::singleton = nullptr;
 void ImportDock::set_edit_path(const String &p_path) {
 	Ref<ConfigFile> config;
 	config.instantiate();
-	Error err = config->load(p_path + ".import");
+	Error err = config->load(p_path + ".import", true);
 	if (err != OK) {
 		clear();
 		return;
@@ -234,7 +234,7 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 		Ref<ConfigFile> config;
 		config.instantiate();
 		extensions.insert(p_paths[i].get_extension());
-		Error err = config->load(p_paths[i] + ".import");
+		Error err = config->load(p_paths[i] + ".import", true);
 		ERR_CONTINUE(err != OK);
 
 		if (i == 0) {
@@ -418,7 +418,7 @@ void ImportDock::_importer_selected(int i_idx) {
 		if (params->paths.size()) {
 			String path = params->paths[0];
 			config.instantiate();
-			Error err = config->load(path + ".import");
+			Error err = config->load(path + ".import", true);
 			if (err != OK) {
 				config.unref();
 			}
@@ -553,7 +553,7 @@ void ImportDock::_reimport_attempt() {
 	for (int i = 0; i < params->paths.size(); i++) {
 		Ref<ConfigFile> config;
 		config.instantiate();
-		Error err = config->load(params->paths[i] + ".import");
+		Error err = config->load(params->paths[i] + ".import", true);
 		ERR_CONTINUE(err != OK);
 
 		String imported_with = config->get_value("remap", "importer");
@@ -634,7 +634,7 @@ void ImportDock::_reimport() {
 	for (int i = 0; i < params->paths.size(); i++) {
 		Ref<ConfigFile> config;
 		config.instantiate();
-		Error err = config->load(params->paths[i] + ".import");
+		Error err = config->load(params->paths[i] + ".import", true);
 		ERR_CONTINUE(err != OK);
 
 		if (params->importer.is_valid()) {
@@ -682,7 +682,7 @@ void ImportDock::_reimport() {
 			}
 		}
 
-		config->save(params->paths[i] + ".import");
+		config->save(params->paths[i] + ".import", true);
 	}
 
 	EditorFileSystem::get_singleton()->reimport_files(params->paths);

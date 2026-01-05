@@ -293,7 +293,7 @@ if env["platform"] == "macos":
     methods.write_macos_plist(
         f"./bin/libtextserver_fallback.macos.{env['target']}.framework",
         f"libtextserver_fallback.macos.{env['target']}",
-        "org.redotengine.textserver_fallback",
+        "org.godotengine.textserver_fallback",
         "Fallback Text Server",
     )
     library = env.SharedLibrary(

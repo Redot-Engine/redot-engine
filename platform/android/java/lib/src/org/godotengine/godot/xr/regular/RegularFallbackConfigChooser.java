@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.xr.regular;
+package org.godotengine.godot.xr.regular;
 
 import android.util.Log;
 

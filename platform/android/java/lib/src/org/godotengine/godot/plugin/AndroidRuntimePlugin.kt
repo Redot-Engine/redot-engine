@@ -30,10 +30,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.plugin
+package org.godotengine.godot.plugin
 
-import org.redotengine.godot.Godot
-import org.redotengine.godot.variant.Callable
+import org.godotengine.godot.Godot
+import org.godotengine.godot.variant.Callable
 
 /**
  * Built-in Godot Android plugin used to provide access to the Android runtime capabilities.

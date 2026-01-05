@@ -55,17 +55,17 @@ Variant _jobject_to_variant(JNIEnv *env, jobject obj);
 Variant::Type get_jni_type(const String &p_type);
 
 /**
- * Convert a Godot Callable to a org.redotengine.godot.variant.Callable java object.
+ * Convert a Godot Callable to a org.godotengine.godot.variant.Callable java object.
  * @param p_env JNI environment instance
  * @param p_callable Callable parameter to convert. If null or invalid type, a null jobject is returned.
- * @return org.redotengine.godot.variant.Callable jobject or null
+ * @return org.godotengine.godot.variant.Callable jobject or null
  */
 jobject callable_to_jcallable(JNIEnv *p_env, const Variant &p_callable);
 
 /**
- * Convert a org.redotengine.godot.variant.Callable java object to a Godot Callable variant.
+ * Convert a org.godotengine.godot.variant.Callable java object to a Godot Callable variant.
  * @param p_env JNI environment instance
- * @param p_jcallable_obj org.redotengine.godot.variant.Callable java object to convert.
+ * @param p_jcallable_obj org.godotengine.godot.variant.Callable java object to convert.
  * @return Callable variant
  */
 Callable jcallable_to_callable(JNIEnv *p_env, jobject p_jcallable_obj);

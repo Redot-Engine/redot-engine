@@ -305,13 +305,14 @@ template <RenderForwardClustered::PassMode p_pass_mode, uint32_t p_color_pass_fl
 void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p_draw_list, RenderingDevice::FramebufferFormatID p_framebuffer_Format, RenderListParameters *p_params, uint32_t p_from_element, uint32_t p_to_element) {
 	RendererRD::MeshStorage *mesh_storage = RendererRD::MeshStorage::get_singleton();
 	RendererRD::ParticlesStorage *particles_storage = RendererRD::ParticlesStorage::get_singleton();
+	RD *rd = RD::get_singleton();
 	RD::DrawListID draw_list = p_draw_list;
 	RD::FramebufferFormatID framebuffer_format = p_framebuffer_Format;
 
 	//global scope bindings
-	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, render_base_uniform_set, SCENE_UNIFORM_SET);
-	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, p_params->render_pass_uniform_set, RENDER_PASS_UNIFORM_SET);
-	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, scene_shader.default_vec4_xform_uniform_set, TRANSFORMS_UNIFORM_SET);
+	rd->draw_list_bind_uniform_set(draw_list, render_base_uniform_set, SCENE_UNIFORM_SET);
+	rd->draw_list_bind_uniform_set(draw_list, p_params->render_pass_uniform_set, RENDER_PASS_UNIFORM_SET);
+	rd->draw_list_bind_uniform_set(draw_list, scene_shader.default_vec4_xform_uniform_set, TRANSFORMS_UNIFORM_SET);
 
 	RID prev_material_uniform_set;
 
@@ -342,13 +343,17 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 		const GeometryInstanceSurfaceDataCache *surf = p_params->elements[i];
 		const RenderElementInfo &element_info = p_params->element_info[i];
 
+		auto *owner = surf->owner;
+		auto base_flags = owner->base_flags;
+		auto owner_instance_count = owner->instance_count;
+
 		if (p_pass_mode == PASS_MODE_COLOR && surf->color_pass_inclusion_mask && (p_color_pass_flags & surf->color_pass_inclusion_mask) == 0) {
 			// Some surfaces can be repeated in multiple render lists. We exclude them from being rendered on the color pass based on the
 			// features supported by the pass compared to the exclusion mask.
 			continue;
 		}
 
-		if (surf->owner->instance_count == 0) {
+		if (owner_instance_count == 0) {
 			continue;
 		}
 
@@ -405,7 +410,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 			}
 
 			if (cull_variant == SceneShaderForwardClustered::ShaderData::CULL_VARIANT_MAX) {
-				bool mirror = surf->owner->mirror;
+				bool mirror = owner->mirror;
 				if (p_params->reverse_cull) {
 					mirror = !mirror;
 				}
@@ -416,13 +421,13 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 
 		pipeline_key.primitive_type = surf->primitive;
 
-		RID xforms_uniform_set = surf->owner->transforms_uniform_set;
+		RID xforms_uniform_set = owner->transforms_uniform_set;
 
 		SceneShaderForwardClustered::ShaderSpecialization pipeline_specialization = p_params->base_specialization;
-		pipeline_specialization.multimesh = bool(surf->owner->base_flags & INSTANCE_DATA_FLAG_MULTIMESH);
-		pipeline_specialization.multimesh_format_2d = bool(surf->owner->base_flags & INSTANCE_DATA_FLAG_MULTIMESH_FORMAT_2D);
-		pipeline_specialization.multimesh_has_color = bool(surf->owner->base_flags & INSTANCE_DATA_FLAG_MULTIMESH_HAS_COLOR);
-		pipeline_specialization.multimesh_has_custom_data = bool(surf->owner->base_flags & INSTANCE_DATA_FLAG_MULTIMESH_HAS_CUSTOM_DATA);
+		pipeline_specialization.multimesh = bool(base_flags & INSTANCE_DATA_FLAG_MULTIMESH);
+		pipeline_specialization.multimesh_format_2d = bool(base_flags & INSTANCE_DATA_FLAG_MULTIMESH_FORMAT_2D);
+		pipeline_specialization.multimesh_has_color = bool(base_flags & INSTANCE_DATA_FLAG_MULTIMESH_HAS_COLOR);
+		pipeline_specialization.multimesh_has_custom_data = bool(base_flags & INSTANCE_DATA_FLAG_MULTIMESH_HAS_CUSTOM_DATA);
 
 		if constexpr (p_pass_mode == PASS_MODE_COLOR) {
 			pipeline_specialization.use_light_soft_shadows = element_info.uses_softshadow;
@@ -502,8 +507,8 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 			RD::VertexFormatID vertex_format = -1;
 			bool pipeline_motion_vectors = pipeline_key.color_pass_flags & SceneShaderForwardClustered::PIPELINE_COLOR_PASS_FLAG_MOTION_VECTORS;
 			uint64_t input_mask = shader->get_vertex_input_mask(pipeline_key.version, pipeline_key.color_pass_flags, pipeline_key.ubershader);
-			if (surf->owner->mesh_instance.is_valid()) {
-				mesh_storage->mesh_instance_surface_get_vertex_arrays_and_format(surf->owner->mesh_instance, surf->surface_index, input_mask, pipeline_motion_vectors, vertex_array_rd, vertex_format);
+			if (owner->mesh_instance.is_valid()) {
+				mesh_storage->mesh_instance_surface_get_vertex_arrays_and_format(owner->mesh_instance, surf->surface_index, input_mask, pipeline_motion_vectors, vertex_array_rd, vertex_format);
 			} else {
 				mesh_storage->mesh_surface_get_vertex_arrays_and_format(mesh_surface, input_mask, pipeline_motion_vectors, vertex_array_rd, vertex_format);
 			}
@@ -544,39 +549,39 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 			index_array_rd = mesh_storage->mesh_surface_get_index_array(mesh_surface, element_info.lod_index);
 
 			if (prev_vertex_array_rd != vertex_array_rd) {
-				RD::get_singleton()->draw_list_bind_vertex_array(draw_list, vertex_array_rd);
+				rd->draw_list_bind_vertex_array(draw_list, vertex_array_rd);
 				prev_vertex_array_rd = vertex_array_rd;
 			}
 
 			if (prev_index_array_rd != index_array_rd) {
 				if (index_array_rd.is_valid()) {
-					RD::get_singleton()->draw_list_bind_index_array(draw_list, index_array_rd);
+					rd->draw_list_bind_index_array(draw_list, index_array_rd);
 				}
 				prev_index_array_rd = index_array_rd;
 			}
 
 			if (!pipeline_rd.is_null()) {
-				RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, pipeline_rd);
+				rd->draw_list_bind_render_pipeline(draw_list, pipeline_rd);
 			}
 
 			if (xforms_uniform_set.is_valid() && prev_xforms_uniform_set != xforms_uniform_set) {
-				RD::get_singleton()->draw_list_bind_uniform_set(draw_list, xforms_uniform_set, TRANSFORMS_UNIFORM_SET);
+				rd->draw_list_bind_uniform_set(draw_list, xforms_uniform_set, TRANSFORMS_UNIFORM_SET);
 				prev_xforms_uniform_set = xforms_uniform_set;
 			}
 
 			if (material_uniform_set != prev_material_uniform_set) {
 				// Update uniform set.
-				if (material_uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(material_uniform_set)) { // Material may not have a uniform set.
-					RD::get_singleton()->draw_list_bind_uniform_set(draw_list, material_uniform_set, MATERIAL_UNIFORM_SET);
+				if (material_uniform_set.is_valid() && rd->uniform_set_is_valid(material_uniform_set)) { // Material may not have a uniform set.
+					rd->draw_list_bind_uniform_set(draw_list, material_uniform_set, MATERIAL_UNIFORM_SET);
 				}
 
 				prev_material_uniform_set = material_uniform_set;
 			}
 
-			if (surf->owner->base_flags & INSTANCE_DATA_FLAG_PARTICLES) {
-				particles_storage->particles_get_instance_buffer_motion_vectors_offsets(surf->owner->data->base, push_constant.multimesh_motion_vectors_current_offset, push_constant.multimesh_motion_vectors_previous_offset);
-			} else if (surf->owner->base_flags & INSTANCE_DATA_FLAG_MULTIMESH) {
-				mesh_storage->_multimesh_get_motion_vectors_offsets(surf->owner->data->base, push_constant.multimesh_motion_vectors_current_offset, push_constant.multimesh_motion_vectors_previous_offset);
+			if (base_flags & INSTANCE_DATA_FLAG_PARTICLES) {
+				particles_storage->particles_get_instance_buffer_motion_vectors_offsets(owner->data->base, push_constant.multimesh_motion_vectors_current_offset, push_constant.multimesh_motion_vectors_previous_offset);
+			} else if (base_flags & INSTANCE_DATA_FLAG_MULTIMESH) {
+				mesh_storage->_multimesh_get_motion_vectors_offsets(owner->data->base, push_constant.multimesh_motion_vectors_current_offset, push_constant.multimesh_motion_vectors_previous_offset);
 			} else {
 				push_constant.multimesh_motion_vectors_current_offset = 0;
 				push_constant.multimesh_motion_vectors_previous_offset = 0;
@@ -592,17 +597,17 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 				push_constant_size = sizeof(SceneState::PushConstant) - sizeof(SceneState::PushConstantUbershader);
 			}
 
-			RD::get_singleton()->draw_list_set_push_constant(draw_list, &push_constant, push_constant_size);
+			rd->draw_list_set_push_constant(draw_list, &push_constant, push_constant_size);
 
-			uint32_t instance_count = surf->owner->instance_count > 1 ? surf->owner->instance_count : element_info.repeat;
+			uint32_t instance_count = owner_instance_count > 1 ? owner_instance_count : element_info.repeat;
 			if (surf->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_PARTICLE_TRAILS) {
-				instance_count /= surf->owner->trail_steps;
+				instance_count /= owner->trail_steps;
 			}
 
-			if (bool(surf->owner->base_flags & INSTANCE_DATA_FLAG_MULTIMESH_INDIRECT)) {
-				RD::get_singleton()->draw_list_draw_indirect(draw_list, index_array_rd.is_valid(), mesh_storage->_multimesh_get_command_buffer_rd_rid(surf->owner->data->base), surf->surface_index * sizeof(uint32_t) * mesh_storage->INDIRECT_MULTIMESH_COMMAND_STRIDE, 1, 0);
+			if (bool(base_flags & INSTANCE_DATA_FLAG_MULTIMESH_INDIRECT)) {
+				rd->draw_list_draw_indirect(draw_list, index_array_rd.is_valid(), mesh_storage->_multimesh_get_command_buffer_rd_rid(owner->data->base), surf->surface_index * sizeof(uint32_t) * mesh_storage->INDIRECT_MULTIMESH_COMMAND_STRIDE, 1, 0);
 			} else {
-				RD::get_singleton()->draw_list_draw(draw_list, index_array_rd.is_valid(), instance_count);
+				rd->draw_list_draw(draw_list, index_array_rd.is_valid(), instance_count);
 			}
 		}
 

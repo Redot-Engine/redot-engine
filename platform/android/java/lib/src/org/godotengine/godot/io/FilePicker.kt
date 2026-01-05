@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.io
+package org.godotengine.godot.io
 
 import android.app.Activity
 import android.content.Context
@@ -41,8 +41,8 @@ import android.provider.DocumentsContract
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
-import org.redotengine.godot.GodotLib
-import org.redotengine.godot.io.file.MediaStoreData
+import org.godotengine.godot.GodotLib
+import org.godotengine.godot.io.file.MediaStoreData
 
 /**
  * Utility class for managing file selection and file picker activities.

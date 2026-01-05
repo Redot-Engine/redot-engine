@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.input
+package org.godotengine.godot.input
 
 import android.os.Build
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -38,7 +38,7 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.OnScaleGestureListener
-import org.redotengine.godot.GodotLib
+import org.godotengine.godot.GodotLib
 
 /**
  * Handles regular and scale gesture input related events for the [GodotView] view.

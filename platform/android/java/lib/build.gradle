@@ -31,7 +31,7 @@ android {
         manifestPlaceholders = [godotLibraryVersion: getGodotLibraryVersionName()]
     }
 
-    namespace = "org.redotengine.godot"
+    namespace = "org.godotengine.godot"
 
     compileOptions {
         sourceCompatibility versions.javaVersion

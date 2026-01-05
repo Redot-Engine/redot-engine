@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.io.file
+package org.godotengine.godot.io.file
 
 /**
  * Android representation of Godot native access flags.
