@@ -37,6 +37,7 @@
 
 template <typename T>
 class Vector;
+struct Color;
 
 class Main {
 	enum CLIOptionAvailability {
@@ -74,6 +75,7 @@ public:
 	static Error setup2(bool p_show_boot_logo = true); // The thread calling setup2() will effectively become the main thread.
 	static String get_rendering_driver_name();
 	static void setup_boot_logo();
+	static Color _get_boot_splash_bg_color();
 #ifdef TESTS_ENABLED
 	static Error test_setup();
 	static void test_cleanup();

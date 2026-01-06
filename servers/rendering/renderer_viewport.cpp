@@ -37,6 +37,7 @@
 #include "core/object/worker_thread_pool.h"
 #include "renderer_canvas_cull.h"
 #include "renderer_scene_cull.h"
+#include "main/main.h"
 #include "rendering_server_globals.h"
 #include "storage/texture_storage.h"
 
@@ -746,7 +747,7 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
 #endif // XR_DISABLED
 
 	if (Engine::get_singleton()->is_editor_hint()) {
-		RSG::texture_storage->set_default_clear_color(GLOBAL_GET_CACHED(Color, "rendering/environment/defaults/default_clear_color"));
+		RSG::texture_storage->set_default_clear_color(Main::_get_boot_splash_bg_color());
 	}
 
 	if (sorted_active_viewports_dirty) {
