@@ -79,6 +79,7 @@
 #include "servers/navigation_server_3d.h"
 #include "servers/rendering_server.h"
 
+#include "docks/uid_viewer_dock.h"
 #include "editor/animation/animation_player_editor_plugin.h"
 #include "editor/asset_library/asset_library_editor_plugin.h"
 #include "editor/audio/audio_stream_preview.h"
@@ -8448,6 +8449,13 @@ EditorNode::EditorNode() {
 	bottom_panel = memnew(EditorBottomPanel);
 	center_split->add_child(bottom_panel);
 	center_split->set_dragger_visibility(SplitContainer::DRAGGER_HIDDEN);
+
+	//UIDViewer
+
+	UIDViewerDock *uid_viewer_dock = memnew(UIDViewerDock);
+	uid_viewer_dock->set_name("UID Viewer");
+	bottom_panel->add_item(TTR("UID Viewer"), uid_viewer_dock,
+			EditorNode::get_singleton()->get_gui_base()->get_theme_icon(SNAME("ResourceUID"), SNAME("EditorIcons")));
 
 	log = memnew(EditorLog);
 	Button *output_button = bottom_panel->add_item(TTRC("Output"), log, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_output_bottom_panel", TTRC("Toggle Output Bottom Panel"), KeyModifierMask::ALT | Key::O));
