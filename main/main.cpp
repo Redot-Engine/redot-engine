@@ -135,8 +135,6 @@
 
 #include "modules/modules_enabled.gen.h" // For mono.
 
-
-
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 #include "modules/mono/editor/bindings_generator.h"
 #endif
@@ -3767,6 +3765,9 @@ Error Main::setup2(bool p_show_boot_logo) {
 Color Main::_get_boot_splash_bg_color() {
 #if defined(TOOLS_ENABLED)
 	if (editor || project_manager) {
+		if (EditorSettings::get_singleton()) {
+			return EditorSettings::get_singleton()->get_setting("interface/theme/base_color");
+		}
 		return EditorSettings::get_setting_directly("interface/theme/base_color", EditorSettings::get_default_base_color());
 	}
 #endif
