@@ -3772,7 +3772,7 @@ Color Main::get_boot_splash_bg_color() {
 	}
 #endif
 
-	return GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
+	return GLOBAL_GET("application/boot_splash/bg_color");
 }
 
 void Main::setup_boot_logo() {
@@ -3820,8 +3820,8 @@ void Main::setup_boot_logo() {
 			boot_logo->set_pixel(0, 0, Color(0, 0, 0, 0));
 		}
 
-		Color boot_bg_color = get_boot_splash_bg_color();
 		if (boot_logo.is_valid()) {
+			Color boot_bg_color = get_boot_splash_bg_color();
 			RenderingServer::get_singleton()->set_boot_image(boot_logo, boot_bg_color, boot_logo_scale, boot_logo_filter);
 
 		} else {
@@ -3834,6 +3834,7 @@ void Main::setup_boot_logo() {
 #endif
 
 			MAIN_PRINT("Main: ClearColor");
+			Color boot_bg_color = get_boot_splash_bg_color();
 			RenderingServer::get_singleton()->set_default_clear_color(boot_bg_color);
 			MAIN_PRINT("Main: Image");
 			RenderingServer::get_singleton()->set_boot_image(splash, boot_bg_color, false);
@@ -4025,6 +4026,9 @@ int Main::start() {
 #endif
 		// Needed to instance editor-only classes for their default values
 		Engine::get_singleton()->set_editor_hint(true);
+
+		// Register boot_splash properties for doctool generation
+		GLOBAL_DEF(PropertyInfo(Variant::COLOR, "application/boot_splash/bg_color"), Color(0.14, 0.14, 0.14));
 
 		// Translate the class reference only when `-l LOCALE` parameter is given.
 		if (!locale.is_empty() && locale != "en") {
