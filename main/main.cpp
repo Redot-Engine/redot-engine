@@ -3166,7 +3166,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 			window_position = &position;
 		}
 
-		Color boot_bg_color = _get_boot_splash_bg_color();
+		Color boot_bg_color = get_boot_splash_bg_color();
 		DisplayServer::set_early_window_clear_color_override(true, boot_bg_color);
 
 		DisplayServer::Context context;
@@ -3481,7 +3481,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 			}
 		}
 
-		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", _get_boot_splash_bg_color());
+		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", get_boot_splash_bg_color());
 		RenderingServer::get_singleton()->set_default_clear_color(clear);
 
 		if (p_show_boot_logo) {
@@ -3762,7 +3762,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 	return OK;
 }
 
-Color Main::_get_boot_splash_bg_color() {
+Color Main::get_boot_splash_bg_color() {
 #if defined(TOOLS_ENABLED)
 	if (editor || project_manager) {
 		if (EditorSettings::get_singleton()) {
@@ -3820,7 +3820,7 @@ void Main::setup_boot_logo() {
 			boot_logo->set_pixel(0, 0, Color(0, 0, 0, 0));
 		}
 
-		Color boot_bg_color = _get_boot_splash_bg_color();
+		Color boot_bg_color = get_boot_splash_bg_color();
 		if (boot_logo.is_valid()) {
 			RenderingServer::get_singleton()->set_boot_image(boot_logo, boot_bg_color, boot_logo_scale, boot_logo_filter);
 

@@ -43,10 +43,10 @@
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/object/class_db.h"
-#include "core/variant/variant_parser.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
+#include "core/variant/variant_parser.h"
 #include "core/version.h"
 #include "editor/editor_node.h"
 #include "editor/file_system/editor_paths.h"
@@ -1289,7 +1289,6 @@ Variant EditorSettings::get_setting_directly(const String &p_setting, const Vari
 Color EditorSettings::get_default_base_color() {
 	return Color(0.06, 0.09, 0.14);
 }
-
 
 String EditorSettings::get_newest_settings_path() {
 	const String config_file_name = vformat("editor_settings-%d.%d.tres", REDOT_VERSION_MAJOR, REDOT_VERSION_MINOR);
