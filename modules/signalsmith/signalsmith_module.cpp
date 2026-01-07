@@ -47,11 +47,6 @@ void SignalSmith::_bind_methods() {
 }
 
 SignalSmith::SignalSmith() {
-	channels = (channels < 1) ? 1 : channels;
-	sample_rate = (sample_rate < 1) ? 44100 : sample_rate;
-	tempo = 1.0f;
-
-	// Correct current Signalsmith API
 	stretch.presetDefault(channels, sample_rate);
 }
 
