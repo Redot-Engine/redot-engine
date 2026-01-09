@@ -48,6 +48,7 @@ class GDScriptStruct {
 	friend class GDScriptStructInstance;
 	friend class GDScriptCompiler;
 	friend class GDScriptAnalyzer;
+	friend class GDScriptStructClass;
 
 public:
 	// Member information struct
@@ -67,10 +68,17 @@ public:
 		bool is_static = false;
 	};
 
+	// Reference counting for proper lifecycle management
+	// This ensures structs are only deleted when all references are gone
+	void reference();
+	void unreference();
+	int get_reference_count() const { return ref_count.get(); }
+
 private:
 	StringName name;
 	GDScriptStruct *base_struct = nullptr;
 	GDScript *owner = nullptr; // GDScript that owns this struct
+	mutable SafeRefCount ref_count;
 
 	// Members
 	HashMap<StringName, MemberInfo> members;

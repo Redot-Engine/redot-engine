@@ -38,13 +38,28 @@
 
 GDScriptStruct::GDScriptStruct(const StringName &p_name) :
 		name(p_name) {
+	// Initialize with ref_count = 0
+	// References will be added by owners (script, wrapper class)
+	ref_count.init(0);
 }
 
 GDScriptStruct::~GDScriptStruct() {
 	// Clean up children
 	for (GDScriptStruct *child : children) {
-		memdelete(child);
+		// Unreference children before deleting
+		child->unreference();
+		if (child->get_reference_count() == 0) {
+			memdelete(child);
+		}
 	}
+}
+
+void GDScriptStruct::reference() {
+	ref_count.ref();
+}
+
+void GDScriptStruct::unreference() {
+	ref_count.unref();
 }
 
 GDScriptStructInstance *GDScriptStruct::create_instance(const Variant **p_args, int p_argcount) {

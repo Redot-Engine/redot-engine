@@ -128,7 +128,38 @@ void GDScriptStructClass::_bind_methods() {
 
 GDScriptStructClass::GDScriptStructClass(GDScriptStruct *p_struct) {
 	struct_type = p_struct;
+	if (struct_type) {
+		struct_type->reference(); // Increment ref count when we take ownership
+	}
 	// Don't ERR_FAIL_NULL here since we need a default constructor for instantiate()
+}
+
+GDScriptStructClass::~GDScriptStructClass() {
+	if (struct_type) {
+		struct_type->unreference();
+		if (struct_type->get_reference_count() == 0) {
+			memdelete(struct_type);
+		}
+		struct_type = nullptr;
+	}
+}
+
+void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
+	if (p_struct == struct_type) {
+		return; // No change
+	}
+	// Unreference old struct
+	if (struct_type) {
+		struct_type->unreference();
+		if (struct_type->get_reference_count() == 0) {
+			memdelete(struct_type);
+		}
+	}
+	struct_type = p_struct;
+	// Reference new struct
+	if (struct_type) {
+		struct_type->reference();
+	}
 }
 
 Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
@@ -1630,8 +1661,12 @@ void GDScript::clear(ClearData *p_clear_data) {
 	static_variables.clear();
 	static_variables_indices.clear();
 
-	// Clear structs
+	// Clear structs - first clear constants that hold struct wrapper references
+	// The constants HashMap contains Ref<GDScriptStructClass> which reference the structs
 	for (KeyValue<StringName, GDScriptStruct *> &E : structs) {
+		// Remove the constant wrapper first, which will unreference the struct
+		constants.erase(E.key);
+		// Add to clear_data for potential later deletion
 		clear_data->structs.insert(E.value);
 	}
 	structs.clear();
@@ -1672,9 +1707,12 @@ void GDScript::clear(ClearData *p_clear_data) {
 				GDScriptCache::remove_script(gdscr->get_path());
 			}
 		}
-		// Delete structs
+		// Delete structs - unreference first, delete if ref count reaches 0
 		for (GDScriptStruct *E : clear_data->structs) {
-			memdelete(E);
+			E->unreference();
+			if (E->get_reference_count() == 0) {
+				memdelete(E);
+			}
 		}
 		clear_data->clear();
 	}

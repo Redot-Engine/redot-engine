@@ -1321,8 +1321,8 @@ void Variant::reference(const Variant &p_variant) {
 			if (struct_instance) {
 				struct_instance->reference();
 			}
-			// Copy the pointer bytes
-			memcpy(_data._mem, p_variant._data._mem, sizeof(_data._mem));
+			// Copy the pointer - only copy pointer size, not entire _mem
+			memcpy(_data._mem, p_variant._data._mem, sizeof(void *));
 		} break;
 		default: {
 		}

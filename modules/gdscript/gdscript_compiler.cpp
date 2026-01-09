@@ -3156,6 +3156,7 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	}
 
 	// Create the GDScriptStruct object
+	// The struct starts with ref_count = 1 from its constructor
 	GDScriptStruct *gdstruct = memnew(GDScriptStruct(p_struct->identifier->name));
 	gdstruct->set_owner(p_script);
 	gdstruct->set_fully_qualified_name(p_struct->fqsn);
@@ -3177,7 +3178,11 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 			Error err = OK;
 			_parse_function(err, p_script, p_class, method);
 			if (err) {
-				memdelete(gdstruct);
+				// Unreference and delete on error
+				gdstruct->unreference();
+				if (gdstruct->get_reference_count() == 0) {
+					memdelete(gdstruct);
+				}
 				return err;
 			}
 
@@ -3188,13 +3193,15 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	}
 
 	// Register the struct in the script
+	// This adds another reference - the script now owns the struct
+	gdstruct->reference(); // Increment for the script's ownership
 	p_script->structs[p_struct->identifier->name] = gdstruct;
 
 	// Create a wrapper class for struct construction and store it as a constant
 	// This allows `StructName.new()` to work
 	Ref<GDScriptStructClass> struct_wrapper;
 	struct_wrapper.instantiate(); // This creates the object with ref_count = 1
-	struct_wrapper->set_struct_type(gdstruct); // Set the struct type after creation
+	struct_wrapper->set_struct_type(gdstruct); // This will also reference the struct
 
 	// Add to constants so it's accessible at runtime
 	p_script->constants[p_struct->identifier->name] = struct_wrapper;
@@ -3266,9 +3273,12 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 		p_script->constants.erase(E.key);
 	}
 
-	// Now it's safe to delete the old structs
+	// Now unreference the old structs - they will be deleted if ref count reaches 0
 	for (KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
-		memdelete(E.value);
+		E.value->unreference();
+		if (E.value->get_reference_count() == 0) {
+			memdelete(E.value);
+		}
 	}
 }
 

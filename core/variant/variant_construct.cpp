@@ -268,10 +268,11 @@ void Variant::construct(Variant::Type p_type, Variant &base, const Variant **p_a
 
 	// STRUCT type - special handling since structs are dynamically defined
 	if (p_type == STRUCT) {
-		// For now, create a null/empty struct
 		// Actual struct construction happens through GDScriptStructClass::new()
+		// Return a NIL variant and set error
+		base = Variant();
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
-		ERR_FAIL_MSG("Cannot construct generic STRUCT type. Use specific struct type's new() method.");
+		return;
 	}
 
 	uint32_t s = construct_data[p_type].size();
