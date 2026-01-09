@@ -715,9 +715,23 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 
 MCPTools::ToolResult MCPTools::tool_game_control(const Dictionary &p_args) {
 	String action = p_args.get("action", "");
+	ToolResult result;
+
+	// Handle 'wait' locally on the server to allow waiting for connections
+	if (action == "wait") {
+		float secs = p_args.get("seconds", 1.0);
+		OS::get_singleton()->delay_usec(secs * 1000000);
+		result.add_text("Waited " + String::num(secs) + " seconds on server.");
+		return result;
+	}
+
+	if (!MCPBridge::get_singleton()->is_client_connected()) {
+		result.set_error("Game process not connected to bridge yet. Try action='wait' first.");
+		return result;
+	}
+
 	Dictionary resp = MCPBridge::get_singleton()->send_command(action, p_args);
 
-	ToolResult result;
 	if (resp.has("error")) {
 		result.set_error(resp["error"]);
 	} else if (resp.has("image_base64")) {
