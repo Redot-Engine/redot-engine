@@ -36,6 +36,7 @@
 
 #include "core/object/class_db.h"
 #include "core/object/object.h"
+#include "core/os/os.h"
 #include "core/variant/dictionary.h"
 #include "core/variant/variant.h"
 
@@ -98,4 +99,23 @@ public:
 
 	// === Project Tools ===
 	ToolResult tool_get_project_info(const Dictionary &p_args);
+	ToolResult tool_open_editor(const Dictionary &p_args);
+	ToolResult tool_run_project(const Dictionary &p_args);
+
+	// === Game Builder Tools ===
+	ToolResult tool_get_class_info(const Dictionary &p_args);
+	ToolResult tool_set_project_setting(const Dictionary &p_args);
+	ToolResult tool_add_input_action(const Dictionary &p_args);
+	ToolResult tool_attach_script(const Dictionary &p_args);
+	ToolResult tool_add_autoload(const Dictionary &p_args);
+	ToolResult tool_get_node_info(const Dictionary &p_args);
+
+	// === Debugging & Control ===
+	ToolResult tool_get_game_output(const Dictionary &p_args);
+	ToolResult tool_stop_game(const Dictionary &p_args);
+	ToolResult tool_validate_script(const Dictionary &p_args);
+
+private:
+	static OS::ProcessID last_game_pid;
+	static String last_log_path;
 };

@@ -42,7 +42,16 @@
 #include "core/version.h"
 #include "scene/resources/packed_scene.h"
 
+#include "modules/modules_enabled.gen.h"
+
+#ifdef MODULE_GDSCRIPT_ENABLED
+#include "modules/gdscript/gdscript_parser.h"
+#endif
+
 #include <functional>
+
+OS::ProcessID MCPTools::last_game_pid = 0;
+String MCPTools::last_log_path = "";
 
 MCPTools::MCPTools() {
 }
@@ -268,6 +277,147 @@ Array MCPTools::get_tool_definitions() {
 		tools.push_back(tool);
 	}
 
+	// open_editor
+	{
+		Dictionary props;
+		Dictionary tool;
+		tool["name"] = "open_editor";
+		tool["description"] = "Open the Redot Editor for the current project";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props);
+		tools.push_back(tool);
+	}
+
+	// run_project
+	{
+		Dictionary props;
+		Dictionary tool;
+		tool["name"] = "run_project";
+		tool["description"] = "Run the current project (launch the game)";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props);
+		tools.push_back(tool);
+	}
+
+	// get_class_info
+	{
+		Dictionary props;
+		props["class_name"] = MCPSchemaBuilder::make_string_property("Name of the Redot class (e.g., 'CharacterBody2D')");
+		Array required;
+		required.push_back("class_name");
+		Dictionary tool;
+		tool["name"] = "get_class_info";
+		tool["description"] = "Get detailed information about a Redot class (properties, methods, signals)";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tools.push_back(tool);
+	}
+
+	// set_project_setting
+	{
+		Dictionary props;
+		props["setting"] = MCPSchemaBuilder::make_string_property("Setting path (e.g., 'application/run/main_scene')");
+		props["value"] = MCPSchemaBuilder::make_string_property("Value to set (will be converted to appropriate type)");
+		Array required;
+		required.push_back("setting");
+		required.push_back("value");
+		Dictionary tool;
+		tool["name"] = "set_project_setting";
+		tool["description"] = "Set a project setting and save project.godot";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tools.push_back(tool);
+	}
+
+	// add_input_action
+	{
+		Dictionary props;
+		props["action_name"] = MCPSchemaBuilder::make_string_property("Name of the action (e.g., 'jump')");
+		Array required;
+		required.push_back("action_name");
+		Dictionary tool;
+		tool["name"] = "add_input_action";
+		tool["description"] = "Add a new input action to the project settings";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tools.push_back(tool);
+	}
+
+	// attach_script
+	{
+		Dictionary props;
+		props["scene_path"] = MCPSchemaBuilder::make_string_property("Path to the scene file");
+		props["node_path"] = MCPSchemaBuilder::make_string_property("Path to the node ('.' for root)");
+		props["script_path"] = MCPSchemaBuilder::make_string_property("Path to the .gd script file");
+		Array required;
+		required.push_back("scene_path");
+		required.push_back("node_path");
+		required.push_back("script_path");
+		Dictionary tool;
+		tool["name"] = "attach_script";
+		tool["description"] = "Attach a GDScript file to a node in a scene";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tools.push_back(tool);
+	}
+
+	// add_autoload
+	{
+		Dictionary props;
+		props["name"] = MCPSchemaBuilder::make_string_property("Singleton name");
+		props["path"] = MCPSchemaBuilder::make_string_property("Path to the script or scene file");
+		Array required;
+		required.push_back("name");
+		required.push_back("path");
+		Dictionary tool;
+		tool["name"] = "add_autoload";
+		tool["description"] = "Add a new Autoload (singleton) to the project";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tools.push_back(tool);
+	}
+
+	// get_node_info
+	{
+		Dictionary props;
+		props["scene_path"] = MCPSchemaBuilder::make_string_property("Path to the scene file");
+		props["node_path"] = MCPSchemaBuilder::make_string_property("Path to the node ('.' for root)");
+		Array required;
+		required.push_back("scene_path");
+		required.push_back("node_path");
+		Dictionary tool;
+		tool["name"] = "get_node_info";
+		tool["description"] = "Get detailed information about a node in a scene (properties, script, children)";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tools.push_back(tool);
+	}
+
+	// get_game_output
+	{
+		Dictionary props;
+		Dictionary tool;
+		tool["name"] = "get_game_output";
+		tool["description"] = "Get the latest logs and errors from the currently running game process";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props);
+		tools.push_back(tool);
+	}
+
+	// stop_game
+	{
+		Dictionary props;
+		Dictionary tool;
+		tool["name"] = "stop_game";
+		tool["description"] = "Stop the currently running game process";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props);
+		tools.push_back(tool);
+	}
+
+	// validate_script
+	{
+		Dictionary props;
+		props["path"] = MCPSchemaBuilder::make_string_property("Path to the .gd script file");
+		Array required;
+		required.push_back("path");
+		Dictionary tool;
+		tool["name"] = "validate_script";
+		tool["description"] = "Perform a syntax check on a GDScript file to find errors";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tools.push_back(tool);
+	}
+
 	return tools;
 }
 
@@ -296,6 +446,28 @@ MCPTools::ToolResult MCPTools::execute_tool(const String &p_name, const Dictiona
 		return tool_set_node_property(p_arguments);
 	} else if (p_name == "get_project_info") {
 		return tool_get_project_info(p_arguments);
+	} else if (p_name == "open_editor") {
+		return tool_open_editor(p_arguments);
+	} else if (p_name == "run_project") {
+		return tool_run_project(p_arguments);
+	} else if (p_name == "get_class_info") {
+		return tool_get_class_info(p_arguments);
+	} else if (p_name == "set_project_setting") {
+		return tool_set_project_setting(p_arguments);
+	} else if (p_name == "add_input_action") {
+		return tool_add_input_action(p_arguments);
+	} else if (p_name == "attach_script") {
+		return tool_attach_script(p_arguments);
+	} else if (p_name == "add_autoload") {
+		return tool_add_autoload(p_arguments);
+	} else if (p_name == "get_node_info") {
+		return tool_get_node_info(p_arguments);
+	} else if (p_name == "get_game_output") {
+		return tool_get_game_output(p_arguments);
+	} else if (p_name == "stop_game") {
+		return tool_stop_game(p_arguments);
+	} else if (p_name == "validate_script") {
+		return tool_validate_script(p_arguments);
 	}
 
 	ToolResult result;
@@ -910,6 +1082,360 @@ MCPTools::ToolResult MCPTools::tool_get_project_info(const Dictionary &p_args) {
 	}
 	info["input_actions"] = input_actions;
 
+	result.add_text(JSON::stringify(info, "  "));
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_open_editor(const Dictionary &p_args) {
+	ToolResult result;
+
+	List<String> args;
+	args.push_back("--editor");
+	args.push_back("--path");
+	args.push_back(ProjectSettings::get_singleton()->get_resource_path());
+
+	Error err = OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), args);
+	if (err != OK) {
+		result.set_error("Failed to start editor process");
+		return result;
+	}
+
+	result.add_text("Editor process started for project: " + ProjectSettings::get_singleton()->get_resource_path());
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_run_project(const Dictionary &p_args) {
+	ToolResult result;
+
+	// Stop previous game if running
+	if (last_game_pid != 0) {
+		OS::get_singleton()->kill(last_game_pid);
+	}
+
+	String log_file = "res://.redot/mcp_game.log";
+	last_log_path = normalize_path(log_file);
+	String global_log_path = ProjectSettings::get_singleton()->globalize_path(last_log_path);
+
+	List<String> args;
+	args.push_back("--path");
+	args.push_back(ProjectSettings::get_singleton()->get_resource_path());
+	args.push_back("--log-file");
+	args.push_back(global_log_path);
+	args.push_back("--no-header");
+
+	Error err = OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), args, &last_game_pid);
+	if (err != OK) {
+		last_game_pid = 0;
+		result.set_error("Failed to start project process");
+		return result;
+	}
+
+	result.add_text("Project process started with logging to: " + last_log_path);
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_get_game_output(const Dictionary &p_args) {
+	ToolResult result;
+
+	if (last_log_path.is_empty()) {
+		result.set_error("No game process has been started yet");
+		return result;
+	}
+
+	Error err;
+	Ref<FileAccess> f = FileAccess::open(last_log_path, FileAccess::READ, &err);
+	if (err != OK || f.is_null()) {
+		result.set_error("Failed to open log file: " + last_log_path);
+		return result;
+	}
+
+	String content = f->get_as_text();
+	result.add_text(content);
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_stop_game(const Dictionary &p_args) {
+	ToolResult result;
+
+	if (last_game_pid == 0) {
+		result.set_error("No game process is currently running");
+		return result;
+	}
+
+	Error err = OS::get_singleton()->kill(last_game_pid);
+	if (err != OK) {
+		result.set_error("Failed to stop game process");
+		return result;
+	}
+
+	last_game_pid = 0;
+	result.add_text("Game process stopped");
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_validate_script(const Dictionary &p_args) {
+	ToolResult result;
+	String path = p_args.get("path", "");
+
+	if (path.is_empty()) {
+		result.set_error("Missing required parameter: path");
+		return result;
+	}
+
+#ifdef MODULE_GDSCRIPT_ENABLED
+	String normalized = normalize_path(path);
+	Error err;
+	Ref<FileAccess> f = FileAccess::open(normalized, FileAccess::READ, &err);
+	if (err != OK || f.is_null()) {
+		result.set_error("Failed to open script file: " + normalized);
+		return result;
+	}
+
+	String source = f->get_as_text();
+	GDScriptParser parser;
+	Error parse_err = parser.parse(source, normalized, false);
+
+	if (parse_err != OK) {
+		String error_list = "Script validation failed:\n";
+		for (const GDScriptParser::ParserError &e : parser.get_errors()) {
+			error_list += "Line " + itos(e.line) + ": " + e.message + "\n";
+		}
+		result.set_error(error_list);
+		return result;
+	}
+
+	result.add_text("Script validation successful: No syntax errors found in " + normalized);
+#else
+	result.set_error("GDScript module not enabled; validation unavailable");
+#endif
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_get_class_info(const Dictionary &p_args) {
+	ToolResult result;
+	String class_name = p_args.get("class_name", "");
+
+	if (class_name.is_empty()) {
+		result.set_error("Missing required parameter: class_name");
+		return result;
+	}
+
+	if (!ClassDB::class_exists(class_name)) {
+		result.set_error("Class not found: " + class_name);
+		return result;
+	}
+
+	Dictionary info;
+	info["class"] = class_name;
+	info["inherits"] = ClassDB::get_parent_class(class_name);
+
+	// Get properties
+	Array properties;
+	List<PropertyInfo> plist;
+	ClassDB::get_property_list(class_name, &plist);
+	for (const PropertyInfo &p : plist) {
+		Dictionary pinfo;
+		pinfo["name"] = p.name;
+		pinfo["type"] = Variant::get_type_name(p.type);
+		properties.push_back(pinfo);
+	}
+	info["properties"] = properties;
+
+	// Get signals
+	Array signals;
+	List<MethodInfo> slist;
+	ClassDB::get_signal_list(class_name, &slist);
+	for (const MethodInfo &s : slist) {
+		signals.push_back(s.name);
+	}
+	info["signals"] = signals;
+
+	result.add_text(JSON::stringify(info, "  "));
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_set_project_setting(const Dictionary &p_args) {
+	ToolResult result;
+	String setting = p_args.get("setting", "");
+	Variant value = p_args.get("value", Variant());
+
+	if (setting.is_empty()) {
+		result.set_error("Missing required parameter: setting");
+		return result;
+	}
+
+	ProjectSettings::get_singleton()->set_setting(setting, value);
+	Error err = ProjectSettings::get_singleton()->save();
+
+	if (err != OK) {
+		result.set_error("Failed to save project settings");
+		return result;
+	}
+
+	result.add_text("Setting '" + setting + "' updated and saved.");
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_add_input_action(const Dictionary &p_args) {
+	ToolResult result;
+	String action_name = p_args.get("action_name", "");
+
+	if (action_name.is_empty()) {
+		result.set_error("Missing required parameter: action_name");
+		return result;
+	}
+
+	String setting_path = "input/" + action_name;
+	Dictionary action_dict;
+	action_dict["deadzone"] = 0.5f;
+	action_dict["events"] = Array();
+
+	ProjectSettings::get_singleton()->set_setting(setting_path, action_dict);
+	Error err = ProjectSettings::get_singleton()->save();
+
+	if (err != OK) {
+		result.set_error("Failed to save input action to project settings");
+		return result;
+	}
+
+	result.add_text("Input action '" + action_name + "' added to project settings.");
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_attach_script(const Dictionary &p_args) {
+	ToolResult result;
+	String scene_path = p_args.get("scene_path", "");
+	String node_path = p_args.get("node_path", ".");
+	String script_path = p_args.get("script_path", "");
+
+	if (scene_path.is_empty() || script_path.is_empty()) {
+		result.set_error("Missing required parameters: scene_path and script_path");
+		return result;
+	}
+
+	if (!validate_path(scene_path) || !validate_path(script_path)) {
+		result.set_error("Invalid paths provided");
+		return result;
+	}
+
+	// Load scene
+	Ref<PackedScene> scene = ResourceLoader::load(normalize_path(scene_path), "PackedScene");
+	if (scene.is_null()) {
+		result.set_error("Failed to load scene");
+		return result;
+	}
+
+	Node *root = scene->instantiate();
+	Node *target = (node_path == "." || node_path.is_empty()) ? root : root->get_node_or_null(node_path);
+
+	if (!target) {
+		memdelete(root);
+		result.set_error("Target node not found: " + node_path);
+		return result;
+	}
+
+	// Load script
+	Ref<Resource> script = ResourceLoader::load(normalize_path(script_path));
+	if (script.is_null()) {
+		memdelete(root);
+		result.set_error("Failed to load script");
+		return result;
+	}
+
+	target->set_script(script);
+
+	// Save
+	Ref<PackedScene> new_scene;
+	new_scene.instantiate();
+	new_scene->pack(root);
+	Error err = ResourceSaver::save(new_scene, normalize_path(scene_path));
+	memdelete(root);
+
+	if (err != OK) {
+		result.set_error("Failed to save scene");
+		return result;
+	}
+
+	result.add_text("Script '" + script_path + "' attached to node '" + node_path + "' in scene '" + scene_path + "'");
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_add_autoload(const Dictionary &p_args) {
+	ToolResult result;
+	String name = p_args.get("name", "");
+	String path = p_args.get("path", "");
+
+	if (name.is_empty() || path.is_empty()) {
+		result.set_error("Missing required parameters: name and path");
+		return result;
+	}
+
+	String setting_path = "autoload/" + name;
+	// Redot uses "*res://path" for singletons
+	ProjectSettings::get_singleton()->set_setting(setting_path, "*" + normalize_path(path));
+	Error err = ProjectSettings::get_singleton()->save();
+
+	if (err != OK) {
+		result.set_error("Failed to save autoload settings");
+		return result;
+	}
+
+	result.add_text("Autoload '" + name + "' added with path '" + path + "'");
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_get_node_info(const Dictionary &p_args) {
+	ToolResult result;
+	String scene_path = p_args.get("scene_path", "");
+	String node_path = p_args.get("node_path", ".");
+
+	if (scene_path.is_empty()) {
+		result.set_error("Missing required parameter: scene_path");
+		return result;
+	}
+
+	Ref<PackedScene> scene = ResourceLoader::load(normalize_path(scene_path), "PackedScene");
+	if (scene.is_null()) {
+		result.set_error("Failed to load scene");
+		return result;
+	}
+
+	Node *root = scene->instantiate();
+	Node *target = (node_path == "." || node_path.is_empty()) ? root : root->get_node_or_null(node_path);
+
+	if (!target) {
+		memdelete(root);
+		result.set_error("Node not found");
+		return result;
+	}
+
+	Dictionary info;
+	info["name"] = target->get_name();
+	info["type"] = target->get_class();
+
+	Ref<Resource> script = target->get_script();
+	if (script.is_valid()) {
+		info["script"] = script->get_path();
+	}
+
+	Array children;
+	for (int i = 0; i < target->get_child_count(); i++) {
+		children.push_back(target->get_child(i)->get_name());
+	}
+	info["children"] = children;
+
+	// Properties
+	Dictionary props;
+	List<PropertyInfo> plist;
+	target->get_property_list(&plist);
+	for (const PropertyInfo &p : plist) {
+		if (p.usage & PROPERTY_USAGE_EDITOR) {
+			props[p.name] = target->get(p.name);
+		}
+	}
+	info["properties"] = props;
+
+	memdelete(root);
 	result.add_text(JSON::stringify(info, "  "));
 	return result;
 }
