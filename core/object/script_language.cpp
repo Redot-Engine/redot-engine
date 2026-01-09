@@ -550,6 +550,48 @@ void ScriptServer::save_global_classes() {
 	ProjectSettings::get_singleton()->store_global_class_list(gcarr);
 }
 
+/***************** STRUCT SERIALIZATION *****************/
+
+Variant ScriptServer::create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data) {
+	MutexLock lock(languages_mutex);
+	if (!languages_ready) {
+		ERR_FAIL_V_MSG(Variant(), "Cannot create struct instance: languages not initialized.");
+	}
+
+	// Try each language to see if it can create the struct
+	for (int i = 0; i < _language_count; i++) {
+		ScriptLanguage *lang = _languages[i];
+		if (lang && lang->can_create_struct_by_name()) {
+			Variant result = lang->create_struct_by_name(p_fully_qualified_name, p_data);
+			if (result.get_type() != Variant::NIL) {
+				return result;
+			}
+		}
+	}
+
+	ERR_FAIL_V_MSG(Variant(), vformat("Cannot create struct instance: no language supports struct '%s'.", p_fully_qualified_name));
+}
+
+bool ScriptServer::global_struct_exists(const String &p_fully_qualified_name) {
+	MutexLock lock(languages_mutex);
+	if (!languages_ready) {
+		return false;
+	}
+
+	// Check if any language can create this struct
+	for (int i = 0; i < _language_count; i++) {
+		ScriptLanguage *lang = _languages[i];
+		if (lang && lang->can_create_struct_by_name()) {
+			// Try to create with empty data to check if it exists
+			Variant result = lang->create_struct_by_name(p_fully_qualified_name, Dictionary());
+			if (result.get_type() != Variant::NIL) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 Vector<Ref<ScriptBacktrace>> ScriptServer::capture_script_backtraces(bool p_include_variables) {
 	if (is_program_exiting) {
 		return Vector<Ref<ScriptBacktrace>>();

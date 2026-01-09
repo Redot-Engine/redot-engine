@@ -161,6 +161,37 @@ void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
 	}
 }
 
+// Temporary helper to create a STRUCT Variant from a GDScriptStructInstance
+// TODO: Replace with proper Variant API once Variant exposes a safe constructor (e.g., Variant::from_struct)
+// This is a workaround needed because Variant doesn't yet provide a public API for constructing STRUCT variants
+// from struct instances.
+//
+// Safety notes:
+// - Variant::_data._mem is a byte array sized to fit any Variant type (see variant.h:281)
+// - STRUCT type stores a single pointer to GDScriptStructInstance
+// - This mimics how other pointer-based types (like OBJECT) are stored internally
+//
+// When adding a proper Variant API, consider adding one of:
+// - static Variant Variant::from_struct(GDScriptStructInstance *p_instance)
+// - void Variant::set_struct(GDScriptStructInstance *p_instance)
+// - friend class GDScriptStructInstance; in Variant, with direct accessors
+Variant GDScriptStructClass::_variant_from_struct_instance(GDScriptStructInstance *p_instance) {
+	// Safety assertions
+	ERR_FAIL_NULL_V(p_instance, Variant());
+	CRASH_COND_MSG(sizeof(void *) > sizeof(Variant::_data._mem), "Variant internal storage too small for pointer");
+	CRASH_COND_MSG(Variant::STRUCT >= Variant::VARIANT_MAX, "Variant::STRUCT enum out of range");
+
+	Variant result;
+	result.type = Variant::STRUCT;
+	// Copy the pointer into Variant's internal storage
+	// This is safe because:
+	// 1. _mem is sized to fit any Variant type (see variant.h union definition)
+	// 2. We verified sizeof(void*) fits in _mem above
+	// 3. The struct instance is already reference-counted (caller holds a reference)
+	memcpy(result._data._mem, &p_instance, sizeof(void *));
+	return result;
+}
+
 Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 	ERR_FAIL_NULL_V(struct_type, Variant());
 	GDScriptStructInstance *instance = struct_type->create_instance(p_args, p_argcount);
@@ -173,11 +204,8 @@ Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callab
 	instance->reference();
 
 	// Create a Variant of STRUCT type with the instance
-	Variant result;
-	result.type = Variant::STRUCT;
-	// Copy the pointer
-	memcpy(result._data._mem, &instance, sizeof(void *));
-	return result;
+	// Uses the helper function to safely construct the Variant
+	return _variant_from_struct_instance(instance);
 }
 
 Variant GDScriptStructClass::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
@@ -1665,6 +1693,8 @@ void GDScript::clear(ClearData *p_clear_data) {
 	for (KeyValue<StringName, GDScriptStruct *> &E : structs) {
 		// Remove the constant wrapper first, which will unreference the struct
 		constants.erase(E.key);
+		// Unregister from global registry
+		GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
 		// Add to clear_data for potential later deletion
 		clear_data->structs.insert(E.value);
 	}
@@ -3115,6 +3145,63 @@ Ref<GDScript> GDScriptLanguage::get_script_by_fully_qualified_name(const String 
 	return scr;
 }
 
+/***************** STRUCT REGISTRY *****************/
+
+void GDScriptLanguage::register_struct(const String &p_fully_qualified_name, GDScriptStruct *p_struct) {
+	MutexLock lock(mutex);
+	global_structs.insert(p_fully_qualified_name, p_struct);
+}
+
+void GDScriptLanguage::unregister_struct(const String &p_fully_qualified_name) {
+	MutexLock lock(mutex);
+	global_structs.erase(p_fully_qualified_name);
+}
+
+GDScriptStruct *GDScriptLanguage::get_struct_by_name(const String &p_fully_qualified_name) {
+	MutexLock lock(mutex);
+	HashMap<String, GDScriptStruct *>::Iterator E = global_structs.find(p_fully_qualified_name);
+	if (!E) {
+		return nullptr;
+	}
+	return E->value;
+}
+
+Variant GDScriptLanguage::create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data) {
+	GDScriptStruct *struct_type = get_struct_by_name(p_fully_qualified_name);
+	if (!struct_type) {
+		ERR_FAIL_V_MSG(Variant(), vformat("Cannot create struct instance: struct type '%s' not found in registry.", p_fully_qualified_name));
+	}
+
+	// Create a new struct instance
+	GDScriptStructInstance *instance = memnew(GDScriptStructInstance(struct_type));
+
+	// Deserialize the data into the instance
+	if (!p_data.is_empty()) {
+		if (!instance->deserialize(p_data)) {
+			memdelete(instance);
+			ERR_FAIL_V_MSG(Variant(), vformat("Failed to deserialize struct instance for type '%s'.", p_fully_qualified_name));
+		}
+	}
+
+	// Wrap in a Variant
+	Ref<GDScriptStructClass> struct_class;
+	struct_class.instantiate();
+	struct_class->set_struct_type(struct_type);
+	return struct_class->_variant_from_struct_instance(instance);
+}
+
+/* STRUCT SERIALIZATION VIRTUAL METHODS */
+
+bool GDScriptLanguage::can_create_struct_by_name() const {
+	return true;
+}
+
+Variant GDScriptLanguage::create_struct_by_name(const String &p_fully_qualified_name, const Dictionary &p_data) {
+	// This is the virtual method implementation called by ScriptServer
+	// It delegates to the existing registry method
+	return const_cast<GDScriptLanguage *>(this)->create_struct_instance(p_fully_qualified_name, p_data);
+}
+
 /*************** RESOURCE ***************/
 
 Ref<Resource> ResourceFormatLoaderGDScript::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
@@ -3261,3 +3348,26 @@ void ResourceFormatSaverGDScript::get_recognized_extensions(const Ref<Resource> 
 bool ResourceFormatSaverGDScript::recognize(const Ref<Resource> &p_resource) const {
 	return Object::cast_to<GDScript>(*p_resource) != nullptr;
 }
+
+/***************** STRUCT SERIALIZATION HELPERS FOR JSON *****************/
+
+// These functions are called from core/io/json.cpp with C linkage
+// to allow serialization without direct header dependencies
+
+extern "C" {
+
+Dictionary gdscript_struct_instance_serialize(const GDScriptStructInstance *p_instance) {
+	ERR_FAIL_NULL_V(p_instance, Dictionary());
+	// Call the serialize method
+	return p_instance->serialize();
+}
+
+bool gdscript_struct_instance_get_type_name(const GDScriptStructInstance *p_instance, String &r_name) {
+	ERR_FAIL_NULL_V(p_instance, false);
+	GDScriptStruct *struct_type = p_instance->get_struct_type();
+	ERR_FAIL_NULL_V(struct_type, false);
+	r_name = struct_type->get_fully_qualified_name();
+	return true;
+}
+
+} // extern "C"

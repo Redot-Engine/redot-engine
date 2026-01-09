@@ -856,6 +856,9 @@ public:
 
 		String fqsn; // Fully-qualified struct name
 
+		bool resolved_interface = false;
+		bool resolved_body = false;
+
 		bool add_field(VariableNode *p_variable) {
 			if (field_indices.has(p_variable->identifier->name)) {
 				return false; // Duplicate field
@@ -1137,6 +1140,7 @@ public:
 
 	struct SelfNode : public ExpressionNode {
 		ClassNode *current_class = nullptr;
+		StructNode *current_struct = nullptr;
 
 		SelfNode() {
 			type = SELF;
@@ -1456,6 +1460,7 @@ private:
 	GDScriptTokenizer::Token current;
 
 	ClassNode *current_class = nullptr;
+	StructNode *current_struct = nullptr;
 	FunctionNode *current_function = nullptr;
 	LambdaNode *current_lambda = nullptr;
 	SuiteNode *current_suite = nullptr;

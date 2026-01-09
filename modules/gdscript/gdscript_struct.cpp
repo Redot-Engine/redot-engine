@@ -32,6 +32,7 @@
 
 #include "gdscript_struct.h"
 
+#include "core/object/class_db.h"
 #include "core/object/object.h"
 #include "core/string/string_name.h"
 #include "core/variant/callable.h"
@@ -94,8 +95,20 @@ GDScriptStructInstance *GDScriptStruct::create_instance(const Variant **p_args, 
 				if (info->type != Variant::NIL && arg_value.get_type() != Variant::NIL) {
 					// Check if the argument type matches the expected type
 					if (info->type == Variant::OBJECT) {
-						// For Object types, allow any Object-derived type
-						type_valid = arg_value.is_ref_counted() || arg_value.get_type() == Variant::OBJECT;
+						// For Object types, require the argument to be an Object
+						if (arg_value.get_type() != Variant::OBJECT) {
+							type_valid = false;
+						} else if (!info->type_name.is_empty()) {
+							// If a specific class is requested, validate the object's class
+							Object *obj = arg_value.get_validated_object();
+							if (obj == nullptr) {
+								type_valid = false;
+							} else {
+								// Check if the object is an instance of the expected class
+								type_valid = ClassDB::is_parent_class(obj->get_class_name(), info->type_name);
+							}
+						}
+						// If type_name is empty, accept any Object
 					} else if (arg_value.get_type() != info->type) {
 						// Type mismatch - try to convert
 						Variant converted;
@@ -293,11 +306,53 @@ Variant *GDScriptStructInstance::get_member_ptr(const StringName &p_name) {
 }
 
 Variant GDScriptStructInstance::call(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
-	// TODO: Implement struct method calling
-	// For now, struct methods are not fully implemented
-	// They need a separate calling mechanism from GDScriptFunction
+	// Look up the method in the struct type
+	const GDScriptStruct::MethodInfo *method_info = nullptr;
+
+	// Check current struct
+	if (struct_type->get_methods().has(p_method)) {
+		method_info = &struct_type->get_methods().get(p_method);
+	}
+
+	// Check base struct if not found
+	if (method_info == nullptr && struct_type->get_base_struct() != nullptr) {
+		GDScriptStruct *base = struct_type->get_base_struct();
+		while (base != nullptr) {
+			if (base->get_methods().has(p_method)) {
+				method_info = &base->get_methods().get(p_method);
+				break;
+			}
+			base = base->get_base_struct();
+		}
+	}
+
+	if (method_info == nullptr) {
+		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+		r_error.argument = 0;
+		r_error.expected = 0;
+		return Variant();
+	}
+
+	// Check if this is a static method
+	// For now, only static methods are supported on structs
+	// Non-static methods would require VM integration to provide 'self'
+	if (!method_info->is_static) {
+		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+		r_error.argument = 0;
+		r_error.expected = 0;
+		ERR_FAIL_V_MSG(Variant(), vformat("Non-static struct methods are not yet supported. Cannot call instance method '%s' on struct '%s'.", p_method, struct_type->get_name()));
+	}
+
+	// Static method - call via GDScriptFunction
+	if (method_info->function != nullptr) {
+		// For static methods, we can pass nullptr as the instance
+		// Static methods don't access instance members
+		return method_info->function->call(nullptr, p_args, p_argcount, r_error);
+	}
 
 	r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+	r_error.argument = 0;
+	r_error.expected = 0;
 	return Variant();
 }
 

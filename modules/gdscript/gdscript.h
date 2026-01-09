@@ -72,6 +72,10 @@ protected:
 	static void _bind_methods();
 
 public:
+	// Temporary helper to create a STRUCT Variant from a GDScriptStructInstance
+	// TODO: Replace with proper Variant API once Variant exposes a safe constructor
+	static Variant _variant_from_struct_instance(GDScriptStructInstance *p_instance);
+
 	_FORCE_INLINE_ GDScriptStruct *get_struct_type() const { return struct_type; }
 	void set_struct_type(GDScriptStruct *p_struct);
 	Variant _new(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
@@ -502,6 +506,9 @@ class GDScriptLanguage : public ScriptLanguage {
 
 	HashMap<String, ObjectID> orphan_subclasses;
 
+	// Global struct registry for serialization/deserialization
+	HashMap<String, GDScriptStruct *> global_structs;
+
 #ifdef TOOLS_ENABLED
 	void _extension_loaded(const Ref<GDExtension> &p_extension);
 	void _extension_unloading(const Ref<GDExtension> &p_extension);
@@ -618,6 +625,12 @@ public:
 
 	_FORCE_INLINE_ static GDScriptLanguage *get_singleton() { return singleton; }
 
+	// Struct registry methods
+	void register_struct(const String &p_fully_qualified_name, GDScriptStruct *p_struct);
+	void unregister_struct(const String &p_fully_qualified_name);
+	GDScriptStruct *get_struct_by_name(const String &p_fully_qualified_name);
+	Variant create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data);
+
 	virtual String get_name() const override;
 
 	/* LANGUAGE FUNCTIONS */
@@ -694,6 +707,10 @@ public:
 
 	virtual bool handles_global_class_type(const String &p_type) const override;
 	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_is_abstract = nullptr, bool *r_is_tool = nullptr) const override;
+
+	/* STRUCT SERIALIZATION */
+	virtual bool can_create_struct_by_name() const override;
+	virtual Variant create_struct_by_name(const String &p_fully_qualified_name, const Dictionary &p_data) override;
 
 	void add_orphan_subclass(const String &p_qualified_name, const ObjectID &p_subclass);
 	Ref<GDScript> get_orphan_subclass(const String &p_qualified_name);

@@ -104,6 +104,10 @@ public:
 	static void get_inheriters_list(const StringName &p_base_type, List<StringName> *r_classes);
 	static void save_global_classes();
 
+	// Struct serialization utilities (for GDScript)
+	static Variant create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data);
+	static bool global_struct_exists(const String &p_fully_qualified_name);
+
 	static Vector<Ref<ScriptBacktrace>> capture_script_backtraces(bool p_include_variables = false);
 
 	static void init_languages();
@@ -445,6 +449,11 @@ public:
 
 	virtual bool handles_global_class_type(const String &p_type) const { return false; }
 	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_is_abstract = nullptr, bool *r_is_tool = nullptr) const { return String(); }
+
+	/* STRUCT SERIALIZATION */
+	// These methods allow serialization systems to create struct instances without knowing about GDScript
+	virtual bool can_create_struct_by_name() const { return false; }
+	virtual Variant create_struct_by_name(const String &p_fully_qualified_name, const Dictionary &p_data) { return Variant(); }
 
 	virtual ~ScriptLanguage() {}
 };

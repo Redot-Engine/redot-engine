@@ -35,6 +35,29 @@
 #include "core/config/engine.h"
 #include "core/object/script_language.h"
 #include "core/variant/container_type_validate.h"
+#include "core/variant/variant_internal.h"
+
+// Forward declaration for GDScript struct serialization
+class GDScriptStructInstance;
+class GDScriptStruct;
+
+// We need to declare these methods without including the GDScript headers
+// This is a bit of a hack, but necessary due to layering (core/io can't include modules/gdscript)
+// In the future, this should be replaced with a proper Variant-level API
+
+extern "C" {
+// These will be defined in gdscript.cpp with C linkage to avoid name mangling issues
+Dictionary gdscript_struct_instance_serialize(const GDScriptStructInstance *p_instance);
+bool gdscript_struct_instance_get_type_name(const GDScriptStructInstance *p_instance, String &r_name);
+}
+
+// Helper function to serialize a struct
+static Dictionary _serialize_struct(const GDScriptStructInstance *p_instance) {
+	ERR_FAIL_NULL_V(p_instance, Dictionary());
+
+	// Call the GDScript helper function
+	return gdscript_struct_instance_serialize(p_instance);
+}
 
 const char *JSON::tk_name[TK_MAX] = {
 	"'{'",
@@ -825,8 +848,28 @@ Variant JSON::_from_native(const Variant &p_variant, bool p_full_objects, int p_
 		} break;
 
 		case Variant::STRUCT: {
-			// TODO: Implement struct serialization
-			ERR_FAIL_V_MSG(Variant(), vformat("Struct serialization not yet implemented."));
+			// Serialize struct as tagged dictionary with __type__ metadata
+			// This allows round-trip deserialization
+			const GDScriptStructInstance *struct_instance = reinterpret_cast<const GDScriptStructInstance *>(VariantInternal::get_struct(&p_variant));
+			ERR_FAIL_NULL_V(struct_instance, Variant());
+
+			Dictionary ret;
+			ret[TYPE] = Variant::get_type_name(p_variant.get_type());
+
+			// Get the serialized data from the struct instance using helper
+			Dictionary struct_data = _serialize_struct(struct_instance);
+
+			// Ensure __type__ field exists (it should from serialize())
+			if (!struct_data.has("__type__")) {
+				ERR_FAIL_V_MSG(Variant(), "Struct serialization failed: missing __type__ field.");
+			}
+
+			// Wrap the serialized data in the expected format
+			Array args;
+			args.push_back(struct_data);
+			ret[ARGS] = args;
+
+			return ret;
 		} break;
 
 		case Variant::DICTIONARY: {
@@ -1303,8 +1346,22 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 				} break;
 
 				case Variant::STRUCT: {
-					// TODO: Implement struct deserialization
-					ERR_FAIL_V_MSG(Variant(), vformat("Struct deserialization not yet implemented."));
+					// Deserialize struct from tagged dictionary
+					LOAD_ARGS();
+
+					ERR_FAIL_COND_V_MSG(args.size() != 1, Variant(), "Invalid struct data: expected single dictionary argument.");
+
+					Dictionary data = args[0];
+					ERR_FAIL_COND_V_MSG(!data.has("__type__"), Variant(), "Invalid struct data: missing __type__ field.");
+
+					String type_name = data["__type__"];
+					ERR_FAIL_COND_V_MSG(type_name.is_empty(), Variant(), "Invalid struct data: empty __type__ field.");
+
+					// Use ScriptServer to create the struct instance
+					Variant struct_instance = ScriptServer::create_struct_instance(type_name, data);
+					ERR_FAIL_COND_V_MSG(struct_instance.get_type() != Variant::STRUCT, Variant(), vformat("Failed to create struct instance for type '%s'.", type_name));
+
+					return struct_instance;
 				} break;
 
 				case Variant::DICTIONARY: {

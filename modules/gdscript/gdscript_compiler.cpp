@@ -3188,6 +3188,9 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	// The script takes ownership of the struct (transfers the initial reference from constructor)
 	p_script->structs[p_struct->identifier->name] = gdstruct;
 
+	// Register the struct in the global registry for serialization
+	GDScriptLanguage::get_singleton()->register_struct(p_struct->fqsn, gdstruct);
+
 	// Create a wrapper class for struct construction and store it as a constant
 	// This allows `StructName.new()` to work
 	Ref<GDScriptStructClass> struct_wrapper;

@@ -898,6 +898,11 @@ GDScriptParser::ClassNode *GDScriptParser::parse_class(bool p_is_static) {
 }
 
 GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
+	if (p_is_static) {
+		push_error(R"(Structs cannot be static.)");
+		return nullptr;
+	}
+
 	StructNode *n_struct = alloc_node<StructNode>();
 
 	n_struct->owner_class = current_class;
@@ -940,6 +945,11 @@ GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 		complete_extents(n_struct);
 		return n_struct;
 	}
+
+	// Set current_struct context for parsing struct body
+	// This ensures struct methods bind self to the struct type, not the enclosing class
+	StructNode *previous_struct = current_struct;
+	current_struct = n_struct;
 
 	// Parse struct body (fields and methods)
 	bool struct_end = false;
@@ -1003,6 +1013,9 @@ GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 	}
 
 	complete_extents(n_struct);
+
+	// Restore previous struct context
+	current_struct = previous_struct;
 
 	if (multiline) {
 		consume(GDScriptTokenizer::Token::DEDENT, R"(Missing unindent at the end of the struct body.)");
@@ -2912,7 +2925,10 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_self(ExpressionNode *p_pre
 	}
 	SelfNode *self = alloc_node<SelfNode>();
 	complete_extents(self);
-	self->current_class = current_class;
+	// Prefer current_struct over current_class for struct methods
+	// This ensures self binds to the struct type, not the enclosing class
+	self->current_struct = current_struct;
+	self->current_class = current_struct ? nullptr : current_class;
 	return self;
 }
 
@@ -5374,8 +5390,8 @@ String GDScriptParser::DataType::to_string() const {
 			return String(native_type).get_file(); // Remove path, keep filename
 		}
 		case STRUCT:
-			if (struct_type && struct_type->identifier != nullptr) {
-				return struct_type->identifier->name.operator String();
+			if (struct_type && !struct_type->fqsn.is_empty()) {
+				return struct_type->fqsn;
 			}
 			return "<struct>";
 		case RESOLVING:
@@ -5432,8 +5448,10 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 						break;
 					case STRUCT:
 						result.hint = PROPERTY_HINT_ARRAY_TYPE;
-						if (elem_type.struct_type && elem_type.struct_type->identifier != nullptr) {
-							result.hint_string = elem_type.struct_type->identifier->name;
+						if (elem_type.struct_type && !elem_type.struct_type->fqsn.is_empty()) {
+							result.hint_string = elem_type.struct_type->fqsn;
+						} else {
+							result.hint_string = "Variant";
 						}
 						break;
 					case VARIANT:
@@ -5471,8 +5489,8 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 						}
 						break;
 					case STRUCT:
-						if (key_type.struct_type && key_type.struct_type->identifier != nullptr) {
-							key_hint = key_type.struct_type->identifier->name;
+						if (key_type.struct_type && !key_type.struct_type->fqsn.is_empty()) {
+							key_hint = key_type.struct_type->fqsn;
 						} else {
 							key_hint = "Variant";
 						}
@@ -5506,8 +5524,8 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 						}
 						break;
 					case STRUCT:
-						if (value_type.struct_type && value_type.struct_type->identifier != nullptr) {
-							value_hint = value_type.struct_type->identifier->name;
+						if (value_type.struct_type && !value_type.struct_type->fqsn.is_empty()) {
+							value_hint = value_type.struct_type->fqsn;
 						} else {
 							value_hint = "Variant";
 						}
@@ -5562,8 +5580,10 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 			break;
 		case STRUCT:
 			result.type = Variant::STRUCT;
-			if (struct_type && struct_type->identifier != nullptr) {
-				result.class_name = struct_type->identifier->name;
+			if (struct_type && !struct_type->fqsn.is_empty()) {
+				result.hint_string = struct_type->fqsn;
+			} else {
+				result.hint_string = "Variant";
 			}
 			break;
 		case VARIANT:

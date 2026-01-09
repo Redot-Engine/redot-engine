@@ -150,6 +150,12 @@ private:
 	Vector<Variant> members; // Member values
 	SafeRefCount ref_count;
 
+	// Non-copyable and non-movable to match SafeRefCount semantics
+	GDScriptStructInstance(const GDScriptStructInstance &) = delete;
+	GDScriptStructInstance &operator=(const GDScriptStructInstance &) = delete;
+	GDScriptStructInstance(GDScriptStructInstance &&) = delete;
+	GDScriptStructInstance &operator=(GDScriptStructInstance &&) = delete;
+
 public:
 	GDScriptStructInstance(GDScriptStruct *p_struct_type);
 	~GDScriptStructInstance();
