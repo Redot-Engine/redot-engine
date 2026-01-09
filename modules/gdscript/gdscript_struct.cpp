@@ -148,13 +148,15 @@ GDScriptStructInstance *GDScriptStruct::create_instance(const Variant **p_args, 
 	return instance;
 }
 
-void GDScriptStruct::add_member(const StringName &p_name, const Variant::Type p_type, const StringName &p_type_name) {
+void GDScriptStruct::add_member(const StringName &p_name, const Variant::Type p_type, const StringName &p_type_name, const Variant &p_default_value, bool p_has_default_value) {
 	ERR_FAIL_COND(members.has(p_name));
 
 	MemberInfo info;
 	info.index = get_member_count(); // Index after all inherited members
 	info.type = p_type;
 	info.type_name = p_type_name;
+	info.default_value = p_default_value;
+	info.has_default_value = p_has_default_value;
 
 	members[p_name] = info;
 	member_names.push_back(p_name);

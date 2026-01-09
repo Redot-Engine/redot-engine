@@ -1751,15 +1751,18 @@ void GDScript::clear(ClearData *p_clear_data) {
 	static_variables.clear();
 	static_variables_indices.clear();
 
-	// Clear structs - first clear constants that hold struct wrapper references
-	// The constants HashMap contains Ref<GDScriptStructClass> which reference the structs
+	// Clear structs - properly release all ownership references
 	for (KeyValue<StringName, GDScriptStruct *> &E : structs) {
-		// Remove the constant wrapper first, which will unreference the struct
+		// Step 1: Remove the constant wrapper (releases wrapper's reference)
 		constants.erase(E.key);
-		// Unregister from global registry
+		// Step 2: Unregister from global registry (releases registry's reference)
 		GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
-		// Add to clear_data for potential later deletion
-		clear_data->structs.insert(E.value);
+		// Step 3: Release the script HashMap's ownership reference
+		// This is the reference taken in _compile_struct (line 3245)
+		E.value->unreference();
+		// Note: We don't add to clear_data anymore because we've already released
+		// the script's ownership reference. If other owners exist (e.g., external references),
+		// they are responsible for cleanup. The script has done its part.
 	}
 	structs.clear();
 
@@ -1787,9 +1790,11 @@ void GDScript::clear(ClearData *p_clear_data) {
 	}
 #endif
 
-	// If it's not the root, skip clearing the data
+	// All dependencies have been accounted for
+	// Only root scripts clean up functions and scripts to avoid double-free
+	// Structs are cleaned up immediately above (not added to clear_data)
 	if (is_root) {
-		// All dependencies have been accounted for
+		// Only root scripts clean up functions and scripts
 		for (GDScriptFunction *E : clear_data->functions) {
 			memdelete(E);
 		}
@@ -1799,12 +1804,7 @@ void GDScript::clear(ClearData *p_clear_data) {
 				GDScriptCache::remove_script(gdscr->get_path());
 			}
 		}
-		// Clear structs - use atomic check-and-delete via unreference() return value
-		for (GDScriptStruct *E : clear_data->structs) {
-			if (E->unreference()) {
-				memdelete(E);
-			}
-		}
+		// Note: clear_data->structs is now empty (structs cleaned up immediately above)
 		clear_data->clear();
 	}
 }

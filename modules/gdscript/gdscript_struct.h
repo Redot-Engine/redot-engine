@@ -106,7 +106,7 @@ public:
 
 	// Member management
 	int get_member_count() const;
-	void add_member(const StringName &p_name, const Variant::Type p_type, const StringName &p_type_name = StringName());
+	void add_member(const StringName &p_name, const Variant::Type p_type, const StringName &p_type_name = StringName(), const Variant &p_default_value = Variant(), bool p_has_default_value = false);
 	bool has_member(const StringName &p_name) const;
 	int get_member_index(const StringName &p_name) const;
 	const Vector<StringName> &get_member_names() const { return member_names; }

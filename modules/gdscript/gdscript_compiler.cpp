@@ -3161,6 +3161,8 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 		if (field.variable != nullptr) {
 			Variant::Type type = Variant::NIL;
 			StringName type_name;
+			Variant default_value;
+			bool has_default_value = false;
 
 			if (field.variable->datatype_specifier != nullptr) {
 				const GDScriptParser::DataType &datatype = field.variable->datatype_specifier->get_datatype();
@@ -3198,20 +3200,15 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 				}
 			}
 
-			// Add member with type information
-			gdstruct->add_member(field.variable->identifier->name, type, type_name);
-
 			// Set default value if present
-			// Note: We access the member through the mutable HashMap after insertion
 			if (field.variable->initializer != nullptr && field.variable->initializer->is_constant) {
-				// Get mutable access to the member we just added
-				HashMap<StringName, GDScriptStruct::MemberInfo> &members = const_cast<HashMap<StringName, GDScriptStruct::MemberInfo> &>(gdstruct->get_members());
-				GDScriptStruct::MemberInfo *member_info = members.getptr(field.variable->identifier->name);
-				if (member_info != nullptr) {
-					member_info->default_value = field.variable->initializer->reduced_value;
-					member_info->has_default_value = true;
-				}
+				default_value = field.variable->initializer->reduced_value;
+				has_default_value = true;
 			}
+
+			// Add member with type information and default value (if any)
+			// This avoids the need for const_cast by setting default_value during add_member
+			gdstruct->add_member(field.variable->identifier->name, type, type_name, default_value, has_default_value);
 		}
 	}
 
@@ -3269,9 +3266,9 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	// 3. Global registry (released when GDScriptLanguage::unregister_struct is called)
 	// 4. struct_wrapper (released when wrapper is destroyed/constant is cleared)
 	//
-	// When function returns, the compiler's reference (ref #1) is implicitly released
-	// because we don't keep a reference to gdstruct. The struct stays alive because
-	// the other 3 references remain.
+	// We must explicitly release the compiler's reference (ref #1) before returning.
+	// The struct stays alive because the other 3 references remain.
+	gdstruct->unreference(); // Release compiler's reference (ref_count: 4 -> 3)
 
 	return OK;
 }

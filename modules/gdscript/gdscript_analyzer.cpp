@@ -4851,6 +4851,16 @@ void GDScriptAnalyzer::reduce_preload(GDScriptParser::PreloadNode *p_preload) {
 }
 
 void GDScriptAnalyzer::reduce_self(GDScriptParser::SelfNode *p_self) {
+	// Check if 'self' is being used outside of a class context (e.g., in a struct)
+	if (parser->current_class == nullptr) {
+		p_self->is_constant = false;
+		// Emit a clear compile error: 'self' is not valid outside of class context
+		push_error(vformat(R"(Using "self" outside of a class context is not allowed.)"), p_self);
+		// Set type to void to indicate invalid usage
+		p_self->set_datatype(GDScriptParser::DataType());
+		return;
+	}
+
 	p_self->is_constant = false;
 	p_self->set_datatype(type_from_metatype(parser->current_class->get_datatype()));
 	mark_lambda_use_self();

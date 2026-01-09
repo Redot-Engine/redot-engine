@@ -37,6 +37,9 @@
 #include "core/variant/container_type_validate.h"
 #include "core/variant/variant_internal.h"
 
+// GDScript struct serialization support
+// Guarded with MODULE_GDSCRIPT_ENABLED since core/io can't depend on modules/gdscript
+#ifdef MODULE_GDSCRIPT_ENABLED
 // Forward declaration for GDScript struct serialization
 class GDScriptStructInstance;
 class GDScriptStruct;
@@ -58,6 +61,12 @@ static Dictionary _serialize_struct(const GDScriptStructInstance *p_instance) {
 	// Call the GDScript helper function
 	return gdscript_struct_instance_serialize(p_instance);
 }
+#else
+// Stub implementation when GDScript module is disabled
+static Dictionary _serialize_struct(const void *p_instance) {
+	ERR_FAIL_V_MSG(Dictionary(), "STRUCT serialization requires MODULE_GDSCRIPT_ENABLED.");
+}
+#endif // MODULE_GDSCRIPT_ENABLED
 
 const char *JSON::tk_name[TK_MAX] = {
 	"'{'",
@@ -847,6 +856,7 @@ Variant JSON::_from_native(const Variant &p_variant, bool p_full_objects, int p_
 			return ret;
 		} break;
 
+#ifdef MODULE_GDSCRIPT_ENABLED
 		case Variant::STRUCT: {
 			// Serialize struct as tagged dictionary with __type__ metadata
 			// This allows round-trip deserialization
@@ -884,6 +894,11 @@ Variant JSON::_from_native(const Variant &p_variant, bool p_full_objects, int p_
 
 			return ret;
 		} break;
+#else
+		case Variant::STRUCT: {
+			ERR_FAIL_V_MSG(Variant(), "STRUCT serialization requires MODULE_GDSCRIPT_ENABLED.");
+		} break;
+#endif // MODULE_GDSCRIPT_ENABLED
 
 		case Variant::DICTIONARY: {
 			const Dictionary dict = p_variant;
@@ -1358,6 +1373,7 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 					// Nothing to do at this stage. `Object` should be treated as a class, not as a built-in type.
 				} break;
 
+#ifdef MODULE_GDSCRIPT_ENABLED
 				case Variant::STRUCT: {
 					// Deserialize struct from tagged dictionary
 					LOAD_ARGS();
@@ -1389,6 +1405,11 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 
 					return struct_instance;
 				} break;
+#else
+				case Variant::STRUCT: {
+					ERR_FAIL_V_MSG(Variant(), "STRUCT deserialization requires MODULE_GDSCRIPT_ENABLED.");
+				} break;
+#endif // MODULE_GDSCRIPT_ENABLED
 
 				case Variant::DICTIONARY: {
 					LOAD_ARGS_CHECK_FACTOR(2);
