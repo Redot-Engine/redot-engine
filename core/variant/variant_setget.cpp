@@ -34,6 +34,7 @@
 #include "variant_callable.h"
 
 #include "core/io/resource.h"
+#include "modules/gdscript/gdscript_struct.h"
 
 struct VariantSetterGetterInfo {
 	void (*setter)(Variant *base, const Variant *value, bool &valid);
@@ -257,6 +258,13 @@ void Variant::set_named(const StringName &p_member, const Variant &p_value, bool
 			obj->set(p_member, p_value, &r_valid);
 			return;
 		}
+	} else if (type == Variant::STRUCT) {
+		GDScriptStructInstance *struct_instance = VariantGetInternalPtr<GDScriptStructInstance>::get_ptr(this);
+		if (struct_instance) {
+			r_valid = struct_instance->set(p_member, p_value);
+			return;
+		}
+		r_valid = false;
 	} else if (type == Variant::DICTIONARY) {
 		Dictionary &dict = *VariantGetInternalPtr<Dictionary>::get_ptr(this);
 		r_valid = dict.set(p_member, p_value);
@@ -287,6 +295,18 @@ Variant Variant::get_named(const StringName &p_member, bool &r_valid) const {
 			} else {
 				return obj->get(p_member, &r_valid);
 			}
+		} break;
+		case Variant::STRUCT: {
+			const GDScriptStructInstance *struct_instance = VariantGetInternalPtr<GDScriptStructInstance>::get_ptr(this);
+			if (struct_instance) {
+				Variant ret;
+				if (struct_instance->get(p_member, ret)) {
+					r_valid = true;
+					return ret;
+				}
+			}
+			r_valid = false;
+			return Variant();
 		} break;
 		case Variant::DICTIONARY: {
 			const Variant *v = VariantGetInternalPtr<Dictionary>::get_ptr(this)->getptr(p_member);

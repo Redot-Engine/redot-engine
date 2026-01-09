@@ -1256,6 +1256,9 @@ void GDScriptAnalyzer::resolve_class_member(GDScriptParser::ClassNode *p_class, 
 			case GDScriptParser::ClassNode::Member::GROUP:
 				// No-op, but needed to silence warnings.
 				break;
+			case GDScriptParser::ClassNode::Member::STRUCT:
+				// Structs are resolved separately in resolve_struct_body
+				break;
 			case GDScriptParser::ClassNode::Member::UNDEFINED:
 				ERR_PRINT("Trying to resolve undefined member.");
 				break;
@@ -1578,9 +1581,50 @@ void GDScriptAnalyzer::resolve_class_body(GDScriptParser::ClassNode *p_class, bo
 			GDScriptParser::ClassNode::Member member = p_class->members[i];
 			if (member.type == GDScriptParser::ClassNode::Member::CLASS) {
 				resolve_class_body(member.m_class, true);
+			} else if (member.type == GDScriptParser::ClassNode::Member::STRUCT) {
+				resolve_struct_body(member.m_struct, true);
 			}
 		}
 	}
+}
+
+void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct, const GDScriptParser::Node *p_source) {
+	if (p_struct == nullptr) {
+		return;
+	}
+
+	// Resolve base struct if extends is used
+	if (!p_struct->extends.is_empty()) {
+		// TODO: Implement struct inheritance resolution
+		// For now, mark as unresolved
+	}
+
+	// Resolve field types
+	for (const GDScriptParser::StructNode::Field &field : p_struct->fields) {
+		if (field.variable != nullptr && field.variable->datatype_specifier != nullptr) {
+			resolve_datatype(field.variable->datatype_specifier);
+			field.variable->set_datatype(field.variable->datatype_specifier->get_datatype());
+		}
+	}
+
+	// Resolve method signatures
+	for (GDScriptParser::FunctionNode *method : p_struct->methods) {
+		if (method != nullptr) {
+			resolve_function_signature(method);
+		}
+	}
+
+	// Resolve method bodies
+	for (GDScriptParser::FunctionNode *method : p_struct->methods) {
+		if (method != nullptr) {
+			resolve_function_body(method);
+		}
+	}
+}
+
+void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct, bool p_recursive) {
+	resolve_struct_body(p_struct);
+	// Recursive resolution not needed for structs since they can't contain nested structs (yet)
 }
 
 void GDScriptAnalyzer::resolve_node(GDScriptParser::Node *p_node, bool p_is_root) {
@@ -1595,6 +1639,10 @@ void GDScriptAnalyzer::resolve_node(GDScriptParser::Node *p_node, bool p_is_root
 				resolve_class_interface(static_cast<GDScriptParser::ClassNode *>(p_node), true);
 				resolve_class_body(static_cast<GDScriptParser::ClassNode *>(p_node), true);
 			}
+			break;
+		case GDScriptParser::Node::STRUCT:
+			// Resolve struct body
+			resolve_struct_body(static_cast<GDScriptParser::StructNode *>(p_node), true);
 			break;
 		case GDScriptParser::Node::CONSTANT:
 			resolve_constant(static_cast<GDScriptParser::ConstantNode *>(p_node), true);
@@ -2675,6 +2723,7 @@ void GDScriptAnalyzer::reduce_expression(GDScriptParser::ExpressionNode *p_expre
 		case GDScriptParser::Node::PATTERN:
 		case GDScriptParser::Node::RETURN:
 		case GDScriptParser::Node::SIGNAL:
+		case GDScriptParser::Node::STRUCT:
 		case GDScriptParser::Node::SUITE:
 		case GDScriptParser::Node::TYPE:
 		case GDScriptParser::Node::VARIABLE:
@@ -4972,6 +5021,7 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 							case Variant::NODE_PATH:
 							case Variant::SIGNAL:
 							case Variant::STRING_NAME:
+							case Variant::STRUCT:
 								break;
 							// Support depends on if the dictionary has a typed key, otherwise anything is valid.
 							case Variant::DICTIONARY:
@@ -5040,6 +5090,7 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 					case Variant::NODE_PATH:
 					case Variant::SIGNAL:
 					case Variant::STRING_NAME:
+					case Variant::STRUCT:
 						result_type.kind = GDScriptParser::DataType::VARIANT;
 						push_error(vformat(R"(Cannot use subscript operator on a base of type "%s".)", base_type.to_string()), p_subscript->base);
 						break;
@@ -5772,6 +5823,25 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 		}
 	}
 
+	// Handle struct construction
+	if (p_base_type.kind == GDScriptParser::DataType::STRUCT) {
+		if (p_is_constructor && p_function == SNAME("new")) {
+			// Struct constructor - returns instance of the struct
+			r_return_type = p_base_type;
+			r_return_type.is_meta_type = false;
+			r_method_flags.set_flag(METHOD_FLAG_STATIC);
+
+			// TODO: Get constructor parameters if struct has _init method
+			// For now, struct constructors have no parameters
+
+			return true;
+		}
+
+		// TODO: Handle struct methods when implemented
+		push_error(vformat(R"(Struct "%s" does not have a method "%s".)", p_base_type.to_string(), p_function), p_source);
+		return false;
+	}
+
 	if (p_base_type.kind == GDScriptParser::DataType::BUILTIN) {
 		// Construct a base type to get methods.
 		Callable::CallError err;
@@ -6249,6 +6319,7 @@ bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &
 		case GDScriptParser::DataType::VARIANT:
 		case GDScriptParser::DataType::BUILTIN:
 		case GDScriptParser::DataType::ENUM:
+		case GDScriptParser::DataType::STRUCT:
 		case GDScriptParser::DataType::RESOLVING:
 		case GDScriptParser::DataType::UNRESOLVED:
 			break; // Already solved before.
@@ -6286,6 +6357,7 @@ bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &
 		case GDScriptParser::DataType::VARIANT:
 		case GDScriptParser::DataType::BUILTIN:
 		case GDScriptParser::DataType::ENUM:
+		case GDScriptParser::DataType::STRUCT:
 		case GDScriptParser::DataType::RESOLVING:
 		case GDScriptParser::DataType::UNRESOLVED:
 			break; // Already solved before.

@@ -55,6 +55,7 @@ public:
 		NATIVE,
 		SCRIPT,
 		GDSCRIPT,
+		STRUCT,
 	};
 
 	Kind kind = UNINITIALIZED;
@@ -64,6 +65,7 @@ public:
 	StringName native_type;
 	Script *script_type = nullptr;
 	Ref<Script> script_type_ref;
+	class GDScriptStruct *struct_type = nullptr;
 
 	bool is_type(const Variant &p_variant, bool p_allow_implicit_conversion = false) const {
 		if (!has_type) {
@@ -178,6 +180,16 @@ public:
 					base = base->get_base_script();
 				}
 				return valid;
+			} break;
+			case STRUCT: {
+				if (p_variant.get_type() == Variant::NIL) {
+					return true;
+				}
+				if (p_variant.get_type() != Variant::STRUCT) {
+					return false;
+				}
+				// TODO: Check struct type matching
+				return true;
 			} break;
 		}
 		return false;

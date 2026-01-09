@@ -35,6 +35,7 @@
 #include "gdscript.h"
 #include "gdscript_byte_codegen.h"
 #include "gdscript_cache.h"
+#include "gdscript_struct.h"
 #include "gdscript_utility_functions.h"
 
 #include "core/config/engine.h"
@@ -194,6 +195,20 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 			result.kind = GDScriptDataType::BUILTIN;
 			result.builtin_type = p_datatype.builtin_type;
 			break;
+		case GDScriptParser::DataType::STRUCT: {
+			if (p_handle_metatype && p_datatype.is_meta_type) {
+				// Struct as a type reference
+				result.kind = GDScriptDataType::BUILTIN;
+				result.builtin_type = Variant::STRUCT;
+				break;
+			}
+
+			// Struct value type
+			result.kind = GDScriptDataType::STRUCT;
+			result.builtin_type = Variant::STRUCT;
+			// TODO: Store reference to struct definition
+			// result.struct_type = p_datatype.struct_type;
+		} break;
 		case GDScriptParser::DataType::RESOLVING:
 		case GDScriptParser::DataType::UNRESOLVED: {
 			_set_error("Parser bug (please report): converting unresolved type.", nullptr);
@@ -2999,7 +3014,7 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 }
 
 Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state) {
-	// Compile member functions, getters, and setters.
+	// Compile member functions, getters, setters, and structs.
 	for (int i = 0; i < p_class->members.size(); i++) {
 		const GDScriptParser::ClassNode::Member &member = p_class->members[i];
 		if (member.type == member.FUNCTION) {
@@ -3024,6 +3039,13 @@ Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser:
 						return err;
 					}
 				}
+			}
+		} else if (member.type == member.STRUCT) {
+			// Compile struct
+			const GDScriptParser::StructNode *struct_node = member.m_struct;
+			Error err = _compile_struct(p_script, p_class, struct_node);
+			if (err) {
+				return err;
 			}
 		}
 	}
@@ -3128,6 +3150,58 @@ Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser:
 	return OK;
 }
 
+Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::StructNode *p_struct) {
+	if (p_struct == nullptr) {
+		return OK;
+	}
+
+	// Create the GDScriptStruct object
+	GDScriptStruct *gdstruct = memnew(GDScriptStruct(p_struct->identifier->name));
+	gdstruct->set_owner(p_script);
+	gdstruct->set_fully_qualified_name(p_struct->fqsn);
+
+	// Add members to the struct
+	for (const GDScriptParser::StructNode::Field &field : p_struct->fields) {
+		if (field.variable != nullptr) {
+			Variant::Type type = Variant::NIL;
+			if (field.variable->datatype_specifier != nullptr) {
+				type = field.variable->datatype_specifier->get_datatype().builtin_type;
+			}
+			gdstruct->add_member(field.variable->identifier->name, type);
+		}
+	}
+
+	// Compile struct methods
+	for (const GDScriptParser::FunctionNode *method : p_struct->methods) {
+		if (method != nullptr) {
+			Error err = OK;
+			_parse_function(err, p_script, p_class, method);
+			if (err) {
+				memdelete(gdstruct);
+				return err;
+			}
+
+			// Add method to struct
+			// Note: We'll need to get the compiled function from the script
+			// For now, this is a placeholder
+		}
+	}
+
+	// Register the struct in the script
+	p_script->structs[p_struct->identifier->name] = gdstruct;
+
+	// Create a wrapper class for struct construction and store it as a constant
+	// This allows `StructName.new()` to work
+	Ref<GDScriptStructClass> struct_wrapper;
+	struct_wrapper.instantiate(); // This creates the object with ref_count = 1
+	struct_wrapper->set_struct_type(gdstruct); // Set the struct type after creation
+
+	// Add to constants so it's accessible at runtime
+	p_script->constants[p_struct->identifier->name] = struct_wrapper;
+
+	return OK;
+}
+
 void GDScriptCompiler::convert_to_initializer_type(Variant &p_variant, const GDScriptParser::VariableNode *p_node) {
 	// Set p_variant to the value of p_node's initializer, with the type of p_node's variable.
 	GDScriptParser::DataType member_t = p_node->datatype;
@@ -3149,12 +3223,15 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 	p_script->simplified_icon_path = p_class->simplified_icon_path;
 
 	HashMap<StringName, Ref<GDScript>> old_subclasses;
+	HashMap<StringName, GDScriptStruct *> old_structs;
 
 	if (p_keep_state) {
 		old_subclasses = p_script->subclasses;
+		old_structs = p_script->structs;
 	}
 
 	p_script->subclasses.clear();
+	p_script->structs.clear();
 
 	for (int i = 0; i < p_class->members.size(); i++) {
 		if (p_class->members[i].type != GDScriptParser::ClassNode::Member::CLASS) {
@@ -3180,6 +3257,18 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 		p_script->subclasses.insert(name, subclass);
 
 		make_scripts(subclass.ptr(), inner_class, p_keep_state);
+	}
+
+	// Clean up old structs that were not reused
+	// (Structs cannot be reused like subclasses since they may have different definitions)
+	// First, we need to remove the struct wrapper constants that reference these structs
+	for (const KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
+		p_script->constants.erase(E.key);
+	}
+
+	// Now it's safe to delete the old structs
+	for (KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
+		memdelete(E.value);
 	}
 }
 

@@ -897,6 +897,103 @@ GDScriptParser::ClassNode *GDScriptParser::parse_class(bool p_is_static) {
 	return n_class;
 }
 
+GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
+	StructNode *n_struct = alloc_node<StructNode>();
+
+	n_struct->owner_class = current_class;
+
+	if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for the struct name after "struct".)")) {
+		n_struct->identifier = parse_identifier();
+
+		// Build fully-qualified struct name
+		if (current_class) {
+			String base_name = current_class->fqcn;
+			if (base_name.is_empty()) {
+				base_name = GDScript::canonicalize_path(script_path);
+			}
+			n_struct->fqsn = base_name + "::" + n_struct->identifier->name;
+		} else {
+			n_struct->fqsn = n_struct->identifier->name;
+		}
+	}
+
+	// Handle extends for inheritance
+	if (match(GDScriptTokenizer::Token::EXTENDS)) {
+		if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for base struct after "extends".)")) {
+			IdentifierNode *base_identifier = parse_identifier();
+			n_struct->extends.push_back(base_identifier);
+		}
+	}
+
+	consume(GDScriptTokenizer::Token::COLON, R"(Expected ":" after struct declaration.)");
+
+	bool multiline = match(GDScriptTokenizer::Token::NEWLINE);
+
+	if (multiline && !consume(GDScriptTokenizer::Token::INDENT, R"(Expected indented block after struct declaration.)")) {
+		complete_extents(n_struct);
+		return n_struct;
+	}
+
+	// Parse struct body (fields and methods)
+	bool struct_end = false;
+	while (!struct_end && !is_at_end()) {
+		GDScriptTokenizer::Token token = current;
+
+		if (token.type == GDScriptTokenizer::Token::DEDENT) {
+			struct_end = true;
+			break;
+		}
+
+		if (token.type == GDScriptTokenizer::Token::NEWLINE) {
+			advance();
+			continue;
+		}
+
+		switch (token.type) {
+			case GDScriptTokenizer::Token::VAR: {
+				// Parse field
+				VariableNode *variable = parse_variable(false);
+				if (variable != nullptr) {
+					n_struct->add_field(variable);
+				}
+				end_statement("struct field");
+				break;
+			}
+			case GDScriptTokenizer::Token::FUNC: {
+				// Parse method
+				FunctionNode *function = parse_function(p_is_static);
+				if (function != nullptr) {
+					n_struct->add_method(function);
+					// Check for constructor
+					if (function->identifier->name == SNAME("_init")) {
+						n_struct->constructor = function;
+					}
+				}
+				end_statement("struct method");
+				break;
+			}
+			case GDScriptTokenizer::Token::PASS: {
+				advance();
+				end_statement(R"("pass")");
+				break;
+			}
+			default: {
+				push_error(vformat(R"(Unexpected %s in struct body.)", token.get_debug_name()));
+				advance();
+				break;
+			}
+		}
+	}
+
+	complete_extents(n_struct);
+
+	if (multiline) {
+		consume(GDScriptTokenizer::Token::DEDENT, R"(Missing unindent at the end of the struct body.)");
+	}
+
+	return n_struct;
+}
+
 void GDScriptParser::parse_class_name() {
 	if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for the global class name after "class_name".)")) {
 		current_class->identifier = parse_identifier();
@@ -1038,6 +1135,9 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 				break;
 			case GDScriptTokenizer::Token::CLASS:
 				parse_class_member(&GDScriptParser::parse_class, AnnotationInfo::CLASS, "class");
+				break;
+			case GDScriptTokenizer::Token::STRUCT:
+				parse_class_member(&GDScriptParser::parse_struct, AnnotationInfo::CLASS, "struct");
 				break;
 			case GDScriptTokenizer::Token::ENUM:
 				parse_class_member(&GDScriptParser::parse_enum, AnnotationInfo::NONE, "enum");
@@ -4200,6 +4300,7 @@ GDScriptParser::ParseRule *GDScriptParser::get_rule(GDScriptTokenizer::Token::Ty
 		{ &GDScriptParser::parse_self,                   	nullptr,                                        PREC_NONE }, // SELF,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // SIGNAL,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STATIC,
+		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STRUCT,
 		{ &GDScriptParser::parse_call,						nullptr,                                        PREC_NONE }, // SUPER,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // TRAIT,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // VAR,
@@ -5255,6 +5356,11 @@ String GDScriptParser::DataType::to_string() const {
 			// or the fully qualified class name of the script defining the enum
 			return String(native_type).get_file(); // Remove path, keep filename
 		}
+		case STRUCT:
+			if (struct_type && struct_type->identifier != nullptr) {
+				return struct_type->identifier->name.operator String();
+			}
+			return "<struct>";
 		case RESOLVING:
 		case UNRESOLVED:
 			return "<unresolved type>";
@@ -5306,6 +5412,12 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 					case ENUM:
 						result.hint = PROPERTY_HINT_ARRAY_TYPE;
 						result.hint_string = String(elem_type.native_type).replace("::", ".");
+						break;
+					case STRUCT:
+						result.hint = PROPERTY_HINT_ARRAY_TYPE;
+						if (elem_type.struct_type && elem_type.struct_type->identifier != nullptr) {
+							result.hint_string = elem_type.struct_type->identifier->name;
+						}
 						break;
 					case VARIANT:
 					case RESOLVING:
@@ -5415,6 +5527,12 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 				result.type = Variant::INT;
 				result.usage |= PROPERTY_USAGE_CLASS_IS_ENUM;
 				result.class_name = String(native_type).replace("::", ".");
+			}
+			break;
+		case STRUCT:
+			result.type = Variant::STRUCT;
+			if (struct_type && struct_type->identifier != nullptr) {
+				result.class_name = struct_type->identifier->name;
 			}
 			break;
 		case VARIANT:
@@ -5828,6 +5946,9 @@ void GDScriptParser::TreePrinter::print_class(ClassNode *p_class) {
 				break; // Nothing. Will be printed by enum.
 			case ClassNode::Member::GROUP:
 				break; // Nothing. Groups are only used by inspector.
+			case ClassNode::Member::STRUCT:
+				print_struct(m.m_struct);
+				break;
 			case ClassNode::Member::UNDEFINED:
 				push_line("<unknown member>");
 				break;
@@ -5953,6 +6074,42 @@ void GDScriptParser::TreePrinter::print_enum(EnumNode *p_enum) {
 	}
 	decrease_indent();
 	push_line("}");
+}
+
+void GDScriptParser::TreePrinter::print_struct(StructNode *p_struct) {
+	push_text("struct ");
+	if (p_struct->identifier != nullptr) {
+		print_identifier(p_struct->identifier);
+	} else {
+		push_text("<unnamed>");
+	}
+
+	// Print extends
+	if (!p_struct->extends.is_empty()) {
+		push_text(" extends ");
+		for (int i = 0; i < p_struct->extends.size(); i++) {
+			if (i > 0) {
+				push_text(".");
+			}
+			print_identifier(p_struct->extends[i]);
+		}
+	}
+
+	push_line(":");
+
+	increase_indent();
+
+	// Print fields
+	for (const StructNode::Field &field : p_struct->fields) {
+		print_variable(field.variable);
+	}
+
+	// Print methods
+	for (const FunctionNode *function : p_struct->methods) {
+		print_function(const_cast<FunctionNode *>(function));
+	}
+
+	decrease_indent();
 }
 
 void GDScriptParser::TreePrinter::print_for(ForNode *p_for) {

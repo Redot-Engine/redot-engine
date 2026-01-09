@@ -37,6 +37,7 @@
 #include "core/io/resource.h"
 #include "core/math/math_funcs.h"
 #include "core/variant/variant_parser.h"
+#include "modules/gdscript/gdscript_struct.h"
 
 PagedAllocator<Variant::Pools::BucketSmall, true> Variant::Pools::_bucket_small;
 PagedAllocator<Variant::Pools::BucketMedium, true> Variant::Pools::_bucket_medium;
@@ -118,6 +119,9 @@ String Variant::get_type_name(Variant::Type p_type) {
 		}
 		case OBJECT: {
 			return "Object";
+		}
+		case STRUCT: {
+			return "Struct";
 		}
 		case CALLABLE: {
 			return "Callable";
@@ -1311,6 +1315,15 @@ void Variant::reference(const Variant &p_variant) {
 				_data.packed_array = PackedArrayRef<Vector4>::create();
 			}
 		} break;
+		case STRUCT: {
+			// Reference the struct instance
+			GDScriptStructInstance *struct_instance = const_cast<GDScriptStructInstance *>(reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem));
+			if (struct_instance) {
+				struct_instance->reference();
+			}
+			// Copy the pointer bytes
+			memcpy(_data._mem, p_variant._data._mem, sizeof(_data._mem));
+		} break;
 		default: {
 		}
 	}
@@ -1479,6 +1492,18 @@ void Variant::_clear_internal() {
 		} break;
 		case PACKED_VECTOR4_ARRAY: {
 			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case STRUCT: {
+			// Unreference the struct instance
+			GDScriptStructInstance *struct_instance = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			if (struct_instance) {
+				struct_instance->unreference();
+				if (struct_instance->get_reference_count() == 0) {
+					memdelete(struct_instance);
+				}
+			}
+			// Clear the pointer
+			memset(_data._mem, 0, sizeof(_data._mem));
 		} break;
 		default: {
 			// Not needed, there is no point. The following do not allocate memory:
@@ -3490,7 +3515,7 @@ void Variant::construct_from_string(const String &p_string, Variant &r_value, Ob
 
 String Variant::get_construct_string() const {
 	String vars;
-	VariantWriter::write_to_string(*this, vars, nullptr, nullptr, true, true);
+	VariantWriter::write_to_string(*this, vars);
 
 	return vars;
 }

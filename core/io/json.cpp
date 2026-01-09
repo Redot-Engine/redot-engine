@@ -824,6 +824,11 @@ Variant JSON::_from_native(const Variant &p_variant, bool p_full_objects, int p_
 			return ret;
 		} break;
 
+		case Variant::STRUCT: {
+			// TODO: Implement struct serialization
+			ERR_FAIL_V_MSG(Variant(), vformat("Struct serialization not yet implemented."));
+		} break;
+
 		case Variant::DICTIONARY: {
 			const Dictionary dict = p_variant;
 
@@ -1295,6 +1300,11 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 
 				case Variant::OBJECT: {
 					// Nothing to do at this stage. `Object` should be treated as a class, not as a built-in type.
+				} break;
+
+				case Variant::STRUCT: {
+					// TODO: Implement struct deserialization
+					ERR_FAIL_V_MSG(Variant(), vformat("Struct deserialization not yet implemented."));
 				} break;
 
 				case Variant::DICTIONARY: {

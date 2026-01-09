@@ -37,6 +37,7 @@
 #include "gdscript_compiler.h"
 #include "gdscript_parser.h"
 #include "gdscript_rpc_callable.h"
+#include "gdscript_struct.h"
 #include "gdscript_tokenizer_buffer.h"
 #include "gdscript_warning.h"
 
@@ -115,6 +116,43 @@ Variant GDScriptNativeClass::callp(const StringName &p_method, const Variant **p
 	if (method && method->is_static()) {
 		// Native static method.
 		return method->call(nullptr, p_args, p_argcount, r_error);
+	}
+
+	r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+	return Variant();
+}
+
+void GDScriptStructClass::_bind_methods() {
+	// Don't bind "new" here - it will be handled via callp
+}
+
+GDScriptStructClass::GDScriptStructClass(GDScriptStruct *p_struct) {
+	struct_type = p_struct;
+	// Don't ERR_FAIL_NULL here since we need a default constructor for instantiate()
+}
+
+Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
+	ERR_FAIL_NULL_V(struct_type, Variant());
+	GDScriptStructInstance *instance = struct_type->create_instance(p_args, p_argcount);
+	if (!instance) {
+		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+		return Variant();
+	}
+
+	// Initialize reference count to 1 for the first owner
+	instance->reference();
+
+	// Create a Variant of STRUCT type with the instance
+	Variant result;
+	result.type = Variant::STRUCT;
+	// Copy the pointer
+	memcpy(result._data._mem, &instance, sizeof(instance));
+	return result;
+}
+
+Variant GDScriptStructClass::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
+	if (p_method == SNAME("new")) {
+		return _new(p_args, p_argcount, r_error);
 	}
 
 	r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
@@ -1592,6 +1630,12 @@ void GDScript::clear(ClearData *p_clear_data) {
 	static_variables.clear();
 	static_variables_indices.clear();
 
+	// Clear structs
+	for (KeyValue<StringName, GDScriptStruct *> &E : structs) {
+		clear_data->structs.insert(E.value);
+	}
+	structs.clear();
+
 	if (implicit_initializer) {
 		clear_data->functions.insert(implicit_initializer);
 		implicit_initializer = nullptr;
@@ -1627,6 +1671,10 @@ void GDScript::clear(ClearData *p_clear_data) {
 			if (gdscr.is_valid()) {
 				GDScriptCache::remove_script(gdscr->get_path());
 			}
+		}
+		// Delete structs
+		for (GDScriptStruct *E : clear_data->structs) {
+			memdelete(E);
 		}
 		clear_data->clear();
 	}

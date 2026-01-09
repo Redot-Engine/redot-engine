@@ -917,6 +917,9 @@ Variant VariantUtilityFunctions::type_convert(const Variant &p_variant, const Va
 			return p_variant.operator ::RID();
 		case Variant::Type::OBJECT:
 			return p_variant.operator Object *();
+		case Variant::Type::STRUCT:
+			// TODO: Implement struct conversion
+			return p_variant;
 		case Variant::Type::CALLABLE:
 			return p_variant.operator Callable();
 		case Variant::Type::SIGNAL:
@@ -1055,13 +1058,7 @@ void VariantUtilityFunctions::push_warning(const Variant **p_args, int p_arg_cou
 
 String VariantUtilityFunctions::var_to_str(const Variant &p_var) {
 	String vars;
-	VariantWriter::write_to_string(p_var, vars, nullptr, nullptr, true, false);
-	return vars;
-}
-
-String VariantUtilityFunctions::var_to_str_with_objects(const Variant &p_var) {
-	String vars;
-	VariantWriter::write_to_string(p_var, vars, nullptr, nullptr, true, true);
+	VariantWriter::write_to_string(p_var, vars);
 	return vars;
 }
 
@@ -1070,27 +1067,9 @@ Variant VariantUtilityFunctions::str_to_var(const String &p_var) {
 	ss.s = p_var;
 
 	String errs;
-	int line = 1;
+	int line;
 	Variant ret;
-	Error err = VariantParser::parse(&ss, ret, errs, line, nullptr, false);
-	if (err != OK) {
-		ERR_PRINT("Parse error at line " + itos(line) + ": " + errs + ".");
-	}
-
-	return ret;
-}
-
-Variant VariantUtilityFunctions::str_to_var_with_objects(const String &p_var) {
-	VariantParser::StreamString ss;
-	ss.s = p_var;
-
-	String errs;
-	int line = 1;
-	Variant ret;
-	Error err = VariantParser::parse(&ss, ret, errs, line, nullptr, true);
-	if (err != OK) {
-		ERR_PRINT("Parse error at line " + itos(line) + ": " + errs + ".");
-	}
+	(void)VariantParser::parse(&ss, ret, errs, line);
 
 	return ret;
 }
@@ -1810,9 +1789,6 @@ void Variant::_register_variant_utility_functions() {
 
 	FUNCBINDR(var_to_str, sarray("variable"), Variant::UTILITY_FUNC_TYPE_GENERAL);
 	FUNCBINDR(str_to_var, sarray("string"), Variant::UTILITY_FUNC_TYPE_GENERAL);
-
-	FUNCBINDR(var_to_str_with_objects, sarray("variable"), Variant::UTILITY_FUNC_TYPE_GENERAL);
-	FUNCBINDR(str_to_var_with_objects, sarray("string"), Variant::UTILITY_FUNC_TYPE_GENERAL);
 
 	FUNCBINDR(var_to_bytes, sarray("variable"), Variant::UTILITY_FUNC_TYPE_GENERAL);
 	FUNCBINDR(bytes_to_var, sarray("bytes"), Variant::UTILITY_FUNC_TYPE_GENERAL);

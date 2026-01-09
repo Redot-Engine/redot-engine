@@ -99,6 +99,7 @@ public:
 	struct UnaryOpNode;
 	struct VariableNode;
 	struct WhileNode;
+	struct StructNode;
 
 	class DataType {
 	public:
@@ -109,6 +110,7 @@ public:
 			NATIVE,
 			SCRIPT,
 			CLASS, // GDScript.
+			STRUCT, // Struct.
 			ENUM, // Enumeration.
 			VARIANT, // Can be any type.
 			RESOLVING, // Currently resolving.
@@ -136,6 +138,7 @@ public:
 		Ref<Script> script_type;
 		String script_path;
 		ClassNode *class_type = nullptr;
+		StructNode *struct_type = nullptr;
 
 		MethodInfo method_info; // For callable/signals.
 		HashMap<StringName, int64_t> enum_values; // For enums.
@@ -220,6 +223,8 @@ public:
 					return script_type == p_other.script_type;
 				case CLASS:
 					return class_type == p_other.class_type || class_type->fqcn == p_other.class_type->fqcn;
+				case STRUCT:
+					return struct_type == p_other.struct_type;
 				case RESOLVING:
 				case UNRESOLVED:
 					break;
@@ -328,6 +333,7 @@ public:
 			RETURN,
 			SELF,
 			SIGNAL,
+			STRUCT,
 			SUBSCRIPT,
 			SUITE,
 			TERNARY_OPERATOR,
@@ -561,6 +567,7 @@ public:
 			enum Type {
 				UNDEFINED,
 				CLASS,
+				STRUCT,
 				CONSTANT,
 				FUNCTION,
 				SIGNAL,
@@ -574,6 +581,7 @@ public:
 
 			union {
 				ClassNode *m_class = nullptr;
+				StructNode *m_struct;
 				ConstantNode *constant;
 				FunctionNode *function;
 				SignalNode *signal;
@@ -590,6 +598,8 @@ public:
 					case CLASS:
 						// All class-type members have an id.
 						return m_class->identifier->name;
+					case STRUCT:
+						return m_struct->identifier->name;
 					case CONSTANT:
 						return constant->identifier->name;
 					case FUNCTION:
@@ -615,6 +625,8 @@ public:
 						return "???";
 					case CLASS:
 						return "class";
+					case STRUCT:
+						return "struct";
 					case CONSTANT:
 						return "constant";
 					case FUNCTION:
@@ -637,6 +649,8 @@ public:
 				switch (type) {
 					case CLASS:
 						return m_class->start_line;
+					case STRUCT:
+						return m_struct->start_line;
 					case CONSTANT:
 						return constant->start_line;
 					case FUNCTION:
@@ -661,6 +675,14 @@ public:
 				switch (type) {
 					case CLASS:
 						return m_class->get_datatype();
+					case STRUCT:
+						if (m_struct) {
+							DataType dt;
+							dt.kind = DataType::STRUCT;
+							dt.struct_type = m_struct;
+							return dt;
+						}
+						return DataType();
 					case CONSTANT:
 						return constant->get_datatype();
 					case FUNCTION:
@@ -685,6 +707,8 @@ public:
 				switch (type) {
 					case CLASS:
 						return m_class;
+					case STRUCT:
+						return m_struct;
 					case CONSTANT:
 						return constant;
 					case FUNCTION:
@@ -710,6 +734,10 @@ public:
 			Member(ClassNode *p_class) {
 				type = CLASS;
 				m_class = p_class;
+			}
+			Member(StructNode *p_struct) {
+				type = STRUCT;
+				m_struct = p_struct;
 			}
 			Member(ConstantNode *p_constant) {
 				type = CONSTANT;
@@ -800,6 +828,58 @@ public:
 
 		ClassNode() {
 			type = CLASS;
+		}
+	};
+
+	struct StructNode : public Node {
+#ifdef TOOLS_ENABLED
+		MemberDocData doc_data;
+#endif // TOOLS_ENABLED
+
+		IdentifierNode *identifier = nullptr;
+		Vector<IdentifierNode *> extends; // Single inheritance from another struct
+
+		struct Field {
+			VariableNode *variable = nullptr;
+			int index = 0;
+		};
+		Vector<Field> fields;
+		HashMap<StringName, int> field_indices;
+
+		Vector<FunctionNode *> methods;
+		HashMap<StringName, FunctionNode *> method_map;
+
+		FunctionNode *constructor = nullptr; // Implicit _init method
+
+		DataType base_struct_type;
+		ClassNode *owner_class = nullptr; // Class that owns this struct
+
+		String fqsn; // Fully-qualified struct name
+
+		int start_line = 0;
+		int end_line = 0;
+
+		void add_field(VariableNode *p_variable) {
+			int idx = fields.size();
+			fields.push_back({ p_variable, idx });
+			field_indices[p_variable->identifier->name] = idx;
+		}
+
+		void add_method(FunctionNode *p_function) {
+			methods.push_back(p_function);
+			method_map[p_function->identifier->name] = p_function;
+		}
+
+		bool has_field(const StringName &p_name) const {
+			return field_indices.has(p_name);
+		}
+
+		bool has_method(const StringName &p_name) const {
+			return method_map.has(p_name);
+		}
+
+		StructNode() {
+			type = Node::STRUCT;
 		}
 	};
 
@@ -1511,6 +1591,7 @@ private:
 	// Main blocks.
 	void parse_program();
 	ClassNode *parse_class(bool p_is_static);
+	StructNode *parse_struct(bool p_is_static);
 	void parse_class_name();
 	void parse_extends();
 	void parse_class_body(bool p_is_multiline);
@@ -1672,6 +1753,7 @@ public:
 		void print_return(ReturnNode *p_return);
 		void print_self(SelfNode *p_self);
 		void print_signal(SignalNode *p_signal);
+		void print_struct(StructNode *p_struct);
 		void print_statement(Node *p_statement);
 		void print_subscript(SubscriptNode *p_subscript);
 		void print_suite(SuiteNode *p_suite);
