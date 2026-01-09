@@ -151,6 +151,10 @@ static const Color boot_splash_editor_bg_color = Color(0.06, 0.09, 0.14);
 #endif // TOOLS_ENABLED && !GDSCRIPT_NO_LSP
 #endif // MODULE_GDSCRIPT_ENABLED
 
+#ifdef MODULE_MCP_ENABLED
+#include "modules/mcp/mcp_server.h"
+#endif // MODULE_MCP_ENABLED
+
 /* Static members */
 
 // Singletons
@@ -288,6 +292,10 @@ static bool validate_extension_api = false;
 static String validate_extension_api_file;
 #endif
 bool profile_gpu = false;
+
+#ifdef MODULE_MCP_ENABLED
+static bool mcp_server_enabled = false;
+#endif
 
 // Constants.
 
@@ -604,7 +612,10 @@ void Main::print_help(const char *p_binary) {
 	print_help_option("--gpu-index <device_index>", "Use a specific GPU (run with --verbose to get a list of available devices).\n");
 	print_help_option("--text-driver <driver>", "Text driver (used for font rendering, bidirectional support and shaping).\n");
 	print_help_option("--tablet-driver <driver>", "Pen tablet input driver.\n");
-	print_help_option("--headless", "Enable headless mode (--display-driver headless --audio-driver Dummy). Useful for servers and with --script.\n");
+	print_help_option("--headless", "Enable headless mode (--display-driver headless --audio-driver Dummy). Useful for servers and with --script.\\n");
+#ifdef MODULE_MCP_ENABLED
+	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\\n", CLI_OPTION_AVAILABILITY_EDITOR);
+#endif
 	print_help_option("--log-file <file>", "Write output/error log to the specified path instead of the default location defined by the project.\n");
 	print_help_option("", "<file> path should be absolute or relative to the project directory.\n");
 	print_help_option("--write-movie <file>", "Write a video to the specified path (usually with .avi or .png extension).\n");
@@ -1405,6 +1416,13 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			audio_driver = NULL_AUDIO_DRIVER;
 			display_driver = NULL_DISPLAY_DRIVER;
 
+#ifdef MODULE_MCP_ENABLED
+		} else if (arg == "--mcp-server") { // Start MCP server for AI agent integration.
+			mcp_server_enabled = true;
+			audio_driver = NULL_AUDIO_DRIVER;
+			display_driver = NULL_DISPLAY_DRIVER;
+#endif
+
 		} else if (arg == "--embedded") { // Enable embedded mode.
 #ifdef MACOS_ENABLED
 			display_driver = EMBEDDED_DISPLAY_DRIVER;
@@ -2151,7 +2169,11 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	if (main_args.is_empty() && String(GLOBAL_GET("application/run/main_scene")) == "") {
 #ifdef TOOLS_ENABLED
-		if (!editor && !project_manager) {
+		if (!editor && !project_manager
+#ifdef MODULE_MCP_ENABLED
+				&& !mcp_server_enabled
+#endif
+		) {
 #endif
 			const String error_msg = "Error: Can't run project: no main scene defined in the project.\n";
 			OS::get_singleton()->print("%s", error_msg.utf8().get_data());
@@ -2945,7 +2967,10 @@ Error Main::setup2(bool p_show_boot_logo) {
 	set_current_thread_safe_for_nodes(true);
 
 	// Don't use rich formatting to prevent ANSI escape codes from being written to log files.
-	print_header(false);
+#ifdef MODULE_MCP_ENABLED
+	if (!mcp_server_enabled)
+#endif
+		print_header(false);
 
 #ifdef TOOLS_ENABLED
 	int accessibility_mode_editor = 0;
@@ -4229,7 +4254,11 @@ int Main::start() {
 	}
 
 #ifdef TOOLS_ENABLED
-	if (!editor && !project_manager && !cmdline_tool && script.is_empty() && game_path.is_empty()) {
+	if (!editor && !project_manager && !cmdline_tool && script.is_empty() && game_path.is_empty()
+#ifdef MODULE_MCP_ENABLED
+			&& !mcp_server_enabled
+#endif
+	) {
 		// If we end up here, it means we didn't manage to detect what we want to run.
 		// Let's throw an error gently. The code leading to this is pretty brittle so
 		// this might end up triggered by valid usage, in which case we'll have to
@@ -4724,6 +4753,17 @@ int Main::start() {
 			OS::get_singleton()->delay_usec(minimum_time - elapsed_time);
 		}
 	}
+
+#ifdef MODULE_MCP_ENABLED
+	// If MCP server mode is enabled, start the server and don't continue to the main loop.
+	if (mcp_server_enabled) {
+		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
+		OS::get_singleton()->benchmark_dump();
+
+		MCPServer::get_singleton()->start();
+		return EXIT_SUCCESS;
+	}
+#endif
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
 	OS::get_singleton()->benchmark_dump();
