@@ -63,10 +63,10 @@ void MCPBridge::_bind_methods() {
 Error MCPBridge::start_server(int p_port) {
 	is_host = true;
 	if (p_port == 0) {
-		// Try to find an available port
 		for (int i = 10000; i < 11000; i++) {
 			if (server->listen(i) == OK) {
 				port = i;
+				fprintf(stderr, "[MCP] Bridge server listening on port %d\n", port);
 				return OK;
 			}
 		}
@@ -75,26 +75,32 @@ Error MCPBridge::start_server(int p_port) {
 		Error err = server->listen(p_port);
 		if (err == OK) {
 			port = p_port;
+			fprintf(stderr, "[MCP] Bridge server listening on port %d\n", port);
 		}
 		return err;
 	}
 }
 
 bool MCPBridge::is_client_connected() const {
-	return connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED;
+	if (connection.is_valid()) {
+		connection->poll();
+		return connection->get_status() == StreamPeerTCP::STATUS_CONNECTED;
+	}
+	return false;
 }
 
 Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
 	is_host = false;
 	connection.instantiate();
 	port = p_port;
+	fprintf(stderr, "[MCP] Game process connecting to bridge at %s:%d\n", p_host.utf8().get_data(), port);
 	return connection->connect_to_host(p_host, p_port);
 }
 
 Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args) {
 	if (!is_client_connected()) {
 		Dictionary err;
-		err["error"] = "Not connected";
+		err["error"] = "Bridge not connected";
 		return err;
 	}
 
@@ -111,25 +117,35 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
 	String response_str;
 	while (OS::get_singleton()->get_ticks_msec() - start_time < 5000) {
+		connection->poll();
 		if (connection->get_available_bytes() > 0) {
 			uint8_t c;
-			connection->get_data(&c, 1);
-			if (c == '\n') {
-				break;
+			int read;
+			connection->get_partial_data(&c, 1, read);
+			if (read > 0) {
+				if (c == '\n') {
+					break;
+				}
+				response_str += (char)c;
 			}
-			response_str += (char)c;
 		} else {
 			OS::get_singleton()->delay_usec(1000);
 		}
 	}
 
-	Variant res_var;
-	if (JSON::parse_string(response_str).get_type() == Variant::DICTIONARY) {
-		return JSON::parse_string(response_str);
+	if (response_str.is_empty()) {
+		Dictionary err;
+		err["error"] = "Bridge timeout";
+		return err;
+	}
+
+	Variant res_var = JSON::parse_string(response_str);
+	if (res_var.get_type() == Variant::DICTIONARY) {
+		return res_var;
 	}
 
 	Dictionary err;
-	err["error"] = "Response timeout or invalid format";
+	err["error"] = "Bridge invalid response: " + response_str;
 	return err;
 }
 
@@ -137,28 +153,30 @@ void MCPBridge::update() {
 	if (is_host) {
 		if (server->is_connection_available()) {
 			connection = server->take_connection();
-			fprintf(stderr, "[MCP] Game process connected to bridge\n");
+			fprintf(stderr, "[MCP] Game process connected to bridge on host side\n");
 		}
 	} else {
-		// Client (Game) side: process commands
-		if (is_client_connected() && connection->get_available_bytes() > 0) {
-			String cmd_str;
+		// Client (Game) side
+		if (is_client_connected()) {
 			while (connection->get_available_bytes() > 0) {
 				uint8_t c;
-				connection->get_data(&c, 1);
-				if (c == '\n') {
-					break;
+				int read;
+				connection->get_partial_data(&c, 1, read);
+				if (read > 0) {
+					if (c == '\n') {
+						Variant cmd_var = JSON::parse_string(partial_data);
+						partial_data = "";
+						if (cmd_var.get_type() == Variant::DICTIONARY) {
+							Dictionary resp = _process_command(cmd_var);
+							String resp_json = JSON::stringify(resp);
+							CharString utf8 = resp_json.utf8();
+							connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
+							connection->put_u8('\n');
+						}
+					} else {
+						partial_data += (char)c;
+					}
 				}
-				cmd_str += (char)c;
-			}
-
-			Variant cmd_var = JSON::parse_string(cmd_str);
-			if (cmd_var.get_type() == Variant::DICTIONARY) {
-				Dictionary resp = _process_command(cmd_var);
-				String resp_json = JSON::stringify(resp);
-				CharString utf8 = resp_json.utf8();
-				connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
-				connection->put_u8('\n');
 			}
 		}
 	}
@@ -168,6 +186,8 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 	String action = p_cmd.get("action", "");
 	Dictionary args = p_cmd.get("args", Dictionary());
 	Dictionary resp;
+
+	fprintf(stderr, "[MCP] Bridge processing command: %s\n", action.utf8().get_data());
 
 	if (action == "capture") {
 		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
@@ -232,10 +252,6 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			Input::get_singleton()->parse_input_event(ev);
 		}
 		resp["status"] = "typed";
-	} else if (action == "wait") {
-		float secs = args.get("seconds", 1.0);
-		OS::get_singleton()->delay_usec(secs * 1000000);
-		resp["status"] = "waited";
 	} else if (action == "inspect_live") {
 		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
 		if (st) {

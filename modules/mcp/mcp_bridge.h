@@ -48,6 +48,7 @@ private:
 
 	bool is_host = false;
 	int port = 0;
+	String partial_data;
 
 	// Internal command handling
 	Dictionary _process_command(const Dictionary &p_cmd);

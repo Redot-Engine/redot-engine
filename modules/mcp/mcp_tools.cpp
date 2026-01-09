@@ -357,9 +357,9 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 			info["name"] = target->get_name();
 			info["type"] = target->get_class();
 			info["path"] = node_path;
-			Ref<Resource> script = target->get_script();
-			if (script.is_valid()) {
-				info["script"] = script->get_path();
+			Ref<Resource> script_res = target->get_script();
+			if (script_res.is_valid()) {
+				info["script"] = script_res->get_path();
 			}
 			Array children;
 			for (int i = 0; i < target->get_child_count(); i++) {
@@ -452,9 +452,9 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		if (!source || !target) {
 			result.set_error("Node not found");
 		} else {
-			Ref<Resource> script = target->get_script();
-			if (script.is_valid()) {
-				_ensure_callback_exists(script->get_path(), method);
+			Ref<Resource> script_res = target->get_script();
+			if (script_res.is_valid()) {
+				_ensure_callback_exists(script_res->get_path(), method);
 			}
 			source->connect(sig, Callable(target, method));
 			should_save = true;
