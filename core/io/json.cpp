@@ -864,9 +864,22 @@ Variant JSON::_from_native(const Variant &p_variant, bool p_full_objects, int p_
 				ERR_FAIL_V_MSG(Variant(), "Struct serialization failed: missing __type__ field.");
 			}
 
-			// Wrap the serialized data in the expected format
+			// Encode field values using _from_native to ensure proper JSON encoding
+			// This handles non-JSON-native types (nested structs, objects, typed arrays, etc.)
+			Dictionary encoded_struct_data;
+			encoded_struct_data["__type__"] = struct_data["__type__"]; // Copy type identifier as-is
+
+			for (const KeyValue<Variant, Variant> &kv : struct_data) {
+				if (kv.key == "__type__") {
+					continue; // Already copied above
+				}
+				// Encode the value using _from_native, keys are strings (field names) and don't need encoding
+				encoded_struct_data[kv.key] = _from_native(kv.value, p_full_objects, p_depth + 1);
+			}
+
+			// Wrap the encoded serialized data in the expected format
 			Array args;
-			args.push_back(struct_data);
+			args.push_back(encoded_struct_data);
 			ret[ARGS] = args;
 
 			return ret;
@@ -1351,14 +1364,27 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 
 					ERR_FAIL_COND_V_MSG(args.size() != 1, Variant(), "Invalid struct data: expected single dictionary argument.");
 
-					Dictionary data = args[0];
-					ERR_FAIL_COND_V_MSG(!data.has("__type__"), Variant(), "Invalid struct data: missing __type__ field.");
+					Dictionary encoded_data = args[0];
+					ERR_FAIL_COND_V_MSG(!encoded_data.has("__type__"), Variant(), "Invalid struct data: missing __type__ field.");
 
-					String type_name = data["__type__"];
+					String type_name = encoded_data["__type__"];
 					ERR_FAIL_COND_V_MSG(type_name.is_empty(), Variant(), "Invalid struct data: empty __type__ field.");
 
-					// Use ScriptServer to create the struct instance
-					Variant struct_instance = ScriptServer::create_struct_instance(type_name, data);
+					// Decode field values using _to_native to properly reconstruct non-JSON-native types
+					// This handles nested structs, objects, typed arrays, etc.
+					Dictionary decoded_struct_data;
+					decoded_struct_data["__type__"] = encoded_data["__type__"]; // Copy type identifier as-is
+
+					for (const KeyValue<Variant, Variant> &kv : encoded_data) {
+						if (kv.key == "__type__") {
+							continue; // Already copied above
+						}
+						// Decode the value using _to_native, keys are strings (field names) and don't need decoding
+						decoded_struct_data[kv.key] = _to_native(kv.value, p_allow_objects, p_depth + 1);
+					}
+
+					// Use ScriptServer to create the struct instance with decoded data
+					Variant struct_instance = ScriptServer::create_struct_instance(type_name, decoded_struct_data);
 					ERR_FAIL_COND_V_MSG(struct_instance.get_type() != Variant::STRUCT, Variant(), vformat("Failed to create struct instance for type '%s'.", type_name));
 
 					return struct_instance;

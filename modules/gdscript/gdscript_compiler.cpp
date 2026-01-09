@@ -3149,56 +3149,129 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	}
 
 	// Create the GDScriptStruct object
-	// The struct starts with ref_count = 1 from its constructor
+	// CRITICAL: The constructor sets ref_count = 0, not 1
+	// We must explicitly reference() after memnew to take ownership
 	GDScriptStruct *gdstruct = memnew(GDScriptStruct(p_struct->identifier->name));
+	gdstruct->reference(); // First reference: compiler owns it during compilation
 	gdstruct->set_owner(p_script);
 	gdstruct->set_fully_qualified_name(p_struct->fqsn);
 
-	// Add members to the struct
+	// Add members to the struct with full type information
 	for (const GDScriptParser::StructNode::Field &field : p_struct->fields) {
 		if (field.variable != nullptr) {
 			Variant::Type type = Variant::NIL;
+			StringName type_name;
+
 			if (field.variable->datatype_specifier != nullptr) {
-				type = field.variable->datatype_specifier->get_datatype().builtin_type;
+				const GDScriptParser::DataType &datatype = field.variable->datatype_specifier->get_datatype();
+
+				// Handle all datatype kinds, not just builtins
+				switch (datatype.kind) {
+					case GDScriptParser::DataType::BUILTIN:
+						type = datatype.builtin_type;
+						break;
+					case GDScriptParser::DataType::NATIVE:
+						type = Variant::OBJECT;
+						type_name = datatype.native_type;
+						break;
+					case GDScriptParser::DataType::SCRIPT:
+						type = Variant::OBJECT;
+						if (datatype.script_type.is_valid()) {
+							type_name = datatype.script_type->get_class_name();
+						}
+						break;
+					case GDScriptParser::DataType::CLASS:
+						type = Variant::OBJECT;
+						type_name = GDScript::get_class_static();
+						break;
+					case GDScriptParser::DataType::STRUCT:
+						type = Variant::STRUCT;
+						// For STRUCT type, store the fully qualified struct name
+						// datatype.struct_type is a parser node, use its fqsn directly
+						if (datatype.struct_type != nullptr) {
+							type_name = datatype.struct_type->fqsn;
+						}
+						break;
+					default:
+						type = Variant::NIL;
+						break;
+				}
 			}
-			gdstruct->add_member(field.variable->identifier->name, type);
+
+			// Add member with type information
+			gdstruct->add_member(field.variable->identifier->name, type, type_name);
+
+			// Set default value if present
+			// Note: We access the member through the mutable HashMap after insertion
+			if (field.variable->initializer != nullptr && field.variable->initializer->is_constant) {
+				// Get mutable access to the member we just added
+				HashMap<StringName, GDScriptStruct::MemberInfo> &members = const_cast<HashMap<StringName, GDScriptStruct::MemberInfo> &>(gdstruct->get_members());
+				GDScriptStruct::MemberInfo *member_info = members.getptr(field.variable->identifier->name);
+				if (member_info != nullptr) {
+					member_info->default_value = field.variable->initializer->reduced_value;
+					member_info->has_default_value = true;
+				}
+			}
 		}
 	}
 
 	// Compile struct methods
+	// TODO: Pass struct-specific context instead of p_class for correct "self" semantics
+	// This requires creating a struct-specific ClassNode wrapper or similar mechanism
 	for (const GDScriptParser::FunctionNode *method : p_struct->methods) {
 		if (method != nullptr) {
 			Error err = OK;
 			GDScriptFunction *func = _parse_function(err, p_script, p_class, method);
 			if (err) {
-				// Unreference and delete on error
-				gdstruct->unreference();
+				// ERROR PATH: Clean up properly with RAII-style unwinding
+				// At this point, only the compiler's reference exists (ref_count = 1)
+				// The struct hasn't been added to p_script->structs or global registry yet
+				gdstruct->unreference(); // Release compiler's reference (ref_count goes 1 -> 0)
+
+				// Verify ref_count is 0 (should be, since we had the only reference)
 				if (gdstruct->get_reference_count() == 0) {
-					memdelete(gdstruct);
+					memdelete(gdstruct); // Safe to delete now
+				} else {
+					ERR_PRINT(vformat("Struct '%s' has unexpected references after compilation error: ref_count = %d",
+							p_struct->identifier->name, gdstruct->get_reference_count()));
 				}
 				return err;
 			}
 
 			// Add method to struct
-			gdstruct->add_method(method->identifier->name, func);
+			gdstruct->add_method(method->identifier->name, func, method->is_static);
 		}
 	}
 
-	// Register the struct in the script
-	// The script takes ownership of the struct (transfers the initial reference from constructor)
+	// Register the struct in the script (takes a reference)
+	// The script HashMap stores the raw pointer, so we add a reference for it
+	gdstruct->reference(); // Second reference: p_script->structs owns it
 	p_script->structs[p_struct->identifier->name] = gdstruct;
 
-	// Register the struct in the global registry for serialization
+	// Register the struct in the global registry for serialization (takes a reference)
+	gdstruct->reference(); // Third reference: global registry owns it
 	GDScriptLanguage::get_singleton()->register_struct(p_struct->fqsn, gdstruct);
 
 	// Create a wrapper class for struct construction and store it as a constant
 	// This allows `StructName.new()` to work
 	Ref<GDScriptStructClass> struct_wrapper;
-	struct_wrapper.instantiate(); // This creates the object with ref_count = 1
-	struct_wrapper->set_struct_type(gdstruct); // This will also reference the struct
+	struct_wrapper.instantiate(); // RefCounted with ref_count = 1
+	// set_struct_type will take another reference (Fourth reference: struct_wrapper owns it)
+	struct_wrapper->set_struct_type(gdstruct);
 
 	// Add to constants so it's accessible at runtime
 	p_script->constants[p_struct->identifier->name] = struct_wrapper;
+
+	// REFERENCE COUNTING SUMMARY:
+	// After successful compilation, gdstruct has 4 references:
+	// 1. Compiler (released at function end)
+	// 2. p_script->structs HashMap (released when script is cleared/struct is removed)
+	// 3. Global registry (released when GDScriptLanguage::unregister_struct is called)
+	// 4. struct_wrapper (released when wrapper is destroyed/constant is cleared)
+	//
+	// When function returns, the compiler's reference (ref #1) is implicitly released
+	// because we don't keep a reference to gdstruct. The struct stays alive because
+	// the other 3 references remain.
 
 	return OK;
 }
@@ -3262,12 +3335,26 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 
 	// Clean up old structs that were not reused
 	// (Structs cannot be reused like subclasses since they may have different definitions)
-	// First, we need to remove the struct wrapper constants that reference these structs
+	//
+	// CRITICAL: Must mirror the cleanup in GDScript::clear() to avoid leaks/crashes
+	// The order matters: unregister -> unreference -> delete (if ref_count == 0)
+	//
+	// Old structs have 3 references at this point:
+	// 1. p_script->structs HashMap (about to be cleared below)
+	// 2. Global registry (must be unregistered first)
+	// 3. struct_wrapper in constants (about to be erased)
+
+	// Step 1: Remove struct wrapper constants (removes reference #3)
 	for (const KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
 		p_script->constants.erase(E.key);
 	}
 
-	// Now unreference the old structs - they will be deleted if ref count reaches 0
+	// Step 2: Unregister from global registry (removes reference #2)
+	for (const KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
+		GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
+	}
+
+	// Step 3: Unreference and delete old structs (removes reference #1, and if ref_count == 0, delete)
 	for (KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
 		E.value->unreference();
 		if (E.value->get_reference_count() == 0) {

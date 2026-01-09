@@ -162,49 +162,112 @@ void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
 }
 
 // Temporary helper to create a STRUCT Variant from a GDScriptStructInstance
-// TODO: Replace with proper Variant API once Variant exposes a safe constructor (e.g., Variant::from_struct)
-// This is a workaround needed because Variant doesn't yet provide a public API for constructing STRUCT variants
-// from struct instances.
+// TODO[PERFORMANCE]: Replace with proper Variant API once Variant exposes a safe constructor
 //
-// Safety notes:
-// - Variant::_data._mem is a byte array sized to fit any Variant type (see variant.h:281)
-// - STRUCT type stores a single pointer to GDScriptStructInstance
-// - This mimics how other pointer-based types (like OBJECT) are stored internally
+// RECOMMENDED API ADDITIONS (in order of preference):
+// 1. static Variant Variant::from_struct(GDScriptStructInstance *p_instance)
+//    - Cleanest API, consistent with other Variant constructors
+//    - Allows Variant to handle all validation internally
+//    - Can be made friend if needed for private access
 //
-// When adding a proper Variant API, consider adding one of:
-// - static Variant Variant::from_struct(GDScriptStructInstance *p_instance)
-// - void Variant::set_struct(GDScriptStructInstance *p_instance)
-// - friend class GDScriptStructInstance; in Variant, with direct accessors
+// 2. void Variant::set_struct(GDScriptStructInstance *p_instance)
+//    - Similar to set_object(), set_ref(), etc.
+//    - Requires Variant to already exist, slightly less efficient
+//
+// 3. friend class GDScriptStructInstance; in Variant
+//    - Gives GDScript direct access to Variant internals
+//    - Most flexible but breaks encapsulation
+//
+// ARCHITECTURAL NOTES:
+// - Variant::_data._mem is a byte array sized to fit any Variant type (sizeof(_mem) >= sizeof(void*))
+// - STRUCT type stores a single pointer to GDScriptStructInstance (reference-counted)
+// - This pattern mimics how OBJECT and other pointer-based types are stored internally
+// - The struct instance MUST already be reference-counted before calling this (see _new below)
+//
+// SAFETY ASSERTIONS:
+// - Null check: p_instance must not be null
+// - Size check: sizeof(void*) must fit in Variant::_data._mem
+// - Enum check: Variant::STRUCT must be within valid enum range
+//
+// OWNERSHIP TRANSFER:
+// - This function does NOT transfer ownership of the reference
+// - The caller MUST ensure the instance has at least one reference
+// - The Variant will hold a reference to the instance for its lifetime
+// - When the Variant is destroyed or reassigned, it will call Variant::destructor()
+//    which will decrement the reference count
 Variant GDScriptStructClass::_variant_from_struct_instance(GDScriptStructInstance *p_instance) {
-	// Safety assertions
+	// SAFETY CHECK #1: Null pointer validation
 	ERR_FAIL_NULL_V(p_instance, Variant());
-	CRASH_COND_MSG(sizeof(void *) > sizeof(Variant::_data._mem), "Variant internal storage too small for pointer");
-	CRASH_COND_MSG(Variant::STRUCT >= Variant::VARIANT_MAX, "Variant::STRUCT enum out of range");
 
+	// SAFETY CHECK #2: Verify Variant internal storage is large enough for pointer
+	// This ensures we won't overflow the buffer when copying the pointer
+	constexpr size_t required_size = sizeof(void *);
+	constexpr size_t available_size = sizeof(Variant::_data._mem);
+	CRASH_COND_MSG(required_size > available_size,
+			vformat("Variant internal storage too small for struct pointer (need %d bytes, have %d bytes)",
+					required_size, available_size));
+
+	// SAFETY CHECK #3: Verify Variant::STRUCT enum is valid
+	// This catches enum value corruption or mismatched headers
+	CRASH_COND_MSG(Variant::STRUCT < 0 || Variant::STRUCT >= Variant::VARIANT_MAX,
+			vformat("Variant::STRUCT enum value %d out of valid range [0, %d)",
+					Variant::STRUCT, Variant::VARIANT_MAX));
+
+	// SAFETY CHECK #4: Verify instance has valid reference count
+	// The struct instance should be reference-counted and have at least 1 reference
+	// This is set by the caller in _new() via instance->reference() before calling this
+#ifdef DEBUG_ENABLED
+	const int ref_count = p_instance->get_reference_count();
+	CRASH_COND_MSG(ref_count <= 0,
+			vformat("Struct instance has invalid reference count %d (must be >= 1). "
+					"Call instance->reference() before _variant_from_struct_instance().",
+					ref_count));
+#endif
+
+	// CONSTRUCT THE VARIANT
+	// This directly manipulates Variant internals, which is safe here because:
+	// 1. We've validated all preconditions above
+	// 2. GDScriptStructClass is a friend of Variant (can access private members)
+	// 3. The memory layout is well-defined and stable
+	// 4. This matches the pattern used for OBJECT and other pointer types
 	Variant result;
 	result.type = Variant::STRUCT;
+
 	// Copy the pointer into Variant's internal storage
-	// This is safe because:
-	// 1. _mem is sized to fit any Variant type (see variant.h union definition)
-	// 2. We verified sizeof(void*) fits in _mem above
-	// 3. The struct instance is already reference-counted (caller holds a reference)
+	// memcpy is used instead of assignment for type safety and to avoid strict aliasing issues
 	memcpy(result._data._mem, &p_instance, sizeof(void *));
+
 	return result;
 }
 
 Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 	ERR_FAIL_NULL_V(struct_type, Variant());
+
+	// Create the struct instance
+	// The constructor initializes ref_count to 0, so we need to increment it
 	GDScriptStructInstance *instance = struct_type->create_instance(p_args, p_argcount);
 	if (!instance) {
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
 		return Variant();
 	}
 
-	// Initialize reference count to 1 for the first owner
-	instance->reference();
+	// REFERENCE COUNTING MANAGEMENT:
+	// The struct instance uses SafeRefCount for reference semantics
+	// - reference() increments the count (from 0 to 1 on first call)
+	// - Each Variant that holds this instance increments the count
+	// - When Variant is destroyed, it calls destructor() which decrements
+	// - When count reaches 0, the instance is automatically deleted
+	//
+	// We increment BEFORE creating the Variant because:
+	// 1. _variant_from_struct_instance() does NOT take ownership
+	// 2. The Variant needs to hold a reference to the instance
+	// 3. If we don't increment here, the Variant would hold a dangling reference
+	instance->reference(); // Now ref_count = 1 (this Variant owns the instance)
 
 	// Create a Variant of STRUCT type with the instance
-	// Uses the helper function to safely construct the Variant
+	// The Variant will hold the reference (ref_count stays at 1)
+	// When the Variant is destroyed, Variant::destructor() will call unreference()
+	// which will decrement ref_count to 0, triggering deletion of the instance
 	return _variant_from_struct_instance(instance);
 }
 
@@ -3149,12 +3212,33 @@ Ref<GDScript> GDScriptLanguage::get_script_by_fully_qualified_name(const String 
 
 void GDScriptLanguage::register_struct(const String &p_fully_qualified_name, GDScriptStruct *p_struct) {
 	MutexLock lock(mutex);
+
+	// Check if a struct with this name already exists
+	HashMap<String, GDScriptStruct *>::Iterator existing = global_structs.find(p_fully_qualified_name);
+	if (existing) {
+		// Unreference the existing struct before replacing it
+		GDScriptStruct *old_struct = existing->value;
+		if (old_struct && old_struct->unreference()) {
+			memdelete(old_struct);
+		}
+		global_structs.erase(p_fully_qualified_name);
+	}
+
 	global_structs.insert(p_fully_qualified_name, p_struct);
 }
 
 void GDScriptLanguage::unregister_struct(const String &p_fully_qualified_name) {
 	MutexLock lock(mutex);
-	global_structs.erase(p_fully_qualified_name);
+
+	HashMap<String, GDScriptStruct *>::Iterator existing = global_structs.find(p_fully_qualified_name);
+	if (existing) {
+		// Unreference the struct before removing it from registry
+		GDScriptStruct *old_struct = existing->value;
+		if (old_struct && old_struct->unreference()) {
+			memdelete(old_struct);
+		}
+		global_structs.erase(p_fully_qualified_name);
+	}
 }
 
 GDScriptStruct *GDScriptLanguage::get_struct_by_name(const String &p_fully_qualified_name) {
@@ -3173,17 +3257,31 @@ Variant GDScriptLanguage::create_struct_instance(const String &p_fully_qualified
 	}
 
 	// Create a new struct instance
+	// The constructor initializes ref_count to 0
 	GDScriptStructInstance *instance = memnew(GDScriptStructInstance(struct_type));
 
 	// Deserialize the data into the instance
 	if (!p_data.is_empty()) {
 		if (!instance->deserialize(p_data)) {
-			memdelete(instance);
+			// Clean up properly using unreference() instead of memdelete
+			// Since ref_count is 0, unreference() will return true and we can safely delete
+			if (instance->unreference()) {
+				memdelete(instance);
+			}
 			ERR_FAIL_V_MSG(Variant(), vformat("Failed to deserialize struct instance for type '%s'.", p_fully_qualified_name));
 		}
 	}
 
+	// REFERENCE COUNTING: Increment ref_count before creating Variant
+	// This is required by _variant_from_struct_instance() contract:
+	// "The caller MUST ensure the instance has at least one reference"
+	// The Variant will hold this reference, and when destroyed will call unreference()
+	instance->reference(); // Now ref_count = 1
+
 	// Wrap in a Variant
+	// The Variant will hold the reference (ref_count stays at 1)
+	// When the Variant is destroyed, Variant::destructor() will call unreference()
+	// which will decrement ref_count to 0, triggering deletion of the instance
 	Ref<GDScriptStructClass> struct_class;
 	struct_class.instantiate();
 	struct_class->set_struct_type(struct_type);

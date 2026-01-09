@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include "core/object/object_id.h"
 #include "core/templates/hash_map.h"
+#include "core/templates/list.h"
 #include "core/templates/safe_refcount.h"
 #include "core/templates/vector.h"
 #include "core/variant/variant.h"

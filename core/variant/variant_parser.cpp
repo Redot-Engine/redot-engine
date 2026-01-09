@@ -1720,21 +1720,6 @@ Error VariantParser::_parse_dictionary(Dictionary &object, Stream *p_stream, int
 			}
 
 			if (token.type == TK_CURLY_BRACKET_CLOSE) {
-				// Check if this dictionary represents a serialized struct
-				if (object.has("__type__")) {
-					String type_name = object["__type__"];
-					if (!type_name.is_empty()) {
-						// Try to reconstruct the struct instance
-						Variant struct_instance = ScriptServer::create_struct_instance(type_name, object);
-						if (struct_instance.get_type() == Variant::STRUCT) {
-							// Successfully reconstructed, but we can't return it here
-							// because the caller expects a Dictionary
-							// This is a limitation - the binary format doesn't support tagged variants
-							// For now, we'll leave it as a Dictionary and rely on JSON for round-trip
-							// TODO: Add tagged variant support to binary format
-						}
-					}
-				}
 				return OK;
 			}
 
