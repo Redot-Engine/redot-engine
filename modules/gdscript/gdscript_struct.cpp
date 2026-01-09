@@ -35,6 +35,7 @@
 #include "core/object/object.h"
 #include "core/string/string_name.h"
 #include "core/variant/callable.h"
+#include "core/variant/variant_utility.h"
 
 GDScriptStruct::GDScriptStruct(const StringName &p_name) :
 		name(p_name) {
@@ -44,22 +45,40 @@ GDScriptStruct::GDScriptStruct(const StringName &p_name) :
 }
 
 GDScriptStruct::~GDScriptStruct() {
-	// Do not delete children here. The reference counting system will handle
-	// cleanup naturally. Children hold references to their parent struct,
-	// and when those references are released elsewhere (e.g., when the
-	// owning GDScript is cleared), the children will be properly destroyed.
+	// Reference counting handles cleanup naturally
+	// The children vector is not currently used for ownership tracking
 }
 
 void GDScriptStruct::reference() {
 	ref_count.ref();
 }
 
-void GDScriptStruct::unreference() {
-	ref_count.unref();
+bool GDScriptStruct::unreference() {
+	return ref_count.unref();
+}
+
+int GDScriptStruct::get_member_count() const {
+	// Return total member count including inherited members
+	int count = members.size();
+	if (base_struct) {
+		count += base_struct->get_member_count();
+	}
+	return count;
 }
 
 GDScriptStructInstance *GDScriptStruct::create_instance(const Variant **p_args, int p_argcount) {
+	// Allocate instance
 	GDScriptStructInstance *instance = memnew(GDScriptStructInstance(this));
+	if (instance == nullptr) {
+		ERR_FAIL_V_MSG(nullptr, vformat("Failed to allocate memory for struct '%s'.", name));
+	}
+
+	// Validate argument count matches expected member count
+	int expected_args = member_names.size();
+	if (p_argcount > expected_args) {
+		memdelete(instance);
+		ERR_FAIL_V_MSG(nullptr, vformat("Too many arguments for struct '%s': expected %d, got %d.", name, expected_args, p_argcount));
+	}
 
 	// Apply positional arguments to struct members in declaration order
 	// This mimics constructor behavior: Struct.new(arg1, arg2, ...)
@@ -68,7 +87,41 @@ GDScriptStructInstance *GDScriptStruct::create_instance(const Variant **p_args, 
 		if (arg_idx < p_argcount) {
 			const MemberInfo *info = members.getptr(member_name);
 			if (info) {
-				instance->members.write[info->index] = *p_args[arg_idx];
+				const Variant &arg_value = *p_args[arg_idx];
+
+				// Validate argument type against member's declared type
+				bool type_valid = true;
+				if (info->type != Variant::NIL && arg_value.get_type() != Variant::NIL) {
+					// Check if the argument type matches the expected type
+					if (info->type == Variant::OBJECT) {
+						// For Object types, allow any Object-derived type
+						type_valid = arg_value.is_ref_counted() || arg_value.get_type() == Variant::OBJECT;
+					} else if (arg_value.get_type() != info->type) {
+						// Type mismatch - try to convert
+						Variant converted;
+						if (Variant::can_convert(arg_value.get_type(), info->type)) {
+							converted = VariantUtilityFunctions::type_convert(arg_value, info->type);
+							type_valid = (converted.get_type() == info->type);
+							if (type_valid) {
+								instance->members.write[info->index] = converted;
+							}
+						} else {
+							type_valid = false;
+						}
+					}
+				}
+
+				if (!type_valid) {
+					memdelete(instance);
+					ERR_FAIL_V_MSG(nullptr, vformat("Type mismatch for struct '%s' member '%s': expected %s, got %s.", name, member_name, Variant::get_type_name(info->type), Variant::get_type_name(arg_value.get_type())));
+				}
+
+				// Type is valid (or passed validation), assign the value
+				if (info->type != Variant::NIL && arg_value.get_type() != Variant::NIL && arg_value.get_type() != info->type) {
+					// Already converted above, or will use the original value
+				} else {
+					instance->members.write[info->index] = arg_value;
+				}
 			}
 			arg_idx++;
 		} else {
@@ -86,7 +139,7 @@ void GDScriptStruct::add_member(const StringName &p_name, const Variant::Type p_
 	ERR_FAIL_COND(members.has(p_name));
 
 	MemberInfo info;
-	info.index = members.size();
+	info.index = get_member_count(); // Index after all inherited members
 	info.type = p_type;
 	info.type_name = p_type_name;
 
@@ -165,15 +218,30 @@ GDScriptStructInstance::GDScriptStructInstance(GDScriptStruct *p_struct_type) :
 		struct_type(p_struct_type) {
 	ERR_FAIL_NULL(struct_type);
 
-	// Initialize members
-	const HashMap<StringName, GDScriptStruct::MemberInfo> &struct_members = struct_type->get_members();
-	members.resize(struct_members.size());
+	// Calculate total member count including inherited members
+	int total_count = struct_type->get_member_count();
+	members.resize(total_count);
 
-	// Set default values
-	for (const KeyValue<StringName, GDScriptStruct::MemberInfo> &E : struct_members) {
-		const GDScriptStruct::MemberInfo &info = E.value;
-		if (info.has_default_value) {
-			members.write[info.index] = info.default_value;
+	// Set default values by walking the inheritance chain
+	// Start from the base struct and work down to the derived struct
+	// This ensures derived struct defaults override base struct defaults
+	Vector<GDScriptStruct *> chain;
+	GDScriptStruct *current = struct_type;
+	while (current) {
+		chain.push_back(current);
+		current = current->get_base_struct();
+	}
+
+	// Iterate in reverse order (base to derived)
+	for (int i = chain.size() - 1; i >= 0; i--) {
+		GDScriptStruct *struct_in_chain = chain[i];
+		const HashMap<StringName, GDScriptStruct::MemberInfo> &struct_members = struct_in_chain->get_members();
+
+		for (const KeyValue<StringName, GDScriptStruct::MemberInfo> &E : struct_members) {
+			const GDScriptStruct::MemberInfo &info = E.value;
+			if (info.has_default_value) {
+				members.write[info.index] = info.default_value;
+			}
 		}
 	}
 }
@@ -187,7 +255,12 @@ bool GDScriptStructInstance::reference() {
 }
 
 bool GDScriptStructInstance::unreference() {
-	return ref_count.unref();
+	if (ref_count.unref()) {
+		// Reference count reached zero, delete this instance
+		memdelete(this);
+		return true;
+	}
+	return false;
 }
 
 bool GDScriptStructInstance::set(const StringName &p_name, const Variant &p_value) {
@@ -246,24 +319,48 @@ Dictionary GDScriptStructInstance::serialize() const {
 	// Store type name
 	data["__type__"] = struct_type->get_fully_qualified_name();
 
-	// Serialize all members
-	const HashMap<StringName, GDScriptStruct::MemberInfo> &struct_members = struct_type->get_members();
+	// Serialize all members from the entire inheritance chain
+	// Walk from base to derived to ensure consistent ordering
+	Vector<GDScriptStruct *> chain;
+	GDScriptStruct *current = struct_type;
+	while (current) {
+		chain.push_back(current);
+		current = current->get_base_struct();
+	}
 
-	for (const KeyValue<StringName, GDScriptStruct::MemberInfo> &E : struct_members) {
-		const Variant &value = members[E.value.index];
-		data[E.key] = value;
+	// Iterate in reverse order (base to derived)
+	for (int i = chain.size() - 1; i >= 0; i--) {
+		GDScriptStruct *struct_in_chain = chain[i];
+		const HashMap<StringName, GDScriptStruct::MemberInfo> &struct_members = struct_in_chain->get_members();
+
+		for (const KeyValue<StringName, GDScriptStruct::MemberInfo> &E : struct_members) {
+			const Variant &value = members[E.value.index];
+			data[E.key] = value;
+		}
 	}
 
 	return data;
 }
 
 bool GDScriptStructInstance::deserialize(const Dictionary &p_data) {
-	// For now, just deserialize members
-	const HashMap<StringName, GDScriptStruct::MemberInfo> &struct_members = struct_type->get_members();
+	// Deserialize all members from the entire inheritance chain
+	// Walk from base to derived to ensure consistent ordering
+	Vector<GDScriptStruct *> chain;
+	GDScriptStruct *current = struct_type;
+	while (current) {
+		chain.push_back(current);
+		current = current->get_base_struct();
+	}
 
-	for (const KeyValue<StringName, GDScriptStruct::MemberInfo> &E : struct_members) {
-		if (p_data.has(E.key)) {
-			members.write[E.value.index] = p_data[E.key];
+	// Iterate in reverse order (base to derived)
+	for (int i = chain.size() - 1; i >= 0; i--) {
+		GDScriptStruct *struct_in_chain = chain[i];
+		const HashMap<StringName, GDScriptStruct::MemberInfo> &struct_members = struct_in_chain->get_members();
+
+		for (const KeyValue<StringName, GDScriptStruct::MemberInfo> &E : struct_members) {
+			if (p_data.has(E.key)) {
+				members.write[E.value.index] = p_data[E.key];
+			}
 		}
 	}
 

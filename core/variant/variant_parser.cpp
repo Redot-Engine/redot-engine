@@ -2181,9 +2181,15 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 			// This allows structs to be saved/loaded and printed
 			const GDScriptStructInstance *struct_instance = VariantGetInternalPtr<GDScriptStructInstance>::get_ptr(&p_variant);
 			if (struct_instance) {
-				Dictionary dict = struct_instance->serialize();
-				// Recursively write the dictionary
-				write(dict, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+				if (unlikely(p_recursion_count > MAX_RECURSION)) {
+					ERR_PRINT("Max recursion reached");
+					p_store_string_func(p_store_string_ud, "null");
+				} else {
+					p_recursion_count++;
+					Dictionary dict = struct_instance->serialize();
+					// Recursively write the dictionary with incremented recursion count
+					write(dict, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+				}
 			} else {
 				p_store_string_func(p_store_string_ud, "null");
 			}

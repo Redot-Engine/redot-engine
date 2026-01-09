@@ -126,20 +126,22 @@ void GDScriptStructClass::_bind_methods() {
 	// Don't bind "new" here - it will be handled via callp
 }
 
+// Constructor: takes ownership of the given struct.
+// null is allowed - the struct_type can be set later via set_struct_type().
 GDScriptStructClass::GDScriptStructClass(GDScriptStruct *p_struct) {
 	struct_type = p_struct;
 	if (struct_type) {
 		struct_type->reference(); // Increment ref count when we take ownership
 	}
-	// Don't ERR_FAIL_NULL here since we need a default constructor for instantiate()
 }
 
 GDScriptStructClass::~GDScriptStructClass() {
 	if (struct_type) {
-		struct_type->unreference();
-		// Do not delete struct_type here. The reference counting system
-		// will handle cleanup naturally. This avoids race conditions
-		// where deleting struct_type could access already-destroyed data.
+		// Use the return value of unreference() which atomically tells us
+		// if the reference count reached zero, avoiding race conditions
+		if (struct_type->unreference()) {
+			memdelete(struct_type);
+		}
 		struct_type = nullptr;
 	}
 }
@@ -148,15 +150,12 @@ void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
 	if (p_struct == struct_type) {
 		return; // No change
 	}
-	// Unreference old struct
+	// Unreference old struct - rely on reference counting system
 	if (struct_type) {
 		struct_type->unreference();
-		if (struct_type->get_reference_count() == 0) {
-			memdelete(struct_type);
-		}
 	}
 	struct_type = p_struct;
-	// Reference new struct
+	// Reference new struct (null is allowed)
 	if (struct_type) {
 		struct_type->reference();
 	}
@@ -177,7 +176,7 @@ Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callab
 	Variant result;
 	result.type = Variant::STRUCT;
 	// Copy the pointer
-	memcpy(result._data._mem, &instance, sizeof(instance));
+	memcpy(result._data._mem, &instance, sizeof(void *));
 	return result;
 }
 
@@ -1707,11 +1706,11 @@ void GDScript::clear(ClearData *p_clear_data) {
 				GDScriptCache::remove_script(gdscr->get_path());
 			}
 		}
-		// Clear structs - unreference but do not delete here
-		// The reference counting system will handle cleanup naturally to avoid race conditions
-		// where deleting a struct could trigger destructors that access other data being cleared
+		// Clear structs - use atomic check-and-delete via unreference() return value
 		for (GDScriptStruct *E : clear_data->structs) {
-			E->unreference();
+			if (E->unreference()) {
+				memdelete(E);
+			}
 		}
 		clear_data->clear();
 	}

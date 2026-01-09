@@ -71,7 +71,7 @@ public:
 	// Reference counting for proper lifecycle management
 	// This ensures structs are only deleted when all references are gone
 	void reference();
-	void unreference();
+	bool unreference(); // Returns true if reference count reached zero
 	int get_reference_count() const { return ref_count.get(); }
 
 private:
@@ -93,6 +93,8 @@ private:
 	GDScriptFunction *constructor = nullptr;
 
 	// Inheritance
+	// NOTE: The children vector is currently unused and not populated.
+	// Child struct tracking is handled through the owning GDScript's structs HashMap.
 	Vector<GDScriptStruct *> children;
 
 	// Fully qualified name for unique identification
@@ -103,6 +105,7 @@ public:
 	GDScriptStructInstance *create_instance(const Variant **p_args = nullptr, int p_argcount = 0);
 
 	// Member management
+	int get_member_count() const;
 	void add_member(const StringName &p_name, const Variant::Type p_type, const StringName &p_type_name = StringName());
 	bool has_member(const StringName &p_name) const;
 	int get_member_index(const StringName &p_name) const;

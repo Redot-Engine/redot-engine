@@ -926,8 +926,6 @@ GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 			while (match(GDScriptTokenizer::Token::PERIOD)) {
 				if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier after "." in extends chain.)")) {
 					IdentifierNode *next_part = parse_identifier();
-					// Append to create fully qualified name
-					base_identifier->name = String(base_identifier->name) + "." + String(next_part->name);
 					n_struct->extends.push_back(next_part);
 				}
 			}
@@ -5472,6 +5470,13 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 							key_hint = key_type.native_type;
 						}
 						break;
+					case STRUCT:
+						if (key_type.struct_type && key_type.struct_type->identifier != nullptr) {
+							key_hint = key_type.struct_type->identifier->name;
+						} else {
+							key_hint = "Variant";
+						}
+						break;
 					case ENUM:
 						key_hint = String(key_type.native_type).replace("::", ".");
 						break;
@@ -5498,6 +5503,13 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 							value_hint = value_type.class_type->get_global_name();
 						} else {
 							value_hint = value_type.native_type;
+						}
+						break;
+					case STRUCT:
+						if (value_type.struct_type && value_type.struct_type->identifier != nullptr) {
+							value_hint = value_type.struct_type->identifier->name;
+						} else {
+							value_hint = "Variant";
 						}
 						break;
 					case ENUM:
