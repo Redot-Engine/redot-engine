@@ -34,6 +34,8 @@
 
 #include "core/io/json.h"
 #include "core/os/os.h"
+#include "core/os/thread.h"
+#include "mcp_bridge.h"
 
 #include <cstdio>
 #include <iostream>
@@ -77,9 +79,22 @@ void MCPServer::_write_line(const String &p_line) {
 	fflush(stdout);
 }
 
+void MCPServer::_bridge_thread_func(void *p_userdata) {
+	MCPServer *ms = (MCPServer *)p_userdata;
+	while (!ms->should_stop) {
+		if (MCPBridge::get_singleton()) {
+			MCPBridge::get_singleton()->update();
+		}
+		OS::get_singleton()->delay_usec(10000); // 10ms
+	}
+}
+
 void MCPServer::_server_loop() {
 	running = true;
 	should_stop = false;
+
+	// Start bridge thread
+	bridge_thread.start(_bridge_thread_func, this);
 
 	// Log startup to stderr (not stdout, which is for JSON-RPC)
 	fprintf(stderr, "[MCP] Redot MCP Server started\n");
@@ -109,6 +124,9 @@ void MCPServer::_server_loop() {
 			_write_line(response);
 		}
 	}
+
+	should_stop = true;
+	bridge_thread.wait_to_finish();
 
 	running = false;
 	fprintf(stderr, "[MCP] Redot MCP Server stopped\n");

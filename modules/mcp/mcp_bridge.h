@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_types.cpp                                                    */
+/*  mcp_bridge.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,48 +30,46 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
+#pragma once
 
-#include "mcp_bridge.h"
-#include "mcp_protocol.h"
-#include "mcp_server.h"
-
-#include "core/config/engine.h"
+#include "core/io/stream_peer_tcp.h"
+#include "core/io/tcp_server.h"
 #include "core/object/class_db.h"
+#include "core/variant/dictionary.h"
 
-static MCPServer *mcp_server_singleton = nullptr;
-static MCPBridge *mcp_bridge_singleton = nullptr;
+class MCPBridge : public Object {
+	GDCLASS(MCPBridge, Object)
 
-void initialize_mcp_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
+private:
+	static MCPBridge *singleton;
 
-	GDREGISTER_CLASS(MCPProtocol);
-	GDREGISTER_CLASS(MCPServer);
-	GDREGISTER_CLASS(MCPBridge);
+	Ref<TCPServer> server;
+	Ref<StreamPeerTCP> connection;
 
-	mcp_server_singleton = memnew(MCPServer);
-	Engine::get_singleton()->add_singleton(
-			Engine::Singleton("MCPServer", MCPServer::get_singleton()));
+	bool is_host = false;
+	int port = 0;
 
-	mcp_bridge_singleton = memnew(MCPBridge);
-	Engine::get_singleton()->add_singleton(
-			Engine::Singleton("MCPBridge", MCPBridge::get_singleton()));
-}
+	// Internal command handling
+	Dictionary _process_command(const Dictionary &p_cmd);
 
-void uninitialize_mcp_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
+protected:
+	static void _bind_methods();
 
-	if (mcp_bridge_singleton) {
-		memdelete(mcp_bridge_singleton);
-		mcp_bridge_singleton = nullptr;
-	}
+public:
+	static MCPBridge *get_singleton() { return singleton; }
 
-	if (mcp_server_singleton) {
-		memdelete(mcp_server_singleton);
-		mcp_server_singleton = nullptr;
-	}
-}
+	MCPBridge();
+	~MCPBridge();
+
+	// Host (MCP Server) side
+	Error start_server(int p_port = 0); // 0 = find available
+	int get_port() const { return port; }
+	bool is_client_connected() const;
+
+	// Client (Game) side
+	Error connect_to_server(const String &p_host, int p_port);
+
+	// Communication
+	Dictionary send_command(const String &p_action, const Dictionary &p_args = Dictionary());
+	void update(); // Called by MainLoop or Server loop
+};

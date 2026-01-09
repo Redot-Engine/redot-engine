@@ -152,6 +152,7 @@ static const Color boot_splash_editor_bg_color = Color(0.06, 0.09, 0.14);
 #endif // MODULE_GDSCRIPT_ENABLED
 
 #ifdef MODULE_MCP_ENABLED
+#include "modules/mcp/mcp_bridge.h"
 #include "modules/mcp/mcp_server.h"
 #endif // MODULE_MCP_ENABLED
 
@@ -295,6 +296,7 @@ bool profile_gpu = false;
 
 #ifdef MODULE_MCP_ENABLED
 static bool mcp_server_enabled = false;
+static int mcp_bridge_port = 0;
 #endif
 
 // Constants.
@@ -615,6 +617,7 @@ void Main::print_help(const char *p_binary) {
 	print_help_option("--headless", "Enable headless mode (--display-driver headless --audio-driver Dummy). Useful for servers and with --script.\\n");
 #ifdef MODULE_MCP_ENABLED
 	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--mcp-bridge-port <port>", "Port for the MCP Bridge connection (internal use).\\n", CLI_OPTION_AVAILABILITY_EDITOR);
 #endif
 	print_help_option("--log-file <file>", "Write output/error log to the specified path instead of the default location defined by the project.\n");
 	print_help_option("", "<file> path should be absolute or relative to the project directory.\n");
@@ -1421,6 +1424,14 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			mcp_server_enabled = true;
 			audio_driver = NULL_AUDIO_DRIVER;
 			display_driver = NULL_DISPLAY_DRIVER;
+		} else if (arg == "--mcp-bridge-port") { // Port for MCP Bridge (game side)
+			if (N) {
+				mcp_bridge_port = N->get().to_int();
+				N = N->next();
+			} else {
+				OS::get_singleton()->print("Missing <port> argument for --mcp-bridge-port <port>.\n");
+				goto error;
+			}
 #endif
 
 		} else if (arg == "--embedded") { // Enable embedded mode.
@@ -4746,6 +4757,12 @@ int Main::start() {
 
 	GDExtensionManager::get_singleton()->startup();
 
+#ifdef MODULE_MCP_ENABLED
+	if (mcp_bridge_port != 0) {
+		MCPBridge::get_singleton()->connect_to_server("127.0.0.1", mcp_bridge_port);
+	}
+#endif
+
 	if (minimum_time_msec) {
 		uint64_t minimum_time = 1000 * minimum_time_msec;
 		uint64_t elapsed_time = OS::get_singleton()->get_ticks_usec();
@@ -4801,6 +4818,11 @@ static uint64_t navigation_process_max = 0;
 // will terminate the program. In case of failure, the OS exit code needs
 // to be set explicitly here (defaults to EXIT_SUCCESS).
 bool Main::iteration() {
+#ifdef MODULE_MCP_ENABLED
+	if (MCPBridge::get_singleton()) {
+		MCPBridge::get_singleton()->update();
+	}
+#endif
 	iterating++;
 
 	const uint64_t ticks = OS::get_singleton()->get_ticks_usec();

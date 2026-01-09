@@ -40,6 +40,7 @@
 #include "core/io/resource_saver.h"
 #include "core/object/class_db.h"
 #include "core/version.h"
+#include "mcp_bridge.h"
 #include "scene/resources/packed_scene.h"
 
 #include "modules/modules_enabled.gen.h"
@@ -53,6 +54,7 @@
 
 OS::ProcessID MCPTools::last_game_pid = 0;
 String MCPTools::last_log_path = "";
+int MCPTools::bridge_port = 0;
 
 // ============================================================================
 // Helpers
@@ -152,15 +154,15 @@ Array MCPTools::get_tool_definitions() {
 		Dictionary props;
 		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'add', 'remove', 'instance', 'set_prop', 'connect', 'get_node', 'reparent', 'create'");
 		props["scene_path"] = MCPSchemaBuilder::make_string_property("Path to scene file");
-		props["node_path"] = MCPSchemaBuilder::make_string_property("Target node path");
+		props["node_path"] = MCPSchemaBuilder::make_string_property("Target node path ('.' for root)");
 		props["node_type"] = MCPSchemaBuilder::make_string_property("Type for 'add' or 'create'");
 		props["node_name"] = MCPSchemaBuilder::make_string_property("Name for node");
 		props["property"] = MCPSchemaBuilder::make_string_property("Property name");
-		props["value"] = MCPSchemaBuilder::make_object_property("Value");
+		props["value"] = MCPSchemaBuilder::make_object_property("Value (supports numbers, strings, and objects like {x:0, y:0})");
 		props["signal"] = MCPSchemaBuilder::make_string_property("Signal name");
-		props["target_node"] = MCPSchemaBuilder::make_string_property("Target node path");
-		props["method"] = MCPSchemaBuilder::make_string_property("Method name");
-		props["instance_path"] = MCPSchemaBuilder::make_string_property("Scene to instance");
+		props["target_node"] = MCPSchemaBuilder::make_string_property("Target node path for connect/reparent");
+		props["method"] = MCPSchemaBuilder::make_string_property("Method name for connect");
+		props["instance_path"] = MCPSchemaBuilder::make_string_property("Path to scene to instance");
 
 		Array required;
 		required.push_back("action");
@@ -168,7 +170,7 @@ Array MCPTools::get_tool_definitions() {
 
 		Dictionary tool;
 		tool["name"] = "scene_action";
-		tool["description"] = "Perform actions within a scene file";
+		tool["description"] = "Perform actions within a scene file (add nodes, set properties, wire signals)";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
 		tools.push_back(tool);
 	}
@@ -189,7 +191,7 @@ Array MCPTools::get_tool_definitions() {
 
 		Dictionary tool;
 		tool["name"] = "resource_action";
-		tool["description"] = "Manage Redot resource files";
+		tool["description"] = "Manage Redot resource files (.tres)";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
 		tools.push_back(tool);
 	}
@@ -198,7 +200,7 @@ Array MCPTools::get_tool_definitions() {
 	{
 		Dictionary props;
 		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'get_symbols', 'search', 'validate', 'get_docs'");
-		props["path"] = MCPSchemaBuilder::make_string_property("Path to script");
+		props["path"] = MCPSchemaBuilder::make_string_property("Path to script (.gd)");
 		props["query"] = MCPSchemaBuilder::make_string_property("Class name or search query");
 
 		Array required;
@@ -206,7 +208,7 @@ Array MCPTools::get_tool_definitions() {
 
 		Dictionary tool;
 		tool["name"] = "code_intel";
-		tool["description"] = "Script analysis and engine documentation";
+		tool["description"] = "Script analysis and engine documentation lookup";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
 		tools.push_back(tool);
 	}
@@ -215,17 +217,38 @@ Array MCPTools::get_tool_definitions() {
 	{
 		Dictionary props;
 		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'get_info', 'set_setting', 'add_input', 'add_autoload', 'run', 'stop', 'output', 'list_files', 'read_file', 'write_file', 'open_editor'");
-		props["setting"] = MCPSchemaBuilder::make_string_property("Setting name");
-		props["value"] = MCPSchemaBuilder::make_object_property("Value");
-		props["path"] = MCPSchemaBuilder::make_string_property("Path");
-		props["content"] = MCPSchemaBuilder::make_string_property("Content for write");
+		props["setting"] = MCPSchemaBuilder::make_string_property("Setting key or Autoload/Input name");
+		props["value"] = MCPSchemaBuilder::make_object_property("Value for setting");
+		props["path"] = MCPSchemaBuilder::make_string_property("File/Directory path");
+		props["content"] = MCPSchemaBuilder::make_string_property("Content for 'write_file'");
 
 		Array required;
 		required.push_back("action");
 
 		Dictionary tool;
 		tool["name"] = "project_config";
-		tool["description"] = "Global project settings and management";
+		tool["description"] = "Global project settings, management, and I/O";
+		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
+		tools.push_back(tool);
+	}
+
+	// game_control
+	{
+		Dictionary props;
+		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'capture', 'click', 'type', 'inspect_live', 'wait'");
+		props["scale"] = MCPSchemaBuilder::make_object_property("Scale for screenshot (0.1 to 1.0)");
+		props["node_path"] = MCPSchemaBuilder::make_string_property("Node path for click/inspect");
+		props["text"] = MCPSchemaBuilder::make_string_property("Text for 'type'");
+		props["x"] = MCPSchemaBuilder::make_object_property("X coord for click");
+		props["y"] = MCPSchemaBuilder::make_object_property("Y coord for click");
+		props["seconds"] = MCPSchemaBuilder::make_object_property("Wait duration");
+
+		Array required;
+		required.push_back("action");
+
+		Dictionary tool;
+		tool["name"] = "game_control";
+		tool["description"] = "Interact with the running game process (screenshots, input, live tree)";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
 		tools.push_back(tool);
 	}
@@ -240,12 +263,18 @@ Array MCPTools::get_tool_definitions() {
 MCPTools::ToolResult MCPTools::execute_tool(const String &p_name, const Dictionary &p_arguments) {
 	if (p_name == "scene_action") {
 		return tool_scene_action(p_arguments);
-	} else if (p_name == "resource_action") {
+	}
+	if (p_name == "resource_action") {
 		return tool_resource_action(p_arguments);
-	} else if (p_name == "code_intel") {
+	}
+	if (p_name == "code_intel") {
 		return tool_code_intel(p_arguments);
-	} else if (p_name == "project_config") {
+	}
+	if (p_name == "project_config") {
 		return tool_project_config(p_arguments);
+	}
+	if (p_name == "game_control") {
+		return tool_game_control(p_arguments);
 	}
 
 	ToolResult result;
@@ -306,7 +335,7 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 
 	Ref<PackedScene> scene = ResourceLoader::load(normalized_scene, "PackedScene");
 	if (scene.is_null()) {
-		result.set_error("Failed to load scene");
+		result.set_error("Failed to load scene: " + normalized_scene);
 		return result;
 	}
 
@@ -370,19 +399,19 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 				parent->add_child(new_node);
 				new_node->set_owner(root);
 				should_save = true;
-				result.add_text("Added node");
+				result.add_text("Added node '" + new_node->get_name() + "' to '" + parent_path + "'");
 			}
 		}
 	} else if (action == "remove") {
 		String node_path = p_args.get("node_path", "");
 		Node *target = root->get_node_or_null(node_path);
 		if (!target || target == root) {
-			result.set_error("Cannot remove root or node not found");
+			result.set_error("Cannot remove root");
 		} else {
 			target->get_parent()->remove_child(target);
 			memdelete(target);
 			should_save = true;
-			result.add_text("Removed node");
+			result.add_text("Removed node: " + node_path);
 		}
 	} else if (action == "instance") {
 		String parent_path = p_args.get("node_path", ".");
@@ -390,13 +419,16 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		Node *parent = (parent_path == "." || parent_path.is_empty()) ? root : root->get_node_or_null(parent_path);
 		Ref<PackedScene> sub = ResourceLoader::load(normalize_path(instance_path), "PackedScene");
 		if (!parent || sub.is_null()) {
-			result.set_error("Failed to instance");
+			result.set_error("Parent or instance scene not found");
 		} else {
 			Node *instance = sub->instantiate();
+			if (p_args.has("node_name")) {
+				instance->set_name(p_args["node_name"]);
+			}
 			parent->add_child(instance);
 			instance->set_owner(root);
 			should_save = true;
-			result.add_text("Instanced");
+			result.add_text("Instanced '" + instance_path + "'");
 		}
 	} else if (action == "set_prop") {
 		String node_path = p_args.get("node_path", ".");
@@ -408,7 +440,7 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		} else {
 			target->set(property, value);
 			should_save = true;
-			result.add_text("Set property");
+			result.add_text("Set property '" + property + "'");
 		}
 	} else if (action == "connect") {
 		String node_path = p_args.get("node_path", ".");
@@ -418,7 +450,7 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		Node *source = (node_path == "." || node_path.is_empty()) ? root : root->get_node_or_null(node_path);
 		Node *target = (target_path == "." || target_path.is_empty()) ? root : root->get_node_or_null(target_path);
 		if (!source || !target) {
-			result.set_error("Not found");
+			result.set_error("Node not found");
 		} else {
 			Ref<Resource> script = target->get_script();
 			if (script.is_valid()) {
@@ -426,7 +458,7 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 			}
 			source->connect(sig, Callable(target, method));
 			should_save = true;
-			result.add_text("Connected");
+			result.add_text("Connected signal");
 		}
 	} else if (action == "reparent") {
 		String node_path = p_args.get("node_path", "");
@@ -434,7 +466,7 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		Node *node = root->get_node_or_null(node_path);
 		Node *new_parent = (target_path == "." || target_path.is_empty()) ? root : root->get_node_or_null(target_path);
 		if (!node || !new_parent || node == root) {
-			result.set_error("Not found");
+			result.set_error("Node not found or root");
 		} else {
 			node->get_parent()->remove_child(node);
 			new_parent->add_child(node);
@@ -459,7 +491,7 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 	String action = p_args.get("action", "");
 	String path = p_args.get("path", "");
 	if (action.is_empty() || path.is_empty()) {
-		result.set_error("Missing args");
+		result.set_error("Missing action or path");
 		return result;
 	}
 	String normalized = normalize_path(path);
@@ -471,16 +503,16 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 			if (obj) {
 				memdelete(obj);
 			}
-			result.set_error("Invalid type");
+			result.set_error("Invalid resource type");
 		} else {
 			ResourceSaver::save(res, normalized);
-			result.add_text("Created");
+			result.add_text("Created resource at " + normalized);
 		}
 		return result;
 	}
 	Ref<Resource> res = ResourceLoader::load(normalized);
 	if (res.is_null()) {
-		result.set_error("Failed to load");
+		result.set_error("Failed to load resource");
 		return result;
 	}
 	if (action == "inspect") {
@@ -498,7 +530,7 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 		Variant val = _json_to_variant(p_args.get("value", Variant()));
 		res->set(prop, val);
 		ResourceSaver::save(res, normalized);
-		result.add_text("Modified");
+		result.add_text("Modified resource");
 	} else if (action == "duplicate") {
 		String np = p_args.get("new_path", "");
 		if (np.is_empty()) {
@@ -506,7 +538,7 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 		} else {
 			Ref<Resource> copy = res->duplicate();
 			ResourceSaver::save(copy, normalize_path(np));
-			result.add_text("Duplicated");
+			result.add_text("Duplicated resource");
 		}
 	}
 	return result;
@@ -530,7 +562,7 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 			info["properties"] = props;
 			result.add_text(JSON::stringify(info, "  "));
 		} else {
-			result.set_error("Not found");
+			result.set_error("Class not found");
 		}
 		return result;
 	}
@@ -545,7 +577,7 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 		Error err;
 		Ref<FileAccess> f = FileAccess::open(normalized, FileAccess::READ, &err);
 		if (err != OK) {
-			result.set_error("Failed to open");
+			result.set_error("Failed to open script");
 			return result;
 		}
 		String source = f->get_as_text();
@@ -563,7 +595,7 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 		return result;
 	}
 #else
-	result.set_error("GDScript disabled");
+	result.set_error("GDScript module disabled");
 #endif
 	return result;
 }
@@ -584,6 +616,12 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		if (last_game_pid != 0) {
 			OS::get_singleton()->kill(last_game_pid);
 		}
+
+		if (MCPBridge::get_singleton()->get_port() == 0) {
+			MCPBridge::get_singleton()->start_server();
+		}
+		bridge_port = MCPBridge::get_singleton()->get_port();
+
 		String lf = normalize_path("res://.redot/mcp_game.log");
 		last_log_path = lf;
 		List<String> args;
@@ -592,11 +630,14 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		args.push_back("--log-file");
 		args.push_back(ProjectSettings::get_singleton()->globalize_path(lf));
 		args.push_back("--no-header");
+		args.push_back("--mcp-bridge-port");
+		args.push_back(itos(bridge_port));
+
 		Error err = OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), args, &last_game_pid);
 		if (err != OK) {
-			result.set_error("Failed to run");
+			result.set_error("Failed to run project");
 		} else {
-			result.add_text("Started");
+			result.add_text("Started with bridge port " + itos(bridge_port));
 		}
 	} else if (action == "stop") {
 		if (last_game_pid != 0) {
@@ -614,7 +655,7 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 			if (f.is_valid()) {
 				result.add_text(f->get_as_text());
 			} else {
-				result.set_error("Not found");
+				result.set_error("Log not found");
 			}
 		}
 	} else if (action == "read_file") {
@@ -622,16 +663,21 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		if (f.is_valid()) {
 			result.add_text(f->get_as_text());
 		} else {
-			result.set_error("Failed");
+			result.set_error("Failed to read");
 		}
 	} else if (action == "write_file") {
 		String p = normalize_path(p_args.get("path", ""));
+		String dir_path = p.get_base_dir();
+		Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+		if (!d->dir_exists(dir_path)) {
+			d->make_dir_recursive(dir_path);
+		}
 		Ref<FileAccess> f = FileAccess::open(p, FileAccess::WRITE);
 		if (f.is_valid()) {
 			f->store_string(p_args.get("content", ""));
-			result.add_text("Wrote");
+			result.add_text("Wrote to " + p);
 		} else {
-			result.set_error("Failed");
+			result.set_error("Failed to write");
 		}
 	} else if (action == "list_files") {
 		Ref<DirAccess> d = DirAccess::open(normalize_path(p_args.get("path", "res://")));
@@ -650,12 +696,12 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 			}
 			result.add_text(JSON::stringify(e));
 		} else {
-			result.set_error("Failed");
+			result.set_error("Failed to list");
 		}
 	} else if (action == "set_setting") {
 		ProjectSettings::get_singleton()->set_setting(p_args.get("setting", ""), p_args.get("value", Variant()));
 		ProjectSettings::get_singleton()->save();
-		result.add_text("Saved");
+		result.add_text("Saved setting");
 	} else if (action == "open_editor") {
 		List<String> args;
 		args.push_back("--editor");
@@ -663,6 +709,25 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		args.push_back(ProjectSettings::get_singleton()->get_resource_path());
 		OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), args);
 		result.add_text("Opening editor");
+	}
+	return result;
+}
+
+MCPTools::ToolResult MCPTools::tool_game_control(const Dictionary &p_args) {
+	String action = p_args.get("action", "");
+	Dictionary resp = MCPBridge::get_singleton()->send_command(action, p_args);
+
+	ToolResult result;
+	if (resp.has("error")) {
+		result.set_error(resp["error"]);
+	} else if (resp.has("image_base64")) {
+		Dictionary content;
+		content["type"] = "image";
+		content["data"] = resp["image_base64"];
+		content["mimeType"] = "image/png";
+		result.content.push_back(content);
+	} else {
+		result.add_text(JSON::stringify(resp, "  "));
 	}
 	return result;
 }

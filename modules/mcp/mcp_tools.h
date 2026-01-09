@@ -89,6 +89,7 @@ public:
 	ToolResult tool_resource_action(const Dictionary &p_args);
 	ToolResult tool_code_intel(const Dictionary &p_args);
 	ToolResult tool_project_config(const Dictionary &p_args);
+	ToolResult tool_game_control(const Dictionary &p_args);
 
 private:
 	// Helpers
@@ -97,4 +98,5 @@ private:
 
 	static OS::ProcessID last_game_pid;
 	static String last_log_path;
+	static int bridge_port;
 };

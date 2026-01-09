@@ -48,6 +48,9 @@ private:
 	bool running = false;
 	bool should_stop = false;
 
+	Thread bridge_thread;
+	static void _bridge_thread_func(void *p_userdata);
+
 	// Server loop - runs on main thread for now (headless mode)
 	void _server_loop();
 
