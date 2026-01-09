@@ -84,38 +84,17 @@ public:
 	// Execute a tool by name
 	ToolResult execute_tool(const String &p_name, const Dictionary &p_arguments);
 
-	// === File System Tools ===
-	ToolResult tool_read_file(const Dictionary &p_args);
-	ToolResult tool_write_file(const Dictionary &p_args);
-	ToolResult tool_list_directory(const Dictionary &p_args);
-	ToolResult tool_file_exists(const Dictionary &p_args);
-
-	// === Scene Tools ===
-	ToolResult tool_create_scene(const Dictionary &p_args);
-	ToolResult tool_get_scene_tree(const Dictionary &p_args);
-	ToolResult tool_add_node(const Dictionary &p_args);
-	ToolResult tool_remove_node(const Dictionary &p_args);
-	ToolResult tool_set_node_property(const Dictionary &p_args);
-
-	// === Project Tools ===
-	ToolResult tool_get_project_info(const Dictionary &p_args);
-	ToolResult tool_open_editor(const Dictionary &p_args);
-	ToolResult tool_run_project(const Dictionary &p_args);
-
-	// === Game Builder Tools ===
-	ToolResult tool_get_class_info(const Dictionary &p_args);
-	ToolResult tool_set_project_setting(const Dictionary &p_args);
-	ToolResult tool_add_input_action(const Dictionary &p_args);
-	ToolResult tool_attach_script(const Dictionary &p_args);
-	ToolResult tool_add_autoload(const Dictionary &p_args);
-	ToolResult tool_get_node_info(const Dictionary &p_args);
-
-	// === Debugging & Control ===
-	ToolResult tool_get_game_output(const Dictionary &p_args);
-	ToolResult tool_stop_game(const Dictionary &p_args);
-	ToolResult tool_validate_script(const Dictionary &p_args);
+	// === Master Controllers ===
+	ToolResult tool_scene_action(const Dictionary &p_args);
+	ToolResult tool_resource_action(const Dictionary &p_args);
+	ToolResult tool_code_intel(const Dictionary &p_args);
+	ToolResult tool_project_config(const Dictionary &p_args);
 
 private:
+	// Helpers
+	static Variant _json_to_variant(const Variant &p_json, Variant::Type p_type = Variant::NIL);
+	static Error _ensure_callback_exists(const String &p_script_path, const String &p_callback_name);
+
 	static OS::ProcessID last_game_pid;
 	static String last_log_path;
 };
