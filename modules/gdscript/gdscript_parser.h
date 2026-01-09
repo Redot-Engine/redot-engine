@@ -856,18 +856,23 @@ public:
 
 		String fqsn; // Fully-qualified struct name
 
-		int start_line = 0;
-		int end_line = 0;
-
-		void add_field(VariableNode *p_variable) {
+		bool add_field(VariableNode *p_variable) {
+			if (field_indices.has(p_variable->identifier->name)) {
+				return false; // Duplicate field
+			}
 			int idx = fields.size();
 			fields.push_back({ p_variable, idx });
 			field_indices[p_variable->identifier->name] = idx;
+			return true;
 		}
 
-		void add_method(FunctionNode *p_function) {
+		bool add_method(FunctionNode *p_function) {
+			if (method_map.has(p_function->identifier->name)) {
+				return false; // Duplicate method
+			}
 			methods.push_back(p_function);
 			method_map[p_function->identifier->name] = p_function;
+			return true;
 		}
 
 		bool has_field(const StringName &p_name) const {

@@ -1257,7 +1257,9 @@ void GDScriptAnalyzer::resolve_class_member(GDScriptParser::ClassNode *p_class, 
 				// No-op, but needed to silence warnings.
 				break;
 			case GDScriptParser::ClassNode::Member::STRUCT:
-				// Structs are resolved separately in resolve_struct_body
+				// Check for name conflicts before resolving struct body
+				check_class_member_name_conflict(p_class, member.m_struct->identifier->name, member.m_struct);
+				// Struct body is resolved separately in resolve_struct_body
 				break;
 			case GDScriptParser::ClassNode::Member::UNDEFINED:
 				ERR_PRINT("Trying to resolve undefined member.");
@@ -1602,15 +1604,16 @@ void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct,
 	// Resolve field types
 	for (const GDScriptParser::StructNode::Field &field : p_struct->fields) {
 		if (field.variable != nullptr && field.variable->datatype_specifier != nullptr) {
-			resolve_datatype(field.variable->datatype_specifier);
-			field.variable->set_datatype(field.variable->datatype_specifier->get_datatype());
+			// Resolve the datatype and convert from metatype to instance type
+			GDScriptParser::DataType resolved_type = resolve_datatype(field.variable->datatype_specifier);
+			field.variable->set_datatype(type_from_metatype(resolved_type));
 		}
 	}
 
 	// Resolve method signatures
 	for (GDScriptParser::FunctionNode *method : p_struct->methods) {
 		if (method != nullptr) {
-			resolve_function_signature(method);
+			resolve_function_signature(method, p_source);
 		}
 	}
 

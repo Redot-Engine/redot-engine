@@ -38,7 +38,9 @@
 #include "core/io/resource_uid.h"
 #include "core/object/script_language.h"
 #include "core/string/string_buffer.h"
+#ifdef MODULE_GDSCRIPT_ENABLED
 #include "modules/gdscript/gdscript_struct.h"
+#endif
 
 char32_t VariantParser::Stream::get_char() {
 	// is within buffer?
@@ -2173,6 +2175,7 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 		} break;
 
 		// Misc types.
+#ifdef MODULE_GDSCRIPT_ENABLED
 		case Variant::STRUCT: {
 			// Serialize struct as a Dictionary for now
 			// This allows structs to be saved/loaded and printed
@@ -2185,6 +2188,12 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 				p_store_string_func(p_store_string_ud, "null");
 			}
 		} break;
+#else
+		case Variant::STRUCT: {
+			// Structs not available without GDScript module
+			p_store_string_func(p_store_string_ud, "null");
+		} break;
+#endif
 		case Variant::COLOR: {
 			Color c = p_variant;
 			p_store_string_func(p_store_string_ud, "Color(" + rtos_fix(c.r, p_compat) + ", " + rtos_fix(c.g, p_compat) + ", " + rtos_fix(c.b, p_compat) + ", " + rtos_fix(c.a, p_compat) + ")");

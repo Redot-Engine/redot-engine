@@ -549,8 +549,9 @@ void GDScriptByteCodeGenerator::write_type_adjust(const Address &p_target, Varia
 			append_opcode(GDScriptFunction::OPCODE_TYPE_ADJUST_PACKED_VECTOR4_ARRAY);
 			break;
 		case Variant::STRUCT:
-			// Structs don't need type adjustment
-			return;
+			// Structs are reference-counted and need type adjustment (like OBJECT)
+			append_opcode(GDScriptFunction::OPCODE_TYPE_ADJUST_STRUCT);
+			break;
 		case Variant::NIL:
 		case Variant::VARIANT_MAX:
 			return;

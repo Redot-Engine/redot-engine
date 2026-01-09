@@ -44,14 +44,10 @@ GDScriptStruct::GDScriptStruct(const StringName &p_name) :
 }
 
 GDScriptStruct::~GDScriptStruct() {
-	// Clean up children
-	for (GDScriptStruct *child : children) {
-		// Unreference children before deleting
-		child->unreference();
-		if (child->get_reference_count() == 0) {
-			memdelete(child);
-		}
-	}
+	// Do not delete children here. The reference counting system will handle
+	// cleanup naturally. Children hold references to their parent struct,
+	// and when those references are released elsewhere (e.g., when the
+	// owning GDScript is cleared), the children will be properly destroyed.
 }
 
 void GDScriptStruct::reference() {

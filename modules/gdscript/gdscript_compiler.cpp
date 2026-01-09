@@ -196,17 +196,10 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 			result.builtin_type = p_datatype.builtin_type;
 			break;
 		case GDScriptParser::DataType::STRUCT: {
-			if (p_handle_metatype && p_datatype.is_meta_type) {
-				// Struct as a type reference
-				result.kind = GDScriptDataType::BUILTIN;
-				result.builtin_type = Variant::STRUCT;
-				break;
-			}
-
-			// Struct value type
-			result.kind = GDScriptDataType::STRUCT;
+			// For now, treat structs as BUILTIN type since struct_type is not yet implemented
+			result.kind = GDScriptDataType::BUILTIN;
 			result.builtin_type = Variant::STRUCT;
-			// TODO: Store reference to struct definition
+			// TODO: Store reference to struct definition when struct_type field is available
 			// result.struct_type = p_datatype.struct_type;
 		} break;
 		case GDScriptParser::DataType::RESOLVING:
@@ -3176,7 +3169,7 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	for (const GDScriptParser::FunctionNode *method : p_struct->methods) {
 		if (method != nullptr) {
 			Error err = OK;
-			_parse_function(err, p_script, p_class, method);
+			GDScriptFunction *func = _parse_function(err, p_script, p_class, method);
 			if (err) {
 				// Unreference and delete on error
 				gdstruct->unreference();
@@ -3187,14 +3180,12 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 			}
 
 			// Add method to struct
-			// Note: We'll need to get the compiled function from the script
-			// For now, this is a placeholder
+			gdstruct->add_method(method->identifier->name, func);
 		}
 	}
 
 	// Register the struct in the script
-	// This adds another reference - the script now owns the struct
-	gdstruct->reference(); // Increment for the script's ownership
+	// The script takes ownership of the struct (transfers the initial reference from constructor)
 	p_script->structs[p_struct->identifier->name] = gdstruct;
 
 	// Create a wrapper class for struct construction and store it as a constant

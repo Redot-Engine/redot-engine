@@ -922,6 +922,15 @@ GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 		if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for base struct after "extends".)")) {
 			IdentifierNode *base_identifier = parse_identifier();
 			n_struct->extends.push_back(base_identifier);
+			// Support dotted chain like extends Base.Child.Grandchild
+			while (match(GDScriptTokenizer::Token::PERIOD)) {
+				if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier after "." in extends chain.)")) {
+					IdentifierNode *next_part = parse_identifier();
+					// Append to create fully qualified name
+					base_identifier->name = String(base_identifier->name) + "." + String(next_part->name);
+					n_struct->extends.push_back(next_part);
+				}
+			}
 		}
 	}
 
@@ -954,22 +963,26 @@ GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 				// Parse field
 				VariableNode *variable = parse_variable(false);
 				if (variable != nullptr) {
-					n_struct->add_field(variable);
+					if (!n_struct->add_field(variable)) {
+						push_error(vformat(R"(Duplicate field "%s" in struct.)", variable->identifier->name), variable);
+					}
 				}
-				end_statement("struct field");
+				// parse_variable() already calls end_statement()
 				break;
 			}
 			case GDScriptTokenizer::Token::FUNC: {
 				// Parse method
 				FunctionNode *function = parse_function(p_is_static);
 				if (function != nullptr) {
-					n_struct->add_method(function);
+					if (!n_struct->add_method(function)) {
+						push_error(vformat(R"(Duplicate method "%s" in struct.)", function->identifier->name), function);
+					}
 					// Check for constructor
 					if (function->identifier->name == SNAME("_init")) {
 						n_struct->constructor = function;
 					}
 				}
-				end_statement("struct method");
+				// parse_function() already calls end_statement via parse_suite()
 				break;
 			}
 			case GDScriptTokenizer::Token::PASS: {
@@ -982,6 +995,12 @@ GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 				advance();
 				break;
 			}
+		}
+
+		// For single-line structs, terminate after first member
+		if (!multiline) {
+			struct_end = true;
+			break;
 		}
 	}
 
@@ -1137,7 +1156,7 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 				parse_class_member(&GDScriptParser::parse_class, AnnotationInfo::CLASS, "class");
 				break;
 			case GDScriptTokenizer::Token::STRUCT:
-				parse_class_member(&GDScriptParser::parse_struct, AnnotationInfo::CLASS, "struct");
+				parse_class_member(&GDScriptParser::parse_struct, AnnotationInfo::NONE, "struct");
 				break;
 			case GDScriptTokenizer::Token::ENUM:
 				parse_class_member(&GDScriptParser::parse_enum, AnnotationInfo::NONE, "enum");

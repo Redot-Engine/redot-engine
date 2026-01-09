@@ -272,6 +272,8 @@ void Variant::construct(Variant::Type p_type, Variant &base, const Variant **p_a
 		// Return a NIL variant and set error
 		base = Variant();
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+		r_error.argument = 0;
+		r_error.expected = 0;
 		return;
 	}
 

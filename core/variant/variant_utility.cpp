@@ -1062,6 +1062,12 @@ String VariantUtilityFunctions::var_to_str(const Variant &p_var) {
 	return vars;
 }
 
+String VariantUtilityFunctions::var_to_str_with_objects(const Variant &p_var) {
+	String vars;
+	VariantWriter::write_to_string(p_var, vars, nullptr, nullptr, true, true);
+	return vars;
+}
+
 Variant VariantUtilityFunctions::str_to_var(const String &p_var) {
 	VariantParser::StreamString ss;
 	ss.s = p_var;
@@ -1070,6 +1076,18 @@ Variant VariantUtilityFunctions::str_to_var(const String &p_var) {
 	int line;
 	Variant ret;
 	(void)VariantParser::parse(&ss, ret, errs, line);
+
+	return ret;
+}
+
+Variant VariantUtilityFunctions::str_to_var_with_objects(const String &p_var) {
+	VariantParser::StreamString ss;
+	ss.s = p_var;
+
+	String errs;
+	int line;
+	Variant ret;
+	(void)VariantParser::parse(&ss, ret, errs, line, nullptr, true);
 
 	return ret;
 }
@@ -1789,6 +1807,8 @@ void Variant::_register_variant_utility_functions() {
 
 	FUNCBINDR(var_to_str, sarray("variable"), Variant::UTILITY_FUNC_TYPE_GENERAL);
 	FUNCBINDR(str_to_var, sarray("string"), Variant::UTILITY_FUNC_TYPE_GENERAL);
+	FUNCBINDR(var_to_str_with_objects, sarray("variable"), Variant::UTILITY_FUNC_TYPE_GENERAL);
+	FUNCBINDR(str_to_var_with_objects, sarray("string"), Variant::UTILITY_FUNC_TYPE_GENERAL);
 
 	FUNCBINDR(var_to_bytes, sarray("variable"), Variant::UTILITY_FUNC_TYPE_GENERAL);
 	FUNCBINDR(bytes_to_var, sarray("bytes"), Variant::UTILITY_FUNC_TYPE_GENERAL);

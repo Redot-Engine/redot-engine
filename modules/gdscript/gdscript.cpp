@@ -137,9 +137,9 @@ GDScriptStructClass::GDScriptStructClass(GDScriptStruct *p_struct) {
 GDScriptStructClass::~GDScriptStructClass() {
 	if (struct_type) {
 		struct_type->unreference();
-		if (struct_type->get_reference_count() == 0) {
-			memdelete(struct_type);
-		}
+		// Do not delete struct_type here. The reference counting system
+		// will handle cleanup naturally. This avoids race conditions
+		// where deleting struct_type could access already-destroyed data.
 		struct_type = nullptr;
 	}
 }
@@ -1707,12 +1707,11 @@ void GDScript::clear(ClearData *p_clear_data) {
 				GDScriptCache::remove_script(gdscr->get_path());
 			}
 		}
-		// Delete structs - unreference first, delete if ref count reaches 0
+		// Clear structs - unreference but do not delete here
+		// The reference counting system will handle cleanup naturally to avoid race conditions
+		// where deleting a struct could trigger destructors that access other data being cleared
 		for (GDScriptStruct *E : clear_data->structs) {
 			E->unreference();
-			if (E->get_reference_count() == 0) {
-				memdelete(E);
-			}
 		}
 		clear_data->clear();
 	}

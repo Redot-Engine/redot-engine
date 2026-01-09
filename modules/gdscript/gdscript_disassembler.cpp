@@ -1303,6 +1303,7 @@ void GDScriptFunction::disassemble(const Vector<String> &p_code_lines) const {
 				DISASSEMBLE_TYPE_ADJUST(PACKED_VECTOR3_ARRAY);
 				DISASSEMBLE_TYPE_ADJUST(PACKED_COLOR_ARRAY);
 				DISASSEMBLE_TYPE_ADJUST(PACKED_VECTOR4_ARRAY);
+				DISASSEMBLE_TYPE_ADJUST(STRUCT);
 
 			case OPCODE_ASSERT: {
 				text += "assert (";
