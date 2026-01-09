@@ -215,7 +215,7 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			Node *node = st->get_root()->get_node_or_null(args["node_path"]);
 			Control *ctrl = Object::cast_to<Control>(node);
 			if (ctrl) {
-				pos = ctrl->get_global_position() + ctrl->get_size() / 2.0;
+				pos = ctrl->get_screen_transform().get_origin() + ctrl->get_size() / 2.0;
 			} else if (Object::cast_to<Node2D>(node)) {
 				pos = Object::cast_to<Node2D>(node)->get_global_position();
 			} else {
@@ -226,19 +226,36 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			pos = Vector2(args.get("x", 0), args.get("y", 0));
 		}
 
-		Ref<InputEventMouseButton> ev;
-		ev.instantiate();
-		ev->set_position(pos);
-		ev->set_global_position(pos);
-		ev->set_button_index(MouseButton::LEFT);
+		// 1. Move mouse to position
+		Ref<InputEventMouseMotion> mm;
+		mm.instantiate();
+		mm->set_position(pos);
+		mm->set_global_position(pos);
+		Input::get_singleton()->parse_input_event(mm);
 
-		ev->set_pressed(true);
-		Input::get_singleton()->parse_input_event(ev);
+		// 2. Press down
+		Ref<InputEventMouseButton> ev_down;
+		ev_down.instantiate();
+		ev_down->set_position(pos);
+		ev_down->set_global_position(pos);
+		ev_down->set_button_index(MouseButton::LEFT);
+		ev_down->set_button_mask(MouseButtonMask::LEFT);
+		ev_down->set_pressed(true);
+		Input::get_singleton()->parse_input_event(ev_down);
 
-		ev->set_pressed(false);
-		Input::get_singleton()->parse_input_event(ev);
+		// 3. Wait a tiny bit (handled by the engine next frame usually, but we want it to feel like a click)
+		// 4. Release
+		Ref<InputEventMouseButton> ev_up;
+		ev_up.instantiate();
+		ev_up->set_position(pos);
+		ev_up->set_global_position(pos);
+		ev_up->set_button_index(MouseButton::LEFT);
+		ev_up->set_button_mask(MouseButtonMask::NONE);
+		ev_up->set_pressed(false);
+		Input::get_singleton()->parse_input_event(ev_up);
 
 		resp["status"] = "clicked";
+		resp["pos"] = pos;
 	} else if (action == "type") {
 		String text = args.get("text", "");
 		for (int i = 0; i < text.length(); i++) {
