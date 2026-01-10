@@ -36,6 +36,7 @@
 #include "core/input/input.h"
 #include "core/input/input_enums.h"
 #include "core/io/json.h"
+#include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "scene/2d/node_2d.h"
 #include "scene/gui/control.h"
@@ -259,14 +260,45 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 	} else if (action == "type") {
 		String text = args.get("text", "");
 		for (int i = 0; i < text.length(); i++) {
-			char32_t c = text[i];
-			Ref<InputEventKey> ev;
-			ev.instantiate();
-			ev->set_unicode(c);
-			ev->set_pressed(true);
-			Input::get_singleton()->parse_input_event(ev);
-			ev->set_pressed(false);
-			Input::get_singleton()->parse_input_event(ev);
+			String token;
+			if (text[i] == '[' && text.find("]", i) != -1) {
+				int end = text.find("]", i);
+				token = text.substr(i + 1, end - i - 1);
+				i = end;
+			} else {
+				token = String::chr(text[i]);
+			}
+
+			uint32_t k_val = (uint32_t)find_keycode(token);
+			if (k_val == 0 && token.length() == 1) {
+				// Fallback for regular characters
+				k_val = (uint32_t)token.to_upper()[0];
+			}
+
+			Key code = (Key)(k_val & (uint32_t)KeyModifierMask::CODE_MASK);
+			uint32_t mods = k_val & (uint32_t)KeyModifierMask::MODIFIER_MASK;
+			char32_t unicode = 0;
+			if (token.length() == 1) {
+				unicode = token[0];
+			}
+
+			// Send Press
+			Ref<InputEventKey> ev_down;
+			ev_down.instantiate();
+			ev_down->set_keycode(code);
+			ev_down->set_physical_keycode(code);
+			ev_down->set_unicode(unicode);
+			ev_down->set_pressed(true);
+			ev_down->set_shift_pressed(mods & (uint32_t)KeyModifierMask::SHIFT);
+			ev_down->set_ctrl_pressed(mods & (uint32_t)KeyModifierMask::CTRL);
+			ev_down->set_alt_pressed(mods & (uint32_t)KeyModifierMask::ALT);
+			ev_down->set_meta_pressed(mods & (uint32_t)KeyModifierMask::META);
+			Input::get_singleton()->parse_input_event(ev_down);
+
+			// Send Release
+			Ref<InputEventKey> ev_up = ev_down->duplicate();
+			ev_up->set_pressed(false);
+			Input::get_singleton()->parse_input_event(ev_up);
 		}
 		resp["status"] = "typed";
 	} else if (action == "inspect_live") {
