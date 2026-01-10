@@ -892,7 +892,7 @@ Exclude:
 ## pcre2
 
 - Upstream: http://www.pcre.org
-- Version: 10.45 (2dce7761b1831fd3f82a9c2bd5476259d945da4d, 2025)
+- Version: 10.46 (b2bd4254b379b9d7dc9a3dda060a7e27009ccdff, 2025)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
@@ -904,6 +904,11 @@ Files extracted from upstream source:
 - `src/pcre2_ucptables.c`
 - `deps/sljit/sljit_src`
 - `AUTHORS.md` and `LICENCE.md`
+
+Patches:
+
+- `0001-fix-format-enumerate.patch` (GH-114766)
+- `0002-fix-duplicate-symbols.patch` (GH-114766)
 
 
 ## recastnavigation
