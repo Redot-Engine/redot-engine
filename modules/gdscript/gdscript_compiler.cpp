@@ -262,7 +262,7 @@ static bool _can_use_validate_call(const MethodBind *p_method, const Vector<GDSc
 }
 
 GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &codegen, Error &r_error, const GDScriptParser::ExpressionNode *p_expression, bool p_root, bool p_initializer) {
-	if (p_expression->is_constant && !(p_expression->get_datatype().is_meta_type && p_expression->get_datatype().kind == GDScriptParser::DataType::CLASS)) {
+	if (p_expression->is_constant && !(p_expression->get_datatype().is_meta_type && (p_expression->get_datatype().kind == GDScriptParser::DataType::CLASS || p_expression->get_datatype().kind == GDScriptParser::DataType::STRUCT))) {
 		return codegen.add_constant(p_expression->reduced_value);
 	}
 
@@ -369,6 +369,18 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 				} break;
 				case GDScriptParser::IdentifierNode::MEMBER_CONSTANT:
 				case GDScriptParser::IdentifierNode::MEMBER_CLASS: {
+					// Handle struct types (metatype)
+					if (in->get_datatype().kind == GDScriptParser::DataType::STRUCT && in->get_datatype().is_meta_type) {
+						// Struct type identifier - treat it like CLASS mode for static calls
+						// Store the constant value but use CLASS mode so write_call can dispatch properly
+						GDScriptCodeGenerator::Address addr;
+						addr.mode = GDScriptCodeGenerator::Address::CLASS;
+						GDScriptCodeGenerator::Address temp = codegen.add_constant(in->reduced_value);
+						addr.address = temp.address;
+						addr.type = _gdtype_from_datatype(in->get_datatype(), codegen.script);
+						return addr;
+					}
+
 					// Try class constants.
 					GDScript *owner = codegen.script;
 					while (owner) {

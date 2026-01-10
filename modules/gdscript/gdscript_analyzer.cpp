@@ -3706,6 +3706,9 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 	List<GDScriptParser::DataType> par_types;
 
 	bool is_constructor = (base_type.is_meta_type || (p_call->callee && p_call->callee->type == GDScriptParser::Node::IDENTIFIER)) && p_call->function_name == SNAME("new");
+	if (p_call->function_name == SNAME("new") && base_type.kind == GDScriptParser::DataType::STRUCT) {
+		print_line("DEBUG resolve_call: Checking constructor, base_type.is_meta_type=" + itos(base_type.is_meta_type) + ", base_type.kind=" + itos(base_type.kind) + ", is_constructor=" + itos(is_constructor));
+	}
 
 	if (is_constructor) {
 		if (Engine::get_singleton()->has_singleton(base_type.native_type)) {
@@ -4250,6 +4253,35 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 			}
 		}
 		return;
+	}
+
+	// Handle struct types
+	if (base.kind == GDScriptParser::DataType::STRUCT) {
+		if (base.struct_type == nullptr) {
+			return;
+		}
+
+		if (base.is_meta_type) {
+			// Accessing struct static methods/constructors (e.g., Point.new)
+			// For now, just set the identifier as having a valid type
+			// The actual method resolution happens in resolve_call
+			p_identifier->set_datatype(base);
+			return;
+		} else {
+			// Accessing struct instance fields (e.g., point.x)
+			if (base.struct_type->has_field(name)) {
+				int field_index = base.struct_type->field_indices[name];
+				if (field_index >= 0 && field_index < base.struct_type->fields.size()) {
+					const GDScriptParser::StructNode::Field &field = base.struct_type->fields[field_index];
+					if (field.variable != nullptr && field.variable->datatype.is_set()) {
+						p_identifier->set_datatype(field.variable->datatype);
+						return;
+					}
+				}
+			}
+			push_error(vformat(R"(Cannot find field "%s" in struct "%s".)", name, base.struct_type->identifier->name), p_identifier);
+			return;
+		}
 	}
 
 	GDScriptParser::ClassNode *base_class = base.class_type;
@@ -5908,7 +5940,9 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 	if (p_base_type.kind == GDScriptParser::DataType::STRUCT) {
 		const GDScriptParser::FunctionNode *func = p_base_type.struct_type->method_map[p_function];
 		print_line("DEBUG get_function_signature: struct has " + itos(p_base_type.struct_type->methods.size()) + " methods, method_map.has(" + String(p_function) + ")=" + itos(p_base_type.struct_type->has_method(p_function)) + ", func=" + itos(func != nullptr) + ", resolved_signature=" + (func ? itos(func->resolved_signature) : itos(0)));
+		print_line("DEBUG get_function_signature: p_is_constructor=" + itos(p_is_constructor) + ", p_function=" + String(p_function) + ", SNAME('new')=" + String(SNAME("new")) + ", equals=" + itos(p_function == SNAME("new")));
 		if (p_is_constructor && p_function == SNAME("new")) {
+			print_line("DEBUG get_function_signature: ENTERING constructor block for struct");
 			// Struct constructor - returns instance of the struct
 			r_return_type = p_base_type;
 			r_return_type.is_meta_type = false;
@@ -5948,6 +5982,7 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 				}
 			}
 
+			print_line("DEBUG get_function_signature: RETURNING true from struct constructor block");
 			return true;
 		}
 

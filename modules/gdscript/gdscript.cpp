@@ -145,7 +145,6 @@ GDScriptStructClass::~GDScriptStructClass() {
 }
 
 void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
-void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
 	if (p_struct == struct_type) {
 		return; // No change
 	}
@@ -1754,13 +1753,18 @@ void GDScript::clear(ClearData *p_clear_data) {
 
 	// Clear structs - properly release all ownership references
 	for (KeyValue<StringName, GDScriptStruct *> &E : structs) {
+		// Store the struct pointer before any operations to avoid use-after-free
+		GDScriptStruct *s = E.value;
 		// Step 1: Remove the constant wrapper (releases wrapper's reference)
 		constants.erase(E.key);
 		// Step 2: Unregister from global registry (releases registry's reference)
-		GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
+		GDScriptLanguage::get_singleton()->unregister_struct(s->get_fully_qualified_name());
 		// Step 3: Release the script HashMap's ownership reference
 		// This is the reference taken in _compile_struct (line 3245)
-		E.value->unreference();
+		// If unreference() returns true, reference count reached zero - delete the struct
+		if (s->unreference()) {
+			memdelete(s);
+		}
 		// Note: We don't add to clear_data anymore because we've already released
 		// the script's ownership reference. If other owners exist (e.g., external references),
 		// they are responsible for cleanup. The script has done its part.
@@ -3238,11 +3242,14 @@ void GDScriptLanguage::unregister_struct(const String &p_fully_qualified_name) {
 
 	HashMap<String, GDScriptStruct *>::Iterator existing = global_structs.find(p_fully_qualified_name);
 	if (existing) {
-		// Just release our reference - don't delete even if ref_count reaches zero
-		// The struct may still be owned by other entities (script HashMap, wrappers, etc.)
+		// Release our reference and check if ref_count reached zero
+		// If unreference() returns true, the struct should be deleted
 		GDScriptStruct *old_struct = existing->value;
 		if (old_struct) {
-			old_struct->unreference();
+			if (old_struct->unreference()) {
+				// Reference count reached zero - delete the struct
+				memdelete(old_struct);
+			}
 		}
 		global_structs.erase(p_fully_qualified_name);
 	}
