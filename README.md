@@ -75,6 +75,56 @@ scons platform=linuxbsd  # or: scons platform=macos
 Nix works on Linux and macOS, and is available at [nixos.org/download.html](https://nixos.org/download.html). The `nix run .` command automatically detects your platform and architecture.
 
 
+## AI Integration (Model Context Protocol)
+
+Redot includes a native **MCP (Model Context Protocol)** server, allowing AI coding assistants (like OpenCode, Claude Desktop, Cursor, or Zed) to interact directly with your game project.
+
+### Tools Overview
+The MCP server provides 5 master controllers:
+
+*   **`redot_scene_action`**: Manage `.tscn` files (add nodes, set properties, instance scenes, and wire signals with automatic callback generation).
+*   **`redot_resource_action`**: Manage `.tres` files (create/modify materials, themes, and data resources).
+*   **`redot_code_intel`**: Deep script analysis (GDScript syntax validation and engine documentation lookup).
+*   **`redot_project_config`**: Project-level control (configure Input Map, Autoloads, run/stop the game, and read logs).
+*   **`redot_game_control`**: Vision & Interaction (capture screenshots, click UI elements, and inspect the live scene tree of a running game).
+
+### Running the MCP Server
+
+#### 1. Using the compiled binary (Standard)
+```json
+{
+  "mcp": {
+    "redot": {
+      "type": "local",
+      "command": [
+        "/path/to/redot.editor.binary",
+        "--headless",
+        "--mcp-server",
+        "--path",
+        "/path/to/your/project"
+      ],
+      "enabled": true
+    }
+  }
+}
+```
+
+#### 2. Using Nix (For Development)
+If you are developing inside a Nix environment, use the provided wrapper to ensure all libraries are correctly linked:
+
+1. Locate the `redot-mcp.sh` script in the engine root.
+2. In your `opencode.json` or MCP client config, use:
+```json
+{
+  "mcp": {
+    "redot": {
+      "type": "local",
+      "command": ["/path/to/redot-engine/redot-mcp.sh", "/path/to/your/project"],
+      "enabled": true
+    }
+  }
+}
+```
 ## Community and contributing
 
 Redot is not only an engine but an ever-growing community of users and engine
