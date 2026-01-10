@@ -145,13 +145,15 @@ GDScriptStructClass::~GDScriptStructClass() {
 }
 
 void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
+void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
 	if (p_struct == struct_type) {
 		return; // No change
 	}
-	// Just release our reference to the old struct - don't delete even if ref_count reaches zero
-	// The struct may still be owned by other entities (script HashMap, registry, etc.)
+	// Unreference old struct - rely on reference counting system
 	if (struct_type) {
-		struct_type->unreference();
+		if (struct_type->unreference()) {
+			memdelete(struct_type);
+		}
 	}
 	struct_type = p_struct;
 	// Reference new struct (null is allowed)
