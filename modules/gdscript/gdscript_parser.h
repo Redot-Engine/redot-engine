@@ -251,6 +251,7 @@ public:
 			script_type = p_other.script_type;
 			script_path = p_other.script_path;
 			class_type = p_other.class_type;
+			struct_type = p_other.struct_type;
 			method_info = p_other.method_info;
 			enum_values = p_other.enum_values;
 			container_element_types = p_other.container_element_types;
@@ -675,14 +676,14 @@ public:
 				switch (type) {
 					case CLASS:
 						return m_class->get_datatype();
-					case STRUCT:
-						if (m_struct) {
-							DataType dt;
-							dt.kind = DataType::STRUCT;
-							dt.struct_type = m_struct;
-							return dt;
-						}
-						return DataType();
+					case STRUCT: {
+						ERR_FAIL_NULL_V(m_struct, DataType());
+						DataType dt;
+						dt.kind = DataType::STRUCT;
+						dt.type_source = DataType::ANNOTATED_EXPLICIT;
+						dt.struct_type = m_struct;
+						return dt;
+					}
 					case CONSTANT:
 						return constant->get_datatype();
 					case FUNCTION:

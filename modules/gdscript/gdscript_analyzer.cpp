@@ -1256,11 +1256,16 @@ void GDScriptAnalyzer::resolve_class_member(GDScriptParser::ClassNode *p_class, 
 			case GDScriptParser::ClassNode::Member::GROUP:
 				// No-op, but needed to silence warnings.
 				break;
-			case GDScriptParser::ClassNode::Member::STRUCT:
+			case GDScriptParser::ClassNode::Member::STRUCT: {
 				// Check for name conflicts before resolving struct body
-				check_class_member_name_conflict(p_class, member.m_struct->identifier->name, member.m_struct);
+				if (member.m_struct->identifier != nullptr) {
+					check_class_member_name_conflict(p_class, member.m_struct->identifier->name, member.m_struct);
+				}
 				// Struct body is resolved separately in resolve_struct_body
+				// Note: We don't set the datatype on the struct node itself because
+				// Member::get_datatype() creates a fresh DataType with the correct struct_type pointer
 				break;
+			}
 			case GDScriptParser::ClassNode::Member::UNDEFINED:
 				ERR_PRINT("Trying to resolve undefined member.");
 				break;
@@ -1355,6 +1360,10 @@ void GDScriptAnalyzer::resolve_class_interface(GDScriptParser::ClassNode *p_clas
 			GDScriptParser::ClassNode::Member member = p_class->members[i];
 			if (member.type == GDScriptParser::ClassNode::Member::CLASS) {
 				resolve_class_interface(member.m_class, true);
+			} else if (member.type == GDScriptParser::ClassNode::Member::STRUCT) {
+				// Resolve struct method signatures during interface resolution
+				// This is needed so that struct methods can be called during analysis
+				resolve_struct_body(member.m_struct);
 			}
 		}
 	}
@@ -1595,21 +1604,21 @@ void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct,
 		return;
 	}
 
+	print_line("DEBUG resolve_struct_body: Called for struct '" + p_struct->identifier->name + "', already_resolved=" + itos(p_struct->resolved_body));
+
 	// Idempotence guard: skip if already resolved
 	if (p_struct->resolved_body) {
 		return;
 	}
 
-	// Mark as resolving to prevent infinite recursion
-	// (Used if we ever support recursive struct types)
-	p_struct->resolved_body = true;
-
 	// Save current class context and set struct context
 	GDScriptParser::ClassNode *previous_class = parser->current_class;
-	parser->current_class = nullptr; // Clear class context for structs
 
 	GDScriptParser::StructNode *previous_struct = parser->current_struct;
 	parser->current_struct = p_struct;
+
+	// TODO: If recursive structs are supported later, use a dedicated "resolving" flag
+	// or an analyzer-side stack/visited set, not `resolved_body`.
 
 	// Resolve base struct if extends is used
 	if (!p_struct->extends.is_empty()) {
@@ -1620,24 +1629,23 @@ void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct,
 	// Resolve field types
 	for (const GDScriptParser::StructNode::Field &field : p_struct->fields) {
 		if (field.variable != nullptr) {
-			if (field.variable->datatype_specifier != nullptr) {
-				// Resolve the datatype and convert from metatype to instance type
-				GDScriptParser::DataType resolved_type = resolve_datatype(field.variable->datatype_specifier);
-				field.variable->set_datatype(type_from_metatype(resolved_type));
-			} else {
-				// No explicit type - infer from initializer by resolving the variable
-				resolve_variable(field.variable, false);
-			}
+			// `resolve_variable()` already handles explicit types + initializer reduction/compat checks.
+			resolve_variable(field.variable, false);
 		}
 	}
 
 	// Resolve method signatures only (not bodies) for struct methods
 	// Method body resolution is skipped until struct method calling is implemented
+	print_line("DEBUG resolve_struct_body: Struct has " + itos(p_struct->methods.size()) + " methods");
 	for (GDScriptParser::FunctionNode *method : p_struct->methods) {
 		if (method != nullptr && !method->resolved_signature) {
+			print_line("DEBUG resolve_struct_body: Resolving method '" + method->identifier->name + "'");
 			resolve_function_signature(method, p_source);
+			print_line("DEBUG resolve_struct_body: After resolve, resolved_signature=" + itos(method->resolved_signature));
 		}
 	}
+
+	p_struct->resolved_body = true;
 
 	// Restore previous context
 	parser->current_struct = previous_struct;
@@ -3679,6 +3687,9 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 		} else {
 			reduce_expression(subscript->base);
 			base_type = subscript->base->get_datatype();
+			if (base_type.kind == GDScriptParser::DataType::STRUCT) {
+				print_line("DEBUG after reduce_expression: subscript->base=" + itos((uint64_t)subscript->base) + ", struct_type=" + itos(base_type.struct_type != nullptr) + ", datatype addr=" + itos((uint64_t)&subscript->base->datatype));
+			}
 			is_self = subscript->base->type == GDScriptParser::Node::SELF;
 		}
 	} else {
@@ -4330,6 +4341,23 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 					return;
 				}
 
+				case GDScriptParser::ClassNode::Member::STRUCT: {
+					// Structs are similar to classes - treat them as types
+					// Create the datatype directly since member.get_datatype() seems to have issues
+					GDScriptParser::DataType struct_dt;
+					struct_dt.kind = GDScriptParser::DataType::STRUCT;
+					struct_dt.is_constant = true;
+					struct_dt.is_meta_type = true;
+					struct_dt.type_source = GDScriptParser::DataType::ANNOTATED_EXPLICIT;
+					struct_dt.struct_type = member.m_struct;
+					struct_dt.script_path = parser->script_path;
+					print_line("DEBUG reduce_identifier_from_base: p_identifier=" + itos((uint64_t)p_identifier) + ", Setting struct '" + member.m_struct->identifier->name + "', struct_type=" + itos(struct_dt.struct_type != nullptr) + ", fqsn='" + struct_dt.struct_type->fqsn + "', datatype addr=" + itos((uint64_t)&p_identifier->datatype));
+					p_identifier->set_datatype(struct_dt);
+					p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CLASS;
+					p_identifier->is_constant = true;
+					return;
+				}
+
 				default: {
 					// Do nothing
 				}
@@ -4456,6 +4484,10 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 
 void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_identifier, bool can_be_builtin) {
 	// TODO: This is an opportunity to further infer types.
+
+	if (p_identifier->name == StringName("TestStruct")) {
+		print_line("DEBUG reduce_identifier: p_identifier=" + itos((uint64_t)p_identifier) + ", name=" + String(p_identifier->name) + ", current datatype kind=" + itos(p_identifier->datatype.kind) + ", struct_type=" + itos(p_identifier->datatype.struct_type != nullptr));
+	}
 
 	// Check if we are inside an enum. This allows enum values to access other elements of the same enum.
 	if (current_enum) {
@@ -5874,6 +5906,8 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 
 	// Handle struct construction and methods
 	if (p_base_type.kind == GDScriptParser::DataType::STRUCT) {
+		const GDScriptParser::FunctionNode *func = p_base_type.struct_type->method_map[p_function];
+		print_line("DEBUG get_function_signature: struct has " + itos(p_base_type.struct_type->methods.size()) + " methods, method_map.has(" + String(p_function) + ")=" + itos(p_base_type.struct_type->has_method(p_function)) + ", func=" + itos(func != nullptr) + ", resolved_signature=" + (func ? itos(func->resolved_signature) : itos(0)));
 		if (p_is_constructor && p_function == SNAME("new")) {
 			// Struct constructor - returns instance of the struct
 			r_return_type = p_base_type;

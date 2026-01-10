@@ -92,11 +92,6 @@ private:
 	// Constructor
 	GDScriptFunction *constructor = nullptr;
 
-	// Inheritance
-	// NOTE: The children vector is currently unused and not populated.
-	// Child struct tracking is handled through the owning GDScript's structs HashMap.
-	Vector<GDScriptStruct *> children;
-
 	// Fully qualified name for unique identification
 	String fully_qualified_name;
 

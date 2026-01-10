@@ -137,11 +137,9 @@ GDScriptStructClass::GDScriptStructClass(GDScriptStruct *p_struct) {
 
 GDScriptStructClass::~GDScriptStructClass() {
 	if (struct_type) {
-		// Use the return value of unreference() which atomically tells us
-		// if the reference count reached zero, avoiding race conditions
-		if (struct_type->unreference()) {
-			memdelete(struct_type);
-		}
+		// Just release our reference - don't delete even if ref_count reaches zero
+		// The struct may still be owned by other entities (script HashMap, registry, etc.)
+		struct_type->unreference();
 		struct_type = nullptr;
 	}
 }
@@ -150,7 +148,8 @@ void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
 	if (p_struct == struct_type) {
 		return; // No change
 	}
-	// Unreference old struct - rely on reference counting system
+	// Just release our reference to the old struct - don't delete even if ref_count reaches zero
+	// The struct may still be owned by other entities (script HashMap, registry, etc.)
 	if (struct_type) {
 		struct_type->unreference();
 	}
@@ -1804,7 +1803,6 @@ void GDScript::clear(ClearData *p_clear_data) {
 				GDScriptCache::remove_script(gdscr->get_path());
 			}
 		}
-		// Note: clear_data->structs is now empty (structs cleaned up immediately above)
 		clear_data->clear();
 	}
 }
@@ -3216,14 +3214,20 @@ void GDScriptLanguage::register_struct(const String &p_fully_qualified_name, GDS
 	// Check if a struct with this name already exists
 	HashMap<String, GDScriptStruct *>::Iterator existing = global_structs.find(p_fully_qualified_name);
 	if (existing) {
-		// Unreference the existing struct before replacing it
+		// Just release our reference to the old struct - don't delete even if ref_count reaches zero
+		// The struct may still be owned by other entities (script HashMap, wrappers, etc.)
 		GDScriptStruct *old_struct = existing->value;
-		if (old_struct && old_struct->unreference()) {
-			memdelete(old_struct);
+		if (old_struct) {
+			print_line("DEBUG register_struct: Found existing struct '" + p_fully_qualified_name + "' with ref_count=", itos(old_struct->get_reference_count()));
+			old_struct->unreference();
+			print_line("DEBUG register_struct: After unreference old struct, ref_count=", itos(old_struct->get_reference_count()));
 		}
 		global_structs.erase(p_fully_qualified_name);
 	}
 
+	// Take a reference for the registry's ownership
+	p_struct->reference();
+	print_line("DEBUG register_struct: Added new struct '" + p_fully_qualified_name + "' with ref_count=", itos(p_struct->get_reference_count()));
 	global_structs.insert(p_fully_qualified_name, p_struct);
 }
 
@@ -3232,10 +3236,11 @@ void GDScriptLanguage::unregister_struct(const String &p_fully_qualified_name) {
 
 	HashMap<String, GDScriptStruct *>::Iterator existing = global_structs.find(p_fully_qualified_name);
 	if (existing) {
-		// Unreference the struct before removing it from registry
+		// Just release our reference - don't delete even if ref_count reaches zero
+		// The struct may still be owned by other entities (script HashMap, wrappers, etc.)
 		GDScriptStruct *old_struct = existing->value;
-		if (old_struct && old_struct->unreference()) {
-			memdelete(old_struct);
+		if (old_struct) {
+			old_struct->unreference();
 		}
 		global_structs.erase(p_fully_qualified_name);
 	}

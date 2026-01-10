@@ -1663,8 +1663,18 @@ bool Variant::is_builtin_method_static(Variant::Type p_type, const StringName &p
 
 bool Variant::is_builtin_method_vararg(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		print_line("DEBUG is_builtin_method_vararg: p_type=STRUCT, method=" + String(p_method) + ", returning false");
+		return false;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
-	ERR_FAIL_NULL_V(method, false);
+	if (!method) {
+		print_line("DEBUG is_builtin_method_vararg: p_type=" + itos(p_type) + ", method=" + String(p_method) + ", method=null");
+		ERR_FAIL_NULL_V(method, false);
+	}
 	return method->is_vararg;
 }
 

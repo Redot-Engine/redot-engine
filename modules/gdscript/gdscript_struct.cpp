@@ -40,14 +40,13 @@
 
 GDScriptStruct::GDScriptStruct(const StringName &p_name) :
 		name(p_name) {
-	// Initialize with ref_count = 0
-	// References will be added by owners (script, wrapper class)
-	ref_count.init(0);
+	// Initialize with ref_count = 1
+	// The first reference represents the initial creator's ownership
+	// Subsequent owners must call reference() to take ownership
+	ref_count.init(1);
 }
 
 GDScriptStruct::~GDScriptStruct() {
-	// Reference counting handles cleanup naturally
-	// The children vector is not currently used for ownership tracking
 }
 
 void GDScriptStruct::reference() {

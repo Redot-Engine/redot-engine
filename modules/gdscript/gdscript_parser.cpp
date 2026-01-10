@@ -968,8 +968,9 @@ GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 
 		switch (token.type) {
 			case GDScriptTokenizer::Token::VAR: {
-				// Parse field
-				VariableNode *variable = parse_variable(false);
+				// Parse field - consume VAR token first, just like parse_class_member does
+				advance();
+				VariableNode *variable = parse_variable(p_is_static, true);
 				if (variable != nullptr) {
 					if (!n_struct->add_field(variable)) {
 						push_error(vformat(R"(Duplicate field "%s" in struct.)", variable->identifier->name), variable);
@@ -980,6 +981,7 @@ GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 			}
 			case GDScriptTokenizer::Token::FUNC: {
 				// Parse method
+				advance();
 				FunctionNode *function = parse_function(p_is_static);
 				if (function != nullptr) {
 					if (!n_struct->add_method(function)) {

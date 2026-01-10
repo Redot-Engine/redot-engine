@@ -39,6 +39,10 @@
 
 #include "core/templates/hash_set.h"
 
+// Forward declarations
+class GDScriptStruct;
+class GDScriptStructClass;
+
 class GDScriptCompiler {
 	const GDScriptParser *parser = nullptr;
 	HashSet<GDScript *> parsed_classes;
@@ -111,15 +115,26 @@ class GDScriptCompiler {
 				if (obj) {
 					type.kind = GDScriptDataType::NATIVE;
 					type.native_type = obj->get_class_name();
+					print_line("DEBUG add_constant: obj=" + String(obj->get_class()) + ", type.kind set to NATIVE");
 
-					Ref<Script> scr = obj->get_script();
-					if (scr.is_valid()) {
-						type.script_type = scr.ptr();
-						Ref<GDScript> gdscript = scr;
-						if (gdscript.is_valid()) {
-							type.kind = GDScriptDataType::GDSCRIPT;
-						} else {
-							type.kind = GDScriptDataType::SCRIPT;
+					// Check if this is a GDScriptStructClass (used for struct constructors)
+					GDScriptStructClass *struct_class = Object::cast_to<GDScriptStructClass>(obj);
+					print_line("DEBUG add_constant: struct_class=" + itos(uint64_t(struct_class)));
+					if (struct_class != nullptr) {
+						print_line("DEBUG add_constant: Detected GDScriptStructClass, setting kind to STRUCT");
+						type.kind = GDScriptDataType::STRUCT;
+						type.struct_type = struct_class->get_struct_type();
+					} else {
+						// Check if this is a Script
+						Ref<Script> scr = obj->get_script();
+						if (scr.is_valid()) {
+							type.script_type = scr.ptr();
+							Ref<GDScript> gdscript = scr;
+							if (gdscript.is_valid()) {
+								type.kind = GDScriptDataType::GDSCRIPT;
+							} else {
+								type.kind = GDScriptDataType::SCRIPT;
+							}
 						}
 					}
 				} else {
