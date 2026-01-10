@@ -40,11 +40,13 @@
 #include "core/os/os.h"
 #include "scene/2d/node_2d.h"
 #include "scene/gui/control.h"
+#include "scene/main/canvas_item.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/main/window.h"
 #include "servers/rendering_server.h"
+#include <functional>
 
 MCPBridge *MCPBridge::singleton = nullptr;
 
@@ -244,7 +246,9 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 		ev_down->set_pressed(true);
 		Input::get_singleton()->parse_input_event(ev_down);
 
-		// 3. Wait a tiny bit (handled by the engine next frame usually, but we want it to feel like a click)
+		// 3. Wait 50ms to ensure engine processes the down state
+		OS::get_singleton()->delay_usec(50000);
+
 		// 4. Release
 		Ref<InputEventMouseButton> ev_up;
 		ev_up.instantiate();
@@ -257,6 +261,52 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 
 		resp["status"] = "clicked";
 		resp["pos"] = pos;
+	} else if (action == "inspect_live") {
+		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+		if (st) {
+			String path = args.get("path", ".");
+			Node *node = (path == "." || path.is_empty()) ? (Node *)st->get_root() : st->get_root()->get_node_or_null(path);
+			if (node) {
+				bool recursive = args.get("recursive", false);
+				int max_depth = args.get("depth", 5);
+
+				std::function<Dictionary(Node *, int)> build_tree = [&](Node *p_node, int p_depth) -> Dictionary {
+					Dictionary info;
+					info["name"] = p_node->get_name();
+					info["type"] = p_node->get_class();
+
+					CanvasItem *ci = Object::cast_to<CanvasItem>(p_node);
+					info["visible"] = ci ? ci->is_visible_in_tree() : true;
+
+					if (Control *c = Object::cast_to<Control>(p_node)) {
+						Vector2 sp = c->get_screen_transform().get_origin() + c->get_size() / 2.0;
+						info["screen_pos"] = sp;
+						info["size"] = c->get_size();
+					} else if (Node2D *n2 = Object::cast_to<Node2D>(p_node)) {
+						info["pos"] = n2->get_global_position();
+					}
+
+					if (recursive && p_depth < max_depth) {
+						Array children;
+						for (int i = 0; i < p_node->get_child_count(); i++) {
+							Node *child = p_node->get_child(i);
+							// Skip internal nodes to keep context clean
+							String cname = child->get_name();
+							if (cname.begins_with("@@")) {
+								continue;
+							}
+							children.push_back(build_tree(child, p_depth + 1));
+						}
+						info["children"] = children;
+					}
+					return info;
+				};
+
+				resp["tree"] = build_tree(node, 0);
+			} else {
+				resp["error"] = "Node not found";
+			}
+		}
 	} else if (action == "type") {
 		String text = args.get("text", "");
 		for (int i = 0; i < text.length(); i++) {
