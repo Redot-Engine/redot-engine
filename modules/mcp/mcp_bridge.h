@@ -35,6 +35,7 @@
 #include "core/io/stream_peer_tcp.h"
 #include "core/io/tcp_server.h"
 #include "core/object/class_db.h"
+#include "core/os/mutex.h"
 #include "core/variant/dictionary.h"
 
 class MCPBridge : public Object {
@@ -42,6 +43,7 @@ class MCPBridge : public Object {
 
 private:
 	static MCPBridge *singleton;
+	mutable Mutex mutex;
 
 	Ref<TCPServer> server;
 	Ref<StreamPeerTCP> connection;
