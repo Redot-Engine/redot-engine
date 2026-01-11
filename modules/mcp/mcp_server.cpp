@@ -52,6 +52,12 @@ MCPServer::MCPServer() {
 
 MCPServer::~MCPServer() {
 	stop();
+
+	// Wait for server loop to exit to prevent use-after-free of protocol
+	while (running) {
+		OS::get_singleton()->delay_usec(1000);
+	}
+
 	if (protocol) {
 		memdelete(protocol);
 		protocol = nullptr;
@@ -92,7 +98,7 @@ void MCPServer::_bridge_thread_func(void *p_userdata) {
 }
 
 void MCPServer::_server_loop() {
-	running = true;
+	// running = true; // Handled by start() CAS
 	should_stop = false;
 
 	// Start bridge thread
@@ -130,17 +136,19 @@ void MCPServer::_server_loop() {
 	should_stop = true;
 	bridge_thread.wait_to_finish();
 
-	running = false;
+	// running = false; // Handled by start() exit
 	fprintf(stderr, "[MCP] Redot MCP Server stopped\n");
 	fflush(stderr);
 }
 
 void MCPServer::start() {
-	if (running) {
+	bool expected = false;
+	if (!running.compare_exchange_strong(expected, true)) {
 		return;
 	}
 
 	_server_loop();
+	running = false;
 }
 
 void MCPServer::stop() {
