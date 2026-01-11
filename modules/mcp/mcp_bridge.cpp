@@ -447,6 +447,10 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 	} else if (action == "wait") {
 		// Deprecated/No-op on client side, handled by server now
 		resp["status"] = "wait_is_server_side";
+	} else {
+		resp["status"] = "error";
+		resp["error"] = "unknown_action";
+		resp["action"] = action;
 	}
 
 	return resp;
