@@ -33,6 +33,8 @@
 #include "mcp_server.h"
 
 #include "core/io/json.h"
+#include "core/io/resource_loader.h"
+#include "core/object/script_language.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
 #include "mcp_bridge.h"
@@ -147,4 +149,49 @@ void MCPServer::stop() {
 	}
 
 	should_stop = true;
+}
+
+void MCPServer::run_tests(const String &p_script_path) {
+	fprintf(stderr, "[MCP] Running tests from: %s\n", p_script_path.utf8().get_data());
+
+	Error err;
+	Ref<Resource> res = ResourceLoader::load(p_script_path, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err);
+	if (err != OK || res.is_null()) {
+		fprintf(stderr, "[MCP] Failed to load test script: %s (Error: %d)\n", p_script_path.utf8().get_data(), err);
+		return;
+	}
+
+	Ref<Script> script = res;
+	if (script.is_null()) {
+		fprintf(stderr, "[MCP] Resource is not a script: %s\n", p_script_path.utf8().get_data());
+		return;
+	}
+
+	Object *obj = ClassDB::instantiate(script->get_instance_base_type());
+	if (!obj) {
+		fprintf(stderr, "[MCP] Failed to instantiate base type: %s\n", String(script->get_instance_base_type()).utf8().get_data());
+		return;
+	}
+
+	obj->set_script(script);
+
+	if (obj->get_script_instance()) {
+		Callable::CallError ce;
+		Variant ret = obj->callp("run", nullptr, 0, ce);
+
+		if (ce.error == Callable::CallError::CALL_OK) {
+			fprintf(stderr, "[MCP] Test finished. Return value: %s\n", ret.get_construct_string().utf8().get_data());
+		} else if (ce.error == Callable::CallError::CALL_ERROR_INVALID_METHOD) {
+			fprintf(stderr, "[MCP] Test script missing 'run()' method\n");
+		} else {
+			fprintf(stderr, "[MCP] Error calling 'run()': %d\n", ce.error);
+		}
+	} else {
+		fprintf(stderr, "[MCP] Script instance could not be created\n");
+	}
+
+	// If it's not refcounted, delete it.
+	if (!Object::cast_to<RefCounted>(obj)) {
+		memdelete(obj);
+	}
 }

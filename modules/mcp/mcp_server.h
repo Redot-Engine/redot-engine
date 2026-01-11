@@ -75,6 +75,9 @@ public:
 	// Stop the MCP server
 	void stop();
 
+	// Run unit tests headlessly
+	static void run_tests(const String &p_script_path);
+
 	// Check if server is running
 	bool is_running() const { return running; }
 };

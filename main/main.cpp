@@ -297,6 +297,7 @@ bool profile_gpu = false;
 #ifdef MODULE_MCP_ENABLED
 static bool mcp_server_enabled = false;
 static int mcp_bridge_port = 0;
+static String mcp_run_tests;
 #endif
 
 // Constants.
@@ -618,6 +619,7 @@ void Main::print_help(const char *p_binary) {
 #ifdef MODULE_MCP_ENABLED
 	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\\n", CLI_OPTION_AVAILABILITY_EDITOR);
 	print_help_option("--mcp-bridge-port <port>", "Port for the MCP Bridge connection (internal use).\\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--run-tests <path>", "Run a unit test script headlessly and exit.\\n", CLI_OPTION_AVAILABILITY_EDITOR);
 #endif
 	print_help_option("--log-file <file>", "Write output/error log to the specified path instead of the default location defined by the project.\n");
 	print_help_option("", "<file> path should be absolute or relative to the project directory.\n");
@@ -1432,6 +1434,8 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 				OS::get_singleton()->print("Missing <port> argument for --mcp-bridge-port <port>.\n");
 				goto error;
 			}
+		} else if (arg.begins_with("--run-tests=")) {
+			mcp_run_tests = arg.substr(12);
 #endif
 
 		} else if (arg == "--embedded") { // Enable embedded mode.
@@ -4778,6 +4782,14 @@ int Main::start() {
 		OS::get_singleton()->benchmark_dump();
 
 		MCPServer::get_singleton()->start();
+		return EXIT_SUCCESS;
+	}
+
+	if (!mcp_run_tests.is_empty()) {
+		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
+		OS::get_singleton()->benchmark_dump();
+
+		MCPServer::run_tests(mcp_run_tests);
 		return EXIT_SUCCESS;
 	}
 #endif

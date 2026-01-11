@@ -178,8 +178,8 @@ Array MCPTools::get_tool_definitions() {
 	// resource_action
 	{
 		Dictionary props;
-		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'create', 'modify', 'inspect', 'duplicate'");
-		props["path"] = MCPSchemaBuilder::make_string_property("Path to resource (.tres)");
+		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'create', 'modify', 'inspect', 'duplicate', 'inspect_asset'");
+		props["path"] = MCPSchemaBuilder::make_string_property("Path to resource (.tres) or asset");
 		props["type"] = MCPSchemaBuilder::make_string_property("Type for 'create'");
 		props["property"] = MCPSchemaBuilder::make_string_property("Property name");
 		props["value"] = MCPSchemaBuilder::make_object_property("Value");
@@ -191,7 +191,7 @@ Array MCPTools::get_tool_definitions() {
 
 		Dictionary tool;
 		tool["name"] = "resource_action";
-		tool["description"] = "Manage Redot resource files (.tres)";
+		tool["description"] = "Manage Redot resource files (.tres) and asset imports";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
 		tools.push_back(tool);
 	}
@@ -411,7 +411,7 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 			target->get_parent()->remove_child(target);
 			memdelete(target);
 			should_save = true;
-			result.add_text("Removed node: " + node_path);
+			result.add_text("Removed node");
 		}
 	} else if (action == "instance") {
 		String parent_path = p_args.get("node_path", ".");
@@ -495,6 +495,23 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 		return result;
 	}
 	String normalized = normalize_path(path);
+
+	if (action == "inspect_asset") {
+		String import_path = normalized + ".import";
+		if (!FileAccess::exists(import_path)) {
+			result.set_error("Asset is not imported or not found: " + path);
+			return result;
+		}
+		Error err;
+		Ref<FileAccess> f = FileAccess::open(import_path, FileAccess::READ, &err);
+		if (err != OK) {
+			result.set_error("Failed to open .import file");
+			return result;
+		}
+		result.add_text(f->get_as_text());
+		return result;
+	}
+
 	if (action == "create") {
 		String type = p_args.get("type", "Resource");
 		Object *obj = ClassDB::instantiate(type);
@@ -553,6 +570,7 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 			Dictionary info;
 			info["class"] = query;
 			info["inherits"] = ClassDB::get_parent_class(query);
+
 			Array props;
 			List<PropertyInfo> plist;
 			ClassDB::get_property_list(query, &plist);
@@ -560,7 +578,36 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 				props.push_back(p.name + " (" + Variant::get_type_name(p.type) + ")");
 			}
 			info["properties"] = props;
+
+			Array signals;
+			List<MethodInfo> slist;
+			ClassDB::get_signal_list(query, &slist);
+			for (const MethodInfo &s : slist) {
+				signals.push_back(s.name);
+			}
+			info["signals"] = signals;
+
+			Array methods;
+			List<MethodInfo> mlist;
+			ClassDB::get_method_list(query, &mlist);
+			for (const MethodInfo &m : mlist) {
+				if (m.name.begins_with("_")) {
+					continue;
+				}
+				String sig = m.name + "(";
+				for (int i = 0; i < m.arguments.size(); i++) {
+					if (i > 0) {
+						sig += ", ";
+					}
+					sig += m.arguments[i].name;
+				}
+				sig += ")";
+				methods.push_back(sig);
+			}
+			info["methods"] = methods;
+
 			result.add_text(JSON::stringify(info, "  "));
+			return result;
 		} else {
 			result.set_error("Class not found");
 		}
@@ -590,7 +637,31 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 			}
 			result.set_error(el);
 		} else {
-			result.add_text(action == "validate" ? "Valid" : "Symbols placeholder");
+			if (action == "validate") {
+				result.add_text("Valid");
+			} else {
+				Dictionary symbols;
+				const GDScriptParser::ClassNode *head = parser.get_tree();
+				if (head) {
+					Array functions;
+					Array variables;
+					Array signals;
+					for (int i = 0; i < head->members.size(); i++) {
+						const GDScriptParser::ClassNode::Member &m = head->members[i];
+						if (m.type == GDScriptParser::ClassNode::Member::FUNCTION) {
+							functions.push_back(m.get_name());
+						} else if (m.type == GDScriptParser::ClassNode::Member::VARIABLE) {
+							variables.push_back(m.get_name());
+						} else if (m.type == GDScriptParser::ClassNode::Member::SIGNAL) {
+							signals.push_back(m.get_name());
+						}
+					}
+					symbols["functions"] = functions;
+					symbols["variables"] = variables;
+					symbols["signals"] = signals;
+				}
+				result.add_text(JSON::stringify(symbols, "  "));
+			}
 		}
 		return result;
 	}

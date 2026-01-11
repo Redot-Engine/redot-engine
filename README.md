@@ -83,10 +83,10 @@ Redot includes a native **MCP (Model Context Protocol)** server, allowing AI cod
 The MCP server provides 5 master controllers:
 
 *   **`redot_scene_action`**: Manage `.tscn` files (add nodes, set properties, instance scenes, and wire signals with automatic callback generation).
-*   **`redot_resource_action`**: Manage `.tres` files (create/modify materials, themes, and data resources).
-*   **`redot_code_intel`**: Deep script analysis (GDScript syntax validation and engine documentation lookup).
+*   **`redot_resource_action`**: Manage `.tres` files and assets (create/modify materials, themes, inspect `.import` metadata).
+*   **`redot_code_intel`**: Deep script analysis (GDScript syntax validation, symbol extraction, and engine documentation lookup).
 *   **`redot_project_config`**: Project-level control (configure Input Map, Autoloads, run/stop the game, and read logs).
-*   **`redot_game_control`**: Vision & Interaction (capture screenshots, click UI elements, and inspect the live scene tree of a running game).
+*   **`redot_game_control`**: Vision & Interaction (capture screenshots, click UI elements with high-precision, and inspect the live scene tree recursively).
 
 ### Running the MCP Server
 
@@ -108,6 +108,14 @@ The MCP server provides 5 master controllers:
   }
 }
 ```
+
+#### 2. Running Unit Tests
+You can execute automated tests headlessly using the `--run-tests` flag:
+```bash
+./bin/redot.<platform> --headless --run-tests=res://tests/my_test.gd
+```
+*Note: Your test script should have a `func run():` method.*
+
 
 #### 2. Using Nix (For Development)
 If you are developing inside a Nix environment, use the provided wrapper to ensure all libraries are correctly linked:
