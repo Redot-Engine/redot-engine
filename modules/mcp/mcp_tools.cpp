@@ -483,8 +483,15 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 	if (should_save) {
 		Ref<PackedScene> new_scene;
 		new_scene.instantiate();
-		new_scene->pack(root);
-		ResourceSaver::save(new_scene, normalized_scene);
+		if (new_scene.is_valid()) {
+			new_scene->pack(root);
+			Error err = ResourceSaver::save(new_scene, normalized_scene);
+			if (err != OK) {
+				result.set_error("Failed to save scene: " + itos(err));
+			}
+		} else {
+			result.set_error("Failed to instantiate PackedScene for saving");
+		}
 	}
 	memdelete(root);
 	return result;
@@ -724,9 +731,18 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		}
 	} else if (action == "stop") {
 		if (last_game_pid != 0) {
-			OS::get_singleton()->kill(last_game_pid);
-			last_game_pid = 0;
-			result.add_text("Stopped");
+			if (OS::get_singleton()->is_process_running(last_game_pid)) {
+				Error err = OS::get_singleton()->kill(last_game_pid);
+				if (err == OK) {
+					last_game_pid = 0;
+					result.add_text("Stopped");
+				} else {
+					result.set_error("Failed to kill process: " + itos(err));
+				}
+			} else {
+				last_game_pid = 0;
+				result.set_error("Process is no longer running");
+			}
 		} else {
 			result.set_error("Not running");
 		}

@@ -1440,6 +1440,16 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 				OS::get_singleton()->print("Missing <port> argument for --mcp-bridge-port <port>.\n");
 				goto error;
 			}
+		} else if (arg == "--run-tests") { // Run a unit test script headlessly and exit.
+			if (N) {
+				mcp_run_tests = N->get();
+				N = N->next();
+				audio_driver = NULL_AUDIO_DRIVER;
+				display_driver = NULL_DISPLAY_DRIVER;
+			} else {
+				OS::get_singleton()->print("Missing <path> argument for --run-tests <path>.\n");
+				goto error;
+			}
 #endif
 
 		} else if (arg == "--embedded") { // Enable embedded mode.

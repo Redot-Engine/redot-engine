@@ -133,9 +133,14 @@ Error MCPServer::stop_game_process() {
 	}
 	Error err = OS::get_singleton()->kill(game_pid);
 	if (err == OK) {
-		game_pid = 0; // cleared immediately, or wait for reaper? kill sends signal.
-		// We should probably wait for it to exit or let reaper handle it.
-		// For now, assume it will exit.
+		// Wait up to 1s for it to exit and be reaped
+		uint64_t start = OS::get_singleton()->get_ticks_msec();
+		while (OS::get_singleton()->is_process_running(game_pid) && OS::get_singleton()->get_ticks_msec() - start < 1000) {
+			process_mutex.unlock();
+			OS::get_singleton()->delay_usec(10000);
+			process_mutex.lock();
+		}
+		game_pid = 0;
 	}
 	return err;
 }

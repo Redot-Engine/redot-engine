@@ -65,7 +65,6 @@ void MCPBridge::_bind_methods() {
 }
 
 Error MCPBridge::start_server(int p_port) {
-	MutexLock lock(mutex);
 	is_host = true;
 	if (p_port == 0) {
 		for (int i = 10000; i < 11000; i++) {
@@ -87,7 +86,6 @@ Error MCPBridge::start_server(int p_port) {
 }
 
 bool MCPBridge::is_client_connected() const {
-	MutexLock lock(mutex);
 	if (connection.is_valid()) {
 		connection->poll();
 		return connection->get_status() == StreamPeerTCP::STATUS_CONNECTED;
@@ -96,7 +94,6 @@ bool MCPBridge::is_client_connected() const {
 }
 
 Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
-	MutexLock lock(mutex);
 	is_host = false;
 	connection.instantiate();
 	port = p_port;
@@ -105,9 +102,7 @@ Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
 }
 
 Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args) {
-	mutex.lock();
-	if (!connection.is_valid() || connection->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
-		mutex.unlock();
+	if (!is_client_connected()) {
 		Dictionary err;
 		err["error"] = "Bridge not connected";
 		return err;
@@ -122,35 +117,24 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 	connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
 	connection->put_u8('\n');
 
-	// Buffer for reading response (now buffered locally)
-	Vector<uint8_t> read_buffer;
-	read_buffer.resize(4096);
-	String response_str;
+	// Wait for response (blocking with timeout)
 	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
-	const uint64_t TIMEOUT_MS = 5000;
-	mutex.unlock();
-
-	// Wait for response (blocking with timeout) - Dropping lock for long wait
-	while (OS::get_singleton()->get_ticks_msec() - start_time < TIMEOUT_MS) {
-		mutex.lock();
+	String response_str;
+	while (OS::get_singleton()->get_ticks_msec() - start_time < 5000) {
 		connection->poll();
 		if (connection->get_available_bytes() > 0) {
-			int read = 0;
-			// Read up to buffer size or available bytes
-			int to_read = MIN(connection->get_available_bytes(), read_buffer.size());
-			connection->get_partial_data(read_buffer.ptrw(), to_read, read);
-
-			for (int i = 0; i < read; i++) {
-				char c = (char)read_buffer[i];
+			uint8_t c;
+			int read;
+			connection->get_partial_data(&c, 1, read);
+			if (read > 0) {
 				if (c == '\n') {
-					mutex.unlock();
 					goto parsed;
 				}
-				response_str += c;
+				response_str += (char)c;
 			}
+		} else {
+			OS::get_singleton()->delay_usec(1000);
 		}
-		mutex.unlock();
-		OS::get_singleton()->delay_usec(1000);
 	}
 
 	{
@@ -177,7 +161,6 @@ parsed:
 }
 
 void MCPBridge::update() {
-	MutexLock lock(mutex);
 	if (is_host) {
 		if (server->is_connection_available()) {
 			if (connection.is_valid()) {
@@ -189,8 +172,7 @@ void MCPBridge::update() {
 		}
 	} else {
 		// Client (Game) side
-		if (connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
-			connection->poll();
+		if (is_client_connected()) {
 			while (connection->get_available_bytes() > 0) {
 				uint8_t c;
 				int read;
@@ -200,16 +182,21 @@ void MCPBridge::update() {
 						Variant cmd_var = JSON::parse_string(partial_data);
 						partial_data = "";
 						if (cmd_var.get_type() == Variant::DICTIONARY) {
+							// Release lock during command processing to avoid deadlocks
+							mutex.unlock();
 							Dictionary resp = _process_command(cmd_var);
-							String resp_json = JSON::stringify(resp);
-							CharString utf8 = resp_json.utf8();
-							connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
-							connection->put_u8('\n');
+							mutex.lock();
+
+							if (connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
+								String resp_json = JSON::stringify(resp);
+								CharString utf8 = resp_json.utf8();
+								connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
+								connection->put_u8('\n');
+							}
 						}
 					} else {
-						if (partial_data.length() > 1024 * 1024) { // 1MB limit to prevent OOM
+						if (partial_data.length() > 1024 * 1024) { // 1MB limit
 							partial_data = "";
-							fprintf(stderr, "[MCP] Bridge buffer overflow, clearing\n");
 						}
 						partial_data += (char)c;
 					}
@@ -385,7 +372,6 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 		String text = args.get("text", "");
 
 		// Smart Fallback: Check if the text matches an Input Action (e.g. "ui_cancel")
-		// Only check if it's more than 1 char and doesn't look like a special key [KEY]
 		if (text.length() > 1 && !text.begins_with("[") && InputMap::get_singleton()->has_action(text)) {
 			_trigger_action_event(text);
 			resp["status"] = "triggered_action_fallback";
@@ -404,7 +390,6 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 
 			uint32_t k_val = (uint32_t)find_keycode(token);
 			if (k_val == 0 && token.length() == 1) {
-				// Fallback for regular characters
 				k_val = (uint32_t)token.to_upper()[0];
 			}
 
@@ -445,7 +430,6 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			resp["status"] = "triggered_action";
 		}
 	} else if (action == "wait") {
-		// Deprecated/No-op on client side, handled by server now
 		resp["status"] = "wait_is_server_side";
 	} else {
 		resp["status"] = "error";
