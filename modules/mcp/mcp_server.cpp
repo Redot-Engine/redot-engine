@@ -54,7 +54,12 @@ MCPServer::~MCPServer() {
 	stop();
 
 	// Wait for server loop to exit to prevent use-after-free of protocol
+	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
 	while (running) {
+		if (OS::get_singleton()->get_ticks_msec() - start_time > 3000) { // 3s timeout
+			fprintf(stderr, "[MCP] Server shutdown timed out\n");
+			break;
+		}
 		OS::get_singleton()->delay_usec(1000);
 	}
 
@@ -125,11 +130,13 @@ void MCPServer::_server_loop() {
 		}
 
 		// Process the JSON-RPC message
-		String response = protocol->process_string(line);
+		if (protocol && !should_stop) {
+			String response = protocol->process_string(line);
 
-		// Only send response if there is one (notifications don't get responses)
-		if (!response.is_empty()) {
-			_write_line(response);
+			// Only send response if there is one (notifications don't get responses)
+			if (!response.is_empty()) {
+				_write_line(response);
+			}
 		}
 	}
 
