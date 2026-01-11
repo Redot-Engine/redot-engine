@@ -170,7 +170,7 @@ Array MCPTools::get_tool_definitions() {
 
 		Dictionary tool;
 		tool["name"] = "scene_action";
-		tool["description"] = "Perform actions within a scene file (add nodes, set properties, wire signals)";
+		tool["description"] = "Perform actions within a scene file (add nodes, set properties, wire signals). IMPORTANT: Always use this tool for .tscn files instead of direct text editing to maintain project integrity.";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
 		tools.push_back(tool);
 	}
@@ -227,7 +227,7 @@ Array MCPTools::get_tool_definitions() {
 
 		Dictionary tool;
 		tool["name"] = "project_config";
-		tool["description"] = "Global project settings, management, and I/O";
+		tool["description"] = "Global project settings, management, and Redot-specific I/O. Note: For editing existing GDScript files, use native text editing tools if available for better precision.";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
 		tools.push_back(tool);
 	}
@@ -242,6 +242,8 @@ Array MCPTools::get_tool_definitions() {
 		props["x"] = MCPSchemaBuilder::make_object_property("X coord for click");
 		props["y"] = MCPSchemaBuilder::make_object_property("Y coord for click");
 		props["seconds"] = MCPSchemaBuilder::make_object_property("Wait duration");
+		props["recursive"] = MCPSchemaBuilder::make_boolean_property("Recursive tree dump (for inspect_live)");
+		props["depth"] = MCPSchemaBuilder::make_object_property("Max depth for recursive dump");
 
 		Array required;
 		required.push_back("action");
@@ -411,7 +413,7 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 			target->get_parent()->remove_child(target);
 			memdelete(target);
 			should_save = true;
-			result.add_text("Removed node");
+			result.add_text("Removed node: " + node_path);
 		}
 	} else if (action == "instance") {
 		String parent_path = p_args.get("node_path", ".");

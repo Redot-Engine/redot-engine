@@ -133,6 +133,16 @@ If you are developing inside a Nix environment, use the provided wrapper to ensu
   }
 }
 ```
+
+### AI Agent Best Practices
+To get the most out of Redot's MCP server, agents should follow these guidelines:
+
+1.  **Scene Editing**: Use `redot_scene_action` for all `.tscn` modifications. Avoid editing TSCN files as raw text to prevent breaking node UIDs and internal references.
+2.  **Scripting**: For existing `.gd` files, use **native text editing tools** (like `edit`) for precise logic changes. Use `redot_project_config(action="write_file")` only when creating new scripts from scratch.
+3.  **Live Interaction**: Always `wait` 3-5 seconds after `run` before attempting vision or input actions to allow the bridge to initialize.
+4.  **Spatial Awareness**: Use `redot_game_control(action="inspect_live", recursive=true)` to discover UI paths and their pre-calculated screen coordinates for 100% accurate clicking.
+5.  **Debugging**: Use `redot_project_config(action="output")` to read real-time logs and `redot_code_intel(action="validate")` to syntax-check fixes before running the game.
+
 ## Community and contributing
 
 Redot is not only an engine but an ever-growing community of users and engine
