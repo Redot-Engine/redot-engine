@@ -228,28 +228,21 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	}
 
 	int get_constant_pos(const Variant &p_constant) {
-		print_line("DEBUG get_constant_pos: ENTRY, Variant type=" + itos(p_constant.get_type()) + ", current constant_map.size()=" + itos(constant_map.size()));
 		if (p_constant.get_type() == Variant::OBJECT) {
 			Object *obj = p_constant;
 			if (obj) {
-				print_line("DEBUG get_constant_pos: Variant is OBJECT, class=" + String(obj->get_class()) + ", obj=" + itos(uint64_t(obj)));
 				GDScriptStructClass *sc = Object::cast_to<GDScriptStructClass>(obj);
 				if (sc) {
-					print_line("DEBUG get_constant_pos: IS GDScriptStructClass, struct_type=" + itos(uint64_t(sc->get_struct_type())));
 				} else {
-					print_line("DEBUG get_constant_pos: NOT GDScriptStructClass");
 				}
 			}
 		}
 		if (constant_map.has(p_constant)) {
 			int existing_pos = constant_map[p_constant];
-			print_line("DEBUG get_constant_pos: FOUND existing constant at pos=" + itos(existing_pos));
 			return existing_pos;
 		}
 		int pos = constant_map.size();
-		print_line("DEBUG get_constant_pos: ADDING new constant at pos=" + itos(pos));
 		constant_map[p_constant] = pos;
-		print_line("DEBUG get_constant_pos: After add, constant_map.size()=" + itos(constant_map.size()));
 		return pos;
 	}
 

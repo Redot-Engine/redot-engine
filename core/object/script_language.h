@@ -454,6 +454,8 @@ public:
 	// These methods allow serialization systems to create struct instances without knowing about GDScript
 	virtual bool can_create_struct_by_name() const { return false; }
 	virtual Variant create_struct_by_name(const String &p_fully_qualified_name, const Dictionary &p_data) { return Variant(); }
+	virtual Dictionary struct_to_dict(const Variant &p_struct) const { return Dictionary(); }
+	virtual void get_struct_property_list(const Variant &p_struct, List<PropertyInfo> *p_list) const {}
 
 	virtual ~ScriptLanguage() {}
 };

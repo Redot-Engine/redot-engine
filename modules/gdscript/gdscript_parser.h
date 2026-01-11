@@ -682,6 +682,11 @@ public:
 						dt.kind = DataType::STRUCT;
 						dt.type_source = DataType::ANNOTATED_EXPLICIT;
 						dt.struct_type = m_struct;
+						dt.is_meta_type = true;
+						dt.is_constant = true;
+						// Note: script_path needs to be set by the caller since Member doesn't have access to it
+						// This is set in reduce_identifier_from_base via p_identifier->set_datatype(member.get_datatype())
+						// followed by setting script_path from the current parser context
 						return dt;
 					}
 					case CONSTANT:
@@ -859,6 +864,7 @@ public:
 
 		bool resolved_interface = false;
 		bool resolved_body = false;
+		bool resolving_body = false; // Sentinel for re-entrancy detection
 
 		bool add_field(VariableNode *p_variable) {
 			if (field_indices.has(p_variable->identifier->name)) {

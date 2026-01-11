@@ -34,7 +34,10 @@
 #include "variant_callable.h"
 
 #include "core/io/resource.h"
+#include "core/object/script_language.h"
+#ifdef MODULE_GDSCRIPT_ENABLED
 #include "modules/gdscript/gdscript_struct.h"
+#endif
 
 struct VariantSetterGetterInfo {
 	void (*setter)(Variant *base, const Variant *value, bool &valid);
@@ -258,13 +261,16 @@ void Variant::set_named(const StringName &p_member, const Variant &p_value, bool
 			obj->set(p_member, p_value, &r_valid);
 			return;
 		}
+#ifdef MODULE_GDSCRIPT_ENABLED
 	} else if (type == Variant::STRUCT) {
-		GDScriptStructInstance *struct_instance = VariantGetInternalPtr<GDScriptStructInstance>::get_ptr(this);
+		// _data._mem contains a pointer to the struct instance, not the instance itself
+		GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance **>(_data._mem);
 		if (struct_instance) {
 			r_valid = struct_instance->set(p_member, p_value);
 			return;
 		}
 		r_valid = false;
+#endif
 	} else if (type == Variant::DICTIONARY) {
 		Dictionary &dict = *VariantGetInternalPtr<Dictionary>::get_ptr(this);
 		r_valid = dict.set(p_member, p_value);
@@ -274,7 +280,6 @@ void Variant::set_named(const StringName &p_member, const Variant &p_value, bool
 }
 
 Variant Variant::get_named(const StringName &p_member, bool &r_valid) const {
-	print_line("DEBUG Variant::get_named: Looking for '" + String(p_member) + "' on Variant of type " + Variant::get_type_name(type));
 	uint32_t s = variant_setters_getters[type].size();
 	if (s) {
 		for (uint32_t i = 0; i < s; i++) {
@@ -297,24 +302,21 @@ Variant Variant::get_named(const StringName &p_member, bool &r_valid) const {
 				return obj->get(p_member, &r_valid);
 			}
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
 		case Variant::STRUCT: {
-			const GDScriptStructInstance *struct_instance = VariantGetInternalPtr<GDScriptStructInstance>::get_ptr(this);
+			// _data._mem contains a pointer to the struct instance, not the instance itself
+			const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(_data._mem);
 			if (struct_instance) {
-				print_line("DEBUG Variant::get_named: STRUCT type, calling struct_instance->get(" + String(p_member) + ")");
 				Variant ret;
 				if (struct_instance->get(p_member, ret)) {
-					print_line("DEBUG Variant::get_named: SUCCESS, found field");
 					r_valid = true;
 					return ret;
-				} else {
-					print_line("DEBUG Variant::get_named: FAILED, struct_instance->get returned false");
 				}
-			} else {
-				print_line("DEBUG Variant::get_named: STRUCT type but struct_instance is NULL!");
 			}
 			r_valid = false;
 			return Variant();
 		} break;
+#endif
 		case Variant::DICTIONARY: {
 			const Variant *v = VariantGetInternalPtr<Dictionary>::get_ptr(this)->getptr(p_member);
 			if (v) {
@@ -1326,6 +1328,22 @@ void Variant::get_property_list(List<PropertyInfo> *p_list) const {
 		ERR_FAIL_NULL(obj);
 		obj->get_property_list(p_list);
 
+#ifdef MODULE_GDSCRIPT_ENABLED
+	} else if (type == STRUCT) {
+		// Use ScriptLanguage to get struct properties
+		ScriptLanguage *lang = nullptr;
+		for (int i = 0; i < ScriptServer::get_language_count(); i++) {
+			ScriptLanguage *l = ScriptServer::get_language(i);
+			if (l && String(l->get_name()) == "GDScript") {
+				lang = l;
+				break;
+			}
+		}
+		if (lang) {
+			lang->get_struct_property_list(*this, p_list);
+		}
+		return;
+#endif
 	} else {
 		List<StringName> members;
 		get_member_list(type, &members);

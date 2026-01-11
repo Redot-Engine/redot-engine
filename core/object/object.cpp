@@ -884,10 +884,8 @@ Variant Object::callp(const StringName &p_method, const Variant **p_args, int p_
 	MethodBind *method = ClassDB::get_method(get_class_name(), p_method);
 
 	if (method) {
-		print_line("DEBUG Object::callp: Found method via ClassDB: " + String(p_method) + " on class " + get_class_name());
 		ret = method->call(this, p_args, p_argcount, r_error);
 	} else {
-		print_line("DEBUG Object::callp: Method NOT found via ClassDB: " + String(p_method) + " on class " + get_class_name());
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
 	}
 

@@ -368,15 +368,11 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 				case GDScriptParser::IdentifierNode::MEMBER_CONSTANT:
 				case GDScriptParser::IdentifierNode::MEMBER_CLASS: {
 					// Handle struct types (metatype)
-					print_line("DEBUG IDENTIFIER: " + String(identifier) + ", source=" + itos(in->source) + ", kind=" + itos(in->get_datatype().kind) + ", is_meta_type=" + itos(in->get_datatype().is_meta_type));
 					if (in->get_datatype().kind == GDScriptParser::DataType::STRUCT && in->get_datatype().is_meta_type) {
 						// Struct type identifier - look up the wrapper from the global registry
 						// The wrapper is registered during _compile_struct and persists across compilations
-						print_line("DEBUG STRUCT IDENTIFIER: Processing struct type '" + String(identifier) + "'");
-						print_line("DEBUG STRUCT IDENTIFIER: Looking up in global wrapper registry with fqsn='" + String(in->get_datatype().struct_type->fqsn) + "'");
 						Ref<GDScriptStructClass> struct_wrapper = GDScriptLanguage::get_singleton()->get_struct_wrapper(in->get_datatype().struct_type->fqsn);
 						if (struct_wrapper.is_valid()) {
-							print_line("DEBUG STRUCT IDENTIFIER: Found wrapper in global registry, wrapper=" + itos(uint64_t(struct_wrapper.ptr())));
 							// Use the wrapper from global registry
 							// CRITICAL: Must return the CONSTANT address directly, not create a new address with CLASS mode
 							// CLASS mode points to stack[1] which is the script, NOT the constant table
@@ -384,10 +380,8 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 							GDScriptCodeGenerator::Address result = codegen.add_constant(wrapper_variant);
 							// Override the type to ensure it's recognized as STRUCT
 							result.type = _gdtype_from_datatype(in->get_datatype(), codegen.script);
-							print_line("DEBUG STRUCT IDENTIFIER: Returning address: mode=" + itos(result.mode) + ", address=" + itos(result.address) + ", type.kind=" + itos(result.type.kind));
 							return result;
 						} else {
-							print_line("DEBUG STRUCT IDENTIFIER: ERROR - Wrapper not found in global registry for fqsn='" + String(in->get_datatype().struct_type->fqsn) + "'");
 						}
 
 						// Shouldn't happen - struct wrapper not in global registry
@@ -707,44 +701,76 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 						if (subscript->is_attribute) {
 							// May be static built-in method call, or struct static method call.
-							const GDScriptParser::IdentifierNode *id = static_cast<const GDScriptParser::IdentifierNode *>(subscript->base);
-							if (subscript->base->type == GDScriptParser::Node::IDENTIFIER) {
-								print_line("DEBUG compiler: Checking static call: " + String(id->name) + "." + String(call->function_name) + ", kind=" + itos(id->datatype.kind) + ", STRUCT=" + itos(GDScriptParser::DataType::STRUCT) + ", is_meta_type=" + itos(id->datatype.is_meta_type));
-							}
-							// Check if this is a struct TYPE (not instance) for static method calls
-							// We need to check:
-							// 1. kind == STRUCT
-							// 2. is_meta_type == true (means it's the type itself, not an instance)
-							// This distinguishes TestStruct.new() (meta_type=true) from s.get_value() (meta_type=false)
-							if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER && id->datatype.kind == GDScriptParser::DataType::STRUCT && id->datatype.is_meta_type) {
-								// Struct static method call (e.g., TestStruct.new())
-								print_line("DEBUG STATIC CALL: Detected struct static call: " + String(id->name) + "." + String(call->function_name));
-								print_line("DEBUG STATIC CALL: About to call _parse_expression on subscript->base");
-								GDScriptCodeGenerator::Address base = _parse_expression(codegen, r_error, subscript->base);
-								print_line("DEBUG STATIC CALL: After _parse_expression, base address mode=" + itos(base.mode) + ", address=" + itos(base.address) + ", type.kind=" + itos(base.type.kind));
-								if (r_error) {
-									print_line("DEBUG STATIC CALL: ERROR after _parse_expression");
-									return GDScriptCodeGenerator::Address();
-								}
-								print_line("DEBUG STATIC CALL: About to write_call with function=" + String(call->function_name));
-								gen->write_call(result, base, call->function_name, arguments);
-								print_line("DEBUG STATIC CALL: After write_call");
-							} else if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER && GDScriptParser::get_builtin_type(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name) < Variant::VARIANT_MAX) {
-								print_line("DEBUG compiler: Detected builtin static call: " + String(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name) + "." + String(subscript->attribute->name));
-								gen->write_call_builtin_type_static(result, GDScriptParser::get_builtin_type(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name), subscript->attribute->name, arguments);
-							} else if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER && call->function_name != SNAME("new") &&
-									static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->source == GDScriptParser::IdentifierNode::NATIVE_CLASS && !Engine::get_singleton()->has_singleton(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name)) {
-								// It's a static native method call.
-								StringName class_name = static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name;
-								MethodBind *method = ClassDB::get_method(class_name, subscript->attribute->name);
-								if (_can_use_validate_call(method, arguments)) {
-									// Exact arguments, use validated call.
-									gen->write_call_native_static_validated(result, method, arguments);
+							if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER) {
+								const GDScriptParser::IdentifierNode *id = static_cast<const GDScriptParser::IdentifierNode *>(subscript->base);
+								// Check if this is a struct TYPE (not instance) for static method calls
+								// We need to check:
+								// 1. kind == STRUCT
+								// 2. is_meta_type == true (means it's the type itself, not an instance)
+								// This distinguishes TestStruct.new() (meta_type=true) from s.get_value() (meta_type=false)
+								if (id->datatype.kind == GDScriptParser::DataType::STRUCT && id->datatype.is_meta_type) {
+									// Struct static method call (e.g., TestStruct.new())
+									GDScriptCodeGenerator::Address base = _parse_expression(codegen, r_error, subscript->base);
+									if (r_error) {
+										return GDScriptCodeGenerator::Address();
+									}
+									gen->write_call(result, base, call->function_name, arguments);
+								} else if (GDScriptParser::get_builtin_type(id->name) < Variant::VARIANT_MAX) {
+									gen->write_call_builtin_type_static(result, GDScriptParser::get_builtin_type(id->name), subscript->attribute->name, arguments);
+								} else if (call->function_name != SNAME("new") &&
+										id->source == GDScriptParser::IdentifierNode::NATIVE_CLASS && !Engine::get_singleton()->has_singleton(id->name)) {
+									// It's a static native method call.
+									StringName class_name = id->name;
+									MethodBind *method = ClassDB::get_method(class_name, subscript->attribute->name);
+									if (_can_use_validate_call(method, arguments)) {
+										// Exact arguments, use validated call.
+										gen->write_call_native_static_validated(result, method, arguments);
+									} else {
+										// Not exact arguments, use regular static call
+										gen->write_call_native_static(result, class_name, subscript->attribute->name, arguments);
+									}
 								} else {
-									// Not exact arguments, use regular static call
-									gen->write_call_native_static(result, class_name, subscript->attribute->name, arguments);
+									// Regular instance method call on identifier
+									GDScriptCodeGenerator::Address base = _parse_expression(codegen, r_error, subscript->base);
+									if (r_error) {
+										return GDScriptCodeGenerator::Address();
+									}
+									if (is_awaited) {
+										gen->write_call_async(result, base, call->function_name, arguments);
+									} else if (base.type.has_type && base.type.kind != GDScriptDataType::BUILTIN) {
+										// Native method, use faster path.
+										StringName class_name;
+										if (base.type.kind == GDScriptDataType::NATIVE) {
+											class_name = base.type.native_type;
+										} else {
+											class_name = base.type.native_type == StringName() ? base.type.script_type->get_instance_base_type() : base.type.native_type;
+										}
+										if (ClassDB::class_exists(class_name) && ClassDB::has_method(class_name, call->function_name)) {
+											MethodBind *method = ClassDB::get_method(class_name, call->function_name);
+											if (_can_use_validate_call(method, arguments)) {
+												// Exact arguments, use validated call.
+												gen->write_call_method_bind_validated(result, base, method, arguments);
+											} else {
+												// Not exact arguments, but still can use method bind call.
+												gen->write_call_method_bind(result, base, method, arguments);
+											}
+										} else {
+											gen->write_call(result, base, call->function_name, arguments);
+										}
+									} else if (base.type.has_type && base.type.kind == GDScriptDataType::BUILTIN) {
+										gen->write_call_builtin_type(result, base, base.type.builtin_type, call->function_name, arguments);
+									} else if (base.type.has_type && base.type.kind == GDScriptDataType::STRUCT) {
+										// Structs use regular method calls, not builtin type calls
+										gen->write_call(result, base, call->function_name, arguments);
+									} else {
+										gen->write_call(result, base, call->function_name, arguments);
+									}
+									if (base.mode == GDScriptCodeGenerator::Address::TEMPORARY) {
+										gen->pop_temporary();
+									}
 								}
 							} else {
+								// Non-identifier base - parse expression and call method
 								GDScriptCodeGenerator::Address base = _parse_expression(codegen, r_error, subscript->base);
 								if (r_error) {
 									return GDScriptCodeGenerator::Address();
@@ -3199,7 +3225,6 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	if (p_struct == nullptr) {
 		return OK;
 	}
-	print_line("DEBUG _compile_struct: Called for struct '" + p_struct->identifier->name + "', fqsn='" + p_struct->fqsn + "'");
 
 	// Check if struct is already compiled
 	if (p_script->structs.has(p_struct->identifier->name)) {
@@ -3212,6 +3237,15 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 		// Already compiled globally, just add it to this script's struct list
 		existing->reference(); // Take a reference for p_script->structs
 		p_script->structs[p_struct->identifier->name] = existing;
+
+		// Create a wrapper class for struct construction (needed for hot-reload and StructName.new())
+		Ref<GDScriptStructClass> struct_wrapper;
+		struct_wrapper.instantiate();
+		struct_wrapper->set_struct_type(existing);
+
+		// Store the wrapper in constants so StructName.new() works
+		p_script->constants[p_struct->identifier->name] = struct_wrapper;
+
 		return OK;
 	}
 
@@ -3219,7 +3253,6 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	// CRITICAL: The constructor sets ref_count = 1, which is the compiler's initial ownership
 	// We do NOT call reference() here - the constructor provides the first reference
 	GDScriptStruct *gdstruct = memnew(GDScriptStruct(p_struct->identifier->name));
-	print_line("DEBUG _compile_struct: After memnew, ref_count=", itos(gdstruct->get_reference_count()));
 	// No reference() call needed - constructor already set ref_count = 1 for the compiler
 	gdstruct->set_owner(p_script);
 	gdstruct->set_fully_qualified_name(p_struct->fqsn);
@@ -3311,30 +3344,22 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	// Register the struct in the script (takes a reference)
 	// The script HashMap stores the raw pointer, so we add a reference for it
 	gdstruct->reference(); // Second reference: p_script->structs owns it
-	print_line("DEBUG _compile_struct: After script reference, ref_count=", itos(gdstruct->get_reference_count()));
 	p_script->structs[p_struct->identifier->name] = gdstruct;
 
 	// Register the struct in the global registry for serialization
 	// NOTE: register_struct() takes its own reference, so we don't take one here
-	print_line("DEBUG _compile_struct: Before register_struct call, ref_count=", itos(gdstruct->get_reference_count()));
 	GDScriptLanguage::get_singleton()->register_struct(p_struct->fqsn, gdstruct);
-	print_line("DEBUG _compile_struct: After register_struct call, ref_count=", itos(gdstruct->get_reference_count()));
 
 	// Create a wrapper class for struct construction
 	// This allows `StructName.new()` to work
-	print_line("DEBUG _compile_struct: Creating GDScriptStructClass wrapper");
 	Ref<GDScriptStructClass> struct_wrapper;
 	struct_wrapper.instantiate(); // RefCounted with ref_count = 1
-	print_line("DEBUG _compile_struct: After wrapper instantiate, wrapper=" + itos(uint64_t(struct_wrapper.ptr())));
 	// set_struct_type will take another reference (Fourth reference: struct_wrapper owns it)
 	struct_wrapper->set_struct_type(gdstruct);
-	print_line("DEBUG _compile_struct: After set_struct_type (wrapper), ref_count=", itos(gdstruct->get_reference_count()));
 
 	// CRITICAL: Register the wrapper in the GLOBAL registry (not script-specific constants)
 	// This ensures the wrapper persists across multiple compilation passes
-	print_line("DEBUG _compile_struct: Registering wrapper in global registry with fqsn='" + String(p_struct->fqsn) + "'");
 	GDScriptLanguage::get_singleton()->register_struct_wrapper(p_struct->fqsn, struct_wrapper);
-	print_line("DEBUG _compile_struct: Stored wrapper in global registry, wrapper=" + itos(uint64_t(struct_wrapper.ptr())));
 
 	// REFERENCE COUNTING SUMMARY:
 	// After successful compilation, gdstruct has 4 references:
@@ -3347,9 +3372,7 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	//
 	// We must explicitly release the compiler's reference (ref #1) before returning.
 	// The struct stays alive because the other 3 references remain.
-	print_line("DEBUG _compile_struct: Before final unreference, ref_count=", itos(gdstruct->get_reference_count()));
 	gdstruct->unreference(); // Release compiler's reference (ref_count: 4 -> 3)
-	print_line("DEBUG _compile_struct: After final unreference, ref_count=", itos(gdstruct->get_reference_count()));
 
 	return OK;
 }
@@ -3424,7 +3447,6 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 
 	// Step 1: Unregister struct wrappers from global wrapper registry (removes reference #3)
 	for (const KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
-		print_line("DEBUG make_scripts: Unregistering struct wrapper for '" + String(E.value->get_fully_qualified_name()) + "' from global registry");
 		GDScriptLanguage::get_singleton()->unregister_struct_wrapper(E.value->get_fully_qualified_name());
 	}
 

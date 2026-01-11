@@ -719,6 +719,8 @@ public:
 	/* STRUCT SERIALIZATION */
 	virtual bool can_create_struct_by_name() const override;
 	virtual Variant create_struct_by_name(const String &p_fully_qualified_name, const Dictionary &p_data) override;
+	virtual Dictionary struct_to_dict(const Variant &p_struct) const override;
+	virtual void get_struct_property_list(const Variant &p_struct, List<PropertyInfo> *p_list) const override;
 
 	void add_orphan_subclass(const String &p_qualified_name, const ObjectID &p_subclass);
 	Ref<GDScript> get_orphan_subclass(const String &p_qualified_name);

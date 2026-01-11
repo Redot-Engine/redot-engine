@@ -139,9 +139,10 @@ GDScriptStructClass::GDScriptStructClass(GDScriptStruct *p_struct) {
 
 GDScriptStructClass::~GDScriptStructClass() {
 	if (struct_type) {
-		// Just release our reference - don't delete even if ref_count reaches zero
-		// The struct may still be owned by other entities (script HashMap, registry, etc.)
-		struct_type->unreference();
+		// Unreference and delete if ref_count reaches zero
+		if (struct_type->unreference()) {
+			memdelete(struct_type);
+		}
 		struct_type = nullptr;
 	}
 }
@@ -237,12 +238,7 @@ Variant GDScriptStructClass::_variant_from_struct_instance(GDScriptStructInstanc
 
 	// Copy the pointer into Variant's internal storage
 	// memcpy is used instead of assignment for type safety and to avoid strict aliasing issues
-	print_line("DEBUG _variant_from_struct_instance: p_instance (value) = " + itos((uint64_t)p_instance));
-	print_line("DEBUG _variant_from_struct_instance: &p_instance (address) = " + itos((uint64_t)&p_instance));
 	memcpy(result._data._mem, &p_instance, sizeof(void *));
-	GDScriptStructInstance *copied_ptr = *(GDScriptStructInstance **)result._data._mem;
-	print_line("DEBUG _variant_from_struct_instance: after memcpy, copied_ptr = " + itos((uint64_t)copied_ptr));
-	print_line("DEBUG _variant_from_struct_instance: about to return, result._data._mem ptr = " + itos(*(uint64_t *)result._data._mem));
 
 	return result;
 }
@@ -258,9 +254,6 @@ Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callab
 		return Variant();
 	}
 
-	print_line("DEBUG _new: Created struct instance at " + itos((uint64_t)instance));
-	print_line("DEBUG _new: ref_count after creation = " + itos(instance->get_reference_count()));
-
 	// REFERENCE COUNTING MANAGEMENT:
 	// The struct instance is created with ref_count = 1 (initial reference)
 	// When we create a Variant from it, the Variant will hold this reference
@@ -271,9 +264,7 @@ Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callab
 	// with an initial reference count of 1
 
 	// Create a Variant of STRUCT type with the instance
-	Variant result = _variant_from_struct_instance(instance);
-	print_line("DEBUG _new: Created Variant, type = " + result.get_type_name(result.get_type()) + ", ref_count = " + itos(instance->get_reference_count()));
-	return result;
+	return _variant_from_struct_instance(instance);
 }
 
 Variant GDScriptStructClass::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
@@ -3234,16 +3225,13 @@ void GDScriptLanguage::register_struct(const String &p_fully_qualified_name, GDS
 		// The struct may still be owned by other entities (script HashMap, wrappers, etc.)
 		GDScriptStruct *old_struct = existing->value;
 		if (old_struct) {
-			print_line("DEBUG register_struct: Found existing struct '" + p_fully_qualified_name + "' with ref_count=", itos(old_struct->get_reference_count()));
 			old_struct->unreference();
-			print_line("DEBUG register_struct: After unreference old struct, ref_count=", itos(old_struct->get_reference_count()));
 		}
 		global_structs.erase(p_fully_qualified_name);
 	}
 
 	// Take a reference for the registry's ownership
 	p_struct->reference();
-	print_line("DEBUG register_struct: Added new struct '" + p_fully_qualified_name + "' with ref_count=", itos(p_struct->get_reference_count()));
 	global_structs.insert(p_fully_qualified_name, p_struct);
 }
 
@@ -3350,6 +3338,37 @@ Variant GDScriptLanguage::create_struct_by_name(const String &p_fully_qualified_
 	// This is the virtual method implementation called by ScriptServer
 	// It delegates to the existing registry method
 	return const_cast<GDScriptLanguage *>(this)->create_struct_instance(p_fully_qualified_name, p_data);
+}
+
+Dictionary GDScriptLanguage::struct_to_dict(const Variant &p_struct) const {
+	Dictionary result;
+	if (p_struct.get_type() != Variant::STRUCT) {
+		return result;
+	}
+
+	// GDScriptLanguage is now a friend of Variant, so we can access _data._mem
+	const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(p_struct._data._mem);
+	if (!struct_instance) {
+		return result;
+	}
+
+	// Use the existing serialize() method
+	return struct_instance->serialize();
+}
+
+void GDScriptLanguage::get_struct_property_list(const Variant &p_struct, List<PropertyInfo> *p_list) const {
+	if (p_struct.get_type() != Variant::STRUCT || !p_list) {
+		return;
+	}
+
+	// GDScriptLanguage is now a friend of Variant, so we can access _data._mem
+	const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(p_struct._data._mem);
+	if (!struct_instance) {
+		return;
+	}
+
+	// Use the existing get_property_list method on GDScriptStructInstance
+	struct_instance->get_property_list(p_list);
 }
 
 /*************** RESOURCE ***************/

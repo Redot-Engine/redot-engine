@@ -198,46 +198,35 @@ GDScriptFunction *GDScriptByteCodeGenerator::write_end() {
 	}
 
 	if (constant_map.size()) {
-		print_line("DEBUG FINALIZE: constant_map.size()=" + itos(constant_map.size()));
 		function->_constant_count = constant_map.size();
 		function->constants.resize(constant_map.size());
 		function->_constants_ptr = function->constants.ptrw();
 		for (const KeyValue<Variant, int> &K : constant_map) {
-			print_line("DEBUG FINALIZE: Writing constant at index " + itos(K.value) + ", Variant type=" + itos(K.key.get_type()));
 			if (K.key.get_type() == Variant::OBJECT) {
 				Object *obj = K.key;
 				if (obj) {
-					print_line("DEBUG FINALIZE: Constant is OBJECT, class=" + String(obj->get_class()) + ", obj=" + itos(uint64_t(obj)));
 					GDScriptStructClass *sc = Object::cast_to<GDScriptStructClass>(obj);
 					if (sc) {
-						print_line("DEBUG FINALIZE: CONSTANT at index " + itos(K.value) + " IS GDScriptStructClass!");
 					} else {
-						print_line("DEBUG FINALIZE: CONSTANT at index " + itos(K.value) + " is NOT GDScriptStructClass");
 					}
 				}
 			}
 			function->constants.write[K.value] = K.key;
 		}
-		print_line("DEBUG FINALIZE: After writing all constants");
 		// Verify all constants were written correctly
 		for (int i = 0; i < function->constants.size(); i++) {
 			Variant &v = function->constants.write[i];
-			print_line("DEBUG FINALIZE VERIFY: Constant[" + itos(i) + "] type=" + itos(v.get_type()));
 			if (v.get_type() == Variant::OBJECT) {
 				Object *obj = v;
 				if (obj) {
-					print_line("DEBUG FINALIZE VERIFY: Constant[" + itos(i) + "] is OBJECT, class=" + String(obj->get_class()));
 					GDScriptStructClass *sc = Object::cast_to<GDScriptStructClass>(obj);
 					if (sc) {
-						print_line("DEBUG FINALIZE VERIFY: Constant[" + itos(i) + "] IS GDScriptStructClass!");
 					} else {
-						print_line("DEBUG FINALIZE VERIFY: Constant[" + itos(i) + "] is NOT GDScriptStructClass");
 					}
 				}
 			}
 		}
 	} else {
-		print_line("DEBUG FINALIZE: No constants in function");
 		function->_constants_ptr = nullptr;
 		function->_constant_count = 0;
 	}

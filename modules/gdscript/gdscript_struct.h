@@ -69,9 +69,10 @@ public:
 	};
 
 	// Reference counting for proper lifecycle management
-	// This ensures structs are only deleted when all references are gone
+	// unreference() returns true when ref_count reaches zero, but does NOT delete this.
+	// Callers are responsible for deletion when unreference() returns true.
 	void reference();
-	bool unreference(); // Returns true if reference count reached zero
+	bool unreference();
 	int get_reference_count() const { return ref_count.get(); }
 
 private:
@@ -156,6 +157,8 @@ public:
 	~GDScriptStructInstance();
 
 	// Reference counting for reference semantics
+	// unreference() returns true when ref_count reaches zero, but does NOT delete this.
+	// Callers are responsible for deletion when unreference() returns true.
 	bool reference();
 	bool unreference();
 	int get_reference_count() const { return ref_count.get(); }

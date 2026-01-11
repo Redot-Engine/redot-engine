@@ -37,7 +37,9 @@
 #include "core/io/resource.h"
 #include "core/math/math_funcs.h"
 #include "core/variant/variant_parser.h"
+#ifdef MODULE_GDSCRIPT_ENABLED
 #include "modules/gdscript/gdscript_struct.h"
+#endif
 
 PagedAllocator<Variant::Pools::BucketSmall, true> Variant::Pools::_bucket_small;
 PagedAllocator<Variant::Pools::BucketMedium, true> Variant::Pools::_bucket_medium;
@@ -1315,6 +1317,7 @@ void Variant::reference(const Variant &p_variant) {
 				_data.packed_array = PackedArrayRef<Vector4>::create();
 			}
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
 			// Reference the struct instance
 			// _data._mem contains a pointer to the struct instance, not the instance itself
@@ -1325,6 +1328,7 @@ void Variant::reference(const Variant &p_variant) {
 			// Copy the pointer
 			memcpy(_data._mem, p_variant._data._mem, sizeof(void *));
 		} break;
+#endif
 		default: {
 		}
 	}
@@ -1494,6 +1498,7 @@ void Variant::_clear_internal() {
 		case PACKED_VECTOR4_ARRAY: {
 			PackedArrayRefBase::destroy(_data.packed_array);
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
 			// Unreference the struct instance
 			// unreference() handles deletion when ref_count reaches 0
@@ -1512,6 +1517,7 @@ void Variant::_clear_internal() {
 			// Clear the pointer
 			memset(_data._mem, 0, sizeof(_data._mem));
 		} break;
+#endif
 		default: {
 			// Not needed, there is no point. The following do not allocate memory:
 			// VECTOR2, VECTOR3, VECTOR4, RECT2, PLANE, QUATERNION, COLOR.
@@ -1769,9 +1775,10 @@ String Variant::stringify(int recursion_count) const {
 			const ::RID &s = *reinterpret_cast<const ::RID *>(_data._mem);
 			return "RID(" + itos(s.get_id()) + ")";
 		}
+#ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
 			// Get the struct instance and convert to string
-			const GDScriptStructInstance *struct_instance = reinterpret_cast<const GDScriptStructInstance *>(_data._mem);
+			const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(_data._mem);
 			if (struct_instance) {
 				// Simple string representation for now to avoid crashes
 				// TODO: Add proper field serialization
@@ -1779,6 +1786,7 @@ String Variant::stringify(int recursion_count) const {
 			}
 			return "<Struct#null>";
 		}
+#endif
 		default: {
 			return "<" + get_type_name(type) + ">";
 		}
@@ -2832,11 +2840,12 @@ void Variant::operator=(const Variant &p_variant) {
 		case PACKED_VECTOR4_ARRAY: {
 			_data.packed_array = PackedArrayRef<Vector4>::reference_from(_data.packed_array, p_variant._data.packed_array);
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
 			// For struct instances, we need to reference the new instance and unreference the old one
-			const GDScriptStructInstance *new_struct = reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem);
-			GDScriptStructInstance *old_struct = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
-			if (new_struct && const_cast<GDScriptStructInstance *>(new_struct)->reference()) {
+			GDScriptStructInstance *new_struct = *reinterpret_cast<GDScriptStructInstance *const *>(p_variant._data._mem);
+			GDScriptStructInstance *old_struct = *reinterpret_cast<GDScriptStructInstance **>(_data._mem);
+			if (new_struct && new_struct->reference()) {
 				// Successfully took a reference to the new struct
 				memcpy(_data._mem, p_variant._data._mem, sizeof(_data._mem));
 				if (old_struct) {
@@ -2845,6 +2854,7 @@ void Variant::operator=(const Variant &p_variant) {
 			}
 			// If reference() failed, the struct is being destroyed and we don't copy
 		} break;
+#endif
 		default: {
 		}
 	}

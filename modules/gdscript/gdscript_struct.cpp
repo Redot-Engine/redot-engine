@@ -157,6 +157,19 @@ void GDScriptStruct::add_member(const StringName &p_name, const Variant::Type p_
 	info.default_value = p_default_value;
 	info.has_default_value = p_has_default_value;
 
+	// Populate property_info for inspector/debugger use
+	info.property_info.name = p_name;
+	info.property_info.type = p_type;
+	if (p_type == Variant::OBJECT && !p_type_name.is_empty()) {
+		info.property_info.class_name = p_type_name;
+	} else if (p_type == Variant::STRUCT && !p_type_name.is_empty()) {
+		// For STRUCT type, store the fully qualified struct name
+		info.property_info.class_name = p_type_name;
+		info.property_info.hint = PROPERTY_HINT_TYPE_STRING;
+	}
+	// Set usage flags to make the property visible and editable
+	info.property_info.usage = PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR;
+
 	members[p_name] = info;
 	member_names.push_back(p_name);
 	member_types.push_back(p_type);
@@ -232,8 +245,6 @@ GDScriptStructInstance::GDScriptStructInstance(GDScriptStruct *p_struct_type) :
 		struct_type(p_struct_type) {
 	ERR_FAIL_NULL(struct_type);
 
-	print_line("DEBUG GDScriptStructInstance::Constructor: struct_type=" + itos((uint64_t)struct_type) + ", name='" + String(struct_type->get_name()) + "', member_count=" + itos(struct_type->get_member_count()));
-
 	// Note: struct_type is owned by GDScript and outlives all instances
 	// We don't call reference() on it because the script manages its lifecycle
 
@@ -284,12 +295,9 @@ bool GDScriptStructInstance::reference() {
 }
 
 bool GDScriptStructInstance::unreference() {
-	if (ref_count.unref()) {
-		// Reference count reached zero, delete this instance
-		memdelete(this);
-		return true;
-	}
-	return false;
+	// Decrement ref_count and return true if it reached zero.
+	// Do NOT delete this instance - callers are responsible for deletion.
+	return ref_count.unref();
 }
 
 bool GDScriptStructInstance::set(const StringName &p_name, const Variant &p_value) {
@@ -303,17 +311,11 @@ bool GDScriptStructInstance::set(const StringName &p_name, const Variant &p_valu
 }
 
 bool GDScriptStructInstance::get(const StringName &p_name, Variant &r_value) const {
-	print_line("DEBUG GDScriptStructInstance::get: Looking for field '" + String(p_name) + "' in struct at " + itos((uint64_t)struct_type));
-	print_line("DEBUG GDScriptStructInstance::get: struct_type->get_name() = '" + String(struct_type->get_name()) + "'");
-	print_line("DEBUG GDScriptStructInstance::get: member count = " + itos(struct_type->get_member_count()));
 	int index = struct_type->get_member_index(p_name);
-	print_line("DEBUG GDScriptStructInstance::get: Field index = " + itos(index));
 	if (index < 0) {
-		print_line("DEBUG GDScriptStructInstance::get: Field NOT found!");
 		return false;
 	}
 
-	print_line("DEBUG GDScriptStructInstance::get: Field found, returning value");
 	r_value = members[index];
 	return true;
 }
@@ -420,6 +422,16 @@ Dictionary GDScriptStructInstance::serialize() const {
 }
 
 bool GDScriptStructInstance::deserialize(const Dictionary &p_data) {
+	// Check type safety first - verify __type__ matches expected struct type
+	if (p_data.has("__type__")) {
+		String stored_type = p_data["__type__"];
+		String expected_type = struct_type->get_fully_qualified_name();
+		if (stored_type != expected_type) {
+			// Type mismatch - fail early to prevent corrupting the struct
+			return false;
+		}
+	}
+
 	// Deserialize all members from the entire inheritance chain
 	// Walk from base to derived to ensure consistent ordering
 	Vector<GDScriptStruct *> chain;

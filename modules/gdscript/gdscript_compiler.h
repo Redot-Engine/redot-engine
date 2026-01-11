@@ -106,55 +106,41 @@ class GDScriptCompiler {
 		}
 
 		GDScriptCodeGenerator::Address add_constant(const Variant &p_constant) {
-			print_line("DEBUG add_constant: ENTRY, Variant type=" + itos(p_constant.get_type()));
 			GDScriptDataType type;
 			type.has_type = true;
 			type.kind = GDScriptDataType::BUILTIN;
 			type.builtin_type = p_constant.get_type();
-			print_line("DEBUG add_constant: builtin_type=" + itos(type.builtin_type));
 			if (type.builtin_type == Variant::OBJECT) {
 				Object *obj = p_constant;
-				print_line("DEBUG add_constant: Variant is OBJECT, obj=" + itos(uint64_t(obj)));
 				if (obj) {
-					print_line("DEBUG add_constant: obj class=" + String(obj->get_class()) + ", type.kind set to NATIVE");
 					type.kind = GDScriptDataType::NATIVE;
 					type.native_type = obj->get_class_name();
 
 					// Check if this is a GDScriptStructClass (used for struct constructors)
 					GDScriptStructClass *struct_class = Object::cast_to<GDScriptStructClass>(obj);
-					print_line("DEBUG add_constant: struct_class=" + itos(uint64_t(struct_class)));
 					if (struct_class != nullptr) {
-						print_line("DEBUG add_constant: Detected GDScriptStructClass, setting kind to STRUCT, struct_type=" + itos(uint64_t(struct_class->get_struct_type())));
 						type.kind = GDScriptDataType::STRUCT;
 						type.struct_type = struct_class->get_struct_type();
 					} else {
-						print_line("DEBUG add_constant: Not a GDScriptStructClass, checking if Script...");
 						// Check if this is a Script
 						Ref<Script> scr = obj->get_script();
 						if (scr.is_valid()) {
-							print_line("DEBUG add_constant: Is a Script, script_type=" + itos(uint64_t(scr.ptr())));
 							type.script_type = scr.ptr();
 							Ref<GDScript> gdscript = scr;
 							if (gdscript.is_valid()) {
-								print_line("DEBUG add_constant: Is a GDScript, setting kind to GDSCRIPT");
 								type.kind = GDScriptDataType::GDSCRIPT;
 							} else {
-								print_line("DEBUG add_constant: Is not GDScript, setting kind to SCRIPT");
 								type.kind = GDScriptDataType::SCRIPT;
 							}
 						} else {
-							print_line("DEBUG add_constant: Not a Script either");
 						}
 					}
 				} else {
-					print_line("DEBUG add_constant: obj is null, setting to NIL");
 					type.builtin_type = Variant::NIL;
 				}
 			}
 
-			print_line("DEBUG add_constant: Calling generator->add_or_get_constant");
 			uint32_t addr = generator->add_or_get_constant(p_constant);
-			print_line("DEBUG add_constant: After add_or_get_constant, addr=" + itos(addr) + ", returning Address(mode=CONSTANT, address=" + itos(addr) + ", kind=" + itos(type.kind) + ")");
 			return GDScriptCodeGenerator::Address(GDScriptCodeGenerator::Address::CONSTANT, addr, type);
 		}
 

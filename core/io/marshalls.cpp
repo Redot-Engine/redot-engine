@@ -2124,6 +2124,30 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 			r_len += sizeof(real_t) * 4 * len;
 
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case Variant::STRUCT: {
+			// Serialize structs as dictionaries for debugging/serialization
+			// Use ScriptLanguage to get struct data as a dictionary
+			ScriptLanguage *lang = nullptr;
+			for (int i = 0; i < ScriptServer::get_language_count(); i++) {
+				ScriptLanguage *l = ScriptServer::get_language(i);
+				if (l && String(l->get_name()) == "GDScript") {
+					lang = l;
+					break;
+				}
+			}
+			if (lang) {
+				Dictionary dict = lang->struct_to_dict(p_variant);
+				Error err = encode_variant(dict, buf, r_len, p_full_objects, p_depth + 1);
+				ERR_FAIL_COND_V(err, err);
+			} else {
+				// Fallback to empty dictionary
+				Dictionary dict;
+				Error err = encode_variant(dict, buf, r_len, p_full_objects, p_depth + 1);
+				ERR_FAIL_COND_V(err, err);
+			}
+		} break;
+#endif
 		default: {
 			ERR_FAIL_V(ERR_BUG);
 		}
