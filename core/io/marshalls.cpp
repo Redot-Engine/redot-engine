@@ -2127,8 +2127,11 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case Variant::STRUCT: {
 			// Serialize structs as dictionaries for debugging/serialization
-			// Use ScriptLanguage to get struct data as a dictionary
+			// We convert the struct to a Dictionary and encode it directly
+			// IMPORTANT: The STRUCT header was already written above (lines 1433-1437)
+			// We need to encode the DICTIONARY content WITHOUT writing another header
 			ScriptLanguage *lang = nullptr;
+			Dictionary dict;
 			for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 				ScriptLanguage *l = ScriptServer::get_language(i);
 				if (l && String(l->get_name()) == "GDScript") {
@@ -2137,14 +2140,33 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 				}
 			}
 			if (lang) {
-				Dictionary dict = lang->struct_to_dict(p_variant);
-				Error err = encode_variant(dict, buf, r_len, p_full_objects, p_depth + 1);
+				dict = lang->struct_to_dict(p_variant);
+			}
+			// Encode dictionary content directly (without header, it's already written)
+			// Write count
+			if (buf) {
+				encode_uint32(uint32_t(dict.size()), buf);
+				buf += 4;
+			}
+			r_len += 4;
+
+			// Encode each key-value pair
+			for (const KeyValue<Variant, Variant> &kv : dict) {
+				int len;
+				Error err = encode_variant(kv.key, buf, len, p_full_objects, p_depth + 1);
 				ERR_FAIL_COND_V(err, err);
-			} else {
-				// Fallback to empty dictionary
-				Dictionary dict;
-				Error err = encode_variant(dict, buf, r_len, p_full_objects, p_depth + 1);
+				ERR_FAIL_COND_V(len % 4, ERR_BUG);
+				r_len += len;
+				if (buf) {
+					buf += len;
+				}
+				err = encode_variant(kv.value, buf, len, p_full_objects, p_depth + 1);
 				ERR_FAIL_COND_V(err, err);
+				ERR_FAIL_COND_V(len % 4, ERR_BUG);
+				r_len += len;
+				if (buf) {
+					buf += len;
+				}
 			}
 		} break;
 #endif

@@ -1501,16 +1501,20 @@ void Variant::_clear_internal() {
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
 			// Unreference the struct instance
-			// unreference() handles deletion when ref_count reaches 0
+			// unreference() returns true when ref_count reaches zero, indicating we should delete
 			GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance **>(_data._mem);
 			if (struct_instance) {
 #ifndef DEV_ENABLED
-				struct_instance->unreference();
+				if (struct_instance->unreference()) {
+					memdelete(struct_instance);
+				}
 #else
 				// In dev builds, check ref_count before unreferencing
 				// This protects against garbage data in uninitialized Variants
 				if (struct_instance->get_reference_count() > 0) {
-					struct_instance->unreference();
+					if (struct_instance->unreference()) {
+						memdelete(struct_instance);
+					}
 				}
 #endif
 			}

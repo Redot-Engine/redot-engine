@@ -837,6 +837,15 @@ void GDScriptByteCodeGenerator::write_set(const Address &p_target, const Address
 			append(setter);
 			return;
 		}
+	} else if (p_target.type.has_type && p_target.type.kind == GDScriptDataType::STRUCT && Variant::get_member_validated_keyed_setter(Variant::STRUCT)) {
+		// Struct type uses validated keyed setter.
+		Variant::ValidatedKeyedSetter setter = Variant::get_member_validated_keyed_setter(Variant::STRUCT);
+		append_opcode(GDScriptFunction::OPCODE_SET_KEYED_VALIDATED);
+		append(p_target);
+		append(p_index);
+		append(p_source);
+		append(setter);
+		return;
 	}
 
 	append_opcode(GDScriptFunction::OPCODE_SET_KEYED);
@@ -865,6 +874,15 @@ void GDScriptByteCodeGenerator::write_get(const Address &p_target, const Address
 			append(getter);
 			return;
 		}
+	} else if (p_source.type.has_type && p_source.type.kind == GDScriptDataType::STRUCT && Variant::get_member_validated_keyed_getter(Variant::STRUCT)) {
+		// Struct type uses validated keyed getter.
+		Variant::ValidatedKeyedGetter getter = Variant::get_member_validated_keyed_getter(Variant::STRUCT);
+		append_opcode(GDScriptFunction::OPCODE_GET_KEYED_VALIDATED);
+		append(p_source);
+		append(p_index);
+		append(p_target);
+		append(getter);
+		return;
 	}
 	append_opcode(GDScriptFunction::OPCODE_GET_KEYED);
 	append(p_source);

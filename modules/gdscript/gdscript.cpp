@@ -3221,11 +3221,14 @@ void GDScriptLanguage::register_struct(const String &p_fully_qualified_name, GDS
 	// Check if a struct with this name already exists
 	HashMap<String, GDScriptStruct *>::Iterator existing = global_structs.find(p_fully_qualified_name);
 	if (existing) {
-		// Just release our reference to the old struct - don't delete even if ref_count reaches zero
+		// Release our reference to the old struct and delete if ref_count reaches zero
 		// The struct may still be owned by other entities (script HashMap, wrappers, etc.)
 		GDScriptStruct *old_struct = existing->value;
 		if (old_struct) {
-			old_struct->unreference();
+			if (old_struct->unreference()) {
+				// Reference count reached zero - delete the struct
+				memdelete(old_struct);
+			}
 		}
 		global_structs.erase(p_fully_qualified_name);
 	}
@@ -3270,7 +3273,15 @@ void GDScriptLanguage::register_struct_wrapper(const String &p_fully_qualified_n
 	// Check if a wrapper with this name already exists
 	HashMap<String, Ref<GDScriptStructClass>>::Iterator existing = global_struct_wrappers.find(p_fully_qualified_name);
 	if (existing) {
-		// Just replace it - the old wrapper will be destroyed when the Ref goes out of scope
+		// Unreference the old wrapper's struct before replacing
+		// The old wrapper holds a reference to the struct type that needs to be released
+		Ref<GDScriptStructClass> old_wrapper = existing->value;
+		if (old_wrapper.is_valid()) {
+			// Clear the old wrapper's reference to the struct type
+			// This will decrement the struct's ref_count
+			old_wrapper->set_struct_type(nullptr);
+		}
+		// Now erase and replace - the Ref will go out of scope and be destroyed
 		global_struct_wrappers.erase(p_fully_qualified_name);
 	}
 

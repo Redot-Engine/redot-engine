@@ -856,7 +856,8 @@ Variant Object::callp(const StringName &p_method, const Variant **p_args, int p_
 		// Forward to GDScriptStructClass::callp by using a Callable
 		Callable callable = Callable(this, p_method);
 		if (callable.is_valid()) {
-			return callable.callp(Variant(const_cast<const Variant **>(p_args), p_argcount), r_error);
+			callable.callp(p_args, p_argcount, ret, r_error);
+			return ret;
 		}
 	}
 #endif

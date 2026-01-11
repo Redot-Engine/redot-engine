@@ -3085,7 +3085,21 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 }
 
 Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state) {
-	// Compile member functions, getters, setters, and structs.
+	// IMPORTANT: Compile structs BEFORE functions so that struct wrappers are registered
+	// in the global registry before any function code tries to reference them
+	for (int i = 0; i < p_class->members.size(); i++) {
+		const GDScriptParser::ClassNode::Member &member = p_class->members[i];
+		if (member.type == member.STRUCT) {
+			// Compile struct first to register wrappers in global registry
+			const GDScriptParser::StructNode *struct_node = member.m_struct;
+			Error err = _compile_struct(p_script, p_class, struct_node);
+			if (err) {
+				return err;
+			}
+		}
+	}
+
+	// Now compile member functions, getters, and setters (struct wrappers are already registered)
 	for (int i = 0; i < p_class->members.size(); i++) {
 		const GDScriptParser::ClassNode::Member &member = p_class->members[i];
 		if (member.type == member.FUNCTION) {
@@ -3110,13 +3124,6 @@ Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser:
 						return err;
 					}
 				}
-			}
-		} else if (member.type == member.STRUCT) {
-			// Compile struct
-			const GDScriptParser::StructNode *struct_node = member.m_struct;
-			Error err = _compile_struct(p_script, p_class, struct_node);
-			if (err) {
-				return err;
 			}
 		}
 	}

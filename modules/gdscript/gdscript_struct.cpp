@@ -148,7 +148,14 @@ GDScriptStructInstance *GDScriptStruct::create_instance(const Variant **p_args, 
 }
 
 void GDScriptStruct::add_member(const StringName &p_name, const Variant::Type p_type, const StringName &p_type_name, const Variant &p_default_value, bool p_has_default_value) {
+	// Check if member already exists in this struct (local check)
 	ERR_FAIL_COND(members.has(p_name));
+
+	// Also check if member exists in base struct to prevent shadowing
+	// Shadowing base struct members can lead to confusing behavior and bugs
+	if (base_struct && base_struct->has_member(p_name)) {
+		ERR_FAIL_MSG(vformat("Cannot add member '%s': already defined in base struct '%s'.", p_name, base_struct->get_name()));
+	}
 
 	MemberInfo info;
 	info.index = get_member_count(); // Index after all inherited members
@@ -313,6 +320,10 @@ bool GDScriptStructInstance::set(const StringName &p_name, const Variant &p_valu
 bool GDScriptStructInstance::get(const StringName &p_name, Variant &r_value) const {
 	int index = struct_type->get_member_index(p_name);
 	if (index < 0) {
+		return false;
+	}
+
+	if (index >= members.size()) {
 		return false;
 	}
 

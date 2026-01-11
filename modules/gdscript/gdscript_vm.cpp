@@ -1919,9 +1919,6 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				const StringName *methodname = &_global_names_ptr[methodname_idx];
 
 				GET_INSTRUCTION_ARG(base, argc);
-				if (base->get_type() == Variant::OBJECT) {
-					Object *obj = *base;
-				}
 				Variant **argptrs = instruction_args;
 
 #ifdef DEBUG_ENABLED
@@ -3337,16 +3334,16 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 #ifdef DEBUG_ENABLED
 				bool freed = false;
-				Object *obj = container->get_validated_object_with_check(freed);
+				Object *iter_obj = container->get_validated_object_with_check(freed);
 				if (freed) {
 					err_text = "Trying to iterate on a previously freed object.";
 					OPCODE_BREAK;
-				} else if (!obj) {
+				} else if (!iter_obj) {
 					err_text = "Trying to iterate on a null value.";
 					OPCODE_BREAK;
 				}
 #else
-				Object *obj = *VariantInternal::get_object(container);
+				Object *iter_obj = *VariantInternal::get_object(container);
 #endif
 
 				*counter = Variant();
@@ -3358,7 +3355,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				const Variant *args[] = { &vref };
 
 				Callable::CallError ce;
-				Variant has_next = obj->callp(CoreStringName(_iter_init), args, 1, ce);
+				Variant has_next = iter_obj->callp(CoreStringName(_iter_init), args, 1, ce);
 
 #ifdef DEBUG_ENABLED
 				if (ref.size() != 1 || ce.error != Callable::CallError::CALL_OK) {
@@ -3374,7 +3371,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 					*counter = ref[0];
 
 					GET_VARIANT_PTR(iterator, 2);
-					*iterator = obj->callp(CoreStringName(_iter_get), (const Variant **)&counter, 1, ce);
+					*iterator = iter_obj->callp(CoreStringName(_iter_get), (const Variant **)&counter, 1, ce);
 #ifdef DEBUG_ENABLED
 					if (ce.error != Callable::CallError::CALL_OK) {
 						err_text = vformat(R"(There was an error calling "_iter_get" on iterator object of type %s.)", *container);
@@ -3704,16 +3701,16 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 #ifdef DEBUG_ENABLED
 				bool freed = false;
-				Object *obj = container->get_validated_object_with_check(freed);
+				Object *iter_obj = container->get_validated_object_with_check(freed);
 				if (freed) {
 					err_text = "Trying to iterate on a previously freed object.";
 					OPCODE_BREAK;
-				} else if (!obj) {
+				} else if (!iter_obj) {
 					err_text = "Trying to iterate on a null value.";
 					OPCODE_BREAK;
 				}
 #else
-				Object *obj = *VariantInternal::get_object(container);
+				Object *iter_obj = *VariantInternal::get_object(container);
 #endif
 
 				Array ref = { *counter };
@@ -3724,7 +3721,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				const Variant *args[] = { &vref };
 
 				Callable::CallError ce;
-				Variant has_next = obj->callp(CoreStringName(_iter_next), args, 1, ce);
+				Variant has_next = iter_obj->callp(CoreStringName(_iter_next), args, 1, ce);
 
 #ifdef DEBUG_ENABLED
 				if (ref.size() != 1 || ce.error != Callable::CallError::CALL_OK) {
@@ -3740,7 +3737,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 					*counter = ref[0];
 
 					GET_VARIANT_PTR(iterator, 2);
-					*iterator = obj->callp(CoreStringName(_iter_get), (const Variant **)&counter, 1, ce);
+					*iterator = iter_obj->callp(CoreStringName(_iter_get), (const Variant **)&counter, 1, ce);
 #ifdef DEBUG_ENABLED
 					if (ce.error != Callable::CallError::CALL_OK) {
 						err_text = vformat(R"(There was an error calling "_iter_get" on iterator object of type %s.)", *container);
@@ -3860,7 +3857,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				CHECK_SPACE(2);
 				GET_VARIANT_PTR(arg, 0);
 				VariantInternal::clear(arg);
-				*arg = (GDScriptStructInstance *)nullptr;
+				// Create a null struct Variant and assign it
+				// Using VariantInternal::initialize which can access private members
+				VariantInternal::initialize(arg, Variant::STRUCT);
 				ip += 2;
 			}
 			DISPATCH_OPCODE;
