@@ -19,6 +19,9 @@ Example:
         --project /home/user/my_game \
         --click-node "StartButton" \
         --trigger-action "pause"
+
+    # For Nix users:
+    nix develop -c python3 modules/mcp/tests/verify_workflow.py --binary ./bin/redot.linuxbsd.editor.x86_64 --project ...
 """
 
 import json
