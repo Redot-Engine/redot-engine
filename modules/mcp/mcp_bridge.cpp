@@ -156,6 +156,10 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 void MCPBridge::update() {
 	if (is_host) {
 		if (server->is_connection_available()) {
+			if (connection.is_valid()) {
+				fprintf(stderr, "[MCP] Dropping existing connection for new client\n");
+				connection->disconnect_from_host();
+			}
 			connection = server->take_connection();
 			fprintf(stderr, "[MCP] Game process connected to bridge on host side\n");
 		}
@@ -178,6 +182,10 @@ void MCPBridge::update() {
 							connection->put_u8('\n');
 						}
 					} else {
+						if (partial_data.length() > 1024 * 1024) { // 1MB limit to prevent OOM
+							partial_data = "";
+							fprintf(stderr, "[MCP] Bridge buffer overflow, clearing\n");
+						}
 						partial_data += (char)c;
 					}
 				}
