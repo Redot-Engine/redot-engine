@@ -41,21 +41,32 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <poll.h>
-#include <unistd.h>
 #include <cstdio>
 #include <iostream>
 #include <string>
+
+#ifndef WINDOWS_ENABLED
+#include <poll.h>
+#include <unistd.h>
+#else
+#include <io.h>
+#define STDIN_FILENO 0
+#endif
 
 MCPServer *MCPServer::singleton = nullptr;
 
 MCPServer::MCPServer() {
 	singleton = this;
 	protocol = memnew(MCPProtocol);
+#ifndef WINDOWS_ENABLED
 	if (pipe(wake_fds) != 0) {
 		wake_fds[0] = -1;
 		wake_fds[1] = -1;
 	}
+#else
+	wake_fds[0] = -1;
+	wake_fds[1] = -1;
+#endif
 }
 
 MCPServer::~MCPServer() {
@@ -71,12 +82,14 @@ MCPServer::~MCPServer() {
 		OS::get_singleton()->delay_usec(1000);
 	}
 
+#ifndef WINDOWS_ENABLED
 	if (wake_fds[0] != -1) {
 		close(wake_fds[0]);
 	}
 	if (wake_fds[1] != -1) {
 		close(wake_fds[1]);
 	}
+#endif
 
 	if (protocol) {
 		memdelete(protocol);
@@ -92,6 +105,16 @@ void MCPServer::_bind_methods() {
 }
 
 String MCPServer::_read_line() {
+#ifdef WINDOWS_ENABLED
+	// On Windows, raw non-blocking reading from stdin is complex.
+	// Fallback to simpler blocking read for now to ensure compatibility.
+	std::string line;
+	if (std::getline(std::cin, line)) {
+		return String::utf8(line.c_str());
+	}
+	should_stop = true;
+	return String();
+#else
 	while (!should_stop) {
 		// 1. Check if we already have a complete line in the buffer
 		int newline_pos = stdin_buffer.find("\n");
@@ -145,6 +168,7 @@ String MCPServer::_read_line() {
 		}
 	}
 	return String();
+#endif
 }
 
 void MCPServer::_write_line(const String &p_line) {
@@ -196,6 +220,7 @@ Error MCPServer::stop_game_process() {
 
 	Error err = OS::get_singleton()->kill(pid_to_kill);
 	if (err == OK) {
+		// Wait up to 1s for it to exit and be reaped
 		uint64_t start = OS::get_singleton()->get_ticks_msec();
 		while (OS::get_singleton()->is_process_running(pid_to_kill) && OS::get_singleton()->get_ticks_msec() - start < 1000) {
 			OS::get_singleton()->delay_usec(10000);
@@ -273,11 +298,13 @@ void MCPServer::stop() {
 		return;
 	}
 	should_stop = true;
+#ifndef WINDOWS_ENABLED
 	if (wake_fds[1] != -1) {
 		char c = 0;
 		int r = write(wake_fds[1], &c, 1);
 		(void)r;
 	}
+#endif
 }
 
 void MCPServer::run_tests(const String &p_script_path) {
