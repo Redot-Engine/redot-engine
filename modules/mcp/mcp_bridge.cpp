@@ -181,37 +181,40 @@ void MCPBridge::update() {
 		}
 	} else {
 		// Client (Game) side
-		if (connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
-			Ref<StreamPeerTCP> conn = connection;
-			while (conn->get_available_bytes() > 0) {
-				uint8_t c;
-				int read_bytes;
-				conn->get_partial_data(&c, 1, read_bytes);
-				if (read_bytes > 0) {
-					if (c == '\n') {
-						String cmd_str = partial_data;
-						partial_data = "";
+		if (connection.is_valid()) {
+			connection->poll();
+			if (connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
+				Ref<StreamPeerTCP> conn = connection;
+				while (conn->get_available_bytes() > 0) {
+					uint8_t c;
+					int read_bytes;
+					conn->get_partial_data(&c, 1, read_bytes);
+					if (read_bytes > 0) {
+						if (c == '\n') {
+							String cmd_str = partial_data;
+							partial_data = "";
 
-						mutex.unlock();
-						Variant cmd_var = JSON::parse_string(cmd_str);
-						if (cmd_var.get_type() == Variant::DICTIONARY) {
-							Dictionary resp = _process_command(cmd_var);
-							String resp_json = JSON::stringify(resp);
-							CharString utf8 = resp_json.utf8();
+							mutex.unlock();
+							Variant cmd_var = JSON::parse_string(cmd_str);
+							if (cmd_var.get_type() == Variant::DICTIONARY) {
+								Dictionary resp = _process_command(cmd_var);
+								String resp_json = JSON::stringify(resp);
+								CharString utf8 = resp_json.utf8();
 
-							mutex.lock();
-							if (connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
-								connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
-								connection->put_u8('\n');
+								mutex.lock();
+								if (connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
+									connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
+									connection->put_u8('\n');
+								}
+							} else {
+								mutex.lock();
 							}
 						} else {
-							mutex.lock();
+							if (partial_data.length() > 1024 * 1024) { // 1MB limit
+								partial_data = "";
+							}
+							partial_data += (char)c;
 						}
-					} else {
-						if (partial_data.length() > 1024 * 1024) { // 1MB limit
-							partial_data = "";
-						}
-						partial_data += (char)c;
 					}
 				}
 			}
