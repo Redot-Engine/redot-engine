@@ -24,13 +24,13 @@ Example:
     nix develop -c python3 modules/mcp/tests/verify_workflow.py --binary ./bin/redot.linuxbsd.editor.x86_64 --project ...
 """
 
-import json
-import sys
-import subprocess
-import time
-import base64
 import argparse
+import base64
+import json
 import os
+import subprocess
+import sys
+import time
 
 
 def send_request(proc, method, params, req_id=1):
@@ -142,7 +142,7 @@ def main():
             time.sleep(2)
 
         # 5. Capture Screenshot
-        print(f"\n--- Capturing Screenshot ---")
+        print("\n--- Capturing Screenshot ---")
         send_request(
             proc, "tools/call", {"name": "game_control", "arguments": {"action": "capture", "scale": 0.5}}, req_id=5
         )
@@ -161,7 +161,7 @@ def main():
                     break
 
             if not has_image:
-                print(f"Warning: Capture returned no image content.")
+                print("Warning: Capture returned no image content.")
                 print(json.dumps(resp, indent=2))
         else:
             print("Capture failed or timed out.")
