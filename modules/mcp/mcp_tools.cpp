@@ -41,6 +41,7 @@
 #include "core/object/class_db.h"
 #include "core/version.h"
 #include "mcp_bridge.h"
+#include "mcp_server.h"
 #include "scene/resources/packed_scene.h"
 
 #include "modules/modules_enabled.gen.h"
@@ -687,14 +688,22 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		info["version"] = v;
 		result.add_text(JSON::stringify(info, "  "));
 	} else if (action == "run") {
-		if (last_game_pid != 0) {
-			OS::get_singleton()->kill(last_game_pid);
+		if (MCPServer::get_singleton()->is_game_running()) {
+			MCPServer::get_singleton()->stop_game_process();
 		}
 
 		if (MCPBridge::get_singleton()->get_port() == 0) {
-			MCPBridge::get_singleton()->start_server();
+			Error err = MCPBridge::get_singleton()->start_server();
+			if (err != OK) {
+				result.set_error("Failed to start bridge server: " + itos(err));
+				return result;
+			}
 		}
 		bridge_port = MCPBridge::get_singleton()->get_port();
+		if (bridge_port == 0) {
+			result.set_error("Bridge port is 0 after start");
+			return result;
+		}
 
 		String lf = normalize_path("res://.redot/mcp_game.log");
 		last_log_path = lf;
