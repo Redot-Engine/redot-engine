@@ -11,4 +11,9 @@ if [ -z "$PROJECT_PATH" ]; then
     exit 1
 fi
 
+if ! command -v nix &> /dev/null; then
+    echo "Error: nix command not found. Please install Nix."
+    exit 1
+fi
+
 nix develop "$ENGINE_DIR" -c "$BINARY" --headless --mcp-server --path "$PROJECT_PATH"

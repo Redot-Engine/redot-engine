@@ -94,12 +94,18 @@ Array MCPProtocol::_get_tool_definitions() const {
 }
 
 Variant MCPProtocol::_handle_tools_list(const Variant &p_params) {
+	if (!is_initialized()) {
+		return make_response_error(INVALID_REQUEST, "Protocol not initialized");
+	}
 	Dictionary result;
 	result["tools"] = _get_tool_definitions();
 	return result;
 }
 
 Variant MCPProtocol::_handle_tools_call(const Variant &p_params) {
+	if (!is_initialized()) {
+		return make_response_error(INVALID_REQUEST, "Protocol not initialized");
+	}
 	Dictionary params;
 	if (p_params.get_type() == Variant::DICTIONARY) {
 		params = p_params;

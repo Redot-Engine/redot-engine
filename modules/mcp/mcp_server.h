@@ -38,6 +38,8 @@
 #include "core/os/thread.h"
 #include "core/os/thread_safe.h"
 
+#include <atomic>
+
 class MCPServer : public Object {
 	GDCLASS(MCPServer, Object)
 
@@ -45,8 +47,8 @@ private:
 	static MCPServer *singleton;
 
 	MCPProtocol *protocol = nullptr;
-	bool running = false;
-	bool should_stop = false;
+	std::atomic<bool> running = false;
+	std::atomic<bool> should_stop = false;
 
 	Thread bridge_thread;
 	static void _bridge_thread_func(void *p_userdata);
