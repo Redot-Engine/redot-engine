@@ -98,4 +98,5 @@ private:
 	mutable Mutex process_mutex; // Protects game_pid and game_log_path
 	void _check_game_process(); // Reaper logic
 	int wake_fds[2];
+	String stdin_buffer;
 };

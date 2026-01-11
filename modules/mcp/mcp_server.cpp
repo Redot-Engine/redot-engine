@@ -92,14 +92,23 @@ void MCPServer::_bind_methods() {
 }
 
 String MCPServer::_read_line() {
-	struct pollfd p_fds[2];
-	p_fds[0].fd = STDIN_FILENO;
-	p_fds[0].events = POLLIN;
-	p_fds[1].fd = wake_fds[0];
-	p_fds[1].events = POLLIN;
-
 	while (!should_stop) {
-		int ret = poll(p_fds, 2, 500); // 500ms timeout
+		// 1. Check if we already have a complete line in the buffer
+		int newline_pos = stdin_buffer.find("\n");
+		if (newline_pos != -1) {
+			String line = stdin_buffer.substr(0, newline_pos);
+			stdin_buffer = stdin_buffer.substr(newline_pos + 1);
+			return line.strip_edges();
+		}
+
+		// 2. No line? Wait for data using poll
+		struct pollfd p_fds[2];
+		p_fds[0].fd = STDIN_FILENO;
+		p_fds[0].events = POLLIN;
+		p_fds[1].fd = wake_fds[0];
+		p_fds[1].events = POLLIN;
+
+		int ret = poll(p_fds, 2, 100); // 100ms timeout for responsiveness
 		if (ret < 0) {
 			if (errno == EINTR) {
 				continue;
@@ -107,25 +116,32 @@ String MCPServer::_read_line() {
 			should_stop = true;
 			return String();
 		}
-		if (ret == 0) {
-			continue; // Timeout
-		}
 
-		if (p_fds[1].revents & POLLIN) {
-			// Woken up
-			char c;
-			int r = read(wake_fds[0], &c, 1); // Consume the wake byte
-			(void)r;
-			return String();
-		}
-
-		if (p_fds[0].revents & POLLIN) {
-			std::string line;
-			if (std::getline(std::cin, line)) {
-				return String::utf8(line.c_str());
+		if (ret > 0) {
+			if (p_fds[1].revents & POLLIN) {
+				// Woken up by internal pipe
+				char c;
+				int r = read(wake_fds[0], &c, 1);
+				(void)r;
+				return String();
 			}
-			should_stop = true;
-			return String();
+
+			if (p_fds[0].revents & POLLIN) {
+				// Raw read from stdin
+				char buf[4096];
+				ssize_t bytes = read(STDIN_FILENO, buf, sizeof(buf));
+				if (bytes > 0) {
+					stdin_buffer += String::utf8(buf, bytes);
+					// Continue to loop to extract the line from buffer
+				} else if (bytes == 0) {
+					// EOF
+					should_stop = true;
+					return String();
+				} else if (errno != EAGAIN && errno != EINTR) {
+					should_stop = true;
+					return String();
+				}
+			}
 		}
 	}
 	return String();
