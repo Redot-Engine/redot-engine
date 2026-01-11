@@ -65,10 +65,11 @@ void MCPBridge::_bind_methods() {
 }
 
 Error MCPBridge::start_server(int p_port) {
+	MutexLock lock(mutex);
 	is_host = true;
 	if (p_port == 0) {
 		for (int i = 10000; i < 11000; i++) {
-			if (server->listen(i) == OK) {
+			if (server->listen(i, IPAddress("127.0.0.1")) == OK) {
 				port = i;
 				fprintf(stderr, "[MCP] Bridge server listening on port %d\n", port);
 				return OK;
@@ -76,7 +77,7 @@ Error MCPBridge::start_server(int p_port) {
 		}
 		return ERR_ALREADY_IN_USE;
 	} else {
-		Error err = server->listen(p_port);
+		Error err = server->listen(p_port, IPAddress("127.0.0.1"));
 		if (err == OK) {
 			port = p_port;
 			fprintf(stderr, "[MCP] Bridge server listening on port %d\n", port);
@@ -86,6 +87,7 @@ Error MCPBridge::start_server(int p_port) {
 }
 
 bool MCPBridge::is_client_connected() const {
+	MutexLock lock(mutex);
 	if (connection.is_valid()) {
 		connection->poll();
 		return connection->get_status() == StreamPeerTCP::STATUS_CONNECTED;
@@ -94,6 +96,7 @@ bool MCPBridge::is_client_connected() const {
 }
 
 Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
+	MutexLock lock(mutex);
 	is_host = false;
 	connection.instantiate();
 	port = p_port;
@@ -102,7 +105,9 @@ Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
 }
 
 Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args) {
-	if (!is_client_connected()) {
+	mutex.lock();
+	if (!connection.is_valid() || connection->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
+		mutex.unlock();
 		Dictionary err;
 		err["error"] = "Bridge not connected";
 		return err;
@@ -117,29 +122,47 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 	connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
 	connection->put_u8('\n');
 
-	// Wait for response (blocking with timeout)
-	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
+	// Buffer for reading response (now buffered locally)
+	Vector<uint8_t> read_buffer;
+	read_buffer.resize(4096);
 	String response_str;
-	while (OS::get_singleton()->get_ticks_msec() - start_time < 5000) {
+	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
+	const uint64_t TIMEOUT_MS = 5000;
+	mutex.unlock();
+
+	// Wait for response (blocking with timeout) - Dropping lock for long wait
+	while (OS::get_singleton()->get_ticks_msec() - start_time < TIMEOUT_MS) {
+		mutex.lock();
 		connection->poll();
 		if (connection->get_available_bytes() > 0) {
-			uint8_t c;
-			int read;
-			connection->get_partial_data(&c, 1, read);
-			if (read > 0) {
+			int read = 0;
+			// Read up to buffer size or available bytes
+			int to_read = MIN(connection->get_available_bytes(), read_buffer.size());
+			connection->get_partial_data(read_buffer.ptrw(), to_read, read);
+
+			for (int i = 0; i < read; i++) {
+				char c = (char)read_buffer[i];
 				if (c == '\n') {
-					break;
+					mutex.unlock();
+					goto parsed;
 				}
-				response_str += (char)c;
+				response_str += c;
 			}
-		} else {
-			OS::get_singleton()->delay_usec(1000);
 		}
+		mutex.unlock();
+		OS::get_singleton()->delay_usec(1000);
 	}
 
-	if (response_str.is_empty()) {
+	{
 		Dictionary err;
 		err["error"] = "Bridge timeout";
+		return err;
+	}
+
+parsed:
+	if (response_str.is_empty()) {
+		Dictionary err;
+		err["error"] = "Empty response";
 		return err;
 	}
 
@@ -154,6 +177,7 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 }
 
 void MCPBridge::update() {
+	MutexLock lock(mutex);
 	if (is_host) {
 		if (server->is_connection_available()) {
 			if (connection.is_valid()) {
@@ -165,7 +189,8 @@ void MCPBridge::update() {
 		}
 	} else {
 		// Client (Game) side
-		if (is_client_connected()) {
+		if (connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
+			connection->poll();
 			while (connection->get_available_bytes() > 0) {
 				uint8_t c;
 				int read;
