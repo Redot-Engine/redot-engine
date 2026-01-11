@@ -1,3 +1,26 @@
+"""
+Verify Redot MCP Server end-to-end workflow
+
+Usage:
+    python3 verify_workflow.py --binary <path_to_redot_binary> --project <path_to_project_dir> [options]
+
+Arguments:
+    --binary <path>         Path to Redot editor binary (e.g. ./bin/redot.linuxbsd.editor.x86_64)
+    --project <path>        Path to Redot project directory
+    --click-node <path>     Node path to click after launch (default: MainMenu/MenuPanel/VBoxContainer/StartButton)
+    --trigger-action <name> Input action to trigger (e.g. ui_cancel for Pause) (default: ui_cancel)
+    --wait-load <seconds>   Seconds to wait for game load (default: 15.0)
+    --wait-gameplay <seconds> Seconds to wait after click (default: 5.0)
+    --screenshot-file <path> Output path for screenshot (default: mcp_verify_capture.png)
+
+Example:
+    python3 modules/mcp/tests/verify_workflow.py \
+        --binary ./bin/redot.linuxbsd.editor.x86_64 \
+        --project /home/user/my_game \
+        --click-node "StartButton" \
+        --trigger-action "pause"
+"""
+
 import json
 import sys
 import subprocess
