@@ -98,8 +98,48 @@ void MCPServer::_bridge_thread_func(void *p_userdata) {
 		if (MCPBridge::get_singleton()) {
 			MCPBridge::get_singleton()->update();
 		}
+		ms->_check_game_process();
 		OS::get_singleton()->delay_usec(10000); // 10ms
 	}
+}
+
+void MCPServer::_check_game_process() {
+	if (game_pid != 0) {
+		if (!OS::get_singleton()->is_process_running(game_pid)) {
+			// Zombie reaper: In Godot/Redot, calling is_process_running internally calls waitpid with WNOHANG on Linux.
+			// If it returns false, it means the process has exited and been reaped.
+			fprintf(stderr, "[MCP] Game process %d exited.\n", (int)game_pid);
+			game_pid = 0;
+		}
+	}
+}
+
+Error MCPServer::start_game_process(const List<String> &p_args, const String &p_log_path) {
+	if (game_pid != 0) {
+		stop_game_process();
+	}
+	game_log_path = p_log_path;
+	return OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), p_args, &game_pid);
+}
+
+Error MCPServer::stop_game_process() {
+	if (game_pid == 0) {
+		return ERR_DOES_NOT_EXIST;
+	}
+	Error err = OS::get_singleton()->kill(game_pid);
+	if (err == OK) {
+		game_pid = 0; // cleared immediately, or wait for reaper? kill sends signal.
+		// We should probably wait for it to exit or let reaper handle it.
+		// For now, assume it will exit.
+	}
+	return err;
+}
+
+bool MCPServer::is_game_running() const {
+	if (game_pid == 0) {
+		return false;
+	}
+	return OS::get_singleton()->is_process_running(game_pid);
 }
 
 void MCPServer::_server_loop() {

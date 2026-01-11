@@ -35,6 +35,7 @@
 #include "mcp_protocol.h"
 
 #include "core/object/class_db.h"
+#include "core/os/os.h"
 #include "core/os/thread.h"
 #include "core/os/thread_safe.h"
 
@@ -82,4 +83,15 @@ public:
 
 	// Check if server is running
 	bool is_running() const { return running; }
+
+	// Game Process Management
+	Error start_game_process(const List<String> &p_args, const String &p_log_path);
+	Error stop_game_process();
+	bool is_game_running() const;
+	String get_game_log_path() const { return game_log_path; }
+
+private:
+	OS::ProcessID game_pid = 0;
+	String game_log_path;
+	void _check_game_process(); // Reaper logic
 };
