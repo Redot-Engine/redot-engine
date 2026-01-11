@@ -35,6 +35,7 @@
 #include "mcp_protocol.h"
 
 #include "core/object/class_db.h"
+#include "core/os/mutex.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
 #include "core/os/thread_safe.h"
@@ -88,10 +89,11 @@ public:
 	Error start_game_process(const List<String> &p_args, const String &p_log_path);
 	Error stop_game_process();
 	bool is_game_running() const;
-	String get_game_log_path() const { return game_log_path; }
+	String get_game_log_path() const;
 
 private:
 	OS::ProcessID game_pid = 0;
 	String game_log_path;
+	mutable Mutex process_mutex; // Protects game_pid and game_log_path
 	void _check_game_process(); // Reaper logic
 };

@@ -104,6 +104,7 @@ void MCPServer::_bridge_thread_func(void *p_userdata) {
 }
 
 void MCPServer::_check_game_process() {
+	MutexLock lock(process_mutex);
 	if (game_pid != 0) {
 		if (!OS::get_singleton()->is_process_running(game_pid)) {
 			// Zombie reaper: In Godot/Redot, calling is_process_running internally calls waitpid with WNOHANG on Linux.
@@ -115,14 +116,18 @@ void MCPServer::_check_game_process() {
 }
 
 Error MCPServer::start_game_process(const List<String> &p_args, const String &p_log_path) {
+	MutexLock lock(process_mutex);
 	if (game_pid != 0) {
+		lock.~MutexLock(); // Unlock before calling stop_game_process to avoid recursion deadlock if it locks too
 		stop_game_process();
+		process_mutex.lock(); // Relock
 	}
 	game_log_path = p_log_path;
 	return OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), p_args, &game_pid);
 }
 
 Error MCPServer::stop_game_process() {
+	MutexLock lock(process_mutex);
 	if (game_pid == 0) {
 		return ERR_DOES_NOT_EXIST;
 	}
@@ -136,10 +141,16 @@ Error MCPServer::stop_game_process() {
 }
 
 bool MCPServer::is_game_running() const {
+	MutexLock lock(process_mutex);
 	if (game_pid == 0) {
 		return false;
 	}
 	return OS::get_singleton()->is_process_running(game_pid);
+}
+
+String MCPServer::get_game_log_path() const {
+	MutexLock lock(process_mutex);
+	return game_log_path;
 }
 
 void MCPServer::_server_loop() {
