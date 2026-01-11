@@ -66,11 +66,13 @@ void uninitialize_mcp_module(ModuleInitializationLevel p_level) {
 	}
 
 	if (mcp_bridge_singleton) {
+		Engine::get_singleton()->remove_singleton("MCPBridge");
 		memdelete(mcp_bridge_singleton);
 		mcp_bridge_singleton = nullptr;
 	}
 
 	if (mcp_server_singleton) {
+		Engine::get_singleton()->remove_singleton("MCPServer");
 		memdelete(mcp_server_singleton);
 		mcp_server_singleton = nullptr;
 	}

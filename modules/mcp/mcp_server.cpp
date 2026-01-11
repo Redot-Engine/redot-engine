@@ -175,19 +175,20 @@ void MCPServer::run_tests(const String &p_script_path) {
 
 	obj->set_script(script);
 
-	if (obj->get_script_instance()) {
+	ScriptInstance *si = obj->get_script_instance();
+	if (si) {
 		Callable::CallError ce;
 		Variant ret = obj->callp("run", nullptr, 0, ce);
 
 		if (ce.error == Callable::CallError::CALL_OK) {
 			fprintf(stderr, "[MCP] Test finished. Return value: %s\n", ret.get_construct_string().utf8().get_data());
 		} else if (ce.error == Callable::CallError::CALL_ERROR_INVALID_METHOD) {
-			fprintf(stderr, "[MCP] Test script missing 'run()' method\n");
+			fprintf(stderr, "[MCP] Test script missing 'run()' method or script not fully initialized\n");
 		} else {
 			fprintf(stderr, "[MCP] Error calling 'run()': %d\n", ce.error);
 		}
 	} else {
-		fprintf(stderr, "[MCP] Script instance could not be created\n");
+		fprintf(stderr, "[MCP] Script instance could not be created for %s\n", p_script_path.utf8().get_data());
 	}
 
 	// If it's not refcounted, delete it.

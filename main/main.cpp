@@ -617,9 +617,9 @@ void Main::print_help(const char *p_binary) {
 	print_help_option("--tablet-driver <driver>", "Pen tablet input driver.\n");
 	print_help_option("--headless", "Enable headless mode (--display-driver headless --audio-driver Dummy). Useful for servers and with --script.\\n");
 #ifdef MODULE_MCP_ENABLED
-	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\\n", CLI_OPTION_AVAILABILITY_EDITOR);
-	print_help_option("--mcp-bridge-port <port>", "Port for the MCP Bridge connection (internal use).\\n", CLI_OPTION_AVAILABILITY_EDITOR);
-	print_help_option("--run-tests <path>", "Run a unit test script headlessly and exit.\\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--mcp-bridge-port <port>", "Port for the MCP Bridge connection (internal use).\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--run-tests <path>", "Run a unit test script headlessly and exit.\n", CLI_OPTION_AVAILABILITY_EDITOR);
 #endif
 	print_help_option("--log-file <file>", "Write output/error log to the specified path instead of the default location defined by the project.\n");
 	print_help_option("", "<file> path should be absolute or relative to the project directory.\n");
@@ -1428,14 +1428,18 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			display_driver = NULL_DISPLAY_DRIVER;
 		} else if (arg == "--mcp-bridge-port") { // Port for MCP Bridge (game side)
 			if (N) {
-				mcp_bridge_port = N->get().to_int();
+				int port = N->get().to_int();
+				if (port > 0 && port < 65536) {
+					mcp_bridge_port = port;
+				} else {
+					OS::get_singleton()->print("Invalid port number for --mcp-bridge-port: %d. Must be between 1 and 65535.\n", port);
+					goto error;
+				}
 				N = N->next();
 			} else {
 				OS::get_singleton()->print("Missing <port> argument for --mcp-bridge-port <port>.\n");
 				goto error;
 			}
-		} else if (arg.begins_with("--run-tests=")) {
-			mcp_run_tests = arg.substr(12);
 #endif
 
 		} else if (arg == "--embedded") { // Enable embedded mode.
@@ -4763,7 +4767,11 @@ int Main::start() {
 
 #ifdef MODULE_MCP_ENABLED
 	if (mcp_bridge_port != 0) {
-		MCPBridge::get_singleton()->connect_to_server("127.0.0.1", mcp_bridge_port);
+		if (MCPBridge::get_singleton()) {
+			MCPBridge::get_singleton()->connect_to_server("127.0.0.1", mcp_bridge_port);
+		} else {
+			OS::get_singleton()->print("Error: MCPBridge singleton is null despite module being enabled.\n");
+		}
 	}
 #endif
 
@@ -4781,7 +4789,12 @@ int Main::start() {
 		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
 		OS::get_singleton()->benchmark_dump();
 
-		MCPServer::get_singleton()->start();
+		if (MCPServer::get_singleton()) {
+			MCPServer::get_singleton()->start();
+		} else {
+			OS::get_singleton()->print("Error: MCPServer singleton is null.\n");
+			return EXIT_FAILURE;
+		}
 		return EXIT_SUCCESS;
 	}
 
