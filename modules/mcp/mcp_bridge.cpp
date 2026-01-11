@@ -411,36 +411,9 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			_trigger_action_event(action_name);
 			resp["status"] = "triggered_action";
 		}
-	} else if (action == "inspect_live") {
-		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
-		if (st) {
-			String path = args.get("path", ".");
-			Node *node = (path == "." || path.is_empty()) ? (Node *)st->get_root() : st->get_root()->get_node_or_null(path);
-			if (node) {
-				Dictionary info;
-				info["name"] = node->get_name();
-				info["type"] = node->get_class();
-
-				Array children;
-				for (int i = 0; i < node->get_child_count(); i++) {
-					children.push_back(node->get_child(i)->get_name());
-				}
-				info["children"] = children;
-
-				Dictionary props;
-				List<PropertyInfo> plist;
-				node->get_property_list(&plist);
-				for (const PropertyInfo &p : plist) {
-					if (p.usage & PROPERTY_USAGE_EDITOR) {
-						props[p.name] = node->get(p.name);
-					}
-				}
-				info["properties"] = props;
-				resp["info"] = info;
-			} else {
-				resp["error"] = "Node not found";
-			}
-		}
+	} else if (action == "wait") {
+		// Deprecated/No-op on client side, handled by server now
+		resp["status"] = "wait_is_server_side";
 	}
 
 	return resp;
