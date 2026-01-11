@@ -10,6 +10,7 @@ def get_doc_classes():
     return [
         "MCPServer",
         "MCPProtocol",
+        "MCPBridge",
     ]
 
 
