@@ -123,7 +123,9 @@ Variant GDScriptNativeClass::callp(const StringName &p_method, const Variant **p
 }
 
 void GDScriptStructClass::_bind_methods() {
-	// Don't bind "new" here - it will be handled via callp
+	// Bind the vararg "new" constructor method
+	// This allows Object::callp to find it via ClassDB::get_method
+	ClassDB::bind_vararg_method(METHOD_FLAGS_DEFAULT, "new", &GDScriptStructClass::_new_bind);
 }
 
 // Constructor: takes ownership of the given struct.
@@ -235,7 +237,12 @@ Variant GDScriptStructClass::_variant_from_struct_instance(GDScriptStructInstanc
 
 	// Copy the pointer into Variant's internal storage
 	// memcpy is used instead of assignment for type safety and to avoid strict aliasing issues
+	print_line("DEBUG _variant_from_struct_instance: p_instance (value) = " + itos((uint64_t)p_instance));
+	print_line("DEBUG _variant_from_struct_instance: &p_instance (address) = " + itos((uint64_t)&p_instance));
 	memcpy(result._data._mem, &p_instance, sizeof(void *));
+	GDScriptStructInstance *copied_ptr = *(GDScriptStructInstance **)result._data._mem;
+	print_line("DEBUG _variant_from_struct_instance: after memcpy, copied_ptr = " + itos((uint64_t)copied_ptr));
+	print_line("DEBUG _variant_from_struct_instance: about to return, result._data._mem ptr = " + itos(*(uint64_t *)result._data._mem));
 
 	return result;
 }
@@ -244,31 +251,29 @@ Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callab
 	ERR_FAIL_NULL_V(struct_type, Variant());
 
 	// Create the struct instance
-	// The constructor initializes ref_count to 0, so we need to increment it
+	// The constructor initializes ref_count to 1, representing the initial reference
 	GDScriptStructInstance *instance = struct_type->create_instance(p_args, p_argcount);
 	if (!instance) {
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
 		return Variant();
 	}
 
+	print_line("DEBUG _new: Created struct instance at " + itos((uint64_t)instance));
+	print_line("DEBUG _new: ref_count after creation = " + itos(instance->get_reference_count()));
+
 	// REFERENCE COUNTING MANAGEMENT:
-	// The struct instance uses SafeRefCount for reference semantics
-	// - reference() increments the count (from 0 to 1 on first call)
-	// - Each Variant that holds this instance increments the count
-	// - When Variant is destroyed, it calls destructor() which decrements
-	// - When count reaches 0, the instance is automatically deleted
+	// The struct instance is created with ref_count = 1 (initial reference)
+	// When we create a Variant from it, the Variant will hold this reference
+	// When the Variant is destroyed, Variant::destructor() will call instance->unreference()
+	// which will decrement ref_count to 0, triggering deletion of the instance
 	//
-	// We increment BEFORE creating the Variant because:
-	// 1. _variant_from_struct_instance() does NOT take ownership
-	// 2. The Variant needs to hold a reference to the instance
-	// 3. If we don't increment here, the Variant would hold a dangling reference
-	instance->reference(); // Now ref_count = 1 (this Variant owns the instance)
+	// No additional reference() call is needed here since the instance was created
+	// with an initial reference count of 1
 
 	// Create a Variant of STRUCT type with the instance
-	// The Variant will hold the reference (ref_count stays at 1)
-	// When the Variant is destroyed, Variant::destructor() will call unreference()
-	// which will decrement ref_count to 0, triggering deletion of the instance
-	return _variant_from_struct_instance(instance);
+	Variant result = _variant_from_struct_instance(instance);
+	print_line("DEBUG _new: Created Variant, type = " + result.get_type_name(result.get_type()) + ", ref_count = " + itos(instance->get_reference_count()));
+	return result;
 }
 
 Variant GDScriptStructClass::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
@@ -278,6 +283,11 @@ Variant GDScriptStructClass::callp(const StringName &p_method, const Variant **p
 
 	r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
 	return Variant();
+}
+
+// Vararg wrapper for the "new" method to be used with ClassDB binding
+Variant GDScriptStructClass::_new_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
+	return _new(p_args, p_argcount, r_error);
 }
 
 GDScriptFunction *GDScript::_super_constructor(GDScript *p_script) {
@@ -3264,6 +3274,39 @@ GDScriptStruct *GDScriptLanguage::get_struct_by_name(const String &p_fully_quali
 	return E->value;
 }
 
+/***************** STRUCT WRAPPER REGISTRY *****************/
+
+void GDScriptLanguage::register_struct_wrapper(const String &p_fully_qualified_name, const Ref<GDScriptStructClass> &p_wrapper) {
+	MutexLock lock(mutex);
+
+	// Check if a wrapper with this name already exists
+	HashMap<String, Ref<GDScriptStructClass>>::Iterator existing = global_struct_wrappers.find(p_fully_qualified_name);
+	if (existing) {
+		// Just replace it - the old wrapper will be destroyed when the Ref goes out of scope
+		global_struct_wrappers.erase(p_fully_qualified_name);
+	}
+
+	global_struct_wrappers.insert(p_fully_qualified_name, p_wrapper);
+}
+
+void GDScriptLanguage::unregister_struct_wrapper(const String &p_fully_qualified_name) {
+	MutexLock lock(mutex);
+
+	HashMap<String, Ref<GDScriptStructClass>>::Iterator existing = global_struct_wrappers.find(p_fully_qualified_name);
+	if (existing) {
+		global_struct_wrappers.erase(p_fully_qualified_name);
+	}
+}
+
+Ref<GDScriptStructClass> GDScriptLanguage::get_struct_wrapper(const String &p_fully_qualified_name) {
+	MutexLock lock(mutex);
+	HashMap<String, Ref<GDScriptStructClass>>::Iterator E = global_struct_wrappers.find(p_fully_qualified_name);
+	if (!E) {
+		return Ref<GDScriptStructClass>();
+	}
+	return E->value;
+}
+
 Variant GDScriptLanguage::create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data) {
 	GDScriptStruct *struct_type = get_struct_by_name(p_fully_qualified_name);
 	if (!struct_type) {
@@ -3271,31 +3314,26 @@ Variant GDScriptLanguage::create_struct_instance(const String &p_fully_qualified
 	}
 
 	// Create a new struct instance
-	// The constructor initializes ref_count to 0
+	// The constructor initializes ref_count to 1 (initial reference)
 	GDScriptStructInstance *instance = memnew(GDScriptStructInstance(struct_type));
 
 	// Deserialize the data into the instance
 	if (!p_data.is_empty()) {
 		if (!instance->deserialize(p_data)) {
-			// Clean up properly using unreference() instead of memdelete
-			// Since ref_count is 0, unreference() will return true and we can safely delete
-			if (instance->unreference()) {
-				memdelete(instance);
-			}
+			// Clean up by unreferencing - since ref_count is 1, unreference() will
+			// decrement to 0 and return true, but we still need to memdelete since
+			// the unreference() method in GDScriptStructInstance memdeletes itself
+			instance->unreference();
 			ERR_FAIL_V_MSG(Variant(), vformat("Failed to deserialize struct instance for type '%s'.", p_fully_qualified_name));
 		}
 	}
 
-	// REFERENCE COUNTING: Increment ref_count before creating Variant
-	// This is required by _variant_from_struct_instance() contract:
-	// "The caller MUST ensure the instance has at least one reference"
-	// The Variant will hold this reference, and when destroyed will call unreference()
-	instance->reference(); // Now ref_count = 1
+	// REFERENCE COUNTING: The instance is created with ref_count = 1
+	// When we create a Variant from it, the Variant will hold this reference
+	// When the Variant is destroyed, Variant::destructor() will call instance->unreference()
+	// which will decrement ref_count to 0, triggering deletion of the instance
 
 	// Wrap in a Variant
-	// The Variant will hold the reference (ref_count stays at 1)
-	// When the Variant is destroyed, Variant::destructor() will call unreference()
-	// which will decrement ref_count to 0, triggering deletion of the instance
 	Ref<GDScriptStructClass> struct_class;
 	struct_class.instantiate();
 	struct_class->set_struct_type(struct_type);

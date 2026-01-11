@@ -675,27 +675,46 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 #define CHECK_SPACE(m_space) \
 	GD_ERR_BREAK((ip + m_space) > _code_size)
 
-#define GET_VARIANT_PTR(m_v, m_code_ofs)                                                            \
-	Variant *m_v;                                                                                   \
-	{                                                                                               \
-		int address = _code_ptr[ip + 1 + (m_code_ofs)];                                             \
-		int address_type = (address & ADDR_TYPE_MASK) >> ADDR_BITS;                                 \
-		if (unlikely(address_type < 0 || address_type >= ADDR_TYPE_MAX)) {                          \
-			err_text = "Bad address type.";                                                         \
-			OPCODE_BREAK;                                                                           \
-		}                                                                                           \
-		int address_index = address & ADDR_MASK;                                                    \
-		if (unlikely(address_index < 0 || address_index >= variant_address_limits[address_type])) { \
-			if (address_type == ADDR_TYPE_MEMBER && !p_instance) {                                  \
-				err_text = "Cannot access member without instance.";                                \
-			} else {                                                                                \
-				err_text = "Bad address index.";                                                    \
-			}                                                                                       \
-			OPCODE_BREAK;                                                                           \
-		}                                                                                           \
-		m_v = &variant_addresses[address_type][address_index];                                      \
-		if (unlikely(!m_v))                                                                         \
-			OPCODE_BREAK;                                                                           \
+#define GET_VARIANT_PTR(m_v, m_code_ofs)                                                                                                             \
+	Variant *m_v;                                                                                                                                    \
+	{                                                                                                                                                \
+		int address = _code_ptr[ip + 1 + (m_code_ofs)];                                                                                              \
+		int address_type = (address & ADDR_TYPE_MASK) >> ADDR_BITS;                                                                                  \
+		int address_index = address & ADDR_MASK;                                                                                                     \
+		if (address_type == ADDR_TYPE_CONSTANT) {                                                                                                    \
+			print_line("DEBUG GET_VARIANT_PTR: Loading CONSTANT, address_index=" + itos(address_index));                                             \
+			if (address_index >= 0 && address_index < _constant_count) {                                                                             \
+				Variant *c = &_constants_ptr[address_index];                                                                                         \
+				print_line("DEBUG GET_VARIANT_PTR: Constant type=" + itos(c->get_type()));                                                           \
+				if (c->get_type() == Variant::OBJECT) {                                                                                              \
+					Object *obj = *c;                                                                                                                \
+					if (obj) {                                                                                                                       \
+						print_line("DEBUG GET_VARIANT_PTR: Constant is OBJECT, class=" + String(obj->get_class()) + ", obj=" + itos(uint64_t(obj))); \
+						GDScriptStructClass *sc = Object::cast_to<GDScriptStructClass>(obj);                                                         \
+						if (sc) {                                                                                                                    \
+							print_line("DEBUG GET_VARIANT_PTR: CONSTANT IS GDScriptStructClass!");                                                   \
+						} else {                                                                                                                     \
+							print_line("DEBUG GET_VARIANT_PTR: CONSTANT is NOT GDScriptStructClass");                                                \
+						}                                                                                                                            \
+					}                                                                                                                                \
+				}                                                                                                                                    \
+			}                                                                                                                                        \
+		}                                                                                                                                            \
+		if (unlikely(address_type < 0 || address_type >= ADDR_TYPE_MAX)) {                                                                           \
+			err_text = "Bad address type.";                                                                                                          \
+			OPCODE_BREAK;                                                                                                                            \
+		}                                                                                                                                            \
+		if (unlikely(address_index < 0 || address_index >= variant_address_limits[address_type])) {                                                  \
+			if (address_type == ADDR_TYPE_MEMBER && !p_instance) {                                                                                   \
+				err_text = "Cannot access member without instance.";                                                                                 \
+			} else {                                                                                                                                 \
+				err_text = "Bad address index.";                                                                                                     \
+			}                                                                                                                                        \
+			OPCODE_BREAK;                                                                                                                            \
+		}                                                                                                                                            \
+		m_v = &variant_addresses[address_type][address_index];                                                                                       \
+		if (unlikely(!m_v))                                                                                                                          \
+			OPCODE_BREAK;                                                                                                                            \
 	}
 
 #else // !DEBUG_ENABLED
@@ -1905,6 +1924,11 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				const StringName *methodname = &_global_names_ptr[methodname_idx];
 
 				GET_INSTRUCTION_ARG(base, argc);
+				print_line("DEBUG VM: OPCODE_CALL, method=" + String(*methodname) + ", base type=" + base->get_type_name(base->get_type()));
+				if (base->get_type() == Variant::OBJECT) {
+					Object *obj = *base;
+					print_line("DEBUG VM: base object class=" + String(obj->get_class()));
+				}
 				Variant **argptrs = instruction_args;
 
 #ifdef DEBUG_ENABLED
@@ -1923,7 +1947,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				if (call_ret) {
 					GET_INSTRUCTION_ARG(ret, argc + 1);
 					base->callp(*methodname, (const Variant **)argptrs, argc, temp_ret, err);
+					print_line("DEBUG VM: After callp, temp_ret type = " + temp_ret.get_type_name(temp_ret.get_type()));
 					*ret = temp_ret;
+					print_line("DEBUG VM: After assignment, ret type = " + ret->get_type_name(ret->get_type()));
 #ifdef DEBUG_ENABLED
 					if (ret->get_type() == Variant::NIL) {
 						if (base_type == Variant::OBJECT) {

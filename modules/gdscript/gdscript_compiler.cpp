@@ -196,11 +196,9 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 			result.builtin_type = p_datatype.builtin_type;
 			break;
 		case GDScriptParser::DataType::STRUCT: {
-			// For now, treat structs as BUILTIN type since struct_type is not yet implemented
-			result.kind = GDScriptDataType::BUILTIN;
+			// Struct type - use STRUCT kind to distinguish from other builtin types
+			result.kind = GDScriptDataType::STRUCT;
 			result.builtin_type = Variant::STRUCT;
-			// TODO: Store reference to struct definition when struct_type field is available
-			// result.struct_type = p_datatype.struct_type;
 		} break;
 		case GDScriptParser::DataType::RESOLVING:
 		case GDScriptParser::DataType::UNRESOLVED: {
@@ -370,15 +368,31 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 				case GDScriptParser::IdentifierNode::MEMBER_CONSTANT:
 				case GDScriptParser::IdentifierNode::MEMBER_CLASS: {
 					// Handle struct types (metatype)
+					print_line("DEBUG IDENTIFIER: " + String(identifier) + ", source=" + itos(in->source) + ", kind=" + itos(in->get_datatype().kind) + ", is_meta_type=" + itos(in->get_datatype().is_meta_type));
 					if (in->get_datatype().kind == GDScriptParser::DataType::STRUCT && in->get_datatype().is_meta_type) {
-						// Struct type identifier - treat it like CLASS mode for static calls
-						// Store the constant value but use CLASS mode so write_call can dispatch properly
-						GDScriptCodeGenerator::Address addr;
-						addr.mode = GDScriptCodeGenerator::Address::CLASS;
-						GDScriptCodeGenerator::Address temp = codegen.add_constant(in->reduced_value);
-						addr.address = temp.address;
-						addr.type = _gdtype_from_datatype(in->get_datatype(), codegen.script);
-						return addr;
+						// Struct type identifier - look up the wrapper from the global registry
+						// The wrapper is registered during _compile_struct and persists across compilations
+						print_line("DEBUG STRUCT IDENTIFIER: Processing struct type '" + String(identifier) + "'");
+						print_line("DEBUG STRUCT IDENTIFIER: Looking up in global wrapper registry with fqsn='" + String(in->get_datatype().struct_type->fqsn) + "'");
+						Ref<GDScriptStructClass> struct_wrapper = GDScriptLanguage::get_singleton()->get_struct_wrapper(in->get_datatype().struct_type->fqsn);
+						if (struct_wrapper.is_valid()) {
+							print_line("DEBUG STRUCT IDENTIFIER: Found wrapper in global registry, wrapper=" + itos(uint64_t(struct_wrapper.ptr())));
+							// Use the wrapper from global registry
+							// CRITICAL: Must return the CONSTANT address directly, not create a new address with CLASS mode
+							// CLASS mode points to stack[1] which is the script, NOT the constant table
+							Variant wrapper_variant = struct_wrapper;
+							GDScriptCodeGenerator::Address result = codegen.add_constant(wrapper_variant);
+							// Override the type to ensure it's recognized as STRUCT
+							result.type = _gdtype_from_datatype(in->get_datatype(), codegen.script);
+							print_line("DEBUG STRUCT IDENTIFIER: Returning address: mode=" + itos(result.mode) + ", address=" + itos(result.address) + ", type.kind=" + itos(result.type.kind));
+							return result;
+						} else {
+							print_line("DEBUG STRUCT IDENTIFIER: ERROR - Wrapper not found in global registry for fqsn='" + String(in->get_datatype().struct_type->fqsn) + "'");
+						}
+
+						// Shouldn't happen - struct wrapper not in global registry
+						_set_error(vformat(R"(Struct wrapper "%s" not found in global registry.)", identifier), in);
+						return GDScriptCodeGenerator::Address();
 					}
 
 					// Try class constants.
@@ -704,13 +718,17 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 							// This distinguishes TestStruct.new() (meta_type=true) from s.get_value() (meta_type=false)
 							if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER && id->datatype.kind == GDScriptParser::DataType::STRUCT && id->datatype.is_meta_type) {
 								// Struct static method call (e.g., TestStruct.new())
-								print_line("DEBUG compiler: Detected struct static call: " + String(id->name) + "." + String(call->function_name));
+								print_line("DEBUG STATIC CALL: Detected struct static call: " + String(id->name) + "." + String(call->function_name));
+								print_line("DEBUG STATIC CALL: About to call _parse_expression on subscript->base");
 								GDScriptCodeGenerator::Address base = _parse_expression(codegen, r_error, subscript->base);
-								print_line("DEBUG compiler: base address mode=" + itos(base.mode) + ", type.kind=" + itos(base.type.kind));
+								print_line("DEBUG STATIC CALL: After _parse_expression, base address mode=" + itos(base.mode) + ", address=" + itos(base.address) + ", type.kind=" + itos(base.type.kind));
 								if (r_error) {
+									print_line("DEBUG STATIC CALL: ERROR after _parse_expression");
 									return GDScriptCodeGenerator::Address();
 								}
+								print_line("DEBUG STATIC CALL: About to write_call with function=" + String(call->function_name));
 								gen->write_call(result, base, call->function_name, arguments);
+								print_line("DEBUG STATIC CALL: After write_call");
 							} else if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER && GDScriptParser::get_builtin_type(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name) < Variant::VARIANT_MAX) {
 								print_line("DEBUG compiler: Detected builtin static call: " + String(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name) + "." + String(subscript->attribute->name));
 								gen->write_call_builtin_type_static(result, GDScriptParser::get_builtin_type(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name), subscript->attribute->name, arguments);
@@ -3302,23 +3320,28 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	GDScriptLanguage::get_singleton()->register_struct(p_struct->fqsn, gdstruct);
 	print_line("DEBUG _compile_struct: After register_struct call, ref_count=", itos(gdstruct->get_reference_count()));
 
-	// Create a wrapper class for struct construction and store it as a constant
+	// Create a wrapper class for struct construction
 	// This allows `StructName.new()` to work
+	print_line("DEBUG _compile_struct: Creating GDScriptStructClass wrapper");
 	Ref<GDScriptStructClass> struct_wrapper;
 	struct_wrapper.instantiate(); // RefCounted with ref_count = 1
+	print_line("DEBUG _compile_struct: After wrapper instantiate, wrapper=" + itos(uint64_t(struct_wrapper.ptr())));
 	// set_struct_type will take another reference (Fourth reference: struct_wrapper owns it)
 	struct_wrapper->set_struct_type(gdstruct);
-
-	// Add to constants so it's accessible at runtime
-	p_script->constants[p_struct->identifier->name] = struct_wrapper;
 	print_line("DEBUG _compile_struct: After set_struct_type (wrapper), ref_count=", itos(gdstruct->get_reference_count()));
+
+	// CRITICAL: Register the wrapper in the GLOBAL registry (not script-specific constants)
+	// This ensures the wrapper persists across multiple compilation passes
+	print_line("DEBUG _compile_struct: Registering wrapper in global registry with fqsn='" + String(p_struct->fqsn) + "'");
+	GDScriptLanguage::get_singleton()->register_struct_wrapper(p_struct->fqsn, struct_wrapper);
+	print_line("DEBUG _compile_struct: Stored wrapper in global registry, wrapper=" + itos(uint64_t(struct_wrapper.ptr())));
 
 	// REFERENCE COUNTING SUMMARY:
 	// After successful compilation, gdstruct has 4 references:
 	// 1. Constructor/Compiler (released at function end)
 	// 2. p_script->structs HashMap (released when script is cleared/struct is removed)
-	// 3. Global registry (released when GDScriptLanguage::unregister_struct is called)
-	// 4. struct_wrapper (released when wrapper is destroyed/constant is cleared)
+	// 3. Global struct registry (released when GDScriptLanguage::unregister_struct is called)
+	// 4. struct_wrapper in global wrapper registry (released when wrapper is unregistered)
 	//
 	// Total: 4 references (constructor + script + registry + wrapper)
 	//
@@ -3392,19 +3415,20 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 	// (Structs cannot be reused like subclasses since they may have different definitions)
 	//
 	// CRITICAL: Must mirror the cleanup in GDScript::clear() to avoid leaks/crashes
-	// The order matters: unregister -> unreference -> delete (if ref_count == 0)
+	// The order matters: unregister wrapper -> unregister struct -> unreference -> delete (if ref_count == 0)
 	//
 	// Old structs have 3 references at this point:
 	// 1. p_script->structs HashMap (about to be cleared below)
-	// 2. Global registry (must be unregistered first)
-	// 3. struct_wrapper in constants (about to be erased)
+	// 2. Global struct registry (must be unregistered)
+	// 3. struct_wrapper in global wrapper registry (must be unregistered)
 
-	// Step 1: Remove struct wrapper constants (removes reference #3)
+	// Step 1: Unregister struct wrappers from global wrapper registry (removes reference #3)
 	for (const KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
-		p_script->constants.erase(E.key);
+		print_line("DEBUG make_scripts: Unregistering struct wrapper for '" + String(E.value->get_fully_qualified_name()) + "' from global registry");
+		GDScriptLanguage::get_singleton()->unregister_struct_wrapper(E.value->get_fully_qualified_name());
 	}
 
-	// Step 2: Unregister from global registry (removes reference #2)
+	// Step 2: Unregister structs from global registry (removes reference #2)
 	for (const KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
 		GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
 	}

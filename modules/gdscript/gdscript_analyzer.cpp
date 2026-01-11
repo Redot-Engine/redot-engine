@@ -866,6 +866,10 @@ GDScriptParser::DataType GDScriptAnalyzer::resolve_datatype(GDScriptParser::Type
 							result = member.get_datatype();
 							found = true;
 							break;
+						case GDScriptParser::ClassNode::Member::STRUCT:
+							result = member.get_datatype();
+							found = true;
+							break;
 						case GDScriptParser::ClassNode::Member::ENUM:
 							result = member.get_datatype();
 							found = true;
@@ -4296,6 +4300,20 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 
 	for (GDScriptParser::ClassNode *script_class : script_classes) {
 		if (p_base == nullptr && script_class->identifier && script_class->identifier->name == name) {
+			// Check if there's a struct with the same name - structs take precedence over classes
+			bool struct_exists = false;
+			if (parser->current_class != nullptr) {
+				for (const GDScriptParser::ClassNode::Member &member : parser->current_class->members) {
+					if (member.type == GDScriptParser::ClassNode::Member::STRUCT && member.m_struct->identifier->name == name) {
+						struct_exists = true;
+						break;
+					}
+				}
+			}
+			if (struct_exists) {
+				// Skip this class, there's a struct with the same name
+				continue;
+			}
 			reduce_identifier_from_base_set_class(p_identifier, script_class->get_datatype());
 			if (script_class->outer != nullptr) {
 				p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CLASS;
@@ -5948,41 +5966,61 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 			r_return_type.is_meta_type = false;
 			r_method_flags.set_flag(METHOD_FLAG_STATIC);
 
-			// Get constructor parameters if struct has _init method
+			// Get constructor parameters from struct members or explicit _init method
 			const GDScriptParser::StructNode *struct_node = p_base_type.struct_type;
-			if (struct_node && struct_node->constructor) {
-				// Extract signature from the constructor function
-				const GDScriptParser::FunctionNode *ctor = struct_node->constructor;
-				if (ctor->return_type) {
-					// Constructors cannot have explicit return types
-					push_error("Struct constructor cannot have an explicit return type.", ctor->return_type);
-				}
-				for (const GDScriptParser::ParameterNode *param : ctor->parameters) {
-					if (param->datatype.is_set()) {
-						r_par_types.push_back(param->datatype);
-					} else if (param->initializer && param->initializer->is_constant) {
-						// Infer type from default value
-						r_par_types.push_back(type_from_variant(param->initializer->reduced_value, param));
-					} else {
-						// No type info, use Variant
-						GDScriptParser::DataType variant_type;
-						variant_type.kind = GDScriptParser::DataType::VARIANT;
-						r_par_types.push_back(variant_type);
+			if (struct_node) {
+				if (struct_node->constructor) {
+					// Extract signature from the constructor function
+					const GDScriptParser::FunctionNode *ctor = struct_node->constructor;
+					if (ctor->return_type) {
+						// Constructors cannot have explicit return types
+						push_error("Struct constructor cannot have an explicit return type.", ctor->return_type);
 					}
-				}
-				// Count default arguments by checking initializers, consistent with class path
-				r_default_arg_count = 0;
-				for (const GDScriptParser::ParameterNode *param : ctor->parameters) {
-					if (param->initializer != nullptr) {
-						r_default_arg_count++;
+					for (const GDScriptParser::ParameterNode *param : ctor->parameters) {
+						if (param->datatype.is_set()) {
+							r_par_types.push_back(param->datatype);
+						} else if (param->initializer && param->initializer->is_constant) {
+							// Infer type from default value
+							r_par_types.push_back(type_from_variant(param->initializer->reduced_value, param));
+						} else {
+							// No type info, use Variant
+							GDScriptParser::DataType variant_type;
+							variant_type.kind = GDScriptParser::DataType::VARIANT;
+							r_par_types.push_back(variant_type);
+						}
 					}
-				}
-				if (ctor->is_static) {
-					r_method_flags.set_flag(METHOD_FLAG_STATIC);
+					// Count default arguments by checking initializers, consistent with class path
+					r_default_arg_count = 0;
+					for (const GDScriptParser::ParameterNode *param : ctor->parameters) {
+						if (param->initializer != nullptr) {
+							r_default_arg_count++;
+						}
+					}
+					if (ctor->is_static) {
+						r_method_flags.set_flag(METHOD_FLAG_STATIC);
+					}
+				} else {
+					// No explicit constructor - derive signature from struct fields
+					// Default constructor takes one argument per field
+					// ALL struct fields are optional (have default values), so
+					// default_arg_count equals the total number of fields
+					for (const GDScriptParser::StructNode::Field &field : struct_node->fields) {
+						if (field.variable && field.variable->datatype.is_set()) {
+							r_par_types.push_back(field.variable->datatype);
+						} else {
+							// No type info, use Variant
+							GDScriptParser::DataType variant_type;
+							variant_type.kind = GDScriptParser::DataType::VARIANT;
+							r_par_types.push_back(variant_type);
+						}
+					}
+					// All struct fields have default values (nil if not specified)
+					// This allows calling the constructor with 0 to N arguments
+					r_default_arg_count = struct_node->fields.size();
 				}
 			}
 
-			print_line("DEBUG get_function_signature: RETURNING true from struct constructor block");
+			print_line("DEBUG get_function_signature: RETURNING true from struct constructor block, param_count=" + itos(r_par_types.size()) + ", default_args=" + itos(r_default_arg_count));
 			return true;
 		}
 

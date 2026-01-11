@@ -232,6 +232,17 @@ GDScriptStructInstance::GDScriptStructInstance(GDScriptStruct *p_struct_type) :
 		struct_type(p_struct_type) {
 	ERR_FAIL_NULL(struct_type);
 
+	print_line("DEBUG GDScriptStructInstance::Constructor: struct_type=" + itos((uint64_t)struct_type) + ", name='" + String(struct_type->get_name()) + "', member_count=" + itos(struct_type->get_member_count()));
+
+	// Note: struct_type is owned by GDScript and outlives all instances
+	// We don't call reference() on it because the script manages its lifecycle
+
+	// Initialize reference count to 1 for the newly created instance.
+	// The creator holds the initial reference, so ref_count starts at 1.
+	// When the Variant wrapper is destroyed, it will unreference() and
+	// if count reaches 0, the instance will be deleted.
+	ref_count.init(1);
+
 	// Calculate total member count including inherited members
 	int total_count = struct_type->get_member_count();
 	members.resize(total_count);
@@ -262,9 +273,13 @@ GDScriptStructInstance::GDScriptStructInstance(GDScriptStruct *p_struct_type) :
 
 GDScriptStructInstance::~GDScriptStructInstance() {
 	// Variant members will clean themselves up
+	// struct_type is not owned by this instance
 }
 
 bool GDScriptStructInstance::reference() {
+	// SafeRefCount::ref() returns false if count is 0.
+	// For struct instances, the constructor initializes ref_count to 1,
+	// so reference() will work correctly for taking additional references.
 	return ref_count.ref();
 }
 
@@ -288,11 +303,17 @@ bool GDScriptStructInstance::set(const StringName &p_name, const Variant &p_valu
 }
 
 bool GDScriptStructInstance::get(const StringName &p_name, Variant &r_value) const {
+	print_line("DEBUG GDScriptStructInstance::get: Looking for field '" + String(p_name) + "' in struct at " + itos((uint64_t)struct_type));
+	print_line("DEBUG GDScriptStructInstance::get: struct_type->get_name() = '" + String(struct_type->get_name()) + "'");
+	print_line("DEBUG GDScriptStructInstance::get: member count = " + itos(struct_type->get_member_count()));
 	int index = struct_type->get_member_index(p_name);
+	print_line("DEBUG GDScriptStructInstance::get: Field index = " + itos(index));
 	if (index < 0) {
+		print_line("DEBUG GDScriptStructInstance::get: Field NOT found!");
 		return false;
 	}
 
+	print_line("DEBUG GDScriptStructInstance::get: Field found, returning value");
 	r_value = members[index];
 	return true;
 }

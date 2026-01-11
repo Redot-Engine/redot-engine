@@ -1317,11 +1317,12 @@ void Variant::reference(const Variant &p_variant) {
 		} break;
 		case STRUCT: {
 			// Reference the struct instance
-			GDScriptStructInstance *struct_instance = const_cast<GDScriptStructInstance *>(reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem));
+			// _data._mem contains a pointer to the struct instance, not the instance itself
+			GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(p_variant._data._mem);
 			if (struct_instance) {
 				struct_instance->reference();
 			}
-			// Copy the pointer - only copy pointer size, not entire _mem
+			// Copy the pointer
 			memcpy(_data._mem, p_variant._data._mem, sizeof(void *));
 		} break;
 		default: {
@@ -1495,12 +1496,18 @@ void Variant::_clear_internal() {
 		} break;
 		case STRUCT: {
 			// Unreference the struct instance
-			GDScriptStructInstance *struct_instance = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			// unreference() handles deletion when ref_count reaches 0
+			GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance **>(_data._mem);
 			if (struct_instance) {
+#ifndef DEV_ENABLED
 				struct_instance->unreference();
-				if (struct_instance->get_reference_count() == 0) {
-					memdelete(struct_instance);
+#else
+				// In dev builds, check ref_count before unreferencing
+				// This protects against garbage data in uninitialized Variants
+				if (struct_instance->get_reference_count() > 0) {
+					struct_instance->unreference();
 				}
+#endif
 			}
 			// Clear the pointer
 			memset(_data._mem, 0, sizeof(_data._mem));
@@ -1761,6 +1768,16 @@ String Variant::stringify(int recursion_count) const {
 		case RID: {
 			const ::RID &s = *reinterpret_cast<const ::RID *>(_data._mem);
 			return "RID(" + itos(s.get_id()) + ")";
+		}
+		case STRUCT: {
+			// Get the struct instance and convert to string
+			const GDScriptStructInstance *struct_instance = reinterpret_cast<const GDScriptStructInstance *>(_data._mem);
+			if (struct_instance) {
+				// Simple string representation for now to avoid crashes
+				// TODO: Add proper field serialization
+				return String("<") + String(struct_instance->get_struct_name()) + " struct>";
+			}
+			return "<Struct#null>";
 		}
 		default: {
 			return "<" + get_type_name(type) + ">";
@@ -2814,6 +2831,19 @@ void Variant::operator=(const Variant &p_variant) {
 		} break;
 		case PACKED_VECTOR4_ARRAY: {
 			_data.packed_array = PackedArrayRef<Vector4>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case STRUCT: {
+			// For struct instances, we need to reference the new instance and unreference the old one
+			const GDScriptStructInstance *new_struct = reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem);
+			GDScriptStructInstance *old_struct = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			if (new_struct && const_cast<GDScriptStructInstance *>(new_struct)->reference()) {
+				// Successfully took a reference to the new struct
+				memcpy(_data._mem, p_variant._data._mem, sizeof(_data._mem));
+				if (old_struct) {
+					old_struct->unreference();
+				}
+			}
+			// If reference() failed, the struct is being destroyed and we don't copy
 		} break;
 		default: {
 		}

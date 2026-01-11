@@ -79,6 +79,7 @@ public:
 	_FORCE_INLINE_ GDScriptStruct *get_struct_type() const { return struct_type; }
 	void set_struct_type(GDScriptStruct *p_struct);
 	Variant _new(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+	Variant _new_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 	virtual Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) override;
 	GDScriptStructClass(GDScriptStruct *p_struct = nullptr);
 	~GDScriptStructClass();
@@ -508,6 +509,8 @@ class GDScriptLanguage : public ScriptLanguage {
 
 	// Global struct registry for serialization/deserialization
 	HashMap<String, GDScriptStruct *> global_structs;
+	// Global struct wrapper registry for constructor access
+	HashMap<String, Ref<GDScriptStructClass>> global_struct_wrappers;
 
 #ifdef TOOLS_ENABLED
 	void _extension_loaded(const Ref<GDExtension> &p_extension);
@@ -630,6 +633,11 @@ public:
 	void unregister_struct(const String &p_fully_qualified_name);
 	GDScriptStruct *get_struct_by_name(const String &p_fully_qualified_name);
 	Variant create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data);
+
+	// Struct wrapper registry methods
+	void register_struct_wrapper(const String &p_fully_qualified_name, const Ref<GDScriptStructClass> &p_wrapper);
+	void unregister_struct_wrapper(const String &p_fully_qualified_name);
+	Ref<GDScriptStructClass> get_struct_wrapper(const String &p_fully_qualified_name);
 
 	virtual String get_name() const override;
 

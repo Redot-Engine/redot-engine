@@ -274,6 +274,7 @@ void Variant::set_named(const StringName &p_member, const Variant &p_value, bool
 }
 
 Variant Variant::get_named(const StringName &p_member, bool &r_valid) const {
+	print_line("DEBUG Variant::get_named: Looking for '" + String(p_member) + "' on Variant of type " + Variant::get_type_name(type));
 	uint32_t s = variant_setters_getters[type].size();
 	if (s) {
 		for (uint32_t i = 0; i < s; i++) {
@@ -299,11 +300,17 @@ Variant Variant::get_named(const StringName &p_member, bool &r_valid) const {
 		case Variant::STRUCT: {
 			const GDScriptStructInstance *struct_instance = VariantGetInternalPtr<GDScriptStructInstance>::get_ptr(this);
 			if (struct_instance) {
+				print_line("DEBUG Variant::get_named: STRUCT type, calling struct_instance->get(" + String(p_member) + ")");
 				Variant ret;
 				if (struct_instance->get(p_member, ret)) {
+					print_line("DEBUG Variant::get_named: SUCCESS, found field");
 					r_valid = true;
 					return ret;
+				} else {
+					print_line("DEBUG Variant::get_named: FAILED, struct_instance->get returned false");
 				}
+			} else {
+				print_line("DEBUG Variant::get_named: STRUCT type but struct_instance is NULL!");
 			}
 			r_valid = false;
 			return Variant();

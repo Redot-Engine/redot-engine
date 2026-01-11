@@ -848,6 +848,19 @@ Variant Object::callp(const StringName &p_method, const Variant **p_args, int p_
 	Variant ret;
 	OBJ_DEBUG_LOCK
 
+#ifdef MODULE_GDSCRIPT_ENABLED
+	// Special case for GDScriptStructClass to support struct constructors
+	// This is needed because GDScriptStructClass::callp needs to be called directly,
+	// but callp is not virtual so Object::callp doesn't dispatch to it.
+	if (get_class_name() == StringName("GDScriptStructClass")) {
+		// Forward to GDScriptStructClass::callp by using a Callable
+		Callable callable = Callable(this, p_method);
+		if (callable.is_valid()) {
+			return callable.callp(Variant(const_cast<const Variant **>(p_args), p_argcount), r_error);
+		}
+	}
+#endif
+
 	if (script_instance) {
 		ret = script_instance->callp(p_method, p_args, p_argcount, r_error);
 		// Force jump table.
@@ -871,8 +884,10 @@ Variant Object::callp(const StringName &p_method, const Variant **p_args, int p_
 	MethodBind *method = ClassDB::get_method(get_class_name(), p_method);
 
 	if (method) {
+		print_line("DEBUG Object::callp: Found method via ClassDB: " + String(p_method) + " on class " + get_class_name());
 		ret = method->call(this, p_args, p_argcount, r_error);
 	} else {
+		print_line("DEBUG Object::callp: Method NOT found via ClassDB: " + String(p_method) + " on class " + get_class_name());
 		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
 	}
 
