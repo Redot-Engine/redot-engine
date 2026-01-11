@@ -38,7 +38,7 @@
 #include "core/variant/variant.h"
 
 // MCP Protocol Version
-static constexpr const char *MCP_PROTOCOL_VERSION = "2025-11-25";
+static constexpr const char *MCP_PROTOCOL_VERSION = "2024-11-05";
 static constexpr const char *MCP_SERVER_NAME = "redot-mcp";
 static constexpr const char *MCP_SERVER_VERSION = "1.0.0";
 

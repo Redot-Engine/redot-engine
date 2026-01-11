@@ -90,10 +90,12 @@ public:
 	Error stop_game_process();
 	bool is_game_running() const;
 	String get_game_log_path() const;
+	OS::ProcessID get_game_pid() const;
 
 private:
 	OS::ProcessID game_pid = 0;
 	String game_log_path;
 	mutable Mutex process_mutex; // Protects game_pid and game_log_path
 	void _check_game_process(); // Reaper logic
+	int wake_fds[2];
 };

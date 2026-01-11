@@ -615,8 +615,9 @@ void Main::print_help(const char *p_binary) {
 	print_help_option("--gpu-index <device_index>", "Use a specific GPU (run with --verbose to get a list of available devices).\n");
 	print_help_option("--text-driver <driver>", "Text driver (used for font rendering, bidirectional support and shaping).\n");
 	print_help_option("--tablet-driver <driver>", "Pen tablet input driver.\n");
-	print_help_option("--headless", "Enable headless mode (--display-driver headless --audio-driver Dummy). Useful for servers and with --script.\\n");
+	print_help_option("--headless", "Enable headless mode (--display-driver headless --audio-driver Dummy). Useful for servers and with --script.\n");
 #ifdef MODULE_MCP_ENABLED
+
 	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\n", CLI_OPTION_AVAILABILITY_EDITOR);
 	print_help_option("--mcp-bridge-port <port>", "Port for the MCP Bridge connection (internal use).\n", CLI_OPTION_AVAILABILITY_EDITOR);
 	print_help_option("--run-tests <path>", "Run a unit test script headlessly and exit.\n", CLI_OPTION_AVAILABILITY_EDITOR);
@@ -4778,7 +4779,10 @@ int Main::start() {
 #ifdef MODULE_MCP_ENABLED
 	if (mcp_bridge_port != 0) {
 		if (MCPBridge::get_singleton()) {
-			MCPBridge::get_singleton()->connect_to_server("127.0.0.1", mcp_bridge_port);
+			Error err = MCPBridge::get_singleton()->connect_to_server("127.0.0.1", mcp_bridge_port);
+			if (err != OK) {
+				OS::get_singleton()->print("Error: MCPBridge failed to connect to server at 127.0.0.1:%d. Error code: %d\n", mcp_bridge_port, err);
+			}
 		} else {
 			OS::get_singleton()->print("Error: MCPBridge singleton is null despite module being enabled.\n");
 		}
@@ -4797,7 +4801,11 @@ int Main::start() {
 	// If MCP server mode is enabled, start the server and don't continue to the main loop.
 	if (mcp_server_enabled) {
 		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
-		OS::get_singleton()->benchmark_dump();
+
+		// Disable engine stdout printing to keep JSON-RPC stream pure
+		if (Engine::get_singleton()) {
+			Engine::get_singleton()->set_print_to_stdout(false);
+		}
 
 		if (MCPServer::get_singleton()) {
 			MCPServer::get_singleton()->start();
@@ -4810,7 +4818,6 @@ int Main::start() {
 
 	if (!mcp_run_tests.is_empty()) {
 		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
-		OS::get_singleton()->benchmark_dump();
 
 		MCPServer::run_tests(mcp_run_tests);
 		return EXIT_SUCCESS;
@@ -4818,7 +4825,10 @@ int Main::start() {
 #endif
 
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
-	OS::get_singleton()->benchmark_dump();
+#ifdef MODULE_MCP_ENABLED
+	if (!mcp_server_enabled && mcp_run_tests.is_empty())
+#endif
+		OS::get_singleton()->benchmark_dump();
 
 	return EXIT_SUCCESS;
 }

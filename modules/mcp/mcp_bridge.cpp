@@ -65,6 +65,7 @@ void MCPBridge::_bind_methods() {
 }
 
 Error MCPBridge::start_server(int p_port) {
+	MutexLock lock(mutex);
 	is_host = true;
 	if (p_port == 0) {
 		for (int i = 10000; i < 11000; i++) {
@@ -86,6 +87,7 @@ Error MCPBridge::start_server(int p_port) {
 }
 
 bool MCPBridge::is_client_connected() const {
+	MutexLock lock(mutex);
 	if (connection.is_valid()) {
 		connection->poll();
 		return connection->get_status() == StreamPeerTCP::STATUS_CONNECTED;
@@ -94,6 +96,7 @@ bool MCPBridge::is_client_connected() const {
 }
 
 Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
+	MutexLock lock(mutex);
 	is_host = false;
 	connection.instantiate();
 	port = p_port;
@@ -102,10 +105,15 @@ Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
 }
 
 Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args) {
-	if (!is_client_connected()) {
-		Dictionary err;
-		err["error"] = "Bridge not connected";
-		return err;
+	Ref<StreamPeerTCP> conn;
+	{
+		MutexLock lock(mutex);
+		if (!connection.is_valid() || connection->get_status() != StreamPeerTCP::STATUS_CONNECTED) {
+			Dictionary err;
+			err["error"] = "Bridge not connected";
+			return err;
+		}
+		conn = connection;
 	}
 
 	Dictionary cmd;
@@ -114,19 +122,19 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 
 	String json = JSON::stringify(cmd);
 	CharString utf8 = json.utf8();
-	connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
-	connection->put_u8('\n');
+	conn->put_data((const uint8_t *)utf8.get_data(), utf8.length());
+	conn->put_u8('\n');
 
 	// Wait for response (blocking with timeout)
 	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
 	String response_str;
 	while (OS::get_singleton()->get_ticks_msec() - start_time < 5000) {
-		connection->poll();
-		if (connection->get_available_bytes() > 0) {
+		conn->poll();
+		if (conn->get_available_bytes() > 0) {
 			uint8_t c;
-			int read;
-			connection->get_partial_data(&c, 1, read);
-			if (read > 0) {
+			int read_bytes;
+			conn->get_partial_data(&c, 1, read_bytes);
+			if (read_bytes > 0) {
 				if (c == '\n') {
 					goto parsed;
 				}
@@ -161,6 +169,7 @@ parsed:
 }
 
 void MCPBridge::update() {
+	MutexLock lock(mutex);
 	if (is_host) {
 		if (server->is_connection_available()) {
 			if (connection.is_valid()) {
@@ -172,27 +181,31 @@ void MCPBridge::update() {
 		}
 	} else {
 		// Client (Game) side
-		if (is_client_connected()) {
-			while (connection->get_available_bytes() > 0) {
+		if (connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
+			Ref<StreamPeerTCP> conn = connection;
+			while (conn->get_available_bytes() > 0) {
 				uint8_t c;
-				int read;
-				connection->get_partial_data(&c, 1, read);
-				if (read > 0) {
+				int read_bytes;
+				conn->get_partial_data(&c, 1, read_bytes);
+				if (read_bytes > 0) {
 					if (c == '\n') {
-						Variant cmd_var = JSON::parse_string(partial_data);
+						String cmd_str = partial_data;
 						partial_data = "";
-						if (cmd_var.get_type() == Variant::DICTIONARY) {
-							// Release lock during command processing to avoid deadlocks
-							mutex.unlock();
-							Dictionary resp = _process_command(cmd_var);
-							mutex.lock();
 
+						mutex.unlock();
+						Variant cmd_var = JSON::parse_string(cmd_str);
+						if (cmd_var.get_type() == Variant::DICTIONARY) {
+							Dictionary resp = _process_command(cmd_var);
+							String resp_json = JSON::stringify(resp);
+							CharString utf8 = resp_json.utf8();
+
+							mutex.lock();
 							if (connection.is_valid() && connection->get_status() == StreamPeerTCP::STATUS_CONNECTED) {
-								String resp_json = JSON::stringify(resp);
-								CharString utf8 = resp_json.utf8();
 								connection->put_data((const uint8_t *)utf8.get_data(), utf8.length());
 								connection->put_u8('\n');
 							}
+						} else {
+							mutex.lock();
 						}
 					} else {
 						if (partial_data.length() > 1024 * 1024) { // 1MB limit
@@ -257,6 +270,10 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
 		if (st) {
 			Window *vp = st->get_root();
+			if (!vp) {
+				resp["error"] = "No root window found";
+				return resp;
+			}
 			Ref<Image> img = vp->get_texture()->get_image();
 
 			float scale = args.get("scale", 1.0);
@@ -276,7 +293,16 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 		Vector2 pos;
 		if (args.has("node_path")) {
 			SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
-			Node *node = st->get_root()->get_node_or_null(args["node_path"]);
+			if (!st) {
+				resp["error"] = "No scene tree found";
+				return resp;
+			}
+			Window *root_window = st->get_root();
+			if (!root_window) {
+				resp["error"] = "No root window found";
+				return resp;
+			}
+			Node *node = root_window->get_node_or_null(args["node_path"]);
 			Control *ctrl = Object::cast_to<Control>(node);
 			if (ctrl) {
 				pos = ctrl->get_screen_transform().get_origin() + ctrl->get_size() / 2.0;
@@ -325,8 +351,13 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 	} else if (action == "inspect_live") {
 		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
 		if (st) {
+			Window *root_window = st->get_root();
+			if (!root_window) {
+				resp["error"] = "No root window found";
+				return resp;
+			}
 			String path = args.get("path", ".");
-			Node *node = (path == "." || path.is_empty()) ? (Node *)st->get_root() : st->get_root()->get_node_or_null(path);
+			Node *node = (path == "." || path.is_empty()) ? (Node *)root_window : root_window->get_node_or_null(path);
 			if (node) {
 				bool recursive = args.get("recursive", false);
 				int max_depth = args.get("depth", 5);

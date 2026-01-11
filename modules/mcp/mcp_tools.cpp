@@ -53,10 +53,6 @@
 #include "core/doc_data.h"
 #include <functional>
 
-OS::ProcessID MCPTools::last_game_pid = 0;
-String MCPTools::last_log_path = "";
-int MCPTools::bridge_port = 0;
-
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -113,7 +109,6 @@ MCPTools::~MCPTools() {
 }
 
 void MCPTools::_bind_methods() {
-	// Tools are called internally
 }
 
 // ============================================================================
@@ -330,7 +325,7 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		Error err = ResourceSaver::save(new_scene, normalized_scene);
 		memdelete(root_node);
 		if (err != OK) {
-			result.set_error("Failed to save scene");
+			result.set_error("Failed to save scene: " + itos(err));
 		} else {
 			result.add_text("Scene created: " + normalized_scene);
 		}
@@ -533,16 +528,22 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 			}
 			result.set_error("Invalid resource type");
 		} else {
-			ResourceSaver::save(res, normalized);
-			result.add_text("Created resource at " + normalized);
+			Error err = ResourceSaver::save(res, normalized);
+			if (err != OK) {
+				result.set_error("Failed to save resource: " + itos(err));
+			} else {
+				result.add_text("Created resource at " + normalized);
+			}
 		}
 		return result;
 	}
+
 	Ref<Resource> res = ResourceLoader::load(normalized);
 	if (res.is_null()) {
 		result.set_error("Failed to load resource");
 		return result;
 	}
+
 	if (action == "inspect") {
 		Dictionary props;
 		List<PropertyInfo> plist;
@@ -557,16 +558,24 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 		String prop = p_args.get("property", "");
 		Variant val = _json_to_variant(p_args.get("value", Variant()));
 		res->set(prop, val);
-		ResourceSaver::save(res, normalized);
-		result.add_text("Modified resource");
+		Error err = ResourceSaver::save(res, normalized);
+		if (err != OK) {
+			result.set_error("Failed to save modified resource: " + itos(err));
+		} else {
+			result.add_text("Modified resource");
+		}
 	} else if (action == "duplicate") {
 		String np = p_args.get("new_path", "");
 		if (np.is_empty()) {
 			result.set_error("Missing new_path");
 		} else {
 			Ref<Resource> copy = res->duplicate();
-			ResourceSaver::save(copy, normalize_path(np));
-			result.add_text("Duplicated resource");
+			Error err = ResourceSaver::save(copy, normalize_path(np));
+			if (err != OK) {
+				result.set_error("Failed to save duplicated resource: " + itos(err));
+			} else {
+				result.add_text("Duplicated resource");
+			}
 		}
 	}
 	return result;
@@ -581,7 +590,6 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 			Dictionary info;
 			info["class"] = query;
 			info["inherits"] = ClassDB::get_parent_class(query);
-
 			Array props;
 			List<PropertyInfo> plist;
 			ClassDB::get_property_list(query, &plist);
@@ -589,7 +597,6 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 				props.push_back(p.name + " (" + Variant::get_type_name(p.type) + ")");
 			}
 			info["properties"] = props;
-
 			Array signals;
 			List<MethodInfo> slist;
 			ClassDB::get_signal_list(query, &slist);
@@ -597,7 +604,6 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 				signals.push_back(s.name);
 			}
 			info["signals"] = signals;
-
 			Array methods;
 			List<MethodInfo> mlist;
 			ClassDB::get_method_list(query, &mlist);
@@ -616,9 +622,7 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 				methods.push_back(sig);
 			}
 			info["methods"] = methods;
-
 			result.add_text(JSON::stringify(info, "  "));
-			return result;
 		} else {
 			result.set_error("Class not found");
 		}
@@ -654,9 +658,7 @@ MCPTools::ToolResult MCPTools::tool_code_intel(const Dictionary &p_args) {
 				Dictionary symbols;
 				const GDScriptParser::ClassNode *head = parser.get_tree();
 				if (head) {
-					Array functions;
-					Array variables;
-					Array signals;
+					Array functions, variables, signals;
 					for (int i = 0; i < head->members.size(); i++) {
 						const GDScriptParser::ClassNode::Member &m = head->members[i];
 						if (m.type == GDScriptParser::ClassNode::Member::FUNCTION) {
@@ -698,7 +700,6 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		if (MCPServer::get_singleton()->is_game_running()) {
 			MCPServer::get_singleton()->stop_game_process();
 		}
-
 		if (MCPBridge::get_singleton()->get_port() == 0) {
 			Error err = MCPBridge::get_singleton()->start_server();
 			if (err != OK) {
@@ -706,14 +707,16 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 				return result;
 			}
 		}
-		bridge_port = MCPBridge::get_singleton()->get_port();
-		if (bridge_port == 0) {
+		int b_port = MCPBridge::get_singleton()->get_port();
+		if (b_port == 0) {
 			result.set_error("Bridge port is 0 after start");
 			return result;
 		}
-
 		String lf = normalize_path("res://.redot/mcp_game.log");
-		last_log_path = lf;
+		if (!validate_path(lf)) {
+			result.set_error("Invalid log path: " + lf);
+			return result;
+		}
 		List<String> args;
 		args.push_back("--path");
 		args.push_back(ProjectSettings::get_singleton()->get_resource_path());
@@ -721,69 +724,78 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		args.push_back(ProjectSettings::get_singleton()->globalize_path(lf));
 		args.push_back("--no-header");
 		args.push_back("--mcp-bridge-port");
-		args.push_back(itos(bridge_port));
-
-		Error err = OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), args, &last_game_pid);
+		args.push_back(itos(b_port));
+		Error err = MCPServer::get_singleton()->start_game_process(args, ProjectSettings::get_singleton()->globalize_path(lf));
 		if (err != OK) {
-			result.set_error("Failed to run project");
+			result.set_error("Failed to run project: " + itos(err));
 		} else {
-			result.add_text("Started with bridge port " + itos(bridge_port));
+			result.add_text("Started with bridge port " + itos(b_port));
 		}
 	} else if (action == "stop") {
-		if (last_game_pid != 0) {
-			if (OS::get_singleton()->is_process_running(last_game_pid)) {
-				Error err = OS::get_singleton()->kill(last_game_pid);
-				if (err == OK) {
-					last_game_pid = 0;
-					result.add_text("Stopped");
-				} else {
-					result.set_error("Failed to kill process: " + itos(err));
-				}
+		if (MCPServer::get_singleton()->is_game_running()) {
+			Error err = MCPServer::get_singleton()->stop_game_process();
+			if (err == OK) {
+				result.add_text("Stopped");
 			} else {
-				last_game_pid = 0;
-				result.set_error("Process is no longer running");
+				result.set_error("Failed to stop process: " + itos(err));
 			}
 		} else {
 			result.set_error("Not running");
 		}
 	} else if (action == "output") {
-		if (last_log_path.is_empty()) {
-			result.set_error("No log");
+		String glp = MCPServer::get_singleton()->get_game_log_path();
+		if (glp.is_empty()) {
+			result.set_error("No log path available");
 		} else {
-			Ref<FileAccess> f = FileAccess::open(last_log_path, FileAccess::READ);
+			Ref<FileAccess> f = FileAccess::open(glp, FileAccess::READ);
 			if (f.is_valid()) {
 				result.add_text(f->get_as_text());
 			} else {
-				result.set_error("Log not found");
+				result.set_error("Log file not found: " + glp);
 			}
 		}
 	} else if (action == "read_file_res") {
-		Ref<FileAccess> f = FileAccess::open(normalize_path(p_args.get("path", "")), FileAccess::READ);
+		String p = p_args.get("path", "");
+		if (!validate_path(p)) {
+			result.set_error("Invalid path: " + p);
+			return result;
+		}
+		Ref<FileAccess> f = FileAccess::open(normalize_path(p), FileAccess::READ);
 		if (f.is_valid()) {
 			result.add_text(f->get_as_text());
 		} else {
-			result.set_error("Failed to read");
+			result.set_error("Failed to read: " + p);
 		}
 	} else if (action == "create_file_res") {
-		String p = normalize_path(p_args.get("path", ""));
-		if (p.ends_with(".gd") && FileAccess::exists(p)) {
-			result.set_error("Error: File '" + p + "' already exists. To modify GDScripts, you must use your native 'edit' tool instead of this MCP tool. This ensures precise and efficient logic changes.");
+		String p = p_args.get("path", "");
+		if (!validate_path(p)) {
+			result.set_error("Invalid path: " + p);
 			return result;
 		}
-		String dir_path = p.get_base_dir();
+		String norm_p = normalize_path(p);
+		if (norm_p.ends_with(".gd") && FileAccess::exists(norm_p)) {
+			result.set_error("Error: File '" + norm_p + "' already exists. To modify GDScripts, you must use your native 'edit' tool instead of this MCP tool.");
+			return result;
+		}
+		String dir_path = norm_p.get_base_dir();
 		Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 		if (!d->dir_exists(dir_path)) {
 			d->make_dir_recursive(dir_path);
 		}
-		Ref<FileAccess> f = FileAccess::open(p, FileAccess::WRITE);
+		Ref<FileAccess> f = FileAccess::open(norm_p, FileAccess::WRITE);
 		if (f.is_valid()) {
 			f->store_string(p_args.get("content", ""));
-			result.add_text("Wrote to " + p);
+			result.add_text("Wrote to " + norm_p);
 		} else {
-			result.set_error("Failed to write");
+			result.set_error("Failed to write: " + norm_p);
 		}
 	} else if (action == "list_files") {
-		Ref<DirAccess> d = DirAccess::open(normalize_path(p_args.get("path", "res://")));
+		String p = p_args.get("path", "res://");
+		if (!validate_path(p)) {
+			result.set_error("Invalid path: " + p);
+			return result;
+		}
+		Ref<DirAccess> d = DirAccess::open(normalize_path(p));
 		if (d.is_valid()) {
 			Array e;
 			d->list_dir_begin();
@@ -799,7 +811,7 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 			}
 			result.add_text(JSON::stringify(e));
 		} else {
-			result.set_error("Failed to list");
+			result.set_error("Failed to list: " + p);
 		}
 	} else if (action == "set_setting") {
 		ProjectSettings::get_singleton()->set_setting(p_args.get("setting", ""), p_args.get("value", Variant()));
@@ -819,22 +831,17 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 MCPTools::ToolResult MCPTools::tool_game_control(const Dictionary &p_args) {
 	String action = p_args.get("action", "");
 	ToolResult result;
-
-	// Handle 'wait' locally on the server to allow waiting for connections
 	if (action == "wait") {
 		float secs = p_args.get("seconds", 1.0);
 		OS::get_singleton()->delay_usec(secs * 1000000);
 		result.add_text("Waited " + String::num(secs) + " seconds on server.");
 		return result;
 	}
-
 	if (!MCPBridge::get_singleton()->is_client_connected()) {
 		result.set_error("Game process not connected to bridge yet. Try action='wait' first.");
 		return result;
 	}
-
 	Dictionary resp = MCPBridge::get_singleton()->send_command(action, p_args);
-
 	if (resp.has("error")) {
 		result.set_error(resp["error"]);
 	} else if (resp.has("image_base64")) {
