@@ -216,18 +216,18 @@ Array MCPTools::get_tool_definitions() {
 	// project_config
 	{
 		Dictionary props;
-		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'get_info', 'set_setting', 'add_input', 'add_autoload', 'run', 'stop', 'output', 'list_files', 'read_file', 'write_file', 'open_editor'");
+		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'get_info', 'set_setting', 'add_input', 'add_autoload', 'run', 'stop', 'output', 'list_files', 'read_file_res', 'create_file_res', 'open_editor'");
 		props["setting"] = MCPSchemaBuilder::make_string_property("Setting key or Autoload/Input name");
 		props["value"] = MCPSchemaBuilder::make_object_property("Value for setting");
-		props["path"] = MCPSchemaBuilder::make_string_property("File/Directory path");
-		props["content"] = MCPSchemaBuilder::make_string_property("Content for 'write_file'");
+		props["path"] = MCPSchemaBuilder::make_string_property("File/Directory path (res://)");
+		props["content"] = MCPSchemaBuilder::make_string_property("Content for 'create_file_res'");
 
 		Array required;
 		required.push_back("action");
 
 		Dictionary tool;
 		tool["name"] = "project_config";
-		tool["description"] = "Global project settings, management, and Redot-specific I/O. Note: For editing existing GDScript files, use native text editing tools if available for better precision.";
+		tool["description"] = "Global project settings and Redot-specific I/O. Note: For editing existing GDScript files, use native text editing tools for precision.";
 		tool["inputSchema"] = MCPSchemaBuilder::make_object_schema(props, required);
 		tools.push_back(tool);
 	}
@@ -731,15 +731,19 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 				result.set_error("Log not found");
 			}
 		}
-	} else if (action == "read_file") {
+	} else if (action == "read_file_res") {
 		Ref<FileAccess> f = FileAccess::open(normalize_path(p_args.get("path", "")), FileAccess::READ);
 		if (f.is_valid()) {
 			result.add_text(f->get_as_text());
 		} else {
 			result.set_error("Failed to read");
 		}
-	} else if (action == "write_file") {
+	} else if (action == "create_file_res") {
 		String p = normalize_path(p_args.get("path", ""));
+		if (p.ends_with(".gd") && FileAccess::exists(p)) {
+			result.set_error("Error: File '" + p + "' already exists. To modify GDScripts, you must use your native 'edit' tool instead of this MCP tool. This ensures precise and efficient logic changes.");
+			return result;
+		}
 		String dir_path = p.get_base_dir();
 		Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 		if (!d->dir_exists(dir_path)) {
