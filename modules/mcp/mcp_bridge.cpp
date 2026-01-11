@@ -35,6 +35,7 @@
 #include "core/crypto/crypto_core.h"
 #include "core/input/input.h"
 #include "core/input/input_enums.h"
+#include "core/input/input_map.h"
 #include "core/io/json.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
@@ -185,6 +186,46 @@ void MCPBridge::update() {
 	}
 }
 
+void MCPBridge::_trigger_action_event(const StringName &p_action) {
+	if (!InputMap::get_singleton()->has_action(p_action)) {
+		return;
+	}
+
+	const List<Ref<InputEvent>> *events_ptr = InputMap::get_singleton()->action_get_events(p_action);
+	if (!events_ptr) {
+		return;
+	}
+	const List<Ref<InputEvent>> &events = *events_ptr;
+
+	for (const Ref<InputEvent> &ev : events) {
+		// Try to find a Key or Mouse Button to simulate
+		Ref<InputEventKey> key_ev = ev;
+		Ref<InputEventMouseButton> mouse_ev = ev;
+
+		if (key_ev.is_valid() || mouse_ev.is_valid()) {
+			Ref<InputEvent> press_ev = ev->duplicate();
+			Ref<InputEvent> release_ev = ev->duplicate();
+
+			if (key_ev.is_valid()) {
+				Ref<InputEventKey> k = press_ev;
+				k->set_pressed(true);
+				Ref<InputEventKey> k_up = release_ev;
+				k_up->set_pressed(false);
+			} else if (mouse_ev.is_valid()) {
+				Ref<InputEventMouseButton> m = press_ev;
+				m->set_pressed(true);
+				Ref<InputEventMouseButton> m_up = release_ev;
+				m_up->set_pressed(false);
+			}
+
+			Input::get_singleton()->parse_input_event(press_ev);
+			OS::get_singleton()->delay_usec(50000); // 50ms hold
+			Input::get_singleton()->parse_input_event(release_ev);
+			return; // Triggered one valid event for the action
+		}
+	}
+}
+
 Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 	String action = p_cmd.get("action", "");
 	Dictionary args = p_cmd.get("args", Dictionary());
@@ -309,6 +350,15 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 		}
 	} else if (action == "type") {
 		String text = args.get("text", "");
+
+		// Smart Fallback: Check if the text matches an Input Action (e.g. "ui_cancel")
+		// Only check if it's more than 1 char and doesn't look like a special key [KEY]
+		if (text.length() > 1 && !text.begins_with("[") && InputMap::get_singleton()->has_action(text)) {
+			_trigger_action_event(text);
+			resp["status"] = "triggered_action_fallback";
+			return resp;
+		}
+
 		for (int i = 0; i < text.length(); i++) {
 			String token;
 			if (text[i] == '[' && text.find("]", i) != -1) {
@@ -351,6 +401,16 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			Input::get_singleton()->parse_input_event(ev_up);
 		}
 		resp["status"] = "typed";
+	} else if (action == "trigger_action") {
+		String action_name = args.get("action_name", "");
+		if (action_name.is_empty()) {
+			resp["error"] = "Missing action_name";
+		} else if (!InputMap::get_singleton()->has_action(action_name)) {
+			resp["error"] = "Action not found: " + action_name;
+		} else {
+			_trigger_action_event(action_name);
+			resp["status"] = "triggered_action";
+		}
 	} else if (action == "inspect_live") {
 		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
 		if (st) {

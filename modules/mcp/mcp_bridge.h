@@ -52,6 +52,7 @@ private:
 
 	// Internal command handling
 	Dictionary _process_command(const Dictionary &p_cmd);
+	void _trigger_action_event(const StringName &p_action);
 
 protected:
 	static void _bind_methods();

@@ -235,10 +235,11 @@ Array MCPTools::get_tool_definitions() {
 	// game_control
 	{
 		Dictionary props;
-		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'capture', 'click', 'type', 'inspect_live', 'wait'");
+		props["action"] = MCPSchemaBuilder::make_string_property("Action: 'capture', 'click', 'type', 'trigger_action', 'inspect_live', 'wait'");
 		props["scale"] = MCPSchemaBuilder::make_object_property("Scale for screenshot (0.1 to 1.0)");
 		props["node_path"] = MCPSchemaBuilder::make_string_property("Node path for click/inspect");
 		props["text"] = MCPSchemaBuilder::make_string_property("Text for 'type'");
+		props["action_name"] = MCPSchemaBuilder::make_string_property("Action name for 'trigger_action' (e.g. ui_cancel)");
 		props["x"] = MCPSchemaBuilder::make_object_property("X coord for click");
 		props["y"] = MCPSchemaBuilder::make_object_property("Y coord for click");
 		props["seconds"] = MCPSchemaBuilder::make_object_property("Wait duration");
