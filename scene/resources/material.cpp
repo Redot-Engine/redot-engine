@@ -1357,7 +1357,7 @@ void vertex() {)";
 	if (flags[FLAG_FIXED_SIZE]) {
 		code += R"(
 	// Fixed Size: Enabled
-	if (PROJECTION_MATRIX[3][3] != 0.0) {
+	if (PROJECTION_MATRIX[2][3] == 0.0) {
 		// Orthogonal matrix; try to do about the same with viewport size.
 		float h = abs(1.0 / (2.0 * PROJECTION_MATRIX[1][1]));
 		// Consistent with vertical FOV (Keep Height).
@@ -1367,7 +1367,7 @@ void vertex() {)";
 		MODELVIEW_MATRIX[2] *= sc;
 	} else {
 		// Scale by depth.
-		float sc = -(MODELVIEW_MATRIX)[3].z;
+		float sc = length((MODELVIEW_MATRIX)[3].xyz);
 		MODELVIEW_MATRIX[0] *= sc;
 		MODELVIEW_MATRIX[1] *= sc;
 		MODELVIEW_MATRIX[2] *= sc;
@@ -1841,7 +1841,8 @@ void fragment() {)";
 		code += R"(
 	// Proximity Fade: Enabled
 	float proximity_depth_tex = textureLod(depth_texture, SCREEN_UV, 0.0).r;
-	vec4 proximity_view_pos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, proximity_depth_tex, 1.0);
+	vec4 ndc = OUTPUT_IS_SRGB ? vec4(vec3(SCREEN_UV, proximity_depth_tex) * 2.0 - 1.0, 1.0) : vec4(SCREEN_UV * 2.0 - 1.0, proximity_depth_tex, 1.0);
+	vec4 proximity_view_pos = INV_PROJECTION_MATRIX * ndc;
 	proximity_view_pos.xyz /= proximity_view_pos.w;
 	ALPHA *= clamp(1.0 - smoothstep(proximity_view_pos.z + proximity_fade_distance, proximity_view_pos.z, VERTEX.z), 0.0, 1.0);
 )";

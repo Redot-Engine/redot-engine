@@ -114,10 +114,6 @@ class RenderingDeviceDriverD3D12 : public RenderingDeviceDriver {
 		bool native_16bit_ops = false;
 	};
 
-	struct StorageBufferCapabilities {
-		bool storage_buffer_16_bit_access_is_supported = false;
-	};
-
 	struct FormatCapabilities {
 		bool relaxed_casting_supported = false;
 	};
@@ -143,7 +139,6 @@ class RenderingDeviceDriverD3D12 : public RenderingDeviceDriver {
 	FragmentShadingRateCapabilities fsr_capabilities;
 	FragmentDensityMapCapabilities fdm_capabilities;
 	ShaderCapabilities shader_capabilities;
-	StorageBufferCapabilities storage_buffer_capabilities;
 	FormatCapabilities format_capabilities;
 	BarrierCapabilities barrier_capabilities;
 	MiscFeaturesSupport misc_features_support;
@@ -360,12 +355,10 @@ private:
 		TextureInfo *main_texture = nullptr;
 
 		UINT mapped_subresource = UINT_MAX;
-		SelfList<TextureInfo> pending_clear{ this };
 #ifdef DEBUG_ENABLED
 		bool created_from_extension = false;
 #endif
 	};
-	SelfList<TextureInfo>::List textures_pending_clear;
 
 	HashMap<DXGI_FORMAT, uint32_t> format_sample_counts_mask_cache;
 	Mutex format_sample_counts_mask_cache_mutex;
