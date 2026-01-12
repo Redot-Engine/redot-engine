@@ -37,6 +37,8 @@
 #include "scene/main/scene_tree_fti.h"
 #include "scene/resources/mesh.h"
 
+#include <cstdlib>
+
 #undef Window
 
 class PackedScene;
