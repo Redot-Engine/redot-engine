@@ -193,7 +193,7 @@ Variant GDScriptStructClass::_variant_from_struct_instance(GDScriptStructInstanc
 }
 
 Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
-	ERR_FAIL_NULL_V(struct_type, Variant());
+	ERR_FAIL_COND_V(!struct_type.is_valid(), Variant());
 
 	// Create the struct instance and return it as a Variant
 	// The COW implementation handles everything internally
