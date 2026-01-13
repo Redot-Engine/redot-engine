@@ -3239,10 +3239,9 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	}
 
 	// Also check if it exists globally (from a previous reload)
-	GDScriptStruct *existing = GDScriptLanguage::get_singleton()->get_struct_by_name(p_struct->fqsn);
-	if (existing) {
+	Ref<GDScriptStruct> existing = GDScriptLanguage::get_singleton()->get_struct_by_name(p_struct->fqsn);
+	if (existing.is_valid()) {
 		// Already compiled globally, just add it to this script's struct list
-		existing->reference(); // Take a reference for p_script->structs
 		p_script->structs[p_struct->identifier->name] = existing;
 
 		// Create a wrapper class for struct construction (needed for hot-reload and StructName.new())
@@ -3256,11 +3255,9 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 		return OK;
 	}
 
-	// Create the GDScriptStruct object
-	// CRITICAL: The constructor sets ref_count = 1, which is the compiler's initial ownership
-	// We do NOT call reference() here - the constructor provides the first reference
-	GDScriptStruct *gdstruct = memnew(GDScriptStruct(p_struct->identifier->name));
-	// No reference() call needed - constructor already set ref_count = 1 for the compiler
+	// Create the GDScriptStruct object with RefCounted (COW architecture)
+	Ref<GDScriptStruct> gdstruct;
+	gdstruct.instantiate();
 	gdstruct->set_owner(p_script);
 	gdstruct->set_fully_qualified_name(p_struct->fqsn);
 
@@ -3328,18 +3325,7 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 			Error err = OK;
 			GDScriptFunction *func = _parse_function(err, p_script, p_class, method);
 			if (err) {
-				// ERROR PATH: Clean up properly with RAII-style unwinding
-				// At this point, only the compiler's reference exists (ref_count = 1)
-				// The struct hasn't been added to p_script->structs or global registry yet
-				gdstruct->unreference(); // Release compiler's reference (ref_count goes 1 -> 0)
-
-				// Verify ref_count is 0 (should be, since we had the only reference)
-				if (gdstruct->get_reference_count() == 0) {
-					memdelete(gdstruct); // Safe to delete now
-				} else {
-					ERR_PRINT(vformat("Struct '%s' has unexpected references after compilation error: ref_count = %d",
-							p_struct->identifier->name, gdstruct->get_reference_count()));
-				}
+				// ERROR PATH: The Ref<> will automatically clean up when it goes out of scope
 				return err;
 			}
 
@@ -3348,38 +3334,22 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 		}
 	}
 
-	// Register the struct in the script (takes a reference)
-	// The script HashMap stores the raw pointer, so we add a reference for it
-	gdstruct->reference(); // Second reference: p_script->structs owns it
+	// Register the struct in the script (Ref<> automatically manages reference counting)
 	p_script->structs[p_struct->identifier->name] = gdstruct;
 
 	// Register the struct in the global registry for serialization
-	// NOTE: register_struct() takes its own reference, so we don't take one here
+	// The registry stores its own Ref<>, so reference counting is automatic
 	GDScriptLanguage::get_singleton()->register_struct(p_struct->fqsn, gdstruct);
 
 	// Create a wrapper class for struct construction
 	// This allows `StructName.new()` to work
 	Ref<GDScriptStructClass> struct_wrapper;
-	struct_wrapper.instantiate(); // RefCounted with ref_count = 1
-	// set_struct_type will take another reference (Fourth reference: struct_wrapper owns it)
+	struct_wrapper.instantiate();
 	struct_wrapper->set_struct_type(gdstruct);
 
 	// CRITICAL: Register the wrapper in the GLOBAL registry (not script-specific constants)
 	// This ensures the wrapper persists across multiple compilation passes
 	GDScriptLanguage::get_singleton()->register_struct_wrapper(p_struct->fqsn, struct_wrapper);
-
-	// REFERENCE COUNTING SUMMARY:
-	// After successful compilation, gdstruct has 4 references:
-	// 1. Constructor/Compiler (released at function end)
-	// 2. p_script->structs HashMap (released when script is cleared/struct is removed)
-	// 3. Global struct registry (released when GDScriptLanguage::unregister_struct is called)
-	// 4. struct_wrapper in global wrapper registry (released when wrapper is unregistered)
-	//
-	// Total: 4 references (constructor + script + registry + wrapper)
-	//
-	// We must explicitly release the compiler's reference (ref #1) before returning.
-	// The struct stays alive because the other 3 references remain.
-	gdstruct->unreference(); // Release compiler's reference (ref_count: 4 -> 3)
 
 	return OK;
 }
@@ -3405,7 +3375,7 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 	p_script->simplified_icon_path = p_class->simplified_icon_path;
 
 	HashMap<StringName, Ref<GDScript>> old_subclasses;
-	HashMap<StringName, GDScriptStruct *> old_structs;
+	HashMap<StringName, Ref<GDScriptStruct>> old_structs;
 
 	if (p_keep_state) {
 		old_subclasses = p_script->subclasses;
@@ -3444,31 +3414,26 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 	// Clean up old structs that were not reused
 	// (Structs cannot be reused like subclasses since they may have different definitions)
 	//
-	// CRITICAL: Must mirror the cleanup in GDScript::clear() to avoid leaks/crashes
-	// The order matters: unregister wrapper -> unregister struct -> unreference -> delete (if ref_count == 0)
-	//
-	// Old structs have 3 references at this point:
-	// 1. p_script->structs HashMap (about to be cleared below)
-	// 2. Global struct registry (must be unregistered)
-	// 3. struct_wrapper in global wrapper registry (must be unregistered)
+	// With Ref<> automatic reference counting, cleanup happens automatically:
+	// 1. Unregister struct wrappers from global wrapper registry
+	// 2. Unregister structs from global registry
+	// 3. When old_structs goes out of scope, Ref<> automatically cleans up
 
-	// Step 1: Unregister struct wrappers from global wrapper registry (removes reference #3)
-	for (const KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
-		GDScriptLanguage::get_singleton()->unregister_struct_wrapper(E.value->get_fully_qualified_name());
-	}
-
-	// Step 2: Unregister structs from global registry (removes reference #2)
-	for (const KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
-		GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
-	}
-
-	// Step 3: Unreference and delete old structs (removes reference #1, and if ref_count == 0, delete)
-	for (KeyValue<StringName, GDScriptStruct *> &E : old_structs) {
-		E.value->unreference();
-		if (E.value->get_reference_count() == 0) {
-			memdelete(E.value);
+	// Step 1: Unregister struct wrappers from global wrapper registry
+	for (const KeyValue<StringName, Ref<GDScriptStruct>> &E : old_structs) {
+		if (E.value.is_valid()) {
+			GDScriptLanguage::get_singleton()->unregister_struct_wrapper(E.value->get_fully_qualified_name());
 		}
 	}
+
+	// Step 2: Unregister structs from global registry
+	for (const KeyValue<StringName, Ref<GDScriptStruct>> &E : old_structs) {
+		if (E.value.is_valid()) {
+			GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
+		}
+	}
+
+	// Step 3: When old_structs goes out of scope, Ref<> automatically handles cleanup
 }
 
 GDScriptCompiler::FunctionLambdaInfo GDScriptCompiler::_get_function_replacement_info(GDScriptFunction *p_func, int p_index, int p_depth, GDScriptFunction *p_parent_func) {

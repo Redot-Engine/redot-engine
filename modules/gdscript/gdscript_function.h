@@ -44,6 +44,7 @@
 
 class GDScriptInstance;
 class GDScript;
+class GDScriptStruct;
 
 class GDScriptDataType {
 public:
@@ -65,7 +66,7 @@ public:
 	StringName native_type;
 	Script *script_type = nullptr;
 	Ref<Script> script_type_ref;
-	class GDScriptStruct *struct_type = nullptr;
+	Ref<GDScriptStruct> struct_type;
 
 	bool is_type(const Variant &p_variant, bool p_allow_implicit_conversion = false) const {
 		if (!has_type) {

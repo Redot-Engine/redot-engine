@@ -1319,14 +1319,11 @@ void Variant::reference(const Variant &p_variant) {
 		} break;
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
-			// Reference the struct instance
-			// _data._mem contains a pointer to the struct instance, not the instance itself
-			GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(p_variant._data._mem);
-			if (struct_instance) {
-				struct_instance->reference();
-			}
-			// Copy the pointer
-			memcpy(_data._mem, p_variant._data._mem, sizeof(void *));
+			// COW: Copy the wrapper by value.
+			// The Ref<> inside handles reference counting automatically.
+			// Placement new to copy the wrapper into _mem.
+			const GDScriptStructInstance *src_wrapper = reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem);
+			new (_data._mem) GDScriptStructInstance(*src_wrapper);
 		} break;
 #endif
 		default: {
@@ -1500,25 +1497,11 @@ void Variant::_clear_internal() {
 		} break;
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
-			// Unreference the struct instance
-			// unreference() returns true when ref_count reaches zero, indicating we should delete
-			GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance **>(_data._mem);
-			if (struct_instance) {
-#ifndef DEV_ENABLED
-				if (struct_instance->unreference()) {
-					memdelete(struct_instance);
-				}
-#else
-				// In dev builds, check ref_count before unreferencing
-				// This protects against garbage data in uninitialized Variants
-				if (struct_instance->get_reference_count() > 0) {
-					if (struct_instance->unreference()) {
-						memdelete(struct_instance);
-					}
-				}
-#endif
-			}
-			// Clear the pointer
+			// COW: Destroy the wrapper by calling its destructor.
+			// The Ref<> destructor handles reference counting automatically.
+			GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			wrapper->~GDScriptStructInstance();
+			// Clear the memory
 			memset(_data._mem, 0, sizeof(_data._mem));
 		} break;
 #endif
@@ -1781,12 +1764,12 @@ String Variant::stringify(int recursion_count) const {
 		}
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
-			// Get the struct instance and convert to string
-			const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(_data._mem);
-			if (struct_instance) {
+			// Get the struct wrapper and convert to string
+			const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(_data._mem);
+			if (wrapper && wrapper->is_valid()) {
 				// Simple string representation for now to avoid crashes
 				// TODO: Add proper field serialization
-				return String("<") + String(struct_instance->get_struct_name()) + " struct>";
+				return String("<") + String(wrapper->get_struct_name()) + " struct>";
 			}
 			return "<Struct#null>";
 		}
@@ -2846,17 +2829,12 @@ void Variant::operator=(const Variant &p_variant) {
 		} break;
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case STRUCT: {
-			// For struct instances, we need to reference the new instance and unreference the old one
-			GDScriptStructInstance *new_struct = *reinterpret_cast<GDScriptStructInstance *const *>(p_variant._data._mem);
-			GDScriptStructInstance *old_struct = *reinterpret_cast<GDScriptStructInstance **>(_data._mem);
-			if (new_struct && new_struct->reference()) {
-				// Successfully took a reference to the new struct
-				memcpy(_data._mem, p_variant._data._mem, sizeof(_data._mem));
-				if (old_struct) {
-					old_struct->unreference();
-				}
-			}
-			// If reference() failed, the struct is being destroyed and we don't copy
+			// COW: Destroy old wrapper, copy new wrapper by value
+			GDScriptStructInstance *old_wrapper = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			old_wrapper->~GDScriptStructInstance();
+
+			const GDScriptStructInstance *new_wrapper = reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem);
+			new (_data._mem) GDScriptStructInstance(*new_wrapper);
 		} break;
 #endif
 		default: {

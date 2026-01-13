@@ -41,6 +41,12 @@
 
 class RefCounted;
 
+#ifdef MODULE_GDSCRIPT_ENABLED
+// Forward declaration to avoid circular dependency
+// The actual type is defined in modules/gdscript/gdscript_struct.h
+class GDScriptStructInstance;
+#endif
+
 class VariantInternal {
 	friend class Variant;
 
@@ -123,9 +129,11 @@ public:
 			case Variant::OBJECT:
 				init_object(v);
 				break;
+#ifdef MODULE_GDSCRIPT_ENABLED
 			case Variant::STRUCT:
-				// TODO: Implement struct initialization
+				init_struct(v);
 				break;
+#endif
 			default:
 				break;
 		}
@@ -218,9 +226,11 @@ public:
 
 	_FORCE_INLINE_ static const ObjectID get_object_id(const Variant *v) { return v->_get_obj().id; }
 
-	// Struct access - stores pointer directly in _mem
-	_FORCE_INLINE_ static void *get_struct(Variant *v) { return v->_data._mem; }
-	_FORCE_INLINE_ static const void *get_struct(const Variant *v) { return v->_data._mem; }
+	// Struct access - stores wrapper by value in _mem
+#ifdef MODULE_GDSCRIPT_ENABLED
+	_FORCE_INLINE_ static GDScriptStructInstance *get_struct(Variant *v) { return reinterpret_cast<GDScriptStructInstance *>(v->_data._mem); }
+	_FORCE_INLINE_ static const GDScriptStructInstance *get_struct(const Variant *v) { return reinterpret_cast<const GDScriptStructInstance *>(v->_data._mem); }
+#endif
 
 	template <typename T>
 	_FORCE_INLINE_ static void init_generic(Variant *v) {
@@ -332,6 +342,14 @@ public:
 		object_reset_data(v);
 		v->type = Variant::OBJECT;
 	}
+#ifdef MODULE_GDSCRIPT_ENABLED
+	_FORCE_INLINE_ static void init_struct(Variant *v) {
+		// Zero-initialize the wrapper memory
+		// The default constructor will be called via placement new when the struct is actually constructed
+		memset(v->_data._mem, 0, sizeof(v->_data._mem));
+		v->type = Variant::STRUCT;
+	}
+#endif
 
 	_FORCE_INLINE_ static void clear(Variant *v) {
 		v->clear();

@@ -32,9 +32,9 @@
 
 #pragma once
 
+#include "core/object/ref_counted.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
-#include "core/templates/safe_refcount.h"
 #include "core/templates/vector.h"
 #include "core/variant/variant.h"
 #include "gdscript_function.h"
@@ -42,13 +42,18 @@
 class GDScript;
 class GDScriptStructInstance;
 
+// Forward declaration for the instance data
+class GDScriptStructInstanceData;
+
 // Lightweight struct type definition for GDScript
-// Similar to GDScript but without Object overhead
-class GDScriptStruct {
+// The blueprint/type definition - shared across all instances
+class GDScriptStruct : public RefCounted {
+	GDCLASS(GDScriptStruct, RefCounted);
 	friend class GDScriptStructInstance;
 	friend class GDScriptCompiler;
 	friend class GDScriptAnalyzer;
 	friend class GDScriptStructClass;
+	friend class GDScriptStructInstanceData;
 
 public:
 	// Member information struct
@@ -68,18 +73,10 @@ public:
 		bool is_static = false;
 	};
 
-	// Reference counting for proper lifecycle management
-	// unreference() returns true when ref_count reaches zero, but does NOT delete this.
-	// Callers are responsible for deletion when unreference() returns true.
-	void reference();
-	bool unreference();
-	int get_reference_count() const { return ref_count.get(); }
-
 private:
 	StringName name;
-	GDScriptStruct *base_struct = nullptr;
+	Ref<GDScriptStruct> base_struct;
 	GDScript *owner = nullptr; // GDScript that owns this struct
-	mutable SafeRefCount ref_count;
 
 	// Members
 	HashMap<StringName, MemberInfo> members;
@@ -96,9 +93,12 @@ private:
 	// Fully qualified name for unique identification
 	String fully_qualified_name;
 
+protected:
+	static void _bind_methods();
+
 public:
-	// Create a new struct instance
-	GDScriptStructInstance *create_instance(const Variant **p_args = nullptr, int p_argcount = 0);
+	// Create a new struct instance (returns Variant containing GDScriptStructInstance wrapper)
+	Variant create_variant_instance(const Variant **p_args = nullptr, int p_argcount = 0);
 
 	// Member management
 	int get_member_count() const;
@@ -120,7 +120,8 @@ public:
 
 	// Inheritance
 	bool is_child_of(const GDScriptStruct *p_struct) const;
-	GDScriptStruct *get_base_struct() const { return base_struct; }
+	Ref<GDScriptStruct> get_base_struct() const { return base_struct; }
+	void set_base_struct(const Ref<GDScriptStruct> &p_base) { base_struct = p_base; }
 
 	// Identification
 	void set_name(const StringName &p_name) { name = p_name; }
@@ -132,47 +133,111 @@ public:
 	void set_owner(GDScript *p_owner) { owner = p_owner; }
 	GDScript *get_owner() const { return owner; }
 
+	GDScriptStruct();
 	GDScriptStruct(const StringName &p_name);
 	~GDScriptStruct();
 };
 
-// Lightweight struct instance - much less overhead than GDScriptInstance
-// No Object base, just reference-counted data storage
-class GDScriptStructInstance {
-	friend class GDScriptStruct;
+// The actual instance data - this is what gets COW-managed
+// Inherits from RefCounted for automatic reference counting
+class GDScriptStructInstanceData : public RefCounted {
+	GDCLASS(GDScriptStructInstanceData, RefCounted);
+	friend class GDScriptStructInstance;
 
 private:
-	GDScriptStruct *struct_type = nullptr;
-	Vector<Variant> members; // Member values
-	SafeRefCount ref_count;
+	Ref<GDScriptStruct> blueprint; // Pointer to the type definition
+	Vector<Variant> members; // The actual data
 
-	// Non-copyable and non-movable to match SafeRefCount semantics
-	GDScriptStructInstance(const GDScriptStructInstance &) = delete;
-	GDScriptStructInstance &operator=(const GDScriptStructInstance &) = delete;
-	GDScriptStructInstance(GDScriptStructInstance &&) = delete;
-	GDScriptStructInstance &operator=(GDScriptStructInstance &&) = delete;
+protected:
+	static void _bind_methods();
 
 public:
-	GDScriptStructInstance(GDScriptStruct *p_struct_type);
-	~GDScriptStructInstance();
+	// Factory method
+	static Ref<GDScriptStructInstanceData> create(const Ref<GDScriptStruct> &p_blueprint);
 
-	// Reference counting for reference semantics
-	// unreference() returns true when ref_count reaches zero, but does NOT delete this.
-	// Callers are responsible for deletion when unreference() returns true.
-	bool reference();
-	bool unreference();
-	int get_reference_count() const { return ref_count.get(); }
+	// Direct member access (bypasses COW - only use when you know you have unique ownership)
+	Variant get_member_direct(int p_index) const;
+	void set_member_direct(int p_index, const Variant &p_value);
 
-	// Member access
-	bool set(const StringName &p_name, const Variant &p_value);
+	// Get the blueprint
+	Ref<GDScriptStruct> get_blueprint() const { return blueprint; }
+
+	// Get member array (for serialization)
+	const Vector<Variant> &get_members() const { return members; }
+	Vector<Variant> &get_members_mut() { return members; }
+
+	// Duplicate this data for COW
+	Ref<GDScriptStructInstanceData> duplicate() const;
+
+	// Serialization
+	Dictionary serialize() const;
+	bool deserialize(const Dictionary &p_data);
+
+	// Property list for editor/debugger
+	void get_property_list(List<PropertyInfo> *p_list) const;
+
+	GDScriptStructInstanceData();
+};
+
+// A lightweight wrapper class that the Variant stores by value
+// This class implements the COW logic
+// Designed to be small and copyable - stored directly in Variant's union
+class GDScriptStructInstance {
+private:
+	// The Variant stores this object by value
+	// The Ref<> inside manages the actual data with automatic reference counting
+	Ref<GDScriptStructInstanceData> data;
+
+public:
+	// Default constructor - creates null instance
+	GDScriptStructInstance() = default;
+
+	// Constructor from blueprint - creates new instance data
+	GDScriptStructInstance(const Ref<GDScriptStruct> &p_blueprint);
+
+	// Constructor from instance data - wraps existing data (used internally)
+	GDScriptStructInstance(const Ref<GDScriptStructInstanceData> &p_data);
+
+	// Copy constructor - just copies the Ref (fast, no deep copy)
+	GDScriptStructInstance(const GDScriptStructInstance &p_other) = default;
+
+	// Move constructor
+	GDScriptStructInstance(GDScriptStructInstance &&p_other) noexcept = default;
+
+	// Assignment operator - implements COW
+	GDScriptStructInstance &operator=(const GDScriptStructInstance &p_other);
+
+	// Move assignment
+	GDScriptStructInstance &operator=(GDScriptStructInstance &&p_other) noexcept = default;
+
+	// Destructor - automatic cleanup through Ref<>
+	~GDScriptStructInstance() = default;
+
+	// Check if instance is valid
+	bool is_valid() const { return data.is_valid(); }
+	bool is_null() const { return data.is_null(); }
+
+	// Ensure we have a unique copy (call this before modifying if needed)
+	void _ensure_unique();
+
+	// Member access - const getter (no COW needed)
 	bool get(const StringName &p_name, Variant &r_value) const;
+	Variant get_by_index(int p_index) const;
+
+	// Member access - setter (implements COW)
+	bool set(const StringName &p_name, const Variant &p_value);
+	void set_by_index(int p_index, const Variant &p_value);
+
+	// Direct pointer access (for VM optimization - caller must ensure unique first)
+	// Returns pointer to member value, or nullptr if not found
 	Variant *get_member_ptr(const StringName &p_name);
+	Variant *get_member_ptr_by_index(int p_index);
 
 	// Method calling
-	Variant call(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+	Variant call(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) const;
 
 	// Type information
-	GDScriptStruct *get_struct_type() const { return struct_type; }
+	Ref<GDScriptStruct> get_struct_type() const;
 	StringName get_struct_name() const;
 
 	// Property list for editor/debugger
@@ -181,4 +246,7 @@ public:
 	// Serialization
 	Dictionary serialize() const;
 	bool deserialize(const Dictionary &p_data);
+
+	// Get the underlying data (for advanced use)
+	const Ref<GDScriptStructInstanceData> &get_data() const { return data; }
 };

@@ -130,38 +130,20 @@ void GDScriptStructClass::_bind_methods() {
 
 // Constructor: takes ownership of the given struct.
 // null is allowed - the struct_type can be set later via set_struct_type().
-GDScriptStructClass::GDScriptStructClass(GDScriptStruct *p_struct) {
-	struct_type = p_struct;
-	if (struct_type) {
-		struct_type->reference(); // Increment ref count when we take ownership
-	}
+GDScriptStructClass::GDScriptStructClass(const Ref<GDScriptStruct> &p_struct) :
+		struct_type(p_struct) {
+	// Ref<> automatically handles reference counting
 }
 
-GDScriptStructClass::~GDScriptStructClass() {
-	if (struct_type) {
-		// Unreference and delete if ref_count reaches zero
-		if (struct_type->unreference()) {
-			memdelete(struct_type);
-		}
-		struct_type = nullptr;
-	}
+// Destructor is defaulted - Ref<> automatically handles cleanup
+
+Ref<GDScriptStruct> GDScriptStructClass::get_struct_type() const {
+	return struct_type;
 }
 
-void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
-	if (p_struct == struct_type) {
-		return; // No change
-	}
-	// Unreference old struct - rely on reference counting system
-	if (struct_type) {
-		if (struct_type->unreference()) {
-			memdelete(struct_type);
-		}
-	}
+void GDScriptStructClass::set_struct_type(const Ref<GDScriptStruct> &p_struct) {
+	// Ref<> assignment automatically handles reference counting
 	struct_type = p_struct;
-	// Reference new struct (null is allowed)
-	if (struct_type) {
-		struct_type->reference();
-	}
 }
 
 // Temporary helper to create a STRUCT Variant from a GDScriptStructInstance
@@ -192,53 +174,18 @@ void GDScriptStructClass::set_struct_type(GDScriptStruct *p_struct) {
 // - Size check: sizeof(void*) must fit in Variant::_data._mem
 // - Enum check: Variant::STRUCT must be within valid enum range
 //
-// OWNERSHIP TRANSFER:
-// - This function does NOT transfer ownership of the reference
-// - The caller MUST ensure the instance has at least one reference
-// - The Variant will hold a reference to the instance for its lifetime
-// - When the Variant is destroyed or reassigned, it will call Variant::destructor()
-//    which will decrement the reference count
+// COW: Create a Variant from a struct instance wrapper
+// The wrapper is copied by value, and the Ref<> inside handles reference counting
 Variant GDScriptStructClass::_variant_from_struct_instance(GDScriptStructInstance *p_instance) {
-	// SAFETY CHECK #1: Null pointer validation
 	ERR_FAIL_NULL_V(p_instance, Variant());
 
-	// SAFETY CHECK #2: Verify Variant internal storage is large enough for pointer
-	// This ensures we won't overflow the buffer when copying the pointer
-	constexpr size_t required_size = sizeof(void *);
-	constexpr size_t available_size = sizeof(Variant::_data._mem);
-	CRASH_COND_MSG(required_size > available_size,
-			vformat("Variant internal storage too small for struct pointer (need %d bytes, have %d bytes)",
-					required_size, available_size));
-
-	// SAFETY CHECK #3: Verify Variant::STRUCT enum is valid
-	// This catches enum value corruption or mismatched headers
-	CRASH_COND_MSG(Variant::STRUCT < 0 || Variant::STRUCT >= Variant::VARIANT_MAX,
-			vformat("Variant::STRUCT enum value %d out of valid range [0, %d)",
-					Variant::STRUCT, Variant::VARIANT_MAX));
-
-	// SAFETY CHECK #4: Verify instance has valid reference count
-	// The struct instance should be reference-counted and have at least 1 reference
-	// This is set by the caller in _new() via instance->reference() before calling this
-#ifdef DEBUG_ENABLED
-	const int ref_count = p_instance->get_reference_count();
-	CRASH_COND_MSG(ref_count <= 0,
-			vformat("Struct instance has invalid reference count %d (must be >= 1). "
-					"Call instance->reference() before _variant_from_struct_instance().",
-					ref_count));
-#endif
-
-	// CONSTRUCT THE VARIANT
-	// This directly manipulates Variant internals, which is safe here because:
-	// 1. We've validated all preconditions above
-	// 2. GDScriptStructClass is a friend of Variant (can access private members)
-	// 3. The memory layout is well-defined and stable
-	// 4. This matches the pattern used for OBJECT and other pointer types
+	// With COW, we copy the wrapper by value into the Variant's memory
 	Variant result;
 	result.type = Variant::STRUCT;
 
-	// Copy the pointer into Variant's internal storage
-	// memcpy is used instead of assignment for type safety and to avoid strict aliasing issues
-	memcpy(result._data._mem, &p_instance, sizeof(void *));
+	// Use placement new to copy the wrapper into _mem
+	// The copy constructor of GDScriptStructInstance copies the Ref<> properly
+	new (result._data._mem) GDScriptStructInstance(*p_instance);
 
 	return result;
 }
@@ -246,25 +193,9 @@ Variant GDScriptStructClass::_variant_from_struct_instance(GDScriptStructInstanc
 Variant GDScriptStructClass::_new(const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 	ERR_FAIL_NULL_V(struct_type, Variant());
 
-	// Create the struct instance
-	// The constructor initializes ref_count to 1, representing the initial reference
-	GDScriptStructInstance *instance = struct_type->create_instance(p_args, p_argcount);
-	if (!instance) {
-		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
-		return Variant();
-	}
-
-	// REFERENCE COUNTING MANAGEMENT:
-	// The struct instance is created with ref_count = 1 (initial reference)
-	// When we create a Variant from it, the Variant will hold this reference
-	// When the Variant is destroyed, Variant::destructor() will call instance->unreference()
-	// which will decrement ref_count to 0, triggering deletion of the instance
-	//
-	// No additional reference() call is needed here since the instance was created
-	// with an initial reference count of 1
-
-	// Create a Variant of STRUCT type with the instance
-	return _variant_from_struct_instance(instance);
+	// Create the struct instance and return it as a Variant
+	// The COW implementation handles everything internally
+	return struct_type->create_variant_instance(p_args, p_argcount);
 }
 
 Variant GDScriptStructClass::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
@@ -1752,23 +1683,15 @@ void GDScript::clear(ClearData *p_clear_data) {
 	static_variables.clear();
 	static_variables_indices.clear();
 
-	// Clear structs - properly release all ownership references
-	for (KeyValue<StringName, GDScriptStruct *> &E : structs) {
-		// Store the struct pointer before any operations to avoid use-after-free
-		GDScriptStruct *s = E.value;
+	// Clear structs - with Ref<>, cleanup happens automatically
+	for (KeyValue<StringName, Ref<GDScriptStruct>> &E : structs) {
 		// Step 1: Remove the constant wrapper (releases wrapper's reference)
 		constants.erase(E.key);
 		// Step 2: Unregister from global registry (releases registry's reference)
-		GDScriptLanguage::get_singleton()->unregister_struct(s->get_fully_qualified_name());
-		// Step 3: Release the script HashMap's ownership reference
-		// This is the reference taken in _compile_struct (line 3245)
-		// If unreference() returns true, reference count reached zero - delete the struct
-		if (s->unreference()) {
-			memdelete(s);
+		if (E.value.is_valid()) {
+			GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
 		}
-		// Note: We don't add to clear_data anymore because we've already released
-		// the script's ownership reference. If other owners exist (e.g., external references),
-		// they are responsible for cleanup. The script has done its part.
+		// Step 3: When structs.clear() is called, Ref<> automatically handles cleanup
 	}
 	structs.clear();
 
@@ -3215,52 +3138,35 @@ Ref<GDScript> GDScriptLanguage::get_script_by_fully_qualified_name(const String 
 
 /***************** STRUCT REGISTRY *****************/
 
-void GDScriptLanguage::register_struct(const String &p_fully_qualified_name, GDScriptStruct *p_struct) {
+void GDScriptLanguage::register_struct(const String &p_fully_qualified_name, const Ref<GDScriptStruct> &p_struct) {
 	MutexLock lock(mutex);
 
 	// Check if a struct with this name already exists
-	HashMap<String, GDScriptStruct *>::Iterator existing = global_structs.find(p_fully_qualified_name);
+	HashMap<String, Ref<GDScriptStruct>>::Iterator existing = global_structs.find(p_fully_qualified_name);
 	if (existing) {
-		// Release our reference to the old struct and delete if ref_count reaches zero
-		// The struct may still be owned by other entities (script HashMap, wrappers, etc.)
-		GDScriptStruct *old_struct = existing->value;
-		if (old_struct) {
-			if (old_struct->unreference()) {
-				// Reference count reached zero - delete the struct
-				memdelete(old_struct);
-			}
-		}
+		// The Ref<> will automatically clean up when overwritten
 		global_structs.erase(p_fully_qualified_name);
 	}
 
-	// Take a reference for the registry's ownership
-	p_struct->reference();
+	// Store the Ref<> (takes ownership automatically)
 	global_structs.insert(p_fully_qualified_name, p_struct);
 }
 
 void GDScriptLanguage::unregister_struct(const String &p_fully_qualified_name) {
 	MutexLock lock(mutex);
 
-	HashMap<String, GDScriptStruct *>::Iterator existing = global_structs.find(p_fully_qualified_name);
+	HashMap<String, Ref<GDScriptStruct>>::Iterator existing = global_structs.find(p_fully_qualified_name);
 	if (existing) {
-		// Release our reference and check if ref_count reached zero
-		// If unreference() returns true, the struct should be deleted
-		GDScriptStruct *old_struct = existing->value;
-		if (old_struct) {
-			if (old_struct->unreference()) {
-				// Reference count reached zero - delete the struct
-				memdelete(old_struct);
-			}
-		}
+		// The Ref<> cleanup happens automatically on erase
 		global_structs.erase(p_fully_qualified_name);
 	}
 }
 
-GDScriptStruct *GDScriptLanguage::get_struct_by_name(const String &p_fully_qualified_name) {
+Ref<GDScriptStruct> GDScriptLanguage::get_struct_by_name(const String &p_fully_qualified_name) {
 	MutexLock lock(mutex);
-	HashMap<String, GDScriptStruct *>::Iterator E = global_structs.find(p_fully_qualified_name);
+	HashMap<String, Ref<GDScriptStruct>>::Iterator E = global_structs.find(p_fully_qualified_name);
 	if (!E) {
-		return nullptr;
+		return Ref<GDScriptStruct>();
 	}
 	return E->value;
 }
@@ -3307,36 +3213,28 @@ Ref<GDScriptStructClass> GDScriptLanguage::get_struct_wrapper(const String &p_fu
 }
 
 Variant GDScriptLanguage::create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data) {
-	GDScriptStruct *struct_type = get_struct_by_name(p_fully_qualified_name);
-	if (!struct_type) {
+	Ref<GDScriptStruct> struct_type = get_struct_by_name(p_fully_qualified_name);
+	if (struct_type.is_null()) {
 		ERR_FAIL_V_MSG(Variant(), vformat("Cannot create struct instance: struct type '%s' not found in registry.", p_fully_qualified_name));
 	}
 
-	// Create a new struct instance
-	// The constructor initializes ref_count to 1 (initial reference)
-	GDScriptStructInstance *instance = memnew(GDScriptStructInstance(struct_type));
+	// Create the instance data wrapper
+	Ref<GDScriptStructInstanceData> instance_data = GDScriptStructInstanceData::create(struct_type);
 
 	// Deserialize the data into the instance
 	if (!p_data.is_empty()) {
-		if (!instance->deserialize(p_data)) {
-			// Clean up by unreferencing - since ref_count is 1, unreference() will
-			// decrement to 0 and return true, but we still need to memdelete since
-			// the unreference() method in GDScriptStructInstance memdeletes itself
-			instance->unreference();
+		if (!instance_data->deserialize(p_data)) {
 			ERR_FAIL_V_MSG(Variant(), vformat("Failed to deserialize struct instance for type '%s'.", p_fully_qualified_name));
 		}
 	}
 
-	// REFERENCE COUNTING: The instance is created with ref_count = 1
-	// When we create a Variant from it, the Variant will hold this reference
-	// When the Variant is destroyed, Variant::destructor() will call instance->unreference()
-	// which will decrement ref_count to 0, triggering deletion of the instance
-
-	// Wrap in a Variant
-	Ref<GDScriptStructClass> struct_class;
-	struct_class.instantiate();
-	struct_class->set_struct_type(struct_type);
-	return struct_class->_variant_from_struct_instance(instance);
+	// Create the wrapper and return as Variant
+	GDScriptStructInstance wrapper(instance_data);
+	Variant result;
+	result.type = Variant::STRUCT;
+	// Use placement new to construct the wrapper in the Variant's memory
+	new (result._data._mem) GDScriptStructInstance(wrapper);
+	return result;
 }
 
 /* STRUCT SERIALIZATION VIRTUAL METHODS */
@@ -3358,13 +3256,14 @@ Dictionary GDScriptLanguage::struct_to_dict(const Variant &p_struct) const {
 	}
 
 	// GDScriptLanguage is now a friend of Variant, so we can access _data._mem
-	const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(p_struct._data._mem);
-	if (!struct_instance) {
+	// With COW, the wrapper is stored by value in _mem
+	const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(p_struct._data._mem);
+	if (!wrapper || !wrapper->is_valid()) {
 		return result;
 	}
 
-	// Use the existing serialize() method
-	return struct_instance->serialize();
+	// Use the existing serialize() method on the wrapper
+	return wrapper->serialize();
 }
 
 void GDScriptLanguage::get_struct_property_list(const Variant &p_struct, List<PropertyInfo> *p_list) const {
@@ -3373,13 +3272,14 @@ void GDScriptLanguage::get_struct_property_list(const Variant &p_struct, List<Pr
 	}
 
 	// GDScriptLanguage is now a friend of Variant, so we can access _data._mem
-	const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(p_struct._data._mem);
-	if (!struct_instance) {
+	// With COW, the wrapper is stored by value in _mem
+	const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(p_struct._data._mem);
+	if (!wrapper || !wrapper->is_valid()) {
 		return;
 	}
 
-	// Use the existing get_property_list method on GDScriptStructInstance
-	struct_instance->get_property_list(p_list);
+	// Use the existing get_property_list method on the wrapper
+	wrapper->get_property_list(p_list);
 }
 
 /*************** RESOURCE ***************/
@@ -3544,8 +3444,8 @@ Dictionary gdscript_struct_instance_serialize(const GDScriptStructInstance *p_in
 
 bool gdscript_struct_instance_get_type_name(const GDScriptStructInstance *p_instance, String &r_name) {
 	ERR_FAIL_NULL_V(p_instance, false);
-	GDScriptStruct *struct_type = p_instance->get_struct_type();
-	ERR_FAIL_NULL_V(struct_type, false);
+	Ref<GDScriptStruct> struct_type = p_instance->get_struct_type();
+	ERR_FAIL_COND_V(!struct_type.is_valid(), false);
 	r_name = struct_type->get_fully_qualified_name();
 	return true;
 }

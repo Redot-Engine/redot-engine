@@ -263,10 +263,10 @@ void Variant::set_named(const StringName &p_member, const Variant &p_value, bool
 		}
 #ifdef MODULE_GDSCRIPT_ENABLED
 	} else if (type == Variant::STRUCT) {
-		// _data._mem contains a pointer to the struct instance, not the instance itself
-		GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance **>(_data._mem);
-		if (struct_instance) {
-			r_valid = struct_instance->set(p_member, p_value);
+		// _data._mem contains the struct wrapper by value
+		GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+		if (wrapper) {
+			r_valid = wrapper->set(p_member, p_value);
 			return;
 		}
 		r_valid = false;
@@ -304,11 +304,11 @@ Variant Variant::get_named(const StringName &p_member, bool &r_valid) const {
 		} break;
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case Variant::STRUCT: {
-			// _data._mem contains a pointer to the struct instance, not the instance itself
-			const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(_data._mem);
-			if (struct_instance) {
+			// _data._mem contains the struct wrapper by value
+			const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(_data._mem);
+			if (wrapper && wrapper->is_valid()) {
 				Variant ret;
-				if (struct_instance->get(p_member, ret)) {
+				if (wrapper->get(p_member, ret)) {
 					r_valid = true;
 					return ret;
 				}
@@ -1124,9 +1124,9 @@ struct VariantKeyedSetGetObject {
 #ifdef MODULE_GDSCRIPT_ENABLED
 struct VariantKeyedSetGetStruct {
 	static void get(const Variant *base, const Variant *key, Variant *value, bool *r_valid) {
-		// Get the struct instance pointer from the Variant
-		const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(base->_data._mem);
-		if (!struct_instance) {
+		// Get the struct wrapper from the Variant (stored by value)
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base->_data._mem);
+		if (!wrapper || !wrapper->is_valid()) {
 			*r_valid = false;
 			*value = Variant();
 			return;
@@ -1144,8 +1144,8 @@ struct VariantKeyedSetGetStruct {
 			return;
 		}
 
-		// Use struct_instance->get to retrieve the member value
-		if (struct_instance->get(member_name, *value)) {
+		// Use wrapper->get to retrieve the member value
+		if (wrapper->get(member_name, *value)) {
 			*r_valid = true;
 		} else {
 			*r_valid = false;
@@ -1156,8 +1156,9 @@ struct VariantKeyedSetGetStruct {
 	static void ptr_get(const void *base, const void *key, void *value) {
 		// Avoid ptrconvert for performance
 		const Variant &base_var = *reinterpret_cast<const Variant *>(base);
-		const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(base_var._data._mem);
-		ERR_FAIL_NULL(struct_instance);
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base_var._data._mem);
+		ERR_FAIL_NULL(wrapper);
+		ERR_FAIL_COND(!wrapper->is_valid());
 
 		// Convert key to Variant first, then to StringName
 		Variant key_var = PtrToArg<Variant>::convert(key);
@@ -1172,7 +1173,7 @@ struct VariantKeyedSetGetStruct {
 
 		// Get the member value
 		Variant result;
-		if (struct_instance->get(member_name, result)) {
+		if (wrapper->get(member_name, result)) {
 			PtrToArg<Variant>::encode(result, value);
 		} else {
 			ERR_FAIL();
@@ -1180,9 +1181,9 @@ struct VariantKeyedSetGetStruct {
 	}
 
 	static void set(Variant *base, const Variant *key, const Variant *value, bool *r_valid) {
-		// Get the struct instance pointer from the Variant
-		GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance **>(base->_data._mem);
-		if (!struct_instance) {
+		// Get the struct wrapper from the Variant (stored by value)
+		GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(base->_data._mem);
+		if (!wrapper || !wrapper->is_valid()) {
 			*r_valid = false;
 			return;
 		}
@@ -1198,15 +1199,16 @@ struct VariantKeyedSetGetStruct {
 			return;
 		}
 
-		// Use struct_instance->set to set the member value
-		*r_valid = struct_instance->set(member_name, *value);
+		// Use wrapper->set to set the member value (COW happens inside)
+		*r_valid = wrapper->set(member_name, *value);
 	}
 
 	static void ptr_set(void *base, const void *key, const void *value) {
 		// Avoid ptrconvert for performance
 		Variant &base_var = *reinterpret_cast<Variant *>(base);
-		GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance **>(base_var._data._mem);
-		ERR_FAIL_NULL(struct_instance);
+		GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(base_var._data._mem);
+		ERR_FAIL_NULL(wrapper);
+		ERR_FAIL_COND(!wrapper->is_valid());
 
 		// Convert key to Variant first, then to StringName
 		Variant key_var = PtrToArg<Variant>::convert(key);
@@ -1221,14 +1223,14 @@ struct VariantKeyedSetGetStruct {
 
 		// Set the member value
 		Variant value_var = PtrToArg<Variant>::convert(value);
-		bool valid = struct_instance->set(member_name, value_var);
+		bool valid = wrapper->set(member_name, value_var);
 		ERR_FAIL_COND(!valid);
 	}
 
 	static bool has(const Variant *base, const Variant *key, bool *r_valid) {
-		// Get the struct instance pointer from the Variant
-		const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(base->_data._mem);
-		if (!struct_instance) {
+		// Get the struct wrapper from the Variant (stored by value)
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base->_data._mem);
+		if (!wrapper || !wrapper->is_valid()) {
 			*r_valid = false;
 			return false;
 		}
@@ -1246,14 +1248,19 @@ struct VariantKeyedSetGetStruct {
 
 		// Check if the member exists by trying to get its index
 		*r_valid = true;
-		return struct_instance->get_struct_type()->get_member_index(member_name) >= 0;
+		Ref<GDScriptStruct> struct_type = wrapper->get_struct_type();
+		if (struct_type.is_null()) {
+			return false;
+		}
+		return struct_type->get_member_index(member_name) >= 0;
 	}
 
 	static uint32_t ptr_has(const void *base, const void *key) {
 		// Avoid ptrconvert for performance
 		const Variant &base_var = *reinterpret_cast<const Variant *>(base);
-		const GDScriptStructInstance *struct_instance = *reinterpret_cast<GDScriptStructInstance *const *>(base_var._data._mem);
-		ERR_FAIL_NULL_V(struct_instance, false);
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base_var._data._mem);
+		ERR_FAIL_NULL_V(wrapper, false);
+		ERR_FAIL_COND_V(!wrapper->is_valid(), false);
 
 		// Convert key to Variant first, then to StringName
 		Variant key_var = PtrToArg<Variant>::convert(key);
@@ -1267,7 +1274,11 @@ struct VariantKeyedSetGetStruct {
 		}
 
 		// Check if the member exists
-		return struct_instance->get_struct_type()->get_member_index(member_name) >= 0;
+		Ref<GDScriptStruct> struct_type = wrapper->get_struct_type();
+		if (struct_type.is_null()) {
+			return false;
+		}
+		return struct_type->get_member_index(member_name) >= 0;
 	}
 };
 #endif

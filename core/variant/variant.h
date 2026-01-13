@@ -178,6 +178,7 @@ private:
 	friend struct _VariantCall;
 	friend class VariantInternal;
 	friend class GDScriptStructClass; // Needed for proper struct construction
+	friend class GDScriptStruct; // Needed for struct instance creation
 	friend class GDScriptLanguage; // Needed for struct serialization and property list
 #ifdef MODULE_GDSCRIPT_ENABLED
 	friend struct VariantKeyedSetGetStruct; // Needed for struct keyed getter/setter

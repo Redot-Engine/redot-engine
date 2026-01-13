@@ -66,7 +66,7 @@ public:
 class GDScriptStructClass : public RefCounted {
 	GDCLASS(GDScriptStructClass, RefCounted);
 
-	GDScriptStruct *struct_type;
+	Ref<GDScriptStruct> struct_type;
 
 protected:
 	static void _bind_methods();
@@ -76,13 +76,13 @@ public:
 	// TODO: Replace with proper Variant API once Variant exposes a safe constructor
 	static Variant _variant_from_struct_instance(GDScriptStructInstance *p_instance);
 
-	_FORCE_INLINE_ GDScriptStruct *get_struct_type() const { return struct_type; }
-	void set_struct_type(GDScriptStruct *p_struct);
+	Ref<GDScriptStruct> get_struct_type() const;
+	void set_struct_type(const Ref<GDScriptStruct> &p_struct);
 	Variant _new(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 	Variant _new_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 	virtual Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) override;
-	GDScriptStructClass(GDScriptStruct *p_struct = nullptr);
-	~GDScriptStructClass();
+	GDScriptStructClass(const Ref<GDScriptStruct> &p_struct = Ref<GDScriptStruct>());
+	~GDScriptStructClass() = default;
 };
 
 class GDScript : public Script {
@@ -140,7 +140,7 @@ class GDScript : public Script {
 	HashMap<StringName, GDScriptFunction *> member_functions;
 	HashMap<StringName, Ref<GDScript>> subclasses;
 	HashMap<StringName, MethodInfo> _signals;
-	HashMap<StringName, GDScriptStruct *> structs;
+	HashMap<StringName, Ref<GDScriptStruct>> structs;
 	Dictionary rpc_config;
 
 public:
@@ -508,7 +508,7 @@ class GDScriptLanguage : public ScriptLanguage {
 	HashMap<String, ObjectID> orphan_subclasses;
 
 	// Global struct registry for serialization/deserialization
-	HashMap<String, GDScriptStruct *> global_structs;
+	HashMap<String, Ref<GDScriptStruct>> global_structs;
 	// Global struct wrapper registry for constructor access
 	HashMap<String, Ref<GDScriptStructClass>> global_struct_wrappers;
 
@@ -629,9 +629,9 @@ public:
 	_FORCE_INLINE_ static GDScriptLanguage *get_singleton() { return singleton; }
 
 	// Struct registry methods
-	void register_struct(const String &p_fully_qualified_name, GDScriptStruct *p_struct);
+	void register_struct(const String &p_fully_qualified_name, const Ref<GDScriptStruct> &p_struct);
 	void unregister_struct(const String &p_fully_qualified_name);
-	GDScriptStruct *get_struct_by_name(const String &p_fully_qualified_name);
+	Ref<GDScriptStruct> get_struct_by_name(const String &p_fully_qualified_name);
 	Variant create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data);
 
 	// Struct wrapper registry methods
