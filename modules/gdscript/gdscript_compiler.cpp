@@ -199,6 +199,7 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 			// Struct type - use STRUCT kind to distinguish from other builtin types
 			result.kind = GDScriptDataType::STRUCT;
 			result.builtin_type = Variant::STRUCT;
+			result.struct_type = p_datatype.struct_type;
 		} break;
 		case GDScriptParser::DataType::RESOLVING:
 		case GDScriptParser::DataType::UNRESOLVED: {
@@ -382,11 +383,10 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 							result.type = _gdtype_from_datatype(in->get_datatype(), codegen.script);
 							return result;
 						} else {
+							// Shouldn't happen - struct wrapper not in global registry
+							_set_error(vformat(R"(Struct wrapper "%s" not found in global registry.)", identifier), in);
+							return GDScriptCodeGenerator::Address();
 						}
-
-						// Shouldn't happen - struct wrapper not in global registry
-						_set_error(vformat(R"(Struct wrapper "%s" not found in global registry.)", identifier), in);
-						return GDScriptCodeGenerator::Address();
 					}
 
 					// Try class constants.
@@ -3350,6 +3350,9 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 	// CRITICAL: Register the wrapper in the GLOBAL registry (not script-specific constants)
 	// This ensures the wrapper persists across multiple compilation passes
 	GDScriptLanguage::get_singleton()->register_struct_wrapper(p_struct->fqsn, struct_wrapper);
+
+	// Store the wrapper in constants so StructName.new() works in the same compilation pass
+	p_script->constants[p_struct->identifier->name] = struct_wrapper;
 
 	return OK;
 }

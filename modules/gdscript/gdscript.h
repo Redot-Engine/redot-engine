@@ -103,7 +103,7 @@ class GDScript : public Script {
 	struct ClearData {
 		RBSet<GDScriptFunction *> functions;
 		RBSet<Ref<Script>> scripts;
-		RBSet<GDScriptStruct *> structs;
+		RBSet<Ref<GDScriptStruct>> structs;
 		void clear() {
 			functions.clear();
 			scripts.clear();

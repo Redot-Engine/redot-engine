@@ -41,12 +41,6 @@
 
 class RefCounted;
 
-#ifdef MODULE_GDSCRIPT_ENABLED
-// Forward declaration to avoid circular dependency
-// The actual type is defined in modules/gdscript/gdscript_struct.h
-class GDScriptStructInstance;
-#endif
-
 class VariantInternal {
 	friend class Variant;
 
@@ -129,11 +123,9 @@ public:
 			case Variant::OBJECT:
 				init_object(v);
 				break;
-#ifdef MODULE_GDSCRIPT_ENABLED
 			case Variant::STRUCT:
 				init_struct(v);
 				break;
-#endif
 			default:
 				break;
 		}
@@ -227,10 +219,8 @@ public:
 	_FORCE_INLINE_ static const ObjectID get_object_id(const Variant *v) { return v->_get_obj().id; }
 
 	// Struct access - stores wrapper by value in _mem
-#ifdef MODULE_GDSCRIPT_ENABLED
-	_FORCE_INLINE_ static GDScriptStructInstance *get_struct(Variant *v) { return reinterpret_cast<GDScriptStructInstance *>(v->_data._mem); }
-	_FORCE_INLINE_ static const GDScriptStructInstance *get_struct(const Variant *v) { return reinterpret_cast<const GDScriptStructInstance *>(v->_data._mem); }
-#endif
+	_FORCE_INLINE_ static void *get_struct(Variant *v) { return v->_data._mem; }
+	_FORCE_INLINE_ static const void *get_struct(const Variant *v) { return v->_data._mem; }
 
 	template <typename T>
 	_FORCE_INLINE_ static void init_generic(Variant *v) {
@@ -342,14 +332,12 @@ public:
 		object_reset_data(v);
 		v->type = Variant::OBJECT;
 	}
-#ifdef MODULE_GDSCRIPT_ENABLED
 	_FORCE_INLINE_ static void init_struct(Variant *v) {
 		// Zero-initialize the wrapper memory
 		// The default constructor will be called via placement new when the struct is actually constructed
 		memset(v->_data._mem, 0, sizeof(v->_data._mem));
 		v->type = Variant::STRUCT;
 	}
-#endif
 
 	_FORCE_INLINE_ static void clear(Variant *v) {
 		v->clear();
@@ -464,8 +452,7 @@ public:
 			case Variant::OBJECT:
 				return get_object(v);
 			case Variant::STRUCT:
-				// TODO: Implement struct pointer access
-				return nullptr;
+				return get_struct(v);
 			case Variant::VARIANT_MAX:
 				ERR_FAIL_V(nullptr);
 		}
@@ -553,8 +540,7 @@ public:
 			case Variant::OBJECT:
 				return get_object(v);
 			case Variant::STRUCT:
-				// TODO: Implement struct pointer access
-				return nullptr;
+				return get_struct(v);
 			case Variant::VARIANT_MAX:
 				ERR_FAIL_V(nullptr);
 		}
@@ -809,17 +795,18 @@ struct VariantGetInternalPtr<PackedVector4Array> {
 	static const PackedVector4Array *get_ptr(const Variant *v) { return VariantInternal::get_vector4_array(v); }
 };
 
-// Forward declaration for GDScriptStructInstance
+// Forward declaration for GDScript struct template specialization
+// The actual type is defined in modules/gdscript/gdscript_struct.h
 class GDScriptStructInstance;
 
 template <>
 struct VariantGetInternalPtr<GDScriptStructInstance> {
 	static GDScriptStructInstance *get_ptr(Variant *v) {
-		// STRUCT type stores the pointer directly in _data._mem
+		// STRUCT type stores the wrapper by value in _data._mem
 		return reinterpret_cast<GDScriptStructInstance *>(VariantInternal::get_struct(v));
 	}
 	static const GDScriptStructInstance *get_ptr(const Variant *v) {
-		// STRUCT type stores the pointer directly in _data._mem
+		// STRUCT type stores the wrapper by value in _data._mem
 		return reinterpret_cast<const GDScriptStructInstance *>(VariantInternal::get_struct(v));
 	}
 };

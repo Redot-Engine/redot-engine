@@ -56,6 +56,19 @@ GDScriptStruct::GDScriptStruct(const StringName &p_name) :
 }
 
 GDScriptStruct::~GDScriptStruct() {
+	// Clean up constructor function pointer
+	if (constructor != nullptr) {
+		delete constructor;
+		constructor = nullptr;
+	}
+
+	// Clean up method function pointers
+	for (const KeyValue<StringName, MethodInfo> &E : methods) {
+		if (E.value.function != nullptr) {
+			delete E.value.function;
+		}
+	}
+	methods.clear();
 }
 
 Variant GDScriptStruct::create_variant_instance(const Variant **p_args, int p_argcount) {
@@ -354,10 +367,22 @@ bool GDScriptStructInstanceData::deserialize(const Dictionary &p_data) {
 
 void GDScriptStructInstanceData::get_property_list(List<PropertyInfo> *p_list) const {
 	if (blueprint.is_valid()) {
-		const HashMap<StringName, GDScriptStruct::MemberInfo> &struct_members = blueprint->get_members();
+		// Walk the inheritance chain to include inherited members
+		Vector<Ref<GDScriptStruct>> chain;
+		Ref<GDScriptStruct> current = blueprint;
+		while (current.is_valid()) {
+			chain.push_back(current);
+			current = current->get_base_struct();
+		}
 
-		for (const KeyValue<StringName, GDScriptStruct::MemberInfo> &E : struct_members) {
-			p_list->push_back(E.value.property_info);
+		// Iterate in reverse order (base to derived) so derived members come last
+		for (int i = chain.size() - 1; i >= 0; i--) {
+			Ref<GDScriptStruct> struct_in_chain = chain[i];
+			const HashMap<StringName, GDScriptStruct::MemberInfo> &struct_members = struct_in_chain->get_members();
+
+			for (const KeyValue<StringName, GDScriptStruct::MemberInfo> &E : struct_members) {
+				p_list->push_back(E.value.property_info);
+			}
 		}
 	}
 }
@@ -486,7 +511,9 @@ Variant *GDScriptStructInstance::get_member_ptr_by_index(int p_index) {
 		return nullptr;
 	}
 
-	// Return direct pointer - caller should have called _ensure_unique() first if they plan to modify
+	// COW: Ensure unique copy before returning a modifiable pointer
+	_ensure_unique();
+
 	return &data->get_members_mut().write[p_index];
 }
 

@@ -53,6 +53,8 @@
 #include "core/config/project_settings.h"
 #include "core/core_constants.h"
 #include "core/io/file_access.h"
+#include "core/io/marshalls.h"
+#include "core/variant/variant_internal.h"
 
 #include "scene/resources/packed_scene.h"
 #include "scene/scene_string_names.h"
@@ -2868,6 +2870,7 @@ Vector<String> GDScriptLanguage::get_reserved_words() const {
 		"namespace", // Reserved for potential future use.
 		"signal",
 		"static",
+		"struct",
 		"trait", // Reserved for potential future use.
 		"var",
 		// Other keywords.
@@ -3448,6 +3451,62 @@ bool gdscript_struct_instance_get_type_name(const GDScriptStructInstance *p_inst
 	ERR_FAIL_COND_V(!struct_type.is_valid(), false);
 	r_name = struct_type->get_fully_qualified_name();
 	return true;
+}
+
+} // extern "C"
+
+/***************** STRUCT SERIALIZATION HELPERS FOR MARSHALLS *****************/
+
+// These functions are called from core/io/marshalls.cpp with C linkage
+// to allow serialization without direct header dependencies
+
+extern "C" {
+
+// Check if a Variant contains a struct instance
+bool gdscript_variant_is_struct(const Variant &p_variant) {
+	return p_variant.get_type() == Variant::STRUCT;
+}
+
+// Serialize a struct variant
+// For debugger/marshaling, we encode the struct as a Dictionary
+// The header (STRUCT type) has already been written by the caller
+Error gdscript_variant_encode_struct(const Variant &p_variant, uint8_t *r_buffer, int &r_len) {
+	if (p_variant.get_type() != Variant::STRUCT) {
+		return ERR_INVALID_PARAMETER;
+	}
+
+	// get_struct returns void*, need to cast to GDScriptStructInstance*
+	const GDScriptStructInstance *instance = reinterpret_cast<const GDScriptStructInstance *>(VariantInternal::get_struct(&p_variant));
+	ERR_FAIL_NULL_V(instance, ERR_BUG);
+
+	// Serialize struct to Dictionary
+	Dictionary dict = instance->serialize();
+
+	// Encode the Dictionary as our data payload
+	// Note: This will write a DICTIONARY type header, which is fine
+	// because the decoder will read it and return a Dictionary (not reconstruct the struct)
+	Error err = encode_variant(dict, r_buffer, r_len, false, 0);
+	return err;
+}
+
+// Decode a struct variant (returns Dictionary for debugger compatibility)
+Error gdscript_variant_decode_struct(const uint8_t *p_buffer, int p_len, int *r_len, Variant &r_variant) {
+	// For debugger/marshaling use, decode as Dictionary
+	// The struct blueprint may not be available on the receiving end
+	// This allows the debugger to display struct data without the struct definition
+	Variant dict_var;
+	Error err = decode_variant(dict_var, p_buffer, p_len, r_len, false, 0);
+	if (err != OK) {
+		return err;
+	}
+
+	if (dict_var.get_type() != Variant::DICTIONARY) {
+		return ERR_INVALID_DATA;
+	}
+
+	// Return as Dictionary (not reconstructed as struct)
+	r_variant = dict_var;
+	return OK;
 }
 
 } // extern "C"
