@@ -281,6 +281,8 @@ bool arg_default_value_is_assignable_to_type(const Context &p_context, const Var
 		case Variant::VECTOR4I:
 			return p_arg_type.name == p_context.names_cache.vector4_type ||
 					p_arg_type.name == Variant::get_type_name(p_val.get_type());
+		case Variant::STRUCT:
+			return p_arg_type.name == Variant::get_type_name(p_val.get_type());
 		case Variant::VARIANT_MAX:
 			break;
 	}
@@ -307,6 +309,7 @@ bool arg_default_value_is_valid_data(const Variant &p_val, String *r_err_msg = n
 		case Variant::PACKED_VECTOR4_ARRAY:
 		case Variant::CALLABLE:
 		case Variant::SIGNAL:
+		case Variant::STRUCT:
 		case Variant::OBJECT:
 			if (p_val.is_zero()) {
 				return true;
