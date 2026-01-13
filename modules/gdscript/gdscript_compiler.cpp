@@ -759,10 +759,8 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 										}
 									} else if (base.type.has_type && base.type.kind == GDScriptDataType::BUILTIN) {
 										gen->write_call_builtin_type(result, base, base.type.builtin_type, call->function_name, arguments);
-									} else if (base.type.has_type && base.type.kind == GDScriptDataType::STRUCT) {
-										// Structs use regular method calls, not builtin type calls
-										gen->write_call(result, base, call->function_name, arguments);
 									} else {
+										// Regular call (includes structs and other types)
 										gen->write_call(result, base, call->function_name, arguments);
 									}
 									if (base.mode == GDScriptCodeGenerator::Address::TEMPORARY) {
@@ -799,10 +797,8 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 									}
 								} else if (base.type.has_type && base.type.kind == GDScriptDataType::BUILTIN) {
 									gen->write_call_builtin_type(result, base, base.type.builtin_type, call->function_name, arguments);
-								} else if (base.type.has_type && base.type.kind == GDScriptDataType::STRUCT) {
-									// Structs use regular method calls, not builtin type calls
-									gen->write_call(result, base, call->function_name, arguments);
 								} else {
+									// Regular call (includes structs and other types)
 									gen->write_call(result, base, call->function_name, arguments);
 								}
 								if (base.mode == GDScriptCodeGenerator::Address::TEMPORARY) {
