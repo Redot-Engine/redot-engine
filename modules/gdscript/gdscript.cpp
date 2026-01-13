@@ -3439,10 +3439,10 @@ bool ResourceFormatSaverGDScript::recognize(const Ref<Resource> &p_resource) con
 
 extern "C" {
 
-Dictionary gdscript_struct_instance_serialize(const GDScriptStructInstance *p_instance) {
-	ERR_FAIL_NULL_V(p_instance, Dictionary());
+void gdscript_struct_instance_serialize(const GDScriptStructInstance *p_instance, Dictionary &r_dict) {
+	ERR_FAIL_NULL(p_instance);
 	// Call the serialize method
-	return p_instance->serialize();
+	r_dict = p_instance->serialize();
 }
 
 bool gdscript_struct_instance_get_type_name(const GDScriptStructInstance *p_instance, String &r_name) {
