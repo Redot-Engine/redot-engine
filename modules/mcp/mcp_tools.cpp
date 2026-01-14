@@ -421,13 +421,17 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 			result.set_error("Parent or instance scene not found");
 		} else {
 			Node *instance = sub->instantiate();
-			if (p_args.has("node_name")) {
-				instance->set_name(p_args["node_name"]);
+			if (!instance) {
+				result.set_error("Failed to instantiate scene: " + instance_path);
+			} else {
+				if (p_args.has("node_name")) {
+					instance->set_name(p_args["node_name"]);
+				}
+				parent->add_child(instance);
+				instance->set_owner(root);
+				should_save = true;
+				result.add_text("Instanced '" + instance_path + "'");
 			}
-			parent->add_child(instance);
-			instance->set_owner(root);
-			should_save = true;
-			result.add_text("Instanced '" + instance_path + "'");
 		}
 	} else if (action == "set_prop") {
 		String node_path = p_args.get("node_path", ".");
