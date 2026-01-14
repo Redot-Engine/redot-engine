@@ -19,13 +19,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Editor (target=editor)
-            cache-name: android-editor
-            target: editor
-            scons-flags: >-
-              arch=arm64
-              production=yes
-
           - name: Template arm32 (target=template_release, arch=arm32)
             cache-name: android-template-arm32
             target: template_release

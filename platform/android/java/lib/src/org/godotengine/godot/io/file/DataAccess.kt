@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.io.file
+package org.godotengine.godot.io.file
 
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import org.redotengine.godot.error.Error
-import org.redotengine.godot.io.StorageScope
+import org.godotengine.godot.error.Error
+import org.godotengine.godot.io.StorageScope
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream

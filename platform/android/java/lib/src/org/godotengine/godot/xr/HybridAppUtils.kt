@@ -35,10 +35,10 @@
  */
 @file:JvmName("HybridAppUtils")
 
-package org.redotengine.godot.xr
+package org.godotengine.godot.xr
 
 import android.util.Log
-import org.redotengine.godot.GodotLib
+import org.godotengine.godot.GodotLib
 
 private const val TAG = "HybridAppUtils"
 

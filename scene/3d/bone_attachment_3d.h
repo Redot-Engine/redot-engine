@@ -51,6 +51,7 @@ class BoneAttachment3D : public Node3D {
 
 	void _check_bind();
 	void _check_unbind();
+	void _snap_to_bone();
 
 	bool updating = false;
 	void _transform_changed();

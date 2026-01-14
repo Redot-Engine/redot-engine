@@ -32,16 +32,16 @@
 
 @file:JvmName("BenchmarkUtils")
 
-package org.redotengine.godot.utils
+package org.godotengine.godot.utils
 
 import android.os.Build
 import android.os.SystemClock
 import android.os.Trace
 import android.util.Log
-import org.redotengine.godot.BuildConfig
-import org.redotengine.godot.error.Error
-import org.redotengine.godot.io.file.FileAccessFlags
-import org.redotengine.godot.io.file.FileAccessHandler
+import org.godotengine.godot.BuildConfig
+import org.godotengine.godot.error.Error
+import org.godotengine.godot.io.file.FileAccessFlags
+import org.godotengine.godot.io.file.FileAccessHandler
 import org.json.JSONObject
 import java.nio.ByteBuffer
 import java.util.Collections

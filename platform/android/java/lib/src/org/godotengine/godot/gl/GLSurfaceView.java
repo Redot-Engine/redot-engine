@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.redotengine.godot.gl;
+package org.godotengine.godot.gl;
 
 import android.content.Context;
 import android.opengl.EGL14;

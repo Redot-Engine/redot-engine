@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.service
+package org.godotengine.godot.service
 
 import android.app.Service
 import android.content.Intent
@@ -50,9 +50,9 @@ import android.widget.FrameLayout
 import androidx.annotation.CallSuper
 import androidx.annotation.RequiresApi
 import androidx.core.os.bundleOf
-import org.redotengine.godot.Godot
-import org.redotengine.godot.GodotHost
-import org.redotengine.godot.R
+import org.godotengine.godot.Godot
+import org.godotengine.godot.GodotHost
+import org.godotengine.godot.R
 import java.lang.ref.WeakReference
 
 /**

@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-package org.redotengine.godot.xr;
+package org.godotengine.godot.xr;
 
 /**
  * Godot available XR modes.
