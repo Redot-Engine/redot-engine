@@ -138,6 +138,8 @@ public:
 	static EditorSettings *get_singleton();
 	static String get_existing_settings_path();
 	static String get_newest_settings_path();
+	static Variant get_setting_directly(const String &p_setting, const Variant &p_default = Variant());
+	static Color get_default_base_color();
 
 	static void create();
 	void setup_language();
