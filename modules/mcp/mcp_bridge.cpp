@@ -277,7 +277,12 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 				resp["error"] = "No root window found";
 				return resp;
 			}
-			Ref<Image> img = vp->get_texture()->get_image();
+			Ref<Texture2D> tex = vp->get_texture();
+			if (tex.is_null()) {
+				resp["error"] = "Viewport texture is missing";
+				return resp;
+			}
+			Ref<Image> img = tex->get_image();
 
 			float scale = args.get("scale", 1.0);
 			if (scale != 1.0) {
