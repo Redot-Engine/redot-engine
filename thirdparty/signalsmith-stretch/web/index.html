@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Signalsmith Stretch Web Audio demo</title>
+		<style>
+			body {
+				font-size: 12pt;
+				font-family: Arial, sans-serif;
+			}
+			#start-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				height: 100vh;
+				width: 100vw;
+				display: flex;
+				flex-direction: column;
+    				z-index: 100;
+			}
+			button {
+				justify-content: center;
+				align-items: center;
+				flex-grow: 1;
+				font: inherit;
+			}
+			.suggestion-code {
+				border: 1px solid #888;
+				border-radius: 3px;
+				padding: 0.3em 0.5em;
+				margin: 1em 0;
+				cursor: pointer;
+			}
+			.suggestion-code:hover {
+				background: #8884;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="start-overlay">
+			<button id="start-live">live</button>
+			<button id="start-scheduled">scheduled</button>
+		</div>
+		<div id="suggestions">
+			<pre><code>stretch.start()</code></pre>
+			<pre><code>stretch.start(audioContext.currentTime + 1)</code></pre>
+			<pre><code>stretch.stop()</code></pre>
+			<pre><code>stretch.stop(audioContext.currentTime + 3)</code></pre>
+			<pre><code>stretch.schedule({
+	semitones: 5
+})</code></pre>
+			<pre><code>stretch.schedule({
+	semitones: 0,
+	output: audioContext.currentTime + 3
+})</code></pre>
+			<pre><code>stretch.schedule({
+	rate: 0.8
+})</code></pre>
+			<pre><code>stretch.schedule({
+	input: 0, // start from beginning
+	rate: 1.2,
+	semitones: -2
+})</code></pre>
+			<pre><code>stretch.schedule({
+	input: 0,
+	output: audioContext.currentTime + 1
+}, true)</code></pre>
+		</div>
+		<script type="module">
+			import SignalsmithStretch from "./release/SignalsmithStretch.mjs";
+			let $ = document.querySelector.bind(document);
+			let $$ = document.querySelectorAll.bind(document);
+			
+			async function start(live) {
+				$('#start-overlay').remove();
+
+				let audioContext = new AudioContext();
+				
+				let stretchNode = await SignalsmithStretch(audioContext);
+				stretchNode.connect(audioContext.destination);
+				
+				let response = await fetch('loop.mp3');
+				let arrayBuffer = await response.arrayBuffer();
+				let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+				
+				if (live) {
+					stretchNode.start();
+					let sourceNode = audioContext.createBufferSource();
+					sourceNode.buffer = audioBuffer;
+					sourceNode.connect(stretchNode);
+					sourceNode.loop = true;
+					sourceNode.start();
+				} else {
+					let channelArrays = []
+					for (let c = 0; c < audioBuffer.numberOfChannels; ++c) {
+						channelArrays.push(audioBuffer.getChannelData(c));
+					}
+					let channelBuffers = channelArrays.map(c => c.buffer);
+					stretchNode.addBuffers(channelArrays, channelBuffers);
+				}
+
+				// put things in the global context, for debugging
+				Object.assign(globalThis, {
+					stretch: stretchNode,
+					audioContext: audioContext
+				});
+			}
+
+			$('#start-live').onclick = e => start(true);
+			$('#start-scheduled').onclick = e => start(false);
+			
+			$$('#suggestions pre').forEach(node => {
+				let fn = new Function('return ' + node.textContent);
+				node.classList.add('suggestion-code');
+				node.onclick = e => fn().then(console.log);
+			});
+		</script>
+	</body>
+</html>
