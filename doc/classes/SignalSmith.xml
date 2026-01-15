@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SignalSmith" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Performs time-stretching and pitch-shifting on raw audio buffers using Signalsmith.
+	</brief_description>
+	<description>
+		SignalSmith is a low-level audio processing utility which wraps the Signalsmith time-stretching library. It operates on raw interleaved floating-point PCM audio buffers and allows independent control of playback tempo and pitch.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="process">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="input" type="PackedFloat32Array" />
+			<description>
+				Processes a block of interleaved audio samples and returns a new buffer containing the time-stretched and pitch-shifted result.
+				The effective playback speed is determined by the ratio of input samples to output samples, as influenced by the current tempo setting. The input buffer must contain 32-bit floating-point PCM data and be interleaved according to the configured channel count.
+			</description>
+		</method>
+		<method name="reset">
+			<return type="void" />
+			<description>
+				Resets the internal processing state.
+				This should be called when restarting playback or discontinuously changing input streams.
+			</description>
+		</method>
+		<method name="set_channels">
+			<return type="void" />
+			<param index="0" name="channels" type="int" />
+			<description>
+				Sets the number of audio channels.
+				Input and output buffers are expected to be interleaved according to this channel count.
+			</description>
+		</method>
+		<method name="set_pitch">
+			<return type="void" />
+			<param index="0" name="pitch" type="float" />
+			<description>
+				Sets the pitch transpose factor.
+				A value of `1.0` leaves pitch unchanged. Values greater than `1.0` raise pitch, while values less than `1.0` lower pitch.
+			</description>
+		</method>
+		<method name="set_sample_rate">
+			<return type="void" />
+			<param index="0" name="rate" type="int" />
+			<description>
+				Sets the sample rate, in Hz, used by the internal processing engine.
+				Changing the sample rate resets the internal state.
+			</description>
+		</method>
+		<method name="set_tempo">
+			<return type="void" />
+			<param index="0" name="tempo" type="float" />
+			<description>
+				Sets the tempo multiplier used during processing.
+				This value influences the ratio between input and output buffer sizes during time-stretching. A value of `1.0` preserves the original tempo, values greater than `1.0` speed up playback, and values less than `1.0` slow it down.
+			</description>
+		</method>
+	</methods>
+</class>

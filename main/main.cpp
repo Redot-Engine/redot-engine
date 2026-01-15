@@ -135,11 +135,6 @@
 
 #include "modules/modules_enabled.gen.h" // For mono.
 
-// Fallback definition for missing editor splash color
-#if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
-static const Color boot_splash_editor_bg_color = Color(0.06, 0.09, 0.14);
-#endif
-
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 #include "modules/mono/editor/bindings_generator.h"
 #endif
@@ -3225,48 +3220,8 @@ Error Main::setup2(bool p_show_boot_logo) {
 			window_position = &position;
 		}
 
-		Color boot_bg_color;
-#ifdef TOOLS_ENABLED
-		if (editor) {
-			// Read base color directly from settings file since EditorSettings isn't available yet
-			boot_bg_color = Color(0.06, 0.09, 0.14); // Default fallback
-			if (EditorPaths::get_singleton() && EditorPaths::get_singleton()->are_paths_valid()) {
-				String config_file_path = EditorSettings::get_existing_settings_path();
-				if (FileAccess::exists(config_file_path)) {
-					Ref<FileAccess> f = FileAccess::open(config_file_path, FileAccess::READ);
-					if (f.is_valid()) {
-						VariantParser::StreamFile stream;
-						stream.f = f;
-						String assign;
-						Variant value;
-						VariantParser::Tag next_tag;
-						int lines = 0;
-						String error_text;
-						VariantParser::ResourceParser rp_new;
-						rp_new.ext_func = _parse_resource_dummy;
-						rp_new.sub_func = _parse_resource_dummy;
-						while (true) {
-							assign = Variant();
-							next_tag.fields.clear();
-							next_tag.name = String();
-							Error err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true);
-							if (err == ERR_FILE_EOF) {
-								break;
-							}
-							if (err == OK && !assign.is_empty() && assign == "interface/theme/base_color") {
-								boot_bg_color = value;
-								break;
-							}
-						}
-					}
-				}
-			}
-		} else {
-			boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
-		}
-#else
-		boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
-#endif
+		GLOBAL_DEF(PropertyInfo(Variant::COLOR, "application/boot_splash/bg_color"), Color(0.14, 0.14, 0.14));
+		Color boot_bg_color = get_boot_splash_bg_color();
 		DisplayServer::set_early_window_clear_color_override(true, boot_bg_color);
 
 		DisplayServer::Context context;
@@ -3581,7 +3536,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 			}
 		}
 
-		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", Color(0.128, 0.128, 0.128));
+		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", get_boot_splash_bg_color());
 		RenderingServer::get_singleton()->set_default_clear_color(clear);
 
 		if (p_show_boot_logo) {
@@ -3862,6 +3817,19 @@ Error Main::setup2(bool p_show_boot_logo) {
 	return OK;
 }
 
+Color Main::get_boot_splash_bg_color() {
+#if defined(TOOLS_ENABLED)
+	if (editor || project_manager) {
+		if (EditorSettings::get_singleton()) {
+			return EditorSettings::get_singleton()->get_setting("interface/theme/base_color");
+		}
+		return EditorSettings::get_setting_directly("interface/theme/base_color", EditorSettings::get_default_base_color());
+	}
+#endif
+
+	return GLOBAL_GET("application/boot_splash/bg_color");
+}
+
 void Main::setup_boot_logo() {
 	MAIN_PRINT("Main: Load Boot Image");
 
@@ -3907,49 +3875,8 @@ void Main::setup_boot_logo() {
 			boot_logo->set_pixel(0, 0, Color(0, 0, 0, 0));
 		}
 
-		Color boot_bg_color;
-#ifdef TOOLS_ENABLED
-		if (editor) {
-			// Read base color directly from settings file since EditorSettings isn't available yet
-			boot_bg_color = Color(0.06, 0.09, 0.14); // Default fallback
-			if (EditorPaths::get_singleton() && EditorPaths::get_singleton()->are_paths_valid()) {
-				String config_file_path = EditorSettings::get_existing_settings_path();
-				if (FileAccess::exists(config_file_path)) {
-					Ref<FileAccess> f = FileAccess::open(config_file_path, FileAccess::READ);
-					if (f.is_valid()) {
-						VariantParser::StreamFile stream;
-						stream.f = f;
-						String assign;
-						Variant value;
-						VariantParser::Tag next_tag;
-						int lines = 0;
-						String error_text;
-						VariantParser::ResourceParser rp_new;
-						rp_new.ext_func = _parse_resource_dummy;
-						rp_new.sub_func = _parse_resource_dummy;
-						while (true) {
-							assign = Variant();
-							next_tag.fields.clear();
-							next_tag.name = String();
-							Error err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true);
-							if (err == ERR_FILE_EOF) {
-								break;
-							}
-							if (err == OK && !assign.is_empty() && assign == "interface/theme/base_color") {
-								boot_bg_color = value;
-								break;
-							}
-						}
-					}
-				}
-			}
-		} else {
-			boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
-		}
-#else
-		boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
-#endif
 		if (boot_logo.is_valid()) {
+			Color boot_bg_color = get_boot_splash_bg_color();
 			RenderingServer::get_singleton()->set_boot_image(boot_logo, boot_bg_color, boot_logo_scale, boot_logo_filter);
 
 		} else {
@@ -3962,6 +3889,7 @@ void Main::setup_boot_logo() {
 #endif
 
 			MAIN_PRINT("Main: ClearColor");
+			Color boot_bg_color = get_boot_splash_bg_color();
 			RenderingServer::get_singleton()->set_default_clear_color(boot_bg_color);
 			MAIN_PRINT("Main: Image");
 			RenderingServer::get_singleton()->set_boot_image(splash, boot_bg_color, false);
@@ -3975,8 +3903,10 @@ void Main::setup_boot_logo() {
 		}
 #endif
 	}
-	RenderingServer::get_singleton()->set_default_clear_color(
-			GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
+	if (!editor && !project_manager) {
+		RenderingServer::get_singleton()->set_default_clear_color(
+				GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
+	}
 }
 
 String Main::get_rendering_driver_name() {
