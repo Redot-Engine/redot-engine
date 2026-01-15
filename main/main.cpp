@@ -146,6 +146,11 @@
 #endif // TOOLS_ENABLED && !GDSCRIPT_NO_LSP
 #endif // MODULE_GDSCRIPT_ENABLED
 
+#ifdef MODULE_MCP_ENABLED
+#include "modules/mcp/mcp_bridge.h"
+#include "modules/mcp/mcp_server.h"
+#endif // MODULE_MCP_ENABLED
+
 /* Static members */
 
 // Singletons
@@ -283,6 +288,12 @@ static bool validate_extension_api = false;
 static String validate_extension_api_file;
 #endif
 bool profile_gpu = false;
+
+#ifdef MODULE_MCP_ENABLED
+static bool mcp_server_enabled = false;
+static int mcp_bridge_port = 0;
+static String mcp_run_tests;
+#endif
 
 // Constants.
 
@@ -600,6 +611,12 @@ void Main::print_help(const char *p_binary) {
 	print_help_option("--text-driver <driver>", "Text driver (used for font rendering, bidirectional support and shaping).\n");
 	print_help_option("--tablet-driver <driver>", "Pen tablet input driver.\n");
 	print_help_option("--headless", "Enable headless mode (--display-driver headless --audio-driver Dummy). Useful for servers and with --script.\n");
+#ifdef MODULE_MCP_ENABLED
+
+	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--mcp-bridge-port <port>", "Port for the MCP Bridge connection (internal use).\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--run-tests <path>", "Run a unit test script headlessly and exit.\n", CLI_OPTION_AVAILABILITY_EDITOR);
+#endif
 	print_help_option("--log-file <file>", "Write output/error log to the specified path instead of the default location defined by the project.\n");
 	print_help_option("", "<file> path should be absolute or relative to the project directory.\n");
 	print_help_option("--write-movie <file>", "Write a video to the specified path (usually with .avi or .png extension).\n");
@@ -1400,6 +1417,37 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			audio_driver = NULL_AUDIO_DRIVER;
 			display_driver = NULL_DISPLAY_DRIVER;
 
+#ifdef MODULE_MCP_ENABLED
+		} else if (arg == "--mcp-server") { // Start MCP server for AI agent integration.
+			mcp_server_enabled = true;
+			audio_driver = NULL_AUDIO_DRIVER;
+			display_driver = NULL_DISPLAY_DRIVER;
+		} else if (arg == "--mcp-bridge-port") { // Port for MCP Bridge (game side)
+			if (N) {
+				int port = N->get().to_int();
+				if (port > 0 && port < 65536) {
+					mcp_bridge_port = port;
+				} else {
+					OS::get_singleton()->print("Invalid port number for --mcp-bridge-port: %d. Must be between 1 and 65535.\n", port);
+					goto error;
+				}
+				N = N->next();
+			} else {
+				OS::get_singleton()->print("Missing <port> argument for --mcp-bridge-port <port>.\n");
+				goto error;
+			}
+		} else if (arg == "--run-tests") { // Run a unit test script headlessly and exit.
+			if (N) {
+				mcp_run_tests = N->get();
+				N = N->next();
+				audio_driver = NULL_AUDIO_DRIVER;
+				display_driver = NULL_DISPLAY_DRIVER;
+			} else {
+				OS::get_singleton()->print("Missing <path> argument for --run-tests <path>.\n");
+				goto error;
+			}
+#endif
+
 		} else if (arg == "--embedded") { // Enable embedded mode.
 #ifdef MACOS_ENABLED
 			display_driver = EMBEDDED_DISPLAY_DRIVER;
@@ -2146,7 +2194,11 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	if (main_args.is_empty() && String(GLOBAL_GET("application/run/main_scene")) == "") {
 #ifdef TOOLS_ENABLED
-		if (!editor && !project_manager) {
+		if (!editor && !project_manager
+#ifdef MODULE_MCP_ENABLED
+				&& !mcp_server_enabled
+#endif
+		) {
 #endif
 			const String error_msg = "Error: Can't run project: no main scene defined in the project.\n";
 			OS::get_singleton()->print("%s", error_msg.utf8().get_data());
@@ -2940,7 +2992,10 @@ Error Main::setup2(bool p_show_boot_logo) {
 	set_current_thread_safe_for_nodes(true);
 
 	// Don't use rich formatting to prevent ANSI escape codes from being written to log files.
-	print_header(false);
+#ifdef MODULE_MCP_ENABLED
+	if (!mcp_server_enabled)
+#endif
+		print_header(false);
 
 #ifdef TOOLS_ENABLED
 	int accessibility_mode_editor = 0;
@@ -4159,7 +4214,11 @@ int Main::start() {
 	}
 
 #ifdef TOOLS_ENABLED
-	if (!editor && !project_manager && !cmdline_tool && script.is_empty() && game_path.is_empty()) {
+	if (!editor && !project_manager && !cmdline_tool && script.is_empty() && game_path.is_empty()
+#ifdef MODULE_MCP_ENABLED
+			&& !mcp_server_enabled
+#endif
+	) {
 		// If we end up here, it means we didn't manage to detect what we want to run.
 		// Let's throw an error gently. The code leading to this is pretty brittle so
 		// this might end up triggered by valid usage, in which case we'll have to
@@ -4647,6 +4706,19 @@ int Main::start() {
 
 	GDExtensionManager::get_singleton()->startup();
 
+#ifdef MODULE_MCP_ENABLED
+	if (mcp_bridge_port != 0) {
+		if (MCPBridge::get_singleton()) {
+			Error err = MCPBridge::get_singleton()->connect_to_server("127.0.0.1", mcp_bridge_port);
+			if (err != OK) {
+				OS::get_singleton()->print("Error: MCPBridge failed to connect to server at 127.0.0.1:%d. Error code: %d\n", mcp_bridge_port, err);
+			}
+		} else {
+			OS::get_singleton()->print("Error: MCPBridge singleton is null despite module being enabled.\n");
+		}
+	}
+#endif
+
 	if (minimum_time_msec) {
 		uint64_t minimum_time = 1000 * minimum_time_msec;
 		uint64_t elapsed_time = OS::get_singleton()->get_ticks_usec();
@@ -4655,8 +4727,38 @@ int Main::start() {
 		}
 	}
 
+#ifdef MODULE_MCP_ENABLED
+	// If MCP server mode is enabled, start the server and don't continue to the main loop.
+	if (mcp_server_enabled) {
+		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
+
+		// Disable engine stdout printing to keep JSON-RPC stream pure
+		if (Engine::get_singleton()) {
+			Engine::get_singleton()->set_print_to_stdout(false);
+		}
+
+		if (MCPServer::get_singleton()) {
+			MCPServer::get_singleton()->start();
+		} else {
+			OS::get_singleton()->print("Error: MCPServer singleton is null.\n");
+			return EXIT_FAILURE;
+		}
+		return EXIT_SUCCESS;
+	}
+
+	if (!mcp_run_tests.is_empty()) {
+		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
+
+		MCPServer::run_tests(mcp_run_tests);
+		return EXIT_SUCCESS;
+	}
+#endif
+
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
-	OS::get_singleton()->benchmark_dump();
+#ifdef MODULE_MCP_ENABLED
+	if (!mcp_server_enabled && mcp_run_tests.is_empty())
+#endif
+		OS::get_singleton()->benchmark_dump();
 
 	return EXIT_SUCCESS;
 }
@@ -4691,6 +4793,11 @@ static uint64_t navigation_process_max = 0;
 // will terminate the program. In case of failure, the OS exit code needs
 // to be set explicitly here (defaults to EXIT_SUCCESS).
 bool Main::iteration() {
+#ifdef MODULE_MCP_ENABLED
+	if (MCPBridge::get_singleton()) {
+		MCPBridge::get_singleton()->update();
+	}
+#endif
 	iterating++;
 
 	const uint64_t ticks = OS::get_singleton()->get_ticks_usec();
