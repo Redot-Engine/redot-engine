@@ -1690,7 +1690,7 @@ void EditorNode::save_resource_as(const Ref<Resource> &p_resource, const String 
 				file->set_current_file(String());
 			}
 		}
-	} else if (!p_resource->get_path().is_empty()) {
+	} else if (!p_resource->get_path().get_base_dir().is_empty()) {
 		file->set_current_path(p_resource->get_path());
 		if (!extensions.is_empty()) {
 			const String ext = p_resource->get_path().get_extension().to_lower();
@@ -3507,7 +3507,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			about->popup_centered(Size2(780, 500) * EDSCALE);
 		} break;
 		case HELP_SUPPORT_GODOT_DEVELOPMENT: {
-			OS::get_singleton()->shell_open("https://fund.godotengine.org");
+			OS::get_singleton()->shell_open("https://fund.godotengine.org/?ref=help_menu");
 		} break;
 	}
 }
