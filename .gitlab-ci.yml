@@ -13,6 +13,7 @@ stages:
     - /root/scripts/Fetch_Deps.sh "$PLATFORM"
     - mkdir  -p out/$PLATFORM/$ARCH/$TYPE
     - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS target=$TARGET
+    - rm -rf bin/obj
     - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE/
   artifacts:
     expire_in: 3 days
@@ -27,6 +28,7 @@ stages:
     - /root/scripts/Fetch_Deps.sh "$PLATFORM"
     - mkdir  -p out/templates
     - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS target=$TARGET
+    - rm -rf bin/obj
     - cp -r bin/* out/templates
 
 .build-release-template-mono:
@@ -39,6 +41,7 @@ stages:
     - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
     - mkdir  -p out/templates-mono
     - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS module_mono_enabled=yes target=$TARGET
+    - rm -rf bin/obj
     - cp -r bin/* out/templates-mono
 
 .Template-Linux:
@@ -332,6 +335,7 @@ stages:
     - cp -r mono-glue/GodotSharp/GodotSharp/Generated modules/mono/glue/GodotSharp/GodotSharp/
     - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
     - ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=$PLATFORM
+    - rm -rf bin/obj
     - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE-mono/
   artifacts:
     public: false
@@ -355,26 +359,26 @@ create-tarball:
     - status_version=$(grep -E '^status_version\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
     - echo "$major.$minor.$patch-$status.$status_version"
     - |
-       if [ "$status" == "stable" ]
-         then
-         if [ "$patch" == "0" ]
-           then
-           export VERSIONSTRING="${major}.${minor}-stable"
-           export VERSIONTXT="${major}.${minor}.stable"
-         else
-           export VERSIONSTRING="${major}.${minor}.${patch}-stable"
-           export VERSIONTXT="${major}.${minor}.${patch}.stable"
-         fi
+      if [ "$status" == "stable" ]
+        then
+        if [ "$patch" == "0" ]
+          then
+          export VERSIONSTRING="${major}.${minor}-stable"
+          export VERSIONTXT="${major}.${minor}.stable"
         else
-         if [ "$patch" == "0" ]
-         then
-           export VERSIONSTRING="${major}.${minor}-${status}.${status_version}"
-           export VERSIONTXT="${major}.${minor}.${status}.${status_version}"
-         else
-           export VERSIONSTRING="${major}.${minor}.${patch}-${status}.${status_version}"
-           export VERSIONTXT="${major}.${minor}.${patch}.${status}.${status_version}"
-         fi
-       fi
+          export VERSIONSTRING="${major}.${minor}.${patch}-stable"
+          export VERSIONTXT="${major}.${minor}.${patch}.stable"
+        fi
+       else
+        if [ "$patch" == "0" ]
+        then
+          export VERSIONSTRING="${major}.${minor}-${status}.${status_version}"
+          export VERSIONTXT="${major}.${minor}.${status}.${status_version}"
+        else
+          export VERSIONSTRING="${major}.${minor}.${patch}-${status}.${status_version}"
+          export VERSIONTXT="${major}.${minor}.${patch}.${status}.${status_version}"
+        fi
+      fi
     - echo $VERSIONSTRING
     - TARBALL_NAME="redot-${VERSIONSTRING}.tar.xz"
     - FOLDER_NAME="redot-${VERSIONSTRING}"
@@ -393,7 +397,7 @@ linux-editor-x64-mono:
   tags: [ docker ]
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
   rules:
-    - when: always
+    - if: $DO_RELEASE == "true"
   stage: build
   before_script:
     - export SCONS="scons -j$(nproc) verbose=no warnings=no progress=no"
@@ -430,6 +434,7 @@ linux-editor-x64-mono:
     - cp -r mono-glue/GodotSharp/GodotSharp/Generated modules/mono/glue/GodotSharp/GodotSharp/
     - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
     - ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=$PLATFORM
+    - rm -rf bin/obj
     - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE-mono/
   variables:
     OPTIONS: "production=yes"
