@@ -1,5 +1,5 @@
 #define MyAppName "Redot Engine"
-#define MyAppVersion "4.5"
+#define MyAppVersion "26.1"
 #define MyAppPublisher "Redot Engine contributors"
 #define MyAppURL "https://redotengine.org/"
 #define MyAppExeName "redot.exe"

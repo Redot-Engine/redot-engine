@@ -658,10 +658,16 @@ void Input::joy_connection_changed(int p_idx, bool p_connected, const String &p_
 		int mapping = fallback_mapping;
 		// Bypass the mapping system if the joypad's mapping is already handled by its driver
 		// (for example, the SDL joypad driver).
-		if (!p_joypad_info.get("mapping_handled", false)) {
+		if (p_joypad_info.get("mapping_handled", false)) {
+			js.is_known = true;
+		} else {
 			for (int i = 0; i < map_db.size(); i++) {
 				if (js.uid == map_db[i].uid) {
 					mapping = i;
+					if (mapping != fallback_mapping) {
+						js.is_known = true;
+					}
+					break;
 				}
 			}
 		}
@@ -789,6 +795,7 @@ void Input::_parse_input_event_impl(const Ref<InputEvent> &p_event, bool p_is_em
 			touch_event->set_canceled(mb->is_canceled());
 			touch_event->set_position(mb->get_position());
 			touch_event->set_double_tap(mb->is_double_click());
+			touch_event->set_window_id(mb->get_window_id());
 			touch_event->set_device(InputEvent::DEVICE_ID_EMULATION);
 			_THREAD_SAFE_UNLOCK_
 			event_dispatch_function(touch_event);
@@ -1862,13 +1869,7 @@ void Input::set_fallback_mapping(const String &p_guid) {
 
 //platforms that use the remapping system can override and call to these ones
 bool Input::is_joy_known(int p_device) {
-	if (joy_names.has(p_device)) {
-		int mapping = joy_names[p_device].mapping;
-		if (mapping != -1 && mapping != fallback_mapping) {
-			return true;
-		}
-	}
-	return false;
+	return joy_names.has(p_device) && joy_names[p_device].is_known;
 }
 
 String Input::get_joy_guid(int p_device) const {

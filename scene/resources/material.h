@@ -66,7 +66,6 @@ protected:
 
 	void _mark_ready();
 	void _mark_initialized(const Callable &p_add_to_dirty_list, const Callable &p_update_shader);
-	bool _is_initialized() { return init_state == INIT_STATE_READY; }
 
 	GDVIRTUAL0RC_REQUIRED(RID, _get_shader_rid)
 	GDVIRTUAL0RC_REQUIRED(Shader::Mode, _get_shader_mode)
@@ -77,6 +76,9 @@ public:
 		RENDER_PRIORITY_MAX = RS::MATERIAL_RENDER_PRIORITY_MAX,
 		RENDER_PRIORITY_MIN = RS::MATERIAL_RENDER_PRIORITY_MIN,
 	};
+
+	bool _is_initialized() { return init_state == INIT_STATE_READY; }
+
 	void set_next_pass(const Ref<Material> &p_pass);
 	Ref<Material> get_next_pass() const;
 

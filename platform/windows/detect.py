@@ -316,7 +316,7 @@ def configure_msvc(env: "SConsEnvironment"):
                 if not caught and (is_cl and re_cl_capture.match(line)) or (not is_cl and re_link_capture.match(line)):
                     caught = True
                     try:
-                        with open(capture_path, "a", encoding="utf-8") as log:
+                        with open(capture_path, "a", encoding=sys.stdout.encoding, errors="replace") as log:
                             log.write(line + "\n")
                     except OSError:
                         print_warning(f'Failed to log captured line: "{line}".')
@@ -407,6 +407,7 @@ def configure_msvc(env: "SConsEnvironment"):
         "dwrite",
         "wbemuuid",
         "ntdll",
+        "hid",
     ]
 
     if env.debug_features:
@@ -481,7 +482,7 @@ def configure_msvc(env: "SConsEnvironment"):
                 "libGLES.windows." + env["arch"] + prebuilt_lib_extra_suffix,
             ]
             LIBS += ["dxgi", "d3d9", "d3d11"]
-        env.Prepend(CPPEXTPATH=["#thirdparty/angle/include"])
+        env.Prepend(CPPPATH=["#thirdparty/angle/include"])
 
     if env["target"] in ["editor", "template_debug"]:
         LIBS += ["psapi", "dbghelp"]
@@ -786,6 +787,7 @@ def configure_mingw(env: "SConsEnvironment"):
             "dwrite",
             "wbemuuid",
             "ntdll",
+            "hid",
         ]
     )
 
@@ -874,7 +876,7 @@ def configure_mingw(env: "SConsEnvironment"):
                 ]
             )
             env.Append(LIBS=["dxgi", "d3d9", "d3d11"])
-        env.Prepend(CPPEXTPATH=["#thirdparty/angle/include"])
+        env.Prepend(CPPPATH=["#thirdparty/angle/include"])
 
     env.Append(CPPDEFINES=["MINGW_ENABLED", ("MINGW_HAS_SECURE_API", 1)])
 
@@ -931,6 +933,6 @@ def check_d3d12_installed(env, suffix):
             "The Direct3D 12 rendering driver requires dependencies to be installed.\n"
             "You can install them by running `python misc\\scripts\\install_d3d12_sdk_windows.py`.\n"
             "See the documentation for more information:\n\t"
-            "https://docs.godotengine.org/en/latest/contributing/development/compiling/compiling_for_windows.html"
+            "https://docs.godotengine.org/en/latest/engine_details/development/compiling/compiling_for_windows.html"
         )
         sys.exit(255)

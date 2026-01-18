@@ -61,13 +61,15 @@
 # Damglador <vse.stopchanskyi@gmail.com>, 2025.
 # Volodymyr Mikhav <mihaw.wolodymyr@gmail.com>, 2025.
 # Максим Горпиніч <gorpinicmaksim5@gmail.com>, 2025.
+# Максим Горпиніч <gorpinicmaksim0@gmail.com>, 2025.
+# "A Thousand Ships (she/her)" <over999ships@gmail.com>, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: Ukrainian (Godot Engine)\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2025-08-02 06:02+0000\n"
-"Last-Translator: Максим Горпиніч <gorpinicmaksim5@gmail.com>\n"
+"PO-Revision-Date: 2025-12-02 13:21+0000\n"
+"Last-Translator: Максим Горпиніч <gorpinicmaksim0@gmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/godot-engine/"
 "godot/uk/>\n"
 "Language: uk\n"
@@ -76,7 +78,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 msgid "Unset"
 msgstr "Зняти"
@@ -724,6 +726,9 @@ msgstr "Крок сітки Y"
 msgid "Blend X Value"
 msgstr "Значення суміші X"
 
+msgid "Blend Y Value"
+msgstr "Значення Y суміші"
+
 msgid "Max Y"
 msgstr "Макс Y"
 
@@ -738,6 +743,9 @@ msgstr "Мін X"
 
 msgid "X Value"
 msgstr "X Значення"
+
+msgid "Max X"
+msgstr "Макс X"
 
 msgid "Parameter Changed: %s"
 msgstr "Параметр змінено: %s"
@@ -1662,7 +1670,7 @@ msgid "Track is not of type Node3D, can't insert key"
 msgstr "Доріжка не належить до типу Node3D, ключ не можна вставити"
 
 msgid "Track is not of type MeshInstance3D, can't insert key"
-msgstr "Доріжка не належить до типу Node3D, не вдається вставити ключ"
+msgstr "Трек не належить до типу MeshInstance3D, неможливо вставити ключ"
 
 msgid "Track path is invalid, so can't add a method key."
 msgstr "Шлях доріжки є некоректним, отже не можна додавати ключ методу."
@@ -2385,7 +2393,7 @@ msgid "Assets ZIP File"
 msgstr "ZIP файл ресурсів"
 
 msgid "AssetLib"
-msgstr "AssetLib'"
+msgstr "AssetLib"
 
 msgid "Error opening asset file for \"%s\" (not in ZIP format)."
 msgstr ""
@@ -2737,7 +2745,7 @@ msgstr ""
 "системою."
 
 msgid "Synchronize Script Changes"
-msgstr "Синхронізувати зміни у скрипті"
+msgstr "Синхронізувати зміни у сценарії"
 
 msgid ""
 "When this option is enabled, any script that is saved will be reloaded in the "
@@ -4394,7 +4402,7 @@ msgid "Error duplicating scene to save it."
 msgstr "Помилка під час дублювання сцени для її збереження."
 
 msgid "Instantiate Script"
-msgstr "Вставити екземпляр скрипту"
+msgstr "Вставити екземпляр сценарію"
 
 msgid "<unknown>"
 msgstr "<невідомий>"
@@ -4515,7 +4523,7 @@ msgid "Attach Script..."
 msgstr "Прикріпити скрипт..."
 
 msgid "Extend Script..."
-msgstr "Розширити сценарій..."
+msgstr "Розширити скрипт..."
 
 msgid "Move Up"
 msgstr "Перемістити вгору"
@@ -4564,7 +4572,7 @@ msgid "Detach the script from the selected node."
 msgstr "Від'єднати скрипт від позначеного вузла."
 
 msgid "Extend the script of the selected node."
-msgstr "Розширити сценарій вибраного вузла."
+msgstr "Розширити скрипт вибраного вузла."
 
 msgid "Extra scene options."
 msgstr "Додаткові параметри сцени."
@@ -5012,7 +5020,7 @@ msgstr ""
 "конфігурацію."
 
 msgid "Unable to find script field for addon plugin at: '%s'."
-msgstr "Не вдалося знайти поле скрипту для додатка тут: «%s»."
+msgstr "Не вдалося знайти поле сценарію для додатка тут: «%s»."
 
 msgid "Unable to load addon script from path: '%s'."
 msgstr "Неможливо завантажити скрипт доповнення зі шляху: '%s'."
@@ -6721,7 +6729,7 @@ msgid "Script path: %s"
 msgstr "Шлях сценарію: %s"
 
 msgid "The script will run in the editor."
-msgstr "Сценарій запуститься в редакторі."
+msgstr "Скрипт запуститься в редакторі."
 
 msgid "The selected class can't be instantiated."
 msgstr "Вибраний клас не може бути створений."
@@ -7649,6 +7657,13 @@ msgstr "Назви, що починаються з _, зарезервовані
 msgid "Property: %s"
 msgstr "Нерухомість: %s"
 
+msgid ""
+"Toggling the checkbox is disabled for Resource properties. Modify the "
+"property using the resource picker instead."
+msgstr ""
+"Перемикання прапорця вимкнено для властивостей ресурсу. Натомість змініть "
+"властивість за допомогою засобу вибору ресурсу."
+
 msgid "Unfavorite Property"
 msgstr "Вилучити властивість з обраного"
 
@@ -8013,6 +8028,9 @@ msgstr "Новий шейдер..."
 msgid "Size: %s"
 msgstr "Розмір: %s"
 
+msgid "Invalid file or broken link."
+msgstr "Недійсний файл або непрацююче посилання."
+
 msgid "Type: %s"
 msgstr "Введіть: %s"
 
@@ -8030,6 +8048,9 @@ msgstr "Довжина: %0.3fs"
 
 msgid "Advanced settings are always shown when searching."
 msgstr "Розширені налаштування завжди відображаються під час пошуку."
+
+msgid "Event Configured"
+msgstr "Подія налаштована"
 
 msgid "Configure"
 msgstr "Конфігурація"
@@ -8718,6 +8739,12 @@ msgstr "Ім'я тегу не може бути порожнім."
 
 msgid "Tag name can't contain spaces."
 msgstr "Назва тегу не може містити пробілів."
+
+msgid "Tag name can't begin or end with underscore."
+msgstr "Назва тегу не може починатися або закінчуватися символом підкреслення."
+
+msgid "Tag name can't contain consecutive underscores."
+msgstr "Назва тегу не може містити послідовні символи підкреслення."
 
 msgid "These characters are not allowed in tags: %s."
 msgstr "Ці символи заборонені в тегах: %s."
@@ -9421,7 +9448,7 @@ msgid "Loading emission mask requires ParticleProcessMaterial."
 msgstr "Для завантаження емісійної маски потрібен ParticleProcessMaterial."
 
 msgid "GPUParticles2D"
-msgstr "CPUParticles2D"
+msgstr "GPUParticles2D"
 
 msgid "Convert to CPUParticles2D"
 msgstr "Перетворити на CPUParticles2D"
@@ -9679,7 +9706,7 @@ msgid "Create Rest Pose from Bones"
 msgstr "Створити вільну позу з кісток"
 
 msgid "Skeleton2D"
-msgstr "Skeleton 2D"
+msgstr "Skeleton2D"
 
 msgid "Reset to Rest Pose"
 msgstr "Відновити вільну позу"
@@ -9745,7 +9772,7 @@ msgid "Sprite's region needs to be enabled in the inspector."
 msgstr "Регіон спрайта потрібно увімкнути в інспекторі."
 
 msgid "Sprite2D"
-msgstr "Sprite 2D"
+msgstr "Sprite2D"
 
 msgid "Drag to Resize Region Rect"
 msgstr "Перетягніть, щоб змінити розмір прямокутника області"
@@ -10733,6 +10760,12 @@ msgstr "Змінити висоту форми циліндра"
 
 msgid "Change Separation Ray Shape Length"
 msgstr "Змінити довжину форми променя"
+
+msgid "Remove SoftBody3D pinned point %d"
+msgstr "Вилучити закріплену точку SoftBody3D %d"
+
+msgid "Add SoftBody3D pinned point %d"
+msgstr "Додати закріплену точку SoftBody3D %d"
 
 msgid "Change Probe Size"
 msgstr "Змінити розмір зонду"
@@ -12225,7 +12258,7 @@ msgid "CPUParticles3D"
 msgstr "CPUParticles3D"
 
 msgid "Convert to GPUParticles3D"
-msgstr "Перетворити на GPUParticles3D"
+msgstr "Конвертувати в GPUParticles3D"
 
 msgid "Curve Point #"
 msgstr "Точку кривої #"
@@ -12351,7 +12384,7 @@ msgid "Revert"
 msgstr "Повернути"
 
 msgid "Skeleton3D"
-msgstr "Skeleton 3D"
+msgstr "Skeleton3D"
 
 msgid "Reset All Bone Poses"
 msgstr "Скинути всі пози кісток"
@@ -12576,7 +12609,7 @@ msgid "Clear Guides"
 msgstr "Вилучити напрямні"
 
 msgid "Create Custom Bone2D(s) from Node(s)"
-msgstr "Створити нетипові кістки2D з вузла(ів)"
+msgstr "Створення власних Bone2D з вузла(ів)"
 
 msgid "Zoom to 3.125%"
 msgstr "Масштаб у 3,125%"
@@ -12894,7 +12927,7 @@ msgstr ""
 "бездіяльності."
 
 msgid "One Shot"
-msgstr "Один знімок"
+msgstr "Один Раз"
 
 msgid "Disconnects the signal after its first emission."
 msgstr "Від'єднує сигнал після його першого видання."
@@ -14398,7 +14431,7 @@ msgid "Toggle color channel preview selection."
 msgstr "Перемикання попереднього перегляду колірного каналу."
 
 msgid "Move GradientTexture2D Fill Point"
-msgstr "Перемістити точку заповнення Gradient Texture2D"
+msgstr "Перемістити точку заливки GradientTexture2D"
 
 msgid "Swap GradientTexture2D Fill Points"
 msgstr "Поміняти точки заповнення GradientTexture2D"
@@ -14860,7 +14893,7 @@ msgid "ConfigFile"
 msgstr "Файл конфігурації"
 
 msgid "Script"
-msgstr "Сценарій"
+msgstr "Скрипт"
 
 msgid "Connections to method:"
 msgstr "З'єднання з методом:"
@@ -14904,7 +14937,7 @@ msgid "Can't drop nodes without an open scene."
 msgstr "Неможливо скинути вузли без відкритої сцени."
 
 msgid "Can't drop nodes because script '%s' does not inherit Node."
-msgstr "Неможливо видалити вузли, оскільки сценарій «%s» не успадковує вузол."
+msgstr "Неможливо видалити вузли, оскільки скрипт «%s» не успадковує вузол."
 
 msgid "Emoji & Symbols"
 msgstr "Емодзі та символи"
@@ -16199,6 +16232,9 @@ msgstr "Встановити константу: %s"
 msgid "Invalid name for varying."
 msgstr "Некоректна назва для варіації."
 
+msgid "Varying with that name already exists."
+msgstr "Варіація з цією назвою вже існує."
+
 msgid "Boolean type cannot be used with `%s` varying mode."
 msgstr "Логічний тип не можна використовувати зі змінним режимом `%s`."
 
@@ -17278,11 +17314,11 @@ msgstr "Змінено режим візуального шейдерів"
 
 msgctxt "Locale"
 msgid "Script:"
-msgstr "Сценарій:"
+msgstr "Скрипт:"
 
 msgctxt "Locale"
 msgid "Script"
-msgstr "Сценарій"
+msgstr "Скрипт"
 
 msgid "Changed Locale Language Filter"
 msgstr "Змінено фільтр локальної мови"
@@ -17671,6 +17707,9 @@ msgstr "Очікувалося ціле число від 0 до 2^32 - 1."
 msgid "Expected a string of length 1 (a character)."
 msgstr "Очікувався рядок довжиною 1 (один символ)."
 
+msgid "Range too big."
+msgstr "Занадто великий діапазон."
+
 msgid "Cannot resize array."
 msgstr "Неможливо змінити розмір масиву."
 
@@ -17678,7 +17717,7 @@ msgid "Step argument is zero!"
 msgstr "Аргумент кроку нуль!"
 
 msgid "Not a script with an instance."
-msgstr "Не сценарій з екземпляром."
+msgstr "Не скрипт з екземпляром."
 
 msgid "Not based on a script."
 msgstr "Не на основі сценарію."
@@ -17691,11 +17730,11 @@ msgstr "Недійсний формат словника екземплярів 
 
 msgid "Invalid instance dictionary format (can't load script at @path)."
 msgstr ""
-"Недійсний формат словника екземпляра (не вдається завантажити сценарій за "
+"Недійсний формат словника екземпляра (не вдається завантажити скрипт за "
 "@path)."
 
 msgid "Invalid instance dictionary format (invalid script at @path)."
-msgstr "Недійсний формат словника екземпляра (недійсний сценарій на @path)."
+msgstr "Недійсний формат словника екземпляра (недійсний скрипт на @path)."
 
 msgid "Invalid instance dictionary (invalid subclasses)."
 msgstr "Недійсний словник екземплярів (недійсні підкласи)."
@@ -18296,8 +18335,8 @@ msgstr "Видалити всі вершини?"
 
 msgid "A NavigationMesh resource must be set or created for this node to work."
 msgstr ""
-"Для роботи цього вузла слід встановити або створити ресурс «Навігаційна "
-"сітка»."
+"Для роботи цього вузла необхідно встановити або створити ресурс "
+"NavigationMesh."
 
 msgid ""
 "Cannot generate navigation mesh because it does not belong to the edited "
@@ -18334,7 +18373,7 @@ msgstr ""
 "потім створюючи вершини та полігони навігаційної сіті."
 
 msgid "Clear NavigationMesh"
-msgstr "Очистити навігаційну сітку"
+msgstr "Очистити NavigationMesh"
 
 msgid "Clears the internal NavigationMesh vertices and polygons."
 msgstr "Очищає внутрішні вершини та полігони NavigationMesh."
@@ -18602,6 +18641,13 @@ msgid "\"Use Gradle Build\" must be enabled to use the plugins."
 msgstr ""
 "Щоб використовувати плагіни, потрібно ввімкнути «Використовувати збірку "
 "Gradle»."
+
+msgid ""
+"\"Compress Native Libraries\" is only valid when \"Use Gradle Build\" is "
+"enabled."
+msgstr ""
+"Опція «Стиснути нативні бібліотеки» дійсна лише тоді, коли ввімкнено "
+"«Використовувати збірку Gradle»."
 
 msgid "\"Export AAB\" is only valid when \"Use Gradle Build\" is enabled."
 msgstr ""
@@ -19159,10 +19205,10 @@ msgid "The notarization process generally takes less than an hour."
 msgstr "Процес нотаріального засвідчення зазвичай займає менше години."
 
 msgid ""
-"You can check progress manually by opening a Terminal and running the "
+"You can check the progress manually by opening a Terminal and running the "
 "following command:"
 msgstr ""
-"Ви можете відстежувати прогрес, якщо відкриєте термінал і виконаєте таку "
+"Ви можете перевірити прогрес вручну, відкривши термінал і виконавши таку "
 "команду:"
 
 msgid ""
@@ -19177,6 +19223,13 @@ msgstr "Інструменти командного рядка Xcode не вст
 
 msgid "Could not start xcrun executable."
 msgstr "Не вдалося запустити виконуваний файл xcrun."
+
+msgid ""
+"See instructions on finding your team ID: https://developer.apple.com/help/"
+"glossary/team-id"
+msgstr ""
+"Дивіться інструкції щодо пошуку ідентифікатора вашої команди: https://"
+"developer.apple.com/help/glossary/team-id"
 
 msgid "Built-in CodeSign failed with error \"%s\"."
 msgstr "Вбудований CodeSign не вдався з помилкою \"%s\"."
@@ -20840,6 +20893,14 @@ msgstr "Рекурсія не допускається."
 
 msgid "Function '%s' can't be called from source code."
 msgstr "Функцію '%s' не можна викликати з вихідного коду."
+
+msgid "No matching function for \"%s\" call:"
+msgstr "Немає відповідної функції для виклику \"%s\":"
+
+msgid ""
+"candidate function \"%s(%s)\" not viable, argument %d should be %s but is %s."
+msgstr ""
+"Функція-кандидат \"%s(%s)\" нежиттєздатна, аргумент %d має бути %s, але є %s."
 
 msgid ""
 "Too few arguments for \"%s(%s)\" call. Expected at least %d but received %d."

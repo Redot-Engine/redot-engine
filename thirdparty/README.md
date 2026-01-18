@@ -598,7 +598,7 @@ Files extracted from upstream source:
 ## libpng
 
 - Upstream: http://libpng.org/pub/png/libpng.html
-- Version: 1.6.48 (ea127968204cc5d10f3fc9250c306b9e8cbd9b80, 2025)
+- Version: 1.6.53 (4e3f57d50f552841550a36eabbb3fbcecacb7750, 2025)
 - License: libpng/zlib
 
 Files extracted from upstream source:
@@ -677,7 +677,7 @@ File extracted from upstream source:
 ## mbedtls
 
 - Upstream: https://github.com/Mbed-TLS/mbedtls
-- Version: 3.6.4 (c765c831e5c2a0971410692f92f7a81d6ec65ec2, 2025)
+- Version: 3.6.5 (e185d7fd85499c8ce5ca2a54f5cf8fe7dbe3f8df, 2025)
 - License: Apache 2.0
 
 File extracted from upstream release tarball:
@@ -687,7 +687,7 @@ File extracted from upstream release tarball:
 - From `library/` to `thirdparty/mbedtls/library/`:
   - All `.c` and `.h` files
   - Except `bignum_mod.c`, `block_cipher.c`, `ecp_curves_new.c`, `lmots.c`,
-  `lms.c`, `bignum_core_invasive.h`
+    `lms.c`
 - The `LICENSE` file (edited to keep only the Apache 2.0 variant)
 - Added 2 files `godot_core_mbedtls_platform.c` and `godot_core_mbedtls_config.h`
   providing configuration for light bundling with core
@@ -915,7 +915,7 @@ Exclude:
 ## pcre2
 
 - Upstream: http://www.pcre.org
-- Version: 10.45 (2dce7761b1831fd3f82a9c2bd5476259d945da4d, 2025)
+- Version: 10.46 (b2bd4254b379b9d7dc9a3dda060a7e27009ccdff, 2025)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
@@ -927,6 +927,11 @@ Files extracted from upstream source:
 - `src/pcre2_ucptables.c`
 - `deps/sljit/sljit_src`
 - `AUTHORS.md` and `LICENCE.md`
+
+Patches:
+
+- `0001-fix-format-enumerate.patch` (GH-114766)
+- `0002-fix-duplicate-symbols.patch` (GH-114766)
 
 
 ## recastnavigation
