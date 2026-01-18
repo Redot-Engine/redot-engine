@@ -68,11 +68,15 @@ using namespace godot;
 // Thirdparty headers.
 
 #ifdef MODULE_MSDFGEN_ENABLED
+GODOT_MSVC_WARNING_PUSH_AND_IGNORE(4458) // "Declaration of 'identifier' hides class member".
+
 #include <core/EdgeHolder.h>
 #include <core/ShapeDistanceFinder.h>
 #include <core/contour-combiners.h>
 #include <core/edge-selectors.h>
 #include <msdfgen.h>
+
+GODOT_MSVC_WARNING_POP
 #endif
 
 #ifdef MODULE_SVG_ENABLED
@@ -2249,6 +2253,8 @@ Dictionary TextServerAdvanced::_font_get_ot_name_strings(const RID &p_font_rid) 
 	FontAdvanced *fd = _get_font_data(p_font_rid);
 	ERR_FAIL_NULL_V(fd, Dictionary());
 
+	Dictionary out;
+#ifdef MODULE_FREETYPE_ENABLED
 	MutexLock lock(fd->mutex);
 	Vector2i size = _get_size(fd, 16);
 	FontForSizeAdvanced *ffsd = nullptr;
@@ -2351,11 +2357,10 @@ Dictionary TextServerAdvanced::_font_get_ot_name_strings(const RID &p_font_rid) 
 		}
 	}
 
-	Dictionary out;
 	for (const KeyValue<String, Dictionary> &E : names_for_lang) {
 		out[E.key] = E.value;
 	}
-
+#endif
 	return out;
 }
 
@@ -5719,6 +5724,7 @@ RID TextServerAdvanced::_find_sys_font_for_text(const RID &p_fdef, const String 
 			}
 
 			bool fb_use_msdf = key.msdf;
+#ifdef MODULE_FREETYPE_ENABLED
 			if (fb_use_msdf) {
 				FontAdvanced *fd = _get_font_data(sysf.rid);
 				if (fd) {
@@ -5732,6 +5738,7 @@ RID TextServerAdvanced::_find_sys_font_for_text(const RID &p_fdef, const String 
 					}
 				}
 			}
+#endif
 
 			_font_set_antialiasing(sysf.rid, key.antialiasing);
 			_font_set_disable_embedded_bitmaps(sysf.rid, key.disable_embedded_bitmaps);
@@ -6730,6 +6737,11 @@ void TextServerAdvanced::_shape_run(ShapedTextDataAdvanced *p_sd, int64_t p_star
 						p_sd->descent = MAX(p_sd->descent, Math::round(get_hex_code_box_size(fs, gl.index).x * 0.5));
 					}
 				}
+				bool zero_w = (p_sd->preserve_control) ? (p_sd->text[i] == 0x200B || p_sd->text[i] == 0xFEFF) : ((p_sd->text[i] >= 0x200B && p_sd->text[i] <= 0x200D) || p_sd->text[i] == 0x2060 || p_sd->text[i] == 0xFEFF);
+				if (zero_w) {
+					gl.index = 0;
+					gl.advance = 0.0;
+				}
 
 				p_sd->width += gl.advance;
 
@@ -6804,6 +6816,22 @@ void TextServerAdvanced::_shape_run(ShapedTextDataAdvanced *p_sd, int64_t p_star
 		unsigned int last_cluster_index = 0;
 		bool last_cluster_valid = true;
 
+		unsigned int last_non_zero_w = glyph_count - 1;
+		if (last_run) {
+			for (int64_t i = glyph_count - 1; i >= 0; i--) {
+				last_non_zero_w = (unsigned int)i;
+				if (p_sd->orientation == ORIENTATION_HORIZONTAL) {
+					if (glyph_pos[i].x_advance != 0) {
+						break;
+					}
+				} else {
+					if (glyph_pos[i].y_advance != 0) {
+						break;
+					}
+				}
+			}
+		}
+
 		double adv_rem = 0.0;
 		for (unsigned int i = 0; i < glyph_count; i++) {
 			if ((i > 0) && (last_cluster_id != glyph_info[i].cluster)) {
@@ -6849,6 +6877,11 @@ void TextServerAdvanced::_shape_run(ShapedTextDataAdvanced *p_sd, int64_t p_star
 #endif
 
 			gl.index = glyph_info[i].codepoint;
+			bool zero_w = (p_sd->preserve_control) ? (p_sd->text[glyph_info[i].cluster] == 0x200B || p_sd->text[glyph_info[i].cluster] == 0xFEFF) : ((p_sd->text[glyph_info[i].cluster] >= 0x200B && p_sd->text[glyph_info[i].cluster] <= 0x200D) || p_sd->text[glyph_info[i].cluster] == 0x2060 || p_sd->text[glyph_info[i].cluster] == 0xFEFF);
+			if (zero_w) {
+				gl.index = 0;
+				gl.advance = 0.0;
+			}
 			if ((p_sd->text[glyph_info[i].cluster] == 0x0009) || u_isblank(p_sd->text[glyph_info[i].cluster]) || is_linebreak(p_sd->text[glyph_info[i].cluster])) {
 				adv_rem = 0.0; // Reset on blank.
 			}
@@ -6890,8 +6923,8 @@ void TextServerAdvanced::_shape_run(ShapedTextDataAdvanced *p_sd, int64_t p_star
 					gl.x_off += _font_get_baseline_offset(gl.font_rid) * (double)(_font_get_ascent(gl.font_rid, gl.font_size) + _font_get_descent(gl.font_rid, gl.font_size));
 				}
 			}
-			if (!last_run || i < glyph_count - 1) {
-				// Do not add extra spacing to the last glyph of the string.
+			if ((!last_run || i < last_non_zero_w) && !Math::is_zero_approx(gl.advance)) {
+				// Do not add extra spacing to the last glyph of the string and zero width glyphs.
 				if (sp_sp && is_whitespace(p_sd->text[glyph_info[i].cluster])) {
 					gl.advance += sp_sp;
 				} else {
@@ -6900,9 +6933,9 @@ void TextServerAdvanced::_shape_run(ShapedTextDataAdvanced *p_sd, int64_t p_star
 			}
 
 			if (p_sd->preserve_control) {
-				last_cluster_valid = last_cluster_valid && ((glyph_info[i].codepoint != 0) || (p_sd->text[glyph_info[i].cluster] == 0x0009) || (u_isblank(p_sd->text[glyph_info[i].cluster]) && (gl.advance != 0)) || (!u_isblank(p_sd->text[glyph_info[i].cluster]) && is_linebreak(p_sd->text[glyph_info[i].cluster])));
+				last_cluster_valid = last_cluster_valid && ((glyph_info[i].codepoint != 0) || zero_w || (p_sd->text[glyph_info[i].cluster] == 0x0009) || (u_isblank(p_sd->text[glyph_info[i].cluster]) && (gl.advance != 0)) || (!u_isblank(p_sd->text[glyph_info[i].cluster]) && is_linebreak(p_sd->text[glyph_info[i].cluster])));
 			} else {
-				last_cluster_valid = last_cluster_valid && ((glyph_info[i].codepoint != 0) || (p_sd->text[glyph_info[i].cluster] == 0x0009) || (u_isblank(p_sd->text[glyph_info[i].cluster]) && (gl.advance != 0)) || (!u_isblank(p_sd->text[glyph_info[i].cluster]) && !u_isgraph(p_sd->text[glyph_info[i].cluster])));
+				last_cluster_valid = last_cluster_valid && ((glyph_info[i].codepoint != 0) || zero_w || (p_sd->text[glyph_info[i].cluster] == 0x0009) || (u_isblank(p_sd->text[glyph_info[i].cluster]) && (gl.advance != 0)) || (!u_isblank(p_sd->text[glyph_info[i].cluster]) && !u_isgraph(p_sd->text[glyph_info[i].cluster])));
 			}
 		}
 		if (p_direction == HB_DIRECTION_LTR || p_direction == HB_DIRECTION_TTB) {

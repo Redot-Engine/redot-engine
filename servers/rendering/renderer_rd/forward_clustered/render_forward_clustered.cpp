@@ -853,7 +853,7 @@ void RenderForwardClustered::_fill_instance_data(RenderListType p_render_list, i
 
 		RenderElementInfo &element_info = rl->element_info[p_offset + i];
 
-		element_info.value = uint32_t(surface->sort.sort_key1 & 0xFFF);
+		element_info.value = uint32_t((surface->sort.sort_key2 & 0x0FFF00000000) >> 32u);
 
 		if (cant_repeat) {
 			prev_surface = nullptr;
@@ -938,7 +938,7 @@ void RenderForwardClustered::_fill_render_list(RenderListType p_render_list, con
 		float fade_alpha = 1.0;
 
 		if (inst->fade_near || inst->fade_far) {
-			float fade_dist = inst->transform.origin.distance_to(p_render_data->scene_data->cam_transform.origin);
+			float fade_dist = inst->transformed_aabb.get_center().distance_to(p_render_data->scene_data->cam_transform.origin);
 			// Use `smoothstep()` to make opacity changes more gradual and less noticeable to the player.
 			if (inst->fade_far && fade_dist > inst->fade_far_begin) {
 				fade_alpha = Math::smoothstep(0.0f, 1.0f, 1.0f - (fade_dist - inst->fade_far_begin) / (inst->fade_far_end - inst->fade_far_begin));
@@ -1827,9 +1827,13 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 				using_sdfgi = true;
 			}
 			if (environment_get_ssr_enabled(p_render_data->environment)) {
-				using_separate_specular = true;
-				using_ssr = true;
-				color_pass_flags |= COLOR_PASS_FLAG_SEPARATE_SPECULAR;
+				if (!p_render_data->transparent_bg) {
+					using_separate_specular = true;
+					using_ssr = true;
+					color_pass_flags |= COLOR_PASS_FLAG_SEPARATE_SPECULAR;
+				} else {
+					WARN_PRINT_ONCE("Screen-space reflections are not supported in viewports with a transparent background. Disabling SSR in transparent viewport.");
+				}
 			}
 		}
 
@@ -1906,6 +1910,11 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 	}
 
 	bool using_sss = rb_data.is_valid() && !is_reflection_probe && scene_state.used_sss && ss_effects->sss_get_quality() != RS::SUB_SURFACE_SCATTERING_QUALITY_DISABLED;
+
+	if (using_sss && p_render_data->transparent_bg) {
+		WARN_PRINT_ONCE("Sub-surface scattering is not supported in viewports with a transparent background. Disabling SSS in transparent viewport.");
+		using_sss = false;
+	}
 
 	if ((using_sss || ce_needs_separate_specular) && !using_separate_specular) {
 		using_separate_specular = true;

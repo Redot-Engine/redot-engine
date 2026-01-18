@@ -5,7 +5,8 @@
 	</brief_description>
 	<description>
 		Object that holds the project-independent editor settings. These settings are generally visible in the [b]Editor &gt; Editor Settings[/b] menu.
-		Property names use slash delimiters to distinguish sections. Setting values can be of any [Variant] type. It's recommended to use [code]snake_case[/code] for editor settings to be consistent with the Redot editor itself.
+		Property names use slash delimiters to distinguish sections. Setting values can be of any [Variant] type. It's recommended to use [code]snake_case[/code] for editor settings to be consistent with the Godot editor itself.
+		Editor settings are saved automatically when changed.
 		Accessing the settings can be done using the following methods, such as:
 		[codeblocks]
 		[gdscript]
@@ -870,7 +871,7 @@
 		</member>
 		<member name="interface/editor/editor_language" type="String" setter="" getter="">
 			The language to use for the editor interface.
-			Translations are provided by the community. If you spot a mistake, [url=$DOCS_URL/contributing/documentation/editor_and_docs_localization.html]contribute to editor translations on Weblate![/url]
+			Translations are provided by the community. If you spot a mistake, [url=https://contributing.godotengine.org/en/latest/documentation/translation/index.html]contribute to editor translations on Weblate![/url]
 		</member>
 		<member name="interface/editor/editor_screen" type="int" setter="" getter="">
 			The preferred monitor to display the editor. If [b]Auto[/b], the editor will remember the last screen it was displayed on across multiple sessions.

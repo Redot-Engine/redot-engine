@@ -1698,7 +1698,7 @@ void EditorNode::save_resource_as(const Ref<Resource> &p_resource, const String 
 				file->set_current_file(String());
 			}
 		}
-	} else if (!p_resource->get_path().is_empty()) {
+	} else if (!p_resource->get_path().get_base_dir().is_empty()) {
 		file->set_current_path(p_resource->get_path());
 		if (!extensions.is_empty()) {
 			const String ext = p_resource->get_path().get_extension().to_lower();
@@ -7916,7 +7916,7 @@ EditorNode::EditorNode() {
 	center_split->set_name("DockVSplitCenter");
 	center_split->set_vertical(true);
 	center_split->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	center_split->set_collapsed(false);
+	center_split->set_collapsed(true);
 	center_vb->add_child(center_split);
 
 	right_hsplit = memnew(DockSplitContainer);

@@ -43,18 +43,6 @@
 #define __REQUIRED_RPCNDR_H_VERSION__ 475
 #endif
 
-#include <d3dx12.h>
-#include <dxgi1_6.h>
-#define D3D12MA_D3D12_HEADERS_ALREADY_INCLUDED
-#include <D3D12MemAlloc.h>
-
-#include <wrl/client.h>
-
-#if defined(_MSC_VER) && defined(MemoryBarrier)
-// Annoying define from winnt.h. Reintroduced by some of the headers above.
-#undef MemoryBarrier
-#endif
-
 GODOT_GCC_WARNING_PUSH
 GODOT_GCC_WARNING_IGNORE("-Wimplicit-fallthrough")
 GODOT_GCC_WARNING_IGNORE("-Wlogical-not-parentheses")
@@ -72,6 +60,18 @@ GODOT_CLANG_WARNING_IGNORE("-Wswitch")
 GODOT_MSVC_WARNING_PUSH
 GODOT_MSVC_WARNING_IGNORE(4200) // "nonstandard extension used: zero-sized array in struct/union".
 GODOT_MSVC_WARNING_IGNORE(4806) // "'&': unsafe operation: no value of type 'bool' promoted to type 'uint32_t' can equal the given constant".
+
+#include <d3dx12.h>
+#include <dxgi1_6.h>
+#define D3D12MA_D3D12_HEADERS_ALREADY_INCLUDED
+#include <D3D12MemAlloc.h>
+
+#include <wrl/client.h>
+
+#if defined(_MSC_VER) && defined(MemoryBarrier)
+// Annoying define from winnt.h. Reintroduced by some of the headers above.
+#undef MemoryBarrier
+#endif
 
 #include <nir_spirv.h>
 #include <nir_to_dxil.h>
@@ -101,28 +101,26 @@ uint32_t RenderingDXIL::patch_specialization_constant(
 		const uint64_t (&p_stages_bit_offsets)[D3D12_BITCODE_OFFSETS_NUM_STAGES],
 		HashMap<RenderingDeviceCommons::ShaderStage, Vector<uint8_t>> &r_stages_bytecodes,
 		bool p_is_first_patch) {
-	uint32_t patch_val = 0;
+	int64_t patch_val = 0;
 	switch (p_type) {
 		case RenderingDeviceCommons::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT: {
-			uint32_t int_value = *((const int *)p_value);
-			ERR_FAIL_COND_V(int_value & (1 << 31), 0);
-			patch_val = int_value;
+			patch_val = *((const int32_t *)p_value);
 		} break;
 		case RenderingDeviceCommons::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_BOOL: {
 			bool bool_value = *((const bool *)p_value);
-			patch_val = (uint32_t)bool_value;
+			patch_val = (int32_t)bool_value;
 		} break;
 		case RenderingDeviceCommons::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_FLOAT: {
-			uint32_t int_value = *((const int *)p_value);
-			ERR_FAIL_COND_V(int_value & (1 << 31), 0);
-			patch_val = (int_value >> 1);
+			patch_val = *((const int32_t *)p_value);
 		} break;
 	}
-	// For VBR encoding to encode the number of bits we expect (32), we need to set the MSB unconditionally.
-	// However, signed VBR moves the MSB to the LSB, so setting the MSB to 1 wouldn't help. Therefore,
-	// the bit we set to 1 is the one at index 30.
-	patch_val |= (1 << 30);
-	patch_val <<= 1; // What signed VBR does.
+
+	// Encode to signed VBR.
+	if (patch_val >= 0) {
+		patch_val <<= 1;
+	} else {
+		patch_val = ((-patch_val) << 1) | 1;
+	}
 
 	auto tamper_bits = [](uint8_t *p_start, uint64_t p_bit_offset, uint64_t p_tb_value) -> uint64_t {
 		uint64_t original = 0;
@@ -176,13 +174,13 @@ uint32_t RenderingDXIL::patch_specialization_constant(
 
 		Vector<uint8_t> &bytecode = r_stages_bytecodes[(RenderingDeviceCommons::ShaderStage)stage];
 #ifdef DEV_ENABLED
-		uint64_t orig_patch_val = tamper_bits(bytecode.ptrw(), offset, patch_val);
+		uint64_t orig_patch_val = tamper_bits(bytecode.ptrw(), offset, (uint64_t)patch_val);
 		// Checking against the value the NIR patch should have set.
 		DEV_ASSERT(!p_is_first_patch || ((orig_patch_val >> 1) & GODOT_NIR_SC_SENTINEL_MAGIC_MASK) == GODOT_NIR_SC_SENTINEL_MAGIC);
-		uint64_t readback_patch_val = tamper_bits(bytecode.ptrw(), offset, patch_val);
-		DEV_ASSERT(readback_patch_val == patch_val);
+		uint64_t readback_patch_val = tamper_bits(bytecode.ptrw(), offset, (uint64_t)patch_val);
+		DEV_ASSERT(readback_patch_val == (uint64_t)patch_val);
 #else
-		tamper_bits(bytecode.ptrw(), offset, patch_val);
+		tamper_bits(bytecode.ptrw(), offset, (uint64_t)patch_val);
 #endif
 
 		stages_patched_mask |= (1 << stage);
@@ -320,10 +318,6 @@ bool RenderingShaderContainerD3D12::_convert_spirv_to_nir(const Vector<Rendering
 				p_compiler_options);
 
 		ERR_FAIL_NULL_V_MSG(shader, false, "Shader translation (step 1) at stage " + String(RenderingDeviceCommons::SHADER_STAGE_NAMES[stage]) + " failed.");
-
-#ifdef DEV_ENABLED
-		nir_validate_shader(shader, "Validate before feeding NIR to the DXIL compiler");
-#endif
 
 		if (stage == RenderingDeviceCommons::SHADER_STAGE_VERTEX) {
 			dxil_runtime_conf.yz_flip.y_mask = 0xffff;
@@ -623,9 +617,7 @@ bool RenderingShaderContainerD3D12::_generate_root_signature(BitField<RenderingD
 	D3D12_ROOT_SIGNATURE_FLAGS root_sig_flags =
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_AMPLIFICATION_SHADER_ROOT_ACCESS |
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_MESH_SHADER_ROOT_ACCESS;
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
 	if (!p_stages_processed.has_flag(RenderingDeviceCommons::SHADER_STAGE_VERTEX_BIT)) {
 		root_sig_flags |= D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS;
