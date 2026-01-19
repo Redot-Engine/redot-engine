@@ -5,7 +5,7 @@ Import("env")
 
 signalsmith_env = env.Clone()
 
-signalsmith_env.Append(CPPPATH=["#thirdparty"])
+signalsmith_env.Append(CPPPATH=["#thirdparty", "#thirdparty/minimp3",])
 
 cxx = env.subst("$CXX")
 is_clang = "clang" in cxx
