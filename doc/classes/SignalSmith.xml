@@ -9,6 +9,18 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="change_tempo">
+			<return type="AudioStreamWAV" />
+			<param index="0" name="path" type="String" />
+			<param index="1" name="tempo" type="float" />
+			<param index="2" name="pitch" type="float" default="1.0" />
+			<description>
+				Loads an MP3 file, applies time-stretching and pitch-shifting using the Signalsmith engine, and returns a streamable AudioStreamWAV.
+				The `tempo` parameter controls playback speed without affecting pitch. A value of `1.0` preserves the original speed.
+				The `pitch` parameter is a transpose factor. A value of `1.0` preserves pitch, `2.0` raises pitch by one octave,
+				and `0.5` lowers pitch by one octave.
+			</description>
+		</method>
 		<method name="process">
 			<return type="PackedFloat32Array" />
 			<param index="0" name="input" type="PackedFloat32Array" />
