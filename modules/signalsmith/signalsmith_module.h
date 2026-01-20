@@ -60,10 +60,10 @@ public:
 	void set_tempo(float p_tempo);
 	void reset();
 
-    int get_last_sample_rate() const;
-    int get_last_channels() const;
+	int get_last_sample_rate() const;
+	int get_last_channels() const;
 
 	PackedFloat32Array process(const PackedFloat32Array &input);
 
-    Ref<AudioStreamWAV> change_tempo(const String &path, float p_tempo, float p_pitch = 1.0f);
+	Ref<AudioStreamWAV> change_tempo(const String &path, float p_tempo, float p_pitch = 1.0f);
 };

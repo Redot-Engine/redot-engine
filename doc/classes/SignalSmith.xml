@@ -21,6 +21,16 @@
 				and `0.5` lowers pitch by one octave.
 			</description>
 		</method>
+		<method name="get_last_channels" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_last_sample_rate" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
 		<method name="process">
 			<return type="PackedFloat32Array" />
 			<param index="0" name="input" type="PackedFloat32Array" />
