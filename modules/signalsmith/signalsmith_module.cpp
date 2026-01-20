@@ -48,11 +48,11 @@ void SignalSmith::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_channels", "channels"), &SignalSmith::set_channels);
 	ClassDB::bind_method(D_METHOD("set_pitch", "pitch"), &SignalSmith::set_pitch);
 	ClassDB::bind_method(D_METHOD("set_tempo", "tempo"), &SignalSmith::set_tempo);
-    ClassDB::bind_method(D_METHOD("get_last_sample_rate"), &SignalSmith::get_last_sample_rate);
-    ClassDB::bind_method( D_METHOD("get_last_channels"), &SignalSmith::get_last_channels);
+	ClassDB::bind_method(D_METHOD("get_last_sample_rate"), &SignalSmith::get_last_sample_rate);
+	ClassDB::bind_method(D_METHOD("get_last_channels"), &SignalSmith::get_last_channels);
 	ClassDB::bind_method(D_METHOD("reset"), &SignalSmith::reset);
 	ClassDB::bind_method(D_METHOD("process", "input"), &SignalSmith::process);
-    ClassDB::bind_method(D_METHOD("change_tempo", "path", "tempo", "pitch"), &SignalSmith::change_tempo, DEFVAL(1.0f));
+	ClassDB::bind_method(D_METHOD("change_tempo", "path", "tempo", "pitch"), &SignalSmith::change_tempo, DEFVAL(1.0f));
 }
 
 SignalSmith::SignalSmith() {
@@ -205,22 +205,22 @@ Ref<AudioStreamWAV> SignalSmith::change_tempo(const String &path, float p_tempo,
 	pb->start(0.0);
 
 	const int channels = mp3->is_monophonic() ? 1 : 2;
-    const int sample_rate = AudioServer::get_singleton()->get_mix_rate();
+	const int sample_rate = AudioServer::get_singleton()->get_mix_rate();
 
 	Vector<AudioFrame> frames;
 	const int block = 1024;
 
-    while (true) {
-        int old = frames.size();
-        frames.resize(old + block);
-        int mixed = pb->mix(frames.ptrw() + old, 1.0f, block);
+	while (true) {
+		int old = frames.size();
+		frames.resize(old + block);
+		int mixed = pb->mix(frames.ptrw() + old, 1.0f, block);
 
-        if (mixed <= 0) {
-            frames.resize(old);
+		if (mixed <= 0) {
+			frames.resize(old);
 
-            break;
-        }
-    }
+			break;
+		}
+	}
 
 	ERR_FAIL_COND_V(frames.is_empty(), out);
 
@@ -241,14 +241,14 @@ Ref<AudioStreamWAV> SignalSmith::change_tempo(const String &path, float p_tempo,
 	set_sample_rate(sample_rate);
 	set_channels(channels);
 	set_tempo(p_tempo);
-    set_pitch(p_pitch);
+	set_pitch(p_pitch);
 
 	reset();
 
 	PackedFloat32Array processed = process(input);
 	ERR_FAIL_COND_V(processed.is_empty(), out);
 
-    // convert float pcm to pcm16
+	// convert float pcm to pcm16
 	PackedByteArray pcm16;
 	pcm16.resize(processed.size() * 2);
 	uint8_t *pcm_w = pcm16.ptrw();
@@ -272,5 +272,3 @@ Ref<AudioStreamWAV> SignalSmith::change_tempo(const String &path, float p_tempo,
 
 	return out;
 }
-
-
