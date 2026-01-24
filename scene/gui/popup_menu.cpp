@@ -3257,8 +3257,11 @@ void PopupMenu::_pre_popup() {
 	minsize.height = Math::ceil(minsize.height);
 
 	Size2 maxsize = get_max_size();
-	if (maxsize != Size2()) {
-		minsize = minsize.min(maxsize);
+	if (maxsize.x > 0) {
+		minsize.x = MIN(minsize.x, maxsize.x);
+	}
+	if (maxsize.y > 0) {
+		minsize.y = MIN(minsize.y, maxsize.y);
 	}
 
 	set_min_size(minsize);
