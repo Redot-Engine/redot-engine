@@ -160,16 +160,7 @@ def make_authors_header(target, source, env):
 
 
 def make_donors_header(target, source, env):
-    SECTIONS = {
-        "Patrons": "DONORS_PATRONS",
-        "Platinum sponsors": "DONORS_SPONSORS_PLATINUM",
-        "Gold sponsors": "DONORS_SPONSORS_GOLD",
-        "Silver sponsors": "DONORS_SPONSORS_SILVER",
-        "Diamond members": "DONORS_MEMBERS_DIAMOND",
-        "Titanium members": "DONORS_MEMBERS_TITANIUM",
-        "Platinum members": "DONORS_MEMBERS_PLATINUM",
-        "Gold members": "DONORS_MEMBERS_GOLD",
-    }
+    SECTIONS = {"Donors": "DONORS_LIST"}
     buffer = methods.get_buffer(str(source[0]))
     reading = False
 
