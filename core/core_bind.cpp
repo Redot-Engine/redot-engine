@@ -2011,10 +2011,6 @@ Dictionary Engine::get_donor_info() const {
 	return ::Engine::get_singleton()->get_donor_info();
 }
 
-Dictionary Engine::get_godot_donor_info() const {
-	return ::Engine::get_singleton()->get_godot_donor_info();
-}
-
 Dictionary Engine::get_license_info() const {
 	return ::Engine::get_singleton()->get_license_info();
 }
@@ -2163,7 +2159,6 @@ void Engine::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_godot_author_info"), &Engine::get_godot_author_info);
 	ClassDB::bind_method(D_METHOD("get_copyright_info"), &Engine::get_copyright_info);
 	ClassDB::bind_method(D_METHOD("get_donor_info"), &Engine::get_donor_info);
-	ClassDB::bind_method(D_METHOD("get_godot_donor_info"), &Engine::get_godot_donor_info);
 	ClassDB::bind_method(D_METHOD("get_license_info"), &Engine::get_license_info);
 	ClassDB::bind_method(D_METHOD("get_license_text"), &Engine::get_license_text);
 

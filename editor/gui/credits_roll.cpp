@@ -205,43 +205,8 @@ void CreditsRoll::roll_credits() {
 
 		_create_nothing();
 
-		_create_label(TTRC("Patrons"), LabelSize::HEADER);
-		_create_label(_build_string(DONORS_PATRONS));
-
-		_create_nothing();
-
-		_create_label(TTRC("Platinum Sponsors"), LabelSize::HEADER);
-		_create_label(_build_string(DONORS_SPONSORS_PLATINUM));
-
-		_create_nothing();
-
-		_create_label(TTRC("Gold Sponsors"), LabelSize::HEADER);
-		_create_label(_build_string(DONORS_SPONSORS_GOLD));
-
-		_create_nothing();
-
-		_create_label(TTRC("Silver Sponsors"), LabelSize::HEADER);
-		_create_label(_build_string(DONORS_SPONSORS_SILVER));
-
-		_create_nothing();
-
-		_create_label(TTRC("Diamond Members"), LabelSize::HEADER);
-		_create_label(_build_string(DONORS_MEMBERS_DIAMOND));
-
-		_create_nothing();
-
-		_create_label(TTRC("Titanium Members"), LabelSize::HEADER);
-		_create_label(_build_string(DONORS_MEMBERS_TITANIUM));
-
-		_create_nothing();
-
-		_create_label(TTRC("Platinum Members"), LabelSize::HEADER);
-		_create_label(_build_string(DONORS_MEMBERS_PLATINUM));
-
-		_create_nothing();
-
-		_create_label(TTRC("Gold Members"), LabelSize::HEADER);
-		_create_label(_build_string(DONORS_MEMBERS_GOLD));
+		_create_label(TTRC("Donors"), LabelSize::HEADER);
+		_create_label(_build_string(DONORS_LIST));
 
 		_create_nothing();
 		_create_label(String::utf8(GODOT_LICENSE_TEXT));

@@ -238,27 +238,7 @@ TypedArray<Dictionary> Engine::get_copyright_info() const {
 
 Dictionary Engine::get_donor_info() const {
 	Dictionary donors;
-	donors["patrons"] = Array();
-	donors["platinum_sponsors"] = Array();
-	donors["gold_sponsors"] = Array();
-	donors["silver_sponsors"] = Array();
-	donors["diamond_members"] = Array();
-	donors["titanium_members"] = Array();
-	donors["platinum_members"] = Array();
-	donors["gold_members"] = Array();
-	return donors;
-}
-
-Dictionary Engine::get_godot_donor_info() const {
-	Dictionary donors;
-	donors["patrons"] = array_from_info(DONORS_PATRONS);
-	donors["platinum_sponsors"] = array_from_info(DONORS_SPONSORS_PLATINUM);
-	donors["gold_sponsors"] = array_from_info(DONORS_SPONSORS_GOLD);
-	donors["silver_sponsors"] = array_from_info(DONORS_SPONSORS_SILVER);
-	donors["diamond_members"] = array_from_info(DONORS_MEMBERS_DIAMOND);
-	donors["titanium_members"] = array_from_info(DONORS_MEMBERS_TITANIUM);
-	donors["platinum_members"] = array_from_info(DONORS_MEMBERS_PLATINUM);
-	donors["gold_members"] = array_from_info(DONORS_MEMBERS_GOLD);
+	donors["donors"] = array_from_info(DONORS_LIST);
 	return donors;
 }
 

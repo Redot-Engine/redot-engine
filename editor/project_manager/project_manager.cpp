@@ -1272,7 +1272,7 @@ void ProjectManager::_titlebar_resized() {
 }
 
 void ProjectManager::_open_donate_page() {
-	OS::get_singleton()->shell_open("https://fund.godotengine.org/?ref=project_manager");
+	OS::get_singleton()->shell_open("https://ko-fi.com/redotengine");
 }
 
 // Object methods.
