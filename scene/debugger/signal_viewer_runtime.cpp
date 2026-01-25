@@ -266,10 +266,10 @@ void SignalViewerRuntime::_send_batch_updates() {
 
 		String node_name = node->get_name();
 		String node_class = node->get_class();
-		Array connections = signal_connections.has(key) ? signal_connections[key] : Array();
+		Array conns = signal_connections.has(key) ? signal_connections[key] : Array();
 
 		// Send the update with accumulated count
-		_send_signal_update(key, emitter_id, node_name, node_class, signal_name, count, connections);
+		_send_signal_update(key, emitter_id, node_name, node_class, signal_name, count, conns);
 	}
 
 	// Clear all counts after sending

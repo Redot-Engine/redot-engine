@@ -290,8 +290,8 @@ void SignalizeDock::_on_search_changed(const String &p_text) {
 		}
 
 		String node_name = gn->get_title();
-		bool visible = search_lower.is_empty() || node_name.to_lower().contains(search_lower);
-		gn->set_visible(visible);
+		bool is_visible = search_lower.is_empty() || node_name.to_lower().contains(search_lower);
+		gn->set_visible(is_visible);
 	}
 }
 
@@ -389,8 +389,8 @@ void SignalizeDock::_on_open_function_button_pressed(ObjectID p_node_id, const S
 	}
 
 	// Get the script attached to this node
-	Ref<Script> script = node->get_script();
-	if (!script.is_valid()) {
+	Ref<Script> node_script = node->get_script();
+	if (!node_script.is_valid()) {
 		ERR_PRINT(vformat("[Signalize] Cannot open function: node '%s' has no script", node->get_name()));
 		return;
 	}
@@ -403,11 +403,11 @@ void SignalizeDock::_on_open_function_button_pressed(ObjectID p_node_id, const S
 	}
 
 	// First, try to find the method in the direct script
-	bool success = script_editor->script_goto_method(script, p_method_name);
+	bool success = script_editor->script_goto_method(node_script, p_method_name);
 
 	// If not found and the script has a base class, search the base class script
 	if (!success) {
-		Ref<Script> base_script = script->get_base_script();
+		Ref<Script> base_script = node_script->get_base_script();
 		while (base_script.is_valid()) {
 			success = script_editor->script_goto_method(base_script, p_method_name);
 			if (success) {
@@ -518,10 +518,10 @@ void SignalizeDock::_build_graph() {
 
 						// Check if target has a script with this method
 						bool has_script_method = false;
-						ScriptInstance *script = target_node->get_script_instance();
-						if (script) {
+						ScriptInstance *script_instance = target_node->get_script_instance();
+						if (script_instance) {
 							// Check if this method exists in the script
-							has_script_method = script->has_method(StringName(method_name));
+							has_script_method = script_instance->has_method(StringName(method_name));
 						}
 
 						// Only include if it's a real user connection (to a script method)
@@ -633,8 +633,8 @@ void SignalizeDock::_build_graph_for_single_node(Node *p_node) {
 			}
 
 			// Filter: Only include connections to script methods
-			ScriptInstance *script = target_node->get_script_instance();
-			if (!script || !script->has_method(StringName(target_method))) {
+			ScriptInstance *script_instance = target_node->get_script_instance();
+			if (!script_instance || !script_instance->has_method(StringName(target_method))) {
 				continue; // Skip internal engine connections
 			}
 
@@ -710,8 +710,8 @@ void SignalizeDock::_build_graph_for_single_node(Node *p_node) {
 					}
 
 					// Filter: Only include if p_node has this method in a script
-					ScriptInstance *script = p_node->get_script_instance();
-					if (!script || !script->has_method(StringName(target_method))) {
+					ScriptInstance *script_instance = p_node->get_script_instance();
+					if (!script_instance || !script_instance->has_method(StringName(target_method))) {
 						continue; // Skip internal engine connections
 					}
 
@@ -829,9 +829,9 @@ void SignalizeDock::_create_graph_node(Node *p_node, int p_depth, int p_index) {
 	HBoxContainer *titlebar = gn->get_titlebar_hbox();
 	if (titlebar) {
 		for (int i = 0; i < titlebar->get_child_count(); i++) {
-			Label *title_label = Object::cast_to<Label>(titlebar->get_child(i));
-			if (title_label) {
-				title_label->add_theme_color_override("font_color", Color(0, 0, 0, 1)); // Black text
+			Label *title_lbl = Object::cast_to<Label>(titlebar->get_child(i));
+			if (title_lbl) {
+				title_lbl->add_theme_color_override("font_color", Color(0, 0, 0, 1)); // Black text
 				break;
 			}
 		}
@@ -1936,16 +1936,16 @@ void SignalizeDock::_global_signal_emission_callback(Object *p_emitter, const St
 		}
 
 		// Also skip common editor UI classes from the emitter
-		String node_class = emitter_node->get_class();
-		if (node_class.contains("Editor") || node_class.contains("MenuBar") ||
-				node_class.contains("Button") || node_class.contains("LineEdit") ||
-				node_class.contains("Panel") || node_class.contains("Window") ||
-				node_class.contains("Popup") || node_class.contains("Label")) {
+		String emitter_class = emitter_node->get_class();
+		if (emitter_class.contains("Editor") || emitter_class.contains("MenuBar") ||
+				emitter_class.contains("Button") || emitter_class.contains("LineEdit") ||
+				emitter_class.contains("Panel") || emitter_class.contains("Window") ||
+				emitter_class.contains("Popup") || emitter_class.contains("Label")) {
 			return; // Skip editor UI
 		}
 
 		// Track this gameplay signal!
-		String node_name = emitter_node->get_name();
+		String emitter_name = emitter_node->get_name();
 	} else {
 		// EDITOR MODE: Only track signals from nodes in our graph
 		if (!viewer->node_graph_nodes.has(emitter_id)) {
@@ -2477,13 +2477,13 @@ void SignalizeDock::_inspect_selected_editor_node() {
 	}
 
 	// For now, just inspect the first selected node
-	Node *selected_node = selected_nodes.front()->get();
-	if (!selected_node) {
+	Node *node = selected_nodes.front()->get();
+	if (!node) {
 		return;
 	}
 
 	// Build graph for just this node
-	_build_graph_for_single_node(selected_node);
+	_build_graph_for_single_node(node);
 }
 
 void SignalizeDock::_inspect_selected_remote_node(ScriptEditorDebugger *debugger) {
@@ -2503,9 +2503,9 @@ void SignalizeDock::_inspect_selected_remote_node(ScriptEditorDebugger *debugger
 
 	// Get the metadata from the selected item
 	// EditorDebuggerTree stores ObjectID in column 0 metadata
-	Variant metadata = selected->get_metadata(0);
+	Variant node_metadata = selected->get_metadata(0);
 
-	if (metadata.get_type() != Variant::INT) {
+	if (node_metadata.get_type() != Variant::INT) {
 		// Fallback: Try to match by name from SceneDebuggerTree
 		const SceneDebuggerTree *remote_tree_data = debugger->get_remote_tree();
 		if (remote_tree_data && !remote_tree_data->nodes.is_empty()) {
@@ -2526,7 +2526,7 @@ void SignalizeDock::_inspect_selected_remote_node(ScriptEditorDebugger *debugger
 		return;
 	}
 
-	ObjectID node_id = ObjectID(uint64_t(int64_t(metadata)));
+	ObjectID node_id = node_metadata;
 	if (node_id.is_null()) {
 		return;
 	}
@@ -2655,14 +2655,14 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 
 		String signal_name = sig_info[0];
 		int count = sig_info[1];
-		Array connections = sig_info[2];
+		Array conns = sig_info[2];
 
 		// Track emission count
 		node_emits[node_id][signal_name] = count;
 
 		// Collect all target methods
-		for (int j = 0; j < connections.size(); j++) {
-			Array conn_data = connections[j];
+		for (int j = 0; j < conns.size(); j++) {
+			Array conn_data = conns[j];
 			if (conn_data.size() < 4) {
 				continue;
 			}
@@ -2707,10 +2707,10 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 		}
 
 		String signal_name = sig_info[0];
-		Array connections = sig_info[2];
+		Array conns = sig_info[2];
 
 		// Only add if there are connections
-		if (connections.size() > 0) {
+		if (conns.size() > 0) {
 			main_node_signals.push_back(signal_name);
 		}
 	}
@@ -2737,9 +2737,9 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 	HBoxContainer *titlebar = main_node->get_titlebar_hbox();
 	if (titlebar) {
 		for (int i = 0; i < titlebar->get_child_count(); i++) {
-			Label *title_label = Object::cast_to<Label>(titlebar->get_child(i));
-			if (title_label) {
-				title_label->add_theme_color_override("font_color", Color(0, 0, 0, 1));
+			Label *title_lbl = Object::cast_to<Label>(titlebar->get_child(i));
+			if (title_lbl) {
+				title_lbl->add_theme_color_override("font_color", Color(0, 0, 0, 1));
 				break;
 			}
 		}
@@ -2766,9 +2766,9 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 			if (sig_info.size() < 3) {
 				continue;
 			}
-			Array connections = sig_info[2];
-			for (int j = 0; j < connections.size(); j++) {
-				Array conn_data = connections[j];
+			Array conns = sig_info[2];
+			for (int j = 0; j < conns.size(); j++) {
+				Array conn_data = conns[j];
 				if (conn_data.size() < 4) {
 					continue;
 				}
@@ -2904,15 +2904,15 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 		}
 
 		String signal_name = sig_info[0];
-		Array connections = sig_info[2];
+		Array conns = sig_info[2];
 
 		if (!signal_to_slot.has(node_id) || !signal_to_slot[node_id].has(signal_name)) {
 			continue;
 		}
 		int from_slot = signal_to_slot[node_id][signal_name];
 
-		for (int j = 0; j < connections.size(); j++) {
-			Array conn_data = connections[j];
+		for (int j = 0; j < conns.size(); j++) {
+			Array conn_data = conns[j];
 			if (conn_data.size() < 4) {
 				continue;
 			}
