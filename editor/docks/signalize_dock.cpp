@@ -167,7 +167,11 @@ SignalizeDock::SignalizeDock() {
 	}
 
 	// Build initial graph from edited scene (only works when game is not running)
-	_build_graph();
+	// Only build if a scene is already open (might not be during editor initialization)
+	EditorNode *editor_node = EditorNode::get_singleton();
+	if (editor_node && EditorNode::get_editor_data().get_edited_scene_count() > 0) {
+		_build_graph();
+	}
 }
 
 void SignalizeDock::_on_test_signal() {
