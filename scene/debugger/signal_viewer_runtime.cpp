@@ -26,8 +26,8 @@
 /* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
 /* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
 /* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
 #include "signal_viewer_runtime.h"
@@ -105,9 +105,7 @@ void SignalViewerRuntime::_signal_emission_callback(Object *p_emitter, const Str
 
 	// Filter out internal engine noise - gizmo timers, skeleton pose updates, etc.
 	// Skip timer signals (unless they're user-created gameplay timers)
-	if (signal_name == "timeout" && (
-		node_name.contains("Gizmo") || node_name.contains("Update") ||
-		node_name.contains("Timer") && node_class.contains("Editor"))) {
+	if (signal_name == "timeout" && (node_name.contains("Gizmo") || node_name.contains("Update") || node_name.contains("Timer") && node_class.contains("Editor"))) {
 		return; // Skip editor gizmo/update timers
 	}
 
@@ -123,23 +121,23 @@ void SignalViewerRuntime::_signal_emission_callback(Object *p_emitter, const Str
 
 	// Filter out Skeleton3D and PhysicalBone completely
 	if (node_class == "Skeleton3D" || node_class == "Skeleton3D3D" ||
-		node_class == "PhysicalBone" || node_class == "PhysicalBoneSimulator3D") {
+			node_class == "PhysicalBone" || node_class == "PhysicalBoneSimulator3D") {
 		return;
 	}
 
 	// Additional filtering by class name for robustness
 	// Skip all common GUI/Control classes and editor internals
 	if (node_class == "VScrollBar" || node_class == "HScrollBar" ||
-		node_class == "ScrollBar" || node_class == "RichTextLabel" ||
-		node_class == "Label" || node_class == "Button" ||
-		node_class == "LineEdit" || node_class == "TextEdit" ||
-		node_class == "Panel" || node_class == "Popup" ||
-		node_class == "Window" || node_class == "Dialog" ||
-		node_class.contains("Editor") || node_class.contains("Gizmo") ||
-		node_class.contains("Menu") || node_class.contains("Theme") ||
-		node_class.contains("StyleBox") || node_class.contains("Tree") ||
-		node_class.contains("ItemList") || node_class.contains("Option") ||
-		node_class.contains("Check")) {
+			node_class == "ScrollBar" || node_class == "RichTextLabel" ||
+			node_class == "Label" || node_class == "Button" ||
+			node_class == "LineEdit" || node_class == "TextEdit" ||
+			node_class == "Panel" || node_class == "Popup" ||
+			node_class == "Window" || node_class == "Dialog" ||
+			node_class.contains("Editor") || node_class.contains("Gizmo") ||
+			node_class.contains("Menu") || node_class.contains("Theme") ||
+			node_class.contains("StyleBox") || node_class.contains("Tree") ||
+			node_class.contains("ItemList") || node_class.contains("Option") ||
+			node_class.contains("Check")) {
 		return;
 	}
 
@@ -354,7 +352,7 @@ void SignalViewerRuntime::send_node_signal_data(ObjectID p_node_id) {
 		signal_data_array.append(sig_info);
 
 		print_line(vformat("[Signal Viewer Runtime] Signal: %s (count: %d, connections: %d)",
-			signal_name, count, connections_array.size()));
+				signal_name, count, connections_array.size()));
 	}
 
 	// Send the data back to editor

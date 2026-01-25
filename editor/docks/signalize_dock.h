@@ -1,14 +1,46 @@
+/**************************************************************************/
+/*  signalize_dock.h                                                      */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
 #pragma once
 
-#include "scene/gui/graph_edit.h"
 #include "scene/gui/button.h"
+#include "scene/gui/graph_edit.h"
 #include "scene/gui/line_edit.h"
 #include "scene/main/node.h"
 
 #include "core/object/object_id.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/list.h"
 #include "core/templates/hash_set.h"
+#include "core/templates/list.h"
 
 // Forward declarations
 class SignalizeInspectorPlugin;
@@ -50,16 +82,16 @@ private:
 	// Track graph nodes and their positions
 	HashMap<ObjectID, GraphNode *> node_graph_nodes;
 	HashMap<ObjectID, String> node_graph_names;
-	HashMap<ObjectID, Color> node_colors;  // Track color for each node
-	HashMap<ObjectID, Vector2> saved_node_positions;  // Track manually positioned nodes
+	HashMap<ObjectID, Color> node_colors; // Track color for each node
+	HashMap<ObjectID, Vector2> saved_node_positions; // Track manually positioned nodes
 
 	// Track labels for each node to update signal info
-	HashMap<ObjectID, Label *> node_emits_labels;  // Shows "Emits: signal1 (5), signal2 (3)"
+	HashMap<ObjectID, Label *> node_emits_labels; // Shows "Emits: signal1 (5), signal2 (3)"
 	HashMap<ObjectID, Label *> node_receives_labels; // Shows "Receives: method1 (2), method2 (1)"
 
 	// Track which signals/methods each node has (for updating labels)
-	HashMap<ObjectID, HashMap<String, int>> node_emits;     // node_id -> signal_name -> count
-	HashMap<ObjectID, HashMap<String, int>> node_receives;  // node_id -> method_name -> count
+	HashMap<ObjectID, HashMap<String, int>> node_emits; // node_id -> signal_name -> count
+	HashMap<ObjectID, HashMap<String, int>> node_receives; // node_id -> method_name -> count
 
 	// Track signal emissions using String key: "emitter_id|signal|target_id|method" -> count
 	HashMap<String, int> connections;
@@ -71,7 +103,7 @@ private:
 	// Track next available port slot index for each node (sequential from 0)
 	HashMap<ObjectID, int> next_emitter_slot_idx;
 	HashMap<ObjectID, int> next_receiver_slot_idx;
-	HashMap<ObjectID, int> num_input_ports;  // Track how many input ports each node has
+	HashMap<ObjectID, int> num_input_ports; // Track how many input ports each node has
 	HashMap<ObjectID, int> num_output_ports; // Track how many output ports each node has
 
 	// Track connections to make: emitter_id, signal_name, target_id, method_name -> from_slot, to_slot
@@ -87,7 +119,7 @@ private:
 
 	// Track receiver method with its actual target object (for opening scripts)
 	struct ReceiverMethodInfo {
-		ObjectID target_id;  // The object that actually owns the method/script
+		ObjectID target_id; // The object that actually owns the method/script
 		String method_name;
 	};
 
