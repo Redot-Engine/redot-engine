@@ -34,6 +34,7 @@
 
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
+#include "scene/resources/audio_stream_wav.h"
 #include "signalsmith-stretch/signalsmith-stretch.h"
 #include <random>
 
@@ -59,5 +60,10 @@ public:
 	void set_tempo(float p_tempo);
 	void reset();
 
+	int get_last_sample_rate() const;
+	int get_last_channels() const;
+
 	PackedFloat32Array process(const PackedFloat32Array &input);
+
+	Ref<AudioStreamWAV> change_tempo(const String &path, float p_tempo, float p_pitch = 1.0f);
 };
