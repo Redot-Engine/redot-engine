@@ -43,6 +43,7 @@
 #include "editor/debugger/editor_visual_profiler.h"
 #include "editor/docks/filesystem_dock.h"
 #include "editor/docks/inspector_dock.h"
+#include "editor/docks/signalize_dock.h"
 #include "editor/editor_log.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
@@ -487,6 +488,52 @@ void ScriptEditorDebugger::_msg_servers_memory_usage(uint64_t p_thread_id, const
 
 void ScriptEditorDebugger::_msg_servers_drawn(uint64_t p_thread_id, const Array &p_data) {
 	can_request_idle_draw = true;
+}
+
+void ScriptEditorDebugger::_msg_signal_viewer_signal_emitted(uint64_t p_thread_id, const Array &p_data) {
+	// Forward signal emission data to SignalizeDock
+	// Data format: [emitter_id, node_name, node_class, signal_name, count, connections_array]
+
+	if (p_data.size() < 6) {
+		print_line("[ScriptEditorDebugger] WARNING: Invalid signal_viewer data, expected 6 elements");
+		return;
+	}
+
+	// Extract the data
+	ObjectID emitter_id = p_data[0];
+	String node_name = p_data[1];
+	String node_class = p_data[2];
+	String signal_name = p_data[3];
+	int count = p_data[4];
+	Array connections = p_data[5];
+
+	// Get SignalizeDock singleton and update it
+	SignalizeDock *signal_viewer = SignalizeDock::get_singleton();
+	if (signal_viewer) {
+		signal_viewer->_on_runtime_signal_emitted(emitter_id, node_name, node_class, signal_name, count, connections);
+	} else {
+		print_line("[ScriptEditorDebugger] WARNING: No SignalizeDock singleton");
+	}
+}
+
+void ScriptEditorDebugger::_msg_signal_viewer_node_signal_data(uint64_t p_thread_id, const Array &p_data) {
+	// Forward node signal data response to SignalizeDock
+	// Data format: [node_id, node_name, node_class, [signals_data]]
+
+	if (p_data.is_empty()) {
+		print_line("[ScriptEditorDebugger] WARNING: Invalid node_signal_data, empty array");
+		return;
+	}
+
+	print_line(vformat("[ScriptEditorDebugger] Received node signal data with %d elements", p_data.size()));
+
+	// Get SignalizeDock singleton and forward the data
+	SignalizeDock *signal_viewer = SignalizeDock::get_singleton();
+	if (signal_viewer) {
+		signal_viewer->_on_node_signal_data_received(p_data);
+	} else {
+		print_line("[ScriptEditorDebugger] WARNING: No SignalizeDock singleton for node_signal_data");
+	}
 }
 
 void ScriptEditorDebugger::_msg_stack_dump(uint64_t p_thread_id, const Array &p_data) {
@@ -942,14 +989,28 @@ void ScriptEditorDebugger::_msg_embed_next_frame(uint64_t p_thread_id, const Arr
 void ScriptEditorDebugger::_parse_message(const String &p_msg, uint64_t p_thread_id, const Array &p_data) {
 	emit_signal(SNAME("debug_data"), p_msg, p_data);
 
+	// DEBUG: Log signal_viewer messages
+	if (p_msg.contains("signal_viewer")) {
+		print_line(vformat("[ScriptEditorDebugger] Received message: '%s'", p_msg));
+	}
+
 	ParseMessageFunc *fn_ptr = parse_message_handlers.getptr(p_msg);
 	if (fn_ptr) {
+		if (p_msg.contains("signal_viewer")) {
+			print_line(vformat("[ScriptEditorDebugger] Found handler for: '%s'", p_msg));
+		}
 		(this->**fn_ptr)(p_thread_id, p_data);
 	} else {
+		if (p_msg.contains("signal_viewer")) {
+			print_line(vformat("[ScriptEditorDebugger] No handler found for: '%s', trying plugins_capture", p_msg));
+		}
 		int colon_index = p_msg.find_char(':');
 		ERR_FAIL_COND_MSG(colon_index < 1, "Invalid message received");
 
 		bool parsed = EditorDebuggerNode::get_singleton()->plugins_capture(this, p_msg, p_data);
+		if (p_msg.contains("signal_viewer")) {
+			print_line(vformat("[ScriptEditorDebugger] plugins_capture returned: %s", parsed ? "TRUE" : "FALSE"));
+		}
 		if (!parsed) {
 			WARN_PRINT("Unknown message: " + p_msg);
 		}
@@ -970,6 +1031,8 @@ void ScriptEditorDebugger::_init_parse_message_handlers() {
 #endif // DISABLE_DEPRECATED
 	parse_message_handlers["servers:memory_usage"] = &ScriptEditorDebugger::_msg_servers_memory_usage;
 	parse_message_handlers["servers:drawn"] = &ScriptEditorDebugger::_msg_servers_drawn;
+	parse_message_handlers["signal_viewer:signal_emitted"] = &ScriptEditorDebugger::_msg_signal_viewer_signal_emitted;
+	parse_message_handlers["signal_viewer:node_signal_data"] = &ScriptEditorDebugger::_msg_signal_viewer_node_signal_data;
 	parse_message_handlers["stack_dump"] = &ScriptEditorDebugger::_msg_stack_dump;
 	parse_message_handlers["stack_frame_vars"] = &ScriptEditorDebugger::_msg_stack_frame_vars;
 	parse_message_handlers["stack_frame_var"] = &ScriptEditorDebugger::_msg_stack_frame_var;

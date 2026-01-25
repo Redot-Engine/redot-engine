@@ -42,6 +42,10 @@
 #include "core/string/translation_server.h"
 #include "core/variant/typed_array.h"
 
+// Static member initialization for signal emission callback
+Object::SignalEmissionCallback Object::signal_emission_callback = nullptr;
+bool Object::signal_emission_callback_enabled = false;
+
 #ifdef DEBUG_ENABLED
 
 struct _ObjectDebugLock {
@@ -1235,6 +1239,12 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 #endif
 			//not connected? just return
 			return ERR_UNAVAILABLE;
+		}
+
+		// STEP 1: Signal emission hook - Call the registered callback if enabled
+		// This allows editor tools like the Signal Viewer to track signal emissions globally
+		if (signal_emission_callback_enabled && signal_emission_callback) {
+			signal_emission_callback(this, p_name, p_args, p_argcount);
 		}
 
 		if (s->slot_map.size() > MAX_SLOTS_ON_STACK) {

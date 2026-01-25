@@ -791,6 +791,29 @@ public: // Should be protected, but bug in clang++.
 public:
 	static constexpr bool _class_is_enabled = true;
 
+	// Signal tracking callback for editor tools (e.g., Signal Viewer)
+	// This callback is invoked whenever a signal is emitted, allowing tools to track signal activity
+	// The callback is only active when explicitly registered to minimize performance impact
+	typedef void (*SignalEmissionCallback)(Object *p_emitter, const StringName &p_signal, const Variant **p_args, int p_argcount);
+
+private:
+	static SignalEmissionCallback signal_emission_callback;
+	static bool signal_emission_callback_enabled;
+
+public:
+	static void set_signal_emission_callback(SignalEmissionCallback p_callback) {
+		signal_emission_callback = p_callback;
+		signal_emission_callback_enabled = (p_callback != nullptr);
+	}
+
+	static SignalEmissionCallback get_signal_emission_callback() {
+		return signal_emission_callback;
+	}
+
+	static bool is_signal_emission_callback_enabled() {
+		return signal_emission_callback_enabled;
+	}
+
 	void notify_property_list_changed();
 
 	static void *get_class_ptr_static() {
