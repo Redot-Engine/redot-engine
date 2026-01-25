@@ -505,12 +505,12 @@ void ScriptEditorDebugger::_msg_signal_viewer_signal_emitted(uint64_t p_thread_i
 	String node_class = p_data[2];
 	String signal_name = p_data[3];
 	int count = p_data[4];
-	Array connections = p_data[5];
+	Array signal_connections = p_data[5];
 
 	// Get SignalizeDock singleton and update it
 	SignalizeDock *signal_viewer = SignalizeDock::get_singleton();
 	if (signal_viewer) {
-		signal_viewer->_on_runtime_signal_emitted(emitter_id, node_name, node_class, signal_name, count, connections);
+		signal_viewer->_on_runtime_signal_emitted(emitter_id, node_name, node_class, signal_name, count, signal_connections);
 	} else {
 		print_line("[ScriptEditorDebugger] WARNING: No SignalizeDock singleton");
 	}

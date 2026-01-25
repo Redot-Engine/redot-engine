@@ -39,6 +39,7 @@
 #include "core/object/script_language.h"
 #include "core/templates/hash_set.h"
 #include "core/variant/callable.h"
+#include <functional>
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/editor_interface.h"
@@ -857,7 +858,7 @@ Color SignalizeDock::_get_editor_node_icon_color(Node *p_node) {
 	}
 
 	Ref<Texture2D> icon = editor->get_object_icon(p_node, "Node");
-	if (!icon.is_valid() || icon == nullptr) {
+	if (!icon.is_valid()) {
 		// No icon available, use default color
 		return Color(0.92, 0.92, 0.92, 1.0);
 	}
