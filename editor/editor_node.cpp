@@ -8461,7 +8461,7 @@ EditorNode::EditorNode() {
 
 	// Signalize
 	SignalizeDock *signalize_dock = memnew(SignalizeDock);
-	Ref<Shortcut> signalize_shortcut = ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_signalize_bottom_panel", TTRC("Toggle Signalize Bottom Panel"), KeyModifierMask::ALT | Key::S);
+	Ref<Shortcut> signalize_shortcut = ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_signalize_bottom_panel", TTRC("Toggle Signalize Bottom Panel"), KeyModifierMask::ALT | Key::I);
 	Button *signalize_button = bottom_panel->add_item(TTR("Signalize"), signalize_dock, signalize_shortcut);
 	signalize_dock->set_tool_button(signalize_button);
 

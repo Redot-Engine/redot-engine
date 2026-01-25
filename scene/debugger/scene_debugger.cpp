@@ -3170,8 +3170,15 @@ Error SceneDebugger::_msg_signal_viewer_request_node_data_by_path(const Array &p
 		return ERR_UNAVAILABLE;
 	}
 
-	// Get the node from the scene tree
-	Node *node = scene_tree->get_current_scene()->get_node(node_path);
+	// Get the current scene and validate it exists
+	Node *current_scene = scene_tree->get_current_scene();
+	if (!current_scene) {
+		print_line("[Signal Viewer Game] ERROR: No current scene");
+		return ERR_UNAVAILABLE;
+	}
+
+	// Get the node from the scene tree using get_node_or_null for safety
+	Node *node = current_scene->get_node_or_null(node_path);
 	if (!node) {
 		print_line(vformat("[Signal Viewer Game] ERROR: Node not found at path: %s", node_path_str));
 		return ERR_UNAVAILABLE;

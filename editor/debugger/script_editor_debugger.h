@@ -306,8 +306,8 @@ public:
 
 	void clear_inspector(bool p_send_msg = true);
 
-	// Send message to game process - made public for SignalizeDock
-	void _put_msg(const String &p_message, const Array &p_data, uint64_t p_thread_id = Thread::MAIN_ID);
+	// Send message to game process - public for SignalizeDock integration
+	void put_msg(const String &p_message, const Array &p_data, uint64_t p_thread_id = Thread::MAIN_ID);
 
 	// Needed by _live_edit_set, buttons state.
 	void set_editor_remote_tree(const Tree *p_tree) { editor_remote_tree = p_tree; }

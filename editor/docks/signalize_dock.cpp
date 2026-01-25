@@ -2577,7 +2577,7 @@ void SignalizeDock::_inspect_remote_node(ObjectID p_node_id, const String &p_nod
 
 	// Send with "scene:" prefix to reach SceneDebugger handlers
 	// Pass args directly (not wrapped), as the handler expects: [node_id, node_path]
-	debugger->_put_msg("scene:signal_viewer_request_node_data", args);
+	debugger->put_msg("scene:signal_viewer_request_node_data", args);
 
 	// Update inspection state
 	inspected_node_id = p_node_id;

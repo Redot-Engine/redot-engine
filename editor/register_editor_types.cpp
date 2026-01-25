@@ -33,7 +33,6 @@
 #include "register_editor_types.h"
 
 #include "core/object/script_language.h"
-#include "docks/signalize_dock.h"
 #include "editor/animation/animation_tree_editor_plugin.h"
 #include "editor/audio/audio_stream_editor_plugin.h"
 #include "editor/audio/audio_stream_randomizer_editor_plugin.h"

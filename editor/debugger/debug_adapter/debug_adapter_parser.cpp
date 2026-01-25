@@ -514,7 +514,7 @@ Dictionary DebugAdapterParser::req_godot_put_msg(const Dictionary &p_params) con
 	String msg = args["message"];
 	Array data = args["data"];
 
-	EditorDebuggerNode::get_singleton()->get_default_debugger()->_put_msg(msg, data);
+	EditorDebuggerNode::get_singleton()->get_default_debugger()->put_msg(msg, data);
 
 	return prepare_success_response(p_params);
 }

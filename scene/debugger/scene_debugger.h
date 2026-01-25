@@ -126,7 +126,7 @@ private:
 #endif
 	static Error _msg_rq_screenshot(const Array &p_args);
 
-	// STEP 1: Signal Viewer - Track signal emissions during gameplay
+	// Signal Viewer: Track signal emissions during gameplay
 	static Error _msg_signal_viewer_start_tracking(const Array &p_args);
 	static Error _msg_signal_viewer_stop_tracking(const Array &p_args);
 	static Error _msg_signal_viewer_request_node_data(const Array &p_args);
