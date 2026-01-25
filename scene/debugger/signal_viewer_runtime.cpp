@@ -105,7 +105,7 @@ void SignalViewerRuntime::_signal_emission_callback(Object *p_emitter, const Str
 
 	// Filter out internal engine noise - gizmo timers, skeleton pose updates, etc.
 	// Skip timer signals (unless they're user-created gameplay timers)
-	if (signal_name == "timeout" && (node_name.contains("Gizmo") || node_name.contains("Update") || node_name.contains("Timer") && node_class.contains("Editor"))) {
+	if (signal_name == "timeout" && (node_name.contains("Gizmo") || node_name.contains("Update") || (node_name.contains("Timer") && node_class.contains("Editor")))) {
 		return; // Skip editor gizmo/update timers
 	}
 
@@ -235,9 +235,44 @@ void SignalViewerRuntime::_send_batch_updates() {
 
 	print_line(vformat("[Signal Viewer Runtime] Sending batch updates for %d signals", signal_emission_counts.size()));
 
-	// Note: We'll send updates for signals that have counts but haven't been sent recently
-	// For simplicity, we just reset all counts here. A more sophisticated approach would
-	// send all pending counts in a single message.
+	// Iterate over all accumulated signal counts and send updates
+	for (const KeyValue<String, int> &E : signal_emission_counts) {
+		const String &key = E.key;
+		int count = E.value;
+
+		// Parse the key to get ObjectID and signal name
+		// Key format: "{ObjectID}:{signal_name}"
+		int sep_pos = key.find(":");
+		if (sep_pos < 0) {
+			continue; // Invalid key format, skip
+		}
+
+		String object_id_str = key.substr(0, sep_pos);
+		String signal_name = key.substr(sep_pos + 1);
+		ObjectID emitter_id = ObjectID(object_id_str.to_int());
+
+		// Look up the node to get its name and class
+		Object *obj = ObjectDB::get_instance(emitter_id);
+		if (!obj) {
+			// Node was deleted, skip this entry
+			print_line(vformat("[Signal Viewer Runtime] Skipping deleted node (ID: %s)", object_id_str));
+			continue;
+		}
+
+		Node *node = Object::cast_to<Node>(obj);
+		if (!node) {
+			continue; // Not a node, skip
+		}
+
+		String node_name = node->get_name();
+		String node_class = node->get_class();
+		Array connections = signal_connections.has(key) ? signal_connections[key] : Array();
+
+		// Send the update with accumulated count
+		_send_signal_update(key, emitter_id, node_name, node_class, signal_name, count, connections);
+	}
+
+	// Clear all counts after sending
 	signal_emission_counts.clear();
 }
 
