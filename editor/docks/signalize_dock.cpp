@@ -39,7 +39,6 @@
 #include "core/object/script_language.h"
 #include "core/templates/hash_set.h"
 #include "core/variant/callable.h"
-#include <functional>
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/script_editor_debugger.h"
 #include "editor/editor_interface.h"
@@ -59,6 +58,7 @@
 #include "scene/gui/tree.h"
 #include "scene/main/timer.h"
 #include "scene/resources/style_box_flat.h"
+#include <functional>
 
 // Static member initialization
 SignalizeDock *SignalizeDock::singleton_instance = nullptr;
