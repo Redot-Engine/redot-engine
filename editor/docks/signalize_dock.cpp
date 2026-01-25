@@ -1,31 +1,63 @@
+/**************************************************************************/
+/*  signalize_dock.cpp                                                    */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
 #include "signalize_dock.h"
 
-#include "editor/editor_node.h"
-#include "editor/editor_interface.h"
-#include "editor/settings/editor_settings.h"
-#include "editor/inspector/editor_inspector.h"
-#include "editor/debugger/editor_debugger_node.h"
-#include "editor/debugger/script_editor_debugger.h"
-#include "editor/run/editor_run_bar.h"
-#include "editor/script/script_editor_plugin.h"
-#include "scene/debugger/scene_debugger.h"
-#include "scene/gui/tree.h"
 #include "core/debugger/engine_debugger.h"
-#include "core/object/script_language.h"
-#include "core/object/script_instance.h"
-#include "core/variant/callable.h"
 #include "core/input/input_event.h"
 #include "core/object/class_db.h"
+#include "core/object/script_instance.h"
+#include "core/object/script_language.h"
+#include "core/templates/hash_set.h"
+#include "core/variant/callable.h"
+#include "editor/debugger/editor_debugger_node.h"
+#include "editor/debugger/script_editor_debugger.h"
+#include "editor/editor_interface.h"
+#include "editor/editor_node.h"
+#include "editor/gui/window_wrapper.h"
+#include "editor/inspector/editor_inspector.h"
+#include "editor/run/editor_run_bar.h"
+#include "editor/script/script_editor_plugin.h"
+#include "editor/settings/editor_settings.h"
+#include "scene/debugger/scene_debugger.h"
+#include "scene/gui/box_container.h"
+#include "scene/gui/color_picker.h"
 #include "scene/gui/control.h"
 #include "scene/gui/label.h"
-#include "scene/gui/color_picker.h"
-#include "scene/gui/spin_box.h"
 #include "scene/gui/option_button.h"
-#include "scene/resources/style_box_flat.h"
-#include "scene/gui/box_container.h"
+#include "scene/gui/spin_box.h"
+#include "scene/gui/tree.h"
 #include "scene/main/timer.h"
-#include "editor/gui/window_wrapper.h"
-#include "core/templates/hash_set.h"
+#include "scene/resources/style_box_flat.h"
 
 // Static member initialization
 SignalizeDock *SignalizeDock::singleton_instance = nullptr;
@@ -273,7 +305,6 @@ void SignalizeDock::_on_connection_color_changed(const Color &p_color) {
 		editor_settings->save();
 	}
 
-	
 	// Note: We don't rebuild the graph here because:
 	// 1. Rebuilding triggers the color_changed signal again, creating an infinite loop
 	// 2. The new color will be applied automatically when the graph is next rebuilt for any reason
@@ -388,7 +419,7 @@ void SignalizeDock::_on_open_function_button_pressed(ObjectID p_node_id, const S
 	}
 
 	if (!success) {
-			}
+	}
 }
 
 void SignalizeDock::_build_graph() {
@@ -401,7 +432,7 @@ void SignalizeDock::_build_graph() {
 		}
 	}
 
-// Cleanup old runtime tracking connections before rebuilding
+	// Cleanup old runtime tracking connections before rebuilding
 	_cleanup_runtime_signal_tracking();
 
 	EditorNode *editor_node = EditorNode::get_singleton();
@@ -416,7 +447,6 @@ void SignalizeDock::_build_graph() {
 		return;
 	}
 
-	
 	// First pass: collect all nodes that participate in signal connections
 	// ONLY include nodes that BOTH emit signals AND have their targets also included
 	// This ensures all nodes in the graph will have visible connections
@@ -426,7 +456,7 @@ void SignalizeDock::_build_graph() {
 	_collect_all_nodes(scene_root, all_nodes);
 
 	// Build a set of all nodes in the scene for quick lookup
-	HashMap<ObjectID, Node*> node_lookup;
+	HashMap<ObjectID, Node *> node_lookup;
 	for (Node *node : all_nodes) {
 		node_lookup[node->get_instance_id()] = node;
 	}
@@ -525,14 +555,13 @@ void SignalizeDock::_build_graph() {
 		}
 	}
 
-
 	// Fourth pass: create the signal connections
 	_connect_all_node_signals();
 
 	// Log graph build result (level 1 - Quiet)
 	if (should_log(1)) {
 		print_line(vformat("[Signalize] Graph built: %d nodes, %d connections",
-			node_graph_nodes.size(), connections.size()));
+				node_graph_nodes.size(), connections.size()));
 	}
 
 	// Auto-arrange the graph nodes for better visualization
@@ -544,7 +573,7 @@ void SignalizeDock::_build_graph() {
 			kv.value->set_position_offset(saved_node_positions[kv.key]);
 		}
 	}
-	}
+}
 void SignalizeDock::_collect_all_nodes(Node *p_node, List<Node *> &r_list) {
 	if (!p_node) {
 		return;
@@ -566,7 +595,6 @@ void SignalizeDock::_build_graph_for_single_node(Node *p_node) {
 		return;
 	}
 
-	
 	// Clear previous graph
 	_clear_inspection();
 
@@ -737,7 +765,7 @@ void SignalizeDock::_build_graph_for_single_node(Node *p_node) {
 	// Log single-node graph build result (level 2 - Normal, inspector updates)
 	if (should_log(2)) {
 		print_line(vformat("[Signalize] Built graph for node %s: %d nodes, %d connections",
-			node_name, node_graph_nodes.size(), pending_connections.size()));
+				node_name, node_graph_nodes.size(), pending_connections.size()));
 	}
 }
 
@@ -1043,7 +1071,7 @@ void SignalizeDock::_connect_all_node_signals() {
 
 				if (!already_added) {
 					ReceiverMethodInfo info;
-					info.target_id = target_id;  // The object that owns the method
+					info.target_id = target_id; // The object that owns the method
 					info.method_name = method_name;
 					receiver_methods_list[target_id].push_back(info);
 				}
@@ -1247,7 +1275,6 @@ void SignalizeDock::_cleanup_runtime_signal_tracking() {
 		return; // Nothing to clean up
 	}
 
-
 	// Get the scene root
 	EditorNode *editor_node = EditorNode::get_singleton();
 	if (!editor_node) {
@@ -1260,7 +1287,6 @@ void SignalizeDock::_cleanup_runtime_signal_tracking() {
 		runtime_signal_connections.clear();
 		return;
 	}
-
 
 	// Disconnect all tracked signals
 	for (const KeyValue<ObjectID, HashMap<String, int>> &node_entry : runtime_signal_connections) {
@@ -1289,8 +1315,7 @@ void SignalizeDock::_cleanup_runtime_signal_tracking() {
 
 	// Clear the tracking data
 	runtime_signal_connections.clear();
-
-	}
+}
 
 void SignalizeDock::_connect_runtime_signal_tracking() {
 	EditorNode *editor_node = EditorNode::get_singleton();
@@ -1312,7 +1337,7 @@ void SignalizeDock::_connect_runtime_signal_tracking() {
 		Node *root = scene_tree->get_root();
 		if (root) {
 			// Helper function to recursively search for a matching scene
-			std::function<Node*(Node*, int)> search_recursive = [&](Node *node, int depth) -> Node* {
+			std::function<Node *(Node *, int)> search_recursive = [&](Node *node, int depth) -> Node * {
 				if (!node || depth > 10) { // Limit recursion depth
 					return nullptr;
 				}
@@ -1328,9 +1353,9 @@ void SignalizeDock::_connect_runtime_signal_tracking() {
 
 				// Skip UI dialogs and popups
 				if (node_class.contains("Dialog") || node_class.contains("Popup") ||
-					node_class.contains("Window") || node_class.contains("Menu") ||
-					node_class.contains("Panel") || node_class.contains("Button") ||
-					node_name.begins_with("_editor_") || node_name.contains("__editor")) {
+						node_class.contains("Window") || node_class.contains("Menu") ||
+						node_class.contains("Panel") || node_class.contains("Button") ||
+						node_name.begins_with("_editor_") || node_name.contains("__editor")) {
 					return nullptr;
 				}
 
@@ -1378,7 +1403,6 @@ void SignalizeDock::_connect_runtime_signal_tracking() {
 	List<Node *> all_nodes;
 	_collect_all_nodes(scene_root, all_nodes);
 
-
 	// For each node, connect to its signals
 	for (Node *node : all_nodes) {
 		if (!node) {
@@ -1412,13 +1436,12 @@ void SignalizeDock::_connect_runtime_signal_tracking() {
 				}
 				runtime_signal_connections[node_id][sig.name] = 1;
 
-							} else {
+			} else {
 				ERR_PRINT(vformat("[Signalize] Failed to connect to signal: %s.%s (error: %d)",
-					node->get_name(), sig.name, (int)err));
+						node->get_name(), sig.name, (int)err));
 			}
 		}
 	}
-
 }
 
 void SignalizeDock::_add_receiver_slots(Node *p_node) {
@@ -1625,7 +1648,6 @@ void SignalizeDock::_create_visual_connections() {
 			graph_edit->set_connection_activity(*emitter_name_ptr, conn.from_slot, *receiver_name_ptr, conn.to_slot, 0.05);
 		}
 	}
-
 }
 
 // Simplified callback for runtime signal tracking
@@ -1635,7 +1657,7 @@ void SignalizeDock::_on_signal_fired(Node *p_emitter, const String &p_signal) {
 	}
 
 	// Basic tracking verification - just print to console when a signal fires
-	
+
 	// Look up all connections for this signal and log them
 	List<Object::Connection> conns;
 	p_emitter->get_signal_connection_list(StringName(p_signal), &conns);
@@ -1652,7 +1674,7 @@ void SignalizeDock::_on_signal_fired(Node *p_emitter, const String &p_signal) {
 		}
 
 		// Log each connection that would be triggered
-		
+
 		// Also call the detailed callback for counting
 		_on_signal_emitted(p_emitter, p_signal, target_obj, method_name);
 	}
@@ -1663,14 +1685,14 @@ void SignalizeDock::_on_signal_emitted(Node *p_emitter, const String &p_signal, 
 		return;
 	}
 
-// Basic tracking verification - just print to console
+	// Basic tracking verification - just print to console
 
 	// Build key for this specific connection
 	String key = vformat("%s|%s|%s|%s",
-						String::num_uint64((uint64_t)p_emitter->get_instance_id()),
-						p_signal,
-						String::num_uint64((uint64_t)p_target->get_instance_id()),
-						p_method);
+			String::num_uint64((uint64_t)p_emitter->get_instance_id()),
+			p_signal,
+			String::num_uint64((uint64_t)p_target->get_instance_id()),
+			p_method);
 
 	// Update count if this connection exists
 	if (connections.has(key)) {
@@ -1684,10 +1706,9 @@ void SignalizeDock::_on_runtime_signal_emitted(ObjectID p_emitter_id, const Stri
 	// LIVE MODE: Highlight connections when signals fire during gameplay
 	// Only process signals for nodes that are currently being inspected
 	if (!is_inspecting || p_emitter_id != inspected_node_id) {
-				return;
+		return;
 	}
 
-	
 	// Update emission count
 	if (!node_emits.has(p_emitter_id)) {
 		node_emits[p_emitter_id] = HashMap<String, int>();
@@ -1698,25 +1719,26 @@ void SignalizeDock::_on_runtime_signal_emitted(ObjectID p_emitter_id, const Stri
 	// Highlight each connection for this signal
 	for (int i = 0; i < p_connections.size(); i++) {
 		Array conn_data = p_connections[i];
-		if (conn_data.size() < 4) continue;
+		if (conn_data.size() < 4) {
+			continue;
+		}
 
 		ObjectID target_id = conn_data[0];
 		String target_method = conn_data[3];
 
 		// Build connection key
 		String connection_key = vformat("%s|%s|%s|%s",
-			String::num_uint64(p_emitter_id),
-			p_signal_name,
-			String::num_uint64(target_id),
-			target_method);
+				String::num_uint64(p_emitter_id),
+				p_signal_name,
+				String::num_uint64(target_id),
+				target_method);
 
 		// Find the matching ConnectionSlot in pending_connections
 		for (const ConnectionSlot &slot : pending_connections) {
 			if (slot.emitter_id == p_emitter_id &&
-				slot.signal_name == p_signal_name &&
-				slot.receiver_id == target_id &&
-				slot.method_name == target_method) {
-
+					slot.signal_name == p_signal_name &&
+					slot.receiver_id == target_id &&
+					slot.method_name == target_method) {
 				// Get the graph node names
 				String *from_node_name = node_graph_names.getptr(p_emitter_id);
 				String *to_node_name = node_graph_names.getptr(target_id);
@@ -1724,7 +1746,6 @@ void SignalizeDock::_on_runtime_signal_emitted(ObjectID p_emitter_id, const Stri
 				if (from_node_name && to_node_name) {
 					// Highlight the connection by setting activity to 1.0 (full brightness)
 					graph_edit->set_connection_activity(*from_node_name, slot.from_slot, *to_node_name, slot.to_slot, 1.0);
-
 
 					// Set up timer to fade back to inactive
 					// Cancel existing timer if there is one
@@ -1768,10 +1789,9 @@ void SignalizeDock::_fade_connection_highlight(const String &p_connection_key) {
 	// Find the matching ConnectionSlot
 	for (const ConnectionSlot &slot : pending_connections) {
 		if (slot.emitter_id == emitter_id &&
-			slot.signal_name == signal_name &&
-			slot.receiver_id == receiver_id &&
-			slot.method_name == method_name) {
-
+				slot.signal_name == signal_name &&
+				slot.receiver_id == receiver_id &&
+				slot.method_name == method_name) {
 			// Get the graph node names
 			String *from_node_name = node_graph_names.getptr(emitter_id);
 			String *to_node_name = node_graph_names.getptr(receiver_id);
@@ -1849,9 +1869,7 @@ void SignalizeDock::_global_signal_emission_callback(Object *p_emitter, const St
 	String signal_name = String(p_signal);
 
 	// Skip timer signals from gizmos/updates
-	if (signal_name == "timeout" && (
-		node_name.contains("Gizmo") || node_name.contains("Update") ||
-		(node_name.contains("Timer") && node_class.contains("Editor")))) {
+	if (signal_name == "timeout" && (node_name.contains("Gizmo") || node_name.contains("Update") || (node_name.contains("Timer") && node_class.contains("Editor")))) {
 		return; // Skip editor gizmo/update timers
 	}
 
@@ -1875,8 +1893,7 @@ void SignalizeDock::_global_signal_emission_callback(Object *p_emitter, const St
 
 	// DEBUG: Log all Area3D signals
 	if (String(p_signal) == "body_entered" || String(p_signal) == "body_exited" ||
-	    String(p_signal) == "area_entered" || String(p_signal) == "area_exited") {
-
+			String(p_signal) == "area_entered" || String(p_signal) == "area_exited") {
 		// Log all connection targets for debugging
 		for (const Object::Connection &conn : conns) {
 			Object *target_obj = conn.callable.get_object();
@@ -1920,9 +1937,9 @@ void SignalizeDock::_global_signal_emission_callback(Object *p_emitter, const St
 		// Also skip common editor UI classes from the emitter
 		String node_class = emitter_node->get_class();
 		if (node_class.contains("Editor") || node_class.contains("MenuBar") ||
-			node_class.contains("Button") || node_class.contains("LineEdit") ||
-			node_class.contains("Panel") || node_class.contains("Window") ||
-			node_class.contains("Popup") || node_class.contains("Label")) {
+				node_class.contains("Button") || node_class.contains("LineEdit") ||
+				node_class.contains("Panel") || node_class.contains("Window") ||
+				node_class.contains("Popup") || node_class.contains("Label")) {
 			return; // Skip editor UI
 		}
 
@@ -1948,7 +1965,7 @@ void SignalizeDock::_global_signal_emission_callback(Object *p_emitter, const St
 
 	// Print to console for now (Step 1)
 	if (!viewer->tracking_runtime_scene) {
-			}
+	}
 
 	// Look up all connections and log them too
 	for (const Object::Connection &conn : conns) {
@@ -1961,8 +1978,7 @@ void SignalizeDock::_global_signal_emission_callback(Object *p_emitter, const St
 		if (method_name.is_empty()) {
 			continue;
 		}
-
-			}
+	}
 }
 
 void SignalizeDock::_enable_signal_tracking() {
@@ -1970,7 +1986,7 @@ void SignalizeDock::_enable_signal_tracking() {
 		return; // Already enabled
 	}
 
-		Object::set_signal_emission_callback(_global_signal_emission_callback);
+	Object::set_signal_emission_callback(_global_signal_emission_callback);
 	tracking_enabled = true;
 }
 
@@ -1979,19 +1995,19 @@ void SignalizeDock::_disable_signal_tracking() {
 		return; // Already disabled
 	}
 
-		Object::set_signal_emission_callback(nullptr);
+	Object::set_signal_emission_callback(nullptr);
 	tracking_enabled = false;
 }
 
 SignalizeDock::~SignalizeDock() {
-// Clean up - disable signal tracking when dock is destroyed
+	// Clean up - disable signal tracking when dock is destroyed
 	_disable_signal_tracking();
 
 	// Unregister message capture handlers
 	if (EngineDebugger::get_singleton()) {
 		EngineDebugger::unregister_message_capture("signal_viewer");
 		EngineDebugger::unregister_message_capture("scene");
-			}
+	}
 
 	// Clear singleton instance to prevent dangling pointer
 	singleton_instance = nullptr;
@@ -2154,17 +2170,16 @@ void SignalizeDock::_update_connection_labels() {
 
 // Callbacks for play/stop button presses
 void SignalizeDock::_on_play_pressed() {
-		// Start timer to periodically check if game is running
+	// Start timer to periodically check if game is running
 	if (game_start_check_timer) {
-				game_start_check_timer->start();
-			} else {
+		game_start_check_timer->start();
+	} else {
 		ERR_PRINT("[Signalize] ERROR: Timer is null!");
 	}
 	_on_play_mode_changed(true);
 }
 
 void SignalizeDock::_on_game_start_check_timer_timeout() {
-
 	// Check if game is actually running
 	EditorInterface *editor_interface = EditorInterface::get_singleton();
 	if (!editor_interface) {
@@ -2172,7 +2187,7 @@ void SignalizeDock::_on_game_start_check_timer_timeout() {
 	}
 
 	bool is_playing = editor_interface->is_playing_scene();
-	
+
 	if (!is_playing) {
 		return; // Game not running yet, wait for next check
 	}
@@ -2181,30 +2196,28 @@ void SignalizeDock::_on_game_start_check_timer_timeout() {
 
 	EditorDebuggerNode *debugger_node = EditorDebuggerNode::get_singleton();
 	if (debugger_node) {
-		
 		// Try to get the current debugger session
 		ScriptEditorDebugger *debugger = debugger_node->get_current_debugger();
 
 		if (debugger) {
-
 			// Check if session is active before sending
 			bool session_active = debugger->is_session_active();
-			
+
 			if (!session_active) {
-								return; // Keep timer running to retry
+				return; // Keep timer running to retry
 			}
 
 			// Send the start_tracking message via ScriptEditorDebugger
 			// NOTE: Must use "scene:" prefix because SceneDebugger captures that prefix
 			Array args;
 			debugger->send_message("scene:signal_viewer:start_tracking", args);
-			
+
 			// Stop the timer - we've successfully sent the message
 			if (game_start_check_timer) {
 				game_start_check_timer->stop();
 			}
 		} else {
-						// Don't stop the timer - keep retrying
+			// Don't stop the timer - keep retrying
 			return;
 		}
 	} else {
@@ -2213,7 +2226,7 @@ void SignalizeDock::_on_game_start_check_timer_timeout() {
 
 	// Set tracking flag
 	tracking_runtime_scene = true;
-	
+
 	// Stop the timer - we've detected the game is running
 	if (game_start_check_timer) {
 		game_start_check_timer->stop();
@@ -2221,7 +2234,7 @@ void SignalizeDock::_on_game_start_check_timer_timeout() {
 }
 
 void SignalizeDock::_on_stop_pressed() {
-		// Stop the game start check timer
+	// Stop the game start check timer
 	if (game_start_check_timer) {
 		game_start_check_timer->stop();
 	}
@@ -2229,7 +2242,6 @@ void SignalizeDock::_on_stop_pressed() {
 }
 
 void SignalizeDock::_on_play_mode_changed(bool p_is_playing) {
-	
 	// Update title label to show (Remote) when game is running
 	if (title_label) {
 		if (p_is_playing) {
@@ -2258,7 +2270,6 @@ void SignalizeDock::_on_play_mode_changed(bool p_is_playing) {
 		// Clear the known ObjectIDs tracker
 		known_remote_object_ids.clear();
 
-		
 		// Capture the initial remote scene root ID and connect to signals
 		EditorDebuggerNode *debugger_node = EditorDebuggerNode::get_singleton();
 		if (debugger_node) {
@@ -2267,10 +2278,10 @@ void SignalizeDock::_on_play_mode_changed(bool p_is_playing) {
 				// NOTE: remote_tree_updated signal fires frequently and causes lag
 				// Disabled for on-demand inspection - only connect when live tracking is needed
 				// debugger->connect("remote_tree_updated", callable_mp(this, &SignalizeDock::_on_remote_tree_updated));
-				// 
+				//
 				// Connect to remote_objects_requested signal to detect node selection in remote tree
 				debugger->connect("remote_objects_requested", callable_mp(this, &SignalizeDock::_on_remote_object_selected_in_tree));
-				
+
 				// Get the current remote scene root
 				const SceneDebuggerTree *remote_tree = debugger->get_remote_tree();
 				if (remote_tree && remote_tree->nodes.size() > 0) {
@@ -2278,7 +2289,7 @@ void SignalizeDock::_on_play_mode_changed(bool p_is_playing) {
 					const List<SceneDebuggerTree::RemoteNode>::Element *first_node = remote_tree->nodes.front();
 					if (first_node) {
 						remote_scene_root_id = first_node->get().id;
-						
+
 						// Track all ObjectIDs in the initial scene (for detecting new nodes in scene transitions)
 						for (const List<SceneDebuggerTree::RemoteNode>::Element *E = remote_tree->nodes.front(); E; E = E->next()) {
 							known_remote_object_ids.insert(E->get().id);
@@ -2288,7 +2299,7 @@ void SignalizeDock::_on_play_mode_changed(bool p_is_playing) {
 			}
 		}
 
-			} else {
+	} else {
 		// Game stopped - disconnect from debugger signals to prevent lag
 		EditorDebuggerNode *debugger_node = EditorDebuggerNode::get_singleton();
 		if (debugger_node) {
@@ -2297,7 +2308,7 @@ void SignalizeDock::_on_play_mode_changed(bool p_is_playing) {
 				// Disconnect signals to stop receiving updates
 				if (debugger->is_connected("remote_objects_requested", callable_mp(this, &SignalizeDock::_on_remote_object_selected_in_tree))) {
 					debugger->disconnect("remote_objects_requested", callable_mp(this, &SignalizeDock::_on_remote_object_selected_in_tree));
-									}
+				}
 				// remote_tree_updated is already disabled, but if we ever enable it we should disconnect it too
 			}
 		}
@@ -2307,11 +2318,10 @@ void SignalizeDock::_on_play_mode_changed(bool p_is_playing) {
 		_build_graph();
 		remote_scene_root_id = ObjectID(); // Reset root ID
 		known_remote_object_ids.clear(); // Clear tracked ObjectIDs
-			}
+	}
 }
 
 void SignalizeDock::_on_remote_tree_updated() {
-
 	// In live mode, we only track new ObjectIDs to detect scene transitions
 	// We DON'T auto-regenerate the graph - user must manually click nodes
 
@@ -2367,15 +2377,15 @@ void SignalizeDock::_on_remote_tree_updated() {
 
 void SignalizeDock::_on_remote_tree_check_timer_timeout() {
 	remote_tree_check_count++;
-	
+
 	EditorDebuggerNode *debugger_node = EditorDebuggerNode::get_singleton();
 	if (!debugger_node) {
-				return;
+		return;
 	}
 
 	ScriptEditorDebugger *debugger = debugger_node->get_current_debugger();
 	if (!debugger) {
-				return;
+		return;
 	}
 
 	const SceneDebuggerTree *remote_tree = debugger->get_remote_tree();
@@ -2383,9 +2393,7 @@ void SignalizeDock::_on_remote_tree_check_timer_timeout() {
 		return;
 	}
 
-	
 	if (remote_tree->nodes.size() == 0) {
-		
 		// Stop after 10 checks (5 seconds) to avoid infinite loop
 		if (remote_tree_check_count >= 10) {
 			remote_tree_check_timer->stop();
@@ -2397,15 +2405,15 @@ void SignalizeDock::_on_remote_tree_check_timer_timeout() {
 
 	int count = 0;
 	for (const SceneDebuggerTree::RemoteNode &remote_node : remote_tree->nodes) {
-		if (count >= 5) break; // Only check first 5
-
+		if (count >= 5) {
+			break; // Only check first 5
+		}
 
 		// CRITICAL TEST: Can we get this object via ObjectDB?
 		Object *obj = ObjectDB::get_instance(remote_node.id);
 		if (obj) {
 			Node *node = Object::cast_to<Node>(obj);
 			if (node) {
-
 				// Can we get its signals?
 				List<MethodInfo> signals;
 				node->get_signal_list(&signals);
@@ -2424,7 +2432,6 @@ void SignalizeDock::_on_remote_tree_check_timer_timeout() {
 		count++;
 	}
 
-	
 	// Stop checking - we got our answer
 	remote_tree_check_timer->stop();
 }
@@ -2465,52 +2472,48 @@ void SignalizeDock::_inspect_selected_editor_node() {
 	// Get the selected node(s)
 	const List<Node *> &selected_nodes = editor_selection->get_top_selected_node_list();
 	if (selected_nodes.is_empty()) {
-				return;
+		return;
 	}
 
 	// For now, just inspect the first selected node
 	Node *selected_node = selected_nodes.front()->get();
 	if (!selected_node) {
-				return;
+		return;
 	}
 
-	
 	// Build graph for just this node
 	_build_graph_for_single_node(selected_node);
 }
 
 void SignalizeDock::_inspect_selected_remote_node(ScriptEditorDebugger *debugger) {
-
 	// Get the actual Tree widget (not the data structure)
 	const Tree *remote_tree_widget = debugger->get_editor_remote_tree();
 	if (!remote_tree_widget) {
-				return;
+		return;
 	}
 
 	// Get the selected item from the tree
 	TreeItem *selected = const_cast<Tree *>(remote_tree_widget)->get_selected();
 	if (!selected) {
-				return;
+		return;
 	}
 
 	// Debug: Print what we got
-	
+
 	// Get the metadata from the selected item
 	// EditorDebuggerTree stores ObjectID in column 0 metadata
 	Variant metadata = selected->get_metadata(0);
-	
+
 	if (metadata.get_type() != Variant::INT) {
-		
 		// Fallback: Try to match by name from SceneDebuggerTree
 		const SceneDebuggerTree *remote_tree_data = debugger->get_remote_tree();
 		if (remote_tree_data && !remote_tree_data->nodes.is_empty()) {
 			String selected_name = selected->get_text(0);
-			
+
 			// Search through all nodes for a matching name
 			for (const List<SceneDebuggerTree::RemoteNode>::Element *E = remote_tree_data->nodes.front(); E; E = E->next()) {
 				const SceneDebuggerTree::RemoteNode &node = E->get();
 				if (node.name == selected_name) {
-					
 					// Build the path
 					String node_path_str = "/root/" + node.name;
 
@@ -2524,7 +2527,7 @@ void SignalizeDock::_inspect_selected_remote_node(ScriptEditorDebugger *debugger
 
 	ObjectID node_id = ObjectID(uint64_t(int64_t(metadata)));
 	if (node_id.is_null()) {
-				return;
+		return;
 	}
 
 	// Get the node name from the tree item
@@ -2550,7 +2553,6 @@ void SignalizeDock::_inspect_selected_remote_node(ScriptEditorDebugger *debugger
 		node_path_str = "/root/" + node_path_str;
 	}
 
-
 	// Request signal data for this node from the game process
 	_inspect_remote_node(node_id, node_path_str);
 }
@@ -2565,19 +2567,17 @@ void SignalizeDock::_inspect_remote_node(ObjectID p_node_id, const String &p_nod
 
 	ScriptEditorDebugger *debugger = debugger_node->get_current_debugger();
 	if (!debugger) {
-				return;
+		return;
 	}
 
 	// Send message to game process requesting signal data for this node
 	Array args;
-	args.append((int64_t)p_node_id);  // Node ID - pass as integer, not string!
-	args.append(p_node_path);  // Node path
-
+	args.append((int64_t)p_node_id); // Node ID - pass as integer, not string!
+	args.append(p_node_path); // Node path
 
 	// Send with "scene:" prefix to reach SceneDebugger handlers
 	// Pass args directly (not wrapped), as the handler expects: [node_id, node_path]
 	debugger->_put_msg("scene:signal_viewer_request_node_data", args);
-
 
 	// Update inspection state
 	inspected_node_id = p_node_id;
@@ -2588,17 +2588,16 @@ void SignalizeDock::_inspect_remote_node(ObjectID p_node_id, const String &p_nod
 	// This allows connections to light up when this node's signals fire
 	if (!tracking_enabled) {
 		_enable_signal_tracking();
-			}
+	}
 }
 
 // Per-node inspection: Handle signal data received from game process
 void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 	// Data format: [node_id, node_name, node_class, [{signal_name, count, [[target_id, target_name, target_class, target_method], ...]}, ...]]
 	if (p_data.size() < 4) {
-				return;
+		return;
 	}
 
-	
 	// Clear previous graph VISUALS but preserve inspection state
 	// We need to clear the graph nodes to rebuild them, but keep is_inspecting=true
 	List<GraphNode *> nodes_to_delete;
@@ -2637,7 +2636,7 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 	ObjectID node_id = p_data[0];
 	String node_name = p_data[1];
 	String node_class = p_data[2];
-	Array signal_data = p_data[3];  // Array of signal info dictionaries
+	Array signal_data = p_data[3]; // Array of signal info dictionaries
 
 	// Track signal emissions for this node
 	if (!node_emits.has(node_id)) {
@@ -2649,7 +2648,9 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 
 	for (int i = 0; i < signal_data.size(); i++) {
 		Array sig_info = signal_data[i];
-		if (sig_info.size() < 3) continue;
+		if (sig_info.size() < 3) {
+			continue;
+		}
 
 		String signal_name = sig_info[0];
 		int count = sig_info[1];
@@ -2661,7 +2662,9 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 		// Collect all target methods
 		for (int j = 0; j < connections.size(); j++) {
 			Array conn_data = connections[j];
-			if (conn_data.size() < 4) continue;
+			if (conn_data.size() < 4) {
+				continue;
+			}
 
 			ObjectID target_id = conn_data[0];
 			String target_name = conn_data[1];
@@ -2698,7 +2701,9 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 	List<String> main_node_signals;
 	for (int i = 0; i < signal_data.size(); i++) {
 		Array sig_info = signal_data[i];
-		if (sig_info.size() < 3) continue;
+		if (sig_info.size() < 3) {
+			continue;
+		}
 
 		String signal_name = sig_info[0];
 		Array connections = sig_info[2];
@@ -2757,18 +2762,24 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 		String target_class;
 		for (int i = 0; i < signal_data.size(); i++) {
 			Array sig_info = signal_data[i];
-			if (sig_info.size() < 3) continue;
+			if (sig_info.size() < 3) {
+				continue;
+			}
 			Array connections = sig_info[2];
 			for (int j = 0; j < connections.size(); j++) {
 				Array conn_data = connections[j];
-				if (conn_data.size() < 4) continue;
+				if (conn_data.size() < 4) {
+					continue;
+				}
 				if (ObjectID(uint64_t(int64_t(conn_data[0]))) == target_id) {
 					target_name = conn_data[1];
 					target_class = conn_data[2];
 					break;
 				}
 			}
-			if (!target_name.is_empty()) break;
+			if (!target_name.is_empty()) {
+				break;
+			}
 		}
 
 		GraphNode *target_gn = memnew(GraphNode);
@@ -2887,7 +2898,9 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 	// Seventh pass: Create pending connections
 	for (int i = 0; i < signal_data.size(); i++) {
 		Array sig_info = signal_data[i];
-		if (sig_info.size() < 3) continue;
+		if (sig_info.size() < 3) {
+			continue;
+		}
 
 		String signal_name = sig_info[0];
 		Array connections = sig_info[2];
@@ -2899,7 +2912,9 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 
 		for (int j = 0; j < connections.size(); j++) {
 			Array conn_data = connections[j];
-			if (conn_data.size() < 4) continue;
+			if (conn_data.size() < 4) {
+				continue;
+			}
 
 			ObjectID target_id = conn_data[0];
 			String target_method = conn_data[3];
@@ -2917,7 +2932,6 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 			conn_slot.from_slot = from_slot;
 			conn_slot.to_slot = to_slot;
 			pending_connections.push_back(conn_slot);
-
 		}
 	}
 
@@ -2934,12 +2948,10 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 
 	// Create visual connections
 	call_deferred("_create_visual_connections");
-
 }
 
 // Per-node inspection: Clear current inspection
 void SignalizeDock::_clear_inspection() {
-
 	// Clear all graph nodes
 	List<GraphNode *> nodes_to_delete;
 	for (int i = 0; i < graph_edit->get_child_count(); i++) {
@@ -2977,7 +2989,7 @@ void SignalizeDock::_clear_inspection() {
 	// This stops tracking all signals when no node is being inspected
 	if (tracking_enabled) {
 		_disable_signal_tracking();
-			}
+	}
 
 	// Clear inspection state
 	inspected_node_id = ObjectID();
@@ -2987,7 +2999,6 @@ void SignalizeDock::_clear_inspection() {
 
 // Called by inspector plugin when a node is inspected in the Remote tree
 void SignalizeDock::_on_node_inspected_in_remote_tree(ObjectID p_node_id, const String &p_node_path) {
-
 	// Don't auto-inspect if we're already manually inspecting a node
 	// This prevents automatic inspections (from clicking into the game) from overriding manual inspections
 	if (is_inspecting) {
@@ -2997,12 +3008,12 @@ void SignalizeDock::_on_node_inspected_in_remote_tree(ObjectID p_node_id, const 
 	// Only auto-inspect if game is running
 	EditorDebuggerNode *debugger_node = EditorDebuggerNode::get_singleton();
 	if (!debugger_node) {
-				return;
+		return;
 	}
 
 	ScriptEditorDebugger *debugger = debugger_node->get_current_debugger();
 	if (!debugger) {
-				return;
+		return;
 	}
 
 	// Auto-inspect this node
@@ -3011,23 +3022,22 @@ void SignalizeDock::_on_node_inspected_in_remote_tree(ObjectID p_node_id, const 
 
 // Called when a node is clicked in the remote tree
 void SignalizeDock::_on_remote_object_selected_in_tree(const Array &p_object_ids) {
-	
 	if (p_object_ids.is_empty()) {
-				return;
+		return;
 	}
 
 	// Get the first selected object ID
 	ObjectID selected_id = ObjectID(uint64_t(int64_t(p_object_ids[0])));
-	
+
 	// Get the node from the ObjectDB
 	Object *obj = ObjectDB::get_instance(selected_id);
 	if (!obj) {
-				return;
+		return;
 	}
 
 	Node *node = Object::cast_to<Node>(obj);
 	if (!node) {
-				return;
+		return;
 	}
 
 	// Get the node path
@@ -3035,27 +3045,26 @@ void SignalizeDock::_on_remote_object_selected_in_tree(const Array &p_object_ids
 	String node_path_str = node_path.operator String();
 	String node_name = node->get_name();
 
-
 	// Only inspect if game is running
 	EditorDebuggerNode *debugger_node = EditorDebuggerNode::get_singleton();
 	if (!debugger_node) {
-				return;
+		return;
 	}
 
 	ScriptEditorDebugger *debugger = debugger_node->get_current_debugger();
 	if (!debugger) {
-				return;
+		return;
 	}
 
 	// Inspect this node
-		_inspect_remote_node(selected_id, node_path_str);
+	_inspect_remote_node(selected_id, node_path_str);
 }
 
 // Message capture handler - receives signal emissions from game
 Error SignalizeDock::_capture_signal_viewer_messages(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured) {
 	// Debug: Print all scene messages to understand the flow
 	if (p_msg.begins_with("inspect") || p_msg.contains("selected") || p_msg.contains("remote")) {
-			}
+	}
 
 	if (p_msg == "signal_viewer:signal_emitted") {
 		r_captured = true;
@@ -3070,14 +3079,14 @@ Error SignalizeDock::_capture_signal_viewer_messages(void *p_user, const String 
 			Array connections = p_args[4];
 
 			// Print to console (Step 1)
-			
+
 			// Log connections
 			for (int i = 0; i < connections.size(); i++) {
 				Array conn_data = connections[i];
 				if (conn_data.size() >= 3) {
 					String target_class = conn_data[1];
 					String method_name = conn_data[2];
-									}
+				}
 			}
 
 			// Update the graph visualization
@@ -3106,7 +3115,6 @@ Error SignalizeDock::_capture_signal_viewer_messages(void *p_user, const String 
 	// Capture inspect_objects to detect when nodes are clicked in remote tree
 	// (registered for "scene" prefix, so p_msg is "inspect_objects" not "scene:inspect_objects")
 	if (p_msg == "inspect_objects") {
-		
 		// Don't capture this message - let the normal debugger handle it
 		// But we can inspect what's being selected
 		if (p_args.size() > 0) {
@@ -3114,7 +3122,6 @@ Error SignalizeDock::_capture_signal_viewer_messages(void *p_user, const String 
 			if (!object_ids.is_empty()) {
 				ObjectID selected_id = ObjectID(uint64_t(int64_t(object_ids[0])));
 
-				
 				// Get the singleton and trigger inspection
 				SignalizeDock *viewer = singleton_instance;
 				if (viewer) {
@@ -3131,7 +3138,7 @@ Error SignalizeDock::_capture_signal_viewer_messages(void *p_user, const String 
 								if (node) {
 									NodePath node_path = node->get_path();
 									String node_path_str = node_path.operator String();
-																		viewer->_inspect_remote_node(selected_id, node_path_str);
+									viewer->_inspect_remote_node(selected_id, node_path_str);
 								}
 							}
 						}

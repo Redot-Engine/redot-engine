@@ -33,6 +33,7 @@
 #include "register_editor_types.h"
 
 #include "core/object/script_language.h"
+#include "docks/signalize_dock.h"
 #include "editor/animation/animation_tree_editor_plugin.h"
 #include "editor/audio/audio_stream_editor_plugin.h"
 #include "editor/audio/audio_stream_randomizer_editor_plugin.h"
@@ -57,7 +58,6 @@
 #include "editor/import/3d/resource_importer_obj.h"
 #include "editor/import/3d/resource_importer_scene.h"
 #include "editor/import/editor_import_plugin.h"
-#include "docks/signalize_dock.h"
 #ifndef DISABLE_DEPRECATED
 #include "editor/import/resource_importer_animated_texture.h"
 #endif
@@ -140,7 +140,6 @@
 #include "editor/scene/2d/parallax_background_editor_plugin.h"
 #include "editor/scene/3d/skeleton_ik_3d_editor_plugin.h"
 #endif
-
 
 void register_editor_types() {
 	OS::get_singleton()->benchmark_begin_measure("Editor", "Register Types");

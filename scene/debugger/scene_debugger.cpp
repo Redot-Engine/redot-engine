@@ -3048,7 +3048,7 @@ void SceneDebugger::_signal_viewer_emission_callback(Object *p_emitter, const St
 
 	// Skip common editor UI classes (though these shouldn't appear in gameplay)
 	if (node_class.contains("Editor") || node_class.contains("MenuBar") ||
-		node_class.contains("Window") || node_class.contains("Popup")) {
+			node_class.contains("Window") || node_class.contains("Popup")) {
 		return;
 	}
 
@@ -3133,7 +3133,7 @@ Error SceneDebugger::_msg_signal_viewer_request_node_data(const Array &p_args) {
 	String node_path = p_args[1];
 
 	print_line(vformat("[Signal Viewer Game] Requesting signal data for node: %s (ID: %s)",
-		node_path, String::num_uint64((uint64_t)node_id)));
+			node_path, String::num_uint64((uint64_t)node_id)));
 
 	// Get the SignalViewerRuntime singleton
 	SignalViewerRuntime *runtime = SignalViewerRuntime::get_singleton();
