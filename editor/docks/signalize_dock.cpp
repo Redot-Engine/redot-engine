@@ -518,10 +518,10 @@ void SignalizeDock::_build_graph() {
 
 						// Check if target has a script with this method
 						bool has_script_method = false;
-						ScriptInstance *script_instance = target_node->get_script_instance();
-						if (script_instance) {
+						ScriptInstance *script_inst = target_node->get_script_instance();
+						if (script_inst) {
 							// Check if this method exists in the script
-							has_script_method = script_instance->has_method(StringName(method_name));
+							has_script_method = script_inst->has_method(StringName(method_name));
 						}
 
 						// Only include if it's a real user connection (to a script method)
@@ -633,8 +633,8 @@ void SignalizeDock::_build_graph_for_single_node(Node *p_node) {
 			}
 
 			// Filter: Only include connections to script methods
-			ScriptInstance *script_instance = target_node->get_script_instance();
-			if (!script_instance || !script_instance->has_method(StringName(target_method))) {
+			ScriptInstance *script_inst = target_node->get_script_instance();
+			if (!script_inst || !script_inst->has_method(StringName(target_method))) {
 				continue; // Skip internal engine connections
 			}
 
@@ -710,8 +710,8 @@ void SignalizeDock::_build_graph_for_single_node(Node *p_node) {
 					}
 
 					// Filter: Only include if p_node has this method in a script
-					ScriptInstance *script_instance = p_node->get_script_instance();
-					if (!script_instance || !script_instance->has_method(StringName(target_method))) {
+					ScriptInstance *script_inst = p_node->get_script_instance();
+					if (!script_inst || !script_inst->has_method(StringName(target_method))) {
 						continue; // Skip internal engine connections
 					}
 
@@ -2801,9 +2801,9 @@ void SignalizeDock::_on_node_signal_data_received(const Array &p_data) {
 		HBoxContainer *target_titlebar = target_gn->get_titlebar_hbox();
 		if (target_titlebar) {
 			for (int i = 0; i < target_titlebar->get_child_count(); i++) {
-				Label *title_label = Object::cast_to<Label>(target_titlebar->get_child(i));
-				if (title_label) {
-					title_label->add_theme_color_override("font_color", Color(0, 0, 0, 1));
+				Label *title_lbl = Object::cast_to<Label>(target_titlebar->get_child(i));
+				if (title_lbl) {
+					title_lbl->add_theme_color_override("font_color", Color(0, 0, 0, 1));
 					break;
 				}
 			}
