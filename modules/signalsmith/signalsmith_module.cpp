@@ -216,8 +216,7 @@ Ref<AudioStreamWAV> SignalSmith::change_tempo(const String &path, float p_tempo,
 		int mixed = pb->mix(frames.ptrw() + old, 1.0f, block);
 
 		if (mixed <= 0) {
-			frames.resize(old);
-
+			frames.resize(old + mixed);
 			break;
 		}
 	}
