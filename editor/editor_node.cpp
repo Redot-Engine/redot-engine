@@ -208,6 +208,8 @@
 #include "editor/gui/touch_actions_panel.h"
 #endif // ANDROID_ENABLED
 
+#include "docks/signalize_dock.h"
+
 #include <cstdlib>
 
 EditorNode *EditorNode::singleton = nullptr;
@@ -8447,6 +8449,12 @@ EditorNode::EditorNode() {
 	bottom_panel = memnew(EditorBottomPanel);
 	center_split->add_child(bottom_panel);
 	center_split->set_dragger_visibility(SplitContainer::DRAGGER_HIDDEN);
+
+	// Signalize
+	SignalizeDock *signalize_dock = memnew(SignalizeDock);
+	Ref<Shortcut> signalize_shortcut = ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_signalize_bottom_panel", TTRC("Toggle Signalize Bottom Panel"), KeyModifierMask::ALT | Key::S);
+	Button *signalize_button = bottom_panel->add_item(TTR("Signalize"), signalize_dock, signalize_shortcut);
+	signalize_dock->set_tool_button(signalize_button);
 
 	log = memnew(EditorLog);
 	Button *output_button = bottom_panel->add_item(TTRC("Output"), log, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_output_bottom_panel", TTRC("Toggle Output Bottom Panel"), KeyModifierMask::ALT | Key::O));
