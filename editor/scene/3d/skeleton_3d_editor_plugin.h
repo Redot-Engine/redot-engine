@@ -245,6 +245,7 @@ class EditorInspectorPluginSkeleton : public EditorInspectorPlugin {
 	GDCLASS(EditorInspectorPluginSkeleton, EditorInspectorPlugin);
 
 	friend class Skeleton3DEditorPlugin;
+	friend class Skeleton3DGizmoPlugin;
 
 	Skeleton3DEditor *skeleton_editor = nullptr;
 
@@ -278,7 +279,7 @@ class Skeleton3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	};
 	static SelectionMaterials selection_materials;
 
-	Skeleton3DEditor *skeleton_editor;
+	EditorInspectorPluginSkeleton *skeleton_plugin = nullptr;
 
 public:
 	static Ref<ArrayMesh> get_bones_mesh(Skeleton3D *p_skeleton, int p_selected, bool p_is_selected);
@@ -294,6 +295,6 @@ public:
 
 	void redraw(EditorNode3DGizmo *p_gizmo) override;
 
-	Skeleton3DGizmoPlugin(Skeleton3DEditor *p_skeleton_editor);
+	Skeleton3DGizmoPlugin(EditorInspectorPluginSkeleton *p_skeleton_plugin);
 	~Skeleton3DGizmoPlugin();
 };
