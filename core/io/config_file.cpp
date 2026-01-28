@@ -277,6 +277,9 @@ Error ConfigFile::_parse(const String &p_path, VariantParser::Stream *p_stream, 
 	String assign;
 	Variant value;
 	VariantParser::Tag next_tag;
+	if (p_path.to_lower().ends_with("project.godot")) {
+		p_allow_objects = true;
+	}
 
 	int lines = 0;
 	String error_text;
