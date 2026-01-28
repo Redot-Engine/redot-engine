@@ -1,5 +1,5 @@
 <!--
-Please target the `dev` branch in priority.
+Please target the `master` branch in priority.
 
 Relevant fixes are cherry-picked for stable branches as needed by maintainers.
 
