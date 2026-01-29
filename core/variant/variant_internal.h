@@ -123,6 +123,9 @@ public:
 			case Variant::OBJECT:
 				init_object(v);
 				break;
+			case Variant::STRUCT:
+				init_struct(v);
+				break;
 			default:
 				break;
 		}
@@ -214,6 +217,10 @@ public:
 	_FORCE_INLINE_ static const Object **get_object(const Variant *v) { return (const Object **)&v->_get_obj().obj; }
 
 	_FORCE_INLINE_ static const ObjectID get_object_id(const Variant *v) { return v->_get_obj().id; }
+
+	// Struct access - stores wrapper by value in _mem
+	_FORCE_INLINE_ static void *get_struct(Variant *v) { return v->_data._mem; }
+	_FORCE_INLINE_ static const void *get_struct(const Variant *v) { return v->_data._mem; }
 
 	template <typename T>
 	_FORCE_INLINE_ static void init_generic(Variant *v) {
@@ -324,6 +331,12 @@ public:
 	_FORCE_INLINE_ static void init_object(Variant *v) {
 		object_reset_data(v);
 		v->type = Variant::OBJECT;
+	}
+	_FORCE_INLINE_ static void init_struct(Variant *v) {
+		// Zero-initialize the wrapper memory
+		// The default constructor will be called via placement new when the struct is actually constructed
+		memset(v->_data._mem, 0, sizeof(v->_data._mem));
+		v->type = Variant::STRUCT;
 	}
 
 	_FORCE_INLINE_ static void clear(Variant *v) {
@@ -438,6 +451,8 @@ public:
 				return get_vector4_array(v);
 			case Variant::OBJECT:
 				return get_object(v);
+			case Variant::STRUCT:
+				return get_struct(v);
 			case Variant::VARIANT_MAX:
 				ERR_FAIL_V(nullptr);
 		}
@@ -524,6 +539,8 @@ public:
 				return get_vector4_array(v);
 			case Variant::OBJECT:
 				return get_object(v);
+			case Variant::STRUCT:
+				return get_struct(v);
 			case Variant::VARIANT_MAX:
 				ERR_FAIL_V(nullptr);
 		}
@@ -776,6 +793,22 @@ template <>
 struct VariantGetInternalPtr<PackedVector4Array> {
 	static PackedVector4Array *get_ptr(Variant *v) { return VariantInternal::get_vector4_array(v); }
 	static const PackedVector4Array *get_ptr(const Variant *v) { return VariantInternal::get_vector4_array(v); }
+};
+
+// Forward declaration for GDScript struct template specialization
+// The actual type is defined in modules/gdscript/gdscript_struct.h
+class GDScriptStructInstance;
+
+template <>
+struct VariantGetInternalPtr<GDScriptStructInstance> {
+	static GDScriptStructInstance *get_ptr(Variant *v) {
+		// STRUCT type stores the wrapper by value in _data._mem
+		return reinterpret_cast<GDScriptStructInstance *>(VariantInternal::get_struct(v));
+	}
+	static const GDScriptStructInstance *get_ptr(const Variant *v) {
+		// STRUCT type stores the wrapper by value in _data._mem
+		return reinterpret_cast<const GDScriptStructInstance *>(VariantInternal::get_struct(v));
+	}
 };
 
 template <typename T, typename = void>

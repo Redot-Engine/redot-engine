@@ -110,6 +110,8 @@ uint32_t GDScriptByteCodeGenerator::add_temporary(const GDScriptDataType &p_type
 			case Variant::PACKED_VECTOR3_ARRAY:
 			case Variant::PACKED_COLOR_ARRAY:
 			case Variant::PACKED_VECTOR4_ARRAY:
+			case Variant::STRUCT:
+				// Structs are reference counted, so we don't use the pool for them.
 			case Variant::VARIANT_MAX:
 				// Arrays, dictionaries, and objects are reference counted, so we don't use the pool for them.
 				temp_type = Variant::NIL;
@@ -200,7 +202,29 @@ GDScriptFunction *GDScriptByteCodeGenerator::write_end() {
 		function->constants.resize(constant_map.size());
 		function->_constants_ptr = function->constants.ptrw();
 		for (const KeyValue<Variant, int> &K : constant_map) {
+			if (K.key.get_type() == Variant::OBJECT) {
+				Object *obj = K.key;
+				if (obj) {
+					GDScriptStructClass *sc = Object::cast_to<GDScriptStructClass>(obj);
+					if (sc) {
+					} else {
+					}
+				}
+			}
 			function->constants.write[K.value] = K.key;
+		}
+		// Verify all constants were written correctly
+		for (int i = 0; i < function->constants.size(); i++) {
+			Variant &v = function->constants.write[i];
+			if (v.get_type() == Variant::OBJECT) {
+				Object *obj = v;
+				if (obj) {
+					GDScriptStructClass *sc = Object::cast_to<GDScriptStructClass>(obj);
+					if (sc) {
+					} else {
+					}
+				}
+			}
 		}
 	} else {
 		function->_constants_ptr = nullptr;
@@ -546,6 +570,10 @@ void GDScriptByteCodeGenerator::write_type_adjust(const Address &p_target, Varia
 		case Variant::PACKED_VECTOR4_ARRAY:
 			append_opcode(GDScriptFunction::OPCODE_TYPE_ADJUST_PACKED_VECTOR4_ARRAY);
 			break;
+		case Variant::STRUCT:
+			// Structs are reference-counted and need type adjustment (like OBJECT)
+			append_opcode(GDScriptFunction::OPCODE_TYPE_ADJUST_STRUCT);
+			break;
 		case Variant::NIL:
 		case Variant::VARIANT_MAX:
 			return;
@@ -809,6 +837,15 @@ void GDScriptByteCodeGenerator::write_set(const Address &p_target, const Address
 			append(setter);
 			return;
 		}
+	} else if (p_target.type.has_type && p_target.type.kind == GDScriptDataType::STRUCT && Variant::get_member_validated_keyed_setter(Variant::STRUCT)) {
+		// Struct type uses validated keyed setter.
+		Variant::ValidatedKeyedSetter setter = Variant::get_member_validated_keyed_setter(Variant::STRUCT);
+		append_opcode(GDScriptFunction::OPCODE_SET_KEYED_VALIDATED);
+		append(p_target);
+		append(p_index);
+		append(p_source);
+		append(setter);
+		return;
 	}
 
 	append_opcode(GDScriptFunction::OPCODE_SET_KEYED);
@@ -837,6 +874,15 @@ void GDScriptByteCodeGenerator::write_get(const Address &p_target, const Address
 			append(getter);
 			return;
 		}
+	} else if (p_source.type.has_type && p_source.type.kind == GDScriptDataType::STRUCT && Variant::get_member_validated_keyed_getter(Variant::STRUCT)) {
+		// Struct type uses validated keyed getter.
+		Variant::ValidatedKeyedGetter getter = Variant::get_member_validated_keyed_getter(Variant::STRUCT);
+		append_opcode(GDScriptFunction::OPCODE_GET_KEYED_VALIDATED);
+		append(p_source);
+		append(p_index);
+		append(p_target);
+		append(getter);
+		return;
 	}
 	append_opcode(GDScriptFunction::OPCODE_GET_KEYED);
 	append(p_source);

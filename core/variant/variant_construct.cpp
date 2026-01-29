@@ -265,6 +265,18 @@ void Variant::_unregister_variant_constructors() {
 
 void Variant::construct(Variant::Type p_type, Variant &base, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 	ERR_FAIL_INDEX(p_type, Variant::VARIANT_MAX);
+
+	// STRUCT type - special handling since structs are dynamically defined
+	if (p_type == STRUCT) {
+		// Actual struct construction happens through GDScriptStructClass::new()
+		// Return a NIL variant and set error
+		base = Variant();
+		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+		r_error.argument = 0;
+		r_error.expected = 0;
+		return;
+	}
+
 	uint32_t s = construct_data[p_type].size();
 	for (uint32_t i = 0; i < s; i++) {
 		int argc = construct_data[p_type][i].argument_count;
@@ -297,36 +309,70 @@ int Variant::get_constructor_count(Variant::Type p_type) {
 
 Variant::ValidatedConstructor Variant::get_validated_constructor(Variant::Type p_type, int p_constructor) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, nullptr);
+
+	// STRUCT type doesn't have constructors (yet)
+	if (p_type == STRUCT) {
+		return nullptr;
+	}
+
 	ERR_FAIL_INDEX_V(p_constructor, (int)construct_data[p_type].size(), nullptr);
 	return construct_data[p_type][p_constructor].validated_construct;
 }
 
 Variant::PTRConstructor Variant::get_ptr_constructor(Variant::Type p_type, int p_constructor) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, nullptr);
+
+	// STRUCT type doesn't have constructors (yet)
+	if (p_type == STRUCT) {
+		return nullptr;
+	}
+
 	ERR_FAIL_INDEX_V(p_constructor, (int)construct_data[p_type].size(), nullptr);
 	return construct_data[p_type][p_constructor].ptr_construct;
 }
 
 int Variant::get_constructor_argument_count(Variant::Type p_type, int p_constructor) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, -1);
+
+	// STRUCT type doesn't have constructors (yet)
+	if (p_type == STRUCT) {
+		return -1;
+	}
+
 	ERR_FAIL_INDEX_V(p_constructor, (int)construct_data[p_type].size(), -1);
 	return construct_data[p_type][p_constructor].argument_count;
 }
 
 Variant::Type Variant::get_constructor_argument_type(Variant::Type p_type, int p_constructor, int p_argument) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, Variant::VARIANT_MAX);
+
+	// STRUCT type doesn't have constructors (yet)
+	if (p_type == STRUCT) {
+		return Variant::NIL;
+	}
+
 	ERR_FAIL_INDEX_V(p_constructor, (int)construct_data[p_type].size(), Variant::VARIANT_MAX);
 	return construct_data[p_type][p_constructor].get_argument_type(p_argument);
 }
 
 String Variant::get_constructor_argument_name(Variant::Type p_type, int p_constructor, int p_argument) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, String());
+
+	// STRUCT type doesn't have constructors (yet)
+	if (p_type == STRUCT) {
+		return String();
+	}
 	ERR_FAIL_INDEX_V(p_constructor, (int)construct_data[p_type].size(), String());
 	return construct_data[p_type][p_constructor].arg_names[p_argument];
 }
 
 void Variant::get_constructor_list(Type p_type, List<MethodInfo> *r_list) {
 	ERR_FAIL_INDEX(p_type, Variant::VARIANT_MAX);
+
+	// STRUCT type doesn't have constructors (yet)
+	if (p_type == STRUCT) {
+		return;
+	}
 
 	MethodInfo mi;
 	mi.return_val.type = p_type;

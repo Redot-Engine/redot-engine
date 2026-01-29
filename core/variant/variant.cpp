@@ -37,6 +37,9 @@
 #include "core/io/resource.h"
 #include "core/math/math_funcs.h"
 #include "core/variant/variant_parser.h"
+#ifdef MODULE_GDSCRIPT_ENABLED
+#include "modules/gdscript/gdscript_struct.h"
+#endif
 
 PagedAllocator<Variant::Pools::BucketSmall, true> Variant::Pools::_bucket_small;
 PagedAllocator<Variant::Pools::BucketMedium, true> Variant::Pools::_bucket_medium;
@@ -118,6 +121,9 @@ String Variant::get_type_name(Variant::Type p_type) {
 		}
 		case OBJECT: {
 			return "Object";
+		}
+		case STRUCT: {
+			return "Struct";
 		}
 		case CALLABLE: {
 			return "Callable";
@@ -1311,6 +1317,15 @@ void Variant::reference(const Variant &p_variant) {
 				_data.packed_array = PackedArrayRef<Vector4>::create();
 			}
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case STRUCT: {
+			// COW: Copy the wrapper by value.
+			// The Ref<> inside handles reference counting automatically.
+			// Placement new to copy the wrapper into _mem.
+			const GDScriptStructInstance *src_wrapper = reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem);
+			new (_data._mem) GDScriptStructInstance(*src_wrapper);
+		} break;
+#endif
 		default: {
 		}
 	}
@@ -1480,6 +1495,16 @@ void Variant::_clear_internal() {
 		case PACKED_VECTOR4_ARRAY: {
 			PackedArrayRefBase::destroy(_data.packed_array);
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case STRUCT: {
+			// COW: Destroy the wrapper by calling its destructor.
+			// The Ref<> destructor handles reference counting automatically.
+			GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			wrapper->~GDScriptStructInstance();
+			// Clear the memory
+			memset(_data._mem, 0, sizeof(_data._mem));
+		} break;
+#endif
 		default: {
 			// Not needed, there is no point. The following do not allocate memory:
 			// VECTOR2, VECTOR3, VECTOR4, RECT2, PLANE, QUATERNION, COLOR.
@@ -1737,6 +1762,18 @@ String Variant::stringify(int recursion_count) const {
 			const ::RID &s = *reinterpret_cast<const ::RID *>(_data._mem);
 			return "RID(" + itos(s.get_id()) + ")";
 		}
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case STRUCT: {
+			// Get the struct wrapper and convert to string
+			const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(_data._mem);
+			if (wrapper && wrapper->is_valid()) {
+				// Simple string representation for now to avoid crashes
+				// TODO: Add proper field serialization
+				return String("<") + String(wrapper->get_struct_name()) + " struct>";
+			}
+			return "<Struct#null>";
+		}
+#endif
 		default: {
 			return "<" + get_type_name(type) + ">";
 		}
@@ -2790,6 +2827,16 @@ void Variant::operator=(const Variant &p_variant) {
 		case PACKED_VECTOR4_ARRAY: {
 			_data.packed_array = PackedArrayRef<Vector4>::reference_from(_data.packed_array, p_variant._data.packed_array);
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case STRUCT: {
+			// COW: Destroy old wrapper, copy new wrapper by value
+			GDScriptStructInstance *old_wrapper = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			old_wrapper->~GDScriptStructInstance();
+
+			const GDScriptStructInstance *new_wrapper = reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem);
+			new (_data._mem) GDScriptStructInstance(*new_wrapper);
+		} break;
+#endif
 		default: {
 		}
 	}
@@ -3490,7 +3537,7 @@ void Variant::construct_from_string(const String &p_string, Variant &r_value, Ob
 
 String Variant::get_construct_string() const {
 	String vars;
-	VariantWriter::write_to_string(*this, vars, nullptr, nullptr, true, true);
+	VariantWriter::write_to_string(*this, vars);
 
 	return vars;
 }

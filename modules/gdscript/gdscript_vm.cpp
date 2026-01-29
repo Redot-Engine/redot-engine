@@ -33,6 +33,7 @@
 #include "gdscript.h"
 #include "gdscript_function.h"
 #include "gdscript_lambda_callable.h"
+#include "gdscript_struct.h"
 
 #include "core/os/os.h"
 
@@ -408,6 +409,7 @@ void (*type_init_function_table[])(Variant *) = {
 		&&OPCODE_TYPE_ADJUST_PACKED_VECTOR3_ARRAY,       \
 		&&OPCODE_TYPE_ADJUST_PACKED_COLOR_ARRAY,         \
 		&&OPCODE_TYPE_ADJUST_PACKED_VECTOR4_ARRAY,       \
+		&&OPCODE_TYPE_ADJUST_STRUCT,                     \
 		&&OPCODE_ASSERT,                                 \
 		&&OPCODE_BREAKPOINT,                             \
 		&&OPCODE_LINE,                                   \
@@ -678,11 +680,25 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 	{                                                                                               \
 		int address = _code_ptr[ip + 1 + (m_code_ofs)];                                             \
 		int address_type = (address & ADDR_TYPE_MASK) >> ADDR_BITS;                                 \
+		int address_index = address & ADDR_MASK;                                                    \
+		if (address_type == ADDR_TYPE_CONSTANT) {                                                   \
+			if (address_index >= 0 && address_index < _constant_count) {                            \
+				Variant *c = &_constants_ptr[address_index];                                        \
+				if (c->get_type() == Variant::OBJECT) {                                             \
+					Object *obj = *c;                                                               \
+					if (obj) {                                                                      \
+						GDScriptStructClass *sc = Object::cast_to<GDScriptStructClass>(obj);        \
+						if (sc) {                                                                   \
+						} else {                                                                    \
+						}                                                                           \
+					}                                                                               \
+				}                                                                                   \
+			}                                                                                       \
+		}                                                                                           \
 		if (unlikely(address_type < 0 || address_type >= ADDR_TYPE_MAX)) {                          \
 			err_text = "Bad address type.";                                                         \
 			OPCODE_BREAK;                                                                           \
 		}                                                                                           \
-		int address_index = address & ADDR_MASK;                                                    \
 		if (unlikely(address_index < 0 || address_index >= variant_address_limits[address_type])) { \
 			if (address_type == ADDR_TYPE_MEMBER && !p_instance) {                                  \
 				err_text = "Cannot access member without instance.";                                \
@@ -3318,16 +3334,16 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 #ifdef DEBUG_ENABLED
 				bool freed = false;
-				Object *obj = container->get_validated_object_with_check(freed);
+				Object *iter_obj = container->get_validated_object_with_check(freed);
 				if (freed) {
 					err_text = "Trying to iterate on a previously freed object.";
 					OPCODE_BREAK;
-				} else if (!obj) {
+				} else if (!iter_obj) {
 					err_text = "Trying to iterate on a null value.";
 					OPCODE_BREAK;
 				}
 #else
-				Object *obj = *VariantInternal::get_object(container);
+				Object *iter_obj = *VariantInternal::get_object(container);
 #endif
 
 				*counter = Variant();
@@ -3339,7 +3355,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				const Variant *args[] = { &vref };
 
 				Callable::CallError ce;
-				Variant has_next = obj->callp(CoreStringName(_iter_init), args, 1, ce);
+				Variant has_next = iter_obj->callp(CoreStringName(_iter_init), args, 1, ce);
 
 #ifdef DEBUG_ENABLED
 				if (ref.size() != 1 || ce.error != Callable::CallError::CALL_OK) {
@@ -3355,7 +3371,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 					*counter = ref[0];
 
 					GET_VARIANT_PTR(iterator, 2);
-					*iterator = obj->callp(CoreStringName(_iter_get), (const Variant **)&counter, 1, ce);
+					*iterator = iter_obj->callp(CoreStringName(_iter_get), (const Variant **)&counter, 1, ce);
 #ifdef DEBUG_ENABLED
 					if (ce.error != Callable::CallError::CALL_OK) {
 						err_text = vformat(R"(There was an error calling "_iter_get" on iterator object of type %s.)", *container);
@@ -3685,16 +3701,16 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 #ifdef DEBUG_ENABLED
 				bool freed = false;
-				Object *obj = container->get_validated_object_with_check(freed);
+				Object *iter_obj = container->get_validated_object_with_check(freed);
 				if (freed) {
 					err_text = "Trying to iterate on a previously freed object.";
 					OPCODE_BREAK;
-				} else if (!obj) {
+				} else if (!iter_obj) {
 					err_text = "Trying to iterate on a null value.";
 					OPCODE_BREAK;
 				}
 #else
-				Object *obj = *VariantInternal::get_object(container);
+				Object *iter_obj = *VariantInternal::get_object(container);
 #endif
 
 				Array ref = { *counter };
@@ -3705,7 +3721,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				const Variant *args[] = { &vref };
 
 				Callable::CallError ce;
-				Variant has_next = obj->callp(CoreStringName(_iter_next), args, 1, ce);
+				Variant has_next = iter_obj->callp(CoreStringName(_iter_next), args, 1, ce);
 
 #ifdef DEBUG_ENABLED
 				if (ref.size() != 1 || ce.error != Callable::CallError::CALL_OK) {
@@ -3721,7 +3737,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 					*counter = ref[0];
 
 					GET_VARIANT_PTR(iterator, 2);
-					*iterator = obj->callp(CoreStringName(_iter_get), (const Variant **)&counter, 1, ce);
+					*iterator = iter_obj->callp(CoreStringName(_iter_get), (const Variant **)&counter, 1, ce);
 #ifdef DEBUG_ENABLED
 					if (ce.error != Callable::CallError::CALL_OK) {
 						err_text = vformat(R"(There was an error calling "_iter_get" on iterator object of type %s.)", *container);
@@ -3834,6 +3850,19 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 			OPCODE_TYPE_ADJUST(PACKED_VECTOR3_ARRAY, PackedVector3Array);
 			OPCODE_TYPE_ADJUST(PACKED_COLOR_ARRAY, PackedColorArray);
 			OPCODE_TYPE_ADJUST(PACKED_VECTOR4_ARRAY, PackedVector4Array);
+
+			OPCODE(OPCODE_TYPE_ADJUST_STRUCT) {
+				// Struct type adjustment: clear the struct and set to null
+				// Similar to OBJECT type adjustment since both are reference-counted pointers
+				CHECK_SPACE(2);
+				GET_VARIANT_PTR(arg, 0);
+				VariantInternal::clear(arg);
+				// Create a null struct Variant and assign it
+				// Using VariantInternal::initialize which can access private members
+				VariantInternal::initialize(arg, Variant::STRUCT);
+				ip += 2;
+			}
+			DISPATCH_OPCODE;
 
 			OPCODE(OPCODE_ASSERT) {
 				CHECK_SPACE(3);

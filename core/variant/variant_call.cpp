@@ -1376,6 +1376,12 @@ void Variant::callp(const StringName &p_method, const Variant **p_args, int p_ar
 	} else {
 		r_error.error = Callable::CallError::CALL_OK;
 
+		// STRUCT type doesn't have built-in methods
+		if (type == STRUCT) {
+			r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+			return;
+		}
+
 		const VariantBuiltInMethodInfo *imf = builtin_method_info[type].getptr(p_method);
 
 		if (!imf) {
@@ -1408,6 +1414,12 @@ void Variant::call_const(const StringName &p_method, const Variant **p_args, int
 	} else {
 		r_error.error = Callable::CallError::CALL_OK;
 
+		// STRUCT type doesn't have built-in methods
+		if (type == STRUCT) {
+			r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+			return;
+		}
+
 		const VariantBuiltInMethodInfo *imf = builtin_method_info[type].getptr(p_method);
 
 		if (!imf) {
@@ -1426,6 +1438,12 @@ void Variant::call_const(const StringName &p_method, const Variant **p_args, int
 
 void Variant::call_static(Variant::Type p_type, const StringName &p_method, const Variant **p_args, int p_argcount, Variant &r_ret, Callable::CallError &r_error) {
 	r_error.error = Callable::CallError::CALL_OK;
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+		return;
+	}
 
 	const VariantBuiltInMethodInfo *imf = builtin_method_info[p_type].getptr(p_method);
 
@@ -1452,16 +1470,33 @@ bool Variant::has_method(const StringName &p_method) const {
 		return obj->has_method(p_method);
 	}
 
+	// STRUCT type doesn't have built-in methods
+	if (type == STRUCT) {
+		return false;
+	}
+
 	return builtin_method_info[type].has(p_method);
 }
 
 bool Variant::has_builtin_method(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return false;
+	}
+
 	return builtin_method_info[p_type].has(p_method);
 }
 
 Variant::ValidatedBuiltInMethod Variant::get_validated_builtin_method(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, nullptr);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return nullptr;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, nullptr);
 	return method->validated_call;
@@ -1469,6 +1504,12 @@ Variant::ValidatedBuiltInMethod Variant::get_validated_builtin_method(Variant::T
 
 Variant::PTRBuiltInMethod Variant::get_ptr_builtin_method(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, nullptr);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return nullptr;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, nullptr);
 	return method->ptrcall;
@@ -1476,6 +1517,12 @@ Variant::PTRBuiltInMethod Variant::get_ptr_builtin_method(Variant::Type p_type, 
 
 MethodInfo Variant::get_builtin_method_info(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, MethodInfo());
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return MethodInfo();
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, MethodInfo());
 	return method->get_method_info(p_method);
@@ -1483,6 +1530,12 @@ MethodInfo Variant::get_builtin_method_info(Variant::Type p_type, const StringNa
 
 int Variant::get_builtin_method_argument_count(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, 0);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return 0;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, 0);
 	return method->argument_count;
@@ -1490,6 +1543,12 @@ int Variant::get_builtin_method_argument_count(Variant::Type p_type, const Strin
 
 Variant::Type Variant::get_builtin_method_argument_type(Variant::Type p_type, const StringName &p_method, int p_argument) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, Variant::NIL);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return Variant::NIL;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, Variant::NIL);
 	ERR_FAIL_INDEX_V(p_argument, method->argument_count, Variant::NIL);
@@ -1498,6 +1557,11 @@ Variant::Type Variant::get_builtin_method_argument_type(Variant::Type p_type, co
 
 String Variant::get_builtin_method_argument_name(Variant::Type p_type, const StringName &p_method, int p_argument) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, String());
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return String();
+	}
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, String());
 #ifdef DEBUG_ENABLED
@@ -1510,6 +1574,12 @@ String Variant::get_builtin_method_argument_name(Variant::Type p_type, const Str
 
 Vector<Variant> Variant::get_builtin_method_default_arguments(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, Vector<Variant>());
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return Vector<Variant>();
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, Vector<Variant>());
 	return method->default_arguments;
@@ -1517,6 +1587,12 @@ Vector<Variant> Variant::get_builtin_method_default_arguments(Variant::Type p_ty
 
 bool Variant::has_builtin_method_return_value(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return false;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, false);
 	return method->has_return_type;
@@ -1524,6 +1600,12 @@ bool Variant::has_builtin_method_return_value(Variant::Type p_type, const String
 
 void Variant::get_builtin_method_list(Variant::Type p_type, List<StringName> *p_list) {
 	ERR_FAIL_INDEX(p_type, Variant::VARIANT_MAX);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return;
+	}
+
 	for (const StringName &E : builtin_method_names[p_type]) {
 		p_list->push_back(E);
 	}
@@ -1531,11 +1613,23 @@ void Variant::get_builtin_method_list(Variant::Type p_type, List<StringName> *p_
 
 int Variant::get_builtin_method_count(Variant::Type p_type) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, -1);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return 0;
+	}
+
 	return builtin_method_names[p_type].size();
 }
 
 Variant::Type Variant::get_builtin_method_return_type(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, Variant::NIL);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return Variant::NIL;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, Variant::NIL);
 	return method->return_type;
@@ -1543,6 +1637,12 @@ Variant::Type Variant::get_builtin_method_return_type(Variant::Type p_type, cons
 
 bool Variant::is_builtin_method_const(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return false;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, false);
 	return method->is_const;
@@ -1550,6 +1650,12 @@ bool Variant::is_builtin_method_const(Variant::Type p_type, const StringName &p_
 
 bool Variant::is_builtin_method_static(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return false;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, false);
 	return method->is_static;
@@ -1557,6 +1663,12 @@ bool Variant::is_builtin_method_static(Variant::Type p_type, const StringName &p
 
 bool Variant::is_builtin_method_vararg(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return false;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, false);
 	return method->is_vararg;
@@ -1564,6 +1676,12 @@ bool Variant::is_builtin_method_vararg(Variant::Type p_type, const StringName &p
 
 uint32_t Variant::get_builtin_method_hash(Variant::Type p_type, const StringName &p_method) {
 	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, 0);
+
+	// STRUCT type doesn't have built-in methods
+	if (p_type == STRUCT) {
+		return 0;
+	}
+
 	const VariantBuiltInMethodInfo *method = builtin_method_info[p_type].getptr(p_method);
 	ERR_FAIL_NULL_V(method, 0);
 	uint32_t hash = hash_murmur3_one_32(method->is_const);
@@ -1588,6 +1706,11 @@ void Variant::get_method_list(List<MethodInfo> *p_list) const {
 			obj->get_method_list(p_list);
 		}
 	} else {
+		// STRUCT type doesn't have built-in methods
+		if (type == STRUCT) {
+			return;
+		}
+
 		for (const StringName &E : builtin_method_names[type]) {
 			const VariantBuiltInMethodInfo *method = builtin_method_info[type].getptr(E);
 			ERR_CONTINUE(!method);

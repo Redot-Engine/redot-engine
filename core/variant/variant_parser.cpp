@@ -38,6 +38,9 @@
 #include "core/io/resource_uid.h"
 #include "core/object/script_language.h"
 #include "core/string/string_buffer.h"
+#ifdef MODULE_GDSCRIPT_ENABLED
+#include "modules/gdscript/gdscript_struct.h"
+#endif
 
 char32_t VariantParser::Stream::get_char() {
 	// is within buffer?
@@ -2172,6 +2175,31 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 		} break;
 
 		// Misc types.
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case Variant::STRUCT: {
+			// Serialize struct as a Dictionary with __type__ metadata
+			// JSON format supports round-trip, binary format does not yet
+			const GDScriptStructInstance *struct_instance = VariantGetInternalPtr<GDScriptStructInstance>::get_ptr(&p_variant);
+			if (struct_instance) {
+				if (unlikely(p_recursion_count > MAX_RECURSION)) {
+					ERR_PRINT("Max recursion reached");
+					p_store_string_func(p_store_string_ud, "null");
+				} else {
+					p_recursion_count++;
+					Dictionary dict = struct_instance->serialize();
+					// Recursively write the dictionary with incremented recursion count
+					write(dict, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+				}
+			} else {
+				p_store_string_func(p_store_string_ud, "null");
+			}
+		} break;
+#else
+		case Variant::STRUCT: {
+			// Structs not available without GDScript module
+			p_store_string_func(p_store_string_ud, "null");
+		} break;
+#endif
 		case Variant::COLOR: {
 			Color c = p_variant;
 			p_store_string_func(p_store_string_ud, "Color(" + rtos_fix(c.r, p_compat) + ", " + rtos_fix(c.g, p_compat) + ", " + rtos_fix(c.b, p_compat) + ", " + rtos_fix(c.a, p_compat) + ")");

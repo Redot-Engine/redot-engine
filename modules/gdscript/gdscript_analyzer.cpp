@@ -866,6 +866,10 @@ GDScriptParser::DataType GDScriptAnalyzer::resolve_datatype(GDScriptParser::Type
 							result = member.get_datatype();
 							found = true;
 							break;
+						case GDScriptParser::ClassNode::Member::STRUCT:
+							result = member.get_datatype();
+							found = true;
+							break;
 						case GDScriptParser::ClassNode::Member::ENUM:
 							result = member.get_datatype();
 							found = true;
@@ -1256,6 +1260,15 @@ void GDScriptAnalyzer::resolve_class_member(GDScriptParser::ClassNode *p_class, 
 			case GDScriptParser::ClassNode::Member::GROUP:
 				// No-op, but needed to silence warnings.
 				break;
+			case GDScriptParser::ClassNode::Member::STRUCT: {
+				// Check for name conflicts before resolving struct body
+				if (member.m_struct->identifier != nullptr) {
+					check_class_member_name_conflict(p_class, member.m_struct->identifier->name, member.m_struct);
+				}
+				// Resolve struct body during interface resolution so method signatures are available
+				resolve_struct_body(member.m_struct);
+				break;
+			}
 			case GDScriptParser::ClassNode::Member::UNDEFINED:
 				ERR_PRINT("Trying to resolve undefined member.");
 				break;
@@ -1350,6 +1363,10 @@ void GDScriptAnalyzer::resolve_class_interface(GDScriptParser::ClassNode *p_clas
 			GDScriptParser::ClassNode::Member member = p_class->members[i];
 			if (member.type == GDScriptParser::ClassNode::Member::CLASS) {
 				resolve_class_interface(member.m_class, true);
+			} else if (member.type == GDScriptParser::ClassNode::Member::STRUCT) {
+				// Resolve struct method signatures during interface resolution
+				// This is needed so that struct methods can be called during analysis
+				resolve_struct_body(member.m_struct);
 			}
 		}
 	}
@@ -1578,9 +1595,77 @@ void GDScriptAnalyzer::resolve_class_body(GDScriptParser::ClassNode *p_class, bo
 			GDScriptParser::ClassNode::Member member = p_class->members[i];
 			if (member.type == GDScriptParser::ClassNode::Member::CLASS) {
 				resolve_class_body(member.m_class, true);
+			} else if (member.type == GDScriptParser::ClassNode::Member::STRUCT) {
+				resolve_struct_body(member.m_struct, true);
 			}
 		}
 	}
+}
+
+void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct, const GDScriptParser::Node *p_source) {
+	if (p_struct == nullptr) {
+		return;
+	}
+
+	// Guard against null identifier before dereferencing
+	if (p_struct->identifier == nullptr) {
+		return;
+	}
+
+	// Re-entrancy guard: return early if already resolving this struct
+	if (p_struct->resolving_body) {
+		return;
+	}
+
+	// Idempotence guard: skip if already resolved
+	if (p_struct->resolved_body) {
+		return;
+	}
+
+	// Set resolving sentinel before any recursive work
+	p_struct->resolving_body = true;
+
+	// Save current class context and set struct context
+	GDScriptParser::ClassNode *previous_class = parser->current_class;
+
+	GDScriptParser::StructNode *previous_struct = parser->current_struct;
+	parser->current_struct = p_struct;
+
+	// Resolve base struct if extends is used
+	if (!p_struct->extends.is_empty()) {
+		// TODO: Implement struct inheritance resolution
+		// For now, mark as unresolved
+	}
+
+	// Resolve field types
+	for (const GDScriptParser::StructNode::Field &field : p_struct->fields) {
+		if (field.variable != nullptr) {
+			// `resolve_variable()` already handles explicit types + initializer reduction/compat checks.
+			resolve_variable(field.variable, false);
+		}
+	}
+
+	// Resolve method signatures only (not bodies) for struct methods
+	// Method body resolution is skipped until struct method calling is implemented
+	for (GDScriptParser::FunctionNode *method : p_struct->methods) {
+		if (method != nullptr && method->identifier != nullptr && !method->resolved_signature) {
+			resolve_function_signature(method, p_source);
+		}
+	}
+
+	p_struct->resolved_body = true;
+
+	// Clear resolving sentinel on all exit paths
+	p_struct->resolving_body = false;
+
+	// Restore previous context
+	parser->current_struct = previous_struct;
+	parser->current_class = previous_class;
+}
+
+void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct, bool p_recursive) {
+	resolve_struct_body(p_struct);
+	// Recursive resolution not needed for structs since they can't contain nested structs (yet)
 }
 
 void GDScriptAnalyzer::resolve_node(GDScriptParser::Node *p_node, bool p_is_root) {
@@ -1595,6 +1680,10 @@ void GDScriptAnalyzer::resolve_node(GDScriptParser::Node *p_node, bool p_is_root
 				resolve_class_interface(static_cast<GDScriptParser::ClassNode *>(p_node), true);
 				resolve_class_body(static_cast<GDScriptParser::ClassNode *>(p_node), true);
 			}
+			break;
+		case GDScriptParser::Node::STRUCT:
+			// Resolve struct body
+			resolve_struct_body(static_cast<GDScriptParser::StructNode *>(p_node), p_node);
 			break;
 		case GDScriptParser::Node::CONSTANT:
 			resolve_constant(static_cast<GDScriptParser::ConstantNode *>(p_node), true);
@@ -1829,13 +1918,27 @@ void GDScriptAnalyzer::resolve_function_signature(GDScriptParser::FunctionNode *
 
 	if (!p_is_lambda && function_name == GDScriptLanguage::get_singleton()->strings._init) {
 		// Constructor.
-		GDScriptParser::DataType return_type = parser->current_class->get_datatype();
-		return_type.is_meta_type = false;
-		p_function->set_datatype(return_type);
-		if (p_function->return_type) {
-			GDScriptParser::DataType declared_return = resolve_datatype(p_function->return_type);
-			if (declared_return.kind != GDScriptParser::DataType::BUILTIN || declared_return.builtin_type != Variant::NIL) {
-				push_error("Constructor cannot have an explicit return type.", p_function->return_type);
+		if (parser->current_struct != nullptr) {
+			// Struct methods named _init are NOT constructors - they're regular methods
+			// Treat them as normal functions, not special constructors
+			if (p_function->return_type != nullptr) {
+				p_function->set_datatype(type_from_metatype(resolve_datatype(p_function->return_type)));
+			} else {
+				GDScriptParser::DataType return_type;
+				return_type.type_source = GDScriptParser::DataType::INFERRED;
+				return_type.kind = GDScriptParser::DataType::VARIANT;
+				p_function->set_datatype(return_type);
+			}
+		} else {
+			// Class constructor
+			GDScriptParser::DataType return_type = parser->current_class->get_datatype();
+			return_type.is_meta_type = false;
+			p_function->set_datatype(return_type);
+			if (p_function->return_type) {
+				GDScriptParser::DataType declared_return = resolve_datatype(p_function->return_type);
+				if (declared_return.kind != GDScriptParser::DataType::BUILTIN || declared_return.builtin_type != Variant::NIL) {
+					push_error("Constructor cannot have an explicit return type.", p_function->return_type);
+				}
 			}
 		}
 	} else if (!p_is_lambda && function_name == GDScriptLanguage::get_singleton()->strings._static_init) {
@@ -1865,103 +1968,106 @@ void GDScriptAnalyzer::resolve_function_signature(GDScriptParser::FunctionNode *
 #ifdef TOOLS_ENABLED
 		// Check if the function signature matches the parent. If not it's an error since it breaks polymorphism.
 		// Not for the constructor which can vary in signature.
-		GDScriptParser::DataType base_type = parser->current_class->base_type;
-		base_type.is_meta_type = false;
-		GDScriptParser::DataType parent_return_type;
-		List<GDScriptParser::DataType> parameters_types;
-		int default_par_count = 0;
-		BitField<MethodFlags> method_flags = {};
-		StringName native_base;
-		if (!p_is_lambda && get_function_signature(p_function, false, base_type, function_name, parent_return_type, parameters_types, default_par_count, method_flags, &native_base)) {
-			bool valid = p_function->is_static == method_flags.has_flag(METHOD_FLAG_STATIC);
+		// Skip this check for struct methods since structs don't have polymorphism in the same way
+		if (parser->current_class != nullptr && parser->current_struct == nullptr) {
+			GDScriptParser::DataType base_type = parser->current_class->base_type;
+			base_type.is_meta_type = false;
+			GDScriptParser::DataType parent_return_type;
+			List<GDScriptParser::DataType> parameters_types;
+			int default_par_count = 0;
+			BitField<MethodFlags> method_flags = {};
+			StringName native_base;
+			if (!p_is_lambda && get_function_signature(p_function, false, base_type, function_name, parent_return_type, parameters_types, default_par_count, method_flags, &native_base)) {
+				bool valid = p_function->is_static == method_flags.has_flag(METHOD_FLAG_STATIC);
 
-			if (p_function->return_type != nullptr) {
-				// Check return type covariance.
-				GDScriptParser::DataType return_type = p_function->get_datatype();
-				if (return_type.is_variant()) {
-					// `is_type_compatible()` returns `true` if one of the types is `Variant`.
-					// Don't allow an explicitly specified `Variant` if the parent return type is narrower.
-					valid = valid && parent_return_type.is_variant();
-				} else if (return_type.kind == GDScriptParser::DataType::BUILTIN && return_type.builtin_type == Variant::NIL) {
-					// `is_type_compatible()` returns `true` if target is an `Object` and source is `null`.
-					// Don't allow `void` if the parent return type is a hard non-`void` type.
-					if (parent_return_type.is_hard_type() && !(parent_return_type.kind == GDScriptParser::DataType::BUILTIN && parent_return_type.builtin_type == Variant::NIL)) {
-						valid = false;
-					}
-				} else {
-					valid = valid && is_type_compatible(parent_return_type, return_type);
-				}
-			}
-
-			int parent_min_argc = parameters_types.size() - default_par_count;
-			int parent_max_argc = (method_flags & METHOD_FLAG_VARARG) ? INT_MAX : parameters_types.size();
-			int current_min_argc = p_function->parameters.size() - default_value_count;
-			int current_max_argc = p_function->is_vararg() ? INT_MAX : p_function->parameters.size();
-
-			// `[current_min_argc..current_max_argc]` must include `[parent_min_argc..parent_max_argc]`.
-			valid = valid && current_min_argc <= parent_min_argc && parent_max_argc <= current_max_argc;
-
-			if (valid) {
-				int i = 0;
-				for (const GDScriptParser::DataType &parent_par_type : parameters_types) {
-					if (i >= p_function->parameters.size()) {
-						break;
-					}
-					const GDScriptParser::DataType &current_par_type = p_function->parameters[i]->datatype;
-					i++;
-					// Check parameter type contravariance.
-					if (parent_par_type.is_variant() && parent_par_type.is_hard_type()) {
+				if (p_function->return_type != nullptr) {
+					// Check return type covariance.
+					GDScriptParser::DataType return_type = p_function->get_datatype();
+					if (return_type.is_variant()) {
 						// `is_type_compatible()` returns `true` if one of the types is `Variant`.
-						// Don't allow narrowing a hard `Variant`.
-						valid = valid && current_par_type.is_variant();
+						// Don't allow an explicitly specified `Variant` if the parent return type is narrower.
+						valid = valid && parent_return_type.is_variant();
+					} else if (return_type.kind == GDScriptParser::DataType::BUILTIN && return_type.builtin_type == Variant::NIL) {
+						// `is_type_compatible()` returns `true` if target is an `Object` and source is `null`.
+						// Don't allow `void` if the parent return type is a hard non-`void` type.
+						if (parent_return_type.is_hard_type() && !(parent_return_type.kind == GDScriptParser::DataType::BUILTIN && parent_return_type.builtin_type == Variant::NIL)) {
+							valid = false;
+						}
 					} else {
-						valid = valid && is_type_compatible(current_par_type, parent_par_type);
+						valid = valid && is_type_compatible(parent_return_type, return_type);
 					}
 				}
-			}
 
-			if (!valid) {
-				// Compute parent signature as a string to show in the error message.
-				String parent_signature = String(function_name) + "(";
-				int j = 0;
-				for (const GDScriptParser::DataType &par_type : parameters_types) {
-					if (j > 0) {
-						parent_signature += ", ";
-					}
-					String parameter = par_type.to_string();
-					if (parameter == "null") {
-						parameter = "Variant";
-					}
-					parent_signature += parameter;
-					if (j >= parameters_types.size() - default_par_count) {
-						parent_signature += " = <default>";
-					}
+				int parent_min_argc = parameters_types.size() - default_par_count;
+				int parent_max_argc = (method_flags & METHOD_FLAG_VARARG) ? INT_MAX : parameters_types.size();
+				int current_min_argc = p_function->parameters.size() - default_value_count;
+				int current_max_argc = p_function->is_vararg() ? INT_MAX : p_function->parameters.size();
 
-					j++;
-				}
-				if (method_flags & METHOD_FLAG_VARARG) {
-					if (!parameters_types.is_empty()) {
-						parent_signature += ", ";
-					}
-					parent_signature += "...";
-				}
-				parent_signature += ") -> ";
+				// `[current_min_argc..current_max_argc]` must include `[parent_min_argc..parent_max_argc]`.
+				valid = valid && current_min_argc <= parent_min_argc && parent_max_argc <= current_max_argc;
 
-				const String return_type = parent_return_type.to_string_strict();
-				if (return_type == "null") {
-					parent_signature += "void";
-				} else {
-					parent_signature += return_type;
+				if (valid) {
+					int i = 0;
+					for (const GDScriptParser::DataType &parent_par_type : parameters_types) {
+						if (i >= p_function->parameters.size()) {
+							break;
+						}
+						const GDScriptParser::DataType &current_par_type = p_function->parameters[i]->datatype;
+						i++;
+						// Check parameter type contravariance.
+						if (parent_par_type.is_variant() && parent_par_type.is_hard_type()) {
+							// `is_type_compatible()` returns `true` if one of the types is `Variant`.
+							// Don't allow narrowing a hard `Variant`.
+							valid = valid && current_par_type.is_variant();
+						} else {
+							valid = valid && is_type_compatible(current_par_type, parent_par_type);
+						}
+					}
 				}
 
-				push_error(vformat(R"(The function signature doesn't match the parent. Parent signature is "%s".)", parent_signature), p_function);
-			}
+				if (!valid) {
+					// Compute parent signature as a string to show in the error message.
+					String parent_signature = String(function_name) + "(";
+					int j = 0;
+					for (const GDScriptParser::DataType &par_type : parameters_types) {
+						if (j > 0) {
+							parent_signature += ", ";
+						}
+						String parameter = par_type.to_string();
+						if (parameter == "null") {
+							parameter = "Variant";
+						}
+						parent_signature += parameter;
+						if (j >= parameters_types.size() - default_par_count) {
+							parent_signature += " = <default>";
+						}
+
+						j++;
+					}
+					if (method_flags & METHOD_FLAG_VARARG) {
+						if (!parameters_types.is_empty()) {
+							parent_signature += ", ";
+						}
+						parent_signature += "...";
+					}
+					parent_signature += ") -> ";
+
+					const String return_type = parent_return_type.to_string_strict();
+					if (return_type == "null") {
+						parent_signature += "void";
+					} else {
+						parent_signature += return_type;
+					}
+
+					push_error(vformat(R"(The function signature doesn't match the parent. Parent signature is "%s".)", parent_signature), p_function);
+				}
 #ifdef DEBUG_ENABLED
-			if (native_base != StringName()) {
-				parser->push_warning(p_function, GDScriptWarning::NATIVE_METHOD_OVERRIDE, function_name, native_base);
-			}
+				if (native_base != StringName()) {
+					parser->push_warning(p_function, GDScriptWarning::NATIVE_METHOD_OVERRIDE, function_name, native_base);
+				}
 #endif // DEBUG_ENABLED
-		}
+			}
+		} // End of if (parser->current_class != nullptr) check
 #endif // TOOLS_ENABLED
 	}
 
@@ -2675,6 +2781,7 @@ void GDScriptAnalyzer::reduce_expression(GDScriptParser::ExpressionNode *p_expre
 		case GDScriptParser::Node::PATTERN:
 		case GDScriptParser::Node::RETURN:
 		case GDScriptParser::Node::SIGNAL:
+		case GDScriptParser::Node::STRUCT:
 		case GDScriptParser::Node::SUITE:
 		case GDScriptParser::Node::TYPE:
 		case GDScriptParser::Node::VARIABLE:
@@ -3591,6 +3698,8 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 		} else {
 			reduce_expression(subscript->base);
 			base_type = subscript->base->get_datatype();
+			if (base_type.kind == GDScriptParser::DataType::STRUCT) {
+			}
 			is_self = subscript->base->type == GDScriptParser::Node::SELF;
 		}
 	} else {
@@ -3607,6 +3716,8 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 	List<GDScriptParser::DataType> par_types;
 
 	bool is_constructor = (base_type.is_meta_type || (p_call->callee && p_call->callee->type == GDScriptParser::Node::IDENTIFIER)) && p_call->function_name == SNAME("new");
+	if (p_call->function_name == SNAME("new") && base_type.kind == GDScriptParser::DataType::STRUCT) {
+	}
 
 	if (is_constructor) {
 		if (Engine::get_singleton()->has_singleton(base_type.native_type)) {
@@ -4153,6 +4264,35 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 		return;
 	}
 
+	// Handle struct types
+	if (base.kind == GDScriptParser::DataType::STRUCT) {
+		if (base.struct_type == nullptr) {
+			return;
+		}
+
+		if (base.is_meta_type) {
+			// Accessing struct static methods/constructors (e.g., Point.new)
+			// For now, just set the identifier as having a valid type
+			// The actual method resolution happens in resolve_call
+			p_identifier->set_datatype(base);
+			return;
+		} else {
+			// Accessing struct instance fields (e.g., point.x)
+			if (base.struct_type->has_field(name)) {
+				int field_index = base.struct_type->field_indices[name];
+				if (field_index >= 0 && field_index < base.struct_type->fields.size()) {
+					const GDScriptParser::StructNode::Field &field = base.struct_type->fields[field_index];
+					if (field.variable != nullptr && field.variable->datatype.is_set()) {
+						p_identifier->set_datatype(field.variable->datatype);
+						return;
+					}
+				}
+			}
+			push_error(vformat(R"(Cannot find field "%s" in struct "%s".)", name, base.struct_type->identifier->name), p_identifier);
+			return;
+		}
+	}
+
 	GDScriptParser::ClassNode *base_class = base.class_type;
 	List<GDScriptParser::ClassNode *> script_classes;
 	bool is_base = true;
@@ -4165,6 +4305,20 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 
 	for (GDScriptParser::ClassNode *script_class : script_classes) {
 		if (p_base == nullptr && script_class->identifier && script_class->identifier->name == name) {
+			// Check if there's a struct with the same name - structs take precedence over classes
+			bool struct_exists = false;
+			if (parser->current_class != nullptr) {
+				for (const GDScriptParser::ClassNode::Member &member : parser->current_class->members) {
+					if (member.type == GDScriptParser::ClassNode::Member::STRUCT && member.m_struct->identifier->name == name) {
+						struct_exists = true;
+						break;
+					}
+				}
+			}
+			if (struct_exists) {
+				// Skip this class, there's a struct with the same name
+				continue;
+			}
 			reduce_identifier_from_base_set_class(p_identifier, script_class->get_datatype());
 			if (script_class->outer != nullptr) {
 				p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CLASS;
@@ -4239,6 +4393,17 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 				case GDScriptParser::ClassNode::Member::CLASS: {
 					reduce_identifier_from_base_set_class(p_identifier, member.get_datatype());
 					p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CLASS;
+					return;
+				}
+
+				case GDScriptParser::ClassNode::Member::STRUCT: {
+					// Structs are similar to classes - treat them as types
+					// Use the member's get_datatype() which now properly sets kind, is_meta_type, is_constant, type_source, and struct_type
+					p_identifier->set_datatype(member.get_datatype());
+					// Set script_path since Member doesn't have access to the parser context
+					p_identifier->datatype.script_path = parser->script_path;
+					p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CLASS;
+					p_identifier->is_constant = true;
 					return;
 				}
 
@@ -4368,6 +4533,9 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 
 void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_identifier, bool can_be_builtin) {
 	// TODO: This is an opportunity to further infer types.
+
+	if (p_identifier->name == StringName("TestStruct")) {
+	}
 
 	// Check if we are inside an enum. This allows enum values to access other elements of the same enum.
 	if (current_enum) {
@@ -4763,6 +4931,18 @@ void GDScriptAnalyzer::reduce_preload(GDScriptParser::PreloadNode *p_preload) {
 }
 
 void GDScriptAnalyzer::reduce_self(GDScriptParser::SelfNode *p_self) {
+	// Check if 'self' is being used outside of a class context (e.g., in a struct)
+	if (parser->current_class == nullptr) {
+		p_self->is_constant = false;
+		// Emit a clear compile error: 'self' is not valid outside of class context
+		push_error(R"(Using "self" outside of a class context is not allowed.)", p_self);
+		// Set VARIANT fallback instead of void to allow type checking to continue
+		GDScriptParser::DataType variant_type;
+		variant_type.kind = GDScriptParser::DataType::VARIANT;
+		p_self->set_datatype(variant_type);
+		return;
+	}
+
 	p_self->is_constant = false;
 	p_self->set_datatype(type_from_metatype(parser->current_class->get_datatype()));
 	mark_lambda_use_self();
@@ -4972,6 +5152,7 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 							case Variant::NODE_PATH:
 							case Variant::SIGNAL:
 							case Variant::STRING_NAME:
+							case Variant::STRUCT:
 								break;
 							// Support depends on if the dictionary has a typed key, otherwise anything is valid.
 							case Variant::DICTIONARY:
@@ -5040,6 +5221,7 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 					case Variant::NODE_PATH:
 					case Variant::SIGNAL:
 					case Variant::STRING_NAME:
+					case Variant::STRUCT:
 						result_type.kind = GDScriptParser::DataType::VARIANT;
 						push_error(vformat(R"(Cannot use subscript operator on a base of type "%s".)", base_type.to_string()), p_subscript->base);
 						break;
@@ -5772,6 +5954,162 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 		}
 	}
 
+	// Handle struct construction and methods
+	if (p_base_type.kind == GDScriptParser::DataType::STRUCT) {
+		const GDScriptParser::StructNode *struct_node = p_base_type.struct_type;
+
+		// Use non-mutating lookup - don't call push_error if struct_node is null
+		if (!struct_node) {
+			return false;
+		}
+
+		if (p_is_constructor && p_function == SNAME("new")) {
+			// Struct constructor - returns instance of the struct
+			r_return_type = p_base_type;
+			r_return_type.is_meta_type = false;
+			r_method_flags.set_flag(METHOD_FLAG_STATIC);
+
+			// Get constructor parameters from struct members or explicit _init method
+			// struct_node is already declared and null-checked above
+			if (struct_node) {
+				if (struct_node->constructor) {
+					// Extract signature from the constructor function
+					const GDScriptParser::FunctionNode *ctor = struct_node->constructor;
+					if (ctor->return_type) {
+						// Constructors cannot have explicit return types
+						push_error("Struct constructor cannot have an explicit return type.", ctor->return_type);
+					}
+					for (const GDScriptParser::ParameterNode *param : ctor->parameters) {
+						if (param->datatype.is_set()) {
+							r_par_types.push_back(param->datatype);
+						} else if (param->initializer && param->initializer->is_constant) {
+							// Infer type from default value
+							r_par_types.push_back(type_from_variant(param->initializer->reduced_value, param));
+						} else {
+							// No type info, use Variant
+							GDScriptParser::DataType variant_type;
+							variant_type.kind = GDScriptParser::DataType::VARIANT;
+							r_par_types.push_back(variant_type);
+						}
+					}
+					// Count default arguments by checking initializers, consistent with class path
+					r_default_arg_count = 0;
+					for (const GDScriptParser::ParameterNode *param : ctor->parameters) {
+						if (param->initializer != nullptr) {
+							r_default_arg_count++;
+						}
+					}
+					if (ctor->is_static) {
+						r_method_flags.set_flag(METHOD_FLAG_STATIC);
+					}
+				} else {
+					// No explicit constructor - derive signature from struct fields
+					// Default constructor takes one argument per field
+					// ALL struct fields are optional (have default values), so
+					// default_arg_count equals the total number of fields
+					for (const GDScriptParser::StructNode::Field &field : struct_node->fields) {
+						if (field.variable && field.variable->datatype.is_set()) {
+							r_par_types.push_back(field.variable->datatype);
+						} else {
+							// No type info, use Variant
+							GDScriptParser::DataType variant_type;
+							variant_type.kind = GDScriptParser::DataType::VARIANT;
+							r_par_types.push_back(variant_type);
+						}
+					}
+					// All struct fields have default values (nil if not specified)
+					// This allows calling the constructor with 0 to N arguments
+					r_default_arg_count = struct_node->fields.size();
+				}
+			}
+
+			return true;
+		}
+
+		// Look up the method in the struct
+		// struct_node is already declared and null-checked above
+		// Check if method exists in this struct
+		if (struct_node->has_method(p_function)) {
+			const GDScriptParser::FunctionNode *func = struct_node->method_map[p_function];
+			if (func && func->resolved_signature) {
+				// Extract return type
+				if (func->return_type) {
+					r_return_type = type_from_metatype(resolve_datatype(func->return_type));
+				} else {
+					r_return_type.kind = GDScriptParser::DataType::VARIANT;
+				}
+
+				// Extract parameter types
+				for (const GDScriptParser::ParameterNode *param : func->parameters) {
+					if (param->datatype.is_set()) {
+						r_par_types.push_back(param->datatype);
+					} else if (param->initializer && param->initializer->is_constant) {
+						// Infer type from default value
+						r_par_types.push_back(type_from_variant(param->initializer->reduced_value, param));
+					} else {
+						// No type info, use Variant
+						GDScriptParser::DataType variant_type;
+						variant_type.kind = GDScriptParser::DataType::VARIANT;
+						r_par_types.push_back(variant_type);
+					}
+				}
+
+				r_default_arg_count = func->default_arg_values.size();
+
+				// Set method flags
+				if (func->is_static) {
+					r_method_flags.set_flag(METHOD_FLAG_STATIC);
+				}
+
+				return true;
+			}
+		}
+
+		// Check base structs
+		const GDScriptParser::StructNode *current = struct_node;
+		while (current->base_struct_type.kind == GDScriptParser::DataType::STRUCT && current->base_struct_type.struct_type) {
+			current = current->base_struct_type.struct_type;
+			if (current->has_method(p_function)) {
+				const GDScriptParser::FunctionNode *func = current->method_map[p_function];
+				if (func && func->resolved_signature) {
+					// Extract return type
+					if (func->return_type) {
+						r_return_type = type_from_metatype(resolve_datatype(func->return_type));
+					} else {
+						r_return_type.kind = GDScriptParser::DataType::VARIANT;
+					}
+
+					// Extract parameter types
+					for (const GDScriptParser::ParameterNode *param : func->parameters) {
+						if (param->datatype.is_set()) {
+							r_par_types.push_back(param->datatype);
+						} else if (param->initializer && param->initializer->is_constant) {
+							// Infer type from default value
+							r_par_types.push_back(type_from_variant(param->initializer->reduced_value, param));
+						} else {
+							// No type info, use Variant
+							GDScriptParser::DataType variant_type;
+							variant_type.kind = GDScriptParser::DataType::VARIANT;
+							r_par_types.push_back(variant_type);
+						}
+					}
+
+					r_default_arg_count = func->default_arg_values.size();
+
+					// Set method flags
+					if (func->is_static) {
+						r_method_flags.set_flag(METHOD_FLAG_STATIC);
+					}
+
+					return true;
+				}
+			}
+		}
+
+		// Method not found in struct or its bases
+		return false;
+	}
+
 	if (p_base_type.kind == GDScriptParser::DataType::BUILTIN) {
 		// Construct a base type to get methods.
 		Callable::CallError err;
@@ -6205,6 +6543,7 @@ bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &
 	StringName src_native;
 	Ref<Script> src_script;
 	const GDScriptParser::ClassNode *src_class = nullptr;
+	const GDScriptParser::StructNode *src_struct = nullptr;
 
 	switch (p_source.kind) {
 		case GDScriptParser::DataType::NATIVE:
@@ -6246,6 +6585,14 @@ bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &
 				src_script = base->base_type.script_type;
 			}
 			break;
+		case GDScriptParser::DataType::STRUCT:
+			if (p_source.is_meta_type) {
+				// Struct meta types are not currently supported.
+				return false;
+			} else {
+				src_struct = p_source.struct_type;
+			}
+			break;
 		case GDScriptParser::DataType::VARIANT:
 		case GDScriptParser::DataType::BUILTIN:
 		case GDScriptParser::DataType::ENUM:
@@ -6281,6 +6628,24 @@ bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &
 					return true;
 				}
 				src_class = src_class->base_type.class_type;
+			}
+			return false;
+		case GDScriptParser::DataType::STRUCT:
+			if (p_target.is_meta_type) {
+				// Struct meta types are not currently supported.
+				return false;
+			}
+			// Check if source struct is the same as target struct or inherits from it.
+			while (src_struct != nullptr) {
+				if (src_struct == p_target.struct_type || src_struct->fqsn == p_target.struct_type->fqsn) {
+					return true;
+				}
+				// Follow the inheritance chain.
+				if (src_struct->base_struct_type.kind == GDScriptParser::DataType::STRUCT) {
+					src_struct = src_struct->base_struct_type.struct_type;
+				} else {
+					break;
+				}
 			}
 			return false;
 		case GDScriptParser::DataType::VARIANT:

@@ -228,8 +228,18 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	}
 
 	int get_constant_pos(const Variant &p_constant) {
+		if (p_constant.get_type() == Variant::OBJECT) {
+			Object *obj = p_constant;
+			if (obj) {
+				GDScriptStructClass *sc = Object::cast_to<GDScriptStructClass>(obj);
+				if (sc) {
+				} else {
+				}
+			}
+		}
 		if (constant_map.has(p_constant)) {
-			return constant_map[p_constant];
+			int existing_pos = constant_map[p_constant];
+			return existing_pos;
 		}
 		int pos = constant_map.size();
 		constant_map[p_constant] = pos;

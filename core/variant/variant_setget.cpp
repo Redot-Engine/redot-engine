@@ -34,6 +34,10 @@
 #include "variant_callable.h"
 
 #include "core/io/resource.h"
+#include "core/object/script_language.h"
+#ifdef MODULE_GDSCRIPT_ENABLED
+#include "modules/gdscript/gdscript_struct.h"
+#endif
 
 struct VariantSetterGetterInfo {
 	void (*setter)(Variant *base, const Variant *value, bool &valid);
@@ -257,6 +261,16 @@ void Variant::set_named(const StringName &p_member, const Variant &p_value, bool
 			obj->set(p_member, p_value, &r_valid);
 			return;
 		}
+#ifdef MODULE_GDSCRIPT_ENABLED
+	} else if (type == Variant::STRUCT) {
+		// _data._mem contains the struct wrapper by value
+		GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+		if (wrapper) {
+			r_valid = wrapper->set(p_member, p_value);
+			return;
+		}
+		r_valid = false;
+#endif
 	} else if (type == Variant::DICTIONARY) {
 		Dictionary &dict = *VariantGetInternalPtr<Dictionary>::get_ptr(this);
 		r_valid = dict.set(p_member, p_value);
@@ -288,6 +302,21 @@ Variant Variant::get_named(const StringName &p_member, bool &r_valid) const {
 				return obj->get(p_member, &r_valid);
 			}
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case Variant::STRUCT: {
+			// _data._mem contains the struct wrapper by value
+			const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(_data._mem);
+			if (wrapper && wrapper->is_valid()) {
+				Variant ret;
+				if (wrapper->get(p_member, ret)) {
+					r_valid = true;
+					return ret;
+				}
+			}
+			r_valid = false;
+			return Variant();
+		} break;
+#endif
 		case Variant::DICTIONARY: {
 			const Variant *v = VariantGetInternalPtr<Dictionary>::get_ptr(this)->getptr(p_member);
 			if (v) {
@@ -1092,6 +1121,167 @@ struct VariantKeyedSetGetObject {
 	}
 };
 
+#ifdef MODULE_GDSCRIPT_ENABLED
+struct VariantKeyedSetGetStruct {
+	static void get(const Variant *base, const Variant *key, Variant *value, bool *r_valid) {
+		// Get the struct wrapper from the Variant (stored by value)
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base->_data._mem);
+		if (!wrapper || !wrapper->is_valid()) {
+			*r_valid = false;
+			*value = Variant();
+			return;
+		}
+
+		// Convert key to StringName
+		StringName member_name;
+		if (key->get_type() == Variant::STRING_NAME) {
+			member_name = *VariantGetInternalPtr<StringName>::get_ptr(key);
+		} else if (key->get_type() == Variant::STRING) {
+			member_name = *VariantGetInternalPtr<String>::get_ptr(key);
+		} else {
+			*r_valid = false;
+			*value = Variant();
+			return;
+		}
+
+		// Use wrapper->get to retrieve the member value
+		if (wrapper->get(member_name, *value)) {
+			*r_valid = true;
+		} else {
+			*r_valid = false;
+			*value = Variant();
+		}
+	}
+
+	static void ptr_get(const void *base, const void *key, void *value) {
+		// Avoid ptrconvert for performance
+		const Variant &base_var = *reinterpret_cast<const Variant *>(base);
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base_var._data._mem);
+		ERR_FAIL_NULL(wrapper);
+		ERR_FAIL_COND(!wrapper->is_valid());
+
+		// Convert key to Variant first, then to StringName
+		Variant key_var = PtrToArg<Variant>::convert(key);
+		StringName member_name;
+		if (key_var.get_type() == Variant::STRING_NAME) {
+			member_name = *VariantGetInternalPtr<StringName>::get_ptr(&key_var);
+		} else if (key_var.get_type() == Variant::STRING) {
+			member_name = *VariantGetInternalPtr<String>::get_ptr(&key_var);
+		} else {
+			ERR_FAIL();
+		}
+
+		// Get the member value
+		Variant result;
+		if (wrapper->get(member_name, result)) {
+			PtrToArg<Variant>::encode(result, value);
+		} else {
+			ERR_FAIL();
+		}
+	}
+
+	static void set(Variant *base, const Variant *key, const Variant *value, bool *r_valid) {
+		// Get the struct wrapper from the Variant (stored by value)
+		GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(base->_data._mem);
+		if (!wrapper || !wrapper->is_valid()) {
+			*r_valid = false;
+			return;
+		}
+
+		// Convert key to StringName
+		StringName member_name;
+		if (key->get_type() == Variant::STRING_NAME) {
+			member_name = *VariantGetInternalPtr<StringName>::get_ptr(key);
+		} else if (key->get_type() == Variant::STRING) {
+			member_name = *VariantGetInternalPtr<String>::get_ptr(key);
+		} else {
+			*r_valid = false;
+			return;
+		}
+
+		// Use wrapper->set to set the member value (COW happens inside)
+		*r_valid = wrapper->set(member_name, *value);
+	}
+
+	static void ptr_set(void *base, const void *key, const void *value) {
+		// base points directly to the struct instance (stored by value in Variant)
+		GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(base);
+		ERR_FAIL_NULL(wrapper);
+		ERR_FAIL_COND(!wrapper->is_valid());
+
+		// Convert key to Variant first, then to StringName
+		Variant key_var = PtrToArg<Variant>::convert(key);
+		StringName member_name;
+		if (key_var.get_type() == Variant::STRING_NAME) {
+			member_name = *VariantGetInternalPtr<StringName>::get_ptr(&key_var);
+		} else if (key_var.get_type() == Variant::STRING) {
+			member_name = *VariantGetInternalPtr<String>::get_ptr(&key_var);
+		} else {
+			ERR_FAIL();
+		}
+
+		// Set the member value
+		Variant value_var = PtrToArg<Variant>::convert(value);
+		bool valid = wrapper->set(member_name, value_var);
+		ERR_FAIL_COND(!valid);
+	}
+
+	static bool has(const Variant *base, const Variant *key, bool *r_valid) {
+		// Get the struct wrapper from the Variant (stored by value)
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base->_data._mem);
+		if (!wrapper || !wrapper->is_valid()) {
+			*r_valid = false;
+			return false;
+		}
+
+		// Convert key to StringName
+		StringName member_name;
+		if (key->get_type() == Variant::STRING_NAME) {
+			member_name = *VariantGetInternalPtr<StringName>::get_ptr(key);
+		} else if (key->get_type() == Variant::STRING) {
+			member_name = *VariantGetInternalPtr<String>::get_ptr(key);
+		} else {
+			*r_valid = false;
+			return false;
+		}
+
+		// Check if the member exists by trying to get its index
+		*r_valid = true;
+		Ref<GDScriptStruct> struct_type = wrapper->get_struct_type();
+		if (struct_type.is_null()) {
+			return false;
+		}
+		return struct_type->get_member_index(member_name) >= 0;
+	}
+
+	static uint32_t ptr_has(const void *base, const void *key) {
+		// Convert base to Variant first to match ptr_get/ptr_set calling convention
+		Variant base_var = PtrToArg<Variant>::convert(base);
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base_var._data._mem);
+		ERR_FAIL_NULL_V(wrapper, false);
+		ERR_FAIL_COND_V(!wrapper->is_valid(), false);
+
+		// Convert key to Variant first, then to StringName
+		Variant key_var = PtrToArg<Variant>::convert(key);
+		StringName member_name;
+		if (key_var.get_type() == Variant::STRING_NAME) {
+			member_name = *VariantGetInternalPtr<StringName>::get_ptr(&key_var);
+		} else if (key_var.get_type() == Variant::STRING) {
+			member_name = *VariantGetInternalPtr<String>::get_ptr(&key_var);
+		} else {
+			return false;
+		}
+
+		// Check if the member exists
+		Ref<GDScriptStruct> struct_type = wrapper->get_struct_type();
+		if (struct_type.is_null()) {
+			return false;
+		}
+		return struct_type->get_member_index(member_name) >= 0;
+	}
+};
+#endif
+
 struct VariantKeyedSetterGetterInfo {
 	Variant::ValidatedKeyedSetter validated_setter = nullptr;
 	Variant::ValidatedKeyedGetter validated_getter = nullptr;
@@ -1125,6 +1315,9 @@ static void register_keyed_member(Variant::Type p_type) {
 static void register_keyed_setters_getters() {
 	register_keyed_member<VariantKeyedSetGetDictionary>(Variant::DICTIONARY);
 	register_keyed_member<VariantKeyedSetGetObject>(Variant::OBJECT);
+#ifdef MODULE_GDSCRIPT_ENABLED
+	register_keyed_member<VariantKeyedSetGetStruct>(Variant::STRUCT);
+#endif
 }
 bool Variant::is_keyed(Variant::Type p_type) {
 	ERR_FAIL_INDEX_V(p_type, VARIANT_MAX, false);
@@ -1299,6 +1492,22 @@ void Variant::get_property_list(List<PropertyInfo> *p_list) const {
 		ERR_FAIL_NULL(obj);
 		obj->get_property_list(p_list);
 
+#ifdef MODULE_GDSCRIPT_ENABLED
+	} else if (type == STRUCT) {
+		// Use ScriptLanguage to get struct properties
+		ScriptLanguage *lang = nullptr;
+		for (int i = 0; i < ScriptServer::get_language_count(); i++) {
+			ScriptLanguage *l = ScriptServer::get_language(i);
+			if (l && String(l->get_name()) == "GDScript") {
+				lang = l;
+				break;
+			}
+		}
+		if (lang) {
+			lang->get_struct_property_list(*this, p_list);
+		}
+		return;
+#endif
 	} else {
 		List<StringName> members;
 		get_member_list(type, &members);

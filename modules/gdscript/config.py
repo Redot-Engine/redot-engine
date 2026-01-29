@@ -4,7 +4,7 @@ def can_build(env, platform):
 
 
 def configure(env):
-    pass
+    env.Append(CPPDEFINES=["MODULE_GDSCRIPT_ENABLED"])
 
 
 def get_doc_classes():

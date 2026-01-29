@@ -34,6 +34,10 @@
 
 #include "gdscript_function.h"
 
+// Forward declarations
+class GDScriptStruct;
+class GDScriptStructInstance;
+
 #include "core/debugger/engine_debugger.h"
 #include "core/debugger/script_debugger.h"
 #include "core/doc_data.h"
@@ -59,6 +63,28 @@ public:
 	GDScriptNativeClass(const StringName &p_name);
 };
 
+class GDScriptStructClass : public RefCounted {
+	GDCLASS(GDScriptStructClass, RefCounted);
+
+	Ref<GDScriptStruct> struct_type;
+
+protected:
+	static void _bind_methods();
+
+public:
+	// Temporary helper to create a STRUCT Variant from a GDScriptStructInstance
+	// TODO: Replace with proper Variant API once Variant exposes a safe constructor
+	static Variant _variant_from_struct_instance(GDScriptStructInstance *p_instance);
+
+	Ref<GDScriptStruct> get_struct_type() const;
+	void set_struct_type(const Ref<GDScriptStruct> &p_struct);
+	Variant _new(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+	Variant _new_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+	virtual Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) override;
+	GDScriptStructClass(const Ref<GDScriptStruct> &p_struct = Ref<GDScriptStruct>());
+	~GDScriptStructClass() = default;
+};
+
 class GDScript : public Script {
 	GDCLASS(GDScript, Script);
 	bool tool = false;
@@ -77,9 +103,11 @@ class GDScript : public Script {
 	struct ClearData {
 		RBSet<GDScriptFunction *> functions;
 		RBSet<Ref<Script>> scripts;
+		RBSet<Ref<GDScriptStruct>> structs;
 		void clear() {
 			functions.clear();
 			scripts.clear();
+			structs.clear();
 		}
 	};
 
@@ -92,6 +120,8 @@ class GDScript : public Script {
 	friend class GDScriptLambdaSelfCallable;
 	friend class GDScriptLanguage;
 	friend struct GDScriptUtilityFunctionsDefinitions;
+	friend class GDScriptStruct;
+	friend class GDScriptStructInstance;
 
 	Ref<GDScriptNativeClass> native;
 	Ref<GDScript> base;
@@ -110,6 +140,7 @@ class GDScript : public Script {
 	HashMap<StringName, GDScriptFunction *> member_functions;
 	HashMap<StringName, Ref<GDScript>> subclasses;
 	HashMap<StringName, MethodInfo> _signals;
+	HashMap<StringName, Ref<GDScriptStruct>> structs;
 	Dictionary rpc_config;
 
 public:
@@ -476,6 +507,11 @@ class GDScriptLanguage : public ScriptLanguage {
 
 	HashMap<String, ObjectID> orphan_subclasses;
 
+	// Global struct registry for serialization/deserialization
+	HashMap<String, Ref<GDScriptStruct>> global_structs;
+	// Global struct wrapper registry for constructor access
+	HashMap<String, Ref<GDScriptStructClass>> global_struct_wrappers;
+
 #ifdef TOOLS_ENABLED
 	void _extension_loaded(const Ref<GDExtension> &p_extension);
 	void _extension_unloading(const Ref<GDExtension> &p_extension);
@@ -592,6 +628,17 @@ public:
 
 	_FORCE_INLINE_ static GDScriptLanguage *get_singleton() { return singleton; }
 
+	// Struct registry methods
+	void register_struct(const String &p_fully_qualified_name, const Ref<GDScriptStruct> &p_struct);
+	void unregister_struct(const String &p_fully_qualified_name);
+	Ref<GDScriptStruct> get_struct_by_name(const String &p_fully_qualified_name);
+	Variant create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data);
+
+	// Struct wrapper registry methods
+	void register_struct_wrapper(const String &p_fully_qualified_name, const Ref<GDScriptStructClass> &p_wrapper);
+	void unregister_struct_wrapper(const String &p_fully_qualified_name);
+	Ref<GDScriptStructClass> get_struct_wrapper(const String &p_fully_qualified_name);
+
 	virtual String get_name() const override;
 
 	/* LANGUAGE FUNCTIONS */
@@ -668,6 +715,12 @@ public:
 
 	virtual bool handles_global_class_type(const String &p_type) const override;
 	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_is_abstract = nullptr, bool *r_is_tool = nullptr) const override;
+
+	/* STRUCT SERIALIZATION */
+	virtual bool can_create_struct_by_name() const override;
+	virtual Variant create_struct_by_name(const String &p_fully_qualified_name, const Dictionary &p_data) override;
+	virtual Dictionary struct_to_dict(const Variant &p_struct) const override;
+	virtual void get_struct_property_list(const Variant &p_struct, List<PropertyInfo> *p_list) const override;
 
 	void add_orphan_subclass(const String &p_qualified_name, const ObjectID &p_subclass);
 	Ref<GDScript> get_orphan_subclass(const String &p_qualified_name);

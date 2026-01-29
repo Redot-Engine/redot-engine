@@ -149,6 +149,14 @@ void GDScriptDocGen::_doctype_from_gdtype(const GDType &p_gdtype, String &r_type
 				}
 			}
 			return;
+		case GDType::STRUCT:
+			// For now, treat structs as their struct type name
+			if (p_gdtype.struct_type && p_gdtype.struct_type->identifier) {
+				r_type = String(p_gdtype.struct_type->identifier->name);
+			} else {
+				r_type = "Struct";
+			}
+			return;
 		case GDType::VARIANT:
 		case GDType::RESOLVING:
 		case GDType::UNRESOLVED:

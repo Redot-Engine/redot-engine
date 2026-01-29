@@ -40,6 +40,18 @@
 #include <climits>
 #include <cstdio>
 
+// GDScript struct serialization support
+// Guarded with MODULE_GDSCRIPT_ENABLED since core/io can't depend on modules/gdscript
+#ifdef MODULE_GDSCRIPT_ENABLED
+
+extern "C" {
+// These functions are defined in modules/gdscript/gdscript.cpp with C linkage
+Error gdscript_variant_encode_struct(const Variant &p_variant, uint8_t *r_buffer, int &r_len);
+Error gdscript_variant_decode_struct(const uint8_t *p_buffer, int p_len, int *r_len, Variant &r_variant);
+}
+
+#endif // MODULE_GDSCRIPT_ENABLED
+
 void EncodedObjectAsID::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_object_id", "id"), &EncodedObjectAsID::set_object_id);
 	ClassDB::bind_method(D_METHOD("get_object_id"), &EncodedObjectAsID::get_object_id);
@@ -1296,6 +1308,17 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 			r_variant = varray;
 
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case Variant::STRUCT: {
+			// Decode struct via GDScript helper function
+			Error err = gdscript_variant_decode_struct(buf, len, r_len, r_variant);
+			ERR_FAIL_COND_V(err, err);
+		} break;
+#else
+		case Variant::STRUCT: {
+			ERR_FAIL_V(ERR_BUG);
+		} break;
+#endif
 		default: {
 			ERR_FAIL_V(ERR_BUG);
 		}
@@ -2124,6 +2147,17 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 			r_len += sizeof(real_t) * 4 * len;
 
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case Variant::STRUCT: {
+			// Encode struct via GDScript helper function
+			Error err = gdscript_variant_encode_struct(p_variant, buf, r_len);
+			ERR_FAIL_COND_V(err, err);
+		} break;
+#else
+		case Variant::STRUCT: {
+			ERR_FAIL_V(ERR_BUG);
+		} break;
+#endif
 		default: {
 			ERR_FAIL_V(ERR_BUG);
 		}

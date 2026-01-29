@@ -35,6 +35,7 @@
 #include "gdscript.h"
 #include "gdscript_byte_codegen.h"
 #include "gdscript_cache.h"
+#include "gdscript_struct.h"
 #include "gdscript_utility_functions.h"
 
 #include "core/config/engine.h"
@@ -194,6 +195,12 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 			result.kind = GDScriptDataType::BUILTIN;
 			result.builtin_type = p_datatype.builtin_type;
 			break;
+		case GDScriptParser::DataType::STRUCT: {
+			// Struct type - use STRUCT kind to distinguish from other builtin types
+			result.kind = GDScriptDataType::STRUCT;
+			result.builtin_type = Variant::STRUCT;
+			result.struct_type = p_datatype.struct_type;
+		} break;
 		case GDScriptParser::DataType::RESOLVING:
 		case GDScriptParser::DataType::UNRESOLVED: {
 			_set_error("Parser bug (please report): converting unresolved type.", nullptr);
@@ -254,7 +261,7 @@ static bool _can_use_validate_call(const MethodBind *p_method, const Vector<GDSc
 }
 
 GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &codegen, Error &r_error, const GDScriptParser::ExpressionNode *p_expression, bool p_root, bool p_initializer) {
-	if (p_expression->is_constant && !(p_expression->get_datatype().is_meta_type && p_expression->get_datatype().kind == GDScriptParser::DataType::CLASS)) {
+	if (p_expression->is_constant && !(p_expression->get_datatype().is_meta_type && (p_expression->get_datatype().kind == GDScriptParser::DataType::CLASS || p_expression->get_datatype().kind == GDScriptParser::DataType::STRUCT))) {
 		return codegen.add_constant(p_expression->reduced_value);
 	}
 
@@ -361,6 +368,27 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 				} break;
 				case GDScriptParser::IdentifierNode::MEMBER_CONSTANT:
 				case GDScriptParser::IdentifierNode::MEMBER_CLASS: {
+					// Handle struct types (metatype)
+					if (in->get_datatype().kind == GDScriptParser::DataType::STRUCT && in->get_datatype().is_meta_type) {
+						// Struct type identifier - look up the wrapper from the global registry
+						// The wrapper is registered during _compile_struct and persists across compilations
+						Ref<GDScriptStructClass> struct_wrapper = GDScriptLanguage::get_singleton()->get_struct_wrapper(in->get_datatype().struct_type->fqsn);
+						if (struct_wrapper.is_valid()) {
+							// Use the wrapper from global registry
+							// CRITICAL: Must return the CONSTANT address directly, not create a new address with CLASS mode
+							// CLASS mode points to stack[1] which is the script, NOT the constant table
+							Variant wrapper_variant = struct_wrapper;
+							GDScriptCodeGenerator::Address result = codegen.add_constant(wrapper_variant);
+							// Override the type to ensure it's recognized as STRUCT
+							result.type = _gdtype_from_datatype(in->get_datatype(), codegen.script);
+							return result;
+						} else {
+							// Shouldn't happen - struct wrapper not in global registry
+							_set_error(vformat(R"(Struct wrapper "%s" not found in global registry.)", identifier), in);
+							return GDScriptCodeGenerator::Address();
+						}
+					}
+
 					// Try class constants.
 					GDScript *owner = codegen.script;
 					while (owner) {
@@ -672,22 +700,75 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 						const GDScriptParser::SubscriptNode *subscript = static_cast<const GDScriptParser::SubscriptNode *>(call->callee);
 
 						if (subscript->is_attribute) {
-							// May be static built-in method call.
-							if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER && GDScriptParser::get_builtin_type(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name) < Variant::VARIANT_MAX) {
-								gen->write_call_builtin_type_static(result, GDScriptParser::get_builtin_type(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name), subscript->attribute->name, arguments);
-							} else if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER && call->function_name != SNAME("new") &&
-									static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->source == GDScriptParser::IdentifierNode::NATIVE_CLASS && !Engine::get_singleton()->has_singleton(static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name)) {
-								// It's a static native method call.
-								StringName class_name = static_cast<GDScriptParser::IdentifierNode *>(subscript->base)->name;
-								MethodBind *method = ClassDB::get_method(class_name, subscript->attribute->name);
-								if (_can_use_validate_call(method, arguments)) {
-									// Exact arguments, use validated call.
-									gen->write_call_native_static_validated(result, method, arguments);
+							// May be static built-in method call, or struct static method call.
+							if (!call->is_super && subscript->base->type == GDScriptParser::Node::IDENTIFIER) {
+								const GDScriptParser::IdentifierNode *id = static_cast<const GDScriptParser::IdentifierNode *>(subscript->base);
+								// Check if this is a struct TYPE (not instance) for static method calls
+								// We need to check:
+								// 1. kind == STRUCT
+								// 2. is_meta_type == true (means it's the type itself, not an instance)
+								// This distinguishes TestStruct.new() (meta_type=true) from s.get_value() (meta_type=false)
+								if (id->datatype.kind == GDScriptParser::DataType::STRUCT && id->datatype.is_meta_type) {
+									// Struct static method call (e.g., TestStruct.new())
+									GDScriptCodeGenerator::Address base = _parse_expression(codegen, r_error, subscript->base);
+									if (r_error) {
+										return GDScriptCodeGenerator::Address();
+									}
+									gen->write_call(result, base, call->function_name, arguments);
+								} else if (GDScriptParser::get_builtin_type(id->name) < Variant::VARIANT_MAX) {
+									gen->write_call_builtin_type_static(result, GDScriptParser::get_builtin_type(id->name), subscript->attribute->name, arguments);
+								} else if (call->function_name != SNAME("new") &&
+										id->source == GDScriptParser::IdentifierNode::NATIVE_CLASS && !Engine::get_singleton()->has_singleton(id->name)) {
+									// It's a static native method call.
+									StringName class_name = id->name;
+									MethodBind *method = ClassDB::get_method(class_name, subscript->attribute->name);
+									if (_can_use_validate_call(method, arguments)) {
+										// Exact arguments, use validated call.
+										gen->write_call_native_static_validated(result, method, arguments);
+									} else {
+										// Not exact arguments, use regular static call
+										gen->write_call_native_static(result, class_name, subscript->attribute->name, arguments);
+									}
 								} else {
-									// Not exact arguments, use regular static call
-									gen->write_call_native_static(result, class_name, subscript->attribute->name, arguments);
+									// Regular instance method call on identifier
+									GDScriptCodeGenerator::Address base = _parse_expression(codegen, r_error, subscript->base);
+									if (r_error) {
+										return GDScriptCodeGenerator::Address();
+									}
+									if (is_awaited) {
+										gen->write_call_async(result, base, call->function_name, arguments);
+									} else if (base.type.has_type && base.type.kind != GDScriptDataType::BUILTIN) {
+										// Native method, use faster path.
+										StringName class_name;
+										if (base.type.kind == GDScriptDataType::NATIVE) {
+											class_name = base.type.native_type;
+										} else {
+											class_name = base.type.native_type == StringName() ? base.type.script_type->get_instance_base_type() : base.type.native_type;
+										}
+										if (ClassDB::class_exists(class_name) && ClassDB::has_method(class_name, call->function_name)) {
+											MethodBind *method = ClassDB::get_method(class_name, call->function_name);
+											if (_can_use_validate_call(method, arguments)) {
+												// Exact arguments, use validated call.
+												gen->write_call_method_bind_validated(result, base, method, arguments);
+											} else {
+												// Not exact arguments, but still can use method bind call.
+												gen->write_call_method_bind(result, base, method, arguments);
+											}
+										} else {
+											gen->write_call(result, base, call->function_name, arguments);
+										}
+									} else if (base.type.has_type && base.type.kind == GDScriptDataType::BUILTIN) {
+										gen->write_call_builtin_type(result, base, base.type.builtin_type, call->function_name, arguments);
+									} else {
+										// Regular call (includes structs and other types)
+										gen->write_call(result, base, call->function_name, arguments);
+									}
+									if (base.mode == GDScriptCodeGenerator::Address::TEMPORARY) {
+										gen->pop_temporary();
+									}
 								}
 							} else {
+								// Non-identifier base - parse expression and call method
 								GDScriptCodeGenerator::Address base = _parse_expression(codegen, r_error, subscript->base);
 								if (r_error) {
 									return GDScriptCodeGenerator::Address();
@@ -717,6 +798,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 								} else if (base.type.has_type && base.type.kind == GDScriptDataType::BUILTIN) {
 									gen->write_call_builtin_type(result, base, base.type.builtin_type, call->function_name, arguments);
 								} else {
+									// Regular call (includes structs and other types)
 									gen->write_call(result, base, call->function_name, arguments);
 								}
 								if (base.mode == GDScriptCodeGenerator::Address::TEMPORARY) {
@@ -2999,7 +3081,21 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 }
 
 Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state) {
-	// Compile member functions, getters, and setters.
+	// IMPORTANT: Compile structs BEFORE functions so that struct wrappers are registered
+	// in the global registry before any function code tries to reference them
+	for (int i = 0; i < p_class->members.size(); i++) {
+		const GDScriptParser::ClassNode::Member &member = p_class->members[i];
+		if (member.type == member.STRUCT) {
+			// Compile struct first to register wrappers in global registry
+			const GDScriptParser::StructNode *struct_node = member.m_struct;
+			Error err = _compile_struct(p_script, p_class, struct_node);
+			if (err) {
+				return err;
+			}
+		}
+	}
+
+	// Now compile member functions, getters, and setters (struct wrappers are already registered)
 	for (int i = 0; i < p_class->members.size(); i++) {
 		const GDScriptParser::ClassNode::Member &member = p_class->members[i];
 		if (member.type == member.FUNCTION) {
@@ -3128,6 +3224,135 @@ Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser:
 	return OK;
 }
 
+Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::StructNode *p_struct) {
+	if (p_struct == nullptr) {
+		return OK;
+	}
+
+	// Check if struct is already compiled
+	if (p_script->structs.has(p_struct->identifier->name)) {
+		return OK;
+	}
+
+	// Also check if it exists globally (from a previous reload)
+	Ref<GDScriptStruct> existing = GDScriptLanguage::get_singleton()->get_struct_by_name(p_struct->fqsn);
+	if (existing.is_valid()) {
+		// Already compiled globally, just add it to this script's struct list
+		p_script->structs[p_struct->identifier->name] = existing;
+
+		// Create a wrapper class for struct construction (needed for hot-reload and StructName.new())
+		Ref<GDScriptStructClass> struct_wrapper;
+		struct_wrapper.instantiate();
+		struct_wrapper->set_struct_type(existing);
+
+		// Store the wrapper in constants so StructName.new() works
+		p_script->constants[p_struct->identifier->name] = struct_wrapper;
+
+		return OK;
+	}
+
+	// Create the GDScriptStruct object with RefCounted (COW architecture)
+	Ref<GDScriptStruct> gdstruct;
+	gdstruct.instantiate();
+	gdstruct->set_owner(p_script);
+	gdstruct->set_fully_qualified_name(p_struct->fqsn);
+
+	// Add members to the struct with full type information
+	for (const GDScriptParser::StructNode::Field &field : p_struct->fields) {
+		if (field.variable != nullptr) {
+			Variant::Type type = Variant::NIL;
+			StringName type_name;
+			Variant default_value;
+			bool has_default_value = false;
+
+			if (field.variable->datatype_specifier != nullptr) {
+				const GDScriptParser::DataType &datatype = field.variable->datatype_specifier->get_datatype();
+
+				// Handle all datatype kinds, not just builtins
+				switch (datatype.kind) {
+					case GDScriptParser::DataType::BUILTIN:
+						type = datatype.builtin_type;
+						break;
+					case GDScriptParser::DataType::NATIVE:
+						type = Variant::OBJECT;
+						type_name = datatype.native_type;
+						break;
+					case GDScriptParser::DataType::SCRIPT:
+						type = Variant::OBJECT;
+						if (datatype.script_type.is_valid()) {
+							type_name = datatype.script_type->get_class_name();
+						}
+						break;
+					case GDScriptParser::DataType::CLASS:
+						type = Variant::OBJECT;
+						type_name = GDScript::get_class_static();
+						break;
+					case GDScriptParser::DataType::STRUCT:
+						type = Variant::STRUCT;
+						// For STRUCT type, store the fully qualified struct name
+						// datatype.struct_type is a parser node, use its fqsn directly
+						if (datatype.struct_type != nullptr) {
+							type_name = datatype.struct_type->fqsn;
+						}
+						break;
+					default:
+						type = Variant::NIL;
+						break;
+				}
+			}
+
+			// Set default value if present
+			if (field.variable->initializer != nullptr && field.variable->initializer->is_constant) {
+				default_value = field.variable->initializer->reduced_value;
+				has_default_value = true;
+			}
+
+			// Add member with type information and default value (if any)
+			// This avoids the need for const_cast by setting default_value during add_member
+			gdstruct->add_member(field.variable->identifier->name, type, type_name, default_value, has_default_value);
+		}
+	}
+
+	// Compile struct methods
+	// TODO: Pass struct-specific context instead of p_class for correct "self" semantics
+	// This requires creating a struct-specific ClassNode wrapper or similar mechanism
+	for (const GDScriptParser::FunctionNode *method : p_struct->methods) {
+		if (method != nullptr) {
+			Error err = OK;
+			GDScriptFunction *func = _parse_function(err, p_script, p_class, method);
+			if (err) {
+				// ERROR PATH: The Ref<> will automatically clean up when it goes out of scope
+				return err;
+			}
+
+			// Add method to struct
+			gdstruct->add_method(method->identifier->name, func, method->is_static);
+		}
+	}
+
+	// Register the struct in the script (Ref<> automatically manages reference counting)
+	p_script->structs[p_struct->identifier->name] = gdstruct;
+
+	// Register the struct in the global registry for serialization
+	// The registry stores its own Ref<>, so reference counting is automatic
+	GDScriptLanguage::get_singleton()->register_struct(p_struct->fqsn, gdstruct);
+
+	// Create a wrapper class for struct construction
+	// This allows `StructName.new()` to work
+	Ref<GDScriptStructClass> struct_wrapper;
+	struct_wrapper.instantiate();
+	struct_wrapper->set_struct_type(gdstruct);
+
+	// CRITICAL: Register the wrapper in the GLOBAL registry (not script-specific constants)
+	// This ensures the wrapper persists across multiple compilation passes
+	GDScriptLanguage::get_singleton()->register_struct_wrapper(p_struct->fqsn, struct_wrapper);
+
+	// Store the wrapper in constants so StructName.new() works in the same compilation pass
+	p_script->constants[p_struct->identifier->name] = struct_wrapper;
+
+	return OK;
+}
+
 void GDScriptCompiler::convert_to_initializer_type(Variant &p_variant, const GDScriptParser::VariableNode *p_node) {
 	// Set p_variant to the value of p_node's initializer, with the type of p_node's variable.
 	GDScriptParser::DataType member_t = p_node->datatype;
@@ -3149,12 +3374,15 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 	p_script->simplified_icon_path = p_class->simplified_icon_path;
 
 	HashMap<StringName, Ref<GDScript>> old_subclasses;
+	HashMap<StringName, Ref<GDScriptStruct>> old_structs;
 
 	if (p_keep_state) {
 		old_subclasses = p_script->subclasses;
+		old_structs = p_script->structs;
 	}
 
 	p_script->subclasses.clear();
+	p_script->structs.clear();
 
 	for (int i = 0; i < p_class->members.size(); i++) {
 		if (p_class->members[i].type != GDScriptParser::ClassNode::Member::CLASS) {
@@ -3181,6 +3409,30 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 
 		make_scripts(subclass.ptr(), inner_class, p_keep_state);
 	}
+
+	// Clean up old structs that were not reused
+	// (Structs cannot be reused like subclasses since they may have different definitions)
+	//
+	// With Ref<> automatic reference counting, cleanup happens automatically:
+	// 1. Unregister struct wrappers from global wrapper registry
+	// 2. Unregister structs from global registry
+	// 3. When old_structs goes out of scope, Ref<> automatically cleans up
+
+	// Step 1: Unregister struct wrappers from global wrapper registry
+	for (const KeyValue<StringName, Ref<GDScriptStruct>> &E : old_structs) {
+		if (E.value.is_valid()) {
+			GDScriptLanguage::get_singleton()->unregister_struct_wrapper(E.value->get_fully_qualified_name());
+		}
+	}
+
+	// Step 2: Unregister structs from global registry
+	for (const KeyValue<StringName, Ref<GDScriptStruct>> &E : old_structs) {
+		if (E.value.is_valid()) {
+			GDScriptLanguage::get_singleton()->unregister_struct(E.value->get_fully_qualified_name());
+		}
+	}
+
+	// Step 3: When old_structs goes out of scope, Ref<> automatically handles cleanup
 }
 
 GDScriptCompiler::FunctionLambdaInfo GDScriptCompiler::_get_function_replacement_info(GDScriptFunction *p_func, int p_index, int p_depth, GDScriptFunction *p_parent_func) {

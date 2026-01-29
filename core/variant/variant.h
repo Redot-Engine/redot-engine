@@ -67,6 +67,7 @@
 
 class Object;
 class RefCounted;
+class GDScriptStructInstance;
 
 template <typename T>
 class Ref;
@@ -123,6 +124,7 @@ public:
 		NODE_PATH,
 		RID,
 		OBJECT,
+		STRUCT,
 		CALLABLE,
 		SIGNAL,
 		DICTIONARY,
@@ -175,6 +177,12 @@ private:
 
 	friend struct _VariantCall;
 	friend class VariantInternal;
+	friend class GDScriptStructClass; // Needed for proper struct construction
+	friend class GDScriptStruct; // Needed for struct instance creation
+	friend class GDScriptLanguage; // Needed for struct serialization and property list
+#ifdef MODULE_GDSCRIPT_ENABLED
+	friend struct VariantKeyedSetGetStruct; // Needed for struct keyed getter/setter
+#endif
 	// Variant takes 24 bytes when real_t is float, and 40 bytes if double.
 	// It only allocates extra memory for AABB/Transform2D (24, 48 if double),
 	// Basis/Transform3D (48, 96 if double), Projection (64, 128 if double),
@@ -310,6 +318,7 @@ private:
 		true, //NODE_PATH,
 		false, //RID,
 		true, //OBJECT,
+		true, //STRUCT,
 		true, //CALLABLE,
 		true, //SIGNAL,
 		true, //DICTIONARY,

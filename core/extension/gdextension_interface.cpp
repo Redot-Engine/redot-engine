@@ -817,6 +817,11 @@ static GDExtensionPtrOperatorEvaluator gdextension_variant_get_ptr_operator_eval
 	return (GDExtensionPtrOperatorEvaluator)Variant::get_ptr_operator_evaluator(Variant::Operator(p_operator), Variant::Type(p_type_a), Variant::Type(p_type_b));
 }
 static GDExtensionPtrBuiltInMethod gdextension_variant_get_ptr_builtin_method(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_method, GDExtensionInt p_hash) {
+	// STRUCT type doesn't support built-in methods
+	if (p_type == (int)Variant::STRUCT) {
+		return nullptr;
+	}
+
 	const StringName method = *reinterpret_cast<const StringName *>(p_method);
 	uint32_t hash = Variant::get_builtin_method_hash(Variant::Type(p_type), method);
 	if (hash != p_hash) {
@@ -827,6 +832,11 @@ static GDExtensionPtrBuiltInMethod gdextension_variant_get_ptr_builtin_method(GD
 	return (GDExtensionPtrBuiltInMethod)Variant::get_ptr_builtin_method(Variant::Type(p_type), method);
 }
 static GDExtensionPtrConstructor gdextension_variant_get_ptr_constructor(GDExtensionVariantType p_type, int32_t p_constructor) {
+	// STRUCT type doesn't support constructors (yet)
+	if (p_type == (int)Variant::STRUCT) {
+		return nullptr;
+	}
+
 	return (GDExtensionPtrConstructor)Variant::get_ptr_constructor(Variant::Type(p_type), p_constructor);
 }
 static GDExtensionPtrDestructor gdextension_variant_get_ptr_destructor(GDExtensionVariantType p_type) {

@@ -39,6 +39,10 @@
 
 #include "core/templates/hash_set.h"
 
+// Forward declarations
+class GDScriptStruct;
+class GDScriptStructClass;
+
 class GDScriptCompiler {
 	const GDScriptParser *parser = nullptr;
 	HashSet<GDScript *> parsed_classes;
@@ -112,14 +116,23 @@ class GDScriptCompiler {
 					type.kind = GDScriptDataType::NATIVE;
 					type.native_type = obj->get_class_name();
 
-					Ref<Script> scr = obj->get_script();
-					if (scr.is_valid()) {
-						type.script_type = scr.ptr();
-						Ref<GDScript> gdscript = scr;
-						if (gdscript.is_valid()) {
-							type.kind = GDScriptDataType::GDSCRIPT;
+					// Check if this is a GDScriptStructClass (used for struct constructors)
+					GDScriptStructClass *struct_class = Object::cast_to<GDScriptStructClass>(obj);
+					if (struct_class != nullptr) {
+						type.kind = GDScriptDataType::STRUCT;
+						type.struct_type = struct_class->get_struct_type();
+					} else {
+						// Check if this is a Script
+						Ref<Script> scr = obj->get_script();
+						if (scr.is_valid()) {
+							type.script_type = scr.ptr();
+							Ref<GDScript> gdscript = scr;
+							if (gdscript.is_valid()) {
+								type.kind = GDScriptDataType::GDSCRIPT;
+							} else {
+								type.kind = GDScriptDataType::SCRIPT;
+							}
 						} else {
-							type.kind = GDScriptDataType::SCRIPT;
 						}
 					}
 				} else {
@@ -162,6 +175,7 @@ class GDScriptCompiler {
 	Error _parse_setter_getter(GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::VariableNode *p_variable, bool p_is_setter);
 	Error _prepare_compilation(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state);
 	Error _compile_class(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state);
+	Error _compile_struct(GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::StructNode *p_struct);
 	FunctionLambdaInfo _get_function_replacement_info(GDScriptFunction *p_func, int p_index = -1, int p_depth = 0, GDScriptFunction *p_parent_func = nullptr);
 	Vector<FunctionLambdaInfo> _get_function_lambda_replacement_info(GDScriptFunction *p_func, int p_depth = 0, GDScriptFunction *p_parent_func = nullptr);
 	ScriptLambdaInfo _get_script_lambda_replacement_info(GDScript *p_script);
