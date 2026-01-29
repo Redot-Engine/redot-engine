@@ -46,6 +46,7 @@ class EditorInspectorPluginSkeleton;
 class EditorPropertyVector3;
 class Joint;
 class PhysicalBone3D;
+class Skeleton3DEditor;
 class Skeleton3DEditorPlugin;
 class Button;
 class Tree;
@@ -70,6 +71,7 @@ class BonePropertiesEditor : public VBoxContainer {
 
 	Rect2 background_rects[5];
 
+	Skeleton3DEditor *skeleton_editor = nullptr;
 	Skeleton3D *skeleton = nullptr;
 	// String property;
 
@@ -95,7 +97,7 @@ protected:
 	void _notification(int p_what);
 
 public:
-	BonePropertiesEditor(Skeleton3D *p_skeleton);
+	BonePropertiesEditor(Skeleton3DEditor *p_skeleton_editor, Skeleton3D *p_skeleton);
 
 	// Which transform target to modify.
 	void set_target(const String &p_prop);
@@ -157,8 +159,6 @@ class Skeleton3DEditor : public VBoxContainer {
 	EditorFileDialog *file_dialog = nullptr;
 
 	bool keyable = false;
-
-	static Skeleton3DEditor *singleton;
 
 	void _on_click_skeleton_option(int p_skeleton_option);
 	void _file_selected(const String &p_file);
@@ -222,8 +222,6 @@ protected:
 	void _node_removed(Node *p_node);
 
 public:
-	static Skeleton3DEditor *get_singleton() { return singleton; }
-
 	void select_bone(int p_idx);
 
 	int get_selected_bone() const;
@@ -247,8 +245,10 @@ class EditorInspectorPluginSkeleton : public EditorInspectorPlugin {
 	GDCLASS(EditorInspectorPluginSkeleton, EditorInspectorPlugin);
 
 	friend class Skeleton3DEditorPlugin;
+	friend class Skeleton3DGizmoPlugin;
+	friend class Skeleton3DEditor;
 
-	Skeleton3DEditor *skel_editor = nullptr;
+	Skeleton3DEditor *skeleton_editor = nullptr;
 
 public:
 	virtual bool can_handle(Object *p_object) override;
@@ -280,6 +280,8 @@ class Skeleton3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	};
 	static SelectionMaterials selection_materials;
 
+	EditorInspectorPluginSkeleton *skeleton_plugin = nullptr;
+
 public:
 	static Ref<ArrayMesh> get_bones_mesh(Skeleton3D *p_skeleton, int p_selected, bool p_is_selected);
 
@@ -294,6 +296,6 @@ public:
 
 	void redraw(EditorNode3DGizmo *p_gizmo) override;
 
-	Skeleton3DGizmoPlugin();
+	Skeleton3DGizmoPlugin(EditorInspectorPluginSkeleton *p_skeleton_plugin);
 	~Skeleton3DGizmoPlugin();
 };
