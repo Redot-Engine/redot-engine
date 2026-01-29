@@ -153,13 +153,16 @@
 # David <ocsidev@gmail.com>, 2025.
 # Eduardo Suárez <eduardosrez@gmail.com>, 2025.
 # Julián Lacomba <julian_alberto93@yahoo.com.ar>, 2025.
+# Ignacio Parentella <ignacio.parentella@gmail.com>, 2025.
+# "A Thousand Ships (she/her)" <over999ships@gmail.com>, 2025.
+# Myeongjin <aranet100@gmail.com>, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor interface\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2025-08-26 18:02+0000\n"
-"Last-Translator: Javier <xavier.ocampos@gmail.com>\n"
+"PO-Revision-Date: 2025-12-15 17:00+0000\n"
+"Last-Translator: Alejandro Moctezuma <moctezumaalejandro25@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/godot-engine/"
 "godot/es/>\n"
 "Language: es\n"
@@ -167,7 +170,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.15.1-dev\n"
 
 msgid "Unset"
 msgstr "No Establecido"
@@ -380,10 +383,10 @@ msgid "Down"
 msgstr "Abajo"
 
 msgid "Page Up"
-msgstr "Página Arriba"
+msgstr "Avanzar Página"
 
 msgid "Page Down"
-msgstr "Página Abajo"
+msgstr "Retroceder Página"
 
 msgid "Home"
 msgstr "Inicio"
@@ -401,7 +404,7 @@ msgid "Paste"
 msgstr "Pegar"
 
 msgid "Toggle Tab Focus Mode"
-msgstr "Act./Desact. Modo Foco de Pestaña"
+msgstr "Alternar modo foco de pestaña"
 
 msgid "Undo"
 msgstr "Deshacer"
@@ -726,7 +729,7 @@ msgstr ""
 "la activación falla."
 
 msgid "Set the blending position within the space"
-msgstr "Establecer la posición de mezclado dentro del espacio"
+msgstr "Establece la posición de combinación dentro del espacio"
 
 msgid "Select and move points, create points with RMB."
 msgstr "Seleccionar y mover puntos, crear puntos con clic derecho."
@@ -747,13 +750,13 @@ msgid "Sync:"
 msgstr "Sincronizar:"
 
 msgid "Blend:"
-msgstr "Mezcla:"
+msgstr "Combinación:"
 
 msgid "Point"
 msgstr "Punto"
 
 msgid "Blend Value"
-msgstr "Valor de Mezcla"
+msgstr "Valor de Combinación"
 
 msgid "Open Editor"
 msgstr "Abrir Editor"
@@ -789,7 +792,8 @@ msgid "Remove BlendSpace2D Triangle"
 msgstr "Eliminar Triángulo BlendSpace2D"
 
 msgid "No triangles exist, so no blending can take place."
-msgstr "No existen triángulos, por lo tanto, no se puede realizar el mezclado."
+msgstr ""
+"No existen triángulos, por lo tanto, no se puede realizar ninguna combinación."
 
 msgid "Toggle Auto Triangles"
 msgstr "Act./Desact. Triángulos Automáticos"
@@ -801,7 +805,8 @@ msgid "Erase points and triangles."
 msgstr "Borrar puntos y triángulos."
 
 msgid "Generate blend triangles automatically (instead of manually)"
-msgstr "Generar triángulos combinados automáticamente (en lugar de manualmente)"
+msgstr ""
+"Generar triángulos de combinación automáticamente (en lugar de manualmente)"
 
 msgid "Grid X Step"
 msgstr "Paso X de Cuadrícula"
@@ -810,7 +815,10 @@ msgid "Grid Y Step"
 msgstr "Paso Y de Cuadrícula"
 
 msgid "Blend X Value"
-msgstr "Valor X de Fusión"
+msgstr "Valor X de Combinación"
+
+msgid "Blend Y Value"
+msgstr "Valor Y de Combinación"
 
 msgid "Max Y"
 msgstr "Max Y"
@@ -827,6 +835,9 @@ msgstr "Min X"
 msgid "X Value"
 msgstr "Valor X"
 
+msgid "Max X"
+msgstr "Max X"
+
 msgid "Parameter Changed: %s"
 msgstr "Parámetro Modificado: %s"
 
@@ -837,7 +848,7 @@ msgid "Edit Filters"
 msgstr "Editar Filtros"
 
 msgid "Output node can't be added to the blend tree."
-msgstr "El nodo de salida no puede ser agregado al blend tree."
+msgstr "El nodo de Salida no se puede añadir al árbol de combinación."
 
 msgid "Add Node to BlendTree"
 msgstr "Añadir Nodo a BlendTree"
@@ -1204,10 +1215,10 @@ msgid "Duplicate Animation"
 msgstr "Duplicar Animación"
 
 msgid "Blend Next Changed"
-msgstr "Mezclar el Siguiente Cambio"
+msgstr "Siguiente Combinación Cambiada"
 
 msgid "Change Blend Time"
-msgstr "Cambiar Tiempo de Mezcla"
+msgstr "Cambiar Tiempo de Combinación"
 
 msgid "[Global] (create)"
 msgstr "[Global] (crear)"
@@ -1315,10 +1326,10 @@ msgid "Error!"
 msgstr "¡Error!"
 
 msgid "Cross-Animation Blend Times"
-msgstr "Tiempos de Mezcla entre Animaciones"
+msgstr "Tiempos de Combinación de Animación Cruzada"
 
 msgid "Blend Times:"
-msgstr "Tiempos de Mezcla:"
+msgstr "Tiempos de Combinación:"
 
 msgid "Next (Auto Queue):"
 msgstr "Siguiente (Cola Automática):"
@@ -1544,7 +1555,7 @@ msgid "Select node in scene."
 msgstr "Selecciona nodo en escena."
 
 msgid "Use Blend"
-msgstr "Usar Mezcla"
+msgstr "Usar Combinación"
 
 msgid "Update Mode (How this property is set)"
 msgstr "Modo de actualización (Cómo se establece)"
@@ -1616,7 +1627,7 @@ msgid "Toggle Track Enabled"
 msgstr "Act./Desact. Pista"
 
 msgid "Don't Use Blend"
-msgstr "No Usar Mezcla"
+msgstr "No Usar Combinación"
 
 msgid "Nearest"
 msgstr "Más Cercano"
@@ -1670,7 +1681,7 @@ msgid "Change Animation Loop Mode"
 msgstr "Cambiar Modo Loop de Animación"
 
 msgid "Change Animation Use Blend"
-msgstr "Cambiar Uso de Mezcla en la Animación"
+msgstr "Cambiar Uso de Combinación de Animación"
 
 msgid ""
 "Compressed tracks can't be edited or removed. Re-import the animation with "
@@ -1690,7 +1701,7 @@ msgstr "¿Crear %d nuevas pistas e insertar claves?"
 
 msgid "Hold Shift when clicking the key icon to skip this dialog."
 msgstr ""
-"Mantén presionada la tecla Shift al hacer clic en el ícono de la llave para "
+"Mantén presionada la tecla Shift al hacer clic en el icono de la llave para "
 "omitir este cuadro de diálogo."
 
 msgid "Create"
@@ -1721,7 +1732,7 @@ msgid "Rearrange Tracks"
 msgstr "Reordenar Pistas"
 
 msgid "Blend Shape tracks only apply to MeshInstance3D nodes."
-msgstr "Las pistas de Formas Combinadas solo se aplican a nodos MeshInstance3D."
+msgstr "Las pistas de Forma Combinada solo se aplican a nodos MeshInstance3D."
 
 msgid "Position/Rotation/Scale 3D tracks only apply to 3D-based nodes."
 msgstr ""
@@ -2154,7 +2165,7 @@ msgid "3D Pos/Rot/Scl Track:"
 msgstr "Pista de Pos/Rot/Escala 3D:"
 
 msgid "Blendshape Track:"
-msgstr "Pista de Forma Combinada:"
+msgstr "Pista de Blendshape:"
 
 msgid "Value Track:"
 msgstr "Pista de Escala 3D:"
@@ -2435,7 +2446,7 @@ msgstr ""
 "enviar datos a través de Internet."
 
 msgid "Go Online"
-msgstr "Ir a Internet"
+msgstr "Conectarse"
 
 msgid "Failed to get repository configuration."
 msgstr "Error al obtener la configuración del repositorio."
@@ -2488,7 +2499,7 @@ msgid "Assets ZIP File"
 msgstr "Archivo ZIP de assets"
 
 msgid "AssetLib"
-msgstr "Biblioteca de Recursos"
+msgstr "Librería de Assets"
 
 msgid "Error opening asset file for \"%s\" (not in ZIP format)."
 msgstr ""
@@ -2500,7 +2511,7 @@ msgstr "%s (ya existe)"
 
 msgid "%d file conflicts with your project and won't be installed"
 msgid_plural "%d files conflict with your project and won't be installed"
-msgstr[0] "%d archivo entra en conflicto con su proyecto y no se instalará"
+msgstr[0] "%d archivo entra en conflicto con tu proyecto y no se instalará"
 msgstr[1] "%d archivos entran en conflicto con tu proyecto y no se instalarán"
 
 msgid "This asset doesn't have a root directory, so it can't be ignored."
@@ -2546,7 +2557,7 @@ msgid "Ignore asset root"
 msgstr "Ignorar la raíz del recurso"
 
 msgid "No files conflict with your project"
-msgstr "Ningún archivo entra en conflicto con su proyecto"
+msgstr "Ningún archivo entra en conflicto con tu proyecto"
 
 msgid "Show contents of the asset and conflicting files."
 msgstr "Mostrar el contenido del recurso y los archivos conflictivos."
@@ -2717,10 +2728,10 @@ msgid "Audio Bus Layout"
 msgstr "Layout del Bus de Audio"
 
 msgid "Step Into"
-msgstr "Entrar En"
+msgstr "Entrar"
 
 msgid "Step Over"
-msgstr "Salir de Aquí"
+msgstr "Saltar Paso"
 
 msgid "Break"
 msgstr "Detener"
@@ -2934,7 +2945,7 @@ msgid "Evaluate"
 msgstr "Evaluar"
 
 msgid "Updating assets on target device:"
-msgstr "Actualizando complementos en el dispositivo de destino:"
+msgstr "Actualizando assets en el dispositivo de destino:"
 
 msgid "Syncing headers"
 msgstr "Sincronizando cabeceras"
@@ -3332,7 +3343,7 @@ msgid "Properties"
 msgstr "Propiedades"
 
 msgid "overrides %s:"
-msgstr "anula %s:"
+msgstr "sobrescribe %s:"
 
 msgid "default:"
 msgstr "predeterminado:"
@@ -4901,7 +4912,7 @@ msgid ""
 "Make sure the editor's user data path is writable."
 msgstr ""
 "Un error ha ocurrido mientras se intentaba guardar el diseño del editor.\n"
-"Asegúrese de que la ruta de datos del usuario del editor tenga permisos de "
+"Asegúrate de que la ruta de datos del usuario del editor tenga permisos de "
 "escritura."
 
 msgid ""
@@ -4959,7 +4970,7 @@ msgstr ""
 "entender mejor este flujo de trabajo."
 
 msgid "Changes may be lost!"
-msgstr "Cambios pueden ser perdidos!"
+msgstr "¡Podrías perder tus cambios!"
 
 msgid "This object is read-only."
 msgstr "Este objeto es de solo lectura."
@@ -4997,8 +5008,8 @@ msgid ""
 "The current scene has no root node, but %d modified external resource(s) and/"
 "or plugin data were saved anyway."
 msgstr ""
-"La escena actual no tiene un nodo raíz, de todas maneras se guardaron datos "
-"de %d recurso(s) externo(s) modificado(s) y extensiones."
+"La escena actual no tiene un nodo raíz, pero %d recurso(s) externo(s) "
+"modificado(s) y/o datos de plugin fueron guardados de todos modos."
 
 msgid ""
 "A root node is required to save the scene. You can add a root node using the "
@@ -5105,10 +5116,12 @@ msgstr "Apertura Rápida de Paleta de Colores..."
 
 msgid "Unable to enable addon plugin at: '%s' parsing of config failed."
 msgstr ""
-"Imposible habilitar plugin de addon en: '%s'. Falló análisis de configuración."
+"No se pudo habilitar el plugin adicional en: '%s', el análisis de la "
+"configuración falló."
 
 msgid "Unable to find script field for addon plugin at: '%s'."
-msgstr "Imposible encontrar campo de script para plugin de addon en: '%s'."
+msgstr ""
+"No se pudo encontrar el campo de script para el plugin adicional en: '%s'."
 
 msgid "Unable to load addon script from path: '%s'."
 msgstr "Imposible cargar script de addon desde: '%s'."
@@ -5125,7 +5138,7 @@ msgstr ""
 msgid ""
 "Unable to load addon script from path: '%s'. Base type is not 'EditorPlugin'."
 msgstr ""
-"Imposible cargar script de addon desde: '%s'. Su tipo base no es "
+"No se pudo cargar el script adicional desde la ruta: '%s'. El tipo base no es "
 "'EditorPlugin'."
 
 msgid "Unable to load addon script from path: '%s'. Script is not in tool mode."
@@ -5205,7 +5218,7 @@ msgid "Loading central editor layout..."
 msgstr "Cargando el diseño del editor central..."
 
 msgid "Loading plugin window layout..."
-msgstr "Cargando complemento del diseño de la ventana..."
+msgstr "Cargando Layout de la ventana del plugin..."
 
 msgid "Editor layout ready."
 msgstr "Diseño del editor listo."
@@ -5631,7 +5644,7 @@ msgid "Output"
 msgstr "Salida"
 
 msgid "Toggle Output Bottom Panel"
-msgstr "Act./Desact. Panel Inferior de Salida"
+msgstr "Alternar panel inferior de salidas"
 
 msgid "Don't Save"
 msgstr "No Guardar"
@@ -5944,8 +5957,8 @@ msgid ""
 "Failed to export Apple Embedded plugins with code %d. Please check the output "
 "log."
 msgstr ""
-"Fallo al exportar los plugins integrados de Apple con el código %d. Por "
-"favor, revisa el registro de salida."
+"Error al exportar los plugins de Apple Embedded con el código %d. Por favor, "
+"revisa el registro de salida."
 
 msgid "Could not create a directory at path \"%s\"."
 msgstr "No se pudo crear un directorio en la ruta \"%s\"."
@@ -6713,7 +6726,7 @@ msgid "Creating autoload scripts..."
 msgstr "Creando scripts de carga automática..."
 
 msgid "Initializing plugins..."
-msgstr "Inicializando complementos..."
+msgstr "Inicializando plugins..."
 
 msgid "Starting file scan..."
 msgstr "Iniciando escaneo de archivos..."
@@ -7380,7 +7393,7 @@ msgid ""
 msgstr ""
 "El material no tiene nombre ni ninguna otra forma de identificarse en la "
 "reimportación.\n"
-"Por favor, dale un nombre o asegúrese de exportarlo con un ID único."
+"Por favor, dale un nombre o asegúrate de exportarlo con un ID único."
 
 msgid "Extract Materials to Resource Files"
 msgstr "Extraer Materiales a Archivos de Recursos"
@@ -7796,6 +7809,14 @@ msgstr ""
 msgid "Property: %s"
 msgstr "Propiedad: %s"
 
+msgid ""
+"Toggling the checkbox is disabled for Resource properties. Modify the "
+"property using the resource picker instead."
+msgstr ""
+"La opción de alternar la casilla de verificación está deshabilitada para las "
+"propiedades de Resource. En su lugar, modifica la propiedad mediante el "
+"selector de recursos."
+
 msgid "Unfavorite Property"
 msgstr "Propiedad no favorita"
 
@@ -8157,6 +8178,9 @@ msgstr "Nuevo Shader..."
 msgid "Size: %s"
 msgstr "Tamaño: %s"
 
+msgid "Invalid file or broken link."
+msgstr "Archivo inválido o enlace roto."
+
 msgid "Type: %s"
 msgstr "Tipo: %s"
 
@@ -8174,6 +8198,9 @@ msgstr "Duración: %0.3fs"
 
 msgid "Advanced settings are always shown when searching."
 msgstr "La configuración avanzada siempre se muestra al buscar."
+
+msgid "Event Configured"
+msgstr "Evento Configurado"
 
 msgid "Configure"
 msgstr "Configurar"
@@ -8213,7 +8240,7 @@ msgid ""
 "Recovery mode is enabled. Enabled plugins will not run while this mode is "
 "active."
 msgstr ""
-"El modo de recuperación está habilitado. Los complementos habilitados no se "
+"Modo de recuperación está habilitado. Los plugins habilitados no se "
 "ejecutarán mientras este modo esté activo."
 
 msgid "Installed Plugins:"
@@ -8273,10 +8300,10 @@ msgid ""
 "If left empty, the folder will be named after the plugin name converted to "
 "`snake_case`."
 msgstr ""
-"Opcional. El nombre de la carpeta generalmente debe usar el nombre en "
-"`snake_case` (evite espacios y caracteres especiales).\n"
-"Si se deja vacía, la carpeta recibirá el nombre del complemento convertido a "
-"`snake_case`."
+"Opcional. El nombre de la carpeta generalmente debe usar la convención "
+"`snake_case` (evita espacios y caracteres especiales).\n"
+"Si se deja vacío, la carpeta se nombrará a partir del nombre del plugin "
+"convertido a `snake_case`."
 
 msgid ""
 "Optional. This description should be kept relatively short (up to 5 lines).\n"
@@ -8309,7 +8336,7 @@ msgid ""
 "to the plugin."
 msgstr ""
 "Requerido. El lenguaje de scripting que se utilizará para el script.\n"
-"Tenga en cuenta que un plugin puede utilizar varios lenguajes a la vez "
+"Ten en cuenta que un plugin puede utilizar varios lenguajes a la vez "
 "agregando más scripts al plugin."
 
 msgid "Script Name:"
@@ -8625,7 +8652,7 @@ msgstr ""
 "la Librería de Assets!"
 
 msgid "Go Online and Open Asset Library"
-msgstr "Ir a Internet y Abrir la Librería de Assets"
+msgstr "Conectarse y Abrir la Librería de Assets"
 
 msgid "Are you sure to run %d projects at once?"
 msgstr "¿Estás seguro de ejecutar %d proyectos a la vez?"
@@ -8876,6 +8903,13 @@ msgstr "El nombre de la etiqueta no puede estar vacío."
 
 msgid "Tag name can't contain spaces."
 msgstr "El nombre de la etiqueta no puede contener espacios."
+
+msgid "Tag name can't begin or end with underscore."
+msgstr ""
+"El nombre de la etiqueta no puede comenzar ni terminar con un guión bajo."
+
+msgid "Tag name can't contain consecutive underscores."
+msgstr "El nombre de la etiqueta no puede contener guiones bajos consecutivos."
 
 msgid "These characters are not allowed in tags: %s."
 msgstr "Estos caracteres no están permitidos en las etiquetas: %s."
@@ -9143,7 +9177,7 @@ msgstr ""
 "Se puede especificar una ruta de archivo de video predeterminada en la "
 "configuración del proyecto, en la categoría Editor > Movie Writer.\n"
 "Alternativamente, para ejecutar escenas individuales, se puede añadir un "
-"metadato de cadena `movie_file` al nodo raíz, \n"
+"metadato de string `movie_file` al nodo raíz, \n"
 "especificando la ruta de un archivo de video que se utilizará al grabar esa "
 "escena."
 
@@ -9859,7 +9893,7 @@ msgid "Create Rest Pose from Bones"
 msgstr "Crear Pose de Reposo a partir de los Huesos"
 
 msgid "Skeleton2D"
-msgstr "Esqueleto 2D"
+msgstr "Skeleton2D"
 
 msgid "Reset to Rest Pose"
 msgstr "Reiniciar a la Pose de Reposo"
@@ -10649,8 +10683,8 @@ msgid ""
 "The material to use for this tile. This can be used to apply a different "
 "blend mode or custom shaders to a single tile."
 msgstr ""
-"El material a utilizar para este tile. Esto puede ser utilizado para aplicar "
-"un modo de mezcla diferente o shaders personalizados a un único tile."
+"El material a usar para este Tile. Esto puede usarse para aplicar un modo de "
+"combinación diferente o shaders personalizados a un solo Tile."
 
 msgid ""
 "The sorting order for this tile. Higher values will make the tile render in "
@@ -10924,6 +10958,12 @@ msgstr "Cambiar Altura de la Forma del Cilindro"
 msgid "Change Separation Ray Shape Length"
 msgstr "Cambiar Longitud de la Forma del Rayo de Separación"
 
+msgid "Remove SoftBody3D pinned point %d"
+msgstr "Eliminar el punto fijado %d de SoftBody3D"
+
+msgid "Add SoftBody3D pinned point %d"
+msgstr "Añadir punto fijado %d de SoftBody3D"
+
 msgid "Change Probe Size"
 msgstr "Cambiar Tamaño de la Sonda"
 
@@ -11129,7 +11169,7 @@ msgid "Contained Mesh is not of type ArrayMesh."
 msgstr "La Malla contenedora no es del tipo ArrayMesh."
 
 msgid "Can't unwrap mesh with blend shapes."
-msgstr "No se puede desenvolver la malla con formas de mezcla."
+msgstr "No se puede desenvolver la malla con formas combinadas."
 
 msgid "Only triangles are supported for lightmap unwrap."
 msgstr "Solo se admiten triángulos para el unwrap de Lightmap."
@@ -11895,7 +11935,7 @@ msgid "Cancel Transformation"
 msgstr "Cancelar Transformación"
 
 msgid "Begin Translate Transformation"
-msgstr "Comenzar la transformación de traducción"
+msgstr "Iniciar Transformación de Traslación"
 
 msgid "Begin Rotate Transformation"
 msgstr "Iniciar Transformación de Rotación"
@@ -12561,7 +12601,7 @@ msgid "Revert"
 msgstr "Revertir"
 
 msgid "Skeleton3D"
-msgstr "Esqueleto 3D"
+msgstr "Skeleton3D"
 
 msgid "Reset All Bone Poses"
 msgstr "Restablecer Todas las Poses de Huesos"
@@ -12986,7 +13026,7 @@ msgid "Adding %s..."
 msgstr "Añadiendo %s..."
 
 msgid "Can't instantiate multiple nodes without root."
-msgstr "No se pueden instanciar varios nodos sin un nodo raíz."
+msgstr "No se pueden instanciar múltiples nodos sin un nodo raíz."
 
 msgid "Circular dependency found at %s."
 msgstr "Dependencia circular encontrada en %s."
@@ -13049,8 +13089,7 @@ msgstr "Añadir Script"
 
 msgid "%s: Callback code won't be generated, please add it manually."
 msgstr ""
-"%s: El código de CallBack no será generado automáticamente, por favor, "
-"agrégalo manualmente."
+"%s: El código del Callback no se generará, por favor, añádelo manualmente."
 
 msgid "Connect to Node:"
 msgstr "Conectar al Nodo:"
@@ -13523,7 +13562,7 @@ msgstr "No se han encontrado tamaños de fuente."
 
 msgid "1 icon"
 msgid_plural "{num} icons"
-msgstr[0] "1 ícono"
+msgstr[0] "1 icono"
 msgstr[1] "{num} íconos"
 
 msgid "No icons found."
@@ -13609,13 +13648,13 @@ msgid "Deselect all visible font size items."
 msgstr "Deseleccionar todos los ítems de tamaño de fuente visibles."
 
 msgid "Select all visible icon items."
-msgstr "Seleccionar todos los ítems de ícono visibles."
+msgstr "Seleccionar todos los ítems de icono visibles."
 
 msgid "Select all visible icon items and their data."
-msgstr "Seleccionar todos los ítems de ícono visibles y sus datos."
+msgstr "Seleccionar todos los ítems de icono visibles y sus datos."
 
 msgid "Deselect all visible icon items."
-msgstr "Deseleccionar todos los ítems de ícono visibles."
+msgstr "Deseleccionar todos los ítems de icono visibles."
 
 msgid "Select all visible stylebox items."
 msgstr "Seleccionar todos los ítems de StyleBox visibles."
@@ -14022,7 +14061,7 @@ msgid "Many"
 msgstr "Muchas"
 
 msgid "Disabled LineEdit"
-msgstr "Desactivar LineEdit"
+msgstr "LineEdit Desactivado"
 
 msgid "Tab 1"
 msgstr "Tab 1"
@@ -15833,7 +15872,7 @@ msgid "Go to the override in the Project Settings."
 msgstr "Ir a la anulación en los Ajustes del Proyecto."
 
 msgid "Remove this override."
-msgstr "Eliminar esta sobrescritura."
+msgstr "Eliminar esta sobreescritura."
 
 msgid "Left Stick Left, Joystick 0 Left"
 msgstr "Joystick Izquierda, Joystick 0 Izquierda"
@@ -16421,6 +16460,9 @@ msgstr "Establecer Constante: %s"
 msgid "Invalid name for varying."
 msgstr "Nombre inválido para el varying."
 
+msgid "Varying with that name already exists."
+msgstr "Ya existe un Varying con ese nombre."
+
 msgid "Boolean type cannot be used with `%s` varying mode."
 msgstr "El tipo booleano no puede usarse con el modo de varying `%s."
 
@@ -16645,7 +16687,7 @@ msgid ""
 "Returns an associated floating-point scalar if the provided boolean value is "
 "true or false."
 msgstr ""
-"Devuelve un escalar de coma flotante asociado si el valor booleano "
+"Devuelve un escalar de punto flotante asociado si el valor booleano "
 "proporcionado es verdadero o falso."
 
 msgid ""
@@ -16942,7 +16984,7 @@ msgid "Finds the truncated value of the parameter."
 msgstr "Encuentra el valor truncado del parámetro."
 
 msgid "Sums two floating-point scalars."
-msgstr "Suma dos productos escalares de coma flotante."
+msgstr "Suma dos productos escalares de punto flotante."
 
 msgid "Sums two integer scalars."
 msgstr "Suma dos productos escalares enteros."
@@ -17005,7 +17047,7 @@ msgstr ""
 "signo."
 
 msgid "Divides two floating-point scalars."
-msgstr "Divide dos productos escalares de coma flotante."
+msgstr "Divide dos productos escalares de punto flotante."
 
 msgid "Divides two integer scalars."
 msgstr "Divide dos productos escalares enteros."
@@ -17014,7 +17056,7 @@ msgid "Divides two unsigned integer scalars."
 msgstr "Divide dos productos escalares enteros sin signo."
 
 msgid "Multiplies two floating-point scalars."
-msgstr "Multiplica dos productos escalares de coma flotante."
+msgstr "Multiplica dos productos escalares de punto flotante."
 
 msgid "Multiplies two integer scalars."
 msgstr "Multiplica dos productos escalares enteros."
@@ -17023,7 +17065,7 @@ msgid "Multiplies two unsigned integer scalars."
 msgstr "Multiplica dos productos escalares enteros sin signo."
 
 msgid "Returns the remainder of the two floating-point scalars."
-msgstr "Devuelve el resto de dos escalares de coma flotante."
+msgstr "Devuelve el resto de dos escalares de punto flotante."
 
 msgid "Returns the remainder of the two integer scalars."
 msgstr "Devuelve el resto de dos escalares enteros."
@@ -17032,7 +17074,7 @@ msgid "Returns the remainder of the two unsigned integer scalars."
 msgstr "Devuelve el resto de dos escalares enteros sin signo."
 
 msgid "Subtracts two floating-point scalars."
-msgstr "Resta de dos escalares de coma flotante."
+msgstr "Resta de dos escalares de punto flotante."
 
 msgid "Subtracts two integer scalars."
 msgstr "Resta de dos escalares enteros."
@@ -17041,7 +17083,7 @@ msgid "Subtracts two unsigned integer scalars."
 msgstr "Resta de dos escalares enteros sin signo."
 
 msgid "Scalar floating-point constant."
-msgstr "Constante escalar de coma flotante."
+msgstr "Constante escalar de punto flotante."
 
 msgid "Scalar integer constant."
 msgstr "Constante escalar entero."
@@ -17050,7 +17092,7 @@ msgid "Scalar unsigned integer constant."
 msgstr "Constante escalar entero sin signo."
 
 msgid "Scalar floating-point parameter."
-msgstr "Parámetro escalar de coma flotante."
+msgstr "Parámetro escalar de punto flotante."
 
 msgid "Scalar integer parameter."
 msgstr "Parámetro escalar entero."
@@ -17487,7 +17529,7 @@ msgid ""
 "it later in the Expressions. You can also declare varyings, parameters and "
 "constants."
 msgstr ""
-"Expresión personalizada en el Lenguaje de Shaders de Godot, que se coloca al "
+"Expresión personalizada en el lenguaje de shaders de Godot, que se coloca al "
 "inicio del shader resultante. Puedes definir varias funciones dentro y "
 "llamarlas más tarde en las Expresiones. También puedes declarar varyings, "
 "parámetros y constantes."
@@ -17627,7 +17669,7 @@ msgid "POT Generation"
 msgstr "Generación de POT"
 
 msgid "Files with translation strings:"
-msgstr "Archivos con cadenas de traducción:"
+msgstr "Archivos con strings de traducción:"
 
 msgid "Generate POT"
 msgstr "Generar POT"
@@ -17637,15 +17679,14 @@ msgstr "Añadir Cadenas Integradas a POT"
 
 msgid "Add strings from built-in components such as certain Control nodes."
 msgstr ""
-"Agregar cadenas de componentes integrados como ciertos nodos de Control."
+"Agregar strings de componentes integrados como ciertos nodos de Control."
 
 msgid ""
 "No VCS plugins are available in the project. Install a VCS plugin to use VCS "
 "integration features."
 msgstr ""
-"El proyecto no tiene plugins de control de versiones. Para usar las "
-"características de integración de control de versiones, instale un plugin de "
-"SCV."
+"No hay plugins de VCS disponibles en el proyecto. Instala un plugin de VCS "
+"para usar las funciones de integración de VCS."
 
 msgid ""
 "Remote settings are empty. VCS features that use the network may not work."
@@ -17909,6 +17950,9 @@ msgstr "Se esperaba un entero entre 0 y 2^32 - 1."
 
 msgid "Expected a string of length 1 (a character)."
 msgstr "Se esperaba una string de longitud 1 (un carácter)."
+
+msgid "Range too big."
+msgstr "El rango es demasiado grande."
 
 msgid "Cannot resize array."
 msgstr "No se puede cambiar el tamaño del array."
@@ -18475,7 +18519,7 @@ msgstr ""
 "geometría fuente y luego crea los vértices y polígonos de navegación."
 
 msgid "Clear NavigationPolygon"
-msgstr "Limpiar Polígono de Navegación"
+msgstr "Limpiar NavigationPolygon"
 
 msgid "Clears the internal NavigationPolygon outlines, vertices and polygons."
 msgstr ""
@@ -18578,10 +18622,10 @@ msgstr ""
 "geometría fuente y luego crea los vértices y polígonos de navegación."
 
 msgid "Clear NavigationMesh"
-msgstr "Limpiar Malla de Navegación"
+msgstr "Limpiar NavigationMesh"
 
 msgid "Clears the internal NavigationMesh vertices and polygons."
-msgstr "Limpia los vértices y polígonos internos de la malla de navegación."
+msgstr "Limpia los vértices y polígonos internos de la NavigationMesh."
 
 msgid "Baking NavigationMesh ..."
 msgstr "Procesar NavigationMesh..."
@@ -18854,6 +18898,13 @@ msgstr ""
 msgid "\"Use Gradle Build\" must be enabled to use the plugins."
 msgstr ""
 "\"Usar Construcción de Gradle\" debe estar activado para usar los plugins."
+
+msgid ""
+"\"Compress Native Libraries\" is only valid when \"Use Gradle Build\" is "
+"enabled."
+msgstr ""
+"\"Comprimir Librerías Nativas\" solo es válido cuando \"Usar compilación de "
+"Gradle\" está habilitado."
 
 msgid "\"Export AAB\" is only valid when \"Use Gradle Build\" is enabled."
 msgstr ""
@@ -19440,7 +19491,7 @@ msgid "The notarization process generally takes less than an hour."
 msgstr "El proceso de notarización generalmente toma menos de una hora."
 
 msgid ""
-"You can check progress manually by opening a Terminal and running the "
+"You can check the progress manually by opening a Terminal and running the "
 "following command:"
 msgstr ""
 "Puedes verificar el progreso manualmente abriendo una Terminal y ejecutando "
@@ -19458,6 +19509,13 @@ msgstr "Las herramientas de línea de comandos de Xcode no están instaladas."
 
 msgid "Could not start xcrun executable."
 msgstr "No se pudo iniciar el ejecutable xcrun."
+
+msgid ""
+"See instructions on finding your team ID: https://developer.apple.com/help/"
+"glossary/team-id"
+msgstr ""
+"Consulta las instrucciones para encontrar tu ID de equipo: https://"
+"developer.apple.com/la/help/glossary/team-id"
 
 msgid "Built-in CodeSign failed with error \"%s\"."
 msgstr "El CodeSign incorporado falló con el error \"%s\"."
@@ -19748,13 +19806,13 @@ msgid "Resources Modification"
 msgstr "Modificación de Recursos"
 
 msgid "Icon size \"%d\" is missing."
-msgstr "Falta el tamaño del ícono \"%d\"."
+msgstr "Falta el tamaño del icono \"%d\"."
 
 msgid "Failed to rename temporary file \"%s\"."
 msgstr "Fallo al renombrar el archivo temporal \"%s\"."
 
 msgid "Invalid icon path."
-msgstr "Ruta de ícono inválida."
+msgstr "Ruta de icono inválida."
 
 msgid "Invalid file version."
 msgstr "Versión de archivo inválida."
@@ -19763,7 +19821,7 @@ msgid "Invalid product version."
 msgstr "Versión de producto inválida."
 
 msgid "Invalid icon file \"%s\"."
-msgstr "Archivo de ícono \"%s\" inválido."
+msgstr "Archivo de icono \"%s\" inválido."
 
 msgid "Could not find signtool executable at \"%s\"."
 msgstr "No se pudo encontrar el ejecutable de signtool en \"%s\"."
@@ -20079,7 +20137,7 @@ msgstr ""
 msgid ""
 "This bone lacks a proper REST pose. Go to the Skeleton2D node and set one."
 msgstr ""
-"Este hueso no tiene una pose de DESCANSO adecuada. Ve al nodo Skeleton2D y "
+"Este hueso no tiene una pose de REST adecuada. Ve al nodo Skeleton2D y "
 "asígnale una."
 
 msgid ""
@@ -20092,7 +20150,7 @@ msgstr ""
 "El nodo TileMap está obsoleto, ya que ha sido reemplazado por el uso de "
 "múltiples nodos TileMapLayer.\n"
 "Para convertir un TileMap en un conjunto de nodos TileMapLayer, abre el panel "
-"inferior de TileMap con este nodo seleccionado, haz clic en el ícono de la "
+"inferior de TileMap con este nodo seleccionado, haz clic en el icono de la "
 "caja de herramientas en la esquina superior derecha y elige \"Extraer capas "
 "de TileMap como nodos individuales de TileMapLayer\"."
 
@@ -20187,10 +20245,11 @@ msgid ""
 "maps onto the underlying surface.\n"
 "If you don't want the Albedo texture to be visible, set Albedo Mix to 0."
 msgstr ""
-"El decal tiene una textura Normal y/o ORM, pero no tiene una textura Albedo.\n"
-"Se requiere una textura Albedo con un canal alfa para mezclar los mapas "
-"normales/ORM en la superficie subyacente.\n"
-"Si no desea que la textura Albedo sea visible, ajuste Mezcla Albedo a 0."
+"El decal tiene una textura Normal y/o ORM, pero no se ha establecido ninguna "
+"textura Albedo.\n"
+"Se requiere una textura Albedo con un canal alfa para combinar los mapas "
+"normal/ORM sobre la superficie subyacente.\n"
+"Si no quieres que la textura Albedo sea visible, establece Mezcla Albedo a 0."
 
 msgid ""
 "The decal's Cull Mask has no bits enabled, which means the decal will not "
@@ -21146,6 +21205,15 @@ msgstr "No se permite la recursión."
 msgid "Function '%s' can't be called from source code."
 msgstr "La función '%s' no puede ser llamada desde el código fuente."
 
+msgid "No matching function for \"%s\" call:"
+msgstr "No se ha encontrado ninguna función que coincida con la llamada \"%s\":"
+
+msgid ""
+"candidate function \"%s(%s)\" not viable, argument %d should be %s but is %s."
+msgstr ""
+"La función candidata \"%s(%s)\" no es viable, el argumento %d debería ser %s "
+"pero es %s."
+
 msgid ""
 "Too few arguments for \"%s(%s)\" call. Expected at least %d but received %d."
 msgstr ""
@@ -21557,10 +21625,10 @@ msgid "Enum hint is for '%s' only."
 msgstr "La sugerencia de enumeración es solo para '%s'."
 
 msgid "Expected a string constant."
-msgstr "Se esperaba una constante de cadena."
+msgstr "Se esperaba una constante de string."
 
 msgid "Expected ',' or ')' after string constant."
-msgstr "Se esperaba ',' o ')' después de la constante de cadena."
+msgstr "Se esperaba ',' o ')' después de la constante de string."
 
 msgid "Can only specify '%s' once."
 msgstr "Solo se puede especificar '%s' una vez."

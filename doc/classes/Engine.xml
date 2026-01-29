@@ -48,9 +48,7 @@
 			<return type="Dictionary" />
 			<description>
 				Returns a [Dictionary] of categorized donor names. Each entry is an [Array] of strings:
-				{[code]platinum_sponsors[/code], [code]gold_sponsors[/code], [code]silver_sponsors[/code], [code]bronze_sponsors[/code], [code]mini_sponsors[/code], [code]gold_donors[/code], [code]silver_donors[/code], [code]bronze_donors[/code]}
-				See also [method get_godot_donor_info] for Godot's donor info.
-				[b]Warning:[/b] All donor names are empty. This currently maintained for compatibility with Redot.
+				{[code]donors[/code]}
 			</description>
 		</method>
 		<method name="get_frames_drawn">
@@ -105,14 +103,6 @@
 				[/csharp]
 				[/codeblocks]
 				See also [method get_version_info] for Redot's version info.
-			</description>
-		</method>
-		<method name="get_godot_donor_info" qualifiers="const">
-			<return type="Dictionary" />
-			<description>
-				Returns a [Dictionary] of categorized donor names for Godot. Each entry is an [Array] of strings:
-				{[code]platinum_sponsors[/code], [code]gold_sponsors[/code], [code]silver_sponsors[/code], [code]bronze_sponsors[/code], [code]mini_sponsors[/code], [code]gold_donors[/code], [code]silver_donors[/code], [code]bronze_donors[/code]}
-				See also [method get_donor_info] for Redot's donor info.
 			</description>
 		</method>
 		<method name="get_license_info" qualifiers="const">
