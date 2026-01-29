@@ -246,6 +246,7 @@ class EditorInspectorPluginSkeleton : public EditorInspectorPlugin {
 
 	friend class Skeleton3DEditorPlugin;
 	friend class Skeleton3DGizmoPlugin;
+	friend class Skeleton3DEditor;
 
 	Skeleton3DEditor *skeleton_editor = nullptr;
 

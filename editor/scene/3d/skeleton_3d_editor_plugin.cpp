@@ -201,6 +201,7 @@ void BonePropertiesEditor::_show_add_meta_dialog() {
 		add_child(add_meta_dialog);
 	}
 
+	ERR_FAIL_NULL(skeleton_editor);
 	int bone = skeleton_editor->get_selected_bone();
 	StringName dialog_title = skeleton->get_bone_name(bone);
 
@@ -210,6 +211,7 @@ void BonePropertiesEditor::_show_add_meta_dialog() {
 }
 
 void BonePropertiesEditor::_add_meta_confirm() {
+	ERR_FAIL_NULL(skeleton_editor);
 	int bone = skeleton_editor->get_selected_bone();
 	String name = add_meta_dialog->get_meta_name();
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
@@ -288,7 +290,7 @@ void BonePropertiesEditor::_property_keyed(const String &p_path, bool p_advance)
 }
 
 void BonePropertiesEditor::_update_properties() {
-	if (!skeleton) {
+	if (!skeleton || !skeleton_editor) {
 		return;
 	}
 	int selected = skeleton_editor->get_selected_bone();
@@ -1164,6 +1166,9 @@ void Skeleton3DEditor::_notification(int p_what) {
 			update_joint_tree();
 		} break;
 		case NOTIFICATION_PREDELETE: {
+			if (editor_plugin) {
+				editor_plugin->skeleton_editor = nullptr;
+			}
 			if (skeleton) {
 				select_bone(-1); // Requires that the joint_tree has not been deleted.
 				_disconnect_from_skeleton();
