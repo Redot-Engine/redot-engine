@@ -1,10 +1,10 @@
 short_name = "redot"
 name = "Redot Engine LTS"
 major = 26
-minor = 1
+minor = 2
 patch = 0
-status = "stable"
-status_version = 0
+status = "alpha"
+status_version = 1
 module_config = ""
 website = "https://redotengine.org"
 docs = "latest"
