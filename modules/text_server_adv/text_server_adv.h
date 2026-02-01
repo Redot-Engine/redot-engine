@@ -96,6 +96,11 @@ using namespace godot;
 
 // Thirdparty headers.
 
+GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Wshadow")
+#ifdef __EMSCRIPTEN__
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wunnecessary-virtual-specifier")
+#endif
+
 #include <unicode/ubidi.h>
 #include <unicode/ubrk.h>
 #include <unicode/uchar.h>
@@ -108,6 +113,11 @@ using namespace godot;
 #include <unicode/uspoof.h>
 #include <unicode/ustring.h>
 #include <unicode/utypes.h>
+
+GODOT_GCC_WARNING_POP
+#ifdef __EMSCRIPTEN__
+GODOT_CLANG_WARNING_POP
+#endif
 
 #ifdef MODULE_FREETYPE_ENABLED
 #include <ft2build.h>
@@ -371,7 +381,7 @@ class TextServerAdvanced : public TextServerExtension {
 		HashMap<String, bool> script_support_overrides;
 
 		PackedByteArray data;
-		const uint8_t *data_ptr;
+		const uint8_t *data_ptr = nullptr;
 		size_t data_size;
 		int face_index = 0;
 

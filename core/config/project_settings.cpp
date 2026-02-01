@@ -1578,6 +1578,8 @@ ProjectSettings::ProjectSettings() {
 	GLOBAL_DEF("application/config/auto_accept_quit", true);
 	GLOBAL_DEF("application/config/quit_on_go_back", true);
 
+	GLOBAL_DEF_BASIC("application/boot_splash/bg_color", Color(0.14, 0.14, 0.14));
+
 	GLOBAL_DEF_BASIC(PropertyInfo(Variant::INT, "accessibility/general/accessibility_support", PROPERTY_HINT_ENUM, "Auto (When Screen Reader is Running),Always Active,Disabled"), 0);
 	GLOBAL_DEF_BASIC(PropertyInfo(Variant::INT, "accessibility/general/updates_per_second", PROPERTY_HINT_RANGE, "1,100,1"), 60);
 
@@ -1736,6 +1738,14 @@ ProjectSettings::ProjectSettings() {
 	GLOBAL_DEF("navigation/baking/thread_model/baking_use_multiple_threads", true);
 	GLOBAL_DEF("navigation/baking/thread_model/baking_use_high_priority_threads", true);
 #endif // !defined(NAVIGATION_2D_DISABLED) || !defined(NAVIGATION_3D_DISABLED)
+#ifndef NAVIGATION_2D_DISABLED
+	GLOBAL_DEF("navigation/2d/warnings/navmesh_edge_merge_errors", true);
+	GLOBAL_DEF("navigation/2d/warnings/navmesh_cell_size_mismatch", true);
+#endif // NAVIGATION_2D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+	GLOBAL_DEF("navigation/3d/warnings/navmesh_edge_merge_errors", true);
+	GLOBAL_DEF("navigation/3d/warnings/navmesh_cell_size_mismatch", true);
+#endif // NAVIGATION_3D_DISABLED
 
 	ProjectSettings::get_singleton()->add_hidden_prefix("input/");
 }

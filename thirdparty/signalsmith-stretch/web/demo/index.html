@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Signalsmith Stretch Web Audio demo</title>
+		<link rel="stylesheet" href="/style/article/dist.css">
+		<style>
+			#start-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				height: 100vh;
+				width: 100vw;
+				display: flex;
+				flex-direction: column;
+    				z-index: 100;
+			}
+			button {
+				justify-content: center;
+				align-items: center;
+				flex-grow: 1;
+				font: inherit;
+			}
+			
+			:root {
+				font-size: calc(min(12pt, 4.3vh));
+			}
+		
+			body {
+				margin: 0;
+				padding: 0;
+				position: fixed;
+				height: 100vh;
+				width: 100vw;
+				max-height: 100vh;
+				max-width: 100vw;
+				display: grid;
+				grid-template-areas: "playstop playback upload" "controls controls controls" "scope scope scope";
+				grid-template-columns: 3.5rem 1fr 6rem;
+				grid-template-rows: max-content 2fr 6rem;
+			}
+			
+			#controls {
+				grid-area: controls;
+				display: grid;
+				grid-template-columns: max-content 1fr max-content;
+				grid-auto-rows: max-content;
+				padding: 1rem;
+				align-content: space-evenly;
+			}
+			#controls label {
+				grid-column: 1;
+				text-align: right;
+				padding-right: 1ex;
+			}
+			#controls input[type=range], #controls input[type=checkbox] {
+				grid-column: 2;
+				font: inherit;
+				flex-grow: 0.25;
+			}
+			#controls input[type=range] {
+				flex-grow: 1;
+			}
+			#controls input[type=number] {
+				grid-column: 3;
+				font: inherit;
+			}
+
+			#scope {
+				grid-area: scope;
+				width: 100%;
+				height: 6rem;
+				max-height: 100%;
+				border: none;
+			}
+			#playstop {
+				grid-area: playstop;
+			}
+			#playback {
+				grid-area: playback;
+				height: 100%;
+				position: relative;
+				padding: 0;
+				margin: 0 1rex;
+				accent-color: currentcolor;
+			}
+			#playback::before {
+				content: '';
+				background: #DDD;
+				box-shadow: rgba(0, 0, 0, 0.267) 0px -8px 3px -8px inset, rgba(255, 255, 255, 0.2) 0px 6px 2px -4px inset;
+				position: absolute;
+				left: -1rem;
+				right: -1rem;
+				height: 100%;
+				z-index: -1;
+			}
+			#upload, #upload-file {
+				grid-area: upload;
+			}
+		</style>
+	</head>
+	<body>
+		<button id="playstop" alt="toggle play">...</button>
+		<input id="playback" type="range" value="0" min="0" max="1" step="0.001">
+		<input id="upload-file" type="file" style="visibility: hidden" accept="audio/*">
+		<button id="upload">upload</button>
+		<div id="controls">
+			<label>rate</label>
+			<input type="range" min="0" max="4" step="0.01" data-key="rate" class="diagram-blue">
+			<input type="number" min="0" max="4" step="0.01" data-key="rate" class="diagram-blue">
+			<label>semitones</label>
+			<input type="range" min="-12" max="12" step="1" data-key="semitones" class="diagram-red">
+			<input type="number" min="-12" max="12" step="1" data-key="semitones" class="diagram-red">
+			<label>tonality limit</label>
+			<input type="range" min="2000" max="20000" step="100" data-key="tonalityHz" class="diagram-red">
+			<input type="number" min="2000" max="20000" step="1" data-key="tonalityHz" class="diagram-red">
+			<label>formant</label>
+			<div style="display: flex">
+				<input type="checkbox" data-key="formantCompensation" class="diagram-yellow">
+				<input type="range" min="50" max="500" step="1" data-key="formantBaseHz" class="diagram-brown">
+			</div>
+			<input type="number" min="50" max="500" step="1" data-key="formantBaseHz" class="diagram-brown">
+			<label>block (ms)</label>
+			<input type="range" min="50" max="180" step="1" data-key="blockMs" class="diagram-green">
+			<input type="number" min="50" max="180" step="1" data-key="blockMs" class="diagram-green">
+			<label>overlap</label>
+			<input type="range" min="2" max="8" step="0.1" data-key="overlap" class="diagram-green">
+			<input type="number" min="2" max="8" step="0.1" data-key="overlap" class="diagram-green">
+		</div>
+		<script type="module">
+			import SignalsmithStretch from "../release/SignalsmithStretch.mjs";
+			import Scope from './Scope.mjs';
+			let $ = document.querySelector.bind(document);
+			let $$ = document.querySelectorAll.bind(document);
+			
+			(async () => {
+				let audioContext = new AudioContext();
+				let stretch;
+				let audioDuration = 1;
+
+				let controlValuesInitial = {
+					active: false,
+					rate: 1,
+					semitones: 0,
+					tonalityHz: 8000,
+					formantSemitones: 0,
+					formantCompensation: false,
+					formantBaseHz: 200,
+					loopStart: 0,
+					loopEnd: 0 // disabled (<= start), but this gets set when we load an audio file
+				};
+				let controlValues = Object.assign({}, controlValuesInitial);
+				let configValuesInitial = {
+					blockMs: 120,
+					overlap: 4,
+					splitComputation: true
+				};
+				let configValues = Object.assign({}, configValuesInitial);
+
+				let scope;
+				if (!/Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile/.test(navigator.userAgent)) {
+					// add scope for fun, but only on desktop
+					scope = await Scope(audioContext);
+					scope.connect(audioContext.destination);
+					let scopeFrame = scope.openInterface();
+					scopeFrame.id = 'scope';
+					document.body.appendChild(scopeFrame);
+				}
+
+				// Drop zone
+				document.body.ondragover = event => {
+					  event.preventDefault();
+				}
+				document.body.ondrop = handleDrop;
+
+				function handleDrop(event) {
+					event.preventDefault();
+					var dt = event.dataTransfer;
+					handleFile(dt.items ? dt.items[0].getAsFile() : dt.files[0]);
+				}
+				function handleFile(file) {
+					return new Promise((pass, fail) => {
+						var reader = new FileReader();
+						reader.onload = e => pass(handleArrayBuffer(reader.result));
+						reader.onerror = fail;
+						reader.readAsArrayBuffer(file);
+					});
+				}
+				async function handleArrayBuffer(arrayBuffer) {
+					let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+					audioDuration = audioBuffer.duration;
+					let channelBuffers = []
+					for (let c = 0; c < audioBuffer.numberOfChannels; ++c) {
+						channelBuffers.push(audioBuffer.getChannelData(c));
+					}
+					// fresh node
+					if (stretch) {
+						stretch.stop();
+						stretch.disconnect();
+					}
+					stretch = await SignalsmithStretch(audioContext);
+					stretch.connect(scope || audioContext.destination);
+					await stretch.addBuffers(channelBuffers);
+					controlValues.loopEnd = audioDuration;
+					configChanged();
+					controlsChanged();
+				}
+				
+				// fetch audio and add buffer
+				let response = await fetch('loop.mp3');
+				handleArrayBuffer(await response.arrayBuffer());
+				
+				$('#playstop').onclick = e => {
+					controlValues.active = !controlValues.active;
+					controlsChanged(0.15);
+				};
+				$$('#controls input').forEach(input => {
+					let isCheckbox = input.type == 'checkbox';
+					let key = input.dataset.key;
+					input.oninput = input.onchange = e => {
+						let value = isCheckbox ? input.checked : parseFloat(input.value);
+						if (key in controlValues) {
+							controlValues[key] = value;
+							controlsChanged();
+						} else if (key in configValues) {
+							configValues[key] = value;
+							configChanged();
+						}
+					};
+					if (!isCheckbox) input.ondblclick = e => {
+						if (key in controlValues) {
+							controlValues[key] = controlValuesInitial[key];
+							controlsChanged();
+						} else if (key in configValues) {
+							configValues[key] = configValuesInitial[key];
+							configChanged();
+						}
+					};
+				});
+				function controlsChanged(scheduleAhead) {
+					$('#playstop').innerHTML = '<svg alt="toggle play" height="1em" width="1em" viewbox="0 0 8 8" style="vertical-align:middle"><path d="' + (controlValues.active ? 'M1 1L3 1 3 7 1 7ZM5 1 7 1 7 7 5 7Z' : 'M1 0L8 4 1 8') + '" fill="currentColor"/></svg>';
+
+					$$('#controls input').forEach(input => {
+						let key = input.dataset.key;
+						if (key in controlValues) {
+							let value = controlValues[key];
+							// Update value if it doesn't match
+							if (value !== parseFloat(input.value)) input.value = value;
+						}
+					});
+
+					if (stretch) {
+						let obj = Object.assign({output: audioContext.currentTime + (scheduleAhead || 0)}, controlValues);
+						stretch.schedule(obj);
+					}
+					audioContext.resume();
+				}
+				controlsChanged();
+				let configTimeout = null;
+				function configChanged() {
+					$$('#controls input').forEach(input => {
+						let key = input.dataset.key;
+						if (key in configValues) {
+							let value = configValues[key];
+							// Update value if it doesn't match
+							if (value !== parseFloat(input.value)) input.value = value;
+						}
+					});
+
+					if (configTimeout == null) {
+						configTimeout = setTimeout(_ => {
+							configTimeout = null;
+							if (stretch) {
+								stretch.configure({
+									blockMs: configValues.blockMs,
+									intervalMs: configValues.blockMs/configValues.overlap,
+									splitComputation: configValues.splitComputation,
+								});
+							}
+						}, 50);
+					}
+					audioContext.resume();
+				}
+				controlsChanged();
+				
+				$('#upload').onclick = e => $('#upload-file').click();
+				$('#upload-file').onchange = async e => {
+					stretch.stop();
+					await handleFile($('#upload-file').files[0]).catch(e => alert(e.message));
+					if (stretch) {
+						controlValues.active = true;
+						controlsChanged();
+					}
+				}
+				
+				let playbackPosition = $('#playback');
+				setInterval(_ => {
+					playbackPosition.max = audioDuration;
+					playbackPosition.value = stretch?.inputTime;
+				}, 100);
+				let playbackHeld = false;
+				function updatePlaybackPosition(e) {
+					let inputTime = parseFloat(playbackPosition.value);
+					let obj = Object.assign({}, controlValues);
+					if (playbackHeld) obj.rate = 0;
+					stretch.schedule(Object.assign({input: inputTime}, obj));
+				}
+				playbackPosition.onmousedown = e => {
+					playbackHeld = true;
+				};
+				playbackPosition.onmouseup = playbackPosition.onmousecancel = e => {
+					playbackHeld = false;
+				};
+				playbackPosition.oninput = playbackPosition.onchange = updatePlaybackPosition;
+			})();
+		</script>
+	</body>
+</html>

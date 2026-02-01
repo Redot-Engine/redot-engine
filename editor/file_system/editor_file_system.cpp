@@ -2796,6 +2796,7 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 
 	ResourceUID::ID uid = ResourceUID::INVALID_ID;
 	Variant generator_parameters;
+	String group_file;
 	if (p_generator_parameters) {
 		generator_parameters = *p_generator_parameters;
 	}
@@ -2823,6 +2824,10 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 				if (cf->has_section_key("remap", "uid")) {
 					String uidt = cf->get_value("remap", "uid");
 					uid = ResourceUID::get_singleton()->text_to_id(uidt);
+				}
+
+				if (cf->has_section_key("remap", "group_file")) {
+					group_file = cf->get_value("remap", "group_file");
 				}
 
 				if (!p_generator_parameters) {
@@ -2920,6 +2925,9 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 		}
 
 		f->store_line("uid=\"" + ResourceUID::get_singleton()->id_to_text(uid) + "\""); // Store in readable format.
+		if (!group_file.is_empty()) {
+			f->store_line("group_file=\"" + group_file + "\"");
+		}
 
 		if (err == OK) {
 			if (importer->get_save_extension().is_empty()) {
@@ -3088,7 +3096,7 @@ Error EditorFileSystem::_copy_file(const String &p_from, const String &p_to) {
 		}
 
 		// Roll a new uid for this copied .import file to avoid conflict.
-		ResourceUID::ID res_uid = ResourceUID::get_singleton()->create_id();
+		ResourceUID::ID res_uid = ResourceUID::get_singleton()->create_id_for_path(p_to);
 
 		// Save the new .import file
 		Ref<ConfigFile> cfg;
@@ -3273,7 +3281,12 @@ void EditorFileSystem::reimport_files(const Vector<String> &p_files) {
 	// Emit the resource_reimporting signal for the single file before the actual importation.
 	emit_signal(SNAME("resources_reimporting"), reloads);
 
-#ifdef THREADS_ENABLED
+#ifdef WEB_ENABLED
+	// On web, busy-wait loops on the main thread block the JavaScript event loop,
+	// causing the browser tab to appear frozen. Disable threaded imports entirely.
+	// See GH-112072 for details.
+	bool use_multiple_threads = false;
+#elif defined(THREADS_ENABLED)
 	bool use_multiple_threads = GLOBAL_GET("editor/import/use_multiple_threads");
 #else
 	bool use_multiple_threads = false;
@@ -3444,7 +3457,7 @@ bool EditorFileSystem::_should_skip_directory(const String &p_path) {
 
 	if (FileAccess::exists(p_path.path_join("project.godot"))) {
 		// Skip if another project inside this.
-		if (EditorFileSystem::get_singleton()->first_scan) {
+		if (EditorFileSystem::get_singleton() == nullptr || EditorFileSystem::get_singleton()->first_scan) {
 			WARN_PRINT_ONCE(vformat("Detected another project.godot at %s. The folder will be ignored.", p_path));
 		}
 		return true;
@@ -3742,7 +3755,9 @@ void EditorFileSystem::remove_import_format_support_query(Ref<EditorFileSystemIm
 }
 
 EditorFileSystem::EditorFileSystem() {
-#ifdef THREADS_ENABLED
+#if defined(THREADS_ENABLED) && !defined(WEB_ENABLED)
+	// On web, threaded scanning blocks the browser's event loop, causing freezes.
+	// See GH-112072 for details.
 	use_threads = true;
 #endif
 

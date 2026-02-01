@@ -79,6 +79,7 @@
 #include "servers/navigation_server_3d.h"
 #include "servers/rendering_server.h"
 
+#include "docks/uid_viewer_dock.h"
 #include "editor/animation/animation_player_editor_plugin.h"
 #include "editor/asset_library/asset_library_editor_plugin.h"
 #include "editor/audio/audio_stream_preview.h"
@@ -1697,7 +1698,7 @@ void EditorNode::save_resource_as(const Ref<Resource> &p_resource, const String 
 				file->set_current_file(String());
 			}
 		}
-	} else if (!p_resource->get_path().is_empty()) {
+	} else if (!p_resource->get_path().get_base_dir().is_empty()) {
 		file->set_current_path(p_resource->get_path());
 		if (!extensions.is_empty()) {
 			const String ext = p_resource->get_path().get_extension().to_lower();
@@ -3514,7 +3515,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			about->popup_centered(Size2(780, 500) * EDSCALE);
 		} break;
 		case HELP_SUPPORT_GODOT_DEVELOPMENT: {
-			OS::get_singleton()->shell_open("https://redotengine.org/donate");
+			OS::get_singleton()->shell_open("https://ko-fi.com/redotengine");
 		} break;
 	}
 }
@@ -7915,7 +7916,7 @@ EditorNode::EditorNode() {
 	center_split->set_name("DockVSplitCenter");
 	center_split->set_vertical(true);
 	center_split->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	center_split->set_collapsed(false);
+	center_split->set_collapsed(true);
 	center_vb->add_child(center_split);
 
 	right_hsplit = memnew(DockSplitContainer);
@@ -8448,6 +8449,13 @@ EditorNode::EditorNode() {
 	bottom_panel = memnew(EditorBottomPanel);
 	center_split->add_child(bottom_panel);
 	center_split->set_dragger_visibility(SplitContainer::DRAGGER_HIDDEN);
+
+	//UIDViewer
+
+	UIDViewerDock *uid_viewer_dock = memnew(UIDViewerDock);
+	uid_viewer_dock->set_name("UID Viewer");
+	bottom_panel->add_item(TTR("UID Viewer"), uid_viewer_dock,
+			EditorNode::get_singleton()->get_gui_base()->get_theme_icon(SNAME("ResourceUID"), SNAME("EditorIcons")));
 
 	log = memnew(EditorLog);
 	Button *output_button = bottom_panel->add_item(TTRC("Output"), log, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_output_bottom_panel", TTRC("Toggle Output Bottom Panel"), KeyModifierMask::ALT | Key::O));

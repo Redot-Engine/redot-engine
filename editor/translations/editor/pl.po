@@ -85,19 +85,22 @@
 # Marcin Zieliński <czolgista83@gmail.com>, 2023.
 # Aleksander Łagowiec <mineolek10@users.noreply.hosted.weblate.org>, 2023.
 # Zartio <i.tokajo@gmail.com>, 2024.
-# Piotr Kostrzewski <piotr.kostrzewski2@outlook.com>, 2024.
+# Piotr Kostrzewski <piotr.kostrzewski2@outlook.com>, 2024, 2025.
 # Szymon Hałucha <99204426+SzymonHalucha@users.noreply.github.com>, 2024.
 # Krzysztof Rams <krzysztofeczek@gmail.com>, 2024, 2025.
 # gre-gorn <gre-gorn@users.noreply.hosted.weblate.org>, 2024.
 # Dawid Kobylewski <d.kobylewski@gmail.com>, 2024.
 # Bartosz Nowaczyk <bartus.nowaczyk@gmail.com>, 2025.
 # Cyprian Klimaszewski <cyprian.klimaszewski@gmail.com>, 2025.
+# Marcus Cadaver <pilekc@hotmail.com>, 2025.
+# "A Thousand Ships (she/her)" <over999ships@gmail.com>, 2025.
+# MiloszS <m.sobczyk.official@gmail.com>, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor interface\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2025-09-07 17:17+0000\n"
+"PO-Revision-Date: 2025-12-02 02:07+0000\n"
 "Last-Translator: Tomek <kobewi4e@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/godot-engine/godot/"
 "pl/>\n"
@@ -107,10 +110,10 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 msgid "Unset"
-msgstr "Nieustalone"
+msgstr "Niewybrane"
 
 msgid "Physical"
 msgstr "Fizyczny"
@@ -749,6 +752,9 @@ msgstr "Krok Y siatki"
 msgid "Blend X Value"
 msgstr "Wartość mieszania X"
 
+msgid "Blend Y Value"
+msgstr "Wartość mieszania Y"
+
 msgid "Max Y"
 msgstr "Maks. Y"
 
@@ -763,6 +769,9 @@ msgstr "Min. X"
 
 msgid "X Value"
 msgstr "Wartość X"
+
+msgid "Max X"
+msgstr "Maks. X"
 
 msgid "Parameter Changed: %s"
 msgstr "Parametr zmieniony: %s"
@@ -7670,6 +7679,13 @@ msgstr "Nazwy zaczynające się od _ są zarezerwowane dla metadanych edytora."
 msgid "Property: %s"
 msgstr "Właściwość: %s"
 
+msgid ""
+"Toggling the checkbox is disabled for Resource properties. Modify the "
+"property using the resource picker instead."
+msgstr ""
+"Przełączanie pola wyboru jest wyłączone dla właściwości Resource. Zamiast "
+"tego zmodyfikuj właściwość używając wybieracza zasobów."
+
 msgid "Unfavorite Property"
 msgstr "Nie lub właściwości"
 
@@ -8030,6 +8046,9 @@ msgstr "Nowy Shader..."
 msgid "Size: %s"
 msgstr "Rozmiar: %s"
 
+msgid "Invalid file or broken link."
+msgstr "Nieprawidłowy plik lub uszkodzone łącze."
+
 msgid "Type: %s"
 msgstr "Typ: %s"
 
@@ -8047,6 +8066,9 @@ msgstr "Długość: %0.3fs"
 
 msgid "Advanced settings are always shown when searching."
 msgstr "Zaawansowane ustawienia są zawsze widoczne podczas wyszukiwania."
+
+msgid "Event Configured"
+msgstr "Zdarzenie skonfigurowane"
 
 msgid "Configure"
 msgstr "Konfiguruj"
@@ -8737,6 +8759,13 @@ msgstr "Nazwa tagu nie może być pusta."
 msgid "Tag name can't contain spaces."
 msgstr "Nazwa tagu nie może zawierać spacji."
 
+msgid "Tag name can't begin or end with underscore."
+msgstr "Nazwa tagu nie może zaczynać się lub kończyć znakiem podkreślenia."
+
+msgid "Tag name can't contain consecutive underscores."
+msgstr ""
+"Nazwa tagu nie może zawierać następujących po sobie znaków podkreślenia."
+
 msgid "These characters are not allowed in tags: %s."
 msgstr "Te znaki nie są dozwolone w tagach: %s."
 
@@ -9166,7 +9195,7 @@ msgid "Connection impossible to the game process."
 msgstr "Połączenie z procesem gry niemożliwe."
 
 msgid "Game starting..."
-msgstr "Startowanie gry..."
+msgstr "Uruchamianie gry..."
 
 msgid "Game running not embedded."
 msgstr "Gra działa nieosadzona."
@@ -9700,10 +9729,10 @@ msgid "Create Rest Pose from Bones"
 msgstr "Utwórz pozę spoczynkową z kości"
 
 msgid "Skeleton2D"
-msgstr "Szkielet 2D"
+msgstr "Szkielet2D"
 
 msgid "Reset to Rest Pose"
-msgstr "Resetuj do pozy spoczynkowej"
+msgstr "Przywróć pozę spoczynkową"
 
 msgid "Overwrite Rest Pose"
 msgstr "Nadpisz pozę spoczynkową"
@@ -10753,6 +10782,12 @@ msgstr "Zmień wysokość kształtu cylindra"
 
 msgid "Change Separation Ray Shape Length"
 msgstr "Zmień długość kształtu promienia oddzielającego"
+
+msgid "Remove SoftBody3D pinned point %d"
+msgstr "Usuń punkt przypięcia %d SoftBody3D"
+
+msgid "Add SoftBody3D pinned point %d"
+msgstr "Dodaj punkt przypięcia %d SoftBody3D"
 
 msgid "Change Probe Size"
 msgstr "Zmień rozmiar sondy"
@@ -12321,7 +12356,7 @@ msgid "Move Joint"
 msgstr "Przesuń złącze"
 
 msgid "Create Polygon3D"
-msgstr "Utwórz Wielokąt3D"
+msgstr "Utwórz wielokąt 3D"
 
 msgid "Edit Poly"
 msgstr "Edytuj wielokąt"
@@ -16220,6 +16255,9 @@ msgstr "Ustaw stałą: %s"
 msgid "Invalid name for varying."
 msgstr "Niewłaściwa nazwa dla varying."
 
+msgid "Varying with that name already exists."
+msgstr "Varying o tej nazwie już istnieje."
+
 msgid "Boolean type cannot be used with `%s` varying mode."
 msgstr "Typ boolowski nie może być użyty z trybem varying `%s`."
 
@@ -17696,6 +17734,9 @@ msgstr "Oczekiwano liczby całkowitej pomiędzy 0 i 2^32 - 1."
 msgid "Expected a string of length 1 (a character)."
 msgstr "Oczekiwano ciągu znaków o długości 1 (znaku)."
 
+msgid "Range too big."
+msgstr "Zakres zbyt duży."
+
 msgid "Cannot resize array."
 msgstr "Nie można zmienić rozmiaru tablicy."
 
@@ -18630,6 +18671,13 @@ msgstr ""
 msgid "\"Use Gradle Build\" must be enabled to use the plugins."
 msgstr "Aby korzystać z wtyczek, należy włączyć opcję „Użyj kompilacji Gradle”."
 
+msgid ""
+"\"Compress Native Libraries\" is only valid when \"Use Gradle Build\" is "
+"enabled."
+msgstr ""
+"„Kompresuj biblioteki natywne” jest prawidłowe tylko wtedy, gdy włączona jest "
+"opcja „Użyj kompilacji Gradle”."
+
 msgid "\"Export AAB\" is only valid when \"Use Gradle Build\" is enabled."
 msgstr ""
 "„Eksportuj AAB” działa tylko wtedy, gdy włączona jest opcja „Użyj kompilacji "
@@ -19180,7 +19228,7 @@ msgid "The notarization process generally takes less than an hour."
 msgstr "Proces poświadczania trwa zazwyczaj mniej niż godzinę."
 
 msgid ""
-"You can check progress manually by opening a Terminal and running the "
+"You can check the progress manually by opening a Terminal and running the "
 "following command:"
 msgstr ""
 "Możesz sprawdzić postęp ręcznie, otwierając Terminal i wykonując następujące "
@@ -19198,6 +19246,13 @@ msgstr "Narzędzia wiersza poleceń Xcode nie są zainstalowane."
 
 msgid "Could not start xcrun executable."
 msgstr "Nie można było uruchomić podprocesu xcrun."
+
+msgid ""
+"See instructions on finding your team ID: https://developer.apple.com/help/"
+"glossary/team-id"
+msgstr ""
+"Zobacz instrukcje na temat znalezienia swojego ID zespołu: https://"
+"developer.apple.com/help/glossary/team-id"
 
 msgid "Built-in CodeSign failed with error \"%s\"."
 msgstr "Wbudowany CodeSign nie powiódł się z powodu błędu \"%s\"."
@@ -19816,7 +19871,7 @@ msgid ""
 "This bone lacks a proper REST pose. Go to the Skeleton2D node and set one."
 msgstr ""
 "Tej kości brakuje odpowiedniej pozy spoczynkowej. Pójdź do węzła Skeleton2D i "
-"ustaw ją."
+"ustaw jakąś."
 
 msgid ""
 "The TileMap node is deprecated as it is superseded by the use of multiple "
@@ -20204,10 +20259,10 @@ msgid ""
 "Please only use it as a child of Area3D, StaticBody3D, RigidBody3D, "
 "CharacterBody3D, etc. to give them a shape."
 msgstr ""
-"CollisionPolygon2D służy jedynie do określenia kształtu kolizji dla jednego z "
-"obiektów dziedziczących z CollisionObject2D. \n"
-"Używaj go tylko jako dziecko obiektów typu Area2D, StaticBody2D, RigidBody2D, "
-"KinematicBody2D itp. by nadać im kształt."
+"CollisionPolygon3D służy jedynie do określenia kształtu kolizji dla jednego "
+"obiektu dziedziczącego CollisionObject3D.\n"
+"Używaj go tylko jako dziecko obiektów typu Area3D, StaticBody3D, RigidBody3D, "
+"CharacterBody3D itp. by nadać im kształt."
 
 msgid "An empty CollisionPolygon3D has no effect on collision."
 msgstr "Pusty CollisionPolygon3D nie ma wpływu na kolizję."
@@ -20229,10 +20284,10 @@ msgid ""
 "Please only use it as a child of Area3D, StaticBody3D, RigidBody3D, "
 "CharacterBody3D, etc. to give them a shape."
 msgstr ""
-"CollisionShape2D służy jedynie do określenia kształtu kolizji dla jednego z "
-"obiektów dziedziczących z CollisionObject2D.\n"
-"Używaj go tylko jako dziecko obiektów typu Area2D, StaticBody2D, RigidBody2D, "
-"KinematicBody2D itp. by nadać im kształt."
+"CollisionShape3D służy jedynie do określenia kształtu kolizji dla jednego "
+"obiektu dziedziczącego CollisionObject3D.\n"
+"Używaj go tylko jako dziecko obiektów typu Area3D, StaticBody3D, RigidBody3D, "
+"CharacterBody3D itp. by nadać im kształt."
 
 msgid ""
 "A shape must be provided for CollisionShape3D to function. Please create a "
@@ -20852,6 +20907,15 @@ msgstr "Rekurencja jest niedozwolona."
 
 msgid "Function '%s' can't be called from source code."
 msgstr "Funkcja \"%s\" nie może być wywołana z kodu źródłowego."
+
+msgid "No matching function for \"%s\" call:"
+msgstr "Nie znaleziono pasującej funkcji dla wywołania \"%s\":"
+
+msgid ""
+"candidate function \"%s(%s)\" not viable, argument %d should be %s but is %s."
+msgstr ""
+"funkcja kandydująca \"%s(%s)\" nie pasuje, argument %d powinien być %s, ale "
+"jest %s."
 
 msgid ""
 "Too few arguments for \"%s(%s)\" call. Expected at least %d but received %d."

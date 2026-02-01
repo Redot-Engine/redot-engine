@@ -135,8 +135,8 @@ RID PopupMenu::bind_global_menu() {
 			nmenu->set_item_tooltip(global_menu, index, item.tooltip);
 			if (!item.shortcut_is_disabled && item.shortcut.is_valid() && item.shortcut->has_valid_event()) {
 				Array events = item.shortcut->get_events();
-				for (int j = 0; j < events.size(); j++) {
-					Ref<InputEventKey> ie = events[j];
+				for (const Variant &v : events) {
+					Ref<InputEventKey> ie = v;
 					if (ie.is_valid() && _set_item_accelerator(index, ie)) {
 						break;
 					}
@@ -2855,7 +2855,26 @@ void PopupMenu::_unref_shortcut(Ref<Shortcut> p_sc) {
 
 void PopupMenu::_shortcut_changed() {
 	for (int i = 0; i < items.size(); i++) {
-		items.write[i].dirty = true;
+		Item &item = items.write[i];
+		item.dirty = true;
+		if (global_menu.is_valid() && !item.separator) {
+			NativeMenu *nmenu = NativeMenu::get_singleton();
+			nmenu->set_item_accelerator(global_menu, i, Key::NONE);
+			if (!item.shortcut_is_disabled && item.shortcut.is_valid() && item.shortcut->has_valid_event()) {
+				Array events = item.shortcut->get_events();
+				for (const Variant &v : events) {
+					Ref<InputEventKey> ie = v;
+					if (ie.is_valid() && _set_item_accelerator(i, ie)) {
+						break;
+					}
+				}
+				if (item.shortcut_is_global) {
+					nmenu->set_item_key_callback(global_menu, i, callable_mp(this, &PopupMenu::activate_item));
+				} else {
+					nmenu->set_item_key_callback(global_menu, i, Callable());
+				}
+			}
+		}
 	}
 	control->queue_redraw();
 }
@@ -3223,17 +3242,30 @@ void PopupMenu::popup(const Rect2i &p_bounds) {
 }
 
 void PopupMenu::_pre_popup() {
-	Size2 scale = get_force_native() ? get_parent_viewport()->get_popup_base_transform_native().get_scale() : get_parent_viewport()->get_popup_base_transform().get_scale();
-	CanvasItem *c = Object::cast_to<CanvasItem>(get_parent());
-	if (c) {
+	Size2 scale = get_force_native()
+			? get_parent_viewport()->get_popup_base_transform_native().get_scale()
+			: get_parent_viewport()->get_popup_base_transform().get_scale();
+
+	if (CanvasItem *c = Object::cast_to<CanvasItem>(get_parent())) {
 		scale *= c->get_global_transform_with_canvas().get_scale();
 	}
+
 	real_t popup_scale = MIN(scale.x, scale.y);
 	set_content_scale_factor(popup_scale);
+
 	Size2 minsize = get_contents_minimum_size() * popup_scale;
-	minsize.height = Math::ceil(minsize.height); // Ensures enough height at fractional content scales to prevent the v_scroll_bar from showing.
-	set_min_size(minsize); // `height` is truncated here by the cast to Size2i for Window.min_size.
-	reset_size(); // Shrinkwraps to min size.
+	minsize.height = Math::ceil(minsize.height);
+
+	Size2 maxsize = get_max_size();
+	if (maxsize.x > 0) {
+		minsize.x = MIN(minsize.x, maxsize.x);
+	}
+	if (maxsize.y > 0) {
+		minsize.y = MIN(minsize.y, maxsize.y);
+	}
+
+	set_min_size(minsize);
+	reset_size();
 }
 
 void PopupMenu::set_visible(bool p_visible) {

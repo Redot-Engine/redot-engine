@@ -194,13 +194,21 @@
 # mbenrubi <maxime.benrubi@gmail.com>, 2025.
 # MaxiMaxdu59 <max.miroux@gmail.com>, 2025.
 # Omgeta <anooptiger@hotmail.com>, 2025.
+# Dario Le Hy <dario.lehy@gmail.com>, 2025.
+# Cacathoes <etnatrabuc@gmail.com>, 2025.
+# "A Thousand Ships (she/her)" <over999ships@gmail.com>, 2025.
+# Mvsqu3 <paulkevinb.22@gmail.com>, 2025.
+# czepyga <maxime.czepyga@gmail.com>, 2025.
+# itsaboon <jackdgrabina@gmail.com>, 2025.
+# Bamowen <mathieu.monsauret@gmail.com>, 2025.
+# Korimi <hmvg2007@gmail.com>, 2025.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor interface\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2025-09-07 17:17+0000\n"
-"Last-Translator: aioshiro <aioshiro57@proton.me>\n"
+"PO-Revision-Date: 2025-12-13 20:00+0000\n"
+"Last-Translator: Korimi <hmvg2007@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/godot-engine/godot/"
 "fr/>\n"
 "Language: fr\n"
@@ -208,7 +216,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 msgid "Unset"
 msgstr "Non défini"
@@ -562,10 +570,10 @@ msgid "Delete Nodes"
 msgstr "Supprimer le(s) nœud(s)"
 
 msgid "Follow Input Port Connection"
-msgstr "Suivre le port d'entrée de la connexion"
+msgstr "Suivre la connexion du port d'entrée"
 
 msgid "Follow Output Port Connection"
-msgstr "Suivre le port de sortie de la connexion"
+msgstr "Suivre la connexion du port de sortie"
 
 msgid "Go Up One Level"
 msgstr "Monter d’un niveau"
@@ -857,6 +865,9 @@ msgstr "Pas en Y de la grille"
 msgid "Blend X Value"
 msgstr "Valeur en X de mélange"
 
+msgid "Blend Y Value"
+msgstr "Valeur en Y de mélange"
+
 msgid "Max Y"
 msgstr "Max Y"
 
@@ -871,6 +882,9 @@ msgstr "Min X"
 
 msgid "X Value"
 msgstr "Valeur en X"
+
+msgid "Max X"
+msgstr "Max X"
 
 msgid "Parameter Changed: %s"
 msgstr "Paramètre modifié : %s"
@@ -2542,7 +2556,7 @@ msgid "Assets ZIP File"
 msgstr "Fichier ZIP de données"
 
 msgid "AssetLib"
-msgstr "Bibliothèque de ressources (AssetLib)"
+msgstr "AssetLib"
 
 msgid "Error opening asset file for \"%s\" (not in ZIP format)."
 msgstr ""
@@ -3757,7 +3771,7 @@ msgid "Favorites"
 msgstr "Favoris"
 
 msgid "View items as a grid of thumbnails."
-msgstr "Afficher les éléments sous forme de grille de vignettes."
+msgstr "Afficher les éléments sous forme de grille d'aperçus."
 
 msgid "View items as a list."
 msgstr "Afficher les éléments sous forme de liste."
@@ -7243,7 +7257,7 @@ msgid "Refresh files."
 msgstr "Rafraîchir les fichiers."
 
 msgid "(Un)favorite current folder."
-msgstr "Ajouter ou supprimer aux favoris le dossier courant."
+msgstr "(Dé)favoriser le dossier courant."
 
 msgid "Current Drive"
 msgstr "Profil actuel"
@@ -7895,6 +7909,13 @@ msgstr ""
 msgid "Property: %s"
 msgstr "Propriété : %s"
 
+msgid ""
+"Toggling the checkbox is disabled for Resource properties. Modify the "
+"property using the resource picker instead."
+msgstr ""
+"La case à cocher est désactivée pour les propriétés des resources. Modifiez "
+"la propriété à l'aide du sélecteur de ressources."
+
 msgid "Unfavorite Property"
 msgstr "Retirer la propriété des favoris"
 
@@ -8257,6 +8278,9 @@ msgstr "Nouveau shader…"
 msgid "Size: %s"
 msgstr "Taille : %s"
 
+msgid "Invalid file or broken link."
+msgstr "Fichier invalide ou lien mort."
+
 msgid "Type: %s"
 msgstr "Type : %s"
 
@@ -8274,6 +8298,9 @@ msgstr "Longueur : %0.3f s"
 
 msgid "Advanced settings are always shown when searching."
 msgstr "Les paramètres avancés sont toujours affichés lors d’une recherche."
+
+msgid "Event Configured"
+msgstr "Évènement configuré"
 
 msgid "Configure"
 msgstr "Configurer"
@@ -8639,7 +8666,7 @@ msgid "Project Installation Path:"
 msgstr "Chemin d'installation du projet :"
 
 msgid "Renderer:"
-msgstr "Moteur de rendu :"
+msgstr "Moteur de rendu :"
 
 msgid ""
 "RenderingDevice-based methods not available on this GPU:\n"
@@ -8982,6 +9009,14 @@ msgstr "Le nom de l'étiquette ne peut pas être vide."
 
 msgid "Tag name can't contain spaces."
 msgstr "Le nom de l'étiquette ne peut pas contenir d'espace."
+
+msgid "Tag name can't begin or end with underscore."
+msgstr ""
+"Le nom de l'étiquette ne peut pas commencer ou finir avec un tiret du bas."
+
+msgid "Tag name can't contain consecutive underscores."
+msgstr ""
+"Le nom de l'étiquette ne peut pas contenir de tirets du bas consécutifs."
 
 msgid "These characters are not allowed in tags: %s."
 msgstr "Ces caractères ne sont pas autorisés dans les étiquettes : %s."
@@ -9965,7 +10000,7 @@ msgid "Create Rest Pose from Bones"
 msgstr "Créer la position de repos d'après les os"
 
 msgid "Skeleton2D"
-msgstr "Squelette 2D"
+msgstr "Skeleton2D"
 
 msgid "Reset to Rest Pose"
 msgstr "Remettre à la position de repos"
@@ -10377,7 +10412,7 @@ msgid "Replace Tiles with Proxies"
 msgstr "Remplace les Tuiles avec des Proxys"
 
 msgid "Extract TileMap layers as individual TileMapLayer nodes"
-msgstr "Extraire les calques de TileMap comme des nœuds de TileMapLayer"
+msgstr "Extraire les couches TileMap en nœuds TileMapLayer individuels"
 
 msgid "Can't edit multiple layers at once."
 msgstr "Impossible de modifier plusieurs calques simultanément."
@@ -11041,6 +11076,12 @@ msgstr "Changer la hauteur de la forme du cylindre"
 
 msgid "Change Separation Ray Shape Length"
 msgstr "Changer la longueur de la forme du rayon de séparation"
+
+msgid "Remove SoftBody3D pinned point %d"
+msgstr "Retirer le point %d épinglé du SoftBody3D"
+
+msgid "Add SoftBody3D pinned point %d"
+msgstr "Ajouter au SoftBody3D le point épinglé %d"
 
 msgid "Change Probe Size"
 msgstr "Changer la taille de la sonde"
@@ -12139,6 +12180,9 @@ msgstr "Définir la couleur du soleil de prévisualisation"
 msgid "Set Preview Sun Energy"
 msgstr "Définir l'énergie du soleil de prévisualisation"
 
+msgid "Set Preview Sun Max Shadow Distance"
+msgstr "Définir la distance maximale des ombres du soleil de pré-visualisation"
+
 msgid "Set Preview Environment Sky Color"
 msgstr "Définir la couleur du ciel de l'environnement de prévisualisation"
 
@@ -12507,7 +12551,7 @@ msgid "Generate Visibility AABB"
 msgstr "Générer AABB de Visibilité"
 
 msgid "\"%s\" doesn't inherit from Node3D."
-msgstr "\"%s\" n'hérite pas de Node2D."
+msgstr "\"%s\" n'hérite pas de Node3D."
 
 msgid "\"%s\" doesn't contain geometry."
 msgstr "\"%s\" ne contient pas de géométrie."
@@ -12690,7 +12734,7 @@ msgid "Revert"
 msgstr "Réinitialiser"
 
 msgid "Skeleton3D"
-msgstr "Squelette 3D"
+msgstr "Skeleton3D"
 
 msgid "Reset All Bone Poses"
 msgstr "Réinitialiser toutes les poses de l'os"
@@ -15218,7 +15262,7 @@ msgid "Target"
 msgstr "Cible"
 
 msgid "Error at ([hint=Line %d, column %d]%d, %d[/hint]):"
-msgstr "Erreur à ([hint=Ligne %d, colonne %d]]%d, %d[/hint]) :"
+msgstr "Erreur à ([hint=Ligne %d, colonne %d]%d, %d[/hint]) :"
 
 msgid ""
 "Missing connected method '%s' for signal '%s' from node '%s' to node '%s'."
@@ -16565,6 +16609,9 @@ msgstr "Modifier la constante : %s"
 msgid "Invalid name for varying."
 msgstr "Nom invalide pour un varying."
 
+msgid "Varying with that name already exists."
+msgstr "Un varying avec ce nom existe déjà."
+
 msgid "Boolean type cannot be used with `%s` varying mode."
 msgstr "Le type booléen ne peut être utilisé avec le mode varying « %s »."
 
@@ -16662,13 +16709,13 @@ msgid "Grayscale function."
 msgstr "Fonction niveau de gris."
 
 msgid "Converts HSV vector to RGB equivalent."
-msgstr "Convertit le vecteur HSV en équivalent RGB."
+msgstr "Convertit le vecteur TSV en équivalent RGB."
 
 msgid "Converts color from linear to sRGB color space."
 msgstr "Convertit la couleur de l'espace linéaire à sRGB."
 
 msgid "Converts RGB vector to HSV equivalent."
-msgstr "Convertit le vecteur RGB en équivalent HSV."
+msgstr "Convertit le vecteur RGB en équivalent TSV."
 
 msgid "Sepia function."
 msgstr "Fonction Sepia."
@@ -17782,7 +17829,7 @@ msgid "Generate POT"
 msgstr "Générer POT"
 
 msgid "Add Built-in Strings to POT"
-msgstr "Ajouter des chaînes intégrées au POT"
+msgstr "Ajouter des chaînes intégrées au TOP"
 
 msgid "Add strings from built-in components such as certain Control nodes."
 msgstr ""
@@ -18063,6 +18110,9 @@ msgstr "Un entier entre 0 et 2^32 - 1 était attendu."
 
 msgid "Expected a string of length 1 (a character)."
 msgstr "Une chaîne de caractères de longueur 1 (un caractère) était attendue."
+
+msgid "Range too big."
+msgstr "Intervalle trop grand."
 
 msgid "Cannot resize array."
 msgstr "Impossible de redimensionner le tableau."
@@ -18733,7 +18783,7 @@ msgstr ""
 "correspondants."
 
 msgid "Clear NavigationMesh"
-msgstr "Suppression du maillage de navigation"
+msgstr "Vider le NavigationMesh"
 
 msgid "Clears the internal NavigationMesh vertices and polygons."
 msgstr "Réinitialise le NavigationMesh interne."
@@ -18796,7 +18846,7 @@ msgid "Error saving file %s: %s"
 msgstr "Erreur lors de l'enregistrement du fichier %s : %s"
 
 msgid "OpenXR Action map:"
-msgstr "Tableau des actions OpenXR :"
+msgstr "Tableau des actions OpenXR :"
 
 msgid "Remove interaction profile"
 msgstr "Suppression du profil d'interaction"
@@ -19010,6 +19060,13 @@ msgstr ""
 msgid "\"Use Gradle Build\" must be enabled to use the plugins."
 msgstr ""
 "\"Utiliser la compilation Gradle\" doit être activé pour utiliser les plugins."
+
+msgid ""
+"\"Compress Native Libraries\" is only valid when \"Use Gradle Build\" is "
+"enabled."
+msgstr ""
+"\"Compresser les bibliothèques natives\" est valide uniquement lorsque "
+"« Utiliser la compilation Gradle » est activé."
 
 msgid "\"Export AAB\" is only valid when \"Use Gradle Build\" is enabled."
 msgstr ""
@@ -19600,7 +19657,7 @@ msgid "The notarization process generally takes less than an hour."
 msgstr "Le processus de certification prend généralement moins d'une heure."
 
 msgid ""
-"You can check progress manually by opening a Terminal and running the "
+"You can check the progress manually by opening a Terminal and running the "
 "following command:"
 msgstr ""
 "Vous pouvez contrôler la progression manuellement en ouvrant un Terminal et "
@@ -19618,6 +19675,13 @@ msgstr "Les outils en ligne de commande Xcode ne sont pas installés."
 
 msgid "Could not start xcrun executable."
 msgstr "Impossible de démarrer le sous-processus."
+
+msgid ""
+"See instructions on finding your team ID: https://developer.apple.com/help/"
+"glossary/team-id"
+msgstr ""
+"Voir les instructions pour trouver l'ID de votre équipe : https://"
+"developer.apple.com/help/glossary/team-id"
 
 msgid "Built-in CodeSign failed with error \"%s\"."
 msgstr "CodeSign intégré a échoué avec l'erreur : \"%s\"."
@@ -20208,9 +20272,9 @@ msgid ""
 "SceneTree.\n"
 "Check the node's inherited physics_interpolation_mode."
 msgstr ""
-"PhysiqueBody2D ne fonctionnera pas correctement sur une branche non "
-"interpolée du SceneTree.\n"
-"Vérifiez le mode physics_interpolation_mode hérité du nœud."
+"PhysicsBody2D ne fonctionnera pas correctement sur une branche non interpolée "
+"du SceneTree.\n"
+"Vérifiez le mode de physics_interpolation_mode hérité du nœud."
 
 msgid ""
 "Size changes to RigidBody2D will be overridden by the physics engine when "
@@ -20519,8 +20583,8 @@ msgstr ""
 msgid ""
 "The NavigationAgent3D can be used only under a Node3D inheriting parent node."
 msgstr ""
-"Le NavigationAgent3D peut être utilisé uniquement sous un nœud 3D hérité d'un "
-"nœud parent."
+"Le NavigationAgent3D peut être utilisé uniquement sous un nœud parent "
+"héritant de Node3D."
 
 msgid ""
 "NavigationLink3D start position should be different than the end position to "
@@ -20782,8 +20846,8 @@ msgid ""
 "The \"Remote Path\" property must point to a valid Node3D or Node3D-derived "
 "node to work."
 msgstr ""
-"La propriété \"Remote Path\" doit pointer vers un nœud 3D valide ou un nœud "
-"3D dérivé d'un nœud pour fonctionner."
+"La propriété \"Remote Path\" doit pointer vers un Node3D valide ou un nœud "
+"dérivé de Node3D pour fonctionner."
 
 msgid "There is no child Skeleton3D!"
 msgstr "Il n'y a pas d'enfant Skeleton3D !"
@@ -21320,6 +21384,15 @@ msgstr "La récursivité n'est pas autorisée."
 msgid "Function '%s' can't be called from source code."
 msgstr "La fonction '%s' ne peut être appelée depuis le code source."
 
+msgid "No matching function for \"%s\" call:"
+msgstr "Pas de fonction correspondante pour l'appel de \"%s\" :"
+
+msgid ""
+"candidate function \"%s(%s)\" not viable, argument %d should be %s but is %s."
+msgstr ""
+"fonction candidate \"%s(%s)\" non valable, l'argument %d devrait être %s mais "
+"est %s."
+
 msgid ""
 "Too few arguments for \"%s(%s)\" call. Expected at least %d but received %d."
 msgstr ""
@@ -21575,6 +21648,9 @@ msgstr "Le cas par défaut ne doit être défini qu'une seule fois."
 msgid "'%s' must be placed within a '%s' block."
 msgstr "'%s' doit être placé à l'intérieur d'un bloc '%s'."
 
+msgid "Undefined identifier '%s' in a case label."
+msgstr "Identifiant indéfini '%s' dans une étiquette de cas."
+
 msgid "Expected an unsigned integer constant."
 msgstr "Un entier non signé constant était attendu."
 
@@ -21635,6 +21711,18 @@ msgstr "Type de shader non valide. Les types valides sont : %s"
 
 msgid "Unexpected token: '%s'."
 msgstr "Jeton inattendu : «  %s  »."
+
+msgid "Duplicated stencil mode reference value: '%s'."
+msgstr "Valeur de référence du mode de pochoir dupliqué : '%s'."
+
+msgid "Stencil mode reference value cannot be negative: '%s'."
+msgstr ""
+"La valeur de référence du mode Pochoir ne peut pas être négative : '%s'."
+
+msgid "Stencil mode reference value cannot be greater than 255: '%s'."
+msgstr ""
+"La valeur de référence du mode Pochoir ne peut pas être supérieure à 255 : "
+"'%s'."
 
 msgid "Expected a struct identifier."
 msgstr "Un identifiant struct est attendu."
@@ -21888,8 +21976,14 @@ msgstr ""
 msgid "uniform buffer"
 msgstr "tampon uniforme"
 
+msgid "Expected an identifier for stencil mode."
+msgstr "Un identifiant pour le mode pochoir était attendu."
+
 msgid "Expected an identifier for render mode."
 msgstr "Un identifiant est attendu pour le mode de rendu."
+
+msgid "Duplicated stencil mode: '%s'."
+msgstr "Mode de pochoir dupliqué : '%s'."
 
 msgid "Duplicated render mode: '%s'."
 msgstr "Mode de rendu dupliqué : '%s'."
@@ -21899,6 +21993,9 @@ msgid ""
 msgstr ""
 "Redéfinition du mode de rendu : « %s ». Le mode « %s » a déjà été défini sur "
 "« %s »."
+
+msgid "Invalid stencil mode: '%s'."
+msgstr "Mode pochoir invalide : '%s'."
 
 msgid "Invalid render mode: '%s'."
 msgstr "Mode de rendu non valide : « %s »."

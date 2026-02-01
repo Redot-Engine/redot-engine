@@ -480,7 +480,11 @@ Array ScriptTextEditor::_inline_object_parse(const String &p_text) {
 				params.push_back(s_param.to_float());
 			}
 			if (valid_floats && params.size() == 3) {
-				params.push_back(1.0);
+				if (fn_name == ".from_rgba8") {
+					params.push_back(255);
+				} else {
+					params.push_back(1.0);
+				}
 			}
 			if (valid_floats && params.size() == 4) {
 				has_added_color = true;
@@ -1381,7 +1385,8 @@ void ScriptTextEditor::_show_symbol_tooltip(const String &p_symbol, int p_row, i
 	}
 
 	if (p_symbol.begins_with("res://") || p_symbol.begins_with("uid://")) {
-		EditorHelpBitTooltip::show_tooltip(code_editor->get_text_editor(), "resource||" + p_symbol);
+		Control *tmp = EditorHelpBitTooltip::make_tooltip(code_editor->get_text_editor(), "resource||" + p_symbol);
+		memdelete(tmp);
 		return;
 	}
 
@@ -1491,7 +1496,8 @@ void ScriptTextEditor::_show_symbol_tooltip(const String &p_symbol, int p_row, i
 	}
 
 	if (!doc_symbol.is_empty() || !debug_value.is_empty()) {
-		EditorHelpBitTooltip::show_tooltip(code_editor->get_text_editor(), doc_symbol, debug_value, true);
+		Control *tmp = EditorHelpBitTooltip::make_tooltip(code_editor->get_text_editor(), doc_symbol, debug_value, true);
+		memdelete(tmp);
 	}
 }
 
