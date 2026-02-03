@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  uid_viewer_dock.h                                                     */
+/*  uid_viewer.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -34,14 +34,19 @@
 
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
+#include "scene/gui/control.h"
 #include "scene/gui/line_edit.h"
 #include "scene/gui/popup_menu.h"
 #include "scene/gui/tree.h"
+#include "scene/main/window.h"
 
-class UIDViewerDock : public VBoxContainer {
-	GDCLASS(UIDViewerDock, VBoxContainer);
+class UIDViewer : public Window {
+	GDCLASS(UIDViewer, Window);
 
 private:
+	bool is_open = false;
+
+	VBoxContainer *container = nullptr;
 	Tree *uid_tree = nullptr;
 	LineEdit *search_edit = nullptr;
 	Button *refresh_button = nullptr;
@@ -54,9 +59,11 @@ private:
 	void _on_item_activated();
 	void _on_context_menu_id_pressed(int id);
 	void _on_tree_rmb_selected(const Vector2 &p_pos, MouseButton p_button);
+	void _on_tool_closed();
 	void _show_all_items(TreeItem *item);
 	bool _filter_tree_recursive(TreeItem *item, const String &search_lower);
 
 public:
-	UIDViewerDock();
+	UIDViewer();
+	void _open_tool();
 };

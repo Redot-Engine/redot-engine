@@ -102,6 +102,7 @@ class ProjectExportDialog;
 class ProjectSettingsEditor;
 class SceneImportSettingsDialog;
 class ProjectUpgradeTool;
+class UIDViewer;
 
 #ifdef ANDROID_ENABLED
 class TouchActionsPanel;
@@ -175,6 +176,7 @@ public:
 		TOOLS_ORPHAN_RESOURCES,
 		TOOLS_BUILD_PROFILE_MANAGER,
 		TOOLS_PROJECT_UPGRADE,
+		TOOLS_UID_VIEWER,
 		TOOLS_CUSTOM,
 
 		VCS_METADATA,
@@ -496,6 +498,8 @@ private:
 
 	ProjectUpgradeTool *project_upgrade_tool = nullptr;
 	bool run_project_upgrade_tool = false;
+
+	UIDViewer *uid_viewer = nullptr;
 
 	bool was_window_windowed_last = false;
 

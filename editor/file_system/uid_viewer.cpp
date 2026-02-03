@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  uid_viewer_dock.cpp                                                   */
+/*  uid_viewer.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,33 +30,37 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor/docks/uid_viewer_dock.h"
+#include "editor/file_system/uid_viewer.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_uid.h"
 #include "editor/docks/filesystem_dock.h"
 #include "editor/file_system/editor_file_system.h"
-#include "scene/main/window.h" // For MouseButton enum in Godot 4.3+
+#include "editor/themes/editor_scale.h"
 #include "servers/display_server.h"
 
-UIDViewerDock::UIDViewerDock() {
-	set_name("UID Viewer");
+UIDViewer::UIDViewer() {
+	// Create container
+	container = memnew(VBoxContainer);
+	add_child(container);
 
-	set_mouse_filter(Control::MOUSE_FILTER_STOP);
-	set_focus_mode(Control::FOCUS_ALL);
+	container->set_name("UID Viewer");
+	container->set_anchors_preset(Control::PRESET_FULL_RECT);
+	container->set_mouse_filter(Control::MOUSE_FILTER_STOP);
+	container->set_focus_mode(Control::FOCUS_ALL);
 
 	// Top bar
 	HBoxContainer *top_bar = memnew(HBoxContainer);
-	add_child(top_bar);
+	container->add_child(top_bar);
 
 	search_edit = memnew(LineEdit);
 	search_edit->set_placeholder("Search for UID or path...");
-	search_edit->set_h_size_flags(SIZE_EXPAND_FILL);
-	search_edit->connect("text_changed", callable_mp(this, &UIDViewerDock::_on_search_text_changed));
+	search_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	search_edit->connect("text_changed", callable_mp(this, &UIDViewer::_on_search_text_changed));
 	top_bar->add_child(search_edit);
 
 	refresh_button = memnew(Button);
 	refresh_button->set_text("Refresh");
-	refresh_button->connect("pressed", callable_mp(this, &UIDViewerDock::_on_refresh_pressed));
+	refresh_button->connect("pressed", callable_mp(this, &UIDViewer::_on_refresh_pressed));
 	top_bar->add_child(refresh_button);
 
 	// Tree
@@ -67,28 +71,33 @@ UIDViewerDock::UIDViewerDock() {
 	uid_tree->set_column_title(1, "Resource Path");
 	uid_tree->set_column_custom_minimum_width(0, 280);
 	uid_tree->set_column_expand(1, true);
-	uid_tree->set_v_size_flags(SIZE_EXPAND_FILL);
-	uid_tree->set_h_size_flags(SIZE_EXPAND_FILL);
+	uid_tree->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+	uid_tree->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	uid_tree->set_allow_rmb_select(true);
-	uid_tree->connect("item_activated", callable_mp(this, &UIDViewerDock::_on_item_activated));
-	add_child(uid_tree);
+	uid_tree->connect("item_activated", callable_mp(this, &UIDViewer::_on_item_activated));
+	container->add_child(uid_tree);
 
-	// Context menu (owned by dock)
+	// Context menu
 	context_menu = memnew(PopupMenu);
 	context_menu->add_item("Copy UID");
 	context_menu->add_item("Copy Path");
-	context_menu->connect("id_pressed", callable_mp(this, &UIDViewerDock::_on_context_menu_id_pressed));
-	add_child(context_menu);
+	context_menu->connect("id_pressed", callable_mp(this, &UIDViewer::_on_context_menu_id_pressed));
+	container->add_child(context_menu);
 
 	_refresh_uid_list();
 
-	uid_tree->connect("item_mouse_selected", callable_mp(this, &UIDViewerDock::_on_tree_rmb_selected));
+	uid_tree->connect("item_mouse_selected", callable_mp(this, &UIDViewer::_on_tree_rmb_selected));
 
 	// Auto-refresh on filesystem changes
-	EditorFileSystem::get_singleton()->connect("filesystem_changed", callable_mp(this, &UIDViewerDock::_refresh_uid_list));
+	EditorFileSystem::get_singleton()->connect("filesystem_changed", callable_mp(this, &UIDViewer::_refresh_uid_list));
+
+	// Prepare window
+	set_title("UID Viewer Tool");
+	set_size(Size2i(850 * EDSCALE, 450 * EDSCALE));
+	hide();
 }
 
-void UIDViewerDock::_refresh_uid_list() {
+void UIDViewer::_refresh_uid_list() {
 	uid_tree->clear();
 	TreeItem *root = uid_tree->create_item();
 
@@ -131,7 +140,7 @@ void UIDViewerDock::_refresh_uid_list() {
 	_on_search_text_changed(search_edit->get_text());
 }
 
-void UIDViewerDock::_on_search_text_changed(const String &text) {
+void UIDViewer::_on_search_text_changed(const String &text) {
 	String search_lower = text.to_lower().strip_edges();
 
 	TreeItem *root = uid_tree->get_root();
@@ -148,12 +157,12 @@ void UIDViewerDock::_on_search_text_changed(const String &text) {
 	_filter_tree_recursive(root, search_lower);
 }
 
-void UIDViewerDock::_on_refresh_pressed() {
+void UIDViewer::_on_refresh_pressed() {
 	EditorFileSystem::get_singleton()->scan();
 	_refresh_uid_list();
 }
 
-void UIDViewerDock::_on_item_activated() {
+void UIDViewer::_on_item_activated() {
 	TreeItem *selected = uid_tree->get_selected();
 	if (!selected) {
 		return;
@@ -168,7 +177,7 @@ void UIDViewerDock::_on_item_activated() {
 	}
 }
 
-void UIDViewerDock::_on_context_menu_id_pressed(int id) {
+void UIDViewer::_on_context_menu_id_pressed(int id) {
 	if (!last_selected_item) {
 		return;
 	}
@@ -185,7 +194,7 @@ void UIDViewerDock::_on_context_menu_id_pressed(int id) {
 	}
 }
 
-void UIDViewerDock::_show_all_items(TreeItem *item) {
+void UIDViewer::_show_all_items(TreeItem *item) {
 	if (!item) {
 		item = uid_tree->get_root();
 		if (!item) {
@@ -202,7 +211,7 @@ void UIDViewerDock::_show_all_items(TreeItem *item) {
 	}
 }
 
-bool UIDViewerDock::_filter_tree_recursive(TreeItem *item, const String &search_lower) {
+bool UIDViewer::_filter_tree_recursive(TreeItem *item, const String &search_lower) {
 	if (!item) {
 		return false;
 	}
@@ -229,7 +238,7 @@ bool UIDViewerDock::_filter_tree_recursive(TreeItem *item, const String &search_
 	return result;
 }
 
-void UIDViewerDock::_on_tree_rmb_selected(const Vector2 &p_pos, MouseButton p_button) {
+void UIDViewer::_on_tree_rmb_selected(const Vector2 &p_pos, MouseButton p_button) {
 	if (p_button != MouseButton::RIGHT) {
 		return;
 	}
@@ -243,5 +252,23 @@ void UIDViewerDock::_on_tree_rmb_selected(const Vector2 &p_pos, MouseButton p_bu
 			context_menu->set_position(uid_tree->get_screen_position() + p_pos);
 			context_menu->popup();
 		}
+	}
+}
+
+void UIDViewer::_on_tool_closed() {
+	if (is_open) {
+		hide();
+		disconnect("close_requested", callable_mp(this, &UIDViewer::_on_tool_closed));
+		is_open = false;
+	}
+}
+
+void UIDViewer::_open_tool() {
+	if (!is_open) {
+		connect("close_requested", callable_mp(this, &UIDViewer::_on_tool_closed));
+		popup_centered();
+		is_open = true;
+	} else {
+		grab_focus();
 	}
 }
