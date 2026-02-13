@@ -48,7 +48,7 @@ Official binaries for the Redot editor and the export templates will be found
 
 ### Compiling from source
 
-[See the official docs](https://docs.godotengine.org/en/latest/engine_details/development/compiling)
+[See the official docs](https://docs.redotengine.org/contributing/development/compiling/)
 for compilation instructions for every supported platform.
 
 #### Using Nix (recommended)
