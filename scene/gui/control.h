@@ -190,6 +190,25 @@ private:
 
 	/// This Data struct is to avoid namespace pollution in derived classes.
 	struct Data {
+		struct OffsetTransform {
+			static constexpr Vector2 DEFAULT_TRANSLATION_ABSOLUTE = Vector2();
+			static constexpr Vector2 DEFAULT_TRANSLATION_RELATIVE = Vector2();
+			static constexpr Vector2 DEFAULT_SCALE = Vector2(1, 1);
+			static constexpr real_t DEFAULT_ROTATION = 0.0;
+			static constexpr Vector2 DEFAULT_PIVOT_ABSOLUTE = Vector2();
+			static constexpr Vector2 DEFAULT_PIVOT_RELATIVE = Vector2(0.5, 0.5);
+			static constexpr bool DEFAULT_VISUAL_ONLY = true;
+
+			bool enabled = false;
+			Vector2 translation_absolute = DEFAULT_TRANSLATION_ABSOLUTE;
+			Vector2 translation_relative = DEFAULT_TRANSLATION_RELATIVE;
+			Vector2 scale = DEFAULT_SCALE;
+			real_t rotation = DEFAULT_ROTATION;
+			Vector2 pivot_absolute = DEFAULT_PIVOT_ABSOLUTE;
+			Vector2 pivot_relative = DEFAULT_PIVOT_RELATIVE;
+			bool visual_only = DEFAULT_VISUAL_ONLY;
+		};
+
 		bool initialized = false;
 
 		/// @name Global Relations
@@ -219,6 +238,8 @@ private:
 		real_t rotation = 0.0;
 		Vector2 scale = Vector2(1, 1);
 		Vector2 pivot_offset;
+
+		OffsetTransform *offset_transform = nullptr;
 
 		Point2 pos_cache;
 		Size2 size_cache;
@@ -375,6 +396,7 @@ private:
 	/// @}
 	/// @name Extra Properties
 	/// @{
+	void _ensure_allocated_offset_transform();
 	static int root_layout_direction;
 	/// @}
 protected:
@@ -567,6 +589,26 @@ public:
 	BitField<SizeFlags> get_v_size_flags() const;
 	void set_stretch_ratio(real_t p_ratio);
 	real_t get_stretch_ratio() const;
+	/// @}
+	/// @name Offset transform
+	/// @{
+	void set_offset_transform_enabled(bool p_enabled);
+	bool is_offset_transform_enabled() const;
+	void set_offset_transform_position(const Vector2 &p_offset);
+	Vector2 get_offset_transform_position() const;
+	void set_offset_transform_position_ratio(const Vector2 &p_offset);
+	Vector2 get_offset_transform_position_ratio() const;
+	void set_offset_transform_scale(const Vector2 &p_scale);
+	Vector2 get_offset_transform_scale() const;
+	void set_offset_transform_rotation(real_t p_rotation);
+	real_t get_offset_transform_rotation() const;
+	void set_offset_transform_pivot(const Vector2 &p_pivot);
+	Vector2 get_offset_transform_pivot() const;
+	void set_offset_transform_pivot_ratio(const Vector2 &p_pivot);
+	Vector2 get_offset_transform_pivot_ratio() const;
+	void set_offset_transform_visual_only(bool p_enabled);
+	bool is_offset_transform_visual_only() const;
+	Transform2D get_offset_transform() const;
 	/// @}
 	/// @name Input Events
 	/// @{
