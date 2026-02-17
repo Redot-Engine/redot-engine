@@ -3,12 +3,12 @@ name: Trigger Sync Class Reference
 on:
   pull_request:
     paths:
-      - './doc/classes/**'
+      - 'doc/classes/**'
     types: [closed]
     branches: master
   push:
     paths:
-      - './doc/classes/**'
+      - 'doc/classes/**'
     branches: master
 
 jobs:
