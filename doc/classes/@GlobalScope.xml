@@ -4,7 +4,7 @@
 		Global scope constants and functions.
 	</brief_description>
 	<description>
-		A asdfasdf list of global scope enumerated constants and built-in functions. This is all that resides in the globals, constants regarding error codes, keycodes, property hints, etc.
+		A list of global scope enumerated constants and built-in functions. This is all that resides in the globals, constants regarding error codes, keycodes, property hints, etc.
 		Singletons are also documented here, since they can be accessed from anywhere.
 		For the entries that can only be accessed from scripts written in GDScript, see [@GDScript].
 	</description>
