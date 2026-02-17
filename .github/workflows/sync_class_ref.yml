@@ -1,7 +1,6 @@
 name: Trigger Sync Class Reference
 
 on:
-  workflow_dispatch:
   pull_request:
     paths:
       - './doc/classes'
@@ -13,6 +12,7 @@ on:
 jobs:
   trigger:
     name: Trigger update class reference files based on the engine revision
+    if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
     - uses: passeidireto/trigger-external-workflow-action@main
