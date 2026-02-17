@@ -1,6 +1,7 @@
 name: Trigger Sync Class Reference
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - './doc/classes'
