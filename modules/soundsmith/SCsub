@@ -3,9 +3,9 @@ from misc.utility.scons_hints import *
 
 Import("env")
 
-signalsmith_env = env.Clone()
+soundsmith_env = env.Clone()
 
-signalsmith_env.Append(
+soundsmith_env.Append(
     CPPPATH=[
         "#thirdparty",
         "#thirdparty/minimp3",
@@ -18,12 +18,12 @@ is_gcc = ("gcc" in cxx or "g++" in cxx) and not is_clang
 is_msvc = ("cl" in cxx) and not is_clang
 
 if is_gcc:
-    signalsmith_env.Append(CCFLAGS=["-Wno-class-memaccess"])
-    signalsmith_env.Append(CCFLAGS=["-Wno-shadow"])
+    soundsmith_env.Append(CCFLAGS=["-Wno-class-memaccess"])
+    soundsmith_env.Append(CCFLAGS=["-Wno-shadow"])
 
 # silence "hides previous declaration/member" warnings
 if is_msvc:
-    signalsmith_env.Append(
+    soundsmith_env.Append(
         CCFLAGS=[
             "/wd4456",  # hides previous local declaration
             "/wd4458",  # hides class member
@@ -32,7 +32,7 @@ if is_msvc:
 
 module_sources = [
     "register_types.cpp",
-    "signalsmith_module.cpp",
+    "soundsmith_module.cpp",
 ]
 
-signalsmith_env.add_source_files(env.modules_sources, module_sources)
+soundsmith_env.add_source_files(env.modules_sources, module_sources)
