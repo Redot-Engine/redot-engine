@@ -11,13 +11,11 @@ on:
 jobs:
   trigger:
     name: Trigger update class reference files based on the engine revision
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
     - uses: passeidireto/trigger-external-workflow-action@main
       env:
         PAYLOAD_AUTHOR: ${{ github.author }}
-        PAYLOAD_REVISION: "master"
       with:
         repository: Redot-Engine/redot-docs-site
         event: sync_class_ref
