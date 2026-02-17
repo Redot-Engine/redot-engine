@@ -18,6 +18,6 @@ jobs:
         PAYLOAD_AUTHOR: ${{ github.author }}
         PAYLOAD_REVISION: "3"
       with:
-        repository: 17chuchu/redot-docs-site
+        repository: Redot-Engine/redot-docs-site
         event: sync_class_ref
         github_pat: ${{ secrets.REDOT_DOCS_SITE_PAT }}
