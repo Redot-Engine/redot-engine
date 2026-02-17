@@ -1,7 +1,6 @@
 name: Trigger Sync Class Reference
 
 on:
-  workflow_dispatch:
   pull_request:
     paths:
       - 'doc/classes/**'
@@ -11,12 +10,13 @@ on:
 jobs:
   trigger:
     name: Trigger update class reference files based on the engine revision
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
     - uses: passeidireto/trigger-external-workflow-action@main
       env:
         PAYLOAD_AUTHOR: ${{ github.author }}
       with:
-        repository: 17chuchu/redot-docs-site
+        repository: Redot-Engine/redot-docs-site
         event: sync_class_ref
         github_pat: ${{ secrets.REDOT_DOCS_SITE_PAT }}
