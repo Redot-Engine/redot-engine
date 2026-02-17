@@ -1,0 +1,24 @@
+name: Trigger Sync Class Reference
+
+on:
+  pull_request:
+    paths:
+      - './doc/classes'
+    types: [closed]
+  push:
+    paths:
+      - './doc/classes'
+
+jobs:
+  trigger:
+    name: Trigger update class reference files based on the engine revision
+    runs-on: ubuntu-latest
+    steps:
+    - uses: passeidireto/trigger-external-workflow-action@main
+      env:
+        PAYLOAD_AUTHOR: ${{ github.author }}
+        PAYLOAD_REVISION: "3"
+      with:
+        repository: 17chuchu/redot-docs-site
+        event: sync_class_ref
+        github_pat: ${{ secrets.REDOT_DOCS_SITE_PAT }}
