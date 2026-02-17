@@ -6,15 +6,11 @@ on:
       - 'doc/classes/**'
     types: [closed]
     branches: master
-  push:
-    paths:
-      - 'doc/classes/**'
-    branches: master
 
 jobs:
   trigger:
     name: Trigger update class reference files based on the engine revision
-    if: (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) || github.event_name == 'push'
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
     - uses: passeidireto/trigger-external-workflow-action@main
