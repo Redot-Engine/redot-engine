@@ -28,6 +28,7 @@ flags = {
     "i": False,
     "a": True,
     "e": False,
+    "f": False,
 }
 flag_descriptions = {
     "c": "Toggle colors when outputting.",
