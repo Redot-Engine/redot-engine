@@ -1,13 +1,12 @@
 default_language_version:
   python: python3
-# "doc/tools/make_md.py" is excluded because it fails the mypy check, and attempts to make the linter happy break the code. It needs to be the way it is.
+
 exclude: |
   (?x)^(
     .*thirdparty/.*|
     .*-(dll|dylib|so)_wrap\.[ch]|
     platform/android/java/editor/src/main/java/com/android/.*|
-    platform/android/java/lib/src/com/google/.*|
-    doc/tools/make_md.py
+    platform/android/java/lib/src/com/google/.*
   )$
 
 repos:

@@ -1033,7 +1033,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                 default = property_def.default_value
                 if default is not None and property_def.overrides:
                     override_file = sanitize_class_name(property_def.overrides, True)
-                    ref = f"[{property_def.overrides}.{property_def.name}]({override_file}.md#class_{sanitize_class_name(property_def.overrides)}_property_{property_def.name})"
+                    ref = f"[{property_def.overrides}.{property_def.name}]({override_file}.md#{sanitize_class_name(property_def.overrides)}_property_{property_def.name})"
                     # Not using translate() for now as it breaks table formatting.
                     ml.append((type_rst, property_def.name, f"{default} (overrides {ref})"))
                 else:
@@ -1242,7 +1242,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write(f"{signature}{self_link}\n\n")
 
                     # Add annotation description, or a call to action if it's missing.
-                    m.description = escape_tags(m.description)
+                    m.description = escape_tags(m.description) if m.description is not None else None
                     if m.description is not None and m.description.strip() != "":
                         f.write(f"{format_text_block(m.description.strip(), m, state)}\n\n")
                     else:
@@ -1304,7 +1304,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write("\n")
 
                 # Add property description, or a call to action if it's missing.
-                property_def.text = escape_tags(property_def.text)
+                property_def.text = escape_tags(property_def.text) if property_def.text is not None else None
                 f.write(make_deprecated_experimental(property_def, state))
 
                 if property_def.text is not None and property_def.text.strip() != "":
@@ -1353,7 +1353,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write(f"{ret_type} {signature}{self_link}\n\n")
 
                     # Add constructor description, or a call to action if it's missing.
-                    m.description = escape_tags(m.description)
+                    m.description = escape_tags(m.description) if m.description is not None else None
                     f.write(make_deprecated_experimental(m, state))
 
                     if m.description is not None and m.description.strip() != "":
@@ -1401,7 +1401,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write(f"{ret_type} {signature}{self_link}\n\n")
 
                     # Add method description, or a call to action if it's missing.
-                    m.description = escape_tags(m.description)
+                    m.description = escape_tags(m.description) if m.description is not None else None
                     f.write(make_deprecated_experimental(m, state))
 
                     if m.description is not None and m.description.strip() != "":
@@ -1443,11 +1443,11 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write("<!-- classref-operator -->\n\n")
 
                     ret_type, signature = make_method_signature(class_def, m, "", state)
-                    signature = escape_tags(signature)
+                    signature = escape_tags(signature) if signature is not None else None
                     f.write(f"{ret_type} {signature} {self_link}\n\n")
 
                     # Add operator description, or a call to action if it's missing.
-                    m.description = escape_tags(m.description)
+                    m.description = escape_tags(m.description) if m.description is not None else None
                     f.write(make_deprecated_experimental(m, state))
 
                     if m.description is not None and m.description.strip() != "":
@@ -1513,11 +1513,25 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
         f.write(make_footer())
 
 
-def escape_tags(input: str) -> str:
-    return input.replace("<", "&lt").replace(">", "&gt")
+def escape_tags(input: Optional[str]) -> str:
+    """
+    Aggressively escape < and > to &lt; and &gt; for MDX/Docusaurus compatibility.
+    MDX parsers are stricter than vanilla Markdown and require escaping even within
+    code blocks to prevent build failures and runtime crashes.
+    """
+    if input is None:
+        return ""
+    return input.replace("<", "&lt;").replace(">", "&gt;")
 
 
-def escape_braces(input: str) -> str:
+def escape_braces(input: Optional[str]) -> str:
+    """
+    Escape { and } to \{ and \} for MDX/Docusaurus compatibility.
+    MDX parsers are stricter than vanilla Markdown and require escaping even within
+    code blocks to prevent build failures and runtime crashes.
+    """
+    if input is None:
+        return ""
     return input.replace("{", "\\{").replace("}", "\\}")
 
 
@@ -1628,7 +1642,7 @@ def make_method_signature(
             out += "\\ ..."
 
     out += "\\ )"
-
+    out = escape_braces(out)
     if qualifiers is not None:
         # Qualifiers as badges/spans for Markdown
         qualifier_map = {
@@ -1643,7 +1657,6 @@ def make_method_signature(
         for qualifier in qualifiers.split():
             badge = qualifier_map.get(qualifier, f'<span class="{qualifier}">{qualifier}</span>')
             out += f" {badge}"
-    out = escape_braces(out)
     return ret_type, out
 
 
@@ -1728,7 +1741,7 @@ def make_separator(section_level: bool = False) -> str:
     if section_level:
         separator_class = "section"
 
-    return f'<hr class="classref-{separator_class}-separator"></hr>\n\n'
+    return f'<hr class="classref-{separator_class}-separator"/>\n\n'
 
 
 def make_link(url: str, title: str) -> str:
