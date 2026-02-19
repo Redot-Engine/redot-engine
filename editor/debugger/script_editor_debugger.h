@@ -210,6 +210,8 @@ private:
 #endif // DISABLE_DEPRECATED
 	void _msg_servers_memory_usage(uint64_t p_thread_id, const Array &p_data);
 	void _msg_servers_drawn(uint64_t p_thread_id, const Array &p_data);
+	void _msg_signal_viewer_signal_emitted(uint64_t p_thread_id, const Array &p_data);
+	void _msg_signal_viewer_node_signal_data(uint64_t p_thread_id, const Array &p_data);
 	void _msg_stack_dump(uint64_t p_thread_id, const Array &p_data);
 	void _msg_stack_frame_vars(uint64_t p_thread_id, const Array &p_data);
 	void _msg_stack_frame_var(uint64_t p_thread_id, const Array &p_data);
@@ -275,7 +277,6 @@ private:
 	void _item_menu_id_pressed(int p_option);
 	void _tab_changed(int p_tab);
 
-	void _put_msg(const String &p_message, const Array &p_data, uint64_t p_thread_id = Thread::MAIN_ID);
 	void _export_csv();
 
 	void _clear_execution();
@@ -305,8 +306,12 @@ public:
 
 	void clear_inspector(bool p_send_msg = true);
 
+	// Send message to game process - public for SignalizeDock integration
+	void put_msg(const String &p_message, const Array &p_data, uint64_t p_thread_id = Thread::MAIN_ID);
+
 	// Needed by _live_edit_set, buttons state.
 	void set_editor_remote_tree(const Tree *p_tree) { editor_remote_tree = p_tree; }
+	const Tree *get_editor_remote_tree() const { return editor_remote_tree; }
 
 	void request_remote_tree();
 	const SceneDebuggerTree *get_remote_tree();

@@ -46,6 +46,7 @@
 #include "scene/animation/tween.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/debugger/scene_debugger.h"
+#include "scene/debugger/signal_viewer_runtime.h"
 #include "scene/gui/aspect_ratio_container.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
@@ -453,6 +454,10 @@ void register_scene_types() {
 	GDREGISTER_CLASS(CanvasModulate);
 	GDREGISTER_CLASS(ResourcePreloader);
 	GDREGISTER_CLASS(Window);
+
+#ifdef DEBUG_ENABLED
+	GDREGISTER_CLASS(SignalViewerRuntime);
+#endif
 
 	GDREGISTER_CLASS(StatusIndicator);
 

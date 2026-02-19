@@ -42,6 +42,10 @@
 #include "core/string/translation_server.h"
 #include "core/variant/typed_array.h"
 
+// Static member initialization for signal emission callback
+std::atomic<Object::SignalEmissionCallback> Object::signal_emission_callback = nullptr;
+std::atomic<bool> Object::signal_emission_callback_enabled = false;
+
 #ifdef DEBUG_ENABLED
 
 struct _ObjectDebugLock {
@@ -1223,6 +1227,12 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 	uint32_t *slot_flags = slot_flags_stack;
 	uint32_t slot_count = 0;
 
+	// STEP 1: Signal emission hook - Declare variables for callback capture
+	// This allows editor tools like the Signal Viewer to track signal emissions globally
+	// We capture the callback while holding the lock, but call it after releasing to prevent deadlocks
+	Object::SignalEmissionCallback emission_callback = nullptr;
+	bool should_call_callback = false;
+
 	{
 		OBJ_SIGNAL_LOCK
 
@@ -1235,6 +1245,12 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 #endif
 			//not connected? just return
 			return ERR_UNAVAILABLE;
+		}
+
+		// Capture callback state under lock (thread-safe atomic load)
+		should_call_callback = signal_emission_callback_enabled.load(std::memory_order_acquire) && signal_emission_callback.load(std::memory_order_acquire);
+		if (should_call_callback) {
+			emission_callback = signal_emission_callback.load(std::memory_order_acquire);
 		}
 
 		if (s->slot_map.size() > MAX_SLOTS_ON_STACK) {
@@ -1265,6 +1281,12 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 				_disconnect(p_name, slot_callables[i]);
 			}
 		}
+	}
+
+	// STEP 1: Call the emission callback outside the lock to prevent deadlocks
+	// if the callback re-enters signal code paths
+	if (should_call_callback && emission_callback) {
+		emission_callback(this, p_name, p_args, p_argcount);
 	}
 
 	OBJ_DEBUG_LOCK

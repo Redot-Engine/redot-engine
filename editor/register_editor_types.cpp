@@ -147,7 +147,6 @@ void register_editor_types() {
 	ResourceSaver::set_timestamp_on_save(true);
 
 	EditorStringNames::create();
-
 	GDREGISTER_CLASS(EditorPaths);
 	GDREGISTER_CLASS(EditorPlugin);
 	GDREGISTER_CLASS(EditorTranslationParserPlugin);
@@ -266,6 +265,7 @@ void register_editor_types() {
 	EditorPlugins::add_by_type<ThemeEditorPlugin>();
 	EditorPlugins::add_by_type<ToolButtonEditorPlugin>();
 	EditorPlugins::add_by_type<VoxelGIEditorPlugin>();
+
 #ifndef DISABLE_DEPRECATED
 	EditorPlugins::add_by_type<SkeletonIK3DEditorPlugin>();
 #endif
