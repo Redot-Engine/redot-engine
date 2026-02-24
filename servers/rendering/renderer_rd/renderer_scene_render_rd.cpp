@@ -34,6 +34,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/image.h"
+#include "effects/motion_blur.h"
 #include "renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"
 #include "servers/rendering/renderer_rd/shaders/decal_data_inc.glsl.gen.h"
@@ -541,6 +542,23 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 		}
 		RD::get_singleton()->draw_command_end_label();
 	}
+
+	bool using_motion_blur = RSG::camera_attributes->camera_attributes_uses_motion_blur(p_render_data->camera_attributes);
+
+	if (using_motion_blur && !can_use_storage) {
+		WARN_PRINT_ONCE("Motion blur requires storage support in shader. Disabling motion blur.");
+		using_motion_blur = false;
+	}
+
+	if (using_motion_blur && !RSG::camera_attributes->camera_attributes_get_motion_blur_show_in_editor() && Engine::get_singleton()->is_editor_hint()) {
+		using_motion_blur = false;
+	}
+
+	if (can_use_effects && using_motion_blur) {
+		RENDER_TIMESTAMP("Motion Blur");
+		motion_blur->motion_blur_compute(rb, p_render_data->camera_attributes, p_render_data->scene_data, p_render_data->transparent_bg, time_step, copy_effects);
+	}
+
 
 	float auto_exposure_scale = 1.0;
 
@@ -1680,6 +1698,11 @@ void RendererSceneRenderRD::init() {
 		RendererRD::Fog::get_singleton()->init_fog_shader(RendererRD::LightStorage::get_singleton()->get_max_directional_lights(), get_roughness_layers(), is_using_radiance_cubemap_array());
 	}
 
+	RSG::camera_attributes->camera_attributes_set_motion_blur_framerate_mode(RS::MotionBlurFramerateMode(int(GLOBAL_GET("rendering/camera/motion_blur/motion_blur_framerate_mode"))), int(GLOBAL_GET("rendering/camera/motion_blur/motion_blur_reference_framerate")));
+	RSG::camera_attributes->camera_attributes_set_motion_blur_show_in_editor(bool(GLOBAL_GET("rendering/camera/motion_blur/motion_blur_show_in_editor")));
+	RSG::camera_attributes->camera_attributes_set_motion_blur_quality(RS::MotionBlurQuality(int(GLOBAL_GET("rendering/camera/motion_blur/motion_blur_quality"))));
+	RSG::camera_attributes->camera_attributes_set_motion_blur_tile_size(RS::MotionBlurTileSize(int(GLOBAL_GET("rendering/camera/motion_blur/motion_blur_tile_size"))));
+
 	RSG::camera_attributes->camera_attributes_set_dof_blur_bokeh_shape(RS::DOFBokehShape(int(GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_bokeh_shape"))));
 	RSG::camera_attributes->camera_attributes_set_dof_blur_quality(RS::DOFBlurQuality(int(GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_bokeh_quality"))), GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_use_jitter"));
 	use_physical_light_units = GLOBAL_GET("rendering/lights_and_shadows/use_physical_light_units");
@@ -1708,6 +1731,7 @@ void RendererSceneRenderRD::init() {
 	bool can_use_storage = _render_buffers_can_be_storage();
 	bool can_use_vrs = is_vrs_supported();
 	bokeh_dof = memnew(RendererRD::BokehDOF(!can_use_storage));
+	motion_blur = memnew(RendererRD::MotionBlur(RSG::camera_attributes->camera_attributes_get_motion_blur_tile_size()));
 	copy_effects = memnew(RendererRD::CopyEffects(!can_use_storage));
 	debug_effects = memnew(RendererRD::DebugEffects);
 	luminance = memnew(RendererRD::Luminance(!can_use_storage));
@@ -1731,6 +1755,9 @@ RendererSceneRenderRD::~RendererSceneRenderRD() {
 
 	if (bokeh_dof) {
 		memdelete(bokeh_dof);
+	}
+	if (motion_blur) {
+		memdelete(motion_blur);
 	}
 	if (copy_effects) {
 		memdelete(copy_effects);
