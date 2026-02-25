@@ -2415,9 +2415,6 @@ ColorPicker::~ColorPicker() {
 /////////////////
 
 void ColorPickerPopupPanel::_input_from_window(const Ref<InputEvent> &p_event) {
-	if (p_event->is_action_pressed(SNAME("ui_accept"), false, true)) {
-		_close_pressed();
-	}
 	PopupPanel::_input_from_window(p_event);
 }
 
