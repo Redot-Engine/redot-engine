@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  signalsmith_module.h                                                  */
+/*  soundsmith_module.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -38,8 +38,8 @@
 #include "signalsmith-stretch/signalsmith-stretch.h"
 #include <random>
 
-class SignalSmith : public RefCounted {
-	GDCLASS(SignalSmith, RefCounted);
+class SoundSmith : public RefCounted {
+	GDCLASS(SoundSmith, RefCounted);
 
 private:
 	signalsmith::stretch::SignalsmithStretch<float, std::mt19937> stretch;
@@ -51,8 +51,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	SignalSmith();
-	~SignalSmith();
+	SoundSmith();
+	~SoundSmith();
 
 	void set_sample_rate(int p_rate);
 	void set_channels(int p_channels);
