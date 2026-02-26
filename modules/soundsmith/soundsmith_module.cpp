@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  signalsmith_module.cpp                                                */
+/*  soundsmith_module.cpp                                                 */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,7 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "signalsmith_module.h"
+#include "soundsmith_module.h"
 
 #include "core/io/file_access.h"
 #include "core/os/memory.h"
@@ -43,25 +43,25 @@
 #include <cmath>
 #include <vector>
 
-void SignalSmith::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_sample_rate", "rate"), &SignalSmith::set_sample_rate);
-	ClassDB::bind_method(D_METHOD("set_channels", "channels"), &SignalSmith::set_channels);
-	ClassDB::bind_method(D_METHOD("set_pitch", "pitch"), &SignalSmith::set_pitch);
-	ClassDB::bind_method(D_METHOD("set_tempo", "tempo"), &SignalSmith::set_tempo);
-	ClassDB::bind_method(D_METHOD("get_last_sample_rate"), &SignalSmith::get_last_sample_rate);
-	ClassDB::bind_method(D_METHOD("get_last_channels"), &SignalSmith::get_last_channels);
-	ClassDB::bind_method(D_METHOD("reset"), &SignalSmith::reset);
-	ClassDB::bind_method(D_METHOD("process", "input"), &SignalSmith::process);
-	ClassDB::bind_method(D_METHOD("change_tempo", "path", "tempo", "pitch"), &SignalSmith::change_tempo, DEFVAL(1.0f));
+void SoundSmith::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_sample_rate", "rate"), &SoundSmith::set_sample_rate);
+	ClassDB::bind_method(D_METHOD("set_channels", "channels"), &SoundSmith::set_channels);
+	ClassDB::bind_method(D_METHOD("set_pitch", "pitch"), &SoundSmith::set_pitch);
+	ClassDB::bind_method(D_METHOD("set_tempo", "tempo"), &SoundSmith::set_tempo);
+	ClassDB::bind_method(D_METHOD("get_last_sample_rate"), &SoundSmith::get_last_sample_rate);
+	ClassDB::bind_method(D_METHOD("get_last_channels"), &SoundSmith::get_last_channels);
+	ClassDB::bind_method(D_METHOD("reset"), &SoundSmith::reset);
+	ClassDB::bind_method(D_METHOD("process", "input"), &SoundSmith::process);
+	ClassDB::bind_method(D_METHOD("change_tempo", "path", "tempo", "pitch"), &SoundSmith::change_tempo, DEFVAL(1.0f));
 }
 
-SignalSmith::SignalSmith() {
+SoundSmith::SoundSmith() {
 	stretch.presetDefault(channels, sample_rate);
 }
 
-SignalSmith::~SignalSmith() {}
+SoundSmith::~SoundSmith() {}
 
-void SignalSmith::set_sample_rate(int p_rate) {
+void SoundSmith::set_sample_rate(int p_rate) {
 	if (p_rate < 1) {
 		return;
 	}
@@ -70,7 +70,7 @@ void SignalSmith::set_sample_rate(int p_rate) {
 	stretch.presetDefault(channels, sample_rate);
 }
 
-void SignalSmith::set_channels(int p_channels) {
+void SoundSmith::set_channels(int p_channels) {
 	if (p_channels < 1) {
 		return;
 	}
@@ -79,7 +79,7 @@ void SignalSmith::set_channels(int p_channels) {
 	stretch.presetDefault(channels, sample_rate);
 }
 
-void SignalSmith::set_pitch(float p_pitch) {
+void SoundSmith::set_pitch(float p_pitch) {
 	if (!(p_pitch > 0.0f)) {
 		return;
 	}
@@ -87,7 +87,7 @@ void SignalSmith::set_pitch(float p_pitch) {
 	stretch.setTransposeFactor(p_pitch);
 }
 
-void SignalSmith::set_tempo(float p_tempo) {
+void SoundSmith::set_tempo(float p_tempo) {
 	if (!(p_tempo > 0.0f)) {
 		return;
 	}
@@ -95,19 +95,19 @@ void SignalSmith::set_tempo(float p_tempo) {
 	tempo = p_tempo;
 }
 
-int SignalSmith::get_last_sample_rate() const {
+int SoundSmith::get_last_sample_rate() const {
 	return sample_rate;
 }
 
-int SignalSmith::get_last_channels() const {
+int SoundSmith::get_last_channels() const {
 	return channels;
 }
 
-void SignalSmith::reset() {
+void SoundSmith::reset() {
 	stretch.reset();
 }
 
-PackedFloat32Array SignalSmith::process(const PackedFloat32Array &input) {
+PackedFloat32Array SoundSmith::process(const PackedFloat32Array &input) {
 	PackedFloat32Array output;
 
 	if (channels < 1) {
@@ -189,7 +189,7 @@ PackedFloat32Array SignalSmith::process(const PackedFloat32Array &input) {
 	return output;
 }
 
-Ref<AudioStreamWAV> SignalSmith::change_tempo(const String &path, float p_tempo, float p_pitch) {
+Ref<AudioStreamWAV> SoundSmith::change_tempo(const String &path, float p_tempo, float p_pitch) {
 	Ref<AudioStreamWAV> out;
 
 	Ref<AudioStreamMP3> mp3 = AudioStreamMP3::load_from_file(path);
