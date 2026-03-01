@@ -30,6 +30,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/error/error_list.h"
 #ifdef VULKAN_ENABLED
 
 #include "rendering_context_driver_vulkan.h"
@@ -914,14 +915,57 @@ Error RenderingContextDriverVulkan::_create_vulkan_instance(const VkInstanceCrea
 	return OK;
 }
 
+bool RenderingContextDriverVulkan::_vulkan_is_supported() {
+#ifdef USE_VOLK
+	if (volkInitialize() != VK_SUCCESS) {
+		return false;
+	}
+#endif
+
+	if (!vkCreateInstance) {
+		return false;
+	}
+
+	VkApplicationInfo app_info{};
+	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	app_info.apiVersion = VK_API_VERSION_1_0;
+
+	VkInstanceCreateInfo create_info{};
+	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	create_info.pApplicationInfo = &app_info;
+
+	VkInstance _instance;
+	if (vkCreateInstance(&create_info, nullptr, &_instance) != VK_SUCCESS) {
+		return false;
+	}
+
+#ifdef USE_VOLK
+	volkLoadInstance(_instance);
+#endif
+
+	if (!vkEnumeratePhysicalDevices) {
+		vkDestroyInstance(_instance, nullptr);
+		return false;
+	}
+
+	uint32_t device_count = 0;
+	VkResult result = vkEnumeratePhysicalDevices(_instance, &device_count, nullptr);
+
+	vkDestroyInstance(_instance, nullptr);
+
+	if (result != VK_SUCCESS || device_count == 0) {
+		return false;
+	}
+
+	return true;
+}
+
 Error RenderingContextDriverVulkan::initialize() {
 	Error err;
 
-#ifdef USE_VOLK
-	if (volkInitialize() != VK_SUCCESS) {
-		return FAILED;
+	if (!_vulkan_is_supported()) {
+		return ERR_UNAVAILABLE;
 	}
-#endif
 
 	err = _initialize_vulkan_version();
 	ERR_FAIL_COND_V(err != OK, err);
