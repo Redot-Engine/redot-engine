@@ -920,11 +920,11 @@ bool RenderingContextDriverVulkan::_vulkan_is_supported() {
 	if (volkInitialize() != VK_SUCCESS) {
 		return false;
 	}
-#endif
 
 	if (!vkCreateInstance) {
 		return false;
 	}
+#endif
 
 	VkApplicationInfo app_info{};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -943,10 +943,12 @@ bool RenderingContextDriverVulkan::_vulkan_is_supported() {
 	volkLoadInstance(_instance);
 #endif
 
+#ifdef USE_VOLK
 	if (!vkEnumeratePhysicalDevices) {
 		vkDestroyInstance(_instance, nullptr);
 		return false;
 	}
+#endif
 
 	uint32_t device_count = 0;
 	VkResult result = vkEnumeratePhysicalDevices(_instance, &device_count, nullptr);
