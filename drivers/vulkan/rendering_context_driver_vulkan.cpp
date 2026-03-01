@@ -30,7 +30,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/error/error_list.h"
 #ifdef VULKAN_ENABLED
 
 #include "rendering_context_driver_vulkan.h"
@@ -38,6 +37,7 @@
 #include "vk_enum_string_helper.h"
 
 #include "core/config/project_settings.h"
+#include "core/error/error_list.h"
 #include "core/version.h"
 
 #include "rendering_device_driver_vulkan.h"
@@ -916,6 +916,11 @@ Error RenderingContextDriverVulkan::_create_vulkan_instance(const VkInstanceCrea
 }
 
 bool RenderingContextDriverVulkan::_vulkan_is_supported() {
+	if (VulkanHooks::get_singleton() != nullptr) {
+		VkPhysicalDevice hooked_device = VK_NULL_HANDLE;
+		return VulkanHooks::get_singleton()->get_physical_device(&hooked_device);
+	}
+
 #ifdef USE_VOLK
 	if (volkInitialize() != VK_SUCCESS) {
 		return false;
@@ -933,6 +938,13 @@ bool RenderingContextDriverVulkan::_vulkan_is_supported() {
 	VkInstanceCreateInfo create_info{};
 	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
+
+#if defined(USE_VOLK) && (defined(MACOS_ENABLED) || defined(IOS_ENABLED))
+	const char *probe_extensions[] = { VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME };
+	create_info.enabledExtensionCount = 1;
+	create_info.ppEnabledExtensionNames = probe_extensions;
+	create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
 	VkInstance _instance;
 	if (vkCreateInstance(&create_info, nullptr, &_instance) != VK_SUCCESS) {
