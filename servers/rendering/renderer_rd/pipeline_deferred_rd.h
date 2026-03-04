@@ -131,4 +131,5 @@ public:
 			pipeline = RID();
 		}
 	}
+
 };
