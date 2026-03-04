@@ -84,6 +84,7 @@ public:
 	}
 
 	~PipelineDeferredRD() {
+		_wait(); // Block until worker thread completes
 #ifdef DEV_ENABLED
 		ERR_FAIL_COND_MSG(pipeline.is_valid(), "'free()' must be called manually before deconstruction and before the corresponding shader is freed.");
 #endif
