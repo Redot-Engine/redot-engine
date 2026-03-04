@@ -126,9 +126,9 @@ public:
 
 		if (pipeline.is_valid()) {
 #ifdef DEV_ENABLED
-			ERR_FAIL_COND_MSG(!(RD::get_singleton()->render_pipeline_is_valid(pipeline) || RD::get_singleton()->compute_pipeline_is_valid(pipeline)), "`free()` must be called  manually before the dependent shader is freed.");
+			ERR_FAIL_COND_MSG(!(RD::get_singleton()->render_pipeline_is_valid(pipeline) || RD::get_singleton()->compute_pipeline_is_valid(pipeline)), "`free()` must be called manually before the dependent shader is freed.");
 #endif
-			RD::get_singleton()->free(pipeline);
+			RD::get_singleton()->free_rid(pipeline);
 			pipeline = RID();
 		}
 	}
