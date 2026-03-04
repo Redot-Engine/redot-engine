@@ -73,7 +73,8 @@ protected:
 
 	void _wait() {
 		if (task != WorkerThreadPool::INVALID_TASK_ID) {
-			WorkerThreadPool::get_singleton()->wait_for_task_completion(task);
+			const Error err = WorkerThreadPool::get_singleton()->wait_for_task_completion(task);
+			ERR_FAIL_COND_MSG(err != OK, "Failed to wait for pipeline compilation task completion.");
 			task = WorkerThreadPool::INVALID_TASK_ID;
 		}
 	}
@@ -131,5 +132,4 @@ public:
 			pipeline = RID();
 		}
 	}
-
 };
