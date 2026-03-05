@@ -556,6 +556,13 @@ double VariantUtilityFunctions::remap(double value, double istart, double istop,
 	return Math::remap(value, istart, istop, ostart, ostop);
 }
 
+double VariantUtilityFunctions::remap_default(double value, double istart, double istop, double ostart, double ostop, double default_value) {
+	if (istart == istop) {
+		return default_value;
+	}
+	return Math::remap(value, istart, istop, ostart, ostop);
+}
+
 double VariantUtilityFunctions::smoothstep(double from, double to, double val) {
 	return Math::smoothstep(from, to, val);
 }
@@ -1745,6 +1752,7 @@ void Variant::_register_variant_utility_functions() {
 	FUNCBINDR(lerp_angle, sarray("from", "to", "weight"), Variant::UTILITY_FUNC_TYPE_MATH);
 	FUNCBINDR(inverse_lerp, sarray("from", "to", "weight"), Variant::UTILITY_FUNC_TYPE_MATH);
 	FUNCBINDR(remap, sarray("value", "istart", "istop", "ostart", "ostop"), Variant::UTILITY_FUNC_TYPE_MATH);
+	FUNCBINDR(remap_default, sarray("value", "istart", "istop", "ostart", "ostop", "default_value"), Variant::UTILITY_FUNC_TYPE_MATH);
 
 	FUNCBINDR(smoothstep, sarray("from", "to", "x"), Variant::UTILITY_FUNC_TYPE_MATH);
 	FUNCBINDR(move_toward, sarray("from", "to", "delta"), Variant::UTILITY_FUNC_TYPE_MATH);
