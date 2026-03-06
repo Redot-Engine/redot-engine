@@ -82,6 +82,9 @@
 		<member name="hex_visible" type="bool" setter="set_hex_visible" getter="is_hex_visible" default="true">
 			If [code]true[/code], the hex color code input field is visible.
 		</member>
+		<member name="intensity" type="float" setter="set_intensity" getter="get_intensity" default="0.0">
+			The currently selected intensity.
+		</member>
 		<member name="old_color" type="Color" setter="set_old_color" getter="get_old_color" default="Color(0, 0, 0, 1)">
 			The currently stored old color. See also [member display_old_color].
 		</member>
