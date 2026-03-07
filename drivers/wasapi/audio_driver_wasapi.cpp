@@ -918,13 +918,13 @@ void AudioDriverWASAPI::thread_func(void *p_udata) {
 								for (int ch = 0; ch < channels - 1; ch++) {
 									int32_t sample = read_sample(ad->audio_input.format_tag, ad->audio_input.bits_per_sample, data, j * channels + ch);
 									if (ch % 2 == 0) {
-										rtemp += sample;
-									} else {
 										ltemp += sample;
+									} else {
+										rtemp += sample;
 									}
 								}
 								int32_t last_sample = read_sample(ad->audio_input.format_tag, ad->audio_input.bits_per_sample, data, j * channels + (channels - 1));
-								r += last_sample;
+								rtemp += last_sample;
 								if (channels % 2 != 0) {
 									ltemp += last_sample;
 									ltemp /= ((channels + 1) / 2);
