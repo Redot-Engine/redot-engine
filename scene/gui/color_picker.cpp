@@ -374,7 +374,9 @@ void ColorPicker::set_focus_on_picker_shape() {
 }
 
 void ColorPicker::set_intensity(float p_intensity) {
-	intensity_slider->set_value(p_intensity);
+	intensity = p_intensity;
+	_normalized_apply_intensity_to_color();
+	_update_color();
 }
 
 float ColorPicker::get_intensity() {
@@ -2091,7 +2093,7 @@ void ColorPicker::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_recent_presets"), &ColorPicker::get_recent_presets);
 	ClassDB::bind_method(D_METHOD("set_picker_shape", "shape"), &ColorPicker::set_picker_shape);
 	ClassDB::bind_method(D_METHOD("get_picker_shape"), &ColorPicker::get_picker_shape);
-	ClassDB::bind_method(D_METHOD("set_intensity"), &ColorPicker::set_intensity);
+	ClassDB::bind_method(D_METHOD("set_intensity", "intensity"), &ColorPicker::set_intensity);
 	ClassDB::bind_method(D_METHOD("get_intensity"), &ColorPicker::get_intensity);
 
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "color"), "set_pick_color", "get_pick_color");
