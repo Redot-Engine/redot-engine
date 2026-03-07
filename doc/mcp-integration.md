@@ -67,3 +67,22 @@ To get the most out of Redot's MCP server, agents should follow these guidelines
 4.  **Spatial Awareness**: Use `redot_game_control(action="inspect_live", recursive=true)` to discover UI paths and their pre-calculated screen coordinates for 100% accurate clicking.
 5.  **Debugging**: Use `redot_project_config(action="output")` to read real-time logs and `redot_code_intel(action="validate")` to syntax-check fixes before running the game.
 6.  **Script Editing Policy**: The MCP tool `create_file_res` is restricted to creating **new** files. To edit existing `.gd` scripts, agents **must** use native text editing tools (like `edit`). This ensures precision and prevents accidental overwrites of complex logic.
+
+### MCP Server Configuration Examples
+#### 1. Antigravity IDE
+```
+{
+  "mcpServers": {
+    "redot": {
+      "command": "/path/to/redot.editor.binary",
+      "args": [
+        "--headless",
+        "--mcp-server",
+        "--path",
+        "/path/to/your/project"
+      ],
+      "disabled": false
+    }
+  }
+}
+```
