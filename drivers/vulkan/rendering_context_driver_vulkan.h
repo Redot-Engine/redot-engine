@@ -108,6 +108,7 @@ private:
 	VkDebugReportCallbackEXT debug_report = VK_NULL_HANDLE;
 	Functions functions;
 
+	bool _vulkan_is_supported();
 	Error _initialize_vulkan_version();
 	void _register_requested_instance_extension(const CharString &p_extension_name, bool p_required);
 	Error _initialize_instance_extensions();
