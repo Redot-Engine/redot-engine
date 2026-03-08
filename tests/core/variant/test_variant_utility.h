@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "core/math/math_defs.h"
 #include "core/variant/variant_utility.h"
 
 #include "tests/test_macros.h"
@@ -129,5 +130,21 @@ TEST_CASE("[VariantUtility] Type conversion") {
 		CHECK(converted == Variant(123));
 	}
 }
+
+TEST_CASE_TEMPLATE("[VariantUtility] remap_default", T, float, double) {
+    CHECK(VariantUtilityFunctions::remap_default(150.0, 100.0, 200.0, 0.0, 1000.0, -99.0) == doctest::Approx(500.0));
+    CHECK(VariantUtilityFunctions::remap_default(250.0, 100.0, 200.0, 0.0, 1000.0, -99.0) == doctest::Approx(1500.0));
+    CHECK(VariantUtilityFunctions::remap_default(-50.0, -100.0, 0.0, 0.0, 100.0, -99.0) == doctest::Approx(50.0));
+
+    CHECK(VariantUtilityFunctions::remap_default(150.0, 100.0, 100.0, 0.0, 1000.0, -99.0) == doctest::Approx(-99.0));
+
+    CHECK(VariantUtilityFunctions::remap_default(INFINITY, 100.0, 200.0, 0.0, 1000.0, -99.0) == doctest::Approx(-99.0));
+    CHECK(VariantUtilityFunctions::remap_default(NAN, 100.0, 200.0, 0.0, 1000.0, -99.0) == doctest::Approx(-99.0));
+    CHECK(VariantUtilityFunctions::remap_default(150.0, 100.0, 200.0, NAN, 1000.0, -99.0) == doctest::Approx(-99.0));
+
+    CHECK(VariantUtilityFunctions::remap_default(150.0, 100.0, INFINITY, 0.0, 1000.0, -99.0) == doctest::Approx(0.0));
+    CHECK(VariantUtilityFunctions::remap_default(150.0, 100.0, INFINITY, 50.0, 1000.0, -99.0) == doctest::Approx(50.0));
+}
+
 
 } // namespace TestVariantUtility
