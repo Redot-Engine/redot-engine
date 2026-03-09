@@ -33,6 +33,7 @@
 #include "variant_utility.h"
 
 #include "core/io/marshalls.h"
+#include "core/math/math_funcs.h"
 #include "core/object/ref_counted.h"
 #include "core/object/script_language.h"
 #include "core/os/os.h"
@@ -557,10 +558,12 @@ double VariantUtilityFunctions::remap(double value, double istart, double istop,
 }
 
 double VariantUtilityFunctions::remap_default(double value, double istart, double istop, double ostart, double ostop, double default_value) {
-	if (istart == istop) {
-		return default_value;
+	double result = Math::remap(value, istart, istop, ostart, ostop);
+	if (Math::is_finite(result)) {
+		return result;
 	}
-	return Math::remap(value, istart, istop, ostart, ostop);
+
+	return default_value;
 }
 
 double VariantUtilityFunctions::smoothstep(double from, double to, double val) {
