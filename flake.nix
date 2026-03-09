@@ -46,6 +46,8 @@
           ];
 
           commonDeps = with pkgs; [
+            stdenv.cc
+            gcc-unwrapped
             pkg-config
             installShellFiles
             python3
@@ -64,7 +66,6 @@
           deps = if isDarwin then darwinDeps ++ commonDeps else linuxDeps ++ commonDeps;
           libraryPathVar = if isDarwin then "DYLD_LIBRARY_PATH" else "LD_LIBRARY_PATH";
           platform = if isDarwin then "macos" else "linuxbsd";
-          binary = if isDarwin then "redot.macos.editor.${arch}" else "redot.linuxbsd.editor.${arch}";
         });
   in {
     apps = forEachSupportedSystem ({
@@ -72,17 +73,120 @@
       deps,
       libraryPathVar,
       platform,
-      binary,
       arch,
       ...
     }: let
       script = pkgs.writeShellScript "redot" ''
+        export PATH=${pkgs.lib.makeBinPath deps}:$PATH
         export ${libraryPathVar}=${pkgs.lib.makeLibraryPath deps}
-        if [ ! -f ./bin/${binary} ]; then
-          echo "Building Redot..."
-          scons platform=${platform}
+
+        scons_args=()
+        runtime_args=()
+        parsing_runtime_args=0
+        show_help=0
+        target=editor
+        target_arch=${arch}
+        dev_build=no
+        precision=single
+        threads=yes
+        extra_suffix=
+
+        for arg in "$@"; do
+          if [ "$parsing_runtime_args" -eq 0 ] && [ "$arg" = "--help" ]; then
+            show_help=1
+            continue
+          fi
+
+          if [ "$parsing_runtime_args" -eq 0 ] && [ "$arg" = "--" ]; then
+            parsing_runtime_args=1
+            continue
+          fi
+
+          if [ "$parsing_runtime_args" -eq 0 ]; then
+            scons_args+=("$arg")
+
+            case "$arg" in
+              target=*) target=''${arg#target=} ;;
+              arch=*) target_arch=''${arg#arch=} ;;
+              dev_build=*) dev_build=''${arg#dev_build=} ;;
+              precision=*) precision=''${arg#precision=} ;;
+              threads=*) threads=''${arg#threads=} ;;
+              extra_suffix=*) extra_suffix=''${arg#extra_suffix=} ;;
+            esac
+          else
+            runtime_args+=("$arg")
+          fi
+        done
+
+        if [ "$show_help" -eq 1 ]; then
+          cat <<EOF
+Usage:
+  nix run .
+  nix run . -- [scons build flags...]
+  nix run . -- [scons build flags...] -- [redot runtime args...]
+
+Examples:
+  nix run .
+  nix run . -- target=editor dev_build=yes num_jobs=12
+  nix run . -- target=template_release production=yes
+  nix run . -- target=editor dev_build=yes -- --path /tmp/project
+
+Argument handling:
+  - The first '--' is consumed by Nix.
+  - Arguments before the next '--' are passed to SCons.
+  - Arguments after the next '--' are passed to the Redot binary.
+
+Notes:
+  - Common SCons flags include target=..., dev_build=yes, production=yes,
+    module_mono_enabled=yes, precision=double, num_jobs=..., and ccflags=...
+  - The wrapper auto-builds only when a matching binary is not already present.
+    Use 'nix develop' for full manual rebuild control.
+EOF
+          exit 0
         fi
-        exec ./bin/${binary} "$@"
+
+        binary_pattern="redot.${platform}.''${target}"
+
+        if [ "$dev_build" = "yes" ]; then
+          binary_pattern="$binary_pattern.dev"
+        fi
+
+        if [ "$precision" = "double" ]; then
+          binary_pattern="$binary_pattern.double"
+        fi
+
+        binary_pattern="$binary_pattern.''${target_arch}"
+
+        if [ "$threads" = "no" ]; then
+          binary_pattern="$binary_pattern.nothreads"
+        fi
+
+        if [ -n "$extra_suffix" ]; then
+          binary_pattern="$binary_pattern.$extra_suffix"
+        fi
+
+        shopt -s nullglob
+        matches=(./bin/"$binary_pattern"*)
+
+        if [ "''${#matches[@]}" -eq 0 ]; then
+          echo "Building Redot..."
+          scons platform=${platform} "''${scons_args[@]}"
+          matches=(./bin/"$binary_pattern"*)
+        fi
+
+        if [ "''${#matches[@]}" -eq 0 ]; then
+          echo "Could not find a built Redot binary matching $binary_pattern" >&2
+          exit 1
+        fi
+
+        binary_path="''${matches[0]}"
+        for candidate in "''${matches[@]}"; do
+          if [ "$candidate" -nt "$binary_path" ]; then
+            binary_path="$candidate"
+          fi
+        done
+
+        exec "$binary_path" "''${runtime_args[@]}"
       '';
     in {
       default = {
