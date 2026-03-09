@@ -145,6 +145,4 @@ TEST_CASE_TEMPLATE("[VariantUtility] remap_default", T, float, double) {
 	CHECK(VariantUtilityFunctions::remap_default(150.0, 100.0, INFINITY, 0.0, 1000.0, -99.0) == doctest::Approx(0.0));
 	CHECK(VariantUtilityFunctions::remap_default(150.0, 100.0, INFINITY, 50.0, 1000.0, -99.0) == doctest::Approx(50.0));
 }
-
-
 } // namespace TestVariantUtility
