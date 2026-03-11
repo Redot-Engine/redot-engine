@@ -34,6 +34,7 @@
 
 #include "core/io/image.h"
 #include "core/math/expression.h"
+#include "core/math/math_funcs.h"
 #include "scene/gui/color_mode.h"
 #include "scene/gui/color_picker_shape.h"
 #include "scene/gui/file_dialog.h"
@@ -374,6 +375,11 @@ void ColorPicker::set_focus_on_picker_shape() {
 }
 
 void ColorPicker::set_intensity(float p_intensity) {
+	p_intensity = CLAMP(p_intensity, this->intensity_slider->get_min(), this->intensity_slider->get_max());
+	if (Math::is_equal_approx(intensity, p_intensity)) {
+		return;
+	}
+
 	intensity = p_intensity;
 	_normalized_apply_intensity_to_color();
 	_update_color();

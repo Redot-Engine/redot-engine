@@ -84,6 +84,7 @@
 		</member>
 		<member name="intensity" type="float" setter="set_intensity" getter="get_intensity" default="0.0">
 			The currently selected intensity.
+			Note: [code]set_intensity[/code] clamps the value in the range [code][-10.0, 10.0][/code]
 		</member>
 		<member name="old_color" type="Color" setter="set_old_color" getter="get_old_color" default="Color(0, 0, 0, 1)">
 			The currently stored old color. See also [member display_old_color].
