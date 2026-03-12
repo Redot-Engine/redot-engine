@@ -2868,8 +2868,8 @@ void Variant::_variant_call_error(const String &p_method, Callable::CallError &e
 		case Callable::CallError::CALL_ERROR_TOO_MANY_ARGUMENTS: {
 			err = "Too many arguments for method '" + p_method + "'";
 		} break;
-		default: {
-		}
+		default:
+			return;
 	}
 	ERR_PRINT(err.utf8().get_data());
 }
