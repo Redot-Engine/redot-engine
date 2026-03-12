@@ -107,10 +107,10 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_CAST_TAB
 	(1 << Variant::AABB), // aabb
 	(1 << Variant::QUATERNION) | (1 << Variant::BASIS), // basis
 	(1 << Variant::TRANSFORM2D) |
-	(1 << Variant::QUATERNION) |
-	(1 << Variant::BASIS) |
-	(1 << Variant::TRANSFORM3D) |
-	(1 << Variant::PROJECTION), // transform3d
+			(1 << Variant::QUATERNION) |
+			(1 << Variant::BASIS) |
+			(1 << Variant::TRANSFORM3D) |
+			(1 << Variant::PROJECTION), // transform3d
 	(1 << Variant::TRANSFORM3D) | (1 << Variant::PROJECTION), // projection
 	(1 << Variant::STRING) | (1 << Variant::INT) | (1 << Variant::COLOR), // color
 	(1 << Variant::STRING) | (1 << Variant::STRING_NAME), // stringname
@@ -121,16 +121,16 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_CAST_TAB
 	(1 << Variant::SIGNAL), // signal
 	(1 << Variant::DICTIONARY), // dictionary
 	(1ull << Variant::ARRAY) |
-	(1ull << Variant::PACKED_BYTE_ARRAY) |
-	(1ull << Variant::PACKED_INT32_ARRAY) |
-	(1ull << Variant::PACKED_INT64_ARRAY) |
-	(1ull << Variant::PACKED_FLOAT32_ARRAY) |
-	(1ull << Variant::PACKED_FLOAT64_ARRAY) |
-	(1ull << Variant::PACKED_STRING_ARRAY) |
-	(1ull << Variant::PACKED_COLOR_ARRAY) |
-	(1ull << Variant::PACKED_VECTOR2_ARRAY) |
-	(1ull << Variant::PACKED_VECTOR3_ARRAY) |
-	(1ull << Variant::PACKED_VECTOR4_ARRAY), // array
+			(1ull << Variant::PACKED_BYTE_ARRAY) |
+			(1ull << Variant::PACKED_INT32_ARRAY) |
+			(1ull << Variant::PACKED_INT64_ARRAY) |
+			(1ull << Variant::PACKED_FLOAT32_ARRAY) |
+			(1ull << Variant::PACKED_FLOAT64_ARRAY) |
+			(1ull << Variant::PACKED_STRING_ARRAY) |
+			(1ull << Variant::PACKED_COLOR_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR2_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR3_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR4_ARRAY), // array
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_BYTE_ARRAY), // packedbytearray
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_INT32_ARRAY), // packedint32array
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_INT64_ARRAY), // packedint64array
@@ -163,10 +163,10 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_STRICT_C
 	(1 << Variant::AABB), // aabb
 	(1 << Variant::QUATERNION) | (1 << Variant::BASIS), // basis
 	(1 << Variant::TRANSFORM2D) |
-	(1 << Variant::QUATERNION) |
-	(1 << Variant::BASIS) |
-	(1 << Variant::TRANSFORM3D) |
-	(1 << Variant::PROJECTION), // transform3d
+			(1 << Variant::QUATERNION) |
+			(1 << Variant::BASIS) |
+			(1 << Variant::TRANSFORM3D) |
+			(1 << Variant::PROJECTION), // transform3d
 	(1 << Variant::TRANSFORM3D) | (1 << Variant::PROJECTION), // projection
 	(1 << Variant::STRING) | (1 << Variant::INT) | (1 << Variant::COLOR), // color
 	(1 << Variant::STRING) | (1 << Variant::STRING_NAME), // stringname
@@ -177,16 +177,16 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_STRICT_C
 	(1 << Variant::SIGNAL), // signal
 	(1 << Variant::DICTIONARY), // dictionary
 	(1ull << Variant::ARRAY) |
-	(1ull << Variant::PACKED_BYTE_ARRAY) |
-	(1ull << Variant::PACKED_INT32_ARRAY) |
-	(1ull << Variant::PACKED_INT64_ARRAY) |
-	(1ull << Variant::PACKED_FLOAT32_ARRAY) |
-	(1ull << Variant::PACKED_FLOAT64_ARRAY) |
-	(1ull << Variant::PACKED_STRING_ARRAY) |
-	(1ull << Variant::PACKED_COLOR_ARRAY) |
-	(1ull << Variant::PACKED_VECTOR2_ARRAY) |
-	(1ull << Variant::PACKED_VECTOR3_ARRAY) |
-	(1ull << Variant::PACKED_VECTOR4_ARRAY), // array
+			(1ull << Variant::PACKED_BYTE_ARRAY) |
+			(1ull << Variant::PACKED_INT32_ARRAY) |
+			(1ull << Variant::PACKED_INT64_ARRAY) |
+			(1ull << Variant::PACKED_FLOAT32_ARRAY) |
+			(1ull << Variant::PACKED_FLOAT64_ARRAY) |
+			(1ull << Variant::PACKED_STRING_ARRAY) |
+			(1ull << Variant::PACKED_COLOR_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR2_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR3_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR4_ARRAY), // array
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_BYTE_ARRAY), // packedbytearray
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_INT32_ARRAY), // packedint32array
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_INT64_ARRAY), // packedint64array
@@ -200,8 +200,7 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_STRICT_C
 };
 
 String Variant::get_type_name(Variant::Type p_type) {
-	if (p_type < VARIANT_MAX)
-	{
+	if (p_type < VARIANT_MAX) {
 		return TYPE_STRING_TABLE[p_type];
 	}
 	return "";
@@ -221,8 +220,7 @@ Variant::Type Variant::get_type_by_name(const String &p_type_name) {
 
 bool Variant::can_convert(Variant::Type p_type_from, Variant::Type p_type_to) {
 	std::uint64_t valid_types = 0;
-	if (p_type_to < VARIANT_MAX)
-	{
+	if (p_type_to < VARIANT_MAX) {
 		valid_types = TYPE_CAST_TABLE[p_type_to];
 	}
 	return (valid_types & (1ull << p_type_from)) != 0;
@@ -230,8 +228,7 @@ bool Variant::can_convert(Variant::Type p_type_from, Variant::Type p_type_to) {
 
 bool Variant::can_convert_strict(Variant::Type p_type_from, Variant::Type p_type_to) {
 	std::uint64_t valid_types = 0;
-	if (p_type_to < VARIANT_MAX)
-	{
+	if (p_type_to < VARIANT_MAX) {
 		valid_types = TYPE_STRICT_CAST_TABLE[p_type_to];
 	}
 	return (valid_types & (1ull << p_type_from)) != 0;
@@ -688,7 +685,8 @@ void Variant::reference(const Variant &p_variant) {
 
 void Variant::zero() {
 	switch (type) {
-		case NIL: break;
+		case NIL:
+			break;
 		case BOOL:
 		case INT:
 		case FLOAT:
@@ -717,13 +715,14 @@ void Variant::zero() {
 	}
 }
 
-template<typename T>
-void destroy(T *s) { reinterpret_cast<T *>(s)->~T(); }
+template <typename T>
+void destroy(T *s) {
+	reinterpret_cast<T *>(s)->~T();
+}
 
-template<typename T>
-void bucketFree(PagedAllocator<T, true> *bucket, void *mem)
-{
-	((PagedAllocator<T, true> *)bucket)->free((T*)mem);
+template <typename T>
+void bucketFree(PagedAllocator<T, true> *bucket, void *mem) {
+	((PagedAllocator<T, true> *)bucket)->free((T *)mem);
 }
 
 using Destructor = void (*)(void *);
@@ -761,8 +760,7 @@ void Variant::_clear_internal() {
 		(Destructor)destroy<Dictionary>,
 		(Destructor)destroy<Array>,
 	};
-	static const std::array<BucketFree, Variant::VARIANT_MAX> BUCKET_FREE_FN_TBL
-	{
+	static const std::array<BucketFree, Variant::VARIANT_MAX> BUCKET_FREE_FN_TBL{
 		nullptr,
 		nullptr,
 		nullptr,
@@ -793,8 +791,7 @@ void Variant::_clear_internal() {
 		nullptr,
 		nullptr,
 	};
-	static const std::array<void *, Variant::VARIANT_MAX> BUCKET_TBL
-	{
+	static const std::array<void *, Variant::VARIANT_MAX> BUCKET_TBL{
 		nullptr,
 		nullptr,
 		nullptr,
@@ -806,15 +803,15 @@ void Variant::_clear_internal() {
 		nullptr,
 		nullptr,
 		nullptr,
-		(void*)&Pools::_bucket_small,
+		(void *)&Pools::_bucket_small,
 		nullptr,
 		nullptr,
 		nullptr,
 		nullptr,
-		(void*)&Pools::_bucket_small,
-		(void*)&Pools::_bucket_medium,
-		(void*)&Pools::_bucket_medium,
-		(void*)&Pools::_bucket_large,
+		(void *)&Pools::_bucket_small,
+		(void *)&Pools::_bucket_medium,
+		(void *)&Pools::_bucket_medium,
+		(void *)&Pools::_bucket_large,
 		nullptr,
 		nullptr,
 		nullptr,
@@ -850,7 +847,9 @@ void Variant::_clear_internal() {
 			}
 		} break;
 		// Miscellaneous types.
-		case OBJECT: { _get_obj().unref(is_weak_ref); } break;
+		case OBJECT: {
+			_get_obj().unref(is_weak_ref);
+		} break;
 		// Arrays.
 		case PACKED_BYTE_ARRAY:
 		case PACKED_INT32_ARRAY:
@@ -861,7 +860,9 @@ void Variant::_clear_internal() {
 		case PACKED_VECTOR2_ARRAY:
 		case PACKED_VECTOR3_ARRAY:
 		case PACKED_VECTOR4_ARRAY:
-		case PACKED_COLOR_ARRAY: { PackedArrayRefBase::destroy(_data.packed_array); } break;
+		case PACKED_COLOR_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
 		default: {
 			// Not needed, there is no point. The following do not allocate memory:
 			// VECTOR2, VECTOR3, VECTOR4, RECT2, PLANE, QUATERNION, COLOR.
@@ -902,11 +903,13 @@ Variant::operator uint8_t() const {
 }
 
 Variant::operator ObjectID() const {
-	switch (type)
-	{
-	case Variant::INT: return ObjectID(_data._int);
-	case Variant::OBJECT: return _get_obj().id;
-	default: return ObjectID();
+	switch (type) {
+		case Variant::INT:
+			return ObjectID(_data._int);
+		case Variant::OBJECT:
+			return _get_obj().id;
+		default:
+			return ObjectID();
 	}
 }
 
@@ -923,11 +926,13 @@ Variant::operator double() const {
 }
 
 Variant::operator StringName() const {
-	switch (type)
-	{
-	case Variant::STRING_NAME: return *reinterpret_cast<const StringName *>(_data._mem);
-	case Variant::STRING: return *reinterpret_cast<const String *>(_data._mem);
-	default: return StringName();
+	switch (type) {
+		case Variant::STRING_NAME:
+			return *reinterpret_cast<const StringName *>(_data._mem);
+		case Variant::STRING:
+			return *reinterpret_cast<const String *>(_data._mem);
+		default:
+			return StringName();
 	}
 }
 
@@ -1128,102 +1133,140 @@ String Variant::to_json_string() const {
 }
 
 Variant::operator Vector2() const {
-	switch (type)
-	{
-	case Variant::VECTOR2: return *reinterpret_cast<const Vector2 *>(_data._mem);
-	case Variant::VECTOR2I: return *reinterpret_cast<const Vector2i *>(_data._mem);
-	case Variant::VECTOR3: return Vector2(reinterpret_cast<const Vector3 *>(_data._mem)->x, reinterpret_cast<const Vector3 *>(_data._mem)->y);
-	case Variant::VECTOR3I: return Vector2(reinterpret_cast<const Vector3i *>(_data._mem)->x, reinterpret_cast<const Vector3i *>(_data._mem)->y);
-	case Variant::VECTOR4: return Vector2(reinterpret_cast<const Vector4 *>(_data._mem)->x, reinterpret_cast<const Vector4 *>(_data._mem)->y);
-	case Variant::VECTOR4I: return Vector2(reinterpret_cast<const Vector4i *>(_data._mem)->x, reinterpret_cast<const Vector4i *>(_data._mem)->y);
-	default: return Vector2();
+	switch (type) {
+		case Variant::VECTOR2:
+			return *reinterpret_cast<const Vector2 *>(_data._mem);
+		case Variant::VECTOR2I:
+			return *reinterpret_cast<const Vector2i *>(_data._mem);
+		case Variant::VECTOR3:
+			return Vector2(reinterpret_cast<const Vector3 *>(_data._mem)->x, reinterpret_cast<const Vector3 *>(_data._mem)->y);
+		case Variant::VECTOR3I:
+			return Vector2(reinterpret_cast<const Vector3i *>(_data._mem)->x, reinterpret_cast<const Vector3i *>(_data._mem)->y);
+		case Variant::VECTOR4:
+			return Vector2(reinterpret_cast<const Vector4 *>(_data._mem)->x, reinterpret_cast<const Vector4 *>(_data._mem)->y);
+		case Variant::VECTOR4I:
+			return Vector2(reinterpret_cast<const Vector4i *>(_data._mem)->x, reinterpret_cast<const Vector4i *>(_data._mem)->y);
+		default:
+			return Vector2();
 	}
 }
 
 Variant::operator Vector2i() const {
-	switch (type)
-	{
-	case Variant::VECTOR2: return *reinterpret_cast<const Vector2 *>(_data._mem);
-	case Variant::VECTOR2I: return *reinterpret_cast<const Vector2i *>(_data._mem);
-	case Variant::VECTOR3: return Vector2i(reinterpret_cast<const Vector3 *>(_data._mem)->x, reinterpret_cast<const Vector3 *>(_data._mem)->y);
-	case Variant::VECTOR3I: return Vector2i(reinterpret_cast<const Vector3i *>(_data._mem)->x, reinterpret_cast<const Vector3i *>(_data._mem)->y);
-	case Variant::VECTOR4: return Vector2i(reinterpret_cast<const Vector4 *>(_data._mem)->x, reinterpret_cast<const Vector4 *>(_data._mem)->y);
-	case Variant::VECTOR4I: return Vector2i(reinterpret_cast<const Vector4i *>(_data._mem)->x, reinterpret_cast<const Vector4i *>(_data._mem)->y);
-	default: return Vector2i();
+	switch (type) {
+		case Variant::VECTOR2:
+			return *reinterpret_cast<const Vector2 *>(_data._mem);
+		case Variant::VECTOR2I:
+			return *reinterpret_cast<const Vector2i *>(_data._mem);
+		case Variant::VECTOR3:
+			return Vector2i(reinterpret_cast<const Vector3 *>(_data._mem)->x, reinterpret_cast<const Vector3 *>(_data._mem)->y);
+		case Variant::VECTOR3I:
+			return Vector2i(reinterpret_cast<const Vector3i *>(_data._mem)->x, reinterpret_cast<const Vector3i *>(_data._mem)->y);
+		case Variant::VECTOR4:
+			return Vector2i(reinterpret_cast<const Vector4 *>(_data._mem)->x, reinterpret_cast<const Vector4 *>(_data._mem)->y);
+		case Variant::VECTOR4I:
+			return Vector2i(reinterpret_cast<const Vector4i *>(_data._mem)->x, reinterpret_cast<const Vector4i *>(_data._mem)->y);
+		default:
+			return Vector2i();
 	}
 }
 
 Variant::operator Rect2() const {
-	switch (type)
-	{
-	case Variant::RECT2: return *reinterpret_cast<const Rect2 *>(_data._mem);
-	case Variant::RECT2I: return *reinterpret_cast<const Rect2i *>(_data._mem);
-	default: return Rect2();
+	switch (type) {
+		case Variant::RECT2:
+			return *reinterpret_cast<const Rect2 *>(_data._mem);
+		case Variant::RECT2I:
+			return *reinterpret_cast<const Rect2i *>(_data._mem);
+		default:
+			return Rect2();
 	}
 }
 
 Variant::operator Rect2i() const {
-	switch (type)
-	{
-	case Variant::RECT2: return *reinterpret_cast<const Rect2 *>(_data._mem);
-	case Variant::RECT2I: return *reinterpret_cast<const Rect2i *>(_data._mem);
-	default: return Rect2i();
+	switch (type) {
+		case Variant::RECT2:
+			return *reinterpret_cast<const Rect2 *>(_data._mem);
+		case Variant::RECT2I:
+			return *reinterpret_cast<const Rect2i *>(_data._mem);
+		default:
+			return Rect2i();
 	}
 }
 
 Variant::operator Vector3() const {
-	switch (type)
-	{
-	case Variant::VECTOR2: return Vector3(reinterpret_cast<const Vector2 *>(_data._mem)->x, reinterpret_cast<const Vector2 *>(_data._mem)->y, 0.0);
-	case Variant::VECTOR2I: return Vector3(reinterpret_cast<const Vector2i *>(_data._mem)->x, reinterpret_cast<const Vector2i *>(_data._mem)->y, 0.0);
-	case Variant::VECTOR3: return *reinterpret_cast<const Vector3 *>(_data._mem);
-	case Variant::VECTOR3I: return *reinterpret_cast<const Vector3i *>(_data._mem);
-	case Variant::VECTOR4: return Vector3(reinterpret_cast<const Vector4 *>(_data._mem)->x, reinterpret_cast<const Vector4 *>(_data._mem)->y, reinterpret_cast<const Vector4 *>(_data._mem)->z);
-	case Variant::VECTOR4I: return Vector3(reinterpret_cast<const Vector4i *>(_data._mem)->x, reinterpret_cast<const Vector4i *>(_data._mem)->y, reinterpret_cast<const Vector4i *>(_data._mem)->z);
-	default: return Vector3();
+	switch (type) {
+		case Variant::VECTOR2:
+			return Vector3(reinterpret_cast<const Vector2 *>(_data._mem)->x, reinterpret_cast<const Vector2 *>(_data._mem)->y, 0.0);
+		case Variant::VECTOR2I:
+			return Vector3(reinterpret_cast<const Vector2i *>(_data._mem)->x, reinterpret_cast<const Vector2i *>(_data._mem)->y, 0.0);
+		case Variant::VECTOR3:
+			return *reinterpret_cast<const Vector3 *>(_data._mem);
+		case Variant::VECTOR3I:
+			return *reinterpret_cast<const Vector3i *>(_data._mem);
+		case Variant::VECTOR4:
+			return Vector3(reinterpret_cast<const Vector4 *>(_data._mem)->x, reinterpret_cast<const Vector4 *>(_data._mem)->y, reinterpret_cast<const Vector4 *>(_data._mem)->z);
+		case Variant::VECTOR4I:
+			return Vector3(reinterpret_cast<const Vector4i *>(_data._mem)->x, reinterpret_cast<const Vector4i *>(_data._mem)->y, reinterpret_cast<const Vector4i *>(_data._mem)->z);
+		default:
+			return Vector3();
 	}
 }
 
 Variant::operator Vector3i() const {
-	switch (type)
-	{
-	case Variant::VECTOR2: return Vector3i(reinterpret_cast<const Vector2 *>(_data._mem)->x, reinterpret_cast<const Vector2 *>(_data._mem)->y, 0.0);
-	case Variant::VECTOR2I: return Vector3i(reinterpret_cast<const Vector2i *>(_data._mem)->x, reinterpret_cast<const Vector2i *>(_data._mem)->y, 0.0);
-	case Variant::VECTOR3: return *reinterpret_cast<const Vector3 *>(_data._mem);
-	case Variant::VECTOR3I: return *reinterpret_cast<const Vector3i *>(_data._mem);
-	case Variant::VECTOR4: return Vector3i(reinterpret_cast<const Vector4 *>(_data._mem)->x, reinterpret_cast<const Vector4 *>(_data._mem)->y, reinterpret_cast<const Vector4 *>(_data._mem)->z);
-	case Variant::VECTOR4I: return Vector3i(reinterpret_cast<const Vector4i *>(_data._mem)->x, reinterpret_cast<const Vector4i *>(_data._mem)->y, reinterpret_cast<const Vector4i *>(_data._mem)->z);
-	default: return Vector3i();
+	switch (type) {
+		case Variant::VECTOR2:
+			return Vector3i(reinterpret_cast<const Vector2 *>(_data._mem)->x, reinterpret_cast<const Vector2 *>(_data._mem)->y, 0.0);
+		case Variant::VECTOR2I:
+			return Vector3i(reinterpret_cast<const Vector2i *>(_data._mem)->x, reinterpret_cast<const Vector2i *>(_data._mem)->y, 0.0);
+		case Variant::VECTOR3:
+			return *reinterpret_cast<const Vector3 *>(_data._mem);
+		case Variant::VECTOR3I:
+			return *reinterpret_cast<const Vector3i *>(_data._mem);
+		case Variant::VECTOR4:
+			return Vector3i(reinterpret_cast<const Vector4 *>(_data._mem)->x, reinterpret_cast<const Vector4 *>(_data._mem)->y, reinterpret_cast<const Vector4 *>(_data._mem)->z);
+		case Variant::VECTOR4I:
+			return Vector3i(reinterpret_cast<const Vector4i *>(_data._mem)->x, reinterpret_cast<const Vector4i *>(_data._mem)->y, reinterpret_cast<const Vector4i *>(_data._mem)->z);
+		default:
+			return Vector3i();
 	}
 }
 
 Variant::operator Vector4() const {
-	switch (type)
-	{
-	case Variant::VECTOR2: return Vector4(reinterpret_cast<const Vector2 *>(_data._mem)->x, reinterpret_cast<const Vector2 *>(_data._mem)->y, 0.0, 0.0);
-	case Variant::VECTOR2I: return Vector4(reinterpret_cast<const Vector2i *>(_data._mem)->x, reinterpret_cast<const Vector2i *>(_data._mem)->y, 0.0, 0.0);
-	case Variant::VECTOR3: return Vector4(reinterpret_cast<const Vector3 *>(_data._mem)->x, reinterpret_cast<const Vector3 *>(_data._mem)->y, reinterpret_cast<const Vector3 *>(_data._mem)->z, 0.0);
-	case Variant::VECTOR3I: return Vector4(reinterpret_cast<const Vector3i *>(_data._mem)->x, reinterpret_cast<const Vector3i *>(_data._mem)->y, reinterpret_cast<const Vector3i *>(_data._mem)->z, 0.0);
-	case Variant::VECTOR4: return *reinterpret_cast<const Vector4 *>(_data._mem);
-	case Variant::VECTOR4I: return *reinterpret_cast<const Vector4i *>(_data._mem);
-	default: return Vector4();
+	switch (type) {
+		case Variant::VECTOR2:
+			return Vector4(reinterpret_cast<const Vector2 *>(_data._mem)->x, reinterpret_cast<const Vector2 *>(_data._mem)->y, 0.0, 0.0);
+		case Variant::VECTOR2I:
+			return Vector4(reinterpret_cast<const Vector2i *>(_data._mem)->x, reinterpret_cast<const Vector2i *>(_data._mem)->y, 0.0, 0.0);
+		case Variant::VECTOR3:
+			return Vector4(reinterpret_cast<const Vector3 *>(_data._mem)->x, reinterpret_cast<const Vector3 *>(_data._mem)->y, reinterpret_cast<const Vector3 *>(_data._mem)->z, 0.0);
+		case Variant::VECTOR3I:
+			return Vector4(reinterpret_cast<const Vector3i *>(_data._mem)->x, reinterpret_cast<const Vector3i *>(_data._mem)->y, reinterpret_cast<const Vector3i *>(_data._mem)->z, 0.0);
+		case Variant::VECTOR4:
+			return *reinterpret_cast<const Vector4 *>(_data._mem);
+		case Variant::VECTOR4I:
+			return *reinterpret_cast<const Vector4i *>(_data._mem);
+		default:
+			return Vector4();
 	}
 }
 
 Variant::operator Vector4i() const {
-	switch (type)
-	{
-	case Variant::VECTOR2: return Vector4i(reinterpret_cast<const Vector2 *>(_data._mem)->x, reinterpret_cast<const Vector2 *>(_data._mem)->y, 0.0, 0.0);
-	case Variant::VECTOR2I: return Vector4i(reinterpret_cast<const Vector2i *>(_data._mem)->x, reinterpret_cast<const Vector2i *>(_data._mem)->y, 0.0, 0.0);
-	case Variant::VECTOR3: return Vector4i(reinterpret_cast<const Vector3 *>(_data._mem)->x, reinterpret_cast<const Vector3 *>(_data._mem)->y, reinterpret_cast<const Vector3 *>(_data._mem)->z, 0.0);
-	case Variant::VECTOR3I: return Vector4i(reinterpret_cast<const Vector3i *>(_data._mem)->x, reinterpret_cast<const Vector3i *>(_data._mem)->y, reinterpret_cast<const Vector3i *>(_data._mem)->z, 0.0);
-	case Variant::VECTOR4:
-	{
-		const Vector4 &v4 = *reinterpret_cast<const Vector4 *>(_data._mem);
-		return Vector4i(v4.x, v4.y, v4.z, v4.w);
-	} break;
-	case Variant::VECTOR4I: return *reinterpret_cast<const Vector4i *>(_data._mem);
-	default: return Vector4i();
+	switch (type) {
+		case Variant::VECTOR2:
+			return Vector4i(reinterpret_cast<const Vector2 *>(_data._mem)->x, reinterpret_cast<const Vector2 *>(_data._mem)->y, 0.0, 0.0);
+		case Variant::VECTOR2I:
+			return Vector4i(reinterpret_cast<const Vector2i *>(_data._mem)->x, reinterpret_cast<const Vector2i *>(_data._mem)->y, 0.0, 0.0);
+		case Variant::VECTOR3:
+			return Vector4i(reinterpret_cast<const Vector3 *>(_data._mem)->x, reinterpret_cast<const Vector3 *>(_data._mem)->y, reinterpret_cast<const Vector3 *>(_data._mem)->z, 0.0);
+		case Variant::VECTOR3I:
+			return Vector4i(reinterpret_cast<const Vector3i *>(_data._mem)->x, reinterpret_cast<const Vector3i *>(_data._mem)->y, reinterpret_cast<const Vector3i *>(_data._mem)->z, 0.0);
+		case Variant::VECTOR4: {
+			const Vector4 &v4 = *reinterpret_cast<const Vector4 *>(_data._mem);
+			return Vector4i(v4.x, v4.y, v4.z, v4.w);
+		} break;
+		case Variant::VECTOR4I:
+			return *reinterpret_cast<const Vector4i *>(_data._mem);
+		default:
+			return Vector4i();
 	}
 }
 
@@ -2765,17 +2808,23 @@ bool StringLikeVariantComparator::compare(const Variant &p_lhs, const Variant &p
 
 bool StringLikeVariantOrder::compare(const Variant &p_lhs, const Variant &p_rhs) {
 	String lhs;
-	switch (p_lhs.get_type())
-	{
-	case Variant::STRING: lhs = *VariantInternal::get_string(&p_lhs); break;
-	case Variant::STRING_NAME: lhs = *VariantInternal::get_string_name(&p_lhs); break;
-	default: return p_lhs < p_rhs;
+	switch (p_lhs.get_type()) {
+		case Variant::STRING:
+			lhs = *VariantInternal::get_string(&p_lhs);
+			break;
+		case Variant::STRING_NAME:
+			lhs = *VariantInternal::get_string_name(&p_lhs);
+			break;
+		default:
+			return p_lhs < p_rhs;
 	}
-	switch (p_rhs.get_type())
-	{
-	case Variant::STRING: return StringName::AlphCompare::compare(lhs, *VariantInternal::get_string(&p_rhs));
-	case Variant::STRING_NAME: return StringName::AlphCompare::compare(lhs, *VariantInternal::get_string_name(&p_rhs));
-	default: return p_lhs < p_rhs;
+	switch (p_rhs.get_type()) {
+		case Variant::STRING:
+			return StringName::AlphCompare::compare(lhs, *VariantInternal::get_string(&p_rhs));
+		case Variant::STRING_NAME:
+			return StringName::AlphCompare::compare(lhs, *VariantInternal::get_string_name(&p_rhs));
+		default:
+			return p_lhs < p_rhs;
 	}
 	return p_lhs < p_rhs;
 }
@@ -2785,8 +2834,8 @@ bool Variant::is_ref_counted() const {
 }
 
 static const std::uint64_t IS_SHARED = (1ull << Variant::OBJECT) |
-	(1ull << Variant::ARRAY) |
-	(1ull << Variant::DICTIONARY);
+		(1ull << Variant::ARRAY) |
+		(1ull << Variant::DICTIONARY);
 
 bool Variant::is_type_shared(Variant::Type p_type) {
 	return (IS_SHARED & (1ull << p_type)) != 0;
@@ -2798,9 +2847,12 @@ bool Variant::is_shared() const {
 
 bool Variant::is_read_only() const {
 	switch (type) {
-	case ARRAY: return reinterpret_cast<const Array *>(_data._mem)->is_read_only();
-	case DICTIONARY: return reinterpret_cast<const Dictionary *>(_data._mem)->is_read_only();
-	default: return false;
+		case ARRAY:
+			return reinterpret_cast<const Array *>(_data._mem)->is_read_only();
+		case DICTIONARY:
+			return reinterpret_cast<const Dictionary *>(_data._mem)->is_read_only();
+		default:
+			return false;
 	}
 }
 
