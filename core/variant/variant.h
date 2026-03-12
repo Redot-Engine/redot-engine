@@ -93,8 +93,6 @@ public:
 	// If this changes the table in variant_op must be updated
 	enum Type {
 		NIL,
-
-		// atomic types
 		BOOL,
 		INT,
 		FLOAT,
@@ -282,54 +280,32 @@ private:
 
 	void _clear_internal();
 
-	static constexpr bool needs_deinit[Variant::VARIANT_MAX] = {
-		false, //NIL,
-		false, //BOOL,
-		false, //INT,
-		false, //FLOAT,
-		true, //STRING,
-		false, //VECTOR2,
-		false, //VECTOR2I,
-		false, //RECT2,
-		false, //RECT2I,
-		false, //VECTOR3,
-		false, //VECTOR3I,
-		true, //TRANSFORM2D,
-		false, //VECTOR4,
-		false, //VECTOR4I,
-		false, //PLANE,
-		false, //QUATERNION,
-		true, //AABB,
-		true, //BASIS,
-		true, //TRANSFORM,
-		true, //PROJECTION,
-
-		// misc types
-		false, //COLOR,
-		true, //STRING_NAME,
-		true, //NODE_PATH,
-		false, //RID,
-		true, //OBJECT,
-		true, //CALLABLE,
-		true, //SIGNAL,
-		true, //DICTIONARY,
-		true, //ARRAY,
-
-		// typed arrays
-		true, //PACKED_BYTE_ARRAY,
-		true, //PACKED_INT32_ARRAY,
-		true, //PACKED_INT64_ARRAY,
-		true, //PACKED_FLOAT32_ARRAY,
-		true, //PACKED_FLOAT64_ARRAY,
-		true, //PACKED_STRING_ARRAY,
-		true, //PACKED_VECTOR2_ARRAY,
-		true, //PACKED_VECTOR3_ARRAY,
-		true, //PACKED_COLOR_ARRAY,
-		true, //PACKED_VECTOR4_ARRAY,
-	};
+	static constexpr std::uint64_t needs_deinit = (1ull << Variant::STRING) |
+		(1ull << Variant::TRANSFORM2D) |
+		(1ull << Variant::AABB) |
+		(1ull << Variant::BASIS) |
+		(1ull << Variant::TRANSFORM3D) |
+		(1ull << Variant::PROJECTION) |
+		(1ull << Variant::STRING_NAME) |
+		(1ull << Variant::NODE_PATH) |
+		(1ull << Variant::OBJECT) |
+		(1ull << Variant::CALLABLE) |
+		(1ull << Variant::SIGNAL) |
+		(1ull << Variant::DICTIONARY) |
+		(1ull << Variant::ARRAY) |
+		(1ull << Variant::PACKED_BYTE_ARRAY) |
+		(1ull << Variant::PACKED_INT32_ARRAY) |
+		(1ull << Variant::PACKED_INT64_ARRAY) |
+		(1ull << Variant::PACKED_FLOAT32_ARRAY) |
+		(1ull << Variant::PACKED_FLOAT64_ARRAY) |
+		(1ull << Variant::PACKED_STRING_ARRAY) |
+		(1ull << Variant::PACKED_COLOR_ARRAY) |
+		(1ull << Variant::PACKED_VECTOR2_ARRAY) |
+		(1ull << Variant::PACKED_VECTOR3_ARRAY) |
+		(1ull << Variant::PACKED_VECTOR4_ARRAY);
 
 	_FORCE_INLINE_ void clear() {
-		if (unlikely(needs_deinit[type])) { // Make it fast for types that don't need deinit.
+		if (unlikely((needs_deinit & (1ull << type)) != 0)) { // Make it fast for types that don't need deinit.
 			_clear_internal();
 		}
 		type = NIL;
@@ -354,38 +330,24 @@ private:
 	template <typename T>
 	_ALWAYS_INLINE_ T _to_int() const {
 		switch (get_type()) {
-			case NIL:
-				return 0;
-			case BOOL:
-				return _data._bool ? 1 : 0;
-			case INT:
-				return T(_data._int);
-			case FLOAT:
-				return T(_data._float);
-			case STRING:
-				return reinterpret_cast<const String *>(_data._mem)->to_int();
-			default: {
-				return 0;
-			}
+		case NIL: return 0;
+		case BOOL: return _data._bool ? 1 : 0;
+		case INT: return T(_data._int);
+		case FLOAT: return T(_data._float);
+		case STRING: return reinterpret_cast<const String *>(_data._mem)->to_int();
+		default: return 0;
 		}
 	}
 
 	template <typename T>
 	_ALWAYS_INLINE_ T _to_float() const {
 		switch (type) {
-			case NIL:
-				return 0;
-			case BOOL:
-				return _data._bool ? 1 : 0;
-			case INT:
-				return T(_data._int);
-			case FLOAT:
-				return T(_data._float);
-			case STRING:
-				return reinterpret_cast<const String *>(_data._mem)->to_float();
-			default: {
-				return 0;
-			}
+		case NIL: return 0;
+		case BOOL: return _data._bool ? 1 : 0;
+		case INT: return T(_data._int);
+		case FLOAT: return T(_data._float);
+		case STRING: return reinterpret_cast<const String *>(_data._mem)->to_float();
+		default: return 0;
 		}
 	}
 
@@ -872,7 +834,7 @@ public:
 	}
 	_FORCE_INLINE_ Variant() {}
 	_FORCE_INLINE_ ~Variant() {
-		if (unlikely(needs_deinit[type])) { // Make it fast for types that don't need deinit.
+		if (unlikely((needs_deinit & (1ull << type)) != 0)) { // Make it fast for types that don't need deinit.
 			_clear_internal();
 		}
 	}
