@@ -117,7 +117,7 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_CAST_TAB
 	(1 << Variant::STRING) | (1 << Variant::NODE_PATH), // nodepath
 	(1 << Variant::OBJECT) | (1 << Variant::RID), // rid
 	(1 << Variant::NIL) | (1 << Variant::OBJECT), // object
-	(1 << Variant::CALLABLE), // callbale
+	(1 << Variant::CALLABLE), // callable
 	(1 << Variant::SIGNAL), // signal
 	(1 << Variant::DICTIONARY), // dictionary
 	(1ull << Variant::ARRAY) |
@@ -2826,7 +2826,6 @@ bool StringLikeVariantOrder::compare(const Variant &p_lhs, const Variant &p_rhs)
 		default:
 			return p_lhs < p_rhs;
 	}
-	return p_lhs < p_rhs;
 }
 
 bool Variant::is_ref_counted() const {
@@ -2859,15 +2858,17 @@ bool Variant::is_read_only() const {
 void Variant::_variant_call_error(const String &p_method, Callable::CallError &error) {
 	String err;
 	switch (error.error) {
-		case Callable::CallError::CALL_ERROR_INVALID_ARGUMENT: {
+		case Callable::CallError::CALL_ERROR_INVALID_ARGUMENT:
 			err = "Invalid type for argument #" + itos(error.argument) + ", expected '" + Variant::get_type_name(Variant::Type(error.expected)) + "'.";
-		} break;
-		case Callable::CallError::CALL_ERROR_INVALID_METHOD: {
+		case Callable::CallError::CALL_ERROR_INVALID_METHOD:
 			err = "Invalid method '" + p_method + "' for type '" + Variant::get_type_name(type) + "'.";
-		} break;
-		case Callable::CallError::CALL_ERROR_TOO_MANY_ARGUMENTS: {
+		case Callable::CallError::CALL_ERROR_TOO_MANY_ARGUMENTS:
+		case Callable::CallError::CALL_ERROR_TOO_FEW_ARGUMENTS:
 			err = "Too many arguments for method '" + p_method + "'";
-		} break;
+		case Callable::CallError::CALL_ERROR_INSTANCE_IS_NULL:
+			err = "Instance is null";
+		case Callable::CallError::CALL_ERROR_METHOD_NOT_CONST:
+			err = "Method not const in const instance";
 		default:
 			return;
 	}
