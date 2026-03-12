@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file voxelizer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/resources/multimesh.h"
@@ -51,11 +57,11 @@ private:
 
 	struct Cell {
 		uint32_t children[8];
-		float albedo[3] = {}; //albedo in RGB24
-		float emission[3] = {}; //accumulated light in 16:16 fixed point (needs to be integer for moving lights fast)
+		float albedo[3] = {}; ///< Albedo in RGB24
+		float emission[3] = {}; ///< Accumulated light in 16:16 fixed point (needs to be integer for moving lights fast)
 		float normal[3] = {};
 		uint32_t used_sides = 0;
-		float alpha = 0.0; //used for upsampling
+		float alpha = 0.0; ///< Used for upsampling
 		uint16_t x = 0;
 		uint16_t y = 0;
 		uint16_t z = 0;
@@ -90,7 +96,7 @@ private:
 	};
 
 	struct MaterialCache {
-		//128x128 textures
+		/// 128x128 textures
 		Vector<Color> albedo;
 		Vector<Color> emission;
 	};
@@ -118,6 +124,9 @@ private:
 	void _debug_mesh(int p_idx, int p_level, const AABB &p_aabb, Ref<MultiMesh> &p_multimesh, int &idx);
 
 	bool sorted = false;
+	/// Cells need to be sorted by level and coordinates
+	/// it is important that level has more priority (for compute), and that Z has the least,
+	/// given it may aid older implementations plot using GPU
 	void _sort();
 
 public:

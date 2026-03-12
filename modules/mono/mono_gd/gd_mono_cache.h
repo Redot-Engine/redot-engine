@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gd_mono_cache.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../csharp_script.h"
@@ -56,7 +62,7 @@ namespace GDMonoCache {
 #endif
 
 struct godotsharp_property_info {
-	godot_string_name name; // Not owned
+	godot_string_name name; ///< Not owned
 	godot_string hint_string;
 	Variant::Type type;
 	PropertyHint hint;
@@ -65,7 +71,7 @@ struct godotsharp_property_info {
 };
 
 struct godotsharp_property_def_val_pair {
-	godot_string_name name; // Not owned
+	godot_string_name name; ///< Not owned
 	godot_variant value;
 };
 

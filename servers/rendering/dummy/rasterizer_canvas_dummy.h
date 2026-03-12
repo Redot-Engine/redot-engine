@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rasterizer_canvas_dummy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/renderer_canvas_render.h"

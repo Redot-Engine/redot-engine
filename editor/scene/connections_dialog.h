@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file connections_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/dialogs.h"
@@ -146,9 +152,15 @@ private:
 	Label *warning_label = nullptr;
 	Label *error_label = nullptr;
 
+	/**
+	 * Signal automatically called by parent dialog.
+	 */
 	void ok_pressed() override;
 	void _cancel_pressed();
 	void _item_activated();
+	/**
+	 * Called each time a target node is selected within the target node tree.
+	 */
 	void _tree_node_selected();
 	void _focus_currently_connected();
 
@@ -160,9 +172,19 @@ private:
 	void _open_method_popup();
 
 	void _unbind_count_changed(double p_count);
+	/**
+	 * Adds a new parameter bind to connection.
+	 */
 	void _add_bind();
+	/**
+	 * Remove parameter bind from connection.
+	 */
 	void _remove_bind();
 	void _advanced_pressed();
+	/**
+	 * Enables or disables the connect button. The connect button is enabled if a
+	 * node is selected and valid in the selected mode.
+	 */
 	void _update_ok_enabled();
 	void _update_warning_label();
 
@@ -172,6 +194,9 @@ protected:
 	static void _bind_methods();
 
 public:
+	/**
+	 * Automatically generates a name for the callback method.
+	 */
 	static StringName generate_method_callback_name(Node *p_source, const String &p_signal_name, Node *p_target);
 	Node *get_source() const;
 	ConnectionData get_source_connection_data() const;
@@ -188,10 +213,18 @@ public:
 	bool get_deferred() const;
 	bool get_one_shot() const;
 	bool get_append_source() const;
+	/**
+	 * @return `true` if ConnectDialog is being used to edit an existing connection.
+	 */
 	bool is_editing() const;
 
 	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
 
+	/**
+	 * Initialize ConnectDialog and populate fields with expected data.
+	 * If creating a connection from scratch, sensible defaults are used.
+	 * If editing an existing connection, previous data is retained.
+	 */
 	void init(const ConnectionData &p_cd, const PackedStringArray &p_signal_args, bool p_edit = false);
 
 	void popup_dialog(const String &p_for_signal);
@@ -201,7 +234,7 @@ public:
 
 //////////////////////////////////////////
 
-// Custom `Tree` needed to use `EditorHelpBit` to display signal documentation.
+/// Custom `Tree` needed to use `EditorHelpBit` to display signal documentation.
 class ConnectionsDockTree : public Tree {
 	virtual Control *make_custom_tooltip(const String &p_text) const;
 };
@@ -216,7 +249,7 @@ class ConnectionsDock : public VBoxContainer {
 		TREE_ITEM_TYPE_CONNECTION,
 	};
 
-	// Right-click context menu options.
+	/// Right-click context menu options.
 	enum ClassMenuOption {
 		CLASS_MENU_OPEN_DOCS,
 	};
@@ -246,9 +279,23 @@ class ConnectionsDock : public VBoxContainer {
 
 	void _filter_changed(const String &p_text);
 
+	/**
+	 * Post-ConnectDialog callback for creating/editing connections.
+	 * Creates or edits connections based on state of the ConnectDialog when "Connect" is pressed.
+	 */
 	void _make_or_edit_connection();
+	/**
+	 * Creates single connection w/ undo-redo functionality.
+	 */
 	void _connect(const ConnectDialog::ConnectionData &p_cd);
+	/**
+	 * Break single connection w/ undo-redo functionality.
+	 */
 	void _disconnect(const ConnectDialog::ConnectionData &p_cd);
+	/**
+	 * Break all connections of currently selected signal.
+	 * Can undo-redo as a single action.
+	 */
 	void _disconnect_all();
 
 	void _tree_item_selected();
@@ -256,8 +303,17 @@ class ConnectionsDock : public VBoxContainer {
 	TreeItemType _get_item_type(const TreeItem &p_item) const;
 	bool _is_connection_inherited(Connection &p_connection);
 
+	/**
+	 * Open connection dialog with TreeItem data to CREATE a brand-new connection.
+	 */
 	void _open_connection_dialog(TreeItem &p_item);
+	/**
+	 * Open connection dialog with Connection data to EDIT an existing connection.
+	 */
 	void _open_edit_connection_dialog(TreeItem &p_item);
+	/**
+	 * Open slot method location in script editor.
+	 */
 	void _go_to_method(TreeItem &p_item);
 
 	void _handle_class_menu_option(int p_option);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sky.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/rid_owner.h"
@@ -42,9 +48,11 @@
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_compiler.h"
 
-// Forward declare RendererSceneRenderRD so we can pass it into some of our methods, these classes are pretty tightly bound
+/// Forward declare RendererSceneRenderRD so we can pass it into some of our methods, these classes are pretty tightly bound
+/// @{
 class RendererSceneRenderRD;
 class RenderSceneBuffersRD;
+/// @}
 
 namespace RendererRD {
 
@@ -59,7 +67,7 @@ public:
 
 	const int SAMPLERS_BINDING_FIRST_INDEX = 4;
 
-	// Skys need less info from Directional Lights than the normal shaders
+	/// Skys need less info from Directional Lights than the normal shaders
 	struct SkyDirectionalLightData {
 		float direction[3];
 		float energy;
@@ -98,13 +106,13 @@ private:
 	};
 
 	struct SkyPushConstant {
-		float orientation[12]; // 48 - 48
-		float projection[4]; // 16 - 64
-		float position[3]; // 12 - 76
-		float time; // 4 - 80
-		float pad[2]; // 8 - 88
-		float luminance_multiplier; // 4 - 92
-		float brightness_multiplier; // 4 - 96
+		float orientation[12]; ///< 48 - 48
+		float projection[4]; ///< 16 - 64
+		float position[3]; ///< 12 - 76
+		float time; ///< 4 - 80
+		float pad[2]; ///< 8 - 88
+		float luminance_multiplier; ///< 4 - 92
+		float brightness_multiplier; ///< 4 - 96
 		// 128 is the max size of a push constant. We can replace "pad" but we can't add any more.
 	};
 
@@ -141,27 +149,27 @@ private:
 public:
 	struct SkySceneState {
 		struct UBO {
-			float combined_reprojection[RendererSceneRender::MAX_RENDER_VIEWS][16]; // 2 x 64 - 128
-			float view_inv_projections[RendererSceneRender::MAX_RENDER_VIEWS][16]; // 2 x 64 - 256
-			float view_eye_offsets[RendererSceneRender::MAX_RENDER_VIEWS][4]; // 2 x 16 - 288
+			float combined_reprojection[RendererSceneRender::MAX_RENDER_VIEWS][16]; ///< 2 x 64 - 128
+			float view_inv_projections[RendererSceneRender::MAX_RENDER_VIEWS][16]; ///< 2 x 64 - 256
+			float view_eye_offsets[RendererSceneRender::MAX_RENDER_VIEWS][4]; ///< 2 x 16 - 288
 
-			uint32_t volumetric_fog_enabled; // 4 - 292
-			float volumetric_fog_inv_length; // 4 - 296
-			float volumetric_fog_detail_spread; // 4 - 300
-			float volumetric_fog_sky_affect; // 4 - 304
+			uint32_t volumetric_fog_enabled; ///< 4 - 292
+			float volumetric_fog_inv_length; ///< 4 - 296
+			float volumetric_fog_detail_spread; ///< 4 - 300
+			float volumetric_fog_sky_affect; ///< 4 - 304
 
-			uint32_t fog_enabled; // 4 - 308
-			float fog_sky_affect; // 4 - 312
-			float fog_density; // 4 - 316
-			float fog_sun_scatter; // 4 - 320
+			uint32_t fog_enabled; ///< 4 - 308
+			float fog_sky_affect; ///< 4 - 312
+			float fog_density; ///< 4 - 316
+			float fog_sun_scatter; ///< 4 - 320
 
-			float fog_light_color[3]; // 12 - 332
-			float fog_aerial_perspective; // 4 - 336
+			float fog_light_color[3]; ///< 12 - 332
+			float fog_aerial_perspective; ///< 4 - 336
 
-			float z_far; // 4 - 340
-			uint32_t directional_light_count; // 4 - 344
-			uint32_t pad1; // 4 - 348
-			uint32_t pad2; // 4 - 352
+			float z_far; ///< 4 - 340
+			uint32_t directional_light_count; ///< 4 - 344
+			uint32_t pad1; ///< 4 - 348
+			uint32_t pad2; ///< 4 - 352
 		};
 
 		UBO ubo;
@@ -192,8 +200,8 @@ public:
 				RID views[6];
 				Size2i size;
 			};
-			Vector<Mipmap> mipmaps; //per-face view
-			Vector<RID> views; // per-cubemap view
+			Vector<Mipmap> mipmaps; ///< per-face view
+			Vector<RID> views; ///< per-cubemap view
 		};
 
 		struct DownsampleLayer {
@@ -201,14 +209,16 @@ public:
 				RID view;
 				Size2i size;
 
-				// for mobile only
+				/// For mobile only
+				/// @{
 				RID views[6];
 				RID framebuffers[6];
+				/// @
 			};
 			Vector<Mipmap> mipmaps;
 		};
 
-		RID radiance_base_cubemap; //cubemap for first layer, first cubemap
+		RID radiance_base_cubemap; ///< cubemap for first layer, first cubemap
 		RID downsampled_radiance_cubemap;
 		DownsampleLayer downsampled_layer;
 		RID coefficient_buffer;
@@ -267,7 +277,7 @@ public:
 		Sky *dirty_list = nullptr;
 		float baked_exposure = 1.0;
 
-		//State to track when radiance cubemap needs updating
+		/// State to track when radiance cubemap needs updating
 		SkyMaterialData *prev_material = nullptr;
 		Vector3 prev_position;
 		float prev_time;

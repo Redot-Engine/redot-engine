@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_server_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/class_db.h"
@@ -62,7 +68,8 @@ public:
 
 	virtual TypedArray<RID> get_maps() const = 0;
 
-	/* MAP API */
+	/// @name MAP API
+	/// @{
 
 	virtual RID map_create() = 0;
 
@@ -102,7 +109,9 @@ public:
 
 	virtual Vector2 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
 
-	/* REGION API */
+	/// @}
+	/// @name REGION API
+	/// @{
 
 	virtual RID region_create() = 0;
 	virtual uint32_t region_get_iteration_id(RID p_region) const = 0;
@@ -146,7 +155,9 @@ public:
 	virtual Vector2 region_get_random_point(RID p_region, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
 	virtual Rect2 region_get_bounds(RID p_region) const = 0;
 
-	/* LINK API */
+	/// @}
+	/// @name LINK API
+	/// @{
 
 	virtual RID link_create() = 0;
 	virtual uint32_t link_get_iteration_id(RID p_link) const = 0;
@@ -178,7 +189,9 @@ public:
 	virtual void link_set_owner_id(RID p_link, ObjectID p_owner_id) = 0;
 	virtual ObjectID link_get_owner_id(RID p_link) const = 0;
 
-	/* AGENT API */
+	/// @}
+	/// @name AGENT API
+	/// @{
 
 	virtual RID agent_create() = 0;
 
@@ -230,7 +243,9 @@ public:
 	virtual void agent_set_avoidance_priority(RID p_agent, real_t p_priority) = 0;
 	virtual real_t agent_get_avoidance_priority(RID p_agent) const = 0;
 
-	/* OBSTACLE API */
+	/// @}
+	/// @name OBSTACLE API
+	/// @{
 
 	virtual RID obstacle_create() = 0;
 	virtual void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled) = 0;
@@ -250,16 +265,21 @@ public:
 	virtual void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers) = 0;
 	virtual uint32_t obstacle_get_avoidance_layers(RID p_obstacle) const = 0;
 
-	/* QUERY API */
+	/// @}
+	/// @name QUERY API
+	/// @{
 
 	virtual void query_path(const Ref<NavigationPathQueryParameters2D> &p_query_parameters, Ref<NavigationPathQueryResult2D> p_query_result, const Callable &p_callback = Callable()) = 0;
 
-	/* NAVMESH BAKE API */
+	/// @}
+	/// @name NAVMESH BAKE API
+	/// @{
 
 	virtual void parse_source_geometry_data(const Ref<NavigationPolygon> &p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData2D> &p_source_geometry_data, Node *p_root_node, const Callable &p_callback = Callable()) = 0;
 	virtual void bake_from_source_geometry_data(const Ref<NavigationPolygon> &p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData2D> &p_source_geometry_data, const Callable &p_callback = Callable()) = 0;
 	virtual void bake_from_source_geometry_data_async(const Ref<NavigationPolygon> &p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData2D> &p_source_geometry_data, const Callable &p_callback = Callable()) = 0;
 	virtual bool is_baking_navigation_polygon(Ref<NavigationPolygon> p_navigation_polygon) const = 0;
+	/// @}
 
 protected:
 	static RWLock geometry_parser_rwlock;
@@ -272,7 +292,8 @@ public:
 
 	virtual Vector<Vector2> simplify_path(const Vector<Vector2> &p_path, real_t p_epsilon) = 0;
 
-	/* SERVER API */
+	/// @name SERVER API
+	/// @{
 
 	virtual void set_active(bool p_active) = 0;
 	virtual void process(double p_delta_time) = 0;
@@ -285,7 +306,9 @@ public:
 	NavigationServer2D();
 	~NavigationServer2D() override;
 
-	/* DEBUG API */
+	/// @}
+	/// @name DEBUG API
+	/// @{
 
 	enum ProcessInfo {
 		INFO_ACTIVE_MAPS,
@@ -304,6 +327,7 @@ public:
 
 	void set_debug_enabled(bool p_enabled);
 	bool get_debug_enabled() const;
+	/// @}
 
 protected:
 #ifndef DISABLE_DEPRECATED

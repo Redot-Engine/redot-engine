@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_data_tool.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mesh_data_tool.h"
 #include "mesh_data_tool.compat.inc"
 

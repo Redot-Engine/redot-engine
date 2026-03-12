@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_access_windows_pipe.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef WINDOWS_ENABLED
@@ -52,13 +58,14 @@ class FileAccessWindowsPipe : public FileAccess {
 	void _close();
 
 public:
+	/// Open pipe using handles created by CreatePipe(rfd, wfd, NULL, 4096) call in the OS.execute_with_pipe.
 	Error open_existing(HANDLE p_rfd, HANDLE p_wfd, bool p_blocking);
 
 	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
-	virtual bool is_open() const override; ///< true when file is open
+	virtual bool is_open() const override; ///< @return `true` when file is open
 
-	virtual String get_path() const override; /// returns the path for the current open file
-	virtual String get_path_absolute() const override; /// returns the absolute path for the current open file
+	virtual String get_path() const override; ///< @return The path for the current open file
+	virtual String get_path_absolute() const override; ///< @return The absolute path for the current open file
 
 	virtual void seek(uint64_t p_position) override {}
 	virtual void seek_end(int64_t p_position = 0) override {}

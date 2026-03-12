@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/interpolated_property.h"
@@ -109,8 +115,8 @@ private:
 	void _update_process_mode();
 
 protected:
-	// Use from derived classes to set process modes instead of setting directly.
-	// This is because physics interpolation may need to request process modes additionally.
+	/// Use from derived classes to set process modes instead of setting directly.
+	/// This is because physics interpolation may need to request process modes additionally.
 	void set_desired_process_modes(bool p_process_internal, bool p_physics_process_internal);
 
 	virtual void _physics_interpolated_changed() override;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file copy_effects.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
@@ -80,7 +86,8 @@ private:
 		uint32_t flags;
 		uint32_t pad;
 
-		//glow
+		/// @name Glow
+		/// @{
 		float glow_strength;
 		float glow_bloom;
 		float glow_hdr_threshold;
@@ -90,6 +97,7 @@ private:
 		float glow_white;
 		float glow_luminance_cap;
 		float glow_auto_exposure_scale;
+		/// @}
 
 		float luminance_multiplier;
 		float res1;
@@ -141,7 +149,8 @@ private:
 		int32_t target[2];
 		uint32_t flags;
 		float luminance_multiplier;
-		// Glow.
+		/// @name Glow
+		/// @{
 		float glow_strength;
 		float glow_bloom;
 		float glow_hdr_threshold;
@@ -151,11 +160,15 @@ private:
 		float glow_white;
 		float glow_luminance_cap;
 		float glow_auto_exposure_scale;
-		// DOF.
+		/// @}
+		/// @name DOF
+		/// @{
 		float camera_z_far;
 		float camera_z_near;
 		uint32_t pad2[2];
-		//SET color
+		/// @}
+
+		// SET color
 		float set_color[4];
 	};
 
@@ -212,8 +225,8 @@ private:
 
 	} copy_to_fb;
 
-	// Copy to DP
-
+	/// @name Copy to DP
+	/// @{
 	struct CopyToDPPushConstant {
 		float z_far;
 		float z_near;
@@ -225,8 +238,9 @@ private:
 		RID shader_version;
 		PipelineCacheRD pipeline;
 	} cube_to_dp;
-
-	// Cubemap effects
+	/// @}
+	/// @name Cubemap Effects
+	/// @{
 
 	struct CubemapDownsamplerPushConstant {
 		uint32_t face_size;
@@ -288,8 +302,9 @@ private:
 		RID compute_pipeline;
 		PipelineCacheRD raster_pipeline;
 	} roughness;
-
-	// Merge specular
+	/// @}
+	/// @name Merge Specular
+	/// @{
 
 	enum SpecularMergeMode {
 		SPECULAR_MERGE_ADD,
@@ -304,11 +319,12 @@ private:
 
 		SPECULAR_MERGE_MAX
 	};
+	/// @}
 
-	/* Specular merge must be done using raster, rather than compute
+	/**
+	 * Specular merge must be done using raster, rather than compute
 	 * because it must continue the existing color buffer
 	 */
-
 	struct SpecularMerge {
 		SpecularMergeShaderRD shader;
 		RID shader_version;

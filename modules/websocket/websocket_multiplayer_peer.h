@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file websocket_multiplayer_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "websocket_peer.h"
@@ -89,7 +95,8 @@ protected:
 	void _clear();
 
 public:
-	/* MultiplayerPeer */
+	/// @name MultiplayerPeer
+	/// @{
 	virtual void set_target_peer(int p_target_peer) override;
 	virtual int get_packet_peer() const override;
 	virtual int get_packet_channel() const override { return 0; }
@@ -104,13 +111,15 @@ public:
 	virtual void disconnect_peer(int p_peer_id, bool p_force = false) override;
 
 	virtual ConnectionStatus get_connection_status() const override;
-
-	/* PacketPeer */
+	/// @}
+	/// @name PacketPeer
+	/// @{
 	virtual int get_available_packet_count() const override;
 	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override;
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
-
-	/* WebSocketPeer */
+	/// @}
+	/// @name WebSocketPeer
+	/// @{
 	virtual Ref<WebSocketPeer> get_peer(int p_peer_id) const;
 
 	Error create_client(const String &p_url, Ref<TLSOptions> p_options);
@@ -136,6 +145,7 @@ public:
 
 	void set_max_queued_packets(int p_max_queued_packets);
 	int get_max_queued_packets() const;
+	/// @}
 
 	WebSocketMultiplayerPeer();
 	~WebSocketMultiplayerPeer();

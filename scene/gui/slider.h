@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file slider.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/range.h"
@@ -48,7 +54,7 @@ public:
 private:
 	struct Grab {
 		int pos = 0;
-		double uvalue = 0.0; // Value at `pos`.
+		double uvalue = 0.0; ///< Value at `pos`.
 		double value_before_dragging = 0.0;
 		bool active = false;
 	} grab;

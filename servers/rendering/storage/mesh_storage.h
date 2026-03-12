@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering_server.h"
@@ -39,7 +45,8 @@ class RendererMeshStorage {
 public:
 	virtual ~RendererMeshStorage() {}
 
-	/* MESH API */
+	/// @name MESH API
+	/// @{
 
 	virtual RID mesh_allocate() = 0;
 	virtual void mesh_initialize(RID p_rid) = 0;
@@ -47,7 +54,7 @@ public:
 
 	virtual void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count) = 0;
 
-	/// Returns stride
+	/// @return stride
 	virtual void mesh_add_surface(RID p_mesh, const RS::SurfaceData &p_surface) = 0;
 
 	virtual int mesh_get_blend_shape_count(RID p_mesh) const = 0;
@@ -82,8 +89,9 @@ public:
 	virtual void mesh_debug_usage(List<RS::MeshInfo> *r_info) = 0;
 
 	virtual bool mesh_needs_instance(RID p_mesh, bool p_has_skeleton) = 0;
-
-	/* MESH INSTANCE */
+	/// @}
+	/// @name MESH INSTANCE
+	/// @{
 
 	virtual RID mesh_instance_create(RID p_base) = 0;
 	virtual void mesh_instance_free(RID p_rid) = 0;
@@ -92,25 +100,27 @@ public:
 	virtual void mesh_instance_check_for_update(RID p_mesh_instance) = 0;
 	virtual void mesh_instance_set_canvas_item_transform(RID p_mesh_instance, const Transform2D &p_transform) = 0;
 	virtual void update_mesh_instances() = 0;
+	/// @}
+	/// @name MULTIMESH API
+	/// @{
 
-	/* MULTIMESH API */
 	struct MultiMeshInterpolator {
 		RS::MultimeshTransformFormat _transform_format = RS::MULTIMESH_TRANSFORM_3D;
 		bool _use_colors = false;
 		bool _use_custom_data = false;
 
-		// The stride of the buffer in floats.
+		/// The stride of the buffer in floats.
 		int _stride = 0;
 
-		// Vertex format sizes in floats.
+		/// Vertex format sizes in floats.
 		int _vf_size_xform = 0;
 		int _vf_size_color = 0;
 		int _vf_size_data = 0;
 
-		// Set by allocate, can be used to prevent indexing out of range.
+		/// Set by allocate, can be used to prevent indexing out of range.
 		int _num_instances = 0;
 
-		// Quality determines whether to use lerp or slerp etc.
+		/// Quality determines whether to use lerp or slerp etc.
 		int quality = 0;
 		bool interpolated = false;
 		bool on_interpolate_update_list = false;
@@ -194,15 +204,17 @@ public:
 
 	virtual AABB _multimesh_get_aabb(RID p_multimesh) = 0;
 
-	// Multimesh is responsible for allocating / destroying a MultiMeshInterpolator object.
-	// This allows shared functionality for interpolation across backends.
+	/// Multimesh is responsible for allocating / destroying a MultiMeshInterpolator object.
+	/// This allows shared functionality for interpolation across backends.
 	virtual MultiMeshInterpolator *_multimesh_get_interpolator(RID p_multimesh) const = 0;
+	/// @}
 
 private:
 	void _multimesh_add_to_interpolation_lists(RID p_multimesh, MultiMeshInterpolator &r_mmi);
 
 public:
-	/* SKELETON API */
+	/// @name SKELETON API
+	/// @{
 
 	virtual RID skeleton_allocate() = 0;
 	virtual void skeleton_initialize(RID p_rid) = 0;
@@ -217,8 +229,9 @@ public:
 	virtual void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D &p_base_transform) = 0;
 
 	virtual void skeleton_update_dependency(RID p_base, DependencyTracker *p_instance) = 0;
-
-	/* INTERPOLATION */
+	/// @}
+	/// @name INTERPOLATION
+	/// @{
 
 	struct InterpolationData {
 		void notify_free_multimesh(RID p_rid);
@@ -230,4 +243,5 @@ public:
 
 	void update_interpolation_tick(bool p_process = true);
 	void update_interpolation_frame(bool p_process = true);
+	/// @}
 };

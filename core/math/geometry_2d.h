@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file geometry_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/delaunay_2d.h"
@@ -362,8 +368,8 @@ public:
 		return triangles;
 	}
 
-	// Assumes cartesian coordinate system with +x to the right, +y up.
-	// If using screen coordinates (+x to the right, +y down) the result will need to be flipped.
+	/// Assumes cartesian coordinate system with +x to the right, +y up.
+	/// If using screen coordinates (+x to the right, +y down) the result will need to be flipped.
 	static bool is_polygon_clockwise(const Vector<Vector2> &p_polygon) {
 		int c = p_polygon.size();
 		if (c < 3) {
@@ -380,7 +386,7 @@ public:
 		return sum > 0.0f;
 	}
 
-	// Alternate implementation that should be faster.
+	/// Alternate implementation that should be faster.
 	static bool is_point_in_polygon(const Vector2 &p_point, const Vector<Vector2> &p_polygon) {
 		int c = p_polygon.size();
 		if (c < 3) {
@@ -433,8 +439,8 @@ public:
 		return (real_t)(A.x - O.x) * (B.y - O.y) - (real_t)(A.y - O.y) * (B.x - O.x);
 	}
 
-	// Returns a list of points on the convex hull in counter-clockwise order.
-	// Note: the last point in the returned list is the same as the first one.
+	/// @return A list of points on the convex hull in counter-clockwise order.
+	/// @note The last point in the returned list is the same as the first one.
 	static Vector<Point2> convex_hull(Vector<Point2> P) {
 		int n = P.size(), k = 0;
 		Vector<Point2> H;
@@ -506,6 +512,13 @@ public:
 
 	static Vector<Vector<Vector2>> decompose_polygon_in_convex(const Vector<Point2> &p_polygon);
 
+	/// Super simple, almost brute force scanline stacking fitter.
+	/// It's pretty basic for now, but it tries to make sure that the aspect ratio of the
+	/// resulting atlas is somehow square. This is necessary because video cards have limits
+	/// on texture size (usually 2048 or 4096), so the squarer a texture, the more the chances
+	/// that it will work in every hardware.
+	/// For example, it will prioritize a 1024x1024 atlas (works everywhere) instead of a
+	/// 256x8192 atlas (won't work anywhere).
 	static void make_atlas(const Vector<Size2i> &p_rects, Vector<Point2i> &r_result, Size2i &r_size);
 	static Vector<Vector3i> partial_pack_rects(const Vector<Vector2i> &p_sizes, const Size2i &p_atlas_size);
 

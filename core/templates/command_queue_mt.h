@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file command_queue_mt.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/worker_thread_pool.h"
@@ -76,7 +82,7 @@ class CommandQueueMT {
 		_FORCE_INLINE_ auto &get() { return ::tuple_get<I>(args); }
 	};
 
-	// Separate class from Command so we can save the space of the ret pointer for commands that don't return.
+	/// Separate class from Command so we can save the space of the ret pointer for commands that don't return.
 	template <typename T, typename M, typename R, typename... Args>
 	struct CommandRet : public CommandBase {
 		T *instance;
@@ -98,7 +104,7 @@ class CommandQueueMT {
 			return (instance->*method)(std::move(get<I>())...);
 		}
 
-		// This method exists so we can call it in the parameter pack expansion in call_impl.
+		/// This method exists so we can call it in the parameter pack expansion in call_impl.
 		template <size_t I>
 		_FORCE_INLINE_ auto &get() { return ::tuple_get<I>(args); }
 	};

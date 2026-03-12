@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file material_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/inspector/editor_inspector.h"
@@ -107,6 +113,7 @@ protected:
 	void _notification(int p_what);
 	void gui_input(const Ref<InputEvent> &p_event) override;
 	void _set_rotation(real_t p_x_degrees, real_t p_y_degrees);
+	/// Store the rotation so it can persist when switching between materials.
 	void _store_rotation_metadata();
 	void _update_rotation();
 

@@ -30,17 +30,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file optimized_translation.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/string/translation.h"
 
+/// This translation uses a sort of modified perfect hash algorithm
+/// it requires hashing strings twice and then does a binary search,
+/// so it's slower, but at the same time it has an extremely high chance
+/// of catching untranslated strings
 class OptimizedTranslation : public Translation {
 	GDCLASS(OptimizedTranslation, Translation);
-
-	//this translation uses a sort of modified perfect hash algorithm
-	//it requires hashing strings twice and then does a binary search,
-	//so it's slower, but at the same time it has an extremely high chance
-	//of catching untranslated strings
 
 	//load/store friendly types
 	Vector<int> hash_table;
@@ -80,9 +85,14 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual StringName get_message(const StringName &p_src_text, const StringName &p_context = "") const override; //overridable for other implementations
+	/// p_context passed in is ignore. The use of context is not yet supported in OptimizedTranslation.
+	/// @note Overridable for other implementations
+	virtual StringName get_message(const StringName &p_src_text, const StringName &p_context = "") const override;
+	/// The use of plurals translation is not yet supported in OptimizedTranslation.
 	virtual StringName get_plural_message(const StringName &p_src_text, const StringName &p_plural_text, int p_n, const StringName &p_context = "") const override;
 	virtual Vector<String> get_translated_message_list() const override;
+	/// This method compresses a Translation instance.
+	/// Right now, it doesn't handle context or plurals, so Translation subclasses using plurals or context (i.e TranslationPO) shouldn't be compressed.
 	void generate(const Ref<Translation> &p_from);
 
 	OptimizedTranslation() {}

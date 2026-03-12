@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_scene_buffers.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -111,11 +117,13 @@ public:
 
 	virtual void configure(const RenderSceneBuffersConfiguration *p_config) = 0;
 
-	// for those settings that are unlikely to require buffers to be recreated, we'll add setters
+	/// @name For those settings that are unlikely to require buffers to be recreated, we'll add setters
+	/// @{
 	virtual void set_fsr_sharpness(float p_fsr_sharpness) = 0;
 	virtual void set_texture_mipmap_bias(float p_texture_mipmap_bias) = 0;
 	virtual void set_anisotropic_filtering_level(RS::ViewportAnisotropicFiltering p_anisotropic_filtering_level) = 0;
 	virtual void set_use_debanding(bool p_use_debanding) = 0;
+	/// @}
 };
 
 class RenderSceneBuffersExtension : public RenderSceneBuffers {

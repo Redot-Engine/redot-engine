@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rb_set.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/memory.h"
@@ -37,9 +43,8 @@
 
 #include <initializer_list>
 
-// based on the very nice implementation of rb-trees by:
-// https://web.archive.org/web/20120507164830/https://web.mit.edu/~emin/www/source_code/red_black_tree/index.html
-
+/// Based on the very nice implementation of red-black trees by:
+/// https://web.archive.org/web/20120507164830/https://web.mit.edu/~emin/www/source_code/red_black_tree/index.html
 template <typename T, typename C = Comparator<T>, typename A = DefaultAllocator>
 class RBSet {
 	enum Color {
@@ -146,7 +151,7 @@ public:
 	}
 
 #if 0
-	//to use when replacing find()
+	/// To use when replacing find()
 	_FORCE_INLINE_ Iterator find(const K &p_key) {
 		return Iterator(find(p_key));
 	}
@@ -160,7 +165,7 @@ public:
 	}
 
 #if 0
-	//to use when replacing find()
+	/// To use when replacing find()
 	_FORCE_INLINE_ ConstIterator find(const K &p_key) const {
 		return ConstIterator(find(p_key));
 	}
@@ -674,8 +679,8 @@ public:
 		return _data.size_cache;
 	}
 
+	/// Used for debug, mostly
 	int calculate_depth() const {
-		// used for debug mostly
 		if (!_data._root) {
 			return 0;
 		}

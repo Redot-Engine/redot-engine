@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_map_iteration_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../nav_rid_2d.h"
@@ -81,7 +87,7 @@ struct NavMapIteration2D {
 
 	int navmesh_polygon_count = 0;
 
-	// The edge connections that the map builds on top with the edge connection margin.
+	/// The edge connections that the map builds on top with the edge connection margin.
 	HashMap<const NavBaseIteration2D *, LocalVector<Nav2D::Connection>> external_region_connections;
 	HashMap<const NavBaseIteration2D *, LocalVector<LocalVector<Nav2D::Connection>>> navbases_polygons_external_connections;
 

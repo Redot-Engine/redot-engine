@@ -30,12 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file openxr_fb_update_swapchain_extension.h
+ *
+ * This extension implements the FB update swapchain extension.
+ * This is an extension Meta added to further configure the swapchain.
+ * Other Android based devices are implementing this as well, see:
+ * https://github.khronos.org/OpenXR-Inventory/extension_support.html#XR_FB_swapchain_update_state
+ */
 
-// This extension implements the FB update swapchain extension.
-// This is an extension Meta added to further configure the swapchain.
-// Other Android based devices are implementing this as well, see:
-// https://github.khronos.org/OpenXR-Inventory/extension_support.html#XR_FB_swapchain_update_state
+#pragma once
 
 #include "../openxr_api.h"
 #include "../util.h"
@@ -71,12 +75,14 @@ public:
 private:
 	static OpenXRFBUpdateSwapchainExtension *singleton;
 
-	// Setup
+	/// @name Setup
+	/// @{
 	String rendering_driver;
 	bool fb_swapchain_update_state_ext = false;
 	bool fb_swapchain_update_state_vulkan_ext = false;
 	bool fb_swapchain_update_state_opengles_ext = false;
 	bool fb_swapchain_update_state_android_ext = false;
+	/// @}
 
 	uint32_t filter_to_gl(OpenXRViewportCompositionLayerProvider::Filter p_filter, OpenXRViewportCompositionLayerProvider::MipmapMode p_mipmap_mode = OpenXRViewportCompositionLayerProvider::MipmapMode::MIPMAP_MODE_DISABLED);
 	uint32_t wrap_to_gl(OpenXRViewportCompositionLayerProvider::Wrap p_wrap);
@@ -87,7 +93,9 @@ private:
 	uint32_t wrap_to_vk(OpenXRViewportCompositionLayerProvider::Wrap p_wrap);
 	uint32_t swizzle_to_vk(OpenXRViewportCompositionLayerProvider::Swizzle p_swizzle);
 
-	// OpenXR API call wrappers
+	/// @name OpenXR API call wrappers
+	/// @{
 	EXT_PROTO_XRRESULT_FUNC2(xrUpdateSwapchainFB, (XrSwapchain), swapchain, (const XrSwapchainStateBaseHeaderFB *), state);
 	EXT_PROTO_XRRESULT_FUNC2(xrGetSwapchainStateFB, (XrSwapchain), swapchain, (XrSwapchainStateBaseHeaderFB *), state);
+	/// @}
 };

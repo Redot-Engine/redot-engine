@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_export_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/shared_object.h"
@@ -150,13 +156,13 @@ protected:
 	GDVIRTUAL2RC(String, _get_android_manifest_element_contents, const Ref<EditorExportPlatform> &, bool);
 	GDVIRTUAL2RC(PackedByteArray, _update_android_prebuilt_manifest, const Ref<EditorExportPlatform> &, const PackedByteArray &);
 
-	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features); // Return true if this plugin does property export customization
-	virtual Ref<Resource> _customize_resource(const Ref<Resource> &p_resource, const String &p_path); // If nothing is returned, it means do not touch (nothing changed). If something is returned (either the same or a different resource) it means changes are made.
+	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features); ///< @return `true` if this plugin does property export customization
+	virtual Ref<Resource> _customize_resource(const Ref<Resource> &p_resource, const String &p_path); ///< If nothing is returned, it means do not touch (nothing changed). If something is returned (either the same or a different resource) it means changes are made.
 
-	virtual bool _begin_customize_scenes(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features); // Return true if this plugin does property export customization
-	virtual Node *_customize_scene(Node *p_root, const String &p_path); // Return true if a change was made
+	virtual bool _begin_customize_scenes(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features); ///< @return `true` if this plugin does property export customization
+	virtual Node *_customize_scene(Node *p_root, const String &p_path); ///< @return `true` if a change was made
 
-	virtual uint64_t _get_customization_configuration_hash() const; // Hash used for caching customized resources and scenes.
+	virtual uint64_t _get_customization_configuration_hash() const; ///< Hash used for caching customized resources and scenes.
 
 	virtual void _end_customize_scenes();
 	virtual void _end_customize_resources();

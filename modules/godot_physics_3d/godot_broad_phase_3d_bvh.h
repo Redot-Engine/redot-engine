@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_broad_phase_3d_bvh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_broad_phase_3d.h"
@@ -75,7 +81,7 @@ class GodotBroadPhase3DBVH : public GodotBroadPhase3D {
 	void *unpair_userdata = nullptr;
 
 public:
-	// 0 is an invalid ID
+	/// 0 is an invalid ID
 	virtual ID create(GodotCollisionObject3D *p_object, int p_subindex = 0, const AABB &p_aabb = AABB(), bool p_static = false) override;
 	virtual void move(ID p_id, const AABB &p_aabb) override;
 	virtual void set_static(ID p_id, bool p_static) override;

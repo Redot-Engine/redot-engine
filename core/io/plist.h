@@ -30,9 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file plist.h
+ *
+ * Property list file format (application/x-plist) parser, property list ASN-1 serialization.
+ */
 
-// Property list file format (application/x-plist) parser, property list ASN-1 serialization.
+#pragma once
 
 #include "core/io/file_access.h"
 
@@ -116,11 +120,11 @@ public:
 
 	bool push_subnode(const Ref<PListNode> &p_node, const String &p_key = "");
 
-	size_t get_asn1_size(uint8_t p_len_octets) const;
+	size_t get_asn1_size(uint8_t p_len_octets) const; ///< Get size of all data, excluding type and size information.
 
 	void store_asn1_size(PackedByteArray &p_stream, uint8_t p_len_octets) const;
-	bool store_asn1(PackedByteArray &p_stream, uint8_t p_len_octets) const;
-	void store_text(String &p_stream, uint8_t p_indent) const;
+	bool store_asn1(PackedByteArray &p_stream, uint8_t p_len_octets) const; ///< Convert to binary ASN1 stream.
+	void store_text(String &p_stream, uint8_t p_indent) const; ///< Convert to text XML stream.
 
 	PListNode() {}
 	~PListNode() {}

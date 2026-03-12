@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_wav.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/audio/audio_stream.h"
@@ -67,6 +73,7 @@ class AudioStreamPlaybackWAV : public AudioStreamPlaybackResampled {
 	Ref<AudioStreamWAV> base;
 
 	template <typename Depth, bool is_stereo, bool is_ima_adpcm, bool is_qoa>
+	/// This function will be compiled branchless by any decent compiler
 	void decode_samples(const Depth *p_src, AudioFrame *p_dst, int64_t &p_offset, int8_t &p_increment, uint32_t p_amount, IMA_ADPCM_State *p_ima_adpcm, QOA_State *p_qoa);
 
 	bool _is_sample = false;
@@ -81,7 +88,7 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; ///< Number of times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
@@ -106,7 +113,7 @@ public:
 		FORMAT_QOA,
 	};
 
-	// Keep the ResourceImporterWAV `edit/loop_mode` enum hint in sync with these options.
+	/// Keep the ResourceImporterWAV `edit/loop_mode` enum hint in sync with these options.
 	enum LoopMode {
 		LOOP_DISABLED,
 		LOOP_FORWARD,
@@ -156,7 +163,7 @@ public:
 	void set_tags(const Dictionary &p_tags);
 	virtual Dictionary get_tags() const override;
 
-	virtual double get_length() const override; //if supported, otherwise return 0
+	virtual double get_length() const override; ///< If supported, otherwise return 0
 
 	virtual bool is_monophonic() const override;
 

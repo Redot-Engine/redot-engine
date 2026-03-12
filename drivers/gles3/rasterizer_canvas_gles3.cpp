@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rasterizer_canvas_gles3.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rasterizer_canvas_gles3.h"
 
 #ifdef GLES3_ENABLED
@@ -846,7 +852,7 @@ void RasterizerCanvasGLES3::_record_item_commands(const Item *p_item, RID p_rend
 
 	bool skipping = false;
 
-	// TODO: consider making lights a per-batch property and then baking light operations in the shader for better performance.
+	/// @todo Consider making lights a per-batch property and then baking light operations in the shader for better performance.
 	uint32_t lights[4] = { 0, 0, 0, 0 };
 
 	uint16_t light_count = 0;
@@ -2592,10 +2598,6 @@ void RasterizerCanvasGLES3::free_polygon(PolygonID p_polygon) {
 	polygon_buffers.polygons.erase(p_polygon);
 }
 
-// Creates a new uniform buffer and uses it right away
-// This expands the instance buffer continually
-// In theory allocations can reach as high as number of windows * 3 frames
-// because OpenGL can start rendering subsequent frames before finishing the current one
 void RasterizerCanvasGLES3::_allocate_instance_data_buffer() {
 	GLuint new_buffers[3];
 	glGenBuffers(3, new_buffers);
@@ -2829,7 +2831,7 @@ RasterizerCanvasGLES3::RasterizerCanvasGLES3() {
 	}
 
 	String global_defines;
-	global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
+	global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; /// @todo This is arbitrary for now
 	global_defines += "#define MAX_LIGHTS " + itos(data.max_lights_per_render) + "\n";
 
 	GLES3::MaterialStorage::get_singleton()->shaders.canvas_shader.initialize(global_defines, 1);

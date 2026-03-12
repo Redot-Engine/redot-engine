@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_shape_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/geometry_3d.h"
@@ -105,7 +111,7 @@ public:
 	virtual bool is_concave() const override { return true; }
 	virtual void get_supports(const Vector3 &p_normal, int p_max, Vector3 *r_supports, int &r_amount, FeatureType &r_type) const override { r_amount = 0; }
 
-	// Returns true to stop the query.
+	/// @return `true` to stop the query.
 	typedef bool (*QueryCallback)(void *p_userdata, GodotShape3D *p_convex);
 
 	virtual void cull(const AABB &p_local_aabb, QueryCallback p_callback, void *p_userdata, bool p_invert_backface_collision) const = 0;
@@ -390,7 +396,7 @@ struct GodotHeightMapShape3D : public GodotConcaveShape3D {
 	int depth = 0;
 	Vector3 local_origin;
 
-	// Accelerator.
+	/// Accelerator
 	struct Range {
 		real_t min = 0.0;
 		real_t max = 0.0;
@@ -447,9 +453,9 @@ public:
 	GodotHeightMapShape3D();
 };
 
-//used internally
+/// Used internally
 struct GodotFaceShape3D : public GodotShape3D {
-	Vector3 normal; //cache
+	Vector3 normal; ///< cache
 	Vector3 vertex[3];
 	bool backface_collision = false;
 	bool invert_backface_collision = false;

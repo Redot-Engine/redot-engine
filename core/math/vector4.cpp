@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vector4.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "vector4.h"
 
 #include "core/math/math_funcs.h"

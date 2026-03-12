@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_tree.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/main_loop.h"
@@ -109,11 +115,11 @@ private:
 		_FORCE_INLINE_ bool operator()(const ProcessGroup *p_left, const ProcessGroup *p_right) const;
 	};
 
-	PagedAllocator<ProcessGroup, true> group_allocator; // Allocate groups on pages, to enhance cache usage.
+	PagedAllocator<ProcessGroup, true> group_allocator; ///< Allocate groups on pages, to enhance cache usage.
 
 	LocalVector<ProcessGroup *> process_groups;
 	bool process_groups_dirty = true;
-	LocalVector<ProcessGroup *> local_process_group_cache; // Used when processing to group what needs to
+	LocalVector<ProcessGroup *> local_process_group_cache; ///< Used when processing to group what needs to
 	uint64_t process_last_pass = 1;
 
 	ProcessGroup default_process_group;
@@ -128,6 +134,8 @@ private:
 #ifndef _3D_DISABLED
 	struct ClientPhysicsInterpolation {
 		SelfList<Node3D>::List _node_3d_list;
+		/// This should be called once per physics tick, to make sure the transform previous and current
+		/// is kept up to date on the few Node3Ds that are using client side physics interpolation.
 		void physics_process();
 	} _client_physics_interpolation;
 #endif
@@ -150,12 +158,12 @@ private:
 	HashMap<StringName, Group> group_map;
 	bool _quit = false;
 
-	// Static so we can get directly instead of via SceneTree pointer.
+	/// Static so we can get directly instead of via SceneTree pointer.
 	static bool _physics_interpolation_enabled;
 
-	// Note that physics interpolation is hard coded to OFF in the editor,
-	// therefore we have a second bool to enable e.g. configuration warnings
-	// to only take effect when the project is using physics interpolation.
+	/// @note Physics interpolation is hard-coded to OFF in the editor,
+	/// therefore we have a second bool to enable e.g. configuration warnings
+	/// to only take effect when the project is using physics interpolation.
 	static bool _physics_interpolation_enabled_in_project;
 
 	SceneTreeFTI scene_tree_fti;
@@ -182,10 +190,9 @@ private:
 		bool operator<(const UGCall &p_with) const { return group == p_with.group ? call < p_with.call : group < p_with.group; }
 	};
 
-	// Safety for when a node is deleted while a group is being called.
-
+	/// Safety for when a node is deleted while a group is being called.
 	int nodes_removed_on_group_call_lock = 0;
-	HashSet<Node *> nodes_removed_on_group_call; // Skip erased nodes.
+	HashSet<Node *> nodes_removed_on_group_call; ///< Skip erased nodes.
 
 	List<ObjectID> delete_queue;
 
@@ -239,6 +246,8 @@ private:
 	Group *add_to_group(const StringName &p_group, Node *p_node);
 	void remove_from_group(const StringName &p_group, Node *p_node);
 
+	/// When reading this function, keep in mind that this code must work in a way where
+	/// if any node is removed, this needs to continue working.
 	void _process_group(ProcessGroup *p_group, bool p_physics);
 	void _process_groups_thread(uint32_t p_index, bool p_physics);
 	void _process(bool p_physics);
@@ -283,7 +292,7 @@ private:
 		CALL_INPUT_TYPE_UNHANDLED_PICKING_INPUT,
 	};
 
-	//used by viewport
+	/// Used by viewport
 	void _call_input_pause(const StringName &p_group, CallInputType p_call_type, const Ref<InputEvent> &p_input, Viewport *p_viewport);
 
 protected:
@@ -436,7 +445,7 @@ public:
 	void remove_tween(const Ref<Tween> &p_tween);
 	TypedArray<Tween> get_processed_tweens();
 
-	//used by Main::start, don't use otherwise
+	/// Used by Main::start, don't use otherwise
 	void add_current_scene(Node *p_current);
 
 	static SceneTree *get_singleton() { return singleton; }
@@ -457,14 +466,17 @@ public:
 	void set_disable_node_threading(bool p_disable);
 	//default texture settings
 
+	/// This version is for use in editor.
 	void set_physics_interpolation_enabled(bool p_enabled);
 	bool is_physics_interpolation_enabled() const { return _physics_interpolation_enabled; }
 
-	// Different name to disambiguate fast static versions from the user bound versions.
+	/// Different name to disambiguate fast static versions from the user bound versions.
 	static bool is_fti_enabled() { return _physics_interpolation_enabled; }
 	static bool is_fti_enabled_in_project() { return _physics_interpolation_enabled_in_project; }
 
 #ifndef _3D_DISABLED
+	/// This ensures that _update_physics_interpolation_data() will be called at least once every
+	/// physics tick, to ensure the previous and current transforms are kept up to date.
 	void client_physics_interpolation_add_node_3d(SelfList<Node3D> *p_elem);
 	void client_physics_interpolation_remove_node_3d(SelfList<Node3D> *p_elem);
 #endif

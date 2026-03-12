@@ -30,9 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file lipo.h
+ *
+ * @brief Universal / Universal 2 fat binary file creator and extractor.
+ */
 
-// Universal / Universal 2 fat binary file creator and extractor.
+#pragma once
 
 #include "core/io/file_access.h"
 #include "core/object/ref_counted.h"

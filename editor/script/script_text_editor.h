@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_text_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "script_editor_plugin.h"
@@ -190,7 +196,7 @@ protected:
 
 	void _on_caret_moved();
 
-	void _validate_script(); // No longer virtual.
+	void _validate_script(); ///< No longer virtual.
 	void _update_warnings();
 	void _update_errors();
 	void _update_bookmark_list();

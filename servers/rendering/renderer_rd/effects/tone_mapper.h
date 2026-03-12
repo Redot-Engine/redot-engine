@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tone_mapper.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
@@ -71,27 +77,28 @@ private:
 	};
 
 	struct TonemapPushConstant {
-		float bcs[3]; // 12 - 12
-		uint32_t flags; //  4 - 16
+		float bcs[3]; ///< 12 - 12
+		uint32_t flags; ///<  4 - 16
 
-		float pixel_size[2]; //  8 - 24
-		uint32_t tonemapper; //  4 - 28
-		uint32_t pad; //  4 - 32
+		float pixel_size[2]; ///<  8 - 24
+		uint32_t tonemapper; ///<  4 - 28
+		uint32_t pad; ///<  4 - 32
 
-		uint32_t glow_texture_size[2]; //  8 - 40
-		float glow_intensity; //  4 - 44
-		float glow_map_strength; //  4 - 48
+		uint32_t glow_texture_size[2]; ///<  8 - 40
+		float glow_intensity; ///<  4 - 44
+		float glow_map_strength; ///<  4 - 48
 
-		uint32_t glow_mode; //  4 - 52
-		float glow_levels[7]; // 28 - 80
+		uint32_t glow_mode; ///<  4 - 52
+		float glow_levels[7]; ///< 28 - 80
 
-		float exposure; //  4 - 84
-		float white; //  4 - 88
-		float auto_exposure_scale; //  4 - 92
-		float luminance_multiplier; //  4 - 96
+		float exposure; ///<  4 - 84
+		float white; ///<  4 - 88
+		float auto_exposure_scale; ///<  4 - 92
+		float luminance_multiplier; ///<  4 - 96
 	};
 
-	/* tonemap actually writes to a framebuffer, which is
+	/**
+	 * Tonemap actually writes to a framebuffer, which is
 	 * better to do using the raster pipeline rather than
 	 * compute, as that framebuffer might be in different formats
 	 */

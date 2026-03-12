@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sprite_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "sprite_2d.h"
 
 #include "core/input/input.h"
@@ -478,8 +484,6 @@ void Sprite2D::_validate_property(PropertyInfo &p_property) const {
 }
 
 void Sprite2D::_texture_changed() {
-	// Changes to the texture need to trigger an update to make
-	// the editor redraw the sprite with the updated texture.
 	if (texture.is_valid()) {
 		queue_redraw();
 	}

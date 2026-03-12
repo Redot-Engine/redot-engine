@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_iterator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef GDEXTENSION
@@ -70,6 +76,7 @@ public:
 	Vector<ScriptRange> script_ranges;
 
 private:
+	/// This implementation is derived from ICU: icu4c/source/extra/scrptrun/scrptrun.cpp
 	static bool same_script(int32_t p_script_one, int32_t p_script_two);
 
 public:

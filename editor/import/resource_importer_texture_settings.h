@@ -30,11 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_texture_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
-// ResourceImporterTextureSettings contains code used by
-// multiple texture importers and the export dialog.
+/// ResourceImporterTextureSettings contains code used by
+/// multiple texture importers and the export dialog.
 namespace ResourceImporterTextureSettings {
+/// ResourceImporterTextureSettings contains code used by
+/// multiple texture importers and the export dialog.
 bool should_import_s3tc_bptc();
 bool should_import_etc2_astc();
 } //namespace ResourceImporterTextureSettings

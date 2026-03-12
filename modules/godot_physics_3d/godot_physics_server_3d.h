@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_physics_server_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_joint_3d.h"
@@ -102,8 +108,8 @@ public:
 
 	virtual real_t shape_get_custom_solver_bias(RID p_shape) const override;
 
-	/* SPACE API */
-
+	/// @name SPACE API
+	/// @{
 	virtual RID space_create() override;
 	virtual void space_set_active(RID p_space, bool p_active) override;
 	virtual bool space_is_active(RID p_space) const override;
@@ -111,15 +117,15 @@ public:
 	virtual void space_set_param(RID p_space, SpaceParameter p_param, real_t p_value) override;
 	virtual real_t space_get_param(RID p_space, SpaceParameter p_param) const override;
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectSpaceState3D *space_get_direct_state(RID p_space) override;
 
 	virtual void space_set_debug_contacts(RID p_space, int p_max_contacts) override;
 	virtual Vector<Vector3> space_get_contacts(RID p_space) const override;
 	virtual int space_get_contact_count(RID p_space) const override;
-
-	/* AREA API */
-
+	/// @}
+	/// @name AREA API
+	/// @{
 	virtual RID area_create() override;
 
 	virtual void area_set_space(RID p_area, RID p_space) override;
@@ -159,10 +165,11 @@ public:
 
 	virtual void area_set_monitor_callback(RID p_area, const Callable &p_callback) override;
 	virtual void area_set_area_monitor_callback(RID p_area, const Callable &p_callback) override;
+	/// @}
+	/// @name BODY API
+	/// @{
 
-	/* BODY API */
-
-	// create a body of a given type
+	/// Create a body of a given type
 	virtual RID body_create() override;
 
 	virtual void body_set_space(RID p_body, RID p_space) override;
@@ -258,11 +265,11 @@ public:
 
 	virtual bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) override;
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectBodyState3D *body_get_direct_state(RID p_body) override;
-
-	/* SOFT BODY */
-
+	/// @}
+	/// @name SOFT BODY
+	/// @{
 	virtual RID soft_body_create() override;
 
 	virtual void soft_body_update_rendering_server(RID p_body, PhysicsServer3DRenderingServerHandler *p_rendering_server_handler) override;
@@ -318,9 +325,9 @@ public:
 	virtual void soft_body_remove_all_pinned_points(RID p_body) override;
 	virtual void soft_body_pin_point(RID p_body, int p_point_index, bool p_pin) override;
 	virtual bool soft_body_is_point_pinned(RID p_body, int p_point_index) const override;
-
-	/* JOINT API */
-
+	/// @}
+	/// @name JOINT API
+	/// @{
 	virtual RID joint_create() override;
 
 	virtual void joint_clear(RID p_joint) override; //resets type
@@ -370,9 +377,9 @@ public:
 
 	virtual void joint_disable_collisions_between_bodies(RID p_joint, bool p_disable) override;
 	virtual bool joint_is_disabled_collisions_between_bodies(RID p_joint) const override;
-
-	/* MISC */
-
+	/// @}
+	/// @name MISC
+	/// @{
 	virtual void free(RID p_rid) override;
 
 	virtual void set_active(bool p_active) override;
@@ -384,6 +391,7 @@ public:
 	virtual void finish() override;
 
 	virtual bool is_flushing_queries() const override { return flushing_queries; }
+	/// @}
 
 	int get_process_info(ProcessInfo p_info) override;
 

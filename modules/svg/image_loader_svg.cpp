@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_loader_svg.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_loader_svg.h"
 
 #include "core/os/memory.h"
@@ -44,13 +50,6 @@ void ImageLoaderSVG::set_forced_color_map(const HashMap<Color, Color> &p_color_m
 }
 
 void ImageLoaderSVG::_replace_color_property(const HashMap<Color, Color> &p_color_map, const String &p_prefix, String &r_string) {
-	// Replace colors in the SVG based on what is passed in `p_color_map`.
-	// Used to change the colors of editor icons based on the used theme.
-	// The strings being replaced are typically of the form:
-	//   fill="#5abbef"
-	// But can also be 3-letter codes, include alpha, be "none" or a named color
-	// string ("blue"). So we convert to Godot Color to compare with `p_color_map`.
-
 	const int prefix_len = p_prefix.length();
 	int pos = r_string.find(p_prefix);
 	while (pos != -1) {

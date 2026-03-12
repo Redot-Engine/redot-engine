@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_server_default.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/worker_thread_pool.h"
@@ -68,11 +74,13 @@ class RenderingServerDefault : public RenderingServer {
 
 	double frame_setup_time = 0;
 
-	//for printing
+	/// For printing
+	/// @{
 	bool print_gpu_profile = false;
 	HashMap<String, float> print_gpu_profile_task_time;
 	uint64_t print_frame_profile_ticks_from = 0;
 	uint32_t print_frame_profile_frame_count = 0;
+	/// @}
 
 	mutable CommandQueueMT command_queue;
 
@@ -127,7 +135,8 @@ public:
 
 #include "servers/server_wrap_mt_common.h"
 
-	/* TEXTURE API */
+	/// @name TEXTURE API
+	/// @{
 
 #define ServerName RendererTextureStorage
 #define server_name RSG::texture_storage
@@ -187,28 +196,34 @@ public:
 		return ret;                                                                                                              \
 	}
 
-	//these go pass-through, as they can be called from any thread
+	/// These go pass-through, as they can be called from any thread
+	/// @{
 	FUNCRIDTEX1(texture_2d, const Ref<Image> &)
 	FUNCRIDTEX2(texture_2d_layered, const Vector<Ref<Image>> &, TextureLayeredType)
 	FUNCRIDTEX6(texture_3d, Image::Format, int, int, int, bool, const Vector<Ref<Image>> &)
 	FUNCRIDTEX3(texture_external, int, int, uint64_t)
 	FUNCRIDTEX1(texture_proxy, RID)
+	/// @}
 
-	// Called directly, not through the command queue.
+	/// Called directly, not through the command queue.
 	virtual RID texture_create_from_native_handle(TextureType p_type, Image::Format p_format, uint64_t p_native_handle, int p_width, int p_height, int p_depth, int p_layers = 1, TextureLayeredType p_layered_type = TEXTURE_LAYERED_2D_ARRAY) override {
 		return RSG::texture_storage->texture_create_from_native_handle(p_type, p_format, p_native_handle, p_width, p_height, p_depth, p_layers, p_layered_type);
 	}
 
-	//these go through command queue if they are in another thread
+	/// These go through command queue if they are in another thread
+	/// @{
 	FUNC3(texture_2d_update, RID, const Ref<Image> &, int)
 	FUNC2(texture_3d_update, RID, const Vector<Ref<Image>> &)
 	FUNC4(texture_external_update, RID, int, int, uint64_t)
 	FUNC2(texture_proxy_update, RID, RID)
+	/// @}
 
-	//these also go pass-through
+	/// These also go pass-through
+	/// @{
 	FUNCRIDTEX0(texture_2d_placeholder)
 	FUNCRIDTEX1(texture_2d_layered_placeholder, TextureLayeredType)
 	FUNCRIDTEX0(texture_3d_placeholder)
+	/// @}
 
 	FUNC1RC(Ref<Image>, texture_2d_get, RID)
 	FUNC2RC(Ref<Image>, texture_2d_layer_get, RID, int)
@@ -217,7 +232,7 @@ public:
 	FUNC2(texture_replace, RID, RID)
 
 	FUNC3(texture_set_size_override, RID, int, int)
-// FIXME: Disabled during Vulkan refactoring, should be ported.
+/// @todo FIXME: Disabled during Vulkan refactoring, should be ported.
 #if 0
 	FUNC2(texture_bind, RID, uint32_t)
 #endif
@@ -238,7 +253,9 @@ public:
 	FUNC2RC(RID, texture_get_rd_texture, RID, bool)
 	FUNC2RC(uint64_t, texture_get_native_handle, RID, bool)
 
-	/* SHADER API */
+	//// @}
+	/// @name SHADER API
+	/// @{
 
 #undef ServerName
 #undef server_name
@@ -288,7 +305,9 @@ public:
 
 	FUNC1RC(ShaderNativeSourceCode, shader_get_native_source_code, RID)
 
-	/* COMMON MATERIAL API */
+	/// @}
+	/// @name COMMON MATERIAL API
+	/// @{
 
 	FUNCRIDSPLIT(material)
 
@@ -322,9 +341,11 @@ public:
 	FUNC2(material_set_render_priority, RID, int)
 	FUNC2(material_set_next_pass, RID, RID)
 
-	/* MESH API */
+	/// @}
+	/// @name MESH API
+	/// @{
 
-//from now on, calls forwarded to this singleton
+// From now on, calls forwarded to this singleton
 #undef ServerName
 #undef server_name
 
@@ -393,7 +414,9 @@ public:
 
 	FUNC1(mesh_debug_usage, List<MeshInfo> *)
 
-	/* MULTIMESH API */
+	/// @}
+	/// @name MULTIMESH API
+	/// @{
 
 	FUNCRIDSPLIT(multimesh)
 
@@ -430,7 +453,9 @@ public:
 	FUNC2(multimesh_set_visible_instances, RID, int)
 	FUNC1RC(int, multimesh_get_visible_instances, RID)
 
-	/* SKELETON API */
+	/// @}
+	/// @name SKELETON API
+	/// @{
 
 	FUNCRIDSPLIT(skeleton)
 	FUNC3(skeleton_allocate_data, RID, int, bool)
@@ -441,7 +466,9 @@ public:
 	FUNC2RC(Transform2D, skeleton_bone_get_transform_2d, RID, int)
 	FUNC2(skeleton_set_base_transform_2d, RID, const Transform2D &)
 
-	/* Light API */
+	/// @}
+	/// @name Light API
+	/// @{
 #undef ServerName
 #undef server_name
 
@@ -470,7 +497,9 @@ public:
 	FUNC2(light_directional_set_blend_splits, RID, bool)
 	FUNC2(light_directional_set_sky_mode, RID, LightDirectionalSkyMode)
 
-	/* PROBE API */
+	/// @}
+	/// @name PROBE API
+	/// @{
 
 	FUNCRIDSPLIT(reflection_probe)
 
@@ -491,7 +520,9 @@ public:
 	FUNC2(reflection_probe_set_resolution, RID, int)
 	FUNC2(reflection_probe_set_mesh_lod_threshold, RID, float)
 
-	/* LIGHTMAP */
+	/// @}
+	/// @name LIGHTMAP
+	/// @{
 
 	FUNCRIDSPLIT(lightmap)
 
@@ -510,14 +541,18 @@ public:
 	FUNC1R(ShadowmaskMode, lightmap_get_shadowmask_mode, RID)
 	FUNC2(lightmap_set_shadowmask_mode, RID, ShadowmaskMode)
 
-	/* Shadow Atlas */
+	/// @}
+	/// @name Shadow Atlas
+	/// @{
 	FUNC0R(RID, shadow_atlas_create)
 	FUNC3(shadow_atlas_set_size, RID, int, bool)
 	FUNC3(shadow_atlas_set_quadrant_subdivision, RID, int, int)
 
 	FUNC2(directional_shadow_atlas_set_size, int, bool)
 
-	/* DECAL API */
+	/// @}
+	/// @name DECAL API
+	/// @{
 
 #undef ServerName
 #undef server_name
@@ -537,9 +572,11 @@ public:
 	FUNC3(decal_set_fade, RID, float, float)
 	FUNC2(decal_set_normal_fade, RID, float)
 
-	/* BAKED LIGHT API */
+	/// @}
+	/// @name BAKED LIGHT API
+	/// @{
 
-//from now on, calls forwarded to this singleton
+// From now on, calls forwarded to this singleton
 #undef ServerName
 #undef server_name
 
@@ -569,7 +606,9 @@ public:
 
 	FUNC0(sdfgi_reset)
 
-	/* PARTICLES */
+	/// @}
+	/// @name PARTICLES
+	/// @{
 
 #undef ServerName
 #undef server_name
@@ -620,7 +659,9 @@ public:
 	FUNC2(particles_set_emitter_velocity, RID, const Vector3 &)
 	FUNC2(particles_set_interp_to_end, RID, float)
 
-	/* PARTICLES COLLISION */
+	/// @}
+	/// @name PARTICLES COLLISION
+	/// @{
 
 	FUNCRIDSPLIT(particles_collision)
 
@@ -636,7 +677,9 @@ public:
 	FUNC2(particles_collision_set_height_field_mask, RID, uint32_t)
 	FUNC2(particles_collision_set_height_field_resolution, RID, ParticlesCollisionHeightfieldResolution)
 
-	/* FOG VOLUME */
+	/// @}
+	/// @name FOG VOLUME
+	/// @{
 
 #undef ServerName
 #undef server_name
@@ -650,7 +693,9 @@ public:
 	FUNC2(fog_volume_set_size, RID, const Vector3 &)
 	FUNC2(fog_volume_set_material, RID, RID)
 
-	/* VISIBILITY_NOTIFIER */
+	/// @}
+	/// @name VISIBILITY_NOTIFIER
+	/// @{
 
 #undef ServerName
 #undef server_name
@@ -664,11 +709,13 @@ public:
 
 #undef server_name
 #undef ServerName
-//from now on, calls forwarded to this singleton
+// From now on, calls forwarded to this singleton
 #define ServerName RenderingMethod
 #define server_name RSG::scene
 
-	/* CAMERA API */
+	/// @}
+	/// @name CAMERA API
+	/// @{
 
 	FUNCRIDSPLIT(camera)
 	FUNC4(camera_set_perspective, RID, float, float, float)
@@ -681,17 +728,20 @@ public:
 	FUNC2(camera_set_compositor, RID, RID)
 	FUNC2(camera_set_use_vertical_aspect, RID, bool)
 
-	/* OCCLUDER */
+	/// @}
+	/// @name OCCLUDER
+	/// @{
 	FUNCRIDSPLIT(occluder)
 	FUNC3(occluder_set_mesh, RID, const PackedVector3Array &, const PackedInt32Array &)
-
+	/// @}
 #undef server_name
 #undef ServerName
-//from now on, calls forwarded to this singleton
+// From now on, calls forwarded to this singleton
 #define ServerName RendererViewport
 #define server_name RSG::viewport
 
-	/* VIEWPORT TARGET API */
+	/// @name VIEWPORT TARGET API
+	/// @{
 
 	FUNCRIDSPLIT(viewport)
 
@@ -769,11 +819,13 @@ public:
 	FUNC2(viewport_set_vrs_update_mode, RID, ViewportVRSUpdateMode)
 	FUNC2(viewport_set_vrs_texture, RID, RID)
 
-	/* COMPOSITOR EFFECT */
+	/// @}
+	/// @name COMPOSITOR EFFECT
+	/// @{
 
 #undef server_name
 #undef ServerName
-//from now on, calls forwarded to this singleton
+// From now on, calls forwarded to this singleton
 #define ServerName RenderingMethod
 #define server_name RSG::scene
 
@@ -782,17 +834,23 @@ public:
 	FUNC3(compositor_effect_set_callback, RID, CompositorEffectCallbackType, const Callable &)
 	FUNC3(compositor_effect_set_flag, RID, CompositorEffectFlags, bool)
 
-	/* COMPOSITOR */
+	/// @}
+	/// @name COMPOSITOR
+	/// @{
 
 	FUNC2(compositor_set_compositor_effects, RID, const TypedArray<RID> &)
 
 	FUNCRIDSPLIT(compositor)
 
-	/* ENVIRONMENT API */
+	/// @}
+	/// @name ENVIRONMENT API
+	/// @{
 
 	FUNC1(voxel_gi_set_quality, VoxelGIQuality)
 
-	/* SKY API */
+	/// @}
+	/// @name SKY API
+	/// @{
 
 	FUNCRIDSPLIT(sky)
 	FUNC2(sky_set_radiance_size, RID, int)
@@ -800,7 +858,9 @@ public:
 	FUNC2(sky_set_material, RID, RID)
 	FUNC4R(Ref<Image>, sky_bake_panorama, RID, float, bool, const Size2i &)
 
-	/* ENVIRONMENT */
+	/// @}
+	/// @name ENVIRONMENT
+	/// @{
 
 	FUNCRIDSPLIT(environment)
 
@@ -856,11 +916,13 @@ public:
 	FUNC1(light_projectors_set_filter, RS::LightProjectorFilter);
 	FUNC1(lightmaps_set_bicubic_filter, bool);
 
-	/* CAMERA ATTRIBUTES */
+	/// @}
+	/// @name CAMERA ATTRIBUTES
+	/// @{
 
 #undef server_name
 #undef ServerName
-//from now on, calls forwarded to this singleton
+// From now on, calls forwarded to this singleton
 #define ServerName RendererCameraAttributes
 #define server_name RSG::camera_attributes
 
@@ -873,7 +935,9 @@ public:
 	FUNC3(camera_attributes_set_exposure, RID, float, float)
 	FUNC6(camera_attributes_set_auto_exposure, RID, bool, float, float, float, float)
 
-	/* SCENARIO API */
+	/// @}
+	/// @name  SCENARIO API
+	/// @{
 
 #undef server_name
 #undef ServerName
@@ -888,7 +952,9 @@ public:
 	FUNC2(scenario_set_fallback_environment, RID, RID)
 	FUNC2(scenario_set_compositor, RID, RID)
 
-	/* INSTANCING API */
+	/// @}
+	/// @name INSTANCING API
+	/// @{
 	FUNCRIDSPLIT(instance)
 
 	FUNC2(instance_set_base, RID, RID)
@@ -912,10 +978,12 @@ public:
 
 	FUNC2(instance_set_ignore_culling, RID, bool)
 
-	// don't use these in a game!
+	/// @warning Don't use these in a game!
+	/// @{
 	FUNC2RC(Vector<ObjectID>, instances_cull_aabb, const AABB &, RID)
 	FUNC3RC(Vector<ObjectID>, instances_cull_ray, const Vector3 &, const Vector3 &, RID)
 	FUNC2RC(Vector<ObjectID>, instances_cull_convex, const Vector<Plane> &, RID)
+	/// @}
 
 	FUNC3(instance_geometry_set_flag, RID, InstanceFlags, bool)
 	FUNC2(instance_geometry_set_cast_shadows_setting, RID, ShadowCastingSetting)
@@ -934,14 +1002,16 @@ public:
 	FUNC3R(TypedArray<Image>, bake_render_uv2, RID, const TypedArray<RID> &, const Size2i &)
 
 	FUNC1(gi_set_use_half_resolution, bool)
+	/// @}
 
 #undef server_name
 #undef ServerName
-//from now on, calls forwarded to this singleton
+// From now on, calls forwarded to this singleton
 #define ServerName RendererCanvasCull
 #define server_name RSG::canvas
 
-	/* CANVAS (2D) */
+	/// @name CANVAS (2D)
+	/// @{
 
 	FUNCRIDSPLIT(canvas)
 	FUNC3(canvas_set_item_mirroring, RID, RID, const Point2 &)
@@ -1080,7 +1150,9 @@ public:
 
 	FUNC1R(Rect2, _debug_canvas_item_get_rect, RID)
 
-	/* GLOBAL SHADER UNIFORMS */
+	/// @}
+	/// @name GLOBAL SHADER UNIFORMS
+	/// @{
 
 #undef server_name
 #undef ServerName
@@ -1099,7 +1171,9 @@ public:
 	FUNC1(global_shader_parameters_load_settings, bool)
 	FUNC0(global_shader_parameters_clear)
 
-	/* COMPOSITOR */
+	/// @}
+	/// @name COMPOSITOR
+	/// @{
 
 #undef server_name
 #undef ServerName
@@ -1108,12 +1182,16 @@ public:
 
 	FUNC4S(set_boot_image, const Ref<Image> &, const Color &, bool, bool)
 
-	/* STATUS INFORMATION */
+	/// @}
+	/// @name STATUS INFORMATION
+	/// @{
 
 #undef server_name
 #undef ServerName
 
-	/* UTILITIES */
+	/// @}
+	/// @name UTILITIES
+	/// @{
 
 #define ServerName RendererUtilities
 #define server_name RSG::utilities
@@ -1137,7 +1215,9 @@ public:
 
 	virtual RID get_test_cube() override;
 
-	/* FREE */
+	/// @}
+	/// @name FREE
+	/// @{
 
 	virtual void free(RID p_rid) override {
 		if (Thread::get_caller_id() == server_thread) {
@@ -1148,11 +1228,15 @@ public:
 		}
 	}
 
-	/* INTERPOLATION */
+	/// @}
+	/// @name INTERPOLATION
+	/// @{
 
 	virtual void set_physics_interpolation_enabled(bool p_enabled) override;
 
-	/* EVENT QUEUING */
+	/// @}
+	/// @name EVENT QUEUING
+	/// @{
 
 	virtual void request_frame_drawn_callback(const Callable &p_callable) override;
 
@@ -1177,7 +1261,9 @@ public:
 		}
 	}
 
-	/* TESTING */
+	/// @}
+	/// @name TESTING
+	/// @{
 
 	virtual double get_frame_setup_time_cpu() const override;
 
@@ -1198,6 +1284,7 @@ public:
 	virtual void set_print_gpu_profile(bool p_enable) override;
 
 	virtual Size2i get_maximum_viewport_size() const override;
+	/// @}
 
 	RenderingServerDefault(bool p_create_thread = false);
 	~RenderingServerDefault();

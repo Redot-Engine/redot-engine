@@ -30,22 +30,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_future_extension.h
+ *
+ * 	The OpenXR future extension forms the basis of OpenXRs ability to
+ *	execute logic asynchronously.
+ *
+ *	Asynchronous functions will return a future object which can be
+ *	polled each frame to determine if the asynchronous function has
+ *	been completed.
+ *
+ *	If so the future can be used to obtain final return values.
+ *	The API call for this is often part of the extension that utilizes
+ *	the future.
+ *
+ *	We will be using Godot Callables to drive responses on futures.
+ */
+
 #pragma once
-
-/*
-	The OpenXR future extension forms the basis of OpenXRs ability to
-	execute logic asynchronously.
-
-	Asynchronous functions will return a future object which can be
-	polled each frame to determine if the asynchronous function has
-	been completed.
-
-	If so the future can be used to obtain final return values.
-	The API call for this is often part of the extension that utilizes
-	the future.
-
-	We will be using Godot Callables to drive responses on futures.
-*/
 
 #include "../util.h"
 #include "core/object/ref_counted.h"
@@ -126,13 +128,15 @@ private:
 
 	HashMap<XrFutureEXT, Ref<OpenXRFutureResult>> futures;
 
-	// Make these accessible from GDExtension and/or GDScript
+	/// Make these accessible from GDExtension and/or GDScript
 	Ref<OpenXRFutureResult> _register_future(uint64_t p_future, const Callable &p_on_success = Callable());
 	void _cancel_future(uint64_t p_future);
 
 	// OpenXR API call wrappers
 
-	// Futures
+	/// @name Futures
+	/// @{
 	EXT_PROTO_XRRESULT_FUNC3(xrPollFutureEXT, (XrInstance), instance, (const XrFuturePollInfoEXT *), poll_info, (XrFuturePollResultEXT *), poll_result);
 	EXT_PROTO_XRRESULT_FUNC2(xrCancelFutureEXT, (XrInstance), instance, (const XrFutureCancelInfoEXT *), cancel_info);
+	/// @}
 };

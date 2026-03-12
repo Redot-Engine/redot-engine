@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_replication_interface.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "multiplayer_spawner.h"
@@ -70,29 +76,34 @@ private:
 		uint16_t last_sent_sync = 0;
 	};
 
-	// Replication state.
+	/// Replication state.
+	/// @{
 	HashMap<int, PeerInfo> peers_info;
 	uint32_t last_net_id = 0;
 	HashMap<ObjectID, TrackedNode> tracked_nodes;
 	RBSet<ObjectID> spawned_nodes;
 	HashSet<ObjectID> sync_nodes;
+	/// @}
 
-	// Pending local spawn information (handles spawning nested nodes during ready).
+	/// Pending local spawn information (handles spawning nested nodes during ready).
 	HashSet<ObjectID> spawn_queue;
 
-	// Pending remote spawn information.
+	/// @name Pending Remote Spawn Information.
+	/// @{
 	ObjectID pending_spawn;
 	int pending_spawn_remote = 0;
 	const uint8_t *pending_buffer = nullptr;
 	int pending_buffer_size = 0;
 	List<uint32_t> pending_sync_net_ids;
-
-	// Replicator config.
+	/// @}
+	/// @name Replicator Config
+	/// @{
 	SceneMultiplayer *multiplayer = nullptr;
 	SceneCacheInterface *multiplayer_cache = nullptr;
 	PackedByteArray packet_cache;
-	int sync_mtu = 1350; // Highly dependent on underlying protocol.
+	int sync_mtu = 1350; ///< Highly dependent on underlying protocol.
 	int delta_mtu = 65535;
+	/// @}
 
 	TrackedNode &_track(const ObjectID &p_id);
 	void _untrack(const ObjectID &p_id);

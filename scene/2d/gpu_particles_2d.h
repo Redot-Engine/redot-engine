@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gpu_particles_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/2d/node_2d.h"
@@ -96,6 +102,8 @@ private:
 
 	void _attach_sub_emitter();
 
+	/// Changes to the texture need to trigger an update to make
+	/// the editor redraw the sprite with the updated texture.
 	void _texture_changed();
 
 protected:

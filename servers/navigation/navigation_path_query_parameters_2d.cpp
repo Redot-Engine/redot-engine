@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_path_query_parameters_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "navigation_path_query_parameters_2d.h"
 
 void NavigationPathQueryParameters2D::set_pathfinding_algorithm(const NavigationPathQueryParameters2D::PathfindingAlgorithm p_pathfinding_algorithm) {

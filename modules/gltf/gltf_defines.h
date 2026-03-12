@@ -30,11 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_defines.h
+ *
+ * @brief This file should only be included by other headers.
+ */
+
 #pragma once
 
-// This file should only be included by other headers.
-
-// GLTF classes.
+/// @name GLTF Classes
+/// @{
 struct GLTFAccessor;
 class GLTFAnimation;
 class GLTFBufferView;
@@ -51,8 +56,9 @@ class GLTFSpecGloss;
 class GLTFState;
 class GLTFTexture;
 class GLTFTextureSampler;
-
-// GLTF index aliases.
+/// @}
+/// @name GLTF Index Aliases
+/// @{
 using GLTFAccessorIndex = int;
 using GLTFAnimationIndex = int;
 using GLTFBufferIndex = int;
@@ -67,3 +73,4 @@ using GLTFSkeletonIndex = int;
 using GLTFSkinIndex = int;
 using GLTFTextureIndex = int;
 using GLTFTextureSamplerIndex = int;
+/// @}

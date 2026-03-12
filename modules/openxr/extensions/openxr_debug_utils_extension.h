@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_debug_utils_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../util.h"
@@ -61,16 +67,16 @@ public:
 private:
 	static OpenXRDebugUtilsExtension *singleton;
 
-	// related extensions
+	/// related extensions
 	bool debug_utils_ext = false;
 
-	// debug handlers
+	/// debug handlers
 	XrDebugUtilsMessengerEXT default_messenger = XR_NULL_HANDLE;
 
 	static XrBool32 XRAPI_PTR _debug_callback(XrDebugUtilsMessageSeverityFlagsEXT p_message_severity, XrDebugUtilsMessageTypeFlagsEXT p_message_types, const XrDebugUtilsMessengerCallbackDataEXT *p_callback_data, void *p_user_data);
 	XrBool32 debug_callback(XrDebugUtilsMessageSeverityFlagsEXT p_message_severity, XrDebugUtilsMessageTypeFlagsEXT p_message_types, const XrDebugUtilsMessengerCallbackDataEXT *p_callback_data, void *p_user_data);
 
-	// OpenXR API call wrappers
+	/// OpenXR API call wrappers
 	EXT_PROTO_XRRESULT_FUNC3(xrCreateDebugUtilsMessengerEXT, (XrInstance), p_instance, (const XrDebugUtilsMessengerCreateInfoEXT *), p_create_info, (XrDebugUtilsMessengerEXT *), p_messenger)
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyDebugUtilsMessengerEXT, (XrDebugUtilsMessengerEXT), p_messenger)
 	EXT_PROTO_XRRESULT_FUNC2(xrSetDebugUtilsObjectNameEXT, (XrInstance), p_instance, (const XrDebugUtilsObjectNameInfoEXT *), p_name_info)

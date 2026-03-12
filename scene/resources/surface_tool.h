@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file surface_tool.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/local_vector.h"
@@ -44,19 +50,21 @@ class SurfaceTool : public RefCounted {
 
 public:
 	struct Vertex {
-		// Trivial data for which the hash is computed using hash_buffer.
+		/// @name Trivial data for which the hash is computed using hash_buffer.
 		// ----------------------------------------------------------------
-		uint32_t smooth_group = 0; // Must be first.
+		/// @{
+		uint32_t smooth_group = 0; ///< Must be first.
 
 		Color color;
-		Vector3 normal; // normal, binormal, tangent.
+		Vector3 normal; ///< normal, binormal, tangent.
 		Vector3 binormal;
 		Vector3 tangent;
 		Vector2 uv;
 		Vector2 uv2;
 		Color custom[RS::ARRAY_CUSTOM_COUNT];
 
-		Vector3 vertex; // Must be last.
+		Vector3 vertex; ///< Must be last.
+		/// @}
 		// ----------------------------------------------------------------
 
 		Vector<int> bones;
@@ -84,13 +92,13 @@ public:
 
 	enum {
 		/* Do not move vertices that are located on the topological border (vertices on triangle edges that don't have a paired triangle). Useful for simplifying portions of the larger mesh. */
-		SIMPLIFY_LOCK_BORDER = 1 << 0, // From meshopt_SimplifyLockBorder
+		SIMPLIFY_LOCK_BORDER = 1 << 0, ///< From meshopt_SimplifyLockBorder
 		/* Improve simplification performance assuming input indices are a sparse subset of the mesh. Note that error becomes relative to subset extents. */
-		SIMPLIFY_SPARSE = 1 << 1, // From meshopt_SimplifySparse
+		SIMPLIFY_SPARSE = 1 << 1, ///< From meshopt_SimplifySparse
 		/* Treat error limit and resulting error as absolute instead of relative to mesh extents. */
-		SIMPLIFY_ERROR_ABSOLUTE = 1 << 2, // From meshopt_SimplifyErrorAbsolute
+		SIMPLIFY_ERROR_ABSOLUTE = 1 << 2, ///< From meshopt_SimplifyErrorAbsolute
 		/* Remove disconnected parts of the mesh during simplification incrementally, regardless of the topological restrictions inside components. */
-		SIMPLIFY_PRUNE = 1 << 3, // From meshopt_SimplifyPrune
+		SIMPLIFY_PRUNE = 1 << 3, ///< From meshopt_SimplifyPrune
 	};
 
 	typedef void (*OptimizeVertexCacheFunc)(unsigned int *destination, const unsigned int *indices, size_t index_count, size_t vertex_count);
@@ -149,9 +157,11 @@ private:
 	Mesh::PrimitiveType primitive = Mesh::PRIMITIVE_LINES;
 	uint64_t format = 0;
 	Ref<Material> material;
-	//arrays
+	/// @name Arrays
+	/// @{
 	LocalVector<Vertex> vertex_array;
 	LocalVector<int> index_array;
+	/// @}
 
 	//memory
 	Color last_color;
@@ -172,7 +182,8 @@ private:
 	void _create_list_from_arrays(Array arr, LocalVector<Vertex> *r_vertex, LocalVector<int> *r_index, uint64_t &lformat);
 	void _create_list(const Ref<Mesh> &p_existing, int p_surface, LocalVector<Vertex> *r_vertex, LocalVector<int> *r_index, uint64_t &lformat);
 
-	//mikktspace callbacks
+	/// @name mikktspace callbacks
+	/// @{
 	static int mikktGetNumFaces(const SMikkTSpaceContext *pContext);
 	static int mikktGetNumVerticesOfFace(const SMikkTSpaceContext *pContext, const int iFace);
 	static void mikktGetPosition(const SMikkTSpaceContext *pContext, float fvPosOut[], const int iFace, const int iVert);
@@ -180,6 +191,7 @@ private:
 	static void mikktGetTexCoord(const SMikkTSpaceContext *pContext, float fvTexcOut[], const int iFace, const int iVert);
 	static void mikktSetTSpaceDefault(const SMikkTSpaceContext *pContext, const float fvTangent[], const float fvBiTangent[], const float fMagS, const float fMagT,
 			const tbool bIsOrientationPreserving, const int iFace, const int iVert);
+	/// @}
 
 	void _add_triangle_fan(const Vector<Vector3> &p_vertices, const Vector<Vector2> &p_uvs = Vector<Vector2>(), const Vector<Color> &p_colors = Vector<Color>(), const Vector<Vector2> &p_uv2s = Vector<Vector2>(), const Vector<Vector3> &p_normals = Vector<Vector3>(), const TypedArray<Plane> &p_tangents = TypedArray<Plane>());
 

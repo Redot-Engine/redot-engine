@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_zoom_widget.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/box_container.h"
@@ -63,8 +69,8 @@ public:
 
 	float get_min_zoom();
 	float get_max_zoom();
-	// It's best to setup simultaneously, so min < max can be checked easily.
+	/// It's best to setup simultaneously, so min < max can be checked easily.
 	void setup_zoom_limits(float p_min, float p_max);
-	// Sets the shortcut context for the zoom buttons. By default their context is this EditorZoomWidget control.
+	/// Sets the shortcut context for the zoom buttons. By default their context is this EditorZoomWidget control.
 	void set_shortcut_context(Node *p_node) const;
 };

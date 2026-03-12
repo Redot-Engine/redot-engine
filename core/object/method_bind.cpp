@@ -30,8 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-// object.h needs to be the first include *before* method_bind.h
-// FIXME: Find out why and fix potential cyclical dependencies.
+/**
+ * @file method_bind.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
+/// object.h needs to be the first include *before* method_bind.h
+/// @todo FIXME: Find out why and fix potential cyclical dependencies.
 #include "core/object/object.h"
 
 #include "method_bind.h"

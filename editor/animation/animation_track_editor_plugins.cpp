@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_track_editor_plugins.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_track_editor_plugins.h"
 
 #include "editor/audio/audio_stream_preview.h"

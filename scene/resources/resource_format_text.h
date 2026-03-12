@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_format_text.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/file_access.h"
@@ -41,11 +47,11 @@
 class ResourceLoaderText {
 public:
 	enum {
-		// Version 2: Changed names for Basis, AABB, Vectors, etc.
-		// Version 3: New string ID for ext/subresources, breaks forward compat.
-		// Version 4: PackedByteArray can be base64 encoded, and PackedVector4Array was added.
+		/// Version 2: Changed names for Basis, AABB, Vectors, etc.
+		/// Version 3: New string ID for ext/subresources, breaks forward compat.
+		/// Version 4: PackedByteArray can be base64 encoded, and PackedVector4Array was added.
 		FORMAT_VERSION = 4,
-		// For compat, save as version 3 if not using PackedVector4Array or no big PackedByteArray.
+		/// For compat, save as version 3 if not using PackedVector4Array or no big PackedByteArray.
 		FORMAT_VERSION_COMPAT = 3,
 	};
 
@@ -173,7 +179,7 @@ class ResourceFormatSaverTextInstance {
 	bool bundle_resources = false;
 	bool skip_editor = false;
 
-	struct NonPersistentKey { //for resource properties generated on the fly
+	struct NonPersistentKey { ///< For resource properties generated on the fly
 		Ref<Resource> base;
 		StringName property;
 		bool operator<(const NonPersistentKey &p_key) const { return base == p_key.base ? property < p_key.property : base < p_key.base; }

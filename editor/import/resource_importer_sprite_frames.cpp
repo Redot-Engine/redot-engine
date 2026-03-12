@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_sprite_frames.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_sprite_frames.h"
 
 #include "core/config/project_settings.h"
@@ -202,10 +208,10 @@ static void _remap_channels(Ref<Image> &r_image, ResourceImporterTexture::Channe
 	}
 }
 
+/// Clamp HDR exposure following Filament's tonemapping formula.
+/// This can be used to reduce fireflies in environment maps or reduce the influence
+/// of the sun from an HDRI panorama on environment lighting (when a DirectionalLight3D is used instead).
 static void _clamp_hdr_exposure(Ref<Image> &r_image) {
-	// Clamp HDR exposure following Filament's tonemapping formula.
-	// This can be used to reduce fireflies in environment maps or reduce the influence
-	// of the sun from an HDRI panorama on environment lighting (when a DirectionalLight3D is used instead).
 	const int height = r_image->get_height();
 	const int width = r_image->get_width();
 

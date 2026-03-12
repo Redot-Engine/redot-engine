@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file core_bind.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/debugger/engine_profiler.h"
@@ -267,7 +273,9 @@ public:
 	uint64_t get_static_memory_peak_usage() const;
 	Dictionary get_memory_info() const;
 
+	/** This method uses a signed argument for better error reporting as it's used from the scripting API. */
 	void delay_usec(int p_usec) const;
+	/** This method uses a signed argument for better error reporting as it's used from the scripting API. */
 	void delay_msec(int p_msec) const;
 	uint64_t get_ticks_msec() const;
 	uint64_t get_ticks_usec() const;
@@ -294,10 +302,10 @@ public:
 
 	Error move_to_trash(const String &p_path) const;
 	String get_user_data_dir() const;
-	String get_config_dir() const;
-	String get_data_dir() const;
-	String get_cache_dir() const;
-	String get_temp_dir() const;
+	String get_config_dir() const; ///< Exposed as `get_config_dir()` instead of `get_config_path()` for consistency with other exposed OS methods.
+	String get_data_dir() const; ///< Exposed as `get_data_dir()` instead of `get_data_path()` for consistency with other exposed OS methods.
+	String get_cache_dir() const; ///< Exposed as `get_cache_dir()` instead of `get_cache_path()` for consistency with other exposed OS methods.
+	String get_temp_dir() const; ///< Exposed as `get_temp_dir()` instead of `get_temp_path()` for consistency with other exposed OS methods.
 
 	Error set_thread_name(const String &p_name);
 	::Thread::ID get_thread_caller_id() const;
@@ -354,17 +362,22 @@ public:
 		OPERATION_INTERSECTION,
 		OPERATION_XOR
 	};
-	// 2D polygon boolean operations.
+
+	/// @name 2D polygon boolean operations
+	/// @{
 	TypedArray<PackedVector2Array> merge_polygons(const Vector<Vector2> &p_polygon_a, const Vector<Vector2> &p_polygon_b); // Union (add).
 	TypedArray<PackedVector2Array> clip_polygons(const Vector<Vector2> &p_polygon_a, const Vector<Vector2> &p_polygon_b); // Difference (subtract).
 	TypedArray<PackedVector2Array> intersect_polygons(const Vector<Vector2> &p_polygon_a, const Vector<Vector2> &p_polygon_b); // Common area (multiply).
 	TypedArray<PackedVector2Array> exclude_polygons(const Vector<Vector2> &p_polygon_a, const Vector<Vector2> &p_polygon_b); // All but common area (xor).
-
-	// 2D polyline vs polygon operations.
+	/// @}
+	/// @name 2D polyline vs polygon operations
+	/// @{
 	TypedArray<PackedVector2Array> clip_polyline_with_polygon(const Vector<Vector2> &p_polyline, const Vector<Vector2> &p_polygon); // Cut.
 	TypedArray<PackedVector2Array> intersect_polyline_with_polygon(const Vector<Vector2> &p_polyline, const Vector<Vector2> &p_polygon); // Chop.
+	/// @}
 
-	// 2D offset polygons/polylines.
+	/// @name 2D offset polygons/polylines
+	/// @{
 	enum PolyJoinType {
 		JOIN_SQUARE,
 		JOIN_ROUND,
@@ -379,6 +392,7 @@ public:
 	};
 	TypedArray<PackedVector2Array> offset_polygon(const Vector<Vector2> &p_polygon, real_t p_delta, PolyJoinType p_join_type = JOIN_SQUARE);
 	TypedArray<PackedVector2Array> offset_polyline(const Vector<Vector2> &p_polygon, real_t p_delta, PolyJoinType p_join_type = JOIN_SQUARE, PolyEndType p_end_type = END_SQUARE);
+	/// @}
 
 	Dictionary make_atlas(const Vector<Size2> &p_rects);
 
@@ -634,7 +648,7 @@ public:
 
 	bool is_embedded_in_editor() const;
 
-	// `set_write_movie_path()` is not exposed to the scripting API as changing it at run-time has no effect.
+	/// `set_write_movie_path()` is not exposed to the scripting API as changing it at run-time has no effect.
 	String get_write_movie_path() const;
 
 	void set_print_to_stdout(bool p_enabled);

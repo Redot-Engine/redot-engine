@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file emws_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "emws_peer.h"
 
 #ifdef WEB_ENABLED

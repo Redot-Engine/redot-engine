@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mutex.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/typedefs.h"
@@ -78,7 +84,7 @@ public:
 	explicit MutexLock(const MutexT &p_mutex) :
 			lock(p_mutex.mutex) {}
 
-	// Clarification: all the funny syntax is needed so this function exists only for binary mutexes.
+	/// Clarification: all the funny syntax is needed so this function exists only for binary mutexes.
 	template <typename T = MutexT>
 	_ALWAYS_INLINE_ THREADING_NAMESPACE::unique_lock<THREADING_NAMESPACE::mutex> &_get_lock(
 			typename std::enable_if<std::is_same<T, THREADING_NAMESPACE::mutex>::value> * = nullptr) const {
@@ -93,11 +99,11 @@ public:
 		lock.unlock();
 	}
 
-	// TODO: Implement a `try_temp_relock` if needed (will also need a dummy method below).
+	/// @todo Implement a `try_temp_relock` if needed (will also need a dummy method below).
 };
 
-using Mutex = MutexImpl<THREADING_NAMESPACE::recursive_mutex>; // Recursive, for general use
-using BinaryMutex = MutexImpl<THREADING_NAMESPACE::mutex>; // Non-recursive, handle with care
+using Mutex = MutexImpl<THREADING_NAMESPACE::recursive_mutex>; ///< Recursive, for general use
+using BinaryMutex = MutexImpl<THREADING_NAMESPACE::mutex>; ///< Non-recursive, handle with care
 
 extern template class MutexImpl<THREADING_NAMESPACE::recursive_mutex>;
 extern template class MutexImpl<THREADING_NAMESPACE::mutex>;

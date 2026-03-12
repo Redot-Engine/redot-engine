@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file instance_placeholder.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/main/node.h"
@@ -48,6 +54,10 @@ class InstancePlaceholder : public Node {
 	List<PropSet> stored_values;
 
 private:
+	/// This method will attempt to set the correct values on the placeholder instance
+	/// for regular types this is trivial and unnecessary.
+	/// For nodes however this becomes a bit tricky because they might now have existed until the instantiation,
+	/// so this method will try to find the correct nodes and resolve them.
 	void set_value_on_instance(InstancePlaceholder *p_placeholder, Node *p_instance, const PropSet &p_set);
 	Node *try_get_node(InstancePlaceholder *p_placeholder, Node *p_instance, const NodePath &p_path);
 

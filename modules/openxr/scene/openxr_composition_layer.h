@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_composition_layer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include <openxr/openxr.h>
@@ -49,21 +55,21 @@ class OpenXRCompositionLayer : public Node3D {
 	GDCLASS(OpenXRCompositionLayer, Node3D);
 
 public:
-	// Must be identical to Filter enum definition in OpenXRViewportCompositionLayerProvider.
+	/// Must be identical to Filter enum definition in OpenXRViewportCompositionLayerProvider.
 	enum Filter {
 		FILTER_NEAREST,
 		FILTER_LINEAR,
 		FILTER_CUBIC,
 	};
 
-	// Must be identical to MipmapMode enum definition in OpenXRViewportCompositionLayerProvider.
+	/// Must be identical to MipmapMode enum definition in OpenXRViewportCompositionLayerProvider.
 	enum MipmapMode {
 		MIPMAP_MODE_DISABLED,
 		MIPMAP_MODE_NEAREST,
 		MIPMAP_MODE_LINEAR,
 	};
 
-	// Must be identical to Wrap enum definition in OpenXRViewportCompositionLayerProvider.
+	/// Must be identical to Wrap enum definition in OpenXRViewportCompositionLayerProvider.
 	enum Wrap {
 		WRAP_CLAMP_TO_BORDER,
 		WRAP_CLAMP_TO_EDGE,
@@ -72,7 +78,7 @@ public:
 		WRAP_MIRROR_CLAMP_TO_EDGE,
 	};
 
-	// Must be identical to Swizzle enum definition in OpenXRViewportCompositionLayerProvider.
+	/// Must be identical to Swizzle enum definition in OpenXRViewportCompositionLayerProvider.
 	enum Swizzle {
 		SWIZZLE_RED,
 		SWIZZLE_GREEN,

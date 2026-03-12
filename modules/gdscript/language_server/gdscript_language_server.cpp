@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_language_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_language_server.h"
 
 #include "core/os/os.h"
@@ -40,7 +46,7 @@
 int GDScriptLanguageServer::port_override = -1;
 
 GDScriptLanguageServer::GDScriptLanguageServer() {
-	// TODO: Move to editor_settings.cpp
+	/// @todo Move to editor_settings.cpp
 	_EDITOR_DEF("network/language_server/remote_host", host);
 	_EDITOR_DEF("network/language_server/remote_port", port);
 	_EDITOR_DEF("network/language_server/enable_smart_resolve", true);

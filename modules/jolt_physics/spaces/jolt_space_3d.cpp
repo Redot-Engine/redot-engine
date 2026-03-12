@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_space_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_space_3d.h"
 
 #include "../joints/jolt_joint_3d.h"
@@ -498,7 +504,6 @@ void JoltSpace3D::set_is_object_sleeping(const JPH::BodyID &p_jolt_id, bool p_en
 }
 
 void JoltSpace3D::enqueue_call_queries(SelfList<JoltBody3D> *p_body) {
-	// This method will be called from the body activation listener on multiple threads during the simulation step.
 	MutexLock body_call_queries_lock(body_call_queries_mutex);
 
 	if (!p_body->in_list()) {

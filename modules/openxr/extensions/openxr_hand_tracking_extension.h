@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_hand_tracking_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../util.h"
@@ -109,22 +115,27 @@ public:
 private:
 	static OpenXRHandTrackingExtension *singleton;
 
-	// state
+	/// @name State
+	/// @{
 	XrSystemHandTrackingPropertiesEXT handTrackingSystemProperties;
-	HandTracker hand_trackers[OPENXR_MAX_TRACKED_HANDS]; // Fixed for left and right hand
-
-	// related extensions
+	HandTracker hand_trackers[OPENXR_MAX_TRACKED_HANDS]; ///< Fixed for left and right hand
+	/// @}
+	/// @name Related Extensions
+	/// @{
 	bool hand_tracking_ext = false;
 	bool hand_motion_range_ext = false;
 	bool hand_tracking_source_ext = false;
 	bool unobstructed_data_source = false;
 	bool controller_data_source = false;
-
-	// functions
+	/// @}
+	/// @name Functions
+	/// @{
 	void cleanup_hand_tracking();
-
-	// OpenXR API call wrappers
+	/// @}
+	/// @name OpenXR API call wrappers
+	/// @{
 	EXT_PROTO_XRRESULT_FUNC3(xrCreateHandTrackerEXT, (XrSession), p_session, (const XrHandTrackerCreateInfoEXT *), p_createInfo, (XrHandTrackerEXT *), p_handTracker)
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyHandTrackerEXT, (XrHandTrackerEXT), p_handTracker)
 	EXT_PROTO_XRRESULT_FUNC3(xrLocateHandJointsEXT, (XrHandTrackerEXT), p_handTracker, (const XrHandJointsLocateInfoEXT *), p_locateInfo, (XrHandJointLocationsEXT *), p_locations)
+	/// @}
 };

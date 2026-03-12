@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_language_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/extension/ext_wrappers.gen.inc"
@@ -237,7 +243,8 @@ public:
 	EXBIND0RC(String, get_extension)
 	EXBIND0(finish)
 
-	/* EDITOR FUNCTIONS */
+	/// @name EDITOR FUNCTIONS
+	/// @{
 
 	GDVIRTUAL0RC_REQUIRED(Vector<String>, _get_reserved_words)
 
@@ -592,7 +599,9 @@ public:
 	EXBIND0(reload_all_scripts)
 	EXBIND2(reload_scripts, const Array &, bool)
 	EXBIND2(reload_tool_script, const Ref<Script> &, bool)
-	/* LOADER FUNCTIONS */
+	/// @}
+	/// @name LOADER FUNCTIONS
+	/// @{
 
 	GDVIRTUAL0RC_REQUIRED(PackedStringArray, _get_recognized_extensions)
 
@@ -680,6 +689,7 @@ public:
 		}
 		return ret["name"];
 	}
+	/// @}
 };
 
 VARIANT_ENUM_CAST(ScriptLanguageExtension::LookupResultType)

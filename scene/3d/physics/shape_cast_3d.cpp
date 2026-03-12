@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shape_cast_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shape_cast_3d.h"
 
 #include "scene/3d/physics/collision_object_3d.h"

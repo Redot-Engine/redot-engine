@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_string_names.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/string/node_path.h"
@@ -129,10 +135,10 @@ public:
 
 	const NodePath path_pp = NodePath("..");
 
-	const StringName default_ = "default"; // default would conflict with C++ keyword.
+	const StringName default_ = "default"; ///< default would conflict with C++ keyword.
 	const StringName output = "output";
 
-	const StringName Master = "Master"; // Audio bus name.
+	const StringName Master = "Master"; ///< Audio bus name.
 
 	const StringName theme_changed = "theme_changed";
 	const StringName shader = "shader";

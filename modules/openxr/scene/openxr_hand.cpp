@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_hand.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_hand.h"
 
 #include "../extensions/openxr_hand_tracking_extension.h"
@@ -95,7 +101,7 @@ OpenXRHand::Hands OpenXRHand::get_hand() const {
 void OpenXRHand::set_hand_skeleton(const NodePath &p_hand_skeleton) {
 	hand_skeleton = p_hand_skeleton;
 
-	// TODO if inside tree call _get_bones()
+	/// @todo If inside tree call _get_bones()
 }
 
 void OpenXRHand::set_motion_range(MotionRange p_motion_range) {
@@ -344,7 +350,7 @@ void OpenXRHand::_update_skeleton() {
 						confidences[i] = XRPose::XR_TRACKING_CONFIDENCE_HIGH;
 						positions[i] = Vector3(pose.position.x * ws, pose.position.y * ws, pose.position.z * ws);
 
-						// TODO get inverse of position, we'll do this later. For now we're ignoring bone positions which generally works better anyway
+						/// @todo Get inverse of position, we'll do this later. For now we're ignoring bone positions which generally works better anyway
 					} else {
 						confidences[i] = XRPose::XR_TRACKING_CONFIDENCE_LOW;
 					}

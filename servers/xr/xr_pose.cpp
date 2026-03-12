@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_pose.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_pose.h"
 
 #include "servers/xr_server.h"

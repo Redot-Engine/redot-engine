@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_picker.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/box_container.h"
@@ -83,7 +89,8 @@ public:
 class ColorPicker : public VBoxContainer {
 	GDCLASS(ColorPicker, VBoxContainer);
 
-	// These classes poke into theme items for their internal logic.
+	/// @name These classes poke into theme items for their internal logic.
+	/// @{
 	friend class ColorPickerShape;
 	friend class ColorPickerShapeRectangle;
 	friend class ColorPickerShapeWheel;
@@ -92,6 +99,7 @@ class ColorPicker : public VBoxContainer {
 	friend class ColorPickerShapeOKHSLCircle;
 	friend class ColorPickerShapeOKHSRectangle;
 	friend class ColorPickerShapeOKHLRectangle;
+	/// @}
 
 	friend class ColorModeRGB;
 	friend class ColorModeHSV;
@@ -124,8 +132,8 @@ public:
 	};
 
 private:
-	// Ideally, `SHAPE_NONE` should be -1 so that we don't need to convert shape type to index.
-	// In order to avoid breaking compatibility, we have to use these methods for conversion.
+	/// Ideally, `SHAPE_NONE` should be -1 so that we don't need to convert shape type to index.
+	/// In order to avoid breaking compatibility, we have to use these methods for conversion.
 	inline int get_current_shape_index() {
 		return shape_to_index(current_shape);
 	}
@@ -201,12 +209,14 @@ private:
 	Ref<StyleBoxFlat> picker_preview_style_box;
 	Ref<StyleBoxFlat> picker_preview_style_box_color;
 
-	// Legacy color picking.
+	/// @name Legacy color picking
+	/// @{
 	TextureRect *picker_texture_rect = nullptr;
 	Color picker_color;
 	FileDialog *file_dialog = nullptr;
 	MenuButton *menu_btn = nullptr;
 	PopupMenu *options_menu = nullptr;
+	/// @}
 
 	MarginContainer *internal_margin = nullptr;
 	HBoxContainer *shape_container = nullptr;
@@ -347,10 +357,12 @@ private:
 
 		Ref<Texture2D> color_script;
 
-		/* Mode buttons */
+		/// @name Mode buttons
+		/// @{
 		Ref<StyleBox> mode_button_normal;
 		Ref<StyleBox> mode_button_pressed;
 		Ref<StyleBox> mode_button_hover;
+		/// @}
 	} theme_cache;
 
 	void _copy_normalized_to_hsv_okhsl();
@@ -373,6 +385,8 @@ private:
 	void _text_type_toggled();
 #endif // TOOLS_ENABLED
 	void _sample_input(const Ref<InputEvent> &p_event);
+	/// Covers the right half of the sample if the old color is being displayed,
+	/// or the whole sample if it's not being displayed.
 	void _sample_draw();
 	void _slider_draw(int p_which);
 	void _alpha_slider_draw();
@@ -392,13 +406,16 @@ private:
 	void _block_input_on_popup_show();
 	void _enable_input_on_popup_hide();
 
-	// Native color picking.
+	/// @name Native color picking
+	/// @{
 	void _pick_button_pressed_native();
 	void _native_cb(bool p_status, const Color &p_color);
-
-	// Legacy color picking.
+	/// @}
+	/// @name Legacy color picking
+	/// @{
 	void _pick_button_pressed_legacy();
 	void _picker_texture_input(const Ref<InputEvent> &p_event);
+	/// @}
 
 	inline int _get_preset_size();
 	void _add_preset_button(int p_size, const Color &p_color);

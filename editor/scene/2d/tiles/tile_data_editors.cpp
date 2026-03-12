@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_data_editors.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_data_editors.h"
 
 #include "tile_set_editor.h"
@@ -1893,8 +1899,8 @@ void TileDataTerrainsEditor::_update_terrain_selector() {
 		terrain_property_editor->setup(options);
 		terrain_property_editor->update_property();
 
-		// Kind of a hack to set icons.
-		// We could provide a way to modify that in the EditorProperty.
+		/// Kind of a hack to set icons.
+		/// @todo We could provide a way to modify that in the EditorProperty.
 		OptionButton *option_button = Object::cast_to<OptionButton>(terrain_property_editor->get_child(0));
 		for (int terrain = 0; terrain < tile_set->get_terrains_count(terrain_set); terrain++) {
 			option_button->set_item_icon(terrain + 1, icons[terrain_set][terrain]);

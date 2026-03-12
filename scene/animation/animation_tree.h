@@ -30,12 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_tree.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "animation_mixer.h"
 #include "scene/resources/animation.h"
 
-#define HUGE_LENGTH 31540000 // 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation length and Transition xfade time to prevent time inversion for AnimationNodeStateMachine.
+#define HUGE_LENGTH 31540000 ///< 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation length and Transition xfade time to prevent time inversion for AnimationNodeStateMachine.
 
 class AnimationNodeBlendTree;
 class AnimationNodeStartState;
@@ -64,19 +70,19 @@ public:
 	AHashMap<NodePath, bool> filter;
 	bool filter_enabled = false;
 
-	// To propagate information from upstream for use in estimation of playback progress.
-	// These values must be taken from the result of blend_node() or blend_input() and must be essentially read-only.
-	// For example, if you want to change the position, you need to change the pi.time value of PlaybackInfo passed to blend_input(pi) and get the result.
+	/// To propagate information from upstream for use in estimation of playback progress.
+	/// These values must be taken from the result of blend_node() or blend_input() and must be essentially read-only.
+	/// For example, if you want to change the position, you need to change the pi.time value of PlaybackInfo passed to blend_input(pi) and get the result.
 	struct NodeTimeInfo {
-		// Retain the previous frame values. These are stored into the AnimationTree's Map and exposing them as read-only values.
+		/// Retain the previous frame values. These are stored into the AnimationTree's Map and exposing them as read-only values.
 		double length = 0.0;
 		double position = 0.0;
 		double delta = 0.0;
 
-		// Needs internally to estimate remain time, the previous frame values are not retained.
+		/// Needs internally to estimate remain time, the previous frame values are not retained.
 		Animation::LoopMode loop_mode = Animation::LOOP_NONE;
-		bool will_end = false; // For breaking loop, it is true when just looped.
-		bool is_infinity = false; // For unpredictable state machine's end.
+		bool will_end = false; ///< For breaking loop, it is true when just looped.
+		bool is_infinity = false; ///< For unpredictable state machine's end.
 
 		bool is_looping() {
 			return loop_mode != Animation::LOOP_NONE;
@@ -96,7 +102,7 @@ public:
 		}
 	};
 
-	// Temporary state for blending process which needs to be stored in each AnimationNodes.
+	/// Temporary state for blending process which needs to be stored in each AnimationNodes.
 	struct NodeState {
 		friend AnimationNode;
 
@@ -114,10 +120,10 @@ public:
 
 	} node_state;
 
-	// Temporary state for blending process which needs to be started in the AnimationTree, pass through the AnimationNodes, and then return to the AnimationTree.
+	/// Temporary state for blending process which needs to be started in the AnimationTree, pass through the AnimationNodes, and then return to the AnimationTree.
 	struct ProcessState {
 		AnimationTree *tree = nullptr;
-		const AHashMap<NodePath, int> *track_map; // TODO: Is there a better way to manage filter/tracks?
+		const AHashMap<NodePath, int> *track_map; ///< @todo Is there a better way to manage filter/tracks?
 		bool is_testing = false;
 		bool valid = false;
 		String invalid_reasons;
@@ -153,8 +159,8 @@ public:
 	void _set_filters(const Array &p_filters);
 	friend class AnimationNodeBlendTree;
 
-	// The time information is passed from upstream to downstream by AnimationMixer::PlaybackInfo::p_playback_info until AnimationNodeAnimation processes it.
-	// Conversely, AnimationNodeAnimation returns the processed result as NodeTimeInfo from downstream to upstream.
+	/// The time information is passed from upstream to downstream by AnimationMixer::PlaybackInfo::p_playback_info until AnimationNodeAnimation processes it.
+	/// Conversely, AnimationNodeAnimation returns the processed result as NodeTimeInfo from downstream to upstream.
 	NodeTimeInfo _blend_node(Ref<AnimationNode> p_node, const StringName &p_subpath, AnimationNode *p_new_parent, AnimationMixer::PlaybackInfo p_playback_info, FilterAction p_filter = FILTER_IGNORE, bool p_sync = true, bool p_test_only = false, real_t *r_activity = nullptr);
 	NodeTimeInfo _pre_process(ProcessState *p_process_state, AnimationMixer::PlaybackInfo p_playback_info, bool p_test_only = false);
 
@@ -163,14 +169,14 @@ protected:
 	StringName current_position = "current_position";
 	StringName current_delta = "current_delta";
 
-	virtual NodeTimeInfo process(const AnimationMixer::PlaybackInfo p_playback_info, bool p_test_only = false); // To organize time information. Virtualizing for especially AnimationNodeAnimation needs to take "backward" into account.
-	virtual NodeTimeInfo _process(const AnimationMixer::PlaybackInfo p_playback_info, bool p_test_only = false); // Main process.
+	virtual NodeTimeInfo process(const AnimationMixer::PlaybackInfo p_playback_info, bool p_test_only = false); ///< To organize time information. Virtualizing for especially AnimationNodeAnimation needs to take "backward" into account.
+	virtual NodeTimeInfo _process(const AnimationMixer::PlaybackInfo p_playback_info, bool p_test_only = false); ///< Main process.
 
 	void blend_animation(const StringName &p_animation, AnimationMixer::PlaybackInfo p_playback_info);
 	NodeTimeInfo blend_node(Ref<AnimationNode> p_node, const StringName &p_subpath, AnimationMixer::PlaybackInfo p_playback_info, FilterAction p_filter = FILTER_IGNORE, bool p_sync = true, bool p_test_only = false);
 	NodeTimeInfo blend_input(int p_input, AnimationMixer::PlaybackInfo p_playback_info, FilterAction p_filter = FILTER_IGNORE, bool p_sync = true, bool p_test_only = false);
 
-	// Bind-able methods to expose for compatibility, moreover AnimationMixer::PlaybackInfo is not exposed.
+	/// Bind-able methods to expose for compatibility, moreover AnimationMixer::PlaybackInfo is not exposed.
 	void blend_animation_ex(const StringName &p_animation, double p_time, double p_delta, bool p_seeked, bool p_is_external_seeking, real_t p_blend, Animation::LoopedFlag p_looped_flag = Animation::LOOPED_FLAG_NONE);
 	double blend_node_ex(const StringName &p_sub_path, Ref<AnimationNode> p_node, double p_time, bool p_seek, bool p_is_external_seeking, real_t p_blend, FilterAction p_filter = FILTER_IGNORE, bool p_sync = true, bool p_test_only = false);
 	double blend_input_ex(int p_input, double p_time, bool p_seek, bool p_is_external_seeking, real_t p_blend, FilterAction p_filter = FILTER_IGNORE, bool p_sync = true, bool p_test_only = false);
@@ -199,8 +205,8 @@ public:
 	void set_parameter(const StringName &p_name, const Variant &p_value);
 	Variant get_parameter(const StringName &p_name) const;
 
-	void set_node_time_info(const NodeTimeInfo &p_node_time_info); // Wrapper of set_parameter().
-	virtual NodeTimeInfo get_node_time_info() const; // Wrapper of get_parameter().
+	void set_node_time_info(const NodeTimeInfo &p_node_time_info); ///< Wrapper of set_parameter().
+	virtual NodeTimeInfo get_node_time_info() const; ///< Wrapper of get_parameter().
 
 	struct ChildNode {
 		StringName name;
@@ -289,7 +295,7 @@ private:
 	mutable List<PropertyInfo> properties;
 	mutable AHashMap<StringName, AHashMap<StringName, StringName>> property_parent_map;
 	mutable AHashMap<ObjectID, StringName> property_reference_map;
-	mutable AHashMap<StringName, Pair<Variant, bool>> property_map; // Property value and read-only flag.
+	mutable AHashMap<StringName, Pair<Variant, bool>> property_map; ///< Property value and read-only flag.
 
 	mutable bool properties_dirty = true;
 
@@ -314,6 +320,7 @@ private:
 
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
+	/// `libraries` is a dynamic property, so we can't use `_validate_property` to change it.
 	virtual uint32_t _get_libraries_property_usage() const override;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
 	virtual void _validate_property(PropertyInfo &p_property) const override;
@@ -323,7 +330,7 @@ private:
 
 	virtual void _set_active(bool p_active) override;
 
-	// Make animation instances.
+	/// Make animation instances.
 	virtual bool _blend_pre_process(double p_delta, int p_track_count, const AHashMap<NodePath, int> &p_track_map) override;
 
 #ifndef DISABLE_DEPRECATED

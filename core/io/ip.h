@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ip.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/ip_address.h"
@@ -87,7 +93,7 @@ public:
 
 	IPAddress resolve_hostname(const String &p_hostname, Type p_type = TYPE_ANY);
 	PackedStringArray resolve_hostname_addresses(const String &p_hostname, Type p_type = TYPE_ANY);
-	// async resolver hostname
+	/// async resolver hostname
 	ResolverID resolve_hostname_queue_item(const String &p_hostname, Type p_type = TYPE_ANY);
 	ResolverStatus get_resolve_item_status(ResolverID p_id) const;
 	IPAddress get_resolve_item_address(ResolverID p_id) const;

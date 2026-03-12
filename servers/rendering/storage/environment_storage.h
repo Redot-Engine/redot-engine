@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file environment_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/rid_owner.h"
@@ -40,18 +46,18 @@ private:
 	static RendererEnvironmentStorage *singleton;
 
 	// Environment
+	/// @note We capture and store all environment parameters received from Redot here.
+	/// Not all renderers support all effects and should just ignore the bits they don't support.
 	struct Environment {
-		// Note, we capture and store all environment parameters received from Redot here.
-		// Not all renderers support all effects and should just ignore the bits they don't support.
-
-		// Background
+		/// @name Background
+		/// @{
 		RS::EnvironmentBG background = RS::ENV_BG_CLEAR_COLOR;
 		RID sky;
 		float sky_custom_fov = 0.0;
 		Basis sky_orientation;
 		Color bg_color;
 		float bg_energy_multiplier = 1.0;
-		float bg_intensity = 1.0; // Measured in nits or candela/m^2. Default to 1.0 so this doesn't impact rendering when Physical Light Units disabled.
+		float bg_intensity = 1.0; ///< Measured in nits or candela/m^2. Default to 1.0 so this doesn't impact rendering when Physical Light Units disabled.
 		int canvas_max_layer = 0;
 		RS::EnvironmentAmbientSource ambient_source = RS::ENV_AMBIENT_SOURCE_BG;
 		Color ambient_light;
@@ -59,13 +65,15 @@ private:
 		float ambient_sky_contribution = 1.0;
 		RS::EnvironmentReflectionSource reflection_source = RS::ENV_REFLECTION_SOURCE_BG;
 		int camera_feed_id = 0;
-
-		// Tonemap
+		/// @}
+		/// @name Tonemap
+		/// @{
 		RS::EnvironmentToneMapper tone_mapper;
 		float exposure = 1.0;
 		float white = 1.0;
-
-		// Fog
+		/// @}
+		/// @name Fog
+		/// @{
 		bool fog_enabled = false;
 		RS::EnvironmentFogMode fog_mode = RS::EnvironmentFogMode::ENV_FOG_MODE_EXPONENTIAL;
 		Color fog_light_color = Color(0.518, 0.553, 0.608);
@@ -74,15 +82,17 @@ private:
 		float fog_density = 0.01;
 		float fog_sky_affect = 1.0;
 		float fog_height = 0.0;
-		float fog_height_density = 0.0; //can be negative to invert effect
+		float fog_height_density = 0.0; ///< Can be negative to invert effect
 		float fog_aerial_perspective = 0.0;
-
-		// Depth Fog
+		/// @}
+		/// @name Depth Fog
+		/// @{
 		float fog_depth_curve = 1.0;
 		float fog_depth_begin = 10.0;
 		float fog_depth_end = 100.0;
-
-		// Volumetric Fog
+		/// @}
+		/// @name Volumetric Fog
+		/// @{
 		bool volumetric_fog_enabled = false;
 		float volumetric_fog_density = 0.01;
 		Color volumetric_fog_scattering = Color(1, 1, 1);
@@ -96,8 +106,9 @@ private:
 		float volumetric_fog_sky_affect = 1.0;
 		bool volumetric_fog_temporal_reprojection = true;
 		float volumetric_fog_temporal_reprojection_amount = 0.9;
-
-		// Glow
+		/// @}
+		/// @name Glow
+		/// @{
 		bool glow_enabled = false;
 		Vector<float> glow_levels;
 		float glow_intensity = 0.8;
@@ -108,17 +119,19 @@ private:
 		float glow_hdr_bleed_threshold = 1.0;
 		float glow_hdr_luminance_cap = 12.0;
 		float glow_hdr_bleed_scale = 2.0;
-		float glow_map_strength = 0.0f; // 1.0f in GLES3 ??
+		float glow_map_strength = 0.0f; ///< 1.0f in GLES3 ??
 		RID glow_map;
-
-		// SSR
+		/// @}
+		/// @name SSR
+		/// @{
 		bool ssr_enabled = false;
 		int ssr_max_steps = 64;
 		float ssr_fade_in = 0.15;
 		float ssr_fade_out = 2.0;
 		float ssr_depth_tolerance = 0.2;
-
-		// SSAO
+		/// @}
+		/// @name SSAO
+		/// @{
 		bool ssao_enabled = false;
 		float ssao_radius = 1.0;
 		float ssao_intensity = 2.0;
@@ -128,15 +141,17 @@ private:
 		float ssao_sharpness = 0.98;
 		float ssao_direct_light_affect = 0.0;
 		float ssao_ao_channel_affect = 0.0;
-
-		// SSIL
+		/// @}
+		/// @name SSIL
+		/// @{
 		bool ssil_enabled = false;
 		float ssil_radius = 5.0;
 		float ssil_intensity = 1.0;
 		float ssil_sharpness = 0.98;
 		float ssil_normal_rejection = 1.0;
-
-		// SDFGI
+		/// @}
+		/// @name SDFGI
+		/// @{
 		bool sdfgi_enabled = false;
 		int sdfgi_cascades = 4;
 		float sdfgi_min_cell_size = 0.2;
@@ -147,14 +162,16 @@ private:
 		float sdfgi_normal_bias = 1.1;
 		float sdfgi_probe_bias = 1.1;
 		RS::EnvironmentSDFGIYScale sdfgi_y_scale = RS::ENV_SDFGI_Y_SCALE_75_PERCENT;
-
-		// Adjustments
+		/// @}
+		/// @name Adjustments
+		/// @{
 		bool adjustments_enabled = false;
 		float adjustments_brightness = 1.0f;
 		float adjustments_contrast = 1.0f;
 		float adjustments_saturation = 1.0f;
 		bool use_1d_color_correction = false;
 		RID color_correction;
+		/// @}
 	};
 
 	mutable RID_Owner<Environment, true> environment_owner;
@@ -165,7 +182,8 @@ public:
 	RendererEnvironmentStorage();
 	virtual ~RendererEnvironmentStorage();
 
-	// Environment
+	/// @name Environment
+	/// @{
 	RID environment_allocate();
 	void environment_initialize(RID p_rid);
 	void environment_free(RID p_rid);
@@ -173,8 +191,9 @@ public:
 	bool is_environment(RID p_environment) const {
 		return environment_owner.owns(p_environment);
 	}
-
-	// Background
+	/// @}
+	/// @name Background
+	/// @{}
 	void environment_set_background(RID p_env, RS::EnvironmentBG p_bg);
 	void environment_set_sky(RID p_env, RID p_sky);
 	void environment_set_sky_custom_fov(RID p_env, float p_scale);
@@ -199,14 +218,16 @@ public:
 	float environment_get_ambient_light_energy(RID p_env) const;
 	float environment_get_ambient_sky_contribution(RID p_env) const;
 	RS::EnvironmentReflectionSource environment_get_reflection_source(RID p_env) const;
-
-	// Tonemap
+	/// @}
+	/// @name Tonemap
+	/// @{
 	void environment_set_tonemap(RID p_env, RS::EnvironmentToneMapper p_tone_mapper, float p_exposure, float p_white);
 	RS::EnvironmentToneMapper environment_get_tone_mapper(RID p_env) const;
 	float environment_get_exposure(RID p_env) const;
 	float environment_get_white(RID p_env) const;
-
-	// Fog
+	/// @}
+	/// @name Fog
+	/// @{
 	void environment_set_fog(RID p_env, bool p_enable, const Color &p_light_color, float p_light_energy, float p_sun_scatter, float p_density, float p_height, float p_height_density, float p_aerial_perspective, float p_sky_affect, RS::EnvironmentFogMode p_mode);
 	bool environment_get_fog_enabled(RID p_env) const;
 	RS::EnvironmentFogMode environment_get_fog_mode(RID p_env) const;
@@ -218,14 +239,16 @@ public:
 	float environment_get_fog_height(RID p_env) const;
 	float environment_get_fog_height_density(RID p_env) const;
 	float environment_get_fog_aerial_perspective(RID p_env) const;
-
-	// Depth Fog
+	/// @}
+	/// @name Depth Fog
+	/// @{
 	void environment_set_fog_depth(RID p_env, float p_curve, float p_begin, float p_end);
 	float environment_get_fog_depth_curve(RID p_env) const;
 	float environment_get_fog_depth_begin(RID p_env) const;
 	float environment_get_fog_depth_end(RID p_env) const;
-
-	// Volumetric Fog
+	/// @}
+	/// @name Volumetric Fog
+	/// @{
 	void environment_set_volumetric_fog(RID p_env, bool p_enable, float p_density, const Color &p_albedo, const Color &p_emission, float p_emission_energy, float p_anisotropy, float p_length, float p_detail_spread, float p_gi_inject, bool p_temporal_reprojection, float p_temporal_reprojection_amount, float p_ambient_inject, float p_sky_affect);
 	bool environment_get_volumetric_fog_enabled(RID p_env) const;
 	float environment_get_volumetric_fog_density(RID p_env) const;
@@ -240,8 +263,9 @@ public:
 	bool environment_get_volumetric_fog_temporal_reprojection(RID p_env) const;
 	float environment_get_volumetric_fog_temporal_reprojection_amount(RID p_env) const;
 	float environment_get_volumetric_fog_ambient_inject(RID p_env) const;
-
-	// GLOW
+	/// @}
+	/// @name GLOW
+	/// @{
 	void environment_set_glow(RID p_env, bool p_enable, Vector<float> p_levels, float p_intensity, float p_strength, float p_mix, float p_bloom_threshold, RS::EnvironmentGlowBlendMode p_blend_mode, float p_hdr_bleed_threshold, float p_hdr_bleed_scale, float p_hdr_luminance_cap, float p_glow_map_strength, RID p_glow_map);
 	bool environment_get_glow_enabled(RID p_env) const;
 	Vector<float> environment_get_glow_levels(RID p_env) const;
@@ -255,16 +279,18 @@ public:
 	float environment_get_glow_hdr_bleed_scale(RID p_env) const;
 	float environment_get_glow_map_strength(RID p_env) const;
 	RID environment_get_glow_map(RID p_env) const;
-
-	// SSR
+	/// @}
+	/// @name SSR
+	/// @{
 	void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int, float p_fade_out, float p_depth_tolerance);
 	bool environment_get_ssr_enabled(RID p_env) const;
 	int environment_get_ssr_max_steps(RID p_env) const;
 	float environment_get_ssr_fade_in(RID p_env) const;
 	float environment_get_ssr_fade_out(RID p_env) const;
 	float environment_get_ssr_depth_tolerance(RID p_env) const;
-
-	// SSAO
+	/// @}
+	/// @name SSAO
+	/// @{
 	void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect, float p_ao_channel_affect);
 	bool environment_get_ssao_enabled(RID p_env) const;
 	float environment_get_ssao_radius(RID p_env) const;
@@ -275,16 +301,18 @@ public:
 	float environment_get_ssao_sharpness(RID p_env) const;
 	float environment_get_ssao_direct_light_affect(RID p_env) const;
 	float environment_get_ssao_ao_channel_affect(RID p_env) const;
-
-	// SSIL
+	/// @}
+	/// @name SSIL
+	/// @{
 	void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_sharpness, float p_normal_rejection);
 	bool environment_get_ssil_enabled(RID p_env) const;
 	float environment_get_ssil_radius(RID p_env) const;
 	float environment_get_ssil_intensity(RID p_env) const;
 	float environment_get_ssil_sharpness(RID p_env) const;
 	float environment_get_ssil_normal_rejection(RID p_env) const;
-
-	// SDFGI
+	/// @}
+	/// @name SDFGI
+	/// @{
 	void environment_set_sdfgi(RID p_env, bool p_enable, int p_cascades, float p_min_cell_size, RS::EnvironmentSDFGIYScale p_y_scale, bool p_use_occlusion, float p_bounce_feedback, bool p_read_sky, float p_energy, float p_normal_bias, float p_probe_bias);
 	bool environment_get_sdfgi_enabled(RID p_env) const;
 	int environment_get_sdfgi_cascades(RID p_env) const;
@@ -296,8 +324,9 @@ public:
 	float environment_get_sdfgi_normal_bias(RID p_env) const;
 	float environment_get_sdfgi_probe_bias(RID p_env) const;
 	RS::EnvironmentSDFGIYScale environment_get_sdfgi_y_scale(RID p_env) const;
-
-	// Adjustment
+	/// @}
+	/// @name Adjustment
+	/// @{
 	void environment_set_adjustment(RID p_env, bool p_enable, float p_brightness, float p_contrast, float p_saturation, bool p_use_1d_color_correction, RID p_color_correction);
 	bool environment_get_adjustments_enabled(RID p_env) const;
 	float environment_get_adjustments_brightness(RID p_env) const;
@@ -305,4 +334,5 @@ public:
 	float environment_get_adjustments_saturation(RID p_env) const;
 	bool environment_get_use_1d_color_correction(RID p_env) const;
 	RID environment_get_color_correction(RID p_env) const;
+	/// @}
 };

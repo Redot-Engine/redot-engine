@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file lightmap_gi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/local_vector.h"
@@ -53,14 +59,17 @@ public:
 	};
 
 private:
-	// The 'merged' texture atlases actually used by the renderer.
+	/// @name The 'merged' texture atlases actually used by the renderer.
+	/// @{
 	Ref<TextureLayered> combined_light_texture;
 	Ref<TextureLayered> combined_shadowmask_texture;
+	/// @}
 
-	// The temporary texture atlas arrays which are used for storage.
-	// If a single atlas is too large, it's split and recombined during loading.
+	/// @name The temporary texture atlas arrays which are used for storage. If a single atlas is too large, it's split and recombined during loading.
+	/// @{
 	TypedArray<TextureLayered> storage_light_textures;
 	TypedArray<TextureLayered> storage_shadowmask_textures;
+	/// @}
 
 	bool uses_spherical_harmonics = false;
 	bool interior = false;

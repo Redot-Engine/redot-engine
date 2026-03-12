@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fsr2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_accumulate_pass.glsl.gen.h"
@@ -129,7 +135,7 @@ public:
 class FSR2Effect {
 public:
 	struct RootSignature {
-		// Proxy structure to store the shader required by RD that uses the terminology used by the FSR2 API.
+		/// Proxy structure to store the shader required by RD that uses the terminology used by the FSR2 API.
 		RID shader_rid;
 	};
 

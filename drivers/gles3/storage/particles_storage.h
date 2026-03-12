@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file particles_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef GLES3_ENABLED
@@ -58,13 +64,13 @@ private:
 
 	struct ParticleInstanceData3D {
 		float xform[12];
-		float color[2]; // Color and custom are packed together into one vec4;
+		float color[2]; ///< Color and custom are packed together into one vec4;
 		float custom[2];
 	};
 
 	struct ParticleInstanceData2D {
 		float xform[8];
-		float color[2]; // Color and custom are packed together into one vec4;
+		float color[2]; ///< Color and custom are packed together into one vec4;
 		float custom[2];
 	};
 
@@ -79,7 +85,7 @@ private:
 		enum {
 			MAX_ATTRACTORS = 32,
 			MAX_COLLIDERS = 32,
-			MAX_3D_TEXTURES = 0 // GLES3 renderer doesn't support using 3D textures for flow field or collisions.
+			MAX_3D_TEXTURES = 0 ///< GLES3 renderer doesn't support using 3D textures for flow field or collisions.
 		};
 
 		enum AttractorType {
@@ -90,7 +96,7 @@ private:
 
 		struct Attractor {
 			float transform[16];
-			float extents[4]; // Extents or radius. w-channel is padding.
+			float extents[4]; ///< Extents or radius. w-channel is padding.
 
 			uint32_t type;
 			float strength;
@@ -109,7 +115,7 @@ private:
 
 		struct Collider {
 			float transform[16];
-			float extents[4]; // Extents or radius. w-channel is padding.
+			float extents[4]; ///< Extents or radius. w-channel is padding.
 
 			uint32_t type;
 			float scale;
@@ -187,25 +193,27 @@ private:
 
 		// Transform Feedback buffer and VAO for rendering.
 		// Each frame we render to this one.
-		GLuint front_vertex_array = 0; // Binds process buffer. Used for processing.
-		GLuint front_process_buffer = 0; // Transform + color + custom data + userdata + velocity + flags. Only needed for processing.
-		GLuint front_instance_buffer = 0; // Transform + color + custom data. In packed format needed for rendering.
+		GLuint front_vertex_array = 0; ///< Binds process buffer. Used for processing.
+		GLuint front_process_buffer = 0; ///< Transform + color + custom data + userdata + velocity + flags. Only needed for processing.
+		GLuint front_instance_buffer = 0; ///< Transform + color + custom data. In packed format needed for rendering.
 
 		// VAO for transform feedback, contains last frame's data.
 		// Read from this one for particles process and then copy to last frame buffer.
-		GLuint back_vertex_array = 0; // Binds process buffer. Used for processing.
-		GLuint back_process_buffer = 0; // Transform + color + custom data + userdata + velocity + flags. Only needed for processing.
-		GLuint back_instance_buffer = 0; // Transform + color + custom data. In packed format needed for rendering.
+		GLuint back_vertex_array = 0; ///< Binds process buffer. Used for processing.
+		GLuint back_process_buffer = 0; ///< Transform + color + custom data + userdata + velocity + flags. Only needed for processing.
+		GLuint back_instance_buffer = 0; ///< Transform + color + custom data. In packed format needed for rendering.
 
 		uint32_t instance_buffer_size_cache = 0;
 		uint32_t instance_buffer_stride_cache = 0;
 		uint32_t num_attrib_arrays_cache = 0;
 		uint32_t process_buffer_stride_cache = 0;
 
-		// Only ever copied to, holds last frame's instance data, then swaps with sort_buffer.
+		/// @name Only ever copied to, holds last frame's instance data, then swaps with sort_buffer.
+		/// @{
 		GLuint last_frame_buffer = 0;
 		bool last_frame_buffer_filled = false;
 		float last_frame_phase = 0.0;
+		/// @}
 
 		// The frame-before-last's instance buffer.
 		// Use this to copy data back for sorting or computing AABB.
@@ -252,6 +260,7 @@ private:
 		}
 	};
 
+	/// Does one step of processing particles by reading from back_process_buffer and writing to front_process_buffer.
 	void _particles_process(Particles *p_particles, double p_delta);
 	void _particles_free_data(Particles *particles);
 	void _particles_update_buffers(Particles *particles);

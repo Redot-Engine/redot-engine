@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_access.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/compression.h"
@@ -108,7 +114,7 @@ protected:
 	static void _bind_methods();
 
 	AccessType get_access_type() const;
-	virtual String fix_path(const String &p_path) const;
+	virtual String fix_path(const String &p_path) const; ///< Helper used by file accesses that use a single filesystem.
 	virtual Error open_internal(const String &p_path, int p_mode_flags) = 0; ///< open a file
 	virtual uint64_t _get_modified_time(const String &p_file) = 0;
 	virtual uint64_t _get_access_time(const String &p_file) = 0;
@@ -163,8 +169,8 @@ public:
 
 	virtual bool is_open() const = 0; ///< true when file is open
 
-	virtual String get_path() const { return ""; } /// returns the path for the current open file
-	virtual String get_path_absolute() const { return ""; } /// returns the absolute path for the current open file
+	virtual String get_path() const { return ""; } ///< returns the path for the current open file
+	virtual String get_path_absolute() const { return ""; } ///< returns the absolute path for the current open file
 
 	virtual void seek(uint64_t p_position) = 0; ///< seek to a given position
 	virtual void seek_end(int64_t p_position = 0) = 0; ///< seek from the end of file with negative offset
@@ -173,6 +179,8 @@ public:
 
 	virtual bool eof_reached() const = 0; ///< reading passed EOF
 
+	///  @name These are all implemented for ease of porting, then can later be optimized
+	/// @{
 	virtual uint8_t get_8() const; ///< get a byte
 	virtual uint16_t get_16() const; ///< get 16 bits uint
 	virtual uint32_t get_32() const; ///< get 32 bits uint
@@ -182,6 +190,7 @@ public:
 	virtual float get_float() const;
 	virtual double get_double() const;
 	virtual real_t get_real() const;
+	/// @}
 
 	Variant get_var(bool p_allow_objects = false) const;
 
@@ -194,7 +203,6 @@ public:
 	virtual String get_as_utf8_string(bool p_skip_cr = false) const;
 
 	/**
-
 	 * Use this for files WRITTEN in _big_ endian machines (ie, amiga/mac)
 	 * It's not about the current CPU type but file formats.
 	 * This flag gets reset to `false` (little endian) on each open.
@@ -234,9 +242,9 @@ public:
 
 	virtual Error reopen(const String &p_path, int p_mode_flags); ///< does not change the AccessType
 
-	static Ref<FileAccess> create(AccessType p_access); /// Create a file access (for the current platform) this is the only portable way of accessing files.
+	static Ref<FileAccess> create(AccessType p_access); ///< Create a file access (for the current platform) this is the only portable way of accessing files.
 	static Ref<FileAccess> create_for_path(const String &p_path);
-	static Ref<FileAccess> open(const String &p_path, int p_mode_flags, Error *r_error = nullptr); /// Create a file access (for the current platform) this is the only portable way of accessing files.
+	static Ref<FileAccess> open(const String &p_path, int p_mode_flags, Error *r_error = nullptr); ///< Create a file access (for the current platform) this is the only portable way of accessing files.
 	static Ref<FileAccess> create_temp(int p_mode_flags, const String &p_prefix = "", const String &p_extension = "", bool p_keep = false, Error *r_error = nullptr);
 
 	static Ref<FileAccess> open_encrypted(const String &p_path, ModeFlags p_mode_flags, const Vector<uint8_t> &p_key, const Vector<uint8_t> &p_iv = Vector<uint8_t>());
@@ -245,7 +253,7 @@ public:
 	static Error get_open_error();
 
 	static CreateFunc get_create_func(AccessType p_access);
-	static bool exists(const String &p_name); ///< return true if a file exists
+	static bool exists(const String &p_name); ///< @return true if a file exists
 	static uint64_t get_modified_time(const String &p_file);
 	static uint64_t get_access_time(const String &p_file);
 	static int64_t get_size(const String &p_file);

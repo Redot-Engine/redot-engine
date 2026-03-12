@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_physics_server_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_joints_2d.h"
@@ -104,8 +110,8 @@ public:
 
 	virtual bool shape_collide(RID p_shape_A, const Transform2D &p_xform_A, const Vector2 &p_motion_A, RID p_shape_B, const Transform2D &p_xform_B, const Vector2 &p_motion_B, Vector2 *r_results, int p_result_max, int &r_result_count) override;
 
-	/* SPACE API */
-
+	/// @name SPACE API
+	/// @{
 	virtual RID space_create() override;
 	virtual void space_set_active(RID p_space, bool p_active) override;
 	virtual bool space_is_active(RID p_space) const override;
@@ -117,10 +123,11 @@ public:
 	virtual Vector<Vector2> space_get_contacts(RID p_space) const override;
 	virtual int space_get_contact_count(RID p_space) const override;
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectSpaceState2D *space_get_direct_state(RID p_space) override;
-
-	/* AREA API */
+	/// @{
+	/// @name AREA API
+	/// @{
 
 	virtual RID area_create() override;
 
@@ -163,10 +170,11 @@ public:
 	virtual void area_set_area_monitor_callback(RID p_area, const Callable &p_callback) override;
 
 	virtual void area_set_pickable(RID p_area, bool p_pickable) override;
+	/// @{
+	/// @name BODY API
+	/// @{
 
-	/* BODY API */
-
-	// create a body of a given type
+	/// Create a body of a given type
 	virtual RID body_create() override;
 
 	virtual void body_set_space(RID p_body, RID p_space) override;
@@ -257,10 +265,11 @@ public:
 
 	virtual bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) override;
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectBodyState2D *body_get_direct_state(RID p_body) override;
-
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	virtual RID joint_create() override;
 
@@ -284,9 +293,9 @@ public:
 	virtual real_t damped_spring_joint_get_param(RID p_joint, DampedSpringParam p_param) const override;
 
 	virtual JointType joint_get_type(RID p_joint) const override;
-
-	/* MISC */
-
+	/// @}
+	/// @name MISC
+	/// @{
 	virtual void free(RID p_rid) override;
 
 	virtual void set_active(bool p_active) override;
@@ -298,6 +307,7 @@ public:
 	virtual void finish() override;
 
 	virtual bool is_flushing_queries() const override { return flushing_queries; }
+	/// @}
 
 	int get_process_info(ProcessInfo p_info) override;
 

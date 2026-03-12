@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file particle_process_material.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/rid.h"
@@ -37,13 +43,12 @@
 #include "scene/resources/curve_texture.h"
 #include "scene/resources/material.h"
 
-/*
- TODO:
--Path following
--Emitter positions deformable by bones
--Proper trails
-*/
-
+/**
+ * @todo
+ *-Path following
+ *-Emitter positions deformable by bones
+ *-Proper trails
+ */
 class ParticleProcessMaterial : public Material {
 	GDCLASS(ParticleProcessMaterial, Material);
 
@@ -70,7 +75,7 @@ public:
 		PARAM_MAX
 	};
 
-	// When extending, make sure not to overflow the size of the MaterialKey below.
+	/// When extending, make sure not to overflow the size of the MaterialKey below.
 	enum ParticleFlags {
 		PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY,
 		PARTICLE_FLAG_ROTATE_Y,
@@ -79,7 +84,7 @@ public:
 		PARTICLE_FLAG_MAX
 	};
 
-	// When extending, make sure not to overflow the size of the MaterialKey below.
+	/// When extending, make sure not to overflow the size of the MaterialKey below.
 	enum EmissionShape {
 		EMISSION_SHAPE_POINT,
 		EMISSION_SHAPE_SPHERE,
@@ -91,7 +96,7 @@ public:
 		EMISSION_SHAPE_MAX
 	};
 
-	// When extending, make sure not to overflow the size of the MaterialKey below.
+	/// When extending, make sure not to overflow the size of the MaterialKey below.
 	enum SubEmitterMode {
 		SUB_EMITTER_DISABLED,
 		SUB_EMITTER_CONSTANT,
@@ -101,7 +106,7 @@ public:
 		SUB_EMITTER_MAX
 	};
 
-	// When extending, make sure not to overflow the size of the MaterialKey below.
+	/// When extending, make sure not to overflow the size of the MaterialKey below.
 	enum CollisionMode {
 		COLLISION_DISABLED,
 		COLLISION_RIGID,
@@ -110,9 +115,9 @@ public:
 	};
 
 private:
+	/// The bit size of the struct must be kept below or equal to 64 bits.
+	/// Consider this when extending ParticleFlags, EmissionShape, or SubEmitterMode.
 	struct MaterialKey {
-		// The bit size of the struct must be kept below or equal to 64 bits.
-		// Consider this when extending ParticleFlags, EmissionShape, or SubEmitterMode.
 		uint64_t texture_mask : PARAM_MAX;
 		uint64_t texture_color : 1;
 		uint64_t particle_flags : PARTICLE_FLAG_MAX;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_channel_selector.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/box_container.h"
@@ -47,7 +53,7 @@ public:
 
 	void set_available_channels_mask(uint32_t p_mask);
 	uint32_t get_selected_channels_mask() const;
-	Vector4 get_selected_channel_factors() const;
+	Vector4 get_selected_channel_factors() const; ///< Helper
 
 private:
 	void _notification(int p_what);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tcp_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/ip.h"
@@ -55,7 +61,7 @@ public:
 	bool is_connection_available() const;
 	Ref<StreamPeerTCP> take_connection();
 
-	void stop(); // Stop listening
+	void stop(); ///< Stop listening
 
 	TCPServer();
 	~TCPServer();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_language_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "gdscript_language_protocol.h"
@@ -43,7 +49,7 @@ class GDScriptLanguageServer : public EditorPlugin {
 
 	Thread thread;
 	bool thread_running = false;
-	// There is no notification when the editor is initialized. We need to poll till we attempted to start the server.
+	/// There is no notification when the editor is initialized. We need to poll till we attempted to start the server.
 	bool start_attempted = false;
 	bool started = false;
 	bool use_thread = false;

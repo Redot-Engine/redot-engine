@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ref_counted.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/class_db.h"
@@ -46,7 +52,7 @@ protected:
 public:
 	_FORCE_INLINE_ bool is_referenced() const { return refcount_init.get() != 1; }
 	bool init_ref();
-	bool reference(); // returns false if refcount is at zero and didn't get increased
+	bool reference(); ///< @return `false` if refcount is at zero and didn't get increased
 	bool unreference();
 	int get_reference_count() const;
 
@@ -196,14 +202,14 @@ public:
 	inline bool is_null() const { return reference == nullptr; }
 
 	void unref() {
-		// TODO: this should be moved to mutexes, since this engine does not really
-		// do a lot of referencing on references and stuff
-		// mutexes will avoid more crashes?
+		/// @todo This should be moved to mutexes, since this engine does not really
+		/// do a lot of referencing on references and stuff
+		/// mutexes will avoid more crashes?
 
 		if (reference) {
-			// NOTE: `reinterpret_cast` is "safe" here because we know `T` has simple linear
-			// inheritance to `RefCounted`. This guarantees that `T * == `RefCounted *`, which
-			// allows us to declare `Ref<T>` with forward declared `T` types.
+			/// @note `reinterpret_cast` is "safe" here because we know `T` has simple linear
+			/// inheritance to `RefCounted`. This guarantees that `T * == `RefCounted *`, which
+			/// allows us to declare `Ref<T>` with forward declared `T` types.
 			if (reinterpret_cast<RefCounted *>(reference)->unreference()) {
 				memdelete(reinterpret_cast<RefCounted *>(reference));
 			}
@@ -273,7 +279,7 @@ struct VariantInternalAccessor<Ref<T>> {
 	static _FORCE_INLINE_ void set(Variant *v, const Ref<T> &p_ref) { VariantInternal::object_assign(v, p_ref); }
 };
 
-// Zero-constructing Ref initializes reference to nullptr (and thus empty).
+/// Zero-constructing Ref initializes reference to nullptr (and thus empty).
 template <typename T>
 struct is_zero_constructible<Ref<T>> : std::true_type {};
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file a_hash_map.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "a_hash_map.h"
 #include "core/variant/variant.h"
 

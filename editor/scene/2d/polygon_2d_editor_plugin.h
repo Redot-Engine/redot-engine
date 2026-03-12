@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file polygon_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/scene/2d/abstract_polygon_2d_editor.h"
@@ -87,7 +93,7 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 
 	Button *dock_button = nullptr;
 	VBoxContainer *polygon_edit = nullptr;
-	Mode current_mode = MODE_MAX; // Uninitialized.
+	Mode current_mode = MODE_MAX; ///< Uninitialized.
 	Button *mode_buttons[MODE_MAX];
 	Action selected_action = ACTION_CREATE;
 	Button *action_buttons[ACTION_MAX];

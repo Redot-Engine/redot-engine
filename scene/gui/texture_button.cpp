@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_button.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_button.h"
 
 #include "core/typedefs.h"
@@ -94,7 +100,7 @@ bool TextureButton::has_point(const Point2 &p_point) const {
 					ofs -= _texture_region.position / min;
 				} break;
 				default: {
-					// FIXME: Why a switch if we only handle one enum value?
+					/// @todo FIXME: Why a switch if we only handle one enum value?
 				}
 			}
 

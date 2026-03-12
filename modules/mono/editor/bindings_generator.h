@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file bindings_generator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef DEBUG_ENABLED
@@ -612,6 +618,8 @@ class BindingsGenerator {
 			return itype;
 		}
 
+		/// C interface for enums is the same as that of 'uint32_t'. Remember to apply
+		/// any of the changes done here to the 'uint32_t' type interface as well.
 		static void postsetup_enum_type(TypeInterface &r_enum_itype);
 
 		TypeInterface() {
@@ -624,7 +632,7 @@ class BindingsGenerator {
 
 	struct InternalCall {
 		String name;
-		String unique_sig; // Unique signature to avoid duplicates in containers
+		String unique_sig; ///< Unique signature to avoid duplicates in containers
 		bool editor_only = false;
 
 		bool is_vararg = false;
@@ -705,7 +713,7 @@ class BindingsGenerator {
 		StringName type_Vector4 = "Vector4";
 		StringName type_Vector4i = "Vector4i";
 
-		// Object not included as it must be checked for all derived classes
+		/// Object not included as it must be checked for all derived classes
 		static constexpr int nullable_types_count = 19;
 		StringName nullable_types[nullable_types_count] = {
 			type_String,
@@ -792,7 +800,9 @@ class BindingsGenerator {
 		return p_type->name;
 	}
 
+	/// Based on the version in EditorHelp.
 	String bbcode_to_text(const String &p_bbcode, const TypeInterface *p_itype);
+	/// Based on the version in EditorHelp.
 	String bbcode_to_xml(const String &p_bbcode, const TypeInterface *p_itype, bool p_is_signal = false);
 
 	void _append_text_method(StringBuilder &p_output, const TypeInterface *p_target_itype, const StringName &p_target_cname, const String &p_link_target, const Vector<String> &p_link_target_parts);
@@ -838,6 +848,9 @@ class BindingsGenerator {
 	void _populate_global_constants();
 
 	bool _method_has_conflicting_signature(const MethodInterface &p_imethod, const TypeInterface &p_itype);
+	/// Check if a method already exists in p_itype with a method signature that would conflict with p_imethod.
+	/// The return type is ignored because only changing the return type is not enough to avoid conflicts.
+	/// The const keyword is also ignored since it doesn't generate different C# code.
 	bool _method_has_conflicting_signature(const MethodInterface &p_imethod_left, const MethodInterface &p_imethod_right);
 
 	Error _generate_cs_type(const TypeInterface &itype, const String &p_output_file);

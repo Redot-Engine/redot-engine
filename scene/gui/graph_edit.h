@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file graph_edit.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/variant/typed_dictionary.h"
@@ -127,18 +133,18 @@ public:
 	private:
 		struct Cache {
 			bool dirty = true;
-			Vector2 from_pos; // In graph space.
-			Vector2 to_pos; // In graph space.
+			Vector2 from_pos; ///< In graph space.
+			Vector2 to_pos; ///< In graph space.
 			Color from_color;
 			Color to_color;
-			Rect2 aabb; // In local screen space.
-			Line2D *line = nullptr; // In local screen space.
+			Rect2 aabb; ///< In local screen space.
+			Line2D *line = nullptr; ///< In local screen space.
 		} _cache;
 
 		friend class GraphEdit;
 	};
 
-	// Should be in sync with ControlScheme in ViewPanner.
+	/// Should be in sync with ControlScheme in ViewPanner.
 	enum PanningScheme {
 		SCROLL_ZOOMS,
 		SCROLL_PANS,
@@ -207,7 +213,7 @@ private:
 	bool connecting_from_output = false;
 	int connecting_type = 0;
 	Color connecting_color;
-	Vector2 connecting_to_point; // In local screen space.
+	Vector2 connecting_to_point; ///< In local screen space.
 	bool connecting_target_valid = false;
 	StringName connecting_target_node;
 	int connecting_from_port_index = 0;
@@ -226,7 +232,7 @@ private:
 
 	float zoom = 1.0;
 	float zoom_step = 1.2;
-	// Proper values set in constructor.
+	/// Proper values set in constructor.
 	float zoom_min = 0.0;
 	float zoom_max = 0.0;
 
@@ -258,9 +264,9 @@ private:
 	HBoxContainer *menu_hbox = nullptr;
 	Control *connections_layer = nullptr;
 
-	GraphEditFilter *top_connection_layer = nullptr; // Draws a dragged connection. Necessary since the connection line shader can't be applied to the whole top layer.
+	GraphEditFilter *top_connection_layer = nullptr; ///< Draws a dragged connection. Necessary since the connection line shader can't be applied to the whole top layer.
 	Line2D *dragged_connection_line = nullptr;
-	Control *top_layer = nullptr; // Used for drawing the box selection rect. Contains the minimap, menu panel and the scrollbars.
+	Control *top_layer = nullptr; ///< Used for drawing the box selection rect. Contains the minimap, menu panel and the scrollbars.
 
 	GraphEditMinimap *minimap = nullptr;
 
@@ -305,8 +311,8 @@ private:
 		float port_hotzone_outer_extent = 0.0;
 	} theme_cache;
 
-	// This separates the children in two layers to ensure the order
-	// of both background nodes (e.g frame nodes) and foreground nodes (connectable nodes).
+	/// This separates the children in two layers to ensure the order
+	/// of both background nodes (e.g frame nodes) and foreground nodes (connectable nodes).
 	int background_nodes_separator_idx = 0;
 
 	HashMap<StringName, HashSet<StringName>> frame_attached_nodes;
@@ -410,11 +416,12 @@ public:
 
 	void key_input(const Ref<InputEvent> &p_ev);
 
-	// This method has to be public (for undo redo).
-	// TODO: Find a better way to do this.
+	/// This method has to be public (for undo redo).
+	/// @todo Find a better way to do this.
 	void _update_graph_frame(GraphFrame *p_frame);
 
-	// Connection related methods.
+	/// @name Connection-related methods
+	/// @{
 	Error connect_node(const StringName &p_from, int p_from_port, const StringName &p_to, int p_to_port, bool keep_alive = false);
 	bool is_node_connected(const StringName &p_from, int p_from_port, const StringName &p_to, int p_to_port);
 	int get_connection_count(const StringName &p_node, int p_port);
@@ -445,12 +452,14 @@ public:
 	void add_valid_connection_type(int p_type, int p_with_type);
 	void remove_valid_connection_type(int p_type, int p_with_type);
 	bool is_valid_connection_type(int p_type, int p_with_type) const;
-
-	// GraphFrame related methods.
+	/// @}
+	/// @name GraphFrame-related methods
+	/// @{
 	void attach_graph_element_to_frame(const StringName &p_graph_element, const StringName &p_parent_frame);
 	void detach_graph_element_from_frame(const StringName &p_graph_element);
 	GraphFrame *get_element_frame(const StringName &p_attached_graph_element);
 	TypedArray<StringName> get_attached_nodes_of_frame(const StringName &p_graph_frame);
+	/// @}
 
 	void set_panning_scheme(PanningScheme p_scheme);
 	PanningScheme get_panning_scheme() const;

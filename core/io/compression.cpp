@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file compression.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "compression.h"
 
 #include "core/config/project_settings.h"
@@ -223,11 +229,6 @@ int64_t Compression::decompress(uint8_t *p_dst, int64_t p_dst_max_size, const ui
 	ERR_FAIL_V(-1);
 }
 
-/**
-	This will handle both Gzip and Deflate streams. It will automatically allocate the output buffer into the provided p_dst_vect Vector.
-	This is required for compressed data whose final uncompressed size is unknown, as is the case for HTTP response bodies.
-	This is much slower however than using Compression::decompress because it may result in multiple full copies of the output buffer.
-*/
 int Compression::decompress_dynamic(Vector<uint8_t> *p_dst_vect, int64_t p_max_dst_size, const uint8_t *p_src, int64_t p_src_size, Mode p_mode) {
 	uint8_t *dst = nullptr;
 	int out_mark = 0;

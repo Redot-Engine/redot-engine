@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_area_3d.h"
@@ -73,13 +79,13 @@ class GodotBody3D : public GodotCollisionObject3D {
 	uint16_t locked_axis = 0;
 
 	real_t _inv_mass = 1.0;
-	Vector3 _inv_inertia; // Relative to the principal axes of inertia
+	Vector3 _inv_inertia; ///< Relative to the principal axes of inertia
 
-	// Relative to the local frame of reference
+	/// Relative to the local frame of reference
 	Basis principal_inertia_axes_local;
 	Vector3 center_of_mass_local;
 
-	// In world orientation with local origin
+	/// In world orientation with local origin
 	Basis _inv_inertia_tensor;
 	Basis principal_inertia_axes;
 	Vector3 center_of_mass;
@@ -131,7 +137,7 @@ class GodotBody3D : public GodotCollisionObject3D {
 		Vector3 impulse;
 	};
 
-	Vector<Contact> contacts; //no contacts by default
+	Vector<Contact> contacts; ///< No contacts by default
 	int contact_count = 0;
 
 	Callable body_state_callback;
@@ -149,7 +155,7 @@ class GodotBody3D : public GodotCollisionObject3D {
 
 	void _update_transform_dependent();
 
-	friend class GodotPhysicsDirectBodyState3D; // i give up, too many functions to expose
+	friend class GodotPhysicsDirectBodyState3D; /// I give up, too many functions to expose
 
 public:
 	void set_state_sync_callback(const Callable &p_callable);

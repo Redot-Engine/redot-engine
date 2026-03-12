@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_server_3d_dummy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/physics_server_3d.h"
@@ -159,7 +165,8 @@ public:
 
 	virtual real_t shape_get_custom_solver_bias(RID p_shape) const override { return 0; }
 
-	/* SPACE API */
+	/// @name SPACE API
+	/// @{
 
 	virtual RID space_create() override { return RID(); }
 	virtual void space_set_active(RID p_space, bool p_active) override {}
@@ -174,7 +181,9 @@ public:
 	virtual Vector<Vector3> space_get_contacts(RID p_space) const override { return Vector<Vector3>(); }
 	virtual int space_get_contact_count(RID p_space) const override { return 0; }
 
-	/* AREA API */
+	/// @}
+	/// @name AREA API
+	/// @{
 
 	virtual RID area_create() override { return RID(); }
 
@@ -216,7 +225,9 @@ public:
 
 	virtual void area_set_ray_pickable(RID p_area, bool p_enable) override {}
 
-	/* BODY API */
+	/// @}
+	/// @name BODY API
+	/// @{
 
 	virtual RID body_create() override { return RID(); }
 
@@ -310,7 +321,9 @@ public:
 
 	virtual bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) override { return false; }
 
-	/* SOFT BODY */
+	/// @}
+	/// @name SOFT BODY
+	/// @{
 
 	virtual RID soft_body_create() override { return RID(); }
 
@@ -373,7 +386,9 @@ public:
 	virtual void soft_body_apply_central_impulse(RID p_body, const Vector3 &p_impulse) override {}
 	virtual void soft_body_apply_central_force(RID p_body, const Vector3 &p_force) override {}
 
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	virtual RID joint_create() override { return RID(); }
 
@@ -425,7 +440,9 @@ public:
 	virtual void generic_6dof_joint_set_flag(RID p_joint, Vector3::Axis, G6DOFJointAxisFlag p_flag, bool p_enable) override {}
 	virtual bool generic_6dof_joint_get_flag(RID p_joint, Vector3::Axis, G6DOFJointAxisFlag p_flag) const override { return false; }
 
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	virtual void free(RID p_rid) override {}
 
@@ -446,4 +463,5 @@ public:
 	virtual bool is_flushing_queries() const override { return false; }
 
 	virtual int get_process_info(ProcessInfo p_info) override { return 0; }
+	/// @}
 };

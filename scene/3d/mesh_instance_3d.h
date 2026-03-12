@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_instance_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/local_vector.h"
@@ -60,6 +66,8 @@ protected:
 	void _resolve_skeleton_path();
 
 protected:
+	/// This is not _too_ bad performance-wise, really. It only arrives here if the property was not set anywhere else.
+	/// Add to it that it's probably found on first call to _set anyway.
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;

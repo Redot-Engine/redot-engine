@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_player_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/node_3d.h"
@@ -76,13 +82,16 @@ private:
 	AttenuationModel attenuation_model = ATTENUATION_INVERSE_DISTANCE;
 	float unit_size = 10.0;
 	float max_db = 3.0;
-	// Internally used to take doppler tracking into account.
+	/// Internally used to take doppler tracking into account.
 	float actual_pitch_scale = 1.0;
 
 	uint64_t last_mix_count = -1;
 	bool force_update_panning = false;
 
 	static void _calc_output_vol(const Vector3 &source_dir, real_t tightness, Vector<AudioFrame> &output);
+	/// Set the volume to cosine of half horizontal the angle from the source to the left/right speaker direction ignoring elevation.
+	/// Then scale `cosx` so that greatest ratio of the speaker volumes is `1-panning_strength`.
+	/// See https://github.com/godotengine/godot/issues/103989 for evidence that this is the most standard implementation.
 	static AudioFrame _calc_output_vol_stereo(const Vector3 &source_dir, real_t panning_strength);
 
 #ifndef PHYSICS_3D_DISABLED

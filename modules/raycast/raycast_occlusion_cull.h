@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file raycast_occlusion_cull.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/projection.h"
@@ -134,8 +140,8 @@ private:
 		int current_scene_idx = 0;
 
 		HashMap<RID, OccluderInstance> instances;
-		HashSet<RID> dirty_instances; // To avoid duplicates
-		LocalVector<RID> dirty_instances_array; // To iterate and split into threads
+		HashSet<RID> dirty_instances; ///< To avoid duplicates
+		LocalVector<RID> dirty_instances_array; ///< To iterate and split into threads
 		LocalVector<RID> removed_instances;
 
 		void _update_dirty_instance_thread(int p_idx, RID *p_instances);

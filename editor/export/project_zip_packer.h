@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_zip_packer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/zip_io.h"
@@ -40,6 +46,10 @@ class ProjectZIPPacker {
 	static void _zip_recursive(const String &p_path, const String &p_base_path, zipFile p_zip);
 
 public:
+	/// Name the downloaded ZIP file to contain the project name and download date for easier organization.
+	/// Replace characters not allowed (or risky) in Windows file names with safe characters.
+	/// In the project name, all invalid characters become an empty string so that a name
+	/// like "Platformer 2: Godette's Revenge" becomes "platformer_2-_godette-s_revenge".
 	static String get_project_zip_safe_name();
 	static void pack_project_zip(const String &p_path);
 };

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file text_shader_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/gui/code_editor.h"
@@ -75,7 +81,7 @@ class ShaderTextEditor : public CodeTextEditor {
 	bool block_shader_changed = false;
 	void _shader_changed();
 
-	uint32_t dependencies_version = 0; // Incremented if deps changed
+	uint32_t dependencies_version = 0; ///< Incremented if deps changed
 
 protected:
 	void _notification(int p_what);

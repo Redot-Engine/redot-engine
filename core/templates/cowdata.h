@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file cowdata.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/error/error_macros.h"
@@ -117,16 +123,16 @@ private:
 		return *out;
 	}
 
-	// Decrements the reference count. Deallocates the backing buffer if needed.
-	// After this function, _ptr is guaranteed to be NULL.
+	/// Decrements the reference count. Deallocates the backing buffer if needed.
+	/// After this function, _ptr is guaranteed to be NULL.
 	void _unref();
 	void _ref(const CowData *p_from);
 	void _ref(const CowData &p_from);
 
-	// Ensures that the backing buffer is at least p_size wide, and that this CowData instance is
-	// the only reference to it. The buffer is populated with as many element copies from the old
-	// array as possible.
-	// It is the responsibility of the caller to populate newly allocated space up to p_size.
+	/// Ensures that the backing buffer is at least p_size wide, and that this CowData instance is
+	/// the only reference to it. The buffer is populated with as many element copies from the old
+	/// array as possible.
+	/// It is the responsibility of the caller to populate newly allocated space up to p_size.
 	Error _fork_allocate(USize p_size);
 	Error _copy_on_write() { return _fork_allocate(size()); }
 
@@ -134,10 +140,10 @@ private:
 	// It is the responsibility of the caller to populate the array and the new size property.
 	Error _alloc(USize p_alloc_size);
 
-	// Re-allocates the backing array to the given capacity. The reference count is initialized to 1.
-	// It is the responsibility of the caller to populate the array and the new size property.
-	// The caller must also make sure there are no other references to the data, as pointers may
-	// be invalidated.
+	/// Re-allocates the backing array to the given capacity. The reference count is initialized to 1.
+	/// It is the responsibility of the caller to populate the array and the new size property.
+	/// The caller must also make sure there are no other references to the data, as pointers may
+	/// be invalidated.
 	Error _realloc(USize p_alloc_size);
 
 public:
@@ -444,6 +450,6 @@ CowData<T>::CowData(std::initializer_list<T> p_init) {
 
 GODOT_GCC_WARNING_POP
 
-// Zero-constructing CowData initializes _ptr to nullptr (and thus empty).
+/// Zero-constructing CowData initializes _ptr to nullptr (and thus empty).
 template <typename T>
 struct is_zero_constructible<CowData<T>> : std::true_type {};

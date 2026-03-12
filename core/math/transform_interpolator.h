@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file transform_interpolator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/math_defs.h"
@@ -61,34 +67,37 @@ public:
 private:
 	_FORCE_INLINE_ static bool _sign(real_t p_val) { return p_val >= 0; }
 	static real_t _vec3_sum(const Vector3 &p_pt) { return p_pt.x + p_pt.y + p_pt.z; }
-	static real_t _vec3_normalize(Vector3 &p_vec);
+	static real_t _vec3_normalize(Vector3 &p_vec); ///< @return length.
 	_FORCE_INLINE_ static bool _vec3_is_equal_approx(const Vector3 &p_a, const Vector3 &p_b, real_t p_tolerance) {
 		return Math::is_equal_approx(p_a.x, p_b.x, p_tolerance) && Math::is_equal_approx(p_a.y, p_b.y, p_tolerance) && Math::is_equal_approx(p_a.z, p_b.z, p_tolerance);
 	}
-	static Vector3 _basis_orthonormalize(Basis &r_basis);
+	static Vector3 _basis_orthonormalize(Basis &r_basis); ///< Gram-Schmidt Process. @return lengths
 	static Method _test_basis(Basis p_basis, bool r_needed_normalize, Quaternion &r_quat);
 	static Basis _basis_slerp_unchecked(Basis p_from, Basis p_to, real_t p_fraction);
 	static Quaternion _quat_slerp_unchecked(const Quaternion &p_from, const Quaternion &p_to, real_t p_fraction);
 	static Quaternion _basis_to_quat_unchecked(const Basis &p_basis);
 	static bool _basis_is_orthogonal(const Basis &p_basis, real_t p_epsilon = 0.01f);
+	/// This check doesn't seem to be needed but is preserved in case of bugs.
 	static bool _basis_is_orthogonal_any_scale(const Basis &p_basis);
 
 	static void interpolate_basis_linear(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction);
 	static void interpolate_basis_scaled_slerp(Basis p_prev, Basis p_curr, Basis &r_result, real_t p_fraction);
 
 public:
+	/// Special case for physics interpolation, if flipping, don't interpolate basis.
+	/// If the determinant polarity changes, the handedness of the coordinate system changes.
 	static void interpolate_transform_2d(const Transform2D &p_prev, const Transform2D &p_curr, Transform2D &r_result, real_t p_fraction);
 
-	// Generic functions, use when you don't know what method should be used, e.g. from GDScript.
-	// These will be slower.
+	/// Generic functions, use when you don't know what method should be used, e.g. from GDScript.
+	/// These will be slower.
 	static void interpolate_transform_3d(const Transform3D &p_prev, const Transform3D &p_curr, Transform3D &r_result, real_t p_fraction);
 	static void interpolate_basis(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction);
 
-	// Optimized function when you know ahead of time the method.
+	/// Optimized function when you know ahead of time the method.
 	static void interpolate_transform_3d_via_method(const Transform3D &p_prev, const Transform3D &p_curr, Transform3D &r_result, real_t p_fraction, Method p_method);
 	static void interpolate_basis_via_method(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction, Method p_method);
 
-	static real_t checksum_transform_3d(const Transform3D &p_transform);
+	static real_t checksum_transform_3d(const Transform3D &p_transform); /// Just a really basic checksum. @todo This can probably be improved
 
 	static Method find_method(const Basis &p_a, const Basis &p_b);
 };

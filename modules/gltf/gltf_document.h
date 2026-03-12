@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_document.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "extensions/gltf_document_extension.h"
@@ -115,6 +121,8 @@ public:
 private:
 	void _build_parent_hierarchy(Ref<GLTFState> p_state);
 	double _filter_number(double p_float);
+	/// 3.6.2.5: For floating-point components, JSON-stored minimum and maximum values represent single precision
+	/// floats and SHOULD be rounded to single precision before usage to avoid any potential boundary mismatches.
 	void _round_min_max_components(Vector<double> &r_type_min, Vector<double> &r_type_max);
 	String _get_component_type_name(const GLTFAccessor::GLTFComponentType p_component_type);
 	int _get_component_type_size(const GLTFAccessor::GLTFComponentType p_component_type);
@@ -307,15 +315,15 @@ private:
 	Error _serialize_gltf_extensions(Ref<GLTFState> p_state) const;
 
 public:
-	// https://www.itu.int/rec/R-REC-BT.601
-	// https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.601-7-201103-I!!PDF-E.pdf
+	/// https://www.itu.int/rec/R-REC-BT.601
+	/// https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.601-7-201103-I!!PDF-E.pdf
 	static constexpr float R_BRIGHTNESS_COEFF = 0.299f;
 	static constexpr float G_BRIGHTNESS_COEFF = 0.587f;
 	static constexpr float B_BRIGHTNESS_COEFF = 0.114f;
 
 private:
-	// https://github.com/microsoft/glTF-SDK/blob/master/GLTFSDK/Source/PBRUtils.cpp#L9
-	// https://bghgary.github.io/glTF/convert-between-workflows-bjs/js/babylon.pbrUtilities.js
+	/// https://github.com/microsoft/glTF-SDK/blob/master/GLTFSDK/Source/PBRUtils.cpp#L9
+	/// https://bghgary.github.io/glTF/convert-between-workflows-bjs/js/babylon.pbrUtilities.js
 	static float solve_metallic(float p_dielectric_specular, float p_diffuse,
 			float p_specular,
 			float p_one_minus_specular_strength);
@@ -341,6 +349,7 @@ public:
 	void _generate_skeleton_bone_node(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index, Node3D *p_current_node, Node *p_scene_parent, Node *p_scene_root);
 	void _attach_node_to_skeleton(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index, Node3D *p_current_node, Skeleton3D *p_godot_skeleton, Node *p_scene_root, GLTFNodeIndex p_bone_node_index = -1);
 	void _generate_scene_node_compat_4pt4(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index, Node *p_scene_parent, Node *p_scene_root);
+	/// Deprecated code used when naming_version is 0 or 1 (Godot 4.0 to 4.4).
 	void _generate_skeleton_bone_node_compat_4pt4(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index, Node *p_scene_parent, Node *p_scene_root);
 	void _import_animation(Ref<GLTFState> p_state, AnimationPlayer *p_animation_player,
 			const GLTFAnimationIndex p_index, const bool p_trimming, const bool p_remove_immutable_tracks);

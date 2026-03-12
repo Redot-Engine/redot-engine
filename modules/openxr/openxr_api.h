@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_api.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "action_map/openxr_action.h"
@@ -244,18 +250,22 @@ private:
 	EXT_PROTO_XRRESULT_FUNC3(xrWaitFrame, (XrSession), session, (const XrFrameWaitInfo *), frameWaitInfo, (XrFrameState *), frameState)
 	EXT_PROTO_XRRESULT_FUNC2(xrWaitSwapchainImage, (XrSwapchain), swapchain, (const XrSwapchainImageWaitInfo *), waitInfo)
 
-	// instance
-	bool create_instance();
-	bool get_system_info();
-	bool load_supported_view_configuration_types();
-	bool load_supported_environmental_blend_modes();
+	/// @name instance
+	/// @{
+	bool create_instance(); ///< Create our OpenXR instance, this will query any registered extension wrappers for extensions we need to enable.
+	bool get_system_info(); ///< @return Basic OpenXR system info based on the form factor we desire
+	bool load_supported_view_configuration_types(); ///< This queries the supported configuration types, likely there will only be one choosing between Mono (phone AR) and Stereo (HMDs)
+	bool load_supported_environmental_blend_modes(); ///< This queries the supported environmental blend modes.
 	bool is_view_configuration_supported(XrViewConfigurationType p_configuration_type) const;
+	/// This loads our view configuration for each view so for a stereo HMD, we'll get two entries (that are likely identical)
+	/// The returned data supplies us with the recommended render target size
 	bool load_supported_view_configuration_views(XrViewConfigurationType p_configuration_type);
 	void destroy_instance();
-
-	// session
+	/// @}
+	/// @name session
+	/// @{
 	bool create_session();
-	bool load_supported_reference_spaces();
+	bool load_supported_reference_spaces(); ///< Loads the supported reference spaces for our OpenXR session
 	bool is_reference_space_supported(XrReferenceSpaceType p_reference_space);
 	bool setup_play_space();
 	bool setup_view_space();
@@ -265,45 +275,46 @@ private:
 	bool create_main_swapchains(Size2i p_size);
 	void free_main_swapchains();
 	void destroy_session();
+	/// @}
 
-	// action map
-	struct Tracker { // Trackers represent tracked physical objects such as controllers, pucks, etc.
-		String name; // Name for this tracker (i.e. "/user/hand/left")
-		XrPath toplevel_path; // OpenXR XrPath for this tracker
-		RID active_profile_rid; // RID of the active profile for this tracker
+	/// action map
+	struct Tracker { ///< Trackers represent tracked physical objects such as controllers, pucks, etc.
+		String name; ///< Name for this tracker (i.e. "/user/hand/left")
+		XrPath toplevel_path; ///< OpenXR XrPath for this tracker
+		RID active_profile_rid; ///< RID of the active profile for this tracker
 	};
 	RID_Owner<Tracker, true> tracker_owner;
 	RID get_tracker_rid(XrPath p_path);
-	bool interaction_profile_changed = true; // If true we need to check for updates to our active_profile_rid.
+	bool interaction_profile_changed = true; ///< If true we need to check for updates to our active_profile_rid.
 
-	struct ActionSet { // Action sets define a set of actions that can be enabled together
-		String name; // Name for this action set (i.e. "godot_action_set")
-		bool is_attached; // If true our action set has been attached to the session and can no longer be modified
-		XrActionSet handle; // OpenXR handle for this action set
+	struct ActionSet { ///< Action sets define a set of actions that can be enabled together
+		String name; ///< Name for this action set (i.e. "godot_action_set")
+		bool is_attached; ///< If true our action set has been attached to the session and can no longer be modified
+		XrActionSet handle; ///< OpenXR handle for this action set
 	};
 	RID_Owner<ActionSet, true> action_set_owner;
 
-	struct ActionTracker { // Links and action to a tracker
-		RID tracker_rid; // RID of the tracker
-		XrSpace space; // Optional space for pose actions
-		bool was_location_valid; // If true the last position we obtained was valid
+	struct ActionTracker { ///< Links and action to a tracker
+		RID tracker_rid; ///< RID of the tracker
+		XrSpace space; ///< Optional space for pose actions
+		bool was_location_valid; ///< If true the last position we obtained was valid
 	};
 
-	struct Action { // Actions define the inputs and outputs in OpenXR
-		RID action_set_rid; // RID of the action set this action belongs to
-		String name; // Name for this action (i.e. "aim_pose")
-		XrActionType action_type; // Type of action (bool, float, etc.)
-		Vector<ActionTracker> trackers; // The trackers this action can be used with
-		XrAction handle; // OpenXR handle for this action
+	struct Action { ///< Actions define the inputs and outputs in OpenXR
+		RID action_set_rid; ///< RID of the action set this action belongs to
+		String name; ///< Name for this action (i.e. "aim_pose")
+		XrActionType action_type; ///< Type of action (bool, float, etc.)
+		Vector<ActionTracker> trackers; ///< The trackers this action can be used with
+		XrAction handle; ///< OpenXR handle for this action
 	};
 	RID_Owner<Action, true> action_owner;
 	RID get_action_rid(XrAction p_action);
 
-	struct InteractionProfile { // Interaction profiles define suggested bindings between the physical inputs on controller types and our actions
-		String name; // Name of the interaction profile (i.e. "/interaction_profiles/valve/index_controller")
-		XrPath path; // OpenXR path for this profile
-		Vector<XrActionSuggestedBinding> bindings; // OpenXR action bindings
-		Vector<PackedByteArray> modifiers; // Array of modifiers we'll add into XrBindingModificationsKHR
+	struct InteractionProfile { ///< Interaction profiles define suggested bindings between the physical inputs on controller types and our actions
+		String name; ///< Name of the interaction profile (i.e. "/interaction_profiles/valve/index_controller")
+		XrPath path; ///< OpenXR path for this profile
+		Vector<XrActionSuggestedBinding> bindings; ///< OpenXR action bindings
+		Vector<PackedByteArray> modifiers; ///< Array of modifiers we'll add into XrBindingModificationsKHR
 	};
 	RID_Owner<InteractionProfile, true> interaction_profile_owner;
 	RID get_interaction_profile_rid(XrPath p_path);
@@ -318,7 +329,8 @@ private:
 		}
 	};
 
-	// state changes
+	/// @name state changes
+	/// @{
 	bool poll_events();
 	bool on_state_idle();
 	bool on_state_ready();
@@ -328,11 +340,12 @@ private:
 	bool on_state_stopping();
 	bool on_state_loss_pending();
 	bool on_state_exiting();
+	/// @}
 
-	// convenience
+	/// convenience
 	void copy_string_to_char_buffer(const String p_string, char *p_buffer, int p_buffer_len);
 
-	// Render state, Only accessible in rendering thread
+	/// Render state, Only accessible in rendering thread
 	struct RenderState {
 		bool running = false;
 		bool should_render = false;
@@ -345,8 +358,8 @@ private:
 
 		LocalVector<XrView> views;
 		LocalVector<XrCompositionLayerProjectionView> projection_views;
-		LocalVector<XrCompositionLayerDepthInfoKHR> depth_views; // Only used by Composition Layer Depth Extension if available
-		bool submit_depth_buffer = false; // if set to true we submit depth buffers to OpenXR if a suitable extension is enabled.
+		LocalVector<XrCompositionLayerDepthInfoKHR> depth_views; ///< Only used by Composition Layer Depth Extension if available
+		bool submit_depth_buffer = false; ///< If set to true we submit depth buffers to OpenXR if a suitable extension is enabled.
 		bool view_pose_valid = false;
 
 		double z_near = 0.0;
@@ -430,10 +443,10 @@ public:
 	String get_system_name() const { return system_name; }
 	uint32_t get_vendor_id() const { return vendor_id; }
 
-	// helper method to convert an XrPosef to a Transform3D
+	/// Helper method to convert an XrPosef to a Transform3D
 	Transform3D transform_from_pose(const XrPosef &p_pose);
 
-	// helper method to get a valid Transform3D from an openxr space location
+	/// Helper method to get a valid Transform3D from an openxr space location
 	XRPose::TrackingConfidence transform_from_location(const XrSpaceLocation &p_location, Transform3D &r_transform);
 	XRPose::TrackingConfidence transform_from_location(const XrHandJointLocationEXT &p_location, Transform3D &r_transform);
 	void parse_velocities(const XrSpaceVelocity &p_velocity, Vector3 &r_linear_velocity, Vector3 &r_angular_velocity);
@@ -463,6 +476,8 @@ public:
 	static const Vector<OpenXRExtensionWrapper *> &get_registered_extension_wrappers();
 	static void register_extension_metadata();
 	static void cleanup_extension_wrappers();
+	/// @return All extensions we will request regardless of whether they are available.
+	/// This is mostly used by the editor to filter features not enabled through project settings.
 	static PackedStringArray get_all_requested_extensions();
 
 	void set_form_factor(XrFormFactor p_form_factor);
@@ -518,19 +533,19 @@ public:
 	void post_draw_viewport(RID p_render_target);
 	void end_frame();
 
-	// Display refresh rate
+	/// @return Display refresh rate
 	float get_display_refresh_rate() const;
 	void set_display_refresh_rate(float p_refresh_rate);
 	Array get_available_display_refresh_rates() const;
 
-	// Render Target size multiplier
+	/// @return Render Target size multiplier
 	double get_render_target_size_multiplier() const;
 	void set_render_target_size_multiplier(double multiplier);
 
 	Rect2i get_render_region() const;
 	void set_render_region(const Rect2i &p_render_region);
 
-	// Foveation settings
+	/// Foveation settings
 	bool is_foveation_supported() const;
 
 	int get_foveation_level() const;
@@ -539,18 +554,20 @@ public:
 	bool get_foveation_dynamic() const;
 	void set_foveation_dynamic(bool p_foveation_dynamic);
 
-	// Play space.
+	/// Play space.
 	Size2 get_play_space_bounds() const;
 
-	// swapchains
+	/// @name swapchains
+	/// @{
 	PackedInt64Array get_supported_swapchain_formats();
 	int64_t get_color_swapchain_format() const { return color_swapchain_format; }
 	int64_t get_depth_swapchain_format() const { return depth_swapchain_format; }
+	/// @}
 
 	double get_render_state_z_near() const { return render_state.z_near; }
 	double get_render_state_z_far() const { return render_state.z_far; }
 
-	// action map
+	/// action map
 	String get_default_action_map_resource_name();
 
 	RID tracker_create(const String p_name);

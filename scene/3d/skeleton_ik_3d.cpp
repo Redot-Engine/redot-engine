@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_ik_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skeleton_ik_3d.h"
 
 FabrikInverseKinematic::ChainItem *FabrikInverseKinematic::ChainItem::find_child(const BoneId p_bone_id) {
@@ -49,7 +55,6 @@ FabrikInverseKinematic::ChainItem *FabrikInverseKinematic::ChainItem::add_child(
 	return &children.write[infant_child_id];
 }
 
-/// Build a chain that starts from the root to tip
 bool FabrikInverseKinematic::build_chain(Task *p_task, bool p_force_simple_chain) {
 	ERR_FAIL_COND_V(-1 == p_task->root_bone, false);
 
@@ -115,9 +120,9 @@ bool FabrikInverseKinematic::build_chain(Task *p_task, bool p_force_simple_chain
 		chain.tips.write[x].end_effector = ee;
 
 		if (p_force_simple_chain) {
-			// NOTE:
-			//	This is a "hack" that force to create only one tip per chain since the solver of multi tip (end effector)
-			//	is not yet created.
+			/// @todo
+			///	This is a "hack" that force to create only one tip per chain since the solver of multi tip (end effector)
+			///	is not yet created.
 			//	Remove this code when this is done
 			break;
 		}
@@ -165,7 +170,7 @@ void FabrikInverseKinematic::solve_simple_backwards(const Chain &r_chain, bool p
 			const Vector3 look_parent((sub_chain_tip->parent_item->current_pos - sub_chain_tip->current_pos).normalized());
 			goal = sub_chain_tip->current_pos + (look_parent * sub_chain_tip->length);
 
-			// [TODO] Constraints goes here
+			/// @todo Constraints goes here
 		}
 
 		sub_chain_tip = sub_chain_tip->parent_item;
@@ -193,7 +198,7 @@ void FabrikInverseKinematic::solve_simple_forwards(Chain &r_chain, bool p_solve_
 			sub_chain_root->current_ori = (child.current_pos - sub_chain_root->current_pos).normalized();
 			origin = sub_chain_root->current_pos + (sub_chain_root->current_ori * child.length);
 
-			// [TODO] Constraints goes here
+			/// @todo Constraints goes here
 
 			if (p_solve_magnet && sub_chain_root == r_chain.middle_chain_item) {
 				// In case of magnet solving this is the tip

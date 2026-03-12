@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file projection.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/vector3.h"
@@ -106,18 +112,48 @@ struct [[nodiscard]] Projection {
 		return Math::rad_to_deg(Math::atan(p_aspect * Math::tan(Math::deg_to_rad(p_fovx) * 0.5)) * 2.0);
 	}
 
+	/// @note This assumes z-facing near and far planes, i.e. that :
+	/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+	/// - near and far planes are z-facing (i.e. columns[0][2] and [1][2] == 0)
 	real_t get_z_far() const;
+	/// @note This assumes z-facing near and far planes, i.e. that :
+	/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+	/// - near and far planes are z-facing (i.e. columns[0][2] and [1][2] == 0)
 	real_t get_z_near() const;
+	/// @note This assumes a rectangular projection plane, i.e. that :
+	/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+	/// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	real_t get_aspect() const;
+	/// @note This assumes a rectangular projection plane, i.e. that :
+	/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+	/// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	real_t get_fov() const;
+	/// @note This assumes that the matrix is a projection across z-axis
+	/// i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0
 	bool is_orthogonal() const;
 
+	/**
+	 * Fast Plane Extraction from combined modelview/projection matrices.
+	 * References:
+	 * https://web.archive.org/web/20011221205252/https://www.markmorley.com/opengl/frustumculling.html
+	 * https://web.archive.org/web/20061020020112/https://www2.ravensoft.com/users/ggribb/plane%20extraction.pdf
+	 */
 	Vector<Plane> get_projection_planes(const Transform3D &p_transform) const;
 
 	bool get_endpoints(const Transform3D &p_transform, Vector3 *p_8points) const;
+	/// @note This assumes a symmetrical frustum, i.e. that :
+	/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+	/// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
+	/// - there is no offset / skew (i.e. columns[2][0] == columns[2][1] == 0)
 	Vector2 get_viewport_half_extents() const;
+	/// @note This assumes a symmetrical frustum, i.e. that :
+	/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+	/// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
+	/// - there is no offset / skew (i.e. columns[2][0] == columns[2][1] == 0)
 	Vector2 get_far_plane_half_extents() const;
 
+	/// Adapted from Mesa's `src/util/u_math.c` `util_invert_mat4x4`.
+	/// MIT licensed. Copyright 2008 VMware, Inc. Authored by Jacques Leroy.
 	void invert();
 	Projection inverse() const;
 
@@ -134,6 +170,9 @@ struct [[nodiscard]] Projection {
 	void scale_translate_to_fit(const AABB &p_aabb);
 	void add_jitter_offset(const Vector2 &p_offset);
 	void make_scale(const Vector3 &p_scale);
+	/// @note This assumes a rectangular projection plane, i.e. that :
+	/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+	/// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	int get_pixels_per_meter(int p_for_pixel_width) const;
 	operator Transform3D() const;
 
@@ -156,6 +195,9 @@ struct [[nodiscard]] Projection {
 		return !(*this == p_cam);
 	}
 
+	/// @note This assumes a rectangular projection plane, i.e. that :
+	/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+	/// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	real_t get_lod_multiplier() const;
 
 	Projection() = default;

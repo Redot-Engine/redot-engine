@@ -30,13 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file texture_rd.h
+ *
+ * @note These classes are part of the Rendering Device based renderer.
+ * They are included here to ensure the correct order of registration
+ * is performed.
+ * Once the renderer has been moved into a module, these classes should
+ * be moved as well.
+ */
 
-// Note, these classes are part of the Rendering Device based renderer.
-// They are included here to ensure the correct order of registration
-// is performed.
-// Once the renderer has been moved into a module, these classes should
-// be moved as well.
+#pragma once
 
 #include "scene/resources/texture.h"
 
@@ -61,7 +65,7 @@ public:
 	void set_texture_rd_rid(RID p_texture_rd_rid);
 	RID get_texture_rd_rid() const;
 
-	// Internal function that should only be called from the rendering thread.
+	/// Internal function that should only be called from the rendering thread.
 	void _set_texture_rd_rid(RID p_texture_rd_rid);
 
 	Texture2DRD();
@@ -98,7 +102,7 @@ public:
 	void set_texture_rd_rid(RID p_texture_rd_rid);
 	RID get_texture_rd_rid() const;
 
-	// Internal function that should only be called from the rendering thread.
+	/// Internal function that should only be called from the rendering thread.
 	void _set_texture_rd_rid(RID p_texture_rd_rid);
 
 	TextureLayeredRD(LayeredType p_layer_type);
@@ -153,7 +157,7 @@ public:
 	void set_texture_rd_rid(RID p_texture_rd_rid);
 	RID get_texture_rd_rid() const;
 
-	// Internal function that should only be called from the rendering thread.
+	/// Internal function that should only be called from the rendering thread.
 	void _set_texture_rd_rid(RID p_texture_rd_rid);
 
 	Texture3DRD();

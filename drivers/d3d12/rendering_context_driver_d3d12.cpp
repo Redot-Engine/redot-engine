@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_context_driver_d3d12.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_context_driver_d3d12.h"
 
 #include "d3d12_hooks.h"
@@ -63,8 +69,8 @@ GODOT_CLANG_WARNING_POP
 #include <dxguids.h>
 #endif
 
-// Note: symbols are not available in MinGW and old MSVC import libraries.
-// GUID values from https://github.com/microsoft/DirectX-Headers/blob/7a9f4d06911d30eecb56a4956dab29dcca2709ed/include/directx/d3d12.idl#L5877-L5881
+/// @note Symbols are not available in MinGW and old MSVC import libraries.
+/// GUID values from https://github.com/microsoft/DirectX-Headers/blob/7a9f4d06911d30eecb56a4956dab29dcca2709ed/include/directx/d3d12.idl#L5877-L5881
 const GUID CLSID_D3D12DeviceFactoryGodot = { 0x114863bf, 0xc386, 0x4aee, { 0xb3, 0x9d, 0x8f, 0x0b, 0xbb, 0x06, 0x29, 0x55 } };
 const GUID CLSID_D3D12DebugGodot = { 0xf2352aeb, 0xdd84, 0x49fe, { 0xb9, 0x7b, 0xa9, 0xdc, 0xfd, 0xcc, 0x1b, 0x4f } };
 const GUID CLSID_D3D12SDKConfigurationGodot = { 0x7cda6aca, 0xa03e, 0x49c8, { 0x94, 0x58, 0x03, 0x34, 0xd2, 0x0e, 0x07, 0xce } };
@@ -83,8 +89,6 @@ const GUID CLSID_D3D12SDKConfigurationGodot = { 0x7cda6aca, 0xa03e, 0x49c8, { 0x
 RenderingContextDriverD3D12::RenderingContextDriverD3D12() {}
 
 RenderingContextDriverD3D12::~RenderingContextDriverD3D12() {
-	// Let's release manually everything that may still be holding
-	// onto the DLLs before freeing them.
 	device_factory.Reset();
 	dxgi_factory.Reset();
 
@@ -116,7 +120,7 @@ Error RenderingContextDriverD3D12::_init_device_factory() {
 	ERR_FAIL_NULL_V(lib_dcomp, ERR_CANT_CREATE);
 #endif
 
-	// Note: symbol is not available in MinGW import library.
+	/// @note Symbol is not available in MinGW import library.
 	PFN_D3D12_GET_INTERFACE d3d_D3D12GetInterface = (PFN_D3D12_GET_INTERFACE)(void *)GetProcAddress(lib_d3d12, "D3D12GetInterface");
 	if (!d3d_D3D12GetInterface) {
 		return OK; // Fallback to the system loader.
@@ -321,7 +325,7 @@ IDXGIAdapter1 *RenderingContextDriverD3D12::create_adapter(uint32_t p_adapter_in
 	ComPtr<IDXGIFactory6> factory_6;
 	dxgi_factory.As(&factory_6);
 
-	// TODO: Use IDXCoreAdapterList, which gives more comprehensive information.
+	/// @todo Use IDXCoreAdapterList, which gives more comprehensive information.
 	IDXGIAdapter1 *adapter = nullptr;
 	if (factory_6) {
 		if (factory_6->EnumAdapterByGpuPreference(p_adapter_index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)) == DXGI_ERROR_NOT_FOUND) {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_property_name_processor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_property_name_processor.h"
 
 #include "core/string/translation_server.h"

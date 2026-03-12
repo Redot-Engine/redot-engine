@@ -30,19 +30,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file primitive_meshes.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/resources/font.h"
 #include "scene/resources/mesh.h"
 #include "servers/text_server.h"
 
-///@TODO probably should change a few integers to unsigned integers...
+/// @todo Probably should change a few integers to unsigned integers...
 
 /**
-	Base class for all the classes in this file, handles a number of code functions that are shared among all meshes.
-	This class is set apart that it assumes a single surface is always generated for our mesh.
-*/
-
+ * Base class for all the classes in this file, handles a number of code functions that are shared among all meshes.
+ * This class is set apart that it assumes a single surface is always generated for our mesh.
+ */
 class PrimitiveMesh : public Mesh {
 	GDCLASS(PrimitiveMesh, Mesh);
 
@@ -60,15 +65,15 @@ private:
 	bool add_uv2 = false;
 	float uv2_padding = 2.0;
 
-	// make sure we do an update after we've finished constructing our object
+	/// Make sure we do an update after we've finished constructing our object
 	mutable bool pending_request = true;
 	void _update() const;
 
 protected:
-	// assume primitive triangles as the type, correct for all but one and it will change this :)
+	/// Assume primitive triangles as the type, correct for all but one and it will change this :)
 	Mesh::PrimitiveType primitive_type = Mesh::PRIMITIVE_TRIANGLES;
 
-	// Copy of our texel_size project setting.
+	/// Copy of our texel_size project setting.
 	float texel_size = 0.2;
 
 	static void _bind_methods();
@@ -123,8 +128,8 @@ public:
 };
 
 /**
-	Mesh for a simple capsule
-*/
+ *	Mesh for a simple capsule
+ */
 class CapsuleMesh : public PrimitiveMesh {
 	GDCLASS(CapsuleMesh, PrimitiveMesh);
 
@@ -157,8 +162,8 @@ public:
 };
 
 /**
-	A box
-*/
+ *	A box
+ */
 class BoxMesh : public PrimitiveMesh {
 	GDCLASS(BoxMesh, PrimitiveMesh);
 
@@ -191,9 +196,8 @@ public:
 };
 
 /**
-	A cylinder
-*/
-
+ *	A cylinder
+ */
 class CylinderMesh : public PrimitiveMesh {
 	GDCLASS(CylinderMesh, PrimitiveMesh);
 
@@ -237,9 +241,9 @@ public:
 	bool is_cap_bottom() const;
 };
 
-/*
-	A flat rectangle, can be used as quad or heightmap.
-*/
+/**
+ *	A flat rectangle, can be used as quad or heightmap.
+ */
 class PlaneMesh : public PrimitiveMesh {
 	GDCLASS(PlaneMesh, PrimitiveMesh);
 
@@ -282,9 +286,9 @@ public:
 
 VARIANT_ENUM_CAST(PlaneMesh::Orientation)
 
-/*
-	A flat rectangle, inherits from PlaneMesh but defaults to facing the Z-plane.
-*/
+/**
+ *	A flat rectangle, inherits from PlaneMesh but defaults to facing the Z-plane.
+ */
 class QuadMesh : public PlaneMesh {
 	GDCLASS(QuadMesh, PlaneMesh);
 
@@ -296,8 +300,8 @@ public:
 };
 
 /**
-	A prism shapen, handy for ramps, triangles, etc.
-*/
+ *	A prism shapen, handy for ramps, triangles, etc.
+ */
 class PrismMesh : public PrimitiveMesh {
 	GDCLASS(PrismMesh, PrimitiveMesh);
 
@@ -332,8 +336,8 @@ public:
 };
 
 /**
-	A sphere..
-*/
+ *	A sphere..
+ */
 class SphereMesh : public PrimitiveMesh {
 	GDCLASS(SphereMesh, PrimitiveMesh);
 
@@ -370,8 +374,8 @@ public:
 };
 
 /**
-	Big donut
-*/
+ *	Big donut
+ */
 class TorusMesh : public PrimitiveMesh {
 	GDCLASS(TorusMesh, PrimitiveMesh);
 
@@ -402,9 +406,8 @@ public:
 };
 
 /**
-	A single point for use in particle systems
-*/
-
+ *	A single point for use in particle systems
+ */
 class PointMesh : public PrimitiveMesh {
 	GDCLASS(PointMesh, PrimitiveMesh)
 
@@ -517,9 +520,8 @@ public:
 };
 
 /**
-	Text...
-*/
-
+ *	Text...
+ */
 class TextMesh : public PrimitiveMesh {
 	GDCLASS(TextMesh, PrimitiveMesh);
 
@@ -632,7 +634,7 @@ public:
 
 	void set_font(const Ref<Font> &p_font);
 	Ref<Font> get_font() const;
-	Ref<Font> _get_font_or_default() const;
+	Ref<Font> _get_font_or_default() const; ///< Similar code taken from `FontVariation::_get_base_font_or_default`.
 
 	void set_font_size(int p_size);
 	int get_font_size() const;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file crypto_mbedtls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "crypto_mbedtls.h"
 
 #include "core/io/certs_compressed.gen.h"

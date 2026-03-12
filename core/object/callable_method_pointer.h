@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file callable_method_pointer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/object.h"
@@ -145,7 +151,8 @@ Callable create_custom_callable_function_pointer(T *p_instance,
 	return Callable(ccmp);
 }
 
-// CONST VERSION
+/// @name CONST VERSION
+/// @{
 
 template <typename T, typename R, typename... P>
 class CallableCustomMethodPointerC : public CallableCustomMethodPointerBase {
@@ -220,7 +227,9 @@ Callable create_custom_callable_function_pointer(T *p_instance,
 #define callable_mp(I, M) create_custom_callable_function_pointer(I, M)
 #endif // DEBUG_ENABLED
 
-// STATIC VERSIONS
+/// @}
+/// @name STATIC VERSIONS
+/// @{
 
 template <typename R, typename... P>
 class CallableCustomStaticMethodPointer : public CallableCustomMethodPointerBase {
@@ -284,6 +293,7 @@ Callable create_custom_callable_static_function_pointer(
 #endif // DEBUG_ENABLED
 	return Callable(ccmp);
 }
+/// @}
 
 #ifdef DEBUG_ENABLED
 #define callable_mp_static(M) create_custom_callable_static_function_pointer(#M, M)

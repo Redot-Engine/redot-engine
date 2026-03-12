@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file array.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/typedefs.h"
@@ -133,7 +139,7 @@ public:
 
 	void assign(const Array &p_array);
 	void push_back(const Variant &p_value);
-	_FORCE_INLINE_ void append(const Variant &p_value) { push_back(p_value); } //for python compatibility
+	_FORCE_INLINE_ void append(const Variant &p_value) { push_back(p_value); } ///< For python compatibility
 	void append_array(const Array &p_array);
 	Error resize(int p_new_size);
 

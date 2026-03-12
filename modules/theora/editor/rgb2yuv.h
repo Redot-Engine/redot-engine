@@ -30,14 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rgb2yuv.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/typedefs.h"
 
-// For reference, see:
-// - https://stackoverflow.com/a/9467305
-// - https://en.wikipedia.org/wiki/YCbCr#Approximate_8-bit_matrices_for_BT.601
-
+/// For reference, see:
+/// - https://stackoverflow.com/a/9467305
+/// - https://en.wikipedia.org/wiki/YCbCr#Approximate_8-bit_matrices_for_BT.601
 static void _rgb2yuv420(uint8_t *y, uint8_t *u, uint8_t *v, uint8_t *rgb, size_t width, size_t height, size_t pixel_size) {
 	size_t uvpos = 0;
 	size_t i = 0;

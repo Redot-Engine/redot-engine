@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mcp_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/string/ustring.h"
@@ -37,12 +43,12 @@
 #include "core/variant/dictionary.h"
 #include "core/variant/variant.h"
 
-// MCP Protocol Version
+/// MCP Protocol Version
 static constexpr const char *MCP_PROTOCOL_VERSION = "2024-11-05";
 static constexpr const char *MCP_SERVER_NAME = "redot-mcp";
 static constexpr const char *MCP_SERVER_VERSION = "1.0.0";
 
-// MCP Content Types
+/// MCP Content Types
 struct MCPTextContent {
 	String type = "text";
 	String text;
@@ -57,7 +63,7 @@ struct MCPTextContent {
 
 struct MCPImageContent {
 	String type = "image";
-	String data; // Base64 encoded
+	String data; ///< Base64 encoded
 	String mime_type;
 
 	Dictionary to_dict() const {
@@ -89,7 +95,7 @@ struct MCPResourceContent {
 	}
 };
 
-// MCP Tool Definition
+/// MCP Tool Definition
 struct MCPToolDefinition {
 	String name;
 	String description;
@@ -104,7 +110,7 @@ struct MCPToolDefinition {
 	}
 };
 
-// Helper for building JSON Schema
+/// Helper for building JSON Schema
 class MCPSchemaBuilder {
 public:
 	static Dictionary make_object_schema(const Dictionary &properties, const Array &required = Array()) {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_meta_controller_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "openxr_extension_wrapper.h"
@@ -42,9 +48,9 @@ protected:
 
 public:
 	enum MetaControllers {
-		META_TOUCH_PROXIMITY, // Proximity extensions for normal touch controllers
-		META_TOUCH_PRO, // Touch controller for the Quest Pro
-		META_TOUCH_PLUS, // Touch controller for the Quest Plus
+		META_TOUCH_PROXIMITY, ///< Proximity extensions for normal touch controllers
+		META_TOUCH_PRO, ///< Touch controller for the Quest Pro
+		META_TOUCH_PLUS, ///< Touch controller for the Quest Plus
 		META_MAX_CONTROLLERS
 	};
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file thread.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "platform_config.h"
 
 #ifndef PLATFORM_THREAD_OVERRIDE // See details in thread.h.

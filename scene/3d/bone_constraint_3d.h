@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file bone_constraint_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
@@ -54,8 +60,8 @@ protected:
 	bool _get(const StringName &p_path, Variant &r_ret) const;
 	bool _set(const StringName &p_path, const Variant &p_value);
 
-	// Define get_property_list() instead of _get_property_list()
-	// to merge child class properties into parent class array inspector.
+	/// Define get_property_list() instead of _get_property_list()
+	/// to merge child class properties into parent class array inspector.
 	void get_property_list(List<PropertyInfo> *p_list) const; // Will be called by child classes.
 
 	virtual void _validate_bone_names() override;
@@ -85,7 +91,7 @@ public:
 
 	void clear_settings();
 
-	static double symmetrize_angle(double p_angle); // Helper to make angle 0->TAU become -PI->PI.
+	static double symmetrize_angle(double p_angle); ///< Helper to make angle 0->TAU become -PI->PI.
 	static double get_roll_angle(const Quaternion &p_rotation, const Vector3 &p_roll_axis);
 
 	~BoneConstraint3D();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xml_parser.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xml_parser.h"
 
 #include "core/io/file_access.h"
@@ -40,7 +46,6 @@ static inline bool _is_white_space(char c) {
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
 }
 
-//! sets the state that text was found. Returns true if set should be set
 bool XMLParser::_set_text(const char *start, const char *end) {
 	// check if text is more than 2 characters, and if not, check if there is
 	// only white space, so that this text won't be reported

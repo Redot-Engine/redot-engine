@@ -30,9 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file ustring.h
+ *
+ * @note _GODOT suffix added to header guard to avoid conflict with ICU header.
+ */
 
-// Note: _GODOT suffix added to header guard to avoid conflict with ICU header.
+#pragma once
 
 #include "core/string/char_utils.h" // IWYU pragma: export
 #include "core/templates/cowdata.h"
@@ -48,8 +52,8 @@ class CharStringT;
 /*  Utility Functions                                                    */
 /*************************************************************************/
 
-// Not defined by std.
-// strlen equivalent function for char16_t * arguments.
+/// Not defined by std.
+/// strlen equivalent function for char16_t * arguments.
 constexpr size_t strlen(const char16_t *p_str) {
 	const char16_t *ptr = p_str;
 	while (*ptr != 0) {
@@ -58,7 +62,7 @@ constexpr size_t strlen(const char16_t *p_str) {
 	return ptr - p_str;
 }
 
-// strlen equivalent function for char32_t * arguments.
+/// strlen equivalent function for char32_t * arguments.
 constexpr size_t strlen(const char32_t *p_str) {
 	const char32_t *ptr = p_str;
 	while (*ptr != 0) {
@@ -67,7 +71,7 @@ constexpr size_t strlen(const char32_t *p_str) {
 	return ptr - p_str;
 }
 
-// strlen equivalent function for wchar_t * arguments; depends on the platform.
+/// strlen equivalent function for wchar_t * arguments; depends on the platform.
 constexpr size_t strlen(const wchar_t *p_str) {
 	// Use static_cast twice because reinterpret_cast is not allowed in constexpr
 #ifdef WINDOWS_ENABLED
@@ -79,7 +83,7 @@ constexpr size_t strlen(const wchar_t *p_str) {
 #endif
 }
 
-// strnlen equivalent function for char16_t * arguments.
+/// strnlen equivalent function for char16_t * arguments.
 constexpr size_t strnlen(const char16_t *p_str, size_t p_clip_to_len) {
 	size_t len = 0;
 	while (len < p_clip_to_len && *(p_str++) != 0) {
@@ -88,7 +92,7 @@ constexpr size_t strnlen(const char16_t *p_str, size_t p_clip_to_len) {
 	return len;
 }
 
-// strnlen equivalent function for char32_t * arguments.
+/// strnlen equivalent function for char32_t * arguments.
 constexpr size_t strnlen(const char32_t *p_str, size_t p_clip_to_len) {
 	size_t len = 0;
 	while (len < p_clip_to_len && *(p_str++) != 0) {
@@ -97,7 +101,7 @@ constexpr size_t strnlen(const char32_t *p_str, size_t p_clip_to_len) {
 	return len;
 }
 
-// strnlen equivalent function for wchar_t * arguments; depends on the platform.
+/// strnlen equivalent function for wchar_t * arguments; depends on the platform.
 constexpr size_t strnlen(const wchar_t *p_str, size_t p_clip_to_len) {
 	// Use static_cast twice because reinterpret_cast is not allowed in constexpr
 #ifdef WINDOWS_ENABLED
@@ -247,7 +251,7 @@ protected:
 			return;
 		}
 
-		Error err = resize_uninitialized(++len); // include terminating null char.
+		Error err = resize_uninitialized(++len); ///< include terminating null char.
 
 		ERR_FAIL_COND_MSG(err != OK, "Failed to copy C-string.");
 
@@ -270,10 +274,15 @@ class [[nodiscard]] String {
 	static constexpr char32_t _null = 0;
 	static constexpr char32_t _replacement_char = 0xfffd;
 
-	// Known-length copy.
+	/// @brief Known-length copy.
+	/// @details Assumes the following have already been validated:
+	/// p_char != nullptr
+	/// p_length > 0
+	/// p_length <= p_char strlen
+	/// p_char is a valid UTF32 string
 	void copy_from_unchecked(const char32_t *p_char, int p_length);
 
-	// NULL-terminated c string copy - automatically parse the string to find the length.
+	/// NULL-terminated c string copy - automatically parse the string to find the length.
 	void append_latin1(const char *p_cstr) {
 		append_latin1(Span(p_cstr, p_cstr ? strlen(p_cstr) : 0));
 	}
@@ -281,7 +290,7 @@ class [[nodiscard]] String {
 		append_utf32(Span(p_cstr, p_cstr ? strlen(p_cstr) : 0));
 	}
 
-	// wchar_t copy_from depends on the platform.
+	/// wchar_t copy_from depends on the platform.
 	void append_wstring(const Span<wchar_t> &p_cstr) {
 #ifdef WINDOWS_ENABLED
 		// wchar_t is 16-bit, parse as UTF-16
@@ -308,7 +317,7 @@ class [[nodiscard]] String {
 
 public:
 	enum {
-		npos = -1 ///<for "some" compatibility with std::string (npos is a huge value in std::string)
+		npos = -1 ///< For "some" compatibility with std::string (npos is a huge value in std::string)
 	};
 
 	_FORCE_INLINE_ char32_t *ptrw() { return _cowdata.ptrw(); }
@@ -342,7 +351,8 @@ public:
 	}
 	_FORCE_INLINE_ CharProxy<char32_t> operator[](int p_index) { return CharProxy<char32_t>(p_index, _cowdata); }
 
-	/* Compatibility Operators */
+	/// @name Compatibility Operators
+	/// @{
 
 	bool operator==(const String &p_str) const;
 	bool operator!=(const String &p_str) const;
@@ -375,6 +385,7 @@ public:
 	bool operator<=(const String &p_str) const;
 	bool operator>(const String &p_str) const;
 	bool operator>=(const String &p_str) const;
+	/// @}
 
 	signed char casecmp_to(const String &p_str) const;
 	signed char nocasecmp_to(const String &p_str) const;
@@ -386,22 +397,23 @@ public:
 
 	bool is_valid_string() const;
 
-	/* debug, error messages */
+	/// debug, error messages
 	void print_unicode_error(const String &p_message, bool p_critical = false) const;
 
-	/* complex helpers */
+	/// @name complex helpers
+	/// @{
 	String substr(int p_from, int p_chars = -1) const;
-	int find(const String &p_str, int p_from = 0) const; ///< return <0 if failed
-	int find(const char *p_str, int p_from = 0) const; ///< return <0 if failed
-	int find_char(char32_t p_char, int p_from = 0) const; ///< return <0 if failed
-	int findn(const String &p_str, int p_from = 0) const; ///< return <0 if failed, case insensitive
-	int findn(const char *p_str, int p_from = 0) const; ///< return <0 if failed
-	int rfind(const String &p_str, int p_from = -1) const; ///< return <0 if failed
-	int rfind(const char *p_str, int p_from = -1) const; ///< return <0 if failed
-	int rfind_char(char32_t p_char, int p_from = -1) const; ///< return <0 if failed
-	int rfindn(const String &p_str, int p_from = -1) const; ///< return <0 if failed, case insensitive
-	int rfindn(const char *p_str, int p_from = -1) const; ///< return <0 if failed
-	int findmk(const Vector<String> &p_keys, int p_from = 0, int *r_key = nullptr) const; ///< return <0 if failed
+	int find(const String &p_str, int p_from = 0) const; ///< @return `<0` if failed
+	int find(const char *p_str, int p_from = 0) const; ///< @return `<0` if failed
+	int find_char(char32_t p_char, int p_from = 0) const; ///< @return `<0` if failed
+	int findn(const String &p_str, int p_from = 0) const; ///< @return `<0` if failed, case insensitive
+	int findn(const char *p_str, int p_from = 0) const; ///< @return `<0` if failed
+	int rfind(const String &p_str, int p_from = -1) const; ///< @return `<0` if failed
+	int rfind(const char *p_str, int p_from = -1) const; ///< @return `<0` if failed
+	int rfind_char(char32_t p_char, int p_from = -1) const; ///< @return `<0` if failed
+	int rfindn(const String &p_str, int p_from = -1) const; ///< @return `<0` if failed, case insensitive
+	int rfindn(const char *p_str, int p_from = -1) const; ///< @return `<0` if failed
+	int findmk(const Vector<String> &p_keys, int p_from = 0, int *r_key = nullptr) const; ///< @return `<0` if failed
 	bool match(const String &p_wildcard) const;
 	bool matchn(const String &p_wildcard) const;
 	bool begins_with(const String &p_string) const;
@@ -438,11 +450,17 @@ public:
 	String trim_prefix(const char *p_prefix) const;
 	String trim_suffix(const String &p_suffix) const;
 	String trim_suffix(const char *p_suffix) const;
-	String lpad(int min_length, const String &character = " ") const;
-	String rpad(int min_length, const String &character = " ") const;
+	String lpad(int min_length, const String &character = " ") const; ///< Left-pad with a character.
+	String rpad(int min_length, const String &character = " ") const; ///< Right-pad with a character.
+	/// sprintf is implemented in GDScript via:
+	///   "fish %s pie" % "frog"
+	///   "fish %s %d pie" % ["frog", 12]
+	/// In case of an error, the string returned is the error description and "error" is true.
 	String sprintf(const Array &values, bool *error) const;
 	String quote(const String &quotechar = "\"") const;
 	String unquote() const;
+	/// @}
+
 	static String num(double p_num, int p_decimals = -1);
 	static String num_scientific(double p_num);
 	static String num_scientific(float p_num);
@@ -524,8 +542,8 @@ public:
 	char32_t unicode_at(int p_idx) const;
 
 	CharString ascii(bool p_allow_extended = false) const;
-	// Parse an ascii string.
-	// If any character is > 127, an error will be logged, and 0xfffd will be inserted.
+	/// Parse an ascii string.
+	/// If any character is > 127, an error will be logged, and 0xfffd will be inserted.
 	Error append_ascii(const Span<char> &p_range);
 	static String ascii(const Span<char> &p_range) {
 		String s;
@@ -571,14 +589,14 @@ public:
 		return string;
 	}
 
-	static uint32_t hash(const char32_t *p_cstr, int p_len); /* hash the string */
-	static uint32_t hash(const char32_t *p_cstr); /* hash the string */
-	static uint32_t hash(const wchar_t *p_cstr, int p_len); /* hash the string */
-	static uint32_t hash(const wchar_t *p_cstr); /* hash the string */
-	static uint32_t hash(const char *p_cstr, int p_len); /* hash the string */
-	static uint32_t hash(const char *p_cstr); /* hash the string */
-	uint32_t hash() const; /* hash the string */
-	uint64_t hash64() const; /* hash the string */
+	static uint32_t hash(const char32_t *p_cstr, int p_len); ///< hash the string
+	static uint32_t hash(const char32_t *p_cstr); ///< hash the string
+	static uint32_t hash(const wchar_t *p_cstr, int p_len); ///< hash the string
+	static uint32_t hash(const wchar_t *p_cstr); ///< hash the string
+	static uint32_t hash(const char *p_cstr, int p_len); ///< hash the string
+	static uint32_t hash(const char *p_cstr); ///< hash the string
+	uint32_t hash() const; ///< hash the string
+	uint64_t hash64() const; ///< hash the string
 	String md5_text() const;
 	String sha1_text() const;
 	String sha256_text() const;
@@ -592,7 +610,8 @@ public:
 	_FORCE_INLINE_ bool containsn(const char *p_str) const { return findn(p_str) != -1; }
 	_FORCE_INLINE_ bool containsn(const String &p_str) const { return findn(p_str) != -1; }
 
-	// path functions
+	/// @name Path Functions
+	/// @{
 	bool is_absolute_path() const;
 	bool is_relative_path() const;
 	bool is_resource_file() const;
@@ -613,12 +632,20 @@ public:
 	String c_escape_multiline() const;
 	String c_unescape() const;
 	String json_escape() const;
+	/// Splits the URL into scheme, host, port, path, fragment. Strip credentials when present.
 	Error parse_url(String &r_scheme, String &r_host, int &r_port, String &r_path, String &r_fragment) const;
 
+	/// Escape and quote strings with extended ASCII or further Unicode characters
+	/// as well as '"', '=' or ' ' (32)
 	String property_name_encode() const;
+	/// @}
 
-	// node functions
+	/// @name Node Functions
+	/// @{
+
+	/// Do not use this function for critical validation.
 	static String get_invalid_node_name_characters(bool p_allow_internal = false);
+	/// This is a critical validation in node addition, so it must be optimized.
 	String validate_node_name() const;
 	String validate_ascii_identifier() const;
 	String validate_unicode_identifier() const;
@@ -633,8 +660,9 @@ public:
 	bool is_valid_ip_address() const;
 	bool is_valid_filename() const;
 
-	// Use `is_valid_ascii_identifier()` instead. Kept for compatibility.
+	/// Use `is_valid_ascii_identifier()` instead. Kept for compatibility.
 	bool is_valid_identifier() const { return is_valid_ascii_identifier(); }
+	/// @}
 
 	/**
 	 * The constructors must not depend on other overloads
@@ -656,7 +684,8 @@ public:
 	Vector<uint8_t> to_wchar_buffer() const;
 	Vector<uint8_t> to_multibyte_char_buffer(const String &p_encoding = String()) const;
 
-	// Constructors for NULL terminated C strings.
+	/// @name Constructors for NULL terminated C strings.
+	/// @{
 	String(const char *p_cstr) {
 		append_latin1(p_cstr);
 	}
@@ -666,8 +695,10 @@ public:
 	String(const char32_t *p_cstr) {
 		append_utf32(p_cstr);
 	}
+	/// @}
 
-	// Copy assignment for NULL terminated C strings.
+	/// @name Copy assignment for NULL terminated C strings.
+	/// @{
 	void operator=(const char *p_cstr) {
 		clear();
 		append_latin1(p_cstr);
@@ -680,9 +711,10 @@ public:
 		clear();
 		append_utf32(p_cstr);
 	}
+	/// @}
 };
 
-// Zero-constructing String initializes _cowdata.ptr() to nullptr and thus empty.
+/// Zero-constructing String initializes _cowdata.ptr() to nullptr and thus empty.
 template <>
 struct is_zero_constructible<String> : std::true_type {};
 
@@ -698,7 +730,7 @@ String operator+(char32_t p_chr, const String &p_str);
 String itos(int64_t p_val);
 String uitos(uint64_t p_val);
 String rtos(double p_val);
-String rtoss(double p_val); //scientific version
+String rtoss(double p_val); ///< Scientific version
 
 struct NoCaseComparator {
 	bool operator()(const String &p_a, const String &p_b) const {
@@ -720,17 +752,52 @@ struct FileNoCaseComparator {
 
 /* end of namespace */
 
-// Tool translate (TTR and variants) for the editor UI,
-// and doc translate for the class reference (DTR).
+/// Tool translate (TTR and variants) for the editor UI,
+/// and doc translate for the class reference (DTR).
 #ifdef TOOLS_ENABLED
 // Gets parsed.
+/**
+ * "Tools TRanslate". Performs string replacement for internationalization
+ * within the editor. A translation context can optionally be specified to
+ * disambiguate between identical source strings in translations. When
+ * placeholders are desired, use `vformat(TTR("Example: %s"), some_string)`.
+ * If a string mentions a quantity (and may therefore need a dynamic plural form),
+ * use `TTRN()` instead of `TTR()`.
+ *
+ * @note Only use `TTR()` in editor-only code (typically within the `editor/` folder).
+ * For translations that can be supplied by exported projects, use `RTR()` instead.
+ */
 String TTR(const String &p_text, const String &p_context = "");
+/**
+ * "Tools TRanslate for N items". Performs string replacement for
+ * internationalization within the editor. A translation context can optionally
+ * be specified to disambiguate between identical source strings in
+ * translations. Use `TTR()` if the string doesn't need dynamic plural form.
+ * When placeholders are desired, use
+ * `vformat(TTRN("%d item", "%d items", some_integer), some_integer)`.
+ * The placeholder must be present in both strings to avoid run-time warnings in `vformat()`.
+ *
+ * NOTE: Only use `TTRN()` in editor-only code (typically within the `editor/` folder).
+ * For translations that can be supplied by exported projects, use `RTRN()` instead.
+ */
 String TTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context = "");
+/**
+ * "Docs TRanslate". Used for the editor class reference documentation,
+ * handling descriptions extracted from the XML.
+ * It also replaces `$DOCS_URL` with the actual URL to the documentation's branch,
+ * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
+ */
 String DTR(const String &p_text, const String &p_context = "");
+/**
+ * "Docs TRanslate for N items". Used for the editor class reference documentation
+ * (with support for plurals), handling descriptions extracted from the XML.
+ * It also replaces `$DOCS_URL` with the actual URL to the documentation's branch,
+ * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
+ */
 String DTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context = "");
-// Use for C strings.
+/// Use for C strings.
 #define TTRC(m_value) (m_value)
-// Use to avoid parsing (for use later with C strings).
+/// Use to avoid parsing (for use later with C strings).
 #define TTRGET(m_value) TTR(m_value)
 
 #else
@@ -738,18 +805,41 @@ String DTRN(const String &p_text, const String &p_text_plural, int p_n, const St
 #define TTRGET(m_value) (m_value)
 #endif
 
-// Use this to mark property names for editor translation.
-// Often for dynamic properties defined in _get_property_list().
-// Property names defined directly inside EDITOR_DEF, GLOBAL_DEF, and ADD_PROPERTY macros don't need this.
+/// Use this to mark property names for editor translation.
+/// Often for dynamic properties defined in _get_property_list().
+/// Property names defined directly inside EDITOR_DEF, GLOBAL_DEF, and ADD_PROPERTY macros don't need this.
 #define PNAME(m_value) (m_value)
 
-// Similar to PNAME, but to mark groups, i.e. properties with PROPERTY_USAGE_GROUP.
-// Groups defined directly inside ADD_GROUP macros don't need this.
-// The arguments are the same as ADD_GROUP. m_prefix is only used for extraction.
+/// Similar to PNAME, but to mark groups, i.e. properties with PROPERTY_USAGE_GROUP.
+/// Groups defined directly inside ADD_GROUP macros don't need this.
+/// The arguments are the same as ADD_GROUP. m_prefix is only used for extraction.
 #define GNAME(m_value, m_prefix) (m_value)
 
 // Runtime translate for the public node API.
+
+/**
+ * "Run-time TRanslate". Performs string replacement for internationalization
+ * without the editor. A translation context can optionally be specified to
+ * disambiguate between identical source strings in translations. When
+ * placeholders are desired, use `vformat(RTR("Example: %s"), some_string)`.
+ * If a string mentions a quantity (and may therefore need a dynamic plural form),
+ * use `RTRN()` instead of `RTR()`.
+ *
+ * @note Do not use `RTR()` in editor-only code (typically within the `editor/`
+ * folder). For editor translations, use `TTR()` instead.
+ */
 String RTR(const String &p_text, const String &p_context = "");
+/**
+ * "Run-time TRanslate for N items". Performs string replacement for
+ * internationalization without the editor. A translation context can optionally
+ * be specified to disambiguate between identical source strings in translations.
+ * Use `RTR()` if the string doesn't need dynamic plural form. When placeholders
+ * are desired, use `vformat(RTRN("%d item", "%d items", some_integer), some_integer)`.
+ * The placeholder must be present in both strings to avoid run-time warnings in `vformat()`.
+ *
+ * @note Do not use `RTRN()` in editor-only code (typically within the `editor/`
+ * folder). For editor translations, use `TTRN()` instead.
+ */
 String RTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context = "");
 
 /**
@@ -757,7 +847,7 @@ String RTRN(const String &p_text, const String &p_text_plural, int p_n, const St
  * project (such as the ones in nodes like `FileDialog`), which are made possible
  * to add in the POT generator. A translation context can optionally be specified
  * to disambiguate between identical source strings in translations.
- * When placeholders are desired, use vformat(ETR("Example: %s"), some_string)`.
+ * When placeholders are desired, use `vformat(ETR("Example: %s"), some_string)`.
  * If a string mentions a quantity (and may therefore need a dynamic plural form),
  * use `ETRN()` instead of `ETR()`.
  *

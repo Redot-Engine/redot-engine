@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file timer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/main/node.h"
@@ -57,8 +63,8 @@ public:
 		TIMER_PROCESS_IDLE,
 	};
 
-	// Type instead of Mode to prevent name collisions when upgrading from 3 to 4
-	// Godot 3 used TimerProcessMode which is now TimerProcessCallback
+	/// Type instead of Mode to prevent name collisions when upgrading from 3 to 4
+	/// Godot 3 used TimerProcessMode which is now TimerProcessCallback
 	enum TimerProcessType {
 		TIMER_PROCESS_TYPE_TIME,
 		TIMER_PROCESS_TYPE_FRAMES,

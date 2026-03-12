@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_soft_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_area_3d.h"
@@ -48,34 +54,34 @@ class GodotSoftBody3D : public GodotCollisionObject3D {
 	RID soft_mesh;
 
 	struct Node {
-		Vector3 s; // Source position
-		Vector3 x; // Position
-		Vector3 q; // Previous step position/Test position
-		Vector3 f; // Force accumulator
-		Vector3 v; // Velocity
-		Vector3 bv; // Biased Velocity
-		Vector3 n; // Normal
-		real_t area = 0.0; // Area
-		real_t im = 0.0; // 1/mass
-		DynamicBVH::ID leaf; // Leaf data
+		Vector3 s; ///< Source position
+		Vector3 x; ///< Position
+		Vector3 q; ///< Previous step position/Test position
+		Vector3 f; ///< Force accumulator
+		Vector3 v; ///< Velocity
+		Vector3 bv; ///< Biased Velocity
+		Vector3 n; ///< Normal
+		real_t area = 0.0; ///< Area
+		real_t im = 0.0; ///< 1/mass
+		DynamicBVH::ID leaf; ///< Leaf data
 		uint32_t index = 0;
 	};
 
 	struct Link {
-		Vector3 c3; // gradient
-		Node *n[2] = { nullptr, nullptr }; // Node pointers
-		real_t rl = 0.0; // Rest length
-		real_t c0 = 0.0; // (ima+imb)*kLST
-		real_t c1 = 0.0; // rl^2
-		real_t c2 = 0.0; // |gradient|^2/c0
+		Vector3 c3; ///< gradient
+		Node *n[2] = { nullptr, nullptr }; ///< Node pointers
+		real_t rl = 0.0; ///< Rest length
+		real_t c0 = 0.0; ///< (ima+imb)*kLST
+		real_t c1 = 0.0; ///< rl^2
+		real_t c2 = 0.0; ///< |gradient|^2/c0
 	};
 
 	struct Face {
 		Vector3 centroid;
-		Node *n[3] = { nullptr, nullptr, nullptr }; // Node pointers
-		Vector3 normal; // Normal
-		real_t ra = 0.0; // Rest area
-		DynamicBVH::ID leaf; // Leaf data
+		Node *n[3] = { nullptr, nullptr, nullptr }; ///< Node pointers
+		Vector3 normal; ///< Normal
+		real_t ra = 0.0; ///< Rest area
+		DynamicBVH::ID leaf; ///< Leaf data
 		uint32_t index = 0;
 	};
 
@@ -96,11 +102,11 @@ class GodotSoftBody3D : public GodotCollisionObject3D {
 	real_t inv_total_mass = 1.0;
 
 	int iteration_count = 5;
-	real_t linear_stiffness = 0.5; // [0,1]
-	real_t shrinking_factor = 0.0; // [-1,1]
-	real_t pressure_coefficient = 0.0; // [-inf,+inf]
-	real_t damping_coefficient = 0.01; // [0,1]
-	real_t drag_coefficient = 0.0; // [0,1]
+	real_t linear_stiffness = 0.5; ///< [0,1]
+	real_t shrinking_factor = 0.0; ///< [-1,1]
+	real_t pressure_coefficient = 0.0; ///< [-inf,+inf]
+	real_t damping_coefficient = 0.01; ///< [0,1]
+	real_t drag_coefficient = 0.0; ///< [0,1]
 	LocalVector<int> pinned_vertices;
 
 	SelfList<GodotSoftBody3D> active_list;
@@ -215,8 +221,8 @@ public:
 	_FORCE_INLINE_ uint32_t get_node_index(void *p_node) const { return static_cast<Node *>(p_node)->index; }
 	_FORCE_INLINE_ uint32_t get_face_index(void *p_face) const { return static_cast<Face *>(p_face)->index; }
 
-	// Return true to stop the query.
-	// p_index is the node index for AABB query, face index for Ray query.
+	/// @return `true` to stop the query.
+	/// p_index is the node index for AABB query, face index for Ray query.
 	typedef bool (*QueryResultCallback)(uint32_t p_index, void *p_userdata);
 
 	void query_aabb(const AABB &p_aabb, QueryResultCallback p_result_callback, void *p_userdata);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "gdscript_function.h"
@@ -95,16 +101,16 @@ class GDScript : public Script {
 
 	Ref<GDScriptNativeClass> native;
 	Ref<GDScript> base;
-	GDScript *_base = nullptr; //fast pointer access
-	GDScript *_owner = nullptr; //for subclasses
+	GDScript *_base = nullptr; ///< Fast pointer access
+	GDScript *_owner = nullptr; ///< For subclasses
 
-	// Members are just indices to the instantiated script.
-	HashMap<StringName, MemberInfo> member_indices; // Includes member info of all base GDScript classes.
-	HashSet<StringName> members; // Only members of the current class.
+	/// Members are just indices to the instantiated script.
+	HashMap<StringName, MemberInfo> member_indices; ///< Includes member info of all base GDScript classes.
+	HashSet<StringName> members; ///< Only members of the current class.
 
-	// Only static variables of the current class.
+	/// Only static variables of the current class.
 	HashMap<StringName, MemberInfo> static_variables_indices;
-	Vector<Variant> static_variables; // Static variable values.
+	Vector<Variant> static_variables; ///< Static variable values.
 
 	HashMap<StringName, Variant> constants;
 	HashMap<StringName, GDScriptFunction *> member_functions;
@@ -138,14 +144,14 @@ public:
 	};
 
 private:
-	// List is used here because a ptr to elements are stored, so the memory locations need to be stable
+	/// List is used here because a ptr to elements are stored, so the memory locations need to be stable
 	List<UpdatableFuncPtr *> func_ptrs_to_update;
 	Mutex func_ptrs_to_update_mutex;
 
 	void _recurse_replace_function_ptrs(const HashMap<GDScriptFunction *, GDScriptFunction *> &p_replacements) const;
 
 #ifdef TOOLS_ENABLED
-	// For static data storage during hot-reloading.
+	/// For static data storage during hot-reloading.
 	HashMap<StringName, MemberInfo> old_static_variables_indices;
 	Vector<Variant> old_static_variables;
 	void _save_old_static_data();
@@ -168,14 +174,14 @@ private:
 	void _clear_doc();
 #endif
 
-	GDScriptFunction *initializer = nullptr; // Direct pointer to `new()`/`_init()` member function, faster to locate.
+	GDScriptFunction *initializer = nullptr; ///< Direct pointer to `new()`/`_init()` member function, faster to locate.
 
-	GDScriptFunction *implicit_initializer = nullptr; // `@implicit_new()` special function.
-	GDScriptFunction *implicit_ready = nullptr; // `@implicit_ready()` special function.
-	GDScriptFunction *static_initializer = nullptr; // `@static_initializer()` special function.
+	GDScriptFunction *implicit_initializer = nullptr; ///< `@implicit_new()` special function.
+	GDScriptFunction *implicit_ready = nullptr; ///< `@implicit_ready()` special function.
+	GDScriptFunction *static_initializer = nullptr; ///< `@static_initializer()` special function.
 
 	Error _static_init();
-	void _static_default_init(); // Initialize static variables with default values based on their types.
+	void _static_default_init(); ///< Initialize static variables with default values based on their types.
 
 	int subclass_count = 0;
 	RBSet<Object *> instances;
@@ -185,9 +191,9 @@ private:
 	String source;
 	Vector<uint8_t> binary_tokens;
 	String path;
-	bool path_valid = false; // False if using default path.
-	StringName local_name; // Inner class identifier or `class_name`.
-	StringName global_name; // `class_name`.
+	bool path_valid = false; ///< `false` if using default path.
+	StringName local_name; ///< Inner class identifier or `class_name`.
+	StringName global_name; ///< `class_name`.
 	String fully_qualified_name;
 	String simplified_icon_path;
 	SelfList<GDScript> script_list;
@@ -246,7 +252,7 @@ public:
 
 	void clear(GDScript::ClearData *p_clear_data = nullptr);
 
-	// Cancels all functions of the script that are are waiting to be resumed after using await.
+	/// Cancels all functions of the script that are are waiting to be resumed after using await.
 	void cancel_pending_functions(bool warn);
 
 	virtual bool is_valid() const override { return valid; }
@@ -286,7 +292,7 @@ public:
 	Ref<GDScript> get_base() const;
 
 	const HashMap<StringName, MemberInfo> &debug_get_member_indices() const { return member_indices; }
-	const HashMap<StringName, GDScriptFunction *> &debug_get_member_functions() const; //this is debug only
+	const HashMap<StringName, GDScriptFunction *> &debug_get_member_functions() const; ///< This is debug only
 	StringName debug_get_member_by_index(int p_idx) const;
 	StringName debug_get_static_var_by_index(int p_idx) const;
 
@@ -296,7 +302,7 @@ public:
 	virtual Ref<Script> get_base_script() const override;
 	virtual StringName get_global_name() const override;
 
-	virtual StringName get_instance_base_type() const override; // this may not work in all scripts, will return empty if so
+	virtual StringName get_instance_base_type() const override; ///< This may not work in all scripts, will return empty if so
 	virtual ScriptInstance *instance_create(Object *p_this) override;
 	virtual PlaceHolderScriptInstance *placeholder_instance_create(Object *p_this) override;
 	virtual bool instance_has(const Object *p_this) const override;
@@ -373,7 +379,7 @@ class GDScriptInstance : public ScriptInstance {
 	Object *owner = nullptr;
 	Ref<GDScript> script;
 #ifdef DEBUG_ENABLED
-	HashMap<StringName, int> member_indices_cache; //used only for hot script reloading
+	HashMap<StringName, int> member_indices_cache; ///< Used only for hot script reloading
 #endif
 	Vector<Variant> members;
 	bool base_ref_counted;
@@ -439,7 +445,7 @@ class GDScriptLanguage : public ScriptLanguage {
 		GDScriptInstance *instance = nullptr;
 		int *ip = nullptr;
 		int *line = nullptr;
-		CallLevel *prev = nullptr; // Reverse linked list (stack).
+		CallLevel *prev = nullptr; ///< Reverse linked list (stack).
 	};
 
 	static thread_local int _debug_parse_err_line;
@@ -586,21 +592,25 @@ public:
 	_FORCE_INLINE_ Variant *get_global_array() { return _global_array; }
 	_FORCE_INLINE_ const HashMap<StringName, int> &get_global_map() const { return globals; }
 	_FORCE_INLINE_ const HashMap<StringName, Variant> &get_named_globals_map() const { return named_globals; }
-	// These two functions should be used when behavior needs to be consistent between in-editor and running the scene
+	/// @name These two functions should be used when behavior needs to be consistent between in-editor and running the scene
+	/// @{
 	bool has_any_global_constant(const StringName &p_name) { return named_globals.has(p_name) || globals.has(p_name); }
 	Variant get_any_global_constant(const StringName &p_name);
+	/// @}
 
 	_FORCE_INLINE_ static GDScriptLanguage *get_singleton() { return singleton; }
 
 	virtual String get_name() const override;
 
-	/* LANGUAGE FUNCTIONS */
+	/// LANGUAGE FUNCTIONS
+	/// @{
 	virtual void init() override;
 	virtual String get_type() const override;
 	virtual String get_extension() const override;
 	virtual void finish() override;
-
-	/* EDITOR FUNCTIONS */
+	/// @}
+	/// @name EDITOR FUNCTIONS
+	/// @{
 	virtual Vector<String> get_reserved_words() const override;
 	virtual bool is_control_flow_keyword(const String &p_keywords) const override;
 	virtual Vector<String> get_comment_delimiters() const override;
@@ -628,9 +638,9 @@ public:
 	virtual void add_global_constant(const StringName &p_variable, const Variant &p_value) override;
 	virtual void add_named_global_constant(const StringName &p_name, const Variant &p_value) override;
 	virtual void remove_named_global_constant(const StringName &p_name) override;
-
-	/* DEBUGGER FUNCTIONS */
-
+	/// @}
+	/// @name DEBUGGER FUNCTIONS
+	/// @{
 	virtual String debug_get_error() const override;
 	virtual int debug_get_stack_level_count() const override;
 	virtual int debug_get_stack_level_line(int p_level) const override;
@@ -659,15 +669,17 @@ public:
 
 	virtual int profiling_get_accumulated_data(ProfilingInfo *p_info_arr, int p_info_max) override;
 	virtual int profiling_get_frame_data(ProfilingInfo *p_info_arr, int p_info_max) override;
-
-	/* LOADER FUNCTIONS */
-
+	/// @}
+	/// @name LOADER FUNCTIONS
+	/// @{
 	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
+	/// @}
 
-	/* GLOBAL CLASSES */
-
+	/// @name GLOBAL CLASSES
+	/// @{
 	virtual bool handles_global_class_type(const String &p_type) const override;
 	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_is_abstract = nullptr, bool *r_is_tool = nullptr) const override;
+	/// @}
 
 	void add_orphan_subclass(const String &p_qualified_name, const ObjectID &p_subclass);
 	Ref<GDScript> get_orphan_subclass(const String &p_qualified_name);

@@ -30,29 +30,34 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file pooled_list.h
+ *
+ * @brief Simple template to provide a pool with O(1) allocate and free.
+ * The freelist could alternatively be a linked list placed within the unused elements
+ * to use less memory, however a separate freelist is probably more cache friendly.
+ *
+ * @details
+ * NOTE : Take great care when using this with non POD types. The construction and destruction
+ * is done in the LocalVector, NOT as part of the pool. So requesting a new item does not guarantee
+ * a constructor is run, and free does not guarantee a destructor.
+ * You should generally handle clearing
+ * an item explicitly after a request, as it may contain 'leftovers'.
+ * This is by design for fastest use in the BVH. If you want a more general pool
+ * that does call constructors / destructors on request / free, this should probably be
+ * a separate template.
+ *
+ * The zero_on_first_request feature is optional and is useful for e.g. pools of handles,
+ * which may use a ref count which we want to be initialized to zero the first time a handle is created,
+ * but left alone on subsequent allocations (as will typically be incremented).
+ *
+ * Note that there is no function to compact the pool - this would
+ * invalidate any existing pool IDs held externally.
+ * Compaction can be done but would rely on a more complex method
+ * of preferentially giving out lower IDs in the freelist first.
+ */
+
 #pragma once
-
-// Simple template to provide a pool with O(1) allocate and free.
-// The freelist could alternatively be a linked list placed within the unused elements
-// to use less memory, however a separate freelist is probably more cache friendly.
-
-// NOTE : Take great care when using this with non POD types. The construction and destruction
-// is done in the LocalVector, NOT as part of the pool. So requesting a new item does not guarantee
-// a constructor is run, and free does not guarantee a destructor.
-// You should generally handle clearing
-// an item explicitly after a request, as it may contain 'leftovers'.
-// This is by design for fastest use in the BVH. If you want a more general pool
-// that does call constructors / destructors on request / free, this should probably be
-// a separate template.
-
-// The zero_on_first_request feature is optional and is useful for e.g. pools of handles,
-// which may use a ref count which we want to be initialized to zero the first time a handle is created,
-// but left alone on subsequent allocations (as will typically be incremented).
-
-// Note that there is no function to compact the pool - this would
-// invalidate any existing pool IDs held externally.
-// Compaction can be done but would rely on a more complex method
-// of preferentially giving out lower IDs in the freelist first.
 
 #include "core/templates/local_vector.h"
 
@@ -69,10 +74,10 @@ public:
 		_used_size = 0;
 	}
 
-	// Use with care, in most cases you should make sure to
-	// free all elements first (i.e. _used_size would be zero),
-	// although it could also be used without this as an optimization
-	// in some cases.
+	/// Use with care, in most cases you should make sure to
+	/// free all elements first (i.e. _used_size would be zero),
+	/// although it could also be used without this as an optimization
+	/// in some cases.
 	void clear() {
 		list.clear();
 		freelist.clear();
@@ -90,10 +95,10 @@ public:
 		return list[p_index];
 	}
 
-	// To be explicit in a pool there is a distinction
-	// between the number of elements that are currently
-	// in use, and the number of elements that have been reserved.
-	// Using size() would be vague.
+	/// To be explicit in a pool there is a distinction
+	/// between the number of elements that are currently
+	/// in use, and the number of elements that have been reserved.
+	/// Using size() would be vague.
 	U used_size() const { return _used_size; }
 	U reserved_size() const { return list.size(); }
 
@@ -132,7 +137,7 @@ public:
 	}
 };
 
-// a pooled list which automatically keeps a list of the active members
+/// A pooled list which automatically keeps a list of the active members
 template <typename T, typename U = uint32_t, bool force_trivial = false, bool zero_on_first_request = false>
 class TrackedPooledList {
 public:
@@ -140,7 +145,7 @@ public:
 	U pool_reserved_size() const { return _pool.reserved_size(); }
 	U active_size() const { return _active_list.size(); }
 
-	// use with care, see the earlier notes in the PooledList clear()
+	/// Use with care, see the earlier notes in the PooledList clear()
 	void clear() {
 		_pool.clear();
 		_active_list.clear();

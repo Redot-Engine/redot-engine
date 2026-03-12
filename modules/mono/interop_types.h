@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file interop_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/math_defs.h"
@@ -38,7 +44,7 @@
 extern "C" {
 #endif
 
-// This is taken from the old GDNative, which was removed.
+/// This is taken from the old GDNative, which was removed.
 
 #define GODOT_VARIANT_SIZE (sizeof(real_t) * 4 + sizeof(int64_t))
 
@@ -166,7 +172,7 @@ typedef struct {
 	uint8_t _dont_touch_that[GODOT_PROJECTION_SIZE];
 } godot_projection;
 
-// Colors should always use 32-bit floats, so don't use real_t here.
+/// Colors should always use 32-bit floats, so don't use real_t here.
 #define GODOT_COLOR_SIZE (sizeof(float) * 4)
 
 typedef struct {
@@ -185,14 +191,14 @@ typedef struct {
 	uint8_t _dont_touch_that[GODOT_RID_SIZE];
 } godot_rid;
 
-// Alignment hardcoded in `core/variant/callable.h`.
+/// Alignment hardcoded in `core/variant/callable.h`.
 #define GODOT_CALLABLE_SIZE (16)
 
 typedef struct {
 	uint8_t _dont_touch_that[GODOT_CALLABLE_SIZE];
 } godot_callable;
 
-// Alignment hardcoded in `core/variant/callable.h`.
+/// Alignment hardcoded in `core/variant/callable.h`.
 #define GODOT_SIGNAL_SIZE (16)
 
 typedef struct {

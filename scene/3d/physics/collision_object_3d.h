@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file collision_object_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/camera_3d.h"
@@ -76,7 +82,7 @@ private:
 
 	RBMap<uint32_t, ShapeData> shapes;
 
-	bool only_update_transform_changes = false; // This is used for sync to physics.
+	bool only_update_transform_changes = false; ///< This is used for sync to physics.
 
 	bool capture_input_on_drag = false;
 	bool ray_pickable = true;

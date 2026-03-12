@@ -30,19 +30,35 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file convex_hull.h
+ *
+ * Based on Godot's patched VHACD-version of Bullet's btConvexHullComputer.
+ * See /thirdparty/vhacd/btConvexHullComputer.cpp at 64403ddcab9f1dca2408f0a412a22d899708bbb1
+ * In turn, based on /src/LinearMath/btConvexHullComputer.cpp in <https://github.com/bulletphysics/bullet3>
+ * at 73b217fb07e7e3ce126caeb28ab3c9ddd0718467
+ *
+ * Changes:
+ * - int32_t is consistently used instead of int in some cases
+ * - integrated patch db0d6c92927f5a1358b887f2645c11f3014f0e8a from Bullet (CWE-190 integer overflow in btConvexHullComputer)
+ * - adapted to Godot's code style
+ * - replaced Bullet's types (e.g. vectors) with Godot's
+ * - replaced custom Pool implementation with PagedAllocator
+ *
+ * @copyright Copyright (c) 2011 Ole Kniemeyer, MAXON, www.maxon.net
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ */
 
-/*
-Copyright (c) 2011 Ole Kniemeyer, MAXON, www.maxon.net
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
+#pragma once
 
 #include "core/math/geometry_3d.h"
 #include "core/math/vector3.h"
@@ -90,25 +106,25 @@ public:
 		}
 	};
 
-	// Vertices of the output hull
+	/// Vertices of the output hull
 	LocalVector<Vector3> vertices;
 
-	// Edges of the output hull
+	/// Edges of the output hull
 	LocalVector<Edge> edges;
 
-	// Faces of the convex hull. Each entry is an index into the "edges" array pointing to an edge of the face. Faces are planar n-gons
+	/// Faces of the convex hull. Each entry is an index into the "edges" array pointing to an edge of the face. Faces are planar n-gons
 	LocalVector<int32_t> faces;
 
-	/*
-		Compute convex hull of "count" vertices stored in "coords".
-		If "shrink" is positive, the convex hull is shrunken by that amount (each face is moved by "shrink" length units
-		towards the center along its normal).
-		If "shrinkClamp" is positive, "shrink" is clamped to not exceed "shrinkClamp * innerRadius", where "innerRadius"
-		is the minimum distance of a face to the center of the convex hull.
-		The returned value is the amount by which the hull has been shrunken. If it is negative, the amount was so large
-		that the resulting convex hull is empty.
-		The output convex hull can be found in the member variables "vertices", "edges", "faces".
-		*/
+	/**
+	 *	Compute convex hull of "count" vertices stored in "coords".
+	 *	If "shrink" is positive, the convex hull is shrunken by that amount (each face is moved by "shrink" length units
+	 *	towards the center along its normal).
+	 *	If "shrinkClamp" is positive, "shrink" is clamped to not exceed "shrinkClamp * innerRadius", where "innerRadius"
+	 *	is the minimum distance of a face to the center of the convex hull.
+	 *	The returned value is the amount by which the hull has been shrunken. If it is negative, the amount was so large
+	 *	that the resulting convex hull is empty.
+	 *	The output convex hull can be found in the member variables "vertices", "edges", "faces".
+	 */
 	real_t compute(const Vector3 *p_coords, int32_t p_count, real_t p_shrink, real_t p_shrink_clamp);
 
 	static Error convex_hull(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_mesh);

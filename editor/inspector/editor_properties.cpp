@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_properties.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_properties.h"
 
 #include "core/config/project_settings.h"
@@ -1121,7 +1127,7 @@ void EditorPropertyLayersGrid::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Layers grid property editor")));
 		} break;
@@ -3667,8 +3673,8 @@ static EditorPropertyRangeHint _parse_range_hint(PropertyHint p_hint, const Stri
 }
 
 static EditorProperty *get_input_action_editor(const String &p_hint_text, bool is_string_name) {
-	// TODO: Should probably use a better editor GUI with a search bar.
-	// Said GUI could also handle showing builtin options, requiring 1 less hint.
+	/// @todo Should probably use a better editor GUI with a search bar.
+	/// Said GUI could also handle showing builtin options, requiring 1 less hint.
 	EditorPropertyTextEnum *editor = memnew(EditorPropertyTextEnum);
 	Vector<String> options;
 	Vector<String> builtin_options;

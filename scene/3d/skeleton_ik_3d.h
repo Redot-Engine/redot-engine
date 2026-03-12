@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_ik_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
@@ -44,14 +50,16 @@ class FabrikInverseKinematic {
 		Vector<ChainItem> children;
 		ChainItem *parent_item = nullptr;
 
-		// Bone info
+		/// Bone info
 		BoneId bone = -1;
 
 		real_t length = 0.0;
 		/// Positions relative to root bone
+		/// @{
 		Transform3D initial_transform;
 		Vector3 current_pos;
-		// Direction from this bone to child
+		/// @}
+		/// Direction from this bone to child
 		Vector3 current_ori;
 
 		ChainItem *find_child(const BoneId p_bone_id);
@@ -83,13 +91,16 @@ public:
 
 		Chain chain;
 
-		// Settings
+		/// @name Settings
+		/// @{
 		real_t min_distance = 0.01;
 		int max_iterations = 10;
-
-		// Bone data
+		/// @}
+		/// @name Bone data
+		/// @{
 		BoneId root_bone = -1;
 		Vector<EndEffector> end_effectors;
+		/// @}
 
 		Transform3D goal_global_transform;
 	};
@@ -99,14 +110,16 @@ private:
 	static bool build_chain(Task *p_task, bool p_force_simple_chain = true);
 
 	static void solve_simple(Task *p_task, bool p_solve_magnet, Vector3 p_origin_pos);
-	/// Special solvers that solve only chains with one end effector
+	/// @name Special solvers that solve only chains with one end effector
+	/// @{
 	static void solve_simple_backwards(const Chain &r_chain, bool p_solve_magnet);
 	static void solve_simple_forwards(Chain &r_chain, bool p_solve_magnet, Vector3 p_origin_pos);
+	/// @}
 
 public:
 	static Task *create_simple_task(Skeleton3D *p_sk, BoneId root_bone, BoneId tip_bone, const Transform3D &goal_transform);
 	static void free_task(Task *p_task);
-	// The goal of chain should be always in local space
+	/// The goal of chain should be always in local space
 	static void set_goal(Task *p_task, const Transform3D &p_goal);
 	static void make_goal(Task *p_task, const Transform3D &p_inverse_transf);
 	static void solve(Task *p_task, bool override_tip_basis, bool p_use_magnet, const Vector3 &p_magnet_position);

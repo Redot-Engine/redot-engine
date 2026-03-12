@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file line_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "line_2d.h"
 
 #include "core/math/geometry_2d.h"
@@ -278,7 +284,7 @@ void Line2D::_draw() {
 		return;
 	}
 
-	// TODO Maybe have it as member rather than copying parameters and allocating memory?
+	/// @todo Maybe have it as member rather than copying parameters and allocating memory?
 	LineBuilder lb;
 	lb.points = _points;
 	lb.closed = _closed;

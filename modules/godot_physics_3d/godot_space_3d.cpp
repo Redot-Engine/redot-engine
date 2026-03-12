@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_space_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_space_3d.h"
 
 #include "godot_collision_solver_3d.h"
@@ -120,7 +126,7 @@ bool GodotPhysicsDirectSpaceState3D::intersect_ray(const RayParameters &p_parame
 
 	int amount = space->broadphase->cull_segment(begin, end, space->intersection_query_results, GodotSpace3D::INTERSECTION_QUERY_MAX, space->intersection_query_subindex_results);
 
-	//todo, create another array that references results, compute AABBs and check closest point to ray origin, sort, and stop evaluating results when beyond first collision
+	/// @todo Create another array that references results, compute AABBs and check closest point to ray origin, sort, and stop evaluating results when beyond first collision
 
 	bool collided = false;
 	Vector3 res_point, res_normal;
@@ -652,13 +658,6 @@ int GodotSpace3D::_cull_aabb_for_body(GodotBody3D *p_body, const AABB &p_aabb) {
 }
 
 bool GodotSpace3D::test_body_motion(GodotBody3D *p_body, const PhysicsServer3D::MotionParameters &p_parameters, PhysicsServer3D::MotionResult *r_result) {
-	//give me back regular physics engine logic
-	//this is madness
-	//and most people using this function will think
-	//what it does is simpler than using physics
-	//this took about a week to get right..
-	//but is it right? who knows at this point..
-
 	ERR_FAIL_COND_V(p_parameters.max_collisions < 0 || p_parameters.max_collisions > PhysicsServer3D::MotionResult::MAX_COLLISIONS, false);
 
 	if (r_result) {
@@ -1032,7 +1031,6 @@ bool GodotSpace3D::test_body_motion(GodotBody3D *p_body, const PhysicsServer3D::
 	return collided;
 }
 
-// Assumes a valid collision pair, this should have been checked beforehand in the BVH or octree.
 void *GodotSpace3D::_broadphase_pair(GodotCollisionObject3D *A, int p_subindex_A, GodotCollisionObject3D *B, int p_subindex_B, void *p_self) {
 	GodotCollisionObject3D::Type type_A = A->get_type();
 	GodotCollisionObject3D::Type type_B = B->get_type();

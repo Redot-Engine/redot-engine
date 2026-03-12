@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer.h"
 
 #include "core/config/project_settings.h"
@@ -183,7 +189,7 @@ Ref<Resource> ResourceFormatImporter::load_internal(const String &p_path, Error 
 	}
 
 	if (p_silence_errors) {
-		// Note: Some importers do not create files in the .godot folder, so we need to check if the path is empty.
+		/// @note Some importers do not create files in the .godot folder, so we need to check if the path is empty.
 		if (!pat.path.is_empty() && !FileAccess::exists(pat.path)) {
 			return Ref<Resource>();
 		}

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vector2i.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/error/error_macros.h"
@@ -221,8 +227,8 @@ constexpr bool Vector2i::operator!=(const Vector2i &p_vec2) const {
 	return x != p_vec2.x || y != p_vec2.y;
 }
 
-// Multiplication operators required to workaround issues with LLVM using implicit conversion.
-
+/// @name Multiplication operators required to workaround issues with LLVM using implicit conversion.
+/// @{
 constexpr Vector2i operator*(int32_t p_scalar, const Vector2i &p_vector) {
 	return p_vector * p_scalar;
 }
@@ -238,6 +244,7 @@ constexpr Vector2i operator*(float p_scalar, const Vector2i &p_vector) {
 constexpr Vector2i operator*(double p_scalar, const Vector2i &p_vector) {
 	return p_vector * p_scalar;
 }
+/// @}
 
 typedef Vector2i Size2i;
 typedef Vector2i Point2i;

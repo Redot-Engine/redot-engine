@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/environment/renderer_fog.h"
@@ -38,7 +44,8 @@ namespace RendererDummy {
 
 class Fog : public RendererFog {
 public:
-	/* FOG VOLUMES */
+	/// @name FOG VOLUMES
+	/// @{
 
 	virtual RID fog_volume_allocate() override { return RID(); }
 	virtual void fog_volume_initialize(RID p_rid) override {}
@@ -49,6 +56,7 @@ public:
 	virtual void fog_volume_set_material(RID p_fog_volume, RID p_material) override {}
 	virtual AABB fog_volume_get_aabb(RID p_fog_volume) const override { return AABB(); }
 	virtual RS::FogVolumeShape fog_volume_get_shape(RID p_fog_volume) const override { return RS::FOG_VOLUME_SHAPE_BOX; }
+	/// @}
 };
 
 } // namespace RendererDummy

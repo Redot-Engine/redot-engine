@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_data_editors.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "tile_atlas_view.h"
@@ -60,14 +66,16 @@ protected:
 public:
 	void set_tile_set(Ref<TileSet> p_tile_set);
 
-	// Input to handle painting.
+	/// @name Input to handle painting
+	/// @{
 	virtual Control *get_toolbar() { return nullptr; }
 	virtual void forward_draw_over_atlas(TileAtlasView *p_tile_atlas_view, TileSetAtlasSource *p_tile_atlas_source, CanvasItem *p_canvas_item, Transform2D p_transform) {}
 	virtual void forward_draw_over_alternatives(TileAtlasView *p_tile_atlas_view, TileSetAtlasSource *p_tile_atlas_source, CanvasItem *p_canvas_item, Transform2D p_transform) {}
 	virtual void forward_painting_atlas_gui_input(TileAtlasView *p_tile_atlas_view, TileSetAtlasSource *p_tile_atlas_source, const Ref<InputEvent> &p_event) {}
 	virtual void forward_painting_alternatives_gui_input(TileAtlasView *p_tile_atlas_view, TileSetAtlasSource *p_tile_atlas_source, const Ref<InputEvent> &p_event) {}
+	/// @}
 
-	// Used to draw the tile data property value over a tile.
+	/// Used to draw the tile data property value over a tile.
 	virtual void draw_over_tile(CanvasItem *p_canvas_item, Transform2D p_transform, TileMapCell p_cell, bool p_selected = false) {}
 };
 
@@ -198,18 +206,19 @@ class TileDataDefaultEditor : public TileDataEditor {
 	GDCLASS(TileDataDefaultEditor, TileDataEditor);
 
 private:
-	// Toolbar
+	/// @name Toolbar
+	/// @{
 	HBoxContainer *toolbar = memnew(HBoxContainer);
 	Button *picker_button = nullptr;
+	/// @}
 
 	// UI
 	Ref<Texture2D> tile_bool_checked;
 	Ref<Texture2D> tile_bool_unchecked;
 	Label *label = nullptr;
-
 	EditorProperty *property_editor = nullptr;
 
-	// Painting state.
+	/// Painting state.
 	enum DragType {
 		DRAG_TYPE_NONE = 0,
 		DRAG_TYPE_PAINT,
@@ -341,11 +350,13 @@ class TileDataTerrainsEditor : public TileDataEditor {
 	GDCLASS(TileDataTerrainsEditor, TileDataEditor);
 
 private:
-	// Toolbar
+	/// @name Toolbar
+	/// @{
 	HBoxContainer *toolbar = memnew(HBoxContainer);
 	Button *picker_button = nullptr;
+	/// @}
 
-	// Painting state.
+	/// Painting state.
 	enum DragType {
 		DRAG_TYPE_NONE = 0,
 		DRAG_TYPE_PAINT_TERRAIN_SET,

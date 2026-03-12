@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_compositor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/environment/renderer_fog.h"
@@ -54,11 +60,13 @@ struct BlitToScreen {
 	} multi_view;
 
 	struct {
-		//lens distorted parameters for VR
+		// @name Lens distorted parameters for VR
+		// @{
 		bool apply = false;
 		Vector2 eye_center;
 		float k1 = 0.0;
 		float k2 = 0.0;
+		/// @}
 
 		float upscale = 1.0;
 		float aspect_ratio = 1.0;

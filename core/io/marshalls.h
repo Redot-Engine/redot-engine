@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file marshalls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/math_defs.h"
@@ -226,4 +232,8 @@ public:
 Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int *r_len = nullptr, bool p_allow_objects = false, int p_depth = 0);
 Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bool p_full_objects = false, int p_depth = 0);
 
+/// We always allocate a new array, and we don't `memcpy()`.
+/// We also don't consider returning a pointer to the passed vectors when `sizeof(real_t) == 4`.
+/// One reason is that we could decide to put a 4th component in `Vector3` for SIMD/mobile performance,
+/// which would cause trouble with these optimizations.
 Vector<float> vector3_to_float32_array(const Vector3 *vecs, size_t count);

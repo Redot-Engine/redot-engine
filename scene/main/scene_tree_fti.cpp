@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_tree_fti.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef _3D_DISABLED
 
 #include "scene_tree_fti.h"
@@ -133,8 +139,8 @@ void SceneTreeFTI::tick_update() {
 			// Optimization - detect whether we have rested at identity xform.
 			s->data.fti_is_identity_xform = s->data.local_transform == Transform3D();
 
-			// This may not get updated so set it to the same as global xform.
-			// TODO: double check this is the best value.
+			/// This may not get updated so set it to the same as global xform.
+			/// @todo Double check this is the best value.
 			s->data.global_transform_interpolated = s->get_global_transform();
 
 			// Remove from interpolation list.
@@ -370,9 +376,9 @@ void SceneTreeFTI::_node_3d_notify_set_xform(Node3D &r_node) {
 			_node_add_to_frame_list(r_node, true);
 		}
 
-		// ToDo: Double check this is a win,
-		// non-interpolated nodes we always check for identity,
-		// *just in case*.
+		/// @todo Double check this is a win,
+		/// non-interpolated nodes we always check for identity,
+		/// *just in case*.
 		r_node.data.fti_is_identity_xform = r_node.get_transform() == Transform3D();
 		return;
 	}
@@ -527,8 +533,8 @@ void SceneTreeFTI::_update_dirty_nodes(Node *p_node, uint32_t p_current_half_fra
 		}
 	}
 
-	// ToDo : Check global_xform_interp is up to date for nodes
-	// that are not traversed by the depth lists.
+	/// @todo Check global_xform_interp is up to date for nodes
+	/// that are not traversed by the depth lists.
 	if (data.frame_start) {
 		// Mark on the Node3D whether we have set global_transform_interp.
 		// This can later be used when calling `get_global_transform_interpolated()`

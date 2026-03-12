@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mcp_tools.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "mcp_types.h"
@@ -44,11 +50,11 @@ class MCPTools : public Object {
 	GDCLASS(MCPTools, Object)
 
 public:
-	// Result structure for tool execution
+	/// Result structure for tool execution
 	struct ToolResult {
 		bool success = true;
 		String error_message;
-		Array content; // Array of content items (text, image, resource)
+		Array content; ///< Array of content items (text, image, resource)
 
 		void add_text(const String &p_text) {
 			Dictionary d;
@@ -66,11 +72,12 @@ public:
 	};
 
 private:
-	// Path utilities
+	/// @name Path Utilities
+	/// @{
 	static String normalize_path(const String &p_path);
 	static bool validate_path(const String &p_path);
 	static String get_absolute_path(const String &p_path);
-
+	/// @}
 protected:
 	static void _bind_methods();
 
@@ -78,21 +85,25 @@ public:
 	MCPTools();
 	~MCPTools();
 
-	// Get all tool definitions
+	/// Get all tool definitions
 	static Array get_tool_definitions();
 
-	// Execute a tool by name
+	/// Execute a tool by name
 	ToolResult execute_tool(const String &p_name, const Dictionary &p_arguments);
 
-	// === Master Controllers ===
+	/// @name
+	/// @{=== Master Controllers ===
 	ToolResult tool_scene_action(const Dictionary &p_args);
 	ToolResult tool_resource_action(const Dictionary &p_args);
 	ToolResult tool_code_intel(const Dictionary &p_args);
 	ToolResult tool_project_config(const Dictionary &p_args);
 	ToolResult tool_game_control(const Dictionary &p_args);
+	/// @}
 
 private:
-	// Helpers
+	/// @name Helpers
+	/// @{
 	static Variant _json_to_variant(const Variant &p_json, Variant::Type p_type = Variant::NIL);
 	static Error _ensure_callback_exists(const String &p_script_path, const String &p_callback_name);
+	/// @}
 };

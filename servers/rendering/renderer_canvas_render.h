@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_canvas_render.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/rendering_method.h"
@@ -79,10 +85,10 @@ public:
 		Color shadow_color;
 		float shadow_smooth;
 
-		//void *texture_cache; // implementation dependent
+		//void *texture_cache; ///< implementation dependent
 		Rect2 rect_cache;
 		Transform2D xform_cache;
-		float radius_cache; //used for shadow far plane
+		float radius_cache; ///< Used for shadow far plane
 		//Projection shadow_matrix_cache;
 
 		Transform2D light_shader_xform;
@@ -166,10 +172,9 @@ public:
 	//item
 
 	struct Item {
-		//commands are allocated in blocks of 4k to improve performance
-		//and cache coherence.
-		//blocks always grow but never shrink.
-
+		/// Commands are allocated in blocks of 4k to improve performance
+		/// and cache coherence.
+		/// Blocks always grow but never shrink.
 		struct CommandBlock {
 			enum {
 				MAX_SIZE = 4096
@@ -313,10 +318,12 @@ public:
 			Rect2 rect;
 		};
 
-		// For interpolation we store the current local xform,
-		// and the previous xform from the previous tick.
+		/// For interpolation we store the current local xform,
+		/// and the previous xform from the previous tick.
+		/// @{
 		Transform2D xform_curr;
 		Transform2D xform_prev;
+		/// @}
 
 		bool clip : 1;
 		bool visible : 1;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file translation_domain.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -69,11 +75,14 @@ protected:
 	static void _bind_methods();
 
 public:
-	// Methods in this section are not intended for scripting.
+	/// @name Methods in this section are not intended for scripting.
+	/// @{
 	StringName get_message_from_translations(const String &p_locale, const StringName &p_message, const StringName &p_context) const;
 	StringName get_message_from_translations(const String &p_locale, const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context) const;
 	PackedStringArray get_loaded_locales() const;
+	/// Translation objects that could potentially be used for the given locale.
 	HashSet<Ref<Translation>> get_potential_translations(const String &p_locale) const;
+	/// @}
 
 public:
 	Ref<Translation> get_translation_object(const String &p_locale) const;

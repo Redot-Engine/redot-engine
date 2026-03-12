@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_scene.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/error/error_macros.h"
@@ -71,7 +77,7 @@ public:
 		IMPORT_FAIL_ON_MISSING_DEPENDENCIES = 4,
 		IMPORT_GENERATE_TANGENT_ARRAYS = 8,
 		IMPORT_USE_NAMED_SKIN_BINDS = 16,
-		IMPORT_DISCARD_MESHES_AND_MATERIALS = 32, //used for optimizing animation import
+		IMPORT_DISCARD_MESHES_AND_MATERIALS = 32, ///< Used for optimizing animation import
 		IMPORT_FORCE_DISABLE_MESH_COMPRESSION = 64,
 	};
 
@@ -283,7 +289,7 @@ public:
 	virtual void get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset = 0) const override;
 	virtual bool get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const override;
 	virtual void handle_compatibility_options(HashMap<StringName, Variant> &p_import_params) const override;
-	// Import scenes *after* everything else (such as textures).
+	/// Import scenes *after* everything else (such as textures).
 	virtual int get_import_order() const override { return ResourceImporter::IMPORT_ORDER_SCENE; }
 
 	void _pre_fix_global(Node *p_scene, const HashMap<StringName, Variant> &p_options) const;

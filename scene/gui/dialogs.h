@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dialogs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "box_container.h"
@@ -90,7 +96,7 @@ protected:
 
 	void set_default_ok_text(const String &p_text);
 
-	// Not private since used by derived classes signal.
+	/// Not private since used by derived classes signal.
 	void _text_submitted(const String &p_text);
 	void _ok_pressed();
 	void _cancel_pressed();

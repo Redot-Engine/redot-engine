@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file print_string.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/span.h"
@@ -61,7 +67,7 @@ extern void print_raw(const String &p_string);
 extern void print_error(const String &p_string);
 extern bool is_print_verbose_enabled();
 
-// This version avoids processing the text to be printed until it actually has to be printed, saving some CPU usage.
+/// This version avoids processing the text to be printed until it actually has to be printed, saving some CPU usage.
 #define print_verbose(m_text)             \
 	{                                     \
 		if (is_print_verbose_enabled()) { \

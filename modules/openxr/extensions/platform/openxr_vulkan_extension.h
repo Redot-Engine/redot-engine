@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_vulkan_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../../openxr_api.h"
@@ -58,6 +64,9 @@ public:
 	virtual void set_direct_queue_family_and_index(uint32_t p_queue_family_index, uint32_t p_queue_index) override final;
 
 	virtual void get_usable_swapchain_formats(Vector<int64_t> &p_usable_swap_chains) override;
+	/// @note It is very likely we do NOT support any of depth formats where we can combine our stencil support (e.g. _S8_UINT).
+	/// Right now this isn't a problem but once stencil support becomes an issue, we need to check for this in the rendering engine
+	/// and create a separate buffer for the stencil.
 	virtual void get_usable_depth_formats(Vector<int64_t> &p_usable_swap_chains) override;
 	virtual String get_swapchain_format_name(int64_t p_swapchain_format) const override;
 	virtual bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, void **r_swapchain_graphics_data) override;
@@ -68,7 +77,7 @@ public:
 
 private:
 	static OpenXRVulkanExtension *singleton;
-	static XrGraphicsBindingVulkanKHR graphics_binding_vulkan; // declaring this as static so we don't need to know its size and we only need it once when creating our session
+	static XrGraphicsBindingVulkanKHR graphics_binding_vulkan; ///< Declaring this as static so we don't need to know its size and we only need it once when creating our session
 
 	struct SwapchainGraphicsData {
 		bool is_multiview;

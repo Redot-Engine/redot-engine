@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -45,7 +51,7 @@ class Texture : public Resource {
 
 class Texture2D : public Texture {
 	GDCLASS(Texture2D, Texture);
-	OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
+	OBJ_SAVE_TYPE(Texture2D); ///< Saves derived classes with common type so they can be interchanged.
 
 protected:
 	static void _bind_methods();

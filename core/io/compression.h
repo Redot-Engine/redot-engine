@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file compression.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/vector.h"
@@ -43,7 +49,7 @@ public:
 	static inline int gzip_level = Z_DEFAULT_COMPRESSION;
 	static inline int zstd_level = 3;
 	static inline bool zstd_long_distance_matching = false;
-	static inline int zstd_window_log_size = 27; // ZSTD_WINDOWLOG_LIMIT_DEFAULT
+	static inline int zstd_window_log_size = 27; ///< ZSTD_WINDOWLOG_LIMIT_DEFAULT
 	static inline int gzip_chunk = 16384;
 
 	enum Mode : int32_t {
@@ -57,5 +63,10 @@ public:
 	static int64_t compress(uint8_t *p_dst, const uint8_t *p_src, int64_t p_src_size, Mode p_mode = MODE_ZSTD);
 	static int64_t get_max_compressed_buffer_size(int64_t p_src_size, Mode p_mode = MODE_ZSTD);
 	static int64_t decompress(uint8_t *p_dst, int64_t p_dst_max_size, const uint8_t *p_src, int64_t p_src_size, Mode p_mode = MODE_ZSTD);
+	/**
+	 *	This will handle both Gzip and Deflate streams. It will automatically allocate the output buffer into the provided p_dst_vect Vector.
+	 *	This is required for compressed data whose final uncompressed size is unknown, as is the case for HTTP response bodies.
+	 *	This is much slower however than using Compression::decompress because it may result in multiple full copies of the output buffer.
+	 */
 	static int decompress_dynamic(Vector<uint8_t> *p_dst_vect, int64_t p_max_dst_size, const uint8_t *p_src, int64_t p_src_size, Mode p_mode);
 };

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file zip_io.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "zip_io.h"
 
 #include "core/templates/local_vector.h"

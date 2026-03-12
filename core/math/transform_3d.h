@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file transform_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/aabb.h"
@@ -42,12 +48,16 @@ struct [[nodiscard]] Transform3D {
 	Vector3 origin;
 
 	void invert();
+	/// @todo FIXME: this function assumes the basis is a rotation matrix, with no scaling.
+	/// Transform3D::affine_inverse can handle matrices with scaling, so GDScript should eventually use that.
 	Transform3D inverse() const;
 
 	void affine_invert();
 	Transform3D affine_inverse() const;
 
+	/// Equivalent to left multiplication
 	Transform3D rotated(const Vector3 &p_axis, real_t p_angle) const;
+	/// Equivalent to right multiplication
 	Transform3D rotated_local(const Vector3 &p_axis, real_t p_angle) const;
 
 	void rotate(const Vector3 &p_axis, real_t p_angle);
@@ -57,12 +67,16 @@ struct [[nodiscard]] Transform3D {
 	Transform3D looking_at(const Vector3 &p_target, const Vector3 &p_up = Vector3(0, 1, 0), bool p_use_model_front = false) const;
 
 	void scale(const Vector3 &p_scale);
+	/// Equivalent to left multiplication
 	Transform3D scaled(const Vector3 &p_scale) const;
+	/// Equivalent to right multiplication
 	Transform3D scaled_local(const Vector3 &p_scale) const;
 	void scale_basis(const Vector3 &p_scale);
 	void translate_local(real_t p_tx, real_t p_ty, real_t p_tz);
 	void translate_local(const Vector3 &p_translation);
+	/// Equivalent to left multiplication
 	Transform3D translated(const Vector3 &p_translation) const;
+	/// Equivalent to right multiplication
 	Transform3D translated_local(const Vector3 &p_translation) const;
 
 	const Basis &get_basis() const { return basis; }
@@ -86,21 +100,26 @@ struct [[nodiscard]] Transform3D {
 	_FORCE_INLINE_ AABB xform(const AABB &p_aabb) const;
 	_FORCE_INLINE_ Vector<Vector3> xform(const Vector<Vector3> &p_array) const;
 
-	// NOTE: These are UNSAFE with non-uniform scaling, and will produce incorrect results.
-	// They use the transpose.
-	// For safe inverse transforms, xform by the affine_inverse.
+	/// @name These are UNSAFE with non-uniform scaling, and will produce incorrect results.
+	/// @details They use the transpose. For safe inverse transforms, xform by the affine_inverse.
+	/// @{
 	_FORCE_INLINE_ Vector3 xform_inv(const Vector3 &p_vector) const;
 	_FORCE_INLINE_ AABB xform_inv(const AABB &p_aabb) const;
 	_FORCE_INLINE_ Vector<Vector3> xform_inv(const Vector<Vector3> &p_array) const;
+	/// @}
 
-	// Safe with non-uniform scaling (uses affine_inverse).
+	/// @name Safe with non-uniform scaling (uses affine_inverse).
+	/// @{
 	_FORCE_INLINE_ Plane xform(const Plane &p_plane) const;
 	_FORCE_INLINE_ Plane xform_inv(const Plane &p_plane) const;
+	/// @}
 
-	// These fast versions use precomputed affine inverse, and should be used in bottleneck areas where
-	// multiple planes are to be transformed.
+	/// @name These fast versions use precomputed affine inverse
+	/// @details Should be used in bottleneck areas where multiple planes are to be transformed.
+	/// @{
 	_FORCE_INLINE_ Plane xform_fast(const Plane &p_plane, const Basis &p_basis_inverse_transpose) const;
 	static _FORCE_INLINE_ Plane xform_inv_fast(const Plane &p_plane, const Transform3D &p_inverse, const Basis &p_basis_transpose);
+	/// @}
 
 	void operator*=(const Transform3D &p_transform);
 	Transform3D operator*(const Transform3D &p_transform) const;
@@ -184,10 +203,11 @@ _FORCE_INLINE_ Vector3 Transform3D::xform_inv(const Vector3 &p_vector) const {
 			(basis.rows[0][2] * v.x) + (basis.rows[1][2] * v.y) + (basis.rows[2][2] * v.z));
 }
 
-// Neither the plane regular xform or xform_inv are particularly efficient,
-// as they do a basis inverse. For xforming a large number
-// of planes it is better to pre-calculate the inverse transpose basis once
-// and reuse it for each plane, by using the 'fast' version of the functions.
+/// @name Neither the plane regular xform or xform_inv are particularly efficient,
+/// @details They do a basis inverse. For xforming a large number
+/// of planes it is better to pre-calculate the inverse transpose basis once
+/// and reuse it for each plane, by using the 'fast' version of the functions.
+/// @{
 _FORCE_INLINE_ Plane Transform3D::xform(const Plane &p_plane) const {
 	Basis b = basis.inverse();
 	b.transpose();
@@ -199,9 +219,10 @@ _FORCE_INLINE_ Plane Transform3D::xform_inv(const Plane &p_plane) const {
 	Basis basis_transpose = basis.transposed();
 	return xform_inv_fast(p_plane, inv, basis_transpose);
 }
+/// @}
 
+/// https://dev.theomader.com/transform-bounding-boxes/
 _FORCE_INLINE_ AABB Transform3D::xform(const AABB &p_aabb) const {
-	/* https://dev.theomader.com/transform-bounding-boxes/ */
 	Vector3 min = p_aabb.position;
 	Vector3 max = p_aabb.position + p_aabb.size;
 	Vector3 tmin, tmax;

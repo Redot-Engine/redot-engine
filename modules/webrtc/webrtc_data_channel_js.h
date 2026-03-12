@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file webrtc_data_channel_js.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef WEB_ENABLED
@@ -47,7 +53,7 @@ private:
 	WriteMode _write_mode = WRITE_MODE_BINARY;
 
 	enum {
-		PACKET_BUFFER_SIZE = 65536 - 5 // 4 bytes for the size, 1 for for type
+		PACKET_BUFFER_SIZE = 65536 - 5 ///< 4 bytes for the size, 1 for for type
 	};
 
 	int _js_id = 0;

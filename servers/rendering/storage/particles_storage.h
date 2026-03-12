@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file particles_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering_server.h"
@@ -38,7 +44,8 @@ class RendererParticlesStorage {
 public:
 	virtual ~RendererParticlesStorage() {}
 
-	/* PARTICLES */
+	/// @Name PARTICLES
+	/// @{
 
 	virtual RID particles_allocate() = 0;
 	virtual void particles_initialize(RID p_rid) = 0;
@@ -102,8 +109,9 @@ public:
 	virtual void particles_remove_collision(RID p_particles, RID p_particles_collision_instance) = 0;
 
 	virtual void update_particles() = 0;
-
-	/* PARTICLES COLLISION */
+	/// @}
+	/// @name PARTICLES COLLISION
+	/// @{
 
 	virtual RID particles_collision_allocate() = 0;
 	virtual void particles_collision_initialize(RID p_rid) = 0;
@@ -111,23 +119,26 @@ public:
 
 	virtual void particles_collision_set_collision_type(RID p_particles_collision, RS::ParticlesCollisionType p_type) = 0;
 	virtual void particles_collision_set_cull_mask(RID p_particles_collision, uint32_t p_cull_mask) = 0;
-	virtual void particles_collision_set_sphere_radius(RID p_particles_collision, real_t p_radius) = 0; //for spheres
-	virtual void particles_collision_set_box_extents(RID p_particles_collision, const Vector3 &p_extents) = 0; //for non-spheres
+	virtual void particles_collision_set_sphere_radius(RID p_particles_collision, real_t p_radius) = 0; ///< For spheres
+	virtual void particles_collision_set_box_extents(RID p_particles_collision, const Vector3 &p_extents) = 0; ///< For non-spheres
 	virtual void particles_collision_set_attractor_strength(RID p_particles_collision, real_t p_strength) = 0;
 	virtual void particles_collision_set_attractor_directionality(RID p_particles_collision, real_t p_directionality) = 0;
 	virtual void particles_collision_set_attractor_attenuation(RID p_particles_collision, real_t p_curve) = 0;
-	virtual void particles_collision_set_field_texture(RID p_particles_collision, RID p_texture) = 0; //for SDF and vector field, heightfield is dynamic
-	virtual void particles_collision_height_field_update(RID p_particles_collision) = 0; //for SDF and vector field
-	virtual void particles_collision_set_height_field_resolution(RID p_particles_collision, RS::ParticlesCollisionHeightfieldResolution p_resolution) = 0; //for SDF and vector field
+	virtual void particles_collision_set_field_texture(RID p_particles_collision, RID p_texture) = 0; ///< For SDF and vector field, heightfield is dynamic
+	virtual void particles_collision_height_field_update(RID p_particles_collision) = 0; ///< For SDF and vector field
+	virtual void particles_collision_set_height_field_resolution(RID p_particles_collision, RS::ParticlesCollisionHeightfieldResolution p_resolution) = 0; ///< For SDF and vector field
 	virtual AABB particles_collision_get_aabb(RID p_particles_collision) const = 0;
 	virtual bool particles_collision_is_heightfield(RID p_particles_collision) const = 0;
 	virtual uint32_t particles_collision_get_height_field_mask(RID p_particles_collision) const = 0;
 	virtual void particles_collision_set_height_field_mask(RID p_particles_collision, uint32_t p_heightfield_mask) = 0;
 	virtual uint32_t particles_collision_get_cull_mask(RID p_particles_collision) const = 0;
+	/// @}
 
-	//used from 2D and 3D
+	/// @name Used from 2D and 3D
+	/// @{
 	virtual RID particles_collision_instance_create(RID p_collision) = 0;
 	virtual void particles_collision_instance_free(RID p_rid) = 0;
 	virtual void particles_collision_instance_set_transform(RID p_collision_instance, const Transform3D &p_transform) = 0;
 	virtual void particles_collision_instance_set_active(RID p_collision_instance, bool p_active) = 0;
+	/// @}
 };

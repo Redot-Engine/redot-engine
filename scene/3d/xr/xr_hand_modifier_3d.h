@@ -30,16 +30,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_hand_modifier_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "servers/xr/xr_hand_tracker.h"
 
 /**
-	The XRHandModifier3D node drives a hand skeleton using hand tracking
-	data from an XRHandTracking instance.
+ *	The XRHandModifier3D node drives a hand skeleton using hand tracking
+ *	data from an XRHandTracking instance.
  */
-
 class XRHandModifier3D : public SkeletonModifier3D {
 	GDCLASS(XRHandModifier3D, SkeletonModifier3D);
 

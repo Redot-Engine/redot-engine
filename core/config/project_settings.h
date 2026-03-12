@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/class_db.h"
@@ -44,8 +50,8 @@ class ProjectSettings : public Object {
 
 	bool is_changed = false;
 
-	// Starting version from 1 ensures that all callers can reset their tested version to 0,
-	// and will always detect the initial project settings as a "change".
+	/// Starting version from 1 ensures that all callers can reset their tested version to 0,
+	/// and will always detect the initial project settings as a "change".
 	uint32_t _version = 1;
 
 public:
@@ -53,11 +59,14 @@ public:
 	static inline const String PROJECT_DATA_DIR_NAME_SUFFIX = "godot";
 	static inline const String EDITOR_SETTING_OVERRIDE_PREFIX = "editor_overrides/";
 
-	// Properties that are not for built in values begin from this value, so builtin ones are displayed first.
+	/// Properties that are not for built in values begin from this value, so builtin ones are displayed first.
 	constexpr static const int32_t NO_BUILTIN_ORDER_BASE = 1 << 16;
 
 #ifdef TOOLS_ENABLED
+	/// Returns the features that a project must have when opened with this build of Redot.
+	/// This is used by the project manager to provide the initial_settings for config/features.
 	const static PackedStringArray get_required_features();
+	/// Returns the features that this project needs but this build of Redot lacks.
 	const static PackedStringArray get_unsupported_features(const PackedStringArray &p_project_features);
 #endif // TOOLS_ENABLED
 
@@ -94,7 +103,7 @@ protected:
 	int last_builtin_order = 0;
 	uint64_t last_save_time = 0;
 
-	RBMap<StringName, VariantContainer> props; // NOTE: Key order is used e.g. in the save_custom method.
+	RBMap<StringName, VariantContainer> props; ///< @note Key order is used e.g. in the save_custom method.
 	String resource_path;
 	HashMap<StringName, PropertyInfo> custom_prop_info;
 	bool using_datapack = false;
@@ -135,7 +144,9 @@ protected:
 	Error _save_custom_bnd(const String &p_file);
 
 #ifdef TOOLS_ENABLED
+	/// @return The features supported by this build of Redot. Includes all required features.
 	const static PackedStringArray _get_supported_features();
+	/// @return The features that both this project has and this build of Redot has, ensuring required features exist.
 	const static PackedStringArray _trim_to_supported_features(const PackedStringArray &p_project_features);
 #endif // TOOLS_ENABLED
 
@@ -146,6 +157,33 @@ protected:
 
 	void _add_property_info_bind(const Dictionary &p_info);
 
+	/**
+	 * This method is responsible for loading a project.godot file and/or data file
+	 * using the following merit order:
+	 *  - If using NetworkClient, try to lookup project file or fail.
+	 *  - If --main-pack was passed by the user (`p_main_pack`), load it or fail.
+	 *  - Search for project PCKs automatically. For each step we try loading a potential
+	 *    PCK, and if it doesn't work, we proceed to the next step. If any step succeeds,
+	 *    we try loading the project settings, and abort if it fails. Steps:
+	 *    o Bundled PCK in the executable.
+	 *    o [macOS only] PCK with same basename as the binary in the .app resource dir.
+	 *    o PCK with same basename as the binary in the binary's directory. We handle both
+	 *      changing the extension to '.pck' (e.g. 'win_game.exe' -> 'win_game.pck') and
+	 *      appending '.pck' to the binary name (e.g. 'linux_game' -> 'linux_game.pck').
+	 *    o PCK with the same basename as the binary in the current working directory.
+	 *      Same as above for the two possible PCK file names.
+	 *  - On Android, look for 'assets.sparsepck' and try loading it, if it doesn't work,
+	 *    proceed to the next step.
+	 *  - On relevant platforms (Android/iOS), lookup project file in OS resource path.
+	 *    If found, load it or fail.
+	 *  - Lookup project file in passed `p_path` (--path passed by the user), i.e. we
+	 *    are running from source code.
+	 *    If not found and `p_upwards` is true (--upwards passed by the user), look for
+	 *    project files in parent folders up to the system root (used to run a game
+	 *    from command line while in a subfolder).
+	 *    If a project file is found, load it or fail.
+	 *    If nothing was found, error out.
+	 */
 	Error _setup(const String &p_path, const String &p_main_pack, bool p_upwards = false, bool p_ignore_override = false);
 
 	void _add_builtin_input_map();
@@ -163,7 +201,7 @@ public:
 	void set_setting(const String &p_setting, const Variant &p_value);
 	Variant get_setting(const String &p_setting, const Variant &p_default_value = Variant()) const;
 	TypedArray<Dictionary> get_global_class_list();
-	void refresh_global_class_list();
+	void refresh_global_class_list(); ///< This is called after mounting a new PCK file to pick up class changes.
 	void store_global_class_list(const Array &p_classes);
 	String get_global_class_list_path() const;
 
@@ -229,7 +267,7 @@ public:
 	String get_scene_groups_cache_path() const;
 	void load_scene_groups_cache();
 
-	// Testing a version allows fast cached GET_GLOBAL macros.
+	/// Testing a version allows fast cached GET_GLOBAL macros.
 	uint32_t get_version() const { return _version; }
 
 #ifdef TOOLS_ENABLED
@@ -240,6 +278,8 @@ public:
 	bool has_editor_setting_override(const String &p_setting) const;
 	Variant get_editor_setting_override(const String &p_setting) const;
 
+	/// Initialization of engine variables should be done in the setup() method,
+	/// so that the values can be overridden from project.redot or project.binary.
 	ProjectSettings();
 	ProjectSettings(const String &p_path);
 	~ProjectSettings();
@@ -263,9 +303,9 @@ Variant _GLOBAL_DEF(const PropertyInfo &p_info, const Variant &p_default, bool p
 #define GLOBAL_DEF_INTERNAL(m_var, m_value) _GLOBAL_DEF(m_var, m_value, false, false, false, true)
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// Cached versions of GLOBAL_GET.
-// Cached but uses a typed variable for storage, this can be more efficient.
-// Variables prefixed with _ggc_ to avoid shadowing warnings.
+/// Cached versions of GLOBAL_GET.
+/// Cached but uses a typed variable for storage, this can be more efficient.
+/// Variables prefixed with _ggc_ to avoid shadowing warnings.
 #define GLOBAL_GET_CACHED(m_type, m_setting_name) ([](const char *p_name) -> m_type {\
 static_assert(std::is_trivially_destructible<m_type>::value, "GLOBAL_GET_CACHED must use a trivial type that allows static lifetime.");\
 static m_type _ggc_local_var;\

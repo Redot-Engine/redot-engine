@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_text_document.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_lsp.h"
@@ -55,6 +61,8 @@ private:
 
 public:
 	void didOpen(const Variant &p_param);
+	/// Left empty on purpose. Godot does nothing special on closing a document,
+	/// but it satisfies LSP clients that require didClose be implemented.
 	void didClose(const Variant &p_param);
 	void didChange(const Variant &p_param);
 	void willSaveWaitUntil(const Variant &p_param);

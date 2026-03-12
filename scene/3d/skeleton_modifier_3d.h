@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_modifier_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/node_3d.h"
@@ -55,7 +61,7 @@ protected:
 	bool active = true;
 	real_t influence = 1.0;
 
-	// Cache them for the performance reason since finding node with NodePath is slow.
+	/// Cache them for the performance reason since finding node with NodePath is slow.
 	ObjectID skeleton_id;
 
 	void _update_skeleton();
@@ -73,7 +79,7 @@ protected:
 	virtual void _set_active(bool p_active);
 
 	virtual void _process_modification(double p_delta);
-	// TODO: In Godot 5, should obsolete old GDVIRTUAL0(_process_modification); and replace it with _process_modification_with_delta as GDVIRTUAL1(_process_modification, double).
+	/// @todo In Godot 5, should obsolete old GDVIRTUAL0(_process_modification); and replace it with _process_modification_with_delta as GDVIRTUAL1(_process_modification, double).
 	GDVIRTUAL1(_process_modification_with_delta, double);
 #ifndef DISABLE_DEPRECATED
 	GDVIRTUAL0(_process_modification);
@@ -81,7 +87,7 @@ protected:
 
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;
-	virtual bool has_process() const { return false; } // Return true if modifier needs to modify bone pose without external animation such as physics, jiggle and etc.
+	virtual bool has_process() const { return false; } ///< @return `true` if modifier needs to modify bone pose without external animation such as physics, jiggle and etc.
 
 	void set_active(bool p_active);
 	bool is_active() const;
@@ -93,7 +99,8 @@ public:
 
 	void process_modification(double p_delta);
 
-	// Utility APIs.
+	/// @name Utility APIs
+	/// @{
 	static Vector3 get_vector_from_bone_axis(BoneAxis p_axis);
 	static Vector3 get_vector_from_axis(Vector3::Axis p_axis);
 	static Vector3::Axis get_axis_from_bone_axis(BoneAxis p_axis);
@@ -102,7 +109,7 @@ public:
 	static Quaternion get_local_pose_rotation(Skeleton3D *p_skeleton, int p_bone, const Quaternion &p_global_pose_rotation);
 	static Quaternion get_from_to_rotation(const Vector3 &p_from, const Vector3 &p_to, const Quaternion &p_prev_rot);
 	static Vector3 snap_vector_to_plane(const Vector3 &p_plane_normal, const Vector3 &p_vector);
-
+	/// @}
 #ifdef TOOLS_ENABLED
 	virtual bool is_processed_on_saving() const { return false; }
 #endif

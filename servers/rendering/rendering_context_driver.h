@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_context_driver.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/display_server.h"
@@ -52,10 +58,10 @@ public:
 	void window_destroy(DisplayServer::WindowID p_window);
 
 public:
-	// Not an enum as these values are matched against values returned by
-	// the various drivers, which report them in uint32_t. Casting to an
-	// enum value is dangerous in this case as we don't actually know what
-	// range the driver is reporting a value in.
+	/// Not an enum as these values are matched against values returned by
+	/// the various drivers, which report them in uint32_t. Casting to an
+	/// enum value is dangerous in this case as we don't actually know what
+	/// range the driver is reporting a value in.
 	struct Vendor {
 		constexpr static uint32_t VENDOR_UNKNOWN = 0x0;
 		constexpr static uint32_t VENDOR_AMD = 0x1002;

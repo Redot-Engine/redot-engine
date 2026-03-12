@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_interaction_profile_metadata.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_interaction_profile_metadata.h"
 
 #include "../openxr_api.h"
@@ -212,12 +218,6 @@ PackedStringArray OpenXRInteractionProfileMetadata::get_interaction_profile_path
 }
 
 void OpenXRInteractionProfileMetadata::_register_core_metadata() {
-	// Note, currently we add definitions that belong in extensions.
-	// Extensions are registered when our OpenXRAPI is instantiated
-	// however this does not happen in the editor.
-	// We are changing this in another PR, once that is accepted we
-	// can make the changes to move code into extensions where needed.
-
 	// Note that we'll make an exception for XR_EXT_palm_pose, which is used everywhere
 
 	// Our core toplevel paths

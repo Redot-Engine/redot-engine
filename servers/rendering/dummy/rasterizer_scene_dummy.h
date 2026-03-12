@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rasterizer_scene_dummy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/paged_allocator.h"
@@ -97,19 +103,22 @@ public:
 
 	uint32_t geometry_instance_get_pair_mask() override { return 0; }
 
-	/* PIPELINES */
+	/// @name PIPELINES
+	/// @{
 
 	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation) override {}
 	virtual uint32_t get_pipeline_compilations(RS::PipelineSource p_source) override { return 0; }
-
-	/* SDFGI UPDATE */
+	/// @}
+	/// @name SDFGI UPDATE
+	/// @{
 
 	void sdfgi_update(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_environment, const Vector3 &p_world_position) override {}
 	int sdfgi_get_pending_region_count(const Ref<RenderSceneBuffers> &p_render_buffers) const override { return 0; }
 	AABB sdfgi_get_pending_region_bounds(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override { return AABB(); }
 	uint32_t sdfgi_get_pending_region_cascade(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override { return 0; }
-
-	/* SKY API */
+	/// @}
+	/// @name SKY API
+	/// @{
 
 	RID sky_allocate() override { return RID(); }
 	void sky_initialize(RID p_rid) override {}
@@ -117,8 +126,9 @@ public:
 	void sky_set_mode(RID p_sky, RS::SkyMode p_samples) override {}
 	void sky_set_material(RID p_sky, RID p_material) override {}
 	Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) override { return Ref<Image>(); }
-
-	/* ENVIRONMENT API */
+	/// @}
+	/// @name ENVIRONMENT API
+	/// @{
 
 	void environment_glow_set_use_bicubic_upscale(bool p_enable) override {}
 
@@ -195,6 +205,7 @@ public:
 	virtual void decals_set_filter(RS::DecalFilter p_filter) override {}
 	virtual void light_projectors_set_filter(RS::LightProjectorFilter p_filter) override {}
 	virtual void lightmaps_set_bicubic_filter(bool p_enable) override {}
+	/// @}
 
 	RasterizerSceneDummy() {}
 	~RasterizerSceneDummy() {}

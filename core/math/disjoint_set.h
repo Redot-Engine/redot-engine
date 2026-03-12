@@ -30,12 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file disjoint_set.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/hash_map.h"
 #include "core/templates/vector.h"
 
-/* This DisjointSet class uses Find with path compression and Union by rank */
+/** This DisjointSet class uses Find with path compression and Union by rank */
 template <typename T, typename H = HashMapHasherDefault, typename C = HashMapComparatorDefault<T>, typename AL = DefaultAllocator>
 class DisjointSet {
 	struct Element {

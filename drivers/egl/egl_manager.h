@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file egl_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef EGL_ENABLED
@@ -42,8 +48,7 @@
 
 class EGLManager {
 private:
-	// An EGL-side representation of a display with its own rendering
-	// context.
+	/// An EGL-side representation of a display with its own rendering context.
 	struct GLDisplay {
 		void *display = nullptr;
 
@@ -56,14 +61,14 @@ private:
 #endif
 	};
 
-	// EGL specific window data.
+	/// EGL specific window data.
 	struct GLWindow {
 		bool initialized = false;
 #ifdef WINDOWS_ENABLED
 		bool flipped_y = false;
 #endif
 
-		// An handle to the GLDisplay associated with this window.
+		/// An handle to the GLDisplay associated with this window.
 		int gldisplay_id = -1;
 
 		EGLSurface egl_surface = EGL_NO_SURFACE;
@@ -74,7 +79,7 @@ private:
 
 	GLWindow *current_window = nullptr;
 
-	// On EGL the default swap interval is 1 and thus vsync is on by default.
+	/// On EGL the default swap interval is 1 and thus vsync is on by default.
 	bool use_vsync = true;
 
 	virtual const char *_get_platform_extension_name() const = 0;
@@ -89,7 +94,7 @@ private:
 	static void _set_cache(const void *p_key, EGLsizeiANDROID p_key_size, const void *p_value, EGLsizeiANDROID p_value_size);
 	static EGLsizeiANDROID _get_cache(const void *p_key, EGLsizeiANDROID p_key_size, void *p_value, EGLsizeiANDROID p_value_size);
 #endif
-
+	/// Creates and caches a GLDisplay. @return `-1` on error.
 	int _get_gldisplay_id(void *p_display);
 	Error _gldisplay_create_context(GLDisplay &p_gldisplay);
 

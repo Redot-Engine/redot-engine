@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_file_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/dir_access.h"
@@ -218,6 +224,7 @@ private:
 
 	void update_dir();
 	void update_file_name();
+	/// @warning DO NOT USE THIS FUNCTION UNLESS NEEDED, CALL INVALIDATE() INSTEAD.
 	void update_file_list();
 	void update_search_filter_gui();
 	void update_filters();

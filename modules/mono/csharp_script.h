@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file csharp_script.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "mono_gc_handle.h"
@@ -154,9 +160,9 @@ private:
 
 #ifdef GD_MONO_HOT_RELOAD
 	struct StateBackup {
-		// TODO
-		// Replace with buffer containing the serialized state of managed scripts.
-		// Keep variant state backup to use only with script instance placeholders.
+		/// @todo
+		/// Replace with buffer containing the serialized state of managed scripts.
+		/// Keep variant state backup to use only with script instance placeholders.
 		List<Pair<StringName, Variant>> properties;
 		Dictionary event_signals;
 	};
@@ -218,7 +224,8 @@ private:
 	CSharpInstance *_create_instance(const Variant **p_args, int p_argcount, Object *p_owner, bool p_is_ref_counted, Callable::CallError &r_error);
 	Variant _new(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 
-	// Do not use unless you know what you are doing
+	/// @warning Do not use unless you know what you are doing
+	/// Extract information about the script using the mono class.
 	static void update_script_class_info(Ref<CSharpScript> p_script);
 
 	void _get_script_signal_list(List<MethodInfo> *r_signals, bool p_include_base) const;
@@ -231,6 +238,14 @@ protected:
 	void _get_property_list(List<PropertyInfo> *p_properties) const;
 
 public:
+	/**
+	 * IMPORTANT:
+	 * This method must be called only after the CSharpScript and its associated type
+	 * have been added to the script bridge map in the ScriptManagerBridge C# class.
+	 * Other than that, it's the same as `CSharpScript::reload`.
+	 *
+	 * This method should not fail, only assertions allowed.
+	 */
 	static void reload_registered_script(Ref<CSharpScript> p_script);
 
 	bool can_instantiate() const override;
@@ -244,9 +259,9 @@ public:
 	void set_source_code(const String &p_code) override;
 
 #ifdef TOOLS_ENABLED
-	virtual StringName get_doc_class_name() const override { return StringName(); } // TODO
+	virtual StringName get_doc_class_name() const override { return StringName(); } /// @todo
 	virtual Vector<DocData::ClassDoc> get_documentation() const override {
-		// TODO
+		/// @todo
 		Vector<DocData::ClassDoc> docs;
 		return docs;
 	}
@@ -323,17 +338,17 @@ class CSharpInstance : public ScriptInstance {
 
 	bool _reference_owner_unsafe();
 
-	/*
+	/**
 	 * If true is returned, the caller must memdelete the script instance's owner.
 	 */
 	bool _unreference_owner_unsafe();
 
-	/*
+	/**
 	 * If false is returned, the caller must destroy the script instance by removing it from its owner.
 	 */
 	bool _internal_new_managed();
 
-	// Do not use unless you know what you are doing
+	/// @warning Do not use unless you know what you are doing
 	static CSharpInstance *create_for_managed_type(Object *p_owner, CSharpScript *p_script, const MonoGCHandleData &p_gchandle);
 
 public:
@@ -359,7 +374,7 @@ public:
 
 	void mono_object_disposed(GCHandleIntPtr p_gchandle_to_free);
 
-	/*
+	/**
 	 * If 'r_delete_owner' is set to true, the caller must memdelete the script instance's owner. Otherwise, if
 	 * 'r_remove_script_instance' is set to true, the caller must destroy the script instance by removing it from its owner.
 	 */
@@ -418,7 +433,7 @@ class CSharpLanguage : public ScriptLanguage {
 	RBMap<Object *, CSharpScriptBinding> script_bindings;
 
 #ifdef DEBUG_ENABLED
-	// List of unsafe object references
+	/// List of unsafe object references
 	HashMap<ObjectID, int> unsafe_object_references;
 	Mutex unsafe_object_references_lock;
 #endif
@@ -427,9 +442,11 @@ class CSharpLanguage : public ScriptLanguage {
 
 	int lang_idx = -1;
 
-	// For debug_break and debug_break_parse
+	/// @name For debug_break and debug_break_parse
+	/// @{
 	int _debug_parse_err_line = -1;
 	String _debug_parse_err_file;
+	/// @}
 	String _debug_error;
 
 	friend class GDMono;
@@ -442,6 +459,9 @@ class CSharpLanguage : public ScriptLanguage {
 
 	static void *_instance_binding_create_callback(void *p_token, void *p_instance);
 	static void _instance_binding_free_callback(void *p_token, void *p_instance, void *p_binding);
+	/// Instance bindings callbacks can only be called if the C# language is available.
+	/// Failing this assert usually means that we didn't clear the instance binding in some Object
+	/// and the C# language has already been finalized.
 	static GDExtensionBool _instance_binding_reference_callback(void *p_token, void *p_binding, GDExtensionBool p_reference);
 
 	static GDExtensionInstanceBindingCallbacks _instance_binding_callbacks;
@@ -509,7 +529,7 @@ public:
 	bool is_using_templates() override;
 	virtual Ref<Script> make_template(const String &p_template, const String &p_class_name, const String &p_base_class_name) const override;
 	virtual Vector<ScriptTemplate> get_built_in_templates(const StringName &p_object) override;
-	/* TODO */ bool validate(const String &p_script, const String &p_path, List<String> *r_functions,
+	/** @todo */ bool validate(const String &p_script, const String &p_path, List<String> *r_functions,
 			List<ScriptLanguage::ScriptError> *r_errors = nullptr, List<ScriptLanguage::Warning> *r_warnings = nullptr, HashSet<int> *r_safe_lines = nullptr) const override {
 		return true;
 	}
@@ -519,56 +539,61 @@ public:
 	virtual bool has_named_classes() const override { return false; }
 #endif
 	bool supports_builtin_mode() const override;
-	/* TODO? */ int find_function(const String &p_function, const String &p_code) const override {
+	/** @todo ? */ int find_function(const String &p_function, const String &p_code) const override {
 		return -1;
 	}
 	String make_function(const String &p_class, const String &p_name, const PackedStringArray &p_args) const override;
 	virtual bool can_make_function() const override { return false; }
 	virtual String _get_indentation() const;
-	/* TODO? */ void auto_indent_code(String &p_code, int p_from_line, int p_to_line) const override {}
-	/* TODO */ void add_global_constant(const StringName &p_variable, const Variant &p_value) override {}
+	/** @todo ? */ void auto_indent_code(String &p_code, int p_from_line, int p_to_line) const override {}
+	/** @todo ? */ void add_global_constant(const StringName &p_variable, const Variant &p_value) override {}
 	virtual ScriptNameCasing preferred_file_name_casing() const override;
 
-	/* SCRIPT GLOBAL CLASS FUNCTIONS */
+	/// @name SCRIPT GLOBAL CLASS FUNCTIONS
+	/// @{
 	virtual bool handles_global_class_type(const String &p_type) const override;
 	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_is_abstract = nullptr, bool *r_is_tool = nullptr) const override;
-
-	/* DEBUGGER FUNCTIONS */
+	/// @}
+	/// @name DEBUGGER FUNCTIONS
+	/// @{
 	String debug_get_error() const override;
 	int debug_get_stack_level_count() const override;
 	int debug_get_stack_level_line(int p_level) const override;
 	String debug_get_stack_level_function(int p_level) const override;
 	String debug_get_stack_level_source(int p_level) const override;
-	/* TODO */ void debug_get_stack_level_locals(int p_level, List<String> *p_locals, List<Variant> *p_values, int p_max_subitems, int p_max_depth) override {}
-	/* TODO */ void debug_get_stack_level_members(int p_level, List<String> *p_members, List<Variant> *p_values, int p_max_subitems, int p_max_depth) override {}
-	/* TODO */ void debug_get_globals(List<String> *p_locals, List<Variant> *p_values, int p_max_subitems, int p_max_depth) override {}
-	/* TODO */ String debug_parse_stack_level_expression(int p_level, const String &p_expression, int p_max_subitems, int p_max_depth) override {
+	/** @todo */ void debug_get_stack_level_locals(int p_level, List<String> *p_locals, List<Variant> *p_values, int p_max_subitems, int p_max_depth) override {}
+	/** @todo */ void debug_get_stack_level_members(int p_level, List<String> *p_members, List<Variant> *p_values, int p_max_subitems, int p_max_depth) override {}
+	/** @todo */ void debug_get_globals(List<String> *p_locals, List<Variant> *p_values, int p_max_subitems, int p_max_depth) override {}
+	/** @todo */ String debug_parse_stack_level_expression(int p_level, const String &p_expression, int p_max_subitems, int p_max_depth) override {
 		return "";
 	}
 	Vector<StackInfo> debug_get_current_stack_info() override;
-
-	/* PROFILING FUNCTIONS */
-	/* TODO */ void profiling_start() override {}
-	/* TODO */ void profiling_stop() override {}
-	/* TODO */ void profiling_set_save_native_calls(bool p_enable) override {}
-	/* TODO */ int profiling_get_accumulated_data(ProfilingInfo *p_info_arr, int p_info_max) override {
+	/// @}
+	/// @name PROFILING FUNCTIONS
+	/// @{
+	/** @todo */ void profiling_start() override {}
+	/** @todo */ void profiling_stop() override {}
+	/** @todo */ void profiling_set_save_native_calls(bool p_enable) override {}
+	/** @todo */ int profiling_get_accumulated_data(ProfilingInfo *p_info_arr, int p_info_max) override {
 		return 0;
 	}
-	/* TODO */ int profiling_get_frame_data(ProfilingInfo *p_info_arr, int p_info_max) override {
+	/** @todo */ int profiling_get_frame_data(ProfilingInfo *p_info_arr, int p_info_max) override {
 		return 0;
 	}
+	/// @}
 
 	void frame() override;
 
-	/* TODO? */ void get_public_functions(List<MethodInfo> *p_functions) const override {}
-	/* TODO? */ void get_public_constants(List<Pair<String, Variant>> *p_constants) const override {}
-	/* TODO? */ void get_public_annotations(List<MethodInfo> *p_annotations) const override {}
+	/** @todo ? */ void get_public_functions(List<MethodInfo> *p_functions) const override {}
+	/** @todo ? */ void get_public_constants(List<Pair<String, Variant>> *p_constants) const override {}
+	/** @todo ? */ void get_public_annotations(List<MethodInfo> *p_annotations) const override {}
 
 	void reload_all_scripts() override;
 	void reload_scripts(const Array &p_scripts, bool p_soft_reload) override;
 	void reload_tool_script(const Ref<Script> &p_script, bool p_soft_reload) override;
 
-	/* LOADER FUNCTIONS */
+	/// @name LOADER FUNCTIONS
+	/// @{
 	void get_recognized_extensions(List<String> *p_extensions) const override;
 
 #ifdef TOOLS_ENABLED
@@ -581,10 +606,12 @@ public:
 
 	static void tie_native_managed_to_unmanaged(GCHandleIntPtr p_gchandle_intptr, Object *p_unmanaged, const StringName *p_native_name, bool p_ref_counted);
 	static void tie_user_managed_to_unmanaged(GCHandleIntPtr p_gchandle_intptr, Object *p_unmanaged, Ref<CSharpScript> *p_script, bool p_ref_counted);
+	/// This method should not fail
 	static void tie_managed_to_unmanaged_with_pre_setup(GCHandleIntPtr p_gchandle_intptr, Object *p_unmanaged);
 
 	void post_unsafe_reference(Object *p_obj);
 	void pre_unsafe_unreference(Object *p_obj);
+	/// @}
 
 	CSharpLanguage();
 	~CSharpLanguage();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_state_machine_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_state_machine_editor.h"
 
 #include "core/io/resource_loader.h"
@@ -181,7 +187,7 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 
 			if (!read_only) {
 				if (node_rects[i].name.has_point(mb->get_position()) && state_machine->can_edit_node(node_rects[i].node_name)) { // edit name
-					// TODO: Avoid using strings, expose a method on LineEdit.
+					/// @todo Avoid using strings, expose a method on LineEdit.
 					Ref<StyleBox> line_sb = name_edit->get_theme_stylebox(CoreStringName(normal));
 					Rect2 edit_rect = node_rects[i].name;
 					edit_rect.position -= line_sb->get_offset();

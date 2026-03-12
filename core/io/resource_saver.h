@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_saver.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -101,6 +107,6 @@ public:
 	static void set_get_resource_id_for_path(ResourceSaverGetResourceIDForPath p_callback);
 
 	static bool add_custom_resource_format_saver(const String &script_path);
-	static void add_custom_savers();
+	static void add_custom_savers(); ///< Custom resource savers exploits global class names
 	static void remove_custom_savers();
 };

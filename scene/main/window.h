@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file window.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/main/viewport.h"
@@ -46,7 +52,7 @@ class Window : public Viewport {
 	GDCLASS(Window, Viewport);
 
 public:
-	// Keep synced with enum hint for `mode` property.
+	/// Keep synced with enum hint for `mode` property.
 	enum Mode {
 		MODE_WINDOWED = DisplayServer::WINDOW_MODE_WINDOWED,
 		MODE_MINIMIZED = DisplayServer::WINDOW_MODE_MINIMIZED,
@@ -107,7 +113,7 @@ public:
 		DEFAULT_WINDOW_SIZE = 100,
 	};
 
-	// Keep synced with enum hint for `initial_position` property and `display/window/size/initial_position_type` project setting.
+	/// Keep synced with enum hint for `initial_position` property and `display/window/size/initial_position_type` project setting.
 	enum WindowInitialPosition {
 		WINDOW_INITIAL_POSITION_ABSOLUTE,
 		WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN,
@@ -241,7 +247,7 @@ private:
 
 	Transform2D window_transform;
 
-	friend class Viewport; //friend back, can call the methods below
+	friend class Viewport; ///< friend back, can call the methods below
 
 	void _window_input(const Ref<InputEvent> &p_ev);
 	void _window_input_text(const String &p_text);
@@ -261,7 +267,7 @@ private:
 	static int root_layout_direction;
 
 protected:
-	virtual void _pre_popup() {} // Called after "about_to_popup", but before window is shown.
+	virtual void _pre_popup() {} ///< Called after "about_to_popup", but before window is shown.
 	virtual Rect2i _popup_adjust_rect() const { return Rect2i(); }
 	virtual void _post_popup() {}
 
@@ -439,7 +445,8 @@ public:
 
 	void accessibility_announcement(const String &p_announcement);
 
-	// Internationalization.
+	/// @name Internationalization
+	/// @{
 
 	void set_layout_direction(LayoutDirection p_direction);
 	LayoutDirection get_layout_direction() const;
@@ -452,8 +459,9 @@ public:
 	void set_auto_translate(bool p_enable);
 	bool is_auto_translating() const;
 #endif
-
-	// Theming.
+	/// @}
+	/// @name Theming
+	/// @{
 
 	void set_theme_owner_node(Node *p_node);
 	Node *get_theme_owner_node() const;
@@ -513,6 +521,7 @@ public:
 	float get_theme_default_base_scale() const;
 	Ref<Font> get_theme_default_font() const;
 	int get_theme_default_font_size() const;
+	/// @}
 
 	virtual Transform2D get_final_transform() const override;
 	virtual Transform2D get_screen_transform_internal(bool p_absolute_position = false) const override;

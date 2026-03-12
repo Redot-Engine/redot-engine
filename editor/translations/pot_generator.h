@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file pot_generator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/file_access.h"
@@ -47,7 +53,7 @@ class POTGenerator {
 		HashSet<String> locations;
 		HashSet<String> comments;
 	};
-	// Store msgid as key and the additional data around the msgid - if it's under a context, has plurals and its file locations.
+	/// Store msgid as key and the additional data around the msgid - if it's under a context, has plurals and its file locations.
 	HashMap<String, Vector<MsgidData>> all_translation_strings;
 
 	void _write_to_pot(const String &p_file);

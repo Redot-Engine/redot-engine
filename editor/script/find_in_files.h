@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file find_in_files.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/hash_map.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/margin_container.h"
 
-// Performs the actual search
+/// Performs the actual search
 class FindInFiles : public Node {
 	GDCLASS(FindInFiles, Node);
 
@@ -76,7 +82,8 @@ private:
 
 	bool _is_file_matched(const HashSet<String> &p_wildcards, const String &p_file_path, bool p_case_sensitive) const;
 
-	// Config
+	/// @name Config
+	/// @{
 	String _pattern;
 	HashSet<String> _extension_filter;
 	HashSet<String> _include_wildcards;
@@ -84,13 +91,15 @@ private:
 	String _root_dir;
 	bool _whole_words = true;
 	bool _match_case = true;
-
-	// State
+	/// @}
+	/// @name State
+	/// @{
 	bool _searching = false;
 	String _current_dir;
 	Vector<PackedStringArray> _folders_stack;
 	Vector<String> _files_to_scan;
 	int _initial_files_count = 0;
+	/// @}
 };
 
 class LineEdit;
@@ -98,7 +107,7 @@ class CheckBox;
 class FileDialog;
 class HBoxContainer;
 
-// Prompts search parameters
+/// Prompts search parameters
 class FindInFilesDialog : public AcceptDialog {
 	GDCLASS(FindInFilesDialog, AcceptDialog);
 
@@ -167,7 +176,7 @@ class Tree;
 class TreeItem;
 class ProgressBar;
 
-// Display search results
+/// Display search results
 class FindInFilesPanel : public MarginContainer {
 	GDCLASS(FindInFilesPanel, MarginContainer);
 
@@ -210,6 +219,9 @@ private:
 		int begin_trimmed = 0;
 	};
 
+	/// If the file is already open, I assume the editor will reload it.
+	/// If there are unsaved changes, the user will be asked on focus,
+	/// however that means either losing changes or losing replaces.
 	void apply_replaces_in_file(const String &fpath, const Vector<Result> &locations, const String &new_text);
 	void update_replace_buttons();
 	void update_matches_text();

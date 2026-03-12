@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file os.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/config/engine.h"
@@ -162,6 +168,7 @@ public:
 	virtual void open_midi_inputs();
 	virtual void close_midi_inputs();
 
+	/// Default boot screen rect scale mode is "Keep Aspect Centered"
 	virtual Rect2 calculate_boot_screen_rect(const Size2 &p_window_size, const Size2 &p_imgrect_size) const;
 
 	virtual void alert(const String &p_alert, const String &p_title = "ALERT!");
@@ -283,23 +290,28 @@ public:
 	bool is_separate_thread_rendering_enabled() const { return _separate_thread_render; }
 
 	virtual String get_locale() const;
+	/// Non-virtual helper to extract the 2 or 3-letter language code from
+	/// `get_locale()` in a way that's consistent for all platforms.
 	String get_locale_language() const;
 
+	/// Embedded PCK offset.
 	virtual uint64_t get_embedded_pck_offset() const;
 
+	/// Helper function to ensure that a dir name/path will be valid on the OS
 	String get_safe_dir_name(const String &p_dir_name, bool p_allow_paths = false) const;
+	/// Get properly capitalized engine name for system paths
 	virtual String get_godot_dir_name() const;
 
-	virtual String get_data_path() const;
-	virtual String get_config_path() const;
-	virtual String get_cache_path() const;
+	virtual String get_data_path() const; ///< OS equivalent of XDG_DATA_HOME
+	virtual String get_config_path() const; ///< OS equivalent of XDG_CONFIG_HOME
+	virtual String get_cache_path() const; ///< OS equivalent of XDG_CACHE_HOME
 	virtual String get_temp_path() const;
-	virtual String get_bundle_resource_dir() const;
-	virtual String get_bundle_icon_path() const;
+	virtual String get_bundle_resource_dir() const; ///< Path to macOS .app bundle resources
+	virtual String get_bundle_icon_path() const; ///< Path to macOS .app bundle embedded icon
 
-	virtual String get_user_data_dir(const String &p_user_dir) const;
+	virtual String get_user_data_dir(const String &p_user_dir) const; ///< OS specific path for user://
 	virtual String get_user_data_dir() const;
-	virtual String get_resource_dir() const;
+	virtual String get_resource_dir() const; ///< Absolute path to res://
 
 	enum SystemDir {
 		SYSTEM_DIR_DESKTOP,
@@ -312,6 +324,7 @@ public:
 		SYSTEM_DIR_RINGTONES,
 	};
 
+	/// Access system-specific dirs like Documents, Downloads, etc.
 	virtual String get_system_dir(SystemDir p_dir, bool p_shared_storage = true) const;
 
 	virtual Error move_to_trash(const String &p_path) { return FAILED; }
@@ -320,9 +333,9 @@ public:
 	void remove_lock_file();
 
 	virtual int get_exit_code() const;
-	// `set_exit_code` should only be used from `SceneTree` (or from a similar
-	// level, e.g. from the `Main::start` if leaving without creating a `SceneTree`).
-	// For other components, `SceneTree.quit()` should be used instead.
+	/// `set_exit_code` should only be used from `SceneTree` (or from a similar
+	/// level, e.g. from the `Main::start` if leaving without creating a `SceneTree`).
+	/// For other components, `SceneTree.quit()` should be used instead.
 	virtual void set_exit_code(int p_code);
 
 	virtual int get_processor_count() const;
@@ -331,7 +344,7 @@ public:
 
 	virtual String get_unique_id() const;
 
-	bool has_feature(const String &p_feature);
+	bool has_feature(const String &p_feature); ///< Feature tags are always lowercase for consistency.
 
 	virtual bool is_sandboxed() const;
 
@@ -346,7 +359,7 @@ public:
 	virtual Vector<String> get_granted_permissions() const { return Vector<String>(); }
 	virtual void revoke_granted_permissions() {}
 
-	// For recording / measuring benchmark data. Only enabled with tools
+	/// For recording / measuring benchmark data. Only enabled with tools
 	void set_use_benchmark(bool p_use_benchmark);
 	bool is_use_benchmark_set();
 	void set_benchmark_file(const String &p_benchmark_file);
@@ -366,12 +379,12 @@ public:
 
 	virtual PreferredTextureFormat get_preferred_texture_format() const;
 
-	// Load GDExtensions specific to this platform.
-	// This is invoked by the GDExtensionManager after loading GDExtensions specified by the project.
+	/// Load GDExtensions specific to this platform.
+	/// This is invoked by the GDExtensionManager after loading GDExtensions specified by the project.
 	virtual void load_platform_gdextensions() const {}
 
 #ifdef TOOLS_ENABLED
-	// Tests OpenGL context and Rendering Device simultaneous creation. This function is expected to crash on some NVIDIA drivers.
+	/// Tests OpenGL context and Rendering Device simultaneous creation. This function is expected to crash on some NVIDIA drivers.
 	virtual bool _test_create_rendering_device_and_gl(const String &p_display_driver) const { return true; }
 	virtual bool _test_create_rendering_device(const String &p_display_driver) const { return true; }
 #endif

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource_loader.h"
@@ -54,7 +60,7 @@ class ResourceFormatImporter : public ResourceFormatLoader {
 
 	static inline ResourceFormatImporter *singleton = nullptr;
 
-	//need them to stay in order to compute the settings hash
+	/// Need them to stay in order to compute the settings hash
 	struct SortImporterByName {
 		bool operator()(const Ref<ResourceImporter> &p_a, const Ref<ResourceImporter> &p_b) const;
 	};

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file stream_peer_tls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "stream_peer_tls.h"
 
 #include "core/config/engine.h"

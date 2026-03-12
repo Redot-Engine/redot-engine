@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mono_gc_handle.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -56,7 +62,7 @@ struct GCHandleIntPtr {
 
 static_assert(sizeof(GCHandleIntPtr) == sizeof(void *));
 
-// Manual release of the GC handle must be done when using this struct
+/// Manual release of the GC handle must be done when using this struct
 struct MonoGCHandleData {
 	GCHandleIntPtr handle = { nullptr };
 	gdmono::GCHandleType type = gdmono::GCHandleType::NIL;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_call.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant.h"
 
 #include "core/crypto/crypto_core.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file look_at_modifier_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
@@ -89,9 +95,11 @@ private:
 
 	bool is_within_limitations = false;
 
-	// For time-based interpolation.
+	/// @name For time-based interpolation.
+	/// @{
 	Quaternion from_q;
 	Quaternion prev_q;
+	/// @}
 
 	float remaining = 0;
 	float time_step = 1.0;

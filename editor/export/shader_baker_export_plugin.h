@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_baker_export_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/export/editor_export_plugin.h"
@@ -55,7 +61,7 @@ protected:
 	};
 
 	struct WorkResult {
-		// Since this result is per group, this vector will have gaps in the data it covers as the indices must stay relative to all variants.
+		/// Since this result is per group, this vector will have gaps in the data it covers as the indices must stay relative to all variants.
 		Vector<PackedByteArray> variant_data;
 	};
 

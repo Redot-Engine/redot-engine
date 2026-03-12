@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file roughness_limiter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/renderer_rd/shaders/effects/roughness_limiter.glsl.gen.h"
 
 namespace RendererRD {
 
-// Note, this logic is unused at the time of writing. It should be re-incorporated into the renderer at some point.
+/// @todo This logic is unused at the time of writing. It should be re-incorporated into the renderer at some point.
 
 class RoughnessLimiter {
 private:

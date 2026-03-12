@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tiles_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/plugins/editor_plugin.h"
@@ -52,12 +58,12 @@ public:
 	};
 
 private:
-	// For synchronization.
+	/// For synchronization.
 	int atlas_sources_lists_current = 0;
 	float atlas_view_zoom = 1.0;
 	Vector2 atlas_view_scroll;
 
-	// Source sorting.
+	/// Source sorting.
 	int source_sort = SOURCE_SORT_ID;
 
 	struct SourceNameComparator {
@@ -65,7 +71,7 @@ private:
 		bool operator()(const int &p_a, const int &p_b) const;
 	};
 
-	// Patterns preview generation.
+	/// Patterns preview generation.
 	struct QueueItem {
 		Ref<TileSet> tile_set;
 		Ref<TileMapPattern> pattern;
@@ -86,25 +92,28 @@ private:
 public:
 	_FORCE_INLINE_ static TilesEditorUtils *get_singleton() { return singleton; }
 
-	// Pattern preview API.
+	/// Pattern preview API.
 	void queue_pattern_preview(Ref<TileSet> p_tile_set, Ref<TileMapPattern> p_pattern, Callable p_callback);
 
-	// To synchronize the atlas sources lists.
+	/// @name To synchronize the atlas sources lists
+	/// @{
 	void set_sources_lists_current(int p_current);
 	void synchronize_sources_list(Object *p_current_list, Object *p_current_sort_button);
 
 	void set_atlas_view_transform(float p_zoom, Vector2 p_scroll);
 	void synchronize_atlas_view(Object *p_current);
-
-	// Sorting.
+	/// @}
+	/// @name Sorting
+	/// @{
 	void set_sorting_option(int p_option);
 	List<int> get_sorted_sources(const Ref<TileSet> p_tile_set) const;
-
-	// Misc.
+	/// @}
+	/// @name Misc.
+	/// @{
 	void display_tile_set_editor_panel();
 
 	static void draw_selection_rect(CanvasItem *p_ci, const Rect2 &p_rect, const Color &p_color = Color(1.0, 1.0, 1.0));
-
+	/// @}
 	TilesEditorUtils();
 	~TilesEditorUtils();
 };
@@ -115,10 +124,10 @@ class TileMapEditorPlugin : public EditorPlugin {
 	TileMapLayerEditor *editor = nullptr;
 	Button *button = nullptr;
 	ObjectID tile_map_layer_id;
-	ObjectID tile_map_group_id; // Allow keeping the layer selector up to date.
+	ObjectID tile_map_group_id; ///< Allow keeping the layer selector up to date.
 
 	bool tile_map_changed_needs_update = false;
-	ObjectID tile_set_id; // The TileSet associated with the TileMap.
+	ObjectID tile_set_id; ///< The TileSet associated with the TileMap.
 
 	void _tile_map_layer_changed();
 	void _tile_map_layer_removed();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_file_system.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/dir_access.h"
@@ -49,7 +55,7 @@ class EditorFileSystemDirectory : public Object {
 
 	String name;
 	uint64_t modified_time;
-	bool verified = false; //used for checking changes
+	bool verified = false; ///< Used for checking changes
 
 	EditorFileSystemDirectory *parent = nullptr;
 	Vector<EditorFileSystemDirectory *> subdirs;
@@ -57,7 +63,7 @@ class EditorFileSystemDirectory : public Object {
 	struct FileInfo {
 		String file;
 		StringName type;
-		StringName resource_script_class; // If any resource has script with a global class name, its found here.
+		StringName resource_script_class; ///< If any resource has script with a global class name, its found here.
 		ResourceUID::ID uid = ResourceUID::INVALID_ID;
 		uint64_t modified_time = 0;
 		uint64_t import_modified_time = 0;
@@ -66,8 +72,9 @@ class EditorFileSystemDirectory : public Object {
 		bool import_valid = false;
 		String import_group_file;
 		Vector<String> deps;
-		bool verified = false; //used for checking changes
-		// This is for script resources only.
+		bool verified = false; ///< Used for checking changes
+
+		/// This is for script resources only.
 		struct ScriptClassInfo {
 			String name;
 			String extends;
@@ -99,10 +106,10 @@ public:
 	bool get_file_import_is_valid(int p_idx) const;
 	uint64_t get_file_modified_time(int p_idx) const;
 	uint64_t get_file_import_modified_time(int p_idx) const;
-	String get_file_script_class_name(int p_idx) const; //used for scripts
-	String get_file_script_class_extends(int p_idx) const; //used for scripts
-	String get_file_script_class_icon_path(int p_idx) const; //used for scripts
-	String get_file_icon_path(int p_idx) const; //used for FileSystemDock
+	String get_file_script_class_name(int p_idx) const; ///< Used for scripts
+	String get_file_script_class_extends(int p_idx) const; ///< Used for scripts
+	String get_file_script_class_icon_path(int p_idx) const; ///< Used for scripts
+	String get_file_icon_path(int p_idx) const; ///< Used for FileSystemDock
 
 	EditorFileSystemDirectory *get_parent();
 
@@ -214,7 +221,7 @@ class EditorFileSystem : public Node {
 
 	using ScriptClassInfo = EditorFileSystemDirectory::FileInfo::ScriptClassInfo;
 
-	/* Used for reading the filesystem cache file */
+	/// Used for reading the filesystem cache file
 	struct FileCache {
 		StringName type;
 		String resource_script_class;
@@ -337,7 +344,7 @@ class EditorFileSystem : public Node {
 	static Error _resource_import(const String &p_path);
 	static Ref<Resource> _load_resource_on_startup(ResourceFormatImporter *p_importer, const String &p_path, Error *r_error, bool p_use_sub_threads, float *r_progress, ResourceFormatLoader::CacheMode p_cache_mode);
 
-	bool using_fat32_or_exfat; // Workaround for projects in FAT32 or exFAT filesystem (pendrives, most of the time)
+	bool using_fat32_or_exfat; ///< Workaround for projects in FAT32 or exFAT filesystem (pendrives, most of the time)
 
 	void _find_group_files(EditorFileSystemDirectory *efd, HashMap<String, Vector<String>> &group_files, HashSet<String> &groups_to_reimport);
 
@@ -350,6 +357,7 @@ class EditorFileSystem : public Node {
 	HashSet<ObjectID> folders_to_sort;
 
 	Error _copy_file(const String &p_from, const String &p_to);
+	/// Recursively copy directories and build a map of files to copy.
 	bool _copy_directory(const String &p_from, const String &p_to, HashMap<String, String> *p_files);
 	void _queue_refresh_filesystem();
 	void _refresh_filesystem();

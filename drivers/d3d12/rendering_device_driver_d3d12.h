@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_driver_d3d12.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/a_hash_map.h"
@@ -80,8 +86,8 @@ using Microsoft::WRL::ComPtr;
 
 class RenderingContextDriverD3D12;
 
-// Design principles:
-// - D3D12 structs are zero-initialized and fields not requiring a non-zero value are omitted (except in cases where expresivity reasons apply).
+/// Design principles:
+/// - D3D12 structs are zero-initialized and fields not requiring a non-zero value are omitted (except in cases where expresivity reasons apply).
 class RenderingDeviceDriverD3D12 : public RenderingDeviceDriver {
 	/*****************/
 	/**** GENERIC ****/
@@ -135,7 +141,7 @@ class RenderingDeviceDriverD3D12 : public RenderingDeviceDriver {
 	ComPtr<ID3D12Device> device;
 	DeviceLimits device_limits;
 	RDD::Capabilities device_capabilities;
-	uint32_t feature_level = 0; // Major * 10 + minor.
+	uint32_t feature_level = 0; ///< Major * 10 + minor.
 	SubgroupCapabilities subgroup_capabilities;
 	RDD::MultiviewCapabilities multiview_capabilities;
 	FragmentShadingRateCapabilities fsr_capabilities;
@@ -165,8 +171,8 @@ class RenderingDeviceDriverD3D12 : public RenderingDeviceDriver {
 
 		struct FreeBlockInfo {
 			ID3D12DescriptorHeap *heap = nullptr;
-			uint32_t global_offset = 0; // Global offset in an address space shared by all the heaps.
-			uint32_t base_offset = 0; // The offset inside the space of this heap.
+			uint32_t global_offset = 0; ///< Global offset in an address space shared by all the heaps.
+			uint32_t base_offset = 0; ///< The offset inside the space of this heap.
 			uint32_t size = 0;
 			uint32_t nonce = 0;
 		};
@@ -279,25 +285,25 @@ private:
 
 	struct ResourceInfo {
 		struct States {
-			// As many subresources as mipmaps * layers; planes (for depth-stencil) are tracked together.
-			TightLocalVector<D3D12_RESOURCE_STATES> subresource_states; // Used only if not a view.
+			/// As many subresources as mipmaps * layers; planes (for depth-stencil) are tracked together.
+			TightLocalVector<D3D12_RESOURCE_STATES> subresource_states; ///< Used only if not a view.
 			uint32_t last_batch_with_uav_barrier = 0;
 		};
 
-		ID3D12Resource *resource = nullptr; // Non-null even if not owned.
+		ID3D12Resource *resource = nullptr; ///< Non-null even if not owned.
 		struct {
 			ComPtr<ID3D12Resource> resource;
 			ComPtr<D3D12MA::Allocation> allocation;
 			States states;
-		} owner_info; // All empty if the resource is not owned.
-		States *states_ptr = nullptr; // Own or from another if it doesn't own the D3D12 resource.
+		} owner_info; ///< All empty if the resource is not owned.
+		States *states_ptr = nullptr; ///< Own or from another if it doesn't own the D3D12 resource.
 	};
 
 	struct BarrierRequest {
 		static const uint32_t MAX_GROUPS = 4;
-		// Maybe this is too much data to have it locally. Benchmarking may reveal that
-		// cache would be used better by having a maximum of local subresource masks and beyond
-		// that have an allocated vector with the rest.
+		/// Maybe this is too much data to have it locally. Benchmarking may reveal that
+		/// cache would be used better by having a maximum of local subresource masks and beyond
+		/// that have an allocated vector with the rest.
 		static const uint32_t MAX_SUBRESOURCES = 4096;
 		ID3D12Resource *dx_resource = nullptr;
 		uint8_t subres_mask_qwords = 0;
@@ -464,6 +470,8 @@ private:
 
 	// ----- QUEUE FAMILY -----
 
+	/// @return The command list type encoded plus one so zero is an invalid value.
+	/// The only ones that support presenting to a surface are direct queues.
 	virtual CommandQueueFamilyID command_queue_family_get(BitField<CommandQueueFamilyBits> p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface = 0) override;
 
 private:
@@ -483,8 +491,8 @@ private:
 	struct CommandPoolInfo {
 		CommandQueueFamilyID queue_family;
 		CommandBufferType buffer_type = COMMAND_BUFFER_TYPE_PRIMARY;
-		// Since there are no command pools in D3D12, we need to track the command buffers created by this pool
-		// so that we can free them when the pool is freed.
+		/// Since there are no command pools in D3D12, we need to track the command buffers created by this pool
+		/// so that we can free them when the pool is freed.
 		SelfList<CommandBufferInfo>::List command_buffers;
 	};
 
@@ -496,7 +504,7 @@ public:
 	// ----- BUFFER -----
 
 private:
-	// Belongs to RENDERING-SUBPASS, but needed here.
+	/// Belongs to RENDERING-SUBPASS, but needed here.
 	struct FramebufferInfo;
 	struct RenderPassInfo;
 	struct RenderPassState {
@@ -511,10 +519,10 @@ private:
 		uint32_t vertex_buffer_count = 0;
 	};
 
-	// Leveraging knowledge of actual usage and D3D12 specifics (namely, command lists from the same allocator
-	// can't be freely begun and ended), an allocator per list works better.
+	/// Leveraging knowledge of actual usage and D3D12 specifics (namely, command lists from the same allocator
+	/// can't be freely begun and ended), an allocator per list works better.
 	struct CommandBufferInfo {
-		// Store a self list reference to be used by the command pool.
+		/// Store a self list reference to be used by the command pool.
 		SelfList<CommandBufferInfo> command_buffer_info_elem{ this };
 
 		ComPtr<ID3D12CommandAllocator> cmd_allocator;
@@ -578,11 +586,11 @@ private:
 	struct FramebufferInfo {
 		bool is_screen = false;
 		Size2i size;
-		TightLocalVector<uint32_t> attachments_handle_inds; // RTV heap index for color; DSV heap index for DSV.
+		TightLocalVector<uint32_t> attachments_handle_inds; ///< RTV heap index for color; DSV heap index for DSV.
 		CPUDescriptorsHeap rtv_heap;
-		CPUDescriptorsHeap dsv_heap; // Used only for depth-stencil attachments.
+		CPUDescriptorsHeap dsv_heap; ///< Used only for depth-stencil attachments.
 
-		TightLocalVector<TextureID> attachments; // Color and depth-stencil. Used if not screen.
+		TightLocalVector<TextureID> attachments; ///< Color and depth-stencil. Used if not screen.
 		TextureID vrs_attachment;
 	};
 
@@ -605,15 +613,15 @@ private:
 	static const uint32_t PUSH_CONSTANT_SIZE = 128; // Mimicking Vulkan.
 
 	enum {
-		// We can only aim to set a maximum here, since depending on the shader
-		// there may be more or less root signature free for descriptor tables.
-		// Therefore, we'll have to rely on the final check at runtime, when building
-		// the root signature structure for a given shader.
-		// To be precise, these may be present or not, and their size vary statically:
-		// - Push constant (we'll assume this is always present to avoid reserving much
-		//   more space for descriptor sets than needed for almost any imaginable case,
-		//   given that most shader templates feature push constants).
-		// - NIR-DXIL runtime data.
+		/// We can only aim to set a maximum here, since depending on the shader
+		/// there may be more or less root signature free for descriptor tables.
+		/// Therefore, we'll have to rely on the final check at runtime, when building
+		/// the root signature structure for a given shader.
+		/// To be precise, these may be present or not, and their size vary statically:
+		/// - Push constant (we'll assume this is always present to avoid reserving much
+		///   more space for descriptor sets than needed for almost any imaginable case,
+		///   given that most shader templates feature push constants).
+		/// - NIR-DXIL runtime data.
 		MAX_UNIFORM_SETS = (ROOT_SIGNATURE_SIZE - PUSH_CONSTANT_SIZE) / sizeof(uint32_t),
 	};
 
@@ -623,7 +631,7 @@ private:
 		bool is_compute = false;
 
 		struct UniformBindingInfo {
-			uint32_t stages = 0; // Actual shader stages using the uniform (0 if totally optimized out).
+			uint32_t stages = 0; ///< Actual shader stages using the uniform (0 if totally optimized out).
 			ResourceClass res_class = RES_CLASS_INVALID;
 			UniformType type = UNIFORM_TYPE_MAX;
 			uint32_t length = UINT32_MAX;
@@ -663,7 +671,7 @@ private:
 
 		ComPtr<ID3D12RootSignature> root_signature;
 		ComPtr<ID3D12RootSignatureDeserializer> root_signature_deserializer;
-		const D3D12_ROOT_SIGNATURE_DESC *root_signature_desc = nullptr; // Owned by the deserializer.
+		const D3D12_ROOT_SIGNATURE_DESC *root_signature_desc = nullptr; ///< Owned by the deserializer.
 		uint32_t root_signature_crc = 0;
 	};
 
@@ -710,10 +718,10 @@ private:
 				TightLocalVector<RootDescriptorTable> samplers;
 			} root_tables;
 			int uses = 0;
-		} recent_binds[4]; // A better amount may be empirically found.
+		} recent_binds[4]; ///< A better amount may be empirically found.
 
 #ifdef DEV_ENABLED
-		// Filthy, but useful for dev.
+		/// Filthy, but useful for dev.
 		struct ResourceDescInfo {
 			D3D12_DESCRIPTOR_RANGE_TYPE type;
 			D3D12_SRV_DIMENSION srv_dimension;
@@ -868,14 +876,17 @@ public:
 
 	// ----- COMMANDS -----
 
-	// Binding.
+	/// @name Binding
+	/// @{
 	virtual void command_bind_compute_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) override final;
 	virtual void command_bind_compute_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) override final;
 	virtual void command_bind_compute_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) override final;
-
-	// Dispatching.
+	/// @}
+	/// @name Dispatching
+	/// @{
 	virtual void command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups) override final;
 	virtual void command_compute_dispatch_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) override final;
+	/// @}
 
 	// ----- PIPELINE -----
 
@@ -895,15 +906,18 @@ private:
 	};
 
 public:
-	// Basic.
+	/// @name Basic
+	/// @{
 	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) override final;
 	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) override final;
 	virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t *r_results) override final;
 	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) override final;
-
-	// Commands.
+	/// @}
+	/// @name Commands
+	/// @{
 	virtual void command_timestamp_query_pool_reset(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) override final;
 	virtual void command_timestamp_write(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_index) override final;
+	/// @}
 
 	/****************/
 	/**** LABELS ****/
@@ -940,7 +954,7 @@ private:
 			bool aux = false;
 			bool rtv = false;
 		} desc_heaps_exhausted_reported;
-		CD3DX12_CPU_DESCRIPTOR_HANDLE null_rtv_handle = {}; // For [[MANUAL_SUBPASSES]].
+		CD3DX12_CPU_DESCRIPTOR_HANDLE null_rtv_handle = {}; ///< For [[MANUAL_SUBPASSES]].
 		uint32_t segment_serial = 0;
 
 #ifdef DEV_ENABLED

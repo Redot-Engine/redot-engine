@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resolve.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/renderer_rd/shaders/effects/resolve.glsl.gen.h"
@@ -55,7 +61,7 @@ private:
 		ResolvePushConstant push_constant;
 		ResolveShaderRD shader;
 		RID shader_version;
-		RID pipelines[RESOLVE_MODE_MAX]; //3 quality levels
+		RID pipelines[RESOLVE_MODE_MAX]; ///< 3 quality levels
 	} resolve;
 
 public:

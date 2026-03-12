@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_hand.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/node_3d.h"
@@ -44,13 +50,13 @@ class OpenXRHand : public Node3D {
 	GDCLASS(OpenXRHand, Node3D);
 
 public:
-	enum Hands { // Deprecated, need to change this to OpenXRInterface::Hands.
+	enum Hands { ///< @todo Deprecated, need to change this to OpenXRInterface::Hands.
 		HAND_LEFT,
 		HAND_RIGHT,
 		HAND_MAX
 	};
 
-	enum MotionRange { // Deprecated, need to change this to OpenXRInterface::HandMotionRange.
+	enum MotionRange { ///< Deprecated, need to change this to OpenXRInterface::HandMotionRange.
 		MOTION_RANGE_UNOBSTRUCTED,
 		MOTION_RANGE_CONFORM_TO_CONTROLLER,
 		MOTION_RANGE_MAX

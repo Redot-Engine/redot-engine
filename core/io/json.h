@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file json.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -115,7 +121,7 @@ public:
 	virtual bool handles_type(const String &p_type) const override;
 	virtual String get_resource_type(const String &p_path) const override;
 
-	// Treat JSON as a text file, do not generate a `*.json.uid` file.
+	/// Treat JSON as a text file, do not generate a `*.json.uid` file.
 	virtual ResourceUID::ID get_resource_uid(const String &p_path) const override { return ResourceUID::INVALID_ID; }
 	virtual bool has_custom_uid_support() const override { return true; }
 };

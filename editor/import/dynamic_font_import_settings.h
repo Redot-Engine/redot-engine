@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dynamic_font_import_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource_importer.h"
@@ -87,25 +93,29 @@ class DynamicFontImportSettingsDialog : public ConfirmationDialog {
 
 	bool is_pixel = false;
 
-	// Root layout
+	/// @name Root layout
+	/// @{
 	Label *label_warn = nullptr;
 	TabContainer *main_pages = nullptr;
-
-	// Page 1 layout: Rendering Options
+	/// @}
+	/// @name Page 1 layout: Rendering Options
+	/// @{
 	Label *page1_description = nullptr;
 	Label *font_name_label = nullptr;
 	Label *font_preview_label = nullptr;
 	EditorInspector *inspector_general = nullptr;
-
+	/// @}
 	void _main_prop_changed(const String &p_edited_property);
 
-	// Page 2 layout: Preload Configurations
+	/// @name Page 2 layout: Preload Configurations
+	/// @{
 	Label *page2_description = nullptr;
 	Label *label_vars = nullptr;
 	Button *add_var = nullptr;
 	Tree *vars_list = nullptr;
 	TreeItem *vars_list_root = nullptr;
 	EditorInspector *inspector_vars = nullptr;
+	/// @}
 
 	void _variation_add();
 	void _variation_selected();
@@ -119,20 +129,24 @@ class DynamicFontImportSettingsDialog : public ConfirmationDialog {
 	void _glyph_clear();
 	void _glyph_update_lbl();
 
-	// Page 2.0 layout: Translations
+	/// @name Page 2.0 layout: Translations
+	/// @{
 	Label *page2_0_description = nullptr;
 	Tree *locale_tree = nullptr;
 	TreeItem *locale_root = nullptr;
 	Button *btn_fill_locales = nullptr;
+	/// @}
 
 	void _locale_edited();
 	void _process_locales();
 
-	// Page 2.1 layout: Text to select glyphs
+	/// @name Page 2.1 layout: Text to select glyphs
+	/// @{
 	Label *page2_1_description = nullptr;
 	TextEdit *text_edit = nullptr;
 	EditorInspector *inspector_text = nullptr;
 	Button *btn_fill = nullptr;
+	/// @}
 
 	List<ResourceImporter::ImportOption> options_text;
 	Ref<DynamicFontImportSettingsData> text_settings_data;
@@ -140,11 +154,13 @@ class DynamicFontImportSettingsDialog : public ConfirmationDialog {
 	void _change_text_opts();
 	void _glyph_text_selected();
 
-	// Page 2.2 layout: Character map
+	/// @name Page 2.2 layout: Character map
+	/// @{
 	Label *page2_2_description = nullptr;
 	Tree *glyph_table = nullptr;
 	Tree *glyph_tree = nullptr;
 	TreeItem *glyph_root = nullptr;
+	/// @}
 
 	void _glyph_selected();
 	void _range_edited();

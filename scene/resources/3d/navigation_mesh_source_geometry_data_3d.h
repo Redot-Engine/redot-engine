@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_mesh_source_geometry_data_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/rw_lock.h"
@@ -64,7 +70,7 @@ private:
 
 public:
 	struct ProjectedObstruction {
-		static inline uint32_t VERSION = 1; // Increase when format changes so we can detect outdated formats and provide compatibility.
+		static inline uint32_t VERSION = 1; ///< Increase when format changes so we can detect outdated formats and provide compatibility.
 
 		Vector<float> vertices;
 		float elevation = 0.0;
@@ -72,10 +78,10 @@ public:
 		bool carve = false;
 	};
 
-	// kept root node transform here on the geometry data
-	// if we add this transform to all exposed functions we need to break comp on all functions later
-	// when navmesh changes from global transform to relative to navregion
-	// but if it stays here we can just remove it and change the internal functions only
+	/// kept root node transform here on the geometry data
+	/// if we add this transform to all exposed functions we need to break comp on all functions later
+	/// when navmesh changes from global transform to relative to navregion
+	/// but if it stays here we can just remove it and change the internal functions only
 	Transform3D root_node_transform;
 
 	void set_vertices(const Vector<float> &p_vertices);

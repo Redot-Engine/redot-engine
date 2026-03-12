@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_debugger_tree.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/tree.h"
@@ -99,6 +105,21 @@ public:
 	ObjectID get_selected_object();
 	int get_current_debugger(); // Would love to have one tree for every debugger.
 	inline TypedArray<uint64_t> get_selection() const { return inspected_object_ids.duplicate(); }
+	/**
+	 * Populates inspect_scene_tree given data in nodes as a flat list, encoded depth first.
+	 *
+	 * Given a nodes array like [R,A,B,C,D,E] the following Tree will be generated, assuming
+	 * filter is an empty String, R and A child count are 2, B is 1 and C, D and E are 0.
+	 *
+	 * R
+	 * |-A
+	 * | |-B
+	 * | | |-C
+	 * | |
+	 * | |-D
+	 * |
+	 * |-E
+	 */
 	void update_scene_tree(const SceneDebuggerTree *p_tree, int p_debugger);
 	void select_nodes(const TypedArray<int64_t> &p_ids);
 	void clear_selection();

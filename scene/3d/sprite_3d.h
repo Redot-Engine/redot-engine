@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sprite_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/visual_instance_3d.h"
@@ -38,7 +44,7 @@
 class SpriteBase3D : public GeometryInstance3D {
 	GDCLASS(SpriteBase3D, GeometryInstance3D);
 
-	mutable Ref<TriangleMesh> triangle_mesh; //cached
+	mutable Ref<TriangleMesh> triangle_mesh; ///< cached
 
 public:
 	enum DrawFlags {
@@ -119,6 +125,7 @@ protected:
 	uint32_t skin_stride = 0;
 	uint32_t mesh_surface_format = 0;
 
+	/// The 3D equivalent of CanvasItem.queue_redraw().
 	void _queue_redraw();
 
 public:

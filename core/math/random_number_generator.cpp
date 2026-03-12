@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file random_number_generator.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "random_number_generator.h"
 
 void RandomNumberGenerator::_bind_methods() {
@@ -49,7 +55,9 @@ void RandomNumberGenerator::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "seed"), "set_seed", "get_seed");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "state"), "set_state", "get_state");
-	// Default values are non-deterministic, override for doc generation purposes.
+	/// @name Default values are non-deterministic, override for doc generation purposes.
+	/// @{
 	ADD_PROPERTY_DEFAULT("seed", 0);
 	ADD_PROPERTY_DEFAULT("state", 0);
+	/// @}
 }

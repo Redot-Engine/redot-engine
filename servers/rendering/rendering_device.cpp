@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_device.h"
 #include "rendering_device.compat.inc"
 
@@ -115,25 +121,22 @@ static uint32_t _get_device_type_score(const RenderingContextDriver::Device &p_d
 /**** RENDERING DEVICE ****/
 /**************************/
 
-// When true, the command graph will attempt to reorder the rendering commands submitted by the user based on the dependencies detected from
-// the commands automatically. This should improve rendering performance in most scenarios at the cost of some extra CPU overhead.
-//
-// This behavior can be disabled if it's suspected that the graph is not detecting dependencies correctly and more control over the order of
-// the commands is desired (e.g. debugging).
-
+/// When `true`, the command graph will attempt to reorder the rendering commands submitted by the user based on the dependencies detected from
+/// the commands automatically. This should improve rendering performance in most scenarios at the cost of some extra CPU overhead.
+///
+/// This behavior can be disabled if it's suspected that the graph is not detecting dependencies correctly and more control over the order of
+/// the commands is desired (e.g. debugging).
 #define RENDER_GRAPH_REORDER 1
 
-// Synchronization barriers are issued between the graph's levels only with the necessary amount of detail to achieve the correct result. If
-// it's suspected that the graph is not doing this correctly, full barriers can be issued instead that will block all types of operations
-// between the synchronization levels. This setting will have a very negative impact on performance when enabled, so it's only intended for
-// debugging purposes.
-
+/// Synchronization barriers are issued between the graph's levels only with the necessary amount of detail to achieve the correct result. If
+/// it's suspected that the graph is not doing this correctly, full barriers can be issued instead that will block all types of operations
+/// between the synchronization levels. This setting will have a very negative impact on performance when enabled, so it's only intended for
+/// debugging purposes.
 #define RENDER_GRAPH_FULL_BARRIERS 0
 
-// The command graph can automatically issue secondary command buffers and record them on background threads when they reach an arbitrary
-// size threshold. This can be very beneficial towards reducing the time the main thread takes to record all the rendering commands. However,
-// this setting is not enabled by default as it's been shown to cause some strange issues with certain IHVs that have yet to be understood.
-
+/// The command graph can automatically issue secondary command buffers and record them on background threads when they reach an arbitrary
+/// size threshold. This can be very beneficial towards reducing the time the main thread takes to record all the rendering commands. However,
+/// this setting is not enabled by default as it's been shown to cause some strange issues with certain IHVs that have yet to be understood.
 #define SECONDARY_COMMAND_BUFFERS_PER_FRAME 0
 
 RenderingDevice *RenderingDevice::singleton = nullptr;
@@ -1173,8 +1176,6 @@ RID RenderingDevice::texture_create_shared(const TextureView &p_view, RID p_with
 }
 
 RID RenderingDevice::texture_create_from_extension(TextureType p_type, DataFormat p_format, TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage, uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps) {
-	// This method creates a texture object using a VkImage created by an extension, module or other external source (OpenXR uses this).
-
 	Texture texture;
 	texture.type = p_type;
 	texture.format = p_format;
@@ -1813,7 +1814,7 @@ void RenderingDevice::_texture_copy_shared(RID p_src_texture_rid, Texture *p_src
 			DEV_ASSERT(false && "This path should not be reachable.");
 		}
 
-		// FIXME: When using reinterpretation buffers, the only texture aspect supported is color. Depth or stencil contents won't get copied.
+		/// @todo FIXME: When using reinterpretation buffers, the only texture aspect supported is color. Depth or stencil contents won't get copied.
 		RDD::BufferTextureCopyRegion get_data_region;
 		RDG::RecordedBufferToTextureCopy update_copy;
 		RDD::TextureCopyableLayout first_copyable_layout;
@@ -3910,7 +3911,7 @@ RID RenderingDevice::uniform_set_create(const VectorView<RD::Uniform> &p_uniform
 				}
 			} break;
 			case UNIFORM_TYPE_IMAGE_BUFFER: {
-				// Todo.
+				/// @todo
 			} break;
 			case UNIFORM_TYPE_UNIFORM_BUFFER: {
 				ERR_FAIL_COND_V_MSG(uniform.get_id_count() != 1, RID(),
@@ -5680,8 +5681,6 @@ static uint32_t _get_alignment_offset(uint32_t p_offset, uint32_t p_required_ali
 }
 
 RenderingDevice::TransferWorker *RenderingDevice::_acquire_transfer_worker(uint32_t p_transfer_size, uint32_t p_required_align, uint32_t &r_staging_offset) {
-	// Find the first worker that is not currently executing anything and has enough size for the transfer.
-	// If no workers are available, we make a new one. If we're not allowed to make new ones, we wait until one of them is available.
 	TransferWorker *transfer_worker = nullptr;
 	uint32_t available_list_index = 0;
 	bool transfer_worker_busy = true;
@@ -6267,8 +6266,6 @@ void RenderingDevice::_free_internal(RID p_id) {
 	frames_pending_resources_for_processing = uint32_t(frames.size());
 }
 
-// The full list of resources that can be named is in the VkObjectType enum.
-// We just expose the resources that are owned and can be accessed easily.
 void RenderingDevice::set_resource_name(RID p_id, const String &p_name) {
 	_THREAD_SAFE_METHOD_
 

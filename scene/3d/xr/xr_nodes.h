@@ -30,21 +30,26 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_nodes.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/camera_3d.h"
 #include "servers/xr/xr_positional_tracker.h"
 
-/*
-	XRCamera is a subclass of camera which will register itself with its parent XROrigin and as a result is automatically positioned
-*/
-
+/**
+ *	XRCamera is a subclass of camera which will register itself with its parent XROrigin and as a result is automatically positioned
+ */
 class XRCamera3D : public Camera3D {
 	GDCLASS(XRCamera3D, Camera3D);
 
 protected:
-	// The name and pose for our HMD tracker is currently the only hardcoded bit.
-	// If we ever are able to support multiple HMDs we may need to make this settable.
+	/// The name and pose for our HMD tracker is currently the only hardcoded bit.
+	/// If we ever are able to support multiple HMDs we may need to make this settable.
 	StringName tracker_name = "head";
 	StringName pose_name = SceneStringName(default_);
 	Ref<XRPositionalTracker> tracker;
@@ -68,12 +73,11 @@ public:
 	~XRCamera3D();
 };
 
-/*
-	XRNode3D is a helper node that implements binding to a tracker.
-
-	It must be a child node of our XROrigin node
-*/
-
+/**
+ *	XRNode3D is a helper node that implements binding to a tracker.
+ *
+ *	It must be a child node of our XROrigin node
+ */
 class XRNode3D : public Node3D {
 	GDCLASS(XRNode3D, Node3D);
 
@@ -124,12 +128,11 @@ public:
 	~XRNode3D();
 };
 
-/*
-	XRController3D is a helper node that automatically updates its position based on tracker data.
-
-	It must be a child node of our XROrigin node
-*/
-
+/**
+ *	XRController3D is a helper node that automatically updates its position based on tracker data.
+ *
+ *	It must be a child node of our XROrigin node
+ */
 class XRController3D : public XRNode3D {
 	GDCLASS(XRController3D, XRNode3D);
 
@@ -155,11 +158,10 @@ public:
 	XRPositionalTracker::TrackerHand get_tracker_hand() const;
 };
 
-/*
-	XRAnchor3D is a helper node that automatically updates its position based on anchor data, it represents a real world location.
-	It must be a child node of our XROrigin3D node
-*/
-
+/**
+ *	XRAnchor3D is a helper node that automatically updates its position based on anchor data, it represents a real world location.
+ *	It must be a child node of our XROrigin3D node
+ */
 class XRAnchor3D : public XRNode3D {
 	GDCLASS(XRAnchor3D, XRNode3D);
 
@@ -174,21 +176,20 @@ public:
 	Plane get_plane() const;
 };
 
-/*
-	XROrigin3D is special spatial node that acts as our origin point mapping our real world center of our tracking volume into our virtual world.
-
-	It is this point that you will move around the world as the player 'moves while standing still', i.e. the player moves through teleporting or controller inputs as opposed to physically moving.
-
-	Our camera and controllers will always be child nodes and thus place relative to this origin point.
-	This node will automatically locate any camera child nodes and update its position while our XRController3D node will handle tracked controllers.
-*/
-
+/**
+ *	XROrigin3D is special spatial node that acts as our origin point mapping our real world center of our tracking volume into our virtual world.
+ *
+ *	It is this point that you will move around the world as the player 'moves while standing still', i.e. the player moves through teleporting or controller inputs as opposed to physically moving.
+ *
+ *	Our camera and controllers will always be child nodes and thus place relative to this origin point.
+ *	This node will automatically locate any camera child nodes and update its position while our XRController3D node will handle tracked controllers.
+ */
 class XROrigin3D : public Node3D {
 	GDCLASS(XROrigin3D, Node3D);
 
 private:
 	bool current = false;
-	static Vector<XROrigin3D *> origin_nodes; // all origin nodes in tree
+	static Vector<XROrigin3D *> origin_nodes; ///< All origin nodes in tree
 
 	void _set_current(bool p_enabled, bool p_update_others);
 

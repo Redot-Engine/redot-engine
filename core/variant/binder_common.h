@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file binder_common.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/input/input_enums.h"
@@ -44,9 +50,8 @@
 
 #include <cstdio>
 
-// Variant cannot define an implicit cast operator for every Object subclass, so the
-// casting is done here, to allow binding methods with parameters more specific than Object *
-
+/// Variant cannot define an implicit cast operator for every Object subclass, so the
+/// casting is done here, to allow binding methods with parameters more specific than Object *
 template <typename T>
 struct VariantCaster {
 	static _FORCE_INLINE_ T cast(const Variant &p_variant) {
@@ -529,7 +534,8 @@ void call_with_ptr_args_static_method(void (*p_method)(P...), const void **p_arg
 	call_with_ptr_args_static_method_helper<P...>(p_method, p_args, BuildIndexSequence<sizeof...(P)>{});
 }
 
-// Validated
+/// @name Validated
+/// @{
 
 template <typename T, typename... P>
 void call_with_validated_variant_args(Variant *base, void (T::*p_method)(P...), const Variant **p_args) {
@@ -566,7 +572,9 @@ void call_with_validated_variant_args_static_method_ret(R (*p_method)(P...), con
 	call_with_validated_variant_args_static_method_ret_helper<R, P...>(p_method, p_args, r_ret, BuildIndexSequence<sizeof...(P)>{});
 }
 
-// Validated Object
+/// @}
+/// @name Validated Object
+/// @{
 
 template <typename T, typename... P>
 void call_with_validated_object_instance_args(T *base, void (T::*p_method)(P...), const Variant **p_args) {
@@ -597,6 +605,7 @@ template <typename T, typename R, typename... P>
 void call_with_validated_object_instance_args_static_retc(T *base, R (*p_method)(T *, P...), const Variant **p_args, Variant *r_ret) {
 	call_with_validated_variant_args_static_retc_helper<T, R, P...>(base, p_method, p_args, r_ret, BuildIndexSequence<sizeof...(P)>{});
 }
+/// @}
 
 // GCC raises "parameter 'p_args' set but not used" when P = {},
 // it's not clever enough to treat other P values as making this branch valid.

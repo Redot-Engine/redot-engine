@@ -30,33 +30,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-/*
- * Based on Godot's patched VHACD-version of Bullet's btConvexHullComputer.
- * See /thirdparty/vhacd/btConvexHullComputer.cpp at 64403ddcab9f1dca2408f0a412a22d899708bbb1
- * In turn, based on /src/LinearMath/btConvexHullComputer.cpp in <https://github.com/bulletphysics/bullet3>
- * at 73b217fb07e7e3ce126caeb28ab3c9ddd0718467
+/**
+ * @file convex_hull.cpp
  *
- * Changes:
- * - int32_t is consistently used instead of int in some cases
- * - integrated patch db0d6c92927f5a1358b887f2645c11f3014f0e8a from Bullet (CWE-190 integer overflow in btConvexHullComputer)
- * - adapted to Godot's code style
- * - replaced Bullet's types (e.g. vectors) with Godot's
- * - replaced custom Pool implementation with PagedAllocator
+ * [Add any documentation that applies to the entire file here!]
  */
-
-/*
-Copyright (c) 2011 Ole Kniemeyer, MAXON, www.maxon.net
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
 
 #include "convex_hull.h"
 
@@ -93,8 +71,8 @@ subject to the following restrictions:
 #include <cstdio>
 #endif
 
-// Convex hull implementation based on Preparata and Hong
-// Ole Kniemeyer, MAXON Computer GmbH
+/// Convex hull implementation based on Preparata and Hong
+/// Ole Kniemeyer, MAXON Computer GmbH
 class ConvexHullInternal {
 public:
 	class Point64 {

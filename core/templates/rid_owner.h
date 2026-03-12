@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rid_owner.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/memory.h"
@@ -56,22 +62,22 @@
 #include <sanitizer/tsan_interface.h>
 #endif
 
-// The following macros would need to be implemented somehow
-// for purely weakly ordered architectures. There's a test case
-// ("[RID_Owner] Thread safety") with potential to catch issues
-// on such architectures if these primitives fail to be implemented.
-// For now, they will be just markers about needs that may arise.
+/// The following macros would need to be implemented somehow
+/// for purely weakly ordered architectures. There's a test case
+/// ("[RID_Owner] Thread safety") with potential to catch issues
+/// on such architectures if these primitives fail to be implemented.
+/// For now, they will be just markers about needs that may arise.
 #define WEAK_MEMORY_ORDER 0
 #if WEAK_MEMORY_ORDER
-// Ideally, we'd have implementations that collaborate with the
-// sync mechanism used (e.g., the mutex) so instead of some full
-// memory barriers being issued, some acquire-release on the
-// primitive itself. However, these implementations will at least
-// provide correctness.
+/// Ideally, we'd have implementations that collaborate with the
+/// sync mechanism used (e.g., the mutex) so instead of some full
+/// memory barriers being issued, some acquire-release on the
+/// primitive itself. However, these implementations will at least
+/// provide correctness.
 #define SYNC_ACQUIRE std::atomic_thread_fence(std::memory_order_acquire);
 #define SYNC_RELEASE std::atomic_thread_fence(std::memory_order_release);
 #else
-// Compiler barriers are enough in this case.
+/// Compiler barriers are enough in this case.
 #define SYNC_ACQUIRE std::atomic_signal_fence(std::memory_order_acquire);
 #define SYNC_RELEASE std::atomic_signal_fence(std::memory_order_release);
 #endif

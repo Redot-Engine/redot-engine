@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_spin_slider.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/line_edit.h"
@@ -78,9 +84,9 @@ class EditorSpinSlider : public Range {
 	void _grab_end();
 
 	void _grabber_gui_input(const Ref<InputEvent> &p_event);
-	void _value_input_closed();
-	void _value_input_submitted(const String &);
-	void _value_focus_exited();
+	void _value_input_closed(); ///< modal_closed signal
+	void _value_input_submitted(const String &); ///< text_submitted signal
+	void _value_focus_exited(); ///< focus_exited signal
 	void _value_input_gui_input(const Ref<InputEvent> &p_event);
 
 	void _evaluate_input_text();

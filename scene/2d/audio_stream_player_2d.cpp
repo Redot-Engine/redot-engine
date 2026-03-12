@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_player_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream_player_2d.h"
 #include "audio_stream_player_2d.compat.inc"
 
@@ -116,7 +122,6 @@ StringName AudioStreamPlayer2D::_get_actual_bus() {
 	return internal->bus;
 }
 
-// Interacts with PhysicsServer2D, so can only be called during _physics_process
 void AudioStreamPlayer2D::_update_panning() {
 	if (!internal->active.is_set() || internal->stream.is_null()) {
 		return;

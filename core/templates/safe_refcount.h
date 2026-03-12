@@ -30,6 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file safe_refcount.h
+ *
+ * @brief Design goals for these classes:
+ * - No automatic conversions or arithmetic operators,
+ *   to keep explicit the use of atomics everywhere.
+ * - Using acquire-release semantics, even to set the first value.
+ *   The first value may be set relaxedly in many cases, but adding the distinction
+ *   between relaxed and unrelaxed operation to the interface would make it needlessly
+ *   flexible. There's negligible waste in having release semantics for the initial
+ *   value and, as an important benefit, you can be sure the value is properly synchronized
+ *   even with threads that are already running.
+ */
+
 #pragma once
 
 #include "core/typedefs.h"
@@ -41,17 +55,7 @@
 #include <atomic>
 #include <type_traits> // IWYU pragma: keep // Used in macro.
 
-// Design goals for these classes:
-// - No automatic conversions or arithmetic operators,
-//   to keep explicit the use of atomics everywhere.
-// - Using acquire-release semantics, even to set the first value.
-//   The first value may be set relaxedly in many cases, but adding the distinction
-//   between relaxed and unrelaxed operation to the interface would make it needlessly
-//   flexible. There's negligible waste in having release semantics for the initial
-//   value and, as an important benefit, you can be sure the value is properly synchronized
-//   even with threads that are already running.
-
-// These are used in very specific areas of the engine where it's critical that these guarantees are held
+/// These are used in very specific areas of the engine where it's critical that these guarantees are held
 #define SAFE_NUMERIC_TYPE_PUN_GUARANTEES(m_type)                    \
 	static_assert(sizeof(SafeNumeric<m_type>) == sizeof(m_type));   \
 	static_assert(alignof(SafeNumeric<m_type>) == alignof(m_type)); \
@@ -79,7 +83,7 @@ public:
 		return value.fetch_add(1, std::memory_order_acq_rel) + 1;
 	}
 
-	// Returns the original value instead of the new one
+	/// Returns the original value instead of the new one
 	_ALWAYS_INLINE_ T postincrement() {
 		return value.fetch_add(1, std::memory_order_acq_rel);
 	}
@@ -88,7 +92,7 @@ public:
 		return value.fetch_sub(1, std::memory_order_acq_rel) - 1;
 	}
 
-	// Returns the original value instead of the new one
+	/// Returns the original value instead of the new one
 	_ALWAYS_INLINE_ T postdecrement() {
 		return value.fetch_sub(1, std::memory_order_acq_rel);
 	}
@@ -97,7 +101,7 @@ public:
 		return value.fetch_add(p_value, std::memory_order_acq_rel) + p_value;
 	}
 
-	// Returns the original value instead of the new one
+	/// Returns the original value instead of the new one
 	_ALWAYS_INLINE_ T postadd(T p_value) {
 		return value.fetch_add(p_value, std::memory_order_acq_rel);
 	}
@@ -193,22 +197,22 @@ class SafeRefCount {
 #endif
 
 public:
-	_ALWAYS_INLINE_ bool ref() { // true on success
+	_ALWAYS_INLINE_ bool ref() { /// true on success
 		return count.conditional_increment() != 0;
 	}
 
-	_ALWAYS_INLINE_ uint32_t refval() { // none-zero on success
+	_ALWAYS_INLINE_ uint32_t refval() { /// none-zero on success
 		return count.conditional_increment();
 	}
 
-	_ALWAYS_INLINE_ bool unref() { // true if must be disposed of
+	_ALWAYS_INLINE_ bool unref() { /// true if must be disposed of
 #ifdef DEV_ENABLED
 		_check_unref_safety();
 #endif
 		return count.decrement() == 0;
 	}
 
-	_ALWAYS_INLINE_ uint32_t unrefval() { // 0 if must be disposed of
+	_ALWAYS_INLINE_ uint32_t unrefval() { /// 0 if must be disposed of
 #ifdef DEV_ENABLED
 		_check_unref_safety();
 #endif

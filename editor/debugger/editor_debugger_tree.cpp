@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_debugger_tree.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_debugger_tree.h"
 
 #include "editor/debugger/editor_debugger_node.h"
@@ -192,20 +198,6 @@ void EditorDebuggerTree::_scene_tree_rmb_selected(const Vector2 &p_position, Mou
 	item_menu->popup();
 }
 
-/// Populates inspect_scene_tree given data in nodes as a flat list, encoded depth first.
-///
-/// Given a nodes array like [R,A,B,C,D,E] the following Tree will be generated, assuming
-/// filter is an empty String, R and A child count are 2, B is 1 and C, D and E are 0.
-///
-/// R
-/// |-A
-/// | |-B
-/// | | |-C
-/// | |
-/// | |-D
-/// |
-/// |-E
-///
 void EditorDebuggerTree::update_scene_tree(const SceneDebuggerTree *p_tree, int p_debugger) {
 	set_hide_root(false);
 

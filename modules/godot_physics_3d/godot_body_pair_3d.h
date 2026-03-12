@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_body_pair_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_body_3d.h"
@@ -45,11 +51,11 @@ protected:
 		Vector3 normal;
 		int index_A = 0, index_B = 0;
 		Vector3 local_A, local_B;
-		Vector3 acc_impulse; // accumulated impulse - only one of the object's impulse is needed as impulse_a == -impulse_b
-		real_t acc_normal_impulse = 0.0; // accumulated normal impulse (Pn)
-		Vector3 acc_tangent_impulse; // accumulated tangent impulse (Pt)
-		real_t acc_bias_impulse = 0.0; // accumulated normal impulse for position bias (Pnb)
-		real_t acc_bias_impulse_center_of_mass = 0.0; // accumulated normal impulse for position bias applied to com
+		Vector3 acc_impulse; ///< accumulated impulse - only one of the object's impulse is needed as impulse_a == -impulse_b
+		real_t acc_normal_impulse = 0.0; ///< accumulated normal impulse (Pn)
+		Vector3 acc_tangent_impulse; ///< accumulated tangent impulse (Pt)
+		real_t acc_bias_impulse = 0.0; ///< accumulated normal impulse for position bias (Pnb)
+		real_t acc_bias_impulse_center_of_mass = 0.0; ///< accumulated normal impulse for position bias applied to com
 		real_t mass_normal = 0.0;
 		real_t bias = 0.0;
 		real_t bounce = 0.0;
@@ -57,7 +63,7 @@ protected:
 		real_t depth = 0.0;
 		bool active = false;
 		bool used = false;
-		Vector3 rA, rB; // Offset in world orientation with respect to center of mass
+		Vector3 rA, rB; ///< Offset in world orientation with respect to center of mass
 	};
 
 	Vector3 sep_axis;
@@ -93,7 +99,7 @@ class GodotBodyPair3D : public GodotBodyContact3D {
 
 	bool report_contacts_only = false;
 
-	Vector3 offset_B; //use local A coordinates to avoid numerical issues on collision detection
+	Vector3 offset_B; ///< Use local A coordinates to avoid numerical issues on collision detection
 
 	Contact contacts[MAX_CONTACTS];
 	int contact_count = 0;
@@ -103,6 +109,13 @@ class GodotBodyPair3D : public GodotBodyContact3D {
 	void contact_added_callback(const Vector3 &p_point_A, int p_index_A, const Vector3 &p_point_B, int p_index_B, const Vector3 &normal);
 
 	void validate_contacts();
+	/// `_test_ccd` prevents tunneling by slowing down a high velocity body that is about to collide so
+	/// that next frame it will be at an appropriate location to collide (i.e. slight overlap).
+	/// @warning The way velocity is adjusted down to cause a collision means the momentum will be
+	/// weaker than it should for a bounce!
+	/// Process: Only proceed if body A's motion is high relative to its size.
+	/// Cast forward along motion vector to see if A is going to enter/pass B's collider next frame, only proceed if it does.
+	/// Adjust the velocity of A down so that it will just slightly intersect the collider instead of blowing right past it.
 	bool _test_ccd(real_t p_step, GodotBody3D *p_A, int p_shape_A, const Transform3D &p_xform_A, GodotBody3D *p_B, int p_shape_B, const Transform3D &p_xform_B);
 
 public:

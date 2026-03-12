@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/2d/node_2d.h"
@@ -54,7 +60,7 @@ protected:
 	bool first = true;
 	bool just_exited_tree = false;
 
-	ObjectID custom_viewport_id; // To check validity.
+	ObjectID custom_viewport_id; ///< To check validity.
 	Viewport *custom_viewport = nullptr;
 	Viewport *viewport = nullptr;
 
@@ -75,7 +81,7 @@ protected:
 	bool rotation_smoothing_enabled = false;
 
 	bool limit_enabled = true;
-	int limit[4] = { -10000000, -10000000, 10000000, 10000000 }; // Left, top, right, bottom.
+	int limit[4] = { -10000000, -10000000, 10000000, 10000000 }; ///< Left, top, right, bottom.
 	bool limit_smoothing_enabled = false;
 
 	real_t drag_margin[4] = { 0.2, 0.2, 0.2, 0.2 };
@@ -109,7 +115,7 @@ protected:
 	struct InterpolationData {
 		Transform2D xform_curr;
 		Transform2D xform_prev;
-		uint32_t last_update_physics_tick = UINT32_MAX; // Ensure tick 0 is detected as a change.
+		uint32_t last_update_physics_tick = UINT32_MAX; ///< Ensure tick 0 is detected as a change.
 	} _interpolation_data;
 
 	void _ensure_update_interpolation_data();

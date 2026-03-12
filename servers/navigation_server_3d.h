@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_server_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/class_db.h"
@@ -58,7 +64,8 @@ public:
 
 	virtual TypedArray<RID> get_maps() const = 0;
 
-	/* MAP API */
+	/// @name MAP API
+	/// @{
 
 	virtual RID map_create() = 0;
 
@@ -106,7 +113,9 @@ public:
 
 	virtual Vector3 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly) const = 0;
 
-	/* REGION API */
+	/// @}
+	/// @name REGION API
+	/// @{
 
 	virtual RID region_create() = 0;
 	virtual uint32_t region_get_iteration_id(RID p_region) const = 0;
@@ -157,7 +166,9 @@ public:
 
 	virtual AABB region_get_bounds(RID p_region) const = 0;
 
-	/* LINK API */
+	/// @}
+	/// @name LINK API
+	/// @{
 
 	virtual RID link_create() = 0;
 	virtual uint32_t link_get_iteration_id(RID p_link) const = 0;
@@ -189,7 +200,9 @@ public:
 	virtual void link_set_owner_id(RID p_link, ObjectID p_owner_id) = 0;
 	virtual ObjectID link_get_owner_id(RID p_link) const = 0;
 
-	/* AGENT API */
+	/// @}
+	/// @name AGENT API
+	/// @{
 
 	virtual RID agent_create() = 0;
 
@@ -248,7 +261,9 @@ public:
 	virtual void agent_set_avoidance_priority(RID p_agent, real_t p_priority) = 0;
 	virtual real_t agent_get_avoidance_priority(RID p_agent) const = 0;
 
-	/* OBSTACLE API */
+	/// @}
+	/// @name OBSTACLE API
+	/// @{
 
 	virtual RID obstacle_create() = 0;
 
@@ -277,11 +292,15 @@ public:
 	virtual void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers) = 0;
 	virtual uint32_t obstacle_get_avoidance_layers(RID p_obstacle) const = 0;
 
-	/* QUERY API */
+	/// @}
+	/// @name QUERY API
+	/// @{
 
 	virtual void query_path(const Ref<NavigationPathQueryParameters3D> &p_query_parameters, Ref<NavigationPathQueryResult3D> p_query_result, const Callable &p_callback = Callable()) = 0;
 
-	/* NAVMESH BAKE API */
+	/// @}
+	/// @name NAVMESH BAKE API
+	/// @{
 
 #ifndef _3D_DISABLED
 	virtual void parse_source_geometry_data(const Ref<NavigationMesh> &p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData3D> &p_source_geometry_data, Node *p_root_node, const Callable &p_callback = Callable()) = 0;
@@ -302,7 +321,9 @@ public:
 
 	virtual Vector<Vector3> simplify_path(const Vector<Vector3> &p_path, real_t p_epsilon) = 0;
 
-	/* SERVER API */
+	/// @}
+	/// @name SERVER API
+	/// @{
 
 	virtual void set_active(bool p_active) = 0;
 	virtual void process(double p_delta_time) = 0;
@@ -315,7 +336,9 @@ public:
 	NavigationServer3D();
 	~NavigationServer3D() override;
 
-	/* DEBUG API */
+	/// @}
+	/// @name DEBUG API
+	/// @{
 
 	enum ProcessInfo {
 		INFO_ACTIVE_MAPS,
@@ -513,6 +536,7 @@ public:
 	Ref<StandardMaterial3D> get_debug_navigation_avoidance_static_obstacle_pushout_face_material();
 	Ref<StandardMaterial3D> get_debug_navigation_avoidance_static_obstacle_pushin_edge_material();
 	Ref<StandardMaterial3D> get_debug_navigation_avoidance_static_obstacle_pushout_edge_material();
+	/// @}
 #endif // DEBUG_ENABLED
 };
 

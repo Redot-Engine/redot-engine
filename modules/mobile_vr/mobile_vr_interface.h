@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mobile_vr_interface.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/xr/xr_interface.h"
@@ -37,16 +43,15 @@
 #include "servers/xr/xr_vrs.h"
 
 /**
-	The mobile interface is a native VR interface that can be used on Android and iOS phones.
-	It contains a basic implementation supporting 3DOF tracking if a gyroscope and accelerometer are
-	present and sets up the proper projection matrices based on the values provided.
-
-	We're planning to eventually do separate interfaces towards mobile SDKs that have far more capabilities and
-	do not rely on the user providing most of these settings (though enhancing this with auto detection features
-	based on the device we're running on would be cool). I'm mostly adding this as an example or base plate for
-	more advanced interfaces.
-*/
-
+ *	The mobile interface is a native VR interface that can be used on Android and iOS phones.
+ *	It contains a basic implementation supporting 3DOF tracking if a gyroscope and accelerometer are
+ *	present and sets up the proper projection matrices based on the values provided.
+ *
+ *	We're planning to eventually do separate interfaces towards mobile SDKs that have far more capabilities and
+ *	do not rely on the user providing most of these settings (though enhancing this with auto detection features
+ *	based on the device we're running on would be cool). I'm mostly adding this as an example or base plate for
+ *	more advanced interfaces.
+ */
 class MobileVRInterface : public XRInterface {
 	GDCLASS(MobileVRInterface, XRInterface);
 
@@ -55,7 +60,7 @@ private:
 	XRInterface::TrackingStatus tracking_state;
 	XRPose::TrackingConfidence tracking_confidence = XRPose::XR_TRACKING_CONFIDENCE_NONE;
 
-	// Just set some defaults for these. At some point we need to look at adding a lookup table for common device + headset combos and/or support reading cardboard QR codes
+	/// Just set some defaults for these. At some point we need to look at adding a lookup table for common device + headset combos and/or support reading cardboard QR codes
 	double eye_height = 1.85;
 	uint64_t last_ticks = 0;
 
@@ -64,23 +69,23 @@ private:
 	double display_to_lens = 4.0;
 	double oversample = 1.5;
 
-	Rect2 offset_rect = Rect2(0, 0, 1, 1); // Full screen rect.
+	Rect2 offset_rect = Rect2(0, 0, 1, 1); ///< Full screen rect.
 
 	double k1 = 0.215;
 	double k2 = 0.215;
 	double aspect = 1.0;
 
-	// at a minimum we need a tracker for our head
+	/// At a minimum we need a tracker for our head
 	Ref<XRPositionalTracker> head;
 	Transform3D head_transform;
 
 	XRVRS xr_vrs;
 
-	/*
-		logic for processing our sensor data, this was originally in our positional tracker logic but I think
-		that doesn't make sense in hindsight. It only makes marginally more sense to park it here for now,
-		this probably deserves an object of its own
-	*/
+	/**
+	 *	logic for processing our sensor data, this was originally in our positional tracker logic but I think
+	 *	that doesn't make sense in hindsight. It only makes marginally more sense to park it here for now,
+	 *	this probably deserves an object of its own
+	 */
 	Vector3 scale_magneto(const Vector3 &p_magnetometer);
 	Basis combine_acc_mag(const Vector3 &p_grav, const Vector3 &p_magneto);
 
@@ -94,7 +99,7 @@ private:
 	Vector3 mag_next_min;
 	Vector3 mag_next_max;
 
-	///@TODO a few support functions for trackers, most are math related and should likely be moved elsewhere
+	/// @todo A few support functions for trackers, most are math related and should likely be moved elsewhere
 	float floor_decimals(const float p_value, const float p_decimals) {
 		float power_of_10 = std::pow(10.0f, p_decimals);
 		return std::floor(p_value * power_of_10) / power_of_10;

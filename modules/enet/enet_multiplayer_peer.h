@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file enet_multiplayer_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "enet_connection.h"
@@ -108,7 +114,7 @@ public:
 	virtual bool is_server() const override;
 	virtual bool is_server_relay_supported() const override;
 
-	// Overridden so we can instrument the DTLSServer when needed.
+	/// Overridden so we can instrument the DTLSServer when needed.
 	virtual void set_refuse_new_connections(bool p_enabled) override;
 
 	virtual ConnectionStatus get_connection_status() const override;
@@ -125,6 +131,8 @@ public:
 	Error create_mesh(int p_id);
 	Error add_mesh_peer(int p_id, Ref<ENetConnection> p_host);
 
+	/// Sets IP for ENet to bind when using create_server or create_client
+	/// if no IP is set, then ENet bind to ENET_HOST_ANY
 	void set_bind_ip(const IPAddress &p_ip);
 
 	Ref<ENetConnection> get_host() const;

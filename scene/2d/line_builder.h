@@ -30,14 +30,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file line_builder.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "line_2d.h"
 
 class LineBuilder {
 public:
-	// TODO Move in a struct and reference it
-	// Input
+	/// @todo Move in a struct and reference it
+	/// @name Input
+	/// @{
 	Vector<Vector2> points;
 	Line2D::LineJointMode joint_mode = Line2D::LINE_JOINT_SHARP;
 	Line2D::LineCapMode begin_cap_mode = Line2D::LINE_CAP_NONE;
@@ -51,14 +58,17 @@ public:
 	float sharp_limit = 2.f;
 	int round_precision = 8;
 	float tile_aspect = 1.f; // w/h
-	// TODO offset_joints option (offers alternative implementation of round joints)
+	/// @}
+	/// @todo offset_joints option (offers alternative implementation of round joints)
 
-	// TODO Move in a struct and reference it
-	// Output
+	/// @todo Move in a struct and reference it
+	/// @name Output
+	/// @{
 	Vector<Vector2> vertices;
 	Vector<Color> colors;
 	Vector<Vector2> uvs;
 	Vector<int> indices;
+	/// @}
 
 	LineBuilder();
 
@@ -70,7 +80,8 @@ private:
 		DOWN = 1
 	};
 
-	// Triangle-strip methods
+	/// @name Triangle-strip methods
+	/// @{
 	void strip_begin(Vector2 up, Vector2 down, Color color, float uvx);
 	void strip_new_quad(Vector2 up, Vector2 down, Color color, float uvx);
 	void strip_add_quad(Vector2 up, Vector2 down, Color color, float uvx);
@@ -78,8 +89,8 @@ private:
 	void strip_add_arc(Vector2 center, float angle_delta, Orientation orientation);
 
 	void new_arc(Vector2 center, Vector2 vbegin, float angle_delta, Color color, Rect2 uv_rect);
-
+	/// @}
 private:
 	bool _interpolate_color = false;
-	int _last_index[2] = {}; // Index of last up and down vertices of the strip
+	int _last_index[2] = {}; ///< Index of last up and down vertices of the strip
 };

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_shader_forward_mobile.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../storage_rd/material_storage.h"
@@ -184,7 +190,7 @@ public:
 			STENCIL_COMPARE_NOT_EQUAL,
 			STENCIL_COMPARE_GREATER_OR_EQUAL,
 			STENCIL_COMPARE_ALWAYS,
-			STENCIL_COMPARE_MAX // Not an actual operator, just the amount of operators.
+			STENCIL_COMPARE_MAX ///< Not an actual operator, just the amount of operators.
 		};
 
 		struct PipelineKey {

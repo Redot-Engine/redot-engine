@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_server_2d_wrap_mt.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "physics_server_2d_wrap_mt.h"
 
 void PhysicsServer2DWrapMT::_assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id) {

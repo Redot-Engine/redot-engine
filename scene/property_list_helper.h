@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file property_list_helper.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/method_bind.h"
@@ -65,7 +71,7 @@ public:
 		array_length_getter = create_method_bind(p_array_length_getter);
 	}
 
-	// Register property without setter/getter. Only use when you don't need PropertyListHelper for _set/_get logic.
+	/// Register property without setter/getter. Only use when you don't need PropertyListHelper for _set/_get logic.
 	void register_property(const PropertyInfo &p_info, const Variant &p_default);
 
 	template <typename S, typename G>

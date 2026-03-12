@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file core_string_names.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/string/string_name.h"
@@ -46,7 +52,7 @@ public:
 
 	_FORCE_INLINE_ static CoreStringNames *get_singleton() { return singleton; }
 
-	const StringName free_ = "free"; // free would conflict with C++ keyword.
+	const StringName free_ = "free"; ///< free would conflict with C++ keyword.
 	const StringName changed = "changed";
 	const StringName script = "script";
 	const StringName script_changed = "script_changed";

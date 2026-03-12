@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file enet_packet_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/packet_peer.h"
@@ -49,7 +55,7 @@ private:
 
 protected:
 	friend class ENetConnection;
-	// Internally used by ENetConnection during service, destroy, etc.
+	/// Internally used by ENetConnection during service, destroy, etc.
 	void _on_disconnect();
 	void _queue_packet(ENetPacket *p_packet);
 
@@ -116,11 +122,13 @@ public:
 	int get_channels() const;
 	int get_packet_flags() const;
 
-	// Extras
+	/// @name Extras
+	/// @{
 	IPAddress get_remote_address() const;
 	int get_remote_port() const;
+	/// @}
 
-	// Used by ENetMultiplayer (TODO use meta? If only they where StringNames)
+	/// Used by ENetMultiplayer (@todo Use meta? If only they where StringNames)
 	bool is_active() const;
 
 	ENetPacketPeer(ENetPeer *p_peer);

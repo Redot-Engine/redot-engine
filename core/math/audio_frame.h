@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_frame.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/vector2.h"
@@ -49,7 +55,7 @@ static _FORCE_INLINE_ float undenormalize(float f) {
 }
 
 static const float AUDIO_PEAK_OFFSET = 0.0000000001f;
-static const float AUDIO_MIN_PEAK_DB = -200.0f; // linear_to_db(AUDIO_PEAK_OFFSET)
+static const float AUDIO_MIN_PEAK_DB = -200.0f; ///< linear_to_db(AUDIO_PEAK_OFFSET)
 
 struct AudioFrame {
 	// Left and right samples.

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_editor_debugger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/script_language.h"
@@ -129,8 +135,8 @@ private:
 	Button *next = nullptr;
 	Button *dobreak = nullptr;
 	Button *docontinue = nullptr;
-	// Reference to "Remote" tab in scene tree. Needed by _live_edit_set and buttons state.
-	// Each debugger should have it's tree in the future I guess.
+	/// Reference to "Remote" tab in scene tree. Needed by _live_edit_set and buttons state.
+	/// Each debugger should have it's tree in the future I guess.
 	const Tree *editor_remote_tree = nullptr;
 
 	HashMap<int, String> profiler_signature;
@@ -172,7 +178,7 @@ private:
 		bool can_debug = false;
 		bool has_stackdump = false;
 		uint32_t debug_order = 0;
-		uint64_t thread_id = Thread::UNASSIGNED_ID; // for order
+		uint64_t thread_id = Thread::UNASSIGNED_ID; ///< For order
 	};
 
 	struct ThreadSort {
@@ -305,7 +311,7 @@ public:
 
 	void clear_inspector(bool p_send_msg = true);
 
-	// Needed by _live_edit_set, buttons state.
+	/// Needed by _live_edit_set, buttons state.
 	void set_editor_remote_tree(const Tree *p_tree) { editor_remote_tree = p_tree; }
 
 	void request_remote_tree();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file movie_writer_pngwav.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/movie_writer/movie_writer.h"
@@ -38,7 +44,7 @@ class MovieWriterPNGWAV : public MovieWriter {
 	GDCLASS(MovieWriterPNGWAV, MovieWriter)
 
 	enum {
-		MAX_TRAILING_ZEROS = 8 // more than 10 days at 60fps, no hard drive can put up with this anyway :)
+		MAX_TRAILING_ZEROS = 8 ///< More than 10 days at 60fps, no hard drive can put up with this anyway :)
 	};
 
 	uint32_t mix_rate = 48000;

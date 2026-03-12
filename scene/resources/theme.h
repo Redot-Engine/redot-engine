@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file theme.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -94,10 +100,12 @@ protected:
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
 
-	// Default values configurable for each individual theme.
+	/// @name Default values configurable for each individual theme.
+	/// @{
 	float default_base_scale = 0.0;
 	Ref<Font> default_font;
 	int default_font_size = -1;
+	/// @}
 
 	HashMap<StringName, ThemeIconMap> icon_map;
 	HashMap<StringName, ThemeStyleMap> style_map;
@@ -224,8 +232,11 @@ public:
 	StringName get_type_variation_base(const StringName &p_theme_type) const;
 	void get_type_variation_list(const StringName &p_base_type, List<StringName> *p_list) const;
 
+	/// Add a record to every data type map.
 	void add_type(const StringName &p_theme_type);
+	/// Gracefully remove the record from every data type map.
 	void remove_type(const StringName &p_theme_type);
+	/// Gracefully rename the record in every data type map.
 	void rename_type(const StringName &p_old_theme_type, const StringName &p_theme_type);
 	void get_type_list(List<StringName> *p_list) const;
 	void get_type_dependencies(const StringName &p_base_type, const StringName &p_type_variant, Vector<StringName> &r_result);

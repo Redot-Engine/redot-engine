@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file copy_effects.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "copy_effects.h"
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
@@ -599,7 +605,7 @@ void CopyEffects::copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffe
 	RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, copy_to_fb.pipelines[mode].get_render_pipeline(RD::INVALID_ID, RD::get_singleton()->framebuffer_get_format(p_dest_framebuffer)));
 	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uniform_set_cache->get_cache(shader, 0, u_source_rd_texture), 0);
 	if (p_secondary.is_valid()) {
-		// TODO may need to do this differently when reading from depth buffer for multiview
+		/// @todo May need to do this differently when reading from depth buffer for multiview
 		RD::Uniform u_secondary(RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, 0, Vector<RID>({ default_sampler, p_secondary }));
 		RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uniform_set_cache->get_cache(shader, 1, u_secondary), 1);
 	}
@@ -1158,7 +1164,7 @@ void CopyEffects::cubemap_filter_raster(RID p_source_cubemap, RID p_dest_framebu
 	MaterialStorage *material_storage = MaterialStorage::get_singleton();
 	ERR_FAIL_NULL(material_storage);
 
-	// TODO implement!
+	/// @todo Implement!
 	CubemapFilterRasterPushConstant push_constant;
 	push_constant.mip_level = p_mip_level;
 	push_constant.face_id = p_face_id;

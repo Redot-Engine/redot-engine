@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file text_server_fb.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "text_server_fb.h"
 
 #ifdef GDEXTENSION
@@ -3903,7 +3909,6 @@ bool TextServerFallback::_shaped_text_resize_object(const RID &p_shaped, const V
 }
 
 void TextServerFallback::_realign(ShapedTextDataFallback *p_sd) const {
-	// Align embedded objects to baseline.
 	double full_ascent = p_sd->ascent;
 	double full_descent = p_sd->descent;
 	for (KeyValue<Variant, ShapedTextDataFallback::EmbeddedObject> &E : p_sd->objects) {

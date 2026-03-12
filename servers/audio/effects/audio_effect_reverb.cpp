@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_effect_reverb.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_effect_reverb.h"
 #include "servers/audio_server.h"
 void AudioEffectReverbInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {

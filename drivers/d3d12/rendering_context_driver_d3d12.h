@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_context_driver_d3d12.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/mutex.h"
@@ -132,5 +138,7 @@ public:
 	bool use_validation_layers() const;
 
 	RenderingContextDriverD3D12();
+	/// Let's release manually everything that may still be holding
+	/// onto the DLLs before freeing them.
 	virtual ~RenderingContextDriverD3D12() override;
 };

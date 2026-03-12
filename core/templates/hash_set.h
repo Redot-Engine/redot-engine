@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file hash_set.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/memory.h"
@@ -42,7 +48,6 @@
  *
  * - You need to keep an iterator or const pointer to Key and you intend to add/remove elements in the meantime.
  * - Iteration order does matter (via operator<)
- *
  */
 
 template <typename TKey,
@@ -298,8 +303,8 @@ public:
 		return true;
 	}
 
-	// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
-	// If adding a known (possibly large) number of elements at once, must be larger than old capacity.
+	/// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
+	/// If adding a known (possibly large) number of elements at once, must be larger than old capacity.
 	void reserve(uint32_t p_new_capacity) {
 		uint32_t new_index = capacity_index;
 

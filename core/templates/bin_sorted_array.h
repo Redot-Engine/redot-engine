@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file bin_sorted_array.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/local_vector.h"
@@ -40,7 +46,7 @@ class BinSortedArray {
 	PagedArray<T> array;
 	LocalVector<uint64_t> bin_limits;
 
-	// Implement if elements need to keep track of their own index in the array.
+	/// Implement if elements need to keep track of their own index in the array.
 	_FORCE_INLINE_ virtual void _update_idx(T &r_element, uint64_t p_idx) {}
 
 	_FORCE_INLINE_ void _swap(uint64_t p_a, uint64_t p_b) {

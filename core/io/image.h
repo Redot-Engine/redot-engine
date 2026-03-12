@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -43,8 +49,8 @@
 
 class Image;
 
-// Function pointer prototypes.
-
+/// @name Function pointer prototypes.
+/// @{
 typedef Error (*SavePNGFunc)(const String &p_path, const Ref<Image> &p_img);
 typedef Vector<uint8_t> (*SavePNGBufferFunc)(const Ref<Image> &p_img);
 
@@ -62,53 +68,54 @@ typedef Vector<uint8_t> (*SaveEXRBufferFunc)(const Ref<Image> &p_img, bool p_gra
 
 typedef Error (*SaveDDSFunc)(const String &p_path, const Ref<Image> &p_img);
 typedef Vector<uint8_t> (*SaveDDSBufferFunc)(const Ref<Image> &p_img);
+/// @}
 
 class Image : public Resource {
 	GDCLASS(Image, Resource);
 
 public:
 	enum {
-		MAX_WIDTH = (1 << 24), // Force a limit somehow.
-		MAX_HEIGHT = (1 << 24), // Force a limit somehow.
-		MAX_PIXELS = 268435456 // 16384 ^ 2
+		MAX_WIDTH = (1 << 24), ///< Force a limit somehow.
+		MAX_HEIGHT = (1 << 24), ///< Force a limit somehow.
+		MAX_PIXELS = 268435456 ///< 16384 ^ 2
 	};
 
 	enum Format : int32_t {
-		FORMAT_L8, // Luminance
-		FORMAT_LA8, // Luminance-Alpha
+		FORMAT_L8, ///< Luminance
+		FORMAT_LA8, ///< Luminance-Alpha
 		FORMAT_R8,
 		FORMAT_RG8,
 		FORMAT_RGB8,
 		FORMAT_RGBA8,
 		FORMAT_RGBA4444,
 		FORMAT_RGB565,
-		FORMAT_RF, // Float
+		FORMAT_RF, ///< Float
 		FORMAT_RGF,
 		FORMAT_RGBF,
 		FORMAT_RGBAF,
-		FORMAT_RH, // Half
+		FORMAT_RH, ///< Half
 		FORMAT_RGH,
 		FORMAT_RGBH,
 		FORMAT_RGBAH,
 		FORMAT_RGBE9995,
-		FORMAT_DXT1, // BC1
-		FORMAT_DXT3, // BC2
-		FORMAT_DXT5, // BC3
-		FORMAT_RGTC_R, // BC4
-		FORMAT_RGTC_RG, // BC5
-		FORMAT_BPTC_RGBA, // BC7
-		FORMAT_BPTC_RGBF, // BC6 Signed
-		FORMAT_BPTC_RGBFU, // BC6 Unsigned
-		FORMAT_ETC, // ETC1
+		FORMAT_DXT1, ///< BC1
+		FORMAT_DXT3, ///< BC2
+		FORMAT_DXT5, ///< BC3
+		FORMAT_RGTC_R, ///< BC4
+		FORMAT_RGTC_RG, ///< BC5
+		FORMAT_BPTC_RGBA, ///< BC7
+		FORMAT_BPTC_RGBF, ///< BC6 Signed
+		FORMAT_BPTC_RGBFU, ///< BC6 Unsigned
+		FORMAT_ETC, ///< ETC1
 		FORMAT_ETC2_R11,
-		FORMAT_ETC2_R11S, // Signed, NOT srgb.
+		FORMAT_ETC2_R11S, ///< Signed, NOT srgb.
 		FORMAT_ETC2_RG11,
-		FORMAT_ETC2_RG11S, // Signed, NOT srgb.
+		FORMAT_ETC2_RG11S, ///< Signed, NOT srgb.
 		FORMAT_ETC2_RGB8,
 		FORMAT_ETC2_RGBA8,
 		FORMAT_ETC2_RGB8A1,
-		FORMAT_ETC2_RA_AS_RG, // ETC2 RGBA with a RA-RG swizzle for normal maps.
-		FORMAT_DXT5_RA_AS_RG, // BC3 with a RA-RG swizzle for normal maps.
+		FORMAT_ETC2_RA_AS_RG, ///< ETC2 RGBA with a RA-RG swizzle for normal maps.
+		FORMAT_DXT5_RA_AS_RG, ///< BC3 with a RA-RG swizzle for normal maps.
 		FORMAT_ASTC_4x4,
 		FORMAT_ASTC_4x4_HDR,
 		FORMAT_ASTC_8x8,
@@ -128,7 +135,7 @@ public:
 		// INTERPOLATE_GAUSS
 	};
 
-	// Used for obtaining optimal compression quality.
+	/// Used for obtaining optimal compression quality.
 	enum UsedChannels {
 		USED_CHANNELS_L,
 		USED_CHANNELS_LA,
@@ -138,7 +145,7 @@ public:
 		USED_CHANNELS_RGBA,
 	};
 
-	// ASTC supports block formats other than 4x4.
+	/// ASTC supports block formats other than 4x4.
 	enum ASTCFormat {
 		ASTC_FORMAT_4x4,
 		ASTC_FORMAT_8x8,
@@ -189,7 +196,8 @@ public:
 		float rdo_quality_loss = 0;
 	};
 
-	// External saver function pointers.
+	/// @name External saver function pointers
+	/// @{
 
 	static inline SavePNGFunc save_png_func = nullptr;
 	static inline SaveJPGFunc save_jpg_func = nullptr;
@@ -202,7 +210,9 @@ public:
 	static inline SaveWebPBufferFunc save_webp_buffer_func = nullptr;
 	static inline SaveDDSBufferFunc save_dds_buffer_func = nullptr;
 
-	// External loader function pointers.
+	/// @}
+	/// @name External loader function pointers
+	/// @{
 
 	static inline ImageMemLoadFunc _png_mem_loader_func = nullptr;
 	static inline ImageMemLoadFunc _png_mem_unpacker_func = nullptr;
@@ -215,7 +225,9 @@ public:
 	static inline ImageMemLoadFunc _dds_mem_loader_func = nullptr;
 	static inline ImageMemLoadFunc _gif_mem_loader_func = nullptr;
 
-	// External VRAM compression function pointers.
+	/// @}
+	/// @name External VRAM compression function pointers
+	/// @{
 
 	static void (*_image_compress_bc_func)(Image *, UsedChannels p_channels);
 	static void (*_image_compress_bptc_func)(Image *, UsedChannels p_channels);
@@ -226,7 +238,9 @@ public:
 	static Error (*_image_compress_bptc_rd_func)(Image *, UsedChannels p_channels);
 	static Error (*_image_compress_bc_rd_func)(Image *, UsedChannels p_channels);
 
-	// External VRAM decompression function pointers.
+	/// @}
+	/// @name External VRAM decompression function pointers
+	/// @{
 
 	static void (*_image_decompress_bc)(Image *);
 	static void (*_image_decompress_bptc)(Image *);
@@ -234,7 +248,9 @@ public:
 	static void (*_image_decompress_etc2)(Image *);
 	static void (*_image_decompress_astc)(Image *);
 
-	// External packer function pointers.
+	/// @}
+	/// @name External packer function pointers
+	/// @{
 
 	static Vector<uint8_t> (*webp_lossy_packer)(const Ref<Image> &p_image, float p_quality);
 	static Vector<uint8_t> (*webp_lossless_packer)(const Ref<Image> &p_image);
@@ -245,6 +261,7 @@ public:
 	static Ref<Image> (*png_unpacker)(const Vector<uint8_t> &p_buffer);
 	static Ref<Image> (*basis_universal_unpacker)(const Vector<uint8_t> &p_buffer);
 	static Ref<Image> (*basis_universal_unpacker_ptr)(const uint8_t *p_data, int p_size);
+	/// @}
 
 protected:
 	virtual Ref<Resource> _duplicate(const DuplicateParams &p_params) const override;
@@ -272,6 +289,8 @@ private:
 	_FORCE_INLINE_ void _put_pixelb(int p_x, int p_y, uint32_t p_pixel_size, uint8_t *p_data, const uint8_t *p_pixel);
 	_FORCE_INLINE_ void _get_pixelb(int p_x, int p_y, uint32_t p_pixel_size, const uint8_t *p_data, uint8_t *p_pixel);
 
+	/// Repeats `p_pixel` `p_count` times in consecutive memory.
+	/// Results in the original pixel and `p_count - 1` subsequent copies of it.
 	_FORCE_INLINE_ void _repeat_pixel_over_subsequent_memory(uint8_t *p_pixel, int p_pixel_size, int p_count);
 
 	void _set_data(const Dictionary &p_data);
@@ -297,28 +316,34 @@ public:
 	bool has_mipmaps() const;
 	int get_mipmap_count() const;
 
-	// Convert the image to another format, conversion only to raw byte format.
+	/// Convert the image to another format, conversion only to raw byte format.
 	void convert(Format p_new_format);
 
 	Format get_format() const;
 
-	// Get where the mipmap begins in data.
+	/// @name Get where the mipmap begins in data
+	/// @{
 	int64_t get_mipmap_offset(int p_mipmap) const;
 	void get_mipmap_offset_and_size(int p_mipmap, int64_t &r_ofs, int64_t &r_size) const;
 	void get_mipmap_offset_size_and_dimensions(int p_mipmap, int64_t &r_ofs, int64_t &r_size, int &w, int &h) const;
+	/// @}
 
 	static Image3DValidateError validate_3d_image(Format p_format, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> &p_images);
 	static String get_3d_image_validation_error_text(Image3DValidateError p_error);
 
-	// Resize the image, using the preferred interpolation method.
+	/// @name Resize the image, using the preferred interpolation method
+	/// @{
 	void resize_to_po2(bool p_square = false, Interpolation p_interpolation = INTERPOLATE_BILINEAR);
 	void resize(int p_width, int p_height, Interpolation p_interpolation = INTERPOLATE_BILINEAR);
 	void shrink_x2();
 	bool is_size_po2() const;
+	/// @}
 
-	// Crop the image to a specific size, if larger, then the image is filled by black.
+	/// @name Crop the image to a specific size, if larger, then the image is filled by black.
+	/// @{
 	void crop_from_point(int p_x, int p_y, int p_width, int p_height);
 	void crop(int p_width, int p_height);
+	/// @}
 
 	void rotate_90(ClockDirection p_direction);
 	void rotate_180();
@@ -326,7 +351,7 @@ public:
 	void flip_x();
 	void flip_y();
 
-	// Generate a mipmap chain of an image (creates an image 1/4 the size, with averaging of 4->1).
+	/// Generate a mipmap chain of an image (creates an image 1/4 the size, with averaging of 4->1).
 	Error generate_mipmaps(bool p_renormalize = false);
 
 	Error generate_mipmap_roughness(RoughnessChannel p_roughness_channel, const Ref<Image> &p_normal_map);
@@ -334,12 +359,14 @@ public:
 	void clear_mipmaps();
 	void normalize();
 
-	// Creates new internal image data of a given size and format. Current image will be lost.
+	/// @name Creates new internal image data of a given size and format. Current image will be lost.
+	/// @{
 	void initialize_data(int p_width, int p_height, bool p_use_mipmaps, Format p_format);
 	void initialize_data(int p_width, int p_height, bool p_use_mipmaps, Format p_format, const Vector<uint8_t> &p_data);
 	void initialize_data(const char **p_xpm);
+	/// @}
 
-	// Returns true when the image is empty (0,0) in size.
+	/// @return `true` when the image is empty (0,0) in size.
 	bool is_empty() const;
 
 	Vector<uint8_t> get_data() const;
@@ -361,11 +388,11 @@ public:
 	static Ref<Image> create_from_data(int p_width, int p_height, bool p_use_mipmaps, Format p_format, const Vector<uint8_t> &p_data);
 	void set_data(int p_width, int p_height, bool p_use_mipmaps, Format p_format, const Vector<uint8_t> &p_data);
 
-	Image() = default; // Create an empty image.
-	Image(int p_width, int p_height, bool p_use_mipmaps, Format p_format); // Create an empty image of a specific size and format.
-	Image(int p_width, int p_height, bool p_mipmaps, Format p_format, const Vector<uint8_t> &p_data); // Import an image of a specific size and format from a byte vector.
-	Image(const uint8_t *p_mem_png_jpg, int p_len = -1); // Import either a png or jpg from a pointer.
-	Image(const char **p_xpm); // Import an XPM image.
+	Image() = default; ///< Create an empty image.
+	Image(int p_width, int p_height, bool p_use_mipmaps, Format p_format); ///< Create an empty image of a specific size and format.
+	Image(int p_width, int p_height, bool p_mipmaps, Format p_format, const Vector<uint8_t> &p_data); ///< Import an image of a specific size and format from a byte vector.
+	Image(const uint8_t *p_mem_png_jpg, int p_len = -1); ///< Import either a png or jpg from a pointer.
+	Image(const char **p_xpm); ///< Import an XPM image.
 
 	~Image() {}
 
@@ -449,6 +476,26 @@ public:
 
 	void copy_internals_from(const Ref<Image> &p_image);
 
+	/**
+	 * https://github.com/richgel999/bc7enc_rdo/blob/master/LICENSE
+	 *
+	 * @copyright This is free and unencumbered software released into the public domain.
+	 * Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+	 * software, either in source code form or as a compiled binary, for any purpose,
+	 * commercial or non - commercial, and by any means.
+	 * In jurisdictions that recognize copyright laws, the author or authors of this
+	 * software dedicate any and all copyright interest in the software to the public
+	 * domain. We make this dedication for the benefit of the public at large and to
+	 * the detriment of our heirs and successors. We intend this dedication to be an
+	 * overt act of relinquishment in perpetuity of all present and future rights to
+	 * this software under copyright law.
+	 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	 * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	 * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+	 * AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+	 * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+	 * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	 */
 	Dictionary compute_image_metrics(const Ref<Image> p_compared_image, bool p_luma_metric = true);
 };
 

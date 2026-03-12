@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_player_internal.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -98,7 +104,7 @@ public:
 	void seek(float p_seconds);
 	void stop_basic();
 	bool is_playing() const;
-	float get_playback_position();
+	float get_playback_position(); ///< @return The playback position of the most recently started playback stream.
 
 	void set_playing(bool p_enable);
 	bool is_active() const;

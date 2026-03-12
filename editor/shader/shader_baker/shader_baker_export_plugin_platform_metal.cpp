@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_baker_export_plugin_platform_metal.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader_baker_export_plugin_platform_metal.h"
 
 #include "drivers/metal/rendering_shader_container_metal.h"

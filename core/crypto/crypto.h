@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file crypto.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/crypto/hashing_context.h"
@@ -143,8 +149,8 @@ public:
 
 	PackedByteArray hmac_digest(HashingContext::HashType p_hash_type, const PackedByteArray &p_key, const PackedByteArray &p_msg);
 
-	// Compares two PackedByteArrays for equality without leaking timing information in order to prevent timing attacks.
-	// @see: https://paragonie.com/blog/2015/11/preventing-timing-attacks-on-string-comparison-with-double-hmac-strategy
+	/// Compares two PackedByteArrays for equality without leaking timing information in order to prevent timing attacks.
+	/// @see https://paragonie.com/blog/2015/11/preventing-timing-attacks-on-string-comparison-with-double-hmac-strategy
 	bool constant_time_compare(const PackedByteArray &p_trusted, const PackedByteArray &p_received);
 
 	Crypto() {}
@@ -157,7 +163,7 @@ public:
 	virtual bool handles_type(const String &p_type) const override;
 	virtual String get_resource_type(const String &p_path) const override;
 
-	// Treat certificates as text files, do not generate a `*.{crt,key,pub}.uid` file.
+	/// Treat certificates as text files, do not generate a `*.{crt,key,pub}.uid` file.
 	virtual ResourceUID::ID get_resource_uid(const String &p_path) const override { return ResourceUID::INVALID_ID; }
 	virtual bool has_custom_uid_support() const override { return true; }
 };

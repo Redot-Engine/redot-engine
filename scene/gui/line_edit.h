@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file line_edit.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/control.h"
@@ -332,7 +338,7 @@ public:
 
 	void set_text(String p_text);
 	String get_text() const;
-	void set_text_with_selection(const String &p_text); // Set text, while preserving selection.
+	void set_text_with_selection(const String &p_text); ///< Set text, while preserving selection.
 
 	void set_text_direction(TextDirection p_text_direction);
 	TextDirection get_text_direction() const;
@@ -432,7 +438,7 @@ public:
 
 	void set_select_all_on_focus(bool p_enabled);
 	bool is_select_all_on_focus() const;
-	void clear_pending_select_all_on_focus(); // For other controls, e.g. SpinBox.
+	void clear_pending_select_all_on_focus(); ///< For other controls, e.g. SpinBox.
 
 	virtual bool is_text_field() const override;
 

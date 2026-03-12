@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/file_access.h"
@@ -93,7 +99,14 @@ protected:
 	Dictionary _load_editor_meta(const String &p_to_path) const;
 
 	static inline void _remap_channels(Ref<Image> &r_image, ChannelRemap p_options[4]);
+	/// Clamp HDR exposure following Filament's tonemapping formula.
+	/// This can be used to reduce fireflies in environment maps or reduce the influence
+	/// of the sun from an HDRI panorama on environment lighting (when a DirectionalLight3D is used instead).
 	static inline void _clamp_hdr_exposure(Ref<Image> &r_image);
+	/// Inverting the green channel can be used to flip a normal map's direction.
+	/// There's no standard when it comes to normal map Y direction, so this is
+	/// sometimes needed when using a normal map exported from another program.
+	/// See <http://wiki.polycount.com/wiki/Normal_Map_Technical_Details#Common_Swizzle_Coordinates>.
 	static inline void _invert_y_channel(Ref<Image> &r_image);
 
 public:

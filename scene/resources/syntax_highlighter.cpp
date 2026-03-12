@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file syntax_highlighter.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "syntax_highlighter.h"
 
 #include "scene/gui/text_edit.h"

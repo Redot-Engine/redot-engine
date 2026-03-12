@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_path_query_parameters_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "navigation_path_query_parameters_3d.h"
 
 void NavigationPathQueryParameters3D::set_pathfinding_algorithm(const NavigationPathQueryParameters3D::PathfindingAlgorithm p_pathfinding_algorithm) {

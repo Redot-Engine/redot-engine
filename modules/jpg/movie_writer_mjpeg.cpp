@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file movie_writer_mjpeg.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "movie_writer_mjpeg.h"
 #include "core/config/project_settings.h"
 

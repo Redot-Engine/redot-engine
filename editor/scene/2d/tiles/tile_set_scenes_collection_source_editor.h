@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_set_scenes_collection_source_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/inspector/editor_inspector.h"
@@ -45,7 +51,7 @@ class TileSetScenesCollectionSourceEditor : public HBoxContainer {
 	GDCLASS(TileSetScenesCollectionSourceEditor, HBoxContainer);
 
 private:
-	// -- Proxy object for an atlas source, needed by the inspector --
+	/// -- Proxy object for an atlas source, needed by the inspector --
 	class TileSetScenesCollectionProxyObject : public Object {
 		GDCLASS(TileSetScenesCollectionProxyObject, Object);
 
@@ -67,7 +73,7 @@ private:
 		void edit(Ref<TileSet> p_tile_set, TileSetScenesCollectionSource *p_tile_set_scenes_collection_source, int p_source_id);
 	};
 
-	// -- Proxy object for a tile, needed by the inspector --
+	/// -- Proxy object for a tile, needed by the inspector --
 	class SceneTileProxyObject : public Object {
 		GDCLASS(SceneTileProxyObject, Object);
 
@@ -86,7 +92,7 @@ private:
 		static void _bind_methods();
 
 	public:
-		// Update the proxied object.
+		/// Update the proxied object.
 		void edit(TileSetScenesCollectionSource *p_tile_set_atlas_source, int p_scene_id);
 
 		SceneTileProxyObject(TileSetScenesCollectionSourceEditor *p_tiles_set_scenes_collection_source_editor) {
@@ -103,12 +109,14 @@ private:
 
 	bool tile_set_scenes_collection_source_changed_needs_update = false;
 
-	// Source inspector.
+	/// @name Source Inspector
+	/// @{
 	TileSetScenesCollectionProxyObject *scenes_collection_source_proxy_object = nullptr;
 	Label *scenes_collection_source_inspector_label = nullptr;
 	EditorInspector *scenes_collection_source_inspector = nullptr;
-
-	// Tile inspector.
+	/// @}
+	/// @name Tile Inspector
+	/// @{
 	SceneTileProxyObject *tile_proxy_object = nullptr;
 	Label *tile_inspector_label = nullptr;
 	EditorInspector *tile_inspector = nullptr;
@@ -126,12 +134,14 @@ private:
 	void _source_add_pressed();
 	void _scene_file_selected(const String &p_path);
 	void _source_delete_pressed();
-
-	// Update methods.
+	/// @}
+	/// @name Update Methods
+	/// @{
 	void _update_source_inspector();
 	void _update_tile_inspector();
 	void _update_scenes_list();
 	void _update_action_buttons();
+	/// @}
 
 	void _drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
 	bool _can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;

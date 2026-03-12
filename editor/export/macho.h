@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file macho.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 // Mach-O binary object file format parser and editor.
@@ -182,13 +188,13 @@ private:
 	uint64_t lc_limit = 0;
 
 	uint64_t exe_limit = 0;
-	uint64_t exe_base = std::numeric_limits<uint64_t>::max(); // Start of first __text section.
+	uint64_t exe_base = std::numeric_limits<uint64_t>::max(); ///< Start of first __text section.
 	uint32_t align = 0;
 	uint32_t cputype = 0;
 	uint32_t cpusubtype = 0;
 
-	uint64_t link_edit_offset = 0; // __LINKEDIT segment offset.
-	uint64_t signature_offset = 0; // Load command offset.
+	uint64_t link_edit_offset = 0; ///< __LINKEDIT segment offset.
+	uint64_t signature_offset = 0; ///< Load command offset.
 
 	uint32_t seg_align(uint64_t p_vmaddr, uint32_t p_min, uint32_t p_max);
 	bool alloc_signature(uint64_t p_size);

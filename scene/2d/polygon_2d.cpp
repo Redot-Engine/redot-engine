@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file polygon_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "polygon_2d.h"
 
 #include "core/math/geometry_2d.h"

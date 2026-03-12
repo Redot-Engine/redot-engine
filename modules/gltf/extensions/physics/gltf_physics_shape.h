@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_physics_shape.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../../gltf_defines.h"
@@ -38,10 +44,9 @@
 
 class ImporterMesh;
 
-// GLTFPhysicsShape is an intermediary between Godot's collision shape nodes
-// and the OMI_physics_shape extension.
-// https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_shape
-
+/// GLTFPhysicsShape is an intermediary between Godot's collision shape nodes
+/// and the OMI_physics_shape extension.
+/// https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_shape
 class GLTFPhysicsShape : public Resource {
 	GDCLASS(GLTFPhysicsShape, Resource)
 
@@ -56,7 +61,7 @@ private:
 	bool is_trigger = false;
 	GLTFMeshIndex mesh_index = -1;
 	Ref<ImporterMesh> importer_mesh = nullptr;
-	// Internal only, for caching Godot shape resources. Used in `to_resource` and `to_node`.
+	/// Internal only, for caching Godot shape resources. Used in `to_resource` and `to_node`.
 	Ref<Shape3D> _shape_cache = nullptr;
 
 public:

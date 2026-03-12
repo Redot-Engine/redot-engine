@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_positional_tracker.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/thread_safe.h"
@@ -38,26 +44,25 @@
 #include "servers/xr_server.h"
 
 /**
-	The positional tracker object as an object that represents the position and orientation of a tracked object like a controller or headset.
-	An AR/VR Interface will registered the trackers it manages with our AR/VR server and update its position and orientation.
-	This is where potentially additional AR/VR interfaces may be active as there are AR/VR SDKs that solely deal with positional tracking.
-*/
-
+ *	The positional tracker object as an object that represents the position and orientation of a tracked object like a controller or headset.
+ *	An AR/VR Interface will registered the trackers it manages with our AR/VR server and update its position and orientation.
+ *	This is where potentially additional AR/VR interfaces may be active as there are AR/VR SDKs that solely deal with positional tracking.
+ */
 class XRPositionalTracker : public XRTracker {
 	GDCLASS(XRPositionalTracker, XRTracker);
 	_THREAD_SAFE_CLASS_
 
 public:
 	enum TrackerHand {
-		TRACKER_HAND_UNKNOWN, /* unknown or not applicable */
-		TRACKER_HAND_LEFT, /* controller is the left hand controller */
-		TRACKER_HAND_RIGHT, /* controller is the right hand controller */
+		TRACKER_HAND_UNKNOWN, ///< unknown or not applicable
+		TRACKER_HAND_LEFT, ///< controller is the left hand controller
+		TRACKER_HAND_RIGHT, ///< controller is the right hand controller
 		TRACKER_HAND_MAX
 	};
 
 protected:
-	String profile; // this is interface dependent, for OpenXR this will be the interaction profile bound for to the tracker
-	TrackerHand tracker_hand = TRACKER_HAND_UNKNOWN; // if known, the hand this tracker is held in
+	String profile; ///< This is interface dependent, for OpenXR this will be the interaction profile bound for to the tracker
+	TrackerHand tracker_hand = TRACKER_HAND_UNKNOWN; ///< If known, the hand this tracker is held in
 
 	HashMap<StringName, Ref<XRPose>> poses;
 	HashMap<StringName, Variant> inputs;

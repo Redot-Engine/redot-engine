@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file remote_filesystem_client.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/string/ustring.h"
@@ -43,12 +49,12 @@ class RemoteFilesystemClient {
 protected:
 	String _get_cache_path() { return cache_path; }
 	struct FileCache {
-		String path; // Local path (as in "folder/to/file.png")
-		uint64_t server_modified_time = 0; // MD5 checksum.
+		String path; ///< Local path (as in "folder/to/file.png")
+		uint64_t server_modified_time = 0; ///< MD5 checksum.
 		uint64_t modified_time = 0;
 	};
 	virtual bool _is_configured() { return !cache_path.is_empty(); }
-	// Can be re-implemented per platform. If so, feel free to ignore get_cache_path()
+	/// Can be re-implemented per platform. If so, feel free to ignore get_cache_path()
 	virtual Vector<FileCache> _load_cache_file();
 	virtual Error _store_file(const String &p_path, const LocalVector<uint8_t> &p_file, uint64_t &modified_time);
 	virtual Error _remove_file(const String &p_path);

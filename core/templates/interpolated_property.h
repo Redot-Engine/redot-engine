@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file interpolated_property.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 struct Vector2;
@@ -40,22 +46,21 @@ double lerp(double p_a, double p_b, float p_fraction);
 Vector2 lerp(const Vector2 &p_a, const Vector2 &p_b, float p_fraction);
 } //namespace InterpolatedPropertyFuncs
 
-// This class is intended to reduce the boiler plate involved to
-// support custom properties to be physics interpolated.
-
+/// This class is intended to reduce the boiler plate involved to
+/// support custom properties to be physics interpolated.
 template <class T>
 class InterpolatedProperty {
-	// Only needs interpolating / updating the servers when
-	// curr and prev are different.
+	/// Only needs interpolating / updating the servers when
+	/// curr and prev are different.
 	bool _needs_interpolating = false;
 	T _interpolated;
 	T curr;
 	T prev;
 
 public:
-	// FTI depends on the constant flow between current values
-	// (on the current tick) and stored previous values (on the previous tick).
-	// These should be updated both on each tick, and also on resets.
+	/// FTI depends on the constant flow between current values
+	/// (on the current tick) and stored previous values (on the previous tick).
+	/// These should be updated both on each tick, and also on resets.
 	void pump() {
 		prev = curr;
 		_needs_interpolating = false;
@@ -100,8 +105,8 @@ public:
 		pump();
 	}
 	InterpolatedProperty() {
-		// Ensure either the constructor is run,
-		// or the memory is zeroed if using a fundamental type.
+		/// Ensure either the constructor is run,
+		/// or the memory is zeroed if using a fundamental type.
 		_interpolated = T{};
 		curr = T{};
 		prev = T{};

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_language.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/script_language.h"
@@ -294,7 +300,7 @@ public:
 		OP_INCREMENT,
 		OP_DECREMENT,
 		OP_SELECT_IF,
-		OP_SELECT_ELSE, //used only internally, then only IF appears with 3 arguments
+		OP_SELECT_ELSE, ///< Used only internally, then only IF appears with 3 arguments
 		OP_POST_INCREMENT,
 		OP_POST_DECREMENT,
 		OP_CALL,
@@ -539,7 +545,7 @@ public:
 			DataType type;
 			StringName struct_name;
 			DataPrecision precision;
-			int line; //for completion
+			int line; ///< For completion
 			int array_size;
 			bool is_const;
 			Vector<Scalar> values;
@@ -989,7 +995,7 @@ private:
 	HashSet<String> include_markers_handled;
 	HashMap<StringName, int> function_overload_count;
 
-	// Additional function information (eg. call hierarchy). No need to expose it to compiler.
+	/// Additional function information (eg. call hierarchy). No need to expose it to compiler.
 	struct CallInfo {
 		struct Item {
 			enum ItemType {
@@ -1158,7 +1164,7 @@ private:
 		bool high_end;
 	};
 
-	struct BuiltinFuncOutArgs { //arguments used as out in built in functions
+	struct BuiltinFuncOutArgs { ///< Arguments used as out in built in functions
 		enum { MAX_ARGS = 2 };
 		const char *name;
 		const int arguments[MAX_ARGS];
@@ -1224,6 +1230,7 @@ private:
 
 	Node *_parse_and_reduce_expression(BlockNode *p_block, const FunctionInfo &p_function_info, const ExpressionInfo *p_previous_expression_info = nullptr);
 	Error _parse_block(BlockNode *p_block, const FunctionInfo &p_function_info, bool p_just_one = false, bool p_can_break = false, bool p_can_continue = false);
+	/// @return A list of shader types as an human-readable string
 	String _get_shader_type_list(const HashSet<String> &p_shader_types) const;
 	String _get_qualifier_str(ArgumentQualifier p_qualifier) const;
 

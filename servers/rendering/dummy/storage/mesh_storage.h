@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/rid_owner.h"
@@ -63,7 +69,8 @@ public:
 	MeshStorage();
 	~MeshStorage();
 
-	/* MESH API */
+	///@name MESH API
+	/// @{
 	DummyMesh *get_mesh(RID p_rid) { return mesh_owner.get_or_null(p_rid); }
 	bool owns_mesh(RID p_rid) { return mesh_owner.owns(p_rid); }
 
@@ -153,8 +160,9 @@ public:
 	virtual void mesh_surface_remove(RID p_mesh, int p_surface) override;
 	virtual void mesh_clear(RID p_mesh) override;
 	virtual void mesh_debug_usage(List<RS::MeshInfo> *r_info) override {}
-
-	/* MESH INSTANCE */
+	/// @}
+	/// @name MESH INSTANCE
+	/// @{
 
 	virtual RID mesh_instance_create(RID p_base) override { return RID(); }
 	virtual void mesh_instance_free(RID p_rid) override {}
@@ -164,8 +172,9 @@ public:
 	virtual void mesh_instance_check_for_update(RID p_mesh_instance) override {}
 	virtual void mesh_instance_set_canvas_item_transform(RID p_mesh_instance, const Transform2D &p_transform) override {}
 	virtual void update_mesh_instances() override {}
-
-	/* MULTIMESH API */
+	/// @}
+	/// @name MULTIMESH API
+	/// @{
 
 	bool owns_multimesh(RID p_rid) { return multimesh_owner.owns(p_rid); }
 
@@ -201,8 +210,9 @@ public:
 	virtual int _multimesh_get_visible_instances(RID p_multimesh) const override { return 0; }
 
 	MultiMeshInterpolator *_multimesh_get_interpolator(RID p_multimesh) const override { return nullptr; }
-
-	/* SKELETON API */
+	/// @}
+	/// @name SKELETON API
+	/// @{
 
 	virtual RID skeleton_allocate() override { return RID(); }
 	virtual void skeleton_initialize(RID p_rid) override {}
@@ -216,10 +226,11 @@ public:
 	virtual Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const override { return Transform2D(); }
 
 	virtual void skeleton_update_dependency(RID p_base, DependencyTracker *p_instance) override {}
-
-	/* OCCLUDER */
-
+	/// @}
+	/// @name OCCLUDER
+	/// @{
 	void occluder_set_mesh(RID p_occluder, const PackedVector3Array &p_vertices, const PackedInt32Array &p_indices) {}
+	/// @}
 };
 
 } // namespace RendererDummy

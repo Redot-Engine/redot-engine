@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file utilities.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/rid_owner.h"
@@ -56,7 +62,7 @@ private:
 
 	/* MISC */
 
-	//keep cached since it can be called form any thread
+	// Keep cached since it can be called form any thread
 	uint64_t texture_mem_cache = 0;
 	uint64_t buffer_mem_cache = 0;
 	uint64_t total_mem_cache = 0;
@@ -67,16 +73,19 @@ public:
 	Utilities();
 	virtual ~Utilities() override;
 
-	/* INSTANCES */
+	/// @name INSTANCES
+	/// @{
 
 	virtual RS::InstanceType get_base_type(RID p_rid) const override;
 	virtual bool free(RID p_rid) override;
-
-	/* DEPENDENCIES */
+	/// @}
+	/// @name DEPENDENCIES
+	/// @{
 
 	virtual void base_update_dependency(RID p_base, DependencyTracker *p_instance) override;
-
-	/* VISIBILITY NOTIFIER */
+	/// @}
+	/// @name VISIBILITY NOTIFIER
+	/// @{
 
 	VisibilityNotifier *get_visibility_notifier(RID p_rid) { return visibility_notifier_owner.get_or_null(p_rid); }
 	bool owns_visibility_notifier(RID p_rid) const { return visibility_notifier_owner.owns(p_rid); }
@@ -90,8 +99,9 @@ public:
 
 	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const override;
 	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) override;
-
-	/* TIMING */
+	/// @}
+	/// @name TIMING
+	/// @{
 
 	virtual void capture_timestamps_begin() override;
 	virtual void capture_timestamp(const String &p_name) override;
@@ -100,8 +110,9 @@ public:
 	virtual uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const override;
 	virtual uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const override;
 	virtual String get_captured_timestamp_name(uint32_t p_index) const override;
-
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	virtual void update_dirty_resources() override;
 	virtual void set_debug_generate_wireframes(bool p_generate) override {}
@@ -120,6 +131,7 @@ public:
 	virtual Size2i get_maximum_viewport_size() const override;
 	virtual uint32_t get_maximum_shader_varyings() const override;
 	virtual uint64_t get_maximum_uniform_buffer_size() const override;
+	/// @}
 };
 
 } // namespace RendererRD

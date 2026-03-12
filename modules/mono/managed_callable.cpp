@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file managed_callable.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "managed_callable.h"
 
 #include "csharp_script.h"

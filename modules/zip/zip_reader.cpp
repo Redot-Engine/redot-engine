@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file zip_reader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "zip_reader.h"
 
 #include "core/error/error_macros.h"

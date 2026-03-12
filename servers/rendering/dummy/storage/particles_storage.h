@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file particles_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/storage/particles_storage.h"
@@ -38,7 +44,8 @@ namespace RendererDummy {
 
 class ParticlesStorage : public RendererParticlesStorage {
 public:
-	/* PARTICLES */
+	/// @name PARTICLES
+	/// @{
 
 	virtual RID particles_allocate() override { return RID(); }
 	virtual void particles_initialize(RID p_rid) override {}
@@ -96,8 +103,9 @@ public:
 	virtual void particles_remove_collision(RID p_particles, RID p_instance) override {}
 
 	virtual void update_particles() override {}
-
-	/* PARTICLES COLLISION */
+	/// @}
+	/// @name PARTICLES COLLISION
+	/// @{
 
 	virtual RID particles_collision_allocate() override { return RID(); }
 	virtual void particles_collision_initialize(RID p_rid) override {}
@@ -125,6 +133,7 @@ public:
 	virtual void particles_collision_instance_set_active(RID p_collision_instance, bool p_active) override {}
 
 	virtual bool particles_is_inactive(RID p_particles) const override { return false; }
+	/// @}
 };
 
 } // namespace RendererDummy

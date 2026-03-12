@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_composition_layer_extension.h
+ *
+ * @brief This extension provides access to composition layers for displaying 2D content through the XR compositor.
+ */
+
 #pragma once
 
 #include "openxr_extension_wrapper.h"
@@ -39,17 +45,15 @@
 #ifdef ANDROID_ENABLED
 #include <jni.h>
 
-// Copied here from openxr_platform.h, in order to avoid including that whole header,
-// which can cause compilation issues on some platforms.
+/// Copied here from openxr_platform.h, in order to avoid including that whole header,
+/// which can cause compilation issues on some platforms.
 typedef XrResult(XRAPI_PTR *PFN_xrCreateSwapchainAndroidSurfaceKHR)(XrSession session, const XrSwapchainCreateInfo *info, XrSwapchain *swapchain, jobject *surface);
 #endif
 
 class JavaObject;
 class OpenXRViewportCompositionLayerProvider;
 
-// This extension provides access to composition layers for displaying 2D content through the XR compositor.
-
-// OpenXRCompositionLayerExtension enables the extensions related to this functionality
+/// OpenXRCompositionLayerExtension enables the extensions related to this functionality
 class OpenXRCompositionLayerExtension : public OpenXRExtensionWrapper {
 	GDCLASS(OpenXRCompositionLayerExtension, OpenXRExtensionWrapper);
 
@@ -103,21 +107,21 @@ private:
 
 class OpenXRViewportCompositionLayerProvider {
 public:
-	// Must be identical to Filter enum definition in OpenXRCompositionLayer.
+	/// Must be identical to Filter enum definition in OpenXRCompositionLayer.
 	enum Filter {
 		FILTER_NEAREST,
 		FILTER_LINEAR,
 		FILTER_CUBIC,
 	};
 
-	// Must be identical to MipmapMode enum definition in OpenXRCompositionLayer.
+	/// Must be identical to MipmapMode enum definition in OpenXRCompositionLayer.
 	enum MipmapMode {
 		MIPMAP_MODE_DISABLED,
 		MIPMAP_MODE_NEAREST,
 		MIPMAP_MODE_LINEAR,
 	};
 
-	// Must be identical to Wrap enum definition in OpenXRCompositionLayer.
+	/// Must be identical to Wrap enum definition in OpenXRCompositionLayer.
 	enum Wrap {
 		WRAP_CLAMP_TO_BORDER,
 		WRAP_CLAMP_TO_EDGE,
@@ -126,7 +130,7 @@ public:
 		WRAP_MIRROR_CLAMP_TO_EDGE,
 	};
 
-	// Must be identical to Swizzle enum definition in OpenXRCompositionLayer.
+	/// Must be identical to Swizzle enum definition in OpenXRCompositionLayer.
 	enum Swizzle {
 		SWIZZLE_RED,
 		SWIZZLE_GREEN,
@@ -178,9 +182,11 @@ private:
 	OpenXRAPI *openxr_api = nullptr;
 	OpenXRCompositionLayerExtension *composition_layer_extension = nullptr;
 
-	// Only for SubViewports.
+	/// @name Only for SubViewports
+	/// @{
 	bool update_and_acquire_swapchain(bool p_static_image);
 	RID get_current_swapchain_texture();
+	/// @}
 
 	void update_swapchain_sub_image(XrSwapchainSubImage &r_swapchain_sub_image);
 	void free_swapchain();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file run_instances_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/dialogs.h"
@@ -61,7 +67,7 @@ class RunInstancesDialog : public AcceptDialog {
 		String get_feature_tags() const;
 	};
 
-	// Right-click popup menu.
+	/// Right-click popup menu.
 	enum {
 		CLEAR_ITEM,
 		CLEAR_ALL,
@@ -83,15 +89,17 @@ class RunInstancesDialog : public AcceptDialog {
 	PopupMenu *popup_menu = nullptr;
 
 	void _fetch_main_args();
-	// These 2 methods are necessary due to callable_mp() not supporting default arguments.
+	/// @name These 2 methods are necessary due to callable_mp() not supporting default arguments.
+	/// @{
 	void _start_main_timer();
 	void _start_instance_timer();
+	/// @}
 
 	void _refresh_argument_count();
 	void _create_instance(InstanceData &p_instance, const Dictionary &p_data, int p_idx);
 	void _save_main_args();
 	void _save_arguments();
-	// Separates command line arguments without splitting up quoted strings.
+	/// Separates command line arguments without splitting up quoted strings.
 	Vector<String> _split_cmdline_args(const String &p_arg_string) const;
 	void _instance_menu_id_pressed(int p_option);
 	void _instance_tree_rmb(const Vector2 &p_pos, MouseButton p_button);

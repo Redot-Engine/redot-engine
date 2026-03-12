@@ -30,12 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file openxr_fb_display_refresh_rate_extension.h
+ *
+ * This extension gives us access to the possible display refresh rates
+ * supported by the HMD.
+ * While this is an FB extension it has been adopted by most runtimes and
+ * will likely become core in the near future.
+ */
 
-// This extension gives us access to the possible display refresh rates
-// supported by the HMD.
-// While this is an FB extension it has been adopted by most runtimes and
-// will likely become core in the near future.
+#pragma once
 
 #include "../openxr_api.h"
 #include "../util.h"
@@ -69,8 +73,10 @@ private:
 
 	bool display_refresh_rate_ext = false;
 
-	// OpenXR API call wrappers
+	/// @name OpenXR API call wrappers
+	/// @{
 	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateDisplayRefreshRatesFB, (XrSession), session, (uint32_t), displayRefreshRateCapacityInput, (uint32_t *), displayRefreshRateCountOutput, (float *), displayRefreshRates);
 	EXT_PROTO_XRRESULT_FUNC2(xrGetDisplayRefreshRateFB, (XrSession), session, (float *), display_refresh_rate);
 	EXT_PROTO_XRRESULT_FUNC2(xrRequestDisplayRefreshRateFB, (XrSession), session, (float), display_refresh_rate);
+	/// @}
 };

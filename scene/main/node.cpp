@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node.h"
 #include "node.compat.inc"
 
@@ -520,7 +526,7 @@ void Node::_move_child(Node *p_child, int p_index, bool p_ignore_end) {
 
 	// Specifying one place beyond the end
 	// means the same as moving to the last index
-	if (!p_ignore_end) { // p_ignore_end is a little hack to make back internal children work properly.
+	if (!p_ignore_end) { /// @todo p_ignore_end is a little hack to make back internal children work properly.
 		if (p_child->data.internal_mode == INTERNAL_MODE_FRONT) {
 			if (p_index == data.internal_children_front_count_cache) {
 				p_index--;
@@ -1479,7 +1485,6 @@ void Node::set_name(const StringName &p_name) {
 	}
 }
 
-// Returns a clear description of this node depending on what is available. Useful for error messages.
 String Node::get_description() const {
 	String description;
 	if (is_inside_tree()) {
@@ -1579,7 +1584,7 @@ void Node::_validate_child_name(Node *p_child, bool p_force_human_readable) {
 	}
 }
 
-// Return s + 1 as if it were an integer
+/// @return `s + 1` as if it were an integer
 String increase_numeric_string(const String &s) {
 	String res = s;
 	bool carry = res.length() > 0;
@@ -1943,8 +1948,6 @@ bool Node::has_node(const NodePath &p_path) const {
 	return get_node_or_null(p_path) != nullptr;
 }
 
-// Finds the first child node (in tree order) whose name matches the given pattern.
-// Can be recursive or not, and limited to owned nodes.
 Node *Node::find_child(const String &p_pattern, bool p_recursive, bool p_owned) const {
 	ERR_THREAD_GUARD_V(nullptr);
 	ERR_FAIL_COND_V(p_pattern.is_empty(), nullptr);
@@ -1971,9 +1974,6 @@ Node *Node::find_child(const String &p_pattern, bool p_recursive, bool p_owned) 
 	return nullptr;
 }
 
-// Finds child nodes based on their name using pattern matching, or class name,
-// or both (either pattern or type can be left empty).
-// Can be recursive or not, and limited to owned nodes.
 TypedArray<Node> Node::find_children(const String &p_pattern, const String &p_type, bool p_recursive, bool p_owned) const {
 	ERR_THREAD_GUARD_V(TypedArray<Node>());
 	TypedArray<Node> matches;
@@ -2778,7 +2778,6 @@ void Node::get_storable_properties(HashSet<StringName> &r_storable_properties) c
 }
 
 String Node::to_string() {
-	// Keep this method in sync with `Object::to_string`.
 	ERR_THREAD_GUARD_V(String());
 	if (get_script_instance()) {
 		bool valid;
@@ -3084,9 +3083,6 @@ void Node::_duplicate_scripts(const Node *p_original, Node *p_copy) const {
 	}
 }
 
-// Duplicate node's properties.
-// This has to be called after nodes have been duplicated since there might be properties
-// of type Node that can be updated properly only if duplicated node tree is complete.
 void Node::_duplicate_properties(const Node *p_root, const Node *p_original, Node *p_copy, int p_flags) const {
 	List<PropertyInfo> props;
 	p_original->get_property_list(&props);
@@ -3144,9 +3140,6 @@ void Node::_duplicate_properties(const Node *p_root, const Node *p_original, Nod
 	}
 }
 
-// Duplication of signals must happen after all the node descendants have been copied,
-// because re-targeting of connections from some descendant to another is not possible
-// if the emitter node comes later in tree order than the receiver
 void Node::_duplicate_signals(const Node *p_original, Node *p_copy) const {
 	if ((this != p_original) && !(p_original->is_ancestor_of(this))) {
 		return;
@@ -4157,7 +4150,7 @@ Node::Node() {
 	data.display_folded = false;
 	data.editable_instance = false;
 
-	data.ready_notified = false; // This is a small hack, so if a node is added during _ready() to the tree, it correctly gets the _ready() notification.
+	data.ready_notified = false; /// @todo This is a small hack, so if a node is added during _ready() to the tree, it correctly gets the _ready() notification.
 	data.ready_first = true;
 
 	data.auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;

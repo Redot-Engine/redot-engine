@@ -30,22 +30,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file rendering_device_driver.h
+ *
+ * RenderingDeviceDriver - Design principles
+ * -----------------------------------------
+ * - Very little validation is done, and normally only in dev or debug builds.
+ * - Error reporting is generally simple: returning an id of 0 or a false boolean.
+ * - Certain enums/constants/structs follow Vulkan values/layout. That makes things easier for RDDVulkan (it asserts compatibility).
+ * - We allocate as little as possible in functions expected to be quick (a counterexample is loading/saving shaders) and use alloca() whenever suitable.
+ * - We try to back opaque ids with the native ones or memory addresses.
+ * - When using bookkeeping structures because the actual API id of a resource is not enough, we use a PagedAllocator.
+ * - Every struct has default initializers.
+ * - Using VectorView to take array-like arguments. Vector<uint8_t> is an exception (an indiom for "BLOB").
+ * - If a driver needs some higher-level information (the kind of info RenderingDevice keeps), it shall store a copy of what it needs.
+ *   There's no backwards communication from the driver to query data from RenderingDevice.
+ */
 
-// ***********************************************************************************
-// RenderingDeviceDriver - Design principles
-// -----------------------------------------
-// - Very little validation is done, and normally only in dev or debug builds.
-// - Error reporting is generally simple: returning an id of 0 or a false boolean.
-// - Certain enums/constants/structs follow Vulkan values/layout. That makes things easier for RDDVulkan (it asserts compatibility).
-// - We allocate as little as possible in functions expected to be quick (a counterexample is loading/saving shaders) and use alloca() whenever suitable.
-// - We try to back opaque ids with the native ones or memory addresses.
-// - When using bookkeeping structures because the actual API id of a resource is not enough, we use a PagedAllocator.
-// - Every struct has default initializers.
-// - Using VectorView to take array-like arguments. Vector<uint8_t> is an exception (an indiom for "BLOB").
-// - If a driver needs some higher-level information (the kind of info RenderingDevice keeps), it shall store a copy of what it needs.
-//   There's no backwards communication from the driver to query data from RenderingDevice.
-// ***********************************************************************************
+#pragma once
 
 #include "core/object/object.h"
 #include "core/variant/type_info.h"
@@ -53,20 +55,22 @@
 #include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_shader_container.h"
 
-// These utilities help drivers avoid allocations.
+/// These utilities help drivers avoid allocations.
+/// @{
 #define ALLOCA(m_size) ((m_size != 0) ? alloca(m_size) : nullptr)
 #define ALLOCA_ARRAY(m_type, m_count) ((m_type *)ALLOCA(sizeof(m_type) * (m_count)))
 #define ALLOCA_SINGLE(m_type) ALLOCA_ARRAY(m_type, 1)
+/// @}
 
-// This helps forwarding certain arrays to the API with confidence.
+/// This helps forwarding certain arrays to the API with confidence.
 #define ARRAYS_COMPATIBLE(m_type_a, m_type_b) (sizeof(m_type_a) == sizeof(m_type_b) && alignof(m_type_a) == alignof(m_type_b))
-// This is used when you also need to ensure structured types are compatible field-by-field.
-// TODO: The fieldwise check is unimplemented, but still this one is useful, as a strong annotation about the needs.
+/// This is used when you also need to ensure structured types are compatible field-by-field.
+/// @todo The fieldwise check is unimplemented, but still this one is useful, as a strong annotation about the needs.
 #define ARRAYS_COMPATIBLE_FIELDWISE(m_type_a, m_type_b) ARRAYS_COMPATIBLE(m_type_a, m_type_b)
-// Another utility, to make it easy to compare members of different enums, which is not fine with some compilers.
+/// Another utility, to make it easy to compare members of different enums, which is not fine with some compilers.
 #define ENUM_MEMBERS_EQUAL(m_a, m_b) ((int64_t)m_a == (int64_t)m_b)
 
-// This helps using a single paged allocator for many resource types.
+/// This helps using a single paged allocator for many resource types.
 template <typename... RESOURCE_TYPES>
 struct VersatileResourceTemplate {
 	static constexpr size_t RESOURCE_SIZES[] = { sizeof(RESOURCE_TYPES)... };
@@ -120,7 +124,8 @@ public:
 		_ALWAYS_INLINE_ m_name##ID() = default;                                   \
 	};
 
-	// Id types declared before anything else to prevent cyclic dependencies between the different concerns.
+	/// Id types declared before anything else to prevent cyclic dependencies between the different concerns.
+	/// @{
 	DEFINE_ID(Buffer);
 	DEFINE_ID(Texture);
 	DEFINE_ID(Sampler);
@@ -138,26 +143,23 @@ public:
 	DEFINE_ID(QueryPool);
 	DEFINE_ID(Fence);
 	DEFINE_ID(Semaphore);
-
+	/// @}
 public:
-	/*****************/
-	/**** GENERIC ****/
-	/*****************/
+	/// @name GENERIC
+	/// @{
 
 	virtual Error initialize(uint32_t p_device_index, uint32_t p_frame_count) = 0;
-
-	/****************/
-	/**** MEMORY ****/
-	/****************/
+	/// @}
+	/// @name MEMORY
+	/// @{
 
 	enum MemoryAllocationType {
-		MEMORY_ALLOCATION_TYPE_CPU, // For images, CPU allocation also means linear, GPU is tiling optimal.
+		MEMORY_ALLOCATION_TYPE_CPU, ///< For images, CPU allocation also means linear, GPU is tiling optimal.
 		MEMORY_ALLOCATION_TYPE_GPU,
 	};
-
-	/*****************/
-	/**** BUFFERS ****/
-	/*****************/
+	/// @}
+	/// @name BUFFERS
+	/// @{
 
 	enum BufferUsageBits {
 		BUFFER_USAGE_TRANSFER_FROM_BIT = (1 << 0),
@@ -176,18 +178,17 @@ public:
 	};
 
 	virtual BufferID buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type) = 0;
-	// Only for a buffer with BUFFER_USAGE_TEXEL_BIT.
+	/// Only for a buffer with BUFFER_USAGE_TEXEL_BIT.
 	virtual bool buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) = 0;
 	virtual void buffer_free(BufferID p_buffer) = 0;
 	virtual uint64_t buffer_get_allocation_size(BufferID p_buffer) = 0;
 	virtual uint8_t *buffer_map(BufferID p_buffer) = 0;
 	virtual void buffer_unmap(BufferID p_buffer) = 0;
-	// Only for a buffer with BUFFER_USAGE_DEVICE_ADDRESS_BIT.
+	/// Only for a buffer with BUFFER_USAGE_DEVICE_ADDRESS_BIT.
 	virtual uint64_t buffer_get_device_address(BufferID p_buffer) = 0;
-
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
+	/// @}
+	/// @name TEXTURE
+	/// @{
 
 	struct TextureView {
 		DataFormat format = DATA_FORMAT_MAX;
@@ -263,7 +264,7 @@ public:
 
 	virtual TextureID texture_create(const TextureFormat &p_format, const TextureView &p_view) = 0;
 	virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type, DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil, uint32_t p_mipmaps) = 0;
-	// texture_create_shared_*() can only use original, non-view textures as original. RenderingDevice is responsible for ensuring that.
+	/// texture_create_shared_*() can only use original, non-view textures as original. RenderingDevice is responsible for ensuring that.
 	virtual TextureID texture_create_shared(TextureID p_original_texture, const TextureView &p_view) = 0;
 	virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture, const TextureView &p_view, TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) = 0;
 	virtual void texture_free(TextureID p_texture) = 0;
@@ -273,25 +274,22 @@ public:
 	virtual void texture_unmap(TextureID p_texture) = 0;
 	virtual BitField<TextureUsageBits> texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) = 0;
 	virtual bool texture_can_make_shared_with_format(TextureID p_texture, DataFormat p_format, bool &r_raw_reinterpretation) = 0;
-
-	/*****************/
-	/**** SAMPLER ****/
-	/*****************/
+	/// @}
+	/// @name SAMPLER
+	/// @{
 
 	virtual SamplerID sampler_create(const SamplerState &p_state) = 0;
 	virtual void sampler_free(SamplerID p_sampler) = 0;
 	virtual bool sampler_is_format_supported_for_filter(DataFormat p_format, SamplerFilter p_filter) = 0;
-
-	/**********************/
-	/**** VERTEX ARRAY ****/
-	/**********************/
+	/// @}
+	/// @name VERTEX ARRAY
+	/// @{
 
 	virtual VertexFormatID vertex_format_create(VectorView<VertexAttribute> p_vertex_attribs) = 0;
 	virtual void vertex_format_free(VertexFormatID p_vertex_format) = 0;
-
-	/******************/
-	/**** BARRIERS ****/
-	/******************/
+	/// @}
+	/// @name BARRIERS
+	/// @{
 
 	enum PipelineStageBits {
 		PIPELINE_STAGE_TOP_OF_PIPE_BIT = (1 << 0),
@@ -370,25 +368,22 @@ public:
 			VectorView<MemoryBarrier> p_memory_barriers,
 			VectorView<BufferBarrier> p_buffer_barriers,
 			VectorView<TextureBarrier> p_texture_barriers) = 0;
-
-	/****************/
-	/**** FENCES ****/
-	/****************/
+	/// @}
+	/// @name FENCES
+	/// @{
 
 	virtual FenceID fence_create() = 0;
 	virtual Error fence_wait(FenceID p_fence) = 0;
 	virtual void fence_free(FenceID p_fence) = 0;
-
-	/********************/
-	/**** SEMAPHORES ****/
-	/********************/
+	/// @}
+	/// @name SEMAPHORES
+	/// @{
 
 	virtual SemaphoreID semaphore_create() = 0;
 	virtual void semaphore_free(SemaphoreID p_semaphore) = 0;
-
-	/*************************/
-	/**** COMMAND BUFFERS ****/
-	/*************************/
+	/// @}
+	/// @name COMMAND BUFFERS
+	/// @{
 
 	// ----- QUEUE FAMILY -----
 
@@ -398,8 +393,8 @@ public:
 		COMMAND_QUEUE_FAMILY_TRANSFER_BIT = 0x4
 	};
 
-	// The requested command queue family must support all specified bits or it'll fail to return a valid family otherwise. If a valid surface is specified, the queue must support presenting to it.
-	// It is valid to specify no bits and a valid surface: in this case, the dedicated presentation queue family will be the preferred option.
+	/// The requested command queue family must support all specified bits or it'll fail to return a valid family otherwise. If a valid surface is specified, the queue must support presenting to it.
+	/// It is valid to specify no bits and a valid surface: in this case, the dedicated presentation queue family will be the preferred option.
 	virtual CommandQueueFamilyID command_queue_family_get(BitField<CommandQueueFamilyBits> p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface = 0) = 0;
 
 	// ----- QUEUE -----
@@ -426,73 +421,70 @@ public:
 	virtual bool command_buffer_begin_secondary(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, uint32_t p_subpass, FramebufferID p_framebuffer) = 0;
 	virtual void command_buffer_end(CommandBufferID p_cmd_buffer) = 0;
 	virtual void command_buffer_execute_secondary(CommandBufferID p_cmd_buffer, VectorView<CommandBufferID> p_secondary_cmd_buffers) = 0;
+	/// @}
+	/// @name SWAP CHAIN
+	/// @{
 
-	/********************/
-	/**** SWAP CHAIN ****/
-	/********************/
-
-	// The swap chain won't be valid for use until it is resized at least once.
+	/// The swap chain won't be valid for use until it is resized at least once.
 	virtual SwapChainID swap_chain_create(RenderingContextDriver::SurfaceID p_surface) = 0;
 
-	// The swap chain must not be in use when a resize is requested. Wait until all rendering associated to the swap chain is finished before resizing it.
+	/// The swap chain must not be in use when a resize is requested. Wait until all rendering associated to the swap chain is finished before resizing it.
 	virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, uint32_t p_desired_framebuffer_count) = 0;
 
-	// Acquire the framebuffer that can be used for drawing. This must be called only once every time a new frame will be rendered.
+	/// Acquire the framebuffer that can be used for drawing. This must be called only once every time a new frame will be rendered.
 	virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, bool &r_resize_required) = 0;
 
-	// Retrieve the render pass that can be used to draw on the swap chain's framebuffers.
+	/// Retrieve the render pass that can be used to draw on the swap chain's framebuffers.
 	virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) = 0;
 
-	// Retrieve the rotation in degrees to apply as a pre-transform. Usually 0 on PC. May be 0, 90, 180 & 270 on Android.
+	/// Retrieve the rotation in degrees to apply as a pre-transform. Usually 0 on PC. May be 0, 90, 180 & 270 on Android.
 	virtual int swap_chain_get_pre_rotation_degrees(SwapChainID p_swap_chain) { return 0; }
 
-	// Retrieve the format used by the swap chain's framebuffers.
+	/// Retrieve the format used by the swap chain's framebuffers.
 	virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) = 0;
 
-	// Tells the swapchain the max_fps so it can use the proper frame pacing.
-	// Android uses this with Swappy library. Some implementations or platforms may ignore this hint.
+	/// Tells the swapchain the max_fps so it can use the proper frame pacing.
+	/// Android uses this with Swappy library. Some implementations or platforms may ignore this hint.
 	virtual void swap_chain_set_max_fps(SwapChainID p_swap_chain, int p_max_fps) {}
 
-	// Wait until all rendering associated to the swap chain is finished before deleting it.
+	/// Wait until all rendering associated to the swap chain is finished before deleting it.
 	virtual void swap_chain_free(SwapChainID p_swap_chain) = 0;
-
-	/*********************/
-	/**** FRAMEBUFFER ****/
-	/*********************/
+	/// @}
+	/// @name FRAMEBUFFER
+	/// @{
 
 	virtual FramebufferID framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) = 0;
 	virtual void framebuffer_free(FramebufferID p_framebuffer) = 0;
-
-	/****************/
-	/**** SHADER ****/
-	/****************/
+	/// @}
+	/// @name SHADER
+	/// @{
 
 	struct ImmutableSampler {
 		UniformType type = UNIFORM_TYPE_MAX;
-		uint32_t binding = 0xffffffff; // Binding index as specified in shader.
+		uint32_t binding = 0xffffffff; ///< Binding index as specified in shader.
 		LocalVector<ID> ids;
 	};
 
-	// Creates a Pipeline State Object (PSO) out of the shader and all the input data it needs.
-	// Immutable samplers can be embedded when creating the pipeline layout on the condition they remain valid and unchanged, so they don't need to be
-	// specified when creating uniform sets PSO resource for binding.
+	/// Creates a Pipeline State Object (PSO) out of the shader and all the input data it needs.
+	/// Immutable samplers can be embedded when creating the pipeline layout on the condition they remain valid and unchanged, so they don't need to be
+	/// specified when creating uniform sets PSO resource for binding.
 	virtual ShaderID shader_create_from_container(const Ref<RenderingShaderContainer> &p_shader_container, const Vector<ImmutableSampler> &p_immutable_samplers) = 0;
-	// Only meaningful if API_TRAIT_SHADER_CHANGE_INVALIDATION is SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH.
+	/// Only meaningful if API_TRAIT_SHADER_CHANGE_INVALIDATION is SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH.
 	virtual uint32_t shader_get_layout_hash(ShaderID p_shader) { return 0; }
 	virtual void shader_free(ShaderID p_shader) = 0;
 	virtual void shader_destroy_modules(ShaderID p_shader) = 0;
+	/// @}
 
 public:
-	/*********************/
-	/**** UNIFORM SET ****/
-	/*********************/
+	/// @name UNIFORM SET
+	/// @{
 
 	struct BoundUniform {
 		UniformType type = UNIFORM_TYPE_MAX;
-		uint32_t binding = 0xffffffff; // Binding index as specified in shader.
+		uint32_t binding = 0xffffffff; ///< Binding index as specified in shader.
 		LocalVector<ID> ids;
-		// Flag to indicate  that this is an immutable sampler so it is skipped when creating uniform
-		// sets, as it would be set previously when creating the pipeline layout.
+		/// Flag to indicate  that this is an immutable sampler so it is skipped when creating uniform
+		/// sets, as it would be set previously when creating the pipeline layout.
 		bool immutable_sampler = false;
 	};
 
@@ -504,10 +496,9 @@ public:
 	// ----- COMMANDS -----
 
 	virtual void command_uniform_set_prepare_for_use(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) = 0;
-
-	/******************/
-	/**** TRANSFER ****/
-	/******************/
+	/// @}
+	/// @name TRANSFER
+	/// @{
 
 	struct BufferCopyRegion {
 		uint64_t src_offset = 0;
@@ -539,10 +530,9 @@ public:
 
 	virtual void command_copy_buffer_to_texture(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<BufferTextureCopyRegion> p_regions) = 0;
 	virtual void command_copy_texture_to_buffer(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, BufferID p_dst_buffer, VectorView<BufferTextureCopyRegion> p_regions) = 0;
-
-	/******************/
-	/**** PIPELINE ****/
-	/******************/
+	/// @}
+	/// @name  PIPELINE
+	/// @{
 
 	virtual void pipeline_free(PipelineID p_pipeline) = 0;
 
@@ -556,10 +546,9 @@ public:
 	virtual void pipeline_cache_free() = 0;
 	virtual size_t pipeline_cache_query_size() = 0;
 	virtual Vector<uint8_t> pipeline_cache_serialize() = 0;
-
-	/*******************/
-	/**** RENDERING ****/
-	/*******************/
+	/// @}
+	/// @name RENDERING
+	/// @{
 
 	// ----- SUBPASS -----
 
@@ -639,26 +628,31 @@ public:
 	virtual void command_render_set_scissor(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_scissors) = 0;
 	virtual void command_render_clear_attachments(CommandBufferID p_cmd_buffer, VectorView<AttachmentClear> p_attachment_clears, VectorView<Rect2i> p_rects) = 0;
 
-	// Binding.
+	/// Binding
+	/// @{
 	virtual void command_bind_render_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) = 0;
 	virtual void command_bind_render_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) = 0;
 	virtual void command_bind_render_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) = 0;
-
-	// Drawing.
+	/// @}
+	///  Drawing
+	/// @{
 	virtual void command_render_draw(CommandBufferID p_cmd_buffer, uint32_t p_vertex_count, uint32_t p_instance_count, uint32_t p_base_vertex, uint32_t p_first_instance) = 0;
 	virtual void command_render_draw_indexed(CommandBufferID p_cmd_buffer, uint32_t p_index_count, uint32_t p_instance_count, uint32_t p_first_index, int32_t p_vertex_offset, uint32_t p_first_instance) = 0;
 	virtual void command_render_draw_indexed_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) = 0;
 	virtual void command_render_draw_indexed_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) = 0;
 	virtual void command_render_draw_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) = 0;
 	virtual void command_render_draw_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) = 0;
-
-	// Buffer binding.
+	/// @}
+	/// Buffer Binding
+	/// @{
 	virtual void command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count, const BufferID *p_buffers, const uint64_t *p_offsets) = 0;
 	virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format, uint64_t p_offset) = 0;
-
-	// Dynamic state.
+	/// @}
+	/// Dynamic State
+	/// @{
 	virtual void command_render_set_blend_constants(CommandBufferID p_cmd_buffer, const Color &p_constants) = 0;
 	virtual void command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) = 0;
+	/// @}
 
 	// ----- PIPELINE -----
 
@@ -675,70 +669,71 @@ public:
 			RenderPassID p_render_pass,
 			uint32_t p_render_subpass,
 			VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
-
-	/*****************/
-	/**** COMPUTE ****/
-	/*****************/
+	/// @}
+	/// @name COMPUTE
+	/// @{
 
 	// ----- COMMANDS -----
 
-	// Binding.
+	/// Binding
+	/// @{
 	virtual void command_bind_compute_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) = 0;
 	virtual void command_bind_compute_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) = 0;
 	virtual void command_bind_compute_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) = 0;
-
-	// Dispatching.
+	/// @}
+	/// Dispatching
+	/// @{
 	virtual void command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups) = 0;
 	virtual void command_compute_dispatch_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) = 0;
+	/// @}
 
 	// ----- PIPELINE -----
 
 	virtual PipelineID compute_pipeline_create(ShaderID p_shader, VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
-
-	/******************/
-	/**** CALLBACK ****/
-	/******************/
+	/// @}
+	/// @name CALLBACK
+	/// @{
 
 	typedef void (*DriverCallback)(RenderingDeviceDriver *p_driver, CommandBufferID p_command_buffer, void *p_userdata);
-
-	/*****************/
-	/**** QUERIES ****/
-	/*****************/
+	/// @}
+	/// @name QUERIES
+	/// @{
 
 	// ----- TIMESTAMP -----
 
-	// Basic.
+	/// Basic
+	/// @{
 	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) = 0;
 	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) = 0;
 	virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t *r_results) = 0;
 	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) = 0;
+	/// @}
 
-	// Commands.
+	/// Commands
+	/// @{
 	virtual void command_timestamp_query_pool_reset(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) = 0;
 	virtual void command_timestamp_write(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_index) = 0;
+	/// @}
 
-	/****************/
-	/**** LABELS ****/
-	/****************/
+	/// @}
+	/// @name LABELS
+	/// @{
 
 	virtual void command_begin_label(CommandBufferID p_cmd_buffer, const char *p_label_name, const Color &p_color) = 0;
 	virtual void command_end_label(CommandBufferID p_cmd_buffer) = 0;
-
-	/****************/
-	/**** DEBUG *****/
-	/****************/
+	/// @}
+	/// @name DEBUG
+	/// @{
 	virtual void command_insert_breadcrumb(CommandBufferID p_cmd_buffer, uint32_t p_data) = 0;
-
-	/********************/
-	/**** SUBMISSION ****/
-	/********************/
+	/// @}
+	/// @name SUBMISSION
+	/// @{
 
 	virtual void begin_segment(uint32_t p_frame_index, uint32_t p_frames_drawn) = 0;
 	virtual void end_segment() = 0;
-
-	/**************/
-	/**** MISC ****/
-	/**************/
+	/// @}
+	/// @name MISC
+	/// @{
 
 	enum ObjectType {
 		OBJECT_TYPE_TEXTURE,
@@ -791,9 +786,9 @@ public:
 
 	enum ShaderChangeInvalidation {
 		SHADER_CHANGE_INVALIDATION_ALL_BOUND_UNIFORM_SETS,
-		// What Vulkan does.
+		/// What Vulkan does.
 		SHADER_CHANGE_INVALIDATION_INCOMPATIBLE_SETS_PLUS_CASCADE,
-		// What D3D12 does.
+		/// What D3D12 does.
 		SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH,
 	};
 
@@ -828,7 +823,7 @@ public:
 	virtual const RenderingShaderContainerFormat &get_shader_container_format() const = 0;
 
 	virtual bool is_composite_alpha_supported(CommandQueueID p_queue) const { return false; }
-
+	/// @}
 	/******************/
 
 	virtual ~RenderingDeviceDriver();

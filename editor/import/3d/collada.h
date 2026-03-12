@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file collada.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/xml_parser.h"
@@ -528,6 +534,7 @@ private: // private stuff
 	void _parse_library(XMLParser &p_parser);
 
 	Variant _parse_param(XMLParser &p_parser);
+	//! reads floats from inside of xml element until end of xml element
 	Vector<float> _read_float_array(XMLParser &p_parser);
 	Vector<String> _read_string_array(XMLParser &p_parser);
 	Transform3D _read_transform(XMLParser &p_parser);
@@ -542,6 +549,8 @@ private: // private stuff
 	void _merge_skeletons(VisualScene *p_vscene, Node *p_node);
 	bool _optimize_skeletons(VisualScene *p_vscene, Node *p_node);
 
+	/// Bind Shape Matrix scales the bones and makes them gigantic, so the matrix then shrinks the model?
+	/// Solution: apply the Bind Shape Matrix to the VERTICES, and if the object comes scaled, it seems to be left alone!
 	bool _move_geometry_to_skeletons(VisualScene *p_vscene, Node *p_node, List<Node *> *p_mgeom);
 
 	void _optimize();

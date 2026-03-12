@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file triangle_mesh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/face3.h"
@@ -54,7 +60,7 @@ private:
 
 	struct BVH {
 		AABB aabb;
-		Vector3 center; //used for sorting
+		Vector3 center; ///< Used for sorting
 		int left = -1;
 		int right = -1;
 
@@ -97,12 +103,13 @@ public:
 
 	void create(const Vector<Vector3> &p_faces, const Vector<int32_t> &p_surface_indices = Vector<int32_t>());
 
-	// Wrapped functions for compatibility with method bindings
-	// and user exposed script api that can't use more native types.
+	/// @name Wrapped functions for compatibility with method bindings and user exposed script api that can't use more native types.
+	/// @{
 	bool create_from_faces(const Vector<Vector3> &p_faces);
 	Dictionary intersect_segment_scriptwrap(const Vector3 &p_begin, const Vector3 &p_end) const;
 	Dictionary intersect_ray_scriptwrap(const Vector3 &p_begin, const Vector3 &p_dir) const;
 	Vector<Vector3> get_faces_scriptwrap() const;
+	/// @}
 
 	TriangleMesh();
 };

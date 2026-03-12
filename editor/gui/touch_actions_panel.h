@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file touch_actions_panel.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/panel_container.h"
@@ -70,7 +76,7 @@ private:
 	bool shift_btn_pressed = false;
 	bool alt_btn_pressed = false;
 
-	bool is_floating = false; // Embedded panel mode is default.
+	bool is_floating = false; ///< Embedded panel mode is default.
 	int embedded_panel_index = 0;
 
 	void _notification(int p_what);

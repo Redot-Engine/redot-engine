@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_command_palette.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/input/shortcut.h"
@@ -48,7 +54,7 @@ class EditorCommandPalette : public ConfirmationDialog {
 		String name;
 		Ref<Shortcut> shortcut;
 		String shortcut_text;
-		int last_used = 0; // Store time as int, because doubles have problems with text serialization.
+		int last_used = 0; ///< Store time as int, because doubles have problems with text serialization.
 	};
 
 	struct CommandEntry {

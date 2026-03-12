@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file option_button.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/button.h"
@@ -74,7 +80,7 @@ class OptionButton : public Button {
 	void _select(int p_which, bool p_emit = false);
 	void _select_int(int p_which);
 	void _refresh_size_cache();
-	void _dummy_setter() {} // Stub for PropertyListHelper (_set() doesn't use it).
+	void _dummy_setter() {} ///< Stub for PropertyListHelper (_set() doesn't use it).
 
 	virtual void pressed() override;
 
@@ -95,8 +101,8 @@ protected:
 	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
 
 public:
-	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties returned by `_get_items()` ever changes,
-	// this value should be updated to reflect the new size.
+	/// @warning This is used by the POT generator's scene parser. If the number of properties returned by `_get_items()` ever changes,
+	/// this value should be updated to reflect the new size.
 	static const int ITEM_PROPERTY_SIZE = 5;
 
 	void add_icon_item(const Ref<Texture2D> &p_icon, const String &p_label, int p_id = -1);

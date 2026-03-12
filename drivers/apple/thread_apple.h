@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file thread_apple.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/safe_refcount.h"
@@ -69,7 +75,7 @@ public:
 	static constexpr size_t CACHE_LINE_BYTES = std::hardware_destructive_interference_size;
 	GODOT_GCC_WARNING_POP
 #else
-	// At a negligible memory cost, we use a conservatively high value.
+	/// At a negligible memory cost, we use a conservatively high value.
 	static constexpr size_t CACHE_LINE_BYTES = 128;
 #endif
 
@@ -91,11 +97,11 @@ public:
 	_FORCE_INLINE_ static void yield() { pthread_yield_np(); }
 
 	_FORCE_INLINE_ ID get_id() const { return id; }
-	// get the ID of the caller thread
+	/// Get the ID of the caller thread
 	_FORCE_INLINE_ static ID get_caller_id() {
 		return caller_id;
 	}
-	// get the ID of the main thread
+	/// Get the ID of the main thread
 	_FORCE_INLINE_ static ID get_main_id() { return MAIN_ID; }
 
 	_FORCE_INLINE_ static bool is_main_thread() { return caller_id == MAIN_ID; }

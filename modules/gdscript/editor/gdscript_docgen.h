@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_docgen.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../gdscript_parser.h"
@@ -40,10 +46,11 @@ class GDScriptDocGen {
 	using GDP = GDScriptParser;
 	using GDType = GDP::DataType;
 
-	static HashMap<String, String> singletons; // Script path to singleton name.
+	static HashMap<String, String> singletons; ///< Script path to singleton name.
 
 	static String _get_script_name(const String &p_path);
 	static String _get_class_name(const GDP::ClassNode &p_class);
+	/// This method is needed for the editor, since during autocompletion the script is not compiled, only analyzed.
 	static void _doctype_from_gdtype(const GDType &p_gdtype, String &r_type, String &r_enum, bool p_is_return = false);
 	static String _docvalue_from_variant(const Variant &p_variant, int p_recursion_level = 1);
 	static void _generate_docs(GDScript *p_script, const GDP::ClassNode *p_class);

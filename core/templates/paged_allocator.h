@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file paged_allocator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/core_globals.h"
@@ -155,8 +161,8 @@ public:
 		}
 	}
 
-	// Power of 2 recommended because of alignment with OS page sizes.
-	// Even if element is bigger, it's still a multiple and gets rounded to amount of pages.
+	/// Power of 2 recommended because of alignment with OS page sizes.
+	/// Even if element is bigger, it's still a multiple and gets rounded to amount of pages.
 	PagedAllocator(uint32_t p_page_size = DEFAULT_PAGE_SIZE) {
 		configure(p_page_size);
 	}

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_navigation_server_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_navigation_server_3d.h"
 
 #include "core/os/mutex.h"
@@ -42,7 +48,6 @@ using namespace NavigationUtilities;
 /// Creates a struct for each function and a function that once called creates
 /// an instance of that struct with the submitted parameters.
 /// Then, that struct is stored in an array; the `sync` function consume that array.
-
 #define COMMAND_1(F_NAME, T_0, D_0)                                   \
 	struct MERGE(F_NAME, _command_3d) : public SetCommand3D {         \
 		T_0 d_0;                                                      \
@@ -1374,22 +1379,10 @@ void GodotNavigationServer3D::sync() {
 }
 
 void GodotNavigationServer3D::process(double p_delta_time) {
-	// Called for each main loop iteration AFTER node and user script process() and BEFORE RenderingServer sync.
-	// Will run reliably every rendered frame independent of the physics tick rate.
-	// Use for things that (only) need to update once per main loop iteration and rendered frame or is visible to the user.
-	// E.g. (final) sync of objects for this main loop iteration, updating rendered debug visuals, updating debug statistics, ...
-
 	sync();
 }
 
 void GodotNavigationServer3D::physics_process(double p_delta_time) {
-	// Called for each physics process step AFTER node and user script physics_process() and BEFORE PhysicsServer sync.
-	// Will NOT run reliably every rendered frame. If there is no physics step this function will not run.
-	// Use for physics or step depending calculations and updates where the result affects the next step calculation.
-	// E.g. anything physics sync related, avoidance simulations, physics space state queries, ...
-	// If physics process needs to play catchup this function will be called multiple times per frame so it should not hold
-	// costly updates that are not important outside the stepped calculations to avoid causing a physics performance death spiral.
-
 	flush_queries();
 
 	if (!active) {

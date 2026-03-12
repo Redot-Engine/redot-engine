@@ -30,6 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file importer_mesh.h
+ *
+ * The following classes are used by importers instead of ArrayMesh and MeshInstance3D
+ * so the data is not registered (hence, quality loss), importing happens faster and
+ * its easier to modify before saving
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -40,10 +48,6 @@
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
 #include "scene/resources/3d/convex_polygon_shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
-
-// The following classes are used by importers instead of ArrayMesh and MeshInstance3D
-// so the data is not registered (hence, quality loss), importing happens faster and
-// its easier to modify before saving
 
 class ImporterMesh : public Resource {
 	GDCLASS(ImporterMesh, Resource)

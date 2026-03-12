@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packed_scene.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -90,6 +96,10 @@ class SceneState : public RefCounted {
 
 	Vector<ConnectionData> connections;
 
+	/// This function handles all the work related to properly packing scenes, be it
+	/// instantiated or inherited.
+	/// Given the complexity of this process, an attempt will be made to properly
+	/// document it. if you fail to understand something, please ask!
 	Error _parse_node(Node *p_owner, Node *p_node, int p_parent_idx, HashMap<StringName, int> &name_map, HashMap<Variant, int, VariantHasher, VariantComparator> &variant_map, HashMap<Node *, int> &node_map, HashMap<Node *, int> &nodepath_map);
 	Error _parse_connections(Node *p_owner, Node *p_node, HashMap<StringName, int> &name_map, HashMap<Variant, int, VariantHasher, VariantComparator> &variant_map, HashMap<Node *, int> &node_map, HashMap<Node *, int> &nodepath_map);
 
@@ -167,8 +177,8 @@ public:
 
 	void update_instance_resource(String p_path, Ref<PackedScene> p_packed_scene);
 
-	//unbuild API
-
+	/// @name Unbuild API
+	/// @{
 	int get_node_count() const;
 	StringName get_node_type(int p_idx) const;
 	StringName get_node_name(int p_idx) const;
@@ -199,9 +209,9 @@ public:
 	Vector<NodePath> get_editable_instances() const;
 	Ref<Resource> get_sub_resource(const String &p_path);
 	Vector<Ref<Resource>> get_sub_resources();
-
-	//build API
-
+	/// @}
+	/// @name Build API
+	/// @{
 	int add_name(const StringName &p_name);
 	int add_value(const Variant &p_value);
 	int add_node_path(const NodePath &p_path);
@@ -218,8 +228,9 @@ public:
 
 	virtual void set_last_modified_time(uint64_t p_time) { last_modified_time = p_time; }
 	uint64_t get_last_modified_time() const { return last_modified_time; }
+	/// @}
 
-	// Used when saving pointers (saves a path property instead).
+	/// Used when saving pointers (saves a path property instead).
 	static String get_meta_pointer_property(const String &p_property);
 
 #ifdef TOOLS_ENABLED
@@ -241,7 +252,7 @@ class PackedScene : public Resource {
 	Dictionary _get_bundled_scene() const;
 
 protected:
-	virtual bool editor_can_reload_from_file() override { return false; } // this is handled by editor better
+	virtual bool editor_can_reload_from_file() override { return false; } ///< This is handled by editor better
 	static void _bind_methods();
 	virtual void reset_state() override;
 

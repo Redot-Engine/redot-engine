@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fuzzy_search.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/variant/variant.h"
@@ -52,7 +58,7 @@ class FuzzyTokenMatch {
 	int matched_length = 0;
 	int token_length = 0;
 	int token_idx = -1;
-	Vector2i interval = Vector2i(-1, -1); // x and y are both inclusive indices.
+	Vector2i interval = Vector2i(-1, -1); ///< x and y are both inclusive indices.
 
 	void add_substring(int p_substring_start, int p_substring_length);
 	bool intersects(const Vector2i &p_other_interval) const;
@@ -61,7 +67,7 @@ class FuzzyTokenMatch {
 
 public:
 	int score = 0;
-	Vector<Vector2i> substrings; // x is start index, y is length.
+	Vector<Vector2i> substrings; ///< x is start index, y is length.
 };
 
 class FuzzySearchResult {
@@ -71,8 +77,11 @@ class FuzzySearchResult {
 	Vector2i match_interval = Vector2i(-1, -1);
 
 	bool can_add_token_match(const FuzzyTokenMatch &p_match) const;
+	/// This can always be tweaked more. The intuition is that exact matches should almost always
+	/// be prioritized over broken up matches, and other criteria more or less act as tie breakers.
 	void score_token_match(FuzzyTokenMatch &p_match, bool p_case_insensitive) const;
 	void add_token_match(const FuzzyTokenMatch &p_match);
+	/// This adds a small bonus to results which match tokens in the same order they appear in the query.
 	void maybe_apply_score_bonus();
 
 public:

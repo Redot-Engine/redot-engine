@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file pair.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/typedefs.h"
@@ -58,7 +64,7 @@ struct PairSort {
 	}
 };
 
-// Pair is zero-constructible if and only if both constrained types are zero-constructible.
+/// Pair is zero-constructible if and only if both constrained types are zero-constructible.
 template <typename F, typename S>
 struct is_zero_constructible<Pair<F, S>> : std::conjunction<is_zero_constructible<F>, is_zero_constructible<S>> {};
 
@@ -92,6 +98,6 @@ struct KeyValueSort {
 	}
 };
 
-// KeyValue is zero-constructible if and only if both constrained types are zero-constructible.
+/// KeyValue is zero-constructible if and only if both constrained types are zero-constructible.
 template <typename K, typename V>
 struct is_zero_constructible<KeyValue<K, V>> : std::conjunction<is_zero_constructible<K>, is_zero_constructible<V>> {};

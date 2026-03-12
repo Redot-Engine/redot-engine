@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/dialogs.h"
@@ -108,18 +114,18 @@ private:
 	void _set_message(const String &p_msg, MessageType p_type, InputType input_type = PROJECT_PATH);
 	void _validate_path();
 
-	// Project path for MODE_NEW and MODE_INSTALL. Install path for MODE_IMPORT.
-	// Install path is only visible when importing a ZIP.
+	/// Project path for MODE_NEW and MODE_INSTALL. Install path for MODE_IMPORT.
+	/// Install path is only visible when importing a ZIP.
 	String _get_target_path();
 	void _set_target_path(const String &p_text);
 
-	// Calculated from project name / ZIP name.
+	/// Calculated from project name / ZIP name.
 	String auto_dir;
 
-	// Updates `auto_dir`. If the target path dir name is equal to `auto_dir` (the default state), the target path is also updated.
+	/// Updates `auto_dir`. If the target path dir name is equal to `auto_dir` (the default state), the target path is also updated.
 	void _update_target_auto_dir();
 
-	// While `create_dir` is disabled, stores the last target path dir name, or an empty string if equal to `auto_dir`.
+	/// While `create_dir` is disabled, stores the last target path dir name, or an empty string if equal to `auto_dir`.
 	String last_custom_target_dir;
 	void _create_dir_toggled(bool p_pressed);
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_driver_vulkan.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/hash_map.h"
@@ -102,13 +108,15 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 		PFN_vkCreateRenderPass2KHR CreateRenderPass2KHR = nullptr;
 		PFN_vkCmdEndRenderPass2KHR EndRenderPass2KHR = nullptr;
 
-		// Debug marker extensions.
+		/// @name Debug marker extensions
+		/// @{
 		PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT = nullptr;
 		PFN_vkCmdDebugMarkerEndEXT CmdDebugMarkerEndEXT = nullptr;
 		PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT = nullptr;
 		PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT = nullptr;
+		/// @}
 
-		// Debug device fault.
+		/// Debug device fault.
 		PFN_vkGetDeviceFaultInfoEXT GetDeviceFaultInfoEXT = nullptr;
 	};
 	// Debug marker extensions.
@@ -149,6 +157,8 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 #endif
 	DeviceFunctions device_functions;
 
+	/// We don't actually use this extension, but some runtime components on some platforms
+	/// can and will fill the validation layers with useless info otherwise if not enabled.
 	void _register_requested_device_extension(const CharString &p_extension_name, bool p_required);
 	Error _initialize_device_extensions();
 	Error _check_device_features();
@@ -195,7 +205,7 @@ public:
 			uint64_t size = UINT64_MAX;
 		} allocation;
 		uint64_t size = 0;
-		VkBufferView vk_view = VK_NULL_HANDLE; // For texel buffers.
+		VkBufferView vk_view = VK_NULL_HANDLE; ///< For texel buffers.
 	};
 
 	virtual BufferID buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type) override final;
@@ -219,7 +229,7 @@ public:
 		struct {
 			VmaAllocation handle = nullptr;
 			VmaAllocationInfo info = {};
-		} allocation; // All 0/null if just a view.
+		} allocation; ///< All 0/null if just a view.
 #ifdef DEBUG_ENABLED
 		bool created_from_extension = false;
 		bool transient = false;
@@ -397,10 +407,10 @@ private:
 	struct Framebuffer {
 		VkFramebuffer vk_framebuffer = VK_NULL_HANDLE;
 
-		// Only filled in if the framebuffer uses a fragment density map with offsets. Unused otherwise.
+		/// Only filled in if the framebuffer uses a fragment density map with offsets. Unused otherwise.
 		uint32_t fragment_density_map_offsets_layers = 0;
 
-		// Only filled in by a framebuffer created by a swap chain. Unused otherwise.
+		/// Only filled in by a framebuffer created by a swap chain. Unused otherwise.
 		VkImage swap_chain_image = VK_NULL_HANDLE;
 		VkImageSubresourceRange swap_chain_image_subresource_range = {};
 		bool swap_chain_acquired = false;
@@ -430,24 +440,25 @@ public:
 	/**** UNIFORM SET ****/
 	/*********************/
 
-	// Descriptor sets require allocation from a pool.
-	// The documentation on how to use pools properly
-	// is scarce, and the documentation is strange.
-	//
-	// Basically, you can mix and match pools as you
-	// like, but you'll run into fragmentation issues.
-	// Because of this, the recommended approach is to
-	// create a pool for every descriptor set type, as
-	// this prevents fragmentation.
-	//
-	// This is implemented here as a having a list of
-	// pools (each can contain up to 64 sets) for each
-	// set layout. The amount of sets for each type
-	// is used as the key.
-
 private:
 	static const uint32_t MAX_UNIFORM_POOL_ELEMENT = 65535;
 
+	/**
+	 * Descriptor sets require allocation from a pool.
+	 * The documentation on how to use pools properly
+	 * is scarce, and the documentation is strange.
+	 *
+	 * Basically, you can mix and match pools as you
+	 * like, but you'll run into fragmentation issues.
+	 * Because of this, the recommended approach is to
+	 * create a pool for every descriptor set type, as
+	 * this prevents fragmentation.
+	 *
+	 * This is implemented here as a having a list of
+	 * pools (each can contain up to 64 sets) for each
+	 * set layout. The amount of sets for each type
+	 * is used as the key.
+	 */
 	struct DescriptorSetPoolKey {
 		uint16_t uniform_type[UNIFORM_TYPE_MAX] = {};
 
@@ -465,8 +476,8 @@ private:
 	VkDescriptorPool _descriptor_set_pool_create(const DescriptorSetPoolKey &p_key, bool p_linear_pool);
 	void _descriptor_set_pool_unreference(DescriptorSetPools::Iterator p_pool_sets_it, VkDescriptorPool p_vk_descriptor_pool, int p_linear_pool_index);
 
-	// Global flag to toggle usage of immutable sampler when creating pipeline layouts.
-	// It cannot change after creating the PSOs, since we need to skipping samplers when creating uniform sets.
+	/// Global flag to toggle usage of immutable sampler when creating pipeline layouts.
+	/// It cannot change after creating the PSOs, since we need to skipping samplers when creating uniform sets.
 	bool immutable_samplers_enabled = true;
 
 	struct UniformSetInfo {
@@ -520,7 +531,7 @@ private:
 	struct PipelineCache {
 		String file_path;
 		size_t current_size = 0;
-		Vector<uint8_t> buffer; // Header then data.
+		Vector<uint8_t> buffer; ///< Header then data.
 		VkPipelineCache vk_cache = VK_NULL_HANDLE;
 	};
 
@@ -559,35 +570,40 @@ public:
 	virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments, VectorView<Subpass> p_subpasses, VectorView<SubpassDependency> p_subpass_dependencies, uint32_t p_view_count, AttachmentReference p_fragment_density_map_attachment) override final;
 	virtual void render_pass_free(RenderPassID p_render_pass) override final;
 
-	// ----- COMMANDS -----
-
+	/// @name ----- COMMANDS -----
+	/// @{
 	virtual void command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type, const Rect2i &p_rect, VectorView<RenderPassClearValue> p_clear_values) override final;
 	virtual void command_end_render_pass(CommandBufferID p_cmd_buffer) override final;
 	virtual void command_next_render_subpass(CommandBufferID p_cmd_buffer, CommandBufferType p_cmd_buffer_type) override final;
 	virtual void command_render_set_viewport(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_viewports) override final;
 	virtual void command_render_set_scissor(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_scissors) override final;
 	virtual void command_render_clear_attachments(CommandBufferID p_cmd_buffer, VectorView<AttachmentClear> p_attachment_clears, VectorView<Rect2i> p_rects) override final;
-
-	// Binding.
+	/// @}
+	/// @name Binding
+	/// @{
 	virtual void command_bind_render_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) override final;
 	virtual void command_bind_render_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) override final;
 	virtual void command_bind_render_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) override final;
-
-	// Drawing.
+	/// @}
+	/// @name Drawing
+	/// @{
 	virtual void command_render_draw(CommandBufferID p_cmd_buffer, uint32_t p_vertex_count, uint32_t p_instance_count, uint32_t p_base_vertex, uint32_t p_first_instance) override final;
 	virtual void command_render_draw_indexed(CommandBufferID p_cmd_buffer, uint32_t p_index_count, uint32_t p_instance_count, uint32_t p_first_index, int32_t p_vertex_offset, uint32_t p_first_instance) override final;
 	virtual void command_render_draw_indexed_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) override final;
 	virtual void command_render_draw_indexed_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) override final;
 	virtual void command_render_draw_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) override final;
 	virtual void command_render_draw_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) override final;
-
-	// Buffer binding.
+	/// @}
+	/// @name Buffer binding
+	/// @{
 	virtual void command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count, const BufferID *p_buffers, const uint64_t *p_offsets) override final;
 	virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format, uint64_t p_offset) override final;
-
-	// Dynamic state.
+	/// @}
+	/// @name Dynamic state
+	/// @{
 	virtual void command_render_set_blend_constants(CommandBufferID p_cmd_buffer, const Color &p_constants) override final;
 	virtual void command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) override final;
+	/// @}
 
 	// ----- PIPELINE -----
 
@@ -611,14 +627,17 @@ public:
 
 	// ----- COMMANDS -----
 
-	// Binding.
+	/// @name Binding
+	/// @{
 	virtual void command_bind_compute_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) override final;
 	virtual void command_bind_compute_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) override final;
 	virtual void command_bind_compute_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) override final;
-
-	// Dispatching.
+	/// @}
+	/// @name Dispatching
+	/// @{
 	virtual void command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups) override final;
 	virtual void command_compute_dispatch_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) override final;
+	/// @}
 
 	// ----- PIPELINE -----
 
@@ -634,6 +653,9 @@ public:
 	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) override final;
 	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) override final;
 	virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t *r_results) override final;
+	/// This sucks because timestampPeriod multiplier is a float, while the timestamp is 64 bits nanosecs.
+	/// So, in cases like nvidia which give you enormous numbers and 1 as multiplier, multiplying is next to impossible.
+	/// Need to do 128 bits fixed point multiplication to get the right value.
 	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) override final;
 
 	// Commands.

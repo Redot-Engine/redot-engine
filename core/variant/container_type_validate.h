@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file container_type_validate.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/script_language.h"
@@ -48,7 +54,7 @@ struct ContainerTypeValidate {
 	const char *where = "container";
 
 private:
-	// Coerces String and StringName into each other and int into float when needed.
+	/// Coerces String and StringName into each other and int into float when needed.
 	_FORCE_INLINE_ bool _internal_validate(Variant &inout_variant, const char *p_operation, bool p_output_errors) const {
 		if (type == Variant::NIL) {
 			return true;

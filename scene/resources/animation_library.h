@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_library.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/rb_map.h"
@@ -46,7 +52,7 @@ class AnimationLibrary : public Resource {
 
 	void _animation_changed(const StringName &p_name);
 
-	friend class AnimationMixer; // For faster access.
+	friend class AnimationMixer; ///< For faster access.
 	RBMap<StringName, Ref<Animation>, StringName::AlphCompare> animations;
 
 protected:

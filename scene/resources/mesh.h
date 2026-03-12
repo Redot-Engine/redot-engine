@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -50,8 +56,8 @@ class MeshConvexDecompositionSettings;
 class Mesh : public Resource {
 	GDCLASS(Mesh, Resource);
 
-	mutable Ref<TriangleMesh> triangle_mesh; //cached
-	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; //cached
+	mutable Ref<TriangleMesh> triangle_mesh; ///< Cached
+	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; ///< Cached
 	mutable Vector<Vector3> debug_lines;
 	Size2i lightmap_size_hint;
 
@@ -367,7 +373,7 @@ public:
 	void surface_remove(int p_surface);
 	void clear_surfaces();
 
-	void surface_set_custom_aabb(int p_idx, const AABB &p_aabb); //only recognized by driver
+	void surface_set_custom_aabb(int p_idx, const AABB &p_aabb); ///< Only recognized by driver
 
 	int surface_get_array_len(int p_idx) const override;
 	int surface_get_array_index_len(int p_idx) const override;

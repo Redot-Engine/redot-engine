@@ -30,17 +30,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file codesign.h
+ *
+ * @brief  macOS code signature creation utility.
+ *
+ * Current implementation has the following limitation:
+ *  - Only version 11.3.0 signatures are supported.
+ *  - Only "framework" and "app" bundle types are supported.
+ *  - Page hash array scattering is not supported.
+ *  - Reading and writing binary property lists i snot supported (third-party frameworks with binary Info.plist will not work unless .plist is converted to text format).
+ *  - Requirements code generator is not implemented (only hard-coded requirements for the ad-hoc signing is supported).
+ *  - RFC5652/CMS blob generation is not implemented, supports ad-hoc signing only.
+ */
 
-// macOS code signature creation utility.
-//
-// Current implementation has the following limitation:
-//  - Only version 11.3.0 signatures are supported.
-//  - Only "framework" and "app" bundle types are supported.
-//  - Page hash array scattering is not supported.
-//  - Reading and writing binary property lists i snot supported (third-party frameworks with binary Info.plist will not work unless .plist is converted to text format).
-//  - Requirements code generator is not implemented (only hard-coded requirements for the ad-hoc signing is supported).
-//  - RFC5652/CMS blob generation is not implemented, supports ad-hoc signing only.
+#pragma once
 
 #include "core/io/file_access.h"
 #include "core/object/ref_counted.h"
@@ -131,8 +135,7 @@ public:
 /* CodeSignRequirements                                                  */
 /*************************************************************************/
 
-// Note: Proper code generator is not implemented (any we probably won't ever need it), just a hardcoded bytecode for the limited set of cases.
-
+/// @note Proper code generator is not implemented (any we probably won't ever need it), just a hardcoded bytecode for the limited set of cases.
 class CodeSignRequirements : public CodeSignBlob {
 	PackedByteArray blob;
 
@@ -167,8 +170,7 @@ public:
 /* CodeSignEntitlementsText                                             */
 /*************************************************************************/
 
-// PList formatted entitlements.
-
+/// PList formatted entitlements.
 class CodeSignEntitlementsText : public CodeSignBlob {
 	PackedByteArray blob;
 
@@ -189,8 +191,7 @@ public:
 /* CodeSignEntitlementsBinary                                           */
 /*************************************************************************/
 
-// ASN.1 serialized entitlements.
-
+/// ASN.1 serialized entitlements.
 class CodeSignEntitlementsBinary : public CodeSignBlob {
 	PackedByteArray blob;
 
@@ -211,17 +212,16 @@ public:
 /* CodeSignCodeDirectory                                                 */
 /*************************************************************************/
 
-// Code Directory, runtime options, code segment and special structure hashes.
-
+/// Code Directory, runtime options, code segment and special structure hashes.
 class CodeSignCodeDirectory : public CodeSignBlob {
 public:
 	enum Slot {
 		SLOT_INFO_PLIST = -1,
 		SLOT_REQUIREMENTS = -2,
 		SLOT_RESOURCES = -3,
-		SLOT_APP_SPECIFIC = -4, // Unused.
+		SLOT_APP_SPECIFIC = -4, ///< Unused.
 		SLOT_ENTITLEMENTS = -5,
-		SLOT_RESERVER1 = -6, // Unused.
+		SLOT_RESERVER1 = -6, ///< Unused.
 		SLOT_DER_ENTITLEMENTS = -7,
 	};
 
@@ -258,32 +258,32 @@ private:
 	PackedByteArray blob;
 
 	struct CodeDirectoryHeader {
-		uint32_t version; // Using version 0x0020500.
-		uint32_t flags; // // Option flags.
-		uint32_t hash_offset; // Slot zero offset.
-		uint32_t ident_offset; // Identifier string offset.
-		uint32_t special_slots; // Nr. of slots with negative index.
-		uint32_t code_slots; // Nr. of slots with index >= 0, (code_limit / page_size).
-		uint32_t code_limit; // Everything before code signature load command offset.
-		uint8_t hash_size; // 20 (SHA-1) or 32 (SHA-256).
-		uint8_t hash_type; // 1 (SHA-1) or 2 (SHA-256).
-		uint8_t platform; // Not used.
-		uint8_t page_size; // Page size, power of two, 2^12 (4096).
-		uint32_t spare2; // Not used.
+		uint32_t version; ///< Using version 0x0020500.
+		uint32_t flags; ///< Option flags.
+		uint32_t hash_offset; ///< Slot zero offset.
+		uint32_t ident_offset; ///< Identifier string offset.
+		uint32_t special_slots; ///< Nr. of slots with negative index.
+		uint32_t code_slots; ///< Nr. of slots with index >= 0, (code_limit / page_size).
+		uint32_t code_limit; ///< Everything before code signature load command offset.
+		uint8_t hash_size; ///< 20 (SHA-1) or 32 (SHA-256).
+		uint8_t hash_type; ///< 1 (SHA-1) or 2 (SHA-256).
+		uint8_t platform; ///< Not used.
+		uint8_t page_size; ///< Page size, power of two, 2^12 (4096).
+		uint32_t spare2; ///< Not used.
 		// Version 0x20100
-		uint32_t scatter_vector_offset; // Set to 0 and ignore.
+		uint32_t scatter_vector_offset; ///</< Set to 0 and ignore.
 		// Version 0x20200
-		uint32_t team_offset; // Team id string offset.
+		uint32_t team_offset; ///< Team id string offset.
 		// Version 0x20300
-		uint32_t spare3; // Not used.
-		uint64_t code_limit_64; // Set to 0 and ignore.
+		uint32_t spare3; ///< Not used.
+		uint64_t code_limit_64; ///< Set to 0 and ignore.
 		// Version 0x20400
-		uint64_t exec_seg_base; // Start of the signed code segment.
-		uint64_t exec_seg_limit; // Code segment (__TEXT) vmsize.
-		uint64_t exec_seg_flags; // Executable segment flags.
+		uint64_t exec_seg_base; ///< Start of the signed code segment.
+		uint64_t exec_seg_limit; ///< Code segment (__TEXT) vmsize.
+		uint64_t exec_seg_flags; ///< Executable segment flags.
 		// Version 0x20500
-		uint32_t runtime; // Runtime version.
-		uint32_t pre_encrypt_offset; // Set to 0 and ignore.
+		uint32_t runtime; ///< Runtime version.
+		uint32_t pre_encrypt_offset; ///< Set to 0 and ignore.
 	};
 
 	int32_t pages = 0;

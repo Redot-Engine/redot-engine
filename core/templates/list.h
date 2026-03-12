@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file list.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/error/error_macros.h"
@@ -45,7 +51,6 @@
  * using the same API, or features such as erasing an element
  * from the iterator.
  */
-
 template <typename T, typename A = DefaultAllocator>
 class List {
 	struct _Data;
@@ -204,7 +209,7 @@ public:
 	}
 
 #if 0
-	//to use when replacing find()
+	/// To use when replacing find()
 	_FORCE_INLINE_ Iterator find(const K &p_key) {
 		return Iterator(find(p_key));
 	}
@@ -216,7 +221,7 @@ public:
 		return ConstIterator(nullptr);
 	}
 #if 0
-	//to use when replacing find()
+	/// To use when replacing find()
 	_FORCE_INLINE_ ConstIterator find(const K &p_key) const {
 		return ConstIterator(find(p_key));
 	}
@@ -535,8 +540,8 @@ public:
 		p_list._data = nullptr;
 	}
 
-	// Random access to elements, use with care,
-	// do not use for iteration.
+	/// Random access to elements, use with care,
+	/// do not use for iteration.
 	T &get(int p_index) {
 		CRASH_BAD_INDEX(p_index, size());
 
@@ -550,8 +555,8 @@ public:
 		return I->get();
 	}
 
-	// Random access to elements, use with care,
-	// do not use for iteration.
+	/// Random access to elements, use with care,
+	/// do not use for iteration.
 	const T &get(int p_index) const {
 		CRASH_BAD_INDEX(p_index, size());
 

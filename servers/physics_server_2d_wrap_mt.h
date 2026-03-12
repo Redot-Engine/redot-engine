@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_server_2d_wrap_mt.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/worker_thread_pool.h"
@@ -79,7 +85,7 @@ public:
 
 #include "servers/server_wrap_mt_common.h"
 
-	//FUNC1RID(shape,ShapeType); todo fix
+	/// FUNC1RID(shape,ShapeType); @todo Fix
 	FUNCRID(world_boundary_shape)
 	FUNCRID(separation_ray_shape)
 	FUNCRID(segment_shape)
@@ -96,13 +102,14 @@ public:
 	FUNC1RC(Variant, shape_get_data, RID);
 	FUNC1RC(real_t, shape_get_custom_solver_bias, RID);
 
-	//these work well, but should be used from the main thread only
+	// These work well, but should be used from the main thread only
 	bool shape_collide(RID p_shape_A, const Transform2D &p_xform_A, const Vector2 &p_motion_A, RID p_shape_B, const Transform2D &p_xform_B, const Vector2 &p_motion_B, Vector2 *r_results, int p_result_max, int &r_result_count) override {
 		ERR_FAIL_COND_V(!Thread::is_main_thread(), false);
 		return physics_server_2d->shape_collide(p_shape_A, p_xform_A, p_motion_A, p_shape_B, p_xform_B, p_motion_B, r_results, p_result_max, r_result_count);
 	}
 
-	/* SPACE API */
+	/// @name SPACE API
+	/// @{
 
 	FUNCRID(space);
 	FUNC2(space_set_active, RID, bool);
@@ -111,7 +118,7 @@ public:
 	FUNC3(space_set_param, RID, SpaceParameter, real_t);
 	FUNC2RC(real_t, space_get_param, RID, SpaceParameter);
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// @note This function only works on physics process, errors and returns null otherwise
 	PhysicsDirectSpaceState2D *space_get_direct_state(RID p_space) override {
 		ERR_FAIL_COND_V(!Thread::is_main_thread(), nullptr);
 		return physics_server_2d->space_get_direct_state(p_space);
@@ -128,7 +135,9 @@ public:
 		return physics_server_2d->space_get_contact_count(p_space);
 	}
 
-	/* AREA API */
+	/// @}
+	/// @name AREA API
+	/// @{
 
 	//FUNC0RID(area);
 	FUNCRID(area);
@@ -171,7 +180,9 @@ public:
 	FUNC2(area_set_monitor_callback, RID, const Callable &);
 	FUNC2(area_set_area_monitor_callback, RID, const Callable &);
 
-	/* BODY API */
+	/// @}
+	/// 2name BODY API
+	/// @{
 
 	//FUNC2RID(body,BodyMode,bool);
 	FUNCRID(body)
@@ -275,7 +286,9 @@ public:
 		return physics_server_2d->body_get_direct_state(p_body);
 	}
 
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	FUNCRID(joint)
 
@@ -291,7 +304,7 @@ public:
 	///FUNC5RID(groove_joint,const Vector2&,const Vector2&,const Vector2&,RID,RID);
 	///FUNC4RID(damped_spring_joint,const Vector2&,const Vector2&,RID,RID);
 
-	//TODO need to convert this to FUNCRID, but it's a hassle..
+	/// @todo Need to convert this to FUNCRID, but it's a hassle..
 
 	FUNC4(joint_make_pin, RID, const Vector2 &, RID, RID);
 	FUNC6(joint_make_groove, RID, const Vector2 &, const Vector2 &, const Vector2 &, RID, RID);
@@ -308,7 +321,9 @@ public:
 
 	FUNC1RC(JointType, joint_get_type, RID);
 
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	FUNC1(free, RID);
 	FUNC1(set_active, bool);
@@ -327,6 +342,7 @@ public:
 	int get_process_info(ProcessInfo p_info) override {
 		return physics_server_2d->get_process_info(p_info);
 	}
+	/// @}
 
 	PhysicsServer2DWrapMT(PhysicsServer2D *p_contained, bool p_create_thread);
 	~PhysicsServer2DWrapMT();

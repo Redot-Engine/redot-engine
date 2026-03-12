@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file label.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/control.h"
@@ -98,6 +104,8 @@ private:
 		int font_shadow_outline_size;
 	} theme_cache;
 
+	/// @return A rect providing the line's horizontal offset and total size. To determine the vertical
+	/// offset, use r_offset and r_line_spacing from get_layout_data.
 	Rect2 _get_line_rect(int p_para, int p_line) const;
 	void _ensure_shaped() const;
 	void _update_visible() const;

@@ -30,14 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file object_id.h
+ *
+ * Class to store an object ID (int64)
+ * needs to be compatile with int64 because this is what Variant uses
+ * Also, need to be explicitly only castable to 64 bits integer types
+ * to avoid bugs due to loss of precision
+ */
+
 #pragma once
 
 #include "core/typedefs.h"
-
-// Class to store an object ID (int64)
-// needs to be compatile with int64 because this is what Variant uses
-// Also, need to be explicitly only castable to 64 bits integer types
-// to avoid bugs due to loss of precision
 
 class ObjectID {
 	uint64_t id = 0;

@@ -30,6 +30,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_opengl_extension.cpp
+ *
+ * @brief OpenXR requires us to submit sRGB textures so that it recognizes the content as being in sRGB color space.
+ *
+ * @details We do fall back on "normal" textures but this
+ * will likely result in incorrect colors as OpenXR will double the sRGB conversion.
+ * All major XR runtimes support sRGB textures.
+ *
+ * In OpenGL output of the fragment shader is assumed to be in the color space of
+ * the developers choice, however a linear to sRGB HW conversion can be enabled
+ * through enabling GL_FRAMEBUFFER_SRGB if an sRGB color attachment is used.
+ * This is a global setting.
+ * See: https://www.khronos.org/opengl/wiki/Framebuffer
+ *
+ * In OpenGLES output of the fragment shader is assumed to be in linear color space
+ * and will be converted by default to sRGB if an sRGB color attachment is used.
+ * The extension GL_EXT_sRGB_write_control was introduced to enable turning this
+ * feature off.
+ * See: https://registry.khronos.org/OpenGL/extensions/EXT/EXT_sRGB_write_control.txt
+ */
+
 #include "openxr_opengl_extension.h"
 
 #ifdef GLES3_ENABLED
@@ -40,23 +62,6 @@
 #include "drivers/gles3/storage/texture_storage.h"
 #include "servers/rendering/rendering_server_globals.h"
 #include "servers/rendering_server.h"
-
-// OpenXR requires us to submit sRGB textures so that it recognizes the content
-// as being in sRGB color space. We do fall back on "normal" textures but this
-// will likely result in incorrect colors as OpenXR will double the sRGB conversion.
-// All major XR runtimes support sRGB textures.
-
-// In OpenGL output of the fragment shader is assumed to be in the color space of
-// the developers choice, however a linear to sRGB HW conversion can be enabled
-// through enabling GL_FRAMEBUFFER_SRGB if an sRGB color attachment is used.
-// This is a global setting.
-// See: https://www.khronos.org/opengl/wiki/Framebuffer
-
-// In OpenGLES output of the fragment shader is assumed to be in linear color space
-// and will be converted by default to sRGB if an sRGB color attachment is used.
-// The extension GL_EXT_sRGB_write_control was introduced to enable turning this
-// feature off.
-// See: https://registry.khronos.org/OpenGL/extensions/EXT/EXT_sRGB_write_control.txt
 
 HashMap<String, bool *> OpenXROpenGLExtension::get_requested_extensions() {
 	HashMap<String, bool *> request_extensions;

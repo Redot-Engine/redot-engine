@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_hand_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_hand_modifier_3d.h"
 
 #include "core/config/project_settings.h"
@@ -81,7 +87,7 @@ void XRHandModifier3D::_get_joint_data() {
 		has_stored_previous_transforms = false;
 	}
 
-	// Table of bone names for different rig types.
+	/// Table of bone names for different rig types.
 	static const String bone_names[XRHandTracker::HAND_JOINT_MAX] = {
 		"Palm",
 		"Hand",

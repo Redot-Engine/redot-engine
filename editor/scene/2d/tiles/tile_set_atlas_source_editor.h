@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_set_atlas_source_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "tile_atlas_view.h"
@@ -47,7 +53,7 @@ class TileSetAtlasSourceEditor : public HSplitContainer {
 	GDCLASS(TileSetAtlasSourceEditor, HSplitContainer);
 
 public:
-	// A class to store which tiles are selected.
+	/// A struct to store which tiles are selected.
 	struct TileSelection {
 		Vector2i tile = TileSetSource::INVALID_ATLAS_COORDS;
 		int alternative = TileSetSource::INVALID_TILE_ALTERNATIVE;
@@ -61,7 +67,7 @@ public:
 		}
 	};
 
-	// -- Proxy object for an atlas source, needed by the inspector --
+	/// -- Proxy object for an atlas source, needed by the inspector --
 	class TileSetAtlasSourceProxyObject : public Object {
 		GDCLASS(TileSetAtlasSourceProxyObject, Object);
 
@@ -84,7 +90,7 @@ public:
 		Ref<TileSetAtlasSource> get_edited() { return tile_set_atlas_source; }
 	};
 
-	// -- Proxy object for a tile, needed by the inspector --
+	/// -- Proxy object for a tile, needed by the inspector --
 	class AtlasTileProxyObject : public Object {
 		GDCLASS(AtlasTileProxyObject, Object);
 
@@ -105,7 +111,7 @@ public:
 		Ref<TileSetAtlasSource> get_edited_tile_set_atlas_source() const { return tile_set_atlas_source; }
 		RBSet<TileSelection> get_edited_tiles() const { return tiles; }
 
-		// Update the proxied object.
+		/// Update the proxied object.
 		void edit(Ref<TileSetAtlasSource> p_tile_set_atlas_source, const RBSet<TileSelection> &p_tiles = RBSet<TileSelection>());
 
 		AtlasTileProxyObject(TileSetAtlasSourceEditor *p_tiles_set_atlas_source_editor) {
@@ -132,7 +138,8 @@ private:
 
 	bool tile_set_changed_needs_update = false;
 
-	// -- Properties painting --
+	/// @name -- Properties painting --
+	/// @{
 	ScrollContainer *tile_data_editors_scroll = nullptr;
 	VBoxContainer *tile_data_painting_editor_container = nullptr;
 	Label *tile_data_editors_label = nullptr;
@@ -141,14 +148,16 @@ private:
 	Tree *tile_data_editors_tree = nullptr;
 	void _tile_data_editor_dropdown_button_draw();
 	void _tile_data_editor_dropdown_button_pressed();
-
-	// -- Tile data editors --
+	/// @}
+	/// @name -- Tile data editors --
+	/// @{
 	String current_property;
 	HashMap<String, TileDataEditor *> tile_data_editors;
 	TileDataEditor *current_tile_data_editor = nullptr;
 	void _tile_data_editors_tree_selected();
-
-	// -- Inspector --
+	/// @}
+	/// @name -- Inspector --
+	/// @{
 	AtlasTileProxyObject *tile_proxy_object = nullptr;
 	EditorInspector *tile_inspector = nullptr;
 	Label *tile_inspector_no_tile_selected_label = nullptr;
@@ -157,12 +166,14 @@ private:
 
 	TileSetAtlasSourceProxyObject *atlas_source_proxy_object = nullptr;
 	EditorInspector *atlas_source_inspector = nullptr;
-
-	// -- Atlas view --
+	/// @}
+	/// @name -- Atlas view --
+	/// @{
 	TileAtlasView *tile_atlas_view = nullptr;
 	Label *help_label = nullptr;
+	/// @}
 
-	// Dragging
+	/// Dragging
 	enum DragType {
 		DRAG_TYPE_NONE = 0,
 		DRAG_TYPE_CREATE_TILES,
@@ -198,7 +209,7 @@ private:
 
 	HashMap<Vector2i, List<const PropertyInfo *>> _group_properties_per_tiles(const List<PropertyInfo> &r_list, const TileSetAtlasSource *p_atlas);
 
-	// Popup functions.
+	/// Popup functions.
 	enum MenuOptions {
 		TILE_CREATE,
 		TILE_CREATE_ALTERNATIVE,
@@ -212,27 +223,31 @@ private:
 	int menu_option_alternative = TileSetSource::INVALID_TILE_ALTERNATIVE;
 	void _menu_option(int p_option);
 
-	// Tool buttons.
+	/// @name Tool Buttons
+	/// @{
 	Ref<ButtonGroup> tools_button_group;
 	Button *tool_setup_atlas_source_button = nullptr;
 	Button *tool_select_button = nullptr;
 	Button *tool_paint_button = nullptr;
 	Label *tool_tile_id_label = nullptr;
-
-	// Tool settings.
+	/// @}
+	/// @name Tool Settings
+	/// @{
 	HBoxContainer *tool_settings = nullptr;
 	HBoxContainer *tool_settings_tile_data_toolbar_container = nullptr;
 	Button *tools_settings_erase_button = nullptr;
 	MenuButton *tool_advanced_menu_button = nullptr;
 	TextureRect *outside_tiles_warning = nullptr;
-
-	// Selection.
+	/// @}
+	/// @name Selection
+	/// @{
 	RBSet<TileSelection> selection;
 
 	void _set_selection_from_array(const Array &p_selection);
 	Array _get_selection_as_array();
+	/// @}
 
-	// A control on the tile atlas to draw and handle input events.
+	/// A control on the tile atlas to draw and handle input events.
 	Vector2i hovered_base_tile_coords = TileSetSource::INVALID_ATLAS_COORDS;
 
 	PopupMenu *base_tile_popup_menu = nullptr;
@@ -247,7 +262,7 @@ private:
 	void _tile_atlas_control_gui_input(const Ref<InputEvent> &p_event);
 	void _tile_atlas_view_transform_changed();
 
-	// A control over the alternative tiles.
+	/// A control over the alternative tiles.
 	Vector3i hovered_alternative_tile_coords = Vector3i(TileSetSource::INVALID_ATLAS_COORDS.x, TileSetSource::INVALID_ATLAS_COORDS.y, TileSetSource::INVALID_TILE_ALTERNATIVE);
 
 	PopupMenu *alternative_tile_popup_menu = nullptr;
@@ -259,7 +274,8 @@ private:
 	void _tile_alternatives_control_mouse_exited();
 	void _tile_alternatives_control_gui_input(const Ref<InputEvent> &p_event);
 
-	// -- Update functions --
+	/// @name -- Update functions --
+	/// @{
 	void _update_tile_id_label();
 	void _update_source_inspector();
 	void _update_fix_selected_and_hovered_tiles();
@@ -271,8 +287,9 @@ private:
 	void _update_atlas_view();
 	void _update_toolbar();
 	void _update_buttons();
-
-	// -- Misc --
+	/// @}
+	/// @name -- Misc --
+	/// @{
 	void _auto_create_tiles();
 	void _auto_remove_tiles();
 	void _cancel_auto_create_tiles();
@@ -289,12 +306,12 @@ private:
 	void _atlas_source_proxy_object_changed(const String &p_what);
 
 	void _undo_redo_inspector_callback(Object *p_undo_redo, Object *p_edited, const String &p_property, const Variant &p_new_value);
-
+	/// @}
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	// -- input events --
+	/// -- input events --
 	virtual void shortcut_input(const Ref<InputEvent> &p_event) override;
 
 public:

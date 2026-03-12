@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -67,7 +73,7 @@ private:
 	void _check_shader_rid() const;
 	void _dependency_changed();
 	void _recompile();
-	virtual void _update_shader() const; //used for visual shader
+	virtual void _update_shader() const; ///< Used for visual shader
 	Array _get_shader_uniform_list(bool p_get_groups = false);
 
 protected:
@@ -84,6 +90,8 @@ public:
 	virtual Mode get_mode() const;
 
 	virtual void set_path(const String &p_path, bool p_take_over = false) override;
+	/// Used only if the shader does not have a resource path set,
+	/// for example during loading stage or when created by code.
 	void set_include_path(const String &p_path);
 
 	void set_code(const String &p_code);

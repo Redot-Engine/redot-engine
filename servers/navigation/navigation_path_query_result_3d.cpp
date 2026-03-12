@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_path_query_result_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "navigation_path_query_result_3d.h"
 
 void NavigationPathQueryResult3D::set_path(const Vector<Vector3> &p_path) {

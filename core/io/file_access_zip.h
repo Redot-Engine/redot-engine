@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_access_zip.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef MINIZIP_ENABLED
@@ -63,7 +69,7 @@ public:
 	Error add_package(const String &p_name);
 
 	bool file_exists(const String &p_name) const;
-
+	/// Load with offset feature only supported for PCK files
 	virtual bool try_open_pack(const String &p_path, bool p_replace_files, uint64_t p_offset) override;
 	Ref<FileAccess> get_file(const String &p_path, PackedData::PackedFile *p_file) override;
 
@@ -84,7 +90,7 @@ class FileAccessZip : public FileAccess {
 
 public:
 	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
-	virtual bool is_open() const override; ///< true when file is open
+	virtual bool is_open() const override; ///< @return `true` when file is open
 
 	virtual void seek(uint64_t p_position) override; ///< seek to a given position
 	virtual void seek_end(int64_t p_position = 0) override; ///< seek from the end of file
@@ -101,7 +107,7 @@ public:
 	virtual void flush() override;
 	virtual bool store_buffer(const uint8_t *p_src, uint64_t p_length) override;
 
-	virtual bool file_exists(const String &p_name) override; ///< return true if a file exists
+	virtual bool file_exists(const String &p_name) override; ///< @return `true` if a file exists
 
 	virtual uint64_t _get_modified_time(const String &p_file) override { return 0; }
 	virtual uint64_t _get_access_time(const String &p_file) override { return 0; }

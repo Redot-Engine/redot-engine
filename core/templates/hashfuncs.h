@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file hashfuncs.h
+ *
+ * @brief Hashing functions
+ */
+
 #pragma once
 
 #include "core/math/aabb.h"
@@ -62,10 +68,6 @@
 #ifdef _MSC_VER
 #include <intrin.h> // Needed for `__umulh` below.
 #endif
-
-/**
- * Hashing functions
- */
 
 /**
  * DJB2 Hash function
@@ -128,9 +130,8 @@ static _FORCE_INLINE_ uint64_t hash64_murmur3_64(uint64_t key, uint64_t seed) {
 }
 
 #define HASH_MURMUR3_SEED 0x7F07C65
-// Murmurhash3 32-bit version.
-// All MurmurHash versions are public domain software, and the author disclaims all copyright to their code.
-
+/// Murmurhash3 32-bit version.
+/// All MurmurHash versions are public domain software, and the author disclaims all copyright to their code.
 static _FORCE_INLINE_ uint32_t hash_murmur3_one_32(uint32_t p_in, uint32_t p_seed = HASH_MURMUR3_SEED) {
 	p_in *= 0xcc9e2d51;
 	p_in = (p_in << 15) | (p_in >> 17);
@@ -321,7 +322,7 @@ template <typename T>
 class Ref;
 
 struct HashMapHasherDefault {
-	// Generic hash function for any type.
+	/// Generic hash function for any type.
 	template <typename T>
 	static _FORCE_INLINE_ uint32_t hash(const T *p_pointer) { return hash_one_uint64((uint64_t)p_pointer); }
 
@@ -432,7 +433,7 @@ struct HashHasher {
 	static _FORCE_INLINE_ uint64_t hash(const uint64_t hash) { return hash; }
 };
 
-// TODO: Fold this into HashMapHasherDefault once C++20 concepts are allowed
+/// @todo Fold this into HashMapHasherDefault once C++20 concepts are allowed
 template <typename T>
 struct HashableHasher {
 	static _FORCE_INLINE_ uint32_t hash(const T &hashable) { return hashable.hash(); }
@@ -577,7 +578,7 @@ inline constexpr uint32_t hash_table_size_primes[HASH_TABLE_SIZE_MAX] = {
 	1610612741,
 };
 
-// Computed with elem_i = UINT64_C (0 x FFFFFFFF FFFFFFFF ) / d_i + 1, where d_i is the i-th element of the above array.
+/// Computed with elem_i = UINT64_C (0 x FFFFFFFF FFFFFFFF ) / d_i + 1, where d_i is the i-th element of the above array.
 inline constexpr uint64_t hash_table_size_primes_inv[HASH_TABLE_SIZE_MAX] = {
 	3689348814741910324,
 	1418980313362273202,

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_cache.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "gdscript.h"
@@ -81,7 +87,7 @@ public:
 };
 
 class GDScriptCache {
-	// String key is full path.
+	/// String key is full path.
 	HashMap<String, GDScriptParserRef *> parser_map;
 	HashMap<String, Vector<ObjectID>> abandoned_parser_map;
 	HashMap<String, Ref<GDScript>> shallow_gdscript_cache;

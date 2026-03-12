@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/a_hash_map.h"
@@ -56,7 +62,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	// Public for use with callable_mp.
+	/// Public for use with callable_mp.
 	void _skin_changed();
 
 	RID get_skeleton() const;
@@ -95,7 +101,7 @@ private:
 
 	void _update_deferred(UpdateFlag p_update_flag = UPDATE_FLAG_POSE);
 	uint8_t update_flags = UPDATE_FLAG_NONE;
-	bool updating = false; // Is updating now?
+	bool updating = false; ///< Is updating now?
 	double update_delta = 0.0;
 
 	struct Bone {
@@ -114,8 +120,8 @@ private:
 		Quaternion pose_rotation;
 		Vector3 pose_scale = Vector3(1, 1, 1);
 		Transform3D global_pose;
-		int nested_set_offset = 0; // Offset in nested set of bone hierarchy.
-		int nested_set_span = 0; // Subtree span in nested set of bone hierarchy.
+		int nested_set_offset = 0; ///< Offset in nested set of bone hierarchy.
+		int nested_set_span = 0; ///< Subtree span in nested set of bone hierarchy.
 
 		void update_pose_cache() {
 			if (pose_cache_dirty) {
@@ -182,7 +188,8 @@ private:
 
 	void _update_process_order() const;
 
-	// To process modifiers.
+	/// @name To process modifiers
+	/// @{
 	ModifierCallbackModeProcess modifier_callback_mode_process = MODIFIER_CALLBACK_MODE_PROCESS_IDLE;
 	LocalVector<ObjectID> modifiers;
 	bool modifiers_dirty = false;
@@ -190,16 +197,17 @@ private:
 	void _process_modifiers();
 	void _process_changed();
 	void _make_modifiers_dirty();
-
-	// Global bone pose calculation.
-	mutable LocalVector<int> nested_set_offset_to_bone_index; // Map from Bone::nested_set_offset to bone index.
-	mutable LocalVector<bool> bone_global_pose_dirty; // Indexable with Bone::nested_set_offset.
+	/// @}
+	/// @name Global bone pose calculation
+	/// @{
+	mutable LocalVector<int> nested_set_offset_to_bone_index; ///< Map from Bone::nested_set_offset to bone index.
+	mutable LocalVector<bool> bone_global_pose_dirty; ///< Indexable with Bone::nested_set_offset.
 	void _update_bones_nested_set() const;
 	int _update_bone_nested_set(int p_bone, int p_offset) const;
 	void _make_bone_global_poses_dirty() const;
 	void _make_bone_global_pose_subtree_dirty(int p_bone) const;
 	void _update_bone_global_pose(int p_bone) const;
-
+	/// @}
 #ifndef DISABLE_DEPRECATED
 	void _add_bone_bind_compat_88791(const String &p_name);
 
@@ -258,13 +266,15 @@ public:
 	void set_motion_scale(float p_motion_scale);
 	float get_motion_scale() const;
 
-	// bone metadata
+	/// @name Bone Metadata
+	/// @{
 	Variant get_bone_meta(int p_bone, const StringName &p_key) const;
 	void get_bone_meta_list(int p_bone, List<StringName> *p_list) const;
 	bool has_bone_meta(int p_bone, const StringName &p_key) const;
 	void set_bone_meta(int p_bone, const StringName &p_key, const Variant &p_value);
-
-	// Posing API
+	/// @}
+	/// @name Posing API
+	/// @{
 	Transform3D get_bone_pose(int p_bone) const;
 	Vector3 get_bone_pose_position(int p_bone) const;
 	Quaternion get_bone_pose_rotation(int p_bone) const;
@@ -280,7 +290,7 @@ public:
 	void reset_bone_pose(int p_bone);
 	void reset_bone_poses();
 
-	void localize_rests(); // Used for loaders and tools.
+	void localize_rests(); ///< Used for loaders and tools.
 
 	Ref<Skin> create_skin_from_rest_transforms();
 

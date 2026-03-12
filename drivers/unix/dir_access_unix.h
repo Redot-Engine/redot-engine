@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dir_access_unix.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #if defined(UNIX_ENABLED)
@@ -62,7 +68,7 @@ public:
 	virtual bool current_is_dir() const override;
 	virtual bool current_is_hidden() const override;
 
-	virtual void list_dir_end() override; ///<
+	virtual void list_dir_end() override;
 
 	virtual int get_drive_count() override;
 	virtual String get_drive(int p_drive) override;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_scene_cull.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_scene_cull.h"
 
 #include "core/config/project_settings.h"
@@ -2221,8 +2227,8 @@ void RendererSceneCull::_light_instance_setup_directional_shadow(int p_shadow_in
 		real_t y_min = 0.f, y_max = 0.f;
 		real_t z_min = 0.f, z_max = 0.f;
 
-		// FIXME: z_max_cam is defined, computed, but not used below when setting up
-		// ortho_camera. Commented out for now to fix warnings but should be investigated.
+		/// @todo FIXME: z_max_cam is defined, computed, but not used below when setting up
+		/// ortho_camera. Commented out for now to fix warnings but should be investigated.
 		real_t x_min_cam = 0.f, x_max_cam = 0.f;
 		real_t y_min_cam = 0.f, y_max_cam = 0.f;
 		real_t z_min_cam = 0.f;
@@ -3372,7 +3378,7 @@ void RendererSceneCull::_render_scene(const RendererSceneRender::CameraData *p_c
 							//if using perspetive, map them to near plane
 							for (int j = 0; j < 2; j++) {
 								if (p.distance_to(points[j]) < 0) {
-									points[j].z = -zn; //small hack to keep size constant when hitting the screen
+									points[j].z = -zn; ///< @todo Small hack to keep size constant when hitting the screen
 								}
 
 								p.intersects_segment(cam_xf.origin, points[j], &points[j]); //map to plane
@@ -3400,7 +3406,7 @@ void RendererSceneCull::_render_scene(const RendererSceneRender::CameraData *p_c
 							//if using perspetive, map them to near plane
 							for (int j = 0; j < 2; j++) {
 								if (p.distance_to(points[j]) < 0) {
-									points[j].z = -zn; //small hack to keep size constant when hitting the screen
+									points[j].z = -zn; ///< Small hack to keep size constant when hitting the screen
 								}
 
 								p.intersects_segment(cam_xf.origin, points[j], &points[j]); //map to plane
@@ -3464,7 +3470,7 @@ void RendererSceneCull::_render_scene(const RendererSceneRender::CameraData *p_c
 	//render SDFGI
 
 	{
-		// Q: Should this whole block be skipped if we're rendering our reflection probe?
+		/// @todo Q: Should this whole block be skipped if we're rendering our reflection probe?
 
 		sdfgi_update_data.update_static = false;
 

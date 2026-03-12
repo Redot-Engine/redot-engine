@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file grid_map_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../grid_map.h"
@@ -76,21 +82,27 @@ class GridMapEditor : public VBoxContainer {
 	HBoxContainer *toolbar = nullptr;
 	TightLocalVector<BaseButton *> viewport_shortcut_buttons;
 	Ref<ButtonGroup> mode_buttons_group;
-	// mode
+	/// @name mode
+	/// @{
 	Button *transform_mode_button = nullptr;
 	Button *select_mode_button = nullptr;
 	Button *erase_mode_button = nullptr;
 	Button *paint_mode_button = nullptr;
 	Button *pick_mode_button = nullptr;
-	// action
+	/// @}
+	/// @name action
+	/// @{
 	Button *fill_action_button = nullptr;
 	Button *move_action_button = nullptr;
 	Button *duplicate_action_button = nullptr;
 	Button *delete_action_button = nullptr;
-	// rotation
+	/// @}
+	/// @name rotation
+	/// @{
 	Button *rotate_x_button = nullptr;
 	Button *rotate_y_button = nullptr;
 	Button *rotate_z_button = nullptr;
+	/// @}
 
 	EditorZoomWidget *zoom_widget = nullptr;
 	Button *mode_thumbnail = nullptr;
@@ -213,7 +225,7 @@ class GridMapEditor : public VBoxContainer {
 	ItemList *mesh_library_palette = nullptr;
 	Label *info_message = nullptr;
 
-	void update_grid(); // Change which and where the grid is displayed
+	void update_grid(); ///< Change which and where the grid is displayed
 	void _draw_grids(const Vector3 &cell_size);
 	void _configure();
 	void _menu_option(int);

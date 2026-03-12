@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_region_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/inspector/editor_inspector.h"
@@ -60,7 +66,7 @@ class TextureRegionEditor : public AcceptDialog {
 	Button *zoom_in = nullptr;
 	Button *zoom_reset = nullptr;
 	Button *zoom_out = nullptr;
-	HBoxContainer *hb_grid = nullptr; //For showing/hiding the grid controls when changing the SnapMode
+	HBoxContainer *hb_grid = nullptr; ///< For showing/hiding the grid controls when changing the SnapMode
 	SpinBox *sb_step_y = nullptr;
 	SpinBox *sb_step_x = nullptr;
 	SpinBox *sb_off_y = nullptr;
@@ -136,6 +142,8 @@ class TextureRegionEditor : public AcceptDialog {
 	void _edit_region();
 	void _clear_edited_object();
 
+	/// Margin line is a dashed line with a normalized dash length. This method works
+	/// for both vertical and horizontal lines.
 	void _draw_margin_line(Vector2 p_from, Vector2 p_to);
 
 	void _set_grid_parameters_clamping(bool p_enabled);

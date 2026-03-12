@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file translation_domain.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "translation_domain.h"
 
 #include "core/string/translation.h"
@@ -257,7 +263,6 @@ PackedStringArray TranslationDomain::get_loaded_locales() const {
 	return locales;
 }
 
-// Translation objects that could potentially be used for the given locale.
 HashSet<Ref<Translation>> TranslationDomain::get_potential_translations(const String &p_locale) const {
 	HashSet<Ref<Translation>> res;
 

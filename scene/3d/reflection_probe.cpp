@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file reflection_probe.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "reflection_probe.h"
 
 void ReflectionProbe::set_intensity(float p_intensity) {

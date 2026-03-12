@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_frames.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_frames.h"
 
 #include "core/error/error_macros.h"

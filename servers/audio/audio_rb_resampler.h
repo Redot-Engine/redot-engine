@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_rb_resampler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/audio_frame.h"
@@ -49,7 +55,7 @@ struct AudioRBResampler {
 	SafeNumeric<int> rb_read_pos;
 	SafeNumeric<int> rb_write_pos;
 
-	int32_t offset; //contains the fractional remainder of the resampler
+	int32_t offset; ///< Contains the fractional remainder of the resampler
 	enum {
 		MIX_FRAC_BITS = 13,
 		MIX_FRAC_LEN = (1 << MIX_FRAC_BITS),
@@ -59,6 +65,9 @@ struct AudioRBResampler {
 	float *read_buf = nullptr;
 	float *rb = nullptr;
 
+	/// Linear interpolation based sample rate conversion (low quality)
+	/// Note that AudioStreamPlaybackResampled::mix has better algorithm,
+	/// but it wasn't obvious to integrate that with VideoStreamPlayer
 	template <int C>
 	uint32_t _resample(AudioFrame *p_dest, int p_todo, int32_t p_increment);
 

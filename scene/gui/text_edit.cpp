@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file text_edit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "text_edit.h"
 #include "text_edit.compat.inc"
 
@@ -629,7 +635,6 @@ String TextEdit::Text::get_default_word_separators() const {
 	return concat_separators;
 }
 
-// Get default and/or custom word separators depending on the option enabled.
 String TextEdit::Text::get_enabled_word_separators() const {
 	String all_separators;
 	if (use_default_word_separators) {
@@ -4365,7 +4370,6 @@ int TextEdit::get_last_unhidden_line() const {
 }
 
 int TextEdit::get_next_visible_line_offset_from(int p_line_from, int p_visible_amount) const {
-	// Returns the number of lines (hidden and unhidden) from p_line_from to (p_line_from + visible_amount of unhidden lines).
 	ERR_FAIL_INDEX_V(p_line_from, text.size(), Math::abs(p_visible_amount));
 
 	if (!_is_hiding_enabled()) {
@@ -4400,8 +4404,6 @@ int TextEdit::get_next_visible_line_offset_from(int p_line_from, int p_visible_a
 }
 
 Point2i TextEdit::get_next_visible_line_index_offset_from(int p_line_from, int p_wrap_index_from, int p_visible_amount) const {
-	// Returns the number of lines (hidden and unhidden) from (p_line_from + p_wrap_index_from) row to (p_line_from + visible_amount of unhidden and wrapped rows).
-	// Wrap index is set to the wrap index of the last line.
 	int wrap_index = 0;
 	ERR_FAIL_INDEX_V(p_line_from, text.size(), Point2i(Math::abs(p_visible_amount), 0));
 
@@ -5452,7 +5454,6 @@ struct _CaretSortComparator {
 };
 
 Vector<int> TextEdit::get_sorted_carets(bool p_include_ignored_carets) const {
-	// Returns caret indexes sorted by selection start or caret position from top to bottom of text.
 	Vector<Vector3i> caret_line_col_indexes;
 	for (int i = 0; i < get_caret_count(); i++) {
 		if (!p_include_ignored_carets && multicaret_edit_ignore_caret(i)) {
@@ -5470,8 +5471,6 @@ Vector<int> TextEdit::get_sorted_carets(bool p_include_ignored_carets) const {
 }
 
 void TextEdit::collapse_carets(int p_from_line, int p_from_column, int p_to_line, int p_to_column, bool p_inclusive) {
-	// Collapse carets in the selected range to the from position.
-
 	// Clamp the collapse target position.
 	int collapse_line = CLAMP(p_from_line, 0, text.size() - 1);
 	int collapse_column = CLAMP(p_from_column, 0, text[collapse_line].length());
@@ -5631,7 +5630,6 @@ void TextEdit::merge_overlapping_carets() {
 	}
 }
 
-// Starts a multicaret edit operation. Call this before iterating over the carets and call [end_multicaret_edit] afterwards.
 void TextEdit::begin_multicaret_edit() {
 	if (!multi_carets_enabled) {
 		return;
@@ -6077,7 +6075,6 @@ String TextEdit::get_selected_text(int p_caret) {
 }
 
 int TextEdit::get_selection_at_line_column(int p_line, int p_column, bool p_include_edges, bool p_only_selections) const {
-	// Return the caret index of the found selection, or -1.
 	for (int i = 0; i < get_caret_count(); i++) {
 		if (_selection_contains(i, p_line, p_column, p_include_edges, p_only_selections)) {
 			return i;
@@ -6087,8 +6084,6 @@ int TextEdit::get_selection_at_line_column(int p_line, int p_column, bool p_incl
 }
 
 Vector<Point2i> TextEdit::get_line_ranges_from_carets(bool p_only_selections, bool p_merge_adjacent) const {
-	// Get a series of line ranges that cover all lines that have a caret or selection.
-	// For each Point2i range, x is the first line and y is the last line.
 	Vector<Point2i> ret;
 	int last_to_line = INT_MIN;
 
@@ -6115,7 +6110,6 @@ Vector<Point2i> TextEdit::get_line_ranges_from_carets(bool p_only_selections, bo
 }
 
 TypedArray<Vector2i> TextEdit::get_line_ranges_from_carets_typed_array(bool p_only_selections, bool p_merge_adjacent) const {
-	// Wrapper for `get_line_ranges_from_carets` to return a datatype that can be exposed.
 	TypedArray<Vector2i> ret;
 	Vector<Point2i> ranges = get_line_ranges_from_carets(p_only_selections, p_merge_adjacent);
 	for (const Point2i &range : ranges) {
@@ -7014,7 +7008,6 @@ bool TextEdit::is_default_word_separators_enabled() const {
 	return text.is_default_word_separators_enabled();
 }
 
-// Set word separators. Combine default separators with custom separators if those options are enabled.
 void TextEdit::set_custom_word_separators(const String &p_separators) {
 	text.set_custom_word_separators(p_separators);
 }
@@ -7035,7 +7028,6 @@ String TextEdit::get_custom_word_separators() const {
 	return text.get_custom_word_separators();
 }
 
-// Enable or disable custom word separators.
 void TextEdit::set_use_custom_word_separators(bool p_enabled) {
 	text.set_use_custom_word_separators(p_enabled);
 }
@@ -8294,9 +8286,6 @@ bool TextEdit::_is_line_col_in_range(int p_line, int p_column, int p_from_line, 
 }
 
 void TextEdit::_offset_carets_after(int p_old_line, int p_old_column, int p_new_line, int p_new_column, bool p_include_selection_begin, bool p_include_selection_end) {
-	// Moves all carets at or after old_line and old_column.
-	// Called after deleting or inserting text so that the carets stay with the text they are at.
-
 	int edit_height = p_new_line - p_old_line;
 	int edit_size = p_new_column - p_old_column;
 	if (edit_height == 0 && edit_size == 0) {
@@ -8351,7 +8340,6 @@ void TextEdit::_offset_carets_after(int p_old_line, int p_old_column, int p_new_
 }
 
 void TextEdit::_cancel_drag_and_drop_text() {
-	// Cancel the drag operation if drag originated from here.
 	if (selection_drag_attempt && get_viewport()) {
 		get_viewport()->gui_cancel_drag();
 	}
@@ -8369,7 +8357,6 @@ void TextEdit::_selection_changed(int p_caret) {
 }
 
 void TextEdit::_click_selection_held() {
-	// Update the selection mode on a timer so it is updated when the view scrolls even if the mouse isn't moving.
 	if (!Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT)) {
 		click_select_held->stop();
 		return;

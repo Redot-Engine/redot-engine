@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file viewport.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/main/node.h"
@@ -122,7 +128,7 @@ public:
 		MSAA_2X,
 		MSAA_4X,
 		MSAA_8X,
-		// 16x MSAA is not supported due to its high cost and driver bugs.
+		/// 16x MSAA is not supported due to its high cost and driver bugs.
 		MSAA_MAX
 	};
 
@@ -238,7 +244,7 @@ private:
 	friend class ViewportTexture;
 
 	Viewport *parent = nullptr;
-	Viewport *gui_parent = nullptr; // Whose gui.tooltip_popup it is.
+	Viewport *gui_parent = nullptr; ///< Whose gui.tooltip_popup it is.
 
 	HashSet<CanvasLayer *> canvas_layers;
 
@@ -336,7 +342,7 @@ private:
 	SDFOversize sdf_oversize = SDF_OVERSIZE_120_PERCENT;
 	SDFScale sdf_scale = SDF_SCALE_50_PERCENT;
 
-	uint32_t canvas_cull_mask = 0xffffffff; // by default show everything
+	uint32_t canvas_cull_mask = 0xffffffff; ///< By default show everything
 
 	enum SubWindowDrag {
 		SUB_WINDOW_DRAG_DISABLED,
@@ -380,8 +386,8 @@ private:
 		Control *mouse_over = nullptr;
 		LocalVector<Control *> mouse_over_hierarchy;
 		bool sending_mouse_enter_exit_notifications = false;
-		Window *subwindow_over = nullptr; // mouse_over and subwindow_over are mutually exclusive. At all times at least one of them is nullptr.
-		Window *windowmanager_window_over = nullptr; // Only used in root Viewport.
+		Window *subwindow_over = nullptr; ///< mouse_over and subwindow_over are mutually exclusive. At all times at least one of them is nullptr.
+		Window *windowmanager_window_over = nullptr; ///< Only used in root Viewport.
 		Control *drag_mouse_over = nullptr;
 		Control *tooltip_control = nullptr;
 		Window *tooltip_popup = nullptr;
@@ -391,7 +397,7 @@ private:
 		Point2 last_mouse_pos;
 		Point2 drag_accum;
 		bool drag_attempted = false;
-		Variant drag_data; // Only used in root-Viewport and SubViewports, that are not children of a SubViewportContainer.
+		Variant drag_data; ///< Only used in root-Viewport and SubViewports, that are not children of a SubViewportContainer.
 		ObjectID drag_preview_id;
 		String drag_description;
 		Ref<SceneTreeTimer> tooltip_timer;
@@ -399,11 +405,11 @@ private:
 		bool roots_order_dirty = false;
 		List<Control *> roots;
 		HashSet<ObjectID> canvas_parents_with_dirty_order;
-		int canvas_sort_index = 0; //for sorting items with canvas as root
-		bool dragging = false; // Is true in the viewport in which dragging started while dragging is active.
-		bool global_dragging = false; // Is true while dragging is active. Only used in root-Viewport and SubViewports that are not children of a SubViewportContainer.
+		int canvas_sort_index = 0; ///< For sorting items with canvas as root
+		bool dragging = false; ///< Is true in the viewport in which dragging started while dragging is active.
+		bool global_dragging = false; ///< Is true while dragging is active. Only used in root-Viewport and SubViewports that are not children of a SubViewportContainer.
 		bool drag_successful = false;
-		Control *target_control = nullptr; // Control that the mouse is over in the innermost nested Viewport. Only used in root-Viewport and SubViewports, that are not children of a SubViewportContainer.
+		Control *target_control = nullptr; ///< Control that the mouse is over in the innermost nested Viewport. Only used in root-Viewport and SubViewports, that are not children of a SubViewportContainer.
 		bool embed_subwindows_hint = false;
 
 		Window *subwindow_focused = nullptr;
@@ -416,7 +422,7 @@ private:
 		SubWindowResize subwindow_resize_mode;
 		Rect2i subwindow_resize_from_rect;
 
-		Vector<SubWindow> sub_windows; // Don't obtain references or pointers to the elements, as their location can change.
+		Vector<SubWindow> sub_windows; ///< Don't obtain references or pointers to the elements, as their location can change.
 	} gui;
 
 	DefaultCanvasItemTextureFilter default_canvas_item_texture_filter = DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR;
@@ -491,6 +497,8 @@ private:
 	bool _sub_windows_forward_input(const Ref<InputEvent> &p_event);
 	SubWindowResize _sub_window_get_resize_margin(Window *p_subwindow, const Point2 &p_point);
 
+	/// Update gui.mouse_over and gui.subwindow_over in all Viewports.
+	/// Send necessary mouse_enter/mouse_exit signals and the MOUSE_ENTER/MOUSE_EXIT notifications for every Viewport in the SceneTree.
 	void _update_mouse_over();
 	virtual void _update_mouse_over(Vector2 p_pos);
 	virtual void _mouse_leave_viewport();
@@ -632,6 +640,24 @@ public:
 
 	Vector2 get_mouse_position() const;
 	void warp_mouse(const Vector2 &p_position);
+	/** Move the mouse cursor from its current position to a location bounded by `p_rect`
+	 * in accordance with a heuristic that takes the traveled distance `p_relative` of the mouse
+	 * into account.
+	 *
+	 * All parameters are in viewport coordinates.
+	 * p_relative denotes the distance to the previous mouse position.
+	 * p_rect denotes the area, in which the mouse should be confined in.
+	 *
+	 * The relative distance reported for the next event after a warp is in the boundaries of the
+	 * size of the rect on that axis, but it may be greater, in which case there's no problem as
+	 * fmod() will warp it, but if the pointer has moved in the opposite direction between the
+	 * pointer relocation and the subsequent event, the reported relative distance will be less
+	 * than the size of the rect and thus fmod() will be disabled for handling the situation.
+	 * And due to this mouse warping mechanism being stateless, we need to apply some heuristics
+	 * to detect the warp: if the relative distance is greater than the half of the size of the
+	 * relevant rect (checked per each axis), it will be considered as the consequence of a former
+	 * pointer warp.
+	 */
 	Point2 wrap_mouse_in_rect(const Vector2 &p_relative, const Rect2 &p_rect);
 	virtual void update_mouse_cursor_state();
 
@@ -683,6 +709,8 @@ public:
 	void gui_cancel_drag();
 	void gui_perform_drop_at(const Point2 &p_pos, Control *p_control = nullptr);
 
+	/// `gui_find_control` doesn't take embedded windows into account. So the caller of this function
+	/// needs to make sure, that there is no embedded window at the specified position.
 	Control *gui_find_control(const Point2 &p_global);
 
 	void set_sdf_oversize(SDFOversize p_sdf_oversize);
@@ -740,8 +768,8 @@ public:
 	virtual bool is_sub_viewport() const { return false; }
 
 private:
-	// 2D audio, camera, and physics. (don't put World2D here because World2D is needed for Control nodes).
-	friend class AudioListener2D; // Needs _audio_listener_2d_set and _audio_listener_2d_remove
+	/// 2D audio, camera, and physics. (don't put World2D here because World2D is needed for Control nodes).
+	friend class AudioListener2D; // /<Needs _audio_listener_2d_set and _audio_listener_2d_remove
 	AudioListener2D *audio_listener_2d = nullptr;
 	void _audio_listener_2d_set(AudioListener2D *p_audio_listener);
 	void _audio_listener_2d_remove(AudioListener2D *p_audio_listener);
@@ -753,11 +781,11 @@ private:
 	void _camera_2d_set(Camera2D *p_camera_2d);
 
 #ifndef PHYSICS_2D_DISABLED
-	// Collider to frame
+	/// Collider to frame
 	HashMap<ObjectID, uint64_t> physics_2d_mouseover;
-	// Collider & shape to frame
+	/// Collider & shape to frame
 	HashMap<Pair<ObjectID, int>, uint64_t> physics_2d_shape_mouseover;
-	// Cleans up colliders corresponding to old frames or all of them.
+	/// Cleans up colliders corresponding to old frames or all of them.
 	void _cleanup_mouseover_colliders(bool p_clean_all_frames, bool p_paused_only, uint64_t p_frame_reference = 0);
 #endif // PHYSICS_2D_DISABLED
 
@@ -771,7 +799,8 @@ public:
 
 #ifndef _3D_DISABLED
 private:
-	// 3D audio, camera, physics, and world.
+	/// @name 3D audio, camera, physics, and world.
+	/// @{
 	bool use_xr = false;
 	friend class AudioListener3D;
 	AudioListener3D *audio_listener_3d = nullptr;
@@ -781,9 +810,10 @@ private:
 	void _update_audio_listener_3d();
 	void _listener_transform_3d_changed_notify();
 	void _audio_listener_3d_set(AudioListener3D *p_listener);
-	bool _audio_listener_3d_add(AudioListener3D *p_listener); //true if first
+	bool _audio_listener_3d_add(AudioListener3D *p_listener); ///< `true` if first
 	void _audio_listener_3d_remove(AudioListener3D *p_listener);
 	void _audio_listener_3d_make_next_current(AudioListener3D *p_exclude);
+	/// @}
 
 #ifndef PHYSICS_3D_DISABLED
 	void _collision_object_3d_input_event(CollisionObject3D *p_object, Camera3D *p_camera, const Ref<InputEvent> &p_input_event, const Vector3 &p_pos, const Vector3 &p_normal, int p_shape);
@@ -812,7 +842,7 @@ private:
 	HashSet<Camera3D *> camera_3d_set;
 	void _camera_3d_transform_changed_notify();
 	void _camera_3d_set(Camera3D *p_camera);
-	bool _camera_3d_add(Camera3D *p_camera); //true if first
+	bool _camera_3d_add(Camera3D *p_camera); ///< `true` if first
 	void _camera_3d_remove(Camera3D *p_camera);
 	void _camera_3d_make_next_current(Camera3D *p_exclude);
 
@@ -871,8 +901,8 @@ public:
 
 	enum UpdateMode {
 		UPDATE_DISABLED,
-		UPDATE_ONCE, //then goes to disabled
-		UPDATE_WHEN_VISIBLE, // default
+		UPDATE_ONCE, ///< then goes to disabled
+		UPDATE_WHEN_VISIBLE, ///< default
 		UPDATE_WHEN_PARENT_VISIBLE,
 		UPDATE_ALWAYS
 	};

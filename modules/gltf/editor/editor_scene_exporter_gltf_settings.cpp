@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_scene_exporter_gltf_settings.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_scene_exporter_gltf_settings.h"
 
 const uint32_t PROP_EDITOR_SCRIPT_VAR = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_SCRIPT_VARIABLE;
@@ -181,7 +187,6 @@ bool is_any_node_invisible(Node *p_node) {
 	return false;
 }
 
-// Run this before popping up the export settings, because the extensions may have changed.
 void EditorSceneExporterGLTFSettings::generate_property_list(Ref<GLTFDocument> p_document, Node *p_root) {
 	_property_list.clear();
 	_document = p_document;

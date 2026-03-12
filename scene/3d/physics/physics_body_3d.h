@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/physics/collision_object_3d.h"
@@ -65,6 +71,6 @@ public:
 	virtual real_t get_inverse_mass() const;
 
 	TypedArray<PhysicsBody3D> get_collision_exceptions();
-	void add_collision_exception_with(Node *p_node); //must be physicsbody
+	void add_collision_exception_with(Node *p_node); ///< Must be physicsbody
 	void remove_collision_exception_with(Node *p_node);
 };

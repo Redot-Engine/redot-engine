@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file filesystem_dock.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/file_system/dependency_editor.h"
@@ -308,6 +314,8 @@ private:
 
 	void _tree_rmb_option(int p_option);
 	void _file_list_rmb_option(int p_option);
+	/// Used for submenu commands where we don't know whether we're
+	/// calling from the file_list_rmb menu or the _tree_rmb option.
 	void _generic_rmb_option_selected(int p_option);
 	void _file_option(int p_option, const Vector<String> &p_selected);
 	int _get_menu_option_from_key(const Ref<InputEventKey> &p_key);

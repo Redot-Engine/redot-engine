@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ustring.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "ustring.h"
 
 #include "core/crypto/crypto_core.h"
@@ -62,7 +68,6 @@ static _FORCE_INLINE_ char32_t lower_case(char32_t c) {
 }
 
 Error String::parse_url(String &r_scheme, String &r_host, int &r_port, String &r_path, String &r_fragment) const {
-	// Splits the URL into scheme, host, port, path, fragment. Strip credentials when present.
 	String base = *this;
 	r_scheme = "";
 	r_host = "";
@@ -199,11 +204,6 @@ void String::append_utf32(const Span<char32_t> &p_cstr) {
 	*dst = 0;
 }
 
-// assumes the following have already been validated:
-// p_char != nullptr
-// p_length > 0
-// p_length <= p_char strlen
-// p_char is a valid UTF32 string
 void String::copy_from_unchecked(const char32_t *p_char, const int p_length) {
 	resize_uninitialized(p_length + 1); // + 1 for \0
 	char32_t *dst = ptrw();
@@ -2379,12 +2379,13 @@ bool String::is_numeric() const {
 		}
 	}
 
-	return true; // TODO: Use the parser below for this instead
+	return true; /// @todo Use the parser below for this instead
 }
 
 template <typename C>
 static double built_in_strtod(
-		/* A decimal ASCII floating-point number,
+		/**
+		 * A decimal ASCII floating-point number,
 		 * optionally preceded by white space. Must
 		 * have form "-I.FE-X", where I is the integer
 		 * part of the mantissa, F is the fractional
@@ -2394,19 +2395,26 @@ static double built_in_strtod(
 		 * omitted, or both. The decimal point isn't
 		 * necessary unless F is present. The "E" may
 		 * actually be an "e". E and X may both be
-		 * omitted (but not just one). */
+		 * omitted (but not just one).
+		 */
 		const C *string,
-		/* If non-nullptr, store terminating Cacter's
-		 * address here. */
+		/**
+		 * If non-nullptr, store terminating Cacter's
+		 * address here.
+		 */
 		C **endPtr = nullptr) {
-	/* Largest possible base 10 exponent. Any
+	/**
+	 * Largest possible base 10 exponent. Any
 	 * exponent larger than this will already
 	 * produce underflow or overflow, so there's
-	 * no need to worry about additional digits. */
+	 * no need to worry about additional digits.
+	 */
 	static const int maxExponent = 511;
-	/* Table giving binary powers of 10. Entry
+	/**
+	 * Table giving binary powers of 10. Entry
 	 * is 10^2^i. Used to convert decimal
-	 * exponents into floating-point numbers. */
+	 * exponents into floating-point numbers.
+	 */
 	static const double powersOf10[] = {
 		10.,
 		100.,
@@ -2426,7 +2434,8 @@ static double built_in_strtod(
 	int c;
 	/* Exponent read from "EX" field. */
 	int exp = 0;
-	/* Exponent that derives from the fractional
+	/**
+	 * Exponent that derives from the fractional
 	 * part. Under normal circumstances, it is
 	 * the negative of the number of digits in F.
 	 * However, if I is very long, the last digits
@@ -2434,7 +2443,8 @@ static double built_in_strtod(
 	 * large negative exponent could cause an
 	 * unnecessary overflow on I alone). In this
 	 * case, fracExp is incremented one for each
-	 * dropped digit. */
+	 * dropped digit.
+	 */
 	int fracExp = 0;
 	/* Number of digits in mantissa. */
 	int mantSize;
@@ -2461,7 +2471,7 @@ static double built_in_strtod(
 		sign = false;
 	}
 
-	/*
+	/**
 	 * Count the number of digits in the mantissa (including the decimal
 	 * point), and also locate the decimal point.
 	 */
@@ -2478,7 +2488,7 @@ static double built_in_strtod(
 		p += 1;
 	}
 
-	/*
+	/**
 	 * Now suck up the digits in the mantissa. Use two integers to collect 9
 	 * digits each (this is faster than using floating-point). If the mantissa
 	 * has more than 18 digits, ignore the extras, since they can't affect the
@@ -2559,7 +2569,7 @@ static double built_in_strtod(
 		exp = fracExp + exp;
 	}
 
-	/*
+	/**
 	 * Generate a floating-point number that represents the exponent. Do this
 	 * by processing the exponent one bit at a time to combine many powers of
 	 * 2 of 10. Then combine the exponent with the fraction.
@@ -2638,7 +2648,7 @@ int64_t String::to_int(const char32_t *p_str, int p_len, bool p_clamp) {
 	if (p_len == 0 || !p_str[0]) {
 		return 0;
 	}
-	///@todo make more exact so saving and loading does not lose precision
+	/// @todo Make more exact so saving and loading does not lose precision
 
 	int64_t integer = 0;
 	int64_t sign = 1;
@@ -5168,7 +5178,7 @@ bool String::is_valid_html_color() const {
 	return Color::html_is_valid(*this);
 }
 
-// Changes made to the set of invalid filename characters must also be reflected in the String documentation for is_valid_filename.
+/// Changes made to the set of invalid filename characters must also be reflected in the String documentation for is_valid_filename.
 static const char *invalid_filename_characters[] = { ":", "/", "\\", "?", "*", "\"", "|", "%", "<", ">" };
 
 bool String::is_valid_filename() const {
@@ -5335,8 +5345,6 @@ String String::path_join(const String &p_file) const {
 }
 
 String String::property_name_encode() const {
-	// Escape and quote strings with extended ASCII or further Unicode characters
-	// as well as '"', '=' or ' ' (32)
 	const char32_t *cstr = get_data();
 	for (int i = 0; cstr[i]; i++) {
 		if (cstr[i] == '=' || cstr[i] == '"' || cstr[i] == ';' || cstr[i] == '[' || cstr[i] == ']' || cstr[i] < 33 || cstr[i] > 126) {
@@ -5347,12 +5355,10 @@ String String::property_name_encode() const {
 	return *this;
 }
 
-// Changes made to the set of invalid characters must also be reflected in the String documentation.
-
+/// Changes made to the set of invalid characters must also be reflected in the String documentation.
 static const char32_t invalid_node_name_characters[] = { '.', ':', '@', '/', '\"', UNIQUE_NODE_PREFIX[0], 0 };
 
 String String::get_invalid_node_name_characters(bool p_allow_internal) {
-	// Do not use this function for critical validation.
 	String r;
 	const char32_t *c = invalid_node_name_characters;
 	while (*c) {
@@ -5371,7 +5377,6 @@ String String::get_invalid_node_name_characters(bool p_allow_internal) {
 }
 
 String String::validate_node_name() const {
-	// This is a critical validation in node addition, so it must be optimized.
 	const char32_t *cn = ptr();
 	if (cn == nullptr) {
 		return String();
@@ -5439,7 +5444,6 @@ String rtoss(double p_val) {
 	return String::num_scientific(p_val);
 }
 
-// Right-pad with a character.
 String String::rpad(int min_length, const String &character) const {
 	String s = *this;
 	int padding = min_length - s.length();
@@ -5449,7 +5453,6 @@ String String::rpad(int min_length, const String &character) const {
 	return s;
 }
 
-// Left-pad with a character.
 String String::lpad(int min_length, const String &character) const {
 	String s = *this;
 	int padding = min_length - s.length();
@@ -5459,10 +5462,6 @@ String String::lpad(int min_length, const String &character) const {
 	return s;
 }
 
-// sprintf is implemented in GDScript via:
-//   "fish %s pie" % "frog"
-//   "fish %s %d pie" % ["frog", 12]
-// In case of an error, the string returned is the error description and "error" is true.
 String String::sprintf(const Array &values, bool *error) const {
 	static const String ZERO("0");
 	static const String SPACE(" ");
@@ -5950,17 +5949,7 @@ Vector<uint8_t> String::to_multibyte_char_buffer(const String &p_encoding) const
 }
 
 #ifdef TOOLS_ENABLED
-/**
- * "Tools TRanslate". Performs string replacement for internationalization
- * within the editor. A translation context can optionally be specified to
- * disambiguate between identical source strings in translations. When
- * placeholders are desired, use `vformat(TTR("Example: %s"), some_string)`.
- * If a string mentions a quantity (and may therefore need a dynamic plural form),
- * use `TTRN()` instead of `TTR()`.
- *
- * NOTE: Only use `TTR()` in editor-only code (typically within the `editor/` folder).
- * For translations that can be supplied by exported projects, use `RTR()` instead.
- */
+
 String TTR(const String &p_text, const String &p_context) {
 	if (TranslationServer::get_singleton()) {
 		return TranslationServer::get_singleton()->tool_translate(p_text, p_context);
@@ -5969,18 +5958,6 @@ String TTR(const String &p_text, const String &p_context) {
 	return p_text;
 }
 
-/**
- * "Tools TRanslate for N items". Performs string replacement for
- * internationalization within the editor. A translation context can optionally
- * be specified to disambiguate between identical source strings in
- * translations. Use `TTR()` if the string doesn't need dynamic plural form.
- * When placeholders are desired, use
- * `vformat(TTRN("%d item", "%d items", some_integer), some_integer)`.
- * The placeholder must be present in both strings to avoid run-time warnings in `vformat()`.
- *
- * NOTE: Only use `TTRN()` in editor-only code (typically within the `editor/` folder).
- * For translations that can be supplied by exported projects, use `RTRN()` instead.
- */
 String TTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context) {
 	if (TranslationServer::get_singleton()) {
 		return TranslationServer::get_singleton()->tool_translate_plural(p_text, p_text_plural, p_n, p_context);
@@ -5993,12 +5970,6 @@ String TTRN(const String &p_text, const String &p_text_plural, int p_n, const St
 	return p_text_plural;
 }
 
-/**
- * "Docs TRanslate". Used for the editor class reference documentation,
- * handling descriptions extracted from the XML.
- * It also replaces `$DOCS_URL` with the actual URL to the documentation's branch,
- * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
- */
 String DTR(const String &p_text, const String &p_context) {
 	// Comes straight from the XML, so remove indentation and any trailing whitespace.
 	const String text = p_text.dedent().strip_edges();
@@ -6010,12 +5981,6 @@ String DTR(const String &p_text, const String &p_context) {
 	return text.replace("$DOCS_URL", REDOT_VERSION_DOCS_URL);
 }
 
-/**
- * "Docs TRanslate for N items". Used for the editor class reference documentation
- * (with support for plurals), handling descriptions extracted from the XML.
- * It also replaces `$DOCS_URL` with the actual URL to the documentation's branch,
- * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
- */
 String DTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context) {
 	const String text = p_text.dedent().strip_edges();
 	const String text_plural = p_text_plural.dedent().strip_edges();
@@ -6032,17 +5997,6 @@ String DTRN(const String &p_text, const String &p_text_plural, int p_n, const St
 }
 #endif
 
-/**
- * "Run-time TRanslate". Performs string replacement for internationalization
- * without the editor. A translation context can optionally be specified to
- * disambiguate between identical source strings in translations. When
- * placeholders are desired, use `vformat(RTR("Example: %s"), some_string)`.
- * If a string mentions a quantity (and may therefore need a dynamic plural form),
- * use `RTRN()` instead of `RTR()`.
- *
- * NOTE: Do not use `RTR()` in editor-only code (typically within the `editor/`
- * folder). For editor translations, use `TTR()` instead.
- */
 String RTR(const String &p_text, const String &p_context) {
 	if (TranslationServer::get_singleton()) {
 		String rtr = TranslationServer::get_singleton()->tool_translate(p_text, p_context);
@@ -6055,17 +6009,6 @@ String RTR(const String &p_text, const String &p_context) {
 	return p_text;
 }
 
-/**
- * "Run-time TRanslate for N items". Performs string replacement for
- * internationalization without the editor. A translation context can optionally
- * be specified to disambiguate between identical source strings in translations.
- * Use `RTR()` if the string doesn't need dynamic plural form. When placeholders
- * are desired, use `vformat(RTRN("%d item", "%d items", some_integer), some_integer)`.
- * The placeholder must be present in both strings to avoid run-time warnings in `vformat()`.
- *
- * NOTE: Do not use `RTRN()` in editor-only code (typically within the `editor/`
- * folder). For editor translations, use `TTRN()` instead.
- */
 String RTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context) {
 	if (TranslationServer::get_singleton()) {
 		String rtr = TranslationServer::get_singleton()->tool_translate_plural(p_text, p_text_plural, p_n, p_context);

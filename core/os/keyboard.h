@@ -30,19 +30,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file keyboard.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/string/ustring.h"
 
-// Keep the values in this enum in sync with `_keycodes` in `keyboard.cpp`,
-// and the bindings in `core_constants.cpp`.
+/// Keep the values in this enum in sync with `_keycodes` in `keyboard.cpp`,
+/// and the bindings in `core_constants.cpp`.
 enum class Key {
 	NONE = 0,
-	// Special key: The strategy here is similar to the one used by toolkits,
-	// which consists in leaving the 21 bits unicode range for printable
-	// characters, and use the upper 11 bits for special keys and modifiers.
-	// This way everything (char/keycode) can fit nicely in one 32-bit
-	// integer (the enum's underlying type is `int` by default).
+	/// Special key: The strategy here is similar to the one used by toolkits,
+	/// which consists in leaving the 21 bits unicode range for printable
+	/// characters, and use the upper 11 bits for special keys and modifiers.
+	/// This way everything (char/keycode) can fit nicely in one 32-bit
+	/// integer (the enum's underlying type is `int` by default).
 	SPECIAL = (1 << 22),
 	/* CURSOR/FUNCTION/BROWSER/MULTIMEDIA/MISC KEYS */
 	ESCAPE = SPECIAL | 0x01,
@@ -52,7 +58,7 @@ enum class Key {
 	ENTER = SPECIAL | 0x05,
 	KP_ENTER = SPECIAL | 0x06,
 	INSERT = SPECIAL | 0x07,
-	KEY_DELETE = SPECIAL | 0x08, // "DELETE" is a reserved word on Windows.
+	KEY_DELETE = SPECIAL | 0x08, ///< "DELETE" is a reserved word on Windows.
 	PAUSE = SPECIAL | 0x09,
 	PRINT = SPECIAL | 0x0A,
 	SYSREQ = SPECIAL | 0x0B,
@@ -267,7 +273,8 @@ enum class KeyLocation {
 	RIGHT
 };
 
-// To avoid having unnecessary operators, only define the ones that are needed.
+/// @name To avoid having unnecessary operators, only define the ones that are needed.
+/// @{
 
 constexpr Key operator-(uint32_t a, Key b) {
 	return (Key)(a - (uint32_t)b);
@@ -336,6 +343,7 @@ constexpr KeyModifierMask operator+(KeyModifierMask a, KeyModifierMask b) {
 constexpr KeyModifierMask operator|(KeyModifierMask a, KeyModifierMask b) {
 	return (KeyModifierMask)((int)a | (int)b);
 }
+/// @}
 
 String keycode_get_string(Key p_code);
 bool keycode_has_unicode(Key p_keycode);

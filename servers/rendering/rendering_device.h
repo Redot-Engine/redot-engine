@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/worker_thread_pool.h"
@@ -95,7 +101,7 @@ protected:
 	/**** ID INFRASTRUCTURE ****/
 	/***************************/
 public:
-	//base numeric ID for all types
+	/// Base numeric ID for all types
 	enum {
 		INVALID_FORMAT_ID = -1
 	};
@@ -106,42 +112,41 @@ public:
 		ID_TYPE_DRAW_LIST,
 		ID_TYPE_COMPUTE_LIST = 4,
 		ID_TYPE_MAX,
-		ID_BASE_SHIFT = 58, // 5 bits for ID types.
+		ID_BASE_SHIFT = 58, ///< 5 bits for ID types.
 		ID_MASK = (ID_BASE_SHIFT - 1),
 	};
 
 private:
-	HashMap<RID, HashSet<RID>> dependency_map; // IDs to IDs that depend on it.
-	HashMap<RID, HashSet<RID>> reverse_dependency_map; // Same as above, but in reverse.
+	HashMap<RID, HashSet<RID>> dependency_map; ///< IDs to IDs that depend on it.
+	HashMap<RID, HashSet<RID>> reverse_dependency_map; ///< Same as above, but in reverse.
 
 	void _add_dependency(RID p_id, RID p_depends_on);
 	void _free_dependencies(RID p_id);
 
 private:
-	/***************************/
-	/**** BUFFER MANAGEMENT ****/
-	/***************************/
-
-	// These are temporary buffers on CPU memory that hold
-	// the information until the CPU fetches it and places it
-	// either on GPU buffers, or images (textures). It ensures
-	// updates are properly synchronized with whatever the
-	// GPU is doing.
-	//
-	// The logic here is as follows, only 3 of these
-	// blocks are created at the beginning (one per frame)
-	// they can each belong to a frame (assigned to current when
-	// used) and they can only be reused after the same frame is
-	// recycled.
-	//
-	// When CPU requires to allocate more than what is available,
-	// more of these buffers are created. If a limit is reached,
-	// then a fence will ensure will wait for blocks allocated
-	// in previous frames are processed. If that fails, then
-	// another fence will ensure everything pending for the current
-	// frame is processed (effectively stalling).
-	//
-	// See the comments in the code to understand better how it works.
+	/// @name BUFFER MANAGEMENT
+	/// @details
+	/// These are temporary buffers on CPU memory that hold
+	/// the information until the CPU fetches it and places it
+	/// either on GPU buffers, or images (textures). It ensures
+	/// updates are properly synchronized with whatever the
+	/// GPU is doing.
+	///
+	/// The logic here is as follows, only 3 of these
+	/// blocks are created at the beginning (one per frame)
+	/// they can each belong to a frame (assigned to current when
+	/// used) and they can only be reused after the same frame is
+	/// recycled.
+	///
+	/// When CPU requires to allocate more than what is available,
+	/// more of these buffers are created. If a limit is reached,
+	/// then a fence will ensure will wait for blocks allocated
+	/// in previous frames are processed. If that fails, then
+	/// another fence will ensure everything pending for the current
+	/// frame is processed (effectively stalling).
+	///
+	/// See the comments in the code to understand better how it works.
+	/// @{
 
 	enum StagingRequiredAction {
 		STAGING_REQUIRED_ACTION_NONE,
@@ -184,11 +189,11 @@ private:
 	Error _buffer_initialize(Buffer *p_buffer, Span<uint8_t> p_data, uint32_t p_required_align = 32);
 
 	void update_perf_report();
-	// Flag for batching descriptor sets.
+	/// Flag for batching descriptor sets.
 	bool descriptor_set_batching = true;
-	// When true, the final draw call that copies our offscreen result into the Swapchain is put into its
-	// own cmd buffer, so that the whole rendering can start early instead of having to wait for the
-	// swapchain semaphore to be signaled (which causes bubbles).
+	/// When true, the final draw call that copies our offscreen result into the Swapchain is put into its
+	/// own cmd buffer, so that the whole rendering can start early instead of having to wait for the
+	/// swapchain semaphore to be signaled (which causes bubbles).
 	bool split_swapchain_into_its_own_cmd_buffer = true;
 	uint32_t gpu_copy_count = 0;
 	uint32_t copy_bytes_count = 0;
@@ -213,11 +218,10 @@ public:
 	Vector<uint8_t> buffer_get_data(RID p_buffer, uint32_t p_offset = 0, uint32_t p_size = 0); // This causes stall, only use to retrieve large buffers for saving.
 	Error buffer_get_data_async(RID p_buffer, const Callable &p_callback, uint32_t p_offset = 0, uint32_t p_size = 0);
 	uint64_t buffer_get_device_address(RID p_buffer);
-
+	/// @}
 private:
-	/******************/
-	/**** CALLBACK ****/
-	/******************/
+	/// @name CALLBACK
+	/// @{
 
 public:
 	enum CallbackResourceType {
@@ -257,22 +261,20 @@ public:
 	};
 
 	Error driver_callback_add(RDD::DriverCallback p_callback, void *p_userdata, VectorView<CallbackResource> p_resources);
-
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
-
-	// In modern APIs, the concept of textures may not exist;
-	// instead there is the image (the memory pretty much,
-	// the view (how the memory is interpreted) and the
-	// sampler (how it's sampled from the shader).
-	//
-	// Texture here includes the first two stages, but
-	// It's possible to create textures sharing the image
-	// but with different views. The main use case for this
-	// is textures that can be read as both SRGB/Linear,
-	// or slices of a texture (a mipmap, a layer, a 3D slice)
-	// for a framebuffer to render into it.
+	/// @}
+	/// @name TEXTURE
+	/// @details In modern APIs, the concept of textures may not exist;
+	/// instead there is the image (the memory pretty much,
+	/// the view (how the memory is interpreted) and the
+	/// sampler (how it's sampled from the shader).
+	///
+	/// Texture here includes the first two stages, but
+	/// It's possible to create textures sharing the image
+	/// but with different views. The main use case for this
+	/// is textures that can be read as both SRGB/Linear,
+	/// or slices of a texture (a mipmap, a layer, a 3D slice)
+	/// for a framebuffer to render into it.
+	/// @{
 
 	struct Texture {
 		struct SharedFallback {
@@ -309,7 +311,7 @@ public:
 
 		BitField<RDD::TextureAspectBits> read_aspect_flags = {};
 		BitField<RDD::TextureAspectBits> barrier_aspect_flags = {};
-		bool bound = false; // Bound to framebuffer.
+		bool bound = false; ///< Bound to framebuffer.
 		RID owner;
 
 		RDG::ResourceTracker *draw_tracker = nullptr;
@@ -376,7 +378,7 @@ public:
 
 public:
 	struct TextureView {
-		DataFormat format_override = DATA_FORMAT_MAX; // // Means, use same as format.
+		DataFormat format_override = DATA_FORMAT_MAX; ///< Means, use same as format.
 		TextureSwizzle swizzle_r = TEXTURE_SWIZZLE_R;
 		TextureSwizzle swizzle_g = TEXTURE_SWIZZLE_G;
 		TextureSwizzle swizzle_b = TEXTURE_SWIZZLE_B;
@@ -401,6 +403,7 @@ public:
 
 	RID texture_create(const TextureFormat &p_format, const TextureView &p_view, const Vector<Vector<uint8_t>> &p_data = Vector<Vector<uint8_t>>());
 	RID texture_create_shared(const TextureView &p_view, RID p_with_texture);
+	/// This method creates a texture object using a VkImage created by an extension, module or other external source (OpenXR uses this).
 	RID texture_create_from_extension(TextureType p_type, DataFormat p_format, TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage, uint64_t p_image, uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers, uint64_t p_mipmaps = 1);
 	RID texture_create_shared_from_slice(const TextureView &p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1, TextureSliceType p_slice_type = TEXTURE_SLICE_2D, uint32_t p_layers = 0);
 	Error texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t> &p_data);
@@ -422,11 +425,10 @@ public:
 
 	void texture_set_discardable(RID p_texture, bool p_discardable);
 	bool texture_is_discardable(RID p_texture);
-
+	/// @}
 public:
-	/*************/
-	/**** VRS ****/
-	/*************/
+	/// @name VRS
+	/// @{
 
 	enum VRSMethod {
 		VRS_METHOD_NONE,
@@ -448,16 +450,14 @@ public:
 	VRSMethod vrs_get_method() const;
 	DataFormat vrs_get_format() const;
 	Size2i vrs_get_texel_size() const;
-
-	/*********************/
-	/**** FRAMEBUFFER ****/
-	/*********************/
-
-	// In modern APIs, generally, framebuffers work similar to how they
-	// do in OpenGL, with the exception that
-	// the "format" (RDD::RenderPassID) is not dynamic
-	// and must be more or less the same as the one
-	// used for the render pipelines.
+	/// @}
+	/// @name FRAMEBUFFER
+	/// @details In modern APIs, generally, framebuffers work similar to how they
+	/// do in OpenGL, with the exception that
+	/// the "format" (RDD::RenderPassID) is not dynamic
+	/// and must be more or less the same as the one
+	/// used for the render pipelines.
+	/// @{
 
 	struct AttachmentFormat {
 		enum : uint32_t {
@@ -612,14 +612,14 @@ private:
 	static RDD::RenderPassID _render_pass_create(RenderingDeviceDriver *p_driver, const Vector<AttachmentFormat> &p_attachments, const Vector<FramebufferPass> &p_passes, VectorView<RDD::AttachmentLoadOp> p_load_ops, VectorView<RDD::AttachmentStoreOp> p_store_ops, uint32_t p_view_count = 1, VRSMethod p_vrs_method = VRS_METHOD_NONE, int32_t p_vrs_attachment = -1, Size2i p_vrs_texel_size = Size2i(), Vector<TextureSamples> *r_samples = nullptr);
 	static RDD::RenderPassID _render_pass_create_from_graph(RenderingDeviceDriver *p_driver, VectorView<RDD::AttachmentLoadOp> p_load_ops, VectorView<RDD::AttachmentStoreOp> p_store_ops, void *p_user_data);
 
-	// This is a cache and it's never freed, it ensures
-	// IDs for a given format are always unique.
+	/// This is a cache and it's never freed, it ensures
+	/// IDs for a given format are always unique.
 	RBMap<FramebufferFormatKey, FramebufferFormatID> framebuffer_format_cache;
 	struct FramebufferFormat {
 		const RBMap<FramebufferFormatKey, FramebufferFormatID>::Element *E;
-		RDD::RenderPassID render_pass; // Here for constructing shaders, never used, see section (7.2. Render Pass Compatibility from Vulkan spec).
+		RDD::RenderPassID render_pass; ///< Here for constructing shaders, never used, see section (7.2. Render Pass Compatibility from Vulkan spec).
 		Vector<TextureSamples> pass_samples;
-		uint32_t view_count = 1; // Number of views.
+		uint32_t view_count = 1; ///< Number of views.
 	};
 
 	HashMap<FramebufferFormatID, FramebufferFormat> framebuffer_formats;
@@ -639,7 +639,7 @@ private:
 	RID_Owner<Framebuffer, true> framebuffer_owner;
 
 public:
-	// This ID is warranted to be unique for the same formats, does not need to be freed
+	/// This ID is warranted to be unique for the same formats, does not need to be freed
 	FramebufferFormatID framebuffer_format_create(const Vector<AttachmentFormat> &p_format, uint32_t p_view_count = 1, int32_t p_vrs_attachment = -1);
 	FramebufferFormatID framebuffer_format_create_multipass(const Vector<AttachmentFormat> &p_attachments, const Vector<FramebufferPass> &p_passes, uint32_t p_view_count = 1, int32_t p_vrs_attachment = -1);
 	FramebufferFormatID framebuffer_format_create_empty(TextureSamples p_samples = TEXTURE_SAMPLES_1);
@@ -653,33 +653,30 @@ public:
 
 	FramebufferFormatID framebuffer_get_format(RID p_framebuffer);
 	Size2 framebuffer_get_size(RID p_framebuffer);
-
-	/*****************/
-	/**** SAMPLER ****/
-	/*****************/
+	/// @}
+	/// @name SAMPLER
+	/// @{
 private:
 	RID_Owner<RDD::SamplerID, true> sampler_owner;
-
+	/// @}
 public:
 	RID sampler_create(const SamplerState &p_state);
 	bool sampler_is_format_supported_for_filter(DataFormat p_format, SamplerFilter p_sampler_filter) const;
 
-	/**********************/
-	/**** VERTEX ARRAY ****/
-	/**********************/
+	/// @name VERTEX ARRAY
+	/// @{
 
 	typedef int64_t VertexFormatID;
 
 private:
-	// Vertex buffers in Vulkan are similar to how
-	// they work in OpenGL, except that instead of
-	// an attribute index, there is a buffer binding
-	// index (for binding the buffers in real-time)
-	// and a location index (what is used in the shader).
-	//
-	// This mapping is done here internally, and it's not
-	// exposed.
-
+	/// Vertex buffers in Vulkan are similar to how
+	/// they work in OpenGL, except that instead of
+	/// an attribute index, there is a buffer binding
+	/// index (for binding the buffers in real-time)
+	/// and a location index (what is used in the shader).
+	///
+	/// This mapping is done here internally, and it's not
+	/// exposed.
 	RID_Owner<Buffer, true> vertex_buffer_owner;
 
 	struct VertexDescriptionKey {
@@ -740,8 +737,8 @@ private:
 		}
 	};
 
-	// This is a cache and it's never freed, it ensures that
-	// ID used for a specific format always remain the same.
+	/// This is a cache and it's never freed, it ensures that
+	/// ID used for a specific format always remain the same.
 	HashMap<VertexDescriptionKey, VertexFormatID, VertexDescriptionHash> vertex_format_cache;
 
 	struct VertexDescriptionCache {
@@ -757,8 +754,8 @@ private:
 		int vertex_count = 0;
 		uint32_t max_instances_allowed = 0;
 
-		Vector<RDD::BufferID> buffers; // Not owned, just referenced.
-		Vector<RDG::ResourceTracker *> draw_trackers; // Not owned, just referenced.
+		Vector<RDD::BufferID> buffers; ///< Not owned, just referenced.
+		Vector<RDG::ResourceTracker *> draw_trackers; ///< Not owned, just referenced.
 		Vector<uint64_t> offsets;
 		Vector<int32_t> transfer_worker_indices;
 		Vector<uint64_t> transfer_worker_operations;
@@ -777,9 +774,9 @@ private:
 	RID_Owner<IndexBuffer, true> index_buffer_owner;
 
 	struct IndexArray {
-		uint32_t max_index = 0; // Remember the maximum index here too, for validation.
-		RDD::BufferID driver_id; // Not owned, inherited from index buffer.
-		RDG::ResourceTracker *draw_tracker = nullptr; // Not owned, inherited from index buffer.
+		uint32_t max_index = 0; ///< Remember the maximum index here too, for validation.
+		RDD::BufferID driver_id; ///< Not owned, inherited from index buffer.
+		RDG::ResourceTracker *draw_tracker = nullptr; ///< Not owned, inherited from index buffer.
 		uint32_t offset = 0;
 		uint32_t indices = 0;
 		IndexBufferFormat format = INDEX_BUFFER_FORMAT_UINT16;
@@ -805,7 +802,7 @@ public:
 		return vertex_buffer_create(p_size_bytes, p_data, p_creation_bits);
 	}
 
-	// This ID is warranted to be unique for the same formats, does not need to be freed
+	/// This ID is warranted to be unique for the same formats, does not need to be freed
 	VertexFormatID vertex_format_create(const Vector<VertexAttribute> &p_vertex_descriptions);
 	RID vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format, const Vector<RID> &p_src_buffers, const Vector<uint64_t> &p_offsets = Vector<uint64_t>());
 
@@ -815,22 +812,20 @@ public:
 	}
 
 	RID index_array_create(RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count);
-
-	/****************/
-	/**** SHADER ****/
-	/****************/
-
-	// Some APIs (e.g., Vulkan) specifies a really complex behavior for the application
-	// in order to tell when descriptor sets need to be re-bound (or not).
-	// "When binding a descriptor set (see Descriptor Set Binding) to set
-	//  number N, if the previously bound descriptor sets for sets zero
-	//  through N-1 were all bound using compatible pipeline layouts,
-	//  then performing this binding does not disturb any of the lower numbered sets.
-	//  If, additionally, the previous bound descriptor set for set N was
-	//  bound using a pipeline layout compatible for set N, then the bindings
-	//  in sets numbered greater than N are also not disturbed."
-	// As a result, we need to figure out quickly when something is no longer "compatible".
-	// in order to avoid costly rebinds.
+	/// @}
+	/// @name SHADER
+	/// @details Some APIs (e.g., Vulkan) specifies a really complex behavior for the application
+	/// in order to tell when descriptor sets need to be re-bound (or not).
+	/// "When binding a descriptor set (see Descriptor Set Binding) to set
+	///  number N, if the previously bound descriptor sets for sets zero
+	///  through N-1 were all bound using compatible pipeline layouts,
+	///  then performing this binding does not disturb any of the lower numbered sets.
+	///  If, additionally, the previous bound descriptor set for set N was
+	///  bound using a pipeline layout compatible for set N, then the bindings
+	///  in sets numbered greater than N are also not disturbed."
+	/// As a result, we need to figure out quickly when something is no longer "compatible".
+	/// in order to avoid costly rebinds.
+	/// @{
 
 private:
 	struct UniformSetFormat {
@@ -851,26 +846,25 @@ private:
 		}
 	};
 
-	// Always grows, never shrinks, ensuring unique IDs, but we assume
-	// the amount of formats will never be a problem, as the amount of shaders
-	// in a game is limited.
+	/// Always grows, never shrinks, ensuring unique IDs, but we assume
+	/// the amount of formats will never be a problem, as the amount of shaders
+	/// in a game is limited.
 	RBMap<UniformSetFormat, uint32_t> uniform_set_format_cache;
 
-	// Shaders in Vulkan are just pretty much
-	// precompiled blocks of SPIR-V bytecode. They
-	// are most likely not really compiled to host
-	// assembly until a pipeline is created.
-	//
-	// When supplying the shaders, this implementation
-	// will use the reflection abilities of glslang to
-	// understand and cache everything required to
-	// create and use the descriptor sets (Vulkan's
-	// biggest pain).
-	//
-	// Additionally, hashes are created for every set
-	// to do quick validation and ensuring the user
-	// does not submit something invalid.
-
+	/// Shaders in Vulkan are just pretty much
+	/// precompiled blocks of SPIR-V bytecode. They
+	/// are most likely not really compiled to host
+	/// assembly until a pipeline is created.
+	///
+	/// When supplying the shaders, this implementation
+	/// will use the reflection abilities of glslang to
+	/// understand and cache everything required to
+	/// create and use the descriptor sets (Vulkan's
+	/// biggest pain).
+	///
+	/// Additionally, hashes are created for every set
+	/// to do quick validation and ensuring the user
+	/// does not submit something invalid.
 	struct Shader : public ShaderReflection {
 		String name; // Used for debug.
 		RDD::ShaderID driver_id;
@@ -891,8 +885,8 @@ public:
 		BARRIER_MASK_COMPUTE = 2,
 		BARRIER_MASK_TRANSFER = 4,
 
-		BARRIER_MASK_RASTER = BARRIER_MASK_VERTEX | BARRIER_MASK_FRAGMENT, // 9,
-		BARRIER_MASK_ALL_BARRIERS = 0x7FFF, // all flags set
+		BARRIER_MASK_RASTER = BARRIER_MASK_VERTEX | BARRIER_MASK_FRAGMENT, ///< 9,
+		BARRIER_MASK_ALL_BARRIERS = 0x7FFF, ///< All flags set
 		BARRIER_MASK_NO_BARRIER = 0x8000,
 	};
 
@@ -971,15 +965,13 @@ public:
 	void shader_destroy_modules(RID p_shader);
 
 	uint64_t shader_get_vertex_input_attribute_mask(RID p_shader);
-
-	/******************/
-	/**** UNIFORMS ****/
-	/******************/
+	/// @}
+	/// @name UNIFORMS
+	/// @{
 	String get_perf_report() const;
-
-	/*****************/
-	/**** BUFFERS ****/
-	/*****************/
+	/// @}
+	/// @name BUFFERS
+	/// @{
 
 	RID uniform_buffer_create(uint32_t p_size_bytes, Span<uint8_t> p_data = {}, BitField<BufferCreationBits> p_creation_bits = 0);
 	RID _uniform_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t> &p_data, BitField<BufferCreationBits> p_creation_bits = 0) {
@@ -995,17 +987,18 @@ public:
 	RID _texture_buffer_create(uint32_t p_size_elements, DataFormat p_format, const Vector<uint8_t> &p_data) {
 		return texture_buffer_create(p_size_elements, p_format, p_data);
 	}
+	/// @}
 
 	struct Uniform {
 		UniformType uniform_type = UNIFORM_TYPE_IMAGE;
-		uint32_t binding = 0; // Binding index as specified in shader.
-		// This flag specifies that this is an immutable sampler to be set when creating pipeline layout.
+		uint32_t binding = 0; ///< Binding index as specified in shader.
+		/// This flag specifies that this is an immutable sampler to be set when creating pipeline layout.
 		bool immutable_sampler = false;
 
 	private:
-		// In most cases only one ID is provided per binding, so avoid allocating memory unnecessarily for performance.
-		RID id; // If only one is provided, this is used.
-		Vector<RID> ids; // If multiple ones are provided, this is used instead.
+		/// In most cases only one ID is provided per binding, so avoid allocating memory unnecessarily for performance.
+		RID id; ///< If only one is provided, this is used.
+		Vector<RID> ids; ///< If multiple ones are provided, this is used instead.
 
 	public:
 		_FORCE_INLINE_ uint32_t get_id_count() const {
@@ -1068,14 +1061,13 @@ private:
 	static const uint32_t MAX_UNIFORM_SETS = 16;
 	static const uint32_t MAX_PUSH_CONSTANT_SIZE = 128;
 
-	// This structure contains the descriptor set. They _need_ to be allocated
-	// for a shader (and will be erased when this shader is erased), but should
-	// work for other shaders as long as the hash matches. This covers using
-	// them in shader variants.
-	//
-	// Keep also in mind that you can share buffers between descriptor sets, so
-	// the above restriction is not too serious.
-
+	/// This structure contains the descriptor set. They _need_ to be allocated
+	/// for a shader (and will be erased when this shader is erased), but should
+	/// work for other shaders as long as the hash matches. This covers using
+	/// them in shader variants.
+	///
+	/// Keep also in mind that you can share buffers between descriptor sets, so
+	/// the above restriction is not too serious.
 	struct UniformSet {
 		uint32_t format = 0;
 		RID shader_id;
@@ -1091,7 +1083,7 @@ private:
 			RID texture;
 		};
 
-		LocalVector<AttachableTexture> attachable_textures; // Used for validation.
+		LocalVector<AttachableTexture> attachable_textures; ///< Used for validation.
 		Vector<RDG::ResourceTracker *> draw_trackers;
 		Vector<RDG::ResourceUsage> draw_trackers_usage;
 		HashMap<RID, RDG::ResourceUsage> untracked_usage;
@@ -1123,21 +1115,20 @@ public:
 
 	bool uniform_sets_have_linear_pools() const;
 
-	/*******************/
-	/**** PIPELINES ****/
-	/*******************/
+	/// @name PIPELINES
+	/// @{
 
-	// Render pipeline contains ALL the
-	// information required for drawing.
-	// This includes all the rasterizer state
-	// as well as shader used, framebuffer format,
-	// etc.
-	// While the pipeline is just a single object
-	// (VkPipeline) a lot of values are also saved
-	// here to do validation (vulkan does none by
-	// default) and warn the user if something
-	// was not supplied as intended.
 private:
+	/// Render pipeline contains ALL the
+	/// information required for drawing.
+	/// This includes all the rasterizer state
+	/// as well as shader used, framebuffer format,
+	/// etc.
+	/// While the pipeline is just a single object
+	/// (VkPipeline) a lot of values are also saved
+	/// here to do validation (vulkan does none by
+	/// default) and warn the user if something
+	/// was not supplied as intended.
 	struct RenderPipeline {
 		// Cached values for validation.
 #ifdef DEBUG_ENABLED
@@ -1191,11 +1182,10 @@ public:
 	bool compute_pipeline_is_valid(RID p_pipeline);
 
 	void update_pipeline_cache(bool p_closing = false);
-
+	/// @}
 private:
-	/****************/
-	/**** SCREEN ****/
-	/****************/
+	/// @name SCREEN
+	/// @{
 	HashMap<DisplayServer::WindowID, RDD::SwapChainID> screen_swap_chains;
 	HashMap<DisplayServer::WindowID, RDD::FramebufferID> screen_framebuffers;
 
@@ -1209,17 +1199,16 @@ public:
 	int screen_get_pre_rotation_degrees(DisplayServer::WindowID p_screen = DisplayServer::MAIN_WINDOW_ID) const;
 	FramebufferFormatID screen_get_framebuffer_format(DisplayServer::WindowID p_screen = DisplayServer::MAIN_WINDOW_ID) const;
 	Error screen_free(DisplayServer::WindowID p_screen = DisplayServer::MAIN_WINDOW_ID);
-
-	/*************************/
-	/**** DRAW LISTS (II) ****/
-	/*************************/
+	/// @}
+	/// @name DRAW LISTS (II)
+	/// @{
 
 private:
-	// Draw list contains both the command buffer
-	// used for drawing as well as a LOT of
-	// information used for validation. This
-	// validation is cheap so most of it can
-	// also run in release builds.
+	/// Draw list contains both the command buffer
+	/// used for drawing as well as a LOT of
+	/// information used for validation. This
+	/// validation is cheap so most of it can
+	/// also run in release builds.
 
 	struct DrawList {
 		Rect2i viewport;
@@ -1344,11 +1333,10 @@ public:
 	DrawListID draw_list_switch_to_next_pass();
 
 	void draw_list_end();
-
+	/// @}
 private:
-	/***********************/
-	/**** COMPUTE LISTS ****/
-	/***********************/
+	/// @name COMPUTE LISTS
+	/// @{
 
 	struct ComputeList {
 		bool active = false;
@@ -1402,11 +1390,10 @@ public:
 	void compute_list_add_barrier(ComputeListID p_list);
 
 	void compute_list_end();
-
+	/// @}
 private:
-	/*************************/
-	/**** TRANSFER WORKER ****/
-	/*************************/
+	/// @name TRANSFER WORKER
+	/// @{
 
 	struct TransferWorker {
 		uint32_t index = 0;
@@ -1436,6 +1423,8 @@ private:
 	BinaryMutex transfer_worker_pool_texture_barriers_mutex;
 	ConditionVariable transfer_worker_pool_condition;
 
+	/// Find the first worker that is not currently executing anything and has enough size for the transfer.
+	/// If no workers are available, we make a new one. If we're not allowed to make new ones, we wait until one of them is available.
 	TransferWorker *_acquire_transfer_worker(uint32_t p_transfer_size, uint32_t p_required_align, uint32_t &r_staging_offset);
 	void _release_transfer_worker(TransferWorker *p_transfer_worker);
 	void _end_transfer_worker(TransferWorker *p_transfer_worker);
@@ -1451,10 +1440,9 @@ private:
 	void _submit_transfer_barriers(RDD::CommandBufferID p_draw_command_buffer);
 	void _wait_for_transfer_workers();
 	void _free_transfer_workers();
-
-	/***********************/
-	/**** COMMAND GRAPH ****/
-	/***********************/
+	/// @}
+	/// @name COMMAND GRAPH
+	/// @{
 
 	bool _texture_make_mutable(Texture *p_texture, RID p_texture_id);
 	bool _buffer_make_mutable(Buffer *p_buffer, RID p_buffer_id);
@@ -1466,10 +1454,9 @@ private:
 	bool _dependencies_make_mutable(RID p_id, RDG::ResourceTracker *p_resource_tracker);
 
 	RenderingDeviceGraph draw_graph;
-
-	/**************************/
-	/**** QUEUE MANAGEMENT ****/
-	/**************************/
+	/// @}
+	/// @name QUEUE MANAGEMENT
+	/// @{
 
 	RDD::CommandQueueFamilyID main_queue_family;
 	RDD::CommandQueueFamilyID transfer_queue_family;
@@ -1477,25 +1464,23 @@ private:
 	RDD::CommandQueueID main_queue;
 	RDD::CommandQueueID transfer_queue;
 	RDD::CommandQueueID present_queue;
+	/// @}
+	/// @name FRAME MANAGEMENT
+	/// @{
 
-	/**************************/
-	/**** FRAME MANAGEMENT ****/
-	/**************************/
-
-	// This is the frame structure. There are normally
-	// 3 of these (used for triple buffering), or 2
-	// (double buffering). They are cycled constantly.
-	//
-	// It contains two command buffers, one that is
-	// used internally for setting up (creating stuff)
-	// and another used mostly for drawing.
-	//
-	// They also contains a list of things that need
-	// to be disposed of when deleted, which can't
-	// happen immediately due to the asynchronous
-	// nature of the GPU. They will get deleted
-	// when the frame is cycled.
-
+	/// This is the frame structure. There are normally
+	/// 3 of these (used for triple buffering), or 2
+	/// (double buffering). They are cycled constantly.
+	///
+	/// It contains two command buffers, one that is
+	/// used internally for setting up (creating stuff)
+	/// and another used mostly for drawing.
+	///
+	/// They also contains a list of things that need
+	/// to be disposed of when deleted, which can't
+	/// happen immediately due to the asynchronous
+	/// nature of the GPU. They will get deleted
+	/// when the frame is cycled.
 	struct Frame {
 		// List in usage order, from last to free to first to free.
 		List<Buffer> buffers_to_dispose_of;
@@ -1507,42 +1492,45 @@ private:
 		List<RenderPipeline> render_pipelines_to_dispose_of;
 		List<ComputePipeline> compute_pipelines_to_dispose_of;
 
-		// Pending asynchronous data transfer for buffers.
+		/// Pending asynchronous data transfer for buffers.
+		/// @{
 		LocalVector<RDD::BufferID> download_buffer_staging_buffers;
 		LocalVector<RDD::BufferCopyRegion> download_buffer_copy_regions;
 		LocalVector<BufferGetDataRequest> download_buffer_get_data_requests;
-
-		// Pending asynchronous data transfer for textures.
+		/// @}
+		/// Pending asynchronous data transfer for textures.
+		/// @{
 		LocalVector<RDD::BufferID> download_texture_staging_buffers;
 		LocalVector<RDD::BufferTextureCopyRegion> download_buffer_texture_copy_regions;
 		LocalVector<uint32_t> download_texture_mipmap_offsets;
 		LocalVector<TextureGetDataRequest> download_texture_get_data_requests;
+		/// @}
 
-		// The command pool used by the command buffer.
+		/// The command pool used by the command buffer.
 		RDD::CommandPoolID command_pool;
 
-		// The command buffer used by the main thread when recording the frame.
+		/// The command buffer used by the main thread when recording the frame.
 		RDD::CommandBufferID command_buffer;
 
-		// Signaled by the command buffer submission. Present must wait on this semaphore.
+		/// Signaled by the command buffer submission. Present must wait on this semaphore.
 		RDD::SemaphoreID semaphore;
 
-		// Signaled by the command buffer submission. Must wait on this fence before beginning command recording for the frame.
+		/// Signaled by the command buffer submission. Must wait on this fence before beginning command recording for the frame.
 		RDD::FenceID fence;
 		bool fence_signaled = false;
 
-		// Semaphores the frame must wait on before executing the command buffer.
+		/// Semaphores the frame must wait on before executing the command buffer.
 		LocalVector<RDD::SemaphoreID> semaphores_to_wait_on;
 
-		// Swap chains prepared for drawing during the frame that must be presented.
+		/// Swap chains prepared for drawing during the frame that must be presented.
 		LocalVector<RDD::SwapChainID> swap_chains_to_present;
 
-		// Semaphores the transfer workers can use to wait before rendering the frame.
-		// This must have the same size of the transfer worker pool.
+		/// Semaphores the transfer workers can use to wait before rendering the frame.
+		/// This must have the same size of the transfer worker pool.
 		TightLocalVector<RDD::SemaphoreID> transfer_worker_semaphores;
 
-		// Extra command buffer pool used for driver workarounds or to reduce GPU bubbles by
-		// splitting the final render pass to the swapchain into its own cmd buffer.
+		/// Extra command buffer pool used for driver workarounds or to reduce GPU bubbles by
+		/// splitting the final render pass to the swapchain into its own cmd buffer.
 		RDG::CommandBufferPool command_buffer_pool;
 
 		struct Timestamp {
@@ -1568,12 +1556,13 @@ private:
 	TightLocalVector<Frame> frames;
 	uint64_t frames_drawn = 0;
 
-	// Whenever logic/physics request a graphics operation (not just deleting a resource) that requires
-	// us to flush all graphics commands, we must set frames_pending_resources_for_processing = frames.size().
-	// This is important for when the user requested for the logic loop to still be updated while
-	// graphics should not (e.g. headless Multiplayer servers, minimized windows that need to still
-	// process something on the background).
+	/// Whenever logic/physics request a graphics operation (not just deleting a resource) that requires
+	/// us to flush all graphics commands, we must set frames_pending_resources_for_processing = frames.size().
+	/// This is important for when the user requested for the logic loop to still be updated while
+	/// graphics should not (e.g. headless Multiplayer servers, minimized windows that need to still
+	/// process something on the background).
 	uint32_t frames_pending_resources_for_processing = 0u;
+	/// @}
 
 public:
 	bool has_pending_resources_for_processing() const { return frames_pending_resources_for_processing != 0u; }
@@ -1613,9 +1602,8 @@ public:
 
 	void free(RID p_id);
 
-	/****************/
-	/**** Timing ****/
-	/****************/
+	/// @name Timing
+	/// @{
 
 	void capture_timestamp(const String &p_name);
 	uint32_t get_captured_timestamps_count() const;
@@ -1623,6 +1611,7 @@ public:
 	uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const;
 	uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const;
 	String get_captured_timestamp_name(uint32_t p_index) const;
+	/// @}
 
 	/****************/
 	/**** LIMITS ****/
@@ -1647,6 +1636,8 @@ public:
 
 	RenderingDevice *create_local_device();
 
+	/// The full list of resources that can be named is in the VkObjectType enum.
+	/// We just expose the resources that are owned and can be accessed easily.
 	void set_resource_name(RID p_id, const String &p_name);
 
 	void _draw_command_begin_label(String p_label_name, const Color &p_color = Color(1, 1, 1, 1));
@@ -1687,9 +1678,8 @@ public:
 	~RenderingDevice();
 
 private:
-	/*****************/
-	/**** BINDERS ****/
-	/*****************/
+	/// @name BINDERS
+	/// @{
 
 	RID _texture_create(const Ref<RDTextureFormat> &p_format, const Ref<RDTextureView> &p_view, const TypedArray<PackedByteArray> &p_data = Array());
 	RID _texture_create_shared(const Ref<RDTextureView> &p_view, RID p_with_texture);
@@ -1719,6 +1709,7 @@ private:
 
 	void _draw_list_set_push_constant(DrawListID p_list, const Vector<uint8_t> &p_data, uint32_t p_data_size);
 	void _compute_list_set_push_constant(ComputeListID p_list, const Vector<uint8_t> &p_data, uint32_t p_data_size);
+	/// @}
 };
 
 VARIANT_ENUM_CAST(RenderingDevice::DeviceType)

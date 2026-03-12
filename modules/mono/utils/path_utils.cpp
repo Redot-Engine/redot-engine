@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file path_utils.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "path_utils.h"
 
 #include "core/config/project_settings.h"
@@ -193,9 +199,8 @@ String join(const String &p_a, const String &p_b, const String &p_c, const Strin
 	return Path::join(Path::join(Path::join(p_a, p_b), p_c), p_d);
 }
 
+/// This function assumes arguments are normalized and absolute paths
 String relative_to_impl(const String &p_path, const String &p_relative_to) {
-	// This function assumes arguments are normalized and absolute paths
-
 	if (p_path.begins_with(p_relative_to)) {
 		return p_path.substr(p_relative_to.length() + 1);
 	} else {

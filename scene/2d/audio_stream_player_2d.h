@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_player_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/2d/node_2d.h"
@@ -53,7 +59,7 @@ private:
 	struct Output {
 		AudioFrame vol;
 		int bus_index = 0;
-		Viewport *viewport = nullptr; //pointer only used for reference to previous mix
+		Viewport *viewport = nullptr; ///< Pointer only used for reference to previous mix
 	};
 
 	AudioStreamPlayerInternal *internal = nullptr;
@@ -64,6 +70,7 @@ private:
 	Vector<AudioFrame> volume_vector;
 
 	uint64_t last_mix_count = -1;
+	/// Interacts with PhysicsServer2D, so can only be called during _physics_process
 	bool force_update_panning = false;
 
 	AudioServer::PlaybackType playback_type = AudioServer::PlaybackType::PLAYBACK_TYPE_DEFAULT;

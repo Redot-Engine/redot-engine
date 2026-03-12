@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_set_atlas_source_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_set_atlas_source_editor.h"
 
 #include "tiles_editor_plugin.h"
@@ -2023,7 +2029,7 @@ void TileSetAtlasSourceEditor::_tile_alternatives_control_mouse_exited() {
 void TileSetAtlasSourceEditor::_tile_alternatives_create_button_pressed(const Vector2i &p_atlas_coords) {
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 
-	// FIXME: Doesn't undo changes to `next_alternative_id` counter.
+	/// @todo FIXME: Doesn't undo changes to `next_alternative_id` counter.
 	undo_redo->create_action(TTR("Create tile alternatives"));
 	int next_id = tile_set_atlas_source->get_next_alternative_tile_id(p_atlas_coords);
 	undo_redo->add_do_method(tile_set_atlas_source, "create_alternative_tile", p_atlas_coords, next_id);

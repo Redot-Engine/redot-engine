@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animated_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/image_frames.h"
@@ -39,7 +45,7 @@
 class AnimatedTexture : public Texture2D {
 	GDCLASS(AnimatedTexture, Texture2D);
 
-	// Use readers writers lock for this, since its far more times read than written to.
+	/// Use readers writers lock for this, since its far more times read than written to.
 	RWLock rw_lock;
 
 public:

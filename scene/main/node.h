@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/string/node_path.h"
@@ -52,8 +58,8 @@ class Node : public Object {
 	friend class SceneTreeFTI;
 
 protected:
-	// During group processing, these are thread-safe.
-	// Outside group processing, these avoid the cost of sync by working as plain primitive types.
+	/// During group processing, these are thread-safe.
+	/// Outside group processing, these avoid the cost of sync by working as plain primitive types.
 	union MTFlag {
 		SafeFlag mt;
 		bool st;
@@ -69,14 +75,14 @@ protected:
 	};
 
 public:
-	// N.B. Any enum stored as a bitfield should be specified as UNSIGNED to work around
-	// some compilers trying to store it as signed, and requiring 1 more bit than necessary.
+	/// N.B. Any enum stored as a bitfield should be specified as UNSIGNED to work around
+	/// some compilers trying to store it as signed, and requiring 1 more bit than necessary.
 	enum ProcessMode : unsigned int {
-		PROCESS_MODE_INHERIT, // same as parent node
-		PROCESS_MODE_PAUSABLE, // process only if not paused
-		PROCESS_MODE_WHEN_PAUSED, // process only if paused
-		PROCESS_MODE_ALWAYS, // process always
-		PROCESS_MODE_DISABLED, // never process
+		PROCESS_MODE_INHERIT, ///< same as parent node
+		PROCESS_MODE_PAUSABLE, ///< process only if not paused
+		PROCESS_MODE_WHEN_PAUSED, ///< process only if paused
+		PROCESS_MODE_ALWAYS, ///< process always
+		PROCESS_MODE_DISABLED, ///< never process
 	};
 
 	enum ProcessThreadGroup {
@@ -160,7 +166,7 @@ private:
 		bool operator()(const Node *p_a, const Node *p_b) const { return p_b->data.physics_process_priority == p_a->data.physics_process_priority ? p_b->is_greater_than(p_a) : p_b->data.physics_process_priority > p_a->data.physics_process_priority; }
 	};
 
-	// This Data struct is to avoid namespace pollution in derived classes.
+	/// This Data struct is to avoid namespace pollution in derived classes.
 	struct Data {
 		String scene_file_path;
 		Ref<SceneState> instance_state;
@@ -177,14 +183,14 @@ private:
 		mutable int internal_children_front_count_cache = 0;
 		mutable int internal_children_back_count_cache = 0;
 		mutable int external_children_count_cache = 0;
-		mutable int index = -1; // relative to front, normal or back.
+		mutable int index = -1; ///< relative to front, normal or back.
 		int32_t depth = -1;
-		int blocked = 0; // Safeguard that throws an error when attempting to modify the tree in a harmful way while being traversed.
+		int blocked = 0; ///< Safeguard that throws an error when attempting to modify the tree in a harmful way while being traversed.
 		StringName name;
 		SceneTree *tree = nullptr;
 
 #ifdef TOOLS_ENABLED
-		NodePath import_path; // Path used when imported, used by scene editors to keep tracking.
+		NodePath import_path; ///< Path used when imported, used by scene editors to keep tracking.
 #endif
 		String editor_description;
 
@@ -193,7 +199,7 @@ private:
 		mutable RID accessibility_element;
 
 		HashMap<StringName, GroupData> grouped;
-		List<Node *>::Element *OW = nullptr; // Owned element.
+		List<Node *>::Element *OW = nullptr; ///< Owned element.
 		List<Node *> owned;
 
 		Node *process_owner = nullptr;
@@ -201,14 +207,16 @@ private:
 		Node *process_thread_group_owner = nullptr;
 		int process_thread_group_order = 0;
 		BitField<ProcessThreadMessages> process_thread_messages = {};
-		void *process_group = nullptr; // to avoid cyclic dependency
+		void *process_group = nullptr; ///< to avoid cyclic dependency
 
-		int multiplayer_authority = 1; // Server by default.
+		int multiplayer_authority = 1; ///< Server by default.
 		Variant rpc_config;
 
-		// Variables used to properly sort the node when processing, ignored otherwise.
+		/// @name Variables used to properly sort the node when processing, ignored otherwise.
+		/// @{
 		int process_priority = 0;
 		int physics_process_priority = 0;
+		/// @}
 
 		// Keep bitpacked values together to get better packing.
 		ProcessMode process_mode : 3;
@@ -227,24 +235,24 @@ private:
 		bool unhandled_key_input : 1;
 		bool unhandled_picking_input : 1;
 
-		// Physics interpolation can be turned on and off on a per node basis.
-		// This only takes effect when the SceneTree (or project setting) physics interpolation
-		// is switched on.
+		/// Physics interpolation can be turned on and off on a per node basis.
+		/// This only takes effect when the SceneTree (or project setting) physics interpolation
+		/// is switched on.
 		bool physics_interpolated : 1;
 
-		// We can auto-reset physics interpolation when e.g. adding a node for the first time.
+		/// We can auto-reset physics interpolation when e.g. adding a node for the first time.
 		bool physics_interpolation_reset_requested : 1;
 
-		// Most nodes need not be interpolated in the scene tree, physics interpolation
-		// is normally only needed in the RenderingServer. However if we need to read the
-		// interpolated transform of a node in the SceneTree, it is necessary to duplicate
-		// the interpolation logic client side, in order to prevent stalling the RenderingServer
-		// by reading back.
+		/// Most nodes need not be interpolated in the scene tree, physics interpolation
+		/// is normally only needed in the RenderingServer. However if we need to read the
+		/// interpolated transform of a node in the SceneTree, it is necessary to duplicate
+		/// the interpolation logic client side, in order to prevent stalling the RenderingServer
+		/// by reading back.
 		bool physics_interpolated_client_side : 1;
 
-		// For certain nodes (e.g. CPU particles in global mode)
-		// it can be useful to not send the instance transform to the
-		// RenderingServer, and specify the mesh in world space.
+		/// For certain nodes (e.g. CPU particles in global mode)
+		/// it can be useful to not send the instance transform to the
+		/// RenderingServer, and specify the mesh in world space.
 		bool use_identity_transform : 1;
 
 		bool use_placeholder : 1;
@@ -291,7 +299,13 @@ private:
 	Array _get_node_and_resource(const NodePath &p_path);
 
 	void _duplicate_scripts(const Node *p_original, Node *p_copy) const;
+	/// Duplicate node's properties.
+	/// This has to be called after nodes have been duplicated since there might be properties
+	/// of type Node that can be updated properly only if duplicated node tree is complete.
 	void _duplicate_properties(const Node *p_root, const Node *p_original, Node *p_copy, int p_flags) const;
+	/// Duplication of signals must happen after all the node descendants have been copied,
+	/// because re-targeting of connections from some descendant to another is not possible
+	/// if the emitter node comes later in tree order than the receiver
 	void _duplicate_signals(const Node *p_original, Node *p_copy) const;
 	Node *_duplicate(int p_flags, HashMap<const Node *, Node *> *r_duplimap = nullptr) const;
 
@@ -322,7 +336,8 @@ private:
 
 	void _update_children_cache_impl() const;
 
-	// Process group management
+	/// @name Process group management
+	/// @{
 	void _add_process_group();
 	void _remove_process_group();
 	void _add_to_process_thread_group();
@@ -334,9 +349,10 @@ private:
 
 	Variant _call_deferred_thread_group_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
 	Variant _call_thread_safe_bind(const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+	/// @}
 
-	// Editor only signal to keep the SceneTreeEditor in sync.
 #ifdef TOOLS_ENABLED
+	/// Editor only signal to keep the SceneTreeEditor in sync.
 	void _emit_editor_state_changed();
 #else
 	void _emit_editor_state_changed() {}
@@ -376,12 +392,14 @@ protected:
 	bool _is_using_identity_transform() const { return data.use_identity_transform; }
 	int32_t _get_scene_tree_depth() const { return data.depth; }
 
-	//call from SceneTree
+	/// @name Call from SceneTree
+	/// @{
 	void _call_input(const Ref<InputEvent> &p_event);
 	void _call_shortcut_input(const Ref<InputEvent> &p_event);
 	void _call_unhandled_input(const Ref<InputEvent> &p_event);
 	void _call_unhandled_key_input(const Ref<InputEvent> &p_event);
 	void _call_unhandled_picking_input(const Ref<InputEvent> &p_event);
+	/// @}
 
 	void _validate_property(PropertyInfo &p_property) const;
 
@@ -390,7 +408,7 @@ protected:
 	}
 
 protected:
-	virtual bool _uses_signal_mutex() const override { return false; } // Node uses thread guards instead.
+	virtual bool _uses_signal_mutex() const override { return false; } ///< Node uses thread guards instead.
 
 	virtual void input(const Ref<InputEvent> &p_event);
 	virtual void shortcut_input(const Ref<InputEvent> &p_key_event);
@@ -443,7 +461,7 @@ public:
 		NOTIFICATION_POST_ENTER_TREE = 27,
 		NOTIFICATION_DISABLED = 28,
 		NOTIFICATION_ENABLED = 29,
-		NOTIFICATION_RESET_PHYSICS_INTERPOLATION = 2001, // I cannot do that Redot.
+		NOTIFICATION_RESET_PHYSICS_INTERPOLATION = 2001, ///< I cannot do that Redot.
 		// Keep these linked to Node.
 
 		NOTIFICATION_ACCESSIBILITY_UPDATE = 3000,
@@ -479,9 +497,11 @@ public:
 		NOTIFICATION_UNSUSPENDED = 9004
 	};
 
-	/* NODE/TREE */
+	/// @name NODE/TREE
+	/// @{
 
 	StringName get_name() const;
+	/// @return A clear description of this node depending on what is available. Useful for error messages.
 	String get_description() const;
 	void set_name(const StringName &p_name);
 
@@ -497,7 +517,12 @@ public:
 	bool has_node(const NodePath &p_path) const;
 	Node *get_node(const NodePath &p_path) const;
 	Node *get_node_or_null(const NodePath &p_path) const;
+	/// Finds the first child node (in tree order) whose name matches the given pattern.
+	/// Can be recursive or not, and limited to owned nodes.
 	Node *find_child(const String &p_pattern, bool p_recursive = true, bool p_owned = true) const;
+	/// Finds child nodes based on their name using pattern matching, or class name,
+	/// or both (either pattern or type can be left empty).
+	/// Can be recursive or not, and limited to owned nodes.
 	TypedArray<Node> find_children(const String &p_pattern, const String &p_type = "", bool p_recursive = true, bool p_owned = true) const;
 	bool has_node_and_resource(const NodePath &p_path) const;
 	Node *get_node_and_resource(const NodePath &p_path, Ref<Resource> &r_res, Vector<StringName> &r_leftover_subpath, bool p_last_is_property = true) const;
@@ -600,16 +625,16 @@ public:
 #endif
 	void get_storable_properties(HashSet<StringName> &r_storable_properties) const;
 
+	/// @note Keep this method in sync with `Object::to_string`.
 	virtual String to_string() override;
-
-	/* NOTIFICATIONS */
-
+	/// @}
+	/// @name NOTIFICATIONS
+	/// @{
 	void propagate_notification(int p_notification);
-
 	void propagate_call(const StringName &p_method, const Array &p_args = Array(), const bool p_parent_first = false);
-
-	/* PROCESSING */
-
+	/// @}
+	/// @name PROCESSING
+	/// @{
 	void set_physics_process(bool p_process);
 	double get_physics_process_delta_time() const;
 	bool is_physics_processing() const;
@@ -676,6 +701,7 @@ public:
 	}
 
 	_FORCE_INLINE_ static bool is_group_processing() { return current_process_thread_group; }
+	/// @}
 
 	void set_process_thread_messages(BitField<ProcessThreadMessages> p_flags);
 	BitField<ProcessThreadMessages> get_process_thread_messages() const;
@@ -745,10 +771,10 @@ public:
 
 	void queue_free();
 
-	//hacks for speed
+	/// @todo Hacks for speed
 	static void init_node_hrcr();
 
-	void set_import_path(const NodePath &p_import_path); //path used when imported, used by scene editors to keep tracking
+	void set_import_path(const NodePath &p_import_path); ///< Path used when imported, used by scene editors to keep tracking
 	NodePath get_import_path() const;
 
 	bool is_owned_by_parent() const;
@@ -764,13 +790,14 @@ public:
 	void set_display_folded(bool p_folded);
 	bool is_displayed_folded() const;
 
-	/* NETWORK */
+	/// @name NETWORK
+	/// @{
 
 	virtual void set_multiplayer_authority(int p_peer_id, bool p_recursive = true);
 	int get_multiplayer_authority() const;
 	bool is_multiplayer_authority() const;
 
-	void rpc_config(const StringName &p_method, const Variant &p_config); // config a local method for RPC
+	void rpc_config(const StringName &p_method, const Variant &p_config); ///< Config a local method for RPC
 	const Variant get_node_rpc_config() const;
 
 	template <typename... VarArgs>
@@ -782,8 +809,9 @@ public:
 	Error rpcp(int p_peer_id, const StringName &p_method, const Variant **p_arg, int p_argcount);
 
 	Ref<MultiplayerAPI> get_multiplayer() const;
-
-	/* INTERNATIONALIZATION */
+	/// @}
+	/// @name INTERNATIONALIZATION
+	/// @{
 
 	void set_auto_translate_mode(AutoTranslateMode p_mode);
 	AutoTranslateMode get_auto_translate_mode() const;
@@ -800,8 +828,9 @@ public:
 		}
 		return p_n == 1 ? p_message : String(p_message_plural);
 	}
-
-	/* THREADING */
+	/// @}
+	/// @name THREADING
+	/// @{
 
 	void call_deferred_thread_groupp(const StringName &p_method, const Variant **p_args, int p_argcount, bool p_show_error = false);
 	template <typename... VarArgs>
@@ -828,6 +857,7 @@ public:
 	}
 	void set_thread_safe(const StringName &p_property, const Variant &p_value);
 	void notify_thread_safe(int p_notification);
+	/// @}
 
 	// These inherited functions need proper multithread locking when overridden in Node.
 #ifdef DEBUG_ENABLED
@@ -868,8 +898,8 @@ VARIANT_ENUM_CAST(Node::AutoTranslateMode);
 
 typedef HashSet<Node *, Node::Comparator> NodeSet;
 
-// Template definitions must be in the header so they are always fully initialized before their usage.
-// See this StackOverflow question for more information: https://stackoverflow.com/questions/495021/why-can-templates-only-be-implemented-in-the-header-file
+/// Template definitions must be in the header so they are always fully initialized before their usage.
+/// @see StackOverflow question for more information: https://stackoverflow.com/questions/495021/why-can-templates-only-be-implemented-in-the-header-file
 
 template <typename... VarArgs>
 Error Node::rpc(const StringName &p_method, VarArgs... p_args) {

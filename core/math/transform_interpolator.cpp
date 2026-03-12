@@ -30,14 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file transform_interpolator.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "transform_interpolator.h"
 
 #include "core/math/transform_2d.h"
 #include "core/math/transform_3d.h"
 
 void TransformInterpolator::interpolate_transform_2d(const Transform2D &p_prev, const Transform2D &p_curr, Transform2D &r_result, real_t p_fraction) {
-	// Special case for physics interpolation, if flipping, don't interpolate basis.
-	// If the determinant polarity changes, the handedness of the coordinate system changes.
 	if (_sign(p_prev.determinant()) != _sign(p_curr.determinant())) {
 		r_result.columns[0] = p_curr.columns[0];
 		r_result.columns[1] = p_curr.columns[1];
@@ -184,10 +188,10 @@ void TransformInterpolator::interpolate_basis_linear(const Basis &p_prev, const 
 	// Interpolate basis.
 	r_result = p_prev.lerp(p_curr, p_fraction);
 
-	// It turns out we need to guard against zero scale basis.
-	// This is kind of silly, as we should probably fix the bugs elsewhere in Redot that can't deal with
-	// zero scale, but until that time...
-	// TODO: Rewrite this ^
+	/// It turns out we need to guard against zero scale basis.
+	/// This is kind of silly, as we should probably fix the bugs elsewhere in Redot that can't deal with
+	/// zero scale, but until that time...
+	/// @todo Rewrite this ^
 	for (int n = 0; n < 3; n++) {
 		Vector3 &axis = r_result[n];
 
@@ -204,7 +208,6 @@ void TransformInterpolator::interpolate_basis_linear(const Basis &p_prev, const 
 	}
 }
 
-// Returns length.
 real_t TransformInterpolator::_vec3_normalize(Vector3 &p_vec) {
 	real_t lengthsq = p_vec.length_squared();
 	if (lengthsq == 0.0f) {
@@ -218,10 +221,7 @@ real_t TransformInterpolator::_vec3_normalize(Vector3 &p_vec) {
 	return length;
 }
 
-// Returns lengths.
 Vector3 TransformInterpolator::_basis_orthonormalize(Basis &r_basis) {
-	// Gram-Schmidt Process.
-
 	Vector3 x = r_basis.get_column(0);
 	Vector3 y = r_basis.get_column(1);
 	Vector3 z = r_basis.get_column(2);
@@ -300,7 +300,7 @@ TransformInterpolator::Method TransformInterpolator::_test_basis(Basis p_basis, 
 		return INTERP_LERP;
 	}
 
-	// TODO: This could possibly be less stringent too, check this.
+	/// @todo This could possibly be less stringent too, check this.
 	r_quat = _basis_to_quat_unchecked(p_basis);
 	if (!r_quat.is_normalized()) {
 		return INTERP_LERP;
@@ -309,7 +309,6 @@ TransformInterpolator::Method TransformInterpolator::_test_basis(Basis p_basis, 
 	return r_needed_normalize ? INTERP_SCALED_SLERP : INTERP_SLERP;
 }
 
-// This check doesn't seem to be needed but is preserved in case of bugs.
 bool TransformInterpolator::_basis_is_orthogonal_any_scale(const Basis &p_basis) {
 	Vector3 cross = p_basis.get_column(0).cross(p_basis.get_column(1));
 	real_t l = _vec3_normalize(cross);
@@ -352,7 +351,6 @@ bool TransformInterpolator::_basis_is_orthogonal(const Basis &p_basis, real_t p_
 }
 
 real_t TransformInterpolator::checksum_transform_3d(const Transform3D &p_transform) {
-	// just a really basic checksum, this can probably be improved
 	real_t sum = _vec3_sum(p_transform.origin);
 	sum -= _vec3_sum(p_transform.basis.rows[0]);
 	sum += _vec3_sum(p_transform.basis.rows[1]);

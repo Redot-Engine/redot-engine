@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/resources/texture.h"
@@ -63,6 +69,9 @@ public:
 	void set_camera_active(bool p_active);
 	bool get_camera_active() const;
 
+	/// @note When any CameraTexture is created, we need to automatically activate monitoring
+	///       of camera feeds. This may incur a small lag spike, so it may be preferable to
+	///       enable it manually before creating the camera texture.
 	CameraTexture();
 	~CameraTexture();
 };

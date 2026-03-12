@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file webp_common.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webp_common.h"
 
 #include "core/config/project_settings.h"
@@ -74,7 +80,7 @@ Vector<uint8_t> _webp_packer(const Ref<Image> &p_image, float p_quality, bool p_
 	Vector<uint8_t> data = img->get_data();
 	const uint8_t *r = data.ptr();
 
-	// we need to use the more complex API in order to access specific flags...
+	/// @todo We need to use the more complex API in order to access specific flags...
 
 	WebPConfig config;
 	WebPPicture pic;

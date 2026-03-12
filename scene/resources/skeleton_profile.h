@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_profile.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "texture.h"
@@ -45,8 +51,8 @@ public:
 	};
 
 protected:
-	// Note: SkeletonProfileHumanoid which extends SkeletonProfile exists to unify standard bone names.
-	// That is what is_read_only is for, so don't make it public.
+	/// @note SkeletonProfileHumanoid which extends SkeletonProfile exists to unify standard bone names.
+	/// That is what is_read_only is for, so don't make it public.
 	bool is_read_only = false;
 
 	struct SkeletonProfileGroup {

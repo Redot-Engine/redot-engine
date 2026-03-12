@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vrs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
@@ -48,7 +54,7 @@ private:
 	};
 
 	struct VRSPushConstant {
-		float max_texel_factor; // 4x8, 8x4 and 8x8 are only available on some GPUs.
+		float max_texel_factor; ///< 4x8, 8x4 and 8x8 are only available on some GPUs.
 		float res1;
 		float res2;
 		float res3;

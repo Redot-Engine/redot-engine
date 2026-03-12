@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file stream_peer_gzip.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/stream_peer.h"
@@ -42,7 +48,7 @@ class StreamPeerGZIP : public StreamPeer {
 	GDCLASS(StreamPeerGZIP, StreamPeer);
 
 private:
-	void *ctx = nullptr; // Will hold our z_stream instance.
+	void *ctx = nullptr; ///< Will hold our z_stream instance.
 	bool compressing = true;
 
 	RingBuffer<uint8_t> rb;

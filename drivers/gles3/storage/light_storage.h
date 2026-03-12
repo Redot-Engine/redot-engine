@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef GLES3_ENABLED
@@ -888,7 +894,7 @@ public:
 	virtual void set_directional_shadow_count(int p_count) override;
 
 	Rect2i get_directional_shadow_rect();
-	void update_directional_shadow_atlas();
+	void update_directional_shadow_atlas(); ///< Create if necessary and clear.
 
 	_FORCE_INLINE_ GLuint directional_shadow_get_texture() {
 		return directional_shadow.depth;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file input.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "input.h"
 #include "input.compat.inc"
 
@@ -740,8 +746,6 @@ Vector3 Input::get_gyroscope() const {
 }
 
 void Input::_parse_input_event_impl(const Ref<InputEvent> &p_event, bool p_is_emulated) {
-	// This function does the final delivery of the input event to user land.
-	// Regardless where the event came from originally, this has to happen on the main thread.
 	DEV_ASSERT(Thread::get_caller_id() == Thread::get_main_id());
 
 	// Notes on mouse-touch emulation:
@@ -1073,15 +1077,6 @@ void Input::warp_mouse(const Vector2 &p_position) {
 }
 
 Point2 Input::warp_mouse_motion(const Ref<InputEventMouseMotion> &p_motion, const Rect2 &p_rect) {
-	// The relative distance reported for the next event after a warp is in the boundaries of the
-	// size of the rect on that axis, but it may be greater, in which case there's no problem as fmod()
-	// will warp it, but if the pointer has moved in the opposite direction between the pointer relocation
-	// and the subsequent event, the reported relative distance will be less than the size of the rect
-	// and thus fmod() will be disabled for handling the situation.
-	// And due to this mouse warping mechanism being stateless, we need to apply some heuristics to
-	// detect the warp: if the relative distance is greater than the half of the size of the relevant rect
-	// (checked per each axis), it will be considered as the consequence of a former pointer warp.
-
 	const Point2 rel_sign(p_motion->get_relative().x >= 0.0f ? 1 : -1, p_motion->get_relative().y >= 0.0 ? 1 : -1);
 	const Size2 warp_margin = p_rect.size * 0.5f;
 	const Point2 rel_warped(
@@ -1141,8 +1136,6 @@ bool Input::is_emulating_touch_from_mouse() const {
 	return emulate_touch_from_mouse;
 }
 
-// Calling this whenever the game window is focused helps unsticking the "touch mouse"
-// if the OS or its abstraction class hasn't properly reported that touch pointers raised
 void Input::ensure_touch_mouse_raised() {
 	_THREAD_SAFE_METHOD_
 	if (mouse_from_touch_index != -1) {
@@ -1777,9 +1770,6 @@ void Input::add_joy_mapping(const String &p_mapping, bool p_update_existing) {
 }
 
 void Input::remove_joy_mapping(const String &p_guid) {
-	// One GUID can exist multiple times in `map_db`, and
-	// `add_joy_mapping` can choose not to update the existing mapping,
-	// so the indices can be all over the place. Therefore we need to remember them.
 	Vector<int> removed_idx;
 	int min_removed_idx = -1;
 	int max_removed_idx = -1;
@@ -1867,7 +1857,6 @@ void Input::set_fallback_mapping(const String &p_guid) {
 	}
 }
 
-//platforms that use the remapping system can override and call to these ones
 bool Input::is_joy_known(int p_device) {
 	return joy_names.has(p_device) && joy_names[p_device].is_known;
 }

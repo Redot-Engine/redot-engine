@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file compositor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -108,7 +114,7 @@ class Compositor : public Resource {
 private:
 	RID compositor;
 
-	// Compositor effects
+	/// Compositor effects
 	LocalVector<Ref<CompositorEffect>> effects;
 
 protected:

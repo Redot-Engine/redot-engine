@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_mp3.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/audio/audio_stream.h"
@@ -70,7 +76,7 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; ///< Times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
@@ -91,7 +97,7 @@ public:
 
 class AudioStreamMP3 : public AudioStream {
 	GDCLASS(AudioStreamMP3, AudioStream);
-	OBJ_SAVE_TYPE(AudioStream) //children are all saved as AudioStream, so they can be exchanged
+	OBJ_SAVE_TYPE(AudioStream) ///< Children are all saved as AudioStream, so they can be exchanged
 	RES_BASE_EXTENSION("mp3str");
 
 	friend class AudioStreamPlaybackMP3;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file doc_data.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/xml_parser.h"
@@ -109,7 +115,7 @@ public:
 		bool is_experimental = false;
 		String experimental_message;
 		Vector<ArgumentDoc> arguments;
-		// NOTE: Only for GDScript for now. The rest argument is not saved to the XML file.
+		/// @note Only for GDScript for now. The rest argument is not saved to the XML file.
 		ArgumentDoc rest_argument;
 		Vector<int> errors_returned;
 		String keywords;

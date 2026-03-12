@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skin_tool.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "gltf_defines.h"
@@ -79,6 +85,9 @@ public:
 
 public:
 	static Error _expand_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
+	/// This may seem duplicated from expand_skins, but this is really a sanity check! (so it kinda is)
+	/// In case additional interpolating logic is added to the skins, this will help ensure that you
+	/// do not cause it to self implode into a fiery blaze
 	static Error _verify_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
 	static Error _asset_parse_skins(
 			const Vector<SkinNodeIndex> &p_input_skin_indices,

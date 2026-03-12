@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file metal_objects.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 /**************************************************************************/
@@ -68,8 +74,8 @@
 #import <initializer_list>
 #import <optional>
 
-// These types can be used in Vector and other containers that use
-// pointer operations not supported by ARC.
+/// These types can be used in Vector and other containers that use
+/// pointer operations not supported by ARC.
 namespace MTL {
 #define MTL_CLASS(name)                               \
 	class name {                                      \
@@ -313,7 +319,7 @@ class API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0)) MDCommandBuffer {
 private:
 #pragma mark - Common State
 
-	// From RenderingDevice
+	/// From RenderingDevice
 	static constexpr uint32_t MAX_PUSH_CONSTANT_SIZE = 128;
 
 	RenderingDeviceDriverMetal *device_driver = nullptr;
@@ -372,22 +378,22 @@ public:
 		// clang-format off
 		enum DirtyFlag: uint16_t {
 			DIRTY_NONE     = 0,
-			DIRTY_PIPELINE = 1 << 0, //! pipeline state
-			DIRTY_UNIFORMS = 1 << 1, //! uniform sets
-			DIRTY_PUSH     = 1 << 2, //! push constants
-			DIRTY_DEPTH    = 1 << 3, //! depth / stencil state
-			DIRTY_VERTEX   = 1 << 4, //! vertex buffers
-			DIRTY_VIEWPORT = 1 << 5, //! viewport rectangles
-			DIRTY_SCISSOR  = 1 << 6, //! scissor rectangles
-			DIRTY_BLEND    = 1 << 7, //! blend state
-			DIRTY_RASTER   = 1 << 8, //! encoder state like cull mode
+			DIRTY_PIPELINE = 1 << 0, //!< pipeline state
+			DIRTY_UNIFORMS = 1 << 1, //!< uniform sets
+			DIRTY_PUSH     = 1 << 2, //!< push constants
+			DIRTY_DEPTH    = 1 << 3, //!< depth / stencil state
+			DIRTY_VERTEX   = 1 << 4, //!< vertex buffers
+			DIRTY_VIEWPORT = 1 << 5, //!< viewport rectangles
+			DIRTY_SCISSOR  = 1 << 6, //!< scissor rectangles
+			DIRTY_BLEND    = 1 << 7, //!< blend state
+			DIRTY_RASTER   = 1 << 8, //!< encoder state like cull mode
 			DIRTY_ALL      = (1 << 9) - 1,
 		};
 		// clang-format on
 		BitField<DirtyFlag> dirty = DIRTY_NONE;
 
 		LocalVector<MDUniformSet *> uniform_sets;
-		// Bit mask of the uniform sets that are dirty, to prevent redundant binding.
+		/// Bit mask of the uniform sets that are dirty, to prevent redundant binding.
 		uint64_t uniform_set_mask = 0;
 		uint8_t push_constant_data[MAX_PUSH_CONSTANT_SIZE];
 		uint32_t push_constant_data_len = 0;
@@ -490,7 +496,7 @@ public:
 
 	} render;
 
-	// State specific for a compute pass.
+	/// State specific for a compute pass.
 	struct ComputeState {
 		MDComputePipeline *pipeline = nullptr;
 		id<MTLComputeCommandEncoder> encoder = nil;
@@ -498,16 +504,16 @@ public:
 		// clang-format off
 		enum DirtyFlag: uint16_t {
 			DIRTY_NONE     = 0,
-			DIRTY_PIPELINE = 1 << 0, //! pipeline state
-			DIRTY_UNIFORMS = 1 << 1, //! uniform sets
-			DIRTY_PUSH     = 1 << 2, //! push constants
+			DIRTY_PIPELINE = 1 << 0, //!< pipeline state
+			DIRTY_UNIFORMS = 1 << 1, //!< uniform sets
+			DIRTY_PUSH     = 1 << 2, //!< push constants
 			DIRTY_ALL      = (1 << 3) - 1,
 		};
 		// clang-format on
 		BitField<DirtyFlag> dirty = DIRTY_NONE;
 
 		LocalVector<MDUniformSet *> uniform_sets;
-		// Bit mask of the uniform sets that are dirty, to prevent redundant binding.
+		/// Bit mask of the uniform sets that are dirty, to prevent redundant binding.
 		uint64_t uniform_set_mask = 0;
 		uint8_t push_constant_data[MAX_PUSH_CONSTANT_SIZE];
 		uint32_t push_constant_data_len = 0;
@@ -537,7 +543,7 @@ public:
 
 	} compute;
 
-	// State specific to a blit pass.
+	/// State specific to a blit pass.
 	struct {
 		id<MTLBlitCommandEncoder> encoder = nil;
 		_FORCE_INLINE_ void reset() {
@@ -951,12 +957,12 @@ public:
 	virtual ~MDFrameBuffer() = default;
 };
 
-// These functions are used to convert between Objective-C objects and
-// the RIDs used by Redot, respecting automatic reference counting.
+/// These functions are used to convert between Objective-C objects and
+/// the RIDs used by Redot, respecting automatic reference counting.
 namespace rid {
 
-// Converts an Objective-C object to a pointer, and incrementing the
-// reference count.
+/// Converts an Objective-C object to a pointer, and incrementing the
+/// reference count.
 _FORCE_INLINE_ void *owned(id p_id) {
 	return (__bridge_retained void *)p_id;
 }
@@ -972,12 +978,12 @@ MAKE_ID(id<MTLSamplerState>, RDD::SamplerID)
 MAKE_ID(MTLVertexDescriptor *, RDD::VertexFormatID)
 MAKE_ID(id<MTLCommandQueue>, RDD::CommandPoolID)
 
-// Converts a pointer to an Objective-C object without changing the reference count.
+/// Converts a pointer to an Objective-C object without changing the reference count.
 _FORCE_INLINE_ auto get(RDD::ID p_id) {
 	return (p_id.id) ? (__bridge ::id)(void *)p_id.id : nil;
 }
 
-// Converts a pointer to an Objective-C object, and decrements the reference count.
+/// Converts a pointer to an Objective-C object, and decrements the reference count.
 _FORCE_INLINE_ auto release(RDD::ID p_id) {
 	return (__bridge_transfer ::id)(void *)p_id.id;
 }

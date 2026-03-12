@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file path_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/node_3d.h"
@@ -45,7 +51,7 @@ private:
 	Ref<ArrayMesh> debug_mesh;
 	Ref<Material> debug_material;
 
-	Callable update_callback; // Used only by CSG currently.
+	Callable update_callback; ///< Used only by CSG currently.
 
 	void _update_debug_mesh();
 	void _update_debug_path_material();

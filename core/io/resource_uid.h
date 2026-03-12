@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_uid.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -49,14 +55,14 @@ public:
 	static String get_cache_file();
 
 private:
-	void *crypto = nullptr; // CryptoCore::RandomGenerator (avoid including crypto_core.h)
+	void *crypto = nullptr; ///< CryptoCore::RandomGenerator (avoid including crypto_core.h)
 	Mutex mutex;
 	struct Cache {
 		CharString cs;
 		bool saved_to_cache = false;
 	};
 
-	HashMap<ID, Cache> unique_ids; //unique IDs and utf8 paths (less memory used)
+	HashMap<ID, Cache> unique_ids; ///< Unique IDs and utf8 paths (less memory used)
 	static ResourceUID *singleton;
 
 	uint32_t cache_entries = 0;

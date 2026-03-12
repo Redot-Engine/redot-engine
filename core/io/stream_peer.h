@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file stream_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -66,7 +72,8 @@ public:
 
 	virtual int get_available_bytes() const = 0;
 
-	/* helpers */
+	/// @name Helpers
+	/// @{
 	void set_big_endian(bool p_big_endian);
 	bool is_big_endian_enabled() const;
 
@@ -99,6 +106,7 @@ public:
 	String get_string(int p_bytes = -1);
 	String get_utf8_string(int p_bytes = -1);
 	Variant get_var(bool p_allow_objects = false);
+	/// @}
 
 	StreamPeer() {}
 };

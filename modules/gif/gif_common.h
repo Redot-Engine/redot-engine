@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gif_common.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/error/error_list.h"
@@ -40,7 +46,7 @@
 struct GifFileType;
 
 namespace GIFCommon {
-// Given a GIF file, unpack it into an image.
+/// Given a GIF file, unpack it into an image.
 Ref<Image> _gif_unpack(const Vector<uint8_t> &p_buffer);
 Ref<ImageFrames> _gif_animated_unpack(const Vector<uint8_t> &p_buffer, int p_max_frames);
 Error gif_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer, int p_buffer_len);

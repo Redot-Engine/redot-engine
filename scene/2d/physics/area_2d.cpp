@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file area_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "area_2d.h"
 
 #include "servers/audio_server.h"

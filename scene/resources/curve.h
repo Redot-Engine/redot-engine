@@ -30,11 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file curve.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
 
-// y(x) curve
+/// y(x) curve
 class Curve : public Resource {
 	GDCLASS(Curve, Resource);
 
@@ -150,6 +156,7 @@ protected:
 
 private:
 	void mark_dirty();
+	/// Add a point and preserve order.
 	int _add_point(Vector2 p_position,
 			real_t p_left_tangent = 0,
 			real_t p_right_tangent = 0,
@@ -247,12 +254,12 @@ public:
 	Vector2 sample_baked(real_t p_offset, bool p_cubic = false) const;
 	Transform2D sample_baked_with_rotation(real_t p_offset, bool p_cubic = false) const;
 	PackedVector2Array get_points() const;
-	PackedVector2Array get_baked_points() const; //useful for going through
+	PackedVector2Array get_baked_points() const; ///< Useful for going through
 	Vector2 get_closest_point(const Vector2 &p_to_point) const;
 	real_t get_closest_offset(const Vector2 &p_to_point) const;
 
-	PackedVector2Array tessellate(int p_max_stages = 5, real_t p_tolerance = 4) const; //useful for display
-	PackedVector2Array tessellate_even_length(int p_max_stages = 5, real_t p_length = 20.0) const; // Useful for baking.
+	PackedVector2Array tessellate(int p_max_stages = 5, real_t p_tolerance = 4) const; ///< Useful for display
+	PackedVector2Array tessellate_even_length(int p_max_stages = 5, real_t p_length = 20.0) const; ///< Useful for baking.
 };
 
 class Curve3D : public Resource {
@@ -267,7 +274,7 @@ class Curve3D : public Resource {
 
 	LocalVector<Point> points;
 #ifdef TOOLS_ENABLED
-	// For Path3DGizmo.
+	/// For Path3DGizmo.
 	mutable Vector<size_t> points_in_cache;
 #endif
 
@@ -294,6 +301,8 @@ class Curve3D : public Resource {
 	Vector3 _sample_baked(Interval p_interval, bool p_cubic) const;
 	real_t _sample_baked_tilt(Interval p_interval) const;
 	Basis _sample_posture(Interval p_interval, bool p_apply_tilt = false) const;
+	/// Internal method for getting posture at a baked point. Assuming caller
+	/// make all safety checks.
 	Basis _compose_posture(int p_index) const;
 
 	real_t bake_interval = 0.2;
@@ -318,7 +327,7 @@ protected:
 
 public:
 #ifdef TOOLS_ENABLED
-	// For Path3DGizmo.
+	/// For Path3DGizmo.
 	Basis get_point_baked_posture(int p_index, bool p_apply_tilt = false) const;
 #endif
 
@@ -351,13 +360,13 @@ public:
 	Transform3D sample_baked_with_rotation(real_t p_offset, bool p_cubic = false, bool p_apply_tilt = false) const;
 	real_t sample_baked_tilt(real_t p_offset) const;
 	Vector3 sample_baked_up_vector(real_t p_offset, bool p_apply_tilt = false) const;
-	PackedVector3Array get_baked_points() const; // Useful for going through.
-	Vector<real_t> get_baked_tilts() const; //useful for going through
+	PackedVector3Array get_baked_points() const; ///< Useful for going through.
+	Vector<real_t> get_baked_tilts() const; ///< Useful for going through
 	PackedVector3Array get_baked_up_vectors() const;
 	Vector3 get_closest_point(const Vector3 &p_to_point) const;
 	real_t get_closest_offset(const Vector3 &p_to_point) const;
 	PackedVector3Array get_points() const;
 
-	PackedVector3Array tessellate(int p_max_stages = 5, real_t p_tolerance = 4) const; // Useful for display.
-	PackedVector3Array tessellate_even_length(int p_max_stages = 5, real_t p_length = 0.2) const; // Useful for baking.
+	PackedVector3Array tessellate(int p_max_stages = 5, real_t p_tolerance = 4) const; ///< Useful for display.
+	PackedVector3Array tessellate_even_length(int p_max_stages = 5, real_t p_length = 0.2) const; ///< Useful for baking.
 };

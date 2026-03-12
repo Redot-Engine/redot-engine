@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file engine_debugger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/string/string_name.h"
@@ -126,8 +132,9 @@ public:
 	void profiler_enable(const StringName &p_name, bool p_enabled, const Array &p_opts = Array());
 	Error capture_parse(const StringName &p_name, const String &p_msg, const Array &p_args, bool &r_captured);
 
+	/// The purpose of this is just processing events every now and then when the script might get too busy
+	/// otherwise bugs like infinite loops can't be caught.
 	void line_poll() {
-		// The purpose of this is just processing events every now and then when the script might get too busy otherwise bugs like infinite loops can't be caught.
 		if (unlikely(poll_every % 2048) == 0) {
 			poll_events(false);
 		}

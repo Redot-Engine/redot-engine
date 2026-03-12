@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_forward_clustered.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/paged_allocator.h"
@@ -77,10 +83,10 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 	};
 
 	enum RenderListType {
-		RENDER_LIST_OPAQUE, //used for opaque objects
-		RENDER_LIST_MOTION, //used for opaque objects with motion
-		RENDER_LIST_ALPHA, //used for transparent objects
-		RENDER_LIST_SECONDARY, //used for shadows and other objects
+		RENDER_LIST_OPAQUE, ///< Used for opaque objects
+		RENDER_LIST_MOTION, ///< Used for opaque objects with motion
+		RENDER_LIST_ALPHA, ///< Used for transparent objects
+		RENDER_LIST_SECONDARY, ///< Used for shadows and other objects
 		RENDER_LIST_MAX
 	};
 
@@ -262,7 +268,7 @@ private:
 		float sh[9 * 4];
 	};
 
-	// When changing any of these enums, remember to change the corresponding enums in the shader files as well.
+	/// When changing any of these enums, remember to change the corresponding enums in the shader files as well.
 	enum {
 		INSTANCE_DATA_FLAG_MULTIMESH_INDIRECT = 1 << 2,
 		INSTANCE_DATA_FLAGS_DYNAMIC = 1 << 3,
@@ -285,7 +291,7 @@ private:
 	};
 
 	struct SceneState {
-		// This struct is loaded into Set 1 - Binding 1, populated at start of rendering a frame, must match with shader code
+		/// This struct is loaded into Set 1 - Binding 1, populated at start of rendering a frame, must match with shader code
 		struct UBO {
 			uint32_t cluster_shift;
 			uint32_t cluster_width;
@@ -328,15 +334,15 @@ private:
 			float transform[16];
 			float prev_transform[16];
 			uint32_t flags;
-			uint32_t instance_uniforms_ofs; //base offset in global buffer for instance variables
-			uint32_t gi_offset; //GI information when using lightmapping (VCT or lightmap index)
+			uint32_t instance_uniforms_ofs; ///< Base offset in global buffer for instance variables
+			uint32_t gi_offset; ///< GI information when using lightmapping (VCT or lightmap index)
 			uint32_t layer_mask;
 			float lightmap_uv_scale[4];
 			float compressed_aabb_position[4];
 			float compressed_aabb_size[4];
 			float uv_scale[4];
 
-			// These setters allow us to copy the data over with operation when using floats.
+			/// These setters allow us to copy the data over with operation when using floats.
 			inline void set_lightmap_uv_scale(const Rect2 &p_rect) {
 #ifdef REAL_T_IS_DOUBLE
 				lightmap_uv_scale[0] = p_rect.position.x;
@@ -473,7 +479,7 @@ private:
 		Color sh[9];
 	};
 
-	// Cached data for drawing surfaces
+	/// Cached data for drawing surfaces
 	struct GeometryInstanceSurfaceDataCache {
 		enum {
 			FLAG_PASS_DEPTH = 1,
@@ -537,13 +543,15 @@ private:
 
 	class GeometryInstanceForwardClustered : public RenderGeometryInstanceBase {
 	public:
-		// lightmap
+		/// @name Lightmap
+		/// @{
 		RID lightmap_instance;
 		Rect2 lightmap_uv_scale;
 		uint32_t lightmap_slice_index;
 		GeometryInstanceLightmapSH *lightmap_sh = nullptr;
+		/// @}
 
-		//used during rendering
+		// Used during rendering
 
 		uint32_t gi_offset_cache = 0;
 		bool store_transform_cache = true;
@@ -554,7 +562,7 @@ private:
 		bool using_projectors = false;
 		bool using_softshadows = false;
 
-		//used during setup
+		// Used during setup
 		uint64_t prev_transform_change_frame = 0xFFFFFFFF;
 		enum TransformStatus {
 			NONE,
@@ -646,7 +654,7 @@ private:
 	void _update_dirty_geometry_instances();
 	void _update_dirty_geometry_pipelines();
 
-	// Global data about the scene that can be used to pre-allocate resources without relying on culling.
+	/// Global data about the scene that can be used to pre-allocate resources without relying on culling.
 	struct GlobalSurfaceData {
 		bool screen_texture_used = false;
 		bool normal_texture_used = false;
@@ -716,7 +724,8 @@ private:
 
 	virtual void _update_shader_quality_settings() override;
 
-	/* Effects */
+	/// @name Effects
+	/// @{
 
 	RendererRD::Resolve *resolve_effects = nullptr;
 	RendererRD::TAA *taa = nullptr;
@@ -727,41 +736,48 @@ private:
 	RendererRD::MFXTemporalEffect *mfx_temporal_effect = nullptr;
 #endif
 	RendererRD::MotionVectorsStore *motion_vectors_store = nullptr;
-
-	/* Cluster builder */
+	/// @}
+	/// @name Cluster Builder
+	/// @{
 
 	ClusterBuilderSharedDataRD cluster_builder_shared;
 	ClusterBuilderRD *current_cluster_builder = nullptr;
-
-	/* SDFGI */
+	/// @}
+	/// @name SDFGI
+	/// @{
 	void _update_sdfgi(RenderDataRD *p_render_data);
-
-	/* Volumetric fog */
+	/// @}
+	/// @name Volumetric Fog
+	/// @{
 	RID shadow_sampler;
 
 	void _update_volumetric_fog(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const Projection &p_cam_projection, const Transform3D &p_cam_transform, const Transform3D &p_prev_cam_inv_transform, RID p_shadow_atlas, int p_directional_light_count, bool p_use_directional_shadows, int p_positional_light_count, int p_voxel_gi_count, const PagedArray<RID> &p_fog_volumes);
-
-	/* Render shadows */
+	/// @}
+	/// @name Render Shadows
+	/// @{
 
 	void _render_shadow_pass(RID p_light, RID p_shadow_atlas, int p_pass, const PagedArray<RenderGeometryInstance *> &p_instances, float p_lod_distance_multiplier = 0, float p_screen_mesh_lod_threshold = 0.0, bool p_open_pass = true, bool p_close_pass = true, bool p_clear_region = true, RenderingMethod::RenderInfo *p_render_info = nullptr, const Size2i &p_viewport_size = Size2i(1, 1), const Transform3D &p_main_cam_transform = Transform3D());
 	void _render_shadow_begin();
 	void _render_shadow_append(RID p_framebuffer, const PagedArray<RenderGeometryInstance *> &p_instances, const Projection &p_projection, const Transform3D &p_transform, float p_zfar, float p_bias, float p_normal_bias, bool p_reverse_cull_face, bool p_use_dp, bool p_use_dp_flip, bool p_use_pancake, float p_lod_distance_multiplier = 0.0, float p_screen_mesh_lod_threshold = 0.0, const Rect2i &p_rect = Rect2i(), bool p_flip_y = false, bool p_clear_region = true, bool p_begin = true, bool p_end = true, RenderingMethod::RenderInfo *p_render_info = nullptr, const Size2i &p_viewport_size = Size2i(1, 1), const Transform3D &p_main_cam_transform = Transform3D());
 	void _render_shadow_process();
 	void _render_shadow_end();
-
-	/* Render Scene */
+	/// @}
+	/// @name Render Scene
+	/// @{
 	void _process_ssao(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const RID *p_normal_buffers, const Projection *p_projections);
 	void _process_ssil(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const RID *p_normal_buffers, const Projection *p_projections, const Transform3D &p_transform);
 	void _copy_framebuffer_to_ssil(Ref<RenderSceneBuffersRD> p_render_buffers);
 	void _pre_opaque_render(RenderDataRD *p_render_data, bool p_use_ssao, bool p_use_ssil, bool p_use_gi, const RID *p_normal_roughness_slices, RID p_voxel_gi_buffer);
 	void _process_ssr(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_dest_framebuffer, const RID *p_normal_buffer_slices, RID p_specular_buffer, const RID *p_metallic_slices, RID p_environment, const Projection *p_projections, const Vector3 *p_eye_offsets, bool p_use_additive);
 	void _process_sss(Ref<RenderSceneBuffersRD> p_render_buffers, const Projection &p_camera);
-
-	/* Debug */
+	/// @}
+	/// @name Debug
+	/// @{
 	void _debug_draw_cluster(Ref<RenderSceneBuffersRD> p_render_buffers);
-
+	/// @}
 protected:
-	/* setup */
+	/// @name Setup
+	/// @{
 
 	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
 	virtual RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
@@ -772,8 +788,9 @@ protected:
 
 	virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) override;
 	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override;
-
-	/* Rendering */
+	/// @}
+	/// @name Rendering
+	/// @{
 
 	virtual void _render_scene(RenderDataRD *p_render_data, const Color &p_default_bg_color) override;
 	virtual void _render_buffers_debug_draw(const RenderDataRD *p_render_data) override;
@@ -782,7 +799,7 @@ protected:
 	virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) override;
 	virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) override;
 	virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) override;
-
+	/// @}
 public:
 	static RenderForwardClustered *get_singleton() { return singleton; }
 
@@ -796,27 +813,31 @@ public:
 
 	virtual void base_uniforms_changed() override;
 
-	/* SDFGI UPDATE */
+	/// @name SDFGI UPDATE
+	/// @{
 
 	virtual void sdfgi_update(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_environment, const Vector3 &p_world_position) override;
 	virtual int sdfgi_get_pending_region_count(const Ref<RenderSceneBuffers> &p_render_buffers) const override;
 	virtual AABB sdfgi_get_pending_region_bounds(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
 	virtual uint32_t sdfgi_get_pending_region_cascade(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
 	RID sdfgi_get_ubo() const { return gi.sdfgi_ubo; }
-
-	/* GEOMETRY INSTANCE */
+	/// @}
+	/// @name GEOMETRY INSTANCE
+	/// @{
 
 	virtual RenderGeometryInstance *geometry_instance_create(RID p_base) override;
 	virtual void geometry_instance_free(RenderGeometryInstance *p_geometry_instance) override;
 
 	virtual uint32_t geometry_instance_get_pair_mask() override;
-
-	/* PIPELINES */
+	/// @}
+	/// @name PIPELINES
+	/// @{
 
 	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation) override;
 	virtual uint32_t get_pipeline_compilations(RS::PipelineSource p_source) override;
-
-	/* SHADER LIBRARY */
+	/// @}
+	/// @name SHADER LIBRARY
+	/// @{
 
 	virtual void enable_features(BitField<FeatureBits> p_feature_bits) override;
 	virtual String get_name() const override;
@@ -824,6 +845,7 @@ public:
 	virtual bool free(RID p_rid) override;
 
 	virtual void update() override;
+	/// @}
 
 	RenderForwardClustered();
 	~RenderForwardClustered();

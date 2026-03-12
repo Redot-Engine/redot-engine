@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vehicle_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/physics/physics_body_3d.h"
@@ -57,7 +63,7 @@ class VehicleWheel3D : public Node3D {
 		WheelXform curr;
 		WheelXform prev;
 
-		// If a wheel is added on a frame, the xform will not be set until it has been physics updated at least once.
+		/// If a wheel is added on a frame, the xform will not be set until it has been physics updated at least once.
 		bool unset = true;
 		bool reset_queued = false;
 
@@ -85,9 +91,9 @@ class VehicleWheel3D : public Node3D {
 	bool engine_traction = false;
 	bool steers = false;
 
-	Vector3 m_chassisConnectionPointCS; //const
-	Vector3 m_wheelDirectionCS; //const
-	Vector3 m_wheelAxleCS; // const or modified by steering
+	Vector3 m_chassisConnectionPointCS; ///< const
+	Vector3 m_wheelDirectionCS; ///< const
+	Vector3 m_wheelAxleCS; ///< const or modified by steering
 
 	real_t m_suspensionRestLength = 0.15;
 	real_t m_maxSuspensionTravel = 0.2;
@@ -114,20 +120,20 @@ class VehicleWheel3D : public Node3D {
 
 	real_t m_clippedInvContactDotSuspension = 1.0;
 	real_t m_suspensionRelativeVelocity = 0.0;
-	//calculated by suspension
+	/// Calculated by suspension
 	real_t m_wheelsSuspensionForce = 0.0;
 	real_t m_skidInfo = 0.0;
 
 	struct RaycastInfo {
-		//set by raycaster
-		Vector3 m_contactNormalWS; //contactnormal
-		Vector3 m_contactPointWS; //raycast hitpoint
+		// Set by raycaster
+		Vector3 m_contactNormalWS; ///< Contactnormal
+		Vector3 m_contactPointWS; ///< Raycast hitpoint
 		real_t m_suspensionLength = 0.0;
-		Vector3 m_hardPointWS; //raycast starting point
-		Vector3 m_wheelDirectionWS; //direction in worldspace
-		Vector3 m_wheelAxleWS; // axle in worldspace
+		Vector3 m_hardPointWS; ///< Raycast starting point
+		Vector3 m_wheelDirectionWS; ///< Direction in worldspace
+		Vector3 m_wheelAxleWS; ///< Axle in worldspace
 		bool m_isInContact = false;
-		PhysicsBody3D *m_groundObject = nullptr; //could be general void* ptr
+		PhysicsBody3D *m_groundObject = nullptr; ///< Could be general void* ptr
 	} m_raycastInfo;
 
 	void _update(PhysicsDirectBodyState3D *s);
@@ -224,6 +230,7 @@ class VehicleBody3D : public RigidBody3D {
 		btVehicleWheelContactPoint(PhysicsDirectBodyState3D *s, PhysicsBody3D *body1, const Vector3 &frictionPosWorld, const Vector3 &frictionDirectionWorld, real_t maxImpulse);
 	};
 
+	/// Bilateral constraint between two dynamic objects
 	void _resolve_single_bilateral(PhysicsDirectBodyState3D *s, const Vector3 &pos1, PhysicsBody3D *body2, const Vector3 &pos2, const Vector3 &normal, real_t &impulse, const real_t p_rollInfluence);
 	real_t _calc_rolling_friction(btVehicleWheelContactPoint &contactPoint);
 

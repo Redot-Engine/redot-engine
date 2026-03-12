@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tab_container.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/container.h"
@@ -57,7 +63,7 @@ private:
 	bool theme_changing = false;
 	Vector<Control *> children_removing;
 	bool drag_to_rearrange_enabled = false;
-	// Set the default setup current tab to be an invalid index.
+	/// Set the default setup current tab to be an invalid index.
 	int setup_current_tab = -2;
 	bool updating_visibility = false;
 

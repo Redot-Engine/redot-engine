@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file placeholder_textures.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "placeholder_textures.h"
 
 void PlaceholderTexture2D::set_size(Size2 p_size) {

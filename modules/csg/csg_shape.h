@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file csg_shape.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "csg.h"
@@ -107,7 +113,8 @@ private:
 		real_t *tansw = nullptr;
 	};
 
-	//mikktspace callbacks
+	/// @name mikktspace callbacks
+	/// @{
 	static int mikktGetNumFaces(const SMikkTSpaceContext *pContext);
 	static int mikktGetNumVerticesOfFace(const SMikkTSpaceContext *pContext, const int iFace);
 	static void mikktGetPosition(const SMikkTSpaceContext *pContext, float fvPosOut[], const int iFace, const int iVert);
@@ -115,6 +122,7 @@ private:
 	static void mikktGetTexCoord(const SMikkTSpaceContext *pContext, float fvTexcOut[], const int iFace, const int iVert);
 	static void mikktSetTSpaceDefault(const SMikkTSpaceContext *pContext, const float fvTangent[], const float fvBiTangent[], const float fMagS, const float fMagT,
 			const tbool bIsOrientationPreserving, const int iFace, const int iVert);
+	/// @}
 
 #ifndef PHYSICS_3D_DISABLED
 	void _update_collision_faces();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_action_set.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_action_set.h"
 
 void OpenXRActionSet::_bind_methods() {
@@ -51,8 +57,6 @@ void OpenXRActionSet::_bind_methods() {
 }
 
 Ref<OpenXRActionSet> OpenXRActionSet::new_action_set(const char *p_name, const char *p_localized_name, const int p_priority) {
-	// This is a helper function to help build our default action sets
-
 	Ref<OpenXRActionSet> action_set;
 	action_set.instantiate();
 	action_set->set_name(String(p_name));
@@ -151,8 +155,6 @@ void OpenXRActionSet::remove_action(Ref<OpenXRAction> p_action) {
 }
 
 Ref<OpenXRAction> OpenXRActionSet::add_new_action(const char *p_name, const char *p_localized_name, const OpenXRAction::ActionType p_action_type, const char *p_toplevel_paths) {
-	// This is a helper function to help build our default action sets
-
 	Ref<OpenXRAction> new_action = OpenXRAction::new_action(p_name, p_localized_name, p_action_type, p_toplevel_paths);
 	add_action(new_action);
 	return new_action;

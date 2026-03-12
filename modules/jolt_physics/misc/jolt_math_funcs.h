@@ -30,16 +30,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_math_funcs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/transform_3d.h"
 
 class JoltMath {
 public:
-	// Note that `p_basis` is mutated to be right-handed orthonormal.
+	/// @note `p_basis` is mutated to be right-handed orthonormal.
 	static void decompose(Basis &p_basis, Vector3 &r_scale);
 
-	// Note that `p_transform` is mutated to be right-handed orthonormal.
+	/// @note `p_transform` is mutated to be right-handed orthonormal.
 	static _FORCE_INLINE_ void decompose(Transform3D &p_transform, Vector3 &r_scale) {
 		decompose(p_transform.basis, r_scale);
 	}

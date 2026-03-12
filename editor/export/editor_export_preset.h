@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_export_preset.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 class EditorExportPlatform;
@@ -189,11 +195,11 @@ public:
 	}
 	Variant get_or_env(const StringName &p_name, const String &p_env_var, bool *r_valid = nullptr) const;
 
-	// Return the preset's version number, or fall back to the
-	// `application/config/version` project setting if set to an empty string.
-	// If `p_windows_version` is `true`, formats the returned version number to
-	// be compatible with Windows executable metadata (which requires a
-	// 4-component format).
+	/// Return the preset's version number, or fall back to the
+	/// `application/config/version` project setting if set to an empty string.
+	/// If `p_windows_version` is `true`, formats the returned version number to
+	/// be compatible with Windows executable metadata (which requires a
+	/// 4-component format).
 	String get_version(const StringName &p_name, bool p_windows_version = false) const;
 
 	const HashMap<StringName, PropertyInfo> &get_properties() const { return properties; }

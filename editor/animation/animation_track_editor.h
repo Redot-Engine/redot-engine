@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_track_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/editor_data.h"
@@ -190,8 +196,8 @@ class AnimationTimelineEdit : public Range {
 	friend class AnimationBezierTrackEdit;
 	friend class AnimationTrackEditor;
 
-	static constexpr float SCROLL_ZOOM_FACTOR_IN = 1.02f; // Zoom factor per mouse scroll in the animation editor when zooming in. The closer to 1.0, the finer the control.
-	static constexpr float SCROLL_ZOOM_FACTOR_OUT = 0.98f; // Zoom factor when zooming out. Similar to SCROLL_ZOOM_FACTOR_IN but less than 1.0.
+	static constexpr float SCROLL_ZOOM_FACTOR_IN = 1.02f; ///< Zoom factor per mouse scroll in the animation editor when zooming in. The closer to 1.0, the finer the control.
+	static constexpr float SCROLL_ZOOM_FACTOR_OUT = 0.98f; ///< Zoom factor when zooming out. Similar to SCROLL_ZOOM_FACTOR_IN but less than 1.0.
 
 	Ref<Animation> animation;
 	bool read_only = false;
@@ -210,7 +216,7 @@ class AnimationTimelineEdit : public Range {
 
 	MenuButton *add_track = nullptr;
 	LineEdit *filter_track = nullptr;
-	Control *play_position = nullptr; //separate control used to draw so updates for only position changed are much faster
+	Control *play_position = nullptr; ///< Separate control used to draw so updates for only position changed are much faster
 	HScrollBar *hscroll = nullptr;
 
 	void _zoom_changed(double);
@@ -288,7 +294,7 @@ class AnimationMarkerEdit : public Control {
 	};
 
 	AnimationTimelineEdit *timeline = nullptr;
-	Control *play_position = nullptr; // Separate control used to draw so updates for only position changed are much faster.
+	Control *play_position = nullptr; ///< Separate control used to draw so updates for only position changed are much faster.
 	float play_position_pos = 0.0f;
 
 	HashSet<StringName> selection;
@@ -440,7 +446,7 @@ class AnimationTrackEdit : public Control {
 	Popup *path_popup = nullptr;
 	LineEdit *path = nullptr;
 	Node *root = nullptr;
-	Control *play_position = nullptr; //separate control used to draw so updates for only position changed are much faster
+	Control *play_position = nullptr; ///< Separate control used to draw so updates for only position changed are much faster
 	float play_position_pos = 0.0f;
 	NodePath node_path;
 
@@ -636,7 +642,7 @@ class AnimationTrackEditor : public VBoxContainer {
 	Vector<AnimationTrackEditGroup *> groups;
 
 	bool animation_changing_awaiting_update = false;
-	void _animation_update(); // Updated by AnimationTrackEditor(this)
+	void _animation_update(); ///< Updated by AnimationTrackEditor(this)
 	int _get_track_selected();
 	void _animation_changed();
 	void _update_tracks();
@@ -675,7 +681,7 @@ class AnimationTrackEditor : public VBoxContainer {
 		Animation::TrackType type;
 		NodePath path;
 		int track_idx = 0;
-		float time = FLT_MAX; // Defaults to current timeline position.
+		float time = FLT_MAX; ///< Defaults to current timeline position.
 		Variant value;
 		String query;
 		bool advance = false;
@@ -911,7 +917,7 @@ public:
 		EDIT_ADD_RESET_KEY,
 		EDIT_DELETE_SELECTION,
 		EDIT_GOTO_NEXT_STEP,
-		EDIT_GOTO_NEXT_STEP_TIMELINE_ONLY, // Next step without updating animation.
+		EDIT_GOTO_NEXT_STEP_TIMELINE_ONLY, ///< Next step without updating animation.
 		EDIT_GOTO_PREV_STEP,
 		EDIT_APPLY_RESET,
 		EDIT_BAKE_ANIMATION,

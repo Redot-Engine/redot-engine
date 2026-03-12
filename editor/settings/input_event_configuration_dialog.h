@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file input_event_configuration_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/dialogs.h"
@@ -39,8 +45,8 @@ class Tree;
 class EventListenerLineEdit;
 class CheckBox;
 
-// Confirmation Dialog used when configuring an input event.
-// Separate from ActionMapEditor for code cleanliness and separation of responsibilities.
+/// Confirmation Dialog used when configuring an input event.
+/// Separate from ActionMapEditor for code cleanliness and separation of responsibilities.
 class InputEventConfigurationDialog : public ConfirmationDialog {
 	GDCLASS(InputEventConfigurationDialog, ConfirmationDialog)
 private:
@@ -129,8 +135,8 @@ protected:
 	void _notification(int p_what);
 
 public:
-	// Pass an existing event to configure it. Alternatively, pass no event to start with a blank configuration.
-	// An action name can be passed for descriptive purposes.
+	/// Pass an existing event to configure it. Alternatively, pass no event to start with a blank configuration.
+	/// An action name can be passed for descriptive purposes.
 	void popup_and_configure(const Ref<InputEvent> &p_event = Ref<InputEvent>(), const String &p_current_action_name = "");
 	Ref<InputEvent> get_event() const;
 

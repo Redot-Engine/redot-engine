@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_job_system.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/spin_lock.h"
@@ -72,11 +78,11 @@ class JoltJobSystem final : public JPH::JobSystemWithBarrier {
 	};
 
 #ifdef DEBUG_ENABLED
-	// We use `const void*` here to avoid the cost of hashing the actual string, since the job names
-	// are always literals and as such will point to the same address every time.
+	/// We use `const void*` here to avoid the cost of hashing the actual string, since the job names
+	/// are always literals and as such will point to the same address every time.
 	inline static HashMap<const void *, uint64_t> timings_by_job;
 
-	// TODO: Check whether the usage of SpinLock is justified or if this should be a mutex instead.
+	/// @todo Check whether the usage of SpinLock is justified or if this should be a mutex instead.
 	inline static SpinLock timings_lock;
 #endif
 

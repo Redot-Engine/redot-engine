@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_blend_tree_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/script_language.h"
@@ -103,6 +109,7 @@ class AnimationNodeBlendTreeEditor : public AnimationTreeNodeEditorPlugin {
 	void _node_renamed(const String &p_text, Ref<AnimationNode> p_node);
 	void _node_renamed_focus_out(Ref<AnimationNode> p_node);
 	void _node_rename_lineedit_changed(const String &p_text);
+	/// AnimationNode's "node_changed" signal means almost update_input.
 	void _node_changed(const StringName &p_node_name);
 
 	String current_node_rename_text;
@@ -201,6 +208,7 @@ class AnimationNodeAnimationEditor : public VBoxContainer {
 	Button *button = nullptr;
 	AnimationNodeAnimationEditorDialog *dialog = nullptr;
 	void _open_set_custom_timeline_from_marker_dialog();
+	/// @note p_id is ignored. It is included because OptionButton's item_changed signal always passes it.
 	void _validate_markers(int p_id);
 	void _confirm_set_custom_timeline_from_marker_dialog();
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file popup.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/main/window.h"
@@ -47,8 +53,8 @@ class Popup : public Window {
 public:
 	enum HideReason {
 		HIDE_REASON_NONE,
-		HIDE_REASON_CANCELED, // E.g., because of rupture of UI flow (app unfocused). Includes closed programmatically.
-		HIDE_REASON_UNFOCUSED, // E.g., user clicked outside.
+		HIDE_REASON_CANCELED, ///< E.g., because of rupture of UI flow (app unfocused). Includes closed programmatically.
+		HIDE_REASON_UNFOCUSED, ///< E.g., user clicked outside.
 	};
 
 private:

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_replication_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_replication_interface.h"
 
 #include "scene_multiplayer.h"
@@ -829,7 +835,7 @@ void SceneReplicationInterface::_send_sync(int p_peer, const HashSet<ObjectID> &
 		ERR_CONTINUE_MSG(err != OK, "Unable to retrieve sync state.");
 		err = MultiplayerAPI::encode_and_compress_variants(varp.ptrw(), varp.size(), nullptr, size);
 		ERR_CONTINUE_MSG(err != OK, "Unable to encode sync state.");
-		// TODO Handle single state above MTU.
+		/// @todo Handle single state above MTU.
 		ERR_CONTINUE_MSG(size > sync_mtu, vformat("Node states bigger than MTU will not be sent (%d > %d): %s", size, sync_mtu, node->get_path()));
 		if (ofs + 4 + 4 + size > sync_mtu) {
 			// Send what we got, and reset write.

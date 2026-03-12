@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_interactive.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/audio/audio_stream.h"
@@ -83,7 +89,7 @@ private:
 	double time = 0;
 
 	enum {
-		MAX_CLIPS = 63, // Because we use bitmasks for transition matching.
+		MAX_CLIPS = 63, ///< Because we use bitmasks for transition matching.
 		MAX_TRANSITIONS = 63,
 	};
 
@@ -128,7 +134,7 @@ private:
 
 	HashMap<TransitionKey, Transition, TransitionKeyHasher> transition_map;
 
-	uint64_t version = 1; // Used to stop playback instances for incompatibility.
+	uint64_t version = 1; ///< Used to stop playback instances for incompatibility.
 	int clip_count = 0;
 
 	HashSet<AudioStreamPlaybackInteractive *> playbacks;
@@ -146,7 +152,8 @@ private:
 	Dictionary _get_transitions() const;
 
 public:
-	// CLIPS
+	/// @name CLIPS
+	/// @{
 	void set_clip_count(int p_count);
 	int get_clip_count() const;
 
@@ -164,9 +171,9 @@ public:
 
 	void set_clip_auto_advance_next_clip(int p_clip, int p_index);
 	int get_clip_auto_advance_next_clip(int p_clip) const;
-
-	// TRANSITIONS
-
+	/// @}
+	/// @name TRANSITIONS
+	/// @{
 	void add_transition(int p_from_clip, int p_to_clip, TransitionFromTime p_from_time, TransitionToTime p_to_time, FadeMode p_fade_mode, float p_fade_beats, bool p_use_filler_flip = false, int p_filler_clip = -1, bool p_hold_previous = false);
 	TransitionFromTime get_transition_from_time(int p_from_clip, int p_to_clip) const;
 	TransitionToTime get_transition_to_time(int p_from_clip, int p_to_clip) const;
@@ -180,6 +187,7 @@ public:
 	void erase_transition(int p_from_clip, int p_to_clip);
 
 	PackedInt32Array get_transition_list() const;
+	/// @}
 
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 	virtual String get_stream_name() const override;
@@ -219,9 +227,9 @@ private:
 		Ref<AudioStream> stream;
 		Ref<AudioStreamPlayback> playback;
 		bool active = false;
-		double fade_wait = 0; // Time to wait until fade kicks-in
+		double fade_wait = 0; ///< Time to wait until fade kicks-in
 		double fade_volume = 1.0;
-		double fade_speed = 0; // Fade speed, negative or positive
+		double fade_speed = 0; ///< Fade speed, negative or positive
 		int auto_advance = -1;
 		bool first_mix = true;
 		double previous_position = 0;
@@ -253,7 +261,7 @@ public:
 	virtual void start(double p_from_pos = 0.0) override;
 	virtual void stop() override;
 	virtual bool is_playing() const override;
-	virtual int get_loop_count() const override; // times it looped
+	virtual int get_loop_count() const override; ///< Number of times it looped
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;

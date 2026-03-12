@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file uniform_set_cache_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "uniform_set_cache_rd.h"
 
 UniformSetCacheRD *UniformSetCacheRD::singleton = nullptr;

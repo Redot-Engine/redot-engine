@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_server_3d_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/extension/ext_wrappers.gen.inc"
@@ -211,7 +217,8 @@ protected:
 public:
 	// The warning is valid, but unavoidable. If the function is not overridden it will error anyway.
 
-	/* SHAPE API */
+	//// @name SHAPE API
+	/// @{
 
 	EXBIND0R(RID, world_boundary_shape_create)
 	EXBIND0R(RID, separation_ray_shape_create)
@@ -233,8 +240,9 @@ public:
 	EXBIND1RC(ShapeType, shape_get_type, RID)
 	EXBIND1RC(Variant, shape_get_data, RID)
 	EXBIND1RC(real_t, shape_get_custom_solver_bias, RID)
-
-	/* SPACE API */
+	/// @}
+	/// @name SPACE API
+	/// @{
 
 	EXBIND0R(RID, space_create)
 	EXBIND2(space_set_active, RID, bool)
@@ -248,8 +256,9 @@ public:
 	EXBIND2(space_set_debug_contacts, RID, int)
 	EXBIND1RC(Vector<Vector3>, space_get_contacts, RID)
 	EXBIND1RC(int, space_get_contact_count, RID)
-
-	/* AREA API */
+	/// @}
+	/// @name AREA API
+	/// @{
 
 	//EXBIND0RID(area);
 	EXBIND0R(RID, area_create)
@@ -289,8 +298,9 @@ public:
 
 	EXBIND2(area_set_monitor_callback, RID, const Callable &)
 	EXBIND2(area_set_area_monitor_callback, RID, const Callable &)
-
-	/* BODY API */
+	/// @}
+	/// @name BODY API
+	/// @{
 
 	//EXBIND2RID(body,BodyMode,bool);
 	EXBIND0R(RID, body_create)
@@ -408,8 +418,9 @@ public:
 	}
 
 	EXBIND1R(PhysicsDirectBodyState3D *, body_get_direct_state, RID)
-
-	/* SOFT BODY API */
+	/// @}
+	/// @name SOFT BODY API
+	/// @{
 
 	EXBIND0R(RID, soft_body_create)
 
@@ -480,8 +491,9 @@ public:
 	EXBIND3(soft_body_apply_point_force, RID, int, const Vector3 &)
 	EXBIND2(soft_body_apply_central_impulse, RID, const Vector3 &)
 	EXBIND2(soft_body_apply_central_force, RID, const Vector3 &)
-
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	EXBIND0R(RID, joint_create)
 	EXBIND1(joint_clear, RID)
@@ -531,8 +543,9 @@ public:
 
 	EXBIND2(joint_disable_collisions_between_bodies, RID, bool)
 	EXBIND1RC(bool, joint_is_disabled_collisions_between_bodies, RID)
-
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	GDVIRTUAL1_REQUIRED(_free_rid, RID)
 	virtual void free(RID p_rid) override {
@@ -550,6 +563,7 @@ public:
 
 	EXBIND0RC(bool, is_flushing_queries)
 	EXBIND1R(int, get_process_info, ProcessInfo)
+	/// @}
 
 	PhysicsServer3DExtension();
 	~PhysicsServer3DExtension();

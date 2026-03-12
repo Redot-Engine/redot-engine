@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -99,7 +105,7 @@ public:
 	virtual void stop();
 	virtual bool is_playing() const;
 
-	virtual int get_loop_count() const; //times it looped
+	virtual int get_loop_count() const; ///< Number of times it looped
 
 	virtual double get_playback_position() const;
 	virtual void seek(double p_time);
@@ -129,10 +135,10 @@ class AudioStreamPlaybackResampled : public AudioStreamPlayback {
 	GDCLASS(AudioStreamPlaybackResampled, AudioStreamPlayback);
 
 	enum {
-		FP_BITS = 16, //fixed point used for resampling
+		FP_BITS = 16, ///< Fixed point used for resampling
 		FP_LEN = (1 << FP_BITS),
 		FP_MASK = FP_LEN - 1,
-		INTERNAL_BUFFER_LEN = 128, // 128 warrants 3ms positional jitter at much at 44100hz
+		INTERNAL_BUFFER_LEN = 128, ///< 128 warrants 3ms positional jitter at much at 44100hz
 		CUBIC_INTERP_HISTORY = 4
 	};
 
@@ -142,7 +148,7 @@ class AudioStreamPlaybackResampled : public AudioStreamPlayback {
 
 protected:
 	void begin_resample();
-	// Returns the number of frames that were mixed.
+	/// @return The number of frames that were mixed.
 	virtual int _mix_internal(AudioFrame *p_buffer, int p_frames);
 	virtual float get_stream_sampling_rate();
 
@@ -159,7 +165,7 @@ public:
 
 class AudioStream : public Resource {
 	GDCLASS(AudioStream, Resource);
-	OBJ_SAVE_TYPE(AudioStream); // Saves derived classes with common type so they can be interchanged.
+	OBJ_SAVE_TYPE(AudioStream); ///< Saves derived classes with common type so they can be interchanged.
 
 	enum {
 		MAX_TAGGED_OFFSETS = 8
@@ -232,7 +238,7 @@ public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 	virtual String get_stream_name() const override;
 
-	virtual double get_length() const override; //if supported, otherwise return 0
+	virtual double get_length() const override; ///< If supported, otherwise return 0
 
 	virtual bool is_monophonic() const override;
 };
@@ -258,7 +264,7 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; ///< Number of times it looped
 
 	virtual void seek(double p_time) override;
 
@@ -316,6 +322,9 @@ protected:
 
 public:
 	void add_stream(int p_index, Ref<AudioStream> p_stream, float p_weight = 1.0);
+
+	/// p_index_to is relative to the array prior to the removal of from.
+	/// Example: [0, 1, 2, 3], move(1, 3) => [0, 2, 1, 3]
 	void move_stream(int p_index_from, int p_index_to);
 	void remove_stream(int p_index);
 
@@ -339,7 +348,7 @@ public:
 	virtual Ref<AudioStreamPlayback> instantiate_playback() override;
 	virtual String get_stream_name() const override;
 
-	virtual double get_length() const override; //if supported, otherwise return 0
+	virtual double get_length() const override; ///< If supported, otherwise return 0
 	virtual bool is_monophonic() const override;
 
 	virtual bool is_meta_stream() const override { return true; }
@@ -363,7 +372,7 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; ///< Number of times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;

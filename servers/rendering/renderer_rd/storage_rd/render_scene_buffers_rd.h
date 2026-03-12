@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_scene_buffers_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef METAL_ENABLED
@@ -73,12 +79,12 @@ private:
 	uint64_t auto_exposure_version = 1;
 	RS::ViewportVRSMode vrs_mode = RS::VIEWPORT_VRS_DISABLED;
 
-	// Our render target represents our final destination that we display on screen.
+	/// Our render target represents our final destination that we display on screen.
 	RID render_target;
 	Size2i target_size = Size2i(0, 0);
 	uint32_t view_count = 1;
 
-	// The internal size of the textures we render 3D to in case we render at a lower resolution and upscale
+	/// The internal size of the textures we render 3D to in case we render at a lower resolution and upscale
 	Size2i internal_size = Size2i(0, 0);
 	RS::ViewportScaling3DMode scaling_3d_mode = RS::VIEWPORT_SCALING_3D_MODE_OFF;
 	float fsr_sharpness = 0.2f;
@@ -89,14 +95,16 @@ private:
 	RendererRD::MFXSpatialContext *mfx_spatial_context = nullptr;
 #endif
 
-	// Aliasing settings
+	/// @name Aliasing Settings
+	/// @{
 	RS::ViewportMSAA msaa_3d = RS::VIEWPORT_MSAA_DISABLED;
 	RS::ViewportScreenSpaceAA screen_space_aa = RS::VIEWPORT_SCREEN_SPACE_AA_DISABLED;
 	bool use_taa = false;
 	bool use_debanding = false;
 	RD::TextureSamples texture_samples = RD::TEXTURE_SAMPLES_1;
-
-	// Named Textures
+	/// @}
+	/// @name Named Textures
+	/// @{
 
 	struct NTKey {
 		StringName context;
@@ -154,11 +162,11 @@ private:
 	};
 
 	struct NamedTexture {
-		// Cache the data used to create our texture
+		/// Cache the data used to create our texture
 		RD::TextureFormat format;
-		bool is_unique; // If marked as unique, we return it into our pool
+		bool is_unique; ///< If marked as unique, we return it into our pool
 
-		// Our texture objects, slices are lazy (i.e. only created when requested).
+		/// Our texture objects, slices are lazy (i.e. only created when requested).
 		RID texture;
 		mutable HashMap<NTSliceKey, RID, NTSliceKey> slices;
 		Vector<Size2i> sizes;
@@ -167,11 +175,12 @@ private:
 	mutable HashMap<NTKey, NamedTexture, NTKey> named_textures;
 	void update_sizes(NamedTexture &p_named_texture);
 	void free_named_texture(NamedTexture &p_named_texture);
+	/// @}
 
-	// Data buffers
+	/// Data buffers
 	mutable HashMap<StringName, Ref<RenderBufferCustomDataRD>> data_buffers;
 
-	// Samplers.
+	/// Samplers.
 	RendererRD::MaterialStorage::Samplers samplers;
 
 	void update_samplers();
@@ -183,7 +192,8 @@ public:
 	RenderSceneBuffersRD();
 	virtual ~RenderSceneBuffersRD();
 
-	// info from our renderer
+	/// @name Info from our renderer
+	/// @{
 	void set_can_be_storage(const bool p_can_be_storage) { can_be_storage = p_can_be_storage; }
 	bool get_can_be_storage() const { return can_be_storage; }
 	void set_max_cluster_elements(const uint32_t p_max_elements) { max_cluster_elements = p_max_elements; }
@@ -192,6 +202,7 @@ public:
 	RD::DataFormat get_base_data_format() const { return base_data_format; }
 	void set_vrs(RendererRD::VRS *p_vrs) { vrs = p_vrs; }
 	RS::ViewportVRSMode get_vrs_mode() { return vrs_mode; }
+	/// @}
 
 	void cleanup();
 	virtual void configure(const RenderSceneBuffersConfiguration *p_config) override;
@@ -206,7 +217,8 @@ public:
 	_FORCE_INLINE_ RendererRD::MFXSpatialContext *get_mfx_spatial_context() const { return mfx_spatial_context; }
 #endif
 
-	// Named Textures
+	/// @name Named Textures
+	/// @{
 
 	bool has_texture(const StringName &p_context, const StringName &p_texture_name) const;
 	RID create_texture(const StringName &p_context, const StringName &p_texture_name, const RD::DataFormat p_data_format, const uint32_t p_usage_bits, const RD::TextureSamples p_texture_samples = RD::TEXTURE_SAMPLES_1, const Size2i p_size = Size2i(0, 0), const uint32_t p_layers = 0, const uint32_t p_mipmaps = 1, bool p_unique = true, bool p_discardable = false);
@@ -217,18 +229,21 @@ public:
 	RID get_texture_slice(const StringName &p_context, const StringName &p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers = 1, const uint32_t p_mipmaps = 1);
 	RID get_texture_slice_view(const StringName &p_context, const StringName &p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers = 1, const uint32_t p_mipmaps = 1, RD::TextureView p_view = RD::TextureView());
 	Size2i get_texture_slice_size(const StringName &p_context, const StringName &p_texture_name, const uint32_t p_mipmap);
+	/// @}
 
 	void clear_context(const StringName &p_context);
 
-	// Allocate shared buffers
+	/// Allocate shared buffers
 	void allocate_blur_textures();
 
-	// Custom data
+	/// @name Custom Data
+	/// @{
 	bool has_custom_data(const StringName &p_name);
 	void set_custom_data(const StringName &p_name, Ref<RenderBufferCustomDataRD> p_data);
 	Ref<RenderBufferCustomDataRD> get_custom_data(const StringName &p_name) const;
-
-	// Getters
+	/// @}
+	/// @name Getters
+	/// @{
 
 	_FORCE_INLINE_ RID get_render_target() const { return render_target; }
 	_FORCE_INLINE_ uint32_t get_view_count() const { return view_count; }
@@ -241,6 +256,7 @@ public:
 	_FORCE_INLINE_ RS::ViewportScreenSpaceAA get_screen_space_aa() const { return screen_space_aa; }
 	_FORCE_INLINE_ bool get_use_taa() const { return use_taa; }
 	_FORCE_INLINE_ bool get_use_debanding() const { return use_debanding; }
+	/// @}
 
 	uint64_t get_auto_exposure_version() const { return auto_exposure_version; }
 	void set_auto_exposure_version(const uint64_t p_auto_exposure_version) { auto_exposure_version = p_auto_exposure_version; }
@@ -282,7 +298,7 @@ public:
 		return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_DEPTH_MSAA, p_layer, 0);
 	}
 
-	// back buffer (color)
+	/// Back buffer (color)
 	RID get_back_buffer_texture() const {
 		// Prefer returning the dedicated backbuffer color texture if it was created. Return the reused blur texture otherwise.
 		if (has_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_COLOR)) {
@@ -294,7 +310,7 @@ public:
 		}
 	}
 
-	// Upscaled.
+	/// Upscaled texture
 	void ensure_upscaled();
 
 	_FORCE_INLINE_ bool has_upscaled_texture() const {
@@ -308,7 +324,7 @@ public:
 	}
 
 	// Velocity, currently only used by TAA (Clustered) but we'll be using this in other places soon too.
-
+	/// Velocity texture
 	void ensure_velocity();
 	bool has_velocity_buffer(bool p_has_msaa);
 	RID get_velocity_buffer(bool p_get_msaa);

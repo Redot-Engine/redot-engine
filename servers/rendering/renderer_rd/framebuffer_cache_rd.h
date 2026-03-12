@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file framebuffer_cache_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/local_vector.h"
@@ -188,10 +194,10 @@ private:
 public:
 	template <typename... Args>
 	RID get_cache(Args... args) {
-		uint32_t h = hash_murmur3_one_32(1); //1 view
+		uint32_t h = hash_murmur3_one_32(1); ///< 1 view
 		h = hash_murmur3_one_32(sizeof...(Args), h);
 		h = _hash_rids(h, args...);
-		h = hash_murmur3_one_32(0, h); // 0 passes
+		h = hash_murmur3_one_32(0, h); ///< 0 passes
 		h = hash_fmix32(h);
 
 		uint32_t table_idx = h % HASH_TABLE_SIZE;

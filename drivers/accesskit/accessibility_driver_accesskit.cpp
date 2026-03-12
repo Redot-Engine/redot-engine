@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file accessibility_driver_accesskit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef ACCESSKIT_ENABLED
 
 #include "accessibility_driver_accesskit.h"
@@ -455,7 +461,7 @@ RID AccessibilityDriverAccessKit::accessibility_create_sub_text_edit_elements(co
 		accesskit_node_set_bounds(ae->node, rect);
 	}
 
-	// Sort runs in logical order.
+	/// Sort runs in logical order.
 	struct RunCompare {
 		_FORCE_INLINE_ bool operator()(const AccessibilityElement *l, const AccessibilityElement *r) const {
 			return l->run.x < r->run.x;
@@ -628,7 +634,7 @@ void AccessibilityDriverAccessKit::accessibility_set_window_focused(DisplayServe
 		accesskit_macos_queued_events_raise(events);
 	}
 #endif
-	// Note: On Windows, the subclassing adapter takes care of this.
+	/// @note On Windows, the subclassing adapter takes care of this.
 }
 
 void AccessibilityDriverAccessKit::accessibility_update_set_role(const RID &p_id, DisplayServer::AccessibilityRole p_role) {

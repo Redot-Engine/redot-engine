@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/main/node.h"
@@ -56,9 +62,9 @@ class Node3D : public Node {
 	friend class SceneTreeFTITests;
 
 public:
-	// Edit mode for the rotation.
-	// THIS MODE ONLY AFFECTS HOW DATA IS EDITED AND SAVED
-	// IT DOES _NOT_ AFFECT THE TRANSFORM LOGIC (see comment in TransformDirty).
+	/// Edit mode for the rotation.
+	/// THIS MODE ONLY AFFECTS HOW DATA IS EDITED AND SAVED
+	/// IT DOES _NOT_ AFFECT THE TRANSFORM LOGIC (see comment in TransformDirty).
 	enum RotationEditMode {
 		ROTATION_EDIT_MODE_EULER,
 		ROTATION_EDIT_MODE_QUATERNION,
@@ -66,22 +72,24 @@ public:
 	};
 
 private:
-	// For the sake of ease of use, Node3D can operate with Transforms (Basis+Origin), Quaternion/Scale and Euler Rotation/Scale.
-	// Transform and Quaternion are stored in data.local_transform Basis (so quaternion is not really stored, but converted back/forth from 3x3 matrix on demand).
-	// Euler needs to be kept separate because converting to Basis and back may result in a different vector (which is troublesome for users
-	// editing in the inspector, not only because of the numerical precision loss but because they expect these rotations to be consistent, or support
-	// "redundant" rotations for animation interpolation, like going from 0 to 720 degrees).
-	//
-	// As such, the system works in a way where if the local transform is set (via transform/basis/quaternion), the EULER rotation and scale becomes dirty.
-	// It will remain dirty until reading back is attempted (for performance reasons). Likewise, if the Euler rotation scale are set, the local transform
-	// will become dirty (and again, will not become valid again until read).
-	//
-	// All this is transparent from outside the Node3D API, which allows everything to works by calling these functions in exchange.
-	//
-	// Additionally, setting either transform, quaternion, Euler rotation or scale makes the global transform dirty, which will be updated when read again.
-	//
-	// NOTE: Again, RotationEditMode is _independent_ of this mechanism, it is only meant to expose the right set of properties for editing (editor) and saving
-	// (to scene, in order to keep the same values and avoid data loss on conversions). It has zero influence in the logic described above.
+	/**
+	 * For the sake of ease of use, Node3D can operate with Transforms (Basis+Origin), Quaternion/Scale and Euler Rotation/Scale.
+	 * Transform and Quaternion are stored in data.local_transform Basis (so quaternion is not really stored, but converted back/forth from 3x3 matrix on demand).
+	 * Euler needs to be kept separate because converting to Basis and back may result in a different vector (which is troublesome for users
+	 * editing in the inspector, not only because of the numerical precision loss but because they expect these rotations to be consistent, or support
+	 * "redundant" rotations for animation interpolation, like going from 0 to 720 degrees).
+	 *
+	 * As such, the system works in a way where if the local transform is set (via transform/basis/quaternion), the EULER rotation and scale becomes dirty.
+	 * It will remain dirty until reading back is attempted (for performance reasons). Likewise, if the Euler rotation scale are set, the local transform
+	 * will become dirty (and again, will not become valid again until read).
+	 *
+	 * All this is transparent from outside the Node3D API, which allows everything to works by calling these functions in exchange.
+	 *
+	 * Additionally, setting either transform, quaternion, Euler rotation or scale makes the global transform dirty, which will be updated when read again.
+	 *
+	 * NOTE: Again, RotationEditMode is _independent_ of this mechanism, it is only meant to expose the right set of properties for editing (editor) and saving
+	 * (to scene, in order to keep the same values and avoid data loss on conversions). It has zero influence in the logic described above.
+	 */
 	enum TransformDirty {
 		DIRTY_NONE = 0,
 		DIRTY_EULER_ROTATION_AND_SCALE = 1,
@@ -100,20 +108,21 @@ private:
 	mutable SelfList<Node> xform_change;
 	SelfList<Node3D> _client_physics_interpolation_node_3d_list;
 
-	// This Data struct is to avoid namespace pollution in derived classes.
-
+	/// This Data struct is to avoid namespace pollution in derived classes.
 	struct Data {
-		// Interpolated global transform - correct on the frame only.
-		// Only used with FTI.
+		/// Interpolated global transform - correct on the frame only.
+		/// Only used with FTI.
 		Transform3D global_transform_interpolated;
 
-		// Current xforms are either
-		// * Used for everything (when not using FTI)
-		// * Correct on the physics tick (when using FTI)
+		/// Current xforms are either
+		/// * Used for everything (when not using FTI)
+		/// * Correct on the physics tick (when using FTI)
+		/// @{
 		mutable Transform3D global_transform;
 		mutable Transform3D local_transform;
+		/// @}
 
-		// Only used with FTI.
+		/// Only used with FTI.
 		Transform3D local_transform_prev;
 
 		mutable EulerOrder euler_rotation_order = EulerOrder::YXZ;
@@ -128,8 +137,8 @@ private:
 		bool top_level : 1;
 		bool inside_world : 1;
 
-		// This is cached, and only currently kept up to date in visual instances.
-		// This is set if a visual instance is (a) in the tree AND (b) visible via is_visible_in_tree() call.
+		/// This is cached, and only currently kept up to date in visual instances.
+		/// This is set if a visual instance is (a) in the tree AND (b) visible via is_visible_in_tree() call.
 		bool vi_visible : 1;
 
 		bool ignore_notification : 1;
@@ -139,7 +148,8 @@ private:
 		bool visible : 1;
 		bool disable_scale : 1;
 
-		// Scene tree interpolation.
+		/// @name Scene tree interpolation.
+		/// @{
 		bool fti_on_frame_xform_list : 1;
 		bool fti_on_frame_property_list : 1;
 		bool fti_on_tick_xform_list : 1;
@@ -148,6 +158,7 @@ private:
 		bool fti_frame_xform_force_update : 1;
 		bool fti_is_identity_xform : 1;
 		bool fti_processed : 1;
+		/// @}
 
 		RID visibility_parent;
 
@@ -188,7 +199,9 @@ private:
 protected:
 	_FORCE_INLINE_ void set_ignore_transform_notification(bool p_ignore) { data.ignore_notification = p_ignore; }
 
+	/// This function is called when the local transform (data.local_transform) is dirty and the right value is contained in the Euler rotation and scale.
 	_FORCE_INLINE_ void _update_local_transform() const;
+	/// This function is called when the Euler rotation (data.euler_rotation) is dirty and the right value is contained in the local transform
 	_FORCE_INLINE_ void _update_rotation_and_scale() const;
 
 	void _set_vi_visible(bool p_visible) { data.vi_visible = p_visible; }
@@ -197,24 +210,24 @@ protected:
 	const Transform3D &_get_cached_global_transform_interpolated() const { return data.global_transform_interpolated; }
 	void _disable_client_physics_interpolation();
 
-	// Calling this announces to the FTI system that a node has been moved,
-	// or requires an update in terms of interpolation
-	// (e.g. changing Camera zoom even if position hasn't changed).
+	/// Calling this announces to the FTI system that a node has been moved,
+	/// or requires an update in terms of interpolation
+	/// (e.g. changing Camera zoom even if position hasn't changed).
 	void fti_notify_node_changed(bool p_transform_changed = true);
 
-	// Opportunity after FTI to update the servers
-	// with global_transform_interpolated,
-	// and any custom interpolated data in derived classes.
-	// Make sure to call the parent class fti_update_servers(),
-	// so all data is updated to the servers.
+	/// Opportunity after FTI to update the servers
+	/// with global_transform_interpolated,
+	/// and any custom interpolated data in derived classes.
+	/// Make sure to call the parent class fti_update_servers(),
+	/// so all data is updated to the servers.
 	virtual void fti_update_servers_xform() {}
 	virtual void fti_update_servers_property() {}
 
-	// Pump the FTI data, also gives a chance for inherited classes
-	// to pump custom data, but they *must* call the base class here too.
-	// This is the opportunity for classes to move current values for
-	// transforms and properties to stored previous values,
-	// and this should take place both on ticks, and during resets.
+	/// Pump the FTI data, also gives a chance for inherited classes
+	/// to pump custom data, but they *must* call the base class here too.
+	/// This is the opportunity for classes to move current values for
+	/// transforms and properties to stored previous values,
+	/// and this should take place both on ticks, and during resets.
 	virtual void fti_pump_xform();
 	virtual void fti_pump_property() {}
 
@@ -276,7 +289,10 @@ public:
 	Quaternion get_quaternion() const;
 	Transform3D get_global_transform() const;
 
+	/// Visible nodes - get_global_transform_interpolated is cheap.
+	/// Invisible nodes - get_global_transform_interpolated is expensive, try to avoid.
 	Transform3D get_global_transform_interpolated();
+	/// @return `false` to timeout and remove from the client interpolation list.
 	bool update_client_physics_interpolation_data();
 
 #ifdef TOOLS_ENABLED

@@ -30,14 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
-
-#include "core/math/math_funcs.h"
-
-/*
- * Derived from Robert Penner's easing equations: http://robertpenner.com/easing/
+/**
+ * @file easing_equations.h
  *
- * Copyright (c) 2001 Robert Penner
+ * @brief Derived from Robert Penner's easing equations: http://robertpenner.com/easing/
+ *
+ * @copyright Copyright (c) 2001 Robert Penner
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +55,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#pragma once
+
+#include "core/math/math_funcs.h"
 
 namespace Linear {
 static real_t in(real_t t, real_t b, real_t c, real_t d) {

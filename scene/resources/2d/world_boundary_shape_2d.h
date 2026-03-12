@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file world_boundary_shape_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/resources/2d/shape_2d.h"
@@ -37,7 +43,7 @@
 class WorldBoundaryShape2D : public Shape2D {
 	GDCLASS(WorldBoundaryShape2D, Shape2D);
 
-	// WorldBoundaryShape2D is often used for one-way platforms, where the normal pointing up makes sense.
+	/// WorldBoundaryShape2D is often used for one-way platforms, where the normal pointing up makes sense.
 	Vector2 normal = Vector2(0, -1);
 	real_t distance = 0.0;
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef GLES3_ENABLED
@@ -69,7 +75,7 @@ struct Mesh {
 		uint32_t attribute_buffer_size = 0;
 		uint32_t skin_buffer_size = 0;
 
-		// Cache vertex arrays so they can be created
+		/// Cache vertex arrays so they can be created
 		struct Version {
 			uint32_t input_mask = 0;
 			GLuint vertex_array = 0;
@@ -77,8 +83,8 @@ struct Mesh {
 			Attrib attribs[RS::ARRAY_MAX];
 		};
 
-		SpinLock version_lock; //needed to access versions
-		Version *versions = nullptr; //allocated on demand
+		SpinLock version_lock; ///< Needed to access versions
+		Version *versions = nullptr; ///< Allocated on demand
 		uint32_t version_count = 0;
 
 		GLuint index_buffer = 0;
@@ -107,8 +113,8 @@ struct Mesh {
 
 		Vector<AABB> bone_aabbs;
 
-		// Transform used in runtime bone AABBs compute.
-		// As bone AABBs are saved in Mesh space, but bones animation is in Skeleton space.
+		/// Transform used in runtime bone AABBs compute.
+		/// As bone AABBs are saved in Mesh space, but bones animation is in Skeleton space.
 		Transform3D mesh_to_skeleton_xform;
 
 		Vector4 uv_scale;
@@ -163,13 +169,13 @@ struct MeshInstance {
 		int vertex_tangent_offset_cache = 0;
 		uint64_t format_cache = 0;
 
-		Mesh::Surface::Version *versions = nullptr; //allocated on demand
+		Mesh::Surface::Version *versions = nullptr; ///< Allocated on demand
 		uint32_t version_count = 0;
 	};
 	LocalVector<Surface> surfaces;
 	LocalVector<float> blend_weights;
 
-	List<MeshInstance *>::Element *I = nullptr; //used to erase itself
+	List<MeshInstance *>::Element *I = nullptr; ///< Used to erase itself
 	uint64_t skeleton_version = 0;
 	bool dirty = false;
 	bool weights_dirty = false;
@@ -197,7 +203,7 @@ struct MultiMesh {
 	uint32_t color_offset_cache = 0;
 	uint32_t custom_data_offset_cache = 0;
 
-	Vector<float> data_cache; //used if individual setting is used
+	Vector<float> data_cache; ///< Used if individual setting is used
 	bool *data_cache_dirty_regions = nullptr;
 	uint32_t data_cache_used_dirty_regions = 0;
 
@@ -419,7 +425,7 @@ public:
 		return (s->vertex_count <= 65536 && s->vertex_count > 0) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 	}
 
-	// Use this to cache Vertex Array Objects so they are only generated once
+	/// Use this to cache Vertex Array Objects so they are only generated once
 	_FORCE_INLINE_ void mesh_surface_get_vertex_arrays_and_format(void *p_surface, uint64_t p_input_mask, GLuint &r_vertex_array_gl) {
 		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
 
@@ -461,8 +467,8 @@ public:
 	virtual void mesh_instance_set_canvas_item_transform(RID p_mesh_instance, const Transform2D &p_transform) override;
 	virtual void update_mesh_instances() override;
 
-	// TODO: considering hashing versions with multimesh buffer RID.
-	// Doing so would allow us to avoid specifying multimesh buffer pointers every frame and may improve performance.
+	/// @todo Considering hashing versions with multimesh buffer RID.
+	/// Doing so would allow us to avoid specifying multimesh buffer pointers every frame and may improve performance.
 	_FORCE_INLINE_ void mesh_instance_surface_get_vertex_arrays_and_format(RID p_mesh_instance, uint32_t p_surface_index, uint64_t p_input_mask, GLuint &r_vertex_array_gl) {
 		MeshInstance *mi = mesh_instance_owner.get_or_null(p_mesh_instance);
 		ERR_FAIL_NULL(mi);

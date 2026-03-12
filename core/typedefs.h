@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file typedefs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 /**
@@ -38,8 +44,8 @@
 
 // IWYU pragma: always_keep
 
-// Ensure that C++ standard is at least C++17.
-// If on MSVC, also ensures that the `Zc:__cplusplus` flag is present.
+/// Ensure that C++ standard is at least C++17.
+/// If on MSVC, also ensures that the `Zc:__cplusplus` flag is present.
 static_assert(__cplusplus >= 201703L, "Minimum of C++17 required.");
 
 // IWYU pragma: begin_exports
@@ -149,13 +155,13 @@ constexpr auto CLAMP(const T m_a, const T2 m_min, const T3 m_max) {
 
 /* Functions to handle powers of 2 and shifting. */
 
-// Returns `true` if a positive integer is a power of 2, `false` otherwise.
+/// @return `true` if a positive integer is a power of 2, `false` otherwise.
 template <typename T>
 inline bool is_power_of_2(const T x) {
 	return x && ((x & (x - 1)) == 0);
 }
 
-// Function to find the next power of 2 to an integer.
+/// Function to find the next power of 2 to an integer.
 constexpr uint64_t next_power_of_2(uint64_t p_number) {
 	if (p_number == 0) {
 		return 0;
@@ -187,7 +193,7 @@ constexpr uint32_t next_power_of_2(uint32_t p_number) {
 	return ++p_number;
 }
 
-// Function to find the previous power of 2 to an integer.
+/// Function to find the previous power of 2 to an integer.
 constexpr uint64_t previous_power_of_2(uint64_t p_number) {
 	p_number |= p_number >> 1;
 	p_number |= p_number >> 2;
@@ -207,7 +213,7 @@ constexpr uint32_t previous_power_of_2(uint32_t p_number) {
 	return p_number - (p_number >> 1);
 }
 
-// Function to find the closest power of 2 to an integer.
+/// Function to find the closest power of 2 to an integer.
 constexpr uint64_t closest_power_of_2(uint64_t p_number) {
 	uint64_t nx = next_power_of_2(p_number);
 	uint64_t px = previous_power_of_2(p_number);
@@ -220,7 +226,7 @@ constexpr uint32_t closest_power_of_2(uint32_t p_number) {
 	return (nx - p_number) > (p_number - px) ? px : nx;
 }
 
-// Get a shift value from a power of 2.
+/// Get a shift value from a power of 2.
 constexpr int32_t get_shift_from_power_of_2(uint64_t p_bits) {
 	for (uint64_t i = 0; i < (uint64_t)64; i++) {
 		if (p_bits == (uint64_t)((uint64_t)1 << i)) {
@@ -259,7 +265,7 @@ static _FORCE_INLINE_ T nearest_power_of_2_templated(T p_number) {
 	return ++p_number;
 }
 
-// Function to find the nearest (bigger) power of 2 to an integer.
+/// Function to find the nearest (bigger) power of 2 to an integer.
 constexpr uint64_t nearest_shift(uint64_t p_number) {
 	uint64_t i = 63;
 	do {
@@ -284,15 +290,15 @@ constexpr uint32_t nearest_shift(uint32_t p_number) {
 	return 0;
 }
 
-// constexpr function to find the floored log2 of a number
+/// constexpr function to find the floored log2 of a number
 template <typename T>
 constexpr T floor_log2(T x) {
 	return x < 2 ? x : 1 + floor_log2(x >> 1);
 }
 
-// Get the number of bits needed to represent the number.
-// IE, if you pass in 8, you will get 4.
-// If you want to know how many bits are needed to store 8 values however, pass in (8 - 1).
+/// Get the number of bits needed to represent the number.
+/// IE, if you pass in 8, you will get 4.
+/// If you want to know how many bits are needed to store 8 values however, pass in (8 - 1).
 template <typename T>
 constexpr T get_num_bits(T x) {
 	return floor_log2(x);
@@ -324,13 +330,13 @@ static inline uint64_t BSWAP64(uint64_t x) {
 }
 #endif
 
-// Generic comparator used in Map, List, etc.
+/// Generic comparator used in Map, List, etc.
 template <typename T>
 struct Comparator {
 	_ALWAYS_INLINE_ bool operator()(const T &p_a, const T &p_b) const { return (p_a < p_b); }
 };
 
-// Global lock macro, relies on the static Mutex::_global_mutex.
+/// Global lock macro, relies on the static Mutex::_global_mutex.
 void _global_lock();
 void _global_unlock();
 
@@ -357,12 +363,12 @@ struct _GlobalLock {
 #define _PRINTF_FORMAT_ATTRIBUTE_2_3
 #endif
 
-// This is needed due to a strange OpenGL API that expects a pointer
-// type for an argument that is actually an offset.
+/// This is needed due to a strange OpenGL API that expects a pointer
+/// type for an argument that is actually an offset.
 #define CAST_INT_TO_UCHAR_PTR(ptr) ((uint8_t *)(uintptr_t)(ptr))
 
-// Home-made index sequence trick, so it can be used everywhere without the costly include of std::tuple.
-// https://stackoverflow.com/questions/15014096/c-index-of-type-during-variadic-template-expansion
+/// Home-made index sequence trick, so it can be used everywhere without the costly include of std::tuple.
+/// https://stackoverflow.com/questions/15014096/c-index-of-type-during-variadic-template-expansion
 template <size_t... Is>
 struct IndexSequence {};
 
@@ -372,19 +378,19 @@ struct BuildIndexSequence : BuildIndexSequence<N - 1, N - 1, Is...> {};
 template <size_t... Is>
 struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
 
-// Limit the depth of recursive algorithms when dealing with Array/Dictionary
+/// Limit the depth of recursive algorithms when dealing with Array/Dictionary
 #define MAX_RECURSION 100
 
-// Macro GD_IS_DEFINED() allows to check if a macro is defined. It needs to be defined to anything (say 1) to work.
+/// Macro GD_IS_DEFINED() allows to check if a macro is defined. It needs to be defined to anything (say 1) to work.
 #define __GDARG_PLACEHOLDER_1 false,
 #define __gd_take_second_arg(__ignored, val, ...) val
 #define ____gd_is_defined(arg1_or_junk) __gd_take_second_arg(arg1_or_junk true, false)
 #define ___gd_is_defined(val) ____gd_is_defined(__GDARG_PLACEHOLDER_##val)
 #define GD_IS_DEFINED(x) ___gd_is_defined(x)
 
-// Whether the default value of a type is just all-0 bytes.
-// This can most commonly be exploited by using memset for these types instead of loop-construct.
-// Trivially constructible types are also zero-constructible.
+/// Whether the default value of a type is just all-0 bytes.
+/// This can most commonly be exploited by using memset for these types instead of loop-construct.
+/// Trivially constructible types are also zero-constructible.
 template <typename T>
 struct is_zero_constructible : std::is_trivially_constructible<T> {};
 

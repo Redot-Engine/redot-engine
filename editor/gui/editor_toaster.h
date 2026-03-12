@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_toaster.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/box_container.h"
@@ -70,25 +76,29 @@ private:
 	struct Toast {
 		Severity severity = SEVERITY_INFO;
 
-		// Timing.
+		/// @name Timing
+		/// @{
 		real_t duration = -1.0;
 		real_t remaining_time = 0.0;
 		bool popped = false;
-
-		// Buttons
+		/// @{
+		/// @name Buttons
+		/// @{
 		Button *copy_button = nullptr;
 		Button *close_button = nullptr;
-
-		// Messages
+		/// @}
+		/// @name Messages
+		/// @{
 		String message;
 		String tooltip;
 		int count = 0;
 		Label *message_label = nullptr;
 		Label *message_count_label = nullptr;
+		/// @}
 	};
 	HashMap<Control *, Toast> toasts;
 
-	bool is_processing_error = false; // Makes sure that we don't handle errors that are triggered within the EditorToaster error processing.
+	bool is_processing_error = false; ///< Makes sure that we don't handle errors that are triggered within the EditorToaster error processing.
 
 	const double default_message_duration = 5.0;
 

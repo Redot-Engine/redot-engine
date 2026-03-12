@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_shader_container.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -69,7 +75,7 @@ protected:
 		uint32_t type = 0;
 		uint32_t binding = 0;
 		uint32_t stages = 0;
-		uint32_t length = 0; // Size of arrays (in total elements), or UBOs (in bytes * total elements).
+		uint32_t length = 0; ///< Size of arrays (in total elements), or UBOs (in bytes * total elements).
 		uint32_t writable = 0;
 
 		bool operator<(const ReflectionBindingData &p_other) const {
@@ -100,7 +106,8 @@ protected:
 	virtual uint32_t _format() const = 0;
 	virtual uint32_t _format_version() const = 0;
 
-	// These methods will always be called with a valid pointer.
+	/// These methods will always be called with a valid pointer.
+	/// @{
 	virtual uint32_t _from_bytes_header_extra_data(const uint8_t *p_bytes);
 	virtual uint32_t _from_bytes_reflection_extra_data(const uint8_t *p_bytes);
 	virtual uint32_t _from_bytes_reflection_binding_uniform_extra_data_start(const uint8_t *p_bytes);
@@ -110,19 +117,21 @@ protected:
 	virtual uint32_t _from_bytes_shader_extra_data_start(const uint8_t *p_bytes);
 	virtual uint32_t _from_bytes_shader_extra_data(const uint8_t *p_bytes, uint32_t p_index);
 	virtual uint32_t _from_bytes_footer_extra_data(const uint8_t *p_bytes);
-
-	// These methods will be called with a nullptr to retrieve the size of the data.
+	/// @}
+	/// These methods will be called with a nullptr to retrieve the size of the data.
+	/// @{
 	virtual uint32_t _to_bytes_header_extra_data(uint8_t *p_bytes) const;
 	virtual uint32_t _to_bytes_reflection_extra_data(uint8_t *p_bytes) const;
 	virtual uint32_t _to_bytes_reflection_binding_uniform_extra_data(uint8_t *p_bytes, uint32_t p_index) const;
 	virtual uint32_t _to_bytes_reflection_specialization_extra_data(uint8_t *p_bytes, uint32_t p_index) const;
 	virtual uint32_t _to_bytes_shader_extra_data(uint8_t *p_bytes, uint32_t p_index) const;
 	virtual uint32_t _to_bytes_footer_extra_data(uint8_t *p_bytes) const;
+	/// @}
 
-	// This method will be called when set_from_shader_reflection() is finished. Used to update internal structures to match the reflection if necessary.
+	/// This method will be called when set_from_shader_reflection() is finished. Used to update internal structures to match the reflection if necessary.
 	virtual void _set_from_shader_reflection_post(const String &p_shader_name, const RenderingDeviceCommons::ShaderReflection &p_reflection);
 
-	// This method will be called when set_code_from_spirv() is called.
+	/// This method will be called when set_code_from_spirv() is called.
 	virtual bool _set_code_from_spirv(const Vector<RenderingDeviceCommons::ShaderStageSPIRVData> &p_spirv) = 0;
 
 public:

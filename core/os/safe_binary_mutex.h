@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file safe_binary_mutex.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/error/error_macros.h"
@@ -40,14 +46,16 @@
 
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wundefined-var-template")
 
-// A very special kind of mutex, used in scenarios where these
-// requirements hold at the same time:
-// - Must be used with a condition variable (only binary mutexes are suitable).
-// - Must have recursive semnantics (or simulate, as this one does).
-// The implementation keeps the lock count in TS. Therefore, only
-// one object of each version of the template can exists; hence the Tag argument.
-// Tags must be unique across the Redot codebase.
-// Also, don't forget to declare the thread_local variable on each use.
+/**
+ * A very special kind of mutex, used in scenarios where these
+ * requirements hold at the same time:
+ * - Must be used with a condition variable (only binary mutexes are suitable).
+ * - Must have recursive semnantics (or simulate, as this one does).
+ * The implementation keeps the lock count in TS. Therefore, only
+ * one object of each version of the template can exists; hence the Tag argument.
+ * Tags must be unique across the Redot codebase.
+ * Also, don't forget to declare the thread_local variable on each use.
+ */
 template <int Tag>
 class SafeBinaryMutex {
 	friend class MutexLock<SafeBinaryMutex<Tag>>;
@@ -115,7 +123,7 @@ public:
 		mutex.unlock();
 	}
 
-	// TODO: Implement a `try_temp_relock` if needed (will also need a dummy method below).
+	/// @todo Implement a `try_temp_relock` if needed (will also need a dummy method below).
 };
 
 GODOT_CLANG_WARNING_POP

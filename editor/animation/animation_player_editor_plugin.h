@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_player_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/animation/animation_library_editor.h"
@@ -209,6 +215,8 @@ class AnimationPlayerEditor : public VBoxContainer {
 	void _list_changed();
 	void _animation_finished(const String &p_name);
 	void _current_animation_changed(const String &p_name);
+	/// The purpose of _update_animation is to reflect the current state
+	/// of the animation player in the current editor..
 	void _update_animation();
 	void _update_player();
 	void _set_controls_disabled(bool p_disabled);
@@ -231,6 +239,7 @@ class AnimationPlayerEditor : public VBoxContainer {
 	bool _are_onion_layers_valid();
 	void _allocate_onion_layers();
 	void _free_onion_layers();
+	/// This would be called per viewport and we want to act once only.
 	void _prepare_onion_layers_1();
 	void _prepare_onion_layers_2_prolog();
 	void _prepare_onion_layers_2_step_prepare(int p_step_offset, uint32_t p_capture_idx);
@@ -317,7 +326,8 @@ public:
 	~AnimationPlayerEditorPlugin();
 };
 
-// AnimationTrackKeyEditEditorPlugin
+/// @name AnimationTrackKeyEditEditorPlugin
+/// @{
 
 class EditorInspectorPluginAnimationTrackKeyEdit : public EditorInspectorPlugin {
 	GDCLASS(EditorInspectorPluginAnimationTrackKeyEdit, EditorInspectorPlugin);
@@ -342,8 +352,9 @@ public:
 
 	AnimationTrackKeyEditEditorPlugin();
 };
-
-// AnimationMarkerKeyEditEditorPlugin
+/// @}
+/// @name AnimationMarkerKeyEditEditorPlugin
+/// @{
 
 class EditorInspectorPluginAnimationMarkerKeyEdit : public EditorInspectorPlugin {
 	GDCLASS(EditorInspectorPluginAnimationMarkerKeyEdit, EditorInspectorPlugin);
@@ -368,3 +379,4 @@ public:
 
 	AnimationMarkerKeyEditEditorPlugin();
 };
+/// @}

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file video_stream_theora.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/file_access.h"
@@ -61,8 +67,11 @@ class VideoStreamPlaybackTheora : public VideoStreamPlayback {
 	int buffer_data();
 	int queue_page(ogg_page *page);
 	int read_page(ogg_page *page);
+	/// Read one buffer worth of pages and feed them to the streams.
 	int feed_pages();
 	double get_page_time(ogg_page *page);
+	/// Seek the video and audio streams simultaneously to find the granulepos where we should start decoding.
+	/// It will return the position where we should start reading pages, and the video and audio granulepos.
 	int64_t seek_streams(double p_time, int64_t &video_granulepos, int64_t &audio_granulepos);
 	void find_streams(th_setup_info *&ts);
 	void read_headers(th_setup_info *&ts);

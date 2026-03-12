@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/os/mutex.h"
@@ -58,13 +64,15 @@ public:
 	typedef HashSet<ShaderVersionPair> ShaderVersionPairSet;
 
 private:
-	//versions
+	/// @name Versions
+	/// @{
 	CharString general_defines;
 	Vector<VariantDefine> variant_defines;
 	Vector<bool> variants_enabled;
 	Vector<uint32_t> variant_to_group;
 	HashMap<int, LocalVector<int>> group_to_variant_map;
 	Vector<bool> group_enabled;
+	/// @}
 
 	Vector<RD::PipelineImmutableSampler> immutable_samplers;
 
@@ -92,11 +100,13 @@ private:
 		int group = 0;
 	};
 
-	// Vector will have the size of SHADER_STAGE_MAX and unused stages will have empty strings.
+	/// Vector will have the size of SHADER_STAGE_MAX and unused stages will have empty strings.
 	void _compile_variant(uint32_t p_variant, CompileData p_data);
 
 	void _initialize_version(Version *p_version);
 	void _clear_version(Version *p_version);
+	/// Try to compile all variants for a given group.
+	/// Will skip variants that are disabled.
 	void _compile_version_start(Version *p_version, int p_group);
 	void _compile_version_end(Version *p_version, int p_group);
 	void _compile_ensure_finished(Version *p_version);
@@ -213,13 +223,13 @@ public:
 
 	bool version_free(RID p_version);
 
-	// Enable/disable variants for things that you know won't be used at engine initialization time .
+	/// Enable/disable variants for things that you know won't be used at engine initialization time .
 	void set_variant_enabled(int p_variant, bool p_enabled);
 	bool is_variant_enabled(int p_variant) const;
 	int64_t get_variant_count() const;
 	int get_variant_to_group(int p_variant) const;
 
-	// Enable/disable groups for things that might be enabled at run time.
+	/// Enable/disable groups for things that might be enabled at run time.
 	void enable_group(int p_group);
 	bool is_group_enabled(int p_group) const;
 	int64_t get_group_count() const;
@@ -247,6 +257,7 @@ public:
 	String version_get_cache_file_relative_path(RID p_version, int p_group, const String &p_api_name);
 
 	void initialize(const Vector<String> &p_variant_defines, const String &p_general_defines = "", const Vector<RD::PipelineImmutableSampler> &p_immutable_samplers = Vector<RD::PipelineImmutableSampler>());
+	/// Same as above, but allows specifying shader compilation groups.
 	void initialize(const Vector<VariantDefine> &p_variant_defines, const String &p_general_defines = "", const Vector<RD::PipelineImmutableSampler> &p_immutable_samplers = Vector<RD::PipelineImmutableSampler>());
 
 	virtual ~ShaderRD();

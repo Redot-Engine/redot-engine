@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_driver_metal.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #import "metal_objects.h"
@@ -114,7 +120,7 @@ public:
 #pragma mark - Texture
 
 private:
-	// Returns true if the texture is a valid linear format.
+	/// @return `true` if the texture is a valid linear format.
 	Result<bool> is_valid_linear(TextureFormat const &p_format) const;
 	void _get_sub_resource(TextureID p_texture, const TextureSubresource &p_subresource, TextureCopyableLayout *r_layout) const;
 
@@ -292,12 +298,14 @@ private:
 public:
 	virtual void pipeline_free(PipelineID p_pipeline_id) override final;
 
-	// ----- BINDING -----
-
+	//@name ----- BINDING -----
+	// @{
 	virtual void command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader, uint32_t p_first_index, VectorView<uint32_t> p_data) override final;
+	/// @}
 
-	// ----- CACHE -----
 private:
+	/// @name ----- CACHE -----
+	/// @{
 	String _pipeline_get_cache_path() const;
 
 public:
@@ -305,15 +313,20 @@ public:
 	virtual void pipeline_cache_free() override final;
 	virtual size_t pipeline_cache_query_size() override final;
 	virtual Vector<uint8_t> pipeline_cache_serialize() override final;
+	/// @}
 
 #pragma mark Rendering
 
-	// ----- SUBPASS -----
+	/// @}
+	/// @name ----- SUBPASS -----
+	/// @{
 
 	virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments, VectorView<Subpass> p_subpasses, VectorView<SubpassDependency> p_subpass_dependencies, uint32_t p_view_count, AttachmentReference p_fragment_density_map_attachment) override final;
 	virtual void render_pass_free(RenderPassID p_render_pass) override final;
 
-	// ----- COMMANDS -----
+	/// @}
+	/// @name ----- COMMANDS -----
+	/// @{
 
 public:
 	virtual void command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type, const Rect2i &p_rect, VectorView<RenderPassClearValue> p_clear_values) override final;
@@ -323,28 +336,34 @@ public:
 	virtual void command_render_set_scissor(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_scissors) override final;
 	virtual void command_render_clear_attachments(CommandBufferID p_cmd_buffer, VectorView<AttachmentClear> p_attachment_clears, VectorView<Rect2i> p_rects) override final;
 
-	// Binding.
+	/// @}
+	/// @name Binding
+	/// @{
 	virtual void command_bind_render_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) override final;
 	virtual void command_bind_render_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) override final;
 	virtual void command_bind_render_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) override final;
-
-	// Drawing.
+	/// @}
+	/// @name Drawing
+	/// @{
 	virtual void command_render_draw(CommandBufferID p_cmd_buffer, uint32_t p_vertex_count, uint32_t p_instance_count, uint32_t p_base_vertex, uint32_t p_first_instance) override final;
 	virtual void command_render_draw_indexed(CommandBufferID p_cmd_buffer, uint32_t p_index_count, uint32_t p_instance_count, uint32_t p_first_index, int32_t p_vertex_offset, uint32_t p_first_instance) override final;
 	virtual void command_render_draw_indexed_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) override final;
 	virtual void command_render_draw_indexed_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) override final;
 	virtual void command_render_draw_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) override final;
 	virtual void command_render_draw_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) override final;
-
-	// Buffer binding.
+	/// @}
+	/// @name Buffer binding
+	/// @{
 	virtual void command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count, const BufferID *p_buffers, const uint64_t *p_offsets) override final;
 	virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format, uint64_t p_offset) override final;
-
-	// Dynamic state.
+	/// @}
+	/// @name Dynamic state
+	/// @{
 	virtual void command_render_set_blend_constants(CommandBufferID p_cmd_buffer, const Color &p_constants) override final;
 	virtual void command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) override final;
-
-	// ----- PIPELINE -----
+	/// @}
+	/// @name----- PIPELINE -----
+	/// @{
 
 	virtual PipelineID render_pipeline_create(
 			ShaderID p_shader,
@@ -359,7 +378,7 @@ public:
 			RenderPassID p_render_pass,
 			uint32_t p_render_subpass,
 			VectorView<PipelineSpecializationConstant> p_specialization_constants) override final;
-
+	/// @}
 #pragma mark - Compute
 
 	// ----- COMMANDS -----

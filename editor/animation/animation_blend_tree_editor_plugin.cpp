@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_blend_tree_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_blend_tree_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -1050,14 +1056,13 @@ void AnimationNodeBlendTreeEditor::_bind_methods() {
 
 AnimationNodeBlendTreeEditor *AnimationNodeBlendTreeEditor::singleton = nullptr;
 
-// AnimationNode's "node_changed" signal means almost update_input.
 void AnimationNodeBlendTreeEditor::_node_changed(const StringName &p_node_name) {
-	// TODO:
-	// Here is executed during the commit of EditorNode::undo_redo, it is not possible to create an undo_redo action here.
-	// The disconnect when the number of enabled inputs decreases is done in AnimationNodeBlendTree and update_graph().
-	// This means that there is no place to register undo_redo actions.
-	// In order to implement undo_redo correctly, we may need to implement AnimationNodeEdit such as AnimationTrackKeyEdit
-	// and add it to _node_selected() with EditorNode::get_singleton()->push_item(AnimationNodeEdit).
+	/// @todo
+	/// Here is executed during the commit of EditorNode::undo_redo, it is not possible to create an undo_redo action here.
+	/// The disconnect when the number of enabled inputs decreases is done in AnimationNodeBlendTree and update_graph().
+	/// This means that there is no place to register undo_redo actions.
+	/// In order to implement undo_redo correctly, we may need to implement AnimationNodeEdit such as AnimationTrackKeyEdit
+	/// and add it to _node_selected() with EditorNode::get_singleton()->push_item(AnimationNodeEdit).
 	update_graph();
 }
 
@@ -1315,7 +1320,6 @@ void AnimationNodeAnimationEditor::_open_set_custom_timeline_from_marker_dialog(
 }
 
 void AnimationNodeAnimationEditor::_validate_markers(int p_id) {
-	// Note: p_id is ignored. It is included because OptionButton's item_changed signal always passes it.
 	int start_id = dialog->select_start->get_selected_id();
 	int end_id = dialog->select_end->get_selected_id();
 

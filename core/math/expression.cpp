@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file expression.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "expression.h"
 
 #include "core/object/class_db.h"

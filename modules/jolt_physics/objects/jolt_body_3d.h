@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "jolt_physics_direct_body_state_3d.h"
@@ -114,6 +120,7 @@ private:
 	virtual void _add_to_space() override;
 
 	bool _should_call_queries() const { return state_sync_callback.is_valid() || custom_integration_callback.is_valid(); }
+	/// This method will be called from the body activation listener on multiple threads during the simulation step.
 	void _enqueue_call_queries();
 	void _dequeue_call_queries();
 
@@ -125,6 +132,7 @@ private:
 	JPH::MassProperties _calculate_mass_properties(const JPH::Shape &p_shape) const;
 	JPH::MassProperties _calculate_mass_properties() const;
 
+	/// This method will be called from the body activation listener on multiple threads during the simulation step.
 	void _on_wake_up();
 
 	void _update_mass_properties();

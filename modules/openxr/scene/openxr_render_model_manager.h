@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_render_model_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "openxr_render_model.h"
@@ -67,7 +73,7 @@ private:
 	RenderModelTracker tracker = RENDER_MODEL_TRACKER_ANY;
 	String make_local_to_pose;
 
-	// cached values
+	/// cached values
 	Ref<XRPositionalTracker> positional_tracker;
 	XrPath xr_path = XR_NULL_PATH;
 

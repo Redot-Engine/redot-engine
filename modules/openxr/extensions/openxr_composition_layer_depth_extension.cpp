@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_composition_layer_depth_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_composition_layer_depth_extension.h"
 
 OpenXRCompositionLayerDepthExtension *OpenXRCompositionLayerDepthExtension::singleton = nullptr;
@@ -63,7 +69,6 @@ int OpenXRCompositionLayerDepthExtension::get_composition_layer_count() {
 }
 
 XrCompositionLayerBaseHeader *OpenXRCompositionLayerDepthExtension::get_composition_layer(int p_index) {
-	// Seems this is all done in our base layer... Just in case this changes...
 	return nullptr;
 }
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_region_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_region_3d.h"
 
 #include "nav_map_3d.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file png_driver_common.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "png_driver_common.h"
 
 #include "core/config/engine.h"
@@ -38,9 +44,9 @@
 
 namespace PNGDriverCommon {
 
-// Print any warnings.
-// On error, set explain and return true.
-// Call should be wrapped in ERR_FAIL_COND
+/// Print any warnings.
+/// On error, set explain and return true.
+/// Call should be wrapped in ERR_FAIL_COND
 static bool check_error(const png_image &image) {
 	const png_uint_32 failed = PNG_IMAGE_FAILED(image);
 	if (failed & PNG_IMAGE_ERROR) {
@@ -205,7 +211,8 @@ Error image_to_png(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer) {
 	return OK;
 }
 
-/// APNG functions
+/// @name APNG functions
+/// @{
 
 static void apng_error_func(png_struct *p_struct, const char *p_message) {
 	ERR_PRINT(p_message);
@@ -513,5 +520,6 @@ Error apng_to_image_frames(const uint8_t *p_source, size_t p_size, bool p_force_
 	p_frames->set_frame_image(0, image);
 	return OK;
 #endif // PNG_READ_APNG_SUPPORTED
+	/// @}
 }
 } // namespace PNGDriverCommon

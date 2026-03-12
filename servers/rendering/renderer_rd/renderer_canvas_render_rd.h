@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_canvas_render_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/lru.h"
@@ -50,7 +56,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	};
 
 	const int SAMPLERS_BINDING_FIRST_INDEX = 10;
-	// The size of the ring buffer to store GPU buffers. Triple-buffering the max expected frames in flight.
+	/// The size of the ring buffer to store GPU buffers. Triple-buffering the max expected frames in flight.
 	static const uint32_t BATCH_DATA_BUFFER_COUNT = 3;
 
 	enum ShaderVariant {
@@ -64,7 +70,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	};
 
 	enum {
-		INSTANCE_FLAGS_LIGHT_COUNT_SHIFT = 0, // 4 bits for light count.
+		INSTANCE_FLAGS_LIGHT_COUNT_SHIFT = 0, ///< 4 bits for light count.
 
 		INSTANCE_FLAGS_CLIP_RECT_UV = (1 << 4),
 		INSTANCE_FLAGS_TRANSPOSE_RECT = (1 << 5),
@@ -75,7 +81,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		INSTANCE_FLAGS_NINEPATCH_H_MODE_SHIFT = 9,
 		INSTANCE_FLAGS_NINEPATCH_V_MODE_SHIFT = 11,
 
-		INSTANCE_FLAGS_SHADOW_MASKED_SHIFT = 13, // 16 bits.
+		INSTANCE_FLAGS_SHADOW_MASKED_SHIFT = 13, ///< 16 bits.
 	};
 
 	enum {
@@ -111,9 +117,8 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		MAX_LIGHTS_PER_RENDER = 256,
 	};
 
-	/****************/
-	/**** SHADER ****/
-	/****************/
+	/// @name SHADER
+	/// @{
 
 	struct ShaderSpecialization {
 		union {
@@ -181,7 +186,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	};
 
 	struct {
-		// Data must be guaranteed to be erased before the rest on the destructor.
+		/// Data must be guaranteed to be erased before the rest on the destructor.
 		CanvasShaderData *default_version_data = nullptr;
 		CanvasShaderRD canvas_shader;
 		RID default_version_rd_shader;
@@ -213,18 +218,18 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		return static_cast<RendererCanvasRenderRD *>(singleton)->_create_material_func(static_cast<CanvasShaderData *>(p_shader));
 	}
 
-	/**************************/
-	/**** CANVAS TEXTURES *****/
-	/**************************/
+	/// @}
+	/// @name CANVAS TEXTURES
+	/// @{
 
 	struct {
 		RS::CanvasItemTextureFilter default_filter;
 		RS::CanvasItemTextureRepeat default_repeat;
 	} default_samplers;
 
-	/******************/
-	/**** POLYGONS ****/
-	/******************/
+	/// @}
+	/// @name POLYGONS
+	/// @{
 
 	struct PolygonBuffers {
 		RD::VertexFormatID vertex_format_id;
@@ -240,21 +245,19 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		PolygonID last_id;
 	} polygon_buffers;
 
-	/********************/
-	/**** PRIMITIVES ****/
-	/********************/
+	/// @}
+	/// @name PRIMITIVES
+	/// @{
 
 	struct {
 		RID index_array[4];
 	} primitive_arrays;
+	/// @}
 
-	/*******************/
-	/**** MATERIALS ****/
-	/*******************/
+	// MATERIALS
 
-	/******************/
-	/**** LIGHTING ****/
-	/******************/
+	/// @name LIGHTING
+	/// @{
 
 	struct CanvasLight {
 		RID texture;
@@ -305,12 +308,12 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	};
 
 	struct LightUniform {
-		float matrix[8]; //light to texture coordinate matrix
-		float shadow_matrix[8]; //light to shadow coordinate matrix
+		float matrix[8]; ///< Light to texture coordinate matrix
+		float shadow_matrix[8]; ///< Light to shadow coordinate matrix
 		float color[4];
 
 		uint8_t shadow_color[4];
-		uint32_t flags; //index to light texture
+		uint32_t flags; ///< Index to light texture
 		float shadow_pixel_size;
 		float height;
 
@@ -345,12 +348,11 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		RD::FramebufferFormatID sdf_framebuffer_format;
 	} shadow_render;
 
-	/***************/
-	/**** STATE ****/
-	/***************/
+	/// @}
+	/// @name STATE
+	/// @{
 
-	//state that does not vary across rendering all items
-
+	/// State that does not vary across rendering all items
 	struct InstanceData {
 		float world[6];
 		uint32_t flags;
@@ -369,9 +371,9 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 			};
 			//primitive
 			struct {
-				float points[6]; // vec2 points[3]
-				float uvs[6]; // vec2 points[3]
-				uint32_t colors[6]; // colors encoded as half
+				float points[6]; ///< vec2 points[3]
+				float uvs[6]; ///< vec2 points[3]
+				uint32_t colors[6]; ///< colors encoded as half
 			};
 		};
 		float color_texture_pixel_size[2];
@@ -385,7 +387,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		uint32_t batch_flags;
 	};
 
-	// TextureState is used to determine when a new batch is required due to a change of texture state.
+	/// TextureState is used to determine when a new batch is required due to a change of texture state.
 	struct TextureState {
 		static const uint32_t FILTER_SHIFT = 0;
 		static const uint32_t FILTER_BITS = 3;
@@ -512,16 +514,16 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		CanvasMaterialData *material_data = nullptr;
 
 		const Item::Command *command = nullptr;
-		Item::Command::Type command_type = Item::Command::TYPE_ANIMATION_SLICE; // Can default to any type that doesn't form a batch.
+		Item::Command::Type command_type = Item::Command::TYPE_ANIMATION_SLICE; ///< Can default to any type that doesn't form a batch.
 		ShaderVariant shader_variant = SHADER_VARIANT_QUAD;
 		RD::RenderPrimitive render_primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
 		bool use_lighting = false;
 
-		// batch-specific data
+		/// batch-specific data
 		union {
-			// TYPE_PRIMITIVE
+			/// TYPE_PRIMITIVE
 			uint32_t primitive_points = 0;
-			// TYPE_PARTICLES
+			/// TYPE_PARTICLES
 			uint32_t mesh_instance_count;
 		};
 		bool has_blend = false;
@@ -530,13 +532,13 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 
 	HashMap<TextureState, TextureInfo, HashableHasher<TextureState>, HashMapComparatorDefault<TextureState>, PagedAllocator<HashMapElement<TextureState, TextureInfo>>> texture_info_map;
 
-	// per-frame buffers
+	/// per-frame buffers
 	struct DataBuffer {
 		LocalVector<RID> instance_buffers;
 	};
 
 	struct State {
-		//state buffer
+		/// State Buffer
 		struct Buffer {
 			float canvas_transform[16];
 			float screen_transform[16];
@@ -590,6 +592,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 		double time;
 
 	} state;
+	/// @}
 
 	Item *items[MAX_RENDER_ITEMS];
 
@@ -612,9 +615,9 @@ class RendererCanvasRenderRD : public RendererCanvasRender {
 	Color debug_redraw_color;
 	double debug_redraw_time = 1.0;
 
-	// A structure to store cached render target information
+	/// A structure to store cached render target information
 	struct RenderTarget {
-		// Current render target for the canvas.
+		/// Current render target for the canvas.
 		RID render_target;
 		bool use_linear_colors = false;
 	};

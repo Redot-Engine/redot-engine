@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_dialog.h"
 
 #include "core/config/project_settings.h"
@@ -188,7 +194,7 @@ void ProjectDialog::_validate_path() {
 		return;
 	}
 
-	// TODO: The following 5 lines could be simplified if OS.get_user_home_dir() or SYSTEM_DIR_HOME is implemented. See: https://github.com/godotengine/godot-proposals/issues/4851.
+	/// @todo The following 5 lines could be simplified if OS.get_user_home_dir() or SYSTEM_DIR_HOME is implemented. See: https://github.com/godotengine/godot-proposals/issues/4851.
 #ifdef WINDOWS_ENABLED
 	String home_dir = OS::get_singleton()->get_environment("USERPROFILE");
 #else
@@ -770,9 +776,9 @@ void ProjectDialog::ok_pressed() {
 	hide();
 	if (mode == MODE_NEW || mode == MODE_IMPORT || mode == MODE_INSTALL) {
 #ifdef ANDROID_ENABLED
-		// Create a .nomedia file to hide assets from media apps on Android.
-		// Android 11 has some issues with nomedia files, so it's disabled there. See GH-106479, GH-105399 for details.
-		// NOTE: Nomedia file is also handled during the first filesystem scan. See editor_file_system.cpp -> EditorFileSystem::scan().
+		/// Create a .nomedia file to hide assets from media apps on Android.
+		/// Android 11 has some issues with nomedia files, so it's disabled there. See GH-106479, GH-105399 for details.
+		/// @note Nomedia file is also handled during the first filesystem scan. See editor_file_system.cpp -> EditorFileSystem::scan().
 		String sdk_version = OS::get_singleton()->get_version().get_slicec('.', 0);
 		if (sdk_version != "30") {
 			const String nomedia_file_path = path.path_join(".nomedia");

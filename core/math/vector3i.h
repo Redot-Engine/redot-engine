@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vector3i.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/error/error_macros.h"
@@ -103,7 +109,8 @@ struct [[nodiscard]] Vector3i {
 	_FORCE_INLINE_ double distance_to(const Vector3i &p_to) const;
 	_FORCE_INLINE_ int64_t distance_squared_to(const Vector3i &p_to) const;
 
-	/* Operators */
+	/// @name Operators
+	/// @{
 
 	constexpr Vector3i &operator+=(const Vector3i &p_v);
 	constexpr Vector3i operator+(const Vector3i &p_v) const;
@@ -134,6 +141,7 @@ struct [[nodiscard]] Vector3i {
 
 	explicit operator String() const;
 	operator Vector3() const;
+	/// @}
 
 	constexpr Vector3i() :
 			x(0), y(0), z(0) {}
@@ -165,8 +173,8 @@ int64_t Vector3i::distance_squared_to(const Vector3i &p_to) const {
 	return (p_to - *this).length_squared();
 }
 
-/* Operators */
-
+/// @name Operators
+/// @{
 constexpr Vector3i &Vector3i::operator+=(const Vector3i &p_v) {
 	x += p_v.x;
 	y += p_v.y;
@@ -232,8 +240,9 @@ constexpr Vector3i &Vector3i::operator*=(int32_t p_scalar) {
 constexpr Vector3i Vector3i::operator*(int32_t p_scalar) const {
 	return Vector3i(x * p_scalar, y * p_scalar, z * p_scalar);
 }
-
-// Multiplication operators required to workaround issues with LLVM using implicit conversion.
+/// @}
+/// @nameMultiplication operators required to workaround issues with LLVM using implicit conversion.
+/// @{
 
 constexpr Vector3i operator*(int32_t p_scalar, const Vector3i &p_vector) {
 	return p_vector * p_scalar;
@@ -250,6 +259,7 @@ constexpr Vector3i operator*(float p_scalar, const Vector3i &p_vector) {
 constexpr Vector3i operator*(double p_scalar, const Vector3i &p_vector) {
 	return p_vector * p_scalar;
 }
+/// @}
 
 constexpr Vector3i &Vector3i::operator/=(int32_t p_scalar) {
 	x /= p_scalar;

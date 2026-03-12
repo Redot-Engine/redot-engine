@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physical_bone_simulator_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
@@ -60,10 +66,12 @@ class PhysicalBoneSimulator3D : public SkeletonModifier3D {
 
 	Vector<SimulatedBone> bones;
 
-	/// This is a slow API, so it's cached
+	/// @name This is a slow API, so it's cached
+	/// @{
 	PhysicalBone3D *_get_physical_bone_parent(int p_bone);
 	void _rebuild_physical_bones_cache();
 	void _reset_physical_bones_state();
+	/// @}
 
 protected:
 	static void _bind_methods();

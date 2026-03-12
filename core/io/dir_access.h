@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dir_access.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
 
-//@ TODO, excellent candidate for THREAD_SAFE MACRO, should go through all these and add THREAD_SAFE where it applies
+/// @todo Excellent candidate for THREAD_SAFE MACRO, should go through all these and add THREAD_SAFE where it applies
 class DirAccess : public RefCounted {
 	GDCLASS(DirAccess, RefCounted);
 
@@ -100,7 +106,7 @@ public:
 	virtual String get_current_dir(bool p_include_drive = true) const = 0; ///< return current dir location
 	virtual Error make_dir(String p_dir) = 0;
 	virtual Error make_dir_recursive(const String &p_dir);
-	virtual Error erase_contents_recursive(); //super dangerous, use with care!
+	virtual Error erase_contents_recursive(); ///< @warning Super dangerous, use with care!
 
 	virtual bool file_exists(String p_file) = 0;
 	virtual bool dir_exists(String p_dir) = 0;
@@ -118,8 +124,8 @@ public:
 	virtual String read_link(String p_file) = 0;
 	virtual Error create_link(String p_source, String p_target) = 0;
 
-	// Meant for editor code when we want to quickly remove a file without custom
-	// handling (e.g. removing a cache file).
+	/// Meant for editor code when we want to quickly remove a file without custom
+	/// handling (e.g. removing a cache file).
 	static void remove_file_or_error(const String &p_path) {
 		Ref<DirAccess> da = create(ACCESS_FILESYSTEM);
 		if (da->file_exists(p_path)) {

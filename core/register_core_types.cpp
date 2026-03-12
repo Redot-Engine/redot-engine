@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file register_core_types.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "register_core_types.h"
 
 #include "core/config/engine.h"
@@ -393,7 +399,7 @@ void register_core_singletons() {
 void register_core_extensions() {
 	OS::get_singleton()->benchmark_begin_measure("Core", "Register Extensions");
 
-	// Hardcoded for now.
+	/// @todo Hardcoded for now.
 	GDExtension::initialize_gdextensions();
 	gdextension_manager->load_extensions();
 	gdextension_manager->initialize_extensions(GDExtension::INITIALIZATION_LEVEL_CORE);

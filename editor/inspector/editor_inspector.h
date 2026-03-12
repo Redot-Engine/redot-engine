@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_inspector.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/inspector/editor_property_name_processor.h"
@@ -175,6 +181,8 @@ protected:
 	virtual Variant _get_cache_value(const StringName &p_prop, bool &r_valid) const;
 	virtual StringName _get_revert_property() const;
 
+	/// This function is to be called on EditorPropertyResource, EditorPropertyArray, and EditorPropertyDictionary.
+	/// Behavior is undetermined on any other EditorProperty.
 	void _update_property_bg();
 
 	void _accessibility_action_menu(const Variant &p_data);
@@ -319,7 +327,7 @@ class EditorInspectorCategory : public Control {
 
 	friend class EditorInspector;
 
-	// Right-click context menu options.
+	/// Right-click context menu options.
 	enum ClassMenuOption {
 		MENU_OPEN_DOCS,
 		MENU_UNFAVORITE_ALL,
@@ -382,7 +390,7 @@ class EditorInspectorSection : public Container {
 	String label;
 	String section;
 	Color bg_color;
-	bool vbox_added = false; // Optimization.
+	bool vbox_added = false; ///< Optimization.
 	bool foldable = false;
 	bool checkable = false;
 	bool checked = false;
@@ -517,12 +525,14 @@ class EditorInspectorArray : public EditorInspectorSection {
 	AcceptDialog *resize_dialog = nullptr;
 	SpinBox *new_size_spin_box = nullptr;
 
-	// Pagination.
+	/// @name Pagination
+	/// @{
 	int page_length = 5;
 	int page = 0;
 	int max_page = 0;
 	int begin_array_index = 0;
 	int end_array_index = 0;
+	/// @}
 
 	bool read_only = false;
 	bool movable = true;
@@ -665,7 +675,7 @@ class EditorInspector : public ScrollContainer {
 	VBoxContainer *begin_vbox = nullptr;
 	VBoxContainer *main_vbox = nullptr;
 
-	// Map used to cache the instantiated editors.
+	/// Map used to cache the instantiated editors.
 	HashMap<StringName, List<EditorProperty *>> editor_property_map;
 	List<EditorInspectorSection *> sections;
 	HashSet<StringName> pending;
@@ -723,6 +733,8 @@ class EditorInspector : public ScrollContainer {
 
 	void _edit_set(const String &p_name, const Variant &p_value, bool p_refresh_all, const String &p_changed_field);
 
+	/// @param p_changing The "changing" variable must be true for properties that trigger events as typing occurs,
+	/// like "text_changed" signal. E.g. text property of Label, Button, RichTextLabel, etc.
 	void _property_changed(const String &p_path, const Variant &p_value, const String &p_name = "", bool p_changing = false, bool p_update_all = false);
 	void _multiple_properties_changed(const Vector<String> &p_paths, const Array &p_values, bool p_changing = false);
 	void _property_keyed(const String &p_path, bool p_advance);
@@ -746,6 +758,7 @@ class EditorInspector : public ScrollContainer {
 	HashMap<StringName, int> per_array_page;
 	void _page_change_request(int p_new_page, const StringName &p_array_prefix);
 
+	/// This is called when property change is notified via notify_property_list_changed()
 	void _changed_callback();
 	void _edit_request_change(Object *p_object, const String &p_prop);
 
@@ -801,7 +814,7 @@ public:
 	EditorPropertyNameProcessor::Style get_property_name_style() const;
 	void set_property_name_style(EditorPropertyNameProcessor::Style p_style);
 
-	// If true, the inspector will update its property name style according to the current editor settings.
+	/// If true, the inspector will update its property name style according to the current editor settings.
 	void set_use_settings_name_style(bool p_enable);
 
 	void set_autoclear(bool p_enable);

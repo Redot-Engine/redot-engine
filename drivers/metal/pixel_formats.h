@@ -30,27 +30,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file pixel_formats.h
+ *
+ * @brief Portions of this code were derived from MoltenVK.
+ *
+ * @copyright Copyright (c) 2015-2023 The Brenwill Workshop Ltd.
+ * (http://www.brenwill.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
 
-/**************************************************************************/
-/*                                                                        */
-/* Portions of this code were derived from MoltenVK.                      */
-/*                                                                        */
-/* Copyright (c) 2015-2023 The Brenwill Workshop Ltd.                     */
-/* (http://www.brenwill.com)                                              */
-/*                                                                        */
-/* Licensed under the Apache License, Version 2.0 (the "License");        */
-/* you may not use this file except in compliance with the License.       */
-/* You may obtain a copy of the License at                                */
-/*                                                                        */
-/*     http://www.apache.org/licenses/LICENSE-2.0                         */
-/*                                                                        */
-/* Unless required by applicable law or agreed to in writing, software    */
-/* distributed under the License is distributed on an "AS IS" BASIS,      */
-/* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or        */
-/* implied. See the License for the specific language governing           */
-/* permissions and limitations under the License.                         */
-/**************************************************************************/
+#pragma once
 
 #include "core/typedefs.h"
 
@@ -283,59 +284,59 @@ public:
 		}
 	}
 
-	/** Returns whether the specified Metal MTLPixelFormat is a PVRTC format. */
+	/** @return Whether the specified Metal MTLPixelFormat is a PVRTC format. */
 	bool isPVRTCFormat(MTLPixelFormat p_format);
 
-	/** Returns the format type corresponding to the specified Redot pixel format, */
+	/** @return The format type corresponding to the specified Redot pixel format, */
 	MTLFormatType getFormatType(DataFormat p_format);
 
-	/** Returns the format type corresponding to the specified Metal MTLPixelFormat, */
+	/** @return The format type corresponding to the specified Metal MTLPixelFormat, */
 	MTLFormatType getFormatType(MTLPixelFormat p_format);
 
 	/**
-	 * Returns the Metal MTLPixelFormat corresponding to the specified Redot pixel
+	 * @return The Metal MTLPixelFormat corresponding to the specified Redot pixel
 	 * or returns MTLPixelFormatInvalid if no corresponding MTLPixelFormat exists.
 	 */
 	MTLPixelFormat getMTLPixelFormat(DataFormat p_format);
 
 	/**
-	 * Returns the DataFormat corresponding to the specified Metal MTLPixelFormat,
+	 * @return The DataFormat corresponding to the specified Metal MTLPixelFormat,
 	 * or returns DATA_FORMAT_MAX if no corresponding DataFormat exists.
 	 */
 	DataFormat getDataFormat(MTLPixelFormat p_format);
 
 	/**
-	 * Returns the size, in bytes, of a texel block of the specified Redot pixel.
+	 * @return The size, in bytes, of a texel block of the specified Redot pixel.
 	 * For uncompressed formats, the returned value corresponds to the size in bytes of a single texel.
 	 */
 	uint32_t getBytesPerBlock(DataFormat p_format);
 
 	/**
-	 * Returns the size, in bytes, of a texel block of the specified Metal format.
+	 * @return The size, in bytes, of a texel block of the specified Metal format.
 	 * For uncompressed formats, the returned value corresponds to the size in bytes of a single texel.
 	 */
 	uint32_t getBytesPerBlock(MTLPixelFormat p_format);
 
-	/** Returns the number of planes of the specified chroma-subsampling (YCbCr) DataFormat */
+	/** @return The number of planes of the specified chroma-subsampling (YCbCr) DataFormat */
 	uint8_t getChromaSubsamplingPlaneCount(DataFormat p_format);
 
-	/** Returns the number of bits per channel of the specified chroma-subsampling (YCbCr) DataFormat */
+	/** @return The number of bits per channel of the specified chroma-subsampling (YCbCr) DataFormat */
 	uint8_t getChromaSubsamplingComponentBits(DataFormat p_format);
 
 	/**
-	 * Returns the size, in bytes, of a texel of the specified Redot format.
+	 * @return The size, in bytes, of a texel of the specified Redot format.
 	 * The returned value may be fractional for certain compressed formats.
 	 */
 	float getBytesPerTexel(DataFormat p_format);
 
 	/**
-	 * Returns the size, in bytes, of a texel of the specified Metal format.
+	 * @return The size, in bytes, of a texel of the specified Metal format.
 	 * The returned value may be fractional for certain compressed formats.
 	 */
 	float getBytesPerTexel(MTLPixelFormat p_format);
 
 	/**
-	 * Returns the size, in bytes, of a row of texels of the specified Redot pixel format.
+	 * @return The size, in bytes, of a row of texels of the specified Redot pixel format.
 	 *
 	 * For compressed formats, this takes into consideration the compression block size,
 	 * and p_texels_per_row should specify the width in texels, not blocks. The result is rounded
@@ -344,7 +345,7 @@ public:
 	size_t getBytesPerRow(DataFormat p_format, uint32_t p_texels_per_row);
 
 	/**
-	 * Returns the size, in bytes, of a row of texels of the specified Metal format.
+	 * @return The size, in bytes, of a row of texels of the specified Metal format.
 	 *
 	 * For compressed formats, this takes into consideration the compression block size,
 	 * and texelsPerRow should specify the width in texels, not blocks. The result is rounded
@@ -353,7 +354,7 @@ public:
 	size_t getBytesPerRow(MTLPixelFormat p_format, uint32_t p_texels_per_row);
 
 	/**
-	 * Returns the size, in bytes, of a texture layer of the specified Redot pixel format.
+	 * @return The size, in bytes, of a texture layer of the specified Redot pixel format.
 	 *
 	 * For compressed formats, this takes into consideration the compression block size,
 	 * and p_texel_rows_per_layer should specify the height in texels, not blocks. The result is
@@ -362,24 +363,24 @@ public:
 	size_t getBytesPerLayer(DataFormat p_format, size_t p_bytes_per_row, uint32_t p_texel_rows_per_layer);
 
 	/**
-	 * Returns the size, in bytes, of a texture layer of the specified Metal format.
+	 * @return The size, in bytes, of a texture layer of the specified Metal format.
 	 * For compressed formats, this takes into consideration the compression block size,
 	 * and p_texel_rows_per_layer should specify the height in texels, not blocks. The result is
 	 * rounded up if p_texel_rows_per_layer is not an integer multiple of the compression block height.
 	 */
 	size_t getBytesPerLayer(MTLPixelFormat p_format, size_t p_bytes_per_row, uint32_t p_texel_rows_per_layer);
 
-	/** Returns whether or not the specified Godot format requires swizzling to use with Metal. */
+	/** @return Whether or not the specified Godot format requires swizzling to use with Metal. */
 	bool needsSwizzle(DataFormat p_format);
 
-	/** Returns the Metal format capabilities supported by the specified Godot format, without substitution. */
+	/** @return The Metal format capabilities supported by the specified Godot format, without substitution. */
 	MTLFmtCaps getCapabilities(DataFormat p_format, bool p_extended = false);
 
-	/** Returns the Metal format capabilities supported by the specified Metal format. */
+	/** @return The Metal format capabilities supported by the specified Metal format. */
 	MTLFmtCaps getCapabilities(MTLPixelFormat p_format, bool p_extended = false);
 
 	/**
-	 * Returns the Metal MTLVertexFormat corresponding to the specified
+	 * @return The Metal MTLVertexFormat corresponding to the specified
 	 * DataFormat as used as a vertex attribute format.
 	 */
 	MTLVertexFormat getMTLVertexFormat(DataFormat p_format);

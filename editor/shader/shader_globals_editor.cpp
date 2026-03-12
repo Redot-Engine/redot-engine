@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_globals_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader_globals_editor.h"
 
 #include "core/config/project_settings.h"

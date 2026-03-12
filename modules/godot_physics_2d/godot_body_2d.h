@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_body_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_area_2d.h"
@@ -155,7 +161,7 @@ class GodotBody2D : public GodotCollisionObject2D {
 
 	void _update_transform_dependent();
 
-	friend class GodotPhysicsDirectBodyState2D; // i give up, too many functions to expose
+	friend class GodotPhysicsDirectBodyState2D; /// I give up, too many functions to expose
 
 public:
 	void set_state_sync_callback(const Callable &p_callable);

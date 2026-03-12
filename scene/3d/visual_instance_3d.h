@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file visual_instance_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/node_3d.h"
@@ -56,9 +62,9 @@ protected:
 	GDVIRTUAL0RC(AABB, _get_aabb)
 public:
 	enum GetFacesFlags {
-		FACES_SOLID = 1, // solid geometry
+		FACES_SOLID = 1, //< solid geometry
 		FACES_ENCLOSING = 2,
-		FACES_DYNAMIC = 4 // dynamic object geometry
+		FACES_DYNAMIC = 4 ///< dynamic object geometry
 
 	};
 

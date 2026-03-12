@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file text_server_adv.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 /*************************************************************************/
@@ -179,16 +185,19 @@ class TextServerAdvanced : public TextServerExtension {
 	void _insert_feature_sets();
 	_FORCE_INLINE_ void _insert_feature(const StringName &p_name, int32_t p_tag, Variant::Type p_vtype = Variant::INT, bool p_hidden = false);
 
-	// ICU support data.
-
+	/// @name ICU Support Data
+	/// @{
 	static bool icu_data_loaded;
 	static PackedByteArray icu_data;
 	mutable USet *allowed = nullptr;
 	mutable USpoofChecker *sc_spoof = nullptr;
 	mutable USpoofChecker *sc_conf = nullptr;
+	/// @}
 
 	mutable HashMap<String, UBreakIterator *> line_break_iterators_per_language;
 
+	/// Creating UBreakIterator (ubrk_open) is surprisingly costly.
+	/// However, cloning (ubrk_clone) is cheaper, so we keep around blueprints to accelerate creating new ones.
 	UBreakIterator *_create_line_break_iterator_for_locale(const String &p_language, UErrorCode *r_err) const;
 
 	// Font cache data.
@@ -376,9 +385,11 @@ class TextServerAdvanced : public TextServerExtension {
 		Dictionary supported_varaitions;
 		Dictionary feature_overrides;
 
-		// Language/script support override.
+		/// @name Language/script support override.
+		/// @{
 		HashMap<String, bool> language_support_overrides;
 		HashMap<String, bool> script_support_overrides;
+		/// @}
 
 		PackedByteArray data;
 		const uint8_t *data_ptr = nullptr;
@@ -500,14 +511,14 @@ class TextServerAdvanced : public TextServerExtension {
 		Mutex mutex;
 
 		/* Source data */
-		RID parent; // Substring parent ShapedTextData.
+		RID parent; ///< Substring parent ShapedTextData.
 
-		int start = 0; // Substring start offset in the parent string.
-		int end = 0; // Substring end offset in the parent string.
+		int start = 0; ///< Substring start offset in the parent string.
+		int end = 0; ///< Substring end offset in the parent string.
 
 		String text;
 		String custom_punct;
-		TextServer::Direction direction = DIRECTION_LTR; // Desired text direction.
+		TextServer::Direction direction = DIRECTION_LTR; ///< Desired text direction.
 		TextServer::Orientation orientation = ORIENTATION_HORIZONTAL;
 
 		struct Span {
@@ -524,7 +535,7 @@ class TextServerAdvanced : public TextServerExtension {
 			Variant meta;
 		};
 		Vector<Span> spans;
-		int first_span = 0; // First span in the parent ShapedTextData.
+		int first_span = 0; ///< First span in the parent ShapedTextData.
 		int last_span = 0;
 
 		Vector<TextRun> runs;
@@ -540,20 +551,20 @@ class TextServerAdvanced : public TextServerExtension {
 		HashMap<Variant, EmbeddedObject, VariantHasher, VariantComparator> objects;
 
 		/* Shaped data */
-		TextServer::Direction para_direction = DIRECTION_LTR; // Detected text direction.
+		TextServer::Direction para_direction = DIRECTION_LTR; ///< Detected text direction.
 		int base_para_direction = UBIDI_DEFAULT_LTR;
-		SafeFlag valid{ false }; // String is shaped.
-		bool line_breaks_valid = false; // Line and word break flags are populated (and virtual zero width spaces inserted).
-		bool justification_ops_valid = false; // Virtual elongation glyphs are added to the string.
+		SafeFlag valid{ false }; ///< String is shaped.
+		bool line_breaks_valid = false; ///< Line and word break flags are populated (and virtual zero width spaces inserted).
+		bool justification_ops_valid = false; ///< Virtual elongation glyphs are added to the string.
 		bool sort_valid = false;
 		bool text_trimmed = false;
 
-		bool preserve_invalid = true; // Draw hex code box instead of missing characters.
-		bool preserve_control = false; // Draw control characters.
+		bool preserve_invalid = true; ///< Draw hex code box instead of missing characters.
+		bool preserve_control = false; ///< Draw control characters.
 
-		double ascent = 0.0; // Ascent for horizontal layout, 1/2 of width for vertical.
-		double descent = 0.0; // Descent for horizontal layout, 1/2 of width for vertical.
-		double width = 0.0; // Width for horizontal layout, height for vertical.
+		double ascent = 0.0; ///< Ascent for horizontal layout, 1/2 of width for vertical.
+		double descent = 0.0; ///< Descent for horizontal layout, 1/2 of width for vertical.
+		double width = 0.0; ///< Width for horizontal layout, height for vertical.
 		double width_trimmed = 0.0;
 		int extra_spacing[4] = { 0, 0, 0, 0 };
 
@@ -567,12 +578,14 @@ class TextServerAdvanced : public TextServerExtension {
 		LocalVector<Glyph> glyphs;
 		LocalVector<Glyph> glyphs_logical;
 
-		/* Intermediate data */
+		/// Intermediate data
+		/// @{
 		Char16String utf16;
 		Vector<UBiDi *> bidi_iter;
 		Vector<Vector3i> bidi_override;
 		ScriptIterator *script_iter = nullptr;
 		hb_buffer_t *hb_buffer = nullptr;
+		/// @}
 
 		HashMap<int, bool> jstops;
 		HashMap<int, bool> breaks;
@@ -597,11 +610,12 @@ class TextServerAdvanced : public TextServerExtension {
 		}
 	};
 
-	// Common data.
-
+	/// Common Data
+	/// @{
 	mutable RID_PtrOwner<FontAdvancedLinkedVariation> font_var_owner;
 	mutable RID_PtrOwner<FontAdvanced> font_owner;
 	mutable RID_PtrOwner<ShapedTextDataAdvanced> shaped_owner;
+	/// @}
 
 	_FORCE_INLINE_ FontAdvanced *_get_font_data(const RID &p_font_rid) const {
 		RID rid = p_font_rid;
@@ -715,13 +729,12 @@ class TextServerAdvanced : public TextServerExtension {
 
 	Mutex ft_mutex;
 
-	// HarfBuzz bitmap font interface.
-
+	/// HarfBuzz bitmap font interface
 	static hb_font_funcs_t *funcs;
 
 	struct bmp_font_t {
 		TextServerAdvanced::FontForSizeAdvanced *face = nullptr;
-		bool unref = false; /* Whether to destroy bm_face when done. */
+		bool unref = false; ///< Whether to destroy bm_face when done.
 	};
 
 	static bmp_font_t *_bmp_font_create(TextServerAdvanced::FontForSizeAdvanced *p_face, bool p_unref);
@@ -778,8 +791,8 @@ public:
 	MODBIND1RC(int64_t, name_to_tag, const String &);
 	MODBIND1RC(String, tag_to_name, int64_t);
 
-	/* Font interface */
-
+	/// @name Font Interface
+	/// @{
 	MODBIND0R(RID, create_font);
 	MODBIND1R(RID, create_font_linked_variation, const RID &);
 
@@ -962,9 +975,9 @@ public:
 
 	MODBIND1(reference_oversampling_level, double);
 	MODBIND1(unreference_oversampling_level, double);
-
-	/* Shaped text buffer interface */
-
+	/// @}
+	/// @name Shaped text buffer interface
+	/// @{
 	MODBIND2R(RID, create_shaped_text, Direction, Orientation);
 
 	MODBIND1(shaped_text_clear, const RID &);
@@ -1052,6 +1065,7 @@ public:
 	MODBIND1RC(double, shaped_text_get_underline_thickness, const RID &);
 
 	MODBIND1RC(PackedInt32Array, shaped_text_get_character_breaks, const RID &);
+	/// @}
 
 	MODBIND2RC(String, format_number, const String &, const String &);
 	MODBIND2RC(String, parse_number, const String &, const String &);

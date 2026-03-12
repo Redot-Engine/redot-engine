@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_data.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/list.h"
@@ -46,7 +52,7 @@ class PopupMenu;
  * Used in the editor to set & access the currently edited object, as well as the history of objects which have been edited.
  */
 class EditorSelectionHistory {
-	// Stores the object & property (if relevant).
+	/// Stores the object & property (if relevant).
 	struct _Object {
 		Ref<RefCounted> ref;
 		ObjectID object;
@@ -54,18 +60,18 @@ class EditorSelectionHistory {
 		bool inspector_only = false;
 	};
 
-	// Represents the selection of an object for editing.
+	/// Represents the selection of an object for editing.
 	struct HistoryElement {
-		// The sub-resources of the parent object (first in the path) that have been edited.
-		// For example, Node2D -> nested resource -> nested resource, if edited each individually in their own inspector.
+		/// The sub-resources of the parent object (first in the path) that have been edited.
+		/// For example, Node2D -> nested resource -> nested resource, if edited each individually in their own inspector.
 		Vector<_Object> path;
-		// The current point in the path. This is always equal to the last item in the path - it is never decremented.
+		/// The current point in the path. This is always equal to the last item in the path - it is never decremented.
 		int level = 0;
 	};
 	friend class EditorData;
 
 	Vector<HistoryElement> history;
-	int current_elem_idx; // The current history element being edited.
+	int current_elem_idx; ///< The current history element being edited.
 
 public:
 	void cleanup_history();
@@ -73,15 +79,15 @@ public:
 	bool is_at_beginning() const;
 	bool is_at_end() const;
 
-	// Adds an object to the selection history. A property name can be passed if the target is a subresource of the given object.
-	// If the object should not change the main screen plugin, it can be set as inspector only.
+	/// Adds an object to the selection history. A property name can be passed if the target is a subresource of the given object.
+	/// If the object should not change the main screen plugin, it can be set as inspector only.
 	void add_object(ObjectID p_object, const String &p_property = String(), bool p_inspector_only = false);
 	void replace_object(ObjectID p_old_object, ObjectID p_new_object);
 
 	int get_history_len();
 	int get_history_pos();
 
-	// Gets an object from the history. The most recent object would be the object with p_obj = get_history_len() - 1.
+	/// Gets an object from the history. The most recent object would be the object with p_obj = get_history_len() - 1.
 	ObjectID get_history_obj(int p_obj) const;
 
 	bool next();
@@ -89,11 +95,11 @@ public:
 	ObjectID get_current();
 	bool is_current_inspector_only() const;
 
-	// Gets the size of the path of the current history item.
+	/// @return The size of the path of the current history item.
 	int get_path_size() const;
-	// Gets the object of the current history item, if valid.
+	/// @return The object of the current history item, if valid.
 	ObjectID get_path_object(int p_index) const;
-	// Gets the property of the current history item.
+	/// @return The property of the current history item.
 	String get_path_property(int p_index) const;
 
 	void clear();
@@ -179,11 +185,11 @@ public:
 	bool has_extension_editor_plugin(const StringName &p_class_name);
 	EditorPlugin *get_extension_editor_plugin(const StringName &p_class_name);
 
-	void add_undo_redo_inspector_hook_callback(Callable p_callable); // Callbacks should have this signature: void (Object* undo_redo, Object *modified_object, String property, Variant new_value)
+	void add_undo_redo_inspector_hook_callback(Callable p_callable); ///< Callbacks should have this signature: void (Object* undo_redo, Object *modified_object, String property, Variant new_value)
 	void remove_undo_redo_inspector_hook_callback(Callable p_callable);
 	const Vector<Callable> get_undo_redo_inspector_hook_callback();
 
-	void add_move_array_element_function(const StringName &p_class, Callable p_callable); // Function should have this signature: void (Object* undo_redo, Object *modified_object, String array_prefix, int element_index, int new_position)
+	void add_move_array_element_function(const StringName &p_class, Callable p_callable); ///< Function should have this signature: void (Object* undo_redo, Object *modified_object, String array_prefix, int element_index, int new_position)
 	void remove_move_array_element_function(const StringName &p_class);
 	Callable get_move_array_element_function(const StringName &p_class) const;
 
@@ -273,12 +279,12 @@ public:
 class EditorSelection : public Object {
 	GDCLASS(EditorSelection, Object);
 
-	// Contains the selected nodes and corresponding metadata.
-	// Metadata objects come from calling _get_editor_data on the editor_plugins, passing the selected node.
+	/// Contains the selected nodes and corresponding metadata.
+	/// Metadata objects come from calling _get_editor_data on the editor_plugins, passing the selected node.
 	HashMap<Node *, Object *> selection;
 
-	// Tracks whether the selection change signal has been emitted.
-	// Prevents multiple signals being called in one frame.
+	/// Tracks whether the selection change signal has been emitted.
+	/// Prevents multiple signals being called in one frame.
 	bool emitted = false;
 
 	bool changed = false;
@@ -286,7 +292,7 @@ class EditorSelection : public Object {
 
 	void _node_removed(Node *p_node);
 
-	// Editor plugins which are related to selection.
+	/// Editor plugins which are related to selection.
 	List<Object *> editor_plugins;
 	List<Node *> top_selected_node_list;
 
@@ -309,22 +315,22 @@ public:
 		return Object::cast_to<T>(selection[p_node]);
 	}
 
-	// Adds an editor plugin which can provide metadata for selected nodes.
+	/// Adds an editor plugin which can provide metadata for selected nodes.
 	void add_editor_plugin(Object *p_object);
 
 	void update();
 	void clear();
 
-	// Returns only the top level selected nodes.
-	// That is, if the selection includes some node and a child of that node, only the parent is returned.
+	/// @return Only the top level selected nodes.
+	/// That is, if the selection includes some node and a child of that node, only the parent is returned.
 	const List<Node *> &get_top_selected_node_list();
-	// Same as get_top_selected_node_list but returns a copy in a TypedArray for binding to scripts.
+	/// Same as get_top_selected_node_list but returns a copy in a TypedArray for binding to scripts.
 	TypedArray<Node> get_top_selected_nodes();
-	// Returns all the selected nodes (list version of "get_selected_nodes").
+	/// @return All the selected nodes (list version of "get_selected_nodes").
 	List<Node *> get_full_selected_node_list();
-	// Same as get_full_selected_node_list but returns a copy in a TypedArray for binding to scripts.
+	/// Same as get_full_selected_node_list but returns a copy in a TypedArray for binding to scripts.
 	TypedArray<Node> get_selected_nodes();
-	// Returns the map of selected objects and their metadata.
+	/// @return The map of selected objects and their metadata.
 	HashMap<Node *, Object *> &get_selection() { return selection; }
 
 	~EditorSelection();

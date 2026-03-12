@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_action_set_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../action_map/openxr_action_map.h"
@@ -81,12 +87,14 @@ protected:
 	static void _bind_methods();
 	void _notification(int p_what);
 
-	// used for undo/redo
+	/// @name Used for undo/redo
+	/// @{
 	void _do_set_name(const String p_new_text);
 	void _do_set_localized_name(const String p_new_text);
 	void _do_set_priority(int64_t value);
 	void _do_add_action_editor(OpenXRActionEditor *p_action_editor);
 	void _do_remove_action_editor(OpenXRActionEditor *p_action_editor);
+	/// @}
 
 public:
 	Ref<OpenXRActionSet> get_action_set() { return action_set; }

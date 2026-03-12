@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_context_driver_vulkan.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #ifdef VULKAN_ENABLED
@@ -46,20 +52,24 @@
 class RenderingContextDriverVulkan : public RenderingContextDriver {
 public:
 	struct Functions {
-		// Physical device.
+		/// @name Physical device
+		/// @{
 		PFN_vkGetPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2 = nullptr;
 		PFN_vkGetPhysicalDeviceProperties2 GetPhysicalDeviceProperties2 = nullptr;
-
-		// Device.
+		/// @}
+		/// @name Device
+		/// @{
 		PFN_vkGetDeviceProcAddr GetDeviceProcAddr = nullptr;
-
-		// Surfaces.
+		/// @}
+		/// @name Surfaces
+		/// @{
 		PFN_vkGetPhysicalDeviceSurfaceSupportKHR GetPhysicalDeviceSurfaceSupportKHR = nullptr;
 		PFN_vkGetPhysicalDeviceSurfaceFormatsKHR GetPhysicalDeviceSurfaceFormatsKHR = nullptr;
 		PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
 		PFN_vkGetPhysicalDeviceSurfacePresentModesKHR GetPhysicalDeviceSurfacePresentModesKHR = nullptr;
-
-		// Debug utils.
+		/// @}
+		/// @name Debug utils
+		/// @{
 		PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT = nullptr;
 		PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT = nullptr;
 		PFN_vkCmdBeginDebugUtilsLabelEXT CmdBeginDebugUtilsLabelEXT = nullptr;
@@ -73,23 +83,26 @@ public:
 					CmdEndDebugUtilsLabelEXT != nullptr &&
 					SetDebugUtilsObjectNameEXT != nullptr;
 		}
-
-		// Debug report.
+		/// @}
+		/// @name Debug report
+		/// @{
 		PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallbackEXT = nullptr;
 		PFN_vkDebugReportMessageEXT DebugReportMessageEXT = nullptr;
 		PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallbackEXT = nullptr;
-
-		// Debug marker extensions.
-		PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT = nullptr;
-		PFN_vkCmdDebugMarkerEndEXT CmdDebugMarkerEndEXT = nullptr;
-		PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT = nullptr;
-		PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT = nullptr;
 
 		bool debug_report_functions_available() const {
 			return CreateDebugReportCallbackEXT != nullptr &&
 					DebugReportMessageEXT != nullptr &&
 					DestroyDebugReportCallbackEXT != nullptr;
 		}
+		/// @}
+		/// @name Debug marker extensions
+		/// @{
+		PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT = nullptr;
+		PFN_vkCmdDebugMarkerEndEXT CmdDebugMarkerEndEXT = nullptr;
+		PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT = nullptr;
+		PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT = nullptr;
+		/// @}
 	};
 
 private:
@@ -114,18 +127,38 @@ private:
 	Error _initialize_instance_extensions();
 	Error _initialize_instance();
 	Error _initialize_devices();
+	/**
+	 * Workaround for the Adreno 6XX family of devices.
+	 *
+	 * There's a known issue with the Vulkan driver in this family of devices where it'll crash if a dynamic state for drawing is
+	 * used in a command buffer before a dispatch call is issued. As both dynamic scissor and viewport are basic requirements for
+	 * the engine to not bake this state into the PSO, the only known way to fix this issue is to reset the command buffer entirely.
+	 *
+	 * As the render graph has no built in limitations of whether it'll issue compute work before anything needs to draw on the
+	 * frame, and there's no guarantee that compute work will never be dependent on rasterization in the future, this workaround
+	 * will end recording on the current command buffer any time a compute list is encountered after a draw list was executed.
+	 * A new command buffer will be created afterwards and the appropriate synchronization primitives will be inserted.
+	 *
+	 * Executing this workaround has the added cost of synchronization between all the command buffers that are created as well as
+	 * all the individual submissions. This performance hit is accepted for the sake of being able to support these devices without
+	 * limiting the design of the renderer.
+	 *
+	 * This bug was fixed in driver version 512.503.0, so we only enabled it on devices older than this.
+	 */
 	void _check_driver_workarounds(const VkPhysicalDeviceProperties &p_device_properties, Device &r_device);
 
-	// Static callbacks.
+	/// @name Static callbacks
+	/// @{
 	static VKAPI_ATTR VkBool32 VKAPI_CALL _debug_messenger_callback(VkDebugUtilsMessageSeverityFlagBitsEXT p_message_severity, VkDebugUtilsMessageTypeFlagsEXT p_message_type, const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data, void *p_user_data);
 	static VKAPI_ATTR VkBool32 VKAPI_CALL _debug_report_callback(VkDebugReportFlagsEXT p_flags, VkDebugReportObjectTypeEXT p_object_type, uint64_t p_object, size_t p_location, int32_t p_message_code, const char *p_layer_prefix, const char *p_message, void *p_user_data);
-	// Debug marker extensions.
+
+	/// @name Debug marker extensions
 	VkDebugReportObjectTypeEXT _convert_to_debug_report_objectType(VkObjectType p_object_type);
 
 protected:
 	Error _find_validation_layers(TightLocalVector<const char *> &r_layer_names) const;
 
-	// Can be overridden by platform-specific drivers.
+	/// Can be overridden by platform-specific drivers.
 	virtual const char *_get_platform_surface_extension() const { return nullptr; }
 	virtual bool _use_validation_layers() const;
 	virtual Error _create_vulkan_instance(const VkInstanceCreateInfo *p_create_info, VkInstance *r_instance);
@@ -148,7 +181,7 @@ public:
 	virtual void surface_destroy(SurfaceID p_surface) override;
 	virtual bool is_debug_utils_enabled() const override;
 
-	// Vulkan-only methods.
+	/// Vulkan-only methods.
 	struct Surface {
 		VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 		uint32_t width = 0;

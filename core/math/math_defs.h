@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file math_defs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/typedefs.h"
@@ -63,7 +69,7 @@ inline constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
 #ifdef PRECISE_MATH_CHECKS
 #define UNIT_EPSILON 0.00001
 #else
-//tolerate some more floating point error normally
+/// Tolerate some more floating point error normally
 #define UNIT_EPSILON 0.001
 #endif
 

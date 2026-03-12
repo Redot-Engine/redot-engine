@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file path_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/plugins/editor_plugin.h"
@@ -98,8 +104,8 @@ class Path2DEditor : public HBoxContainer {
 	Vector2 edge_point;
 	Vector2 original_mouse_pos;
 
-	// Number of control points in range of the last click.
-	// 0, 1, or 2.
+	/// Number of control points in range of the last click.
+	/// 0, 1, or 2.
 	int control_points_in_range = 0;
 
 	void _mode_selected(int p_mode);

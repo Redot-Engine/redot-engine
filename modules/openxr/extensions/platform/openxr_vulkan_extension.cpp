@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_vulkan_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_vulkan_extension.h"
 
 #include "../../openxr_util.h"
@@ -223,8 +229,8 @@ void *OpenXRVulkanExtension::set_session_create_and_get_next_pointer(void *p_nex
 }
 
 void OpenXRVulkanExtension::get_usable_swapchain_formats(Vector<int64_t> &p_usable_swap_chains) {
-	// We might want to do more here especially if we keep things in linear color space
-	// Possibly add in R10G10B10A2 as an option if we're using the mobile renderer.
+	/// @todo We might want to do more here especially if we keep things in linear color space
+	/// Possibly add in R10G10B10A2 as an option if we're using the mobile renderer.
 	p_usable_swap_chains.push_back(VK_FORMAT_R8G8B8A8_SRGB);
 	p_usable_swap_chains.push_back(VK_FORMAT_B8G8R8A8_SRGB);
 	p_usable_swap_chains.push_back(VK_FORMAT_R8G8B8A8_UINT);
@@ -232,10 +238,6 @@ void OpenXRVulkanExtension::get_usable_swapchain_formats(Vector<int64_t> &p_usab
 }
 
 void OpenXRVulkanExtension::get_usable_depth_formats(Vector<int64_t> &p_usable_swap_chains) {
-	// Note, it is very likely we do NOT support any of depth formats where we can combine our stencil support (e.g. _S8_UINT).
-	// Right now this isn't a problem but once stencil support becomes an issue, we need to check for this in the rendering engine
-	// and create a separate buffer for the stencil.
-
 	p_usable_swap_chains.push_back(VK_FORMAT_D24_UNORM_S8_UINT);
 	p_usable_swap_chains.push_back(VK_FORMAT_D32_SFLOAT_S8_UINT);
 	p_usable_swap_chains.push_back(VK_FORMAT_D32_SFLOAT);

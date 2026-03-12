@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file stream_peer_tcp.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/ip.h"
@@ -76,17 +82,19 @@ public:
 
 	void set_no_delay(bool p_enabled);
 
-	// Poll socket updating its state.
+	/// Poll socket updating its state.
 	Error poll();
 
-	// Wait or check for writable, readable.
+	/// Wait or check for writable, readable.
 	Error wait(NetSocket::PollType p_type, int p_timeout = 0);
 
-	// Read/Write from StreamPeer
+	/// @name Read/Write from StreamPeer
+	/// @{
 	Error put_data(const uint8_t *p_data, int p_bytes) override;
 	Error put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) override;
 	Error get_data(uint8_t *p_buffer, int p_bytes) override;
 	Error get_partial_data(uint8_t *p_buffer, int p_bytes, int &r_received) override;
+	/// @}
 
 	StreamPeerTCP();
 	~StreamPeerTCP();

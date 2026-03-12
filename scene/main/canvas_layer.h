@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file canvas_layer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/main/node.h"
@@ -46,7 +52,7 @@ class CanvasLayer : public Node {
 	Transform2D transform;
 	RID canvas;
 
-	ObjectID custom_viewport_id; // to check validity
+	ObjectID custom_viewport_id; ///< To check validity
 	Viewport *custom_viewport = nullptr;
 
 	RID viewport;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_document_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../gltf_state.h"
@@ -43,7 +49,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	// Import process.
+	/// @name Import Process
+	/// @{
 	virtual Error import_preflight(Ref<GLTFState> p_state, Vector<String> p_extensions);
 	virtual Vector<String> get_supported_extensions();
 	virtual Error parse_node_extensions(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Dictionary &p_extensions);
@@ -56,7 +63,9 @@ public:
 	virtual Node3D *generate_scene_node(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node *p_scene_parent);
 	virtual Error import_node(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Dictionary &r_json, Node *p_node);
 	virtual Error import_post(Ref<GLTFState> p_state, Node *p_node);
-	// Export process.
+	/// @}
+	/// @name Export Process
+	/// @{
 	virtual Error export_preflight(Ref<GLTFState> p_state, Node *p_root);
 	virtual void convert_scene_node(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node *p_scene_node);
 	virtual Error export_post_convert(Ref<GLTFState> p_state, Node *p_root);
@@ -68,6 +77,7 @@ public:
 	virtual Error serialize_texture_json(Ref<GLTFState> p_state, Dictionary p_texture_json, Ref<GLTFTexture> p_gltf_texture, const String &p_image_format);
 	virtual Error export_node(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Dictionary &r_json, Node *p_node);
 	virtual Error export_post(Ref<GLTFState> p_state);
+	/// @}
 
 	// Import process.
 	GDVIRTUAL2R(Error, _import_preflight, Ref<GLTFState>, Vector<String>);

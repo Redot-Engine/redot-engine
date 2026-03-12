@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multiplayer_api.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -47,9 +53,9 @@ protected:
 
 public:
 	enum RPCMode {
-		RPC_MODE_DISABLED, // No rpc for this method, calls to this will be blocked (default)
-		RPC_MODE_ANY_PEER, // Any peer can call this RPC
-		RPC_MODE_AUTHORITY, // Only the node's multiplayer authority (server by default) can call this RPC
+		RPC_MODE_DISABLED, ///< No rpc for this method, calls to this will be blocked (default)
+		RPC_MODE_ANY_PEER, ///< Any peer can call this RPC
+		RPC_MODE_AUTHORITY, ///< Only the node's multiplayer authority (server by default) can call this RPC
 	};
 
 	static Ref<MultiplayerAPI> create_default_interface();
@@ -100,7 +106,8 @@ public:
 	virtual Error object_configuration_add(Object *p_object, Variant p_config) override;
 	virtual Error object_configuration_remove(Object *p_object, Variant p_config) override;
 
-	// Extensions
+	/// @name Extensions
+	/// @{
 	GDVIRTUAL0R(Error, _poll);
 	GDVIRTUAL1(_set_multiplayer_peer, Ref<MultiplayerPeer>);
 	GDVIRTUAL0R(Ref<MultiplayerPeer>, _get_multiplayer_peer);
@@ -110,4 +117,5 @@ public:
 	GDVIRTUAL0RC(int, _get_remote_sender_id);
 	GDVIRTUAL2R(Error, _object_configuration_add, Object *, Variant);
 	GDVIRTUAL2R(Error, _object_configuration_remove, Object *, Variant);
+	/// @}
 };

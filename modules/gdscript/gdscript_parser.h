@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_parser.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "gdscript_cache.h"
@@ -108,37 +114,37 @@ public:
 			BUILTIN,
 			NATIVE,
 			SCRIPT,
-			CLASS, // GDScript.
-			ENUM, // Enumeration.
-			VARIANT, // Can be any type.
-			RESOLVING, // Currently resolving.
+			CLASS, ///< GDScript.
+			ENUM, ///< Enumeration.
+			VARIANT, ///< Can be any type.
+			RESOLVING, ///< Currently resolving.
 			UNRESOLVED,
 		};
 		Kind kind = UNRESOLVED;
 
 		enum TypeSource {
-			UNDETECTED, // Can be any type.
-			INFERRED, // Has inferred type, but still dynamic.
-			ANNOTATED_EXPLICIT, // Has a specific type annotated.
-			ANNOTATED_INFERRED, // Has a static type but comes from the assigned value.
+			UNDETECTED, ///< Can be any type.
+			INFERRED, ///< Has inferred type, but still dynamic.
+			ANNOTATED_EXPLICIT, ///< Has a specific type annotated.
+			ANNOTATED_INFERRED, ///< Has a static type but comes from the assigned value.
 		};
 		TypeSource type_source = UNDETECTED;
 
 		bool is_constant = false;
 		bool is_read_only = false;
 		bool is_meta_type = false;
-		bool is_pseudo_type = false; // For global names that can't be used standalone.
-		bool is_coroutine = false; // For function calls.
+		bool is_pseudo_type = false; ///< For global names that can't be used standalone.
+		bool is_coroutine = false; ///< For function calls.
 
 		Variant::Type builtin_type = Variant::NIL;
 		StringName native_type;
-		StringName enum_type; // Enum name or the value name in an enum.
+		StringName enum_type; ///< Enum name or the value name in an enum.
 		Ref<Script> script_type;
 		String script_path;
 		ClassNode *class_type = nullptr;
 
-		MethodInfo method_info; // For callable/signals.
-		HashMap<StringName, int64_t> enum_values; // For enums.
+		MethodInfo method_info; ///< For callable/signals.
+		HashMap<StringName, int64_t> enum_values; ///< For enums.
 
 		_FORCE_INLINE_ bool is_set() const { return kind != RESOLVING && kind != UNRESOLVED; }
 		_FORCE_INLINE_ bool is_resolving() const { return kind == RESOLVING; }
@@ -150,7 +156,7 @@ public:
 		_FORCE_INLINE_ String to_string_strict() const { return is_hard_type() ? to_string() : "Variant"; }
 		PropertyInfo to_property_info(const String &p_name) const;
 
-		_FORCE_INLINE_ static DataType get_variant_type() { // Default DataType for container elements.
+		_FORCE_INLINE_ static DataType get_variant_type() { ///< Default DataType for container elements.
 			DataType datatype;
 			datatype.kind = VARIANT;
 			datatype.type_source = INFERRED;
@@ -261,7 +267,7 @@ public:
 	};
 
 	struct ParserError {
-		// TODO: Do I really need a "type"?
+		/// @todo Do I really need a "type"?
 		// enum Type {
 		//     NO_ERROR,
 		//     EMPTY_FILE,
@@ -354,8 +360,8 @@ public:
 		virtual ~Node() {}
 	};
 
+	/// Base type for all expression kinds.
 	struct ExpressionNode : public Node {
-		// Base type for all expression kinds.
 		bool reduced = false;
 		bool is_constant = false;
 		Variant reduced_value;
@@ -418,7 +424,7 @@ public:
 	};
 
 	struct AssignmentNode : public ExpressionNode {
-		// Assignment is not really an expression but it's easier to parse as if it were.
+		/// Assignment is not really an expression but it's easier to parse as if it were.
 		enum Operation {
 			OP_NONE,
 			OP_ADDITION,
@@ -566,8 +572,8 @@ public:
 				SIGNAL,
 				VARIABLE,
 				ENUM,
-				ENUM_VALUE, // For unnamed enums.
-				GROUP, // For member grouping.
+				ENUM_VALUE, ///< For unnamed enums.
+				GROUP, ///< For member grouping.
 			};
 
 			Type type = UNDEFINED;
@@ -753,13 +759,13 @@ public:
 		bool has_static_data = false;
 		bool annotated_static_unload = false;
 		String extends_path;
-		Vector<IdentifierNode *> extends; // List for indexing: extends A.B.C
+		Vector<IdentifierNode *> extends; ///< List for indexing: extends A.B.C
 		DataType base_type;
-		String fqcn; // Fully-qualified class name. Identifies uniquely any class in the project.
+		String fqcn; ///< Fully-qualified class name. Identifies uniquely any class in the project.
 #ifdef TOOLS_ENABLED
 		ClassDocData doc_data;
 
-		// EnumValue docs are parsed after itself, so we need a method to add/modify the doc property later.
+		/// EnumValue docs are parsed after itself, so we need a method to add/modify the doc property later.
 		void set_enum_value_doc_data(const StringName &p_name, const MemberDocData &p_doc_data) {
 			ERR_FAIL_INDEX(members_indices[p_name], members.size());
 			members.write[members_indices[p_name]].enum_value.doc_data = p_doc_data;
@@ -857,7 +863,7 @@ public:
 		TypeNode *return_type = nullptr;
 		SuiteNode *body = nullptr;
 		bool is_abstract = false;
-		bool is_static = false; // For lambdas it's determined in the analyzer.
+		bool is_static = false; ///< For lambdas it's determined in the analyzer.
 		bool is_coroutine = false;
 		Variant rpc_config;
 		MethodInfo info;
@@ -866,7 +872,7 @@ public:
 #ifdef TOOLS_ENABLED
 		MemberDocData doc_data;
 		int min_local_doc_line = 0;
-		String signature; // For autocompletion.
+		String signature; ///< For autocompletion.
 #endif // TOOLS_ENABLED
 
 		bool resolved_signature = false;
@@ -890,15 +896,15 @@ public:
 
 	struct IdentifierNode : public ExpressionNode {
 		StringName name;
-		SuiteNode *suite = nullptr; // The block in which the identifier is used.
+		SuiteNode *suite = nullptr; ///< The block in which the identifier is used.
 
 		enum Source {
 			UNDEFINED_SOURCE,
 			FUNCTION_PARAMETER,
 			LOCAL_VARIABLE,
 			LOCAL_CONSTANT,
-			LOCAL_ITERATOR, // `for` loop iterator.
-			LOCAL_BIND, // Pattern bind.
+			LOCAL_ITERATOR, ///< `for` loop iterator.
+			LOCAL_BIND, ///< Pattern bind.
 			MEMBER_VARIABLE,
 			MEMBER_CONSTANT,
 			MEMBER_FUNCTION,
@@ -918,11 +924,11 @@ public:
 			SignalNode *signal_source;
 			FunctionNode *function_source;
 		};
-		bool function_source_is_static = false; // For non-GDScript scripts.
+		bool function_source_is_static = false; ///< For non-GDScript scripts.
 
-		FunctionNode *source_function = nullptr; // TODO: Rename to disambiguate `function_source`.
+		FunctionNode *source_function = nullptr; ///< @todo Rename to disambiguate `function_source`.
 
-		int usages = 0; // Useful for binds/iterator variable.
+		int usages = 0; ///< Useful for binds/iterator variable.
 
 		IdentifierNode() {
 			type = IDENTIFIER;
@@ -1014,7 +1020,7 @@ public:
 			ExpressionNode *expression;
 		};
 		Vector<PatternNode *> array;
-		bool rest_used = false; // For array/dict patterns.
+		bool rest_used = false; ///< For array/dict patterns.
 
 		struct Pair {
 			ExpressionNode *key = nullptr;
@@ -1171,8 +1177,8 @@ public:
 
 		bool has_return = false;
 		bool has_continue = false;
-		bool has_unreachable_code = false; // Just so warnings aren't given more than once per block.
-		bool is_in_loop = false; // The block is nested in a loop (directly or indirectly).
+		bool has_unreachable_code = false; ///< Just so warnings aren't given more than once per block.
+		bool is_in_loop = false; ///< The block is nested in a loop (directly or indirectly).
 
 		bool has_local(const StringName &p_name) const;
 		const Local &get_local(const StringName &p_name) const;
@@ -1285,29 +1291,29 @@ public:
 
 	enum CompletionType {
 		COMPLETION_NONE,
-		COMPLETION_ANNOTATION, // Annotation (following @).
-		COMPLETION_ANNOTATION_ARGUMENTS, // Annotation arguments hint.
-		COMPLETION_ASSIGN, // Assignment based on type (e.g. enum values).
-		COMPLETION_ATTRIBUTE, // After id.| to look for members.
-		COMPLETION_ATTRIBUTE_METHOD, // After id.| to look for methods.
-		COMPLETION_BUILT_IN_TYPE_CONSTANT_OR_STATIC_METHOD, // Constants inside a built-in type (e.g. Color.BLUE) or static methods (e.g. Color.html).
-		COMPLETION_CALL_ARGUMENTS, // Complete with nodes, input actions, enum values (or usual expressions).
-		// TODO: COMPLETION_DECLARATION, // Potential declaration (var, const, func).
-		COMPLETION_GET_NODE, // Get node with $ notation.
-		COMPLETION_IDENTIFIER, // List available identifiers in scope.
-		COMPLETION_INHERIT_TYPE, // Type after extends. Exclude non-viable types (built-ins, enums, void). Includes subtypes using the argument index.
-		COMPLETION_METHOD, // List available methods in scope.
-		COMPLETION_OVERRIDE_METHOD, // Override implementation, also for native virtuals.
-		COMPLETION_PROPERTY_DECLARATION, // Property declaration (get, set).
-		COMPLETION_PROPERTY_DECLARATION_OR_TYPE, // Property declaration (get, set) or a type hint.
-		COMPLETION_PROPERTY_METHOD, // Property setter or getter (list available methods).
-		COMPLETION_RESOURCE_PATH, // For load/preload.
-		COMPLETION_SUBSCRIPT, // Inside id[|].
-		COMPLETION_SUPER, // super(), used for lookup.
-		COMPLETION_SUPER_METHOD, // After super.
-		COMPLETION_TYPE_ATTRIBUTE, // Attribute in type name (Type.|).
-		COMPLETION_TYPE_NAME, // Name of type (after :).
-		COMPLETION_TYPE_NAME_OR_VOID, // Same as TYPE_NAME, but allows void (in function return type).
+		COMPLETION_ANNOTATION, ///< Annotation (following @).
+		COMPLETION_ANNOTATION_ARGUMENTS, ///< Annotation arguments hint.
+		COMPLETION_ASSIGN, ///< Assignment based on type (e.g. enum values).
+		COMPLETION_ATTRIBUTE, ///< After id.| to look for members.
+		COMPLETION_ATTRIBUTE_METHOD, ///< After id.| to look for methods.
+		COMPLETION_BUILT_IN_TYPE_CONSTANT_OR_STATIC_METHOD, ///< Constants inside a built-in type (e.g. Color.BLUE) or static methods (e.g. Color.html).
+		COMPLETION_CALL_ARGUMENTS, ///< Complete with nodes, input actions, enum values (or usual expressions).
+		/// @todo COMPLETION_DECLARATION, // Potential declaration (var, const, func).
+		COMPLETION_GET_NODE, ///< Get node with $ notation.
+		COMPLETION_IDENTIFIER, ///< List available identifiers in scope.
+		COMPLETION_INHERIT_TYPE, ///< Type after extends. Exclude non-viable types (built-ins, enums, void). Includes subtypes using the argument index.
+		COMPLETION_METHOD, ///< List available methods in scope.
+		COMPLETION_OVERRIDE_METHOD, ///< Override implementation, also for native virtuals.
+		COMPLETION_PROPERTY_DECLARATION, ///< Property declaration (get, set).
+		COMPLETION_PROPERTY_DECLARATION_OR_TYPE, ///< Property declaration (get, set) or a type hint.
+		COMPLETION_PROPERTY_METHOD, ///< Property setter or getter (list available methods).
+		COMPLETION_RESOURCE_PATH, ///< For load/preload.
+		COMPLETION_SUBSCRIPT, ///< Inside id[|].
+		COMPLETION_SUPER, ///< super(), used for lookup.
+		COMPLETION_SUPER_METHOD, ///< After super.
+		COMPLETION_TYPE_ATTRIBUTE, ///< Attribute in type name (Type.|).
+		COMPLETION_TYPE_NAME, ///< Name of type (after :).
+		COMPLETION_TYPE_NAME_OR_VOID, ///< Same as TYPE_NAME, but allows void (in function return type).
 	};
 
 	struct CompletionCall {
@@ -1378,7 +1384,7 @@ private:
 	CompletionContext completion_context;
 	List<CompletionCall> completion_call_stack;
 	bool in_lambda = false;
-	bool lambda_ended = false; // Marker for when a lambda ends, to apply an end of statement if needed.
+	bool lambda_ended = false; ///< Marker for when a lambda ends, to apply an end of statement if needed.
 
 	typedef bool (GDScriptParser::*AnnotationAction)(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	struct AnnotationInfo {
@@ -1394,7 +1400,7 @@ private:
 			STANDALONE = 1 << 7,
 			CLASS_LEVEL = CLASS | VARIABLE | CONSTANT | SIGNAL | FUNCTION,
 		};
-		uint32_t target_kind = 0; // Flags.
+		uint32_t target_kind = 0; ///< Flags.
 		AnnotationAction apply = nullptr;
 		MethodInfo info;
 	};
@@ -1402,7 +1408,7 @@ private:
 	List<AnnotationNode *> annotation_stack;
 
 	typedef ExpressionNode *(GDScriptParser::*ParseFunction)(ExpressionNode *p_previous_operand, bool p_can_assign);
-	// Higher value means higher precedence (i.e. is evaluated first).
+	/// Higher value means higher precedence (i.e. is evaluated first).
 	enum Precedence {
 		PREC_NONE,
 		PREC_ASSIGNMENT,
@@ -1455,8 +1461,8 @@ private:
 		return node;
 	}
 
-	// Allocates a node for patching up the parse tree when an error occurred.
-	// Such nodes don't track their extents as they don't relate to actual tokens.
+	/// Allocates a node for patching up the parse tree when an error occurred.
+	/// Such nodes don't track their extents as they don't relate to actual tokens.
 	template <typename T>
 	T *alloc_recovery_node() {
 		T *node = memnew(T);
@@ -1484,13 +1490,13 @@ private:
 	}
 	void apply_pending_warnings();
 #endif
-	// Setting p_force to false will prevent the completion context from being update if a context was already set before.
-	// This should only be done when we push context before we consumed any tokens for the corresponding structure.
-	// See parse_precedence for an example.
+	/// Setting p_force to false will prevent the completion context from being update if a context was already set before.
+	/// This should only be done when we push context before we consumed any tokens for the corresponding structure.
+	/// See parse_precedence for an example.
 	void make_completion_context(CompletionType p_type, Node *p_node, int p_argument = -1, bool p_force = true);
 	void make_completion_context(CompletionType p_type, Variant::Type p_builtin_type, bool p_force = true);
-	// In some cases it might become necessary to alter the completion context after parsing a subexpression.
-	// For example to not override COMPLETE_CALL_ARGUMENTS with COMPLETION_NONE from string literals.
+	/// In some cases it might become necessary to alter the completion context after parsing a subexpression.
+	/// For example to not override COMPLETE_CALL_ARGUMENTS with COMPLETION_NONE from string literals.
 	void override_completion_context(const Node *p_for_node, CompletionType p_type, Node *p_node, int p_argument = -1);
 	void push_completion_call(Node *p_call);
 	void pop_completion_call();
@@ -1508,7 +1514,8 @@ private:
 	void push_multiline(bool p_state);
 	void pop_multiline();
 
-	// Main blocks.
+	/// @name Main Blocks
+	/// @{
 	void parse_program();
 	ClassNode *parse_class(bool p_is_static);
 	void parse_class_name();
@@ -1522,7 +1529,9 @@ private:
 	FunctionNode *parse_function(bool p_is_static);
 	bool parse_function_signature(FunctionNode *p_function, SuiteNode *p_body, const String &p_type, int p_signature_start);
 	SuiteNode *parse_suite(const String &p_context, SuiteNode *p_suite = nullptr, bool p_for_lambda = false);
-	// Annotations
+	/// @}
+	/// @name Annotations
+	/// @{
 	AnnotationNode *parse_annotation(uint32_t p_valid_targets);
 	static bool register_annotation(const MethodInfo &p_info, uint32_t p_target_kinds, AnnotationAction p_apply, const Vector<Variant> &p_default_arguments = Vector<Variant>(), bool p_is_vararg = false);
 	bool validate_annotation_arguments(AnnotationNode *p_annotation);
@@ -1534,6 +1543,8 @@ private:
 	bool onready_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	template <PropertyHint t_hint, Variant::Type t_type>
 	bool export_annotations(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
+	/// For `@export_storage` and `@export_custom`, there is no need to check the variable type, argument values,
+	/// or handle array exports in a special way, so they are implemented as separate methods.
 	bool export_storage_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool export_custom_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool export_tool_button_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
@@ -1542,7 +1553,9 @@ private:
 	bool warning_ignore_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool warning_ignore_region_annotations(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
 	bool rpc_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class);
-	// Statements.
+	/// @}
+	/// @name Statements
+	/// @{
 	Node *parse_statement();
 	VariableNode *parse_variable(bool p_is_static);
 	VariableNode *parse_variable(bool p_is_static, bool p_allow_property);
@@ -1559,7 +1572,9 @@ private:
 	MatchBranchNode *parse_match_branch();
 	PatternNode *parse_match_pattern(PatternNode *p_root_pattern = nullptr);
 	WhileNode *parse_while();
-	// Expressions.
+	/// @}
+	/// @name Expressions
+	/// @{
 	ExpressionNode *parse_expression(bool p_can_assign, bool p_stop_on_assign = false);
 	ExpressionNode *parse_precedence(Precedence p_precedence, bool p_can_assign, bool p_stop_on_assign = false);
 	ExpressionNode *parse_literal(ExpressionNode *p_previous_operand, bool p_can_assign);
@@ -1588,7 +1603,7 @@ private:
 	ExpressionNode *parse_yield(ExpressionNode *p_previous_operand, bool p_can_assign);
 	ExpressionNode *parse_invalid_token(ExpressionNode *p_previous_operand, bool p_can_assign);
 	TypeNode *parse_type(bool p_allow_void = false);
-
+	/// @}
 #ifdef TOOLS_ENABLED
 	int max_script_doc_line = INT_MAX;
 	int min_member_doc_line = 1;
@@ -1606,7 +1621,11 @@ public:
 	const HashMap<String, Ref<GDScriptParserRef>> &get_depended_parsers();
 	ClassNode *find_class(const String &p_qualified_name) const;
 	bool has_class(const GDScriptParser::ClassNode *p_class) const;
-	static Variant::Type get_builtin_type(const StringName &p_type); // Excluding `Variant::NIL` and `Variant::OBJECT`.
+	/// This function is used to determine that a type is "built-in" as opposed to native
+	/// and custom classes. So `Variant::NIL` and `Variant::OBJECT` are excluded:
+	/// `Variant::NIL` - `null` is literal, not a type.
+	/// `Variant::OBJECT` - `Object` should be treated as a class, not as a built-in type.
+	static Variant::Type get_builtin_type(const StringName &p_type);
 
 	CompletionContext get_completion_context() const { return completion_context; }
 	void get_annotation_list(List<MethodInfo> *r_annotations) const;
@@ -1614,7 +1633,7 @@ public:
 
 	const List<ParserError> &get_errors() const { return errors; }
 	const List<String> get_dependencies() const {
-		// TODO: Keep track of deps.
+		/// @todo Keep track of deps.
 		return List<String>();
 	}
 #ifdef DEBUG_ENABLED

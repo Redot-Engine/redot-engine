@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_viewport.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/rid_owner.h"
@@ -47,7 +53,7 @@ public:
 		RID self;
 		RID parent;
 
-		// use xr interface to override camera positioning and projection matrices and control output
+		/// Use xr interface to override camera positioning and projection matrices and control output
 		bool use_xr = false;
 
 		Size2i internal_size;

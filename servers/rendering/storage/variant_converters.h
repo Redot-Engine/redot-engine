@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_converters.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/error/error_macros.h"
@@ -41,7 +47,7 @@
 
 template <typename T>
 struct VariantConverterStd140 {
-	// Generic base template for all Vector2/3/4(i) classes.
+	/// Generic base template for all Vector2/3/4(i) classes.
 	static constexpr int Elements = T::AXIS_COUNT;
 
 	template <typename P>
@@ -192,8 +198,7 @@ T construct_vector(const std::initializer_list<P> &values) {
 	return vector;
 }
 
-// Compatibility converter, tries to convert certain Variant types into a Vector2/3/4(i).
-
+/// Compatibility converter, tries to convert certain Variant types into a Vector2/3/4(i).
 template <typename T>
 T convert_to_vector(const Variant &p_variant, bool p_linear_color = false) {
 	const Variant::Type type = p_variant.get_type();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file grid_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/3d/node_3d.h"
@@ -113,7 +119,7 @@ class GridMap : public Node3D {
 				IndexKey key;
 			};
 
-			Vector<Item> items; //tools only, for changing visibility
+			Vector<Item> items; ///< Tools only, for changing visibility
 		};
 
 		Vector<MultimeshInstance> multimesh_instances;

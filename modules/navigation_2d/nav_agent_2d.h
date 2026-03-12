@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_agent_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "nav_rid_2d.h"
@@ -54,7 +60,7 @@ class NavAgent2D : public NavRid2D {
 	int max_neighbors = NavigationDefaults2D::AVOIDANCE_AGENT_MAX_NEIGHBORS;
 	real_t neighbor_distance = NavigationDefaults2D::AVOIDANCE_AGENT_NEIGHBOR_DISTANCE;
 	Vector2 safe_velocity;
-	bool clamp_speed = true; // Experimental, clamps velocity to max_speed.
+	bool clamp_speed = true; ///< Experimental, clamps velocity to max_speed.
 
 	NavMap2D *map = nullptr;
 
@@ -117,9 +123,15 @@ public:
 	void set_target_position(const Vector2 &p_target_position);
 	Vector2 get_target_position() const { return target_position; }
 
+	/// Sets the "wanted" velocity for an agent as a suggestion
+	/// This velocity is not guaranteed, RVO simulation will only try to fulfill it
 	void set_velocity(const Vector2 &p_velocity);
 	Vector2 get_velocity() const { return velocity; }
 
+	/// This function replaces the internal rvo simulation velocity
+	/// should only be used after the agent was teleported
+	/// as it destroys consistency in movement in cramped situations
+	/// use velocity instead to update with a safer "suggestion"
 	void set_velocity_forced(const Vector2 &p_velocity);
 	Vector2 get_velocity_forced() const { return velocity_forced; }
 
@@ -140,10 +152,10 @@ public:
 	void request_sync();
 	void cancel_sync_request();
 
-	// Updates this agent with rvo data after the rvo simulation avoidance step.
+	/// Updates this agent with rvo data after the rvo simulation avoidance step.
 	void update();
 
-	// RVO debug data from the last frame update.
+	/// @return RVO debug data from the last frame update / RVO simulation internals of this agent
 	const Dictionary get_avoidance_data() const;
 
 private:

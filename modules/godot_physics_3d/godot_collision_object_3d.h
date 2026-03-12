@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_collision_object_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "godot_broad_phase_3d.h"
@@ -66,7 +72,7 @@ private:
 		Transform3D xform;
 		Transform3D xform_inv;
 		GodotBroadPhase3D::ID bpid;
-		AABB aabb_cache; //for rayqueries
+		AABB aabb_cache; ///< For rayqueries
 		real_t area_cache = 0.0;
 		GodotShape3D *shape = nullptr;
 		bool disabled = false;

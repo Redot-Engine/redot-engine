@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_render_model_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../openxr_uuid.h"
@@ -108,22 +114,26 @@ public:
 private:
 	static OpenXRRenderModelExtension *singleton;
 
-	// Related extensions.
+	/// @name Related Extensions
+	/// @{
 	bool uuid_ext = false;
 	bool render_model_ext = false;
 	bool interaction_render_model_ext = false;
-
-	// XrSync status
+	/// @}
+	/// @name XrSync status
+	/// @{
 	bool xr_sync_has_run = false;
-
-	// Interaction data.
+	/// @}
+	/// @name Interaction Data
+	/// @{
 	bool _interaction_data_dirty = true;
 	HashMap<XrRenderModelIdEXT, RID> interaction_render_models;
 
 	void _clear_interaction_data();
 	bool _update_interaction_data();
+	/// @}
 
-	// Render model.
+	//// Render Model
 	Vector<XrPath> toplevel_paths;
 
 	struct RenderModel {
@@ -140,17 +150,18 @@ private:
 
 	mutable RID_Owner<RenderModel, true> render_model_owner;
 
-	// GLTF asset cache
+	/// GLTF asset cache
 	HashMap<XrUuidEXT, Ref<OpenXRRenderModelData>, HashMapHasherXrUuidEXT> render_model_data_cache;
 
 	Ref<OpenXRRenderModelData> _get_render_model_data(XrUuidEXT p_cache_id, uint32_t p_animatable_node_count);
 	Ref<OpenXRRenderModelData> _load_asset(XrRenderModelAssetEXT p_asset, uint32_t p_animatable_node_count);
 	void _clear_render_model_data();
 
-	// GDScript/GDExtension passthroughs
+	/// GDScript/GDExtension passthroughs
 	RID _render_model_create(uint64_t p_render_model_id);
 
-	// OpenXR API call wrappers
+	/// @name OpenXR API call wrappers
+	/// @{
 	EXT_PROTO_XRRESULT_FUNC3(xrCreateRenderModelEXT, (XrSession), session, (const XrRenderModelCreateInfoEXT *), createInfo, (XrRenderModelEXT *), renderModel);
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyRenderModelEXT, (XrRenderModelEXT), renderModel);
 	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelPropertiesEXT, (XrRenderModelEXT), renderModel, (const XrRenderModelPropertiesGetInfoEXT *), getInfo, (XrRenderModelPropertiesEXT *), properties);
@@ -167,4 +178,5 @@ private:
 	EXT_PROTO_XRRESULT_FUNC4(xrLocateSpace, (XrSpace), space, (XrSpace), baseSpace, (XrTime), time, (XrSpaceLocation *), location);
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpace, (XrSpace), space);
 	EXT_PROTO_XRRESULT_FUNC5(xrPathToString, (XrInstance), instance, (XrPath), path, (uint32_t), bufferCapacityInput, (uint32_t *), bufferCountOutput, (char *), buffer);
+	/// @}
 };

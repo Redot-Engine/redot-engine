@@ -30,33 +30,33 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_cone_twist_joint_3d.h
+ *
+ * @brief Adapted to Godot from the Bullet library.
+ *
+ * @details Bullet Continuous Collision Detection and Physics Library
+ * GodotConeTwistJoint3D is Copyright (c) 2007 Starbreeze Studios
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ *
+ * Written by: Marcus Hennix
+ */
+
 #pragma once
-
-/*
-Adapted to Godot from the Bullet library.
-*/
-
-/*
-Bullet Continuous Collision Detection and Physics Library
-GodotConeTwistJoint3D is Copyright (c) 2007 Starbreeze Studios
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
-Written by: Marcus Hennix
-*/
 
 #include "../godot_joint_3d.h"
 #include "godot_jacobian_entry_3d.h"
 
-// GodotConeTwistJoint3D can be used to simulate ragdoll joints (upper arm, leg etc).
+/// GodotConeTwistJoint3D can be used to simulate ragdoll joints (upper arm, leg etc).
 class GodotConeTwistJoint3D : public GodotJoint3D {
 #ifdef IN_PARALLELL_SOLVER
 public:
@@ -71,7 +71,7 @@ public:
 		GodotBody3D *_arr[2] = { nullptr, nullptr };
 	};
 
-	GodotJacobianEntry3D m_jac[3] = {}; //3 orthogonal linear constraints
+	GodotJacobianEntry3D m_jac[3] = {}; ///< 3 orthogonal linear constraints
 
 	real_t m_appliedImpulse = 0.0;
 	Transform3D m_rbAFrame;

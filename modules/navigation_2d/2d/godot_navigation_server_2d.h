@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_navigation_server_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "../nav_agent_2d.h"
@@ -68,7 +74,7 @@ struct SetCommand2D {
 	virtual void exec(GodotNavigationServer2D *p_server) = 0;
 };
 
-// This server exposes the `NavigationServer3D` features in the 2D world.
+/// This server exposes the `NavigationServer3D` features in the 2D world.
 class GodotNavigationServer2D : public NavigationServer2D {
 	GDCLASS(GodotNavigationServer2D, NavigationServer2D);
 
@@ -91,7 +97,8 @@ class GodotNavigationServer2D : public NavigationServer2D {
 	NavMeshGenerator2D *navmesh_generator_2d = nullptr;
 #endif // CLIPPER2_ENABLED
 
-	// Performance Monitor.
+	/// @name Performance Monitor
+	/// @{
 	int pm_region_count = 0;
 	int pm_agent_count = 0;
 	int pm_link_count = 0;
@@ -101,6 +108,7 @@ class GodotNavigationServer2D : public NavigationServer2D {
 	int pm_edge_connection_count = 0;
 	int pm_edge_free_count = 0;
 	int pm_obstacle_count = 0;
+	/// @}
 
 public:
 	GodotNavigationServer2D();
@@ -330,7 +338,17 @@ public:
 
 	void flush_queries();
 
+	/// Called for each main loop iteration AFTER node and user script process() and BEFORE RenderingServer sync.
+	/// Will run reliably every rendered frame independent of the physics tick rate.
+	/// Use for things that (only) need to update once per main loop iteration and rendered frame or is visible to the user.
+	/// E.g. (final) sync of objects for this main loop iteration, updating rendered debug visuals, updating debug statistics, ...
 	virtual void process(double p_delta_time) override;
+	/// Called for each physics process step AFTER node and user script physics_process() and BEFORE PhysicsServer sync.
+	/// Will NOT run reliably every rendered frame. If there is no physics step this function will not run.
+	/// Use for physics or step depending calculations and updates where the result affects the next step calculation.
+	/// E.g. anything physics sync related, avoidance simulations, physics space state queries, ...
+	/// If physics process needs to play catchup this function will be called multiple times per frame so it should not hold
+	/// costly updates that are not important outside the stepped calculations to avoid causing a physics performance death spiral.
 	virtual void physics_process(double p_delta_time) override;
 	virtual void init() override;
 	virtual void sync() override;

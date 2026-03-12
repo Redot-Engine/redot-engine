@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/math/dynamic_bvh.h"
@@ -134,7 +140,7 @@ class Node3DEditorViewport : public Control {
 		VIEW_INFORMATION,
 		VIEW_FRAME_TIME,
 
-		// < Keep in sync with menu.
+		// Keep in sync with menu.
 		VIEW_DISPLAY_NORMAL,
 		VIEW_DISPLAY_WIREFRAME,
 		VIEW_DISPLAY_OVERDRAW,
@@ -165,7 +171,7 @@ class Node3DEditorViewport : public Control {
 		VIEW_DISPLAY_MOTION_VECTORS,
 		VIEW_DISPLAY_INTERNAL_BUFFER,
 		VIEW_DISPLAY_MAX,
-		// > Keep in sync with menu.
+		// Keep in sync with menu.
 
 		VIEW_LOCK_ROTATION,
 		VIEW_CINEMATIC_PREVIEW,
@@ -462,16 +468,20 @@ private:
 	Transform3D to_camera_transform(const Cursor &p_cursor) const;
 	void _draw();
 
-	// These allow tool scripts to set the 3D cursor location by updating the camera transform.
+	/// @name These allow tool scripts to set the 3D cursor location by updating the camera transform.
+	/// @{
 	Transform3D last_camera_transform;
 	bool _camera_moved_externally();
 	void _apply_camera_transform_to_cursor();
+	/// @}
 
 	void _surface_mouse_enter();
 	void _surface_mouse_exit();
 	void _surface_focus_enter();
 	void _surface_focus_exit();
 
+	/// This is only active during instant transforms,
+	/// to capture and wrap mouse events outside the control.
 	void input(const Ref<InputEvent> &p_event) override;
 	void _sinput(const Ref<InputEvent> &p_event);
 	void _update_freelook(real_t delta);
@@ -518,16 +528,21 @@ private:
 	Transform3D _compute_transform(TransformMode p_mode, const Transform3D &p_original, const Transform3D &p_original_local, Vector3 p_motion, double p_extra, bool p_local, bool p_orthogonal);
 
 	void begin_transform(TransformMode p_mode, bool instant);
+	/// Apply the current transform operation.
 	void commit_transform();
 	void apply_transform(Vector3 p_motion, double p_snap);
+	/// Update the current transform operation in response to an input.
 	void update_transform(bool p_shift);
 	void update_transform_numeric();
+	/// Perform cleanup after a transform operation is committed or canceled.
 	void finish_transform();
 
+	/// Register a shortcut and also add it as an input action with the same events.
 	void register_shortcut_action(const String &p_path, const String &p_name, Key p_keycode, bool p_physical = false);
+	/// Update the action in the InputMap to the provided shortcut events.
 	void shortcut_changed_callback(const Ref<Shortcut> p_shortcut, const String &p_shortcut_path);
 
-	// Supported rendering methods for advanced debug draw mode items.
+	/// Supported rendering methods for advanced debug draw mode items.
 	enum SupportedRenderingMethods {
 		ALL,
 		FORWARD_PLUS,
@@ -563,7 +578,7 @@ public:
 			AcceptDialog *p_accept);
 
 	SubViewport *get_viewport_node() { return viewport; }
-	Camera3D *get_camera_3d() { return camera; } // return the default camera object.
+	Camera3D *get_camera_3d() { return camera; } ///< @return The default camera object.
 	Control *get_surface() { return surface; }
 
 	Node3DEditorViewport(Node3DEditor *p_spatial_editor, int p_index);
@@ -575,9 +590,9 @@ class Node3DEditorSelectedItem : public Object {
 
 public:
 	AABB aabb;
-	Transform3D original; // original location when moving
+	Transform3D original; ///< Original location when moving
 	Transform3D original_local;
-	Transform3D last_xform; // last transform
+	Transform3D last_xform; ///< Last transform
 	bool last_xform_dirty;
 	Node3D *sp = nullptr;
 	RID sbox_instance;
@@ -585,7 +600,7 @@ public:
 	RID sbox_instance_xray;
 	RID sbox_instance_xray_offset;
 	Ref<EditorNode3DGizmo> gizmo;
-	HashMap<int, Transform3D> subgizmos; // Key: Subgizmo ID, Value: Initial subgizmo transform.
+	HashMap<int, Transform3D> subgizmos; ///< Key: Subgizmo ID, Value: Initial subgizmo transform.
 
 	Node3DEditorSelectedItem() {
 		sp = nullptr;
@@ -681,8 +696,8 @@ private:
 	bool origin_enabled = false;
 	RID grid[3];
 	RID grid_instance[3];
-	bool grid_visible[3] = { false, false, false }; //currently visible
-	bool grid_enable[3] = { false, false, false }; //should be always visible if true
+	bool grid_visible[3] = { false, false, false }; ///< Currently visible
+	bool grid_enable[3] = { false, false, false }; ///< Should be always visible if true
 	bool grid_enabled = false;
 	bool grid_init_draw = false;
 	Camera3D::ProjectionType grid_camera_last_update_perspective = Camera3D::PROJECTION_PERSPECTIVE;
@@ -724,7 +739,8 @@ private:
 	Ref<ShaderMaterial> grid_mat[3];
 	Ref<StandardMaterial3D> cursor_material;
 
-	// Scene drag and drop support
+	/// Scene drag and drop support
+	/// @{
 	Node3D *preview_node = nullptr;
 	AABB preview_bounds;
 
@@ -732,6 +748,7 @@ private:
 	Ref<Material> preview_reset_material;
 	ObjectID preview_material_target;
 	int preview_material_surface = -1;
+	/// @}
 
 	struct Gizmo {
 		bool visible = false;
@@ -802,8 +819,8 @@ private:
 	void _menu_item_pressed(int p_option);
 	void _menu_item_toggled(bool pressed, int p_option);
 	void _menu_gizmo_toggled(int p_option);
-	// Used for secondary menu items which are displayed depending on the currently selected node
-	// (such as MeshInstance's "Mesh" menu).
+	/// Used for secondary menu items which are displayed depending on the currently selected node
+	/// (such as MeshInstance's "Mesh" menu).
 	PanelContainer *context_toolbar_panel = nullptr;
 	HBoxContainer *context_toolbar_hbox = nullptr;
 	HashMap<Control *, VSeparator *> context_toolbar_separators;
@@ -854,8 +871,7 @@ private:
 	bool do_snap_selected_nodes_to_floor = false;
 	void _snap_selected_nodes_to_floor();
 
-	// Preview Sun and Environment
-
+	/// Preview Sun and Environment
 	class PreviewSunEnvPopup : public PopupPanel {
 		GDCLASS(PreviewSunEnvPopup, PopupPanel);
 

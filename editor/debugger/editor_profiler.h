@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_profiler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "scene/gui/box_container.h"
@@ -60,7 +66,7 @@ public:
 		struct Category {
 			StringName signature;
 			String name;
-			float total_time = 0; //total for category
+			float total_time = 0; ///< Total for category
 
 			struct Item {
 				StringName signature;

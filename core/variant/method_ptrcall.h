@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file method_ptrcall.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/object_id.h"
@@ -87,7 +93,7 @@ struct PtrToArgVectorConvert {
 		}
 		return ret;
 	}
-	// No EncodeT because direct pointer conversion not possible.
+	/// No EncodeT because direct pointer conversion not possible.
 	_FORCE_INLINE_ static void encode(const Vector<TAlt> &p_vec, void *p_ptr) {
 		Vector<T> *dv = reinterpret_cast<Vector<T> *>(p_ptr);
 		int len = p_vec.size();
@@ -113,7 +119,7 @@ struct PtrToArgVectorFromArray {
 		}
 		return ret;
 	}
-	// No EncodeT because direct pointer conversion not possible.
+	/// No EncodeT because direct pointer conversion not possible.
 	_FORCE_INLINE_ static void encode(const Vector<T> &p_vec, void *p_ptr) {
 		Array *arr = reinterpret_cast<Array *>(p_ptr);
 		int len = p_vec.size();
@@ -130,7 +136,7 @@ struct PtrToArgStringConvertByReference {
 		T s = *reinterpret_cast<const String *>(p_ptr);
 		return s;
 	}
-	// No EncodeT because direct pointer conversion not possible.
+	/// No EncodeT because direct pointer conversion not possible.
 	_FORCE_INLINE_ static void encode(const T &p_vec, void *p_ptr) {
 		String *arr = reinterpret_cast<String *>(p_ptr);
 		*arr = String(p_vec);
@@ -147,7 +153,8 @@ struct PtrToArg<T, std::enable_if_t<!std::is_same_v<T, GetSimpleTypeT<T>>>> : Pt
 
 template <>
 struct PtrToArg<bool> : Internal::PtrToArgConvert<bool, uint8_t> {};
-// Integer types.
+/// @name Integer types
+/// @{
 template <>
 struct PtrToArg<uint8_t> : Internal::PtrToArgConvert<uint8_t, int64_t> {};
 template <>
@@ -164,11 +171,14 @@ template <>
 struct PtrToArg<int64_t> : Internal::PtrToArgDirect<int64_t> {};
 template <>
 struct PtrToArg<uint64_t> : Internal::PtrToArgDirect<uint64_t> {};
-// Float types
+/// @}
+/// @name Float types
+/// @{
 template <>
 struct PtrToArg<float> : Internal::PtrToArgConvert<float, double> {};
 template <>
 struct PtrToArg<double> : Internal::PtrToArgDirect<double> {};
+/// @}
 
 template <>
 struct PtrToArg<String> : Internal::PtrToArgDirect<String> {};
@@ -210,7 +220,7 @@ template <>
 struct PtrToArg<NodePath> : Internal::PtrToArgDirect<NodePath> {};
 template <>
 struct PtrToArg<RID> : Internal::PtrToArgDirect<RID> {};
-// Object doesn't need this.
+/// Object doesn't need this.
 template <>
 struct PtrToArg<Callable> : Internal::PtrToArgDirect<Callable> {};
 template <>
@@ -247,8 +257,7 @@ struct PtrToArg<T, std::enable_if_t<std::is_enum_v<T>>> : Internal::PtrToArgConv
 template <typename T>
 struct PtrToArg<BitField<T>, std::enable_if_t<std::is_enum_v<T>>> : Internal::PtrToArgConvert<BitField<T>, int64_t> {};
 
-// This is for Object.
-
+/// This is for Object.
 template <typename T>
 struct PtrToArg<T *> {
 	_FORCE_INLINE_ static T *convert(const void *p_ptr) {
@@ -271,8 +280,7 @@ struct PtrToArg<const T *> {
 	}
 };
 
-// This is for ObjectID.
-
+/// This is for ObjectID.
 template <>
 struct PtrToArg<ObjectID> {
 	_FORCE_INLINE_ static const ObjectID convert(const void *p_ptr) {
@@ -284,22 +292,21 @@ struct PtrToArg<ObjectID> {
 	}
 };
 
-// This is for the special cases used by Variant.
-
+/// This is for the special cases used by Variant.
 template <>
 struct PtrToArg<Vector<StringName>> : Internal::PtrToArgVectorConvert<String, StringName> {};
 
-// For stuff that gets converted to Array vectors.
-
+/// @name For stuff that gets converted to Array vectors.
+/// @{
 template <>
 struct PtrToArg<Vector<Variant>> : Internal::PtrToArgVectorFromArray<Variant> {};
 template <>
 struct PtrToArg<Vector<RID>> : Internal::PtrToArgVectorFromArray<RID> {};
 template <>
 struct PtrToArg<Vector<Plane>> : Internal::PtrToArgVectorFromArray<Plane> {};
+/// @}
 
-// Special case for IPAddress.
-
+/// Special case for IPAddress.
 template <>
 struct PtrToArg<IPAddress> : Internal::PtrToArgStringConvertByReference<IPAddress> {};
 
@@ -321,7 +328,7 @@ struct PtrToArg<Vector<Face3>> {
 		}
 		return ret;
 	}
-	// No EncodeT because direct pointer conversion not possible.
+	/// No EncodeT because direct pointer conversion not possible.
 	_FORCE_INLINE_ static void encode(const Vector<Face3> &p_vec, void *p_ptr) {
 		Vector<Vector3> *arr = reinterpret_cast<Vector<Vector3> *>(p_ptr);
 		int len = p_vec.size();

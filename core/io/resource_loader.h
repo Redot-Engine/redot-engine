@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_loader.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -131,10 +137,10 @@ public:
 	struct LoadToken : public RefCounted {
 		String local_path;
 		String user_path;
-		uint32_t user_rc = 0; // Having user RC implies regular RC incremented in one, until the user RC reaches zero.
+		uint32_t user_rc = 0; ///< Having user RC implies regular RC incremented in one, until the user RC reaches zero.
 		ThreadLoadTask *task_if_unregistered = nullptr;
 
-		void clear();
+		void clear(); ///< This should be robust enough to be called redundantly without issues.
 
 		virtual ~LoadToken();
 	};
@@ -176,10 +182,10 @@ private:
 	static Ref<ResourceFormatLoader> _find_custom_resource_format_loader(const String &path);
 
 	struct ThreadLoadTask {
-		WorkerThreadPool::TaskID task_id = 0; // Used if run on a worker thread from the pool.
-		Thread::ID thread_id = 0; // Used if running on an user thread (e.g., simple non-threaded load).
-		bool awaited = false; // If it's in the pool, this helps not awaiting from more than one dependent thread.
-		ConditionVariable *cond_var = nullptr; // In not in the worker pool or already awaiting, this is used as a secondary awaiting mechanism.
+		WorkerThreadPool::TaskID task_id = 0; ///< Used if run on a worker thread from the pool.
+		Thread::ID thread_id = 0; ///< Used if running on an user thread (e.g., simple non-threaded load).
+		bool awaited = false; ///< If it's in the pool, this helps not awaiting from more than one dependent thread.
+		ConditionVariable *cond_var = nullptr; ///< In not in the worker pool or already awaiting, this is used as a secondary awaiting mechanism.
 		uint32_t awaiters_count = 0;
 		bool need_wait = true;
 		LoadToken *load_token = nullptr;
@@ -203,6 +209,8 @@ private:
 		LocalVector<ResourceChangedConnection> resource_changed_connections;
 	};
 
+	/// This implementation must allow re-entrancy for a task that started awaiting in a deeper stack frame.
+	/// The load task token must be manually re-referenced before this is called, which includes threaded runs.
 	static void _run_load_task(void *p_userdata);
 
 	static thread_local bool import_thread;
@@ -260,7 +268,7 @@ public:
 	static void set_timestamp_on_load(bool p_timestamp) { timestamp_on_load = p_timestamp; }
 	static bool get_timestamp_on_load() { return timestamp_on_load; }
 
-	// Loaders can safely use this regardless which thread they are running on.
+	/// Loaders can safely use this regardless which thread they are running on.
 	static void notify_load_error(const String &p_err) {
 		if (err_notify) {
 			MessageQueue::get_main_singleton()->push_callable(callable_mp_static(err_notify).bind(p_err));
@@ -270,7 +278,7 @@ public:
 		err_notify = p_err_notify;
 	}
 
-	// Loaders can safely use this regardless which thread they are running on.
+	/// Loaders can safely use this regardless which thread they are running on.
 	static void notify_dependency_error(const String &p_path, const String &p_dependency, const String &p_type) {
 		if (dep_err_notify) {
 			if (Thread::get_caller_id() == Thread::get_main_id()) {
@@ -294,13 +302,13 @@ public:
 	static void load_translation_remaps();
 	static void clear_translation_remaps();
 
-	static void clear_thread_load_tasks();
+	static void clear_thread_load_tasks(); ///< Bring the thing down as quickly as possible without causing deadlocks or leaks.
 
 	static void set_load_callback(ResourceLoadedCallback p_callback);
 	static ResourceLoaderImport import;
 
 	static bool add_custom_resource_format_loader(const String &script_path);
-	static void add_custom_loaders();
+	static void add_custom_loaders(); ///< Custom loaders registration exploits global class names
 	static void remove_custom_loaders();
 
 	static void set_create_missing_resources_if_class_unavailable(bool p_enable);

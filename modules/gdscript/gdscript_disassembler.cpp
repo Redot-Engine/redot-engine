@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_disassembler.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef DEBUG_ENABLED
 
 #include "gdscript.h"

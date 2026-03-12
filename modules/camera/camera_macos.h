@@ -30,10 +30,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_macos.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
-///@TODO this is a near duplicate of CameraIOS, we should find a way to combine those to minimize code duplication!!!!
-// If you fix something here, make sure you fix it there as well!
+/// @todo This is a near duplicate of CameraIOS, we should find a way to combine those to minimize code duplication!!!!
+/// If you fix something here, make sure you fix it there as well!
 
 #include "servers/camera_server.h"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file abstract_polygon_2d_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/plugins/editor_plugin.h"
@@ -78,9 +84,9 @@ class AbstractPolygon2DEditor : public HBoxContainer {
 	};
 
 	PosVertex edited_point;
-	Vertex hover_point; // point under mouse cursor
-	Vertex selected_point; // currently selected
-	PosVertex edge_point; // adding an edge point?
+	Vertex hover_point; ///< point under mouse cursor
+	Vertex selected_point; ///< currently selected
+	PosVertex edge_point; ///< adding an edge point?
 	Vector2 original_mouse_pos;
 
 	Vector<Vector2> pre_move_edit;

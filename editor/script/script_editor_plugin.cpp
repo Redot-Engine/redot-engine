@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -330,7 +336,7 @@ void EditorConfigFileSyntaxHighlighter::_update_cache() {
 	const Color string_color = EDITOR_GET("text_editor/theme/highlighting/string_color");
 	highlighter->add_color_region("\"", "\"", string_color);
 
-	// FIXME: Sections in ConfigFile must be at the beginning of a line. Otherwise, it can be an array within a line.
+	/// @todo FIXME: Sections in ConfigFile must be at the beginning of a line. Otherwise, it can be an array within a line.
 	const Color function_color = EDITOR_GET("text_editor/theme/highlighting/function_color");
 	highlighter->add_color_region("[", "]", function_color);
 
@@ -480,7 +486,7 @@ String ScriptEditor::_get_debug_tooltip(const String &p_text, Node *p_se) {
 		return String();
 	}
 
-	// NOTE: See also `ScriptTextEditor::_show_symbol_tooltip()` for documentation tooltips enabled.
+	/// @note See also `ScriptTextEditor::_show_symbol_tooltip()` for documentation tooltips enabled.
 	String debug_value = EditorDebuggerNode::get_singleton()->get_var_value(p_text);
 	if (!debug_value.is_empty()) {
 		constexpr int DISPLAY_LIMIT = 1024;
@@ -4335,7 +4341,7 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	ED_SHORTCUT("script_editor/window_sort", TTRC("Sort"));
 	ED_SHORTCUT("script_editor/window_move_up", TTRC("Move Up"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::UP);
 	ED_SHORTCUT("script_editor/window_move_down", TTRC("Move Down"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::DOWN);
-	// FIXME: These should be `Key::GREATER` and `Key::LESS` but those don't work.
+	/// @todo FIXME: These should be `Key::GREATER` and `Key::LESS` but those don't work.
 	ED_SHORTCUT("script_editor/next_script", TTRC("Next Script"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::PERIOD);
 	ED_SHORTCUT("script_editor/prev_script", TTRC("Previous Script"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::COMMA);
 	set_process_input(true);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_codegen.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "gdscript_function.h"
@@ -155,7 +161,7 @@ public:
 	virtual void write_for_range_assignment(const Address &p_from, const Address &p_to, const Address &p_step) = 0;
 	virtual void write_for(const Address &p_variable, bool p_use_conversion, bool p_is_range) = 0;
 	virtual void write_endfor(bool p_is_range) = 0;
-	virtual void start_while_condition() = 0; // Used to allow a jump to the expression evaluation.
+	virtual void start_while_condition() = 0; ///< Used to allow a jump to the expression evaluation.
 	virtual void write_while(const Address &p_condition) = 0;
 	virtual void write_endwhile() = 0;
 	virtual void write_break() = 0;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_lsp.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/doc_data.h"
@@ -405,7 +411,6 @@ struct Command {
 
 // Use namespace instead of enumeration to follow the LSP specifications.
 // `LSP::EnumName::EnumValue` is OK but `LSP::EnumValue` is not.
-
 namespace TextDocumentSyncKind {
 /**
  * Documents should not be synced at all.
@@ -861,9 +866,9 @@ static const String Markdown = "markdown";
  *	value: [
  *		'# Header',
  *		'Some text',
- *		'```typescript',
+ *		'typescript',
  *		'someCode();',
- *		'```'
+ *		''
  *	].join('\n')
  * };
  * ```
@@ -1405,7 +1410,7 @@ struct FoldingRange {
 	int endCharacter = 0;
 
 	/**
-	 * Describes the kind of the folding range such as `comment' or 'region'. The kind
+	 * Describes the kind of the folding range such as `comment` or `region`. The kind
 	 * is used to categorize folding ranges and used by commands like 'Fold all comments'. See
 	 * [FoldingRangeKind](#FoldingRangeKind) for an enumeration of standardized kinds.
 	 */

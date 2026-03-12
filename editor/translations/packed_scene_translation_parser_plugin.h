@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packed_scene_translation_parser_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/translations/editor_translation_parser.h"
@@ -43,6 +49,8 @@ class PackedSceneEditorTranslationParserPlugin : public EditorTranslationParserP
 	HashMap<String, Vector<String>> exception_list;
 
 public:
+	/// Parse specific scene Node's properties (see in constructor) that are auto-translated by the engine when set. E.g Label's text property.
+	/// These properties are translated with the tr() function in the C++ code when being set or updated.
 	virtual Error parse_file(const String &p_path, Vector<Vector<String>> *r_translations) override;
 	bool match_property(const String &p_property_name, const String &p_node_type);
 	virtual void get_recognized_extensions(List<String> *r_extensions) const override;

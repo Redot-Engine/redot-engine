@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_canvas_cull.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/paged_allocator.h"
@@ -43,7 +49,7 @@ class RendererCanvasCull {
 
 public:
 	struct Item : public RendererCanvasRender::Item {
-		RID parent; // canvas it belongs to
+		RID parent; ///< Canvas it belongs to
 		RID self;
 		List<Item *>::Element *E;
 		int z_index;
@@ -56,9 +62,9 @@ public:
 		bool children_order_dirty;
 		int ysort_children_count;
 		Color ysort_modulate;
-		Transform2D ysort_xform; // Relative to y-sorted subtree's root item (identity for such root). Its `origin.y` is used for sorting.
+		Transform2D ysort_xform; ///< Relative to y-sorted subtree's root item (identity for such root). Its `origin.y` is used for sorting.
 		int ysort_index;
-		int ysort_parent_abs_z_index; // Absolute Z index of parent. Only populated and used when y-sorting.
+		int ysort_parent_abs_z_index; ///< Absolute Z index of parent. Only populated and used when y-sorting.
 		uint32_t visibility_layer = 0xffffffff;
 
 		Vector<Item *> child_items;
@@ -384,7 +390,8 @@ public:
 
 	void finalize();
 
-	/* INTERPOLATION */
+	/// @name INTERPOLATION
+	/// @{
 
 	void tick();
 	void update_interpolation_tick(bool p_process = true);
@@ -409,6 +416,7 @@ public:
 
 		bool interpolation_enabled = false;
 	} _interpolation_data;
+	/// @}
 
 	RendererCanvasCull();
 	~RendererCanvasCull();

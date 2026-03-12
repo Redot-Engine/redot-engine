@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file path_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/plugins/editor_plugin.h"
@@ -44,7 +50,7 @@ class ConfirmationDialog;
 class Path3DGizmo : public EditorNode3DGizmo {
 	GDCLASS(Path3DGizmo, EditorNode3DGizmo);
 
-	// Map handle id to control point id and handle type.
+	/// Map handle id to control point id and handle type.
 	enum HandleType {
 		HANDLE_TYPE_IN,
 		HANDLE_TYPE_OUT,
@@ -52,8 +58,8 @@ class Path3DGizmo : public EditorNode3DGizmo {
 	};
 
 	struct HandleInfo {
-		int point_idx; // Index of control point.
-		HandleType type; // Type of this handle.
+		int point_idx; ///< Index of control point.
+		HandleType type; ///< Type of this handle.
 	};
 
 	Path3D *path = nullptr;
@@ -63,11 +69,11 @@ class Path3DGizmo : public EditorNode3DGizmo {
 	mutable float orig_out_length;
 	mutable float disk_size = 0.8;
 
-	// Index that should have swapped control points for achieving an outwards curve.
+	/// Index that should have swapped control points for achieving an outwards curve.
 	int swapped_control_points_idx = -1;
 	bool control_points_overlapped = false;
 
-	// Cache information of secondary handles.
+	/// Cache information of secondary handles.
 	Vector<HandleInfo> _secondary_handles_info;
 
 	void _update_transform_gizmo();
@@ -87,8 +93,8 @@ class Path3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 
 	float disk_size = 0.8;
 
-	// Locking basis is meant to ensure a predictable behavior during translation of the curve points in "local space transform mode".
-	// Without the locking, the gizmo/point, in "local space transform mode", wouldn't follow a straight path and would curve and twitch in an unpredictable way.
+	/// Locking basis is meant to ensure a predictable behavior during translation of the curve points in "local space transform mode".
+	/// Without the locking, the gizmo/point, in "local space transform mode", wouldn't follow a straight path and would curve and twitch in an unpredictable way.
 	HashMap<int, Basis> transformation_locked_basis;
 
 protected:

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_debugger_node.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/script_language.h"
@@ -187,7 +193,7 @@ public:
 	}
 
 	String get_var_value(const String &p_var) const;
-	Ref<Script> get_dump_stack_script() const { return stack_script; } // Why do we need this?
+	Ref<Script> get_dump_stack_script() const { return stack_script; } ///< Why do we need this?
 
 	bool get_debug_with_external_editor() { return debug_with_external_editor; }
 
@@ -198,7 +204,8 @@ public:
 	void reload_all_scripts();
 	void reload_scripts(const Vector<String> &p_script_paths);
 
-	// Remote inspector/edit.
+	/// @name Remote inspector/edit
+	/// @{
 	void request_remote_tree();
 	void set_remote_selection(const TypedArray<int64_t> &p_ids);
 	void clear_remote_tree_selection();
@@ -206,8 +213,9 @@ public:
 	bool match_remote_selection(const TypedArray<uint64_t> &p_ids) const;
 	static void _methods_changed(void *p_ud, Object *p_base, const StringName &p_name, const Variant **p_args, int p_argcount);
 	static void _properties_changed(void *p_ud, Object *p_base, const StringName &p_property, const Variant &p_value);
-
-	// LiveDebug
+	/// @}
+	/// @name LiveDebug
+	/// @{
 	void set_live_debugging(bool p_enabled);
 	void update_live_edit_root();
 	void live_debug_create_node(const NodePath &p_parent, const String &p_type, const String &p_name);
@@ -217,6 +225,7 @@ public:
 	void live_debug_restore_node(ObjectID p_id, const NodePath &p_at, int p_at_pos);
 	void live_debug_duplicate_node(const NodePath &p_at, const String &p_new_name);
 	void live_debug_reparent_node(const NodePath &p_at, const NodePath &p_new_place, const String &p_new_name, int p_at_pos);
+	/// @}
 
 	void set_debug_mute_audio(bool p_mute);
 	bool get_debug_mute_audio() const;

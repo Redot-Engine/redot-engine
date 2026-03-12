@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_data_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
@@ -40,12 +46,14 @@ class RenderDataRD : public RenderData {
 	GDCLASS(RenderDataRD, RenderData);
 
 public:
-	// Access methods to expose data externally
+	/// @name Access methods to expose data externally
+	/// @{
 	virtual Ref<RenderSceneBuffers> get_render_scene_buffers() const override;
 	virtual RenderSceneData *get_render_scene_data() const override;
 
 	virtual RID get_environment() const override;
 	virtual RID get_camera_attributes() const override;
+	/// @}
 
 	// Members are publicly accessible within the render engine.
 	Ref<RenderSceneBuffersRD> render_buffers;
@@ -78,22 +86,26 @@ public:
 
 	RenderingMethod::RenderInfo *render_info = nullptr;
 
-	/* Viewport data */
+	/// @name Viewport Data
+	/// @{
 	bool transparent_bg = false;
 	Rect2i render_region;
-
-	/* Shadow data */
+	/// @}
+	/// @name Shadow Data
+	/// @{
 	const RendererSceneRender::RenderShadowData *render_shadows = nullptr;
 	int render_shadow_count = 0;
 
 	LocalVector<int> cube_shadows;
 	LocalVector<int> shadows;
 	LocalVector<int> directional_shadows;
-
-	/* GI info */
+	/// @}
+	/// @name GI info
+	/// @{
 	const RendererSceneRender::RenderSDFGIData *render_sdfgi_regions = nullptr;
 	int render_sdfgi_region_count = 0;
 	const RendererSceneRender::RenderSDFGIUpdateData *sdfgi_update_data = nullptr;
 
 	uint32_t voxel_gi_count = 0;
+	/// @}
 };

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_vrs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/class_db.h"
@@ -37,8 +43,7 @@
 #include "core/templates/rid.h"
 #include "core/variant/variant.h"
 
-/* This is a helper class for generating stereoscopic VRS images */
-
+/// This is a helper class for generating stereoscopic VRS images
 class XRVRS : public Object {
 	GDCLASS(XRVRS, Object);
 

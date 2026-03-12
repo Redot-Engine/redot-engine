@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_instance.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/object/ref_counted.h"
@@ -54,6 +60,7 @@ public:
 	virtual void get_method_list(List<MethodInfo> *p_list) const = 0;
 	virtual bool has_method(const StringName &p_method) const = 0;
 
+	/// Default implementation simply traverses hierarchy.
 	virtual int get_method_argument_count(const StringName &p_method, bool *r_is_valid = nullptr) const;
 
 	virtual Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) = 0;
@@ -69,7 +76,7 @@ public:
 		return callp(p_method, sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args), cerr);
 	}
 
-	virtual Variant call_const(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error); // implement if language supports const functions
+	virtual Variant call_const(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error); ///< Implement if language supports const functions
 	virtual void notification(int p_notification, bool p_reversed = false) = 0;
 	virtual String to_string(bool *r_valid) {
 		if (r_valid) {
@@ -78,9 +85,9 @@ public:
 		return String();
 	}
 
-	//this is used by script languages that keep a reference counter of their own
-	//you can make Ref<> not die when it reaches zero, so deleting the reference
-	//depends entirely from the script
+	/// This is used by script languages that keep a reference counter of their own
+	/// you can make Ref<> not die when it reaches zero, so deleting the reference
+	/// depends entirely from the script
 
 	virtual void refcount_incremented() {}
 	virtual bool refcount_decremented() { return true; } //return true if it can die

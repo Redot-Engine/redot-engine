@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file window_wrapper.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "window_wrapper.h"
 
 #include "editor/editor_node.h"
@@ -45,7 +51,7 @@
 
 // WindowWrapper
 
-// Capture all shortcut events not handled by other nodes.
+/// Capture all shortcut events not handled by other nodes.
 class ShortcutBin : public Node {
 	GDCLASS(ShortcutBin, Node);
 
@@ -65,7 +71,7 @@ class ShortcutBin : public Node {
 		ERR_FAIL_NULL(grandparent_window);
 
 		if (Object::cast_to<InputEventKey>(p_event.ptr()) || Object::cast_to<InputEventShortcut>(p_event.ptr())) {
-			// HACK: Propagate the window input to the editor main window to handle global shortcuts.
+			/// @todo HACK: Propagate the window input to the editor main window to handle global shortcuts.
 			grandparent_window->push_input(p_event);
 
 			if (grandparent_window->is_input_handled()) {
@@ -124,7 +130,7 @@ void WindowWrapper::_set_window_enabled_with_rect(bool p_visible, const Rect2 p_
 
 void WindowWrapper::_set_window_rect(const Rect2 p_rect) {
 	// Set the window rect even when the window is maximized to have a good default size
-	// when the user remove the maximized mode.
+	// when the user removes the maximized mode.
 	window->set_position(p_rect.position);
 	window->set_size(p_rect.size);
 

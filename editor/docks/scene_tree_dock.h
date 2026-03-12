@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_tree_dock.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "editor/scene/scene_tree_editor.h"
@@ -158,7 +164,7 @@ class SceneTreeDock : public VBoxContainer {
 	EditorFileDialog *new_scene_from_dialog = nullptr;
 
 	enum FilterMenuItems {
-		FILTER_BY_TYPE = 64, // Used in the same menus as the Tool enum.
+		FILTER_BY_TYPE = 64, ///< Used in the same menus as the Tool enum.
 		FILTER_BY_GROUP,
 	};
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_shader_container_metal.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #import "sha256_digest.h"
@@ -134,14 +140,14 @@ public:
 		uint32_t msl_version = UINT32_MAX;
 		/*! @brief The minimum supported OS version for shaders baked to a `.metallib`.
 		 *
-		 * NOTE: This property is only valid when shaders are baked to a .metalllib
+		 * @note This property is only valid when shaders are baked to a .metalllib
 		 *
 		 * Format is major * 10000 + minor * 100 + patch.
 		 */
 		MinOsVersion os_min_version;
 		uint32_t flags = NONE;
 
-		/// @brief Returns `true` if the shader is compiled with multi-view support.
+		/// @return `true` if the shader is compiled with multi-view support.
 		bool needs_view_mask_buffer() const {
 			return flags & NEEDS_VIEW_MASK_BUFFER;
 		}
@@ -154,7 +160,7 @@ public:
 			}
 		}
 
-		/// @brief Returns `true` if the shader was compiled with argument buffer support.
+		/// @return `true` if the shader was compiled with argument buffer support.
 		bool uses_argument_buffers() const {
 			return flags & USES_ARGUMENT_BUFFERS;
 		}
@@ -180,11 +186,11 @@ public:
 
 	struct BindingInfoData {
 		uint32_t shader_stage = UINT32_MAX; ///< The shader stage this binding is used in, or UINT32_MAX if not used.
-		uint32_t data_type = 0; // MTLDataTypeNone
+		uint32_t data_type = 0; ///< MTLDataTypeNone
 		uint32_t index = 0;
-		uint32_t access = 0; // MTLBindingAccessReadOnly
-		uint32_t usage = 0; // MTLResourceUsage (none)
-		uint32_t texture_type = 2; // MTLTextureType2D
+		uint32_t access = 0; ///< MTLBindingAccessReadOnly
+		uint32_t usage = 0; ///< MTLResourceUsage (none)
+		uint32_t texture_type = 2; ///< MTLTextureType2D
 		uint32_t image_format = 0;
 		uint32_t array_length = 0;
 		uint32_t is_multisampled = 0;
@@ -238,8 +244,8 @@ public:
 		uint32_t used_stages = 0;
 	};
 
-	HeaderData mtl_reflection_data; // compliment to reflection_data
-	Vector<StageData> mtl_shaders; // compliment to shaders
+	HeaderData mtl_reflection_data; ///< Compliment to reflection_data
+	Vector<StageData> mtl_shaders; ///< Compliment to shaders
 
 private:
 	struct ToolchainProperties {
@@ -259,8 +265,8 @@ private:
 	bool export_mode = false;
 	MinOsVersion min_os_version;
 
-	Vector<UniformData> mtl_reflection_binding_set_uniforms_data; // compliment to reflection_binding_set_uniforms_data
-	Vector<SpecializationData> mtl_reflection_specialization_data; // compliment to reflection_specialization_data
+	Vector<UniformData> mtl_reflection_binding_set_uniforms_data; ///< Compliment to reflection_binding_set_uniforms_data
+	Vector<SpecializationData> mtl_reflection_specialization_data; ///< Compliment to reflection_specialization_data
 
 	Error compile_metal_source(const char *p_source, const StageData &p_stage_data, Vector<uint8_t> &r_binary_data);
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file uniform_set_cache_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/templates/local_vector.h"
@@ -53,7 +59,7 @@ class UniformSetCacheRD : public Object {
 	PagedAllocator<Cache> cache_allocator;
 
 	enum {
-		HASH_TABLE_SIZE = 16381 // Prime
+		HASH_TABLE_SIZE = 16381 ///< Prime
 	};
 
 	Cache *hash_table[HASH_TABLE_SIZE] = {};

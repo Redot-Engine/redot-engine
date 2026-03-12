@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_effect_hard_limiter.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_effect_hard_limiter.h"
 
 #include "servers/audio_server.h"

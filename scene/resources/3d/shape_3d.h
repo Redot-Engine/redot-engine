@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shape_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -47,7 +53,7 @@ class Shape3D : public Resource {
 
 	Ref<ArrayMesh> debug_mesh_cache;
 
-	// Not wrapped in `#ifdef DEBUG_ENABLED` as it is used for rendering.
+	/// Not wrapped in `#ifdef DEBUG_ENABLED` as it is used for rendering.
 	Color debug_color = Color(0.0, 0.0, 0.0, 0.0);
 	bool debug_fill = true;
 #ifdef DEBUG_ENABLED
@@ -68,7 +74,7 @@ public:
 	Ref<ArrayMesh> get_debug_mesh();
 	virtual Vector<Vector3> get_debug_mesh_lines() const = 0; // { return Vector<Vector3>(); }
 	virtual Ref<ArrayMesh> get_debug_arraymesh_faces(const Color &p_modulate) const = 0;
-	/// Returns the radius of a sphere that fully enclose this shape
+	/// @return The radius of a sphere that fully enclose this shape
 	virtual real_t get_enclosing_radius() const = 0;
 
 	void add_vertices_to_array(Vector<Vector3> &array, const Transform3D &p_xform);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_body_activation_listener_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "Jolt/Jolt.h"
@@ -39,6 +45,7 @@
 class JoltBodyActivationListener3D final
 		: public JPH::BodyActivationListener {
 public:
+	/// This method will be called on multiple threads during the simulation step.
 	virtual void OnBodyActivated(const JPH::BodyID &p_body_id, JPH::uint64 p_body_user_data) override;
 	virtual void OnBodyDeactivated(const JPH::BodyID &p_body_id, JPH::uint64 p_body_user_data) override {}
 };

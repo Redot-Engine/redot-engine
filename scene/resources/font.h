@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file font.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/resource.h"
@@ -82,18 +88,22 @@ class Font : public Resource {
 		}
 	};
 
-	// Shaped string cache.
+	// @name/ Shaped String Cache
+	// @{
 	mutable LRUCache<ShapedTextKey, Ref<TextLine>, ShapedTextKeyHasher> cache;
 	mutable LRUCache<ShapedTextKey, Ref<TextParagraph>, ShapedTextKeyHasher> cache_wrap;
-
+	/// @}
 protected:
-	// Output.
+	/// @name Output
+	/// @{
 	mutable TypedArray<RID> rids;
 	mutable bool dirty_rids = true;
-
-	// Fallbacks.
+	/// @}
+	/// @name Fallbacks
+	/// @{
 	static constexpr int MAX_FALLBACK_DEPTH = 64;
 	TypedArray<Font> fallbacks;
+	/// @}
 
 	static void _bind_methods();
 
@@ -120,16 +130,19 @@ public:
 
 	static constexpr int DEFAULT_FONT_SIZE = 16;
 
-	// Fallbacks.
+	/// @name Fallbacks
+	/// @{
 	virtual void set_fallbacks(const TypedArray<Font> &p_fallbacks);
 	virtual TypedArray<Font> get_fallbacks() const;
-
-	// Output.
+	/// @}
+	/// @name Output
+	/// @{
 	virtual RID find_variation(const Dictionary &p_variation_coordinates, int p_face_index = 0, float p_strength = 0.0, Transform2D p_transform = Transform2D(), int p_spacing_top = 0, int p_spacing_bottom = 0, int p_spacing_space = 0, int p_spacing_glyph = 0, float p_baseline_offset = 0.0) const { return RID(); }
 	virtual RID _get_rid() const { return RID(); }
 	virtual TypedArray<RID> get_rids() const;
-
-	// Font metrics.
+	/// @}
+	/// @name Font Metrics
+	/// @{
 	virtual real_t get_height(int p_font_size) const;
 	virtual real_t get_ascent(int p_font_size) const;
 	virtual real_t get_descent(int p_font_size) const;
@@ -145,8 +158,9 @@ public:
 
 	virtual int get_spacing(TextServer::SpacingType p_spacing) const { return 0; }
 	virtual Dictionary get_opentype_features() const;
-
-	// Drawing string.
+	/// @}
+	/// @name Drawing String
+	/// @{
 	virtual void set_cache_capacity(int p_single_line, int p_multi_line);
 
 	virtual Size2 get_string_size(const String &p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA | TextServer::JUSTIFICATION_WORD_BOUND, TextServer::Direction p_direction = TextServer::DIRECTION_AUTO, TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
@@ -157,13 +171,15 @@ public:
 
 	virtual void draw_string_outline(RID p_canvas_item, const Point2 &p_pos, const String &p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1, const Color &p_modulate = Color(1.0, 1.0, 1.0), BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA | TextServer::JUSTIFICATION_WORD_BOUND, TextServer::Direction p_direction = TextServer::DIRECTION_AUTO, TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL, float p_oversampling = 0.0) const;
 	virtual void draw_multiline_string_outline(RID p_canvas_item, const Point2 &p_pos, const String &p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1, int p_size = 1, const Color &p_modulate = Color(1.0, 1.0, 1.0), BitField<TextServer::LineBreakFlag> p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND, BitField<TextServer::JustificationFlag> p_jst_flags = TextServer::JUSTIFICATION_KASHIDA | TextServer::JUSTIFICATION_WORD_BOUND, TextServer::Direction p_direction = TextServer::DIRECTION_AUTO, TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL, float p_oversampling = 0.0) const;
-
-	// Drawing char.
+	/// @}
+	/// @name Drawing char
+	/// @{
 	virtual Size2 get_char_size(char32_t p_char, int p_font_size = DEFAULT_FONT_SIZE) const;
 	virtual real_t draw_char(RID p_canvas_item, const Point2 &p_pos, char32_t p_char, int p_font_size = DEFAULT_FONT_SIZE, const Color &p_modulate = Color(1.0, 1.0, 1.0), float p_oversampling = 0.0) const;
 	virtual real_t draw_char_outline(RID p_canvas_item, const Point2 &p_pos, char32_t p_char, int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1, const Color &p_modulate = Color(1.0, 1.0, 1.0), float p_oversampling = 0.0) const;
-
-	// Helper functions.
+	/// @}
+	/// @name Helper Functions
+	/// @{
 	virtual bool has_char(char32_t p_char) const;
 	virtual String get_supported_chars() const;
 
@@ -173,6 +189,7 @@ public:
 	virtual Dictionary get_supported_feature_list() const;
 	virtual Dictionary get_supported_variation_list() const;
 	virtual int64_t get_face_count() const;
+	/// @}
 
 	Font();
 	~Font();
@@ -186,10 +203,12 @@ class FontFile : public Font {
 	GDCLASS(FontFile, Font);
 	RES_BASE_EXTENSION("fontdata");
 
-	// Font source data.
+	/// @name Font Source Data
+	/// @{
 	const uint8_t *data_ptr = nullptr;
 	size_t data_size = 0;
 	mutable PackedByteArray data;
+	/// @}
 
 	TextServer::FontAntialiasing antialiasing = TextServer::FONT_ANTIALIASING_GRAY;
 	bool mipmaps = false;
@@ -240,12 +259,14 @@ public:
 	Error load_bitmap_font(const String &p_path);
 	Error load_dynamic_font(const String &p_path);
 
-	// Font source data.
+	/// @name Font Source Data
+	/// @{
 	virtual void set_data_ptr(const uint8_t *p_data, size_t p_size);
 	virtual void set_data(const PackedByteArray &p_data);
 	virtual PackedByteArray get_data() const;
-
-	// Common properties.
+	/// @}
+	/// @name Common Properties
+	/// @{
 	virtual void set_font_name(const String &p_name);
 	virtual void set_font_style_name(const String &p_name);
 	virtual void set_font_style(BitField<TextServer::FontStyle> p_style);
@@ -296,8 +317,9 @@ public:
 
 	virtual void set_oversampling(real_t p_oversampling);
 	virtual real_t get_oversampling() const;
-
-	// Cache.
+	/// @}
+	/// @name Cache
+	/// @{
 	virtual RID find_variation(const Dictionary &p_variation_coordinates, int p_face_index = 0, float p_strength = 0.0, Transform2D p_transform = Transform2D(), int p_spacing_top = 0, int p_spacing_bottom = 0, int p_spacing_space = 0, int p_spacing_glyph = 0, float p_baseline_offset = 0.0) const override;
 	virtual RID _get_rid() const override;
 
@@ -341,6 +363,7 @@ public:
 
 	virtual void set_cache_scale(int p_cache_index, int p_size, real_t p_scale); // Rendering scale for bitmap fonts (e.g. emoji fonts).
 	virtual real_t get_cache_scale(int p_cache_index, int p_size) const;
+	/// @}
 
 	virtual int get_texture_count(int p_cache_index, const Vector2i &p_size) const;
 	virtual void clear_textures(int p_cache_index, const Vector2i &p_size);
@@ -381,7 +404,8 @@ public:
 	virtual void render_range(int p_cache_index, const Vector2i &p_size, char32_t p_start, char32_t p_end);
 	virtual void render_glyph(int p_cache_index, const Vector2i &p_size, int32_t p_index);
 
-	// Language/script support override.
+	/// @name Language/Script Support Override
+	/// @{
 	virtual void set_language_support_override(const String &p_language, bool p_supported);
 	virtual bool get_language_support_override(const String &p_language) const;
 	virtual void remove_language_support_override(const String &p_language);
@@ -394,10 +418,12 @@ public:
 
 	virtual void set_opentype_feature_overrides(const Dictionary &p_overrides);
 	virtual Dictionary get_opentype_feature_overrides() const;
-
-	// Base font properties.
+	/// @}
+	/// @name Base Font Properties
+	/// @{
 	virtual int32_t get_glyph_index(int p_size, char32_t p_char, char32_t p_variation_selector = 0x0000) const;
 	virtual char32_t get_char_from_glyph_index(int p_size, int32_t p_glyph_index) const;
+	/// @}
 
 	FontFile();
 	~FontFile();

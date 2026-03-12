@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_mesh_source_geometry_data_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "navigation_mesh_source_geometry_data_3d.h"
 
 void NavigationMeshSourceGeometryData3D::set_vertices(const Vector<float> &p_vertices) {

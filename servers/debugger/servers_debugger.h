@@ -30,13 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file servers_debugger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "servers/rendering_server.h"
 
 class ServersDebugger {
 public:
-	// Memory usage
+	/// @name Memory Usage
+	/// @{
 	struct ResourceInfo {
 		String path;
 		String format;
@@ -52,8 +59,9 @@ public:
 		Array serialize();
 		bool deserialize(const Array &p_arr);
 	};
-
-	// Script Profiler
+	/// @}
+	/// @name Script Profiler
+	/// @{
 	struct ScriptFunctionSignature {
 		StringName name;
 		int id = -1;
@@ -70,8 +78,9 @@ public:
 		double total_time = 0;
 		double internal_time = 0;
 	};
-
-	// Servers profiler
+	/// @}
+	/// @name Servers Profiler
+	/// @{
 	struct ServerFunctionInfo {
 		StringName name;
 		double time = 0;
@@ -95,8 +104,9 @@ public:
 		Array serialize();
 		bool deserialize(const Array &p_arr);
 	};
-
-	// Visual Profiler
+	/// @}
+	/// @name Visual Profiler
+	/// @{
 	struct VisualProfilerFrame {
 		uint64_t frame_number = 0;
 		Vector<RS::FrameProfileArea> areas;
@@ -104,6 +114,7 @@ public:
 		Array serialize();
 		bool deserialize(const Array &p_arr);
 	};
+	/// @}
 
 private:
 	class ScriptsProfiler;
@@ -119,6 +130,7 @@ private:
 	static Error _capture(void *p_user, const String &p_cmd, const Array &p_data, bool &r_captured);
 
 	void _send_resource_usage();
+	/// Done on a best-effort basis.
 	String _get_resource_type_from_path(const String &p_path);
 
 	ServersDebugger();

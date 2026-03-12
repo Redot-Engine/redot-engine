@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file semaphore.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/typedefs.h"
@@ -55,7 +61,7 @@ class Semaphore {
 private:
 	mutable THREADING_NAMESPACE::mutex mutex;
 	mutable THREADING_NAMESPACE::condition_variable condition;
-	mutable uint32_t count = 0; // Initialized as locked.
+	mutable uint32_t count = 0; ///< Initialized as locked.
 #ifdef DEBUG_ENABLED
 	mutable uint32_t awaiters = 0;
 #endif

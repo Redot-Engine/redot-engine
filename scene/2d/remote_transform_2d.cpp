@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file remote_transform_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "remote_transform_2d.h"
 
 void RemoteTransform2D::_update_cache() {
@@ -66,7 +72,7 @@ void RemoteTransform2D::_update_remote() {
 		return; // The transform data of the RemoteTransform2D is not used at all.
 	}
 
-	//todo make faster
+	/// @todo <ake faster
 	if (use_global_coordinates) {
 		if (update_remote_position && update_remote_rotation && update_remote_scale) {
 			n->set_global_transform(get_global_transform());

@@ -30,42 +30,46 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file tuple.h
+ *
+ * @brief Simple recursive Tuple type that has no runtime overhead.
+ *
+ * @details The compile-time recursion works as follows:
+ * Assume the following: Tuple<int, float> my_tuple(42, 3.14f);
+ * This expands to a class hierarchy that inherits from the previous step.
+ * So in this case this leads to:
+ *  - struct Tuple<int> : Tuple<float>   <--- This contains the int value.
+ *  - struct Tuple<float>                <--- This contains the float value.
+ * where each of the classes has a single field of the type for that step in the
+ * recursion. So: float value;  int value; etc.
+ *
+ * This works by splitting up the parameter pack for each step in the recursion minus the first.
+ * so the first step creates the "T value" from the first template parameter.
+ * any further template arguments end up in "Rest", which we then use to instantiate a new
+ * tuple, but now minus the first argument. To write this all out:
+ *
+ * Tuple<int, float>
+ * step 1: Tuple T = int, Rest = float. Results in a Tuple<int> : Tuple<float>
+ * step 2: Tuple T = float, no Rest. Results in a Tuple<float>
+ *
+ * tuple_get<I> works through a similar recursion, using the inheritance chain to walk to the right node.
+ * In order to tuple_get<1>(my_tuple), from the example tuple above:
+ *
+ * 1. We want tuple_get<1> to return the float, which is one level "up" from Tuple<int> : Tuple<float>,
+ *    (the real type of the Tuple "root").
+ * 2. Since index 1 > 0, it casts the tuple to its parent type (Tuple<float>). This works because
+ *    we cast to Tuple<Rest...> which in this case is just float.
+ * 3. Now we're looking for index 0 in Tuple<float>, which directly returns its value field. Note
+ *    how get<0> is a template specialization.
+ *
+ * At compile time, this gets fully resolved. The compiler sees get<1>(my_tuple) and:
+ * 1. Creates TupleGet<1, Tuple<int, float>>::tuple_get which contains the cast to Tuple<float>.
+ * 2. Creates TupleGet<0, Tuple<float>>::tuple_get which directly returns the value.
+ * 3. The compiler will then simply optimize all of this nonsense away and return the float directly.
+ */
 
-// Simple recursive Tuple type that has no runtime overhead.
-//
-// The compile-time recursion works as follows:
-// Assume the following: Tuple<int, float> my_tuple(42, 3.14f);
-// This expands to a class hierarchy that inherits from the previous step.
-// So in this case this leads to:
-//  - struct Tuple<int> : Tuple<float>   <--- This contains the int value.
-//  - struct Tuple<float>                <--- This contains the float value.
-// where each of the classes has a single field of the type for that step in the
-// recursion. So: float value;  int value; etc.
-//
-// This works by splitting up the parameter pack for each step in the recursion minus the first.
-// so the first step creates the "T value" from the first template parameter.
-// any further template arguments end up in "Rest", which we then use to instantiate a new
-// tuple, but now minus the first argument. To write this all out:
-//
-// Tuple<int, float>
-// step 1: Tuple T = int, Rest = float. Results in a Tuple<int> : Tuple<float>
-// step 2: Tuple T = float, no Rest. Results in a Tuple<float>
-//
-// tuple_get<I> works through a similar recursion, using the inheritance chain to walk to the right node.
-// In order to tuple_get<1>(my_tuple), from the example tuple above:
-//
-// 1. We want tuple_get<1> to return the float, which is one level "up" from Tuple<int> : Tuple<float>,
-//    (the real type of the Tuple "root").
-// 2. Since index 1 > 0, it casts the tuple to its parent type (Tuple<float>). This works because
-//    we cast to Tuple<Rest...> which in this case is just float.
-// 3. Now we're looking for index 0 in Tuple<float>, which directly returns its value field. Note
-//    how get<0> is a template specialization.
-//
-// At compile time, this gets fully resolved. The compiler sees get<1>(my_tuple) and:
-// 1. Creates TupleGet<1, Tuple<int, float>>::tuple_get which contains the cast to Tuple<float>.
-// 2. Creates TupleGet<0, Tuple<float>>::tuple_get which directly returns the value.
-// 3. The compiler will then simply optimize all of this nonsense away and return the float directly.
+#pragma once
 
 #include "core/typedefs.h"
 
@@ -87,7 +91,7 @@ struct Tuple<T, Rest...> : Tuple<Rest...> {
 			value(std::forward<F>(f)) {}
 };
 
-// Tuple is zero-constructible if and only if all constrained types are zero-constructible.
+/// Tuple is zero-constructible if and only if all constrained types are zero-constructible.
 template <typename... Types>
 struct is_zero_constructible<Tuple<Types...>> : std::conjunction<is_zero_constructible<Types>...> {};
 
@@ -101,11 +105,10 @@ struct TupleGet<0, Tuple<First, Rest...>> {
 	}
 };
 
-// Rationale for using auto here is that the alternative is writing a
-// helper struct to create an otherwise useless type. we would have to write
-// a second recursive template chain like: TupleGetType<I, Tuple<First, Rest...>>::type
-// just to recover the type in the most baroque way possible.
-
+/// Rationale for using auto here is that the alternative is writing a
+/// helper struct to create an otherwise useless type. we would have to write
+/// a second recursive template chain like: TupleGetType<I, Tuple<First, Rest...>>::type
+/// just to recover the type in the most baroque way possible.
 template <size_t I, typename First, typename... Rest>
 struct TupleGet<I, Tuple<First, Rest...>> {
 	_FORCE_INLINE_ static auto &tuple_get(Tuple<First, Rest...> &t) {

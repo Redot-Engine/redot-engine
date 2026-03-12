@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packet_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "core/io/stream_peer.h"
@@ -63,7 +69,8 @@ public:
 
 	virtual int get_max_packet_size() const = 0;
 
-	/* helpers / binders */
+	/// @name helpers / binders
+	/// @{
 
 	virtual Error get_packet_buffer(Vector<uint8_t> &r_buffer);
 	virtual Error put_packet_buffer(const Vector<uint8_t> &p_buffer);
@@ -73,6 +80,7 @@ public:
 
 	void set_encode_buffer_max_size(int p_max_size);
 	int get_encode_buffer_max_size() const;
+	/// @}
 
 	PacketPeer() {}
 	~PacketPeer() {}
@@ -98,7 +106,7 @@ public:
 class PacketPeerStream : public PacketPeer {
 	GDCLASS(PacketPeerStream, PacketPeer);
 
-	//the way the buffers work sucks, will change later
+	/// @todo The way the buffers work sucks, will change later
 
 	mutable Ref<StreamPeer> peer;
 	mutable RingBuffer<uint8_t> ring_buffer;

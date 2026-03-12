@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_map_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #pragma once
 
 #include "2d/nav_map_iteration_2d.h"
@@ -54,10 +60,10 @@ class NavMap2D : public NavRid2D {
 	/// each cell has the following cell_size.
 	real_t cell_size = NavigationDefaults2D::NAV_MESH_CELL_SIZE;
 
-	// For the inter-region merging to work, internal rasterization is performed.
+	/// For the inter-region merging to work, internal rasterization is performed.
 	Vector2 merge_rasterizer_cell_size = Vector2(cell_size, cell_size);
 
-	// This value is used to control sensitivity of internal rasterizer.
+	/// This value is used to control sensitivity of internal rasterizer.
 	float merge_rasterizer_cell_scale = 0.1;
 
 	bool use_edge_connections = true;
@@ -100,7 +106,7 @@ class NavMap2D : public NavRid2D {
 	bool avoidance_use_multiple_threads = true;
 	bool avoidance_use_high_priority_threads = true;
 
-	// Performance Monitor
+	/// Performance Monitor
 	Nav2D::PerformanceData performance_data;
 
 	struct {
@@ -223,7 +229,8 @@ public:
 	void step(double p_delta_time);
 	void dispatch_callbacks();
 
-	// Performance Monitor
+	/// @name Performance Monitor
+	/// @{
 	int get_pm_region_count() const { return performance_data.pm_region_count; }
 	int get_pm_agent_count() const { return performance_data.pm_agent_count; }
 	int get_pm_link_count() const { return performance_data.pm_link_count; }
@@ -233,6 +240,7 @@ public:
 	int get_pm_edge_connection_count() const { return performance_data.pm_edge_connection_count; }
 	int get_pm_edge_free_count() const { return performance_data.pm_edge_free_count; }
 	int get_pm_obstacle_count() const { return performance_data.pm_obstacle_count; }
+	/// @}
 
 	int get_region_connections_count(NavRegion2D *p_region) const;
 	Vector2 get_region_connection_pathway_start(NavRegion2D *p_region, int p_connection_id) const;
