@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file remote_debugger.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "core/debugger/debugger_marshalls.h"
 #include "core/debugger/engine_debugger.h"

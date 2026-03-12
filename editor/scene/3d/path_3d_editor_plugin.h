@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file path_3d_editor_plugin.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"

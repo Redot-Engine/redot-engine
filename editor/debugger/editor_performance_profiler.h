@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file editor_performance_profiler.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "core/templates/hash_map.h"
 #include "main/performance.h"

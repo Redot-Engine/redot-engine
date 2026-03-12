@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file animation_player.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "animation_mixer.h"
 #include "scene/resources/animation.h"

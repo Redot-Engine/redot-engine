@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file text_server_adv.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 /*************************************************************************/
 /* ICU/HarfBuzz/Graphite backed Text Server implementation with BiDi,    */

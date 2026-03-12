@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file rendering_device_driver_metal.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #import "metal_objects.h"
 #import "rendering_shader_container_metal.h"

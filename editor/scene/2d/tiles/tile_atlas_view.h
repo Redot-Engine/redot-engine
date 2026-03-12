@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file tile_atlas_view.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "editor/gui/editor_zoom_widget.h"
 #include "scene/gui/box_container.h"
@@ -146,8 +146,8 @@ public:
 
 	void set_padding(Side p_side, int p_padding);
 	/// @}
-	//@name Left side
-	// @{
+	/// @name Left side
+	/// @{
 	void set_texture_grid_visible(bool p_visible) { base_tiles_texture_grid->set_visible(p_visible); }
 	void set_tile_shape_grid_visible(bool p_visible) { base_tiles_shape_grid->set_visible(p_visible); }
 

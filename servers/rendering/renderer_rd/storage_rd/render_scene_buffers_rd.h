@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file render_scene_buffers_rd.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #ifdef METAL_ENABLED
 #include "../effects/metal_fx.h"

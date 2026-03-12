@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file bvh_tree.h
  *
@@ -41,8 +43,6 @@
  * to a simpler tree.
  * @note MAX_CHILDREN should be fixed at 2 for now.
  */
-
-#pragma once
 
 #include "core/math/aabb.h"
 #include "core/math/bvh_abb.h"

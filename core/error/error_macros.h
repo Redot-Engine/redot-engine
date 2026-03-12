@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file error_macros.h
  *
@@ -50,8 +52,6 @@
  *
  * These macros should be used instead of `ERR_FAIL_COND` for bounds checking.
  */
-
-#pragma once
 
 #include "core/typedefs.h"
 

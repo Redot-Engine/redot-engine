@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file metal_device_properties.h
  *
@@ -50,8 +52,6 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-
-#pragma once
 
 #import "servers/rendering/rendering_device.h"
 

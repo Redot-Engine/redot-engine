@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file webxr_interface_js.h
  *
  * @brief The WebXR interface is a VR/AR interface that can be used on the web.
  */
-
-#pragma once
 
 #ifdef WEB_ENABLED
 

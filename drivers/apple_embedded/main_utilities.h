@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file main_utilities.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 void change_to_launch_dir(char **p_args);
 

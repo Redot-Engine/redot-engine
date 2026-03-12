@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file openxr_future_extension.h
  *
@@ -46,8 +48,6 @@
  *
  *	We will be using Godot Callables to drive responses on futures.
  */
-
-#pragma once
 
 #include "../util.h"
 #include "core/object/ref_counted.h"

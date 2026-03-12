@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file pixel_formats.h
  *
@@ -50,8 +52,6 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-
-#pragma once
 
 #include "core/typedefs.h"
 

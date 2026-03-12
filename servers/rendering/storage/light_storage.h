@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file light_storage.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "render_scene_buffers.h"
 #include "servers/rendering_server.h"
@@ -46,7 +46,7 @@ public:
 	virtual ~RendererLightStorage() {}
 
 	/// @name Light API
-	/// {@
+	/// @{
 
 	virtual RID directional_light_allocate() = 0;
 	virtual void directional_light_initialize(RID p_rid) = 0;

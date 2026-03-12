@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file openxr_visibility_mask_extension.h
  *
@@ -43,8 +45,6 @@
  *
  * https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_visibility_mask
  */
-
-#pragma once
 
 #include "../util.h"
 

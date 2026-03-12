@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file texture_rd.h
  *
@@ -39,8 +41,6 @@
  * Once the renderer has been moved into a module, these classes should
  * be moved as well.
  */
-
-#pragma once
 
 #include "scene/resources/texture.h"
 

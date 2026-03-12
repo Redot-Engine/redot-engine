@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file godotsharp_defs.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #define BINDINGS_NAMESPACE "Godot"
 #define BINDINGS_NAMESPACE_COLLECTIONS BINDINGS_NAMESPACE ".Collections"

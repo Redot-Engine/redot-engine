@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file dir_access_unix.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #if defined(UNIX_ENABLED)
 

@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file fastnoise_lite.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "noise.h"
 
@@ -156,7 +156,7 @@ public:
 	void set_offset(Vector3 p_offset);
 	Vector3 get_offset() const;
 	/// @}
-	///@name Fractal-specific
+	/// @name Fractal-specific
 	/// @{
 	void set_fractal_type(FractalType p_type);
 	FractalType get_fractal_type() const;
@@ -177,7 +177,7 @@ public:
 	real_t get_fractal_ping_pong_strength() const;
 	/// @}
 	/// @name Cellular-specific
-	/// @}
+	/// @{
 	void set_cellular_distance_function(CellularDistanceFunction p_func);
 	CellularDistanceFunction get_cellular_distance_function() const;
 

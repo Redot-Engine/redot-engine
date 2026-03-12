@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file triangulate.h
  *
  * https://www.flipcode.com/archives/Efficient_Polygon_Triangulation.shtml
  */
-
-#pragma once
 
 #include "core/math/vector2.h"
 #include "core/templates/vector.h"

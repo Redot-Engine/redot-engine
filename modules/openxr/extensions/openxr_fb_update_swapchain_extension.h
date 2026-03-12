@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file openxr_fb_update_swapchain_extension.h
  *
@@ -38,8 +40,6 @@
  * Other Android based devices are implementing this as well, see:
  * https://github.khronos.org/OpenXR-Inventory/extension_support.html#XR_FB_swapchain_update_state
  */
-
-#pragma once
 
 #include "../openxr_api.h"
 #include "../util.h"

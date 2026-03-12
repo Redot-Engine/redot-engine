@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file register_server_types.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 void register_server_types();
 void unregister_server_types();

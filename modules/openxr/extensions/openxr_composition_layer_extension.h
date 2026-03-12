@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file openxr_composition_layer_extension.h
  *
  * @brief This extension provides access to composition layers for displaying 2D content through the XR compositor.
  */
-
-#pragma once
 
 #include "openxr_extension_wrapper.h"
 

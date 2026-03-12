@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file action_map_editor.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "scene/gui/control.h"
 
@@ -76,8 +76,8 @@ private:
 	Vector<ActionInfo> actions_cache;
 	Tree *action_tree = nullptr;
 
-	// @name/ Storing which action/event is currently being edited in the InputEventConfigurationDialog.
-	// @{
+	/// @name/ Storing which action/event is currently being edited in the InputEventConfigurationDialog.
+	/// @{
 	Dictionary current_action;
 	String current_action_name;
 	int current_action_event_index = -1;

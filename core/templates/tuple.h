@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file tuple.h
  *
@@ -68,8 +70,6 @@
  * 2. Creates TupleGet<0, Tuple<float>>::tuple_get which directly returns the value.
  * 3. The compiler will then simply optimize all of this nonsense away and return the float directly.
  */
-
-#pragma once
 
 #include "core/typedefs.h"
 

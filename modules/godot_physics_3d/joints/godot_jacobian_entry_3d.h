@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file godot_jacobian_entry_3d.h
  *
@@ -48,8 +50,6 @@
  * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
  */
-
-#pragma once
 
 #include "core/math/transform_3d.h"
 

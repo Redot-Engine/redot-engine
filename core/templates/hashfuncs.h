@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file hashfuncs.h
  *
  * @brief Hashing functions
  */
-
-#pragma once
 
 #include "core/math/aabb.h"
 #include "core/math/basis.h"

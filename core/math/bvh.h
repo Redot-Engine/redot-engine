@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file bvh.h
  *
@@ -52,8 +54,6 @@
  * TYPE_BODY
  * and pairable_mask is either 0 if static, or set to all if non static
  */
-
-#pragma once
 
 #include "bvh_tree.h"
 

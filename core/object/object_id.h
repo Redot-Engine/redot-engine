@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file object_id.h
  *
@@ -38,8 +40,6 @@
  * Also, need to be explicitly only castable to 64 bits integer types
  * to avoid bugs due to loss of precision
  */
-
-#pragma once
 
 #include "core/typedefs.h"
 

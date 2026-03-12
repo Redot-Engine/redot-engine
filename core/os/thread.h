@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file thread.h
  *
@@ -37,8 +39,6 @@
  * to use a custom Thread implementation defined in `platform/[your_platform]/platform_thread.h`.
  * Overriding the Thread implementation is required in some proprietary platforms.
  */
-
-#pragma once
 
 #include "platform_config.h"
 

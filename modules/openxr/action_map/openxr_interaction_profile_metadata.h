@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file openxr_interaction_profile_metadata.h
  *
@@ -52,8 +54,6 @@
  * are supported but otherwise action types should match between action and
  * input/output paths.
  */
-
-#pragma once
 
 #include "openxr_action.h"
 

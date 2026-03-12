@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file xr_interface.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "core/math/projection.h"
 #include "core/os/thread_safe.h"
@@ -132,6 +132,7 @@ public:
 	virtual PackedVector3Array get_play_area() const; ///< if available, returns an array of vectors denoting the play area the player can move around in
 	/// @}
 	/// specific to AR
+	/// @{
 	virtual bool get_anchor_detection_is_enabled() const;
 	virtual void set_anchor_detection_is_enabled(bool p_enable);
 	virtual int get_camera_feed_id();

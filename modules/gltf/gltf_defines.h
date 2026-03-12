@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file gltf_defines.h
  *
  * @brief This file should only be included by other headers.
  */
-
-#pragma once
 
 /// @name GLTF Classes
 /// @{

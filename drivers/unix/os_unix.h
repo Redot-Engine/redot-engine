@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file os_unix.h
  *
  * @brief UNIX only handles the core functions. Inheriting platforms under unix (eg. X11) should handle the rest
  */
-
-#pragma once
 
 #ifdef UNIX_ENABLED
 

@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file spring_bone_simulator_3d.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "scene/3d/skeleton_modifier_3d.h"
 
@@ -136,7 +136,7 @@ public:
 		int end_bone = -1;
 
 		/// To make virtual end joint.
-		/// @[
+		/// @{}
 		bool extend_end_bone = false;
 		BoneDirection end_bone_direction = BONE_DIRECTION_FROM_PARENT;
 		float end_bone_length = 0.0;
@@ -147,8 +147,8 @@ public:
 		String center_bone_name;
 		int center_bone = -1;
 
-		// @name/ Cache into joints
-		// @{
+		/// @name Cache into joints
+		/// @{
 		bool individual_config = false;
 		float radius = 0.02;
 		Ref<Curve> radius_damping_curve;

@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file text_server_fb.h
  *
  * @brief Fallback Text Server provides simplified TS functionality, without BiDi, shaping and advanced font features support.
  */
-
-#pragma once
 
 #ifdef GDEXTENSION
 // Headers for building as GDExtension plug-in.

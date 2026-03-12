@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file alt_codes.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 /// OEM encodings for Alt codes input.
 inline constexpr char32_t alt_code_oem437[256] = {

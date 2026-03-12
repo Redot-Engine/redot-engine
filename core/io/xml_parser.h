@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file xml_parser.h
  *
  * @brief Based on irrXML (see their zlib license). Added mainly for compatibility with their Collada loader.
  */
-
-#pragma once
 
 #include "core/object/ref_counted.h"
 #include "core/string/ustring.h"

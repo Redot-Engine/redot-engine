@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file locales.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 /**
  * Windows has some weird locale identifiers which do not honor the ISO 639-1

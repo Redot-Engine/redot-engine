@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file midi_driver_winmidi.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #ifdef WINMIDI_ENABLED
 

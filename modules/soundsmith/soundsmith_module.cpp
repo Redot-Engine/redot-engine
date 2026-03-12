@@ -36,7 +36,7 @@
  * [Add any documentation that applies to the entire file here!]
  */
 
-#include "signalsmith_module.h"
+#include "soundsmith_module.h"
 
 #include "core/io/file_access.h"
 #include "core/os/memory.h"

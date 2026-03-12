@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file godot_cone_twist_joint_3d.h
  *
@@ -50,8 +52,6 @@
  *
  * Written by: Marcus Hennix
  */
-
-#pragma once
 
 #include "../godot_joint_3d.h"
 #include "godot_jacobian_entry_3d.h"

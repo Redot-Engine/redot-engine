@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file version.h
  *
@@ -37,8 +39,6 @@
  * and then <major>.<minor>.<patch> for subsequent bugfix releases where <patch> != 0
  * That's arbitrary, but we find it pretty and it's the current policy.
  */
-
-#pragma once
 
 #include "core/version_generated.gen.h" // IWYU pragma: export
 

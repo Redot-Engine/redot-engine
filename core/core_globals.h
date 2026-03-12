@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file core_globals.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 /// Home for state needed from global functions
 /// that cannot be stored in Engine or OS due to e.g. circular includes

@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file safe_refcount.h
  *
@@ -43,8 +45,6 @@
  *   value and, as an important benefit, you can be sure the value is properly synchronized
  *   even with threads that are already running.
  */
-
-#pragma once
 
 #include "core/typedefs.h"
 

@@ -30,14 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file aabb.h
  *
  * @brief AABB (Axis Aligned Bounding Box)
  * @details This is implemented by a point (position) and the box size.
  */
-
-#pragma once
 
 #include "core/math/plane.h"
 #include "core/math/vector3.h"

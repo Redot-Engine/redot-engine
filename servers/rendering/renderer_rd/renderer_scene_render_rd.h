@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file renderer_scene_render_rd.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/effects/bokeh_dof.h"

@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file openxr_hand_interaction_extension.h
  *
@@ -50,8 +52,6 @@
  * See: https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_hand_interaction
  * for more information.
  */
-
-#pragma once
 
 #include "openxr_extension_wrapper.h"
 

@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file cluster_builder_rd.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "servers/rendering/renderer_rd/shaders/cluster_debug.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/cluster_render.glsl.gen.h"

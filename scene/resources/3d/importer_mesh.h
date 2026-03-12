@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file importer_mesh.h
  *
@@ -37,8 +39,6 @@
  * so the data is not registered (hence, quality loss), importing happens faster and
  * its easier to modify before saving
  */
-
-#pragma once
 
 #include "core/io/resource.h"
 #include "scene/resources/mesh.h"

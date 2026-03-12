@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file spin_lock.h
  *
@@ -37,8 +39,6 @@
  * sizes match the assumed cache line. We can't use align attributes
  * because these objects may end up unaligned in semi-tightly packed arrays.
  */
-
-#pragma once
 
 #include "core/os/thread.h"
 #include "core/typedefs.h"

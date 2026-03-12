@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file godot_slider_joint_3d.h
  *
@@ -51,8 +53,6 @@
  * Added by Roman Ponomarev (rponom@gmail.com)
  * April 04, 2008
  */
-
-#pragma once
 
 #include "../godot_joint_3d.h"
 #include "godot_jacobian_entry_3d.h"

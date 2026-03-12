@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file nav_mesh_queries_3d.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "../nav_utils_3d.h"
 
@@ -107,7 +107,7 @@ public:
 		NavMap3D *map = nullptr;
 		PathQuerySlot *path_query_slot = nullptr;
 		/// @}
-		/// @name Path P{oints
+		/// @name Path Points
 		/// @{
 		LocalVector<Vector3> path_points;
 		LocalVector<int32_t> path_meta_point_types;

@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file openxr_fb_display_refresh_rate_extension.h
  *
@@ -38,8 +40,6 @@
  * While this is an FB extension it has been adopted by most runtimes and
  * will likely become core in the near future.
  */
-
-#pragma once
 
 #include "../openxr_api.h"
 #include "../util.h"

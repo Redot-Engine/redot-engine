@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file ustring.h
  *
  * @note _GODOT suffix added to header guard to avoid conflict with ICU header.
  */
-
-#pragma once
 
 #include "core/string/char_utils.h" // IWYU pragma: export
 #include "core/templates/cowdata.h"

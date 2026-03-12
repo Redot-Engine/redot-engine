@@ -30,14 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file paged_array.h
  *
  * @brief PagedArray is used mainly for filling a very large array from multiple threads efficiently and without causing major fragmentation
  * PageArrayPool manages central page allocation in a thread safe matter
  */
-
-#pragma once
 
 #include "core/os/memory.h"
 #include "core/os/spin_lock.h"

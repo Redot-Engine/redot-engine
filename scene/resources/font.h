@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file font.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "core/io/resource.h"
 #include "core/templates/lru.h"
@@ -88,8 +88,8 @@ class Font : public Resource {
 		}
 	};
 
-	// @name/ Shaped String Cache
-	// @{
+	/// @name Shaped String Cache
+	/// @{
 	mutable LRUCache<ShapedTextKey, Ref<TextLine>, ShapedTextKeyHasher> cache;
 	mutable LRUCache<ShapedTextKey, Ref<TextParagraph>, ShapedTextKeyHasher> cache_wrap;
 	/// @}

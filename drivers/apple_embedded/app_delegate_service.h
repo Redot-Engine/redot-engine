@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file app_delegate_service.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #import <UIKit/UIKit.h>
 

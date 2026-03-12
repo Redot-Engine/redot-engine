@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file rendering_server.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "core/io/image.h"
 #include "core/math/geometry_3d.h"
@@ -668,10 +668,8 @@ public:
 
 	virtual void light_projectors_set_filter(LightProjectorFilter p_filter) = 0;
 
-	/// @}
 	/// @name PROBE API
 	/// @{
-
 	virtual RID reflection_probe_create() = 0;
 
 	enum ReflectionProbeUpdateMode {
@@ -1619,7 +1617,7 @@ public:
 	virtual void canvas_texture_set_texture_repeat(RID p_canvas_texture, CanvasItemTextureRepeat p_repeat) = 0;
 
 	/// @}
-	/// @namme CANVAS ITEM
+	/// @name CANVAS ITEM
 	/// @{
 
 	virtual RID canvas_item_create() = 0;

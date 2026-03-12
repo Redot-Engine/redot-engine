@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file rendering_device_driver.h
  *
@@ -46,8 +48,6 @@
  * - If a driver needs some higher-level information (the kind of info RenderingDevice keeps), it shall store a copy of what it needs.
  *   There's no backwards communication from the driver to query data from RenderingDevice.
  */
-
-#pragma once
 
 #include "core/object/object.h"
 #include "core/variant/type_info.h"

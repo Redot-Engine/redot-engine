@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file thorvg_svg_in_ot.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #ifdef GDEXTENSION
 // Headers for building as GDExtension plug-in.

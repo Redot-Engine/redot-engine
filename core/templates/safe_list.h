@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file safe_list.h
  *
@@ -41,8 +43,6 @@
  *   instead the node will be deallocated at a later time when it is safe to do so.
  * - No blocking synchronization primitives will be used.
  */
-
-#pragma once
 
 #include "core/os/memory.h"
 #include "core/typedefs.h"

@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file plist.h
  *
  * Property list file format (application/x-plist) parser, property list ASN-1 serialization.
  */
-
-#pragma once
 
 #include "core/io/file_access.h"
 

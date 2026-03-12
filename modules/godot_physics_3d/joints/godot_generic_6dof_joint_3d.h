@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file godot_generic_6dof_joint_3d.h
  *
@@ -53,8 +55,6 @@
  * email: projectileman@yahoo.com
  * http://gimpact.sf.net
  */
-
-#pragma once
 
 #include "../godot_joint_3d.h"
 #include "godot_jacobian_entry_3d.h"

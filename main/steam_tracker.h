@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file steam_tracker.h
  *
@@ -41,8 +43,6 @@
  * Currently, SteamAPI is not used by the engine in any way, and is not
  * exposed to the scripting APIs.
  */
-
-#pragma once
 
 #if defined(STEAMAPI_ENABLED)
 

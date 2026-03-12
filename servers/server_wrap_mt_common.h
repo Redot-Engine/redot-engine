@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file server_wrap_mt_common.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #ifdef DEBUG_ENABLED
 #define MAIN_THREAD_SYNC_CHECK                                                                         \

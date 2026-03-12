@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file scene_tree_fti_tests.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include <stdint.h>
 

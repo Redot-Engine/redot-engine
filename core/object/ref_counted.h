@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file ref_counted.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "core/object/class_db.h"
 #include "core/templates/safe_refcount.h"
@@ -208,7 +208,7 @@ public:
 
 		if (reference) {
 			/// @note `reinterpret_cast` is "safe" here because we know `T` has simple linear
-			/// inheritance to `RefCounted`. This guarantees that `T * == `RefCounted *`, which
+			/// inheritance to `RefCounted`. This guarantees that `T * == RefCounted *`, which
 			/// allows us to declare `Ref<T>` with forward declared `T` types.
 			if (reinterpret_cast<RefCounted *>(reference)->unreference()) {
 				memdelete(reinterpret_cast<RefCounted *>(reference));

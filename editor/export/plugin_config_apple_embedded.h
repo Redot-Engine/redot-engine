@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file plugin_config_apple_embedded.h
  *
@@ -48,8 +50,6 @@
  * The `plist` section are optional.
  * - **key**: key and value that would be added in Info.plist file.
  */
-
-#pragma once
 
 #include "core/io/config_file.h"
 #include "core/string/ustring.h"

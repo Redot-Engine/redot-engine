@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file tile_map_layer_editor.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "tile_atlas_view.h"
 
@@ -187,6 +187,7 @@ private:
 	void _tab_changed();
 	/// @}
 	/// @name Bottom Panel Tiles
+	/// @{
 	VBoxContainer *tiles_bottom_panel = nullptr;
 	Label *missing_source_label = nullptr;
 	Label *invalid_source_label = nullptr;

@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file ucaps.h
  *
  * @brief This file was generated using the `misc/scripts/ucaps_fetch.py` script.
  */
-
-#pragma once
 
 #define LTU_LEN 1477
 #define UTL_LEN 1460

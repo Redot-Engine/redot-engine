@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file openxr_interface.h
  *
@@ -56,8 +58,6 @@
  * As some data is setup before we start rendering, and cleaned up
  * after we've stopped, that is accessed directly from both threads.
  */
-
-#pragma once
 
 #include "action_map/openxr_action_map.h"
 #include "extensions/openxr_hand_tracking_extension.h"
@@ -92,7 +92,7 @@ private:
 
 	struct Action { ///< An action we've registered with OpenXR
 		String action_name; ///< Name of our action as presented to Godot (can be altered from the action map)
-		OpenXRAction::ActionType action_type;  ///< The action type of this action
+		OpenXRAction::ActionType action_type; ///< The action type of this action
 		RID action_rid; ///< RID of the action registered with our OpenXR API
 	};
 	struct ActionSet { ///< An action set we've registered with OpenXR

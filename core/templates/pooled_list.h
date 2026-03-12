@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file pooled_list.h
  *
@@ -56,8 +58,6 @@
  * Compaction can be done but would rely on a more complex method
  * of preferentially giving out lower IDs in the freelist first.
  */
-
-#pragma once
 
 #include "core/templates/local_vector.h"
 

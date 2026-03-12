@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file metal_fx.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #if defined(METAL_ENABLED) && !defined(VISIONOS_ENABLED)
 #define METAL_MFXTEMPORAL_ENABLED

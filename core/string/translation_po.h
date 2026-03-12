@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file translation_po.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 //#define DEBUG_TRANSLATION_PO
 

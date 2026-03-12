@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file gdextension_interface.h
  *
@@ -51,8 +53,6 @@
  * - Some types have no destructor (see `extension_api.json`'s `has_destructor` field), for
  *   them it is always safe to skip the constructor for the return value if you are in a hurry ;-)
  */
-
-#pragma once
 
 /* This is a C class header, you can copy it and use it directly in your own binders.
  * Together with the JSON file, you should be able to generate any binder.

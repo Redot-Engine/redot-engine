@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file tile_set.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "core/io/resource.h"
 #include "core/object/object.h"
@@ -342,8 +342,8 @@ private:
 	mutable bool tile_meshes_dirty = true;
 	/// @}
 #ifndef PHYSICS_2D_DISABLED
-	//@name Physics
-	// @{
+	/// @name Physics
+	/// @{
 	struct PhysicsLayer {
 		uint32_t collision_layer = 1;
 		uint32_t collision_mask = 1;

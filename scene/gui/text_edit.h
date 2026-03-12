@@ -30,13 +30,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 /**
  * @file text_edit.h
  *
  * [Add any documentation that applies to the entire file here!]
  */
-
-#pragma once
 
 #include "scene/gui/control.h"
 #include "scene/gui/popup_menu.h"
@@ -902,7 +902,7 @@ public:
 	bool is_empty_selection_clipboard_enabled() const;
 	/// @}
 	/// @name Text Manipulation
-	/// @}
+	/// @{
 	void clear();
 
 	void set_text(const String &p_text);
@@ -987,6 +987,7 @@ public:
 	Point2i search(const String &p_key, uint32_t p_search_flags, int p_from_line, int p_from_column) const;
 	/// @}
 	/// @name Mouse
+	/// @{
 	Point2 get_local_mouse_pos() const;
 
 	String get_word_at_pos(const Vector2 &p_pos) const;
