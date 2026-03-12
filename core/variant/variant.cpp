@@ -2860,15 +2860,20 @@ void Variant::_variant_call_error(const String &p_method, Callable::CallError &e
 	switch (error.error) {
 		case Callable::CallError::CALL_ERROR_INVALID_ARGUMENT:
 			err = "Invalid type for argument #" + itos(error.argument) + ", expected '" + Variant::get_type_name(Variant::Type(error.expected)) + "'.";
+			break;
 		case Callable::CallError::CALL_ERROR_INVALID_METHOD:
 			err = "Invalid method '" + p_method + "' for type '" + Variant::get_type_name(type) + "'.";
+			break;
 		case Callable::CallError::CALL_ERROR_TOO_MANY_ARGUMENTS:
 		case Callable::CallError::CALL_ERROR_TOO_FEW_ARGUMENTS:
 			err = "Too many arguments for method '" + p_method + "'";
+			break;
 		case Callable::CallError::CALL_ERROR_INSTANCE_IS_NULL:
 			err = "Instance is null";
+			break;
 		case Callable::CallError::CALL_ERROR_METHOD_NOT_CONST:
 			err = "Method not const in const instance";
+			break;
 		default:
 			return;
 	}
