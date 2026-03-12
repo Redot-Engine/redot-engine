@@ -200,7 +200,7 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_STRICT_C
 };
 
 String Variant::get_type_name(Variant::Type p_type) {
-	if (p_type < VARIANT_MAX) {
+	if ((p_type >= NIL) && (p_type < VARIANT_MAX)) {
 		return TYPE_STRING_TABLE[p_type];
 	}
 	return "";
@@ -209,7 +209,7 @@ String Variant::get_type_name(Variant::Type p_type) {
 Variant::Type Variant::get_type_by_name(const String &p_type_name) {
 	static HashMap<String, Type> type_names;
 	if (unlikely(type_names.is_empty())) {
-		for (int i = 0; i < VARIANT_MAX; i++) {
+		for (int i = NIL; i < VARIANT_MAX; i++) {
 			type_names[get_type_name((Type)i)] = (Type)i;
 		}
 	}
@@ -220,7 +220,7 @@ Variant::Type Variant::get_type_by_name(const String &p_type_name) {
 
 bool Variant::can_convert(Variant::Type p_type_from, Variant::Type p_type_to) {
 	std::uint64_t valid_types = 0;
-	if (p_type_to < VARIANT_MAX) {
+	if ((p_type_to >= NIL) && (p_type_to < VARIANT_MAX)) {
 		valid_types = TYPE_CAST_TABLE[p_type_to];
 	}
 	return (valid_types & (1ull << p_type_from)) != 0;
@@ -228,7 +228,7 @@ bool Variant::can_convert(Variant::Type p_type_from, Variant::Type p_type_to) {
 
 bool Variant::can_convert_strict(Variant::Type p_type_from, Variant::Type p_type_to) {
 	std::uint64_t valid_types = 0;
-	if (p_type_to < VARIANT_MAX) {
+	if ((p_type_to >= NIL) && (p_type_to < VARIANT_MAX)) {
 		valid_types = TYPE_STRICT_CAST_TABLE[p_type_to];
 	}
 	return (valid_types & (1ull << p_type_from)) != 0;
