@@ -945,7 +945,7 @@ constexpr T monotonic_cubic_interpolate_angle(T p_from, T p_to, T p_pre, T p_pos
 }
 
 template <typename T>
-constexpr T monotonic_cubic_interpolate_angle_in_time(T p_from, T p_to, T p_pre, T p_post, T p_time, T p_pre_t, T p_from_t, T p_to_t, T p_post_t) {
+constexpr T monotonic_cubic_interpolate_angle_in_time(T p_from, T p_to, T p_pre, T p_post, T p_weight, T p_pre_t, T p_to_t, T p_post_t) {
 	T from_rot = fmod(p_from, (T)TAU);
 
 	T pre_diff = fmod(p_pre - from_rot, (T)TAU);
@@ -957,7 +957,7 @@ constexpr T monotonic_cubic_interpolate_angle_in_time(T p_from, T p_to, T p_pre,
 	T post_diff = fmod(p_post - to_rot, (T)TAU);
 	T post_rot = to_rot + fmod((T)2 * post_diff, (T)TAU) - post_diff;
 
-	return monotonic_cubic_interpolate_in_time(pre_rot, from_rot, to_rot, post_rot, p_pre_t, p_from_t, p_to_t, p_post_t, p_time);
+	return monotonic_cubic_interpolate_in_time(from_rot, to_rot, pre_rot, post_rot, p_weight, p_to_t, p_pre_t, p_post_t);
 }
 
 }; // namespace Math
