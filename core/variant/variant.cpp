@@ -783,6 +783,9 @@ using Destructor = void (*)(void *);
 using BucketFree = void (*)(void *, void *);
 
 void Variant::_clear_internal() {
+	/*
+	 * The following tables must line up with Variant::Type
+	 */
 	static const std::array<Destructor, Variant::VARIANT_MAX> DESTRUCTOR_TABLE = {
 		nullptr,
 		nullptr,
