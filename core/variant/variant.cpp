@@ -47,6 +47,105 @@ PagedAllocator<Variant::Pools::BucketMedium, true> Variant::Pools::_bucket_mediu
 PagedAllocator<Variant::Pools::BucketLarge, true> Variant::Pools::_bucket_large;
 
 /*
+ * The following three tables help handling cases where buckets are involved,
+ * namely `_clear_internal` and `reference`. These must line up with their
+ * respective values in the Variant::Type enumeration
+ */
+const std::array<void *, Variant::PACKED_BYTE_ARRAY> Variant::BUCKET_TBL = {
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(void *)&Variant::Pools::_bucket_small,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(void *)&Variant::Pools::_bucket_small,
+	(void *)&Variant::Pools::_bucket_medium,
+	(void *)&Variant::Pools::_bucket_medium,
+	(void *)&Variant::Pools::_bucket_large,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+};
+const std::array<Variant::BucketAlloc, Variant::PACKED_BYTE_ARRAY> Variant::BUCKET_ALLOC_FN_TBL = {
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(Variant::BucketAlloc)Variant::bucketAlloc<Variant::Pools::BucketSmall>,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(Variant::BucketAlloc)Variant::bucketAlloc<Variant::Pools::BucketSmall>,
+	(Variant::BucketAlloc)Variant::bucketAlloc<Variant::Pools::BucketMedium>,
+	(Variant::BucketAlloc)Variant::bucketAlloc<Variant::Pools::BucketMedium>,
+	(Variant::BucketAlloc)Variant::bucketAlloc<Variant::Pools::BucketLarge>,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+};
+const std::array<Variant::BucketFree, Variant::PACKED_BYTE_ARRAY> Variant::BUCKET_FREE_FN_TBL{
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(Variant::BucketFree)Variant::bucketFree<Variant::Pools::BucketSmall>,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(Variant::BucketFree)Variant::bucketFree<Variant::Pools::BucketSmall>,
+	(Variant::BucketFree)Variant::bucketFree<Variant::Pools::BucketMedium>,
+	(Variant::BucketFree)Variant::bucketFree<Variant::Pools::BucketMedium>,
+	(Variant::BucketFree)Variant::bucketFree<Variant::Pools::BucketLarge>,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+};
+
+/*
  * This table gives textual names to the Variant::Type enum and is used in
  * `get_type_name`. These must line up with their respective values in the
  * Variant::Type enumeration
@@ -564,181 +663,113 @@ void Variant::ObjData::unref(bool p_is_weak_ref) {
 	*this = ObjData();
 }
 
+using CopyCtorFromPtr = void (*)(void *, void *);
+
+template <typename T, typename U>
+void copyConstructFromPtr(T *dst, U *src) {
+	memnew_placement(dst, T(*src));
+}
+
+/*
+ * This table holds in-place copy constructors for different variants in the
+ * Variant::Type enum and is used in `reference`. These must line up with their
+ * respective values in the Variant::Type enumeration
+ */
+static const std::array<CopyCtorFromPtr, Variant::PACKED_BYTE_ARRAY> COPY_CTOR_TABLE = {
+	nullptr,
+	(CopyCtorFromPtr)copyConstructFromPtr<bool, bool>,
+	(CopyCtorFromPtr)copyConstructFromPtr<int64_t, int64_t>,
+	(CopyCtorFromPtr)copyConstructFromPtr<double, double>,
+	(CopyCtorFromPtr)copyConstructFromPtr<String, String>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Vector2, Vector2>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Vector2i, Vector2i>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Rect2, Rect2>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Rect2i, Rect2i>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Vector3, Vector3>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Vector3i, Vector3i>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Transform2D, Transform2D>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Vector4, Vector4>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Vector4i, Vector4i>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Plane, Plane>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Quaternion, Quaternion>,
+	(CopyCtorFromPtr)copyConstructFromPtr<::AABB, ::AABB>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Basis, Basis>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Transform3D, Transform3D>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Projection, Projection>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Color, Color>,
+	(CopyCtorFromPtr)copyConstructFromPtr<StringName, StringName>,
+	(CopyCtorFromPtr)copyConstructFromPtr<NodePath, NodePath>,
+	(CopyCtorFromPtr)copyConstructFromPtr<::RID, ::RID>,
+	nullptr,
+	(CopyCtorFromPtr)copyConstructFromPtr<Callable, Callable>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Signal, Signal>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Dictionary, Dictionary>,
+	(CopyCtorFromPtr)copyConstructFromPtr<Array, Array>,
+};
+
 void Variant::reference(const Variant &p_variant) {
+	using PackedArrayCreate = PackedArrayRefBase *(*)();
+
+	static const std::array<
+			PackedArrayCreate,
+			Variant::VARIANT_MAX - Variant::PACKED_BYTE_ARRAY>
+			PACKED_ARRAY_CREATE_TBL = {
+				packedArrayCreate<uint8_t>,
+				packedArrayCreate<int32_t>,
+				packedArrayCreate<int64_t>,
+				packedArrayCreate<float>,
+				packedArrayCreate<double>,
+				packedArrayCreate<String>,
+				packedArrayCreate<Vector2>,
+				packedArrayCreate<Vector3>,
+				packedArrayCreate<Color>,
+				packedArrayCreate<Vector4>,
+			};
+	void *dst;
+	void *src;
 	if (type == OBJECT && p_variant.type == OBJECT) {
 		_get_obj().ref(p_variant._get_obj(), is_weak_ref, p_variant.is_weak_ref);
 		return;
 	}
-
 	clear();
-
 	type = p_variant.type;
-
 	switch (p_variant.type) {
-		case NIL: {
-			// None.
-		} break;
-
-		// Atomic types.
-		case BOOL: {
-			_data._bool = p_variant._data._bool;
-		} break;
-		case INT: {
-			_data._int = p_variant._data._int;
-		} break;
-		case FLOAT: {
-			_data._float = p_variant._data._float;
-		} break;
-		case STRING: {
-			memnew_placement(_data._mem, String(*reinterpret_cast<const String *>(p_variant._data._mem)));
-		} break;
-
-		// Math types.
-		case VECTOR2: {
-			memnew_placement(_data._mem, Vector2(*reinterpret_cast<const Vector2 *>(p_variant._data._mem)));
-		} break;
-		case VECTOR2I: {
-			memnew_placement(_data._mem, Vector2i(*reinterpret_cast<const Vector2i *>(p_variant._data._mem)));
-		} break;
-		case RECT2: {
-			memnew_placement(_data._mem, Rect2(*reinterpret_cast<const Rect2 *>(p_variant._data._mem)));
-		} break;
-		case RECT2I: {
-			memnew_placement(_data._mem, Rect2i(*reinterpret_cast<const Rect2i *>(p_variant._data._mem)));
-		} break;
-		case TRANSFORM2D: {
-			_data._transform2d = (Transform2D *)Pools::_bucket_small.alloc();
-			memnew_placement(_data._transform2d, Transform2D(*p_variant._data._transform2d));
-		} break;
-		case VECTOR3: {
-			memnew_placement(_data._mem, Vector3(*reinterpret_cast<const Vector3 *>(p_variant._data._mem)));
-		} break;
-		case VECTOR3I: {
-			memnew_placement(_data._mem, Vector3i(*reinterpret_cast<const Vector3i *>(p_variant._data._mem)));
-		} break;
-		case VECTOR4: {
-			memnew_placement(_data._mem, Vector4(*reinterpret_cast<const Vector4 *>(p_variant._data._mem)));
-		} break;
-		case VECTOR4I: {
-			memnew_placement(_data._mem, Vector4i(*reinterpret_cast<const Vector4i *>(p_variant._data._mem)));
-		} break;
-		case PLANE: {
-			memnew_placement(_data._mem, Plane(*reinterpret_cast<const Plane *>(p_variant._data._mem)));
-		} break;
-		case AABB: {
-			_data._aabb = (::AABB *)Pools::_bucket_small.alloc();
-			memnew_placement(_data._aabb, ::AABB(*p_variant._data._aabb));
-		} break;
-		case QUATERNION: {
-			memnew_placement(_data._mem, Quaternion(*reinterpret_cast<const Quaternion *>(p_variant._data._mem)));
-		} break;
-		case BASIS: {
-			_data._basis = (Basis *)Pools::_bucket_medium.alloc();
-			memnew_placement(_data._basis, Basis(*p_variant._data._basis));
-		} break;
-		case TRANSFORM3D: {
-			_data._transform3d = (Transform3D *)Pools::_bucket_medium.alloc();
-			memnew_placement(_data._transform3d, Transform3D(*p_variant._data._transform3d));
-		} break;
-		case PROJECTION: {
-			_data._projection = (Projection *)Pools::_bucket_large.alloc();
-			memnew_placement(_data._projection, Projection(*p_variant._data._projection));
-		} break;
-
-		// Miscellaneous types.
-		case COLOR: {
-			memnew_placement(_data._mem, Color(*reinterpret_cast<const Color *>(p_variant._data._mem)));
-		} break;
-		case RID: {
-			memnew_placement(_data._mem, ::RID(*reinterpret_cast<const ::RID *>(p_variant._data._mem)));
-		} break;
-		case OBJECT: {
+		case TRANSFORM2D:
+		case AABB:
+		case BASIS:
+		case TRANSFORM3D:
+		case PROJECTION:
+			_data._ptr = BUCKET_ALLOC_FN_TBL[p_variant.type](BUCKET_TBL[p_variant.type]);
+			dst = _data._ptr;
+			src = p_variant._data._ptr;
+			break;
+		case OBJECT:
 			memnew_placement(_data._mem, ObjData);
 			_get_obj().ref(p_variant._get_obj(), is_weak_ref, p_variant.is_weak_ref);
-		} break;
-		case CALLABLE: {
-			memnew_placement(_data._mem, Callable(*reinterpret_cast<const Callable *>(p_variant._data._mem)));
-		} break;
-		case SIGNAL: {
-			memnew_placement(_data._mem, Signal(*reinterpret_cast<const Signal *>(p_variant._data._mem)));
-		} break;
-		case STRING_NAME: {
-			memnew_placement(_data._mem, StringName(*reinterpret_cast<const StringName *>(p_variant._data._mem)));
-		} break;
-		case NODE_PATH: {
-			memnew_placement(_data._mem, NodePath(*reinterpret_cast<const NodePath *>(p_variant._data._mem)));
-		} break;
-		case DICTIONARY: {
-			memnew_placement(_data._mem, Dictionary(*reinterpret_cast<const Dictionary *>(p_variant._data._mem)));
-		} break;
-		case ARRAY: {
-			memnew_placement(_data._mem, Array(*reinterpret_cast<const Array *>(p_variant._data._mem)));
-		} break;
-
-		// Arrays.
-		case PACKED_BYTE_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<uint8_t> *>(p_variant._data.packed_array)->reference();
+			// fallthrough
+		case NIL:
+			return;
+		case PACKED_BYTE_ARRAY:
+		case PACKED_INT32_ARRAY:
+		case PACKED_INT64_ARRAY:
+		case PACKED_FLOAT32_ARRAY:
+		case PACKED_FLOAT64_ARRAY:
+		case PACKED_STRING_ARRAY:
+		case PACKED_VECTOR2_ARRAY:
+		case PACKED_VECTOR3_ARRAY:
+		case PACKED_COLOR_ARRAY:
+		case PACKED_VECTOR4_ARRAY:
+			_data.packed_array = (p_variant._data.packed_array)->reference();
 			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<uint8_t>::create();
+				_data.packed_array = PACKED_ARRAY_CREATE_TBL[p_variant.type - PACKED_BYTE_ARRAY]();
 			}
-		} break;
-		case PACKED_INT32_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<int32_t> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<int32_t>::create();
-			}
-		} break;
-		case PACKED_INT64_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<int64_t> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<int64_t>::create();
-			}
-		} break;
-		case PACKED_FLOAT32_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<float> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<float>::create();
-			}
-		} break;
-		case PACKED_FLOAT64_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<double> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<double>::create();
-			}
-		} break;
-		case PACKED_STRING_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<String> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<String>::create();
-			}
-		} break;
-		case PACKED_VECTOR2_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<Vector2> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<Vector2>::create();
-			}
-		} break;
-		case PACKED_VECTOR3_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<Vector3> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<Vector3>::create();
-			}
-		} break;
-		case PACKED_COLOR_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<Color> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<Color>::create();
-			}
-		} break;
-		case PACKED_VECTOR4_ARRAY: {
-			_data.packed_array = static_cast<PackedArrayRef<Vector4> *>(p_variant._data.packed_array)->reference();
-			if (!_data.packed_array) {
-				_data.packed_array = PackedArrayRef<Vector4>::create();
-			}
-		} break;
-		default: {
-		}
+			return;
+		default:
+			dst = _data._mem;
+			src = (void *)p_variant._data._mem;
+			break;
 	}
+	COPY_CTOR_TABLE[p_variant.type](dst, src);
 }
 
 void Variant::zero() {
@@ -778,111 +809,45 @@ void destroy(T *s) {
 	reinterpret_cast<T *>(s)->~T();
 }
 
-template <typename T>
-void bucketFree(PagedAllocator<T, true> *bucket, void *mem) {
-	((PagedAllocator<T, true> *)bucket)->free((T *)mem);
-}
-
 using Destructor = void (*)(void *);
 using BucketFree = void (*)(void *, void *);
 
+/*
+ * The following table must line up with Variant::Type
+ */
+static const std::array<Destructor, Variant::VARIANT_MAX> DESTRUCTOR_TABLE = {
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(Destructor)destroy<String>,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(Destructor)destroy<Transform2D>,
+	nullptr,
+	nullptr,
+	nullptr,
+	nullptr,
+	(Destructor)destroy<::AABB>,
+	(Destructor)destroy<Basis>,
+	(Destructor)destroy<Transform3D>,
+	(Destructor)destroy<Projection>,
+	nullptr,
+	(Destructor)destroy<StringName>,
+	(Destructor)destroy<NodePath>,
+	(Destructor)destroy<::RID>,
+	nullptr,
+	(Destructor)destroy<Callable>,
+	(Destructor)destroy<Signal>,
+	(Destructor)destroy<Dictionary>,
+	(Destructor)destroy<Array>,
+};
+
 void Variant::_clear_internal() {
-	/*
-	 * The following tables must line up with Variant::Type
-	 */
-	static const std::array<Destructor, Variant::VARIANT_MAX> DESTRUCTOR_TABLE = {
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		(Destructor)destroy<String>,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		(Destructor)destroy<Transform2D>,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		(Destructor)destroy<::AABB>,
-		(Destructor)destroy<Basis>,
-		(Destructor)destroy<Transform3D>,
-		(Destructor)destroy<Projection>,
-		nullptr,
-		(Destructor)destroy<StringName>,
-		(Destructor)destroy<NodePath>,
-		(Destructor)destroy<::RID>,
-		nullptr,
-		(Destructor)destroy<Callable>,
-		(Destructor)destroy<Signal>,
-		(Destructor)destroy<Dictionary>,
-		(Destructor)destroy<Array>,
-	};
-	static const std::array<BucketFree, Variant::VARIANT_MAX> BUCKET_FREE_FN_TBL{
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		(BucketFree)bucketFree<Variant::Pools::BucketSmall>,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		(BucketFree)bucketFree<Variant::Pools::BucketSmall>,
-		(BucketFree)bucketFree<Variant::Pools::BucketMedium>,
-		(BucketFree)bucketFree<Variant::Pools::BucketMedium>,
-		(BucketFree)bucketFree<Variant::Pools::BucketLarge>,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-	};
-	static const std::array<void *, Variant::VARIANT_MAX> BUCKET_TBL{
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		(void *)&Pools::_bucket_small,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		(void *)&Pools::_bucket_small,
-		(void *)&Pools::_bucket_medium,
-		(void *)&Pools::_bucket_medium,
-		(void *)&Pools::_bucket_large,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-	};
 	switch (type) {
 		case STRING:
 		case STRING_NAME:

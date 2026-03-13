@@ -65,6 +65,8 @@
 #include "core/variant/dictionary.h"
 #include "core/variant/variant_deep_duplicate.h"
 
+#include <array>
+
 class Object;
 class RefCounted;
 
@@ -94,6 +96,8 @@ public:
 	// tables in variant.cpp
 	enum Type {
 		NIL,
+
+		// atomic types
 		BOOL,
 		INT,
 		FLOAT,
@@ -172,6 +176,20 @@ private:
 		static PagedAllocator<BucketLarge, true> _bucket_large;
 	};
 
+	using BucketAlloc = void *(*)(void *);
+	using BucketFree = void (*)(void *, void *);
+	template <typename T>
+	static void *bucketAlloc(PagedAllocator<T, true> *bucket) {
+		return ((PagedAllocator<T, true> *)bucket)->alloc();
+	}
+	template <typename T>
+	static void bucketFree(PagedAllocator<T, true> *bucket, void *mem) {
+		((PagedAllocator<T, true> *)bucket)->free((T *)mem);
+	}
+	static const std::array<void *, Variant::PACKED_BYTE_ARRAY> BUCKET_TBL;
+	static const std::array<BucketAlloc, Variant::PACKED_BYTE_ARRAY> BUCKET_ALLOC_FN_TBL;
+	static const std::array<BucketFree, Variant::PACKED_BYTE_ARRAY> BUCKET_FREE_FN_TBL;
+
 	friend struct _VariantCall;
 	friend class VariantInternal;
 	// Variant takes 24 bytes when real_t is float, and 40 bytes if double.
@@ -232,6 +250,11 @@ private:
 		}
 		_FORCE_INLINE_ virtual ~PackedArrayRefBase() {} //needs virtual destructor, but make inline
 	};
+
+	template <typename T>
+	static PackedArrayRefBase *packedArrayCreate() {
+		return PackedArrayRef<T>::create();
+	}
 
 	template <typename T>
 	struct PackedArrayRef : public PackedArrayRefBase {
