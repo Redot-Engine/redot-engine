@@ -269,7 +269,11 @@ String Variant::get_type_name(Variant::Type p_type) {
 }
 
 Variant::Type Variant::get_type_by_name(const String &p_type_name) {
-	return STRING_TO_TYPE_TBL.at(std::string(p_type_name.utf8().ptr()));
+	std::string stdName(p_type_name.utf8().ptr());
+	if (STRING_TO_TYPE_TBL.find(stdName) != STRING_TO_TYPE_TBL.end()) {
+		return STRING_TO_TYPE_TBL.at(stdName);
+	}
+	return Variant::Type::VARIANT_MAX;
 }
 
 bool Variant::can_convert(Variant::Type p_type_from, Variant::Type p_type_to) {
