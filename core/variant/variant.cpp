@@ -746,7 +746,7 @@ void Variant::reference(const Variant &p_variant) {
 		case OBJECT:
 			memnew_placement(_data._mem, ObjData);
 			_get_obj().ref(p_variant._get_obj(), is_weak_ref, p_variant.is_weak_ref);
-			// fallthrough
+		[[fallthrough]]
 		case NIL:
 			return;
 		case PACKED_BYTE_ARRAY:
