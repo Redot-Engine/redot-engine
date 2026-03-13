@@ -40,6 +40,7 @@
 #include "core/variant/variant_parser.h"
 #include <array>
 #include <cstdint>
+#include <unordered_map>
 
 PagedAllocator<Variant::Pools::BucketSmall, true> Variant::Pools::_bucket_small;
 PagedAllocator<Variant::Pools::BucketMedium, true> Variant::Pools::_bucket_medium;
@@ -199,6 +200,48 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_STRICT_C
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_VECTOR4_ARRAY), // packedvec4array
 };
 
+static const std::unordered_map<std::string, Variant::Type> STRING_TO_TYPE_TBL = {
+	{ "Nil", Variant::NIL },
+	{ "bool", Variant::BOOL },
+	{ "int", Variant::INT },
+	{ "float", Variant::FLOAT },
+	{ "String", Variant::STRING },
+	{ "Vector2", Variant::VECTOR2 },
+	{ "Vector2i", Variant::VECTOR2I },
+	{ "Rect2", Variant::RECT2 },
+	{ "Rect2i", Variant::RECT2I },
+	{ "Vector3", Variant::VECTOR3 },
+	{ "Vector3i", Variant::VECTOR3I },
+	{ "Transform2D", Variant::TRANSFORM2D },
+	{ "Vector4", Variant::VECTOR4 },
+	{ "Vector4i", Variant::VECTOR4I },
+	{ "Plane", Variant::PLANE },
+	{ "Quaternion", Variant::QUATERNION },
+	{ "AABB", Variant::AABB },
+	{ "Basis", Variant::BASIS },
+	{ "Transform3D", Variant::TRANSFORM3D },
+	{ "Projection", Variant::PROJECTION },
+	{ "Color", Variant::COLOR },
+	{ "StringName", Variant::STRING_NAME },
+	{ "NodePath", Variant::NODE_PATH },
+	{ "RID", Variant::RID },
+	{ "Object", Variant::OBJECT },
+	{ "Callable", Variant::CALLABLE },
+	{ "Signal", Variant::SIGNAL },
+	{ "Dictionary", Variant::DICTIONARY },
+	{ "Array", Variant::ARRAY },
+	{ "PackedByteArray", Variant::PACKED_BYTE_ARRAY },
+	{ "PackedInt32Array", Variant::PACKED_INT32_ARRAY },
+	{ "PackedInt64Array", Variant::PACKED_INT64_ARRAY },
+	{ "PackedFloat32Array", Variant::PACKED_FLOAT32_ARRAY },
+	{ "PackedFloat64Array", Variant::PACKED_FLOAT64_ARRAY },
+	{ "PackedStringArray", Variant::PACKED_STRING_ARRAY },
+	{ "PackedVector2Array", Variant::PACKED_VECTOR2_ARRAY },
+	{ "PackedVector3Array", Variant::PACKED_VECTOR3_ARRAY },
+	{ "PackedColorArray", Variant::PACKED_COLOR_ARRAY },
+	{ "PackedVector4Array", Variant::PACKED_VECTOR4_ARRAY },
+};
+
 String Variant::get_type_name(Variant::Type p_type) {
 	if ((p_type >= NIL) && (p_type < VARIANT_MAX)) {
 		return TYPE_STRING_TABLE[p_type];
@@ -207,15 +250,7 @@ String Variant::get_type_name(Variant::Type p_type) {
 }
 
 Variant::Type Variant::get_type_by_name(const String &p_type_name) {
-	static HashMap<String, Type> type_names;
-	if (unlikely(type_names.is_empty())) {
-		for (int i = NIL; i < VARIANT_MAX; i++) {
-			type_names[get_type_name((Type)i)] = (Type)i;
-		}
-	}
-
-	const Type *ptr = type_names.getptr(p_type_name);
-	return (ptr == nullptr) ? VARIANT_MAX : *ptr;
+	return STRING_TO_TYPE_TBL.at(std::string(p_type_name.utf8().ptr()));
 }
 
 bool Variant::can_convert(Variant::Type p_type_from, Variant::Type p_type_to) {
