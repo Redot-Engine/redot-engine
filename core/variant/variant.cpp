@@ -46,6 +46,11 @@ PagedAllocator<Variant::Pools::BucketSmall, true> Variant::Pools::_bucket_small;
 PagedAllocator<Variant::Pools::BucketMedium, true> Variant::Pools::_bucket_medium;
 PagedAllocator<Variant::Pools::BucketLarge, true> Variant::Pools::_bucket_large;
 
+/*
+ * This table gives textual names to the Variant::Type enum and is used in
+ * `get_type_name`. These must line up with their respective values in the
+ * Variant::Type enumeration
+ */
 static const std::array<String, Variant::Type::VARIANT_MAX> TYPE_STRING_TABLE = {
 	"Nil",
 	"bool",
@@ -88,6 +93,11 @@ static const std::array<String, Variant::Type::VARIANT_MAX> TYPE_STRING_TABLE = 
 	"PackedVector4Array",
 };
 
+/*
+ * This table indicates the types that a given Variant::Type can be cast from
+ * and is used in `can_convert`. These must line up with their respective values
+ * in the Variant::Type enumeration
+ */
 static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_CAST_TABLE = {
 	~0ull, // nil
 	(1 << Variant::BOOL) | (1 << Variant::INT) | (1 << Variant::FLOAT) | (1 << Variant::STRING), // bool
@@ -144,6 +154,11 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_CAST_TAB
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_VECTOR4_ARRAY), // packedvec4array
 };
 
+/*
+ * This table indicates the types that a given Variant::Type can be cast from
+ * and is used in `can_convert_strict`. These must line up with their respective
+ * values in the Variant::Type enumeration
+ */
 static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_STRICT_CAST_TABLE = {
 	~0ull, // nil
 	(1 << Variant::BOOL) | (1 << Variant::INT) | (1 << Variant::FLOAT), // bool
@@ -200,6 +215,10 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_STRICT_C
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_VECTOR4_ARRAY), // packedvec4array
 };
 
+/*
+ * This table provides an inverse conversion to TYPE_STRING_TABLE and is used in
+ * `get_type_by_name`.
+ */
 static const std::unordered_map<std::string, Variant::Type> STRING_TO_TYPE_TBL = {
 	{ "Nil", Variant::NIL },
 	{ "bool", Variant::BOOL },

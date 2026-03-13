@@ -90,7 +90,8 @@ typedef Vector<Vector4> PackedVector4Array;
 
 class Variant {
 public:
-	// If this changes the table in variant_op must be updated
+	// If this changes the table in variant_op must be updated along side the
+	// tables in variant.cpp
 	enum Type {
 		NIL,
 		BOOL,
