@@ -1315,34 +1315,6 @@ static _FORCE_INLINE_ void call_helperp(void (*p_func)(P...), const Variant **p_
 	(void)r_error;
 }
 
-// struct CallHelperVoid
-// {
-// 	static void call()
-// 	{
-// 	}
-// };
-//
-// struct CallHelperRet
-// {
-// 	static void call()
-// 	{
-// 	}
-// };
-//
-// template <typename TRet, typename... TArgs>
-// static _FORCE_INLINE_ void _call_helper()
-// {
-// 	std::conditional<std::is_same<TRet, void>::value, CallHelperVoid, CallHelperRet>::call();
-// }
-//
-// template <typename... P, size_t... Is>
-// static _FORCE_INLINE_ void call_helperp2(void (*p_func)(P...), const Variant **p_args, Callable::CallError &r_error, IndexSequence<Is...>) {
-// 	r_error.error = Callable::CallError::CALL_OK;
-// 	p_func(VariantCasterAndValidate<P>::cast(p_args, Is, r_error)...);
-// 	(void)p_args;
-// 	(void)r_error;
-// }
-
 template <typename... P, size_t... Is>
 static _FORCE_INLINE_ void validated_call_helperp(void (*p_func)(P...), const Variant **p_args, IndexSequence<Is...>) {
 	p_func(VariantCaster<P>::cast(*p_args[Is])...);
