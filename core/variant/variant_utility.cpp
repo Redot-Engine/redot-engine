@@ -1297,7 +1297,7 @@ static _FORCE_INLINE_ Variant::Type get_arg_type_helperr(R (*p_func)(P...), int 
 
 template <typename R, typename... P>
 static _FORCE_INLINE_ Variant::Type get_arg_type_helperr(R (*p_func)(Callable::CallError &, P...), int p_arg) {
-	return call_get_argument_type<P...>(p_arg + 1);
+	return call_get_argument_type<P...>(p_arg);
 }
 
 template <typename R, typename... P>
@@ -1522,9 +1522,9 @@ struct Func<void(Callable::CallError &, const Variant **, int)> {
 	};
 };
 
-template <typename TRet>
-struct Func<TRet(Callable::CallError &, const Variant **, int)> {
-	template <TRet (*m_func)(Callable::CallError &, const Variant **, int), Variant::UtilityFunctionType m_category>
+template <>
+struct Func<String(Callable::CallError &, const Variant **, int)> {
+	template <String (*m_func)(Callable::CallError &, const Variant **, int), Variant::UtilityFunctionType m_category>
 	struct FuncInner {
 		static void call(Variant *r_ret, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 			r_error.error = Callable::CallError::CALL_OK;
@@ -1555,6 +1555,54 @@ struct Func<TRet(Callable::CallError &, const Variant **, int)> {
 		}
 		static Variant::Type get_return_type() {
 			return Variant::STRING;
+		}
+		static bool has_return_type() {
+			return true;
+		}
+		static bool is_vararg() {
+			return true;
+		}
+		static Variant::UtilityFunctionType get_type() {
+			return m_category;
+		}
+		static void register_fn(const String &name, const Vector<String> &args) {
+			register_utility_function<FuncInner<m_func, m_category>>(name, args);
+		}
+	};
+};
+
+template <typename TRet>
+struct Func<TRet(Callable::CallError &, const Variant **, int)> {
+	template <TRet (*m_func)(Callable::CallError &, const Variant **, int), Variant::UtilityFunctionType m_category>
+	struct FuncInner {
+		static void call(Variant *r_ret, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
+			r_error.error = Callable::CallError::CALL_OK;
+			*r_ret = m_func(r_error, p_args, p_argcount);
+		}
+		static void validated_call(Variant *r_ret, const Variant **p_args, int p_argcount) {
+			Callable::CallError c;
+			*r_ret = m_func(c, p_args, p_argcount);
+		}
+		static void ptrcall(void *ret, const void **p_args, int p_argcount) {
+			Vector<Variant> args;
+			for (int i = 0; i < p_argcount; i++) {
+				args.push_back(PtrToArg<Variant>::convert(p_args[i]));
+			}
+			Vector<const Variant *> argsp;
+			for (int i = 0; i < p_argcount; i++) {
+				argsp.push_back(&args[i]);
+			}
+			Variant r;
+			validated_call(&r, (const Variant **)argsp.ptr(), p_argcount);
+		}
+		static int get_argument_count() {
+			return 1;
+		}
+		static Variant::Type get_argument_type(int p_arg) {
+			return Variant::NIL;
+		}
+		static Variant::Type get_return_type() {
+			return Variant::NIL;
 		}
 		static bool has_return_type() {
 			return true;
