@@ -345,79 +345,6 @@
 				It can perform smoother interpolation than [method cubic_interpolate] by the time values.
 			</description>
 		</method>
-		<method name="monotonic_cubic_interpolate">
-			<return type="float" />
-			<param index="0" name="from" type="float" />
-			<param index="1" name="to" type="float" />
-			<param index="2" name="pre" type="float" />
-			<param index="3" name="post" type="float" />
-			<param index="4" name="weight" type="float" />
-			<description>
-				Performs monotonic cubic interpolation between [param from] and [param to]
-				using neighboring values [param pre] and [param post].
-				The interpolation factor [param weight] is typically between 0.0 and 1.0.
-
-				Unlike [method cubic_interpolate], this method preserves monotonicity
-				by automatically limiting tangents to prevent overshoot between key values.
-				This makes it suitable for animation tracks and other data where values
-				should not exceed surrounding keyframes.
-			</description>
-		</method>
-		<method name="monotonic_cubic_interpolate_angle">
-			<return type="float" />
-			<param index="0" name="from" type="float" />
-			<param index="1" name="to" type="float" />
-			<param index="2" name="pre" type="float" />
-			<param index="3" name="post" type="float" />
-			<param index="4" name="weight" type="float" />
-			<description>
-				Performs monotonic cubic interpolation between angular values, rotating
-				along the shortest path between [param from] and [param to].
-
-				The neighboring angles [param pre] and [param post] are used to compute
-				shape-preserving tangents while accounting for angle wrapping.
-				This prevents overshoot while maintaining continuous rotation.
-				See also [method lerp_angle].
-			</description>
-		</method>
-		<method name="monotonic_cubic_interpolate_angle_in_time">
-			<return type="float" />
-			<param index="0" name="from" type="float" />
-			<param index="1" name="to" type="float" />
-			<param index="2" name="pre" type="float" />
-			<param index="3" name="post" type="float" />
-			<param index="4" name="weight" type="float" />
-			<param index="5" name="to_t" type="float" />
-			<param index="6" name="pre_t" type="float" />
-			<param index="7" name="post_t" type="float" />
-			<description>
-				Time-aware version of [method monotonic_cubic_interpolate_angle].
-
-				The interpolation factor is derived from the provided keyframe times,
-				allowing unevenly spaced keyframes to influence tangent calculation.
-				This produces consistent motion when animation keys are not uniformly
-				distributed in time while still preventing overshoot.
-			</description>
-		</method>
-		<method name="monotonic_cubic_interpolate_in_time">
-			<return type="float" />
-			<param index="0" name="from" type="float" />
-			<param index="1" name="to" type="float" />
-			<param index="2" name="pre" type="float" />
-			<param index="3" name="post" type="float" />
-			<param index="4" name="weight" type="float" />
-			<param index="5" name="to_t" type="float" />
-			<param index="6" name="pre_t" type="float" />
-			<param index="7" name="post_t" type="float" />
-			<description>
-				Time-aware version of [method monotonic_cubic_interpolate].
-
-				The interpolation parameter is normalized using the supplied keyframe
-				times, allowing interpolation to account for non-uniform spacing between
-				values. Tangents are computed in a way that preserves monotonicity and
-				prevents overshoot between keyframes.
-			</description>
-		</method>
 		<method name="db_to_linear">
 			<return type="float" />
 			<param index="0" name="db" type="float" />
@@ -825,6 +752,79 @@
 				mini(1, 2)   # Returns 1
 				mini(-3, -4) # Returns -4
 				[/codeblock]
+			</description>
+		</method>
+		<method name="monotonic_cubic_interpolate">
+			<return type="float" />
+			<param index="0" name="from" type="float" />
+			<param index="1" name="to" type="float" />
+			<param index="2" name="pre" type="float" />
+			<param index="3" name="post" type="float" />
+			<param index="4" name="weight" type="float" />
+			<description>
+				Performs monotonic cubic interpolation between [param from] and [param to]
+				using neighboring values [param pre] and [param post].
+				The interpolation factor [param weight] is typically between 0.0 and 1.0.
+
+				Unlike [method cubic_interpolate], this method preserves monotonicity
+				by automatically limiting tangents to prevent overshoot between key values.
+				This makes it suitable for animation tracks and other data where values
+				should not exceed surrounding keyframes.
+			</description>
+		</method>
+		<method name="monotonic_cubic_interpolate_angle">
+			<return type="float" />
+			<param index="0" name="from" type="float" />
+			<param index="1" name="to" type="float" />
+			<param index="2" name="pre" type="float" />
+			<param index="3" name="post" type="float" />
+			<param index="4" name="weight" type="float" />
+			<description>
+				Performs monotonic cubic interpolation between angular values, rotating
+				along the shortest path between [param from] and [param to].
+
+				The neighboring angles [param pre] and [param post] are used to compute
+				shape-preserving tangents while accounting for angle wrapping.
+				This prevents overshoot while maintaining continuous rotation.
+				See also [method lerp_angle].
+			</description>
+		</method>
+		<method name="monotonic_cubic_interpolate_angle_in_time">
+			<return type="float" />
+			<param index="0" name="from" type="float" />
+			<param index="1" name="to" type="float" />
+			<param index="2" name="pre" type="float" />
+			<param index="3" name="post" type="float" />
+			<param index="4" name="weight" type="float" />
+			<param index="5" name="to_t" type="float" />
+			<param index="6" name="pre_t" type="float" />
+			<param index="7" name="post_t" type="float" />
+			<description>
+				Time-aware version of [method monotonic_cubic_interpolate_angle].
+
+				The interpolation factor is derived from the provided keyframe times,
+				allowing unevenly spaced keyframes to influence tangent calculation.
+				This produces consistent motion when animation keys are not uniformly
+				distributed in time while still preventing overshoot.
+			</description>
+		</method>
+		<method name="monotonic_cubic_interpolate_in_time">
+			<return type="float" />
+			<param index="0" name="from" type="float" />
+			<param index="1" name="to" type="float" />
+			<param index="2" name="pre" type="float" />
+			<param index="3" name="post" type="float" />
+			<param index="4" name="weight" type="float" />
+			<param index="5" name="to_t" type="float" />
+			<param index="6" name="pre_t" type="float" />
+			<param index="7" name="post_t" type="float" />
+			<description>
+				Time-aware version of [method monotonic_cubic_interpolate].
+
+				The interpolation parameter is normalized using the supplied keyframe
+				times, allowing interpolation to account for non-uniform spacing between
+				values. Tangents are computed in a way that preserves monotonicity and
+				prevents overshoot between keyframes.
 			</description>
 		</method>
 		<method name="move_toward">
