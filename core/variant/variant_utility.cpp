@@ -1631,164 +1631,164 @@ struct Func<TRet(TArgs...)> {
 void Variant::_register_variant_utility_functions() {
 	// Math
 
-	Func<typeof(VariantUtilityFunctions::sin)>::FuncInner<VariantUtilityFunctions::sin, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sin", sarray("angle_rad"));
-	Func<typeof(VariantUtilityFunctions::cos)>::FuncInner<VariantUtilityFunctions::cos, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cos", sarray("angle_rad"));
-	Func<typeof(VariantUtilityFunctions::tan)>::FuncInner<VariantUtilityFunctions::tan, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("tan", sarray("angle_rad"));
+	Func<decltype(VariantUtilityFunctions::sin)>::FuncInner<VariantUtilityFunctions::sin, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sin", sarray("angle_rad"));
+	Func<decltype(VariantUtilityFunctions::cos)>::FuncInner<VariantUtilityFunctions::cos, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cos", sarray("angle_rad"));
+	Func<decltype(VariantUtilityFunctions::tan)>::FuncInner<VariantUtilityFunctions::tan, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("tan", sarray("angle_rad"));
 
-	Func<typeof(VariantUtilityFunctions::sinh)>::FuncInner<VariantUtilityFunctions::sinh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sinh", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::cosh)>::FuncInner<VariantUtilityFunctions::cosh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cosh", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::tanh)>::FuncInner<VariantUtilityFunctions::tanh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("tanh", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::sinh)>::FuncInner<VariantUtilityFunctions::sinh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sinh", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::cosh)>::FuncInner<VariantUtilityFunctions::cosh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cosh", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::tanh)>::FuncInner<VariantUtilityFunctions::tanh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("tanh", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::asin)>::FuncInner<VariantUtilityFunctions::asin, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("asin", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::acos)>::FuncInner<VariantUtilityFunctions::acos, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("acos", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::atan)>::FuncInner<VariantUtilityFunctions::atan, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("atan", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::asin)>::FuncInner<VariantUtilityFunctions::asin, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("asin", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::acos)>::FuncInner<VariantUtilityFunctions::acos, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("acos", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::atan)>::FuncInner<VariantUtilityFunctions::atan, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("atan", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::atan2)>::FuncInner<VariantUtilityFunctions::atan2, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("atan2", sarray("y", "x"));
+	Func<decltype(VariantUtilityFunctions::atan2)>::FuncInner<VariantUtilityFunctions::atan2, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("atan2", sarray("y", "x"));
 
-	Func<typeof(VariantUtilityFunctions::asinh)>::FuncInner<VariantUtilityFunctions::asinh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("asinh", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::acosh)>::FuncInner<VariantUtilityFunctions::acosh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("acosh", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::atanh)>::FuncInner<VariantUtilityFunctions::atanh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("atanh", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::asinh)>::FuncInner<VariantUtilityFunctions::asinh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("asinh", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::acosh)>::FuncInner<VariantUtilityFunctions::acosh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("acosh", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::atanh)>::FuncInner<VariantUtilityFunctions::atanh, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("atanh", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::sqrt)>::FuncInner<VariantUtilityFunctions::sqrt, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sqrt", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::fmod)>::FuncInner<VariantUtilityFunctions::fmod, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("fmod", sarray("x", "y"));
-	Func<typeof(VariantUtilityFunctions::fposmod)>::FuncInner<VariantUtilityFunctions::fposmod, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("fposmod", sarray("x", "y"));
-	Func<typeof(VariantUtilityFunctions::posmod)>::FuncInner<VariantUtilityFunctions::posmod, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("posmod", sarray("x", "y"));
+	Func<decltype(VariantUtilityFunctions::sqrt)>::FuncInner<VariantUtilityFunctions::sqrt, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sqrt", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::fmod)>::FuncInner<VariantUtilityFunctions::fmod, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("fmod", sarray("x", "y"));
+	Func<decltype(VariantUtilityFunctions::fposmod)>::FuncInner<VariantUtilityFunctions::fposmod, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("fposmod", sarray("x", "y"));
+	Func<decltype(VariantUtilityFunctions::posmod)>::FuncInner<VariantUtilityFunctions::posmod, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("posmod", sarray("x", "y"));
 
-	Func<typeof(VariantUtilityFunctions::floor)>::FuncInner<VariantUtilityFunctions::floor, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("floor", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::floorf)>::FuncInner<VariantUtilityFunctions::floorf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("floorf", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::floori)>::FuncInner<VariantUtilityFunctions::floori, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("floori", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::floor)>::FuncInner<VariantUtilityFunctions::floor, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("floor", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::floorf)>::FuncInner<VariantUtilityFunctions::floorf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("floorf", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::floori)>::FuncInner<VariantUtilityFunctions::floori, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("floori", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::ceil)>::FuncInner<VariantUtilityFunctions::ceil, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("ceil", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::ceilf)>::FuncInner<VariantUtilityFunctions::ceilf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("ceilf", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::ceili)>::FuncInner<VariantUtilityFunctions::ceili, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("ceili", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::ceil)>::FuncInner<VariantUtilityFunctions::ceil, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("ceil", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::ceilf)>::FuncInner<VariantUtilityFunctions::ceilf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("ceilf", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::ceili)>::FuncInner<VariantUtilityFunctions::ceili, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("ceili", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::round)>::FuncInner<VariantUtilityFunctions::round, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("round", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::roundf)>::FuncInner<VariantUtilityFunctions::roundf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("roundf", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::roundi)>::FuncInner<VariantUtilityFunctions::roundi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("roundi", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::round)>::FuncInner<VariantUtilityFunctions::round, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("round", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::roundf)>::FuncInner<VariantUtilityFunctions::roundf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("roundf", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::roundi)>::FuncInner<VariantUtilityFunctions::roundi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("roundi", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::abs)>::FuncInner<VariantUtilityFunctions::abs, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("abs", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::absf)>::FuncInner<VariantUtilityFunctions::absf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("absf", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::absi)>::FuncInner<VariantUtilityFunctions::absi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("absi", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::abs)>::FuncInner<VariantUtilityFunctions::abs, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("abs", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::absf)>::FuncInner<VariantUtilityFunctions::absf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("absf", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::absi)>::FuncInner<VariantUtilityFunctions::absi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("absi", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::sign)>::FuncInner<VariantUtilityFunctions::sign, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sign", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::signf)>::FuncInner<VariantUtilityFunctions::signf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("signf", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::signi)>::FuncInner<VariantUtilityFunctions::signi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("signi", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::sign)>::FuncInner<VariantUtilityFunctions::sign, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sign", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::signf)>::FuncInner<VariantUtilityFunctions::signf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("signf", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::signi)>::FuncInner<VariantUtilityFunctions::signi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("signi", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::snapped)>::FuncInner<VariantUtilityFunctions::snapped, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("snapped", sarray("x", "step"));
-	Func<typeof(VariantUtilityFunctions::snappedf)>::FuncInner<VariantUtilityFunctions::snappedf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("snappedf", sarray("x", "step"));
-	Func<typeof(VariantUtilityFunctions::snappedi)>::FuncInner<VariantUtilityFunctions::snappedi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("snappedi", sarray("x", "step"));
+	Func<decltype(VariantUtilityFunctions::snapped)>::FuncInner<VariantUtilityFunctions::snapped, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("snapped", sarray("x", "step"));
+	Func<decltype(VariantUtilityFunctions::snappedf)>::FuncInner<VariantUtilityFunctions::snappedf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("snappedf", sarray("x", "step"));
+	Func<decltype(VariantUtilityFunctions::snappedi)>::FuncInner<VariantUtilityFunctions::snappedi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("snappedi", sarray("x", "step"));
 
-	Func<typeof(VariantUtilityFunctions::pow)>::FuncInner<VariantUtilityFunctions::pow, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("pow", sarray("base", "exp"));
-	Func<typeof(VariantUtilityFunctions::log)>::FuncInner<VariantUtilityFunctions::log, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("log", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::exp)>::FuncInner<VariantUtilityFunctions::exp, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("exp", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::pow)>::FuncInner<VariantUtilityFunctions::pow, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("pow", sarray("base", "exp"));
+	Func<decltype(VariantUtilityFunctions::log)>::FuncInner<VariantUtilityFunctions::log, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("log", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::exp)>::FuncInner<VariantUtilityFunctions::exp, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("exp", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::is_nan)>::FuncInner<VariantUtilityFunctions::is_nan, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_nan", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::is_inf)>::FuncInner<VariantUtilityFunctions::is_inf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_inf", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::is_nan)>::FuncInner<VariantUtilityFunctions::is_nan, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_nan", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::is_inf)>::FuncInner<VariantUtilityFunctions::is_inf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_inf", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::is_equal_approx)>::FuncInner<VariantUtilityFunctions::is_equal_approx, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_equal_approx", sarray("a", "b"));
-	Func<typeof(VariantUtilityFunctions::is_zero_approx)>::FuncInner<VariantUtilityFunctions::is_zero_approx, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_zero_approx", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::is_finite)>::FuncInner<VariantUtilityFunctions::is_finite, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_finite", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::is_equal_approx)>::FuncInner<VariantUtilityFunctions::is_equal_approx, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_equal_approx", sarray("a", "b"));
+	Func<decltype(VariantUtilityFunctions::is_zero_approx)>::FuncInner<VariantUtilityFunctions::is_zero_approx, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_zero_approx", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::is_finite)>::FuncInner<VariantUtilityFunctions::is_finite, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("is_finite", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::ease)>::FuncInner<VariantUtilityFunctions::ease, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("ease", sarray("x", "curve"));
-	Func<typeof(VariantUtilityFunctions::step_decimals)>::FuncInner<VariantUtilityFunctions::step_decimals, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("step_decimals", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::ease)>::FuncInner<VariantUtilityFunctions::ease, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("ease", sarray("x", "curve"));
+	Func<decltype(VariantUtilityFunctions::step_decimals)>::FuncInner<VariantUtilityFunctions::step_decimals, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("step_decimals", sarray("x"));
 
-	Func<typeof(VariantUtilityFunctions::lerp)>::FuncInner<VariantUtilityFunctions::lerp, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("lerp", sarray("from", "to", "weight"));
-	Func<typeof(VariantUtilityFunctions::lerpf)>::FuncInner<VariantUtilityFunctions::lerpf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("lerpf", sarray("from", "to", "weight"));
-	Func<typeof(VariantUtilityFunctions::cubic_interpolate)>::FuncInner<VariantUtilityFunctions::cubic_interpolate, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cubic_interpolate", sarray("from", "to", "pre", "post", "weight"));
-	Func<typeof(VariantUtilityFunctions::cubic_interpolate_angle)>::FuncInner<VariantUtilityFunctions::cubic_interpolate_angle, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cubic_interpolate_angle", sarray("from", "to", "pre", "post", "weight"));
-	Func<typeof(VariantUtilityFunctions::cubic_interpolate_in_time)>::FuncInner<VariantUtilityFunctions::cubic_interpolate_in_time, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cubic_interpolate_in_time", sarray("from", "to", "pre", "post", "weight", "to_t", "pre_t", "post_t"));
-	Func<typeof(VariantUtilityFunctions::cubic_interpolate_angle_in_time)>::FuncInner<VariantUtilityFunctions::cubic_interpolate_angle_in_time, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cubic_interpolate_angle_in_time", sarray("from", "to", "pre", "post", "weight", "to_t", "pre_t", "post_t"));
-	Func<typeof(VariantUtilityFunctions::bezier_interpolate)>::FuncInner<VariantUtilityFunctions::bezier_interpolate, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("bezier_interpolate", sarray("start", "control_1", "control_2", "end", "t"));
-	Func<typeof(VariantUtilityFunctions::bezier_derivative)>::FuncInner<VariantUtilityFunctions::bezier_derivative, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("bezier_derivative", sarray("start", "control_1", "control_2", "end", "t"));
-	Func<typeof(VariantUtilityFunctions::angle_difference)>::FuncInner<VariantUtilityFunctions::angle_difference, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("angle_difference", sarray("from", "to"));
-	Func<typeof(VariantUtilityFunctions::lerp_angle)>::FuncInner<VariantUtilityFunctions::lerp_angle, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("lerp_angle", sarray("from", "to", "weight"));
-	Func<typeof(VariantUtilityFunctions::inverse_lerp)>::FuncInner<VariantUtilityFunctions::inverse_lerp, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("inverse_lerp", sarray("from", "to", "weight"));
-	Func<typeof(VariantUtilityFunctions::remap)>::FuncInner<VariantUtilityFunctions::remap, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("remap", sarray("value", "istart", "istop", "ostart", "ostop"));
+	Func<decltype(VariantUtilityFunctions::lerp)>::FuncInner<VariantUtilityFunctions::lerp, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("lerp", sarray("from", "to", "weight"));
+	Func<decltype(VariantUtilityFunctions::lerpf)>::FuncInner<VariantUtilityFunctions::lerpf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("lerpf", sarray("from", "to", "weight"));
+	Func<decltype(VariantUtilityFunctions::cubic_interpolate)>::FuncInner<VariantUtilityFunctions::cubic_interpolate, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cubic_interpolate", sarray("from", "to", "pre", "post", "weight"));
+	Func<decltype(VariantUtilityFunctions::cubic_interpolate_angle)>::FuncInner<VariantUtilityFunctions::cubic_interpolate_angle, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cubic_interpolate_angle", sarray("from", "to", "pre", "post", "weight"));
+	Func<decltype(VariantUtilityFunctions::cubic_interpolate_in_time)>::FuncInner<VariantUtilityFunctions::cubic_interpolate_in_time, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cubic_interpolate_in_time", sarray("from", "to", "pre", "post", "weight", "to_t", "pre_t", "post_t"));
+	Func<decltype(VariantUtilityFunctions::cubic_interpolate_angle_in_time)>::FuncInner<VariantUtilityFunctions::cubic_interpolate_angle_in_time, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("cubic_interpolate_angle_in_time", sarray("from", "to", "pre", "post", "weight", "to_t", "pre_t", "post_t"));
+	Func<decltype(VariantUtilityFunctions::bezier_interpolate)>::FuncInner<VariantUtilityFunctions::bezier_interpolate, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("bezier_interpolate", sarray("start", "control_1", "control_2", "end", "t"));
+	Func<decltype(VariantUtilityFunctions::bezier_derivative)>::FuncInner<VariantUtilityFunctions::bezier_derivative, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("bezier_derivative", sarray("start", "control_1", "control_2", "end", "t"));
+	Func<decltype(VariantUtilityFunctions::angle_difference)>::FuncInner<VariantUtilityFunctions::angle_difference, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("angle_difference", sarray("from", "to"));
+	Func<decltype(VariantUtilityFunctions::lerp_angle)>::FuncInner<VariantUtilityFunctions::lerp_angle, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("lerp_angle", sarray("from", "to", "weight"));
+	Func<decltype(VariantUtilityFunctions::inverse_lerp)>::FuncInner<VariantUtilityFunctions::inverse_lerp, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("inverse_lerp", sarray("from", "to", "weight"));
+	Func<decltype(VariantUtilityFunctions::remap)>::FuncInner<VariantUtilityFunctions::remap, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("remap", sarray("value", "istart", "istop", "ostart", "ostop"));
 
-	Func<typeof(VariantUtilityFunctions::smoothstep)>::FuncInner<VariantUtilityFunctions::smoothstep, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("smoothstep", sarray("from", "to", "x"));
-	Func<typeof(VariantUtilityFunctions::move_toward)>::FuncInner<VariantUtilityFunctions::move_toward, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("move_toward", sarray("from", "to", "delta"));
-	Func<typeof(VariantUtilityFunctions::rotate_toward)>::FuncInner<VariantUtilityFunctions::rotate_toward, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("rotate_toward", sarray("from", "to", "delta"));
+	Func<decltype(VariantUtilityFunctions::smoothstep)>::FuncInner<VariantUtilityFunctions::smoothstep, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("smoothstep", sarray("from", "to", "x"));
+	Func<decltype(VariantUtilityFunctions::move_toward)>::FuncInner<VariantUtilityFunctions::move_toward, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("move_toward", sarray("from", "to", "delta"));
+	Func<decltype(VariantUtilityFunctions::rotate_toward)>::FuncInner<VariantUtilityFunctions::rotate_toward, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("rotate_toward", sarray("from", "to", "delta"));
 
-	Func<typeof(VariantUtilityFunctions::deg_to_rad)>::FuncInner<VariantUtilityFunctions::deg_to_rad, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("deg_to_rad", sarray("deg"));
-	Func<typeof(VariantUtilityFunctions::rad_to_deg)>::FuncInner<VariantUtilityFunctions::rad_to_deg, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("rad_to_deg", sarray("rad"));
-	Func<typeof(VariantUtilityFunctions::linear_to_db)>::FuncInner<VariantUtilityFunctions::linear_to_db, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("linear_to_db", sarray("lin"));
-	Func<typeof(VariantUtilityFunctions::db_to_linear)>::FuncInner<VariantUtilityFunctions::db_to_linear, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("db_to_linear", sarray("db"));
+	Func<decltype(VariantUtilityFunctions::deg_to_rad)>::FuncInner<VariantUtilityFunctions::deg_to_rad, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("deg_to_rad", sarray("deg"));
+	Func<decltype(VariantUtilityFunctions::rad_to_deg)>::FuncInner<VariantUtilityFunctions::rad_to_deg, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("rad_to_deg", sarray("rad"));
+	Func<decltype(VariantUtilityFunctions::linear_to_db)>::FuncInner<VariantUtilityFunctions::linear_to_db, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("linear_to_db", sarray("lin"));
+	Func<decltype(VariantUtilityFunctions::db_to_linear)>::FuncInner<VariantUtilityFunctions::db_to_linear, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("db_to_linear", sarray("db"));
 
-	Func<typeof(VariantUtilityFunctions::wrap)>::FuncInner<VariantUtilityFunctions::wrap, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("wrap", sarray("value", "min", "max"));
-	Func<typeof(VariantUtilityFunctions::wrapi)>::FuncInner<VariantUtilityFunctions::wrapi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("wrapi", sarray("value", "min", "max"));
-	Func<typeof(VariantUtilityFunctions::wrapf)>::FuncInner<VariantUtilityFunctions::wrapf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("wrapf", sarray("value", "min", "max"));
+	Func<decltype(VariantUtilityFunctions::wrap)>::FuncInner<VariantUtilityFunctions::wrap, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("wrap", sarray("value", "min", "max"));
+	Func<decltype(VariantUtilityFunctions::wrapi)>::FuncInner<VariantUtilityFunctions::wrapi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("wrapi", sarray("value", "min", "max"));
+	Func<decltype(VariantUtilityFunctions::wrapf)>::FuncInner<VariantUtilityFunctions::wrapf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("wrapf", sarray("value", "min", "max"));
 
-	Func<typeof(VariantUtilityFunctions::max)>::FuncInner<VariantUtilityFunctions::max, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("max", sarray());
-	Func<typeof(VariantUtilityFunctions::maxi)>::FuncInner<VariantUtilityFunctions::maxi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("maxi", sarray("a", "b"));
-	Func<typeof(VariantUtilityFunctions::maxf)>::FuncInner<VariantUtilityFunctions::maxf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("maxf", sarray("a", "b"));
+	Func<decltype(VariantUtilityFunctions::max)>::FuncInner<VariantUtilityFunctions::max, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("max", sarray());
+	Func<decltype(VariantUtilityFunctions::maxi)>::FuncInner<VariantUtilityFunctions::maxi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("maxi", sarray("a", "b"));
+	Func<decltype(VariantUtilityFunctions::maxf)>::FuncInner<VariantUtilityFunctions::maxf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("maxf", sarray("a", "b"));
 
-	Func<typeof(VariantUtilityFunctions::min)>::FuncInner<VariantUtilityFunctions::min, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("min", sarray());
-	Func<typeof(VariantUtilityFunctions::mini)>::FuncInner<VariantUtilityFunctions::mini, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("mini", sarray("a", "b"));
-	Func<typeof(VariantUtilityFunctions::minf)>::FuncInner<VariantUtilityFunctions::minf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("minf", sarray("a", "b"));
+	Func<decltype(VariantUtilityFunctions::min)>::FuncInner<VariantUtilityFunctions::min, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("min", sarray());
+	Func<decltype(VariantUtilityFunctions::mini)>::FuncInner<VariantUtilityFunctions::mini, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("mini", sarray("a", "b"));
+	Func<decltype(VariantUtilityFunctions::minf)>::FuncInner<VariantUtilityFunctions::minf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("minf", sarray("a", "b"));
 
-	Func<typeof(VariantUtilityFunctions::clamp)>::FuncInner<VariantUtilityFunctions::clamp, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("clamp", sarray("value", "min", "max"));
-	Func<typeof(VariantUtilityFunctions::clampi)>::FuncInner<VariantUtilityFunctions::clampi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("clampi", sarray("value", "min", "max"));
-	Func<typeof(VariantUtilityFunctions::clampf)>::FuncInner<VariantUtilityFunctions::clampf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("clampf", sarray("value", "min", "max"));
+	Func<decltype(VariantUtilityFunctions::clamp)>::FuncInner<VariantUtilityFunctions::clamp, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("clamp", sarray("value", "min", "max"));
+	Func<decltype(VariantUtilityFunctions::clampi)>::FuncInner<VariantUtilityFunctions::clampi, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("clampi", sarray("value", "min", "max"));
+	Func<decltype(VariantUtilityFunctions::clampf)>::FuncInner<VariantUtilityFunctions::clampf, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("clampf", sarray("value", "min", "max"));
 
-	Func<typeof(VariantUtilityFunctions::nearest_po2)>::FuncInner<VariantUtilityFunctions::nearest_po2, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("nearest_po2", sarray("value"));
-	Func<typeof(VariantUtilityFunctions::pingpong)>::FuncInner<VariantUtilityFunctions::pingpong, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("pingpong", sarray("value", "length"));
+	Func<decltype(VariantUtilityFunctions::nearest_po2)>::FuncInner<VariantUtilityFunctions::nearest_po2, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("nearest_po2", sarray("value"));
+	Func<decltype(VariantUtilityFunctions::pingpong)>::FuncInner<VariantUtilityFunctions::pingpong, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("pingpong", sarray("value", "length"));
 
-	Func<typeof(VariantUtilityFunctions::sigmoid)>::FuncInner<VariantUtilityFunctions::sigmoid, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sigmoid", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::sigmoid_approx)>::FuncInner<VariantUtilityFunctions::sigmoid_approx, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sigmoid_approx", sarray("x"));
-	Func<typeof(VariantUtilityFunctions::sigmoid_affine)>::FuncInner<VariantUtilityFunctions::sigmoid_affine, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sigmoid_affine", sarray("x", "amplitude", "y_translation"));
-	Func<typeof(VariantUtilityFunctions::sigmoid_affine_approx)>::FuncInner<VariantUtilityFunctions::sigmoid_affine_approx, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sigmoid_affine_approx", sarray("x", "amplitude", "y_translation"));
+	Func<decltype(VariantUtilityFunctions::sigmoid)>::FuncInner<VariantUtilityFunctions::sigmoid, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sigmoid", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::sigmoid_approx)>::FuncInner<VariantUtilityFunctions::sigmoid_approx, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sigmoid_approx", sarray("x"));
+	Func<decltype(VariantUtilityFunctions::sigmoid_affine)>::FuncInner<VariantUtilityFunctions::sigmoid_affine, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sigmoid_affine", sarray("x", "amplitude", "y_translation"));
+	Func<decltype(VariantUtilityFunctions::sigmoid_affine_approx)>::FuncInner<VariantUtilityFunctions::sigmoid_affine_approx, Variant::UTILITY_FUNC_TYPE_MATH>::register_fn("sigmoid_affine_approx", sarray("x", "amplitude", "y_translation"));
 
 	// Random
 
 	Func<void()>::FuncInner<VariantUtilityFunctions::randomize, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randomize", sarray());
-	Func<typeof(VariantUtilityFunctions::randi)>::FuncInner<VariantUtilityFunctions::randi, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randi", sarray());
-	Func<typeof(VariantUtilityFunctions::randf)>::FuncInner<VariantUtilityFunctions::randf, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randf", sarray());
-	Func<typeof(VariantUtilityFunctions::randi_range)>::FuncInner<VariantUtilityFunctions::randi_range, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randi_range", sarray("from", "to"));
-	Func<typeof(VariantUtilityFunctions::randf_range)>::FuncInner<VariantUtilityFunctions::randf_range, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randf_range", sarray("from", "to"));
-	Func<typeof(VariantUtilityFunctions::randfn)>::FuncInner<VariantUtilityFunctions::randfn, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randfn", sarray("mean", "deviation"));
+	Func<decltype(VariantUtilityFunctions::randi)>::FuncInner<VariantUtilityFunctions::randi, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randi", sarray());
+	Func<decltype(VariantUtilityFunctions::randf)>::FuncInner<VariantUtilityFunctions::randf, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randf", sarray());
+	Func<decltype(VariantUtilityFunctions::randi_range)>::FuncInner<VariantUtilityFunctions::randi_range, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randi_range", sarray("from", "to"));
+	Func<decltype(VariantUtilityFunctions::randf_range)>::FuncInner<VariantUtilityFunctions::randf_range, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randf_range", sarray("from", "to"));
+	Func<decltype(VariantUtilityFunctions::randfn)>::FuncInner<VariantUtilityFunctions::randfn, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("randfn", sarray("mean", "deviation"));
 	Func<void(int64_t)>::FuncInner<VariantUtilityFunctions::seed, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("seed", sarray("base"));
-	Func<typeof(VariantUtilityFunctions::rand_from_seed)>::FuncInner<VariantUtilityFunctions::rand_from_seed, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("rand_from_seed", sarray("seed"));
+	Func<decltype(VariantUtilityFunctions::rand_from_seed)>::FuncInner<VariantUtilityFunctions::rand_from_seed, Variant::UTILITY_FUNC_TYPE_RANDOM>::register_fn("rand_from_seed", sarray("seed"));
 
 	// Utility
 
-	Func<typeof(VariantUtilityFunctions::weakref)>::FuncInner<VariantUtilityFunctions::weakref, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("weakref", sarray("obj"));
-	Func<typeof(VariantUtilityFunctions::_typeof)>::FuncInner<VariantUtilityFunctions::_typeof, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("_typeof", sarray("variable"));
-	Func<typeof(VariantUtilityFunctions::type_convert)>::FuncInner<VariantUtilityFunctions::type_convert, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("type_convert", sarray("variant", "type"));
-	Func<typeof(VariantUtilityFunctions::str)>::FuncInner<VariantUtilityFunctions::str, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("str", sarray());
-	Func<typeof(VariantUtilityFunctions::error_string)>::FuncInner<VariantUtilityFunctions::error_string, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("error_string", sarray("error"));
-	Func<typeof(VariantUtilityFunctions::type_string)>::FuncInner<VariantUtilityFunctions::type_string, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("type_string", sarray("type"));
-	Func<typeof(VariantUtilityFunctions::print)>::FuncInner<VariantUtilityFunctions::print, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("print", sarray());
-	Func<typeof(VariantUtilityFunctions::print_rich)>::FuncInner<VariantUtilityFunctions::print_rich, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("print_rich", sarray());
-	Func<typeof(VariantUtilityFunctions::printerr)>::FuncInner<VariantUtilityFunctions::printerr, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("printerr", sarray());
-	Func<typeof(VariantUtilityFunctions::printt)>::FuncInner<VariantUtilityFunctions::printt, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("printt", sarray());
-	Func<typeof(VariantUtilityFunctions::prints)>::FuncInner<VariantUtilityFunctions::prints, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("prints", sarray());
-	Func<typeof(VariantUtilityFunctions::printraw)>::FuncInner<VariantUtilityFunctions::printraw, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("printraw", sarray());
-	Func<typeof(VariantUtilityFunctions::_print_verbose)>::FuncInner<VariantUtilityFunctions::_print_verbose, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("print_verbose", sarray());
-	Func<typeof(VariantUtilityFunctions::push_error)>::FuncInner<VariantUtilityFunctions::push_error, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("push_error", sarray());
-	Func<typeof(VariantUtilityFunctions::push_warning)>::FuncInner<VariantUtilityFunctions::push_warning, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("push_warning", sarray());
+	Func<decltype(VariantUtilityFunctions::weakref)>::FuncInner<VariantUtilityFunctions::weakref, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("weakref", sarray("obj"));
+	Func<decltype(VariantUtilityFunctions::_typeof)>::FuncInner<VariantUtilityFunctions::_typeof, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("_typeof", sarray("variable"));
+	Func<decltype(VariantUtilityFunctions::type_convert)>::FuncInner<VariantUtilityFunctions::type_convert, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("type_convert", sarray("variant", "type"));
+	Func<decltype(VariantUtilityFunctions::str)>::FuncInner<VariantUtilityFunctions::str, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("str", sarray());
+	Func<decltype(VariantUtilityFunctions::error_string)>::FuncInner<VariantUtilityFunctions::error_string, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("error_string", sarray("error"));
+	Func<decltype(VariantUtilityFunctions::type_string)>::FuncInner<VariantUtilityFunctions::type_string, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("type_string", sarray("type"));
+	Func<decltype(VariantUtilityFunctions::print)>::FuncInner<VariantUtilityFunctions::print, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("print", sarray());
+	Func<decltype(VariantUtilityFunctions::print_rich)>::FuncInner<VariantUtilityFunctions::print_rich, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("print_rich", sarray());
+	Func<decltype(VariantUtilityFunctions::printerr)>::FuncInner<VariantUtilityFunctions::printerr, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("printerr", sarray());
+	Func<decltype(VariantUtilityFunctions::printt)>::FuncInner<VariantUtilityFunctions::printt, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("printt", sarray());
+	Func<decltype(VariantUtilityFunctions::prints)>::FuncInner<VariantUtilityFunctions::prints, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("prints", sarray());
+	Func<decltype(VariantUtilityFunctions::printraw)>::FuncInner<VariantUtilityFunctions::printraw, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("printraw", sarray());
+	Func<decltype(VariantUtilityFunctions::_print_verbose)>::FuncInner<VariantUtilityFunctions::_print_verbose, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("print_verbose", sarray());
+	Func<decltype(VariantUtilityFunctions::push_error)>::FuncInner<VariantUtilityFunctions::push_error, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("push_error", sarray());
+	Func<decltype(VariantUtilityFunctions::push_warning)>::FuncInner<VariantUtilityFunctions::push_warning, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("push_warning", sarray());
 
-	Func<typeof(VariantUtilityFunctions::var_to_str)>::FuncInner<VariantUtilityFunctions::var_to_str, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("var_to_str", sarray("variable"));
-	Func<typeof(VariantUtilityFunctions::str_to_var)>::FuncInner<VariantUtilityFunctions::str_to_var, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("str_to_var", sarray("string"));
+	Func<decltype(VariantUtilityFunctions::var_to_str)>::FuncInner<VariantUtilityFunctions::var_to_str, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("var_to_str", sarray("variable"));
+	Func<decltype(VariantUtilityFunctions::str_to_var)>::FuncInner<VariantUtilityFunctions::str_to_var, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("str_to_var", sarray("string"));
 
-	Func<typeof(VariantUtilityFunctions::var_to_str_with_objects)>::FuncInner<VariantUtilityFunctions::var_to_str_with_objects, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("var_to_str_with_objects", sarray("variable"));
-	Func<typeof(VariantUtilityFunctions::str_to_var_with_objects)>::FuncInner<VariantUtilityFunctions::str_to_var_with_objects, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("str_to_var_with_objects", sarray("string"));
+	Func<decltype(VariantUtilityFunctions::var_to_str_with_objects)>::FuncInner<VariantUtilityFunctions::var_to_str_with_objects, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("var_to_str_with_objects", sarray("variable"));
+	Func<decltype(VariantUtilityFunctions::str_to_var_with_objects)>::FuncInner<VariantUtilityFunctions::str_to_var_with_objects, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("str_to_var_with_objects", sarray("string"));
 
-	Func<typeof(VariantUtilityFunctions::var_to_bytes)>::FuncInner<VariantUtilityFunctions::var_to_bytes, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("var_to_bytes", sarray("variable"));
-	Func<typeof(VariantUtilityFunctions::bytes_to_var)>::FuncInner<VariantUtilityFunctions::bytes_to_var, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("bytes_to_var", sarray("bytes"));
+	Func<decltype(VariantUtilityFunctions::var_to_bytes)>::FuncInner<VariantUtilityFunctions::var_to_bytes, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("var_to_bytes", sarray("variable"));
+	Func<decltype(VariantUtilityFunctions::bytes_to_var)>::FuncInner<VariantUtilityFunctions::bytes_to_var, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("bytes_to_var", sarray("bytes"));
 
-	Func<typeof(VariantUtilityFunctions::var_to_bytes_with_objects)>::FuncInner<VariantUtilityFunctions::var_to_bytes_with_objects, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("var_to_bytes_with_objects", sarray("variable"));
-	Func<typeof(VariantUtilityFunctions::bytes_to_var_with_objects)>::FuncInner<VariantUtilityFunctions::bytes_to_var_with_objects, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("bytes_to_var_with_objects", sarray("bytes"));
+	Func<decltype(VariantUtilityFunctions::var_to_bytes_with_objects)>::FuncInner<VariantUtilityFunctions::var_to_bytes_with_objects, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("var_to_bytes_with_objects", sarray("variable"));
+	Func<decltype(VariantUtilityFunctions::bytes_to_var_with_objects)>::FuncInner<VariantUtilityFunctions::bytes_to_var_with_objects, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("bytes_to_var_with_objects", sarray("bytes"));
 
-	Func<typeof(VariantUtilityFunctions::hash)>::FuncInner<VariantUtilityFunctions::hash, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("hash", sarray("variable"));
+	Func<decltype(VariantUtilityFunctions::hash)>::FuncInner<VariantUtilityFunctions::hash, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("hash", sarray("variable"));
 
-	Func<typeof(VariantUtilityFunctions::instance_from_id)>::FuncInner<VariantUtilityFunctions::instance_from_id, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("instance_from_id", sarray("instance_id"));
-	Func<typeof(VariantUtilityFunctions::is_instance_id_valid)>::FuncInner<VariantUtilityFunctions::is_instance_id_valid, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("is_instance_id_valid", sarray("id"));
-	Func<typeof(VariantUtilityFunctions::is_instance_valid)>::FuncInner<VariantUtilityFunctions::is_instance_valid, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("is_instance_valid", sarray("instance"));
+	Func<decltype(VariantUtilityFunctions::instance_from_id)>::FuncInner<VariantUtilityFunctions::instance_from_id, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("instance_from_id", sarray("instance_id"));
+	Func<decltype(VariantUtilityFunctions::is_instance_id_valid)>::FuncInner<VariantUtilityFunctions::is_instance_id_valid, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("is_instance_id_valid", sarray("id"));
+	Func<decltype(VariantUtilityFunctions::is_instance_valid)>::FuncInner<VariantUtilityFunctions::is_instance_valid, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("is_instance_valid", sarray("instance"));
 
-	Func<typeof(VariantUtilityFunctions::rid_allocate_id)>::FuncInner<VariantUtilityFunctions::rid_allocate_id, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("rid_allocate_id", Vector<String>());
-	Func<typeof(VariantUtilityFunctions::rid_from_int64)>::FuncInner<VariantUtilityFunctions::rid_from_int64, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("rid_from_int64", sarray("base"));
+	Func<decltype(VariantUtilityFunctions::rid_allocate_id)>::FuncInner<VariantUtilityFunctions::rid_allocate_id, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("rid_allocate_id", Vector<String>());
+	Func<decltype(VariantUtilityFunctions::rid_from_int64)>::FuncInner<VariantUtilityFunctions::rid_from_int64, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("rid_from_int64", sarray("base"));
 
-	Func<typeof(VariantUtilityFunctions::is_same)>::FuncInner<VariantUtilityFunctions::is_same, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("is_same", sarray("a", "b"));
+	Func<decltype(VariantUtilityFunctions::is_same)>::FuncInner<VariantUtilityFunctions::is_same, Variant::UTILITY_FUNC_TYPE_GENERAL>::register_fn("is_same", sarray("a", "b"));
 }
 
 void Variant::_unregister_variant_utility_functions() {
