@@ -86,6 +86,7 @@
         show_help=0
         target=editor
         target_arch=${arch}
+        scons_platform=${platform}
         dev_build=no
         precision=single
         threads=yes
@@ -103,16 +104,25 @@
           fi
 
           if [ "$parsing_runtime_args" -eq 0 ]; then
-            scons_args+=("$arg")
-
             case "$arg" in
               target=*) target=''${arg#target=} ;;
-              arch=*) target_arch=''${arg#arch=} ;;
+              arch=*)
+                target_arch=''${arg#arch=}
+                if [ "$target_arch" = "auto" ]; then
+                  target_arch=${arch}
+                fi
+                ;;
+              platform=*)
+                scons_platform=''${arg#platform=}
+                continue
+                ;;
               dev_build=*) dev_build=''${arg#dev_build=} ;;
               precision=*) precision=''${arg#precision=} ;;
               threads=*) threads=''${arg#threads=} ;;
               extra_suffix=*) extra_suffix=''${arg#extra_suffix=} ;;
             esac
+
+            scons_args+=("$arg")
           else
             runtime_args+=("$arg")
           fi
@@ -145,7 +155,7 @@ EOF
           exit 0
         fi
 
-        binary_pattern="redot.${platform}.''${target}"
+        binary_pattern="redot.$scons_platform.''${target}"
 
         if [ "$dev_build" = "yes" ]; then
           binary_pattern="$binary_pattern.dev"
@@ -165,26 +175,17 @@ EOF
           binary_pattern="$binary_pattern.$extra_suffix"
         fi
 
-        shopt -s nullglob
-        matches=(./bin/"$binary_pattern"*)
+        binary_path="./bin/$binary_pattern"
 
-        if [ "''${#matches[@]}" -eq 0 ]; then
+        if [ ! -f "$binary_path" ]; then
           echo "Building Redot..."
-          scons platform=${platform} "''${scons_args[@]}"
-          matches=(./bin/"$binary_pattern"*)
+          scons "''${scons_args[@]}" platform=$scons_platform
         fi
 
-        if [ "''${#matches[@]}" -eq 0 ]; then
-          echo "Could not find a built Redot binary matching $binary_pattern" >&2
+        if [ ! -f "$binary_path" ]; then
+          echo "Could not find a built Redot binary at $binary_path" >&2
           exit 1
         fi
-
-        binary_path="''${matches[0]}"
-        for candidate in "''${matches[@]}"; do
-          if [ "$candidate" -nt "$binary_path" ]; then
-            binary_path="$candidate"
-          fi
-        done
 
         exec "$binary_path" "''${runtime_args[@]}"
       '';

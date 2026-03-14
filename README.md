@@ -63,7 +63,7 @@ nix run .
 
 This will automatically install all build dependencies and compile Redot if the binary doesn't exist.
 
-Detailed Nix usage, including passing SCons build flags through `nix run`, forwarding runtime arguments, and manual `nix develop` workflows, is documented in `docs/nix.md`.
+Detailed Nix usage, including passing SCons build flags through `nix run`, forwarding runtime arguments, and manual `nix develop` workflows, is documented in the `Nix usage guide` at `doc/nix.md`.
 
 
 ## Community and contributing
