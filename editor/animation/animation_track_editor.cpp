@@ -3114,7 +3114,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 							if (is_angle) {
 								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinearAngle")), TTR("Linear Angle"), MENU_INTERPOLATION_LINEAR_ANGLE);
 								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubicAngle")), TTR("Cubic Angle"), MENU_INTERPOLATION_CUBIC_ANGLE);
-								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpMonotonic")), TTR("Monotonic Cubic Angle"), MENU_INTERPOLATION_CUBIC_MONOTONIC_ANGLE);
+								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpMonotonicAngle")), TTR("Monotonic Cubic Angle"), MENU_INTERPOLATION_CUBIC_MONOTONIC_ANGLE);
 							}
 						}
 					}
