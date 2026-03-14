@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_undo_redo_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object.h"
 #include "core/object/undo_redo.h"
 

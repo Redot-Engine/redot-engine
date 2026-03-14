@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skeleton_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/inspector/add_metadata_dialog.h"
 #include "editor/inspector/editor_properties.h"
@@ -99,7 +105,7 @@ protected:
 public:
 	BonePropertiesEditor(Skeleton3DEditor *p_skeleton_editor, Skeleton3D *p_skeleton);
 
-	// Which transform target to modify.
+	/// Which transform target to modify.
 	void set_target(const String &p_prop);
 	void set_label(const String &p_label) { label = p_label; }
 	void set_keyable(const bool p_keyable);
@@ -126,7 +132,7 @@ class Skeleton3DEditor : public VBoxContainer {
 
 	struct BoneInfo {
 		PhysicalBone3D *physical_bone = nullptr;
-		Transform3D relative_rest; // Relative to skeleton node.
+		Transform3D relative_rest; ///< Relative to skeleton node.
 	};
 
 	EditorInspectorPluginSkeleton *editor_plugin = nullptr;
@@ -208,6 +214,7 @@ class Skeleton3DEditor : public VBoxContainer {
 	void _draw_handles();
 
 	void _joint_tree_selection_changed();
+	/// May be not used with single select mode.
 	void _joint_tree_rmb_select(const Vector2 &p_pos, MouseButton p_button);
 	void _joint_tree_button_clicked(Object *p_item, int p_column, int p_id, MouseButton p_button);
 	void _update_properties();

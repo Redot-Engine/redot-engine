@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file joint_3d_gizmo_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 
 class Joint3DGizmoPlugin : public EditorNode3DGizmoPlugin {
@@ -92,7 +98,7 @@ public:
 	/// with axis X and Y that are looking toward the body and oriented toward up
 	static Basis look_body_toward_z(const Transform3D &p_joint_transform, const Transform3D &p_body_transform);
 
-	// Draw circle around p_axis
+	/// Draw circle around p_axis
 	static void draw_circle(Vector3::Axis p_axis, real_t p_radius, const Transform3D &p_offset, const Basis &p_base, real_t p_limit_lower, real_t p_limit_upper, Vector<Vector3> &r_points, bool p_inverse = false);
 	static void draw_cone(const Transform3D &p_offset, const Basis &p_base, real_t p_swing, real_t p_twist, Vector<Vector3> &r_points);
 };

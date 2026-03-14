@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file memory.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/templates/safe_refcount.h"
 
@@ -62,28 +68,33 @@ public:
 	static void *realloc_static(void *p_memory, size_t p_bytes, bool p_pad_align = false);
 	static void free_static(void *p_ptr, bool p_pad_align = false);
 
-	//	                            ↓ return value of alloc_aligned_static
-	//	┌─────────────────┬─────────┬─────────┬──────────────────┐
-	//	│ padding (up to  │ uint32_t│ void*   │ padding (up to   │
-	//	│ p_alignment - 1)│ offset  │ p_bytes │ p_alignment - 1) │
-	//	└─────────────────┴─────────┴─────────┴──────────────────┘
-	//
-	// alloc_aligned_static will allocate p_bytes + p_alignment - 1 + sizeof(uint32_t) and
-	// then offset the pointer until alignment is satisfied.
-	//
-	// This offset is stored before the start of the returned ptr so we can retrieve the original/real
-	// start of the ptr in order to free it.
-	//
-	// The rest is wasted as padding in the beginning and end of the ptr. The sum of padding at
-	// both start and end of the block must add exactly to p_alignment - 1.
-	//
-	// p_alignment MUST be a power of 2.
+	/**
+	 *	                            ↓ return value of alloc_aligned_static
+	 *	┌─────────────────┬─────────┬─────────┬──────────────────┐
+	 *	│ padding (up to  │ uint32_t│ void*   │ padding (up to   │
+	 *	│ p_alignment - 1)│ offset  │ p_bytes │ p_alignment - 1) │
+	 *	└─────────────────┴─────────┴─────────┴──────────────────┘
+	 *
+	 * alloc_aligned_static will allocate p_bytes + p_alignment - 1 + sizeof(uint32_t) and
+	 * then offset the pointer until alignment is satisfied.
+	 *
+	 * This offset is stored before the start of the returned ptr so we can retrieve the original/real
+	 * start of the ptr in order to free it.
+	 *
+	 * The rest is wasted as padding in the beginning and end of the ptr. The sum of padding at
+	 * both start and end of the block must add exactly to p_alignment - 1.
+	 *
+	 * p_alignment MUST be a power of 2.
+	 */
 	static void *alloc_aligned_static(size_t p_bytes, size_t p_alignment);
 	static void *realloc_aligned_static(void *p_memory, size_t p_bytes, size_t p_prev_bytes, size_t p_alignment);
-	// Pass the ptr returned by alloc_aligned_static to free it.
-	// e.g.
-	//	void *data = realloc_aligned_static( bytes, 16 );
-	//  free_aligned_static( data );
+
+	/**
+	 * Pass the ptr returned by alloc_aligned_static to free it.
+	 * e.g.
+	 *	void *data = realloc_aligned_static( bytes, 16 );
+	 *  free_aligned_static( data );
+	 */
 	static void free_aligned_static(void *p_memory);
 
 	static uint64_t get_mem_available();
@@ -103,8 +114,8 @@ void *operator new(size_t p_size, void *(*p_allocfunc)(size_t p_size)); ///< ope
 void *operator new(size_t p_size, void *p_pointer, size_t check, const char *p_description); ///< operator new that takes a description and uses a pointer to the preallocated memory
 
 #ifdef _MSC_VER
-// When compiling with VC++ 2017, the above declarations of placement new generate many irrelevant warnings (C4291).
-// The purpose of the following definitions is to muffle these warnings, not to provide a usable implementation of placement delete.
+/// When compiling with VC++ 2017, the above declarations of placement new generate many irrelevant warnings (C4291).
+/// The purpose of the following definitions is to muffle these warnings, not to provide a usable implementation of placement delete.
 void operator delete(void *p_mem, const char *p_description);
 void operator delete(void *p_mem, void *(*p_allocfunc)(size_t p_size));
 void operator delete(void *p_mem, void *p_pointer, size_t check, const char *p_description);
@@ -197,7 +208,7 @@ T *memnew_arr_template(size_t p_elements) {
 	return (T *)mem;
 }
 
-// Fast alternative to a loop constructor pattern.
+/// Fast alternative to a loop constructor pattern.
 template <typename T>
 _FORCE_INLINE_ void memnew_arr_placement(T *p_start, size_t p_num) {
 	if constexpr (is_zero_constructible_v<T>) {

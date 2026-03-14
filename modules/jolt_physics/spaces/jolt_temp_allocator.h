@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_temp_allocator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "Jolt/Jolt.h"
 
 #include "Jolt/Core/TempAllocator.h"

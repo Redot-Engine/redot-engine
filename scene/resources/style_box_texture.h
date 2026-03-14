@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file style_box_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/style_box.h"
 #include "scene/resources/texture.h"
 

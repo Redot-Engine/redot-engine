@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_opengl_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "../../openxr_api.h"

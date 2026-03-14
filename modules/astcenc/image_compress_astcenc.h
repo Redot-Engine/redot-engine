@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_compress_astcenc.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 
 #ifdef TOOLS_ENABLED

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_step_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_space_3d.h"
 
 #include "core/templates/local_vector.h"

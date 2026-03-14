@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file camera_feed.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/math/transform_2d.h"
 #include "servers/camera_server.h"
@@ -46,21 +52,21 @@ class CameraFeed : public RefCounted {
 
 public:
 	enum FeedDataType {
-		FEED_NOIMAGE, // we don't have an image yet
-		FEED_RGB, // our texture will contain a normal RGB texture that can be used directly
-		FEED_YCBCR, // our texture will contain a YCbCr texture that needs to be converted to RGB before output
-		FEED_YCBCR_SEP, // our camera is split into two textures, first plane contains Y data, second plane contains CbCr data
-		FEED_EXTERNAL, // specific for android atm, camera feed is managed externally, assumed RGB for now
+		FEED_NOIMAGE, ///< We don't have an image yet
+		FEED_RGB, ///< Our texture will contain a normal RGB texture that can be used directly
+		FEED_YCBCR, ///< Our texture will contain a YCbCr texture that needs to be converted to RGB before output
+		FEED_YCBCR_SEP, ///< Our camera is split into two textures, first plane contains Y data, second plane contains CbCr data
+		FEED_EXTERNAL, ///< Specific for android atm, camera feed is managed externally, assumed RGB for now
 	};
 
 	enum FeedPosition {
-		FEED_UNSPECIFIED, // we have no idea
-		FEED_FRONT, // this is a camera on the front of the device
-		FEED_BACK // this is a camera on the back of the device
+		FEED_UNSPECIFIED, ///< We have no idea
+		FEED_FRONT, ///< This is a camera on the front of the device
+		FEED_BACK ///< This is a camera on the back of the device
 	};
 
 private:
-	int id; // unique id for this, for internal use in case feeds are removed
+	int id; ///< Unique id for this, for internal use in case feeds are removed
 	const StringName format_changed_signal_name = "format_changed";
 	const StringName frame_changed_signal_name = "frame_changed";
 
@@ -74,18 +80,18 @@ protected:
 		uint32_t pixel_format = 0;
 	};
 
-	String name; // name of our camera feed
-	FeedDataType datatype; // type of texture data stored
-	FeedPosition position; // position of camera on the device
-	Transform2D transform; // display transform
+	String name; ///< Name of our camera feed
+	FeedDataType datatype; ///< Type of texture data stored
+	FeedPosition position; ///< Position of camera on the device
+	Transform2D transform; ///< Display transform
 	int base_width = 0;
 	int base_height = 0;
 	Vector<FeedFormat> formats;
 	Dictionary parameters;
 	int selected_format = -1;
 
-	bool active; // only when active do we actually update the camera texture each frame
-	RID texture[CameraServer::FEED_IMAGES]; // texture images needed for this
+	bool active; ///< Only when active do we actually update the camera texture each frame
+	RID texture[CameraServer::FEED_IMAGES]; ///< Texture images needed for this
 
 	static void _bind_methods();
 

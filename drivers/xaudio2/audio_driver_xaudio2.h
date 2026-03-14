@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_driver_xaudio2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
 #include "core/templates/safe_refcount.h"

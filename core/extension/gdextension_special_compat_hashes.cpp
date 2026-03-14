@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdextension_special_compat_hashes.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdextension_special_compat_hashes.h"
 
 #ifndef DISABLE_DEPRECATED

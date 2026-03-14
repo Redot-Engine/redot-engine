@@ -33,11 +33,9 @@
 #pragma once
 
 /**
- * @class Vector
- * Vector container. Simple copy-on-write container.
+ * @file vector.h
  *
- * LocalVector is an alternative available for internal use when COW is not
- * required.
+ * [Add any documentation that applies to the entire file here!]
  */
 
 #include "core/error/error_macros.h"
@@ -59,6 +57,13 @@ public:
 	}
 };
 
+/**
+ * @class Vector
+ * Vector container. Simple copy-on-write container.
+ *
+ * LocalVector is an alternative available for internal use when COW is not
+ * required.
+ */
 template <typename T>
 class Vector {
 	friend class VectorWriteProxy<T>;
@@ -71,7 +76,7 @@ private:
 	CowData<T> _cowdata;
 
 public:
-	// Must take a copy instead of a reference (see GH-31736).
+	/// Must take a copy instead of a reference (see GH-31736).
 	bool push_back(T p_elem);
 	_FORCE_INLINE_ bool append(const T &p_elem) { return push_back(p_elem); } //alias
 	void fill(T p_elem);
@@ -122,7 +127,7 @@ public:
 	}
 
 	_FORCE_INLINE_ const T &operator[](Size p_index) const { return _cowdata.get(p_index); }
-	// Must take a copy instead of a reference (see GH-31736).
+	/// Must take a copy instead of a reference (see GH-31736).
 	Error insert(Size p_pos, T p_val) { return _cowdata.insert(p_pos, p_val); }
 	Size find(const T &p_val, Size p_from = 0) const {
 		if (p_from < 0) {
@@ -144,7 +149,7 @@ public:
 	}
 	Size count(const T &p_val) const { return span().count(p_val); }
 
-	// Must take a copy instead of a reference (see GH-31736).
+	/// Must take a copy instead of a reference (see GH-31736).
 	void append_array(Vector<T> p_other);
 
 	_FORCE_INLINE_ bool has(const T &p_val) const { return find(p_val) != -1; }

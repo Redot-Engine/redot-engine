@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_player_internal.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream_player_internal.h"
 
 #include "scene/main/node.h"
@@ -177,7 +183,7 @@ Ref<AudioStreamPlayback> AudioStreamPlayerInternal::play_basic() {
 }
 
 void AudioStreamPlayerInternal::set_stream_paused(bool p_pause) {
-	// TODO this does not have perfect recall, fix that maybe? If there are zero playbacks registered with the AudioServer, this bool isn't persisted.
+	/// @todo This does not have perfect recall, fix that maybe? If there are zero playbacks registered with the AudioServer, this bool isn't persisted.
 	for (Ref<AudioStreamPlayback> &playback : stream_playbacks) {
 		AudioServer::get_singleton()->set_playback_paused(playback, p_pause);
 		if (_is_sample() && playback->get_sample_playback().is_valid()) {
@@ -187,7 +193,8 @@ void AudioStreamPlayerInternal::set_stream_paused(bool p_pause) {
 }
 
 bool AudioStreamPlayerInternal::get_stream_paused() const {
-	// There's currently no way to pause some playback streams but not others. Check the first and don't bother looking at the rest.
+	/// @todo There's currently no way to pause some playback streams but not others.
+	/// Check the first and don't bother looking at the rest.
 	if (!stream_playbacks.is_empty()) {
 		return AudioServer::get_singleton()->is_playback_paused(stream_playbacks[0]);
 	}
@@ -292,7 +299,6 @@ bool AudioStreamPlayerInternal::is_playing() const {
 }
 
 float AudioStreamPlayerInternal::get_playback_position() {
-	// Return the playback position of the most recently started playback stream.
 	if (!stream_playbacks.is_empty()) {
 		return AudioServer::get_singleton()->get_playback_position(stream_playbacks[stream_playbacks.size() - 1]);
 	}

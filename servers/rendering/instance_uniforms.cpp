@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file instance_uniforms.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "instance_uniforms.h"
 
 #include "rendering_server_globals.h"
@@ -166,7 +172,7 @@ void InstanceUniforms::_init_param(Item &r_item, const RendererMaterialStorage::
 	}
 
 	if (r_item.info.hint == PROPERTY_HINT_FLAGS) {
-		// HACK: Detect boolean flags count and prevent overhead.
+		/// @todo HACK: Detect boolean flags count and prevent overhead.
 		switch (r_item.info.hint_string.length()) {
 			case 3: // "x,y"
 				r_item.flags = 1;

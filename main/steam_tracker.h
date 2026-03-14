@@ -32,17 +32,21 @@
 
 #pragma once
 
+/**
+ * @file steam_tracker.h
+ *
+ * @brief SteamTracker is used to load SteamAPI dynamic library and initialize the interface.
+ * This notifies Steam that Redot editor is running and
+ * allow tracking of the usage time of child instances of the engine
+ * (e.g., opened projects).
+ *
+ * Currently, SteamAPI is not used by the engine in any way, and is not
+ * exposed to the scripting APIs.
+ */
+
 #if defined(STEAMAPI_ENABLED)
 
 #include "core/os/os.h"
-
-// SteamTracker is used to load SteamAPI dynamic library and initialize
-// the interface, this notifies Steam that Redot editor is running and
-// allow tracking of the usage time of child instances of the engine
-// (e.g., opened projects).
-//
-// Currently, SteamAPI is not used by the engine in any way, and is not
-// exposed to the scripting APIs.
 
 enum SteamAPIInitResult {
 	SteamAPIInitResult_OK = 0,
@@ -51,11 +55,11 @@ enum SteamAPIInitResult {
 	SteamAPIInitResult_VersionMismatch = 3,
 };
 
-// https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Init
+/// https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Init
 typedef bool (*SteamAPI_InitFunction)();
 typedef SteamAPIInitResult (*SteamAPI_InitFlatFunction)(char *r_err_msg);
 
-// https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Shutdown
+/// https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Shutdown
 typedef void (*SteamAPI_ShutdownFunction)();
 
 class SteamTracker {

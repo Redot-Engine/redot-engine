@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tiles_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tiles_editor_plugin.h"
 
 #include "tile_set_editor.h"
@@ -134,7 +140,7 @@ void TilesEditorUtils::_thread() {
 
 				Ref<Image> image = viewport->get_texture()->get_image();
 
-				// Find the index for the given pattern. TODO: optimize.
+				/// Find the index for the given pattern. @todo Optimize.
 				item.callback.call(item.pattern, ImageTexture::create_from_image(image));
 
 				viewport->queue_free();

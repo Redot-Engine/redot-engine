@@ -30,21 +30,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_effect_spectrum_analyzer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_effect_spectrum_analyzer.h"
 #include "servers/audio_server.h"
 
+/**
+ * FFT routine, @copyright (C)1996 S.M.Bernsee. Sign = -1 is FFT, 1 is iFFT (inverse)
+ * Fills fftBuffer[0...2*fftFrameSize-1] with the Fourier transform of the
+ * time domain data in fftBuffer[0...2*fftFrameSize-1]. The FFT array takes
+ * and returns the cosine and sine parts in an interleaved manner, ie.
+ * fftBuffer[0] = cosPart[0], fftBuffer[1] = sinPart[0], asf. fftFrameSize
+ * must be a power of 2. It expects a complex input signal (see footnote 2),
+ * ie. when working with 'common' audio signals our input signal has to be
+ * passed as {in[0],0.,in[1],0.,in[2],0.,...} asf. In that case, the transform
+ * of the frequencies of interest is in fftBuffer[0...fftFrameSize].
+ */
 static void smbFft(float *fftBuffer, long fftFrameSize, long sign)
-/*
-	FFT routine, (C)1996 S.M.Bernsee. Sign = -1 is FFT, 1 is iFFT (inverse)
-	Fills fftBuffer[0...2*fftFrameSize-1] with the Fourier transform of the
-	time domain data in fftBuffer[0...2*fftFrameSize-1]. The FFT array takes
-	and returns the cosine and sine parts in an interleaved manner, ie.
-	fftBuffer[0] = cosPart[0], fftBuffer[1] = sinPart[0], asf. fftFrameSize
-	must be a power of 2. It expects a complex input signal (see footnote 2),
-	ie. when working with 'common' audio signals our input signal has to be
-	passed as {in[0],0.,in[1],0.,in[2],0.,...} asf. In that case, the transform
-	of the frequencies of interest is in fftBuffer[0...fftFrameSize].
-*/
+
 {
 	float wr, wi, arg, *p1, *p2, temp;
 	float tr, ti, ur, ui, *p1r, *p1i, *p2r, *p2i;

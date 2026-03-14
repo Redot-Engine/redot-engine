@@ -29,6 +29,12 @@
 #define snd_input_getc snd_input_getc_dylibloader_orig_asound
 #define snd_input_ungetc snd_input_ungetc_dylibloader_orig_asound
 #define snd_output_stdio_open snd_output_stdio_open_dylibloader_orig_asound
+
+/**
+ * @file asound-so_wrap.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
 #define snd_output_stdio_attach snd_output_stdio_attach_dylibloader_orig_asound
 #define snd_output_buffer_open snd_output_buffer_open_dylibloader_orig_asound
 #define snd_output_buffer_string snd_output_buffer_string_dylibloader_orig_asound

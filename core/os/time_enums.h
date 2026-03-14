@@ -32,11 +32,17 @@
 
 #pragma once
 
+/**
+ * @file time_enums.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <cstdint>
 
+/// Start at 1 to follow Windows SYSTEMTIME structure
+/// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724950(v=vs.85).aspx
 enum Month {
-	/// Start at 1 to follow Windows SYSTEMTIME structure
-	/// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724950(v=vs.85).aspx
 	MONTH_JANUARY = 1,
 	MONTH_FEBRUARY,
 	MONTH_MARCH,

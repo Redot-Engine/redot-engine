@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file variant_utility.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant.h"
 
 struct VariantUtilityFunctions {

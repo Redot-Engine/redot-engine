@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_debugger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/shortcut.h"
 #include "core/object/ref_counted.h"
 #include "core/string/ustring.h"
@@ -287,9 +293,11 @@ private:
 
 	bool camera_override = false;
 
-	// Values taken from EditorZoomWidget.
+	/// Values taken from EditorZoomWidget
+	/// @{
 	const float VIEW_2D_MIN_ZOOM = 1.0 / 128;
 	const float VIEW_2D_MAX_ZOOM = 128;
+	/// @}
 
 	Ref<ViewPanner> panner;
 	Vector2 view_2d_offset;
@@ -305,7 +313,7 @@ private:
 	struct Cursor {
 		Vector3 pos;
 		real_t x_rot, y_rot, distance, fov_scale;
-		Vector3 eye_pos; // Used in freelook mode.
+		Vector3 eye_pos; ///< Used in freelook mode.
 
 		Cursor() {
 			// These rotations place the camera in +X +Y +Z, aka south east, facing north west.
@@ -317,7 +325,8 @@ private:
 	};
 	Cursor cursor;
 
-	// Values taken from Node3DEditor.
+	/// Values taken from Node3DEditor
+	/// @{
 	const float VIEW_3D_MIN_ZOOM = 0.01;
 #ifdef REAL_T_IS_DOUBLE
 	const double VIEW_3D_MAX_ZOOM = 1'000'000'000'000;
@@ -327,6 +336,7 @@ private:
 
 	const float CAMERA_MIN_FOV_SCALE = 0.1;
 	const float CAMERA_MAX_FOV_SCALE = 2.5;
+	/// @}
 
 	bool camera_first_override = true;
 	bool camera_freelook = false;
@@ -400,9 +410,11 @@ private:
 	void _open_selection_list(const Vector<SelectResult> &p_items, const Point2 &p_pos);
 	void _close_selection_list();
 
+	/// Copied and trimmed from the CanvasItemEditor implementation.
 	void _find_canvas_items_at_pos(const Point2 &p_pos, Node *p_node, Vector<SelectResult> &r_items, const Transform2D &p_parent_xform = Transform2D(), const Transform2D &p_canvas_xform = Transform2D());
 	void _find_canvas_items_at_rect(const Rect2 &p_rect, Node *p_node, Vector<SelectResult> &r_items, const Transform2D &p_parent_xform = Transform2D(), const Transform2D &p_canvas_xform = Transform2D());
 	void _pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_event);
+	/// A very shallow copy of the same function inside CanvasItemEditor.
 	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event);
 	void _reset_camera_2d();
 	void _update_view_2d();

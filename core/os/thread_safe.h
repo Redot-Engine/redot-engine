@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file thread_safe.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/mutex.h" // IWYU pragma: keep // Used in macro.
 
 #define _THREAD_SAFE_CLASS_ mutable Mutex _thread_safe_;

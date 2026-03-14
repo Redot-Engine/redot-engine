@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file feed_effects.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "drivers/gles3/shader_gles3.h"

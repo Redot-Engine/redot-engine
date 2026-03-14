@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_shape_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/physics_server_2d.h"
 
 class GodotShape2D;
@@ -129,7 +135,7 @@ public:
 	virtual ~GodotShape2D();
 };
 
-//let the optimizer do the magic
+/// Let the optimizer do the magic
 #define DEFAULT_PROJECT_RANGE_CAST                                                                                                                                  \
 	virtual void project_range_castv(const Vector2 &p_cast, const Vector2 &p_normal, const Transform2D &p_transform, real_t &r_min, real_t &r_max) const override { \
 		project_range_cast(p_cast, p_normal, p_transform, r_min, r_max);                                                                                            \

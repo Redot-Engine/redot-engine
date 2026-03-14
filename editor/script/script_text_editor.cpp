@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_text_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_text_editor.h"
 
 #include "core/config/project_settings.h"
@@ -1485,7 +1491,7 @@ void ScriptTextEditor::_show_symbol_tooltip(const String &p_symbol, int p_row, i
 		}
 	}
 
-	// NOTE: See also `ScriptEditor::_get_debug_tooltip()` for documentation tooltips disabled.
+	/// @note See also `ScriptEditor::_get_debug_tooltip()` for documentation tooltips disabled.
 	String debug_value = EditorDebuggerNode::get_singleton()->get_var_value(p_symbol);
 	if (!debug_value.is_empty()) {
 		constexpr int DISPLAY_LIMIT = 1024;
@@ -2189,10 +2195,9 @@ static Node *_find_script_node(Node *p_current_node, const Ref<Script> &script) 
 	return nullptr;
 }
 
+/// This function prepares a string for being "dropped" into the script editor.
+/// The string can be a resource path, node path or property name.
 static String _quote_drop_data(const String &str) {
-	// This function prepares a string for being "dropped" into the script editor.
-	// The string can be a resource path, node path or property name.
-
 	const bool using_single_quotes = EDITOR_GET("text_editor/completion/use_single_quotes");
 
 	String escaped = str.c_escape();

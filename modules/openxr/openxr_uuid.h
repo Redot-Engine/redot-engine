@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_uuid.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 // Godot helper functions for OpenXR XrUuidExt data type
 #include "core/templates/hashfuncs.h"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_scene_importer_blend.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_scene_importer_blend.h"
 
 #include "../gltf_defines.h"
@@ -572,9 +578,9 @@ bool EditorFileSystemImportFormatSupportQueryBlend::query() {
 
 		EditorNode::get_singleton()->get_gui_base()->add_child(browse_dialog);
 
-		// Update icons.
-		// This is a hack because we can't rely on notifications here as we don't receive them.
-		// Usually, we only have to wait for `NOTIFICATION_THEME_CHANGED` to update the icons.
+		/// Update icons.
+		/// @todo This is a hack because we can't rely on notifications here as we don't receive them.
+		/// Usually, we only have to wait for `NOTIFICATION_THEME_CHANGED` to update the icons.
 		callable_mp(this, &EditorFileSystemImportFormatSupportQueryBlend::_update_icons).call_deferred();
 	}
 

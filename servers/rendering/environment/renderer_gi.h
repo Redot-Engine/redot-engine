@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file renderer_gi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering_server.h"
 
 class RendererGI {

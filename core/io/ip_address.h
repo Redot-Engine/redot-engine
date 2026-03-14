@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file ip_address.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 
 struct [[nodiscard]] IPAddress {
@@ -97,6 +103,6 @@ public:
 	IPAddress() { clear(); }
 };
 
-// Zero-constructing IPAddress initializes field, valid, and wildcard to 0 (and thus empty).
+/// Zero-constructing IPAddress initializes field, valid, and wildcard to 0 (and thus empty).
 template <>
 struct is_zero_constructible<IPAddress> : std::true_type {};

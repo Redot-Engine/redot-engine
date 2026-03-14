@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 
 #import <CoreHaptics/CoreHaptics.h>

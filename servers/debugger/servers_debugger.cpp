@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file servers_debugger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers_debugger.h"
 
 #include "core/config/project_settings.h"
@@ -495,7 +501,6 @@ void ServersDebugger::_send_resource_usage() {
 	EngineDebugger::get_singleton()->send_message("servers:memory_usage", usage.serialize());
 }
 
-// Done on a best-effort basis.
 String ServersDebugger::_get_resource_type_from_path(const String &p_path) {
 	if (p_path.is_empty()) {
 		return "";

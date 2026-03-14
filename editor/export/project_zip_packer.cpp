@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_zip_packer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_zip_packer.h"
 
 #include "core/config/project_settings.h"
@@ -39,10 +45,6 @@
 #include "core/os/time.h"
 
 String ProjectZIPPacker::get_project_zip_safe_name() {
-	// Name the downloaded ZIP file to contain the project name and download date for easier organization.
-	// Replace characters not allowed (or risky) in Windows file names with safe characters.
-	// In the project name, all invalid characters become an empty string so that a name
-	// like "Platformer 2: Godette's Revenge" becomes "platformer_2-_godette-s_revenge".
 	const String project_name = GLOBAL_GET("application/config/name");
 	const String project_name_safe = project_name.to_lower().replace_char(' ', '_');
 	const String datetime_safe =

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file undo_redo.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
 

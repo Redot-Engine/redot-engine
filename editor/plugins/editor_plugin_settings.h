@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_plugin_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/plugin_config_dialog.h"
 
 class TextureRect;

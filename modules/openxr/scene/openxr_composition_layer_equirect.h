@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_composition_layer_equirect.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <openxr/openxr.h>
 
 #include "openxr_composition_layer.h"

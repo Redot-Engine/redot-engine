@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_settings.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_settings.h"
 
 #include "core/config/project_settings.h"
@@ -1296,10 +1302,6 @@ String EditorSettings::get_newest_settings_path() {
 }
 
 void EditorSettings::create() {
-	// IMPORTANT: create() *must* create a valid EditorSettings singleton,
-	// as the rest of the engine code will assume it. As such, it should never
-	// return (incl. via ERR_FAIL) without initializing the singleton member.
-
 	if (singleton.ptr()) {
 		ERR_PRINT("Can't recreate EditorSettings as it already exists.");
 		return;

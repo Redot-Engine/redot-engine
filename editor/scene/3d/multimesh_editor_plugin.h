@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file multimesh_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/3d/multimesh_instance_3d.h"
 #include "scene/gui/slider.h"

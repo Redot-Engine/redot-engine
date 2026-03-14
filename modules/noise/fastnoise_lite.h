@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fastnoise_lite.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "noise.h"
 
 #include "thirdparty/misc/FastNoiseLite.h"
@@ -102,20 +108,23 @@ private:
 	int seed = 0;
 	real_t frequency = 0.01;
 
-	// Fractal specific.
+	/// @name Fractal-specific
+	/// @{
 	FractalType fractal_type = FRACTAL_FBM;
 	int fractal_octaves = 5;
 	real_t fractal_lacunarity = 2;
 	real_t fractal_gain = 0.5;
 	real_t fractal_weighted_strength = 0;
 	real_t fractal_ping_pong_strength = 2;
-
-	// Cellular specific.
+	/// @}
+	/// @name Cellular-specific
+	/// @{
 	CellularDistanceFunction cellular_distance_function = DISTANCE_EUCLIDEAN;
 	CellularReturnType cellular_return_type = RETURN_DISTANCE;
 	real_t cellular_jitter = 1.0;
-
-	// Domain warp specific.
+	/// @}
+	/// @name Domain Warp specific
+	/// @{
 	bool domain_warp_enabled = false;
 	DomainWarpType domain_warp_type = DOMAIN_WARP_SIMPLEX;
 	real_t domain_warp_amplitude = 30.0;
@@ -124,16 +133,17 @@ private:
 	int domain_warp_fractal_octaves = 5;
 	real_t domain_warp_fractal_lacunarity = 6;
 	real_t domain_warp_fractal_gain = 0.5;
+	/// @}
 
-	// This needs manual conversion because Godots Inspector property API does not support discontiguous enum indices.
+	/// This needs manual conversion because Godots Inspector property API does not support discontiguous enum indices.
 	_FastNoiseLite::FractalType _convert_domain_warp_fractal_type_enum(DomainWarpFractalType p_domain_warp_fractal_type);
 
 public:
 	FastNoiseLite();
 	~FastNoiseLite();
 
-	// General noise settings.
-
+	/// @name General Noise Settings
+	/// @{
 	void set_noise_type(NoiseType p_noise_type);
 	NoiseType get_noise_type() const;
 
@@ -145,9 +155,9 @@ public:
 
 	void set_offset(Vector3 p_offset);
 	Vector3 get_offset() const;
-
-	// Fractal specific.
-
+	/// @}
+	/// @name Fractal-specific
+	/// @{
 	void set_fractal_type(FractalType p_type);
 	FractalType get_fractal_type() const;
 
@@ -165,9 +175,9 @@ public:
 
 	void set_fractal_ping_pong_strength(real_t p_ping_pong_strength);
 	real_t get_fractal_ping_pong_strength() const;
-
-	// Cellular specific.
-
+	/// @}
+	/// @name Cellular-specific
+	/// @{
 	void set_cellular_distance_function(CellularDistanceFunction p_func);
 	CellularDistanceFunction get_cellular_distance_function() const;
 
@@ -176,9 +186,9 @@ public:
 
 	void set_cellular_jitter(real_t p_jitter);
 	real_t get_cellular_jitter() const;
-
-	// Domain warp specific.
-
+	/// @}
+	/// @name Domain Sarp specific
+	/// @{
 	void set_domain_warp_enabled(bool p_enabled);
 	bool is_domain_warp_enabled() const;
 
@@ -202,8 +212,9 @@ public:
 
 	void set_domain_warp_fractal_gain(real_t p_gain);
 	real_t get_domain_warp_fractal_gain() const;
-
-	// Interface methods.
+	/// @}
+	/// @name Interface Methods
+	/// @{
 	real_t get_noise_1d(real_t p_x) const override;
 
 	real_t get_noise_2dv(Vector2 p_v) const override;
@@ -211,6 +222,7 @@ public:
 
 	real_t get_noise_3dv(Vector3 p_v) const override;
 	real_t get_noise_3d(real_t p_x, real_t p_y, real_t p_z) const override;
+	/// @}
 
 	void _changed();
 };

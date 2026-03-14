@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_shader_library.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 class RenderingShaderLibrary {
 public:
 	enum FeatureBits {
@@ -42,10 +48,10 @@ public:
 		FEATURE_FP32_BIT = 1U << 4U,
 	};
 
-	// Used by the shader baker to globally enable features on all the shaders that will be exported.
+	/// Used by the shader baker to globally enable features on all the shaders that will be exported.
 	virtual void enable_features(BitField<FeatureBits> p_feature_bits) = 0;
 
-	// Used by the shader baker to reference by name the library.
+	/// Used by the shader baker to reference by name the library.
 	virtual String get_name() const = 0;
 
 	virtual ~RenderingShaderLibrary() {}

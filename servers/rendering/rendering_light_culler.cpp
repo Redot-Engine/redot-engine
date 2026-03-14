@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_light_culler.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_light_culler.h"
 
 #include "core/math/plane.h"
@@ -228,8 +234,6 @@ void RenderingLightCuller::LightCullPlanes::add_cull_plane(const Plane &p) {
 	cull_planes[num_cull_planes++] = p;
 }
 
-// Directional lights are different to points, as the origin is infinitely in the distance, so the plane third
-// points are derived differently.
 bool RenderingLightCuller::add_light_camera_planes_directional(LightCullPlanes &r_cull_planes, const LightSource &p_light_source) {
 	uint32_t lookup = 0;
 	r_cull_planes.num_cull_planes = 0;
@@ -570,8 +574,8 @@ RenderingLightCuller::RenderingLightCuller() {
 /* clang-format off */
 uint8_t RenderingLightCuller::Data::LUT_entry_sizes[LUT_SIZE] = {0, 4, 4, 0, 4, 6, 6, 8, 4, 6, 6, 8, 6, 6, 6, 6, 4, 6, 6, 8, 0, 8, 8, 0, 6, 6, 6, 6, 8, 6, 6, 4, 4, 6, 6, 8, 6, 6, 6, 6, 0, 8, 8, 0, 8, 6, 6, 4, 6, 6, 6, 6, 8, 6, 6, 4, 8, 6, 6, 4, 0, 4, 4, 0, };
 
-// The lookup table used to determine which edges form the silhouette of the camera frustum,
-// depending on the viewing angle (defined by which camera planes are backward facing).
+/// The lookup table used to determine which edges form the silhouette of the camera frustum,
+/// depending on the viewing angle (defined by which camera planes are backward facing).
 uint8_t RenderingLightCuller::Data::LUT_entries[LUT_SIZE][8] = {
 {0, 0, 0, 0, 0, 0, 0, 0, },
 {7, 6, 4, 5, 0, 0, 0, 0, },
@@ -643,10 +647,6 @@ uint8_t RenderingLightCuller::Data::LUT_entries[LUT_SIZE][8] = {
 
 #ifdef RENDERING_LIGHT_CULLER_CALCULATE_LUT
 
-// See e.g. http://lspiroengine.com/?p=153 for reference.
-// Principles are the same, but differences to the article:
-// * Order of planes / points is different in Redot.
-// * We use a lookup table at runtime.
 void RenderingLightCuller::create_LUT() {
 	// Each pair of planes that are opposite can have an edge.
 	for (int plane_0 = 0; plane_0 < PLANE_TOTAL; plane_0++) {
@@ -673,8 +673,6 @@ void RenderingLightCuller::create_LUT() {
 	debug_print_LUT_as_table();
 }
 
-// we can pre-create the entire LUT and store it hard coded as a static inside the executable!
-// it is only small in size, 64 entries with max 8 bytes per entry
 void RenderingLightCuller::debug_print_LUT_as_table() {
 	print_line("\nLIGHT VOLUME TABLE BEGIN\n");
 
@@ -919,26 +917,19 @@ void RenderingLightCuller::get_neighbouring_planes(PlaneOrder p_plane, PlaneOrde
 	}
 }
 
-// Given two planes, returns the two points shared by those planes.  The points are always
-// returned in counter-clockwise order, assuming the first input plane is facing towards
-// the viewer.
-
-// param p_plane_a The plane facing towards the viewer.
-// param p_plane_b A plane neighboring p_plane_a.
-// param r_points An array of exactly two elements to be filled with the indices of the points
-// on return.
-
 void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrder p_plane_b, PointOrder r_points[2]) const {
 	static const PointOrder fp_table[PLANE_TOTAL][PLANE_TOTAL][2] = {
 		{
 				// LSM_FP_NEAR
 				{
 						// LSM_FP_NEAR
-						PT_NEAR_LEFT_TOP, PT_NEAR_RIGHT_TOP, // Invalid combination.
+						PT_NEAR_LEFT_TOP,
+						PT_NEAR_RIGHT_TOP, // Invalid combination.
 				},
 				{
 						// LSM_FP_FAR
-						PT_FAR_RIGHT_TOP, PT_FAR_LEFT_TOP, // Invalid combination.
+						PT_FAR_RIGHT_TOP,
+						PT_FAR_LEFT_TOP, // Invalid combination.
 				},
 				{
 						// LSM_FP_LEFT
@@ -966,11 +957,13 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				// LSM_FP_FAR
 				{
 						// LSM_FP_NEAR
-						PT_FAR_LEFT_TOP, PT_FAR_RIGHT_TOP, // Invalid combination.
+						PT_FAR_LEFT_TOP,
+						PT_FAR_RIGHT_TOP, // Invalid combination.
 				},
 				{
 						// LSM_FP_FAR
-						PT_FAR_RIGHT_TOP, PT_FAR_LEFT_TOP, // Invalid combination.
+						PT_FAR_RIGHT_TOP,
+						PT_FAR_LEFT_TOP, // Invalid combination.
 				},
 				{
 						// LSM_FP_LEFT
@@ -1008,7 +1001,8 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				},
 				{
 						// LSM_FP_LEFT
-						PT_FAR_LEFT_BOTTOM, PT_FAR_LEFT_BOTTOM, // Invalid combination.
+						PT_FAR_LEFT_BOTTOM,
+						PT_FAR_LEFT_BOTTOM, // Invalid combination.
 				},
 				{
 						// LSM_FP_TOP
@@ -1017,7 +1011,8 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				},
 				{
 						// LSM_FP_RIGHT
-						PT_FAR_LEFT_BOTTOM, PT_FAR_LEFT_BOTTOM, // Invalid combination.
+						PT_FAR_LEFT_BOTTOM,
+						PT_FAR_LEFT_BOTTOM, // Invalid combination.
 				},
 				{
 						// LSM_FP_BOTTOM
@@ -1045,7 +1040,8 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				},
 				{
 						// LSM_FP_TOP
-						PT_NEAR_LEFT_TOP, PT_FAR_LEFT_TOP, // Invalid combination.
+						PT_NEAR_LEFT_TOP,
+						PT_FAR_LEFT_TOP, // Invalid combination.
 				},
 				{
 						// LSM_FP_RIGHT
@@ -1054,7 +1050,8 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				},
 				{
 						// LSM_FP_BOTTOM
-						PT_FAR_LEFT_BOTTOM, PT_NEAR_LEFT_BOTTOM, // Invalid combination.
+						PT_FAR_LEFT_BOTTOM,
+						PT_NEAR_LEFT_BOTTOM, // Invalid combination.
 				},
 		},
 
@@ -1072,7 +1069,8 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				},
 				{
 						// LSM_FP_LEFT
-						PT_FAR_RIGHT_BOTTOM, PT_FAR_RIGHT_BOTTOM, // Invalid combination.
+						PT_FAR_RIGHT_BOTTOM,
+						PT_FAR_RIGHT_BOTTOM, // Invalid combination.
 				},
 				{
 						// LSM_FP_TOP
@@ -1081,7 +1079,8 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				},
 				{
 						// LSM_FP_RIGHT
-						PT_FAR_RIGHT_BOTTOM, PT_FAR_RIGHT_BOTTOM, // Invalid combination.
+						PT_FAR_RIGHT_BOTTOM,
+						PT_FAR_RIGHT_BOTTOM, // Invalid combination.
 				},
 				{
 						// LSM_FP_BOTTOM
@@ -1118,7 +1117,8 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				},
 				{
 						// LSM_FP_TOP
-						PT_NEAR_LEFT_BOTTOM, PT_FAR_LEFT_BOTTOM, // Invalid combination.
+						PT_NEAR_LEFT_BOTTOM,
+						PT_FAR_LEFT_BOTTOM, // Invalid combination.
 				},
 				{
 						// LSM_FP_RIGHT
@@ -1127,7 +1127,8 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 				},
 				{
 						// LSM_FP_BOTTOM
-						PT_FAR_LEFT_BOTTOM, PT_NEAR_LEFT_BOTTOM, // Invalid combination.
+						PT_FAR_LEFT_BOTTOM,
+						PT_NEAR_LEFT_BOTTOM, // Invalid combination.
 				},
 		},
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file script_iterator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GDEXTENSION
 
 // Headers for building as GDExtension plug-in.
@@ -70,6 +76,7 @@ public:
 	Vector<ScriptRange> script_ranges;
 
 private:
+	/// This implementation is derived from ICU: icu4c/source/extra/scrptrun/scrptrun.cpp
 	static bool same_script(int32_t p_script_one, int32_t p_script_two);
 
 public:

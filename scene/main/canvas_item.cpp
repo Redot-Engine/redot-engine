@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file canvas_item.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "canvas_item.h"
 #include "canvas_item.compat.inc"
 
@@ -140,7 +146,7 @@ void CanvasItem::_redraw_callback() {
 
 	RID ci = get_canvas_item();
 	RenderingServer::get_singleton()->canvas_item_clear(ci);
-	//todo updating = true - only allow drawing here
+	/// @todo updating = true - only allow drawing here
 	if (is_visible_in_tree()) {
 		drawing = true;
 		Ref<TextServer> ts = TextServerManager::get_singleton()->get_primary_interface();
@@ -157,7 +163,7 @@ void CanvasItem::_redraw_callback() {
 		}
 		drawing = false;
 	}
-	//todo updating = false
+	/// @todo updating = false
 	pending_update = false; // don't change to false until finished drawing (avoid recursive update)
 }
 
@@ -198,7 +204,6 @@ Transform2D CanvasItem::get_global_transform() const {
 	return global_transform;
 }
 
-// Same as get_global_transform() but no reset for `global_invalid`.
 Transform2D CanvasItem::get_global_transform_const() const {
 	if (_is_global_invalid()) {
 		const CanvasItem *pi = get_parent_item();

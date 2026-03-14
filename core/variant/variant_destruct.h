@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file variant_destruct.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/variant/variant.h"
 
 #include "core/object/class_db.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file upnp.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "upnp_device.h"
 
 #include "core/object/ref_counted.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_utility_functions.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/string_name.h"
 #include "core/variant/variant.h"
 

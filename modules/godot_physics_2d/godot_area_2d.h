@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_area_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_collision_object_2d.h"
 
 #include "core/templates/self_list.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_filter_sw.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/typedefs.h"
 
 class AudioFilterSW {
@@ -55,7 +61,7 @@ public:
 		HIGHSHELF
 	};
 
-	class Processor { // Simple filter processor.
+	class Processor { ///< Simple filter processor.
 		AudioFilterSW *filter = nullptr;
 		Coeffs coeffs;
 		// History.
@@ -91,7 +97,7 @@ public:
 	void set_resonance(float p_resonance);
 	void set_gain(float p_gain);
 	void set_sampling_rate(float p_srate);
-	void set_stages(int p_stages); //adjust for multiple stages
+	void set_stages(int p_stages); ///< Adjust for multiple stages
 
 	void prepare_coefficients(Coeffs *p_coeffs);
 

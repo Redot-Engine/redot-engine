@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_preview_plugins.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_resource_preview.h"
 
 class ScriptLanguage;

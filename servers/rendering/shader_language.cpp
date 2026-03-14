@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_language.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader_language.h"
 
 #include "core/os/os.h"
@@ -262,21 +268,21 @@ ShaderLanguage::Token ShaderLanguage::_make_token(TokenType p_type, const String
 
 enum ContextFlag : uint32_t {
 	CF_UNSPECIFIED = 0U,
-	CF_BLOCK = 1U, // "void test() { <x> }"
-	CF_FUNC_DECL_PARAM_SPEC = 2U, // "void test(<x> int param) {}"
-	CF_FUNC_DECL_PARAM_TYPE = 4U, // "void test(<x> param) {}"
-	CF_IF_DECL = 8U, // "if(<x>) {}"
-	CF_BOOLEAN = 16U, // "bool t = <x>;"
-	CF_GLOBAL_SPACE = 32U, // "struct", "const", "void" etc.
-	CF_DATATYPE = 64U, // "<x> value;"
-	CF_UNIFORM_TYPE = 128U, // "uniform <x> myUniform;"
-	CF_VARYING_TYPE = 256U, // "varying <x> myVarying;"
-	CF_PRECISION_MODIFIER = 512U, // "<x> vec4 a = vec4(0.0, 1.0, 2.0, 3.0);"
-	CF_INTERPOLATION_QUALIFIER = 1024U, // "varying <x> vec3 myColor;"
-	CF_UNIFORM_KEYWORD = 2048U, // "uniform"
-	CF_CONST_KEYWORD = 4096U, // "const"
-	CF_UNIFORM_QUALIFIER = 8192U, // "<x> uniform float t;"
-	CF_SHADER_TYPE = 16384U, // "shader_type"
+	CF_BLOCK = 1U, ///< "void test() { <x> }"
+	CF_FUNC_DECL_PARAM_SPEC = 2U, ///< "void test(<x> int param) {}"
+	CF_FUNC_DECL_PARAM_TYPE = 4U, ///< "void test(<x> param) {}"
+	CF_IF_DECL = 8U, ///< "if(<x>) {}"
+	CF_BOOLEAN = 16U, ///< "bool t = <x>;"
+	CF_GLOBAL_SPACE = 32U, ///< "struct", "const", "void" etc.
+	CF_DATATYPE = 64U, ///< "<x> value;"
+	CF_UNIFORM_TYPE = 128U, ///< "uniform <x> myUniform;"
+	CF_VARYING_TYPE = 256U, ///< "varying <x> myVarying;"
+	CF_PRECISION_MODIFIER = 512U, ///< "<x> vec4 a = vec4(0.0, 1.0, 2.0, 3.0);"
+	CF_INTERPOLATION_QUALIFIER = 1024U, ///< "varying <x> vec3 myColor;"
+	CF_UNIFORM_KEYWORD = 2048U, ///< "uniform"
+	CF_CONST_KEYWORD = 4096U, ///< "const"
+	CF_UNIFORM_QUALIFIER = 8192U, ///< "<x> uniform float t;"
+	CF_SHADER_TYPE = 16384U, ///< "shader_type"
 };
 
 const uint32_t KCF_DATATYPE = CF_BLOCK | CF_GLOBAL_SPACE | CF_DATATYPE | CF_FUNC_DECL_PARAM_TYPE | CF_UNIFORM_TYPE;
@@ -4896,7 +4902,7 @@ PropertyInfo ShaderLanguage::uniform_to_property_info(const ShaderNode::Uniform 
 		case ShaderLanguage::TYPE_INT: {
 			if (p_uniform.array_size > 0) {
 				pi.type = Variant::PACKED_INT32_ARRAY;
-				// TODO: Handle range and encoding for for unsigned values.
+				/// @todo Handle range and encoding for for unsigned values.
 			} else if (p_uniform.hint == ShaderLanguage::ShaderNode::Uniform::HINT_ENUM) {
 				pi.type = Variant::INT;
 				pi.hint = PROPERTY_HINT_ENUM;
@@ -4918,7 +4924,7 @@ PropertyInfo ShaderLanguage::uniform_to_property_info(const ShaderNode::Uniform 
 		case ShaderLanguage::TYPE_IVEC2: {
 			if (p_uniform.array_size > 0) {
 				pi.type = Variant::PACKED_INT32_ARRAY;
-				// TODO: Handle vector pairs?
+				/// @todo: Handle vector pairs?
 			} else {
 				pi.type = Variant::VECTOR2I;
 			}
@@ -4927,7 +4933,7 @@ PropertyInfo ShaderLanguage::uniform_to_property_info(const ShaderNode::Uniform 
 		case ShaderLanguage::TYPE_IVEC3: {
 			if (p_uniform.array_size > 0) {
 				pi.type = Variant::PACKED_INT32_ARRAY;
-				// TODO: Handle vector pairs?
+				/// @todo: Handle vector pairs?
 			} else {
 				pi.type = Variant::VECTOR3I;
 			}
@@ -4936,7 +4942,7 @@ PropertyInfo ShaderLanguage::uniform_to_property_info(const ShaderNode::Uniform 
 		case ShaderLanguage::TYPE_IVEC4: {
 			if (p_uniform.array_size > 0) {
 				pi.type = Variant::PACKED_INT32_ARRAY;
-				// TODO: Handle vector pairs?
+				/// @todo: Handle vector pairs?
 			} else {
 				pi.type = Variant::VECTOR4I;
 			}
@@ -5065,7 +5071,7 @@ PropertyInfo ShaderLanguage::uniform_to_property_info(const ShaderNode::Uniform 
 			}
 		} break;
 		case ShaderLanguage::TYPE_STRUCT: {
-			// FIXME: Implement this.
+			/// @todo FIXME: Implement this.
 		} break;
 		case ShaderLanguage::TYPE_MAX:
 			break;
@@ -7144,14 +7150,14 @@ ShaderLanguage::Node *ShaderLanguage::_parse_expression(BlockNode *p_block, cons
 				keyword_completion_context = prev_keyword_completion_context;
 #endif
 
-				//todo
-				//member (period) has priority over any operator
-				//creates a subindexing expression in place
+				/// @todo
+				/// member (period) has priority over any operator
+				/// creates a subindexing expression in place
 
 				/*} else if (tk.type==TK_BRACKET_OPEN) {
-				//todo
-				//subindexing has priority over any operator
-				//creates a subindexing expression in place
+				/// @todo
+				/// subindexing has priority over any operator
+				/// creates a subindexing expression in place
 
 	*/
 			} else if (tk.type == TK_BRACKET_OPEN) {
@@ -9061,7 +9067,6 @@ Error ShaderLanguage::_parse_block(BlockNode *p_block, const FunctionInfo &p_fun
 }
 
 String ShaderLanguage::_get_shader_type_list(const HashSet<String> &p_shader_types) const {
-	// Return a list of shader types as an human-readable string
 	String valid_types;
 	for (const String &E : p_shader_types) {
 		if (!valid_types.is_empty()) {
@@ -11191,7 +11196,7 @@ Error ShaderLanguage::_parse_shader_mode(bool p_is_stencil, const Vector<ModeInf
 	return OK;
 }
 
-// skips over whitespace and /* */ and // comments
+/// Skips over whitespace and /* */ and // comments
 static int _get_first_ident_pos(const String &p_code) {
 	int idx = 0;
 

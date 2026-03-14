@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file simple_type.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <type_traits>
 
 template <typename T>

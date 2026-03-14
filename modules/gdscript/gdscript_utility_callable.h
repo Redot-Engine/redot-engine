@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_utility_callable.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_utility_functions.h"
 
 #include "core/variant/callable.h"

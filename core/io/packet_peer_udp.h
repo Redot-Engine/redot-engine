@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file packet_peer_udp.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/ip.h"
 #include "core/io/net_socket.h"
 #include "core/io/packet_peer.h"
@@ -76,9 +82,9 @@ public:
 	Error wait();
 	bool is_bound() const;
 
-	Error connect_shared_socket(Ref<NetSocket> p_sock, IPAddress p_ip, uint16_t p_port, UDPServer *ref); // Used by UDPServer
-	void disconnect_shared_socket(); // Used by UDPServer
-	Error store_packet(IPAddress p_ip, uint32_t p_port, uint8_t *p_buf, int p_buf_size); // Used internally and by UDPServer
+	Error connect_shared_socket(Ref<NetSocket> p_sock, IPAddress p_ip, uint16_t p_port, UDPServer *ref); ///< Used by UDPServer
+	void disconnect_shared_socket(); ///< Used by UDPServer
+	Error store_packet(IPAddress p_ip, uint32_t p_port, uint8_t *p_buf, int p_buf_size); ///< Used internally and by UDPServer
 	Error connect_to_host(const IPAddress &p_host, int p_port);
 	bool is_socket_connected() const;
 

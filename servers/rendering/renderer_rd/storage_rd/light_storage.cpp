@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "light_storage.h"
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
@@ -1450,7 +1456,7 @@ void LightStorage::reflection_probe_release_atlas_index(RID p_instance) {
 	ERR_FAIL_INDEX(rpi->atlas_index, atlas->reflections.size());
 	atlas->reflections.write[rpi->atlas_index].owner = RID();
 
-	// TODO investigate if this is enough? shouldn't we be freeing our textures and framebuffers?
+	/// @todo Investigate if this is enough? shouldn't we be freeing our textures and framebuffers?
 
 	if (rpi->rendering) {
 		// We were cancelled mid rendering, trigger refresh.

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file type_info.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/simple_type.h"
 #include "core/typedefs.h"
 
@@ -55,11 +61,11 @@ enum Metadata {
 };
 }
 
-// If the compiler fails because it's trying to instantiate the primary 'GetTypeInfo' template
-// instead of one of the specializations, it's most likely because the type 'T' is not supported.
-// If 'T' is a class that inherits 'Object', make sure it can see the actual class declaration
-// instead of a forward declaration. You can always forward declare 'T' in a header file, and then
-// include the actual declaration of 'T' in the source file where 'GetTypeInfo<T>' is instantiated.
+/// If the compiler fails because it's trying to instantiate the primary 'GetTypeInfo' template
+/// instead of one of the specializations, it's most likely because the type 'T' is not supported.
+/// If 'T' is a class that inherits 'Object', make sure it can see the actual class declaration
+/// instead of a forward declaration. You can always forward declare 'T' in a header file, and then
+/// include the actual declaration of 'T' in the source file where 'GetTypeInfo<T>' is instantiated.
 template <typename T, typename = void>
 struct GetTypeInfo;
 
@@ -237,7 +243,7 @@ inline StringName __constant_get_bitfield_name(T param, const String &p_constant
 }
 #define CLASS_INFO(m_type) (GetTypeInfo<m_type *>::get_class_info())
 
-// No initialization by default, except for scalar types.
+/// No initialization by default, except for scalar types.
 template <typename T>
 struct ZeroInitializer {
 	static void initialize(T &value) {

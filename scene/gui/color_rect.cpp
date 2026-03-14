@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_rect.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "color_rect.h"
 
 void ColorRect::set_color(const Color &p_color) {

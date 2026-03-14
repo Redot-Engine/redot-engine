@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file math_funcs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/math_defs.h"
 #include "core/typedefs.h"
@@ -97,7 +103,7 @@ _ALWAYS_INLINE_ float tanh(float p_x) {
 	return std::tanh(p_x);
 }
 
-// Always does clamping so always safe to use.
+/// Always does clamping so always safe to use.
 _ALWAYS_INLINE_ double asin(double p_x) {
 	return p_x < -1 ? (-PI / 2) : (p_x > 1 ? (PI / 2) : std::asin(p_x));
 }
@@ -105,7 +111,7 @@ _ALWAYS_INLINE_ float asin(float p_x) {
 	return p_x < -1 ? (-(float)PI / 2) : (p_x > 1 ? ((float)PI / 2) : std::asin(p_x));
 }
 
-// Always does clamping so always safe to use.
+/// Always does clamping so always safe to use.
 _ALWAYS_INLINE_ double acos(double p_x) {
 	return p_x < -1 ? PI : (p_x > 1 ? 0 : std::acos(p_x));
 }
@@ -134,7 +140,7 @@ _ALWAYS_INLINE_ float asinh(float p_x) {
 	return std::asinh(p_x);
 }
 
-// Always does clamping so always safe to use.
+/// Always does clamping so always safe to use.
 _ALWAYS_INLINE_ double acosh(double p_x) {
 	return p_x < 1 ? 0 : std::acosh(p_x);
 }
@@ -142,7 +148,7 @@ _ALWAYS_INLINE_ float acosh(float p_x) {
 	return p_x < 1 ? 0 : std::acosh(p_x);
 }
 
-// Always does clamping so always safe to use.
+/// Always does clamping so always safe to use.
 _ALWAYS_INLINE_ double atanh(double p_x) {
 	return p_x <= -1 ? -INF : (p_x >= 1 ? INF : std::atanh(p_x));
 }
@@ -236,7 +242,8 @@ _ALWAYS_INLINE_ bool is_inf(float p_val) {
 	return std::isinf(p_val);
 }
 
-// These methods assume (p_num + p_den) doesn't overflow.
+/// @name These methods assume (p_num + p_den) doesn't overflow.
+/// @{
 _ALWAYS_INLINE_ int32_t division_round_up(int32_t p_num, int32_t p_den) {
 	int32_t offset = (p_num < 0 && p_den < 0) ? 1 : -1;
 	return (p_num + p_den + offset) / p_den;
@@ -251,6 +258,7 @@ _ALWAYS_INLINE_ int64_t division_round_up(int64_t p_num, int64_t p_den) {
 _ALWAYS_INLINE_ uint64_t division_round_up(uint64_t p_num, uint64_t p_den) {
 	return (p_num + p_den - 1) / p_den;
 }
+/// @}
 
 _ALWAYS_INLINE_ bool is_finite(double p_val) {
 	return std::isfinite(p_val);
@@ -441,8 +449,8 @@ _ALWAYS_INLINE_ float cubic_interpolate_angle_in_time(float p_from, float p_to, 
 	return cubic_interpolate_in_time(from_rot, to_rot, pre_rot, post_rot, p_weight, p_to_t, p_pre_t, p_post_t);
 }
 
+/** Formula from Wikipedia article on Bezier curves. */
 _ALWAYS_INLINE_ double bezier_interpolate(double p_start, double p_control_1, double p_control_2, double p_end, double p_t) {
-	/* Formula from Wikipedia article on Bezier curves. */
 	double omt = (1.0 - p_t);
 	double omt2 = omt * omt;
 	double omt3 = omt2 * omt;
@@ -451,8 +459,9 @@ _ALWAYS_INLINE_ double bezier_interpolate(double p_start, double p_control_1, do
 
 	return p_start * omt3 + p_control_1 * omt2 * p_t * 3.0 + p_control_2 * omt * t2 * 3.0 + p_end * t3;
 }
+
+/** Formula from Wikipedia article on Bezier curves. */
 _ALWAYS_INLINE_ float bezier_interpolate(float p_start, float p_control_1, float p_control_2, float p_end, float p_t) {
-	/* Formula from Wikipedia article on Bezier curves. */
 	float omt = (1.0f - p_t);
 	float omt2 = omt * omt;
 	float omt3 = omt2 * omt;
@@ -462,8 +471,8 @@ _ALWAYS_INLINE_ float bezier_interpolate(float p_start, float p_control_1, float
 	return p_start * omt3 + p_control_1 * omt2 * p_t * 3.0f + p_control_2 * omt * t2 * 3.0f + p_end * t3;
 }
 
+/** Formula from Wikipedia article on Bezier curves. */
 _ALWAYS_INLINE_ double bezier_derivative(double p_start, double p_control_1, double p_control_2, double p_end, double p_t) {
-	/* Formula from Wikipedia article on Bezier curves. */
 	double omt = (1.0 - p_t);
 	double omt2 = omt * omt;
 	double t2 = p_t * p_t;
@@ -471,8 +480,9 @@ _ALWAYS_INLINE_ double bezier_derivative(double p_start, double p_control_1, dou
 	double d = (p_control_1 - p_start) * 3.0 * omt2 + (p_control_2 - p_control_1) * 6.0 * omt * p_t + (p_end - p_control_2) * 3.0 * t2;
 	return d;
 }
+
+/** Formula from Wikipedia article on Bezier curves. */
 _ALWAYS_INLINE_ float bezier_derivative(float p_start, float p_control_1, float p_control_2, float p_end, float p_t) {
-	/* Formula from Wikipedia article on Bezier curves. */
 	float omt = (1.0f - p_t);
 	float omt2 = omt * omt;
 	float t2 = p_t * p_t;
@@ -673,9 +683,11 @@ _ALWAYS_INLINE_ float pingpong(float p_value, float p_length) {
 	return (p_length != 0.0f) ? abs(fract((p_value - p_length) / (p_length * 2.0f)) * p_length * 2.0f - p_length) : 0.0f;
 }
 
-// double only, as these functions are mainly used by the editor and not performance-critical,
+/// double only, as these functions are mainly used by the editor and not performance-critical,
 double ease(double p_x, double p_c);
 int step_decimals(double p_step);
+/// Only meant for editor usage in float ranges, where a step of 0
+/// means that decimal digits should not be limited in String::num.
 int range_step_decimals(double p_step); // For editor use only.
 double snapped(double p_value, double p_step);
 
@@ -697,7 +709,7 @@ double random(double p_from, double p_to);
 float random(float p_from, float p_to);
 int random(int p_from, int p_to);
 
-// This function should be as fast as possible and rounding mode should not matter.
+/// This function should be as fast as possible and rounding mode should not matter.
 _ALWAYS_INLINE_ int fast_ftoi(float p_value) {
 	return std::rint(p_value);
 }

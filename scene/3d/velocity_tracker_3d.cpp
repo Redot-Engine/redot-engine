@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file velocity_tracker_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "velocity_tracker_3d.h"
 
 #include "core/config/engine.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_compiler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/pair.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering_server.h"

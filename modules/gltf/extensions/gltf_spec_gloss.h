@@ -32,15 +32,20 @@
 
 #pragma once
 
+/**
+ * @file gltf_spec_gloss.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 class Image;
 
-// KHR_materials_pbrSpecularGlossiness is an archived GLTF extension.
-// This means that it is deprecated and not recommended for new files.
-// However, it is still supported for loading old files.
-// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
-
+/// KHR_materials_pbrSpecularGlossiness is an archived GLTF extension.
+/// This means that it is deprecated and not recommended for new files.
+/// However, it is still supported for loading old files.
+/// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
 class GLTFSpecGloss : public Resource {
 	GDCLASS(GLTFSpecGloss, Resource);
 	friend class GLTFDocument;

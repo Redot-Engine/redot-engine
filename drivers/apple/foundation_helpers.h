@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file foundation_helpers.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <Foundation/NSString.h>
 
 class String;
@@ -44,15 +50,15 @@ namespace conv {
 
 /**
  * Converts a Godot String to an NSString without allocating an intermediate UTF-8 buffer.
- * */
+ */
 NSString *to_nsstring(const String &p_str);
 /**
  * Converts a Godot CharString to an NSString without allocating an intermediate UTF-8 buffer.
- * */
+ */
 NSString *to_nsstring(const CharString &p_str);
 /**
  * Converts an NSString to a Godot String without allocating intermediate buffers.
- * */
+ */
 String to_string(NSString *p_str);
 
 } //namespace conv

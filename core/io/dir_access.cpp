@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dir_access.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "dir_access.h"
 
 #include "core/config/project_settings.h"
@@ -465,8 +471,8 @@ Error DirAccess::copy(const String &p_from, const String &p_to, int p_chmod_flag
 	return err;
 }
 
-// Changes dir for the current scope, returning back to the original dir
-// when scope exits
+/// Changes dir for the current scope, returning back to the original dir
+/// when scope exits
 class DirChanger {
 	DirAccess *da;
 	String original_dir;

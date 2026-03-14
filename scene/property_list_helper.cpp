@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file property_list_helper.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "property_list_helper.h"
 
 Vector<PropertyListHelper *> PropertyListHelper::base_helpers; // static

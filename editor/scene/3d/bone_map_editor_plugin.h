@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file bone_map_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/editor_node.h"
 #include "editor/inspector/editor_properties.h"
 #include "editor/plugins/editor_plugin.h"
@@ -163,7 +169,7 @@ class BoneMapper : public VBoxContainer {
 	void _apply_picker_selection();
 	void _clear_mapping_current_group();
 
-	/* For auto mapping */
+	/// For auto mapping
 	enum BoneSegregation {
 		BONE_SEGREGATION_NONE,
 		BONE_SEGREGATION_LEFT,

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file separation_ray_shape_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "separation_ray_shape_2d.h"
 
 #include "servers/physics_server_2d.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file dxil_hash.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 

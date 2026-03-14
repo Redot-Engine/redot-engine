@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/texture.h"
 
 class BitMap;

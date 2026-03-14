@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_translation_parser_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_translation_parser_plugin.h"
 
 #include "../gdscript.h"
@@ -42,11 +48,6 @@ void GDScriptEditorTranslationParserPlugin::get_recognized_extensions(List<Strin
 }
 
 Error GDScriptEditorTranslationParserPlugin::parse_file(const String &p_path, Vector<Vector<String>> *r_translations) {
-	// Extract all translatable strings using the parsed tree from GDScriptParser.
-	// The strategy is to find all ExpressionNode and AssignmentNode from the tree and extract strings if relevant, i.e
-	// Search strings in ExpressionNode -> CallNode -> tr(), set_text(), set_placeholder() etc.
-	// Search strings in AssignmentNode -> text = "__", tooltip_text = "__" etc.
-
 	Error err;
 	Ref<Resource> loaded_res = ResourceLoader::load(p_path, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err);
 	ERR_FAIL_COND_V_MSG(err, err, "Failed to load " + p_path);
@@ -235,8 +236,6 @@ void GDScriptEditorTranslationParserPlugin::_traverse_block(const GDScriptParser
 }
 
 void GDScriptEditorTranslationParserPlugin::_assess_expression(const GDScriptParser::ExpressionNode *p_expression) {
-	// Explore all ExpressionNodes to find CallNodes which contain translation strings, such as tr(), set_text() etc.
-	// tr() can be embedded quite deep within multiple ExpressionNodes so need to dig down to search through all ExpressionNodes.
 	if (!p_expression) {
 		return;
 	}

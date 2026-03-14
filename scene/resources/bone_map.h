@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file bone_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skeleton_profile.h"
 
 class BoneMap : public Resource {
@@ -58,7 +64,7 @@ public:
 
 	StringName get_skeleton_bone_name(const StringName &p_profile_bone_name) const;
 	void set_skeleton_bone_name(const StringName &p_profile_bone_name, const StringName &p_skeleton_bone_name);
-	void _set_skeleton_bone_name(const StringName &p_profile_bone_name, const StringName &p_skeleton_bone_name); // Avoid to emit signal for editor.
+	void _set_skeleton_bone_name(const StringName &p_profile_bone_name, const StringName &p_skeleton_bone_name); ///< Avoid to emit signal for editor.
 
 	StringName find_profile_bone_name(const StringName &p_skeleton_bone_name) const;
 

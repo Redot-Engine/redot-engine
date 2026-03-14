@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file spin_box.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "spin_box.h"
 
 #include "core/input/input.h"

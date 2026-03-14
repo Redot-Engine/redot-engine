@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_space_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_area_3d.h"
 #include "godot_body_3d.h"
 #include "godot_broad_phase_3d.h"
@@ -84,6 +90,7 @@ private:
 	SelfList<GodotSoftBody3D>::List active_soft_body_list;
 
 	static void *_broadphase_pair(GodotCollisionObject3D *A, int p_subindex_A, GodotCollisionObject3D *B, int p_subindex_B, void *p_self);
+	/// Assumes a valid collision pair, this should have been checked beforehand in the BVH or octree.
 	static void _broadphase_unpair(GodotCollisionObject3D *A, int p_subindex_A, GodotCollisionObject3D *B, int p_subindex_B, void *p_data, void *p_self);
 
 	HashSet<GodotCollisionObject3D *> objects;
@@ -206,6 +213,12 @@ public:
 	void set_elapsed_time(ElapsedTime p_time, uint64_t p_msec) { elapsed_time[p_time] = p_msec; }
 	uint64_t get_elapsed_time(ElapsedTime p_time) const { return elapsed_time[p_time]; }
 
+	/// give me back regular physics engine logic
+	/// this is madness
+	/// and most people using this function will think
+	/// what it does is simpler than using physics
+	/// this took about a week to get right..
+	/// but is it right? who knows at this point..
 	bool test_body_motion(GodotBody3D *p_body, const PhysicsServer3D::MotionParameters &p_parameters, PhysicsServer3D::MotionResult *r_result);
 
 	GodotSpace3D();

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rid.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/typedefs.h"
 
 class RID_AllocBase;

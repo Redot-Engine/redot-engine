@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file quick_hull.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/geometry_3d.h"
 #include "core/templates/list.h"
 

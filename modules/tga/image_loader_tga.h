@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_loader_tga.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image_loader.h"
 
 #define TGA_IMAGE_DESCRIPTOR_ALPHA_MASK 0xf

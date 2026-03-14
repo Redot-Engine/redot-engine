@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file multiplayer_synchronizer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_replication_config.h"
 
 #include "scene/main/node.h"
@@ -54,7 +60,7 @@ private:
 	};
 
 	Ref<SceneReplicationConfig> replication_config;
-	NodePath root_path = NodePath(".."); // Start with parent, like with AnimationPlayer.
+	NodePath root_path = NodePath(".."); ///< Start with parent, like with AnimationPlayer.
 	uint64_t sync_interval_usec = 0;
 	uint64_t delta_interval_usec = 0;
 	VisibilityUpdateMode visibility_update_mode = VISIBILITY_PROCESS_IDLE;

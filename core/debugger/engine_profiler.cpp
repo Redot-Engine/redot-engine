@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file engine_profiler.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "engine_profiler.h"
 
 #include "core/debugger/engine_debugger.h"

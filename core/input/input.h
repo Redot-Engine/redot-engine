@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file input.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/input_event.h"
 #include "core/object/object.h"
 #include "core/os/keyboard.h"
@@ -48,7 +54,7 @@ class Input : public Object {
 	static constexpr uint64_t MAX_EVENT = 32;
 
 public:
-	// Keep synced with "DisplayServer::MouseMode" enum.
+	/// Keep synced with `DisplayServer::MouseMode` enum.
 	enum MouseMode {
 		MOUSE_MODE_VISIBLE,
 		MOUSE_MODE_HIDDEN,
@@ -124,7 +130,7 @@ private:
 		float api_strength = 0.0;
 		HashMap<int, DeviceState> device_states;
 
-		// Cache.
+		/// Cache
 		struct ActionStateCache {
 			bool pressed = false;
 			float strength = false;
@@ -144,7 +150,7 @@ private:
 	struct VibrationInfo {
 		float weak_magnitude;
 		float strong_magnitude;
-		float duration; // Duration in seconds
+		float duration; ///< Duration in seconds
 		uint64_t timestamp;
 	};
 
@@ -184,7 +190,7 @@ private:
 
 	HashSet<uint32_t> ignored_device_ids;
 
-	int fallback_mapping = -1; // Index of the guid in map_db.
+	int fallback_mapping = -1; ///< Index of the guid in map_db.
 
 	CursorShape default_shape = CURSOR_ARROW;
 
@@ -203,7 +209,7 @@ private:
 
 	struct JoyEvent {
 		int type = TYPE_MAX;
-		int index = -1; // Can be either JoyAxis or JoyButton.
+		int index = -1; ///< Can be either JoyAxis or JoyButton.
 		float value = 0.f;
 	};
 
@@ -256,6 +262,8 @@ private:
 	void _axis_event(int p_device, JoyAxis p_axis, float p_value);
 	void _update_action_cache(const StringName &p_action_name, ActionState &r_action_state);
 
+	/// This function does the final delivery of the input event to user land.
+	/// Regardless where the event came from originally, this has to happen on the main thread.
 	void _parse_input_event_impl(const Ref<InputEvent> &p_event, bool p_is_emulated);
 
 	List<Ref<InputEvent>> buffered_events;
@@ -338,6 +346,17 @@ public:
 	BitField<MouseButtonMask> get_mouse_button_mask() const;
 
 	void warp_mouse(const Vector2 &p_position);
+
+	/**
+	 * The relative distance reported for the next event after a warp is in the boundaries of the
+	 * size of the rect on that axis, but it may be greater, in which case there's no problem as fmod()
+	 * will warp it, but if the pointer has moved in the opposite direction between the pointer relocation
+	 * and the subsequent event, the reported relative distance will be less than the size of the rect
+	 * and thus fmod() will be disabled for handling the situation.
+	 * And due to this mouse warping mechanism being stateless, we need to apply some heuristics to
+	 * detect the warp: if the relative distance is greater than the half of the size of the relevant rect
+	 * (checked per each axis), it will be considered as the consequence of a former pointer warp.
+	 */
 	Point2 warp_mouse_motion(const Ref<InputEventMouseMotion> &p_motion, const Rect2 &p_rect);
 
 	void parse_input_event(const Ref<InputEvent> &p_event);
@@ -359,6 +378,9 @@ public:
 
 	void set_emulate_touch_from_mouse(bool p_emulate);
 	bool is_emulating_touch_from_mouse() const;
+
+	/// Calling this whenever the game window is focused helps unsticking the "touch mouse"
+	/// if the OS or its abstraction class hasn't properly reported that touch pointers raised
 	void ensure_touch_mouse_raised();
 
 	void set_emulate_mouse_from_touch(bool p_emulate);
@@ -375,10 +397,15 @@ public:
 	void joy_hat(int p_device, BitField<HatMask> p_val);
 
 	void add_joy_mapping(const String &p_mapping, bool p_update_existing = false);
+
+	/// One GUID can exist multiple times in `map_db`, and
+	/// `add_joy_mapping` can choose not to update the existing mapping,
+	/// so the indices can be all over the place. Therefore we need to remember them.
 	void remove_joy_mapping(const String &p_guid);
 
 	int get_unused_joy_id();
 
+	/// Platforms that use the remapping system can override and call to these ones
 	bool is_joy_known(int p_device);
 	String get_joy_guid(int p_device) const;
 	bool should_ignore_device(int p_vendor_id, int p_product_id) const;

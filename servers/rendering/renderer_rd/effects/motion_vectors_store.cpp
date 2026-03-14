@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file motion_vectors_store.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "motion_vectors_store.h"
 
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"

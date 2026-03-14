@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ss_effects.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "ss_effects.h"
 
 #include "core/config/project_settings.h"
@@ -449,8 +455,8 @@ void SSEffects::downsample_depth(Ref<RenderSceneBuffersRD> p_render_buffers, uin
 			downsample_mode = SS_EFFECTS_DOWNSAMPLE_FULL_MIPS;
 			use_full_mips = true;
 		} else {
-			// Only need the first two mipmaps, but the cost to generate the next two is trivial
-			// TODO investigate the benefit of a shader version to generate only 2 mips
+			/// Only need the first two mipmaps, but the cost to generate the next two is trivial
+			/// @todo Investigate the benefit of a shader version to generate only 2 mips
 			downsample_mode = SS_EFFECTS_DOWNSAMPLE_MIPMAP;
 			use_mips = true;
 		}

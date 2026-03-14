@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_interaction_profile_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../action_map/openxr_action_map.h"
 #include "../action_map/openxr_interaction_profile.h"
 #include "../action_map/openxr_interaction_profile_metadata.h"
@@ -66,7 +72,7 @@ protected:
 	const OpenXRInteractionProfileMetadata::InteractionProfile *profile_def = nullptr;
 
 public:
-	String tooltip; // Tooltip text to show on tab
+	String tooltip; ///< Tooltip text to show on tab
 
 	Ref<OpenXRInteractionProfile> get_interaction_profile() { return interaction_profile; }
 
@@ -77,6 +83,7 @@ public:
 	void _add_binding(const String p_action, const String p_path);
 	void _remove_binding(const String p_action, const String p_path);
 
+	/// @note Don't need to remove bindings themselves as remove_all_for_action will be called for each before this is called.
 	void remove_all_for_action_set(Ref<OpenXRActionSet> p_action_set);
 	void remove_all_for_action(Ref<OpenXRAction> p_action);
 

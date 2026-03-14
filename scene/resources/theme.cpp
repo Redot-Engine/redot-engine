@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file theme.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "theme.h"
 
 #include "scene/theme/theme_db.h"
@@ -1295,7 +1301,6 @@ void Theme::get_type_variation_list(const StringName &p_base_type, List<StringNa
 
 // Theme types.
 void Theme::add_type(const StringName &p_theme_type) {
-	// Add a record to every data type map.
 	for (int i = 0; i < Theme::DATA_TYPE_MAX; i++) {
 		Theme::DataType dt = (Theme::DataType)i;
 		add_theme_item_type(dt, p_theme_type);
@@ -1305,7 +1310,6 @@ void Theme::add_type(const StringName &p_theme_type) {
 }
 
 void Theme::remove_type(const StringName &p_theme_type) {
-	// Gracefully remove the record from every data type map.
 	for (int i = 0; i < Theme::DATA_TYPE_MAX; i++) {
 		Theme::DataType dt = (Theme::DataType)i;
 		remove_theme_item_type(dt, p_theme_type);
@@ -1327,7 +1331,6 @@ void Theme::remove_type(const StringName &p_theme_type) {
 }
 
 void Theme::rename_type(const StringName &p_old_theme_type, const StringName &p_theme_type) {
-	// Gracefully rename the record in every data type map.
 	for (int i = 0; i < Theme::DATA_TYPE_MAX; i++) {
 		Theme::DataType dt = (Theme::DataType)i;
 		rename_theme_item_type(dt, p_old_theme_type, p_theme_type);

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file physics_server_3d_wrap_mt.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/config/project_settings.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/os/thread.h"
@@ -81,7 +87,7 @@ public:
 
 #include "servers/server_wrap_mt_common.h"
 
-	//FUNC1RID(shape,ShapeType); todo fix
+	/// FUNC1RID(shape,ShapeType); @todo Fix
 	FUNCRID(world_boundary_shape)
 	FUNCRID(separation_ray_shape)
 	FUNCRID(sphere_shape)
@@ -103,13 +109,14 @@ public:
 	FUNC1RC(Variant, shape_get_data, RID);
 	FUNC1RC(real_t, shape_get_custom_solver_bias, RID);
 #if 0
-	//these work well, but should be used from the main thread only
+	// These work well, but should be used from the main thread only
 	bool shape_collide(RID p_shape_A, const Transform &p_xform_A, const Vector3 &p_motion_A, RID p_shape_B, const Transform &p_xform_B, const Vector3 &p_motion_B, Vector3 *r_results, int p_result_max, int &r_result_count) {
 		ERR_FAIL_COND_V(!Thread::is_main_thread(), false);
 		return physics_server_3d->shape_collide(p_shape_A, p_xform_A, p_motion_A, p_shape_B, p_xform_B, p_motion_B, r_results, p_result_max, r_result_count);
 	}
 #endif
-	/* SPACE API */
+	/// @name SPACE API
+	/// @{
 
 	FUNCRID(space);
 	FUNC2(space_set_active, RID, bool);
@@ -118,7 +125,7 @@ public:
 	FUNC3(space_set_param, RID, SpaceParameter, real_t);
 	FUNC2RC(real_t, space_get_param, RID, SpaceParameter);
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	PhysicsDirectSpaceState3D *space_get_direct_state(RID p_space) override {
 		ERR_FAIL_COND_V(!Thread::is_main_thread(), nullptr);
 		return physics_server_3d->space_get_direct_state(p_space);
@@ -135,7 +142,9 @@ public:
 		return physics_server_3d->space_get_contact_count(p_space);
 	}
 
-	/* AREA API */
+	/// @}
+	/// @name AREA API
+	/// @{
 
 	//FUNC0RID(area);
 	FUNCRID(area);
@@ -175,7 +184,9 @@ public:
 	FUNC2(area_set_monitor_callback, RID, const Callable &);
 	FUNC2(area_set_area_monitor_callback, RID, const Callable &);
 
-	/* BODY API */
+	/// @}
+	/// @name BODY API
+	/// @{
 
 	//FUNC2RID(body,BodyMode,bool);
 	FUNCRID(body)
@@ -276,13 +287,15 @@ public:
 		return physics_server_3d->body_test_motion(p_body, p_parameters, r_result);
 	}
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	PhysicsDirectBodyState3D *body_get_direct_state(RID p_body) override {
 		ERR_FAIL_COND_V(!Thread::is_main_thread(), nullptr);
 		return physics_server_3d->body_get_direct_state(p_body);
 	}
 
-	/* SOFT BODY API */
+	/// @}
+	/// @name SOFT BODY API
+	/// @{
 
 	FUNCRID(soft_body)
 
@@ -340,7 +353,9 @@ public:
 	FUNC3(soft_body_pin_point, RID, int, bool);
 	FUNC2RC(bool, soft_body_is_point_pinned, RID, int);
 
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	FUNCRID(joint)
 
@@ -392,7 +407,9 @@ public:
 	FUNC2(joint_disable_collisions_between_bodies, RID, bool);
 	FUNC1RC(bool, joint_is_disabled_collisions_between_bodies, RID);
 
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	FUNC1(free, RID);
 	FUNC1(set_active, bool);
@@ -411,6 +428,7 @@ public:
 	int get_process_info(ProcessInfo p_info) override {
 		return physics_server_3d->get_process_info(p_info);
 	}
+	/// @}
 
 	PhysicsServer3DWrapMT(PhysicsServer3D *p_contained, bool p_create_thread);
 	~PhysicsServer3DWrapMT();

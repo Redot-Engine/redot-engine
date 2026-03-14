@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rasterizer_scene_gles3.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "platform_gl.h"
 #ifdef GLES3_ENABLED
 
@@ -52,9 +58,9 @@
 #include "storage/utilities.h"
 
 enum RenderListType {
-	RENDER_LIST_OPAQUE, //used for opaque objects
-	RENDER_LIST_ALPHA, //used for transparent objects
-	RENDER_LIST_SECONDARY, //used for shadows and other objects
+	RENDER_LIST_OPAQUE, ///< Used for opaque objects
+	RENDER_LIST_ALPHA, ///< Used for transparent objects
+	RENDER_LIST_SECONDARY, ///< Used for shadows and other objects
 	RENDER_LIST_MAX
 };
 
@@ -66,34 +72,34 @@ enum PassMode {
 	PASS_MODE_MATERIAL,
 };
 
-// These should share as much as possible with SkyUniform Location
+/// These should share as much as possible with SkyUniform Location
 enum SceneUniformLocation {
 	SCENE_TONEMAP_UNIFORM_LOCATION,
 	SCENE_GLOBALS_UNIFORM_LOCATION,
 	SCENE_DATA_UNIFORM_LOCATION,
 	SCENE_MATERIAL_UNIFORM_LOCATION,
-	SCENE_EMPTY1, // Unused, put here to avoid conflicts with SKY_DIRECTIONAL_LIGHT_UNIFORM_LOCATION.
+	SCENE_EMPTY1, ///< Unused, put here to avoid conflicts with SKY_DIRECTIONAL_LIGHT_UNIFORM_LOCATION.
 	SCENE_OMNILIGHT_UNIFORM_LOCATION,
 	SCENE_SPOTLIGHT_UNIFORM_LOCATION,
 	SCENE_DIRECTIONAL_LIGHT_UNIFORM_LOCATION,
 	SCENE_MULTIVIEW_UNIFORM_LOCATION,
 	SCENE_POSITIONAL_SHADOW_UNIFORM_LOCATION,
 	SCENE_DIRECTIONAL_SHADOW_UNIFORM_LOCATION,
-	SCENE_EMPTY2, // Unused, put here to avoid conflicts with SKY_MULTIVIEW_UNIFORM_LOCATION.
+	SCENE_EMPTY2, ///< Unused, put here to avoid conflicts with SKY_MULTIVIEW_UNIFORM_LOCATION.
 };
 
 enum SkyUniformLocation {
 	SKY_TONEMAP_UNIFORM_LOCATION,
 	SKY_GLOBALS_UNIFORM_LOCATION,
-	SKY_EMPTY1, // Unused, put here to avoid conflicts with SCENE_DATA_UNIFORM_LOCATION.
+	SKY_EMPTY1, ///< Unused, put here to avoid conflicts with SCENE_DATA_UNIFORM_LOCATION.
 	SKY_MATERIAL_UNIFORM_LOCATION,
 	SKY_DIRECTIONAL_LIGHT_UNIFORM_LOCATION,
-	SKY_EMPTY2, // Unused, put here to avoid conflicts with SCENE_OMNILIGHT_UNIFORM_LOCATION.
-	SKY_EMPTY3, // Unused, put here to avoid conflicts with SCENE_SPOTLIGHT_UNIFORM_LOCATION.
-	SKY_EMPTY4, // Unused, put here to avoid conflicts with SCENE_DIRECTIONAL_LIGHT_UNIFORM_LOCATION.
-	SKY_EMPTY5, // Unused, put here to avoid conflicts with SCENE_MULTIVIEW_UNIFORM_LOCATION.
-	SKY_EMPTY6, // Unused, put here to avoid conflicts with SCENE_POSITIONAL_SHADOW_UNIFORM_LOCATION.
-	SKY_EMPTY7, // Unused, put here to avoid conflicts with SCENE_DIRECTIONAL_SHADOW_UNIFORM_LOCATION.
+	SKY_EMPTY2, ///< Unused, put here to avoid conflicts with SCENE_OMNILIGHT_UNIFORM_LOCATION.
+	SKY_EMPTY3, ///< Unused, put here to avoid conflicts with SCENE_SPOTLIGHT_UNIFORM_LOCATION.
+	SKY_EMPTY4, ///< Unused, put here to avoid conflicts with SCENE_DIRECTIONAL_LIGHT_UNIFORM_LOCATION.
+	SKY_EMPTY5, ///< Unused, put here to avoid conflicts with SCENE_MULTIVIEW_UNIFORM_LOCATION.
+	SKY_EMPTY6, ///< Unused, put here to avoid conflicts with SCENE_POSITIONAL_SHADOW_UNIFORM_LOCATION.
+	SKY_EMPTY7, ///< Unused, put here to avoid conflicts with SCENE_DIRECTIONAL_SHADOW_UNIFORM_LOCATION.
 	SKY_MULTIVIEW_UNIFORM_LOCATION,
 };
 
@@ -109,10 +115,10 @@ struct RenderDataGLES3 {
 	bool cam_frustum = false;
 	uint32_t camera_visible_layers = 0xFFFFFFFF;
 
-	// For billboards to cast correct shadows.
+	/// For billboards to cast correct shadows.
 	Transform3D main_cam_transform;
 
-	// For stereo rendering
+	/// For stereo rendering
 	uint32_t view_count = 1;
 	Vector3 view_eye_offset[RendererSceneRender::MAX_RENDER_VIEWS];
 	Projection view_projection[RendererSceneRender::MAX_RENDER_VIEWS];
@@ -142,9 +148,11 @@ struct RenderDataGLES3 {
 
 	RenderingMethod::RenderInfo *render_info = nullptr;
 
-	/* Shadow data */
+	/// Shadow data
+	/// @{
 	const RendererSceneRender::RenderShadowData *render_shadows = nullptr;
 	int render_shadow_count = 0;
+	/// }
 };
 
 class RasterizerCanvasGLES3;
@@ -175,13 +183,12 @@ private:
 	GLES3::SceneMaterialData *default_material_data_ptr = nullptr;
 	GLES3::SceneMaterialData *overdraw_material_data_ptr = nullptr;
 
-	/* LIGHT INSTANCE */
-
+	//// LIGHT INSTANCE
 	struct LightData {
 		float position[3];
 		float inv_radius;
 
-		float direction[3]; // Only used by SpotLight
+		float direction[3]; ///< Only used by SpotLight
 		float size;
 
 		float color[3];
@@ -204,7 +211,7 @@ private:
 		float color[3];
 		float size;
 
-		uint32_t enabled; // For use by SkyShaders
+		uint32_t enabled; ///< For use by SkyShaders
 		uint32_t bake_mode;
 		float shadow_opacity;
 		float specular;
@@ -230,14 +237,14 @@ private:
 		float shadow_matrices[4][16];
 		float fade_from;
 		float fade_to;
-		uint32_t blend_splits; // Not exposed to the shader.
+		uint32_t blend_splits; ///< Not exposed to the shader.
 		uint32_t pad;
 	};
 	static_assert(sizeof(DirectionalShadowData) % 16 == 0, "DirectionalShadowData size must be a multiple of 16 bytes");
 
 	class GeometryInstanceGLES3;
 
-	// Cached data for drawing surfaces
+	/// Cached data for drawing surfaces
 	struct GeometryInstanceSurface {
 		enum {
 			FLAG_PASS_DEPTH = 1,
@@ -300,7 +307,7 @@ private:
 
 	class GeometryInstanceGLES3 : public RenderGeometryInstanceBase {
 	public:
-		//used during rendering
+		/// Used during rendering
 		bool store_transform_cache = true;
 
 		int32_t instance_count = 0;
@@ -310,8 +317,8 @@ private:
 		bool using_softshadows = false;
 
 		struct LightPass {
-			int32_t light_id = -1; // Position in the light uniform buffer.
-			int32_t shadow_id = -1; // Position in the shadow uniform buffer.
+			int32_t light_id = -1; ///< Position in the light uniform buffer.
+			int32_t shadow_id = -1; ///< Position in the shadow uniform buffer.
 			RID light_instance_rid;
 			bool is_omni = false;
 		};
@@ -334,7 +341,7 @@ private:
 		uint32_t lightmap_slice_index;
 		GeometryInstanceLightmapSH *lightmap_sh = nullptr;
 
-		// Used during setup.
+		/// Used during setup.
 		GeometryInstanceSurface *surface_caches = nullptr;
 		SelfList<GeometryInstanceGLES3> dirty_list_element;
 
@@ -373,7 +380,7 @@ private:
 
 	SelfList<GeometryInstanceGLES3>::List geometry_instance_dirty_list;
 
-	// Use PagedAllocator instead of RID to maximize performance
+	/// Use PagedAllocator instead of RID to maximize performance
 	PagedAllocator<GeometryInstanceGLES3> geometry_instance_alloc;
 	PagedAllocator<GeometryInstanceSurface> geometry_instance_surface_alloc;
 
@@ -381,7 +388,7 @@ private:
 	void _geometry_instance_add_surface_with_material_chain(GeometryInstanceGLES3 *ginstance, uint32_t p_surface, GLES3::SceneMaterialData *p_material, RID p_mat_src, RID p_mesh);
 	void _geometry_instance_add_surface(GeometryInstanceGLES3 *ginstance, uint32_t p_surface, RID p_material, RID p_mesh);
 	void _geometry_instance_update(RenderGeometryInstance *p_geometry_instance);
-	void _update_dirty_geometry_instances();
+	void _update_dirty_geometry_instances(); ///< Parse any updates on our geometry, updates surface caches and such
 
 	struct SceneState {
 		struct UBO {
@@ -660,7 +667,7 @@ private:
 			elements.clear();
 		}
 
-		//should eventually be replaced by radix
+		/// @todo Should eventually be replaced by radix
 
 		struct SortByKey {
 			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurface *A, const GeometryInstanceSurface *B) const {
@@ -709,7 +716,9 @@ private:
 
 	RenderList render_list[RENDER_LIST_MAX];
 
+	/// Puts lights into Uniform Buffers. Needs to be called before _fill_list as this caches the index of each light in the Uniform Buffer
 	void _setup_lights(const RenderDataGLES3 *p_render_data, bool p_using_shadows, uint32_t &r_directional_light_count, uint32_t &r_omni_light_count, uint32_t &r_spot_light_count, uint32_t &r_directional_shadow_count);
+	/// Needs to be called after _setup_lights so that directional_light_count is accurate.
 	void _setup_environment(const RenderDataGLES3 *p_render_data, bool p_no_fog, const Size2i &p_screen_size, bool p_flip_y, const Color &p_default_bg_color, bool p_pancake_shadows, float p_shadow_bias = 0.0);
 	void _fill_render_list(RenderListType p_render_list, const RenderDataGLES3 *p_render_data, PassMode p_pass_mode, bool p_append = false);
 	void _render_shadows(const RenderDataGLES3 *p_render_data, const Size2i &p_viewport_size = Size2i(1, 1));
@@ -729,7 +738,8 @@ protected:
 
 	void _render_buffers_debug_draw(Ref<RenderSceneBuffersGLES3> p_render_buffers, RID p_shadow_atlas, GLuint p_fbo);
 
-	/* Camera Attributes */
+	/// @name Camera Attributes
+	/// @{
 
 	struct CameraAttributes {
 		float exposure_multiplier = 1.0;
@@ -739,7 +749,9 @@ protected:
 	bool use_physical_light_units = false;
 	mutable RID_Owner<CameraAttributes, true> camera_attributes_owner;
 
-	/* Environment */
+	/// @}
+	/// @name Environment
+	/// @{
 
 	RS::EnvironmentSSAOQuality ssao_quality = RS::ENV_SSAO_QUALITY_MEDIUM;
 	bool ssao_half_size = false;
@@ -753,7 +765,9 @@ protected:
 
 	bool lightmap_bicubic_upscale = false;
 
-	/* Sky */
+	/// @}
+	/// @name Sky
+	/// @{
 
 	struct SkyGlobals {
 		float fog_aerial_perspective = 0.0;
@@ -823,8 +837,9 @@ protected:
 	void _update_sky_radiance(RID p_env, const Projection &p_projection, const Transform3D &p_transform, float p_sky_energy_multiplier);
 	void _draw_sky(RID p_env, const Projection &p_projection, const Transform3D &p_transform, float p_sky_energy_multiplier, float p_luminance_multiplier, bool p_use_multiview, bool p_flip_y, bool p_apply_color_adjustments_in_post);
 	void _free_sky_data(Sky *p_sky);
+	/// @}
 
-	// Needed for a single argument calls (material and uv2).
+	/// Needed for a single argument calls (material and uv2).
 	PagedArrayPool<RenderGeometryInstance *> cull_argument_pool;
 	PagedArray<RenderGeometryInstance *> cull_argument;
 
@@ -838,12 +853,13 @@ public:
 
 	uint32_t geometry_instance_get_pair_mask() override;
 
-	/* PIPELINES */
-
+	/// @name PIPELINES
+	/// @{
 	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation) override {}
 	virtual uint32_t get_pipeline_compilations(RS::PipelineSource p_source) override { return 0; }
-
-	/* SDFGI UPDATE */
+	/// @}
+	/// @name SDFGI UPDATE
+	/// @{
 
 	void sdfgi_update(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_environment, const Vector3 &p_world_position) override {}
 	int sdfgi_get_pending_region_count(const Ref<RenderSceneBuffers> &p_render_buffers) const override {
@@ -856,7 +872,9 @@ public:
 		return 0;
 	}
 
-	/* SKY API */
+	/// @}
+	/// @name SKY API
+	/// @{
 
 	RID sky_allocate() override;
 	void sky_initialize(RID p_rid) override;
@@ -866,7 +884,9 @@ public:
 	Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) override;
 	float sky_get_baked_exposure(RID p_sky) const;
 
-	/* ENVIRONMENT API */
+	/// @}
+	/// @name ENVIRONMENT API
+	/// @{
 
 	void environment_glow_set_use_bicubic_upscale(bool p_enable) override;
 
@@ -942,6 +962,7 @@ public:
 	void decals_set_filter(RS::DecalFilter p_filter) override;
 	void light_projectors_set_filter(RS::LightProjectorFilter p_filter) override;
 	virtual void lightmaps_set_bicubic_filter(bool p_enable) override;
+	/// @}
 
 	RasterizerSceneGLES3();
 	~RasterizerSceneGLES3();

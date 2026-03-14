@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file text_server_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/gdvirtual.gen.inc"
 #include "core/os/thread_safe.h"
 #include "core/variant/native_ptr.h"
@@ -78,7 +84,8 @@ public:
 	GDVIRTUAL1RC(int64_t, _name_to_tag, const String &);
 	GDVIRTUAL1RC(String, _tag_to_name, int64_t);
 
-	/* Font interface */
+	/// @name Font Interface
+	/// @{
 
 	virtual RID create_font() override;
 	GDVIRTUAL0R_REQUIRED(RID, _create_font);
@@ -407,7 +414,9 @@ public:
 	GDVIRTUAL2RC(Vector2, _get_hex_code_box_size, int64_t, int64_t);
 	GDVIRTUAL5C(_draw_hex_code_box, RID, int64_t, const Vector2 &, int64_t, const Color &);
 
-	/* Shaped text buffer interface */
+	/// @}
+	/// @name Shaped Text Buffer Interface
+	/// @{
 
 	virtual RID create_shaped_text(Direction p_direction = DIRECTION_AUTO, Orientation p_orientation = ORIENTATION_HORIZONTAL) override;
 	GDVIRTUAL2R_REQUIRED(RID, _create_shaped_text, Direction, Orientation);
@@ -642,6 +651,7 @@ public:
 
 	virtual void cleanup() override;
 	GDVIRTUAL0(_cleanup);
+	/// @}
 
 	TextServerExtension();
 	~TextServerExtension();

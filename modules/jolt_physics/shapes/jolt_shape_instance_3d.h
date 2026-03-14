@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_shape_instance_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/transform_3d.h"
 
 #include "Jolt/Jolt.h"
@@ -42,7 +48,7 @@ class JoltShapedObject3D;
 class JoltShape3D;
 
 class JoltShapeInstance3D {
-	// This RAII helper exists solely to avoid needing to maintain move construction/assignment in `JoltShapeInstance3D`.
+	/// This RAII helper exists solely to avoid needing to maintain move construction/assignment in `JoltShapeInstance3D`.
 	struct ShapeReference {
 		JoltShapedObject3D *parent = nullptr;
 		JoltShape3D *shape = nullptr;

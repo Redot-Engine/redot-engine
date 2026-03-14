@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_link_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "2d/nav_base_iteration_2d.h"
 #include "nav_base_2d.h"
 #include "nav_utils_2d.h"
@@ -106,11 +112,13 @@ public:
 		return end_position;
 	}
 
-	// NavBase properties.
+	/// @name NavBase Properties
+	/// @{
 	virtual void set_navigation_layers(uint32_t p_navigation_layers) override;
 	virtual void set_enter_cost(real_t p_enter_cost) override;
 	virtual void set_travel_cost(real_t p_travel_cost) override;
 	virtual void set_owner_id(ObjectID p_owner_id) override;
+	/// @}
 
 	bool sync();
 	void request_sync();

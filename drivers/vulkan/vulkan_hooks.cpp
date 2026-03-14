@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vulkan_hooks.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "vulkan_hooks.h"
 
 VulkanHooks *VulkanHooks::singleton = nullptr;

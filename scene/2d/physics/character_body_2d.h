@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file character_body_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/physics/kinematic_collision_2d.h"
 #include "scene/2d/physics/physics_body_2d.h"
 
@@ -158,6 +164,7 @@ private:
 	void set_up_direction(const Vector2 &p_up_direction);
 	void _set_collision_direction(const PhysicsServer2D::MotionResult &p_result);
 	void _set_platform_data(const PhysicsServer2D::MotionResult &p_result);
+	/// Method that avoids the p_wall_as_floor parameter for the public method.
 	void _apply_floor_snap(bool p_wall_as_floor = false);
 	void _snap_on_floor(bool p_was_on_floor, bool p_vel_dir_facing_up, bool p_wall_as_floor = false);
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource_uid.h"
 #include "core/object/class_db.h"
 #include "core/object/gdvirtual.gen.inc"
@@ -99,7 +105,7 @@ private:
 	Variant _duplicate_recursive(const Variant &p_variant, const DuplicateParams &p_params, uint32_t p_usage = 0) const;
 	void _find_sub_resources(const Variant &p_variant, HashSet<Ref<Resource>> &p_resources_found);
 
-	// Only for binding the deep duplicate method, so it doesn't need actual members.
+	/// Only for binding the deep duplicate method, so it doesn't need actual members.
 	enum DeepDuplicateMode : int;
 
 	_ALWAYS_INLINE_ Ref<Resource> _duplicate_deep_bind(DeepDuplicateMode p_deep_subresources_mode) const;
@@ -114,7 +120,7 @@ protected:
 	void _set_path(const String &p_path);
 	void _take_over_path(const String &p_path);
 
-	virtual void reset_local_to_scene();
+	virtual void reset_local_to_scene(); ///< Restores the state as if setup_local_to_scene() hadn't been called.
 	GDVIRTUAL0(_setup_local_to_scene);
 
 	GDVIRTUAL0RC(RID, _get_rid);
@@ -125,12 +131,12 @@ protected:
 	virtual Ref<Resource> _duplicate(const DuplicateParams &p_params) const;
 
 public:
-	static Node *(*_get_local_scene_func)(); // Used by the editor.
-	static void (*_update_configuration_warning)(); // Used by the editor.
+	static Node *(*_get_local_scene_func)(); ///< Used by the editor.
+	static void (*_update_configuration_warning)(); ///< Used by the editor.
 
 	void update_configuration_warning();
 	virtual bool editor_can_reload_from_file();
-	virtual void reset_state(); // For resources that store state in non-exposed properties, such as via _validate_property or _get_property_list, this function must be implemented to clear them.
+	virtual void reset_state(); ///< For resources that store state in non-exposed properties, such as via _validate_property or _get_property_list, this function must be implemented to clear them.
 	virtual Error copy_from(const Ref<Resource> &p_resource);
 	virtual void reload_from_file();
 
@@ -143,10 +149,12 @@ public:
 
 	virtual void set_path(const String &p_path, bool p_take_over = false);
 	String get_path() const;
-	virtual void set_path_cache(const String &p_path); // Set raw path without involving resource cache.
+	virtual void set_path_cache(const String &p_path); ///< Set raw path without involving resource cache.
 	_FORCE_INLINE_ bool is_built_in() const { return path_cache.is_empty() || path_cache.contains("::") || path_cache.begins_with("local://"); }
 
 	static void seed_scene_unique_id(uint32_t p_seed);
+	/// Generate a unique enough hash, but still user-readable.
+	/// If it's not unique it does not matter because the saver will try again.
 	static String generate_scene_unique_id();
 	void set_scene_unique_id(const String &p_id);
 	String get_scene_unique_id() const;
@@ -181,9 +189,9 @@ public:
 
 	void set_as_translation_remapped(bool p_remapped);
 
-	virtual RID get_rid() const; // Some resources may offer conversion to RID.
+	virtual RID get_rid() const; ///< Some resources may offer conversion to RID.
 
-	// Helps keep IDs the same when loading/saving scenes. An empty ID clears the entry, and an empty ID is returned when not found.
+	/// Helps keep IDs the same when loading/saving scenes. An empty ID clears the entry, and an empty ID is returned when not found.
 	static void set_resource_id_for_path(const String &p_referrer_path, const String &p_resource_path, const String &p_id);
 	void set_id_for_path(const String &p_referrer_path, const String &p_id) { set_resource_id_for_path(p_referrer_path, get_path(), p_id); }
 	String get_id_for_path(const String &p_referrer_path) const;
@@ -196,11 +204,11 @@ VARIANT_ENUM_CAST(Resource::DeepDuplicateMode);
 
 class ResourceCache {
 	friend class Resource;
-	friend class ResourceLoader; // Need the lock.
+	friend class ResourceLoader; ///< Need the lock.
 	static Mutex lock;
 	static HashMap<String, Resource *> resources;
 #ifdef TOOLS_ENABLED
-	static HashMap<String, HashMap<String, String>> resource_path_cache; // Each tscn has a set of resource paths and IDs.
+	static HashMap<String, HashMap<String, String>> resource_path_cache; ///< Each tscn has a set of resource paths and IDs.
 	static RWLock path_cache_lock;
 #endif // TOOLS_ENABLED
 	friend void unregister_core_types();

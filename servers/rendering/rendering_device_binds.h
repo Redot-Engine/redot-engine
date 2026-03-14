@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_device_binds.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/rendering_device.h"
 
 #define RD_SETGET(m_type, m_member)            \

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file progress_bar.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "progress_bar.h"
 
 #include "scene/resources/text_line.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_format_binary.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_format_binary.h"
 
 #include "core/config/project_settings.h"
@@ -44,8 +50,8 @@
 //#define print_bl(m_what) print_line(m_what)
 #define print_bl(m_what) (void)(m_what)
 
+// Numbering must be different from variant, in case new variant types are added (variant must be always contiguous for jumptable optimization)
 enum {
-	//numbering must be different from variant, in case new variant types are added (variant must be always contiguous for jumptable optimization)
 	VARIANT_NIL = 1,
 	VARIANT_BOOL = 2,
 	VARIANT_INT = 3,

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fog_material.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fog_material.h"
 
 #include "core/version.h"

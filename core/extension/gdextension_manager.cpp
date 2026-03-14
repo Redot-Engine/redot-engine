@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdextension_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdextension_manager.h"
 
 #include "core/extension/gdextension_library_loader.h"
@@ -238,12 +244,12 @@ Ref<GDExtension> GDExtensionManager::get_extension(const String &p_path) {
 }
 
 bool GDExtensionManager::class_has_icon_path(const String &p_class) const {
-	// TODO: Check that the icon belongs to a registered class somehow.
+	/// @todo Check that the icon belongs to a registered class somehow.
 	return gdextension_class_icon_paths.has(p_class);
 }
 
 String GDExtensionManager::class_get_icon_path(const String &p_class) const {
-	// TODO: Check that the icon belongs to a registered class somehow.
+	/// @todo Check that the icon belongs to a registered class somehow.
 	if (gdextension_class_icon_paths.has(p_class)) {
 		return gdextension_class_icon_paths[p_class];
 	}

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_saver_dds.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 
 Error save_dds(const String &p_path, const Ref<Image> &p_img);

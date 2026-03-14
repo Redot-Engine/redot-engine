@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_translation_parser.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
 #include "core/variant/typed_array.h"
@@ -59,8 +65,8 @@ class EditorTranslationParser {
 
 public:
 	enum ParserType {
-		STANDARD, // GDScript, CSharp, ...
-		CUSTOM // User-defined parser plugins. This will override standard parsers if the same extension type is defined.
+		STANDARD, ///< GDScript, CSharp, ...
+		CUSTOM ///< User-defined parser plugins. This will override standard parsers if the same extension type is defined.
 	};
 
 	static EditorTranslationParser *get_singleton();

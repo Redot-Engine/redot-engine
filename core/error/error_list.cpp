@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file error_list.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "error_list.h"
 
 #include <iterator>

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file triangle_mesh.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "triangle_mesh.h"
 
 #include "core/templates/sort_array.h"
@@ -116,7 +122,7 @@ void TriangleMesh::create(const Vector<Vector3> &p_faces, const Vector<int32_t> 
 	fc /= 3;
 	triangles.resize(fc);
 
-	bvh.resize(fc * 3); //will never be larger than this (todo make better)
+	bvh.resize(fc * 3); ///< (@todo Make better) Will never be larger than this
 	BVH *bw = bvh.ptrw();
 
 	{

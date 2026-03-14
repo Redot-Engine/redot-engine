@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_atlas_packer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/vector2.h"
 #include "core/math/vector2i.h"
 #include "core/templates/vector.h"

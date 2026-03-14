@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file syslog_logger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef UNIX_ENABLED
 
 #include "syslog_logger.h"

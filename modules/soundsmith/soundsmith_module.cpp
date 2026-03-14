@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file soundsmith_module.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "soundsmith_module.h"
 
 #include "core/io/file_access.h"

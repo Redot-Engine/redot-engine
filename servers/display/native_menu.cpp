@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file native_menu.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "native_menu.h"
 
 #include "scene/resources/image_texture.h"

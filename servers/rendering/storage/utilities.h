@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file utilities.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering_server.h"
 
 class DependencyTracker;
@@ -74,16 +80,16 @@ public:
 	ChangedCallback changed_callback = nullptr;
 	DeletedCallback deleted_callback = nullptr;
 
-	void update_begin() { // call before updating dependencies
+	void update_begin() { ///< Call before updating dependencies
 		instance_version++;
 	}
 
-	void update_dependency(Dependency *p_dependency) { //called internally, can't be used directly, use update functions in Storage
+	void update_dependency(Dependency *p_dependency) { ///< Called internally, can't be used directly, use update functions in Storage
 		dependencies.insert(p_dependency);
 		p_dependency->instances[this] = instance_version;
 	}
 
-	void update_end() { //call after updating dependencies
+	void update_end() { ///< Call after updating dependencies
 		List<Pair<Dependency *, DependencyTracker *>> to_clean_up;
 
 		for (Dependency *E : dependencies) {
@@ -125,16 +131,19 @@ class RendererUtilities {
 public:
 	virtual ~RendererUtilities() {}
 
-	/* INSTANCES */
+	/// @name INSTANCES
+	/// @{
 
 	virtual RS::InstanceType get_base_type(RID p_rid) const = 0;
 	virtual bool free(RID p_rid) = 0;
-
-	/* DEPENDENCIES */
+	/// @}
+	/// @name DEPENDENCIES
+	/// @{
 
 	virtual void base_update_dependency(RID p_base, DependencyTracker *p_instance) = 0;
-
-	/* VISIBILITY NOTIFIER */
+	/// @}
+	/// @name VISIBILITY NOTIFIER
+	/// @{
 
 	virtual RID visibility_notifier_allocate() = 0;
 	virtual void visibility_notifier_initialize(RID p_notifier) = 0;
@@ -145,8 +154,9 @@ public:
 
 	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const = 0;
 	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) = 0;
-
-	/* TIMING */
+	/// @}
+	/// @name TIMING
+	/// @{
 
 	bool capturing_timestamps = false;
 
@@ -169,8 +179,9 @@ public:
 	virtual uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const = 0;
 	virtual uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const = 0;
 	virtual String get_captured_timestamp_name(uint32_t p_index) const = 0;
-
-	/* MISC */
+	/// @{
+	/// @name MISC
+	/// @{
 
 	virtual void update_dirty_resources() = 0;
 	virtual void set_debug_generate_wireframes(bool p_generate) = 0;
@@ -188,4 +199,5 @@ public:
 	virtual Size2i get_maximum_viewport_size() const = 0;
 	virtual uint32_t get_maximum_shader_varyings() const = 0;
 	virtual uint64_t get_maximum_uniform_buffer_size() const = 0;
+	/// @}
 };

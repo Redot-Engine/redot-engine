@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_loader_tinyexr.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_loader_tinyexr.h"
 
 #include <zlib.h> // Should come before including tinyexr.

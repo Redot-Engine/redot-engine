@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file curve_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 #include "editor/inspector/editor_resource_preview.h"
 #include "editor/plugins/editor_plugin.h"
@@ -95,6 +101,7 @@ private:
 
 	void update_view_transform();
 
+	/// Uses non-baked points, but takes advantage of ordered iteration to be faster.
 	void plot_curve_accurate(float p_step, const Color &p_line_color, const Color &p_edge_line_color);
 
 	void set_selected_index(int p_index);
@@ -108,7 +115,7 @@ private:
 private:
 	const float ASPECT_RATIO = 6.f / 13.f;
 	const float LINE_WIDTH = 0.5f;
-	const int STEP_SIZE = 2; // Number of pixels between plot points.
+	const int STEP_SIZE = 2; ///< Number of pixels between plot points.
 
 	Transform2D _world_to_view;
 
@@ -120,12 +127,14 @@ private:
 	TangentIndex selected_tangent_index = TANGENT_NONE;
 	TangentIndex hovered_tangent_index = TANGENT_NONE;
 
-	// Make sure to use the scaled values below.
+	/// @name Make sure to use the scaled values below.
+	/// @{
 	const int BASE_POINT_RADIUS = 4;
 	const int BASE_HOVER_RADIUS = 10;
 	const int BASE_TANGENT_RADIUS = 3;
 	const int BASE_TANGENT_HOVER_RADIUS = 8;
 	const int BASE_TANGENT_LENGTH = 36;
+	/// @}
 
 	int point_radius = BASE_POINT_RADIUS;
 	int hover_radius = BASE_HOVER_RADIUS;
@@ -148,7 +157,7 @@ private:
 	int snap_count = 10;
 };
 
-// CurveEdit + toolbar
+/// CurveEdit + toolbar
 class CurveEditor : public VBoxContainer {
 	GDCLASS(CurveEditor, VBoxContainer);
 

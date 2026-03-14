@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_tree.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_tree.h"
 #include "animation_tree.compat.inc"
 
@@ -901,7 +907,6 @@ void AnimationTree::_setup_animation_player() {
 	clear_caches();
 }
 
-// `libraries` is a dynamic property, so we can't use `_validate_property` to change it.
 uint32_t AnimationTree::_get_libraries_property_usage() const {
 	if (!animation_player.is_empty()) {
 		return PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY;

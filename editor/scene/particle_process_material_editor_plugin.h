@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file particle_process_material_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_properties.h"
 #include "editor/plugins/editor_plugin.h"
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file script_text_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_editor_plugin.h"
 
 #include "editor/gui/code_editor.h"
@@ -190,7 +196,7 @@ protected:
 
 	void _on_caret_moved();
 
-	void _validate_script(); // No longer virtual.
+	void _validate_script(); ///< No longer virtual.
 	void _update_warnings();
 	void _update_errors();
 	void _update_bookmark_list();

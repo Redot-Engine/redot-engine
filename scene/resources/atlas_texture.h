@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file atlas_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/texture.h"
 
 class AtlasTexture : public Texture2D {

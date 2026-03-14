@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_completion.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef TOOLS_ENABLED
 
 #include "tests/test_macros.h"

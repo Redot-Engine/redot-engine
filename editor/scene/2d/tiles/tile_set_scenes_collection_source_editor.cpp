@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_set_scenes_collection_source_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_set_scenes_collection_source_editor.h"
 
 #include "editor/editor_node.h"

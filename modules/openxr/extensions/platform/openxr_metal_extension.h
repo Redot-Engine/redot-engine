@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_metal_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../../openxr_api.h"
 #include "../../util.h"
 #include "../openxr_extension_wrapper.h"

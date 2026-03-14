@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dictionary.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "dictionary.h"
 
 #include "core/templates/hash_map.h"
@@ -44,11 +50,11 @@
 
 struct DictionaryPrivate {
 	SafeRefCount refcount;
-	Variant *read_only = nullptr; // If enabled, a pointer is used to a temporary value that is used to return read-only values.
+	Variant *read_only = nullptr; ///< If enabled, a pointer is used to a temporary value that is used to return read-only values.
 	HashMap<Variant, Variant, VariantHasher, StringLikeVariantComparator> variant_map;
 	ContainerTypeValidate typed_key;
 	ContainerTypeValidate typed_value;
-	Variant *typed_fallback = nullptr; // Allows a typed dictionary to return dummy values when attempting an invalid access.
+	Variant *typed_fallback = nullptr; ///< Allows a typed dictionary to return dummy values when attempting an invalid access.
 };
 
 Dictionary::ConstIterator Dictionary::begin() const {
@@ -93,8 +99,8 @@ Variant Dictionary::get_value_at_index(int p_index) const {
 	return Variant();
 }
 
-// WARNING: This operator does not validate the value type. For scripting/extensions this is
-// done in `variant_setget.cpp`. Consider using `set()` if the data might be invalid.
+/// @warning This operator does not validate the value type. For scripting/extensions this is
+/// done in `variant_setget.cpp`. Consider using `set()` if the data might be invalid.
 Variant &Dictionary::operator[](const Variant &p_key) {
 	Variant key = p_key;
 	if (unlikely(!_p->typed_key.validate(key, "use `operator[]`"))) {
@@ -146,7 +152,7 @@ const Variant *Dictionary::getptr(const Variant &p_key) const {
 	return &E->value;
 }
 
-// WARNING: This method does not validate the value type.
+/// @warning This method does not validate the value type.
 Variant *Dictionary::getptr(const Variant &p_key) {
 	Variant key = p_key;
 	if (unlikely(!_p->typed_key.validate(key, "getptr"))) {

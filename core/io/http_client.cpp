@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file http_client.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "http_client.h"
 
 const char *HTTPClient::_methods[METHOD_MAX] = {

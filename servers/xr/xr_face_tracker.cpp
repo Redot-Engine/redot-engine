@@ -30,10 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_face_tracker.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_face_tracker.h"
 
 void XRFaceTracker::_bind_methods() {
-	// Base Shapes
+	/// Base Shapes
+	/// @{
 	BIND_ENUM_CONSTANT(FT_EYE_LOOK_OUT_RIGHT);
 	BIND_ENUM_CONSTANT(FT_EYE_LOOK_IN_RIGHT);
 	BIND_ENUM_CONSTANT(FT_EYE_LOOK_UP_RIGHT);
@@ -136,7 +143,9 @@ void XRFaceTracker::_bind_methods() {
 	BIND_ENUM_CONSTANT(FT_THROAT_SWALLOW);
 	BIND_ENUM_CONSTANT(FT_NECK_FLEX_RIGHT);
 	BIND_ENUM_CONSTANT(FT_NECK_FLEX_LEFT);
-	// Blended Shapes
+	/// @}
+	/// Blended Shapes
+	/// @{
 	BIND_ENUM_CONSTANT(FT_EYE_CLOSED);
 	BIND_ENUM_CONSTANT(FT_EYE_WIDE);
 	BIND_ENUM_CONSTANT(FT_EYE_SQUINT);
@@ -179,6 +188,7 @@ void XRFaceTracker::_bind_methods() {
 	BIND_ENUM_CONSTANT(FT_MOUTH_TIGHTENER);
 	BIND_ENUM_CONSTANT(FT_MOUTH_PRESS);
 	BIND_ENUM_CONSTANT(FT_MAX);
+	/// @}
 
 	ClassDB::bind_method(D_METHOD("get_blend_shape", "blend_shape"), &XRFaceTracker::get_blend_shape);
 	ClassDB::bind_method(D_METHOD("set_blend_shape", "blend_shape", "weight"), &XRFaceTracker::set_blend_shape);

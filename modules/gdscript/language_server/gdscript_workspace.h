@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_workspace.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gdscript_parser.h"
 #include "gdscript_extend_parser.h"
 #include "godot_lsp.h"
@@ -52,12 +58,13 @@ protected:
 	bool initialized = false;
 	HashMap<StringName, LSP::DocumentSymbol> native_symbols;
 
-	// Absolute paths that are known to point to res://
+	/// Absolute paths that are known to point to res://
 	HashSet<String> absolute_res_paths;
 
 	const LSP::DocumentSymbol *get_native_symbol(const String &p_class, const String &p_member = "") const;
 	const LSP::DocumentSymbol *get_script_symbol(const String &p_path) const;
 	const LSP::DocumentSymbol *get_parameter_symbol(const LSP::DocumentSymbol *p_parent, const String &symbol_identifier);
+	/// Go down and pick closest `DocumentSymbol` with `p_symbol_identifier`.
 	const LSP::DocumentSymbol *get_local_symbol_at(const ExtendGDScriptParser *p_parser, const String &p_symbol_identifier, const LSP::Position p_position);
 
 	void reload_all_workspace_scripts();

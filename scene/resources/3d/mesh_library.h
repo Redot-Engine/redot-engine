@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file mesh_library.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/templates/rb_map.h"
 #include "scene/resources/mesh.h"

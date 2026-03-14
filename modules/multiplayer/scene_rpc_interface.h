@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_rpc_interface.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 #include "scene/main/multiplayer_api.h"
 

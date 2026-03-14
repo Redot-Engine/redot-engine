@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_crypto_mbedtls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/crypto/crypto.h"
 #include "core/crypto/hashing_context.h"
 

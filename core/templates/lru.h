@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file lru.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "hash_map.h"
 #include "list.h"
 

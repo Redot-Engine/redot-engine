@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file doc_data.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "doc_data.h"
 
 String DocData::get_default_value_string(const Variant &p_value) {

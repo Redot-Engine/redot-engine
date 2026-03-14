@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_variant_type_selectors.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_variant_type_selectors.h"
 
 struct CompareVariantTypeNames {

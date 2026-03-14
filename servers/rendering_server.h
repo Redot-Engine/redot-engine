@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/math/geometry_3d.h"
 #include "core/math/transform_2d.h"
@@ -41,8 +47,9 @@
 #include "servers/display_server.h"
 #include "servers/rendering/rendering_device.h"
 
-// Helper macros for code outside of the rendering server, but that is
-// called by the rendering server.
+/// Helper macros for code outside of the rendering server, but that is
+/// called by the rendering server.
+/// @{
 #ifdef DEBUG_ENABLED
 #define ERR_NOT_ON_RENDER_THREAD                                          \
 	RenderingServer *rendering_server = RenderingServer::get_singleton(); \
@@ -56,6 +63,7 @@
 #define ERR_NOT_ON_RENDER_THREAD
 #define ERR_NOT_ON_RENDER_THREAD_V(m_ret)
 #endif
+/// @}
 
 class RenderingServer : public Object {
 	GDCLASS(RenderingServer, Object);
@@ -112,7 +120,8 @@ public:
 		MAX_MESH_SURFACES = 256
 	};
 
-	/* TEXTURE API */
+	/// @name TEXTURE API
+	/// @{
 
 	enum TextureType {
 		TEXTURE_TYPE_2D,
@@ -201,7 +210,9 @@ public:
 	virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const = 0;
 	virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const = 0;
 
-	/* PIPELINES API */
+	/// @}
+	/// @name PIPELINES API
+	/// @{
 
 	enum PipelineSource {
 		PIPELINE_SOURCE_CANVAS,
@@ -212,7 +223,9 @@ public:
 		PIPELINE_SOURCE_MAX
 	};
 
-	/* SHADER API */
+	/// @}
+	/// @name SHADER API
+	/// @{
 
 	enum ShaderMode {
 		SHADER_SPATIAL,
@@ -254,7 +267,9 @@ public:
 
 	virtual ShaderNativeSourceCode shader_get_native_source_code(RID p_shader) const = 0;
 
-	/* COMMON MATERIAL API */
+	/// @}
+	/// @name COMMON MATERIAL API
+	/// @{
 
 	enum {
 		MATERIAL_RENDER_PRIORITY_MIN = -128,
@@ -273,22 +288,24 @@ public:
 
 	virtual void material_set_next_pass(RID p_material, RID p_next_material) = 0;
 
-	/* MESH API */
+	/// @}
+	/// @name MESH API
+	/// @{
 
 	enum ArrayType {
-		ARRAY_VERTEX = 0, // RG32F (2D), RGB32F, RGBA16 (compressed)
-		ARRAY_NORMAL = 1, // RG16
-		ARRAY_TANGENT = 2, // BA16 (with normal) or A16 (with vertex, when compressed)
-		ARRAY_COLOR = 3, // RGBA8
-		ARRAY_TEX_UV = 4, // RG32F or RG16
-		ARRAY_TEX_UV2 = 5, // RG32F or RG16
-		ARRAY_CUSTOM0 = 6, // Depends on ArrayCustomFormat.
+		ARRAY_VERTEX = 0, ///< RG32F (2D), RGB32F, RGBA16 (compressed)
+		ARRAY_NORMAL = 1, ///< RG16
+		ARRAY_TANGENT = 2, ///< BA16 (with normal) or A16 (with vertex, when compressed)
+		ARRAY_COLOR = 3, ///< RGBA8
+		ARRAY_TEX_UV = 4, ///< RG32F or RG16
+		ARRAY_TEX_UV2 = 5, ///< RG32F or RG16
+		ARRAY_CUSTOM0 = 6, ///< Depends on ArrayCustomFormat.
 		ARRAY_CUSTOM1 = 7,
 		ARRAY_CUSTOM2 = 8,
 		ARRAY_CUSTOM3 = 9,
-		ARRAY_BONES = 10, // RGBA16UI (x2 if 8 weights)
-		ARRAY_WEIGHTS = 11, // RGBA16UNORM (x2 if 8 weights)
-		ARRAY_INDEX = 12, // 16 or 32 bits depending on length > 0xFFFF.
+		ARRAY_BONES = 10, ///< RGBA16UI (x2 if 8 weights)
+		ARRAY_WEIGHTS = 11, ///< RGBA16UNORM (x2 if 8 weights)
+		ARRAY_INDEX = 12, ///< 16 or 32 bits depending on length > 0xFFFF.
 		ARRAY_MAX = 13
 	};
 
@@ -369,9 +386,9 @@ public:
 		PrimitiveType primitive = PRIMITIVE_MAX;
 
 		uint64_t format = ARRAY_FLAG_FORMAT_CURRENT_VERSION;
-		Vector<uint8_t> vertex_data; // Vertex, Normal, Tangent (change with skinning, blendshape).
-		Vector<uint8_t> attribute_data; // Color, UV, UV2, Custom0-3.
-		Vector<uint8_t> skin_data; // Bone index, Bone weight.
+		Vector<uint8_t> vertex_data; ///< Vertex, Normal, Tangent (change with skinning, blendshape).
+		Vector<uint8_t> attribute_data; ///< Color, UV, UV2, Custom0-3.
+		Vector<uint8_t> skin_data; ///< Bone index, Bone weight.
 		uint32_t vertex_count = 0;
 		Vector<uint8_t> index_data;
 		uint32_t index_count = 0;
@@ -384,8 +401,8 @@ public:
 		Vector<LOD> lods;
 		Vector<AABB> bone_aabbs;
 
-		// Transforms used in runtime bone AABBs compute.
-		// Since bone AABBs is saved in Mesh space, but bones is in Skeleton space.
+		/// Transforms used in runtime bone AABBs compute.
+		/// Since bone AABBs is saved in Mesh space, but bones is in Skeleton space.
 		Transform3D mesh_to_skeleton_xform;
 
 		Vector<uint8_t> blend_shape_data;
@@ -407,7 +424,7 @@ public:
 	virtual uint32_t mesh_surface_get_format_skin_stride(BitField<ArrayFormat> p_format, int p_vertex_len) const;
 	virtual uint32_t mesh_surface_get_format_index_stride(BitField<ArrayFormat> p_format, int p_vertex_len) const;
 
-	/// Returns stride
+	/// @return stride
 	virtual void mesh_surface_make_offsets_from_format(uint64_t p_format, int p_vertex_len, int p_index_len, uint32_t *r_offsets, uint32_t &r_vertex_element_size, uint32_t &r_normal_element_size, uint32_t &r_attrib_element_size, uint32_t &r_skin_element_size) const;
 	virtual Error mesh_create_surface_data_from_arrays(SurfaceData *r_surface_data, PrimitiveType p_primitive, const Array &p_arrays, const Array &p_blend_shapes = Array(), const Dictionary &p_lods = Dictionary(), uint64_t p_compress_format = 0);
 	int32_t _get_vertex_to_custom_array_length_factor(uint32_t p_format, int p_array_index);
@@ -466,7 +483,9 @@ public:
 
 	virtual void mesh_debug_usage(List<MeshInfo> *r_info) = 0;
 
-	/* MULTIMESH API */
+	/// @}
+	/// @name MULTIMESH API
+	/// @{
 
 	virtual RID multimesh_create() = 0;
 
@@ -510,16 +529,20 @@ public:
 	virtual RID multimesh_get_buffer_rd_rid(RID p_multimesh) const = 0;
 	virtual Vector<float> multimesh_get_buffer(RID p_multimesh) const = 0;
 
-	// Interpolation.
+	/// Interpolation
+	/// @{
 	virtual void multimesh_set_buffer_interpolated(RID p_multimesh, const Vector<float> &p_buffer_curr, const Vector<float> &p_buffer_prev) = 0;
 	virtual void multimesh_set_physics_interpolated(RID p_multimesh, bool p_interpolated) = 0;
 	virtual void multimesh_set_physics_interpolation_quality(RID p_multimesh, MultimeshPhysicsInterpolationQuality p_quality) = 0;
 	virtual void multimesh_instance_reset_physics_interpolation(RID p_multimesh, int p_index) = 0;
+	/// @}
 
 	virtual void multimesh_set_visible_instances(RID p_multimesh, int p_visible) = 0;
 	virtual int multimesh_get_visible_instances(RID p_multimesh) const = 0;
 
-	/* SKELETON API */
+	/// @}
+	/// @name SKELETON API
+	/// @{
 
 	virtual RID skeleton_create() = 0;
 	virtual void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false) = 0;
@@ -530,7 +553,8 @@ public:
 	virtual Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const = 0;
 	virtual void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D &p_base_transform) = 0;
 
-	/* Light API */
+	/// @}
+	/// @name Light API
 
 	enum LightType {
 		LIGHT_DIRECTIONAL,
@@ -586,7 +610,7 @@ public:
 	virtual void light_set_bake_mode(RID p_light, LightBakeMode p_bake_mode) = 0;
 	virtual void light_set_max_sdfgi_cascade(RID p_light, uint32_t p_cascade) = 0;
 
-	// Omni light
+	/// Omni light
 	enum LightOmniShadowMode {
 		LIGHT_OMNI_SHADOW_DUAL_PARABOLOID,
 		LIGHT_OMNI_SHADOW_CUBE,
@@ -594,7 +618,7 @@ public:
 
 	virtual void light_omni_set_shadow_mode(RID p_light, LightOmniShadowMode p_mode) = 0;
 
-	// Directional light
+	/// Directional light
 	enum LightDirectionalShadowMode {
 		LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL,
 		LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS,
@@ -611,13 +635,14 @@ public:
 	virtual void light_directional_set_blend_splits(RID p_light, bool p_enable) = 0;
 	virtual void light_directional_set_sky_mode(RID p_light, LightDirectionalSkyMode p_mode) = 0;
 
-	// Shadow atlas
-
+	/// Shadow atlas
+	/// @{
 	virtual RID shadow_atlas_create() = 0;
 	virtual void shadow_atlas_set_size(RID p_atlas, int p_size, bool p_use_16_bits = true) = 0;
 	virtual void shadow_atlas_set_quadrant_subdivision(RID p_atlas, int p_quadrant, int p_subdivision) = 0;
 
 	virtual void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true) = 0;
+	/// @}
 
 	enum ShadowQuality {
 		SHADOW_QUALITY_HARD,
@@ -643,8 +668,8 @@ public:
 
 	virtual void light_projectors_set_filter(LightProjectorFilter p_filter) = 0;
 
-	/* PROBE API */
-
+	/// @name PROBE API
+	/// @{
 	virtual RID reflection_probe_create() = 0;
 
 	enum ReflectionProbeUpdateMode {
@@ -676,7 +701,9 @@ public:
 	virtual void reflection_probe_set_resolution(RID p_probe, int p_resolution) = 0;
 	virtual void reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_pixels) = 0;
 
-	/* DECAL API */
+	/// @}
+	/// @name DECAL API
+	/// @{
 
 	enum DecalTexture {
 		DECAL_TEXTURE_ALBEDO,
@@ -708,7 +735,9 @@ public:
 
 	virtual void decals_set_filter(DecalFilter p_quality) = 0;
 
-	/* VOXEL GI API */
+	/// @}
+	/// @name VOXEL GI API
+	/// @{
 
 	virtual RID voxel_gi_create() = 0;
 
@@ -740,7 +769,9 @@ public:
 
 	virtual void sdfgi_reset() = 0;
 
-	/* LIGHTMAP */
+	/// @}
+	/// @name LIGHTMAP
+	/// @{
 
 	enum ShadowmaskMode {
 		SHADOWMASK_MODE_NONE,
@@ -768,7 +799,9 @@ public:
 	virtual ShadowmaskMode lightmap_get_shadowmask_mode(RID p_lightmap) = 0;
 	virtual void lightmap_set_shadowmask_mode(RID p_lightmap, ShadowmaskMode p_mode) = 0;
 
-	/* PARTICLES API */
+	/// @}
+	/// @name PARTICLES API
+	/// @{
 
 	virtual RID particles_create() = 0;
 
@@ -844,7 +877,9 @@ public:
 	virtual void particles_set_emitter_velocity(RID p_particles, const Vector3 &p_velocity) = 0;
 	virtual void particles_set_interp_to_end(RID p_particles, float p_interp) = 0;
 
-	/* PARTICLES COLLISION API */
+	/// @}
+	/// @name PARTICLES COLLISION API
+	/// @{
 
 	virtual RID particles_collision_create() = 0;
 
@@ -869,7 +904,7 @@ public:
 
 	virtual void particles_collision_height_field_update(RID p_particles_collision) = 0; // For SDF and vector field.
 
-	enum ParticlesCollisionHeightfieldResolution { // Longest axis resolution.
+	enum ParticlesCollisionHeightfieldResolution { ///< Longest axis resolution.
 		PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_256,
 		PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_512,
 		PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_1024,
@@ -882,7 +917,9 @@ public:
 	virtual void particles_collision_set_height_field_resolution(RID p_particles_collision, ParticlesCollisionHeightfieldResolution p_resolution) = 0; // For SDF and vector field.
 	virtual void particles_collision_set_height_field_mask(RID p_particles_collision, uint32_t p_heightfield_mask) = 0;
 
-	/* FOG VOLUME API */
+	/// @}
+	/// @name FOG VOLUME API
+	/// @{
 
 	virtual RID fog_volume_create() = 0;
 
@@ -899,18 +936,24 @@ public:
 	virtual void fog_volume_set_size(RID p_fog_volume, const Vector3 &p_size) = 0;
 	virtual void fog_volume_set_material(RID p_fog_volume, RID p_material) = 0;
 
-	/* VISIBILITY NOTIFIER API */
+	/// @}
+	/// @name VISIBILITY NOTIFIER API
+	/// @{
 
 	virtual RID visibility_notifier_create() = 0;
 	virtual void visibility_notifier_set_aabb(RID p_notifier, const AABB &p_aabb) = 0;
 	virtual void visibility_notifier_set_callbacks(RID p_notifier, const Callable &p_enter_callbable, const Callable &p_exit_callable) = 0;
 
-	/* OCCLUDER API */
+	/// @}
+	/// @name OCCLUDER API
+	/// @{
 
 	virtual RID occluder_create() = 0;
 	virtual void occluder_set_mesh(RID p_occluder, const PackedVector3Array &p_vertices, const PackedInt32Array &p_indices) = 0;
 
-	/* CAMERA API */
+	/// @}
+	/// @name CAMERA API
+	/// @{
 
 	virtual RID camera_create() = 0;
 	virtual void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far) = 0;
@@ -923,10 +966,12 @@ public:
 	virtual void camera_set_compositor(RID p_camera, RID p_compositor) = 0;
 	virtual void camera_set_use_vertical_aspect(RID p_camera, bool p_enable) = 0;
 
-	/* VIEWPORT API */
+	/// @}
+	/// @name VIEWPORT API
+	/// @{
 
 	enum CanvasItemTextureFilter {
-		CANVAS_ITEM_TEXTURE_FILTER_DEFAULT, // Uses canvas item setting for draw command, uses global setting for canvas item.
+		CANVAS_ITEM_TEXTURE_FILTER_DEFAULT, ///< Uses canvas item setting for draw command, uses global setting for canvas item.
 		CANVAS_ITEM_TEXTURE_FILTER_NEAREST,
 		CANVAS_ITEM_TEXTURE_FILTER_LINEAR,
 		CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
@@ -937,7 +982,7 @@ public:
 	};
 
 	enum CanvasItemTextureRepeat {
-		CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT, // Uses canvas item setting for draw command, uses global setting for canvas item.
+		CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT, ///< Uses canvas item setting for draw command, uses global setting for canvas item.
 		CANVAS_ITEM_TEXTURE_REPEAT_DISABLED,
 		CANVAS_ITEM_TEXTURE_REPEAT_ENABLED,
 		CANVAS_ITEM_TEXTURE_REPEAT_MIRROR,
@@ -953,7 +998,7 @@ public:
 		VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL,
 		VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL,
 		VIEWPORT_SCALING_3D_MODE_MAX,
-		VIEWPORT_SCALING_3D_MODE_OFF = 255, // for internal use only
+		VIEWPORT_SCALING_3D_MODE_OFF = 255, ///< For internal use only
 	};
 
 	enum ViewportAnisotropicFiltering {
@@ -998,8 +1043,8 @@ public:
 
 	enum ViewportUpdateMode {
 		VIEWPORT_UPDATE_DISABLED,
-		VIEWPORT_UPDATE_ONCE, // Then goes to disabled, must be manually updated.
-		VIEWPORT_UPDATE_WHEN_VISIBLE, // Default
+		VIEWPORT_UPDATE_ONCE, ///< Then goes to disabled, must be manually updated.
+		VIEWPORT_UPDATE_WHEN_VISIBLE, ///< Default
 		VIEWPORT_UPDATE_WHEN_PARENT_VISIBLE,
 		VIEWPORT_UPDATE_ALWAYS
 	};
@@ -1177,7 +1222,9 @@ public:
 	virtual void viewport_set_vrs_update_mode(RID p_viewport, ViewportVRSUpdateMode p_mode) = 0;
 	virtual void viewport_set_vrs_texture(RID p_viewport, RID p_texture) = 0;
 
-	/* SKY API */
+	/// @}
+	/// @name SKY API
+	/// @{
 
 	enum SkyMode {
 		SKY_MODE_AUTOMATIC,
@@ -1192,7 +1239,9 @@ public:
 	virtual void sky_set_material(RID p_sky, RID p_material) = 0;
 	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) = 0;
 
-	/* COMPOSITOR EFFECTS API */
+	/// @}
+	/// @name COMPOSITOR EFFECTS API
+	/// @{
 
 	enum CompositorEffectFlags {
 		COMPOSITOR_EFFECT_FLAG_ACCESS_RESOLVED_COLOR = 1,
@@ -1217,13 +1266,17 @@ public:
 	virtual void compositor_effect_set_callback(RID p_effect, CompositorEffectCallbackType p_callback_type, const Callable &p_callback) = 0;
 	virtual void compositor_effect_set_flag(RID p_effect, CompositorEffectFlags p_flag, bool p_set) = 0;
 
-	/* COMPOSITOR API */
+	/// @}
+	/// @name COMPOSITOR API
+	/// @{
 
 	virtual RID compositor_create() = 0;
 
 	virtual void compositor_set_compositor_effects(RID p_compositor, const TypedArray<RID> &p_effects) = 0;
 
-	/* ENVIRONMENT API */
+	/// @}
+	/// @name ENVIRONMENT API
+	/// @{
 
 	virtual RID environment_create() = 0;
 
@@ -1388,7 +1441,9 @@ public:
 	virtual void sub_surface_scattering_set_quality(SubSurfaceScatteringQuality p_quality) = 0;
 	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) = 0;
 
-	/* CAMERA EFFECTS */
+	/// @}
+	/// @name CAMERA EFFECTS
+	/// @{
 
 	virtual RID camera_attributes_create() = 0;
 
@@ -1413,7 +1468,9 @@ public:
 	virtual void camera_attributes_set_exposure(RID p_camera_attributes, float p_multiplier, float p_exposure_normalization) = 0;
 	virtual void camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable, float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale) = 0;
 
-	/* SCENARIO API */
+	/// @}
+	/// @name SCENARIO API
+	/// @{
 
 	virtual RID scenario_create() = 0;
 
@@ -1422,7 +1479,9 @@ public:
 	virtual void scenario_set_camera_attributes(RID p_scenario, RID p_camera_attributes) = 0;
 	virtual void scenario_set_compositor(RID p_scenario, RID p_compositor) = 0;
 
-	/* INSTANCING API */
+	/// @}
+	/// @name INSTANCING API
+	/// @{
 
 	enum InstanceType {
 		INSTANCE_NONE,
@@ -1436,7 +1495,7 @@ public:
 		INSTANCE_VOXEL_GI,
 		INSTANCE_LIGHTMAP,
 		INSTANCE_OCCLUDER,
-		INSTANCE_VISIBLITY_NOTIFIER, // TODO: Fix typo in "VISIBILITY" (in 5.0).
+		INSTANCE_VISIBLITY_NOTIFIER, /// @todo Fix typo in "VISIBILITY" (in 5.0).
 		INSTANCE_FOG_VOLUME,
 		INSTANCE_MAX,
 
@@ -1468,10 +1527,12 @@ public:
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
 
-	// Don't use these in a game!
+	/// @warning Don't use these in a game!
+	/// @{
 	virtual Vector<ObjectID> instances_cull_aabb(const AABB &p_aabb, RID p_scenario = RID()) const = 0;
 	virtual Vector<ObjectID> instances_cull_ray(const Vector3 &p_from, const Vector3 &p_to, RID p_scenario = RID()) const = 0;
 	virtual Vector<ObjectID> instances_cull_convex(const Vector<Plane> &p_convex, RID p_scenario = RID()) const = 0;
+	/// @}
 
 	PackedInt64Array _instances_cull_aabb_bind(const AABB &p_aabb, RID p_scenario = RID()) const;
 	PackedInt64Array _instances_cull_ray_bind(const Vector3 &p_from, const Vector3 &p_to, RID p_scenario = RID()) const;
@@ -1512,7 +1573,9 @@ public:
 	virtual Variant instance_geometry_get_shader_parameter_default_value(RID p_instance, const StringName &) const = 0;
 	virtual void instance_geometry_get_shader_parameter_list(RID p_instance, List<PropertyInfo> *p_parameters) const = 0;
 
-	/* Bake 3D objects */
+	/// @}
+	/// @name Bake 3D objects
+	/// @{
 
 	enum BakeChannels {
 		BAKE_CHANNEL_ALBEDO_ALPHA,
@@ -1523,7 +1586,9 @@ public:
 
 	virtual TypedArray<Image> bake_render_uv2(RID p_base, const TypedArray<RID> &p_material_overrides, const Size2i &p_image_size) = 0;
 
-	/* CANVAS (2D) */
+	/// @}
+	/// @name CANVAS (2D)
+	/// @{
 
 	virtual RID canvas_create() = 0;
 	virtual void canvas_set_item_mirroring(RID p_canvas, RID p_item, const Point2 &p_mirroring) = 0;
@@ -1533,7 +1598,10 @@ public:
 
 	virtual void canvas_set_disable_scale(bool p_disable) = 0;
 
-	/* CANVAS TEXTURE */
+	/// @}
+	/// @name CANVAS TEXTURE
+	/// @{
+
 	virtual RID canvas_texture_create() = 0;
 
 	enum CanvasTextureChannel {
@@ -1544,11 +1612,13 @@ public:
 	virtual void canvas_texture_set_channel(RID p_canvas_texture, CanvasTextureChannel p_channel, RID p_texture) = 0;
 	virtual void canvas_texture_set_shading_parameters(RID p_canvas_texture, const Color &p_base_color, float p_shininess) = 0;
 
-	// Takes effect only for new draw commands.
+	/// Takes effect only for new draw commands.
 	virtual void canvas_texture_set_texture_filter(RID p_canvas_texture, CanvasItemTextureFilter p_filter) = 0;
 	virtual void canvas_texture_set_texture_repeat(RID p_canvas_texture, CanvasItemTextureRepeat p_repeat) = 0;
 
-	/* CANVAS ITEM */
+	/// @}
+	/// @name CANVAS ITEM
+	/// @{
 
 	virtual RID canvas_item_create() = 0;
 	virtual void canvas_item_set_parent(RID p_item, RID p_parent) = 0;
@@ -1635,7 +1705,10 @@ public:
 	virtual void canvas_item_reset_physics_interpolation(RID p_item) = 0;
 	virtual void canvas_item_transform_physics_interpolation(RID p_item, const Transform2D &p_transform) = 0;
 
-	/* CANVAS LIGHT */
+	/// @}
+	/// @name CANVAS LIGHT
+	/// @{
+
 	virtual RID canvas_light_create() = 0;
 
 	enum CanvasLightMode {
@@ -1686,7 +1759,9 @@ public:
 	virtual void canvas_light_reset_physics_interpolation(RID p_light) = 0;
 	virtual void canvas_light_transform_physics_interpolation(RID p_light, const Transform2D &p_transform) = 0;
 
-	/* CANVAS LIGHT OCCLUDER */
+	/// @}
+	/// @name CANVAS LIGHT OCCLUDER
+	/// @{
 
 	virtual RID canvas_light_occluder_create() = 0;
 	virtual void canvas_light_occluder_attach_to_canvas(RID p_occluder, RID p_canvas) = 0;
@@ -1700,7 +1775,9 @@ public:
 	virtual void canvas_light_occluder_reset_physics_interpolation(RID p_occluder) = 0;
 	virtual void canvas_light_occluder_transform_physics_interpolation(RID p_occluder, const Transform2D &p_transform) = 0;
 
-	/* CANVAS LIGHT OCCLUDER POLYGON */
+	/// @}
+	/// @name CANVAS LIGHT OCCLUDER POLYGON
+	/// @{
 
 	virtual RID canvas_occluder_polygon_create() = 0;
 	virtual void canvas_occluder_polygon_set_shape(RID p_occluder_polygon, const Vector<Vector2> &p_shape, bool p_closed) = 0;
@@ -1718,7 +1795,9 @@ public:
 	Rect2 debug_canvas_item_get_rect(RID p_item);
 	virtual Rect2 _debug_canvas_item_get_rect(RID p_item) = 0;
 
-	/* GLOBAL SHADER UNIFORMS */
+	/// @}
+	/// @name GLOBAL SHADER UNIFORMS
+	/// @{
 
 	enum GlobalShaderParameterType {
 		GLOBAL_VAR_TYPE_BOOL,
@@ -1768,15 +1847,21 @@ public:
 
 	static int global_shader_uniform_type_get_shader_datatype(GlobalShaderParameterType p_type);
 
-	/* FREE */
+	/// @}
+	/// @name FREE
+	/// @{
 
-	virtual void free(RID p_rid) = 0; // Free RIDs associated with the rendering server.
+	virtual void free(RID p_rid) = 0; ///< Free RIDs associated with the rendering server.
 
-	/* INTERPOLATION */
+	/// @}
+	/// @name INTERPOLATION
+	/// @{
 
 	virtual void set_physics_interpolation_enabled(bool p_enabled) = 0;
 
-	/* EVENT QUEUING */
+	/// @}
+	/// @name EVENT QUEUING
+	/// @{
 
 	virtual void request_frame_drawn_callback(const Callable &p_callable) = 0;
 
@@ -1788,7 +1873,9 @@ public:
 	virtual void tick() = 0;
 	virtual void pre_draw(bool p_will_draw) = 0;
 
-	/* STATUS INFORMATION */
+	/// @}
+	/// @name STATUS INFORMATION
+	/// @{
 
 	enum RenderingInfo {
 		RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME,
@@ -1825,7 +1912,9 @@ public:
 
 	virtual void gi_set_use_half_resolution(bool p_enable) = 0;
 
-	/* TESTING */
+	/// @}
+	/// @name TESTING
+	/// @{
 
 	virtual RID get_test_cube() = 0;
 
@@ -1844,7 +1933,7 @@ public:
 	virtual void set_default_clear_color(const Color &p_color) = 0;
 
 #ifndef DISABLE_DEPRECATED
-	// Never actually used, should be removed when we can break compatibility.
+	/// @todo Never actually used, should be removed when we can break compatibility.
 	enum Features {
 		FEATURE_SHADERS,
 		FEATURE_MULTITHREADED,
@@ -1863,6 +1952,7 @@ public:
 
 	virtual Size2i get_maximum_viewport_size() const = 0;
 
+	/// @return The rendering device we're using globally.
 	RenderingDevice *get_rendering_device() const;
 	RenderingDevice *create_local_rendering_device() const;
 
@@ -1878,6 +1968,7 @@ public:
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
 #endif
+	/// @}
 
 	RenderingServer();
 	virtual ~RenderingServer();
@@ -1893,7 +1984,8 @@ public:
 #endif
 
 private:
-	// Binder helpers
+	/// Binder helpers
+	/// @{
 	RID _texture_2d_layered_create(const TypedArray<Image> &p_layers, TextureLayeredType p_layered_type);
 	RID _texture_3d_create(Image::Format p_format, int p_width, int p_height, int p_depth, bool p_mipmaps, const TypedArray<Image> &p_data);
 	void _texture_3d_update(RID p_texture, const TypedArray<Image> &p_data);
@@ -1906,13 +1998,15 @@ private:
 	TypedArray<Dictionary> _canvas_item_get_instance_shader_parameter_list(RID p_item) const;
 	TypedArray<Image> _bake_render_uv2(RID p_base, const TypedArray<RID> &p_material_overrides, const Size2i &p_image_size);
 	void _particles_set_trail_bind_poses(RID p_particles, const TypedArray<Transform3D> &p_bind_poses);
+	/// @}
 #ifdef TOOLS_ENABLED
 	SurfaceUpgradeCallback surface_upgrade_callback = nullptr;
 	bool warn_on_surface_upgrade = true;
 #endif
 };
 
-// Make variant understand the enums.
+/// Make variant understand the enums.
+/// @{
 VARIANT_ENUM_CAST(RenderingServer::TextureType);
 VARIANT_ENUM_CAST(RenderingServer::TextureLayeredType);
 VARIANT_ENUM_CAST(RenderingServer::CubeMapLayer);
@@ -1995,7 +2089,7 @@ VARIANT_ENUM_CAST(RenderingServer::GlobalShaderParameterType);
 VARIANT_ENUM_CAST(RenderingServer::RenderingInfo);
 VARIANT_ENUM_CAST(RenderingServer::CanvasTextureChannel);
 VARIANT_ENUM_CAST(RenderingServer::BakeChannels);
-
+/// @}
 #ifndef DISABLE_DEPRECATED
 VARIANT_ENUM_CAST(RenderingServer::Features);
 #endif

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_atlas_packer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_atlas_packer.h"
 
 #include "core/math/geometry_2d.h"

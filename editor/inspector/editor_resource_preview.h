@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_resource_preview.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/semaphore.h"
 #include "core/os/thread.h"
 #include "core/templates/safe_refcount.h"
@@ -75,7 +81,7 @@ public:
 class EditorResourcePreview : public Node {
 	GDCLASS(EditorResourcePreview, Node);
 
-	static constexpr int CURRENT_METADATA_VERSION = 1; // Increment this number to invalidate all previews.
+	static constexpr int CURRENT_METADATA_VERSION = 1; ///< Increment this number to invalidate all previews.
 	inline static EditorResourcePreview *singleton = nullptr;
 
 	struct QueueItem {
@@ -110,8 +116,8 @@ class EditorResourcePreview : public Node {
 	int small_thumbnail_size = -1;
 
 	static void _thread_func(void *ud);
-	void _thread(); // For rendering drivers supporting async texture creation.
-	static void _idle_callback(); // For other rendering drivers (i.e., OpenGL).
+	void _thread(); ///< For rendering drivers supporting async texture creation.
+	static void _idle_callback(); ///< For other rendering drivers (i.e., OpenGL).
 	void _iterate();
 
 	void _write_preview_cache(Ref<FileAccess> p_file, int p_thumbnail_size, bool p_has_small_texture, uint64_t p_modified_time, const String &p_hash, const Dictionary &p_metadata);
@@ -133,8 +139,8 @@ public:
 		Ref<Texture2D> small_preview;
 	};
 
-	// p_receiver_func callback has signature (String p_path, Ref<Texture2D> p_preview, Ref<Texture2D> p_preview_small, Variant p_userdata)
-	// p_preview will be null if there was an error
+	/// p_receiver_func callback has signature (String p_path, Ref<Texture2D> p_preview, Ref<Texture2D> p_preview_small, Variant p_userdata)
+	/// p_preview will be null if there was an error
 	void queue_resource_preview(const String &p_path, Object *p_receiver, const StringName &p_receiver_func, const Variant &p_userdata);
 	void queue_edited_resource_preview(const Ref<Resource> &p_res, Object *p_receiver, const StringName &p_receiver_func, const Variant &p_userdata);
 	const Dictionary get_preview_metadata(const String &p_path) const;

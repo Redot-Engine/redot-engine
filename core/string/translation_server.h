@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file translation_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/translation.h"
 #include "core/string/translation_domain.h"
 
@@ -81,6 +87,7 @@ class TranslationServer : public Object {
 
 		explicit operator String() const;
 
+		/// Replaces '-' with '_' for macOS style locales.
 		Locale(const TranslationServer &p_server, const String &p_locale, bool p_add_defaults);
 	};
 

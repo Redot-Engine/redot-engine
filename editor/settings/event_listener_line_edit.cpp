@@ -30,12 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file event_listener_line_edit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "event_listener_line_edit.h"
 
 #include "core/input/input_map.h"
 #include "scene/gui/dialogs.h"
 
-// Maps to 2*axis if value is neg, or 2*axis+1 if value is pos.
+/// Maps to 2*axis if value is neg, or 2*axis+1 if value is pos.
 static const char *_joy_axis_descriptions[(size_t)JoyAxis::MAX * 2] = {
 	TTRC("Left Stick Left, Joystick 0 Left"),
 	TTRC("Left Stick Right, Joystick 0 Right"),

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_texture_atlas.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/io/resource_importer.h"
 class ResourceImporterTextureAtlas : public ResourceImporter {
@@ -41,8 +47,8 @@ class ResourceImporterTextureAtlas : public ResourceImporter {
 		Rect2 region;
 		bool is_cropped = false;
 		bool is_mesh = false;
-		Vector<int> chart_pieces; //one for region, many for mesh
-		Vector<Vector<Vector2>> chart_vertices; //for mesh
+		Vector<int> chart_pieces; ///< One for region, many for mesh
+		Vector<Vector<Vector2>> chart_vertices; ///< For mesh
 		Ref<Image> image;
 	};
 
@@ -65,6 +71,7 @@ public:
 	virtual bool get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const override;
 	virtual String get_option_group_file() const override;
 
+	/// If this happens, it's because the atlas_file field was not filled, so just import a broken texture.
 	virtual Error import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files = nullptr, Variant *r_metadata = nullptr) override;
 	virtual Error import_group_file(const String &p_group_file, const HashMap<String, HashMap<StringName, Variant>> &p_source_file_options, const HashMap<String, String> &p_base_paths) override;
 

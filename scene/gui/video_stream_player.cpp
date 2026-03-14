@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file video_stream_player.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "video_stream_player.h"
 
 #include "core/os/os.h"
@@ -56,7 +62,6 @@ bool VideoStreamPlayer::mix(AudioFrame *p_buffer, int p_frames) {
 	return false;
 }
 
-// Called from main thread (e.g. VideoStreamPlaybackTheora::update).
 int VideoStreamPlayer::_audio_mix_callback(void *p_udata, const float *p_data, int p_frames) {
 	ERR_FAIL_NULL_V(p_udata, 0);
 	ERR_FAIL_NULL_V(p_data, 0);
@@ -81,7 +86,6 @@ void VideoStreamPlayer::_mix_audios(void *p_self) {
 	static_cast<VideoStreamPlayer *>(p_self)->_mix_audio();
 }
 
-// Called from audio thread
 void VideoStreamPlayer::_mix_audio() {
 	if (stream.is_null()) {
 		return;

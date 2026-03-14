@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scroll_bar.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/range.h"
 
 class ScrollBar : public Range {

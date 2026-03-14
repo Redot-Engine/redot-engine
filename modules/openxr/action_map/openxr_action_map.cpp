@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_action_map.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_action_map.h"
 
 void OpenXRActionMap::_bind_methods() {
@@ -570,7 +576,7 @@ void OpenXRActionMap::create_default_action_sets() {
 }
 
 void OpenXRActionMap::create_editor_action_sets() {
-	// TODO implement
+	/// @todo Implement
 }
 
 Ref<OpenXRAction> OpenXRActionMap::get_action(const String p_path) const {

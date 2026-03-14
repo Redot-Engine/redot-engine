@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file vector2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/math_funcs.h"
 
@@ -126,6 +132,7 @@ struct [[nodiscard]] Vector2 {
 
 	Vector2 move_toward(const Vector2 &p_to, real_t p_delta) const;
 
+	/// @return The component of the vector along the given plane, specified by its normal vector.
 	Vector2 slide(const Vector2 &p_normal) const;
 	Vector2 bounce(const Vector2 &p_normal) const;
 	Vector2 reflect(const Vector2 &p_normal) const;
@@ -309,9 +316,10 @@ Vector2 Vector2::direction_to(const Vector2 &p_to) const {
 	return ret;
 }
 
-// Multiplication operators required to workaround issues with LLVM using implicit conversion
-// to Vector2i instead for integers where it should not.
-
+/// @name Multiplication operators
+/// @details Required to workaround issues with LLVM using implicit conversion
+/// to Vector2i instead for integers where it should not.
+/// @{
 constexpr Vector2 operator*(float p_scalar, const Vector2 &p_vec) {
 	return p_vec * p_scalar;
 }
@@ -327,6 +335,7 @@ constexpr Vector2 operator*(int32_t p_scalar, const Vector2 &p_vec) {
 constexpr Vector2 operator*(int64_t p_scalar, const Vector2 &p_vec) {
 	return p_vec * p_scalar;
 }
+/// @}
 
 typedef Vector2 Size2;
 typedef Vector2 Point2;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file polygon_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/physics/collision_polygon_3d.h"

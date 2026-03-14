@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_texture.h"
 
 #include "servers/camera/camera_feed.h"
@@ -51,7 +57,7 @@ void CameraTexture::_bind_methods() {
 }
 
 void CameraTexture::_on_format_changed() {
-	// FIXME: `emit_changed` is more appropriate, but causes errors for some reason.
+	/// @todo FIXME: `emit_changed` is more appropriate, but causes errors for some reason.
 	callable_mp((Resource *)this, &Resource::emit_changed).call_deferred();
 }
 
@@ -145,9 +151,6 @@ bool CameraTexture::get_camera_active() const {
 }
 
 CameraTexture::CameraTexture() {
-	// Note: When any CameraTexture is created, we need to automatically activate monitoring
-	//       of camera feeds. This may incur a small lag spike, so it may be preferable to
-	//       enable it manually before creating the camera texture.
 	CameraServer::get_singleton()->set_monitoring_feeds(true);
 }
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file code_edit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "code_edit.h"
 #include "code_edit.compat.inc"
 
@@ -3768,7 +3774,6 @@ void CodeEdit::_filter_code_completion_candidates_impl() {
 	queue_redraw();
 }
 
-// Assumes both the new_options and the code_completion_options are sorted.
 bool CodeEdit::_should_reset_selected_option_for_new_options(const Vector<ScriptLanguage::CodeCompletionOption> &p_new_options) {
 	if (code_completion_current_selected >= p_new_options.size()) {
 		return true;
@@ -3915,7 +3920,6 @@ CodeEdit::~CodeEdit() {
 	_clear_line_number_text_cache();
 }
 
-// Return true if l should come before r
 bool CodeCompletionOptionCompare::operator()(const ScriptLanguage::CodeCompletionOption &l, const ScriptLanguage::CodeCompletionOption &r) const {
 	TypedArray<int> lcharac = l.get_option_cached_characteristics();
 	TypedArray<int> rcharac = r.get_option_cached_characteristics();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ip_windows.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #if defined(WINDOWS_ENABLED)
 
 #include "ip_windows.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file object.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/disabled_classes.gen.h"
 #include "core/extension/gdextension_interface.h"
 #include "core/object/message_queue.h"
@@ -58,7 +64,7 @@ enum PropertyHint {
 	PROPERTY_HINT_RANGE, ///< hint_text = "min,max[,step][,or_greater][,or_less][,hide_slider][,radians_as_degrees][,degrees][,exp][,suffix:<keyword>] range.
 	PROPERTY_HINT_ENUM, ///< hint_text= "val1,val2,val3,etc"
 	PROPERTY_HINT_ENUM_SUGGESTION, ///< hint_text= "val1,val2,val3,etc"
-	PROPERTY_HINT_EXP_EASING, /// exponential easing function (Math::ease) use "attenuation" hint string to revert (flip h), "positive_only" to exclude in-out and out-in. (ie: "attenuation,positive_only")
+	PROPERTY_HINT_EXP_EASING, ///< exponential easing function (Math::ease) use "attenuation" hint string to revert (flip h), "positive_only" to exclude in-out and out-in. (ie: "attenuation,positive_only")
 	PROPERTY_HINT_LINK,
 	PROPERTY_HINT_FLAGS, ///< hint_text= "flag1,flag2,etc" (as bit flags)
 	PROPERTY_HINT_LAYERS_2D_RENDER,
@@ -83,19 +89,19 @@ enum PropertyHint {
 	PROPERTY_HINT_NODE_PATH_VALID_TYPES,
 	PROPERTY_HINT_SAVE_FILE, ///< a file path must be passed, hint_text (optionally) is a filter "*.png,*.wav,*.doc,". This opens a save dialog
 	PROPERTY_HINT_GLOBAL_SAVE_FILE, ///< a file path must be passed, hint_text (optionally) is a filter "*.png,*.wav,*.doc,". This opens a save dialog
-	PROPERTY_HINT_INT_IS_OBJECTID, // Deprecated.
+	PROPERTY_HINT_INT_IS_OBJECTID, ///< Deprecated.
 	PROPERTY_HINT_INT_IS_POINTER,
 	PROPERTY_HINT_ARRAY_TYPE,
 	PROPERTY_HINT_LOCALE_ID,
 	PROPERTY_HINT_LOCALIZABLE_STRING,
 	PROPERTY_HINT_NODE_TYPE, ///< a node object type
-	PROPERTY_HINT_HIDE_QUATERNION_EDIT, /// Only Node3D::transform should hide the quaternion editor.
+	PROPERTY_HINT_HIDE_QUATERNION_EDIT, ///< Only Node3D::transform should hide the quaternion editor.
 	PROPERTY_HINT_PASSWORD,
 	PROPERTY_HINT_LAYERS_AVOIDANCE,
 	PROPERTY_HINT_DICTIONARY_TYPE,
 	PROPERTY_HINT_TOOL_BUTTON,
 	PROPERTY_HINT_ONESHOT, ///< the property will be changed by self after setting, such as AudioStreamPlayer.playing, Particles.emitting.
-	PROPERTY_HINT_NO_NODEPATH, /// < this property will not contain a NodePath, regardless of type (Array, Dictionary, List, etc.). Needed for SceneTreeDock.
+	PROPERTY_HINT_NO_NODEPATH, ///< this property will not contain a NodePath, regardless of type (Array, Dictionary, List, etc.). Needed for SceneTreeDock.
 	PROPERTY_HINT_GROUP_ENABLE, ///< used to make the property's group checkable. Only use for boolean types.
 	PROPERTY_HINT_INPUT_NAME,
 	PROPERTY_HINT_FILE_PATH,
@@ -107,9 +113,9 @@ enum PropertyUsageFlags {
 	PROPERTY_USAGE_STORAGE = 1 << 1,
 	PROPERTY_USAGE_EDITOR = 1 << 2,
 	PROPERTY_USAGE_INTERNAL = 1 << 3,
-	PROPERTY_USAGE_CHECKABLE = 1 << 4, // Used for editing global variables.
-	PROPERTY_USAGE_CHECKED = 1 << 5, // Used for editing global variables.
-	PROPERTY_USAGE_GROUP = 1 << 6, // Used for grouping props in the editor.
+	PROPERTY_USAGE_CHECKABLE = 1 << 4, ///< Used for editing global variables.
+	PROPERTY_USAGE_CHECKED = 1 << 5, ///< Used for editing global variables.
+	PROPERTY_USAGE_GROUP = 1 << 6, ///< Used for grouping props in the editor.
 	PROPERTY_USAGE_CATEGORY = 1 << 7,
 	PROPERTY_USAGE_SUBGROUP = 1 << 8,
 	PROPERTY_USAGE_CLASS_IS_BITFIELD = 1 << 9,
@@ -118,27 +124,27 @@ enum PropertyUsageFlags {
 	PROPERTY_USAGE_SCRIPT_VARIABLE = 1 << 12,
 	PROPERTY_USAGE_STORE_IF_NULL = 1 << 13,
 	PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED = 1 << 14,
-	PROPERTY_USAGE_SCRIPT_DEFAULT_VALUE = 1 << 15, // Deprecated.
+	PROPERTY_USAGE_SCRIPT_DEFAULT_VALUE = 1 << 15, ///< Deprecated.
 	PROPERTY_USAGE_CLASS_IS_ENUM = 1 << 16,
 	PROPERTY_USAGE_NIL_IS_VARIANT = 1 << 17,
-	PROPERTY_USAGE_ARRAY = 1 << 18, // Used in the inspector to group properties as elements of an array.
-	PROPERTY_USAGE_ALWAYS_DUPLICATE = 1 << 19, // When duplicating a resource, always duplicate, even with subresource duplication disabled.
-	PROPERTY_USAGE_NEVER_DUPLICATE = 1 << 20, // When duplicating a resource, never duplicate, even with subresource duplication enabled.
+	PROPERTY_USAGE_ARRAY = 1 << 18, ///< Used in the inspector to group properties as elements of an array.
+	PROPERTY_USAGE_ALWAYS_DUPLICATE = 1 << 19, ///< When duplicating a resource, always duplicate, even with subresource duplication disabled.
+	PROPERTY_USAGE_NEVER_DUPLICATE = 1 << 20, ///< When duplicating a resource, never duplicate, even with subresource duplication enabled.
 	PROPERTY_USAGE_HIGH_END_GFX = 1 << 21,
 	PROPERTY_USAGE_NODE_PATH_FROM_SCENE_ROOT = 1 << 22,
 	PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT = 1 << 23,
-	PROPERTY_USAGE_KEYING_INCREMENTS = 1 << 24, // Used in inspector to increment property when keyed in animation player.
-	PROPERTY_USAGE_DEFERRED_SET_RESOURCE = 1 << 25, // Deprecated.
-	PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT = 1 << 26, // For Object properties, instantiate them when creating in editor.
-	PROPERTY_USAGE_EDITOR_BASIC_SETTING = 1 << 27, //for project or editor settings, show when basic settings are selected.
-	PROPERTY_USAGE_READ_ONLY = 1 << 28, // Mark a property as read-only in the inspector.
-	PROPERTY_USAGE_SECRET = 1 << 29, // Export preset credentials that should be stored separately from the rest of the export config.
+	PROPERTY_USAGE_KEYING_INCREMENTS = 1 << 24, ///< Used in inspector to increment property when keyed in animation player.
+	PROPERTY_USAGE_DEFERRED_SET_RESOURCE = 1 << 25, ///< Deprecated.
+	PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT = 1 << 26, ///< For Object properties, instantiate them when creating in editor.
+	PROPERTY_USAGE_EDITOR_BASIC_SETTING = 1 << 27, ///< For project or editor settings, show when basic settings are selected.
+	PROPERTY_USAGE_READ_ONLY = 1 << 28, ///< Mark a property as read-only in the inspector.
+	PROPERTY_USAGE_SECRET = 1 << 29, ///< Export preset credentials that should be stored separately from the rest of the export config.
 
 	PROPERTY_USAGE_DEFAULT = PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 	PROPERTY_USAGE_NO_EDITOR = PROPERTY_USAGE_STORAGE,
 };
 
-// Respective values are defined by disabled_classes.gen.h
+/// Respective values are defined by disabled_classes.gen.h
 #define GD_IS_CLASS_ENABLED(m_class) m_class::_class_is_enabled
 
 #define ADD_SIGNAL(m_signal) ::ClassDB::add_signal(get_class_static(), m_signal)
@@ -161,8 +167,8 @@ enum PropertyUsageFlags {
 #define ADD_ARRAY_COUNT_WITH_USAGE_FLAGS(m_label, m_count_property, m_count_property_setter, m_count_property_getter, m_prefix, m_property_usage_flags) ClassDB::add_property_array_count(get_class_static(), m_label, m_count_property, StringName(m_count_property_setter), StringName(m_count_property_getter), m_prefix, m_property_usage_flags)
 #define ADD_ARRAY(m_array_path, m_prefix) ClassDB::add_property_array(get_class_static(), m_array_path, m_prefix)
 
-// Helper macro to use with PROPERTY_HINT_ARRAY_TYPE for arrays of specific resources:
-// PropertyInfo(Variant::ARRAY, "fallbacks", PROPERTY_HINT_ARRAY_TYPE, MAKE_RESOURCE_TYPE_HINT("Font")
+/// Helper macro to use with PROPERTY_HINT_ARRAY_TYPE for arrays of specific resources:
+/// PropertyInfo(Variant::ARRAY, "fallbacks", PROPERTY_HINT_ARRAY_TYPE, MAKE_RESOURCE_TYPE_HINT("Font")
 #define MAKE_RESOURCE_TYPE_HINT(m_type) vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
 
 struct PropertyInfo {
@@ -402,8 +408,8 @@ struct ObjectGDExtension {
 #define GDVIRTUAL_IS_OVERRIDDEN(m_name) _gdvirtual_##m_name##_overridden()
 #define GDVIRTUAL_IS_OVERRIDDEN_PTR(m_obj, m_name) m_obj->_gdvirtual_##m_name##_overridden()
 
-/*
- * The following is an incomprehensible blob of hacks and workarounds to
+/**
+ * @todo The following is an incomprehensible blob of hacks and workarounds to
  * compensate for many of the fallacies in C++. As a plus, this macro pretty
  * much alone defines the object model.
  */
@@ -586,11 +592,11 @@ public:
 
 	enum ConnectFlags {
 		CONNECT_DEFERRED = 1,
-		CONNECT_PERSIST = 2, // Hint for scene to save this connection.
+		CONNECT_PERSIST = 2, ///< Hint for scene to save this connection.
 		CONNECT_ONE_SHOT = 4,
 		CONNECT_REFERENCE_COUNTED = 8,
 		CONNECT_APPEND_SOURCE_OBJECT = 16,
-		CONNECT_INHERITED = 32, // Used in editor builds.
+		CONNECT_INHERITED = 32, ///< Used in editor builds.
 	};
 
 	struct Connection {
@@ -648,11 +654,14 @@ private:
 	HashSet<String> editor_section_folding;
 #endif
 	ScriptInstance *script_instance = nullptr;
-	Variant script; // Reference does not exist yet, store it in a Variant.
+	Variant script; ///< Reference does not exist yet, store it in a Variant.
 	HashMap<StringName, Variant> metadata;
 	HashMap<StringName, Variant *> metadata_properties;
 	mutable const StringName *_class_name_ptr = nullptr;
 
+	/// This version of add_user_signal is meant to be used from scripts or external apis
+	/// without access to ADD_SIGNAL in bind_methods
+	/// added events are per instance, as opposed to the other ones, which are global
 	void _add_user_signal(const String &p_name, const Array &p_args = Array());
 	bool _has_user_signal(const StringName &p_name) const;
 	void _remove_user_signal(const StringName &p_name);
@@ -712,7 +721,11 @@ protected:
 	virtual bool _property_can_revertv(const StringName &p_name) const { return false; }
 	virtual bool _property_get_revertv(const StringName &p_name, Variant &r_property) const { return false; }
 
+	/// Notify classes starting with Object and ending with most derived subclass.
+	/// e.g. Object -> Node -> Node3D
 	void _notification_forward(int p_notification);
+	/// Notify classes starting with most derived subclass and ending in Object.
+	/// e.g. Node3D -> Node -> Object
 	void _notification_backward(int p_notification);
 	virtual void _notification_forwardv(int p_notification) {}
 	virtual void _notification_backwardv(int p_notification) {}
@@ -787,14 +800,14 @@ protected:
 	mutable VirtualMethodTracker *virtual_method_list = nullptr;
 #endif
 
-public: // Should be protected, but bug in clang++.
+public: // @todo Should be protected, but bug in clang++.
 	static void initialize_class();
 	_FORCE_INLINE_ static void register_custom_data_to_otdb() {}
 
 public:
 	static constexpr bool _class_is_enabled = true;
 
-	void notify_property_list_changed();
+	void notify_property_list_changed(); ///< Scripts may add variables, so refresh is desired
 
 	static void *get_class_ptr_static() {
 		static int ptr;
@@ -806,8 +819,8 @@ public:
 
 	template <typename T>
 	static T *cast_to(Object *p_object) {
-		// This is like dynamic_cast, but faster.
-		// The reason is that we can assume no virtual and multiple inheritance.
+		/// This is like dynamic_cast, but faster.
+		/// The reason is that we can assume no virtual and multiple inheritance.
 		static_assert(std::is_base_of_v<Object, T>, "T must be derived from Object");
 		static_assert(std::is_same_v<std::decay_t<T>, typename T::self_type>, "T must use GDCLASS or GDSOFTCLASS");
 		return p_object && p_object->is_class_ptr(T::get_class_ptr_static()) ? static_cast<T *>(p_object) : nullptr;
@@ -824,11 +837,11 @@ public:
 		NOTIFICATION_POSTINITIALIZE = 0,
 		NOTIFICATION_PREDELETE = 1,
 		NOTIFICATION_EXTENSION_RELOADED = 2,
-		// Internal notification to send after NOTIFICATION_PREDELETE, not bound to scripting.
-		NOTIFICATION_PREDELETE_CLEANUP = 3,
+		NOTIFICATION_PREDELETE_CLEANUP = 3, ///< Internal notification to send after NOTIFICATION_PREDELETE, not bound to scripting.
 	};
 
-	/* TYPE API */
+	/// @name TYPE API
+	/// @{
 	static void assign_class_name_static(const Span<char> &p_name, StringName &r_target);
 
 	static const StringName &get_class_static() {
@@ -841,7 +854,7 @@ public:
 
 	_FORCE_INLINE_ String get_class() const { return get_class_name(); }
 
-	virtual String get_save_class() const { return get_class(); } //class stored when saving
+	virtual String get_save_class() const { return get_class(); } ///< Class stored when saving
 
 	virtual bool is_class(const String &p_class) const {
 		if (_extension && _extension->is_class(p_class)) {
@@ -855,7 +868,9 @@ public:
 
 	StringName get_class_name_for_extension(const GDExtension *p_library) const;
 
-	/* IAPI */
+	/// @}
+	/// @name IAPI
+	/// @{
 
 	void set(const StringName &p_name, const Variant &p_value, bool *r_valid = nullptr);
 	Variant get(const StringName &p_name, bool *r_valid = nullptr) const;
@@ -886,9 +901,9 @@ public:
 		return (cerr.error == Callable::CallError::CALL_OK) ? ret : Variant();
 	}
 
-	// Depending on the boolean, we call either the virtual function _notification_backward or _notification_forward.
-	// - Forward calls subclasses in descending order (e.g. Object -> Node -> Node3D -> extension -> script).
-	//   Backward calls subclasses in descending order (e.g. script -> extension -> Node3D -> Node -> Object).
+	/// Depending on the boolean, we call either the virtual function _notification_backward or _notification_forward.
+	/// - Forward calls subclasses in descending order (e.g. Object -> Node -> Node3D -> extension -> script).
+	///   Backward calls subclasses in descending order (e.g. script -> extension -> Node3D -> Node -> Object).
 	_FORCE_INLINE_ void notification(int p_notification, bool p_reversed = false) {
 		if (p_reversed) {
 			_notification_backward(p_notification);
@@ -899,11 +914,12 @@ public:
 
 	virtual String to_string();
 
-	// Used mainly by script, get and set all INCLUDING string.
+	/// Used mainly by script, get and set all INCLUDING string.
 	virtual Variant getvar(const Variant &p_key, bool *r_valid = nullptr) const;
 	virtual void setvar(const Variant &p_key, const Variant &p_value, bool *r_valid = nullptr);
 
-	/* SCRIPT */
+	/// @}
+	/// SCRIPT
 
 // When in debug, some non-virtual functions can be overridden for multithreaded guards.
 #ifdef DEBUG_ENABLED
@@ -925,14 +941,14 @@ public:
 #ifdef TOOLS_ENABLED
 	void set_edited(bool p_edited);
 	bool is_edited() const;
-	// This function is used to check when something changed beyond a point, it's used mainly for generating previews.
+	/// This function is used to check when something changed beyond a point, it's used mainly for generating previews.
 	uint32_t get_edited_version() const;
 #endif
 
 	void set_script_instance(ScriptInstance *p_instance);
 	_FORCE_INLINE_ ScriptInstance *get_script_instance() const { return script_instance; }
 
-	// Some script languages can't control instance creation, so this function eases the process.
+	/// Some script languages can't control instance creation, so this function eases the process.
 	void set_script_and_instance(const Variant &p_script, ScriptInstance *p_instance);
 
 	void add_user_signal(const MethodInfo &p_signal);
@@ -973,11 +989,11 @@ public:
 	Variant::Type get_static_property_type(const StringName &p_property, bool *r_valid = nullptr) const;
 	Variant::Type get_static_property_type_indexed(const Vector<StringName> &p_path, bool *r_valid = nullptr) const;
 
-	// Translate message (internationalization).
+	/// Translate message (internationalization).
 	String tr(const StringName &p_message, const StringName &p_context = "") const;
 	String tr_n(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context = "") const;
 
-	bool _is_queued_for_deletion = false; // Set to true by SceneTree::queue_delete().
+	bool _is_queued_for_deletion = false; ///< Set to true by SceneTree::queue_delete().
 	bool is_queued_for_deletion() const;
 
 	_FORCE_INLINE_ void set_message_translation(bool p_enable) { _can_translate = p_enable; }
@@ -994,9 +1010,9 @@ public:
 	void editor_clear_section_folding() { editor_section_folding.clear(); }
 #endif
 
-	// Used by script languages to store binding data.
+	/// Used by script languages to store binding data.
 	void *get_instance_binding(void *p_token, const GDExtensionInstanceBindingCallbacks *p_callbacks);
-	// Used on creation by binding only.
+	/// Used on creation by binding only.
 	void set_instance_binding(void *p_token, void *p_binding, const GDExtensionInstanceBindingCallbacks *p_callbacks);
 	bool has_instance_binding(void *p_token);
 	void free_instance_binding(void *p_token);
@@ -1021,7 +1037,7 @@ bool predelete_handler(Object *p_object);
 void postinitialize_handler(Object *p_object);
 
 class ObjectDB {
-// This needs to add up to 63, 1 bit is for reference.
+/// This needs to add up to 63, 1 bit is for reference.
 #define OBJECTDB_VALIDATOR_BITS 32
 #define OBJECTDB_VALIDATOR_MASK ((uint64_t(1) << OBJECTDB_VALIDATOR_BITS) - 1)
 #define OBJECTDB_SLOT_MAX_BLOCKS_COUNT_BITS 5
@@ -1078,7 +1094,7 @@ public:
 	}
 
 	template <typename T>
-	_ALWAYS_INLINE_ static Ref<T> get_ref(ObjectID p_instance_id); // Defined in ref_counted.h
+	_ALWAYS_INLINE_ static Ref<T> get_ref(ObjectID p_instance_id); ///< Defined in ref_counted.h
 
 	static void debug_objects(DebugFunc p_func);
 	static int get_object_count();

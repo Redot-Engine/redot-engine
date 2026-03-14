@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_link_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/2d/navigation/navigation_link_2d.h"
 

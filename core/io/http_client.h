@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file http_client.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/crypto/crypto.h"
 #include "core/io/ip.h"
 #include "core/io/stream_peer.h"
@@ -132,13 +138,13 @@ public:
 
 	enum Status {
 		STATUS_DISCONNECTED,
-		STATUS_RESOLVING, // Resolving hostname (if passed a hostname)
+		STATUS_RESOLVING, ///< Resolving hostname (if passed a hostname)
 		STATUS_CANT_RESOLVE,
-		STATUS_CONNECTING, // Connecting to IP
+		STATUS_CONNECTING, ///< Connecting to IP
 		STATUS_CANT_CONNECT,
-		STATUS_CONNECTED, // Connected, requests can be made
-		STATUS_REQUESTING, // Request in progress
-		STATUS_BODY, // Request resulted in body, which must be read
+		STATUS_CONNECTED, ///< Connected, requests can be made
+		STATUS_REQUESTING, ///< Request in progress
+		STATUS_BODY, ///< Request resulted in body, which must be read
 		STATUS_CONNECTION_ERROR,
 		STATUS_TLS_HANDSHAKE_ERROR,
 
@@ -185,9 +191,9 @@ public:
 	virtual Error get_response_headers(List<String> *r_response) = 0;
 	virtual int64_t get_response_body_length() const = 0;
 
-	virtual PackedByteArray read_response_body_chunk() = 0; // Can't get body as partial text because of most encodings UTF8, gzip, etc.
+	virtual PackedByteArray read_response_body_chunk() = 0; ///< Can't get body as partial text because of most encodings UTF8, gzip, etc.
 
-	virtual void set_blocking_mode(bool p_enable) = 0; // Useful mostly if running in a thread
+	virtual void set_blocking_mode(bool p_enable) = 0; ///< Useful mostly if running in a thread
 	virtual bool is_blocking_mode_enabled() const = 0;
 
 	virtual void set_read_chunk_size(int p_size) = 0;
@@ -195,9 +201,11 @@ public:
 
 	virtual Error poll() = 0;
 
-	// Use empty string or -1 to unset
+	/// @name Use empty string or -1 to unset
+	/// @{
 	virtual void set_http_proxy(const String &p_host, int p_port);
 	virtual void set_https_proxy(const String &p_host, int p_port);
+	// @}
 
 	HTTPClient() {}
 	virtual ~HTTPClient() {}

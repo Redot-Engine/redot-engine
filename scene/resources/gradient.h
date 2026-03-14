@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gradient.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 #include "thirdparty/misc/ok_color.h"

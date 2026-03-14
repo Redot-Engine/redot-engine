@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_manager.h"
 
 #include "core/config/project_settings.h"
@@ -396,9 +402,6 @@ void ProjectManager::_show_error(const String &p_message, const Size2 &p_min_siz
 }
 
 void ProjectManager::_dim_window() {
-	// This method must be called before calling `get_tree()->quit()`.
-	// Otherwise, its effect won't be visible
-
 	// Dim the project manager window while it's quitting to make it clearer that it's busy.
 	// No transition is applied, as the effect needs to be visible immediately
 	float c = 0.5f;
@@ -1233,7 +1236,7 @@ void ProjectManager::shortcut_input(const Ref<InputEvent> &p_ev) {
 }
 
 void ProjectManager::_files_dropped(PackedStringArray p_files) {
-	// TODO: Support installing multiple ZIPs at the same time?
+	/// @todo Support installing multiple ZIPs at the same time?
 	if (p_files.size() == 1 && p_files[0].ends_with(".zip")) {
 		const String &file = p_files[0];
 		_install_project(file, file.get_file().get_basename().capitalize());

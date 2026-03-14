@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file webrtc_peer_connection_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webrtc_peer_connection.h"
 
 #include "core/extension/ext_wrappers.gen.inc"

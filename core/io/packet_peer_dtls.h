@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file packet_peer_dtls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/crypto/crypto.h"
 #include "core/io/packet_peer_udp.h"
 

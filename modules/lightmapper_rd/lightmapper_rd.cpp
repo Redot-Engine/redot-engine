@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file lightmapper_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "lightmapper_rd.h"
 
 #include "core/string/print_string.h"

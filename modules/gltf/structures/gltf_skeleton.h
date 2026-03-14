@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_skeleton.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gltf_defines.h"
 
 #include "core/io/resource.h"
@@ -45,17 +51,17 @@ class GLTFSkeleton : public Resource {
 	friend class FBXDocument;
 
 private:
-	// The *synthesized* skeletons joints
+	/// The *synthesized* skeletons joints
 	Vector<GLTFNodeIndex> joints;
 
-	// The roots of the skeleton. If there are multiple, each root must have the
-	// same parent (ie roots are siblings)
+	/// The roots of the skeleton. If there are multiple, each root must have the
+	/// same parent (ie roots are siblings)
 	Vector<GLTFNodeIndex> roots;
 
-	// The created Skeleton3D for the scene
+	/// The created Skeleton3D for the scene
 	Skeleton3D *godot_skeleton = nullptr;
 
-	// Set of unique bone names for the skeleton
+	/// Set of unique bone names for the skeleton
 	HashSet<String> unique_names;
 
 	HashMap<int32_t, GLTFNodeIndex> godot_bone_node;

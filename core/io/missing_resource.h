@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file missing_resource.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 #define META_PROPERTY_MISSING_RESOURCES "metadata/_missing_resources"

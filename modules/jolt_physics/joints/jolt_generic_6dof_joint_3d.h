@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_generic_6dof_joint_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../jolt_physics_server_3d.h"
 #include "jolt_joint_3d.h"
 

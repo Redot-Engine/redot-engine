@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file enet_multiplayer_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "enet_multiplayer_peer.h"
 
 void ENetMultiplayerPeer::set_target_peer(int p_peer) {
@@ -492,8 +498,6 @@ ENetMultiplayerPeer::~ENetMultiplayerPeer() {
 	}
 }
 
-// Sets IP for ENet to bind when using create_server or create_client
-// if no IP is set, then ENet bind to ENET_HOST_ANY
 void ENetMultiplayerPeer::set_bind_ip(const IPAddress &p_ip) {
 	ERR_FAIL_COND_MSG(!p_ip.is_valid() && !p_ip.is_wildcard(), vformat("Invalid bind IP address: %s", String(p_ip)));
 

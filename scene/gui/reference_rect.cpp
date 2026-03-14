@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file reference_rect.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "reference_rect.h"
 
 #include "core/config/engine.h"

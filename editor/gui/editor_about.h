@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_about.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/dialogs.h"
 
 class CreditsRoll;
@@ -42,7 +48,7 @@ class TextureRect;
 class Tree;
 
 /**
- * NOTE: Do not assume the EditorNode singleton to be available in this class' methods.
+ * @note Do not assume the EditorNode singleton to be available in this class' methods.
  * EditorAbout is also used from the project manager where EditorNode isn't initialized.
  */
 class EditorAbout : public AcceptDialog {

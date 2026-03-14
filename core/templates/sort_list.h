@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sort_list.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/typedefs.h"
 
 template <typename Element, typename T, T Element::*value, Element *Element::*prev, Element *Element::*next, typename Comparator = Comparator<T>>

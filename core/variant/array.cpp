@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file array.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "array.h"
 
 #include "container_type_validate.h"
@@ -43,7 +49,7 @@
 struct ArrayPrivate {
 	SafeRefCount refcount;
 	Vector<Variant> array;
-	Variant *read_only = nullptr; // If enabled, a pointer is used to a temporary value that is used to return read-only values.
+	Variant *read_only = nullptr; ///< If enabled, a pointer is used to a temporary value that is used to return read-only values.
 	ContainerTypeValidate typed;
 
 	ArrayPrivate() {}

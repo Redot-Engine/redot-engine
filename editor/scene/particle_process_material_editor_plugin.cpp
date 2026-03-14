@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file particle_process_material_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "particle_process_material_editor_plugin.h"
 
 #include "editor/editor_string_names.h"
@@ -53,7 +59,7 @@ void ParticleProcessMaterialMinMaxPropertyEditor::_range_edit_draw() {
 
 	bool widget_active = mouse_inside || drag != Drag::NONE;
 
-	// FIXME: Need to offset by 1 due to some outline bug.
+	/// @todo FIXME: Need to offset by 1 due to some outline bug.
 	range_edit_widget->draw_rect(Rect2(margin + Vector2(1, 1), usable_area - Vector2(1, 1)), widget_active ? background_color.lerp(normal_color, 0.3) : background_color, false, 1.0);
 
 	Color draw_color;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file variant_op.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant.h"
 
 #include "core/debugger/engine_debugger.h"

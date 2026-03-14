@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fixed_vector.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/span.h"
 
 GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Warray-bounds")
@@ -42,11 +48,10 @@ GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Warray-bounds")
  *  prevent dynamic allocations (especially in bottleneck code).
  *
  * Choose CAPACITY such that it is enough for all elements that could be added through all branches.
- *
  */
 template <class T, uint32_t CAPACITY>
 class FixedVector {
-	// This declaration allows us to access other FixedVector's private members.
+	/// This declaration allows us to access other FixedVector's private members.
 	template <class T_, uint32_t CAPACITY_>
 	friend class FixedVector;
 
@@ -148,9 +153,9 @@ public:
 		ptr()[_size].~T();
 	}
 
-	// NOTE: Subscripts sanity check the bounds to avoid undefined behavior.
-	//       This is slower than direct buffer access and can prevent autovectorization.
-	//       If the bounds are known, use ptr() subscript instead.
+	/// @note Subscripts sanity check the bounds to avoid undefined behavior.
+	///       This is slower than direct buffer access and can prevent autovectorization.
+	///       If the bounds are known, use ptr() subscript instead.
 	constexpr const T &operator[](uint32_t p_index) const {
 		CRASH_COND(p_index >= _size);
 		return ptr()[p_index];

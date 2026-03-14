@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file center_container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "center_container.h"
 
 Size2 CenterContainer::get_minimum_size() const {

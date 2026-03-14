@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scroll_container.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "container.h"
 
 #include "scroll_bar.h"
@@ -55,7 +61,7 @@ private:
 	VScrollBar *v_scroll = nullptr;
 	PanelContainer *focus_panel = nullptr;
 
-	mutable Size2 largest_child_min_size; // The largest one among the min sizes of all available child controls.
+	mutable Size2 largest_child_min_size; ///< The largest one among the min sizes of all available child controls.
 
 	void update_scrollbars();
 

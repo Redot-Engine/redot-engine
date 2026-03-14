@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file a_star_grid_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
 #include "core/templates/local_vector.h"
@@ -82,14 +88,14 @@ private:
 		Vector2 pos;
 		real_t weight_scale = 1.0;
 
-		// Used for pathfinding.
+		/// Used for pathfinding.
 		Point *prev_point = nullptr;
 		real_t g_score = 0;
 		real_t f_score = 0;
 		uint64_t open_pass = 0;
 		uint64_t closed_pass = 0;
 
-		// Used for getting last_closest_point.
+		/// Used for getting last_closest_point.
 		real_t abs_g_score = 0;
 		real_t abs_f_score = 0;
 
@@ -100,7 +106,7 @@ private:
 	};
 
 	struct SortPoints {
-		_FORCE_INLINE_ bool operator()(const Point *A, const Point *B) const { // Returns true when the Point A is worse than Point B.
+		_FORCE_INLINE_ bool operator()(const Point *A, const Point *B) const { ///< Returns true when the Point A is worse than Point B.
 			if (A->f_score > B->f_score) {
 				return true;
 			} else if (A->f_score < B->f_score) {

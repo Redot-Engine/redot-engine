@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file render_forward_mobile.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/paged_allocator.h"
 #include "servers/rendering/renderer_rd/forward_mobile/scene_shader_forward_mobile.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
@@ -49,7 +55,8 @@ protected:
 private:
 	static RenderForwardMobile *singleton;
 
-	/* Scene Shader */
+	//// @nameScene Shader
+	/// @{
 
 	enum {
 		SCENE_UNIFORM_SET = 0,
@@ -60,30 +67,30 @@ private:
 
 	enum {
 		MAX_LIGHTMAPS = 8,
-		MAX_RDL_CULL = 8, // maximum number of reflection probes, decals or lights we can cull per geometry instance
+		MAX_RDL_CULL = 8, ///< Maximum number of reflection probes, decals or lights we can cull per geometry instance
 		INSTANCE_DATA_BUFFER_MIN_SIZE = 4096
 	};
 
 	enum RenderListType {
-		RENDER_LIST_OPAQUE, //used for opaque objects
-		RENDER_LIST_ALPHA, //used for transparent objects
-		RENDER_LIST_SECONDARY, //used for shadows and other objects
+		RENDER_LIST_OPAQUE, ///< Used for opaque objects
+		RENDER_LIST_ALPHA, ///< Used for transparent objects
+		RENDER_LIST_SECONDARY, ///< Used for shadows and other objects
 		RENDER_LIST_MAX
 	};
 
-	/* Scene Shader */
-
 	SceneShaderForwardMobile scene_shader;
 
-	/* Render Buffer */
+	/// @}
+	/// @name Render Buffer
+	/// @{
 
 	class RenderBufferDataForwardMobile : public RenderBufferCustomDataRD {
 		GDCLASS(RenderBufferDataForwardMobile, RenderBufferCustomDataRD);
 
 	public:
 		enum FramebufferConfigType {
-			FB_CONFIG_RENDER_PASS, // Single pass framebuffer for normal rendering.
-			FB_CONFIG_RENDER_AND_POST_PASS, // Two subpasses, one for normal rendering, one for post processing.
+			FB_CONFIG_RENDER_PASS, ///< Single pass framebuffer for normal rendering.
+			FB_CONFIG_RENDER_AND_POST_PASS, ///< Two subpasses, one for normal rendering, one for post processing.
 			FB_CONFIG_MAX
 		};
 
@@ -98,8 +105,9 @@ private:
 	};
 
 	virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) override;
-
-	/* Rendering */
+	/// @}
+	/// @name Rendering
+	/// @{
 
 	enum PassMode {
 		PASS_MODE_COLOR,
@@ -152,16 +160,18 @@ private:
 			base_specialization = p_base_specialization;
 		}
 	};
-
-	/* Render shadows */
+	/// @}
+	/// @name Render shadows
+	/// @{
 
 	void _render_shadow_pass(RID p_light, RID p_shadow_atlas, int p_pass, const PagedArray<RenderGeometryInstance *> &p_instances, float p_lod_distance_multiplier = 0, float p_screen_mesh_lod_threshold = 0.0, bool p_open_pass = true, bool p_close_pass = true, bool p_clear_region = true, RenderingMethod::RenderInfo *p_render_info = nullptr, const Transform3D &p_main_cam_transform = Transform3D());
 	void _render_shadow_begin();
 	void _render_shadow_append(RID p_framebuffer, const PagedArray<RenderGeometryInstance *> &p_instances, const Projection &p_projection, const Transform3D &p_transform, float p_zfar, float p_bias, float p_normal_bias, bool p_use_dp, bool p_use_dp_flip, bool p_use_pancake, float p_lod_distance_multiplier = 0.0, float p_screen_mesh_lod_threshold = 0.0, const Rect2i &p_rect = Rect2i(), bool p_flip_y = false, bool p_clear_region = true, bool p_begin = true, bool p_end = true, RenderingMethod::RenderInfo *p_render_info = nullptr, const Transform3D &p_main_cam_transform = Transform3D());
 	void _render_shadow_process();
 	void _render_shadow_end();
-
-	/* Render Scene */
+	/// @}
+	/// @name Render Scene
+	/// @{
 
 	RID _setup_render_pass_uniform_set(RenderListType p_render_list, const RenderDataRD *p_render_data, RID p_radiance_texture, const RendererRD::MaterialStorage::Samplers &p_samplers, bool p_use_directional_shadow_atlas = false, int p_index = 0);
 	void _pre_opaque_render(RenderDataRD *p_render_data);
@@ -178,8 +188,9 @@ private:
 	void _setup_lightmaps(const RenderDataRD *p_render_data, const PagedArray<RID> &p_lightmaps, const Transform3D &p_cam_transform);
 
 	RID render_base_uniform_set;
-
-	/* Light map */
+	/// @}
+	/// @name Light Map
+	/// @{
 
 	struct LightmapData {
 		float normal_xform[12];
@@ -191,8 +202,9 @@ private:
 	struct LightmapCaptureData {
 		float sh[9 * 4];
 	};
-
-	/* Scene state */
+	/// @}
+	/// @name Scene State
+	/// @{
 
 	struct SceneState {
 		LocalVector<RID> uniform_buffers;
@@ -214,19 +226,19 @@ private:
 			float transform[16];
 			float prev_transform[16];
 			uint32_t flags;
-			uint32_t instance_uniforms_ofs; // Base offset in global buffer for instance variables.
-			uint32_t gi_offset; // GI information when using lightmapping (VCT or lightmap index).
+			uint32_t instance_uniforms_ofs; ///< Base offset in global buffer for instance variables.
+			uint32_t gi_offset; ///< GI information when using lightmapping (VCT or lightmap index).
 			uint32_t layer_mask;
-			float lightmap_uv_scale[4]; // Doubles as uv_offset when needed.
-			uint32_t reflection_probes[2]; // Packed reflection probes.
-			uint32_t omni_lights[2]; // Packed omni lights.
-			uint32_t spot_lights[2]; // Packed spot lights.
-			uint32_t decals[2]; // Packed spot lights.
+			float lightmap_uv_scale[4]; ///< Doubles as uv_offset when needed.
+			uint32_t reflection_probes[2]; ///< Packed reflection probes.
+			uint32_t omni_lights[2]; ///< Packed omni lights.
+			uint32_t spot_lights[2]; ///< Packed spot lights.
+			uint32_t decals[2]; ///< Packed spot lights.
 			float compressed_aabb_position[4];
 			float compressed_aabb_size[4];
 			float uv_scale[4];
 
-			// These setters allow us to copy the data over with operation when using floats.
+			///< These setters allow us to copy the data over with operation when using floats.
 			inline void set_lightmap_uv_scale(const Rect2 &p_rect) {
 #ifdef REAL_T_IS_DOUBLE
 				lightmap_uv_scale[0] = p_rect.position.x;
@@ -310,8 +322,9 @@ private:
 
 		LocalVector<ShadowPass> shadow_passes;
 	} scene_state;
-
-	/* Render List */
+	/// @}
+	/// @name Render List
+	/// @{
 
 	// !BAS! Render list can probably be reused between clustered and mobile?
 	struct RenderList {
@@ -406,9 +419,10 @@ private:
 	void _render_list_with_draw_list(RenderListParameters *p_params, RID p_framebuffer, BitField<RD::DrawFlags> p_clear_colors = RD::DRAW_DEFAULT_ALL, const Vector<Color> &p_clear_color_values = Vector<Color>(), float p_clear_depth_value = 0.0, uint32_t p_clear_stencil_value = 0, const Rect2 &p_region = Rect2());
 
 	RenderList render_list[RENDER_LIST_MAX];
-
+	/// @}
 protected:
-	/* setup */
+	/// @name Setup
+	/// @{
 	virtual void _update_shader_quality_settings() override;
 
 	virtual float _render_buffers_get_luminance_multiplier() override;
@@ -424,12 +438,13 @@ protected:
 
 	virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) override {}
 	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override {}
-
-	/* Geometry instance */
+	/// @}
+	/// @name Geometry Instance
+	/// @{
 
 	class GeometryInstanceForwardMobile;
 
-	// When changing any of these enums, remember to change the corresponding enums in the shader files as well.
+	/// When changing any of these enums, remember to change the corresponding enums in the shader files as well.
 	enum {
 		INSTANCE_DATA_FLAG_MULTIMESH_INDIRECT = 1 << 2,
 		INSTANCE_DATA_FLAGS_DYNAMIC = 1 << 3,
@@ -453,7 +468,7 @@ protected:
 		Color sh[9];
 	};
 
-	// Cached data for drawing surfaces
+	/// Cached data for drawing surfaces
 	struct GeometryInstanceSurfaceDataCache {
 		enum {
 			FLAG_PASS_DEPTH = 1,
@@ -514,11 +529,11 @@ protected:
 
 	class GeometryInstanceForwardMobile : public RenderGeometryInstanceBase {
 	public:
-		//used during rendering
+		// Used during rendering
 		RID transforms_uniform_set;
 		bool use_projector = false;
 		bool use_soft_shadow = false;
-		bool store_transform_cache = true; // If true we copy our transform into our per-draw buffer, if false we use our transforms UBO and clear our per-draw transform.
+		bool store_transform_cache = true; ///< If true we copy our transform into our per-draw buffer, if false we use our transforms UBO and clear our per-draw transform.
 		uint32_t instance_count = 0;
 		uint32_t trail_steps = 1;
 
@@ -545,7 +560,7 @@ protected:
 
 		GeometryInstanceSurfaceDataCache *surface_caches = nullptr;
 
-		// do we use this?
+		/// @todo Do we use this?
 		SelfList<GeometryInstanceForwardMobile> dirty_list_element;
 
 		GeometryInstanceForwardMobile() :
@@ -564,8 +579,9 @@ protected:
 
 		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
 	};
-
-	/* Rendering */
+	/// @}
+	/// @name Rendering
+	/// @{
 
 	virtual void _render_scene(RenderDataRD *p_render_data, const Color &p_default_bg_color) override;
 
@@ -573,8 +589,9 @@ protected:
 	virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) override;
 	virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) override;
 	virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) override;
-
-	/* Forward ID */
+	/// @}
+	/// @name Forward ID
+	/// @{
 
 	class ForwardIDStorageMobile : public RendererRD::ForwardIDStorage {
 	public:
@@ -609,20 +626,23 @@ protected:
 			return map > p_sort.map;
 		}
 	};
+	/// @}
 
 public:
 	static RenderForwardMobile *get_singleton() { return singleton; }
 
 	virtual RID reflection_probe_create_framebuffer(RID p_color, RID p_depth) override;
 
-	/* SDFGI UPDATE */
+	/// @name SDFGI UPDATE
+	/// @{
 
 	virtual void sdfgi_update(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_environment, const Vector3 &p_world_position) override {}
 	virtual int sdfgi_get_pending_region_count(const Ref<RenderSceneBuffers> &p_render_buffers) const override { return 0; }
 	virtual AABB sdfgi_get_pending_region_bounds(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override { return AABB(); }
 	virtual uint32_t sdfgi_get_pending_region_cascade(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override { return 0; }
-
-	/* GEOMETRY INSTANCE */
+	/// @}
+	/// @name GEOMETRY INSTANCE
+	/// @{
 
 	static void _geometry_instance_dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *p_tracker);
 	static void _geometry_instance_dependency_deleted(const RID &p_dependency, DependencyTracker *p_tracker);
@@ -634,6 +654,7 @@ public:
 	PagedAllocator<GeometryInstanceForwardMobile> geometry_instance_alloc;
 	PagedAllocator<GeometryInstanceSurfaceDataCache> geometry_instance_surface_alloc;
 	PagedAllocator<GeometryInstanceLightmapSH> geometry_instance_lightmap_sh;
+	/// @}
 
 	struct SurfacePipelineData {
 		void *mesh_surface = nullptr;
@@ -687,7 +708,7 @@ public:
 	void _update_dirty_geometry_instances();
 	void _update_dirty_geometry_pipelines();
 
-	// Global data about the scene that can be used to pre-allocate resources without relying on culling.
+	/// Global data about the scene that can be used to pre-allocate resources without relying on culling.
 	struct GlobalSurfaceData {
 		bool screen_texture_used = false;
 		bool depth_texture_used = false;
@@ -698,12 +719,14 @@ public:
 
 	virtual uint32_t geometry_instance_get_pair_mask() override;
 
-	/* PIPELINES */
+	/// @name PIPELINES
+	/// @{
 
 	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation) override;
 	virtual uint32_t get_pipeline_compilations(RS::PipelineSource p_source) override;
-
-	/* SHADER LIBRARY */
+	/// @}
+	/// @name SHADER LIBRARY
+	/// @{
 
 	virtual void enable_features(BitField<FeatureBits> p_feature_bits) override;
 	virtual String get_name() const override;
@@ -717,6 +740,7 @@ public:
 	virtual bool is_dynamic_gi_supported() const override;
 	virtual bool is_volumetric_supported() const override;
 	virtual uint32_t get_max_elements() const override;
+	/// @}
 
 	RenderForwardMobile();
 	~RenderForwardMobile();

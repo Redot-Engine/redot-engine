@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_body_direct_state_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/physics_server_3d.h"
 
 class GodotBody3D;

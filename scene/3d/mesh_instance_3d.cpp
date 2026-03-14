@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_instance_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mesh_instance_3d.h"
 
 #include "scene/3d/skeleton_3d.h"
@@ -51,9 +57,6 @@ RID MeshInstance3D::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_3D_DISABLED
 
 bool MeshInstance3D::_set(const StringName &p_name, const Variant &p_value) {
-	//this is not _too_ bad performance wise, really. it only arrives here if the property was not set anywhere else.
-	//add to it that it's probably found on first call to _set anyway.
-
 	if (!get_instance().is_valid()) {
 		return false;
 	}

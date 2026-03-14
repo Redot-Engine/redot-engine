@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file worker_thread_pool.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "worker_thread_pool.h"
 
 #include "core/object/script_language.h"
@@ -222,10 +228,6 @@ void WorkerThreadPool::_thread_function(void *p_user) {
 }
 
 void WorkerThreadPool::_post_tasks(Task **p_tasks, uint32_t p_count, bool p_high_priority, MutexLock<BinaryMutex> &p_lock, bool p_pump_task) {
-	// Fall back to processing on the calling thread if there are no worker threads.
-	// Separated into its own variable to make it easier to extend this logic
-	// in custom builds.
-
 	// Avoid calling pump tasks or low priority tasks from the calling thread.
 	bool process_on_calling_thread = threads.is_empty() && !p_pump_task;
 	if (process_on_calling_thread) {
@@ -267,13 +269,6 @@ void WorkerThreadPool::_post_tasks(Task **p_tasks, uint32_t p_count, bool p_high
 void WorkerThreadPool::_notify_threads(const ThreadData *p_current_thread_data, uint32_t p_process_count, uint32_t p_promote_count) {
 	uint32_t to_process = p_process_count;
 	uint32_t to_promote = p_promote_count;
-
-	// This is where which threads are awaken is decided according to the workload.
-	// Threads that will anyway have a chance to check the situation and process/promote tasks
-	// are excluded from being notified. Others will be tried anyway to try to distribute load.
-	// The current thread, if is a pool thread, is also excluded depending on the promoting/processing
-	// needs because it will anyway loop again. However, it will contribute to decreasing the count,
-	// which helps reducing sync traffic.
 
 	uint32_t thread_count = threads.size();
 
@@ -498,8 +493,6 @@ void WorkerThreadPool::_unlock_unlockable_mutexes() {
 }
 
 void WorkerThreadPool::_wait_collaboratively(ThreadData *p_caller_pool_thread, Task *p_task) {
-	// Keep processing tasks until the condition to stop waiting is met.
-
 	while (true) {
 		Task *task_to_process = nullptr;
 		bool relock_unlockables = false;
@@ -593,7 +586,6 @@ void WorkerThreadPool::_switch_runlevel(Runlevel p_runlevel) {
 	control_cond_var.notify_all();
 }
 
-// Returns whether threads have to exit. This may perform the check about handling needed.
 bool WorkerThreadPool::_handle_runlevel(ThreadData *p_thread_data, MutexLock<BinaryMutex> &p_lock) {
 	bool exit = false;
 	switch (runlevel) {

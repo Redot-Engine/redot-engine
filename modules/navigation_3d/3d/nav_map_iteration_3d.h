@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_map_iteration_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../nav_rid_3d.h"
 #include "../nav_utils_3d.h"
 #include "nav_mesh_queries_3d.h"
@@ -83,7 +89,7 @@ struct NavMapIteration3D {
 
 	int navmesh_polygon_count = 0;
 
-	// The edge connections that the map builds on top with the edge connection margin.
+	/// The edge connections that the map builds on top with the edge connection margin.
 	HashMap<const NavBaseIteration3D *, LocalVector<Nav3D::Connection>> external_region_connections;
 	HashMap<const NavBaseIteration3D *, LocalVector<LocalVector<Nav3D::Connection>>> navbases_polygons_external_connections;
 

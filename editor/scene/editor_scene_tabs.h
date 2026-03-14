@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_scene_tabs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/margin_container.h"
 
 class Button;
@@ -49,7 +55,7 @@ class EditorSceneTabs : public MarginContainer {
 
 public:
 	enum {
-		SCENE_SHOW_IN_FILESYSTEM = 1000, // Prevents conflicts with EditorNode options.
+		SCENE_SHOW_IN_FILESYSTEM = 1000, ///< Prevents conflicts with EditorNode options.
 		SCENE_RUN,
 		SCENE_CLOSE_OTHERS,
 		SCENE_CLOSE_RIGHT,

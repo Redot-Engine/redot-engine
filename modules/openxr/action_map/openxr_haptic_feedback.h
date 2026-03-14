@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_haptic_feedback.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include <openxr/openxr.h>
 

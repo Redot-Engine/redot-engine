@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file platform_config.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <alloca.h>
 
 #define PLATFORM_THREAD_OVERRIDE

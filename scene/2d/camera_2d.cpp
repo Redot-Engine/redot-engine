@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_2d.h"
 
 #include "core/config/project_settings.h"
@@ -64,7 +70,7 @@ void Camera2D::_update_scroll() {
 		Point2 screen_offset = (anchor_mode == ANCHOR_MODE_DRAG_CENTER ? (screen_size * 0.5) : Point2());
 		Point2 adj_screen_pos = camera_screen_center - (screen_size * 0.5);
 
-		// TODO: Remove xform and screen_offset when ParallaxBackground/ParallaxLayer is removed.
+		/// @todo Remove xform and screen_offset when ParallaxBackground/ParallaxLayer is removed.
 		get_tree()->call_group(group_name, SNAME("_camera_moved"), xform, screen_offset, adj_screen_pos);
 	}
 }
@@ -190,11 +196,11 @@ Transform2D Camera2D::get_camera_transform() {
 			}
 		}
 
-		// FIXME: There is a bug here, introduced before physics interpolation.
-		// Smoothing occurs rather confusingly during the call to get_camera_transform().
-		// It may be called MULTIPLE TIMES on certain frames,
-		// therefore smoothing is not currently applied only once per frame / tick,
-		// which will result in some haphazard results.
+		/// @todo FIXME: There is a bug here, introduced before physics interpolation.
+		/// Smoothing occurs rather confusingly during the call to get_camera_transform().
+		/// It may be called MULTIPLE TIMES on certain frames,
+		/// therefore smoothing is not currently applied only once per frame / tick,
+		/// which will result in some haphazard results.
 		if (position_smoothing_enabled && !is_part_of_edited_scene()) {
 			bool physics_process = (process_callback == CAMERA2D_PROCESS_PHYSICS) || is_physics_interpolated_and_enabled();
 			real_t delta = physics_process ? get_physics_process_delta_time() : get_process_delta_time();

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file view_controller.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <UIKit/UIKit.h>
 
 @class GDTView;

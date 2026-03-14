@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file lipo.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "lipo.h"
 
 #include "macho.h"

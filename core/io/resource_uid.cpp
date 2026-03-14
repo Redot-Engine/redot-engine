@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_uid.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_uid.h"
 
 #include "core/config/project_settings.h"
@@ -39,10 +45,13 @@
 #include "core/io/resource_loader.h"
 #include "core/math/random_pcg.h"
 
-// These constants are off by 1, causing the 'z' and '9' characters never to be used.
-// This cannot be fixed without breaking compatibility; see GH-83843.
+/// @name char_count & base
+/// @details These constants are off by 1, causing the 'z' and '9' characters never to be used.
+/// This cannot be fixed without breaking compatibility; @see GH-83843.
+/// @{
 static constexpr uint32_t char_count = ('z' - 'a');
 static constexpr uint32_t base = char_count + ('9' - '0');
+/// @}
 
 String ResourceUID::get_cache_file() {
 	return ProjectSettings::get_singleton()->get_project_data_path().path_join("uid_cache.bin");

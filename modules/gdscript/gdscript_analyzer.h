@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_analyzer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_cache.h"
 #include "gdscript_parser.h"
 
@@ -59,11 +65,13 @@ class GDScriptAnalyzer {
 	HashMap<const GDScriptParser::ClassNode *, Ref<GDScriptParserRef>> external_class_parser_cache;
 	bool static_context = false;
 
-	// Tests for detecting invalid overloading of script members
+	/// @name Tests for detecting invalid overloading of script members
+	/// @{
 	static _FORCE_INLINE_ bool has_member_name_conflict_in_script_class(const StringName &p_name, const GDScriptParser::ClassNode *p_current_class_node, const GDScriptParser::Node *p_member);
 	static _FORCE_INLINE_ bool has_member_name_conflict_in_native_type(const StringName &p_name, const StringName &p_native_type_string);
 	Error check_native_member_name_conflict(const StringName &p_member_name, const GDScriptParser::Node *p_member_node, const StringName &p_native_type_string);
 	Error check_class_member_name_conflict(const GDScriptParser::ClassNode *p_class_node, const StringName &p_member_name, const GDScriptParser::Node *p_member_node);
+	/// @}
 
 	void get_class_node_current_scope_classes(GDScriptParser::ClassNode *p_node, List<GDScriptParser::ClassNode *> *p_list, GDScriptParser::Node *p_source);
 
@@ -97,7 +105,8 @@ class GDScriptAnalyzer {
 	void resolve_match_pattern(GDScriptParser::PatternNode *p_match_pattern, GDScriptParser::ExpressionNode *p_match_test);
 	void resolve_return(GDScriptParser::ReturnNode *p_return);
 
-	// Reduction functions.
+	/// @name Reduction functions.
+	/// @{
 	void reduce_expression(GDScriptParser::ExpressionNode *p_expression, bool p_is_root = false);
 	void reduce_array(GDScriptParser::ArrayNode *p_array);
 	void reduce_assignment(GDScriptParser::AssignmentNode *p_assignment);
@@ -117,6 +126,7 @@ class GDScriptAnalyzer {
 	void reduce_ternary_op(GDScriptParser::TernaryOpNode *p_ternary_op, bool p_is_root = false);
 	void reduce_type_test(GDScriptParser::TypeTestNode *p_type_test);
 	void reduce_unary_op(GDScriptParser::UnaryOpNode *p_unary_op);
+	/// @}
 
 	Variant make_expression_reduced_value(GDScriptParser::ExpressionNode *p_expression, bool &is_reduced);
 	Variant make_array_reduced_value(GDScriptParser::ArrayNode *p_array, bool &is_reduced);
@@ -124,7 +134,8 @@ class GDScriptAnalyzer {
 	Variant make_subscript_reduced_value(GDScriptParser::SubscriptNode *p_subscript, bool &is_reduced);
 	Variant make_call_reduced_value(GDScriptParser::CallNode *p_call, bool &is_reduced);
 
-	// Helpers.
+	/// @name Helpers
+	/// @{
 	Array make_array_from_element_datatype(const GDScriptParser::DataType &p_element_datatype, const GDScriptParser::Node *p_source_node = nullptr);
 	Dictionary make_dictionary_from_element_datatype(const GDScriptParser::DataType &p_key_element_datatype, const GDScriptParser::DataType &p_value_element_datatype, const GDScriptParser::Node *p_source_node = nullptr);
 	GDScriptParser::DataType type_from_variant(const Variant &p_value, const GDScriptParser::Node *p_source);
@@ -137,7 +148,11 @@ class GDScriptAnalyzer {
 	GDScriptParser::DataType get_operation_type(Variant::Operator p_operation, const GDScriptParser::DataType &p_a, const GDScriptParser::DataType &p_b, bool &r_valid, const GDScriptParser::Node *p_source);
 	GDScriptParser::DataType get_operation_type(Variant::Operator p_operation, const GDScriptParser::DataType &p_a, bool &r_valid, const GDScriptParser::Node *p_source);
 	void update_const_expression_builtin_type(GDScriptParser::ExpressionNode *p_expression, const GDScriptParser::DataType &p_type, const char *p_usage, bool p_is_cast = false);
+	/// When an array literal is stored (or passed as function argument) to a typed context, we then assume the array is typed.
+	/// This function determines which type is that (if any).
 	void update_array_literal_element_type(GDScriptParser::ArrayNode *p_array, const GDScriptParser::DataType &p_element_type);
+	/// When a dictionary literal is stored (or passed as function argument) to a typed context, we then assume the dictionary is typed.
+	/// This function determines which type is that (if any).
 	void update_dictionary_literal_element_type(GDScriptParser::DictionaryNode *p_dictionary, const GDScriptParser::DataType &p_key_element_type, const GDScriptParser::DataType &p_value_element_type);
 	bool is_type_compatible(const GDScriptParser::DataType &p_target, const GDScriptParser::DataType &p_source, bool p_allow_implicit_conversion = false, const GDScriptParser::Node *p_source_node = nullptr);
 	void push_error(const String &p_message, const GDScriptParser::Node *p_origin = nullptr);
@@ -147,10 +162,16 @@ class GDScriptAnalyzer {
 	void resolve_pending_lambda_bodies();
 	bool class_exists(const StringName &p_class) const;
 	void reduce_identifier_from_base_set_class(GDScriptParser::IdentifierNode *p_identifier, GDScriptParser::DataType p_identifier_datatype);
+	/// Delicate piece of code that intentionally doesn't use the GDScript cache or `get_depended_parser_for`.
+	/// Search dependencies for the parser that owns `p_class` and make a cache entry for it.
+	/// Required for how we store pointers to classes owned by other parser trees and need to call `resolve_class_member` and such on the same parser tree.
+	/// Since https://github.com/godotengine/godot/pull/94871 there can technically be multiple parsers for the same script in the same parser tree.
+	/// Even if unlikely, getting the wrong parser could lead to strange undefined behavior without errors.
 	Ref<GDScriptParserRef> ensure_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const GDScriptParser::ClassNode *p_from_class, const char *p_context, const GDScriptParser::Node *p_source);
 	Ref<GDScriptParserRef> find_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const Ref<GDScriptParserRef> &p_dependant_parser);
 	Ref<GDScriptParserRef> find_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, GDScriptParser *p_dependant_parser);
 	Ref<GDScript> get_depended_shallow_script(const String &p_path, Error &r_error);
+	/// @}
 #ifdef DEBUG_ENABLED
 	void is_shadowing(GDScriptParser::IdentifierNode *p_identifier, const String &p_context, const bool p_in_local_scope);
 #endif

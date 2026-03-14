@@ -32,12 +32,18 @@
 
 #pragma once
 
+/**
+ * @file animation_blend_tree.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/animation/animation_tree.h"
 
 class AnimationNodeAnimation : public AnimationRootNode {
 	GDCLASS(AnimationNodeAnimation, AnimationRootNode);
 
-	StringName backward = "backward"; // Only used by pingpong animation.
+	StringName backward = "backward"; ///< Only used by pingpong animation.
 
 	StringName animation;
 
@@ -61,7 +67,7 @@ public:
 	void get_parameter_list(List<PropertyInfo> *r_list) const override;
 	virtual Variant get_parameter_default_value(const StringName &p_parameter) const override;
 
-	virtual NodeTimeInfo get_node_time_info() const override; // Wrapper of get_parameter().
+	virtual NodeTimeInfo get_node_time_info() const override; ///< Wrapper of get_parameter().
 
 	static Vector<String> (*get_editable_animation_list)();
 

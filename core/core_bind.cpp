@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file core_bind.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core_bind.h"
 #include "core_bind.compat.inc"
 
@@ -598,7 +604,6 @@ Dictionary OS::get_memory_info() const {
 	return ::OS::get_singleton()->get_memory_info();
 }
 
-/** This method uses a signed argument for better error reporting as it's used from the scripting API. */
 void OS::delay_usec(int p_usec) const {
 	ERR_FAIL_COND_MSG(
 			p_usec < 0,
@@ -606,7 +611,6 @@ void OS::delay_usec(int p_usec) const {
 	::OS::get_singleton()->delay_usec(p_usec);
 }
 
-/** This method uses a signed argument for better error reporting as it's used from the scripting API. */
 void OS::delay_msec(int p_msec) const {
 	ERR_FAIL_COND_MSG(
 			p_msec < 0,
@@ -639,22 +643,18 @@ String OS::get_user_data_dir() const {
 }
 
 String OS::get_config_dir() const {
-	// Exposed as `get_config_dir()` instead of `get_config_path()` for consistency with other exposed OS methods.
 	return ::OS::get_singleton()->get_config_path();
 }
 
 String OS::get_data_dir() const {
-	// Exposed as `get_data_dir()` instead of `get_data_path()` for consistency with other exposed OS methods.
 	return ::OS::get_singleton()->get_data_path();
 }
 
 String OS::get_cache_dir() const {
-	// Exposed as `get_cache_dir()` instead of `get_cache_path()` for consistency with other exposed OS methods.
 	return ::OS::get_singleton()->get_cache_path();
 }
 
 String OS::get_temp_dir() const {
-	// Exposed as `get_temp_dir()` instead of `get_temp_path()` for consistency with other exposed OS methods.
 	return ::OS::get_singleton()->get_temp_path();
 }
 

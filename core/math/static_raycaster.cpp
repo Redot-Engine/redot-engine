@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file static_raycaster.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "static_raycaster.h"
 
 StaticRaycaster *(*StaticRaycaster::create_function)() = nullptr;

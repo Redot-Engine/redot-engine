@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant.h"
 
 #include "core/debugger/engine_debugger.h"
@@ -1085,7 +1091,6 @@ bool Variant::is_null() const {
 }
 
 void Variant::ObjData::ref(const ObjData &p_from, bool p_is_weak_ref_old, bool p_is_weak_ref) {
-	// Mirrors Ref::ref in refcounted.h
 	if (p_from.id == id) {
 		return;
 	}
@@ -1105,7 +1110,6 @@ void Variant::ObjData::ref(const ObjData &p_from, bool p_is_weak_ref_old, bool p
 }
 
 void Variant::ObjData::ref_pointer(Object *p_object, bool p_is_weak_ref_old, bool p_is_weak_ref) {
-	// Mirrors Ref::ref_pointer in refcounted.h
 	if (p_object == obj) {
 		return;
 	}
@@ -1128,7 +1132,6 @@ void Variant::ObjData::ref_pointer(Object *p_object, bool p_is_weak_ref_old, boo
 }
 
 void Variant::ObjData::unref(bool p_is_weak_ref) {
-	// Mirrors Ref::unref in refcounted.h
 	if (!p_is_weak_ref && id.is_ref_counted()) {
 		RefCounted *reference = static_cast<RefCounted *>(obj);
 		// Assuming reference is not null because id.is_ref_counted() was true.
@@ -1431,8 +1434,8 @@ void Variant::_clear_internal() {
 			_get_obj().unref(is_weak_ref);
 		} break;
 		case RID: {
-			// Not much need probably.
-			// HACK: Can't seem to use destructor + scoping operator, so hack.
+			/// Not much need probably.
+			/// @todo HACK: Can't seem to use destructor + scoping operator, so hack.
 			typedef ::RID RID_Class;
 			reinterpret_cast<RID_Class *>(_data._mem)->~RID_Class();
 		} break;

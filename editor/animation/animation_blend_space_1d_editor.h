@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_blend_space_1d_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/animation/animation_tree_editor_plugin.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/animation/animation_blend_space_1d.h"

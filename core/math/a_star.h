@@ -32,13 +32,15 @@
 
 #pragma once
 
+/**
+ * @file a_star.h
+ *
+ * @brief A* pathfinding algorithm.
+ */
+
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
 #include "core/templates/a_hash_map.h"
-
-/**
-	A* pathfinding algorithm.
-*/
 
 class AStar3D : public RefCounted {
 	GDCLASS(AStar3D, RefCounted);
@@ -55,20 +57,20 @@ class AStar3D : public RefCounted {
 		AHashMap<int64_t, Point *> neighbors = 4u;
 		AHashMap<int64_t, Point *> unlinked_neighbours = 4u;
 
-		// Used for pathfinding.
+		/// Used for pathfinding.
 		Point *prev_point = nullptr;
 		real_t g_score = 0;
 		real_t f_score = 0;
 		uint64_t open_pass = 0;
 		uint64_t closed_pass = 0;
 
-		// Used for getting closest_point_of_last_pathing_call.
+		/// Used for getting closest_point_of_last_pathing_call.
 		real_t abs_g_score = 0;
 		real_t abs_f_score = 0;
 	};
 
 	struct SortPoints {
-		_FORCE_INLINE_ bool operator()(const Point *A, const Point *B) const { // Returns true when the Point A is worse than Point B.
+		_FORCE_INLINE_ bool operator()(const Point *A, const Point *B) const { ///< Returns true when the Point A is worse than Point B.
 			if (A->f_score > B->f_score) {
 				return true;
 			} else if (A->f_score < B->f_score) {

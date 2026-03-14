@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file os.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "os.h"
 
 #include "core/config/project_settings.h"
@@ -221,18 +227,14 @@ String OS::get_locale() const {
 	return "en";
 }
 
-// Non-virtual helper to extract the 2 or 3-letter language code from
-// `get_locale()` in a way that's consistent for all platforms.
 String OS::get_locale_language() const {
 	return get_locale().left(3).remove_char('_');
 }
 
-// Embedded PCK offset.
 uint64_t OS::get_embedded_pck_offset() const {
 	return 0;
 }
 
-// Default boot screen rect scale mode is "Keep Aspect Centered"
 Rect2 OS::calculate_boot_screen_rect(const Size2 &p_window_size, const Size2 &p_imgrect_size) const {
 	Rect2 screenrect;
 	if (p_window_size.width > p_window_size.height) {
@@ -249,7 +251,6 @@ Rect2 OS::calculate_boot_screen_rect(const Size2 &p_window_size, const Size2 &p_
 	return screenrect;
 }
 
-// Helper function to ensure that a dir name/path will be valid on the OS
 String OS::get_safe_dir_name(const String &p_dir_name, bool p_allow_paths) const {
 	String safe_dir_name = p_dir_name;
 	Vector<String> invalid_chars = String(": * ? \" < > |").split(" ");
@@ -281,23 +282,19 @@ String OS::get_safe_dir_name(const String &p_dir_name, bool p_allow_paths) const
 
 // Path to data, config, cache, etc. OS-specific folders
 
-// Get properly capitalized engine name for system paths
 String OS::get_godot_dir_name() const {
 	// Default to lowercase, so only override when different case is needed
 	return String(REDOT_VERSION_SHORT_NAME).to_lower();
 }
 
-// OS equivalent of XDG_DATA_HOME
 String OS::get_data_path() const {
 	return ".";
 }
 
-// OS equivalent of XDG_CONFIG_HOME
 String OS::get_config_path() const {
 	return ".";
 }
 
-// OS equivalent of XDG_CACHE_HOME
 String OS::get_cache_path() const {
 	return ".";
 }
@@ -306,17 +303,14 @@ String OS::get_temp_path() const {
 	return ".";
 }
 
-// Path to macOS .app bundle resources
 String OS::get_bundle_resource_dir() const {
 	return ".";
 }
 
-// Path to macOS .app bundle embedded icon
 String OS::get_bundle_icon_path() const {
 	return String();
 }
 
-// OS specific path for user://
 String OS::get_user_data_dir(const String &p_user_dir) const {
 	return ".";
 }
@@ -339,12 +333,10 @@ String OS::get_user_data_dir() const {
 	}
 }
 
-// Absolute path to res://
 String OS::get_resource_dir() const {
 	return ProjectSettings::get_singleton()->get_resource_path();
 }
 
-// Access system-specific dirs like Documents, Downloads, etc.
 String OS::get_system_dir(SystemDir p_dir, bool p_shared_storage) const {
 	return ".";
 }
@@ -447,7 +439,6 @@ void OS::set_has_server_feature_callback(HasServerFeatureCallback p_callback) {
 }
 
 bool OS::has_feature(const String &p_feature) {
-	// Feature tags are always lowercase for consistency.
 	if (p_feature == get_identifier()) {
 		return true;
 	}
@@ -790,7 +781,7 @@ void OS::benchmark_dump() {
 		HashMap<String, String> results;
 		for (const KeyValue<Pair<String, String>, double> &E : benchmark_marks_final) {
 			if (E.key.first == "Startup" && !results.has(E.key.first)) {
-				results.insert(E.key.first, "", true); // Hack to make sure "Startup" always comes first.
+				results.insert(E.key.first, "", true); /// @todo Hack to make sure "Startup" always comes first.
 			}
 
 			results[E.key.first] += vformat("\t\t- %s: %.3f msec.\n", E.key.second, (E.value * 1000));

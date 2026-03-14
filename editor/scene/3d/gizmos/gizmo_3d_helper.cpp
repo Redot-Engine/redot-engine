@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gizmo_3d_helper.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gizmo_3d_helper.h"
 
 #include "editor/editor_undo_redo_manager.h"

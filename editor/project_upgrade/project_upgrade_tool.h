@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file project_upgrade_tool.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 
 class ConfirmationDialog;

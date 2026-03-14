@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_tree_fti.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/mutex.h"
 #include "core/templates/local_vector.h"
 
@@ -60,15 +66,15 @@ public:
 };
 #else
 
-// Important.
-// This class uses raw pointers, so it is essential that on deletion, this class is notified
-// so that any references can be cleared up to prevent dangling pointer access.
-
-// This class can be used from a custom SceneTree.
-
-// Note we could potentially make SceneTreeFTI static / global to avoid the lookup through scene tree,
-// but this covers the custom case of multiple scene trees.
-
+/**
+ * @warning This class uses raw pointers, so it is essential that on deletion, this class is notified
+ * so that any references can be cleared up to prevent dangling pointer access.
+ *
+ * This class can be used from a custom SceneTree.
+ *
+ * Note we could potentially make SceneTreeFTI static / global to avoid the lookup through scene tree,
+ * but this covers the custom case of multiple scene trees.
+ */
 class SceneTreeFTI {
 	friend class SceneTreeFTITests;
 
@@ -81,32 +87,32 @@ class SceneTreeFTI {
 	struct Data {
 		static const uint32_t scene_tree_depth_limit = 48;
 
-		// Prev / Curr lists of Node3Ds having local xforms pumped.
+		/// Prev / Curr lists of Node3Ds having local xforms pumped.
 		LocalVector<Node3D *> tick_xform_list[2];
 
-		// The frame lists are changed nodes that need to start traversal,
-		// either longterm (on the tick list) or single frame forced.
+		/// The frame lists are changed nodes that need to start traversal,
+		/// either longterm (on the tick list) or single frame forced.
 		LocalVector<Node3D *> frame_xform_list;
 		LocalVector<Node3D *> frame_xform_list_forced;
 
-		// Prev / Curr lists of Node3Ds having actively interpolated properties.
+		/// Prev / Curr lists of Node3Ds having actively interpolated properties.
 		LocalVector<Node3D *> tick_property_list[2];
 
 		LocalVector<Node3D *> frame_property_list;
 		LocalVector<Node3D *> request_reset_list;
 		LocalVector<Node3D *> dirty_node_depth_lists[scene_tree_depth_limit];
 
-		// When we are using two alternating lists,
-		// which one is current.
+		/// When we are using two alternating lists,
+		/// which one is current.
 		uint32_t mirror = 0;
 
-		// Global on / off switch for SceneTreeFTI.
+		/// Global on / off switch for SceneTreeFTI.
 		bool enabled = false;
 
-		// Whether we are in physics ticks, or in a frame.
+		/// Whether we are in physics ticks, or in a frame.
 		bool in_frame = false;
 
-		// Updating at the start of the frame, or the end on second pass.
+		/// Updating at the start of the frame, or the end on second pass.
 		bool frame_start = true;
 
 		Mutex mutex;
@@ -114,11 +120,12 @@ class SceneTreeFTI {
 		TraversalMode traversal_mode = TM_DEFAULT;
 		bool use_optimized_traversal_method = true;
 
-		// DEBUGGING
+		/// @name DEBUGGING
+		/// @{
 		bool periodic_debug_log = false;
 		uint32_t debug_node_count = 0;
 		uint32_t debug_nodes_processed = 0;
-
+		/// @}
 	} data;
 
 #ifdef GODOT_SCENE_TREE_FTI_VERIFY
@@ -140,7 +147,7 @@ class SceneTreeFTI {
 	void _clear_depth_lists();
 
 public:
-	// Hottest function, allow inlining the data.enabled check.
+	/// Hottest function, allow inlining the data.enabled check.
 	void node_3d_notify_changed(Node3D &r_node, bool p_transform_changed) {
 		if (!data.enabled) {
 			return;
@@ -157,10 +164,10 @@ public:
 	void node_3d_request_reset(Node3D *p_node);
 	void node_3d_notify_delete(Node3D *p_node);
 
-	// Calculate interpolated xforms, send to visual server.
+	/// Calculate interpolated xforms, send to visual server.
 	void frame_update(Node *p_root, bool p_frame_start);
 
-	// Update local xform pumps.
+	/// Update local xform pumps.
 	void tick_update();
 
 	void set_enabled(Node *p_root, bool p_enabled);

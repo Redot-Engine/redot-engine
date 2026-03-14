@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file forward_id_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <cstdint>
 
 class RendererSceneRenderRD;

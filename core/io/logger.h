@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file logger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/file_access.h"
 #include "core/object/script_backtrace.h"
 #include "core/string/ustring.h"

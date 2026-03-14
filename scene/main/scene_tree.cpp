@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_tree.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_tree.h"
 
 #include "core/config/project_settings.h"
@@ -117,8 +123,7 @@ void SceneTreeTimer::release_connections() {
 }
 
 #ifndef _3D_DISABLED
-// This should be called once per physics tick, to make sure the transform previous and current
-// is kept up to date on the few Node3Ds that are using client side physics interpolation.
+
 void SceneTree::ClientPhysicsInterpolation::physics_process() {
 	for (SelfList<Node3D> *E = _node_3d_list.first(); E;) {
 		Node3D *node_3d = E->self();
@@ -580,7 +585,6 @@ void SceneTree::initialize() {
 }
 
 void SceneTree::set_physics_interpolation_enabled(bool p_enabled) {
-	// This version is for use in editor.
 	_physics_interpolation_enabled_in_project = p_enabled;
 
 	// We never want interpolation in the editor.
@@ -605,8 +609,6 @@ void SceneTree::set_physics_interpolation_enabled(bool p_enabled) {
 
 #ifndef _3D_DISABLED
 void SceneTree::client_physics_interpolation_add_node_3d(SelfList<Node3D> *p_elem) {
-	// This ensures that _update_physics_interpolation_data() will be called at least once every
-	// physics tick, to ensure the previous and current transforms are kept up to date.
 	_client_physics_interpolation._node_3d_list.add(p_elem);
 }
 
@@ -767,9 +769,9 @@ bool SceneTree::process(double p_time) {
 #endif // _3D_DISABLED
 #endif // TOOLS_ENABLED
 
-	// Second pass of scene tree fixed timestep interpolation.
-	// ToDo: Possibly needs another flush_transform_notifications here
-	// depending on whether there are side effects to _call_idle_callbacks().
+	/// Second pass of scene tree fixed timestep interpolation.
+	/// @todo Possibly needs another flush_transform_notifications here
+	/// depending on whether there are side effects to _call_idle_callbacks().
 	get_scene_tree_fti().frame_update(get_root(), false);
 
 	if (_physics_interpolation_enabled) {
@@ -1149,9 +1151,6 @@ bool SceneTree::is_suspended() const {
 }
 
 void SceneTree::_process_group(ProcessGroup *p_group, bool p_physics) {
-	// When reading this function, keep in mind that this code must work in a way where
-	// if any node is removed, this needs to continue working.
-
 	p_group->call_queue.flush(); // Flush messages before processing.
 
 	Vector<Node *> &nodes = p_physics ? p_group->physics_nodes : p_group->nodes;

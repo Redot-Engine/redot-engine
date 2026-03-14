@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_android_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../../util.h"
 #include "../openxr_extension_wrapper.h"
 

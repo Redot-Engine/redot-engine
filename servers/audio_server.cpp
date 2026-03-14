@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_server.h"
 
 #include "core/config/project_settings.h"
@@ -392,9 +398,9 @@ void AudioServer::_mix_step() {
 			continue;
 		}
 
-		// If `fading_out` is true, we're in the process of fading out the stream playback.
-		// TODO: Currently this sets the volume of the stream to 0 which creates a linear interpolation between its previous volume and silence.
-		//  A more punchy option for fading out could be to just use the lookahead buffer.
+		/// If `fading_out` is true, we're in the process of fading out the stream playback.
+		/// @todo Currently this sets the volume of the stream to 0 which creates a linear interpolation between its previous volume and silence.
+		/// A more punchy option for fading out could be to just use the lookahead buffer.
 		bool fading_out = playback->state.load() == AudioStreamPlaybackListNode::FADE_OUT_TO_DELETION || playback->state.load() == AudioStreamPlaybackListNode::FADE_OUT_TO_PAUSE;
 
 		AudioFrame *buf = mix_buffer.ptrw();
@@ -464,7 +470,7 @@ void AudioServer::_mix_step() {
 			//  The channels correspond to output channels of the audio device, e.g. stereo or 5.1. To reduce needless nesting, this is done with a helper method named `_mix_step_for_channel`.
 			for (int channel_idx = 0; channel_idx < channel_count; channel_idx++) {
 				AudioFrame *channel_buf = thread_get_channel_mix_buffer(bus_idx, channel_idx);
-				// TODO: This `fading_out` check could be replaced with with an exponential fadeout of the samples from the lookahead buffer for more punchy results.
+				/// @todo This `fading_out` check could be replaced with with an exponential fadeout of the samples from the lookahead buffer for more punchy results.
 				if (fading_out) {
 					bus_details.volume[idx][channel_idx] = AudioFrame(0, 0);
 				}
@@ -664,7 +670,7 @@ void AudioServer::_mix_step() {
 }
 
 void AudioServer::_mix_step_for_channel(AudioFrame *p_out_buf, AudioFrame *p_source_buf, AudioFrame p_vol_start, AudioFrame p_vol_final, float p_attenuation_filter_cutoff_hz, float p_highshelf_gain, AudioFilterSW::Processor *p_processor_l, AudioFilterSW::Processor *p_processor_r) {
-	// TODO: In the future it could be nice to replace all of these hardcoded effects with something a bit cleaner and more flexible, but for now this is what we do to support 3D audio players.
+	/// @todo In the future it could be nice to replace all of these hardcoded effects with something a bit cleaner and more flexible, but for now this is what we do to support 3D audio players.
 	if (p_highshelf_gain != 0) {
 		AudioFilterSW filter;
 		filter.set_mode(AudioFilterSW::HIGHSHELF);
@@ -684,7 +690,7 @@ void AudioServer::_mix_step_for_channel(AudioFrame *p_out_buf, AudioFrame *p_sou
 		p_processor_r->update_coeffs(buffer_size);
 
 		for (unsigned int frame_idx = 0; frame_idx < buffer_size; frame_idx++) {
-			// TODO: Make lerp speed buffer-size-invariant if buffer_size ever becomes a project setting to avoid very small buffer sizes causing pops due to too-fast lerps.
+			/// @todo Make lerp speed buffer-size-invariant if buffer_size ever becomes a project setting to avoid very small buffer sizes causing pops due to too-fast lerps.
 			float lerp_param = (float)frame_idx / buffer_size;
 			AudioFrame vol = p_vol_final * lerp_param + (1 - lerp_param) * p_vol_start;
 			AudioFrame mixed = vol * p_source_buf[frame_idx];
@@ -695,7 +701,7 @@ void AudioServer::_mix_step_for_channel(AudioFrame *p_out_buf, AudioFrame *p_sou
 
 	} else {
 		for (unsigned int frame_idx = 0; frame_idx < buffer_size; frame_idx++) {
-			// TODO: Make lerp speed buffer-size-invariant if buffer_size ever becomes a project setting to avoid very small buffer sizes causing pops due to too-fast lerps.
+			/// @todo Make lerp speed buffer-size-invariant if buffer_size ever becomes a project setting to avoid very small buffer sizes causing pops due to too-fast lerps.
 			float lerp_param = (float)frame_idx / buffer_size;
 			p_out_buf[frame_idx] += (p_vol_final * lerp_param + (1 - lerp_param) * p_vol_start) * p_source_buf[frame_idx];
 		}
@@ -1514,8 +1520,8 @@ void AudioServer::init_channels_and_buffers() {
 void AudioServer::init() {
 	channel_disable_threshold_db = GLOBAL_DEF_RST(PropertyInfo(Variant::FLOAT, "audio/buses/channel_disable_threshold_db", PROPERTY_HINT_RANGE, "-80,0,0.1,suffix:dB"), -60.0);
 	channel_disable_frames = float(GLOBAL_DEF_RST(PropertyInfo(Variant::FLOAT, "audio/buses/channel_disable_time", PROPERTY_HINT_RANGE, "0,5,0.01,or_greater"), 2.0)) * get_mix_rate();
-	// TODO: Buffer size is hardcoded for now. This would be really nice to have as a project setting because currently it limits audio latency to an absolute minimum of 11ms with default mix rate, but there's some additional work required to make that happen. See TODOs in `_mix_step_for_channel`.
-	// When this becomes a project setting, it should be specified in milliseconds rather than raw sample count, because 512 samples at 192khz is shorter than it is at 48khz, for example.
+	/// @todo Buffer size is hardcoded for now. This would be really nice to have as a project setting because currently it limits audio latency to an absolute minimum of 11ms with default mix rate, but there's some additional work required to make that happen. See TODOs in `_mix_step_for_channel`.
+	/// When this becomes a project setting, it should be specified in milliseconds rather than raw sample count, because 512 samples at 192khz is shorter than it is at 48khz, for example.
 	buffer_size = 512;
 
 	init_channels_and_buffers();

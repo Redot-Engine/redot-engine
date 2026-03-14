@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_region_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/node_3d.h"
 #include "scene/resources/navigation_mesh.h"
 

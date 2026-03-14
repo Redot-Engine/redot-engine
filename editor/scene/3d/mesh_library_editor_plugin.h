@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file mesh_library_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/resources/3d/mesh_library.h"
 

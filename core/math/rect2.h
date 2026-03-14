@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rect2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/vector2.h"
 
@@ -145,7 +151,7 @@ struct [[nodiscard]] Rect2 {
 		return size.x > 0.0f && size.y > 0.0f;
 	}
 
-	// Returns the intersection between two Rect2s or an empty Rect2 if there is no intersection.
+	/// @return The intersection between two Rect2s or an empty Rect2 if there is no intersection.
 	inline Rect2 intersection(const Rect2 &p_rect) const {
 		Rect2 new_rect = p_rect;
 
@@ -163,7 +169,7 @@ struct [[nodiscard]] Rect2 {
 		return new_rect;
 	}
 
-	inline Rect2 merge(const Rect2 &p_rect) const { ///< return a merged rect
+	inline Rect2 merge(const Rect2 &p_rect) const { ///< @return A merged rect
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
 			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
@@ -252,7 +258,7 @@ struct [[nodiscard]] Rect2 {
 		return r;
 	}
 
-	inline void expand_to(const Vector2 &p_vector) { // In place function for speed.
+	inline void expand_to(const Vector2 &p_vector) { ///< In place function for speed.
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0)) {
 			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");

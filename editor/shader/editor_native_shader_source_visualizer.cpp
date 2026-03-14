@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_native_shader_source_visualizer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_native_shader_source_visualizer.h"
 
 #include "editor/editor_string_names.h"

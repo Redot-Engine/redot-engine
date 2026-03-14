@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "light_storage.h"
 
 using namespace RendererDummy;

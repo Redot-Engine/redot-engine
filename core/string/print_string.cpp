@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file print_string.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "print_string.h"
 
 #include "core/core_globals.h"

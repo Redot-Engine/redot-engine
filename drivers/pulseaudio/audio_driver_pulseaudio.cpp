@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_driver_pulseaudio.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_driver_pulseaudio.h"
 
 #ifdef PULSEAUDIO_ENABLED
@@ -64,8 +70,8 @@ void AudioDriverPulseAudio::pa_state_cb(pa_context *c, void *userdata) {
 			break;
 		default:
 			print_verbose("PulseAudio: context other");
-			// TODO: Check if we want to handle some of the other
-			// PA context states like PA_CONTEXT_UNCONNECTED.
+			/// @todo Check if we want to handle some of the other
+			/// PA context states like PA_CONTEXT_UNCONNECTED.
 			break;
 	}
 }
@@ -190,10 +196,10 @@ Error AudioDriverPulseAudio::init_output_device() {
 		}
 	}
 
-	// Detect the amount of channels PulseAudio is using
-	// Note: If using an even amount of channels (2, 4, etc) channels and pa_map.channels will be equal,
-	// if not then pa_map.channels will have the real amount of channels PulseAudio is using and channels
-	// will have the amount of channels Redot is using (in this case it's pa_map.channels + 1)
+	/// Detect the amount of channels PulseAudio is using
+	/// @note If using an even amount of channels (2, 4, etc) channels and pa_map.channels will be equal,
+	/// if not then pa_map.channels will have the real amount of channels PulseAudio is using and channels
+	/// will have the amount of channels Redot is using (in this case it's pa_map.channels + 1)
 	Error err = detect_channels();
 	if (err != OK) {
 		// This most likely means there are no sinks.
@@ -250,10 +256,10 @@ Error AudioDriverPulseAudio::init_output_device() {
 	}
 
 	pa_buffer_attr attr;
-	// set to appropriate buffer length (in bytes) from global settings
-	// Note: PulseAudio defaults to 4 fragments, which means that the actual
-	// latency is tlength / fragments. It seems that the PulseAudio has no way
-	// to get the fragments number so we're hardcoding this to the default of 4
+	/// set to appropriate buffer length (in bytes) from global settings
+	/// @note PulseAudio defaults to 4 fragments, which means that the actual
+	/// latency is tlength / fragments. It seems that the PulseAudio has no way
+	/// to get the fragments number so we're hardcoding this to the default of 4
 	const int fragments = 4;
 	attr.tlength = pa_buffer_size * sizeof(int16_t) * fragments;
 	// set them to be automatically chosen

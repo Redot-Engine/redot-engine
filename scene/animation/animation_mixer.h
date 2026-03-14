@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_mixer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/a_hash_map.h"
 #include "scene/animation/tween.h"
 #include "scene/main/node.h"
@@ -70,7 +76,9 @@ public:
 		ANIMATION_CALLBACK_MODE_DISCRETE_FORCE_CONTINUOUS,
 	};
 
-	/* ---- Data ---- */
+	/// @name---- Data ----
+	/// @{
+
 	struct AnimationLibraryData {
 		StringName name;
 		Ref<AnimationLibrary> library;
@@ -100,11 +108,12 @@ public:
 		AnimationData animation_data;
 		PlaybackInfo playback_info;
 	};
-
+	/// @}
 protected:
-	/* ---- Data lists ---- */
+	/// @name ---- Data lists ----
+	/// @{
 	LocalVector<AnimationLibraryData> animation_libraries;
-	AHashMap<StringName, AnimationData> animation_set; // HashMap<Library name + Animation name, AnimationData>
+	AHashMap<StringName, AnimationData> animation_set; ///< HashMap<Library name + Animation name, AnimationData>
 
 	TypedArray<StringName> _get_animation_library_list() const;
 	Vector<String> _get_animation_list() const {
@@ -117,30 +126,37 @@ protected:
 		}
 		return ret;
 	}
+	/// @}
 
-	// For caches.
+	/// @name For Caches
+	/// @{
 	uint64_t animation_set_update_pass = 1;
-	void _animation_set_cache_update();
-
-	// Signals.
+	void _animation_set_cache_update(); ///< Relatively fast function to update all animations.
+	/// @{
+	/// @name Signals
+	/// @{
 	virtual void _animation_added(const StringName &p_name, const StringName &p_library);
 	virtual void _animation_removed(const StringName &p_name, const StringName &p_library);
 	virtual void _animation_renamed(const StringName &p_name, const StringName &p_to_name, const StringName &p_library);
 	virtual void _animation_changed(const StringName &p_name);
+	/// @}
 
-	/* ---- General settings for animation ---- */
+	/// @name ---- General settings for animation ----
+	/// @{
 	AnimationCallbackModeProcess callback_mode_process = ANIMATION_CALLBACK_MODE_PROCESS_IDLE;
 	AnimationCallbackModeMethod callback_mode_method = ANIMATION_CALLBACK_MODE_METHOD_DEFERRED;
 	AnimationCallbackModeDiscrete callback_mode_discrete = ANIMATION_CALLBACK_MODE_DISCRETE_RECESSIVE;
 	int audio_max_polyphony = 32;
 	NodePath root_node;
+	/// @}
 
 	bool processing = false;
 	bool active = true;
 
 	void _set_process(bool p_process, bool p_force = false);
 
-	/* ---- Caches for blending ---- */
+	/// @name ---- Caches for blending ----
+	/// @{
 	bool cache_valid = false;
 	uint64_t setup_pass = 1;
 	uint64_t process_pass = 1;
@@ -227,7 +243,7 @@ protected:
 		Variant value;
 		Vector<StringName> subpath;
 
-		// TODO: There are many boolean, can be packed into one integer.
+		/// @todo There are many boolean, can be packed into one integer.
 		bool is_init = false;
 		bool use_continuous = false;
 		bool use_discrete = false;
@@ -259,15 +275,16 @@ protected:
 	struct TrackCacheMethod : public TrackCache {
 		TrackCacheMethod() { type = Animation::TYPE_METHOD; }
 	};
+	/// @}
 
-	// Audio stream information for each audio stream placed on the track.
+	/// Audio stream information for each audio stream placed on the track.
 	struct PlayingAudioStreamInfo {
-		AudioStreamPlaybackPolyphonic::ID index = -1; // ID retrieved from AudioStreamPlaybackPolyphonic.
+		AudioStreamPlaybackPolyphonic::ID index = -1; ///< ID retrieved from AudioStreamPlaybackPolyphonic.
 		double start = 0.0;
 		double len = 0.0;
 	};
 
-	// Audio track information for mixng and ending.
+	/// Audio track information for mixng and ending.
 	struct PlayingAudioTrackInfo {
 		AHashMap<int, PlayingAudioStreamInfo> stream_info;
 		double length = 0.0;
@@ -281,7 +298,7 @@ protected:
 	struct TrackCacheAudio : public TrackCache {
 		Ref<AudioStreamPolyphonic> audio_stream;
 		Ref<AudioStreamPlaybackPolyphonic> audio_stream_playback;
-		HashMap<ObjectID, PlayingAudioTrackInfo> playing_streams; // Key is Animation resource ObjectID.
+		HashMap<ObjectID, PlayingAudioTrackInfo> playing_streams; ///< Key is Animation resource ObjectID.
 		AudioServer::PlaybackType playback_type;
 		StringName bus;
 
@@ -311,24 +328,29 @@ protected:
 	HashSet<TrackCache *> playing_caches;
 	Vector<Node *> playing_audio_stream_players;
 
-	// Helpers.
+	/// @name Helpers
+	/// @{
 	void _clear_caches();
 	void _clear_audio_streams();
 	void _clear_playing_caches();
 	void _init_root_motion_cache();
 	bool _update_caches();
 	void _create_track_num_to_track_cache_for_animation(Ref<Animation> &p_animation);
+	/// @}
 
-	/* ---- Audio ---- */
+	/// @name ---- Audio ----
+	/// @{
 	AudioServer::PlaybackType playback_type;
-
-	/* ---- Blending processor ---- */
+	/// @}
+	/// @name ---- Blending processor ----
+	/// @{
 	LocalVector<AnimationInstance> animation_instances;
 	AHashMap<NodePath, int> track_map;
 	int track_count = 0;
 	bool deterministic = false;
-
-	/* ---- Root motion accumulator for Skeleton3D ---- */
+	/// @}
+	/// @name ---- Root motion accumulator for Skeleton3D ----
+	/// @{}
 	NodePath root_motion_track;
 	bool root_motion_local = false;
 	Vector3 root_motion_position = Vector3(0, 0, 0);
@@ -337,6 +359,7 @@ protected:
 	Vector3 root_motion_position_accumulator = Vector3(0, 0, 0);
 	Quaternion root_motion_rotation_accumulator = Quaternion(0, 0, 0, 1);
 	Vector3 root_motion_scale_accumulator = Vector3(1, 1, 1);
+	/// @}
 
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
@@ -352,26 +375,30 @@ protected:
 	static void _bind_methods();
 	void _node_removed(Node *p_node);
 
-	// Helper for extended class.
+	/// Helper for extended class.
 	virtual void _set_active(bool p_active);
 	virtual void _remove_animation(const StringName &p_name);
 	virtual void _rename_animation(const StringName &p_from_name, const StringName &p_to_name);
 
-	/* ---- Blending processor ---- */
+	/// ---- Blending processor ----
 	virtual void _process_animation(double p_delta, bool p_update_only = false);
 
-	// For post process with retrieved key value during blending.
+	/// @name For post process with retrieved key value during blending.
+	/// @{
 	virtual Variant _post_process_key_value(const Ref<Animation> &p_anim, int p_track, Variant &p_value, ObjectID p_object_id, int p_object_sub_idx = -1);
 	Variant post_process_key_value(const Ref<Animation> &p_anim, int p_track, Variant p_value, ObjectID p_object_id, int p_object_sub_idx = -1);
 	GDVIRTUAL5RC(Variant, _post_process_key_value, Ref<Animation>, int, Variant, ObjectID, int);
+	/// @}
 
 	void _blend_init();
 	virtual bool _blend_pre_process(double p_delta, int p_track_count, const AHashMap<NodePath, int> &p_track_map);
 	virtual void _blend_capture(double p_delta);
-	void _blend_calc_total_weight(); // For indeterministic blending.
+	void _blend_calc_total_weight(); ///< For indeterministic blending.
+	/// Apply value/transform/blend/bezier blends to track caches and execute method/audio/animation tracks.
 	void _blend_process(double p_delta, bool p_update_only = false);
-	void _blend_apply();
+	void _blend_apply(); ///< Finally, set the tracks.
 	virtual void _blend_post_process();
+	/// Separate function to use alloca() more efficiently
 	void _call_object(ObjectID p_object_id, const StringName &p_method, const Vector<Variant> &p_params, bool p_deferred);
 
 	/* ---- Capture feature ---- */
@@ -392,7 +419,7 @@ protected:
 			clear();
 		}
 	} capture_cache;
-	void blend_capture(double p_delta); // To blend capture track with all other animations.
+	void blend_capture(double p_delta); ///< To blend capture track with all other animations.
 
 #ifndef DISABLE_DEPRECATED
 	virtual Variant _post_process_key_value_bind_compat_86687(const Ref<Animation> &p_anim, int p_track, Variant p_value, Object *p_object, int p_object_idx = -1);
@@ -417,7 +444,8 @@ public:
 	bool has_animation(const StringName &p_name) const;
 	StringName find_animation(const Ref<Animation> &p_animation) const;
 
-	/* ---- General settings for animation ---- */
+	/// @name ---- General settings for animation ----
+	/// @{
 	void set_active(bool p_active);
 	bool is_active() const;
 
@@ -435,12 +463,14 @@ public:
 
 	void set_callback_mode_discrete(AnimationCallbackModeDiscrete p_mode);
 	AnimationCallbackModeDiscrete get_callback_mode_discrete() const;
-
-	/* ---- Audio ---- */
+	/// @}
+	/// @name ---- Audio ----
+	/// @{
 	void set_audio_max_polyphony(int p_audio_max_polyphony);
 	int get_audio_max_polyphony() const;
-
-	/* ---- Root motion accumulator for Skeleton3D ---- */
+	/// @}
+	/// @name ---- Root motion accumulator for Skeleton3D ----
+	/// @{
 	void set_root_motion_track(const NodePath &p_track);
 	NodePath get_root_motion_track() const;
 
@@ -454,17 +484,19 @@ public:
 	Vector3 get_root_motion_position_accumulator() const;
 	Quaternion get_root_motion_rotation_accumulator() const;
 	Vector3 get_root_motion_scale_accumulator() const;
-
-	/* ---- Blending processor ---- */
+	/// @}
+	/// @name ---- Blending processor ----
+	/// @{
 	void make_animation_instance(const StringName &p_name, const PlaybackInfo p_playback_info);
 	void clear_animation_instances();
 	virtual void advance(double p_time);
 	virtual void clear_caches(); // Must be called by hand if an animation was modified after added.
-
-	/* ---- Capture feature ---- */
+	/// @}
+	/// ---- Capture feature ----
 	void capture(const StringName &p_name, double p_duration, Tween::TransitionType p_trans_type = Tween::TRANS_LINEAR, Tween::EaseType p_ease_type = Tween::EASE_IN);
 
-	/* ---- Reset on save ---- */
+	/// @na,e ---- Reset on save ----
+	/// @{
 	void set_reset_on_save_enabled(bool p_enabled);
 	bool is_reset_on_save_enabled() const;
 	bool can_apply_reset() const;
@@ -475,6 +507,7 @@ public:
 
 #ifdef TOOLS_ENABLED
 	Ref<AnimatedValuesBackup> apply_reset(bool p_user_initiated = false);
+	/// @}
 
 	void set_editing(bool p_editing);
 	bool is_editing() const;

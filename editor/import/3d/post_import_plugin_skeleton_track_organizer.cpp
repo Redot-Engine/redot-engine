@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file post_import_plugin_skeleton_track_organizer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "post_import_plugin_skeleton_track_organizer.h"
 
 #include "scene/3d/skeleton_3d.h"

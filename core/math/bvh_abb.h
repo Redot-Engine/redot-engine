@@ -32,9 +32,15 @@
 
 #pragma once
 
+/**
+ * @file bvh_abb.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/aabb.h"
 
-// special optimized version of axis aligned bounding box
+/// Special optimized version of axis aligned bounding box
 template <typename BOUNDS = AABB, typename POINT = Vector3>
 struct BVH_ABB {
 	struct ConvexHull {
@@ -56,7 +62,7 @@ struct BVH_ABB {
 		IR_FULL,
 	};
 
-	// we store mins with a negative value in order to test them with SIMD
+	/// We store mins with a negative value in order to test them with SIMD
 	POINT min;
 	POINT neg_max;
 
@@ -68,7 +74,8 @@ struct BVH_ABB {
 		neg_max = -_max;
 	}
 
-	// to and from standard AABB
+	/// @name to and from standard AABB
+	/// @{
 	void from(const BOUNDS &p_aabb) {
 		min = p_aabb.position;
 		neg_max = -(p_aabb.position + p_aabb.size);
@@ -78,6 +85,7 @@ struct BVH_ABB {
 		r_aabb.position = min;
 		r_aabb.size = calculate_size();
 	}
+	/// @}
 
 	void merge(const BVH_ABB &p_o) {
 		for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
@@ -215,7 +223,7 @@ struct BVH_ABB {
 		return true;
 	}
 
-	// Very hot in profiling, make sure optimized
+	/// @warning Very hot in profiling, make sure optimized
 	bool intersects(const BVH_ABB &p_o) const {
 		if (_any_morethan(p_o.min, -neg_max)) {
 			return false;
@@ -226,7 +234,7 @@ struct BVH_ABB {
 		return true;
 	}
 
-	// for pre-swizzled tester (this object)
+	/// For pre-swizzled tester (this object)
 	bool intersects_swizzled(const BVH_ABB &p_o) const {
 		if (_any_lessthan(min, p_o.min)) {
 			return false;
@@ -260,7 +268,7 @@ struct BVH_ABB {
 		grow(change);
 	}
 
-	// Actually surface area metric.
+	/// Actually surface area metric.
 	real_t get_area() const {
 		POINT d = calculate_size();
 		return 2.0f * (d.x * d.y + d.y * d.z + d.z * d.x);

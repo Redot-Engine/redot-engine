@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_access_unix_pipe.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "file_access_unix_pipe.h"
 
 #if defined(UNIX_ENABLED)

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file collision_object_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/node_3d.h"
 
@@ -76,7 +82,7 @@ private:
 
 	RBMap<uint32_t, ShapeData> shapes;
 
-	bool only_update_transform_changes = false; // This is used for sync to physics.
+	bool only_update_transform_changes = false; ///< This is used for sync to physics.
 
 	bool capture_input_on_drag = false;
 	bool ray_pickable = true;

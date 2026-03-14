@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file bone_map_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "bone_map_editor_plugin.h"
 
 #include "editor/import/3d/post_import_plugin_skeleton_renamer.h"
@@ -56,7 +62,7 @@ void BoneMapperButton::fetch_textures() {
 	set_offset(SIDE_TOP, 0);
 	set_offset(SIDE_BOTTOM, 0);
 
-	// Hack to avoid handle color darkening...
+	/// @todo Hack to avoid handle color darkening...
 	set_modulate(EditorThemeManager::is_dark_theme() ? Color(1, 1, 1) : Color(4.25, 4.25, 4.25));
 
 	circle = memnew(TextureRect);
@@ -1410,7 +1416,7 @@ void BoneMapEditor::create_editors() {
 
 void BoneMapEditor::fetch_objects() {
 	skeleton = nullptr;
-	// Hackey... but it may be the easiest way to get a selected object from "ImporterScene".
+	/// @todo Hackey... but it may be the easiest way to get a selected object from "ImporterScene".
 	SceneImportSettingsDialog *si = SceneImportSettingsDialog::get_singleton();
 	if (!si) {
 		return;

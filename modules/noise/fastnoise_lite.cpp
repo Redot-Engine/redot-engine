@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fastnoise_lite.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fastnoise_lite.h"
 
 #include "core/config/engine.h"

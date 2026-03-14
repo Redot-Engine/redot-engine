@@ -32,12 +32,17 @@
 
 #pragma once
 
+/**
+ * @file render_scene_data_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/storage/render_scene_data.h"
 
-// This is a container for data related to rendering a single frame of a viewport where we load this data into a UBO
-// that can be used by the main scene shader but also by various effects.
-
+/// This is a container for data related to rendering a single frame of a viewport where we load this data into a UBO
+/// that can be used by the main scene shader but also by various effects.
 class RenderSceneDataRD : public RenderSceneData {
 	GDCLASS(RenderSceneDataRD, RenderSceneData);
 
@@ -53,10 +58,10 @@ public:
 	bool cam_frustum = false;
 	bool flip_y = false;
 
-	// For billboards to cast correct shadows.
+	/// For billboards to cast correct shadows.
 	Transform3D main_cam_transform;
 
-	// For stereo rendering
+	/// For stereo rendering
 	uint32_t view_count = 1;
 	Vector3 view_eye_offset[RendererSceneRender::MAX_RENDER_VIEWS];
 	Projection view_projection[RendererSceneRender::MAX_RENDER_VIEWS];
@@ -97,7 +102,7 @@ public:
 	virtual RID get_uniform_buffer() const override;
 
 private:
-	RID uniform_buffer; // loaded into this uniform buffer (supplied externally)
+	RID uniform_buffer; ///< loaded into this uniform buffer (supplied externally)
 
 	enum SceneDataFlags {
 		SCENE_DATA_FLAGS_USE_AMBIENT_LIGHT = 1 << 0,
@@ -107,11 +112,11 @@ private:
 		SCENE_DATA_FLAGS_USE_FOG = 1 << 4,
 		SCENE_DATA_FLAGS_USE_UV2_MATERIAL = 1 << 5,
 		SCENE_DATA_FLAGS_USE_PANCAKE_SHADOWS = 1 << 6,
-		SCENE_DATA_FLAGS_IN_SHADOW_PASS = 1 << 7, // Only used by Forward+ renderer.
+		SCENE_DATA_FLAGS_IN_SHADOW_PASS = 1 << 7, ///< Only used by Forward+ renderer.
 		SCENE_DATA_FLAGS_MAX
 	};
 
-	// This struct is loaded into Set 1 - Binding 0, populated at start of rendering a frame, must match with shader code
+	/// This struct is loaded into Set 1 - Binding 0, populated at start of rendering a frame, must match with shader code
 	struct UBO {
 		float projection_matrix[16];
 		float inv_projection_matrix[16];
@@ -127,7 +132,7 @@ private:
 		float viewport_size[2];
 		float screen_pixel_size[2];
 
-		float directional_penumbra_shadow_kernel[128]; //32 vec4s
+		float directional_penumbra_shadow_kernel[128]; ///< 32 vec4s
 		float directional_soft_shadow_kernel[128];
 		float penumbra_shadow_kernel[128];
 		float soft_shadow_kernel[128];
@@ -163,11 +168,11 @@ private:
 		float fog_aerial_perspective;
 
 		float time;
-		float taa_frame_count; // Used to add break up samples over multiple frames. Value is an integer from 0 to taa_phase_count -1.
+		float taa_frame_count; ///< Used to add break up samples over multiple frames. Value is an integer from 0 to taa_phase_count -1.
 		float taa_jitter[2];
 
-		float emissive_exposure_normalization; // Needed to normalize emissive when using physical units.
-		float IBL_exposure_normalization; // Adjusts for baked exposure.
+		float emissive_exposure_normalization; ///< Needed to normalize emissive when using physical units.
+		float IBL_exposure_normalization; ///< Adjusts for baked exposure.
 		uint32_t camera_visible_layers;
 		float pass_alpha_multiplier;
 	};

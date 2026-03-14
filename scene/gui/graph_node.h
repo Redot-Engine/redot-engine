@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file graph_node.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/graph_element.h"
 
 class HBoxContainer;

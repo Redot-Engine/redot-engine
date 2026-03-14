@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file immediate_mesh.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "immediate_mesh.h"
 
 void ImmediateMesh::surface_begin(PrimitiveType p_primitive, const Ref<Material> &p_material) {

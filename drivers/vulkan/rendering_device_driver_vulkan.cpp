@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_driver_vulkan.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_device_driver_vulkan.h"
 
 #include "core/config/project_settings.h"
@@ -379,7 +385,7 @@ uint32_t RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_stages_fla
 		flags += SHADER_STAGE_TESSELATION_EVALUATION_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
-		// FIXME: Add shader stage geometry bit.
+		/// @todo FIXME: Add shader stage geometry bit.
 	}
 	if (supported_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
 		flags += SHADER_STAGE_FRAGMENT_BIT;
@@ -536,8 +542,6 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions() {
 	_register_requested_device_extension(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME, false);
 
-	// We don't actually use this extension, but some runtime components on some platforms
-	// can and will fill the validation layers with useless info otherwise if not enabled.
 	_register_requested_device_extension(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, false);
 
 	if (Engine::get_singleton()->is_generate_spirv_debug_info_enabled()) {
@@ -657,36 +661,36 @@ Error RenderingDeviceDriverVulkan::_check_device_features() {
 		return ERR_CANT_CREATE;
 	}
 
-	// Opt-in to the features we actually need/use. These can be changed in the future.
-	// We do this for multiple reasons:
-	//
-	//	1. Certain features (like sparse* stuff) cause unnecessary internal driver allocations.
-	//	2. Others like shaderStorageImageMultisample are a huge red flag
-	//	   (MSAA + Storage is rarely needed).
-	//	3. Most features when turned off aren't actually off (we just promise the driver not to use them)
-	//	   and it is validation what will complain. This allows us to target a minimum baseline.
-	//
-	// TODO: Allow the user to override these settings (i.e. turn off more stuff) using profiles
-	// so they can target a broad range of HW. For example Mali HW does not have
-	// shaderClipDistance/shaderCullDistance; thus validation would complain if such feature is used;
-	// allowing them to fix the problem without even owning Mali HW to test on.
-	//
-	// The excluded features are:
-	// - robustBufferAccess (can hamper performance on some hardware)
-	// - occlusionQueryPrecise
-	// - pipelineStatisticsQuery
-	// - shaderStorageImageMultisample (unsupported by Intel Arc, prevents from using MSAA storage accidentally)
-	// - shaderResourceResidency
-	// - sparseBinding (we don't use sparse features and enabling them cause extra internal allocations inside the Vulkan driver we don't need)
-	// - sparseResidencyBuffer
-	// - sparseResidencyImage2D
-	// - sparseResidencyImage3D
-	// - sparseResidency2Samples
-	// - sparseResidency4Samples
-	// - sparseResidency8Samples
-	// - sparseResidency16Samples
-	// - sparseResidencyAliased
-	// - inheritedQueries
+	/// Opt-in to the features we actually need/use. These can be changed in the future.
+	/// We do this for multiple reasons:
+	///
+	///	1. Certain features (like sparse* stuff) cause unnecessary internal driver allocations.
+	///	2. Others like shaderStorageImageMultisample are a huge red flag
+	///	   (MSAA + Storage is rarely needed).
+	///	3. Most features when turned off aren't actually off (we just promise the driver not to use them)
+	///	   and it is validation what will complain. This allows us to target a minimum baseline.
+	///
+	/// @todo Allow the user to override these settings (i.e. turn off more stuff) using profiles
+	/// so they can target a broad range of HW. For example Mali HW does not have
+	/// shaderClipDistance/shaderCullDistance; thus validation would complain if such feature is used;
+	/// allowing them to fix the problem without even owning Mali HW to test on.
+	///
+	/// The excluded features are:
+	/// - robustBufferAccess (can hamper performance on some hardware)
+	/// - occlusionQueryPrecise
+	/// - pipelineStatisticsQuery
+	/// - shaderStorageImageMultisample (unsupported by Intel Arc, prevents from using MSAA storage accidentally)
+	/// - shaderResourceResidency
+	/// - sparseBinding (we don't use sparse features and enabling them cause extra internal allocations inside the Vulkan driver we don't need)
+	/// - sparseResidencyBuffer
+	/// - sparseResidencyImage2D
+	/// - sparseResidencyImage3D
+	/// - sparseResidency2Samples
+	/// - sparseResidency4Samples
+	/// - sparseResidency8Samples
+	/// - sparseResidency16Samples
+	/// - sparseResidencyAliased
+	/// - inheritedQueries
 
 #define VK_DEVICEFEATURE_ENABLE_IF(x)                             \
 	if (physical_device_features.x) {                             \
@@ -964,7 +968,7 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities() {
 				print_verbose("  Primitive fragment shading rate");
 			}
 			if (fsr_capabilities.attachment_supported) {
-				// TODO: Expose these somehow to the end user.
+				/// @todo Expose these somehow to the end user.
 				fsr_capabilities.min_texel_size.x = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
 				fsr_capabilities.min_texel_size.y = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
 				fsr_capabilities.max_texel_size.x = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.width;
@@ -2713,7 +2717,7 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 	}
 
 	for (uint32_t i = 0; i < p_wait_semaphores.size(); i++) {
-		// FIXME: Allow specifying the stage mask in more detail.
+		/// @todo FIXME: Allow specifying the stage mask in more detail.
 		wait_semaphores.push_back(VkSemaphore(p_wait_semaphores[i].id));
 		wait_semaphores_stages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 	}
@@ -4066,7 +4070,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(VectorView<Bou
 				vk_writes[writes_amount].pTexelBufferView = vk_buf_views;
 			} break;
 			case UNIFORM_TYPE_IMAGE_BUFFER: {
-				CRASH_NOW_MSG("Unimplemented!"); // TODO.
+				CRASH_NOW_MSG("Unimplemented!"); /// @todo
 			} break;
 			case UNIFORM_TYPE_UNIFORM_BUFFER: {
 				const BufferInfo *buf_info = (const BufferInfo *)uniform.ids[0].id;
@@ -4484,9 +4488,9 @@ void RenderingDeviceDriverVulkan::pipeline_cache_free() {
 size_t RenderingDeviceDriverVulkan::pipeline_cache_query_size() {
 	DEV_ASSERT(pipelines_cache.vk_cache);
 
-	// FIXME:
-	// We're letting the cache grow unboundedly. We may want to set at limit and see if implementations use LRU or the like.
-	// If we do, we won't be able to assume any longer that the cache is dirty if, and only if, it has grown.
+	/// @todo FIXME:
+	/// We're letting the cache grow unboundedly. We may want to set at limit and see if implementations use LRU or the like.
+	/// If we do, we won't be able to assume any longer that the cache is dirty if, and only if, it has grown.
 	VkResult err = vkGetPipelineCacheData(vk_device, pipelines_cache.vk_cache, &pipelines_cache.current_size, nullptr);
 	ERR_FAIL_COND_V_MSG(err, 0, "vkGetPipelineCacheData failed with error " + itos(err) + ".");
 
@@ -5345,10 +5349,6 @@ void RenderingDeviceDriverVulkan::timestamp_query_pool_get_results(QueryPoolID p
 }
 
 uint64_t RenderingDeviceDriverVulkan::timestamp_query_result_to_time(uint64_t p_result) {
-	// This sucks because timestampPeriod multiplier is a float, while the timestamp is 64 bits nanosecs.
-	// So, in cases like nvidia which give you enormous numbers and 1 as multiplier, multiplying is next to impossible.
-	// Need to do 128 bits fixed point multiplication to get the right value.
-
 	auto mult64to128 = [](uint64_t u, uint64_t v, uint64_t &h, uint64_t &l) {
 		uint64_t u1 = (u & 0xffffffff);
 		uint64_t v1 = (v & 0xffffffff);
@@ -5627,7 +5627,7 @@ void RenderingDeviceDriverVulkan::print_lost_device_info() {
 			last_breadcrumb_offset = biggest_id * sizeof(uint32_t) * 2u;
 		}
 
-		const size_t entries_to_print = 8u; // Note: The value is arbitrary.
+		const size_t entries_to_print = 8u; /// @note The value is arbitrary.
 		for (size_t i = 0u; i < entries_to_print; ++i) {
 			const uint32_t last_breadcrumb = *reinterpret_cast<uint32_t *>(breadcrumb_ptr + last_breadcrumb_offset + sizeof(uint32_t));
 			const uint32_t phase = last_breadcrumb & uint32_t(~((1 << 16) - 1));

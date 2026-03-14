@@ -32,6 +32,18 @@
 
 #pragma once
 
+/**
+ * @file safe_list.h
+ *
+ * @brief Design goals for these classes:
+ * - Accessing this list with an iterator will never result in a use-after free,
+ *   even if the element being accessed has been logically removed from the list on
+ *   another thread.
+ * - Logical deletion from the list will not result in deallocation at that time,
+ *   instead the node will be deallocated at a later time when it is safe to do so.
+ * - No blocking synchronization primitives will be used.
+ */
+
 #include "core/os/memory.h"
 #include "core/typedefs.h"
 
@@ -39,16 +51,7 @@
 #include <functional>
 #include <initializer_list>
 
-// Design goals for these classes:
-// - Accessing this list with an iterator will never result in a use-after free,
-//   even if the element being accessed has been logically removed from the list on
-//   another thread.
-// - Logical deletion from the list will not result in deallocation at that time,
-//   instead the node will be deallocated at a later time when it is safe to do so.
-// - No blocking synchronization primitives will be used.
-
-// This is used in very specific areas of the engine where it's critical that these guarantees are held.
-
+/// This is used in very specific areas of the engine where it's critical that these guarantees are held.
 template <typename T, typename A = DefaultAllocator>
 class SafeList {
 	struct SafeListNode {
@@ -122,7 +125,7 @@ public:
 	};
 
 public:
-	// Calling this will cause an allocation.
+	/// Calling this will cause an allocation.
 	void insert(T p_value) {
 		SafeListNode *new_node = memnew_allocator(SafeListNode, A);
 		new_node->val = p_value;
@@ -201,7 +204,7 @@ public:
 		return Iterator(nullptr, this);
 	}
 
-	// Calling this will cause zero to many deallocations.
+	/// Calling this will cause zero to many deallocations.
 	bool maybe_cleanup() {
 		SafeListNode *cursor = nullptr;
 		SafeListNode *new_graveyard_head = nullptr;

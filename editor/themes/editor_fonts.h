@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_fonts.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/theme.h"
 
 void editor_register_fonts(const Ref<Theme> &p_theme);

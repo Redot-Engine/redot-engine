@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file extension_api_dump.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/extension/gdextension.h"
 
 #ifdef TOOLS_ENABLED

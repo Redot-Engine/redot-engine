@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file texture_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/storage/texture_storage.h"
 
 namespace RendererDummy {
@@ -51,8 +57,8 @@ public:
 	TextureStorage();
 	~TextureStorage();
 
-	/* Canvas Texture API */
-
+	/// @name Canvas Texture API
+	/// @{
 	virtual RID canvas_texture_allocate() override { return RID(); }
 	virtual void canvas_texture_initialize(RID p_rid) override {}
 	virtual void canvas_texture_free(RID p_rid) override {}
@@ -62,8 +68,9 @@ public:
 
 	virtual void canvas_texture_set_texture_filter(RID p_item, RS::CanvasItemTextureFilter p_filter) override {}
 	virtual void canvas_texture_set_texture_repeat(RID p_item, RS::CanvasItemTextureRepeat p_repeat) override {}
-
-	/* Texture API */
+	/// @}
+	/// @name Texture API
+	/// @{
 
 	bool owns_texture(RID p_rid) { return texture_owner.owns(p_rid); }
 
@@ -132,8 +139,9 @@ public:
 	virtual void texture_rd_initialize(RID p_texture, const RID &p_rd_texture, const RS::TextureLayeredType p_layer_type = RS::TEXTURE_LAYERED_2D_ARRAY) override {}
 	virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const override { return RID(); }
 	virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const override { return 0; }
-
-	/* DECAL API */
+	/// @}
+	/// @name DECAL API
+	/// @{
 	virtual RID decal_allocate() override { return RID(); }
 	virtual void decal_initialize(RID p_rid) override {}
 	virtual void decal_free(RID p_rid) override {}
@@ -153,15 +161,17 @@ public:
 
 	virtual void texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) override {}
 	virtual void texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) override {}
-
-	/* DECAL INSTANCE */
+	/// @}
+	/// @name DECAL INSTANCE
+	/// @{
 
 	virtual RID decal_instance_create(RID p_decal) override { return RID(); }
 	virtual void decal_instance_free(RID p_decal_instance) override {}
 	virtual void decal_instance_set_transform(RID p_decal, const Transform3D &p_transform) override {}
 	virtual void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) override {}
-
-	/* RENDER TARGET */
+	/// @}
+	/// @name RENDER TARGET
+	/// @{
 
 	virtual RID render_target_create() override { return RID(); }
 	virtual void render_target_free(RID p_rid) override {}
@@ -215,6 +225,7 @@ public:
 
 	virtual void render_target_set_velocity_target_size(RID p_render_target, const Size2i &p_target_size) override {}
 	virtual Size2i render_target_get_velocity_target_size(RID p_render_target) const override { return Size2i(0, 0); }
+	/// @}
 };
 
 } // namespace RendererDummy

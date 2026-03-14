@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file remote_debugger_peer_websocket.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "websocket_peer.h"
 
 #include "core/debugger/remote_debugger_peer.h"
