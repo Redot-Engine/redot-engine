@@ -692,11 +692,11 @@ TEST_CASE_TEMPLATE("[Math] monotonic_cubic_interpolate_in_time", T, float, doubl
 }
 
 TEST_CASE_TEMPLATE("[Math] monotonic_cubic_interpolate_angle_in_time", T, float, double) {
-	CHECK(Math::cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.0, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.0));
-	CHECK(Math::cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.25, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.494964));
-	CHECK(Math::cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.5, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)1.27627));
-	CHECK(Math::cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.75, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)2.07394));
-	CHECK(Math::cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)1.0, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)Math::PI * (5.0 / 6.0)));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.0, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.0));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.25, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.494964));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.5, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)1.27627));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.75, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)2.07394));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)1.0, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)Math::PI * (5.0 / 6.0)));
 }
 
 } // namespace TestMath
