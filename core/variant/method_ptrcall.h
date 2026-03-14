@@ -241,6 +241,8 @@ template <>
 struct PtrToArg<PackedVector4Array> : Internal::PtrToArgDirect<PackedVector4Array> {};
 template <>
 struct PtrToArg<Variant> : Internal::PtrToArgByReference<Variant> {};
+// template <>
+// struct PtrToArg<Callable::CallError> : Internal::PtrToArgConvert<Callable::CallError, int32_t> {};
 
 template <typename T>
 struct PtrToArg<T, std::enable_if_t<std::is_enum_v<T>>> : Internal::PtrToArgConvert<T, int64_t> {};
