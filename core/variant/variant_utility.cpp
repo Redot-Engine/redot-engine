@@ -1046,6 +1046,7 @@ void VariantUtilityFunctions::push_error(Callable::CallError &r_error, const Var
 	if (p_arg_count < 1) {
 		r_error.error = Callable::CallError::CALL_ERROR_TOO_FEW_ARGUMENTS;
 		r_error.expected = 1;
+		return;
 	}
 
 	ERR_PRINT(join_string(p_args, p_arg_count));
@@ -1056,6 +1057,7 @@ void VariantUtilityFunctions::push_warning(Callable::CallError &r_error, const V
 	if (p_arg_count < 1) {
 		r_error.error = Callable::CallError::CALL_ERROR_TOO_FEW_ARGUMENTS;
 		r_error.expected = 1;
+		return;
 	}
 
 	WARN_PRINT(join_string(p_args, p_arg_count));
