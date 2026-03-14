@@ -3089,7 +3089,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpRaw")), TTR("Nearest"), MENU_INTERPOLATION_NEAREST);
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinear")), TTR("Linear"), MENU_INTERPOLATION_LINEAR);
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubic")), TTR("Cubic"), MENU_INTERPOLATION_CUBIC);
-				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubic")), TTR("Monotonic Cubic"), MENU_INTERPOLATION_CUBIC_MONOTONIC);
+				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpMonotonic")), TTR("Monotonic Cubic"), MENU_INTERPOLATION_CUBIC_MONOTONIC);
 				// Check whether it is angle property.
 				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
 				if (ape) {
@@ -3114,7 +3114,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 							if (is_angle) {
 								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinearAngle")), TTR("Linear Angle"), MENU_INTERPOLATION_LINEAR_ANGLE);
 								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubicAngle")), TTR("Cubic Angle"), MENU_INTERPOLATION_CUBIC_ANGLE);
-								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubicAngle")), TTR("Monotonic Cubic Angle"), MENU_INTERPOLATION_CUBIC_MONOTONIC_ANGLE);
+								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpMonotonic")), TTR("Monotonic Cubic Angle"), MENU_INTERPOLATION_CUBIC_MONOTONIC_ANGLE);
 							}
 						}
 					}
