@@ -854,9 +854,9 @@ constexpr T monotonic_cubic_interpolate(T p_from, T p_to, T p_pre, T p_post, T p
 		const T h = sqrt(a * a + b * b);
 
 		if (h > (T)3.0) {
-			const T scale = (T)3.0 / h;
-			m1 *= scale;
-			m2 *= scale;
+			const T scale_factor = (T)3.0 / h;
+			m1 *= scale_factor;
+			m2 *= scale_factor;
 		}
 	}
 
@@ -945,7 +945,7 @@ constexpr T monotonic_cubic_interpolate_angle(T p_from, T p_to, T p_pre, T p_pos
 }
 
 template <typename T>
-constexpr T monotonic_cubic_interpolate_angle_in_time(T p_from, T p_to, T p_pre, T p_post, T p_weight, T p_pre_t, T p_to_t, T p_post_t) {
+constexpr T monotonic_cubic_interpolate_angle_in_time(T p_from, T p_to, T p_pre, T p_post, T p_weight, T p_to_t, T p_pre_t, T p_post_t) {
 	T from_rot = fmod(p_from, (T)TAU);
 
 	T pre_diff = fmod(p_pre - from_rot, (T)TAU);
