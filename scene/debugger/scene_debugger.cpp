@@ -31,6 +31,7 @@
 /**************************************************************************/
 
 #include "scene_debugger.h"
+#include "signal_viewer_runtime.h"
 
 #include "core/debugger/debugger_marshalls.h"
 #include "core/debugger/engine_debugger.h"
@@ -558,6 +559,14 @@ void SceneDebugger::_init_message_handlers() {
 	message_handlers["runtime_node_select_reset_camera_3d"] = _msg_runtime_node_select_reset_camera_3d;
 #endif
 	message_handlers["rq_screenshot"] = _msg_rq_screenshot;
+
+	// STEP 1: Signal Viewer - Register signal tracking message handlers
+	message_handlers["signal_viewer:start_tracking"] = _msg_signal_viewer_start_tracking;
+	message_handlers["signal_viewer:stop_tracking"] = _msg_signal_viewer_stop_tracking;
+	message_handlers["signal_viewer:request_node_data"] = _msg_signal_viewer_request_node_data;
+	message_handlers["signal_viewer:request_node_data_by_path"] = _msg_signal_viewer_request_node_data_by_path;
+	// Note: When sent from ScriptEditorDebugger with "scene:" prefix, it gets stripped to just "signal_viewer_request_node_data"
+	message_handlers["signal_viewer_request_node_data"] = _msg_signal_viewer_request_node_data;
 }
 
 void SceneDebugger::_save_node(ObjectID id, const String &p_path) {
@@ -3026,5 +3035,183 @@ void RuntimeNodeSelect::_reset_camera_3d() {
 	SceneTree::get_singleton()->get_root()->set_camera_3d_override_perspective(camera_fov * cursor.fov_scale, camera_znear, camera_zfar);
 }
 #endif // _3D_DISABLED
+
+// STEP 1: Signal Viewer - Implementation
+
+// Static member initialization
+bool SceneDebugger::signal_viewer_tracking_enabled = false;
+
+// Signal emission callback - called by Object::emit_signal() when tracking is enabled
+void SceneDebugger::_signal_viewer_emission_callback(Object *p_emitter, const StringName &p_signal, const Variant **p_args, int p_argcount) {
+	// Only track Node objects
+	Node *emitter_node = Object::cast_to<Node>(p_emitter);
+	if (!emitter_node) {
+		return; // Not a node, skip
+	}
+
+	// Check if this signal has connections
+	List<Object::Connection> conns;
+	p_emitter->get_signal_connection_list(p_signal, &conns);
+	if (conns.is_empty()) {
+		return; // No connections, skip
+	}
+
+	// Filter out editor UI noise
+	String node_class = emitter_node->get_class();
+	String node_name = emitter_node->get_name();
+
+	// Skip common editor UI classes (though these shouldn't appear in gameplay)
+	if (node_class.contains("Editor") || node_class.contains("MenuBar") ||
+			node_class.contains("Window") || node_class.contains("Popup")) {
+		return;
+	}
+
+	// Build message with signal emission data
+	Array msg_data;
+	msg_data.append(emitter_node->get_instance_id());
+	msg_data.append(node_name);
+	msg_data.append(node_class);
+	msg_data.append(String(p_signal));
+
+	// Add connection info
+	Array connections_array;
+	for (const Object::Connection &conn : conns) {
+		Array conn_data;
+		Object *target = conn.callable.get_object();
+		if (target) {
+			conn_data.append(target->get_instance_id());
+			conn_data.append(target->get_class());
+			conn_data.append(String(conn.callable.get_method()));
+			connections_array.append(conn_data);
+		}
+	}
+	msg_data.append(connections_array);
+
+	// Send message back to editor
+	EngineDebugger::get_singleton()->send_message("signal_viewer:signal_emitted", msg_data);
+}
+
+// Message handler: Start tracking signals
+Error SceneDebugger::_msg_signal_viewer_start_tracking(const Array &p_args) {
+	print_line("[Signal Viewer Game] _msg_signal_viewer_start_tracking called!");
+
+	if (signal_viewer_tracking_enabled) {
+		print_line("[Signal Viewer Game] Already enabled, skipping");
+		return OK; // Already enabled
+	}
+
+	// Create or get the SignalViewerRuntime singleton
+	print_line("[Signal Viewer Game] Creating SignalViewerRuntime singleton...");
+	SignalViewerRuntime *runtime = SignalViewerRuntime::create_singleton();
+	if (runtime) {
+		print_line("[Signal Viewer Game] Starting tracking...");
+		runtime->start_tracking();
+		signal_viewer_tracking_enabled = true;
+		print_line("[Signal Viewer Game] Signal tracking enabled");
+	} else {
+		print_line("[Signal Viewer Game] ERROR: Failed to create SignalViewerRuntime!");
+	}
+
+	return OK;
+}
+
+// Message handler: Stop tracking signals
+Error SceneDebugger::_msg_signal_viewer_stop_tracking(const Array &p_args) {
+	if (!signal_viewer_tracking_enabled) {
+		return OK; // Already disabled
+	}
+
+	// Stop tracking via SignalViewerRuntime
+	SignalViewerRuntime *runtime = SignalViewerRuntime::get_singleton();
+	if (runtime) {
+		runtime->stop_tracking();
+	}
+	signal_viewer_tracking_enabled = false;
+
+	print_line("[Signal Viewer Game] Signal tracking disabled");
+
+	return OK;
+}
+
+// Message handler: Request signal data for a specific node
+Error SceneDebugger::_msg_signal_viewer_request_node_data(const Array &p_args) {
+	print_line("[Signal Viewer Game] _msg_signal_viewer_request_node_data called!");
+
+	if (p_args.size() < 2) {
+		print_line("[Signal Viewer Game] ERROR: Invalid arguments, expected node_id and node_path");
+		return ERR_INVALID_PARAMETER;
+	}
+
+	// Parse arguments
+	ObjectID node_id = p_args[0];
+	String node_path = p_args[1];
+
+	print_line(vformat("[Signal Viewer Game] Requesting signal data for node: %s (ID: %s)",
+			node_path, String::num_uint64((uint64_t)node_id)));
+
+	// Get the SignalViewerRuntime singleton
+	SignalViewerRuntime *runtime = SignalViewerRuntime::get_singleton();
+	if (!runtime) {
+		print_line("[Signal Viewer Game] ERROR: SignalViewerRuntime not initialized");
+		return ERR_UNAVAILABLE;
+	}
+
+	// Send signal data for this node
+	runtime->send_node_signal_data(node_id);
+
+	return OK;
+}
+
+// Message handler: Request signal data for a node by path
+Error SceneDebugger::_msg_signal_viewer_request_node_data_by_path(const Array &p_args) {
+	print_line("[Signal Viewer Game] _msg_signal_viewer_request_node_data_by_path called!");
+
+	if (p_args.size() < 1) {
+		print_line("[Signal Viewer Game] ERROR: Invalid arguments, expected node_path");
+		return ERR_INVALID_PARAMETER;
+	}
+
+	// Parse arguments
+	String node_path_str = p_args[0];
+	NodePath node_path = NodePath(node_path_str);
+
+	print_line(vformat("[Signal Viewer Game] Requesting signal data for node path: %s", node_path_str));
+
+	// Get the scene tree
+	SceneTree *scene_tree = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+	if (!scene_tree) {
+		print_line("[Signal Viewer Game] ERROR: No SceneTree");
+		return ERR_UNAVAILABLE;
+	}
+
+	// Get the current scene and validate it exists
+	Node *current_scene = scene_tree->get_current_scene();
+	if (!current_scene) {
+		print_line("[Signal Viewer Game] ERROR: No current scene");
+		return ERR_UNAVAILABLE;
+	}
+
+	// Get the node from the scene tree using get_node_or_null for safety
+	Node *node = current_scene->get_node_or_null(node_path);
+	if (!node) {
+		print_line(vformat("[Signal Viewer Game] ERROR: Node not found at path: %s", node_path_str));
+		return ERR_UNAVAILABLE;
+	}
+
+	ObjectID node_id = node->get_instance_id();
+	print_line(vformat("[Signal Viewer Game] Found node: %s (ID: %s)", node->get_name(), String::num_uint64((uint64_t)node_id)));
+
+	// Get the SignalViewerRuntime singleton
+	SignalViewerRuntime *runtime = SignalViewerRuntime::get_singleton();
+	if (!runtime) {
+		print_line("[Signal Viewer Game] ERROR: SignalViewerRuntime not initialized");
+		return ERR_UNAVAILABLE;
+	}
+
+	// Send signal data for this node
+	runtime->send_node_signal_data(node_id);
+
+	return OK;
+}
 
 #endif // DEBUG_ENABLED
