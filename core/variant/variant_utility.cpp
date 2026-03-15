@@ -33,6 +33,7 @@
 #include "variant_utility.h"
 
 #include "core/io/marshalls.h"
+#include "core/math/math_funcs.h"
 #include "core/object/ref_counted.h"
 #include "core/object/script_language.h"
 #include "core/os/os.h"
@@ -554,6 +555,15 @@ double VariantUtilityFunctions::inverse_lerp(double from, double to, double weig
 
 double VariantUtilityFunctions::remap(double value, double istart, double istop, double ostart, double ostop) {
 	return Math::remap(value, istart, istop, ostart, ostop);
+}
+
+double VariantUtilityFunctions::remap_default(double value, double istart, double istop, double ostart, double ostop, double default_value) {
+	double result = Math::remap(value, istart, istop, ostart, ostop);
+	if (Math::is_finite(result)) {
+		return result;
+	}
+
+	return default_value;
 }
 
 double VariantUtilityFunctions::smoothstep(double from, double to, double val) {
@@ -1745,6 +1755,7 @@ void Variant::_register_variant_utility_functions() {
 	FUNCBINDR(lerp_angle, sarray("from", "to", "weight"), Variant::UTILITY_FUNC_TYPE_MATH);
 	FUNCBINDR(inverse_lerp, sarray("from", "to", "weight"), Variant::UTILITY_FUNC_TYPE_MATH);
 	FUNCBINDR(remap, sarray("value", "istart", "istop", "ostart", "ostop"), Variant::UTILITY_FUNC_TYPE_MATH);
+	FUNCBINDR(remap_default, sarray("value", "istart", "istop", "ostart", "ostop", "default_value"), Variant::UTILITY_FUNC_TYPE_MATH);
 
 	FUNCBINDR(smoothstep, sarray("from", "to", "x"), Variant::UTILITY_FUNC_TYPE_MATH);
 	FUNCBINDR(move_toward, sarray("from", "to", "delta"), Variant::UTILITY_FUNC_TYPE_MATH);

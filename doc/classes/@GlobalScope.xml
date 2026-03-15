@@ -1102,7 +1102,24 @@
 				remap(75, 0, 100, -1, 1) # Returns 0.5
 				[/codeblock]
 				For complex use cases where multiple ranges are needed, consider using [Curve] or [Gradient] instead.
-				[b]Note:[/b] If [code]istart == istop[/code], the return value is undefined (most likely NaN, INF, or -INF).
+				[b]Note:[/b] If [code]istart == istop[/code], the return value is undefined (most likely NaN, INF, or -INF). See also [method remap_default].
+			</description>
+		</method>
+		<method name="remap_default" keywords="range, lerp, interpolate">
+			<return type="float" />
+			<param index="0" name="value" type="float" />
+			<param index="1" name="istart" type="float" />
+			<param index="2" name="istop" type="float" />
+			<param index="3" name="ostart" type="float" />
+			<param index="4" name="ostop" type="float" />
+			<param index="5" name="default_value" type="float" />
+			<description>
+				Maps a [param value] from range [code][istart, istop][/code] to [code][ostart, ostop][/code] and returns [param default_value] if [method remap] would've returned [code]INF[/code] or [code]NAN[/code]. See also [method remap], [method lerp] and [method inverse_lerp]. If [param value] is outside [code][istart, istop][/code], then the resulting value will also be outside [code][ostart, ostop][/code]. If this is not desired, use [method clamp] on the result of this function.
+				[codeblock]
+				remap_default(75, 0, 100, -1, 1, 3) # Returns 0.5
+				remap_default(75, 0, 0, -1, 1, 3) # Returns 3.0
+				[/codeblock]
+				For complex use cases where multiple ranges are needed, consider using [Curve] or [Gradient] instead.
 			</description>
 		</method>
 		<method name="rid_allocate_id">

@@ -95,6 +95,7 @@ struct VariantUtilityFunctions {
 	static double lerp_angle(double from, double to, double weight);
 	static double inverse_lerp(double from, double to, double weight);
 	static double remap(double value, double istart, double istop, double ostart, double ostop);
+	static double remap_default(double value, double istart, double istop, double ostart, double ostop, double default_value);
 	static double smoothstep(double from, double to, double val);
 	static double move_toward(double from, double to, double delta);
 	static double rotate_toward(double from, double to, double delta);
