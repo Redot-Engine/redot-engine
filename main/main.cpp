@@ -3196,6 +3196,13 @@ Error Main::setup2(bool p_show_boot_logo) {
 
 		int display_driver_idx = -1;
 
+		if (display_driver == "default") {
+			String display = OS::get_singleton()->get_environment("WAYLAND_DISPLAY");
+			if (!display.is_empty()) {
+				display_driver = "wayland";
+			}
+		}
+
 		if (display_driver.is_empty() || display_driver == "default") {
 			display_driver_idx = 0;
 		} else {
