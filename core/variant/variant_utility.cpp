@@ -1438,23 +1438,20 @@ static void register_utility_function(const String &p_name, const Vector<String>
 	utility_function_name_table.push_back(sname);
 }
 
-template <typename TRet, typename... TArgs>
-struct FuncBase {
-	template <TRet (*m_func)(TArgs...), Variant::UtilityFunctionType m_category, template <TRet(TArgs...), Variant::UtilityFunctionType> typename TFuncInner>
-	struct FuncInnerBase {
-		static Variant::UtilityFunctionType get_type() {
-			return m_category;
-		}
-		static void register_fn(const String &name, const Vector<String> &args) {
-			register_utility_function<TFuncInner<m_func, m_category>>(name, args);
-		}
-		static bool has_return_type() {
-			return !std::is_same<TRet, void>::value;
-		}
-		static Variant::Type get_return_type() {
-			return get_ret_type_helper<TRet>();
-		}
-	};
+template <typename TRet, Variant::UtilityFunctionType m_category, typename TFuncInner>
+struct FuncInnerBase {
+	static Variant::UtilityFunctionType get_type() {
+		return m_category;
+	}
+	static void register_fn(const String &name, const Vector<String> &args) {
+		register_utility_function<TFuncInner>(name, args);
+	}
+	static bool has_return_type() {
+		return !std::is_same<TRet, void>::value;
+	}
+	static Variant::Type get_return_type() {
+		return get_ret_type_helper<TRet>();
+	}
 };
 
 template <typename _Signature>
@@ -1463,7 +1460,7 @@ struct Func;
 template <>
 struct Func<void(Callable::CallError &, const Variant **, int)> {
 	template <void (*m_func)(Callable::CallError &, const Variant **, int), Variant::UtilityFunctionType m_category>
-	struct FuncInner : FuncBase<void, Callable::CallError &, const Variant **, int>::template FuncInnerBase<m_func, m_category, FuncInner> {
+	struct FuncInner : FuncInnerBase<void, m_category, FuncInner<m_func, m_category>> {
 		static void call(Variant *r_ret, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 			r_error.error = Callable::CallError::CALL_OK;
 			m_func(r_error, p_args, p_argcount);
@@ -1499,7 +1496,7 @@ struct Func<void(Callable::CallError &, const Variant **, int)> {
 template <>
 struct Func<String(Callable::CallError &, const Variant **, int)> {
 	template <String (*m_func)(Callable::CallError &, const Variant **, int), Variant::UtilityFunctionType m_category>
-	struct FuncInner : FuncBase<String, Callable::CallError &, const Variant **, int>::template FuncInnerBase<m_func, m_category, FuncInner> {
+	struct FuncInner : FuncInnerBase<String, m_category, FuncInner<m_func, m_category>> {
 		static void call(Variant *r_ret, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 			r_error.error = Callable::CallError::CALL_OK;
 			*r_ret = m_func(r_error, p_args, p_argcount);
@@ -1536,7 +1533,7 @@ struct Func<String(Callable::CallError &, const Variant **, int)> {
 template <typename TRet>
 struct Func<TRet(Callable::CallError &, const Variant **, int)> {
 	template <TRet (*m_func)(Callable::CallError &, const Variant **, int), Variant::UtilityFunctionType m_category>
-	struct FuncInner : FuncBase<TRet, Callable::CallError &, const Variant **, int>::template FuncInnerBase<m_func, m_category, FuncInner> {
+	struct FuncInner : FuncInnerBase<TRet, m_category, FuncInner<m_func, m_category>> {
 		static void call(Variant *r_ret, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 			r_error.error = Callable::CallError::CALL_OK;
 			*r_ret = m_func(r_error, p_args, p_argcount);
@@ -1572,7 +1569,7 @@ struct Func<TRet(Callable::CallError &, const Variant **, int)> {
 template <typename TRet, typename... TArgs>
 struct Func<TRet(TArgs...)> {
 	template <TRet (*m_func)(TArgs...), Variant::UtilityFunctionType m_category>
-	struct FuncInner : FuncBase<TRet, TArgs...>::template FuncInnerBase<m_func, m_category, FuncInner> {
+	struct FuncInner : FuncInnerBase<TRet, m_category, FuncInner<m_func, m_category>> {
 		static void call(Variant *ret, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
 			Helper<TRet(TArgs...)>::call(m_func, ret, p_args, r_error);
 		}
