@@ -2501,10 +2501,10 @@ String OS_Windows::get_user_data_dir(const String &p_user_dir) const {
 }
 
 String OS_Windows::expand_path(const String &p_path) const {
-	String path = p_path;
+	String path = p_path.replace_char('\\', '/');
 
-	if (path.begins_with("~/") || path.begins_with("~\\") || path == "~") {
-		String home = get_environment("USERPROFILE");
+	if (path.begins_with("~/") || path == "~") {
+		String home = get_environment("USERPROFILE").replace_char('\\', '/').rstrip("/");
 		if (!home.is_empty()) {
 			path = home + path.substr(1);
 		}
