@@ -31,6 +31,7 @@ name is available.
 
 ## Developers
 
+    Abdul Rehman (AR-DEV-1)
     Adam Vondersaar (trashguy)
     Andevrs (tindrew)
     Arctis Fireblight
