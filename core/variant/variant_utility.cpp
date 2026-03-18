@@ -1384,8 +1384,9 @@ private:
 	template <size_t... Is>
 	static _FORCE_INLINE_ void validated_call_helper(void (*p_func)(Callable::CallError &, TArgs...), Variant *ret, const Variant **p_args, IndexSequence<Is...>) {
 		Callable::CallError err;
-		*ret = p_func(err, VariantCaster<TArgs>::cast(*p_args[Is])...);
+		p_func(err, VariantCaster<TArgs>::cast(*p_args[Is])...);
 		(void)p_args;
+		(void)ret;
 	}
 };
 
