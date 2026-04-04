@@ -85,10 +85,7 @@ TEST_CASE("[Font][CWE-407] Cyclic detection: linear chain A→B→C is valid") {
 	b.instantiate();
 	c.instantiate();
 
-	TypedArray<Font> c_fallbacks;
-	c_fallbacks.push_back(Variant()); // empty — leaf
-	// C has no fallbacks.
-
+	// C has no fallbacks — leaf node.
 	TypedArray<Font> b_fallbacks;
 	b_fallbacks.push_back(c);
 	b->set_fallbacks(b_fallbacks);

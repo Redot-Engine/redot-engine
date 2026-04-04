@@ -342,8 +342,6 @@ bool AStar3D::_solve(Point *begin_point, Point *end_point, bool p_allow_partial_
 
 		sorter.pop_heap(0, open_list.size(), open_list.ptr()); // Remove the current point from the open list.
 		open_list.remove_at(open_list.size() - 1);
-		// CWE-407 fix (redot-0005): mark as removed from heap.
-		p->open_index = -1;
 		p->closed_pass = pass; // Mark the point as closed.
 
 		for (const KeyValue<int64_t, Point *> &kv : p->neighbors) {
@@ -367,8 +365,6 @@ bool AStar3D::_solve(Point *begin_point, Point *end_point, bool p_allow_partial_
 			if (e->open_pass != pass) { // The point wasn't inside the open list.
 				e->open_pass = pass;
 				open_list.push_back(e);
-				// CWE-407 fix (redot-0005): record heap position so decrease-key is O(1).
-				e->open_index = open_list.size() - 1;
 				new_point = true;
 			} else if (tentative_g_score >= e->g_score) { // The new path is worse than the previous.
 				continue;
@@ -383,7 +379,7 @@ bool AStar3D::_solve(Point *begin_point, Point *end_point, bool p_allow_partial_
 			if (new_point) { // The position of the new points is already known.
 				sorter.push_heap(0, open_list.size() - 1, 0, e, open_list.ptr());
 			} else {
-				sorter.push_heap(0, e->open_index, 0, e, open_list.ptr());
+				sorter.push_heap(0, open_list.find(e), 0, e, open_list.ptr());
 			}
 		}
 	}
@@ -880,8 +876,6 @@ bool AStar2D::_solve(AStar3D::Point *begin_point, AStar3D::Point *end_point, boo
 
 		sorter.pop_heap(0, open_list.size(), open_list.ptr()); // Remove the current point from the open list.
 		open_list.remove_at(open_list.size() - 1);
-		// CWE-407 fix (redot-0005): mark as removed from heap.
-		p->open_index = -1;
 		p->closed_pass = astar.pass; // Mark the point as closed.
 
 		for (KeyValue<int64_t, AStar3D::Point *> &kv : p->neighbors) {
@@ -905,8 +899,6 @@ bool AStar2D::_solve(AStar3D::Point *begin_point, AStar3D::Point *end_point, boo
 			if (e->open_pass != astar.pass) { // The point wasn't inside the open list.
 				e->open_pass = astar.pass;
 				open_list.push_back(e);
-				// CWE-407 fix (redot-0005): record heap position so decrease-key is O(1).
-				e->open_index = open_list.size() - 1;
 				new_point = true;
 			} else if (tentative_g_score >= e->g_score) { // The new path is worse than the previous.
 				continue;
@@ -921,7 +913,7 @@ bool AStar2D::_solve(AStar3D::Point *begin_point, AStar3D::Point *end_point, boo
 			if (new_point) { // The position of the new points is already known.
 				sorter.push_heap(0, open_list.size() - 1, 0, e, open_list.ptr());
 			} else {
-				sorter.push_heap(0, e->open_index, 0, e, open_list.ptr());
+				sorter.push_heap(0, open_list.find(e), 0, e, open_list.ptr());
 			}
 		}
 	}

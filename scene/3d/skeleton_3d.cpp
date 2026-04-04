@@ -221,6 +221,7 @@ void Skeleton3D::_update_process_order() const {
 
 	for (int i = 0; i < len; i++) {
 		bonesptr[i].child_bones.clear();
+		bonesptr[i].child_bones_set.clear();
 	}
 
 	for (int i = 0; i < len; i++) {
@@ -233,9 +234,10 @@ void Skeleton3D::_update_process_order() const {
 		if (bonesptr[i].parent != -1) {
 			int parent_bone_idx = bonesptr[i].parent;
 
-			// CWE-407 fix (redot-0006): HashSet.has() is O(1); Vector.has() was O(C) linear scan.
-			if (!bonesptr[parent_bone_idx].child_bones.has(i)) {
-				bonesptr[parent_bone_idx].child_bones.insert(i);
+			// CWE-407 fix (redot-0006): child_bones_set.has() is O(1); Vector.has() was O(C) linear scan.
+			if (!bonesptr[parent_bone_idx].child_bones_set.has(i)) {
+				bonesptr[parent_bone_idx].child_bones.push_back(i);
+				bonesptr[parent_bone_idx].child_bones_set.insert(i);
 			} else {
 				ERR_PRINT("Skeleton3D parenthood graph is cyclic");
 			}

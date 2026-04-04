@@ -81,19 +81,23 @@ TEST_CASE("[Skeleton3D] Test per-bone meta") {
 // reintroduces O(B²) cost in set_bone_parent / _update_process_order.
 
 TEST_CASE("[Skeleton3D][CWE-407] child_bones: set_bone_parent does not duplicate") {
-	// _update_process_order calls child_bones.has() before inserting.
-	// A HashSet guarantees no duplicates. A regression to Vector::has()
-	// would still deduplicate but via O(B) scan — this test verifies correctness.
+	// _update_process_order inserts into child_bones_set (HashSet) before child_bones (Vector).
+	// The HashSet.has() guard prevents duplicates. A regression that removes the guard
+	// would produce duplicate entries in get_bone_children().
+	// This test calls set_bone_parent twice and verifies exactly 1 child exists.
 	Skeleton3D *skeleton = memnew(Skeleton3D);
 	skeleton->add_bone("root");    // bone 0
 	skeleton->add_bone("child");   // bone 1
 
 	skeleton->set_bone_rest(0, Transform3D());
 	skeleton->set_bone_rest(1, Transform3D());
+
+	// Set parent twice — second call must not duplicate.
 	skeleton->set_bone_parent(1, 0);
+	skeleton->set_bone_parent(1, 0); // triggers _update_process_order again
 
 	Vector<int> children = skeleton->get_bone_children(0);
-	CHECK_MESSAGE(children.size() == 1, "Root must have exactly 1 child after set_bone_parent.");
+	CHECK_MESSAGE(children.size() == 1, "Root must have exactly 1 child despite double set_bone_parent.");
 	CHECK_MESSAGE(children[0] == 1, "Child bone index must be 1.");
 
 	memdelete(skeleton);
@@ -119,6 +123,8 @@ TEST_CASE("[Skeleton3D][CWE-407] child_bones: tree of bones, each has correct ch
 
 	Vector<int> root_children = skeleton->get_bone_children(root);
 	CHECK_MESSAGE(root_children.size() == 2, "Root must have 2 children.");
+	CHECK_MESSAGE(root_children.has(a), "Root children must include A.");
+	CHECK_MESSAGE(root_children.has(c), "Root children must include C.");
 
 	Vector<int> a_children = skeleton->get_bone_children(a);
 	CHECK_MESSAGE(a_children.size() == 1, "A must have 1 child.");

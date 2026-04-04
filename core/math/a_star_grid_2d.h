@@ -79,8 +79,6 @@ private:
 	struct Point {
 		Vector2i id;
 
-		// CWE-407 fix (redot-0005): tracks heap position for O(1) decrease-key, avoiding open_list.find().
-		int32_t open_index = -1;
 		Vector2 pos;
 		real_t weight_scale = 1.0;
 

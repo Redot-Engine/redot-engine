@@ -446,11 +446,9 @@ Error GLTFDocument::_serialize_nodes(Ref<GLTFState> p_state) {
 			Dictionary khr_node_visibility;
 			extensions["KHR_node_visibility"] = khr_node_visibility;
 			khr_node_visibility["visible"] = gltf_node->visible;
-			// CWE-407 fix (redot-0008): HashSet.insert() is idempotent O(1) — was O(E) Vector scan + push_back.
-			p_state->extensions_used.insert("KHR_node_visibility");
-			if (_visibility_mode == VISIBILITY_MODE_INCLUDE_REQUIRED) {
-				p_state->extensions_required.push_back("KHR_node_visibility");
-			}
+			// CWE-407 fix (redot-0008): add_used_extension() guards both extensions_used (HashSet, O(1))
+			// and extensions_required (has() check) — safe to call on every hidden node.
+			p_state->add_used_extension("KHR_node_visibility", _visibility_mode == VISIBILITY_MODE_INCLUDE_REQUIRED);
 		}
 		if (gltf_node->mesh != -1) {
 			node["mesh"] = gltf_node->mesh;

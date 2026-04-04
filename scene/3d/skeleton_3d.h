@@ -102,8 +102,9 @@ private:
 		String name;
 
 		int parent = -1;
-		// CWE-407 fix (redot-0006): was Vector<int> — O(B) .has() inside O(B) loop over bones.
-		HashSet<int> child_bones;
+		Vector<int> child_bones;
+		// CWE-407 fix (redot-0006): shadow index for O(1) has() — Vector preserved for ordered iteration and indexed access.
+		HashSet<int> child_bones_set;
 
 		Transform3D rest;
 		Transform3D global_rest;

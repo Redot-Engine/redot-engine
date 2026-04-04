@@ -122,8 +122,10 @@ class GodotBody2D : public GodotCollisionObject2D {
 	};
 
 	Vector<AreaCMP> areas;
-	// CWE-407 fix (redot-0002): O(1) area lookup by RID — shadow index for areas Vector.
-	HashMap<RID, int> area_index;
+	// CWE-407 fix (redot-0002): stores refCount per RID for O(1) hot-path lookup.
+	// areas Vector is preserved for priority-ordered iteration in integrate_forces().
+	// Storing refCount (not position) avoids staleness after areas.sort() or ordered_insert().
+	HashMap<RID, int> area_refcount;
 
 	struct Contact {
 		Vector2 local_pos;
@@ -166,34 +168,30 @@ public:
 	GodotPhysicsDirectBodyState2D *get_direct_state();
 
 	_FORCE_INLINE_ void add_area(GodotArea2D *p_area) {
-		// CWE-407 fix (redot-0002): was areas.find() — O(n) Vector scan per physics tick.
-		// area_index provides O(1) lookup by RID. Index rebuilt only on overlap change.
+		// CWE-407 fix (redot-0002): area_refcount is the sole refCount source — O(1).
+		// Hot path (existing overlap): O(1) HashMap increment, no Vector scan.
+		// Cold path (new overlap): O(N) ordered_insert + O(1) HashMap insert.
+		// areas Vector is only used for priority-ordered iteration in integrate_forces();
+		// integrate_forces() does not read AreaCMP::refCount, so Vector's field is unused.
 		RID rid = p_area->get_self();
-		HashMap<RID, int>::Iterator it = area_index.find(rid);
-		if (it != area_index.end()) {
-			areas.write[it->value].refCount += 1;
+		HashMap<RID, int>::Iterator it = area_refcount.find(rid);
+		if (it != area_refcount.end()) {
+			it->value += 1;
 		} else {
 			areas.ordered_insert(AreaCMP(p_area));
-			area_index.clear();
-			for (int i = 0; i < areas.size(); i++) {
-				area_index[areas[i].area->get_self()] = i;
-			}
+			area_refcount[rid] = 1;
 		}
 	}
 
 	_FORCE_INLINE_ void remove_area(GodotArea2D *p_area) {
-		// CWE-407 fix (redot-0002): was areas.find() — O(n) Vector scan.
+		// CWE-407 fix (redot-0002): O(1) refCount check — O(N) Vector find only on final removal.
 		RID rid = p_area->get_self();
-		HashMap<RID, int>::Iterator it = area_index.find(rid);
-		if (it != area_index.end()) {
-			int index = it->value;
-			areas.write[index].refCount -= 1;
-			if (areas[index].refCount < 1) {
-				areas.remove_at(index);
-				area_index.clear();
-				for (int i = 0; i < areas.size(); i++) {
-					area_index[areas[i].area->get_self()] = i;
-				}
+		HashMap<RID, int>::Iterator it = area_refcount.find(rid);
+		if (it != area_refcount.end()) {
+			it->value -= 1;
+			if (it->value < 1) {
+				areas.remove_at(areas.find(AreaCMP(p_area)));
+				area_refcount.erase(it);
 			}
 		}
 	}
