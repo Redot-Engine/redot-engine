@@ -74,4 +74,84 @@ TEST_CASE("[Skeleton3D] Test per-bone meta") {
 	skeleton->set_bone_meta(0, "non-existing-key", Variant());
 	memdelete(skeleton);
 }
+// CWE-407 regression tests for redot-0006:
+// Skeleton3D::BoneData::child_bones is now HashSet<int> — O(1) has() instead of
+// O(B) Vector::find() called inside an O(B) loop, which was O(B²) total.
+// A regression to Vector<int> still produces correct results but silently
+// reintroduces O(B²) cost in set_bone_parent / _update_process_order.
+
+TEST_CASE("[Skeleton3D][CWE-407] child_bones: set_bone_parent does not duplicate") {
+	// _update_process_order calls child_bones.has() before inserting.
+	// A HashSet guarantees no duplicates. A regression to Vector::has()
+	// would still deduplicate but via O(B) scan — this test verifies correctness.
+	Skeleton3D *skeleton = memnew(Skeleton3D);
+	skeleton->add_bone("root");    // bone 0
+	skeleton->add_bone("child");   // bone 1
+
+	skeleton->set_bone_rest(0, Transform3D());
+	skeleton->set_bone_rest(1, Transform3D());
+	skeleton->set_bone_parent(1, 0);
+
+	Vector<int> children = skeleton->get_bone_children(0);
+	CHECK_MESSAGE(children.size() == 1, "Root must have exactly 1 child after set_bone_parent.");
+	CHECK_MESSAGE(children[0] == 1, "Child bone index must be 1.");
+
+	memdelete(skeleton);
+}
+
+TEST_CASE("[Skeleton3D][CWE-407] child_bones: tree of bones, each has correct children") {
+	// root → A → B, root → C
+	// After process order update: root has children {A, C}, A has child {B}.
+	Skeleton3D *skeleton = memnew(Skeleton3D);
+	int root = skeleton->add_bone("root");  // 0
+	int a    = skeleton->add_bone("A");     // 1
+	int b    = skeleton->add_bone("B");     // 2
+	int c    = skeleton->add_bone("C");     // 3
+
+	skeleton->set_bone_rest(root, Transform3D());
+	skeleton->set_bone_rest(a,    Transform3D());
+	skeleton->set_bone_rest(b,    Transform3D());
+	skeleton->set_bone_rest(c,    Transform3D());
+
+	skeleton->set_bone_parent(a, root);
+	skeleton->set_bone_parent(b, a);
+	skeleton->set_bone_parent(c, root);
+
+	Vector<int> root_children = skeleton->get_bone_children(root);
+	CHECK_MESSAGE(root_children.size() == 2, "Root must have 2 children.");
+
+	Vector<int> a_children = skeleton->get_bone_children(a);
+	CHECK_MESSAGE(a_children.size() == 1, "A must have 1 child.");
+	CHECK_MESSAGE(a_children[0] == b, "A's child must be B.");
+
+	Vector<int> b_children = skeleton->get_bone_children(b);
+	CHECK_MESSAGE(b_children.size() == 0, "B must be a leaf.");
+
+	memdelete(skeleton);
+}
+
+TEST_CASE("[Skeleton3D][CWE-407][Stress] child_bones: 500-bone chain, each parent has 1 child") {
+	// Linear chain: bone 0 → 1 → 2 → ... → 499.
+	// Each set_bone_parent triggers _update_process_order which walks child_bones.
+	// With HashSet: O(B) total. With Vector::has(): O(B²) ≈ 250K scans.
+	constexpr int N = 500;
+	Skeleton3D *skeleton = memnew(Skeleton3D);
+	for (int i = 0; i < N; i++) {
+		skeleton->add_bone(vformat("bone_%d", i));
+		skeleton->set_bone_rest(i, Transform3D());
+	}
+	for (int i = 1; i < N; i++) {
+		skeleton->set_bone_parent(i, i - 1);
+	}
+	// Verify each bone has exactly 1 child (except the last).
+	for (int i = 0; i < N - 1; i++) {
+		Vector<int> children = skeleton->get_bone_children(i);
+		CHECK_MESSAGE(children.size() == 1, vformat("Bone %d must have exactly 1 child.", i));
+	}
+	Vector<int> last_children = skeleton->get_bone_children(N - 1);
+	CHECK_MESSAGE(last_children.size() == 0, "Last bone must be a leaf.");
+
+	memdelete(skeleton);
+}
+
 } // namespace TestSkeleton3D
