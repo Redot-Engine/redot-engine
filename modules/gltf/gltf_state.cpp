@@ -36,6 +36,8 @@
 
 void GLTFState::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_used_extension", "extension_name", "required"), &GLTFState::add_used_extension);
+	ClassDB::bind_method(D_METHOD("get_extensions_required"), &GLTFState::get_extensions_required);
+	ClassDB::bind_method(D_METHOD("has_used_extension", "extension_name"), &GLTFState::has_used_extension);
 	ClassDB::bind_method(D_METHOD("append_data_to_buffers", "data", "deduplication"), &GLTFState::append_data_to_buffers);
 	ClassDB::bind_method(D_METHOD("append_gltf_node", "gltf_node", "godot_scene_node", "parent_node_index"), &GLTFState::append_gltf_node);
 
@@ -151,6 +153,14 @@ void GLTFState::add_used_extension(const String &p_extension_name, bool p_requir
 			extensions_required.push_back(p_extension_name);
 		}
 	}
+}
+
+Vector<String> GLTFState::get_extensions_required() const {
+	return extensions_required;
+}
+
+bool GLTFState::has_used_extension(const String &p_extension) const {
+	return extensions_used.has(p_extension);
 }
 
 Dictionary GLTFState::get_json() {

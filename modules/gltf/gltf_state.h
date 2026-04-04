@@ -126,6 +126,9 @@ public:
 	}
 
 	void add_used_extension(const String &p_extension, bool p_required = false);
+	// CWE-407 test accessors: expose read-only views of the extension sets for assertions.
+	Vector<String> get_extensions_required() const;
+	bool has_used_extension(const String &p_extension) const;
 	GLTFBufferViewIndex append_data_to_buffers(const Vector<uint8_t> &p_data, const bool p_deduplication);
 	GLTFNodeIndex append_gltf_node(Ref<GLTFNode> p_gltf_node, Node *p_godot_scene_node, GLTFNodeIndex p_parent_node_index);
 

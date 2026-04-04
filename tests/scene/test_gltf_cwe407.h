@@ -35,6 +35,10 @@
 // of O(E) Vector::has() called per node/animation track during import.
 // A regression to Vector<String> reintroduces O(E²) cost when many extensions
 // are referenced repeatedly across a large GLTF file.
+//
+// Assertions use get_extensions_required() and has_used_extension() — public
+// accessors added alongside this fix. A regression removing the HashSet guard
+// would cause duplicate entries in extensions_required and wrong has() results.
 
 #pragma once
 
@@ -45,8 +49,8 @@
 namespace TestGLTFCWE407 {
 
 // Unit: add_used_extension with the same name twice must not duplicate in extensions_required.
-// extensions_used is a HashSet (not exposed directly), but extensions_required is a
-// Vector<String> with a has() guard in add_used_extension(). Both must deduplicate.
+// With HashSet guard: extensions_required has exactly 1 entry after 3 required adds.
+// Without guard (regression): extensions_required would have 3 entries.
 TEST_CASE("[GLTFState][CWE-407] extensions_used: required=true adds to extensions_required once") {
 	Ref<GLTFState> state;
 	state.instantiate();
@@ -56,22 +60,31 @@ TEST_CASE("[GLTFState][CWE-407] extensions_used: required=true adds to extension
 	state->add_used_extension("KHR_draco_mesh_compression", true);
 	state->add_used_extension("KHR_draco_mesh_compression", true);
 
-	// extensions_required is accessible via get_json after set_json, but the
-	// internal Vector is guarded by has(). Verify via a second required extension
-	// that the state remains consistent.
+	CHECK_MESSAGE(state->get_extensions_required().size() == 1,
+			"extensions_required must have exactly 1 entry after 3 duplicate required adds.");
+	CHECK_MESSAGE(state->has_used_extension("KHR_draco_mesh_compression"),
+			"KHR_draco_mesh_compression must be tracked in extensions_used.");
+
+	// Second required extension — extensions_required grows to 2.
 	state->add_used_extension("KHR_mesh_quantization", true);
 	state->add_used_extension("KHR_mesh_quantization", true);
 
-	// Serialize to JSON to observe extensions_required count.
-	Dictionary json = state->get_json();
-	// The primary invariant: no crash, state stays usable.
-	// extensions_required dedup is tested via the Vector::has() guard in gltf_state.cpp.
+	CHECK_MESSAGE(state->get_extensions_required().size() == 2,
+			"extensions_required must have exactly 2 entries after adding a second required extension.");
+	CHECK_MESSAGE(state->has_used_extension("KHR_mesh_quantization"),
+			"KHR_mesh_quantization must be tracked in extensions_used.");
+
+	// Optional extension — extensions_required stays at 2.
 	state->add_used_extension("KHR_materials_unlit", false);
-	// All three extensions in used, two in required. State consistent.
+
+	CHECK_MESSAGE(state->get_extensions_required().size() == 2,
+			"Optional extension must not appear in extensions_required.");
+	CHECK_MESSAGE(state->has_used_extension("KHR_materials_unlit"),
+			"KHR_materials_unlit must be tracked in extensions_used despite being optional.");
 }
 
 // Integration: multiple distinct extensions, each added once and once re-added.
-// Verifies the HashSet correctly tracks all 5 unique entries after 10 add calls.
+// Verifies the HashSet correctly deduplicates across 5 unique entries after 10 add calls.
 TEST_CASE("[GLTFState][CWE-407] extensions_used: multiple distinct extensions tracked") {
 	Ref<GLTFState> state;
 	state.instantiate();
@@ -86,18 +99,32 @@ TEST_CASE("[GLTFState][CWE-407] extensions_used: multiple distinct extensions tr
 	for (const String &ext : extensions) {
 		state->add_used_extension(ext);
 	}
-	// Re-add all — HashSet must remain at 5 unique entries.
+	// Re-add all — HashSet must remain at 5 unique entries (no duplicates in required).
 	for (const String &ext : extensions) {
 		state->add_used_extension(ext);
 	}
 
-	// Verify required extension adds correctly alongside optional ones.
-	state->add_used_extension("KHR_draco_mesh_compression", true); // upgrade to required
-	state->add_used_extension("KHR_draco_mesh_compression", true); // must not duplicate required
+	// None were added as required — extensions_required must be empty.
+	CHECK_MESSAGE(state->get_extensions_required().size() == 0,
+			"No extension was added as required — extensions_required must be empty.");
 
-	// extensions_required must have exactly 1 entry.
-	// Verify indirectly: further adds remain consistent (no crash, no assertion).
+	// All 5 must be tracked in extensions_used.
+	for (const String &ext : extensions) {
+		CHECK_MESSAGE(state->has_used_extension(ext),
+				vformat("%s must be tracked in extensions_used.", ext));
+	}
+
+	// Upgrade one to required twice — extensions_required must have exactly 1 entry.
+	state->add_used_extension("KHR_draco_mesh_compression", true);
+	state->add_used_extension("KHR_draco_mesh_compression", true);
+
+	CHECK_MESSAGE(state->get_extensions_required().size() == 1,
+			"extensions_required must have exactly 1 entry after upgrading one extension to required.");
+
+	// Optional re-add must not appear in extensions_required.
 	state->add_used_extension("KHR_materials_unlit", false);
+	CHECK_MESSAGE(state->get_extensions_required().size() == 1,
+			"Optional add must not change extensions_required size.");
 }
 
 // Functional / complexity gate: N distinct extensions added, then all re-added.
@@ -118,9 +145,23 @@ TEST_CASE("[GLTFState][CWE-407][Stress] extensions_used: 500 distinct + re-add, 
 		state->add_used_extension(vformat("EXT_test_%d", i));
 	}
 
-	// Verify state is still functional.
-	state->add_used_extension("KHR_materials_unlit");
-	// No crash, no stall = HashSet is O(1) per insert.
+	// None were required — extensions_required must be empty.
+	CHECK_MESSAGE(state->get_extensions_required().size() == 0,
+			"No extension was added as required — extensions_required must be empty.");
+
+	// Spot-check membership at both ends of the range.
+	CHECK_MESSAGE(state->has_used_extension("EXT_test_0"),
+			"EXT_test_0 must be tracked in extensions_used.");
+	CHECK_MESSAGE(state->has_used_extension(vformat("EXT_test_%d", N - 1)),
+			"Last extension must be tracked in extensions_used.");
+	CHECK_MESSAGE(!state->has_used_extension("EXT_not_added"),
+			"Unadded extension must not appear in extensions_used.");
+
+	// Add one required — verify it lands exactly once.
+	state->add_used_extension("KHR_materials_unlit", true);
+	state->add_used_extension("KHR_materials_unlit", true);
+	CHECK_MESSAGE(state->get_extensions_required().size() == 1,
+			"extensions_required must have exactly 1 entry after 2 identical required adds.");
 }
 
 } // namespace TestGLTFCWE407
