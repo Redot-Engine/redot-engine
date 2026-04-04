@@ -122,6 +122,8 @@ private:
 
 	struct Group {
 		Vector<Node *> nodes;
+		// CWE-407 fix (redot-0001): O(1) membership test — shadow index for Vector above.
+		HashSet<Node *> node_set;
 		bool changed = false;
 	};
 

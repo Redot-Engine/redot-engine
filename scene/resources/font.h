@@ -33,6 +33,7 @@
 #pragma once
 
 #include "core/io/resource.h"
+#include "core/templates/hash_set.h"
 #include "core/templates/lru.h"
 #include "scene/resources/texture.h"
 #include "servers/text_server.h"
@@ -97,8 +98,11 @@ protected:
 
 	static void _bind_methods();
 
-	virtual void _update_rids_fb(const Font *p_f, int p_depth) const;
+	// CWE-407 fix (redot-0010): pass visited set to avoid O(N²) re-traversal of shared fallback fonts.
+	virtual void _update_rids_fb(const Font *p_f, int p_depth, HashSet<const Font *> *r_visited = nullptr) const;
 	virtual void _update_rids() const;
+	// CWE-407 fix (redot-0009): internal helper with visited set for O(F) cyclic check.
+	bool _is_cyclic_internal(const Ref<Font> &p_f, int p_depth, HashSet<const Font *> &r_visited) const;
 	virtual void reset_state() override;
 
 #ifndef DISABLE_DEPRECATED

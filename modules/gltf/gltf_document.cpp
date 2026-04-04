@@ -250,7 +250,11 @@ Error GLTFDocument::_serialize(Ref<GLTFState> p_state) {
 }
 
 Error GLTFDocument::_serialize_gltf_extensions(Ref<GLTFState> p_state) const {
-	Vector<String> extensions_used = p_state->extensions_used;
+	// CWE-407 fix (redot-0008): extensions_used is now HashSet — convert to sorted Vector for JSON.
+	Vector<String> extensions_used;
+	for (const String &ext : p_state->extensions_used) {
+		extensions_used.push_back(ext);
+	}
 	Vector<String> extensions_required = p_state->extensions_required;
 	if (!p_state->lights.is_empty()) {
 		extensions_used.push_back("KHR_lights_punctual");
@@ -442,11 +446,10 @@ Error GLTFDocument::_serialize_nodes(Ref<GLTFState> p_state) {
 			Dictionary khr_node_visibility;
 			extensions["KHR_node_visibility"] = khr_node_visibility;
 			khr_node_visibility["visible"] = gltf_node->visible;
-			if (!p_state->extensions_used.has("KHR_node_visibility")) {
-				p_state->extensions_used.push_back("KHR_node_visibility");
-				if (_visibility_mode == VISIBILITY_MODE_INCLUDE_REQUIRED) {
-					p_state->extensions_required.push_back("KHR_node_visibility");
-				}
+			// CWE-407 fix (redot-0008): HashSet.insert() is idempotent O(1) — was O(E) Vector scan + push_back.
+			p_state->extensions_used.insert("KHR_node_visibility");
+			if (_visibility_mode == VISIBILITY_MODE_INCLUDE_REQUIRED) {
+				p_state->extensions_required.push_back("KHR_node_visibility");
 			}
 		}
 		if (gltf_node->mesh != -1) {
@@ -5509,9 +5512,8 @@ Error GLTFDocument::_serialize_animations(Ref<GLTFState> p_state) {
 		}
 		if (!gltf_animation->get_pointer_tracks().is_empty()) {
 			// Serialize glTF pointer tracks with the KHR_animation_pointer extension.
-			if (!p_state->extensions_used.has("KHR_animation_pointer")) {
-				p_state->extensions_used.push_back("KHR_animation_pointer");
-			}
+			// CWE-407 fix (redot-0008): HashSet.insert() is idempotent O(1).
+			p_state->extensions_used.insert("KHR_animation_pointer");
 			for (KeyValue<String, GLTFAnimation::Channel<Variant>> &pointer_track_iter : gltf_animation->get_pointer_tracks()) {
 				const String &json_pointer = pointer_track_iter.key;
 				const GLTFAnimation::Channel<Variant> &pointer_track = pointer_track_iter.value;
@@ -8921,7 +8923,8 @@ Error GLTFDocument::append_from_scene(Node *p_node, Ref<GLTFState> p_state, uint
 		state->scene_name = p_node->get_name();
 	} else {
 		if (_root_node_mode == RootNodeMode::ROOT_NODE_MODE_SINGLE_ROOT) {
-			state->extensions_used.append("GODOT_single_root");
+			// CWE-407 fix (redot-0008): HashSet.insert() is idempotent O(1).
+			state->extensions_used.insert("GODOT_single_root");
 		}
 		_convert_scene_node(state, p_node, -1, -1);
 	}
@@ -8992,8 +8995,12 @@ Error GLTFDocument::append_from_file(String p_path, Ref<GLTFState> p_state, uint
 Error GLTFDocument::_parse_gltf_extensions(Ref<GLTFState> p_state) {
 	ERR_FAIL_COND_V(p_state.is_null(), ERR_PARSE_ERROR);
 	if (p_state->json.has("extensionsUsed")) {
+		// CWE-407 fix (redot-0008): populate HashSet from parsed JSON array.
 		Vector<String> ext_array = p_state->json["extensionsUsed"];
-		p_state->extensions_used = ext_array;
+		p_state->extensions_used.clear();
+		for (int i = 0; i < ext_array.size(); i++) {
+			p_state->extensions_used.insert(ext_array[i]);
+		}
 	}
 	if (p_state->json.has("extensionsRequired")) {
 		Vector<String> ext_array = p_state->json["extensionsRequired"];

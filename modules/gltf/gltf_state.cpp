@@ -144,9 +144,8 @@ void GLTFState::_bind_methods() {
 }
 
 void GLTFState::add_used_extension(const String &p_extension_name, bool p_required) {
-	if (!extensions_used.has(p_extension_name)) {
-		extensions_used.push_back(p_extension_name);
-	}
+	// CWE-407 fix (redot-0008): HashSet.insert() is idempotent O(1) — was O(E) has()+push_back().
+	extensions_used.insert(p_extension_name);
 	if (p_required) {
 		if (!extensions_required.has(p_extension_name)) {
 			extensions_required.push_back(p_extension_name);

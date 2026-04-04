@@ -1438,6 +1438,15 @@ void SpringBoneSimulator3D::_find_collisions() {
 		}
 	}
 
+	// CWE-407 fix (redot-0012): build O(1) lookup structures once instead of O(N)
+	// LocalVector::has/find inside S×C inner loops. O(S×C×N) → O(N + S×C).
+	HashSet<ObjectID> collision_set;
+	HashMap<ObjectID, int> collision_index_map;
+	for (uint32_t ci = 0; ci < collisions.size(); ci++) {
+		collision_set.insert(collisions[ci]);
+		collision_index_map[collisions[ci]] = (int)ci;
+	}
+
 	bool setting_updated = false;
 
 	for (int i = 0; i < settings.size(); i++) {
@@ -1452,7 +1461,8 @@ void SpringBoneSimulator3D::_find_collisions() {
 					continue;
 				}
 				ObjectID id = n->get_instance_id();
-				if (!collisions.has(id)) {
+				// CWE-407 fix (redot-0012): O(1) via HashSet instead of O(N) LocalVector::has.
+				if (!collision_set.has(id)) {
 					setting_collisions.write[j] = NodePath(); // Clear path if not found.
 				} else {
 					cache.push_back(id);
@@ -1468,11 +1478,12 @@ void SpringBoneSimulator3D::_find_collisions() {
 					continue;
 				}
 				ObjectID id = n->get_instance_id();
-				int find = collisions.find(id);
-				if (find < 0) {
+				// CWE-407 fix (redot-0012): O(1) via HashMap instead of O(N) LocalVector::find.
+				const int *find_ptr = collision_index_map.getptr(id);
+				if (!find_ptr) {
 					setting_exclude_collisions.write[j] = NodePath(); // Clear path if not found.
 				} else {
-					masks.push_back((uint32_t)find);
+					masks.push_back((uint32_t)*find_ptr);
 				}
 			}
 			uint32_t mask_index = 0;

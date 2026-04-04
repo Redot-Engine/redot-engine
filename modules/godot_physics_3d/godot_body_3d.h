@@ -116,6 +116,8 @@ class GodotBody3D : public GodotCollisionObject3D {
 	HashMap<GodotConstraint3D *, int> constraint_map;
 
 	Vector<AreaCMP> areas;
+	// CWE-407 fix (redot-0003): O(1) area lookup by RID — shadow index for areas Vector.
+	HashMap<RID, int> area_index;
 
 	struct Contact {
 		Vector3 local_pos;
@@ -158,20 +160,33 @@ public:
 	GodotPhysicsDirectBodyState3D *get_direct_state();
 
 	_FORCE_INLINE_ void add_area(GodotArea3D *p_area) {
-		int index = areas.find(AreaCMP(p_area));
-		if (index > -1) {
-			areas.write[index].refCount += 1;
+		// CWE-407 fix (redot-0003): was areas.find() — O(n) Vector scan per physics tick.
+		RID rid = p_area->get_self();
+		HashMap<RID, int>::Iterator it = area_index.find(rid);
+		if (it != area_index.end()) {
+			areas.write[it->value].refCount += 1;
 		} else {
 			areas.ordered_insert(AreaCMP(p_area));
+			area_index.clear();
+			for (int i = 0; i < areas.size(); i++) {
+				area_index[areas[i].area->get_self()] = i;
+			}
 		}
 	}
 
 	_FORCE_INLINE_ void remove_area(GodotArea3D *p_area) {
-		int index = areas.find(AreaCMP(p_area));
-		if (index > -1) {
+		// CWE-407 fix (redot-0003): was areas.find() — O(n) Vector scan.
+		RID rid = p_area->get_self();
+		HashMap<RID, int>::Iterator it = area_index.find(rid);
+		if (it != area_index.end()) {
+			int index = it->value;
 			areas.write[index].refCount -= 1;
 			if (areas[index].refCount < 1) {
 				areas.remove_at(index);
+				area_index.clear();
+				for (int i = 0; i < areas.size(); i++) {
+					area_index[areas[i].area->get_self()] = i;
+				}
 			}
 		}
 	}

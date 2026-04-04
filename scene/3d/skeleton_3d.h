@@ -102,7 +102,8 @@ private:
 		String name;
 
 		int parent = -1;
-		Vector<int> child_bones;
+		// CWE-407 fix (redot-0006): was Vector<int> — O(B) .has() inside O(B) loop over bones.
+		HashSet<int> child_bones;
 
 		Transform3D rest;
 		Transform3D global_rest;

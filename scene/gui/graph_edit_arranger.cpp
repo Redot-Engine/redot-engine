@@ -428,25 +428,33 @@ void GraphEditArranger::_calculate_inner_shifts(Dictionary &r_inner_shifts, cons
 
 float GraphEditArranger::_calculate_threshold(const StringName &p_v, const StringName &p_w, const Dictionary &r_node_names, const HashMap<int, Vector<StringName>> &r_layers, const Dictionary &r_root, const Dictionary &r_align, const Dictionary &r_inner_shift, real_t p_current_threshold, const HashMap<StringName, Vector2> &r_node_positions) {
 #define MAX_ORDER 2147483647
-#define ORDER(node, layers)                            \
-	for (unsigned int i = 0; i < layers.size(); i++) { \
-		int index = layers[i].find(node);              \
-		if (index > 0) {                               \
-			order = index;                             \
-			break;                                     \
-		}                                              \
-		order = MAX_ORDER;                             \
+// CWE-407 fix (redot-0011): replace O(N) Vector::find with O(1) HashMap lookup.
+// Build node_order once (O(N)), use O(1) getptr() per connection.
+#define ORDER(node, node_order_map)                     \
+	{                                                   \
+		const int *_op = node_order_map.getptr(node);  \
+		order = _op ? *_op : MAX_ORDER;                \
 	}
 
 	int order = MAX_ORDER;
 	float threshold = p_current_threshold;
+
+	// Build node_order: maps each node to its within-layer index.
+	// j=1: preserve original > 0 guard — nodes at j==0 not stored → MAX_ORDER.
+	HashMap<StringName, int> node_order;
+	for (unsigned int i = 0; i < r_layers.size(); i++) {
+		for (int j = 1; j < r_layers[i].size(); j++) {
+			node_order[r_layers[i][j]] = j;
+		}
+	}
+
 	if (p_v == p_w) {
 		int min_order = MAX_ORDER;
 		Ref<GraphEdit::Connection> incoming;
 		const Vector<Ref<GraphEdit::Connection>> connection_list = graph_edit->get_connections();
 		for (const Ref<GraphEdit::Connection> &connection : connection_list) {
 			if (connection->to_node == p_w) {
-				ORDER(connection->from_node, r_layers);
+				ORDER(connection->from_node, node_order);
 				if (min_order > order) {
 					min_order = order;
 					incoming = connection;
@@ -477,7 +485,7 @@ float GraphEditArranger::_calculate_threshold(const StringName &p_v, const Strin
 		const Vector<Ref<GraphEdit::Connection>> connection_list = graph_edit->get_connections();
 		for (const Ref<GraphEdit::Connection> &connection : connection_list) {
 			if (connection->from_node == p_w) {
-				ORDER(connection->to_node, r_layers);
+				ORDER(connection->to_node, node_order);
 				if (min_order > order) {
 					min_order = order;
 					outgoing = connection;
@@ -507,14 +515,19 @@ float GraphEditArranger::_calculate_threshold(const StringName &p_v, const Strin
 }
 
 void GraphEditArranger::_place_block(const StringName &p_v, float p_delta, const HashMap<int, Vector<StringName>> &r_layers, const Dictionary &r_root, const Dictionary &r_align, const Dictionary &r_node_name, const Dictionary &r_inner_shift, Dictionary &r_sink, Dictionary &r_shift, HashMap<StringName, Vector2> &r_node_positions) {
-#define PRED(node, layers)                             \
-	for (unsigned int i = 0; i < layers.size(); i++) { \
-		int index = layers[i].find(node);              \
-		if (index > 0) {                               \
-			predecessor = layers[i][index - 1];        \
-			break;                                     \
-		}                                              \
-		predecessor = StringName();                    \
+// CWE-407 fix (redot-0011): replace O(N) Vector::find with O(1) HashMap lookup.
+#define PRED(node, pred_map)                           \
+	{                                                  \
+		const StringName *_pp = pred_map.getptr(node); \
+		predecessor = _pp ? *_pp : StringName();       \
+	}
+
+	// Build predecessor_map: node -> previous node in same layer (empty if first).
+	HashMap<StringName, StringName> predecessor_map;
+	for (unsigned int i = 0; i < r_layers.size(); i++) {
+		for (int j = 1; j < r_layers[i].size(); j++) {
+			predecessor_map[r_layers[i][j]] = r_layers[i][j - 1];
+		}
 	}
 
 	StringName predecessor;
@@ -527,7 +540,7 @@ void GraphEditArranger::_place_block(const StringName &p_v, float p_delta, const
 		StringName w = p_v;
 		real_t threshold = FLT_MIN;
 		do {
-			PRED(w, r_layers);
+			PRED(w, predecessor_map);
 			if (predecessor != StringName()) {
 				StringName u = r_root[predecessor];
 				_place_block(u, p_delta, r_layers, r_root, r_align, r_node_name, r_inner_shift, r_sink, r_shift, r_node_positions);

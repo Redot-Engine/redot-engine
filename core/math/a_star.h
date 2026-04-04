@@ -47,6 +47,8 @@ class AStar3D : public RefCounted {
 	struct Point {
 		Point() {}
 
+		// CWE-407 fix (redot-0005): tracks heap position for O(1) decrease-key, avoiding open_list.find().
+		int32_t open_index = -1;
 		int64_t id = 0;
 		Vector3 pos;
 		real_t weight_scale = 0;

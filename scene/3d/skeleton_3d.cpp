@@ -233,10 +233,9 @@ void Skeleton3D::_update_process_order() const {
 		if (bonesptr[i].parent != -1) {
 			int parent_bone_idx = bonesptr[i].parent;
 
-			// Check to see if this node is already added to the parent.
+			// CWE-407 fix (redot-0006): HashSet.has() is O(1); Vector.has() was O(C) linear scan.
 			if (!bonesptr[parent_bone_idx].child_bones.has(i)) {
-				// Add the child node.
-				bonesptr[parent_bone_idx].child_bones.push_back(i);
+				bonesptr[parent_bone_idx].child_bones.insert(i);
 			} else {
 				ERR_PRINT("Skeleton3D parenthood graph is cyclic");
 			}

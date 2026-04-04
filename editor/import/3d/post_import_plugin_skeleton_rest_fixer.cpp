@@ -164,6 +164,12 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 			}
 
 			// Fix animation by changing node transform.
+			// CWE-407 fix (redot-0007): build HashSet for O(1) .has() — was O(B) Vector scan per track.
+			HashSet<int> bones_to_process_set;
+			{
+				Vector<int> _btp = src_skeleton->get_parentless_bones();
+				for (int _i = 0; _i < _btp.size(); _i++) { bones_to_process_set.insert(_btp[_i]); }
+			}
 			bones_to_process = src_skeleton->get_parentless_bones();
 			{
 				TypedArray<Node> nodes = p_base_scene->find_children("*", "AnimationPlayer");
@@ -200,7 +206,7 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 							int bone_idx = src_skeleton->find_bone(bn);
 							int key_len = anim->track_get_key_count(i);
 							if (anim->track_get_type(i) == Animation::TYPE_POSITION_3D) {
-								if (bones_to_process.has(bone_idx)) {
+								if (bones_to_process_set.has(bone_idx)) { // CWE-407 fix (redot-0007): O(1)
 									for (int j = 0; j < key_len; j++) {
 										Vector3 ps = static_cast<Vector3>(anim->track_get_key_value(i, j));
 										anim->track_set_key_value(i, j, global_transform.basis.xform(ps) + global_transform.origin);
@@ -211,7 +217,7 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 										anim->track_set_key_value(i, j, ps * scl);
 									}
 								}
-							} else if (bones_to_process.has(bone_idx)) {
+							} else if (bones_to_process_set.has(bone_idx)) { // CWE-407 fix (redot-0007): O(1)
 								if (anim->track_get_type(i) == Animation::TYPE_ROTATION_3D) {
 									for (int j = 0; j < key_len; j++) {
 										Quaternion qt = static_cast<Quaternion>(anim->track_get_key_value(i, j));
@@ -625,7 +631,8 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 
 			// Scan hierarchy and populate a whitelist of unmapped bones without mapped descendants.
 			// When both is_using_modifier and is_using_global_pose are enabled, this array is used for detecting warning.
-			Vector<int> keep_bone_rest;
+			// CWE-407 fix (redot-0007): was Vector<int> — O(K) .has() called inside O(T) track loop.
+			HashSet<int> keep_bone_rest;
 			if (is_using_modifier || keep_global_rest_leftovers) {
 				Vector<int> bones_to_process = src_skeleton->get_parentless_bones();
 				while (bones_to_process.size() > 0) {
@@ -658,7 +665,7 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 						}
 
 						if (!found_mapped) {
-							keep_bone_rest.push_back(src_idx); // No mapped descendants. Add to whitelist.
+							keep_bone_rest.insert(src_idx);
 						}
 					}
 				}

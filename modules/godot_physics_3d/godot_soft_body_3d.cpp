@@ -654,20 +654,26 @@ void GodotSoftBody3D::generate_bending_constraints(int p_distance) {
 
 		// Special optimized case for distance == 2.
 		if (p_distance == 2) {
+			// CWE-407 fix (redot-0004): was LocalVector<int>.has() — O(n) per link, O(n²) total.
+			// node_link_set provides O(1) membership; LocalVector preserved for iteration.
 			LocalVector<LocalVector<int>> node_links;
+			LocalVector<HashSet<int>> node_link_set;
 
 			// Build node links.
 			node_links.resize(nodes.size());
+			node_link_set.resize(nodes.size());
 
 			for (Link &link : links) {
 				const int ia = (int)(link.n[0] - &nodes[0]);
 				const int ib = (int)(link.n[1] - &nodes[0]);
-				if (!node_links[ia].has(ib)) {
+				if (!node_link_set[ia].has(ib)) {
 					node_links[ia].push_back(ib);
+					node_link_set[ia].insert(ib);
 				}
 
-				if (!node_links[ib].has(ia)) {
+				if (!node_link_set[ib].has(ia)) {
 					node_links[ib].push_back(ia);
+					node_link_set[ib].insert(ia);
 				}
 			}
 			for (uint32_t ii = 0; ii < node_links.size(); ii++) {

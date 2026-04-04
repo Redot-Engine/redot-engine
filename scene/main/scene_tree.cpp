@@ -173,8 +173,11 @@ SceneTree::Group *SceneTree::add_to_group(const StringName &p_group, Node *p_nod
 		E = group_map.insert(p_group, Group());
 	}
 
-	ERR_FAIL_COND_V_MSG(E->value.nodes.has(p_node), &E->value, "Already in group: " + p_group + ".");
+	// CWE-407 fix (redot-0001): was nodes.has(p_node) — O(n) Vector linear scan.
+	// node_set provides O(1) lookup. Vector preserved for ordered iteration.
+	ERR_FAIL_COND_V_MSG(E->value.node_set.has(p_node), &E->value, "Already in group: " + p_group + ".");
 	E->value.nodes.push_back(p_node);
+	E->value.node_set.insert(p_node);
 	E->value.changed = true;
 	return &E->value;
 }
@@ -186,6 +189,7 @@ void SceneTree::remove_from_group(const StringName &p_group, Node *p_node) {
 	ERR_FAIL_COND(!E);
 
 	E->value.nodes.erase(p_node);
+	E->value.node_set.erase(p_node);
 	if (E->value.nodes.is_empty()) {
 		group_map.remove(E);
 	}

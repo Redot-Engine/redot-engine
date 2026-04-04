@@ -102,24 +102,36 @@ void Font::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "fallbacks", PROPERTY_HINT_ARRAY_TYPE, MAKE_RESOURCE_TYPE_HINT("Font")), "set_fallbacks", "get_fallbacks");
 }
 
-void Font::_update_rids_fb(const Font *p_f, int p_depth) const {
+// CWE-407 fix (redot-0010): was O(N²) — shared fonts in diamond fallback topology
+// re-traversed once per path, bloating rids[] with duplicates.
+// Now O(N) with HashSet visited guard; rids[] contains each font exactly once.
+void Font::_update_rids_fb(const Font *p_f, int p_depth, HashSet<const Font *> *r_visited) const {
 	ERR_FAIL_COND(p_depth > MAX_FALLBACK_DEPTH);
-	if (p_f != nullptr) {
-		RID rid = p_f->_get_rid();
-		if (rid.is_valid()) {
-			rids.push_back(rid);
-		}
-		const TypedArray<Font> &_fallbacks = p_f->get_fallbacks();
-		for (int i = 0; i < _fallbacks.size(); i++) {
-			Ref<Font> fb_font = _fallbacks[i];
-			_update_rids_fb(fb_font.ptr(), p_depth + 1);
-		}
+	if (p_f == nullptr) {
+		return;
+	}
+	if (r_visited != nullptr && r_visited->has(p_f)) {
+		return; // already collected this font's RID
+	}
+	if (r_visited != nullptr) {
+		r_visited->insert(p_f);
+	}
+	RID rid = p_f->_get_rid();
+	if (rid.is_valid()) {
+		rids.push_back(rid);
+	}
+	const TypedArray<Font> &_fallbacks = p_f->get_fallbacks();
+	for (int i = 0; i < _fallbacks.size(); i++) {
+		Ref<Font> fb_font = _fallbacks[i];
+		_update_rids_fb(fb_font.ptr(), p_depth + 1, r_visited);
 	}
 }
 
 void Font::_update_rids() const {
 	rids.clear();
-	_update_rids_fb(this, 0);
+	// CWE-407 fix (redot-0010): visited guard makes traversal O(N) instead of O(N²).
+	HashSet<const Font *> visited;
+	_update_rids_fb(this, 0, &visited);
 	dirty_rids = false;
 }
 
@@ -134,6 +146,13 @@ void Font::_invalidate_rids() {
 }
 
 bool Font::_is_cyclic(const Ref<Font> &p_f, int p_depth) const {
+	// CWE-407 fix (redot-0009): was O(F^D) — shared fonts in diamond fallback graph
+	// re-traversed exponentially with no visited set. Now O(F) with visited guard.
+	HashSet<const Font *> visited;
+	return _is_cyclic_internal(p_f, p_depth, visited);
+}
+
+bool Font::_is_cyclic_internal(const Ref<Font> &p_f, int p_depth, HashSet<const Font *> &r_visited) const {
 	ERR_FAIL_COND_V(p_depth > MAX_FALLBACK_DEPTH, true);
 	if (p_f.is_null()) {
 		return false;
@@ -141,9 +160,14 @@ bool Font::_is_cyclic(const Ref<Font> &p_f, int p_depth) const {
 	if (p_f == this) {
 		return true;
 	}
+	const Font *raw = p_f.ptr();
+	if (r_visited.has(raw)) {
+		return false; // already proven non-cyclic from this node
+	}
+	r_visited.insert(raw);
 	for (int i = 0; i < p_f->fallbacks.size(); i++) {
 		const Ref<Font> &f = p_f->fallbacks[i];
-		if (_is_cyclic(f, p_depth + 1)) {
+		if (_is_cyclic_internal(f, p_depth + 1, r_visited)) {
 			return true;
 		}
 	}
@@ -2891,6 +2915,8 @@ void FontVariation::_update_rids() const {
 	Ref<Font> f = _get_base_font_or_default();
 
 	rids.clear();
+	// CWE-407 fix (redot-0010): visited guard makes traversal O(N) instead of O(N²).
+	HashSet<const Font *> visited;
 	if (fallbacks.is_empty() && f.is_valid()) {
 		RID rid = _get_rid();
 		if (rid.is_valid()) {
@@ -2900,10 +2926,10 @@ void FontVariation::_update_rids() const {
 		const TypedArray<Font> &base_fallbacks = f->get_fallbacks();
 		for (int i = 0; i < base_fallbacks.size(); i++) {
 			Ref<Font> fb_font = base_fallbacks[i];
-			_update_rids_fb(fb_font.ptr(), 0);
+			_update_rids_fb(fb_font.ptr(), 0, &visited);
 		}
 	} else {
-		_update_rids_fb(this, 0);
+		_update_rids_fb(this, 0, &visited);
 	}
 	dirty_rids = false;
 }
@@ -3181,6 +3207,8 @@ void SystemFont::_update_rids() const {
 	Ref<Font> f = _get_base_font_or_default();
 
 	rids.clear();
+	// CWE-407 fix (redot-0010): visited guard makes traversal O(N) instead of O(N²).
+	HashSet<const Font *> visited;
 	if (fallbacks.is_empty() && f.is_valid()) {
 		RID rid = _get_rid();
 		if (rid.is_valid()) {
@@ -3190,10 +3218,10 @@ void SystemFont::_update_rids() const {
 		const TypedArray<Font> &base_fallbacks = f->get_fallbacks();
 		for (int i = 0; i < base_fallbacks.size(); i++) {
 			Ref<Font> fb_font = base_fallbacks[i];
-			_update_rids_fb(fb_font.ptr(), 0);
+			_update_rids_fb(fb_font.ptr(), 0, &visited);
 		}
 	} else {
-		_update_rids_fb(this, 0);
+		_update_rids_fb(this, 0, &visited);
 	}
 	dirty_rids = false;
 }

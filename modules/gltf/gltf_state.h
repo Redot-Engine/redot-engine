@@ -92,7 +92,8 @@ protected:
 	Vector<Ref<GLTFTextureSampler>> texture_samplers;
 	Ref<GLTFTextureSampler> default_texture_sampler;
 	Vector<Ref<Texture2D>> images;
-	Vector<String> extensions_used;
+	// CWE-407 fix (redot-0008): was Vector<String> — O(E) .has() called per node/animation track.
+	HashSet<String> extensions_used;
 	Vector<String> extensions_required;
 	Vector<Ref<Image>> source_images;
 
