@@ -923,6 +923,9 @@ void Skeleton3DEditor::_joint_tree_button_clicked(Object *p_item, int p_column, 
 }
 
 void Skeleton3DEditor::_update_properties() {
+	if (is_deleting) {
+		return;
+	}
 	if (pose_editor) {
 		pose_editor->_update_properties();
 	}
@@ -1171,6 +1174,7 @@ void Skeleton3DEditor::_notification(int p_what) {
 			update_joint_tree();
 		} break;
 		case NOTIFICATION_PREDELETE: {
+			is_deleting = true;
 			if (editor_plugin) {
 				editor_plugin->skeleton_editor = nullptr;
 			}

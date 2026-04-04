@@ -152,6 +152,7 @@ class Skeleton3DEditor : public VBoxContainer {
 	Button *edit_mode_button = nullptr;
 
 	bool edit_mode = false;
+	bool is_deleting = false;
 
 	HBoxContainer *animation_hb = nullptr;
 	Button *key_loc_button = nullptr;

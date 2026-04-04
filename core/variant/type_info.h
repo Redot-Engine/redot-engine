@@ -38,8 +38,10 @@
  * [Add any documentation that applies to the entire file here!]
  */
 
+#include "core/object/object.h"
 #include "core/templates/simple_type.h"
 #include "core/typedefs.h"
+#include "core/variant/variant.h"
 
 #include <type_traits>
 

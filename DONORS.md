@@ -3,7 +3,7 @@
 Redot Engine is a non-profit project developed by a community of voluntary contributors.
 
 Our Team greatly appreciates any and all donations.
-More information about supporting the project can be found on [Redot's Ko-Fi](https://ko-fi.com/redotengine).
+More information about supporting the project can be found on [Redot Foundation](https://redotfoundation.org/support).
 
 Below is a list of our generous donors.
 
