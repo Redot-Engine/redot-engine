@@ -3089,6 +3089,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpRaw")), TTR("Nearest"), MENU_INTERPOLATION_NEAREST);
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinear")), TTR("Linear"), MENU_INTERPOLATION_LINEAR);
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubic")), TTR("Cubic"), MENU_INTERPOLATION_CUBIC);
+				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpMonotonic")), TTR("Monotonic Cubic"), MENU_INTERPOLATION_CUBIC_MONOTONIC);
 				// Check whether it is angle property.
 				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
 				if (ape) {
@@ -3113,6 +3114,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 							if (is_angle) {
 								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinearAngle")), TTR("Linear Angle"), MENU_INTERPOLATION_LINEAR_ANGLE);
 								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubicAngle")), TTR("Cubic Angle"), MENU_INTERPOLATION_CUBIC_ANGLE);
+								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpMonotonicAngle")), TTR("Monotonic Cubic Angle"), MENU_INTERPOLATION_CUBIC_MONOTONIC_ANGLE);
 							}
 						}
 					}
@@ -3563,8 +3565,10 @@ void AnimationTrackEdit::_menu_selected(int p_index) {
 		case MENU_INTERPOLATION_NEAREST:
 		case MENU_INTERPOLATION_LINEAR:
 		case MENU_INTERPOLATION_CUBIC:
+		case MENU_INTERPOLATION_CUBIC_MONOTONIC:
 		case MENU_INTERPOLATION_LINEAR_ANGLE:
-		case MENU_INTERPOLATION_CUBIC_ANGLE: {
+		case MENU_INTERPOLATION_CUBIC_ANGLE:
+		case MENU_INTERPOLATION_CUBIC_MONOTONIC_ANGLE: {
 			Animation::InterpolationType interp_mode = Animation::InterpolationType(p_index - MENU_INTERPOLATION_NEAREST);
 			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->create_action(TTR("Change Animation Interpolation Mode"));
@@ -7071,7 +7075,8 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 				int len = keys.size() - 1;
 
 				// Special case for angle interpolation.
-				bool is_using_angle = animation->track_get_interpolation_type(track) == Animation::INTERPOLATION_LINEAR_ANGLE || animation->track_get_interpolation_type(track) == Animation::INTERPOLATION_CUBIC_ANGLE;
+				Animation::InterpolationType interp_type = animation->track_get_interpolation_type(track);
+				bool is_using_angle = interp_type == Animation::INTERPOLATION_LINEAR_ANGLE || interp_type == Animation::INTERPOLATION_CUBIC_ANGLE || interp_type == Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE;
 
 				// Make insert queue.
 				Vector<Pair<real_t, Variant>> insert_queue_new;
@@ -7304,7 +7309,7 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 					}
 
 					// Special case for angle interpolation.
-					bool is_using_angle = it == Animation::INTERPOLATION_LINEAR_ANGLE || it == Animation::INTERPOLATION_CUBIC_ANGLE;
+					bool is_using_angle = it == Animation::INTERPOLATION_LINEAR_ANGLE || it == Animation::INTERPOLATION_CUBIC_ANGLE || it == Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE;
 
 					// Make insert queue.
 					Vector<Pair<real_t, Variant>> insert_queue_new;

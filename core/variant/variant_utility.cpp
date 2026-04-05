@@ -533,6 +533,24 @@ double VariantUtilityFunctions::cubic_interpolate_angle_in_time(double from, dou
 	return Math::cubic_interpolate_angle_in_time(from, to, pre, post, weight, to_t, pre_t, post_t);
 }
 
+double VariantUtilityFunctions::monotonic_cubic_interpolate(double from, double to, double pre, double post, double weight) {
+	return Math::monotonic_cubic_interpolate(from, to, pre, post, weight);
+}
+
+double VariantUtilityFunctions::monotonic_cubic_interpolate_angle(double from, double to, double pre, double post, double weight) {
+	return Math::monotonic_cubic_interpolate_angle(from, to, pre, post, weight);
+}
+
+double VariantUtilityFunctions::monotonic_cubic_interpolate_in_time(double from, double to, double pre, double post, double weight,
+		double to_t, double pre_t, double post_t) {
+	return Math::monotonic_cubic_interpolate_in_time(from, to, pre, post, weight, to_t, pre_t, post_t);
+}
+
+double VariantUtilityFunctions::monotonic_cubic_interpolate_angle_in_time(double from, double to, double pre, double post, double weight,
+		double to_t, double pre_t, double post_t) {
+	return Math::monotonic_cubic_interpolate_angle_in_time(from, to, pre, post, weight, to_t, pre_t, post_t);
+}
+
 double VariantUtilityFunctions::bezier_interpolate(double p_start, double p_control_1, double p_control_2, double p_end, double p_t) {
 	return Math::bezier_interpolate(p_start, p_control_1, p_control_2, p_end, p_t);
 }
@@ -1688,6 +1706,10 @@ void Variant::_register_variant_utility_functions() {
 	bind_fn_vuf(inverse_lerp, Variant::UTILITY_FUNC_TYPE_MATH, "from", "to", "weight");
 	bind_fn_vuf(remap, Variant::UTILITY_FUNC_TYPE_MATH, "value", "istart", "istop", "ostart", "ostop");
 	bind_fn_vuf(remap_default, Variant::UTILITY_FUNC_TYPE_MATH, "value", "istart", "istop", "ostart", "ostop", "default_value");
+	bind_fn_vuf(monotonic_cubic_interpolate, Variant::UTILITY_FUNC_TYPE_MATH, "from", "to", "pre", "post", "weight");
+	bind_fn_vuf(monotonic_cubic_interpolate_angle, Variant::UTILITY_FUNC_TYPE_MATH, "from", "to", "pre", "post", "weight");
+	bind_fn_vuf(monotonic_cubic_interpolate_in_time, Variant::UTILITY_FUNC_TYPE_MATH, "from", "to", "pre", "post", "weight", "to_t", "pre_t", "post_t");
+	bind_fn_vuf(monotonic_cubic_interpolate_angle_in_time, Variant::UTILITY_FUNC_TYPE_MATH, "from", "to", "pre", "post", "weight", "to_t", "pre_t", "post_t");
 
 	bind_fn_vuf(smoothstep, Variant::UTILITY_FUNC_TYPE_MATH, "from", "to", "x");
 	bind_fn_vuf(move_toward, Variant::UTILITY_FUNC_TYPE_MATH, "from", "to", "delta");
