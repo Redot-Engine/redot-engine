@@ -30,13 +30,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 // CWE-407 regression tests for redot-0001:
 // SceneTree::Group::node_set HashSet shadow — O(1) membership instead of O(N)
 // Vector linear scan. These tests verify that group membership is correct and
 // deduplicated after the fix. A regression to Vector::has() would still pass
 // correctness tests but silently reintroduce O(N²) cost at scale.
 
-#pragma once
 
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"

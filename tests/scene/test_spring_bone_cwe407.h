@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 // CWE-407 regression tests for redot-0012:
 // SpringBoneSimulator3D::_process_bone() built HashSet<ObjectID>/HashMap
 // once per frame outside the S×C inner loop instead of calling
@@ -46,7 +48,6 @@
 // child nodes — see tests/scene/test_spring_bone_simulator_3d.h for
 // the simulation harness if/when added.
 
-#pragma once
 
 #include "scene/3d/spring_bone_simulator_3d.h"
 

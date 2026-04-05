@@ -86,8 +86,8 @@ TEST_CASE("[Skeleton3D][CWE-407] child_bones: set_bone_parent does not duplicate
 	// would produce duplicate entries in get_bone_children().
 	// This test calls set_bone_parent twice and verifies exactly 1 child exists.
 	Skeleton3D *skeleton = memnew(Skeleton3D);
-	skeleton->add_bone("root");    // bone 0
-	skeleton->add_bone("child");   // bone 1
+	skeleton->add_bone("root"); // bone 0
+	skeleton->add_bone("child"); // bone 1
 
 	skeleton->set_bone_rest(0, Transform3D());
 	skeleton->set_bone_rest(1, Transform3D());
@@ -107,15 +107,15 @@ TEST_CASE("[Skeleton3D][CWE-407] child_bones: tree of bones, each has correct ch
 	// root → A → B, root → C
 	// After process order update: root has children {A, C}, A has child {B}.
 	Skeleton3D *skeleton = memnew(Skeleton3D);
-	int root = skeleton->add_bone("root");  // 0
-	int a    = skeleton->add_bone("A");     // 1
-	int b    = skeleton->add_bone("B");     // 2
-	int c    = skeleton->add_bone("C");     // 3
+	int root = skeleton->add_bone("root"); // 0
+	int a = skeleton->add_bone("A"); // 1
+	int b = skeleton->add_bone("B"); // 2
+	int c = skeleton->add_bone("C"); // 3
 
 	skeleton->set_bone_rest(root, Transform3D());
-	skeleton->set_bone_rest(a,    Transform3D());
-	skeleton->set_bone_rest(b,    Transform3D());
-	skeleton->set_bone_rest(c,    Transform3D());
+	skeleton->set_bone_rest(a, Transform3D());
+	skeleton->set_bone_rest(b, Transform3D());
+	skeleton->set_bone_rest(c, Transform3D());
 
 	skeleton->set_bone_parent(a, root);
 	skeleton->set_bone_parent(b, a);

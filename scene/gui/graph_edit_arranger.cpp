@@ -430,10 +430,10 @@ float GraphEditArranger::_calculate_threshold(const StringName &p_v, const Strin
 #define MAX_ORDER 2147483647
 // CWE-407 fix (redot-0011): replace O(N) Vector::find with O(1) HashMap lookup.
 // Build node_order once (O(N)), use O(1) getptr() per connection.
-#define ORDER(node, node_order_map)                     \
-	{                                                   \
-		const int *_op = node_order_map.getptr(node);  \
-		order = _op ? *_op : MAX_ORDER;                \
+#define ORDER(node, node_order_map)                   \
+	{                                                 \
+		const int *_op = node_order_map.getptr(node); \
+		order = _op ? *_op : MAX_ORDER;               \
 	}
 
 	int order = MAX_ORDER;

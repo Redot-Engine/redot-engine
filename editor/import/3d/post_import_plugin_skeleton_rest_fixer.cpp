@@ -168,7 +168,9 @@ void PostImportPluginSkeletonRestFixer::internal_process(InternalImportCategory 
 			HashSet<int> bones_to_process_set;
 			{
 				Vector<int> _btp = src_skeleton->get_parentless_bones();
-				for (int _i = 0; _i < _btp.size(); _i++) { bones_to_process_set.insert(_btp[_i]); }
+				for (int _i = 0; _i < _btp.size(); _i++) {
+					bones_to_process_set.insert(_btp[_i]);
+				}
 			}
 			bones_to_process = src_skeleton->get_parentless_bones();
 			{

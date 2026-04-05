@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 // CWE-407 regression tests for redot-0009 and redot-0010:
 //
 // redot-0009: Font::_is_cyclic used no visited set — O(F^D) traversal of a
@@ -42,12 +44,11 @@
 //
 // A regression to either method (removing visited guard) would cause:
 //   redot-0009: exponential hang on set_fallbacks() with diamond graphs
-//   redot-0010: duplicate RIDs in rids[] → text render artefacts
+//   redot-0010: duplicate RIDs in rids[] → text render artifacts
 //
 // These tests use FontVariation (lightweight constructor, no display server
 // needed for fallback graph structure tests).
 
-#pragma once
 
 #include "scene/resources/font.h"
 

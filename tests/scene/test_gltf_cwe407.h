@@ -30,6 +30,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 // CWE-407 regression tests for redot-0008:
 // GLTFState::extensions_used is now HashSet<String> — O(1) insert/has instead
 // of O(E) Vector::has() called per node/animation track during import.
@@ -40,7 +42,6 @@
 // accessors added alongside this fix. A regression removing the HashSet guard
 // would cause duplicate entries in extensions_required and wrong has() results.
 
-#pragma once
 
 #include "modules/gltf/gltf_state.h"
 
