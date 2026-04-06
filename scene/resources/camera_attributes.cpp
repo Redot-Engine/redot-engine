@@ -147,6 +147,91 @@ CameraAttributes::~CameraAttributes() {
 //////////////////////////////////////////////////////
 /* CameraAttributesPractical */
 
+void CameraAttributesPractical::set_motion_blur_enabled(bool p_enabled) {
+	if (motion_blur_enabled == p_enabled) {
+		return;
+	}
+	motion_blur_enabled = p_enabled;
+	_update_motion_blur();
+	notify_property_list_changed();
+}
+
+bool CameraAttributesPractical::is_motion_blur_enabled() const {
+	return motion_blur_enabled;
+}
+
+void CameraAttributesPractical::set_motion_blur_intensity(float p_intensity) {
+	p_intensity = MAX(0.0f, p_intensity);
+	motion_blur_intensity = p_intensity;
+	_update_motion_blur();
+}
+
+float CameraAttributesPractical::get_motion_blur_intensity() const {
+	return motion_blur_intensity;
+}
+
+void CameraAttributesPractical::set_motion_blur_clamp_velocities_to_tile(bool p_clamp_velocities_to_tile) {
+	if (motion_blur_clamp_velocities_to_tile == p_clamp_velocities_to_tile) {
+		return;
+	}
+	motion_blur_clamp_velocities_to_tile = p_clamp_velocities_to_tile;
+	_update_motion_blur();
+}
+
+bool CameraAttributesPractical::is_motion_blur_clamp_velocities_to_tile() const {
+	return motion_blur_clamp_velocities_to_tile;
+}
+
+void CameraAttributesPractical::set_motion_blur_object_velocity_multiplier(float p_multiplier) {
+	p_multiplier = MAX(0.0f, p_multiplier);
+	motion_blur_object_velocity_multiplier = p_multiplier;
+	_update_motion_blur();
+}
+
+float CameraAttributesPractical::get_motion_blur_object_velocity_multiplier() const {
+	return motion_blur_object_velocity_multiplier;
+}
+
+void CameraAttributesPractical::set_motion_blur_movement_velocity_multiplier(float p_multiplier) {
+	p_multiplier = MAX(0.0f, p_multiplier);
+	motion_blur_movement_velocity_multiplier = p_multiplier;
+	_update_motion_blur();
+}
+
+float CameraAttributesPractical::get_motion_blur_movement_velocity_multiplier() const {
+	return motion_blur_movement_velocity_multiplier;
+}
+
+void CameraAttributesPractical::set_motion_blur_rotation_velocity_multiplier(float p_multiplier) {
+	p_multiplier = MAX(0.0f, p_multiplier);
+	motion_blur_rotation_velocity_multiplier = p_multiplier;
+	_update_motion_blur();
+}
+
+float CameraAttributesPractical::get_motion_blur_rotation_velocity_multiplier() const {
+	return motion_blur_rotation_velocity_multiplier;
+}
+
+void CameraAttributesPractical::set_motion_blur_velocity_lower_threshold(float p_threshold) {
+	p_threshold = MAX(0.0f, p_threshold);
+	motion_blur_velocity_lower_threshold = p_threshold;
+	_update_motion_blur();
+}
+
+float CameraAttributesPractical::get_motion_blur_velocity_lower_threshold() const {
+	return motion_blur_velocity_lower_threshold;
+}
+
+void CameraAttributesPractical::set_motion_blur_velocity_upper_threshold(float p_threshold) {
+	p_threshold = MAX(0.0f, p_threshold);
+	motion_blur_velocity_upper_threshold = p_threshold;
+	_update_motion_blur();
+}
+
+float CameraAttributesPractical::get_motion_blur_velocity_upper_threshold() const {
+	return motion_blur_velocity_upper_threshold;
+}
+
 void CameraAttributesPractical::set_dof_blur_far_enabled(bool p_enabled) {
 	dof_blur_far_enabled = p_enabled;
 	_update_dof_blur();
