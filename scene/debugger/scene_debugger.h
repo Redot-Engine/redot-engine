@@ -126,6 +126,15 @@ private:
 #endif
 	static Error _msg_rq_screenshot(const Array &p_args);
 
+	// Signal Viewer: Track signal emissions during gameplay
+	static Error _msg_signal_viewer_start_tracking(const Array &p_args);
+	static Error _msg_signal_viewer_stop_tracking(const Array &p_args);
+	static Error _msg_signal_viewer_request_node_data(const Array &p_args);
+	static Error _msg_signal_viewer_request_node_data_by_path(const Array &p_args);
+
+	static bool signal_viewer_tracking_enabled;
+	static void _signal_viewer_emission_callback(Object *p_emitter, const StringName &p_signal, const Variant **p_args, int p_argcount);
+
 public:
 	static Error parse_message(void *p_user, const String &p_msg, const Array &p_args, bool &r_captured);
 	static void add_to_cache(const String &p_filename, Node *p_node);
