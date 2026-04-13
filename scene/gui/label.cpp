@@ -118,7 +118,7 @@ bool Label::is_uppercase() const {
 
 int Label::get_line_height(int p_line) const {
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_size = _get_layout_font_size();
 	int font_h = font->get_height(font_size);
 	if (p_line >= 0 && p_line < total_line_count) {
 		RID rid = get_line_rid(p_line);
@@ -144,8 +144,8 @@ int Label::get_line_height(int p_line) const {
 }
 
 void Label::_shape() const {
-	Ref<StyleBox> style = theme_cache.normal_style;
-	int width = (get_size().width - style->get_minimum_size().width);
+	const Size2 available_size = get_size() - theme_cache.normal_style->get_minimum_size();
+	const int width = available_size.width;
 
 	if (text_dirty) {
 		for (Paragraph &para : paragraphs) {
@@ -175,6 +175,40 @@ void Label::_shape() const {
 		text_dirty = false;
 	}
 
+	if (!resize_font_to_fit) {
+		_shape_internal(width);
+		return;
+	}
+
+	const int wrap_width = MAX(1, width);
+	int best = minimum_font_size;
+	if (autowrap_mode == TextServer::AUTOWRAP_OFF) {
+		// A container needs a width that does not depend on the size it assigned last time.
+		minimum_fitted_width = _measure_at_font_size(minimum_font_size, wrap_width).width;
+	}
+	if (width > 0 && available_size.height > 0) {
+		int64_t low = int64_t(minimum_font_size) + 1;
+		int64_t high = maximum_font_size;
+		while (low <= high) {
+			const int candidate = low + (high - low) / 2;
+			const Size2 measured = _measure_at_font_size(candidate, wrap_width);
+			if (measured.width <= width && measured.height <= available_size.height &&
+					(max_lines_visible <= 0 || total_line_count - lines_skipped <= max_lines_visible)) {
+				best = candidate;
+				low = int64_t(candidate) + 1;
+			} else {
+				high = candidate - 1;
+			}
+		}
+	}
+	current_fitted_font_size = best;
+	font_dirty = true;
+	_shape_internal(wrap_width);
+	const_cast<Label *>(this)->update_minimum_size();
+}
+
+void Label::_shape_internal(int p_width, Size2 *r_content_size) const {
+	const int width = p_width;
 	total_line_count = 0;
 	for (Paragraph &para : paragraphs) {
 		if (para.dirty || font_dirty) {
@@ -187,7 +221,7 @@ void Label::_shape() const {
 				TS->shaped_text_set_direction(para.text_rid, (TextServer::Direction)text_direction);
 			}
 			const Ref<Font> &font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-			int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+			int font_size = _get_layout_font_size();
 			ERR_FAIL_COND(font.is_null());
 
 			if (para.dirty) {
@@ -241,6 +275,36 @@ void Label::_shape() const {
 	}
 	dirty = false;
 	font_dirty = false;
+
+	if (r_content_size) {
+		const Ref<Font> &font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
+		const double font_height = font->get_height(_get_layout_font_size());
+		const int line_spacing = settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+		const int paragraph_spacing = settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
+		Size2 measured(1, 0);
+		int line_index = 0;
+		int measured_paragraphs = 0;
+		for (const Paragraph &para : paragraphs) {
+			const int first_line = MAX(0, lines_skipped - line_index);
+			line_index += para.lines_rid.size();
+			if (first_line >= para.lines_rid.size()) {
+				continue;
+			}
+			for (int i = first_line; i < para.lines_rid.size(); i++) {
+				const Size2 line_size = TS->shaped_text_get_size(para.lines_rid[i]);
+				measured.width = MAX(measured.width, line_size.width);
+				measured.height += MAX(font_height, double(line_size.height)) + line_spacing;
+			}
+			measured_paragraphs++;
+		}
+		if (measured_paragraphs > 0) {
+			measured.height += (measured_paragraphs - 1) * paragraph_spacing - line_spacing;
+		} else {
+			measured.height = font_height;
+		}
+		*r_content_size = measured;
+		return;
+	}
 
 	if (xl_text.length() == 0) {
 		minsize = Size2(1, get_line_height());
@@ -374,9 +438,17 @@ void Label::_shape() const {
 
 	_update_visible();
 
-	if (autowrap_mode == TextServer::AUTOWRAP_OFF || !clip || overrun_behavior == TextServer::OVERRUN_NO_TRIMMING) {
+	if (!resize_font_to_fit && (autowrap_mode == TextServer::AUTOWRAP_OFF || !clip || overrun_behavior == TextServer::OVERRUN_NO_TRIMMING)) {
 		const_cast<Label *>(this)->update_minimum_size();
 	}
+}
+
+Size2 Label::_measure_at_font_size(int p_font_size, int p_width) const {
+	font_dirty = true;
+	current_fitted_font_size = p_font_size;
+	Size2 measured;
+	_shape_internal(p_width, &measured);
+	return measured;
 }
 
 void Label::_update_visible() const {
@@ -384,7 +456,7 @@ void Label::_update_visible() const {
 	int paragraph_spacing = settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
 	Ref<StyleBox> style = theme_cache.normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_size = _get_layout_font_size();
 	int font_h = font->get_height(font_size);
 	int lines_visible = total_line_count;
 
@@ -506,7 +578,7 @@ Rect2 Label::_get_line_rect(int p_para, int p_line) const {
 	bool rtl_layout = is_layout_rtl();
 	Ref<StyleBox> style = theme_cache.normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_size = _get_layout_font_size();
 	int font_h = font->get_height(font_size);
 	Size2 size = get_size();
 	RID rid = paragraphs[p_para].lines_rid[p_line];
@@ -556,7 +628,7 @@ int Label::get_layout_data(Vector2 &r_offset, int &r_last_line, int &r_line_spac
 	Size2 size = get_size();
 	Ref<StyleBox> style = theme_cache.normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_size = _get_layout_font_size();
 	int font_h = font->get_height(font_size);
 	int line_spacing = settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
 	int paragraph_spacing = settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
@@ -755,7 +827,7 @@ void Label::_notification(int p_what) {
 
 			Ref<StyleBox> style = theme_cache.normal_style;
 			Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-			int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+			int font_size = _get_layout_font_size();
 			int font_h = font->get_height(font_size);
 			Color font_color = has_settings ? settings->get_font_color() : theme_cache.font_color;
 			Color font_shadow_color = has_settings ? settings->get_shadow_color() : theme_cache.font_shadow_color;
@@ -909,7 +981,7 @@ Rect2 Label::get_character_bounds(int p_pos) const {
 
 	int paragraph_spacing = settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_size = _get_layout_font_size();
 	int font_h = font->get_height(font_size);
 
 	Vector2 ofs;
@@ -971,14 +1043,17 @@ Rect2 Label::get_character_bounds(int p_pos) const {
 Size2 Label::get_minimum_size() const {
 	_ensure_shaped();
 
-	Size2 min_size = minsize;
-
 	const Ref<Font> &font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	const Size2 min_style = theme_cache.normal_style->get_minimum_size();
+	if (resize_font_to_fit) {
+		const bool can_trim_width = autowrap_mode != TextServer::AUTOWRAP_OFF || clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING;
+		return Size2(can_trim_width ? 1.0f : Math::ceil(minimum_fitted_width), font->get_height(minimum_font_size)) + min_style;
+	}
 
+	Size2 min_size = minsize;
+	int font_size = _get_layout_font_size();
 	min_size.height = MAX(min_size.height, font->get_height(font_size));
 
-	Size2 min_style = theme_cache.normal_style->get_minimum_size();
 	if (autowrap_mode != TextServer::AUTOWRAP_OFF) {
 		return Size2(1, (clip || overrun_behavior != TextServer::OVERRUN_NO_TRIMMING) ? 1 : min_size.height) + min_style;
 	} else {
@@ -1014,7 +1089,7 @@ int Label::get_line_count() const {
 int Label::get_visible_line_count() const {
 	Ref<StyleBox> style = theme_cache.normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font() : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+	int font_size = _get_layout_font_size();
 	int font_h = font->get_height(font_size);
 	int line_spacing = settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
 	int paragraph_spacing = settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
@@ -1198,6 +1273,68 @@ String Label::get_paragraph_separator() const {
 	return paragraph_separator;
 }
 
+void Label::set_resize_font_to_fit(bool p_enabled) {
+	if (resize_font_to_fit == p_enabled) {
+		return;
+	}
+
+	resize_font_to_fit = p_enabled;
+	font_dirty = true;
+	queue_redraw();
+	update_minimum_size();
+	update_configuration_warnings();
+}
+
+bool Label::is_resize_font_to_fit_enabled() const {
+	return resize_font_to_fit;
+}
+
+void Label::set_minimum_font_size(int p_size) {
+	ERR_FAIL_COND(p_size <= 0);
+	if (minimum_font_size == p_size) {
+		return;
+	}
+
+	minimum_font_size = p_size;
+	if (resize_font_to_fit) {
+		font_dirty = true;
+		queue_redraw();
+		update_minimum_size();
+	}
+}
+
+int Label::get_minimum_font_size() const {
+	return minimum_font_size;
+}
+
+void Label::set_maximum_font_size(int p_size) {
+	ERR_FAIL_COND(p_size <= 0);
+	if (maximum_font_size == p_size) {
+		return;
+	}
+
+	maximum_font_size = p_size;
+	if (resize_font_to_fit) {
+		font_dirty = true;
+		queue_redraw();
+	}
+}
+
+int Label::get_maximum_font_size() const {
+	return maximum_font_size;
+}
+
+int Label::get_rendered_font_size() const {
+	if (resize_font_to_fit) {
+		_ensure_shaped();
+	}
+	return _get_layout_font_size();
+}
+
+int Label::_get_layout_font_size() const {
+	return resize_font_to_fit && current_fitted_font_size > 0 ? current_fitted_font_size : (settings.is_valid() ? settings->get_font_size() : theme_cache.font_size);
+}
+
 void Label::set_clip_text(bool p_clip) {
 	if (clip == p_clip) {
 		return;
@@ -1340,7 +1477,11 @@ void Label::set_lines_skipped(int p_lines) {
 	}
 
 	lines_skipped = p_lines;
-	_update_visible();
+	if (resize_font_to_fit) {
+		font_dirty = true;
+	} else {
+		_update_visible();
+	}
 	queue_redraw();
 }
 
@@ -1354,7 +1495,11 @@ void Label::set_max_lines_visible(int p_lines) {
 	}
 
 	max_lines_visible = p_lines;
-	_update_visible();
+	if (resize_font_to_fit) {
+		font_dirty = true;
+	} else {
+		_update_visible();
+	}
 	queue_redraw();
 }
 
@@ -1416,6 +1561,14 @@ void Label::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_structured_text_bidi_override_options", "args"), &Label::set_structured_text_bidi_override_options);
 	ClassDB::bind_method(D_METHOD("get_structured_text_bidi_override_options"), &Label::get_structured_text_bidi_override_options);
 
+	ClassDB::bind_method(D_METHOD("set_resize_font_to_fit", "enabled"), &Label::set_resize_font_to_fit);
+	ClassDB::bind_method(D_METHOD("is_resize_font_to_fit_enabled"), &Label::is_resize_font_to_fit_enabled);
+	ClassDB::bind_method(D_METHOD("set_minimum_font_size", "size"), &Label::set_minimum_font_size);
+	ClassDB::bind_method(D_METHOD("get_minimum_font_size"), &Label::get_minimum_font_size);
+	ClassDB::bind_method(D_METHOD("set_maximum_font_size", "size"), &Label::set_maximum_font_size);
+	ClassDB::bind_method(D_METHOD("get_maximum_font_size"), &Label::get_maximum_font_size);
+	ClassDB::bind_method(D_METHOD("get_rendered_font_size"), &Label::get_rendered_font_size);
+
 	ClassDB::bind_method(D_METHOD("get_character_bounds", "pos"), &Label::get_character_bounds);
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "text", PROPERTY_HINT_MULTILINE_TEXT), "set_text", "get_text");
@@ -1432,6 +1585,11 @@ void Label::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "ellipsis_char"), "set_ellipsis_char", "get_ellipsis_char");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "uppercase"), "set_uppercase", "is_uppercase");
 	ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "tab_stops"), "set_tab_stops", "get_tab_stops");
+
+	ADD_GROUP("Resize Font to Fit", "");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "resize_font_to_fit", PROPERTY_HINT_GROUP_ENABLE), "set_resize_font_to_fit", "is_resize_font_to_fit_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "minimum_font_size", PROPERTY_HINT_RANGE, "1,256,1,or_greater"), "set_minimum_font_size", "get_minimum_font_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "maximum_font_size", PROPERTY_HINT_RANGE, "1,256,1,or_greater"), "set_maximum_font_size", "get_maximum_font_size");
 
 	ADD_GROUP("Displayed Text", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "lines_skipped", PROPERTY_HINT_RANGE, "0,999,1"), "set_lines_skipped", "get_lines_skipped");
