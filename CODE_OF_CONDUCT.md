@@ -48,7 +48,7 @@ forums, chat channels, and official events. It also applies when an individual i
 
 ## Enforcement
 
-Instances of abusive or unacceptable behavior may be reported to the project maintainers responsible for enforcement at [insert contact].
+Instances of abusive or unacceptable behavior may be reported to the project maintainers responsible for enforcement.
 
 All reports will be reviewed and investigated promptly and fairly. Project maintainers are required to respect the privacy and security of the reporter.
 
