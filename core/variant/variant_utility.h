@@ -95,6 +95,12 @@ struct VariantUtilityFunctions {
 			double to_t, double pre_t, double post_t);
 	static double cubic_interpolate_angle_in_time(double from, double to, double pre, double post, double weight,
 			double to_t, double pre_t, double post_t);
+	static double monotonic_cubic_interpolate(double from, double to, double pre, double post, double weight);
+	static double monotonic_cubic_interpolate_angle(double from, double to, double pre, double post, double weight);
+	static double monotonic_cubic_interpolate_in_time(double from, double to, double pre, double post, double weight,
+			double to_t, double pre_t, double post_t);
+	static double monotonic_cubic_interpolate_angle_in_time(double from, double to, double pre, double post, double weight,
+			double to_t, double pre_t, double post_t);
 	static double bezier_interpolate(double p_start, double p_control_1, double p_control_2, double p_end, double p_t);
 	static double bezier_derivative(double p_start, double p_control_1, double p_control_2, double p_end, double p_t);
 	static double angle_difference(double from, double to);

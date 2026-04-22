@@ -60,6 +60,8 @@ GLTFAnimation::Interpolation GLTFAnimation::godot_to_gltf_interpolation(const Re
 			return INTERP_STEP;
 		case Animation::INTERPOLATION_CUBIC:
 		case Animation::INTERPOLATION_CUBIC_ANGLE:
+		case Animation::INTERPOLATION_CUBIC_MONOTONIC:
+		case Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE:
 			return INTERP_CUBIC_SPLINE;
 	}
 	return INTERP_LINEAR;

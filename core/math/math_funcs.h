@@ -839,4 +839,137 @@ static _ALWAYS_INLINE_ float sigmoid_affine_approx(float p_x, float p_amplitude,
 	return p_amplitude * (0.5f + p_x / (4.0f + fabsf(p_x))) + p_y_translation;
 }
 
+// TODO once upgrade to >= C++20 add floating_point constraint to these templates
+template <typename T>
+constexpr T monotonic_cubic_interpolate(T p_from, T p_to, T p_pre, T p_post, T p_weight) {
+	const T d0 = p_from - p_pre;
+	const T d1 = p_to - p_from;
+	const T d2 = p_post - p_to;
+
+	T m1 = 0.0;
+	T m2 = 0.0;
+
+	if (!is_zero_approx(d1)) {
+		m1 = (d0 + d1) * (T)0.5;
+		m2 = (d1 + d2) * (T)0.5;
+
+		if (m1 * d1 <= 0.0) {
+			m1 = 0.0;
+		}
+		if (m2 * d1 <= 0.0) {
+			m2 = 0.0;
+		}
+
+		const T a = m1 / d1;
+		const T b = m2 / d1;
+
+		const T h = sqrt(a * a + b * b);
+
+		if (h > (T)3.0) {
+			const T scale_factor = (T)3.0 / h;
+			m1 *= scale_factor;
+			m2 *= scale_factor;
+		}
+	}
+
+	const T t2 = p_weight * p_weight;
+	const T t3 = t2 * p_weight;
+
+	const T h00 = 2 * t3 - 3 * t2 + 1;
+	const T h10 = t3 - 2 * t2 + p_weight;
+	const T h01 = -2 * t3 + 3 * t2;
+	const T h11 = t3 - t2;
+
+	return (
+			h00 * p_from +
+			h10 * m1 +
+			h01 * p_to +
+			h11 * m2);
+}
+
+template <typename T>
+constexpr T monotonic_cubic_interpolate_in_time(T p_from, T p_to, T p_pre, T p_post, T p_weight, T p_to_t, T p_pre_t, T p_post_t) {
+	if (is_zero_approx(p_to_t)) {
+		return (p_from + p_to) * (T)0.5;
+	}
+
+	const T t_from = (T)0;
+	const T t_to = p_to_t;
+	const T t_pre = p_pre_t;
+	const T t_post = p_post_t;
+
+	const T t = p_weight * t_to;
+
+	const T h0 = t_from - t_pre;
+	const T h1 = t_to - t_from;
+	const T h2 = t_post - t_to;
+
+	const T d0 = is_zero_approx(h0) ? (T)0 : (p_from - p_pre) / h0;
+	const T d1 = (p_to - p_from) / h1;
+	const T d2 = is_zero_approx(h2) ? (T)0 : (p_post - p_to) / h2;
+
+	// Fritsch–Carlson monotonic tangents
+	auto tangent = [](T a, T b, T ha, T hb) -> T {
+		if (a * b <= (T)0) {
+			return (T)0;
+		}
+
+		const T w1 = (T)2 * hb + ha;
+		const T w2 = hb + (T)2 * ha;
+
+		return (w1 + w2) / (w1 / a + w2 / b);
+	};
+
+	const T m1 = tangent(d0, d1, h0, h1);
+	const T m2 = tangent(d1, d2, h1, h2);
+
+	const T s = t / h1;
+
+	const T s2 = s * s;
+	const T s3 = s2 * s;
+
+	// Hermite basis
+	const T h00 = (T)2 * s3 - (T)3 * s2 + (T)1;
+	const T h10 = s3 - (T)2 * s2 + s;
+	const T h01 = -(T)2 * s3 + (T)3 * s2;
+	const T h11 = s3 - s2;
+
+	return h00 * p_from +
+			h10 * h1 * m1 +
+			h01 * p_to +
+			h11 * h1 * m2;
+}
+
+template <typename T>
+constexpr T monotonic_cubic_interpolate_angle(T p_from, T p_to, T p_pre, T p_post, T p_weight) {
+	T from_rot = fmod(p_from, (T)TAU);
+
+	T pre_diff = fmod(p_pre - from_rot, (T)TAU);
+	T pre_rot = from_rot + fmod(2.0f * pre_diff, (T)TAU) - pre_diff;
+
+	T to_diff = fmod(p_to - from_rot, (T)TAU);
+	T to_rot = from_rot + fmod(2.0f * to_diff, (T)TAU) - to_diff;
+
+	T post_diff = fmod(p_post - to_rot, (T)TAU);
+	T post_rot = to_rot + fmod(2.0f * post_diff, (T)TAU) - post_diff;
+
+	return monotonic_cubic_interpolate(from_rot, to_rot, pre_rot, post_rot, p_weight);
+}
+
+template <typename T>
+constexpr T monotonic_cubic_interpolate_angle_in_time(T p_from, T p_to, T p_pre, T p_post, T p_weight, T p_to_t, T p_pre_t, T p_post_t) {
+	T from_rot = fmod(p_from, (T)TAU);
+
+	T pre_diff = fmod(p_pre - from_rot, (T)TAU);
+	T pre_rot = from_rot + fmod((T)2 * pre_diff, (T)TAU) - pre_diff;
+
+	T to_diff = fmod(p_to - from_rot, (T)TAU);
+	T to_rot = from_rot + fmod((T)2 * to_diff, (T)TAU) - to_diff;
+
+	T post_diff = fmod(p_post - to_rot, (T)TAU);
+	T post_rot = to_rot + fmod((T)2 * post_diff, (T)TAU) - post_diff;
+
+	return monotonic_cubic_interpolate_in_time(from_rot, to_rot, pre_rot, post_rot, p_weight, p_to_t, p_pre_t, p_post_t);
+}
+
 }; // namespace Math

@@ -1992,6 +1992,8 @@ static void _register_variant_builtin_methods_math() {
 	bind_method(Vector2, slerp, sarray("to", "weight"), varray());
 	bind_method(Vector2, cubic_interpolate, sarray("b", "pre_a", "post_b", "weight"), varray());
 	bind_method(Vector2, cubic_interpolate_in_time, sarray("b", "pre_a", "post_b", "weight", "b_t", "pre_a_t", "post_b_t"), varray());
+	bind_method(Vector2, monotonic_cubic_interpolate, sarray("b", "pre_a", "post_b", "weight"), varray());
+	bind_method(Vector2, monotonic_cubic_interpolate_in_time, sarray("b", "pre_a", "post_b", "weight", "b_t", "pre_a_t", "post_b_t"), varray());
 	bind_method(Vector2, bezier_interpolate, sarray("control_1", "control_2", "end", "t"), varray());
 	bind_method(Vector2, bezier_derivative, sarray("control_1", "control_2", "end", "t"), varray());
 	bind_method(Vector2, max_axis_index, sarray(), varray());
@@ -2103,6 +2105,8 @@ static void _register_variant_builtin_methods_math() {
 	bind_method(Vector3, slerp, sarray("to", "weight"), varray());
 	bind_method(Vector3, cubic_interpolate, sarray("b", "pre_a", "post_b", "weight"), varray());
 	bind_method(Vector3, cubic_interpolate_in_time, sarray("b", "pre_a", "post_b", "weight", "b_t", "pre_a_t", "post_b_t"), varray());
+	bind_method(Vector3, monotonic_cubic_interpolate, sarray("b", "pre_a", "post_b", "weight"), varray());
+	bind_method(Vector3, monotonic_cubic_interpolate_in_time, sarray("b", "pre_a", "post_b", "weight", "b_t", "pre_a_t", "post_b_t"), varray());
 	bind_method(Vector3, bezier_interpolate, sarray("control_1", "control_2", "end", "t"), varray());
 	bind_method(Vector3, bezier_derivative, sarray("control_1", "control_2", "end", "t"), varray());
 	bind_method(Vector3, move_toward, sarray("to", "delta"), varray());
@@ -2160,6 +2164,8 @@ static void _register_variant_builtin_methods_math() {
 	bind_method(Vector4, lerp, sarray("to", "weight"), varray());
 	bind_method(Vector4, cubic_interpolate, sarray("b", "pre_a", "post_b", "weight"), varray());
 	bind_method(Vector4, cubic_interpolate_in_time, sarray("b", "pre_a", "post_b", "weight", "b_t", "pre_a_t", "post_b_t"), varray());
+	bind_method(Vector4, monotonic_cubic_interpolate, sarray("b", "pre_a", "post_b", "weight"), varray());
+	bind_method(Vector4, monotonic_cubic_interpolate_in_time, sarray("b", "pre_a", "post_b", "weight", "b_t", "pre_a_t", "post_b_t"), varray());
 	bind_method(Vector4, posmod, sarray("mod"), varray());
 	bind_method(Vector4, posmodv, sarray("modv"), varray());
 	bind_method(Vector4, snapped, sarray("step"), varray());
@@ -2231,6 +2237,8 @@ static void _register_variant_builtin_methods_math() {
 	bind_method(Quaternion, slerpni, sarray("to", "weight"), varray());
 	bind_method(Quaternion, spherical_cubic_interpolate, sarray("b", "pre_a", "post_b", "weight"), varray());
 	bind_method(Quaternion, spherical_cubic_interpolate_in_time, sarray("b", "pre_a", "post_b", "weight", "b_t", "pre_a_t", "post_b_t"), varray());
+	bind_method(Quaternion, spherical_monotonic_cubic_interpolate, sarray("b", "pre_a", "post_b", "weight"), varray());
+	bind_method(Quaternion, spherical_monotonic_cubic_interpolate_in_time, sarray("b", "pre_a", "post_b", "weight", "b_t", "pre_a_t", "post_b_t"), varray());
 	bind_method(Quaternion, get_euler, sarray("order"), varray((int64_t)EulerOrder::YXZ));
 	bind_static_method(Quaternion, from_euler, sarray("euler"), varray());
 	bind_method(Quaternion, get_axis, sarray(), varray());
