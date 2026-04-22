@@ -32,17 +32,23 @@
 
 #pragma once
 
+/**
+ * @file xr_pose.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class XRPose : public RefCounted {
 	GDCLASS(XRPose, RefCounted);
 
 public:
-	// TrackingConfidence gives an indication of how reliable our transform data is.
+	/// TrackingConfidence gives an indication of how reliable our transform data is.
 	enum TrackingConfidence {
-		XR_TRACKING_CONFIDENCE_NONE, // No tracking information is available for this pose.
-		XR_TRACKING_CONFIDENCE_LOW, // Tracking information may be inaccurate or estimated.
-		XR_TRACKING_CONFIDENCE_HIGH // Tracking information is deemed accurate and up to date.
+		XR_TRACKING_CONFIDENCE_NONE, ///< No tracking information is available for this pose.
+		XR_TRACKING_CONFIDENCE_LOW, ///< Tracking information may be inaccurate or estimated.
+		XR_TRACKING_CONFIDENCE_HIGH ///< Tracking information is deemed accurate and up to date.
 	};
 
 private:

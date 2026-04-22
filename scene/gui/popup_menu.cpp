@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file popup_menu.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "popup_menu.h"
 #include "popup_menu.compat.inc"
 
@@ -2879,7 +2885,6 @@ void PopupMenu::_shortcut_changed() {
 	control->queue_redraw();
 }
 
-// Hide on item selection determines whether or not the popup will close after item selection
 void PopupMenu::set_hide_on_item_selection(bool p_enabled) {
 	hide_on_item_selection = p_enabled;
 }

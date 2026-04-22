@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file joypad_sdl.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "joypad_sdl.h"
 
 #ifdef SDL_ENABLED
@@ -49,8 +55,8 @@
 
 JoypadSDL *JoypadSDL::singleton = nullptr;
 
-// Macro to skip the SDL joystick event handling if the device is an SDL gamepad, because
-// there are separate events for SDL gamepads
+/// Macro to skip the SDL joystick event handling if the device is an SDL gamepad, because
+/// there are separate events for SDL gamepads
 #define SKIP_EVENT_FOR_GAMEPAD                    \
 	if (SDL_IsGamepad(sdl_event.jdevice.which)) { \
 		continue;                                 \
@@ -65,8 +71,8 @@ extern "C" {
 HWND SDL_HelperWindow;
 }
 
-// Required for DInput joypads to work
-// TODO: remove this workaround when we update to newer version of SDL
+/// Required for DInput joypads to work
+/// @todo Remove this workaround when we update to newer version of SDL
 JoypadSDL::JoypadSDL(HWND p_helper_window) :
 		JoypadSDL() {
 	SDL_HelperWindow = p_helper_window;

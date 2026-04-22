@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file semver.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 
 #include "modules/regex/regex.h"

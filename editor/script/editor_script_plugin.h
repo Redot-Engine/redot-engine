@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_script_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 
 class EditorScriptPlugin : public EditorPlugin {

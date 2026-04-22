@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file remote_debugger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/debugger/debugger_marshalls.h"
 #include "core/debugger/engine_debugger.h"
 #include "core/debugger/remote_debugger_peer.h"
@@ -118,6 +124,8 @@ public:
 	void poll_events(bool p_is_idle);
 	void send_message(const String &p_message, const Array &p_args);
 	void send_error(const String &p_func, const String &p_file, int p_line, const String &p_err, const String &p_descr, bool p_editor_notify, ErrorHandlerType p_type);
+	/// This function is called when there is a debugger break (bug on script)
+	/// or when execution is paused from editor
 	void debug(bool p_can_continue = true, bool p_is_error_breakpoint = false);
 
 	explicit RemoteDebugger(Ref<RemoteDebuggerPeer> p_peer);

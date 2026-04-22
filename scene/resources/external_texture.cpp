@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file external_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "external_texture.h"
 
 void ExternalTexture::_bind_methods() {

@@ -32,17 +32,27 @@
 
 #pragma once
 
+/**
+ * @file renames_map_3_to_4.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef DISABLE_DEPRECATED
 
 struct RenamesMap3To4 {
 	static const char *enum_renames[][2];
 	static const char *gdscript_function_renames[][2];
-	static const char *csharp_function_renames[][2];
+	static const char *csharp_function_renames[][2]; ///< gdscript_function_renames clone with PascalCase
 	static const char *gdscript_properties_renames[][2];
 	static const char *csharp_properties_renames[][2];
 	static const char *gdscript_signals_renames[][2];
 	static const char *csharp_signals_renames[][2];
+	/// Project setting paths in scripts include the category, but in project.godot,
+	/// the category is the section delimiter, so we need to support the paths without it.
+	/// The project.godot remaps are defined in the project_godot_renames, keep them in sync!
 	static const char *project_settings_renames[][2];
+	/// Should be kept in sync with project_settings_renames.
 	static const char *project_godot_renames[][2];
 	static const char *input_map_renames[][2];
 	static const char *builtin_types_renames[][2];

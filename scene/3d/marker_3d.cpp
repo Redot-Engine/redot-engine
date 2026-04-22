@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file marker_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "marker_3d.h"
 
 void Marker3D::set_gizmo_extents(real_t p_extents) {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_skin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gltf_defines.h"
 
 #include "core/io/resource.h"
@@ -47,7 +53,7 @@ class GLTFSkin : public Resource {
 	friend class FBXDocument;
 
 private:
-	// The "skeleton" property defined in the gltf spec. -1 = Scene Root
+	/// The "skeleton" property defined in the gltf spec. -1 = Scene Root
 	GLTFNodeIndex skin_root = -1;
 
 	Vector<GLTFNodeIndex> joints_original;
@@ -56,28 +62,28 @@ private:
 	// Note: joints + non_joints should form a complete subtree, or subtrees
 	// with a common parent
 
-	// All nodes that are skins that are caught in-between the original joints
-	// (inclusive of joints_original)
+	/// All nodes that are skins that are caught in-between the original joints
+	/// (inclusive of joints_original)
 	Vector<GLTFNodeIndex> joints;
 
-	// All Nodes that are caught in-between skin joint nodes, and are not
-	// defined as joints by any skin
+	/// All Nodes that are caught in-between skin joint nodes, and are not
+	/// defined as joints by any skin
 	Vector<GLTFNodeIndex> non_joints;
 
-	// The roots of the skin. In the case of multiple roots, their parent *must*
-	// be the same (the roots must be siblings)
+	/// The roots of the skin. In the case of multiple roots, their parent *must*
+	/// be the same (the roots must be siblings)
 	Vector<GLTFNodeIndex> roots;
 
-	// The GLTF Skeleton this Skin points to (after we determine skeletons)
+	/// The GLTF Skeleton this Skin points to (after we determine skeletons)
 	GLTFSkeletonIndex skeleton = -1;
 
-	// A mapping from the joint indices (in the order of joints_original) to the
-	// Godot Skeleton's bone_indices
+	/// A mapping from the joint indices (in the order of joints_original) to the
+	/// Godot Skeleton's bone_indices
 	HashMap<int, int> joint_i_to_bone_i;
 	HashMap<int, StringName> joint_i_to_name;
 
-	// The Actual Skin that will be created as a mapping between the IBM's of
-	// this skin to the generated skeleton for the mesh instances.
+	/// The Actual Skin that will be created as a mapping between the IBM's of
+	/// this skin to the generated skeleton for the mesh instances.
 	Ref<Skin> godot_skin;
 
 protected:

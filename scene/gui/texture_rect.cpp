@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_rect.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_rect.h"
 
 void TextureRect::_notification(int p_what) {

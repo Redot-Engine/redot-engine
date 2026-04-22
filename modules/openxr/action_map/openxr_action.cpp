@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_action.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_action.h"
 
 #include "openxr_action_set.h"
@@ -54,8 +60,6 @@ void OpenXRAction::_bind_methods() {
 }
 
 Ref<OpenXRAction> OpenXRAction::new_action(const char *p_name, const char *p_localized_name, const ActionType p_action_type, const char *p_toplevel_paths) {
-	// This is a helper function to help build our default action sets
-
 	Ref<OpenXRAction> action;
 	action.instantiate();
 	action->set_name(String(p_name));

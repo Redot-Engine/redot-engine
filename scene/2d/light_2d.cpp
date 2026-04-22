@@ -30,10 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "light_2d.h"
 
 void Light2D::owner_changed_notify() {
-	// For cases where owner changes _after_ entering tree (as example, editor editing).
 	_update_light_visibility();
 }
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_include_db.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 
 class ShaderIncludeDB : public Object {

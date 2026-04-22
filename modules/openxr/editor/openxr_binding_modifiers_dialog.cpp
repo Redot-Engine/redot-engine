@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_binding_modifiers_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_binding_modifiers_dialog.h"
 #include "../action_map/openxr_interaction_profile_metadata.h"
 #include "openxr_action_map_editor.h"
@@ -216,7 +222,7 @@ OpenXRBindingModifiersDialog::OpenXRBindingModifiersDialog() {
 	add_binding_modifier_btn->connect("pressed", callable_mp(this, &OpenXRBindingModifiersDialog::_on_add_binding_modifier));
 	binding_modifiers_vb->add_child(add_binding_modifier_btn);
 
-	// TODO may need to create our own dialog for this that can filter on binding modifiers recorded on interaction profiles or on individual bindings.
+	/// @todo May need to create our own dialog for this that can filter on binding modifiers recorded on interaction profiles or on individual bindings.
 
 	create_dialog = memnew(CreateDialog);
 	create_dialog->set_transient(true);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file cpu_particles_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "cpu_particles_2d.h"
 #include "cpu_particles_2d.compat.inc"
 
@@ -1458,7 +1464,7 @@ void CPUParticles2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("restart", "keep_seed"), &CPUParticles2D::restart, DEFVAL(false));
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "emitting", PROPERTY_HINT_ONESHOT), "set_emitting", "is_emitting");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "amount", PROPERTY_HINT_RANGE, "1,1000000,1,exp"), "set_amount", "get_amount"); // FIXME: Evaluate support for `exp` in integer properties, or remove this.
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "amount", PROPERTY_HINT_RANGE, "1,1000000,1,exp"), "set_amount", "get_amount"); /// @todo FIXME: Evaluate support for `exp` in integer properties, or remove this.
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture2D"), "set_texture", "get_texture");
 	ADD_GROUP("Time", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "lifetime", PROPERTY_HINT_RANGE, "0.01,600.0,0.01,or_greater,exp,suffix:s"), "set_lifetime", "get_lifetime");
@@ -1689,10 +1695,10 @@ CPUParticles2D::CPUParticles2D() {
 
 	_update_mesh_texture();
 
-	// CPUParticles2D defaults to interpolation off.
-	// This is because the result often looks better when the particles are updated every frame.
-	// Note that children will need to explicitly turn back on interpolation if they want to use it,
-	// rather than relying on inherit mode.
+	/// CPUParticles2D defaults to interpolation off.
+	/// This is because the result often looks better when the particles are updated every frame.
+	/// Note that children will need to explicitly turn back on interpolation if they want to use it,
+	/// rather than relying on inherit mode.
 	set_physics_interpolation_mode(Node::PHYSICS_INTERPOLATION_MODE_OFF);
 }
 

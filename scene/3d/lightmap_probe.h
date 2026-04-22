@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file lightmap_probe.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/node_3d.h"
 
 class LightmapProbe : public Node3D {

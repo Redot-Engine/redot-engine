@@ -32,12 +32,17 @@
 
 #pragma once
 
+/**
+ * @file dds_enums.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 
 #define PF_FOURCC(m_s) ((uint32_t)(((m_s)[3] << 24U) | ((m_s)[2] << 16U) | ((m_s)[1] << 8U) | ((m_s)[0])))
 
-// Reference: https://docs.microsoft.com/en-us/windows/win32/direct3ddds/dds-header
-
+/// Reference: https://docs.microsoft.com/en-us/windows/win32/direct3ddds/dds-header
 enum {
 	DDS_MAGIC = 0x20534444,
 	DDS_HEADER_SIZE = 124,
@@ -84,7 +89,7 @@ enum DDSFourCC {
 	DDFCC_RGBA32F = 116,
 };
 
-// Reference: https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format
+/// Reference: https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format
 enum DXGIFormat {
 	DXGI_R32G32B32A32_FLOAT = 2,
 	DXGI_R32G32B32_FLOAT = 6,
@@ -118,8 +123,8 @@ enum DXGIFormat {
 	DXGI_B4G4R4A4_UNORM = 115,
 };
 
-// The legacy bitmasked format names here represent the actual data layout in the files,
-// while their official names are flipped (e.g. RGBA8 layout is officially called ABGR8).
+/// The legacy bitmasked format names here represent the actual data layout in the files,
+/// while their official names are flipped (e.g. RGBA8 layout is officially called ABGR8).
 enum DDSFormat {
 	DDS_DXT1,
 	DDS_DXT3,

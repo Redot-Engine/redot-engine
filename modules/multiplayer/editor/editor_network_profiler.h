@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_network_profiler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../multiplayer_debugger.h"
 
 #include "scene/debugger/scene_debugger.h"

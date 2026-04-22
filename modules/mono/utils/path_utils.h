@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file path_utils.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 
 namespace Path {

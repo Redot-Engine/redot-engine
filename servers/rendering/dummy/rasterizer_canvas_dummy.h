@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rasterizer_canvas_dummy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_canvas_render.h"
 
 class RasterizerCanvasDummy : public RendererCanvasRender {

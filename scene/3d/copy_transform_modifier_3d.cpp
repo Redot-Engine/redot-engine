@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file copy_transform_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "copy_transform_modifier_3d.h"
 
 bool CopyTransformModifier3D::_set(const StringName &p_path, const Variant &p_value) {

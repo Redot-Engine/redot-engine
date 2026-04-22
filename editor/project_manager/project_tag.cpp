@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_tag.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_tag.h"
 
 #include "editor/themes/editor_scale.h"

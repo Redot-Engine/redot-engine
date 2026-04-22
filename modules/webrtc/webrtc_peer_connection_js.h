@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file webrtc_peer_connection_js.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef WEB_ENABLED
 
 #include "webrtc_peer_connection.h"

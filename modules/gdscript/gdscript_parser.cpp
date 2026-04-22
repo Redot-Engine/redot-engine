@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_parser.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_parser.h"
 
 #include "gdscript.h"
@@ -49,10 +55,6 @@
 #include "editor/settings/editor_settings.h"
 #endif
 
-// This function is used to determine that a type is "built-in" as opposed to native
-// and custom classes. So `Variant::NIL` and `Variant::OBJECT` are excluded:
-// `Variant::NIL` - `null` is literal, not a type.
-// `Variant::OBJECT` - `Object` should be treated as a class, not as a built-in type.
 static HashMap<StringName, Variant::Type> builtin_types;
 Variant::Type GDScriptParser::get_builtin_type(const StringName &p_type) {
 	if (unlikely(builtin_types.is_empty())) {
@@ -181,10 +183,10 @@ void GDScriptParser::clear() {
 }
 
 void GDScriptParser::push_error(const String &p_message, const Node *p_origin) {
-	// TODO: Improve error reporting by pointing at source code.
-	// TODO: Errors might point at more than one place at once (e.g. show previous declaration).
+	/// @todo Improve error reporting by pointing at source code.
+	/// @todo Errors might point at more than one place at once (e.g. show previous declaration).
 	panic_mode = true;
-	// TODO: Improve positional information.
+	/// @todo Improve positional information.
 	if (p_origin == nullptr) {
 		errors.push_back({ p_message, previous.start_line, previous.start_column });
 	} else {
@@ -1245,7 +1247,7 @@ GDScriptParser::VariableNode *GDScriptParser::parse_property(VariableNode *p_var
 				getter_used = true;
 			}
 		} else {
-			// TODO: Update message to only have the missing one if it's the case.
+			/// @todo Update message to only have the missing one if it's the case.
 			push_error(R"(Expected "get" or "set" for property declaration.)");
 		}
 
@@ -1659,7 +1661,7 @@ bool GDScriptParser::parse_function_signature(FunctionNode *p_function, SuiteNod
 	}
 #endif // TOOLS_ENABLED
 
-	// TODO: Improve token consumption so it synchronizes to a statement boundary. This way we can get into the function body with unrecognized tokens.
+	/// @todo Improve token consumption so it synchronizes to a statement boundary. This way we can get into the function body with unrecognized tokens.
 	if (p_type == "lambda") {
 		return consume(GDScriptTokenizer::Token::COLON, R"(Expected ":" after lambda declaration.)");
 	}
@@ -2130,7 +2132,7 @@ GDScriptParser::Node *GDScriptParser::parse_statement() {
 		if (current_function) {
 			push_warning(result, GDScriptWarning::UNREACHABLE_CODE, current_function->identifier ? current_function->identifier->name : "<anonymous lambda>");
 		} else {
-			// TODO: Properties setters and getters with unreachable code are not being warned
+			/// @todo Properties setters and getters with unreachable code are not being warned
 		}
 	}
 #endif
@@ -2143,7 +2145,7 @@ GDScriptParser::Node *GDScriptParser::parse_statement() {
 }
 
 GDScriptParser::AssertNode *GDScriptParser::parse_assert() {
-	// TODO: Add assert message.
+	/// @todo Add assert message.
 	AssertNode *assert = alloc_node<AssertNode>();
 
 	push_multiline(true);
@@ -2677,7 +2679,7 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_precedence(Precedence p_pr
 	ExpressionNode *previous_operand = (this->*prefix_rule)(nullptr, p_can_assign);
 
 #ifdef TOOLS_ENABLED
-	// HACK: We can't create a context in parse_identifier since it is used in places were we don't want completion.
+	/// @todo HACK: We can't create a context in parse_identifier since it is used in places were we don't want completion.
 	if (previous_operand != nullptr && previous_operand->type == GDScriptParser::Node::IDENTIFIER && prefix_rule == static_cast<ParseFunction>(&GDScriptParser::parse_identifier)) {
 		make_completion_context(COMPLETION_IDENTIFIER, previous_operand);
 	}
@@ -2900,7 +2902,7 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_binary_operator(Expression
 		push_error(vformat(R"(Expected expression after "%s" operator.)", op.get_name()));
 	}
 
-	// TODO: Also for unary, ternary, and assignment.
+	/// @todo Also for unary, ternary, and assignment.
 	switch (op.type) {
 		case GDScriptTokenizer::Token::PLUS:
 			operation->operation = BinaryOpNode::OP_ADDITION;
@@ -3423,7 +3425,7 @@ GDScriptParser::ExpressionNode *GDScriptParser::parse_call(ExpressionNode *p_pre
 				}
 				make_completion_context(COMPLETION_ATTRIBUTE_METHOD, call->callee);
 			} else {
-				// TODO: The analyzer can see if this is actually a Callable and give better error message.
+				/// @todo The analyzer can see if this is actually a Callable and give better error message.
 				push_error(R"*(Cannot call on an expression. Use ".call()" if it's a Callable.)*");
 			}
 		} else {
@@ -4373,7 +4375,7 @@ bool GDScriptParser::static_unload_annotation(AnnotationNode *p_annotation, Node
 }
 
 bool GDScriptParser::abstract_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class) {
-	// NOTE: Use `p_target`, **not** `p_class`, because when `p_target` is a class then `p_class` refers to the outer class.
+	/// @note Use `p_target`, **not** `p_class`, because when `p_target` is a class then `p_class` refers to the outer class.
 	if (p_target->type == Node::CLASS) {
 		ClassNode *class_node = static_cast<ClassNode *>(p_target);
 		if (class_node->is_abstract) {
@@ -4865,9 +4867,6 @@ bool GDScriptParser::export_annotations(AnnotationNode *p_annotation, Node *p_ta
 
 	return true;
 }
-
-// For `@export_storage` and `@export_custom`, there is no need to check the variable type, argument values,
-// or handle array exports in a special way, so they are implemented as separate methods.
 
 bool GDScriptParser::export_storage_annotation(AnnotationNode *p_annotation, Node *p_target, ClassNode *p_class) {
 	ERR_FAIL_COND_V_MSG(p_target->type != Node::VARIABLE, false, vformat(R"("%s" annotation can only be applied to variables.)", p_annotation->name));
@@ -6024,7 +6023,7 @@ void GDScriptParser::TreePrinter::print_if(IfNode *p_if, bool p_is_elif) {
 	print_suite(p_if->true_block);
 	decrease_indent();
 
-	// FIXME: Properly detect "elif" blocks.
+	/// @todo FIXME: Properly detect "elif" blocks.
 	if (p_if->false_block != nullptr) {
 		push_line("Else :");
 		increase_indent();

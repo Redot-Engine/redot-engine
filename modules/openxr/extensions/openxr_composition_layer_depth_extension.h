@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_composition_layer_depth_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_extension_wrapper.h"
 
 class OpenXRCompositionLayerDepthExtension : public OpenXRExtensionWrapper {
@@ -49,6 +55,7 @@ public:
 	virtual HashMap<String, bool *> get_requested_extensions() override;
 	bool is_available();
 	virtual int get_composition_layer_count() override;
+	/// Seems this is all done in our base layer... Just in case this changes...
 	virtual XrCompositionLayerBaseHeader *get_composition_layer(int p_index) override;
 	virtual int get_composition_layer_order(int p_index) override;
 

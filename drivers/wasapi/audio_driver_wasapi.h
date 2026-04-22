@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_driver_wasapi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef WASAPI_ENABLED
 
 #include "core/os/mutex.h"
@@ -48,8 +54,8 @@ class AudioDriverWASAPI : public AudioDriver {
 	class AudioDeviceWASAPI {
 	public:
 		IAudioClient *audio_client = nullptr;
-		IAudioRenderClient *render_client = nullptr; // Output
-		IAudioCaptureClient *capture_client = nullptr; // Input
+		IAudioRenderClient *render_client = nullptr; ///< Output
+		IAudioCaptureClient *capture_client = nullptr; ///< Input
 		SafeFlag active;
 
 		WORD format_tag = 0;
@@ -57,8 +63,8 @@ class AudioDriverWASAPI : public AudioDriver {
 		unsigned int channels = 0;
 		unsigned int frame_size = 0;
 
-		String device_name = "Default"; // Output OR Input
-		String new_device = "Default"; // Output OR Input
+		String device_name = "Default"; ///< Output OR Input
+		String new_device = "Default"; ///< Output OR Input
 
 		AudioDeviceWASAPI() {}
 	};

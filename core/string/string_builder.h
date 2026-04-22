@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file string_builder.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 #include "core/templates/local_vector.h"
 
@@ -41,8 +47,8 @@ class StringBuilder {
 	LocalVector<String> strings;
 	LocalVector<const char *> c_strings;
 
-	// -1 means it's a Redot String
-	// a natural number means C string.
+	/// -1 means it's a Redot String
+	/// a natural number means C string.
 	LocalVector<int32_t> appended_strings;
 
 public:

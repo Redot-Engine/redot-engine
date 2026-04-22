@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_driver_dummy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/audio_server.h"
 
 #include "core/os/mutex.h"

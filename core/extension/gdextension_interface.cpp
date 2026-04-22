@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdextension_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdextension_interface.h"
 
 #include "core/config/engine.h"
@@ -1428,7 +1434,7 @@ static void gdextension_object_call_script_method(GDExtensionObjectPtr p_object,
 	const StringName method = *reinterpret_cast<const StringName *>(p_method);
 	const Variant **args = (const Variant **)p_args;
 
-	Callable::CallError error; // TODO: Check `error`?
+	Callable::CallError error; /// @todo Check `error`?
 	memnew_placement(r_return, Variant);
 	*(Variant *)r_return = o->callp(method, args, p_argument_count, error);
 

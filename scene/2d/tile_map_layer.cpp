@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_map_layer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_map_layer.h"
 
 #include "core/io/marshalls.h"
@@ -268,7 +274,7 @@ void TileMapLayer::_rendering_update(bool p_force_cleanup) {
 		// Update all dirty quadrants.
 		bool needs_set_not_interpolated = SceneTree::is_fti_enabled() && !is_physics_interpolated();
 		for (SelfList<RenderingQuadrant> *quadrant_list_element = dirty_rendering_quadrant_list.first(); quadrant_list_element;) {
-			SelfList<RenderingQuadrant> *next_quadrant_list_element = quadrant_list_element->next(); // "Hack" to clear the list while iterating.
+			SelfList<RenderingQuadrant> *next_quadrant_list_element = quadrant_list_element->next(); ///< @todo "Hack" to clear the list while iterating.
 
 			const Ref<RenderingQuadrant> &rendering_quadrant = quadrant_list_element->self();
 
@@ -771,7 +777,7 @@ void TileMapLayer::_physics_update(bool p_force_cleanup) {
 
 		// Update all dirty quadrants.
 		for (SelfList<PhysicsQuadrant> *quadrant_list_element = dirty_physics_quadrant_list.first(); quadrant_list_element;) {
-			SelfList<PhysicsQuadrant> *next_quadrant_list_element = quadrant_list_element->next(); // "Hack" to clear the list while iterating.
+			SelfList<PhysicsQuadrant> *next_quadrant_list_element = quadrant_list_element->next(); /// @todo "Hack" to clear the list while iterating.
 
 			const Ref<PhysicsQuadrant> &physics_quadrant = quadrant_list_element->self();
 
@@ -2715,7 +2721,6 @@ void TileMapLayer::compute_transformed_tile_dest_rect(Rect2 &r_dest_rect, bool &
 }
 
 void TileMapLayer::set_cell(const Vector2i &p_coords, int p_source_id, const Vector2i &p_atlas_coords, int p_alternative_tile) {
-	// Set the current cell tile (using integer position).
 	Vector2i pk(p_coords);
 	HashMap<Vector2i, CellData>::Iterator E = tile_map_layer_data.find(pk);
 
@@ -2787,7 +2792,6 @@ void TileMapLayer::clear() {
 }
 
 int TileMapLayer::get_cell_source_id(const Vector2i &p_coords) const {
-	// Get a cell source id from position.
 	HashMap<Vector2i, CellData>::ConstIterator E = tile_map_layer_data.find(p_coords);
 
 	if (!E) {
@@ -2798,7 +2802,6 @@ int TileMapLayer::get_cell_source_id(const Vector2i &p_coords) const {
 }
 
 Vector2i TileMapLayer::get_cell_atlas_coords(const Vector2i &p_coords) const {
-	// Get a cell source id from position.
 	HashMap<Vector2i, CellData>::ConstIterator E = tile_map_layer_data.find(p_coords);
 
 	if (!E) {
@@ -2809,7 +2812,6 @@ Vector2i TileMapLayer::get_cell_atlas_coords(const Vector2i &p_coords) const {
 }
 
 int TileMapLayer::get_cell_alternative_tile(const Vector2i &p_coords) const {
-	// Get a cell source id from position.
 	HashMap<Vector2i, CellData>::ConstIterator E = tile_map_layer_data.find(p_coords);
 
 	if (!E) {
@@ -2834,7 +2836,6 @@ TileData *TileMapLayer::get_cell_tile_data(const Vector2i &p_coords) const {
 }
 
 TypedArray<Vector2i> TileMapLayer::get_used_cells() const {
-	// Returns the cells used in the tilemap.
 	TypedArray<Vector2i> a;
 	for (const KeyValue<Vector2i, CellData> &E : tile_map_layer_data) {
 		const TileMapCell &c = E.value.cell;
@@ -2848,7 +2849,6 @@ TypedArray<Vector2i> TileMapLayer::get_used_cells() const {
 }
 
 TypedArray<Vector2i> TileMapLayer::get_used_cells_by_id(int p_source_id, const Vector2i &p_atlas_coords, int p_alternative_tile) const {
-	// Returns the cells used in the tilemap.
 	TypedArray<Vector2i> a;
 	for (const KeyValue<Vector2i, CellData> &E : tile_map_layer_data) {
 		const TileMapCell &c = E.value.cell;
@@ -2866,7 +2866,6 @@ TypedArray<Vector2i> TileMapLayer::get_used_cells_by_id(int p_source_id, const V
 }
 
 Rect2i TileMapLayer::get_used_rect() const {
-	// Return the rect of the currently used area.
 	if (used_rect_cache_dirty) {
 		used_rect_cache = Rect2i();
 

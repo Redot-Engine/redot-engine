@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file debug_adapter_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/file_access.h"
 
 namespace DAP {
@@ -107,7 +113,7 @@ struct Breakpoint {
 	const Source *source = nullptr;
 	int line = 0;
 
-	Breakpoint() = default; // Empty constructor is invalid, but is necessary because Godot's collections don't support rvalues.
+	Breakpoint() = default; ///< Empty constructor is invalid, but is necessary because Godot's collections don't support rvalues.
 	Breakpoint(const Source &p_source) :
 			source(&p_source) {}
 
@@ -177,7 +183,7 @@ struct Capabilities {
 struct Message {
 	int id = 0;
 	String format;
-	bool sendTelemetry = false; // Just in case :)
+	bool sendTelemetry = false; ///< Just in case :)
 	bool showUser = false;
 	Dictionary variables;
 
@@ -225,7 +231,7 @@ struct StackFrame {
 	int line = 0;
 	int column = 0;
 
-	StackFrame() = default; // Empty constructor is invalid, but is necessary because Godot's collections don't support rvalues.
+	StackFrame() = default; ///< Empty constructor is invalid, but is necessary because Godot's collections don't support rvalues.
 	StackFrame(const Source &p_source) :
 			source(&p_source) {}
 

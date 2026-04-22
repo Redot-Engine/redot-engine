@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file texture_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/paged_array.h"
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/renderer_rd/shaders/canvas_sdf.glsl.gen.h"
@@ -101,7 +107,8 @@ private:
 
 	RID default_rd_textures[DEFAULT_RD_TEXTURE_MAX];
 
-	/* Canvas Texture API */
+	/// @name Canvas Texture API
+	/// @{
 
 	struct CanvasTextureCache {
 		RID diffuse;
@@ -133,8 +140,9 @@ private:
 	};
 
 	RID_Owner<CanvasTexture, true> canvas_texture_owner;
-
-	/* Texture API */
+	/// @}
+	/// @name Texture API
+	/// @{
 
 	struct RenderTarget;
 
@@ -197,7 +205,7 @@ private:
 		void cleanup();
 	};
 
-	// Textures can be created from threads, so this RID_Owner is thread safe.
+	/// Textures can be created from threads, so this RID_Owner is thread safe.
 	mutable RID_Owner<Texture, true> texture_owner;
 	Texture *get_texture(RID p_rid) { return texture_owner.get_or_null(p_rid); }
 
@@ -241,8 +249,9 @@ private:
 	};
 
 	void _texture_format_from_rd(RD::DataFormat p_rd_format, TextureFromRDFormat &r_format);
-
-	/* DECAL API */
+	/// @}
+	/// @name DECAL API
+	/// @{
 
 	struct DecalAtlas {
 		struct Texture {
@@ -301,8 +310,9 @@ private:
 	};
 
 	mutable RID_Owner<Decal, true> decal_owner;
-
-	/* DECAL INSTANCE */
+	/// @}
+	/// @name DECAL INSTANCE
+	/// @{
 
 	struct DecalInstance {
 		RID decal;
@@ -313,8 +323,9 @@ private:
 	};
 
 	mutable RID_Owner<DecalInstance> decal_instance_owner;
-
-	/* DECAL DATA (UBO) */
+	/// @}
+	/// @name DECAL DATA (UBO)
+	/// @{
 
 	struct DecalData {
 		float xform[16];
@@ -348,20 +359,21 @@ private:
 	DecalData *decals = nullptr;
 	DecalInstanceSort *decal_sort = nullptr;
 	RID decal_buffer;
-
-	/* RENDER TARGET API */
+	/// @}
+	/// @name RENDER TARGET API
+	/// @{
 
 	struct RenderTarget {
 		Size2i size;
 		uint32_t view_count;
 		RID color;
 		Vector<RID> color_slices;
-		RID color_multisample; // Needed when 2D MSAA is enabled.
+		RID color_multisample; ///< Needed when 2D MSAA is enabled.
 
-		RS::ViewportMSAA msaa = RS::VIEWPORT_MSAA_DISABLED; // 2D MSAA mode
-		bool msaa_needs_resolve = false; // 2D MSAA needs resolved
+		RS::ViewportMSAA msaa = RS::VIEWPORT_MSAA_DISABLED; ///< 2D MSAA mode
+		bool msaa_needs_resolve = false; ///< 2D MSAA needs resolved
 
-		//used for retrieving from CPU
+		/// Used for retrieving from CPU
 		RD::DataFormat color_format = RD::DATA_FORMAT_R4G4_UNORM_PACK8;
 		RD::DataFormat color_format_srgb = RD::DATA_FORMAT_R4G4_UNORM_PACK8;
 		Image::Format image_format = Image::FORMAT_L8;
@@ -372,7 +384,7 @@ private:
 
 		bool sdf_enabled = false;
 
-		RID backbuffer; //used for effects
+		RID backbuffer; ///< Used for effects
 		RID backbuffer_fb;
 		RID backbuffer_mipmap0;
 
@@ -397,7 +409,7 @@ private:
 
 		Rect2i render_region;
 
-		// overridden textures
+		/// overridden textures
 		struct RTOverridden {
 			RID color;
 			RID depth;
@@ -479,7 +491,7 @@ private:
 		RID shader_version;
 		RID pipelines[SHADER_MAX];
 	} rt_sdf;
-
+	/// @}
 public:
 	static TextureStorage *get_singleton();
 
@@ -492,7 +504,8 @@ public:
 
 	bool free(RID p_rid);
 
-	/* Canvas Texture API */
+	/// @name Canvas Texture API
+	/// @{
 
 	bool owns_canvas_texture(RID p_rid) { return canvas_texture_owner.owns(p_rid); }
 
@@ -508,8 +521,9 @@ public:
 
 	CanvasTextureInfo canvas_texture_get_info(RID p_texture, RS::CanvasItemTextureFilter p_base_filter, RS::CanvasItemTextureRepeat p_base_repeat, bool p_use_srgb, bool p_texture_is_data);
 	void canvas_texture_set_invalidation_callback(RID p_canvas_texture, InvalidationCallback p_callback, void *p_userdata);
-
-	/* Texture API */
+	/// @}
+	/// @name Texture API
+	/// @{
 
 	bool owns_texture(RID p_rid) const { return texture_owner.owns(p_rid); }
 
@@ -520,8 +534,10 @@ public:
 	virtual void texture_2d_layered_initialize(RID p_texture, const Vector<Ref<Image>> &p_layers, RS::TextureLayeredType p_layered_type) override;
 	virtual void texture_3d_initialize(RID p_texture, Image::Format, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> &p_data) override;
 	virtual void texture_external_initialize(RID p_texture, int p_width, int p_height, uint64_t p_external_buffer) override;
-	virtual void texture_proxy_initialize(RID p_texture, RID p_base) override; //all slices, then all the mipmaps, must be coherent
+	virtual void texture_proxy_initialize(RID p_texture, RID p_base) override; ///< All slices, then all the mipmaps, must be coherent
 
+	/// @note We make some big assumptions about format and usage. If developers need more control,
+	/// they should use RD::texture_create_from_extension() instead.
 	virtual RID texture_create_from_native_handle(RS::TextureType p_type, Image::Format p_format, uint64_t p_native_handle, int p_width, int p_height, int p_depth, int p_layers = 1, RS::TextureLayeredType p_layered_type = RS::TEXTURE_LAYERED_2D_ARRAY) override;
 
 	virtual void texture_2d_update(RID p_texture, const Ref<Image> &p_image, int p_layer = 0) override;
@@ -534,9 +550,11 @@ public:
 	Vector<Ref<Image>> cubemap_placeholder;
 	Vector<Ref<Image>> texture_3d_placeholder;
 
-	//these two APIs can be used together or in combination with the others.
+	// These two APIs can be used together or in combination with the others.
+
 	virtual void texture_2d_placeholder_initialize(RID p_texture) override;
 	virtual void texture_2d_layered_placeholder_initialize(RID p_texture, RenderingServer::TextureLayeredType p_layered_type) override;
+
 	virtual void texture_3d_placeholder_initialize(RID p_texture) override;
 
 	virtual Ref<Image> texture_2d_get(RID p_texture) const override;
@@ -565,7 +583,7 @@ public:
 	virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const override;
 	virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const override;
 
-	//internal usage
+	/// Internal usage
 	_FORCE_INLINE_ TextureType texture_get_type(RID p_texture) {
 		RendererRD::TextureStorage::Texture *tex = texture_owner.get_or_null(p_texture);
 		if (tex == nullptr) {
@@ -595,8 +613,9 @@ public:
 		}
 		return Size2i(tex->width_2d, tex->height_2d);
 	}
-
-	/* DECAL API */
+	/// @}
+	/// @name DECAL API
+	/// @{
 
 	void update_decal_atlas();
 
@@ -696,8 +715,9 @@ public:
 	virtual AABB decal_get_aabb(RID p_decal) const override;
 	virtual uint32_t decal_get_cull_mask(RID p_decal) const override;
 	Dependency *decal_get_dependency(RID p_decal);
-
-	/* DECAL INSTANCE API */
+	/// @}
+	/// @name DECAL INSTANCE API
+	/// @{
 
 	bool owns_decal_instance(RID p_rid) const { return decal_instance_owner.owns(p_rid); }
 
@@ -730,15 +750,17 @@ public:
 		DecalInstance *di = decal_instance_owner.get_or_null(p_decal_instance);
 		di->cull_mask = p_cull_mask;
 	}
-
-	/* DECAL DATA API */
+	/// @}
+	/// @name DECAL DATA API
+	/// @{
 
 	void free_decal_data();
 	void set_max_decals(const uint32_t p_max_decals);
 	RID get_decal_buffer() { return decal_buffer; }
 	void update_decal_buffer(const PagedArray<RID> &p_decals, const Transform3D &p_camera_xform);
-
-	/* RENDER TARGET API */
+	/// @}
+	/// @name RENDER TARGET API
+	/// @{
 
 	bool owns_render_target(RID p_rid) const { return render_target_owner.owns(p_rid); }
 
@@ -822,6 +844,7 @@ public:
 
 	static RD::DataFormat render_target_get_color_format(bool p_use_hdr, bool p_srgb);
 	static uint32_t render_target_get_color_usage_bits(bool p_msaa);
+	/// @}
 };
 
 } // namespace RendererRD

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file spring_bone_collision_plane_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "spring_bone_collision_plane_3d.h"
 
 Vector3 SpringBoneCollisionPlane3D::_collide(const Transform3D &p_center, float p_bone_radius, float p_bone_length, const Vector3 &p_current) const {

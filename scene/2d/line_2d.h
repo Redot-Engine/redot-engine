@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file line_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node_2d.h"
 
 class Line2D : public Node2D {

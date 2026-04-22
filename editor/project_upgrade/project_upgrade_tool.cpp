@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_upgrade_tool.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_upgrade_tool.h"
 
 #include "core/io/dir_access.h"

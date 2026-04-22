@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_format_text.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_format_text.h"
 
 #include "core/config/project_settings.h"
@@ -166,7 +172,7 @@ Error ResourceLoaderText::_parse_ext_resource(VariantParser::Stream *p_stream, R
 		}
 #ifdef TOOLS_ENABLED
 		if (r_res.is_null()) {
-			// Hack to allow checking original path.
+			/// @todo Hack to allow checking original path.
 			r_res.instantiate();
 			r_res->set_meta("__load_path__", ext_resources[id].path);
 		}

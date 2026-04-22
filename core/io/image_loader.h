@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_loader.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/core_bind.h"
 #include "core/io/file_access.h"
 #include "core/io/image.h"

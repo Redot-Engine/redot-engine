@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file thread_windows.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef WINDOWS_ENABLED
 
 #include "thread_windows.h"

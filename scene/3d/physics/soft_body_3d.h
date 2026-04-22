@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file soft_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/mesh_instance_3d.h"
 #include "servers/physics_server_3d.h"
 
@@ -77,7 +83,7 @@ public:
 	struct PinnedPoint {
 		int point_index = -1;
 		NodePath spatial_attachment_path;
-		Node3D *spatial_attachment = nullptr; // Cache
+		Node3D *spatial_attachment = nullptr; ///< Cache
 		Vector3 offset;
 
 		PinnedPoint();

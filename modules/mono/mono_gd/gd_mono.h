@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gd_mono.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../godotsharp_defs.h"
 
 #include "core/io/config_file.h"

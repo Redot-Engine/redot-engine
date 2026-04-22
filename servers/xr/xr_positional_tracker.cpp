@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_positional_tracker.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_positional_tracker.h"
 
 #include "xr_controller_tracker.h"
@@ -129,7 +135,7 @@ void XRPositionalTracker::set_pose(const StringName &p_action_name, const Transf
 
 	emit_signal(SNAME("pose_changed"), new_pose);
 
-	// TODO discuss whether we also want to create and emit an InputEventXRPose event
+	/// @todo Discuss whether we also want to create and emit an InputEventXRPose event
 }
 
 Variant XRPositionalTracker::get_input(const StringName &p_action_name) const {
@@ -173,17 +179,17 @@ void XRPositionalTracker::set_input(const StringName &p_action_name, const Varia
 					emit_signal(SNAME("button_released"), p_action_name);
 				}
 
-				// TODO discuss whether we also want to create and emit an InputEventXRButton event
+				/// @todo Discuss whether we also want to create and emit an InputEventXRButton event
 			} break;
 			case Variant::FLOAT: {
 				emit_signal(SNAME("input_float_changed"), p_action_name, p_value);
 
-				// TODO discuss whether we also want to create and emit an InputEventXRValue event
+				/// @todo Discuss whether we also want to create and emit an InputEventXRValue event
 			} break;
 			case Variant::VECTOR2: {
 				emit_signal(SNAME("input_vector2_changed"), p_action_name, p_value);
 
-				// TODO discuss whether we also want to create and emit an InputEventXRAxis event
+				/// @todo Discuss whether we also want to create and emit an InputEventXRAxis event
 			} break;
 			default: {
 				// ???

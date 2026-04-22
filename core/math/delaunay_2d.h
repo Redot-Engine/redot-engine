@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file delaunay_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/rect2.h"
 #include "core/templates/vector.h"
 

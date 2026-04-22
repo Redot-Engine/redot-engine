@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rich_text_effect.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rich_text_effect.h"
 
 #include "core/object/script_language.h"

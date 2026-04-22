@@ -30,29 +30,35 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_face_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_face_modifier_3d.h"
 
 #include "servers/xr/xr_face_tracker.h"
 #include "servers/xr_server.h"
 
-// This method takes the name of a mesh blend shape and returns the
-// corresponding XRFaceTracker blend shape. If no match is
-// found then the function returns -1.
+/// This method takes the name of a mesh blend shape and returns the
+/// corresponding XRFaceTracker blend shape. If no match is
+/// found then the function returns -1.
 static int find_face_blend_shape(const StringName &p_name) {
-	// Entry for blend shape name table.
+	/// Entry for blend shape name table.
 	struct blend_map_entry {
 		int blend;
 		const char *name[4];
 	};
 
-	// Table of blend shape names.
-	//
-	// This table consists of the XRFaceTracker blend shape and
-	// the corresponding names (lowercase and no underscore) of:
-	// - The Unified Expression blend shape name.
-	// - The ARKit blend shape name (if present and different).
-	// - The SRanipal blend shape name (if present and different).
-	// - The Meta blend shape name (if present and different).
+	/// Table of blend shape names.
+	///
+	/// This table consists of the XRFaceTracker blend shape and
+	/// the corresponding names (lowercase and no underscore) of:
+	/// - The Unified Expression blend shape name.
+	/// - The ARKit blend shape name (if present and different).
+	/// - The SRanipal blend shape name (if present and different).
+	/// - The Meta blend shape name (if present and different).
 	static constexpr blend_map_entry blend_map[] = {
 		{ XRFaceTracker::FT_EYE_LOOK_OUT_RIGHT,
 				{ "eyelookoutright", "eyerightright", "eyeslookoutr" } },
@@ -362,10 +368,10 @@ static int find_face_blend_shape(const StringName &p_name) {
 	return -1;
 }
 
-// This method adds all the identified XRFaceTracker blend shapes of
-// the mesh to the p_blend_mapping map. The map is indexed by the
-// XRFaceTracker blend shape, and the value is the index of the mesh
-// blend shape.
+/// This method adds all the identified XRFaceTracker blend shapes of
+/// the mesh to the p_blend_mapping map. The map is indexed by the
+/// XRFaceTracker blend shape, and the value is the index of the mesh
+/// blend shape.
 static void identify_face_blend_shapes(RBMap<int, int> &p_blend_mapping, const Ref<Mesh> &mesh) {
 	// Find all blend shapes.
 	const int count = mesh->get_blend_shape_count();
@@ -377,8 +383,8 @@ static void identify_face_blend_shapes(RBMap<int, int> &p_blend_mapping, const R
 	}
 }
 
-// This method removes any unified blend shapes from the p_blend_mapping map
-// if all the individual blend shapes are found and going to be driven.
+/// This method removes any unified blend shapes from the p_blend_mapping map
+/// if all the individual blend shapes are found and going to be driven.
 static void remove_driven_unified_blend_shapes(RBMap<int, int> &p_blend_mapping) {
 	// Entry for unified blend table.
 	struct unified_blend_entry {
@@ -386,11 +392,11 @@ static void remove_driven_unified_blend_shapes(RBMap<int, int> &p_blend_mapping)
 		int individual[4];
 	};
 
-	// Table of unified blend shapes.
-	//
-	// This table consists of:
-	// - The XRFaceTracker unified blend shape.
-	// - The individual blend shapes that make up the unified blend shape.
+	/// Table of unified blend shapes.
+	///
+	/// This table consists of:
+	/// - The XRFaceTracker unified blend shape.
+	/// - The individual blend shapes that make up the unified blend shape.
 	static constexpr unified_blend_entry unified_blends[] = {
 		{ XRFaceTracker::FT_EYE_CLOSED,
 				{ XRFaceTracker::FT_EYE_CLOSED_RIGHT, XRFaceTracker::FT_EYE_CLOSED_LEFT, -1, -1 } },
@@ -542,17 +548,6 @@ MeshInstance3D *XRFaceModifier3D::get_mesh_instance() const {
 }
 
 void XRFaceModifier3D::_get_blend_data() {
-	// This method constructs the blend mapping from the XRFaceTracker
-	// blend shapes to the available blend shapes of the target mesh. It does this
-	// by:
-	//
-	// 1. Identifying the blend shapes of the target mesh and identifying what
-	//    XRFaceTracker blend shape they correspond to. The results are
-	//    placed in the blend_mapping map.
-	// 2. Prevent over-driving facial blend-shapes by removing any unified blend
-	//    shapes from the map if all the individual blend shapes are already
-	//    found and going to be driven.
-
 	blend_mapping.clear();
 
 	// Get the target MeshInstance3D.

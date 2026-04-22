@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file link_button.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/base_button.h"
 #include "scene/resources/text_line.h"
 

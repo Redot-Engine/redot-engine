@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/templates/local_vector.h"
 
@@ -48,13 +54,13 @@ public:
 	static constexpr real_t DEFAULT_STEP = 1.0 / 30;
 
 	enum TrackType : uint8_t {
-		TYPE_VALUE, // Set a value in a property, can be interpolated.
-		TYPE_POSITION_3D, // Position 3D track, can be compressed.
-		TYPE_ROTATION_3D, // Rotation 3D track, can be compressed.
-		TYPE_SCALE_3D, // Scale 3D track, can be compressed.
-		TYPE_BLEND_SHAPE, // Blend Shape track, can be compressed.
-		TYPE_METHOD, // Call any method on a specific node.
-		TYPE_BEZIER, // Bezier curve.
+		TYPE_VALUE, ///< Set a value in a property, can be interpolated.
+		TYPE_POSITION_3D, ///< Position 3D track, can be compressed.
+		TYPE_ROTATION_3D, ///< Rotation 3D track, can be compressed.
+		TYPE_SCALE_3D, ///< Scale 3D track, can be compressed.
+		TYPE_BLEND_SHAPE, ///< Blend Shape track, can be compressed.
+		TYPE_METHOD, ///< Call any method on a specific node.
+		TYPE_BEZIER, ///< Bezier curve.
 		TYPE_AUDIO,
 		TYPE_ANIMATION,
 	};
@@ -81,7 +87,7 @@ public:
 		LOOP_PINGPONG,
 	};
 
-	// LoopedFlag is used in Animataion to "process the keys at both ends correct".
+	/// LoopedFlag is used in Animataion to "process the keys at both ends correct".
 	enum LoopedFlag : uint8_t {
 		LOOPED_FLAG_NONE,
 		LOOPED_FLAG_END,
@@ -112,8 +118,8 @@ public:
 		TrackType type = TrackType::TYPE_ANIMATION;
 		InterpolationType interpolation = INTERPOLATION_LINEAR;
 		bool loop_wrap = true;
-		NodePath path; // Path to something.
-		TypeHash thash = 0; // Hash by Path + SubPath + TrackType.
+		NodePath path; ///< Path to something.
+		TypeHash thash = 0; ///< Hash by Path + SubPath + TrackType.
 		bool imported = false;
 		bool enabled = true;
 		virtual ~Track() {}
@@ -122,10 +128,10 @@ public:
 private:
 	struct Key {
 		real_t transition = 1.0;
-		double time = 0.0; // Time in secs.
+		double time = 0.0; ///< Time in secs.
 	};
 
-	// Transform key holds either Vector3 or Quaternion.
+	/// Transform key holds either Vector3 or Quaternion.
 	template <typename T>
 	struct TKey : public Key {
 		T value;
@@ -195,8 +201,8 @@ private:
 	/* BEZIER TRACK */
 
 	struct BezierKey {
-		Vector2 in_handle; // Relative (x always <0)
-		Vector2 out_handle; // Relative (x always >0)
+		Vector2 in_handle; ///< Relative (x always <0)
+		Vector2 out_handle; ///< Relative (x always >0)
 		real_t value = 0.0;
 #ifdef TOOLS_ENABLED
 		HandleMode handle_mode = HANDLE_MODE_FREE;
@@ -215,8 +221,8 @@ private:
 
 	struct AudioKey {
 		Ref<Resource> stream;
-		real_t start_offset = 0.0; // Offset from start.
-		real_t end_offset = 0.0; // Offset from end, if 0 then full length or infinite.
+		real_t start_offset = 0.0; ///< Offset from start.
+		real_t end_offset = 0.0; ///< Offset from end, if 0 then full length or infinite.
 		AudioKey() {
 		}
 	};
@@ -250,9 +256,9 @@ private:
 		MarkerKey() = default;
 	};
 
-	Vector<MarkerKey> marker_names; // time -> name
-	HashMap<StringName, double> marker_times; // name -> time
-	HashMap<StringName, Color> marker_colors; // name -> color
+	Vector<MarkerKey> marker_names; ///< time -> name
+	HashMap<StringName, double> marker_times; ///< name -> time
+	HashMap<StringName, Color> marker_colors; ///< name -> color
 
 	Vector<Track *> tracks;
 
@@ -297,7 +303,8 @@ private:
 
 	void _track_update_hash(int p_track);
 
-	/* Animation compression page format (version 1):
+	/**
+	 * Animation compression page format (version 1):
 	 *
 	 * Animation uses bitwidth based compression separated into small pages. The intention is that pages fit easily in the cache, so decoding is cache efficient.
 	 * The page-based nature also makes future animation streaming from disk possible.
@@ -347,11 +354,10 @@ private:
 	 * **Rotation**: Quaternion(Vector3::octahedron_decode(unorm_vec3.xy),unorm_vec3.z * Math::PI * 2.0)
 	 * **Frame**: page.time_offset + frame * (1.0/fps)
 	 */
-
 	struct Compression {
 		enum {
 			MAX_DATA_TRACK_SIZE = 16384,
-			BLEND_SHAPE_RANGE = 8, // -8.0 to 8.0.
+			BLEND_SHAPE_RANGE = 8, ///< -8.0 to 8.0.
 			FORMAT_VERSION = 1
 		};
 		struct Page {
@@ -361,7 +367,7 @@ private:
 
 		uint32_t fps = 120;
 		LocalVector<Page> pages;
-		LocalVector<AABB> bounds; // Used by position and scale tracks (which contain index to track and index to bounds).
+		LocalVector<AABB> bounds; ///< Used by position and scale tracks (which contain index to track and index to bounds).
 		bool enabled = false;
 	} compression;
 
@@ -402,7 +408,7 @@ protected:
 
 	static void _bind_methods();
 
-	static bool inform_variant_array(int &r_min, int &r_max); // Returns true if max and min are swapped.
+	static bool inform_variant_array(int &r_min, int &r_max); ///< Returns true if max and min are swapped.
 
 #ifndef DISABLE_DEPRECATED
 	Vector3 _position_track_interpolate_bind_compat_86629(int p_track, double p_time) const;
@@ -548,9 +554,10 @@ public:
 	void clear();
 
 	void optimize(real_t p_allowed_velocity_err = 0.01, real_t p_allowed_angular_err = 0.01, int p_precision = 3);
-	void compress(uint32_t p_page_size = 8192, uint32_t p_fps = 120, float p_split_tolerance = 4.0); // 4.0 seems to be the split tolerance sweet spot from many tests.
+	void compress(uint32_t p_page_size = 8192, uint32_t p_fps = 120, float p_split_tolerance = 4.0); ///< 4.0 seems to be the split tolerance sweet spot from many tests.
 
-	// Helper functions for Variant.
+	/// @name Helper functions for Variant
+	/// @{
 	static bool is_variant_interpolatable(const Variant p_value);
 	static bool validate_type_match(const Variant &p_from, Variant &r_to);
 
@@ -566,7 +573,7 @@ public:
 	static Variant interpolate_variant(const Variant &a, const Variant &b, float c, bool p_snap_array_element = false);
 	static Variant cubic_interpolate_in_time_variant(const Variant &pre_a, const Variant &a, const Variant &b, const Variant &post_b, float c, real_t p_pre_a_t, real_t p_b_t, real_t p_post_b_t, bool p_snap_array_element = false);
 	static Variant monotonic_cubic_interpolate_in_time_variant(const Variant &pre_a, const Variant &a, const Variant &b, const Variant &post_b, float c, real_t p_pre_a_t, real_t p_b_t, real_t p_post_b_t, bool p_snap_array_element = false);
-
+	/// @}
 	static bool is_less_or_equal_approx(double a, double b) {
 		return a < b || Math::is_equal_approx(a, b);
 	}

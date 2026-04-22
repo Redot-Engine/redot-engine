@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file pipeline_cache_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "pipeline_cache_rd.h"
 
 #include "core/os/memory.h"
@@ -73,7 +79,7 @@ RID PipelineCacheRD::_generate_version(RD::VertexFormatID p_vertex_format_id, RD
 }
 
 void PipelineCacheRD::_clear() {
-	// TODO: Clear should probably recompile all the variants already compiled instead to avoid stalls? Needs discussion.
+	/// @todo Clear should probably recompile all the variants already compiled instead to avoid stalls? Needs discussion.
 	if (versions) {
 		for (uint32_t i = 0; i < version_count; i++) {
 			//shader may be gone, so this may not be valid

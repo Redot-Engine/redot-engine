@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file macos_utils.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef MACOS_ENABLED
 
 #include "core/string/ustring.h"

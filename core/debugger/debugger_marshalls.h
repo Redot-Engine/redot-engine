@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file debugger_marshalls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/shortcut.h"
 #include "core/object/script_language.h"
 

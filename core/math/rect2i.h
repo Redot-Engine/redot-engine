@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rect2i.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/vector2i.h"
 
@@ -88,7 +94,7 @@ struct [[nodiscard]] Rect2i {
 		return size.x > 0 && size.y > 0;
 	}
 
-	// Returns the intersection between two Rect2is or an empty Rect2i if there is no intersection.
+	/// @return The intersection between two Rect2is or an empty Rect2i if there is no intersection.
 	inline Rect2i intersection(const Rect2i &p_rect) const {
 		Rect2i new_rect = p_rect;
 

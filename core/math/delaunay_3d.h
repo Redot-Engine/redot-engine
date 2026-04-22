@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file delaunay_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/aabb.h"
 #include "core/math/projection.h"
 #include "core/math/vector3.h"
@@ -47,7 +53,7 @@ class Delaunay3D {
 
 	enum {
 		ACCEL_GRID_SIZE = 16,
-		QUANTIZATION_MAX = 1 << 16 // A power of two smaller than the 23 bit significand of a float.
+		QUANTIZATION_MAX = 1 << 16 ///< A power of two smaller than the 23 bit significand of a float.
 	};
 	struct GridPos {
 		Vector3i pos;
@@ -105,10 +111,9 @@ class Delaunay3D {
 		}
 	};
 
+	/// The only part in the algorithm where there may be precision errors is this one,
+	/// so ensure that we do it with the maximum precision possible.
 	_FORCE_INLINE_ static void circum_sphere_compute(const Vector3 *p_points, Simplex *p_simplex) {
-		// The only part in the algorithm where there may be precision errors is this one,
-		// so ensure that we do it with the maximum precision possible.
-
 		R128 v0_x = p_points[p_simplex->points[0]].x;
 		R128 v0_y = p_points[p_simplex->points[0]].y;
 		R128 v0_z = p_points[p_simplex->points[0]].z;

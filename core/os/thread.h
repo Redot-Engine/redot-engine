@@ -32,11 +32,15 @@
 
 #pragma once
 
-#include "platform_config.h"
+/**
+ * @file thread.h
+ *
+ * @brief Define PLATFORM_THREAD_OVERRIDE in your platform's `platform_config.h`
+ * to use a custom Thread implementation defined in `platform/[your_platform]/platform_thread.h`.
+ * Overriding the Thread implementation is required in some proprietary platforms.
+ */
 
-// Define PLATFORM_THREAD_OVERRIDE in your platform's `platform_config.h`
-// to use a custom Thread implementation defined in `platform/[your_platform]/platform_thread.h`.
-// Overriding the Thread implementation is required in some proprietary platforms.
+#include "platform_config.h"
 
 #ifdef PLATFORM_THREAD_OVERRIDE
 
@@ -98,7 +102,7 @@ public:
 	static constexpr size_t CACHE_LINE_BYTES = std::hardware_destructive_interference_size;
 	GODOT_GCC_WARNING_POP
 #else
-	// At a negligible memory cost, we use a conservatively high value.
+	/// At a negligible memory cost, we use a conservatively high value.
 	static constexpr size_t CACHE_LINE_BYTES = 128;
 #endif
 
@@ -124,20 +128,20 @@ public:
 	_FORCE_INLINE_ static void yield() { std::this_thread::yield(); }
 
 	_FORCE_INLINE_ ID get_id() const { return id; }
-	// get the ID of the caller thread
+	/// Get the ID of the caller thread
 	_FORCE_INLINE_ static ID get_caller_id() {
 		return caller_id;
 	}
-	// get the ID of the main thread
+	/// Get the ID of the main thread
 	_FORCE_INLINE_ static ID get_main_id() { return MAIN_ID; }
 
-	_FORCE_INLINE_ static bool is_main_thread() { return caller_id == MAIN_ID; } // Gain a tiny bit of perf here because there is no need to validate caller_id here, because only main thread will be set as 1.
+	_FORCE_INLINE_ static bool is_main_thread() { return caller_id == MAIN_ID; } ///< Gain a tiny bit of perf here because there is no need to validate caller_id here, because only main thread will be set as 1.
 
 	static Error set_name(const String &p_name);
 
 	ID start(Thread::Callback p_callback, void *p_user, const Settings &p_settings = Settings());
 	bool is_started() const;
-	///< waits until thread is finished, and deallocates it.
+	/// Waits until thread is finished, and deallocates it.
 	void wait_to_finish();
 
 	Thread();

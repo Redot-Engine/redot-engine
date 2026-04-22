@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file bone_attachment_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/skeleton_3d.h"
 
 class BoneAttachment3D : public Node3D {
@@ -93,6 +99,7 @@ public:
 	virtual void on_skeleton_update();
 
 #ifdef TOOLS_ENABLED
+	/// Ensures bindings are properly updated after a scene reload.
 	virtual void notify_rebind_required();
 #endif
 

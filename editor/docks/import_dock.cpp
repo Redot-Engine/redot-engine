@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file import_dock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "import_dock.h"
 
 #include "core/config/project_settings.h"

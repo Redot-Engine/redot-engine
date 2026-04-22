@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packed_scene_translation_parser_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "packed_scene_translation_parser_plugin.h"
 
 #include "core/io/resource_loader.h"
@@ -41,9 +47,6 @@ void PackedSceneEditorTranslationParserPlugin::get_recognized_extensions(List<St
 }
 
 Error PackedSceneEditorTranslationParserPlugin::parse_file(const String &p_path, Vector<Vector<String>> *r_translations) {
-	// Parse specific scene Node's properties (see in constructor) that are auto-translated by the engine when set. E.g Label's text property.
-	// These properties are translated with the tr() function in the C++ code when being set or updated.
-
 	Error err;
 	Ref<Resource> loaded_res = ResourceLoader::load(p_path, "PackedScene", ResourceFormatLoader::CACHE_MODE_REUSE, &err);
 	if (err) {
@@ -75,9 +78,9 @@ Error PackedSceneEditorTranslationParserPlugin::parse_file(const String &p_path,
 		bool auto_translate_mode_found = false;
 		for (int j = 0; j < state->get_node_property_count(i); j++) {
 			String property = state->get_node_property_name(i, j);
-			// If an old scene wasn't saved in the new version, the `auto_translate` property won't be converted into `auto_translate_mode`,
-			// so the deprecated property still needs to be checked as well.
-			// TODO: Remove the check for "auto_translate" once the property if fully removed.
+			/// If an old scene wasn't saved in the new version, the `auto_translate` property won't be converted into `auto_translate_mode`,
+			/// so the deprecated property still needs to be checked as well.
+			/// @todo Remove the check for "auto_translate" once the property if fully removed.
 			if (property != "auto_translate_mode" && property != "auto_translate") {
 				continue;
 			}
@@ -96,7 +99,7 @@ Error PackedSceneEditorTranslationParserPlugin::parse_file(const String &p_path,
 					auto_translating = false;
 				}
 			} else {
-				// TODO: Remove this once `auto_translate` is fully removed.
+				/// @todo Remove this once `auto_translate` is fully removed.
 				auto_translating = (bool)state->get_node_property_value(i, j);
 			}
 

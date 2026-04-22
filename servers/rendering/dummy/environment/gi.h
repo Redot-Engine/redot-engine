@@ -32,13 +32,20 @@
 
 #pragma once
 
+/**
+ * @file gi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/environment/renderer_gi.h"
 
 namespace RendererDummy {
 
 class GI : public RendererGI {
 public:
-	/* VOXEL GI API */
+	/// @name VOXEL GI API
+	/// @{
 
 	virtual RID voxel_gi_allocate() override { return RID(); }
 	virtual void voxel_gi_free(RID p_rid) override {}
@@ -81,6 +88,7 @@ public:
 	virtual uint32_t voxel_gi_get_version(RID p_voxel_gi) const override { return 0; }
 
 	virtual void sdfgi_reset() override {}
+	/// @}
 };
 
 } // namespace RendererDummy

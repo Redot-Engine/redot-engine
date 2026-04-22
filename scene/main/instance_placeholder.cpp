@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file instance_placeholder.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "instance_placeholder.h"
 
 #include "core/io/resource_loader.h"
@@ -113,10 +119,6 @@ Node *InstancePlaceholder::create_instance(bool p_replace, const Ref<PackedScene
 	return instance;
 }
 
-// This method will attempt to set the correct values on the placeholder instance
-// for regular types this is trivial and unnecessary.
-// For nodes however this becomes a bit tricky because they might now have existed until the instantiation,
-// so this method will try to find the correct nodes and resolve them.
 void InstancePlaceholder::set_value_on_instance(InstancePlaceholder *p_placeholder, Node *p_instance, const PropSet &p_set) {
 	bool is_valid;
 

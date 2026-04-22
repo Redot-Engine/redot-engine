@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_svg.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource_importer.h"
 
 class ResourceImporterSVG : public ResourceImporter {

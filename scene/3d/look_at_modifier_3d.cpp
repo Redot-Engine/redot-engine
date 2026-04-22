@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file look_at_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "look_at_modifier_3d.h"
 
 void LookAtModifier3D::_validate_property(PropertyInfo &p_property) const {
@@ -644,7 +650,7 @@ Vector3::Axis LookAtModifier3D::get_secondary_rotation_axis(BoneAxis p_forward_a
 }
 
 Vector2 LookAtModifier3D::get_projection_vector(const Vector3 &p_vector, Vector3::Axis p_axis) {
-	// NOTE: axis is swapped between 2D and 3D.
+	/// @note Axis is swapped between 2D and 3D.
 	Vector2 ret;
 	switch (p_axis) {
 		case Vector3::AXIS_X: {

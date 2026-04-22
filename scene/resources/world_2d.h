@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file world_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 #ifndef PHYSICS_2D_DISABLED

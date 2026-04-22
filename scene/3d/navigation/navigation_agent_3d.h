@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_agent_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 #include "servers/navigation/navigation_globals.h"
 #include "servers/navigation/navigation_path_query_parameters_3d.h"
@@ -81,22 +87,22 @@ class NavigationAgent3D : public Node {
 	Ref<NavigationPathQueryResult3D> navigation_result;
 	int navigation_path_index = 0;
 
-	// the velocity result of the avoidance simulation step
+	/// The velocity result of the avoidance simulation step
 	Vector3 safe_velocity;
 
 	/// The submitted target velocity, sets the "wanted" rvo agent velocity on the next update
-	// this velocity is not guaranteed, the simulation will try to fulfill it if possible
-	// if other agents or obstacles interfere it will be changed accordingly
+	/// this velocity is not guaranteed, the simulation will try to fulfill it if possible
+	/// if other agents or obstacles interfere it will be changed accordingly
 	Vector3 velocity;
 	bool velocity_submitted = false;
 
 	/// The submitted forced velocity, overrides the rvo agent velocity on the next update
-	// should only be used very intentionally and not every frame as it interferes with the simulation stability
+	/// should only be used very intentionally and not every frame as it interferes with the simulation stability
 	Vector3 velocity_forced;
 	bool velocity_forced_submitted = false;
 
-	// 2D avoidance has no y-axis. This stores and reapplies the y-axis velocity to the agent before and after the avoidance step.
-	// While not perfect it at least looks way better than agent's that clip through everything that is not a flat surface
+	/// 2D avoidance has no y-axis. This stores and reapplies the y-axis velocity to the agent before and after the avoidance step.
+	/// While not perfect it at least looks way better than agent's that clip through everything that is not a flat surface
 	bool keep_y_velocity = true;
 	float stored_y_velocity = 0.0;
 
@@ -105,18 +111,22 @@ class NavigationAgent3D : public Node {
 	bool navigation_finished = true;
 	bool last_waypoint_reached = false;
 
-	// Debug properties for exposed bindings
+	/// @name Debug properties for exposed bindings
+	/// @{
 	bool debug_enabled = false;
 	float debug_path_custom_point_size = 4.0;
 	bool debug_use_custom = false;
 	Color debug_path_custom_color = Color(1.0, 1.0, 1.0, 1.0);
+	/// @}
 #ifdef DEBUG_ENABLED
-	// Debug properties internal only
+	/// @name Debug properties internal only
+	/// @{
 	bool debug_path_dirty = true;
 	RID debug_path_instance;
 	Ref<ArrayMesh> debug_path_mesh;
 	Ref<StandardMaterial3D> debug_agent_path_line_custom_material;
 	Ref<StandardMaterial3D> debug_agent_path_point_custom_material;
+	/// @}
 #endif // DEBUG_ENABLED
 
 protected:
@@ -125,6 +135,8 @@ protected:
 	void _validate_property(PropertyInfo &p_property) const;
 
 #ifndef DISABLE_DEPRECATED
+	/// Compatibility with Godot 4.0 beta 10 or below.
+	/// Functions in block below all renamed or replaced in 4.0 beta 1X avoidance rework.
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 #endif // DISABLE_DEPRECATED

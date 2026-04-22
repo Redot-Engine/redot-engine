@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file display_server_headless.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/display_server.h"
 
 #include "servers/rendering/dummy/rasterizer_dummy.h"

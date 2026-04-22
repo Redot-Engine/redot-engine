@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file reflection_probe.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/visual_instance_3d.h"
 
 class ReflectionProbe : public VisualInstance3D {

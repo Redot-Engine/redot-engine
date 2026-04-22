@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file vector3.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/math_funcs.h"
 #include "core/string/ustring.h"
@@ -114,8 +120,8 @@ struct [[nodiscard]] Vector3 {
 	void rotate(const Vector3 &p_axis, real_t p_angle);
 	Vector3 rotated(const Vector3 &p_axis, real_t p_angle) const;
 
-	/* Static Methods between 2 vector3s */
-
+	/// @name Static Methods between 2 vector3s
+	/// @{
 	_FORCE_INLINE_ Vector3 lerp(const Vector3 &p_to, real_t p_weight) const;
 	_FORCE_INLINE_ Vector3 slerp(const Vector3 &p_to, real_t p_weight) const;
 	_FORCE_INLINE_ Vector3 cubic_interpolate(const Vector3 &p_b, const Vector3 &p_pre_a, const Vector3 &p_post_b, real_t p_weight) const;
@@ -124,6 +130,7 @@ struct [[nodiscard]] Vector3 {
 	_FORCE_INLINE_ Vector3 monotonic_cubic_interpolate_in_time(const Vector3 &p_b, const Vector3 &p_pre_a, const Vector3 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const;
 	_FORCE_INLINE_ Vector3 bezier_interpolate(const Vector3 &p_control_1, const Vector3 &p_control_2, const Vector3 &p_end, real_t p_t) const;
 	_FORCE_INLINE_ Vector3 bezier_derivative(const Vector3 &p_control_1, const Vector3 &p_control_2, const Vector3 &p_end, real_t p_t) const;
+	/// @}
 
 	Vector3 move_toward(const Vector3 &p_to, real_t p_delta) const;
 
@@ -165,7 +172,8 @@ struct [[nodiscard]] Vector3 {
 	bool is_zero_approx() const;
 	bool is_finite() const;
 
-	/* Operators */
+	/// @name Operators
+	/// @{
 
 	constexpr Vector3 &operator+=(const Vector3 &p_v);
 	constexpr Vector3 operator+(const Vector3 &p_v) const;
@@ -192,6 +200,7 @@ struct [[nodiscard]] Vector3 {
 
 	explicit operator String() const;
 	operator Vector3i() const;
+	/// @}
 
 	constexpr Vector3() :
 			x(0), y(0), z(0) {}
@@ -240,9 +249,9 @@ Vector3 Vector3::lerp(const Vector3 &p_to, real_t p_weight) const {
 	return res;
 }
 
+/// This method seems more complicated than it really is, since we write out
+/// the internals of some methods for efficiency (mainly, checking length).
 Vector3 Vector3::slerp(const Vector3 &p_to, real_t p_weight) const {
-	// This method seems more complicated than it really is, since we write out
-	// the internals of some methods for efficiency (mainly, checking length).
 	real_t start_length_sq = length_squared();
 	real_t end_length_sq = p_to.length_squared();
 	if (unlikely(start_length_sq == 0.0f || end_length_sq == 0.0f)) {
@@ -347,17 +356,20 @@ Vector3 Vector3::direction_to(const Vector3 &p_to) const {
 	return ret;
 }
 
+/**
+ * @return Any perpendicular vector by cross product with the Vector3.RIGHT or Vector3.UP,
+ * whichever has the greater angle to the current vector with the sign of each element positive.
+ * The only essence is "to avoid being parallel to the current vector", and there is no mathematical basis for using Vector3.RIGHT and Vector3.UP,
+ * since it could be a different vector depending on the prior branching code Math::abs(x) <= Math::abs(y) && Math::abs(x) <= Math::abs(z).
+ * However, it would be reasonable to use any of the axes of the basis, as it is simpler to calculate.
+ * */
 Vector3 Vector3::get_any_perpendicular() const {
-	// Return the any perpendicular vector by cross product with the Vector3.RIGHT or Vector3.UP,
-	// whichever has the greater angle to the current vector with the sign of each element positive.
-	// The only essence is "to avoid being parallel to the current vector", and there is no mathematical basis for using Vector3.RIGHT and Vector3.UP,
-	// since it could be a different vector depending on the prior branching code Math::abs(x) <= Math::abs(y) && Math::abs(x) <= Math::abs(z).
-	// However, it would be reasonable to use any of the axes of the basis, as it is simpler to calculate.
 	ERR_FAIL_COND_V_MSG(is_zero_approx(), Vector3(0, 0, 0), "The Vector3 must not be zero.");
 	return cross((Math::abs(x) <= Math::abs(y) && Math::abs(x) <= Math::abs(z)) ? Vector3(1, 0, 0) : Vector3(0, 1, 0)).normalized();
 }
 
-/* Operators */
+/// @name Operators
+/// @{
 
 constexpr Vector3 &Vector3::operator+=(const Vector3 &p_v) {
 	x += p_v.x;
@@ -410,9 +422,9 @@ constexpr Vector3 &Vector3::operator*=(real_t p_scalar) {
 	return *this;
 }
 
-// Multiplication operators required to workaround issues with LLVM using implicit conversion
-// to Vector3i instead for integers where it should not.
-
+/// @}
+/// @name Multiplication operators required to workaround issues with LLVM using implicit conversion to Vector3i instead for integers where it should not.
+/// @{
 constexpr Vector3 operator*(float p_scalar, const Vector3 &p_vec) {
 	return p_vec * p_scalar;
 }
@@ -432,6 +444,7 @@ constexpr Vector3 operator*(int64_t p_scalar, const Vector3 &p_vec) {
 constexpr Vector3 Vector3::operator*(real_t p_scalar) const {
 	return Vector3(x * p_scalar, y * p_scalar, z * p_scalar);
 }
+/// @}
 
 constexpr Vector3 &Vector3::operator/=(real_t p_scalar) {
 	x /= p_scalar;
@@ -551,7 +564,7 @@ void Vector3::zero() {
 	x = y = z = 0;
 }
 
-// slide returns the component of the vector along the given plane, specified by its normal vector.
+/// @return The component of the vector along the given plane, specified by its normal vector.
 Vector3 Vector3::slide(const Vector3 &p_normal) const {
 #ifdef MATH_CHECKS
 	ERR_FAIL_COND_V_MSG(!p_normal.is_normalized(), Vector3(), "The normal Vector3 " + p_normal.operator String() + " must be normalized.");

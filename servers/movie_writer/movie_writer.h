@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file movie_writer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/templates/local_vector.h"
 #include "servers/audio_server.h"
@@ -43,8 +49,8 @@ class MovieWriter : public Object {
 	uint64_t mix_rate = 0;
 	uint32_t audio_channels = 0;
 
-	// The output resolution, which can differ from the window size.
-	// Used as a base for resizing all subsequent frames if their resolution differs.
+	/// The output resolution, which can differ from the window size.
+	/// Used as a base for resizing all subsequent frames if their resolution differs.
 	Vector2i movie_size;
 
 	float cpu_time = 0.0f;

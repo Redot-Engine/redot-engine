@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_driver_d3d12.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_device_driver_d3d12.h"
 
 #include "d3d12_hooks.h"
@@ -93,10 +99,10 @@ GODOT_MSVC_WARNING_POP
 #endif
 #endif
 
-// Runs constant sanity checks on the structure of the descriptor heap pools to catch implementation errors.
+/// Runs constant sanity checks on the structure of the descriptor heap pools to catch implementation errors.
 #define D3D12_DESCRIPTOR_HEAP_VERIFICATION 0
 
-// Tracks additional information and prints information about the allocation of descriptor heaps.
+/// Tracks additional information and prints information about the allocation of descriptor heaps.
 #define D3D12_DESCRIPTOR_HEAP_VERBOSE 0
 
 static const D3D12_RANGE VOID_RANGE = {};
@@ -105,10 +111,10 @@ static const D3D12_RANGE VOID_RANGE = {};
 /**** GENERIC ****/
 /*****************/
 
-// NOTE: RD's packed format names are reversed in relation to DXGI's; e.g.:.
-// - DATA_FORMAT_A8B8G8R8_UNORM_PACK32 -> DXGI_FORMAT_R8G8B8A8_UNORM (packed; note ABGR vs. RGBA).
-// - DATA_FORMAT_B8G8R8A8_UNORM -> DXGI_FORMAT_B8G8R8A8_UNORM (not packed; note BGRA order matches).
-// TODO: Add YUV formats properly, which would require better support for planes in the RD API.
+/// @note RD's packed format names are reversed in relation to DXGI's; e.g.:.
+/// - DATA_FORMAT_A8B8G8R8_UNORM_PACK32 -> DXGI_FORMAT_R8G8B8A8_UNORM (packed; note ABGR vs. RGBA).
+/// - DATA_FORMAT_B8G8R8A8_UNORM -> DXGI_FORMAT_B8G8R8A8_UNORM (not packed; note BGRA order matches).
+/// @todo Add YUV formats properly, which would require better support for planes in the RD API.
 
 const RenderingDeviceDriverD3D12::D3D12Format RenderingDeviceDriverD3D12::RD_TO_D3D12_FORMAT[RDD::DATA_FORMAT_MAX] = {
 	/* DATA_FORMAT_R4G4_UNORM_PACK8 */ {},
@@ -609,7 +615,7 @@ static const D3D12_COMPARISON_FUNC RD_TO_D3D12_COMPARE_OP[RD::COMPARE_OP_MAX] = 
 };
 
 uint32_t RenderingDeviceDriverD3D12::SubgroupCapabilities::supported_stages_flags_rd() const {
-	// If there's a way to check exactly which are supported, I have yet to find it.
+	/// @todo If there's a way to check exactly which are supported, I have yet to find it.
 	return (
 			RenderingDevice::ShaderStage::SHADER_STAGE_FRAGMENT_BIT |
 			RenderingDevice::ShaderStage::SHADER_STAGE_COMPUTE_BIT);
@@ -2033,7 +2039,7 @@ RDD::SamplerID RenderingDeviceDriverD3D12::sampler_create(const SamplerState &p_
 
 	sampler_desc.ComparisonFunc = p_state.enable_compare ? RD_TO_D3D12_COMPARE_OP[p_state.compare_op] : D3D12_COMPARISON_FUNC_NEVER;
 
-	// TODO: Emulate somehow?
+	/// @todo Emulate somehow?
 	if (p_state.unnormalized_uvw) {
 		WARN_PRINT("Creating a sampler with unnormalized UVW, which is not supported.");
 	}
@@ -2067,7 +2073,7 @@ RDD::VertexFormatID RenderingDeviceDriverD3D12::vertex_format_create(VectorView<
 		vf_info->input_elem_descs[i].SemanticName = "TEXCOORD";
 		vf_info->input_elem_descs[i].SemanticIndex = p_vertex_attribs[i].location;
 		vf_info->input_elem_descs[i].Format = RD_TO_D3D12_FORMAT[p_vertex_attribs[i].format].general_format;
-		vf_info->input_elem_descs[i].InputSlot = i; // TODO: Can the same slot be used if data comes from the same buffer (regardless format)?
+		vf_info->input_elem_descs[i].InputSlot = i; ///< @todo Can the same slot be used if data comes from the same buffer (regardless format)?
 		vf_info->input_elem_descs[i].AlignedByteOffset = p_vertex_attribs[i].offset;
 		if (p_vertex_attribs[i].frequency == VERTEX_FREQUENCY_INSTANCE) {
 			vf_info->input_elem_descs[i].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
@@ -2517,8 +2523,6 @@ void RenderingDeviceDriverD3D12::semaphore_free(SemaphoreID p_semaphore) {
 // ----- QUEUE FAMILY -----
 
 RDD::CommandQueueFamilyID RenderingDeviceDriverD3D12::command_queue_family_get(BitField<CommandQueueFamilyBits> p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface) {
-	// Return the command list type encoded plus one so zero is an invalid value.
-	// The only ones that support presenting to a surface are direct queues.
 	if (p_cmd_queue_family_bits.has_flag(COMMAND_QUEUE_FAMILY_GRAPHICS_BIT) || (p_surface != 0)) {
 		return CommandQueueFamilyID(D3D12_COMMAND_LIST_TYPE_DIRECT + 1);
 	} else if (p_cmd_queue_family_bits.has_flag(COMMAND_QUEUE_FAMILY_COMPUTE_BIT)) {
@@ -3379,7 +3383,7 @@ static void _add_descriptor_count_for_uniform(RenderingDevice::UniformType p_typ
 }
 
 RDD::UniformSetID RenderingDeviceDriverD3D12::uniform_set_create(VectorView<BoundUniform> p_uniforms, ShaderID p_shader, uint32_t p_set_index, int p_linear_pool_index) {
-	//p_linear_pool_index = -1; // TODO:? Linear pools not implemented or not supported by API backend.
+	//p_linear_pool_index = -1; /// @todo ? Linear pools not implemented or not supported by API backend.
 
 	// Pre-bookkeep.
 	UniformSetInfo *uniform_set_info = VersatileResource::allocate<UniformSetInfo>(resources_allocator);
@@ -3696,8 +3700,8 @@ void RenderingDeviceDriverD3D12::command_uniform_set_prepare_for_use(CommandBuff
 		// albeit compatible, shader, which may make a different usage in the end).
 		// However, now we know and can exclude up to one unneeded states.
 
-		// TODO: If subresources involved already in the needed states, or scheduled for it,
-		// maybe it's more optimal not to do anything here
+		/// @todo If subresources involved already in the needed states, or scheduled for it,
+		/// maybe it's more optimal not to do anything here
 
 		uint32_t stages = 0;
 		D3D12_RESOURCE_STATES wanted_state = {};
@@ -3924,7 +3928,7 @@ void RenderingDeviceDriverD3D12::_command_bind_uniform_set(CommandBufferID p_cmd
 						set_heap_walkers.resources.advance(num_resource_descs);
 					}
 
-					// TODO: Batch to avoid multiple calls where possible (in any case, flush before setting root descriptor tables, or even batch that as well).
+					/// @todo Batch to avoid multiple calls where possible (in any case, flush before setting root descriptor tables, or even batch that as well).
 					device->CopyDescriptorsSimple(
 							num_resource_descs,
 							frame_heap_walkers.resources->get_curr_cpu_handle(),
@@ -3974,7 +3978,7 @@ void RenderingDeviceDriverD3D12::_command_bind_uniform_set(CommandBufferID p_cmd
 						tables.samplers->start_gpu_handle = frame_heap_walkers.samplers->get_curr_gpu_handle();
 					}
 
-					// TODO: Batch to avoid multiple calls where possible (in any case, flush before setting root descriptor tables, or even batch that as well).
+					/// @todo Batch to avoid multiple calls where possible (in any case, flush before setting root descriptor tables, or even batch that as well).
 					device->CopyDescriptorsSimple(
 							num_sampler_descs,
 							frame_heap_walkers.samplers->get_curr_cpu_handle(),
@@ -4897,7 +4901,7 @@ void RenderingDeviceDriverD3D12::command_bind_render_uniform_set(CommandBufferID
 
 void RenderingDeviceDriverD3D12::command_bind_render_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) {
 	for (uint32_t i = 0u; i < p_set_count; ++i) {
-		// TODO: _command_bind_uniform_set() does WAAAAY too much stuff. A lot of it should be already cached in UniformSetID when uniform_set_create() was called. Binding is supposed to be a cheap operation, ideally a memcpy.
+		/// @todo _command_bind_uniform_set() does WAAAAY too much stuff. A lot of it should be already cached in UniformSetID when uniform_set_create() was called. Binding is supposed to be a cheap operation, ideally a memcpy.
 		_command_bind_uniform_set(p_cmd_buffer, p_uniform_sets[i], p_shader, p_first_set_index + i, false);
 	}
 }
@@ -5195,7 +5199,7 @@ RDD::PipelineID RenderingDeviceDriverD3D12::render_pipeline_create(
 		render_info.dyn_params.primitive_topology = RD_PRIMITIVE_TO_D3D12_TOPOLOGY[p_render_primitive];
 	}
 	if (p_render_primitive == RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX) {
-		// TODO: This is right for 16-bit indices; for 32-bit there's a different enum value to set, but we don't know at this point.
+		/// @todo This is right for 16-bit indices; for 32-bit there's a different enum value to set, but we don't know at this point.
 		pipeline_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFF;
 	} else {
 		pipeline_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
@@ -5417,7 +5421,7 @@ void RenderingDeviceDriverD3D12::command_bind_compute_uniform_set(CommandBufferI
 
 void RenderingDeviceDriverD3D12::command_bind_compute_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count) {
 	for (uint32_t i = 0u; i < p_set_count; ++i) {
-		// TODO: _command_bind_uniform_set() does WAAAAY too much stuff. A lot of it should be already cached in UniformSetID when uniform_set_create() was called. Binding is supposed to be a cheap operation, ideally a memcpy.
+		/// @todo _command_bind_uniform_set() does WAAAAY too much stuff. A lot of it should be already cached in UniformSetID when uniform_set_create() was called. Binding is supposed to be a cheap operation, ideally a memcpy.
 		_command_bind_uniform_set(p_cmd_buffer, p_uniform_sets[i], p_shader, p_first_set_index + i, true);
 	}
 }
@@ -5575,7 +5579,7 @@ void RenderingDeviceDriverD3D12::command_end_label(CommandBufferID p_cmd_buffer)
 }
 
 void RenderingDeviceDriverD3D12::command_insert_breadcrumb(CommandBufferID p_cmd_buffer, uint32_t p_data) {
-	// TODO: Implement via DRED.
+	/// @todo Implement via DRED.
 }
 
 /********************/

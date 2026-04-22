@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_export.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_export_platform.h"
 #include "editor_export_plugin.h"
 

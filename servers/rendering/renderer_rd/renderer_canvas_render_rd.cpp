@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_canvas_render_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_canvas_render_rd.h"
 
 #include "core/config/project_settings.h"
@@ -2230,7 +2236,7 @@ void RendererCanvasRenderRD::_render_batch_items(RenderTarget p_to_render_target
 			clear_color = texture_storage->render_target_get_clear_request_color(p_to_render_target.render_target);
 			texture_storage->render_target_disable_clear_request(p_to_render_target.render_target);
 		}
-		// TODO: Obtain from framebuffer format eventually when this is implemented.
+		/// @todo Obtain from framebuffer format eventually when this is implemented.
 		fb_uniform_set = texture_storage->render_target_get_framebuffer_uniform_set(p_to_render_target.render_target);
 	}
 
@@ -2340,7 +2346,7 @@ void RendererCanvasRenderRD::_record_item_commands(const Item *p_item, RenderTar
 
 	bool skipping = false;
 
-	// TODO: consider making lights a per-batch property and then baking light operations in the shader for better performance.
+	/// @todo Consider making lights a per-batch property and then baking light operations in the shader for better performance.
 	uint32_t lights[4] = { 0, 0, 0, 0 };
 
 	uint16_t light_count = 0;

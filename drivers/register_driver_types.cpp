@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file register_driver_types.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "register_driver_types.h"
 
 #include "drivers/png/image_frames_loader_png.h"

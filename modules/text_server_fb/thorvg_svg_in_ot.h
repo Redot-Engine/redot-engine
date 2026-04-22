@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file thorvg_svg_in_ot.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GDEXTENSION
 // Headers for building as GDExtension plug-in.
 

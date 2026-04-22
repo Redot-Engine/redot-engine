@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_view_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <UIKit/UIKit.h>
 
 class String;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file smaa.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
 #include "servers/rendering/renderer_rd/shaders/effects/smaa_blending.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/smaa_edge_detection.glsl.gen.h"

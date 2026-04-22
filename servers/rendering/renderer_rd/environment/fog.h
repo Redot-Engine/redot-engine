@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/environment/renderer_fog.h"
@@ -54,7 +60,8 @@ private:
 	static int _get_fog_variant();
 	static int _get_fog_process_variant(int p_idx);
 
-	/* FOG VOLUMES */
+	/// @name FOG VOLUMES
+	/// @{
 
 	struct FogVolume {
 		RID material;
@@ -76,8 +83,9 @@ private:
 	mutable RID_Owner<FogVolumeInstance> fog_volume_instance_owner;
 
 	const int SAMPLERS_BINDING_FIRST_INDEX = 3;
-
-	/* Volumetric Fog */
+	/// @}
+	/// @name Volumetric Fog
+	/// @{
 	struct VolumetricFogShader {
 		enum ShaderGroup {
 			SHADER_GROUP_BASE,
@@ -194,6 +202,7 @@ private:
 		RID process_pipelines[VOLUMETRIC_FOG_PROCESS_SHADER_MAX];
 
 	} volumetric_fog;
+	/// @}
 
 	Vector3i _point_get_position_in_froxel_volume(const Vector3 &p_point, float fog_end, const Vector2 &fog_near_size, const Vector2 &fog_far_size, float volumetric_fog_detail_spread, const Vector3 &fog_size, const Transform3D &p_cam_transform);
 
@@ -244,7 +253,8 @@ public:
 	Fog();
 	~Fog();
 
-	/* FOG VOLUMES */
+	/// @name FOG VOLUMES
+	/// @{
 
 	bool owns_fog_volume(RID p_rid) { return fog_volume_owner.owns(p_rid); }
 
@@ -260,8 +270,9 @@ public:
 	RID fog_volume_get_material(RID p_fog_volume) const;
 	virtual AABB fog_volume_get_aabb(RID p_fog_volume) const override;
 	Vector3 fog_volume_get_size(RID p_fog_volume) const;
-
-	/* FOG VOLUMES INSTANCE */
+	/// @}
+	/// @name FOG VOLUMES INSTANCE
+	/// @{
 
 	bool owns_fog_volume_instance(RID p_rid) { return fog_volume_instance_owner.owns(p_rid); }
 
@@ -291,8 +302,9 @@ public:
 		ERR_FAIL_NULL_V(fvi, Vector3());
 		return fvi->transform.get_origin();
 	}
-
-	/* Volumetric FOG */
+	/// @}
+	/// @name Volumetric FOG
+	/// @{
 	class VolumetricFog : public RenderBufferCustomDataRD {
 		GDCLASS(VolumetricFog, RenderBufferCustomDataRD)
 
@@ -368,6 +380,7 @@ public:
 		SkyRD *sky;
 	};
 	void volumetric_fog_update(const VolumetricFogSettings &p_settings, const Projection &p_cam_projection, const Transform3D &p_cam_transform, const Transform3D &p_prev_cam_inv_transform, RID p_shadow_atlas, int p_directional_light_count, bool p_use_directional_shadows, int p_positional_light_count, int p_voxel_gi_count, const PagedArray<RID> &p_fog_volumes);
+	/// @}
 };
 
 } // namespace RendererRD

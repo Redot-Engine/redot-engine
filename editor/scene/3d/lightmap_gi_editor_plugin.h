@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file lightmap_gi_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/3d/lightmap_gi.h"
 #include "scene/resources/material.h"

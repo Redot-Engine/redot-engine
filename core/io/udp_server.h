@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file udp_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/net_socket.h"
 #include "core/io/packet_peer_udp.h"
 

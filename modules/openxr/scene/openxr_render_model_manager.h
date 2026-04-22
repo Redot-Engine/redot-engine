@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_render_model_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_render_model.h"
 
 #include "scene/3d/node_3d.h"
@@ -67,7 +73,7 @@ private:
 	RenderModelTracker tracker = RENDER_MODEL_TRACKER_ANY;
 	String make_local_to_pose;
 
-	// cached values
+	/// cached values
 	Ref<XRPositionalTracker> positional_tracker;
 	XrPath xr_path = XR_NULL_PATH;
 

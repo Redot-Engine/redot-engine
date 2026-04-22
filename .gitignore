@@ -81,7 +81,8 @@ __pycache__/
 .*_cache/
 
 # Documentation
-doc/_build/
+doc/_doxygen_output/
+doc/_doxygen_issues.txt
 
 # Android
 .gradle/

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file texture_loader_dds.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource_loader.h"
 
 class ResourceFormatDDS : public ResourceFormatLoader {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file ip_windows.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #if defined(WINDOWS_ENABLED)
 
 #include "core/io/ip.h"

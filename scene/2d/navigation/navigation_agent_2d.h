@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_agent_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 #include "servers/navigation/navigation_globals.h"
 #include "servers/navigation/navigation_path_query_parameters_2d.h"
@@ -78,17 +84,17 @@ class NavigationAgent2D : public Node {
 	Ref<NavigationPathQueryResult2D> navigation_result;
 	int navigation_path_index = 0;
 
-	// the velocity result of the avoidance simulation step
+	/// The velocity result of the avoidance simulation step
 	Vector2 safe_velocity;
 
 	/// The submitted target velocity, sets the "wanted" rvo agent velocity on the next update
-	// this velocity is not guaranteed, the simulation will try to fulfill it if possible
-	// if other agents or obstacles interfere it will be changed accordingly
+	/// this velocity is not guaranteed, the simulation will try to fulfill it if possible
+	/// if other agents or obstacles interfere it will be changed accordingly
 	Vector2 velocity;
 	bool velocity_submitted = false;
 
 	/// The submitted forced velocity, overrides the rvo agent velocity on the next update
-	// should only be used very intentionally and not every frame as it interferes with the simulation stability
+	/// should only be used very intentionally and not every frame as it interferes with the simulation stability
 	Vector2 velocity_forced;
 	bool velocity_forced_submitted = false;
 
@@ -98,17 +104,21 @@ class NavigationAgent2D : public Node {
 	bool navigation_finished = true;
 	bool last_waypoint_reached = false;
 
-	// Debug properties for exposed bindings
+	/// @name Debug properties for exposed bindings
+	/// @{
 	bool debug_enabled = false;
 	float debug_path_custom_point_size = 4.0;
 	float debug_path_custom_line_width = -1.0;
 	bool debug_use_custom = false;
 	Color debug_path_custom_color = Color(1.0, 1.0, 1.0, 1.0);
+	/// @}
 
 #ifdef DEBUG_ENABLED
-	// Debug properties internal only
+	/// @name Debug properties internal only
+	/// @{
 	bool debug_path_dirty = true;
 	RID debug_path_instance;
+	/// @}
 #endif // DEBUG_ENABLED
 
 protected:

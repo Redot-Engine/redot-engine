@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fog_material.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/material.h"
 
 class FogMaterial : public Material {

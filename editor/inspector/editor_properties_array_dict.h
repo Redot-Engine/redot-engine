@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_properties_array_dict.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 #include "editor/translations/editor_locale_dialog.h"
 

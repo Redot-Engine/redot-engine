@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file utilities.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "servers/rendering/storage/utilities.h"
@@ -79,10 +85,10 @@ public:
 	Utilities();
 	~Utilities();
 
-	// Buffer size is specified in bytes
+	/// Buffer size is specified in bytes
 	static Vector<uint8_t> buffer_get_data(GLenum p_target, GLuint p_buffer, uint32_t p_buffer_size);
 
-	// Allocate memory with glBufferData. Does not handle resizing.
+	/// Allocate memory with glBufferData. Does not handle resizing.
 	_FORCE_INLINE_ void buffer_allocate_data(GLenum p_target, GLuint p_id, uint32_t p_size, const void *p_data, GLenum p_usage, String p_name = "") {
 		glBufferData(p_target, p_size, p_data, p_usage);
 		buffer_mem_cache += p_size;
@@ -126,8 +132,8 @@ public:
 		render_buffer_allocs_cache.erase(p_id);
 	}
 
-	// Records that data was allocated for state tracking purposes.
-	// Size is measured in bytes.
+	/// Records that data was allocated for state tracking purposes.
+	/// Size is measured in bytes.
 	_FORCE_INLINE_ void texture_allocated_data(GLuint p_id, uint32_t p_size, String p_name = "") {
 		texture_mem_cache += p_size;
 #ifdef DEV_ENABLED
@@ -155,16 +161,19 @@ public:
 		texture_allocs_cache[p_id].size = p_size;
 	}
 
-	/* INSTANCES */
-
+	/// @name INSTANCES
+	/// @{
 	virtual RS::InstanceType get_base_type(RID p_rid) const override;
 	virtual bool free(RID p_rid) override;
-
-	/* DEPENDENCIES */
+	/// @}
+	/// @name DEPENDENCIES
+	/// @{
 
 	virtual void base_update_dependency(RID p_base, DependencyTracker *p_instance) override;
 
-	/* VISIBILITY NOTIFIER */
+	/// @}
+	/// @name VISIBILITY NOTIFIER
+	/// @{
 
 	VisibilityNotifier *get_visibility_notifier(RID p_rid) { return visibility_notifier_owner.get_or_null(p_rid); }
 	bool owns_visibility_notifier(RID p_rid) const { return visibility_notifier_owner.owns(p_rid); }
@@ -179,7 +188,9 @@ public:
 	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const override;
 	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) override;
 
-	/* TIMING */
+	/// @}
+	/// @name TIMING
+	/// @{
 
 #define MAX_QUERIES 256
 #define FRAME_COUNT 3
@@ -211,7 +222,9 @@ public:
 	void _capture_timestamps_begin();
 	void capture_timestamps_end();
 
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	virtual void update_dirty_resources() override;
 	virtual void set_debug_generate_wireframes(bool p_generate) override;
@@ -229,6 +242,7 @@ public:
 	virtual Size2i get_maximum_viewport_size() const override;
 	virtual uint32_t get_maximum_shader_varyings() const override;
 	virtual uint64_t get_maximum_uniform_buffer_size() const override;
+	/// @}
 };
 
 } // namespace GLES3

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdextension_library_loader.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <functional>
 
 #include "core/extension/gdextension_loader.h"
@@ -47,7 +53,7 @@ class GDExtensionLibraryLoader : public GDExtensionLoader {
 private:
 	String resource_path;
 
-	void *library = nullptr; // pointer if valid.
+	void *library = nullptr; ///< pointer if valid.
 	String library_path;
 	String entry_symbol;
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file particles_3d_emission_shape_gizmo_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/scene/3d/gizmos/gizmo_3d_helper.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file xr_hand_tracker.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/xr/xr_positional_tracker.h"
 
 class XRHandTracker : public XRPositionalTracker {

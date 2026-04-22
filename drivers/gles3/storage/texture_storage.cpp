@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "texture_storage.h"
@@ -954,8 +960,6 @@ void TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format
 	_texture_set_3d_data(p_texture, p_data, true);
 }
 
-// Called internally when texture_proxy_create(p_base) is called.
-// Note: p_base is the root and p_texture is the proxy.
 void TextureStorage::texture_proxy_initialize(RID p_texture, RID p_base) {
 	Texture *texture = texture_owner.get_or_null(p_base);
 	ERR_FAIL_NULL(texture);
@@ -2025,7 +2029,7 @@ void TextureStorage::update_texture_atlas() {
 	}
 
 	{ // Atlas Texture initialize.
-		// TODO validate texture atlas size with maximum texture size
+		/// @todo Validate texture atlas size with maximum texture size
 		glGenTextures(1, &texture_atlas.texture);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture_atlas.texture);
@@ -2563,7 +2567,7 @@ void TextureStorage::render_target_set_size(RID p_render_target, int p_width, in
 	_update_render_target(rt);
 }
 
-// TODO: convert to Size2i internally
+/// @todo Convert to Size2i internally
 Size2i TextureStorage::render_target_get_size(RID p_render_target) const {
 	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, Size2i());

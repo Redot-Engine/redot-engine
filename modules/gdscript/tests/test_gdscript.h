@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_gdscript.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_test_runner.h"
 
 #include "tests/test_macros.h"

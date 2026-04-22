@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file label.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "label.h"
 
 #include "scene/gui/container.h"
@@ -496,8 +502,6 @@ Rect2 Label::get_line_rect(int p_line) const {
 }
 
 Rect2 Label::_get_line_rect(int p_para, int p_line) const {
-	// Returns a rect providing the line's horizontal offset and total size. To determine the vertical
-	// offset, use r_offset and r_line_spacing from get_layout_data.
 	bool rtl = TS->shaped_text_get_inferred_direction(paragraphs[p_para].text_rid) == TextServer::DIRECTION_RTL;
 	bool rtl_layout = is_layout_rtl();
 	Ref<StyleBox> style = theme_cache.normal_style;
@@ -653,9 +657,9 @@ int Label::get_layout_data(Vector2 &r_offset, int &r_last_line, int &r_line_spac
 PackedStringArray Label::get_configuration_warnings() const {
 	PackedStringArray warnings = Control::get_configuration_warnings();
 
-	// FIXME: This is not ideal and the sizing model should be fixed,
-	// but for now we have to warn about this impossible to resolve combination.
-	// See GH-83546.
+	/// @todo FIXME: This is not ideal and the sizing model should be fixed,
+	/// but for now we have to warn about this impossible to resolve combination.
+	/// See GH-83546.
 	if (is_inside_tree() && get_tree()->get_edited_scene_root() != this) {
 		// If the Label happens to be the root node of the edited scene, we don't need
 		// to check what its parent is. It's going to be some node from the editor tree

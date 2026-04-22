@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file websocket_multiplayer_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "websocket_multiplayer_peer.h"
 
 #include "core/io/stream_peer_tls.h"

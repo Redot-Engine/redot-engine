@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_document_extension_convert_importer_mesh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_document_extension.h"
 
 class MeshInstance3D;

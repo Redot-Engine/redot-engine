@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_buffer_view.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gltf_defines.h"
 
 #include "core/io/resource.h"

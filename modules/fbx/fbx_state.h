@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fbx_state.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "modules/gltf/gltf_defines.h"
 #include "modules/gltf/gltf_state.h"
 #include "modules/gltf/structures/gltf_skeleton.h"
@@ -46,7 +52,7 @@ class FBXState : public GLTFState {
 	friend class SkinTool;
 	friend class GLTFSkin;
 
-	// Smart pointer that holds the loaded scene.
+	/// Smart pointer that holds the loaded scene.
 	ufbx_unique_ptr<ufbx_scene> scene;
 	bool allow_geometry_helper_nodes = false;
 
@@ -57,7 +63,7 @@ class FBXState : public GLTFState {
 	Vector<GLTFSkinIndex> original_skin_indices;
 	HashMap<ObjectID, GLTFSkeletonIndex> skeleton3d_to_fbx_skeleton;
 	HashMap<ObjectID, HashMap<ObjectID, GLTFSkinIndex>> skin_and_skeleton3d_to_fbx_skin;
-	HashSet<String> unique_mesh_names; // Not in GLTFState because GLTFState prefixes mesh names with the scene name (or _)
+	HashSet<String> unique_mesh_names; ///< Not in GLTFState because GLTFState prefixes mesh names with the scene name (or _)
 
 protected:
 	static void _bind_methods();

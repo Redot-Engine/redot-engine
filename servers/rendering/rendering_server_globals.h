@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_server_globals.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/environment/renderer_fog.h"
 #include "servers/rendering/environment/renderer_gi.h"
 #include "servers/rendering/renderer_canvas_cull.h"

@@ -32,16 +32,21 @@
 
 #pragma once
 
+/**
+ * @file xr_body_modifier_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "servers/xr/xr_body_tracker.h"
 
 class Skeleton3D;
 
 /**
-	The XRBodyModifier3D node drives a body skeleton using body tracking
-	data from an XRBodyTracker instance.
+ * The XRBodyModifier3D node drives a body skeleton using body tracking
+ * data from an XRBodyTracker instance.
  */
-
 class XRBodyModifier3D : public SkeletonModifier3D {
 	GDCLASS(XRBodyModifier3D, SkeletonModifier3D);
 

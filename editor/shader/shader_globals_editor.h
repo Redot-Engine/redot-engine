@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_globals_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_sectioned_inspector.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/option_button.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file light_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/storage/light_storage.h"
 
 namespace RendererDummy {
@@ -60,7 +66,8 @@ public:
 	virtual ~LightStorage();
 
 	bool free(RID p_rid);
-	/* Light API */
+	/// @name Light API
+	/// @{
 
 	virtual RID directional_light_allocate() override { return RID(); }
 	virtual void directional_light_initialize(RID p_rid) override {}
@@ -107,8 +114,9 @@ public:
 	virtual uint32_t light_get_max_sdfgi_cascade(RID p_light) override { return 0; }
 	virtual uint64_t light_get_version(RID p_light) const override { return 0; }
 	virtual uint32_t light_get_cull_mask(RID p_light) const override { return 0; }
-
-	/* LIGHT INSTANCE API */
+	/// @}
+	/// @name LIGHT INSTANCE API
+	/// @{
 
 	RID light_instance_create(RID p_light) override { return RID(); }
 	void light_instance_free(RID p_light) override {}
@@ -117,8 +125,9 @@ public:
 	void light_instance_set_shadow_transform(RID p_light_instance, const Projection &p_projection, const Transform3D &p_transform, float p_far, float p_split, int p_pass, float p_shadow_texel_size, float p_bias_scale = 1.0, float p_range_begin = 0, const Vector2 &p_uv_scale = Vector2()) override {}
 	void light_instance_mark_visible(RID p_light_instance) override {}
 	virtual bool light_instance_is_shadow_visible_at_position(RID p_light_instance, const Vector3 &p_position) const override { return false; }
-
-	/* PROBE API */
+	/// @}
+	/// @name PROBE API
+	/// @{
 	virtual RID reflection_probe_allocate() override { return RID(); }
 	virtual void reflection_probe_initialize(RID p_rid) override {}
 	virtual void reflection_probe_free(RID p_rid) override {}
@@ -149,15 +158,17 @@ public:
 	virtual Vector3 reflection_probe_get_origin_offset(RID p_probe) const override { return Vector3(); }
 	virtual float reflection_probe_get_origin_max_distance(RID p_probe) const override { return 0.0; }
 	virtual bool reflection_probe_renders_shadows(RID p_probe) const override { return false; }
-
-	/* REFLECTION ATLAS */
+	/// @}
+	/// @name REFLECTION ATLAS
+	/// @{
 
 	virtual RID reflection_atlas_create() override { return RID(); }
 	virtual void reflection_atlas_free(RID p_ref_atlas) override {}
 	virtual int reflection_atlas_get_size(RID p_ref_atlas) const override { return 0; }
 	virtual void reflection_atlas_set_size(RID p_ref_atlas, int p_reflection_size, int p_reflection_count) override {}
-
-	/* REFLECTION PROBE INSTANCE */
+	/// @}
+	/// @name REFLECTION PROBE INSTANCE
+	/// @{
 
 	virtual RID reflection_probe_instance_create(RID p_probe) override { return RID(); }
 	virtual void reflection_probe_instance_free(RID p_instance) override {}
@@ -169,8 +180,9 @@ public:
 	virtual bool reflection_probe_instance_begin_render(RID p_instance, RID p_reflection_atlas) override { return false; }
 	virtual Ref<RenderSceneBuffers> reflection_probe_atlas_get_render_buffers(RID p_reflection_atlas) override { return Ref<RenderSceneBuffers>(); }
 	virtual bool reflection_probe_instance_postprocess_step(RID p_instance) override { return true; }
-
-	/* LIGHTMAP CAPTURE */
+	/// @}
+	/// @name LIGHTMAP CAPTURE
+	/// @{
 
 	bool owns_lightmap(RID p_rid) { return lightmap_owner.owns(p_rid); }
 
@@ -196,16 +208,18 @@ public:
 	virtual void lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow) override {}
 	virtual RS::ShadowmaskMode lightmap_get_shadowmask_mode(RID p_lightmap) override { return RS::SHADOWMASK_MODE_NONE; }
 	virtual void lightmap_set_shadowmask_mode(RID p_lightmap, RS::ShadowmaskMode p_mode) override {}
-
-	/* LIGHTMAP INSTANCE */
+	/// @}
+	/// @name LIGHTMAP INSTANCE
+	/// @{
 
 	bool owns_lightmap_instance(RID p_rid) { return lightmap_instance_owner.owns(p_rid); }
 
 	RID lightmap_instance_create(RID p_lightmap) override;
 	void lightmap_instance_free(RID p_lightmap) override;
 	void lightmap_instance_set_transform(RID p_lightmap, const Transform3D &p_transform) override {}
-
-	/* SHADOW ATLAS API */
+	/// @}
+	/// @name SHADOW ATLAS API
+	/// @{
 	virtual RID shadow_atlas_create() override { return RID(); }
 	virtual void shadow_atlas_free(RID p_atlas) override {}
 	virtual void shadow_atlas_set_size(RID p_atlas, int p_size, bool p_16_bits = true) override {}
@@ -217,6 +231,7 @@ public:
 	virtual void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true) override {}
 	virtual int get_directional_light_shadow_size(RID p_light_instance) override { return 0; }
 	virtual void set_directional_shadow_count(int p_count) override {}
+	/// @}
 };
 
 } // namespace RendererDummy

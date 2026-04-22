@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_context_driver_metal.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef METAL_ENABLED
 
 #include "servers/rendering/rendering_context_driver.h"
@@ -66,7 +72,7 @@ protected:
 #else
 	void *metal_device = nullptr;
 #endif
-	Device device; // There is only one device on Apple Silicon.
+	Device device; ///< There is only one device on Apple Silicon.
 
 public:
 	Error initialize() final override;
@@ -88,7 +94,7 @@ public:
 
 #pragma mark - Metal-specific methods
 
-	// Platform-specific data for the Windows embedded in this driver.
+	/// Platform-specific data for the Windows embedded in this driver.
 	struct WindowPlatformData {
 #ifdef __OBJC__
 		CAMetalLayer *__unsafe_unretained layer;

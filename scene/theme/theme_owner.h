@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file theme_owner.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object.h"
 #include "scene/resources/theme.h"
 
@@ -54,22 +60,30 @@ class ThemeOwner : public Object {
 	Ref<Theme> _get_owner_node_theme(Node *p_owner_node) const;
 
 public:
-	// Theme owner node.
-
+	/// @name Theme Owner Node
+	/// @{
 	void set_owner_node(Node *p_node);
 	Node *get_owner_node() const;
 	bool has_owner_node() const;
 
 	void set_owner_context(ThemeContext *p_context, bool p_propagate = true);
+	/// @}
+	/// @name Theme Propagation
+	/// @{
 
-	// Theme propagation.
-
+	/// We check if there are any themes affecting the parent. If that's the case
+	/// its children also need to be affected.
+	/// We don't notify here because `NOTIFICATION_THEME_CHANGED` will be handled
+	/// a bit later by `NOTIFICATION_ENTER_TREE`.
 	void assign_theme_on_parented(Node *p_for_node);
+	/// We check if there were any themes affecting the parent. If that's the case
+	/// its children need were also affected and need to be updated.
+	/// We don't notify because we're exiting the tree, and it's not important.
 	void clear_theme_on_unparented(Node *p_for_node);
 	void propagate_theme_changed(Node *p_to_node, Node *p_owner_node, bool p_notify, bool p_assign);
-
-	// Theme lookup.
-
+	/// @}
+	/// @name Theme Lookup
+	/// @{
 	void get_theme_type_dependencies(const Node *p_for_node, const StringName &p_theme_type, Vector<StringName> &r_result) const;
 
 	Variant get_theme_item_in_types(Theme::DataType p_data_type, const StringName &p_name, const Vector<StringName> &p_theme_types);
@@ -78,6 +92,7 @@ public:
 	float get_theme_default_base_scale();
 	Ref<Font> get_theme_default_font();
 	int get_theme_default_font_size();
+	/// @}
 
 	ThemeOwner(Node *p_holder) { holder = p_holder; }
 };

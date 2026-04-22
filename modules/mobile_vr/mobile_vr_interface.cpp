@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mobile_vr_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mobile_vr_interface.h"
 
 #include "core/input/input.h"
@@ -185,8 +191,8 @@ void MobileVRInterface::set_position_from_sensors() {
 		tracking_confidence = XRPose::XR_TRACKING_CONFIDENCE_HIGH;
 	};
 
-	///@TODO improve this, the magnetometer is very fidgety sometimes flipping the axis for no apparent reason (probably a bug on my part)
-	// if you have a gyro + accelerometer that combo tends to be better than combining all three but without a gyro you need the magnetometer..
+	/// @todo Improve this, the magnetometer is very fidgety sometimes flipping the axis for no apparent reason (probably a bug on my part)
+	/// if you have a gyro + accelerometer that combo tends to be better than combining all three but without a gyro you need the magnetometer..
 	if (has_magneto && has_grav && !has_gyro) {
 		// convert to quaternions, easier to smooth those out
 		Quaternion transform_quat(orientation);

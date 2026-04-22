@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file midi_driver_coremidi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef COREMIDI_ENABLED
 
 #include "core/os/midi_driver.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file spring_bone_collision_sphere_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "spring_bone_collision_sphere_3d.h"
 
 void SpringBoneCollisionSphere3D::set_radius(float p_radius) {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file export_template_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/dialogs.h"
 
 class EditorExportPreset;
@@ -125,12 +131,15 @@ protected:
 public:
 	static String get_android_build_directory(const Ref<EditorExportPreset> &p_preset);
 	static String get_android_source_zip(const Ref<EditorExportPreset> &p_preset);
+	/// The template identifier is the Redot version for the default template, and the full path plus md5 hash for custom templates.
 	static String get_android_template_identifier(const Ref<EditorExportPreset> &p_preset);
 
 	bool is_android_template_installed(const Ref<EditorExportPreset> &p_preset);
 	bool can_install_android_template(const Ref<EditorExportPreset> &p_preset);
 	Error install_android_template(const Ref<EditorExportPreset> &p_preset);
 
+	/// To support custom Android builds, we install the Java source code and buildsystem
+	/// from android_source.zip to the project's res://android folder.
 	Error install_android_template_from_file(const String &p_file, const Ref<EditorExportPreset> &p_preset);
 
 	void popup_manager();

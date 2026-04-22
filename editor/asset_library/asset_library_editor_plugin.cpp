@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file asset_library_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "asset_library_editor_plugin.h"
 
 #include "core/io/json.h"
@@ -69,7 +75,7 @@ void EditorAssetLibraryItem::configure(const String &p_title, int p_asset_id, co
 	price->set_text(p_cost);
 }
 
-// TODO: Refactor this method to use the TextServer.
+/// @todo Refactor this method to use the TextServer.
 void EditorAssetLibraryItem::clamp_width(int p_max_width) {
 	int text_pixel_width = title->get_button_font()->get_string_size(title_text).x * EDSCALE;
 
@@ -717,7 +723,7 @@ void EditorAssetLibrary::_notification(int p_what) {
 }
 
 void EditorAssetLibrary::_update_repository_options() {
-	// TODO: Move to editor_settings.cpp
+	/// @todo Move to editor_settings.cpp
 	Dictionary default_urls;
 	default_urls["godotengine.org"] = "https://godotengine.org/asset-library/api";
 	Dictionary available_urls = _EDITOR_DEF("asset_library/available_urls", default_urls, true);

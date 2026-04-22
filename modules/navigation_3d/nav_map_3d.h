@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_map_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "3d/nav_map_iteration_3d.h"
 #include "3d/nav_mesh_queries_3d.h"
 #include "nav_rid_3d.h"
@@ -60,10 +66,10 @@ class NavMap3D : public NavRid3D {
 	real_t cell_size = NavigationDefaults3D::NAV_MESH_CELL_SIZE;
 	real_t cell_height = NavigationDefaults3D::NAV_MESH_CELL_HEIGHT;
 
-	// For the inter-region merging to work, internal rasterization is performed.
+	/// For the inter-region merging to work, internal rasterization is performed.
 	Vector3 merge_rasterizer_cell_size = Vector3(cell_size, cell_height, cell_size);
 
-	// This value is used to control sensitivity of internal rasterizer.
+	/// This value is used to control sensitivity of internal rasterizer.
 	float merge_rasterizer_cell_scale = 0.1;
 
 	bool use_edge_connections = true;
@@ -108,7 +114,7 @@ class NavMap3D : public NavRid3D {
 	bool avoidance_use_multiple_threads = true;
 	bool avoidance_use_high_priority_threads = true;
 
-	// Performance Monitor
+	/// Performance Monitor
 	Nav3D::PerformanceData performance_data;
 
 	struct {
@@ -241,7 +247,8 @@ public:
 	void step(double p_delta_time);
 	void dispatch_callbacks();
 
-	// Performance Monitor
+	/// @name Performance Monitor
+	/// @{
 	int get_pm_region_count() const { return performance_data.pm_region_count; }
 	int get_pm_agent_count() const { return performance_data.pm_agent_count; }
 	int get_pm_link_count() const { return performance_data.pm_link_count; }
@@ -251,6 +258,7 @@ public:
 	int get_pm_edge_connection_count() const { return performance_data.pm_edge_connection_count; }
 	int get_pm_edge_free_count() const { return performance_data.pm_edge_free_count; }
 	int get_pm_obstacle_count() const { return performance_data.pm_obstacle_count; }
+	/// @}
 
 	int get_region_connections_count(NavRegion3D *p_region) const;
 	Vector3 get_region_connection_pathway_start(NavRegion3D *p_region, int p_connection_id) const;

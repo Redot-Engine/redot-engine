@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_debugger_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/debugger/remote_debugger_peer.h"
 #include "core/object/ref_counted.h"
 

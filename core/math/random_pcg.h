@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file random_pcg.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/math_funcs.h"
 
 #include "thirdparty/misc/pcg.h"
@@ -53,7 +59,7 @@ class Vector;
 
 class RandomPCG {
 	pcg32_random_t pcg;
-	uint64_t current_seed = 0; // The seed the current generator state started from.
+	uint64_t current_seed = 0; ///< The seed the current generator state started from.
 	uint64_t current_inc = 0;
 
 public:
@@ -81,18 +87,20 @@ public:
 
 	int64_t rand_weighted(const Vector<float> &p_weights);
 
-	// Obtaining floating point numbers in [0, 1] range with "good enough" uniformity.
-	// These functions sample the output of rand() as the fraction part of an infinite binary number,
-	// with some tricks applied to reduce ops and branching:
-	// 1. Instead of shifting to the first 1 and connecting random bits, we simply set the MSB and LSB to 1.
-	//    Provided that the RNG is actually uniform bit by bit, this should have the exact same effect.
-	// 2. In order to compensate for exponent info loss, we count zeros from another random number,
-	//    and just add that to the initial offset.
-	//    This has the same probability as counting and shifting an actual bit stream: 2^-n for n zeroes.
-	// For all numbers above 2^-96 (2^-64 for floats), the functions should be uniform.
-	// However, all numbers below that threshold are floored to 0.
-	// The thresholds are chosen to minimize rand() calls while keeping the numbers within a totally subjective quality standard.
-	// If clz or ldexp isn't available, fall back to bit truncation for performance, sacrificing uniformity.
+	/**
+	 * Obtaining floating point numbers in [0, 1] range with "good enough" uniformity.
+	 * These functions sample the output of rand() as the fraction part of an infinite binary number,
+	 * with some tricks applied to reduce ops and branching:
+	 * 1. Instead of shifting to the first 1 and connecting random bits, we simply set the MSB and LSB to 1.
+	 *    Provided that the RNG is actually uniform bit by bit, this should have the exact same effect.
+	 * 2. In order to compensate for exponent info loss, we count zeros from another random number,
+	 *    and just add that to the initial offset.
+	 *    This has the same probability as counting and shifting an actual bit stream: 2^-n for n zeroes.
+	 * For all numbers above 2^-96 (2^-64 for floats), the functions should be uniform.
+	 * However, all numbers below that threshold are floored to 0.
+	 * The thresholds are chosen to minimize rand() calls while keeping the numbers within a totally subjective quality standard.
+	 * If clz or ldexp isn't available, fall back to bit truncation for performance, sacrificing uniformity.
+	 */
 	_FORCE_INLINE_ double randd() {
 #if defined(CLZ32)
 		uint32_t proto_exp_offset = rand();
@@ -122,14 +130,14 @@ public:
 	_FORCE_INLINE_ double randfn(double p_mean, double p_deviation) {
 		double temp = randd();
 		if (temp < CMP_EPSILON) {
-			temp += CMP_EPSILON; // To prevent generating of INF value in log function, resulting to return NaN value from this function.
+			temp += CMP_EPSILON; ///< To prevent generating of INF value in log function, resulting to return NaN value from this function.
 		}
 		return p_mean + p_deviation * (std::cos(Math::TAU * randd()) * std::sqrt(-2.0 * std::log(temp))); // Box-Muller transform.
 	}
 	_FORCE_INLINE_ float randfn(float p_mean, float p_deviation) {
 		float temp = randf();
 		if (temp < CMP_EPSILON) {
-			temp += CMP_EPSILON; // To prevent generating of INF value in log function, resulting to return NaN value from this function.
+			temp += CMP_EPSILON; ///< To prevent generating of INF value in log function, resulting to return NaN value from this function.
 		}
 		return p_mean + p_deviation * (std::cos((float)Math::TAU * randf()) * std::sqrt(-2.0 * std::log(temp))); // Box-Muller transform.
 	}

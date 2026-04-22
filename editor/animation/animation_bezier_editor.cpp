@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_bezier_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_bezier_editor.h"
 
 #include "editor/animation/animation_player_editor_plugin.h"
@@ -281,7 +287,7 @@ void AnimationBezierTrackEdit::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Animation bezier track editor")));
 		} break;
@@ -812,7 +818,6 @@ void AnimationBezierTrackEdit::_notification(int p_what) {
 	}
 }
 
-// Check if a track is displayed in the bezier editor (track type = bezier and track not filtered).
 bool AnimationBezierTrackEdit::_is_track_displayed(int p_track_index) {
 	if (animation->track_get_type(p_track_index) != Animation::TrackType::TYPE_BEZIER) {
 		return false;
@@ -834,7 +839,6 @@ bool AnimationBezierTrackEdit::_is_track_displayed(int p_track_index) {
 	return true;
 }
 
-// Check if the curves for a track are displayed in the editor (not hidden). Includes the check on the track visibility.
 bool AnimationBezierTrackEdit::_is_track_curves_displayed(int p_track_index) {
 	// Is the track is visible in the editor?
 	if (!_is_track_displayed(p_track_index)) {

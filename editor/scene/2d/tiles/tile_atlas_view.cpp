@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_atlas_view.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_atlas_view.h"
 
 #include "editor/settings/editor_settings.h"

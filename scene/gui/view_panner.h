@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file view_panner.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class InputEvent;

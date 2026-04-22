@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/config_file.h"
 #include "editor/inspector/editor_context_menu_plugin.h"
 #include "scene/3d/camera_3d.h"
@@ -145,7 +151,7 @@ protected:
 #endif
 
 public:
-	//TODO: send a resource for editing to the editor node?
+	/// @todo Send a resource for editing to the editor node?
 
 	void add_control_to_container(CustomControlContainer p_location, Control *p_control);
 	void remove_control_from_container(CustomControlContainer p_location, Control *p_control);
@@ -188,22 +194,22 @@ public:
 	virtual void set_plugin_version(const String &p_version);
 	virtual bool has_main_screen() const;
 	virtual void make_visible(bool p_visible);
-	virtual void selected_notify() {} //notify that it was raised by the user, not the editor
+	virtual void selected_notify() {} ///< Notify that it was raised by the user, not the editor
 	virtual void edit(Object *p_object);
 	virtual bool handles(Object *p_object) const;
 	virtual bool can_auto_hide() const;
-	virtual Dictionary get_state() const; //save editor state so it can't be reloaded when reloading scene
-	virtual void set_state(const Dictionary &p_state); //restore editor state (likely was saved with the scene)
-	virtual void clear(); // clear any temporary data in the editor, reset it (likely new scene or load another scene)
+	virtual Dictionary get_state() const; ///< Save editor state so it can't be reloaded when reloading scene
+	virtual void set_state(const Dictionary &p_state); ///< Restore editor state (likely was saved with the scene)
+	virtual void clear(); ///< Clear any temporary data in the editor, reset it (likely new scene or load another scene)
 	virtual String get_unsaved_status(const String &p_for_scene = "") const;
-	virtual void save_external_data(); // if editor references external resources/scenes, save them
-	virtual void apply_changes(); // if changes are pending in editor, apply them
+	virtual void save_external_data(); ///< If editor references external resources/scenes, save them
+	virtual void apply_changes(); ///< If changes are pending in editor, apply them
 	virtual void get_breakpoints(List<String> *p_breakpoints);
 	virtual bool get_remove_list(List<Node *> *p_list);
 	virtual void set_window_layout(Ref<ConfigFile> p_layout);
 	virtual void get_window_layout(Ref<ConfigFile> p_layout);
-	virtual void edited_scene_changed() {} // if changes are pending in editor, apply them
-	virtual bool build(); // builds with external tools. Returns true if safe to continue running scene.
+	virtual void edited_scene_changed() {} ///< If changes are pending in editor, apply them
+	virtual bool build(); ///< Builds with external tools. Returns true if safe to continue running scene.
 
 	EditorInterface *get_editor_interface();
 	ScriptCreateDialog *get_script_create_dialog();
@@ -211,6 +217,7 @@ public:
 	void add_undo_redo_inspector_hook_callback(Callable p_callable);
 	void remove_undo_redo_inspector_hook_callback(Callable p_callable);
 
+	/// Updates the overlays of the 2D viewport or, if in 3D mode, of every 3D viewport.
 	int update_overlays() const;
 
 	void queue_save_layout();
@@ -254,7 +261,11 @@ public:
 	void add_context_menu_plugin(EditorContextMenuPlugin::ContextMenuSlot p_slot, const Ref<EditorContextMenuPlugin> &p_plugin);
 	void remove_context_menu_plugin(const Ref<EditorContextMenuPlugin> &p_plugin);
 
+	/// Called when the plugin gets enabled in project settings, after it's added to the tree.
+	/// You can implement it to register autoloads.
 	void enable_plugin();
+	/// Last function called when the plugin gets disabled in project settings.
+	/// Implement it to cleanup things from the project, such as unregister autoloads.
 	void disable_plugin();
 };
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_wmr_controller_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_extension_wrapper.h"
 
 class OpenXRWMRControllerExtension : public OpenXRExtensionWrapper {

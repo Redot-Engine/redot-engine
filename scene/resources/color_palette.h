@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file color_palette.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 class ColorPalette : public Resource {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file xr_body_tracker.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/xr/xr_positional_tracker.h"
 
 class XRBodyTracker : public XRPositionalTracker {
@@ -48,7 +54,8 @@ public:
 	enum Joint {
 		JOINT_ROOT,
 
-		// Upper Body Joints
+		/// Upper Body Joints
+		/// @{
 		JOINT_HIPS,
 		JOINT_SPINE,
 		JOINT_CHEST,
@@ -62,8 +69,9 @@ public:
 		JOINT_RIGHT_SHOULDER,
 		JOINT_RIGHT_UPPER_ARM,
 		JOINT_RIGHT_LOWER_ARM,
-
-		// Lower Body Joints
+		/// @}
+		/// Lower Body Joints
+		/// @{
 		JOINT_LEFT_UPPER_LEG,
 		JOINT_LEFT_LOWER_LEG,
 		JOINT_LEFT_FOOT,
@@ -72,8 +80,9 @@ public:
 		JOINT_RIGHT_LOWER_LEG,
 		JOINT_RIGHT_FOOT,
 		JOINT_RIGHT_TOES,
-
-		// Left Hand Joints
+		/// @}
+		/// Left Hand Joints
+		/// @{
 		JOINT_LEFT_HAND,
 		JOINT_LEFT_PALM,
 		JOINT_LEFT_WRIST,
@@ -101,8 +110,9 @@ public:
 		JOINT_LEFT_PINKY_FINGER_PHALANX_INTERMEDIATE,
 		JOINT_LEFT_PINKY_FINGER_PHALANX_DISTAL,
 		JOINT_LEFT_PINKY_FINGER_TIP,
-
-		// Right Hand Joints
+		/// @}
+		/// Right Hand Joints
+		/// @{
 		JOINT_RIGHT_HAND,
 		JOINT_RIGHT_PALM,
 		JOINT_RIGHT_WRIST,
@@ -130,8 +140,9 @@ public:
 		JOINT_RIGHT_PINKY_FINGER_PHALANX_INTERMEDIATE,
 		JOINT_RIGHT_PINKY_FINGER_PHALANX_DISTAL,
 		JOINT_RIGHT_PINKY_FINGER_TIP,
-
-		// Extra joints that aren't part of the Godot humanoid skeleton, but are commonly used in some VR avatars.
+		/// @}
+		/// Extra joints that aren't part of the Godot humanoid skeleton, but are commonly used in some VR avatars.
+		/// @{
 		JOINT_LOWER_CHEST,
 		JOINT_LEFT_SCAPULA,
 		JOINT_LEFT_WRIST_TWIST,
@@ -143,7 +154,7 @@ public:
 		JOINT_RIGHT_FOOT_TWIST,
 		JOINT_RIGHT_HEEL,
 		JOINT_RIGHT_MIDDLE_FOOT,
-
+		/// @}
 		JOINT_MAX,
 	};
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scroll_container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scroll_container.h"
 
 #include "core/config/project_settings.h"

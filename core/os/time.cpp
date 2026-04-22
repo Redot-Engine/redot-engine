@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file time.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "time.h" // NOLINT(modernize-deprecated-headers) False positive with C-Header of the same name.
 
 #include "core/os/os.h"
@@ -75,7 +81,7 @@ static constexpr int64_t days_to_year(int64_t p_days) {
 #define SECOND_KEY "second"
 #define DST_KEY "dst"
 
-// Table of number of days in each month (for regular year and leap year).
+/// Table of number of days in each month (for regular year and leap year).
 static const uint8_t MONTH_DAYS_TABLE[2][12] = {
 	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
 	{ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
@@ -192,9 +198,9 @@ static const uint8_t MONTH_DAYS_TABLE[2][12] = {
 		}                                                                                     \
 	}
 
+/// Get all time values from the dictionary. If it doesn't exist, set the
+/// values to the default values for Unix epoch (1970-01-01 00:00:00).
 #define EXTRACT_FROM_DICTIONARY                                                                   \
-	/* Get all time values from the dictionary. If it doesn't exist, set the */                   \
-	/* values to the default values for Unix epoch (1970-01-01 00:00:00). */                      \
 	int64_t year = p_datetime.has(YEAR_KEY) ? int64_t(p_datetime[YEAR_KEY]) : UNIX_EPOCH_YEAR_AD; \
 	Month month = Month((p_datetime.has(MONTH_KEY)) ? int(p_datetime[MONTH_KEY]) : 1);            \
 	int day = p_datetime.has(DAY_KEY) ? int(p_datetime[DAY_KEY]) : 1;                             \

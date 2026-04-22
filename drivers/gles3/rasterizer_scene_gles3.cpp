@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rasterizer_scene_gles3.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rasterizer_scene_gles3.h"
 
 #include "drivers/gles3/effects/copy_effects.h"
@@ -579,8 +585,8 @@ GLuint _init_radiance_texture(int p_size, int p_mipmaps, String p_name) {
 	glBindTexture(GL_TEXTURE_CUBE_MAP, radiance_id);
 #ifdef GL_API_ENABLED
 	if (RasterizerGLES3::is_gles_over_gl()) {
-		//TODO, on low-end compare this to allocating each face of each mip individually
-		// see: https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glTexStorage2D.xhtml
+		/// @todo On low-end compare this to allocating each face of each mip individually
+		/// @see https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glTexStorage2D.xhtml
 		for (int i = 0; i < 6; i++) {
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB10_A2, p_size, p_size, 0, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, nullptr);
 		}
@@ -1079,7 +1085,7 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(RID p_sky, float p_energy, bo
 		texture.target = GL_TEXTURE_2D;
 		texture.active = true;
 		texture.tex_id = rad_tex;
-		texture.is_render_target = true; // HACK: Prevent TextureStorage from retaining a cached copy of the texture.
+		texture.is_render_target = true; /// @todo  HACK: Prevent TextureStorage from retaining a cached copy of the texture.
 		GLES3::TextureStorage::get_singleton()->texture_2d_initialize_from_texture(tex_rid, texture);
 	}
 
@@ -1087,7 +1093,7 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(RID p_sky, float p_energy, bo
 	GLES3::Utilities::get_singleton()->texture_free_data(rad_tex);
 
 	GLES3::Texture &texture = *GLES3::TextureStorage::get_singleton()->get_texture(tex_rid);
-	texture.is_render_target = false; // HACK: Avoid an error when freeing the texture.
+	texture.is_render_target = false; /// @todo HACK: Avoid an error when freeing the texture.
 	texture.tex_id = 0;
 	GLES3::TextureStorage::get_singleton()->texture_free(tex_rid);
 
@@ -1263,7 +1269,6 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list, const
 
 	RenderList *rl = &render_list[p_render_list];
 
-	// Parse any updates on our geometry, updates surface caches and such
 	_update_dirty_geometry_instances();
 
 	if (!p_append) {
@@ -1472,7 +1477,6 @@ void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list, const
 	}
 }
 
-// Needs to be called after _setup_lights so that directional_light_count is accurate.
 void RasterizerSceneGLES3::_setup_environment(const RenderDataGLES3 *p_render_data, bool p_no_fog, const Size2i &p_screen_size, bool p_flip_y, const Color &p_default_bg_color, bool p_pancake_shadows, float p_shadow_bias) {
 	Projection correction;
 	correction.set_depth_correction(p_flip_y, true, false);
@@ -1637,7 +1641,6 @@ void RasterizerSceneGLES3::_setup_environment(const RenderDataGLES3 *p_render_da
 	}
 }
 
-// Puts lights into Uniform Buffers. Needs to be called before _fill_list as this caches the index of each light in the Uniform Buffer
 void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3 *p_render_data, bool p_using_shadows, uint32_t &r_directional_light_count, uint32_t &r_omni_light_count, uint32_t &r_spot_light_count, uint32_t &r_directional_shadow_count) {
 	GLES3::LightStorage *light_storage = GLES3::LightStorage::get_singleton();
 	GLES3::Config *config = GLES3::Config::get_singleton();
@@ -1967,8 +1970,8 @@ void RasterizerSceneGLES3::_setup_lights(const RenderDataGLES3 *p_render_data, b
 		}
 	}
 
-	// TODO, to avoid stalls, should rotate between 3 buffers based on frame index.
-	// TODO, consider mapping the buffer as in 2D
+	/// @todo To avoid stalls, should rotate between 3 buffers based on frame index.
+	/// @todo Consider mapping the buffer as in 2D
 	glBindBufferBase(GL_UNIFORM_BUFFER, SCENE_OMNILIGHT_UNIFORM_LOCATION, scene_state.omni_light_buffer);
 	if (r_omni_light_count) {
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightData) * r_omni_light_count, scene_state.omni_lights);
@@ -2778,7 +2781,7 @@ void RasterizerSceneGLES3::_render_post_processing(const RenderDataGLES3 *p_rend
 	bool msaa3d_needs_resolve = rb->get_msaa_needs_resolve();
 	GLuint fbo_msaa_3d = rb->get_msaa3d_fbo();
 	GLuint fbo_int = rb->get_internal_fbo();
-	GLuint fbo_rt = texture_storage->render_target_get_fbo(render_target); // TODO if MSAA 2D is enabled and we're not using rt_msaa, get 2D render target here.
+	GLuint fbo_rt = texture_storage->render_target_get_fbo(render_target); /// @todo If MSAA 2D is enabled and we're not using rt_msaa, get 2D render target here.
 
 	// Check if we have glow enabled and if so, check if our buffers were allocated
 	bool glow_enabled = false;
@@ -2873,7 +2876,7 @@ void RasterizerSceneGLES3::_render_post_processing(const RenderDataGLES3 *p_rend
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_rt);
 	} else if ((fbo_msaa_3d != 0 && msaa3d_needs_resolve) || (fbo_int != 0)) {
-		// TODO investigate if it's smarter to cache these FBOs
+		/// @todo Investigate if it's smarter to cache these FBOs
 		GLuint fbos[3]; // read, write and post
 		glGenFramebuffers(3, fbos);
 
@@ -3071,8 +3074,8 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters *p_params,
 		uses_additive_lighting = uses_additive_lighting && !shader->unshaded;
 
 		// TODOS
-		/*
-		 * Still a bug when atlas space is limited. Somehow need to evict light when it doesn't have a spot on the atlas, current check isn't enough
+		/**
+		 * @todo Still a bug when atlas space is limited. Somehow need to evict light when it doesn't have a spot on the atlas, current check isn't enough
 		 * Disable depth draw
 		 */
 
@@ -4300,7 +4303,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3() {
 
 	{
 		String global_defines;
-		global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
+		global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; /// @todo This is arbitrary for now
 		global_defines += "\n#define MAX_LIGHT_DATA_STRUCTS " + itos(config->max_renderable_lights) + "\n";
 		global_defines += "\n#define MAX_DIRECTIONAL_LIGHT_DATA_STRUCTS " + itos(MAX_DIRECTIONAL_LIGHTS) + "\n";
 		global_defines += "\n#define MAX_FORWARD_LIGHTS " + itos(config->max_lights_per_object) + "u\n";
@@ -4368,7 +4371,7 @@ void fragment() {
 		sky_globals.roughness_layers = GLOBAL_GET("rendering/reflections/sky_reflections/roughness_layers");
 
 		String global_defines;
-		global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
+		global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; /// @todo This is arbitrary for now
 		global_defines += "\n#define MAX_DIRECTIONAL_LIGHT_DATA_STRUCTS " + itos(sky_globals.max_directional_lights) + "\n";
 		material_storage->shaders.sky_shader.initialize(global_defines);
 		sky_globals.shader_default_version = material_storage->shaders.sky_shader.version_create();

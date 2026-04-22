@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_player.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_mixer.h"
 #include "scene/resources/animation.h"
 
@@ -52,7 +58,7 @@ public:
 #endif // DISABLE_DEPRECATED
 
 private:
-	AHashMap<StringName, StringName> animation_next_set; // For auto advance.
+	AHashMap<StringName, StringName> animation_next_set; ///< For auto advance.
 
 	float speed_scale = 1.0;
 	double default_blend_time = 0.0;
@@ -149,10 +155,12 @@ protected:
 
 	static void _bind_methods();
 
-	// Make animation instances.
+	/// @name Make animation instances
+	/// @{
 	virtual bool _blend_pre_process(double p_delta, int p_track_count, const AHashMap<NodePath, int> &p_track_map) override;
 	virtual void _blend_capture(double p_delta) override;
 	virtual void _blend_post_process() override;
+	/// @}
 
 	virtual void _animation_removed(const StringName &p_name, const StringName &p_library) override;
 	virtual void _rename_animation(const StringName &p_from_name, const StringName &p_to_name) override;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file char_utils.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/typedefs.h"
 
 #include "char_range.inc"

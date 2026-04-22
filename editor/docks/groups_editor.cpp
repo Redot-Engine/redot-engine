@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file groups_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "groups_editor.h"
 
 #include "editor/docks/scene_tree_dock.h"

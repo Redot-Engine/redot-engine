@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multiplayer_api.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "multiplayer_api.h"
 
 #include "core/io/marshalls.h"
@@ -51,11 +57,11 @@ Ref<MultiplayerAPI> MultiplayerAPI::create_default_interface() {
 	return Ref<MultiplayerAPI>(memnew(MultiplayerAPIExtension));
 }
 
-// The variant is compressed and encoded; The first byte contains all the meta
-// information and the format is:
-// - The first LSB 6 bits are used for the variant type.
-// - The next two bits are used to store the encoding mode.
-// - Boolean values uses the encoding mode to store the value.
+/// The variant is compressed and encoded; The first byte contains all the meta
+/// information and the format is:
+/// - The first LSB 6 bits are used for the variant type.
+/// - The next two bits are used to store the encoding mode.
+/// - Boolean values uses the encoding mode to store the value.
 #define VARIANT_META_TYPE_MASK 0x3F
 #define VARIANT_META_EMODE_MASK 0xC0
 #define VARIANT_META_BOOL_MASK 0x80

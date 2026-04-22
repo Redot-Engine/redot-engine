@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file multimesh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/mesh.h"
 #include "servers/rendering_server.h"
 
@@ -65,7 +71,7 @@ protected:
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
-	// Kept for compatibility from 3.x to 4.0.
+	/// Kept for compatibility from 3.x to 4.0.
 	void _set_transform_array(const Vector<Vector3> &p_array);
 	Vector<Vector3> _get_transform_array() const;
 

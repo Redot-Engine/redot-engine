@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_sectioned_inspector.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/split_container.h"
 
 class CheckButton;

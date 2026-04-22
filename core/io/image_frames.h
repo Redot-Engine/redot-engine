@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_frames.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/io/resource.h"
 #include "core/variant/variant.h"
@@ -76,10 +82,10 @@ public:
 
 	bool is_empty() const;
 
-	ImageFrames() = default; // Create empty image frames.
+	ImageFrames() = default; ///< Create empty image frames.
 	ImageFrames(const uint8_t *p_mem_apng, int p_len);
-	ImageFrames(const Vector<Ref<Image>> &p_images, float p_delay = 1.0); // Import images from an image vector and delay.
-	ImageFrames(const Vector<Ref<Image>> &p_images, const Vector<float> &p_delays); // Import images from an image vector and delay vector.
+	ImageFrames(const Vector<Ref<Image>> &p_images, float p_delay = 1.0); ///< Import images from an image vector and delay.
+	ImageFrames(const Vector<Ref<Image>> &p_images, const Vector<float> &p_delays); ///< Import images from an image vector and delay vector.
 
 	~ImageFrames() {}
 

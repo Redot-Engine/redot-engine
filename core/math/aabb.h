@@ -32,13 +32,15 @@
 
 #pragma once
 
+/**
+ * @file aabb.h
+ *
+ * @brief AABB (Axis Aligned Bounding Box)
+ * @details This is implemented by a point (position) and the box size.
+ */
+
 #include "core/math/plane.h"
 #include "core/math/vector3.h"
-
-/**
- * AABB (Axis Aligned Bounding Box)
- * This is implemented by a point (position) and the box size.
- */
 
 class Variant;
 
@@ -70,13 +72,13 @@ struct [[nodiscard]] AABB {
 	bool is_equal_approx(const AABB &p_aabb) const;
 	bool is_same(const AABB &p_aabb) const;
 	bool is_finite() const;
-	_FORCE_INLINE_ bool intersects(const AABB &p_aabb) const; /// Both AABBs overlap
-	_FORCE_INLINE_ bool intersects_inclusive(const AABB &p_aabb) const; /// Both AABBs (or their faces) overlap
-	_FORCE_INLINE_ bool encloses(const AABB &p_aabb) const; /// p_aabb is completely inside this
+	_FORCE_INLINE_ bool intersects(const AABB &p_aabb) const; ///< Both AABBs overlap
+	_FORCE_INLINE_ bool intersects_inclusive(const AABB &p_aabb) const; ///< Both AABBs (or their faces) overlap
+	_FORCE_INLINE_ bool encloses(const AABB &p_aabb) const; ///< p_aabb is completely inside this
 
 	AABB merge(const AABB &p_with) const;
-	void merge_with(const AABB &p_aabb); ///merge with another AABB
-	AABB intersection(const AABB &p_aabb) const; ///get box where two intersect, empty if no intersection occurs
+	void merge_with(const AABB &p_aabb); ///< Merge with another AABB
+	AABB intersection(const AABB &p_aabb) const; ///< Get box where two intersect, empty if no intersection occurs
 	_FORCE_INLINE_ bool smits_intersect_ray(const Vector3 &p_from, const Vector3 &p_dir, real_t p_t0, real_t p_t1) const;
 
 	bool intersects_segment(const Vector3 &p_from, const Vector3 &p_to, Vector3 *r_intersection_point = nullptr, Vector3 *r_normal = nullptr) const;
@@ -271,8 +273,7 @@ bool AABB::intersects_convex_shape(const Plane *p_planes, int p_plane_count, con
 		}
 	}
 
-	// Make sure all points in the shape aren't fully separated from the AABB on
-	// each axis.
+	// Make sure all points in the shape aren't fully separated from the AABB on each axis.
 	int bad_point_counts_positive[3] = { 0 };
 	int bad_point_counts_negative[3] = { 0 };
 

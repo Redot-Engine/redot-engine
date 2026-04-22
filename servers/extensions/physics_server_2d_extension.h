@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file physics_server_2d_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/extension/ext_wrappers.gen.inc"
 #include "core/object/gdvirtual.gen.inc"
 #include "core/variant/native_ptr.h"
@@ -204,7 +210,8 @@ protected:
 public:
 	// The warning is valid, but unavoidable. If the function is not overridden it will error anyway.
 
-	/* SHAPE API */
+	/// @name SHAPE API
+	/// @{
 
 	EXBIND0R(RID, world_boundary_shape_create)
 	EXBIND0R(RID, separation_ray_shape_create)
@@ -227,8 +234,9 @@ public:
 		GDVIRTUAL_CALL(_shape_collide, p_shape_A, p_xform_A, p_motion_A, p_shape_B, p_xform_B, p_motion_B, r_results, p_result_max, &r_result_count, ret);
 		return ret;
 	}
-
-	/* SPACE API */
+	/// @}
+	/// @name SPACE API
+	/// @{
 
 	EXBIND0R(RID, space_create)
 	EXBIND2(space_set_active, RID, bool)
@@ -242,8 +250,9 @@ public:
 	EXBIND2(space_set_debug_contacts, RID, int)
 	EXBIND1RC(Vector<Vector2>, space_get_contacts, RID)
 	EXBIND1RC(int, space_get_contact_count, RID)
-
-	/* AREA API */
+	/// @}
+	/// @name AREA API
+	/// @{
 
 	//EXBIND0RID(area);
 	EXBIND0R(RID, area_create)
@@ -286,8 +295,9 @@ public:
 
 	EXBIND2(area_set_monitor_callback, RID, const Callable &)
 	EXBIND2(area_set_area_monitor_callback, RID, const Callable &)
-
-	/* BODY API */
+	/// @}
+	/// @name BODY API
+	/// @{
 
 	//EXBIND2RID(body,BodyMode,bool);
 	EXBIND0R(RID, body_create)
@@ -409,8 +419,9 @@ public:
 		exclude_objects = nullptr;
 		return ret;
 	}
-
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	EXBIND0R(RID, joint_create)
 	EXBIND1(joint_clear, RID)
@@ -435,8 +446,9 @@ public:
 	EXBIND2RC(real_t, damped_spring_joint_get_param, RID, DampedSpringParam)
 
 	EXBIND1RC(JointType, joint_get_type, RID)
-
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	GDVIRTUAL1_REQUIRED(_free_rid, RID)
 	virtual void free(RID p_rid) override {
@@ -454,6 +466,7 @@ public:
 
 	EXBIND0RC(bool, is_flushing_queries)
 	EXBIND1R(int, get_process_info, ProcessInfo)
+	/// @}
 
 	PhysicsServer2DExtension();
 	~PhysicsServer2DExtension();

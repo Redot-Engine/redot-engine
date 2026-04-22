@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file curve.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "curve.h"
 
 #include "core/math/math_funcs.h"
@@ -59,8 +65,6 @@ void Curve::set_point_count(int p_count) {
 }
 
 int Curve::_add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_tangent, TangentMode p_left_mode, TangentMode p_right_mode, bool p_mark_dirty) {
-	// Add a point and preserve order.
-
 	// Points must remain within the given value and domain ranges.
 	p_position.x = CLAMP(p_position.x, _min_domain, _max_domain);
 	p_position.y = CLAMP(p_position.y, _min_value, _max_value);
@@ -72,7 +76,7 @@ int Curve::_add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_
 		ret = 0;
 
 	} else if (_points.size() == 1) {
-		// TODO Is the `else` able to handle this block already?
+		// @todo Is the `else` able to handle this block already?
 
 		real_t diff = p_position.x - _points[0].position.x;
 
@@ -115,7 +119,7 @@ int Curve::add_point(Vector2 p_position, real_t p_left_tangent, real_t p_right_t
 	return ret;
 }
 
-// TODO: Needed to make the curve editor function properly until https://github.com/godotengine/godot/issues/76985 is fixed.
+/// @todo Needed to make the curve editor function properly until https://github.com/godotengine/godot/issues/76985 is fixed.
 int Curve::add_point_no_update(Vector2 p_position, real_t p_left_tangent, real_t p_right_tangent, TangentMode p_left_mode, TangentMode p_right_mode) {
 	int ret = _add_point(p_position, p_left_tangent, p_right_tangent, p_left_mode, p_right_mode);
 
@@ -1938,8 +1942,6 @@ real_t Curve3D::_sample_baked_tilt(Interval p_interval) const {
 	return Math::lerp(r[idx], r[idx + 1], frac);
 }
 
-// Internal method for getting posture at a baked point. Assuming caller
-// make all safety checks.
 Basis Curve3D::_compose_posture(int p_index) const {
 	Vector3 forward = baked_forward_vector_cache[p_index];
 

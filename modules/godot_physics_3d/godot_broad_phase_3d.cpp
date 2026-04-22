@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_broad_phase_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_broad_phase_3d.h"
 
 GodotBroadPhase3D::CreateFunction GodotBroadPhase3D::create_func = nullptr;

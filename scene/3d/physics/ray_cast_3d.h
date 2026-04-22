@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file ray_cast_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/node_3d.h"
 
 class CollisionObject3D;

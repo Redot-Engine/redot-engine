@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packet_peer_mbed_dtls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "packet_peer_mbed_dtls.h"
 
 int PacketPeerMbedDTLS::bio_send(void *ctx, const unsigned char *buf, size_t len) {

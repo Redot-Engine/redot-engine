@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file concave_polygon_shape_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/2d/shape_2d.h"
 
 class ConcavePolygonShape2D : public Shape2D {

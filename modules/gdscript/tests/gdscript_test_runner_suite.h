@@ -32,13 +32,19 @@
 
 #pragma once
 
+/**
+ * @file gdscript_test_runner_suite.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_test_runner.h"
 
 #include "tests/test_macros.h"
 
 namespace GDScriptTests {
 
-// TODO: Handle some cases failing on release builds. See: https://github.com/godotengine/godot/pull/88452
+/// @todo Handle some cases failing on release builds. See: https://github.com/godotengine/godot/pull/88452
 #ifdef TOOLS_ENABLED
 TEST_SUITE("[Modules][GDScript]") {
 	TEST_CASE("Script compilation and runtime") {

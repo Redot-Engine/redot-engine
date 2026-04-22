@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gradient_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gradient_texture.h"
 
 #include "core/math/geometry_2d.h"

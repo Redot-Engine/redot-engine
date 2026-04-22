@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file enet_connection.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "enet_connection.h"
 
 #include "enet_packet_peer.h"
@@ -165,9 +171,9 @@ ENetConnection::EventType ENetConnection::service(int p_timeout, Event &r_event)
 	ERR_FAIL_NULL_V_MSG(host, EVENT_ERROR, "The ENetConnection instance isn't currently active.");
 	ERR_FAIL_COND_V(r_event.peer.is_valid(), EVENT_ERROR);
 
-	// Drop peers that have already been disconnected.
-	// NOTE: Forcibly disconnected peers (i.e. peers disconnected via
-	// enet_peer_disconnect*) do not trigger DISCONNECTED events.
+	/// Drop peers that have already been disconnected.
+	/// @note Forcibly disconnected peers (i.e. peers disconnected via
+	/// enet_peer_disconnect*) do not trigger DISCONNECTED events.
 	List<Ref<ENetPacketPeer>>::Element *E = peers.front();
 	while (E) {
 		if (!E->get()->is_active()) {

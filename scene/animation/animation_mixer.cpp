@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_mixer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_mixer.h"
 #include "animation_mixer.compat.inc"
 
@@ -132,7 +138,6 @@ void AnimationMixer::_validate_property(PropertyInfo &p_property) const {
 /* -------------------------------------------- */
 
 void AnimationMixer::_animation_set_cache_update() {
-	// Relatively fast function to update all animations.
 	animation_set_update_pass++;
 	bool clear_cache_needed = false;
 
@@ -1170,7 +1175,6 @@ void AnimationMixer::_blend_calc_total_weight() {
 }
 
 void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
-	// Apply value/transform/blend/bezier blends to track caches and execute method/audio/animation tracks.
 #ifdef TOOLS_ENABLED
 	bool can_call = is_inside_tree() && !Engine::get_singleton()->is_editor_hint();
 #endif // TOOLS_ENABLED
@@ -1788,7 +1792,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 					if (!player2) {
 						continue;
 					}
-					// TODO: Make it possible to embed section info in animation track keys.
+					/// @todo Make it possible to embed section info in animation track keys.
 					if (seeked) {
 						// Seek.
 						int idx = a->track_find_key(i, time, Animation::FIND_MODE_NEAREST, true);
@@ -1855,7 +1859,6 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 }
 
 void AnimationMixer::_blend_apply() {
-	// Finally, set the tracks.
 	for (const KeyValue<Animation::TypeHash, TrackCache *> &K : track_cache) {
 		TrackCache *track = K.value;
 		bool is_zero_amount = Math::is_zero_approx(track->total_weight);
@@ -2021,7 +2024,6 @@ void AnimationMixer::_blend_apply() {
 }
 
 void AnimationMixer::_call_object(ObjectID p_object_id, const StringName &p_method, const Vector<Variant> &p_params, bool p_deferred) {
-	// Separate function to use alloca() more efficiently
 	const Variant **argptrs = (const Variant **)alloca(sizeof(Variant *) * p_params.size());
 	const Variant *args = p_params.ptr();
 	uint32_t argcount = p_params.size();

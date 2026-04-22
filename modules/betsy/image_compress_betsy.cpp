@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_compress_betsy.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_compress_betsy.h"
 
 #include "core/config/project_settings.h"
@@ -236,8 +242,6 @@ void BetsyCompressor::_assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id) {
 	task_id = p_pump_task_id;
 }
 
-// Yield thread to WTP so other tasks can be done on it.
-// Automatically regains control as soon a task is pushed to the command queue.
 void BetsyCompressor::_thread_loop() {
 	while (!exit) {
 		WorkerThreadPool::get_singleton()->yield();
@@ -280,8 +284,8 @@ void BetsyCompressor::finish() {
 	}
 }
 
-// Helper functions.
-
+/// @name Helper Functions
+/// @{
 static int get_next_multiple(int n, int m) {
 	return n + (m - (n % m));
 }
@@ -360,6 +364,7 @@ static Error get_src_texture_format(Image *r_img, RD::DataFormat &r_format) {
 
 	return OK;
 }
+/// @}
 
 Error BetsyCompressor::_compress(BetsyFormat p_format, Image *r_img) {
 	uint64_t start_time = OS::get_singleton()->get_ticks_msec();

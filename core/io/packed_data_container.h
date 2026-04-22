@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file packed_data_container.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 class PackedDataContainer : public Resource {

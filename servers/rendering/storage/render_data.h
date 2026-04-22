@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file render_data.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object.h"
 #include "render_scene_buffers.h"
 #include "render_scene_data.h"

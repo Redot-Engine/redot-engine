@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file damped_spring_joint_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "damped_spring_joint_2d.h"
 
 #include "scene/2d/physics/physics_body_2d.h"

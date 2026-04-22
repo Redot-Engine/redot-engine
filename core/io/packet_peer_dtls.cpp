@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packet_peer_dtls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "packet_peer_dtls.h"
 
 PacketPeerDTLS *PacketPeerDTLS::create(bool p_notify_postinitialize) {

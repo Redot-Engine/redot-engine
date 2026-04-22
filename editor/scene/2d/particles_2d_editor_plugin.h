@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file particles_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/scene/particles_editor_plugin.h"
 
 class EditorFileDialog;

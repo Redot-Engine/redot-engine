@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_resource_preview.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_resource_preview.h"
 
 #include "core/config/project_settings.h"

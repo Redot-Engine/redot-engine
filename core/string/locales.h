@@ -32,13 +32,20 @@
 
 #pragma once
 
-// Windows has some weird locale identifiers which do not honor the ISO 639-1
-// standardized nomenclature. Whenever those don't conflict with existing ISO
-// identifiers, we override them.
-//
-// Reference:
-// - https://msdn.microsoft.com/en-us/library/windows/desktop/ms693062(v=vs.85).aspx
+/**
+ * @file locales.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
 
+/**
+ * Windows has some weird locale identifiers which do not honor the ISO 639-1
+ * standardized nomenclature. Whenever those don't conflict with existing ISO
+ * identifiers, we override them.
+ *
+ * Reference:
+ * - https://msdn.microsoft.com/en-us/library/windows/desktop/ms693062(v=vs.85).aspx
+ */
 static const char *locale_renames[][2] = {
 	{ "in", "id" }, //  Indonesian
 	{ "iw", "he" }, //  Hebrew
@@ -47,13 +54,14 @@ static const char *locale_renames[][2] = {
 	{ nullptr, nullptr }
 };
 
-// Additional script information to preferred scripts.
-// Language code, script code, default country, supported countries.
-// Reference:
-// - https://lh.2xlibre.net/locales/
-// - https://www.localeplanet.com/icu/index.html
-// - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f
-
+/**
+ * Additional script information to preferred scripts.
+ * Language code, script code, default country, supported countries.
+ * Reference:
+ * - https://lh.2xlibre.net/locales/
+ * - https://www.localeplanet.com/icu/index.html
+ * - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f
+ * */
 static const char *locale_scripts[][4] = {
 	{ "az", "Latn", "", "AZ" },
 	{ "az", "Arab", "", "IR" },
@@ -76,11 +84,12 @@ static const char *locale_scripts[][4] = {
 	{ nullptr, nullptr, nullptr, nullptr }
 };
 
-// Additional mapping for outdated, temporary or exceptionally reserved country codes.
-// Reference:
-// - https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
-// - https://www.iso.org/obp/ui/#search/code/
-
+/**
+ * Additional mapping for outdated, temporary or exceptionally reserved country codes.
+ * Reference:
+ * - https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+ * - https://www.iso.org/obp/ui/#search/code/
+ */
 static const char *country_renames[][2] = {
 	{ "BU", "MM" }, // Burma, name changed to Myanmar.
 	{ "KV", "XK" }, // Kosovo (temporary FIPS code to European Commission code), no official ISO code assigned.
@@ -89,11 +98,12 @@ static const char *country_renames[][2] = {
 	{ nullptr, nullptr }
 };
 
-// Country code, country name.
-// Reference:
-// - https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
-// - https://www.iso.org/obp/ui/#search/code/
-
+/**
+ * Country code, country name.
+ * Reference:
+ * - https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+ * - https://www.iso.org/obp/ui/#search/code/
+ */
 static const char *country_names[][2] = {
 	{ "AC", "Ascension Island" }, // Exceptionally reserved.
 	{ "AD", "Andorra" },
@@ -359,12 +369,13 @@ static const char *country_names[][2] = {
 	{ nullptr, nullptr }
 };
 
-// Languages code, language name.
-// Reference:
-// - https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
-// - https://www.localeplanet.com/icu/index.html
-// - https://lh.2xlibre.net/locales/
-
+/**
+ * Languages code, language name.
+ * Reference:
+ * - https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
+ * - https://www.localeplanet.com/icu/index.html
+ * - https://lh.2xlibre.net/locales/
+ */
 static const char *language_list[][2] = {
 	{ "aa", "Afar" },
 	{ "ab", "Abkhazian" },
@@ -987,9 +998,8 @@ static const char *language_list[][2] = {
 	{ nullptr, nullptr }
 };
 
-// Additional regional variants.
-// Variant name, supported languages.
-
+/// Additional regional variants.
+/// Variant name, supported languages.
 static const char *locale_variants[][2] = {
 	{ "valencia", "ca" },
 	{ "iqtelif", "tt" },
@@ -998,10 +1008,9 @@ static const char *locale_variants[][2] = {
 	{ nullptr, nullptr },
 };
 
-// Script names and codes (excludes typographic variants, special codes, reserved codes and aliases for combined scripts).
-// Reference:
-// - https://en.wikipedia.org/wiki/ISO_15924
-
+/// Script names and codes (excludes typographic variants, special codes, reserved codes and aliases for combined scripts).
+/// Reference:
+/// - https://en.wikipedia.org/wiki/ISO_15924
 static const char *script_list[][2] = {
 	{ "Adlam", "Adlm" },
 	{ "Afaka", "Afak" },

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_utility.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant_utility.h"
 
 #include "binder_common.h"

@@ -32,10 +32,14 @@
 
 #pragma once
 
-// This extension implements the FB Foveation extension.
-// This is an extension Meta added due to VRS being unavailable on Android.
-// Other Android based devices are implementing this as well, see:
-// https://github.khronos.org/OpenXR-Inventory/extension_support.html#XR_FB_foveation
+/**
+ * @file openxr_fb_foveation_extension.h
+ *
+ * This extension implements the FB Foveation extension.
+ * This is an extension Meta added due to VRS being unavailable on Android.
+ * Other Android based devices are implementing this as well, see:
+ * https://github.khronos.org/OpenXR-Inventory/extension_support.html#XR_FB_foveation
+ */
 
 #include "../openxr_api.h"
 #include "../util.h"
@@ -94,11 +98,13 @@ private:
 		rendering_server->call_on_render_thread(callable_mp_static(&OpenXRFBFoveationExtension::_update_profile));
 	}
 
-	// Enable foveation on this swapchain
+	/// Enable foveation on this swapchain
 	XrSwapchainCreateInfoFoveationFB swapchain_create_info_foveation_fb;
 	OpenXRFBUpdateSwapchainExtension *swapchain_update_state_ext = nullptr;
 
-	// OpenXR API call wrappers
+	/// @name OpenXR API call wrappers
+	/// @{
 	EXT_PROTO_XRRESULT_FUNC3(xrCreateFoveationProfileFB, (XrSession), session, (const XrFoveationProfileCreateInfoFB *), create_info, (XrFoveationProfileFB *), profile);
 	EXT_PROTO_XRRESULT_FUNC1(xrDestroyFoveationProfileFB, (XrFoveationProfileFB), profile);
+	/// @}
 };

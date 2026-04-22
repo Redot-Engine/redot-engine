@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fbx_importer_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/gui/editor_file_dialog.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/line_edit.h"

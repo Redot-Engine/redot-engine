@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file default_theme.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "default_theme.h"
 
 #include "core/io/image.h"
@@ -80,7 +86,7 @@ static Ref<StyleBoxFlat> sb_expand(Ref<StyleBoxFlat> p_sbox, float p_left, float
 	return p_sbox;
 }
 
-// See also `editor_generate_icon()` in `editor/themes/editor_icons.cpp`.
+/// @see ...also `editor_generate_icon()` in `editor/themes/editor_icons.cpp`.
 static Ref<DPITexture> generate_icon(int p_index) {
 	return DPITexture::create_from_string(default_theme_icons_sources[p_index], scale);
 }

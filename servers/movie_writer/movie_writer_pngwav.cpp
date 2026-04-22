@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file movie_writer_pngwav.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "movie_writer_pngwav.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"

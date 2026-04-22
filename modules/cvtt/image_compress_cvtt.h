@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_compress_cvtt.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 
 void image_compress_cvtt(Image *p_image, Image::UsedChannels p_channels);

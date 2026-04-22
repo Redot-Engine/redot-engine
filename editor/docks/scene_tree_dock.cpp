@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_tree_dock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_tree_dock.h"
 
 #include "core/config/project_settings.h"
@@ -2127,8 +2133,8 @@ bool SceneTreeDock::_check_node_path_recursive(Node *p_root_node, Variant &r_var
 			}
 
 			if (Object::cast_to<Material>(resource)) {
-				// For performance reasons, assume that Materials don't have NodePaths in them.
-				// TODO This check could be removed when String performance has improved.
+				/// For performance reasons, assume that Materials don't have NodePaths in them.
+				/// @todo This check could be removed when String performance has improved.
 				break;
 			}
 
@@ -2477,8 +2483,8 @@ void SceneTreeDock::_do_reparent(Node *p_new_parent, int p_position_in_parent, V
 			}
 		}
 
-		// FIXME: Live editing for "Reparent to New Node" option is broken.
-		// We must get the path to `p_new_parent` *after* it was added to the scene.
+		/// @todo FIXME: Live editing for "Reparent to New Node" option is broken.
+		/// We must get the path to `p_new_parent` *after* it was added to the scene.
 		if (p_new_parent->is_inside_tree()) {
 			undo_redo->add_do_method(ed, "live_debug_reparent_node", edited_scene->get_path_to(node), edited_scene->get_path_to(p_new_parent), new_name, new_position_in_parent);
 			undo_redo->add_undo_method(ed, "live_debug_reparent_node", NodePath(String(edited_scene->get_path_to(p_new_parent)).path_join(new_name)), edited_scene->get_path_to(node->get_parent()), node->get_name(), node->get_index(false));
@@ -2849,7 +2855,7 @@ void SceneTreeDock::_delete_confirm(bool p_cut) {
 	}
 	undo_redo->commit_action();
 
-	// hack, force 2d editor viewport to refresh after deletion
+	/// @todo HACK: Force 2d editor viewport to refresh after deletion
 	if (CanvasItemEditor *editor = CanvasItemEditor::get_singleton()) {
 		editor->get_viewport_control()->queue_redraw();
 	}
@@ -3185,8 +3191,8 @@ void SceneTreeDock::_replace_node(Node *p_node, Node *p_by_node, bool p_keep_pro
 				default_oldnode->set_name(cts->get_global_name());
 				get_editor_data()->instantiate_object_properties(default_oldnode);
 			} else {
-				// Legacy custom type, registered with "add_custom_type()".
-				// TODO: Should probably be deprecated in 4.x.
+				/// Legacy custom type, registered with "add_custom_type()".
+				/// @todo Should probably be deprecated in 4.x.
 				const EditorData::CustomType *custom_type = get_editor_data()->get_custom_type_by_path(cts->get_path());
 				if (custom_type) {
 					default_oldnode = Object::cast_to<Node>(get_editor_data()->instantiate_custom_type(custom_type->name, cts->get_instance_base_type()));
@@ -3234,7 +3240,7 @@ void SceneTreeDock::_replace_node(Node *p_node, Node *p_by_node, bool p_keep_pro
 		}
 	}
 
-	// HACK: Remember size of anchored control.
+	/// @todo HACK: Remember size of anchored control.
 	Control *old_control = Object::cast_to<Control>(oldnode);
 	Size2 size;
 	if (old_control) {
@@ -3261,7 +3267,7 @@ void SceneTreeDock::_replace_node(Node *p_node, Node *p_by_node, bool p_keep_pro
 		new_control->set_size(size);
 	}
 
-	//small hack to make collisionshapes and other kind of nodes to work
+	/// @todo small hack to make collisionshapes and other kind of nodes to work
 	for (int i = 0; i < newnode->get_child_count(); i++) {
 		Node *c = newnode->get_child(i);
 		c->call("set_transform", c->call("get_transform"));

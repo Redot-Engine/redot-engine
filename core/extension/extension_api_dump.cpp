@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file extension_api_dump.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "extension_api_dump.h"
 
 #include "core/config/engine.h"
@@ -94,9 +100,8 @@ static String get_type_meta_name(const GodotTypeInfo::Metadata metadata) {
 	return argmeta[metadata];
 }
 
+/// Based on what EditorHelp does.
 static String fix_doc_description(const String &p_bbcode) {
-	// Based on what EditorHelp does.
-
 	return p_bbcode.dedent()
 			.remove_chars("\r")
 			.strip_edges();

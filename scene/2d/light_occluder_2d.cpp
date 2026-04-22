@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_occluder_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "light_occluder_2d.h"
 
 #include "core/config/engine.h"

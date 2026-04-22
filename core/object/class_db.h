@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file class_db.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/method_bind.h"
 #include "core/object/object.h"
 #include "core/string/print_string.h"
@@ -73,8 +79,8 @@ MethodDefinition D_METHOD(const char *p_name, const VarArgs... p_args) {
 
 #else
 
-// When DEBUG_ENABLED is set this will let the engine know
-// the argument names for easier debugging.
+/// When DEBUG_ENABLED is set this will let the engine know
+/// the argument names for easier debugging.
 #define D_METHOD(m_c, ...) m_c
 
 #endif // DEBUG_ENABLED
@@ -162,8 +168,8 @@ public:
 		return ret;
 	}
 
-	// We need a recursive r/w lock because there are various code paths
-	// that may in turn invoke other entry points with require locking.
+	/// We need a recursive r/w lock because there are various code paths
+	/// that may in turn invoke other entry points with require locking.
 	class Locker {
 	public:
 		enum State {
@@ -208,18 +214,18 @@ public:
 	static HashMap<StringName, HashMap<StringName, Variant>> default_values;
 	static HashSet<StringName> default_values_cached;
 
-	// Native structs, used by binder
+	/// Native structs, used by binder
 	struct NativeStruct {
-		String ccode; // C code to create the native struct, fields separated by ; Arrays accepted (even containing other structs), also function pointers. All types must be Redot types.
-		uint64_t struct_size; // local size of struct, for comparison
+		String ccode; ///< C code to create the native struct, fields separated by ; Arrays accepted (even containing other structs), also function pointers. All types must be Redot types.
+		uint64_t struct_size; ///< local size of struct, for comparison
 	};
 	static HashMap<StringName, NativeStruct> native_structs;
 
-	static Array default_array_arg;
+	static Array default_array_arg; ///< Array to use in optional parameters on methods and the DEFVAL_ARRAY macro.
 	static bool is_default_array_arg(const Array &p_array);
 
 private:
-	// Non-locking variants of get_parent_class and is_parent_class.
+	/// Non-locking variants of get_parent_class and is_parent_class.
 	static StringName _get_parent_class(const StringName &p_class);
 	static bool _is_parent_class(const StringName &p_class, const StringName &p_inherits);
 	static void _bind_compatibility(ClassInfo *type, MethodBind *p_method);
@@ -454,6 +460,7 @@ public:
 	static void add_property_subgroup(const StringName &p_class, const String &p_name, const String &p_prefix = "", int p_indent_depth = 0);
 	static void add_property_array_count(const StringName &p_class, const String &p_label, const StringName &p_count_property, const StringName &p_count_setter, const StringName &p_count_getter, const String &p_array_element_prefix, uint32_t p_count_usage = PROPERTY_USAGE_DEFAULT);
 	static void add_property_array(const StringName &p_class, const StringName &p_path, const String &p_array_element_prefix);
+	/// @note For implementation simplicity reasons, this method doesn't allow setters to have optional arguments at the end.
 	static void add_property(const StringName &p_class, const PropertyInfo &p_pinfo, const StringName &p_setter, const StringName &p_getter, int p_index = -1);
 	static void set_property_default_value(const StringName &p_class, const StringName &p_name, const Variant &p_default);
 	static void add_linked_property(const StringName &p_class, const String &p_property, const String &p_linked_property);

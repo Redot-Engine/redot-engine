@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_collision_solver_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_shape_3d.h"
 
 class GodotCollisionSolver3D {

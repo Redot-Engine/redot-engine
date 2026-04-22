@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_vrs.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_vrs.h"
 
 #include "servers/rendering/renderer_scene_render.h"

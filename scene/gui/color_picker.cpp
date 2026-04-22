@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_picker.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "color_picker.h"
 
 #include "core/io/image.h"
@@ -104,7 +110,7 @@ void ColorPicker::_notification(int p_what) {
 				btn_pick->set_tooltip_text(ETR("Pick a color from the screen."));
 				btn_pick->connect(SceneStringName(pressed), callable_mp(this, &ColorPicker::_pick_button_pressed_native));
 			} else if (DisplayServer::get_singleton()->has_feature(DisplayServer::FEATURE_SCREEN_CAPTURE) && !get_tree()->get_root()->is_embedding_subwindows()) {
-				// FIXME: The embedding check is needed to fix a bug in single-window mode (GH-93718).
+				/// @todo FIXME: The embedding check is needed to fix a bug in single-window mode (GH-93718).
 				btn_pick->set_tooltip_text(ETR("Pick a color from the screen."));
 				btn_pick->connect(SceneStringName(pressed), callable_mp(this, &ColorPicker::_pick_button_pressed));
 			} else {
@@ -1451,8 +1457,6 @@ void ColorPicker::_sample_input(const Ref<InputEvent> &p_event) {
 }
 
 void ColorPicker::_sample_draw() {
-	// Covers the right half of the sample if the old color is being displayed,
-	// or the whole sample if it's not being displayed.
 	Rect2 rect_new;
 	Rect2 rect_old;
 
@@ -1894,7 +1898,7 @@ void ColorPicker::_pick_button_pressed_legacy() {
 
 		// Add the Texture of each Window to the Image.
 		Vector<DisplayServer::WindowID> wl = ds->get_window_list();
-		// FIXME: sort windows by visibility.
+		/// @todo FIXME: sort windows by visibility.
 		for (const DisplayServer::WindowID &window_id : wl) {
 			Window *w = Window::get_from_id(window_id);
 			if (!w) {

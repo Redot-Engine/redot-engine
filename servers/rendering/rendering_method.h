@@ -32,12 +32,18 @@
 
 #pragma once
 
+/**
+ * @file rendering_method.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/storage/render_scene_buffers.h"
 #include "servers/rendering_server.h"
 
 #ifdef XR_DISABLED
-// RendererSceneCull::render_camera is empty when 3D is disabled, but
-// it and RenderingMethod::render_camera have a parameter for XRInterface.
+/// RendererSceneCull::render_camera is empty when 3D is disabled, but
+/// it and RenderingMethod::render_camera have a parameter for XRInterface.
 #define XRInterface RefCounted
 #else
 #include "servers/xr/xr_interface.h"
@@ -101,10 +107,12 @@ public:
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
 
-	// don't use these in a game!
+	/// @warning Don't use these in a game!
+	/// @{
 	virtual Vector<ObjectID> instances_cull_aabb(const AABB &p_aabb, RID p_scenario = RID()) const = 0;
 	virtual Vector<ObjectID> instances_cull_ray(const Vector3 &p_from, const Vector3 &p_to, RID p_scenario = RID()) const = 0;
 	virtual Vector<ObjectID> instances_cull_convex(const Vector<Plane> &p_convex, RID p_scenario = RID()) const = 0;
+	/// @}
 
 	virtual void instance_geometry_set_flag(RID p_instance, RS::InstanceFlags p_flags, bool p_enabled) = 0;
 	virtual void instance_geometry_set_cast_shadows_setting(RID p_instance, RS::ShadowCastingSetting p_shadow_casting_setting) = 0;
@@ -119,12 +127,14 @@ public:
 	virtual Variant instance_geometry_get_shader_parameter(RID p_instance, const StringName &p_parameter) const = 0;
 	virtual Variant instance_geometry_get_shader_parameter_default_value(RID p_instance, const StringName &p_parameter) const = 0;
 
-	/* PIPELINES */
+	/// @name PIPELINES
+	/// @{
 
 	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation) = 0;
 	virtual uint32_t get_pipeline_compilations(RS::PipelineSource p_source) = 0;
-
-	/* SKY API */
+	/// @}
+	/// @name SKY API
+	/// @{
 
 	virtual RID sky_allocate() = 0;
 	virtual void sky_initialize(RID p_rid) = 0;
@@ -133,8 +143,9 @@ public:
 	virtual void sky_set_mode(RID p_sky, RS::SkyMode p_samples) = 0;
 	virtual void sky_set_material(RID p_sky, RID p_material) = 0;
 	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) = 0;
-
-	/* COMPOSITOR EFFECT API */
+	/// @}
+	/// @name COMPOSITOR EFFECT API
+	/// @{
 
 	virtual RID compositor_effect_allocate() = 0;
 	virtual void compositor_effect_initialize(RID p_rid) = 0;
@@ -145,8 +156,9 @@ public:
 
 	virtual void compositor_effect_set_callback(RID p_compositor, RS::CompositorEffectCallbackType p_callback_type, const Callable &p_callback) = 0;
 	virtual void compositor_effect_set_flag(RID p_compositor, RS::CompositorEffectFlags p_flag, bool p_set) = 0;
-
-	/* COMPOSITOR API */
+	/// @}
+	/// @name COMPOSITOR API
+	/// @{
 
 	virtual RID compositor_allocate() = 0;
 	virtual void compositor_initialize(RID p_rid) = 0;
@@ -154,13 +166,15 @@ public:
 	virtual bool is_compositor(RID p_compositor) const = 0;
 
 	virtual void compositor_set_compositor_effects(RID p_env, const TypedArray<RID> &p_effects) = 0;
-
-	/* ENVIRONMENT API */
+	/// @}
+	/// @name ENVIRONMENT API
+	/// @{
 
 	virtual RID environment_allocate() = 0;
 	virtual void environment_initialize(RID p_rid) = 0;
-
-	// Background
+	/// @}
+	/// @name Background
+	/// @{
 	virtual void environment_set_background(RID p_env, RS::EnvironmentBG p_bg) = 0;
 	virtual void environment_set_sky(RID p_env, RID p_sky) = 0;
 	virtual void environment_set_sky_custom_fov(RID p_env, float p_scale) = 0;
@@ -184,15 +198,17 @@ public:
 	virtual float environment_get_ambient_light_energy(RID p_env) const = 0;
 	virtual float environment_get_ambient_sky_contribution(RID p_env) const = 0;
 	virtual RS::EnvironmentReflectionSource environment_get_reflection_source(RID p_env) const = 0;
-
-	// Tonemap
+	/// @}
+	/// @name Tonemap
+	/// @{
 	virtual void environment_set_tonemap(RID p_env, RS::EnvironmentToneMapper p_tone_mapper, float p_exposure, float p_white) = 0;
 
 	virtual RS::EnvironmentToneMapper environment_get_tone_mapper(RID p_env) const = 0;
 	virtual float environment_get_exposure(RID p_env) const = 0;
 	virtual float environment_get_white(RID p_env) const = 0;
-
-	// Fog
+	/// @}
+	/// @name Fog
+	/// @{
 	virtual void environment_set_fog(RID p_env, bool p_enable, const Color &p_light_color, float p_light_energy, float p_sun_scatter, float p_density, float p_height, float p_height_density, float p_aerial_perspective, float p_sky_affect, RS::EnvironmentFogMode p_mode = RS::EnvironmentFogMode::ENV_FOG_MODE_EXPONENTIAL) = 0;
 
 	virtual bool environment_get_fog_enabled(RID p_env) const = 0;
@@ -205,15 +221,17 @@ public:
 	virtual float environment_get_fog_height_density(RID p_env) const = 0;
 	virtual float environment_get_fog_aerial_perspective(RID p_env) const = 0;
 	virtual float environment_get_fog_sky_affect(RID p_env) const = 0;
-
-	// Depth Fog
+	/// @}
+	/// @name Depth Fog
+	/// @{
 	virtual void environment_set_fog_depth(RID p_env, float p_curve, float p_begin, float p_end) = 0;
 
 	virtual float environment_get_fog_depth_curve(RID p_env) const = 0;
 	virtual float environment_get_fog_depth_begin(RID p_env) const = 0;
 	virtual float environment_get_fog_depth_end(RID p_env) const = 0;
-
-	// Volumetric Fog
+	/// @}
+	/// @name Volumetric Fog
+	/// @{
 	virtual void environment_set_volumetric_fog(RID p_env, bool p_enable, float p_density, const Color &p_albedo, const Color &p_emission, float p_emission_energy, float p_anisotropy, float p_length, float p_detail_spread, float p_gi_inject, bool p_temporal_reprojection, float p_temporal_reprojection_amount, float p_ambient_inject, float p_sky_affect) = 0;
 
 	virtual bool environment_get_volumetric_fog_enabled(RID p_env) const = 0;
@@ -232,8 +250,9 @@ public:
 
 	virtual void environment_set_volumetric_fog_volume_size(int p_size, int p_depth) = 0;
 	virtual void environment_set_volumetric_fog_filter_active(bool p_enable) = 0;
-
-	// Glow
+	/// @}
+	/// @name Glow
+	/// @{
 
 	virtual void environment_set_glow(RID p_env, bool p_enable, Vector<float> p_levels, float p_intensity, float p_strength, float p_mix, float p_bloom_threshold, RS::EnvironmentGlowBlendMode p_blend_mode, float p_hdr_bleed_threshold, float p_hdr_bleed_scale, float p_hdr_luminance_cap, float p_glow_map_strength, RID p_glow_map) = 0;
 
@@ -251,8 +270,9 @@ public:
 	virtual RID environment_get_glow_map(RID p_env) const = 0;
 
 	virtual void environment_glow_set_use_bicubic_upscale(bool p_enable) = 0;
-
-	// SSR
+	/// @}
+	/// @name SSR
+	/// @{
 
 	virtual void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int, float p_fade_out, float p_depth_tolerance) = 0;
 
@@ -263,8 +283,9 @@ public:
 	virtual float environment_get_ssr_depth_tolerance(RID p_env) const = 0;
 
 	virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) = 0;
-
-	// SSAO
+	/// @}
+	/// @name SSAO
+	/// @{
 	virtual void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect, float p_ao_channel_affect) = 0;
 
 	virtual bool environment_get_ssao_enabled(RID p_env) const = 0;
@@ -278,8 +299,9 @@ public:
 	virtual float environment_get_ssao_ao_channel_affect(RID p_env) const = 0;
 
 	virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
-
-	// SSIL
+	/// @}
+	/// @name SSIL
+	/// @{
 
 	virtual void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_sharpness, float p_normal_rejection) = 0;
 
@@ -290,8 +312,9 @@ public:
 	virtual float environment_get_ssil_normal_rejection(RID p_env) const = 0;
 
 	virtual void environment_set_ssil_quality(RS::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
-
-	// SDFGI
+	/// @}
+	/// @name SDFGI
+	/// @{
 	virtual void environment_set_sdfgi(RID p_env, bool p_enable, int p_cascades, float p_min_cell_size, RS::EnvironmentSDFGIYScale p_y_scale, bool p_use_occlusion, float p_bounce_feedback, bool p_read_sky, float p_energy, float p_normal_bias, float p_probe_bias) = 0;
 
 	virtual bool environment_get_sdfgi_enabled(RID p_env) const = 0;
@@ -328,8 +351,9 @@ public:
 
 	virtual void positional_soft_shadow_filter_set_quality(RS::ShadowQuality p_quality) = 0;
 	virtual void directional_soft_shadow_filter_set_quality(RS::ShadowQuality p_quality) = 0;
-
-	/* Render Buffers */
+	/// @}
+	/// @name Render Buffers
+	/// @{
 
 	virtual Ref<RenderSceneBuffers> render_buffers_create() = 0;
 
@@ -359,16 +383,19 @@ public:
 	virtual void lightmaps_set_bicubic_filter(bool p_enable) = 0;
 
 	virtual bool free(RID p_rid) = 0;
-
-	/* Physics interpolation */
+	/// @}
+	/// @name Physics interpolation
+	/// @{
 
 	virtual void update_interpolation_tick(bool p_process = true) = 0;
 	virtual void set_physics_interpolation_enabled(bool p_enabled) = 0;
-
-	/* Event queueing */
+	/// @}
+	/// @name Event queueing
+	/// @{
 
 	virtual void tick() = 0;
 	virtual void pre_draw(bool p_will_draw) = 0;
+	/// @}
 
 	RenderingMethod();
 	virtual ~RenderingMethod();

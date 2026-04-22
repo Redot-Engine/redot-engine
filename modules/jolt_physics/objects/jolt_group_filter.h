@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_group_filter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "Jolt/Jolt.h"
 
 #include "Jolt/Physics/Collision/CollisionGroup.h"

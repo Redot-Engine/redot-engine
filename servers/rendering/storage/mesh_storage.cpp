@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mesh_storage.h"
 
 #include "core/math/transform_interpolator.h"
@@ -348,7 +354,7 @@ void RendererMeshStorage::update_interpolation_tick(bool p_process) {
 			mmi->on_interpolate_update_list = false;
 
 			// Make sure the most recent transform is set...
-			mmi->_data_interpolated = mmi->_data_curr; // TODO: Copy data rather than use Packed = function?
+			mmi->_data_interpolated = mmi->_data_curr; ///< @todo Copy data rather than use Packed = function?
 
 			// ... and that both prev and current are the same, just in case of any interpolations.
 			mmi->_data_prev = mmi->_data_curr;
@@ -503,8 +509,9 @@ void RendererMeshStorage::update_interpolation_frame(bool p_process) {
 
 				_multimesh_set_buffer(rid, mmi->_data_interpolated);
 
-				// TODO: Make sure AABBs are constantly up to date through the interpolation?
-				// NYI.
+				///
+				/// @todo Make sure AABBs are constantly up to date through the interpolation?
+				/// NYI.
 			}
 		}
 	}

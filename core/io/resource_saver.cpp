@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_saver.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_saver.h"
 #include "core/config/project_settings.h"
 #include "core/io/file_access.h"
@@ -253,8 +259,6 @@ bool ResourceSaver::add_custom_resource_format_saver(const String &script_path) 
 }
 
 void ResourceSaver::add_custom_savers() {
-	// Custom resource savers exploits global class names
-
 	String custom_saver_base_class = ResourceFormatSaver::get_class_static();
 
 	List<StringName> global_classes;

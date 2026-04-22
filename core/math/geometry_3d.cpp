@@ -30,13 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file geometry_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "geometry_3d.h"
 
 #include "core/templates/hash_map.h"
 
 void Geometry3D::get_closest_points_between_segments(const Vector3 &p_p0, const Vector3 &p_p1, const Vector3 &p_q0, const Vector3 &p_q1, Vector3 &r_ps, Vector3 &r_qt) {
-	// Based on David Eberly's Computation of Distance Between Line Segments algorithm.
-
 	Vector3 p = p_p1 - p_p0;
 	Vector3 q = p_q1 - p_q0;
 	Vector3 r = p_p0 - p_q0;
@@ -866,7 +870,7 @@ Vector<Vector3> Geometry3D::compute_convex_mesh_points(const Plane *p_planes, in
 #define square(m_s) ((m_s) * (m_s))
 #define BIG_VAL 1e20
 
-/* dt of 1d function using squared distance */
+/** dt of 1d function using squared distance */
 static void edt(float *f, int stride, int n) {
 	float *d = (float *)alloca(sizeof(float) * n + sizeof(int) * n + sizeof(float) * (n + 1));
 	int *v = reinterpret_cast<int *>(&(d[n]));

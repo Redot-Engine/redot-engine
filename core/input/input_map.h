@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file input_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/input_event.h"
 #include "core/object/object.h"
 #include "core/templates/hash_map.h"
@@ -55,7 +61,7 @@ public:
 	};
 
 	static constexpr float DEFAULT_DEADZONE = 0.2f;
-	// Keep bigger deadzone for toggle actions (default `ui_*` actions, axis `pressed`) (GH-103360).
+	/// Keep bigger deadzone for toggle actions (default `ui_*` actions, axis `pressed`) (GH-103360).
 	static constexpr float DEFAULT_TOGGLE_DEADZONE = 0.5f;
 
 private:
@@ -110,7 +116,7 @@ public:
 #endif
 
 	String get_builtin_display_name(const String &p_name) const;
-	// Use an Ordered Map so insertion order is preserved. We want the elements to be 'grouped' somewhat.
+	/// Use an Ordered Map so insertion order is preserved. We want the elements to be 'grouped' somewhat.
 	const HashMap<String, List<Ref<InputEvent>>> &get_builtins();
 	const HashMap<String, List<Ref<InputEvent>>> &get_builtins_with_feature_overrides_applied();
 

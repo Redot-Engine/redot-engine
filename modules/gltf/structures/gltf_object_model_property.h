@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_object_model_property.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/expression.h"
 #include "core/variant/typed_array.h"
 #include "gltf_accessor.h"

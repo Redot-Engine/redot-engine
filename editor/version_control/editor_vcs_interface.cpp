@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_vcs_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_vcs_interface.h"
 
 #include "editor/editor_node.h"

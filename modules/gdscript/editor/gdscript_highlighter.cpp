@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_highlighter.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_highlighter.h"
 
 #include "../gdscript.h"
@@ -320,7 +326,7 @@ Dictionary GDScriptSyntaxHighlighter::_get_line_syntax_highlighting_impl(int p_l
 			}
 		}
 
-		// VERY hacky... but couldn't come up with anything better.
+		/// @todo VERY hacky... but couldn't come up with anything better.
 		if (j > 0 && (str[j] == '&' || str[j] == '^' || str[j] == '%' || str[j] == '+' || str[j] == '-' || str[j] == '~' || str[j] == '.')) {
 			int to = j - 1;
 			// Find what the last text was (prev_text won't work if there's no whitespace, so we need to do it manually).

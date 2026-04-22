@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file color.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/math_funcs.h"
 
 class String;

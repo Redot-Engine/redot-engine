@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file light_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "core/templates/paged_array.h"
 #include "core/templates/rid_owner.h"
@@ -61,7 +67,8 @@ private:
 	static LightStorage *singleton;
 	uint32_t max_cluster_elements = 512;
 
-	/* LIGHT */
+	/// @name LIGHT
+	/// @{
 	struct Light {
 		RS::LightType type;
 		float param[RS::LIGHT_PARAM_MAX];
@@ -88,8 +95,9 @@ private:
 	};
 
 	mutable RID_Owner<Light, true> light_owner;
-
-	/* LIGHT INSTANCE */
+	/// @}
+	/// @name LIGHT INSTANCE
+	/// @{
 
 	struct LightInstance {
 		struct ShadowTransform {
@@ -126,7 +134,7 @@ private:
 
 		Rect2 directional_rect;
 
-		HashSet<RID> shadow_atlases; //shadow atlases where this light is registered
+		HashSet<RID> shadow_atlases; ///< Shadow atlases where this light is registered
 
 		ForwardID forward_id = -1;
 
@@ -134,13 +142,14 @@ private:
 	};
 
 	mutable RID_Owner<LightInstance> light_instance_owner;
-
-	/* OMNI/SPOT LIGHT DATA */
+	/// @}
+	/// @name OMNI/SPOT LIGHT DATA
+	/// @{
 
 	struct LightData {
 		float position[3];
 		float inv_radius;
-		float direction[3]; // in omni, x and y are used for dual paraboloid offset
+		float direction[3]; ///< In omni, x and y are used for dual paraboloid offset
 		float size;
 
 		float color[3];
@@ -151,7 +160,7 @@ private:
 		float specular_amount;
 		float shadow_opacity;
 
-		float atlas_rect[4]; // in omni, used for atlas uv, in spot, used for projector uv
+		float atlas_rect[4]; ///< In omni, used for atlas uv, in spot, used for projector uv
 		float shadow_matrix[16];
 		float shadow_bias;
 		float shadow_normal_bias;
@@ -183,7 +192,9 @@ private:
 	RID omni_light_buffer;
 	RID spot_light_buffer;
 
-	/* DIRECTIONAL LIGHT DATA */
+	/// @}
+	/// @name DIRECTIONAL LIGHT DATA
+	/// @{
 
 	struct DirectionalLightData {
 		float direction[3];
@@ -218,7 +229,9 @@ private:
 	DirectionalLightData *directional_lights = nullptr;
 	RID directional_light_buffer;
 
-	/* REFLECTION PROBE */
+	/// @}
+	/// @name REFLECTION PROBE
+	/// @{
 
 	struct ReflectionProbe {
 		RS::ReflectionProbeUpdateMode update_mode = RS::REFLECTION_PROBE_UPDATE_ONCE;
@@ -242,8 +255,9 @@ private:
 		Dependency dependency;
 	};
 	mutable RID_Owner<ReflectionProbe, true> reflection_probe_owner;
-
-	/* REFLECTION ATLAS */
+	/// @}
+	/// @name REFLECTION ATLAS
+	/// @{
 
 	struct ReflectionAtlas {
 		int count = 0;
@@ -261,14 +275,16 @@ private:
 
 		Vector<Reflection> reflections;
 
-		Ref<RenderSceneBuffersRD> render_buffers; // Further render buffers used.
+		Ref<RenderSceneBuffersRD> render_buffers; ///< Further render buffers used.
 
-		ClusterBuilderRD *cluster_builder = nullptr; // only used if cluster builder is supported by the renderer.
+		ClusterBuilderRD *cluster_builder = nullptr; ///< only used if cluster builder is supported by the renderer.
 	};
 
 	mutable RID_Owner<ReflectionAtlas> reflection_atlas_owner;
 
-	/* REFLECTION PROBE INSTANCE */
+	/// @}
+	/// @name REFLECTION PROBE INSTANCE
+	/// @{
 
 	struct ReflectionProbeInstance {
 		RID probe;
@@ -289,8 +305,9 @@ private:
 	};
 
 	mutable RID_Owner<ReflectionProbeInstance> reflection_probe_instance_owner;
-
-	/* REFLECTION DATA */
+	/// @}
+	/// @name REFLECTION DATA
+	/// @{
 
 	enum {
 		REFLECTION_AMBIENT_DISABLED = 0,
@@ -303,7 +320,7 @@ private:
 		float index;
 		float box_offset[3];
 		uint32_t mask;
-		float ambient[3]; // ambient color,
+		float ambient[3]; ///< Ambient color,
 		float intensity;
 		float blend_distance;
 		uint32_t exterior;
@@ -313,7 +330,7 @@ private:
 		uint32_t pad0;
 		uint32_t pad1;
 		uint32_t pad2;
-		float local_matrix[16]; // up to here for spot and omni, rest is for directional
+		float local_matrix[16]; ///< Up to here for spot and omni, rest is for directional
 	};
 
 	struct ReflectionProbeInstanceSort {
@@ -330,8 +347,9 @@ private:
 	ReflectionData *reflections = nullptr;
 	ReflectionProbeInstanceSort *reflection_sort = nullptr;
 	RID reflection_buffer;
-
-	/* LIGHTMAP */
+	/// @}
+	/// @name LIGHTMAP
+	/// @{
 
 	struct Lightmap {
 		RID light_texture;
@@ -365,8 +383,9 @@ private:
 	mutable RID_Owner<Lightmap, true> lightmap_owner;
 
 	Vector<RID> shadowmask_textures;
-
-	/* LIGHTMAP INSTANCE */
+	/// @}
+	/// @name LIGHTMAP INSTANCE
+	/// @{
 
 	struct LightmapInstance {
 		RID lightmap;
@@ -374,8 +393,9 @@ private:
 	};
 
 	mutable RID_Owner<LightmapInstance> lightmap_instance_owner;
-
-	/* SHADOW ATLAS */
+	/// @}
+	/// @name SHADOW ATLAS
+	/// @{
 
 	uint64_t shadow_atlas_realloc_tolerance_msec = 500;
 
@@ -392,7 +412,7 @@ private:
 			struct Shadow {
 				RID owner;
 				uint64_t version = 0;
-				uint64_t fog_version = 0; // used for fog
+				uint64_t fog_version = 0; ///< Used for fog
 				uint64_t alloc_tick = 0;
 
 				Shadow() {}
@@ -410,7 +430,7 @@ private:
 		bool use_16_bits = true;
 
 		RID depth;
-		RID fb; //for copying
+		RID fb; ///< For copying
 
 		HashMap<RID, uint32_t> shadow_owners;
 	};
@@ -422,20 +442,22 @@ private:
 	void _shadow_atlas_invalidate_shadow(ShadowAtlas::Quadrant::Shadow *p_shadow, RID p_atlas, ShadowAtlas *p_shadow_atlas, uint32_t p_quadrant, uint32_t p_shadow_idx);
 	bool _shadow_atlas_find_shadow(ShadowAtlas *shadow_atlas, int *p_in_quadrants, int p_quadrant_count, int p_current_subdiv, uint64_t p_tick, int &r_quadrant, int &r_shadow);
 	bool _shadow_atlas_find_omni_shadows(ShadowAtlas *shadow_atlas, int *p_in_quadrants, int p_quadrant_count, int p_current_subdiv, uint64_t p_tick, int &r_quadrant, int &r_shadow);
-
-	/* DIRECTIONAL SHADOW */
+	/// @}
+	/// @name DIRECTIONAL SHADOW
+	/// @{
 
 	struct DirectionalShadow {
 		RID depth;
-		RID fb; //when renderign direct
+		RID fb; ///< When renderign direct
 
 		int light_count = 0;
 		int size = 0;
 		bool use_16_bits = true;
 		int current_light = 0;
 	} directional_shadow;
-
-	/* SHADOW CUBEMAPS */
+	/// @}
+	/// @name SHADOW CUBEMAPS
+	/// @{
 
 	struct ShadowCubemap {
 		RID cubemap;
@@ -444,11 +466,13 @@ private:
 
 	HashMap<int, ShadowCubemap> shadow_cubemaps;
 	ShadowCubemap *_get_shadow_cubemap(int p_size);
-
-	/* PIPELINE HINTS */
+	/// @}
+	/// @name PIPELINE HINTS
+	/// @{
 
 	bool shadow_cubemaps_used = false;
 	bool shadow_dual_paraboloid_used = false;
+	/// @}
 
 public:
 	static LightStorage *get_singleton();
@@ -458,15 +482,17 @@ public:
 
 	bool free(RID p_rid);
 
-	/* Settings */
+	/// @name Settings
+	/// @{
 	void set_max_cluster_elements(const uint32_t p_max_cluster_elements) {
 		max_cluster_elements = p_max_cluster_elements;
 		set_max_reflection_probes(p_max_cluster_elements);
 		set_max_lights(p_max_cluster_elements);
 	}
 	uint32_t get_max_cluster_elements() const { return max_cluster_elements; }
-
-	/* LIGHT */
+	/// @}
+	/// @name LIGHT
+	/// @{
 
 	bool owns_light(RID p_rid) { return light_owner.owns(p_rid); }
 
@@ -597,9 +623,9 @@ public:
 	virtual uint32_t light_get_cull_mask(RID p_light) const override;
 
 	Dependency *light_get_dependency(RID p_light) const;
-
-	/* LIGHT INSTANCE API */
-
+	/// @}
+	/// @name LIGHT INSTANCE API
+	/// @{
 	bool owns_light_instance(RID p_rid) { return light_instance_owner.owns(p_rid); }
 
 	virtual RID light_instance_create(RID p_light) override;
@@ -800,8 +826,9 @@ public:
 		LightInstance *li = light_instance_owner.get_or_null(p_light_instance);
 		return li->directional_rect;
 	}
-
-	/* LIGHT DATA */
+	/// @}
+	/// @name LIGHT DATA
+	/// @{
 
 	void free_light_data();
 	void set_max_lights(const uint32_t p_max_lights);
@@ -828,8 +855,9 @@ public:
 		return false;
 	}
 	void update_light_buffers(RenderDataRD *p_render_data, const PagedArray<RID> &p_lights, const Transform3D &p_camera_transform, RID p_shadow_atlas, bool p_using_shadows, uint32_t &r_directional_light_count, uint32_t &r_positional_light_count, bool &r_directional_light_soft_shadows);
-
-	/* REFLECTION PROBE */
+	/// @}
+	/// @name REFLECTION PROBE
+	/// @{
 
 	bool owns_reflection_probe(RID p_rid) { return reflection_probe_owner.owns(p_rid); }
 
@@ -878,8 +906,9 @@ public:
 	float reflection_probe_get_ambient_color_energy(RID p_probe) const;
 
 	Dependency *reflection_probe_get_dependency(RID p_probe) const;
-
-	/* REFLECTION ATLAS */
+	/// @}
+	/// @name REFLECTION ATLAS
+	/// @{
 
 	bool owns_reflection_atlas(RID p_rid) { return reflection_atlas_owner.owns(p_rid); }
 
@@ -893,8 +922,9 @@ public:
 		ERR_FAIL_NULL_V(atlas, RID());
 		return atlas->reflection;
 	}
-
-	/* REFLECTION PROBE INSTANCE */
+	/// @}
+	/// @name REFLECTION PROBE INSTANCE
+	/// @{
 
 	bool owns_reflection_probe_instance(RID p_rid) { return reflection_probe_instance_owner.owns(p_rid); }
 
@@ -961,8 +991,9 @@ public:
 	}
 
 	ClusterBuilderRD *reflection_probe_instance_get_cluster_builder(RID p_instance, ClusterBuilderSharedDataRD *p_cluster_builder_shared);
-
-	/* REFLECTION DATA */
+	/// @}
+	/// @name REFLECTION DATA
+	/// @{
 
 	void free_reflection_data();
 	void set_max_reflection_probes(const uint32_t p_max_reflection_probes);
@@ -972,8 +1003,9 @@ public:
 	static uint32_t get_reflection_probe_color_usage_bits();
 	static RD::DataFormat get_reflection_probe_depth_format();
 	static uint32_t get_reflection_probe_depth_usage_bits();
-
-	/* LIGHTMAP */
+	/// @}
+	/// @name LIGHTMAP
+	/// @{
 
 	bool owns_lightmap(RID p_rid) { return lightmap_owner.owns(p_rid); }
 
@@ -1048,8 +1080,9 @@ public:
 		ERR_FAIL_NULL_V(lm, RID());
 		return lm->shadow_texture;
 	}
-
-	/* LIGHTMAP INSTANCE */
+	/// @}
+	/// @name LIGHTMAP INSTANCE
+	/// @{
 
 	bool owns_lightmap_instance(RID p_rid) { return lightmap_instance_owner.owns(p_rid); }
 
@@ -1068,8 +1101,9 @@ public:
 		LightmapInstance *li = lightmap_instance_owner.get_or_null(p_lightmap_instance);
 		return li->transform;
 	}
-
-	/* SHADOW ATLAS API */
+	/// @}
+	/// @name SHADOW ATLAS API
+	/// @{
 
 	bool owns_shadow_atlas(RID p_rid) { return shadow_atlas_owner.owns(p_rid); }
 
@@ -1125,8 +1159,9 @@ public:
 	virtual void shadow_atlas_update(RID p_atlas) override;
 	static RD::DataFormat get_shadow_atlas_depth_format(bool p_16_bits);
 	static uint32_t get_shadow_atlas_depth_usage_bits();
-
-	/* DIRECTIONAL SHADOW */
+	/// @}
+	/// @name DIRECTIONAL SHADOW
+	/// @{
 
 	virtual void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true) override;
 	virtual int get_directional_light_shadow_size(RID p_light_instance) override;
@@ -1150,18 +1185,21 @@ public:
 	_FORCE_INLINE_ void directional_shadow_increase_current_light() {
 		directional_shadow.current_light++;
 	}
-
-	/* SHADOW CUBEMAPS */
+	/// @}
+	///  SHADOW CUBEMAPS
+	/// @{
 
 	RID get_cubemap(int p_size);
 	RID get_cubemap_fb(int p_size, int p_pass);
 	static RD::DataFormat get_cubemap_depth_format();
 	static uint32_t get_cubemap_depth_usage_bits();
-
-	/* PIPELINE HINTS */
+	/// @}
+	/// @name PIPELINE HINTS
+	/// @{
 
 	bool get_shadow_cubemaps_used() const;
 	bool get_shadow_dual_paraboloid_used() const;
+	/// @}
 };
 
 } // namespace RendererRD

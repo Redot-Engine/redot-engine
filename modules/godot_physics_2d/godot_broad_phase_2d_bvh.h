@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_broad_phase_2d_bvh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_broad_phase_2d.h"
 
 #include "core/math/bvh.h"

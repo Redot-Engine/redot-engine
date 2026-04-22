@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file group_settings_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "group_settings_editor.h"
 
 #include "core/config/project_settings.h"

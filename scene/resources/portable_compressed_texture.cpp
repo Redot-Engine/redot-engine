@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file portable_compressed_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "portable_compressed_texture.h"
 
 #include "core/config/project_settings.h"

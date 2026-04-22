@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fbx_document.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fbx_state.h"
 
 #include "modules/gltf/gltf_defines.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_replication_config.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_replication_config.h"
 
 bool SceneReplicationConfig::_set(const StringName &p_name, const Variant &p_value) {

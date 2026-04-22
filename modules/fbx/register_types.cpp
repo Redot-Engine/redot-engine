@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file register_types.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "register_types.h"
 
 #include "../gltf/extensions/gltf_document_extension_convert_importer_mesh.h"

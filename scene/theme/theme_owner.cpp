@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file theme_owner.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "theme_owner.h"
 
 #include "scene/gui/control.h"
@@ -117,11 +123,6 @@ ThemeContext *ThemeOwner::_get_active_owner_context() const {
 // Theme propagation.
 
 void ThemeOwner::assign_theme_on_parented(Node *p_for_node) {
-	// We check if there are any themes affecting the parent. If that's the case
-	// its children also need to be affected.
-	// We don't notify here because `NOTIFICATION_THEME_CHANGED` will be handled
-	// a bit later by `NOTIFICATION_ENTER_TREE`.
-
 	Node *parent = p_for_node->get_parent();
 
 	Control *parent_c = Object::cast_to<Control>(parent);
@@ -136,10 +137,6 @@ void ThemeOwner::assign_theme_on_parented(Node *p_for_node) {
 }
 
 void ThemeOwner::clear_theme_on_unparented(Node *p_for_node) {
-	// We check if there were any themes affecting the parent. If that's the case
-	// its children need were also affected and need to be updated.
-	// We don't notify because we're exiting the tree, and it's not important.
-
 	Node *parent = p_for_node->get_parent();
 
 	Control *parent_c = Object::cast_to<Control>(parent);

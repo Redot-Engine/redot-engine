@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godotsharp_defs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #define BINDINGS_NAMESPACE "Godot"
 #define BINDINGS_NAMESPACE_COLLECTIONS BINDINGS_NAMESPACE ".Collections"
 #define API_SOLUTION_NAME "GodotSharp"

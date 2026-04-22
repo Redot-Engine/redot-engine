@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file event_listener_line_edit.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/line_edit.h"
 
 enum InputType {

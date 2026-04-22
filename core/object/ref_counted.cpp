@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file ref_counted.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "ref_counted.h"
 
 #include "core/object/script_language.h"

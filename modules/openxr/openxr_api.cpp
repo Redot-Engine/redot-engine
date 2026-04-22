@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_api.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_api.h"
 
 #include "openxr_interface.h"
@@ -532,9 +538,6 @@ void OpenXRAPI::copy_string_to_char_buffer(const String p_string, char *p_buffer
 }
 
 PackedStringArray OpenXRAPI::get_all_requested_extensions() {
-	// This returns all extensions we will request regardless of whether they are available.
-	// This is mostly used by the editor to filter features not enabled through project settings.
-
 	PackedStringArray requested_extensions;
 	for (OpenXRExtensionWrapper *wrapper : registered_extension_wrappers) {
 		const HashMap<String, bool *> &wrapper_request_extensions = wrapper->get_requested_extensions();
@@ -550,9 +553,7 @@ PackedStringArray OpenXRAPI::get_all_requested_extensions() {
 }
 
 bool OpenXRAPI::create_instance() {
-	// Create our OpenXR instance, this will query any registered extension wrappers for extensions we need to enable.
-
-	// We can request an extension multiple times if there are dependencies
+	/// We can request an extension multiple times if there are dependencies
 	struct RequestExtension {
 		String name;
 		bool *enabled;
@@ -674,8 +675,6 @@ bool OpenXRAPI::create_instance() {
 }
 
 bool OpenXRAPI::get_system_info() {
-	// Retrieve basic OpenXR system info based on the form factor we desire
-
 	// Retrieve the system for our form factor, fails if form factor is not available
 	XrSystemGetInfo system_get_info = {
 		XR_TYPE_SYSTEM_GET_INFO, // type;
@@ -731,8 +730,6 @@ bool OpenXRAPI::get_system_info() {
 }
 
 bool OpenXRAPI::load_supported_view_configuration_types() {
-	// This queries the supported configuration types, likely there will only be one choosing between Mono (phone AR) and Stereo (HMDs)
-
 	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
 
 	supported_view_configuration_types.clear();
@@ -765,8 +762,6 @@ bool OpenXRAPI::load_supported_view_configuration_types() {
 }
 
 bool OpenXRAPI::load_supported_environmental_blend_modes() {
-	// This queries the supported environmental blend modes.
-
 	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
 
 	supported_environment_blend_modes.clear();
@@ -796,9 +791,6 @@ bool OpenXRAPI::is_view_configuration_supported(XrViewConfigurationType p_config
 }
 
 bool OpenXRAPI::load_supported_view_configuration_views(XrViewConfigurationType p_configuration_type) {
-	// This loads our view configuration for each view so for a stereo HMD, we'll get two entries (that are likely identical)
-	// The returned data supplies us with the recommended render target size
-
 	if (!is_view_configuration_supported(p_configuration_type)) {
 		print_line("OpenXR: View configuration ", OpenXRUtil::get_view_configuration_name(view_configuration), " is not supported.");
 		return false;
@@ -905,8 +897,6 @@ bool OpenXRAPI::create_session() {
 }
 
 bool OpenXRAPI::load_supported_reference_spaces() {
-	// loads the supported reference spaces for our OpenXR session
-
 	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
 
 	supported_reference_spaces.clear();
@@ -1037,8 +1027,8 @@ bool OpenXRAPI::setup_play_space() {
 	// But if it was a custom reference space, we don't touch it - it's the job of the extension that
 	// created it to clean it up.
 	if (play_space != XR_NULL_HANDLE && reference_space != XR_REFERENCE_SPACE_TYPE_MAX_ENUM) {
-		// TODO Investigate if destroying our play space here is safe,
-		// it may still be used in the rendering thread.
+		/// @todo Investigate if destroying our play space here is safe,
+		/// it may still be used in the rendering thread.
 
 		xrDestroySpace(play_space);
 	}
@@ -1237,20 +1227,20 @@ bool OpenXRAPI::create_main_swapchains(Size2i p_size) {
 	ERR_FAIL_NULL_V(graphics_extension, false);
 	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
 
-	/*
-		TODO: We need to improve on this, for now we're taking our old approach of creating our main swapchains and substituting
-		those for the ones Godot normally creates.
-		This however means we can only use swapchains for our main XR view.
-
-		It would have been nicer if we could override the swapchain creation in Godot with ours but we have a timing issue here.
-		We can't create XR swapchains until after our XR session is fully instantiated, yet Godot creates its swapchain much earlier.
-
-		We only creates a swapchain for the main output here.
-		Additional swapchains may be created through our composition layer extension.
-
-		Finally an area we need to expand upon is that Foveated rendering is only enabled for the swap chain we create,
-		as we render 3D content into internal buffers that are copied into the swapchain, we do now have (basic) VRS support
-	*/
+	/**
+	 *	@todo We need to improve on this, for now we're taking our old approach of creating our main swapchains and substituting
+	 *	those for the ones Godot normally creates.
+	 *	This however means we can only use swapchains for our main XR view.
+	 *
+	 *	It would have been nicer if we could override the swapchain creation in Godot with ours but we have a timing issue here.
+	 *	We can't create XR swapchains until after our XR session is fully instantiated, yet Godot creates its swapchain much earlier.
+	 *
+	 *	We only creates a swapchain for the main output here.
+	 *	Additional swapchains may be created through our composition layer extension.
+	 *
+	 *	Finally an area we need to expand upon is that Foveated rendering is only enabled for the swap chain we create,
+	 *	as we render 3D content into internal buffers that are copied into the swapchain, we do now have (basic) VRS support
+	 */
 
 	render_state.main_swapchain_size = p_size;
 	uint32_t sample_count = 1;
@@ -1323,10 +1313,10 @@ bool OpenXRAPI::create_main_swapchains(Size2i p_size) {
 }
 
 void OpenXRAPI::destroy_session() {
-	// TODO need to figure out if we're still rendering our current frame
-	// in a separate rendering thread and if so,
-	// if we need to wait for completion.
-	// We could be pulling the rug from underneath rendering...
+	/// @todo Need to figure out if we're still rendering our current frame
+	/// in a separate rendering thread and if so,
+	/// if we need to wait for completion.
+	/// We could be pulling the rug from underneath rendering...
 
 	if (running) {
 		if (session != XR_NULL_HANDLE) {
@@ -2020,8 +2010,8 @@ bool OpenXRAPI::poll_events() {
 			case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: {
 				XrEventDataInstanceLossPending *event = (XrEventDataInstanceLossPending *)&runtimeEvent;
 
-				// TODO We get this event if we're about to loose our OpenXR instance.
-				// We should queue exiting Godot at this point.
+				/// @todo We get this event if we're about to loose our OpenXR instance.
+				/// We should queue exiting Godot at this point.
 
 				print_verbose(String("OpenXR EVENT: instance loss pending at ") + itos(event->lossTime));
 				return false;
@@ -2274,15 +2264,15 @@ void OpenXRAPI::pre_render() {
 		}
 	}
 
-	// Get our view info for the frame we're about to render, note from the OpenXR manual:
+	// @todo Get our view info for the frame we're about to render, note from the OpenXR manual:
 	// "Repeatedly calling xrLocateViews with the same time may not necessarily return the same result. Instead the prediction gets increasingly accurate as the function is called closer to the given time for which a prediction is made"
-
+	//
 	// We're calling this "relatively" early, the positioning we're obtaining here will be used to do our frustum culling,
 	// occlusion culling, etc. There is however a technique that we can investigate in the future where after our entire
 	// Vulkan command buffer is build, but right before vkSubmitQueue is called, we call xrLocateViews one more time and
 	// update the view and projection matrix once more with a slightly more accurate predication and then submit the
 	// command queues.
-
+	//
 	// That is not possible yet but worth investigating in the future.
 
 	XrViewLocateInfo view_locate_info = {

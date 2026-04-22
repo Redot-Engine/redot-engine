@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_server.h"
 #include "rendering_server.compat.inc"
 
@@ -233,7 +239,7 @@ RID RenderingServer::_make_test_cube() {
 
 	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_DIFFUSE, Color(1, 1, 1) );
 	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_SPECULAR, Color(1,1,1) );
-*/
+	*/
 	mesh_surface_set_material(test_cube, 0, test_material);
 
 	return test_cube;
@@ -335,8 +341,8 @@ void _get_axis_angle(const Vector3 &p_normal, const Vector4 &p_tangent, float &r
 	}
 }
 
-// The inputs to this function should match the outputs of _get_axis_angle. I.e. p_axis is a normalized vector
-// and p_angle includes the binormal direction.
+/// The inputs to this function should match the outputs of _get_axis_angle. I.e. p_axis is a normalized vector
+/// and p_angle includes the binormal direction.
 void _get_tbn_from_axis_angle(const Vector3 &p_axis, float p_angle, Vector3 &r_normal, Vector4 &r_tangent) {
 	float binormal_sign = p_angle > 0.5 ? 1.0 : -1.0;
 	float angle = Math::abs(p_angle * 2.0 - 1.0) * Math::PI;
@@ -1921,7 +1927,6 @@ int RenderingServer::global_shader_uniform_type_get_shader_datatype(GlobalShader
 }
 
 RenderingDevice *RenderingServer::get_rendering_device() const {
-	// Return the rendering device we're using globally.
 	return RenderingDevice::get_singleton();
 }
 

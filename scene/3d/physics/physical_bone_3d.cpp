@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physical_bone_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "physical_bone_3d.h"
 
 #include "scene/3d/physics/physical_bone_simulator_3d.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_agent_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_rid_3d.h"
 
 #include "core/object/class_db.h"
@@ -128,9 +134,15 @@ public:
 	void set_target_position(const Vector3 p_target_position);
 	const Vector3 &get_target_position() const { return target_position; }
 
+	/// Sets the "wanted" velocity for an agent as a suggestion
+	/// This velocity is not guaranteed, RVO simulation will only try to fulfill it
 	void set_velocity(const Vector3 p_velocity);
 	const Vector3 &get_velocity() const { return velocity; }
 
+	/// This function replaces the internal rvo simulation velocity
+	/// should only be used after the agent was teleported
+	/// as it destroys consistency in movement in cramped situations
+	/// use velocity instead to update with a safer "suggestion"
 	void set_velocity_forced(const Vector3 p_velocity);
 	const Vector3 &get_velocity_forced() const { return velocity_forced; }
 
@@ -151,10 +163,10 @@ public:
 	void request_sync();
 	void cancel_sync_request();
 
-	// Updates this agent with rvo data after the rvo simulation avoidance step.
+	/// Updates this agent with rvo data after the rvo simulation avoidance step.
 	void update();
 
-	// RVO debug data from the last frame update.
+	/// RVO debug data from the last frame update / RVO simulation internals of this agent.
 	const Dictionary get_avoidance_data() const;
 
 private:

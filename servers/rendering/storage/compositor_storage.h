@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file compositor_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/rid_owner.h"
 #include "servers/rendering_server.h"
 
@@ -85,7 +91,8 @@ public:
 	void compositor_effect_set_flag(RID p_effect, RS::CompositorEffectFlags p_flag, bool p_set);
 	bool compositor_effect_get_flag(RID p_effect, RS::CompositorEffectFlags p_flag) const;
 
-	// Compositor
+	/// @name Compositor
+	/// @{
 	RID compositor_allocate();
 	void compositor_initialize(RID p_rid);
 	void compositor_free(RID p_rid);
@@ -96,4 +103,5 @@ public:
 
 	void compositor_set_compositor_effects(RID p_compositor, const Vector<RID> &p_effects);
 	Vector<RID> compositor_get_compositor_effects(RID p_compositor, RS::CompositorEffectCallbackType p_callback_type = RS::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY, bool p_enabled_only = true) const;
+	/// @}
 };

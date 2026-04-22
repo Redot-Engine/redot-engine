@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_state_machine_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/animation/animation_tree_editor_plugin.h"
 #include "scene/animation/animation_node_state_machine.h"
 #include "scene/gui/graph_edit.h"

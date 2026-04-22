@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_node.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_node.h"
 
 #include "core/config/project_settings.h"
@@ -1196,7 +1202,7 @@ void EditorNode::_fs_changed() {
 
 	_mark_unsaved_scenes();
 
-	// FIXME: Move this to a cleaner location, it's hacky to do this in _fs_changed.
+	/// @todo FIXME: Move this to a cleaner location, it's hacky to do this in _fs_changed.
 	String export_error;
 	Error err = OK;
 	// It's important to wait for the first scan to finish; otherwise, scripts or resources might not be imported.
@@ -1292,11 +1298,6 @@ void EditorNode::_fs_changed() {
 }
 
 void EditorNode::_resources_reimporting(const Vector<String> &p_resources) {
-	// This will copy all the modified properties of the nodes into 'scenes_modification_table'
-	// before they are actually reimported. It's important to do this before the reimportation
-	// because if a mesh is present in an inherited scene, the resource will be modified in
-	// the inherited scene. Then, get_modified_properties_for_node will return the mesh property,
-	// which will trigger a recopy of the previous mesh, preventing the reload.
 	scenes_modification_table.clear();
 	scenes_reimported.clear();
 	resources_reimported.clear();
@@ -2031,8 +2032,6 @@ bool EditorNode::_validate_scene_recursive(const String &p_filename, Node *p_nod
 }
 
 int EditorNode::_save_external_resources(bool p_also_save_external_data) {
-	// Save external resources and its subresources if any was modified.
-
 	int flg = 0;
 	if (EDITOR_GET("filesystem/on_save/compress_binary_resources")) {
 		flg |= ResourceSaver::FLAG_COMPRESS;
@@ -2102,9 +2101,6 @@ int EditorNode::_save_external_resources(bool p_also_save_external_data) {
 }
 
 void EditorNode::_save_scene_silently() {
-	// Save scene without displaying progress dialog. Used to work around
-	// errors about parent node being busy setting up children
-	// when Save on Focus Loss kicks in.
 	Node *scene = editor_data.get_edited_scene_root();
 	if (scene && !scene->get_scene_file_path().is_empty() && DirAccess::exists(scene->get_scene_file_path().get_base_dir())) {
 		_save_scene(scene->get_scene_file_path());
@@ -2353,7 +2349,7 @@ void EditorNode::_dialog_action(String p_file) {
 		case SETTINGS_PICK_MAIN_SCENE: {
 			ProjectSettings::get_singleton()->set("application/run/main_scene", ResourceUID::path_to_uid(p_file));
 			ProjectSettings::get_singleton()->save();
-			// TODO: Would be nice to show the project manager opened with the highlighted field.
+			/// @todo Would be nice to show the project manager opened with the highlighted field.
 
 			project_run_bar->play_main_scene((bool)pick_main_scene->get_meta("from_native", false));
 		} break;
@@ -2637,7 +2633,7 @@ void EditorNode::edit_item(Object *p_object, Object *p_editing_owner) {
 				epres->fold_resource();
 			}
 
-			// TODO: Call the function directly once a proper priority system is implemented.
+			/// @todo Call the function directly once a proper priority system is implemented.
 			to_over_edit.push_back(plugin);
 		}
 
@@ -3002,7 +2998,7 @@ static String _get_unsaved_scene_dialog_text(String p_scene_filename, uint64_t p
 }
 
 void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
-	if (!p_confirmed) { // FIXME: this may be a hack.
+	if (!p_confirmed) { /// @todo FIXME: this may be a hack.
 		current_menu_option = (MenuOptions)p_option;
 	}
 
@@ -4105,7 +4101,6 @@ bool EditorNode::is_addon_plugin_enabled(const String &p_addon) const {
 }
 
 void EditorNode::_remove_edited_scene(bool p_change_tab) {
-	// When scene gets closed no node is edited anymore, so make sure the editors are notified before nodes are freed.
 	hide_unused_editors(SceneTreeDock::get_singleton());
 	SceneTreeDock::get_singleton()->clear_previous_node_selection();
 
@@ -4130,8 +4125,8 @@ void EditorNode::_remove_edited_scene(bool p_change_tab) {
 }
 
 void EditorNode::_remove_scene(int index, bool p_change_tab) {
-	// Clear icon cache in case some scripts are no longer needed or class icons are outdated.
-	// FIXME: Ideally the cache should never be cleared and only updated on per-script basis, when an icon changes.
+	/// Clear icon cache in case some scripts are no longer needed or class icons are outdated.
+	/// @todo FIXME: Ideally the cache should never be cleared and only updated on per-script basis, when an icon changes.
 	editor_data.clear_script_icon_cache();
 	class_icon_cache.clear();
 
@@ -4780,7 +4775,7 @@ void EditorNode::get_preload_scene_modification_table(
 		for (const Connection &c : connections_to) {
 			Node *connection_target_node = Object::cast_to<Node>(c.callable.get_object());
 			if (connection_target_node) {
-				// TODO: add support for reinstating custom callables
+				/// @todo Add support for reinstating custom callables
 				if (!c.callable.is_custom()) {
 					ConnectionWithNodePath connection_to;
 					connection_to.connection = c;
@@ -4810,7 +4805,7 @@ void EditorNode::get_preload_scene_modification_table(
 			}
 
 			if (!source_node || valid_source_owner == nullptr) {
-				// TODO: add support for reinstating custom callables
+				/// @todo Add support for reinstating custom callables
 				if (!c.callable.is_custom()) {
 					valid_connections_from.push_back(c);
 				}
@@ -5139,7 +5134,7 @@ Ref<Script> EditorNode::get_object_custom_type_base(const Object *p_object) cons
 		// 	return name;
 		// }
 
-		// TODO: Should probably be deprecated in 4.x
+		/// @todo Should probably be deprecated in 4.x
 		StringName base = scr->get_instance_base_type();
 		if (base != StringName() && EditorNode::get_editor_data().get_custom_types().has(base)) {
 			const Vector<EditorData::CustomType> &types = EditorNode::get_editor_data().get_custom_types()[base];
@@ -5175,7 +5170,7 @@ StringName EditorNode::get_object_custom_type_name(const Object *p_object) const
 				return name;
 			}
 
-			// TODO: Should probably be deprecated in 4.x.
+			/// @todo Should probably be deprecated in 4.x.
 			StringName base = base_scr->get_instance_base_type();
 			if (base != StringName() && EditorNode::get_editor_data().get_custom_types().has(base)) {
 				const Vector<EditorData::CustomType> &types = EditorNode::get_editor_data().get_custom_types()[base];
@@ -5252,8 +5247,8 @@ Ref<Texture2D> EditorNode::_get_class_or_script_icon(const String &p_class, cons
 		return ext_icon;
 	}
 
-	// Check if the class name is a custom type.
-	// TODO: Should probably be deprecated in 4.x
+	/// Check if the class name is a custom type.
+	/// @todo Should probably be deprecated in 4.x
 	const EditorData::CustomType *ctype = ed.get_custom_type_by_name(p_class);
 	if (ctype && ctype->icon.is_valid()) {
 		return ctype->icon;
@@ -5364,7 +5359,7 @@ bool EditorNode::is_object_of_custom_type(const Object *p_object, const StringNa
 	return false;
 }
 
-// Used to track the progress of tasks in the CLI output (since we don't have any other frame of reference).
+/// Used to track the progress of tasks in the CLI output (since we don't have any other frame of reference).
 static HashMap<String, int> progress_total_steps;
 
 static String last_progress_task;
@@ -6312,7 +6307,7 @@ Dictionary EditorNode::drag_resource(const Ref<Resource> &p_res, Control *p_from
 	Ref<Texture2D> preview;
 
 	{
-		// TODO: make proper previews
+		/// @todo Make proper previews
 		Ref<Texture2D> texture = theme->get_icon(SNAME("FileBigThumb"), EditorStringName(EditorIcons));
 		if (texture.is_valid()) {
 			Ref<Image> img = texture->get_image();
@@ -6494,10 +6489,6 @@ void EditorNode::_file_access_close_error_notify_impl(const String &p_str) {
 	add_io_error(vformat(TTR("Unable to write to file '%s', file in use, locked or lacking permissions."), p_str));
 }
 
-// Recursive function to inform nodes that an array of nodes have had their scene reimported.
-// It will attempt to call a method named '_nodes_scene_reimported' on every node in the
-// tree so that editor scripts which create transient nodes will have the opportunity
-// to recreate them.
 void EditorNode::_notify_nodes_scene_reimported(Node *p_node, Array p_reimported_nodes) {
 	Skeleton3D *skel_3d = Object::cast_to<Skeleton3D>(p_node);
 	if (skel_3d) {
@@ -6843,8 +6834,8 @@ void EditorNode::reload_instances_with_path_in_edited_scenes() {
 				addition_node->get_parent()->remove_child(addition_node);
 			}
 
-			// Clear ownership of the nodes (kind of hack to workaround an issue with
-			// replace_by when called on nodes in other tabs).
+			/// @todo Clear ownership of the nodes (kind of hack to workaround an issue with
+			/// replace_by when called on nodes in other tabs).
 			List<Node *> nodes_owned_by_original_node;
 			original_node->get_owned_by(original_node, &nodes_owned_by_original_node);
 			for (Node *owned_node : nodes_owned_by_original_node) {

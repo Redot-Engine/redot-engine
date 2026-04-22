@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation.h"
 #include "animation.compat.inc"
 
@@ -4841,7 +4847,7 @@ struct AnimationCompressionTimeState {
 	};
 
 	LocalVector<Packet> packets;
-	//used for rollback
+	/// Used for rollback
 	int32_t key_index = 0;
 	int32_t validated_packet_count = 0;
 	int32_t validated_key_index = -1;
@@ -6456,7 +6462,7 @@ Variant Animation::cubic_interpolate_in_time_variant(const Variant &pre_a, const
 			const Transform2D ta = a.operator Transform2D();
 			const Transform2D tb = b.operator Transform2D();
 			const Transform2D tpb = post_b.operator Transform2D();
-			// TODO: May cause unintended skew, we needs spherical_cubic_interpolate_in_time() for angle and Transform2D::cubic_interpolate_with().
+			/// @todo May cause unintended skew, we needs spherical_cubic_interpolate_in_time() for angle and Transform2D::cubic_interpolate_with().
 			return Transform2D(
 					ta[0].cubic_interpolate_in_time(tb[0], tpa[0], tpb[0], c, p_b_t, p_pre_a_t, p_post_b_t),
 					ta[1].cubic_interpolate_in_time(tb[1], tpa[1], tpb[1], c, p_b_t, p_pre_a_t, p_post_b_t),
@@ -6467,7 +6473,7 @@ Variant Animation::cubic_interpolate_in_time_variant(const Variant &pre_a, const
 			const Transform3D ta = a.operator Transform3D();
 			const Transform3D tb = b.operator Transform3D();
 			const Transform3D tpb = post_b.operator Transform3D();
-			// TODO: May cause unintended skew, we needs Transform3D::cubic_interpolate_with().
+			/// @todo May cause unintended skew, we needs Transform3D::cubic_interpolate_with().
 			return Transform3D(
 					ta.basis.rows[0].cubic_interpolate_in_time(tb.basis.rows[0], tpa.basis.rows[0], tpb.basis.rows[0], c, p_b_t, p_pre_a_t, p_post_b_t),
 					ta.basis.rows[1].cubic_interpolate_in_time(tb.basis.rows[1], tpa.basis.rows[1], tpb.basis.rows[1], c, p_b_t, p_pre_a_t, p_post_b_t),
@@ -6487,9 +6493,9 @@ Variant Animation::cubic_interpolate_in_time_variant(const Variant &pre_a, const
 		} break;
 		case Variant::STRING:
 		case Variant::STRING_NAME: {
-			// TODO:
-			// String interpolation works on both the character array size and the character code, to apply cubic interpolation neatly,
-			// we need to figure out how to interpolate well in cases where there are fewer than 4 keys. So, for now, fallback to linear interpolation.
+			/// @todo
+			/// String interpolation works on both the character array size and the character code, to apply cubic interpolation neatly,
+			/// we need to figure out how to interpolate well in cases where there are fewer than 4 keys. So, for now, fallback to linear interpolation.
 			return interpolate_variant(a, b, c);
 		} break;
 		case Variant::PACKED_BYTE_ARRAY: {

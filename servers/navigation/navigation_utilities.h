@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_utilities.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/vector3.h"
 #include "core/variant/typed_array.h"
 

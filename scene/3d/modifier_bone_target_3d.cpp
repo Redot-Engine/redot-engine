@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file modifier_bone_target_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "modifier_bone_target_3d.h"
 
 void ModifierBoneTarget3D::_validate_bone_names() {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file quaternion.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "quaternion.h"
 
 #include "core/math/basis.h"
@@ -404,10 +410,6 @@ Quaternion::Quaternion(const Vector3 &p_axis, real_t p_angle) {
 	}
 }
 
-// Euler constructor expects a vector containing the Euler angles in the format
-// (ax, ay, az), where ax is the angle of rotation around x axis,
-// and similar for other axes.
-// This implementation uses YXZ convention (Z is the first rotation).
 Quaternion Quaternion::from_euler(const Vector3 &p_euler) {
 	real_t half_a1 = p_euler.y * 0.5f;
 	real_t half_a2 = p_euler.x * 0.5f;

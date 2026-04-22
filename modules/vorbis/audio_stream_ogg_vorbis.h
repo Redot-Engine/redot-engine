@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_stream_ogg_vorbis.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/variant/variant.h"
 #include "servers/audio/audio_stream.h"
 
@@ -83,7 +89,7 @@ class AudioStreamPlaybackOggVorbis : public AudioStreamPlaybackResampled {
 	int _mix_frames(AudioFrame *p_buffer, int p_frames);
 	int _mix_frames_vorbis(AudioFrame *p_buffer, int p_frames);
 
-	// Allocates vorbis data structures. Returns true upon success, false on failure.
+	/// Allocates vorbis data structures. Returns true upon success, false on failure.
 	bool _alloc_vorbis();
 
 protected:
@@ -95,7 +101,7 @@ public:
 	virtual void stop() override;
 	virtual bool is_playing() const override;
 
-	virtual int get_loop_count() const override; //times it looped
+	virtual int get_loop_count() const override; ///< @return Number of times it looped
 
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
@@ -116,7 +122,7 @@ public:
 
 class AudioStreamOggVorbis : public AudioStream {
 	GDCLASS(AudioStreamOggVorbis, AudioStream);
-	OBJ_SAVE_TYPE(AudioStream); // Saves derived classes with common type so they can be interchanged.
+	OBJ_SAVE_TYPE(AudioStream); ///< Saves derived classes with common type so they can be interchanged.
 	RES_BASE_EXTENSION("oggvorbisstr");
 
 	friend class AudioStreamPlaybackOggVorbis;
@@ -126,8 +132,8 @@ class AudioStreamOggVorbis : public AudioStream {
 	bool loop = false;
 	double loop_offset = 0.0;
 
-	// Performs a seek to the beginning of the stream, should not be called during playback!
-	// Also causes allocation and deallocation.
+	/// Performs a seek to the beginning of the stream, should not be called during playback!
+	/// Also causes allocation and deallocation.
 	void maybe_update_info();
 
 	Ref<OggPacketSequence> packet_sequence;
@@ -168,7 +174,7 @@ public:
 	void set_packet_sequence(Ref<OggPacketSequence> p_packet_sequence);
 	Ref<OggPacketSequence> get_packet_sequence() const;
 
-	virtual double get_length() const override; //if supported, otherwise return 0
+	virtual double get_length() const override; ///< If supported, otherwise return 0
 
 	virtual bool is_monophonic() const override;
 

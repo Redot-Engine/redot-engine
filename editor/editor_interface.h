@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_interface.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/object/class_db.h"
 #include "core/object/object.h"
@@ -66,12 +72,13 @@ class EditorInterface : public Object {
 
 	static EditorInterface *singleton;
 
-	// Editor dialogs.
-
+	/// @name Editor Dialogs
+	/// @{
 	PropertySelector *property_selector = nullptr;
 	PropertySelector *method_selector = nullptr;
 	SceneTreeDialog *node_selector = nullptr;
 	CreateDialog *create_dialog = nullptr;
+	/// @}
 
 	void _node_selected(const NodePath &p_node_paths, const Callable &p_callback);
 	void _property_selected(const String &p_property_name, const Callable &p_callback);
@@ -80,10 +87,11 @@ class EditorInterface : public Object {
 	void _create_dialog_item_selected(bool p_is_canceled, const Callable &p_callback);
 	void _call_dialog_callback(const Callable &p_callback, const Variant &p_selected, const String &p_context);
 
-	// Editor tools.
-
+	/// @name Editor Tools
+	/// @{
 	TypedArray<Texture2D> _make_mesh_previews(const TypedArray<Mesh> &p_meshes, int p_preview_size);
 	AABB _calculate_aabb_for_scene(Node *p_node, AABB &p_scene_aabb);
+	/// @}
 
 protected:
 	static void _bind_methods();
@@ -100,7 +108,8 @@ public:
 
 	void restart_editor(bool p_save = true);
 
-	// Editor tools.
+	/// @name Editor Tools
+	/// @{
 
 	EditorCommandPalette *get_command_palette() const;
 	EditorFileSystem *get_resource_file_system() const;
@@ -116,8 +125,9 @@ public:
 
 	void set_plugin_enabled(const String &p_plugin, bool p_enabled);
 	bool is_plugin_enabled(const String &p_plugin) const;
-
-	// Editor GUI.
+	/// @}
+	/// @name Editor GUI
+	/// @{
 
 	Ref<Theme> get_editor_theme() const;
 
@@ -141,17 +151,19 @@ public:
 
 	String get_current_feature_profile() const;
 	void set_current_feature_profile(const String &p_profile_name);
-
-	// Editor dialogs.
+	/// @}
+	/// @name Editor Dialogs
+	/// @{
 
 	void popup_node_selector(const Callable &p_callback, const TypedArray<StringName> &p_valid_types = TypedArray<StringName>(), Node *p_current_value = nullptr);
-	// Must use Vector<int> because exposing Vector<Variant::Type> is not supported.
+	/// Must use Vector<int> because exposing Vector<Variant::Type> is not supported.
 	void popup_property_selector(Object *p_object, const Callable &p_callback, const PackedInt32Array &p_type_filter = PackedInt32Array(), const String &p_current_value = String());
 	void popup_method_selector(Object *p_object, const Callable &p_callback, const String &p_current_value = String());
 	void popup_quick_open(const Callable &p_callback, const TypedArray<StringName> &p_base_types = TypedArray<StringName>());
 	void popup_create_dialog(const Callable &p_callback, const StringName &p_base_type = "", const String &p_current_type = "", const String &p_dialog_title = "", const TypedArray<StringName> &p_custom_type_blocklist = TypedArray<StringName>());
-
-	// Editor docks.
+	/// @}
+	/// @name Editor Docks
+	/// @{
 
 	FileSystemDock *get_file_system_dock() const;
 	void select_file(const String &p_file);
@@ -160,8 +172,9 @@ public:
 	String get_current_directory() const;
 
 	EditorInspector *get_inspector() const;
-
-	// Object/Resource/Node editing.
+	/// @}
+	/// @name Object/Resource/Node Editing
+	/// @{
 
 	void inspect_object(Object *p_obj, const String &p_for_property = String(), bool p_inspector_only = false);
 
@@ -180,8 +193,9 @@ public:
 	void mark_scene_as_unsaved();
 	void save_all_scenes();
 	Error close_scene();
-
-	// Scene playback.
+	/// @}
+	/// @name Scene Playback
+	/// @{
 
 	void play_main_scene();
 	void play_current_scene();
@@ -194,10 +208,12 @@ public:
 	bool is_movie_maker_enabled() const;
 
 	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
-
-	// Base.
+	/// @}
+	/// @name Base
+	/// @{
 	static void create();
 	static void free();
+	/// @}
 
 	EditorInterface();
 };

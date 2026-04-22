@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file canvas_item_material.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/material.h"
 
 class CanvasItemMaterial : public Material {

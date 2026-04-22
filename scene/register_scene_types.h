@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file register_scene_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 void register_scene_types();
 void unregister_scene_types();
 void register_scene_singletons();

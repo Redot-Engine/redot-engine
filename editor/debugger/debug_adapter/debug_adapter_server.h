@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file debug_adapter_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "debug_adapter_protocol.h"
 #include "editor/plugins/editor_plugin.h"
 

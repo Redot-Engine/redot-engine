@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file forward_id_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "forward_id_storage.h"
 
 using namespace RendererRD;

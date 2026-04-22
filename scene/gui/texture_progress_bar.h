@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file texture_progress_bar.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/range.h"
 
 class TextureProgressBar : public Range {

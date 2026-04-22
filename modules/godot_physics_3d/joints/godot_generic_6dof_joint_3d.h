@@ -32,34 +32,32 @@
 
 #pragma once
 
-/*
-Adapted to Godot from the Bullet library.
-*/
+/**
+ * @file godot_generic_6dof_joint_3d.h
+ *
+ * @brief Adapted to Godot from the Bullet library.
+ *
+ * @details Bullet Continuous Collision Detection and Physics Library
+ * Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ *
+ * 2007-09-09
+ * GodotGeneric6DOFJoint3D Refactored by Francisco Le?n
+ * email: projectileman@yahoo.com
+ * http://gimpact.sf.net
+ */
 
 #include "../godot_joint_3d.h"
 #include "godot_jacobian_entry_3d.h"
-
-/*
-Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
-
-/*
-2007-09-09
-GodotGeneric6DOFJoint3D Refactored by Francisco Le?n
-email: projectileman@yahoo.com
-http://gimpact.sf.net
-*/
 
 //! Rotation Limit structure for generic joints
 class GodotG6DOFRotationalLimitMotor3D {
@@ -93,15 +91,15 @@ public:
 		return (m_loLimit < m_hiLimit);
 	}
 
-	// Need apply correction.
+	/// Need apply correction.
 	bool needApplyTorques() {
 		return (m_enableMotor || m_currentLimit != 0);
 	}
 
-	// Calculates m_currentLimit and m_currentLimitError.
+	/// Calculates m_currentLimit and m_currentLimitError.
 	int testLimitValue(real_t test_value);
 
-	// Apply the correction impulses for two bodies.
+	/// Apply the correction impulses for two bodies.
 	real_t solveAngularLimits(real_t timeStep, Vector3 &axis, real_t jacDiagABInv, GodotBody3D *body0, GodotBody3D *body1, bool p_body0_dynamic, bool p_body1_dynamic);
 };
 
@@ -182,7 +180,7 @@ protected:
 	Vector3 m_calculatedAxisAngleDiff;
 	Vector3 m_calculatedAxis[3];
 
-	Vector3 m_AnchorPos; // point between pivots of bodies A and B to solve linear axes
+	Vector3 m_AnchorPos; ///< point between pivots of bodies A and B to solve linear axes
 
 	bool m_useLinearReferenceFrameA = false;
 
@@ -208,15 +206,15 @@ public:
 	virtual bool setup(real_t p_step) override;
 	virtual void solve(real_t p_step) override;
 
-	// Calcs the global transform for the joint offset for body A an B, and also calcs the angle differences between the bodies.
+	/// Calcs the global transform for the joint offset for body A an B, and also calcs the angle differences between the bodies.
 	void calculateTransforms();
 
-	// Gets the global transform of the offset for body A.
+	/// Gets the global transform of the offset for body A.
 	const Transform3D &getCalculatedTransformA() const {
 		return m_calculatedTransformA;
 	}
 
-	// Gets the global transform of the offset for body B.
+	/// Gets the global transform of the offset for body B.
 	const Transform3D &getCalculatedTransformB() const {
 		return m_calculatedTransformB;
 	}
@@ -237,16 +235,16 @@ public:
 		return m_frameInB;
 	}
 
-	// Performs Jacobian calculation, and also calculates angle differences and axis.
+	/// Performs Jacobian calculation, and also calculates angle differences and axis.
 	void updateRHS(real_t timeStep);
 
-	// Get the rotation axis in global coordinates.
+	/// Get the rotation axis in global coordinates.
 	Vector3 getAxis(int axis_index) const;
 
-	// Get the relative Euler angle.
+	/// Get the relative Euler angle.
 	real_t getAngle(int axis_index) const;
 
-	// Calculates angular correction and returns true if limit needs to be corrected.
+	/// Calculates angular correction and returns true if limit needs to be corrected.
 	bool testAngularLimitMotor(int axis_index);
 
 	void setLinearLowerLimit(const Vector3 &linearLower) {
@@ -269,17 +267,17 @@ public:
 		m_angularLimits[2].m_hiLimit = angularUpper.z;
 	}
 
-	// Retrieves the angular limit information.
+	/// Retrieves the angular limit information.
 	GodotG6DOFRotationalLimitMotor3D *getRotationalLimitMotor(int index) {
 		return &m_angularLimits[index];
 	}
 
-	// Retrieves the limit information.
+	/// Retrieves the limit information.
 	GodotG6DOFTranslationalLimitMotor3D *getTranslationalLimitMotor() {
 		return &m_linearLimits;
 	}
 
-	// First 3 are linear, next 3 are angular.
+	/// First 3 are linear, next 3 are angular.
 	void setLimit(int axis, real_t lo, real_t hi) {
 		if (axis < 3) {
 			m_linearLimits.m_lowerLimit[axis] = lo;
@@ -311,7 +309,7 @@ public:
 		return B;
 	}
 
-	virtual void calcAnchorPos(); // overridable
+	virtual void calcAnchorPos(); ///< overridable
 
 	void set_param(Vector3::Axis p_axis, PhysicsServer3D::G6DOFJointAxisParam p_param, real_t p_value);
 	real_t get_param(Vector3::Axis p_axis, PhysicsServer3D::G6DOFJointAxisParam p_param) const;

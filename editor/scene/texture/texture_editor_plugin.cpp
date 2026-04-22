@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_editor_plugin.h"
 
 #include "editor/editor_string_names.h"
@@ -83,10 +89,10 @@ void TexturePreview::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED: {
 			if (!is_inside_tree()) {
-				// TODO: This is a workaround because `NOTIFICATION_THEME_CHANGED`
-				// is getting called for some reason when the `TexturePreview` is
-				// getting destroyed, which causes `get_theme_font()` to return `nullptr`.
-				// See https://github.com/godotengine/godot/issues/50743.
+				/// @todo This is a workaround because `NOTIFICATION_THEME_CHANGED`
+				/// is getting called for some reason when the `TexturePreview` is
+				/// getting destroyed, which causes `get_theme_font()` to return `nullptr`.
+				/// See https://github.com/godotengine/godot/issues/50743.
 				break;
 			}
 

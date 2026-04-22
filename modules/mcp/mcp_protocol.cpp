@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mcp_protocol.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mcp_protocol.h"
 
 #include "mcp_tools.h"

@@ -32,5 +32,11 @@
 
 #pragma once
 
+/**
+ * @file register_exporters.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 void register_exporter_types();
 void register_exporters();

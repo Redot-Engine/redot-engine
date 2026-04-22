@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file class_db.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "class_db.h"
 
 #include "core/config/engine.h"
@@ -1480,7 +1486,6 @@ void ClassDB::add_property_array(const StringName &p_class, const StringName &p_
 	type->property_list.push_back(PropertyInfo(Variant::NIL, p_path, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_ARRAY, p_array_element_prefix));
 }
 
-// NOTE: For implementation simplicity reasons, this method doesn't allow setters to have optional arguments at the end.
 void ClassDB::add_property(const StringName &p_class, const PropertyInfo &p_pinfo, const StringName &p_setter, const StringName &p_getter, int p_index) {
 	Locker::Lock lock(Locker::STATE_WRITE);
 
@@ -1945,7 +1950,7 @@ MethodBind *ClassDB::_bind_vararg_method(MethodBind *p_bind, const StringName &p
 	}
 	type->method_map[p_name] = bind;
 #ifdef DEBUG_ENABLED
-	// FIXME: <reduz> set_return_type is no longer in MethodBind, so I guess it should be moved to vararg method bind
+	/// @todo FIXME: <reduz> set_return_type is no longer in MethodBind, so I guess it should be moved to vararg method bind
 	//bind->set_return_type("Variant");
 	type->method_order.push_back(p_name);
 #endif // DEBUG_ENABLED
@@ -2314,7 +2319,7 @@ void ClassDB::register_extension_class(ObjectGDExtension *p_extension) {
 	ClassInfo *parent = classes.getptr(p_extension->parent_class_name);
 
 #ifdef TOOLS_ENABLED
-	// @todo This is a limitation of the current implementation, but it should be possible to remove.
+	/// @todo This is a limitation of the current implementation, but it should be possible to remove.
 	ERR_FAIL_COND_MSG(p_extension->is_runtime && parent->gdextension && !parent->is_runtime, vformat("Extension runtime class '%s' cannot descend from '%s' which isn't also a runtime class.", String(p_extension->class_name), parent->name));
 #endif
 
@@ -2424,7 +2429,6 @@ void ClassDB::cleanup() {
 	native_structs.clear();
 }
 
-// Array to use in optional parameters on methods and the DEFVAL_ARRAY macro.
 Array ClassDB::default_array_arg = Array::create_read_only();
 
 bool ClassDB::is_default_array_arg(const Array &p_array) {

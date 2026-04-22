@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gradient_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/texture.h"
 
 class GradientTexture1D : public Texture2D {

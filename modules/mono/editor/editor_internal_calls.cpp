@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_internal_calls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_internal_calls.h"
 
 #include "../csharp_script.h"
@@ -248,8 +254,8 @@ bool godot_icall_Utils_OS_UnixFileHasExecutableAccess(const godot_string *p_file
 }
 #endif
 
-// The order in this array must match the declaration order of
-// the methods in 'GodotTools/Internals/Internal.cs'.
+/// The order in this array must match the declaration order of
+/// the methods in 'GodotTools/Internals/Internal.cs'.
 static const void *unmanaged_callbacks[]{
 	(void *)godot_icall_GodotSharpDirs_ResMetadataDir,
 	(void *)godot_icall_GodotSharpDirs_MonoUserDir,
