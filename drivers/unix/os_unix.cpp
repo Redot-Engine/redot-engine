@@ -1169,7 +1169,7 @@ String OS_Unix::get_executable_path() const {
 				fallback:
 					char buffer[PATH_MAX];
 					if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) &&
-							(st.st_mode & S_IFREG) && realpath(exe.c_str(), buffer) &&
+							S_ISREG(st.st_mode) && realpath(exe.c_str(), buffer) &&
 							st.st_dev == (dev_t)kif[i].va_fsid && st.st_ino == (ino_t)kif[i].va_fileid) {
 						res = buffer;
 					}
@@ -1279,8 +1279,12 @@ String OS_Unix::get_executable_path() const {
 	}
 	if (!path.empty()) {
 		errno = 0;
+	} else {
+		char resolved_path[MAXPATHLEN];
+		realpath(OS::get_executable_path().utf8().get_data(), resolved_path);
+		return String(resolved_path);
 	}
-	return String(path.c_str());
+	return String::utf8(path.c_str());
 #elif defined(__NetBSD__)
 	int mib[4] = { CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME };
 	char buf[MAXPATHLEN];
