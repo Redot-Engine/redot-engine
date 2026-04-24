@@ -1159,16 +1159,18 @@ String OS_Unix::get_executable_path() const {
 		kinfo_file *kif = nullptr;
 		bool error = false;
 		kd = kvm_openfiles(nullptr, nullptr, nullptr, KVM_NO_FILES, nullptr);
-		if (!kd) return res;
+		if (!kd) {
+			return res;
+		}
 		if ((kif = kvm_getfiles(kd, KERN_FILE_BYPID, getpid(), sizeof(struct kinfo_file), &cntp))) {
 			for (int i = 0; i < cntp && kif[i].fd_fd < 0; i++) {
 				if (kif[i].fd_fd == KERN_FILE_TEXT) {
 					struct stat st;
-					fallback:
+				fallback:
 					char buffer[PATH_MAX];
 					if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) &&
-						(st.st_mode & S_IFREG) && realpath(exe.c_str(), buffer) &&
-						st.st_dev == (dev_t)kif[i].va_fsid && st.st_ino == (ino_t)kif[i].va_fileid) {
+							(st.st_mode & S_IFREG) && realpath(exe.c_str(), buffer) &&
+							st.st_dev == (dev_t)kif[i].va_fsid && st.st_ino == (ino_t)kif[i].va_fileid) {
 						res = buffer;
 					}
 					if (res.empty() && !error) {
@@ -1213,26 +1215,30 @@ String OS_Unix::get_executable_path() const {
 	if (!buffer.empty()) {
 		std::string argv0;
 		if (!buffer[0].empty()) {
-			fallback:
+		fallback:
 			std::size_t slash_pos = buffer[0].find('/');
 			std::size_t colon_pos = buffer[0].find(':');
 			if (slash_pos == 0) {
 				argv0 = buffer[0];
 				path = is_exe(argv0);
-			} else if (slash_pos == std::string::npos || slash_pos > colon_pos) { 
+			} else if (slash_pos == std::string::npos || slash_pos > colon_pos) {
 				std::string penv = cppstr_getenv("PATH");
 				if (!penv.empty()) {
-					retry:
+				retry:
 					std::string tmp;
 					std::stringstream sstr(penv);
 					while (std::getline(sstr, tmp, ':')) {
 						argv0 = tmp + "/" + buffer[0];
 						path = is_exe(argv0);
-						if (!path.empty()) break;
+						if (!path.empty()) {
+							break;
+						}
 						if (slash_pos > colon_pos) {
 							argv0 = tmp + "/" + buffer[0].substr(0, colon_pos);
 							path = is_exe(argv0);
-							if (!path.empty()) break;
+							if (!path.empty()) {
+								break;
+							}
 						}
 					}
 				}
