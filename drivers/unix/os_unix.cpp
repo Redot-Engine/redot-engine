@@ -1280,7 +1280,7 @@ String OS_Unix::get_executable_path() const {
 	}
 	char resolved_path[MAXPATHLEN];
 	realpath(OS::get_executable_path().utf8().get_data(), resolved_path);
-	WARN_PRINT("Couldn't get executable path from any of the methods tried");	
+	WARN_PRINT("Couldn't get executable path from any of the methods tried");
 	return String::utf8(resolved_path);
 }
 #elif defined(__NetBSD__)
