@@ -63,13 +63,18 @@
 #include <sys/sysctl.h>
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <kvm.h>
 #endif
 
 #if defined(__OpenBSD__)
 #include <sys/swap.h>
+#include <sys/types.h>
 #include <uvm/uvmexp.h>
+#include <climits>
+#include <sstream>
+#include <string>
+#include <vector>
 #endif
 
 #if defined(__NetBSD__)
@@ -1146,11 +1151,130 @@ String OS_Unix::get_executable_path() const {
 	}
 	return b;
 #elif defined(__OpenBSD__)
-	char resolved_path[MAXPATHLEN];
-
-	realpath(OS::get_executable_path().utf8().get_data(), resolved_path);
-
-	return String(resolved_path);
+	std::string path;
+	auto is_exe = [](std::string exe) {
+		int cntp = 0;
+		std::string res;
+		kvm_t *kd = nullptr;
+		kinfo_file *kif = nullptr;
+		bool error = false;
+		kd = kvm_openfiles(nullptr, nullptr, nullptr, KVM_NO_FILES, nullptr);
+		if (!kd) return res;
+		if ((kif = kvm_getfiles(kd, KERN_FILE_BYPID, getpid(), sizeof(struct kinfo_file), &cntp))) {
+			for (int i = 0; i < cntp && kif[i].fd_fd < 0; i++) {
+				if (kif[i].fd_fd == KERN_FILE_TEXT) {
+					struct stat st;
+					fallback:
+					char buffer[PATH_MAX];
+					if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) &&
+						(st.st_mode & S_IFREG) && realpath(exe.c_str(), buffer) &&
+						st.st_dev == (dev_t)kif[i].va_fsid && st.st_ino == (ino_t)kif[i].va_fileid) {
+						res = buffer;
+					}
+					if (res.empty() && !error) {
+						error = true;
+						std::size_t last_slash_pos = exe.find_last_of("/");
+						if (last_slash_pos != std::string::npos) {
+							exe = exe.substr(0, last_slash_pos + 1) + kif[i].p_comm;
+							goto fallback;
+						}
+					}
+					break;
+				}
+			}
+		}
+		kvm_close(kd);
+		return res;
+	};
+	auto cppstr_getenv = [](std::string name) {
+		const char *cresult = getenv(name.c_str());
+		std::string result = cresult ? cresult : "";
+		return result;
+	};
+	int cntp = 0;
+	kvm_t *kd = nullptr;
+	kinfo_proc *proc_info = nullptr;
+	std::vector<std::string> buffer;
+	bool error = false, retried = false;
+	kd = kvm_openfiles(nullptr, nullptr, nullptr, KVM_NO_FILES, nullptr);
+	if (!kd) {
+		path.clear();
+		return path;
+	}
+	if ((proc_info = kvm_getprocs(kd, KERN_PROC_PID, getpid(), sizeof(struct kinfo_proc), &cntp))) {
+		char **cmd = kvm_getargv(kd, proc_info, 0);
+		if (cmd) {
+			for (int i = 0; cmd[i]; i++) {
+				buffer.push_back(cmd[i]);
+			}
+		}
+	}
+	kvm_close(kd);
+	if (!buffer.empty()) {
+		std::string argv0;
+		if (!buffer[0].empty()) {
+			fallback:
+			std::size_t slash_pos = buffer[0].find('/');
+			std::size_t colon_pos = buffer[0].find(':');
+			if (slash_pos == 0) {
+				argv0 = buffer[0];
+				path = is_exe(argv0);
+			} else if (slash_pos == std::string::npos || slash_pos > colon_pos) { 
+				std::string penv = cppstr_getenv("PATH");
+				if (!penv.empty()) {
+					retry:
+					std::string tmp;
+					std::stringstream sstr(penv);
+					while (std::getline(sstr, tmp, ':')) {
+						argv0 = tmp + "/" + buffer[0];
+						path = is_exe(argv0);
+						if (!path.empty()) break;
+						if (slash_pos > colon_pos) {
+							argv0 = tmp + "/" + buffer[0].substr(0, colon_pos);
+							path = is_exe(argv0);
+							if (!path.empty()) break;
+						}
+					}
+				}
+				if (path.empty() && !retried) {
+					retried = true;
+					penv = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11R6/bin:/usr/local/bin:/usr/local/sbin";
+					std::string home = cppstr_getenv("HOME");
+					if (!home.empty()) {
+						penv = home + "/bin:" + penv;
+					}
+					goto retry;
+				}
+			}
+			if (path.empty() && slash_pos > 0) {
+				std::string pwd = cppstr_getenv("PWD");
+				if (!pwd.empty()) {
+					argv0 = pwd + "/" + buffer[0];
+					path = is_exe(argv0);
+				}
+				if (path.empty()) {
+					char cwd[PATH_MAX];
+					if (getcwd(cwd, PATH_MAX)) {
+						argv0 = std::string(cwd) + "/" + buffer[0];
+						path = is_exe(argv0);
+					}
+				}
+			}
+		}
+		if (path.empty() && !error) {
+			error = true;
+			buffer.clear();
+			std::string underscore = cppstr_getenv("_");
+			if (!underscore.empty()) {
+				buffer.push_back(underscore);
+				goto fallback;
+			}
+		}
+	}
+	if (!path.empty()) {
+		errno = 0;
+	}
+	return String(path.c_str());
 #elif defined(__NetBSD__)
 	int mib[4] = { CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME };
 	char buf[MAXPATHLEN];
