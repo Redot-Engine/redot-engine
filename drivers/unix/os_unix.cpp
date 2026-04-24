@@ -1277,13 +1277,9 @@ String OS_Unix::get_executable_path() const {
 			}
 		}
 	}
-	if (!path.empty()) {
-		errno = 0;
-	} else {
-		char resolved_path[MAXPATHLEN];
-		realpath(OS::get_executable_path().utf8().get_data(), resolved_path);
-		WARN_PRINT("Couldn't get executable path and there is no remaining fallback method");
-		return String(resolved_path);
+	if (path.empty()) {
+		WARN_PRINT("Couldn't get executable path from any of the methods tried");
+		return OS::get_executable_path();
 	}
 	return String::utf8(path.c_str());
 #elif defined(__NetBSD__)
