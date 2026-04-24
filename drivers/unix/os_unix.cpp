@@ -1280,8 +1280,8 @@ String OS_Unix::get_executable_path() const {
 	}
 	char resolved_path[MAXPATHLEN];
 	realpath(OS::get_executable_path().utf8().get_data(), resolved_path);
-	WARN_PRINT("Couldn't get executable path from any of the methods tried");
-	return String(resolved_path);
+	WARN_PRINT("Couldn't get executable path from any of the methods tried");	
+	return String::utf8(resolved_path);
 }
 #elif defined(__NetBSD__)
 	int mib[4] = { CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME };
@@ -1297,7 +1297,7 @@ String OS_Unix::get_executable_path() const {
 
 	realpath(buf, resolved_path);
 
-	return String(resolved_path);
+	return String::utf8(resolved_path);
 #elif defined(__FreeBSD__)
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
 	char buf[MAXPATHLEN];
