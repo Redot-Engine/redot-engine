@@ -2057,7 +2057,7 @@ SceneTree::SceneTree() {
 	root->set_as_audio_listener_3d(true);
 #endif // _3D_DISABLED
 
-	set_physics_interpolation_enabled(GLOBAL_DEF("physics/common/physics_interpolation", false));
+	set_physics_interpolation_enabled(GLOBAL_DEF("physics/common/physics_interpolation", true));
 
 	// Always disable jitter fix if physics interpolation is enabled -
 	// Jitter fix will interfere with interpolation, and is not necessary
