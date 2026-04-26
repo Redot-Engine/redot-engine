@@ -354,7 +354,6 @@ class ScriptEditor : public PanelContainer {
 	VBoxContainer *scripts_vbox = nullptr;
 	VBoxContainer *overview_vbox = nullptr;
 	HBoxContainer *buttons_hbox = nullptr;
-	Label *filename = nullptr;
 	Button *members_overview_alphabeta_sort_button = nullptr;
 	bool members_overview_enabled;
 	ItemList *help_overview = nullptr;
@@ -370,7 +369,6 @@ class ScriptEditor : public PanelContainer {
 
 	float zoom_factor = 1.0f;
 
-	TextureRect *script_icon = nullptr;
 	Label *script_name_label = nullptr;
 
 	Button *script_back = nullptr;
