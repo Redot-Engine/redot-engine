@@ -40,6 +40,7 @@
 
 #include "core/io/image.h"
 #include "core/math/expression.h"
+#include "core/math/math_funcs.h"
 #include "scene/gui/color_mode.h"
 #include "scene/gui/color_picker_shape.h"
 #include "scene/gui/file_dialog.h"
@@ -377,6 +378,21 @@ void ColorPicker::set_focus_on_line_edit() {
 
 void ColorPicker::set_focus_on_picker_shape() {
 	shapes[get_current_shape_index()]->grab_focus();
+}
+
+void ColorPicker::set_intensity(float p_intensity) {
+	p_intensity = CLAMP(p_intensity, this->intensity_slider->get_min(), this->intensity_slider->get_max());
+	if (Math::is_equal_approx(intensity, p_intensity)) {
+		return;
+	}
+
+	intensity = p_intensity;
+	_normalized_apply_intensity_to_color();
+	_update_color();
+}
+
+float ColorPicker::get_intensity() {
+	return intensity;
 }
 
 void ColorPicker::_update_controls() {
@@ -2087,6 +2103,8 @@ void ColorPicker::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_recent_presets"), &ColorPicker::get_recent_presets);
 	ClassDB::bind_method(D_METHOD("set_picker_shape", "shape"), &ColorPicker::set_picker_shape);
 	ClassDB::bind_method(D_METHOD("get_picker_shape"), &ColorPicker::get_picker_shape);
+	ClassDB::bind_method(D_METHOD("set_intensity", "intensity"), &ColorPicker::set_intensity);
+	ClassDB::bind_method(D_METHOD("get_intensity"), &ColorPicker::get_intensity);
 
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "color"), "set_pick_color", "get_pick_color");
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "old_color"), "set_old_color", "get_old_color");
@@ -2103,6 +2121,7 @@ void ColorPicker::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sliders_visible"), "set_sliders_visible", "are_sliders_visible");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hex_visible"), "set_hex_visible", "is_hex_visible");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "presets_visible"), "set_presets_visible", "are_presets_visible");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "intensity"), "set_intensity", "get_intensity");
 
 	ADD_SIGNAL(MethodInfo("color_changed", PropertyInfo(Variant::COLOR, "color")));
 	ADD_SIGNAL(MethodInfo("preset_added", PropertyInfo(Variant::COLOR, "color")));
