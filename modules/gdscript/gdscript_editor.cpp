@@ -4302,6 +4302,12 @@ static Error _lookup_symbol_from_base(const GDScriptParser::DataType &p_base, co
 
 ::Error GDScriptLanguage::lookup_code(const String &p_code, const String &p_symbol, const String &p_path, Object *p_owner, LookupResult &r_result) {
 	// Before parsing, try the usual stuff.
+	if (p_symbol.is_empty()) {
+		r_result.type = ScriptLanguage::LOOKUP_RESULT_CLASS;
+		r_result.class_name = "Nil";
+		return OK;
+	}
+
 	if (ClassDB::class_exists(p_symbol)) {
 		r_result.type = ScriptLanguage::LOOKUP_RESULT_CLASS;
 		r_result.class_name = p_symbol;
