@@ -51,8 +51,9 @@ bool SplineIK3D::_set(const StringName &p_path, const Variant &p_value) {
 		} else {
 			return false;
 		}
+		return true;
 	}
-	return true;
+	return false;
 }
 
 bool SplineIK3D::_get(const StringName &p_path, Variant &r_ret) const {
@@ -74,8 +75,9 @@ bool SplineIK3D::_get(const StringName &p_path, Variant &r_ret) const {
 		} else {
 			return false;
 		}
+		return true;
 	}
-	return true;
+	return false;
 }
 
 void SplineIK3D::_get_property_list(List<PropertyInfo> *p_list) const {
@@ -356,7 +358,7 @@ void SplineIK3D::_process_joints(double p_delta, Skeleton3D *p_skeleton, SplineI
 
 	// For tilt fade-in, get bones length not on the path as denominator.
 	double fade_in_denom = 0.0;
-	int denom_start = p_setting->tilt_fade_in > 0 ? CLAMP(p_setting->tilt_fade_in - 1, (int)chain_path_start, (int)joint_count) : -1;
+	int denom_start = p_setting->tilt_fade_in > 0 ? CLAMP(p_setting->tilt_fade_in - 1, (int)chain_path_start, (int)joint_last) : -1;
 	int denom_start_to = denom_start - p_setting->tilt_fade_in;
 	if (denom_start >= 0) {
 		for (int i = denom_start; i > denom_start_to; i--) {
@@ -470,7 +472,7 @@ void SplineIK3D::_process_joints(double p_delta, Skeleton3D *p_skeleton, SplineI
 				continue;
 			}
 		}
-		uint32_t nearest_next = p_curve->is_closed() ? Math::posmod(nearest + 1, point_count) : CLAMP(nearest, (uint32_t)0, point_last);
+		uint32_t nearest_next = p_curve->is_closed() ? Math::posmod(nearest + 1, point_count) : CLAMP(nearest + 1, (uint32_t)0, point_last);
 		p_setting->update_chain_coordinate(p_skeleton, TAIL, limit_length(p_setting->chain[HEAD], p_curve_space.xform(points[nearest].lerp(points[nearest_next], interpolate)), solver_info->length));
 		if (!is_fitting_first) {
 			p_setting->twists[HEAD] = Math::lerp((double)tilts[last_nearest], (double)tilts[last_nearest_next], last_interpolate);

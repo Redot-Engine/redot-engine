@@ -4385,7 +4385,7 @@ void AnimationTrackEditor::_insert_track(bool p_reset_wanted, bool p_create_bezi
 }
 
 void AnimationTrackEditor::insert_transform_key(Node3D *p_node, const String &p_sub, const Animation::TrackType p_type, const Variant &p_value) {
-	if (read_only) {
+	if (is_read_only()) {
 		popup_read_only_dialog();
 		return;
 	}
@@ -4455,7 +4455,7 @@ bool AnimationTrackEditor::has_track(Node3D *p_node, const String &p_sub, const 
 }
 
 void AnimationTrackEditor::_insert_animation_key(NodePath p_path, const Variant &p_value) {
-	if (read_only) {
+	if (is_read_only()) {
 		popup_read_only_dialog();
 		return;
 	}
@@ -4494,7 +4494,7 @@ void AnimationTrackEditor::_insert_animation_key(NodePath p_path, const Variant 
 }
 
 void AnimationTrackEditor::insert_node_value_key(Node *p_node, const String &p_property, bool p_only_if_exists, bool p_advance) {
-	if (read_only) {
+	if (is_read_only()) {
 		popup_read_only_dialog();
 		return;
 	}
@@ -4613,7 +4613,7 @@ float AnimationTrackEditor::get_marker_moving_selection_offset() const {
 }
 
 void AnimationTrackEditor::insert_value_key(const String &p_property, bool p_advance) {
-	if (read_only) {
+	if (is_read_only()) {
 		popup_read_only_dialog();
 		return;
 	}

@@ -35,47 +35,49 @@
 bool TwoBoneIK3D::_set(const StringName &p_path, const Variant &p_value) {
 	String path = p_path;
 
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
+	if (!path.begins_with("settings/")) {
+		return false;
+	}
 
-		if (what == "target_node") {
-			set_target_node(which, p_value);
-		} else if (what == "pole_node") {
-			set_pole_node(which, p_value);
-		} else if (what == "root_bone_name") {
-			set_root_bone_name(which, p_value);
-		} else if (what == "root_bone") {
-			set_root_bone(which, p_value);
-		} else if (what == "middle_bone_name") {
-			set_middle_bone_name(which, p_value);
-		} else if (what == "middle_bone") {
-			set_middle_bone(which, p_value);
-		} else if (what == "pole_direction") {
-			set_pole_direction(which, static_cast<SecondaryDirection>((int)p_value));
-		} else if (what == "pole_direction_vector") {
-			set_pole_direction_vector(which, p_value);
-		} else if (what == "end_bone_name") {
-			set_end_bone_name(which, p_value);
-		} else if (what == "end_bone") {
-			String opt = path.get_slicec('/', 3);
-			if (opt.is_empty()) {
-				set_end_bone(which, p_value);
-			} else if (opt == "direction") {
-				set_end_bone_direction(which, static_cast<BoneDirection>((int)p_value));
-			} else if (opt == "length") {
-				set_end_bone_length(which, p_value);
-			} else {
-				return false;
-			}
-		} else if (what == "use_virtual_end") {
-			set_use_virtual_end(which, p_value);
-		} else if (what == "extend_end_bone") {
-			set_extend_end_bone(which, p_value);
+	int which = path.get_slicec('/', 1).to_int();
+	String what = path.get_slicec('/', 2);
+	ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
+
+	if (what == "target_node") {
+		set_target_node(which, p_value);
+	} else if (what == "pole_node") {
+		set_pole_node(which, p_value);
+	} else if (what == "root_bone_name") {
+		set_root_bone_name(which, p_value);
+	} else if (what == "root_bone") {
+		set_root_bone(which, p_value);
+	} else if (what == "middle_bone_name") {
+		set_middle_bone_name(which, p_value);
+	} else if (what == "middle_bone") {
+		set_middle_bone(which, p_value);
+	} else if (what == "pole_direction") {
+		set_pole_direction(which, static_cast<SecondaryDirection>((int)p_value));
+	} else if (what == "pole_direction_vector") {
+		set_pole_direction_vector(which, p_value);
+	} else if (what == "end_bone_name") {
+		set_end_bone_name(which, p_value);
+	} else if (what == "end_bone") {
+		String opt = path.get_slicec('/', 3);
+		if (opt.is_empty()) {
+			set_end_bone(which, p_value);
+		} else if (opt == "direction") {
+			set_end_bone_direction(which, static_cast<BoneDirection>((int)p_value));
+		} else if (opt == "length") {
+			set_end_bone_length(which, p_value);
 		} else {
 			return false;
 		}
+	} else if (what == "use_virtual_end") {
+		set_use_virtual_end(which, p_value);
+	} else if (what == "extend_end_bone") {
+		set_extend_end_bone(which, p_value);
+	} else {
+		return false;
 	}
 	return true;
 }
@@ -83,47 +85,49 @@ bool TwoBoneIK3D::_set(const StringName &p_path, const Variant &p_value) {
 bool TwoBoneIK3D::_get(const StringName &p_path, Variant &r_ret) const {
 	String path = p_path;
 
-	if (path.begins_with("settings/")) {
-		int which = path.get_slicec('/', 1).to_int();
-		String what = path.get_slicec('/', 2);
-		ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
+	if (!path.begins_with("settings/")) {
+		return false;
+	}
 
-		if (what == "target_node") {
-			r_ret = get_target_node(which);
-		} else if (what == "pole_node") {
-			r_ret = get_pole_node(which);
-		} else if (what == "root_bone_name") {
-			r_ret = get_root_bone_name(which);
-		} else if (what == "root_bone") {
-			r_ret = get_root_bone(which);
-		} else if (what == "middle_bone_name") {
-			r_ret = get_middle_bone_name(which);
-		} else if (what == "middle_bone") {
-			r_ret = get_middle_bone(which);
-		} else if (what == "pole_direction") {
-			r_ret = (int)get_pole_direction(which);
-		} else if (what == "pole_direction_vector") {
-			r_ret = get_pole_direction_vector(which);
-		} else if (what == "end_bone_name") {
-			r_ret = get_end_bone_name(which);
-		} else if (what == "end_bone") {
-			String opt = path.get_slicec('/', 3);
-			if (opt.is_empty()) {
-				r_ret = get_end_bone(which);
-			} else if (opt == "direction") {
-				r_ret = (int)get_end_bone_direction(which);
-			} else if (opt == "length") {
-				r_ret = get_end_bone_length(which);
-			} else {
-				return false;
-			}
-		} else if (what == "use_virtual_end") {
-			r_ret = is_using_virtual_end(which);
-		} else if (what == "extend_end_bone") {
-			r_ret = is_end_bone_extended(which);
+	int which = path.get_slicec('/', 1).to_int();
+	String what = path.get_slicec('/', 2);
+	ERR_FAIL_INDEX_V(which, (int)settings.size(), false);
+
+	if (what == "target_node") {
+		r_ret = get_target_node(which);
+	} else if (what == "pole_node") {
+		r_ret = get_pole_node(which);
+	} else if (what == "root_bone_name") {
+		r_ret = get_root_bone_name(which);
+	} else if (what == "root_bone") {
+		r_ret = get_root_bone(which);
+	} else if (what == "middle_bone_name") {
+		r_ret = get_middle_bone_name(which);
+	} else if (what == "middle_bone") {
+		r_ret = get_middle_bone(which);
+	} else if (what == "pole_direction") {
+		r_ret = (int)get_pole_direction(which);
+	} else if (what == "pole_direction_vector") {
+		r_ret = get_pole_direction_vector(which);
+	} else if (what == "end_bone_name") {
+		r_ret = get_end_bone_name(which);
+	} else if (what == "end_bone") {
+		String opt = path.get_slicec('/', 3);
+		if (opt.is_empty()) {
+			r_ret = get_end_bone(which);
+		} else if (opt == "direction") {
+			r_ret = (int)get_end_bone_direction(which);
+		} else if (opt == "length") {
+			r_ret = get_end_bone_length(which);
 		} else {
 			return false;
 		}
+	} else if (what == "use_virtual_end") {
+		r_ret = is_using_virtual_end(which);
+	} else if (what == "extend_end_bone") {
+		r_ret = is_end_bone_extended(which);
+	} else {
+		return false;
 	}
 	return true;
 }
@@ -200,7 +204,7 @@ PackedStringArray TwoBoneIK3D::get_configuration_warnings() const {
 		}
 	}
 	for (uint32_t i = 0; i < tb_settings.size(); i++) {
-		if (tb_settings[i]->target_node.is_empty()) {
+		if (tb_settings[i]->pole_node.is_empty()) {
 			warnings.push_back(RTR("Detecting settings with no pole target set! TwoBoneIK3D must have a pole target to work."));
 			break;
 		}

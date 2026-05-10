@@ -212,7 +212,8 @@ void AimModifier3D::_process_constraint_by_node(int p_index, Skeleton3D *p_skele
 	if (!nd) {
 		return;
 	}
-	Vector3 reference_origin = nd->get_global_transform_interpolated().origin - p_skeleton->get_global_transform_interpolated().origin;
+	const Transform3D skeleton_global = p_skeleton->get_global_transform_interpolated();
+	Vector3 reference_origin = skeleton_global.affine_inverse().xform(nd->get_global_transform_interpolated().origin);
 	_process_aim(p_index, p_skeleton, p_apply_bone, reference_origin, p_amount);
 }
 

@@ -196,15 +196,15 @@ public:
 				Vector3 k = mid_joint_solver_info->current_gpose.xform(get_pole_direction_vector()).normalized(); // Global pole vector.
 				Vector3 n = pole_dir.cross((mid_pos - root_pos).normalized()).normalized(); // Global plane normal.
 
-				// Guard: degenerate cases (zero or already parallel)
-				if (a.is_zero_approx() || k.is_zero_approx() || n.is_zero_approx() || Math::is_zero_approx(n.dot(k))) {
-					return;
-				}
 				// c0 cosθ + c1 sinθ + c2 = 0
 				double c0 = n.dot(k - a * k.dot(a)); // n·(k⊥a)
 				double c1 = n.dot(a.cross(k)); // n·(a×k)
 				double c2 = n.dot(a) * k.dot(a); // (n·a)(k·a)
 				double r = Math::sqrt(c0 * c0 + c1 * c1);
+				// Guard: degenerate cases (axis colinear with pole vector, etc.).
+				if (a.is_zero_approx() || k.is_zero_approx() || n.is_zero_approx() || Math::is_zero_approx(r)) {
+					return;
+				}
 				double cos_arg = CLAMP(-c2 / r, -1.0, 1.0);
 				double phi = Math::atan2(c1, c0);
 				double acosv = Math::acos(cos_arg);

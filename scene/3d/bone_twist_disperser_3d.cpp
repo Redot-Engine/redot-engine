@@ -435,7 +435,7 @@ void BoneTwistDisperser3D::set_damping_curve(int p_index, const Ref<Curve> &p_da
 	ERR_FAIL_INDEX(p_index, (int)settings.size());
 	bool changed = settings[p_index]->damping_curve != p_damping_curve;
 	if (settings[p_index]->damping_curve.is_valid()) {
-		settings[p_index]->damping_curve->disconnect_changed(callable_mp(this, &BoneTwistDisperser3D::_update_curve));
+		settings[p_index]->damping_curve->disconnect_changed(callable_mp(this, &BoneTwistDisperser3D::_update_curve).bind(p_index));
 	}
 	settings[p_index]->damping_curve = p_damping_curve;
 	if (settings[p_index]->damping_curve.is_valid()) {

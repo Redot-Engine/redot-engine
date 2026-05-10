@@ -239,7 +239,11 @@ double LimitAngularVelocityModifier3D::get_max_angular_velocity() const {
 }
 
 void LimitAngularVelocityModifier3D::set_exclude(bool p_exclude) {
+	if (exclude == p_exclude) {
+		return;
+	}
 	exclude = p_exclude;
+	_make_joints_dirty();
 }
 
 bool LimitAngularVelocityModifier3D::is_exclude() const {

@@ -55,6 +55,7 @@ class SpringBoneSimulator3D : public SkeletonModifier3D {
 #endif // TOOLS_ENABLED
 
 	bool joints_dirty = false;
+	bool pending_reset = false;
 
 	LocalVector<ObjectID> collisions; ///< To process collisions for sync position with skeleton.
 	bool collisions_dirty = false;
@@ -195,7 +196,7 @@ protected:
 	void _make_all_joints_dirty();
 
 	void _update_joint_array(int p_index);
-	void _update_joints(bool p_reset);
+	void _update_joints();
 	void _set_joint_bone(int p_index, int p_joint, int p_bone);
 
 	void _update_bone_axis(Skeleton3D *p_skeleton, SpringBone3DSetting *p_setting);

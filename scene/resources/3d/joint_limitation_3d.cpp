@@ -38,6 +38,9 @@ Quaternion JointLimitation3D::make_space(const Vector3 &p_local_forward_vector, 
 	const double ALMOST_ONE = 1.0 - CMP_EPSILON;
 	// The default is to interpret the forward vector as the +Y axis.
 	Vector3 axis_y = p_local_forward_vector.normalized();
+	if (axis_y.is_zero_approx()) {
+		axis_y = Vector3(0, 1, 0);
+	}
 	Vector3 axis_x = p_local_right_vector.normalized();
 	if (axis_x.is_zero_approx() || Math::abs(axis_x.dot(axis_y)) > ALMOST_ONE) {
 		return (Quaternion(Vector3(0, 1, 0), axis_y) * p_rotation_offset.normalized()).normalized();

@@ -1032,11 +1032,11 @@ SpringBoneSimulator3D::RotationAxis SpringBoneSimulator3D::get_joint_rotation_ax
 
 void SpringBoneSimulator3D::set_joint_rotation_axis_vector(int p_index, int p_joint, const Vector3 &p_vector) {
 	ERR_FAIL_INDEX(p_index, (int)settings.size());
-	if (!is_config_individual(p_index) || settings[p_index]->rotation_axis != ROTATION_AXIS_CUSTOM) {
-		return; // Joints are read-only.
-	}
 	const LocalVector<SpringBone3DJointSetting *> &joints = settings[p_index]->joints;
 	ERR_FAIL_INDEX(p_joint, (int)joints.size());
+	if (!is_config_individual(p_index) || joints[p_joint]->rotation_axis != ROTATION_AXIS_CUSTOM) {
+		return; // Joint is read-only.
+	}
 	joints[p_joint]->rotation_axis_vector = p_vector;
 	Skeleton3D *sk = get_skeleton();
 	if (sk) {
@@ -1378,11 +1378,12 @@ void SpringBoneSimulator3D::_validate_bone_names() {
 void SpringBoneSimulator3D::_make_joints_dirty(int p_index, bool p_reset) {
 	ERR_FAIL_INDEX(p_index, (int)settings.size());
 	settings[p_index]->joints_dirty = true;
+	pending_reset |= p_reset;
 	if (joints_dirty) {
 		return;
 	}
 	joints_dirty = true;
-	callable_mp(this, &SpringBoneSimulator3D::_update_joints).call_deferred(p_reset);
+	callable_mp(this, &SpringBoneSimulator3D::_update_joints).call_deferred();
 }
 
 void SpringBoneSimulator3D::_make_all_joints_dirty() {
@@ -1564,7 +1565,7 @@ void SpringBoneSimulator3D::_update_joint_array(int p_index) {
 	}
 }
 
-void SpringBoneSimulator3D::_update_joints(bool p_reset) {
+void SpringBoneSimulator3D::_update_joints() {
 	if (!joints_dirty) {
 		return;
 	}
@@ -1573,7 +1574,7 @@ void SpringBoneSimulator3D::_update_joints(bool p_reset) {
 			continue;
 		}
 		if (settings[i]->individual_config) {
-			settings[i]->simulation_dirty = p_reset;
+			settings[i]->simulation_dirty = pending_reset;
 			settings[i]->joints_dirty = false;
 			continue; // Abort.
 		}
@@ -1610,9 +1611,10 @@ void SpringBoneSimulator3D::_update_joints(bool p_reset) {
 			joints[j]->rotation_axis = settings[i]->rotation_axis;
 			joints[j]->rotation_axis_vector = settings[i]->rotation_axis_vector;
 		}
-		settings[i]->simulation_dirty = p_reset;
+		settings[i]->simulation_dirty = pending_reset;
 		settings[i]->joints_dirty = false;
 	}
+	pending_reset = false;
 	joints_dirty = false;
 	Skeleton3D *sk = get_skeleton();
 	if (sk) {
