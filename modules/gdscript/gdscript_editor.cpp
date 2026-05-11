@@ -4304,7 +4304,7 @@ static Error _lookup_symbol_from_base(const GDScriptParser::DataType &p_base, co
 	// Before parsing, try the usual stuff.
 	if (p_symbol.is_empty()) {
 		r_result.type = ScriptLanguage::LOOKUP_RESULT_CLASS;
-		r_result.class_name = "Variant";//Nil
+		r_result.class_name = "Variant"; //Nil
 		return ERR_CANT_RESOLVE;
 	}
 
