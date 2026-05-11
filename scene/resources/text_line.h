@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file text_line.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/font.h"
 #include "servers/text_server.h"
 

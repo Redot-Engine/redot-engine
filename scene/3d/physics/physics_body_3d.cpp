@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_body_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "physics_body_3d.h"
 
 void PhysicsBody3D::_bind_methods() {

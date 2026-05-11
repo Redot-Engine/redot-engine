@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file theme_editor_preview.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/resources/theme.h"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_blend_tree.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_blend_tree.h"
 
 #include "scene/resources/animation.h"
@@ -676,8 +682,8 @@ AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(const AnimationMixer:
 	NodeTimeInfo os_nti = blend_input(1, pi, FILTER_PASS, true, p_test_only); // Blend values must be more than CMP_EPSILON to process discrete keys in edge.
 
 	if (Animation::is_less_or_equal_approx(cur_fade_in_remaining, 0) && !do_start && !is_fading_out) {
-		// Predict time scale by difference of delta times to estimate input animation's remain time in self time scale.
-		// TODO: Time scale should be included into NodeTimeInfo for Godot 5.0.
+		/// Predict time scale by difference of delta times to estimate input animation's remain time in self time scale.
+		/// @todo Time scale should be included into NodeTimeInfo for Godot 5.0.
 		double abs_os_delta = Math::abs(os_nti.delta);
 		double tscl = Math::is_zero_approx(abs_delta) || Math::is_zero_approx(abs_os_delta) || Math::is_equal_approx(abs_delta, abs_os_delta) ? 1.0 : (abs_delta / abs_os_delta);
 		double os_rem = os_nti.get_remain(break_loop_at_end) * tscl;
@@ -880,7 +886,7 @@ AnimationNode::NodeTimeInfo AnimationNodeBlend2::_process(const AnimationMixer::
 	pi.weight = amount;
 	NodeTimeInfo nti1 = blend_input(1, pi, FILTER_PASS, sync, p_test_only);
 
-	return amount > 0.5 ? nti1 : nti0; // Hacky but good enough.
+	return amount > 0.5 ? nti1 : nti0; ///< @todo Hacky but good enough.
 }
 
 bool AnimationNodeBlend2::has_filter() const {
@@ -923,7 +929,7 @@ AnimationNode::NodeTimeInfo AnimationNodeBlend3::_process(const AnimationMixer::
 	pi.weight = MAX(0, amount);
 	NodeTimeInfo nti2 = blend_input(2, pi, FILTER_IGNORE, sync, p_test_only);
 
-	return amount > 0.5 ? nti2 : (amount < -0.5 ? nti0 : nti1); // Hacky but good enough.
+	return amount > 0.5 ? nti2 : (amount < -0.5 ? nti0 : nti1); ///< @todo Hacky but good enough.
 }
 
 AnimationNodeBlend3::AnimationNodeBlend3() {

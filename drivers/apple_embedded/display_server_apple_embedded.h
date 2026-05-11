@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file display_server_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/input.h"
 #include "servers/display_server.h"
 
@@ -118,23 +124,24 @@ public:
 
 	// MARK: - Input
 
-	// MARK: Touches and Apple Pencil
-
+	/// @name MARK: Touches and Apple Pencil
+	/// @{
 	void touch_press(int p_idx, int p_x, int p_y, bool p_pressed, bool p_double_click);
 	void touch_drag(int p_idx, int p_prev_x, int p_prev_y, int p_x, int p_y, float p_pressure, Vector2 p_tilt);
 	void touches_canceled(int p_idx);
-
-	// MARK: Keyboard
-
+	/// @}
+	/// @name MARK: Keyboard
+	/// @{
 	void key(Key p_key, char32_t p_char, Key p_unshifted, Key p_physical, NSInteger p_modifier, bool p_pressed, KeyLocation p_location);
 	bool is_keyboard_active() const;
-
-	// MARK: Motion
-
+	/// @}
+	/// @name MARK: Motion
+	/// @{
 	void update_gravity(const Vector3 &p_gravity);
 	void update_accelerometer(const Vector3 &p_accelerometer);
 	void update_magnetometer(const Vector3 &p_magnetometer);
 	void update_gyroscope(const Vector3 &p_gyroscope);
+	/// @}
 
 	// MARK: -
 

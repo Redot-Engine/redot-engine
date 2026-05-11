@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_mixer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_mixer.h"
 #include "animation_mixer.compat.inc"
 
@@ -132,7 +138,6 @@ void AnimationMixer::_validate_property(PropertyInfo &p_property) const {
 /* -------------------------------------------- */
 
 void AnimationMixer::_animation_set_cache_update() {
-	// Relatively fast function to update all animations.
 	animation_set_update_pass++;
 	bool clear_cache_needed = false;
 
@@ -713,7 +718,10 @@ bool AnimationMixer::_update_caches() {
 							track_value->object_id = child->get_instance_id();
 						}
 
-						track_value->is_using_angle = anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_LINEAR_ANGLE || anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_ANGLE;
+						track_value->is_using_angle =
+								anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_LINEAR_ANGLE ||
+								anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_ANGLE ||
+								anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE;
 
 						track_value->subpath = leftover_path;
 
@@ -926,7 +934,10 @@ bool AnimationMixer::_update_caches() {
 					if (track_value->init_value.is_string() && anim->value_track_get_update_mode(i) != Animation::UPDATE_DISCRETE) {
 						WARN_PRINT_ONCE_ED(mixer_name + ": '" + String(E) + "', Value Track: '" + String(path) + "' blends String types. This is an experimental algorithm.");
 					}
-					track_value->is_using_angle = track_value->is_using_angle || anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_LINEAR_ANGLE || anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_ANGLE;
+					track_value->is_using_angle = track_value->is_using_angle ||
+							anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_LINEAR_ANGLE ||
+							anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_ANGLE ||
+							anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE;
 				}
 				if (check_angle_interpolation && (was_using_angle != track_value->is_using_angle)) {
 					WARN_PRINT_ED(mixer_name + ": '" + String(E) + "', Value Track: '" + String(path) + "' has different interpolation types for rotation between some animations which may be blended together. Blending prioritizes angle interpolation, so the blending result uses the shortest path referenced to the initial (RESET animation) value.");
@@ -1164,7 +1175,6 @@ void AnimationMixer::_blend_calc_total_weight() {
 }
 
 void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
-	// Apply value/transform/blend/bezier blends to track caches and execute method/audio/animation tracks.
 #ifdef TOOLS_ENABLED
 	bool can_call = is_inside_tree() && !Engine::get_singleton()->is_editor_hint();
 #endif // TOOLS_ENABLED
@@ -1782,7 +1792,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 					if (!player2) {
 						continue;
 					}
-					// TODO: Make it possible to embed section info in animation track keys.
+					/// @todo Make it possible to embed section info in animation track keys.
 					if (seeked) {
 						// Seek.
 						int idx = a->track_find_key(i, time, Animation::FIND_MODE_NEAREST, true);
@@ -1849,7 +1859,6 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 }
 
 void AnimationMixer::_blend_apply() {
-	// Finally, set the tracks.
 	for (const KeyValue<Animation::TypeHash, TrackCache *> &K : track_cache) {
 		TrackCache *track = K.value;
 		bool is_zero_amount = Math::is_zero_approx(track->total_weight);
@@ -2015,7 +2024,6 @@ void AnimationMixer::_blend_apply() {
 }
 
 void AnimationMixer::_call_object(ObjectID p_object_id, const StringName &p_method, const Vector<Variant> &p_params, bool p_deferred) {
-	// Separate function to use alloca() more efficiently
 	const Variant **argptrs = (const Variant **)alloca(sizeof(Variant *) * p_params.size());
 	const Variant *args = p_params.ptr();
 	uint32_t argcount = p_params.size();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file object.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "object.h"
 
 #include "core/extension/gdextension_manager.h"
@@ -928,8 +934,6 @@ Variant Object::call_const(const StringName &p_method, const Variant **p_args, i
 }
 
 void Object::_notification_forward(int p_notification) {
-	// Notify classes starting with Object and ending with most derived subclass.
-	// e.g. Object -> Node -> Node3D
 	_notification_forwardv(p_notification);
 
 	if (_extension) {
@@ -962,8 +966,6 @@ void Object::_notification_backward(int p_notification) {
 		}
 	}
 
-	// Notify classes starting with most derived subclass and ending in Object.
-	// e.g. Node3D -> Node -> Object
 	_notification_backwardv(p_notification);
 }
 
@@ -1025,7 +1027,7 @@ void Object::set_script(const Variant &p_script) {
 		}
 	}
 
-	notify_property_list_changed(); //scripts may add variables, so refresh is desired
+	notify_property_list_changed();
 	emit_signal(CoreStringName(script_changed));
 }
 
@@ -1338,10 +1340,6 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 }
 
 void Object::_add_user_signal(const String &p_name, const Array &p_args) {
-	// this version of add_user_signal is meant to be used from scripts or external apis
-	// without access to ADD_SIGNAL in bind_methods
-	// added events are per instance, as opposed to the other ones, which are global
-
 	OBJ_SIGNAL_LOCK
 
 	MethodInfo mi;
@@ -1499,9 +1497,9 @@ Error Object::connect(const StringName &p_signal, const Callable &p_callable, ui
 	OBJ_SIGNAL_LOCK
 
 	if (p_callable.is_standard()) {
-		// FIXME: This branch should probably removed in favor of the `is_valid()` branch, but there exist some classes
-		// that call `connect()` before they are fully registered with ClassDB. Until all such classes can be found
-		// and registered soon enough this branch is needed to allow `connect()` to succeed.
+		/// @todo FIXME: This branch should probably removed in favor of the `is_valid()` branch, but there exist some classes
+		/// that call `connect()` before they are fully registered with ClassDB. Until all such classes can be found
+		/// and registered soon enough this branch is needed to allow `connect()` to succeed.
 		ERR_FAIL_NULL_V_MSG(p_callable.get_object(), ERR_INVALID_PARAMETER, vformat("Cannot connect to '%s' to callable '%s': the callable object is null.", p_signal, p_callable));
 	} else {
 		ERR_FAIL_COND_V_MSG(!p_callable.is_valid(), ERR_INVALID_PARAMETER, vformat("Cannot connect to '%s': the provided callable is not valid: '%s'.", p_signal, p_callable));
@@ -2294,7 +2292,7 @@ Object::~Object() {
 #endif
 
 	if (_emitting) {
-		//@todo this may need to actually reach the debugger prioritarily somehow because it may crash before
+		/// @todo This may need to actually reach the debugger prioritarily somehow because it may crash before
 		ERR_PRINT(vformat("Object '%s' was freed or unreferenced while a signal is being emitted from it. Try connecting to the signal using 'CONNECT_DEFERRED' flag, or use queue_free() to free the object (if this object is a Node) to avoid this error and potential crashes.", to_string()));
 	}
 

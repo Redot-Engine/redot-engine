@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_valve_analog_threshold_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../action_map/openxr_binding_modifier.h"
 #include "../action_map/openxr_haptic_feedback.h"
 #include "../util.h"

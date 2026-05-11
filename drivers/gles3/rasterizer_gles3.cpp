@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rasterizer_gles3.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rasterizer_gles3.h"
 #include "storage/utilities.h"
 
@@ -79,8 +85,8 @@
 #endif
 
 #if !defined(IOS_ENABLED) && !defined(WEB_ENABLED)
-// We include EGL below to get debug callback on GLES2 platforms,
-// but EGL is not available on iOS or the web.
+/// We include EGL below to get debug callback on GLES2 platforms,
+/// but EGL is not available on iOS or the web.
 #define CAN_DEBUG
 #endif
 
@@ -245,10 +251,10 @@ RasterizerGLES3::RasterizerGLES3() {
 	bool glad_loaded = false;
 
 #ifdef EGL_ENABLED
-	// There should be a more flexible system for getting the GL pointer, as
-	// different DisplayServers can have different ways. We can just use the GLAD
-	// version global to see if it loaded for now though, otherwise we fall back to
-	// the generic loader below.
+	/// @todo There should be a more flexible system for getting the GL pointer, as
+	/// different DisplayServers can have different ways. We can just use the GLAD
+	/// version global to see if it loaded for now though, otherwise we fall back to
+	/// the generic loader below.
 #if defined(EGL_STATIC)
 	bool has_egl = true;
 #else
@@ -276,9 +282,9 @@ RasterizerGLES3::RasterizerGLES3() {
 		}
 	}
 
-	// FIXME this is an early return from a constructor.  Any other code using this instance will crash or the finalizer will crash, because none of
-	// the members of this instance are initialized, so this just makes debugging harder.  It should either crash here intentionally,
-	// or we need to actually test for this situation before constructing this.
+	/// @todo FIXME this is an early return from a constructor.  Any other code using this instance will crash or the finalizer will crash, because none of
+	/// the members of this instance are initialized, so this just makes debugging harder.  It should either crash here intentionally,
+	/// or we need to actually test for this situation before constructing this.
 	ERR_FAIL_COND_MSG(!glad_loaded, "Error initializing GLAD.");
 
 	if (gles_over_gl) {
@@ -458,7 +464,6 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServer::WindowID p_sc
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-// is this p_screen useless in a multi window environment?
 void RasterizerGLES3::blit_render_targets_to_screen(DisplayServer::WindowID p_screen, const BlitToScreen *p_render_targets, int p_amount) {
 	for (int i = 0; i < p_amount; i++) {
 		_blit_render_target_to_screen(p_screen, p_render_targets[i], i == 0);

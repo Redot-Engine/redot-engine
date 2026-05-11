@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multimesh.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "multimesh.h"
 
 #include "servers/rendering_server.h"

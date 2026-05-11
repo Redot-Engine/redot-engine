@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mesh_storage.h"
 
 using namespace RendererRD;
@@ -257,7 +263,6 @@ void MeshStorage::mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count
 	mesh->blend_shape_count = p_blend_shape_count;
 }
 
-/// Returns stride
 void MeshStorage::mesh_add_surface(RID p_mesh, const RS::SurfaceData &p_surface) {
 	Mesh *mesh = mesh_owner.get_or_null(p_mesh);
 	ERR_FAIL_NULL(mesh);

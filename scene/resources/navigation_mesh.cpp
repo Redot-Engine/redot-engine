@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_mesh.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "navigation_mesh.h"
 
 #ifdef DEBUG_ENABLED

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_byte_codegen.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_byte_codegen.h"
 
 #include "core/debugger/engine_debugger.h"
@@ -1996,7 +2002,6 @@ void GDScriptByteCodeGenerator::clear_address(const Address &p_address) {
 	}
 }
 
-// Returns `true` if the local has been reused and not cleaned up with `clear_address()`.
 bool GDScriptByteCodeGenerator::is_local_dirty(const Address &p_address) const {
 	ERR_FAIL_COND_V(p_address.mode != Address::LOCAL_VARIABLE, false);
 	return dirty_locals.has(p_address.address);

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_dock_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/popup.h"
 #include "scene/gui/split_container.h"
 
@@ -95,15 +101,17 @@ private:
 		WindowWrapper *dock_window = nullptr;
 		int dock_slot_index = DOCK_SLOT_NONE;
 		Ref<Shortcut> shortcut;
-		Ref<Texture2D> icon; // Only used when `icon_name` is empty.
+		Ref<Texture2D> icon; ///< Only used when `icon_name` is empty.
 		StringName icon_name;
 	};
 
 	static EditorDockManager *singleton;
 
-	// To access splits easily by index.
+	/// @name To access splits easily by index
+	/// @{
 	Vector<DockSplitContainer *> vsplits;
 	Vector<DockSplitContainer *> hsplits;
+	/// @}
 
 	Vector<WindowWrapper *> dock_windows;
 	TabContainer *dock_slot[DOCK_SLOT_MAX];

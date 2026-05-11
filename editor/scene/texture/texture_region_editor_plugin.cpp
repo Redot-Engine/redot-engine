@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_region_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_region_editor_plugin.h"
 
 #include "core/input/input.h"
@@ -265,9 +271,6 @@ void TextureRegionEditor::_texture_overlay_draw() {
 }
 
 void TextureRegionEditor::_draw_margin_line(Vector2 p_from, Vector2 p_to) {
-	// Margin line is a dashed line with a normalized dash length. This method works
-	// for both vertical and horizontal lines.
-
 	Vector2 dash_size = (p_to - p_from).normalized() * 10;
 	const int dash_thickness = Math::round(2 * EDSCALE);
 	const Color dash_color = get_theme_color(SNAME("mono_color"), EditorStringName(Editor));

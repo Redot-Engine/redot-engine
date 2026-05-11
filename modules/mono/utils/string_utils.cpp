@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file string_utils.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "string_utils.h"
 
 #include "core/io/file_access.h"
@@ -169,7 +175,7 @@ Error read_all_file_utf8(const String &p_path, String &r_content) {
 	return OK;
 }
 
-// TODO: Move to variadic templates once we upgrade to C++11
+/// @todo Move to variadic templates once we upgrade to C++11
 
 String str_format(const char *p_format, ...) {
 	va_list list;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_library_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_library_editor.h"
 
 #include "core/string/print_string.h"

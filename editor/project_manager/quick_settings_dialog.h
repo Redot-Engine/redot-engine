@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file quick_settings_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/dialogs.h"
 
 class Button;
@@ -62,8 +68,8 @@ class QuickSettingsDialog : public AcceptDialog {
 	void _add_setting_control(const String &p_text, Control *p_control);
 
 #ifndef ANDROID_ENABLED
-	// The language selection dropdown doesn't work on Android (as the setting isn't saved), see GH-60353.
-	// Also, the dropdown it spawns is very tall and can't be scrolled without a hardware mouse.
+	/// The language selection dropdown doesn't work on Android (as the setting isn't saved), see GH-60353.
+	/// Also, the dropdown it spawns is very tall and can't be scrolled without a hardware mouse.
 	OptionButton *language_option_button = nullptr;
 #endif
 	OptionButton *theme_option_button = nullptr;

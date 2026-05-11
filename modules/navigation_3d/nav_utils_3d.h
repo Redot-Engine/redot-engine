@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_utils_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/vector3.h"
 #include "core/object/ref_counted.h"
 #include "core/templates/hash_map.h"
@@ -152,7 +158,7 @@ struct NavigationPoly {
 };
 
 struct NavPolyTravelCostGreaterThan {
-	// Returns `true` if the travel cost of `a` is higher than that of `b`.
+	/// @return `true` if the travel cost of `a` is higher than that of `b`.
 	bool operator()(const NavigationPoly *p_poly_a, const NavigationPoly *p_poly_b) const {
 		real_t f_cost_a = p_poly_a->total_travel_cost();
 		real_t h_cost_a = p_poly_a->distance_to_destination;

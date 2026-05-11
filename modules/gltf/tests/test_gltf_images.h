@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_gltf_images.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "test_gltf.h"
 
 #ifdef TOOLS_ENABLED

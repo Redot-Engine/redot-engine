@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multiplayer_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "multiplayer_peer.h"
 
 #include "core/os/os.h"

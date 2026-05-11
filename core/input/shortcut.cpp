@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shortcut.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shortcut.h"
 
 void Shortcut::set_events(const Array &p_events) {

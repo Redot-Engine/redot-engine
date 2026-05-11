@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_select_interaction_profile_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_select_interaction_profile_dialog.h"
 
 #include "../action_map/openxr_interaction_profile_metadata.h"

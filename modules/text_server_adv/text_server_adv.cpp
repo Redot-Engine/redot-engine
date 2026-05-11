@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file text_server_adv.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "text_server_adv.h"
 
 #ifdef GDEXTENSION
@@ -6614,9 +6620,6 @@ _FORCE_INLINE_ void TextServerAdvanced::_add_features(const Dictionary &p_source
 }
 
 UBreakIterator *TextServerAdvanced::_create_line_break_iterator_for_locale(const String &p_language, UErrorCode *r_err) const {
-	// Creating UBreakIterator (ubrk_open) is surprisingly costly.
-	// However, cloning (ubrk_clone) is cheaper, so we keep around blueprints to accelerate creating new ones.
-
 	String language = p_language.is_empty() ? TranslationServer::get_singleton()->get_tool_locale() : p_language;
 	if (!language.contains("@")) {
 		if (lb_strictness == LB_LOOSE) {

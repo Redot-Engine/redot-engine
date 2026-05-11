@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file random_number_generator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/random_pcg.h"
 #include "core/object/ref_counted.h"
 

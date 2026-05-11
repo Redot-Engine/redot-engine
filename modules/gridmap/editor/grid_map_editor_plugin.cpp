@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file grid_map_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "grid_map_editor_plugin.h"
 
 #include "core/os/keyboard.h"
@@ -1056,7 +1062,7 @@ void GridMapEditor::edit(GridMap *p_gridmap) {
 }
 
 void GridMapEditor::update_grid() {
-	grid_xform.origin.x -= 1; // Force update in hackish way.
+	grid_xform.origin.x -= 1; /// @todo Force update in hackish way.
 
 	grid_ofs[edit_axis] = edit_floor[edit_axis] * node->get_cell_size()[edit_axis];
 

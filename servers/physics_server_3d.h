@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file physics_server_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef _3D_DISABLED
 
 #include "core/io/resource.h"
@@ -57,9 +63,9 @@ public:
 	virtual Vector3 get_center_of_mass() const = 0;
 	virtual Vector3 get_center_of_mass_local() const = 0;
 	virtual Basis get_principal_inertia_axes() const = 0;
-	virtual real_t get_inverse_mass() const = 0; // get the mass
-	virtual Vector3 get_inverse_inertia() const = 0; // get density of this body space
-	virtual Basis get_inverse_inertia_tensor() const = 0; // get density of this body space
+	virtual real_t get_inverse_mass() const = 0; ///< @return The mass
+	virtual Vector3 get_inverse_inertia() const = 0; ///< @return Density of this body space
+	virtual Basis get_inverse_inertia_tensor() const = 0; ///< @return Density of this body space
 
 	virtual void set_linear_velocity(const Vector3 &p_velocity) = 0;
 	virtual Vector3 get_linear_velocity() const = 0;
@@ -204,7 +210,7 @@ public:
 		RID rid;
 		ObjectID collider_id;
 		int shape = 0;
-		Vector3 linear_velocity; // Velocity at contact point.
+		Vector3 linear_velocity; ///< Velocity at contact point.
 	};
 
 	virtual int intersect_shape(const ShapeParameters &p_parameters, ShapeResult *r_results, int p_result_max) = 0;
@@ -288,7 +294,8 @@ public:
 
 	virtual real_t shape_get_custom_solver_bias(RID p_shape) const = 0;
 
-	/* SPACE API */
+	/// @name SPACE API
+	/// @{
 
 	virtual RID space_create() = 0;
 	virtual void space_set_active(RID p_space, bool p_active) = 0;
@@ -308,18 +315,20 @@ public:
 	virtual void space_set_param(RID p_space, SpaceParameter p_param, real_t p_value) = 0;
 	virtual real_t space_get_param(RID p_space, SpaceParameter p_param) const = 0;
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectSpaceState3D *space_get_direct_state(RID p_space) = 0;
 
 	virtual void space_set_debug_contacts(RID p_space, int p_max_contacts) = 0;
 	virtual Vector<Vector3> space_get_contacts(RID p_space) const = 0;
 	virtual int space_get_contact_count(RID p_space) const = 0;
 
-	//missing space parameters
+	/// @todo Missing space parameters
 
-	/* AREA API */
+	/// @}
+	/// @name AREA API
+	/// @{
 
-	//missing attenuation? missing better override?
+	/// @todo Missing attenuation? missing better override?
 
 	enum AreaParameter {
 		AREA_PARAM_GRAVITY_OVERRIDE_MODE,
@@ -386,9 +395,11 @@ public:
 
 	virtual void area_set_ray_pickable(RID p_area, bool p_enable) = 0;
 
-	/* BODY API */
+	/// @}
+	/// @name BODY API
+	/// @{
 
-	//missing ccd?
+	/// @todo Missing ccd?
 
 	enum BodyMode {
 		BODY_MODE_STATIC,
@@ -441,7 +452,7 @@ public:
 	virtual void body_set_user_flags(RID p_body, uint32_t p_flags) = 0;
 	virtual uint32_t body_get_user_flags(RID p_body) const = 0;
 
-	// common body variables
+	/// Common body variables
 	enum BodyParameter {
 		BODY_PARAM_BOUNCE,
 		BODY_PARAM_FRICTION,
@@ -525,7 +536,7 @@ public:
 
 	virtual void body_set_ray_pickable(RID p_body, bool p_enable) = 0;
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectBodyState3D *body_get_direct_state(RID p_body) = 0;
 
 	struct MotionParameters {
@@ -576,7 +587,9 @@ public:
 
 	virtual bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) = 0;
 
-	/* SOFT BODY */
+	/// @}
+	/// @name SOFT BODY
+	/// @{
 
 	virtual RID soft_body_create() = 0;
 
@@ -639,7 +652,9 @@ public:
 	virtual void soft_body_pin_point(RID p_body, int p_point_index, bool p_pin) = 0;
 	virtual bool soft_body_is_point_pinned(RID p_body, int p_point_index) const = 0;
 
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	enum JointType {
 		JOINT_TYPE_PIN,
@@ -798,14 +813,18 @@ public:
 	virtual void generic_6dof_joint_set_flag(RID p_joint, Vector3::Axis, G6DOFJointAxisFlag p_flag, bool p_enable) = 0;
 	virtual bool generic_6dof_joint_get_flag(RID p_joint, Vector3::Axis, G6DOFJointAxisFlag p_flag) const = 0;
 
-	/* QUERY API */
+	/// @}
+	/// @name QUERY API
+	/// @{
 
 	enum AreaBodyStatus {
 		AREA_BODY_ADDED,
 		AREA_BODY_REMOVED
 	};
 
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	virtual void free(RID p_rid) = 0;
 
@@ -826,6 +845,7 @@ public:
 	};
 
 	virtual int get_process_info(ProcessInfo p_info) = 0;
+	/// @}
 
 	PhysicsServer3D();
 	~PhysicsServer3D();

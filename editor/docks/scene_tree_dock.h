@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_tree_dock.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/scene/scene_tree_editor.h"
 #include "editor/script/script_create_dialog.h"
 #include "scene/gui/box_container.h"
@@ -158,7 +164,7 @@ class SceneTreeDock : public VBoxContainer {
 	EditorFileDialog *new_scene_from_dialog = nullptr;
 
 	enum FilterMenuItems {
-		FILTER_BY_TYPE = 64, // Used in the same menus as the Tool enum.
+		FILTER_BY_TYPE = 64, ///< Used in the same menus as the Tool enum.
 		FILTER_BY_GROUP,
 	};
 

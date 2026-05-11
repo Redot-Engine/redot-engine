@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_3d_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node_3d_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -1704,8 +1710,6 @@ static bool _redirect_freelook_input(const Ref<InputEvent> &p_event, Node3DEdito
 	return true;
 }
 
-// This is only active during instant transforms,
-// to capture and wrap mouse events outside the control.
 void Node3DEditorViewport::input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(!_edit.instant);
 	Ref<InputEventMouseMotion> m = p_event;
@@ -4589,7 +4593,7 @@ void _insert_rid_recursive(Node *node, HashSet<RID> &rids) {
 
 	if (co) {
 		rids.insert(co->get_rid());
-	} else if (node->is_class("CSGShape3D")) { // HACK: We should avoid referencing module logic.
+	} else if (node->is_class("CSGShape3D")) { /// @todo HACK: We should avoid referencing module logic.
 		rids.insert(node->call("_get_root_collision_instance"));
 	}
 
@@ -5260,7 +5264,6 @@ void Node3DEditorViewport::begin_transform(TransformMode p_mode, bool instant) {
 	}
 }
 
-// Apply the current transform operation.
 void Node3DEditorViewport::commit_transform() {
 	ERR_FAIL_COND(_edit.mode == TRANSFORM_NONE);
 	static const char *_transform_name[4] = {
@@ -5333,7 +5336,6 @@ void Node3DEditorViewport::apply_transform(Vector3 p_motion, double p_snap) {
 	surface->queue_redraw();
 }
 
-// Update the current transform operation in response to an input.
 void Node3DEditorViewport::update_transform(bool p_shift) {
 	Vector3 ray_pos = get_ray_pos(_edit.mouse_pos);
 	Vector3 ray = get_ray(_edit.mouse_pos);
@@ -5428,7 +5430,7 @@ void Node3DEditorViewport::update_transform(bool p_shift) {
 			set_message(TTR("Scaling:") + " (" + String::num(motion_snapped.x, snap_step_decimals) + ", " +
 					String::num(motion_snapped.y, snap_step_decimals) + ", " + String::num(motion_snapped.z, snap_step_decimals) + ")");
 			if (local_coords) {
-				// TODO: needed?
+				/// @todo Needed?
 				motion = _edit.original.basis.inverse().xform(motion);
 			}
 
@@ -5651,7 +5653,6 @@ void Node3DEditorViewport::update_transform_numeric() {
 	apply_transform(motion, extra);
 }
 
-// Perform cleanup after a transform operation is committed or canceled.
 void Node3DEditorViewport::finish_transform() {
 	_edit.mode = TRANSFORM_NONE;
 	_edit.instant = false;
@@ -5665,7 +5666,6 @@ void Node3DEditorViewport::finish_transform() {
 	clicked = ObjectID();
 }
 
-// Register a shortcut and also add it as an input action with the same events.
 void Node3DEditorViewport::register_shortcut_action(const String &p_path, const String &p_name, Key p_keycode, bool p_physical) {
 	Ref<Shortcut> sc = ED_SHORTCUT(p_path, p_name, p_keycode, p_physical);
 	shortcut_changed_callback(sc, p_path);
@@ -5673,7 +5673,6 @@ void Node3DEditorViewport::register_shortcut_action(const String &p_path, const 
 	sc->connect_changed(callable_mp(this, &Node3DEditorViewport::shortcut_changed_callback).bind(sc, p_path));
 }
 
-// Update the action in the InputMap to the provided shortcut events.
 void Node3DEditorViewport::shortcut_changed_callback(const Ref<Shortcut> p_shortcut, const String &p_shortcut_path) {
 	InputMap *im = InputMap::get_singleton();
 	if (im->has_action(p_shortcut_path)) {
@@ -8530,7 +8529,7 @@ void Node3DEditor::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "3D editor")));
 		} break;

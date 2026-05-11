@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_export_platform_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "plugin_config_apple_embedded.h"
 
 #include "core/config/project_settings.h"
@@ -50,12 +56,14 @@
 #include <sys/stat.h>
 #include <functional>
 
-// Optional environment variables for defining confidential information. If any
-// of these is set, they will override the values set in the credentials file.
+/// @name Optional environment variables for defining confidential information.
+/// If any  of these is set, they will override the values set in the credentials file.
+/// @{
 const String ENV_APPLE_PLATFORM_PROFILE_UUID_DEBUG = "GODOT_APPLE_PLATFORM_PROVISIONING_PROFILE_UUID_DEBUG";
 const String ENV_APPLE_PLATFORM_PROFILE_UUID_RELEASE = "GODOT_APPLE_PLATFORM_PROVISIONING_PROFILE_UUID_RELEASE";
 const String ENV_APPLE_PLATFORM_PROFILE_SPECIFIER_DEBUG = "GODOT_APPLE_PLATFORM_PROFILE_SPECIFIER_DEBUG";
 const String ENV_APPLE_PLATFORM_PROFILE_SPECIFIER_RELEASE = "GODOT_APPLE_PLATFORM_PROFILE_SPECIFIER_RELEASE";
+/// @}
 
 static const String storyboard_image_scale_mode[] = {
 	"center",
@@ -145,7 +153,7 @@ private:
 
 	struct AppleEmbeddedExportAsset {
 		String exported_path;
-		bool is_framework = false; // framework is anything linked to the binary, otherwise it's a resource
+		bool is_framework = false; ///< framework is anything linked to the binary, otherwise it's a resource
 		bool should_embed = false;
 	};
 

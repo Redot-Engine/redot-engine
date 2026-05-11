@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file xr_face_modifier_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/node_3d.h"
 
@@ -51,10 +57,22 @@ private:
 	StringName tracker_name = "/user/face_tracker";
 	NodePath target;
 
-	// Map from XRFaceTracker blend shape index to mesh blend shape index.
+	/// Map from XRFaceTracker blend shape index to mesh blend shape index.
 	RBMap<int, int> blend_mapping;
 
 	MeshInstance3D *get_mesh_instance() const;
+	/**
+	 * This method constructs the blend mapping from the XRFaceTracker
+	 * blend shapes to the available blend shapes of the target mesh. It does this
+	 * by:
+	 *
+	 * 1. Identifying the blend shapes of the target mesh and identifying what
+	 *    XRFaceTracker blend shape they correspond to. The results are
+	 *    placed in the blend_mapping map.
+	 * 2. Prevent over-driving facial blend-shapes by removing any unified blend
+	 *    shapes from the map if all the individual blend shapes are already
+	 *    found and going to be driven.
+	 */
 	void _get_blend_data();
 	void _update_face_blends() const;
 

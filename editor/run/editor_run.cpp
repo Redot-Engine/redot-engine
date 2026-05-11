@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_run.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_run.h"
 
 #include "core/config/project_settings.h"

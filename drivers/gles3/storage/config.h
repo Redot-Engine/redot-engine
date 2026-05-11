@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file config.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "core/config/project_settings.h"
@@ -98,13 +104,13 @@ public:
 	bool multiview_supported = false;
 	bool external_texture_supported = false;
 
-	// Adreno 3XX compatibility.
-	bool disable_particles_workaround = false; // Set to 'true' to disable 'GPUParticles'.
+	/// Adreno 3XX compatibility.
+	bool disable_particles_workaround = false; ///< Set to 'true' to disable 'GPUParticles'.
 
-	// PowerVR GE 8320 workaround.
+	/// PowerVR GE 8320 workaround.
 	bool disable_transform_feedback_shader_cache = false;
 
-	// ANGLE shader workaround.
+	/// ANGLE shader workaround.
 	bool polyfill_half2float = true;
 
 #ifdef ANDROID_ENABLED

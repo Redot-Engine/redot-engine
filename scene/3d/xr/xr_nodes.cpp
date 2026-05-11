@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_nodes.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_nodes.h"
 
 #include "core/config/project_settings.h"
@@ -201,7 +207,7 @@ Vector<Plane> XRCamera3D::get_frustum() const {
 	ERR_FAIL_COND_V(!is_inside_world(), Vector<Plane>());
 
 	Size2 viewport_size = get_viewport()->get_visible_rect().size;
-	// TODO Just use the first view for now, this is mostly for debugging so we may look into using our combined projection here.
+	/// @todo Just use the first view for now, this is mostly for debugging so we may look into using our combined projection here.
 	Projection cm = xr_interface->get_projection_for_view(0, viewport_size.aspect(), get_near(), get_far());
 	return cm.get_projection_planes(get_camera_transform());
 }
@@ -343,8 +349,8 @@ bool XRNode3D::get_has_tracking_data() const {
 }
 
 void XRNode3D::trigger_haptic_pulse(const String &p_action_name, double p_frequency, double p_amplitude, double p_duration_sec, double p_delay_sec) {
-	// TODO need to link trackers to the interface that registered them so we can call this on the correct interface.
-	// For now this works fine as in 99% of the cases we only have our primary interface active
+	/// @todo Need to link trackers to the interface that registered them so we can call this on the correct interface.
+	/// For now this works fine as in 99% of the cases we only have our primary interface active
 	XRServer *xr_server = XRServer::get_singleton();
 	if (xr_server != nullptr) {
 		Ref<XRInterface> xr_interface = xr_server->get_primary_interface();

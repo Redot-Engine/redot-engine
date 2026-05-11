@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file camera_feed_linux.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "buffer_decoder.h"
 
 #include "core/os/thread.h"

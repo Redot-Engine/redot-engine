@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dedicated_server_export_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "dedicated_server_export_plugin.h"
 
 EditorExportPreset::FileExportMode DedicatedServerExportPlugin::_get_export_mode_for_path(const String &p_path) {

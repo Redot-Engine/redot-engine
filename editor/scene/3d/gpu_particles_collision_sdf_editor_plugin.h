@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gpu_particles_collision_sdf_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/3d/gpu_particles_collision_3d.h"
 #include "scene/resources/material.h"

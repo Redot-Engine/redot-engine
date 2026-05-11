@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/environment/renderer_gi.h"
@@ -56,9 +62,11 @@
 #define RB_TEX_AMBIENT SNAME("ambient")
 #define RB_TEX_REFLECTION SNAME("reflection")
 
-// Forward declare RenderDataRD and RendererSceneRenderRD so we can pass it into some of our methods, these classes are pretty tightly bound
+/// @name Forward declare RenderDataRD and RendererSceneRenderRD so we can pass it into some of our methods, these classes are pretty tightly bound
+/// @{
 class RenderDataRD;
 class RendererSceneRenderRD;
+/// @}
 
 namespace RendererRD {
 
@@ -99,7 +107,7 @@ public:
 
 	/* VOXEL_GI INSTANCE */
 
-	//@TODO VoxelGIInstance is still directly used in the render code, we'll address this when we refactor the render code itself.
+	/// @todo VoxelGIInstance is still directly used in the render code, we'll address this when we refactor the render code itself.
 
 	struct VoxelGIInstance {
 		// access to our containers
@@ -441,7 +449,7 @@ public:
 		MAX_VOXEL_GI_INSTANCES = 8
 	};
 
-	// Struct for use in render buffer
+	/// Struct for use in render buffer
 	class RenderBuffersGI : public RenderBufferCustomDataRD {
 		GDCLASS(RenderBuffersGI, RenderBufferCustomDataRD)
 
@@ -467,7 +475,8 @@ public:
 		virtual void free_data() override;
 	};
 
-	/* VOXEL GI API */
+	/// @name VOXEL GI API
+	/// @{
 
 	bool owns_voxel_gi(RID p_rid) { return voxel_gi_owner.owns(p_rid); }
 
@@ -519,8 +528,9 @@ public:
 	RID voxel_gi_get_sdf_texture(RID p_voxel_gi);
 
 	Dependency *voxel_gi_get_dependency(RID p_voxel_gi) const;
-
-	/* VOXEL_GI INSTANCE */
+	/// @}
+	/// @name VOXEL_GI INSTANCE
+	/// @{
 
 	_FORCE_INLINE_ RID voxel_gi_instance_get_texture(RID p_probe) {
 		VoxelGIInstance *voxel_gi = voxel_gi_instance_owner.get_or_null(p_probe);
@@ -542,8 +552,9 @@ public:
 	void voxel_gi_instance_free(RID p_rid);
 
 	RS::VoxelGIQuality voxel_gi_quality = RS::VOXEL_GI_QUALITY_LOW;
-
-	/* SDFGI */
+	/// @}
+	/// @name SDFGI
+	/// @{
 
 	class SDFGI : public RenderBufferCustomDataRD {
 		GDCLASS(SDFGI, RenderBufferCustomDataRD)
@@ -569,7 +580,7 @@ public:
 				float pad2[4];
 			};
 
-			//cascade blocks are full-size for volume (128^3), half size for albedo/emission
+			// Cascade blocks are full-size for volume (128^3), half size for albedo/emission
 			RID sdf_tex;
 			RID light_tex;
 			RID light_aniso_0_tex;
@@ -579,17 +590,19 @@ public:
 			RID light_aniso_0_data;
 			RID light_aniso_1_data;
 
-			struct SolidCell { // this struct is unused, but remains as reference for size
+			struct SolidCell { ///< This struct is unused, but remains as reference for size
 				uint32_t position;
 				uint32_t albedo;
 				uint32_t static_light;
 				uint32_t static_light_aniso;
 			};
 
-			// Buffers for indirect compute dispatch.
+			/// @name Buffers for indirect compute dispatch.
+			/// @{
 			RID solid_cell_dispatch_buffer_storage;
 			RID solid_cell_dispatch_buffer_call;
 			RID solid_cell_buffer;
+			/// @}
 
 			RID lightprobe_history_tex;
 			RID lightprobe_average_tex;
@@ -598,7 +611,7 @@ public:
 			Vector3i position;
 
 			static const Vector3i DIRTY_ALL;
-			Vector3i dirty_regions; //(0,0,0 is not dirty, negative is refresh from the end, DIRTY_ALL is refresh all.
+			Vector3i dirty_regions; ///< (0,0,0 is not dirty, negative is refresh from the end, DIRTY_ALL is refresh all.
 
 			RID sdf_store_uniform_set;
 			RID sdf_direct_light_static_uniform_set;
@@ -613,10 +626,11 @@ public:
 			bool all_dynamic_lights_dirty = true;
 		};
 
-		// access to our containers
+		/// Access to our containers
 		GI *gi = nullptr;
 
-		// used for rendering (voxelization)
+		/// @name Used for rendering (voxelization)
+		/// @{
 		RID render_albedo;
 		RID render_emission;
 		RID render_emission_aniso;
@@ -625,8 +639,9 @@ public:
 
 		RID render_sdf[2];
 		RID render_sdf_half[2];
-
-		// used for ping pong processing in cascades
+		/// @}
+		/// @name Used for ping pong processing in cascades
+		/// @{
 		RID sdf_initialize_uniform_set;
 		RID sdf_initialize_half_uniform_set;
 		RID jump_flood_uniform_set[2];
@@ -638,15 +653,16 @@ public:
 		uint32_t cascade_size = 128;
 
 		LocalVector<Cascade> cascades;
+		/// @}
 
 		RID lightprobe_texture;
 		RID lightprobe_data;
 		RID occlusion_texture;
 		RID occlusion_data;
-		RID ambient_texture; //integrates with volumetric fog
+		RID ambient_texture; ///< Integrates with volumetric fog
 
-		RID lightprobe_history_scroll; //used for scrolling lightprobes
-		RID lightprobe_average_scroll; //used for scrolling lightprobes
+		RID lightprobe_history_scroll; ///< Used for scrolling lightprobes
+		RID lightprobe_average_scroll; ///< Used for scrolling lightprobes
 
 		uint32_t history_size = 0;
 		float solid_cell_ratio = 0;
@@ -654,7 +670,7 @@ public:
 
 		int num_cascades = 6;
 		float min_cell_size = 0;
-		uint32_t probe_axis_count = 0; //amount of probes per axis, this is an odd number because it encloses endpoints
+		uint32_t probe_axis_count = 0; ///< Amount of probes per axis, this is an odd number because it encloses endpoints
 
 		RID debug_uniform_set[RendererSceneRender::MAX_RENDER_VIEWS];
 		RID debug_probes_scene_data_ubo;
@@ -674,7 +690,7 @@ public:
 		uint32_t version = 0;
 		uint32_t render_pass = 0;
 
-		int32_t cascade_dynamic_light_count[SDFGI::MAX_CASCADES]; //used dynamically
+		int32_t cascade_dynamic_light_count[SDFGI::MAX_CASCADES]; ///< Used dynamically
 		RID integrate_sky_uniform_set;
 
 		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override {}
@@ -707,8 +723,9 @@ public:
 	bool sdfgi_debug_probe_enabled = false;
 	Vector3i sdfgi_debug_probe_index;
 	uint32_t sdfgi_current_version = 0;
-
-	/* SDFGI UPDATE */
+	/// @}
+	/// @name SDFGI UPDATE
+	/// @{
 
 	int sdfgi_get_lightprobe_octahedron_size() const { return SDFGI::LIGHTPROBE_OCT_SIZE; }
 
@@ -739,30 +756,31 @@ public:
 		uint32_t pad5;
 
 		struct ProbeCascadeData {
-			float position[3]; //offset of (0,0,0) in world coordinates
-			float to_probe; // 1/bounds * grid_size
+			float position[3]; ///< Offset of (0,0,0) in world coordinates
+			float to_probe; ///< 1/bounds * grid_size
 			int32_t probe_world_offset[3];
-			float to_cell; // 1/bounds * grid_size
+			float to_cell; ///< 1/bounds * grid_size
 			float pad[3];
 			float exposure_normalization;
 		};
 
 		ProbeCascadeData cascades[SDFGI::MAX_CASCADES];
 	};
+	/// @}
 
 	struct VoxelGIData {
-		float xform[16]; // 64 - 64
+		float xform[16]; ///< 64 - 64
 
-		float bounds[3]; // 12 - 76
-		float dynamic_range; // 4 - 80
+		float bounds[3]; ///< 12 - 76
+		float dynamic_range; ///< 4 - 80
 
-		float bias; // 4 - 84
-		float normal_bias; // 4 - 88
-		uint32_t blend_ambient; // 4 - 92
-		uint32_t mipmaps; // 4 - 96
+		float bias; ///< 4 - 84
+		float normal_bias; ///< 4 - 88
+		uint32_t blend_ambient; ///< 4 - 92
+		uint32_t mipmaps; ///< 4 - 96
 
-		float pad[3]; // 12 - 108
-		float exposure_normalization; // 4 - 112
+		float pad[3]; ///< 12 - 108
+		float exposure_normalization; ///< 4 - 112
 	};
 
 	struct SceneData {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file line_edit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "line_edit.h"
 
 #include "core/input/input_map.h"
@@ -3257,7 +3263,7 @@ void LineEdit::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_secret_character", "character"), &LineEdit::set_secret_character);
 	ClassDB::bind_method(D_METHOD("get_secret_character"), &LineEdit::get_secret_character);
 	ClassDB::bind_method(D_METHOD("menu_option", "option"), &LineEdit::menu_option);
-	// TODO: Properly handle popups when advanced GUI is disabled.
+	/// @todo Properly handle popups when advanced GUI is disabled.
 #ifndef ADVANCED_GUI_DISABLED
 	ClassDB::bind_method(D_METHOD("get_menu"), &LineEdit::get_menu);
 #endif // ADVANCED_GUI_DISABLED

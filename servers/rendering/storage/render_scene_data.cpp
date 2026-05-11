@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_scene_data.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "render_scene_data.h"
 
 void RenderSceneData::_bind_methods() {

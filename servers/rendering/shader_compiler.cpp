@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_compiler.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader_compiler.h"
 
 #include "servers/rendering/rendering_server_globals.h"

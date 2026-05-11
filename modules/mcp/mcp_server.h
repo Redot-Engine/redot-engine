@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file mcp_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mcp_protocol.h"
 
 #include "core/object/class_db.h"
@@ -55,13 +61,13 @@ private:
 	Thread bridge_thread;
 	static void _bridge_thread_func(void *p_userdata);
 
-	// Server loop - runs on main thread for now (headless mode)
+	/// Server loop - runs on main thread for now (headless mode)
 	void _server_loop();
 
-	// Read a line from stdin
+	/// Read a line from stdin
 	String _read_line();
 
-	// Write a line to stdout
+	/// Write a line to stdout
 	void _write_line(const String &p_line);
 
 protected:
@@ -73,30 +79,32 @@ public:
 	MCPServer();
 	~MCPServer();
 
-	// Start the MCP server (blocking call for headless mode)
+	/// Start the MCP server (blocking call for headless mode)
 	void start();
 
-	// Stop the MCP server
+	/// Stop the MCP server
 	void stop();
 
-	// Run unit tests headlessly
+	/// Run unit tests headlessly
 	static void run_tests(const String &p_script_path);
 
-	// Check if server is running
+	/// Check if server is running
 	bool is_running() const { return running; }
 
-	// Game Process Management
+	/// @name Game Process Management
+	/// @{
 	Error start_game_process(const List<String> &p_args, const String &p_log_path);
 	Error stop_game_process();
 	bool is_game_running() const;
 	String get_game_log_path() const;
 	OS::ProcessID get_game_pid() const;
+	/// @}
 
 private:
 	OS::ProcessID game_pid = 0;
 	String game_log_path;
-	mutable Mutex process_mutex; // Protects game_pid and game_log_path
-	void _check_game_process(); // Reaper logic
+	mutable Mutex process_mutex; ///< Protects game_pid and game_log_path
+	void _check_game_process(); ///< Reaper logic
 	int wake_fds[2];
 	String stdin_buffer;
 };

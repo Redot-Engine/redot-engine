@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file optimized_translation.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "optimized_translation.h"
 
 #include "core/templates/pair.h"
@@ -45,8 +51,6 @@ struct CompressedString {
 };
 
 void OptimizedTranslation::generate(const Ref<Translation> &p_from) {
-	// This method compresses a Translation instance.
-	// Right now, it doesn't handle context or plurals, so Translation subclasses using plurals or context (i.e TranslationPO) shouldn't be compressed.
 #ifdef TOOLS_ENABLED
 	ERR_FAIL_COND(p_from.is_null());
 	List<StringName> keys;
@@ -213,8 +217,6 @@ bool OptimizedTranslation::_get(const StringName &p_name, Variant &r_ret) const 
 }
 
 StringName OptimizedTranslation::get_message(const StringName &p_src_text, const StringName &p_context) const {
-	// p_context passed in is ignore. The use of context is not yet supported in OptimizedTranslation.
-
 	int htsize = hash_table.size();
 
 	if (htsize == 0) {
@@ -296,7 +298,6 @@ Vector<String> OptimizedTranslation::get_translated_message_list() const {
 }
 
 StringName OptimizedTranslation::get_plural_message(const StringName &p_src_text, const StringName &p_plural_text, int p_n, const StringName &p_context) const {
-	// The use of plurals translation is not yet supported in OptimizedTranslation.
 	return get_message(p_src_text, p_context);
 }
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_mesh_source_geometry_data_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/os/rw_lock.h"
 
@@ -60,7 +66,7 @@ protected:
 
 public:
 	struct ProjectedObstruction {
-		static inline uint32_t VERSION = 1; // Increase when format changes so we can detect outdated formats and provide compatibility.
+		static inline uint32_t VERSION = 1; ///< Increase when format changes so we can detect outdated formats and provide compatibility.
 
 		Vector<float> vertices;
 		bool carve = false;
@@ -75,10 +81,10 @@ public:
 	void _add_traversable_outline(const Vector<Vector2> &p_shape_outline);
 	void _add_obstruction_outline(const Vector<Vector2> &p_shape_outline);
 
-	// kept root node transform here on the geometry data
-	// if we add this transform to all exposed functions we need to break comp on all functions later
-	// when navmesh changes from global transform to relative to navregion
-	// but if it stays here we can just remove it and change the internal functions only
+	/// kept root node transform here on the geometry data
+	/// if we add this transform to all exposed functions we need to break comp on all functions later
+	/// when navmesh changes from global transform to relative to navregion
+	/// but if it stays here we can just remove it and change the internal functions only
 	Transform2D root_node_transform;
 
 	void set_traversable_outlines(const TypedArray<Vector<Vector2>> &p_traversable_outlines);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file polygon_2d_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "polygon_2d_editor_plugin.h"
 
 #include "core/input/input_event.h"
@@ -676,7 +682,7 @@ void Polygon2DEditor::_canvas_input(const Ref<InputEvent> &p_input) {
 								Array polygons = node->get_polygons();
 								polygons = polygons.duplicate(); //copy because its a reference
 
-								//todo, could check whether it already exists?
+								/// @todo Could check whether it already exists?
 								polygons.push_back(polygon_create);
 								undo_redo->create_action(TTR("Add Custom Polygon"));
 								undo_redo->add_do_method(node, "set_polygons", polygons);

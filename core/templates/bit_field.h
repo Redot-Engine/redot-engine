@@ -32,11 +32,17 @@
 
 #pragma once
 
+/**
+ * @file bit_field.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/typedefs.h"
 
 #include <type_traits>
 
-// TODO: Replace `typename` with enum concept once C++20 concepts/constraints are allowed.
+/// @todo Replace `typename` with enum concept once C++20 concepts/constraints are allowed.
 
 template <typename T>
 class BitField {
@@ -59,7 +65,7 @@ public:
 			value(static_cast<uint64_t>(p_value)) {}
 	_ALWAYS_INLINE_ constexpr operator T() const { return static_cast<T>(value); }
 
-	// TODO: Unify as single constructor once C++20 `explicit` conditionals are allowed.
+	/// @todo Unify as single constructor once C++20 `explicit` conditionals are allowed.
 
 	template <typename V, std::enable_if_t<std::is_arithmetic_v<V> && std::is_convertible_v<T, int>, int> = 0>
 	_ALWAYS_INLINE_ constexpr BitField(V p_value) :
@@ -71,5 +77,5 @@ public:
 	_ALWAYS_INLINE_ constexpr explicit operator V() const { return static_cast<V>(value); }
 };
 
-// Implicitly zero-constructible as a trivially-constructible type.
+/// Implicitly zero-constructible as a trivially-constructible type.
 static_assert(is_zero_constructible_v<BitField<Error>>);

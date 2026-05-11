@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_body_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_body_3d.h"
 
 #include "../joints/jolt_joint_3d.h"
@@ -163,8 +169,6 @@ void JoltBody3D::_add_to_space() {
 }
 
 void JoltBody3D::_enqueue_call_queries() {
-	// This method will be called from the body activation listener on multiple threads during the simulation step.
-
 	if (space != nullptr) {
 		space->enqueue_call_queries(&call_queries_element);
 	}
@@ -304,8 +308,6 @@ JPH::MassProperties JoltBody3D::_calculate_mass_properties() const {
 }
 
 void JoltBody3D::_on_wake_up() {
-	// This method will be called from the body activation listener on multiple threads during the simulation step.
-
 	if (_should_call_queries()) {
 		_enqueue_call_queries();
 	}

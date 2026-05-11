@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_space_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_area_2d.h"
 #include "godot_body_2d.h"
 #include "godot_broad_phase_2d.h"
@@ -87,6 +93,7 @@ private:
 	SelfList<GodotArea2D>::List area_moved_list;
 
 	static void *_broadphase_pair(GodotCollisionObject2D *A, int p_subindex_A, GodotCollisionObject2D *B, int p_subindex_B, void *p_self);
+	/// Assumes a valid collision pair, this should have been checked beforehand in the BVH or octree.
 	static void _broadphase_unpair(GodotCollisionObject2D *A, int p_subindex_A, GodotCollisionObject2D *B, int p_subindex_B, void *p_data, void *p_self);
 
 	HashSet<GodotCollisionObject2D *> objects;
@@ -187,6 +194,12 @@ public:
 
 	int get_collision_pairs() const { return collision_pairs; }
 
+	/// give me back regular physics engine logic
+	/// this is madness
+	/// and most people using this function will think
+	/// what it does is simpler than using physics
+	/// this took about a week to get right..
+	/// but is it right? who knows at this point..
 	bool test_body_motion(GodotBody2D *p_body, const PhysicsServer2D::MotionParameters &p_parameters, PhysicsServer2D::MotionResult *r_result);
 
 	void set_debug_contacts(int p_amount) { contact_debug.resize(p_amount); }

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_shader_container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_shader_container.h"
 
 #include "core/io/compression.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file render_scene_buffers_gles3.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "drivers/gles3/effects/glow.h"
@@ -43,8 +49,8 @@ class RenderSceneBuffersGLES3 : public RenderSceneBuffers {
 	GDCLASS(RenderSceneBuffersGLES3, RenderSceneBuffers);
 
 public:
-	Size2i internal_size; // Size of the buffer we render 3D content to.
-	Size2i target_size; // Size of our output buffer (render target).
+	Size2i internal_size; ///< Size of the buffer we render 3D content to.
+	Size2i target_size; ///< Size of our output buffer (render target).
 	RS::ViewportScaling3DMode scaling_3d_mode = RS::VIEWPORT_SCALING_3D_MODE_OFF;
 	//float fsr_sharpness = 0.2f;
 	//RS::ViewportScreenSpaceAA screen_space_aa = RS::VIEWPORT_SCREEN_SPACE_AA_DISABLED;
@@ -55,11 +61,13 @@ public:
 
 	RID render_target;
 
-	// Color format details from our render target
+	/// @name Color format details from our render target
+	/// @{
 	GLuint color_internal_format = GL_RGBA8;
 	GLuint color_format = GL_RGBA;
 	GLuint color_type = GL_UNSIGNED_BYTE;
 	uint32_t color_format_size = 4;
+	/// @}
 
 	struct FBDEF {
 		GLuint color = 0;
@@ -77,13 +85,13 @@ public:
 
 		bool check_fbo_cache = false;
 		Vector<FBDEF> cached_fbos;
-	} msaa3d; // MSAA buffers used to render 3D
+	} msaa3d; ///< MSAA buffers used to render 3D
 
-	FBDEF internal3d; // buffers used to either render 3D (scaled/post) or to resolve MSAA into
+	FBDEF internal3d; ///< buffers used to either render 3D (scaled/post) or to resolve MSAA into
 
-	FBDEF backbuffer3d; // our back buffer
+	FBDEF backbuffer3d; ///< our back buffer
 
-	// Buffers for our glow implementation
+	/// Buffers for our glow implementation
 	struct GLOW {
 		GLES3::Glow::GLOWLEVEL levels[4];
 	} glow;
@@ -112,8 +120,8 @@ public:
 
 	void free_render_buffer_data();
 
-	void check_backbuffer(bool p_need_color, bool p_need_depth); // Check if we need to initialize our backbuffer.
-	void check_glow_buffers(); // Check if we need to initialize our glow buffers.
+	void check_backbuffer(bool p_need_color, bool p_need_depth); ///< Check if we need to initialize our backbuffer.
+	void check_glow_buffers(); ///< Check if we need to initialize our glow buffers.
 
 	GLuint get_render_fbo();
 	GLuint get_msaa3d_fbo() {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_byte_codegen.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript.h"
 #include "gdscript_codegen.h"
 #include "gdscript_function.h"
@@ -124,8 +130,8 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	RBMap<GDScriptFunction *, int> lambdas_map;
 
 #ifdef DEBUG_ENABLED
-	// Keep method and property names for pointer and validated operations.
-	// Used when disassembling the bytecode.
+	/// Keep method and property names for pointer and validated operations.
+	/// Used when disassembling the bytecode.
 	Vector<String> operator_names;
 	Vector<String> setter_names;
 	Vector<String> getter_names;
@@ -141,7 +147,8 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	}
 #endif
 
-	// Lists since these can be nested.
+	/// @name Lists since these can be nested.
+	/// @{
 	List<int> if_jmp_addrs;
 	List<int> for_jmp_addrs;
 	List<Address> for_counter_variables;
@@ -151,10 +158,12 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 	List<Address> for_range_step_variables;
 	List<int> while_jmp_addrs;
 	List<int> continue_addrs;
-
-	// Used to patch jumps with `and` and `or` operators with short-circuit.
+	/// @}
+	/// @name Used to patch jumps with `and` and `or` operators with short-circuit.
+	/// @{
 	List<int> logic_op_jump_pos1;
 	List<int> logic_op_jump_pos2;
+	/// @}
 
 	List<Address> ternary_result;
 	List<int> ternary_jump_fail_pos;
@@ -465,6 +474,7 @@ public:
 	virtual void pop_temporary() override;
 	virtual void clear_temporaries() override;
 	virtual void clear_address(const Address &p_address) override;
+	/// @return `true` if the local has been reused and not cleaned up with `clear_address()`.
 	virtual bool is_local_dirty(const Address &p_address) const override;
 
 	virtual void start_parameters() override;

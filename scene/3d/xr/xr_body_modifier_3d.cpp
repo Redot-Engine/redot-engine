@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_body_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_body_modifier_3d.h"
 
 #include "scene/3d/skeleton_3d.h"

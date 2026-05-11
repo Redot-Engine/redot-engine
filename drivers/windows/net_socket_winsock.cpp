@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file net_socket_winsock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef WINDOWS_ENABLED
 
 #include "net_socket_winsock.h"

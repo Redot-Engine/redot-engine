@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_layered_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_layered_texture.h"
 
 #include "core/config/project_settings.h"

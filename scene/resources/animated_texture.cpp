@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animated_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animated_texture.h"
 #include "core/error/error_macros.h"
 #include "core/io/image.h"

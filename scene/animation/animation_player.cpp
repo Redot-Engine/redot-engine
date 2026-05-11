@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_player.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_player.h"
 #include "animation_player.compat.inc"
 

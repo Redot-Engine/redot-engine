@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file retarget_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "retarget_modifier_3d.h"
 
 PackedStringArray RetargetModifier3D::get_configuration_warnings() const {

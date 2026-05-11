@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_viewport.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_viewport.h"
 
 #include "core/config/project_settings.h"
@@ -1662,7 +1668,7 @@ void RendererViewport::viewport_set_canvas_cull_mask(RID p_viewport, uint32_t p_
 	viewport->canvas_cull_mask = p_canvas_cull_mask;
 }
 
-// Workaround for setting this on thread.
+/// Workaround for setting this on thread.
 void RendererViewport::call_set_vsync_mode(DisplayServer::VSyncMode p_mode, DisplayServer::WindowID p_window) {
 	DisplayServer::get_singleton()->window_set_vsync_mode(p_mode, p_window);
 }

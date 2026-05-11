@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_import_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/import/3d/resource_importer_scene.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/light_3d.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file lightmap_probe_gizmo_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "lightmap_probe_gizmo_plugin.h"
 
 #include "editor/editor_node.h"
@@ -37,9 +43,9 @@
 #include "editor/settings/editor_settings.h"
 #include "scene/3d/lightmap_probe.h"
 
+/// @note This gizmo only renders LightmapProbe nodes as wireframes.
+/// The solid sphere representation is handled in LightmapGIGizmoPlugin.
 LightmapProbeGizmoPlugin::LightmapProbeGizmoPlugin() {
-	// NOTE: This gizmo only renders LightmapProbe nodes as wireframes.
-	// The solid sphere representation is handled in LightmapGIGizmoPlugin.
 	create_icon_material("lightmap_probe_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoLightmapProbe"), EditorStringName(EditorIcons)));
 
 	Color gizmo_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/lightprobe_lines");

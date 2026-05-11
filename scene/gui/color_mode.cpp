@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_mode.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "color_mode.h"
 
 #include "core/math/color.h"

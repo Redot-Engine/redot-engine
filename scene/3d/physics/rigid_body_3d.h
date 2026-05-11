@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rigid_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/vset.h"
 #include "scene/3d/physics/physics_body_3d.h"
 

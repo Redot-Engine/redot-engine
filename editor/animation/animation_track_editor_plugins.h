@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_track_editor_plugins.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/animation/animation_track_editor.h"
 
 class AnimationTrackEditBool : public AnimationTrackEdit {

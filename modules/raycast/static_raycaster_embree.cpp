@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file static_raycaster_embree.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "static_raycaster_embree.h"
 
 #ifdef TOOLS_ENABLED

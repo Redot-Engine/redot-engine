@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_build_profile.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 #include "editor/doc/editor_help.h"
 #include "scene/gui/dialogs.h"

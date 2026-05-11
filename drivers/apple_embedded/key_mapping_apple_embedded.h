@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file key_mapping_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/keyboard.h"
 
 #import <UIKit/UIKit.h>

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_loader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_loader.h"
 
 void ImageFormatLoader::_bind_methods() {

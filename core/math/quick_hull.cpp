@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file quick_hull.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "quick_hull.h"
 
 #include "core/templates/hash_map.h"

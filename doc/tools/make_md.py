@@ -3,6 +3,7 @@
 # This script makes Markdown files from the XML class reference for use with the online docs.
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -778,6 +779,21 @@ def main() -> None:
     # Create the output folder recursively if it doesn't already exist.
     os.makedirs(args.output, exist_ok=True)
 
+    # Generate _category_.json file if not in dry run mode
+    if not args.dry_run:
+        category_json_path = os.path.join(args.output, "_category_.json")
+        category_data = {
+            "label": "Class Reference",
+            "position": 6,
+            "link": {
+                "type": "generated-index",
+                "description": "Documentation for all classes, enums, methods, signals, and properties in the engine.",
+            },
+        }
+        with open(category_json_path, "w", encoding="utf-8", newline="\n") as category_file:
+            json.dump(category_data, category_file, indent=2)
+            category_file.write("\n")
+
     print("Generating the Markdown class reference...")
 
     grouped_classes: Dict[str, List[str]] = {}
@@ -886,7 +902,7 @@ def get_git_branch() -> str:
 def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir: str) -> None:
     class_name = class_def.name
     with open(
-        os.devnull if dry_run else os.path.join(output_dir, f"class_{sanitize_class_name(class_name, True)}.md"),
+        os.devnull if dry_run else os.path.join(output_dir, f"{sanitize_class_name(class_name, True)}.md"),
         "w",
         encoding="utf-8",
         newline="\n",
@@ -912,7 +928,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
         f.write(f"<!-- XML source: {source_github_url}. -->\n\n")
 
         # Document reference id and header.
-        f.write(f'<a id="class_{sanitize_class_name(class_name)}"></a>\n\n')
+        f.write(f'<a id="{sanitize_class_name(class_name)}"></a>\n\n')
         f.write(make_heading(class_name, "=", False))
 
         f.write(make_deprecated_experimental(class_def, state))
@@ -926,7 +942,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
             first = True
             while inherits is not None:
                 if not first:
-                    f.write(" **<** ")
+                    f.write(" **\\<** ")
                 else:
                     first = False
 
@@ -1017,11 +1033,11 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                 default = property_def.default_value
                 if default is not None and property_def.overrides:
                     override_file = sanitize_class_name(property_def.overrides, True)
-                    ref = f"[{property_def.overrides}.{property_def.name}](class_{override_file}.md#class_{sanitize_class_name(property_def.overrides)}_property_{property_def.name})"
+                    ref = f"[{property_def.overrides}.{property_def.name}]({override_file}.md#{sanitize_class_name(property_def.overrides)}_property_{property_def.name})"
                     # Not using translate() for now as it breaks table formatting.
                     ml.append((type_rst, property_def.name, f"{default} (overrides {ref})"))
                 else:
-                    anchor = f"class_{sanitize_class_name(class_name)}_property_{property_def.name}"
+                    anchor = f"{sanitize_class_name(class_name)}_property_{property_def.name}"
                     ref = f"[{property_def.name}](#{anchor})"
                     ml.append((type_rst, ref, default))
 
@@ -1068,9 +1084,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
 
             ml = []
             for theme_item_def in class_def.theme_items.values():
-                anchor = (
-                    f"class_{sanitize_class_name(class_name)}_theme_{theme_item_def.data_name}_{theme_item_def.name}"
-                )
+                anchor = f"{sanitize_class_name(class_name)}_theme_{theme_item_def.data_name}_{theme_item_def.name}"
                 ref = f"[{theme_item_def.name}](#{anchor})"
                 ml.append((theme_item_def.type_name.to_md(state), ref, theme_item_def.default_value))
 
@@ -1092,7 +1106,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
 
                 # Create signal signature and anchor point.
 
-                signal_anchor = f"class_{sanitize_class_name(class_name)}_signal_{signal.name}"
+                signal_anchor = f"{sanitize_class_name(class_name)}_signal_{signal.name}"
                 f.write(f'<a id="{signal_anchor}"></a>\n\n')
                 self_link = f"[🔗](#{signal_anchor})"
                 f.write("<!-- classref-signal -->\n\n")
@@ -1145,7 +1159,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                 for value in e.values.values():
                     # Also create signature and anchor point for each enum constant.
 
-                    f.write(f'<a id="class_{sanitize_class_name(class_name)}_constant_{value.name}"></a>\n\n')
+                    f.write(f'<a id="{sanitize_class_name(class_name)}_constant_{value.name}"></a>\n\n')
                     f.write("<!-- classref-enumeration-constant -->\n\n")
 
                     f.write(f"{e.type_name.to_md(state)} **{value.name}** = `{value.value}`\n\n")
@@ -1177,7 +1191,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
             for constant in class_def.constants.values():
                 # Create constant signature and anchor point.
 
-                constant_anchor = f"class_{sanitize_class_name(class_name)}_constant_{constant.name}"
+                constant_anchor = f"{sanitize_class_name(class_name)}_constant_{constant.name}"
                 f.write(f'<a id="{constant_anchor}"></a>\n\n')
                 self_link = f"[🔗](#{constant_anchor})"
                 f.write("<!-- classref-constant -->\n\n")
@@ -1218,7 +1232,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
 
                     self_link = ""
                     if i == 0:
-                        annotation_anchor = f"class_{sanitize_class_name(class_name)}_annotation_{m.name}"
+                        annotation_anchor = f"{sanitize_class_name(class_name)}_annotation_{m.name}"
                         f.write(f'<a id="{annotation_anchor}"></a>\n\n')
                         self_link = f" [🔗](#{annotation_anchor})"
 
@@ -1228,7 +1242,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write(f"{signature}{self_link}\n\n")
 
                     # Add annotation description, or a call to action if it's missing.
-
+                    m.description = escape_tags(m.description) if m.description is not None else None
                     if m.description is not None and m.description.strip() != "":
                         f.write(f"{format_text_block(m.description.strip(), m, state)}\n\n")
                     else:
@@ -1260,7 +1274,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
 
                 # Create property signature and anchor point.
 
-                property_anchor = f"class_{sanitize_class_name(class_name)}_property_{property_def.name}"
+                property_anchor = f"{sanitize_class_name(class_name)}_property_{property_def.name}"
                 f.write(f'<a id="{property_anchor}"></a>\n\n')
                 self_link = f"[🔗](#{property_anchor})"
                 f.write("<!-- classref-property -->\n\n")
@@ -1290,7 +1304,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write("\n")
 
                 # Add property description, or a call to action if it's missing.
-
+                property_def.text = escape_tags(property_def.text) if property_def.text is not None else None
                 f.write(make_deprecated_experimental(property_def, state))
 
                 if property_def.text is not None and property_def.text.strip() != "":
@@ -1329,7 +1343,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
 
                     self_link = ""
                     if i == 0:
-                        constructor_anchor = f"class_{sanitize_class_name(class_name)}_constructor_{m.name}"
+                        constructor_anchor = f"{sanitize_class_name(class_name)}_constructor_{m.name}"
                         f.write(f'<a id="{constructor_anchor}"></a>\n\n')
                         self_link = f" [🔗](#{constructor_anchor})"
 
@@ -1339,7 +1353,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write(f"{ret_type} {signature}{self_link}\n\n")
 
                     # Add constructor description, or a call to action if it's missing.
-
+                    m.description = escape_tags(m.description) if m.description is not None else None
                     f.write(make_deprecated_experimental(m, state))
 
                     if m.description is not None and m.description.strip() != "":
@@ -1376,7 +1390,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                         method_qualifier = ""
                         if m.name.startswith("_"):
                             method_qualifier = "private_"
-                        method_anchor = f"class_{sanitize_class_name(class_name)}_{method_qualifier}method_{m.name}"
+                        method_anchor = f"{sanitize_class_name(class_name)}_{method_qualifier}method_{m.name}"
                         f.write(f'<a id="{method_anchor}"></a>\n\n')
                         self_link = f" [🔗](#{method_anchor})"
 
@@ -1387,7 +1401,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write(f"{ret_type} {signature}{self_link}\n\n")
 
                     # Add method description, or a call to action if it's missing.
-
+                    m.description = escape_tags(m.description) if m.description is not None else None
                     f.write(make_deprecated_experimental(m, state))
 
                     if m.description is not None and m.description.strip() != "":
@@ -1419,7 +1433,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     # Create operator signature and anchor point.
 
                     operator_anchor = (
-                        f"class_{sanitize_class_name(class_name)}_operator_{sanitize_operator_name(m.name, state)}"
+                        f"{sanitize_class_name(class_name)}_operator_{sanitize_operator_name(m.name, state)}"
                     )
                     for parameter in m.parameters:
                         operator_anchor += f"_{parameter.type_name.type_name}"
@@ -1429,10 +1443,11 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                     f.write("<!-- classref-operator -->\n\n")
 
                     ret_type, signature = make_method_signature(class_def, m, "", state)
+                    signature = escape_tags(signature) if signature is not None else None
                     f.write(f"{ret_type} {signature} {self_link}\n\n")
 
                     # Add operator description, or a call to action if it's missing.
-
+                    m.description = escape_tags(m.description) if m.description is not None else None
                     f.write(make_deprecated_experimental(m, state))
 
                     if m.description is not None and m.description.strip() != "":
@@ -1464,7 +1479,7 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
                 # Create theme property signature and anchor point.
 
                 theme_item_anchor = (
-                    f"class_{sanitize_class_name(class_name)}_theme_{theme_item_def.data_name}_{theme_item_def.name}"
+                    f"{sanitize_class_name(class_name)}_theme_{theme_item_def.data_name}_{theme_item_def.name}"
                 )
                 f.write(f'<a id="{theme_item_anchor}"></a>\n\n')
                 self_link = f"[🔗](#{theme_item_anchor})"
@@ -1498,6 +1513,28 @@ def make_rst_class(class_def: ClassDef, state: State, dry_run: bool, output_dir:
         f.write(make_footer())
 
 
+def escape_tags(input: Optional[str]) -> str:
+    """
+    Aggressively escape < and > to &lt; and &gt; for MDX/Docusaurus compatibility.
+    MDX parsers are stricter than vanilla Markdown and require escaping even within
+    code blocks to prevent build failures and runtime crashes.
+    """
+    if input is None:
+        return ""
+    return input.replace("<", "&lt;").replace(">", "&gt;")
+
+
+def escape_braces(input: Optional[str]) -> str:
+    """
+    Escape { and } to \{ and \} for MDX/Docusaurus compatibility.
+    MDX parsers are stricter than vanilla Markdown and require escaping even within
+    code blocks to prevent build failures and runtime crashes.
+    """
+    if input is None:
+        return ""
+    return input.replace("{", "\\{").replace("}", "\\}")
+
+
 def make_type(klass: str, state: State) -> str:
     if klass.find("*") != -1:  # Pointer, ignore
         return f"`{klass}`"
@@ -1505,19 +1542,19 @@ def make_type(klass: str, state: State) -> str:
     def resolve_type(link_type: str) -> str:
         if link_type in state.classes:
             filename = sanitize_class_name(link_type, True)
-            return f"[{link_type}](class_{filename}.md)"
+            return f"[{link_type}]({filename}.md)"
         else:
             print_error(f'{state.current_class}.xml: Unresolved type "{link_type}".', state)
             return f"`{link_type}`"
 
     if klass.endswith("[]"):  # Typed array, strip [] to link to contained type.
-        return f"[Array](class_array.md)\\[{resolve_type(klass[: -len('[]')])}\\]"
+        return f"[Array](Array.md)\\[{resolve_type(klass[: -len('[]')])}\\]"
 
     if klass.startswith("Dictionary["):  # Typed dictionary, split elements to link contained types.
         parts = klass[len("Dictionary[") : -len("]")].partition(", ")
         key = parts[0]
         value = parts[2]
-        return f"[Dictionary](class_dictionary.md)\\[{resolve_type(key)}, {resolve_type(value)}\\]"
+        return f"[Dictionary](Dictionary.md)\\[{resolve_type(key)}, {resolve_type(value)}\\]"
 
     return resolve_type(klass)
 
@@ -1543,9 +1580,9 @@ def make_enum(t: str, is_bitfield: bool, state: State) -> str:
         if is_bitfield:
             if not state.classes[c].enums[e].is_bitfield:
                 print_error(f'{state.current_class}.xml: Enum "{t}" is not bitfield.', state)
-            return f"**BitField**\\[[{e}](class_{filename}.md#{anchor})\\]"
+            return f"**BitField**\\[[{e}]({filename}.md#{anchor})\\]"
         else:
-            return f"[{e}](class_{filename}.md#{anchor})"
+            return f"[{e}]({filename}.md#{anchor})"
 
     print_error(f'{state.current_class}.xml: Unresolved enum "{t}".', state)
 
@@ -1568,7 +1605,9 @@ def make_method_signature(
     if isinstance(definition, MethodDef) and ref_type != "":
         if ref_type == "operator":
             op_name = definition.name.replace("<", "\\<")  # So operator "<" gets correctly displayed.
-            anchor = f"class_{sanitize_class_name(class_def.name)}_{ref_type}_{sanitize_operator_name(definition.name, state)}"
+            anchor = (
+                f"{sanitize_class_name(class_def.name)}_{ref_type}_{sanitize_operator_name(definition.name, state)}"
+            )
             for parameter in definition.parameters:
                 anchor += f"_{parameter.type_name.type_name}"
             out += f"[{op_name}](#{anchor})"
@@ -1576,10 +1615,10 @@ def make_method_signature(
             ref_type_qualifier = ""
             if definition.name.startswith("_"):
                 ref_type_qualifier = "private_"
-            anchor = f"class_{sanitize_class_name(class_def.name)}_{ref_type_qualifier}{ref_type}_{definition.name}"
+            anchor = f"{sanitize_class_name(class_def.name)}_{ref_type_qualifier}{ref_type}_{definition.name}"
             out += f"[{definition.name}](#{anchor})"
         else:
-            anchor = f"class_{sanitize_class_name(class_def.name)}_{ref_type}_{definition.name}"
+            anchor = f"{sanitize_class_name(class_def.name)}_{ref_type}_{definition.name}"
             out += f"[{definition.name}](#{anchor})"
     else:
         out += f"**{definition.name}**"
@@ -1603,7 +1642,7 @@ def make_method_signature(
             out += "\\ ..."
 
     out += "\\ )"
-
+    out = escape_braces(out)
     if qualifiers is not None:
         # Qualifiers as badges/spans for Markdown
         qualifier_map = {
@@ -1618,7 +1657,6 @@ def make_method_signature(
         for qualifier in qualifiers.split():
             badge = qualifier_map.get(qualifier, f'<span class="{qualifier}">{qualifier}</span>')
             out += f" {badge}"
-
     return ret_type, out
 
 
@@ -1703,7 +1741,7 @@ def make_separator(section_level: bool = False) -> str:
     if section_level:
         separator_class = "section"
 
-    return f'<hr class="classref-{separator_class}-separator">\n\n'
+    return f'<hr class="classref-{separator_class}-separator"/>\n\n'
 
 
 def make_link(url: str, title: str) -> str:
@@ -1759,7 +1797,7 @@ def make_rst_index(grouped_classes: Dict[str, List[str]], dry_run: bool, output_
 
                 if group_name in CLASS_GROUPS_BASE:
                     base_class = CLASS_GROUPS_BASE[group_name]
-                    f.write(f"- [{base_class}](class_{sanitize_class_name(base_class, True)}.md)\n")
+                    f.write(f"- [{base_class}]({sanitize_class_name(base_class, True)}.md)\n")
 
                 for class_name in grouped_classes[group_name]:
                     if group_name in CLASS_GROUPS_BASE and sanitize_class_name(
@@ -1767,7 +1805,7 @@ def make_rst_index(grouped_classes: Dict[str, List[str]], dry_run: bool, output_
                     ) == sanitize_class_name(class_name, True):
                         continue
 
-                    f.write(f"- [{class_name}](class_{sanitize_class_name(class_name, True)}.md)\n")
+                    f.write(f"- [{class_name}]({sanitize_class_name(class_name, True)}.md)\n")
 
                 f.write("\n")
 
@@ -1905,7 +1943,7 @@ def format_text_block(
 
                 if tag_state.closing and tag_state.name == inside_code_tag:
                     if is_in_tagset(tag_state.name, RESERVED_CODEBLOCK_TAGS):
-                        tag_text = "\n```"
+                        tag_text = "\n```\n"
                         tag_depth -= 1
                         inside_code = False
                         ignore_code_warnings = False
@@ -2226,8 +2264,8 @@ def format_text_block(
                         if tag_state.name == "method":
                             repl_text = f"{repl_text}()"
                         target_file = sanitize_class_name(target_class_name, True)
-                        anchor = f"class_{sanitize_class_name(target_class_name)}{ref_type}_{target_name}"
-                        tag_text = f"[{repl_text}](class_{target_file}.md#{anchor})"
+                        anchor = f"{sanitize_class_name(target_class_name)}{ref_type}_{target_name}"
+                        tag_text = f"[{repl_text}]({target_file}.md#{anchor})"
                         escape_pre = True
                         escape_post = True
 
@@ -2378,24 +2416,8 @@ def format_text_block(
             post_text = "\\ " + post_text
 
         next_brac_pos = post_text.find("[", 0)
-        iter_pos = 0
-        while not inside_code:
-            iter_pos = post_text.find("*", iter_pos, next_brac_pos)
-            if iter_pos == -1:
-                break
-            post_text = f"{post_text[:iter_pos]}\\*{post_text[iter_pos + 1 :]}"
-            iter_pos += 2
-
-        iter_pos = 0
-        while not inside_code:
-            iter_pos = post_text.find("_", iter_pos, next_brac_pos)
-            if iter_pos == -1:
-                break
-            if not post_text[iter_pos + 1].isalnum():  # don't escape within a snake_case word
-                post_text = f"{post_text[:iter_pos]}\\_{post_text[iter_pos + 1 :]}"
-                iter_pos += 2
-            else:
-                iter_pos += 1
+        if not inside_code:
+            post_text = escape_md(post_text, next_brac_pos)
 
         text = pre_text + tag_text + post_text
         pos = len(pre_text) + len(tag_text)
@@ -2467,38 +2489,60 @@ def format_context_name(context: Union[DefinitionBase, None]) -> str:
     return context_name
 
 
+# Regex to match HTML tags, comments, and bracketed URLs.
+HTML_TAG_RE = re.compile(
+    r"(<(?:[a-zA-Z0-9_/]+(?:\s+[a-zA-Z0-9_/-]+(?:=\"[^\"]*\"|='[^']*'|[^>]*))?|!--.*?--|https?://.*?)>)"
+)
+
+
 def escape_md(text: str, until_pos: int = -1) -> str:
     # Escape \ character, otherwise it ends up as an escape character in Markdown
     pos = 0
+    actual_until_pos = until_pos if until_pos != -1 else len(text)
+
     while True:
-        pos = text.find("\\", pos, until_pos)
+        pos = text.find("\\", pos, actual_until_pos)
         if pos == -1:
             break
         text = f"{text[:pos]}\\\\{text[pos + 1 :]}"
         pos += 2
+        actual_until_pos += 1
 
     # Escape * character to avoid interpreting it as emphasis
     pos = 0
     while True:
-        pos = text.find("*", pos, until_pos)
+        pos = text.find("*", pos, actual_until_pos)
         if pos == -1:
             break
         text = f"{text[:pos]}\\*{text[pos + 1 :]}"
         pos += 2
+        actual_until_pos += 1
 
     # Escape _ character at the end of a word to avoid interpreting it as emphasis
     pos = 0
     while True:
-        pos = text.find("_", pos, until_pos)
+        pos = text.find("_", pos, actual_until_pos)
         if pos == -1:
             break
-        if not text[pos + 1].isalnum():  # don't escape within a snake_case word
+        if pos + 1 < len(text) and not text[pos + 1].isalnum():  # don't escape within a snake_case word
             text = f"{text[:pos]}\\_{text[pos + 1 :]}"
             pos += 2
+            actual_until_pos += 1
         else:
             pos += 1
 
-    return text
+    # Escape < and > characters with &lt; and &gt; when not being used in tags or comments.
+    parts = HTML_TAG_RE.split(text[:actual_until_pos])
+    for i in range(len(parts)):
+        if i % 2 == 0:  # Not a tag
+            parts[i] = parts[i].replace("<", "&lt;").replace(">", "&gt;")
+        else:
+            # It's a tag, but let's double check it actually looks like one.
+            # re.split with capturing group will put the whole match in parts[i]
+            if not parts[i].startswith("<") or not parts[i].endswith(">"):
+                parts[i] = parts[i].replace("<", "&lt;").replace(">", "&gt;")
+
+    return "".join(parts) + text[actual_until_pos:]
 
 
 def format_table(f: TextIO, data: List[Tuple[Optional[str], ...]], remove_empty_columns: bool = False) -> None:
@@ -2537,12 +2581,22 @@ def format_table(f: TextIO, data: List[Tuple[Optional[str], ...]], remove_empty_
 
 def sanitize_class_name(dirty_name: str, is_file_name=False) -> str:
     if is_file_name:
-        return dirty_name.lower().replace('"', "").replace("/", "--")
+        return dirty_name.replace('"', "").replace("/", "--")
     else:
         return dirty_name.replace('"', "").replace("/", "_").replace(".", "_")
 
 
 def sanitize_operator_name(dirty_name: str, state: State) -> str:
+    """
+    Sanitizes an operator name by replacing specific patterns or values with their
+    corresponding standard names. The function attempts to map various operators
+    to a clear, pre-defined representation. If an unsupported operator is found,
+    an error message is logged.
+
+    :param dirty_name: The operator name as a string, which may require sanitization.
+    :param state: The state object, used for handling error logging purposes.
+    :return: A sanitized operator name as a string.
+    """
     clear_name = dirty_name.replace("operator ", "")
 
     if clear_name == "!=":

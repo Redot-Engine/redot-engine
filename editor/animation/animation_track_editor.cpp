@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_track_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_track_editor.h"
 
 #include "animation_track_editor_plugins.h"
@@ -1496,7 +1502,7 @@ void AnimationTimelineEdit::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Animation timeline editor")));
 		} break;
@@ -2097,7 +2103,7 @@ void AnimationTrackEdit::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Animation track editor")));
 		} break;
@@ -3089,6 +3095,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpRaw")), TTR("Nearest"), MENU_INTERPOLATION_NEAREST);
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinear")), TTR("Linear"), MENU_INTERPOLATION_LINEAR);
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubic")), TTR("Cubic"), MENU_INTERPOLATION_CUBIC);
+				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpMonotonic")), TTR("Monotonic Cubic"), MENU_INTERPOLATION_CUBIC_MONOTONIC);
 				// Check whether it is angle property.
 				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
 				if (ape) {
@@ -3113,6 +3120,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 							if (is_angle) {
 								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinearAngle")), TTR("Linear Angle"), MENU_INTERPOLATION_LINEAR_ANGLE);
 								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubicAngle")), TTR("Cubic Angle"), MENU_INTERPOLATION_CUBIC_ANGLE);
+								menu->add_icon_item(get_editor_theme_icon(SNAME("InterpMonotonicAngle")), TTR("Monotonic Cubic Angle"), MENU_INTERPOLATION_CUBIC_MONOTONIC_ANGLE);
 							}
 						}
 					}
@@ -3563,8 +3571,10 @@ void AnimationTrackEdit::_menu_selected(int p_index) {
 		case MENU_INTERPOLATION_NEAREST:
 		case MENU_INTERPOLATION_LINEAR:
 		case MENU_INTERPOLATION_CUBIC:
+		case MENU_INTERPOLATION_CUBIC_MONOTONIC:
 		case MENU_INTERPOLATION_LINEAR_ANGLE:
-		case MENU_INTERPOLATION_CUBIC_ANGLE: {
+		case MENU_INTERPOLATION_CUBIC_ANGLE:
+		case MENU_INTERPOLATION_CUBIC_MONOTONIC_ANGLE: {
 			Animation::InterpolationType interp_mode = Animation::InterpolationType(p_index - MENU_INTERPOLATION_NEAREST);
 			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 			undo_redo->create_action(TTR("Change Animation Interpolation Mode"));
@@ -3737,7 +3747,7 @@ void AnimationTrackEditGroup::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Animation track group")));
 		} break;
@@ -4169,7 +4179,7 @@ void AnimationTrackEditor::_animation_track_remove_request(int p_track, Ref<Anim
 		undo_redo->add_undo_method(p_from_animation.ptr(), "add_track", p_from_animation->track_get_type(idx), idx);
 		undo_redo->add_undo_method(p_from_animation.ptr(), "track_set_path", idx, p_from_animation->track_get_path(idx));
 
-		// TODO interpolation.
+		/// @todo Interpolation.
 		for (int i = 0; i < p_from_animation->track_get_key_count(idx); i++) {
 			Variant v = p_from_animation->track_get_key_value(idx, i);
 			float time = p_from_animation->track_get_key_time(idx, i);
@@ -4769,7 +4779,7 @@ static Vector<String> _get_bezier_subindices_for_type(Variant::Type p_type, bool
 			subindices.push_back(":d");
 		} break;
 		case Variant::NIL: {
-			subindices.push_back(""); // Hack: it is probably float since non-numeric types are filtered in the selection window.
+			subindices.push_back(""); /// @todo Hack: it is probably float since non-numeric types are filtered in the selection window.
 		} break;
 		default: {
 			if (r_valid) {
@@ -5585,7 +5595,7 @@ void AnimationTrackEditor::_fetch_value_track_options(const NodePath &p_path, An
 		}
 	}
 
-	// Hack.
+	/// @todo Hack.
 	NodePath np;
 	animation->add_track(Animation::TYPE_VALUE);
 	animation->track_set_path(animation->get_track_count() - 1, p_path);
@@ -5630,7 +5640,7 @@ void AnimationTrackEditor::_new_track_property_selected(const String &p_name) {
 	if (adding_track_type == Animation::TYPE_BEZIER) {
 		Vector<String> subindices;
 		{
-			// Hack.
+			/// @todo Hack.
 			NodePath np;
 			animation->add_track(Animation::TYPE_VALUE);
 			animation->track_set_path(animation->get_track_count() - 1, full_path);
@@ -6168,7 +6178,7 @@ void AnimationTrackEditor::_scroll_input(const Ref<InputEvent> &p_event) {
 					track_edits[i]->append_to_selection(local_rect, mb->is_command_or_control_pressed());
 				}
 
-				if (_get_track_selected() == -1 && track_edits.size() > 0) { // Minimal hack to make shortcuts work.
+				if (_get_track_selected() == -1 && track_edits.size() > 0) { /// @todo Minimal hack to make shortcuts work.
 					track_edits[track_edits.size() - 1]->grab_focus();
 				}
 			} else if (!mb->is_command_or_control_pressed() && !mb->is_shift_pressed()) {
@@ -7071,7 +7081,8 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 				int len = keys.size() - 1;
 
 				// Special case for angle interpolation.
-				bool is_using_angle = animation->track_get_interpolation_type(track) == Animation::INTERPOLATION_LINEAR_ANGLE || animation->track_get_interpolation_type(track) == Animation::INTERPOLATION_CUBIC_ANGLE;
+				Animation::InterpolationType interp_type = animation->track_get_interpolation_type(track);
+				bool is_using_angle = interp_type == Animation::INTERPOLATION_LINEAR_ANGLE || interp_type == Animation::INTERPOLATION_CUBIC_ANGLE || interp_type == Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE;
 
 				// Make insert queue.
 				Vector<Pair<real_t, Variant>> insert_queue_new;
@@ -7304,7 +7315,7 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 					}
 
 					// Special case for angle interpolation.
-					bool is_using_angle = it == Animation::INTERPOLATION_LINEAR_ANGLE || it == Animation::INTERPOLATION_CUBIC_ANGLE;
+					bool is_using_angle = it == Animation::INTERPOLATION_LINEAR_ANGLE || it == Animation::INTERPOLATION_CUBIC_ANGLE || it == Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE;
 
 					// Make insert queue.
 					Vector<Pair<real_t, Variant>> insert_queue_new;
@@ -8614,7 +8625,7 @@ void AnimationMarkerEdit::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Animation marker editor")));
 		} break;

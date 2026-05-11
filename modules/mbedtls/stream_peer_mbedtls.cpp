@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file stream_peer_mbedtls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "stream_peer_mbedtls.h"
 
 #include "core/io/stream_peer_tcp.h"

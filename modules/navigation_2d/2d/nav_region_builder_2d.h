@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_region_builder_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../nav_utils_2d.h"
 
 struct NavRegionIterationBuild2D;

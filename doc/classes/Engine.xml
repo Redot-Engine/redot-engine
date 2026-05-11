@@ -48,7 +48,7 @@
 			<return type="Dictionary" />
 			<description>
 				Returns a [Dictionary] of categorized donor names. Each entry is an [Array] of strings:
-				{[code]donors[/code]}
+				[code]donors[/code]
 			</description>
 		</method>
 		<method name="get_frames_drawn">

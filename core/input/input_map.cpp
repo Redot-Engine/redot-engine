@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file input_map.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "input_map.h"
 #include "input_map.compat.inc"
 

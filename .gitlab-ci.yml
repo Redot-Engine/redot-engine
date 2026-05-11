@@ -1197,8 +1197,8 @@ sign-mac-templates:
         if [ "$_is_mono" -eq 1 ]; then _mono_prefix="-mono"; _mono_suffix=".mono";fi
 
 
-        cp out/templates${_mono_prefix}/redot.macos.template_release.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_release.universal${_mono_suffix}
-        cp out/templates${_mono_prefix}/redot.macos.template_debug.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_debug.universal${_mono_suffix}
+        cp out/templates${_mono_prefix}/redot.macos.template_release.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_release.universal
+        cp out/templates${_mono_prefix}/redot.macos.template_debug.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_debug.universal
         chmod +x tmp/macos_template.app/Contents/MacOS/redot_macos*
 
 

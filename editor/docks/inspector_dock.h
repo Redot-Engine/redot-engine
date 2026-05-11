@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file inspector_dock.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/editor_data.h"
 #include "editor/gui/create_dialog.h"
 #include "editor/inspector/editor_inspector.h"
@@ -65,10 +71,9 @@ class InspectorDock : public VBoxContainer {
 		EXPAND_ALL,
 		EXPAND_REVERTABLE,
 
-		// Matches `EditorPropertyNameProcessor::Style`.
-		PROPERTY_NAME_STYLE_RAW,
-		PROPERTY_NAME_STYLE_CAPITALIZED,
-		PROPERTY_NAME_STYLE_LOCALIZED,
+		PROPERTY_NAME_STYLE_RAW, ///< Matches `EditorPropertyNameProcessor::Style`
+		PROPERTY_NAME_STYLE_CAPITALIZED, ///< Matches `EditorPropertyNameProcessor::Style`
+		PROPERTY_NAME_STYLE_LOCALIZED, ///< Matches `EditorPropertyNameProcessor::Style`
 
 		OBJECT_METHOD_BASE = 500
 	};
@@ -95,7 +100,7 @@ class InspectorDock : public VBoxContainer {
 	MenuButton *object_menu = nullptr;
 	EditorObjectSelector *object_selector = nullptr;
 
-	bool info_is_warning = false; // Display in yellow and use warning icon if true.
+	bool info_is_warning = false; ///< Display in yellow and use warning icon if true.
 	Button *info = nullptr;
 	AcceptDialog *info_dialog = nullptr;
 
@@ -114,7 +119,7 @@ class InspectorDock : public VBoxContainer {
 
 	void _new_resource();
 	void _load_resource(const String &p_type = "");
-	void _open_resource_selector() { _load_resource(); } // just used to call from arg-less signal
+	void _open_resource_selector() { _load_resource(); } ///< Just used to call from arg-less signal
 	void _resource_file_selected(const String &p_file);
 	void _save_resource(bool save_as);
 	void _unref_resource();

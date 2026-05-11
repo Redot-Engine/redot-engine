@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file pass_func.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #define PASS0R(m_r, m_name)        \
 	m_r m_name() {                 \
 		return PASSBASE->m_name(); \

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file copy_transform_modifier_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/bone_constraint_3d.h"
 
 class CopyTransformModifier3D : public BoneConstraint3D {

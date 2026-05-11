@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_d3d12_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef D3D12_ENABLED
 
 #include "../../openxr_api.h"

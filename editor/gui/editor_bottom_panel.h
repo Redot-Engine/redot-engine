@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_bottom_panel.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/panel_container.h"
 
 class Button;

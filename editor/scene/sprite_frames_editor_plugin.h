@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sprite_frames_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/button.h"
 #include "scene/gui/dialogs.h"
@@ -66,14 +72,14 @@ class SpriteFramesEditor : public HSplitContainer {
 	Node *animated_sprite = nullptr;
 
 	enum {
-		PARAM_USE_CURRENT, // Used in callbacks to indicate `dominant_param` should be not updated.
-		PARAM_FRAME_COUNT, // Keep "Horizontal" & "Vertical" values.
-		PARAM_SIZE, // Keep "Size" values.
+		PARAM_USE_CURRENT, ///< Used in callbacks to indicate `dominant_param` should be not updated.
+		PARAM_FRAME_COUNT, ///< Keep "Horizontal" & "Vertical" values.
+		PARAM_SIZE, ///< Keep "Size" values.
 	};
 	int dominant_param = PARAM_FRAME_COUNT;
 
 	enum {
-		FRAME_ORDER_SELECTION, // Order frames were selected in.
+		FRAME_ORDER_SELECTION, ///< Order frames were selected in.
 
 		// By Row.
 		FRAME_ORDER_LEFT_RIGHT_TOP_BOTTOM,
@@ -168,9 +174,9 @@ class SpriteFramesEditor : public HSplitContainer {
 	Button *toggle_settings_button = nullptr;
 	OptionButton *split_sheet_order = nullptr;
 	EditorFileDialog *file_split_sheet = nullptr;
-	HashMap<int, int> frames_selected; // Key is frame index. Value is selection order.
+	HashMap<int, int> frames_selected; ///< Key is frame index. Value is selection order.
 	HashSet<int> frames_toggled_by_mouse_hover;
-	Vector<Pair<int, int>> frames_ordered; // First is the index to be ordered by. Second is the actual frame index.
+	Vector<Pair<int, int>> frames_ordered; ///< First is the index to be ordered by. Second is the actual frame index.
 	int selected_count = 0;
 	bool frames_need_sort = false;
 	int last_frame_selected = 0;
@@ -239,7 +245,7 @@ class SpriteFramesEditor : public HSplitContainer {
 	bool pending_update = false;
 
 	bool updating;
-	bool updating_split_settings = false; // Skip SpinBox/Range callback when setting value by code.
+	bool updating_split_settings = false; ///< Skip SpinBox/Range callback when setting value by code.
 
 	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
 	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file geometry_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "geometry_2d.h"
 
 GODOT_GCC_WARNING_PUSH_AND_IGNORE("-Walloc-zero")
@@ -39,7 +45,7 @@ GODOT_GCC_WARNING_POP
 #define STB_RECT_PACK_IMPLEMENTATION
 #include "thirdparty/misc/stb_rect_pack.h"
 
-const int clipper_precision = 5; // Based on CMP_EPSILON.
+const int clipper_precision = 5; ///< Based on CMP_EPSILON.
 const double clipper_scale = Math::pow(10.0, clipper_precision);
 
 void Geometry2D::merge_many_polygons(const Vector<Vector<Vector2>> &p_polygons, Vector<Vector<Vector2>> &r_out_polygons, Vector<Vector<Vector2>> &r_out_holes) {
@@ -138,14 +144,6 @@ struct _AtlasWorkRectResult {
 };
 
 void Geometry2D::make_atlas(const Vector<Size2i> &p_rects, Vector<Point2i> &r_result, Size2i &r_size) {
-	// Super simple, almost brute force scanline stacking fitter.
-	// It's pretty basic for now, but it tries to make sure that the aspect ratio of the
-	// resulting atlas is somehow square. This is necessary because video cards have limits
-	// on texture size (usually 2048 or 4096), so the squarer a texture, the more the chances
-	// that it will work in every hardware.
-	// For example, it will prioritize a 1024x1024 atlas (works everywhere) instead of a
-	// 256x8192 atlas (won't work anywhere).
-
 	ERR_FAIL_COND(p_rects.is_empty());
 	for (int i = 0; i < p_rects.size(); i++) {
 		ERR_FAIL_COND(p_rects[i].width <= 0);

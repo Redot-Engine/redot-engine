@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file world_boundary_shape_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "world_boundary_shape_3d.h"
 
 #include "scene/resources/mesh.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skeleton_modification_2d_jiggle.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
@@ -80,6 +86,8 @@ private:
 	uint32_t collision_mask = 1;
 
 	void jiggle_joint_update_bone2d_cache(int p_joint_idx);
+	/// Adopted from: https://wiki.unity3d.com/index.php/JiggleBone
+	/// With modifications by TwistedTwigleg.
 	void _execute_jiggle_joint(int p_joint_idx, Node2D *p_target, float p_delta);
 	void _update_jiggle_joint_data();
 

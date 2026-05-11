@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_data.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_data.h"
 
 #include "core/config/project_settings.h"
@@ -1159,8 +1165,8 @@ Ref<Texture2D> EditorData::get_script_icon(const String &p_script_path) {
 			return icon;
 		}
 
-		// Check for legacy custom classes defined by plugins.
-		// TODO: Should probably be deprecated in 4.x
+		/// Check for legacy custom classes defined by plugins.
+		/// @todo Should probably be deprecated in 4.x
 		const EditorData::CustomType *ctype = get_custom_type_by_path(base_scr->get_path());
 		if (ctype && ctype->icon.is_valid()) {
 			_script_icon_cache[p_script_path] = ctype->icon;

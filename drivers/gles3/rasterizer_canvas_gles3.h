@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rasterizer_canvas_gles3.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "rasterizer_scene_gles3.h"
@@ -55,7 +61,7 @@ class RasterizerCanvasGLES3 : public RendererCanvasRender {
 	_FORCE_INLINE_ void _update_transform_to_mat4(const Transform3D &p_transform, float *p_mat4);
 
 	enum {
-		INSTANCE_FLAGS_LIGHT_COUNT_SHIFT = 0, // 4 bits for light count.
+		INSTANCE_FLAGS_LIGHT_COUNT_SHIFT = 0, ///< 4 bits for light count.
 
 		INSTANCE_FLAGS_CLIP_RECT_UV = (1 << 4),
 		INSTANCE_FLAGS_TRANSPOSE_RECT = (1 << 5),
@@ -66,7 +72,7 @@ class RasterizerCanvasGLES3 : public RendererCanvasRender {
 		INSTANCE_FLAGS_NINEPATCH_H_MODE_SHIFT = 9,
 		INSTANCE_FLAGS_NINEPATCH_V_MODE_SHIFT = 11,
 
-		INSTANCE_FLAGS_SHADOW_MASKED_SHIFT = 13, // 16 bits.
+		INSTANCE_FLAGS_SHADOW_MASKED_SHIFT = 13, ///< 16 bits.
 	};
 
 	enum {
@@ -139,12 +145,12 @@ class RasterizerCanvasGLES3 : public RendererCanvasRender {
 	} shadow_render;
 
 	struct LightUniform {
-		float matrix[8]; //light to texture coordinate matrix
-		float shadow_matrix[8]; //light to shadow coordinate matrix
+		float matrix[8]; ///< Light to texture coordinate matrix
+		float shadow_matrix[8]; ///< Light to shadow coordinate matrix
 		float color[4];
 
 		uint8_t shadow_color[4];
-		uint32_t flags; //index to light texture
+		uint32_t flags; ///< Index to light texture
 		float shadow_pixel_size;
 		float height;
 
@@ -209,7 +215,7 @@ public:
 		float world[6];
 		float color_texture_pixel_size[2];
 		union {
-			//rect
+			/// Rect
 			struct {
 				float modulation[4];
 				union {
@@ -220,11 +226,11 @@ public:
 				float src_rect[4];
 				float pad[2];
 			};
-			//primitive
+			/// Primitive
 			struct {
-				float points[6]; // vec2 points[3]
-				float uvs[6]; // vec2 points[3]
-				uint32_t colors[6]; // colors encoded as half
+				float points[6]; ///< vec2 points[3]
+				float uvs[6]; ///< vec2 points[3]
+				uint32_t colors[6]; ///< colors encoded as half
 			};
 		};
 		uint32_t flags;
@@ -256,7 +262,7 @@ public:
 	} data;
 
 	struct Batch {
-		// Position in the UBO measured in bytes
+		/// Position in the UBO measured in bytes
 		uint32_t start = 0;
 		uint32_t instance_count = 0;
 		uint32_t instance_buffer_index = 0;
@@ -276,7 +282,7 @@ public:
 		uint64_t specialization = 0;
 
 		const Item::Command *command = nullptr;
-		Item::Command::Type command_type = Item::Command::TYPE_ANIMATION_SLICE; // Can default to any type that doesn't form a batch.
+		Item::Command::Type command_type = Item::Command::TYPE_ANIMATION_SLICE; ///< Can default to any type that doesn't form a batch.
 		uint32_t primitive_points = 0;
 
 		uint32_t flags = 0;
@@ -285,9 +291,9 @@ public:
 		bool lights_disabled = false;
 	};
 
-	// DataBuffer contains our per-frame data. I.e. the resources that are updated each frame.
-	// We track them and ensure that they don't get reused until at least 2 frames have passed
-	// to avoid the GPU stalling to wait for a resource to become available.
+	/// DataBuffer contains our per-frame data. I.e. the resources that are updated each frame.
+	/// We track them and ensure that they don't get reused until at least 2 frames have passed
+	/// to avoid the GPU stalling to wait for a resource to become available.
 	struct DataBuffer {
 		Vector<GLuint> instance_buffers;
 		GLuint light_ubo = 0;
@@ -369,6 +375,10 @@ public:
 	bool _bind_material(GLES3::CanvasMaterialData *p_material_data, CanvasShaderGLES3::ShaderVariant p_variant, uint64_t p_specialization);
 	void _new_batch(bool &r_batch_broken);
 	void _add_to_batch(uint32_t &r_index, bool &r_batch_broken);
+	/// Creates a new uniform buffer and uses it right away
+	/// This expands the instance buffer continually
+	/// In theory allocations can reach as high as number of windows * 3 frames
+	/// because OpenGL can start rendering subsequent frames before finishing the current one
 	void _allocate_instance_data_buffer();
 	void _allocate_instance_buffer();
 	void _enable_attributes(uint32_t p_start, bool p_primitive, uint32_t p_rate = 1);

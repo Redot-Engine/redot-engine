@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file debugger_marshalls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "debugger_marshalls.h"
 
 #include "core/io/marshalls.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file graph_element.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/container.h"
 
 class GraphElement : public Container {

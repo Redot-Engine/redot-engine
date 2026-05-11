@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sprite_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "sprite_3d.h"
 
 #include "scene/resources/atlas_texture.h"
@@ -432,7 +438,6 @@ void SpriteBase3D::_im_update() {
 }
 
 void SpriteBase3D::_queue_redraw() {
-	// The 3D equivalent of CanvasItem.queue_redraw().
 	redraw_needed = true;
 	if (!is_inside_tree()) {
 		return;

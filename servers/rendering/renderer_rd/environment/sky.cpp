@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sky.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "sky.h"
 #include "core/config/project_settings.h"
 #include "core/math/math_defs.h"
@@ -1587,9 +1593,9 @@ void SkyRD::update_dirty_skys() {
 	while (sky) {
 		//update sky configuration if texture is missing
 
-		// TODO See if we can move this into `update_radiance_buffers` and remove our dirty_sky logic.
-		// As this is basically a duplicate of the logic in reflection probes we could move this logic
-		// into RenderSceneBuffersRD and use that from both places.
+		/// @todo See if we can move this into `update_radiance_buffers` and remove our dirty_sky logic.
+		/// As this is basically a duplicate of the logic in reflection probes we could move this logic
+		/// into RenderSceneBuffersRD and use that from both places.
 		if (sky->radiance.is_null()) {
 			int mipmaps = Image::get_image_required_mipmaps(sky->radiance_size, sky->radiance_size, Image::FORMAT_RGBAH) + 1;
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file viewport.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "viewport.h"
 
 #include "core/config/project_settings.h"
@@ -1494,24 +1500,6 @@ void Viewport::warp_mouse(const Vector2 &p_position) {
 }
 
 Point2 Viewport::wrap_mouse_in_rect(const Vector2 &p_relative, const Rect2 &p_rect) {
-	// Move the mouse cursor from its current position to a location bounded by `p_rect`
-	// in accordance with a heuristic that takes the traveled distance `p_relative` of the mouse
-	// into account.
-
-	// All parameters are in viewport coordinates.
-	// p_relative denotes the distance to the previous mouse position.
-	// p_rect denotes the area, in which the mouse should be confined in.
-
-	// The relative distance reported for the next event after a warp is in the boundaries of the
-	// size of the rect on that axis, but it may be greater, in which case there's no problem as
-	// fmod() will warp it, but if the pointer has moved in the opposite direction between the
-	// pointer relocation and the subsequent event, the reported relative distance will be less
-	// than the size of the rect and thus fmod() will be disabled for handling the situation.
-	// And due to this mouse warping mechanism being stateless, we need to apply some heuristics
-	// to detect the warp: if the relative distance is greater than the half of the size of the
-	// relevant rect (checked per each axis), it will be considered as the consequence of a former
-	// pointer warp.
-
 	const Point2 rel_sign(p_relative.x >= 0.0f ? 1 : -1, p_relative.y >= 0.0 ? 1 : -1);
 	const Size2 warp_margin = p_rect.size * 0.5f;
 	const Point2 rel_warped(
@@ -1809,8 +1797,6 @@ void Viewport::_gui_call_notification(Control *p_control, int p_what) {
 	}
 }
 
-// `gui_find_control` doesn't take embedded windows into account. So the caller of this function
-// needs to make sure, that there is no embedded window at the specified position.
 Control *Viewport::gui_find_control(const Point2 &p_global) {
 	ERR_MAIN_THREAD_GUARD_V(nullptr);
 
@@ -3195,9 +3181,6 @@ void Viewport::_window_start_resize(SubWindowResize p_edge, Window *p_window) {
 }
 
 void Viewport::_update_mouse_over() {
-	// Update gui.mouse_over and gui.subwindow_over in all Viewports.
-	// Send necessary mouse_enter/mouse_exit signals and the MOUSE_ENTER/MOUSE_EXIT notifications for every Viewport in the SceneTree.
-
 	if (is_attached_in_viewport()) {
 		// Execute this function only, when it is processed by a native Window or a SubViewport, that has no SubViewportContainer as parent.
 		return;
@@ -4037,7 +4020,7 @@ void Viewport::set_vrs_texture(Ref<Texture2D> p_texture) {
 	ERR_MAIN_THREAD_GUARD;
 	vrs_texture = p_texture;
 
-	// TODO need to add something here in case the RID changes
+	/// @todo Need to add something here in case the RID changes
 	RID tex = p_texture.is_valid() ? p_texture->get_rid() : RID();
 	RS::get_singleton()->viewport_set_vrs_texture(viewport, tex);
 }
@@ -4139,8 +4122,8 @@ void Viewport::subwindow_set_popup_safe_rect(Window *p_window, const Rect2i &p_r
 
 Rect2i Viewport::subwindow_get_popup_safe_rect(Window *p_window) const {
 	int index = _sub_window_find(p_window);
-	// FIXME: Re-enable ERR_FAIL_COND after rewriting embedded window popup closing.
-	// Currently it is expected, that index == -1 can happen.
+	/// @todo FIXME: Re-enable ERR_FAIL_COND after rewriting embedded window popup closing.
+	/// Currently it is expected, that index == -1 can happen.
 	if (index == -1) {
 		return Rect2i();
 	}

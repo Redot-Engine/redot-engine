@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_area_pair_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_area_2d.h"
 #include "godot_body_2d.h"
 #include "godot_constraint_2d.h"

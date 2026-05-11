@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_loader_libjpeg_turbo.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_loader_libjpeg_turbo.h"
 
 #include <turbojpeg.h>

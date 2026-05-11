@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file framebuffer_cache_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "framebuffer_cache_rd.h"
 
 FramebufferCacheRD *FramebufferCacheRD::singleton = nullptr;

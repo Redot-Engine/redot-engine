@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_feed.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_feed.h"
 
 #include "servers/rendering_server.h"
@@ -244,9 +250,9 @@ void CameraFeed::set_ycbcr_images(const Ref<Image> &p_y_img, const Ref<Image> &p
 	ERR_FAIL_COND(p_y_img.is_null());
 	ERR_FAIL_COND(p_cbcr_img.is_null());
 	if (active) {
-		///@TODO investigate whether we can use thirdparty/misc/yuv2rgb.h here to convert our YUV data to RGB, our shader approach is potentially faster though..
-		// Wondering about including that into multiple projects, may cause issues.
-		// That said, if we convert to RGB, we could enable using texture resources again...
+		/// @todo Investigate whether we can use thirdparty/misc/yuv2rgb.h here to convert our YUV data to RGB, our shader approach is potentially faster though..
+		/// Wondering about including that into multiple projects, may cause issues.
+		/// That said, if we convert to RGB, we could enable using texture resources again...
 
 		int new_y_width = p_y_img->get_width();
 		int new_y_height = p_y_img->get_height();

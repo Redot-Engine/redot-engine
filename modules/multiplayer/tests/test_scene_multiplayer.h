@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_scene_multiplayer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tests/test_macros.h"
 #include "tests/test_utils.h"
 

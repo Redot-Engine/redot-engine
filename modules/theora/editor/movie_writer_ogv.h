@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file movie_writer_ogv.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/audio_server.h"
 #include "servers/movie_writer/movie_writer.h"
 
@@ -52,54 +58,56 @@ class MovieWriterOGV : public MovieWriter {
 
 	Ref<FileAccess> f;
 
-	// Vorbis quality -0.1 to 1 (-0.1 yields smallest files but lowest fidelity; 1 yields highest fidelity but large files. '0.2' is a reasonable default).
+	/// Vorbis quality -0.1 to 1 (-0.1 yields smallest files but lowest fidelity; 1 yields highest fidelity but large files. '0.2' is a reasonable default).
 	float audio_quality = 0.5;
 
-	// Bitrate target for Theora video.
+	/// Bitrate target for Theora video.
 	int video_bitrate = 0;
 
-	// Theora quality selector from 0 to 1.0 (0 yields smallest files but lowest video quality. 1.0 yields highest fidelity but large files).
+	/// Theora quality selector from 0 to 1.0 (0 yields smallest files but lowest video quality. 1.0 yields highest fidelity but large files).
 	float video_quality = 0.75;
 
-	// Video stream keyframe frequency (one every N frames).
+	/// Video stream keyframe frequency (one every N frames).
 	ogg_uint32_t keyframe_frequency = 64;
 
-	// Sets the encoder speed level. Higher speed levels favor quicker encoding over better quality per bit. Depending on the encoding
-	// mode, and the internal algorithms used, quality may actually improve with higher speeds, but in this case bitrate will also
-	// likely increase. The maximum value, and the meaning of each value, are implementation-specific and may change depending on the
-	// current encoding mode.
+	/// Sets the encoder speed level. Higher speed levels favor quicker encoding over better quality per bit. Depending on the encoding
+	/// mode, and the internal algorithms used, quality may actually improve with higher speeds, but in this case bitrate will also
+	/// likely increase. The maximum value, and the meaning of each value, are implementation-specific and may change depending on the
+	/// current encoding mode.
 	int speed = 4;
 
-	// Take physical pages, weld into a logical stream of packets.
+	/// Take physical pages, weld into a logical stream of packets.
 	ogg_stream_state to;
 
-	// Take physical pages, weld into a logical stream of packets.
+	/// Take physical pages, weld into a logical stream of packets.
 	ogg_stream_state vo;
 
-	// Theora encoding context.
+	/// Theora encoding context.
 	th_enc_ctx *td;
 
-	// Theora bitstream information.
+	/// Theora bitstream information.
 	th_info ti;
 
-	// Theora comment information.
+	/// Theora comment information.
 	th_comment tc;
 
-	// Vorbis bitstream information.
+	/// Vorbis bitstream information.
 	vorbis_info vi;
 
-	// Vorbis comment information.
+	/// Vorbis comment information.
 	vorbis_comment vc;
 
-	// Central working state for the packet->PCM decoder.
+	/// Central working state for the packet->PCM decoder.
 	vorbis_dsp_state vd;
 
-	// Local working space for packet->PCM decode.
+	/// Local working space for packet->PCM decode.
 	vorbis_block vb;
 
-	// Video buffer.
+	/// Video buffer
+	/// @{
 	uint8_t *y, *u, *v;
 	th_ycbcr_buffer ycbcr;
+	/// @}
 
 	bool audio_flag = false;
 	bool video_flag = false;
@@ -109,6 +117,9 @@ class MovieWriterOGV : public MovieWriter {
 	unsigned int backup_page_size = 0;
 	unsigned char *backup_page_data = nullptr;
 
+	/// The added complexity here is because we have to ensure pages are written in ascending timestamp order.
+	/// libOgg doesn't allow checking the next page granulepos without requesting the page, and once requested it can't be
+	/// returned, thus, we need to save it so that it doesn't get erased by the next `ogg_stream_packetin` call.
 	void write_to_file(bool p_finish = false);
 	void push_audio(const int32_t *p_audio_data);
 	void push_video(const Ref<Image> &p_image);
@@ -131,6 +142,10 @@ protected:
 	virtual void get_supported_extensions(List<String> *r_extensions) const override;
 
 	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) override;
+	/// The order of the operations has been chosen so we're one frame behind writing to the stream so we can put the eos
+	/// mark in the last frame.
+	/// Flushing streams to the file every X frames is done to improve audio/video page interleaving thus avoiding large runs
+	/// of video or audio pages.
 	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) override;
 	virtual void write_end() override;
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file debug_adapter_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "debug_adapter_server.h"
 
 #include "editor/editor_log.h"
@@ -39,7 +45,7 @@
 int DebugAdapterServer::port_override = -1;
 
 DebugAdapterServer::DebugAdapterServer() {
-	// TODO: Move to editor_settings.cpp
+	/// @todo Move to editor_settings.cpp
 	_EDITOR_DEF("network/debug_adapter/remote_port", remote_port);
 	_EDITOR_DEF("network/debug_adapter/request_timeout", protocol._request_timeout);
 	_EDITOR_DEF("network/debug_adapter/sync_breakpoints", protocol._sync_breakpoints);

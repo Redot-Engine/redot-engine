@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dynamic_font_import_settings.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "dynamic_font_import_settings.h"
 
 #include "unicode_ranges.inc"

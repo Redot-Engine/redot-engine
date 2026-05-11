@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_types.cpp                                                    */
+/*  soundsmith_module.h                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,20 +30,46 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
+#pragma once
+
+/**
+ * @file signalsmith_module.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
-#include "signalsmith_module.h"
+#include "core/object/ref_counted.h"
+#include "scene/resources/audio_stream_wav.h"
+#include "signalsmith-stretch/signalsmith-stretch.h"
+#include <random>
 
-void initialize_signalsmith_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
+class SoundSmith : public RefCounted {
+	GDCLASS(SoundSmith, RefCounted);
 
-	ClassDB::register_class<SignalSmith>();
-}
+private:
+	signalsmith::stretch::SignalsmithStretch<float, std::mt19937> stretch;
+	int sample_rate = 44100;
+	int channels = 2;
+	float tempo = 1.0f;
 
-void uninitialize_signalsmith_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-}
+protected:
+	static void _bind_methods();
+
+public:
+	SoundSmith();
+	~SoundSmith();
+
+	void set_sample_rate(int p_rate);
+	void set_channels(int p_channels);
+	void set_pitch(float p_pitch);
+	void set_tempo(float p_tempo);
+	void reset();
+
+	int get_last_sample_rate() const;
+	int get_last_channels() const;
+
+	PackedFloat32Array process(const PackedFloat32Array &input);
+
+	Ref<AudioStreamWAV> change_tempo(const String &path, float p_tempo, float p_pitch = 1.0f);
+};

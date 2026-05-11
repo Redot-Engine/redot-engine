@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_3d_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skeleton_3d_editor_plugin.h"
 
 #include "core/io/resource_saver.h"
@@ -433,7 +439,7 @@ void Skeleton3DEditor::reset_pose(const bool p_all_bones) {
 		}
 		ur->add_do_method(skeleton, "reset_bone_poses");
 	} else {
-		// Todo: Do method with multiple bone selection.
+		/// @todo Do method with multiple bone selection.
 		if (selected_bone == -1) {
 			ur->commit_action();
 			return;
@@ -502,7 +508,7 @@ void Skeleton3DEditor::pose_to_rest(const bool p_all_bones) {
 			ur->add_undo_method(skeleton, "set_bone_rest", i, skeleton->get_bone_rest(i));
 		}
 	} else {
-		// Todo: Do method with multiple bone selection.
+		/// @todo Do method with multiple bone selection.
 		if (selected_bone == -1) {
 			ur->commit_action();
 			return;
@@ -812,7 +818,6 @@ void Skeleton3DEditor::_joint_tree_selection_changed() {
 	_update_gizmo_visible();
 }
 
-// May be not used with single select mode.
 void Skeleton3DEditor::_joint_tree_rmb_select(const Vector2 &p_pos, MouseButton p_button) {
 }
 
@@ -918,6 +923,9 @@ void Skeleton3DEditor::_joint_tree_button_clicked(Object *p_item, int p_column, 
 }
 
 void Skeleton3DEditor::_update_properties() {
+	if (is_deleting) {
+		return;
+	}
 	if (pose_editor) {
 		pose_editor->_update_properties();
 	}
@@ -1166,6 +1174,7 @@ void Skeleton3DEditor::_notification(int p_what) {
 			update_joint_tree();
 		} break;
 		case NOTIFICATION_PREDELETE: {
+			is_deleting = true;
 			if (editor_plugin) {
 				editor_plugin->skeleton_editor = nullptr;
 			}

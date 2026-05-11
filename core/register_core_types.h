@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file register_core_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 void register_core_types();
 void register_core_settings();
 void register_core_extensions();

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_loader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_loader.h"
 
 #include "core/config/project_settings.h"
@@ -222,10 +228,13 @@ void ResourceFormatLoader::_bind_methods() {
 
 ///////////////////////////////////
 
-// These are used before and after a wait for a WorkerThreadPool task
-// because that can lead to another load started in the same thread,
-// something we must treat as a different stack for the purposes
-// of tracking nesting.
+/**
+ * @name These are used before and after a wait for a WorkerThreadPool task
+ * @details Because that can lead to another load started in the same thread,
+ * something we must treat as a different stack for the purposes
+ * of tracking nesting.
+ * @{
+ */
 
 #define PREPARE_FOR_WTP_WAIT                                                   \
 	int load_nesting_backup = ResourceLoader::load_nesting;                    \
@@ -239,8 +248,8 @@ void ResourceFormatLoader::_bind_methods() {
 	ResourceLoader::load_nesting = load_nesting_backup;         \
 	ResourceLoader::load_paths_stack = load_paths_stack_backup; \
 	load_paths_stack_backup.clear();
+/// @}
 
-// This should be robust enough to be called redundantly without issues.
 void ResourceLoader::LoadToken::clear() {
 	WorkerThreadPool::TaskID task_to_await = 0;
 
@@ -360,8 +369,6 @@ Ref<Resource> ResourceLoader::_load(const String &p_path, const String &p_origin
 	ERR_FAIL_V_MSG(Ref<Resource>(), vformat("No loader found for resource: %s (expected type: %s)", p_path, !p_type_hint.is_empty() ? p_type_hint : "unknown"));
 }
 
-// This implementation must allow re-entrancy for a task that started awaiting in a deeper stack frame.
-// The load task token must be manually re-referenced before this is called, which includes threaded runs.
 void ResourceLoader::_run_load_task(void *p_userdata) {
 	ThreadLoadTask &load_task = *(ThreadLoadTask *)p_userdata;
 
@@ -944,9 +951,9 @@ Ref<Resource> ResourceLoader::_load_complete_inner(LoadToken &p_load_token, Erro
 }
 
 bool ResourceLoader::_ensure_load_progress() {
-	// Some servers may need a new engine iteration to allow the load to progress.
-	// Since the only known one is the rendering server (in single thread mode), let's keep it simple and just sync it.
-	// This may be refactored in the future to support other servers and have less coupling.
+	/// Some servers may need a new engine iteration to allow the load to progress.
+	/// Since the only known one is the rendering server (in single thread mode), let's keep it simple and just sync it.
+	/// @todo This may be refactored in the future to support other servers and have less coupling.
 	if (OS::get_singleton()->is_separate_thread_rendering_enabled()) {
 		return false; // Not needed.
 	}
@@ -1401,8 +1408,6 @@ void ResourceLoader::clear_translation_remaps() {
 }
 
 void ResourceLoader::clear_thread_load_tasks() {
-	// Bring the thing down as quickly as possible without causing deadlocks or leaks.
-
 	MutexLock thread_load_lock(thread_load_mutex);
 	cleaning_tasks = true;
 
@@ -1485,8 +1490,6 @@ void ResourceLoader::set_create_missing_resources_if_class_unavailable(bool p_en
 }
 
 void ResourceLoader::add_custom_loaders() {
-	// Custom loaders registration exploits global class names
-
 	String custom_loader_base_class = ResourceFormatLoader::get_class_static();
 
 	List<StringName> global_classes;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_animation.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_animation.h"
 
 void GLTFAnimation::_bind_methods() {
@@ -54,6 +60,8 @@ GLTFAnimation::Interpolation GLTFAnimation::godot_to_gltf_interpolation(const Re
 			return INTERP_STEP;
 		case Animation::INTERPOLATION_CUBIC:
 		case Animation::INTERPOLATION_CUBIC_ANGLE:
+		case Animation::INTERPOLATION_CUBIC_MONOTONIC:
+		case Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE:
 			return INTERP_CUBIC_SPLINE;
 	}
 	return INTERP_LINEAR;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skin.h"
 
 void Skin::set_bind_count(int p_size) {

@@ -32,13 +32,15 @@
 
 #pragma once
 
+/**
+ * @file xml_parser.h
+ *
+ * @brief Based on irrXML (see their zlib license). Added mainly for compatibility with their Collada loader.
+ */
+
 #include "core/object/ref_counted.h"
 #include "core/string/ustring.h"
 #include "core/templates/vector.h"
-
-/*
-  Based on irrXML (see their zlib license). Added mainly for compatibility with their Collada loader.
-*/
 
 class XMLParser : public RefCounted {
 	GDCLASS(XMLParser, RefCounted);
@@ -82,7 +84,7 @@ private:
 
 	Vector<Attribute> attributes;
 
-	bool _set_text(const char *start, const char *end);
+	bool _set_text(const char *start, const char *end); ///< Sets the state that text was found. @return `true` if set should be set
 	void _parse_closing_xml_element();
 	void _ignore_definition();
 	bool _parse_cdata();
@@ -110,7 +112,7 @@ public:
 	String get_attribute_value(int p_idx) const;
 	bool has_attribute(const String &p_name) const;
 	String get_named_attribute_value(const String &p_name) const;
-	String get_named_attribute_value_safe(const String &p_name) const; // do not print error if doesn't exist
+	String get_named_attribute_value_safe(const String &p_name) const; ///< Do not print error if doesn't exist
 	bool is_empty() const;
 	int get_current_line() const;
 

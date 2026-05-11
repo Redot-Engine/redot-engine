@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_compress_etcpak.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef TOOLS_ENABLED
 
 #include "core/io/image.h"

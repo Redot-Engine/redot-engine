@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file a_hash_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/hash_map.h"
 
 struct HashMapData {
@@ -52,7 +58,7 @@ static_assert(sizeof(HashMapData) == 8);
  * memory usage. Works like a dynamic array, adding elements to the end of the array, and
  * allows you to access array elements by their index by using `get_by_index` method.
  * Example:
- * ```
+ * ```cpp
  *  AHashMap<int, Object *> map;
  *
  *  int get_object_id_by_number(int p_number) {
@@ -64,7 +70,7 @@ static_assert(sizeof(HashMapData) == 8);
  *		map.get_by_index(p_id).value;
  *  }
  * ```
- * Still, don`t erase the elements because ID can break.
+ * Still, don't erase the elements because ID can break.
  *
  * When an element erase, its place is taken by the element from the end.
  *
@@ -97,7 +103,7 @@ private:
 	MapKeyValue *elements = nullptr;
 	HashMapData *map_data = nullptr;
 
-	// Due to optimization, this is `capacity - 1`. Use + 1 to get normal capacity.
+	/// Due to optimization, this is `capacity - 1`. Use + 1 to get normal capacity.
 	uint32_t capacity = 0;
 	uint32_t num_elements = 0;
 
@@ -380,8 +386,8 @@ public:
 		return true;
 	}
 
-	// Replace the key of an entry in-place, without invalidating iterators or changing the entries position during iteration.
-	// p_old_key must exist in the map and p_new_key must not, unless it is equal to p_old_key.
+	/// Replace the key of an entry in-place, without invalidating iterators or changing the entries position during iteration.
+	/// p_old_key must exist in the map and p_new_key must not, unless it is equal to p_old_key.
 	bool replace_key(const TKey &p_old_key, const TKey &p_new_key) {
 		if (p_old_key == p_new_key) {
 			return true;
@@ -409,8 +415,8 @@ public:
 		return true;
 	}
 
-	// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
-	// If adding a known (possibly large) number of elements at once, must be larger than old capacity.
+	/// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
+	/// If adding a known (possibly large) number of elements at once, must be larger than old capacity.
 	void reserve(uint32_t p_new_capacity) {
 		if (elements == nullptr) {
 			capacity = MAX(4u, p_new_capacity);
@@ -623,7 +629,7 @@ public:
 		return Iterator(elements + pos, elements, elements + num_elements);
 	}
 
-	// Inserts an element without checking if it already exists.
+	/// Inserts an element without checking if it already exists.
 	Iterator insert_new(const TKey &p_key, const TValue &p_value) {
 		DEV_ASSERT(!has(p_key));
 		uint32_t hash = _hash(p_key);
@@ -633,12 +639,12 @@ public:
 
 	/* Array methods. */
 
-	// Unsafe. Changing keys and going outside the bounds of an array can lead to undefined behavior.
+	/// @warning Unsafe. Changing keys and going outside the bounds of an array can lead to undefined behavior.
 	KeyValue<TKey, TValue> *get_elements_ptr() {
 		return elements;
 	}
 
-	// Returns the element index. If not found, returns -1.
+	/// Returns the element index. If not found, returns -1.
 	int get_index(const TKey &p_key) {
 		uint32_t pos = 0;
 		uint32_t h_pos = 0;

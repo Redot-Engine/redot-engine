@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_texture_atlas.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_texture_atlas.h"
 
 #include "atlas_import_failed.xpm"
@@ -94,17 +100,15 @@ String ResourceImporterTextureAtlas::get_option_group_file() const {
 }
 
 Error ResourceImporterTextureAtlas::import(ResourceUID::ID p_source_id, const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
-	/* If this happens, it's because the atlas_file field was not filled, so just import a broken texture */
-
-	//use an xpm because it's size independent, the editor images are vector and size dependent
-	//it's a simple hack
+	/// Use an xpm because it's size independent, the editor images are vector and size dependent.
+	/// @todo It's a simple hack
 	Ref<Image> broken = memnew(Image((const char **)atlas_import_failed_xpm));
 	ResourceSaver::save(ImageTexture::create_from_image(broken), p_save_path + ".tex");
 
 	return OK;
 }
 
-// FIXME: Rasterization has issues, see https://github.com/godotengine/godot/issues/68350#issuecomment-1305610290
+/// @todo FIXME: Rasterization has issues, see https://github.com/godotengine/godot/issues/68350#issuecomment-1305610290
 static void _plot_triangle(Vector2i *p_vertices, const Vector2i &p_offset, bool p_transposed, Ref<Image> p_image, const Ref<Image> &p_src_image) {
 	int width = p_image->get_width();
 	int height = p_image->get_height();

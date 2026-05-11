@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file progress_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "progress_dialog.h"
 
 #include "core/os/os.h"

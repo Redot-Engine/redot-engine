@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file string_builder.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "string_builder.h"
 
 StringBuilder &StringBuilder::append(const String &p_string) {

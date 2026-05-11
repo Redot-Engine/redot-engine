@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file noise_texture_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "noise.h"
 
 #include "core/object/ref_counted.h"

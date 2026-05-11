@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_file_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_file_dialog.h"
 
 #include "core/config/project_settings.h"
@@ -443,7 +449,7 @@ void EditorFileDialog::update_dir() {
 			set_ok_button_text(TTRC("Select Current Folder"));
 			break;
 		case FILE_MODE_SAVE_FILE:
-			// FIXME: Implement, or refactor to avoid duplication with set_mode
+			/// @todo FIXME: Implement, or refactor to avoid duplication with set_mode
 			break;
 	}
 }
@@ -763,7 +769,7 @@ void EditorFileDialog::_items_clear_selection(const Vector2 &p_pos, MouseButton 
 			break;
 
 		case FILE_MODE_SAVE_FILE:
-			// FIXME: Implement, or refactor to avoid duplication with set_mode
+			/// @todo FIXME: Implement, or refactor to avoid duplication with set_mode
 			break;
 	}
 }
@@ -975,7 +981,6 @@ void EditorFileDialog::update_file_name() {
 	}
 }
 
-// DO NOT USE THIS FUNCTION UNLESS NEEDED, CALL INVALIDATE() INSTEAD.
 void EditorFileDialog::update_file_list() {
 	int thumbnail_size = EDITOR_GET("filesystem/file_dialog/thumbnail_size");
 	thumbnail_size *= EDSCALE;

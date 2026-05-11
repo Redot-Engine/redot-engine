@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file grid_map.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "grid_map.h"
 
 #include "core/io/marshalls.h"
@@ -647,7 +653,7 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 
 	Vector<Vector3> col_debug;
 
-	/*
+	/**
 	 * foreach item in this octant,
 	 * set item's multimesh's instance count to number of cells which have this item
 	 * and set said multimesh bounding box to one containing all cells which have this item

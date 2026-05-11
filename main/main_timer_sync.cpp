@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file main_timer_sync.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "main_timer_sync.h"
 
 #include "core/os/os.h"
@@ -46,13 +52,10 @@ void MainFrameTime::clamp_process_step(double min_process_step, double max_proce
 /////////////////////////////////
 
 void MainTimerSync::DeltaSmoother::update_refresh_rate_estimator(int64_t p_delta) {
-	// the calling code should prevent 0 or negative values of delta
-	// (preventing divide by zero)
-
-	// note that if the estimate gets locked, and something external changes this
-	// (e.g. user changes to non-vsync in the OS), then the results may be less than ideal,
-	// but usually it will detect this via the FPS measurement and not attempt smoothing.
-	// This should be a rare occurrence anyway, and will be cured next time user restarts game.
+	/// @note If the estimate gets locked, and something external changes this
+	/// (e.g. user changes to non-vsync in the OS), then the results may be less than ideal,
+	/// but usually it will detect this via the FPS measurement and not attempt smoothing.
+	/// This should be a rare occurrence anyway, and will be cured next time user restarts game.
 	if (_estimate_locked) {
 		return;
 	}
@@ -297,15 +300,10 @@ int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta) {
 
 /////////////////////////////////////
 
-// returns the fraction of p_physics_step required for the timer to overshoot
-// before advance_core considers changing the physics_steps return from
-// the typical values as defined by typical_physics_steps
 double MainTimerSync::get_physics_jitter_fix() {
 	return Engine::get_singleton()->get_physics_jitter_fix();
 }
 
-// gets our best bet for the average number of physics steps per render frame
-// return value: number of frames back this data is consistent
 int MainTimerSync::get_average_physics_steps(double &p_min, double &p_max) {
 	p_min = typical_physics_steps[0];
 	p_max = p_min + 1;
@@ -329,7 +327,6 @@ int MainTimerSync::get_average_physics_steps(double &p_min, double &p_max) {
 	return CONTROL_STEPS;
 }
 
-// advance physics clock by p_process_step, return appropriate number of steps to simulate
 MainFrameTime MainTimerSync::advance_core(double p_physics_step, int p_physics_ticks_per_second, double p_process_step) {
 	MainFrameTime ret;
 
@@ -412,7 +409,6 @@ MainFrameTime MainTimerSync::advance_core(double p_physics_step, int p_physics_t
 	return ret;
 }
 
-// calls advance_core, keeps track of deficit it adds to animaption_step, make sure the deficit sum stays close to zero
 MainFrameTime MainTimerSync::advance_checked(double p_physics_step, int p_physics_ticks_per_second, double p_process_step) {
 	if (fixed_fps != -1) {
 		p_process_step = 1.0 / fixed_fps;
@@ -505,12 +501,10 @@ MainTimerSync::MainTimerSync() {
 	}
 }
 
-// start the clock
 void MainTimerSync::init(uint64_t p_cpu_ticks_usec) {
 	current_cpu_ticks_usec = last_cpu_ticks_usec = p_cpu_ticks_usec;
 }
 
-// set measured wall clock time
 void MainTimerSync::set_cpu_ticks_usec(uint64_t p_cpu_ticks_usec) {
 	current_cpu_ticks_usec = p_cpu_ticks_usec;
 }
@@ -519,7 +513,6 @@ void MainTimerSync::set_fixed_fps(int p_fixed_fps) {
 	fixed_fps = p_fixed_fps;
 }
 
-// advance one physics frame, return timesteps to take
 MainFrameTime MainTimerSync::advance(double p_physics_step, int p_physics_ticks_per_second) {
 	double cpu_process_step = get_cpu_process_step();
 

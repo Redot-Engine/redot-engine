@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sub_viewport_preview_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/texture/texture_editor_plugin.h"
 

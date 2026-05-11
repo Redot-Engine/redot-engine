@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_htc_controller_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_extension_wrapper.h"
 
 class OpenXRHTCControllerExtension : public OpenXRExtensionWrapper {
@@ -41,8 +47,8 @@ protected:
 	static void _bind_methods() {}
 
 public:
+	/// @note HTC Vive Wand controllers are part of the core spec and not part of our extension.
 	enum HTCControllers {
-		// Note, HTC Vive Wand controllers are part of the core spec and not part of our extension.
 		HTC_VIVE_COSMOS,
 		HTC_VIVE_FOCUS3,
 		HTC_HAND_INTERACTION,

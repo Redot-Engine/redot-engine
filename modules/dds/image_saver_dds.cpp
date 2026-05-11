@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_saver_dds.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_saver_dds.h"
 
 #include "dds_enums.h"

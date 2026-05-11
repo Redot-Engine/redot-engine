@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_properties_array_dict.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_properties_array_dict.h"
 
 #include "core/input/input.h"

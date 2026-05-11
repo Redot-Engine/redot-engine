@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_undo_redo_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_undo_redo_manager.h"
 #include "editor_undo_redo_manager.compat.inc"
 

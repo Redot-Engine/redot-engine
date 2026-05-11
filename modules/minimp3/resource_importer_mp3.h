@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_mp3.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream_mp3.h"
 
 #include "core/io/resource_importer.h"

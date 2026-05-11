@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_node.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/script_language.h"
 #include "core/templates/safe_refcount.h"
 #include "editor/editor_data.h"
@@ -207,7 +213,7 @@ public:
 		HELP_SUGGEST_A_FEATURE,
 		HELP_SEND_DOCS_FEEDBACK,
 		HELP_ABOUT,
-		HELP_SUPPORT_GODOT_DEVELOPMENT,
+		HELP_SUPPORT_REDOT_DEVELOPMENT,
 
 		// Update spinner menu.
 		SPINNER_UPDATE_CONTINUOUSLY,
@@ -288,8 +294,8 @@ private:
 	OptionButton *renderer = nullptr;
 
 #ifdef ANDROID_ENABLED
-	VBoxContainer *base_vbox = nullptr; // It only contains the title_bar and main_hbox.
-	HBoxContainer *main_hbox = nullptr; // It only contains the touch_actions_panel and main_vbox.
+	VBoxContainer *base_vbox = nullptr; ///< It only contains the title_bar and main_hbox.
+	HBoxContainer *main_hbox = nullptr; ///< It only contains the touch_actions_panel and main_vbox.
 	TouchActionsPanel *touch_actions_panel = nullptr;
 	void _touch_actions_panel_mode_changed();
 #endif
@@ -299,7 +305,8 @@ private:
 	int renderer_current = 0;
 	String renderer_request;
 
-	// Split containers.
+	/// @name Split Containers
+	/// @{
 	DockSplitContainer *left_l_hsplit = nullptr;
 	DockSplitContainer *left_l_vsplit = nullptr;
 	DockSplitContainer *left_r_hsplit = nullptr;
@@ -309,14 +316,16 @@ private:
 	DockSplitContainer *right_l_vsplit = nullptr;
 	DockSplitContainer *right_r_vsplit = nullptr;
 	DockSplitContainer *center_split = nullptr;
-
-	// Main tabs.
+	/// @}
+	/// @name Main Tabs
+	/// @{
 	EditorSceneTabs *scene_tabs = nullptr;
 
 	int tab_closing_idx = 0;
 	List<String> tabs_to_close;
 	List<int> scenes_to_save_as;
 	int tab_closing_menu_option = -1;
+	/// @}
 
 	bool exiting = false;
 	bool dimmed = false;
@@ -333,9 +342,11 @@ private:
 	EditorRunBar *project_run_bar = nullptr;
 	HBoxContainer *right_menu_hb = nullptr;
 
-	// Spacers to center 2D / 3D / Script buttons.
+	/// @name Spacers to center 2D / 3D / Script buttons.
+	/// @{
 	HBoxContainer *left_spacer = nullptr;
 	Control *right_spacer = nullptr;
+	/// @}
 
 	Control *menu_btn_spacer = nullptr;
 	MenuButton *main_menu_button = nullptr;
@@ -466,7 +477,7 @@ private:
 
 	int current_menu_option = 0;
 
-	SubViewport *scene_root = nullptr; // Root of the scene being edited.
+	SubViewport *scene_root = nullptr; ///< Root of the scene being edited.
 	Object *current = nullptr;
 
 	Ref<Resource> saving_resource;
@@ -574,6 +585,11 @@ private:
 	void _plugin_over_self_own(EditorPlugin *p_plugin);
 
 	void _fs_changed();
+	/// This will copy all the modified properties of the nodes into 'scenes_modification_table'
+	/// before they are actually reimported. It's important to do this before the reimportation
+	/// because if a mesh is present in an inherited scene, the resource will be modified in
+	/// the inherited scene. Then, get_modified_properties_for_node will return the mesh property,
+	/// which will trigger a recopy of the previous mesh, preventing the reload.
 	void _resources_reimporting(const Vector<String> &p_resources);
 	void _resources_reimported(const Vector<String> &p_resources);
 	void _sources_changed(bool p_exist);
@@ -593,7 +609,11 @@ private:
 
 	void _update_undo_redo_allowed();
 
+	/// Save external resources and its subresources if any was modified.
 	int _save_external_resources(bool p_also_save_external_data = false);
+	/// Save scene without displaying progress dialog. Used to work around
+	/// errors about parent node being busy setting up children
+	/// when Save on Focus Loss kicks in.
 	void _save_scene_silently();
 
 	void _set_current_scene(int p_idx);
@@ -647,6 +667,7 @@ private:
 
 	bool has_main_screen() const { return true; }
 
+	/// When scene gets closed no node is edited anymore, so make sure the editors are notified before nodes are freed.
 	void _remove_edited_scene(bool p_change_tab = true);
 	void _remove_scene(int index, bool p_change_tab = true);
 	bool _find_and_save_resource(Ref<Resource> p_res, HashMap<Ref<Resource>, bool> &processed, int32_t flags);
@@ -710,6 +731,10 @@ private:
 
 	void _begin_first_scan();
 
+	/// Recursive function to inform nodes that an array of nodes have had their scene reimported.
+	/// It will attempt to call a method named '_nodes_scene_reimported' on every node in the
+	/// tree so that editor scripts which create transient nodes will have the opportunity
+	/// to recreate them.
 	void _notify_nodes_scene_reimported(Node *p_node, Array p_reimported_nodes);
 
 	void _remove_all_not_owned_children(Node *p_node, Node *p_owner);
@@ -731,13 +756,13 @@ protected:
 	void _notification(int p_what);
 
 public:
-	// Public for use with callable_mp.
+	/// Public for use with callable_mp.
 	void init_plugins();
 	void _on_plugin_ready(Object *p_script, const String &p_activate_name);
 
 	bool call_build();
 
-	// This is a very naive estimation, but we need something now. Will be reworked later.
+	/// @todo This is a very naive estimation, but we need something now. Will be reworked later.
 	bool is_editor_ready() const { return is_inside_tree() && !waiting_for_first_scan; }
 
 	static EditorNode *get_singleton() { return singleton; }
@@ -858,7 +883,7 @@ public:
 		NodePath parent;
 		Node *owner = nullptr;
 		int index = 0;
-		// Used if the original parent node is lost
+		/// Used if the original parent node is lost
 		Transform2D transform_2d;
 		Transform3D transform_3d;
 	};

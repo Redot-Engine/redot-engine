@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file uid_viewer_dock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/file_system/uid_viewer.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_uid.h"

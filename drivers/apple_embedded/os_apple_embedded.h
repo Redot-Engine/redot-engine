@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file os_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef APPLE_EMBEDDED_ENABLED
 
 #import "apple_embedded.h"

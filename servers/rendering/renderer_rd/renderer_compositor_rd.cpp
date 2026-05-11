@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_compositor_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_compositor_rd.h"
 
 #include "core/config/project_settings.h"

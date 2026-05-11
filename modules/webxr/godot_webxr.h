@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_webxr.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

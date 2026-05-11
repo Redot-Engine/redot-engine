@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file lightmap_gi.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "lightmap_gi.h"
 
 #include "core/config/project_settings.h"
@@ -933,8 +939,8 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 
 			Size2i mesh_lightmap_size = mf.mesh->get_lightmap_size_hint();
 			if (mesh_lightmap_size == Size2i(0, 0)) {
-				// TODO we should compute a size if no lightmap hint is set, as we did in 3.x.
-				// For now set to basic size to avoid crash.
+				/// @todo We should compute a size if no lightmap hint is set, as we did in 3.x.
+				/// For now set to basic size to avoid crash.
 				mesh_lightmap_size = Size2i(64, 64);
 			}
 			// Double lightmap texel density if downsampling is enabled, as the final texture size will be halved before saving lightmaps.

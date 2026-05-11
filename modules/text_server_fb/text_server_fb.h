@@ -32,10 +32,11 @@
 
 #pragma once
 
-/*************************************************************************/
-/* Fallback Text Server provides simplified TS functionality, without    */
-/* BiDi, shaping and advanced font features support.                     */
-/*************************************************************************/
+/**
+ * @file text_server_fb.h
+ *
+ * @brief Fallback Text Server provides simplified TS functionality, without BiDi, shaping and advanced font features support.
+ */
 
 #ifdef GDEXTENSION
 // Headers for building as GDExtension plug-in.
@@ -303,9 +304,11 @@ class TextServerFallback : public TextServerExtension {
 		Dictionary supported_varaitions;
 		Dictionary feature_overrides;
 
-		// Language/script support override.
+		/// @name Language/script support override.
+		/// @{
 		HashMap<String, bool> language_support_overrides;
 		HashMap<String, bool> script_support_overrides;
+		/// @}
 
 		PackedByteArray data;
 		const uint8_t *data_ptr = nullptr;
@@ -405,7 +408,7 @@ class TextServerFallback : public TextServerExtension {
 		return p_sty_name.contains("italic") || p_sty_name.contains("oblique");
 	}
 
-	// Shaped text cache data.
+	/// Shaped text cache data.
 	struct TrimData {
 		int trim_pos = -1;
 		int ellipsis_pos = -1;
@@ -423,14 +426,14 @@ class TextServerFallback : public TextServerExtension {
 		Mutex mutex;
 
 		/* Source data */
-		RID parent; // Substring parent ShapedTextData.
+		RID parent; ///< Substring parent ShapedTextData.
 
-		int start = 0; // Substring start offset in the parent string.
-		int end = 0; // Substring end offset in the parent string.
+		int start = 0; ///< Substring start offset in the parent string.
+		int end = 0; ///< Substring end offset in the parent string.
 
 		String text;
 		String custom_punct;
-		TextServer::Direction direction = DIRECTION_LTR; // Desired text direction.
+		TextServer::Direction direction = DIRECTION_LTR; ///< Desired text direction.
 		TextServer::Orientation orientation = ORIENTATION_HORIZONTAL;
 
 		struct Span {
@@ -447,7 +450,7 @@ class TextServerFallback : public TextServerExtension {
 			Variant meta;
 		};
 		Vector<Span> spans;
-		int first_span = 0; // First span in the parent ShapedTextData.
+		int first_span = 0; ///< First span in the parent ShapedTextData.
 		int last_span = 0;
 
 		Vector<TextRun> runs;
@@ -463,19 +466,19 @@ class TextServerFallback : public TextServerExtension {
 		HashMap<Variant, EmbeddedObject, VariantHasher, VariantComparator> objects;
 
 		/* Shaped data */
-		TextServer::Direction para_direction = DIRECTION_LTR; // Detected text direction.
-		SafeFlag valid{ false }; // String is shaped.
-		bool line_breaks_valid = false; // Line and word break flags are populated (and virtual zero width spaces inserted).
-		bool justification_ops_valid = false; // Virtual elongation glyphs are added to the string.
+		TextServer::Direction para_direction = DIRECTION_LTR; ///< Detected text direction.
+		SafeFlag valid{ false }; ///< String is shaped.
+		bool line_breaks_valid = false; ///< Line and word break flags are populated (and virtual zero width spaces inserted).
+		bool justification_ops_valid = false; ///< Virtual elongation glyphs are added to the string.
 		bool sort_valid = false;
 		bool text_trimmed = false;
 
-		bool preserve_invalid = true; // Draw hex code box instead of missing characters.
-		bool preserve_control = false; // Draw control characters.
+		bool preserve_invalid = true; ///< Draw hex code box instead of missing characters.
+		bool preserve_control = false; ///< Draw control characters.
 
-		double ascent = 0.0; // Ascent for horizontal layout, 1/2 of width for vertical.
-		double descent = 0.0; // Descent for horizontal layout, 1/2 of width for vertical.
-		double width = 0.0; // Width for horizontal layout, height for vertical.
+		double ascent = 0.0; ///< Ascent for horizontal layout, 1/2 of width for vertical.
+		double descent = 0.0; ///< Descent for horizontal layout, 1/2 of width for vertical.
+		double width = 0.0; ///< Width for horizontal layout, height for vertical.
 		double width_trimmed = 0.0;
 		int extra_spacing[4] = { 0, 0, 0, 0 };
 
@@ -490,11 +493,12 @@ class TextServerFallback : public TextServerExtension {
 		Vector<Glyph> glyphs_logical;
 	};
 
-	// Common data.
-
+	/// @name Common Data
+	/// @{
 	mutable RID_PtrOwner<FontFallbackLinkedVariation> font_var_owner;
 	mutable RID_PtrOwner<FontFallback> font_owner;
 	mutable RID_PtrOwner<ShapedTextDataFallback> shaped_owner;
+	/// @}
 
 	_FORCE_INLINE_ FontFallback *_get_font_data(const RID &p_font_rid) const {
 		RID rid = p_font_rid;
@@ -594,6 +598,7 @@ class TextServerFallback : public TextServerExtension {
 	mutable HashMap<String, PackedByteArray> system_font_data;
 
 	void _generate_runs(ShapedTextDataFallback *p_sd) const;
+	/// Align embedded objects to baseline.
 	void _realign(ShapedTextDataFallback *p_sd) const;
 	_FORCE_INLINE_ RID _find_sys_font_for_text(const RID &p_fdef, const String &p_script_code, const String &p_language, const String &p_text);
 
@@ -624,8 +629,8 @@ public:
 	MODBIND1RC(int64_t, name_to_tag, const String &);
 	MODBIND1RC(String, tag_to_name, int64_t);
 
-	/* Font interface */
-
+	/// @name Font Interface
+	/// @{
 	MODBIND0R(RID, create_font);
 	MODBIND1R(RID, create_font_linked_variation, const RID &);
 
@@ -807,9 +812,9 @@ public:
 
 	MODBIND1(reference_oversampling_level, double);
 	MODBIND1(unreference_oversampling_level, double);
-
-	/* Shaped text buffer interface */
-
+	/// @}
+	/// @name Shaped text buffer interface
+	/// @{
 	MODBIND2R(RID, create_shaped_text, Direction, Orientation);
 
 	MODBIND1(shaped_text_clear, const RID &);
@@ -903,6 +908,7 @@ public:
 	MODBIND2RC(String, string_to_upper, const String &, const String &);
 	MODBIND2RC(String, string_to_lower, const String &, const String &);
 	MODBIND2RC(String, string_to_title, const String &, const String &);
+	/// @}
 
 	MODBIND0(cleanup);
 

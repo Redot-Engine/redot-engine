@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animated_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image_frames.h"
 #include "core/io/resource_loader.h"
 #include "scene/resources/texture.h"
@@ -39,7 +45,7 @@
 class AnimatedTexture : public Texture2D {
 	GDCLASS(AnimatedTexture, Texture2D);
 
-	// Use readers writers lock for this, since its far more times read than written to.
+	/// Use readers writers lock for this, since its far more times read than written to.
 	RWLock rw_lock;
 
 public:

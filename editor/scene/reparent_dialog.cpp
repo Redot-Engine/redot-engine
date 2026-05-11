@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file reparent_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "reparent_dialog.h"
 
 #include "editor/scene/scene_tree_editor.h"

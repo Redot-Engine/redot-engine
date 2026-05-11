@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_instance_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mesh_instance_2d.h"
 
 #ifndef NAVIGATION_2D_DISABLED

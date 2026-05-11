@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tile_map_layer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/2d/tile_set.h"
 
 #ifndef NAVIGATION_2D_DISABLED
@@ -551,55 +557,67 @@ public:
 
 	// --- Cells manipulation ---
 	// Generic cells manipulations and data access.
+
+	/// Set the current cell tile (using integer position).
 	void set_cell(const Vector2i &p_coords, int p_source_id = TileSet::INVALID_SOURCE, const Vector2i &p_atlas_coords = TileSetSource::INVALID_ATLAS_COORDS, int p_alternative_tile = 0);
 	void erase_cell(const Vector2i &p_coords);
 	void fix_invalid_tiles();
 	void clear();
 
-	int get_cell_source_id(const Vector2i &p_coords) const;
-	Vector2i get_cell_atlas_coords(const Vector2i &p_coords) const;
-	int get_cell_alternative_tile(const Vector2i &p_coords) const;
-	TileData *get_cell_tile_data(const Vector2i &p_coords) const; // Helper method to make accessing the data easier.
+	int get_cell_source_id(const Vector2i &p_coords) const; ///< @return Cell source id from position.
+	Vector2i get_cell_atlas_coords(const Vector2i &p_coords) const; ///< @return Cell source id from position.
+	int get_cell_alternative_tile(const Vector2i &p_coords) const; ///< @return Cell source id from position.
+	TileData *get_cell_tile_data(const Vector2i &p_coords) const; ///< Helper method to make accessing the data easier.
 
-	TypedArray<Vector2i> get_used_cells() const;
+	TypedArray<Vector2i> get_used_cells() const; /// @return The cells used in the tilemap.
+	/// @return The cells used in the tilemap.
 	TypedArray<Vector2i> get_used_cells_by_id(int p_source_id = TileSet::INVALID_SOURCE, const Vector2i &p_atlas_coords = TileSetSource::INVALID_ATLAS_COORDS, int p_alternative_tile = TileSetSource::INVALID_TILE_ALTERNATIVE) const;
-	Rect2i get_used_rect() const;
+	Rect2i get_used_rect() const; ///<  @return The rect of the currently used area.
 
 	bool is_cell_flipped_h(const Vector2i &p_coords) const;
 	bool is_cell_flipped_v(const Vector2i &p_coords) const;
 	bool is_cell_transposed(const Vector2i &p_coords) const;
 
-	// Patterns.
+	/// @name Patterns
+	/// @{
 	Ref<TileMapPattern> get_pattern(TypedArray<Vector2i> p_coords_array);
 	void set_pattern(const Vector2i &p_position, const Ref<TileMapPattern> p_pattern);
-
-	// Terrains.
+	/// @}
+	/// @name Terrains
+	/// @{
 	void set_cells_terrain_connect(TypedArray<Vector2i> p_cells, int p_terrain_set, int p_terrain, bool p_ignore_empty_terrains = true);
 	void set_cells_terrain_path(TypedArray<Vector2i> p_path, int p_terrain_set, int p_terrain, bool p_ignore_empty_terrains = true);
+	/// @}
 
 #ifndef PHYSICS_2D_DISABLED
-	// --- Physics helpers ---
+	/// @name --- Physics helpers ---
+	/// @{
 	bool has_body_rid(RID p_physics_body) const;
-	Vector2i get_coords_for_body_rid(RID p_physics_body) const; // For finding tiles from collision.
+	Vector2i get_coords_for_body_rid(RID p_physics_body) const; ///< For finding tiles from collision.
+	/// @}
 #endif // PHYSICS_2D_DISABLED
 
-	// --- Runtime ---
+	/// @name --- Runtime ---
+	/// @{
 	void update_internals();
 	void notify_runtime_tile_data_update();
 	GDVIRTUAL1R(bool, _use_tile_data_runtime_update, Vector2i);
 	GDVIRTUAL2(_tile_data_runtime_update, Vector2i, TileData *);
 	GDVIRTUAL2(_update_cells, TypedArray<Vector2i>, bool);
-
-	// --- Shortcuts to methods defined in TileSet ---
+	/// @}
+	/// @name --- Shortcuts to methods defined in TileSet ---
+	/// @{
 	Vector2i map_pattern(const Vector2i &p_position_in_tilemap, const Vector2i &p_coords_in_pattern, Ref<TileMapPattern> p_pattern);
 	TypedArray<Vector2i> get_surrounding_cells(const Vector2i &p_coords);
 	Vector2i get_neighbor_cell(const Vector2i &p_coords, TileSet::CellNeighbor p_cell_neighbor) const;
 	Vector2 map_to_local(const Vector2i &p_pos) const;
 	Vector2i local_to_map(const Vector2 &p_pos) const;
-
-	// --- Accessors ---
+	/// @}
+	/// @name --- Accessors ---
+	/// @{
 	void set_tile_map_data_from_array(const Vector<uint8_t> &p_data);
 	Vector<uint8_t> get_tile_map_data_as_array() const;
+	/// @}
 
 	void set_enabled(bool p_enabled);
 	bool is_enabled() const;

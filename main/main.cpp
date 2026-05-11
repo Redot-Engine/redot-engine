@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file main.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "main.h"
 
 #include "core/config/project_settings.h"
@@ -301,9 +307,9 @@ static const String NULL_DISPLAY_DRIVER("headless");
 static const String EMBEDDED_DISPLAY_DRIVER("embedded");
 static const String NULL_AUDIO_DRIVER("Dummy");
 
-// The length of the longest column in the command-line help we should align to
-// (excluding the 2-space left and right margins).
-// Currently, this is `--export-release <preset> <path>`.
+/// The length of the longest column in the command-line help we should align to
+/// (excluding the 2-space left and right margins).
+/// Currently, this is `--export-release <preset> <path>`.
 static const int OPTION_COLUMN_LENGTH = 32;
 
 /* Helper methods */
@@ -355,7 +361,7 @@ static Vector<String> get_files_with_extension(const String &p_root, const Strin
 }
 #endif
 
-// FIXME: Could maybe be moved to have less code in main.cpp.
+/// @todo FIXME: Could maybe be moved to have less code in main.cpp.
 void initialize_physics() {
 #ifndef PHYSICS_3D_DISABLED
 	/// 3D Physics Server
@@ -450,26 +456,14 @@ void Main::print_header(bool p_rich) {
 	}
 }
 
-/**
- * Prints a copyright notice in the command-line help with colored text. A newline is
- * automatically added at the end.
- */
 void Main::print_help_copyright(const char *p_notice) {
 	OS::get_singleton()->print("\u001b[90m%s\u001b[0m\n", p_notice);
 }
 
-/**
- * Prints a title in the command-line help with colored text. A newline is
- * automatically added at beginning and at the end.
- */
 void Main::print_help_title(const char *p_title) {
 	OS::get_singleton()->print("\n\u001b[1;93m%s:\u001b[0m\n", p_title);
 }
 
-/**
- * Returns the option string with required and optional arguments colored separately from the rest of the option.
- * This color replacement must be done *after* calling `rpad()` for the length padding to be done correctly.
- */
 String Main::format_help_option(const char *p_option) {
 	return (String(p_option)
 					.rpad(OPTION_COLUMN_LENGTH)
@@ -479,13 +473,6 @@ String Main::format_help_option(const char *p_option) {
 					.replace(">", ">\u001b[0m"));
 }
 
-/**
- * Prints an option in the command-line help with colored text. No newline is
- * added at the end. `p_availability` denotes which build types the argument is
- * available in. Support in release export templates implies support in debug
- * export templates and editor. Support in debug export templates implies
- * support in editor.
- */
 void Main::print_help_option(const char *p_option, const char *p_description, CLIOptionAvailability p_availability) {
 	const bool option_empty = (p_option && !p_option[0]);
 	if (!option_empty) {
@@ -721,8 +708,7 @@ void Main::print_help(const char *p_binary) {
 }
 
 #ifdef TESTS_ENABLED
-// The order is the same as in `Main::setup()`, only core and some editor types
-// are initialized here. This also combines `Main::setup2()` initialization.
+
 Error Main::test_setup() {
 	Thread::make_main_thread();
 	set_current_thread_safe_for_nodes(true);
@@ -844,7 +830,6 @@ Error Main::test_setup() {
 	return OK;
 }
 
-// The order is the same as in `Main::cleanup()`.
 void Main::test_cleanup() {
 	ERR_FAIL_COND(!_start_success);
 
@@ -932,8 +917,8 @@ int Main::test_entrypoint(int argc, char *argv[], bool &tests_need_run) {
 		if ((strncmp(argv[x], "--test", 6) == 0) && (strlen(argv[x]) == 6)) {
 			tests_need_run = true;
 #ifdef TESTS_ENABLED
-			// TODO: need to come up with different test contexts.
-			// Not every test requires high-level functionality like `ClassDB`.
+			/// @todo Need to come up with different test contexts.
+			/// Not every test requires high-level functionality like `ClassDB`.
 			test_setup();
 			int status = test_main(argc, argv);
 			test_cleanup();
@@ -949,31 +934,6 @@ int Main::test_entrypoint(int argc, char *argv[], bool &tests_need_run) {
 	tests_need_run = false;
 	return EXIT_SUCCESS;
 }
-
-/* Engine initialization
- *
- * Consists of several methods that are called by each platform's specific main(argc, argv).
- * To fully understand engine init, one should therefore start from the platform's main and
- * see how it calls into the Main class' methods.
- *
- * The initialization is typically done in 3 steps (with the setup2 step triggered either
- * automatically by setup, or manually in the platform's main).
- *
- * - setup(execpath, argc, argv, p_second_phase) is the main entry point for all platforms,
- *   responsible for the initialization of all low level singletons and core types, and parsing
- *   command line arguments to configure things accordingly.
- *   If p_second_phase is true, it will chain into setup2() (default behavior). This is
- *   disabled on some platforms (Android, iOS) which trigger the second step in their own time.
- *
- * - setup2(p_main_tid_override) registers high level servers and singletons, displays the
- *   boot splash, then registers higher level types (scene, editor, etc.).
- *
- * - start() is the last step and that's where command line tools can run, or the main loop
- *   can be created eventually and the project settings put into action. That's also where
- *   the editor node is created, if relevant.
- *   start() does it own argument parsing for a subset of the command line arguments described
- *   in help, it's a bit messy and should be globalized with the setup() parsing somehow.
- */
 
 Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_phase) {
 	Thread::make_main_thread();
@@ -1069,7 +1029,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	//XXX: always get_singleton() == 0x0
 	zip_packed_data = ZipArchive::get_singleton();
-	//TODO: remove this temporary fix
+	/// @todo Remove this temporary fix
 	if (!zip_packed_data) {
 		zip_packed_data = memnew(ZipArchive);
 	}
@@ -1133,12 +1093,12 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		} else if (arg == "-h" || arg == "--help" || arg == "/?") { // display help
 
 			show_help = true;
-			exit_err = ERR_HELP; // Hack to force an early exit in `main()` with a success code.
+			exit_err = ERR_HELP; ///< @todo Hack to force an early exit in `main()` with a success code.
 			goto error;
 
 		} else if (arg == "--version") {
 			print_line(get_full_version_string());
-			exit_err = ERR_HELP; // Hack to force an early exit in `main()` with a success code.
+			exit_err = ERR_HELP; ///< @todo Hack to force an early exit in `main()` with a success code.
 			goto error;
 
 		} else if (arg == "-v" || arg == "--verbose") { // verbose output
@@ -1556,9 +1516,9 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			cmdline_tool = true;
 			dump_gdextension_interface = true;
 			print_line("Dumping GDExtension interface header file");
-			// Hack. Not needed but otherwise we end up detecting that this should
-			// run the project instead of a cmdline tool.
-			// Needs full refactoring to fix properly.
+			/// @todo HACK: Not needed but otherwise we end up detecting that this should
+			/// run the project instead of a cmdline tool.
+			/// Needs full refactoring to fix properly.
 			main_args.push_back(arg);
 		} else if (arg == "--dump-extension-api") {
 			// Register as an editor instance to use low-end fallback if relevant.
@@ -1566,9 +1526,9 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			cmdline_tool = true;
 			dump_extension_api = true;
 			print_line("Dumping Extension API");
-			// Hack. Not needed but otherwise we end up detecting that this should
-			// run the project instead of a cmdline tool.
-			// Needs full refactoring to fix properly.
+			/// @todo Hack. Not needed but otherwise we end up detecting that this should
+			/// run the project instead of a cmdline tool.
+			/// Needs full refactoring to fix properly.
 			main_args.push_back(arg);
 		} else if (arg == "--dump-extension-api-with-docs") {
 			// Register as an editor instance to use low-end fallback if relevant.
@@ -1577,18 +1537,18 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			dump_extension_api = true;
 			include_docs_in_extension_api_dump = true;
 			print_line("Dumping Extension API including documentation");
-			// Hack. Not needed but otherwise we end up detecting that this should
-			// run the project instead of a cmdline tool.
-			// Needs full refactoring to fix properly.
+			/// @todo Hack. Not needed but otherwise we end up detecting that this should
+			/// run the project instead of a cmdline tool.
+			/// Needs full refactoring to fix properly.
 			main_args.push_back(arg);
 		} else if (arg == "--validate-extension-api") {
 			// Register as an editor instance to use low-end fallback if relevant.
 			editor = true;
 			cmdline_tool = true;
 			validate_extension_api = true;
-			// Hack. Not needed but otherwise we end up detecting that this should
-			// run the project instead of a cmdline tool.
-			// Needs full refactoring to fix properly.
+			/// @todo Hack. Not needed but otherwise we end up detecting that this should
+			/// run the project instead of a cmdline tool.
+			/// Needs full refactoring to fix properly.
 			main_args.push_back(arg);
 
 			if (N) {
@@ -3780,10 +3740,10 @@ Error Main::setup2(bool p_show_boot_logo) {
 	audio_server->load_default_bus_layout();
 
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
-	// Hacky to have it here, but we don't have good facility yet to let modules
-	// register command line options to call at the right time. This needs to happen
-	// after init'ing the ScriptServer, but also after init'ing the ThemeDB,
-	// for the C# docs generation in the bindings.
+	/// @todo Hacky to have it here, but we don't have good facility yet to let modules
+	/// register command line options to call at the right time. This needs to happen
+	/// after init'ing the ScriptServer, but also after init'ing the ThemeDB,
+	/// for the C# docs generation in the bindings.
 	List<String> cmdline_args = OS::get_singleton()->get_cmdline_args();
 	BindingsGenerator::handle_cmdline_args(cmdline_args);
 #endif
@@ -3913,12 +3873,9 @@ String Main::get_rendering_driver_name() {
 	return rendering_driver;
 }
 
-// everything the main loop needs to know about frame timings
+/// everything the main loop needs to know about frame timings
 static MainTimerSync main_timer_sync;
 
-// Return value should be EXIT_SUCCESS if we start successfully
-// and should move on to `OS::run`, and EXIT_FAILURE otherwise for
-// an early exit with that error code.
 int Main::start() {
 	OS::get_singleton()->benchmark_begin_measure("Startup", "Main::Start");
 
@@ -4098,9 +4055,9 @@ int Main::start() {
 		}
 
 #ifndef MODULE_MONO_ENABLED
-		// Hack to define .NET-specific project settings even on non-.NET builds,
-		// so that we don't lose their descriptions and default values in DocTools.
-		// Default values should be synced with mono_gd/gd_mono.cpp.
+		/// @todo HACK: ...to define .NET-specific project settings even on non-.NET builds,
+		/// so that we don't lose their descriptions and default values in DocTools.
+		/// Default values should be synced with mono_gd/gd_mono.cpp.
 		GLOBAL_DEF("dotnet/project/assembly_name", "");
 		GLOBAL_DEF("dotnet/project/solution_directory", "");
 		GLOBAL_DEF(PropertyInfo(Variant::INT, "dotnet/project/assembly_reload_attempts", PROPERTY_HINT_RANGE, "1,16,1,or_greater"), 3);
@@ -4777,7 +4734,8 @@ int Main::start() {
 	return EXIT_SUCCESS;
 }
 
-/* Main iteration
+/**
+ * Main iteration
  *
  * This is the iteration of the engine's game loop, advancing the state of physics,
  * rendering and audio.
@@ -4798,14 +4756,13 @@ bool Main::is_iterating() {
 	return iterating > 0;
 }
 
-// For performance metrics.
+/// @name For performance metrics
+/// @{
 static uint64_t physics_process_max = 0;
 static uint64_t process_max = 0;
 static uint64_t navigation_process_max = 0;
+/// @}
 
-// Return false means iterating further, returning true means `OS::run`
-// will terminate the program. In case of failure, the OS exit code needs
-// to be set explicitly here (defaults to EXIT_SUCCESS).
 bool Main::iteration() {
 #ifdef MODULE_MCP_ENABLED
 	if (MCPBridge::get_singleton()) {
@@ -5075,12 +5032,6 @@ void Main::force_redraw() {
 	force_redraw_requested = true;
 }
 
-/* Engine deinitialization
- *
- * Responsible for freeing all the memory allocated by previous setup steps,
- * so that the engine closes cleanly without leaking memory or crashing.
- * The order matters as some of those steps are linked with each other.
- */
 void Main::cleanup(bool p_force) {
 	OS::get_singleton()->benchmark_begin_measure("Shutdown", "Main::Cleanup");
 	if (!p_force) {

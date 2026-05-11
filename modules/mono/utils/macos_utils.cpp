@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file macos_utils.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef MACOS_ENABLED
 
 #import "macos_utils.h"

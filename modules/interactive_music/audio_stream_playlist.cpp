@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_playlist.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream_playlist.h"
 
 #include "core/math/math_funcs.h"

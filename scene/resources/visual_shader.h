@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file visual_shader.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/string_builder.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/gui/control.h"
@@ -156,7 +162,7 @@ private:
 			uint64_t port : 32;
 		};
 		uint64_t key = 0;
-		// This is used to apply default equal and hash methods for uint64_t to ConnectionKey.
+		/// This is used to apply default equal and hash methods for uint64_t to ConnectionKey.
 		operator uint64_t() const { return key; }
 	};
 
@@ -185,6 +191,7 @@ public: // internal methods
 
 	void add_node(Type p_type, const Ref<VisualShaderNode> &p_node, const Vector2 &p_position, int p_id);
 	void set_node_position(Type p_type, int p_id, const Vector2 &p_position);
+	/// @return `0` if no embeds, `1` if external embeds, `2` if builtin embeds
 	int has_node_embeds() const;
 
 	void add_varying(const String &p_name, VaryingMode p_mode, VaryingType p_type);
@@ -325,7 +332,7 @@ public:
 	virtual int get_default_input_port(PortType p_type) const;
 
 	virtual void set_input_port_default_value(int p_port, const Variant &p_value, const Variant &p_prev_value = Variant());
-	Variant get_input_port_default_value(int p_port) const; // if NIL (default if node does not set anything) is returned, it means no default value is wanted if disconnected, thus no input var must be supplied (empty string will be supplied)
+	Variant get_input_port_default_value(int p_port) const; ///< If NIL (default if node does not set anything) is returned, it means no default value is wanted if disconnected, thus no input var must be supplied (empty string will be supplied)
 	Array get_default_input_values() const;
 	virtual void set_default_input_values(const Array &p_values);
 	virtual void remove_input_port_default_value(int p_port);
@@ -378,7 +385,7 @@ public:
 	virtual String generate_global(Shader::Mode p_mode, VisualShader::Type p_type, int p_id) const;
 	virtual String generate_global_per_node(Shader::Mode p_mode, int p_id) const;
 	virtual String generate_global_per_func(Shader::Mode p_mode, VisualShader::Type p_type, int p_id) const;
-	// If no output is connected, the output var passed will be empty. If no input is connected and input is NIL, the input var passed will be empty.
+	/// If no output is connected, the output var passed will be empty. If no input is connected and input is NIL, the input var passed will be empty.
 	virtual String generate_code(Shader::Mode p_mode, VisualShader::Type p_type, int p_id, const String *p_input_vars, const String *p_output_vars, bool p_for_preview = false) const = 0;
 
 	virtual String get_warning(Shader::Mode p_mode, VisualShader::Type p_type) const;
@@ -611,6 +618,7 @@ protected:
 	String _get_qual_str() const;
 
 #ifndef DISABLE_DEPRECATED
+	/// Kept for compatibility from 3.x to 4.0.
 	bool _set(const StringName &p_name, const Variant &p_value);
 #endif
 
@@ -778,7 +786,7 @@ public:
 };
 
 #ifndef DISABLE_DEPRECATED
-// Deprecated, for compatibility only.
+/// Deprecated, for compatibility only.
 class VisualShaderNodeComment : public VisualShaderNodeFrame {
 	GDCLASS(VisualShaderNodeComment, VisualShaderNodeFrame);
 

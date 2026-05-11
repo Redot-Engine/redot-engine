@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_types.h                                                      */
+/*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,9 +30,26 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+/**
+ * @file register_types.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
 
-#include "modules/register_module_types.h"
+#include "register_types.h"
+#include "core/object/class_db.h"
+#include "soundsmith_module.h"
 
-void initialize_signalsmith_module(ModuleInitializationLevel p_level);
-void uninitialize_signalsmith_module(ModuleInitializationLevel p_level);
+void initialize_soundsmith_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	ClassDB::register_class<SoundSmith>();
+}
+
+void uninitialize_soundsmith_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}

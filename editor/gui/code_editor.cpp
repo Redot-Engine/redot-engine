@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file code_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "code_editor.h"
 
 #include "core/input/input.h"
@@ -175,7 +181,6 @@ void FindReplaceBar::_notification(int p_what) {
 	}
 }
 
-// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
 void FindReplaceBar::input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -866,8 +871,6 @@ FindReplaceBar::FindReplaceBar() {
 
 static constexpr float ZOOM_FACTOR_PRESETS[8] = { 0.5f, 0.75f, 0.9f, 1.0f, 1.1f, 1.25f, 1.5f, 2.0f };
 
-// This function should be used to handle shortcuts that could otherwise
-// be handled too late if they weren't handled here.
 void CodeTextEditor::input(const Ref<InputEvent> &event) {
 	ERR_FAIL_COND(event.is_null());
 

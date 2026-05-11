@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_obstacle_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "scene/gui/box_container.h"

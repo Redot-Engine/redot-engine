@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_height_map_shape_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_shape_3d.h"
 
 class JoltHeightMapShape3D final : public JoltShape3D {

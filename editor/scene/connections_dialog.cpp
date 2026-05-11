@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file connections_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "connections_dialog.h"
 
 #include "core/config/project_settings.h"
@@ -123,9 +129,6 @@ public:
 	}
 };
 
-/*
- * Signal automatically called by parent dialog.
- */
 void ConnectDialog::ok_pressed() {
 	String method_name = dst_method->get_text();
 
@@ -164,9 +167,6 @@ void ConnectDialog::_item_activated() {
 	_ok_pressed(); // From AcceptDialog.
 }
 
-/*
- * Called each time a target node is selected within the target node tree.
- */
 void ConnectDialog::_tree_node_selected() {
 	Node *current = tree->get_selected();
 
@@ -208,9 +208,6 @@ void ConnectDialog::_method_selected() {
 	dst_method->set_text(selected_item->get_metadata(0));
 }
 
-/*
- * Adds a new parameter bind to connection.
- */
 void ConnectDialog::_add_bind() {
 	Variant::Type type = type_list->get_selected_type();
 
@@ -222,9 +219,6 @@ void ConnectDialog::_add_bind() {
 	cdbinds->notify_changed();
 }
 
-/*
- * Remove parameter bind from connection.
- */
 void ConnectDialog::_remove_bind() {
 	String st = bind_editor->get_selected_path();
 	if (st.is_empty()) {
@@ -236,12 +230,10 @@ void ConnectDialog::_remove_bind() {
 	cdbinds->params.remove_at(idx);
 	cdbinds->notify_changed();
 }
-/*
- * Automatically generates a name for the callback method.
- */
+
 StringName ConnectDialog::generate_method_callback_name(Node *p_source, const String &p_signal_name, Node *p_target) {
 	String node_name = p_source->get_name();
-	for (int i = 0; i < node_name.length(); i++) { // TODO: Regex filter may be cleaner.
+	for (int i = 0; i < node_name.length(); i++) { /// @todo Regex filter may be cleaner.
 		char32_t c = node_name[i];
 		if ((i == 0 && !is_unicode_identifier_start(c)) || (i > 0 && !is_unicode_identifier_continue(c))) {
 			if (c == ' ') {
@@ -443,10 +435,6 @@ void ConnectDialog::_open_method_popup() {
 	method_search->grab_focus();
 }
 
-/*
- * Enables or disables the connect button. The connect button is enabled if a
- * node is selected and valid in the selected mode.
- */
 void ConnectDialog::_update_ok_enabled() {
 	Node *target = tree->get_selected();
 
@@ -638,9 +626,6 @@ bool ConnectDialog::get_append_source() const {
 	return !append_source->is_disabled() && append_source->is_pressed();
 }
 
-/*
- * Returns true if ConnectDialog is being used to edit an existing connection.
- */
 bool ConnectDialog::is_editing() const {
 	return edit_mode;
 }
@@ -657,11 +642,6 @@ void ConnectDialog::shortcut_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-/*
- * Initialize ConnectDialog and populate fields with expected data.
- * If creating a connection from scratch, sensible defaults are used.
- * If editing an existing connection, previous data is retained.
- */
 void ConnectDialog::init(const ConnectionData &p_cd, const PackedStringArray &p_signal_args, bool p_edit) {
 	set_hide_on_ok(false);
 
@@ -950,10 +930,6 @@ void ConnectionsDock::_filter_changed(const String &p_text) {
 	update_tree();
 }
 
-/*
- * Post-ConnectDialog callback for creating/editing connections.
- * Creates or edits connections based on state of the ConnectDialog when "Connect" is pressed.
- */
 void ConnectionsDock::_make_or_edit_connection() {
 	NodePath dst_path = connect_dialog->get_dst_path();
 	Node *target = selected_node->get_node(dst_path);
@@ -1062,9 +1038,6 @@ void ConnectionsDock::_make_or_edit_connection() {
 	update_tree();
 }
 
-/*
- * Creates single connection w/ undo-redo functionality.
- */
 void ConnectionsDock::_connect(const ConnectDialog::ConnectionData &p_cd) {
 	Node *source = Object::cast_to<Node>(p_cd.source);
 	Node *target = Object::cast_to<Node>(p_cd.target);
@@ -1086,9 +1059,6 @@ void ConnectionsDock::_connect(const ConnectDialog::ConnectionData &p_cd) {
 	undo_redo->commit_action();
 }
 
-/*
- * Break single connection w/ undo-redo functionality.
- */
 void ConnectionsDock::_disconnect(const ConnectDialog::ConnectionData &p_cd) {
 	ERR_FAIL_COND(p_cd.source != selected_node); // Shouldn't happen but... Bugcheck.
 
@@ -1106,10 +1076,6 @@ void ConnectionsDock::_disconnect(const ConnectDialog::ConnectionData &p_cd) {
 	undo_redo->commit_action();
 }
 
-/*
- * Break all connections of currently selected signal.
- * Can undo-redo as a single action.
- */
 void ConnectionsDock::_disconnect_all() {
 	TreeItem *item = tree->get_selected();
 	if (!item || _get_item_type(*item) != TREE_ITEM_TYPE_SIGNAL) {
@@ -1187,9 +1153,6 @@ bool ConnectionsDock::_is_connection_inherited(Connection &p_connection) {
 	return bool(p_connection.flags & CONNECT_INHERITED);
 }
 
-/*
- * Open connection dialog with TreeItem data to CREATE a brand-new connection.
- */
 void ConnectionsDock::_open_connection_dialog(TreeItem &p_item) {
 	const Dictionary sinfo = p_item.get_metadata(0);
 	const StringName signal_name = sinfo["name"];
@@ -1210,9 +1173,6 @@ void ConnectionsDock::_open_connection_dialog(TreeItem &p_item) {
 	connect_dialog->popup_dialog(signal_name.operator String() + "(" + String(", ").join(signal_args) + ")");
 }
 
-/*
- * Open connection dialog with Connection data to EDIT an existing connection.
- */
 void ConnectionsDock::_open_edit_connection_dialog(TreeItem &p_item) {
 	TreeItem *signal_item = p_item.get_parent();
 	ERR_FAIL_NULL(signal_item);
@@ -1233,9 +1193,6 @@ void ConnectionsDock::_open_edit_connection_dialog(TreeItem &p_item) {
 	}
 }
 
-/*
- * Open slot method location in script editor.
- */
 void ConnectionsDock::_go_to_method(TreeItem &p_item) {
 	if (_get_item_type(p_item) != TREE_ITEM_TYPE_CONNECTION) {
 		return;
@@ -1530,7 +1487,7 @@ void ConnectionsDock::update_tree() {
 
 			script_base->get_script_signal_list(&class_signals);
 
-			// TODO: Core: Add optional parameter to ignore base classes (no_inheritance like in ClassDB).
+			/// @todo Core: Add optional parameter to ignore base classes (no_inheritance like in ClassDB).
 			Ref<Script> base = script_base->get_base_script();
 			if (base.is_valid()) {
 				List<MethodInfo> base_signals;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file color_picker_shape.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/color_picker.h"
 
 class ColorPickerShape : public Object {

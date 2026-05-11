@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_palette.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "color_palette.h"
 
 void ColorPalette::set_colors(const PackedColorArray &p_colors) {

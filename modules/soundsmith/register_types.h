@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  signalsmith_module.h                                                  */
+/*  register_types.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -32,38 +32,13 @@
 
 #pragma once
 
-#include "core/object/class_db.h"
-#include "core/object/ref_counted.h"
-#include "scene/resources/audio_stream_wav.h"
-#include "signalsmith-stretch/signalsmith-stretch.h"
-#include <random>
+/**
+ * @file register_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
 
-class SignalSmith : public RefCounted {
-	GDCLASS(SignalSmith, RefCounted);
+#include "modules/register_module_types.h"
 
-private:
-	signalsmith::stretch::SignalsmithStretch<float, std::mt19937> stretch;
-	int sample_rate = 44100;
-	int channels = 2;
-	float tempo = 1.0f;
-
-protected:
-	static void _bind_methods();
-
-public:
-	SignalSmith();
-	~SignalSmith();
-
-	void set_sample_rate(int p_rate);
-	void set_channels(int p_channels);
-	void set_pitch(float p_pitch);
-	void set_tempo(float p_tempo);
-	void reset();
-
-	int get_last_sample_rate() const;
-	int get_last_channels() const;
-
-	PackedFloat32Array process(const PackedFloat32Array &input);
-
-	Ref<AudioStreamWAV> change_tempo(const String &path, float p_tempo, float p_pitch = 1.0f);
-};
+void initialize_soundsmith_module(ModuleInitializationLevel p_level);
+void uninitialize_soundsmith_module(ModuleInitializationLevel p_level);

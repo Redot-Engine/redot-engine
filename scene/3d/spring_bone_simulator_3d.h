@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file spring_bone_simulator_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/skeleton_modifier_3d.h"
 
 class SpringBoneSimulator3D : public SkeletonModifier3D {
@@ -43,7 +49,7 @@ class SpringBoneSimulator3D : public SkeletonModifier3D {
 
 	bool joints_dirty = false;
 
-	LocalVector<ObjectID> collisions; // To process collisions for sync position with skeleton.
+	LocalVector<ObjectID> collisions; ///< To process collisions for sync position with skeleton.
 	bool collisions_dirty = false;
 	void _find_collisions();
 	void _process_collisions();
@@ -116,7 +122,7 @@ public:
 		float gravity = 0.0;
 		Vector3 gravity_direction = Vector3(0, -1, 0);
 
-		// To process.
+		/// To process.
 		SpringBone3DVerletInfo *verlet = nullptr;
 	};
 
@@ -129,17 +135,20 @@ public:
 		String end_bone_name;
 		int end_bone = -1;
 
-		// To make virtual end joint.
+		/// To make virtual end joint.
+		/// @{}
 		bool extend_end_bone = false;
 		BoneDirection end_bone_direction = BONE_DIRECTION_FROM_PARENT;
 		float end_bone_length = 0.0;
+		/// @}
 
 		CenterFrom center_from = CENTER_FROM_WORLD_ORIGIN;
 		NodePath center_node;
 		String center_bone_name;
 		int center_bone = -1;
 
-		// Cache into joints.
+		/// @name Cache into joints
+		/// @{
 		bool individual_config = false;
 		float radius = 0.02;
 		Ref<Curve> radius_damping_curve;
@@ -153,17 +162,20 @@ public:
 		RotationAxis rotation_axis = ROTATION_AXIS_ALL;
 		Vector3 rotation_axis_vector = Vector3(1, 0, 0);
 		Vector<SpringBone3DJointSetting *> joints;
-
-		// Cache into collisions.
+		/// @}
+		/// @name Cache into collisions
+		/// @{
 		bool enable_all_child_collisions = true;
 		Vector<NodePath> collisions;
 		Vector<NodePath> exclude_collisions;
 		LocalVector<ObjectID> cached_collisions;
-
-		// To process.
+		/// @}
+		/// @name To process
+		/// @{
 		bool simulation_dirty = false;
 		Transform3D cached_center;
 		Transform3D cached_inverted_center;
+		/// @}
 	};
 
 protected:

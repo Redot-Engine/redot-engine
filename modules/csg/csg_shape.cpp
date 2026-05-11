@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file csg_shape.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "csg_shape.h"
 
 #ifdef DEV_ENABLED

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_navigation_server_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_navigation_server_2d.h"
 
 #include "core/os/mutex.h"
@@ -86,7 +92,7 @@ void GodotNavigationServer2D::init() {
 	RWLockRead read_lock(geometry_parser_rwlock);
 	navmesh_generator_2d->set_generator_parsers(generator_parsers);
 #endif // CLIPPER2_ENABLED
-	// TODO
+	/// @todo
 }
 
 void GodotNavigationServer2D::sync() {
@@ -95,7 +101,7 @@ void GodotNavigationServer2D::sync() {
 		navmesh_generator_2d->sync();
 	}
 #endif // CLIPPER2_ENABLED
-	// TODO
+	/// @todo
 }
 
 void GodotNavigationServer2D::finish() {
@@ -106,7 +112,7 @@ void GodotNavigationServer2D::finish() {
 		navmesh_generator_2d = nullptr;
 	}
 #endif // CLIPPER2_ENABLED
-	// TODO
+	/// @todo
 }
 
 void GodotNavigationServer2D::parse_source_geometry_data(const Ref<NavigationPolygon> &p_navigation_mesh, const Ref<NavigationMeshSourceGeometryData2D> &p_source_geometry_data, Node *p_root_node, const Callable &p_callback) {
@@ -1300,22 +1306,10 @@ void GodotNavigationServer2D::internal_free_obstacle(RID p_object) {
 }
 
 void GodotNavigationServer2D::process(double p_delta_time) {
-	// Called for each main loop iteration AFTER node and user script process() and BEFORE RenderingServer sync.
-	// Will run reliably every rendered frame independent of the physics tick rate.
-	// Use for things that (only) need to update once per main loop iteration and rendered frame or is visible to the user.
-	// E.g. (final) sync of objects for this main loop iteration, updating rendered debug visuals, updating debug statistics, ...
-
 	sync();
 }
 
 void GodotNavigationServer2D::physics_process(double p_delta_time) {
-	// Called for each physics process step AFTER node and user script physics_process() and BEFORE PhysicsServer sync.
-	// Will NOT run reliably every rendered frame. If there is no physics step this function will not run.
-	// Use for physics or step depending calculations and updates where the result affects the next step calculation.
-	// E.g. anything physics sync related, avoidance simulations, physics space state queries, ...
-	// If physics process needs to play catchup this function will be called multiple times per frame so it should not hold
-	// costly updates that are not important outside the stepped calculations to avoid causing a physics performance death spiral.
-
 	flush_queries();
 
 	if (!active) {

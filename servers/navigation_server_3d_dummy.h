@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_server_3d_dummy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/navigation_server_3d.h"
 
 class NavigationServer3DDummy : public NavigationServer3D {

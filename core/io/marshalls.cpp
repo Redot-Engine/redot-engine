@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file marshalls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "marshalls.h"
 
 #include "core/io/resource_loader.h"
@@ -58,25 +64,25 @@ ObjectID EncodedObjectAsID::get_object_id() const {
 #define ERR_FAIL_ADD_OF(a, b, err) ERR_FAIL_COND_V(((int32_t)(b)) < 0 || ((int32_t)(a)) < 0 || ((int32_t)(a)) > INT_MAX - ((int32_t)(b)), err)
 #define ERR_FAIL_MUL_OF(a, b, err) ERR_FAIL_COND_V(((int32_t)(a)) < 0 || ((int32_t)(b)) <= 0 || ((int32_t)(a)) > INT_MAX / ((int32_t)(b)), err)
 
-// Byte 0: `Variant::Type`, byte 1: unused, bytes 2 and 3: additional data.
+/// Byte 0: `Variant::Type`, byte 1: unused, bytes 2 and 3: additional data.
 #define HEADER_TYPE_MASK 0xFF
 
-// For `Variant::INT`, `Variant::FLOAT` and other math types.
+/// For `Variant::INT`, `Variant::FLOAT` and other math types.
 #define HEADER_DATA_FLAG_64 (1 << 16)
 
-// For `Variant::OBJECT`.
+/// For `Variant::OBJECT`.
 #define HEADER_DATA_FLAG_OBJECT_AS_ID (1 << 16)
 
-// For `Variant::ARRAY`.
-// Occupies bits 16 and 17.
+/// For `Variant::ARRAY`.
+/// Occupies bits 16 and 17.
 #define HEADER_DATA_FIELD_TYPED_ARRAY_MASK (0b11 << 16)
 #define HEADER_DATA_FIELD_TYPED_ARRAY_SHIFT 16
 
-// For `Variant::DICTIONARY`.
-// Occupies bits 16 and 17.
+/// For `Variant::DICTIONARY`.
+/// Occupies bits 16 and 17.
 #define HEADER_DATA_FIELD_TYPED_DICTIONARY_KEY_MASK (0b11 << 16)
 #define HEADER_DATA_FIELD_TYPED_DICTIONARY_KEY_SHIFT 16
-// Occupies bits 18 and 19.
+/// Occupies bits 18 and 19.
 #define HEADER_DATA_FIELD_TYPED_DICTIONARY_VALUE_MASK (0b11 << 18)
 #define HEADER_DATA_FIELD_TYPED_DICTIONARY_VALUE_SHIFT 18
 
@@ -201,9 +207,9 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 		*r_len = 4;
 	}
 
-	// NOTE: We cannot use `sizeof(real_t)` for decoding, in case a different size is encoded.
-	// Decoding math types always checks for the encoded size, while encoding always uses compilation setting.
-	// This does lead to some code duplication for decoding, but compatibility is the priority.
+	/// @note We cannot use `sizeof(real_t)` for decoding, in case a different size is encoded.
+	/// Decoding math types always checks for the encoded size, while encoding always uses compilation setting.
+	/// This does lead to some code duplication for decoding, but compatibility is the priority.
 	switch (header & HEADER_TYPE_MASK) {
 		case Variant::NIL: {
 			r_variant = Variant();
@@ -2133,10 +2139,6 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 }
 
 Vector<float> vector3_to_float32_array(const Vector3 *vecs, size_t count) {
-	// We always allocate a new array, and we don't `memcpy()`.
-	// We also don't consider returning a pointer to the passed vectors when `sizeof(real_t) == 4`.
-	// One reason is that we could decide to put a 4th component in `Vector3` for SIMD/mobile performance,
-	// which would cause trouble with these optimizations.
 	Vector<float> floats;
 	if (count == 0) {
 		return floats;

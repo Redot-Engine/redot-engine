@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file file_access_compressed.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/compression.h"
 #include "core/io/file_access.h"
 
@@ -73,10 +79,10 @@ public:
 	Error open_after_magic(Ref<FileAccess> p_base);
 
 	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
-	virtual bool is_open() const override; ///< true when file is open
+	virtual bool is_open() const override; ///< @return `true` when file is open
 
-	virtual String get_path() const override; /// returns the path for the current open file
-	virtual String get_path_absolute() const override; /// returns the absolute path for the current open file
+	virtual String get_path() const override; ///< @return The path for the current open file
+	virtual String get_path_absolute() const override; /// @return The absolute path for the current open file
 
 	virtual void seek(uint64_t p_position) override; ///< seek to a given position
 	virtual void seek_end(int64_t p_position = 0) override; ///< seek from the end of file
@@ -93,7 +99,7 @@ public:
 	virtual void flush() override;
 	virtual bool store_buffer(const uint8_t *p_src, uint64_t p_length) override;
 
-	virtual bool file_exists(const String &p_name) override; ///< return true if a file exists
+	virtual bool file_exists(const String &p_name) override; ///< @return `true` if a file exists
 
 	virtual uint64_t _get_modified_time(const String &p_file) override;
 	virtual uint64_t _get_access_time(const String &p_file) override;

@@ -30,11 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file spring_bone_simulator_3d.cpp
+ *
+ * @brief Original VRM Spring Bone movement logic was distributed by (c) VRM Consortium. Licensed under the MIT license.
+ */
+
 #include "spring_bone_simulator_3d.h"
 
 #include "scene/3d/spring_bone_collision_3d.h"
-
-// Original VRM Spring Bone movement logic was distributed by (c) VRM Consortium. Licensed under the MIT license.
 
 bool SpringBoneSimulator3D::_set(const StringName &p_path, const Variant &p_value) {
 	String path = p_path;

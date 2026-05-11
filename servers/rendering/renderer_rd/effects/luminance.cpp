@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file luminance.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "luminance.h"
 #include "../framebuffer_cache_rd.h"
 #include "../uniform_set_cache_rd.h"

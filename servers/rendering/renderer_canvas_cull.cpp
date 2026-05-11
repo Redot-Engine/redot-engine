@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_canvas_cull.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_canvas_cull.h"
 
 #include "core/config/project_settings.h"
@@ -40,10 +46,10 @@
 #include "rendering_server_globals.h"
 #include "servers/rendering/storage/texture_storage.h"
 
-// Use the same antialiasing feather size as StyleBoxFlat's default
-// (but doubled, as it's specified for both sides here).
-// This value is empirically determined to provide good antialiasing quality
-// while not making lines appear too soft.
+/// Use the same antialiasing feather size as StyleBoxFlat's default
+/// (but doubled, as it's specified for both sides here).
+/// This value is empirically determined to provide good antialiasing quality
+/// while not making lines appear too soft.
 const static float FEATHER_SIZE = 1.25f;
 
 static RendererCanvasCull *_canvas_cull_singleton = nullptr;
@@ -1221,7 +1227,7 @@ void RendererCanvasCull::canvas_item_add_multiline(RID p_item, const Vector<Poin
 	ERR_FAIL_COND(p_points.is_empty() || p_points.size() % 2 != 0);
 	ERR_FAIL_COND(p_colors.size() != 1 && p_colors.size() * 2 != p_points.size());
 
-	// TODO: `canvas_item_add_line`(`multiline`, `polyline`) share logic, should factor out.
+	/// @todo `canvas_item_add_line`(`multiline`, `polyline`) share logic, should factor out.
 	if (p_width < 0) {
 		if (p_antialiased) {
 			WARN_PRINT("Antialiasing is not supported for thin multilines drawn using line strips (`p_width < 0`).");

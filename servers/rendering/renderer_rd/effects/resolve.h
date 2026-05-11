@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resolve.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_rd/shaders/effects/resolve.glsl.gen.h"
 
 namespace RendererRD {
@@ -55,7 +61,7 @@ private:
 		ResolvePushConstant push_constant;
 		ResolveShaderRD shader;
 		RID shader_version;
-		RID pipelines[RESOLVE_MODE_MAX]; //3 quality levels
+		RID pipelines[RESOLVE_MODE_MAX]; ///< 3 quality levels
 	} resolve;
 
 public:

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_obj.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_scene.h"
 
 class EditorOBJImporter : public EditorSceneFormatImporter {

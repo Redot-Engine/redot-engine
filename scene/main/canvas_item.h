@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file canvas_item.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 #include "scene/resources/font.h"
 
@@ -211,31 +217,38 @@ public:
 	/* EDITOR AND DEBUGGING */
 
 #ifdef TOOLS_ENABLED
-	// Save and restore a CanvasItem state
+	/// @name Save and restore a CanvasItem state
+	/// @{
 	virtual void _edit_set_state(const Dictionary &p_state) {}
 	virtual Dictionary _edit_get_state() const { return Dictionary(); }
-
-	// Used to move the node
+	/// @}
+	/// @name Used to move the node
+	/// @{
 	virtual void _edit_set_position(const Point2 &p_position) = 0;
 	virtual Point2 _edit_get_position() const = 0;
-
-	// Used to scale the node
+	/// @}
+	/// @name Used to scale the node
+	/// @{
 	virtual void _edit_set_scale(const Size2 &p_scale) = 0;
 	virtual Size2 _edit_get_scale() const = 0;
-
-	// Used to rotate the node
+	/// @}
+	/// @name Used to rotate the node
+	/// @{
 	virtual bool _edit_use_rotation() const { return false; }
 	virtual void _edit_set_rotation(real_t p_rotation) {}
 	virtual real_t _edit_get_rotation() const { return 0.0; }
-
-	// Used to resize/move the node
+	/// @}
+	/// @name Used to resize/move the node
+	/// @{
 	virtual void _edit_set_rect(const Rect2 &p_rect) {}
 	virtual Size2 _edit_get_minimum_size() const { return Size2(-1, -1); } // LOOKS WEIRD
-
-	// Used to set a pivot
+	/// @}
+	/// @name Used to set a pivot
+	/// @{
 	virtual bool _edit_use_pivot() const { return false; }
 	virtual void _edit_set_pivot(const Point2 &p_pivot) {}
 	virtual Point2 _edit_get_pivot() const { return Point2(); }
+	/// @}
 
 	virtual Transform2D _edit_get_transform() const;
 #endif // TOOLS_ENABLED
@@ -243,18 +256,18 @@ public:
 #ifdef DEBUG_ENABLED
 	// Those need to be available in debug runtime, to allow for node selection.
 
-	// Select the node.
+	/// Select the node.
 	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const;
 
-	// Used to resize/move the node.
-	virtual bool _edit_use_rect() const { return false; } // Maybe replace with _edit_get_editmode().
+	/// Used to resize/move the node.
+	virtual bool _edit_use_rect() const { return false; } ///< @todo Maybe replace with _edit_get_editmode().
 	virtual Rect2 _edit_get_rect() const { return Rect2(0, 0, 0, 0); }
 #endif // DEBUG_ENABLED
 
 	void update_draw_order();
 
-	/* VISIBILITY */
-
+	/// @name VISIBILITY
+	/// @{
 	void set_visible(bool p_visible);
 	bool is_visible() const;
 	bool is_visible_in_tree() const;
@@ -282,8 +295,9 @@ public:
 
 	void set_visibility_layer_bit(uint32_t p_visibility_layer, bool p_enable);
 	bool get_visibility_layer_bit(uint32_t p_visibility_layer) const;
-
-	/* ORDERING */
+	/// @}
+	/// @name ORDERING
+	/// @{
 
 	virtual void set_z_index(int p_z);
 	int get_z_index() const;
@@ -294,8 +308,9 @@ public:
 
 	virtual void set_y_sort_enabled(bool p_enabled);
 	virtual bool is_y_sort_enabled() const;
-
-	/* DRAWING API */
+	/// @}
+	/// @name DRAWING API
+	/// @{
 
 	void draw_dashed_line(const Point2 &p_from, const Point2 &p_to, const Color &p_color, real_t p_width = -1.0, real_t p_dash = 2.0, bool p_aligned = true, bool p_antialiased = false);
 	void draw_line(const Point2 &p_from, const Point2 &p_to, const Color &p_color, real_t p_width = -1.0, bool p_antialiased = false);
@@ -334,8 +349,9 @@ public:
 	void draw_end_animation();
 
 	static CanvasItem *get_current_item_drawn();
-
-	/* RECT / TRANSFORM */
+	/// @}
+	/// @name RECT / TRANSFORM
+	/// @{
 
 	void set_as_top_level(bool p_top_level);
 	bool is_set_as_top_level() const;
@@ -348,9 +364,11 @@ public:
 	virtual Transform2D get_transform() const = 0;
 
 	virtual Transform2D get_global_transform() const;
+	/// Same as get_global_transform() but no reset for `global_invalid`.
 	virtual Transform2D get_global_transform_const() const;
 	virtual Transform2D get_global_transform_with_canvas() const;
 	virtual Transform2D get_screen_transform() const;
+	/// @}
 
 	CanvasItem *get_top_level() const;
 	_FORCE_INLINE_ RID get_canvas_item() const {
@@ -400,7 +418,7 @@ public:
 	TextureFilter get_texture_filter_in_tree() const;
 	TextureRepeat get_texture_repeat_in_tree() const;
 
-	// Used by control nodes to retrieve the parent's anchorable area
+	/// Used by control nodes to retrieve the parent's anchorable area
 	virtual Rect2 get_anchorable_rect() const { return Rect2(0, 0, 0, 0); }
 
 	int get_canvas_layer() const;
@@ -418,7 +436,7 @@ VARIANT_ENUM_CAST(CanvasItem::ClipChildrenMode)
 
 class CanvasTexture : public Texture2D {
 	GDCLASS(CanvasTexture, Texture2D);
-	OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
+	OBJ_SAVE_TYPE(Texture2D); ///< Saves derived classes with common type so they can be interchanged.
 
 	Ref<Texture2D> diffuse_texture;
 	Ref<Texture2D> normal_texture;

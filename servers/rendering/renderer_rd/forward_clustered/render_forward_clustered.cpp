@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_forward_clustered.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "render_forward_clustered.h"
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"
@@ -2447,7 +2453,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 				params.fovy = fovy;
 				params.jitter = jitter;
 				params.delta_time = float(time_step);
-				params.reset_accumulation = false; // FIXME: The engine does not provide a way to reset the accumulation.
+				params.reset_accumulation = false; /// @todo FIXME: The engine does not provide a way to reset the accumulation.
 
 				Projection correction;
 				correction.set_depth_correction(true, true, false);

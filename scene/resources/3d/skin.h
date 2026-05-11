@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 class Skin : public Resource {

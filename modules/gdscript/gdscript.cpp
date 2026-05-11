@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript.h"
 
 #include "gdscript_analyzer.h"
@@ -203,7 +209,7 @@ GDScriptInstance *GDScript::_create_instance(const Variant **p_args, int p_argco
 			ERR_FAIL_V_MSG(nullptr, "Error constructing a GDScriptInstance: " + error_text);
 		}
 	}
-	//@TODO make thread safe
+	/// @todo Make thread safe
 	return instance;
 }
 
@@ -830,7 +836,7 @@ Error GDScript::reload(bool p_keep_state) {
 		if (EngineDebugger::is_active()) {
 			GDScriptLanguage::get_singleton()->debug_break_parse(_get_debug_path(), parser.get_errors().front()->get().line, "Parser Error: " + parser.get_errors().front()->get().message);
 		}
-		// TODO: Show all error messages.
+		/// @todo Show all error messages.
 		_err_print_error("GDScript::reload", path.is_empty() ? "built-in" : (const char *)path.utf8().get_data(), parser.get_errors().front()->get().line, ("Parse Error: " + parser.get_errors().front()->get().message).utf8().get_data(), false, ERR_HANDLER_SCRIPT);
 		reloading = false;
 		return ERR_PARSE_ERROR;
@@ -859,7 +865,7 @@ Error GDScript::reload(bool p_keep_state) {
 	err = compiler.compile(&parser, this, p_keep_state);
 
 	if (err) {
-		// TODO: Provide the script function as the first argument.
+		/// @todo Provide the script function as the first argument.
 		_err_print_error("GDScript::reload", path.is_empty() ? "built-in" : (const char *)path.utf8().get_data(), compiler.get_error_line(), ("Compile Error: " + compiler.get_error()).utf8().get_data(), false, ERR_HANDLER_SCRIPT);
 		if (can_run) {
 			if (EngineDebugger::is_active()) {
@@ -883,7 +889,7 @@ Error GDScript::reload(bool p_keep_state) {
 	for (const GDScriptWarning &warning : parser.get_warnings()) {
 		if (EngineDebugger::is_active()) {
 			Vector<ScriptLanguage::StackInfo> si;
-			// TODO: Provide the script function as the first argument.
+			/// @todo Provide the script function as the first argument.
 			EngineDebugger::get_script_debugger()->send_error("GDScript::reload", get_script_path(), warning.start_line, warning.get_name(), warning.get_message(), false, ERR_HANDLER_WARNING, si);
 		}
 	}
@@ -2651,7 +2657,7 @@ void GDScriptLanguage::reload_scripts(const Array &p_scripts, bool p_soft_reload
 		Ref<GDScript> scr = E.key;
 		print_verbose("GDScript: Reloading: " + scr->get_path());
 		if (scr->is_built_in()) {
-			// TODO: It would be nice to do it more efficiently than loading the whole scene again.
+			/// @todo It would be nice to do it more efficiently than loading the whole scene again.
 			Ref<PackedScene> scene = ResourceLoader::load(scr->get_path().get_slice("::", 0), "", ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP);
 			ERR_CONTINUE(scene.is_null());
 
@@ -2833,7 +2839,8 @@ String GDScriptLanguage::get_global_class_name(const String &p_path, String *r_b
 		return String(); // No class parsed.
 	}
 
-	/* **WARNING**
+	/**
+	 * **WARNING**
 	 *
 	 * This function is written with the goal to be *extremely* error tolerant, as such
 	 * it should meet the following requirements:

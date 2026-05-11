@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file action_map_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "action_map_editor.h"
 
 #include "editor/editor_string_names.h"

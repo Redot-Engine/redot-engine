@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file webrtc_data_channel.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/packet_peer.h"
 
 class WebRTCDataChannel : public PacketPeer {

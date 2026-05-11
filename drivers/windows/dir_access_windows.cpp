@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file dir_access_windows.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #if defined(WINDOWS_ENABLED)
 
 #include "dir_access_windows.h"
@@ -66,9 +72,9 @@ typedef enum _NT_FILE_INFORMATION_CLASS {
 extern "C" NTSYSAPI LONG NTAPI NtQueryInformationFile(HANDLE FileHandle, NT_IO_STATUS_BLOCK *IoStatusBlock, PVOID FileInformation, ULONG Length, NT_FILE_INFORMATION_CLASS FileInformationClass);
 
 struct DirAccessWindowsPrivate {
-	HANDLE h; // handle for FindFirstFile.
+	HANDLE h; ///< Handle for FindFirstFile.
 	WIN32_FIND_DATA f;
-	WIN32_FIND_DATAW fu; // Unicode version.
+	WIN32_FIND_DATAW fu; ///< Unicode version.
 };
 
 String DirAccessWindows::fix_path(const String &p_path) const {

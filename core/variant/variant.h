@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file variant.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/core_string_names.h"
 #include "core/input/input_enums.h"
 #include "core/io/ip_address.h"
@@ -65,6 +71,8 @@
 #include "core/variant/dictionary.h"
 #include "core/variant/variant_deep_duplicate.h"
 
+#include <array>
+
 class Object;
 class RefCounted;
 
@@ -90,17 +98,20 @@ typedef Vector<Vector4> PackedVector4Array;
 
 class Variant {
 public:
-	// If this changes the table in variant_op must be updated
+	/// If this changes the table in variant_op must be updated along side the
+	/// tables in variant.cpp
 	enum Type {
 		NIL,
 
-		// atomic types
+		/// atomic types
+		/// @{
 		BOOL,
 		INT,
 		FLOAT,
 		STRING,
-
-		// math types
+		/// @}
+		/// math types
+		/// @{
 		VECTOR2,
 		VECTOR2I,
 		RECT2,
@@ -116,8 +127,9 @@ public:
 		BASIS,
 		TRANSFORM3D,
 		PROJECTION,
-
-		// misc types
+		/// @}
+		/// misc types
+		/// @{
 		COLOR,
 		STRING_NAME,
 		NODE_PATH,
@@ -127,8 +139,9 @@ public:
 		SIGNAL,
 		DICTIONARY,
 		ARRAY,
-
-		// typed arrays
+		/// @}
+		/// typed arrays
+		/// @{
 		PACKED_BYTE_ARRAY,
 		PACKED_INT32_ARRAY,
 		PACKED_INT64_ARRAY,
@@ -139,12 +152,12 @@ public:
 		PACKED_VECTOR3_ARRAY,
 		PACKED_COLOR_ARRAY,
 		PACKED_VECTOR4_ARRAY,
-
+		/// @}
 		VARIANT_MAX
 	};
 
 	enum {
-		// Maximum recursion depth allowed when serializing variants.
+		/// Maximum recursion depth allowed when serializing variants.
 		MAX_RECURSION_DEPTH = 1024,
 	};
 
@@ -173,6 +186,20 @@ private:
 		static PagedAllocator<BucketLarge, true> _bucket_large;
 	};
 
+	using BucketAlloc = void *(*)(void *);
+	using BucketFree = void (*)(void *, void *);
+	template <typename T>
+	static void *bucketAlloc(PagedAllocator<T, true> *bucket) {
+		return ((PagedAllocator<T, true> *)bucket)->alloc();
+	}
+	template <typename T>
+	static void bucketFree(PagedAllocator<T, true> *bucket, void *mem) {
+		((PagedAllocator<T, true> *)bucket)->free((T *)mem);
+	}
+	static const std::array<void *, Variant::PACKED_BYTE_ARRAY> BUCKET_TBL;
+	static const std::array<BucketAlloc, Variant::PACKED_BYTE_ARRAY> BUCKET_ALLOC_FN_TBL;
+	static const std::array<BucketFree, Variant::PACKED_BYTE_ARRAY> BUCKET_FREE_FN_TBL;
+
 	friend struct _VariantCall;
 	friend class VariantInternal;
 	// Variant takes 24 bytes when real_t is float, and 40 bytes if double.
@@ -187,9 +214,12 @@ private:
 		ObjectID id;
 		Object *obj = nullptr;
 
+		/// Mirrors Ref::ref in refcounted.h
 		void ref(const ObjData &p_from, bool p_is_weak_ref_old, bool p_is_weak_ref);
+		/// Mirrors Ref::ref_pointer in refcounted.h
 		void ref_pointer(Object *p_object, bool p_is_weak_ref_old, bool p_is_weak_ref);
 		void ref_pointer(RefCounted *p_object, bool p_is_weak_ref_old, bool p_is_weak_ref);
+		/// Mirrors Ref::unref in refcounted.h
 		void unref(bool p_is_weak_ref);
 
 		template <typename T>
@@ -202,7 +232,8 @@ private:
 		}
 	};
 
-	/* array helpers */
+	/// @name Array Helpers
+	/// @{
 	struct PackedArrayRefBase {
 		SafeRefCount refcount;
 		_FORCE_INLINE_ PackedArrayRefBase *reference() {
@@ -235,6 +266,11 @@ private:
 	};
 
 	template <typename T>
+	static PackedArrayRefBase *packedArrayCreate() {
+		return PackedArrayRef<T>::create();
+	}
+
+	template <typename T>
 	struct PackedArrayRef : public PackedArrayRefBase {
 		Vector<T> array;
 		static _FORCE_INLINE_ PackedArrayRef<T> *create() {
@@ -259,8 +295,8 @@ private:
 			refcount.init();
 		}
 	};
+	/// @}
 
-	/* end of array helpers */
 	_ALWAYS_INLINE_ ObjData &_get_obj();
 	_ALWAYS_INLINE_ const ObjData &_get_obj() const;
 
@@ -282,54 +318,32 @@ private:
 
 	void _clear_internal();
 
-	static constexpr bool needs_deinit[Variant::VARIANT_MAX] = {
-		false, //NIL,
-		false, //BOOL,
-		false, //INT,
-		false, //FLOAT,
-		true, //STRING,
-		false, //VECTOR2,
-		false, //VECTOR2I,
-		false, //RECT2,
-		false, //RECT2I,
-		false, //VECTOR3,
-		false, //VECTOR3I,
-		true, //TRANSFORM2D,
-		false, //VECTOR4,
-		false, //VECTOR4I,
-		false, //PLANE,
-		false, //QUATERNION,
-		true, //AABB,
-		true, //BASIS,
-		true, //TRANSFORM,
-		true, //PROJECTION,
-
-		// misc types
-		false, //COLOR,
-		true, //STRING_NAME,
-		true, //NODE_PATH,
-		false, //RID,
-		true, //OBJECT,
-		true, //CALLABLE,
-		true, //SIGNAL,
-		true, //DICTIONARY,
-		true, //ARRAY,
-
-		// typed arrays
-		true, //PACKED_BYTE_ARRAY,
-		true, //PACKED_INT32_ARRAY,
-		true, //PACKED_INT64_ARRAY,
-		true, //PACKED_FLOAT32_ARRAY,
-		true, //PACKED_FLOAT64_ARRAY,
-		true, //PACKED_STRING_ARRAY,
-		true, //PACKED_VECTOR2_ARRAY,
-		true, //PACKED_VECTOR3_ARRAY,
-		true, //PACKED_COLOR_ARRAY,
-		true, //PACKED_VECTOR4_ARRAY,
-	};
+	static constexpr std::uint64_t needs_deinit = (1ull << Variant::STRING) |
+			(1ull << Variant::TRANSFORM2D) |
+			(1ull << Variant::AABB) |
+			(1ull << Variant::BASIS) |
+			(1ull << Variant::TRANSFORM3D) |
+			(1ull << Variant::PROJECTION) |
+			(1ull << Variant::STRING_NAME) |
+			(1ull << Variant::NODE_PATH) |
+			(1ull << Variant::OBJECT) |
+			(1ull << Variant::CALLABLE) |
+			(1ull << Variant::SIGNAL) |
+			(1ull << Variant::DICTIONARY) |
+			(1ull << Variant::ARRAY) |
+			(1ull << Variant::PACKED_BYTE_ARRAY) |
+			(1ull << Variant::PACKED_INT32_ARRAY) |
+			(1ull << Variant::PACKED_INT64_ARRAY) |
+			(1ull << Variant::PACKED_FLOAT32_ARRAY) |
+			(1ull << Variant::PACKED_FLOAT64_ARRAY) |
+			(1ull << Variant::PACKED_STRING_ARRAY) |
+			(1ull << Variant::PACKED_COLOR_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR2_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR3_ARRAY) |
+			(1ull << Variant::PACKED_VECTOR4_ARRAY);
 
 	_FORCE_INLINE_ void clear() {
-		if (unlikely(needs_deinit[type])) { // Make it fast for types that don't need deinit.
+		if (unlikely((needs_deinit & (1ull << type)) != 0)) { // Make it fast for types that don't need deinit.
 			_clear_internal();
 		}
 		type = NIL;
@@ -364,9 +378,8 @@ private:
 				return T(_data._float);
 			case STRING:
 				return reinterpret_cast<const String *>(_data._mem)->to_int();
-			default: {
+			default:
 				return 0;
-			}
 		}
 	}
 
@@ -383,9 +396,8 @@ private:
 				return T(_data._float);
 			case STRING:
 				return reinterpret_cast<const String *>(_data._mem)->to_float();
-			default: {
+			default:
 				return 0;
-			}
 		}
 	}
 
@@ -421,7 +433,7 @@ public:
 	bool is_null() const;
 	bool is_read_only() const;
 
-	// Make sure Variant is not implicitly cast when accessing it with bracket notation (GH-49469).
+	/// Make sure Variant is not implicitly cast when accessing it with bracket notation (GH-49469).
 	Variant &operator[](const Variant &p_key) = delete;
 	const Variant &operator[](const Variant &p_key) const = delete;
 
@@ -565,16 +577,19 @@ public:
 	_FORCE_INLINE_ Variant(BitField<T> p_bitfield) :
 			Variant(static_cast<uint64_t>(p_bitfield)) {}
 
-	// If this changes the table in variant_op must be updated
+	/// If this changes the table in variant_op must be updated
 	enum Operator {
-		//comparison
+		/// comparison
+		/// @{
 		OP_EQUAL,
 		OP_NOT_EQUAL,
 		OP_LESS,
 		OP_LESS_EQUAL,
 		OP_GREATER,
 		OP_GREATER_EQUAL,
-		//mathematic
+		/// @}
+		/// mathematic
+		/// @{
 		OP_ADD,
 		OP_SUBTRACT,
 		OP_MULTIPLY,
@@ -583,22 +598,28 @@ public:
 		OP_POSITIVE,
 		OP_MODULE,
 		OP_POWER,
-		//bitwise
+		/// @}
+		/// bitwise
+		/// @{
 		OP_SHIFT_LEFT,
 		OP_SHIFT_RIGHT,
 		OP_BIT_AND,
 		OP_BIT_OR,
 		OP_BIT_XOR,
 		OP_BIT_NEGATE,
-		//logic
+		/// @}
+		/// logic
+		/// @{
 		OP_AND,
 		OP_OR,
 		OP_XOR,
 		OP_NOT,
-		//containment
+		/// @}
+		/// containment
+		/// @{
 		OP_IN,
 		OP_MAX
-
+		/// @}
 	};
 
 	static String get_operator_name(Operator p_op);
@@ -674,7 +695,8 @@ public:
 	void get_method_list(List<MethodInfo> *p_list) const;
 	bool has_method(const StringName &p_method) const;
 
-	/* Constructors */
+	/// @name Constructors
+	/// @{
 
 	typedef void (*ValidatedConstructor)(Variant *r_base, const Variant **p_args);
 	typedef void (*PTRConstructor)(void *base, const void **p_args);
@@ -689,16 +711,18 @@ public:
 
 	static void get_constructor_list(Type p_type, List<MethodInfo> *r_list); //convenience
 
-	/* Destructors */
+	/// @}
+	/// @name Destructors
+	/// @{
 
 	// Only ptrcall is available.
 	typedef void (*PTRDestructor)(void *base);
 
 	static PTRDestructor get_ptr_destructor(Variant::Type p_type);
 	static bool has_destructor(Variant::Type p_type);
-
-	/* Properties */
-
+	/// @}
+	/// @name Properties
+	/// @{
 	void set_named(const StringName &p_member, const Variant &p_value, bool &r_valid);
 	Variant get_named(const StringName &p_member, bool &r_valid) const;
 
@@ -719,7 +743,9 @@ public:
 	static PTRSetter get_member_ptr_setter(Variant::Type p_type, const StringName &p_member);
 	static PTRGetter get_member_ptr_getter(Variant::Type p_type, const StringName &p_member);
 
-	/* Indexing */
+	/// @}
+	/// @name Indexing
+	/// @{
 
 	static bool has_indexing(Variant::Type p_type);
 	static Variant::Type get_indexed_element_type(Variant::Type p_type);
@@ -742,7 +768,9 @@ public:
 
 	uint64_t get_indexed_size() const;
 
-	/* Keying */
+	/// @}
+	/// @name Keying
+	/// @{
 
 	static bool is_keyed(Variant::Type p_type);
 
@@ -766,7 +794,10 @@ public:
 	Variant get_keyed(const Variant &p_key, bool &r_valid) const;
 	bool has_key(const Variant &p_key, bool &r_valid) const;
 
-	/* Generic */
+	/// @}
+	/// @name Generic
+	/// @{
+
 	enum VariantSetError {
 		SET_OK,
 		SET_KEYED_ERR,
@@ -826,7 +857,7 @@ public:
 	uint32_t hash() const;
 	uint32_t recursive_hash(int recursion_count) const;
 
-	// By default, performs a semantic comparison. Otherwise, numeric/binary comparison (if appropriate).
+	/// By default, performs a semantic comparison. Otherwise, numeric/binary comparison (if appropriate).
 	bool hash_compare(const Variant &p_variant, int recursion_count = 0, bool semantic_comparison = true) const;
 	bool identity_compare(const Variant &p_variant) const;
 	bool booleanize() const;
@@ -850,7 +881,7 @@ public:
 	String get_construct_string() const;
 	static void construct_from_string(const String &p_string, Variant &r_value, ObjectConstruct p_obj_construct = nullptr, void *p_construct_ud = nullptr);
 
-	void operator=(const Variant &p_variant); // only this is enough for all the other types
+	void operator=(const Variant &p_variant); ///< Only this is enough for all the other types
 	void operator=(Variant &&p_variant) {
 		if (unlikely(this == &p_variant)) {
 			return;
@@ -872,10 +903,11 @@ public:
 	}
 	_FORCE_INLINE_ Variant() {}
 	_FORCE_INLINE_ ~Variant() {
-		if (unlikely(needs_deinit[type])) { // Make it fast for types that don't need deinit.
+		if (unlikely((needs_deinit & (1ull << type)) != 0)) { // Make it fast for types that don't need deinit.
 			_clear_internal();
 		}
 	}
+	/// @}
 };
 
 //typedef Dictionary Dictionary; no
@@ -1012,6 +1044,6 @@ Array::ConstIterator &Array::ConstIterator::operator--() {
 	return *this;
 }
 
-// Zero-constructing Variant results in NULL.
+/// Zero-constructing Variant results in NULL.
 template <>
 struct is_zero_constructible<Variant> : std::true_type {};

@@ -32,14 +32,20 @@
 
 #pragma once
 
+/**
+ * @file span.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/typedefs.h"
 
-// Equivalent of std::span.
-// Represents a view into a contiguous memory space.
-// DISCLAIMER: This data type does not own the underlying buffer. DO NOT STORE IT.
-//  Additionally, for the lifetime of the Span, do not resize the buffer, and do not insert or remove elements from it.
-//  Failure to respect this may lead to crashes or undefined behavior.
+/// Equivalent of std::span.
+/// Represents a view into a contiguous memory space.
+/// DISCLAIMER: This data type does not own the underlying buffer. DO NOT STORE IT.
+///  Additionally, for the lifetime of the Span, do not resize the buffer, and do not insert or remove elements from it.
+///  Failure to respect this may lead to crashes or undefined behavior.
 template <typename T>
 class Span {
 	const T *_ptr = nullptr;
@@ -57,7 +63,7 @@ public:
 	_FORCE_INLINE_ Span(const T *p_ptr, uint64_t p_len) :
 			_ptr(p_ptr), _len(p_len) {
 #ifdef DEBUG_ENABLED
-		// TODO In c++20, make this check run only in non-consteval, and make this constructor constexpr.
+		/// @todo In c++20, make this check run only in non-consteval, and make this constructor constexpr.
 		if (_ptr == nullptr && _len > 0) {
 			ERR_PRINT("Internal bug, please report: Span was created from nullptr with size > 0. Recovering by using size = 0.");
 			_len = 0;
@@ -65,7 +71,7 @@ public:
 #endif
 	}
 
-	// Allows creating Span directly from C arrays and string literals.
+	/// Allows creating Span directly from C arrays and string literals.
 	template <size_t N>
 	_FORCE_INLINE_ constexpr Span(const T (&p_array)[N]) :
 			_ptr(p_array), _len(N) {
@@ -82,9 +88,9 @@ public:
 
 	_FORCE_INLINE_ constexpr const T *ptr() const { return _ptr; }
 
-	// NOTE: Span subscripts sanity check the bounds to avoid undefined behavior.
-	//       This is slower than direct buffer access and can prevent autovectorization.
-	//       If the bounds are known, use ptr() subscript instead.
+	/// @note Span subscripts sanity check the bounds to avoid undefined behavior.
+	///       This is slower than direct buffer access and can prevent autovectorization.
+	///       If the bounds are known, use ptr() subscript instead.
 	_FORCE_INLINE_ constexpr const T &operator[](uint64_t p_idx) const {
 		CRASH_COND(p_idx >= _len);
 		return _ptr[p_idx];
@@ -98,15 +104,17 @@ public:
 		return Span<T1>(reinterpret_cast<const T1 *>(_ptr), _len * sizeof(T) / sizeof(T1));
 	}
 
-	// Algorithms.
+	/// @name Algorithms
+	/// @{
 	constexpr int64_t find(const T &p_val, uint64_t p_from = 0) const;
 	constexpr int64_t rfind(const T &p_val, uint64_t p_from) const;
 	_FORCE_INLINE_ constexpr int64_t rfind(const T &p_val) const { return rfind(p_val, size() - 1); }
 	constexpr uint64_t count(const T &p_val) const;
 	/// Find the index of the given value using binary search.
-	/// Note: Assumes that elements in the span are sorted. Otherwise, use find() instead.
+	/// @note Assumes that elements in the span are sorted. Otherwise, use find() instead.
 	template <typename Comparator = Comparator<T>>
 	constexpr uint64_t bisect(const T &p_value, bool p_before, Comparator compare = Comparator()) const;
+	/// @}
 };
 
 template <typename T>
@@ -167,6 +175,6 @@ constexpr uint64_t Span<T>::bisect(const T &p_value, bool p_before, Comparator c
 	return lo;
 }
 
-// Zero-constructing Span initializes _ptr and _len to 0 (and thus empty).
+/// Zero-constructing Span initializes _ptr and _len to 0 (and thus empty).
 template <typename T>
 struct is_zero_constructible<Span<T>> : std::true_type {};

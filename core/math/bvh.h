@@ -32,25 +32,28 @@
 
 #pragma once
 
-// BVH
-// This class provides a wrapper around BVH tree, which contains most of the functionality
-// for a dynamic BVH with templated leaf size.
-// However BVH also adds facilities for pairing, to maintain compatibility with Godot 3.2.
-// Pairing is a collision pairing system, on top of the basic BVH.
-
-// Some notes on the use of BVH / Octree from Godot 3.2.
-// This is not well explained elsewhere.
-// The rendering tree mask and types that are sent to the BVH are NOT layer masks.
-// They are INSTANCE_TYPES (defined in visual_server.h), e.g. MESH, MULTIMESH, PARTICLES etc.
-// Thus the lights do no cull by layer mask in the BVH.
-
-// Layer masks are implemented in the renderers as a later step, and light_cull_mask appears to be
-// implemented in GLES3 but not GLES2. Layer masks are not yet implemented for directional lights.
-
-// In the physics, the pairable_type is based on 1 << p_object->get_type() where:
-// TYPE_AREA,
-// TYPE_BODY
-// and pairable_mask is either 0 if static, or set to all if non static
+/**
+ * @file bvh.h
+ *
+ * @brief This class provides a wrapper around BVH tree, which contains most of the functionality for a dynamic BVH with templated leaf size.
+ *
+ * @details However BVH also adds facilities for pairing, to maintain compatibility with Godot 3.2.
+ * Pairing is a collision pairing system, on top of the basic BVH.
+ *
+ * Some notes on the use of BVH / Octree from Godot 3.2.
+ * This is not well explained elsewhere.
+ * The rendering tree mask and types that are sent to the BVH are NOT layer masks.
+ * They are INSTANCE_TYPES (defined in visual_server.h), e.g. MESH, MULTIMESH, PARTICLES etc.
+ * Thus the lights do no cull by layer mask in the BVH.
+ *
+ * Layer masks are implemented in the renderers as a later step, and light_cull_mask appears to be
+ * implemented in GLES3 but not GLES2. Layer masks are not yet implemented for directional lights.
+ *
+ * In the physics, the pairable_type is based on 1 << p_object->get_type() where:
+ * TYPE_AREA,
+ * TYPE_BODY
+ * and pairable_mask is either 0 if static, or set to all if non static
+ */
 
 #include "bvh_tree.h"
 
@@ -63,19 +66,20 @@
 template <typename T, int NUM_TREES = 1, bool USE_PAIRS = false, int MAX_ITEMS = 32, typename USER_PAIR_TEST_FUNCTION = BVH_DummyPairTestFunction<T>, typename USER_CULL_TEST_FUNCTION = BVH_DummyCullTestFunction<T>, typename BOUNDS = AABB, typename POINT = Vector3, bool BVH_THREAD_SAFE = true>
 class BVH_Manager {
 public:
-	// note we are using uint32_t instead of BVHHandle, losing type safety, but this
-	// is for compatibility with octree
+	/// @note We are using uint32_t instead of BVHHandle, losing type safety, but this
+	/// is for compatibility with octree
 	typedef void *(*PairCallback)(void *, uint32_t, T *, int, uint32_t, T *, int);
 	typedef void (*UnpairCallback)(void *, uint32_t, T *, int, uint32_t, T *, int, void *);
 	typedef void *(*CheckPairCallback)(void *, uint32_t, T *, int, uint32_t, T *, int, void *);
 
-	// allow locally toggling thread safety if the template has been compiled with BVH_THREAD_SAFE
+	/// Allow locally toggling thread safety if the template has been compiled with BVH_THREAD_SAFE
 	void params_set_thread_safe(bool p_enable) {
 		_thread_safe = p_enable;
 	}
 
-	// these 2 are crucial for fine tuning, and can be applied manually
-	// see the variable declarations for more info.
+	/// @name These 2 are crucial for fine tuning, and can be applied manually
+	/// @details @see The variable declarations for more info.
+	/// @{
 	void params_set_node_expansion(real_t p_value) {
 		BVH_LOCKED_FUNCTION
 		if (p_value >= 0.0) {
@@ -90,6 +94,7 @@ public:
 		BVH_LOCKED_FUNCTION
 		tree.params_set_pairing_expansion(p_value);
 	}
+	/// @}
 
 	void set_pair_callback(PairCallback p_callback, void *p_userdata) {
 		BVH_LOCKED_FUNCTION
@@ -135,8 +140,9 @@ public:
 	}
 
 	////////////////////////////////////////////////////
-	// wrapper versions that use uint32_t instead of handle
-	// for backward compatibility. Less type safe
+	/// @name Wrapper versions that use uint32_t instead of handle
+	/// @details For backward compatibility. Less type safe
+	/// @{
 	void move(uint32_t p_handle, const BOUNDS &p_aabb) {
 		BVHHandle h;
 		h.set(p_handle);
@@ -195,7 +201,7 @@ public:
 		h.set(p_handle);
 		return item_get_userdata(h);
 	}
-
+	/// @}
 	////////////////////////////////////////////////////
 
 	void move(BVHHandle p_handle, const BOUNDS &p_aabb) {
@@ -227,9 +233,9 @@ public:
 		_check_for_collisions(true);
 	}
 
-	// use in conjunction with activate if you have deferred the collision check, and
-	// set pairable has never been called.
-	// (deferred collision checks are a workaround for visual server for historical reasons)
+	/// Use in conjunction with activate if you have deferred the collision check, and
+	/// set pairable has never been called.
+	/// (deferred collision checks are a workaround for visual server for historical reasons)
 	void force_collision_check(BVHHandle p_handle) {
 		DEV_ASSERT(!p_handle.is_invalid());
 		BVH_LOCKED_FUNCTION
@@ -246,9 +252,10 @@ public:
 		}
 	}
 
-	// these should be read as set_visible for render trees,
-	// but generically this makes items add or remove from the
-	// tree internally, to speed things up by ignoring inactive items
+	/// @name These should be read as set_visible for render trees
+	/// @details ...but generically this makes items add or remove from the
+	/// tree internally, to speed things up by ignoring inactive items
+	/// @{
 	bool activate(BVHHandle p_handle, const BOUNDS &p_aabb, bool p_delay_collision_check = false) {
 		DEV_ASSERT(!p_handle.is_invalid());
 		BVH_LOCKED_FUNCTION
@@ -292,6 +299,7 @@ public:
 
 		return false;
 	}
+	/// @}
 
 	bool get_active(BVHHandle p_handle) {
 		DEV_ASSERT(!p_handle.is_invalid());
@@ -299,7 +307,7 @@ public:
 		return tree.item_get_active(p_handle);
 	}
 
-	// call e.g. once per frame (this does a trickle optimize)
+	/// Call e.g. once per frame (this does a trickle optimize)
 	void update() {
 		BVH_LOCKED_FUNCTION
 		tree.update();
@@ -309,13 +317,13 @@ public:
 #endif
 	}
 
-	// this can be called more frequently than per frame if necessary
+	/// This can be called more frequently than per frame if necessary
 	void update_collisions() {
 		BVH_LOCKED_FUNCTION
 		_check_for_collisions();
 	}
 
-	// prefer calling this directly as type safe
+	/// Prefer calling this directly as type safe
 	void set_tree(const BVHHandle &p_handle, uint32_t p_tree_id, uint32_t p_tree_collision_mask, bool p_force_collision_check = true) {
 		DEV_ASSERT(!p_handle.is_invalid());
 		BVH_LOCKED_FUNCTION
@@ -347,7 +355,8 @@ public:
 		}
 	}
 
-	// cull tests
+	/// @name Cull tests
+	/// @{
 	int cull_aabb(const BOUNDS &p_aabb, T **p_result_array, int p_result_max, const T *p_tester, uint32_t p_tree_collision_mask = 0xFFFFFFFF, int *p_subindex_array = nullptr) {
 		BVH_LOCKED_FUNCTION
 		typename BVHTREE_CLASS::CullParams params;
@@ -429,9 +438,10 @@ public:
 
 		return params.result_count_overall;
 	}
+	/// @}
 
 private:
-	// do this after moving etc.
+	/// Do this after moving etc.
 	void _check_for_collisions(bool p_full_check = false) {
 		if (!changed_items.size()) {
 			// noop
@@ -490,10 +500,12 @@ public:
 	}
 
 private:
-	// supplemental funcs
+	/// @name Supplemental funcs
+	/// @{
 	uint32_t item_get_tree_id(BVHHandle p_handle) const { return _get_extra(p_handle).tree_id; }
 	T *item_get_userdata(BVHHandle p_handle) const { return _get_extra(p_handle).userdata; }
 	int item_get_subindex(BVHHandle p_handle) const { return _get_extra(p_handle).subindex; }
+	/// @}
 
 	void _unpair(BVHHandle p_from, BVHHandle p_to) {
 		tree._handle_sort(p_from, p_to);
@@ -541,7 +553,7 @@ private:
 		return p_pair_data;
 	}
 
-	// returns true if unpair
+	/// @return `true` if unpair
 	bool _find_leavers_process_pair(typename BVHTREE_CLASS::ItemPairs &p_pairs_from, const BVHABB_CLASS &p_abb_from, BVHHandle p_from, BVHHandle p_to, bool p_full_check) {
 		BVHABB_CLASS abb_to;
 		tree.item_get_ABB(p_to, abb_to);
@@ -573,8 +585,7 @@ private:
 		return true;
 	}
 
-	// find all the existing paired aabbs that are no longer
-	// paired, and send callbacks
+	/// Find all the existing paired aabbs that are no longer paired, and send callbacks
 	void _find_leavers(BVHHandle p_handle, const BVHABB_CLASS &expanded_abb_from, bool p_full_check) {
 		typename BVHTREE_CLASS::ItemPairs &p_from = tree._pairs[p_handle.id()];
 
@@ -592,8 +603,7 @@ private:
 		}
 	}
 
-	// find NEW enterers, and send callbacks for them only
-	// handle a and b
+	/// Find NEW enterers, and send callbacks for them only handle a and b
 	void _collide(BVHHandle p_ha, BVHHandle p_hb) {
 		// only have to do this oneway, lower ID then higher ID
 		tree._handle_sort(p_ha, p_hb);
@@ -642,7 +652,7 @@ private:
 		p_to.add_pair_to(p_ha, callback_userdata);
 	}
 
-	// if we remove an item, we need to immediately remove the pairs, to prevent reading the pair after deletion
+	/// If we remove an item, we need to immediately remove the pairs, to prevent reading the pair after deletion
 	void _remove_pairs_containing(BVHHandle p_handle) {
 		typename BVHTREE_CLASS::ItemPairs &p_from = tree._pairs[p_handle.id()];
 
@@ -654,7 +664,7 @@ private:
 		}
 	}
 
-	// Send pair callbacks again for all existing pairs for the given handle.
+	/// Send pair callbacks again for all existing pairs for the given handle.
 	void _recheck_pairs(BVHHandle p_handle) {
 		typename BVHTREE_CLASS::ItemPairs &from = tree._pairs[p_handle.id()];
 
@@ -735,11 +745,10 @@ private:
 		changed_items.push_back(p_handle);
 	}
 
+	/// Care has to be taken here for items that are deleted. The ref ID
+	/// could be reused on the same tick for new items. This is probably
+	/// rare but should be taken into consideration
 	void _remove_changed_item(BVHHandle p_handle) {
-		// Care has to be taken here for items that are deleted. The ref ID
-		// could be reused on the same tick for new items. This is probably
-		// rare but should be taken into consideration
-
 		// callbacks
 		_remove_pairs_containing(p_handle);
 
@@ -769,10 +778,9 @@ private:
 
 	BVHTREE_CLASS tree;
 
-	// for collision pairing,
-	// maintain a list of all items moved etc on each frame / tick
+	/// For collision pairing, maintain a list of all items moved etc on each frame / tick
 	LocalVector<BVHHandle> changed_items;
-	uint32_t _tick = 1; // Start from 1 so items with 0 indicate never updated.
+	uint32_t _tick = 1; ///< Start from 1 so items with 0 indicate never updated.
 
 	class BVHLockedFunction {
 	public:

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file webrtc_data_channel_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webrtc_data_channel.h"
 
 #include "core/extension/ext_wrappers.gen.inc"

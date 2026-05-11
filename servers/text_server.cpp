@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file text_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/text_server.h"
 #include "text_server.compat.inc"
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shape_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 class Shape2D : public Resource {
@@ -59,7 +65,7 @@ public:
 
 	virtual void draw(const RID &p_to_rid, const Color &p_color) {}
 	virtual Rect2 get_rect() const { return Rect2(); }
-	/// Returns the radius of a circle that fully enclose this shape
+	/// @return The radius of a circle that fully enclose this shape
 	virtual real_t get_enclosing_radius() const = 0;
 	virtual RID get_rid() const override;
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_server_3d_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "physics_server_3d_extension.h"
 
 bool PhysicsDirectSpaceState3DExtension::is_body_excluded_from_query(const RID &p_body) const {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file control.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/transform_2d.h"
 #include "core/object/gdvirtual.gen.inc"
 #include "scene/main/canvas_item.h"
@@ -182,12 +188,12 @@ private:
 		}
 	};
 
-	// This Data struct is to avoid namespace pollution in derived classes.
+	/// This Data struct is to avoid namespace pollution in derived classes.
 	struct Data {
 		bool initialized = false;
 
-		// Global relations.
-
+		/// @name Global Relations
+		/// @{
 		List<Control *>::Element *RI = nullptr;
 
 		Control *parent_control = nullptr;
@@ -196,9 +202,9 @@ private:
 		Callable forward_drag;
 		Callable forward_can_drop;
 		Callable forward_drop;
-
-		// Positioning and sizing.
-
+		/// @}
+		/// Positioning and sizing
+		/// @{
 		LayoutMode stored_layout_mode = LayoutMode::LAYOUT_MODE_POSITION;
 		bool stored_use_custom_anchors = false;
 
@@ -224,16 +230,16 @@ private:
 		bool block_minimum_size_adjust = false;
 
 		bool size_warning = true;
-
-		// Container sizing.
-
+		/// @}
+		/// Container Sizing
+		/// @{
 		BitField<SizeFlags> h_size_flags = SIZE_FILL;
 		BitField<SizeFlags> v_size_flags = SIZE_FILL;
 		real_t expand = 1.0;
 		Point2 custom_minimum_size;
-
-		// Input events and rendering.
-
+		/// @}
+		/// @name Input events and rendering
+		/// @{
 		MouseFilter mouse_filter = MOUSE_FILTER_STOP;
 		MouseBehaviorRecursive mouse_behavior_recursive = MOUSE_BEHAVIOR_INHERITED;
 		bool parent_mouse_behavior_recursive_enabled = true;
@@ -243,17 +249,17 @@ private:
 		bool disable_visibility_clip = false;
 
 		CursorShape default_cursor = CURSOR_ARROW;
-
-		// Focus.
-
+		/// @}
+		/// @name Focus
+		/// @{
 		NodePath focus_neighbor[4];
 		NodePath focus_next;
 		NodePath focus_prev;
 
 		ObjectID shortcut_context;
-
-		// Accessibility.
-
+		/// @]
+		/// @name Accessibility
+		/// @{
 		String accessibility_name;
 		String accessibility_description;
 		DisplayServer::AccessibilityLiveMode accessibility_live = DisplayServer::AccessibilityLiveMode::LIVE_OFF;
@@ -262,9 +268,9 @@ private:
 		TypedArray<NodePath> accessibility_described_by_nodes;
 		TypedArray<NodePath> accessibility_labeled_by_nodes;
 		TypedArray<NodePath> accessibility_flow_to_nodes;
-
-		// Theming.
-
+		/// @}
+		/// @name Theming
+		/// @{
 		ThemeOwner *theme_owner = nullptr;
 		Ref<Theme> theme;
 		StringName theme_type_variation;
@@ -283,33 +289,34 @@ private:
 		mutable HashMap<StringName, Theme::ThemeFontSizeMap> theme_font_size_cache;
 		mutable HashMap<StringName, Theme::ThemeColorMap> theme_color_cache;
 		mutable HashMap<StringName, Theme::ThemeConstantMap> theme_constant_cache;
-
-		// Internationalization.
-
+		/// @}
+		/// @name Internationalization
+		/// @{
 		LayoutDirection layout_dir = LAYOUT_DIRECTION_INHERITED;
 		mutable bool is_rtl_dirty = true;
 		mutable bool is_rtl = false;
 
 		bool localize_numeral_system = true;
-
-		// Extra properties.
-
+		/// @}
+		/// @name Extra Properties
+		/// @{
 		String tooltip;
 		AutoTranslateMode tooltip_auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
+		/// @}
 
 	} data;
 
-	// Dynamic properties.
-
+	/// @name Dynamic Properties
+	/// @{
 	static constexpr unsigned properties_managed_by_container_count = 12;
 	static String properties_managed_by_container[properties_managed_by_container_count];
-
-	// Global relations.
-
+	/// @}
+	/// @name Global Relations
+	/// @{
 	friend class Viewport;
-
-	// Positioning and sizing.
-
+	/// @}
+	/// @name Positioning and Sizing
+	/// @{
 	void _update_canvas_item_transform();
 	Transform2D _get_internal_transform() const;
 
@@ -336,39 +343,39 @@ private:
 	void _top_level_changed_on_parent() override;
 
 	void _clear_size_warning();
-
-	// Input events.
-
+	/// @}
+	/// @name Input Events
+	/// @{
 	void _call_gui_input(const Ref<InputEvent> &p_event);
-
-	// Mouse Filter.
-
+	/// @}
+	/// @name Mouse Filter
+	/// @{
 	bool _is_mouse_filter_enabled() const;
 	void _update_mouse_behavior_recursive();
 	void _propagate_mouse_behavior_recursive_recursively(bool p_enabled, bool p_skip_non_inherited);
-
-	// Focus.
-
+	/// @}
+	/// @name Focus
+	/// @{
 	bool _is_focusable() const;
 	void _window_find_focus_neighbor(const Vector2 &p_dir, Node *p_at, const Rect2 &p_rect, const Rect2 &p_clamp, real_t p_min, real_t &r_closest_dist_squared, Control **r_closest);
 	Control *_get_focus_neighbor(Side p_side, int p_count = 0);
 	bool _is_focus_mode_enabled() const;
 	void _update_focus_behavior_recursive();
 	void _propagate_focus_behavior_recursive_recursively(bool p_enabled, bool p_skip_non_inherited);
-
-	// Theming.
-
+	/// @}
+	/// @name Theming
+	/// @{
 	void _theme_changed();
 	void _notify_theme_override_changed();
 	void _invalidate_theme_cache();
-
-	// Extra properties.
-
+	/// @}
+	/// @name Extra Properties
+	/// @{
 	static int root_layout_direction;
-
+	/// @}
 protected:
-	// Dynamic properties.
-
+	/// @name Dynamic Properties
+	/// @{
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
@@ -376,17 +383,17 @@ protected:
 
 	bool _property_can_revert(const StringName &p_name) const;
 	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
-
-	// Theming.
-
+	/// @}
+	/// @name Theming
+	/// @{
 	virtual void _update_theme_item_cache();
-
-	// Internationalization.
-
+	/// @}
+	/// @name Internationalization
+	/// @{
 	virtual TypedArray<Vector3i> structured_text_parser(TextServer::StructuredTextParser p_parser_type, const Array &p_args, const String &p_text) const;
-
-	// Base object overrides.
-
+	/// @}
+	/// @name Base Object Overrides
+	/// @{
 	void _notification(int p_notification);
 	static void _bind_methods();
 
@@ -395,9 +402,9 @@ protected:
 	void _accessibility_action_show_tooltip(const Variant &p_data);
 	void _accessibility_action_hide_tooltip(const Variant &p_data);
 	void _accessibility_action_scroll_into_view(const Variant &p_data);
-
-	// Exposed virtual methods.
-
+	/// @}
+	/// @name Exposed Virtual Methods
+	/// @{
 	GDVIRTUAL1RC(bool, _has_point, Vector2)
 	GDVIRTUAL2RC(TypedArray<Vector3i>, _structured_text_parser, Array, String)
 	GDVIRTUAL0RC(Vector2, _get_minimum_size)
@@ -412,7 +419,7 @@ protected:
 	GDVIRTUAL1RC(String, _get_accessibility_container_name, const Node *)
 
 	GDVIRTUAL1(_gui_input, Ref<InputEvent>)
-
+	/// @}
 public:
 	enum {
 		NOTIFICATION_RESIZED = 40,
@@ -428,9 +435,10 @@ public:
 		NOTIFICATION_MOUSE_EXIT_SELF = 61,
 	};
 
-	// Editor plugin interoperability.
+	/// @name Editor Plugin Interoperability
+	/// @{
 
-	// TODO: Decouple controls from their editor plugin and get rid of this.
+	/// @todo Decouple controls from their editor plugin and get rid of this.
 #ifdef TOOLS_ENABLED
 	virtual Dictionary _edit_get_state() const override;
 	virtual void _edit_set_state(const Dictionary &p_state) override;
@@ -460,9 +468,9 @@ public:
 #endif // DEBUG_ENABLED
 
 	virtual void reparent(Node *p_parent, bool p_keep_global_transform = true) override;
-
-	// Editor integration.
-
+	/// @}
+	/// @name Editor Integration.=
+	/// @{
 	static void set_root_layout_direction(int p_root_dir);
 
 	PackedStringArray get_configuration_warnings() const override;
@@ -472,18 +480,18 @@ public:
 #endif //TOOLS_ENABLED
 
 	virtual bool is_text_field() const;
-
-	// Global relations.
-
+	/// @}
+	/// @name Global Relations
+	/// @{
 	Control *get_parent_control() const;
 	Window *get_parent_window() const;
 	Control *get_root_parent_control() const;
 
 	Size2 get_parent_area_size() const;
 	Rect2 get_parent_anchorable_rect() const;
-
-	// Positioning and sizing.
-
+	/// @}
+	/// @name Positioning and Sizing
+	/// @{
 	virtual Transform2D get_transform() const override;
 
 	void set_anchor(Side p_side, real_t p_anchor, bool p_keep_offset = true, bool p_push_opposite_anchor = true);
@@ -492,7 +500,7 @@ public:
 	real_t get_offset(Side p_side) const;
 	void set_anchor_and_offset(Side p_side, real_t p_anchor, real_t p_pos, bool p_push_opposite_anchor = true);
 
-	// TODO: Rename to set_begin/end_offsets ?
+	/// @todo Rename to set_begin/end_offsets ?
 	void set_begin(const Point2 &p_point);
 	Point2 get_begin() const;
 	void set_end(const Point2 &p_point);
@@ -518,7 +526,7 @@ public:
 	Size2 get_size() const;
 	void reset_size();
 
-	void set_rect(const Rect2 &p_rect); // Reset anchors to begin and set rect, for faster container children sorting.
+	void set_rect(const Rect2 &p_rect); ///< Reset anchors to begin and set rect, for faster container children sorting.
 	Rect2 get_rect() const;
 	Rect2 get_global_rect() const;
 	Rect2 get_screen_rect() const;
@@ -542,18 +550,18 @@ public:
 
 	void set_custom_minimum_size(const Size2 &p_custom);
 	Size2 get_custom_minimum_size() const;
-
-	// Container sizing.
-
+	/// @}
+	/// @name Container Sizing
+	/// @{
 	void set_h_size_flags(BitField<SizeFlags> p_flags);
 	BitField<SizeFlags> get_h_size_flags() const;
 	void set_v_size_flags(BitField<SizeFlags> p_flags);
 	BitField<SizeFlags> get_v_size_flags() const;
 	void set_stretch_ratio(real_t p_ratio);
 	real_t get_stretch_ratio() const;
-
-	// Input events.
-
+	/// @}
+	/// @name Input Events
+	/// @{
 	virtual void gui_input(const Ref<InputEvent> &p_event);
 	void accept_event();
 
@@ -574,9 +582,9 @@ public:
 	bool is_focus_owner_in_shortcut_context() const;
 	void set_shortcut_context(const Node *p_node);
 	Node *get_shortcut_context() const;
-
-	// Drag and drop handling.
-
+	/// @}
+	/// @name Drag and Drop Handling
+	/// @{
 	virtual void set_drag_forwarding(const Callable &p_drag, const Callable &p_can_drop, const Callable &p_drop);
 	virtual Variant get_drag_data(const Point2 &p_point);
 	virtual bool can_drop_data(const Point2 &p_point, const Variant &p_data) const;
@@ -586,9 +594,9 @@ public:
 	void accessibility_drag();
 	void accessibility_drop();
 	bool is_drag_successful() const;
-
-	// Focus.
-
+	/// @}
+	/// @name Focus
+	/// @{
 	void set_focus_mode(FocusMode p_focus_mode);
 	FocusMode get_focus_mode() const;
 	FocusMode get_focus_mode_with_override() const;
@@ -610,9 +618,9 @@ public:
 	NodePath get_focus_next() const;
 	void set_focus_previous(const NodePath &p_prev);
 	NodePath get_focus_previous() const;
-
-	// Accessibility.
-
+	/// @}
+	/// @name Accessibility
+	/// @{
 	virtual String get_accessibility_container_name(const Node *p_node) const;
 
 	void set_accessibility_name(const String &p_name);
@@ -635,9 +643,9 @@ public:
 
 	void set_accessibility_flow_to_nodes(const TypedArray<NodePath> &p_node_path);
 	TypedArray<NodePath> get_accessibility_flow_to_nodes() const;
-
-	// Rendering.
-
+	/// @}
+	/// @name Rendering
+	/// @{
 	void set_default_cursor_shape(CursorShape p_shape);
 	CursorShape get_default_cursor_shape() const;
 	virtual CursorShape get_cursor_shape(const Point2 &p_pos = Point2i()) const;
@@ -647,9 +655,9 @@ public:
 
 	void set_disable_visibility_clip(bool p_ignore);
 	bool is_visibility_clip_disabled() const;
-
-	// Theming.
-
+	/// @}
+	/// @name Theming
+	/// @{
 	void set_theme_owner_node(Node *p_node);
 	Node *get_theme_owner_node() const;
 	bool has_theme_owner_node() const;
@@ -708,9 +716,9 @@ public:
 	float get_theme_default_base_scale() const;
 	Ref<Font> get_theme_default_font() const;
 	int get_theme_default_font_size() const;
-
-	// Internationalization.
-
+	/// @}
+	/// @name Internationalization
+	/// @{
 	void set_layout_direction(LayoutDirection p_direction);
 	LayoutDirection get_layout_direction() const;
 	virtual bool is_layout_rtl() const;
@@ -725,15 +733,16 @@ public:
 
 	void set_tooltip_auto_translate_mode(AutoTranslateMode p_mode);
 	AutoTranslateMode get_tooltip_auto_translate_mode() const;
-
-	// Extra properties.
-
+	/// @}
+	/// @name Extra Properties
+	/// @{
 	String get_tooltip_text() const;
 	void set_tooltip_text(const String &text);
 	virtual String get_tooltip(const Point2 &p_pos) const;
 	virtual Control *make_custom_tooltip(const String &p_text) const;
 
 	virtual String accessibility_get_contextual_info() const;
+	/// @}
 
 	Control();
 	~Control();
@@ -753,7 +762,7 @@ VARIANT_ENUM_CAST(Control::LayoutMode);
 VARIANT_ENUM_CAST(Control::LayoutDirection);
 VARIANT_ENUM_CAST(Control::TextDirection);
 
-// G = get_drag_data_fw, C = can_drop_data_fw, D = drop_data_fw, U = underscore
+/// G = get_drag_data_fw, C = can_drop_data_fw, D = drop_data_fw, U = underscore
 #define SET_DRAG_FORWARDING_CD(from, to) from->set_drag_forwarding(Callable(), callable_mp(this, &to::can_drop_data_fw).bind(from), callable_mp(this, &to::drop_data_fw).bind(from));
 #define SET_DRAG_FORWARDING_CDU(from, to) from->set_drag_forwarding(Callable(), callable_mp(this, &to::_can_drop_data_fw).bind(from), callable_mp(this, &to::_drop_data_fw).bind(from));
 #define SET_DRAG_FORWARDING_GCD(from, to) from->set_drag_forwarding(callable_mp(this, &to::get_drag_data_fw).bind(from), callable_mp(this, &to::can_drop_data_fw).bind(from), callable_mp(this, &to::drop_data_fw).bind(from));

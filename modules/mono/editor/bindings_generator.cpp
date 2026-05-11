@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file bindings_generator.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "bindings_generator.h"
 
 #ifdef DEBUG_ENABLED
@@ -57,7 +63,7 @@ StringBuilder &operator<<(StringBuilder &r_sb, const char *p_cstring) {
 	return r_sb;
 }
 
-#define CS_INDENT "    " // 4 whitespaces
+#define CS_INDENT "    " ///< 4 whitespaces
 
 #define INDENT1 CS_INDENT
 #define INDENT2 INDENT1 INDENT1
@@ -123,17 +129,17 @@ StringBuilder &operator<<(StringBuilder &r_sb, const char *p_cstring) {
 #define C_METHOD_MANAGED_TO_SIGNAL C_NS_MONOMARSHAL ".ConvertSignalToNative"
 #define C_METHOD_MANAGED_FROM_SIGNAL C_NS_MONOMARSHAL ".ConvertSignalToManaged"
 
-// Types that will be ignored by the generator and won't be available in C#.
-// This must be kept in sync with `ignored_types` in csharp_script.cpp
+/// Types that will be ignored by the generator and won't be available in C#.
+/// This must be kept in sync with `ignored_types` in csharp_script.cpp
 const Vector<String> ignored_types = {};
 
-// Special [code] keywords to wrap with <see langword="code"/> instead of <c>code</c>.
-// Don't check against all C# reserved words, as many cases are GDScript-specific.
+/// Special [code] keywords to wrap with <see langword="code"/> instead of <c>code</c>.
+/// Don't check against all C# reserved words, as many cases are GDScript-specific.
 const Vector<String> langword_check = { "true", "false", "null" };
 
-// The following properties currently need to be defined with `new` to avoid warnings. We treat
-// them as a special case instead of silencing the warnings altogether, to be warned if more
-// shadowing appears.
+/// The following properties currently need to be defined with `new` to avoid warnings. We treat
+/// them as a special case instead of silencing the warnings altogether, to be warned if more
+/// shadowing appears.
 const Vector<String> prop_allowed_inherited_member_hiding = {
 	"ArrayMesh.BlendShapeMode",
 	"Button.TextDirection",
@@ -152,9 +158,6 @@ const Vector<String> prop_allowed_inherited_member_hiding = {
 };
 
 void BindingsGenerator::TypeInterface::postsetup_enum_type(BindingsGenerator::TypeInterface &r_enum_itype) {
-	// C interface for enums is the same as that of 'uint32_t'. Remember to apply
-	// any of the changes done here to the 'uint32_t' type interface as well.
-
 	r_enum_itype.cs_type = r_enum_itype.proxy_name;
 	r_enum_itype.cs_in_expr = "(int)%0";
 	r_enum_itype.cs_out = "%5return (%2)%0(%1);";
@@ -171,17 +174,14 @@ void BindingsGenerator::TypeInterface::postsetup_enum_type(BindingsGenerator::Ty
 	r_enum_itype.class_doc = &EditorHelp::get_doc_data()->class_list[r_enum_itype.proxy_name];
 }
 
+/// This seems to be the correct way to do this. It's the same EditorHelp does.
 static String fix_doc_description(const String &p_bbcode) {
-	// This seems to be the correct way to do this. It's the same EditorHelp does.
-
 	return p_bbcode.dedent()
 			.remove_chars("\r")
 			.strip_edges();
 }
 
 String BindingsGenerator::bbcode_to_text(const String &p_bbcode, const TypeInterface *p_itype) {
-	// Based on the version in EditorHelp.
-
 	if (p_bbcode.is_empty()) {
 		return String();
 	}
@@ -278,10 +278,10 @@ String BindingsGenerator::bbcode_to_text(const String &p_bbcode, const TypeInter
 			if (link_tag == "method") {
 				_append_text_method(output, target_itype, target_cname, link_target, link_target_parts);
 			} else if (link_tag == "constructor") {
-				// TODO: Support constructors?
+				/// @todo Support constructors?
 				_append_text_undeclared(output, link_target);
 			} else if (link_tag == "operator") {
-				// TODO: Support operators?
+				/// @todo Support operators?
 				_append_text_undeclared(output, link_target);
 			} else if (link_tag == "member") {
 				_append_text_member(output, target_itype, target_cname, link_target, link_target_parts);
@@ -442,8 +442,6 @@ String BindingsGenerator::bbcode_to_text(const String &p_bbcode, const TypeInter
 }
 
 String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterface *p_itype, bool p_is_signal) {
-	// Based on the version in EditorHelp.
-
 	if (p_bbcode.is_empty()) {
 		return String();
 	}
@@ -592,10 +590,10 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 			if (link_tag == "method") {
 				_append_xml_method(xml_output, target_itype, target_cname, link_target, link_target_parts, p_itype);
 			} else if (link_tag == "constructor") {
-				// TODO: Support constructors?
+				/// @todo Support constructors?
 				_append_xml_undeclared(xml_output, link_target);
 			} else if (link_tag == "operator") {
-				// TODO: Support operators?
+				/// @todo Support operators?
 				_append_xml_undeclared(xml_output, link_target);
 			} else if (link_tag == "member") {
 				_append_xml_member(xml_output, target_itype, target_cname, link_target, link_target_parts, p_itype);
@@ -741,7 +739,7 @@ String BindingsGenerator::bbcode_to_xml(const String &p_bbcode, const TypeInterf
 			pos = brk_end + 1;
 			tag_stack.push_front(tag);
 		} else if (tag == "br") {
-			xml_output.append("\n"); // FIXME: Should use <para> instead. Luckily this tag isn't used for now.
+			xml_output.append("\n"); /// @todo FIXME: Should use <para> instead. Luckily this tag isn't used for now.
 			pos = brk_end + 1;
 		} else if (tag == "u") {
 			// Underline is not supported in Rider xml comments.
@@ -814,7 +812,7 @@ void BindingsGenerator::_append_text_method(StringBuilder &p_output, const TypeI
 			OS::get_singleton()->print("Cannot resolve @GlobalScope method reference in documentation: %s\n", p_link_target.utf8().get_data());
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_text_undeclared(p_output, p_link_target);
 	} else if (!p_target_itype || !p_target_itype->is_object_type) {
 		if (OS::get_singleton()->is_stdout_verbose()) {
@@ -825,7 +823,7 @@ void BindingsGenerator::_append_text_method(StringBuilder &p_output, const TypeI
 			}
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_text_undeclared(p_output, p_link_target);
 	} else {
 		if (p_target_cname == "_init") {
@@ -890,7 +888,7 @@ void BindingsGenerator::_append_text_member(StringBuilder &p_output, const TypeI
 			}
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_text_undeclared(p_output, p_link_target);
 	} else {
 		const TypeInterface *current_itype = p_target_itype;
@@ -929,7 +927,7 @@ void BindingsGenerator::_append_text_signal(StringBuilder &p_output, const TypeI
 			}
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_text_undeclared(p_output, p_link_target);
 	} else {
 		const SignalInterface *target_isignal = p_target_itype->find_signal_by_name(p_target_cname);
@@ -992,7 +990,7 @@ void BindingsGenerator::_append_text_constant(StringBuilder &p_output, const Typ
 			}
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_text_undeclared(p_output, p_link_target);
 	} else {
 		// Try to find the constant in the current class
@@ -1093,7 +1091,7 @@ void BindingsGenerator::_append_xml_method(StringBuilder &p_xml_output, const Ty
 			OS::get_singleton()->print("Cannot resolve @GlobalScope method reference in documentation: %s\n", p_link_target.utf8().get_data());
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_xml_undeclared(p_xml_output, p_link_target);
 	} else if (!p_target_itype || !p_target_itype->is_object_type) {
 		if (OS::get_singleton()->is_stdout_verbose()) {
@@ -1104,7 +1102,7 @@ void BindingsGenerator::_append_xml_method(StringBuilder &p_xml_output, const Ty
 			}
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_xml_undeclared(p_xml_output, p_link_target);
 	} else {
 		if (p_target_cname == "_init") {
@@ -1174,7 +1172,7 @@ void BindingsGenerator::_append_xml_member(StringBuilder &p_xml_output, const Ty
 			}
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_xml_undeclared(p_xml_output, p_link_target);
 	} else {
 		const TypeInterface *current_itype = p_target_itype;
@@ -1216,7 +1214,7 @@ void BindingsGenerator::_append_xml_signal(StringBuilder &p_xml_output, const Ty
 			}
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_xml_undeclared(p_xml_output, p_link_target);
 	} else {
 		const SignalInterface *target_isignal = p_target_itype->find_signal_by_name(p_target_cname);
@@ -1286,7 +1284,7 @@ void BindingsGenerator::_append_xml_constant(StringBuilder &p_xml_output, const 
 			}
 		}
 
-		// TODO Map what we can
+		/// @todo Map what we can
 		_append_xml_undeclared(p_xml_output, p_link_target);
 	} else {
 		// Try to find the constant in the current class
@@ -2124,13 +2122,13 @@ Error BindingsGenerator::generate_cs_api(const String &p_output_dir) {
 	return OK;
 }
 
-// FIXME: There are some members that hide other inherited members.
-// - In the case of both members being the same kind, the new one must be declared
-// explicitly as 'new' to avoid the warning (and we must print a message about it).
-// - In the case of both members being of a different kind, then the new one must
-// be renamed to avoid the name collision (and we must print a warning about it).
-// - Csc warning e.g.:
-// ObjectType/LineEdit.cs(140,38): warning CS0108: 'LineEdit.FocusMode' hides inherited member 'Control.FocusMode'. Use the new keyword if hiding was intended.
+/// @todo FIXME: There are some members that hide other inherited members.
+/// - In the case of both members being the same kind, the new one must be declared
+/// explicitly as 'new' to avoid the warning (and we must print a message about it).
+/// - In the case of both members being of a different kind, then the new one must
+/// be renamed to avoid the name collision (and we must print a warning about it).
+/// - Csc warning e.g.:
+/// ObjectType/LineEdit.cs(140,38): warning CS0108: 'LineEdit.FocusMode' hides inherited member 'Control.FocusMode'. Use the new keyword if hiding was intended.
 Error BindingsGenerator::_generate_cs_type(const TypeInterface &itype, const String &p_output_file) {
 	CRASH_COND(!itype.is_object_type);
 
@@ -2450,7 +2448,7 @@ Error BindingsGenerator::_generate_cs_type(const TypeInterface &itype, const Str
 				   << " = \"" << isignal.proxy_name << "\";\n";
 		}
 
-		// TODO: Only generate HasGodotClassMethod and InvokeGodotClassMethod if there's any method
+		/// @todo Only generate HasGodotClassMethod and InvokeGodotClassMethod if there's any method
 
 		// Generate InvokeGodotClassMethod
 
@@ -3280,9 +3278,9 @@ Error BindingsGenerator::_generate_cs_signal(const BindingsGenerator::TypeInterf
 			}
 		}
 
-		// TODO:
-		// Could we assume the StringName instance of signal name will never be freed (it's stored in ClassDB) before the managed world is unloaded?
-		// If so, we could store the pointer we get from `data_unique_pointer()` instead of allocating StringName here.
+		/// @todo
+		/// Could we assume the StringName instance of signal name will never be freed (it's stored in ClassDB) before the managed world is unloaded?
+		/// If so, we could store the pointer we get from `data_unique_pointer()` instead of allocating StringName here.
 
 		// Generate event
 		if (p_isignal.is_deprecated) {
@@ -3526,7 +3524,7 @@ Error BindingsGenerator::_generate_cs_native_calls(const InternalCall &p_icall, 
 					if (return_type->cname == name_cache.enum_Error) {
 						r_output << base_indent << C_LOCAL_RET " = VariantUtils.ConvertToInt64(" C_LOCAL_VARARG_RET ");\n";
 					} else {
-						// TODO: Use something similar to c_in_vararg (see usage above, with error if not implemented)
+						/// @todo Use something similar to c_in_vararg (see usage above, with error if not implemented)
 						CRASH_NOW_MSG("Custom VarArg return type not implemented: " + return_type->name);
 						r_output << base_indent << C_LOCAL_RET " = " C_LOCAL_VARARG_RET ";\n";
 					}
@@ -5160,10 +5158,6 @@ bool BindingsGenerator::_method_has_conflicting_signature(const MethodInterface 
 }
 
 bool BindingsGenerator::_method_has_conflicting_signature(const MethodInterface &p_imethod_left, const MethodInterface &p_imethod_right) {
-	// Check if a method already exists in p_itype with a method signature that would conflict with p_imethod.
-	// The return type is ignored because only changing the return type is not enough to avoid conflicts.
-	// The const keyword is also ignored since it doesn't generate different C# code.
-
 	if (p_imethod_left.arguments.size() != p_imethod_right.arguments.size()) {
 		// Different argument count, so no conflict.
 		return false;
@@ -5195,7 +5189,7 @@ bool BindingsGenerator::_method_has_conflicting_signature(const MethodInterface 
 void BindingsGenerator::_initialize_blacklisted_methods() {
 	blacklisted_methods["Object"].push_back("to_string"); // there is already ToString
 	blacklisted_methods["Object"].push_back("_to_string"); // override ToString instead
-	blacklisted_methods["Object"].push_back("_init"); // never called in C# (TODO: implement it)
+	blacklisted_methods["Object"].push_back("_init"); ///< Never called in C# (@todo Implement it)
 }
 
 void BindingsGenerator::_initialize_compat_singletons() {

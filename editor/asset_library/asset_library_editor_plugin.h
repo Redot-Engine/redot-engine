@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file asset_library_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/asset_library/editor_asset_installer.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"

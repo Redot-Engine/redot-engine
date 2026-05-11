@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_shaped_object_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_object_3d.h"
 
 #include "core/templates/self_list.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file local_debugger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "local_debugger.h"
 
 #include "core/debugger/script_debugger.h"
@@ -359,8 +365,8 @@ Pair<String, int> LocalDebugger::to_breakpoint(const String &p_line) {
 }
 
 void LocalDebugger::send_message(const String &p_message, const Array &p_args) {
-	// This needs to be cleaned up entirely.
-	// print_line("MESSAGE: '" + p_message + "' - " + String(Variant(p_args)));
+	/// @todo This needs to be cleaned up entirely.
+	/// print_line("MESSAGE: '" + p_message + "' - " + String(Variant(p_args)));
 }
 
 void LocalDebugger::send_error(const String &p_func, const String &p_file, int p_line, const String &p_err, const String &p_descr, bool p_editor_notify, ErrorHandlerType p_type) {

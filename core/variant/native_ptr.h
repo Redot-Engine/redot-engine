@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file native_ptr.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/audio_frame.h"
 #include "core/variant/method_ptrcall.h"
 #include "core/variant/type_info.h"

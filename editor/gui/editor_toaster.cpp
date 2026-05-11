@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_toaster.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_toaster.h"
 
 #include "editor/editor_string_names.h"
@@ -181,7 +187,7 @@ void EditorToaster::_error_handler_impl(const String &p_file, int p_line, const 
 }
 
 void EditorToaster::_update_vbox_position() {
-	// This is kind of a workaround because it's hard to keep the VBox anchroed to the bottom.
+	// This is kind of a workaround because it's hard to keep the VBox anchored to the bottom.
 	vbox_container->set_size(Vector2());
 	vbox_container->set_position(get_global_position() - vbox_container->get_size() + Vector2(get_size().x, -5 * EDSCALE));
 }

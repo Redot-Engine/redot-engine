@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file physics_server_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
@@ -49,14 +55,14 @@ protected:
 	static void _bind_methods();
 
 public:
-	virtual Vector2 get_total_gravity() const = 0; // get gravity vector working on this body space/area
-	virtual real_t get_total_linear_damp() const = 0; // get density of this body space/area
-	virtual real_t get_total_angular_damp() const = 0; // get density of this body space/area
+	virtual Vector2 get_total_gravity() const = 0; ///< @return gravity vector working on this body space/area
+	virtual real_t get_total_linear_damp() const = 0; ///< @return density of this body space/area
+	virtual real_t get_total_angular_damp() const = 0; ///< @return density of this body space/area
 
 	virtual Vector2 get_center_of_mass() const = 0;
 	virtual Vector2 get_center_of_mass_local() const = 0;
-	virtual real_t get_inverse_mass() const = 0; // get the mass
-	virtual real_t get_inverse_inertia() const = 0; // get density of this body space
+	virtual real_t get_inverse_mass() const = 0; ///< @return The mass
+	virtual real_t get_inverse_inertia() const = 0; // @return Density of this body space
 
 	virtual void set_linear_velocity(const Vector2 &p_velocity) = 0;
 	virtual Vector2 get_linear_velocity() const = 0;
@@ -199,7 +205,7 @@ public:
 		RID rid;
 		ObjectID collider_id;
 		int shape = 0;
-		Vector2 linear_velocity; // Velocity at contact point.
+		Vector2 linear_velocity; ///< Velocity at contact point.
 	};
 
 	virtual int intersect_shape(const ShapeParameters &p_parameters, ShapeResult *r_results, int p_result_max) = 0;
@@ -254,10 +260,11 @@ public:
 	virtual Variant shape_get_data(RID p_shape) const = 0;
 	virtual real_t shape_get_custom_solver_bias(RID p_shape) const = 0;
 
-	//these work well, but should be used from the main thread only
+	// These work well, but should be used from the main thread only
 	virtual bool shape_collide(RID p_shape_A, const Transform2D &p_xform_A, const Vector2 &p_motion_A, RID p_shape_B, const Transform2D &p_xform_B, const Vector2 &p_motion_B, Vector2 *r_results, int p_result_max, int &r_result_count) = 0;
 
-	/* SPACE API */
+	/// @name SPACE API
+	/// @{
 
 	virtual RID space_create() = 0;
 	virtual void space_set_active(RID p_space, bool p_active) = 0;
@@ -278,18 +285,20 @@ public:
 	virtual void space_set_param(RID p_space, SpaceParameter p_param, real_t p_value) = 0;
 	virtual real_t space_get_param(RID p_space, SpaceParameter p_param) const = 0;
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// This function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectSpaceState2D *space_get_direct_state(RID p_space) = 0;
 
 	virtual void space_set_debug_contacts(RID p_space, int p_max_contacts) = 0;
 	virtual Vector<Vector2> space_get_contacts(RID p_space) const = 0;
 	virtual int space_get_contact_count(RID p_space) const = 0;
 
-	//missing space parameters
+	/// @todo Missing space parameters
 
-	/* AREA API */
+	/// @}
+	/// @name AREA API
+	/// @{
 
-	//missing attenuation? missing better override?
+	/// @tpdp Missing attenuation? missing better override?
 
 	enum AreaParameter {
 		AREA_PARAM_GRAVITY_OVERRIDE_MODE,
@@ -312,9 +321,9 @@ public:
 	enum AreaSpaceOverrideMode {
 		AREA_SPACE_OVERRIDE_DISABLED,
 		AREA_SPACE_OVERRIDE_COMBINE,
-		AREA_SPACE_OVERRIDE_COMBINE_REPLACE, // Combines, then discards all subsequent calculations
+		AREA_SPACE_OVERRIDE_COMBINE_REPLACE, ///< Combines, then discards all subsequent calculations
 		AREA_SPACE_OVERRIDE_REPLACE,
-		AREA_SPACE_OVERRIDE_REPLACE_COMBINE // Discards all previous calculations, then keeps combining
+		AREA_SPACE_OVERRIDE_REPLACE_COMBINE ///< Discards all previous calculations, then keeps combining
 	};
 
 	virtual void area_add_shape(RID p_area, RID p_shape, const Transform2D &p_transform = Transform2D(), bool p_disabled = false) = 0;
@@ -354,9 +363,11 @@ public:
 	virtual void area_set_monitor_callback(RID p_area, const Callable &p_callback) = 0;
 	virtual void area_set_area_monitor_callback(RID p_area, const Callable &p_callback) = 0;
 
-	/* BODY API */
+	/// @}
+	/// @name BODY API
+	/// @{
 
-	//missing ccd?
+	/// @todo Missing ccd?
 
 	enum BodyMode {
 		BODY_MODE_STATIC,
@@ -411,11 +422,11 @@ public:
 	virtual void body_set_collision_priority(RID p_body, real_t p_priority) = 0;
 	virtual real_t body_get_collision_priority(RID p_body) const = 0;
 
-	// common body variables
+	/// Common body variables
 	enum BodyParameter {
 		BODY_PARAM_BOUNCE,
 		BODY_PARAM_FRICTION,
-		BODY_PARAM_MASS, ///< unused for static, always infinite
+		BODY_PARAM_MASS, ///< Unused for static, always infinite
 		BODY_PARAM_INERTIA,
 		BODY_PARAM_CENTER_OF_MASS,
 		BODY_PARAM_GRAVITY_SCALE,
@@ -490,7 +501,7 @@ public:
 
 	virtual void body_set_pickable(RID p_body, bool p_pickable) = 0;
 
-	// this function only works on physics process, errors and returns null otherwise
+	/// @note This function only works on physics process, errors and returns null otherwise
 	virtual PhysicsDirectBodyState2D *body_get_direct_state(RID p_body) = 0;
 
 	struct MotionParameters {
@@ -532,7 +543,9 @@ public:
 
 	virtual bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) = 0;
 
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	virtual RID joint_create() = 0;
 
@@ -589,14 +602,18 @@ public:
 
 	virtual JointType joint_get_type(RID p_joint) const = 0;
 
-	/* QUERY API */
+	/// @}
+	/// @name QUERY API
+	/// @{
 
 	enum AreaBodyStatus {
 		AREA_BODY_ADDED,
 		AREA_BODY_REMOVED
 	};
 
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	virtual void free(RID p_rid) = 0;
 
@@ -617,6 +634,7 @@ public:
 	};
 
 	virtual int get_process_info(ProcessInfo p_info) = 0;
+	/// @}
 
 	PhysicsServer2D();
 	~PhysicsServer2D();
