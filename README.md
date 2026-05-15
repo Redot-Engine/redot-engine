@@ -45,8 +45,8 @@ codebase of both through a more genuinely community-driven model than Godot.
 
 ### Binary downloads
 
-Official binaries for the Redot editor and the export templates will be found
-[on the Redot website](https://redotengine.org/download) once it's set up and on the [GitHub page](https://github.com/Redot-Engine/redot-engine) until then.
+Official binaries for the Redot editor and the export templates can be found
+[on the Redot website](https://redotengine.org/download) and on the [GitHub page](https://github.com/Redot-Engine/redot-engine).
 
 ### Compiling from source
 
