@@ -233,7 +233,7 @@ void AnimationPlayerEditor::_autoplay_pressed() {
 	}
 }
 
-void AnimationPlayerEditor::_go_to_nearest_keyframe(bool p_backward) {
+void AnimationPlayerEditor::go_to_nearest_keyframe(bool p_backward) {
 	if (_get_current().is_empty()) {
 		return;
 	}
@@ -1651,10 +1651,10 @@ void AnimationPlayerEditor::shortcut_input(const Ref<InputEvent> &p_ev) {
 			_play_bw_pressed();
 			accept_event();
 		} else if (ED_IS_SHORTCUT("animation_editor/go_to_next_keyframe", p_ev)) {
-			_go_to_nearest_keyframe(false);
+			go_to_nearest_keyframe(false);
 			accept_event();
 		} else if (ED_IS_SHORTCUT("animation_editor/go_to_previous_keyframe", p_ev)) {
-			_go_to_nearest_keyframe(true);
+			go_to_nearest_keyframe(true);
 			accept_event();
 		}
 	}
@@ -2281,8 +2281,6 @@ void fragment() {
 	ED_SHORTCUT("animation_editor/play_animation_backwards", TTRC("Play Animation Backwards"), Key::A);
 	ED_SHORTCUT("animation_editor/play_animation_from_start", TTRC("Play Animation from Start"), KeyModifierMask::SHIFT + Key::D);
 	ED_SHORTCUT("animation_editor/play_animation_from_end", TTRC("Play Animation Backwards from End"), KeyModifierMask::SHIFT + Key::A);
-	ED_SHORTCUT("animation_editor/go_to_next_keyframe", TTRC("Go to Next Keyframe"), KeyModifierMask::SHIFT + KeyModifierMask::ALT + Key::D);
-	ED_SHORTCUT("animation_editor/go_to_previous_keyframe", TTRC("Go to Previous Keyframe"), KeyModifierMask::SHIFT + KeyModifierMask::ALT + Key::A);
 }
 
 AnimationPlayerEditor::~AnimationPlayerEditor() {
@@ -2406,6 +2404,13 @@ void AnimationPlayerEditorPlugin::_update_dummy_player(AnimationMixer *p_mixer) 
 		}
 	}
 	memdelete(default_node);
+
+	// Library list is dynamically added to property list, should be copied explicitly.
+	List<StringName> libraries;
+	p_mixer->get_animation_library_list(&libraries);
+	for (const StringName &K : libraries) {
+		dummy_player->add_animation_library(K, p_mixer->get_animation_library(K));
+	}
 
 	if (anim_editor) {
 		anim_editor->_update_player();
