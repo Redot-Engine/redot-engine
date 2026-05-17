@@ -702,8 +702,8 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		info["name"] = ProjectSettings::get_singleton()->get_setting("application/config/name", "Unnamed");
 		info["main_scene"] = ProjectSettings::get_singleton()->get_setting("application/run/main_scene", "");
 		Dictionary v;
-		v["major"] = VERSION_MAJOR;
-		v["minor"] = VERSION_MINOR;
+		v["major"] = REDOT_VERSION_MAJOR;
+		v["minor"] = REDOT_VERSION_MINOR;
 		info["version"] = v;
 		result.add_text(JSON::stringify(info, "  "));
 	} else if (action == "run") {
