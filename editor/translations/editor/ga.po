@@ -21797,3 +21797,6 @@ msgstr ""
 "4.3, mar sin má scríobhadh an cód seo roimh 4.3, ní leanfaidh sé ar aghaidh "
 "ag obair. Smaoinigh ar an spás gearrthóg z-chomhpháirt a shonrú go díreach "
 "i.e. úsáid 'vec4 (VERTEX.xy, 1.0, 1.0)'."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "An iomarca scripteanna le hoscailt in eagarthóir seachtrach (uasmhéid 128)."

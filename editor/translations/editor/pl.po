@@ -21649,3 +21649,6 @@ msgstr ""
 "wcześniejszej wersji niż 4.3, nie będzie on dalej działał. Rozważ podanie "
 "komponentu z w przestrzeni przycinania bezpośrednio np. użyj `vec4(VERTEX.xy, "
 "1.0, 1.0)`."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Zbyt wiele skryptów do otwarcia w zewnętrznym edytorze (maks. 128)."

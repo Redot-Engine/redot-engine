@@ -21976,3 +21976,6 @@ msgstr ""
 "cambiata nella versione 4.3, quindi se questo codice è stato scritto prima di "
 "4.3, non continuerà a funzionare. Considera di specificare il componente z "
 "dello spazio clip direttamente. Ovvero, utilizza`vec4 (VERTEX.xy, 1.0, 1.0)`."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Troppi script da aprire nell'editor esterno (massimo 128)."

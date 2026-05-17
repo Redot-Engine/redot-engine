@@ -6926,3 +6926,6 @@ msgstr "อาร์กูเมนท์มาโครไม่ถูกต้
 
 msgid "Invalid macro argument count."
 msgstr "จำนวนอาร์กูเมนท์มาโครไม่ถูกต้อง"
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "มีสคริปต์มากเกินไปที่จะเปิดในตัวแก้ไขภายนอก (สูงสุด 128)"

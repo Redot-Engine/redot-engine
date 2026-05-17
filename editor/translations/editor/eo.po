@@ -4901,3 +4901,6 @@ msgid ""
 msgstr ""
 "La entute grandeco de la %s por ĉi tio ombrigilo sur ĉi tiu aparato estis "
 "superita (%d/%d). La ombrigilo majo ne funkcias ĝuste."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Tro da skriptoj por malfermi en ekstera redaktilo (maksimume 128)."

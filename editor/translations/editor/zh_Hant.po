@@ -20454,3 +20454,6 @@ msgstr ""
 "您正嘗試將模型空間的 VERTEX 位置指派給裁剪空間的頂點 POSITION。裁剪空間定義在 "
 "4.3 版已變更，若程式碼寫於 4.3 之前將不再適用。請考慮直接指定裁剪空間的 z 分"
 "量，例如使用 `vec4(VERTEX.xy, 1.0, 1.0)`。"
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "要在外部編輯器中開啟的腳本過多（最多 128 個）。"

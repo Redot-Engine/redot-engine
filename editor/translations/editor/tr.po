@@ -21406,3 +21406,6 @@ msgstr ""
 "değişmiştir, bundan dolayı bu kod 4.3'ten önce yazılmışsa çalışmaya devam "
 "etmeyecektir. Parça uzayının z-bileşenini doğrudan belirtmeyi düşünün, yani "
 "`vec4(VERTEX.xy, 1.0, 1.0)` kullanın."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Harici düzenleyicide açılacak çok fazla komut dosyası var (maks. 128)."

@@ -21739,3 +21739,6 @@ msgstr ""
 "mudou na versão 4.3, então se esse código foi escrito antes da 4.3, ele não "
 "continuará funcionando. Considere especificar o componente z do espaço do "
 "clipping diretamente (use `vec4(VERTEX.xy, 1.0, 1.0)`)."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Muitos scripts para abrir no editor externo (máximo 128)."

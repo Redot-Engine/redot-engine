@@ -845,6 +845,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	// External editor (ScriptEditorPlugin)
 	_initial_set("text_editor/external/use_external_editor", false, true);
+	_initial_set("text_editor/external/prefer_tabs_in_external_editor", true, true);
 	_initial_set("text_editor/external/exec_path", "");
 
 	// Help

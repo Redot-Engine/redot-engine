@@ -17066,3 +17066,6 @@ msgid ""
 msgstr ""
 "تم الوصول للحجم الكامل لـ %s بالنسبة لهذا الـ shader على هذا الجهاز (%d/%d). "
 "قد لا يعمل الـ shader بالشكل المناسب."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "عدد كبير جدًا من البرامج النصية لفتحها في محرر خارجي (بحد أقصى 128)."
