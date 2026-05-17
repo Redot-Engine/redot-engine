@@ -4149,3 +4149,6 @@ msgid ""
 msgstr ""
 "Dimensiunea totală a %s pentru acest shader pe acest dispozitiv a fost "
 "depășită (%d/%d). Shader-ul poate să nu funcționeze corect."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Prea multe scripturi de deschis în editorul extern (max. 128)."

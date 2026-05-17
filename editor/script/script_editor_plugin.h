@@ -545,6 +545,13 @@ class ScriptEditor : public PanelContainer {
 	void _update_script_colors();
 	void _update_modified_scripts_for_external_editor(Ref<Script> p_for_script = Ref<Script>());
 
+	/**
+	 * Opens multiple scripts in an external editor.
+	 *
+	 * @param p_paths A list of globalized paths to the scripts.
+	 */
+	void _open_external_editor_bulk(const Vector<String> &p_paths);
+
 	void _script_changed();
 	int file_dialog_option;
 	void _file_dialog_action(const String &p_file);

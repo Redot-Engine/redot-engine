@@ -12904,3 +12904,6 @@ msgstr "Vakio '%s' on määritelty, mutta ei käytetty."
 
 msgid "The local variable '%s' is declared but never used."
 msgstr "Lokaali muuttuja '%s' on määritelty, mutta ei käytetty."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Liian monta skriptiä avattavaksi ulkoisessa muokkaimessa (enintään 128)."

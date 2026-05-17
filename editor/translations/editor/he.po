@@ -4574,3 +4574,6 @@ msgstr "אי אפשר לשנות קבועים."
 
 msgid "The local variable '%s' is declared but never used."
 msgstr "המשתנה המקומי '%s' הוגדר אך לא משומש."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "יותר מדי סקריפטים לפתיחה בעורך חיצוני (מקסימום 128)."
