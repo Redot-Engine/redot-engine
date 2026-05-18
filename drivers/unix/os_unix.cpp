@@ -1196,7 +1196,7 @@ String OS_Unix::get_executable_path() const {
 	std::string buffer;
 	kvm_t *kd = nullptr;
 	kinfo_proc *proc_info = nullptr;
-	bool error = false, retried = false;
+	bool error = false, retried = false, leading_dash_removed = false;
 	kd = kvm_openfiles(nullptr, nullptr, nullptr, KVM_NO_FILES, nullptr);
 	if (kd) {
 		if ((proc_info = kvm_getprocs(kd, KERN_PROC_PID, getpid(), sizeof(struct kinfo_proc), &cntp))) {
@@ -1215,6 +1215,7 @@ String OS_Unix::get_executable_path() const {
 				argv0 = buffer;
 				path = cpp_getexe(argv0);
 			} else if (slash_pos == std::string::npos || slash_pos > colon_pos) {
+			retry_without_leading_dash:
 				std::string penv = cpp_getenv("PATH");
 				if (!penv.empty()) {
 				retry:
@@ -1244,8 +1245,14 @@ String OS_Unix::get_executable_path() const {
 					}
 					goto retry;
 				}
+				if (path.empty() && !leading_dash_removed && buffer[0] == '-' && buffer.length() > 1) {
+					buffer = buffer.substr(1);
+					retried = false;
+					leading_dash_removed = true;
+					goto retry_without_leading_dash;
+				}
 			}
-			if (path.empty() && slash_pos > 0) {
+			if (path.empty() && slash_pos != std::string::npos && slash_pos > 0) {
 				std::string pwd = cpp_getenv("PWD");
 				if (!pwd.empty()) {
 					argv0 = pwd + "/" + buffer;
@@ -1266,6 +1273,8 @@ String OS_Unix::get_executable_path() const {
 			std::string underscore = cpp_getenv("_");
 			if (!underscore.empty()) {
 				buffer = underscore;
+				leading_dash_removed = false;
+				retried = false;
 				goto fallback;
 			}
 		}
