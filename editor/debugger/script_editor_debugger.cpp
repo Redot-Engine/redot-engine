@@ -495,7 +495,7 @@ void ScriptEditorDebugger::_msg_signal_viewer_signal_emitted(uint64_t p_thread_i
 	// Data format: [emitter_id, node_name, node_class, signal_name, count, connections_array]
 
 	if (p_data.size() < 6) {
-		print_line("[ScriptEditorDebugger] WARNING: Invalid signal_viewer data, expected 6 elements");
+		ERR_PRINT("[ScriptEditorDebugger] Invalid signal_viewer data, expected 6 elements");
 		return;
 	}
 
@@ -509,11 +509,12 @@ void ScriptEditorDebugger::_msg_signal_viewer_signal_emitted(uint64_t p_thread_i
 
 	// Get SignalizeDock singleton and update it
 	SignalizeDock *signal_viewer = SignalizeDock::get_singleton();
-	if (signal_viewer) {
-		signal_viewer->_on_runtime_signal_emitted(emitter_id, node_name, node_class, signal_name, count, signal_connections);
-	} else {
-		print_line("[ScriptEditorDebugger] WARNING: No SignalizeDock singleton");
+	if (!signal_viewer) {
+		ERR_PRINT("[ScriptEditorDebugger] No SignalizeDock singleton");
+		return;
 	}
+
+	signal_viewer->_on_runtime_signal_emitted(emitter_id, node_name, node_class, signal_name, count, signal_connections);
 }
 
 void ScriptEditorDebugger::_msg_signal_viewer_node_signal_data(uint64_t p_thread_id, const Array &p_data) {
@@ -521,19 +522,18 @@ void ScriptEditorDebugger::_msg_signal_viewer_node_signal_data(uint64_t p_thread
 	// Data format: [node_id, node_name, node_class, [signals_data]]
 
 	if (p_data.is_empty()) {
-		print_line("[ScriptEditorDebugger] WARNING: Invalid node_signal_data, empty array");
+		ERR_PRINT("[ScriptEditorDebugger] Invalid node_signal_data, empty array");
 		return;
 	}
 
-	print_line(vformat("[ScriptEditorDebugger] Received node signal data with %d elements", p_data.size()));
-
 	// Get SignalizeDock singleton and forward the data
 	SignalizeDock *signal_viewer = SignalizeDock::get_singleton();
-	if (signal_viewer) {
-		signal_viewer->_on_node_signal_data_received(p_data);
-	} else {
-		print_line("[ScriptEditorDebugger] WARNING: No SignalizeDock singleton for node_signal_data");
+	if (!signal_viewer) {
+		ERR_PRINT("[ScriptEditorDebugger] No SignalizeDock singleton for node_signal_data");
+		return;
 	}
+
+	signal_viewer->_on_node_signal_data_received(p_data);
 }
 
 void ScriptEditorDebugger::_msg_stack_dump(uint64_t p_thread_id, const Array &p_data) {
@@ -989,28 +989,14 @@ void ScriptEditorDebugger::_msg_embed_next_frame(uint64_t p_thread_id, const Arr
 void ScriptEditorDebugger::_parse_message(const String &p_msg, uint64_t p_thread_id, const Array &p_data) {
 	emit_signal(SNAME("debug_data"), p_msg, p_data);
 
-	// DEBUG: Log signal_viewer messages
-	if (p_msg.contains("signal_viewer")) {
-		print_line(vformat("[ScriptEditorDebugger] Received message: '%s'", p_msg));
-	}
-
 	ParseMessageFunc *fn_ptr = parse_message_handlers.getptr(p_msg);
 	if (fn_ptr) {
-		if (p_msg.contains("signal_viewer")) {
-			print_line(vformat("[ScriptEditorDebugger] Found handler for: '%s'", p_msg));
-		}
 		(this->**fn_ptr)(p_thread_id, p_data);
 	} else {
-		if (p_msg.contains("signal_viewer")) {
-			print_line(vformat("[ScriptEditorDebugger] No handler found for: '%s', trying plugins_capture", p_msg));
-		}
 		int colon_index = p_msg.find_char(':');
 		ERR_FAIL_COND_MSG(colon_index < 1, "Invalid message received");
 
 		bool parsed = EditorDebuggerNode::get_singleton()->plugins_capture(this, p_msg, p_data);
-		if (p_msg.contains("signal_viewer")) {
-			print_line(vformat("[ScriptEditorDebugger] plugins_capture returned: %s", parsed ? "TRUE" : "FALSE"));
-		}
 		if (!parsed) {
 			WARN_PRINT("Unknown message: " + p_msg);
 		}

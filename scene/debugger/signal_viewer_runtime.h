@@ -44,6 +44,9 @@ private:
 	static SignalViewerRuntime *singleton;
 	bool tracking_enabled = false;
 
+	// Verbosity control: 0=Silent, 1=Quiet, 2=Normal, 3=Verbose
+	int verbosity_level = 0;
+
 	// Track which nodes we're monitoring to avoid duplicate messages
 	HashSet<ObjectID> monitored_nodes;
 
@@ -91,6 +94,15 @@ public:
 
 	// Check if tracking is enabled
 	bool is_tracking_enabled() const { return tracking_enabled; }
+
+	// Set verbosity level (0=Silent, 1=Quiet, 2=Normal, 3=Verbose)
+	void set_verbosity(int p_level) { verbosity_level = CLAMP(p_level, 0, 3); }
+
+	// Get current verbosity level
+	int get_verbosity() const { return verbosity_level; }
+
+	// Helper to check if we should log at a given verbosity level
+	bool should_log(int p_level) const { return verbosity_level >= p_level; }
 
 	// Handle request for node signal data (per-node inspection)
 	// Made public so SceneDebugger can call it

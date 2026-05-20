@@ -94,15 +94,6 @@ void SignalViewerRuntime::_signal_emission_callback(Object *p_emitter, const Str
 	String node_name = emitter_node->get_name();
 	String signal_name = String(p_signal);
 
-	// NOTE: Control node filter disabled to support signal showcases/demos
-	// In production games, you may want to re-enable this to reduce UI noise
-	// FILTER OUT ALL GUI/CONTROL CLASSES - Only track gameplay nodes
-	// Skip all Control-derived classes (GUI elements) - check both by cast and by name
-	// Control *as_control = Object::cast_to<Control>(emitter_node);
-	// if (as_control) {
-	// 	return; // Skip ALL Control nodes
-	// }
-
 	// Filter out internal engine noise - gizmo timers, skeleton pose updates, etc.
 	// Skip timer signals (unless they're user-created gameplay timers)
 	if (signal_name == "timeout" && (node_name.contains("Gizmo") || node_name.contains("Update") || (node_name.contains("Timer") && node_class.contains("Editor")))) {
@@ -141,8 +132,9 @@ void SignalViewerRuntime::_signal_emission_callback(Object *p_emitter, const Str
 		return;
 	}
 
-	// DEBUG: Only print after filtering (much less spam)
-	print_line(vformat("[Signal Viewer Runtime] Tracking: %s.%s", node_name, signal_name));
+	if (runtime->should_log(3)) { // Verbose
+		print_line(vformat("[Signal Viewer Runtime] Tracking: %s.%s", node_name, signal_name));
+	}
 
 	// Create a unique key for this signal
 	String key = vformat("%s:%s", emitter_node->get_instance_id(), signal_name);
@@ -221,7 +213,9 @@ void SignalViewerRuntime::_send_signal_update(const String &p_key, ObjectID p_em
 	// Send message back to editor via EngineDebugger
 	EngineDebugger *ed = EngineDebugger::get_singleton();
 	if (ed) {
-		print_line(vformat("[Signal Viewer Runtime] Sending update: %s.%s (count: %d, connections: %d)", p_node_name, p_signal_name, p_count, p_connections.size()));
+		if (should_log(3)) { // Verbose
+			print_line(vformat("[Signal Viewer Runtime] Sending update: %s.%s (count: %d, connections: %d)", p_node_name, p_signal_name, p_count, p_connections.size()));
+		}
 		ed->send_message("signal_viewer:signal_emitted", msg_data);
 	}
 }
@@ -233,7 +227,9 @@ void SignalViewerRuntime::_send_batch_updates() {
 		return;
 	}
 
-	print_line(vformat("[Signal Viewer Runtime] Sending batch updates for %d signals", signal_emission_counts.size()));
+	if (should_log(3)) { // Verbose
+		print_line(vformat("[Signal Viewer Runtime] Sending batch updates for %d signals", signal_emission_counts.size()));
+	}
 
 	// Iterate over all accumulated signal counts and send updates
 	for (const KeyValue<String, int> &E : signal_emission_counts) {
@@ -255,7 +251,9 @@ void SignalViewerRuntime::_send_batch_updates() {
 		Object *obj = ObjectDB::get_instance(emitter_id);
 		if (!obj) {
 			// Node was deleted, skip this entry
-			print_line(vformat("[Signal Viewer Runtime] Skipping deleted node (ID: %s)", object_id_str));
+			if (should_log(3)) { // Verbose
+				print_line(vformat("[Signal Viewer Runtime] Skipping deleted node (ID: %s)", object_id_str));
+			}
 			continue;
 		}
 
@@ -285,7 +283,9 @@ void SignalViewerRuntime::start_tracking() {
 	Object::set_signal_emission_callback(_signal_emission_callback);
 	tracking_enabled = true;
 
-	print_line("[Signal Viewer Runtime] Signal tracking enabled");
+	if (should_log(2)) { // Normal
+		print_line("[Signal Viewer Runtime] Signal tracking enabled");
+	}
 }
 
 void SignalViewerRuntime::stop_tracking() {
@@ -297,7 +297,9 @@ void SignalViewerRuntime::stop_tracking() {
 	Object::set_signal_emission_callback(nullptr);
 	tracking_enabled = false;
 
-	print_line("[Signal Viewer Runtime] Signal tracking disabled");
+	if (should_log(2)) { // Normal
+		print_line("[Signal Viewer Runtime] Signal tracking disabled");
+	}
 }
 
 void SignalViewerRuntime::send_node_signal_data(ObjectID p_node_id) {
@@ -318,7 +320,9 @@ void SignalViewerRuntime::send_node_signal_data(ObjectID p_node_id) {
 	String node_name = node->get_name();
 	String node_class = node->get_class();
 
-	print_line(vformat("[Signal Viewer Runtime] Collecting signal data for: %s (%s)", node_name, node_class));
+	if (should_log(1)) { // Quiet
+		print_line(vformat("[Signal Viewer Runtime] Collecting signal data for: %s (%s)", node_name, node_class));
+	}
 
 	// Collect all signal data for this node
 	Array signal_data_array;
@@ -386,8 +390,10 @@ void SignalViewerRuntime::send_node_signal_data(ObjectID p_node_id) {
 
 		signal_data_array.append(sig_info);
 
-		print_line(vformat("[Signal Viewer Runtime] Signal: %s (count: %d, connections: %d)",
-				signal_name, count, connections_array.size()));
+		if (should_log(3)) { // Verbose
+			print_line(vformat("[Signal Viewer Runtime] Signal: %s (count: %d, connections: %d)",
+					signal_name, count, connections_array.size()));
+		}
 	}
 
 	// Send the data back to editor
@@ -400,9 +406,12 @@ void SignalViewerRuntime::send_node_signal_data(ObjectID p_node_id) {
 
 	EngineDebugger *ed = EngineDebugger::get_singleton();
 	if (ed) {
-		print_line(vformat("[Signal Viewer Runtime] Sending signal data: %s (%s)", node_name, node_class));
+		if (should_log(1)) { // Quiet
+			print_line(vformat("[Signal Viewer Runtime] Sending signal data: %s (%s)", node_name, node_class));
+		}
 		ed->send_message("signal_viewer:node_signal_data", msg_data);
 	} else {
+		// Always show errors
 		print_line("[Signal Viewer Runtime] No EngineDebugger - cannot send signal data");
 	}
 }
@@ -411,6 +420,8 @@ void SignalViewerRuntime::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("start_tracking"), &SignalViewerRuntime::start_tracking);
 	ClassDB::bind_method(D_METHOD("stop_tracking"), &SignalViewerRuntime::stop_tracking);
 	ClassDB::bind_method(D_METHOD("is_tracking_enabled"), &SignalViewerRuntime::is_tracking_enabled);
+	ClassDB::bind_method(D_METHOD("set_verbosity", "level"), &SignalViewerRuntime::set_verbosity);
+	ClassDB::bind_method(D_METHOD("get_verbosity"), &SignalViewerRuntime::get_verbosity);
 	ClassDB::bind_method(D_METHOD("send_node_signal_data", "node_id"), &SignalViewerRuntime::send_node_signal_data);
 }
 
