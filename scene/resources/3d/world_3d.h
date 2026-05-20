@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file world_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "scene/resources/compositor.h"
 #include "scene/resources/environment.h"

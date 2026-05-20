@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file pipeline_hash_map_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering_server.h"
 
@@ -100,7 +106,7 @@ public:
 		compiled_queue_mutex.unlock();
 	}
 
-	// Start compilation of a pipeline ahead of time in the background. Returns true if the compilation was started, false if it wasn't required. Source is only used for collecting statistics.
+	/// Start compilation of a pipeline ahead of time in the background. Returns true if the compilation was started, false if it wasn't required. Source is only used for collecting statistics.
 	void compile_pipeline(const Key &p_key, uint32_t p_key_hash, RS::PipelineSource p_source, bool p_high_priority) {
 		DEV_ASSERT((creation_object != nullptr) && (creation_function != nullptr) && "Creation object and function was not set before attempting to compile a pipeline.");
 
@@ -169,7 +175,8 @@ public:
 		}
 	}
 
-	// Retrieve a pipeline. It'll return an empty pipeline if it's not available yet, but it'll be guaranteed to succeed if 'wait for compilation' is true and stall as necessary. Source is just an optional number to aid debugging.
+	/// Retrieve a pipeline.
+	/// @return An empty pipeline if it's not available yet, but it'll be guaranteed to succeed if `wait for compilation` is true and stall as necessary. Source is just an optional number to aid debugging.
 	RID get_pipeline(const Key &p_key, uint32_t p_key_hash, bool p_wait_for_compilation, RS::PipelineSource p_source) {
 		RBMap<uint32_t, RID>::Element *e = hash_map.find(p_key_hash);
 
@@ -204,7 +211,7 @@ public:
 		}
 	}
 
-	// Delete all cached pipelines. Can stall if background compilation is in progress.
+	/// Delete all cached pipelines. Can stall if background compilation is in progress.
 	void clear_pipelines() {
 		_wait_for_all_pipelines();
 		_add_new_pipelines_to_map();
@@ -217,7 +224,7 @@ public:
 		compilation_set.clear();
 	}
 
-	// Set the external pipeline compilations array to increase the counters on every time a pipeline is compiled.
+	/// Set the external pipeline compilations array to increase the counters on every time a pipeline is compiled.
 	void set_compilations(uint32_t *p_compilations, Mutex *p_compilations_mutex) {
 		compilations = p_compilations;
 		compilations_mutex = p_compilations_mutex;

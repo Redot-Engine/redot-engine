@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_settings.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_settings.h"
 
 #include "core/config/project_settings.h"
@@ -46,6 +52,7 @@
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
+#include "core/variant/variant_parser.h"
 #include "core/version.h"
 #include "editor/editor_node.h"
 #include "editor/file_system/editor_paths.h"
@@ -582,7 +589,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	EDITOR_SETTING_BASIC(Variant::STRING, PROPERTY_HINT_ENUM, "interface/theme/preset", "Default", "Default,Breeze Dark,Godot,Godot 2,Gray,Light,Solarized (Dark),Solarized (Light),Black (OLED),Indigo,Custom")
 	EDITOR_SETTING_BASIC(Variant::STRING, PROPERTY_HINT_ENUM, "interface/theme/spacing_preset", "Default", "Compact,Default,Spacious,Custom")
 	EDITOR_SETTING(Variant::INT, PROPERTY_HINT_ENUM, "interface/theme/icon_and_font_color", 0, "Auto,Dark,Light")
-	EDITOR_SETTING_BASIC(Variant::COLOR, PROPERTY_HINT_NONE, "interface/theme/base_color", Color(0.2, 0.23, 0.31), "")
+	EDITOR_SETTING_BASIC(Variant::COLOR, PROPERTY_HINT_NONE, "interface/theme/base_color", get_default_base_color(), "")
 	EDITOR_SETTING_BASIC(Variant::COLOR, PROPERTY_HINT_NONE, "interface/theme/accent_color", Color(0.41, 0.61, 0.91), "")
 	EDITOR_SETTING_BASIC(Variant::BOOL, PROPERTY_HINT_NONE, "interface/theme/use_system_accent_color", false, "")
 	EDITOR_SETTING_BASIC(Variant::FLOAT, PROPERTY_HINT_RANGE, "interface/theme/contrast", 0.3, "-1,1,0.01")
@@ -838,6 +845,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	// External editor (ScriptEditorPlugin)
 	_initial_set("text_editor/external/use_external_editor", false, true);
+	_initial_set("text_editor/external/prefer_tabs_in_external_editor", true, true);
 	_initial_set("text_editor/external/exec_path", "");
 
 	// Help
@@ -889,6 +897,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	EDITOR_SETTING_USAGE(Variant::COLOR, PROPERTY_HINT_NONE, "editors/3d_gizmos/gizmo_colors/spring_bone_joint", Color(0.8, 0.9, 0.6), "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
 	EDITOR_SETTING_USAGE(Variant::COLOR, PROPERTY_HINT_NONE, "editors/3d_gizmos/gizmo_colors/spring_bone_collision", Color(0.6, 0.8, 0.9), "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
 	EDITOR_SETTING_USAGE(Variant::COLOR, PROPERTY_HINT_NONE, "editors/3d_gizmos/gizmo_colors/spring_bone_inside_collision", Color(0.9, 0.6, 0.8), "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
+	EDITOR_SETTING_USAGE(Variant::COLOR, PROPERTY_HINT_NONE, "editors/3d_gizmos/gizmo_colors/ik_chain", Color(0.6, 0.9, 0.8), "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
 	_initial_set("editors/3d_gizmos/gizmo_settings/bone_axis_length", (float)0.1);
 	EDITOR_SETTING(Variant::INT, PROPERTY_HINT_ENUM, "editors/3d_gizmos/gizmo_settings/bone_shape", 1, "Wire,Octahedron");
 	EDITOR_SETTING_USAGE(Variant::FLOAT, PROPERTY_HINT_NONE, "editors/3d_gizmos/gizmo_settings/path3d_tilt_disk_size", 0.8, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
@@ -1239,16 +1248,62 @@ String EditorSettings::get_existing_settings_path() {
 	return config_dir.path_join(filename);
 }
 
+static Error _parse_direct_resource_dummy(void *p_data, VariantParser::Stream *p_stream, Ref<Resource> &r_res, int &line, String &r_err_str) {
+	return OK;
+}
+
+Variant EditorSettings::get_setting_directly(const String &p_setting, const Variant &p_default) {
+	if (!EditorPaths::get_singleton() || !EditorPaths::get_singleton()->are_paths_valid()) {
+		return p_default;
+	}
+
+	String config_file_path = get_existing_settings_path();
+	if (config_file_path.is_empty() || !FileAccess::exists(config_file_path)) {
+		return p_default;
+	}
+
+	Ref<FileAccess> f = FileAccess::open(config_file_path, FileAccess::READ);
+	if (f.is_null()) {
+		return p_default;
+	}
+
+	VariantParser::StreamFile stream;
+	stream.f = f;
+	String assign;
+	Variant value;
+	VariantParser::Tag next_tag;
+	int lines = 0;
+	String error_text;
+	VariantParser::ResourceParser rp_new;
+	rp_new.ext_func = _parse_direct_resource_dummy;
+	rp_new.sub_func = _parse_direct_resource_dummy;
+
+	while (true) {
+		assign = Variant();
+		next_tag.fields.clear();
+		next_tag.name = String();
+		Error err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true, true);
+		if (err == ERR_FILE_EOF) {
+			break;
+		}
+		if (err == OK && !assign.is_empty() && assign == p_setting) {
+			return value;
+		}
+	}
+
+	return p_default;
+}
+
+Color EditorSettings::get_default_base_color() {
+	return Color(0.06, 0.09, 0.14);
+}
+
 String EditorSettings::get_newest_settings_path() {
 	const String config_file_name = vformat("editor_settings-%d.%d.tres", REDOT_VERSION_MAJOR, REDOT_VERSION_MINOR);
 	return EditorPaths::get_singleton()->get_config_dir().path_join(config_file_name);
 }
 
 void EditorSettings::create() {
-	// IMPORTANT: create() *must* create a valid EditorSettings singleton,
-	// as the rest of the engine code will assume it. As such, it should never
-	// return (incl. via ERR_FAIL) without initializing the singleton member.
-
 	if (singleton.ptr()) {
 		ERR_PRINT("Can't recreate EditorSettings as it already exists.");
 		return;

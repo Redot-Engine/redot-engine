@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file touch_screen_button.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "touch_screen_button.h"
 
 #include "scene/main/viewport.h"

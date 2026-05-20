@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_theme_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_theme_manager.h"
 
 #include "core/error/error_macros.h"
@@ -93,7 +99,7 @@ uint32_t EditorThemeManager::ThemeConfiguration::hash() {
 uint32_t EditorThemeManager::ThemeConfiguration::hash_fonts() {
 	uint32_t hash = hash_murmur3_one_float(EDSCALE);
 
-	// TODO: Implement the hash based on what editor_register_fonts() uses.
+	/// @todo Implement the hash based on what editor_register_fonts() uses.
 
 	return hash;
 }
@@ -203,7 +209,7 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme> &
 	{
 		OS::get_singleton()->benchmark_begin_measure(get_benchmark_key(), "Register Fonts");
 
-		// TODO: Check if existing font definitions from the old theme are usable and copy them.
+		/// @todo Check if existing font definitions from the old theme are usable and copy them.
 
 		// External function, see editor_fonts.cpp.
 		print_verbose("EditorTheme: Generating new fonts.");
@@ -212,7 +218,7 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme> &
 		OS::get_singleton()->benchmark_end_measure(get_benchmark_key(), "Register Fonts");
 	}
 
-	// TODO: Check if existing style definitions from the old theme are usable and copy them.
+	/// @todo Check if existing style definitions from the old theme are usable and copy them.
 
 	print_verbose("EditorTheme: Generating new styles.");
 	_populate_standard_styles(theme, config);
@@ -1368,13 +1374,20 @@ void EditorThemeManager::_populate_standard_styles(const Ref<EditorTheme> &p_the
 		p_theme->set_constant("buttons_min_height", "AcceptDialog", p_config.dialogs_buttons_min_size.y * EDSCALE);
 
 		// FileDialog.
-		p_theme->set_icon("folder", "FileDialog", p_theme->get_icon(SNAME("Folder"), EditorStringName(EditorIcons)));
-		p_theme->set_icon("parent_folder", "FileDialog", p_theme->get_icon(SNAME("ArrowUp"), EditorStringName(EditorIcons)));
-		p_theme->set_icon("back_folder", "FileDialog", p_theme->get_icon(SNAME("Back"), EditorStringName(EditorIcons)));
-		p_theme->set_icon("forward_folder", "FileDialog", p_theme->get_icon(SNAME("Forward"), EditorStringName(EditorIcons)));
-		p_theme->set_icon("reload", "FileDialog", p_theme->get_icon(SNAME("Reload"), EditorStringName(EditorIcons)));
-		p_theme->set_icon("toggle_hidden", "FileDialog", p_theme->get_icon(SNAME("GuiVisibilityVisible"), EditorStringName(EditorIcons)));
-		p_theme->set_icon("create_folder", "FileDialog", p_theme->get_icon(SNAME("FolderCreate"), EditorStringName(EditorIcons)));
+		p_theme->set_icon("folder", "FileDialog", p_theme->get_icon("Folder", EditorStringName(EditorIcons)));
+		p_theme->set_icon("parent_folder", "FileDialog", p_theme->get_icon("ArrowUp", EditorStringName(EditorIcons)));
+		p_theme->set_icon("back_folder", "FileDialog", p_theme->get_icon("Back", EditorStringName(EditorIcons)));
+		p_theme->set_icon("forward_folder", "FileDialog", p_theme->get_icon("Forward", EditorStringName(EditorIcons)));
+		p_theme->set_icon("reload", "FileDialog", p_theme->get_icon("Reload", EditorStringName(EditorIcons)));
+		p_theme->set_icon("toggle_hidden", "FileDialog", p_theme->get_icon("GuiVisibilityVisible", EditorStringName(EditorIcons)));
+		p_theme->set_icon("toggle_filename_filter", "FileDialog", p_theme->get_icon("FilenameFilter", EditorStringName(EditorIcons)));
+		p_theme->set_icon("thumbnail_mode", "FileDialog", p_theme->get_icon("FileThumbnail", EditorStringName(EditorIcons)));
+		p_theme->set_icon("list_mode", "FileDialog", p_theme->get_icon("FileList", EditorStringName(EditorIcons)));
+		p_theme->set_icon("sort", "FileDialog", p_theme->get_icon("Sort", EditorStringName(EditorIcons)));
+		p_theme->set_icon("favorite", "FileDialog", p_theme->get_icon("Favorites", EditorStringName(EditorIcons)));
+		p_theme->set_icon("favorite_up", "FileDialog", p_theme->get_icon("MoveUp", EditorStringName(EditorIcons)));
+		p_theme->set_icon("favorite_down", "FileDialog", p_theme->get_icon("MoveDown", EditorStringName(EditorIcons)));
+		p_theme->set_icon("create_folder", "FileDialog", p_theme->get_icon("FolderCreate", EditorStringName(EditorIcons)));
 		// Use a different color for folder icons to make them easier to distinguish from files.
 		// On a light theme, the icon will be dark, so we need to lighten it before blending it with the accent color.
 		p_theme->set_color("folder_icon_color", "FileDialog", (p_config.dark_theme ? Color(1, 1, 1) : Color(4.25, 4.25, 4.25)).lerp(p_config.accent_color, 0.7));
@@ -2014,7 +2027,7 @@ void EditorThemeManager::_populate_editor_styles(const Ref<EditorTheme> &p_theme
 		editor_spin_label_bg->set_border_width_all(0);
 		p_theme->set_stylebox("label_bg", "EditorSpinSlider", editor_spin_label_bg);
 
-		// TODO Use separate arrows instead like on SpinBox. Planned for a different PR.
+		/// @todo Use separate arrows instead like on SpinBox. Planned for a different PR.
 		p_theme->set_icon("updown", "EditorSpinSlider", p_theme->get_icon(SNAME("GuiSpinboxUpdown"), EditorStringName(EditorIcons)));
 		p_theme->set_icon("updown_disabled", "EditorSpinSlider", p_theme->get_icon(SNAME("GuiSpinboxUpdownDisabled"), EditorStringName(EditorIcons)));
 
@@ -2529,7 +2542,7 @@ void EditorThemeManager::_populate_editor_styles(const Ref<EditorTheme> &p_theme
 	// Asset Library.
 	p_theme->set_stylebox("bg", "AssetLib", p_config.base_empty_style);
 	p_theme->set_stylebox(SceneStringName(panel), "AssetLib", p_config.content_panel_style);
-	p_theme->set_color("status_color", "AssetLib", Color(0.5, 0.5, 0.5)); // FIXME: Use a defined color instead.
+	p_theme->set_color("status_color", "AssetLib", Color(0.5, 0.5, 0.5)); /// @todo FIXME: Use a defined color instead.
 	p_theme->set_icon("dismiss", "AssetLib", p_theme->get_icon(SNAME("Close"), EditorStringName(EditorIcons)));
 
 	// Debugger.
@@ -2538,8 +2551,8 @@ void EditorThemeManager::_populate_editor_styles(const Ref<EditorTheme> &p_theme
 		debugger_panel_style->set_border_width(SIDE_BOTTOM, 0);
 		p_theme->set_stylebox("DebuggerPanel", EditorStringName(EditorStyles), debugger_panel_style);
 
-		// This pattern of get_font()->get_height(get_font_size()) is used quite a lot and is very verbose.
-		// FIXME: Introduce Theme::get_font_height() / Control::get_theme_font_height() / Window::get_theme_font_height().
+		/// This pattern of get_font()->get_height(get_font_size()) is used quite a lot and is very verbose.
+		/// @todo FIXME: Introduce Theme::get_font_height() / Control::get_theme_font_height() / Window::get_theme_font_height().
 		const int offset_i1 = p_theme->get_font(SNAME("tab_selected"), SNAME("TabContainer"))->get_height(p_theme->get_font_size(SNAME("tab_selected"), SNAME("TabContainer")));
 		const int offset_i2 = p_theme->get_stylebox(SNAME("tab_selected"), SNAME("TabContainer"))->get_minimum_size().height;
 		const int offset_i3 = p_theme->get_stylebox(SceneStringName(panel), SNAME("TabContainer"))->get_content_margin(SIDE_TOP);
@@ -2911,7 +2924,7 @@ bool EditorThemeManager::is_generated_theme_outdated() {
 	// without a restart, so there is no point regenerating the theme.
 
 	if (outdated_cache_dirty) {
-		// TODO: We can use this information more intelligently to do partial theme updates and speed things up.
+		/// @todo We can use this information more intelligently to do partial theme updates and speed things up.
 		outdated_cache = EditorSettings::get_singleton()->check_changed_settings_in_group("interface/theme") ||
 				EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/font") ||
 				EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/main_font") ||

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_set_atlas_source_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_set_atlas_source_editor.h"
 
 #include "tiles_editor_plugin.h"
@@ -2023,7 +2029,7 @@ void TileSetAtlasSourceEditor::_tile_alternatives_control_mouse_exited() {
 void TileSetAtlasSourceEditor::_tile_alternatives_create_button_pressed(const Vector2i &p_atlas_coords) {
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 
-	// FIXME: Doesn't undo changes to `next_alternative_id` counter.
+	/// @todo FIXME: Doesn't undo changes to `next_alternative_id` counter.
 	undo_redo->create_action(TTR("Create tile alternatives"));
 	int next_id = tile_set_atlas_source->get_next_alternative_tile_id(p_atlas_coords);
 	undo_redo->add_do_method(tile_set_atlas_source, "create_alternative_tile", p_atlas_coords, next_id);
@@ -2259,6 +2265,7 @@ void TileSetAtlasSourceEditor::init_new_atlases(const Vector<Ref<TileSetAtlasSou
 
 void TileSetAtlasSourceEditor::_update_source_texture() {
 	if (tile_set_atlas_source && tile_set_atlas_source->get_texture() == atlas_source_texture) {
+		_check_outside_tiles();
 		return;
 	}
 
@@ -2277,8 +2284,9 @@ void TileSetAtlasSourceEditor::_update_source_texture() {
 
 void TileSetAtlasSourceEditor::_check_outside_tiles() {
 	ERR_FAIL_NULL(tile_set_atlas_source);
-	outside_tiles_warning->set_visible(!read_only && tile_set_atlas_source->has_tiles_outside_texture());
-	tool_advanced_menu_button->get_popup()->set_item_disabled(tool_advanced_menu_button->get_popup()->get_item_index(ADVANCED_CLEANUP_TILES), !tile_set_atlas_source->has_tiles_outside_texture());
+	bool has_tiles_outside = tile_set_atlas_source->has_tiles_outside_texture();
+	outside_tiles_warning->set_visible(!read_only && has_tiles_outside);
+	tool_advanced_menu_button->get_popup()->set_item_disabled(tool_advanced_menu_button->get_popup()->get_item_index(ADVANCED_CLEANUP_TILES), !has_tiles_outside);
 }
 
 void TileSetAtlasSourceEditor::_cleanup_outside_tiles() {

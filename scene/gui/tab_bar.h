@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tab_bar.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 #include "scene/property_list_helper.h"
 #include "scene/resources/text_line.h"
@@ -114,7 +120,7 @@ private:
 	CloseButtonDisplayPolicy cb_displaypolicy = CLOSE_BUTTON_SHOW_NEVER;
 	bool close_with_middle_mouse = true;
 
-	int hover = -1; // Hovered tab.
+	int hover = -1; ///< Hovered tab.
 	int max_width = 0;
 	bool scrolling_enabled = true;
 	bool drag_to_rearrange_enabled = false;

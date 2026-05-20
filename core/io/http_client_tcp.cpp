@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file http_client_tcp.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef WEB_ENABLED
 
 #include "http_client_tcp.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file packet_buffer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/ring_buffer.h"
 
 template <typename T>

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file mesh_data_tool.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/mesh.h"
 
 class MeshDataTool : public RefCounted {
@@ -41,7 +47,7 @@ class MeshDataTool : public RefCounted {
 	struct Vertex {
 		Vector3 vertex;
 		Color color;
-		Vector3 normal; // normal, binormal, tangent
+		Vector3 normal; ///< normal, binormal, tangent
 		Plane tangent;
 		Vector2 uv;
 		Vector2 uv2;

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file icudata_stub.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include <unicode/udata.h>
 #include <unicode/utypes.h>
 #include <unicode/uversion.h>

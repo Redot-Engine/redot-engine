@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file input_event.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "input_event.h"
 
 #include "core/input/input_map.h"

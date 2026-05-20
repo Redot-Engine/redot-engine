@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animated_sprite_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animated_sprite_2d.h"
 
 #include "scene/main/viewport.h"

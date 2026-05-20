@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_contact_listener_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_contact_listener_3d.h"
 
 #include "../jolt_project_settings.h"
@@ -194,6 +200,12 @@ bool JoltContactListener3D::_try_add_contacts(const JPH::Body &p_jolt_body1, con
 		const MutexLock write_lock(write_mutex);
 		return manifolds_by_shape_pair[shape_pair];
 	}();
+
+	if (unlikely(!manifold.contacts1.is_empty())) {
+		// CCD collisions can result in two contact callbacks for the same shape pair, one in the earlier discrete stage and one in the later CCD stage.
+		// We want the manifolds from the discrete stage, as the bodies still have their original velocities at that point, so we early-out if we've already stored something.
+		return false;
+	}
 
 	const JPH::uint contact_count = p_manifold.mRelativeContactPointsOn1.size();
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_pin_joint_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_joint_3d.h"
 
 #include "Jolt/Jolt.h"

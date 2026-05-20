@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animatable_body_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animatable_body_2d.h"
 
 void AnimatableBody2D::set_sync_to_physics(bool p_enable) {

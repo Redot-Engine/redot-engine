@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multiplayer_debugger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "multiplayer_debugger.h"
 
 #include "multiplayer_synchronizer.h"

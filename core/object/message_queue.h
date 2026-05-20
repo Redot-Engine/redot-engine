@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file message_queue.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object_id.h"
 #include "core/os/thread_safe.h"
 #include "core/templates/local_vector.h"
@@ -52,8 +58,8 @@ public:
 		uint8_t data[PAGE_SIZE_BYTES];
 	};
 
-	// Needs to be public to be able to define it outside the class.
-	// Needs to lock because there can be multiple of these allocators in several threads.
+	/// Needs to be public to be able to define it outside the class.
+	/// Needs to lock because there can be multiple of these allocators in several threads.
 	typedef PagedAllocator<Page, true> Allocator;
 
 private:
@@ -61,7 +67,7 @@ private:
 		TYPE_CALL,
 		TYPE_NOTIFICATION,
 		TYPE_SET,
-		TYPE_END, // End marker.
+		TYPE_END, ///< End marker.
 		FLAG_NULL_IS_OK = 1 << 13,
 		FLAG_SHOW_ERROR = 1 << 14,
 		FLAG_MASK = FLAG_NULL_IS_OK - 1,

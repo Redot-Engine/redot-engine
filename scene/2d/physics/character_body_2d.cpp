@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file character_body_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "character_body_2d.h"
 
 #ifndef DISABLE_DEPRECATED
@@ -40,7 +46,7 @@
 #define FLOOR_ANGLE_THRESHOLD 0.01
 
 bool CharacterBody2D::move_and_slide() {
-	// Hack in order to work with calling from _process as well as from _physics_process; calling from thread is risky.
+	/// @todo Hack in order to work with calling from _process as well as from _physics_process; calling from thread is risky.
 	double delta = Engine::get_singleton()->is_in_physics_frame() ? get_physics_process_delta_time() : get_process_delta_time();
 
 	Vector2 current_platform_velocity = platform_velocity;
@@ -337,7 +343,6 @@ void CharacterBody2D::apply_floor_snap() {
 	_apply_floor_snap();
 }
 
-// Method that avoids the p_wall_as_floor parameter for the public method.
 void CharacterBody2D::_apply_floor_snap(bool p_wall_as_floor) {
 	if (on_floor) {
 		return;

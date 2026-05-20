@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skeleton_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/inspector/add_metadata_dialog.h"
 #include "editor/inspector/editor_properties.h"
@@ -46,6 +52,7 @@ class EditorInspectorPluginSkeleton;
 class EditorPropertyVector3;
 class Joint;
 class PhysicalBone3D;
+class Skeleton3DEditor;
 class Skeleton3DEditorPlugin;
 class Button;
 class Tree;
@@ -70,6 +77,7 @@ class BonePropertiesEditor : public VBoxContainer {
 
 	Rect2 background_rects[5];
 
+	Skeleton3DEditor *skeleton_editor = nullptr;
 	Skeleton3D *skeleton = nullptr;
 	// String property;
 
@@ -95,12 +103,13 @@ protected:
 	void _notification(int p_what);
 
 public:
-	BonePropertiesEditor(Skeleton3D *p_skeleton);
+	BonePropertiesEditor(Skeleton3DEditor *p_skeleton_editor, Skeleton3D *p_skeleton);
 
-	// Which transform target to modify.
+	/// Which transform target to modify.
 	void set_target(const String &p_prop);
 	void set_label(const String &p_label) { label = p_label; }
 	void set_keyable(const bool p_keyable);
+	void set_skeleton(Skeleton3D *p_skeleton);
 
 	void _update_properties();
 };
@@ -123,7 +132,7 @@ class Skeleton3DEditor : public VBoxContainer {
 
 	struct BoneInfo {
 		PhysicalBone3D *physical_bone = nullptr;
-		Transform3D relative_rest; // Relative to skeleton node.
+		Transform3D relative_rest; ///< Relative to skeleton node.
 	};
 
 	EditorInspectorPluginSkeleton *editor_plugin = nullptr;
@@ -143,21 +152,27 @@ class Skeleton3DEditor : public VBoxContainer {
 	Button *edit_mode_button = nullptr;
 
 	bool edit_mode = false;
+	bool is_deleting = false;
 
 	HBoxContainer *animation_hb = nullptr;
 	Button *key_loc_button = nullptr;
 	Button *key_rot_button = nullptr;
 	Button *key_scale_button = nullptr;
 	Button *key_insert_button = nullptr;
-	Button *key_insert_all_button = nullptr;
+	Button *key_insert_new_button = nullptr;
+	Button *key_mod_insert_button = nullptr;
+	Button *key_mod_insert_new_button = nullptr;
+
+	// To maintain the status while running editor.
+	void _loc_toggled(bool p_toggled_on);
+	void _rot_toggled(bool p_toggled_on);
+	void _scl_toggled(bool p_toggled_on);
 
 	EditorInspectorSection *bones_section = nullptr;
 
 	EditorFileDialog *file_dialog = nullptr;
 
 	bool keyable = false;
-
-	static Skeleton3DEditor *singleton;
 
 	void _on_click_skeleton_option(int p_skeleton_option);
 	void _file_selected(const String &p_file);
@@ -174,7 +189,8 @@ class Skeleton3DEditor : public VBoxContainer {
 	void reset_pose(const bool p_all_bones);
 	void pose_to_rest(const bool p_all_bones);
 
-	void insert_keys(const bool p_all_bones);
+	void _insert_keys(const bool p_all_bones);
+	void insert_keys(const bool p_all_bones, const bool p_enable_modifier);
 
 	void create_physical_skeleton();
 	PhysicalBone3D *create_physical_bone(int bone_id, int bone_child_id, const Vector<BoneInfo> &bones_infos);
@@ -207,11 +223,13 @@ class Skeleton3DEditor : public VBoxContainer {
 	void _draw_handles();
 
 	void _joint_tree_selection_changed();
+	/// May be not used with single select mode.
 	void _joint_tree_rmb_select(const Vector2 &p_pos, MouseButton p_button);
 	void _joint_tree_button_clicked(Object *p_item, int p_column, int p_id, MouseButton p_button);
 	void _update_properties();
 
 	void _subgizmo_selection_change();
+	void _disconnect_from_skeleton();
 
 	int selected_bone = -1;
 
@@ -220,8 +238,6 @@ protected:
 	void _node_removed(Node *p_node);
 
 public:
-	static Skeleton3DEditor *get_singleton() { return singleton; }
-
 	void select_bone(int p_idx);
 
 	int get_selected_bone() const;
@@ -245,10 +261,16 @@ class EditorInspectorPluginSkeleton : public EditorInspectorPlugin {
 	GDCLASS(EditorInspectorPluginSkeleton, EditorInspectorPlugin);
 
 	friend class Skeleton3DEditorPlugin;
+	friend class Skeleton3DGizmoPlugin;
+	friend class Skeleton3DEditor;
 
-	Skeleton3DEditor *skel_editor = nullptr;
+	Skeleton3DEditor *skeleton_editor = nullptr;
 
 public:
+	bool loc_pressed = false;
+	bool rot_pressed = true;
+	bool scl_pressed = false;
+
 	virtual bool can_handle(Object *p_object) override;
 	virtual void parse_begin(Object *p_object) override;
 };
@@ -278,6 +300,8 @@ class Skeleton3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	};
 	static SelectionMaterials selection_materials;
 
+	EditorInspectorPluginSkeleton *skeleton_plugin = nullptr;
+
 public:
 	static Ref<ArrayMesh> get_bones_mesh(Skeleton3D *p_skeleton, int p_selected, bool p_is_selected);
 
@@ -292,6 +316,6 @@ public:
 
 	void redraw(EditorNode3DGizmo *p_gizmo) override;
 
-	Skeleton3DGizmoPlugin();
+	Skeleton3DGizmoPlugin(EditorInspectorPluginSkeleton *p_skeleton_plugin);
 	~Skeleton3DGizmoPlugin();
 };

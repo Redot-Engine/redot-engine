@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_server.h"
 #include "core/variant/typed_array.h"
 #include "rendering_server.h"

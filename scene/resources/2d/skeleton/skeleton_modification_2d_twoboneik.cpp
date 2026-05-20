@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_modification_2d_twoboneik.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skeleton_modification_2d_twoboneik.h"
 #include "scene/2d/skeleton_2d.h"
 
@@ -203,7 +209,7 @@ void SkeletonModification2DTwoBoneIK::_setup_modification(SkeletonModificationSt
 }
 
 void SkeletonModification2DTwoBoneIK::_draw_editor_gizmo() {
-	if (!enabled || !is_setup) {
+	if (!enabled || !is_setup || joint_one_bone_idx < 0) {
 		return;
 	}
 

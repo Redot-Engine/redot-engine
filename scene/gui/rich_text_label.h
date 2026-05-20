@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rich_text_label.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/worker_thread_pool.h"
 #include "core/templates/rid_owner.h"
 #include "scene/gui/popup_menu.h"
@@ -600,9 +606,9 @@ private:
 		Item *to_item = nullptr;
 		int to_char = 0;
 
-		bool double_click = false; // Selecting whole words?
-		bool active = false; // anything selected? i.e. from, to, etc. valid?
-		bool enabled = false; // allow selections?
+		bool double_click = false; ///< Selecting whole words?
+		bool active = false; ///< Anything selected? i.e. from, to, etc. valid?
+		bool enabled = false; ///< Allow selections?
 		bool drag_attempt = false;
 	};
 
@@ -704,7 +710,7 @@ private:
 	static String _get_tag_value(const String &p_tag);
 
 #ifndef DISABLE_DEPRECATED
-	// Kept for compatibility from 3.x to 4.0.
+	/// Kept for compatibility from 3.x to 4.0.
 	bool _set(const StringName &p_name, const Variant &p_value);
 #endif
 	bool use_bbcode = false;

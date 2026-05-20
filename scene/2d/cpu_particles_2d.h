@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file cpu_particles_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 
 class RandomNumberGenerator;
@@ -64,8 +70,8 @@ public:
 
 	enum ParticleFlags {
 		PARTICLE_FLAG_ALIGN_Y_TO_VELOCITY,
-		PARTICLE_FLAG_ROTATE_Y, // Unused, but exposed for consistency with 3D.
-		PARTICLE_FLAG_DISABLE_Z, // Unused, but exposed for consistency with 3D.
+		PARTICLE_FLAG_ROTATE_Y, ///< Unused, but exposed for consistency with 3D.
+		PARTICLE_FLAG_DISABLE_Z, ///< Unused, but exposed for consistency with 3D.
 		PARTICLE_FLAG_MAX
 	};
 
@@ -196,10 +202,10 @@ private:
 	Mutex update_mutex;
 
 	struct InterpolationData {
-		// Whether this particle is non-interpolated, but following an interpolated parent.
+		/// Whether this particle is non-interpolated, but following an interpolated parent.
 		bool interpolated_follow = false;
 
-		// If doing interpolated follow, we need to keep these updated per tick.
+		/// If doing interpolated follow, we need to keep these updated per tick.
 		Transform2D global_xform_curr;
 		Transform2D global_xform_prev;
 	} _interpolation_data;

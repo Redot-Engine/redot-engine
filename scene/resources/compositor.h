@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file compositor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/object/gdvirtual.gen.inc"
 #include "servers/rendering/storage/render_data.h"
@@ -108,7 +114,7 @@ class Compositor : public Resource {
 private:
 	RID compositor;
 
-	// Compositor effects
+	/// Compositor effects
 	LocalVector<Ref<CompositorEffect>> effects;
 
 protected:

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_loader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_loader.h"
 
 #include "core/config/project_settings.h"
@@ -222,10 +228,13 @@ void ResourceFormatLoader::_bind_methods() {
 
 ///////////////////////////////////
 
-// These are used before and after a wait for a WorkerThreadPool task
-// because that can lead to another load started in the same thread,
-// something we must treat as a different stack for the purposes
-// of tracking nesting.
+/**
+ * @name These are used before and after a wait for a WorkerThreadPool task
+ * @details Because that can lead to another load started in the same thread,
+ * something we must treat as a different stack for the purposes
+ * of tracking nesting.
+ * @{
+ */
 
 #define PREPARE_FOR_WTP_WAIT                                                   \
 	int load_nesting_backup = ResourceLoader::load_nesting;                    \
@@ -239,8 +248,8 @@ void ResourceFormatLoader::_bind_methods() {
 	ResourceLoader::load_nesting = load_nesting_backup;         \
 	ResourceLoader::load_paths_stack = load_paths_stack_backup; \
 	load_paths_stack_backup.clear();
+/// @}
 
-// This should be robust enough to be called redundantly without issues.
 void ResourceLoader::LoadToken::clear() {
 	WorkerThreadPool::TaskID task_to_await = 0;
 
@@ -360,8 +369,6 @@ Ref<Resource> ResourceLoader::_load(const String &p_path, const String &p_origin
 	ERR_FAIL_V_MSG(Ref<Resource>(), vformat("No loader found for resource: %s (expected type: %s)", p_path, !p_type_hint.is_empty() ? p_type_hint : "unknown"));
 }
 
-// This implementation must allow re-entrancy for a task that started awaiting in a deeper stack frame.
-// The load task token must be manually re-referenced before this is called, which includes threaded runs.
 void ResourceLoader::_run_load_task(void *p_userdata) {
 	ThreadLoadTask &load_task = *(ThreadLoadTask *)p_userdata;
 
@@ -699,10 +706,17 @@ ResourceLoader::ThreadLoadStatus ResourceLoader::load_threaded_get_status(const 
 		}
 
 		String local_path = _validate_local_path(p_path);
-		ERR_FAIL_COND_V_MSG(!thread_load_tasks.has(local_path), THREAD_LOAD_INVALID_RESOURCE, "Bug in ResourceLoader logic, please report.");
+		LoadToken *load_token = user_load_tokens[p_path];
+		ThreadLoadTask *load_task_ptr;
 
-		ThreadLoadTask &load_task = thread_load_tasks[local_path];
-		status = load_task.status;
+		if (load_token->task_if_unregistered) {
+			load_task_ptr = load_token->task_if_unregistered;
+		} else {
+			ERR_FAIL_COND_V_MSG(!thread_load_tasks.has(local_path), THREAD_LOAD_INVALID_RESOURCE, "Bug in ResourceLoader logic, please report.");
+			load_task_ptr = &thread_load_tasks[local_path];
+		}
+
+		status = load_task_ptr->status;
 		if (r_progress) {
 			*r_progress = _dependency_get_progress(local_path);
 		}
@@ -710,10 +724,10 @@ ResourceLoader::ThreadLoadStatus ResourceLoader::load_threaded_get_status(const 
 		// Support userland polling in a loop on the main thread.
 		if (Thread::is_main_thread() && status == THREAD_LOAD_IN_PROGRESS) {
 			uint64_t frame = Engine::get_singleton()->get_process_frames();
-			if (frame == load_task.last_progress_check_main_thread_frame) {
+			if (frame == load_task_ptr->last_progress_check_main_thread_frame) {
 				ensure_progress = true;
 			} else {
-				load_task.last_progress_check_main_thread_frame = frame;
+				load_task_ptr->last_progress_check_main_thread_frame = frame;
 			}
 		}
 	}
@@ -747,8 +761,23 @@ Ref<Resource> ResourceLoader::load_threaded_get(const String &p_path, Error *r_e
 
 		// Support userland requesting on the main thread before the load is reported to be complete.
 		if (Thread::is_main_thread() && !load_token->local_path.is_empty()) {
-			const ThreadLoadTask &load_task = thread_load_tasks[load_token->local_path];
-			while (load_task.status == THREAD_LOAD_IN_PROGRESS) {
+			ThreadLoadTask *load_task_ptr;
+
+			if (load_token->task_if_unregistered) {
+				load_task_ptr = load_token->task_if_unregistered;
+			} else {
+				if (!thread_load_tasks.has(load_token->local_path)) {
+					print_error("Bug in ResourceLoader logic, please report.");
+					if (r_error) {
+						*r_error = ERR_BUG;
+					}
+					return Ref<Resource>();
+				}
+
+				load_task_ptr = &thread_load_tasks[load_token->local_path];
+			}
+
+			while (load_task_ptr->status == THREAD_LOAD_IN_PROGRESS) {
 				thread_load_lock.temp_unlock();
 				bool exit = !_ensure_load_progress();
 				OS::get_singleton()->delay_usec(1000);
@@ -922,9 +951,9 @@ Ref<Resource> ResourceLoader::_load_complete_inner(LoadToken &p_load_token, Erro
 }
 
 bool ResourceLoader::_ensure_load_progress() {
-	// Some servers may need a new engine iteration to allow the load to progress.
-	// Since the only known one is the rendering server (in single thread mode), let's keep it simple and just sync it.
-	// This may be refactored in the future to support other servers and have less coupling.
+	/// Some servers may need a new engine iteration to allow the load to progress.
+	/// Since the only known one is the rendering server (in single thread mode), let's keep it simple and just sync it.
+	/// @todo This may be refactored in the future to support other servers and have less coupling.
 	if (OS::get_singleton()->is_separate_thread_rendering_enabled()) {
 		return false; // Not needed.
 	}
@@ -1379,8 +1408,6 @@ void ResourceLoader::clear_translation_remaps() {
 }
 
 void ResourceLoader::clear_thread_load_tasks() {
-	// Bring the thing down as quickly as possible without causing deadlocks or leaks.
-
 	MutexLock thread_load_lock(thread_load_mutex);
 	cleaning_tasks = true;
 
@@ -1463,8 +1490,6 @@ void ResourceLoader::set_create_missing_resources_if_class_unavailable(bool p_en
 }
 
 void ResourceLoader::add_custom_loaders() {
-	// Custom loaders registration exploits global class names
-
 	String custom_loader_base_class = ResourceFormatLoader::get_class_static();
 
 	List<StringName> global_classes;

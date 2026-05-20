@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file text_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/object/ref_counted.h"
 #include "core/templates/rid.h"
@@ -142,20 +148,20 @@ public:
 	};
 
 	enum GraphemeFlag {
-		GRAPHEME_IS_VALID = 1 << 0, // Grapheme is valid.
-		GRAPHEME_IS_RTL = 1 << 1, // Grapheme is right-to-left.
-		GRAPHEME_IS_VIRTUAL = 1 << 2, // Grapheme is not part of source string (added by fit_to_width function, do not affect caret movement).
-		GRAPHEME_IS_SPACE = 1 << 3, // Is whitespace (for justification and word breaks).
-		GRAPHEME_IS_BREAK_HARD = 1 << 4, // Is line break (mandatory break, e.g. "\n").
-		GRAPHEME_IS_BREAK_SOFT = 1 << 5, // Is line break (optional break, e.g. space).
-		GRAPHEME_IS_TAB = 1 << 6, // Is tab or vertical tab.
-		GRAPHEME_IS_ELONGATION = 1 << 7, // Elongation (e.g. kashida), grapheme can be duplicated or truncated to fit line to width.
-		GRAPHEME_IS_PUNCTUATION = 1 << 8, // Punctuation, except underscore (can be used as word break, but not line break or justifiction).
-		GRAPHEME_IS_UNDERSCORE = 1 << 9, // Underscore (can be used as word break).
-		GRAPHEME_IS_CONNECTED = 1 << 10, // Connected to previous grapheme.
-		GRAPHEME_IS_SAFE_TO_INSERT_TATWEEL = 1 << 11, // It is safe to insert a U+0640 before this grapheme for elongation.
-		GRAPHEME_IS_EMBEDDED_OBJECT = 1 << 12, // Grapheme is an object replacement character for the embedded object.
-		GRAPHEME_IS_SOFT_HYPHEN = 1 << 13, // Grapheme is a soft hyphen.
+		GRAPHEME_IS_VALID = 1 << 0, ///< Grapheme is valid.
+		GRAPHEME_IS_RTL = 1 << 1, ///< Grapheme is right-to-left.
+		GRAPHEME_IS_VIRTUAL = 1 << 2, ///< Grapheme is not part of source string (added by fit_to_width function, do not affect caret movement).
+		GRAPHEME_IS_SPACE = 1 << 3, ///< Is whitespace (for justification and word breaks).
+		GRAPHEME_IS_BREAK_HARD = 1 << 4, ///< Is line break (mandatory break, e.g. "\n").
+		GRAPHEME_IS_BREAK_SOFT = 1 << 5, ///< Is line break (optional break, e.g. space).
+		GRAPHEME_IS_TAB = 1 << 6, ///< Is tab or vertical tab.
+		GRAPHEME_IS_ELONGATION = 1 << 7, ///< Elongation (e.g. kashida), grapheme can be duplicated or truncated to fit line to width.
+		GRAPHEME_IS_PUNCTUATION = 1 << 8, ///< Punctuation, except underscore (can be used as word break, but not line break or justifiction).
+		GRAPHEME_IS_UNDERSCORE = 1 << 9, ///< Underscore (can be used as word break).
+		GRAPHEME_IS_CONNECTED = 1 << 10, ///< Connected to previous grapheme.
+		GRAPHEME_IS_SAFE_TO_INSERT_TATWEEL = 1 << 11, ///< It is safe to insert a U+0640 before this grapheme for elongation.
+		GRAPHEME_IS_EMBEDDED_OBJECT = 1 << 12, ///< Grapheme is an object replacement character for the embedded object.
+		GRAPHEME_IS_SOFT_HYPHEN = 1 << 13, ///< Grapheme is a soft hyphen.
 	};
 
 	enum Hinting {
@@ -266,7 +272,8 @@ public:
 	virtual int64_t name_to_tag(const String &p_name) const;
 	virtual String tag_to_name(int64_t p_tag) const;
 
-	/* Font interface */
+	/// @name Font Interface
+	/// @{
 
 	virtual RID create_font() = 0;
 	virtual RID create_font_linked_variation(const RID &p_font_rid) = 0;
@@ -458,7 +465,9 @@ public:
 	virtual Vector2 get_hex_code_box_size(int64_t p_size, int64_t p_index) const;
 	virtual void draw_hex_code_box(const RID &p_canvas, int64_t p_size, const Vector2 &p_pos, int64_t p_index, const Color &p_color) const;
 
-	/* Shaped text buffer interface */
+	/// @}
+	/// @name Shaped Text Buffer Interface
+	/// @{
 
 	virtual RID create_shaped_text(Direction p_direction = DIRECTION_AUTO, Orientation p_orientation = ORIENTATION_HORIZONTAL) = 0;
 
@@ -561,8 +570,8 @@ public:
 
 	virtual Vector<Vector2> shaped_text_get_selection(const RID &p_shaped, int64_t p_start, int64_t p_end) const;
 
-	virtual int64_t shaped_text_hit_test_grapheme(const RID &p_shaped, double p_coords) const; // Return grapheme index.
-	virtual int64_t shaped_text_hit_test_position(const RID &p_shaped, double p_coords) const; // Return caret/selection position.
+	virtual int64_t shaped_text_hit_test_grapheme(const RID &p_shaped, double p_coords) const; ///< @return grapheme index.
+	virtual int64_t shaped_text_hit_test_position(const RID &p_shaped, double p_coords) const; ///< @return caret/selection position.
 
 	virtual Vector2 shaped_text_get_grapheme_bounds(const RID &p_shaped, int64_t p_pos) const;
 	virtual int64_t shaped_text_next_grapheme_pos(const RID &p_shaped, int64_t p_pos) const;
@@ -576,21 +585,23 @@ public:
 	// The pen position is always placed on the baseline and moving left to right.
 	virtual void shaped_text_draw(const RID &p_shaped, const RID &p_canvas, const Vector2 &p_pos, double p_clip_l = -1.0, double p_clip_r = -1.0, const Color &p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
 	virtual void shaped_text_draw_outline(const RID &p_shaped, const RID &p_canvas, const Vector2 &p_pos, double p_clip_l = -1.0, double p_clip_r = -1.0, int64_t p_outline_size = 1, const Color &p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
-
+	/// @}
 #ifdef DEBUG_ENABLED
 	void debug_print_glyph(int p_idx, const Glyph &p_glyph) const;
 	void shaped_text_debug_print(const RID &p_shaped) const;
 #endif
 
-	// Number conversion.
+	/// Number Conversion
+	/// @{
 	virtual String format_number(const String &p_string, const String &p_language = "") const = 0;
 	virtual String parse_number(const String &p_string, const String &p_language = "") const = 0;
 	virtual String percent_sign(const String &p_language = "") const = 0;
-
-	// String functions.
+	/// @}
+	/// String Functions
+	/// @{
 	virtual PackedInt32Array string_get_word_breaks(const String &p_string, const String &p_language = "", int64_t p_chars_per_line = 0) const = 0;
 	virtual PackedInt32Array string_get_character_breaks(const String &p_string, const String &p_language = "") const;
-
+	/// @}
 	virtual int64_t is_confusable(const String &p_string, const PackedStringArray &p_dict) const { return -1; }
 	virtual bool spoof_check(const String &p_string) const { return false; }
 
@@ -598,12 +609,14 @@ public:
 	virtual bool is_valid_identifier(const String &p_string) const;
 	virtual bool is_valid_letter(uint64_t p_unicode) const;
 
-	// Other string operations.
+	/// Other String Operations
+	/// @{
 	virtual String string_to_upper(const String &p_string, const String &p_language = "") const = 0;
 	virtual String string_to_lower(const String &p_string, const String &p_language = "") const = 0;
 	virtual String string_to_title(const String &p_string, const String &p_language = "") const = 0;
 
 	TypedArray<Vector3i> parse_structured_text(StructuredTextParser p_parser_type, const Array &p_args, const String &p_text) const;
+	/// @}
 
 	virtual void set_current_drawn_item_oversampling(double p_vp_oversampling) { vp_oversampling = p_vp_oversampling; }
 
@@ -616,20 +629,20 @@ public:
 /*************************************************************************/
 
 struct Glyph {
-	int start = -1; // Start offset in the source string.
-	int end = -1; // End offset in the source string.
+	int start = -1; ///< Start offset in the source string.
+	int end = -1; ///< End offset in the source string.
 
-	uint8_t count = 0; // Number of glyphs in the grapheme, set in the first glyph only.
-	uint8_t repeat = 1; // Draw multiple times in the row.
-	uint16_t flags = 0; // Grapheme flags (valid, rtl, virtual), set in the first glyph only.
+	uint8_t count = 0; ///< Number of glyphs in the grapheme, set in the first glyph only.
+	uint8_t repeat = 1; ///< Draw multiple times in the row.
+	uint16_t flags = 0; ///< Grapheme flags (valid, rtl, virtual), set in the first glyph only.
 
-	float x_off = 0.f; // Offset from the origin of the glyph on baseline.
+	float x_off = 0.f; ///< Offset from the origin of the glyph on baseline.
 	float y_off = 0.f;
-	float advance = 0.f; // Advance to the next glyph along baseline(x for horizontal layout, y for vertical).
+	float advance = 0.f; ///< Advance to the next glyph along baseline(x for horizontal layout, y for vertical).
 
-	RID font_rid; // Font resource.
-	int font_size = 0; // Font size.
-	int32_t index = 0; // Glyph index (font specific) or UTF-32 codepoint (for the invalid glyphs).
+	RID font_rid; ///< Font resource.
+	int font_size = 0; ///< Font size.
+	int32_t index = 0; ///< Glyph index (font specific) or UTF-32 codepoint (for the invalid glyphs).
 
 	int span_index = -1;
 

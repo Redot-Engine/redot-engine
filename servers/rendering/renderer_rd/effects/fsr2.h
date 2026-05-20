@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fsr2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_accumulate_pass.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_autogen_reactive_pass.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_compute_luminance_pyramid_pass.glsl.gen.h"
@@ -129,7 +135,7 @@ public:
 class FSR2Effect {
 public:
 	struct RootSignature {
-		// Proxy structure to store the shader required by RD that uses the terminology used by the FSR2 API.
+		/// Proxy structure to store the shader required by RD that uses the terminology used by the FSR2 API.
 		RID shader_rid;
 	};
 

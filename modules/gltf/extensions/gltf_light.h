@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_light.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 
 class GLTFObjectModelProperty;

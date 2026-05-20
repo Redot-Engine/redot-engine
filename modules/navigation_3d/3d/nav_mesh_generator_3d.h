@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_mesh_generator_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 #include "core/object/worker_thread_pool.h"
 #include "core/templates/rid_owner.h"

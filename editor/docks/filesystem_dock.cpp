@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file filesystem_dock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "filesystem_dock.h"
 
 #include "core/config/project_settings.h"
@@ -929,7 +935,7 @@ void FileSystemDock::_search(EditorFileSystemDirectory *p_path, List<FileInfo> *
 }
 
 void FileSystemDock::_update_file_list(bool p_keep_selection) {
-	// Register the previously current and selected items.
+	// Register the previous, current and selected items.
 	HashSet<String> previous_selection;
 	HashSet<int> valid_selection;
 	if (p_keep_selection) {
@@ -993,6 +999,9 @@ void FileSystemDock::_update_file_list(bool p_keep_selection) {
 		// Display the favorites.
 		Vector<String> favorites_list = EditorSettings::get_singleton()->get_favorites();
 		for (const String &favorite : favorites_list) {
+			if (!favorite.begins_with("res://")) {
+				continue;
+			}
 			String text;
 			Ref<Texture2D> icon;
 			if (favorite == "res://") {
@@ -1902,6 +1911,7 @@ void FileSystemDock::_convert_dialog_action() {
 			for (const String &target : cached_valid_conversion_targets) {
 				if (conversion_id == selected_conversion_id && conversion->converts_to() == target) {
 					Ref<Resource> converted_res = conversion->convert(res);
+					ERR_FAIL_COND(converted_res.is_null());
 					ERR_FAIL_COND(res.is_null());
 					converted_resources.push_back(converted_res);
 					resources_to_erase_history_for.insert(res);
@@ -1926,6 +1936,8 @@ void FileSystemDock::_convert_dialog_action() {
 		Ref<Resource> original_resource = selected_resources.get(i);
 		Ref<Resource> new_resource = converted_resources.get(i);
 
+		// Notify plugins that the original resource is removed.
+		emit_signal(SNAME("file_removed"), original_resource->get_path());
 		// Overwrite the path.
 		new_resource->set_path(original_resource->get_path(), true);
 
@@ -2034,6 +2046,7 @@ void FileSystemDock::_before_move(HashMap<String, ResourceUID::ID> &r_uids, Hash
 			}
 		} else {
 			EditorFileSystemDirectory *current_folder = EditorFileSystem::get_singleton()->get_filesystem_path(to_move[i].path);
+			ERR_CONTINUE(current_folder == nullptr);
 			List<EditorFileSystemDirectory *> folders;
 			folders.push_back(current_folder);
 			while (folders.front()) {
@@ -2156,8 +2169,6 @@ void FileSystemDock::_file_list_rmb_option(int p_option) {
 }
 
 void FileSystemDock::_generic_rmb_option_selected(int p_option) {
-	// Used for submenu commands where we don't know whether we're
-	// calling from the file_list_rmb menu or the _tree_rmb option.
 	if (files->has_focus()) {
 		_file_list_rmb_option(p_option);
 	} else {
@@ -3970,7 +3981,7 @@ void FileSystemDock::_file_sort_popup(int p_id) {
 	set_file_sort((FileSortOption)p_id);
 }
 
-// TODO: Could use a unit test.
+/// @todo Could use a unit test.
 Color FileSystemDock::get_dir_icon_color(const String &p_dir_path, const Color &p_default) {
 	if (!singleton) { // This method can be called from the project manager.
 		return p_default;

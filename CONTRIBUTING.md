@@ -52,6 +52,8 @@ Please refer to these links for detailed guides on workflow:
 -	[PR Workflow](https://docs.redotengine.org/en/latest/contributing/workflow/pr_workflow.html)
 -	[PR Review](https://docs.redotengine.org/en/latest/contributing/workflow/pr_review_guidelines.html)
 
+Please also ensure that you have reviewed our [AI Policy](AI_POLICY.md) if you are planning on
+using AI tools when creating your PRs.
 Additionally, we expect all PR contributors to be using [Pre-Commit](https://pre-commit.com/) to
 speed up PR workflow. See the Code Style doc above for more information.
 

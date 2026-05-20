@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_title_bar.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_title_bar.h"
 
 void EditorTitleBar::gui_input(const Ref<InputEvent> &p_event) {

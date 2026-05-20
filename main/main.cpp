@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file main.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "main.h"
 
 #include "core/config/project_settings.h"
@@ -135,11 +141,6 @@
 
 #include "modules/modules_enabled.gen.h" // For mono.
 
-// Fallback definition for missing editor splash color
-#if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
-static const Color boot_splash_editor_bg_color = Color(0.06, 0.09, 0.14);
-#endif
-
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 #include "modules/mono/editor/bindings_generator.h"
 #endif
@@ -150,6 +151,11 @@ static const Color boot_splash_editor_bg_color = Color(0.06, 0.09, 0.14);
 #include "modules/gdscript/language_server/gdscript_language_server.h"
 #endif // TOOLS_ENABLED && !GDSCRIPT_NO_LSP
 #endif // MODULE_GDSCRIPT_ENABLED
+
+#ifdef MODULE_MCP_ENABLED
+#include "modules/mcp/mcp_bridge.h"
+#include "modules/mcp/mcp_server.h"
+#endif // MODULE_MCP_ENABLED
 
 /* Static members */
 
@@ -289,15 +295,21 @@ static String validate_extension_api_file;
 #endif
 bool profile_gpu = false;
 
+#ifdef MODULE_MCP_ENABLED
+static bool mcp_server_enabled = false;
+static int mcp_bridge_port = 0;
+static String mcp_run_tests;
+#endif
+
 // Constants.
 
 static const String NULL_DISPLAY_DRIVER("headless");
 static const String EMBEDDED_DISPLAY_DRIVER("embedded");
 static const String NULL_AUDIO_DRIVER("Dummy");
 
-// The length of the longest column in the command-line help we should align to
-// (excluding the 2-space left and right margins).
-// Currently, this is `--export-release <preset> <path>`.
+/// The length of the longest column in the command-line help we should align to
+/// (excluding the 2-space left and right margins).
+/// Currently, this is `--export-release <preset> <path>`.
 static const int OPTION_COLUMN_LENGTH = 32;
 
 /* Helper methods */
@@ -349,7 +361,7 @@ static Vector<String> get_files_with_extension(const String &p_root, const Strin
 }
 #endif
 
-// FIXME: Could maybe be moved to have less code in main.cpp.
+/// @todo FIXME: Could maybe be moved to have less code in main.cpp.
 void initialize_physics() {
 #ifndef PHYSICS_3D_DISABLED
 	/// 3D Physics Server
@@ -444,26 +456,14 @@ void Main::print_header(bool p_rich) {
 	}
 }
 
-/**
- * Prints a copyright notice in the command-line help with colored text. A newline is
- * automatically added at the end.
- */
 void Main::print_help_copyright(const char *p_notice) {
 	OS::get_singleton()->print("\u001b[90m%s\u001b[0m\n", p_notice);
 }
 
-/**
- * Prints a title in the command-line help with colored text. A newline is
- * automatically added at beginning and at the end.
- */
 void Main::print_help_title(const char *p_title) {
 	OS::get_singleton()->print("\n\u001b[1;93m%s:\u001b[0m\n", p_title);
 }
 
-/**
- * Returns the option string with required and optional arguments colored separately from the rest of the option.
- * This color replacement must be done *after* calling `rpad()` for the length padding to be done correctly.
- */
 String Main::format_help_option(const char *p_option) {
 	return (String(p_option)
 					.rpad(OPTION_COLUMN_LENGTH)
@@ -473,13 +473,6 @@ String Main::format_help_option(const char *p_option) {
 					.replace(">", ">\u001b[0m"));
 }
 
-/**
- * Prints an option in the command-line help with colored text. No newline is
- * added at the end. `p_availability` denotes which build types the argument is
- * available in. Support in release export templates implies support in debug
- * export templates and editor. Support in debug export templates implies
- * support in editor.
- */
 void Main::print_help_option(const char *p_option, const char *p_description, CLIOptionAvailability p_availability) {
 	const bool option_empty = (p_option && !p_option[0]);
 	if (!option_empty) {
@@ -605,6 +598,12 @@ void Main::print_help(const char *p_binary) {
 	print_help_option("--text-driver <driver>", "Text driver (used for font rendering, bidirectional support and shaping).\n");
 	print_help_option("--tablet-driver <driver>", "Pen tablet input driver.\n");
 	print_help_option("--headless", "Enable headless mode (--display-driver headless --audio-driver Dummy). Useful for servers and with --script.\n");
+#ifdef MODULE_MCP_ENABLED
+
+	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--mcp-bridge-port <port>", "Port for the MCP Bridge connection (internal use).\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--run-tests <path>", "Run a unit test script headlessly and exit.\n", CLI_OPTION_AVAILABILITY_EDITOR);
+#endif
 	print_help_option("--log-file <file>", "Write output/error log to the specified path instead of the default location defined by the project.\n");
 	print_help_option("", "<file> path should be absolute or relative to the project directory.\n");
 	print_help_option("--write-movie <file>", "Write a video to the specified path (usually with .avi or .png extension).\n");
@@ -637,7 +636,7 @@ void Main::print_help(const char *p_binary) {
 #ifdef DEBUG_ENABLED
 	print_help_option("--gpu-abort", "Abort on graphics API usage errors (usually validation layer errors). May help see the problem if your system freezes.\n", CLI_OPTION_AVAILABILITY_TEMPLATE_DEBUG);
 #endif
-	print_help_option("--generate-spirv-debug-info", "Generate SPIR-V debug information. This allows source-level shader debugging with RenderDoc.\n");
+	print_help_option("--generate-spirv-debug-info", "Generate SPIR-V debug information (Vulkan only). This allows source-level shader debugging with RenderDoc.\n");
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
 	print_help_option("--extra-gpu-memory-tracking", "Enables additional memory tracking (see class reference for `RenderingDevice.get_driver_and_device_memory_report()` and linked methods). Currently only implemented for Vulkan. Enabling this feature may cause crashes on some systems due to buggy drivers or bugs in the Vulkan Loader. See https://github.com/godotengine/godot/issues/95967\n");
 	print_help_option("--accurate-breadcrumbs", "Force barriers between breadcrumbs. Useful for narrowing down a command causing GPU resets. Currently only implemented for Vulkan.\n");
@@ -709,8 +708,7 @@ void Main::print_help(const char *p_binary) {
 }
 
 #ifdef TESTS_ENABLED
-// The order is the same as in `Main::setup()`, only core and some editor types
-// are initialized here. This also combines `Main::setup2()` initialization.
+
 Error Main::test_setup() {
 	Thread::make_main_thread();
 	set_current_thread_safe_for_nodes(true);
@@ -832,7 +830,6 @@ Error Main::test_setup() {
 	return OK;
 }
 
-// The order is the same as in `Main::cleanup()`.
 void Main::test_cleanup() {
 	ERR_FAIL_COND(!_start_success);
 
@@ -920,8 +917,8 @@ int Main::test_entrypoint(int argc, char *argv[], bool &tests_need_run) {
 		if ((strncmp(argv[x], "--test", 6) == 0) && (strlen(argv[x]) == 6)) {
 			tests_need_run = true;
 #ifdef TESTS_ENABLED
-			// TODO: need to come up with different test contexts.
-			// Not every test requires high-level functionality like `ClassDB`.
+			/// @todo Need to come up with different test contexts.
+			/// Not every test requires high-level functionality like `ClassDB`.
 			test_setup();
 			int status = test_main(argc, argv);
 			test_cleanup();
@@ -937,31 +934,6 @@ int Main::test_entrypoint(int argc, char *argv[], bool &tests_need_run) {
 	tests_need_run = false;
 	return EXIT_SUCCESS;
 }
-
-/* Engine initialization
- *
- * Consists of several methods that are called by each platform's specific main(argc, argv).
- * To fully understand engine init, one should therefore start from the platform's main and
- * see how it calls into the Main class' methods.
- *
- * The initialization is typically done in 3 steps (with the setup2 step triggered either
- * automatically by setup, or manually in the platform's main).
- *
- * - setup(execpath, argc, argv, p_second_phase) is the main entry point for all platforms,
- *   responsible for the initialization of all low level singletons and core types, and parsing
- *   command line arguments to configure things accordingly.
- *   If p_second_phase is true, it will chain into setup2() (default behavior). This is
- *   disabled on some platforms (Android, iOS) which trigger the second step in their own time.
- *
- * - setup2(p_main_tid_override) registers high level servers and singletons, displays the
- *   boot splash, then registers higher level types (scene, editor, etc.).
- *
- * - start() is the last step and that's where command line tools can run, or the main loop
- *   can be created eventually and the project settings put into action. That's also where
- *   the editor node is created, if relevant.
- *   start() does it own argument parsing for a subset of the command line arguments described
- *   in help, it's a bit messy and should be globalized with the setup() parsing somehow.
- */
 
 Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_phase) {
 	Thread::make_main_thread();
@@ -1057,7 +1029,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	//XXX: always get_singleton() == 0x0
 	zip_packed_data = ZipArchive::get_singleton();
-	//TODO: remove this temporary fix
+	/// @todo Remove this temporary fix
 	if (!zip_packed_data) {
 		zip_packed_data = memnew(ZipArchive);
 	}
@@ -1121,12 +1093,12 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		} else if (arg == "-h" || arg == "--help" || arg == "/?") { // display help
 
 			show_help = true;
-			exit_err = ERR_HELP; // Hack to force an early exit in `main()` with a success code.
+			exit_err = ERR_HELP; ///< @todo Hack to force an early exit in `main()` with a success code.
 			goto error;
 
 		} else if (arg == "--version") {
 			print_line(get_full_version_string());
-			exit_err = ERR_HELP; // Hack to force an early exit in `main()` with a success code.
+			exit_err = ERR_HELP; ///< @todo Hack to force an early exit in `main()` with a success code.
 			goto error;
 
 		} else if (arg == "-v" || arg == "--verbose") { // verbose output
@@ -1405,6 +1377,37 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			audio_driver = NULL_AUDIO_DRIVER;
 			display_driver = NULL_DISPLAY_DRIVER;
 
+#ifdef MODULE_MCP_ENABLED
+		} else if (arg == "--mcp-server") { // Start MCP server for AI agent integration.
+			mcp_server_enabled = true;
+			audio_driver = NULL_AUDIO_DRIVER;
+			display_driver = NULL_DISPLAY_DRIVER;
+		} else if (arg == "--mcp-bridge-port") { // Port for MCP Bridge (game side)
+			if (N) {
+				int port = N->get().to_int();
+				if (port > 0 && port < 65536) {
+					mcp_bridge_port = port;
+				} else {
+					OS::get_singleton()->print("Invalid port number for --mcp-bridge-port: %d. Must be between 1 and 65535.\n", port);
+					goto error;
+				}
+				N = N->next();
+			} else {
+				OS::get_singleton()->print("Missing <port> argument for --mcp-bridge-port <port>.\n");
+				goto error;
+			}
+		} else if (arg == "--run-tests") { // Run a unit test script headlessly and exit.
+			if (N) {
+				mcp_run_tests = N->get();
+				N = N->next();
+				audio_driver = NULL_AUDIO_DRIVER;
+				display_driver = NULL_DISPLAY_DRIVER;
+			} else {
+				OS::get_singleton()->print("Missing <path> argument for --run-tests <path>.\n");
+				goto error;
+			}
+#endif
+
 		} else if (arg == "--embedded") { // Enable embedded mode.
 #ifdef MACOS_ENABLED
 			display_driver = EMBEDDED_DISPLAY_DRIVER;
@@ -1513,9 +1516,9 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			cmdline_tool = true;
 			dump_gdextension_interface = true;
 			print_line("Dumping GDExtension interface header file");
-			// Hack. Not needed but otherwise we end up detecting that this should
-			// run the project instead of a cmdline tool.
-			// Needs full refactoring to fix properly.
+			/// @todo HACK: Not needed but otherwise we end up detecting that this should
+			/// run the project instead of a cmdline tool.
+			/// Needs full refactoring to fix properly.
 			main_args.push_back(arg);
 		} else if (arg == "--dump-extension-api") {
 			// Register as an editor instance to use low-end fallback if relevant.
@@ -1523,9 +1526,9 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			cmdline_tool = true;
 			dump_extension_api = true;
 			print_line("Dumping Extension API");
-			// Hack. Not needed but otherwise we end up detecting that this should
-			// run the project instead of a cmdline tool.
-			// Needs full refactoring to fix properly.
+			/// @todo Hack. Not needed but otherwise we end up detecting that this should
+			/// run the project instead of a cmdline tool.
+			/// Needs full refactoring to fix properly.
 			main_args.push_back(arg);
 		} else if (arg == "--dump-extension-api-with-docs") {
 			// Register as an editor instance to use low-end fallback if relevant.
@@ -1534,18 +1537,18 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			dump_extension_api = true;
 			include_docs_in_extension_api_dump = true;
 			print_line("Dumping Extension API including documentation");
-			// Hack. Not needed but otherwise we end up detecting that this should
-			// run the project instead of a cmdline tool.
-			// Needs full refactoring to fix properly.
+			/// @todo Hack. Not needed but otherwise we end up detecting that this should
+			/// run the project instead of a cmdline tool.
+			/// Needs full refactoring to fix properly.
 			main_args.push_back(arg);
 		} else if (arg == "--validate-extension-api") {
 			// Register as an editor instance to use low-end fallback if relevant.
 			editor = true;
 			cmdline_tool = true;
 			validate_extension_api = true;
-			// Hack. Not needed but otherwise we end up detecting that this should
-			// run the project instead of a cmdline tool.
-			// Needs full refactoring to fix properly.
+			/// @todo Hack. Not needed but otherwise we end up detecting that this should
+			/// run the project instead of a cmdline tool.
+			/// Needs full refactoring to fix properly.
 			main_args.push_back(arg);
 
 			if (N) {
@@ -1811,7 +1814,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		} else if (arg == "--editor-pseudolocalization") {
 			editor_pseudolocalization = true;
 #endif // TOOLS_ENABLED
-		} else if (arg == "--profile-gpu") {
+		} else if (arg == "--gpu-profile") {
 			profile_gpu = true;
 		} else if (arg == "--disable-crash-handler") {
 			OS::get_singleton()->disable_crash_handler();
@@ -2151,7 +2154,11 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	if (main_args.is_empty() && String(GLOBAL_GET("application/run/main_scene")) == "") {
 #ifdef TOOLS_ENABLED
-		if (!editor && !project_manager) {
+		if (!editor && !project_manager
+#ifdef MODULE_MCP_ENABLED
+				&& !mcp_server_enabled
+#endif
+		) {
 #endif
 			const String error_msg = "Error: Can't run project: no main scene defined in the project.\n";
 			OS::get_singleton()->print("%s", error_msg.utf8().get_data());
@@ -2945,7 +2952,10 @@ Error Main::setup2(bool p_show_boot_logo) {
 	set_current_thread_safe_for_nodes(true);
 
 	// Don't use rich formatting to prevent ANSI escape codes from being written to log files.
-	print_header(false);
+#ifdef MODULE_MCP_ENABLED
+	if (!mcp_server_enabled)
+#endif
+		print_header(false);
 
 #ifdef TOOLS_ENABLED
 	int accessibility_mode_editor = 0;
@@ -3170,48 +3180,8 @@ Error Main::setup2(bool p_show_boot_logo) {
 			window_position = &position;
 		}
 
-		Color boot_bg_color;
-#ifdef TOOLS_ENABLED
-		if (editor) {
-			// Read base color directly from settings file since EditorSettings isn't available yet
-			boot_bg_color = Color(0.06, 0.09, 0.14); // Default fallback
-			if (EditorPaths::get_singleton() && EditorPaths::get_singleton()->are_paths_valid()) {
-				String config_file_path = EditorSettings::get_existing_settings_path();
-				if (FileAccess::exists(config_file_path)) {
-					Ref<FileAccess> f = FileAccess::open(config_file_path, FileAccess::READ);
-					if (f.is_valid()) {
-						VariantParser::StreamFile stream;
-						stream.f = f;
-						String assign;
-						Variant value;
-						VariantParser::Tag next_tag;
-						int lines = 0;
-						String error_text;
-						VariantParser::ResourceParser rp_new;
-						rp_new.ext_func = _parse_resource_dummy;
-						rp_new.sub_func = _parse_resource_dummy;
-						while (true) {
-							assign = Variant();
-							next_tag.fields.clear();
-							next_tag.name = String();
-							Error err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true);
-							if (err == ERR_FILE_EOF) {
-								break;
-							}
-							if (err == OK && !assign.is_empty() && assign == "interface/theme/base_color") {
-								boot_bg_color = value;
-								break;
-							}
-						}
-					}
-				}
-			}
-		} else {
-			boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
-		}
-#else
-		boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
-#endif
+		GLOBAL_DEF(PropertyInfo(Variant::COLOR, "application/boot_splash/bg_color"), Color(0.14, 0.14, 0.14));
+		Color boot_bg_color = get_boot_splash_bg_color();
 		DisplayServer::set_early_window_clear_color_override(true, boot_bg_color);
 
 		DisplayServer::Context context;
@@ -3526,7 +3496,7 @@ Error Main::setup2(bool p_show_boot_logo) {
 			}
 		}
 
-		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", Color(0.128, 0.128, 0.128));
+		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", get_boot_splash_bg_color());
 		RenderingServer::get_singleton()->set_default_clear_color(clear);
 
 		if (p_show_boot_logo) {
@@ -3770,10 +3740,10 @@ Error Main::setup2(bool p_show_boot_logo) {
 	audio_server->load_default_bus_layout();
 
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
-	// Hacky to have it here, but we don't have good facility yet to let modules
-	// register command line options to call at the right time. This needs to happen
-	// after init'ing the ScriptServer, but also after init'ing the ThemeDB,
-	// for the C# docs generation in the bindings.
+	/// @todo Hacky to have it here, but we don't have good facility yet to let modules
+	/// register command line options to call at the right time. This needs to happen
+	/// after init'ing the ScriptServer, but also after init'ing the ThemeDB,
+	/// for the C# docs generation in the bindings.
 	List<String> cmdline_args = OS::get_singleton()->get_cmdline_args();
 	BindingsGenerator::handle_cmdline_args(cmdline_args);
 #endif
@@ -3805,6 +3775,19 @@ Error Main::setup2(bool p_show_boot_logo) {
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Setup2");
 
 	return OK;
+}
+
+Color Main::get_boot_splash_bg_color() {
+#if defined(TOOLS_ENABLED)
+	if (editor || project_manager) {
+		if (EditorSettings::get_singleton()) {
+			return EditorSettings::get_singleton()->get_setting("interface/theme/base_color");
+		}
+		return EditorSettings::get_setting_directly("interface/theme/base_color", EditorSettings::get_default_base_color());
+	}
+#endif
+
+	return GLOBAL_GET("application/boot_splash/bg_color");
 }
 
 void Main::setup_boot_logo() {
@@ -3852,49 +3835,8 @@ void Main::setup_boot_logo() {
 			boot_logo->set_pixel(0, 0, Color(0, 0, 0, 0));
 		}
 
-		Color boot_bg_color;
-#ifdef TOOLS_ENABLED
-		if (editor) {
-			// Read base color directly from settings file since EditorSettings isn't available yet
-			boot_bg_color = Color(0.06, 0.09, 0.14); // Default fallback
-			if (EditorPaths::get_singleton() && EditorPaths::get_singleton()->are_paths_valid()) {
-				String config_file_path = EditorSettings::get_existing_settings_path();
-				if (FileAccess::exists(config_file_path)) {
-					Ref<FileAccess> f = FileAccess::open(config_file_path, FileAccess::READ);
-					if (f.is_valid()) {
-						VariantParser::StreamFile stream;
-						stream.f = f;
-						String assign;
-						Variant value;
-						VariantParser::Tag next_tag;
-						int lines = 0;
-						String error_text;
-						VariantParser::ResourceParser rp_new;
-						rp_new.ext_func = _parse_resource_dummy;
-						rp_new.sub_func = _parse_resource_dummy;
-						while (true) {
-							assign = Variant();
-							next_tag.fields.clear();
-							next_tag.name = String();
-							Error err = VariantParser::parse_tag_assign_eof(&stream, lines, error_text, next_tag, assign, value, &rp_new, true);
-							if (err == ERR_FILE_EOF) {
-								break;
-							}
-							if (err == OK && !assign.is_empty() && assign == "interface/theme/base_color") {
-								boot_bg_color = value;
-								break;
-							}
-						}
-					}
-				}
-			}
-		} else {
-			boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
-		}
-#else
-		boot_bg_color = GLOBAL_DEF_BASIC("application/boot_splash/bg_color", boot_splash_bg_color);
-#endif
 		if (boot_logo.is_valid()) {
+			Color boot_bg_color = get_boot_splash_bg_color();
 			RenderingServer::get_singleton()->set_boot_image(boot_logo, boot_bg_color, boot_logo_scale, boot_logo_filter);
 
 		} else {
@@ -3907,6 +3849,7 @@ void Main::setup_boot_logo() {
 #endif
 
 			MAIN_PRINT("Main: ClearColor");
+			Color boot_bg_color = get_boot_splash_bg_color();
 			RenderingServer::get_singleton()->set_default_clear_color(boot_bg_color);
 			MAIN_PRINT("Main: Image");
 			RenderingServer::get_singleton()->set_boot_image(splash, boot_bg_color, false);
@@ -3920,20 +3863,19 @@ void Main::setup_boot_logo() {
 		}
 #endif
 	}
-	RenderingServer::get_singleton()->set_default_clear_color(
-			GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
+	if (!editor && !project_manager) {
+		RenderingServer::get_singleton()->set_default_clear_color(
+				GLOBAL_GET("rendering/environment/defaults/default_clear_color"));
+	}
 }
 
 String Main::get_rendering_driver_name() {
 	return rendering_driver;
 }
 
-// everything the main loop needs to know about frame timings
+/// everything the main loop needs to know about frame timings
 static MainTimerSync main_timer_sync;
 
-// Return value should be EXIT_SUCCESS if we start successfully
-// and should move on to `OS::run`, and EXIT_FAILURE otherwise for
-// an early exit with that error code.
 int Main::start() {
 	OS::get_singleton()->benchmark_begin_measure("Startup", "Main::Start");
 
@@ -4113,9 +4055,9 @@ int Main::start() {
 		}
 
 #ifndef MODULE_MONO_ENABLED
-		// Hack to define .NET-specific project settings even on non-.NET builds,
-		// so that we don't lose their descriptions and default values in DocTools.
-		// Default values should be synced with mono_gd/gd_mono.cpp.
+		/// @todo HACK: ...to define .NET-specific project settings even on non-.NET builds,
+		/// so that we don't lose their descriptions and default values in DocTools.
+		/// Default values should be synced with mono_gd/gd_mono.cpp.
 		GLOBAL_DEF("dotnet/project/assembly_name", "");
 		GLOBAL_DEF("dotnet/project/solution_directory", "");
 		GLOBAL_DEF(PropertyInfo(Variant::INT, "dotnet/project/assembly_reload_attempts", PROPERTY_HINT_RANGE, "1,16,1,or_greater"), 3);
@@ -4229,7 +4171,11 @@ int Main::start() {
 	}
 
 #ifdef TOOLS_ENABLED
-	if (!editor && !project_manager && !cmdline_tool && script.is_empty() && game_path.is_empty()) {
+	if (!editor && !project_manager && !cmdline_tool && script.is_empty() && game_path.is_empty()
+#ifdef MODULE_MCP_ENABLED
+			&& !mcp_server_enabled
+#endif
+	) {
 		// If we end up here, it means we didn't manage to detect what we want to run.
 		// Let's throw an error gently. The code leading to this is pretty brittle so
 		// this might end up triggered by valid usage, in which case we'll have to
@@ -4712,10 +4658,37 @@ int Main::start() {
 	}
 
 	if (movie_writer) {
-		movie_writer->begin(DisplayServer::get_singleton()->window_get_size(), fixed_fps, Engine::get_singleton()->get_write_movie_path());
+		Size2i movie_size = Size2i(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
+		String stretch_mode = GLOBAL_GET("display/window/stretch/mode");
+		if (stretch_mode != "viewport") {
+			// `canvas_items` and `disabled` modes use the window size override instead,
+			// which allows for higher resolution recording with 2D elements designed for a lower resolution.
+			const int window_width_override = GLOBAL_GET("display/window/size/window_width_override");
+			if (window_width_override > 0) {
+				movie_size.width = window_width_override;
+			}
+			const int window_height_override = GLOBAL_GET("display/window/size/window_height_override");
+			if (window_height_override > 0) {
+				movie_size.height = window_height_override;
+			}
+		}
+		movie_writer->begin(movie_size, fixed_fps, Engine::get_singleton()->get_write_movie_path());
 	}
 
 	GDExtensionManager::get_singleton()->startup();
+
+#ifdef MODULE_MCP_ENABLED
+	if (mcp_bridge_port != 0) {
+		if (MCPBridge::get_singleton()) {
+			Error err = MCPBridge::get_singleton()->connect_to_server("127.0.0.1", mcp_bridge_port);
+			if (err != OK) {
+				OS::get_singleton()->print("Error: MCPBridge failed to connect to server at 127.0.0.1:%d. Error code: %d\n", mcp_bridge_port, err);
+			}
+		} else {
+			OS::get_singleton()->print("Error: MCPBridge singleton is null despite module being enabled.\n");
+		}
+	}
+#endif
 
 	if (minimum_time_msec) {
 		uint64_t minimum_time = 1000 * minimum_time_msec;
@@ -4725,13 +4698,44 @@ int Main::start() {
 		}
 	}
 
+#ifdef MODULE_MCP_ENABLED
+	// If MCP server mode is enabled, start the server and don't continue to the main loop.
+	if (mcp_server_enabled) {
+		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
+
+		// Disable engine stdout printing to keep JSON-RPC stream pure
+		if (Engine::get_singleton()) {
+			Engine::get_singleton()->set_print_to_stdout(false);
+		}
+
+		if (MCPServer::get_singleton()) {
+			MCPServer::get_singleton()->start();
+		} else {
+			OS::get_singleton()->print("Error: MCPServer singleton is null.\n");
+			return EXIT_FAILURE;
+		}
+		return EXIT_SUCCESS;
+	}
+
+	if (!mcp_run_tests.is_empty()) {
+		OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
+
+		MCPServer::run_tests(mcp_run_tests);
+		return EXIT_SUCCESS;
+	}
+#endif
+
 	OS::get_singleton()->benchmark_end_measure("Startup", "Main::Start");
-	OS::get_singleton()->benchmark_dump();
+#ifdef MODULE_MCP_ENABLED
+	if (!mcp_server_enabled && mcp_run_tests.is_empty())
+#endif
+		OS::get_singleton()->benchmark_dump();
 
 	return EXIT_SUCCESS;
 }
 
-/* Main iteration
+/**
+ * Main iteration
  *
  * This is the iteration of the engine's game loop, advancing the state of physics,
  * rendering and audio.
@@ -4752,15 +4756,19 @@ bool Main::is_iterating() {
 	return iterating > 0;
 }
 
-// For performance metrics.
+/// @name For performance metrics
+/// @{
 static uint64_t physics_process_max = 0;
 static uint64_t process_max = 0;
 static uint64_t navigation_process_max = 0;
+/// @}
 
-// Return false means iterating further, returning true means `OS::run`
-// will terminate the program. In case of failure, the OS exit code needs
-// to be set explicitly here (defaults to EXIT_SUCCESS).
 bool Main::iteration() {
+#ifdef MODULE_MCP_ENABLED
+	if (MCPBridge::get_singleton()) {
+		MCPBridge::get_singleton()->update();
+	}
+#endif
 	iterating++;
 
 	const uint64_t ticks = OS::get_singleton()->get_ticks_usec();
@@ -5024,12 +5032,6 @@ void Main::force_redraw() {
 	force_redraw_requested = true;
 }
 
-/* Engine deinitialization
- *
- * Responsible for freeing all the memory allocated by previous setup steps,
- * so that the engine closes cleanly without leaking memory or crashing.
- * The order matters as some of those steps are linked with each other.
- */
 void Main::cleanup(bool p_force) {
 	OS::get_singleton()->benchmark_begin_measure("Shutdown", "Main::Cleanup");
 	if (!p_force) {

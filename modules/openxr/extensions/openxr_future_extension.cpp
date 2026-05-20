@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_future_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_future_extension.h"
 
 #include "../openxr_api.h"

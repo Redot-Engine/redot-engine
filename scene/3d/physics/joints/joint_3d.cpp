@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file joint_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "joint_3d.h"
 
 void Joint3D::_disconnect_signals() {

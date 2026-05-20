@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file primitive_meshes.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "primitive_meshes.h"
 
 #include "core/config/project_settings.h"
@@ -728,8 +734,8 @@ void BoxMesh::create_mesh_array(Array &p_arr, Vector3 size, int subdivide_w, int
 	float onethird = 1.0 / 3.0;
 	float twothirds = 2.0 / 3.0;
 
-	// Only used if we calculate UV2
-	// TODO this could be improved by changing the order depending on which side is the longest (basically the below works best if size.y is the longest)
+	/// Only used if we calculate UV2
+	/// @todo This could be improved by changing the order depending on which side is the longest (basically the below works best if size.y is the longest)
 	float total_h = (size.x + size.z + (2.0 * p_uv2_padding));
 	float padding_h = p_uv2_padding / total_h;
 	float width_h = size.x / total_h;
@@ -1595,8 +1601,8 @@ void PrismMesh::_update_lightmap_size() {
 		Size2i _lightmap_size_hint;
 		float padding = get_uv2_padding();
 
-		// left_to_right does not effect the surface area of the prism so we ignore that.
-		// TODO we could combine the two triangles and save some space but we need to re-align the uv1 and adjust the tangent.
+		/// left_to_right does not effect the surface area of the prism so we ignore that.
+		/// @todo We could combine the two triangles and save some space but we need to re-align the uv1 and adjust the tangent.
 
 		float width = (size.x + size.z) / texel_size;
 		float length = (size.y + size.y + size.z) / texel_size;
@@ -3780,8 +3786,6 @@ Ref<Font> TextMesh::get_font() const {
 }
 
 Ref<Font> TextMesh::_get_font_or_default() const {
-	// Similar code taken from `FontVariation::_get_base_font_or_default`.
-
 	if (font_override.is_valid()) {
 		return font_override;
 	}

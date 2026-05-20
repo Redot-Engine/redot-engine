@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file light_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 
 class Light2D : public Node2D {
@@ -74,6 +80,7 @@ private:
 
 	void _update_light_visibility();
 
+	/// For cases where owner changes _after_ entering tree (as example, editor editing).
 	virtual void owner_changed_notify() override;
 	virtual void _physics_interpolated_changed() override;
 

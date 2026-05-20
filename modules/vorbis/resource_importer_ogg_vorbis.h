@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_ogg_vorbis.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream_ogg_vorbis.h"
 
 #include "core/io/resource_importer.h"

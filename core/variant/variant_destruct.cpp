@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_destruct.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant_destruct.h"
 
 static Variant::PTRDestructor destruct_pointers[Variant::VARIANT_MAX] = { nullptr };

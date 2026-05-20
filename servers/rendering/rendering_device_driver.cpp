@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_driver.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_device_driver.h"
 
 /**************/
@@ -54,6 +60,8 @@ uint64_t RenderingDeviceDriver::api_trait_get(ApiTrait p_trait) {
 		case API_TRAIT_USE_GENERAL_IN_COPY_QUEUES:
 			return false;
 		case API_TRAIT_BUFFERS_REQUIRE_TRANSITIONS:
+			return false;
+		case API_TRAIT_TEXTURE_OUTPUTS_REQUIRE_CLEARS:
 			return false;
 		default:
 			ERR_FAIL_V(0);

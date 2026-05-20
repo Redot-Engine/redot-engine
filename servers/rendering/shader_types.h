@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_types.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering_server.h"
 #include "shader_language.h"
 

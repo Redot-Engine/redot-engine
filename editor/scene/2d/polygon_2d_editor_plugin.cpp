@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file polygon_2d_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "polygon_2d_editor_plugin.h"
 
 #include "core/input/input_event.h"
@@ -71,7 +77,7 @@ void Polygon2DEditor::_set_node(Node *p_polygon) {
 	if (node) {
 		canvas->set_texture_filter(node->get_texture_filter_in_tree());
 
-		_update_bone_list();
+		_update_bone_list(node);
 		_update_available_modes();
 		if (current_mode == MODE_MAX) {
 			_select_mode(MODE_POINTS); // Initialize when opening the first time.
@@ -202,12 +208,17 @@ void Polygon2DEditor::_sync_bones() {
 	undo_redo->create_action(TTR("Sync Bones"));
 	undo_redo->add_do_method(node, "_set_bones", new_bones);
 	undo_redo->add_undo_method(node, "_set_bones", prev_bones);
-	undo_redo->add_do_method(this, "_update_bone_list");
-	undo_redo->add_undo_method(this, "_update_bone_list");
+	undo_redo->add_do_method(this, "_update_bone_list", node);
+	undo_redo->add_undo_method(this, "_update_bone_list", node);
 	undo_redo->commit_action();
 }
 
-void Polygon2DEditor::_update_bone_list() {
+void Polygon2DEditor::_update_bone_list(const Polygon2D *p_for_node) {
+	ERR_FAIL_NULL(p_for_node);
+	if (p_for_node != node) {
+		return;
+	}
+
 	NodePath selected;
 	while (bone_scroll_vb->get_child_count()) {
 		CheckBox *cb = Object::cast_to<CheckBox>(bone_scroll_vb->get_child(0));
@@ -299,7 +310,7 @@ void Polygon2DEditor::_select_mode(int p_mode) {
 			bone_paint_strength->show();
 			bone_paint_radius->show();
 			bone_paint_radius_label->show();
-			_update_bone_list();
+			_update_bone_list(node);
 			bone_paint_pos = Vector2(-100000, -100000); // Send brush away when switching.
 		} break;
 		default:
@@ -671,7 +682,7 @@ void Polygon2DEditor::_canvas_input(const Ref<InputEvent> &p_input) {
 								Array polygons = node->get_polygons();
 								polygons = polygons.duplicate(); //copy because its a reference
 
-								//todo, could check whether it already exists?
+								/// @todo Could check whether it already exists?
 								polygons.push_back(polygon_create);
 								undo_redo->create_action(TTR("Add Custom Polygon"));
 								undo_redo->add_do_method(node, "set_polygons", polygons);
@@ -1262,7 +1273,7 @@ void Polygon2DEditor::_canvas_draw() {
 }
 
 void Polygon2DEditor::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("_update_bone_list"), &Polygon2DEditor::_update_bone_list);
+	ClassDB::bind_method(D_METHOD("_update_bone_list", "for_node"), &Polygon2DEditor::_update_bone_list);
 	ClassDB::bind_method(D_METHOD("_update_polygon_editing_state"), &Polygon2DEditor::_update_polygon_editing_state);
 }
 

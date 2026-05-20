@@ -147,6 +147,9 @@ class OS_Windows : public OS {
 	HashMap<String, int> encodings;
 	void _init_encodings();
 
+	Vector<String> _get_video_adapter_driver_info_reg(const String &p_name) const;
+	Vector<String> _get_video_adapter_driver_info_wmi(const String &p_name) const;
+
 	// functions used by main to initialize/deinitialize the OS
 protected:
 	virtual void initialize() override;
@@ -242,6 +245,8 @@ public:
 
 	virtual String get_system_dir(SystemDir p_dir, bool p_shared_storage = true) const override;
 	virtual String get_user_data_dir(const String &p_user_dir) const override;
+
+	virtual String expand_path(const String &p_path) const override;
 
 	virtual String get_unique_id() const override;
 

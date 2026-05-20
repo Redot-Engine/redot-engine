@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_image_frames.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/io/resource_importer.h"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_listener_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_listener_3d.h"
 
 #include "scene/main/viewport.h"

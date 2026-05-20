@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file polygon_2d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/scene/2d/abstract_polygon_2d_editor.h"
 #include "scene/2d/polygon_2d.h"
 
@@ -87,7 +93,7 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 
 	Button *dock_button = nullptr;
 	VBoxContainer *polygon_edit = nullptr;
-	Mode current_mode = MODE_MAX; // Uninitialized.
+	Mode current_mode = MODE_MAX; ///< Uninitialized.
 	Button *mode_buttons[MODE_MAX];
 	Action selected_action = ACTION_CREATE;
 	Button *action_buttons[ACTION_MAX];
@@ -123,7 +129,7 @@ class Polygon2DEditor : public AbstractPolygon2DEditor {
 	AcceptDialog *grid_settings = nullptr;
 
 	void _sync_bones();
-	void _update_bone_list();
+	void _update_bone_list(const Polygon2D *p_for_node);
 
 	Vector<Vector2> editing_points;
 	Vector<Vector2> previous_uv;

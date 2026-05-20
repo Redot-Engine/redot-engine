@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file array.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "array.h"
 
 #include "container_type_validate.h"
@@ -43,7 +49,7 @@
 struct ArrayPrivate {
 	SafeRefCount refcount;
 	Vector<Variant> array;
-	Variant *read_only = nullptr; // If enabled, a pointer is used to a temporary value that is used to return read-only values.
+	Variant *read_only = nullptr; ///< If enabled, a pointer is used to a temporary value that is used to return read-only values.
 	ContainerTypeValidate typed;
 
 	ArrayPrivate() {}
@@ -307,8 +313,9 @@ Error Array::resize(int p_new_size) {
 	int old_size = _p->array.size();
 	Error err = _p->array.resize_initialized(p_new_size);
 	if (!err && variant_type != Variant::NIL && variant_type != Variant::OBJECT) {
+		Variant *write = _p->array.ptrw();
 		for (int i = old_size; i < p_new_size; i++) {
-			VariantInternal::initialize(&_p->array.write[i], variant_type);
+			VariantInternal::initialize(&write[i], variant_type);
 		}
 	}
 	return err;

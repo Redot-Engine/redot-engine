@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file print_string.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "print_string.h"
 
 #include "core/core_globals.h"
@@ -343,6 +349,14 @@ bool is_print_verbose_enabled() {
 	return OS::get_singleton()->is_stdout_verbose();
 }
 
-String stringify_variants(const Variant &p_var) {
-	return p_var.operator String();
+String stringify_variants(const Span<Variant> &p_vars) {
+	if (p_vars.is_empty()) {
+		return String();
+	}
+	String result = String(p_vars[0]);
+	for (const Variant &v : Span(p_vars.ptr() + 1, p_vars.size() - 1)) {
+		result += ' ';
+		result += v.operator String();
+	}
+	return result;
 }

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_context_driver_vulkan_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef VULKAN_ENABLED
 
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"

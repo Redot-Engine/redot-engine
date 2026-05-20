@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file soft_body_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "soft_body_3d.h"
 #include "soft_body_3d.compat.inc"
 

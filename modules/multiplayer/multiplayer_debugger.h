@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file multiplayer_debugger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/debugger/engine_profiler.h"
 
 class MultiplayerSynchronizer;

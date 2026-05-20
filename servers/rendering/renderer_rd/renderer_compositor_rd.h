@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file renderer_compositor_rd.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"

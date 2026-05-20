@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_preloader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_preloader.h"
 #include "core/templates/rb_set.h"
 void ResourcePreloader::_set_resources(const Array &p_data) {

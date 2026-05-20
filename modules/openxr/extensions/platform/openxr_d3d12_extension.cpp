@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_d3d12_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_d3d12_extension.h"
 
 #ifdef D3D12_ENABLED
@@ -275,7 +281,7 @@ bool OpenXRD3D12Extension::get_swapchain_image_data(XrSwapchain p_swapchain, int
 
 bool OpenXRD3D12Extension::create_projection_fov(const XrFovf p_fov, double p_z_near, double p_z_far, Projection &r_camera_matrix) {
 	OpenXRUtil::XrMatrix4x4f matrix;
-	OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(&matrix, OpenXRUtil::GRAPHICS_D3D, p_fov, (float)p_z_near, (float)p_z_far);
+	OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(&matrix, p_fov, (float)p_z_near, (float)p_z_far);
 
 	for (int j = 0; j < 4; j++) {
 		for (int i = 0; i < 4; i++) {

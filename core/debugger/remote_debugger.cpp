@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file remote_debugger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "remote_debugger.h"
 
 #include "core/config/project_settings.h"
@@ -388,9 +394,6 @@ Array RemoteDebugger::_get_message() {
 }
 
 void RemoteDebugger::debug(bool p_can_continue, bool p_is_error_breakpoint) {
-	//this function is called when there is a debugger break (bug on script)
-	//or when execution is paused from editor
-
 	{
 		MutexLock lock(mutex);
 		// Tests that require mutex.

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file compositor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "compositor.h"
 
 #include "servers/rendering_server.h"
@@ -188,7 +194,7 @@ CompositorEffect::CompositorEffect() {
 	RenderingServer *rs = RenderingServer::get_singleton();
 	if (rs != nullptr) {
 		rid = rs->compositor_effect_create();
-		rs->compositor_effect_set_callback(rid, RenderingServer::CompositorEffectCallbackType(effect_callback_type), Callable(this, "_render_callback"));
+		rs->compositor_effect_set_callback(rid, RenderingServer::CompositorEffectCallbackType(effect_callback_type), callable_mp(this, &CompositorEffect::_call_render_callback));
 	}
 }
 

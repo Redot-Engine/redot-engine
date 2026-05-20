@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_map.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_map.h"
 #include "tile_map.compat.inc"
 
@@ -95,7 +101,7 @@ void TileMap::_set_tile_map_data_using_compatibility_format(int p_layer, TileMap
 		SWAP(local[1], local[2]);
 		SWAP(local[4], local[7]);
 		SWAP(local[5], local[6]);
-		//TODO: ask someone to check this...
+		/// @todo Ask someone to check this...
 		if (FORMAT >= FORMAT_2) {
 			SWAP(local[8], local[11]);
 			SWAP(local[9], local[10]);
@@ -668,7 +674,6 @@ void TileMap::notify_runtime_tile_data_update(int p_layer) {
 
 #ifdef DEBUG_ENABLED
 Rect2 TileMap::_edit_get_rect() const {
-	// Return the visible rect of the tilemap.
 	if (layers.is_empty()) {
 		return Rect2();
 	}
@@ -783,7 +788,6 @@ TypedArray<Vector2i> TileMap::get_used_cells_by_id(int p_layer, int p_source_id,
 }
 
 Rect2i TileMap::get_used_rect() const {
-	// Return the visible rect of the tilemap.
 	bool first = true;
 	Rect2i rect = Rect2i();
 	for (const TileMapLayer *layer : layers) {
@@ -804,7 +808,6 @@ Rect2i TileMap::get_used_rect() const {
 // --- Override some methods of the CanvasItem class to pass the changes to the quadrants CanvasItems ---
 
 void TileMap::set_light_mask(int p_light_mask) {
-	// Set light mask for occlusion and applies it to all layers too.
 	CanvasItem::set_light_mask(p_light_mask);
 	for (TileMapLayer *layer : layers) {
 		layer->set_light_mask(p_light_mask);
@@ -812,7 +815,6 @@ void TileMap::set_light_mask(int p_light_mask) {
 }
 
 void TileMap::set_self_modulate(const Color &p_self_modulate) {
-	// Set self_modulation and applies it to all layers too.
 	CanvasItem::set_self_modulate(p_self_modulate);
 	for (TileMapLayer *layer : layers) {
 		layer->set_self_modulate(p_self_modulate);
@@ -820,7 +822,6 @@ void TileMap::set_self_modulate(const Color &p_self_modulate) {
 }
 
 void TileMap::set_texture_filter(TextureFilter p_texture_filter) {
-	// Set a default texture filter and applies it to all layers too.
 	CanvasItem::set_texture_filter(p_texture_filter);
 	for (TileMapLayer *layer : layers) {
 		layer->set_texture_filter(p_texture_filter);
@@ -828,7 +829,6 @@ void TileMap::set_texture_filter(TextureFilter p_texture_filter) {
 }
 
 void TileMap::set_texture_repeat(CanvasItem::TextureRepeat p_texture_repeat) {
-	// Set a default texture repeat and applies it to all layers too.
 	CanvasItem::set_texture_repeat(p_texture_repeat);
 	for (TileMapLayer *layer : layers) {
 		layer->set_texture_repeat(p_texture_repeat);

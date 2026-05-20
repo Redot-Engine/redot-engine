@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file grid_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/node_3d.h"
 #include "scene/resources/3d/mesh_library.h"
 #include "scene/resources/multimesh.h"
@@ -113,7 +119,7 @@ class GridMap : public Node3D {
 				IndexKey key;
 			};
 
-			Vector<Item> items; //tools only, for changing visibility
+			Vector<Item> items; ///< Tools only, for changing visibility
 		};
 
 		Vector<MultimeshInstance> multimesh_instances;

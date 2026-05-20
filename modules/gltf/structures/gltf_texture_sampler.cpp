@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_texture_sampler.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_texture_sampler.h"
 
 void GLTFTextureSampler::_bind_methods() {

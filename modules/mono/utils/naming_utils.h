@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file naming_utils.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 
 String pascal_to_pascal_case(const String &p_identifier);

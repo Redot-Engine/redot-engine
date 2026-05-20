@@ -500,7 +500,7 @@
 				func _ready():
 					var id = get_instance_id()
 					var instance = instance_from_id(id)
-					print(instance.foo) # Prints "water"
+					print(instance.drink) # Prints "water"
 				[/gdscript]
 				[csharp]
 				public partial class MyNode : Node
@@ -619,7 +619,7 @@
 			<return type="Variant" />
 			<param index="0" name="from" type="Variant" />
 			<param index="1" name="to" type="Variant" />
-			<param index="2" name="weight" type="Variant" />
+			<param index="2" name="weight" type="float" />
 			<description>
 				Linearly interpolates between two values by the factor defined in [param weight]. To perform interpolation, [param weight] should be between [code]0.0[/code] and [code]1.0[/code] (inclusive). However, values outside this range are allowed and can be used to perform [i]extrapolation[/i]. If this is not desired, use [method clampf] to limit [param weight].
 				Both [param from] and [param to] must be the same type. Supported types: [int], [float], [Vector2], [Vector3], [Vector4], [Color], [Quaternion], [Basis], [Transform2D], [Transform3D].
@@ -752,6 +752,79 @@
 				mini(1, 2)   # Returns 1
 				mini(-3, -4) # Returns -4
 				[/codeblock]
+			</description>
+		</method>
+		<method name="monotonic_cubic_interpolate">
+			<return type="float" />
+			<param index="0" name="from" type="float" />
+			<param index="1" name="to" type="float" />
+			<param index="2" name="pre" type="float" />
+			<param index="3" name="post" type="float" />
+			<param index="4" name="weight" type="float" />
+			<description>
+				Performs monotonic cubic interpolation between [param from] and [param to]
+				using neighboring values [param pre] and [param post].
+				The interpolation factor [param weight] is typically between 0.0 and 1.0.
+
+				Unlike [method cubic_interpolate], this method preserves monotonicity
+				by automatically limiting tangents to prevent overshoot between key values.
+				This makes it suitable for animation tracks and other data where values
+				should not exceed surrounding keyframes.
+			</description>
+		</method>
+		<method name="monotonic_cubic_interpolate_angle">
+			<return type="float" />
+			<param index="0" name="from" type="float" />
+			<param index="1" name="to" type="float" />
+			<param index="2" name="pre" type="float" />
+			<param index="3" name="post" type="float" />
+			<param index="4" name="weight" type="float" />
+			<description>
+				Performs monotonic cubic interpolation between angular values, rotating
+				along the shortest path between [param from] and [param to].
+
+				The neighboring angles [param pre] and [param post] are used to compute
+				shape-preserving tangents while accounting for angle wrapping.
+				This prevents overshoot while maintaining continuous rotation.
+				See also [method lerp_angle].
+			</description>
+		</method>
+		<method name="monotonic_cubic_interpolate_angle_in_time">
+			<return type="float" />
+			<param index="0" name="from" type="float" />
+			<param index="1" name="to" type="float" />
+			<param index="2" name="pre" type="float" />
+			<param index="3" name="post" type="float" />
+			<param index="4" name="weight" type="float" />
+			<param index="5" name="to_t" type="float" />
+			<param index="6" name="pre_t" type="float" />
+			<param index="7" name="post_t" type="float" />
+			<description>
+				Time-aware version of [method monotonic_cubic_interpolate_angle].
+
+				The interpolation factor is derived from the provided keyframe times,
+				allowing unevenly spaced keyframes to influence tangent calculation.
+				This produces consistent motion when animation keys are not uniformly
+				distributed in time while still preventing overshoot.
+			</description>
+		</method>
+		<method name="monotonic_cubic_interpolate_in_time">
+			<return type="float" />
+			<param index="0" name="from" type="float" />
+			<param index="1" name="to" type="float" />
+			<param index="2" name="pre" type="float" />
+			<param index="3" name="post" type="float" />
+			<param index="4" name="weight" type="float" />
+			<param index="5" name="to_t" type="float" />
+			<param index="6" name="pre_t" type="float" />
+			<param index="7" name="post_t" type="float" />
+			<description>
+				Time-aware version of [method monotonic_cubic_interpolate].
+
+				The interpolation parameter is normalized using the supplied keyframe
+				times, allowing interpolation to account for non-uniform spacing between
+				values. Tangents are computed in a way that preserves monotonicity and
+				prevents overshoot between keyframes.
 			</description>
 		</method>
 		<method name="move_toward">
@@ -1102,7 +1175,24 @@
 				remap(75, 0, 100, -1, 1) # Returns 0.5
 				[/codeblock]
 				For complex use cases where multiple ranges are needed, consider using [Curve] or [Gradient] instead.
-				[b]Note:[/b] If [code]istart == istop[/code], the return value is undefined (most likely NaN, INF, or -INF).
+				[b]Note:[/b] If [code]istart == istop[/code], the return value is undefined (most likely NaN, INF, or -INF). See also [method remap_default].
+			</description>
+		</method>
+		<method name="remap_default" keywords="range, lerp, interpolate">
+			<return type="float" />
+			<param index="0" name="value" type="float" />
+			<param index="1" name="istart" type="float" />
+			<param index="2" name="istop" type="float" />
+			<param index="3" name="ostart" type="float" />
+			<param index="4" name="ostop" type="float" />
+			<param index="5" name="default_value" type="float" />
+			<description>
+				Maps a [param value] from range [code][istart, istop][/code] to [code][ostart, ostop][/code] and returns [param default_value] if [method remap] would've returned [code]INF[/code] or [code]NAN[/code]. See also [method remap], [method lerp] and [method inverse_lerp]. If [param value] is outside [code][istart, istop][/code], then the resulting value will also be outside [code][ostart, ostop][/code]. If this is not desired, use [method clamp] on the result of this function.
+				[codeblock]
+				remap_default(75, 0, 100, -1, 1, 3) # Returns 0.5
+				remap_default(75, 0, 0, -1, 1, 3) # Returns 3.0
+				[/codeblock]
+				For complex use cases where multiple ranges are needed, consider using [Curve] or [Gradient] instead.
 			</description>
 		</method>
 		<method name="rid_allocate_id">
@@ -1689,6 +1779,10 @@
 		<member name="JavaScriptBridge" type="JavaScriptBridge" setter="" getter="">
 			The [JavaScriptBridge] singleton.
 			[b]Note:[/b] Only implemented on the Web platform.
+		</member>
+		<member name="MCPBridge" type="MCPBridge" setter="" getter="">
+		</member>
+		<member name="MCPServer" type="MCPServer" setter="" getter="">
 		</member>
 		<member name="Marshalls" type="Marshalls" setter="" getter="">
 			The [Marshalls] singleton.

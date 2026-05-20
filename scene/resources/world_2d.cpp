@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file world_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "world_2d.h"
 
 #include "core/config/project_settings.h"

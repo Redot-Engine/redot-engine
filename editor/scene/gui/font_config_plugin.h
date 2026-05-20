@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file font_config_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_properties.h"
 #include "editor/inspector/editor_properties_array_dict.h"
 #include "editor/plugins/editor_plugin.h"

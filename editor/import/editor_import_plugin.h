@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_import_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource_importer.h"
 #include "core/variant/typed_array.h"
 

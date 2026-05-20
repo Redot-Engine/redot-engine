@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_geometry_instance.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_geometry_instance.h"
 
 void RenderGeometryInstanceBase::set_skeleton(RID p_skeleton) {

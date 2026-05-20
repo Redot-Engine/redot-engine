@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_custom_motion_shape.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_custom_motion_shape.h"
 
 namespace {
@@ -70,9 +76,6 @@ JPH::AABox JoltCustomMotionShape::GetLocalBounds() const {
 }
 
 void JoltCustomMotionShape::GetSupportingFace(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_direction, JPH::Vec3Arg p_scale, JPH::Mat44Arg p_center_of_mass_transform, JPH::Shape::SupportingFace &p_vertices) const {
-	// This is technically called when using the enhanced internal edge removal, but `JPH::InternalEdgeRemovingCollector` will
-	// only ever use the faces of the second shape in the collision pair, and this shape will always be the first in the pair, so
-	// we can safely skip this.
 }
 
 const JPH::ConvexShape::Support *JoltCustomMotionShape::GetSupportFunction(JPH::ConvexShape::ESupportMode p_mode, JPH::ConvexShape::SupportBuffer &p_buffer, JPH::Vec3Arg p_scale) const {

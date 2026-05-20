@@ -30,12 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_saver_tinyexr.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_saver_tinyexr.h"
 
 #include "core/io/file_access.h"
 #include "core/math/math_funcs.h"
 
 #include <zlib.h> // Should come before including tinyexr.
+#include <cstdlib>
 
 #include "thirdparty/tinyexr/tinyexr.h"
 

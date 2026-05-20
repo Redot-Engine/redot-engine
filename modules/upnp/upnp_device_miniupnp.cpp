@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file upnp_device_miniupnp.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef WEB_ENABLED
 
 #include "upnp_device_miniupnp.h"

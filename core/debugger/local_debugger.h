@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file local_debugger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/debugger/engine_debugger.h"
 #include "core/object/script_language.h"
 #include "core/templates/list.h"

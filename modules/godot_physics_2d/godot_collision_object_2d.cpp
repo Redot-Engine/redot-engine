@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_collision_object_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_collision_object_2d.h"
 #include "godot_physics_server_2d.h"
 #include "godot_space_2d.h"

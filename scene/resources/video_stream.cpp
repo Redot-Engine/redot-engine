@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file video_stream.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "video_stream.h"
 
 // VideoStreamPlayback starts here.

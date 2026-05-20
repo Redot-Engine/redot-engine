@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file basis.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "basis.h"
 
 #include "core/math/math_funcs.h"
@@ -56,8 +62,6 @@ void Basis::invert() {
 }
 
 void Basis::orthonormalize() {
-	// Gram-Schmidt Process
-
 	Vector3 x = get_column(0);
 	Vector3 y = get_column(1);
 	Vector3 z = get_column(2);
@@ -91,8 +95,6 @@ Basis Basis::orthogonalized() const {
 	return c;
 }
 
-// Returns true if the basis vectors are orthogonal (perpendicular), so it has no skew or shear, and can be decomposed into rotation and scale.
-// See https://en.wikipedia.org/wiki/Orthogonal_basis
 bool Basis::is_orthogonal() const {
 	const Vector3 x = get_column(0);
 	const Vector3 y = get_column(1);
@@ -100,8 +102,6 @@ bool Basis::is_orthogonal() const {
 	return Math::is_zero_approx(x.dot(y)) && Math::is_zero_approx(x.dot(z)) && Math::is_zero_approx(y.dot(z));
 }
 
-// Returns true if the basis vectors are orthonormal (orthogonal and normalized), so it has no scale, skew, or shear.
-// See https://en.wikipedia.org/wiki/Orthonormal_basis
 bool Basis::is_orthonormal() const {
 	const Vector3 x = get_column(0);
 	const Vector3 y = get_column(1);
@@ -109,8 +109,6 @@ bool Basis::is_orthonormal() const {
 	return Math::is_equal_approx(x.length_squared(), 1) && Math::is_equal_approx(y.length_squared(), 1) && Math::is_equal_approx(z.length_squared(), 1) && Math::is_zero_approx(x.dot(y)) && Math::is_zero_approx(x.dot(z)) && Math::is_zero_approx(y.dot(z));
 }
 
-// Returns true if the basis is conformal (orthogonal, uniform scale, preserves angles and distance ratios).
-// See https://en.wikipedia.org/wiki/Conformal_linear_transformation
 bool Basis::is_conformal() const {
 	const Vector3 x = get_column(0);
 	const Vector3 y = get_column(1);
@@ -119,7 +117,6 @@ bool Basis::is_conformal() const {
 	return Math::is_equal_approx(x_len_sq, y.length_squared()) && Math::is_equal_approx(x_len_sq, z.length_squared()) && Math::is_zero_approx(x.dot(y)) && Math::is_zero_approx(x.dot(z)) && Math::is_zero_approx(y.dot(z));
 }
 
-// Returns true if the basis only has diagonal elements, so it may only have scale or flip, but no rotation, skew, or shear.
 bool Basis::is_diagonal() const {
 	return (
 			Math::is_zero_approx(rows[0][1]) && Math::is_zero_approx(rows[0][2]) &&
@@ -127,13 +124,12 @@ bool Basis::is_diagonal() const {
 			Math::is_zero_approx(rows[2][0]) && Math::is_zero_approx(rows[2][1]));
 }
 
-// Returns true if the basis is a pure rotation matrix, so it has no scale, skew, shear, or flip.
 bool Basis::is_rotation() const {
 	return is_conformal() && Math::is_equal_approx(determinant(), 1, (real_t)UNIT_EPSILON);
 }
 
 #ifdef MATH_CHECKS
-// This method is only used once, in diagonalize. If it's desired elsewhere, feel free to remove the #ifdef.
+
 bool Basis::is_symmetric() const {
 	if (!Math::is_equal_approx(rows[0][1], rows[1][0])) {
 		return false;
@@ -150,8 +146,6 @@ bool Basis::is_symmetric() const {
 #endif
 
 Basis Basis::diagonalize() {
-// NOTE: only implemented for symmetric matrices
-// with the Jacobi iterative method
 #ifdef MATH_CHECKS
 	ERR_FAIL_COND_V(!is_symmetric(), Basis());
 #endif
@@ -231,8 +225,6 @@ Basis Basis::from_scale(const Vector3 &p_scale) {
 	return Basis(p_scale.x, 0, 0, 0, p_scale.y, 0, 0, 0, p_scale.z);
 }
 
-// Multiplies the matrix from left by the scaling matrix: M -> S.M
-// See the comment for Basis::rotated for further explanation.
 void Basis::scale(const Vector3 &p_scale) {
 	rows[0] *= p_scale.x;
 	rows[1] *= p_scale.y;
@@ -246,8 +238,6 @@ Basis Basis::scaled(const Vector3 &p_scale) const {
 }
 
 void Basis::scale_local(const Vector3 &p_scale) {
-	// performs a scaling in object-local coordinate system:
-	// M -> (M.S.Minv).M = M.S.
 	rows[0] *= p_scale;
 	rows[1] *= p_scale;
 	rows[2] *= p_scale;
@@ -298,35 +288,33 @@ Vector3 Basis::get_scale_global() const {
 	return det_sign * Vector3(rows[0].length(), rows[1].length(), rows[2].length());
 }
 
-// get_scale works with get_rotation, use get_scale_abs if you need to enforce positive signature.
 Vector3 Basis::get_scale() const {
-	// FIXME: We are assuming M = R.S (R is rotation and S is scaling), and use polar decomposition to extract R and S.
-	// A polar decomposition is M = O.P, where O is an orthogonal matrix (meaning rotation and reflection) and
-	// P is a positive semi-definite matrix (meaning it contains absolute values of scaling along its diagonal).
-	//
-	// Despite being different from what we want to achieve, we can nevertheless make use of polar decomposition
-	// here as follows. We can split O into a rotation and a reflection as O = R.Q, and obtain M = R.S where
-	// we defined S = Q.P. Now, R is a proper rotation matrix and S is a (signed) scaling matrix,
-	// which can involve negative scalings. However, there is a catch: unlike the polar decomposition of M = O.P,
-	// the decomposition of O into a rotation and reflection matrix as O = R.Q is not unique.
-	// Therefore, we are going to do this decomposition by sticking to a particular convention.
-	// This may lead to confusion for some users though.
-	//
-	// The convention we use here is to absorb the sign flip into the scaling matrix.
-	// The same convention is also used in other similar functions such as get_rotation_axis_angle, get_rotation, ...
-	//
-	// A proper way to get rid of this issue would be to store the scaling values (or at least their signs)
-	// as a part of Basis. However, if we go that path, we need to disable direct (write) access to the
-	// matrix elements.
-	//
-	// The rotation part of this decomposition is returned by get_rotation* functions.
+	/**
+	 * @todo FIXME: We are assuming M = R.S (R is rotation and S is scaling), and use polar decomposition to extract R and S.
+	 * A polar decomposition is M = O.P, where O is an orthogonal matrix (meaning rotation and reflection) and
+	 * P is a positive semi-definite matrix (meaning it contains absolute values of scaling along its diagonal).
+	 *
+	 * Despite being different from what we want to achieve, we can nevertheless make use of polar decomposition
+	 * here as follows. We can split O into a rotation and a reflection as O = R.Q, and obtain M = R.S where
+	 * we defined S = Q.P. Now, R is a proper rotation matrix and S is a (signed) scaling matrix,
+	 * which can involve negative scalings. However, there is a catch: unlike the polar decomposition of M = O.P,
+	 * the decomposition of O into a rotation and reflection matrix as O = R.Q is not unique.
+	 * Therefore, we are going to do this decomposition by sticking to a particular convention.
+	 * This may lead to confusion for some users though.
+	 *
+	 * The convention we use here is to absorb the sign flip into the scaling matrix.
+	 * The same convention is also used in other similar functions such as get_rotation_axis_angle, get_rotation, ...
+	 *
+	 * A proper way to get rid of this issue would be to store the scaling values (or at least their signs)
+	 * as a part of Basis. However, if we go that path, we need to disable direct (write) access to the
+	 * matrix elements.
+	 *
+	 * The rotation part of this decomposition is returned by get_rotation* functions.
+	 */
 	real_t det_sign = SIGN(determinant());
 	return det_sign * get_scale_abs();
 }
 
-// Decomposes a Basis into a rotation-reflection matrix (an element of the group O(3)) and a positive scaling matrix as B = O.S.
-// Returns the rotation-reflection matrix via reference argument, and scaling information is returned as a Vector3.
-// This (internal) function is too specific and named too ugly to expose to users, and probably there's no need to do so.
 Vector3 Basis::rotref_posscale_decomposition(Basis &rotref) const {
 #ifdef MATH_CHECKS
 	ERR_FAIL_COND_V(determinant() == 0, Vector3());
@@ -344,12 +332,6 @@ Vector3 Basis::rotref_posscale_decomposition(Basis &rotref) const {
 	return scale.abs();
 }
 
-// Multiplies the matrix from left by the rotation matrix: M -> R.M
-// Note that this does *not* rotate the matrix itself.
-//
-// The main use of Basis is as Transform.basis, which is used by the transformation matrix
-// of 3D object. Rotate here refers to rotation of the object (which is R * (*this)),
-// not the matrix itself (which is R * (*this) * R.transposed()).
 Basis Basis::rotated(const Vector3 &p_axis, real_t p_angle) const {
 	return Basis(p_axis, p_angle) * (*this);
 }
@@ -359,8 +341,6 @@ void Basis::rotate(const Vector3 &p_axis, real_t p_angle) {
 }
 
 void Basis::rotate_local(const Vector3 &p_axis, real_t p_angle) {
-	// performs a rotation in object-local coordinate system:
-	// M -> (M.R.Minv).M = M.R.
 	*this = rotated_local(p_axis, p_angle);
 }
 
@@ -385,9 +365,6 @@ void Basis::rotate(const Quaternion &p_quaternion) {
 }
 
 Vector3 Basis::get_euler_normalized(EulerOrder p_order) const {
-	// Assumes that the matrix can be decomposed into a proper rotation and scaling matrix as M = R.S,
-	// and returns the Euler angles corresponding to the rotation part, complementing get_scale().
-	// See the comment in get_scale() for further information.
 	Basis m = orthonormalized();
 	real_t det = m.determinant();
 	if (det < 0) {
@@ -399,9 +376,6 @@ Vector3 Basis::get_euler_normalized(EulerOrder p_order) const {
 }
 
 Quaternion Basis::get_rotation_quaternion() const {
-	// Assumes that the matrix can be decomposed into a proper rotation and scaling matrix as M = R.S,
-	// and returns the Euler angles corresponding to the rotation part, complementing get_scale().
-	// See the comment in get_scale() for further information.
 	Basis m = orthonormalized();
 	real_t det = m.determinant();
 	if (det < 0) {
@@ -413,8 +387,6 @@ Quaternion Basis::get_rotation_quaternion() const {
 }
 
 void Basis::rotate_to_align(Vector3 p_start_direction, Vector3 p_end_direction) {
-	// Takes two vectors and rotates the basis from the first vector to the second vector.
-	// Adopted from: https://gist.github.com/kevinmoran/b45980723e53edeb8a5a43c49f134724
 	const Vector3 axis = p_start_direction.cross(p_end_direction).normalized();
 	if (axis.length_squared() != 0) {
 		real_t dot = p_start_direction.dot(p_end_direction);
@@ -425,9 +397,6 @@ void Basis::rotate_to_align(Vector3 p_start_direction, Vector3 p_end_direction) 
 }
 
 void Basis::get_rotation_axis_angle(Vector3 &p_axis, real_t &p_angle) const {
-	// Assumes that the matrix can be decomposed into a proper rotation and scaling matrix as M = R.S,
-	// and returns the Euler angles corresponding to the rotation part, complementing get_scale().
-	// See the comment in get_scale() for further information.
 	Basis m = orthonormalized();
 	real_t det = m.determinant();
 	if (det < 0) {
@@ -439,9 +408,6 @@ void Basis::get_rotation_axis_angle(Vector3 &p_axis, real_t &p_angle) const {
 }
 
 void Basis::get_rotation_axis_angle_local(Vector3 &p_axis, real_t &p_angle) const {
-	// Assumes that the matrix can be decomposed into a proper rotation and scaling matrix as M = R.S,
-	// and returns the Euler angles corresponding to the rotation part, complementing get_scale().
-	// See the comment in get_scale() for further information.
 	Basis m = transposed();
 	m.orthonormalize();
 	real_t det = m.determinant();
@@ -455,9 +421,6 @@ void Basis::get_rotation_axis_angle_local(Vector3 &p_axis, real_t &p_angle) cons
 }
 
 Vector3 Basis::get_euler(EulerOrder p_order) const {
-	// This epsilon value results in angles within a +/- 0.04 degree range being simplified/truncated.
-	// Based on testing, this is the largest the epsilon can be without the angle truncation becoming
-	// visually noticeable.
 	const real_t epsilon = 0.00000025;
 
 	switch (p_order) {
@@ -884,8 +847,6 @@ void Basis::set_quaternion_scale(const Quaternion &p_quaternion, const Vector3 &
 	rotate(p_quaternion);
 }
 
-// This also sets the non-diagonal elements to 0, which is misleading from the
-// name, so we want this method to be private. Use `from_scale` externally.
 void Basis::_set_diagonal(const Vector3 &p_diag) {
 	rows[0][0] = p_diag.x;
 	rows[0][1] = 0;
@@ -923,10 +884,6 @@ Basis Basis::slerp(const Basis &p_to, real_t p_weight) const {
 }
 
 void Basis::rotate_sh(real_t *p_values) {
-	// code by John Hable
-	// http://filmicworlds.com/blog/simple-and-fast-spherical-harmonic-rotation/
-	// this code is Public Domain
-
 	const static real_t s_c3 = 0.94617469575; // (3*sqrt(5))/(4*sqrt(pi))
 	const static real_t s_c4 = -0.31539156525; // (-sqrt(5))/(4*sqrt(pi))
 	const static real_t s_c5 = 0.54627421529; // (sqrt(15))/(4*sqrt(pi))

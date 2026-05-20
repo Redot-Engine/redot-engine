@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file webrtc_peer_connection_js.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webrtc_peer_connection_js.h"
 
 #ifdef WEB_ENABLED

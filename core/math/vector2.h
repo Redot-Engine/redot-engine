@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file vector2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/math_funcs.h"
 
@@ -121,11 +127,14 @@ struct [[nodiscard]] Vector2 {
 	_FORCE_INLINE_ Vector2 slerp(const Vector2 &p_to, real_t p_weight) const;
 	_FORCE_INLINE_ Vector2 cubic_interpolate(const Vector2 &p_b, const Vector2 &p_pre_a, const Vector2 &p_post_b, real_t p_weight) const;
 	_FORCE_INLINE_ Vector2 cubic_interpolate_in_time(const Vector2 &p_b, const Vector2 &p_pre_a, const Vector2 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const;
+	_FORCE_INLINE_ Vector2 monotonic_cubic_interpolate(const Vector2 &p_b, const Vector2 &p_pre_a, const Vector2 &p_post_b, real_t p_weight) const;
+	_FORCE_INLINE_ Vector2 monotonic_cubic_interpolate_in_time(const Vector2 &p_b, const Vector2 &p_pre_a, const Vector2 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const;
 	_FORCE_INLINE_ Vector2 bezier_interpolate(const Vector2 &p_control_1, const Vector2 &p_control_2, const Vector2 &p_end, real_t p_t) const;
 	_FORCE_INLINE_ Vector2 bezier_derivative(const Vector2 &p_control_1, const Vector2 &p_control_2, const Vector2 &p_end, real_t p_t) const;
 
 	Vector2 move_toward(const Vector2 &p_to, real_t p_delta) const;
 
+	/// @return The component of the vector along the given plane, specified by its normal vector.
 	Vector2 slide(const Vector2 &p_normal) const;
 	Vector2 bounce(const Vector2 &p_normal) const;
 	Vector2 reflect(const Vector2 &p_normal) const;
@@ -289,6 +298,20 @@ Vector2 Vector2::cubic_interpolate_in_time(const Vector2 &p_b, const Vector2 &p_
 	return res;
 }
 
+Vector2 Vector2::monotonic_cubic_interpolate(const Vector2 &p_b, const Vector2 &p_pre_a, const Vector2 &p_post_b, real_t p_weight) const {
+	Vector2 res = *this;
+	res.x = Math::monotonic_cubic_interpolate(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight);
+	res.y = Math::monotonic_cubic_interpolate(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight);
+	return res;
+}
+
+Vector2 Vector2::monotonic_cubic_interpolate_in_time(const Vector2 &p_b, const Vector2 &p_pre_a, const Vector2 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const {
+	Vector2 res = *this;
+	res.x = Math::monotonic_cubic_interpolate_in_time(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
+	res.y = Math::monotonic_cubic_interpolate_in_time(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
+	return res;
+}
+
 Vector2 Vector2::bezier_interpolate(const Vector2 &p_control_1, const Vector2 &p_control_2, const Vector2 &p_end, real_t p_t) const {
 	Vector2 res = *this;
 	res.x = Math::bezier_interpolate(res.x, p_control_1.x, p_control_2.x, p_end.x, p_t);
@@ -309,9 +332,10 @@ Vector2 Vector2::direction_to(const Vector2 &p_to) const {
 	return ret;
 }
 
-// Multiplication operators required to workaround issues with LLVM using implicit conversion
-// to Vector2i instead for integers where it should not.
-
+/// @name Multiplication operators
+/// @details Required to workaround issues with LLVM using implicit conversion
+/// to Vector2i instead for integers where it should not.
+/// @{
 constexpr Vector2 operator*(float p_scalar, const Vector2 &p_vec) {
 	return p_vec * p_scalar;
 }
@@ -327,6 +351,7 @@ constexpr Vector2 operator*(int32_t p_scalar, const Vector2 &p_vec) {
 constexpr Vector2 operator*(int64_t p_scalar, const Vector2 &p_vec) {
 	return p_vec * p_scalar;
 }
+/// @}
 
 typedef Vector2 Size2;
 typedef Vector2 Point2;

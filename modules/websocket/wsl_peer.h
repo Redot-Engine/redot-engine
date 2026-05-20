@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file wsl_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifndef WEB_ENABLED
 
 #include "packet_buffer.h"
@@ -60,11 +66,13 @@ private:
 
 	static wslay_event_callbacks _wsl_callbacks;
 
-	// Helpers
+	/// @name Helpers
+	/// @{
 	static String _compute_key_response(String p_key);
 	static String _generate_key();
+	/// @}
 
-	// Client IP resolver.
+	/// Client IP Resolver
 	class Resolver {
 		Array ip_candidates;
 		IP::ResolverID resolver_id = IP::RESOLVER_INVALID_ID;
@@ -93,7 +101,8 @@ private:
 
 	Resolver resolver;
 
-	// WebSocket connection state.
+	/// @name WebSocket Connection State
+	/// @{
 	WebSocketPeer::State ready_state = WebSocketPeer::STATE_CLOSED;
 	bool is_server = false;
 	Ref<StreamPeerTCP> tcp;
@@ -113,15 +122,19 @@ private:
 	uint64_t last_heartbeat = 0;
 	bool heartbeat_waiting = false;
 	PendingMessage pending_message;
-
-	// WebSocket configuration.
+	/// @}
+	/// @name WebSocket Configuration
+	/// @{
 	bool use_tls = true;
 	Ref<TLSOptions> tls_options;
+	/// @}
 
-	// Packet buffers.
+	/// @name Packet Buffers
+	/// @{
 	Vector<uint8_t> packet_buffer;
-	// Our packet info is just a boolean (is_string), using uint8_t for it.
+	/// Our packet info is just a boolean (is_string), using uint8_t for it.
 	PacketBuffer<uint8_t> in_buffer;
+	/// @}
 
 	Error _send(const uint8_t *p_buffer, int p_buffer_size, wslay_opcode p_opcode);
 
@@ -137,13 +150,15 @@ public:
 	static void initialize();
 	static void deinitialize();
 
-	// PacketPeer
+	/// @name PacketPeer
+	/// @{
 	virtual int get_available_packet_count() const override;
 	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override;
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
 	virtual int get_max_packet_size() const override { return packet_buffer.size(); }
-
-	// WebSocketPeer
+	/// @}
+	/// @name WebSocketPeer
+	/// @{
 	virtual Error send(const uint8_t *p_buffer, int p_buffer_size, WriteMode p_mode) override;
 	virtual Error connect_to_url(const String &p_url, Ref<TLSOptions> p_options = Ref<TLSOptions>()) override;
 	virtual Error accept_stream(Ref<StreamPeer> p_stream) override;
@@ -162,6 +177,7 @@ public:
 
 	virtual bool was_string_packet() const override { return was_string; }
 	virtual void set_no_delay(bool p_enabled) override;
+	/// @}
 
 	WSLPeer();
 	~WSLPeer();

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_fastnoise_lite.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../fastnoise_lite.h"
 
 #include "tests/test_macros.h"

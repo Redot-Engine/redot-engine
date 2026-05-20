@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_expression_evaluator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 
 class Button;

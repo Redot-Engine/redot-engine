@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "light_storage.h"
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
@@ -434,7 +440,14 @@ AABB LightStorage::light_get_aabb(RID p_light) const {
 	switch (light->type) {
 		case RS::LIGHT_SPOT: {
 			float len = light->param[RS::LIGHT_PARAM_RANGE];
-			float size = Math::tan(Math::deg_to_rad(light->param[RS::LIGHT_PARAM_SPOT_ANGLE])) * len;
+			float angle = Math::deg_to_rad(light->param[RS::LIGHT_PARAM_SPOT_ANGLE]);
+
+			if (angle > Math::PI * 0.5) {
+				// Light casts backwards as well.
+				return AABB(Vector3(-1, -1, -1) * len, Vector3(2, 2, 2) * len);
+			}
+
+			float size = Math::sin(angle) * len;
 			return AABB(Vector3(-size, -size, -len), Vector3(size * 2, size * 2, len));
 		};
 		case RS::LIGHT_OMNI: {
@@ -1443,7 +1456,7 @@ void LightStorage::reflection_probe_release_atlas_index(RID p_instance) {
 	ERR_FAIL_INDEX(rpi->atlas_index, atlas->reflections.size());
 	atlas->reflections.write[rpi->atlas_index].owner = RID();
 
-	// TODO investigate if this is enough? shouldn't we be freeing our textures and framebuffers?
+	/// @todo Investigate if this is enough? shouldn't we be freeing our textures and framebuffers?
 
 	if (rpi->rendering) {
 		// We were cancelled mid rendering, trigger refresh.
@@ -1487,6 +1500,9 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 	ReflectionAtlas *atlas = reflection_atlas_owner.get_or_null(p_reflection_atlas);
 
 	ERR_FAIL_NULL_V(atlas, false);
+
+	ERR_FAIL_COND_V_MSG(atlas->size < 2, false, "Attempted to render to a reflection atlas of invalid resolution.");
+	ERR_FAIL_COND_V_MSG(atlas->count < 1, false, "Attempted to render to a reflection atlas of size < 1.");
 
 	ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
 	ERR_FAIL_NULL_V(rpi, false);

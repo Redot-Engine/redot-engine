@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file generic_6dof_joint_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "generic_6dof_joint_3d.h"
 
 void Generic6DOFJoint3D::_bind_methods() {

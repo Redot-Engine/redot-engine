@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file compressed_texture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource_loader.h"
 #include "scene/resources/texture.h"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_tokenizer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_tokenizer.h"
 
 #include "core/error/error_macros.h"
@@ -195,8 +201,8 @@ bool GDScriptTokenizer::Token::can_precede_bin_op() const {
 }
 
 bool GDScriptTokenizer::Token::is_identifier() const {
-	// Note: Most keywords should not be recognized as identifiers.
-	// These are only exceptions for stuff that already is on the engine's API.
+	/// @note Most keywords should not be recognized as identifiers.
+	/// These are only exceptions for stuff that already is on the engine's API.
 	switch (type) {
 		case IDENTIFIER:
 		case MATCH: // Used in String.match().

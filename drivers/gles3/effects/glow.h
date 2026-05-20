@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file glow.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "drivers/gles3/shaders/effects/glow.glsl.gen.h"
@@ -55,7 +61,7 @@ private:
 	float glow_hdr_bleed_scale = 2.0;
 	float glow_hdr_luminance_cap = 12.0;
 
-	// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates pixel overdraw along the diagonal.
+	/// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates pixel overdraw along the diagonal.
 	GLuint screen_triangle = 0;
 	GLuint screen_triangle_array = 0;
 

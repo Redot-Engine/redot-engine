@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_baker_export_plugin_platform_vulkan.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/export/shader_baker_export_plugin.h"
 
 class ShaderBakerExportPluginPlatformVulkan : public ShaderBakerExportPluginPlatform {

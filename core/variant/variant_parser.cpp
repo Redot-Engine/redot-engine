@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_parser.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant_parser.h"
 
 #include "core/config/project_settings.h"
@@ -1995,8 +2001,8 @@ Error VariantParser::parse(Stream *p_stream, Variant &r_ret, String &r_err_str, 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-// These two functions serialize floats or doubles using num_scientific to ensure
-// it can be read back in the same way (except collapsing -0 to 0, and NaN values).
+/// @name These two functions serialize floats or doubles using num_scientific to ensure it can be read back in the same way (except collapsing -0 to 0, and NaN values).
+/// @{
 static String rtos_fix(float p_value, bool p_compat) {
 	if (p_value == 0.0f) {
 		return "0"; // Avoid negative zero (-0) being written, which may annoy git, svn, etc. for changes when they don't exist.
@@ -2020,6 +2026,7 @@ static String rtos_fix(double p_value, bool p_compat) {
 	}
 	return String::num_scientific(p_value);
 }
+/// @}
 
 static String encode_resource_reference(const String &path) {
 	ResourceUID::ID uid = ResourceLoader::get_resource_uid(path);
@@ -2048,7 +2055,7 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 		case Variant::FLOAT: {
 			const double value = p_variant.operator double();
 			String s;
-			// Hack to avoid garbage digits when the underlying float is 32-bit.
+			/// @todo Hack to avoid garbage digits when the underlying float is 32-bit.
 			if ((double)(float)value == value) {
 				s = rtos_fix((float)value, p_compat);
 			} else {

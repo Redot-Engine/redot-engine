@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_settings_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 #include "scene/gui/dialogs.h"
 
@@ -60,7 +66,7 @@ class EditorSettingsDialog : public AcceptDialog {
 	SectionedInspector *inspector = nullptr;
 	EditorEventSearchBar *shortcut_search_bar = nullptr;
 
-	// Shortcuts
+	/// Shortcuts
 	enum ShortcutButton {
 		SHORTCUT_ADD,
 		SHORTCUT_EDIT,
@@ -114,6 +120,11 @@ class EditorSettingsDialog : public AcceptDialog {
 
 	void _update_shortcuts();
 	void _shortcut_button_pressed(Object *p_item, int p_column, int p_idx, MouseButton p_button = MouseButton::LEFT);
+	/// When a shortcut cell is double clicked:
+	/// If the cell has children and is in the bindings column, and if its first child is editable,
+	/// then uncollapse the cell, and if the first child is the only child, then edit that child.
+	/// If the cell is in the bindings column and can be edited, then edit it.
+	/// If the cell is in the name column, then toggle collapse.
 	void _shortcut_cell_double_clicked();
 	static void _set_shortcut_input(const String &p_name, Ref<InputEventKey> &p_event);
 

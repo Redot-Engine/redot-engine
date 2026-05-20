@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_dock_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_dock_manager.h"
 
 #include "scene/gui/box_container.h"
@@ -255,7 +261,7 @@ Control *EditorDockManager::_get_dock_tab_dragged() {
 			return nullptr;
 		}
 
-		// TODO: Update logic when GH-106503 is merged to cast directly to EditorDock instead of the below check.
+		/// @todo Update logic when GH-106503 is merged to cast directly to EditorDock instead of the below check.
 		for (int i = 0; i < DOCK_SLOT_MAX; i++) {
 			if (dock_slot[i] == parent) {
 				dock_tab_dragged = parent->get_tab_control(dock_drop_data["tab_index"]);

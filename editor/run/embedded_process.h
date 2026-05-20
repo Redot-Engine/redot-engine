@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file embedded_process.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 
 class ScriptEditorDebugger;
@@ -67,6 +73,7 @@ public:
 	virtual void embed_process(OS::ProcessID p_pid) = 0;
 	virtual int get_embedded_pid() const = 0;
 	virtual void reset() = 0;
+	virtual void reset_timers() = 0;
 	virtual void request_close() = 0;
 	virtual void queue_update_embedded_process() = 0;
 
@@ -105,6 +112,9 @@ class EmbeddedProcess : public EmbeddedProcessBase {
 	void _update_embedded_process();
 	void _timer_embedding_timeout();
 	void _timer_update_embedded_process_timeout();
+	/// This method checks if the mouse is over the embedded process while the current application is focused.
+	/// The goal is to give focus to the embedded process as soon as the mouse hovers over it,
+	/// allowing the user to interact with it immediately without needing to click first.
 	void _check_mouse_over();
 	void _check_focused_process_id();
 	bool _is_embedded_process_updatable();
@@ -120,6 +130,7 @@ public:
 	void embed_process(OS::ProcessID p_pid) override;
 	int get_embedded_pid() const override;
 	void reset() override;
+	void reset_timers() override;
 	void request_close() override;
 	void queue_update_embedded_process() override;
 

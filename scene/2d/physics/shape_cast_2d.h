@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shape_cast_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 #include "scene/resources/2d/shape_2d.h"
 #include "servers/physics_server_2d.h"

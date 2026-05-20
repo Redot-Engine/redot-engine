@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_preloader_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/panel_container.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file label_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/font.h"
 
@@ -198,7 +204,7 @@ public:
 
 	void set_font(const Ref<Font> &p_font);
 	Ref<Font> get_font() const;
-	Ref<Font> _get_font_or_default() const;
+	Ref<Font> _get_font_or_default() const; ///< Similar code taken from `FontVariation::_get_base_font_or_default`.
 
 	void set_font_size(int p_size);
 	int get_font_size() const;

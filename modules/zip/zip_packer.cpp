@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file zip_packer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "zip_packer.h"
 
 #include "core/io/zip_io.h"

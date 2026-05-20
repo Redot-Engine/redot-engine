@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_space_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/physics_server_3d.h"
 
 #include "Jolt/Jolt.h"
@@ -140,6 +146,7 @@ public:
 
 	void set_is_object_sleeping(const JPH::BodyID &p_jolt_id, bool p_enable);
 
+	/// This method will be called from the body activation listener on multiple threads during the simulation step.
 	void enqueue_call_queries(SelfList<JoltBody3D> *p_body);
 	void enqueue_call_queries(SelfList<JoltArea3D> *p_area);
 	void dequeue_call_queries(SelfList<JoltBody3D> *p_body);

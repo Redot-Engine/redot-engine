@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/shortcut.h"
 #include "core/io/config_file.h"
 #include "core/io/resource.h"
@@ -63,7 +69,7 @@ public:
 	};
 
 	enum InitialScreen {
-		INITIAL_SCREEN_AUTO = -5, // Remembers last screen position.
+		INITIAL_SCREEN_AUTO = -5, ///< Remembers last screen position.
 		INITIAL_SCREEN_WITH_MOUSE_FOCUS = -4,
 		INITIAL_SCREEN_WITH_KEYBOARD_FOCUS = -3,
 		INITIAL_SCREEN_PRIMARY = -2,
@@ -106,7 +112,7 @@ private:
 	Vector<String> recent_dirs;
 
 	bool save_changed_setting = true;
-	bool optimize_save = true; //do not save stuff that came from config but was not set from engine
+	bool optimize_save = true; ///< Do not save stuff that came from config but was not set from engine
 	bool initialized = false;
 
 	bool _set(const StringName &p_name, const Variant &p_value);
@@ -138,7 +144,12 @@ public:
 	static EditorSettings *get_singleton();
 	static String get_existing_settings_path();
 	static String get_newest_settings_path();
+	static Variant get_setting_directly(const String &p_setting, const Variant &p_default = Variant());
+	static Color get_default_base_color();
 
+	/// @warning create() *must* create a valid EditorSettings singleton,
+	/// as the rest of the engine code will assume it. As such, it should never
+	/// return (incl. via ERR_FAIL) without initializing the singleton member.
 	static void create();
 	void setup_language();
 	void setup_network();

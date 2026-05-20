@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "mesh_storage.h"
@@ -2194,8 +2200,8 @@ void MeshStorage::_update_dirty_multimeshes() {
 					glBufferSubData(GL_ARRAY_BUFFER, 0, MIN(visible_region_count * region_size, multimesh->instances * multimesh->stride_cache * sizeof(float)), data);
 					glBindBuffer(GL_ARRAY_BUFFER, 0);
 				} else {
-					// Not that many regions? update them all
-					// TODO: profile the performance cost on low end
+					/// Not that many regions? update them all
+					/// @todo Profile the performance cost on low end
 					glBindBuffer(GL_ARRAY_BUFFER, multimesh->buffer);
 					for (uint32_t i = 0; i < visible_region_count; i++) {
 						if (multimesh->data_cache_dirty_regions[i]) {

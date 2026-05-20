@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file marker_3d_gizmo_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "marker_3d_gizmo_plugin.h"
 
 #include "editor/editor_node.h"
@@ -65,8 +71,8 @@ Marker3DGizmoPlugin::Marker3DGizmoPlugin() {
 	const Color color_x = EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("axis_x_color"), EditorStringName(Editor));
 	cursor_colors.push_back(color_x);
 	cursor_colors.push_back(color_x);
-	// FIXME: Use less strong darkening factor once GH-48573 is fixed.
-	// The current darkening factor compensates for lines being too bright in the 3D editor.
+	/// @todo FIXME: Use less strong darkening factor once GH-48573 is fixed.
+	/// The current darkening factor compensates for lines being too bright in the 3D editor.
 	cursor_colors.push_back(color_x.lerp(Color(0, 0, 0), 0.75));
 	cursor_colors.push_back(color_x.lerp(Color(0, 0, 0), 0.75));
 

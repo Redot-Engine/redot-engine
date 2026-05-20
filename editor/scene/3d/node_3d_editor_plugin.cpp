@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_3d_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node_3d_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -50,6 +56,7 @@
 #include "editor/scene/3d/gizmos/audio_listener_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/audio_stream_player_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/camera_3d_gizmo_plugin.h"
+#include "editor/scene/3d/gizmos/chain_ik_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/cpu_particles_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/decal_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/fog_volume_gizmo_plugin.h"
@@ -77,6 +84,7 @@
 #include "editor/scene/3d/gizmos/reflection_probe_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/spring_bone_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/sprite_base_3d_gizmo_plugin.h"
+#include "editor/scene/3d/gizmos/two_bone_ik_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/visible_on_screen_notifier_3d_gizmo_plugin.h"
 #include "editor/scene/3d/gizmos/voxel_gi_gizmo_plugin.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
@@ -705,9 +713,9 @@ void Node3DEditorViewport::cancel_transform() {
 }
 
 void Node3DEditorViewport::_update_shrink() {
-	bool shrink = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_HALF_RESOLUTION));
-	subviewport_container->set_stretch_shrink(shrink ? 2 : 1);
-	subviewport_container->set_texture_filter(shrink ? TEXTURE_FILTER_NEAREST : TEXTURE_FILTER_PARENT_NODE);
+	const float scaling_3d_scale = GLOBAL_GET("rendering/scaling_3d/scale");
+	const float shrink_factor = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_HALF_RESOLUTION)) ? 0.5 : 1.0;
+	viewport->set_scaling_3d_scale(MAX(0.25, scaling_3d_scale * shrink_factor));
 }
 
 float Node3DEditorViewport::get_znear() const {
@@ -731,11 +739,11 @@ Vector3 Node3DEditorViewport::_get_camera_position() const {
 }
 
 Point2 Node3DEditorViewport::point_to_screen(const Vector3 &p_point) {
-	return camera->unproject_position(p_point) * subviewport_container->get_stretch_shrink();
+	return camera->unproject_position(p_point);
 }
 
 Vector3 Node3DEditorViewport::get_ray_pos(const Vector2 &p_pos) const {
-	return camera->project_ray_origin(p_pos / subviewport_container->get_stretch_shrink());
+	return camera->project_ray_origin(p_pos);
 }
 
 Vector3 Node3DEditorViewport::_get_camera_normal() const {
@@ -743,7 +751,7 @@ Vector3 Node3DEditorViewport::_get_camera_normal() const {
 }
 
 Vector3 Node3DEditorViewport::get_ray(const Vector2 &p_pos) const {
-	return camera->project_ray_normal(p_pos / subviewport_container->get_stretch_shrink());
+	return camera->project_ray_normal(p_pos);
 }
 
 void Node3DEditorViewport::_clear_selected() {
@@ -828,7 +836,7 @@ void Node3DEditorViewport::_select_clicked(bool p_allow_locked) {
 ObjectID Node3DEditorViewport::_select_ray(const Point2 &p_pos) const {
 	Vector3 ray = get_ray(p_pos);
 	Vector3 pos = get_ray_pos(p_pos);
-	Vector2 shrinked_pos = p_pos / subviewport_container->get_stretch_shrink();
+	Vector2 shrinked_pos = p_pos;
 
 	if (viewport->get_debug_draw() == Viewport::DEBUG_DRAW_SDFGI_PROBES) {
 		RS::get_singleton()->sdfgi_set_debug_probe_select(pos, ray);
@@ -1704,8 +1712,6 @@ static bool _redirect_freelook_input(const Ref<InputEvent> &p_event, Node3DEdito
 	return true;
 }
 
-// This is only active during instant transforms,
-// to capture and wrap mouse events outside the control.
 void Node3DEditorViewport::input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(!_edit.instant);
 	Ref<InputEventMouseMotion> m = p_event;
@@ -2987,8 +2993,6 @@ void Node3DEditorViewport::_project_settings_changed() {
 	viewport->set_positional_shadow_atlas_quadrant_subdiv(2, Viewport::PositionalShadowAtlasQuadrantSubdiv(atlas_q2));
 	viewport->set_positional_shadow_atlas_quadrant_subdiv(3, Viewport::PositionalShadowAtlasQuadrantSubdiv(atlas_q3));
 
-	_update_shrink();
-
 	// Update MSAA, screen-space AA and debanding if changed
 
 	const int msaa_mode = GLOBAL_GET("rendering/anti_aliasing/quality/msaa_3d");
@@ -3016,8 +3020,7 @@ void Node3DEditorViewport::_project_settings_changed() {
 	const Viewport::Scaling3DMode scaling_3d_mode = Viewport::Scaling3DMode(int(GLOBAL_GET("rendering/scaling_3d/mode")));
 	viewport->set_scaling_3d_mode(scaling_3d_mode);
 
-	const float scaling_3d_scale = GLOBAL_GET("rendering/scaling_3d/scale");
-	viewport->set_scaling_3d_scale(scaling_3d_scale);
+	_update_shrink();
 
 	const float fsr_sharpness = GLOBAL_GET("rendering/scaling_3d/fsr_sharpness");
 	viewport->set_fsr_sharpness(fsr_sharpness);
@@ -3261,7 +3264,7 @@ void Node3DEditorViewport::_notification(int p_what) {
 			}
 
 			if (show_info) {
-				const String viewport_size = vformat(U"%d × %d", viewport->get_size().x, viewport->get_size().y);
+				const String viewport_size = vformat(U"%d × %d", viewport->get_size().x * viewport->get_scaling_3d_scale(), viewport->get_size().y * viewport->get_scaling_3d_scale());
 				String text;
 				text += vformat(TTR("X: %s\n"), rtos(current_camera->get_position().x).pad_decimals(1));
 				text += vformat(TTR("Y: %s\n"), rtos(current_camera->get_position().y).pad_decimals(1));
@@ -3270,7 +3273,7 @@ void Node3DEditorViewport::_notification(int p_what) {
 				text += vformat(
 						TTR("Size: %s (%.1fMP)\n"),
 						viewport_size,
-						viewport->get_size().x * viewport->get_size().y * 0.000001);
+						viewport->get_size().x * viewport->get_size().y * Math::pow(viewport->get_scaling_3d_scale(), 2) * 0.000001);
 
 				text += "\n";
 				text += vformat(TTR("Objects: %d\n"), viewport->get_render_info(Viewport::RENDER_INFO_TYPE_VISIBLE, Viewport::RENDER_INFO_OBJECTS_IN_FRAME));
@@ -4281,8 +4284,7 @@ void Node3DEditorViewport::update_transform_gizmo_view() {
 	const int viewport_base_height = 400 * MAX(1, EDSCALE);
 	gizmo_scale =
 			(gizmo_size / Math::abs(dd)) * MAX(1, EDSCALE) *
-			MIN(viewport_base_height, subviewport_container->get_size().height) / viewport_base_height /
-			subviewport_container->get_stretch_shrink();
+			MIN(viewport_base_height, subviewport_container->get_size().height) / viewport_base_height;
 	Vector3 scale = Vector3(1, 1, 1) * gizmo_scale;
 
 	// if the determinant is zero, we should disable the gizmo from being rendered
@@ -4514,7 +4516,7 @@ Dictionary Node3DEditorViewport::get_state() const {
 	d["grid"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_GRID));
 	d["information"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_INFORMATION));
 	d["frame_time"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_FRAME_TIME));
-	d["half_res"] = subviewport_container->get_stretch_shrink() > 1;
+	d["half_res"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_HALF_RESOLUTION));
 	d["cinematic_preview"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_CINEMATIC_PREVIEW));
 	if (previewing) {
 		d["previewing"] = EditorNode::get_singleton()->get_edited_scene()->get_path_to(previewing);
@@ -4593,7 +4595,7 @@ void _insert_rid_recursive(Node *node, HashSet<RID> &rids) {
 
 	if (co) {
 		rids.insert(co->get_rid());
-	} else if (node->is_class("CSGShape3D")) { // HACK: We should avoid referencing module logic.
+	} else if (node->is_class("CSGShape3D")) { /// @todo HACK: We should avoid referencing module logic.
 		rids.insert(node->call("_get_root_collision_instance"));
 	}
 
@@ -5264,7 +5266,6 @@ void Node3DEditorViewport::begin_transform(TransformMode p_mode, bool instant) {
 	}
 }
 
-// Apply the current transform operation.
 void Node3DEditorViewport::commit_transform() {
 	ERR_FAIL_COND(_edit.mode == TRANSFORM_NONE);
 	static const char *_transform_name[4] = {
@@ -5337,7 +5338,6 @@ void Node3DEditorViewport::apply_transform(Vector3 p_motion, double p_snap) {
 	surface->queue_redraw();
 }
 
-// Update the current transform operation in response to an input.
 void Node3DEditorViewport::update_transform(bool p_shift) {
 	Vector3 ray_pos = get_ray_pos(_edit.mouse_pos);
 	Vector3 ray = get_ray(_edit.mouse_pos);
@@ -5432,7 +5432,7 @@ void Node3DEditorViewport::update_transform(bool p_shift) {
 			set_message(TTR("Scaling:") + " (" + String::num(motion_snapped.x, snap_step_decimals) + ", " +
 					String::num(motion_snapped.y, snap_step_decimals) + ", " + String::num(motion_snapped.z, snap_step_decimals) + ")");
 			if (local_coords) {
-				// TODO: needed?
+				/// @todo Needed?
 				motion = _edit.original.basis.inverse().xform(motion);
 			}
 
@@ -5655,7 +5655,6 @@ void Node3DEditorViewport::update_transform_numeric() {
 	apply_transform(motion, extra);
 }
 
-// Perform cleanup after a transform operation is committed or canceled.
 void Node3DEditorViewport::finish_transform() {
 	_edit.mode = TRANSFORM_NONE;
 	_edit.instant = false;
@@ -5669,7 +5668,6 @@ void Node3DEditorViewport::finish_transform() {
 	clicked = ObjectID();
 }
 
-// Register a shortcut and also add it as an input action with the same events.
 void Node3DEditorViewport::register_shortcut_action(const String &p_path, const String &p_name, Key p_keycode, bool p_physical) {
 	Ref<Shortcut> sc = ED_SHORTCUT(p_path, p_name, p_keycode, p_physical);
 	shortcut_changed_callback(sc, p_path);
@@ -5677,7 +5675,6 @@ void Node3DEditorViewport::register_shortcut_action(const String &p_path, const 
 	sc->connect_changed(callable_mp(this, &Node3DEditorViewport::shortcut_changed_callback).bind(sc, p_path));
 }
 
-// Update the action in the InputMap to the provided shortcut events.
 void Node3DEditorViewport::shortcut_changed_callback(const Ref<Shortcut> p_shortcut, const String &p_shortcut_path) {
 	InputMap *im = InputMap::get_singleton();
 	if (im->has_action(p_shortcut_path)) {
@@ -8534,7 +8531,7 @@ void Node3DEditor::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "3D editor")));
 		} break;
@@ -8940,6 +8937,8 @@ void Node3DEditor::_register_all_gizmos() {
 	add_gizmo_plugin(Ref<Joint3DGizmoPlugin>(memnew(Joint3DGizmoPlugin)));
 	add_gizmo_plugin(Ref<PhysicalBone3DGizmoPlugin>(memnew(PhysicalBone3DGizmoPlugin)));
 	add_gizmo_plugin(Ref<FogVolumeGizmoPlugin>(memnew(FogVolumeGizmoPlugin)));
+	add_gizmo_plugin(Ref<TwoBoneIK3DGizmoPlugin>(memnew(TwoBoneIK3DGizmoPlugin)));
+	add_gizmo_plugin(Ref<ChainIK3DGizmoPlugin>(memnew(ChainIK3DGizmoPlugin)));
 }
 
 void Node3DEditor::_bind_methods() {

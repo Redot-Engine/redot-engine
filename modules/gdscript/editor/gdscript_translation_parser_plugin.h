@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_translation_parser_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gdscript_parser.h"
 #include "../gdscript_tokenizer.h"
 
@@ -46,7 +52,8 @@ class GDScriptEditorTranslationParserPlugin : public EditorTranslationParserPlug
 
 	Vector<Vector<String>> *translations = nullptr;
 
-	// List of patterns used for extracting translation strings.
+	/// @name List of patterns used for extracting translation strings.
+	/// @{
 	StringName tr_func = "tr";
 	StringName trn_func = "tr_n";
 	StringName atr_func = "atr";
@@ -54,10 +61,13 @@ class GDScriptEditorTranslationParserPlugin : public EditorTranslationParserPlug
 	HashSet<StringName> assignment_patterns;
 	HashSet<StringName> first_arg_patterns;
 	HashSet<StringName> second_arg_patterns;
-	// FileDialog patterns.
+	/// @}
+	/// @name FileDialog Patterns
+	/// @{
 	StringName fd_add_filter = "add_filter";
 	StringName fd_set_filter = "set_filters";
 	StringName fd_filters = "filters";
+	/// @}
 
 	static bool _is_constant_string(const GDScriptParser::ExpressionNode *p_expression);
 
@@ -70,6 +80,8 @@ class GDScriptEditorTranslationParserPlugin : public EditorTranslationParserPlug
 	void _traverse_function(const GDScriptParser::FunctionNode *p_func);
 	void _traverse_block(const GDScriptParser::SuiteNode *p_suite);
 
+	/// Explore all ExpressionNodes to find CallNodes which contain translation strings, such as tr(), set_text() etc.
+	/// tr() can be embedded quite deep within multiple ExpressionNodes so need to dig down to search through all ExpressionNodes.
 	void _assess_expression(const GDScriptParser::ExpressionNode *p_expression);
 	void _assess_assignment(const GDScriptParser::AssignmentNode *p_assignment);
 	void _assess_call(const GDScriptParser::CallNode *p_call);
@@ -78,6 +90,10 @@ class GDScriptEditorTranslationParserPlugin : public EditorTranslationParserPlug
 	void _extract_fd_filter_array(const GDScriptParser::ExpressionNode *p_expression);
 
 public:
+	/// Extract all translatable strings using the parsed tree from GDScriptParser.
+	/// The strategy is to find all ExpressionNode and AssignmentNode from the tree and extract strings if relevant, i.e
+	/// Search strings in ExpressionNode -> CallNode -> tr(), set_text(), set_placeholder() etc.
+	/// Search strings in AssignmentNode -> text = "__", tooltip_text = "__" etc.
 	virtual Error parse_file(const String &p_path, Vector<Vector<String>> *r_translations) override;
 	virtual void get_recognized_extensions(List<String> *r_extensions) const override;
 

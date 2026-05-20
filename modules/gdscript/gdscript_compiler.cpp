@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_compiler.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_compiler.h"
 
 #include "gdscript.h"
@@ -175,8 +181,8 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 				_set_error(vformat(R"(Could not find class "%s" in "%s".)", p_datatype.class_type->fqcn, p_datatype.script_path), nullptr);
 				return GDScriptDataType();
 			} else {
-				// Only hold a strong reference if the owner of the element qualified with this type is not local, to avoid cyclic references (leaks).
-				// TODO: Might lead to use after free if script_type is a subclass and is used after its parent is freed.
+				/// Only hold a strong reference if the owner of the element qualified with this type is not local, to avoid cyclic references (leaks).
+				/// @todo Might lead to use after free if script_type is a subclass and is used after its parent is freed.
 				if (!is_local_class) {
 					result.script_type_ref = script;
 				}
@@ -325,7 +331,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 								const GDScriptParser::ClassNode::Member &member = base_class->get_member(identifier);
 								if (member.type == GDScriptParser::ClassNode::Member::FUNCTION || member.type == GDScriptParser::ClassNode::Member::SIGNAL) {
 									// Get like it was a property.
-									GDScriptCodeGenerator::Address temp = codegen.add_temporary(); // TODO: Get type here.
+									GDScriptCodeGenerator::Address temp = codegen.add_temporary(); /// @todo Get type here.
 
 									GDScriptCodeGenerator::Address base(GDScriptCodeGenerator::Address::SELF);
 									if (member.type == GDScriptParser::ClassNode::Member::FUNCTION && member.function->is_static) {
@@ -351,7 +357,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 						if (nc && (identifier == CoreStringName(free_) || ClassDB::has_signal(nc->get_name(), identifier) || ClassDB::has_method(nc->get_name(), identifier))) {
 							// Get like it was a property.
-							GDScriptCodeGenerator::Address temp = codegen.add_temporary(); // TODO: Get type here.
+							GDScriptCodeGenerator::Address temp = codegen.add_temporary(); /// @todo Get type here.
 							GDScriptCodeGenerator::Address self(GDScriptCodeGenerator::Address::SELF);
 
 							gen->write_get_named(temp, identifier, self);
@@ -369,7 +375,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 						while (scr) {
 							if (scr->constants.has(identifier)) {
-								return codegen.add_constant(scr->constants[identifier]); // TODO: Get type here.
+								return codegen.add_constant(scr->constants[identifier]); /// @todo Get type here.
 							}
 							if (scr->native.is_valid()) {
 								nc = scr->native.ptr();
@@ -471,7 +477,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 #ifdef TOOLS_ENABLED
 					if (GDScriptLanguage::get_singleton()->get_named_globals_map().has(identifier)) {
-						GDScriptCodeGenerator::Address global = codegen.add_temporary(); // TODO: Get type.
+						GDScriptCodeGenerator::Address global = codegen.add_temporary(); /// @todo Get type.
 						gen->write_store_named_global(global, identifier);
 						return global;
 					}
@@ -1882,7 +1888,6 @@ List<GDScriptCodeGenerator::Address> GDScriptCompiler::_add_block_locals(CodeGen
 	return addresses;
 }
 
-// Avoid keeping in the stack long-lived references to objects, which may prevent `RefCounted` objects from being freed.
 void GDScriptCompiler::_clear_block_locals(CodeGen &codegen, const List<GDScriptCodeGenerator::Address> &p_locals) {
 	for (const GDScriptCodeGenerator::Address &local : p_locals) {
 		if (local.type.can_contain_object()) {
@@ -1921,8 +1926,8 @@ Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::Sui
 					return err;
 				}
 
-				// Assign to local.
-				// TODO: This can be improved by passing the target to parse_expression().
+				/// Assign to local.
+				/// @todo This can be improved by passing the target to parse_expression().
 				gen->write_assign(value, value_expr);
 
 				if (value_expr.mode == GDScriptCodeGenerator::Address::TEMPORARY) {
@@ -2110,7 +2115,7 @@ Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::Sui
 				// Loop variables must be cleared even when `break`/`continue` is used.
 				List<GDScriptCodeGenerator::Address> loop_locals = _add_block_locals(codegen, for_n->loop);
 
-				//_clear_block_locals(codegen, loop_locals); // Inside loop, before block - for `continue`. // TODO
+				//_clear_block_locals(codegen, loop_locals); // Inside loop, before block - for `continue`. /// @todo
 
 				err = _parse_block(codegen, for_n->loop, false); // Don't add locals again.
 				if (err) {
@@ -2144,7 +2149,7 @@ Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::Sui
 				// Loop variables must be cleared even when `break`/`continue` is used.
 				List<GDScriptCodeGenerator::Address> loop_locals = _add_block_locals(codegen, while_n->loop);
 
-				//_clear_block_locals(codegen, loop_locals); // Inside loop, before block - for `continue`. // TODO
+				//_clear_block_locals(codegen, loop_locals); // Inside loop, before block - for `continue`. /// @todo
 
 				err = _parse_block(codegen, while_n->loop, false); // Don't add locals again.
 				if (err) {
@@ -2695,10 +2700,6 @@ Error GDScriptCompiler::_parse_setter_getter(GDScript *p_script, const GDScriptP
 	return err;
 }
 
-// Prepares given script, and inner class scripts, for compilation. It populates class members and
-// initializes method RPC info for its base classes first, then for itself, then for inner classes.
-// WARNING: This function cannot initiate compilation of other classes, or it will result in
-// cyclic dependency issues.
 Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state) {
 	if (parsed_classes.has(p_script)) {
 		return OK;

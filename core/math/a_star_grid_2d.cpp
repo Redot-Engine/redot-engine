@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file a_star_grid_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "a_star_grid_2d.h"
 #include "a_star_grid_2d.compat.inc"
 
@@ -555,7 +561,7 @@ bool AStarGrid2D::_solve(Point *p_begin_point, Point *p_end_point, bool p_allow_
 			real_t weight_scale = 1.0;
 
 			if (jumping_enabled) {
-				// TODO: Make it works with weight_scale.
+				/// @todo Make it work with weight_scale.
 				e = _jump(p, e);
 				if (!e || e->closed_pass == pass) {
 					continue;
@@ -805,7 +811,7 @@ void AStarGrid2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_traversals", PROPERTY_HINT_RANGE, "0,65536,0"), "set_max_traversals", "get_max_traversals");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "default_compute_heuristic", PROPERTY_HINT_ENUM, "Euclidean,Manhattan,Octile,Chebyshev"), "set_default_compute_heuristic", "get_default_compute_heuristic");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "default_estimate_heuristic", PROPERTY_HINT_ENUM, "Euclidean,Manhattan,Octile,Chebyshev"), "set_default_estimate_heuristic", "get_default_estimate_heuristic");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "diagonal_mode", PROPERTY_HINT_ENUM, "Never,Always,At Least One Walkable,Only If No Obstacles"), "set_diagonal_mode", "get_diagonal_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "diagonal_mode", PROPERTY_HINT_ENUM, "Always,Never,At Least One Walkable,Only If No Obstacles"), "set_diagonal_mode", "get_diagonal_mode");
 
 	BIND_ENUM_CONSTANT(HEURISTIC_EUCLIDEAN);
 	BIND_ENUM_CONSTANT(HEURISTIC_MANHATTAN);

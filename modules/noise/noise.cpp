@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file noise.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "noise.h"
 
 Vector<Ref<Image>> Noise::_get_seamless_image(int p_width, int p_height, int p_depth, bool p_invert, bool p_in_3d_space, real_t p_blend_skirt, bool p_normalize) const {
@@ -71,7 +77,7 @@ TypedArray<Image> Noise::get_seamless_image_3d(int p_width, int p_height, int p_
 	return ret;
 }
 
-// Template specialization for faster grayscale blending.
+/// Template specialization for faster grayscale blending.
 template <>
 uint8_t Noise::_alpha_blend<uint8_t>(uint8_t p_bg, uint8_t p_fg, int p_alpha) const {
 	uint16_t alpha = p_alpha + 1;
@@ -184,16 +190,19 @@ TypedArray<Image> Noise::get_image_3d(int p_width, int p_height, int p_depth, bo
 }
 
 void Noise::_bind_methods() {
-	// Noise functions.
+	/// @name Noise Functions
+	/// @{
 	ClassDB::bind_method(D_METHOD("get_noise_1d", "x"), &Noise::get_noise_1d);
 	ClassDB::bind_method(D_METHOD("get_noise_2d", "x", "y"), &Noise::get_noise_2d);
 	ClassDB::bind_method(D_METHOD("get_noise_2dv", "v"), &Noise::get_noise_2dv);
 	ClassDB::bind_method(D_METHOD("get_noise_3d", "x", "y", "z"), &Noise::get_noise_3d);
 	ClassDB::bind_method(D_METHOD("get_noise_3dv", "v"), &Noise::get_noise_3dv);
-
-	// Textures.
+	/// @}
+	/// @name Textures
+	/// @{
 	ClassDB::bind_method(D_METHOD("get_image", "width", "height", "invert", "in_3d_space", "normalize"), &Noise::get_image, DEFVAL(false), DEFVAL(false), DEFVAL(true));
 	ClassDB::bind_method(D_METHOD("get_seamless_image", "width", "height", "invert", "in_3d_space", "skirt", "normalize"), &Noise::get_seamless_image, DEFVAL(false), DEFVAL(false), DEFVAL(0.1), DEFVAL(true));
 	ClassDB::bind_method(D_METHOD("get_image_3d", "width", "height", "depth", "invert", "normalize"), &Noise::get_image_3d, DEFVAL(false), DEFVAL(true));
 	ClassDB::bind_method(D_METHOD("get_seamless_image_3d", "width", "height", "depth", "invert", "skirt", "normalize"), &Noise::get_seamless_image_3d, DEFVAL(false), DEFVAL(0.1), DEFVAL(true));
+	/// @}
 }

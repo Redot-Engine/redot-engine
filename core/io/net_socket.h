@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file net_socket.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/ip.h"
 #include "core/object/ref_counted.h"
 
@@ -70,7 +76,7 @@ public:
 	virtual int get_available_bytes() const = 0;
 	virtual Error get_socket_address(IPAddress *r_ip, uint16_t *r_port) const = 0;
 
-	virtual Error set_broadcasting_enabled(bool p_enabled) = 0; // Returns OK if the socket option has been set successfully.
+	virtual Error set_broadcasting_enabled(bool p_enabled) = 0; ///< @return OK if the socket option has been set successfully.
 	virtual void set_blocking_enabled(bool p_enabled) = 0;
 	virtual void set_ipv6_only_enabled(bool p_enabled) = 0;
 	virtual void set_tcp_no_delay_enabled(bool p_enabled) = 0;

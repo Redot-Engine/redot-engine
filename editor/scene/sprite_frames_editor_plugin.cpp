@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sprite_frames_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "sprite_frames_editor_plugin.h"
 
 #include "core/io/resource_loader.h"
@@ -2032,7 +2038,7 @@ SpriteFramesEditor::SpriteFramesEditor() {
 	sub_vb->add_child(animations);
 	animations->set_v_size_flags(SIZE_EXPAND_FILL);
 	animations->set_hide_root(true);
-	// HACK: The cell_selected signal is emitted before the FPS spinbox loses focus and applies the change.
+	/// @todo HACK: The cell_selected signal is emitted before the FPS spinbox loses focus and applies the change.
 	animations->connect("cell_selected", callable_mp(this, &SpriteFramesEditor::_animation_selected), CONNECT_DEFERRED);
 	animations->connect("item_edited", callable_mp(this, &SpriteFramesEditor::_animation_name_edited));
 	animations->set_theme_type_variation("TreeSecondary");
@@ -2222,7 +2228,7 @@ SpriteFramesEditor::SpriteFramesEditor() {
 	frame_list->set_max_text_lines(2);
 	SET_DRAG_FORWARDING_GCD(frame_list, SpriteFramesEditor);
 	frame_list->connect(SceneStringName(gui_input), callable_mp(this, &SpriteFramesEditor::_frame_list_gui_input));
-	// HACK: The item_selected signal is emitted before the Frame Duration spinbox loses focus and applies the change.
+	/// @todo HACK: The item_selected signal is emitted before the Frame Duration spinbox loses focus and applies the change.
 	frame_list->connect("multi_selected", callable_mp(this, &SpriteFramesEditor::_frame_list_item_selected), CONNECT_DEFERRED);
 
 	sub_vb->add_child(frame_list);

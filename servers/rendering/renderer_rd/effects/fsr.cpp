@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fsr.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fsr.h"
 #include "../storage_rd/material_storage.h"
 #include "../uniform_set_cache_rd.h"

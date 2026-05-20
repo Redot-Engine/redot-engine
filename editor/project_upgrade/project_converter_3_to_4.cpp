@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file project_converter_3_to_4.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "project_converter_3_to_4.h"
 
 #ifndef DISABLE_DEPRECATED
@@ -319,7 +325,6 @@ ProjectConverter3To4::ProjectConverter3To4(int p_maximum_file_size_kb, int p_max
 	maximum_line_length = p_maximum_line_length;
 }
 
-// Function responsible for converting project.
 bool ProjectConverter3To4::convert() {
 	print_line("Starting conversion.");
 	uint64_t conversion_start_time = Time::get_singleton()->get_ticks_msec();
@@ -434,7 +439,7 @@ bool ProjectConverter3To4::convert() {
 				custom_rename(source_lines, "\\.shader", ".gdshader");
 
 				convert_hexadecimal_colors(source_lines, reg_container);
-			} else if (file_name.ends_with(".cs")) { // TODO, C# should use different methods.
+			} else if (file_name.ends_with(".cs")) { /// @todo C# should use different methods.
 				rename_classes(source_lines, reg_container); // Using only specialized function.
 				rename_common(RenamesMap3To4::csharp_function_renames, reg_container.csharp_function_regexes, source_lines);
 				rename_common(RenamesMap3To4::builtin_types_renames, reg_container.builtin_types_regexes, source_lines);
@@ -461,7 +466,7 @@ bool ProjectConverter3To4::convert() {
 				rename_common(RenamesMap3To4::input_map_renames, reg_container.input_map_regexes, source_lines);
 				custom_rename(source_lines, "config_version=4", "config_version=5");
 			} else if (file_name.ends_with(".csproj")) {
-				// TODO
+				/// @todo
 			} else if (file_name.ends_with(".import")) {
 				for (SourceLine &source_line : source_lines) {
 					String &line = source_line.line;
@@ -524,7 +529,6 @@ bool ProjectConverter3To4::convert() {
 	return true;
 }
 
-// Function responsible for validating project conversion.
 bool ProjectConverter3To4::validate_conversion() {
 	print_line("Starting checking if project conversion can be done.");
 	uint64_t conversion_start_time = Time::get_singleton()->get_ticks_msec();
@@ -645,7 +649,7 @@ bool ProjectConverter3To4::validate_conversion() {
 				changed_elements.append_array(check_for_rename_joypad_buttons_and_axes(lines, reg_container));
 				changed_elements.append_array(check_for_rename_common(RenamesMap3To4::input_map_renames, reg_container.input_map_regexes, lines));
 			} else if (file_name.ends_with(".csproj")) {
-				// TODO
+				/// @todo
 			} else {
 				ERR_PRINT(vformat("\"%s\", is not supported!", file_name));
 				continue;
@@ -687,7 +691,6 @@ bool ProjectConverter3To4::validate_conversion() {
 	return true;
 }
 
-// Collect files which will be checked, excluding ".txt", ".mp4", ".wav" etc. files.
 Vector<String> ProjectConverter3To4::check_for_files() {
 	Vector<String> collected_files = Vector<String>();
 
@@ -744,7 +747,6 @@ Vector<SourceLine> ProjectConverter3To4::split_lines(const String &text) {
 	return source_lines;
 }
 
-// Test expected results of gdscript
 bool ProjectConverter3To4::test_conversion_gdscript_builtin(const String &name, const String &expected, void (ProjectConverter3To4::*func)(Vector<SourceLine> &, const RegExContainer &, bool), const String &what, const RegExContainer &reg_container, bool builtin_script) {
 	Vector<SourceLine> got = split_lines(name);
 
@@ -775,7 +777,6 @@ bool ProjectConverter3To4::test_conversion_basic(const String &name, const Strin
 	return true;
 }
 
-// Validate if conversions are proper.
 bool ProjectConverter3To4::test_conversion(RegExContainer &reg_container) {
 	bool valid = true;
 
@@ -931,7 +932,7 @@ bool ProjectConverter3To4::test_conversion(RegExContainer &reg_container) {
 
 	valid = valid && test_conversion_gdscript_builtin("export(float) var lifetime = 3.0", "export var lifetime: float = 3.0", &ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container, false);
 	valid = valid && test_conversion_gdscript_builtin("export (int)var spaces=1", "export var spaces: int=1", &ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("export(String, 'AnonymousPro', 'CourierPrime') var _font_name = 'AnonymousPro'", "export var _font_name = 'AnonymousPro' # (String, 'AnonymousPro', 'CourierPrime')", &ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container, false); // TODO, this is only a workaround
+	valid = valid && test_conversion_gdscript_builtin("export(String, 'AnonymousPro', 'CourierPrime') var _font_name = 'AnonymousPro'", "export var _font_name = 'AnonymousPro' # (String, 'AnonymousPro', 'CourierPrime')", &ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container, false); /// @todo This is only a workaround
 	valid = valid && test_conversion_gdscript_builtin("export(PackedScene) var mob_scene", "export var mob_scene: PackedScene", &ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container, false);
 	valid = valid && test_conversion_gdscript_builtin("export(float) var lifetime: float = 3.0", "export var lifetime: float = 3.0", &ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container, false);
 	valid = valid && test_conversion_gdscript_builtin("export var lifetime: float = 3.0", "export var lifetime: float = 3.0", &ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container, false);
@@ -1017,7 +1018,7 @@ bool ProjectConverter3To4::test_conversion(RegExContainer &reg_container) {
 	valid = valid && test_conversion_with_regex("Color(\"#de32bf\")", "Color(\"#de32bf\")", &ProjectConverter3To4::convert_hexadecimal_colors, "color literals", reg_container);
 	valid = valid && test_conversion_with_regex("AAA Color.white AF", "AAA Color.WHITE AF", &ProjectConverter3To4::rename_colors, "color constants", reg_container);
 
-	// Note: Do not change to *scancode*, it is applied before that conversion.
+	/// @note Do not change to *scancode*, it is applied before that conversion.
 	valid = valid && test_conversion_with_regex("\"device\":-1,\"scancode\":16777231,\"physical_scancode\":16777232", "\"device\":-1,\"scancode\":4194319,\"physical_scancode\":4194320", &ProjectConverter3To4::rename_input_map_scancode, "custom rename", reg_container);
 	valid = valid && test_conversion_with_regex("\"device\":-1,\"scancode\":65,\"physical_scancode\":66", "\"device\":-1,\"scancode\":65,\"physical_scancode\":66", &ProjectConverter3To4::rename_input_map_scancode, "custom rename", reg_container);
 
@@ -1148,7 +1149,6 @@ bool ProjectConverter3To4::test_conversion(RegExContainer &reg_container) {
 	return valid;
 }
 
-// Validate in all arrays if names don't do cyclic renames "Node" -> "Node2D" | "Node2D" -> "2DNode"
 bool ProjectConverter3To4::test_array_names() {
 	bool valid = true;
 	Vector<String> names = Vector<String>();
@@ -1237,8 +1237,6 @@ bool ProjectConverter3To4::test_array_names() {
 	return valid;
 }
 
-// Validates the array to prevent cyclic renames, such as `Node` -> `Node2D`, then `Node2D` -> `2DNode`.
-// Also checks if names contain leading or trailing spaces.
 bool ProjectConverter3To4::test_single_array(const char *p_array[][2], bool p_ignore_4_0_name) {
 	bool valid = true;
 	Vector<String> names = Vector<String>();
@@ -1271,8 +1269,6 @@ bool ProjectConverter3To4::test_single_array(const char *p_array[][2], bool p_ig
 	return valid;
 }
 
-// Returns arguments from given function execution, this cannot be really done as regex.
-// `abc(d,e(f,g),h)` -> [d], [e(f,g)], [h]
 Vector<String> ProjectConverter3To4::parse_arguments(const String &line) {
 	Vector<String> parts;
 	int string_size = line.length();
@@ -1339,8 +1335,6 @@ Vector<String> ProjectConverter3To4::parse_arguments(const String &line) {
 	return clean_parts;
 }
 
-// Finds latest parenthesis owned by function.
-// `function(abc(a,b),DD)):` finds this parenthess `function(abc(a,b),DD => ) <= ):`
 int ProjectConverter3To4::get_end_parenthesis(const String &line) const {
 	int current_state = 0;
 	for (int current_index = 0; line.length() > current_index; current_index++) {
@@ -1358,8 +1352,6 @@ int ProjectConverter3To4::get_end_parenthesis(const String &line) const {
 	return -1;
 }
 
-// Merges multiple arguments into a single String.
-// Needed when after processing e.g. 2 arguments, later arguments are not changed in any way.
 String ProjectConverter3To4::connect_arguments(const Vector<String> &arguments, int from, int to) const {
 	if (to == -1) {
 		to = arguments.size();
@@ -1379,7 +1371,6 @@ String ProjectConverter3To4::connect_arguments(const Vector<String> &arguments, 
 	return value;
 }
 
-// Returns the indentation (spaces and tabs) at the start of the line e.g. `\t\tmove_this` returns `\t\t`.
 String ProjectConverter3To4::get_starting_space(const String &line) const {
 	String empty_space;
 	int current_character = 0;
@@ -1411,8 +1402,6 @@ String ProjectConverter3To4::get_starting_space(const String &line) const {
 	return empty_space;
 }
 
-// Returns the object that’s executing the function in the line.
-// e.g. Passing the line "var roman = kieliszek.funkcja()" to this function returns "kieliszek".
 String ProjectConverter3To4::get_object_of_execution(const String &line) const {
 	int end = line.size() - 1; // Last one is \0
 	int variable_start = end - 1;
@@ -1471,7 +1460,6 @@ void ProjectConverter3To4::rename_colors(Vector<SourceLine> &source_lines, const
 	}
 }
 
-// Convert hexadecimal colors from ARGB to RGBA
 void ProjectConverter3To4::convert_hexadecimal_colors(Vector<SourceLine> &source_lines, const RegExContainer &reg_container) {
 	for (SourceLine &source_line : source_lines) {
 		if (source_line.is_comment) {
@@ -1510,7 +1498,6 @@ Vector<String> ProjectConverter3To4::check_for_rename_colors(Vector<String> &lin
 }
 
 void ProjectConverter3To4::fix_tool_declaration(Vector<SourceLine> &source_lines, const RegExContainer &reg_container) {
-	// In godot4, "tool" became "@tool" and must be located at the top of the file.
 	for (int i = 0; i < source_lines.size(); ++i) {
 		if (source_lines[i].line == "tool") {
 			source_lines.remove_at(i);
@@ -1521,9 +1508,6 @@ void ProjectConverter3To4::fix_tool_declaration(Vector<SourceLine> &source_lines
 }
 
 void ProjectConverter3To4::fix_pause_mode(Vector<SourceLine> &source_lines, const RegExContainer &reg_container) {
-	// In Godot 3, the pause_mode 2 equals the PAUSE_MODE_PROCESS value.
-	// In Godot 4, the pause_mode PAUSE_MODE_PROCESS was renamed to PROCESS_MODE_ALWAYS and equals the number 3.
-	// We therefore convert pause_mode = 2 to pause_mode = 3.
 	for (SourceLine &source_line : source_lines) {
 		String &line = source_line.line;
 
@@ -1654,7 +1638,7 @@ bool ProjectConverter3To4::contains_function_call(const String &line, const Stri
 	return (previous_char < '0' || previous_char > '9') && (previous_char < 'a' || previous_char > 'z') && (previous_char < 'A' || previous_char > 'Z') && previous_char != '_' && previous_char != '$' && previous_char != '@';
 }
 
-// TODO, this function should run only on all ".gd" files and also on lines in ".tscn" files which are parts of built-in Scripts.
+/// @todo This function should run only on all ".gd" files and also on lines in ".tscn" files which are parts of built-in Scripts.
 void ProjectConverter3To4::process_gdscript_line(String &line, const RegExContainer &reg_container, bool builtin) {
 	// In this and other functions, reg.sub() is used only after checking lines with str.contains().
 	// With longer lines, doing so can sometimes be significantly faster.
@@ -1676,7 +1660,7 @@ void ProjectConverter3To4::process_gdscript_line(String &line, const RegExContai
 
 	// -- \t.func() -> \tsuper.func()       Object
 	if (line.contains_char('(') && line.contains_char('.')) {
-		line = reg_container.reg_super.sub(line, "$1super.$2", true); // TODO, not sure if possible, but for now this broke String text e.g. "Chosen .gitignore" -> "Chosen super.gitignore"
+		line = reg_container.reg_super.sub(line, "$1super.$2", true); /// @todo Not sure if possible, but for now this broke String text e.g. "Chosen .gitignore" -> "Chosen super.gitignore"
 	}
 
 	// -- JSON.parse(a) -> JSON.new().parse(a) etc.    JSON
@@ -2000,7 +1984,7 @@ void ProjectConverter3To4::process_gdscript_line(String &line, const RegExContai
 		}
 	}
 
-	// -- parse_json( AA ) -> TODO       Object
+	/// -- parse_json( AA ) -> @todo       Object
 	if (contains_function_call(line, "parse_json(")) {
 		int start = line.find("parse_json(");
 		int end = get_end_parenthesis(line.substr(start)) + 1;
@@ -2233,7 +2217,7 @@ void ProjectConverter3To4::process_gdscript_line(String &line, const RegExContai
 			}
 		}
 	}
-	//  draw_rect(a,b,c,d,e)  ->   draw_rect(a,b,c,d)#e) TODOConverter3To4 Antialiasing argument is missing
+	///  draw_rect(a,b,c,d,e)  ->   draw_rect(a,b,c,d)#e) @todo Antialiasing argument is missing
 	if (contains_function_call(line, "draw_rect(")) {
 		int start = line.find("draw_rect(");
 		int end = get_end_parenthesis(line.substr(start)) + 1;
@@ -2907,8 +2891,6 @@ Vector<String> ProjectConverter3To4::check_for_rename_common(const char *array[]
 	return found_renames;
 }
 
-// Prints full info about renamed things e.g.:
-// Line (67) remove -> remove_at  -  LINE """ doubler._blacklist.remove(0) """
 String ProjectConverter3To4::line_formatter(int current_line, String from, String to, String line) {
 	if (from.size() > 200) {
 		from = from.substr(0, 197) + "...";
@@ -2927,8 +2909,6 @@ String ProjectConverter3To4::line_formatter(int current_line, String from, Strin
 	return vformat("Line(%d), %s -> %s  -  LINE \"\"\" %s \"\"\"", current_line, from, to, line);
 }
 
-// Prints only full lines e.g.:
-// Line (1) - FULL LINES - """yield(get_tree().create_timer(3), 'timeout')"""  =====>  """ await get_tree().create_timer(3).timeout """
 String ProjectConverter3To4::simple_line_formatter(int current_line, String old_line, String new_line) {
 	if (old_line.size() > 1000) {
 		old_line = old_line.substr(0, 997) + "...";
@@ -2943,7 +2923,6 @@ String ProjectConverter3To4::simple_line_formatter(int current_line, String old_
 	return vformat("Line (%d) - FULL LINES - \"\"\" %s \"\"\"  =====>  \"\"\" %s \"\"\"", current_line, old_line, new_line);
 }
 
-// Collects string from vector strings
 String ProjectConverter3To4::collect_string_from_vector(Vector<SourceLine> &vector) {
 	String string = "";
 	for (int i = 0; i < vector.size(); i++) {

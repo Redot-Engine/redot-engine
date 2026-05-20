@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file net_socket_winsock.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef WINDOWS_ENABLED
 
 #include "core/io/net_socket.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_binding_modifier.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../action_map/openxr_action.h"
 #include "core/io/resource.h"
 
@@ -51,8 +57,8 @@ protected:
 	GDVIRTUAL0R_REQUIRED(PackedByteArray, _get_ip_modification)
 
 public:
-	virtual String get_description() const; // Returns the description shown in the editor
-	virtual PackedByteArray get_ip_modification(); // Return the XrBindingModificationsKHR binding modifier struct data used when calling xrSuggestInteractionProfileBindings
+	virtual String get_description() const; ///< Returns the description shown in the editor
+	virtual PackedByteArray get_ip_modification(); ///< Return the XrBindingModificationsKHR binding modifier struct data used when calling xrSuggestInteractionProfileBindings
 };
 
 class OpenXRIPBindingModifier : public OpenXRBindingModifier {
@@ -61,7 +67,7 @@ class OpenXRIPBindingModifier : public OpenXRBindingModifier {
 protected:
 	friend class OpenXRInteractionProfile;
 
-	OpenXRInteractionProfile *interaction_profile = nullptr; // action belongs to this interaction profile
+	OpenXRInteractionProfile *interaction_profile = nullptr; ///< action belongs to this interaction profile
 
 public:
 	OpenXRInteractionProfile *get_interaction_profile() const { return interaction_profile; }
@@ -73,7 +79,7 @@ class OpenXRActionBindingModifier : public OpenXRBindingModifier {
 protected:
 	friend class OpenXRIPBinding;
 
-	OpenXRIPBinding *ip_binding = nullptr; // action belongs to this binding
+	OpenXRIPBinding *ip_binding = nullptr; ///< action belongs to this binding
 
 public:
 	OpenXRIPBinding *get_ip_binding() const { return ip_binding; }

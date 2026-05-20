@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skeleton_modification_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/2d/skeleton/skeleton_modification_stack_2d.h"
 
 ///////////////////////////////////////
@@ -49,7 +55,7 @@ protected:
 	static void _bind_methods();
 
 	SkeletonModificationStack2D *stack = nullptr;
-	int execution_mode = 0; // 0 = process
+	int execution_mode = 0; ///< 0 = process
 
 	bool enabled = true;
 	bool is_setup = false;

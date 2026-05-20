@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file runtime_interop.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "runtime_interop.h"
 
 #include "../csharp_script.h"
@@ -266,7 +272,7 @@ GCHandleIntPtr godotsharp_internal_unmanaged_instance_binding_create_managed(Obj
 
 	MonoGCHandleData &gchandle = script_binding.gchandle;
 
-	// TODO: Possible data race?
+	/// @todo Possible data race?
 	CRASH_COND(gchandle.get_intptr().value != p_old_gchandle.value);
 
 	CSharpLanguage::get_singleton()->release_script_gchandle(gchandle);
@@ -494,7 +500,7 @@ void godotsharp_packed_string_array_add(PackedStringArray *r_dest, const String 
 
 void godotsharp_callable_new_with_delegate(GCHandleIntPtr p_delegate_handle, void *p_trampoline,
 		const Object *p_object, Callable *r_callable) {
-	// TODO: Use pooling for ManagedCallable instances.
+	/// @todo Use pooling for ManagedCallable instances.
 	ObjectID objid = p_object ? p_object->get_instance_id() : ObjectID();
 	CallableCustom *managed_callable = memnew(ManagedCallable(p_delegate_handle, p_trampoline, objid));
 	memnew_placement(r_callable, Callable(managed_callable));

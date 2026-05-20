@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_analyzer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_analyzer.h"
 
 #include "gdscript.h"
@@ -128,8 +134,8 @@ static GDScriptParser::DataType make_script_meta_type(const Ref<Script> &p_scrip
 	return type;
 }
 
-// In enum types, native_type is used to store the class (native or otherwise) that the enum belongs to.
-// This disambiguates between similarly named enums in base classes or outer classes
+/// In enum types, native_type is used to store the class (native or otherwise) that the enum belongs to.
+/// This disambiguates between similarly named enums in base classes or outer classes
 static GDScriptParser::DataType make_enum_type(const StringName &p_enum_name, const String &p_base_name, const bool p_meta = false) {
 	GDScriptParser::DataType type;
 	type.type_source = GDScriptParser::DataType::ANNOTATED_EXPLICIT;
@@ -289,7 +295,7 @@ Error GDScriptAnalyzer::check_native_member_name_conflict(const StringName &p_me
 }
 
 Error GDScriptAnalyzer::check_class_member_name_conflict(const GDScriptParser::ClassNode *p_class_node, const StringName &p_member_name, const GDScriptParser::Node *p_member_node) {
-	// TODO check outer classes for static members only
+	/// @todo Check outer classes for static members only
 	const GDScriptParser::DataType *current_data_type = &p_class_node->base_type;
 	while (current_data_type && current_data_type->kind == GDScriptParser::DataType::Kind::CLASS) {
 		GDScriptParser::ClassNode *current_class_node = current_data_type->class_type;
@@ -327,17 +333,17 @@ void GDScriptAnalyzer::get_class_node_current_scope_classes(GDScriptParser::Clas
 
 	p_list->push_back(p_node);
 
-	// TODO: Try to solve class inheritance if not yet resolving.
+	/// @todo Try to solve class inheritance if not yet resolving.
 
 	// Prioritize node base type over its outer class
 	if (p_node->base_type.class_type != nullptr) {
-		// TODO: 'ensure_cached_external_parser_for_class()' is only necessary because 'resolve_class_inheritance()' is not getting called here.
+		/// @todo 'ensure_cached_external_parser_for_class()' is only necessary because 'resolve_class_inheritance()' is not getting called here.
 		ensure_cached_external_parser_for_class(p_node->base_type.class_type, p_node, "Trying to fetch classes in the current scope", p_source);
 		get_class_node_current_scope_classes(p_node->base_type.class_type, p_list, p_source);
 	}
 
 	if (p_node->outer != nullptr) {
-		// TODO: 'ensure_cached_external_parser_for_class()' is only necessary because 'resolve_class_inheritance()' is not getting called here.
+		/// @todo 'ensure_cached_external_parser_for_class()' is only necessary because 'resolve_class_inheritance()' is not getting called here.
 		ensure_cached_external_parser_for_class(p_node->outer, p_node, "Trying to fetch classes in the current scope", p_source);
 		get_class_node_current_scope_classes(p_node->outer, p_list, p_source);
 	}
@@ -601,7 +607,7 @@ Error GDScriptAnalyzer::resolve_class_inheritance(GDScriptParser::ClassNode *p_c
 	}
 
 	if (!result.is_set() || result.has_no_type()) {
-		// TODO: More specific error messages.
+		/// @todo More specific error messages.
 		push_error(vformat(R"(Could not resolve inheritance for class "%s".)", p_class->identifier == nullptr ? "<main>" : p_class->identifier->name), p_class);
 		return ERR_PARSE_ERROR;
 	}
@@ -2039,8 +2045,8 @@ void GDScriptAnalyzer::decide_suite_type(GDScriptParser::Node *p_suite, GDScript
 		case GDScriptParser::Node::WHILE:
 			// Use return or nested suite type as this suite type.
 			if (p_suite->get_datatype().is_set() && (p_suite->get_datatype() != p_statement->get_datatype())) {
-				// Mixed types.
-				// TODO: This could use the common supertype instead.
+				/// Mixed types.
+				/// @todo This could use the common supertype instead.
 				p_suite->datatype.kind = GDScriptParser::DataType::VARIANT;
 				p_suite->datatype.type_source = GDScriptParser::DataType::UNDETECTED;
 			} else {
@@ -2059,7 +2065,7 @@ void GDScriptAnalyzer::resolve_suite(GDScriptParser::SuiteNode *p_suite) {
 		// Apply annotations.
 		for (GDScriptParser::AnnotationNode *&E : stmt->annotations) {
 			resolve_annotation(E);
-			E->apply(parser, stmt, nullptr); // TODO: Provide `p_class`.
+			E->apply(parser, stmt, nullptr); /// @todo Provide `p_class`.
 		}
 
 		resolve_node(stmt);
@@ -2417,7 +2423,7 @@ void GDScriptAnalyzer::resolve_match_branch(GDScriptParser::MatchBranchNode *p_m
 	// Apply annotations.
 	for (GDScriptParser::AnnotationNode *&E : p_match_branch->annotations) {
 		resolve_annotation(E);
-		E->apply(parser, p_match_branch, nullptr); // TODO: Provide `p_class`.
+		E->apply(parser, p_match_branch, nullptr); /// @todo Provide `p_class`.
 	}
 
 	for (int i = 0; i < p_match_branch->patterns.size(); i++) {
@@ -2769,8 +2775,6 @@ void GDScriptAnalyzer::update_const_expression_builtin_type(GDScriptParser::Expr
 	p_expression->set_datatype(p_type);
 }
 
-// When an array literal is stored (or passed as function argument) to a typed context, we then assume the array is typed.
-// This function determines which type is that (if any).
 void GDScriptAnalyzer::update_array_literal_element_type(GDScriptParser::ArrayNode *p_array, const GDScriptParser::DataType &p_element_type) {
 	GDScriptParser::DataType expected_type = p_element_type;
 	expected_type.container_element_types.clear(); // Nested types (like `Array[Array[int]]`) are not currently supported.
@@ -2800,8 +2804,6 @@ void GDScriptAnalyzer::update_array_literal_element_type(GDScriptParser::ArrayNo
 	p_array->set_datatype(array_type);
 }
 
-// When a dictionary literal is stored (or passed as function argument) to a typed context, we then assume the dictionary is typed.
-// This function determines which type is that (if any).
 void GDScriptAnalyzer::update_dictionary_literal_element_type(GDScriptParser::DictionaryNode *p_dictionary, const GDScriptParser::DataType &p_key_element_type, const GDScriptParser::DataType &p_value_element_type) {
 	GDScriptParser::DataType expected_key_type = p_key_element_type;
 	GDScriptParser::DataType expected_value_type = p_value_element_type;
@@ -2881,7 +2883,7 @@ void GDScriptAnalyzer::reduce_assignment(GDScriptParser::AssignmentNode *p_assig
 					if (id_type.is_hard_type()) {
 						switch (id_type.kind) {
 							case GDScriptParser::DataType::BUILTIN:
-								// TODO: Change `Variant::is_type_shared()` to include packed arrays?
+								/// @todo Change `Variant::is_type_shared()` to include packed arrays?
 								need_warn = !Variant::is_type_shared(id_type.builtin_type) && id_type.builtin_type < Variant::PACKED_BYTE_ARRAY;
 								break;
 							case GDScriptParser::DataType::ENUM:
@@ -3175,8 +3177,8 @@ const char *get_rename_from_map(const char *map[][2], String key) {
 	return nullptr;
 }
 
-// Checks if an identifier/function name has been renamed in Godot 4, uses ProjectConverter3To4 for rename map.
-// Returns the new name if found, nullptr otherwise.
+/// Checks if an identifier/function name has been renamed in Godot 4, uses ProjectConverter3To4 for rename map.
+/// Returns the new name if found, nullptr otherwise.
 const char *check_for_renamed_identifier(String identifier, GDScriptParser::Node::Type type) {
 	switch (type) {
 		case GDScriptParser::Node::IDENTIFIER: {
@@ -3569,8 +3571,8 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 			return;
 		}
 		if (!subscript->is_attribute) {
-			// Invalid call. Error already sent in parser.
-			// TODO: Could check if Callable here.
+			/// Invalid call. Error already sent in parser.
+			/// @todo Could check if Callable here.
 			p_call->set_datatype(call_type);
 			mark_node_unsafe(p_call);
 			return;
@@ -3594,8 +3596,8 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 			is_self = subscript->base->type == GDScriptParser::Node::SELF;
 		}
 	} else {
-		// Invalid call. Error already sent in parser.
-		// TODO: Could check if Callable here too.
+		/// Invalid call. Error already sent in parser.
+		/// @todo Could check if Callable here too.
 		p_call->set_datatype(call_type);
 		mark_node_unsafe(p_call);
 		return;
@@ -3677,7 +3679,7 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 		}
 
 #ifdef DEBUG_ENABLED
-		// FIXME: No warning for built-in constructors and utilities due to early return.
+		/// @todo FIXME: No warning for built-in constructors and utilities due to early return.
 		if (p_is_root && return_type.kind != GDScriptParser::DataType::UNRESOLVED && return_type.builtin_type != Variant::NIL &&
 				!(p_call->is_super && p_call->function_name == GDScriptLanguage::get_singleton()->strings._init)) {
 			parser->push_warning(p_call, GDScriptWarning::RETURN_VALUE_DISCARDED, p_call->function_name);
@@ -3905,12 +3907,6 @@ GDScriptParser::DataType GDScriptAnalyzer::make_global_class_meta_type(const Str
 }
 
 Ref<GDScriptParserRef> GDScriptAnalyzer::ensure_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const GDScriptParser::ClassNode *p_from_class, const char *p_context, const GDScriptParser::Node *p_source) {
-	// Delicate piece of code that intentionally doesn't use the GDScript cache or `get_depended_parser_for`.
-	// Search dependencies for the parser that owns `p_class` and make a cache entry for it.
-	// Required for how we store pointers to classes owned by other parser trees and need to call `resolve_class_member` and such on the same parser tree.
-	// Since https://github.com/godotengine/godot/pull/94871 there can technically be multiple parsers for the same script in the same parser tree.
-	// Even if unlikely, getting the wrong parser could lead to strange undefined behavior without errors.
-
 	if (p_class == nullptr) {
 		return nullptr;
 	}
@@ -4367,7 +4363,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 }
 
 void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_identifier, bool can_be_builtin) {
-	// TODO: This is an opportunity to further infer types.
+	/// @todo This is an opportunity to further infer types.
 
 	// Check if we are inside an enum. This allows enum values to access other elements of the same enum.
 	if (current_enum) {
@@ -4404,7 +4400,7 @@ void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_ident
 		case GDScriptParser::IdentifierNode::MEMBER_CONSTANT:
 			p_identifier->set_datatype(p_identifier->constant_source->get_datatype());
 			p_identifier->is_constant = true;
-			// TODO: Constant should have a value on the node itself.
+			/// @todo Constant should have a value on the node itself.
 			p_identifier->reduced_value = p_identifier->constant_source->initializer->reduced_value;
 			found_source = true;
 			break;
@@ -4713,7 +4709,7 @@ void GDScriptAnalyzer::reduce_preload(GDScriptParser::PreloadNode *p_preload) {
 		push_error("Preloaded path must be a constant string.", p_preload->path);
 	} else {
 		p_preload->resolved_path = p_preload->path->reduced_value;
-		// TODO: Save this as script dependency.
+		/// @todo Save this as script dependency.
 		if (p_preload->resolved_path.is_relative_path()) {
 			p_preload->resolved_path = parser->script_path.get_base_dir().path_join(p_preload->resolved_path);
 		}
@@ -4727,7 +4723,7 @@ void GDScriptAnalyzer::reduce_preload(GDScriptParser::PreloadNode *p_preload) {
 				push_error(vformat(R"(Preload file "%s" does not exist.)", p_preload->resolved_path), p_preload->path);
 			}
 		} else {
-			// TODO: Don't load if validating: use completion cache.
+			/// @todo Don't load if validating: use completion cache.
 
 			// Must load GDScript separately to permit cyclic references
 			// as ResourceLoader::load() detects and rejects those.
@@ -4756,9 +4752,9 @@ void GDScriptAnalyzer::reduce_preload(GDScriptParser::PreloadNode *p_preload) {
 	p_preload->reduced_value = p_preload->resource;
 	p_preload->set_datatype(type_from_variant(p_preload->reduced_value, p_preload));
 
-	// TODO: Not sure if this is necessary anymore.
-	// 'type_from_variant()' should call 'resolve_class_inheritance()' which would call 'ensure_cached_external_parser_for_class()'
-	// Better safe than sorry.
+	/// @todo Not sure if this is necessary anymore.
+	/// 'type_from_variant()' should call 'resolve_class_inheritance()' which would call 'ensure_cached_external_parser_for_class()'
+	/// Better safe than sorry.
 	ensure_cached_external_parser_for_class(p_preload->get_datatype().class_type, nullptr, "Trying to resolve preload", p_preload);
 }
 
@@ -4897,7 +4893,7 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 		if (p_subscript->base->is_constant && p_subscript->index->is_constant) {
 			// Just try to get it.
 			bool valid = false;
-			// TODO: Check if `p_subscript->base->reduced_value` is GDScript.
+			/// @todo Check if `p_subscript->base->reduced_value` is GDScript.
 			Variant value = p_subscript->base->reduced_value.get(p_subscript->index->reduced_value, &valid);
 			if (!valid) {
 				push_error(vformat(R"(Cannot get index "%s" from "%s".)", p_subscript->index->reduced_value, p_subscript->base->reduced_value), p_subscript->index);
@@ -5827,7 +5823,7 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 	while (found_function == nullptr && base_class != nullptr) {
 		if (base_class->has_member(function_name)) {
 			if (base_class->get_member(function_name).type != GDScriptParser::ClassNode::Member::FUNCTION) {
-				// TODO: If this is Callable it can have a better error message.
+				/// @todo If this is Callable it can have a better error message.
 				push_error(vformat(R"(Member "%s" is not a function.)", function_name), p_source);
 				return false;
 			}
@@ -6140,7 +6136,7 @@ bool GDScriptAnalyzer::is_type_compatible(const GDScriptParser::DataType &p_targ
 	return check_type_compatibility(p_target, p_source, p_allow_implicit_conversion, p_source_node);
 }
 
-// TODO: Add safe/unsafe return variable (for variant cases)
+/// @todo Add safe/unsafe return variable (for variant cases)
 bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &p_target, const GDScriptParser::DataType &p_source, bool p_allow_implicit_conversion, const GDScriptParser::Node *p_source_node) {
 	// These return "true" so it doesn't affect users negatively.
 	ERR_FAIL_COND_V_MSG(!p_target.is_set(), true, "Parser bug (please report): Trying to check compatibility of unset target type");
@@ -6152,7 +6148,7 @@ bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &
 	}
 
 	if (p_source.kind == GDScriptParser::DataType::VARIANT) {
-		// TODO: This is acceptable but unsafe. Make sure unsafe line is set.
+		/// @todo This is acceptable but unsafe. Make sure unsafe line is set.
 		return true;
 	}
 

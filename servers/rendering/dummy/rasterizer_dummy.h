@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rasterizer_dummy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "scene/resources/mesh.h"

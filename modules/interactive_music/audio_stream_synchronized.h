@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_stream_synchronized.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/audio/audio_stream.h"
 
 class AudioStreamPlaybackSynchronized;
@@ -109,7 +115,7 @@ public:
 	virtual void start(double p_from_pos = 0.0) override;
 	virtual void stop() override;
 	virtual bool is_playing() const override;
-	virtual int get_loop_count() const override; // times it looped
+	virtual int get_loop_count() const override; /// Number of times it looped
 	virtual double get_playback_position() const override;
 	virtual void seek(double p_time) override;
 	virtual int mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) override;

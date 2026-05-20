@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file particles_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "particles_storage.h"
 
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
@@ -1183,7 +1189,7 @@ void ParticlesStorage::_particles_process(Particles *p_particles, double p_delta
 
 	p_particles->has_collision_cache = m->shader_data->uses_collision;
 
-	//todo should maybe compute all particle systems together?
+	/// @todo Should maybe compute all particle systems together?
 	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
 	RD::get_singleton()->compute_list_bind_compute_pipeline(compute_list, m->shader_data->pipeline);
 	RD::get_singleton()->compute_list_bind_uniform_set(compute_list, particles_shader.base_uniform_set, BASE_UNIFORM_SET);
@@ -1465,7 +1471,7 @@ void ParticlesStorage::update_particles() {
 			}
 		}
 
-		// TODO: Should use display refresh rate for all this.
+		/// @todo Should use display refresh rate for all this.
 		float screen_hz = 60;
 
 		int fixed_fps = 0;
@@ -1551,7 +1557,7 @@ void ParticlesStorage::update_particles() {
 			}
 
 			float tmp_scale = particles->speed_scale;
-			// We need this otherwise the speed scale of the particle system influences the TODO.
+			/// We need this otherwise the speed scale of the particle system influences the @todo
 			particles->speed_scale = 1.0;
 			while (todo >= 0) {
 				_particles_process(particles, frame_time);

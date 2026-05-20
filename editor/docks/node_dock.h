@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file node_dock.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "groups_editor.h"
 
 class ConfigFile;

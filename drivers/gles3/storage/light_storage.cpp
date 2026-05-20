@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file light_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "light_storage.h"
@@ -352,7 +358,14 @@ AABB LightStorage::light_get_aabb(RID p_light) const {
 	switch (light->type) {
 		case RS::LIGHT_SPOT: {
 			float len = light->param[RS::LIGHT_PARAM_RANGE];
-			float size = Math::tan(Math::deg_to_rad(light->param[RS::LIGHT_PARAM_SPOT_ANGLE])) * len;
+			float angle = Math::deg_to_rad(light->param[RS::LIGHT_PARAM_SPOT_ANGLE]);
+
+			if (angle > Math::PI * 0.5) {
+				// Light casts backwards as well.
+				return AABB(Vector3(-1, -1, -1) * len, Vector3(2, 2, 2) * len);
+			}
+
+			float size = Math::sin(angle) * len;
 			return AABB(Vector3(-size, -size, -len), Vector3(size * 2, size * 2, len));
 		};
 		case RS::LIGHT_OMNI: {
@@ -808,6 +821,9 @@ bool LightStorage::reflection_probe_instance_begin_render(RID p_instance, RID p_
 	ReflectionAtlas *atlas = reflection_atlas_owner.get_or_null(p_reflection_atlas);
 
 	ERR_FAIL_NULL_V(atlas, false);
+
+	ERR_FAIL_COND_V_MSG(atlas->size < 4, false, "Attempted to render to a reflection atlas of invalid resolution.");
+	ERR_FAIL_COND_V_MSG(atlas->count < 1, false, "Attempted to render to a reflection atlas of size < 1.");
 
 	ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
 	ERR_FAIL_NULL_V(rpi, false);
@@ -1629,7 +1645,6 @@ void LightStorage::shadow_atlas_update(RID p_atlas) {
 
 /* DIRECTIONAL SHADOW */
 
-// Create if necessary and clear.
 void LightStorage::update_directional_shadow_atlas() {
 	if (directional_shadow.depth == 0 && directional_shadow.size > 0) {
 		glGenFramebuffers(1, &directional_shadow.fbo);

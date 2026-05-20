@@ -32,21 +32,26 @@
 
 #pragma once
 
+/**
+ * @file gltf_physics_body.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/physics/physics_body_3d.h"
 
-// GLTFPhysicsBody is an intermediary between Godot's physics body nodes
-// and the OMI_physics_body extension.
-// https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_body
-
+/// GLTFPhysicsBody is an intermediary between Godot's physics body nodes
+/// and the OMI_physics_body extension.
+/// https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_body
 class GLTFPhysicsBody : public Resource {
 	GDCLASS(GLTFPhysicsBody, Resource)
 
 public:
-	// These values map to Godot's physics body types.
-	// When importing, the body type will be set to the closest match, and
-	// user code can change this to make Godot generate a different node type.
-	// When exporting, this will be squashed down to one of "static",
-	// "kinematic", or "dynamic" motion types, or the "trigger" property.
+	/// These values map to Godot's physics body types.
+	/// When importing, the body type will be set to the closest match, and
+	/// user code can change this to make Godot generate a different node type.
+	/// When exporting, this will be squashed down to one of "static",
+	/// "kinematic", or "dynamic" motion types, or the "trigger" property.
 	enum class PhysicsBodyType {
 		STATIC,
 		ANIMATABLE,

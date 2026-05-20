@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file curve_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "curve_texture.h"
 
 void CurveTexture::_bind_methods() {

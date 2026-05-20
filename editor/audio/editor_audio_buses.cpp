@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_audio_buses.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_audio_buses.h"
 
 #include "core/config/project_settings.h"
@@ -392,8 +398,6 @@ float EditorAudioBus::_normalized_volume_to_scaled_db(float normalized) {
 }
 
 float EditorAudioBus::_scaled_db_to_normalized_volume(float db) {
-	/* Inversion of equations found in _normalized_volume_to_scaled_db.
-	 * IMPORTANT: If one function changes, the other much change to reflect it. */
 	if (db > -2.88) {
 		return (db + 16.2f) / 22.22f;
 	} else if (db < -38.602f) {

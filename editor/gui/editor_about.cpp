@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_about.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_about.h"
 
 #include "core/authors.gen.h"
@@ -282,14 +288,7 @@ EditorAbout::EditorAbout() {
 		vb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 		sc->add_child(vb);
 
-		_create_section(vb, TTRC("Patrons"), DONORS_PATRONS, FLAG_ALLOW_WEBSITE | FLAG_SINGLE_COLUMN);
-		_create_section(vb, TTRC("Platinum Sponsors"), DONORS_SPONSORS_PLATINUM, FLAG_ALLOW_WEBSITE);
-		_create_section(vb, TTRC("Gold Sponsors"), DONORS_SPONSORS_GOLD, FLAG_ALLOW_WEBSITE);
-		_create_section(vb, TTRC("Silver Sponsors"), DONORS_SPONSORS_SILVER, FLAG_ALLOW_WEBSITE);
-		_create_section(vb, TTRC("Diamond Members"), DONORS_MEMBERS_DIAMOND, FLAG_ALLOW_WEBSITE);
-		_create_section(vb, TTRC("Titanium Members"), DONORS_MEMBERS_TITANIUM, FLAG_ALLOW_WEBSITE);
-		_create_section(vb, TTRC("Platinum Members"), DONORS_MEMBERS_PLATINUM, FLAG_ALLOW_WEBSITE);
-		_create_section(vb, TTRC("Gold Members"), DONORS_MEMBERS_GOLD, FLAG_ALLOW_WEBSITE);
+		_create_section(vb, TTRC("Donors"), DONORS_LIST, FLAG_ALLOW_WEBSITE);
 	}
 
 	// License.

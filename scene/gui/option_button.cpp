@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file option_button.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "option_button.h"
 
 #include "scene/theme/theme_db.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -330,7 +336,7 @@ void EditorConfigFileSyntaxHighlighter::_update_cache() {
 	const Color string_color = EDITOR_GET("text_editor/theme/highlighting/string_color");
 	highlighter->add_color_region("\"", "\"", string_color);
 
-	// FIXME: Sections in ConfigFile must be at the beginning of a line. Otherwise, it can be an array within a line.
+	/// @todo FIXME: Sections in ConfigFile must be at the beginning of a line. Otherwise, it can be an array within a line.
 	const Color function_color = EDITOR_GET("text_editor/theme/highlighting/function_color");
 	highlighter->add_color_region("[", "]", function_color);
 
@@ -480,7 +486,7 @@ String ScriptEditor::_get_debug_tooltip(const String &p_text, Node *p_se) {
 		return String();
 	}
 
-	// NOTE: See also `ScriptTextEditor::_show_symbol_tooltip()` for documentation tooltips enabled.
+	/// @note See also `ScriptTextEditor::_show_symbol_tooltip()` for documentation tooltips enabled.
 	String debug_value = EditorDebuggerNode::get_singleton()->get_var_value(p_text);
 	if (!debug_value.is_empty()) {
 		constexpr int DISPLAY_LIMIT = 1024;
@@ -2535,6 +2541,11 @@ bool ScriptEditor::edit(const Ref<Resource> &p_resource, int p_line, int p_col, 
 			external_editor_active ||
 			(scr.is_valid() && scr->get_language()->overrides_external_editor());
 	use_external_editor = use_external_editor && !(scr.is_valid() && scr->is_built_in()); // Ignore external editor for built-in scripts.
+
+	if (use_external_editor && restoring_layout && bool(EDITOR_GET("text_editor/external/prefer_tabs_in_external_editor"))) {
+		use_external_editor = false; // Let it open internally, bulk open will handle the external editor.
+	}
+
 	const bool open_dominant = EDITOR_GET("text_editor/behavior/files/open_dominant_script_on_scene_change");
 
 	const bool should_open = (open_dominant && !use_external_editor) || !EditorNode::get_singleton()->is_changing_scene();
@@ -3577,6 +3588,10 @@ void ScriptEditor::set_window_layout(Ref<ConfigFile> p_layout) {
 
 	restoring_layout = true;
 
+	bool use_external_editor = bool(EDITOR_GET("text_editor/external/use_external_editor"));
+	bool prefer_tabs = bool(EDITOR_GET("text_editor/external/prefer_tabs_in_external_editor"));
+	Vector<String> external_scripts;
+
 	HashSet<String> loaded_scripts;
 	List<String> extensions;
 	ResourceLoader::get_recognized_extensions_for_type("Script", &extensions);
@@ -3596,6 +3611,11 @@ void ScriptEditor::set_window_layout(Ref<ConfigFile> p_layout) {
 			}
 			continue;
 		}
+
+		if (use_external_editor && prefer_tabs) {
+			external_scripts.push_back(ProjectSettings::get_singleton()->globalize_path(path));
+		}
+
 		loaded_scripts.insert(path);
 
 		if (extensions.find(path.get_extension())) {
@@ -3623,6 +3643,16 @@ void ScriptEditor::set_window_layout(Ref<ConfigFile> p_layout) {
 				se->set_edit_state(script_info["state"]);
 			}
 		}
+	}
+
+	if (use_external_editor && prefer_tabs && !external_scripts.is_empty()) {
+		// Cap of 128 scripts as a safety measure to prevent too many args passed to a process.
+		// Some platforms limit this by arg count or by a certain number of characters.
+		if (external_scripts.size() > 128) {
+			EditorNode::get_singleton()->show_warning(TTR("Too many scripts to open in external editor (max 128)."));
+			external_scripts.resize(128);
+		}
+		_open_external_editor_bulk(external_scripts);
 	}
 
 	for (int i = 0; i < helps.size(); i++) {
@@ -3873,6 +3903,8 @@ void ScriptEditor::_update_history_pos(int p_new_pos) {
 		if (scr.is_valid()) {
 			notify_script_changed(scr);
 		}
+
+		seb->validate();
 	}
 
 	EditorHelp *eh = Object::cast_to<EditorHelp>(n);
@@ -4001,6 +4033,76 @@ CreateScriptEditorFunc ScriptEditor::script_editor_funcs[ScriptEditor::SCRIPT_ED
 void ScriptEditor::register_create_script_editor_function(CreateScriptEditorFunc p_func) {
 	ERR_FAIL_COND(script_editor_func_count == SCRIPT_EDITOR_FUNC_MAX);
 	script_editor_funcs[script_editor_func_count++] = p_func;
+}
+
+/**
+ * Opens multiple scripts in an external editor.
+ *
+ * @param p_paths A list of globalized paths to the scripts.
+ */
+void ScriptEditor::_open_external_editor_bulk(const Vector<String> &p_paths) {
+	if (p_paths.is_empty()) {
+		return;
+	}
+
+	String path = EDITOR_GET("text_editor/external/exec_path");
+	String flags = EDITOR_GET("text_editor/external/exec_flags");
+
+	List<String> args;
+	String project_path = ProjectSettings::get_singleton()->get_resource_path();
+	bool has_file_flag = false;
+
+	if (flags.size()) {
+		// We only support simple flag replacement for bulk open.
+		// {line} and {col} don't make sense for multiple files.
+		flags = flags.replacen("{line}", "0");
+		flags = flags.replacen("{col}", "0");
+		flags = flags.strip_edges().replace("\\\\", "\\");
+
+		int from = 0;
+		int num_chars = 0;
+		bool inside_quotes = false;
+
+		for (int i = 0; i < flags.size(); i++) {
+			if (flags[i] == '"' && (!i || flags[i - 1] != '\\')) {
+				// Increment `from` if not `inside_quotes`
+				from += !inside_quotes;
+				inside_quotes = !inside_quotes;
+			} else if (flags[i] == '\0' || (!inside_quotes && flags[i] == ' ')) {
+				String arg = flags.substr(from, num_chars);
+				if (arg.contains("{file}")) {
+					has_file_flag = true;
+					for (int j = 0; j < p_paths.size(); j++) {
+						args.push_back(arg.replacen("{file}", p_paths[j]).replacen("{project}", project_path));
+					}
+				} else {
+					args.push_back(arg.replacen("{project}", project_path));
+				}
+
+				from = i + 1;
+				num_chars = 0;
+			} else {
+				num_chars++;
+			}
+		}
+		// Handle fallback case where {file} was not defined.
+		if (!has_file_flag) {
+			for (int i = 0; i < p_paths.size(); i++) {
+				args.push_back(p_paths[i]);
+			}
+		}
+	} else {
+		for (int i = 0; i < p_paths.size(); i++) {
+			args.push_back(p_paths[i]);
+		}
+	}
+
+	if (!path.is_empty()) {
+		Error err = OS::get_singleton()->create_process(path, args);
+		if (err != OK) {
+			ERR_PRINT("Couldn't open external text editor. Review your `text_editor/external/` editor settings.");
+		}
+	}
 }
 
 void ScriptEditor::_script_changed() {
@@ -4333,7 +4435,7 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	ED_SHORTCUT("script_editor/window_sort", TTRC("Sort"));
 	ED_SHORTCUT("script_editor/window_move_up", TTRC("Move Up"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::UP);
 	ED_SHORTCUT("script_editor/window_move_down", TTRC("Move Down"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::DOWN);
-	// FIXME: These should be `Key::GREATER` and `Key::LESS` but those don't work.
+	/// @todo FIXME: These should be `Key::GREATER` and `Key::LESS` but those don't work.
 	ED_SHORTCUT("script_editor/next_script", TTRC("Next Script"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::PERIOD);
 	ED_SHORTCUT("script_editor/prev_script", TTRC("Previous Script"), KeyModifierMask::CMD_OR_CTRL | KeyModifierMask::SHIFT | Key::COMMA);
 	set_process_input(true);
@@ -4650,7 +4752,11 @@ bool ScriptEditorPlugin::handles(Object *p_object) const {
 	}
 
 	if (Object::cast_to<JSON>(p_object)) {
-		return true;
+		// This is here to stop resource files of class JSON from getting confused
+		// with json files and being opened in the text editor.
+		if (Object::cast_to<JSON>(p_object)->get_path().get_extension().to_lower() == "json") {
+			return true;
+		}
 	}
 
 	return p_object->is_class("Script");

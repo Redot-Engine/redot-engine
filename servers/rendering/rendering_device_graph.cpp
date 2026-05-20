@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_graph.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_device_graph.h"
 
 #define PRINT_RENDER_GRAPH 0
@@ -288,7 +294,7 @@ int32_t RenderingDeviceGraph::_add_to_write_list(int32_t p_command_index, Rect2i
 	return next_index;
 }
 
-// Ensures all commands are 8-byte aligned.
+/// Ensures all commands are 8-byte aligned.
 #define GRAPH_ALIGN(x) (((x) + 7u) & 0xFFFFFFF8u)
 
 RenderingDeviceGraph::RecordedCommand *RenderingDeviceGraph::_allocate_command(uint32_t p_command_size, int32_t &r_command_index) {
@@ -554,8 +560,8 @@ void RenderingDeviceGraph::_add_command_to_graph(ResourceTracker **p_resource_tr
 			// A barrier must be pushed if the usage is different of it's a write usage and there was already a command that wrote to this resource previously.
 			if (resource_tracker->texture_driver_id.id != 0) {
 				if (resource_tracker->usage_access.is_empty()) {
-					// FIXME: If the tracker does not know the previous type of usage, assume the generic memory write one.
-					// Tracking access bits across texture slices can be tricky, so this failsafe can be removed once that's improved.
+					/// @todo FIXME: If the tracker does not know the previous type of usage, assume the generic memory write one.
+					/// Tracking access bits across texture slices can be tricky, so this failsafe can be removed once that's improved.
 					resource_tracker->usage_access = RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT;
 				}
 

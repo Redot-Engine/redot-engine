@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file cluster_builder_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "cluster_builder_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_globals.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file webrtc_multiplayer_peer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webrtc_peer_connection.h"
 
 #include "scene/main/multiplayer_peer.h"
@@ -101,13 +107,15 @@ public:
 	Dictionary get_peer(int p_peer_id);
 	Dictionary get_peers();
 
-	// PacketPeer
+	/// @name PacketPeer
+	/// @{
 	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size) override; ///< buffer is GONE after next get_packet
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size) override;
 	virtual int get_available_packet_count() const override;
 	virtual int get_max_packet_size() const override;
+	/// @}
 
-	// MultiplayerPeer
+	/// MultiplayerPeer
 	virtual void set_target_peer(int p_peer_id) override;
 
 	virtual int get_unique_id() const override;

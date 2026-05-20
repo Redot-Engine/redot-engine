@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file luminance.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
 #include "servers/rendering/renderer_rd/shaders/effects/luminance_reduce.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/luminance_reduce_raster.glsl.gen.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file physical_bone_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/physics/physics_body_3d.h"
 #include "scene/3d/skeleton_3d.h"
 
@@ -58,7 +64,7 @@ public:
 	struct JointData {
 		virtual JointType get_joint_type() { return JOINT_TYPE_NONE; }
 
-		/// "j" is used to set the parameter inside the PhysicsServer3D
+		/// @param `j` is used to set the parameter inside the PhysicsServer3D
 		virtual bool _set(const StringName &p_name, const Variant &p_value, RID j);
 		virtual bool _get(const StringName &p_name, Variant &r_ret) const;
 		virtual void _get_property_list(List<PropertyInfo> *p_list) const;
@@ -162,7 +168,7 @@ public:
 
 private:
 #ifdef TOOLS_ENABLED
-	// if false gizmo move body
+	/// If `false` gizmo move body
 	bool gizmo_move_joint = false;
 #endif
 

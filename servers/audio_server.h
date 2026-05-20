@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/audio_frame.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
@@ -80,7 +86,7 @@ protected:
 #endif
 
 public:
-	double get_time_since_last_mix(); //useful for video -> audio sync
+	double get_time_since_last_mix(); ///< Useful for video -> audio sync
 	double get_time_to_next_mix();
 
 	enum SpeakerMode {
@@ -93,7 +99,8 @@ public:
 	static AudioDriver *get_singleton();
 	void set_singleton();
 
-	// Virtual API to implement.
+	/// @name Virtual API to implement
+	/// @{
 
 	virtual const char *get_name() const = 0;
 
@@ -119,7 +126,7 @@ public:
 	virtual String get_input_device() { return "Default"; }
 	virtual void set_input_device(const String &p_name) {}
 
-	//
+	/// @}
 
 	SpeakerMode get_speaker_mode_by_total_channels(int p_channels) const;
 	int get_total_channels_by_speaker_mode(SpeakerMode) const;
@@ -133,7 +140,8 @@ public:
 	void reset_profiling_time() { prof_time.set(0); }
 #endif
 
-	// Samples handling.
+	/// @name Samples Handling
+	/// @{
 	virtual bool is_stream_registered_as_sample(const Ref<AudioStream> &p_stream) const {
 		return false;
 	}
@@ -155,6 +163,7 @@ public:
 	virtual void set_sample_bus_volume_db(int p_bus, float p_volume_db) {}
 	virtual void set_sample_bus_solo(int p_bus, bool p_enable) {}
 	virtual void set_sample_bus_mute(int p_bus, bool p_enable) {}
+	/// @}
 
 	AudioDriver() {}
 	virtual ~AudioDriver() {}
@@ -185,7 +194,7 @@ class AudioServer : public Object {
 	GDCLASS(AudioServer, Object);
 
 public:
-	//re-expose this here, as AudioDriver is not exposed to script
+	/// Re-expose this here, as AudioDriver is not exposed to script
 	enum SpeakerMode {
 		SPEAKER_MODE_STEREO,
 		SPEAKER_SURROUND_31,
@@ -242,7 +251,7 @@ private:
 
 		bool soloed = false;
 
-		// Each channel is a stereo pair.
+		/// Each channel is a stereo pair.
 		struct Channel {
 			bool used = false;
 			bool active = false;
@@ -276,36 +285,36 @@ private:
 	};
 
 	struct AudioStreamPlaybackListNode {
-		// The state machine for audio stream playbacks is as follows:
-		// 1. The playback is created and added to the playback list in the playing state.
-		// 2. The playback is (maybe) paused, and the state is set to FADE_OUT_TO_PAUSE.
-		// 2.1. The playback is mixed after being paused, and the audio server thread atomically sets the state to PAUSED after performing a brief fade-out.
-		// 3. The playback is (maybe) deleted, and the state is set to FADE_OUT_TO_DELETION.
-		// 3.1. The playback is mixed after being deleted, and the audio server thread atomically sets the state to AWAITING_DELETION after performing a brief fade-out.
-		// 		NOTE: The playback is not deallocated at this time because allocation and deallocation are not realtime-safe.
-		// 4. The playback is removed and deallocated on the main thread using the SafeList maybe_cleanup method.
+		/// The state machine for audio stream playbacks is as follows:
+		/// 1. The playback is created and added to the playback list in the playing state.
+		/// 2. The playback is (maybe) paused, and the state is set to FADE_OUT_TO_PAUSE.
+		/// 2.1. The playback is mixed after being paused, and the audio server thread atomically sets the state to PAUSED after performing a brief fade-out.
+		/// 3. The playback is (maybe) deleted, and the state is set to FADE_OUT_TO_DELETION.
+		/// 3.1. The playback is mixed after being deleted, and the audio server thread atomically sets the state to AWAITING_DELETION after performing a brief fade-out.
+		/// 		NOTE: The playback is not deallocated at this time because allocation and deallocation are not realtime-safe.
+		/// 4. The playback is removed and deallocated on the main thread using the SafeList maybe_cleanup method.
 		enum PlaybackState {
-			PAUSED = 0, // Paused. Keep this stream playback around though so it can be restarted.
-			PLAYING = 1, // Playing. Fading may still be necessary if volume changes!
-			FADE_OUT_TO_PAUSE = 2, // About to pause.
-			FADE_OUT_TO_DELETION = 3, // About to stop.
+			PAUSED = 0, ///< Paused. Keep this stream playback around though so it can be restarted.
+			PLAYING = 1, ///< Playing. Fading may still be necessary if volume changes!
+			FADE_OUT_TO_PAUSE = 2, ///< About to pause.
+			FADE_OUT_TO_DELETION = 3, ///< About to stop.
 			AWAITING_DELETION = 4,
 		};
-		// If zero or positive, a place in the stream to seek to during the next mix.
+		/// If zero or positive, a place in the stream to seek to during the next mix.
 		SafeNumeric<float> setseek;
 		SafeNumeric<float> pitch_scale;
 		SafeNumeric<float> highshelf_gain;
-		SafeNumeric<float> attenuation_filter_cutoff_hz; // This isn't used unless highshelf_gain is nonzero.
+		SafeNumeric<float> attenuation_filter_cutoff_hz; ///< This isn't used unless highshelf_gain is nonzero.
 		AudioFilterSW::Processor filter_process[8];
-		// Updating this ref after the list node is created breaks consistency guarantees, don't do it!
+		/// Updating this ref after the list node is created breaks consistency guarantees, don't do it!
 		Ref<AudioStreamPlayback> stream_playback;
-		// Playback state determines the fate of a particular AudioStreamListNode during the mix step. Must be atomically replaced.
+		/// Playback state determines the fate of a particular AudioStreamListNode during the mix step. Must be atomically replaced.
 		std::atomic<PlaybackState> state = AWAITING_DELETION;
-		// This data should only ever be modified by an atomic replacement of the pointer.
+		/// This data should only ever be modified by an atomic replacement of the pointer.
 		std::atomic<AudioStreamPlaybackBusDetails *> bus_details = nullptr;
-		// Previous bus details should only be accessed on the audio thread.
+		/// Previous bus details should only be accessed on the audio thread.
 		AudioStreamPlaybackBusDetails *prev_bus_details = nullptr;
-		// The next few samples are stored here so we have some time to fade audio out if it ends abruptly at the beginning of the next mix.
+		/// The next few samples are stored here so we have some time to fade audio out if it ends abruptly at the beginning of the next mix.
 		AudioFrame lookahead[LOOKAHEAD_BUFFER_SIZE];
 	};
 
@@ -314,10 +323,10 @@ private:
 	void _delete_stream_playback(Ref<AudioStreamPlayback> p_playback);
 	void _delete_stream_playback_list_node(AudioStreamPlaybackListNode *p_node);
 
-	// TODO document if this is necessary.
+	/// @todo Document if this is necessary.
 	SafeList<AudioStreamPlaybackBusDetails *> bus_details_graveyard_frame_old;
 
-	Vector<Vector<AudioFrame>> temp_buffer; //temp_buffer for each level
+	Vector<Vector<AudioFrame>> temp_buffer; ///< temp_buffer for each level
 	Vector<AudioFrame> mix_buffer;
 	Vector<Bus *> buses;
 	HashMap<StringName, Bus *> bus_map;
@@ -331,7 +340,7 @@ private:
 	void _mix_step();
 	void _mix_step_for_channel(AudioFrame *p_out_buf, AudioFrame *p_source_buf, AudioFrame p_vol_start, AudioFrame p_vol_final, float p_attenuation_filter_cutoff_hz, float p_highshelf_gain, AudioFilterSW::Processor *p_processor_l, AudioFilterSW::Processor *p_processor_r);
 
-	// Should only be called on the main thread.
+	/// Should only be called on the main thread.
 	AudioStreamPlaybackListNode *_find_playback_list_node(Ref<AudioStreamPlayback> p_playback);
 
 	struct CallbackItem {
@@ -366,7 +375,7 @@ public:
 		ERR_FAIL_V(1);
 	}
 
-	// Do not use from outside audio thread.
+	/// Do not use from outside audio thread.
 	bool thread_has_channel_mix_buffer(int p_bus, int p_buffer) const;
 	AudioFrame *thread_get_channel_mix_buffer(int p_bus, int p_buffer);
 	int thread_get_mix_buffer_size() const;
@@ -429,9 +438,9 @@ public:
 	void set_playback_speed_scale(float p_scale);
 	float get_playback_speed_scale() const;
 
-	// Convenience method.
+	/// Convenience method.
 	void start_playback_stream(Ref<AudioStreamPlayback> p_playback, const StringName &p_bus, Vector<AudioFrame> p_volume_db_vector, float p_start_time = 0, float p_pitch_scale = 1);
-	// Expose all parameters.
+	/// Expose all parameters.
 	void start_playback_stream(Ref<AudioStreamPlayback> p_playback, const HashMap<StringName, Vector<AudioFrame>> &p_bus_volumes, float p_start_time = 0, float p_pitch_scale = 1, float p_highshelf_gain = 0, float p_attenuation_cutoff_hz = 0);
 	void stop_playback_stream(Ref<AudioStreamPlayback> p_playback);
 

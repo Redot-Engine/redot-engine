@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file movie_writer_mjpeg.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/movie_writer/movie_writer.h"
 
 class MovieWriterMJPEG : public MovieWriter {

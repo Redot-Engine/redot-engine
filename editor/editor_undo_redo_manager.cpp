@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_undo_redo_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_undo_redo_manager.h"
 #include "editor_undo_redo_manager.compat.inc"
 
@@ -440,7 +446,9 @@ void EditorUndoRedoManager::clear_history(int p_idx, bool p_increase_version) {
 		history.undo_stack.clear();
 		history.redo_stack.clear();
 
-		if (!p_increase_version) {
+		if (p_increase_version) {
+			history.saved_version = 0;
+		} else {
 			set_history_as_saved(p_idx);
 		}
 		emit_signal(SNAME("history_changed"));

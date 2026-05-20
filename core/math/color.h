@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file color.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/math_funcs.h"
 
 class String;
@@ -103,6 +109,16 @@ struct [[nodiscard]] Color {
 	Color clamp(const Color &p_min = Color(0, 0, 0, 0), const Color &p_max = Color(1, 1, 1, 1)) const;
 	void invert();
 	Color inverted() const;
+	/**
+	 * Applies an intensity adjustment to the color by modifying the RGB components.
+	 * The alpha component remains unchanged. The intensity is applied as a
+	 * power-of-two multiplier to the RGB values, clamped between 0.0 and 1.0.
+	 *
+	 * @param p_intensity The intensity level to apply. A value of 0 will keep the color unchanged.
+	 *                    Positive values increase brightness, and negative values decrease brightness.
+	 * @return A new Color instance with the adjusted RGB components and the original alpha value.
+	 */
+	Color apply_intensity(float p_intensity) const;
 
 	_FORCE_INLINE_ float get_luminance() const {
 		return 0.2126f * r + 0.7152f * g + 0.0722f * b;

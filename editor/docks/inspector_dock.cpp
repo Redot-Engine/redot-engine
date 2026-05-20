@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file inspector_dock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "inspector_dock.h"
 
 #include "editor/debugger/editor_debugger_inspector.h"

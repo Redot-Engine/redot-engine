@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file condition_variable.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/mutex.h"
 #include "core/os/safe_binary_mutex.h"
 
@@ -46,12 +52,11 @@
 #define THREADING_NAMESPACE std
 #endif
 
-// An object one or multiple threads can wait on a be notified by some other.
-// Normally, you want to use a semaphore for such scenarios, but when the
-// condition is something different than a count being greater than zero
-// (which is the built-in logic in a semaphore) or you want to provide your
-// own mutex to tie the wait-notify to some other behavior, you need to use this.
-
+/// An object one or multiple threads can wait on a be notified by some other.
+/// Normally, you want to use a semaphore for such scenarios, but when the
+/// condition is something different than a count being greater than zero
+/// (which is the built-in logic in a semaphore) or you want to provide your
+/// own mutex to tie the wait-notify to some other behavior, you need to use this.
 class ConditionVariable {
 	mutable THREADING_NAMESPACE::condition_variable condition;
 

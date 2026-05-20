@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file syslog_logger.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef UNIX_ENABLED
 
 #include "core/io/logger.h"

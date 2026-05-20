@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file variant_setget.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant_setget.h"
 #include "variant_callable.h"
 

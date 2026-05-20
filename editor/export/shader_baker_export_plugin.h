@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_baker_export_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/export/editor_export_plugin.h"
 #include "servers/rendering/renderer_rd/shader_rd.h"
 #include "servers/rendering/rendering_shader_container.h"
@@ -55,7 +61,7 @@ protected:
 	};
 
 	struct WorkResult {
-		// Since this result is per group, this vector will have gaps in the data it covers as the indices must stay relative to all variants.
+		/// Since this result is per group, this vector will have gaps in the data it covers as the indices must stay relative to all variants.
 		Vector<PackedByteArray> variant_data;
 	};
 
@@ -84,7 +90,7 @@ protected:
 
 	virtual String get_name() const override;
 	virtual bool _is_active(const Vector<String> &p_features) const;
-	virtual bool _initialize_container_format(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features, const Ref<EditorExportPreset> &p_preset);
+	virtual bool _initialize_container_format(const Ref<EditorExportPlatform> &p_platform, const Ref<EditorExportPreset> &p_preset);
 	virtual void _cleanup_container_format();
 	virtual bool _initialize_cache_directory();
 	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform> &p_platform, const Vector<String> &p_features) override;

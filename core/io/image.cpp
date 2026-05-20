@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image.h"
 
 #include "core/config/project_settings.h"
@@ -469,7 +475,7 @@ int Image::get_mipmap_count() const {
 	}
 }
 
-// Using template generates perfectly optimized code due to constant expression reduction and unused variable removal present in all compilers.
+/// Using template generates perfectly optimized code due to constant expression reduction and unused variable removal present in all compilers.
 template <uint32_t read_bytes, bool read_alpha, uint32_t write_bytes, bool write_alpha, bool read_gray, bool write_gray>
 static void _convert(int p_width, int p_height, const uint8_t *p_src, uint8_t *p_dst) {
 	constexpr uint32_t max_bytes = MAX(read_bytes, write_bytes);
@@ -1558,10 +1564,10 @@ void Image::rotate_90(ClockDirection p_direction) {
 					continue;
 				}
 
-				// Check whether we already processed this cycle.
-				// We iterate over it and if we'll find an index smaller than `i` then we already
-				// processed this cycle because we always start at the smallest index in the cycle.
-				// TODO: Improve this naive approach, can be done better.
+				/// Check whether we already processed this cycle.
+				/// We iterate over it and if we'll find an index smaller than `i` then we already
+				/// processed this cycle because we always start at the smallest index in the cycle.
+				/// @todo Improve this naive approach, can be done better.
 				while (prev > i) {
 					prev = PREV_INDEX_IN_CYCLE(prev);
 				}
@@ -3062,8 +3068,6 @@ void Image::blend_rect_mask(const Ref<Image> &p_src, const Ref<Image> &p_mask, c
 	}
 }
 
-// Repeats `p_pixel` `p_count` times in consecutive memory.
-// Results in the original pixel and `p_count - 1` subsequent copies of it.
 void Image::_repeat_pixel_over_subsequent_memory(uint8_t *p_pixel, int p_pixel_size, int p_count) {
 	int offset = 1;
 	for (int stride = 1; offset + stride <= p_count; stride *= 2) {
@@ -4241,14 +4245,18 @@ void Image::renormalize_uint8(uint8_t *p_rgb) {
 	n += Vector3(1, 1, 1);
 	n *= 0.5;
 	n *= 255;
-	p_rgb[0] = CLAMP(int(n.x), 0, 255);
-	p_rgb[1] = CLAMP(int(n.y), 0, 255);
-	p_rgb[2] = CLAMP(int(n.z), 0, 255);
+	p_rgb[0] = CLAMP(int(Math::round(n.x)), 0, 255);
+	p_rgb[1] = CLAMP(int(Math::round(n.y)), 0, 255);
+	p_rgb[2] = CLAMP(int(Math::round(n.z)), 0, 255);
 }
 
 void Image::renormalize_float(float *p_rgb) {
 	Vector3 n(p_rgb[0], p_rgb[1], p_rgb[2]);
+	n *= 2.0;
+	n -= Vector3(1, 1, 1);
 	n.normalize();
+	n += Vector3(1, 1, 1);
+	n *= 0.5;
 	p_rgb[0] = n.x;
 	p_rgb[1] = n.y;
 	p_rgb[2] = n.z;
@@ -4256,7 +4264,11 @@ void Image::renormalize_float(float *p_rgb) {
 
 void Image::renormalize_half(uint16_t *p_rgb) {
 	Vector3 n(Math::half_to_float(p_rgb[0]), Math::half_to_float(p_rgb[1]), Math::half_to_float(p_rgb[2]));
+	n *= 2.0;
+	n -= Vector3(1, 1, 1);
 	n.normalize();
+	n += Vector3(1, 1, 1);
+	n *= 0.5;
 	p_rgb[0] = Math::make_half_float(n.x);
 	p_rgb[1] = Math::make_half_float(n.y);
 	p_rgb[2] = Math::make_half_float(n.z);
@@ -4306,25 +4318,6 @@ void Image::copy_internals_from(const Ref<Image> &p_image) {
 }
 
 Dictionary Image::compute_image_metrics(const Ref<Image> p_compared_image, bool p_luma_metric) {
-	// https://github.com/richgel999/bc7enc_rdo/blob/master/LICENSE
-	//
-	// This is free and unencumbered software released into the public domain.
-	// Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
-	// software, either in source code form or as a compiled binary, for any purpose,
-	// commercial or non - commercial, and by any means.
-	// In jurisdictions that recognize copyright laws, the author or authors of this
-	// software dedicate any and all copyright interest in the software to the public
-	// domain. We make this dedication for the benefit of the public at large and to
-	// the detriment of our heirs and successors. We intend this dedication to be an
-	// overt act of relinquishment in perpetuity of all present and future rights to
-	// this software under copyright law.
-	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-	// AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-	// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-	// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 	Dictionary result;
 	result["max"] = Math::INF;
 	result["mean"] = Math::INF;

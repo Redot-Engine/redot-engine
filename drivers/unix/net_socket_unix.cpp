@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file net_socket_unix.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 // Some proprietary Unix-derived platforms don't expose Unix sockets
 // so this allows skipping this file to reimplement this API differently.
 #if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)

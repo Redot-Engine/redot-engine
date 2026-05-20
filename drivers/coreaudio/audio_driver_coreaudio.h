@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_driver_coreaudio.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef COREAUDIO_ENABLED
 
 #include "servers/audio_server.h"

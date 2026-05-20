@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_scene_exporter_gltf_settings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../gltf_document.h"
 
 class EditorSceneExporterGLTFSettings : public RefCounted {
@@ -54,6 +60,7 @@ protected:
 	bool _get_extension_setting(const String &p_name_str, Variant &r_ret) const;
 
 public:
+	/// Run this before popping up the export settings, because the extensions may have changed.
 	void generate_property_list(Ref<GLTFDocument> p_document, Node *p_root = nullptr);
 
 	String get_copyright() const;

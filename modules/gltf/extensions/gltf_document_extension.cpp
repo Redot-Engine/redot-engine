@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_document_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_document_extension.h"
 
 void GLTFDocumentExtension::_bind_methods() {

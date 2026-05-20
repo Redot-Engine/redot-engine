@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file world_environment.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "world_environment.h"
 
 #include "scene/3d/node_3d.h"

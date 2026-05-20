@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file inflection_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/hash_map.h"
 #include "core/templates/local_vector.h"
 
@@ -103,9 +109,9 @@ protected:
 		IndexType value = INVALID;
 	} IndexValue;
 
-	// Returns a reference to the value at the index.
-	// If the index has not been initialized, add an empty element at
-	// the end of the values array, and set the index to its position.
+	/// @return A reference to the value at the index.
+	/// If the index has not been initialized, add an empty element at
+	/// the end of the values array, and set the index to its position.
 	ValueType &get_value(KeyType p_idx) {
 		IndexValue *val_idx = p_idx < LinearCount ? &_linear_indexes[p_idx] : _inflection_indexes.getptr(p_idx);
 		if (val_idx == nullptr || val_idx->value == INVALID) {

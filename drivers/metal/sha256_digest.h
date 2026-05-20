@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sha256_digest.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #import <CommonCrypto/CommonDigest.h>
 #import <simd/simd.h>
 #import <zlib.h>

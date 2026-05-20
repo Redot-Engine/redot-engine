@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file translation_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "translation_server.h"
 #include "translation_server.compat.inc"
 
@@ -132,7 +138,6 @@ TranslationServer::Locale::operator String() const {
 }
 
 TranslationServer::Locale::Locale(const TranslationServer &p_server, const String &p_locale, bool p_add_defaults) {
-	// Replaces '-' with '_' for macOS style locales.
 	String univ_locale = p_locale.replace_char('-', '_');
 
 	// Extract locale elements.

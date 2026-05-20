@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_heap.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 
 template <typename T>

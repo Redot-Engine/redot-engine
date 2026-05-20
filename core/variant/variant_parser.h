@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file variant_parser.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/file_access.h"
 #include "core/io/resource.h"
 #include "core/variant/variant.h"

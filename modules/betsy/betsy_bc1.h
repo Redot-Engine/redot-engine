@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file betsy_bc1.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 constexpr const float dxt1_encoding_table[1024] = {
 	0,
 	0,

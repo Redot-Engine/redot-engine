@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file renderer_geometry_instance.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/rect2.h"
 #include "core/math/transform_3d.h"
 #include "core/templates/rid.h"
@@ -76,14 +82,14 @@ public:
 	virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) = 0;
 };
 
-// Base implementation of RenderGeometryInstance shared by internal renderers.
+/// Base implementation of RenderGeometryInstance shared by internal renderers.
 class RenderGeometryInstanceBase : public RenderGeometryInstance {
 public:
-	// setup
+	// Setup
 	uint32_t base_flags = 0;
 	uint32_t flags_cache = 0;
 
-	// used during rendering
+	/// Used during rendering
 	float depth = 0;
 
 	RID mesh_instance;
@@ -112,7 +118,7 @@ public:
 	int32_t shader_uniforms_offset = -1;
 
 	struct Data {
-		//data used less often goes into regular heap
+		// Data used less often goes into regular heap
 		RID base;
 		RS::InstanceType base_type;
 

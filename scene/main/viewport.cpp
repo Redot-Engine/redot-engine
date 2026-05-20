@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file viewport.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "viewport.h"
 
 #include "core/config/project_settings.h"
@@ -272,17 +278,31 @@ void Viewport::_sub_window_update_order() {
 		return;
 	}
 
-	if (!gui.sub_windows[gui.sub_windows.size() - 1].window->get_flag(Window::FLAG_ALWAYS_ON_TOP)) {
-		int index = gui.sub_windows.size() - 1;
-
-		while (index > 0 && gui.sub_windows[index - 1].window->get_flag(Window::FLAG_ALWAYS_ON_TOP)) {
-			--index;
+	// Reorder 'always on top' windows.
+	int last_index = gui.sub_windows.size() - 1;
+	for (int index = last_index, insert_index = last_index; index >= 0; index--) {
+		SubWindow sw = gui.sub_windows[index];
+		Window *parent_window = sw.window->get_parent_visible_window();
+		bool parent_is_always_on_top = (parent_window != nullptr) && parent_window->get_flag(Window::FLAG_ALWAYS_ON_TOP);
+		if (sw.window->get_flag(Window::FLAG_ALWAYS_ON_TOP) || (parent_is_always_on_top && sw.window->is_exclusive())) {
+			if (index != insert_index) {
+				gui.sub_windows.remove_at(index);
+				gui.sub_windows.insert(insert_index, sw);
+			}
+			insert_index--;
 		}
+	}
 
-		if (index != (gui.sub_windows.size() - 1)) {
-			SubWindow sw = gui.sub_windows[gui.sub_windows.size() - 1];
-			gui.sub_windows.remove_at(gui.sub_windows.size() - 1);
-			gui.sub_windows.insert(index, sw);
+	// Reorder exclusive children.
+	for (int parent_index = 0; parent_index < gui.sub_windows.size(); parent_index++) {
+		Window *exclusive_child = gui.sub_windows[parent_index].window->get_exclusive_child();
+		if (exclusive_child != nullptr && exclusive_child->is_visible()) {
+			int child_index = _sub_window_find(exclusive_child);
+			if (child_index < parent_index) {
+				SubWindow sw = gui.sub_windows[child_index];
+				gui.sub_windows.remove_at(child_index);
+				gui.sub_windows.insert(parent_index, sw);
+			}
 		}
 	}
 
@@ -1480,24 +1500,6 @@ void Viewport::warp_mouse(const Vector2 &p_position) {
 }
 
 Point2 Viewport::wrap_mouse_in_rect(const Vector2 &p_relative, const Rect2 &p_rect) {
-	// Move the mouse cursor from its current position to a location bounded by `p_rect`
-	// in accordance with a heuristic that takes the traveled distance `p_relative` of the mouse
-	// into account.
-
-	// All parameters are in viewport coordinates.
-	// p_relative denotes the distance to the previous mouse position.
-	// p_rect denotes the area, in which the mouse should be confined in.
-
-	// The relative distance reported for the next event after a warp is in the boundaries of the
-	// size of the rect on that axis, but it may be greater, in which case there's no problem as
-	// fmod() will warp it, but if the pointer has moved in the opposite direction between the
-	// pointer relocation and the subsequent event, the reported relative distance will be less
-	// than the size of the rect and thus fmod() will be disabled for handling the situation.
-	// And due to this mouse warping mechanism being stateless, we need to apply some heuristics
-	// to detect the warp: if the relative distance is greater than the half of the size of the
-	// relevant rect (checked per each axis), it will be considered as the consequence of a former
-	// pointer warp.
-
 	const Point2 rel_sign(p_relative.x >= 0.0f ? 1 : -1, p_relative.y >= 0.0 ? 1 : -1);
 	const Size2 warp_margin = p_rect.size * 0.5f;
 	const Point2 rel_warped(
@@ -1795,8 +1797,6 @@ void Viewport::_gui_call_notification(Control *p_control, int p_what) {
 	}
 }
 
-// `gui_find_control` doesn't take embedded windows into account. So the caller of this function
-// needs to make sure, that there is no embedded window at the specified position.
 Control *Viewport::gui_find_control(const Point2 &p_global) {
 	ERR_MAIN_THREAD_GUARD_V(nullptr);
 
@@ -1915,6 +1915,10 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 			}
 			MouseButtonMask button_mask = mouse_button_to_mask(mb->get_button_index());
 			if (!gui.mouse_focus_mask.is_empty() && !gui.mouse_focus_mask.has_flag(button_mask)) {
+				if (!gui.mouse_focus) {
+					return;
+				}
+
 				// Do not steal mouse focus and stuff while a focus mask without the current mouse button exists.
 				gui.mouse_focus_mask.set_flag(button_mask);
 			} else {
@@ -3177,9 +3181,6 @@ void Viewport::_window_start_resize(SubWindowResize p_edge, Window *p_window) {
 }
 
 void Viewport::_update_mouse_over() {
-	// Update gui.mouse_over and gui.subwindow_over in all Viewports.
-	// Send necessary mouse_enter/mouse_exit signals and the MOUSE_ENTER/MOUSE_EXIT notifications for every Viewport in the SceneTree.
-
 	if (is_attached_in_viewport()) {
 		// Execute this function only, when it is processed by a native Window or a SubViewport, that has no SubViewportContainer as parent.
 		return;
@@ -4019,7 +4020,7 @@ void Viewport::set_vrs_texture(Ref<Texture2D> p_texture) {
 	ERR_MAIN_THREAD_GUARD;
 	vrs_texture = p_texture;
 
-	// TODO need to add something here in case the RID changes
+	/// @todo Need to add something here in case the RID changes
 	RID tex = p_texture.is_valid() ? p_texture->get_rid() : RID();
 	RS::get_singleton()->viewport_set_vrs_texture(viewport, tex);
 }
@@ -4121,8 +4122,8 @@ void Viewport::subwindow_set_popup_safe_rect(Window *p_window, const Rect2i &p_r
 
 Rect2i Viewport::subwindow_get_popup_safe_rect(Window *p_window) const {
 	int index = _sub_window_find(p_window);
-	// FIXME: Re-enable ERR_FAIL_COND after rewriting embedded window popup closing.
-	// Currently it is expected, that index == -1 can happen.
+	/// @todo FIXME: Re-enable ERR_FAIL_COND after rewriting embedded window popup closing.
+	/// Currently it is expected, that index == -1 can happen.
 	if (index == -1) {
 		return Rect2i();
 	}

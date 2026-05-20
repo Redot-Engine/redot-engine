@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multi_node_edit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "multi_node_edit.h"
 
 #include "core/math/math_fieldwise.h"
@@ -310,7 +316,13 @@ StringName MultiNodeEdit::get_edited_class_name() const {
 }
 
 void MultiNodeEdit::set_property_field(const StringName &p_property, const Variant &p_value, const String &p_field) {
-	_set_impl(p_property, p_value, p_field);
+	// Ignore the field with arrays and dictionaries, as they are passed whole when edited.
+	Variant::Type type = p_value.get_type();
+	if (type == Variant::ARRAY || type == Variant::DICTIONARY) {
+		_set_impl(p_property, p_value, "");
+	} else {
+		_set_impl(p_property, p_value, p_field);
+	}
 }
 
 void MultiNodeEdit::_bind_methods() {

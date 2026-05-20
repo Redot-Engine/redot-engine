@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file stream_peer_tls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/crypto/crypto.h"
 #include "core/io/stream_peer.h"
 

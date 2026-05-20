@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rid_owner.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rid_owner.h"
 
 SafeNumeric<uint64_t> RID_AllocBase::base_id{ 1 };

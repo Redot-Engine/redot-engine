@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_action_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_action_editor.h"
 
 #include "editor/editor_string_names.h"
@@ -163,7 +169,7 @@ OpenXRActionEditor::OpenXRActionEditor(Ref<OpenXRAction> p_action) {
 	action_type_button->connect(SceneStringName(item_selected), callable_mp(this, &OpenXRActionEditor::_on_item_selected));
 	add_child(action_type_button);
 
-	// maybe add dropdown to edit our toplevel paths, or do we deduce them from our suggested bindings?
+	/// @todo Maybe add dropdown to edit our toplevel paths, or do we deduce them from our suggested bindings?
 
 	rem_action = memnew(Button);
 	rem_action->set_tooltip_text(TTR("Remove action"));

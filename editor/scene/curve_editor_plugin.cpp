@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file curve_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "curve_editor_plugin.h"
 
 #include "canvas_item_editor_plugin.h"
@@ -77,8 +83,8 @@ void CurveEdit::set_curve(Ref<Curve> p_curve) {
 		curve->connect(Curve::SIGNAL_DOMAIN_CHANGED, callable_mp(this, &CurveEdit::_curve_changed));
 	}
 
-	// Note: if you edit a curve, then set another, and try to undo,
-	// it will normally apply on the previous curve, but you won't see it.
+	/// @note If you edit a curve, then set another, and try to undo,
+	/// it will normally apply on the previous curve, but you won't see it.
 }
 
 Ref<Curve> CurveEdit::get_curve() {
@@ -134,7 +140,7 @@ void CurveEdit::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Curve editor")));
 		} break;
@@ -470,7 +476,7 @@ CurveEdit::TangentIndex CurveEdit::get_tangent_at(const Vector2 &p_pos) const {
 	return TANGENT_NONE;
 }
 
-// FIXME: This function should be bounded better.
+/// @todo FIXME: This function should be bounded better.
 float CurveEdit::get_offset_without_collision(int p_current_index, float p_offset, bool p_prioritize_right) {
 	float safe_offset = p_offset;
 	bool prioritizing_right = p_prioritize_right;
@@ -731,7 +737,6 @@ Vector2 CurveEdit::get_world_pos(const Vector2 &p_view_pos) const {
 	return _world_to_view.affine_inverse().xform(p_view_pos);
 }
 
-// Uses non-baked points, but takes advantage of ordered iteration to be faster.
 void CurveEdit::plot_curve_accurate(float p_step, const Color &p_line_color, const Color &p_edge_line_color) {
 	const real_t min_x = curve->get_min_domain();
 	const real_t max_x = curve->get_max_domain();

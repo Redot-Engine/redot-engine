@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_saver_webp.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_saver_webp.h"
 
 #include "webp_common.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file jolt_job_system.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_job_system.h"
 
 #include "../jolt_project_settings.h"
@@ -178,7 +184,7 @@ void JoltJobSystem::post_step() {
 #ifdef DEBUG_ENABLED
 
 void JoltJobSystem::flush_timings() {
-	static const StringName profiler_name("servers");
+	const StringName profiler_name = SNAME("servers");
 
 	EngineDebugger *engine_debugger = EngineDebugger::get_singleton();
 

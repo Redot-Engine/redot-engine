@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file test_jsonrpc.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "test_jsonrpc.h"
 
 #include "core/io/json.h"

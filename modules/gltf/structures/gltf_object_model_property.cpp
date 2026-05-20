@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_object_model_property.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_object_model_property.h"
 
 #include "../gltf_template_convert.h"

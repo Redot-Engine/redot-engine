@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_compositor_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_compositor_rd.h"
 
 #include "core/config/project_settings.h"
@@ -161,11 +167,6 @@ void RendererCompositorRD::initialize() {
 
 		blit.sampler = RD::get_singleton()->sampler_create(RD::SamplerState());
 	}
-#if defined(MACOS_ENABLED) && defined(__x86_64__)
-	if (scene) {
-		scene->get_sky()->check_cubemap_array();
-	}
-#endif
 }
 
 uint64_t RendererCompositorRD::frame = 1;

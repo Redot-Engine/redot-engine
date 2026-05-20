@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file project_tag.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 
 class Button;

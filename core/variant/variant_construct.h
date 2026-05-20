@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file variant_construct.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant.h"
 
 #include "core/crypto/crypto_core.h"

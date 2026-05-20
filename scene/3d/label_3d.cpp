@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file label_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "label_3d.h"
 
 #include "scene/main/window.h"
@@ -813,8 +819,6 @@ Ref<Font> Label3D::get_font() const {
 }
 
 Ref<Font> Label3D::_get_font_or_default() const {
-	// Similar code taken from `FontVariation::_get_base_font_or_default`.
-
 	if (theme_font.is_valid()) {
 		theme_font->disconnect_changed(callable_mp(const_cast<Label3D *>(this), &Label3D::_font_changed));
 		theme_font.unref();

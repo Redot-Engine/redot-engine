@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_method.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_method.h"
 
 RenderingMethod::RenderingMethod() {

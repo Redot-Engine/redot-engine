@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file quaternion.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/math_funcs.h"
 #include "core/math/vector3.h"
 #include "core/string/ustring.h"
@@ -70,12 +76,19 @@ struct [[nodiscard]] Quaternion {
 	real_t angle_to(const Quaternion &p_to) const;
 
 	Vector3 get_euler(EulerOrder p_order = EulerOrder::YXZ) const;
+
+	/// Euler constructor expects a vector containing the Euler angles in the format
+	/// (ax, ay, az), where ax is the angle of rotation around x axis,
+	/// and similar for other axes.
+	/// This implementation uses YXZ convention (Z is the first rotation).
 	static Quaternion from_euler(const Vector3 &p_euler);
 
 	Quaternion slerp(const Quaternion &p_to, real_t p_weight) const;
 	Quaternion slerpni(const Quaternion &p_to, real_t p_weight) const;
 	Quaternion spherical_cubic_interpolate(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, real_t p_weight) const;
 	Quaternion spherical_cubic_interpolate_in_time(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const;
+	Quaternion spherical_monotonic_cubic_interpolate(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, real_t p_weight) const;
+	Quaternion spherical_monotonic_cubic_interpolate_in_time(const Quaternion &p_b, const Quaternion &p_pre_a, const Quaternion &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const;
 
 	Vector3 get_axis() const;
 	real_t get_angle() const;

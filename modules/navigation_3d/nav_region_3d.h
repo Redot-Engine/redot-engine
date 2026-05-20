@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_region_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_base_3d.h"
 #include "nav_utils_3d.h"
 
@@ -110,11 +116,13 @@ public:
 	real_t get_surface_area() const;
 	AABB get_bounds() const;
 
-	// NavBase properties.
+	/// @name NavBase Properties
+	/// @{
 	virtual void set_navigation_layers(uint32_t p_navigation_layers) override;
 	virtual void set_enter_cost(real_t p_enter_cost) override;
 	virtual void set_travel_cost(real_t p_travel_cost) override;
 	virtual void set_owner_id(ObjectID p_owner_id) override;
+	/// @}
 
 	bool sync();
 	void request_sync();
@@ -126,10 +134,12 @@ public:
 
 	Ref<NavRegionIteration3D> get_iteration();
 
-	// Performance Monitor
+	/// @name Performance Monitor
+	/// @{
 	int get_pm_polygon_count() const { return performance_data.pm_polygon_count; }
 	int get_pm_edge_count() const { return performance_data.pm_edge_count; }
 	int get_pm_edge_merge_count() const { return performance_data.pm_edge_merge_count; }
+	/// @}
 
 	void set_use_async_iterations(bool p_enabled);
 	bool get_use_async_iterations() const;

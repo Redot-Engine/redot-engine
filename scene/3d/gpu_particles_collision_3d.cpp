@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gpu_particles_collision_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gpu_particles_collision_3d.h"
 
 #include "core/object/worker_thread_pool.h"
@@ -516,7 +522,7 @@ Ref<Image> GPUParticlesCollisionSDF3D::bake() {
 
 	Ref<Image> ret = Image::create_from_data(sdf_size.x, sdf_size.y * sdf_size.z, false, Image::FORMAT_RF, cells_data);
 	ret->convert(Image::FORMAT_RH); //convert to half, save space
-	ret->set_meta("depth", sdf_size.z); //hack, make sure to add to the docs of this function
+	ret->set_meta("depth", sdf_size.z); /// @todo Hack, make sure to add to the docs of this function
 
 	if (bake_end_function) {
 		bake_end_function();

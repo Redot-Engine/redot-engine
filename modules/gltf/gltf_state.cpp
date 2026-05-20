@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_state.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_state.h"
 
 #include "gltf_template_convert.h"

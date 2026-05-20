@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_rpc_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_rpc_interface.h"
 
 #include "scene_multiplayer.h"
@@ -62,7 +68,7 @@ _FORCE_INLINE_ void SceneRPCInterface::_profile_node_data(const String &p_what, 
 }
 #endif
 
-// Returns the packet size stripping the node path added when the node is not yet cached.
+/// Returns the packet size stripping the node path added when the node is not yet cached.
 int get_packet_len(uint32_t p_node_target, int p_packet_len) {
 	if (p_node_target & 0x80000000) {
 		int ofs = p_node_target & 0x7FFFFFFF;

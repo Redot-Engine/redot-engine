@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file logger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "logger.h"
 
 #include "core/core_globals.h"
@@ -174,7 +180,7 @@ RotatedFileLogger::RotatedFileLogger(const String &p_base_path, int p_max_files)
 
 #ifdef MODULE_REGEX_ENABLED
 	strip_ansi_regex.instantiate();
-	strip_ansi_regex->detach_from_objectdb(); // Note: This RegEx instance will exist longer than ObjectDB, therefore can't be registered in ObjectDB.
+	strip_ansi_regex->detach_from_objectdb(); /// @note This RegEx instance will exist longer than ObjectDB, therefore can't be registered in ObjectDB.
 	strip_ansi_regex->compile("\u001b\\[((?:\\d|;)*)([a-zA-Z])");
 #endif // MODULE_REGEX_ENABLED
 }

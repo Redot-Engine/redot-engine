@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file look_at_modifier_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "scene/animation/tween.h"
 
@@ -55,6 +61,7 @@ private:
 	Vector3::Axis primary_rotation_axis = Vector3::AXIS_Y;
 	Vector3::Axis secondary_rotation_axis = Vector3::AXIS_X;
 	bool use_secondary_rotation = true;
+	bool relative = true;
 
 	OriginFrom origin_from = ORIGIN_FROM_SELF;
 	String origin_bone_name;
@@ -89,9 +96,11 @@ private:
 
 	bool is_within_limitations = false;
 
-	// For time-based interpolation.
+	/// @name For time-based interpolation.
+	/// @{
 	Quaternion from_q;
 	Quaternion prev_q;
+	/// @}
 
 	float remaining = 0;
 	float time_step = 1.0;
@@ -125,6 +134,8 @@ public:
 	Vector3::Axis get_primary_rotation_axis() const;
 	void set_use_secondary_rotation(bool p_enabled);
 	bool is_using_secondary_rotation() const;
+	void set_relative(bool p_enabled);
+	bool is_relative() const;
 
 	void set_origin_from(OriginFrom p_origin_from);
 	OriginFrom get_origin_from() const;

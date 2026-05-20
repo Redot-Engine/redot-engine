@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_debugger_tree.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_debugger_tree.h"
 
 #include "editor/debugger/editor_debugger_node.h"
@@ -68,6 +74,7 @@ void EditorDebuggerTree::_notification(int p_what) {
 		case NOTIFICATION_POSTINITIALIZE: {
 			set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 
+			connect("cell_selected", callable_mp(this, &EditorDebuggerTree::_scene_tree_selected));
 			connect("multi_selected", callable_mp(this, &EditorDebuggerTree::_scene_tree_selection_changed));
 			connect("nothing_selected", callable_mp(this, &EditorDebuggerTree::_scene_tree_nothing_selected));
 			connect("item_collapsed", callable_mp(this, &EditorDebuggerTree::_scene_tree_folded));
@@ -85,6 +92,27 @@ void EditorDebuggerTree::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("selection_cleared", PropertyInfo(Variant::INT, "debugger")));
 	ADD_SIGNAL(MethodInfo("save_node", PropertyInfo(Variant::INT, "object_id"), PropertyInfo(Variant::STRING, "filename"), PropertyInfo(Variant::INT, "debugger")));
 	ADD_SIGNAL(MethodInfo("open"));
+}
+
+void EditorDebuggerTree::_scene_tree_selected() {
+	TreeItem *item = get_selected();
+	if (!item) {
+		return;
+	}
+
+	if (!inspected_object_ids.is_empty()) {
+		inspected_object_ids.clear();
+		deselect_all();
+		item->select(0);
+	}
+
+	uint64_t id = uint64_t(item->get_metadata(0));
+	inspected_object_ids.append(id);
+
+	if (!notify_selection_queued) {
+		callable_mp(this, &EditorDebuggerTree::_notify_selection_changed).call_deferred();
+		notify_selection_queued = true;
+	}
 }
 
 void EditorDebuggerTree::_scene_tree_selection_changed(TreeItem *p_item, int p_column, bool p_selected) {
@@ -170,20 +198,6 @@ void EditorDebuggerTree::_scene_tree_rmb_selected(const Vector2 &p_position, Mou
 	item_menu->popup();
 }
 
-/// Populates inspect_scene_tree given data in nodes as a flat list, encoded depth first.
-///
-/// Given a nodes array like [R,A,B,C,D,E] the following Tree will be generated, assuming
-/// filter is an empty String, R and A child count are 2, B is 1 and C, D and E are 0.
-///
-/// R
-/// |-A
-/// | |-B
-/// | | |-C
-/// | |
-/// | |-D
-/// |
-/// |-E
-///
 void EditorDebuggerTree::update_scene_tree(const SceneDebuggerTree *p_tree, int p_debugger) {
 	set_hide_root(false);
 

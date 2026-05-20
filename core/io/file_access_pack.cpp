@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_access_pack.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "file_access_pack.h"
 
 #include "core/io/file_access_encrypted.h"

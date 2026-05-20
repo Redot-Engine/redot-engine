@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file config_file.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/file_access.h"
 #include "core/object/ref_counted.h"
 #include "core/templates/hash_map.h"

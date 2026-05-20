@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file hashing_context.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class HashingContext : public RefCounted {

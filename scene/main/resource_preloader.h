@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_preloader.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 
 class ResourcePreloader : public Node {

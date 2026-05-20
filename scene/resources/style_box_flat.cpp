@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file style_box_flat.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "style_box_flat.h"
 
 #include "scene/main/scene_tree.h"

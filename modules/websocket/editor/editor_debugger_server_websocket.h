@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_debugger_server_websocket.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../websocket_peer.h"
 
 #include "core/io/tcp_server.h"

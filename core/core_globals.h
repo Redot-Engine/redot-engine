@@ -32,9 +32,14 @@
 
 #pragma once
 
-// Home for state needed from global functions
-// that cannot be stored in Engine or OS due to e.g. circular includes
+/**
+ * @file core_globals.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
 
+/// Home for state needed from global functions
+/// that cannot be stored in Engine or OS due to e.g. circular includes
 class CoreGlobals {
 public:
 	static inline bool leak_reporting_enabled = true;

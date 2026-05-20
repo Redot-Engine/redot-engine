@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_player_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_player_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -227,7 +233,7 @@ void AnimationPlayerEditor::_autoplay_pressed() {
 	}
 }
 
-void AnimationPlayerEditor::_go_to_nearest_keyframe(bool p_backward) {
+void AnimationPlayerEditor::go_to_nearest_keyframe(bool p_backward) {
 	if (_get_current().is_empty()) {
 		return;
 	}
@@ -963,9 +969,6 @@ void AnimationPlayerEditor::_scale_changed(const String &p_scale) {
 }
 
 void AnimationPlayerEditor::_update_animation() {
-	// the purpose of _update_animation is to reflect the current state
-	// of the animation player in the current editor..
-
 	updating = true;
 
 	if (player->is_playing()) {
@@ -1406,7 +1409,7 @@ void AnimationPlayerEditor::_seek_value_changed(float p_value, bool p_timeline_o
 	if (track_editor->is_snap_timeline_enabled()) {
 		pos = Math::snapped(pos, _get_editor_step());
 	}
-	pos = CLAMP(pos, 0, (double)anim->get_length() - CMP_EPSILON2); // Hack: Avoid fposmod with LOOP_LINEAR.
+	pos = CLAMP(pos, 0, (double)anim->get_length() - CMP_EPSILON2); /// @todo Hack: Avoid fposmod with LOOP_LINEAR.
 
 	if (!p_timeline_only && anim.is_valid() && (!player->is_valid() || !Math::is_equal_approx(pos, player->get_current_animation_position()))) {
 		player->seek_internal(pos, true, true, false);
@@ -1648,10 +1651,10 @@ void AnimationPlayerEditor::shortcut_input(const Ref<InputEvent> &p_ev) {
 			_play_bw_pressed();
 			accept_event();
 		} else if (ED_IS_SHORTCUT("animation_editor/go_to_next_keyframe", p_ev)) {
-			_go_to_nearest_keyframe(false);
+			go_to_nearest_keyframe(false);
 			accept_event();
 		} else if (ED_IS_SHORTCUT("animation_editor/go_to_previous_keyframe", p_ev)) {
-			_go_to_nearest_keyframe(true);
+			go_to_nearest_keyframe(true);
 			accept_event();
 		}
 	}
@@ -1709,7 +1712,6 @@ void AnimationPlayerEditor::_free_onion_layers() {
 }
 
 void AnimationPlayerEditor::_prepare_onion_layers_1() {
-	// This would be called per viewport and we want to act once only.
 	int64_t cur_frame = get_tree()->get_frame();
 	if (cur_frame == onion.last_frame) {
 		return;
@@ -1764,7 +1766,7 @@ void AnimationPlayerEditor::_prepare_onion_layers_2_prolog() {
 			vp[i] = d;
 		}
 		new_state["viewports"] = vp;
-		// TODO: Save/restore only affected entries.
+		/// @todo Save/restore only affected entries.
 		Node3DEditor::get_singleton()->set_state(new_state);
 	} else {
 		// CanvasItemEditor.
@@ -1777,9 +1779,9 @@ void AnimationPlayerEditor::_prepare_onion_layers_2_prolog() {
 		new_state["show_helpers"] = false;
 		new_state["show_zoom_control"] = false;
 		new_state["show_edit_locks"] = false;
-		new_state["grid_visibility"] = 2; // TODO: Expose CanvasItemEditor::GRID_VISIBILITY_HIDE somehow and use it.
+		new_state["grid_visibility"] = 2; /// @todo Expose CanvasItemEditor::GRID_VISIBILITY_HIDE somehow and use it.
 		new_state["show_transformation_gizmos"] = onion.include_gizmos ? new_state["gizmos"] : Variant(false);
-		// TODO: Save/restore only affected entries.
+		/// @todo Save/restore only affected entries.
 		CanvasItemEditor::get_singleton()->set_state(new_state);
 	}
 
@@ -1875,19 +1877,19 @@ void AnimationPlayerEditor::_prepare_onion_layers_2_epilog() {
 	RS::get_singleton()->viewport_attach_to_screen(root_vp, onion.temp.screen_rect, DisplayServer::MAIN_WINDOW_ID);
 	RS::get_singleton()->viewport_set_update_mode(root_vp, RS::VIEWPORT_UPDATE_WHEN_VISIBLE);
 
-	// Restore animation state.
-	// Here we're combine the power of seeking back to the original position and
-	// restoring the values backup. In most cases they will bring the same value back,
-	// but there are cases handled by one that the other can't.
-	// Namely:
-	// - Seeking won't restore any values that may have been modified by the user
-	//   in the node after the last time the AnimationPlayer updated it.
-	// - Restoring the backup won't account for values that are not directly involved
-	//   in the animation but a consequence of them (e.g., SkeletonModification2DLookAt).
-	// FIXME: Since backup of values is based on the reset animation, only values
-	//        backed by a proper reset animation will work correctly with onion
-	//        skinning and the possibility to restore the values mentioned in the
-	//        first point above is gone. Still good enough.
+	/// Restore animation state.
+	/// Here we're combine the power of seeking back to the original position and
+	/// restoring the values backup. In most cases they will bring the same value back,
+	/// but there are cases handled by one that the other can't.
+	/// Namely:
+	/// - Seeking won't restore any values that may have been modified by the user
+	///   in the node after the last time the AnimationPlayer updated it.
+	/// - Restoring the backup won't account for values that are not directly involved
+	///   in the animation but a consequence of them (e.g., SkeletonModification2DLookAt).
+	/// @todo FIXME: Since backup of values is based on the reset animation, only values
+	///        backed by a proper reset animation will work correctly with onion
+	///        skinning and the possibility to restore the values mentioned in the
+	///        first point above is gone. Still good enough.
 	player->seek_internal(onion.temp.anim_player_position, true, true, false);
 	player->restore(onion.temp.anim_values_backup);
 
@@ -2279,8 +2281,6 @@ void fragment() {
 	ED_SHORTCUT("animation_editor/play_animation_backwards", TTRC("Play Animation Backwards"), Key::A);
 	ED_SHORTCUT("animation_editor/play_animation_from_start", TTRC("Play Animation from Start"), KeyModifierMask::SHIFT + Key::D);
 	ED_SHORTCUT("animation_editor/play_animation_from_end", TTRC("Play Animation Backwards from End"), KeyModifierMask::SHIFT + Key::A);
-	ED_SHORTCUT("animation_editor/go_to_next_keyframe", TTRC("Go to Next Keyframe"), KeyModifierMask::SHIFT + KeyModifierMask::ALT + Key::D);
-	ED_SHORTCUT("animation_editor/go_to_previous_keyframe", TTRC("Go to Previous Keyframe"), KeyModifierMask::SHIFT + KeyModifierMask::ALT + Key::A);
 }
 
 AnimationPlayerEditor::~AnimationPlayerEditor() {
@@ -2404,6 +2404,13 @@ void AnimationPlayerEditorPlugin::_update_dummy_player(AnimationMixer *p_mixer) 
 		}
 	}
 	memdelete(default_node);
+
+	// Library list is dynamically added to property list, should be copied explicitly.
+	List<StringName> libraries;
+	p_mixer->get_animation_library_list(&libraries);
+	for (const StringName &K : libraries) {
+		dummy_player->add_animation_library(K, p_mixer->get_animation_library(K));
+	}
 
 	if (anim_editor) {
 		anim_editor->_update_player();

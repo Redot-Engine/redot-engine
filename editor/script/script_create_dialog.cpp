@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_create_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_create_dialog.h"
 
 #include "core/config/project_settings.h"
@@ -126,7 +132,7 @@ void ScriptCreateDialog::_notification(int p_what) {
 			} else {
 				language_menu->select(default_language);
 			}
-			is_using_templates = EDITOR_DEF("_script_setup_use_script_templates", false);
+			is_using_templates = EDITOR_GET("_script_setup_use_script_templates");
 			use_templates->set_pressed(is_using_templates);
 		} break;
 
@@ -851,6 +857,7 @@ void ScriptCreateDialog::_bind_methods() {
 ScriptCreateDialog::ScriptCreateDialog() {
 	if (EditorSettings::get_singleton()) {
 		EDITOR_DEF("_script_setup_templates_dictionary", Dictionary());
+		EDITOR_DEF("_script_setup_use_script_templates", true);
 	}
 
 	/* Main Controls */

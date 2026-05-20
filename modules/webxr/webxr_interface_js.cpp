@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file webxr_interface_js.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webxr_interface_js.h"
 
 #ifdef WEB_ENABLED
@@ -392,7 +398,7 @@ void WebXRInterfaceJS::uninitialize() {
 Dictionary WebXRInterfaceJS::get_system_info() {
 	Dictionary dict;
 
-	// TODO get actual information from WebXR to return here
+	/// @todo Get actual information from WebXR to return here
 	dict[SNAME("XRRuntimeName")] = String("WebXR");
 	dict[SNAME("XRRuntimeVersion")] = String("");
 

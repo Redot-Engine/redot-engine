@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file vector4i.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/math_funcs.h"
 
@@ -168,7 +174,8 @@ Vector4i Vector4i::sign() const {
 	return Vector4i(SIGN(x), SIGN(y), SIGN(z), SIGN(w));
 }
 
-/* Operators */
+/// @name Operators
+/// @{
 
 constexpr Vector4i &Vector4i::operator+=(const Vector4i &p_v) {
 	x += p_v.x;
@@ -241,8 +248,9 @@ constexpr Vector4i &Vector4i::operator*=(int32_t p_scalar) {
 constexpr Vector4i Vector4i::operator*(int32_t p_scalar) const {
 	return Vector4i(x * p_scalar, y * p_scalar, z * p_scalar, w * p_scalar);
 }
-
-// Multiplication operators required to workaround issues with LLVM using implicit conversion.
+/// @}
+/// @name Multiplication operators required to workaround issues with LLVM using implicit conversion.
+/// @{
 
 constexpr Vector4i operator*(int32_t p_scalar, const Vector4i &p_vector) {
 	return p_vector * p_scalar;
@@ -259,6 +267,7 @@ constexpr Vector4i operator*(float p_scalar, const Vector4i &p_vector) {
 constexpr Vector4i operator*(double p_scalar, const Vector4i &p_vector) {
 	return p_vector * p_scalar;
 }
+/// @}
 
 constexpr Vector4i &Vector4i::operator/=(int32_t p_scalar) {
 	x /= p_scalar;

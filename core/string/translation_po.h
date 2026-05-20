@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file translation_po.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 //#define DEBUG_TRANSLATION_PO
 
 #include "core/math/expression.h"
@@ -40,17 +46,17 @@
 class TranslationPO : public Translation {
 	GDCLASS(TranslationPO, Translation);
 
-	// TLDR: Maps context to a list of source strings and translated strings. In PO terms, maps msgctxt to a list of msgid and msgstr.
-	// The first key corresponds to context, and the second key (of the contained HashMap) corresponds to source string.
-	// The value Vector<StringName> in the second map stores the translated strings. Index 0, 1, 2 matches msgstr[0], msgstr[1], msgstr[2]... in the case of plurals.
-	// Otherwise index 0 matches to msgstr in a singular translation.
-	// Strings without context have "" as first key.
+	/// TLDR: Maps context to a list of source strings and translated strings. In PO terms, maps msgctxt to a list of msgid and msgstr.
+	/// The first key corresponds to context, and the second key (of the contained HashMap) corresponds to source string.
+	/// The value Vector<StringName> in the second map stores the translated strings. Index 0, 1, 2 matches msgstr[0], msgstr[1], msgstr[2]... in the case of plurals.
+	/// Otherwise index 0 matches to msgstr in a singular translation.
+	/// Strings without context have "" as first key.
 	HashMap<StringName, HashMap<StringName, Vector<StringName>>> translation_map;
 
-	int plural_forms = 0; // 0 means no "Plural-Forms" is given in the PO header file. The min for all languages is 1.
+	int plural_forms = 0; ///< 0 means no "Plural-Forms" is given in the PO header file. The min for all languages is 1.
 	String plural_rule;
 
-	// Cache temporary variables related to _get_plural_index() to make it faster
+	/// Cache temporary variables related to _get_plural_index() to make it faster
 	class EQNode : public RefCounted {
 	public:
 		String regex;
@@ -67,21 +73,27 @@ class TranslationPO : public Translation {
 	mutable Array input_val;
 	mutable StringName last_plural_key;
 	mutable StringName last_plural_context;
-	mutable int last_plural_n = -1; // Set it to an impossible value at the beginning.
+	mutable int last_plural_n = -1; ///< Set it to an impossible value at the beginning.
 	mutable int last_plural_mapped_index = 0;
 
+	/// Some examples of p_plural_rule passed in can have the form:
+	/// "n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5" (Arabic)
+	/// "n >= 2" (French) // When evaluating the last, especially careful with this one.
+	/// "n != 1" (English)
 	void _cache_plural_tests(const String &p_plural_rule, Ref<EQNode> &p_node);
-	int _get_plural_index(int p_n) const;
+	int _get_plural_index(int p_n) const; ///< Get a number between [0;number of plural forms).
 
-	Vector<String> _get_message_list() const override;
-	Dictionary _get_messages() const override;
-	void _set_messages(const Dictionary &p_messages) override;
+	Vector<String> _get_message_list() const override; ///< @return All keys in translation_map.
+	Dictionary _get_messages() const override; ///< @return translation_map as a Dictionary.
+	void _set_messages(const Dictionary &p_messages) override; ///< Construct translation_map from a Dictionary.
 
 protected:
 	static void _bind_methods();
 
 public:
 	Vector<String> get_translated_message_list() const override;
+	/// OptimizedTranslation uses this function to get the list of msgid.
+	/// Return all the keys of translation_map under "" context.
 	void get_message_list(List<StringName> *r_messages) const override;
 	int get_message_count() const override;
 	void add_message(const StringName &p_src_text, const StringName &p_xlated_text, const StringName &p_context = "") override;
@@ -90,6 +102,8 @@ public:
 	StringName get_plural_message(const StringName &p_src_text, const StringName &p_plural_text, int p_n, const StringName &p_context = "") const override;
 	void erase_message(const StringName &p_src_text, const StringName &p_context = "") override;
 
+	/// Set plural_forms and plural_rule.
+	/// p_plural_rule passed in has the form "Plural-Forms: nplurals=2; plural=(n >= 2);".
 	void set_plural_rule(const String &p_plural_rule);
 	int get_plural_forms() const;
 	String get_plural_rule() const;

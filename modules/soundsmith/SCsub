@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+from misc.utility.scons_hints import *
+
+Import("env")
+
+soundsmith_env = env.Clone()
+
+soundsmith_env.Append(
+    CPPPATH=[
+        "#thirdparty",
+        "#thirdparty/minimp3",
+    ]
+)
+
+cxx = env.subst("$CXX")
+is_clang = "clang" in cxx
+is_gcc = ("gcc" in cxx or "g++" in cxx) and not is_clang
+is_msvc = ("cl" in cxx) and not is_clang
+
+if is_gcc:
+    soundsmith_env.Append(CCFLAGS=["-Wno-class-memaccess"])
+    soundsmith_env.Append(CCFLAGS=["-Wno-shadow"])
+
+# silence "hides previous declaration/member" warnings
+if is_msvc:
+    soundsmith_env.Append(
+        CCFLAGS=[
+            "/wd4456",  # hides previous local declaration
+            "/wd4458",  # hides class member
+        ]
+    )
+
+module_sources = [
+    "register_types.cpp",
+    "soundsmith_module.cpp",
+]
+
+soundsmith_env.add_source_files(env.modules_sources, module_sources)

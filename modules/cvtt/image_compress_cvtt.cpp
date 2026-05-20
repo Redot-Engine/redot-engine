@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_compress_cvtt.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_compress_cvtt.h"
 
 #include "core/object/worker_thread_pool.h"

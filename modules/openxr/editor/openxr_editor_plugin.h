@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_action_map_editor.h"
 #include "openxr_binding_modifier_editor.h"
 #include "openxr_select_runtime.h"

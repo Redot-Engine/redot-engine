@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_rd.h"
 
 ////////////////////////////////////////////////////////////////////////////

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_broad_phase_layer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "Jolt/Jolt.h"
 
 #include "Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h"

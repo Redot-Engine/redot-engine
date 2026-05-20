@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_help_search.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_help_search.h"
 
 #include "editor/editor_main_screen.h"
@@ -1294,7 +1300,6 @@ TreeItem *EditorHelpSearch::Runner::_create_member_item(TreeItem *p_parent, cons
 }
 
 bool EditorHelpSearch::Runner::work(uint64_t slot) {
-	// Return true when the search has been completed, otherwise false.
 	const uint64_t until = OS::get_singleton()->get_ticks_usec() + slot;
 	if (term.length() > 1 || term == "@") {
 		while (!_slice()) {

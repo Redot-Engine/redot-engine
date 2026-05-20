@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file abstract_polygon_2d_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "abstract_polygon_2d_editor.h"
 
 #include "core/math/geometry_2d.h"
@@ -695,7 +701,7 @@ void AbstractPolygon2DEditor::forward_canvas_draw_over_viewport(Control *p_overl
 		}
 
 		if (!wip_active && j == edited_point.polygon && EDITOR_GET("editors/polygon_editor/show_previous_outline")) {
-			const Color col = Color(0.5, 0.5, 0.5); // FIXME polygon->get_outline_color();
+			const Color col = Color(0.5, 0.5, 0.5); /// @todo FIXME polygon->get_outline_color();
 			const int n = pre_move_edit.size();
 			for (int i = 0; i < n - (is_closed ? 0 : 1); i++) {
 				Vector2 p, p2;

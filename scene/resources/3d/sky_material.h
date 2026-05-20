@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sky_material.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/rid.h"
 #include "scene/resources/material.h"
 

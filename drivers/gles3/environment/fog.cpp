@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "fog.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file retarget_modifier_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/skeleton_modifier_3d.h"
 #include "scene/resources/skeleton_profile.h"
 

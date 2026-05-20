@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file environment.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "environment.h"
 
 #include "core/config/project_settings.h"
@@ -169,9 +175,8 @@ float Environment::get_ambient_light_energy() const {
 	return ambient_energy;
 }
 
+// @note Sky contribution values outside the [0.0; 1.0] range don't make sense and can result in negative colors.
 void Environment::set_ambient_light_sky_contribution(float p_ratio) {
-	// Sky contribution values outside the [0.0; 1.0] range don't make sense and
-	// can result in negative colors.
 	ambient_sky_contribution = CLAMP(p_ratio, 0.0, 1.0);
 	_update_ambient_light();
 }
@@ -1122,7 +1127,7 @@ void Environment::_validate_property(PropertyInfo &p_property) const {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 
-	if (p_property.name == "glow_intensity" && glow_blend_mode == GLOW_BLEND_MODE_MIX) {
+	if (p_property.name == "glow_intensity" && glow_blend_mode == GLOW_BLEND_MODE_MIX && OS::get_singleton()->get_current_rendering_method() != "gl_compatibility") {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 
@@ -1161,7 +1166,7 @@ void Environment::_validate_property(PropertyInfo &p_property) const {
 }
 
 #ifndef DISABLE_DEPRECATED
-// Kept for compatibility from 3.x to 4.0.
+
 bool Environment::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "background_sky") {
 		set_sky(p_value);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_workspace.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_workspace.h"
 
 #include "../gdscript.h"
@@ -189,8 +195,6 @@ const LSP::DocumentSymbol *GDScriptWorkspace::get_parameter_symbol(const LSP::Do
 }
 
 const LSP::DocumentSymbol *GDScriptWorkspace::get_local_symbol_at(const ExtendGDScriptParser *p_parser, const String &p_symbol_identifier, const LSP::Position p_position) {
-	// Go down and pick closest `DocumentSymbol` with `p_symbol_identifier`.
-
 	const LSP::DocumentSymbol *current = &p_parser->get_symbols();
 	const LSP::DocumentSymbol *best_match = nullptr;
 
@@ -591,7 +595,7 @@ String GDScriptWorkspace::get_file_path(const String &p_uri) {
 	// Don't use the returned error, the result isn't OK for URIs that are not valid web URLs.
 	p_uri.parse_url(scheme, host, port, encoded_path, fragment);
 
-	// TODO: Make the parsing RFC-3986 compliant.
+	/// @todo Make the parsing RFC-3986 compliant.
 	ERR_FAIL_COND_V_MSG(scheme != "file" && scheme != "file:" && scheme != "file://", String(), "LSP: The language server only supports the file protocol: " + p_uri);
 
 	// Treat host like authority for now and ignore the port. It's an edge case for invalid file URI's anyway.

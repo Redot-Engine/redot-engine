@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vehicle_body_3d_gizmo_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "vehicle_body_3d_gizmo_plugin.h"
 
 #include "scene/3d/physics/vehicle_body_3d.h"

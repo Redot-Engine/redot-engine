@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file vset.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
 

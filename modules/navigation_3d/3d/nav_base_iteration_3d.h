@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_base_iteration_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../nav_utils_3d.h"
 
 #include "core/object/ref_counted.h"

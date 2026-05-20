@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tcp_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tcp_server.h"
 
 void TCPServer::_bind_methods() {

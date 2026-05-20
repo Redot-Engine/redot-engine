@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_blend_tree.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_blend_tree.h"
 
 #include "scene/resources/animation.h"
@@ -158,9 +164,10 @@ AnimationNode::NodeTimeInfo AnimationNodeAnimation::_process(const AnimationMixe
 	// 1. Progress for AnimationNode.
 	bool will_end = Animation::is_greater_or_equal_approx(cur_time + cur_delta, cur_len);
 	bool is_started = p_seek && !p_is_external_seeking && Math::is_zero_approx(cur_time);
+	bool immediately_after_start = is_started && advance_on_start;
 
 	// 1. Progress for AnimationNode.
-	if (is_started && advance_on_start) {
+	if (immediately_after_start) {
 		cur_time = cur_delta;
 	}
 	if (cur_loop_mode != Animation::LOOP_NONE) {
@@ -267,22 +274,40 @@ AnimationNode::NodeTimeInfo AnimationNodeAnimation::_process(const AnimationMixe
 	}
 
 	if (!p_test_only) {
+		// Force process first key for Discrete/Method/Audio/AnimationPlayback.
+		if (immediately_after_start) {
+			AnimationMixer::PlaybackInfo pi = p_playback_info;
+			pi.start = 0.0;
+			pi.end = cur_len;
+			if (play_mode == PLAY_MODE_FORWARD) {
+				pi.time = 0;
+			} else {
+				pi.time = anim_size;
+			}
+			pi.delta = 0;
+			pi.weight = CMP_EPSILON;
+			blend_animation(animation, pi);
+		}
+
 		AnimationMixer::PlaybackInfo pi = p_playback_info;
 		pi.start = 0.0;
 		pi.end = cur_len;
 		if (play_mode == PLAY_MODE_FORWARD) {
 			pi.time = cur_playback_time;
-			pi.delta = cur_delta;
 		} else {
 			pi.time = anim_size - cur_playback_time;
+		}
+		if (node_backward ? cur_backward : !cur_backward) {
+			pi.delta = cur_delta;
+		} else {
 			pi.delta = -cur_delta;
 		}
 		pi.weight = 1.0;
 		pi.looped_flag = looped_flag;
 		blend_animation(animation, pi);
-	}
 
-	set_parameter(backward, cur_backward);
+		set_parameter(backward, cur_backward);
+	}
 
 	return nti;
 }
@@ -549,7 +574,6 @@ AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(const AnimationMixer:
 	set_parameter(request, ONE_SHOT_REQUEST_NONE);
 
 	bool is_shooting = true;
-	bool clear_remaining_fade = false;
 	bool is_fading_out = cur_active == true && cur_internal_active == false;
 
 	double p_time = p_playback_info.time;
@@ -558,15 +582,25 @@ AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(const AnimationMixer:
 	bool p_seek = p_playback_info.seeked;
 	bool p_is_external_seeking = p_playback_info.is_external_seeking;
 
-	if (Math::is_zero_approx(p_time) && p_seek && !p_is_external_seeking) {
-		clear_remaining_fade = true; // Reset occurs.
+	bool do_start = cur_request == ONE_SHOT_REQUEST_FIRE;
+
+	bool is_reset = Math::is_zero_approx(p_time) && p_seek && !p_is_external_seeking;
+	if (is_reset && cur_internal_active) {
+		do_start = true;
 	}
 
-	bool do_start = cur_request == ONE_SHOT_REQUEST_FIRE;
-	if (cur_request == ONE_SHOT_REQUEST_ABORT) {
+	bool is_abort = cur_request == ONE_SHOT_REQUEST_ABORT;
+	if (is_reset && is_fading_out) {
+		is_abort = true;
+	}
+
+	if (is_abort) {
 		set_parameter(internal_active, false);
 		set_parameter(active, false);
 		set_parameter(time_to_restart, -1);
+		set_parameter(fade_out_remaining, 0);
+		cur_fade_out_remaining = 0;
+		is_fading_out = false;
 		is_shooting = false;
 	} else if (cur_request == ONE_SHOT_REQUEST_FADE_OUT && !is_fading_out) { // If fading, keep current fade.
 		if (cur_active) {
@@ -594,17 +628,6 @@ AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(const AnimationMixer:
 	}
 
 	bool os_seek = p_seek;
-
-	if (clear_remaining_fade) {
-		os_seek = false;
-		cur_fade_out_remaining = 0;
-		set_parameter(fade_out_remaining, 0);
-		if (is_fading_out) {
-			is_fading_out = false;
-			set_parameter(internal_active, false);
-			set_parameter(active, false);
-		}
-	}
 
 	if (!is_shooting) {
 		AnimationMixer::PlaybackInfo pi = p_playback_info;
@@ -673,8 +696,8 @@ AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(const AnimationMixer:
 	NodeTimeInfo os_nti = blend_input(1, pi, FILTER_PASS, true, p_test_only); // Blend values must be more than CMP_EPSILON to process discrete keys in edge.
 
 	if (Animation::is_less_or_equal_approx(cur_fade_in_remaining, 0) && !do_start && !is_fading_out) {
-		// Predict time scale by difference of delta times to estimate input animation's remain time in self time scale.
-		// TODO: Time scale should be included into NodeTimeInfo for Godot 5.0.
+		/// Predict time scale by difference of delta times to estimate input animation's remain time in self time scale.
+		/// @todo Time scale should be included into NodeTimeInfo for Godot 5.0.
 		double abs_os_delta = Math::abs(os_nti.delta);
 		double tscl = Math::is_zero_approx(abs_delta) || Math::is_zero_approx(abs_os_delta) || Math::is_equal_approx(abs_delta, abs_os_delta) ? 1.0 : (abs_delta / abs_os_delta);
 		double os_rem = os_nti.get_remain(break_loop_at_end) * tscl;
@@ -877,7 +900,7 @@ AnimationNode::NodeTimeInfo AnimationNodeBlend2::_process(const AnimationMixer::
 	pi.weight = amount;
 	NodeTimeInfo nti1 = blend_input(1, pi, FILTER_PASS, sync, p_test_only);
 
-	return amount > 0.5 ? nti1 : nti0; // Hacky but good enough.
+	return amount > 0.5 ? nti1 : nti0; ///< @todo Hacky but good enough.
 }
 
 bool AnimationNodeBlend2::has_filter() const {
@@ -920,7 +943,7 @@ AnimationNode::NodeTimeInfo AnimationNodeBlend3::_process(const AnimationMixer::
 	pi.weight = MAX(0, amount);
 	NodeTimeInfo nti2 = blend_input(2, pi, FILTER_IGNORE, sync, p_test_only);
 
-	return amount > 0.5 ? nti2 : (amount < -0.5 ? nti0 : nti1); // Hacky but good enough.
+	return amount > 0.5 ? nti2 : (amount < -0.5 ? nti0 : nti1); ///< @todo Hacky but good enough.
 }
 
 AnimationNodeBlend3::AnimationNodeBlend3() {

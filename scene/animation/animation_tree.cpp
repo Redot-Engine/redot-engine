@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_tree.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_tree.h"
 #include "animation_tree.compat.inc"
 
@@ -901,14 +907,21 @@ void AnimationTree::_setup_animation_player() {
 	clear_caches();
 }
 
-void AnimationTree::_validate_property(PropertyInfo &p_property) const {
+uint32_t AnimationTree::_get_libraries_property_usage() const {
 	if (!animation_player.is_empty()) {
-		if (Engine::get_singleton()->is_editor_hint() && (p_property.name == "root_node" || p_property.name.begins_with("libraries"))) {
-			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
-		}
+		return PROPERTY_USAGE_READ_ONLY;
+	}
+	return PROPERTY_USAGE_STORAGE;
+}
 
-		if (p_property.name.begins_with("libraries")) {
-			p_property.usage &= ~PROPERTY_USAGE_STORAGE;
+void AnimationTree::_validate_property(PropertyInfo &p_property) const {
+	if (!Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
+
+	if (!animation_player.is_empty()) {
+		if (p_property.name == "root_node") {
+			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
 		}
 	}
 }
