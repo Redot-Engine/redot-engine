@@ -521,6 +521,9 @@ public:
 	void set_focus_on_line_edit();
 	void set_focus_on_picker_shape();
 
+	void set_intensity(float intensity);
+	float get_intensity();
+
 	ColorPicker();
 	~ColorPicker();
 };
