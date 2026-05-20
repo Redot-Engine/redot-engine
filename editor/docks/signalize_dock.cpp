@@ -33,6 +33,7 @@
 #include "signalize_dock.h"
 
 #include "core/debugger/engine_debugger.h"
+#include "core/io/file_access.h"
 #include "core/input/input_event.h"
 #include "core/object/class_db.h"
 #include "core/object/script_instance.h"
@@ -98,11 +99,12 @@ SignalizeDock::SignalizeDock() {
 	search_box->connect("text_changed", callable_mp(this, &SignalizeDock::_on_search_changed));
 	top_bar->add_child(search_box);
 
-	refresh_button = memnew(Button);
-	refresh_button->set_text("Build Graph");
-	refresh_button->set_tooltip_text("Rebuild the signal graph from the edited scene");
-	refresh_button->connect("pressed", callable_mp(this, &SignalizeDock::_on_refresh_pressed));
-	top_bar->add_child(refresh_button);
+	// TODO: Temporarily disabled - Build Graph functionality needs refinement
+	// refresh_button = memnew(Button);
+	// refresh_button->set_text("Build Graph");
+	// refresh_button->set_tooltip_text("Rebuild the signal graph from the edited scene");
+	// refresh_button->connect("pressed", callable_mp(this, &SignalizeDock::_on_refresh_pressed));
+	// top_bar->add_child(refresh_button);
 
 	// Per-node inspection: Add button to inspect selected remote node
 	Button *inspect_button = memnew(Button);
@@ -372,6 +374,19 @@ void SignalizeDock::_on_verbosity_changed(int p_level) {
 		editor_settings->set("signalize/verbosity_level", verbosity_level);
 		editor_settings->save();
 	}
+
+	// If runtime tracking is active, send the updated verbosity to the game
+	if (tracking_runtime_scene) {
+		EditorDebuggerNode *debugger_node = EditorDebuggerNode::get_singleton();
+		if (debugger_node) {
+			ScriptEditorDebugger *debugger = debugger_node->get_current_debugger();
+			if (debugger) {
+				Array args;
+				args.append(verbosity_level);
+				debugger->send_message("scene:signal_viewer:set_verbosity", args);
+			}
+		}
+	}
 }
 
 void SignalizeDock::_on_open_function_button_pressed(ObjectID p_node_id, const String &p_method_name) {
@@ -500,37 +515,61 @@ void SignalizeDock::_build_graph() {
 
 	// Now collect all emitters AND their receivers
 	HashMap<ObjectID, bool> final_nodes;
+	int total_connections_checked = 0;
+	int total_signals_checked = 0;
+
 	for (Node *node : all_nodes) {
 		List<MethodInfo> signals;
 		node->get_signal_list(&signals);
+		total_signals_checked += signals.size();
 
 		for (const MethodInfo &sig : signals) {
 			List<Object::Connection> conns;
 			node->get_signal_connection_list(StringName(sig.name), &conns);
+			total_connections_checked += conns.size();
+
+			if (should_log(2) && conns.size() > 0) {
+				print_line(vformat("[Signalize] Node '%s' has signal '%s' with %d connections",
+						node->get_name(), sig.name, conns.size()));
+			}
 
 			for (const Object::Connection &conn : conns) {
 				Object *target = conn.callable.get_object();
 				if (target) {
 					Node *target_node = Object::cast_to<Node>(target);
-					if (target_node && target_node != node && node_lookup.has(target_node->get_instance_id())) {
-						// Filter out internal engine connections that aren't user-created
+					// Check if target is in our scene (either same node or different node in scene)
+					if (target_node && (target_node == node || node_lookup.has(target_node->get_instance_id()))) {
 						String method_name = conn.callable.get_method();
+						String node_class = node->get_class();
+						String target_class = target_node->get_class();
 
-						// Check if target has a script with this method
-						bool has_script_method = false;
-						ScriptInstance *script_inst = target_node->get_script_instance();
-						if (script_inst) {
-							// Check if this method exists in the script
-							has_script_method = script_inst->has_method(StringName(method_name));
+						// Filter out only the most obvious internal engine connections
+						bool is_internal = false;
+
+						// Only filter connections TO specific internal node types (unless it's a self-connection)
+						if (target_node != node &&
+							(target_class.contains("PhysicalBoneSimulator3D") ||
+							 target_class.contains("BoneAttachment3D"))) {
+							is_internal = true;
 						}
 
-						// Only include if it's a real user connection (to a script method)
-						if (!has_script_method) {
-							// This is an internal engine connection, skip it
+						if (is_internal) {
+							// Skip internal engine connections entirely
+							if (should_log(3)) {
+								print_line(vformat("[Signalize]   Skipping internal connection: %s.%s -> %s.%s",
+										node->get_name(), sig.name,
+										target_node->get_name(), method_name));
+							}
 							continue;
 						}
 
-						// This is a valid user-created connection within the scene
+						// This is a user-created connection
+						if (should_log(2)) {
+							print_line(vformat("[Signalize]   Found connection: %s.%s -> %s.%s",
+									node->get_name(), sig.name,
+									target_node->get_name(), method_name));
+						}
+
 						ObjectID emitter_id = node->get_instance_id();
 						ObjectID receiver_id = target_node->get_instance_id();
 
@@ -541,6 +580,16 @@ void SignalizeDock::_build_graph() {
 				}
 			}
 		}
+	}
+
+	// Second pass: find script-based connections that haven't been established yet
+	// These are connections defined in scripts using connect() calls
+	// that only exist when the game is running
+	if (should_log(1)) {
+		print_line("[Signalize] Scanning scripts for connect() calls...");
+	}
+	for (Node *node : all_nodes) {
+		_find_script_connections(node, node_lookup, final_nodes);
 	}
 
 	// Convert set to list
@@ -587,6 +636,179 @@ void SignalizeDock::_collect_all_nodes(Node *p_node, List<Node *> &r_list) {
 		if (child) {
 			_collect_all_nodes(child, r_list);
 		}
+	}
+}
+
+void SignalizeDock::_find_script_connections(Node *p_node, const HashMap<ObjectID, Node *> &p_node_lookup, HashMap<ObjectID, bool> &r_final_nodes) {
+	if (!p_node) {
+		return;
+	}
+
+	// Get the script attached to this node
+	Ref<Script> node_script = p_node->get_script();
+	if (!node_script.is_valid()) {
+		if (should_log(3)) {
+			print_line(vformat("[Signalize] Node '%s' has no script", p_node->get_name()));
+		}
+		return; // No script, no script-based connections
+	}
+
+	// Get the script source code
+	String script_path = node_script->get_path();
+	if (script_path.is_empty()) {
+		if (should_log(3)) {
+			print_line(vformat("[Signalize] Node '%s' script has no path (built-in?)", p_node->get_name()));
+		}
+		return; // Built-in script or no path
+	}
+
+	if (should_log(2)) {
+		print_line(vformat("[Signalize] Checking script for node '%s': %s", p_node->get_name(), script_path));
+	}
+
+	// Read the script file
+	Error err;
+	Ref<FileAccess> file = FileAccess::open(script_path, FileAccess::READ, &err);
+	if (file.is_null()) {
+		if (should_log(2)) {
+			print_line(vformat("[Signalize] Could not read script: %s (error: %d)", script_path, err));
+		}
+		return;
+	}
+
+	String source = file->get_as_text();
+	file->close();
+
+	if (should_log(2)) {
+		print_line(vformat("[Signalize] Script has %d characters, scanning for connect()...", source.length()));
+	}
+
+	// Find all connect() calls in the script
+	// Look for patterns like:
+	// - signal_name.connect(node_path, "method_name")
+	// - signal_name.connect(Callable(node_path, "method_name"))
+	// - node_reference.signal.connect(self, "method")
+
+	Vector<String> lines = source.split("\n");
+	int connect_calls_found = 0;
+
+	for (const String &line : lines) {
+		String trimmed = line.strip_edges();
+
+		// Skip comments
+		if (trimmed.begins_with("#")) {
+			continue;
+		}
+
+		// Look for connect() calls
+		int connect_pos = trimmed.find(".connect(");
+		if (connect_pos == -1) {
+			continue;
+		}
+
+		connect_calls_found++;
+		if (should_log(2)) {
+			print_line(vformat("[Signalize] Found connect() call line %d: %s", connect_calls_found, trimmed));
+		}
+
+		// Try to extract the signal name and target
+		// Extract what's between .connect( and the matching )
+		int paren_start = trimmed.find("(", connect_pos);
+		if (paren_start == -1) {
+			continue;
+		}
+
+		// Find the matching closing paren
+		int depth = 0;
+		int paren_end = -1;
+		for (int i = paren_start; i < trimmed.length(); i++) {
+			if (trimmed[i] == '(') {
+				depth++;
+			} else if (trimmed[i] == ')') {
+				depth--;
+				if (depth == 0) {
+					paren_end = i;
+					break;
+				}
+			}
+		}
+
+		if (paren_end == -1) {
+			if (should_log(3)) {
+				print_line(vformat("[Signalize] Could not find matching closing paren"));
+			}
+			continue;
+		}
+
+		// Extract the arguments string
+		String args = trimmed.substr(paren_start + 1, paren_end - paren_start - 1);
+
+		if (should_log(3)) {
+			print_line(vformat("[Signalize] Connect() args: %s", args));
+		}
+
+		// Now look for potential targets in the arguments
+		// Common patterns:
+		// - self (connects to the same node)
+		// - $NodePath (absolute or relative path)
+		// - %NodePath (unique node path)
+		// - variable names (we can't resolve these statically)
+
+		// Check for "self" first
+		if (args.contains("self") || args.contains("\"self\"")) {
+			// Connection to self - both emitter and receiver are the same node
+			ObjectID emitter_id = p_node->get_instance_id();
+			r_final_nodes[emitter_id] = true;
+
+			if (should_log(2)) {
+				print_line(vformat("[Signalize] Found self-connection in script for node '%s'", p_node->get_name()));
+			}
+		}
+
+		// Look for node paths in quotes
+		Vector<String> quoted_strings;
+		int quote_start = -1;
+		for (int i = 0; i < args.length(); i++) {
+			if ((args[i] == '"' || args[i] == '\'') && quote_start == -1) {
+				quote_start = i;
+			} else if ((args[i] == '"' || args[i] == '\'') && quote_start != -1) {
+				String quoted = args.substr(quote_start, i - quote_start + 1);
+				quoted_strings.append(quoted);
+				quote_start = -1;
+			}
+		}
+
+		for (const String &quoted : quoted_strings) {
+			// Remove quotes
+			String unquoted = quoted.substr(1, quoted.length() - 2);
+
+			if (should_log(3)) {
+				print_line(vformat("[Signalize] Checking quoted string: %s", unquoted));
+			}
+
+			// Check if it's a node path
+			if (unquoted.begins_with("$") || unquoted.begins_with("%") || unquoted.contains("/")) {
+				NodePath node_path(unquoted);
+				Node *target = p_node->get_node(node_path);
+
+				if (target && p_node_lookup.has(target->get_instance_id())) {
+					ObjectID emitter_id = p_node->get_instance_id();
+					ObjectID receiver_id = target->get_instance_id();
+
+					r_final_nodes[emitter_id] = true;
+					r_final_nodes[receiver_id] = true;
+
+					if (should_log(2)) {
+						print_line(vformat("[Signalize] Found script connection: %s -> %s",
+								p_node->get_name(), target->get_name()));
+					}
+				}
+			}
+		}
+	}
+
+	if (should_log(2) && connect_calls_found == 0) {
+		print_line(vformat("[Signalize] No connect() calls found in script for '%s'", p_node->get_name()));
 	}
 }
 
@@ -2211,6 +2433,7 @@ void SignalizeDock::_on_game_start_check_timer_timeout() {
 			// Send the start_tracking message via ScriptEditorDebugger
 			// NOTE: Must use "scene:" prefix because SceneDebugger captures that prefix
 			Array args;
+			args.append(verbosity_level); // Pass verbosity level to runtime
 			debugger->send_message("scene:signal_viewer:start_tracking", args);
 
 			// Stop the timer - we've successfully sent the message

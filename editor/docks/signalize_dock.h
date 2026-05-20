@@ -125,6 +125,7 @@ private:
 
 	void _build_graph();
 	void _collect_all_nodes(Node *p_node, List<Node *> &r_list);
+	void _find_script_connections(Node *p_node, const HashMap<ObjectID, Node *> &p_node_lookup, HashMap<ObjectID, bool> &r_final_nodes);
 	bool _node_has_connections(Node *p_node);
 	void _create_graph_node(Node *p_node, int p_depth, int p_index);
 	Color _get_editor_node_icon_color(Node *p_node); // Get actual icon color from editor

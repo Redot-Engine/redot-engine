@@ -135,6 +135,7 @@ private:
 	// Signal Viewer: Track signal emissions during gameplay
 	static Error _msg_signal_viewer_start_tracking(const Array &p_args);
 	static Error _msg_signal_viewer_stop_tracking(const Array &p_args);
+	static Error _msg_signal_viewer_set_verbosity(const Array &p_args);
 	static Error _msg_signal_viewer_request_node_data(const Array &p_args);
 	static Error _msg_signal_viewer_request_node_data_by_path(const Array &p_args);
 
