@@ -161,6 +161,7 @@ gmon.out
 # Jetbrains IDEs
 .idea/
 .fleet/
+.junie/
 
 # Kate
 *.kate-swp
