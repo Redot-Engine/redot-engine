@@ -98,7 +98,7 @@
 		</constructor>
 	</constructors>
 	<methods>
-		<method name="apply_intensity">
+		<method name="apply_intensity" qualifiers="const">
 			<return type="Color" />
 			<param index="0" name="intensity" type="float" />
 			<description>
