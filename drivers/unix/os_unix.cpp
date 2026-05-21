@@ -1254,35 +1254,34 @@ String OS_Unix::get_executable_path() const {
 						}
 					}
 				}
-				if (path.empty() && !retried) {
-					retried = true;
-					penv = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11R6/bin:/usr/local/bin:/usr/local/sbin";
-					std::string home = cpp_getenv("HOME");
-					if (!home.empty()) {
-						penv = home + "/bin:" + penv;
-					}
-					goto retry;
-				}
-
-				if (path.empty() && !argv0_does_not_exist && !leading_dash_removed && buffer.length() > 1 && buffer[0] == '-') {
-					buffer = buffer.substr(1);
-					retried = false;
-					leading_dash_removed = true;
-					goto retry_without_leading_dash;
-				}
 			}
-			if (path.empty() && (argv0_does_not_exist || (slash_pos != std::string::npos && slash_pos > 0))) {
-				std::string pwd = cpp_getenv("PWD");
-				if (!pwd.empty()) {
-					argv0 = pwd + "/" + buffer;
-					path = cpp_getexe(argv0);
+			if (path.empty() && !retried) {
+				retried = true;
+				penv = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11R6/bin:/usr/local/bin:/usr/local/sbin";
+				std::string home = cpp_getenv("HOME");
+				if (!home.empty()) {
+					penv = home + "/bin:" + penv;
 				}
-				if (path.empty()) {
-					char cwd[PATH_MAX];
-					if (getcwd(cwd, PATH_MAX)) {
-						argv0 = std::string(cwd) + "/" + buffer;
-						path = cpp_getexe(argv0);
-					}
+				goto retry;
+			}
+			if (path.empty() && !argv0_does_not_exist && !leading_dash_removed && buffer.length() > 1 && buffer[0] == '-') {
+				buffer = buffer.substr(1);
+				retried = false;
+				leading_dash_removed = true;
+				goto retry_without_leading_dash;
+			}
+		}
+		if (path.empty() && (argv0_does_not_exist || (slash_pos != std::string::npos && slash_pos > 0))) {
+			std::string pwd = cpp_getenv("PWD");
+			if (!pwd.empty()) {
+				argv0 = pwd + "/" + buffer;
+				path = cpp_getexe(argv0);
+			}
+			if (path.empty()) {
+				char cwd[PATH_MAX];
+				if (getcwd(cwd, PATH_MAX)) {
+					argv0 = std::string(cwd) + "/" + buffer;
+					path = cpp_getexe(argv0);
 				}
 			}
 		}
