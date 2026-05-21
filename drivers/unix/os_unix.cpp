@@ -14,7 +14,7 @@
 /* a copy of this software and associated documentation files (the        */
 /* "Software"), to deal in the Software without restriction, including    */
 /* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */f
 /* permit persons to whom the Software is furnished to do so, subject to  */
 /* the following conditions:                                              */
 /*                                                                        */
@@ -1166,7 +1166,7 @@ String OS_Unix::get_executable_path() const {
 					fallback:
 						struct stat st;
 						char buffer[PATH_MAX];
-						if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) && 
+						if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) &&
 								S_ISREG(st.st_mode) && realpath(exe.c_str(), buffer) &&
 								st.st_dev == (dev_t)kif[i].va_fsid && st.st_ino == (ino_t)kif[i].va_fileid) {
 							res = buffer;
@@ -1258,7 +1258,7 @@ String OS_Unix::get_executable_path() const {
 					retried = true;
 					penv = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11R6/bin:/usr/local/bin:/usr/local/sbin";
 					std::string home = cpp_getenv("HOME");
-				 	if (!home.empty()) {
+					if (!home.empty()) {
 						penv = home + "/bin:" + penv;
 					}
 					goto retry;
