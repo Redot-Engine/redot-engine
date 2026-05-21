@@ -1157,7 +1157,7 @@ String OS_Unix::get_executable_path() const {
 		std::string res;
 		kvm_t *kd = nullptr;
 		kinfo_file *kif = nullptr;
-		bool error = false;
+		bool error1 = false, error2 = false;
 		kd = kvm_openfiles(nullptr, nullptr, nullptr, KVM_NO_FILES, nullptr);
 		if (kd) {
 			if ((kif = kvm_getfiles(kd, KERN_FILE_BYPID, getpid(), sizeof(struct kinfo_file), &cntp))) {
@@ -1166,17 +1166,28 @@ String OS_Unix::get_executable_path() const {
 					fallback:
 						struct stat st;
 						char buffer[PATH_MAX];
-						if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) &&
+						if (!stat(exe.c_str(), &st) && (st.st_mode & S_IXUSR) && 
 								S_ISREG(st.st_mode) && realpath(exe.c_str(), buffer) &&
 								st.st_dev == (dev_t)kif[i].va_fsid && st.st_ino == (ino_t)kif[i].va_fileid) {
 							res = buffer;
 						}
-						if (res.empty() && !error) {
-							error = true;
-							std::size_t last_slash_pos = exe.find_last_of("/");
-							if (last_slash_pos != std::string::npos) {
+						if (res.empty() && !error1) {
+							error1 = true;
+							size_t last_slash_pos = exe.find_last_of("/");
+							if (last_slash_pos != string::npos) {
 								exe = exe.substr(0, last_slash_pos + 1) + kif[i].p_comm;
 								goto fallback;
+							}
+						}
+						if (res.empty() && !error2) {
+							error2 = true;
+							size_t last_slash_pos = exe.find_last_of("/");
+							if (last_slash_pos != string::npos) {
+								const char *progname = getprogname();
+								if (progname) {
+									exe = exe.substr(0, last_slash_pos + 1) + progname;
+									goto fallback;
+								}
 							}
 						}
 						break;
@@ -1206,33 +1217,40 @@ String OS_Unix::get_executable_path() const {
 			}
 		}
 		kvm_close(kd);
-		std::string argv0;
-		if (!buffer.empty()) {
-		fallback:
-			std::size_t slash_pos = buffer.find('/');
-			std::size_t colon_pos = buffer.find(':');
-			if (slash_pos == 0) {
-				argv0 = buffer;
-				path = cpp_getexe(argv0);
-			} else if (slash_pos == std::string::npos || slash_pos > colon_pos) {
-			retry_without_leading_dash:
-				std::string penv = cpp_getenv("PATH");
-				if (!penv.empty()) {
-				retry:
-					std::string tmp;
-					std::stringstream sstr(penv);
-					while (std::getline(sstr, tmp, ':')) {
-						argv0 = tmp + "/" + buffer;
+	}
+	std::string argv0;
+	bool argv0_does_not_exist = false;
+	size_t slash_pos = std::string::npos;
+	size_t colon_pos = std::string::npos;
+	if (buffer.empty()) {
+		argv0_does_not_exist = true;
+		goto path_lookup;
+	} else {
+	fallback:
+		slash_pos = buffer.find('/');
+		colon_pos = buffer.find(':');
+		if (slash_pos == 0) {
+			argv0 = buffer;
+			path = cpp_getexe(argv0);
+		} else if (slash_pos == std::string::npos || slash_pos > colon_pos) {
+		path_lookup:
+		retry_without_leading_dash:
+			std::string penv = cpp_getenv("PATH");
+			if (!penv.empty()) {
+			retry:
+				std::string tmp;
+				std::stringstream sstr(penv);
+				while (std::getline(sstr, tmp, ':')) {
+					argv0 = tmp + "/" + buffer;
+					path = cpp_getexe(argv0);
+					if (!path.empty()) {
+						break;
+					}
+					if (slash_pos > colon_pos) {
+						argv0 = tmp + "/" + buffer.substr(0, colon_pos);
 						path = cpp_getexe(argv0);
 						if (!path.empty()) {
 							break;
-						}
-						if (slash_pos > colon_pos) {
-							argv0 = tmp + "/" + buffer.substr(0, colon_pos);
-							path = cpp_getexe(argv0);
-							if (!path.empty()) {
-								break;
-							}
 						}
 					}
 				}
@@ -1240,19 +1258,20 @@ String OS_Unix::get_executable_path() const {
 					retried = true;
 					penv = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11R6/bin:/usr/local/bin:/usr/local/sbin";
 					std::string home = cpp_getenv("HOME");
-					if (!home.empty()) {
+				 	if (!home.empty()) {
 						penv = home + "/bin:" + penv;
 					}
 					goto retry;
 				}
-				if (path.empty() && !leading_dash_removed && buffer.length() > 1 && buffer[0] == '-') {
+
+				if (path.empty() && !argv0_does_not_exist && !leading_dash_removed && buffer.length() > 1 && buffer[0] == '-') {
 					buffer = buffer.substr(1);
 					retried = false;
 					leading_dash_removed = true;
 					goto retry_without_leading_dash;
 				}
 			}
-			if (path.empty() && slash_pos != std::string::npos && slash_pos > 0) {
+			if (path.empty() && (argv0_does_not_exist || (slash_pos != std::string::npos && slash_pos > 0))) {
 				std::string pwd = cpp_getenv("PWD");
 				if (!pwd.empty()) {
 					argv0 = pwd + "/" + buffer;
@@ -1278,6 +1297,12 @@ String OS_Unix::get_executable_path() const {
 				goto fallback;
 			}
 		}
+	}
+	if (path.empty() && !argv0_does_not_exist) {
+		argv0_does_not_exist = true;
+		retried = false;
+		buffer.clear();
+		goto path_lookup;
 	}
 	if (!path.empty()) {
 		return String::utf8(path.c_str());
