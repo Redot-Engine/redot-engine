@@ -1174,7 +1174,7 @@ String OS_Unix::get_executable_path() const {
 						if (res.empty() && !error1) {
 							error1 = true;
 							size_t last_slash_pos = exe.find_last_of("/");
-							if (last_slash_pos != string::npos) {
+							if (last_slash_pos != std::string::npos) {
 								exe = exe.substr(0, last_slash_pos + 1) + kif[i].p_comm;
 								goto fallback;
 							}
@@ -1182,7 +1182,7 @@ String OS_Unix::get_executable_path() const {
 						if (res.empty() && !error2) {
 							error2 = true;
 							size_t last_slash_pos = exe.find_last_of("/");
-							if (last_slash_pos != string::npos) {
+							if (last_slash_pos != std::string::npos) {
 								const char *progname = getprogname();
 								if (progname) {
 									exe = exe.substr(0, last_slash_pos + 1) + progname;
