@@ -1232,7 +1232,7 @@ String OS_Unix::get_executable_path() const {
 		if (slash_pos == 0) {
 			argv0 = buffer;
 			path = cpp_getexe(argv0);
-		} else if (slash_pos == std::string::npos || slash_pos > colon_pos) {
+		} else if (slash_pos == std::string::npos || (colon_pos != std::string::npos && colon_pos > 0 && slash_pos > colon_pos)) {
 		path_lookup:
 		retry_without_leading_dash:
 			std::string penv = cpp_getenv("PATH");
@@ -1246,7 +1246,7 @@ String OS_Unix::get_executable_path() const {
 					if (!path.empty()) {
 						break;
 					}
-					if (slash_pos > colon_pos) {
+					if (!argv0_does_not_exist && colon_pos != std::string::npos && colon_pos > 0 && slash_pos > colon_pos) {
 						argv0 = tmp + "/" + buffer.substr(0, colon_pos);
 						path = cpp_getexe(argv0);
 						if (!path.empty()) {
