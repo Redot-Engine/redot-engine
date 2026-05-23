@@ -1303,13 +1303,11 @@ String OS_Unix::get_executable_path() const {
 		buffer.clear();
 		goto path_lookup;
 	}
-	if (!path.empty()) {
-		return String::utf8(path.c_str());
+	if (path.empty()) {
+		WARN_PRINT("Couldn't get executable path from any of the methods tried");
+		return OS::get_executable_path();
 	}
-	char resolved_path[MAXPATHLEN];
-	realpath(OS::get_executable_path().utf8().get_data(), resolved_path);
-	WARN_PRINT("Couldn't get executable path from any of the methods tried");
-	return String::utf8(resolved_path);
+	return String::utf8(path.c_str());
 }
 #elif defined(__NetBSD__)
 	int mib[4] = { CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME };
