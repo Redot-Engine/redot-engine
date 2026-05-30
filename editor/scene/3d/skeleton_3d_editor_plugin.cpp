@@ -1146,6 +1146,14 @@ void Skeleton3DEditor::create_editors() {
 	key_mod_insert_button->set_shortcut(ED_SHORTCUT("skeleton_3d_editor/insert_key_to_existing_tracks", TTRC("Insert Key (Existing Tracks)"), Key::INSERT));
 	animation_hb->add_child(key_mod_insert_button);
 
+	key_mod_insert_new_button = memnew(Button);
+	key_mod_insert_new_button->set_theme_type_variation(SceneStringName(FlatButton));
+	key_mod_insert_new_button->set_focus_mode(FOCUS_ACCESSIBILITY);
+	key_mod_insert_new_button->connect(SceneStringName(pressed), callable_mp(this, &Skeleton3DEditor::insert_keys).bind(true, true));
+	key_mod_insert_new_button->set_tooltip_text(TTRC("Insert new key (based on mask) for all modified bones."));
+	key_mod_insert_new_button->set_shortcut(ED_SHORTCUT("skeleton_3d_editor/insert_key_of_all_modified_bones", TTRC("Insert Key (All Modified Bones)"), KeyModifierMask::SHIFT | KeyModifierMask::CMD_OR_CTRL | Key::INSERT));
+	animation_hb->add_child(key_mod_insert_new_button);
+
 	// Bone tree.
 	bones_section = memnew(EditorInspectorSection);
 	bones_section->setup("bones", "Bones", skeleton, Color(0.0f, 0.0, 0.0f), true);
