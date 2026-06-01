@@ -1147,7 +1147,7 @@ String OS_Unix::get_real_path(const String &p_path) const {
 String OS_Unix::get_executable_path() const {
 #ifdef __linux__
 	String s = get_real_path("/proc/self/exe");
-	if (!FileAccess::exists(s)) {
+	if (s.is_empty() || s == "/proc/self/exe" || !FileAccess::exists(s)) {
 		WARN_PRINT("Couldn't get executable path from /proc/self/exe, using argv[0]");
 		return OS::get_executable_path();
 	}
