@@ -1136,7 +1136,7 @@ String OS_Unix::get_user_data_dir(const String &p_user_dir) const {
 }
 
 String OS_Unix::get_real_path(const String &p_path) const {
-	String result;
+	String result = p_path;
 	char resolved_path[PATH_MAX];
 	if (realpath((const char *)p_path.utf8().get_data(), resolved_path)) {
 		result = String::utf8((const char *)resolved_path);
@@ -1146,15 +1146,8 @@ String OS_Unix::get_real_path(const String &p_path) const {
 
 String OS_Unix::get_executable_path() const {
 #ifdef __linux__
-	//fix for running from a symlink
-	char buf[PATH_MAX];
-	memset(buf, 0, PATH_MAX);
-	ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf));
-	String b;
-	if (len > 0) {
-		b.append_utf8(buf, len);
-	}
-	if (b.is_empty()) {
+	String s = get_real_path("/proc/self/exe);
+	if (!FileAccess::exists(s)) {
 		WARN_PRINT("Couldn't get executable path from /proc/self/exe, using argv[0]");
 		return OS::get_executable_path();
 	}
@@ -1305,12 +1298,7 @@ String OS_Unix::get_executable_path() const {
 		return OS::get_executable_path();
 	}
 
-	// NetBSD does not always return a normalized path. For example if argv[0] is "./a.out" then executable path is "/home/netbsd/./a.out". Normalize with realpath:
-	char resolved_path[MAXPATHLEN];
-
-	realpath(buf, resolved_path);
-
-	return String::utf8(resolved_path);
+	return get_real_path(String::utf8(buf));
 #elif defined(__FreeBSD__)
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
 	char buf[MAXPATHLEN];
@@ -1320,7 +1308,7 @@ String OS_Unix::get_executable_path() const {
 		return OS::get_executable_path();
 	}
 
-	return String::utf8(buf);
+	return get_real_path(String::utf8(buf));
 #elif defined(__APPLE__)
 	char temp_path[1];
 	uint32_t buff_size = 1;
@@ -1335,7 +1323,7 @@ String OS_Unix::get_executable_path() const {
 	String path = String::utf8(resolved_path);
 	delete[] resolved_path;
 
-	return path;
+	return get_real_path(path);
 #else
 	ERR_PRINT("Warning, don't know how to obtain executable path on this OS! Please override this function properly.");
 	return OS::get_executable_path();
