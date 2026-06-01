@@ -64,6 +64,11 @@
 #include <wincrypt.h>
 #include <winternl.h>
 
+#include <cwchar>
+#include <cstring>
+#include <cstdlib>
+#include <string>
+
 // Workaround missing `extern "C"` in MinGW-w64 < 12.0.0.
 #if defined(__MINGW32__) && (!defined(__MINGW64_VERSION_MAJOR) || __MINGW64_VERSION_MAJOR < 12)
 extern "C" {
@@ -116,6 +121,28 @@ __declspec(dllexport) void NoHotPatch() {} // Disable Nahimic code injection.
 #ifndef DWRITE_FONT_WEIGHT_SEMI_LIGHT
 #define DWRITE_FONT_WEIGHT_SEMI_LIGHT (DWRITE_FONT_WEIGHT)350
 #endif
+
+static wchar_t *_wrealpath(const wchar_t *path, wchar_t *resolved_path) {
+	std::wstring result;
+	if (!resolved_path) {
+		resolved_path = (wchar_t *)malloc(MAX_PATH);
+	}
+	HANDLE hFile = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	if (hFile != INVALID_HANDLE_VALUE) {
+		DWORD len = GetFinalPathNameByHandleW(hFile, resolved_path, MAX_PATH, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+		if (len) {
+			result = resolved_path;
+			if (!result.substr(0, 8).compare(L"\\\\?\\UNC\\")) {
+				result = L"\\" + result.substr(7);
+			} else if (!result.substr(0, 4).compare(L"\\\\?\\")) {
+				result = result.substr(4);
+			}
+		}
+		CloseHandle(hFile);
+	}
+	wcsncpy_s(resolved_path, MAX_PATH, result.c_str(), MAX_PATH);
+	return (wchar_t *)resolved_path;
+}
 
 static String fix_path(const String &p_path) {
 	String path = p_path;
@@ -2052,27 +2079,17 @@ String OS_Windows::get_system_font_path(const String &p_font_name, int p_weight,
 }
 
 String OS_Windows::get_real_path(const String &p_path) const {
-	WCHAR resolved_path[4096];
-	String result = p_path.replace_char('\\', '/');
-	HANDLE hFile = CreateFileW((const WCHAR *)p_path.utf16().get_data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
-	if (hFile != INVALID_HANDLE_VALUE) {
-		DWORD len = GetFinalPathNameByHandleW(hFile, resolved_path, 4096, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
-		if (len) {
-			result = String::utf16((const char16_t *)resolved_path);
-			if (result.begins_with("\\\\?\\UNC\\")) {
-				result = "\\" + result.substr(7);
-			} else if (result.begins_with("\\\\?\\")) {
-				result = result.substr(4);
-			}
-		}
-		CloseHandle(hFile);
+	String result = p_path;
+	wchar_t resolved_path[MAX_PATH];
+	if (_wrealpath((const wchar_t *)p_path.utf16().get_data(), resolved_path)) {
+		result = String::utf16((const char16_t *)resolved_path);
 	}
 	return result.replace_char('\\', '/');
 }
 
 String OS_Windows::get_executable_path() const {
-	WCHAR bufname[4096];
-	if (!GetModuleFileNameW(nullptr, bufname, 4096)) {
+	WCHAR bufname[MAX_PATH];
+	if (!GetModuleFileNameW(nullptr, bufname, MAX_PATH)) {
 		WARN_PRINT("Couldn't get executable path from GetModuleFileName");
 		return OS::get_executable_path();
 	}
