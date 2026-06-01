@@ -1138,8 +1138,8 @@ String OS_Unix::get_user_data_dir(const String &p_user_dir) const {
 String OS_Unix::get_real_path(const String &p_path) const {
 	String result = p_path;
 	char resolved_path[PATH_MAX];
-	if (realpath((const char *)p_path.utf8().get_data(), resolved_path)) {
-		result = String::utf8((const char *)resolved_path);
+	if (realpath(p_path.utf8().get_data(), resolved_path)) {
+		result = String::utf8(resolved_path);
 	}
 	return result;
 }
