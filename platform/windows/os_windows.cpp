@@ -2059,9 +2059,9 @@ String OS_Windows::get_real_path(const String &p_path) const {
 		DWORD len = GetFinalPathNameByHandleW(hFile, resolved_path, 4096, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
 		if (len) {
 			result = String::utf16((const char16_t *)resolved_path);
-			if (!result.substr(0, 8) == String("\\\\?\\UNC\\")) {
+			if (result.substr(0, 8) == String("\\\\?\\UNC\\")) {
 				result = String("\\") + result.substr(7);
-			} else if (!result.substr(0, 4) == String("\\\\?\\")) {
+			} else if (result.substr(0, 4) == String("\\\\?\\")) {
 				result = result.substr(4);
 			}
 		}
