@@ -51,6 +51,7 @@
 class OS {
 	static OS *singleton;
 	static uint64_t target_ticks;
+	String _realpath;
 	String _execpath;
 	List<String> _cmdline;
 	List<String> _user_args;
@@ -195,6 +196,7 @@ public:
 	virtual Vector<String> get_system_fonts() const { return Vector<String>(); }
 	virtual String get_system_font_path(const String &p_font_name, int p_weight = 400, int p_stretch = 100, bool p_italic = false) const { return String(); }
 	virtual Vector<String> get_system_font_path_for_text(const String &p_font_name, const String &p_text, const String &p_locale = String(), const String &p_script = String(), int p_weight = 400, int p_stretch = 100, bool p_italic = false) const { return Vector<String>(); }
+	virtual String get_real_path(const String &p_path) const;
 	virtual String get_executable_path() const;
 	virtual Error execute(const String &p_path, const List<String> &p_arguments, String *r_pipe = nullptr, int *r_exitcode = nullptr, bool read_stderr = false, Mutex *p_pipe_mutex = nullptr, bool p_open_console = false) = 0;
 	virtual Dictionary execute_with_pipe(const String &p_path, const List<String> &p_arguments, bool p_blocking = true) { return Dictionary(); }
