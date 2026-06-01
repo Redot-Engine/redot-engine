@@ -1151,7 +1151,7 @@ String OS_Unix::get_executable_path() const {
 		WARN_PRINT("Couldn't get executable path from /proc/self/exe, using argv[0]");
 		return OS::get_executable_path();
 	}
-	return b;
+	return s;
 #elif defined(__OpenBSD__)
 	std::string path;
 	auto cpp_getexe = [](std::string exe) {
