@@ -2060,7 +2060,7 @@ String OS_Windows::get_real_path(const String &p_path) const {
 		if (len) {
 			result = String::utf16((const char16_t *)resolved_path);
 			if (result.begins_with("\\\\?\\UNC\\")) {
-				result = String("\\") + result.substr(7);
+				result = "\\" + result.substr(7);
 			} else if (result.begins_with("\\\\?\\")) {
 				result = result.substr(4);
 			}
