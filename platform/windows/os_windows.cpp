@@ -2051,10 +2051,31 @@ String OS_Windows::get_system_font_path(const String &p_font_name, int p_weight,
 	return String();
 }
 
+String OS_Windows::get_real_path(const String &p_path) const {
+  	String result;
+	WCHAR resolved_path[4096];
+	HANDLE hFile = CreateFileW((const WCHAR *)p_path.utf16().get_data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	if (hFile != INVALID_HANDLE_VALUE) {
+		DWORD len = GetFinalPathNameByHandleW(hFile, resolved_path, 4096, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+		if (len) {
+			result = String::utf16((const char16_t *)resolved_path);
+			if (!result.substr(0, 8) == String("\\\\?\\UNC\\")) {
+				result = String("\\") + result.substr(7);
+			} else if (!result.substr(0, 4) == String("\\\\?\\")) {
+				result = result.substr(4);
+			}
+		}
+		CloseHandle(hFile);
+	}
+	return result.replace_char('\\', '/');
+}
+
 String OS_Windows::get_executable_path() const {
+	String s;
 	WCHAR bufname[4096];
-	GetModuleFileNameW(nullptr, bufname, 4096);
-	String s = String::utf16((const char16_t *)bufname).replace_char('\\', '/');
+	if (GetModuleFileNameW(nullptr, bufname, 4096)) {
+		s = get_real_path(String::utf16((const char16_t *)bufname));
+	}
 	return s;
 }
 
