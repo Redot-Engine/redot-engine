@@ -2088,12 +2088,12 @@ String OS_Windows::get_real_path(const String &p_path) const {
 }
 
 String OS_Windows::get_executable_path() const {
-	WCHAR bufname[MAX_PATH];
-	if (!GetModuleFileNameW(nullptr, bufname, MAX_PATH)) {
+	wchar_t buf[MAX_PATH];
+	if (!GetModuleFileNameW(nullptr, buf, MAX_PATH)) {
 		WARN_PRINT("Couldn't get executable path from GetModuleFileName");
 		return OS::get_executable_path();
 	}
-	return get_real_path(String::utf16((const char16_t *)bufname));
+	return get_real_path(String::utf16((const char16_t *)buf));
 }
 
 bool OS_Windows::has_environment(const String &p_var) const {
