@@ -64,9 +64,10 @@
 #include <wincrypt.h>
 #include <winternl.h>
 
-#include <cwchar>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
+#include <cwchar>
+
 #include <string>
 
 // Workaround missing `extern "C"` in MinGW-w64 < 12.0.0.
