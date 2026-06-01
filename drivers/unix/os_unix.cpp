@@ -1135,6 +1135,15 @@ String OS_Unix::get_user_data_dir(const String &p_user_dir) const {
 	return get_data_path().path_join(p_user_dir);
 }
 
+String OS_Unix::get_real_path(const String &p_path) const {
+	String result;
+	char resolved_path[PATH_MAX];
+	if (realpath((const char *)p_path.utf8().get_data(), resolved_path)) {
+		result = String::utf8((const char *)resolved_path);
+	}
+	return result;
+}
+
 String OS_Unix::get_executable_path() const {
 #ifdef __linux__
 	//fix for running from a symlink
