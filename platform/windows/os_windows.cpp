@@ -142,9 +142,9 @@ static wchar_t *_wrealpath(const wchar_t *path, wchar_t *resolved_path) {
 	}
 	if (wcslen(buffer)) {
 		return _wcsdup(result.c_str());
-	} else {
-		wcsncpy_s(ptr, MAX_PATH, result.c_str(), MAX_PATH);
-		return (wchar_t *)ptr;
+	} else if (wcslen(resolved_path)) {
+		wcsncpy_s(resolved_path, sizeof(resolved_path) / sizeof(*resolved_path), result.c_str(), wcslen(result.c_str()));
+		return (wchar_t *)resolved_path;
 	}
 	return nullptr;
 }
