@@ -58,12 +58,12 @@
 #include <sys/sysctl.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__)
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 #include <kvm.h>
 #endif
 
@@ -109,7 +109,7 @@
 // Random location for getentropy. Fitting.
 #include <sys/random.h>
 #define UNIX_GET_ENTROPY
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__GLIBC_MINOR__) && (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 26))
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || (defined(__GLIBC_MINOR__) && (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 26))
 // In <unistd.h>.
 // One day... (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700)
 // https://publications.opengroup.org/standards/unix/c211
@@ -454,7 +454,7 @@ Dictionary OS_Unix::get_memory_info() const {
 	if (swap_used.xsu_avail + ((vmstat.free_count - vmstat.speculative_count) + vmstat.external_page_count) * (int64_t)pagesize != 0) {
 		meminfo["available"] = swap_used.xsu_avail + ((vmstat.free_count - vmstat.speculative_count) + vmstat.external_page_count) * (int64_t)pagesize;
 	}
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 	int pagesize = 0;
 	size_t len = sizeof(pagesize);
 	if (sysctlbyname("vm.stats.vm.v_page_size", &pagesize, &len, nullptr, 0) < 0) {
@@ -1299,7 +1299,7 @@ String OS_Unix::get_executable_path() const {
 	}
 
 	return get_real_path(String::utf8(buf));
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
 	char buf[MAXPATHLEN];
 	size_t len = sizeof(buf);
