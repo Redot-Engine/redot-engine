@@ -1540,12 +1540,18 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD *p_render_data, boo
 		_render_shadow_begin();
 
 		//render directional shadows
-		for (uint32_t i = 0; i < p_render_data->directional_shadows.size(); i++) {
-			_render_shadow_pass(p_render_data->render_shadows[p_render_data->directional_shadows[i]].light, p_render_data->shadow_atlas, p_render_data->render_shadows[p_render_data->directional_shadows[i]].pass, p_render_data->render_shadows[p_render_data->directional_shadows[i]].instances, lod_distance_multiplier, p_render_data->scene_data->screen_mesh_lod_threshold, false, i == p_render_data->directional_shadows.size() - 1, false, p_render_data->render_info, viewport_size, p_render_data->scene_data->cam_transform);
+		const uint32_t directional_shadow_count = p_render_data->directional_shadows.size();
+		for (uint32_t i = 0; i < directional_shadow_count; i++) {
+			const uint32_t sd_index = p_render_data->directional_shadows[i];
+			const auto &sd = p_render_data->render_shadows[sd_index];
+			_render_shadow_pass(sd.light, p_render_data->shadow_atlas, sd.pass, sd.instances, lod_distance_multiplier, p_render_data->scene_data->screen_mesh_lod_threshold, false, i == directional_shadow_count - 1, false, p_render_data->render_info, viewport_size, p_render_data->scene_data->cam_transform);
 		}
 		//render positional shadows
-		for (uint32_t i = 0; i < p_render_data->shadows.size(); i++) {
-			_render_shadow_pass(p_render_data->render_shadows[p_render_data->shadows[i]].light, p_render_data->shadow_atlas, p_render_data->render_shadows[p_render_data->shadows[i]].pass, p_render_data->render_shadows[p_render_data->shadows[i]].instances, lod_distance_multiplier, p_render_data->scene_data->screen_mesh_lod_threshold, i == 0, i == p_render_data->shadows.size() - 1, true, p_render_data->render_info, viewport_size, p_render_data->scene_data->cam_transform);
+		const uint32_t positional_shadow_count = p_render_data->shadows.size();
+		for (uint32_t i = 0; i < positional_shadow_count; i++) {
+			const uint32_t sd_index = p_render_data->shadows[i];
+			const auto &sd = p_render_data->render_shadows[sd_index];
+			_render_shadow_pass(sd.light, p_render_data->shadow_atlas, sd.pass, sd.instances, lod_distance_multiplier, p_render_data->scene_data->screen_mesh_lod_threshold, i == 0, i == positional_shadow_count - 1, true, p_render_data->render_info, viewport_size, p_render_data->scene_data->cam_transform);
 		}
 
 		_render_shadow_process();
