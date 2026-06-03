@@ -775,17 +775,26 @@ void RenderForwardClustered::_setup_environment(const RenderDataRD *p_render_dat
 }
 
 void RenderForwardClustered::_update_instance_data_buffer(RenderListType p_render_list) {
-	if (scene_state.instance_data[p_render_list].size() > 0) {
-		if (scene_state.instance_buffer[p_render_list] == RID() || scene_state.instance_buffer_size[p_render_list] < scene_state.instance_data[p_render_list].size()) {
-			if (scene_state.instance_buffer[p_render_list] != RID()) {
-				RD::get_singleton()->free(scene_state.instance_buffer[p_render_list]);
-			}
-			uint32_t new_size = nearest_power_of_2_templated(MAX(uint64_t(INSTANCE_DATA_BUFFER_MIN_SIZE), scene_state.instance_data[p_render_list].size()));
-			scene_state.instance_buffer[p_render_list] = RD::get_singleton()->storage_buffer_create(new_size * sizeof(SceneState::InstanceData));
-			scene_state.instance_buffer_size[p_render_list] = new_size;
-		}
-		RD::get_singleton()->buffer_update(scene_state.instance_buffer[p_render_list], 0, sizeof(SceneState::InstanceData) * scene_state.instance_data[p_render_list].size(), scene_state.instance_data[p_render_list].ptr());
+	LocalVector<SceneState::InstanceData> &idata = scene_state.instance_data[p_render_list];
+
+	if (idata.is_empty()) {
+		return;
 	}
+
+	const uint32_t idata_size = idata.size();
+	RD *rd = RD::get_singleton();
+
+	if (scene_state.instance_buffer[p_render_list] == RID() || scene_state.instance_buffer_size[p_render_list] < idata_size) {
+		if (scene_state.instance_buffer[p_render_list] != RID()) {
+			rd->free(scene_state.instance_buffer[p_render_list]);
+		}
+
+		uint32_t new_size = nearest_power_of_2_templated(MAX(uint64_t(INSTANCE_DATA_BUFFER_MIN_SIZE), uint64_t(idata_size)));
+		scene_state.instance_buffer[p_render_list] = rd->storage_buffer_create(new_size * sizeof(SceneState::InstanceData));
+		scene_state.instance_buffer_size[p_render_list] = new_size;
+	}
+
+	rd->buffer_update(scene_state.instance_buffer[p_render_list], 0, sizeof(SceneState::InstanceData) * idata_size, idata.ptr());
 }
 void RenderForwardClustered::_fill_instance_data(RenderListType p_render_list, int *p_render_info, uint32_t p_offset, int32_t p_max_elements, bool p_update_buffer) {
 	RenderList *rl = &render_list[p_render_list];
