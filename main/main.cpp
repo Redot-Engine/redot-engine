@@ -205,6 +205,7 @@ String display_driver = "";
 String tablet_driver = "";
 String text_driver = "";
 String rendering_driver = "";
+bool rendering_driver_available = false;
 String rendering_method = "";
 static int text_driver_idx = -1;
 static int audio_driver_idx = -1;
@@ -2597,6 +2598,61 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	// always convert to lower case for consistency in the code
 	rendering_driver = rendering_driver.to_lower();
+
+	// Verify rendering driver is available
+#ifdef D3D12_ENABLED
+	if (rendering_driver == "d3d12") {
+		rendering_driver_available = true;
+	}
+#endif
+#ifdef VULKAN_ENABLED
+	if (rendering_driver == "vulkan") {
+		rendering_driver_available = true;
+	}
+#endif
+#ifdef METAL_ENABLED
+	if (rendering_driver == "metal") {
+		rendering_driver_available = true;
+	}
+#endif
+#ifdef GLES3_ENABLED
+	if (rendering_driver == "opengl3" || rendering_driver == "opengl3_angle" || rendering_driver == "opengl3_es") {
+		rendering_driver_available = true;
+	}
+#endif
+	if (rendering_driver == "dummy") {
+		rendering_driver_available = true;
+	}
+	if (!rendering_driver_available) {
+		Vector<String> unique_rendering_drivers;
+		for (int i = 0; i < DisplayServer::get_create_function_count(); i++) {
+			Vector<String> r_drivers = DisplayServer::get_create_function_rendering_drivers(i);
+
+			for (int d = 0; d < r_drivers.size(); d++) {
+				if (!unique_rendering_drivers.has(r_drivers[d])) {
+					unique_rendering_drivers.append(r_drivers[d]);
+				}
+			}
+		}
+
+		String supported_drivers = "";
+		for (int i = 0; i < unique_rendering_drivers.size(); i++) {
+			if (i == unique_rendering_drivers.size() - 1) {
+				supported_drivers += " and ";
+			} else if (i != 0) {
+				supported_drivers += ", ";
+			}
+			supported_drivers += unique_rendering_drivers[i];
+		}
+		supported_drivers += ".";
+
+		ERR_PRINT(vformat(
+				"Rendering driver '%s' is not available in this engine build.\n"
+				"Edit your project file (project.godot) and change rendering_device/driver from '%s' to an available rendering driver.\n"
+				"Valid options are %s",
+				rendering_driver, rendering_driver, supported_drivers));
+		goto error;
+	}
 
 	OS::get_singleton()->set_current_rendering_driver_name(rendering_driver);
 	OS::get_singleton()->set_current_rendering_method(rendering_method);
