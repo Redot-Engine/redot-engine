@@ -2071,7 +2071,7 @@ String OS_Windows::get_real_path(const String &p_path) const {
 }
 
 String OS_Windows::get_executable_path() const {
-	wchar_t buf[4096];
+	WCHAR buf[4096];
 	if (!GetModuleFileNameW(nullptr, buf, 4096)) {
 		WARN_PRINT("Couldn't get executable path from GetModuleFileName");
 		return OS::get_executable_path().replace_char('\\', '/');
