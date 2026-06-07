@@ -2054,7 +2054,7 @@ String OS_Windows::get_system_font_path(const String &p_font_name, int p_weight,
 String OS_Windows::get_real_path(const String &p_path) const {
 	WCHAR buf[4096];
 	String res = p_path;
-	HANDLE handle = CreateFileW((const WCHAR *)p_path.utf16().get_data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	HANDLE handle = CreateFileW((const WCHAR *)res.utf16().get_data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
 	if (handle != INVALID_HANDLE_VALUE) {
 		DWORD len = GetFinalPathNameByHandleW(handle, buf, 4096, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
 		if (len && len < 4096) {
