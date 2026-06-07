@@ -2086,7 +2086,7 @@ bool OS_Windows::has_environment(const String &p_var) const {
 
 String OS_Windows::get_environment(const String &p_var) const {
 	String res;
-	DWORD len = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr, 0));
+	DWORD len = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr, 0);
 	if (len) {
 		WCHAR *val = new WCHAR[len]();
 		len = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), val, len);
