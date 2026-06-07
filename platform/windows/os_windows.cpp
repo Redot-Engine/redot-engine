@@ -64,12 +64,6 @@
 #include <wincrypt.h>
 #include <winternl.h>
 
-#include <cstdlib>
-#include <cstring>
-#include <cwchar>
-
-#include <string>
-
 // Workaround missing `extern "C"` in MinGW-w64 < 12.0.0.
 #if defined(__MINGW32__) && (!defined(__MINGW64_VERSION_MAJOR) || __MINGW64_VERSION_MAJOR < 12)
 extern "C" {
@@ -122,34 +116,6 @@ __declspec(dllexport) void NoHotPatch() {} // Disable Nahimic code injection.
 #ifndef DWRITE_FONT_WEIGHT_SEMI_LIGHT
 #define DWRITE_FONT_WEIGHT_SEMI_LIGHT (DWRITE_FONT_WEIGHT)350
 #endif
-
-static wchar_t *_wrealpath(const wchar_t *path, wchar_t *resolved_path) {
-	std::wstring result;
-	wchar_t buf[MAX_PATH];
-	wchar_t *ptr = (((wchar_t *)resolved_path) ? ((wchar_t *)resolved_path) : ((wchar_t *)buf));
-	HANDLE hFile = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
-	if (hFile != INVALID_HANDLE_VALUE) {
-		DWORD len = GetFinalPathNameByHandleW(hFile, ptr, MAX_PATH, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
-		if (len && len <= MAX_PATH - 1) {
-			result = ptr;
-			if (!result.substr(0, 8).compare(L"\\\\?\\UNC\\")) {
-				result = L"\\" + result.substr(7);
-			} else if (!result.substr(0, 4).compare(L"\\\\?\\")) {
-				result = result.substr(4);
-			}
-		}
-		CloseHandle(hFile);
-	}
-	if (!result.empty()) {
-		if (!resolved_path) {
-			return _wcsdup(result.c_str());
-		} else {
-			wcsncpy_s(ptr, MAX_PATH, result.c_str(), _TRUNCATE);
-			return (wchar_t *)ptr;
-		}
-	}
-	return nullptr;
-}
 
 static String fix_path(const String &p_path) {
 	String path = p_path;
@@ -2086,34 +2052,50 @@ String OS_Windows::get_system_font_path(const String &p_font_name, int p_weight,
 }
 
 String OS_Windows::get_real_path(const String &p_path) const {
-	String result = p_path;
-	wchar_t resolved_path[MAX_PATH];
-	if (_wrealpath((const wchar_t *)p_path.utf16().get_data(), resolved_path)) {
-		result = String::utf16((const char16_t *)resolved_path);
+	WCHAR buf[4096];
+	String res = p_path;
+	HANDLE handle = CreateFileW((const WCHAR *)p_path.utf16().get_data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+	if (handle != INVALID_HANDLE_VALUE) {
+		DWORD len = GetFinalPathNameByHandleW(handle, buf, 4096, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+		if (len && len < 4096) {
+			res = String::utf16((const char16_t *)buf);
+			if (res.begins_with("\\\\?\\UNC\\")) {
+				res = "\\" + res.substr(7);
+			} else if (res.begins_with("\\\\?\\")) {
+				res = res.substr(4);
+			}
+		}
+		CloseHandle(handle);
 	}
-	return result.replace_char('\\', '/');
+	return res.replace_char('\\', '/');
 }
 
 String OS_Windows::get_executable_path() const {
-	wchar_t buf[MAX_PATH];
-	if (!GetModuleFileNameW(nullptr, buf, MAX_PATH)) {
+	wchar_t buf[4096];
+	if (!GetModuleFileNameW(nullptr, buf, 4096)) {
 		WARN_PRINT("Couldn't get executable path from GetModuleFileName");
-		return OS::get_executable_path();
+		return OS::get_executable_path().replace_char('\\', '/');
 	}
 	return get_real_path(String::utf16((const char16_t *)buf));
 }
 
 bool OS_Windows::has_environment(const String &p_var) const {
-	return GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr, 0) > 0;
+	// An environment variable can still exist in the environment block, but just have an empty value; check for ERROR_ENVVAR_NOT_FOUND:
+	return (!(GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr, 0) == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND));
 }
 
 String OS_Windows::get_environment(const String &p_var) const {
-	WCHAR wval[0x7fff]; // MSDN says 32767 char is the maximum
-	int wlen = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), wval, 0x7fff);
-	if (wlen > 0) {
-		return String::utf16((const char16_t *)wval);
+	String res;
+	DWORD len = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), nullptr, 0));
+	if (len) {
+		WCHAR *val = new WCHAR[len]();
+		len = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), val, len);
+		if (len) {
+			res = String::utf16((const char16_t *)val);
+		}
+		delete[] val;
 	}
-	return "";
+	return res;
 }
 
 void OS_Windows::set_environment(const String &p_var, const String &p_value) const {
