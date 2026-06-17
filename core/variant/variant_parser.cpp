@@ -714,6 +714,42 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			value = -Math::INF;
 		} else if (id == "nan") {
 			value = Math::NaN;
+		} else if (id == "Variant") {
+			Error err = get_token(p_stream, token, line, r_err_str);
+			if (err) {
+				return err;
+			}
+			if (token.type != TK_COLON) {
+				r_err_str = "Expected '::' after 'Variant'";
+				return ERR_PARSE_ERROR;
+			}
+
+			err = get_token(p_stream, token, line, r_err_str);
+			if (err) {
+				return err;
+			}
+			if (token.type != TK_COLON) {
+				r_err_str = "Expected '::' after 'Variant'";
+				return ERR_PARSE_ERROR;
+			}
+
+			err = get_token(p_stream, token, line, r_err_str);
+			if (err) {
+				return err;
+			}
+
+			if (token.type != TK_IDENTIFIER) {
+				r_err_str = "Expected identifier after 'Variant::'";
+				return ERR_PARSE_ERROR;
+			}
+
+			String constant = token.value;
+			if (constant == "NIL") {
+				value = Variant();
+			} else {
+				r_err_str = vformat("Unknown Variant constant '%s'", constant);
+				return ERR_PARSE_ERROR;
+			}
 		} else if (id == "Vector2") {
 			Vector<real_t> args;
 			Error err = _parse_construct<real_t>(p_stream, args, line, r_err_str);
