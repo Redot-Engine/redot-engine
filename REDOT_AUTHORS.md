@@ -31,7 +31,6 @@ name is available.
 
 ## Developers
 
-    Abdul Rehman (AR-DEV-1)
     Adam Vondersaar (trashguy)
     Andevrs (tindrew)
     Arctis Fireblight
@@ -42,3 +41,4 @@ name is available.
     Jon (JoltedJon)
     McDubh (mcdubhghlas)
     Skogi (SkogiB)
+	Shakai (Shakai-Dev)
