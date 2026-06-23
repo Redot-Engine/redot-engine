@@ -305,10 +305,13 @@ void EditorSettings::_get_property_list(List<PropertyInfo> *p_list) const {
 			pusage |= PROPERTY_USAGE_STORAGE;
 		}
 
+		// Settings prefixed with "_" or "projects/" are hidden from the
+		// Editor Settings UI but are always persisted to disk. Use the "_"
+		// prefix for internal/UI-state settings that should not be user-visible.
 		if (!E.name.begins_with("_") && !E.name.begins_with("projects/")) {
 			pusage |= PROPERTY_USAGE_EDITOR;
 		} else {
-			pusage |= PROPERTY_USAGE_STORAGE; //hiddens must always be saved
+			pusage |= PROPERTY_USAGE_STORAGE;
 		}
 
 		PropertyInfo pi(E.type, E.name);

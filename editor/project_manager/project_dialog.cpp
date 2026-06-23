@@ -90,13 +90,13 @@ void ProjectDialog::_validate_path() {
 	_set_message("", MESSAGE_SUCCESS, PROJECT_PATH);
 	_set_message("", MESSAGE_SUCCESS, INSTALL_PATH);
 
-	if (project_name->get_text().strip_edges().is_empty()) {
+	if (line_edit_project_name->get_text().strip_edges().is_empty()) {
 		_set_message(TTRC("It would be a good idea to name your project."), MESSAGE_ERROR);
 		return;
 	}
 
 	Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	String path = project_path->get_text().simplify_path();
+	String path = line_edit_project_path->get_text().simplify_path();
 
 	String target_path = path;
 	InputType target_path_input_type = PROJECT_PATH;
@@ -104,7 +104,7 @@ void ProjectDialog::_validate_path() {
 	if (mode == MODE_IMPORT) {
 		if (path.get_file().strip_edges() == "project.godot") {
 			path = path.get_base_dir();
-			project_path->set_text(path);
+			line_edit_project_path->set_text(path);
 		}
 
 		if (is_zip_file(d, path)) {
@@ -116,11 +116,11 @@ void ProjectDialog::_validate_path() {
 		}
 
 		if (!zip_path.is_empty()) {
-			target_path = install_path->get_text().simplify_path();
+			target_path = line_edit_install_path->get_text().simplify_path();
 			target_path_input_type = INSTALL_PATH;
 
-			create_dir->show();
-			install_path_container->show();
+			btn_create_dir->show();
+			vbox_install_path->show();
 
 			Ref<FileAccess> io_fa;
 			zlib_filefunc_def io = zipio_create_io(&io_fa);
@@ -164,13 +164,13 @@ void ProjectDialog::_validate_path() {
 		} else if (d->dir_exists(path) && d->file_exists(path.path_join("project.godot"))) {
 			zip_path = "";
 
-			create_dir->hide();
-			install_path_container->hide();
+			btn_create_dir->hide();
+			vbox_install_path->hide();
 
 			_set_message(TTRC("Valid project found at path."), MESSAGE_SUCCESS);
 		} else {
-			create_dir->hide();
-			install_path_container->hide();
+			btn_create_dir->hide();
+			vbox_install_path->hide();
 
 			_set_message(TTRC("Please choose a \"project.godot\", a directory with one, or a \".zip\" file."), MESSAGE_ERROR);
 			return;
@@ -208,7 +208,7 @@ void ProjectDialog::_validate_path() {
 
 	is_folder_empty = true;
 	if (mode == MODE_NEW || mode == MODE_INSTALL || mode == MODE_DUPLICATE || (mode == MODE_IMPORT && target_path_input_type == InputType::INSTALL_PATH)) {
-		if (create_dir->is_pressed()) {
+		if (btn_create_dir->is_pressed()) {
 			if (!d->dir_exists(target_path.get_base_dir())) {
 				_set_message(TTRC("The parent directory of the path specified doesn't exist."), MESSAGE_ERROR, target_path_input_type);
 				return;
@@ -285,18 +285,18 @@ void ProjectDialog::_validate_path() {
 
 String ProjectDialog::_get_target_path() {
 	if (mode == MODE_NEW || mode == MODE_INSTALL || mode == MODE_DUPLICATE) {
-		return project_path->get_text();
+		return line_edit_project_path->get_text();
 	} else if (mode == MODE_IMPORT) {
-		return install_path->get_text();
+		return line_edit_install_path->get_text();
 	} else {
 		ERR_FAIL_V("");
 	}
 }
 void ProjectDialog::_set_target_path(const String &p_text) {
 	if (mode == MODE_NEW || mode == MODE_INSTALL || mode == MODE_DUPLICATE) {
-		project_path->set_text(p_text);
+		line_edit_project_path->set_text(p_text);
 	} else if (mode == MODE_IMPORT) {
-		install_path->set_text(p_text);
+		line_edit_install_path->set_text(p_text);
 	} else {
 		ERR_FAIL();
 	}
@@ -305,9 +305,9 @@ void ProjectDialog::_set_target_path(const String &p_text) {
 void ProjectDialog::_update_target_auto_dir() {
 	String new_auto_dir;
 	if (mode == MODE_NEW || mode == MODE_INSTALL || mode == MODE_DUPLICATE) {
-		new_auto_dir = project_name->get_text();
+		new_auto_dir = line_edit_project_name->get_text();
 	} else if (mode == MODE_IMPORT) {
-		new_auto_dir = project_path->get_text().get_file().get_basename();
+		new_auto_dir = line_edit_project_path->get_text().get_file().get_basename();
 	}
 	int naming_convention = (int)EDITOR_GET("project_manager/directory_naming_convention");
 	switch (naming_convention) {
@@ -334,7 +334,7 @@ void ProjectDialog::_update_target_auto_dir() {
 	}
 	new_auto_dir = OS::get_singleton()->get_safe_dir_name(new_auto_dir);
 
-	if (create_dir->is_pressed()) {
+	if (btn_create_dir->is_pressed()) {
 		String target_path = _get_target_path();
 
 		if (target_path.get_file() == auto_dir) {
@@ -351,7 +351,7 @@ void ProjectDialog::_update_target_auto_dir() {
 void ProjectDialog::_create_dir_toggled(bool p_pressed) {
 	String target_path = _get_target_path();
 
-	if (create_dir->is_pressed()) {
+	if (btn_create_dir->is_pressed()) {
 		// (Re-)append target dir name.
 		if (last_custom_target_dir.is_empty()) {
 			target_path = target_path.path_join(auto_dir);
@@ -395,14 +395,14 @@ void ProjectDialog::_install_path_changed() {
 }
 
 void ProjectDialog::_browse_project_path() {
-	String path = project_path->get_text();
+	String path = line_edit_project_path->get_text();
 	if (path.is_relative_path()) {
 		path = EDITOR_GET("filesystem/directories/default_project_path");
 	}
-	if (mode == MODE_IMPORT && install_path->is_visible_in_tree()) {
+	if (mode == MODE_IMPORT && line_edit_install_path->is_visible_in_tree()) {
 		// Select last ZIP file.
 		fdialog_project->set_current_path(path);
-	} else if ((mode == MODE_NEW || mode == MODE_INSTALL || mode == MODE_DUPLICATE) && create_dir->is_pressed()) {
+	} else if ((mode == MODE_NEW || mode == MODE_INSTALL || mode == MODE_DUPLICATE) && btn_create_dir->is_pressed()) {
 		// Select parent directory of project path.
 		fdialog_project->set_current_dir(path.get_base_dir());
 	} else {
@@ -426,11 +426,11 @@ void ProjectDialog::_browse_project_path() {
 void ProjectDialog::_browse_install_path() {
 	ERR_FAIL_COND_MSG(mode != MODE_IMPORT, "Install path is only used for MODE_IMPORT.");
 
-	String path = install_path->get_text();
+	String path = line_edit_install_path->get_text();
 	if (path.is_relative_path() || !DirAccess::dir_exists_absolute(path)) {
 		path = EDITOR_GET("filesystem/directories/default_project_path");
 	}
-	if (create_dir->is_pressed()) {
+	if (btn_create_dir->is_pressed()) {
 		// Select parent directory of install path.
 		fdialog_install->set_current_dir(path.get_base_dir());
 	} else {
@@ -445,18 +445,18 @@ void ProjectDialog::_browse_install_path() {
 void ProjectDialog::_project_path_selected(const String &p_path) {
 	show_dialog(false);
 
-	if (create_dir->is_pressed() && (mode == MODE_NEW || mode == MODE_INSTALL || mode == MODE_DUPLICATE)) {
+	if (btn_create_dir->is_pressed() && (mode == MODE_NEW || mode == MODE_INSTALL || mode == MODE_DUPLICATE)) {
 		// Replace parent directory, but keep target dir name.
-		project_path->set_text(p_path.path_join(project_path->get_text().get_file()));
+		line_edit_project_path->set_text(p_path.path_join(line_edit_project_path->get_text().get_file()));
 	} else {
-		project_path->set_text(p_path);
+		line_edit_project_path->set_text(p_path);
 	}
 
 	_project_path_changed();
 
-	if (install_path->is_visible_in_tree()) {
+	if (line_edit_install_path->is_visible_in_tree()) {
 		// ZIP is selected; focus install path.
-		install_path->grab_focus();
+		line_edit_install_path->grab_focus();
 	} else {
 		get_ok_button()->grab_focus();
 	}
@@ -465,11 +465,11 @@ void ProjectDialog::_project_path_selected(const String &p_path) {
 void ProjectDialog::_install_path_selected(const String &p_path) {
 	ERR_FAIL_COND_MSG(mode != MODE_IMPORT, "Install path is only used for MODE_IMPORT.");
 
-	if (create_dir->is_pressed()) {
+	if (btn_create_dir->is_pressed()) {
 		// Replace parent directory, but keep target dir name.
-		install_path->set_text(p_path.path_join(install_path->get_text().get_file()));
+		line_edit_install_path->set_text(p_path.path_join(line_edit_install_path->get_text().get_file()));
 	} else {
-		install_path->set_text(p_path);
+		line_edit_install_path->set_text(p_path);
 	}
 
 	_install_path_changed();
@@ -478,7 +478,7 @@ void ProjectDialog::_install_path_selected(const String &p_path) {
 }
 
 void ProjectDialog::_reset_name() {
-	project_name->set_text(TTR("New Game Project"));
+	line_edit_project_name->set_text(TTR("New Game Project"));
 }
 
 void ProjectDialog::_renderer_selected() {
@@ -543,10 +543,10 @@ void ProjectDialog::ok_pressed() {
 		return;
 	}
 
-	String path = project_path->get_text();
+	String path = line_edit_project_path->get_text();
 
 	if (mode == MODE_NEW) {
-		if (create_dir->is_pressed()) {
+		if (btn_create_dir->is_pressed()) {
 			Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 			if (!d->dir_exists(path) && d->make_dir(path) != OK) {
 				_set_message(TTRC("Couldn't create project directory, check permissions."), MESSAGE_ERROR);
@@ -580,7 +580,7 @@ void ProjectDialog::ok_pressed() {
 
 		project_features.sort();
 		initial_settings["application/config/features"] = project_features;
-		initial_settings["application/config/name"] = project_name->get_text().strip_edges();
+		initial_settings["application/config/name"] = line_edit_project_name->get_text().strip_edges();
 		initial_settings["application/config/icon"] = "res://icon.svg";
 
 		Error err = ProjectSettings::get_singleton()->save_custom(path.path_join("project.godot"), initial_settings, Vector<String>(), false);
@@ -622,7 +622,7 @@ void ProjectDialog::ok_pressed() {
 				break;
 			}
 
-			path = install_path->get_text().simplify_path();
+			path = line_edit_install_path->get_text().simplify_path();
 			[[fallthrough]];
 		}
 		case MODE_INSTALL: {
@@ -669,7 +669,7 @@ void ProjectDialog::ok_pressed() {
 				return;
 			}
 
-			if (create_dir->is_pressed()) {
+			if (btn_create_dir->is_pressed()) {
 				Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 				if (!d->dir_exists(path) && d->make_dir(path) != OK) {
 					_set_message(TTRC("Couldn't create project directory, check permissions."), MESSAGE_ERROR);
@@ -764,13 +764,23 @@ void ProjectDialog::ok_pressed() {
 			dialog_error->popup_centered();
 			return;
 		}
-		cfg.set_value("application", "config/name", project_name->get_text().strip_edges());
+		cfg.set_value("application", "config/name", line_edit_project_name->get_text().strip_edges());
 		err = cfg.save(project_godot, true);
 		if (err != OK) {
 			dialog_error->set_text(vformat(TTR("Couldn't save project at '%s' (error %d)."), project_godot, err));
 			dialog_error->popup_centered();
 			return;
 		}
+	}
+
+	// Creates an editor setting for the toggle for whether to save the default project path (so it can be persisted)
+	EditorSettings::get_singleton()->set("_project_manager/save_default_project_path", btn_save_default_path->is_pressed());
+	EditorSettings::get_singleton()->save();
+
+	// Save parent directory as default project path if the toggle is on.
+	if (btn_save_default_path->is_pressed()) {
+		EditorSettings::get_singleton()->set("filesystem/directories/default_project_path", path.get_base_dir());
+		EditorSettings::get_singleton()->save();
 	}
 
 	hide();
@@ -820,11 +830,11 @@ void ProjectDialog::set_mode(Mode p_mode) {
 }
 
 void ProjectDialog::set_project_name(const String &p_name) {
-	project_name->set_text(p_name);
+	line_edit_project_name->set_text(p_name);
 }
 
 void ProjectDialog::set_project_path(const String &p_path) {
-	project_path->set_text(p_path);
+	line_edit_project_path->set_text(p_path);
 }
 
 void ProjectDialog::ask_for_path_and_show() {
@@ -835,50 +845,52 @@ void ProjectDialog::ask_for_path_and_show() {
 void ProjectDialog::show_dialog(bool p_reset_name) {
 	if (mode == MODE_RENAME) {
 		// Name and path are set in `ProjectManager::_rename_project`.
-		project_path->set_editable(false);
+		line_edit_project_path->set_editable(false);
 
 		set_title(TTRC("Rename Project"));
 		set_ok_button_text(TTRC("Rename"));
 
-		create_dir->hide();
+		btn_create_dir->hide();
 		project_status_rect->hide();
+		btn_save_default_path->hide();
 		project_browse->hide();
 		edit_check_box->hide();
 
-		name_container->show();
-		install_path_container->hide();
+		vbox_project_name->show();
+		vbox_install_path->hide();
 		renderer_container->hide();
 		default_files_container->hide();
 
-		callable_mp((Control *)project_name, &Control::grab_focus).call_deferred();
-		callable_mp(project_name, &LineEdit::select_all).call_deferred();
+		callable_mp((Control *)line_edit_project_name, &Control::grab_focus).call_deferred();
+		callable_mp(line_edit_project_name, &LineEdit::select_all).call_deferred();
 	} else {
 		if (p_reset_name) {
 			_reset_name();
 		}
-		project_path->set_editable(true);
+		line_edit_project_path->set_editable(true);
 
 		if (mode == MODE_DUPLICATE) {
 			String original_dir = original_project_path.get_base_dir();
-			project_path->set_text(original_dir);
-			install_path->set_text(original_dir);
+			line_edit_project_path->set_text(original_dir);
+			line_edit_install_path->set_text(original_dir);
 			fdialog_project->set_current_dir(original_dir);
 		} else {
 			String fav_dir = EDITOR_GET("filesystem/directories/default_project_path");
 			fav_dir = fav_dir.simplify_path();
 			if (!fav_dir.is_empty()) {
-				project_path->set_text(fav_dir);
-				install_path->set_text(fav_dir);
+				line_edit_project_path->set_text(fav_dir);
+				line_edit_install_path->set_text(fav_dir);
 				fdialog_project->set_current_dir(fav_dir);
 			} else {
 				Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-				project_path->set_text(d->get_current_dir());
-				install_path->set_text(d->get_current_dir());
+				line_edit_project_path->set_text(d->get_current_dir());
+				line_edit_install_path->set_text(d->get_current_dir());
 				fdialog_project->set_current_dir(d->get_current_dir());
 			}
 		}
 
-		create_dir->show();
+		btn_create_dir->show();
+		btn_save_default_path->show();
 		project_status_rect->show();
 		project_browse->show();
 		edit_check_box->show();
@@ -887,8 +899,8 @@ void ProjectDialog::show_dialog(bool p_reset_name) {
 			set_title(TTRC("Import Existing Project"));
 			set_ok_button_text(TTRC("Import"));
 
-			name_container->hide();
-			install_path_container->hide();
+			vbox_project_name->hide();
+			vbox_install_path->hide();
 			renderer_container->hide();
 			default_files_container->hide();
 
@@ -897,45 +909,45 @@ void ProjectDialog::show_dialog(bool p_reset_name) {
 			set_title(TTRC("Create New Project"));
 			set_ok_button_text(TTRC("Create"));
 
-			name_container->show();
-			install_path_container->hide();
+			vbox_project_name->show();
+			vbox_install_path->hide();
 			renderer_container->show();
 			default_files_container->show();
 
-			callable_mp((Control *)project_name, &Control::grab_focus).call_deferred();
-			callable_mp(project_name, &LineEdit::select_all).call_deferred();
+			callable_mp((Control *)line_edit_project_name, &Control::grab_focus).call_deferred();
+			callable_mp(line_edit_project_name, &LineEdit::select_all).call_deferred();
 		} else if (mode == MODE_INSTALL) {
 			set_title(TTR("Install Project:") + " " + zip_title);
 			set_ok_button_text(TTRC("Install"));
 
-			project_name->set_text(zip_title);
+			line_edit_project_name->set_text(zip_title);
 
-			name_container->show();
-			install_path_container->hide();
+			vbox_project_name->show();
+			vbox_install_path->hide();
 			renderer_container->hide();
 			default_files_container->hide();
 
-			callable_mp((Control *)project_path, &Control::grab_focus).call_deferred();
+			callable_mp((Control *)line_edit_project_path, &Control::grab_focus).call_deferred();
 		} else if (mode == MODE_DUPLICATE) {
 			set_title(TTRC("Duplicate Project"));
 			set_ok_button_text(TTRC("Duplicate"));
 
-			name_container->show();
-			install_path_container->hide();
+			vbox_project_name->show();
+			vbox_install_path->hide();
 			renderer_container->hide();
 			default_files_container->hide();
 			if (!duplicate_can_edit) {
 				edit_check_box->hide();
 			}
 
-			callable_mp((Control *)project_name, &Control::grab_focus).call_deferred();
-			callable_mp(project_name, &LineEdit::select_all).call_deferred();
+			callable_mp((Control *)line_edit_project_name, &Control::grab_focus).call_deferred();
+			callable_mp(line_edit_project_name, &LineEdit::select_all).call_deferred();
 		}
 
 		auto_dir = "";
 		last_custom_target_dir = "";
 		_update_target_auto_dir();
-		if (create_dir->is_pressed()) {
+		if (btn_create_dir->is_pressed()) {
 			// Append `auto_dir` to target path.
 			_create_dir_toggled(true);
 		}
@@ -953,7 +965,7 @@ void ProjectDialog::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_THEME_CHANGED: {
-			create_dir->set_button_icon(get_editor_theme_icon(SNAME("FolderCreate")));
+			btn_create_dir->set_button_icon(get_editor_theme_icon(SNAME("FolderCreate")));
 			project_browse->set_button_icon(get_editor_theme_icon(SNAME("FolderBrowse")));
 			install_browse->set_button_icon(get_editor_theme_icon(SNAME("FolderBrowse")));
 		} break;
@@ -976,96 +988,116 @@ void ProjectDialog::_bind_methods() {
 }
 
 ProjectDialog::ProjectDialog() {
-	VBoxContainer *vb = memnew(VBoxContainer);
-	add_child(vb);
+	VBoxContainer *vbox_main = memnew(VBoxContainer);
+	add_child(vbox_main);
 
-	name_container = memnew(VBoxContainer);
-	vb->add_child(name_container);
+	// Project Name VBoxContainer ---------------------------------------------------------------
+	vbox_project_name = memnew(VBoxContainer);
+	vbox_main->add_child(vbox_project_name);
 
-	Label *l = memnew(Label);
-	l->set_text(TTRC("Project Name:"));
-	name_container->add_child(l);
+	Label *label_throw_away = memnew(Label);
+	label_throw_away->set_text(TTRC("Project Name:"));
+	vbox_project_name->add_child(label_throw_away); // Add the project name text label
 
-	project_name = memnew(LineEdit);
-	project_name->set_virtual_keyboard_show_on_focus(false);
-	project_name->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	name_container->add_child(project_name);
+	line_edit_project_name = memnew(LineEdit);
+	line_edit_project_name->set_virtual_keyboard_show_on_focus(false);
+	line_edit_project_name->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	vbox_project_name->add_child(line_edit_project_name); // Add the project name text box
 
-	project_path_container = memnew(VBoxContainer);
-	vb->add_child(project_path_container);
+	// Project Path VBoxContainer ---------------------------------------------------------------
+	HSeparator *separator = memnew(HSeparator);
+	separator->set_mouse_filter(Control::MOUSE_FILTER_PASS);
+	vbox_main->add_child(separator); // Add a little space between project name & project path vboxes
 
-	HBoxContainer *pphb_label = memnew(HBoxContainer);
-	project_path_container->add_child(pphb_label);
+	vbox_project_path = memnew(VBoxContainer);
+	vbox_main->add_child(vbox_project_path);
 
-	l = memnew(Label);
-	l->set_text(TTRC("Project Path:"));
-	l->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	pphb_label->add_child(l);
+	// This references a setting that's created if it doesn't exist in the ok_pressed() method (When "Create" is actually pressed)
+	// The reason being, this setting is only relevant the create project dialog, where the user picks the folder to put their project in.
+	bool save_default = true; // Default value
+	if (EditorSettings::get_singleton()->has_setting("_project_manager/save_default_project_path")) {
+		save_default = EditorSettings::get_singleton()->get_setting("_project_manager/save_default_project_path");
+	}
 
-	create_dir = memnew(CheckButton);
-	create_dir->set_text(TTRC("Create Folder"));
-	create_dir->set_pressed(true);
-	pphb_label->add_child(create_dir);
-	create_dir->connect(SceneStringName(toggled), callable_mp(this, &ProjectDialog::_create_dir_toggled));
+	btn_save_default_path = memnew(CheckButton);
+	btn_save_default_path->set_text(TTRC("Save Parent Folder as Default Project Path"));
+	btn_save_default_path->set_pressed(save_default);
+	vbox_project_path->add_child(btn_save_default_path);
 
-	HBoxContainer *pphb = memnew(HBoxContainer);
-	project_path_container->add_child(pphb);
+	HBoxContainer *hbox_project_path_label = memnew(HBoxContainer);
+	vbox_project_path->add_child(hbox_project_path_label);
 
-	project_path = memnew(LineEdit);
-	project_path->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	project_path->set_accessibility_name(TTRC("Project Path:"));
-	project_path->set_structured_text_bidi_override(TextServer::STRUCTURED_TEXT_FILE);
-	pphb->add_child(project_path);
+	label_throw_away = memnew(Label);
+	label_throw_away->set_text(TTRC("Project Path:"));
+	label_throw_away->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	hbox_project_path_label->add_child(label_throw_away);
 
-	install_path_container = memnew(VBoxContainer);
-	vb->add_child(install_path_container);
+	btn_create_dir = memnew(CheckButton);
+	btn_create_dir->set_text(TTRC("Create Folder"));
+	btn_create_dir->set_pressed(true);
+	hbox_project_path_label->add_child(btn_create_dir);
+	btn_create_dir->connect(SceneStringName(toggled), callable_mp(this, &ProjectDialog::_create_dir_toggled));
 
-	l = memnew(Label);
-	l->set_text(TTRC("Project Installation Path:"));
-	install_path_container->add_child(l);
+	HBoxContainer *hbox_project_path = memnew(HBoxContainer);
+	vbox_project_path->add_child(hbox_project_path);
 
-	HBoxContainer *iphb = memnew(HBoxContainer);
-	install_path_container->add_child(iphb);
+	// Text box for the new project path
+	line_edit_project_path = memnew(LineEdit);
+	line_edit_project_path->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	line_edit_project_path->set_accessibility_name(TTRC("Project Path:"));
+	line_edit_project_path->set_structured_text_bidi_override(TextServer::STRUCTURED_TEXT_FILE);
+	hbox_project_path->add_child(line_edit_project_path);
 
-	install_path = memnew(LineEdit);
-	install_path->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	install_path->set_accessibility_name(TTRC("Project Installation Path:"));
-	install_path->set_structured_text_bidi_override(TextServer::STRUCTURED_TEXT_FILE);
-	iphb->add_child(install_path);
+	vbox_install_path = memnew(VBoxContainer);
+	vbox_main->add_child(vbox_install_path);
+
+	label_throw_away = memnew(Label);
+	label_throw_away->set_text(TTRC("Project Installation Path:"));
+	vbox_install_path->add_child(label_throw_away);
+
+	HBoxContainer *hbox_install_path = memnew(HBoxContainer);
+	vbox_install_path->add_child(hbox_install_path);
+
+	line_edit_install_path = memnew(LineEdit);
+	line_edit_install_path->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	line_edit_install_path->set_accessibility_name(TTRC("Project Installation Path:"));
+	line_edit_install_path->set_structured_text_bidi_override(TextServer::STRUCTURED_TEXT_FILE);
+	hbox_install_path->add_child(line_edit_install_path);
 
 	// status icon
 	project_status_rect = memnew(TextureRect);
 	project_status_rect->set_stretch_mode(TextureRect::STRETCH_KEEP_CENTERED);
-	pphb->add_child(project_status_rect);
+	hbox_project_path->add_child(project_status_rect);
 
+	// Button to choose the project path folder
 	project_browse = memnew(Button);
 	project_browse->set_text(TTRC("Browse"));
 	project_browse->connect(SceneStringName(pressed), callable_mp(this, &ProjectDialog::_browse_project_path));
-	pphb->add_child(project_browse);
+	hbox_project_path->add_child(project_browse);
 
 	// install status icon
 	install_status_rect = memnew(TextureRect);
 	install_status_rect->set_stretch_mode(TextureRect::STRETCH_KEEP_CENTERED);
-	iphb->add_child(install_status_rect);
+	hbox_install_path->add_child(install_status_rect);
 
 	install_browse = memnew(Button);
 	install_browse->set_text(TTRC("Browse"));
 	install_browse->connect(SceneStringName(pressed), callable_mp(this, &ProjectDialog::_browse_install_path));
-	iphb->add_child(install_browse);
+	hbox_install_path->add_child(install_browse);
 
 	msg = memnew(Label);
 	msg->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 	msg->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 	msg->set_custom_minimum_size(Size2(200, 0) * EDSCALE);
 	msg->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
-	vb->add_child(msg);
+	vbox_main->add_child(msg);
 
 	// Renderer selection.
 	renderer_container = memnew(VBoxContainer);
-	vb->add_child(renderer_container);
-	l = memnew(Label);
-	l->set_text(TTRC("Renderer:"));
-	renderer_container->add_child(l);
+	vbox_main->add_child(renderer_container);
+	label_throw_away = memnew(Label);
+	label_throw_away->set_text(TTRC("Renderer:"));
+	renderer_container->add_child(label_throw_away);
 	HBoxContainer *rshc = memnew(HBoxContainer);
 	renderer_container->add_child(rshc);
 	renderer_button_group.instantiate();
@@ -1146,21 +1178,21 @@ ProjectDialog::ProjectDialog() {
 
 	_renderer_selected();
 
-	l = memnew(Label);
-	l->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-	l->set_text(TTRC("The renderer can be changed later, but scenes may need to be adjusted."));
+	label_throw_away = memnew(Label);
+	label_throw_away->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
+	label_throw_away->set_text(TTRC("The renderer can be changed later, but scenes may need to be adjusted."));
 	// Add some extra spacing to separate it from the list above and the buttons below.
-	l->set_custom_minimum_size(Size2(0, 40) * EDSCALE);
-	l->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
-	l->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
-	l->set_modulate(Color(1, 1, 1, 0.7));
-	renderer_container->add_child(l);
+	label_throw_away->set_custom_minimum_size(Size2(0, 40) * EDSCALE);
+	label_throw_away->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
+	label_throw_away->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
+	label_throw_away->set_modulate(Color(1, 1, 1, 0.7));
+	renderer_container->add_child(label_throw_away);
 
 	default_files_container = memnew(HBoxContainer);
-	vb->add_child(default_files_container);
-	l = memnew(Label);
-	l->set_text(TTRC("Version Control Metadata:"));
-	default_files_container->add_child(l);
+	vbox_main->add_child(default_files_container);
+	label_throw_away = memnew(Label);
+	label_throw_away->set_text(TTRC("Version Control Metadata:"));
+	default_files_container->add_child(label_throw_away);
 	vcs_metadata_selection = memnew(OptionButton);
 	vcs_metadata_selection->set_custom_minimum_size(Size2(100, 20));
 	vcs_metadata_selection->add_item(TTRC("None"), (int)EditorVCSInterface::VCSMetadata::NONE);
@@ -1178,22 +1210,22 @@ ProjectDialog::ProjectDialog() {
 
 	Control *spacer2 = memnew(Control);
 	spacer2->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	vb->add_child(spacer2);
+	vbox_main->add_child(spacer2);
 
 	edit_check_box = memnew(CheckBox);
 	edit_check_box->set_text(TTRC("Edit Now"));
 	edit_check_box->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
 	edit_check_box->set_pressed(true);
-	vb->add_child(edit_check_box);
+	vbox_main->add_child(edit_check_box);
 
-	project_name->connect(SceneStringName(text_changed), callable_mp(this, &ProjectDialog::_project_name_changed).unbind(1));
-	project_name->connect(SceneStringName(text_submitted), callable_mp(this, &ProjectDialog::ok_pressed).unbind(1));
+	line_edit_project_name->connect(SceneStringName(text_changed), callable_mp(this, &ProjectDialog::_project_name_changed).unbind(1));
+	line_edit_project_name->connect(SceneStringName(text_submitted), callable_mp(this, &ProjectDialog::ok_pressed).unbind(1));
 
-	project_path->connect(SceneStringName(text_changed), callable_mp(this, &ProjectDialog::_project_path_changed).unbind(1));
-	project_path->connect(SceneStringName(text_submitted), callable_mp(this, &ProjectDialog::ok_pressed).unbind(1));
+	line_edit_project_path->connect(SceneStringName(text_changed), callable_mp(this, &ProjectDialog::_project_path_changed).unbind(1));
+	line_edit_project_path->connect(SceneStringName(text_submitted), callable_mp(this, &ProjectDialog::ok_pressed).unbind(1));
 
-	install_path->connect(SceneStringName(text_changed), callable_mp(this, &ProjectDialog::_install_path_changed).unbind(1));
-	install_path->connect(SceneStringName(text_submitted), callable_mp(this, &ProjectDialog::ok_pressed).unbind(1));
+	line_edit_install_path->connect(SceneStringName(text_changed), callable_mp(this, &ProjectDialog::_install_path_changed).unbind(1));
+	line_edit_install_path->connect(SceneStringName(text_submitted), callable_mp(this, &ProjectDialog::ok_pressed).unbind(1));
 
 	fdialog_install->connect("dir_selected", callable_mp(this, &ProjectDialog::_install_path_selected));
 	fdialog_install->connect("file_selected", callable_mp(this, &ProjectDialog::_install_path_selected));
