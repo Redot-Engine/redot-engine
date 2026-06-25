@@ -4061,6 +4061,8 @@ void WaylandThread::window_try_set_mode(DisplayServer::WindowID p_window_id, Dis
 		default: {
 		} break;
 	}
+
+	wl_display_roundtrip(wl_display);
 }
 
 void WaylandThread::window_set_borderless(DisplayServer::WindowID p_window_id, bool p_borderless) {

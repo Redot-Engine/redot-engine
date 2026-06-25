@@ -3552,6 +3552,9 @@ Error Main::setup2(bool p_show_boot_logo) {
 			}
 		}
 
+		// Sync window size from Wayland thread before rendering boot logo (avoid stretch)
+        DisplayServer::get_singleton()->process_events(); 
+
 		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", get_boot_splash_bg_color());
 		RenderingServer::get_singleton()->set_default_clear_color(clear);
 

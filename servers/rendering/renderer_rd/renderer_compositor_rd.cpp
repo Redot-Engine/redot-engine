@@ -224,13 +224,15 @@ void RendererCompositorRD::set_boot_image(const Ref<Image> &p_image, const Color
 	}
 
 	Size2 window_size = DisplayServer::get_singleton()->window_get_size();
-
 	Rect2 imgrect(0, 0, p_image->get_width(), p_image->get_height());
 	Rect2 screenrect;
+
 	if (p_scale) {
 		screenrect = OS::get_singleton()->calculate_boot_screen_rect(window_size, imgrect.size);
 	} else {
+		float screen_scale = DisplayServer::get_singleton()->screen_get_scale();  
 		screenrect = imgrect;
+		screenrect.size *= screen_scale;   // convert image rect to physical pixels - necessary for Wayland - should return 1.0 elsewhere
 		screenrect.position += ((window_size - screenrect.size) / 2.0).floor();
 	}
 
