@@ -3558,8 +3558,25 @@ Error Main::setup2(bool p_show_boot_logo) {
 		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", get_boot_splash_bg_color());
 		RenderingServer::get_singleton()->set_default_clear_color(clear);
 
-		if (p_show_boot_logo) {
-			setup_boot_logo();
+		if (p_show_boot_logo) {  
+			// Display the boot splash image. On Wayland, this commits the first buffer  
+			// to the compositor, which may trigger a window resize event on tiling WMs.  
+			setup_boot_logo();  
+		
+			// On tiling Wayland compositors (e.g., Hyprland), the compositor sends the  
+			// actual tiling window size only after seeing the first committed buffer.  
+			// We need to synchronize with the compositor to receive this configure event  
+			// before proceeding, otherwise the window size may be stale.  
+			Size2i pre_sync_size = DisplayServer::get_singleton()->window_get_size();  
+			DisplayServer::get_singleton()->compositor_sync();  
+		
+			// If the window size changed after the sync (meaning the compositor sent a  
+			// configure event with a different size), redraw the boot logo with the  
+			// correct dimensions. This ensures the logo is centered and scaled properly  
+			// on tiling window managers.  
+			if (DisplayServer::get_singleton()->window_get_size() != pre_sync_size) {  
+				setup_boot_logo();  
+			}  
 		}
 
 		MAIN_PRINT("Main: Clear Color");

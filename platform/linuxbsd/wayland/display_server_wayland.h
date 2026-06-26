@@ -340,6 +340,7 @@ public:
 	virtual bool color_picker(const Callable &p_callback) override;
 
 	virtual void process_events() override;
+	virtual void compositor_sync() override;
 
 	virtual void release_rendering_thread() override;
 	virtual void swap_buffers() override;

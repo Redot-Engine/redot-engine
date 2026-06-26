@@ -859,6 +859,7 @@ public:
 	virtual void tablet_set_current_driver(const String &p_driver) {}
 
 	virtual void process_events() = 0;
+	virtual void compositor_sync() {};
 
 	virtual void force_process_and_drop_events();
 

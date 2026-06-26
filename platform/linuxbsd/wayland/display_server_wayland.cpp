@@ -1819,6 +1819,16 @@ void DisplayServerWayland::process_events() {
 	Input::get_singleton()->flush_buffered_events();
 }
 
+void DisplayServerWayland::compositor_sync() {  
+    // Wait up to 100ms for the compositor to send a configure with the  
+    // actual window size (e.g. Hyprland's tiling size after first buffer).  
+    // This is event-driven, not a fixed sleep.  
+    if (wayland_thread.wait_window_rect_ms(MAIN_WINDOW_ID, 200)) {  
+        // Size changed — drain the message queue so WindowData::rect is updated.  
+        process_events();  
+    }  
+}
+
 void DisplayServerWayland::release_rendering_thread() {
 #ifdef GLES3_ENABLED
 	if (egl_manager) {

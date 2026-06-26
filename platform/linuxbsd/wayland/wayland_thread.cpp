@@ -3093,6 +3093,10 @@ struct wl_display *WaylandThread::get_wl_display() const {
 	return wl_display;
 }
 
+void WaylandThread::roundtrip() {  
+	wl_display_roundtrip(wl_display);  
+}
+
 // NOTE: Stuff like libdecor can (and will) register foreign proxies which
 // aren't formatted as we like. This method is needed to detect whether a proxy
 // has our tag. Also, be careful! The proxy has to be manually tagged or it
@@ -4870,6 +4874,59 @@ bool WaylandThread::wait_frame_suspend_ms(int p_timeout) {
 
 	DEBUG_LOG_WAYLAND_THREAD("Frame timeout.");
 	return false;
+}
+
+bool WaylandThread::wait_window_rect_ms(DisplayServer::WindowID p_id, int p_timeout) {  
+    ERR_FAIL_COND_V(!windows.has(p_id), false);  
+  
+    Size2i initial_size = windows[p_id].rect.size;  
+  
+    // Same unblock trick as wait_frame_suspend_ms: the polling thread may be  
+    // stuck in prepare_read; a roundtrip bypasses it safely.  
+    MutexLock mutex_lock(mutex);  
+    wl_display_roundtrip(wl_display);  
+  
+    if (windows[p_id].rect.size != initial_size) {  
+        return true; // Already changed during the roundtrip.  
+    }  
+  
+    struct pollfd poll_fd;  
+    poll_fd.fd = wl_display_get_fd(wl_display);  
+    poll_fd.events = POLLIN | POLLHUP;  
+  
+    int begin_ms = OS::get_singleton()->get_ticks_msec();  
+    int remaining_ms = p_timeout;  
+  
+    while (remaining_ms > 0) {  
+        while (wl_display_prepare_read(wl_display) != 0) {  
+            if (wl_display_dispatch_pending(wl_display) == -1) {  
+                break;  
+            }  
+            if (windows[p_id].rect.size != initial_size) {  
+                return true;  
+            }  
+        }  
+  
+        wl_display_flush(wl_display);  
+        poll(&poll_fd, 1, remaining_ms);  
+  
+        if (poll_fd.revents & POLLIN) {  
+            wl_display_read_events(wl_display);  
+        } else {  
+            wl_display_cancel_read(wl_display);  
+            return false;  
+        }  
+  
+        wl_display_dispatch_pending(wl_display);  
+  
+        if (windows[p_id].rect.size != initial_size) {  
+            return true;  
+        }  
+  
+        remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;  
+    }  
+  
+    return false;  
 }
 
 uint64_t WaylandThread::window_get_last_frame_time(DisplayServer::WindowID p_window_id) const {
