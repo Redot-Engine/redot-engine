@@ -662,8 +662,8 @@ elif methods.using_gcc(env):
     if cc_version_major < 12:
         print_error(
             "Detected GCC version older than 12, which does not fully support "
-            "C++20, or has bugs when compiling Redot. Supported versions are 9 "
-            "and later. Use a newer GCC version, or Clang 6 or later by passing "
+            "C++20. Supported versions are 12 and later. Use a newer GCC "
+            "version, or Clang 16 or later by passing "
             '"use_llvm=yes" to the SCons command line.'
         )
         Exit(255)
