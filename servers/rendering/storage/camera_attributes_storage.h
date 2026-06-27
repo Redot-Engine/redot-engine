@@ -121,7 +121,6 @@ public:
 		return cam_attributes && cam_attributes->motion_blur_enabled && cam_attributes->motion_blur_intensity > 0.0;
 	}
 
-
 	void camera_attributes_set_dof_blur_quality(RS::DOFBlurQuality p_quality, bool p_use_jitter);
 	void camera_attributes_set_dof_blur_bokeh_shape(RS::DOFBokehShape p_shape);
 

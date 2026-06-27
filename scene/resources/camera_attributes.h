@@ -97,7 +97,7 @@ private:
 	float motion_blur_velocity_lower_threshold = 0.0;
 	float motion_blur_velocity_upper_threshold = 0.0;
 	void _update_motion_blur();
-  /// @}
+	/// @}
 
 	/// @name DOF Blur
 	/// @{
@@ -138,7 +138,7 @@ public:
 	float get_motion_blur_velocity_lower_threshold() const;
 	void set_motion_blur_velocity_upper_threshold(float p_threshold);
 	float get_motion_blur_velocity_upper_threshold() const;
-  /// @}
+	/// @}
 
 	/// @name DOF Blur
 	/// @{
