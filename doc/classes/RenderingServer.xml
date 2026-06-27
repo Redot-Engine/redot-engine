@@ -102,7 +102,7 @@
 				[/codeblock]
 			</description>
 		</method>
-				<method name="camera_attributes_set_motion_blur">
+		<method name="camera_attributes_set_motion_blur">
 			<return type="void" />
 			<param index="0" name="camera_attributes" type="RID" />
 			<param index="1" name="enabled" type="bool" />

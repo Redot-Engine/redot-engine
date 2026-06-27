@@ -36,19 +36,19 @@
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/rendering_server_globals.h"
 
-RendererRD::MotionBlur::MotionBlur(RSE::MotionBlurTileSize p_tile_size_level) {
+RendererRD::MotionBlur::MotionBlur(RS::MotionBlurTileSize p_tile_size_level) {
 	// Init tile size (changes require restart)
 	switch (p_tile_size_level) {
-		case RSE::MOTION_BLUR_TILE_SIZE_SMALL:
+		case RS::MOTION_BLUR_TILE_SIZE_SMALL:
 			tile_size = 20;
 			break;
-		case RSE::MOTION_BLUR_TILE_SIZE_MEDIUM:
+		case RS::MOTION_BLUR_TILE_SIZE_MEDIUM:
 			tile_size = 40;
 			break;
-		case RSE::MOTION_BLUR_TILE_SIZE_LARGE:
+		case RS::MOTION_BLUR_TILE_SIZE_LARGE:
 			tile_size = 60;
 			break;
-		case RSE::MOTION_BLUR_TILE_SIZE_EXTRA_LARGE:
+		case RS::MOTION_BLUR_TILE_SIZE_EXTRA_LARGE:
 			tile_size = 80;
 			break;
 		default:
@@ -108,8 +108,8 @@ RendererRD::MotionBlur::~MotionBlur() {
 	motion_blur.neighbor_max_shader.version_free(motion_blur.neighbor_max_shader_version);
 	motion_blur.blur_shader.version_free(motion_blur.blur_shader_version);
 
-	RD::get_singleton()->free_rid(motion_blur.nearest_sampler);
-	RD::get_singleton()->free_rid(motion_blur.linear_sampler);
+	RD::get_singleton()->free(motion_blur.nearest_sampler);
+	RD::get_singleton()->free(motion_blur.linear_sampler);
 }
 
 void RendererRD::MotionBlur::motion_blur_process(const MotionBlurBuffers &p_buffers) {
@@ -248,13 +248,13 @@ void RendererRD::MotionBlur::motion_blur_compute(Ref<RenderSceneBuffersRD> p_ren
 		const double time_scale = Engine::get_singleton()->get_effective_time_scale();
 		float time_step = p_time_step / (float)time_scale;
 		switch (RSG::camera_attributes->camera_attributes_get_motion_blur_framerate_mode()) {
-			case RSE::MOTION_BLUR_FRAMERATE_MODE_NATIVE:
+			case RS::MOTION_BLUR_FRAMERATE_MODE_NATIVE:
 				// Use raw intensity, ignore frame time
 				break;
-			case RSE::MOTION_BLUR_FRAMERATE_MODE_CAPPED:
+			case RS::MOTION_BLUR_FRAMERATE_MODE_CAPPED:
 				intensity *= MIN(1.f / reference_framerate, time_step) / time_step;
 				break;
-			case RSE::MOTION_BLUR_FRAMERATE_MODE_FIXED:
+			case RS::MOTION_BLUR_FRAMERATE_MODE_FIXED:
 				// Scale intensity by frame time
 				intensity /= reference_framerate * time_step;
 				break;
@@ -262,13 +262,13 @@ void RendererRD::MotionBlur::motion_blur_compute(Ref<RenderSceneBuffersRD> p_ren
 
 		int sample_count;
 		switch (RSG::camera_attributes->camera_attributes_get_motion_blur_quality()) {
-			case RSE::MOTION_BLUR_QUALITY_LOW:
+			case RS::MOTION_BLUR_QUALITY_LOW:
 				sample_count = 4;
 				break;
-			case RSE::MOTION_BLUR_QUALITY_MEDIUM:
+			case RS::MOTION_BLUR_QUALITY_MEDIUM:
 				sample_count = 8;
 				break;
-			case RSE::MOTION_BLUR_QUALITY_HIGH:
+			case RS::MOTION_BLUR_QUALITY_HIGH:
 				sample_count = 16;
 				break;
 			default:
