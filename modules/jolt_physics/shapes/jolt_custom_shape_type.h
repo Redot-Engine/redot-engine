@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_custom_shape_type.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "Jolt/Jolt.h"
 
 #include "Jolt/Physics/Collision/Shape/Shape.h"

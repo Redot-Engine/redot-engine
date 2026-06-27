@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file enet_packet_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "enet_packet_peer.h"
 
 void ENetPacketPeer::peer_disconnect(int p_data) {

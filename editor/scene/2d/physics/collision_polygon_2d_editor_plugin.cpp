@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file collision_polygon_2d_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "collision_polygon_2d_editor_plugin.h"
 
 Node2D *CollisionPolygon2DEditor::_get_node() const {

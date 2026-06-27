@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file node_3d_editor_gizmos.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/dynamic_bvh.h"
 #include "core/templates/hash_map.h"
 #include "scene/3d/camera_3d.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_texture.h"
 
 #include "core/io/image_loader.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file spin_box.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/line_edit.h"
 #include "scene/gui/range.h"
 #include "scene/main/timer.h"

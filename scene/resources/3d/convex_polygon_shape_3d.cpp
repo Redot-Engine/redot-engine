@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file convex_polygon_shape_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "convex_polygon_shape_3d.h"
 #include "core/math/convex_hull.h"
 #include "scene/resources/mesh.h"

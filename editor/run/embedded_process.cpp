@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file embedded_process.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "embedded_process.h"
 
 #include "core/config/project_settings.h"
@@ -334,9 +340,6 @@ void EmbeddedProcess::_notification(int p_what) {
 }
 
 void EmbeddedProcess::_check_mouse_over() {
-	// This method checks if the mouse is over the embedded process while the current application is focused.
-	// The goal is to give focus to the embedded process as soon as the mouse hovers over it,
-	// allowing the user to interact with it immediately without needing to click first.
 	if (!embedding_completed || !application_has_focus || !window || has_focus() || !is_visible_in_tree() || !window->has_focus() || Input::get_singleton()->is_mouse_button_pressed(MouseButton::LEFT) || Input::get_singleton()->is_mouse_button_pressed(MouseButton::RIGHT)) {
 		return;
 	}

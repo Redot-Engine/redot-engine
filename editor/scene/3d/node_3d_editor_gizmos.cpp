@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_3d_editor_gizmos.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node_3d_editor_gizmos.h"
 
 #include "core/math/geometry_2d.h"

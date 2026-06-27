@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_performance_profiler.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/hash_map.h"
 #include "main/performance.h"
 #include "scene/gui/control.h"

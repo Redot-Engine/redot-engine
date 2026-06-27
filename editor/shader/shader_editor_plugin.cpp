@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shader_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shader_editor_plugin.h"
 
 #include "editor/docks/filesystem_dock.h"
@@ -85,7 +91,7 @@ void ShaderEditorPlugin::_update_shader_list() {
 		if (edited_shader.shader_editor) {
 			unsaved = edited_shader.shader_editor->is_unsaved();
 		}
-		// TODO: Handle visual shaders too.
+		/// @todo Handle visual shaders too.
 
 		if (unsaved) {
 			text += "(*)";
@@ -314,7 +320,7 @@ void ShaderEditorPlugin::get_window_layout(Ref<ConfigFile> p_layout) {
 }
 
 String ShaderEditorPlugin::get_unsaved_status(const String &p_for_scene) const {
-	// TODO: This should also include visual shaders and shader includes, but save_external_data() doesn't seem to save them...
+	/// @todo This should also include visual shaders and shader includes, but save_external_data() doesn't seem to save them...
 	PackedStringArray unsaved_shaders;
 	for (uint32_t i = 0; i < edited_shaders.size(); i++) {
 		if (edited_shaders[i].shader_editor) {

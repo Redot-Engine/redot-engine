@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file remote_transform_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "remote_transform_3d.h"
 
 void RemoteTransform3D::_update_cache() {

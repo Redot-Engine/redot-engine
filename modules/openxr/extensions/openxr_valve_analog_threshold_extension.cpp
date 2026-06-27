@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_valve_analog_threshold_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_valve_analog_threshold_extension.h"
 #include "../action_map/openxr_action_set.h"
 #include "../action_map/openxr_interaction_profile.h"

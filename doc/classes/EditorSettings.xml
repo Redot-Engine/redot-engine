@@ -453,6 +453,9 @@
 		<member name="editors/3d_gizmos/gizmo_colors/gridmap_grid" type="Color" setter="" getter="">
 			The 3D editor gizmo color for the [GridMap] grid.
 		</member>
+		<member name="editors/3d_gizmos/gizmo_colors/ik_chain" type="Color" setter="" getter="">
+			The 3D editor gizmo color for the [IKModifier3D] guides.
+		</member>
 		<member name="editors/3d_gizmos/gizmo_colors/instantiated" type="Color" setter="" getter="">
 			The color override to use for 3D editor gizmos if the [Node3D] in question is part of an instantiated scene file (from the perspective of the current scene).
 		</member>
@@ -1421,6 +1424,10 @@
 		</member>
 		<member name="text_editor/external/exec_path" type="String" setter="" getter="">
 			The path to the text editor executable used to edit text files if [member text_editor/external/use_external_editor] is [code]true[/code].
+		</member>
+		<member name="text_editor/external/prefer_tabs_in_external_editor" type="bool" setter="" getter="">
+			If set, this will instruct the editor to attempt to reopen previously open scripts as tabs in a single instance of the external editor,
+			by passing them in as command line args instead of trying to launch a single instance for each script file.
 		</member>
 		<member name="text_editor/external/use_external_editor" type="bool" setter="" getter="">
 			If [code]true[/code], uses an external editor instead of the built-in Script Editor. See also [member text_editor/external/exec_path] and [member text_editor/external/exec_flags].

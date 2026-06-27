@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_test_runner.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_test_runner.h"
 
 #include "../gdscript.h"
@@ -152,7 +158,7 @@ GDScriptTestRunner::GDScriptTestRunner(const String &p_source_dir, bool p_init_l
 	ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/enable", true);
 	for (int i = 0; i < (int)GDScriptWarning::WARNING_MAX; i++) {
 		if (i == GDScriptWarning::UNTYPED_DECLARATION || i == GDScriptWarning::INFERRED_DECLARATION) {
-			// TODO: Add ability for test scripts to specify which warnings to enable/disable for testing.
+			/// @todo Add ability for test scripts to specify which warnings to enable/disable for testing.
 			continue;
 		}
 		String warning_setting = GDScriptWarning::get_settings_path_from_code((GDScriptWarning::Code)i);
@@ -432,13 +438,13 @@ void GDScriptTestRunner::handle_cmdline() {
 }
 
 void GDScriptTest::enable_stdout() {
-	// TODO: this could likely be handled by doctest or `tests/test_macros.h`.
+	/// @todo This could likely be handled by doctest or `tests/test_macros.h`.
 	OS::get_singleton()->set_stdout_enabled(true);
 	OS::get_singleton()->set_stderr_enabled(true);
 }
 
 void GDScriptTest::disable_stdout() {
-	// TODO: this could likely be handled by doctest or `tests/test_macros.h`.
+	/// @todo This could likely be handled by doctest or `tests/test_macros.h`.
 	OS::get_singleton()->set_stdout_enabled(false);
 	OS::get_singleton()->set_stderr_enabled(false);
 }
@@ -481,7 +487,7 @@ bool GDScriptTest::check_output(const String &p_output) const {
 
 	ERR_FAIL_COND_V_MSG(err != OK, false, "Error when opening the output file.");
 
-	String got = p_output.strip_edges(); // TODO: may be hacky.
+	String got = p_output.strip_edges(); ///< @todo May be hacky.
 	got += "\n"; // Make sure to insert newline for CI static checks.
 
 #ifndef DEBUG_ENABLED
@@ -554,7 +560,7 @@ GDScriptTest::TestResult GDScriptTest::execute_test_code(bool p_is_generating) {
 		const List<GDScriptParser::ParserError> &errors = parser.get_errors();
 		if (!errors.is_empty()) {
 			// Only the first error since the following might be cascading.
-			result.output += errors.front()->get().message + "\n"; // TODO: line, column?
+			result.output += errors.front()->get().message + "\n"; ///< @todo line, column?
 		}
 		if (!p_is_generating) {
 			result.passed = check_output(result.output);
@@ -700,7 +706,7 @@ bool GDScriptTest::generate_output() {
 		return false;
 	}
 
-	String output = result.output.strip_edges(); // TODO: may be hacky.
+	String output = result.output.strip_edges(); ///< @todo May be hacky.
 	output += "\n"; // Make sure to insert newline for CI static checks.
 
 	out_file->store_string(output);

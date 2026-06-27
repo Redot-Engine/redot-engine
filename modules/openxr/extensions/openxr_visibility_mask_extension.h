@@ -32,21 +32,25 @@
 
 #pragma once
 
+/**
+ * @file openxr_visibility_mask_extension.h
+ *
+ * The OpenXR visibility mask extension provides a mesh for each eye that
+ * can be used as a mask to determine which part of our rendered result
+ * is actually visible to the user. Due to lens distortion the edges of
+ * the rendered image are never used in the final result output on the HMD.
+ *
+ * Blacking out this are of the render result can remove a fair amount of
+ * overhead in rendering part of the screen that is unused.
+ *
+ * https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_visibility_mask
+ */
+
 #include "../util.h"
 
 #include "core/templates/vector.h"
 #include "openxr_extension_wrapper.h"
 #include "scene/resources/mesh.h"
-
-// The OpenXR visibility mask extension provides a mesh for each eye that
-// can be used as a mask to determine which part of our rendered result
-// is actually visible to the user. Due to lens distortion the edges of
-// the rendered image are never used in the final result output on the HMD.
-//
-// Blacking out this are of the render result can remove a fair amount of
-// overhead in rendering part of the screen that is unused.
-//
-// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_KHR_visibility_mask
 
 class OpenXRVisibilityMaskExtension : public OpenXRExtensionWrapper {
 	GDCLASS(OpenXRVisibilityMaskExtension, OpenXRExtensionWrapper);
@@ -94,6 +98,8 @@ private:
 	void _update_mesh_data(uint32_t p_view);
 	void _update_mesh();
 
-	// OpenXR API call wrappers
+	/// @name OpenXR API call wrappers
+	/// @{
 	EXT_PROTO_XRRESULT_FUNC5(xrGetVisibilityMaskKHR, (XrSession), session, (XrViewConfigurationType), viewConfigurationType, (uint32_t), viewIndex, (XrVisibilityMaskTypeKHR), visibilityMaskType, (XrVisibilityMaskKHR *), visibilityMask);
+	/// @}
 };

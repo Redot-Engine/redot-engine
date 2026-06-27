@@ -45,8 +45,8 @@ codebase of both through a more genuinely community-driven model than Godot.
 
 ### Binary downloads
 
-Official binaries for the Redot editor and the export templates will be found
-[on the Redot website](https://redotengine.org/download) once it's set up and on the [GitHub page](https://github.com/Redot-Engine/redot-engine) until then.
+Official binaries for the Redot editor and the export templates can be found
+[on the Redot website](https://redotengine.org/download) and on the [GitHub page](https://github.com/Redot-Engine/redot-engine).
 
 ### Compiling from source
 
@@ -63,21 +63,7 @@ nix run .
 
 This will automatically install all build dependencies and compile Redot if the binary doesn't exist.
 
-For manual control over the build process:
-
-```bash
-# Enter the Nix development environment
-nix develop
-
-# Build Redot (use 'macos' on macOS, 'linuxbsd' on Linux)
-scons platform=linuxbsd  # or: scons platform=macos
-
-# Run the editor - binary name reflects your platform and architecture
-# Examples: redot.linuxbsd.editor.x86_64, redot.macos.editor.arm64
-./bin/redot.<platform>.editor.<arch>
-```
-
-Nix works on Linux and macOS, and is available at [nixos.org/download.html](https://nixos.org/download.html). The `nix run .` command automatically detects your platform and architecture.
+Detailed Nix usage, including passing SCons build flags through `nix run`, forwarding runtime arguments, and manual `nix develop` workflows, is documented in the `Nix usage guide` at `doc/nix.md`.
 
 
 ## Community and contributing

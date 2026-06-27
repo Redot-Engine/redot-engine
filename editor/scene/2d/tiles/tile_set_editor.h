@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tile_set_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "atlas_merging_dialog.h"
 #include "scene/gui/tab_bar.h"
 #include "scene/resources/2d/tile_set.h"
@@ -58,11 +64,13 @@ private:
 	bool tile_set_changed_needs_update = false;
 	HSplitContainer *split_container = nullptr;
 
-	// TabBar.
+	/// @name TabBar
+	/// @{
 	HBoxContainer *tile_set_toolbar = nullptr;
 	TabBar *tabs_bar = nullptr;
-
-	// Tiles.
+	/// @}
+	/// @name Tiles
+	/// @{
 	Label *no_source_selected_label = nullptr;
 	TileSetAtlasSourceEditor *tile_set_atlas_source_editor = nullptr;
 	TileSetScenesCollectionSourceEditor *tile_set_scenes_collection_source_editor = nullptr;
@@ -72,8 +80,9 @@ private:
 	void _load_texture_files(const Vector<String> &p_paths);
 
 	void _update_sources_list(int force_selected_id = -1);
-
-	// Sources management.
+	/// @}
+	/// @name Sources Management
+	/// @{
 	Button *sources_delete_button = nullptr;
 	MenuButton *sources_add_button = nullptr;
 	MenuButton *source_sort_button = nullptr;
@@ -85,26 +94,29 @@ private:
 	void _source_add_id_pressed(int p_id_pressed);
 	void _sources_advanced_menu_id_pressed(int p_id_pressed);
 	void _set_source_sort(int p_sort);
-
+	/// @}
 	EditorFileDialog *texture_file_dialog = nullptr;
 	AtlasMergingDialog *atlas_merging_dialog = nullptr;
 	TileProxiesManagerDialog *tile_proxies_manager_dialog = nullptr;
 
 	bool first_edit = true;
 
-	// Patterns.
+	/// @name Patterns
+	/// @{
 	ItemList *patterns_item_list = nullptr;
 	Label *patterns_help_label = nullptr;
 	void _patterns_item_list_gui_input(const Ref<InputEvent> &p_event);
 	void _pattern_preview_done(Ref<TileMapPattern> p_pattern, Ref<Texture2D> p_texture);
 	bool select_last_pattern = false;
 	void _update_patterns_list();
-
-	// Expanded editor.
+	/// @}
+	/// @name Expanded Editor
+	/// @{
 	PanelContainer *expanded_area = nullptr;
 	Control *expanded_editor = nullptr;
 	ObjectID expanded_editor_parent;
 	LocalVector<SplitContainer *> disable_on_expand;
+	/// @}
 
 	void _tile_set_changed();
 	void _tab_changed(int p_tab_changed);

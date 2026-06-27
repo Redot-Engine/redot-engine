@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file stream_peer_gzip.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/stream_peer_gzip.h"
 
 #include "core/io/zip_io.h"

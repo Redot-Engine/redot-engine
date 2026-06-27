@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file aspect_ratio_container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "aspect_ratio_container.h"
 
 #include "scene/gui/texture_rect.h"

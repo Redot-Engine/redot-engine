@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_map_layer_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_map_layer_editor.h"
 
 #include "tiles_editor_plugin.h"
@@ -353,7 +359,7 @@ void TileMapLayerEditorTilesPlugin::_patterns_item_list_gui_input(const Ref<Inpu
 }
 
 void TileMapLayerEditorTilesPlugin::_pattern_preview_done(Ref<TileMapPattern> p_pattern, Ref<Texture2D> p_texture) {
-	// TODO optimize ?
+	/// @todo Optimize ?
 	for (int i = 0; i < patterns_item_list->get_item_count(); i++) {
 		if (patterns_item_list->get_item_metadata(i) == p_pattern) {
 			patterns_item_list->set_item_icon(i, p_texture);
@@ -819,7 +825,7 @@ void TileMapLayerEditorTilesPlugin::forward_canvas_draw_over_viewport(Control *p
 			// Do nothing.
 		} else {
 			Color grid_color = EDITOR_GET("editors/tiles_editor/grid_color");
-			Color selection_color = Color().from_hsv(Math::fposmod(grid_color.get_h() + 0.5, 1.0), grid_color.get_s(), grid_color.get_v(), 1.0);
+			Color selection_color = Color::from_hsv(Math::fposmod(grid_color.get_h() + 0.5, 1.0), grid_color.get_s(), grid_color.get_v(), 1.0);
 			tile_set->draw_cells_outline(p_overlay, tile_map_selection, selection_color, xform);
 		}
 	}
@@ -1809,7 +1815,7 @@ void TileMapLayerEditorTilesPlugin::_tile_atlas_control_draw() {
 
 	// Draw the selection.
 	Color grid_color = EDITOR_GET("editors/tiles_editor/grid_color");
-	Color selection_color = Color().from_hsv(Math::fposmod(grid_color.get_h() + 0.5, 1.0), grid_color.get_s(), grid_color.get_v(), 1.0);
+	Color selection_color = Color::from_hsv(Math::fposmod(grid_color.get_h() + 0.5, 1.0), grid_color.get_s(), grid_color.get_v(), 1.0);
 	for (const TileMapCell &E : tile_set_selection) {
 		int16_t untransformed_alternative_id = E.alternative_tile & TileSetAtlasSource::UNTRANSFORM_MASK;
 		if (E.source_id == source_id && untransformed_alternative_id == 0) {
@@ -2334,9 +2340,9 @@ TileMapLayerEditorTilesPlugin::TileMapLayerEditorTilesPlugin() {
 
 	// --- Bottom panel tiles ---
 	tiles_bottom_panel = memnew(VBoxContainer);
-	// FIXME: This can trigger theme updates when the nodes that we want to update are not yet available.
-	// The toolbar should be extracted to a dedicated control and theme updates should be handled through
-	// the notification.
+	/// @todo FIXME: This can trigger theme updates when the nodes that we want to update are not yet available.
+	/// The toolbar should be extracted to a dedicated control and theme updates should be handled through
+	/// the notification.
 	tiles_bottom_panel->connect(SceneStringName(theme_changed), callable_mp(this, &TileMapLayerEditorTilesPlugin::_update_theme));
 	tiles_bottom_panel->connect(SceneStringName(visibility_changed), callable_mp(this, &TileMapLayerEditorTilesPlugin::_stop_dragging));
 	tiles_bottom_panel->connect(SceneStringName(visibility_changed), callable_mp(this, &TileMapLayerEditorTilesPlugin::_tab_changed));
@@ -3484,9 +3490,9 @@ void TileMapLayerEditorTerrainsPlugin::edit(ObjectID p_edited_tile_map_layer_id)
 
 TileMapLayerEditorTerrainsPlugin::TileMapLayerEditorTerrainsPlugin() {
 	main_vbox_container = memnew(VBoxContainer);
-	// FIXME: This can trigger theme updates when the nodes that we want to update are not yet available.
-	// The toolbar should be extracted to a dedicated control and theme updates should be handled through
-	// the notification.
+	/// @todo FIXME: This can trigger theme updates when the nodes that we want to update are not yet available.
+	/// The toolbar should be extracted to a dedicated control and theme updates should be handled through
+	/// the notification.
 	main_vbox_container->connect(SceneStringName(theme_changed), callable_mp(this, &TileMapLayerEditorTerrainsPlugin::_update_theme));
 	main_vbox_container->set_name(TTR("Terrains"));
 
@@ -3805,8 +3811,8 @@ void TileMapLayerEditor::_update_layers_selector() {
 }
 
 void TileMapLayerEditor::_clear_all_layers_highlighting() {
-	// Note: This function might be removed if we remove the TileMap node at some point.
-	// All processing could be done in _update_all_layers_highlighting otherwise.
+	/// @note This function might be removed if we remove the TileMap node at some point.
+	/// All processing could be done in _update_all_layers_highlighting otherwise.
 	TileMapLayer *edited_layer = _get_edited_layer();
 
 	// Use default mode.

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fsr.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "spatial_upscaler.h"
 
 #include "../storage_rd/render_scene_buffers_rd.h"

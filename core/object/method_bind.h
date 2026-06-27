@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file method_bind.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/variant/binder_common.h"
 
 VARIANT_BITFIELD_CAST(MethodFlags)
@@ -99,7 +105,7 @@ public:
 	PropertyInfo get_return_info() const;
 
 #ifdef DEBUG_ENABLED
-	void set_argument_names(const Vector<StringName> &p_names); // Set by ClassDB, can't be inferred otherwise.
+	void set_argument_names(const Vector<StringName> &p_names); ///< Set by ClassDB, can't be inferred otherwise.
 	Vector<StringName> get_argument_names() const;
 
 	virtual GodotTypeInfo::Metadata get_argument_meta(int p_arg) const = 0;
@@ -140,7 +146,7 @@ public:
 	virtual ~MethodBind();
 };
 
-// MethodBindVarArg base CRTP
+/// MethodBindVarArg base CRTP
 template <typename Derived, typename T, typename R, bool should_returns>
 class MethodBindVarArgBase : public MethodBind {
 protected:
@@ -218,7 +224,7 @@ private:
 	}
 };
 
-// variadic, no return
+/// variadic, no return
 template <typename T>
 class MethodBindVarArgT : public MethodBindVarArgBase<MethodBindVarArgT<T>, T, void, false> {
 	friend class MethodBindVarArgBase<MethodBindVarArgT<T>, T, void, false>;
@@ -252,7 +258,7 @@ MethodBind *create_vararg_method_bind(void (T::*p_method)(const Variant **, int,
 	return a;
 }
 
-// variadic, return
+/// variadic, return
 template <typename T, typename R>
 class MethodBindVarArgTR : public MethodBindVarArgBase<MethodBindVarArgTR<T, R>, T, R, true> {
 	friend class MethodBindVarArgBase<MethodBindVarArgTR<T, R>, T, R, true>;
@@ -298,7 +304,7 @@ class __UnexistingClass;
 #define MB_T T
 #endif
 
-// no return, not const
+/// no return, not const
 #ifdef TYPED_METHOD_BIND
 template <typename T, typename... P>
 #else

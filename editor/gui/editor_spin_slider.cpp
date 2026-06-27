@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_spin_slider.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_spin_slider.h"
 
 #include "core/input/input.h"
@@ -593,7 +599,6 @@ void EditorSpinSlider::_evaluate_input_text() {
 	set_value(v);
 }
 
-//text_submitted signal
 void EditorSpinSlider::_value_input_submitted(const String &p_text) {
 	value_input_closed_frame = Engine::get_singleton()->get_frames_drawn();
 	if (value_input_popup) {
@@ -601,13 +606,11 @@ void EditorSpinSlider::_value_input_submitted(const String &p_text) {
 	}
 }
 
-//modal_closed signal
 void EditorSpinSlider::_value_input_closed() {
 	_evaluate_input_text();
 	value_input_closed_frame = Engine::get_singleton()->get_frames_drawn();
 }
 
-//focus_exited signal
 void EditorSpinSlider::_value_focus_exited() {
 	// discontinue because the focus_exit was caused by right-click context menu
 	if (value_input->is_menu_visible()) {

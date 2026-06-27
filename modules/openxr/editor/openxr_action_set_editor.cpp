@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_action_set_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_action_set_editor.h"
 
 #include "editor/editor_string_names.h"
@@ -169,7 +175,7 @@ void OpenXRActionSetEditor::_on_add_action() {
 	undo_redo->add_undo_method(this, "_do_remove_action_editor", action_editor);
 	undo_redo->commit_action(false);
 
-	// TODO handle focus
+	/// @todo Handle focus
 }
 
 void OpenXRActionSetEditor::_on_remove_action_set() {

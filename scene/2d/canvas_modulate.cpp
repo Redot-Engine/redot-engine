@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file canvas_modulate.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "canvas_modulate.h"
 
 void CanvasModulate::_on_in_canvas_visibility_changed(bool p_new_visibility) {

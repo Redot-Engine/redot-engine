@@ -32,25 +32,28 @@
 
 #pragma once
 
-///////////////////////////////////////////////////////////////////////////
-// Stores available interaction profile metadata
-//
-// OpenXR defines and hardcodes all the supported input devices and their
-// paths as part of the OpenXR spec. When support for new devices is
-// introduced this often starts life as an extension that needs to be enabled
-// until it's adopted into the core. As there is no interface to
-// enumerate the possibly paths, and that any OpenXR runtime would likely
-// limit such enumeration to those input devices supported by that runtime
-// there is no other option than to hardcode this.
-//
-// Note that we need to include paths of our extensions in our action map
-// regardless of whether the developers machine supports the extension or
-// not. Unsupported paths are filtered out when the action map is submitted
-// to the OpenXR runtime.
-//
-// Note on action type that automatic conversions between boolean and float
-// are supported but otherwise action types should match between action and
-// input/output paths.
+/**
+ * @file openxr_interaction_profile_metadata.h
+ *
+ * @brief Stores available interaction profile metadata
+ *
+ * @details OpenXR defines and hardcodes all the supported input devices and their
+ * paths as part of the OpenXR spec. When support for new devices is
+ * introduced this often starts life as an extension that needs to be enabled
+ * until it's adopted into the core. As there is no interface to
+ * enumerate the possibly paths, and that any OpenXR runtime would likely
+ * limit such enumeration to those input devices supported by that runtime
+ * there is no other option than to hardcode this.
+ *
+ * Note that we need to include paths of our extensions in our action map
+ * regardless of whether the developers machine supports the extension or
+ * not. Unsupported paths are filtered out when the action map is submitted
+ * to the OpenXR runtime.
+ *
+ * Note on action type that automatic conversions between boolean and float
+ * are supported but otherwise action types should match between action and
+ * input/output paths.
+ */
 
 #include "openxr_action.h"
 
@@ -64,24 +67,24 @@ class OpenXRInteractionProfileMetadata : public Object {
 
 public:
 	struct TopLevelPath {
-		String display_name; // User friendly display name (i.e. Left controller)
-		String openxr_path; // Path in OpenXR (i.e. /user/hand/left)
-		String openxr_extension_name; // If set, only available if extension is enabled (i.e. XR_HTCX_vive_tracker_interaction)
+		String display_name; ///< User friendly display name (i.e. Left controller)
+		String openxr_path; ///< Path in OpenXR (i.e. /user/hand/left)
+		String openxr_extension_name; ///< If set, only available if extension is enabled (i.e. XR_HTCX_vive_tracker_interaction)
 	};
 
 	struct IOPath {
-		String display_name; // User friendly display name (i.e. Grip pose (left controller))
-		String top_level_path; // Top level path identifying the usage of the device in relation to this input/output
-		String openxr_path; // Path in OpenXR (i.e. /user/hand/left/input/grip/pose)
-		String openxr_extension_name; // If set, only available if extension is enabled (i.e. XR_EXT_palm_pose)
-		OpenXRAction::ActionType action_type; // Type of input/output
+		String display_name; ///< User friendly display name (i.e. Grip pose (left controller))
+		String top_level_path; ///< Top level path identifying the usage of the device in relation to this input/output
+		String openxr_path; ///< Path in OpenXR (i.e. /user/hand/left/input/grip/pose)
+		String openxr_extension_name; ///< If set, only available if extension is enabled (i.e. XR_EXT_palm_pose)
+		OpenXRAction::ActionType action_type; ///< Type of input/output
 	};
 
 	struct InteractionProfile {
-		String display_name; // User friendly display name (i.e. Simple controller)
-		String openxr_path; // Path in OpenXR (i.e. /interaction_profiles/khr/simple_controller)
-		String openxr_extension_name; // If set, only available if extension is enabled (i.e. XR_HTCX_vive_tracker_interaction)
-		Vector<IOPath> io_paths; // Inputs and outputs for this device
+		String display_name; ///< User friendly display name (i.e. Simple controller)
+		String openxr_path; ///< Path in OpenXR (i.e. /interaction_profiles/khr/simple_controller)
+		String openxr_extension_name; ///< If set, only available if extension is enabled (i.e. XR_HTCX_vive_tracker_interaction)
+		Vector<IOPath> io_paths; ///< Inputs and outputs for this device
 
 		bool has_io_path(const String p_io_path) const;
 		const IOPath *get_io_path(const String p_io_path) const;
@@ -94,6 +97,11 @@ private:
 	Vector<TopLevelPath> top_level_paths;
 	Vector<InteractionProfile> interaction_profiles;
 
+	/// @note Currently we add definitions that belong in extensions.
+	/// Extensions are registered when our OpenXRAPI is instantiated
+	/// however this does not happen in the editor.
+	/// We are changing this in another PR, once that is accepted we
+	/// can make the changes to move code into extensions where needed.
 	void _register_core_metadata();
 
 protected:

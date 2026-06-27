@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_shader_container_d3d12.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_shader_container_d3d12.h"
 
 #include "core/templates/sort_array.h"
@@ -39,7 +45,7 @@
 #include <zlib.h>
 
 #ifndef _MSC_VER
-// Match current version used by MinGW, MSVC and Direct3D 12 headers use 500.
+/// Match current version used by MinGW, MSVC and Direct3D 12 headers use 500.
 #define __REQUIRED_RPCNDR_H_VERSION__ 475
 #endif
 
@@ -390,7 +396,6 @@ static dxil_shader_model shader_model_d3d_to_dxil(D3D_SHADER_MODEL p_d3d_shader_
 }
 
 bool RenderingShaderContainerD3D12::_convert_nir_to_dxil(const HashMap<int, nir_shader *> &p_stages_nir_shaders, BitField<RenderingDeviceCommons::ShaderStage> p_stages_processed, HashMap<RenderingDeviceCommons::ShaderStage, Vector<uint8_t>> &r_dxil_blobs) {
-	// Translate NIR to DXIL.
 	for (KeyValue<int, nir_shader *> it : p_stages_nir_shaders) {
 		RenderingDeviceCommons::ShaderStage stage = (RenderingDeviceCommons::ShaderStage)(it.key);
 		GodotNirCallbackUserData godot_nir_callback_user_data;
@@ -531,8 +536,8 @@ bool RenderingShaderContainerD3D12::_generate_root_signature(BitField<RenderingD
 				table.stages_mask |= p_dxil_stages_mask;
 
 				CD3DX12_DESCRIPTOR_RANGE1 range;
-				// Due to the aliasing hack for SRV-UAV of different families,
-				// we can be causing an unintended change of data (sometimes the validation layers catch it).
+				/// @todo Due to the aliasing hack for SRV-UAV of different families,
+				/// we can be causing an unintended change of data (sometimes the validation layers catch it).
 				D3D12_DESCRIPTOR_RANGE_FLAGS flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
 				if (p_range_type == D3D12_DESCRIPTOR_RANGE_TYPE_SRV || p_range_type == D3D12_DESCRIPTOR_RANGE_TYPE_UAV) {
 					flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;

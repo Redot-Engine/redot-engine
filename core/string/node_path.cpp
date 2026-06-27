@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_path.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node_path.h"
 
 #include "core/variant/variant.h"
@@ -116,6 +122,12 @@ bool NodePath::operator==(const NodePath &p_path) const {
 
 	if (!data || !p_path.data) {
 		return false;
+	}
+
+	if (data->hash_cache_valid && p_path.data->hash_cache_valid) {
+		if (data->hash_cache != p_path.data->hash_cache) {
+			return false;
+		}
 	}
 
 	if (data->absolute != p_path.data->absolute) {

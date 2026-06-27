@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_inspector.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_inspector.h"
 #include "editor_inspector.compat.inc"
 
@@ -444,8 +450,8 @@ void EditorProperty::_notification(int p_what) {
 				color = get_theme_color(is_read_only() ? SNAME("readonly_color") : SNAME("property_color"));
 			}
 			if (label.contains_char('.')) {
-				// FIXME: Move this to the project settings editor, as this is only used
-				// for project settings feature tag overrides.
+				/// @todo FIXME: Move this to the project settings editor, as this is only used
+				/// for project settings feature tag overrides.
 				color.a = 0.5;
 			}
 
@@ -748,8 +754,6 @@ StringName EditorProperty::_get_revert_property() const {
 }
 
 void EditorProperty::_update_property_bg() {
-	// This function is to be called on EditorPropertyResource, EditorPropertyArray, and EditorPropertyDictionary.
-	// Behavior is undetermined on any other EditorProperty.
 	if (!is_inside_tree()) {
 		return;
 	}
@@ -1251,10 +1255,10 @@ void EditorProperty::set_object_and_property(Object *p_object, const StringName 
 	_update_flags();
 }
 
+/// Consider a value is potentially overriding another if either of the following is true:
+/// a) The node is foreign (inheriting or an instance), so the original value may come from another scene.
+/// b) The node belongs to the scene, but the original value comes from somewhere but the builtin class (i.e., a script).
 static bool _is_value_potential_override(Node *p_node, const String &p_property) {
-	// Consider a value is potentially overriding another if either of the following is true:
-	// a) The node is foreign (inheriting or an instance), so the original value may come from another scene.
-	// b) The node belongs to the scene, but the original value comes from somewhere but the builtin class (i.e., a script).
 	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
 	Vector<SceneState::PackState> states_stack = PropertyUtils::get_node_states_stack(p_node, edited_scene);
 	if (states_stack.size()) {
@@ -3662,8 +3666,8 @@ void EditorInspector::update_tree() {
 		get_root_inspector()->set_follow_focus(false);
 	}
 
-	// Store currently selected and focused elements to restore after the update.
-	// TODO: Can be useful to store more context for the focusable, such as the caret position in LineEdit.
+	/// Store currently selected and focused elements to restore after the update.
+	/// @todo Can be useful to store more context for the focusable, such as the caret position in LineEdit.
 	StringName current_selected = property_selected;
 	int current_focusable = -1;
 
@@ -4230,8 +4234,8 @@ void EditorInspector::update_tree() {
 					if (scr.is_valid()) {
 						Vector<DocData::ClassDoc> docs = scr->get_documentation();
 						if (!docs.is_empty()) {
-							// The documentation of a GDScript's main class is at the end of the array.
-							// Hacky because this isn't necessarily always guaranteed.
+							/// The documentation of a GDScript's main class is at the end of the array.
+							/// @todo Hacky because this isn't necessarily always guaranteed.
 							classname = docs[docs.size() - 1].name;
 						}
 					}
@@ -4241,7 +4245,7 @@ void EditorInspector::update_tree() {
 			StringName propname = property_prefix + p.name;
 			bool found = false;
 
-			// Small hack for theme_overrides. They are listed under Control, but come from another class.
+			/// @todo Small hack for theme_overrides. They are listed under Control, but come from another class.
 			if (classname == "Control" && p.name.begins_with("theme_override_")) {
 				classname = get_edited_object()->get_class();
 			}
@@ -5080,8 +5084,6 @@ void EditorInspector::_edit_set(const String &p_name, const Variant &p_value, bo
 }
 
 void EditorInspector::_property_changed(const String &p_path, const Variant &p_value, const String &p_name, bool p_changing, bool p_update_all) {
-	// The "changing" variable must be true for properties that trigger events as typing occurs,
-	// like "text_changed" signal. E.g. text property of Label, Button, RichTextLabel, etc.
 	if (p_changing) {
 		changing++;
 	}
@@ -5273,9 +5275,9 @@ void EditorInspector::_update_current_favorites() {
 	Ref<Script> scr = object->get_script();
 	if (scr.is_valid()) {
 		List<PropertyInfo> plist;
-		// FIXME: Only properties from a saved script will be available, unsaved ones will be ignored.
-		// Can cause a little wonkiness, while nothing serious, would be nice to find a way to get
-		// unsaved ones without needing to get the entire property list of an object.
+		/// @todo FIXME: Only properties from a saved script will be available, unsaved ones will be ignored.
+		/// Can cause a little wonkiness, while nothing serious, would be nice to find a way to get
+		/// unsaved ones without needing to get the entire property list of an object.
 		scr->get_script_property_list(&plist);
 
 		String path;
@@ -5361,7 +5363,7 @@ void EditorInspector::_set_property_favorited(const String &p_path, bool p_favor
 		validate_name = ClassDB::get_parent_class_nocheck(class_name);
 	}
 
-	// "script" isn't a real property, so a hack is necessary.
+	/// @todo "script" isn't a real property, so a hack is necessary.
 	if (validate_name.is_empty() && p_path != "script") {
 		class_name = "";
 	}
@@ -5557,7 +5559,6 @@ void EditorInspector::_notification(int p_what) {
 }
 
 void EditorInspector::_changed_callback() {
-	//this is called when property change is notified via notify_property_list_changed()
 	if (object != nullptr) {
 		_update_current_favorites();
 		_edit_request_change(object, String());

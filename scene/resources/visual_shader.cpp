@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file visual_shader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "visual_shader.h"
 
 #include "core/templates/rb_map.h"
@@ -969,7 +975,6 @@ void VisualShader::set_node_position(Type p_type, int p_id, const Vector2 &p_pos
 	g->nodes[p_id].position = p_position;
 }
 
-// Returns 0 if no embeds, 1 if external embeds, 2 if builtin embeds
 int VisualShader::has_node_embeds() const {
 	bool external_embeds = false;
 	for (int i = 0; i < TYPE_MAX; i++) {
@@ -1950,7 +1955,7 @@ bool VisualShader::_get(const StringName &p_name, Variant &r_ret) const {
 }
 
 void VisualShader::reset_state() {
-	// TODO: Everything needs to be cleared here.
+	/// @todo Everything needs to be cleared here.
 	emit_changed();
 }
 
@@ -2188,7 +2193,7 @@ Error VisualShader::_write_node(Type type, StringBuilder *p_global_code, StringB
 
 			if (in_type == VisualShaderNode::PORT_TYPE_SAMPLER && out_type == VisualShaderNode::PORT_TYPE_SAMPLER) {
 				Ref<VisualShaderNode> ref = graph[type].nodes[from_node].node;
-				// FIXME: This needs to be refactored at some point.
+				/// @todo FIXME: This needs to be refactored at some point.
 				if (ref->has_method("get_input_real_name")) {
 					inputs[i] = ref->call("get_input_real_name");
 				} else if (ref->has_method("get_parameter_name")) {
@@ -4397,7 +4402,7 @@ bool VisualShaderNodeParameter::is_global_code_generated() const {
 }
 
 #ifndef DISABLE_DEPRECATED
-// Kept for compatibility from 3.x to 4.0.
+
 bool VisualShaderNodeParameter::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "uniform_name") {
 		set_parameter_name(p_value);

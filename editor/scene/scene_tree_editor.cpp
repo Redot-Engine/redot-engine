@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_tree_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_tree_editor.h"
 
 #include "core/config/project_settings.h"
@@ -63,8 +69,8 @@ PackedStringArray SceneTreeEditor::_get_node_configuration_warnings(Node *p_node
 	if (p_node == get_scene_node()) {
 		Node2D *node_2d = Object::cast_to<Node2D>(p_node);
 		if (node_2d) {
-			// Note: Warn for Node2D but not all CanvasItems, don't warn for Control nodes.
-			// Control nodes may have reasons to use a transformed root node like anchors.
+			/// @note Warn for Node2D but not all CanvasItems, don't warn for Control nodes.
+			/// Control nodes may have reasons to use a transformed root node like anchors.
 			if (!node_2d->get_position().is_zero_approx()) {
 				warnings.append(TTR("The root node of a scene is recommended to not be transformed, since instances of the scene will usually override this. Reset the transform and reload the scene to remove this warning."));
 			}
@@ -482,7 +488,7 @@ void SceneTreeEditor::_update_node(Node *p_node, TreeItem *p_item, bool p_part_o
 		}
 	}
 
-	if (can_rename) { // TODO Should be can edit..
+	if (can_rename) { /// @todo Should be can edit..
 		PackedStringArray warnings = _get_node_configuration_warnings(p_node);
 		if (accessibility_warnings) {
 			warnings.append_array(_get_node_accessibility_configuration_warnings(p_node));
@@ -1898,7 +1904,7 @@ bool SceneTreeEditor::can_drop_data_fw(const Point2 &p_point, const Variant &p_d
 		Vector<String> files = d["files"];
 
 		if (files.is_empty()) {
-			return false; // TODO Weird?
+			return false; /// @todo Weird?
 		}
 
 		if (_is_script_type(EditorFileSystem::get_singleton()->get_file_type(files[0]))) {

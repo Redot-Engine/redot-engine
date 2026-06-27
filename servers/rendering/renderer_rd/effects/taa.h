@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file taa.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_rd/shaders/effects/taa_resolve.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_stream_player.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 #include "servers/audio_server.h"
 

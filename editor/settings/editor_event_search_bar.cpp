@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_event_search_bar.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_event_search_bar.h"
 
 #include "editor/settings/event_listener_line_edit.h"

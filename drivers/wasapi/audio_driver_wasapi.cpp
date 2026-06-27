@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_driver_wasapi.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef WASAPI_ENABLED
 
 #include "audio_driver_wasapi.h"
@@ -900,7 +906,7 @@ void AudioDriverWASAPI::thread_func(void *p_udata) {
 					hr = ad->audio_input.capture_client->GetBuffer(&data, &num_frames_available, &flags, nullptr, nullptr);
 					ERR_BREAK(hr != S_OK);
 
-					// fixme: Only works for floating point atm
+					/// @todo FIXME: Only works for floating point atm
 					for (UINT32 j = 0; j < num_frames_available; j++) {
 						int32_t l = 0, r = 0;
 

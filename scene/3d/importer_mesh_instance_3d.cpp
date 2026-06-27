@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file importer_mesh_instance_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "importer_mesh_instance_3d.h"
 
 #include "scene/resources/3d/importer_mesh.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_help.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/thread.h"
 #include "editor/doc/doc_tools.h"
 #include "editor/plugins/editor_plugin.h"
@@ -57,6 +63,7 @@ class FindBar : public HBoxContainer {
 	int results_count = 0;
 	int results_count_to_current = 0;
 
+	/// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
 	virtual void input(const Ref<InputEvent> &p_event) override;
 
 	void _hide_bar();
@@ -194,7 +201,7 @@ class EditorHelp : public VBoxContainer {
 	inline static int doc_generation_count = 0;
 	inline static String doc_version_hash;
 	inline static Thread worker_thread;
-	inline static Thread loader_thread; // Only load scripts here to avoid deadlocking with main thread.
+	inline static Thread loader_thread; ///< Only load scripts here to avoid deadlocking with main thread.
 
 	inline static SafeFlag _script_docs_loaded = SafeFlag(false);
 	inline static LocalVector<DocData::ClassDoc> _docs_to_add;
@@ -207,7 +214,10 @@ class EditorHelp : public VBoxContainer {
 	static void _gen_extensions_docs();
 	static void _process_postponed_docs();
 	static void _load_script_doc_cache_thread(void *p_udata);
+	/// Runs on loader_thread since _reload_scripts_documentation calls ResourceLoader::load().
+	/// Avoids deadlocks of worker_thread needing main thread for load task dispatching, but main thread waiting on worker_thread.
 	static void _regen_script_doc_thread(void *p_udata);
+	/// Runs on worker_thread since it writes to DocData.
 	static void _finish_regen_script_doc_thread(void *p_udata);
 	static void _reload_scripts_documentation(EditorFileSystemDirectory *p_dir);
 	static void _delete_script_doc_cache();
@@ -238,10 +248,10 @@ public:
 	static String get_cache_full_path();
 	static String get_script_doc_cache_full_path();
 
-	// Adding scripts to DocData directly may make script doc cache inconsistent. Use methods below when adding script docs.
-	// Usage during startup can also cause deadlocks.
+	/// Adding scripts to DocData directly may make script doc cache inconsistent. Use methods below when adding script docs.
+	/// Usage during startup can also cause deadlocks.
 	static DocTools *get_doc_data();
-	// Method forwarding to underlying DocTools to keep script doc cache consistent.
+	/// Method forwarding to underlying DocTools to keep script doc cache consistent.
 	static DocData::ClassDoc *get_doc(const String &p_class_name);
 	static void add_doc(const DocData::ClassDoc &p_class_doc);
 	static void remove_doc(const String &p_class_name);
@@ -280,9 +290,9 @@ class EditorHelpBit : public VBoxContainer {
 
 	enum SymbolHint {
 		SYMBOL_HINT_NONE,
-		SYMBOL_HINT_INHERITANCE, // [ < ParentClass[ < ...]]
-		SYMBOL_HINT_ASSIGNABLE, // [: Type][ = value]
-		SYMBOL_HINT_SIGNATURE, // (arguments)[ -> Type][ qualifiers]
+		SYMBOL_HINT_INHERITANCE, ///< [ < ParentClass[ < ...]]
+		SYMBOL_HINT_ASSIGNABLE, ///< [: Type][ = value]
+		SYMBOL_HINT_SIGNATURE, ///< (arguments)[ -> Type][ qualifiers]
 	};
 
 	struct DocType {
@@ -362,8 +372,8 @@ public:
 	EditorHelpBit(const String &p_symbol = String(), const String &p_prologue = String(), bool p_use_class_prefix = false, bool p_allow_selection = true);
 };
 
-// Standard tooltips do not allow you to hover over them.
-// This class is intended as a temporary workaround.
+/// Standard tooltips do not allow you to hover over them.
+/// This class is intended as a temporary workaround.
 class EditorHelpBitTooltip : public PopupPanel {
 	GDCLASS(EditorHelpBitTooltip, PopupPanel);
 
@@ -382,7 +392,7 @@ protected:
 	void _notification(int p_what);
 
 public:
-	// The returned control is an orphan node, which is to make the standard tooltip invisible.
+	/// The returned control is an orphan node, which is to make the standard tooltip invisible.
 	[[nodiscard]] static Control *make_tooltip(Control *p_target, const String &p_symbol, const String &p_prologue = String(), bool p_use_class_prefix = false);
 
 	void popup_under_cursor();

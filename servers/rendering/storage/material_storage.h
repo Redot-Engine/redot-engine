@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file material_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering_server.h"
 #include "utilities.h"
 
@@ -39,7 +45,8 @@ class RendererMaterialStorage {
 public:
 	virtual ~RendererMaterialStorage() {}
 
-	/* GLOBAL SHADER UNIFORM API */
+	/// @name GLOBAL SHADER UNIFORM API
+	/// @{
 	virtual void global_shader_parameter_add(const StringName &p_name, RS::GlobalShaderParameterType p_type, const Variant &p_value) = 0;
 	virtual void global_shader_parameter_remove(const StringName &p_name) = 0;
 	virtual Vector<StringName> global_shader_parameter_get_list() const = 0;
@@ -55,8 +62,9 @@ public:
 	virtual int32_t global_shader_parameters_instance_allocate(RID p_instance) = 0;
 	virtual void global_shader_parameters_instance_free(RID p_instance) = 0;
 	virtual void global_shader_parameters_instance_update(RID p_instance, int p_index, const Variant &p_value, int p_flags_count = 0) = 0;
-
-	/* SHADER API */
+	/// @}
+	/// @name SHADER API
+	/// @{
 	virtual RID shader_allocate() = 0;
 	virtual void shader_initialize(RID p_rid, bool p_embedded = true) = 0;
 	virtual void shader_free(RID p_rid) = 0;
@@ -74,8 +82,9 @@ public:
 	virtual void shader_embedded_set_lock() = 0;
 	virtual const HashSet<RID> &shader_embedded_set_get() const = 0;
 	virtual void shader_embedded_set_unlock() = 0;
-
-	/* MATERIAL API */
+	/// @]
+	/// @name MATERIAL API
+	/// @{
 
 	virtual RID material_allocate() = 0;
 	virtual void material_initialize(RID p_rid) = 0;
@@ -102,4 +111,5 @@ public:
 	virtual void material_get_instance_shader_parameters(RID p_material, List<InstanceShaderParam> *r_parameters) = 0;
 
 	virtual void material_update_dependency(RID p_material, DependencyTracker *p_instance) = 0;
+	/// @}
 };

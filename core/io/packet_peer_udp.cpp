@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packet_peer_udp.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "packet_peer_udp.h"
 
 #include "core/io/ip.h"
@@ -89,7 +95,7 @@ Error PacketPeerUDP::_set_dest_address(const String &p_address, int p_port) {
 }
 
 int PacketPeerUDP::get_available_packet_count() const {
-	// TODO we should deprecate this, and expose poll instead!
+	/// @todo We should deprecate this, and expose poll instead!
 	Error err = const_cast<PacketPeerUDP *>(this)->_poll();
 	if (err != OK) {
 		return -1;
@@ -107,7 +113,8 @@ Error PacketPeerUDP::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
 		return ERR_UNAVAILABLE;
 	}
 
-	/* Bogus GCC warning here:
+	/**
+	 * Bogus GCC warning here:
 	 * In member function 'int RingBuffer<T>::read(T*, int, bool) [with T = unsigned char]',
 	 *     inlined from 'virtual Error PacketPeerUDP::get_packet(const uint8_t**, int&)' at core/io/packet_peer_udp.cpp:112:9,
 	 *     inlined from 'virtual Error PacketPeerUDP::get_packet(const uint8_t**, int&)' at core/io/packet_peer_udp.cpp:99:7:

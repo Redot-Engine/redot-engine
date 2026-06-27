@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tile_set.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tile_set.h"
 #include "tile_set.compat.inc"
 
@@ -2448,7 +2454,7 @@ void TileSet::draw_terrains(CanvasItem *p_canvas_item, Transform2D p_transform, 
 }
 
 Vector<Vector<Ref<Texture2D>>> TileSet::generate_terrains_icons(Size2i p_size) {
-	// Counts the number of matching terrain tiles and find the best matching icon.
+	/// Counts the number of matching terrain tiles and find the best matching icon.
 	struct Count {
 		int count = 0;
 		float probability = 0.0;
@@ -3579,15 +3585,14 @@ void TileSet::_compatibility_conversion() {
 							}
 #endif // PHYSICS_2D_DISABLED
 
-							// -- TODO: handle --
-							// Those are offset for the whole atlas, they are likely useless for the atlases, but might make sense for single tiles.
-							// texture offset
-							// occluder_offset
-							// navigation_offset
-
-							// For terrains, ignored for now?
-							// bitmask_mode
-							// bitmask_flags
+							/// -- @todo Handle --
+							/// Those are offset for the whole atlas, they are likely useless for the atlases, but might make sense for single tiles.
+							/// texture offset
+							/// occluder_offset
+							/// navigation_offset
+							/// For terrains, ignored for now?
+							/// bitmask_mode
+							/// bitmask_flags
 						}
 					}
 				}
@@ -3669,7 +3674,7 @@ bool TileSet::_set(const StringName &p_name, const Variant &p_value) {
 	Vector<String> components = String(p_name).split("/", true, 2);
 
 #ifndef DISABLE_DEPRECATED
-	// TODO: This should be moved to a dedicated conversion system (see #50691)
+	/// @todo This should be moved to a dedicated conversion system (see #50691)
 	if (components.size() >= 1 && components[0].is_valid_int()) {
 		int id = components[0].to_int();
 
@@ -3830,7 +3835,7 @@ bool TileSet::_set(const StringName &p_name, const Variant &p_value) {
 		} else if (what == "z_index") {
 			ctd->z_index = p_value;
 
-			// TODO: remove the conversion from here, it's not where it should be done (see #50691)
+			/// @todo Remove the conversion from here, it's not where it should be done (see #50691)
 			_compatibility_conversion();
 		} else {
 			return false;

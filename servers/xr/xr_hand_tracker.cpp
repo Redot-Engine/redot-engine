@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_hand_tracker.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_hand_tracker.h"
 
 void XRHandTracker::_bind_methods() {

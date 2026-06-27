@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file filesystem_dock.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "filesystem_dock.h"
 
 #include "core/config/project_settings.h"
@@ -929,7 +935,7 @@ void FileSystemDock::_search(EditorFileSystemDirectory *p_path, List<FileInfo> *
 }
 
 void FileSystemDock::_update_file_list(bool p_keep_selection) {
-	// Register the previously current and selected items.
+	// Register the previous, current and selected items.
 	HashSet<String> previous_selection;
 	HashSet<int> valid_selection;
 	if (p_keep_selection) {
@@ -2163,8 +2169,6 @@ void FileSystemDock::_file_list_rmb_option(int p_option) {
 }
 
 void FileSystemDock::_generic_rmb_option_selected(int p_option) {
-	// Used for submenu commands where we don't know whether we're
-	// calling from the file_list_rmb menu or the _tree_rmb option.
 	if (files->has_focus()) {
 		_file_list_rmb_option(p_option);
 	} else {
@@ -3977,7 +3981,7 @@ void FileSystemDock::_file_sort_popup(int p_id) {
 	set_file_sort((FileSortOption)p_id);
 }
 
-// TODO: Could use a unit test.
+/// @todo Could use a unit test.
 Color FileSystemDock::get_dir_icon_color(const String &p_dir_path, const Color &p_default) {
 	if (!singleton) { // This method can be called from the project manager.
 		return p_default;

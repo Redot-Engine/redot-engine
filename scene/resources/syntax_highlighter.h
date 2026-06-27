@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file syntax_highlighter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/object/gdvirtual.gen.inc"
 

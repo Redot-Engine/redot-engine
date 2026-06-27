@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file texture_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "platform_gl.h"
@@ -239,7 +245,7 @@ struct Texture {
 		detect_roughness_callback_ud = o.detect_roughness_callback_ud;
 	}
 
-	// texture state
+	/// Texture state
 	void gl_set_filter(RS::CanvasItemTextureFilter p_filter) {
 		if (p_filter == state_filter) {
 			return;
@@ -351,7 +357,7 @@ struct RenderTarget {
 	GLuint backbuffer_depth = 0;
 	bool depth_has_stencil = true;
 
-	bool hdr = false; // For Compatibility this effects both 2D and 3D rendering!
+	bool hdr = false; ///< For Compatibility this effects both 2D and 3D rendering!
 	GLuint color_internal_format = GL_RGBA8;
 	GLuint color_format = GL_RGBA;
 	GLuint color_type = GL_UNSIGNED_BYTE;
@@ -414,7 +420,8 @@ private:
 	RID_Owner<CanvasTexture, true> canvas_texture_owner;
 
 	/* Texture API */
-	// Textures can be created from threads, so this RID_Owner is thread safe.
+
+	/// Textures can be created from threads, so this RID_Owner is thread safe.
 	mutable RID_Owner<Texture, true> texture_owner;
 
 	Ref<Image> _get_gl_image_and_format(const Ref<Image> &p_image, Image::Format p_format, Image::Format &r_real_format, GLenum &r_gl_format, GLenum &r_gl_internal_format, GLenum &r_gl_type, bool &r_compressed, bool p_force_decompress) const;
@@ -519,6 +526,8 @@ public:
 	virtual void texture_2d_layered_initialize(RID p_texture, const Vector<Ref<Image>> &p_layers, RS::TextureLayeredType p_layered_type) override;
 	virtual void texture_3d_initialize(RID p_texture, Image::Format, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> &p_data) override;
 	virtual void texture_external_initialize(RID p_texture, int p_width, int p_height, uint64_t p_external_buffer) override;
+	/// Called internally when texture_proxy_create(p_base) is called.
+	/// @note p_base is the root and p_texture is the proxy.
 	virtual void texture_proxy_initialize(RID p_texture, RID p_base) override; //all slices, then all the mipmaps, must be coherent
 
 	virtual RID texture_create_from_native_handle(RS::TextureType p_type, Image::Format p_format, uint64_t p_native_handle, int p_width, int p_height, int p_depth, int p_layers = 1, RS::TextureLayeredType p_layered_type = RS::TEXTURE_LAYERED_2D_ARRAY) override;
@@ -573,7 +582,8 @@ public:
 	uint32_t texture_get_depth(RID p_texture) const;
 	void texture_bind(RID p_texture, uint32_t p_texture_no);
 
-	/* TEXTURE ATLAS API */
+	/// @name TEXTURE ATLAS API
+	/// @{
 
 	void update_texture_atlas();
 
@@ -592,7 +602,9 @@ public:
 	void texture_atlas_mark_dirty_on_texture(RID p_texture);
 	void texture_atlas_remove_texture(RID p_texture);
 
-	/* DECAL API */
+	/// @}
+	/// @name DECAL API
+	/// @{
 
 	virtual RID decal_allocate() override;
 	virtual void decal_initialize(RID p_rid) override;
@@ -614,14 +626,18 @@ public:
 	virtual void texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) override {}
 	virtual void texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) override {}
 
-	/* DECAL INSTANCE */
+	/// @}
+	/// @name DECAL INSTANCE
+	/// @{
 
 	virtual RID decal_instance_create(RID p_decal) override { return RID(); }
 	virtual void decal_instance_free(RID p_decal_instance) override {}
 	virtual void decal_instance_set_transform(RID p_decal, const Transform3D &p_transform) override {}
 	virtual void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) override {}
 
-	/* RENDER TARGET API */
+	/// @}
+	/// @name RENDER TARGET API
+	/// @{
 
 	static GLuint system_fbo;
 
@@ -708,6 +724,7 @@ public:
 
 	virtual void render_target_set_velocity_target_size(RID p_render_target, const Size2i &p_target_size) override {}
 	virtual Size2i render_target_get_velocity_target_size(RID p_render_target) const override { return Size2i(); }
+	/// @}
 
 	void bind_framebuffer(GLuint framebuffer) {
 		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);

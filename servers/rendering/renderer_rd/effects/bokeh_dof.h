@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file bokeh_dof.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
 #include "servers/rendering/renderer_rd/shaders/effects/bokeh_dof.glsl.gen.h"
 #include "servers/rendering/renderer_rd/shaders/effects/bokeh_dof_raster.glsl.gen.h"
@@ -96,19 +102,22 @@ public:
 	struct BokehBuffers {
 		// bokeh buffers
 
-		// textures
+		/// @name Textures
+		/// @{
 		Size2i base_texture_size;
 		RID base_texture;
 		RID depth_texture;
 		RID secondary_texture;
 		RID half_texture[2];
-
-		// raster only
+		/// @}
+		/// @name Raster Only
+		/// @{
 		RID base_fb;
-		RID secondary_fb; // with weights
-		RID half_fb[2]; // with weights
+		RID secondary_fb; ///< With weights
+		RID half_fb[2]; ///< With weights
 		RID base_weight_fb;
 		RID weight_texture[4];
+		/// @}
 	};
 
 	BokehDOF(bool p_prefer_raster_effects);

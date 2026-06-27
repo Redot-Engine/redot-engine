@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file control.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "control.h"
 
 #include "container.h"
@@ -52,7 +58,7 @@
 
 // Editor plugin interoperability.
 
-// TODO: Decouple controls from their editor plugin and get rid of this.
+/// @todo Decouple controls from their editor plugin and get rid of this.
 #ifdef TOOLS_ENABLED
 Dictionary Control::_edit_get_state() const {
 	Dictionary s;

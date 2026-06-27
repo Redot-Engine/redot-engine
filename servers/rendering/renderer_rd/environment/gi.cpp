@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gi.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gi.h"
 
 #include "core/config/project_settings.h"
@@ -3620,7 +3626,7 @@ void GI::init(SkyRD *p_sky) {
 
 		sdfgi_shader.debug_probes.initialize(versions, defines);
 
-		// TODO disable multiview versions if turned off
+		/// @todo Disable multiview versions if turned off
 
 		sdfgi_shader.debug_probes_shader = sdfgi_shader.debug_probes.version_create();
 
@@ -3632,7 +3638,7 @@ void GI::init(SkyRD *p_sky) {
 			ds.enable_depth_write = true;
 			ds.depth_compare_operator = RD::COMPARE_OP_GREATER_OR_EQUAL;
 			for (int i = 0; i < SDFGIShader::PROBE_DEBUG_MAX; i++) {
-				// TODO check if version is enabled
+				/// @todo Check if version is enabled
 
 				RID debug_probes_shader_version = sdfgi_shader.debug_probes.version_get_shader(sdfgi_shader.debug_probes_shader, i);
 				sdfgi_shader.debug_probes_pipeline[i].setup(debug_probes_shader_version, RD::RENDER_PRIMITIVE_TRIANGLE_STRIPS, rs, RD::PipelineMultisampleState(), ds, RD::PipelineColorBlendState::create_disabled(), 0);

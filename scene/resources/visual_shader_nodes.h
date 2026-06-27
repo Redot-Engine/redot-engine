@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file visual_shader_nodes.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/curve_texture.h"
 #include "scene/resources/visual_shader.h"
 

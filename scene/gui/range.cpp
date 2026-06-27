@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file range.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "range.h"
 
 #include "thirdparty/misc/r128.h"

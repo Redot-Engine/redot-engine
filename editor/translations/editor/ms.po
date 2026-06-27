@@ -4288,3 +4288,6 @@ msgstr "Nod B mestilah PhysicsBody2D"
 
 msgid "Constants cannot be modified."
 msgstr "Pemalar tidak dapat diubah suai."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Terlalu banyak skrip untuk dibuka dalam editor luaran (maksimum 128)."

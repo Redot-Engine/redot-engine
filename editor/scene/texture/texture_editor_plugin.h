@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file texture_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/margin_container.h"

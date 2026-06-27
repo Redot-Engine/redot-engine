@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multi_node_edit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "multi_node_edit.h"
 
 #include "core/math/math_fieldwise.h"

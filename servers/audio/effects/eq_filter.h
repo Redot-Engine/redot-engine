@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file eq_filter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/vector.h"
 
 class EQ {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skeleton_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
@@ -143,7 +149,7 @@ class Skeleton2D : public Node2D {
 	struct InterpolationData {
 		Transform2D xform_curr;
 		Transform2D xform_prev;
-		uint32_t last_update_physics_tick = UINT32_MAX; // Ensure tick 0 is detected as a change.
+		uint32_t last_update_physics_tick = UINT32_MAX; ///< Ensure tick 0 is detected as a change.
 	} _interpolation_data;
 
 	void _update_process_mode();

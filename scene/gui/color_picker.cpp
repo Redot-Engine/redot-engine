@@ -30,10 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_picker.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "color_picker.h"
 
 #include "core/io/image.h"
 #include "core/math/expression.h"
+#include "core/math/math_funcs.h"
 #include "scene/gui/color_mode.h"
 #include "scene/gui/color_picker_shape.h"
 #include "scene/gui/file_dialog.h"
@@ -104,7 +111,7 @@ void ColorPicker::_notification(int p_what) {
 				btn_pick->set_tooltip_text(ETR("Pick a color from the screen."));
 				btn_pick->connect(SceneStringName(pressed), callable_mp(this, &ColorPicker::_pick_button_pressed_native));
 			} else if (DisplayServer::get_singleton()->has_feature(DisplayServer::FEATURE_SCREEN_CAPTURE) && !get_tree()->get_root()->is_embedding_subwindows()) {
-				// FIXME: The embedding check is needed to fix a bug in single-window mode (GH-93718).
+				/// @todo FIXME: The embedding check is needed to fix a bug in single-window mode (GH-93718).
 				btn_pick->set_tooltip_text(ETR("Pick a color from the screen."));
 				btn_pick->connect(SceneStringName(pressed), callable_mp(this, &ColorPicker::_pick_button_pressed));
 			} else {
@@ -371,6 +378,21 @@ void ColorPicker::set_focus_on_line_edit() {
 
 void ColorPicker::set_focus_on_picker_shape() {
 	shapes[get_current_shape_index()]->grab_focus();
+}
+
+void ColorPicker::set_intensity(float p_intensity) {
+	p_intensity = CLAMP(p_intensity, this->intensity_slider->get_min(), this->intensity_slider->get_max());
+	if (Math::is_equal_approx(intensity, p_intensity)) {
+		return;
+	}
+
+	intensity = p_intensity;
+	_normalized_apply_intensity_to_color();
+	_update_color();
+}
+
+float ColorPicker::get_intensity() {
+	return intensity;
 }
 
 void ColorPicker::_update_controls() {
@@ -1451,8 +1473,6 @@ void ColorPicker::_sample_input(const Ref<InputEvent> &p_event) {
 }
 
 void ColorPicker::_sample_draw() {
-	// Covers the right half of the sample if the old color is being displayed,
-	// or the whole sample if it's not being displayed.
 	Rect2 rect_new;
 	Rect2 rect_old;
 
@@ -1894,7 +1914,7 @@ void ColorPicker::_pick_button_pressed_legacy() {
 
 		// Add the Texture of each Window to the Image.
 		Vector<DisplayServer::WindowID> wl = ds->get_window_list();
-		// FIXME: sort windows by visibility.
+		/// @todo FIXME: sort windows by visibility.
 		for (const DisplayServer::WindowID &window_id : wl) {
 			Window *w = Window::get_from_id(window_id);
 			if (!w) {
@@ -2083,6 +2103,8 @@ void ColorPicker::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_recent_presets"), &ColorPicker::get_recent_presets);
 	ClassDB::bind_method(D_METHOD("set_picker_shape", "shape"), &ColorPicker::set_picker_shape);
 	ClassDB::bind_method(D_METHOD("get_picker_shape"), &ColorPicker::get_picker_shape);
+	ClassDB::bind_method(D_METHOD("set_intensity", "intensity"), &ColorPicker::set_intensity);
+	ClassDB::bind_method(D_METHOD("get_intensity"), &ColorPicker::get_intensity);
 
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "color"), "set_pick_color", "get_pick_color");
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "old_color"), "set_old_color", "get_old_color");
@@ -2099,6 +2121,7 @@ void ColorPicker::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sliders_visible"), "set_sliders_visible", "are_sliders_visible");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hex_visible"), "set_hex_visible", "is_hex_visible");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "presets_visible"), "set_presets_visible", "are_presets_visible");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "intensity"), "set_intensity", "get_intensity");
 
 	ADD_SIGNAL(MethodInfo("color_changed", PropertyInfo(Variant::COLOR, "color")));
 	ADD_SIGNAL(MethodInfo("preset_added", PropertyInfo(Variant::COLOR, "color")));

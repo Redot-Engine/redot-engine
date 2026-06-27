@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file velocity_tracker_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class VelocityTracker3D : public RefCounted {

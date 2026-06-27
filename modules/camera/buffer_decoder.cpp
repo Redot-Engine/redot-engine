@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file buffer_decoder.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "buffer_decoder.h"
 
 #include "servers/camera/camera_feed.h"

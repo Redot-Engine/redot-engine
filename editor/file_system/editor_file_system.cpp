@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_file_system.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_file_system.h"
 
 #include "core/config/project_settings.h"
@@ -53,7 +59,7 @@ EditorFileSystem *EditorFileSystem::singleton = nullptr;
 int EditorFileSystem::nb_files_total = 0;
 EditorFileSystem::ScannedDirectory *EditorFileSystem::first_scan_root_dir = nullptr;
 
-//the name is the version, to keep compatibility with different versions of Godot
+/// The name is the version, to keep compatibility with different versions of Godot
 #define CACHE_FILE_NAME "filesystem_cache10"
 
 int EditorFileSystemDirectory::find_file_index(const String &p_file) const {
@@ -1744,10 +1750,11 @@ void EditorFileSystem::_notification(int p_what) {
 
 		case NOTIFICATION_PROCESS: {
 			if (use_threads) {
-				/** This hack exists because of the EditorProgress nature
-				 *  of processing events recursively. This needs to be rewritten
-				 *  at some point entirely, but in the meantime the following
-				 *  hack prevents deadlock on import.
+				/**
+				 * @todo This hack exists because of the EditorProgress nature
+				 * of processing events recursively. This needs to be rewritten
+				 * at some point entirely, but in the meantime the following
+				 * hack prevents deadlock on import.
 				 */
 
 				static bool prevent_recursive_process_hack = false;
@@ -1858,7 +1865,7 @@ void EditorFileSystem::_save_filesystem_cache(EditorFileSystemDirectory *p_dir, 
 }
 
 bool EditorFileSystem::_find_file(const String &p_file, EditorFileSystemDirectory **r_d, int &r_file_pos) const {
-	//todo make faster
+	/// @todo Make faster
 
 	if (!filesystem || scanning) {
 		return false;
@@ -1866,7 +1873,7 @@ bool EditorFileSystem::_find_file(const String &p_file, EditorFileSystemDirector
 
 	String f = ProjectSettings::get_singleton()->localize_path(p_file);
 
-	// Note: Only checks if base directory is case sensitive.
+	/// @note Only checks if base directory is case sensitive.
 	Ref<DirAccess> dir = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	bool fs_case_sensitive = dir->is_case_sensitive("res://");
 
@@ -3576,7 +3583,6 @@ Error EditorFileSystem::copy_file(const String &p_from, const String &p_to) {
 }
 
 Error EditorFileSystem::copy_directory(const String &p_from, const String &p_to) {
-	// Recursively copy directories and build a map of files to copy.
 	HashMap<String, String> files;
 	bool success = _copy_directory(p_from, p_to, &files);
 

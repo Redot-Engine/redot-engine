@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animation_library_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/config_file.h"
 #include "core/templates/vector.h"
 #include "editor/plugins/editor_plugin.h"

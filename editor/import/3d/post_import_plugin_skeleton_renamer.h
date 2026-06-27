@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file post_import_plugin_skeleton_renamer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_scene.h"
 
 class PostImportPluginSkeletonRenamer : public EditorScenePostImportPlugin {

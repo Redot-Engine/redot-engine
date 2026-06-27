@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file text_shader_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "text_shader_editor.h"
 
 #include "core/config/project_settings.h"
@@ -1333,5 +1339,5 @@ TextShaderEditor::TextShaderEditor() {
 	add_child(disk_changed);
 
 	_editor_settings_changed();
-	code_editor->show_toggle_files_button(); // TODO: Disabled for now, because it doesn't work properly.
+	code_editor->show_toggle_files_button(); /// @todo Disabled for now, because it doesn't work properly.
 }

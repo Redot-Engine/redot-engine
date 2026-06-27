@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file mcp_bridge.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/stream_peer_tcp.h"
 #include "core/io/tcp_server.h"
 #include "core/object/class_db.h"
@@ -52,7 +58,7 @@ private:
 	int port = 0;
 	String partial_data;
 
-	// Internal command handling
+	/// Internal command handling
 	Dictionary _process_command(const Dictionary &p_cmd);
 	void _trigger_action_event(const StringName &p_action);
 
@@ -65,15 +71,15 @@ public:
 	MCPBridge();
 	~MCPBridge();
 
-	// Host (MCP Server) side
+	/// Host (MCP Server) side
 	Error start_server(int p_port = 0); // 0 = find available
 	int get_port() const { return port; }
 	bool is_client_connected() const;
 
-	// Client (Game) side
+	/// Client (Game) side
 	Error connect_to_server(const String &p_host, int p_port);
 
-	// Communication
+	/// Communication
 	Dictionary send_command(const String &p_action, const Dictionary &p_args = Dictionary());
-	void update(); // Called by MainLoop or Server loop
+	void update(); ///< Called by MainLoop or Server loop
 };

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_attributes_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_attributes_storage.h"
 
 RendererCameraAttributes *RendererCameraAttributes::singleton = nullptr;

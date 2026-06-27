@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_folding.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 
 class EditorFolding {

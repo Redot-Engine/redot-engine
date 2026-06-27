@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file panel.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "panel.h"
 #include "scene/theme/theme_db.h"
 

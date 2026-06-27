@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skeleton_modification_2d_twoboneik.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/skeleton_2d.h"
 #include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 

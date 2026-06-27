@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_globals_override.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 
 class ShaderGlobalsOverride : public Node {

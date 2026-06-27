@@ -126,7 +126,8 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
   variables:
     PLATFORM: "windows"
 
@@ -137,7 +138,8 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
   variables:
     PLATFORM: "windows"
 
@@ -148,7 +150,8 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
   script:
     - !reference [ .build-release-template, script ]
   after_script:
@@ -176,7 +179,8 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
   script:
     - !reference [ .build-release-template-mono, script ]
   after_script:
@@ -1197,8 +1201,8 @@ sign-mac-templates:
         if [ "$_is_mono" -eq 1 ]; then _mono_prefix="-mono"; _mono_suffix=".mono";fi
 
 
-        cp out/templates${_mono_prefix}/redot.macos.template_release.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_release.universal${_mono_suffix}
-        cp out/templates${_mono_prefix}/redot.macos.template_debug.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_debug.universal${_mono_suffix}
+        cp out/templates${_mono_prefix}/redot.macos.template_release.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_release.universal
+        cp out/templates${_mono_prefix}/redot.macos.template_debug.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_debug.universal
         chmod +x tmp/macos_template.app/Contents/MacOS/redot_macos*
 
 

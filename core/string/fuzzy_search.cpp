@@ -30,14 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file fuzzy_search.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "fuzzy_search.h"
 
 constexpr float cull_factor = 0.1f;
 constexpr float cull_cutoff = 30.0f;
 const String boundary_chars = "/\\-_.";
 
+/// Empty intervals are represented as (-1, -1).
 static bool _is_valid_interval(const Vector2i &p_interval) {
-	// Empty intervals are represented as (-1, -1).
 	return p_interval.x >= 0 && p_interval.y >= p_interval.x;
 }
 
@@ -151,9 +157,6 @@ bool FuzzyTokenMatch::is_case_insensitive(const String &p_original, const String
 }
 
 void FuzzySearchResult::score_token_match(FuzzyTokenMatch &p_match, bool p_case_insensitive) const {
-	// This can always be tweaked more. The intuition is that exact matches should almost always
-	// be prioritized over broken up matches, and other criteria more or less act as tie breakers.
-
 	p_match.score = -20 * p_match.get_miss_count() - (p_case_insensitive ? 3 : 0);
 
 	for (const Vector2i &substring : p_match.substrings) {
@@ -176,7 +179,6 @@ void FuzzySearchResult::score_token_match(FuzzyTokenMatch &p_match, bool p_case_
 }
 
 void FuzzySearchResult::maybe_apply_score_bonus() {
-	// This adds a small bonus to results which match tokens in the same order they appear in the query.
 	int *token_range_starts = (int *)alloca(sizeof(int) * token_matches.size());
 
 	for (const FuzzyTokenMatch &match : token_matches) {
@@ -201,8 +203,8 @@ void FuzzySearchResult::add_token_match(const FuzzyTokenMatch &p_match) {
 	token_matches.append(p_match);
 }
 
+/// Removes all results with score < p_cull_score in-place.
 void remove_low_scores(Vector<FuzzySearchResult> &p_results, float p_cull_score) {
-	// Removes all results with score < p_cull_score in-place.
 	int i = 0;
 	int j = p_results.size() - 1;
 	FuzzySearchResult *results = p_results.ptrw();
@@ -237,8 +239,8 @@ void FuzzySearch::sort_and_filter(Vector<FuzzySearchResult> &p_results) const {
 		max_score = MAX(max_score, result.score);
 	}
 
-	// TODO: Tune scoring and culling here to display fewer subsequence soup matches when good matches
-	//  are available.
+	/// @todo Tune scoring and culling here to display fewer subsequence soup matches when good matches
+	///  are available.
 	avg_score /= p_results.size();
 	float cull_score = MIN(cull_cutoff, Math::lerp(avg_score, max_score, cull_factor));
 	remove_low_scores(p_results, cull_score);

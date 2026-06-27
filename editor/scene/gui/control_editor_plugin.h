@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file control_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/inspector/editor_inspector.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
@@ -49,7 +55,7 @@ class PopupPanel;
 class Separator;
 class TextureRect;
 
-// Inspector controls.
+/// Inspector controls.
 class ControlPositioningWarning : public MarginContainer {
 	GDCLASS(ControlPositioningWarning, MarginContainer);
 
@@ -138,7 +144,7 @@ public:
 	virtual bool parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide = false) override;
 };
 
-// Toolbar controls.
+/// Toolbar controls.
 class ControlEditorPopupButton : public Button {
 	GDCLASS(ControlEditorPopupButton, Button);
 
@@ -246,7 +252,7 @@ public:
 	ControlEditorToolbar();
 };
 
-// Editor plugin.
+/// Editor plugin.
 class ControlEditorPlugin : public EditorPlugin {
 	GDCLASS(ControlEditorPlugin, EditorPlugin);
 

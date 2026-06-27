@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_script.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_script.h"
 
 #include "editor/editor_interface.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file basis.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/quaternion.h"
 #include "core/math/vector3.h"
 
@@ -58,8 +64,16 @@ struct [[nodiscard]] Basis {
 	_FORCE_INLINE_ real_t determinant() const;
 
 	void rotate(const Vector3 &p_axis, real_t p_angle);
+	/// Multiplies the matrix from left by the rotation matrix: M -> R.M
+	/// Note that this does *not* rotate the matrix itself.
+	///
+	/// The main use of Basis is as Transform.basis, which is used by the transformation matrix
+	/// of 3D object. Rotate here refers to rotation of the object (which is R * (*this)),
+	/// not the matrix itself (which is R * (*this) * R.transposed()).
 	Basis rotated(const Vector3 &p_axis, real_t p_angle) const;
 
+	/// Performs a rotation in object-local coordinate system:
+	/// M -> (M.R.Minv).M = M.R.
 	void rotate_local(const Vector3 &p_axis, real_t p_angle);
 	Basis rotated_local(const Vector3 &p_axis, real_t p_angle) const;
 
@@ -69,15 +83,36 @@ struct [[nodiscard]] Basis {
 	void rotate(const Quaternion &p_quaternion);
 	Basis rotated(const Quaternion &p_quaternion) const;
 
+	/// Assumes that the matrix can be decomposed into a proper rotation and scaling matrix as M = R.S,
+	/// and returns the Euler angles corresponding to the rotation part, complementing get_scale().
+	/// @see The comment in get_scale() for further information.
 	Vector3 get_euler_normalized(EulerOrder p_order = EulerOrder::YXZ) const;
+	/// Assumes that the matrix can be decomposed into a proper rotation and scaling matrix as M = R.S,
+	/// and returns the Euler angles corresponding to the rotation part, complementing get_scale().
+	/// @see The comment in get_scale() for further information.
 	void get_rotation_axis_angle(Vector3 &p_axis, real_t &p_angle) const;
+	/// Assumes that the matrix can be decomposed into a proper rotation and scaling matrix as M = R.S,
+	/// and returns the Euler angles corresponding to the rotation part, complementing get_scale().
+	/// @see The comment in get_scale() for further information.
 	void get_rotation_axis_angle_local(Vector3 &p_axis, real_t &p_angle) const;
+
+	/// Assumes that the matrix can be decomposed into a proper rotation and scaling matrix as M = R.S,
+	/// and returns the Euler angles corresponding to the rotation part, complementing get_scale().
+	/// See the comment in get_scale() for further information.
 	Quaternion get_rotation_quaternion() const;
 
+	/// Takes two vectors and rotates the basis from the first vector to the second vector.
+	/// Adopted from: https://gist.github.com/kevinmoran/b45980723e53edeb8a5a43c49f134724
 	void rotate_to_align(Vector3 p_start_direction, Vector3 p_end_direction);
 
+	/// Decomposes a Basis into a rotation-reflection matrix (an element of the group O(3)) and a positive scaling matrix as B = O.S.
+	/// @return The rotation-reflection matrix via reference argument, and scaling information is returned as a Vector3.
+	/// This (internal) function is too specific and named too ugly to expose to users, and probably there's no need to do so.
 	Vector3 rotref_posscale_decomposition(Basis &rotref) const;
 
+	/// This epsilon value results in angles within a +/- 0.04 degree range being simplified/truncated.
+	/// Based on testing, this is the largest the epsilon can be without the angle truncation becoming
+	/// visually noticeable.
 	Vector3 get_euler(EulerOrder p_order = EulerOrder::YXZ) const;
 	void set_euler(const Vector3 &p_euler, EulerOrder p_order = EulerOrder::YXZ);
 	static Basis from_euler(const Vector3 &p_euler, EulerOrder p_order = EulerOrder::YXZ) {
@@ -91,10 +126,13 @@ struct [[nodiscard]] Basis {
 
 	void get_axis_angle(Vector3 &r_axis, real_t &r_angle) const;
 	void set_axis_angle(const Vector3 &p_axis, real_t p_angle);
-
+	/// Multiplies the matrix from left by the scaling matrix: M -> S.M
+	/// @see The comment for Basis::rotated for further explanation.
 	void scale(const Vector3 &p_scale);
 	Basis scaled(const Vector3 &p_scale) const;
 
+	/// Performs a scaling in object-local coordinate system:
+	/// M -> (M.S.Minv).M = M.S.
 	void scale_local(const Vector3 &p_scale);
 	Basis scaled_local(const Vector3 &p_scale) const;
 
@@ -102,6 +140,7 @@ struct [[nodiscard]] Basis {
 	Basis scaled_orthogonal(const Vector3 &p_scale) const;
 	real_t get_uniform_scale() const;
 
+	/// get_scale works with get_rotation, use get_scale_abs if you need to enforce positive signature.
 	Vector3 get_scale() const;
 	Vector3 get_scale_abs() const;
 	Vector3 get_scale_global() const;
@@ -110,7 +149,8 @@ struct [[nodiscard]] Basis {
 	void set_euler_scale(const Vector3 &p_euler, const Vector3 &p_scale, EulerOrder p_order = EulerOrder::YXZ);
 	void set_quaternion_scale(const Quaternion &p_quaternion, const Vector3 &p_scale);
 
-	// transposed dot products
+	/// @name Transposed dot products
+	/// @{
 	_FORCE_INLINE_ real_t tdotx(const Vector3 &p_v) const {
 		return rows[0][0] * p_v[0] + rows[1][0] * p_v[1] + rows[2][0] * p_v[2];
 	}
@@ -120,6 +160,7 @@ struct [[nodiscard]] Basis {
 	_FORCE_INLINE_ real_t tdotz(const Vector3 &p_v) const {
 		return rows[0][2] * p_v[0] + rows[1][2] * p_v[1] + rows[2][2] * p_v[2];
 	}
+	/// @}
 
 	bool is_equal_approx(const Basis &p_basis) const;
 	bool is_same(const Basis &p_basis) const;
@@ -141,14 +182,25 @@ struct [[nodiscard]] Basis {
 	constexpr void operator/=(real_t p_val);
 	constexpr Basis operator/(real_t p_val) const;
 
+	/// @return `true` if the basis vectors are orthogonal (perpendicular), so it has no skew or shear, and can be decomposed into rotation and scale.
+	/// @see https://en.wikipedia.org/wiki/Orthogonal_basis
 	bool is_orthogonal() const;
+	/// @return `true` if the basis vectors are orthonormal (orthogonal and normalized), so it has no scale, skew, or shear.
+	/// @see https://en.wikipedia.org/wiki/Orthonormal_basis
 	bool is_orthonormal() const;
+	/// @return `true` if the basis is conformal (orthogonal, uniform scale, preserves angles and distance ratios).
+	/// @see https://en.wikipedia.org/wiki/Conformal_linear_transformation
 	bool is_conformal() const;
+	/// @return `true` if the basis only has diagonal elements, so it may only have scale or flip, but no rotation, skew, or shear.
 	bool is_diagonal() const;
+	/// @return `true` if the basis is a pure rotation matrix, so it has no scale, skew, shear, or flip.
 	bool is_rotation() const;
 
 	Basis lerp(const Basis &p_to, real_t p_weight) const;
 	Basis slerp(const Basis &p_to, real_t p_weight) const;
+	/// Code by John Hable
+	/// http://filmicworlds.com/blog/simple-and-fast-spherical-harmonic-rotation/
+	/// @copyright This code is Public Domain
 	void rotate_sh(real_t *p_values);
 
 	explicit operator String() const;
@@ -172,13 +224,13 @@ struct [[nodiscard]] Basis {
 		set_column(2, p_z);
 	}
 
+	/// Get actual basis axis column (we store transposed as rows for performance).
 	_FORCE_INLINE_ Vector3 get_column(int p_index) const {
-		// Get actual basis axis column (we store transposed as rows for performance).
 		return Vector3(rows[0][p_index], rows[1][p_index], rows[2][p_index]);
 	}
 
+	/// Set actual basis axis column (we store transposed as rows for performance).
 	_FORCE_INLINE_ void set_column(int p_index, const Vector3 &p_value) {
-		// Set actual basis axis column (we store transposed as rows for performance).
 		rows[0][p_index] = p_value.x;
 		rows[1][p_index] = p_value.y;
 		rows[2][p_index] = p_value.z;
@@ -213,15 +265,17 @@ struct [[nodiscard]] Basis {
 				{ p_zx, p_zy, p_zz },
 			} {}
 
-	void orthonormalize();
+	void orthonormalize(); ///< Gram-Schmidt Process
 	Basis orthonormalized() const;
 
 	void orthogonalize();
 	Basis orthogonalized() const;
 
 #ifdef MATH_CHECKS
+	/// This method is only used once, in diagonalize. If it's desired elsewhere, feel free to remove the #ifdef.
 	bool is_symmetric() const;
 #endif
+	/// @note Only implemented for symmetric matrices with the Jacobi iterative method
 	Basis diagonalize();
 
 	operator Quaternion() const { return get_quaternion(); }
@@ -245,7 +299,9 @@ struct [[nodiscard]] Basis {
 	Basis() = default;
 
 private:
-	// Helper method.
+	/// @brief Helper Method
+	/// @details This also sets the non-diagonal elements to 0, which is misleading from the
+	/// name, so we want this method to be private. Use `from_scale` externally.
 	void _set_diagonal(const Vector3 &p_diag);
 };
 

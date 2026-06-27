@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file camera_attributes.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/templates/rid.h"
 
@@ -46,7 +52,7 @@ protected:
 	void _validate_property(PropertyInfo &p_property) const;
 
 	float exposure_multiplier = 1.0;
-	float exposure_sensitivity = 100.0; // In ISO.
+	float exposure_sensitivity = 100.0; ///< In ISO.
 	void _update_exposure();
 
 	bool auto_exposure_enabled = false;
@@ -80,7 +86,8 @@ class CameraAttributesPractical : public CameraAttributes {
 	GDCLASS(CameraAttributesPractical, CameraAttributes);
 
 private:
-	// Motion blur
+	/// @name Motion Blur
+	/// @{
 	bool motion_blur_enabled = false;
 	float motion_blur_intensity = 1.0;
 	bool motion_blur_clamp_velocities_to_tile = true;
@@ -90,8 +97,10 @@ private:
 	float motion_blur_velocity_lower_threshold = 0.0;
 	float motion_blur_velocity_upper_threshold = 0.0;
 	void _update_motion_blur();
+  /// @}
 
-	// DOF blur
+	/// @name DOF Blur
+	/// @{
 	bool dof_blur_far_enabled = false;
 	float dof_blur_far_distance = 10.0;
 	float dof_blur_far_transition = 5.0;
@@ -102,6 +111,7 @@ private:
 
 	float dof_blur_amount = 0.1;
 	void _update_dof_blur();
+	/// @}
 
 	virtual void _update_auto_exposure() override;
 
@@ -110,7 +120,8 @@ protected:
 	void _validate_property(PropertyInfo &p_property) const;
 
 public:
-	// Motion blur
+	/// @name Motion Blur
+	/// @{
 	void set_motion_blur_enabled(bool p_enabled);
 	bool is_motion_blur_enabled() const;
 	void set_motion_blur_intensity(float p_intensity);
@@ -127,8 +138,10 @@ public:
 	float get_motion_blur_velocity_lower_threshold() const;
 	void set_motion_blur_velocity_upper_threshold(float p_threshold);
 	float get_motion_blur_velocity_upper_threshold() const;
+  /// @}
 
-	// DOF blur
+	/// @name DOF Blur
+	/// @{
 	void set_dof_blur_far_enabled(bool p_enabled);
 	bool is_dof_blur_far_enabled() const;
 	void set_dof_blur_far_distance(float p_distance);
@@ -144,6 +157,7 @@ public:
 	float get_dof_blur_near_transition() const;
 	void set_dof_blur_amount(float p_amount);
 	float get_dof_blur_amount() const;
+	/// @}
 
 	void set_auto_exposure_min_sensitivity(float p_min);
 	float get_auto_exposure_min_sensitivity() const;
@@ -160,17 +174,20 @@ class CameraAttributesPhysical : public CameraAttributes {
 	GDCLASS(CameraAttributesPhysical, CameraAttributes);
 
 private:
-	// Exposure
-	float exposure_aperture = 16.0; // In f-stops;
-	float exposure_shutter_speed = 100.0; // In 1 / seconds;
-
-	// Camera properties.
-	float frustum_focal_length = 35.0; // In millimeters.
-	float frustum_focus_distance = 10.0; // In Meters.
+	/// @name Exposure
+	/// @{
+	float exposure_aperture = 16.0; ///< In f-stops;
+	float exposure_shutter_speed = 100.0; ///< In 1 / seconds;
+	/// @}
+	/// @name Camera Properties
+	/// @{
+	float frustum_focal_length = 35.0; ///< In millimeters.
+	float frustum_focus_distance = 10.0; ///< In Meters.
 	real_t frustum_near = 0.05;
 	real_t frustum_far = 4000.0;
 	real_t frustum_fov = 75.0;
 	void _update_frustum();
+	/// @}
 
 	virtual void _update_auto_exposure() override;
 

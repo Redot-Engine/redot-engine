@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_forward_mobile.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "render_forward_mobile.h"
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
@@ -236,7 +242,7 @@ RID RenderForwardMobile::RenderBufferDataForwardMobile::get_color_fbs(Framebuffe
 		color_buffer_id = textures.size();
 		textures.push_back(render_buffers->get_internal_texture()); // color buffer for resolve
 
-		// TODO add support for resolving depth buffer!!!
+		/// @todo Add support for resolving depth buffer!!!
 	}
 
 	// Now define our subpasses
@@ -1526,7 +1532,7 @@ void RenderForwardMobile::_render_shadow_append(RID p_framebuffer, const PagedAr
 	}
 
 	RenderSceneDataRD scene_data;
-	scene_data.flip_y = !p_flip_y; // Q: Why is this inverted? Do we assume flip in shadow logic?
+	scene_data.flip_y = !p_flip_y; /// @todo Q: Why is this inverted? Do we assume flip in shadow logic?
 	scene_data.cam_projection = p_projection;
 	scene_data.cam_transform = p_transform;
 	scene_data.view_projection[0] = p_projection;

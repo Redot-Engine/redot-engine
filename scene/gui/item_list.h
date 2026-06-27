@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file item_list.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/control.h"
 #include "scene/gui/scroll_bar.h"
 #include "scene/property_list_helper.h"

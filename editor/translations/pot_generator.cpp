@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file pot_generator.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "pot_generator.h"
 
 #include "core/config/project_settings.h"

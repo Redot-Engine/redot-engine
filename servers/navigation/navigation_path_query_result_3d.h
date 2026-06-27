@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_path_query_result_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 #include "core/variant/typed_array.h"
 #include "servers/navigation/navigation_utilities.h"

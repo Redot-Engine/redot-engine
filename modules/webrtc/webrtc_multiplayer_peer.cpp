@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file webrtc_multiplayer_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webrtc_multiplayer_peer.h"
 
 void WebRTCMultiplayerPeer::_bind_methods() {
@@ -47,7 +53,7 @@ void WebRTCMultiplayerPeer::set_target_peer(int p_peer_id) {
 	target_peer = p_peer_id;
 }
 
-/* Returns the ID of the MultiplayerPeer who sent the most recent packet: */
+/** Returns the ID of the MultiplayerPeer who sent the most recent packet: */
 int WebRTCMultiplayerPeer::get_packet_peer() const {
 	return next_packet_peer;
 }

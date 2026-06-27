@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file placeholder_textures.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/texture.h"
 
 class PlaceholderTexture2D : public Texture2D {

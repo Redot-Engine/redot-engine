@@ -10327,3 +10327,6 @@ msgstr "Het uniform '%s' is gedeclareerd maar nooit gebruikt."
 
 msgid "The local variable '%s' is declared but never used."
 msgstr "De lokale variabele '%s' wordt gedeclareerd maar nergens gebruikt."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Te veel scripts om in een externe editor te openen (max. 128)."

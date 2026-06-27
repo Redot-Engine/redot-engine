@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_stream_wav.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_stream_wav.h"
 
 #include "core/io/file_access_memory.h"
@@ -94,8 +100,6 @@ void AudioStreamPlaybackWAV::seek(double p_time) {
 
 template <typename Depth, bool is_stereo, bool is_ima_adpcm, bool is_qoa>
 void AudioStreamPlaybackWAV::decode_samples(const Depth *p_src, AudioFrame *p_dst, int64_t &p_offset, int8_t &p_increment, uint32_t p_amount, IMA_ADPCM_State *p_ima_adpcm, QOA_State *p_qoa) {
-	// this function will be compiled branchless by any decent compiler
-
 	int32_t final = 0, final_r = 0;
 	while (p_amount) {
 		p_amount--;
@@ -842,7 +846,7 @@ Ref<AudioStreamWAV> AudioStreamWAV::load_from_buffer(const Vector<uint8_t> &p_st
 			// Loop point info!
 
 			/**
-			 *	Consider exploring next document:
+			 *	@todo Consider exploring next document:
 			 *		http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/RIFFNEW.pdf
 			 *	Especially on page:
 			 *		16 - 17

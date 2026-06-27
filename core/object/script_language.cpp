@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file script_language.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "script_language.h"
 
 #include "core/config/project_settings.h"
@@ -48,7 +54,7 @@ bool ScriptServer::scripting_enabled = true;
 bool ScriptServer::reload_scripts_on_save = false;
 ScriptEditRequestFunction ScriptServer::edit_request_func = nullptr;
 
-// These need to be the last static variables in this file, since we're exploiting the reverse-order destruction of static variables.
+/// These need to be the last static variables in this file, since we're exploiting the reverse-order destruction of static variables.
 static bool is_program_exiting = false;
 struct ProgramExitGuard {
 	~ProgramExitGuard() {
@@ -612,9 +618,6 @@ void ScriptLanguage::frame() {
 }
 
 TypedArray<int> ScriptLanguage::CodeCompletionOption::get_option_characteristics(const String &p_base) {
-	// Return characteristics of the match found by order of importance.
-	// Matches will be ranked by a lexicographical order on the vector returned by this function.
-	// The lower values indicate better matches and that they should go before in the order of appearance.
 	if (last_matches == matches) {
 		return charac;
 	}
@@ -649,7 +652,6 @@ void ScriptLanguage::CodeCompletionOption::clear_characteristics() {
 }
 
 TypedArray<int> ScriptLanguage::CodeCompletionOption::get_option_cached_characteristics() const {
-	// Only returns the cached value and warns if it was not updated since the last change of matches.
 	if (last_matches != matches) {
 		WARN_PRINT("Characteristics are not up to date.");
 	}

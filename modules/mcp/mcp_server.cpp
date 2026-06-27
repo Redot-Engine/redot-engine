@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mcp_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mcp_server.h"
 
 #include "core/io/json.h"

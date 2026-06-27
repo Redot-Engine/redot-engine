@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file string_name.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "string_name.h"
 
 #include "core/os/mutex.h"

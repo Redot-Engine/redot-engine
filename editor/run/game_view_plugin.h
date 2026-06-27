@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file game_view_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/debugger/editor_debugger_plugin.h"
 #include "editor/editor_main_screen.h"

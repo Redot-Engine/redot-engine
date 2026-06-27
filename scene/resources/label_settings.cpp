@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file label_settings.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "label_settings.h"
 
 void LabelSettings::_font_changed() {

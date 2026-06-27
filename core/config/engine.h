@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file engine.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/main_loop.h"
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
@@ -44,7 +50,7 @@ public:
 	struct Singleton {
 		StringName name;
 		Object *ptr = nullptr;
-		StringName class_name; // Used for binding generation hinting.
+		StringName class_name; ///< Used for binding generation hinting.
 		// Singleton scope flags.
 		bool user_created = false;
 		bool editor_only = false;

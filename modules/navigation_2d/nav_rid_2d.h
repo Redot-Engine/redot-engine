@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_rid_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/rid.h"
 
 class NavRid2D {

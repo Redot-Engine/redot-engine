@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file triangulate.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "triangulate.h"
 
 real_t Triangulate::get_area(const Vector<Vector2> &contour) {
@@ -44,8 +50,6 @@ real_t Triangulate::get_area(const Vector<Vector2> &contour) {
 	return A * 0.5f;
 }
 
-/* `is_inside_triangle` decides if a point P is inside the triangle
- * defined by A, B, C. */
 bool Triangulate::is_inside_triangle(real_t Ax, real_t Ay,
 		real_t Bx, real_t By,
 		real_t Cx, real_t Cy,

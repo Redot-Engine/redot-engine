@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_agent_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_agent_3d.h"
 
 #include "nav_map_3d.h"
@@ -259,8 +265,6 @@ void NavAgent3D::set_target_position(const Vector3 p_target_position) {
 }
 
 void NavAgent3D::set_velocity(const Vector3 p_velocity) {
-	// Sets the "wanted" velocity for an agent as a suggestion
-	// This velocity is not guaranteed, RVO simulation will only try to fulfill it
 	velocity = p_velocity;
 	if (avoidance_enabled) {
 		if (use_3d_avoidance) {
@@ -275,10 +279,6 @@ void NavAgent3D::set_velocity(const Vector3 p_velocity) {
 }
 
 void NavAgent3D::set_velocity_forced(const Vector3 p_velocity) {
-	// This function replaces the internal rvo simulation velocity
-	// should only be used after the agent was teleported
-	// as it destroys consistency in movement in cramped situations
-	// use velocity instead to update with a safer "suggestion"
 	velocity_forced = p_velocity;
 	if (avoidance_enabled) {
 		if (use_3d_avoidance) {
@@ -350,7 +350,6 @@ void NavAgent3D::sync() {
 }
 
 const Dictionary NavAgent3D::get_avoidance_data() const {
-	// Returns debug data from RVO simulation internals of this agent.
 	Dictionary _avoidance_data;
 	if (use_3d_avoidance) {
 		_avoidance_data["max_neighbors"] = int(rvo_agent_3d.maxNeighbors_);

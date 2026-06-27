@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_highlighter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/script/script_editor_plugin.h"
 
 class GDScriptSyntaxHighlighter : public EditorSyntaxHighlighter {
@@ -41,10 +47,10 @@ private:
 	struct ColorRegion {
 		enum Type {
 			TYPE_NONE,
-			TYPE_STRING, // `"` and `'`, optional prefix `&`, `^`, or `r`.
-			TYPE_MULTILINE_STRING, // `"""` and `'''`, optional prefix `r`.
-			TYPE_COMMENT, // `#` and `##`.
-			TYPE_CODE_REGION, // `#region` and `#endregion`.
+			TYPE_STRING, ///< `"` and `'`, optional prefix `&`, `^`, or `r`.
+			TYPE_MULTILINE_STRING, ///< `"""` and `'''`, optional prefix `r`.
+			TYPE_COMMENT, ///< `#` and `##`.
+			TYPE_CODE_REGION, ///< `#region` and `#endregion`.
 		};
 
 		Type type = TYPE_NONE;
@@ -53,8 +59,8 @@ private:
 		String end_key;
 		bool line_only = false;
 		bool r_prefix = false;
-		bool is_string = false; // `TYPE_STRING` or `TYPE_MULTILINE_STRING`.
-		bool is_comment = false; // `TYPE_COMMENT` or `TYPE_CODE_REGION`.
+		bool is_string = false; ///< `TYPE_STRING` or `TYPE_MULTILINE_STRING`.
+		bool is_comment = false; ///< `TYPE_COMMENT` or `TYPE_CODE_REGION`.
 	};
 	Vector<ColorRegion> color_regions;
 	HashMap<int, int> color_region_cache;
@@ -81,7 +87,8 @@ private:
 		TYPE,
 	};
 
-	// Colors.
+	/// @name Colors
+	/// @{
 	Color font_color;
 	Color symbol_color;
 	Color function_color;
@@ -96,6 +103,7 @@ private:
 	Color annotation_color;
 	Color string_name_color;
 	Color type_color;
+	/// @}
 
 	enum CommentMarkerLevel {
 		COMMENT_MARKER_CRITICAL,

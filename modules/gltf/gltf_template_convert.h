@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gltf_template_convert.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/hash_set.h"
 #include "core/variant/array.h"
 #include "core/variant/dictionary.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_importer_bmfont.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource_importer.h"
 #include "scene/resources/font.h"
 #include "servers/text_server.h"

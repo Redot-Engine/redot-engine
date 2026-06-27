@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_object_selector.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_object_selector.h"
 
 #include "editor/editor_data.h"

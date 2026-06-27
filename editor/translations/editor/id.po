@@ -12007,3 +12007,6 @@ msgstr "Daftar Argumen Macro Tidak Valid"
 
 msgid "Unmatched conditional statement."
 msgstr "Pernyataan kondisi tidak cocok."
+
+msgid "Too many scripts to open in external editor (max 128)."
+msgstr "Terlalu banyak skrip untuk dibuka di editor eksternal (maks. 128)."

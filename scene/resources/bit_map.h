@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file bit_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/io/resource.h"
 

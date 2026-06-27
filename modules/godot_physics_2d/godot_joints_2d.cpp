@@ -30,13 +30,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_joints_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_joints_2d.h"
 
 #include "godot_space_2d.h"
 
 //based on chipmunk joint constraints
 
-/* Copyright (c) 2007 Scott Lembcke
+/**
+ * @copyright Copyright (c) 2007 Scott Lembcke
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

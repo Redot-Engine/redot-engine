@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_layers.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/hash_map.h"
 #include "core/templates/local_vector.h"
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_soft_body_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "jolt_object_3d.h"
 
 #include "servers/physics_server_3d.h"

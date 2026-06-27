@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file input_event_codec.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "input_event_codec.h"
 
 #include "core/input/input.h"
@@ -47,7 +53,7 @@ enum class BoolShift : uint8_t {
 	PEN_INVERTED,
 };
 
-// cast operator for BoolShift to uint8_t
+/// cast operator for BoolShift to uint8_t
 inline uint8_t operator<<(uint8_t a, BoolShift b) {
 	return a << static_cast<uint8_t>(b);
 }

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file upnp_device.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "upnp_device.h"
 
 UPNPDevice *(*UPNPDevice::_create)(bool p_notify_postinitialize) = nullptr;

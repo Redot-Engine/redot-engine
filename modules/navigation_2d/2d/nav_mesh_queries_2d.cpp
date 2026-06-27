@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_mesh_queries_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_mesh_queries_2d.h"
 
 #include "../nav_base_2d.h"
@@ -894,7 +900,7 @@ ClosestPointQueryResult NavMeshQueries2D::map_iteration_get_closest_point_info(c
 	ClosestPointQueryResult result;
 	real_t closest_point_distance_squared = FLT_MAX;
 
-	// TODO: Check for further 2D improvements.
+	/// @todo Check for further 2D improvements.
 
 	const LocalVector<Ref<NavRegionIteration2D>> &regions = p_map_iteration.region_iterations;
 	for (const Ref<NavRegionIteration2D> &region : regions) {
@@ -1028,7 +1034,7 @@ ClosestPointQueryResult NavMeshQueries2D::polygons_get_closest_point_info(const 
 	ClosestPointQueryResult result;
 	real_t closest_point_distance_squared = FLT_MAX;
 
-	// TODO: Check for further 2D improvements.
+	/// @todo Check for further 2D improvements.
 
 	for (const Polygon &polygon : p_polygons) {
 		real_t cross = -(polygon.vertices[1] - polygon.vertices[0]).cross(polygon.vertices[2] - polygon.vertices[0]);

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file progress_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/center_container.h"

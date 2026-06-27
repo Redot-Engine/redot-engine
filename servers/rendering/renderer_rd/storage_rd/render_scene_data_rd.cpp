@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file render_scene_data_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "render_scene_data_rd.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
@@ -257,7 +263,7 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RS::ViewportDebugDraw p
 	ubo.roughness_limiter_limit = render_scene_render->screen_space_roughness_limiter_get_limit();
 
 	if (calculate_motion_vectors) {
-		// Q : Should we make a complete copy or should we define a separate UBO with just the components we need?
+		/// @todo Q : Should we make a complete copy or should we define a separate UBO with just the components we need?
 		memcpy(&prev_ubo, &ubo, sizeof(UBO));
 
 		Projection prev_correction;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_decompress_bcdec.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 
 enum BCdecFormat {

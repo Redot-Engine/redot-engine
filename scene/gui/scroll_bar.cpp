@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scroll_bar.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scroll_bar.h"
 
 #include "scene/main/window.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file callable.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "callable.h"
 
 #include "core/object/object.h"
@@ -114,7 +120,7 @@ Error Callable::rpcp(int p_id, const Variant **p_arguments, int p_argcount, Call
 			argptrs[i + 2] = p_arguments[i];
 		}
 
-		CallError tmp; // TODO: Check `tmp`?
+		CallError tmp; /// @todo Check `tmp`?
 		Error err = (Error)obj->callp(SNAME("rpc_id"), argptrs, argcount, tmp).operator int64_t();
 
 		r_call_error.error = Callable::CallError::CALL_OK;

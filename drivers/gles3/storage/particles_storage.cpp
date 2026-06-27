@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file particles_storage.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef GLES3_ENABLED
 
 #include "particles_storage.h"
@@ -56,7 +62,7 @@ ParticlesStorage::ParticlesStorage() {
 
 	{
 		String global_defines;
-		global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
+		global_defines += "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; /// @todo This is arbitrary for now
 		material_storage->shaders.particles_process_shader.initialize(global_defines, 1);
 	}
 	{
@@ -510,7 +516,6 @@ void ParticlesStorage::particles_set_canvas_sdf_collision(RID p_particles, bool 
 	particles->sdf_collision_texture = p_texture;
 }
 
-// Does one step of processing particles by reading from back_process_buffer and writing to front_process_buffer.
 void ParticlesStorage::_particles_process(Particles *p_particles, double p_delta) {
 	GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
 	GLES3::MaterialStorage *material_storage = GLES3::MaterialStorage::get_singleton();

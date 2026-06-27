@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file signal_awaiter_utils.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "signal_awaiter_utils.h"
 
 #include "csharp_script.h"
@@ -39,7 +45,7 @@ Error gd_mono_connect_signal_awaiter(Object *p_source, const StringName &p_signa
 	ERR_FAIL_NULL_V(p_source, ERR_INVALID_DATA);
 	ERR_FAIL_NULL_V(p_target, ERR_INVALID_DATA);
 
-	// TODO: Use pooling for ManagedCallable instances.
+	/// @todo Use pooling for ManagedCallable instances.
 	MonoGCHandleData awaiter_handle(p_awaiter_handle_ptr, gdmono::GCHandleType::STRONG_HANDLE);
 	SignalAwaiterCallable *awaiter_callable = memnew(SignalAwaiterCallable(p_target, awaiter_handle, p_signal));
 	Callable callable = Callable(awaiter_callable);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file graph_frame.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "graph_frame.h"
 
 #include "scene/gui/box_container.h"

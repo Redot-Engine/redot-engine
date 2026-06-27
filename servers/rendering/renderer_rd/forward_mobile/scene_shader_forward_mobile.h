@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_shader_forward_mobile.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/pipeline_hash_map_rd.h"
 #include "servers/rendering/renderer_rd/shaders/forward_mobile/scene_forward_mobile.glsl.gen.h"
@@ -184,7 +190,7 @@ public:
 			STENCIL_COMPARE_NOT_EQUAL,
 			STENCIL_COMPARE_GREATER_OR_EQUAL,
 			STENCIL_COMPARE_ALWAYS,
-			STENCIL_COMPARE_MAX // Not an actual operator, just the amount of operators.
+			STENCIL_COMPARE_MAX ///< Not an actual operator, just the amount of operators.
 		};
 
 		struct PipelineKey {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file script_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/script_language.h"
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/dialogs.h"
@@ -80,7 +86,7 @@ class EditorStandardSyntaxHighlighter : public EditorSyntaxHighlighter {
 
 private:
 	Ref<CodeHighlighter> highlighter;
-	ScriptLanguage *script_language = nullptr; // See GH-89610.
+	ScriptLanguage *script_language = nullptr; ///< @see GH-89610.
 
 public:
 	virtual void _update_cache() override;
@@ -150,10 +156,10 @@ public:
 	virtual void _update_cache() override;
 	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override { return highlighter->get_line_syntax_highlighting(p_line); }
 
-	// While not explicitly designed for those formats, this highlighter happens
-	// to handle TSCN, TRES, `project.godot` well. We can expose it in case the
-	// user opens one of these using the script editor (which can be done using
-	// the All Files filter).
+	/// While not explicitly designed for those formats, this highlighter happens
+	/// to handle TSCN, TRES, `project.godot` well. We can expose it in case the
+	/// user opens one of these using the script editor (which can be done using
+	/// the All Files filter).
 	virtual PackedStringArray _get_supported_languages() const override { return PackedStringArray{ "ini", "cfg", "tscn", "tres", "godot" }; }
 	virtual String _get_name() const override { return TTR("ConfigFile"); }
 
@@ -538,6 +544,13 @@ class ScriptEditor : public PanelContainer {
 	void _update_history_pos(int p_new_pos);
 	void _update_script_colors();
 	void _update_modified_scripts_for_external_editor(Ref<Script> p_for_script = Ref<Script>());
+
+	/**
+	 * Opens multiple scripts in an external editor.
+	 *
+	 * @param p_paths A list of globalized paths to the scripts.
+	 */
+	void _open_external_editor_bulk(const Vector<String> &p_paths);
 
 	void _script_changed();
 	int file_dialog_option;

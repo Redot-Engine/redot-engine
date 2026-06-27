@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_constraint_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 class GodotBody3D;
 class GodotSoftBody3D;
 

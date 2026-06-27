@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file occluder_instance_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/visual_instance_3d.h"
 
 class Occluder3D : public Resource {

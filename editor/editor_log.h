@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_log.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/thread.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
@@ -78,10 +84,10 @@ private:
 		Color message_color;
 	} theme_cache;
 
-	// Encapsulates all data and functionality regarding filters.
+	/// Encapsulates all data and functionality regarding filters.
 	struct LogFilter {
 	private:
-		// Force usage of set method since it has functionality built-in.
+		/// Force usage of set method since it has functionality built-in.
 		int message_count = 0;
 		bool active = true;
 
@@ -127,7 +133,7 @@ private:
 	int line_limit = 10000;
 
 	Vector<LogMessage> messages;
-	// Maps MessageTypes to LogFilters for convenient access and storage (don't need 1 member per filter).
+	/// Maps MessageTypes to LogFilters for convenient access and storage (don't need 1 member per filter).
 	HashMap<MessageType, LogFilter *> type_filter_map;
 
 	RichTextLabel *log = nullptr;
@@ -141,13 +147,13 @@ private:
 	Button *show_search_button = nullptr;
 	LineEdit *search_box = nullptr;
 
-	// Reusable RichTextLabel for BBCode parsing during search
+	/// Reusable RichTextLabel for BBCode parsing during search
 	RichTextLabel *bbcode_parser = nullptr;
 
-	// Reference to the "Output" button on the toolbar so we can update its icon when warnings or errors are encountered.
+	/// Reference to the "Output" button on the toolbar so we can update its icon when warnings or errors are encountered.
 	Button *tool_button = nullptr;
 
-	bool is_loading_state = false; // Used to disable saving requests while loading (some signals from buttons will try to trigger a save, which happens during loading).
+	bool is_loading_state = false; ///< Used to disable saving requests while loading (some signals from buttons will try to trigger a save, which happens during loading).
 	Timer *save_state_timer = nullptr;
 
 	static void _error_handler(void *p_self, const char *p_func, const char *p_file, int p_line, const char *p_error, const char *p_errorexp, bool p_editor_notify, ErrorHandlerType p_type);

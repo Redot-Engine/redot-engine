@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color_picker_shape.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "color_picker_shape.h"
 
 #include "scene/gui/margin_container.h"

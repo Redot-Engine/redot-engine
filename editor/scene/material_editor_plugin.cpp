@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file material_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "material_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -112,7 +118,6 @@ void MaterialEditor::_set_rotation(real_t p_x_degrees, real_t p_y_degrees) {
 	_update_rotation();
 }
 
-// Store the rotation so it can persist when switching between materials.
 void MaterialEditor::_store_rotation_metadata() {
 	Vector2 rotation_degrees = Vector2(Math::rad_to_deg(rot.x), Math::rad_to_deg(rot.y));
 	EditorSettings::get_singleton()->set_project_metadata("inspector_options", "material_preview_rotation", rotation_degrees);

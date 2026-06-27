@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file aes_context.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/crypto/aes_context.h"
 
 Error AESContext::start(Mode p_mode, const PackedByteArray &p_key, const PackedByteArray &p_iv) {

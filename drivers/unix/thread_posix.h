@@ -32,4 +32,10 @@
 
 #pragma once
 
+/**
+ * @file thread_posix.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 void init_thread_posix();

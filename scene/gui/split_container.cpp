@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file split_container.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "split_container.h"
 
 #include "scene/gui/texture_rect.h"

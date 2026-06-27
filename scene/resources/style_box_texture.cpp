@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file style_box_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "style_box_texture.h"
 
 float StyleBoxTexture::get_style_margin(Side p_side) const {

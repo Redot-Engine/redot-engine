@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file reverb_filter.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "reverb_filter.h"
 
 #include "core/math/audio_frame.h"

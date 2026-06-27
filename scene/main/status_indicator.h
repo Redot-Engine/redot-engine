@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file status_indicator.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/main/node.h"
 #include "servers/display_server.h"
 

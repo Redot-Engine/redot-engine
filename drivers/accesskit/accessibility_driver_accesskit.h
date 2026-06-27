@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file accessibility_driver_accesskit.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef ACCESSKIT_ENABLED
 
 #include "core/templates/rid_owner.h"

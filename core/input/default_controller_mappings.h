@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file default_controller_mappings.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 class DefaultControllerMappings {
 public:
 	static const char *mappings[];

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_object_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../shapes/jolt_shape_instance_3d.h"
 
 #include "core/math/vector3.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file atlas_texture.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "atlas_texture.h"
 
 int AtlasTexture::get_width() const {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file physics_server_2d_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "physics_server_2d_extension.h"
 
 bool PhysicsDirectSpaceState2DExtension::is_body_excluded_from_query(const RID &p_body) const {

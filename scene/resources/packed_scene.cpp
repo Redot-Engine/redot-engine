@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packed_scene.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "packed_scene.h"
 
 #include "core/config/engine.h"
@@ -738,11 +744,6 @@ static int _vm_get_variant(const Variant &p_variant, HashMap<Variant, int, Varia
 }
 
 Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, HashMap<StringName, int> &name_map, HashMap<Variant, int, VariantHasher, VariantComparator> &variant_map, HashMap<Node *, int> &node_map, HashMap<Node *, int> &nodepath_map) {
-	// this function handles all the work related to properly packing scenes, be it
-	// instantiated or inherited.
-	// given the complexity of this process, an attempt will be made to properly
-	// document it. if you fail to understand something, please ask!
-
 	//discard nodes that do not belong to be processed
 	if (p_node != p_owner && p_node->get_owner() != p_owner && !p_owner->is_editable_instance(p_node->get_owner())) {
 		return OK;

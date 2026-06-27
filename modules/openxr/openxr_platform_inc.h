@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_platform_inc.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 // In various places we need to include platform definitions but we can't
 // include these in our normal header files as we'll end up with issues.
 

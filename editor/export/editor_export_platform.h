@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_export_platform.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 class EditorFileSystemDirectory;
 struct EditorProgress;
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file thread_windows.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef WINDOWS_ENABLED
 
 void init_thread_win();

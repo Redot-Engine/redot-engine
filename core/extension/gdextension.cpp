@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdextension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdextension.h"
 #include "gdextension.compat.inc"
 
@@ -863,7 +869,7 @@ Error GDExtensionResourceLoader::load_gdextension_resource(const String &p_path,
 }
 
 Ref<Resource> GDExtensionResourceLoader::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
-	// We can't have two GDExtension resource object representing the same library, because
+	// We can't have two GDExtension resource objects representing the same library, because
 	// loading (or unloading) a GDExtension affects global data. So, we need reuse the same
 	// object if one has already been loaded (even if caching is disabled at the resource
 	// loader level).

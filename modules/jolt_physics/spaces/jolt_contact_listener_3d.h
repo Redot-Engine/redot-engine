@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_contact_listener_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"

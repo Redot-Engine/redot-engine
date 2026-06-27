@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_export.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_export.h"
 
 #include "core/config/project_settings.h"

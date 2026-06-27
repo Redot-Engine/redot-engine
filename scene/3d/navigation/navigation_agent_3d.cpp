@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file navigation_agent_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "navigation_agent_3d.h"
 
 #include "scene/3d/navigation/navigation_link_3d.h"
@@ -209,8 +215,7 @@ void NavigationAgent3D::_bind_methods() {
 }
 
 #ifndef DISABLE_DEPRECATED
-// Compatibility with Godot 4.0 beta 10 or below.
-// Functions in block below all renamed or replaced in 4.0 beta 1X avoidance rework.
+
 bool NavigationAgent3D::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "time_horizon") {
 		set_time_horizon_agents(p_value);
@@ -705,8 +710,8 @@ real_t NavigationAgent3D::get_path_max_distance() {
 }
 
 void NavigationAgent3D::set_target_position(Vector3 p_position) {
-	// Intentionally not checking for equality of the parameter, as we want to update the path even if the target position is the same in case the world changed.
-	// Revisit later when the navigation server can update the path without requesting a new path.
+	/// Intentionally not checking for equality of the parameter, as we want to update the path even if the target position is the same in case the world changed.
+	/// @todo Revisit later when the navigation server can update the path without requesting a new path.
 
 	target_position = p_position;
 	target_position_submitted = true;
@@ -767,9 +772,9 @@ Vector3 NavigationAgent3D::_get_final_position() const {
 }
 
 void NavigationAgent3D::set_velocity_forced(Vector3 p_velocity) {
-	// Intentionally not checking for equality of the parameter.
-	// We need to always submit the velocity to the navigation server, even when it is the same, in order to run avoidance every frame.
-	// Revisit later when the navigation server can update avoidance without users resubmitting the velocity.
+	/// Intentionally not checking for equality of the parameter.
+	/// We need to always submit the velocity to the navigation server, even when it is the same, in order to run avoidance every frame.
+	/// @todo Revisit later when the navigation server can update avoidance without users resubmitting the velocity.
 
 	velocity_forced = p_velocity;
 	velocity_forced_submitted = true;

@@ -30,24 +30,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-/*
-Adapted to Godot from the Bullet library.
-*/
-
-/*
-Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
+/**
+ * @file godot_hinge_joint_3d.cpp
+ *
+ * @brief Adapted to Godot from the Bullet library.
+ *
+ * @details Bullet Continuous Collision Detection and Physics Library
+ * @copyright Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ */
 
 #include "godot_hinge_joint_3d.h"
 
@@ -151,7 +151,7 @@ bool GodotHingeJoint3D::setup(real_t p_step) {
 	//calculate two perpendicular jointAxis, orthogonal to hingeAxis
 	//these two jointAxis require equal angular velocities for both bodies
 
-	//this is unused for now, it's a todo
+	/// This is unused for now, it's a @todo
 	Vector3 jointAxis0local;
 	Vector3 jointAxis1local;
 
@@ -319,7 +319,7 @@ void GodotHingeJoint3D::solve(real_t p_step) {
 
 		//apply motor
 		if (m_enableAngularMotor) {
-			//todo: add limits too
+			/// @todo Add limits too
 			Vector3 angularLimit(0, 0, 0);
 
 			Vector3 velrel = angVelAroundHingeAxisA - angVelAroundHingeAxisB;
@@ -329,7 +329,7 @@ void GodotHingeJoint3D::solve(real_t p_step) {
 			real_t motor_relvel = desiredMotorVel - projRelVel;
 
 			real_t unclippedMotorImpulse = m_kHinge * motor_relvel;
-			//todo: should clip against accumulated impulse
+			/// @todo Should clip against accumulated impulse
 			real_t clippedMotorImpulse = unclippedMotorImpulse > m_maxMotorImpulse ? m_maxMotorImpulse : unclippedMotorImpulse;
 			clippedMotorImpulse = clippedMotorImpulse < -m_maxMotorImpulse ? -m_maxMotorImpulse : clippedMotorImpulse;
 			Vector3 motorImp = clippedMotorImpulse * axisA;

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file dtls_server_mbedtls.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tls_context_mbedtls.h"
 
 #include "core/io/dtls_server.h"

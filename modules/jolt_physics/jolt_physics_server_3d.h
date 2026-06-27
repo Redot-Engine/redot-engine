@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_physics_server_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/rid_owner.h"
 #include "servers/physics_server_3d.h"
 

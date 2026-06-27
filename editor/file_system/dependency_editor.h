@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file dependency_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/item_list.h"

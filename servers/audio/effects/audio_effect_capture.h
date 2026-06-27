@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_effect_capture.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/audio_frame.h"
 #include "core/object/ref_counted.h"
 #include "core/templates/ring_buffer.h"

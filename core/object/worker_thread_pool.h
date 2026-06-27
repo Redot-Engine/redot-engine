@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file worker_thread_pool.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/condition_variable.h"
 #include "core/os/memory.h"
 #include "core/os/os.h"
@@ -79,7 +85,7 @@ private:
 		void (*native_group_func)(void *, uint32_t) = nullptr;
 		void *native_func_userdata = nullptr;
 		String description;
-		Semaphore done_semaphore; // For user threads awaiting.
+		Semaphore done_semaphore; ///< For user threads awaiting.
 		bool completed : 1;
 		bool pending_notify_yield_over : 1;
 		bool is_pump_task : 1;
@@ -111,7 +117,7 @@ private:
 	BinaryMutex task_mutex;
 
 	struct ThreadData {
-		static Task *const YIELDING; // Too bad constexpr doesn't work here.
+		static Task *const YIELDING; ///< Too bad constexpr doesn't work here.
 
 		uint32_t index = 0;
 		Thread thread;
@@ -119,9 +125,9 @@ private:
 		bool yield_is_over : 1;
 		bool pre_exited_languages : 1;
 		bool exited_languages : 1;
-		bool has_pump_task : 1; // Threads can only have one pump task.
+		bool has_pump_task : 1; ///< Threads can only have one pump task.
 		Task *current_task = nullptr;
-		Task *awaited_task = nullptr; // Null if not awaiting the condition variable, or special value (YIELDING).
+		Task *awaited_task = nullptr; ///< Null if not awaiting the condition variable, or special value (YIELDING).
 		ConditionVariable cond_var;
 		WorkerThreadPool *pool = nullptr;
 
@@ -136,8 +142,8 @@ private:
 	TightLocalVector<ThreadData> threads;
 	enum Runlevel {
 		RUNLEVEL_NORMAL,
-		RUNLEVEL_PRE_EXIT_LANGUAGES, // Block adding new tasks
-		RUNLEVEL_EXIT_LANGUAGES, // All threads detach from scripting threads.
+		RUNLEVEL_PRE_EXIT_LANGUAGES, ///< Block adding new tasks
+		RUNLEVEL_EXIT_LANGUAGES, ///< All threads detach from scripting threads.
 		RUNLEVEL_EXIT,
 	} runlevel = RUNLEVEL_NORMAL;
 	union { // Cleared on every runlevel change.
@@ -168,7 +174,7 @@ private:
 
 	uint32_t max_low_priority_threads = 0;
 	uint32_t low_priority_threads_used = 0;
-	uint32_t notify_index = 0; // For rotating across threads, no help distributing load.
+	uint32_t notify_index = 0; ///< For rotating across threads, no help distributing load.
 
 	uint64_t last_task = 1;
 	int pump_task_count = 0;
@@ -179,7 +185,16 @@ private:
 
 	void _process_task(Task *task);
 
+	/// Fall back to processing on the calling thread if there are no worker threads.
+	/// Separated into its own variable to make it easier to extend this logic
+	/// in custom builds.
 	void _post_tasks(Task **p_tasks, uint32_t p_count, bool p_high_priority, MutexLock<BinaryMutex> &p_lock, bool p_pump_task);
+	/// This is where which threads are awakened is decided according to the workload.
+	/// Threads that will have a chance to check the situation and process/promote tasks anyway
+	/// are excluded from being notified. Others will be tried anyway to try to distribute load.
+	/// The current thread, if it is a pool thread, is also excluded depending on the promoting/processing
+	/// needs because it will loop again anyway. However, it will contribute to decreasing the count,
+	/// which helps reduce sync traffic.
 	void _notify_threads(const ThreadData *p_current_thread_data, uint32_t p_process_count, uint32_t p_promote_count);
 
 	bool _try_promote_low_priority_task();
@@ -218,9 +233,11 @@ private:
 		}
 	};
 
+	/// Keep processing tasks until the condition to stop waiting is met.
 	void _wait_collaboratively(ThreadData *p_caller_pool_thread, Task *p_task);
 
 	void _switch_runlevel(Runlevel p_runlevel);
+	/// @return Whether threads have to exit. This may perform the check about handling needed.
 	bool _handle_runlevel(ThreadData *p_thread_data, MutexLock<BinaryMutex> &p_lock);
 
 #ifdef THREADS_ENABLED
@@ -276,7 +293,7 @@ public:
 #endif
 	}
 
-	// Note: Do not use this unless you know what you are doing, and it is absolutely necessary. Main thread pool (`get_singleton()`) should be preferred instead.
+	/// @note Do not use this unless you know what you are doing, and it is absolutely necessary. Main thread pool (`get_singleton()`) should be preferred instead.
 	static WorkerThreadPool *get_named_pool(const StringName &p_name);
 
 	static WorkerThreadPool *get_singleton() { return singleton; }

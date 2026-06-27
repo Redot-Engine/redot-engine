@@ -30,13 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_texture_settings.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_texture_settings.h"
 
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 
-// ResourceImporterTextureSettings contains code used by
-// multiple texture importers and the export dialog.
 bool ResourceImporterTextureSettings::should_import_s3tc_bptc() {
 	if (GLOBAL_GET("rendering/textures/vram_compression/import_s3tc_bptc")) {
 		return true;

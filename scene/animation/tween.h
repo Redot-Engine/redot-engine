@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tween.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class Tween;
@@ -231,10 +237,10 @@ private:
 	Variant final_val;
 	Variant delta_val;
 
-	Ref<RefCounted> ref_copy; // Makes sure that RefCounted objects are not freed too early.
+	Ref<RefCounted> ref_copy; ///< Makes sure that RefCounted objects are not freed too early.
 
 	double duration = 0;
-	Tween::TransitionType trans_type = Tween::TRANS_MAX; // This is set inside set_tween();
+	Tween::TransitionType trans_type = Tween::TRANS_MAX; ///< This is set inside set_tween();
 	Tween::EaseType ease_type = Tween::EASE_MAX;
 	Callable custom_method;
 

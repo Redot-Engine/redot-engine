@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file project_settings_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/config/project_settings.h"
 #include "editor/editor_data.h"
 #include "editor/import/import_defaults_editor.h"

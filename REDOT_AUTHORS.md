@@ -41,3 +41,4 @@ name is available.
     Jon (JoltedJon)
     McDubh (mcdubhghlas)
     Skogi (SkogiB)
+    Shakai (Shakai-Dev)

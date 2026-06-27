@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_import_settings.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_import_settings.h"
 
 #include "core/config/project_settings.h"
@@ -607,9 +613,9 @@ void SceneImportSettingsDialog::_update_view_gizmos() {
 			// This collider_view doesn't have a mesh so we need to generate a new one.
 			Ref<ImporterMesh> mesh;
 			mesh.instantiate();
-			// ResourceImporterScene::get_collision_shapes() expects ImporterMesh, not Mesh.
-			// TODO: Duplicate code with EditorSceneFormatImporterESCN::import_scene()
-			// Consider making a utility function to convert from Mesh to ImporterMesh.
+			/// ResourceImporterScene::get_collision_shapes() expects ImporterMesh, not Mesh.
+			/// @todo Duplicate code with EditorSceneFormatImporterESCN::import_scene()
+			/// Consider making a utility function to convert from Mesh to ImporterMesh.
 			Ref<Mesh> mesh_3d_mesh = mesh_node->get_mesh();
 			Ref<ArrayMesh> array_mesh_3d_mesh = mesh_3d_mesh;
 			if (array_mesh_3d_mesh.is_valid()) {

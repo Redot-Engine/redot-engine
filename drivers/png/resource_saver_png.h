@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file resource_saver_png.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/io/resource_saver.h"
 

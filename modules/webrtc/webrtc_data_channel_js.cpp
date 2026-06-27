@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file webrtc_data_channel_js.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webrtc_data_channel_js.h"
 
 #ifdef WEB_ENABLED
@@ -50,8 +56,8 @@ extern int godot_js_rtc_datachannel_max_packet_lifetime_get(int p_id);
 extern int godot_js_rtc_datachannel_max_retransmits_get(int p_id);
 extern int godot_js_rtc_datachannel_is_negotiated(int p_id);
 extern int godot_js_rtc_datachannel_get_buffered_amount(int p_id);
-extern char *godot_js_rtc_datachannel_label_get(int p_id); // Must free the returned string.
-extern char *godot_js_rtc_datachannel_protocol_get(int p_id); // Must free the returned string.
+extern char *godot_js_rtc_datachannel_label_get(int p_id); ///< Must free the returned string.
+extern char *godot_js_rtc_datachannel_protocol_get(int p_id); ///< Must free the returned string.
 extern void godot_js_rtc_datachannel_destroy(int p_id);
 extern void godot_js_rtc_datachannel_connect(int p_id, void *p_obj, RTCChOnOpen p_on_open, RTCChOnMessage p_on_message, RTCChOnError p_on_error, RTCChOnClose p_on_close);
 extern void godot_js_rtc_datachannel_close(int p_id);

@@ -32,21 +32,27 @@
 
 #pragma once
 
+/**
+ * @file noise.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image.h"
 #include "core/variant/typed_array.h"
 
 class Noise : public Resource {
 	GDCLASS(Noise, Resource);
 
-	// Helper struct for get_seamless_image(). See comments in .cpp for usage.
+	/// Helper struct for get_seamless_image(). See comments in .cpp for usage.
 	template <typename T>
 	struct img_buff {
 		T *img = nullptr;
-		int width; // Array dimensions & default modulo for image.
+		int width; ///< Array dimensions & default modulo for image.
 		int height;
-		int offset_x; // Offset index location on image (wrapped by specified modulo).
+		int offset_x; ///< Offset index location on image (wrapped by specified modulo).
 		int offset_y;
-		int alt_width; // Alternate module for image.
+		int alt_width; ///< Alternate module for image.
 		int alt_height;
 
 		enum ALT_MODULO {
@@ -56,7 +62,7 @@ class Noise : public Resource {
 			ALT_XY
 		};
 
-		// Multi-dimensional array indexer (e.g. img[x][y]) that supports multiple modulos.
+		/// Multi-dimensional array indexer (e.g. img[x][y]) that supports multiple modulos.
 		T &operator()(int x, int y, ALT_MODULO mode = DEFAULT) {
 			switch (mode) {
 				case ALT_XY:
@@ -82,27 +88,27 @@ class Noise : public Resource {
 		};
 	};
 
+	/**
+	 * To make a seamless image, we swap the quadrants so the edges are perfect matches.
+	 * We initially get a 10% larger image so we have an overlap we can use to blend over the seams.
+	 *
+	 * Noise::img_buff::operator() acts as a multi-dimensional array indexer.
+	 * It does the array math, translates between the flipped and non-flipped quadrants, and manages offsets and modulos.
+	 *
+	 * Here is how the larger source image and final output image map to each other:
+	 *
+	 * Output size = p_width*p_height	Source w/ extra 10% skirt `s` size = src_width*src_height
+	 * Q1   Q2							Q4	Q3 s1
+	 * Q3   Q4							Q2	Q1 s2
+	 * 								s5	s4 s3
+	 *
+	 * All of the loops use output coordinates, so Output:Q1 == Source:Q1
+	 * Ex: Output(half_width, half_height) [the midpoint, corner of Q1/Q4] =>
+	 * on Source it's translated to
+	 * corner of Q1/s3 unless the ALT_XY modulo moves it to Q4
+	 */
 	template <typename T>
 	Vector<Ref<Image>> _generate_seamless_image(Vector<Ref<Image>> p_src, int p_width, int p_height, int p_depth, bool p_invert, real_t p_blend_skirt) const {
-		/*
-		To make a seamless image, we swap the quadrants so the edges are perfect matches.
-		We initially get a 10% larger image so we have an overlap we can use to blend over the seams.
-
-		Noise::img_buff::operator() acts as a multi-dimensional array indexer.
-		It does the array math, translates between the flipped and non-flipped quadrants, and manages offsets and modulos.
-
-		Here is how the larger source image and final output image map to each other:
-
-		Output size = p_width*p_height	Source w/ extra 10% skirt `s` size = src_width*src_height
-		Q1   Q2							Q4	Q3 s1
-		Q3   Q4							Q2	Q1 s2
-										s5	s4 s3
-
-		All of the loops use output coordinates, so Output:Q1 == Source:Q1
-		Ex: Output(half_width, half_height) [the midpoint, corner of Q1/Q4] =>
-		on Source it's translated to
-		corner of Q1/s3 unless the ALT_XY modulo moves it to Q4
-		*/
 		ERR_FAIL_COND_V(p_blend_skirt < 0, Vector<Ref<Image>>());
 
 		int skirt_width = MAX(1, p_width * p_blend_skirt);
@@ -280,7 +286,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	// Virtual destructor so we can delete any Noise derived object when referenced as a Noise*.
+	/// Virtual destructor so we can delete any Noise derived object when referenced as a Noise*.
 	virtual ~Noise() {}
 
 	virtual real_t get_noise_1d(real_t p_x) const = 0;

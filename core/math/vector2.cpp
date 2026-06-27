@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vector2.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "vector2.h"
 
 #include "core/math/vector2i.h"
@@ -173,7 +179,6 @@ Vector2 Vector2::move_toward(const Vector2 &p_to, real_t p_delta) const {
 	return len <= p_delta || len < (real_t)CMP_EPSILON ? p_to : v + vd / len * p_delta;
 }
 
-// slide returns the component of the vector along the given plane, specified by its normal vector.
 Vector2 Vector2::slide(const Vector2 &p_normal) const {
 #ifdef MATH_CHECKS
 	ERR_FAIL_COND_V_MSG(!p_normal.is_normalized(), Vector2(), "The normal Vector2 " + p_normal.operator String() + "must be normalized.");

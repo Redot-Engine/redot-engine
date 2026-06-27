@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file camera_android.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/camera/camera_feed.h"
 #include "servers/camera_server.h"
 

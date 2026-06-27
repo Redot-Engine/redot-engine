@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file math_funcs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/math/math_defs.h"
 #include "core/typedefs.h"
@@ -97,7 +103,7 @@ _ALWAYS_INLINE_ float tanh(float p_x) {
 	return std::tanh(p_x);
 }
 
-// Always does clamping so always safe to use.
+/// Always does clamping so always safe to use.
 _ALWAYS_INLINE_ double asin(double p_x) {
 	return p_x < -1 ? (-PI / 2) : (p_x > 1 ? (PI / 2) : std::asin(p_x));
 }
@@ -105,7 +111,7 @@ _ALWAYS_INLINE_ float asin(float p_x) {
 	return p_x < -1 ? (-(float)PI / 2) : (p_x > 1 ? ((float)PI / 2) : std::asin(p_x));
 }
 
-// Always does clamping so always safe to use.
+/// Always does clamping so always safe to use.
 _ALWAYS_INLINE_ double acos(double p_x) {
 	return p_x < -1 ? PI : (p_x > 1 ? 0 : std::acos(p_x));
 }
@@ -134,7 +140,7 @@ _ALWAYS_INLINE_ float asinh(float p_x) {
 	return std::asinh(p_x);
 }
 
-// Always does clamping so always safe to use.
+/// Always does clamping so always safe to use.
 _ALWAYS_INLINE_ double acosh(double p_x) {
 	return p_x < 1 ? 0 : std::acosh(p_x);
 }
@@ -142,7 +148,7 @@ _ALWAYS_INLINE_ float acosh(float p_x) {
 	return p_x < 1 ? 0 : std::acosh(p_x);
 }
 
-// Always does clamping so always safe to use.
+/// Always does clamping so always safe to use.
 _ALWAYS_INLINE_ double atanh(double p_x) {
 	return p_x <= -1 ? -INF : (p_x >= 1 ? INF : std::atanh(p_x));
 }
@@ -236,7 +242,8 @@ _ALWAYS_INLINE_ bool is_inf(float p_val) {
 	return std::isinf(p_val);
 }
 
-// These methods assume (p_num + p_den) doesn't overflow.
+/// @name These methods assume (p_num + p_den) doesn't overflow.
+/// @{
 _ALWAYS_INLINE_ int32_t division_round_up(int32_t p_num, int32_t p_den) {
 	int32_t offset = (p_num < 0 && p_den < 0) ? 1 : -1;
 	return (p_num + p_den + offset) / p_den;
@@ -251,6 +258,7 @@ _ALWAYS_INLINE_ int64_t division_round_up(int64_t p_num, int64_t p_den) {
 _ALWAYS_INLINE_ uint64_t division_round_up(uint64_t p_num, uint64_t p_den) {
 	return (p_num + p_den - 1) / p_den;
 }
+/// @}
 
 _ALWAYS_INLINE_ bool is_finite(double p_val) {
 	return std::isfinite(p_val);
@@ -441,8 +449,8 @@ _ALWAYS_INLINE_ float cubic_interpolate_angle_in_time(float p_from, float p_to, 
 	return cubic_interpolate_in_time(from_rot, to_rot, pre_rot, post_rot, p_weight, p_to_t, p_pre_t, p_post_t);
 }
 
+/** Formula from Wikipedia article on Bezier curves. */
 _ALWAYS_INLINE_ double bezier_interpolate(double p_start, double p_control_1, double p_control_2, double p_end, double p_t) {
-	/* Formula from Wikipedia article on Bezier curves. */
 	double omt = (1.0 - p_t);
 	double omt2 = omt * omt;
 	double omt3 = omt2 * omt;
@@ -451,8 +459,9 @@ _ALWAYS_INLINE_ double bezier_interpolate(double p_start, double p_control_1, do
 
 	return p_start * omt3 + p_control_1 * omt2 * p_t * 3.0 + p_control_2 * omt * t2 * 3.0 + p_end * t3;
 }
+
+/** Formula from Wikipedia article on Bezier curves. */
 _ALWAYS_INLINE_ float bezier_interpolate(float p_start, float p_control_1, float p_control_2, float p_end, float p_t) {
-	/* Formula from Wikipedia article on Bezier curves. */
 	float omt = (1.0f - p_t);
 	float omt2 = omt * omt;
 	float omt3 = omt2 * omt;
@@ -462,8 +471,8 @@ _ALWAYS_INLINE_ float bezier_interpolate(float p_start, float p_control_1, float
 	return p_start * omt3 + p_control_1 * omt2 * p_t * 3.0f + p_control_2 * omt * t2 * 3.0f + p_end * t3;
 }
 
+/** Formula from Wikipedia article on Bezier curves. */
 _ALWAYS_INLINE_ double bezier_derivative(double p_start, double p_control_1, double p_control_2, double p_end, double p_t) {
-	/* Formula from Wikipedia article on Bezier curves. */
 	double omt = (1.0 - p_t);
 	double omt2 = omt * omt;
 	double t2 = p_t * p_t;
@@ -471,8 +480,9 @@ _ALWAYS_INLINE_ double bezier_derivative(double p_start, double p_control_1, dou
 	double d = (p_control_1 - p_start) * 3.0 * omt2 + (p_control_2 - p_control_1) * 6.0 * omt * p_t + (p_end - p_control_2) * 3.0 * t2;
 	return d;
 }
+
+/** Formula from Wikipedia article on Bezier curves. */
 _ALWAYS_INLINE_ float bezier_derivative(float p_start, float p_control_1, float p_control_2, float p_end, float p_t) {
-	/* Formula from Wikipedia article on Bezier curves. */
 	float omt = (1.0f - p_t);
 	float omt2 = omt * omt;
 	float t2 = p_t * p_t;
@@ -673,9 +683,11 @@ _ALWAYS_INLINE_ float pingpong(float p_value, float p_length) {
 	return (p_length != 0.0f) ? abs(fract((p_value - p_length) / (p_length * 2.0f)) * p_length * 2.0f - p_length) : 0.0f;
 }
 
-// double only, as these functions are mainly used by the editor and not performance-critical,
+/// double only, as these functions are mainly used by the editor and not performance-critical,
 double ease(double p_x, double p_c);
 int step_decimals(double p_step);
+/// Only meant for editor usage in float ranges, where a step of 0
+/// means that decimal digits should not be limited in String::num.
 int range_step_decimals(double p_step); // For editor use only.
 double snapped(double p_value, double p_step);
 
@@ -697,7 +709,7 @@ double random(double p_from, double p_to);
 float random(float p_from, float p_to);
 int random(int p_from, int p_to);
 
-// This function should be as fast as possible and rounding mode should not matter.
+/// This function should be as fast as possible and rounding mode should not matter.
 _ALWAYS_INLINE_ int fast_ftoi(float p_value) {
 	return std::rint(p_value);
 }
@@ -825,6 +837,139 @@ static _ALWAYS_INLINE_ double sigmoid_affine_approx(double p_x, double p_amplitu
 }
 static _ALWAYS_INLINE_ float sigmoid_affine_approx(float p_x, float p_amplitude, float p_y_translation) {
 	return p_amplitude * (0.5f + p_x / (4.0f + fabsf(p_x))) + p_y_translation;
+}
+
+// TODO once upgrade to >= C++20 add floating_point constraint to these templates
+template <typename T>
+constexpr T monotonic_cubic_interpolate(T p_from, T p_to, T p_pre, T p_post, T p_weight) {
+	const T d0 = p_from - p_pre;
+	const T d1 = p_to - p_from;
+	const T d2 = p_post - p_to;
+
+	T m1 = 0.0;
+	T m2 = 0.0;
+
+	if (!is_zero_approx(d1)) {
+		m1 = (d0 + d1) * (T)0.5;
+		m2 = (d1 + d2) * (T)0.5;
+
+		if (m1 * d1 <= 0.0) {
+			m1 = 0.0;
+		}
+		if (m2 * d1 <= 0.0) {
+			m2 = 0.0;
+		}
+
+		const T a = m1 / d1;
+		const T b = m2 / d1;
+
+		const T h = sqrt(a * a + b * b);
+
+		if (h > (T)3.0) {
+			const T scale_factor = (T)3.0 / h;
+			m1 *= scale_factor;
+			m2 *= scale_factor;
+		}
+	}
+
+	const T t2 = p_weight * p_weight;
+	const T t3 = t2 * p_weight;
+
+	const T h00 = 2 * t3 - 3 * t2 + 1;
+	const T h10 = t3 - 2 * t2 + p_weight;
+	const T h01 = -2 * t3 + 3 * t2;
+	const T h11 = t3 - t2;
+
+	return (
+			h00 * p_from +
+			h10 * m1 +
+			h01 * p_to +
+			h11 * m2);
+}
+
+template <typename T>
+constexpr T monotonic_cubic_interpolate_in_time(T p_from, T p_to, T p_pre, T p_post, T p_weight, T p_to_t, T p_pre_t, T p_post_t) {
+	if (is_zero_approx(p_to_t)) {
+		return (p_from + p_to) * (T)0.5;
+	}
+
+	const T t_from = (T)0;
+	const T t_to = p_to_t;
+	const T t_pre = p_pre_t;
+	const T t_post = p_post_t;
+
+	const T t = p_weight * t_to;
+
+	const T h0 = t_from - t_pre;
+	const T h1 = t_to - t_from;
+	const T h2 = t_post - t_to;
+
+	const T d0 = is_zero_approx(h0) ? (T)0 : (p_from - p_pre) / h0;
+	const T d1 = (p_to - p_from) / h1;
+	const T d2 = is_zero_approx(h2) ? (T)0 : (p_post - p_to) / h2;
+
+	// Fritsch–Carlson monotonic tangents
+	auto tangent = [](T a, T b, T ha, T hb) -> T {
+		if (a * b <= (T)0) {
+			return (T)0;
+		}
+
+		const T w1 = (T)2 * hb + ha;
+		const T w2 = hb + (T)2 * ha;
+
+		return (w1 + w2) / (w1 / a + w2 / b);
+	};
+
+	const T m1 = tangent(d0, d1, h0, h1);
+	const T m2 = tangent(d1, d2, h1, h2);
+
+	const T s = t / h1;
+
+	const T s2 = s * s;
+	const T s3 = s2 * s;
+
+	// Hermite basis
+	const T h00 = (T)2 * s3 - (T)3 * s2 + (T)1;
+	const T h10 = s3 - (T)2 * s2 + s;
+	const T h01 = -(T)2 * s3 + (T)3 * s2;
+	const T h11 = s3 - s2;
+
+	return h00 * p_from +
+			h10 * h1 * m1 +
+			h01 * p_to +
+			h11 * h1 * m2;
+}
+
+template <typename T>
+constexpr T monotonic_cubic_interpolate_angle(T p_from, T p_to, T p_pre, T p_post, T p_weight) {
+	T from_rot = fmod(p_from, (T)TAU);
+
+	T pre_diff = fmod(p_pre - from_rot, (T)TAU);
+	T pre_rot = from_rot + fmod(2.0f * pre_diff, (T)TAU) - pre_diff;
+
+	T to_diff = fmod(p_to - from_rot, (T)TAU);
+	T to_rot = from_rot + fmod(2.0f * to_diff, (T)TAU) - to_diff;
+
+	T post_diff = fmod(p_post - to_rot, (T)TAU);
+	T post_rot = to_rot + fmod(2.0f * post_diff, (T)TAU) - post_diff;
+
+	return monotonic_cubic_interpolate(from_rot, to_rot, pre_rot, post_rot, p_weight);
+}
+
+template <typename T>
+constexpr T monotonic_cubic_interpolate_angle_in_time(T p_from, T p_to, T p_pre, T p_post, T p_weight, T p_to_t, T p_pre_t, T p_post_t) {
+	T from_rot = fmod(p_from, (T)TAU);
+
+	T pre_diff = fmod(p_pre - from_rot, (T)TAU);
+	T pre_rot = from_rot + fmod((T)2 * pre_diff, (T)TAU) - pre_diff;
+
+	T to_diff = fmod(p_to - from_rot, (T)TAU);
+	T to_rot = from_rot + fmod((T)2 * to_diff, (T)TAU) - to_diff;
+
+	T post_diff = fmod(p_post - to_rot, (T)TAU);
+	T post_rot = to_rot + fmod((T)2 * post_diff, (T)TAU) - post_diff;
+
+	return monotonic_cubic_interpolate_in_time(from_rot, to_rot, pre_rot, post_rot, p_weight, p_to_t, p_pre_t, p_post_t);
 }
 
 }; // namespace Math

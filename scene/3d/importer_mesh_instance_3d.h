@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file importer_mesh_instance_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/node_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/3d/skin.h"

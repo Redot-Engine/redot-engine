@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file physics_server_2d_dummy.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "physics_server_2d.h"
 
 class PhysicsDirectBodyState2DDummy : public PhysicsDirectBodyState2D {
@@ -151,7 +157,8 @@ public:
 
 	virtual bool shape_collide(RID p_shape_A, const Transform2D &p_xform_A, const Vector2 &p_motion_A, RID p_shape_B, const Transform2D &p_xform_B, const Vector2 &p_motion_B, Vector2 *r_results, int p_result_max, int &r_result_count) override { return false; }
 
-	/* SPACE API */
+	/// @name SPACE API
+	/// @{
 
 	virtual RID space_create() override { return RID(); }
 	virtual void space_set_active(RID p_space, bool p_active) override {}
@@ -166,7 +173,9 @@ public:
 	virtual Vector<Vector2> space_get_contacts(RID p_space) const override { return Vector<Vector2>(); }
 	virtual int space_get_contact_count(RID p_space) const override { return 0; }
 
-	/* AREA API */
+	/// @}
+	/// @name AREA API
+	/// @{
 
 	virtual RID area_create() override { return RID(); }
 
@@ -210,7 +219,9 @@ public:
 	virtual void area_set_monitor_callback(RID p_area, const Callable &p_callback) override {}
 	virtual void area_set_area_monitor_callback(RID p_area, const Callable &p_callback) override {}
 
-	/* BODY API */
+	/// @}
+	/// @name BODY API
+	/// @{
 
 	virtual RID body_create() override { return RID(); }
 
@@ -304,7 +315,9 @@ public:
 
 	virtual bool body_test_motion(RID p_body, const MotionParameters &p_parameters, MotionResult *r_result = nullptr) override { return false; }
 
-	/* JOINT API */
+	/// @}
+	/// @name JOINT API
+	/// @{
 
 	virtual RID joint_create() override { return RID(); }
 
@@ -331,7 +344,9 @@ public:
 
 	virtual JointType joint_get_type(RID p_joint) const override { return JointType::JOINT_TYPE_PIN; }
 
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	virtual void free(RID p_rid) override {}
 
@@ -352,4 +367,5 @@ public:
 	virtual bool is_flushing_queries() const override { return false; }
 
 	virtual int get_process_info(ProcessInfo p_info) override { return 0; }
+	/// @}
 };

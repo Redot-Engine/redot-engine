@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sort_array.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 #include "core/typedefs.h"
 
@@ -85,7 +91,8 @@ public:
 		return k;
 	}
 
-	/* Heap / Heapsort functions */
+	/// @name Heap / Heapsort functions
+	/// @{
 
 	inline void push_heap(int64_t p_first, int64_t p_hole_idx, int64_t p_top_index, T p_value, T *p_array) const {
 		int64_t parent = (p_hole_idx - 1) / 2;
@@ -314,4 +321,5 @@ public:
 		}
 		introselect(p_first, p_nth, p_last, p_array, bitlog(p_last - p_first) * 2);
 	}
+	/// @}
 };

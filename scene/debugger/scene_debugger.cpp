@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_debugger.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_debugger.h"
 
 #include "core/debugger/debugger_marshalls.h"
@@ -1559,7 +1565,7 @@ void RuntimeNodeSelect::_setup(const Dictionary &p_settings) {
 	orbit_sensitivity = Math::deg_to_rad((real_t)p_settings.get("editors/3d/navigation_feel/orbit_sensitivity", 0.004));
 	translation_sensitivity = p_settings.get("editors/3d/navigation_feel/translation_sensitivity", 1);
 
-	/// 3D Selection Box Generation
+	// 3D Selection Box Generation
 	// Copied from the Node3DEditor implementation.
 
 	sbox_3d_color = p_settings.get("editors/3d/selection_box_color", Color());
@@ -2329,7 +2335,7 @@ void RuntimeNodeSelect::_open_selection_list(const Vector<SelectResult> &p_items
 	selection_list->set_position(selection_list->is_embedded() ? p_pos : (Input::get_singleton()->get_mouse_position() + root->get_position()));
 	selection_list->reset_size();
 	selection_list->popup();
-	// FIXME: Ugly hack that stops the popup from hiding when the button is released.
+	/// @todo FIXME: Ugly hack that stops the popup from hiding when the button is released.
 	selection_list->call_deferred(SNAME("set_position"), selection_list->get_position() + Point2(1, 0));
 }
 
@@ -2346,7 +2352,6 @@ void RuntimeNodeSelect::_set_selection_visible(bool p_visible) {
 	}
 }
 
-// Copied and trimmed from the CanvasItemEditor implementation.
 void RuntimeNodeSelect::_find_canvas_items_at_pos(const Point2 &p_pos, Node *p_node, Vector<SelectResult> &r_items, const Transform2D &p_parent_xform, const Transform2D &p_canvas_xform) {
 	if (!p_node || Object::cast_to<Viewport>(p_node)) {
 		return;
@@ -2393,8 +2398,8 @@ void RuntimeNodeSelect::_find_canvas_items_at_pos(const Point2 &p_pos, Node *p_n
 		r_items.push_back(res);
 
 #ifndef PHYSICS_2D_DISABLED
-		// If it's a shape, get the collision object it's from.
-		// FIXME: If the collision object has multiple shapes, only the topmost will be above it in the list.
+		/// If it's a shape, get the collision object it's from.
+		/// @todo FIXME: If the collision object has multiple shapes, only the topmost will be above it in the list.
 		if (Object::cast_to<CollisionShape2D>(ci) || Object::cast_to<CollisionPolygon2D>(ci)) {
 			CollisionObject2D *collision_object = Object::cast_to<CollisionObject2D>(ci->get_parent());
 			if (collision_object) {
@@ -2476,7 +2481,6 @@ void RuntimeNodeSelect::_pan_callback(Vector2 p_scroll_vec, Ref<InputEvent> p_ev
 	_update_view_2d();
 }
 
-// A very shallow copy of the same function inside CanvasItemEditor.
 void RuntimeNodeSelect::_zoom_callback(float p_zoom_factor, Vector2 p_origin, Ref<InputEvent> p_event) {
 	real_t prev_zoom = view_2d_zoom;
 	view_2d_zoom = CLAMP(view_2d_zoom * p_zoom_factor, VIEW_2D_MIN_ZOOM, VIEW_2D_MAX_ZOOM);
@@ -2870,7 +2874,7 @@ bool RuntimeNodeSelect::_handle_3d_input(const Ref<InputEvent> &p_event) {
 		}
 	}
 
-	// TODO: Handle magnify and pan input gestures.
+	/// @todo Handle magnify and pan input gestures.
 
 	return false;
 }

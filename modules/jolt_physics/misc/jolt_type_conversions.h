@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file jolt_type_conversions.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/aabb.h"
 #include "core/math/color.h"
 #include "core/math/plane.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file a_star.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "a_star.h"
 #include "a_star.compat.inc"
 

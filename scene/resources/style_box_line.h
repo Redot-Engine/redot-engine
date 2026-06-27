@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file style_box_line.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/style_box.h"
 
 class StyleBoxLine : public StyleBox {

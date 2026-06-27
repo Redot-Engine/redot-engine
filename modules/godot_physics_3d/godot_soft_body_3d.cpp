@@ -30,6 +30,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_soft_body_3d.cpp
+ *
+ * @brief Based on Bullet soft body.
+ *
+ * @details Bullet Continuous Collision Detection and Physics Library
+ * @copyright Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ */
+
 #include "godot_soft_body_3d.h"
 
 #include "godot_space_3d.h"
@@ -37,24 +56,7 @@
 #include "core/math/geometry_3d.h"
 #include "servers/rendering_server.h"
 
-// Based on Bullet soft body.
-
-/*
-Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
 ///btSoftBody implementation by Nathanael Presson
-
 GodotSoftBody3D::GodotSoftBody3D() :
 		GodotCollisionObject3D(TYPE_SOFT_BODY),
 		active_list(this) {
@@ -138,10 +140,10 @@ void GodotSoftBody3D::set_mesh(RID p_mesh) {
 		return;
 	}
 
-	// TODO: calling RenderingServer::mesh_surface_get_arrays() from the physics thread
-	// is not safe and can deadlock when physics/3d/run_on_separate_thread is enabled.
-	// This method blocks on the main thread to return data, but the main thread may be
-	// blocked waiting on us in PhysicsServer3D::sync().
+	/// @todo Calling RenderingServer::mesh_surface_get_arrays() from the physics thread
+	/// is not safe and can deadlock when physics/3d/run_on_separate_thread is enabled.
+	/// This method blocks on the main thread to return data, but the main thread may be
+	/// blocked waiting on us in PhysicsServer3D::sync().
 	Array arrays = RenderingServer::get_singleton()->mesh_surface_get_arrays(soft_mesh, 0);
 	ERR_FAIL_COND(arrays.is_empty());
 
@@ -730,13 +732,13 @@ void GodotSoftBody3D::generate_bending_constraints(int p_distance) {
 //
 //===================================================================
 
-// A small structure to track lists of dependent link calculations.
+/// A small structure to track lists of dependent link calculations.
 class LinkDeps {
 public:
-	// A link calculation that is dependent on this one.
-	// Positive values = "input A" while negative values = "input B".
+	/// A link calculation that is dependent on this one.
+	/// Positive values = "input A" while negative values = "input B".
 	int value;
-	// Next dependence in the list.
+	/// Next dependence in the list.
 	LinkDeps *next;
 };
 typedef LinkDeps *LinkDepsPtr;

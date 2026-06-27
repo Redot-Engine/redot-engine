@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file input_event.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/input_enums.h"
 #include "core/io/resource.h"
 #include "core/math/transform_2d.h"
@@ -118,7 +124,7 @@ class InputEventWithModifiers : public InputEventFromWindow {
 
 	bool shift_pressed = false;
 	bool alt_pressed = false;
-	bool meta_pressed = false; // "Command" on macOS, "Meta/Win" key on other platforms.
+	bool meta_pressed = false; ///< "Command" on macOS, "Meta/Win" key on other platforms.
 	bool ctrl_pressed = false;
 
 protected:
@@ -156,13 +162,13 @@ public:
 class InputEventKey : public InputEventWithModifiers {
 	GDCLASS(InputEventKey, InputEventWithModifiers);
 
-	Key keycode = Key::NONE; // Key enum, without modifier masks.
+	Key keycode = Key::NONE; ///< Key enum, without modifier masks.
 	Key physical_keycode = Key::NONE;
 	Key key_label = Key::NONE;
-	uint32_t unicode = 0; ///unicode
+	uint32_t unicode = 0; ///< Unicode
 	KeyLocation location = KeyLocation::UNSPECIFIED;
 
-	bool echo = false; /// true if this is an echo key
+	bool echo = false; ///< true if this is an echo key
 
 protected:
 	static void _bind_methods();
@@ -240,7 +246,7 @@ class InputEventMouseButton : public InputEventMouse {
 
 	float factor = 1;
 	MouseButton button_index = MouseButton::NONE;
-	bool double_click = false; //last even less than double click time
+	bool double_click = false; ///< Last even less than double click time
 
 protected:
 	static void _bind_methods();
@@ -352,7 +358,7 @@ class InputEventJoypadButton : public InputEvent {
 	GDCLASS(InputEventJoypadButton, InputEvent);
 
 	JoyButton button_index = (JoyButton)0;
-	float pressure = 0; //0 to 1
+	float pressure = 0; ///< 0 to 1
 protected:
 	static void _bind_methods();
 

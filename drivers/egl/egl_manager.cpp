@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file egl_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "egl_manager.h"
 
 #include "core/crypto/crypto_core.h"
@@ -67,7 +73,6 @@ extern "C" EGLAPI EGLDisplay EGLAPIENTRY eglGetPlatformDisplayEXT(EGLenum platfo
 #endif
 #endif
 
-// Creates and caches a GLDisplay. Returns -1 on error.
 int EGLManager::_get_gldisplay_id(void *p_display) {
 	// Look for a cached GLDisplay.
 	for (unsigned int i = 0; i < displays.size(); i++) {

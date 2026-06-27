@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_3d.h"
 
 #include "core/math/projection.h"
@@ -479,8 +485,8 @@ Point2 Camera3D::unproject_position(const Vector3 &p_pos) const {
 
 	p = cm.xform4(p);
 
-	// Prevent divide by zero.
-	// TODO: Investigate, this was causing NaNs.
+	/// Prevent divide by zero.
+	/// @todo Investigate, this was causing NaNs.
 	ERR_FAIL_COND_V(p.d == 0, Point2());
 
 	p.normal /= p.d;

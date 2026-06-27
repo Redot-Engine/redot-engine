@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_help.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_help.h"
 
 #include "core/config/project_settings.h"
@@ -71,7 +77,7 @@
 #define CONTRIBUTE_URL vformat("%s/contributing/documentation/updating_the_class_reference.html", REDOT_VERSION_DOCS_URL)
 
 #ifdef MODULE_MONO_ENABLED
-// Sync with the types mentioned in https://docs.redotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_differences.html
+/// Sync with the types mentioned in https://docs.redotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_differences.html
 const Vector<String> classes_with_csharp_differences = {
 	"@GlobalScope",
 	"String",
@@ -170,7 +176,7 @@ static void _add_qualifiers_to_rt(const String &p_qualifiers, RichTextLabel *p_r
 	}
 }
 
-// Removes unnecessary prefix from `p_class_specifier` when within the `p_edited_class` context.
+/// Removes unnecessary prefix from `p_class_specifier` when within the `p_edited_class` context.
 static String _contextualize_class_specifier(const String &p_class_specifier, const String &p_edited_class) {
 	// If this is a completely different context than the current class, then keep full path.
 	if (!p_class_specifier.begins_with(p_edited_class)) {
@@ -484,7 +490,8 @@ void EditorHelp::_add_type_icon(const String &p_type, int p_size, const String &
 	class_desc->add_image(icon, size.width, size.height);
 }
 
-// Macros for assigning the deprecated/experimental marks to class members in overview.
+/// @name Macros for assigning the deprecated/experimental marks to class members in overview.
+/// @{
 
 #define DEPRECATED_DOC_TAG                                                                   \
 	class_desc->push_font(theme_cache.doc_bold_font);                                        \
@@ -537,6 +544,7 @@ void EditorHelp::_add_type_icon(const String &p_type, int p_size, const String &
 	} else {                                                                                    \
 		_add_text(m_message);                                                                   \
 	}
+/// @}
 
 void EditorHelp::_add_method(const DocData::MethodDoc &p_method, bool p_overview, bool p_override) {
 	if (p_override) {
@@ -3169,7 +3177,7 @@ void EditorHelp::_load_script_doc_cache_thread(void *p_udata) {
 	_delete_script_doc_cache();
 }
 
-// Helper method to deal with "sources_changed" signal having a parameter.
+/// Helper method to deal with "sources_changed" signal having a parameter.
 static void _regenerate_script_doc_cache(bool p_changes) {
 	EditorHelp::regenerate_script_doc_cache();
 }
@@ -3186,7 +3194,6 @@ void EditorHelp::regenerate_script_doc_cache() {
 	loader_thread.start(_regen_script_doc_thread, EditorFileSystem::get_singleton()->get_filesystem());
 }
 
-// Runs on worker_thread since it writes to DocData.
 void EditorHelp::_finish_regen_script_doc_thread(void *p_udata) {
 	loader_thread.wait_to_finish();
 	_process_postponed_docs();
@@ -3195,8 +3202,6 @@ void EditorHelp::_finish_regen_script_doc_thread(void *p_udata) {
 	OS::get_singleton()->benchmark_end_measure("EditorHelp", "Generate Script Documentation");
 }
 
-// Runs on loader_thread since _reload_scripts_documentation calls ResourceLoader::load().
-// Avoids deadlocks of worker_thread needing main thread for load task dispatching, but main thread waiting on worker_thread.
 void EditorHelp::_regen_script_doc_thread(void *p_udata) {
 	OS::get_singleton()->benchmark_begin_measure("EditorHelp", "Generate Script Documentation");
 
@@ -5047,7 +5052,6 @@ void FindBar::_hide_bar() {
 	hide();
 }
 
-// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
 void FindBar::input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(p_event.is_null());
 

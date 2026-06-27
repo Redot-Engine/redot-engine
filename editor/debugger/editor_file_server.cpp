@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_file_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_file_server.h"
 
 #include "editor/editor_node.h"
@@ -38,7 +44,7 @@
 
 #define FILESYSTEM_PROTOCOL_VERSION 1
 #define PASSWORD_LENGTH 32
-#define MAX_FILE_BUFFER_SIZE 100 * 1024 * 1024 // 100mb max file buffer size (description of files to update, compressed).
+#define MAX_FILE_BUFFER_SIZE 100 * 1024 * 1024 ///< 100mb max file buffer size (description of files to update, compressed).
 
 static void _add_file(String f, const uint64_t &p_modified_time, HashMap<String, uint64_t> &files_to_send, HashMap<String, uint64_t> &cached_files) {
 	f = f.replace_first("res://", ""); // remove res://
@@ -55,8 +61,8 @@ void EditorFileServer::_scan_files_changed(EditorFileSystemDirectory *efd, const
 	for (int i = 0; i < efd->get_file_count(); i++) {
 		String f = efd->get_file_path(i);
 		if (FileAccess::exists(f + ".import")) {
-			// is imported, determine what to do
-			// Todo the modified times of remapped files should most likely be kept in EditorFileSystem to speed this up in the future.
+			/// Is imported, determine what to do
+			/// @todo The modified times of remapped files should most likely be kept in EditorFileSystem to speed this up in the future.
 			Ref<ConfigFile> cf;
 			cf.instantiate();
 			Error err = cf->load(f + ".import", true);

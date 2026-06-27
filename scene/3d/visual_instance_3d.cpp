@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file visual_instance_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "visual_instance_3d.h"
 
 #include "core/config/project_settings.h"
@@ -90,7 +96,7 @@ void VisualInstance3D::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_TRANSFORM_CHANGED: {
-			// ToDo : Can we turn off notify transform for physics interpolated cases?
+			/// @todo Can we turn off notify transform for physics interpolated cases?
 			if (_is_vi_visible() && !(is_inside_tree() && get_tree()->is_physics_interpolation_enabled()) && !_is_using_identity_transform()) {
 				// Physics interpolation global off, always send.
 				RenderingServer::get_singleton()->instance_set_transform(instance, get_global_transform());

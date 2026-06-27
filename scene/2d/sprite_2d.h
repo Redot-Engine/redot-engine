@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file sprite_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 #include "scene/resources/texture.h"
 
@@ -63,6 +69,8 @@ class Sprite2D : public Node2D {
 	void _get_rects(Rect2 &r_src_rect, Rect2 &r_dst_rect, bool &r_filter_clip_enabled) const;
 	Point2 _get_rect_offset(const Size2i &p_size) const;
 
+	/// Changes to the texture need to trigger an update to make
+	/// the editor redraw the sprite with the updated texture.
 	void _texture_changed();
 	void _emit_region_rect_enabled();
 

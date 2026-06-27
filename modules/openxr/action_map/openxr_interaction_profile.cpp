@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_interaction_profile.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_interaction_profile.h"
 
 void OpenXRIPBinding::_bind_methods() {
@@ -61,8 +67,6 @@ void OpenXRIPBinding::_bind_methods() {
 }
 
 Ref<OpenXRIPBinding> OpenXRIPBinding::new_binding(const Ref<OpenXRAction> p_action, const String &p_binding_path) {
-	// This is a helper function to help build our default action sets
-
 	Ref<OpenXRIPBinding> binding;
 	binding.instantiate();
 	binding->set_action(p_action);

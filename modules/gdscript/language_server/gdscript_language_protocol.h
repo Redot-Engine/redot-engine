@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_language_protocol.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_text_document.h"
 #include "gdscript_workspace.h"
 

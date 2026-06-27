@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file node_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "node_3d.h"
 
 #include "core/math/transform_interpolator.h"
@@ -37,40 +43,38 @@
 #include "scene/main/viewport.h"
 #include "scene/property_utils.h"
 
-/*
-
- possible algorithms:
-
- Algorithm 1: (current)
-
- definition of invalidation: global is invalid
-
- 1) If a node sets a LOCAL, it produces an invalidation of everything above
- .  a) If above is invalid, don't keep invalidating upwards
- 2) If a node sets a GLOBAL, it is converted to LOCAL (and forces validation of everything pending below)
-
- drawback: setting/reading globals is useful and used very often, and using affine inverses is slow
-
----
-
- Algorithm 2: (no longer current)
-
- definition of invalidation: NONE dirty, LOCAL dirty, GLOBAL dirty
-
- 1) If a node sets a LOCAL, it must climb the tree and set it as GLOBAL dirty
- .  a) marking GLOBALs as dirty up all the tree must be done always
- 2) If a node sets a GLOBAL, it marks local as dirty, and that's all?
-
- //is clearing the dirty state correct in this case?
-
- drawback: setting a local down the tree forces many tree walks often
-
---
-
-future: no idea
-
+/**
+ * possible algorithms:
+ *
+ * Algorithm 1: (current)
+ *
+ * definition of invalidation: global is invalid
+ *
+ * 1) If a node sets a LOCAL, it produces an invalidation of everything above
+ * .  a) If above is invalid, don't keep invalidating upwards
+ * 2) If a node sets a GLOBAL, it is converted to LOCAL (and forces validation of everything pending below)
+ *
+ * drawback: setting/reading globals is useful and used very often, and using affine inverses is slow
+ *
+ *---
+ *
+ * Algorithm 2: (no longer current)
+ *
+ * definition of invalidation: NONE dirty, LOCAL dirty, GLOBAL dirty
+ *
+ * 1) If a node sets a LOCAL, it must climb the tree and set it as GLOBAL dirty
+ * .  a) marking GLOBALs as dirty up all the tree must be done always
+ * 2) If a node sets a GLOBAL, it marks local as dirty, and that's all?
+ *
+ * //is clearing the dirty state correct in this case?
+ *
+ * drawback: setting a local down the tree forces many tree walks often
+ *
+ *--
+ *
+ *future: no idea
+ *
  */
-
 Node3DGizmo::Node3DGizmo() {
 }
 
@@ -86,14 +90,11 @@ void Node3D::_notify_dirty() {
 }
 
 void Node3D::_update_local_transform() const {
-	// This function is called when the local transform (data.local_transform) is dirty and the right value is contained in the Euler rotation and scale.
 	data.local_transform.basis.set_euler_scale(data.euler_rotation, data.scale, data.euler_rotation_order);
 	_clear_dirty_bits(DIRTY_LOCAL_TRANSFORM);
 }
 
 void Node3D::_update_rotation_and_scale() const {
-	// This function is called when the Euler rotation (data.euler_rotation) is dirty and the right value is contained in the local transform
-
 	data.scale = data.local_transform.basis.get_scale();
 	data.euler_rotation = data.local_transform.basis.get_euler_normalized(data.euler_rotation_order);
 	_clear_dirty_bits(DIRTY_EULER_ROTATION_AND_SCALE);
@@ -410,7 +411,6 @@ Transform3D Node3D::get_transform() const {
 	return data.local_transform;
 }
 
-// Return false to timeout and remove from the client interpolation list.
 bool Node3D::update_client_physics_interpolation_data() {
 	if (!is_inside_tree() || !_is_physics_interpolated_client_side()) {
 		return false;
@@ -505,8 +505,6 @@ Transform3D Node3D::_get_global_transform_interpolated(real_t p_interpolation_fr
 	return res;
 }
 
-// Visible nodes - get_global_transform_interpolated is cheap.
-// Invisible nodes - get_global_transform_interpolated is expensive, try to avoid.
 Transform3D Node3D::get_global_transform_interpolated() {
 #if 1
 	// Pass through if physics interpolation is switched off.
@@ -622,7 +620,8 @@ Transform3D Node3D::get_global_transform_interpolated() {
 Transform3D Node3D::get_global_transform() const {
 	ERR_FAIL_COND_V(!is_inside_tree(), Transform3D());
 
-	/* Due to how threads work at scene level, while this global transform won't be able to be changed from outside a thread,
+	/**
+	 * Due to how threads work at scene level, while this global transform won't be able to be changed from outside a thread,
 	 * it is possible that multiple threads can access it while it's dirty from previous work. Due to this, we must ensure that
 	 * the dirty/update process is thread safe by utilizing atomic copies.
 	 */

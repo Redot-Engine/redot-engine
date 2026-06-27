@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file sky.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "sky.h"
 
 void Sky::set_radiance_size(RadianceSize p_size) {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_audio_buses.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
@@ -99,6 +105,8 @@ class EditorAudioBus : public PanelContainer {
 	void _name_focus_exit() { _name_changed(track_name->get_text()); }
 	void _volume_changed(float p_normalized);
 	float _normalized_volume_to_scaled_db(float normalized);
+	/// Inversion of equations found in _normalized_volume_to_scaled_db.
+	/// @warning If one function changes, the other much change to reflect it.
 	float _scaled_db_to_normalized_volume(float db);
 	void _show_value(float slider_value);
 	void _hide_value_preview();
