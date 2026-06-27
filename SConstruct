@@ -656,13 +656,13 @@ cc_version_metadata1 = cc_version["metadata1"]
 if cc_version_major == -1:
     print_warning(
         "Couldn't detect compiler version, skipping version checks. "
-        "Build may fail if the compiler doesn't support C++17 fully."
+        "Build may fail if the compiler doesn't support C++20 fully."
     )
 elif methods.using_gcc(env):
-    if cc_version_major < 9:
+    if cc_version_major < 12:
         print_error(
-            "Detected GCC version older than 9, which does not fully support "
-            "C++17, or has bugs when compiling Redot. Supported versions are 9 "
+            "Detected GCC version older than 12, which does not fully support "
+            "C++20, or has bugs when compiling Redot. Supported versions are 9 "
             "and later. Use a newer GCC version, or Clang 6 or later by passing "
             '"use_llvm=yes" to the SCons command line.'
         )
@@ -685,35 +685,20 @@ elif methods.using_clang(env):
             )
             Exit(255)
     else:
-        if cc_version_major < 6:
+        if cc_version_major < 16:
             print_error(
-                "Detected Clang version older than 6, which does not fully support "
-                "C++17. Supported versions are Clang 6 and later."
+                "Detected Clang version older than 16, which does not fully support "
+                "C++20. Supported versions are Clang 16 and later."
             )
             Exit(255)
-        elif env["debug_paths_relative"] and cc_version_major < 10:
-            print_warning("Clang < 10 doesn't support -ffile-prefix-map, disabling `debug_paths_relative` option.")
-            env["debug_paths_relative"] = False
 
 elif env.msvc:
     # Ensure latest minor builds of Visual Studio 2017/2019.
     # https://github.com/godotengine/godot/pull/94995#issuecomment-2336464574
-    if cc_version_major == 16 and cc_version_minor < 11:
+    if cc_version_major < 17:
         print_error(
-            "Detected Visual Studio 2019 version older than 16.11, which has bugs "
-            "when compiling Redot. Use a newer VS2019 version, or VS2022."
-        )
-        Exit(255)
-    if cc_version_major == 15 and cc_version_minor < 9:
-        print_error(
-            "Detected Visual Studio 2017 version older than 15.9, which has bugs "
-            "when compiling Redot. Use a newer VS2017 version, or VS2019/VS2022."
-        )
-        Exit(255)
-    if cc_version_major < 15:
-        print_error(
-            "Detected Visual Studio 2015 or earlier, which is unsupported in Redot. "
-            "Supported versions are Visual Studio 2017 and later."
+            "Detected Visual Studio version older than VS2022, which has bugs "
+            "when compiling Redot. Use a newer version."
         )
         Exit(255)
 
@@ -824,20 +809,18 @@ if env["lto"] != "none":
     print("Using LTO: " + env["lto"])
 
 # Set our C and C++ standard requirements.
-# C++17 is required as we need guaranteed copy elision as per GH-36436.
 # Prepending to make it possible to override.
 # This needs to come after `configure`, otherwise we don't have env.msvc.
 if not env.msvc:
     # Specifying GNU extensions support explicitly, which are supported by
-    # both GCC and Clang. Both currently default to gnu17 and gnu++17.
+    # both GCC and Clang. Both currently default to gnu17 and gnu++20.
     env.Prepend(CFLAGS=["-std=gnu17"])
-    env.Prepend(CXXFLAGS=["-std=gnu++17"])
+    env.Prepend(CXXFLAGS=["-std=gnu++20"])
 else:
-    # MSVC started offering C standard support with Visual Studio 2019 16.8, which covers all
-    # of our supported VS2019 & VS2022 versions; VS2017 will only pass the C++ standard.
-    env.Prepend(CXXFLAGS=["/std:c++17"])
+    # MSVC started offering C standard support with Visual Studio 2019 16.8
+    env.Prepend(CXXFLAGS=["/std:c++20"])
     if cc_version_major < 16:
-        print_warning("Visual Studio 2017 cannot specify a C-Standard.")
+        print_warning("Visual Studio 2017 or older cannot specify a C-Standard.")
     else:
         env.Prepend(CFLAGS=["/std:c17"])
     # MSVC is non-conforming with the C++ standard by default, so we enable more conformance.
