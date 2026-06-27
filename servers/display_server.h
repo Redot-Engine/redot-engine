@@ -365,6 +365,7 @@ public:
 	virtual Rect2i screen_get_usable_rect(int p_screen = SCREEN_OF_MAIN_WINDOW) const = 0;
 	virtual int screen_get_dpi(int p_screen = SCREEN_OF_MAIN_WINDOW) const = 0;
 	virtual float screen_get_scale(int p_screen = SCREEN_OF_MAIN_WINDOW) const;
+	static Rect2 calculate_boot_image_rect(const Size2 &p_window_size, const Rect2 &p_imgrect);
 	virtual float screen_get_max_scale() const {
 		float scale = 1.f;
 		int screen_count = get_screen_count();
@@ -500,6 +501,11 @@ public:
 	virtual void window_set_size(const Size2i p_size, WindowID p_window = MAIN_WINDOW_ID) = 0;
 	virtual Size2i window_get_size(WindowID p_window = MAIN_WINDOW_ID) const = 0;
 	virtual Size2i window_get_size_with_decorations(WindowID p_window = MAIN_WINDOW_ID) const = 0;
+
+	/// After the first rendered frame is committed, tiling compositors may
+	/// send a resize event. This hook lets the display server pump those
+	/// events synchronously before the boot image is re-rendered.
+	virtual void pump_resize_events() {}
 
 	virtual void window_set_mode(WindowMode p_mode, WindowID p_window = MAIN_WINDOW_ID) = 0;
 	virtual WindowMode window_get_mode(WindowID p_window = MAIN_WINDOW_ID) const = 0;
@@ -859,8 +865,6 @@ public:
 	virtual void tablet_set_current_driver(const String &p_driver) {}
 
 	virtual void process_events() = 0;
-	virtual void compositor_sync() {};
-
 	virtual void force_process_and_drop_events();
 
 	virtual void release_rendering_thread();

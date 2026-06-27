@@ -752,9 +752,9 @@ void DisplayServerWayland::show_window(WindowID p_window_id) {
 
 	if (!wd.visible) {
 		DEBUG_LOG_WAYLAND(vformat("Showing window %d", p_window_id));
-		// Showing this window will reset its mode with whatever the compositor
-		// reports. We'll save the mode beforehand so that we can reapply it later.
-		// TODO: Fix/Port/Move/Whatever to `WaylandThread` APIs.
+		/// Showing this window will reset its mode with whatever the compositor
+		/// reports. We'll save the mode beforehand so that we can reapply it later.
+		/// @todo Fix/Port/Move/Whatever to `WaylandThread` APIs.
 		WindowMode setup_mode = wd.mode;
 
 		// Let's determine the closest toplevel. For toplevels it will be themselves,
@@ -788,6 +788,39 @@ void DisplayServerWayland::show_window(WindowID p_window_id) {
 			if (wd.rect_changed_callback.is_valid()) {
 				wd.rect_changed_callback.call(wd.rect);
 			}
+
+			// After window_create, the compositor may have sent a configure event with the
+			// actual tiling size (e.g. Hyprland). Sync wd.rect.size to the physical size
+			// NOW, before creating the EGL/Vulkan surface.
+			{
+				struct wl_surface *wl_surf = wayland_thread.window_get_wl_surface(p_window_id);
+				WaylandThread::WindowState *ws = wayland_thread.wl_surface_get_window_state(wl_surf);
+				if (ws) {
+					double win_scale = WaylandThread::window_state_get_scale_factor(ws);
+					Size2i physical_size = WaylandThread::scale_vector2i(ws->rect.size, win_scale);
+					if (physical_size != Size2i()) {
+						print_verbose(vformat("[display_server_wayland.cpp|show_window] Compositor physical size %s differs from requested %s, "
+											  "syncing before EGL surface creation",
+								physical_size, wd.rect.size));
+						wd.rect.size = physical_size;
+					}
+
+					// IMPORTANT: The wayland_thread.window_create() method above calls
+					// wl_surface_commit() without a buffer.  That, alone, should probably be done differently.
+					// The buffer scale is normally deferred to the first frame callback
+					// (wayland_thread.cpp::_frame_wl_callback_on_done),
+					// but the EGL surface and VkSurfaceKHR have already been created by then.
+					// So, wl_surface reports an undefined size while the
+					// wl_egl_window has the correct physical buffer size, and the
+					// Vulkan swap chain gets created at the wrong dimensions for the frame.
+					// Setting it here ensures the wl_surface size matches the wl_egl_window buffer for the first frame.
+					int buffer_scale = (win_scale >= 1.0) ? int(win_scale) : 1;
+					if (ws->buffer_scale != buffer_scale) {
+						wl_surface_set_buffer_scale(wl_surf, buffer_scale);
+					}
+				}
+			}
+
 		} else {
 			DEBUG_LOG_WAYLAND("!!!!! Making popup !!!!!");
 
@@ -1817,16 +1850,6 @@ void DisplayServerWayland::process_events() {
 	wayland_thread.mutex.unlock();
 
 	Input::get_singleton()->flush_buffered_events();
-}
-
-void DisplayServerWayland::compositor_sync() {  
-    // Wait up to 100ms for the compositor to send a configure with the  
-    // actual window size (e.g. Hyprland's tiling size after first buffer).  
-    // This is event-driven, not a fixed sleep.  
-    if (wayland_thread.wait_window_rect_ms(MAIN_WINDOW_ID, 200)) {  
-        // Size changed — drain the message queue so WindowData::rect is updated.  
-        process_events();  
-    }  
 }
 
 void DisplayServerWayland::release_rendering_thread() {

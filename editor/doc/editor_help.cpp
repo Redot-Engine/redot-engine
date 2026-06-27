@@ -3061,6 +3061,8 @@ void EditorHelp::_load_doc_thread(void *p_udata) {
 	}
 
 	OS::get_singleton()->benchmark_end_measure("EditorHelp", vformat("Generate Documentation (Run %d)", doc_generation_count));
+
+	_worker_thread_done.set();
 }
 
 void EditorHelp::_gen_doc_thread(void *p_udata) {
@@ -3094,6 +3096,8 @@ void EditorHelp::_gen_doc_thread(void *p_udata) {
 	}
 
 	OS::get_singleton()->benchmark_end_measure("EditorHelp", vformat("Generate Documentation (Run %d)", doc_generation_count));
+
+	_worker_thread_done.set();
 }
 
 void EditorHelp::_gen_extensions_docs() {
@@ -3109,6 +3113,10 @@ static void _load_script_doc_cache(bool p_changes) {
 }
 
 void EditorHelp::load_script_doc_cache() {
+	if (_cleanup_in_progress.is_set()) {
+		return;
+	}
+
 	if (!ProjectSettings::get_singleton()->is_project_loaded()) {
 		print_verbose("Skipping loading script doc cache since no project is open.");
 		return;
@@ -3132,6 +3140,7 @@ void EditorHelp::load_script_doc_cache() {
 		return;
 	}
 
+	_worker_thread_done.set_to(false);
 	worker_thread.start(_load_script_doc_cache_thread, nullptr);
 }
 
@@ -3152,13 +3161,18 @@ void EditorHelp::_process_postponed_docs() {
 
 void EditorHelp::_load_script_doc_cache_thread(void *p_udata) {
 	ERR_FAIL_COND_MSG(!ProjectSettings::get_singleton()->is_project_loaded(), "Error: cannot load script doc cache without a project.");
+	_worker_thread_done.set();
+	return;
 	ERR_FAIL_COND_MSG(!ResourceLoader::exists(get_script_doc_cache_full_path()), "Error: cannot load script doc cache from inexistent file.");
+	_worker_thread_done.set();
+	return;
 
 	Ref<Resource> script_doc_cache_res = ResourceLoader::load(get_script_doc_cache_full_path(), "", ResourceFormatLoader::CACHE_MODE_IGNORE);
 	if (script_doc_cache_res.is_null()) {
 		print_verbose("Script doc cache is corrupted. Regenerating it instead.");
 		_delete_script_doc_cache();
 		callable_mp_static(EditorHelp::regenerate_script_doc_cache).call_deferred();
+		_worker_thread_done.set();
 		return;
 	}
 
@@ -3175,6 +3189,8 @@ void EditorHelp::_load_script_doc_cache_thread(void *p_udata) {
 
 	// Always delete the doc cache after successful load since most uses of editor will change a script, invalidating cache.
 	_delete_script_doc_cache();
+
+	_worker_thread_done.set();
 }
 
 /// Helper method to deal with "sources_changed" signal having a parameter.
@@ -3183,6 +3199,10 @@ static void _regenerate_script_doc_cache(bool p_changes) {
 }
 
 void EditorHelp::regenerate_script_doc_cache() {
+	if (_cleanup_in_progress.is_set()) {
+		return;
+	}
+
 	if (EditorFileSystem::get_singleton()->is_scanning()) {
 		// Wait until EditorFileSystem scanning is complete to use updated filesystem structure.
 		EditorFileSystem::get_singleton()->connect(SNAME("sources_changed"), callable_mp_static(_regenerate_script_doc_cache), CONNECT_ONE_SHOT);
@@ -3191,6 +3211,7 @@ void EditorHelp::regenerate_script_doc_cache() {
 
 	_wait_for_thread(worker_thread);
 	_wait_for_thread(loader_thread);
+	_loader_thread_done.set_to(false);
 	loader_thread.start(_regen_script_doc_thread, EditorFileSystem::get_singleton()->get_filesystem());
 }
 
@@ -3200,6 +3221,8 @@ void EditorHelp::_finish_regen_script_doc_thread(void *p_udata) {
 	_script_docs_loaded.set();
 
 	OS::get_singleton()->benchmark_end_measure("EditorHelp", "Generate Script Documentation");
+
+	_worker_thread_done.set();
 }
 
 void EditorHelp::_regen_script_doc_thread(void *p_udata) {
@@ -3214,6 +3237,9 @@ void EditorHelp::_regen_script_doc_thread(void *p_udata) {
 	_docs_to_remove_by_path.clear();
 
 	_reload_scripts_documentation(dir);
+
+	_loader_thread_done.set();
+	_worker_thread_done.set_to(false); // worker_thread is about to start
 
 	// All ResourceLoader::load() calls are done, so we can no longer deadlock with main thread.
 	// Switch to back to worker_thread from loader_thread to resynchronize access to DocData.
@@ -3265,6 +3291,10 @@ void EditorHelp::save_script_doc_cache() {
 }
 
 void EditorHelp::generate_doc(bool p_use_cache, bool p_use_script_cache) {
+	if (_cleanup_in_progress.is_set()) {
+		return;
+	}
+
 	doc_generation_count++;
 	OS::get_singleton()->benchmark_begin_measure("EditorHelp", vformat("Generate Documentation (Run %d)", doc_generation_count));
 
@@ -3280,10 +3310,12 @@ void EditorHelp::generate_doc(bool p_use_cache, bool p_use_script_cache) {
 	}
 
 	if (p_use_cache && FileAccess::exists(get_cache_full_path())) {
+		_worker_thread_done.set_to(false);
 		worker_thread.start(_load_doc_thread, (void *)p_use_script_cache);
 	} else {
 		print_verbose("Regenerating editor help cache");
 		doc->generate();
+		_worker_thread_done.set_to(false);
 		worker_thread.start(_gen_doc_thread, (void *)p_use_script_cache);
 	}
 }
@@ -3376,7 +3408,28 @@ void EditorHelp::update_doc() {
 }
 
 void EditorHelp::cleanup_doc() {
-	_wait_for_thread();
+	_cleanup_in_progress.set();
+
+	// loader_thread runs _regen_script_doc_thread which calls ResourceLoader::load().
+	// Flush the message queue so load tasks can dispatch to the main thread.
+	if (loader_thread.is_started()) {
+		while (!_loader_thread_done.is_set()) {
+			MessageQueue::get_singleton()->flush();
+			OS::get_singleton()->delay_usec(1000);
+		}
+		loader_thread.wait_to_finish();
+	}
+
+	// worker_thread runs _load_doc_thread, _gen_doc_thread, _load_script_doc_cache_thread,
+	// or _finish_regen_script_doc_thread. All may post deferred calls needing the main thread.
+	if (worker_thread.is_started()) {
+		while (!_worker_thread_done.is_set()) {
+			MessageQueue::get_singleton()->flush();
+			OS::get_singleton()->delay_usec(1000);
+		}
+		worker_thread.wait_to_finish();
+	}
+
 	memdelete(doc);
 	doc = nullptr;
 }

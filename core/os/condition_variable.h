@@ -52,6 +52,8 @@
 #define THREADING_NAMESPACE std
 #endif
 
+#include <chrono>
+
 /// An object one or multiple threads can wait on a be notified by some other.
 /// Normally, you want to use a semaphore for such scenarios, but when the
 /// condition is something different than a count being greater than zero
@@ -71,6 +73,17 @@ public:
 		condition.wait(p_lock.mutex._get_lock());
 	}
 
+	/// @return `true` if notified before timeout, false if timed out.
+	template <typename BinaryMutexT>
+	_ALWAYS_INLINE_ bool wait_for_usec(const MutexLock<BinaryMutexT> &p_lock, uint64_t p_usec) const {
+		return condition.wait_for(p_lock._get_lock(), std::chrono::microseconds(p_usec)) == THREADING_NAMESPACE::cv_status::no_timeout;
+	}
+
+	template <int Tag>
+	_ALWAYS_INLINE_ bool wait_for_usec(const MutexLock<SafeBinaryMutex<Tag>> &p_lock, uint64_t p_usec) const {
+		return condition.wait_for(p_lock.mutex._get_lock(), std::chrono::microseconds(p_usec)) == THREADING_NAMESPACE::cv_status::no_timeout;
+	}
+
 	_ALWAYS_INLINE_ void notify_one() const {
 		condition.notify_one();
 	}
@@ -81,13 +94,19 @@ public:
 };
 
 #else // No threads.
-
 class ConditionVariable {
 public:
 	template <typename BinaryMutexT>
 	void wait(const MutexLock<BinaryMutexT> &p_lock) const {}
+	template <int Tag>
+	void wait(const MutexLock<SafeBinaryMutex<Tag>> &p_lock) const {}
 	void notify_one() const {}
 	void notify_all() const {}
+
+	template <typename BinaryMutexT>
+	bool wait_for_usec(const MutexLock<BinaryMutexT> &p_lock, uint64_t p_usec) const { return true; }
+	template <int Tag>
+	bool wait_for_usec(const MutexLock<SafeBinaryMutex<Tag>> &p_lock, uint64_t p_usec) const { return true; }
 };
 
 #endif // THREADS_ENABLED

@@ -239,6 +239,8 @@ public:
 		DisplayServer::WindowMode mode = DisplayServer::WINDOW_MODE_WINDOWED;
 		bool suspended = false;
 
+		bool initial_configure_done = false;
+
 		// These are true by default as it isn't guaranteed that we'll find an
 		// xdg-shell implementation with wm_capabilities available. If and once we
 		// receive a wm_capabilities event these will get reset and updated with
@@ -931,6 +933,9 @@ private:
 	// libdecor event handlers.
 	static void libdecor_on_error(struct libdecor *context, enum libdecor_error error, const char *message);
 
+	/// @note This is pretty much a reimplementation of _xdg_surface_on_configure
+	/// and _xdg_toplevel_on_configure. Libdecor really likes wrapping everything,
+	/// forcing us to do stuff like this.
 	static void libdecor_frame_on_configure(struct libdecor_frame *frame, struct libdecor_configuration *configuration, void *user_data);
 
 	static void libdecor_frame_on_close(struct libdecor_frame *frame, void *user_data);
@@ -1106,7 +1111,7 @@ public:
 	void set_frame();
 	bool get_reset_frame();
 	bool wait_frame_suspend_ms(int p_timeout);
-	bool wait_window_rect_ms(DisplayServer::WindowID p_id, int p_timeout);
+
 	bool is_fifo_available() const;
 
 	uint64_t window_get_last_frame_time(DisplayServer::WindowID p_window_id) const;

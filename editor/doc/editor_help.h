@@ -204,6 +204,10 @@ class EditorHelp : public VBoxContainer {
 	inline static Thread loader_thread; ///< Only load scripts here to avoid deadlocking with main thread.
 
 	inline static SafeFlag _script_docs_loaded = SafeFlag(false);
+	inline static SafeFlag _worker_thread_done = SafeFlag(false);
+	inline static SafeFlag _loader_thread_done = SafeFlag(false);
+	inline static SafeFlag _cleanup_in_progress = SafeFlag(false);
+
 	inline static LocalVector<DocData::ClassDoc> _docs_to_add;
 	inline static LocalVector<String> _docs_to_remove;
 	inline static LocalVector<String> _docs_to_remove_by_path;

@@ -580,9 +580,11 @@ void WorkerThreadPool::_switch_runlevel(Runlevel p_runlevel) {
 	runlevel = p_runlevel;
 	memset(&runlevel_data, 0, sizeof(runlevel_data));
 	for (uint32_t i = 0; i < threads.size(); i++) {
-		threads[i].cond_var.notify_one();
+		threads[i].cond_var.notify_one(); // Wakes the worker loop so it rechecks the new runlevel
 		threads[i].signaled = true;
 	}
+	// Notify the main thread even if counts already match,
+	// in case it's currently blocked in wait_for_usec / wait.
 	control_cond_var.notify_all();
 }
 

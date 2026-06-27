@@ -87,6 +87,12 @@ private:
 	void _preview_frame_started();
 	void _pattern_preview_done();
 	static void _thread_func(void *ud);
+	/// Worker thread that generates thumbnail previews for tile patterns.
+	/// Waits for queued pattern requests, renders each pattern in a temporary viewport,
+	/// and returns the result via a callback. The thread can be safely interrupted
+	/// during shutdown by the destructor, which posts the inner semaphore to unblock
+	/// the frame wait. After unblocking, the thread checks the exit flag and cleans
+	/// up without accessing potentially invalid rendering state.
 	void _thread();
 
 public:

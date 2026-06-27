@@ -600,8 +600,14 @@ void EditorResourcePreview::stop() {
 				preview_generators.write[i]->abort();
 			}
 
+			const uint64_t TIMEOUT_USEC = 3000000; // 3 seconds
+			uint64_t start = OS::get_singleton()->get_ticks_usec();
+
 			while (!exited.is_set()) {
-				// Sync pending work.
+				if (OS::get_singleton()->get_ticks_usec() - start > TIMEOUT_USEC) {
+					WARN_PRINT("EditorResourcePreview: Timed out waiting for preview thread.");
+					break;
+				}
 				OS::get_singleton()->delay_usec(10000);
 				RenderingServer::get_singleton()->sync();
 				MessageQueue::get_singleton()->flush();

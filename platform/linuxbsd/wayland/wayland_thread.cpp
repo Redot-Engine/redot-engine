@@ -31,6 +31,7 @@
 /**************************************************************************/
 
 #include "wayland_thread.h"
+#include "core/string/print_string.h"
 
 #ifdef WAYLAND_ENABLED
 
@@ -1257,6 +1258,8 @@ void WaylandThread::_xdg_toplevel_on_configure(void *data, struct xdg_toplevel *
 		window_state_update_size(ws, width, height);
 	}
 
+	ws->initial_configure_done = true;
+
 	DEBUG_LOG_WAYLAND_THREAD(vformat("XDG toplevel on configure width %d height %d.", width, height));
 }
 
@@ -1436,6 +1439,8 @@ void WaylandThread::libdecor_frame_on_configure(struct libdecor_frame *frame, st
 	}
 
 	window_state_update_size(ws, width, height);
+
+	ws->initial_configure_done = true;
 
 	DEBUG_LOG_WAYLAND_THREAD(vformat("libdecor frame on configure rect %s", ws->rect));
 }
@@ -3093,8 +3098,8 @@ struct wl_display *WaylandThread::get_wl_display() const {
 	return wl_display;
 }
 
-void WaylandThread::roundtrip() {  
-	wl_display_roundtrip(wl_display);  
+void WaylandThread::roundtrip() {
+	wl_display_roundtrip(wl_display);
 }
 
 // NOTE: Stuff like libdecor can (and will) register foreign proxies which
@@ -3288,7 +3293,7 @@ void WaylandThread::window_state_update_size(WindowState *p_ws, int p_width, int
 			DEBUG_LOG_WAYLAND_THREAD(vformat("Resizing the window from %s to %s (buffer scale x%d).", p_ws->rect.size, scaled_size, p_ws->buffer_scale));
 		}
 
-		// FIXME: Actually resize the hint instead of centering it.
+		/// @todo FIXME: Actually resize the hint instead of centering it.
 		p_ws->wayland_thread->pointer_set_hint(scaled_size / 2);
 
 		Ref<WindowRectMessage> rect_msg;
@@ -3593,7 +3598,15 @@ void WaylandThread::window_create(DisplayServer::WindowID p_window_id, int p_wid
 	wl_surface_commit(ws.wl_surface);
 
 	// Wait for the surface to be configured before continuing.
-	wl_display_roundtrip(wl_display);
+	// On some compositors (e.g., Hyprland under load), the configure event may
+	// not arrive within a single roundtrip. Loop until it does.
+	const int MAX_CONFIGURE_ROUNDTRIPS = 10;
+	for (int i = 0; i < MAX_CONFIGURE_ROUNDTRIPS && !ws.initial_configure_done; i++) {
+		wl_display_roundtrip(wl_display);
+	}
+	if (!ws.initial_configure_done) {
+		WARN_PRINT("WaylandThread: Surface was not configured after multiple roundtrips. Window may not appear.");
+	}
 
 	window_state_update_size(&ws, ws.rect.size.width, ws.rect.size.height);
 }
@@ -4065,8 +4078,6 @@ void WaylandThread::window_try_set_mode(DisplayServer::WindowID p_window_id, Dis
 		default: {
 		} break;
 	}
-
-	wl_display_roundtrip(wl_display);
 }
 
 void WaylandThread::window_set_borderless(DisplayServer::WindowID p_window_id, bool p_borderless) {
@@ -4869,64 +4880,12 @@ bool WaylandThread::wait_frame_suspend_ms(int p_timeout) {
 			return true;
 		}
 
-		remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;
+		// remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;
+		remaining_ms = p_timeout - (int)(OS::get_singleton()->get_ticks_msec() - begin_ms);
 	}
 
 	DEBUG_LOG_WAYLAND_THREAD("Frame timeout.");
 	return false;
-}
-
-bool WaylandThread::wait_window_rect_ms(DisplayServer::WindowID p_id, int p_timeout) {  
-    ERR_FAIL_COND_V(!windows.has(p_id), false);  
-  
-    Size2i initial_size = windows[p_id].rect.size;  
-  
-    // Same unblock trick as wait_frame_suspend_ms: the polling thread may be  
-    // stuck in prepare_read; a roundtrip bypasses it safely.  
-    MutexLock mutex_lock(mutex);  
-    wl_display_roundtrip(wl_display);  
-  
-    if (windows[p_id].rect.size != initial_size) {  
-        return true; // Already changed during the roundtrip.  
-    }  
-  
-    struct pollfd poll_fd;  
-    poll_fd.fd = wl_display_get_fd(wl_display);  
-    poll_fd.events = POLLIN | POLLHUP;  
-  
-    int begin_ms = OS::get_singleton()->get_ticks_msec();  
-    int remaining_ms = p_timeout;  
-  
-    while (remaining_ms > 0) {  
-        while (wl_display_prepare_read(wl_display) != 0) {  
-            if (wl_display_dispatch_pending(wl_display) == -1) {  
-                break;  
-            }  
-            if (windows[p_id].rect.size != initial_size) {  
-                return true;  
-            }  
-        }  
-  
-        wl_display_flush(wl_display);  
-        poll(&poll_fd, 1, remaining_ms);  
-  
-        if (poll_fd.revents & POLLIN) {  
-            wl_display_read_events(wl_display);  
-        } else {  
-            wl_display_cancel_read(wl_display);  
-            return false;  
-        }  
-  
-        wl_display_dispatch_pending(wl_display);  
-  
-        if (windows[p_id].rect.size != initial_size) {  
-            return true;  
-        }  
-  
-        remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;  
-    }  
-  
-    return false;  
 }
 
 uint64_t WaylandThread::window_get_last_frame_time(DisplayServer::WindowID p_window_id) const {
