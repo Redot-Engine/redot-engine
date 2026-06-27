@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2025 sphynx-owner
-
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -185,6 +185,6 @@ void main() {
 	// If the previous position is happening behind the camera, the w component of the projected vector would be negative,
 	// and the velocity vector would be flipped. (I am not 100% sure this is the whole story but this handles velocities
 	// that are extracted from the environment when the camera moves backwards rapidly, avoiding crazy artifacts)
-	// If degth == 0 (skybox), we use an arithmetic operation to generate a negative infinity float.
+	// If depth == 0 (skybox), we use an arithmetic operation to generate a negative infinity float.
 	imageStore(vector_output, uvi, vec4(enable_velocity * total_velocity.xy / scene_data.screen_pixel_size * (view_past_ndc_cache.w < 0 ? -1 : 1), enable_velocity * total_velocity.z, depth == 0 ? (-1.0 / 0.0) : view_position.z));
 }

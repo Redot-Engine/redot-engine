@@ -60,17 +60,16 @@ void RendererCameraAttributes::camera_attributes_initialize(RID p_rid) {
 void RendererCameraAttributes::camera_attributes_free(RID p_rid) {
 	camera_attributes_owner.free(p_rid);
 }
-
-void RendererCameraAttributes::camera_attributes_set_motion_blur_framerate_mode(RenderingServer::MotionBlurFramerateMode p_mode, int p_reference_framerate) {
+void RendererCameraAttributes::camera_attributes_set_motion_blur_framerate_mode(RS::MotionBlurFramerateMode p_mode, int p_reference_framerate) {
 	motion_blur_framerate_mode = p_mode;
 	motion_blur_reference_framerate = p_reference_framerate;
 }
 
-void RendererCameraAttributes::camera_attributes_set_motion_blur_quality(RenderingServer::MotionBlurQuality p_quality) {
+void RendererCameraAttributes::camera_attributes_set_motion_blur_quality(RS::MotionBlurQuality p_quality) {
 	motion_blur_quality = p_quality;
 }
 
-void RendererCameraAttributes::camera_attributes_set_motion_blur_tile_size(RenderingServer::MotionBlurTileSize p_tile_size) {
+void RendererCameraAttributes::camera_attributes_set_motion_blur_tile_size(RS::MotionBlurTileSize p_tile_size) {
 	motion_blur_tile_size = p_tile_size;
 }
 
@@ -85,7 +84,7 @@ void RendererCameraAttributes::camera_attributes_set_motion_blur(RID p_camera_at
 	CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
 	ERR_FAIL_NULL(cam_attributes);
 #ifdef DEBUG_ENABLED
-	if ((OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" || OS::get_singleton()->get_current_rendering_method() == "mobile") && p_enable) {
+	if (p_enable && (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility" || OS::get_singleton()->get_current_rendering_method() == "mobile")) {
 		WARN_PRINT_ONCE_ED("Motion blur is only available when using the Forward+ renderer.");
 	}
 #endif
@@ -105,6 +104,41 @@ float RendererCameraAttributes::camera_attributes_get_motion_blur_intensity(RID 
 	return cam_attributes->motion_blur_intensity;
 }
 
+bool RendererCameraAttributes::camera_attributes_get_motion_blur_clamp_velocities_to_tile(RID p_camera_attributes) {
+	CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, false);
+	return cam_attributes->motion_blur_clamp_velocities_to_tile;
+}
+
+float RendererCameraAttributes::camera_attributes_get_motion_blur_object_velocity_multiplier(RID p_camera_attributes) {
+	CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->motion_blur_object_velocity_multiplier;
+}
+
+float RendererCameraAttributes::camera_attributes_get_motion_blur_movement_velocity_multiplier(RID p_camera_attributes) {
+	CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->motion_blur_movement_velocity_multiplier;
+}
+
+float RendererCameraAttributes::camera_attributes_get_motion_blur_rotation_velocity_multiplier(RID p_camera_attributes) {
+	CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->motion_blur_rotation_velocity_multiplier;
+}
+
+float RendererCameraAttributes::camera_attributes_get_motion_blur_velocity_lower_threshold(RID p_camera_attributes) {
+	CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->motion_blur_velocity_lower_threshold;
+}
+
+float RendererCameraAttributes::camera_attributes_get_motion_blur_velocity_upper_threshold(RID p_camera_attributes) {
+	CameraAttributes *cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
+	ERR_FAIL_NULL_V(cam_attributes, 0.0);
+	return cam_attributes->motion_blur_velocity_upper_threshold;
+}
 
 void RendererCameraAttributes::camera_attributes_set_dof_blur_quality(RS::DOFBlurQuality p_quality, bool p_use_jitter) {
 	dof_blur_quality = p_quality;

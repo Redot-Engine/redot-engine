@@ -435,6 +435,9 @@
 		<member name="editors/3d/selection_box_color" type="Color" setter="" getter="">
 			The color to use for the selection box that surrounds selected nodes in the 3D editor viewport. The color's alpha channel influences the selection box's opacity.
 		</member>
+		<member name="editors/3d/viewport_visuals/show_motion_blur_in_editor" type="bool" setter="" getter="">
+			If [code]true[/code], when a scene has a camera that has motion blur enabled, it will be be applied in the editor scene view as well. When [code]false[/code], the motion blur will only be applied at runtime.
+		</member>
 		<member name="editors/3d_gizmos/gizmo_colors/aabb" type="Color" setter="" getter="">
 			The color to use for the AABB gizmo that displays the [GeometryInstance3D]'s custom [AABB].
 		</member>

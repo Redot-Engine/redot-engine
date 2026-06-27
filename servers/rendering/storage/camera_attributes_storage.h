@@ -66,7 +66,6 @@ private:
 		float motion_blur_velocity_lower_threshold = 0.0;
 		float motion_blur_velocity_upper_threshold = 0.0;
 
-
 		bool dof_blur_far_enabled = false;
 		float dof_blur_far_distance = 10;
 		float dof_blur_far_transition = 5;
@@ -102,8 +101,8 @@ public:
 	void camera_attributes_initialize(RID p_rid);
 	void camera_attributes_free(RID p_rid);
 
-	void camera_attributes_set_motion_blur_framerate_mode(RS::MotionBlurFramerateMode p_mode, int p_reference_framerate);
 	void camera_attributes_set_motion_blur_show_in_editor(bool p_enabled);
+	void camera_attributes_set_motion_blur_framerate_mode(RS::MotionBlurFramerateMode p_mode, int p_reference_framerate);
 	void camera_attributes_set_motion_blur_quality(RS::MotionBlurQuality p_quality);
 	void camera_attributes_set_motion_blur_tile_size(RS::MotionBlurTileSize p_tile_size);
 
@@ -157,6 +156,9 @@ public:
 		return cam_attributes && cam_attributes->use_auto_exposure;
 	}
 
+	_FORCE_INLINE_ bool camera_attributes_get_motion_blur_show_in_editor() {
+		return motion_blur_show_in_editor;
+	}
 
 	_FORCE_INLINE_ RS::MotionBlurFramerateMode camera_attributes_get_motion_blur_framerate_mode() {
 		return motion_blur_framerate_mode;
@@ -164,10 +166,6 @@ public:
 
 	_FORCE_INLINE_ int camera_attributes_get_motion_blur_reference_framerate() {
 		return motion_blur_reference_framerate;
-	}
-
-	_FORCE_INLINE_ bool camera_attributes_get_motion_blur_show_in_editor() {
-		return motion_blur_show_in_editor;
 	}
 
 	_FORCE_INLINE_ RS::MotionBlurQuality camera_attributes_get_motion_blur_quality() {

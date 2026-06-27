@@ -8569,6 +8569,10 @@ void Node3DEditor::_notification(int p_what) {
 					active_selection_box_mat_xray->set_albedo(active_selection_box_color * Color(1, 1, 1, 0.15));
 				}
 
+				// Update the internal setting that controls whether motion blur effect is enabled in editor viewport.
+				const bool motion_blur_show_in_editor = EDITOR_GET("editors/3d/viewport_visuals/show_motion_blur_in_editor");
+				RS::get_singleton()->camera_attributes_set_motion_blur_show_in_editor(motion_blur_show_in_editor);
+
 				// Update grid color by rebuilding grid.
 				_finish_grid();
 				_init_grid();
@@ -9289,6 +9293,10 @@ void Node3DEditor::PreviewSunEnvPopup::shortcut_input(const Ref<InputEvent> &p_e
 Node3DEditor::Node3DEditor() {
 	gizmo.visible = true;
 	gizmo.scale = 1.0;
+
+	// Init motion blow show in editor setting
+	const bool motion_blur_show_in_editor = EDITOR_GET("editors/3d/viewport_visuals/show_motion_blur_in_editor");
+	RS::get_singleton()->camera_attributes_set_motion_blur_show_in_editor(motion_blur_show_in_editor);
 
 	viewport_environment.instantiate();
 	VBoxContainer *vbc = this;
