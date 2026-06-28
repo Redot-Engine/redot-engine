@@ -63,6 +63,15 @@ public:
 		Vector<String> install_files;
 	};
 
+	struct BuiltinTextEditorTheme {
+		const char *name;
+		/// nullptr = adaptive (computed from UI theme); non-null = static color set
+		HashMap<StringName, Color> (*get_static_colors)();
+		bool set_manually; ///< whether to override user's manual settings
+	};
+
+	static const BuiltinTextEditorTheme BUILTIN_TEXT_EDITOR_THEMES[];
+
 	enum NetworkMode {
 		NETWORK_OFFLINE,
 		NETWORK_ONLINE,
