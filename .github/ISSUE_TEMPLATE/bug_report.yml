@@ -22,8 +22,8 @@ body:
         - The aim is for us to identify whether a bug is a **regression**, i.e. an issue that didn't exist in a previous version, but was introduced later on, breaking existing functionality. For example, if a bug is reproducible in 4.2.stable but not in 4.1.stable, we would like you to test intermediate 4.2 dev and beta snapshots to find which snapshot is the first one where the issue can be reproduced.
       placeholder: |
 
-        - Reproducible in: 4.3.dev [d76c1d0e5], 4.2.stable, 4.2.dev5 and later 4.2 snapshots.
-        - Not reproducible in: 4.1.3.stable, 4.2.dev4 and earlier 4.2 snapshots.
+        - Reproducible in: 26.3-rc.1 [5b6b4ff28], 26.2.stable, and later 26.3 snapshots.
+        - Not reproducible in: 26.1.stable, 4.5.stable and earlier 26.2 snapshots.
     validations:
       required: true
 
@@ -35,8 +35,8 @@ body:
         - For issues that are likely OS-specific and/or graphics-related, please specify the CPU model and architecture.
         - For graphics-related issues, specify the GPU model, driver version, and the rendering backend (GLES2, GLES3, Vulkan).
         - **Bug reports not including the required information may be closed at the maintainers' discretion.** If in doubt, always include all the requested information; it's better to include too much information than not enough information.
-        - **Starting from Redot 4.1, you can copy this information to your clipboard by using *Help > Copy System Info* at the top of the editor window.**
-      placeholder: Windows 10 - Redot v4.0.3.stable - Vulkan (Forward+) - dedicated NVIDIA GeForce GTX 970 (nvidia, 510.85.02) - Intel Core i7-10700KF CPU @ 3.80GHz (16 Threads)
+        - **you can copy this information to your clipboard by using *Help > Copy System Info* at the top of the editor window.**
+      placeholder: Windows 10 - Redot v26.1.stable - Vulkan (Forward+) - dedicated NVIDIA GeForce GTX 970 (nvidia, 510.85.02) - Intel Core i7-10700KF CPU @ 3.80GHz (16 Threads)
     validations:
       required: true
 
