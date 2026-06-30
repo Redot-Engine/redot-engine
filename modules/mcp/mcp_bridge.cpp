@@ -133,31 +133,57 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 
 	// Wait for response (blocking with timeout)
 	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
-	String response_str;
+	CharString raw_buffer;
+	bool got_response = false;
 	while (OS::get_singleton()->get_ticks_msec() - start_time < 5000) {
 		conn->poll();
-		if (conn->get_available_bytes() > 0) {
-			uint8_t c;
-			int read_bytes;
-			conn->get_partial_data(&c, 1, read_bytes);
+		int avail = conn->get_available_bytes();
+		if (avail > 0) {
+			uint8_t buf[4096];
+			int to_read = avail < (int)sizeof(buf) ? avail : (int)sizeof(buf);
+			int read_bytes = 0;
+			conn->get_partial_data(buf, to_read, read_bytes);
 			if (read_bytes > 0) {
-				if (c == '\n') {
-					goto parsed;
+				// Append raw bytes to the buffer (resize + copy).
+				int old_len = raw_buffer.length();
+				raw_buffer.resize_uninitialized(old_len + read_bytes + 1);
+				char *dst = raw_buffer.ptrw();
+				memcpy(dst + old_len, buf, read_bytes);
+				dst[old_len + read_bytes] = 0;
+
+				// Only scan the newly appended bytes for the delimiter.
+				for (int i = old_len; i < old_len + read_bytes; i++) {
+					if (raw_buffer[i] == '\n') {
+						got_response = true;
+						break;
+					}
 				}
-				response_str += (char)c;
+				if (got_response) {
+					break;
+				}
 			}
 		} else {
 			OS::get_singleton()->delay_usec(1000);
 		}
 	}
 
-	{
+	if (!got_response) {
 		Dictionary err;
 		err["error"] = "Bridge timeout";
 		return err;
 	}
 
-parsed:
+	// Decode the full buffer at once so multi-byte UTF-8 sequences
+	// spanning TCP chunk boundaries are handled correctly.
+	int nl = -1;
+	for (int i = 0; i < raw_buffer.length(); i++) {
+		if (raw_buffer[i] == '\n') {
+			nl = i;
+			break;
+		}
+	}
+	int len = (nl >= 0) ? nl : raw_buffer.length();
+	String response_str = String::utf8(raw_buffer.get_data(), len);
 	if (response_str.is_empty()) {
 		Dictionary err;
 		err["error"] = "Empty response";
@@ -178,12 +204,22 @@ void MCPBridge::update() {
 	MutexLock lock(mutex);
 	if (is_host) {
 		if (server->is_connection_available()) {
+			// Only replace the connection if the current one is stale/disconnected,
+			// so we never drop a peer mid-command from the bridge thread.
+			bool current_ok = false;
 			if (connection.is_valid()) {
-				fprintf(stderr, "[MCP] Dropping existing connection for new client\n");
-				connection->disconnect_from_host();
+				connection->poll();
+				current_ok = (connection->get_status() == StreamPeerTCP::STATUS_CONNECTED);
 			}
-			connection = server->take_connection();
-			fprintf(stderr, "[MCP] Game process connected to bridge on host side\n");
+			if (!current_ok) {
+				connection = server->take_connection();
+				fprintf(stderr, "[MCP] Game process connected to bridge on host side\n");
+			} else {
+				// Drain and discard the extra pending connection.
+				Ref<StreamPeerTCP> extra = server->take_connection();
+				extra->disconnect_from_host();
+				fprintf(stderr, "[MCP] Bridge: extra pending connection discarded (active connection in use)\n");
+			}
 		}
 	} else {
 		// Client (Game) side
@@ -289,6 +325,10 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 				return resp;
 			}
 			Ref<Image> img = tex->get_image();
+			if (img.is_null()) {
+				resp["error"] = "Viewport returned no image (not rendered yet or headless)";
+				return resp;
+			}
 
 			float scale = args.get("scale", 1.0);
 			if (scale != 1.0) {
@@ -296,6 +336,10 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			}
 
 			PackedByteArray png_buffer = img->save_png_to_buffer();
+			if (png_buffer.is_empty()) {
+				resp["error"] = "Failed to encode PNG";
+				return resp;
+			}
 			resp["image_base64"] = CryptoCore::b64_encode_str(png_buffer.ptr(), png_buffer.size());
 			resp["format"] = "png";
 			resp["width"] = img->get_width();
