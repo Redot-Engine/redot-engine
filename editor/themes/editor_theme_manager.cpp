@@ -239,17 +239,17 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme> &
 
 	if (regen_standard || regen_text_editor || regen_visual_shader) {
 		print_verbose("EditorTheme: Generating new styles.");
-	}
 
-	if (regen_standard) {
-		_populate_standard_styles(theme, config);
-		_populate_editor_styles(theme, config);
-	}
-	if (regen_text_editor) {
-		_populate_text_editor_styles(theme, config);
-	}
-	if (regen_visual_shader) {
-		_populate_visual_shader_styles(theme, config);
+		if (regen_standard) {
+			_populate_standard_styles(theme, config);
+			_populate_editor_styles(theme, config);
+		}
+		if (regen_text_editor) {
+			_populate_text_editor_styles(theme, config);
+		}
+		if (regen_visual_shader) {
+			_populate_visual_shader_styles(theme, config);
+		}
 	}
 
 	OS::get_singleton()->benchmark_end_measure(get_benchmark_key(), "Create Base Theme");
@@ -2958,7 +2958,10 @@ bool EditorThemeManager::is_generated_theme_outdated() {
 				settings->check_changed_settings_in_group("interface/theme") ||
 				settings->check_changed_settings_in_group("docks/property_editor/subresource_hue_tint");
 
+		// If the interface theme changed, we must also regenerate text editor styles
+		// because _populate_text_editor_styles depends on interface theme configuration (fonts/icons).
 		outdated_subsystems.text_editor_styles =
+				outdated_subsystems.standard_styles ||
 				settings->check_changed_settings_in_group("text_editor/theme") ||
 				settings->check_changed_settings_in_group("text_editor/help/help");
 
