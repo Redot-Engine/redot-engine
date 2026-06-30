@@ -43,6 +43,8 @@
 #include "core/typedefs.h"
 #include "core/variant/variant.h"
 
+#include <concepts>
+
 // uintr_t is only for pairing with real_t, and we only need it in here.
 #ifdef REAL_T_IS_DOUBLE
 typedef uint64_t uintr_t;
@@ -71,74 +73,45 @@ union MarshallReal {
 	real_t r;
 };
 
-static inline unsigned int encode_uint16(uint16_t p_uint, uint8_t *p_arr) {
-	for (int i = 0; i < 2; i++) {
-		*p_arr = p_uint & 0xFF;
-		p_arr++;
+template <std::unsigned_integral T>
+constexpr unsigned int encode_uint(T p_uint, uint8_t *p_arr) {
+	for (std::size_t i = 0; i < sizeof(T); ++i) {
+		p_arr[i] = static_cast<uint8_t>(p_uint & 0xFF);
 		p_uint >>= 8;
 	}
+	return static_cast<unsigned int>(sizeof(T));
+}
 
-	return sizeof(uint16_t);
+static inline unsigned int encode_uint16(uint16_t p_uint, uint8_t *p_arr) {
+	return encode_uint<uint16_t>(p_uint, p_arr);
 }
 
 static inline unsigned int encode_uint32(uint32_t p_uint, uint8_t *p_arr) {
-	for (int i = 0; i < 4; i++) {
-		*p_arr = p_uint & 0xFF;
-		p_arr++;
-		p_uint >>= 8;
-	}
-
-	return sizeof(uint32_t);
+	return encode_uint<uint32_t>(p_uint, p_arr);
 }
 
 static inline unsigned int encode_half(float p_float, uint8_t *p_arr) {
-	encode_uint16(Math::make_half_float(p_float), p_arr);
-
-	return sizeof(uint16_t);
+	return encode_uint16(Math::make_half_float(p_float), p_arr);
 }
 
 static inline unsigned int encode_float(float p_float, uint8_t *p_arr) {
-	MarshallFloat mf;
-	mf.f = p_float;
-	encode_uint32(mf.i, p_arr);
-
-	return sizeof(uint32_t);
+	return encode_uint32(std::bit_cast<uint32_t>(p_float), p_arr);
 }
 
 static inline unsigned int encode_uint64(uint64_t p_uint, uint8_t *p_arr) {
-	for (int i = 0; i < 8; i++) {
-		*p_arr = p_uint & 0xFF;
-		p_arr++;
-		p_uint >>= 8;
-	}
-
-	return sizeof(uint64_t);
+	return encode_uint<uint64_t>(p_uint, p_arr);
 }
 
 static inline unsigned int encode_double(double p_double, uint8_t *p_arr) {
-	MarshallDouble md;
-	md.d = p_double;
-	encode_uint64(md.l, p_arr);
-
-	return sizeof(uint64_t);
+	return encode_uint64(std::bit_cast<uint64_t>(p_double), p_arr);
 }
 
 static inline unsigned int encode_uintr(uintr_t p_uint, uint8_t *p_arr) {
-	for (size_t i = 0; i < sizeof(uintr_t); i++) {
-		*p_arr = p_uint & 0xFF;
-		p_arr++;
-		p_uint >>= 8;
-	}
-
-	return sizeof(uintr_t);
+	return encode_uint<uintr_t>(p_uint, p_arr);
 }
 
 static inline unsigned int encode_real(real_t p_real, uint8_t *p_arr) {
-	MarshallReal mr;
-	mr.r = p_real;
-	encode_uintr(mr.i, p_arr);
-
-	return sizeof(uintr_t);
+	return encode_uintr(std::bit_cast<uintr_t>(p_real), p_arr);
 }
 
 static inline int encode_cstring(const char *p_string, uint8_t *p_data) {
@@ -190,9 +163,7 @@ static inline float decode_half(const uint8_t *p_arr) {
 }
 
 static inline float decode_float(const uint8_t *p_arr) {
-	MarshallFloat mf;
-	mf.i = decode_uint32(p_arr);
-	return mf.f;
+	return std::bit_cast<float>(decode_uint32(p_arr));
 }
 
 static inline uint64_t decode_uint64(const uint8_t *p_arr) {
@@ -209,9 +180,7 @@ static inline uint64_t decode_uint64(const uint8_t *p_arr) {
 }
 
 static inline double decode_double(const uint8_t *p_arr) {
-	MarshallDouble md;
-	md.l = decode_uint64(p_arr);
-	return md.d;
+	return std::bit_cast<double>(decode_uint64(p_arr));
 }
 
 class EncodedObjectAsID : public RefCounted {
