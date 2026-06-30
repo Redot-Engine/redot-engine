@@ -43,6 +43,7 @@
 #include "core/typedefs.h"
 #include "core/variant/variant.h"
 
+#include <bit>
 #include <concepts>
 
 // uintr_t is only for pairing with real_t, and we only need it in here.
