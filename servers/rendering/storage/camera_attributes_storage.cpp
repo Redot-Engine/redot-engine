@@ -62,7 +62,8 @@ void RendererCameraAttributes::camera_attributes_free(RID p_rid) {
 }
 void RendererCameraAttributes::camera_attributes_set_motion_blur_framerate_mode(RS::MotionBlurFramerateMode p_mode, int p_reference_framerate) {
 	motion_blur_framerate_mode = p_mode;
-	motion_blur_reference_framerate = p_reference_framerate;
+	// Ensure it's at least 1 to prevent division by zero
+	motion_blur_reference_framerate = MAX(1, p_reference_framerate);
 }
 
 void RendererCameraAttributes::camera_attributes_set_motion_blur_quality(RS::MotionBlurQuality p_quality) {
