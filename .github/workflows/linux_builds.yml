@@ -19,7 +19,7 @@ env:
 jobs:
   build-linux:
     # Stay one LTS before latest to increase portability of Linux artifacts.
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: ${{ matrix.name }}
     timeout-minutes: 120
     strategy:
@@ -81,7 +81,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -124,7 +124,7 @@ jobs:
 
       - name: Setup older .NET SDK as baseline
         if: matrix.build-mono
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           # Targeting the oldest version we want to support to ensure it still builds.
           dotnet-version: 8.0.100
