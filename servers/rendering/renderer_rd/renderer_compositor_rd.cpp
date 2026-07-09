@@ -82,8 +82,10 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServer::WindowID
 		const int screen_rotation_degrees = -RD::get_singleton()->screen_get_pre_rotation_degrees(p_screen);
 		float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
 
-		blit.push_constant.rotation_cos = Math::cos(screen_rotation);
-		blit.push_constant.rotation_sin = Math::sin(screen_rotation);
+		real_t sc_sin, sc_cos;
+		Math::sin_cos(screen_rotation, sc_sin, sc_cos);
+		blit.push_constant.rotation_cos = sc_cos;
+		blit.push_constant.rotation_sin = sc_sin;
 		// Swap width and height when the orientation is not the native one.
 		if (screen_rotation_degrees % 180 != 0) {
 			SWAP(screen_size.width, screen_size.height);
@@ -243,8 +245,10 @@ void RendererCompositorRD::set_boot_image(const Ref<Image> &p_image, const Color
 
 	const int screen_rotation_degrees = -RD::get_singleton()->screen_get_pre_rotation_degrees(DisplayServer::MAIN_WINDOW_ID);
 	float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
-	blit.push_constant.rotation_cos = Math::cos(screen_rotation);
-	blit.push_constant.rotation_sin = Math::sin(screen_rotation);
+	real_t sc_sin, sc_cos;
+	Math::sin_cos(screen_rotation, sc_sin, sc_cos);
+	blit.push_constant.rotation_cos = sc_cos;
+	blit.push_constant.rotation_sin = sc_sin;
 	blit.push_constant.src_rect[0] = 0.0;
 	blit.push_constant.src_rect[1] = 0.0;
 	blit.push_constant.src_rect[2] = 1.0;

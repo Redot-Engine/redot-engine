@@ -400,8 +400,8 @@ Quaternion::Quaternion(const Vector3 &p_axis, real_t p_angle) {
 		z = 0;
 		w = 0;
 	} else {
-		real_t sin_angle = Math::sin(p_angle * 0.5f);
-		real_t cos_angle = Math::cos(p_angle * 0.5f);
+		real_t sin_angle, cos_angle;
+		Math::sin_cos(p_angle * 0.5f, sin_angle, cos_angle);
 		real_t s = sin_angle / d;
 		x = p_axis.x * s;
 		y = p_axis.y * s;
@@ -419,12 +419,12 @@ Quaternion Quaternion::from_euler(const Vector3 &p_euler) {
 	// Conversion to quaternion as listed in https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19770024290.pdf (page A-6)
 	// a3 is the angle of the first rotation, following the notation in this reference.
 
-	real_t cos_a1 = Math::cos(half_a1);
-	real_t sin_a1 = Math::sin(half_a1);
-	real_t cos_a2 = Math::cos(half_a2);
-	real_t sin_a2 = Math::sin(half_a2);
-	real_t cos_a3 = Math::cos(half_a3);
-	real_t sin_a3 = Math::sin(half_a3);
+	real_t cos_a1, sin_a1;
+	Math::sin_cos(half_a1, sin_a1, cos_a1);
+	real_t cos_a2, sin_a2;
+	Math::sin_cos(half_a2, sin_a2, cos_a2);
+	real_t cos_a3, sin_a3;
+	Math::sin_cos(half_a3, sin_a3, cos_a3);
 
 	return Quaternion(
 			sin_a1 * cos_a2 * sin_a3 + cos_a1 * sin_a2 * cos_a3,

@@ -189,8 +189,10 @@ Basis Basis::diagonalize() {
 
 		// Compute the rotation matrix
 		Basis rot;
-		rot.rows[i][i] = rot.rows[j][j] = Math::cos(angle);
-		rot.rows[i][j] = -(rot.rows[j][i] = Math::sin(angle));
+		real_t rot_sin, rot_cos;
+		Math::sin_cos(angle, rot_sin, rot_cos);
+		rot.rows[i][i] = rot.rows[j][j] = rot_cos;
+		rot.rows[i][j] = -(rot.rows[j][i] = rot_sin);
 
 		// Update the off matrix norm
 		off_matrix_norm_2 -= rows[i][j] * rows[i][j];
@@ -621,16 +623,13 @@ Vector3 Basis::get_euler(EulerOrder p_order) const {
 void Basis::set_euler(const Vector3 &p_euler, EulerOrder p_order) {
 	real_t c, s;
 
-	c = Math::cos(p_euler.x);
-	s = Math::sin(p_euler.x);
+	Math::sin_cos(p_euler.x, s, c);
 	Basis xmat(1, 0, 0, 0, c, -s, 0, s, c);
 
-	c = Math::cos(p_euler.y);
-	s = Math::sin(p_euler.y);
+	Math::sin_cos(p_euler.y, s, c);
 	Basis ymat(c, 0, s, 0, 1, 0, -s, 0, c);
 
-	c = Math::cos(p_euler.z);
-	s = Math::sin(p_euler.z);
+	Math::sin_cos(p_euler.z, s, c);
 	Basis zmat(c, -s, 0, s, c, 0, 0, 0, 1);
 
 	switch (p_order) {
@@ -808,12 +807,12 @@ void Basis::set_axis_angle(const Vector3 &p_axis, real_t p_angle) {
 	ERR_FAIL_COND_MSG(!p_axis.is_normalized(), "The axis Vector3 " + p_axis.operator String() + " must be normalized.");
 #endif
 	Vector3 axis_sq(p_axis.x * p_axis.x, p_axis.y * p_axis.y, p_axis.z * p_axis.z);
-	real_t cosine = Math::cos(p_angle);
+	real_t sine, cosine;
+	Math::sin_cos(p_angle, sine, cosine);
 	rows[0][0] = axis_sq.x + cosine * (1.0f - axis_sq.x);
 	rows[1][1] = axis_sq.y + cosine * (1.0f - axis_sq.y);
 	rows[2][2] = axis_sq.z + cosine * (1.0f - axis_sq.z);
 
-	real_t sine = Math::sin(p_angle);
 	real_t t = 1 - cosine;
 
 	real_t xyzt = p_axis.x * p_axis.y * t;

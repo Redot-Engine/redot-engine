@@ -1462,8 +1462,10 @@ void RendererCanvasCull::canvas_item_add_circle(RID p_item, const Point2 &p_pos,
 
 		for (int i = 0; i < circle_segments + 1; i++) {
 			float angle = i * circle_point_step;
-			points_ptr[i].x = Math::cos(angle) * p_radius;
-			points_ptr[i].y = Math::sin(angle) * p_radius;
+			real_t sc_sin, sc_cos;
+			Math::sin_cos(angle, sc_sin, sc_cos);
+			points_ptr[i].x = sc_cos * p_radius;
+			points_ptr[i].y = sc_sin * p_radius;
 			points_ptr[i] += p_pos;
 		}
 
@@ -1509,8 +1511,8 @@ void RendererCanvasCull::canvas_item_add_circle(RID p_item, const Point2 &p_pos,
 
 		for (int i = 0; i < circle_segments + 1; i++) {
 			const float angle = i * circle_point_step;
-			const float c = Math::cos(angle);
-			const float s = Math::sin(angle);
+			float s, c;
+			Math::sin_cos(angle, s, c);
 
 			points_ptr[i * 2].x = c * p_radius;
 			points_ptr[i * 2].y = s * p_radius;

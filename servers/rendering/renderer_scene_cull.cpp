@@ -3392,8 +3392,10 @@ void RendererSceneCull::_render_scene(const RendererSceneRender::CameraData *p_c
 						float radius = ls->light_get_param(ins->base, RS::LIGHT_PARAM_RANGE);
 						float angle = ls->light_get_param(ins->base, RS::LIGHT_PARAM_SPOT_ANGLE);
 
-						float w = radius * Math::sin(Math::deg_to_rad(angle));
-						float d = radius * Math::cos(Math::deg_to_rad(angle));
+						real_t sc_sin, sc_cos;
+						Math::sin_cos(Math::deg_to_rad(angle), sc_sin, sc_cos);
+						float w = radius * sc_sin;
+						float d = radius * sc_cos;
 
 						Vector3 base = ins->transform.origin - ins->transform.basis.get_column(2).normalized() * d;
 
