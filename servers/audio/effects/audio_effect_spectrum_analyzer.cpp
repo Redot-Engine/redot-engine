@@ -81,7 +81,7 @@ static void smbFft(float *fftBuffer, long fftFrameSize, long sign)
 		ur = 1.0;
 		ui = 0.0;
 		arg = Math::PI / (le2 >> 1);
-		real_t sc_sin, sc_cos;
+		float sc_sin, sc_cos;
 		Math::sin_cos(arg, sc_sin, sc_cos);
 		wr = sc_cos;
 		wi = sign * sc_sin;
