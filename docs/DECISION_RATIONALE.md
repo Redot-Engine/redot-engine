@@ -101,16 +101,16 @@ If Zodot depends on zGameLib from day one, every change to zGameLib requires coo
 ### Phased Approach
 
 ```
-Phase 1: All Zig code lives in Zodot repo.
-         Patterns are documented (see KEY_PATTERNS_AND_CONVENTIONS.md).
-         No external package dependencies beyond Zig std.
+Phase 1: All new Zig code in Zodot. zGameLib already exists and provides
+         platform, Vulkan stack, and zClip — Zodot consumes these directly
+         rather than re-implementing. C++ parts of Zodot stay independent.
 
-Phase 2: Systems that are clearly generic are proto-extracted.
-         A zGameLib repo is created, but Zodot pins a specific commit.
+Phase 2: Systems that are clearly generic are proto-extracted within Zodot.
+         zGameLib may gain new components (math, allocators, hot-reload utils).
 
 Phase 3: Mature systems are extracted into zGameLib.
-         Zodot becomes a consumer.
-         zGameLib is independently usable.
+         Zodot becomes a heavier consumer of zGameLib.
+         zGameLib is independently usable by non-Zodot projects.
 ```
 
 **Real-world parallel**: Bevy engine extracted `bevy_ecs`, `bevy_render`, etc. into separately versioned crates only after the engine and the ECS patterns were stable.

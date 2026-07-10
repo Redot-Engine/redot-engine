@@ -44,7 +44,7 @@ These are targets for Phase 1-2, not yet integrated:
 | **build.zig** | Zig-native build system | Planned | Built-in |
 | **zig-gamedev** (or similar) | Vulkan/GPU abstractions, windowing | Under evaluation | MIT |
 | **zflecs** (or custom ECS) | Flecs-inspired ECS framework in Zig | Under evaluation | MIT |
-| **zGameLib** | Reusable Zig game library (our own) | Planned for Phase 3 | MIT |
+| **zGameLib** | Reusable Zig game library (our own, exists at [`private/zGameLib`](../zGameLib)) | v0.1.0, ready now | Apache-2.0 |
 | **wasmtime** / **wasm3** (via Zig FFI) | WASM runtime for mod sandbox | Under evaluation | Apache 2.0 |
 | **Jolt Physics** (C++ via `@cImport`) | 3D physics (unchanged) | Kept through Phase 1-2 | MIT |
 
@@ -85,19 +85,22 @@ These are targets for Phase 1-2, not yet integrated:
 ## Relationship with zGameLib
 
 ```
-Phase 0-1:  Zodot [depends on] nothing external
-            (all code self-contained, inc. nascent Zig layer)
+Phase 0-1:  zGameLib [already exists]
+            Zodot can consume zgame.platform, zgame.vk, zgame.zclip
+            for new Zig code. C++ parts of Zodot stay independent.
 
 Phase 2:    Zodot [depends on] Zig std + optional WASM runtime
-            (some internal patterns proto-extracted)
+            zGameLib [may gain] math, allocators, hot-reload utils
+            (some internal patterns proto-extracted from Zodot)
 
-Phase 3:    Zodot [depends on] zGameLib (separate repo)
-            zGameLib [depends on] Zig std + optional deps
+Phase 3:    Zodot [depends on] zGameLib more heavily (extracted components)
+            zGameLib [depends on] Zig std + sibling libs
+            Bidirectional flow: Zodot → zGameLib and zGameLib → Zodot
 
 Final:      Zodot = zGameLib + engine-specific layers (editor, scene compat, etc.)
 ```
 
-**Current status:** zGameLib does not exist yet. The "zGameLib patterns" mentioned in documents refer to the coding conventions and architectural decisions designed to make future extraction smooth.
+**Current status:** zGameLib exists at [`private/zGameLib`](../zGameLib) (v0.1.0, Apache-2.0, Zig 0.16+). It already provides a platform adapter (SDL3), Vulkan stack (vk + volk + VMA + shaderc), and zClip animation library. New Zig code in Zodot should consume these directly rather than re-implementing. Future extraction of Zodot components into zGameLib is planned for Phase 3.
 
 ## External Tools We Keep vs. Replace
 
