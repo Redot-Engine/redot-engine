@@ -6,6 +6,7 @@
 Phase 0 (Current)
 │
 ├── Discovery docs complete ────────────────────────────────► Project known
+├── Toolchain validation, build.zig spike, subsystem audit ─► Engineering Phase 0
 │
 ▼
 Phase 1: Build + Foundations
@@ -43,7 +44,7 @@ Phase 3: Extraction & Ecosystem
 H2 2026                      H1 2027                      H2 2027
 ├────────────────────────────┼────────────────────────────┼─────────────────────►
 │                            │                            │
-Phase 0 ──► (done)          │                            │
+Phase 0 ──► (docs done)     │                            │
 │                            │                            │
 Phase 1 ────────────────────►│                            │
 │  1.1 SCons removed         │                            │

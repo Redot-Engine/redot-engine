@@ -3,8 +3,8 @@
 ## Project identity
 
 - **Redot Engine LTS** v26.3.0-alpha (fork of Godot 4.5.2-stable, Sept 2024). MIT license.
-- **Zodot** = planned Zig migration of Redot (Phase 0: no Zig code yet). See `docs/` for vision docs.
-- Pure C++17/C++20 codebase with SCons build system, ~77K commits.
+- **Zodot** = planned Zig migration of Redot (Phase 0: no Zig code yet). See `docs/` for vision docs; directory map in [docs/WORK_TREE.md](docs/WORK_TREE.md).
+- Pure C++20 codebase with SCons build system, ~77K commits.
 
 ## Build system
 
@@ -50,7 +50,7 @@ Tests live in `tests/` (core, scene, servers). Test framework is custom C++ (see
 - Python >= 3.8, SCons >= 4.0
 - GCC >= 12 / Clang >= 16 / MSVC >= 2022 (C++20 with GNU extensions)
 - Vulkan SDK 1.3+
-- Jolt Physics built by default (`disable_physics_3d=yes` to omit)
+- Jolt Physics compiled by default; GodotPhysics3D is the default engine (`disable_physics_3d=yes` omits all 3D physics)
 - No git submodules; all deps vendored in `thirdparty/`
 - Nix flake available for reproducible dev env (`use flake` in `.envrc`)
 
@@ -83,6 +83,11 @@ codespell                 # spelling
 
 ## Codebase architecture
 
+Full directory tree with per-folder descriptions:
+**[docs/WORK_TREE.md](docs/WORK_TREE.md)**
+
+Quick reference:
+
 | Directory | Contents |
 |---|---|
 | `core/` | Math, Variant, IO, OS, String, containers (no STL — custom `Vector`, `Map`, `Set`, `List`) |
@@ -95,7 +100,7 @@ codespell                 # spelling
 | `thirdparty/` | All deps vendored — no submodules |
 | `tests/` | C++ unit tests (core, scene, servers) |
 | `doc/` | Class reference XML (911 files), doc tools, translations |
-| `docs/` | Project vision docs (newly added) |
+| `docs/` | Zodot planning docs + [WORK_TREE.md](docs/WORK_TREE.md) |
 
 ## Important C++ conventions
 
@@ -120,7 +125,7 @@ codespell                 # spelling
 
 - AI contributions allowed per `AI_POLICY.md` (contributor must understand and own all submitted code)
 - Pre-commit required for PRs (`CONTRIBUTING.md`)
-- Commit messages: imperative mood, optional prefix like `Core:`, `Editor:`, keep under 72 chars
+- Commit messages: follow [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) (Conventional Commits, e.g. `feat(ecs): add query API`)
 - Use `git pull --rebase`, avoid merge commits
 - Class reference XML must be updated when adding exposed methods/properties/signals
 

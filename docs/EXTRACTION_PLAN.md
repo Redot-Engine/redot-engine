@@ -17,7 +17,7 @@ zGameLib already exists as an independent project at [`private/zGameLib`](../zGa
 | FrameRing | ✅ **Working** | Frames-in-flight ring |
 | Swapchain | ✅ **Working** | Reusable swapchain policy |
 | Surface bridge | ✅ **Working** | Comptime platform↔vulkan surface |
-| Animation API | ✅ **Working** | Unified API over zClip |
+| Animation API | ⏳ **Stub** | Unified API over zClip (scaffold only; zClip itself is working) |
 | App harness | ⏳ **Stub** | Being built out |
 | Math library | ❌ **Not yet** | Planned (`zmath`) |
 | Audio (zaudio) | ❌ **Not yet** | Planned |
@@ -93,7 +93,8 @@ const clip = try zgame.zclip.SpriteAtlas.load(arena, "player.atlas");
 |---|---|---|
 | **Platform layer** | `zgame.platform` (zGameLib) | Ready |
 | **Vulkan stack** | `zgame.vk` / `zgame.vma` (zGameLib) | Ready |
-| **Animation primitives** | `zgame.zclip` / `zgame.animation` (zGameLib) | Ready |
+| **Animation primitives** | `zgame.zclip` (zGameLib) | Ready |
+| **Animation API** | `zgame.animation` (zGameLib) | Stub (scaffold only) |
 | **Physics adapter** | Needs design (this doc) | Not started |
 | **Hot-reload utilities** | Needs design (this doc) | Not started |
 | **Math / linear algebra** | zGameLib (planned `zmath`) | Not started |
@@ -188,7 +189,7 @@ zGameLib must also stay lean. It is not "everything Zodot might ever want." It i
 | Component | Why |
 |---|---|
 | Redot compatibility layer | Scene tree, Variant, GDExtension — these are Zodot's identity as a Redot fork |
-| Editor (inspector, docks, debugger) | 900K+ lines of C++; editor is not the performance bottleneck |
+| Editor (inspector, docks, debugger) | ~670K lines of C++ (`editor/` + `scene/`); editor is not the performance bottleneck |
 | Mod loader + capability system | Deeply tied to Zodot's specific modding vision and runtime |
 | ECS + PhysicsServer integration | Wiring between ECS and Jolt is Zodot-specific |
 | High-level rendering server | Scene graph traversal, material system, lighting — engine-specific |

@@ -30,7 +30,7 @@ Phase 3:  build.zig → zig build (C++ deps via @cImport) → redot binary
 
 ## Phase 0: Discovery & Planning (Current)
 
-**Status:** Complete.
+**Status:** Documentation complete; engineering tasks remain (see below).
 
 ### Deliverables
 - [x] `PROJECT_OVERVIEW.md` — Vision, roadmap, success criteria
@@ -58,7 +58,7 @@ Phase 3:  build.zig → zig build (C++ deps via @cImport) → redot binary
 
 ### 1.1 Replace SCons with `build.zig` (Phase 1 Priority)
 
-SCons will be **fully removed**, not kept alongside `build.zig`. Maintaining two build systems doubles burden and confuses contributors.
+SCons will be **fully removed** once `build.zig` produces an equivalent binary — not kept as a permanent second entry point. A short transition period may shell out to SCons while porting flags; that is a temporary bridge, not the end state.
 
 | Concern | Current (SCons) | Target (build.zig) |
 |---|---|---|
@@ -70,9 +70,9 @@ SCons will be **fully removed**, not kept alongside `build.zig`. Maintaining two
 **Strategy:**
 - Create `build.zig` as the single entry point.
 - Initially `build.zig` calls `zig c++` directly on existing C++ source files, replicating the compiler flags SCons currently generates.
-- Alternatively, shell out to SCons during transition while handling Zig code directly.
+- During early transition only, `build.zig` may shell out to SCons for C++ while handling Zig code directly — remove this bridge once parity is reached.
 - Over time, fold all C++ compilation into `build.zig` proper.
-- Once `build.zig` can produce an equivalent binary, **delete `SConstruct`, `SCsub` files, and all Python build scripts**.
+- Once `build.zig` can produce an equivalent binary, **delete `SConstruct`, `SCsub` files, and all Python build scripts**. After that point, `scons` is no longer callable.
 
 **Risk:** SCons has 1159 lines of platform detection, module discovery, and flag computation. We do not replicate all of it at once. Run SCons first to generate a flag dump, then port piece by piece.
 
@@ -304,7 +304,7 @@ The adapter pattern:
 | Component | Why It Stays |
 |---|---|
 | Redot compatibility layer (scene tree, Variant bridge, GDExtension) | Core identity of the fork |
-| Editor (inspector, docks, debugger, canvas) | 900K+ lines; works; not worth touching |
+| Editor (inspector, docks, debugger, canvas) | ~670K lines (`editor/` + `scene/`); works; not worth touching |
 | High-level mod loader and capability system | Tied to Zodot's specific modding vision |
 | Deep integration: Physics Server + ECS bridge | Zodot-specific wiring; no value in zGameLib |
 | Rendering server (high-level) | Scene graph traversal, material system are engine-specific |
@@ -330,7 +330,8 @@ The adapter pattern:
 │                                                              │
 │  ✅ EXISTS TODAY:   Platform (SDL3) · Vulkan stack           │
 │                     zClip animation · Gpu/FrameRing          │
-│                     Surface/swapchain · Animation API        │
+│                     Surface/swapchain                        │
+│  ⏳ STUB:           Animation API · App harness               │
 │                                                              │
 │  🔜 FUTURE:         Math library · Allocators                │
 │                     Hot-reload utils · Physics Adapter       │

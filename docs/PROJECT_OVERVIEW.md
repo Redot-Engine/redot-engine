@@ -73,7 +73,7 @@ Phase 3 — Extraction & Ecosystem
 
 ## Current State
 
-**As of this writing (July 2026), the project is in Phase 0.** The repository contains the full Redot Engine LTS codebase (C++17/C++20, SCons build, ~77K commits) with zero Zig code. The sibling zGameLib project already exists at `private/zGameLib` (v0.1.0, Apache-2.0) providing platform, Vulkan, and zClip components that Zodot will consume for new Zig code. All documentation below describes the *planned* architecture and vision, not the current implementation.
+**As of this writing (July 2026), the project is in Phase 0.** Documentation deliverables are complete; engineering tasks (toolchain validation, `build.zig` spike, subsystem audit) remain. The repository contains the full Redot Engine LTS codebase (C++20, SCons build, ~77K commits) with zero Zig code. The sibling zGameLib project already exists at `private/zGameLib` (v0.1.0, Apache-2.0) providing platform, Vulkan, and zClip components that Zodot will consume for new Zig code. All documentation below describes the *planned* architecture and vision, not the current implementation.
 
 ## Related Documents
 

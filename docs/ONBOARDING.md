@@ -10,7 +10,7 @@ This guide covers building and running the **current Redot Engine LTS** codebase
 |---|---|
 | **Python** | >= 3.8 |
 | **SCons** | >= 4.0 (`pip install scons`) |
-| **C++ compiler** | GCC 11+ / Clang 14+ / MSVC 2022+ (C++20 enabled) |
+| **C++ compiler** | GCC 12+ / Clang 16+ / MSVC 2022+ (C++20 enabled) |
 | **Vulkan SDK** | 1.3+ (Linux: `libvulkan-dev`, macOS: MoltenVK, Windows: LunarG SDK) |
 | **Git** | Any modern version |
 | **Optional: Nix** | Reproducible environment (see `flake.nix`) |
@@ -86,15 +86,18 @@ scons platform=macos target=editor
 scons platform=web target=editor
 ```
 
-## Enabling Jolt Physics
+## Jolt Physics
 
-Jolt is built by default in Redot. To disable it:
+Jolt is **compiled into the editor by default** alongside GodotPhysics3D. The
+default project setting (`physics/3d/physics_engine = "DEFAULT"`) resolves to
+**GodotPhysics3D**, not Jolt. To use Jolt, set **Project Settings > Physics > 3D >
+Physics Engine** to `Jolt Physics`.
+
+To disable all 3D physics (both backends):
 
 ```bash
 scons platform=linuxbsd target=editor disable_physics_3d=yes
 ```
-
-If you need to verify Jolt is active, run the editor and check **Project Settings > Physics > 3D > Physics Engine** — it should show "Jolt Physics 3D".
 
 ## Recommended IDE Setup
 
@@ -231,6 +234,7 @@ zig build test-tdd           # run behavioral suite (needs display)
 
 These documents explain the project vision and architecture:
 
+- [WORK_TREE.md](./WORK_TREE.md) — Directory map (dirs only, with descriptions)
 - [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)
 - [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
 - [DEPENDENCIES.md](./DEPENDENCIES.md)
@@ -248,7 +252,7 @@ These documents explain the project vision and architecture:
 
 - How do I build and run the current Redot fork?
 - What dependencies do I need to install?
-- How do I enable Jolt Physics?
+- How do I switch to Jolt Physics (vs the default GodotPhysics3D)?
 - Which IDE tools should I use?
 - Where is the test executable and how do I run it?
 - How do I navigate the existing codebase?

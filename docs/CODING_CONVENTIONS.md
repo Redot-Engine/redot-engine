@@ -65,6 +65,9 @@ STL is permitted only in:
 #include "core/io/file.h"
 #include "scene/node.h"
 
+// New Zig code and Zodot-specific C++ may use `namespace zodot { }`.
+// Existing Redot code keeps the `godot` namespace convention.
+
 namespace zodot {
 
 // Public API first, private details last

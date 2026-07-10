@@ -23,7 +23,7 @@ All thirdparty libraries are vendored in `thirdparty/`. No Git submodules are us
 | **graphite** | vendored | Advanced text shaping | Apache 2.0 |
 | **harfbuzz** | vendored | Text shaping | MIT |
 | **ICU** | vendored | Unicode support | Unicode |
-| **Mono / .NET** | 6.x+ (optional) | C# scripting runtime | MIT / LGPL |
+| **Mono / .NET** | 8.0+ (optional) | C# scripting runtime | MIT / LGPL |
 
 ### Build-Time Tools
 
@@ -40,7 +40,7 @@ These are targets for Phase 1-2, not yet integrated:
 
 | Dependency | Purpose | Status | License |
 |---|---|---|---|
-| **Zig** (master / 0.14+) | Primary implementation language | Not yet used | MIT |
+| **Zig** (0.16+) | Primary implementation language | Not yet used in Zodot | MIT |
 | **build.zig** | Zig-native build system | Planned | Built-in |
 | **zGameLib** | Reusable Zig game library (our own, exists at [`private/zGameLib`](../zGameLib)) | v0.1.0, ready now. Provides platform, Vulkan, zClip. Future: math, allocators, physics adapter | Apache-2.0 |
 | **wasmtime** / **wasm3** (via Zig FFI) | WASM runtime for mod sandbox | Under evaluation | Apache 2.0 |

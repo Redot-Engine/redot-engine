@@ -37,7 +37,7 @@ The existing codebase follows the classic Godot 4.x architecture:
 - **Memory model**: `RefCounted` reference counting + manual `memnew`/`memdelete`. GC-like patterns via `Ref<>` smart pointers.
 - **Scripting**: GDScript (interpreted bytecode) or C# (Mono runtime). Both introduce a GC or interpreter overhead tax.
 - **Rendering**: Vulkan 1.x primary, with GLES3/Metal/D3D12 backends. Heavy use of Godot's own material/shader system.
-- **Physics**: Jolt Physics (primary, via C++ module) OR Godot Physics 3D (fallback). Jolt is vendored as thirdparty C++.
+- **Physics**: GodotPhysics3D (default) and Jolt Physics (optional, via C++ module). Both compile unless `disable_physics_3d=yes`. Jolt is vendored as thirdparty C++.
 - **Build system**: SCons (Python). Platform modules are compiled conditionally. No incremental compilation story for engine code.
 - **Modules**: 61 optional modules compiled as part of the engine binary. Tight coupling between modules and core.
 
@@ -100,7 +100,8 @@ This removes the need for Zodot to write its own platform or raw Vulkan abstract
 
 ## Jolt Physics in the Transition
 
-Jolt Physics is already deeply integrated:
+Jolt Physics is compiled and available as an alternative backend (GodotPhysics3D
+remains the default today). Zodot's migration target is Jolt via Zig FFI:
 
 | Layer | Current | Transition |
 |---|---|---|

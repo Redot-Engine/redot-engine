@@ -11,11 +11,11 @@ This document captures the reasoning behind the major architectural and strategi
 | **License** | MIT (unchanged from Godot) | MIT |
 | **Community** | Focused, responsive maintainers | Large but slower moving |
 | **C++20** | Already enabled | Not yet (Godot 4.x still targets C++17) |
-| **Jolt integration** | Default, deeply tested | Optional module, less integrated |
+| **Jolt integration** | Compiled by default; selectable in project settings | Optional module, less integrated |
 | **Release cadence** | LTS-focused (26.x) | Feature-driven (4.x) |
 | **MCP / AI integration** | Actively explored | Not a priority |
 
-**Verdict:** Redot's C++20 baseline and Jolt-first stance align with Zodot's target architecture. Forking upstream Godot would require re-doing these modifications. Redot is a closer starting point.
+**Verdict:** Redot's C++20 baseline and built-in Jolt module align with Zodot's target architecture. Forking upstream Godot would require re-doing these modifications. Redot is a closer starting point.
 
 **Trade-off:** We inherit Redot's delta from Godot (some API differences, version numbering). This is manageable.
 
@@ -92,11 +92,11 @@ This matches how AAA engines handle hot-reload (native DLL reload for engine, Lu
 
 ---
 
-## 5. Why Self-Contained Zig Migration First Before zGameLib Coupling
+## 5. Why Consume zGameLib Early but Extract Later
 
 ### The Dependency Trap
 
-If Zodot depends on zGameLib from day one, every change to zGameLib requires coordinated updates to both repos. During early rapid iteration, this is a productivity killer.
+If Zodot *reimplements* what zGameLib already provides, effort is wasted and the ecosystem fragments. If Zodot *extracts to* zGameLib before APIs are stable, every change requires coordinated updates to both repos. The balance: **consume existing zGameLib components from Phase 1; extract new generic code only after it matures.**
 
 ### Phased Approach
 
