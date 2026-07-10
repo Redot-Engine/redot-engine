@@ -192,10 +192,12 @@ tests/          — Unit tests
 ### Contribution Workflow
 
 1. Read `CONTRIBUTING.md` in the repo root.
-2. Fork the repository on GitHub.
-3. Create a feature branch.
-4. Make changes, run tests.
-5. Submit a pull request.
+2. Read [GIT_WORKFLOW.md](./GIT_WORKFLOW.md) for commit conventions and branching model.
+3. Fork the repository on GitHub.
+4. Create a feature branch (`feature/<short-description>`).
+5. Make atomic commits with descriptive messages.
+6. Rebase onto master frequently.
+7. Submit a pull request.
 
 ### Useful Commands
 

@@ -3,6 +3,11 @@
 This document summarizes the most important points for people interested in
 contributing to Redot, especially via bug reports or pull requests.
 
+**Zodot contributors:** See [GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md) for
+commit conventions, branching model, and merging policy specific to this project.
+Where this document conflicts with the upstream Redot docs, GIT_WORKFLOW.md takes
+precedence for Zodot-specific work.
+
 The [Redot Documentation](https://docs-stable.redotengine.org/contributing/development) has a dedicated Contributing section
 which details these points and more, and is a recommended read.
 
