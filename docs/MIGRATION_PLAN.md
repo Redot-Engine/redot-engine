@@ -4,11 +4,13 @@
 
 Three-step migration policy:
 
-1. **Zig becomes the build system / entry point.** `build.zig` orchestrates everything. Existing C++ code stays and is linked.
+1. **Zig becomes the build system / entry point.** `build.zig` orchestrates everything. **SCons is fully removed**, not augmented. Python is never used for engine builds.
 2. **Wrap stable C++ libraries via `@cImport`** where it enables hot-reload or cleaner integration.
 3. **Only rewrite/port to pure Zig** when there is clear benefit: hot-reload capability, major performance win, data-oriented redesign (ECS), or new modability features.
 
 We do **not** rewrite things that are already working well just because they are C++.
+
+**Python policy:** After SCons removal, Python is restricted to MCP servers, AI tooling, and supporting scripts. It is never used for building the engine.
 
 ```
 Current:  SCons → C++ compiler → redot binary
@@ -54,7 +56,9 @@ Phase 3:  build.zig → zig build (C++ deps via @cImport) → redot binary
 
 **Goal:** Zig is the entry point. C++ still does most of the work, but we ship a working binary with initial Zig code linked in.
 
-### 1.1 Replace SCons with `build.zig`
+### 1.1 Replace SCons with `build.zig` (Phase 1 Priority)
+
+SCons will be **fully removed**, not kept alongside `build.zig`. Maintaining two build systems doubles burden and confuses contributors.
 
 | Concern | Current (SCons) | Target (build.zig) |
 |---|---|---|
@@ -64,11 +68,15 @@ Phase 3:  build.zig → zig build (C++ deps via @cImport) → redot binary
 | Binary output | `bin/redot.{plat}.{target}.{arch}` | Same (preserve convention) |
 
 **Strategy:**
-- Create `build.zig` that wraps existing SCons logic (or calls `zig c++` directly on the same source files).
-- Initially, `build.zig` can shell out to SCons for C++ compilation while handling Zig code directly.
-- Over time, move C++ compilation into `build.zig` proper.
+- Create `build.zig` as the single entry point.
+- Initially `build.zig` calls `zig c++` directly on existing C++ source files, replicating the compiler flags SCons currently generates.
+- Alternatively, shell out to SCons during transition while handling Zig code directly.
+- Over time, fold all C++ compilation into `build.zig` proper.
+- Once `build.zig` can produce an equivalent binary, **delete `SConstruct`, `SCsub` files, and all Python build scripts**.
 
 **Risk:** SCons has 1159 lines of platform detection, module discovery, and flag computation. We do not replicate all of it at once. Run SCons first to generate a flag dump, then port piece by piece.
+
+**Python's future:** After SCons removal, Python is only used for MCP servers, AI tooling, and supporting scripts. No Python in the engine build pipeline.
 
 ### 1.2 Consume Existing zGameLib Components for New Zig Code
 
@@ -332,9 +340,9 @@ The adapter pattern:
 
 ## Open Questions
 
-- When do we invest in making the `build.zig` → SCons bridge production-quality vs. replacing SCons entirely?
 - Should the ECS live in Zodot or in zGameLib from the start? (Current leaning: Zodot until stable, then extract.)
-- How do we handle Visual Studio / Xcode project generation without SCons?
+- How do we handle Visual Studio / Xcode project generation without SCons? (Zig's `build.zig` has `installVsProject` support to investigate.)
+- When should the existing C++ test suite (SCons-era) be converted to Zig-driven tests? (Likely after Phase 1.1, before 1.2.)
 
 ## Next Documents to Read
 

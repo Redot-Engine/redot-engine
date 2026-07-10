@@ -26,22 +26,26 @@ The ultimate target is a self-contained game engine that:
 Phase 0 — Discovery & Planning (current)
   ├── Create foundation documents (this set)
   ├── Establish Zig toolchain, build.zig, and CI
-  └── Port build system (SCons → Zig build)
+  └── Evaluate build system migration (SCons → build.zig)
 
-Phase 1 — Zig Self-Contained Core
-  ├── Port core data structures (Variant-free replacements)
-  ├── Implement ECS framework (inspired by zflecs / Flecs patterns)
-  ├── Port Jolt Physics binding layer to Zig
-  └── Wire up minimal render path (Vulkan via zig-gamedev or custom)
+Phase 1 — Build System & Incremental Foundations
+  ├── Replace SCons with build.zig as the entry point
+  ├── Zig code linked into Redot binary alongside existing C++
+  ├── Consume existing zGameLib components (platform, Vulkan, zClip) for new Zig code
+  ├── Wrap Jolt Physics via @cImport for ECS integration
+  ├── Implement minimal native hot-reload for one non-critical system
+  └── Spike ECS framework in Zig (new code only, beside existing node tree)
 
-Phase 2 — Hybrid Hot-Reload & Modding
-  ├── Native hot-reload for engine systems
-  ├── WASM sandbox for game scripts / mods
-  └── Capability-based mod API
+Phase 2 — Systems & Modability
+  ├── Hybrid hot-reload (native + WASM) for all engine systems
+  ├── WASM sandbox with capability-based mod API
+  ├── ECS + scene tree coexistence
+  └── Rendering server Zig abstraction (hot paths only)
 
-Phase 3 — zGameLib Extraction
-  ├── Extract reusable systems → zGameLib
-  ├── Zodot consumes zGameLib as a dependency
+Phase 3 — Extraction & Ecosystem
+  ├── Extract mature reusable systems from Zodot → zGameLib
+  ├── Create reusable adapters in zGameLib (Physics Adapter, etc.)
+  ├── Zodot consumes zGameLib as a heavier dependency
   └── zGameLib becomes independently usable without Zodot
 ```
 
@@ -69,7 +73,7 @@ Phase 3 — zGameLib Extraction
 
 ## Current State
 
-**As of this writing (July 2026), the project is in Phase 0.** The repository contains the full Redot Engine LTS codebase (C++17/C++20, SCons build, ~77K commits) with zero Zig code. All documentation below describes the *planned* architecture and vision, not the current implementation.
+**As of this writing (July 2026), the project is in Phase 0.** The repository contains the full Redot Engine LTS codebase (C++17/C++20, SCons build, ~77K commits) with zero Zig code. The sibling zGameLib project already exists at `private/zGameLib` (v0.1.0, Apache-2.0) providing platform, Vulkan, and zClip components that Zodot will consume for new Zig code. All documentation below describes the *planned* architecture and vision, not the current implementation.
 
 ## Related Documents
 

@@ -72,6 +72,19 @@ The existing codebase follows the classic Godot 4.x architecture:
 +----------------------------------------------------+
 ```
 
+### zGameLib Consumption Path
+
+For new Zig code, Zodot consumes existing zGameLib components directly rather than re-implementing them:
+
+| zGameLib Component | Used By Zodot For | Available |
+|---|---|---|
+| `zgame.platform` | SDL3 windowing + input | ✅ Now |
+| `zgame.vk` / `zgame.vma` | Vulkan device + memory management | ✅ Now |
+| `zgame.zclip` | Sprite/skeletal animation | ✅ Now |
+| `zgame.Gpu` / `zgame.FrameRing` | Vulkan bring-up, frames-in-flight | ✅ Now |
+
+This removes the need for Zodot to write its own platform or raw Vulkan abstraction layer. Zodot focuses on engine-specific wiring: ECS integration, mod loader, Redot compatibility.
+
 ### Key Differences & Why They Matter
 
 | Concern | Current (C++ Redot) | Target (Zig Zodot) | Why |

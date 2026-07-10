@@ -107,6 +107,9 @@ Phase 1: All new Zig code in Zodot. zGameLib already exists and provides
 
 Phase 2: Systems that are clearly generic are proto-extracted within Zodot.
          zGameLib may gain new components (math, allocators, hot-reload utils).
+         zGameLib also hosts reusable **adapters** (e.g. Physics Adapter
+         interface + Jolt implementation) that provide clean Zig APIs without
+         engine-specific coupling.
 
 Phase 3: Mature systems are extracted into zGameLib.
          Zodot becomes a heavier consumer of zGameLib.
@@ -142,7 +145,25 @@ Rust was seriously considered but rejected:
 
 ---
 
-## 8. Why Not Build a New Engine from Scratch
+## 8. Why Drop SCons Entirely
+
+SCons is the current build system (Python-based, 1159-line `SConstruct`). It will be **fully removed** in Phase 1, not augmented.
+
+| Concern | Current (SCons) | Target (build.zig) |
+|---|---|---|
+| Language | Python | Zig |
+| Incremental builds | Slow, cache-based | Fast, native |
+| C++ compilation | Custom task wrappers | `zig c++` — same compiler, same flags |
+| Module system | Python `config.py` + `SCsub` | Zig modules + `@cImport` |
+| IDE integration | Manual `compiledb=yes` | Native `compile_commands.json` |
+
+**Why not keep both?** Maintaining two build systems doubles maintenance burden and confuses contributors. The goal is a single `zig build` invocation that builds everything — C++ through `zig c++`, Zig natively.
+
+**Python's future:** After SCons removal, Python is restricted to MCP servers, AI tooling, and supporting scripts. It is never used for building the engine.
+
+---
+
+## 9. Why Not Build a New Engine from Scratch
 
 Building an engine from scratch would take 5-10 years to reach feature parity with Godot/Redot. By forking and gradually replacing C++ with Zig, we:
 

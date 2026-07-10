@@ -210,6 +210,14 @@ Every system should be written as if it will be extracted into zGameLib later.
    - Must have. No implicit global init.
 4. Are all public types namespaced under a clear module?
    - `physics.contact`, not `PhysicsContact`.
+5. Does every public function take an explicit allocator?
+   - If no, refactor before extraction. Hidden allocations prevent zGameLib from controlling memory.
+6. Are there any references to Zodot globals (`_globals`, `Engine::get_singleton()`, etc.)?
+   - If yes, the system is not extractable. Pass these as parameters.
+7. Does the system have complete test coverage (Level 1 unit tests)?
+   - If no, extraction is blocked. Tests validate the API before publishing.
+8. Is the API documented with `///` doc comments including an example?
+   - If no, the API is not ready for external consumption.
 
 ### Module Layout Pattern (Planned)
 
@@ -232,7 +240,65 @@ pub const PhysicsServer = struct {
 
 ---
 
-## 8. Coding Conventions (Zig)
+## 8. TDD Patterns for Zig Code
+
+### Philosophy
+
+Test the behavior, not the implementation. Prefer fast, deterministic, headless tests. Every module should be testable with `zig test` alone — no engine binary required.
+
+### Test Structure
+
+```zig
+// In the same file as the implementation:
+test "empty world has no entities" {
+    var world = try World.init(testing.allocator);
+    defer world.deinit();
+    try testing.expectEqual(@as(usize, 0), world.entityCount());
+}
+
+test "spawning entity increments count" {
+    var world = try World.init(testing.allocator);
+    defer world.deinit();
+    _ = try world.spawn(.{});
+    try testing.expectEqual(@as(usize, 1), world.entityCount());
+}
+```
+
+### Rules
+
+| Rule | Why |
+|---|---|
+| One `test` block per behavior | Clear failure messages, easy to isolate |
+| Use `testing.allocator` | Detects leaks, no hidden state |
+| `defer` cleanup in the test | Ensures teardown even on panic |
+| Test error paths explicitly | `try testing.expectError(error.FileNotFound, shader.compile(...))` |
+| No test depends on another | Tests run in arbitrary order |
+| No external resources (disk, network) | Tests must run in a container headlessly |
+
+### Test Hierarchy
+
+```
+Level 1 — Unit tests (inline `test` blocks)
+  ├── Pure Zig logic, no engine dependencies
+  ├── Run with: `zig test src/ecs/world.zig`
+  └── Fastest, container-safe
+
+Level 2 — Integration tests (tests/ directory)
+  ├── Cross-module behavior (e.g. ECS + physics wrapper)
+  ├── Run with: `zig build test`
+  └── May need minimal FFI stubs
+
+Level 3 — Behavioral / display tests
+  ├── Needs a display + Vulkan/GL driver
+  ├── Run with: `zig build test-tdd`
+  └── Runs under Xvfb in CI, skipped when no display
+```
+
+### CI Gate
+
+Before merge, all Level 1 + Level 2 tests must pass. Level 3 tests run in CI under Xvfb.
+
+## 9. Coding Conventions (Zig)
 
 These apply once Zig code is introduced:
 
@@ -242,7 +308,6 @@ These apply once Zig code is introduced:
 | **File per type** | One public type per file, named after the type. |
 | **Imports** | Group: std → thirdparty → internal. Use `@import` not `@cInclude` for Zig deps. |
 | **Error handling** | Use `!` error unions. Avoid `catch unreachable` in production code. |
-| **Tests** | Inline `test` blocks in the same file. Run with `zig test`. |
 | **Documentation** | `///` doc comments on all public APIs. Examples in doc comments. |
 | **Allocators** | Arena for frame-temporary, `GeneralPurposeAllocator` for persistent. |
 | **comptime** | Use for code generation, type specialization, and assertions — not for logic branching. |

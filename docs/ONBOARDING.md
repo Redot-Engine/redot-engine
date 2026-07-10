@@ -210,6 +210,21 @@ ls modules/
 scons -h
 ```
 
+## Zig-Era Development (Future)
+
+Once the build system migration is underway, development will shift:
+
+```bash
+# Future build commands (once build.zig replaces SCons):
+zig build                    # build editor + Zig code
+zig build test               # run all Zig tests
+zig build test-tdd           # run behavioral suite (needs display)
+```
+
+**Python policy:** Python will be restricted to MCP servers, AI tooling, and supporting scripts. It will **never** be used for engine builds — `build.zig` is the sole build entry point.
+
+**SCons removal:** SCons will be fully removed from the project. No Python-based build scripts remain in the engine build pipeline.
+
 ## Discovery Documents
 
 These documents explain the project vision and architecture:
@@ -219,6 +234,8 @@ These documents explain the project vision and architecture:
 - [DEPENDENCIES.md](./DEPENDENCIES.md)
 - [KEY_PATTERNS_AND_CONVENTIONS.md](./KEY_PATTERNS_AND_CONVENTIONS.md)
 - [DECISION_RATIONALE.md](./DECISION_RATIONALE.md)
+- [CODING_CONVENTIONS.md](./CODING_CONVENTIONS.md)
+- [TESTING_STRATEGY.md](./TESTING_STRATEGY.md)
 
 ## Related Documents
 
