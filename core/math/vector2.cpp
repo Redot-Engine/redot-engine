@@ -46,7 +46,9 @@ real_t Vector2::angle() const {
 }
 
 Vector2 Vector2::from_angle(real_t p_angle) {
-	return Vector2(Math::cos(p_angle), Math::sin(p_angle));
+	real_t sc_sin, sc_cos;
+	Math::sin_cos(p_angle, sc_sin, sc_cos);
+	return Vector2(sc_cos, sc_sin);
 }
 
 real_t Vector2::length() const {
@@ -118,8 +120,8 @@ Vector2 Vector2::round() const {
 }
 
 Vector2 Vector2::rotated(real_t p_by) const {
-	real_t sine = Math::sin(p_by);
-	real_t cosi = Math::cos(p_by);
+	real_t sine, cosi;
+	Math::sin_cos(p_by, sine, cosi);
 	return Vector2(
 			x * cosi - y * sine,
 			x * sine + y * cosi);

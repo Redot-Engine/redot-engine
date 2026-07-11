@@ -385,8 +385,10 @@ static void _generate_contacts_face_circle(const Vector3 *p_points_A, int p_poin
 
 	for (int i = 0; i < circle_segments; ++i) {
 		Vector3 point_pos = circle_B_pos;
-		point_pos += circle_B_line_1 * Math::cos(i * angle_delta);
-		point_pos += circle_B_line_2 * Math::sin(i * angle_delta);
+		real_t sc_sin, sc_cos;
+		Math::sin_cos(i * angle_delta, sc_sin, sc_cos);
+		point_pos += circle_B_line_1 * sc_cos;
+		point_pos += circle_B_line_2 * sc_sin;
 		circle_points[i] = point_pos;
 	}
 
@@ -511,8 +513,10 @@ static void _generate_contacts_circle_circle(const Vector3 *p_points_A, int p_po
 			// Circle A inside circle B.
 			for (int i = 0; i < 3; ++i) {
 				Vector3 circle_A_point = circle_A_pos;
-				circle_A_point += circle_A_line_1 * Math::cos(2.0 * Math::PI * i / 3.0);
-				circle_A_point += circle_A_line_2 * Math::sin(2.0 * Math::PI * i / 3.0);
+				double sc_sin, sc_cos;
+				Math::sin_cos(2.0 * Math::PI * i / 3.0, sc_sin, sc_cos);
+				circle_A_point += circle_A_line_1 * sc_cos;
+				circle_A_point += circle_A_line_2 * sc_sin;
 
 				contact_points[num_points] = circle_A_point;
 				++num_points;
@@ -521,8 +525,10 @@ static void _generate_contacts_circle_circle(const Vector3 *p_points_A, int p_po
 			// Circle B inside circle A.
 			for (int i = 0; i < 3; ++i) {
 				Vector3 circle_B_point = circle_B_pos;
-				circle_B_point += circle_B_line_1 * Math::cos(2.0 * Math::PI * i / 3.0);
-				circle_B_point += circle_B_line_2 * Math::sin(2.0 * Math::PI * i / 3.0);
+				double sc_sin, sc_cos;
+				Math::sin_cos(2.0 * Math::PI * i / 3.0, sc_sin, sc_cos);
+				circle_B_point += circle_B_line_1 * sc_cos;
+				circle_B_point += circle_B_line_2 * sc_sin;
 
 				Vector3 circle_A_point = circle_B_point - norm_proj;
 

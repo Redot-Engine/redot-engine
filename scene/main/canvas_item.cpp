@@ -769,7 +769,9 @@ void CanvasItem::draw_arc(const Vector2 &p_center, real_t p_radius, real_t p_sta
 	const real_t delta_angle = CLAMP(p_end_angle - p_start_angle, -Math::TAU, Math::TAU);
 	for (int i = 0; i < p_point_count; i++) {
 		real_t theta = (i / (p_point_count - 1.0f)) * delta_angle + p_start_angle;
-		points_ptr[i] = p_center + Vector2(Math::cos(theta), Math::sin(theta)) * p_radius;
+		real_t sc_sin, sc_cos;
+		Math::sin_cos(theta, sc_sin, sc_cos);
+		points_ptr[i] = p_center + Vector2(sc_cos, sc_sin) * p_radius;
 	}
 
 	draw_polyline(points, p_color, p_width, p_antialiased);
@@ -843,8 +845,10 @@ void CanvasItem::draw_circle(const Point2 &p_pos, real_t p_radius, const Color &
 
 		for (int i = 0; i < circle_segments; i++) {
 			float angle = i * circle_point_step;
-			points_ptr[i].x = Math::cos(angle) * p_radius;
-			points_ptr[i].y = Math::sin(angle) * p_radius;
+			real_t sc_sin, sc_cos;
+			Math::sin_cos(angle, sc_sin, sc_cos);
+			points_ptr[i].x = sc_cos * p_radius;
+			points_ptr[i].y = sc_sin * p_radius;
 			points_ptr[i] += p_pos;
 		}
 		points_ptr[circle_segments] = points_ptr[0];
