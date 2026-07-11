@@ -264,10 +264,11 @@ Vector3 Vector3::slerp(const Vector3 &p_to, real_t p_weight) const {
 		// Colinear vectors have no rotation axis or angle between them, so the best we can do is lerp.
 		return lerp(p_to, p_weight);
 	}
-	axis /= Math::sqrt(axis_length_sq);
+	real_t axis_length = Math::sqrt(axis_length_sq);
+	axis /= axis_length;
 	real_t start_length = Math::sqrt(start_length_sq);
 	real_t result_length = Math::lerp(start_length, Math::sqrt(end_length_sq), p_weight);
-	real_t angle = angle_to(p_to);
+	real_t angle = Math::atan2(axis_length, dot(p_to));
 	return rotated(axis, angle * p_weight) * (result_length / start_length);
 }
 
