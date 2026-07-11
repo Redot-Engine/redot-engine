@@ -71,7 +71,6 @@
 #include <sys/swap.h>
 #include <sys/types.h>
 #include <uvm/uvmexp.h>
-#include <climits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -89,6 +88,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <cerrno>
+#include <climits>
 #include <csignal>
 #include <cstdarg>
 #include <cstdio>
