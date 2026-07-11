@@ -303,7 +303,7 @@
 			<description>
 				Normalizes a given path, removing consecutive double-slash path separators, converts relative path logic to absolute, and resolves all symbolic links.
 				[b]Note:[/b] On Windows, if a path passed to the function contains backwards slashes for any path separators, those are replaced with forward slashes.
-				[b]Note:[/b] If the functin fails for any reason, (max path byte limit exceeded), the original input string with forward slash separators is returned.
+				[b]Note:[/b] If the function failed for any reason, max path byte limit exceeded, the original input string with forward slash separators is returned.
 			</description>
 		</method>
 		<method name="get_granted_permissions" qualifiers="const">
