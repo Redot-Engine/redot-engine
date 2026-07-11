@@ -52,6 +52,7 @@ public:
 	struct Viewport {
 		RID self;
 		RID parent;
+		RID used_by_viewport; // RID of the sibling viewport that consumed this viewport's texture last frame
 
 		/// Use xr interface to override camera positioning and projection matrices and control output
 		bool use_xr = false;
@@ -208,7 +209,15 @@ public:
 	int num_viewports_with_motion_vectors = 0;
 
 private:
+	// We need to sort the viewports in a "topological order", children first and parents last.
+	// Among siblings sharing the same parent, use used_by_viewport dependency
+	// information to ensure a viewport whose texture is consumed by a sibling
+	// is rendered before that sibling.
 	Vector<Viewport *> _sort_active_viewports();
+	/// Topologically sort a group of sibling viewports using Kahn's algorithm.
+	/// If sibling A has used_by_viewport == sibling B's self RID, then A must
+	/// be rendered before B (A's texture is consumed by B).
+	Vector<Viewport *> _topological_sort_siblings(const Vector<Viewport *> &p_siblings);
 	void _viewport_set_size(Viewport *p_viewport, int p_width, int p_height, uint32_t p_view_count);
 	bool _viewport_requires_motion_vectors(Viewport *p_viewport);
 	void _viewport_set_force_motion_vectors(Viewport *p_viewport, bool p_force_motion_vectors);
