@@ -55,8 +55,6 @@ struct GCHandleIntPtr {
 
 	_FORCE_INLINE_ bool operator==(const GCHandleIntPtr &p_other) { return value == p_other.value; }
 	_FORCE_INLINE_ bool operator!=(const GCHandleIntPtr &p_other) { return value != p_other.value; }
-
-	GCHandleIntPtr() = delete;
 };
 }
 
@@ -64,7 +62,7 @@ static_assert(sizeof(GCHandleIntPtr) == sizeof(void *));
 
 /// Manual release of the GC handle must be done when using this struct
 struct MonoGCHandleData {
-	GCHandleIntPtr handle = { nullptr };
+	GCHandleIntPtr handle{ .value = nullptr };
 	gdmono::GCHandleType type = gdmono::GCHandleType::NIL;
 
 	_FORCE_INLINE_ bool is_released() const { return !handle.value; }
