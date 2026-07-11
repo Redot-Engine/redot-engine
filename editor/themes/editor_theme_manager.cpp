@@ -99,7 +99,16 @@ uint32_t EditorThemeManager::ThemeConfiguration::hash() {
 uint32_t EditorThemeManager::ThemeConfiguration::hash_fonts() {
 	uint32_t hash = hash_murmur3_one_float(EDSCALE);
 
-	/// @todo Implement the hash based on what editor_register_fonts() uses.
+	hash = hash_murmur3_one_32((int)EDITOR_GET("interface/editor/font_antialiasing"), hash);
+	hash = hash_murmur3_one_32((int)EDITOR_GET("interface/editor/font_hinting"), hash);
+	hash = hash_murmur3_one_32((int)EDITOR_GET("interface/editor/font_subpixel_positioning"), hash);
+	hash = hash_murmur3_one_32((bool)EDITOR_GET("interface/editor/font_disable_embedded_bitmaps") ? 1 : 0, hash);
+	hash = hash_murmur3_one_32((bool)EDITOR_GET("interface/editor/font_allow_msdf") ? 1 : 0, hash);
+	hash = hash_murmur3_one_32((int)EDITOR_GET("interface/editor/main_font_size"), hash);
+	hash = hash_murmur3_one_32(((String)EDITOR_GET("interface/editor/main_font")).hash(), hash);
+	hash = hash_murmur3_one_32(((String)EDITOR_GET("interface/editor/main_font_bold")).hash(), hash);
+	hash = hash_murmur3_one_32(((String)EDITOR_GET("interface/editor/code_font")).hash(), hash);
+	hash = hash_murmur3_one_32((int)EDITOR_GET("run/output/font_size"), hash);
 
 	return hash;
 }
@@ -184,19 +193,21 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme> &
 
 	_create_shared_styles(theme, config);
 
+	// Utilize existing function to only regenerate the theme elements necessary
+	if (p_old_theme.is_valid()) {
+		theme->merge_with(p_old_theme);
+	}
+
 	// Register icons.
 	{
 		OS::get_singleton()->benchmark_begin_measure(get_benchmark_key(), "Register Icons");
 
-		// External functions, see editor_icons.cpp.
 		editor_configure_icons(config.dark_theme);
 
-		// If settings are comparable to the old theme, then just copy existing icons over.
-		// Otherwise, regenerate them.
-		bool keep_old_icons = (p_old_theme.is_valid() && theme->get_generated_icons_hash() == p_old_theme->get_generated_icons_hash());
+		bool keep_old_icons = (p_old_theme.is_valid() &&
+				theme->get_generated_icons_hash() == p_old_theme->get_generated_icons_hash());
 		if (keep_old_icons) {
-			print_verbose("EditorTheme: Can keep old icons, copying.");
-			editor_copy_icons(theme, p_old_theme);
+			print_verbose("EditorTheme: Can keep old icons, already copied via merge.");
 		} else {
 			print_verbose("EditorTheme: Generating new icons.");
 			editor_register_icons(theme, config.dark_theme, config.icon_saturation, config.thumb_size, config.gizmo_handle_scale);
@@ -209,26 +220,78 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme> &
 	{
 		OS::get_singleton()->benchmark_begin_measure(get_benchmark_key(), "Register Fonts");
 
-		/// @todo Check if existing font definitions from the old theme are usable and copy them.
-
-		// External function, see editor_fonts.cpp.
-		print_verbose("EditorTheme: Generating new fonts.");
-		editor_register_fonts(theme);
+		bool keep_old_fonts = (p_old_theme.is_valid() &&
+				theme->get_generated_fonts_hash() == p_old_theme->get_generated_fonts_hash());
+		if (keep_old_fonts) {
+			print_verbose("EditorTheme: Can keep old fonts, already copied via merge.");
+		} else {
+			print_verbose("EditorTheme: Generating new fonts.");
+			editor_register_fonts(theme);
+		}
 
 		OS::get_singleton()->benchmark_end_measure(get_benchmark_key(), "Register Fonts");
 	}
 
-	/// @todo Check if existing style definitions from the old theme are usable and copy them.
+	// Populate styles — only regenerate what has changed.
+	bool regen_standard = !p_old_theme.is_valid() || outdated_subsystems.standard_styles;
+	bool regen_text_editor = !p_old_theme.is_valid() || outdated_subsystems.text_editor_styles;
+	bool regen_visual_shader = !p_old_theme.is_valid() || outdated_subsystems.visual_shader_styles;
 
-	print_verbose("EditorTheme: Generating new styles.");
-	_populate_standard_styles(theme, config);
-	_populate_editor_styles(theme, config);
-	_populate_text_editor_styles(theme, config);
-	_populate_visual_shader_styles(theme, config);
+	if (regen_standard || regen_text_editor || regen_visual_shader) {
+		print_verbose("EditorTheme: Generating new styles.");
+
+		if (regen_standard) {
+			_populate_standard_styles(theme, config);
+			_populate_editor_styles(theme, config);
+		}
+		if (regen_text_editor) {
+			_populate_text_editor_styles(theme, config);
+		}
+		if (regen_visual_shader) {
+			_populate_visual_shader_styles(theme, config);
+		}
+	}
 
 	OS::get_singleton()->benchmark_end_measure(get_benchmark_key(), "Create Base Theme");
 	return theme;
 }
+
+struct InterfaceThemePreset {
+	const char *name;
+	Color accent_color;
+	Color base_color;
+	float contrast; // NAN = use config.default_contrast
+	bool draw_extra_borders;
+};
+
+// Alphabetical order. "Default" must be last (used as fallback).
+static const InterfaceThemePreset INTERFACE_THEME_PRESETS[] = {
+	{ "Black (OLED)", Color(0.45, 0.75, 1.0), Color(0, 0, 0), 0.0f, true },
+	{ "Breeze Dark", Color(0.26, 0.76, 1.00), Color(0.24, 0.26, 0.28), NAN, false },
+	{ "Godot", Color(0.44, 0.73, 0.98), Color(0.21, 0.24, 0.29), NAN, false },
+	{ "Godot 2", Color(0.53, 0.67, 0.89), Color(0.24, 0.23, 0.27), NAN, false },
+	{ "Gray", Color(0.44, 0.73, 0.98), Color(0.24, 0.24, 0.24), NAN, false },
+	{ "Indigo", Color(0.37, 0.54, 0.91), Color(0.17, 0.17, 0.20), 0.4f, false },
+	{ "Light", Color(0.87, 0.22, 0.29), Color(0.9, 0.9, 0.9), -0.06f, false },
+	{ "Solarized (Dark)", Color(0.15, 0.55, 0.82), Color(0.03, 0.21, 0.26), 0.23f, false },
+	{ "Solarized (Light)", Color(0.15, 0.55, 0.82), Color(0.89, 0.86, 0.79), -0.06f, false },
+	{ "Default", Color(0.99, 0.40, 0.26), Color(0.06, 0.09, 0.14), NAN, false },
+	{ nullptr, Color(), Color(), 0.0f, false },
+};
+
+struct SpacingPreset {
+	const char *name;
+	int base_spacing;
+	int extra_spacing;
+	Size2 dialogs_buttons_min_size;
+};
+
+static const SpacingPreset SPACING_PRESETS[] = {
+	{ "Compact", 0, 4, Size2(90, 26) },
+	{ "Spacious", 6, 2, Size2(112, 36) },
+	{ "Default", 4, 0, Size2(105, 34) },
+	{ nullptr, 0, 0, Size2() },
+};
 
 EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(const Ref<EditorTheme> &p_theme) {
 	ThemeConfiguration config;
@@ -288,62 +351,27 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 		}
 
 		if (config.preset != "Custom") {
-			Color preset_accent_color;
-			Color preset_base_color;
-			float preset_contrast = 0;
-			bool preset_draw_extra_borders = false;
-
-			// Please use alphabetical order if you're adding a new theme here.
-			if (config.preset == "Breeze Dark") {
-				preset_accent_color = Color(0.26, 0.76, 1.00);
-				preset_base_color = Color(0.24, 0.26, 0.28);
-				preset_contrast = config.default_contrast;
-			} else if (config.preset == "Godot") {
-				preset_accent_color = Color(0.44, 0.73, 0.98);
-				preset_base_color = Color(0.21, 0.24, 0.29);
-				preset_contrast = config.default_contrast;
-			} else if (config.preset == "Godot 2") {
-				preset_accent_color = Color(0.53, 0.67, 0.89);
-				preset_base_color = Color(0.24, 0.23, 0.27);
-				preset_contrast = config.default_contrast;
-			} else if (config.preset == "Gray") {
-				preset_accent_color = Color(0.44, 0.73, 0.98);
-				preset_base_color = Color(0.24, 0.24, 0.24);
-				preset_contrast = config.default_contrast;
-			} else if (config.preset == "Light") {
-				preset_accent_color = Color(0.87, 0.22, 0.29);
-				preset_base_color = Color(0.9, 0.9, 0.9);
-				// A negative contrast rate looks better for light themes, since it better follows the natural order of UI "elevation".
-				preset_contrast = -0.06;
-			} else if (config.preset == "Solarized (Dark)") {
-				preset_accent_color = Color(0.15, 0.55, 0.82);
-				preset_base_color = Color(0.03, 0.21, 0.26);
-				preset_contrast = 0.23;
-			} else if (config.preset == "Solarized (Light)") {
-				preset_accent_color = Color(0.15, 0.55, 0.82);
-				preset_base_color = Color(0.89, 0.86, 0.79);
-				// A negative contrast rate looks better for light themes, since it better follows the natural order of UI "elevation".
-				preset_contrast = -0.06;
-			} else if (config.preset == "Black (OLED)") {
-				preset_accent_color = Color(0.45, 0.75, 1.0);
-				preset_base_color = Color(0, 0, 0);
-				// The contrast rate value is irrelevant on a fully black theme.
-				preset_contrast = 0.0;
-				preset_draw_extra_borders = true;
-			} else if (config.preset == "Indigo") {
-				preset_accent_color = Color(0.37, 0.54, 0.91);
-				preset_base_color = Color(0.17, 0.17, 0.20);
-				preset_contrast = 0.4;
-			} else { // Default
-				preset_accent_color = Color(0.99, 0.40, 0.26);
-				preset_base_color = Color(0.06, 0.09, 0.14);
-				preset_contrast = config.default_contrast;
+			const InterfaceThemePreset *preset = nullptr;
+			for (const InterfaceThemePreset *e = INTERFACE_THEME_PRESETS; e->name; e++) {
+				if (config.preset == e->name) {
+					preset = e;
+					break;
+				}
+			}
+			if (!preset) {
+				// Unknown preset name — fall back to Default (last entry before sentinel).
+				for (const InterfaceThemePreset *e = INTERFACE_THEME_PRESETS; e->name; e++) {
+					if (String(e->name) == "Default") {
+						preset = e;
+						break;
+					}
+				}
 			}
 
-			config.accent_color = preset_accent_color;
-			config.base_color = preset_base_color;
-			config.contrast = preset_contrast;
-			config.draw_extra_borders = preset_draw_extra_borders;
+			config.accent_color = preset->accent_color;
+			config.base_color = preset->base_color;
+			config.contrast = Math::is_nan(preset->contrast) ? config.default_contrast : preset->contrast;
+			config.draw_extra_borders = preset->draw_extra_borders;
 
 			EditorSettings::get_singleton()->set_initial_value("interface/theme/accent_color", config.accent_color);
 			EditorSettings::get_singleton()->set_initial_value("interface/theme/base_color", config.base_color);
@@ -372,33 +400,30 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 	// Handle theme spacing preset.
 	{
 		if (config.spacing_preset != "Custom") {
-			int preset_base_spacing = 0;
-			int preset_extra_spacing = 0;
-			Size2 preset_dialogs_buttons_min_size;
-
-			if (config.spacing_preset == "Compact") {
-				preset_base_spacing = 0;
-				preset_extra_spacing = 4;
-				preset_dialogs_buttons_min_size = Size2(90, 26);
-			} else if (config.spacing_preset == "Spacious") {
-				preset_base_spacing = 6;
-				preset_extra_spacing = 2;
-				preset_dialogs_buttons_min_size = Size2(112, 36);
-			} else { // Default
-				preset_base_spacing = 4;
-				preset_extra_spacing = 0;
-				preset_dialogs_buttons_min_size = Size2(105, 34);
+			const SpacingPreset *preset = nullptr;
+			for (const SpacingPreset *e = SPACING_PRESETS; e->name; e++) {
+				if (config.spacing_preset == e->name) {
+					preset = e;
+					break;
+				}
+			}
+			if (!preset) {
+				for (const SpacingPreset *e = SPACING_PRESETS; e->name; e++) {
+					if (String(e->name) == "Default") {
+						preset = e;
+						break;
+					}
+				}
 			}
 
-			config.base_spacing = preset_base_spacing;
-			config.extra_spacing = preset_extra_spacing;
-			config.dialogs_buttons_min_size = preset_dialogs_buttons_min_size;
+			config.base_spacing = preset->base_spacing;
+			config.extra_spacing = preset->extra_spacing;
+			config.dialogs_buttons_min_size = preset->dialogs_buttons_min_size;
 
 			EditorSettings::get_singleton()->set_initial_value("interface/theme/base_spacing", config.base_spacing);
 			EditorSettings::get_singleton()->set_initial_value("interface/theme/additional_spacing", config.extra_spacing);
 		}
 
-		// Enforce values in case they were adjusted or overridden.
 		EditorSettings::get_singleton()->set_manually("interface/theme/spacing_preset", config.spacing_preset);
 		EditorSettings::get_singleton()->set_manually("interface/theme/base_spacing", config.base_spacing);
 		EditorSettings::get_singleton()->set_manually("interface/theme/additional_spacing", config.extra_spacing);
@@ -2693,13 +2718,21 @@ void _load_text_editor_theme() {
 
 void EditorThemeManager::_populate_text_editor_styles(const Ref<EditorTheme> &p_theme, ThemeConfiguration &p_config) {
 	const String text_editor_color_theme = EDITOR_GET("text_editor/theme/color_theme");
-	const bool is_default_theme = text_editor_color_theme == "Default";
-	const bool is_godot2_theme = text_editor_color_theme == "Godot 2";
-	const bool is_custom_theme = text_editor_color_theme == "Custom";
-	if (is_default_theme || is_godot2_theme || is_custom_theme) {
+
+	const EditorSettings::BuiltinTextEditorTheme *builtin = nullptr;
+	for (const EditorSettings::BuiltinTextEditorTheme *e = EditorSettings::BUILTIN_TEXT_EDITOR_THEMES; e->name; e++) {
+		if (text_editor_color_theme == e->name) {
+			builtin = e;
+			break;
+		}
+	}
+
+	if (builtin) {
 		HashMap<StringName, Color> colors;
-		if (is_default_theme || is_custom_theme) {
-			// Adaptive colors for comments and elements with lower relevance.
+		if (builtin->get_static_colors) {
+			colors = builtin->get_static_colors();
+		} else {
+			// Adaptive colors — computed from the current UI theme configuration.
 			const Color dim_color = Color(p_config.font_color, 0.5);
 			const float mono_value = p_config.mono_color.r;
 			const Color alpha1 = Color(mono_value, mono_value, mono_value, 0.07);
@@ -2771,18 +2804,16 @@ void EditorThemeManager::_populate_text_editor_styles(const Ref<EditorTheme> &p_
 				colors["text_editor/theme/highlighting/comment_markers/warning_color"] = Color(0.75, 0.39, 0.03);
 				colors["text_editor/theme/highlighting/comment_markers/notice_color"] = Color(0.24, 0.54, 0.09);
 			}
-		} else if (is_godot2_theme) {
-			colors = EditorSettings::get_godot2_text_editor_theme();
 		}
 		EditorSettings *settings = EditorSettings::get_singleton();
 		for (const KeyValue<StringName, Color> &setting : colors) {
 			settings->set_initial_value(setting.key, setting.value);
-			if (is_default_theme || is_godot2_theme) {
+			if (builtin->set_manually) {
 				settings->set_manually(setting.key, setting.value);
 			}
 		}
 	} else {
-		// Custom user theme.
+		// User-created .tet file.
 		_load_text_editor_theme();
 	}
 
@@ -2919,24 +2950,40 @@ Ref<EditorTheme> EditorThemeManager::generate_theme(const Ref<EditorTheme> &p_ol
 }
 
 bool EditorThemeManager::is_generated_theme_outdated() {
-	// This list includes settings used by files in the editor/themes folder.
-	// Note that the editor scale is purposefully omitted because it cannot be changed
-	// without a restart, so there is no point regenerating the theme.
-
 	if (outdated_cache_dirty) {
-		/// @todo We can use this information more intelligently to do partial theme updates and speed things up.
-		outdated_cache = EditorSettings::get_singleton()->check_changed_settings_in_group("interface/theme") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/font") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/main_font") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/code_font") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("editors/visual_editors") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor/theme") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor/help/help") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("docks/property_editor/subresource_hue_tint") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("filesystem/file_dialog/thumbnail_size") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("run/output/font_size");
+		EditorSettings *settings = EditorSettings::get_singleton();
 
-		// The outdated flag is relevant at the moment of changing editor settings.
+		// Track which subsystems changed so _create_base_theme() can skip unchanged ones.
+		outdated_subsystems.standard_styles =
+				settings->check_changed_settings_in_group("interface/theme") ||
+				settings->check_changed_settings_in_group("docks/property_editor/subresource_hue_tint");
+
+		// If the interface theme changed, we must also regenerate text editor styles
+		// because _populate_text_editor_styles depends on interface theme configuration (fonts/icons).
+		outdated_subsystems.text_editor_styles =
+				outdated_subsystems.standard_styles ||
+				settings->check_changed_settings_in_group("text_editor/theme") ||
+				settings->check_changed_settings_in_group("text_editor/help/help");
+
+		outdated_subsystems.visual_shader_styles =
+				settings->check_changed_settings_in_group("editors/visual_editors");
+
+		// Font and icon changes are detected via hash comparison in _create_base_theme().
+		// We still need them to trigger the overall outdated flag.
+		bool fonts_changed =
+				settings->check_changed_settings_in_group("interface/editor/font") ||
+				settings->check_changed_settings_in_group("interface/editor/main_font") ||
+				settings->check_changed_settings_in_group("interface/editor/code_font") ||
+				settings->check_changed_settings_in_group("run/output/font_size");
+
+		bool icons_changed =
+				settings->check_changed_settings_in_group("filesystem/file_dialog/thumbnail_size");
+
+		outdated_cache = fonts_changed || icons_changed ||
+				outdated_subsystems.standard_styles ||
+				outdated_subsystems.text_editor_styles ||
+				outdated_subsystems.visual_shader_styles;
+
 		callable_mp_static(&EditorThemeManager::_reset_dirty_flag).call_deferred();
 		outdated_cache_dirty = false;
 	}

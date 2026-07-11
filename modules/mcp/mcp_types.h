@@ -44,7 +44,10 @@
 #include "core/variant/variant.h"
 
 /// MCP Protocol Version
-static constexpr const char *MCP_PROTOCOL_VERSION = "2024-11-05";
+/// The latest version this server supports. Negotiated downwards if needed.
+static constexpr const char *MCP_PROTOCOL_VERSION_LATEST = "2025-06-18";
+/// Legacy version kept for backwards-compatibility negotiation.
+static constexpr const char *MCP_PROTOCOL_VERSION_LEGACY = "2024-11-05";
 static constexpr const char *MCP_SERVER_NAME = "redot-mcp";
 static constexpr const char *MCP_SERVER_VERSION = "1.0.0";
 
@@ -152,5 +155,16 @@ public:
 			prop["items"] = items;
 		}
 		return prop;
+	}
+
+	/// Build a tool annotations object (MCP 2025-06-18+).
+	/// Hints are advisory; clients MUST treat them as untrusted.
+	static Dictionary make_tool_annotations(bool p_read_only = false, bool p_destructive = false, bool p_idempotent = false, bool p_open_world = false) {
+		Dictionary annotations;
+		annotations["readOnlyHint"] = p_read_only;
+		annotations["destructiveHint"] = p_destructive;
+		annotations["idempotentHint"] = p_idempotent;
+		annotations["openWorldHint"] = p_open_world;
+		return annotations;
 	}
 };

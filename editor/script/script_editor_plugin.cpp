@@ -1235,9 +1235,18 @@ void _import_text_editor_theme(const String &p_file) {
 		EditorToaster::get_singleton()->popup_str(TTR("Importing theme failed. File is not a text editor theme file (.tet)."), EditorToaster::SEVERITY_ERROR);
 		return;
 	}
+
 	const String theme_name = p_file.get_file().get_basename();
 	if (EditorSettings::is_default_text_editor_theme(theme_name.to_lower())) {
-		EditorToaster::get_singleton()->popup_str(TTR("Importing theme failed. File name cannot be 'Default', 'Custom', or 'Godot 2'."), EditorToaster::SEVERITY_ERROR);
+		Vector<String> names;
+		for (const auto *t = EditorSettings::BUILTIN_TEXT_EDITOR_THEMES; t->name; t++) {
+			names.push_back("\"" + String(t->name) + "\"");
+		}
+		String list = String(", ").join(names);
+
+		EditorToaster::get_singleton()->popup_str(
+				TTR("Importing theme failed. File name cannot be {list}.").format({ { "list", list } }),
+				EditorToaster::SEVERITY_ERROR);
 		return;
 	}
 
