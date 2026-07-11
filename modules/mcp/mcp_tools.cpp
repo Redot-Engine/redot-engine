@@ -987,13 +987,17 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		ProjectSettings::get_singleton()->save();
 
 		// Also register at runtime for immediate availability.
-		if (!InputMap::get_singleton()->has_action(action_name)) {
-			InputMap::get_singleton()->add_action(action_name, deadzone);
+		InputMap *input_map = InputMap::get_singleton();
+		if (!input_map->has_action(action_name)) {
+			input_map->add_action(action_name, deadzone);
+		} else {
+			input_map->action_set_deadzone(action_name, deadzone);
+			input_map->action_erase_events(action_name);
 		}
 		for (int i = 0; i < events.size(); i++) {
 			Ref<InputEvent> ev = events[i];
 			if (ev.is_valid()) {
-				InputMap::get_singleton()->action_add_event(action_name, ev);
+				input_map->action_add_event(action_name, ev);
 			}
 		}
 		result.add_text("Added input action '" + action_name + "' (deadzone " + String::num(deadzone) + ", " + itos(events.size()) + " event(s))");
@@ -1008,7 +1012,12 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 			result.set_error("Invalid path: " + p);
 			return result;
 		}
-		String autoload_path = "*" + normalize_path(p);
+		String normalized_path = normalize_path(p);
+		if (!FileAccess::exists(normalized_path)) {
+			result.set_error("Autoload file not found: " + normalized_path);
+			return result;
+		}
+		String autoload_path = "*" + normalized_path;
 		ProjectSettings::get_singleton()->set_setting("autoload/" + name, autoload_path);
 		ProjectSettings::get_singleton()->set_as_internal("autoload/" + name, true);
 		ProjectSettings::get_singleton()->save();
