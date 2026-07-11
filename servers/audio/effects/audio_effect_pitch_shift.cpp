@@ -201,8 +201,10 @@ void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long ff
 				phase = gSumPhase[k];
 
 				/* get real and imag part and re-interleave */
-				gFFTworksp[2*k] = magn*std::cos(phase);
-				gFFTworksp[2*k+1] = magn*std::sin(phase);
+				double sc_sin, sc_cos;
+				Math::sin_cos(phase, sc_sin, sc_cos);
+				gFFTworksp[2*k] = magn*sc_cos;
+				gFFTworksp[2*k+1] = magn*sc_sin;
 			}
 
 			/* zero negative frequencies */
@@ -257,8 +259,10 @@ void SMBPitchShift::smbFft(float *fftBuffer, long fftFrameSize, long sign)
 		ur = 1.0;
 		ui = 0.0;
 		arg = Math::PI / (le2>>1);
-		wr = std::cos(arg);
-		wi = sign*std::sin(arg);
+		float sc_sin, sc_cos;
+		Math::sin_cos(arg, sc_sin, sc_cos);
+		wr = sc_cos;
+		wi = sign*sc_sin;
 		for (j = 0; j < le2; j += 2) {
 			p1r = fftBuffer+j; p1i = p1r+1;
 			p2r = p1r+le2; p2i = p2r+1;

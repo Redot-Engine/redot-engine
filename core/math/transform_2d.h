@@ -251,17 +251,23 @@ Rect2 Transform2D::xform(const Rect2 &p_rect) const {
 }
 
 void Transform2D::set_rotation_and_scale(real_t p_rot, const Size2 &p_scale) {
-	columns[0][0] = Math::cos(p_rot) * p_scale.x;
-	columns[1][1] = Math::cos(p_rot) * p_scale.y;
-	columns[1][0] = -Math::sin(p_rot) * p_scale.y;
-	columns[0][1] = Math::sin(p_rot) * p_scale.x;
+	real_t sc_sin, sc_cos;
+	Math::sin_cos(p_rot, sc_sin, sc_cos);
+	columns[0][0] = sc_cos * p_scale.x;
+	columns[1][1] = sc_cos * p_scale.y;
+	columns[1][0] = -sc_sin * p_scale.y;
+	columns[0][1] = sc_sin * p_scale.x;
 }
 
 void Transform2D::set_rotation_scale_and_skew(real_t p_rot, const Size2 &p_scale, real_t p_skew) {
-	columns[0][0] = Math::cos(p_rot) * p_scale.x;
-	columns[1][1] = Math::cos(p_rot + p_skew) * p_scale.y;
-	columns[1][0] = -Math::sin(p_rot + p_skew) * p_scale.y;
-	columns[0][1] = Math::sin(p_rot) * p_scale.x;
+	real_t sc_rot_sin, sc_rot_cos;
+	Math::sin_cos(p_rot, sc_rot_sin, sc_rot_cos);
+	real_t sc_skew_sin, sc_skew_cos;
+	Math::sin_cos(p_rot + p_skew, sc_skew_sin, sc_skew_cos);
+	columns[0][0] = sc_rot_cos * p_scale.x;
+	columns[1][1] = sc_skew_cos * p_scale.y;
+	columns[1][0] = -sc_skew_sin * p_scale.y;
+	columns[0][1] = sc_rot_sin * p_scale.x;
 }
 
 Rect2 Transform2D::xform_inv(const Rect2 &p_rect) const {

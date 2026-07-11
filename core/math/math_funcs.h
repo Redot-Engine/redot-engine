@@ -61,6 +61,42 @@ _ALWAYS_INLINE_ float cos(float p_x) {
 	return std::cos(p_x);
 }
 
+#if !defined(__has_builtin)
+#define _MATH_FUNCS_DEFINED_HAS_BUILTIN
+#define __has_builtin(x) 0
+#endif
+
+template <typename T>
+_ALWAYS_INLINE_ void sin_cos(double p_x, T &r_sin, T &r_cos) {
+#if __has_builtin(__builtin_sincos)
+	double s, c;
+	__builtin_sincos(p_x, &s, &c);
+	r_sin = (T)s;
+	r_cos = (T)c;
+#else
+	r_sin = (T)Math::sin(p_x);
+	r_cos = (T)Math::cos(p_x);
+#endif
+}
+
+template <typename T>
+_ALWAYS_INLINE_ void sin_cos(float p_x, T &r_sin, T &r_cos) {
+#if __has_builtin(__builtin_sincosf)
+	float s, c;
+	__builtin_sincosf(p_x, &s, &c);
+	r_sin = (T)s;
+	r_cos = (T)c;
+#else
+	r_sin = (T)Math::sin(p_x);
+	r_cos = (T)Math::cos(p_x);
+#endif
+}
+
+#ifdef _MATH_FUNCS_DEFINED_HAS_BUILTIN
+#undef _MATH_FUNCS_DEFINED_HAS_BUILTIN
+#undef __has_builtin
+#endif
+
 _ALWAYS_INLINE_ double tan(double p_x) {
 	return std::tan(p_x);
 }
