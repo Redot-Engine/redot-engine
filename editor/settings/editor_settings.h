@@ -35,7 +35,16 @@
 /**
  * @file editor_settings.h
  *
- * [Add any documentation that applies to the entire file here!]
+ * @brief Settings whose names begin with "_" (e.g. "_project_manager/my_setting")
+ * are treated as hidden internal settings:
+ *
+ * They are never shown in the  Editor Settings UI (no PROPERTY_USAGE_EDITOR), but are always written
+ * to disk (PROPERTY_USAGE_STORAGE is forced unconditionally). Use this
+ * convention for settings that should persist across sessions but have
+ * no business being user-visible in the settings dialog.
+ *
+ * Settings beginning with "projects/" follow the same hidden/always-saved
+ * rule and are used for per-project metadata.
  */
 
 #include "core/input/shortcut.h"

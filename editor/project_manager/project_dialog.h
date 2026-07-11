@@ -76,12 +76,13 @@ private:
 	bool is_folder_empty = true;
 	ConfirmationDialog *nonempty_confirmation = nullptr;
 
-	CheckButton *create_dir = nullptr;
+	CheckButton *btn_create_dir = nullptr;
+	CheckButton *btn_save_default_path = nullptr;
 	Button *project_browse = nullptr;
 	Button *install_browse = nullptr;
-	VBoxContainer *name_container = nullptr;
-	VBoxContainer *project_path_container = nullptr;
-	VBoxContainer *install_path_container = nullptr;
+	VBoxContainer *vbox_project_name = nullptr;
+	VBoxContainer *vbox_project_path = nullptr;
+	VBoxContainer *vbox_install_path = nullptr;
 
 	VBoxContainer *renderer_container = nullptr;
 	Label *renderer_info = nullptr;
@@ -91,9 +92,9 @@ private:
 	Label *rd_not_supported = nullptr;
 
 	Label *msg = nullptr;
-	LineEdit *project_name = nullptr;
-	LineEdit *project_path = nullptr;
-	LineEdit *install_path = nullptr;
+	LineEdit *line_edit_project_name = nullptr;
+	LineEdit *line_edit_project_path = nullptr;
+	LineEdit *line_edit_install_path = nullptr;
 	TextureRect *project_status_rect = nullptr;
 	TextureRect *install_status_rect = nullptr;
 
