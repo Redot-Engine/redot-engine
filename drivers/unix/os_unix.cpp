@@ -58,12 +58,12 @@
 #include <sys/sysctl.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__)
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 #include <kvm.h>
 #endif
 
@@ -71,7 +71,6 @@
 #include <sys/swap.h>
 #include <sys/types.h>
 #include <uvm/uvmexp.h>
-#include <climits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -89,6 +88,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <cerrno>
+#include <climits>
 #include <csignal>
 #include <cstdarg>
 #include <cstdio>
@@ -109,7 +109,7 @@
 // Random location for getentropy. Fitting.
 #include <sys/random.h>
 #define UNIX_GET_ENTROPY
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || (defined(__GLIBC_MINOR__) && (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 26))
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || (defined(__GLIBC_MINOR__) && (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 26))
 // In <unistd.h>.
 // One day... (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700)
 // https://publications.opengroup.org/standards/unix/c211
@@ -454,7 +454,7 @@ Dictionary OS_Unix::get_memory_info() const {
 	if (swap_used.xsu_avail + ((vmstat.free_count - vmstat.speculative_count) + vmstat.external_page_count) * (int64_t)pagesize != 0) {
 		meminfo["available"] = swap_used.xsu_avail + ((vmstat.free_count - vmstat.speculative_count) + vmstat.external_page_count) * (int64_t)pagesize;
 	}
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 	int pagesize = 0;
 	size_t len = sizeof(pagesize);
 	if (sysctlbyname("vm.stats.vm.v_page_size", &pagesize, &len, nullptr, 0) < 0) {
@@ -1135,21 +1135,23 @@ String OS_Unix::get_user_data_dir(const String &p_user_dir) const {
 	return get_data_path().path_join(p_user_dir);
 }
 
+String OS_Unix::get_real_path(const String &p_path) const {
+	String result = p_path;
+	char resolved_path[PATH_MAX];
+	if (realpath(p_path.utf8().get_data(), resolved_path)) {
+		result = String::utf8(resolved_path);
+	}
+	return result;
+}
+
 String OS_Unix::get_executable_path() const {
 #ifdef __linux__
-	//fix for running from a symlink
-	char buf[PATH_MAX];
-	memset(buf, 0, PATH_MAX);
-	ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf));
-	String b;
-	if (len > 0) {
-		b.append_utf8(buf, len);
-	}
-	if (b.is_empty()) {
-		WARN_PRINT("Couldn't get executable path from /proc/self/exe, using argv[0]");
+	String s = get_real_path("/proc/self/exe");
+	if (s.is_empty() || s == "/proc/self/exe" || !FileAccess::exists(s)) {
+		WARN_PRINT("Couldn't get executable path from /proc/self/exe");
 		return OS::get_executable_path();
 	}
-	return b;
+	return s;
 #elif defined(__OpenBSD__)
 	std::string path;
 	auto cpp_getexe = [](std::string exe) {
@@ -1318,13 +1320,8 @@ String OS_Unix::get_executable_path() const {
 		return OS::get_executable_path();
 	}
 
-	// NetBSD does not always return a normalized path. For example if argv[0] is "./a.out" then executable path is "/home/netbsd/./a.out". Normalize with realpath:
-	char resolved_path[MAXPATHLEN];
-
-	realpath(buf, resolved_path);
-
-	return String::utf8(resolved_path);
-#elif defined(__FreeBSD__)
+	return get_real_path(String::utf8(buf));
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
 	char buf[MAXPATHLEN];
 	size_t len = sizeof(buf);
@@ -1333,7 +1330,7 @@ String OS_Unix::get_executable_path() const {
 		return OS::get_executable_path();
 	}
 
-	return String::utf8(buf);
+	return get_real_path(String::utf8(buf));
 #elif defined(__APPLE__)
 	char temp_path[1];
 	uint32_t buff_size = 1;
@@ -1348,7 +1345,7 @@ String OS_Unix::get_executable_path() const {
 	String path = String::utf8(resolved_path);
 	delete[] resolved_path;
 
-	return path;
+	return get_real_path(path);
 #else
 	ERR_PRINT("Warning, don't know how to obtain executable path on this OS! Please override this function properly.");
 	return OS::get_executable_path();

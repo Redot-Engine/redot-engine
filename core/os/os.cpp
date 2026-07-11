@@ -175,6 +175,10 @@ bool OS::is_delta_smoothing_enabled() const {
 	return _delta_smoothing_enabled;
 }
 
+String OS::get_real_path(const String &p_path) const {
+	return p_path;
+}
+
 String OS::get_executable_path() const {
 	return _execpath;
 }
