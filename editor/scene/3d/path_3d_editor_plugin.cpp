@@ -439,9 +439,9 @@ void Path3DGizmo::redraw() {
 		PackedInt32Array collected_secondary_handle_ids; // Avoid shadowing member on Node3DEditorGizmo.
 
 		_secondary_handles_info.resize(c->get_point_count() * 3);
-		
+
 		const float disk_size = EDITOR_GET("editors/3d_gizmos/gizmo_settings/path3d_tilt_disk_size");
-		
+
 		for (int idx = 0; idx < c->get_point_count(); idx++) {
 			// Collect primary-handles.
 			const Vector3 pos = c->get_point_position(idx);
