@@ -1096,6 +1096,7 @@ void RendererViewport::viewport_set_parent_viewport(RID p_viewport, RID p_parent
 	ERR_FAIL_NULL(viewport);
 
 	viewport->parent = p_parent_viewport;
+	sorted_active_viewports_dirty = true;
 }
 
 void RendererViewport::viewport_set_clear_mode(RID p_viewport, RS::ViewportClearMode p_clear_mode) {
