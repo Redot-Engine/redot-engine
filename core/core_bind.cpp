@@ -360,6 +360,10 @@ String OS::get_executable_path() const {
 	return ::OS::get_singleton()->get_executable_path();
 }
 
+String OS::get_real_path(const String &p_path) const {
+	return ::OS::get_singleton()->get_real_path(p_path);
+}
+
 Error OS::shell_open(const String &p_uri) {
 	if (p_uri.begins_with("res://")) {
 		WARN_PRINT("Attempting to open an URL with the \"res://\" protocol. Use `ProjectSettings.globalize_path()` to convert a Redot-specific path to a system path before opening it with `OS.shell_open()`.");
@@ -767,6 +771,7 @@ void OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_system_font_path", "font_name", "weight", "stretch", "italic"), &OS::get_system_font_path, DEFVAL(400), DEFVAL(100), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("get_system_font_path_for_text", "font_name", "text", "locale", "script", "weight", "stretch", "italic"), &OS::get_system_font_path_for_text, DEFVAL(String()), DEFVAL(String()), DEFVAL(400), DEFVAL(100), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("get_executable_path"), &OS::get_executable_path);
+	ClassDB::bind_method(D_METHOD("get_real_path", "path"), &OS::get_real_path);
 
 	ClassDB::bind_method(D_METHOD("read_string_from_stdin", "buffer_size"), &OS::read_string_from_stdin, DEFVAL(1024));
 	ClassDB::bind_method(D_METHOD("read_buffer_from_stdin", "buffer_size"), &OS::read_buffer_from_stdin, DEFVAL(1024));
