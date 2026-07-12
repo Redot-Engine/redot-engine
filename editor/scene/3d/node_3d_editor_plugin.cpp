@@ -356,7 +356,7 @@ void ViewportRotationControl::_draw_axis(const Axis2D &p_axis) {
 
 	const Color axis_color = axis_colors[direction];
 	const double min_alpha = 0.35;
-	const double alpha = focused ? 1.0 : Math::remap((p_axis.z_axis + 1.0) / 2.0, 0, 0.5, min_alpha, 1.0);
+	const double alpha = focused ? 1.0 : Math::remap((p_axis.z_axis + 1.0) / 2.0, 0., 0.5, min_alpha, 1.0);
 	const Color c = focused ? Color(axis_color.lightened(0.75), 1.0) : Color(axis_color, alpha);
 
 	if (positive) {
@@ -2394,7 +2394,7 @@ void Node3DEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 				}
 
 				if (_edit.numeric_next_decimal < 0) {
-					_edit.numeric_input = _edit.numeric_input + value * Math::pow(10.0, _edit.numeric_next_decimal--);
+					_edit.numeric_input = _edit.numeric_input + value * Math::pow<real_t>(10.f, _edit.numeric_next_decimal--);
 				} else {
 					_edit.numeric_input = _edit.numeric_input * 10 + value;
 				}
@@ -3273,7 +3273,7 @@ void Node3DEditorViewport::_notification(int p_what) {
 				text += vformat(
 						TTR("Size: %s (%.1fMP)\n"),
 						viewport_size,
-						viewport->get_size().x * viewport->get_size().y * Math::pow(viewport->get_scaling_3d_scale(), 2) * 0.000001);
+						viewport->get_size().x * viewport->get_size().y * Math::pow(viewport->get_scaling_3d_scale(), 2.f) * 0.000001);
 
 				text += "\n";
 				text += vformat(TTR("Objects: %d\n"), viewport->get_render_info(Viewport::RENDER_INFO_TYPE_VISIBLE, Viewport::RENDER_INFO_OBJECTS_IN_FRAME));
@@ -3325,14 +3325,14 @@ void Node3DEditorViewport::_notification(int p_what) {
 				cpu_time_label->add_theme_color_override(
 						SceneStringName(font_color),
 						frame_time_gradient->get_color_at_offset(
-								Math::remap(cpu_time, 0, 30, 0, 1)));
+								Math::remap<real_t>(cpu_time, 0, 30, 0, 1)));
 
 				gpu_time_label->set_text(vformat(TTR("GPU Time: %s ms"), rtos(gpu_time).pad_decimals(2)));
 				// Middle point is at 15 ms.
 				gpu_time_label->add_theme_color_override(
 						SceneStringName(font_color),
 						frame_time_gradient->get_color_at_offset(
-								Math::remap(gpu_time, 0, 30, 0, 1)));
+								Math::remap<real_t>(gpu_time, 0, 30, 0, 1)));
 
 				const double fps = 1000.0 / gpu_time;
 				fps_label->set_text(vformat(TTR("FPS: %d"), fps));
@@ -3340,7 +3340,7 @@ void Node3DEditorViewport::_notification(int p_what) {
 				fps_label->add_theme_color_override(
 						SceneStringName(font_color),
 						frame_time_gradient->get_color_at_offset(
-								Math::remap(fps, 110, 10, 0, 1)));
+								Math::remap<real_t>(fps, 110, 10, 0, 1)));
 			}
 
 			if (lock_rotation) {
@@ -7938,13 +7938,15 @@ void Node3DEditor::_init_grid() {
 			}
 		}
 
-		real_t division_level = Math::log(Math::abs(camera_distance)) / Math::log((double)primary_grid_steps) + division_level_bias;
+		auto fsteps = static_cast<real_t>(primary_grid_steps);
+
+		real_t division_level = Math::log(Math::abs(camera_distance)) / Math::log(fsteps) + division_level_bias;
 
 		real_t clamped_division_level = CLAMP(division_level, division_level_min, division_level_max);
 		real_t division_level_floored = Math::floor(clamped_division_level);
 		real_t division_level_decimals = clamped_division_level - division_level_floored;
 
-		real_t small_step_size = Math::pow(primary_grid_steps, division_level_floored);
+		real_t small_step_size = Math::pow(fsteps, division_level_floored);
 		real_t large_step_size = small_step_size * primary_grid_steps;
 		real_t center_a = large_step_size * (int)(camera_position[a] / large_step_size);
 		real_t center_b = large_step_size * (int)(camera_position[b] / large_step_size);
@@ -7954,9 +7956,9 @@ void Node3DEditor::_init_grid() {
 		real_t bgn_b = center_b - grid_size * small_step_size;
 		real_t end_b = center_b + grid_size * small_step_size;
 
-		real_t fade_size = Math::pow(primary_grid_steps, division_level - 1.0);
-		real_t min_fade_size = Math::pow(primary_grid_steps, float(division_level_min));
-		real_t max_fade_size = Math::pow(primary_grid_steps, float(division_level_max));
+		real_t fade_size = Math::pow(fsteps, division_level - 1.f);
+		real_t min_fade_size = Math::pow(fsteps, float(division_level_min));
+		real_t max_fade_size = Math::pow(fsteps, float(division_level_max));
 		fade_size = CLAMP(fade_size, min_fade_size, max_fade_size);
 
 		real_t grid_fade_size = (grid_size - primary_grid_steps) * fade_size;

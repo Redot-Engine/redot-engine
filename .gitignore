@@ -72,6 +72,7 @@ st[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]
 # Python development
 .venv
 venv
+uv.lock
 
 # Python generated
 __pycache__/

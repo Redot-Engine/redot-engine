@@ -853,7 +853,7 @@ Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Has
 			if (hint_subtype_separator >= 0) {
 				String subtype_string = E.hint_string.substr(0, hint_subtype_separator);
 				int slash_pos = subtype_string.find_char('/');
-				PropertyHint subtype_hint = PropertyHint::PROPERTY_HINT_NONE;
+				PropertyHint subtype_hint = PROPERTY_HINT_NONE;
 				if (slash_pos >= 0) {
 					subtype_hint = PropertyHint(subtype_string.get_slicec('/', 1).to_int());
 					subtype_string = subtype_string.substr(0, slash_pos);
@@ -883,7 +883,7 @@ Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Has
 				int key_subtype_separator = E.hint_string.find_char(':');
 				String key_subtype_string = E.hint_string.substr(0, key_subtype_separator);
 				int key_slash_pos = key_subtype_string.find_char('/');
-				PropertyHint key_subtype_hint = PropertyHint::PROPERTY_HINT_NONE;
+				PropertyHint key_subtype_hint = PROPERTY_HINT_NONE;
 				if (key_slash_pos >= 0) {
 					key_subtype_hint = PropertyHint(key_subtype_string.get_slicec('/', 1).to_int());
 					key_subtype_string = key_subtype_string.substr(0, key_slash_pos);
@@ -894,7 +894,7 @@ Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Has
 				int value_subtype_separator = E.hint_string.find_char(':', key_value_separator) - (key_value_separator + 1);
 				String value_subtype_string = E.hint_string.substr(key_value_separator + 1, value_subtype_separator);
 				int value_slash_pos = value_subtype_string.find_char('/');
-				PropertyHint value_subtype_hint = PropertyHint::PROPERTY_HINT_NONE;
+				PropertyHint value_subtype_hint = PROPERTY_HINT_NONE;
 				if (value_slash_pos >= 0) {
 					value_subtype_hint = PropertyHint(value_subtype_string.get_slicec('/', 1).to_int());
 					value_subtype_string = value_subtype_string.substr(0, value_slash_pos);

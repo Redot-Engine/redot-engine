@@ -30,12 +30,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-/**
- * @file math_funcs.cpp
- *
- * [Add any documentation that applies to the entire file here!]
- */
-
 #include "math_funcs.h"
 
 #include "core/error/error_macros.h"
@@ -43,32 +37,33 @@
 
 static RandomPCG default_rand;
 
-uint32_t Math::rand_from_seed(uint64_t *p_seed) {
+uint32_t Math::rand_from_seed(uint64_t *p_seed) noexcept {
+	// TODO: mcdubh - Rework core/math/random_pcg.h
 	RandomPCG rng = RandomPCG(*p_seed);
 	uint32_t r = rng.rand();
 	*p_seed = rng.get_seed();
 	return r;
 }
 
-void Math::seed(uint64_t p_value) {
+void Math::seed(uint64_t p_value) noexcept {
 	default_rand.seed(p_value);
 }
 
-void Math::randomize() {
+void Math::randomize() noexcept {
 	default_rand.randomize();
 }
 
-uint32_t Math::rand() {
+uint32_t Math::rand() noexcept {
 	return default_rand.rand();
 }
 
-double Math::randfn(double p_mean, double p_deviation) {
+double Math::randfn(double p_mean, double p_deviation) noexcept {
 	return default_rand.randfn(p_mean, p_deviation);
 }
 
-int Math::step_decimals(double p_step) {
-	static const int maxn = 10;
-	static const double sd[maxn] = {
+int Math::step_decimals(double p_step) noexcept {
+	constexpr int maxn = 10;
+	constexpr double sd[maxn] = {
 		0.9999, // somehow compensate for floating point error
 		0.09999,
 		0.009999,
@@ -81,8 +76,9 @@ int Math::step_decimals(double p_step) {
 		0.0000000009999
 	};
 
-	double abs = Math::abs(p_step);
-	double decs = abs - (int)abs; // Strip away integer part
+	double int_part;
+	double decs = Math::modf_with_ptr(Math::abs(p_step), &int_part); // strip int part.
+
 	for (int i = 0; i < maxn; i++) {
 		if (decs >= sd[i]) {
 			return i;
@@ -92,46 +88,52 @@ int Math::step_decimals(double p_step) {
 	return 0;
 }
 
-int Math::range_step_decimals(double p_step) {
-	if (p_step < 0.0000000000001) {
+// Only meant for editor usage in float ranges, where a step of 0
+// means that decimal digits should not be limited in String::num.
+int Math::range_step_decimals(double p_step) noexcept {
+	if (p_step < 1e-13) {
 		return 16; // Max value hardcoded in String::num
 	}
 	return step_decimals(p_step);
 }
 
-double Math::ease(double p_x, double p_c) {
+double Math::ease(double p_x, double p_c) noexcept {
+	// clamp p_x to [0,1]
 	if (p_x < 0) {
 		p_x = 0;
 	} else if (p_x > 1.0) {
 		p_x = 1.0;
 	}
-	if (p_c > 0) {
+
+	// No ease (raw)
+	if (p_c == 0.0) {
+		return 0;
+	}
+
+	// Ease-out / ease-in
+	if (p_c > 0.0) {
 		if (p_c < 1.0) {
 			return 1.0 - Math::pow(1.0 - p_x, 1.0 / p_c);
-		} else {
-			return Math::pow(p_x, p_c);
 		}
-	} else if (p_c < 0) {
-		//inout ease
-
-		if (p_x < 0.5) {
-			return Math::pow(p_x * 2.0, -p_c) * 0.5;
-		} else {
-			return (1.0 - Math::pow(1.0 - (p_x - 0.5) * 2.0, -p_c)) * 0.5 + 0.5;
-		}
-	} else {
-		return 0; // no ease (raw)
+		return Math::pow(p_x, p_c);
 	}
+
+	// In-out ease
+	if (p_x < 0.5) {
+		return Math::pow(p_x * 2.0, -p_c) * 0.5;
+	}
+
+	return (1.0 - Math::pow(1.0 - (p_x - 0.5) * 2.0, -p_c)) * 0.5 + 0.5;
 }
 
-double Math::snapped(double p_value, double p_step) {
-	if (p_step != 0) {
+double Math::snapped(double p_value, double p_step) noexcept {
+	if (p_step != 0.0) {
 		p_value = Math::floor(p_value / p_step + 0.5) * p_step;
 	}
 	return p_value;
 }
 
-uint32_t Math::larger_prime(uint32_t p_val) {
+uint32_t Math::larger_prime(uint32_t p_val) noexcept {
 	static const uint32_t primes[] = {
 		5,
 		13,
@@ -165,24 +167,28 @@ uint32_t Math::larger_prime(uint32_t p_val) {
 		0,
 	};
 
-	int idx = 0;
-	while (true) {
-		ERR_FAIL_COND_V(primes[idx] == 0, 0);
-		if (primes[idx] > p_val) {
-			return primes[idx];
+	for (auto prime : primes) {
+		if (prime == 0) {
+			// sentinel value at the end there..
+			break;
 		}
-		idx++;
+		if (prime > p_val) {
+			return prime;
+		}
 	}
+
+	// No larger prime in the table
+	return 0;
 }
 
-double Math::random(double p_from, double p_to) {
+double Math::random(double p_from, double p_to) noexcept {
 	return default_rand.random(p_from, p_to);
 }
 
-float Math::random(float p_from, float p_to) {
+float Math::random(float p_from, float p_to) noexcept {
 	return default_rand.random(p_from, p_to);
 }
 
-int Math::random(int p_from, int p_to) {
+int Math::random(int p_from, int p_to) noexcept {
 	return default_rand.random(p_from, p_to);
 }

@@ -39,10 +39,12 @@
  */
 
 #include "core/io/image_loader.h"
+#include <span>
 
 class ImageLoaderTinyEXR : public ImageFormatLoader {
 public:
 	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale);
 	virtual void get_recognized_extensions(List<String> *p_extensions) const;
+	Error load_image_from_buffer(Ref<Image> p_image, std::span<const unsigned char> buffer, BitField<LoaderFlags> p_flags = FLAG_NONE, float p_scale = 1.f);
 	ImageLoaderTinyEXR();
 };

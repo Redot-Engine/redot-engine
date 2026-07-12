@@ -3524,9 +3524,9 @@ void TextMesh::_create_mesh_array(Array &p_arr) const {
 									vertices_ptr[p_idx + m] = quad_faces[m];
 									normals_ptr[p_idx + m] = Vector3(d.y, d.x, 0.0);
 									if (m < 2) {
-										uvs_ptr[p_idx + m] = Vector2(Math::remap(u_pos, 0, ps_info.length, real_t(0.0), real_t(1.0)), (ps_info.ccw) ? 0.8 : 0.9);
+										uvs_ptr[p_idx + m] = Vector2(Math::remap<real_t>(u_pos, 0, ps_info.length, real_t(0.0), real_t(1.0)), (ps_info.ccw) ? 0.8 : 0.9);
 									} else {
-										uvs_ptr[p_idx + m] = Vector2(Math::remap(u_pos, 0, ps_info.length, real_t(0.0), real_t(1.0)), (ps_info.ccw) ? 0.9 : 1.0);
+										uvs_ptr[p_idx + m] = Vector2(Math::remap<real_t>(u_pos, 0, ps_info.length, real_t(0.0), real_t(1.0)), (ps_info.ccw) ? 0.9 : 1.0);
 									}
 									tangents_ptr[(p_idx + m) * 4 + 0] = d.x;
 									tangents_ptr[(p_idx + m) * 4 + 1] = -d.y;

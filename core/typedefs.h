@@ -129,29 +129,40 @@ static_assert(__cplusplus >= 201703L, "Minimum of C++17 required.");
 #undef CLAMP
 
 template <typename T>
-constexpr const T SIGN(const T m_v) {
+constexpr const T SIGN(const T m_v) noexcept {
 	return m_v > 0 ? +1.0f : (m_v < 0 ? -1.0f : 0.0f);
 }
 
 template <typename T, typename T2>
-constexpr auto MIN(const T m_a, const T2 m_b) {
+constexpr auto MIN(const T m_a, const T2 m_b) noexcept {
 	return m_a < m_b ? m_a : m_b;
 }
 
+template <typename T, typename T2, typename T3>
+constexpr auto MIN(const T m_a, const T2 m_b, const T3 m_c) noexcept {
+	return MIN(m_a < m_b ? m_a : m_b, m_c);
+}
+
 template <typename T, typename T2>
-constexpr auto MAX(const T m_a, const T2 m_b) {
+constexpr auto MAX(const T m_a, const T2 m_b) noexcept {
 	return m_a > m_b ? m_a : m_b;
 }
 
 template <typename T, typename T2, typename T3>
-constexpr auto CLAMP(const T m_a, const T2 m_min, const T3 m_max) {
+constexpr auto MAX(const T m_a, const T2 m_b, const T3 m_c) noexcept {
+	return MAX(m_a > m_b ? m_a : m_b, m_c);
+}
+
+template <typename T, typename T2, typename T3>
+constexpr auto CLAMP(const T m_a, const T2 m_min, const T3 m_max) noexcept {
 	return m_a < m_min ? m_min : (m_a > m_max ? m_max : m_a);
 }
 
 // Generic swap template.
-#ifndef SWAP
-#define SWAP(m_x, m_y) std::swap((m_x), (m_y))
-#endif // SWAP
+template <typename T>
+constexpr void SWAP(T &m_x, T &m_y) noexcept {
+	std::swap(m_x, m_y);
+}
 
 /* Functions to handle powers of 2 and shifting. */
 
@@ -388,6 +399,17 @@ struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
 #define ___gd_is_defined(val) ____gd_is_defined(__GDARG_PLACEHOLDER_##val)
 #define GD_IS_DEFINED(x) ___gd_is_defined(x)
 
+/// Integral concepts
+template <typename T>
+concept unsigned_integral = std::integral<T> && std::is_unsigned_v<T>;
+
+template <typename T>
+concept signed_integral = std::integral<T> && std::is_signed_v<T>;
+
+/// Arithmetic type
+template <typename T>
+concept arithmetic = std::is_arithmetic_v<T>;
+
 /// Whether the default value of a type is just all-0 bytes.
 /// This can most commonly be exploited by using memset for these types instead of loop-construct.
 /// Trivially constructible types are also zero-constructible.
@@ -405,6 +427,13 @@ struct is_zero_constructible<const volatile T> : is_zero_constructible<T> {};
 
 template <typename T>
 inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
+
+template <typename T>
+concept zero_constructible = is_zero_constructible_v<T>;
+
+/// Trivial type (i.e., all characteristics of a POD type)
+template <typename T>
+concept trivial = std::is_trivial_v<T>;
 
 // Warning suppression helper macros.
 #if defined(__clang__)
