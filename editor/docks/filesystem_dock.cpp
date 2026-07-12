@@ -45,6 +45,7 @@
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/templates/list.h"
+#include "core/variant/variant.h"
 #include "editor/docks/editor_dock_manager.h"
 #include "editor/docks/import_dock.h"
 #include "editor/docks/scene_tree_dock.h"
@@ -66,6 +67,8 @@
 #include "editor/shader/shader_create_dialog.h"
 #include "editor/themes/editor_scale.h"
 #include "editor/themes/editor_theme_manager.h"
+#include "scene/gui/color_picker.h"
+#include "scene/gui/dialogs.h"
 #include "scene/gui/item_list.h"
 #include "scene/gui/label.h"
 #include "scene/gui/line_edit.h"
@@ -238,7 +241,11 @@ void FileSystemDock::_create_tree(TreeItem *p_parent, EditorFileSystemDirectory 
 
 	// Set custom folder color (if applicable).
 	bool has_custom_color = assigned_folder_colors.has(lpath);
-	Color custom_color = has_custom_color ? folder_colors[assigned_folder_colors[lpath]] : Color();
+	Color custom_color = Color();
+	if (has_custom_color) {
+		Variant color = assigned_folder_colors[lpath];
+		custom_color = color.is_string() ? folder_colors[color] : Color(color);
+	}
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 
 	if (has_custom_color) {
@@ -1074,7 +1081,8 @@ void FileSystemDock::_update_file_list(bool p_keep_selection) {
 					}
 
 					if (assigned_folder_colors.has(color_scan_dir)) {
-						inherited_folder_color = folder_colors[assigned_folder_colors[color_scan_dir]];
+						Variant assigned_color = assigned_folder_colors[color_scan_dir];
+						inherited_folder_color = assigned_color.is_string() ? folder_colors[assigned_folder_colors[color_scan_dir]] : Color(assigned_color);
 					}
 
 					color_scan_dir = color_scan_dir.rstrip("/").get_base_dir();
@@ -1104,7 +1112,11 @@ void FileSystemDock::_update_file_list(bool p_keep_selection) {
 
 					files->add_item(dname, folder_icon, true);
 					files->set_item_metadata(-1, dpath);
-					Color this_folder_color = has_custom_color ? folder_colors[assigned_folder_colors[dpath]] : inherited_folder_color;
+					Color this_folder_color = inherited_folder_color;
+					if (has_custom_color) {
+						Variant custom_color = assigned_folder_colors[dpath];
+						this_folder_color = custom_color.is_string() ? folder_colors[custom_color] : Color(custom_color);
+					}
 					files->set_item_icon_modulate(-1, editor_is_dark_theme ? this_folder_color : this_folder_color * ITEM_COLOR_SCALE);
 
 					if (previous_selection.has(dname)) {
@@ -3221,39 +3233,77 @@ void FileSystemDock::_get_drag_target_folder(String &target, bool &target_favori
 }
 
 void FileSystemDock::_update_folder_colors_setting() {
-	if (!ProjectSettings::get_singleton()->has_setting("file_customization/folder_colors")) {
-		ProjectSettings::get_singleton()->set_setting("file_customization/folder_colors", assigned_folder_colors);
-	} else if (assigned_folder_colors.is_empty()) {
+	if (assigned_folder_colors.is_empty()) {
 		ProjectSettings::get_singleton()->set_setting("file_customization/folder_colors", Variant());
+	} else {
+		ProjectSettings::get_singleton()->set_setting("file_customization/folder_colors", assigned_folder_colors);
 	}
 	ProjectSettings::get_singleton()->save();
 }
 
-void FileSystemDock::_folder_color_index_pressed(int p_index, PopupMenu *p_menu) {
-	Variant chosen_color_name = p_menu->get_item_metadata(p_index);
+Vector<String> FileSystemDock::_get_selected_folders() {
 	Vector<String> selected;
 
-	// Get all selected folders based on whether the files panel or tree panel is currently focused.
 	if (files->has_focus()) {
 		Vector<int> files_selected_ids = files->get_selected_items();
+
 		for (int i = 0; i < files_selected_ids.size(); i++) {
-			selected.push_back(files->get_item_metadata(files_selected_ids[i]));
+			selected.push_back(
+					files->get_item_metadata(files_selected_ids[i]));
 		}
 	} else {
 		TreeItem *tree_selected = tree->get_root();
 		tree_selected = tree->get_next_selected(tree_selected);
+
 		while (tree_selected) {
 			selected.push_back(tree_selected->get_metadata(0));
 			tree_selected = tree->get_next_selected(tree_selected);
 		}
 	}
 
-	// Update project settings with new folder colors.
-	for (int i = 0; i < selected.size(); i++) {
-		const String &fpath = selected[i];
+	return selected;
+}
 
-		if (chosen_color_name) {
-			assigned_folder_colors[fpath] = chosen_color_name;
+void FileSystemDock::_folder_color_confirmed() {
+	_set_folder_color(custom_color_selected_folders, folder_color_picker->get_pick_color());
+	custom_color_selected_folders.clear();
+}
+
+void FileSystemDock::_folder_color_index_pressed(int p_index, PopupMenu *p_menu) {
+	Variant chosen_color_name = p_menu->get_item_metadata(p_index);
+
+	if (chosen_color_name.get_type() == Variant::STRING_NAME && StringName(chosen_color_name) == "_custom") {
+		custom_color_selected_folders = _get_selected_folders();
+
+		if (!folder_color_dialog) {
+			folder_color_dialog = memnew(AcceptDialog);
+			folder_color_dialog->set_title(TTR("Select Folder Color"));
+
+			folder_color_picker = memnew(ColorPicker);
+			folder_color_dialog->add_child(folder_color_picker);
+
+			add_child(folder_color_dialog);
+
+			folder_color_dialog->connect(
+					SceneStringName(confirmed),
+					callable_mp(this, &FileSystemDock::_folder_color_confirmed));
+		}
+
+		folder_color_dialog->popup_centered();
+		return;
+	}
+
+	_set_folder_color(_get_selected_folders(), chosen_color_name);
+}
+
+void FileSystemDock::_set_folder_color(const Vector<String> &p_selected_folders, const Variant &p_color) {
+	// Update project settings with new folder colors.
+	for (int i = 0; i < p_selected_folders.size(); i++) {
+		const String &fpath = p_selected_folders[i];
+		if (p_color.is_string() && !String(p_color).is_empty()) {
+			assigned_folder_colors[fpath] = p_color;
+		} else if (p_color.get_type() == Variant::COLOR) {
+			assigned_folder_colors[fpath] = p_color;
 		} else {
 			assigned_folder_colors.erase(fpath);
 		}
@@ -3391,6 +3441,10 @@ void FileSystemDock::_file_and_folders_fill_popup(PopupMenu *p_popup, const Vect
 				folder_colors_menu->set_item_icon_modulate(-1, editor_is_dark_theme ? E.value : E.value * 2);
 				folder_colors_menu->set_item_metadata(-1, E.key);
 			}
+
+			folder_colors_menu->add_separator();
+			folder_colors_menu->add_icon_item(get_editor_theme_icon(SNAME("FolderQuestion")), TTRC("Custom"));
+			folder_colors_menu->set_item_metadata(-1, SNAME("_custom"));
 		}
 	}
 
@@ -3995,9 +4049,12 @@ Color FileSystemDock::get_dir_icon_color(const String &p_dir_path, const Color &
 			parent_dir += "/";
 		}
 
-		const String color_name = singleton->assigned_folder_colors.get(parent_dir, String());
-		if (!color_name.is_empty()) {
-			folder_icon_color = singleton->folder_colors[color_name];
+		Variant color = singleton->assigned_folder_colors.get(parent_dir, String());
+		if (color.get_type() == Variant::STRING && !String(color).is_empty()) {
+			folder_icon_color = singleton->folder_colors[String(color)];
+			break;
+		} else if (color.get_type() == Variant::COLOR) {
+			folder_icon_color = color;
 			break;
 		}
 		parent_dir = parent_dir.trim_suffix("/").get_base_dir();
