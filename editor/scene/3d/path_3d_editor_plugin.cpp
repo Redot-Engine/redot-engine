@@ -122,7 +122,7 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camera, con
 		Vector3 inters;
 		// Special case for primary handle, the handle id equals control point id.
 		const int idx = p_id;
-		if (!Path3DEditorPlugin::singleton->_edit.waiting_handle_physics || !Path3DEditorPlugin::singleton->_edit.in_physics_frame) {
+		if (Path3DEditorPlugin::singleton->snap_to_collider && (!Path3DEditorPlugin::singleton->_edit.waiting_handle_physics || !Path3DEditorPlugin::singleton->_edit.in_physics_frame)) {
 			Path3DEditorPlugin::singleton->_edit.waiting_handle_physics = true;
 			Path3DEditorPlugin::singleton->_edit.gizmo_handle = p_id;
 			Path3DEditorPlugin::singleton->_edit.gizmo_handle_secondary = p_secondary;
