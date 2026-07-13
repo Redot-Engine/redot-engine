@@ -559,7 +559,7 @@ TEST_CASE("[Math] wrapi") {
 	CHECK(Math::wrapi(-30, -20, 160) == 150);
 	CHECK(Math::wrapi(30, -20, 160) == 30);
 	CHECK(Math::wrapi(300, -20, 160) == 120);
-	CHECK(Math::wrapi(300'000'000'000, -20, 160) == 120);
+	CHECK(Math::wrapi<long int>(300'000'000'000, -20, 160) == 120);
 }
 
 TEST_CASE_TEMPLATE("[Math] wrapf", T, float, double) {

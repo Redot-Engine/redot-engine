@@ -401,10 +401,10 @@ struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
 
 /// Integral concepts
 template <typename T>
-concept unsigned_integral = std::integral<T> && std::is_unsigned_v<T>;
+concept unsigned_integral = std::is_integral_v<T> && std::is_unsigned_v<T>;
 
 template <typename T>
-concept signed_integral = std::integral<T> && std::is_signed_v<T>;
+concept signed_integral = std::is_integral_v<T> && std::is_signed_v<T>;
 
 /// Arithmetic type
 template <typename T>

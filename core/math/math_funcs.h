@@ -36,6 +36,7 @@
 #include "core/math/math_defs.h"
 #include "core/typedefs.h"
 
+#include <algorithm>
 #include <bit>
 #include <cfloat>
 #include <cmath>
