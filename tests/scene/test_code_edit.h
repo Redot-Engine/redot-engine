@@ -4082,9 +4082,9 @@ TEST_CASE("[SceneTree][CodeEdit] completion") {
 			CHECK((int)option["kind"] == (int)CodeEdit::CodeCompletionKind::KIND_CLASS);
 			CHECK(option["display_text"] == "item_0.");
 			CHECK(option["insert_text"] == "item_0");
-			CHECK(option["font_color"] == Variant{ Color(1, 0, 0) });
+			CHECK(option["font_color"] == static_cast<Variant>(Color(1, 0, 0)));
 			CHECK(option["icon"] == Ref<Resource>());
-			CHECK(option["default_value"] == Variant{ Color(1, 0, 0) });
+			CHECK(option["default_value"] == static_cast<Variant>(Color(1, 0, 0)));
 
 			/* Set size for mouse input. */
 			code_edit->set_size(Size2(100, 100));

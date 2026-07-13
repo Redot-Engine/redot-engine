@@ -40,7 +40,8 @@
 #include <bit>
 #include <cfloat>
 #include <cmath>
-#include <concepts> // std::floating_point
+#include <concepts>
+#include <limits>
 
 namespace Math {
 
@@ -146,13 +147,20 @@ _ALWAYS_INLINE_ T asinh(T x) noexcept {
 
 template <std::floating_point T>
 _ALWAYS_INLINE_ T acosh(T x) noexcept {
-	x = clamp(x, T(1), std::numeric_limits<T>::infinity());
+	if (x <= T{ 1.f }) {
+		return T{ 0.f };
+	}
 	return std::acosh(x);
 }
 
 template <std::floating_point T>
 _ALWAYS_INLINE_ T atanh(T x) noexcept {
-	x = clamp(x, T(-1) + CMP_EPSILON, T(1) - CMP_EPSILON);
+	if (x < T{ -1.f + CMP_EPSILON }) {
+		return -std::numeric_limits<T>::infinity();
+	}
+	if (x > T{ 1.f - CMP_EPSILON }) {
+		return std::numeric_limits<T>::infinity();
+	}
 	return std::atanh(x);
 }
 
