@@ -292,7 +292,7 @@ TransformInterpolator::Method TransformInterpolator::_test_basis(Basis p_basis, 
 	// Apply less stringent tests than the built in slerp, the standard Redot slerp
 	// is too susceptible to float error to be useful.
 	real_t det = p_basis.determinant();
-	if (!Math::is_equal_approx(det, 1)) {
+	if (!Math::is_equal_approx(det, static_cast<real_t>(1.f), static_cast<real_t>(.01f))) {
 		return INTERP_LERP;
 	}
 

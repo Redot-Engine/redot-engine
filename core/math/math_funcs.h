@@ -51,7 +51,7 @@
 
 namespace Math {
 
-template <typename T>
+template <std::floating_point T>
 _ALWAYS_INLINE_ T sin(T p_x) {
 	return std::sin(p_x);
 }
@@ -400,7 +400,7 @@ constexpr T cubic_interpolate(T p_from, T p_to, T p_pre, T p_post, T p_weight) n
 
 	if (std::is_constant_evaluated()) {
 		// compile time
-		return T(0.5) * (T(2) * p_from) + (a * p_weight) + (b * w2) + (c * w3);
+		return T{ .5 } * ((T{ 2.f } * p_from) + (a * p_weight) + (b * w2) + (c * w3));
 	} else {
 		// runtime
 		return T(0.5) * std::fma(c, w3, std::fma(b, w2, std::fma(a, p_weight, T(2) * p_from)));

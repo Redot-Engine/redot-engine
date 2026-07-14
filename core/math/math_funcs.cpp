@@ -68,8 +68,8 @@ double Math::randfn(double p_mean, double p_deviation) noexcept {
 }
 
 int Math::step_decimals(double p_step) noexcept {
-	constexpr int maxn = 10;
-	constexpr double sd[maxn] = {
+	static constexpr int maxn = 10;
+	static constexpr double sd[maxn] = {
 		0.9999, // somehow compensate for floating point error
 		0.09999,
 		0.009999,
