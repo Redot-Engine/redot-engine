@@ -489,23 +489,13 @@ void RasterizerGLES3::set_boot_image(const Ref<Image> &p_image, const Color &p_c
 	texture_storage->texture_2d_initialize(texture, p_image);
 
 	Rect2 imgrect(0, 0, p_image->get_width(), p_image->get_height());
+	// Size2 win_size_f = Size2(win_size); // This is needed for the .floor() function below because Size2i does not have a floor() function (but Size2 does)
 	Rect2 screenrect;
-	if (p_scale) {
-		if (win_size.width > win_size.height) {
-			//scale horizontally
-			screenrect.size.y = win_size.height;
-			screenrect.size.x = imgrect.size.x * win_size.height / imgrect.size.y;
-			screenrect.position.x = (win_size.width - screenrect.size.x) / 2;
 
-		} else {
-			//scale vertically
-			screenrect.size.x = win_size.width;
-			screenrect.size.y = imgrect.size.y * win_size.width / imgrect.size.x;
-			screenrect.position.y = (win_size.height - screenrect.size.y) / 2;
-		}
+	if (p_scale) {
+		screenrect = OS::get_singleton()->calculate_boot_screen_rect(win_size, imgrect.size);
 	} else {
-		screenrect = imgrect;
-		screenrect.position += ((Size2(win_size.width, win_size.height) - screenrect.size) / 2.0).floor();
+		screenrect = DisplayServer::calculate_boot_image_rect(win_size, imgrect);
 	}
 
 #ifdef WINDOWS_ENABLED
@@ -529,6 +519,43 @@ void RasterizerGLES3::set_boot_image(const Ref<Image> &p_image, const Color &p_c
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	gl_end_frame(true);
+
+	// After the first commit, a tiling compositor (e.g. Hyprland via XWayland)
+	// may have sent a ConfigureNotify with the actual window size.
+	// Pump events and re-render if the size changed.
+	DisplayServer::get_singleton()->pump_resize_events();
+	Size2i new_win_size = DisplayServer::get_singleton()->window_get_size();
+
+	if (new_win_size != win_size && new_win_size.width > 0 && new_win_size.height > 0) {
+		win_size = new_win_size;
+		glViewport(0, 0, win_size.width, win_size.height);
+		glClearColor(p_color.r, p_color.g, p_color.b,
+				OS::get_singleton()->is_layered_allowed() ? p_color.a : 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		Rect2 screenrect2;
+		if (p_scale) {
+			screenrect2 = OS::get_singleton()->calculate_boot_screen_rect(win_size, imgrect.size);
+		} else {
+			screenrect2 = DisplayServer::calculate_boot_image_rect(win_size, imgrect);
+		}
+#ifdef WINDOWS_ENABLED
+		if (!screen_flipped_y)
+#endif
+		{
+			screenrect2.position.y = win_size.y - screenrect2.position.y;
+			screenrect2.size.y = -screenrect2.size.y;
+		}
+		screenrect2.position /= win_size;
+		screenrect2.size /= win_size;
+
+		GLES3::Texture *t2 = texture_storage->get_texture(texture);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, t2->tex_id);
+		copy_effects->copy_to_rect(screenrect2);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		gl_end_frame(true);
+	}
 
 	texture_storage->texture_free(texture);
 }

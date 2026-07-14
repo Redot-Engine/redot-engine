@@ -31,6 +31,7 @@
 /**************************************************************************/
 
 #include "wayland_thread.h"
+#include "core/string/print_string.h"
 
 #ifdef WAYLAND_ENABLED
 
@@ -1257,6 +1258,8 @@ void WaylandThread::_xdg_toplevel_on_configure(void *data, struct xdg_toplevel *
 		window_state_update_size(ws, width, height);
 	}
 
+	ws->initial_configure_done = true;
+
 	DEBUG_LOG_WAYLAND_THREAD(vformat("XDG toplevel on configure width %d height %d.", width, height));
 }
 
@@ -1436,6 +1439,8 @@ void WaylandThread::libdecor_frame_on_configure(struct libdecor_frame *frame, st
 	}
 
 	window_state_update_size(ws, width, height);
+
+	ws->initial_configure_done = true;
 
 	DEBUG_LOG_WAYLAND_THREAD(vformat("libdecor frame on configure rect %s", ws->rect));
 }
@@ -3093,6 +3098,10 @@ struct wl_display *WaylandThread::get_wl_display() const {
 	return wl_display;
 }
 
+void WaylandThread::roundtrip() {
+	wl_display_roundtrip(wl_display);
+}
+
 // NOTE: Stuff like libdecor can (and will) register foreign proxies which
 // aren't formatted as we like. This method is needed to detect whether a proxy
 // has our tag. Also, be careful! The proxy has to be manually tagged or it
@@ -3284,7 +3293,7 @@ void WaylandThread::window_state_update_size(WindowState *p_ws, int p_width, int
 			DEBUG_LOG_WAYLAND_THREAD(vformat("Resizing the window from %s to %s (buffer scale x%d).", p_ws->rect.size, scaled_size, p_ws->buffer_scale));
 		}
 
-		// FIXME: Actually resize the hint instead of centering it.
+		/// @todo FIXME: Actually resize the hint instead of centering it.
 		p_ws->wayland_thread->pointer_set_hint(scaled_size / 2);
 
 		Ref<WindowRectMessage> rect_msg;
@@ -3589,7 +3598,15 @@ void WaylandThread::window_create(DisplayServer::WindowID p_window_id, int p_wid
 	wl_surface_commit(ws.wl_surface);
 
 	// Wait for the surface to be configured before continuing.
-	wl_display_roundtrip(wl_display);
+	// On some compositors (e.g., Hyprland under load), the configure event may
+	// not arrive within a single roundtrip. Loop until it does.
+	const int MAX_CONFIGURE_ROUNDTRIPS = 10;
+	for (int i = 0; i < MAX_CONFIGURE_ROUNDTRIPS && !ws.initial_configure_done; i++) {
+		wl_display_roundtrip(wl_display);
+	}
+	if (!ws.initial_configure_done) {
+		WARN_PRINT("WaylandThread: Surface was not configured after multiple roundtrips. Window may not appear.");
+	}
 
 	window_state_update_size(&ws, ws.rect.size.width, ws.rect.size.height);
 }
@@ -4863,7 +4880,8 @@ bool WaylandThread::wait_frame_suspend_ms(int p_timeout) {
 			return true;
 		}
 
-		remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;
+		// remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;
+		remaining_ms = p_timeout - (int)(OS::get_singleton()->get_ticks_msec() - begin_ms);
 	}
 
 	DEBUG_LOG_WAYLAND_THREAD("Frame timeout.");

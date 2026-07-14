@@ -1941,6 +1941,28 @@ void DisplayServerX11::show_window(WindowID p_id) {
 			}
 		}
 
+		// Search the X11 event queue for ConfigureNotify events and process all that are currently queued early.
+		{
+			MutexLock mutex_lock(events_mutex);
+
+			for (uint32_t event_index = 0; event_index < polled_events.size(); ++event_index) {
+				XEvent &config_event = polled_events[event_index];
+				if (config_event.type == ConfigureNotify) {
+					_window_changed(&config_event);
+					get_config_event = true;
+				}
+			}
+			XEvent config_event;
+			while (XCheckTypedEvent(x11_display, ConfigureNotify, &config_event)) {
+				_window_changed(&config_event);
+				get_config_event = true;
+			}
+		}
+
+		if (!get_config_event) {
+			print_verbose("X11: get_config_event never succeeded!");
+		};
+
 		// Estimate maximize/full screen window size, ConfigureNotify may arrive only after maximize animation is finished.
 		if (!get_config_event && (wd.maximized || wd.fullscreen)) {
 			int screen = window_get_current_screen(p_id);
@@ -1971,7 +1993,6 @@ void DisplayServerX11::show_window(WindowID p_id) {
 			if (sz == Size2i()) {
 				return;
 			}
-
 			wd.size = sz;
 #if defined(RD_ENABLED)
 			if (rendering_context) {
@@ -1987,6 +2008,7 @@ void DisplayServerX11::show_window(WindowID p_id) {
 			}
 #endif
 		}
+		print_verbose(vformat("show_window: final size %s", wd.size));
 	}
 }
 
@@ -2690,6 +2712,29 @@ Size2i DisplayServerX11::window_get_size_with_decorations(WindowID p_window) con
 		}
 	}
 	return Size2i(w, h);
+}
+
+void DisplayServerX11::pump_resize_events() {
+	_THREAD_SAFE_METHOD_
+
+	// Under XWayland + tiling WMs (e.g. Hyprland), the compositor sends
+	// ConfigureNotify only after the first wl_surface.commit (glXSwapBuffers).
+	// Wait one frame-worth of time for the event to arrive, then drain it.
+	OS::get_singleton()->delay_usec(16000); // ~1 frame @ 60 fps
+	XSync(x11_display, False);
+
+	{
+		MutexLock mutex_lock(events_mutex);
+		for (uint32_t i = 0; i < polled_events.size(); ++i) {
+			if (polled_events[i].type == ConfigureNotify) {
+				_window_changed(&polled_events[i]);
+			}
+		}
+		XEvent ev;
+		while (XCheckTypedEvent(x11_display, ConfigureNotify, &ev)) {
+			_window_changed(&ev);
+		}
+	}
 }
 
 // Just a helper to reduce code duplication in `window_is_maximize_allowed`

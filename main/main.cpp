@@ -60,6 +60,7 @@
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/register_core_types.h"
+#include "core/string/print_string.h"
 #include "core/string/translation_server.h"
 #include "core/version.h"
 #include "drivers/register_driver_types.h"
@@ -3555,7 +3556,10 @@ Error Main::setup2(bool p_show_boot_logo) {
 		Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", get_boot_splash_bg_color());
 		RenderingServer::get_singleton()->set_default_clear_color(clear);
 
+		print_verbose(vformat("p_show_boot_logo value:  %s", String(p_show_boot_logo ? "true" : "false")));
 		if (p_show_boot_logo) {
+			print_verbose("Setting up boot logo...");
+			DisplayServer::get_singleton()->process_events();
 			setup_boot_logo();
 		}
 
@@ -5125,6 +5129,11 @@ void Main::cleanup(bool p_force) {
 	// Flush before uninitializing the scene, but delete the MessageQueue as late as possible.
 	message_queue->flush();
 
+	// Drain worker threads BEFORE deleting the SceneTree.
+	// Worker threads may hold references to scene objects; deleting the tree
+	// while they are still running causes use-after-free and deadlocks.
+	WorkerThreadPool::get_singleton()->exit_languages_threads();
+
 	OS::get_singleton()->delete_main_loop();
 
 	OS::get_singleton()->_cmdline.clear();
@@ -5133,15 +5142,12 @@ void Main::cleanup(bool p_force) {
 	OS::get_singleton()->_local_clipboard = "";
 
 	ResourceLoader::clear_translation_remaps();
-
-	WorkerThreadPool::get_singleton()->exit_languages_threads();
-
 	ScriptServer::finish_languages();
 
 	// Sync pending commands that may have been queued from a different thread during ScriptServer finalization
 	RenderingServer::get_singleton()->sync();
 
-	//clear global shader variables before scene and other graphics stuff are deinitialized.
+	// Clear global shader variables before scene and other graphics stuff are deinitialized.
 	rendering_server->global_shader_parameters_clear();
 
 #ifndef XR_DISABLED

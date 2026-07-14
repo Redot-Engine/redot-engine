@@ -77,14 +77,19 @@ void TilesEditorUtils::_thread_func(void *ud) {
 }
 
 void TilesEditorUtils::_thread() {
+	// Worker thread that generates thumbnail previews for tile patterns.
 	pattern_thread_exited.clear();
+
+	// Main loop: wait for queued pattern requests, process them until shutdown.
 	while (!pattern_thread_exit.is_set()) {
+		// Wait for work to be queued.
 		pattern_preview_sem.wait();
 
 		pattern_preview_mutex.lock();
 		if (pattern_preview_queue.is_empty()) {
 			pattern_preview_mutex.unlock();
 		} else {
+			// Dequeue the next pattern request.
 			QueueItem item = pattern_preview_queue.front()->get();
 			pattern_preview_queue.pop_front();
 			pattern_preview_mutex.unlock();
@@ -94,18 +99,20 @@ void TilesEditorUtils::_thread() {
 			Vector2 thumbnail_size2 = Vector2(thumbnail_size, thumbnail_size);
 
 			if (item.pattern.is_valid() && !item.pattern->is_empty()) {
-				// Generate the pattern preview
+				// Create a temporary viewport to render the pattern / Generate the pattern preview.
 				SubViewport *viewport = memnew(SubViewport);
 				viewport->set_size(thumbnail_size2);
 				viewport->set_disable_input(true);
 				viewport->set_transparent_background(true);
 				viewport->set_update_mode(SubViewport::UPDATE_ONCE);
 
+				// Set up the tile map layer with the pattern to render.
 				TileMapLayer *tile_map_layer = memnew(TileMapLayer);
 				tile_map_layer->set_tile_set(item.tile_set);
 				tile_map_layer->set_pattern(Vector2(), item.pattern);
 				viewport->add_child(tile_map_layer);
 
+				// Calculate the bounding rect of the pattern for scaling.
 				Rect2 encompassing_rect;
 				encompassing_rect.set_position(tile_map_layer->map_to_local(tile_map_layer->get_tile_map_layer_data().begin()->key));
 				for (KeyValue<Vector2i, CellData> kv : tile_map_layer->get_tile_map_layer_data()) {
@@ -127,22 +134,41 @@ void TilesEditorUtils::_thread() {
 					}
 				}
 
+				// Scale and center the pattern to fit the thumbnail size.
 				Vector2 scale = thumbnail_size2 / MAX(encompassing_rect.size.x, encompassing_rect.size.y);
 				tile_map_layer->set_scale(scale);
 				tile_map_layer->set_position(-(scale * encompassing_rect.get_center()) + thumbnail_size2 / 2);
 
-				// Add the viewport at the last moment to avoid rendering too early.
+				// Add the viewport to the scene tree (deferred to avoid rendering too early).
 				callable_mp((Node *)EditorNode::get_singleton(), &Node::add_child).call_deferred(viewport, false, Node::INTERNAL_MODE_DISABLED);
 
+				// Register a callback to be notified when the frame is drawn.
 				RS::get_singleton()->connect(SNAME("frame_pre_draw"), callable_mp(this, &TilesEditorUtils::_preview_frame_started), Object::CONNECT_ONE_SHOT);
 
+				// Wait for the rendering server to complete the frame.
 				pattern_preview_done.wait();
 
+				// The thread can be safely interrupted during shutdown by the destructor,
+				// which posts the inner semaphore to unblock the frame wait.
+				// After unblocking, the thread checks the exit flag and cleans up
+				// without accessing potentially invalid rendering state.
+				if (pattern_thread_exit.is_set()) {
+					// Disconnect frame_pre_draw if it hasn't fired yet.
+					if (RS::get_singleton()->is_connected(SNAME("frame_pre_draw"), callable_mp(this, &TilesEditorUtils::_preview_frame_started))) {
+						RS::get_singleton()->disconnect(SNAME("frame_pre_draw"), callable_mp(this, &TilesEditorUtils::_preview_frame_started));
+					}
+					viewport->queue_free();
+					break;
+				}
+
+				// Capture the rendered image from the viewport.
 				Ref<Image> image = viewport->get_texture()->get_image();
 
 				/// Find the index for the given pattern. @todo Optimize.
+				// Return the result via the callback.
 				item.callback.call(item.pattern, ImageTexture::create_from_image(image));
 
+				// Clean up the temporary viewport.
 				viewport->queue_free();
 			}
 		}
@@ -326,10 +352,21 @@ TilesEditorUtils::~TilesEditorUtils() {
 	if (pattern_preview_thread.is_started()) {
 		pattern_thread_exit.set();
 		pattern_preview_sem.post();
+		pattern_preview_done.post(); // Unblock thread if stuck waiting for a frame to be drawn.
+
+		const uint64_t TIMEOUT_USEC = 3000000; // 3 seconds
+		uint64_t start = OS::get_singleton()->get_ticks_usec();
+
 		while (!pattern_thread_exited.is_set()) {
+			if (OS::get_singleton()->get_ticks_usec() - start > TIMEOUT_USEC) {
+				WARN_PRINT("TilesEditorUtils: Timed out waiting for pattern preview thread to exit.");
+				break;
+			}
 			OS::get_singleton()->delay_usec(10000);
-			RenderingServer::get_singleton()->sync(); //sync pending stuff, as thread may be blocked on visual server
+			RenderingServer::get_singleton()->sync();
+			MessageQueue::get_singleton()->flush();
 		}
+
 		pattern_preview_thread.wait_to_finish();
 	}
 	singleton = nullptr;

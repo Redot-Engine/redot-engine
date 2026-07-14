@@ -1730,8 +1730,9 @@ void EditorFileSystem::_notification(int p_what) {
 		case NOTIFICATION_EXIT_TREE: {
 			Thread &active_thread = thread.is_started() ? thread : thread_sources;
 			if (use_threads && active_thread.is_started()) {
+				const uint64_t TIMEOUT_USEC = 1000;
 				while (scanning) {
-					OS::get_singleton()->delay_usec(1000);
+					OS::get_singleton()->delay_usec(TIMEOUT_USEC);
 				}
 				active_thread.wait_to_finish();
 				WARN_PRINT("Scan thread aborted...");
