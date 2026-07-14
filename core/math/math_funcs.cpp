@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file math_funcs.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "math_funcs.h"
 
 #include "core/error/error_macros.h"
