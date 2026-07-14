@@ -605,7 +605,7 @@ struct Colors {
 	static constexpr auto Orchid = Color::hex(0xDA70D6FF);
 	static constexpr auto PaleGoldenrod = Color::hex(0xEEE8AAFF);
 	static constexpr auto PaleGreen = Color::hex(0x98FB98FF);
-	static constexpr auto PaleTorquoise = Color::hex(0xAFEEEEFF);
+	static constexpr auto PaleTurquoise = Color::hex(0xAFEEEEFF);
 	static constexpr auto PaleVioletRed = Color::hex(0xDB7093FF);
 	static constexpr auto PapayaWhip = Color::hex(0xFFEFD5FF);
 	static constexpr auto PeachPuff = Color::hex(0xFFDAB9FF);

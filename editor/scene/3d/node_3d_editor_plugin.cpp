@@ -7956,9 +7956,9 @@ void Node3DEditor::_init_grid() {
 		real_t bgn_b = center_b - grid_size * small_step_size;
 		real_t end_b = center_b + grid_size * small_step_size;
 
-		real_t fade_size = Math::pow(fsteps, division_level - 1.f);
-		real_t min_fade_size = Math::pow(fsteps, float(division_level_min));
-		real_t max_fade_size = Math::pow(fsteps, float(division_level_max));
+		real_t fade_size = Math::pow(fsteps, static_cast<real_t>(division_level - 1.f));
+		real_t min_fade_size = Math::pow(fsteps, static_cast<real_t>(division_level_min));
+		real_t max_fade_size = Math::pow(fsteps, static_cast<real_t>(division_level_max));
 		fade_size = CLAMP(fade_size, min_fade_size, max_fade_size);
 
 		real_t grid_fade_size = (grid_size - primary_grid_steps) * fade_size;

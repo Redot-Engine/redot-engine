@@ -483,8 +483,8 @@ Point2 CanvasItemEditor::snap_point(Point2 p_target, unsigned int p_modes, unsig
 			}
 		}
 		Point2 grid_output;
-		grid_output.x = Math::snapped(p_target.x - offset.x, grid_step.x * Math::pow(2.f, static_cast<real_t>(grid_step_multiplier))) + offset.x;
-		grid_output.y = Math::snapped(p_target.y - offset.y, grid_step.y * Math::pow(2.f, static_cast<real_t>(grid_step_multiplier))) + offset.y;
+		grid_output.x = Math::snapped(p_target.x - offset.x, grid_step.x * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier))) + offset.x;
+		grid_output.y = Math::snapped(p_target.y - offset.y, grid_step.y * Math::pow(static_cast<real_t>(2.f), static_cast<real_t>(grid_step_multiplier))) + offset.y;
 		_snap_if_closer_point(p_target, output, snap_target, grid_output, SNAP_TARGET_GRID, 0.0, -1.0);
 	}
 
