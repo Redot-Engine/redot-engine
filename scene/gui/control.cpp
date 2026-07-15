@@ -603,6 +603,10 @@ void Control::_validate_property(PropertyInfo &p_property) const {
 		// Use the layout mode to display or hide advanced anchoring properties.
 		LayoutMode _layout = _get_layout_mode();
 		bool use_anchors = (_layout == LayoutMode::LAYOUT_MODE_ANCHORS || _layout == LayoutMode::LAYOUT_MODE_UNCONTROLLED);
+		// If using anchors, the position is, well...anchored based on the layout, so manipulating the position doesn't make sense
+		if (use_anchors && p_property.name == "position") {
+			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
+		}
 		if (!use_anchors && p_property.name == "anchors_preset") {
 			p_property.usage ^= PROPERTY_USAGE_EDITOR;
 		}
@@ -925,6 +929,7 @@ void Control::_set_layout_mode(LayoutMode p_mode) {
 		data.stored_use_custom_anchors = false;
 		set_anchors_and_offsets_preset(LayoutPreset::PRESET_TOP_LEFT, LayoutPresetMode::PRESET_MODE_KEEP_SIZE);
 		set_grow_direction_preset(LayoutPreset::PRESET_TOP_LEFT);
+		data.anchor_preset_active = false;
 	}
 
 	if (list_changed) {
@@ -1225,12 +1230,14 @@ void Control::set_anchors_preset(LayoutPreset p_preset, bool p_keep_offsets) {
 	}
 }
 
-void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_margin) {
+void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_preset_margin) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_INDEX((int)p_preset, 16);
 	ERR_FAIL_INDEX((int)p_resize_mode, 4);
 
-	// Calculate the size if the node is not resized
+	data.anchor_preset_active = true;
+	data.anchor_preset_margin = p_preset_margin;
+
 	Size2 min_size = get_minimum_size();
 	Size2 new_size = get_size();
 	if (p_resize_mode == PRESET_MODE_MINSIZE || p_resize_mode == PRESET_MODE_KEEP_HEIGHT) {
@@ -1240,37 +1247,59 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		new_size.y = min_size.y;
 	}
 
+	_compute_preset_offsets(p_preset, new_size, p_preset_margin);
+	_size_changed();
+}
+
+void Control::_compute_preset_offsets(LayoutPreset p_preset, const Size2 &p_size, int p_preset_margin) {
 	Rect2 parent_rect = get_parent_anchorable_rect();
 
 	real_t x = parent_rect.size.x;
 	if (is_layout_rtl()) {
-		x = parent_rect.size.x - x - new_size.x;
+		x = parent_rect.size.x - x - p_size.x;
 	}
-	//Left
+
+	const real_t pivot_corr_x = data.pivot_offset.x * (data.scale.x - 1.0f);
+	const real_t pivot_corr_y = data.pivot_offset.y * (data.scale.y - 1.0f);
+	const real_t scaled_width = p_size.x * data.scale.x;
+	const real_t scaled_height = p_size.y * data.scale.y;
+
+	// Left
 	switch (p_preset) {
 		case PRESET_TOP_LEFT:
 		case PRESET_BOTTOM_LEFT:
 		case PRESET_CENTER_LEFT:
-		case PRESET_TOP_WIDE:
-		case PRESET_BOTTOM_WIDE:
 		case PRESET_LEFT_WIDE:
-		case PRESET_HCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			data.offset[0] = x * (0.0 - data.anchor[0]) + p_margin + parent_rect.position.x;
+			// Fixed-size axis: visual left edge at p_margin.
+			data.offset[0] = x * (0.0 - data.anchor[0]) + pivot_corr_x + p_preset_margin + parent_rect.position.x;
+			break;
+
+		case PRESET_RIGHT_WIDE:
+			// Fixed-size axis: visual left edge at parent_right - scaled_width - margin.
+			data.offset[0] = x * (1.0 - data.anchor[0]) + pivot_corr_x - scaled_width - p_preset_margin + parent_rect.position.x;
 			break;
 
 		case PRESET_CENTER_TOP:
 		case PRESET_CENTER_BOTTOM:
 		case PRESET_CENTER:
 		case PRESET_VCENTER_WIDE:
-			data.offset[0] = x * (0.5 - data.anchor[0]) - new_size.x / 2 + parent_rect.position.x;
+			// Fixed-size axis: visual center at parent horizontal center.
+			data.offset[0] = x * (0.5 - data.anchor[0]) + pivot_corr_x - scaled_width / 2.0f + parent_rect.position.x;
 			break;
 
 		case PRESET_TOP_RIGHT:
 		case PRESET_BOTTOM_RIGHT:
 		case PRESET_CENTER_RIGHT:
-		case PRESET_RIGHT_WIDE:
-			data.offset[0] = x * (1.0 - data.anchor[0]) - new_size.x - p_margin + parent_rect.position.x;
+			// Fixed-size axis: visual right edge at parent_right - margin.
+			data.offset[0] = x * (1.0 - data.anchor[0]) + pivot_corr_x - scaled_width - p_preset_margin + parent_rect.position.x;
+			break;
+
+		case PRESET_TOP_WIDE:
+		case PRESET_BOTTOM_WIDE:
+		case PRESET_HCENTER_WIDE:
+		case PRESET_FULL_RECT:
+			// Stretching axis: visual left edge at margin, accounting for pivot.
+			data.offset[0] = x * (0.0 - data.anchor[0]) + pivot_corr_x + p_preset_margin + parent_rect.position.x;
 			break;
 	}
 
@@ -1279,26 +1308,37 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		case PRESET_TOP_LEFT:
 		case PRESET_TOP_RIGHT:
 		case PRESET_CENTER_TOP:
-		case PRESET_LEFT_WIDE:
-		case PRESET_RIGHT_WIDE:
 		case PRESET_TOP_WIDE:
-		case PRESET_VCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			data.offset[1] = parent_rect.size.y * (0.0 - data.anchor[1]) + p_margin + parent_rect.position.y;
+			// Fixed-size axis: visual top edge at p_margin.
+			data.offset[1] = parent_rect.size.y * (0.0 - data.anchor[1]) + pivot_corr_y + p_preset_margin + parent_rect.position.y;
+			break;
+
+		case PRESET_BOTTOM_WIDE:
+			// Fixed-size axis: visual top edge at parent_bottom - scaled_height - margin.
+			data.offset[1] = parent_rect.size.y * (1.0 - data.anchor[1]) + pivot_corr_y - scaled_height - p_preset_margin + parent_rect.position.y;
 			break;
 
 		case PRESET_CENTER_LEFT:
 		case PRESET_CENTER_RIGHT:
 		case PRESET_CENTER:
 		case PRESET_HCENTER_WIDE:
-			data.offset[1] = parent_rect.size.y * (0.5 - data.anchor[1]) - new_size.y / 2 + parent_rect.position.y;
+			// Fixed-size axis: visual center at parent vertical center.
+			data.offset[1] = parent_rect.size.y * (0.5 - data.anchor[1]) + pivot_corr_y - scaled_height / 2.0f + parent_rect.position.y;
 			break;
 
 		case PRESET_BOTTOM_LEFT:
 		case PRESET_BOTTOM_RIGHT:
 		case PRESET_CENTER_BOTTOM:
-		case PRESET_BOTTOM_WIDE:
-			data.offset[1] = parent_rect.size.y * (1.0 - data.anchor[1]) - new_size.y - p_margin + parent_rect.position.y;
+			// Fixed-size axis: visual bottom edge at parent_bottom - margin.
+			data.offset[1] = parent_rect.size.y * (1.0 - data.anchor[1]) + pivot_corr_y - scaled_height - p_preset_margin + parent_rect.position.y;
+			break;
+
+		case PRESET_LEFT_WIDE:
+		case PRESET_RIGHT_WIDE:
+		case PRESET_VCENTER_WIDE:
+		case PRESET_FULL_RECT:
+			// Stretching axis: visual top edge at margin, accounting for pivot.
+			data.offset[1] = parent_rect.size.y * (0.0 - data.anchor[1]) + pivot_corr_y + p_preset_margin + parent_rect.position.y;
 			break;
 	}
 
@@ -1308,25 +1348,33 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		case PRESET_BOTTOM_LEFT:
 		case PRESET_CENTER_LEFT:
 		case PRESET_LEFT_WIDE:
-			data.offset[2] = x * (0.0 - data.anchor[2]) + new_size.x + p_margin + parent_rect.position.x;
+			// Fixed-size axis: right = logical_left + p_size.x.
+			data.offset[2] = x * (0.0 - data.anchor[2]) + pivot_corr_x + p_size.x + p_preset_margin + parent_rect.position.x;
 			break;
 
 		case PRESET_CENTER_TOP:
 		case PRESET_CENTER_BOTTOM:
 		case PRESET_CENTER:
 		case PRESET_VCENTER_WIDE:
-			data.offset[2] = x * (0.5 - data.anchor[2]) + new_size.x / 2 + parent_rect.position.x;
+			// Fixed-size axis: centered.
+			data.offset[2] = x * (0.5 - data.anchor[2]) + pivot_corr_x + p_size.x - scaled_width / 2.0f + parent_rect.position.x;
 			break;
 
 		case PRESET_TOP_RIGHT:
 		case PRESET_BOTTOM_RIGHT:
 		case PRESET_CENTER_RIGHT:
-		case PRESET_TOP_WIDE:
 		case PRESET_RIGHT_WIDE:
+			// Fixed-size axis: right edge at parent_right - margin.
+			data.offset[2] = x * (1.0 - data.anchor[2]) + pivot_corr_x + p_size.x * (1.0f - data.scale.x) - p_preset_margin + parent_rect.position.x;
+			break;
+
+		case PRESET_TOP_WIDE:
 		case PRESET_BOTTOM_WIDE:
 		case PRESET_HCENTER_WIDE:
 		case PRESET_FULL_RECT:
-			data.offset[2] = x * (1.0 - data.anchor[2]) - p_margin + parent_rect.position.x;
+			// Stretching axis: visual right edge at parent_right - margin.
+			// Divide by scale so visual_width = parent_width - 2*margin regardless of scale.
+			data.offset[2] = pivot_corr_x + p_preset_margin + (x - 2.0f * p_preset_margin) / data.scale.x - x + parent_rect.position.x;
 			break;
 	}
 
@@ -1336,29 +1384,35 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		case PRESET_TOP_RIGHT:
 		case PRESET_CENTER_TOP:
 		case PRESET_TOP_WIDE:
-			data.offset[3] = parent_rect.size.y * (0.0 - data.anchor[3]) + new_size.y + p_margin + parent_rect.position.y;
+			// Fixed-size axis: bottom = logical_top + p_size.y.
+			data.offset[3] = parent_rect.size.y * (0.0 - data.anchor[3]) + pivot_corr_y + p_size.y + p_preset_margin + parent_rect.position.y;
 			break;
 
 		case PRESET_CENTER_LEFT:
 		case PRESET_CENTER_RIGHT:
 		case PRESET_CENTER:
 		case PRESET_HCENTER_WIDE:
-			data.offset[3] = parent_rect.size.y * (0.5 - data.anchor[3]) + new_size.y / 2 + parent_rect.position.y;
+			// Fixed-size axis: centered.
+			data.offset[3] = parent_rect.size.y * (0.5 - data.anchor[3]) + pivot_corr_y + p_size.y - scaled_height / 2.0f + parent_rect.position.y;
 			break;
 
 		case PRESET_BOTTOM_LEFT:
 		case PRESET_BOTTOM_RIGHT:
 		case PRESET_CENTER_BOTTOM:
+		case PRESET_BOTTOM_WIDE:
+			// Fixed-size axis: bottom edge at parent_bottom - margin.
+			data.offset[3] = parent_rect.size.y * (1.0 - data.anchor[3]) + pivot_corr_y + p_size.y * (1.0f - data.scale.y) - p_preset_margin + parent_rect.position.y;
+			break;
+
 		case PRESET_LEFT_WIDE:
 		case PRESET_RIGHT_WIDE:
-		case PRESET_BOTTOM_WIDE:
 		case PRESET_VCENTER_WIDE:
 		case PRESET_FULL_RECT:
-			data.offset[3] = parent_rect.size.y * (1.0 - data.anchor[3]) - p_margin + parent_rect.position.y;
+			// Stretching axis: visual bottom edge at parent_bottom - margin.
+			// Divide by scale so visual_height = parent_height - 2*margin regardless of scale.
+			data.offset[3] = pivot_corr_y + p_preset_margin + (parent_rect.size.y - 2.0f * p_preset_margin) / data.scale.y - parent_rect.size.y + parent_rect.position.y;
 			break;
 	}
-
-	_size_changed();
 }
 
 void Control::set_anchors_and_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_margin) {
@@ -1507,10 +1561,22 @@ void Control::set_size(const Size2 &p_size, bool p_keep_offsets) {
 	}
 #endif // TOOLS_ENABLED
 
+	// For corner/center anchor presets, re-align to the preset using the new size.
+	// Wide/full presets are driven by the parent rect, not by explicit size; skip them.
 	if (p_keep_offsets) {
 		_compute_anchors(Rect2(data.pos_cache, new_size), data.offset, data.anchor);
 	} else {
-		_compute_offsets(Rect2(data.pos_cache, new_size), data.anchor, data.offset);
+		bool preset_applied = false;
+		if (is_inside_tree() && data.anchor_preset_active) {
+			int current_preset = _get_anchors_layout_preset();
+			if (current_preset != -1) {
+				_compute_preset_offsets((LayoutPreset)current_preset, new_size, data.anchor_preset_margin);
+				preset_applied = true;
+			}
+		}
+		if (!preset_applied) {
+			_compute_offsets(Rect2(data.pos_cache, new_size), data.anchor, data.offset);
+		}
 	}
 	_size_changed();
 }
@@ -1576,6 +1642,16 @@ void Control::set_scale(const Vector2 &p_scale) {
 	if (data.scale.y == 0) {
 		data.scale.y = CMP_EPSILON;
 	}
+
+	// Re-apply the anchor preset offsets so that visual alignment (center, right-edge, etc.) stays correct for the new scale value.
+	if (is_inside_tree() && data.anchor_preset_active) {
+		int current_preset = _get_anchors_layout_preset();
+		if (current_preset != -1) {
+			_compute_preset_offsets((LayoutPreset)current_preset, get_size(), data.anchor_preset_margin);
+			_size_changed();
+		}
+	}
+
 	queue_redraw();
 	_notify_transform();
 	queue_accessibility_update();
@@ -1620,6 +1696,16 @@ void Control::set_pivot_offset(const Vector2 &p_pivot) {
 	}
 
 	data.pivot_offset = p_pivot;
+
+	// Re-apply the anchor preset offsets so that visual alignment (center, right-edge, etc.) stays correct for the new scale value.
+	if (is_inside_tree() && data.anchor_preset_active) {
+		int current_preset = _get_anchors_layout_preset();
+		if (current_preset != -1) {
+			_compute_preset_offsets((LayoutPreset)current_preset, get_size(), data.anchor_preset_margin);
+			_size_changed();
+		}
+	}
+
 	queue_redraw();
 	_notify_transform();
 	queue_accessibility_update();
