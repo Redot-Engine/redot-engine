@@ -230,6 +230,8 @@ private:
 		bool block_minimum_size_adjust = false;
 
 		bool size_warning = true;
+		int anchor_preset_margin = 0;
+		bool anchor_preset_active = false;
 		/// @}
 		/// Container Sizing
 		/// @{
@@ -334,6 +336,8 @@ private:
 	LayoutMode _get_default_layout_mode() const;
 	void _set_anchors_layout_preset(int p_preset);
 	int _get_anchors_layout_preset() const;
+
+	void _compute_preset_offsets(LayoutPreset p_preset, const Size2 &p_size, int p_margin = 0);
 
 	void _update_minimum_size_cache() const;
 	void _update_minimum_size();
@@ -512,6 +516,10 @@ public:
 	GrowDirection get_v_grow_direction() const;
 
 	void set_anchors_preset(LayoutPreset p_preset, bool p_keep_offsets = true);
+	/// Sets the control's offsets to align with a layout preset.
+	/// @param p_preset: The layout preset from LayoutPreset enum.
+	/// @param p_resize_mode: How to determine the resulting size (PRESET_MODE_MINSIZE, PRESET_MODE_KEEP_SIZE, etc.).
+	/// @param p_margin: Gap between the control and parent edges.
 	void set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
 	void set_anchors_and_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
 	void set_grow_direction_preset(LayoutPreset p_preset);
