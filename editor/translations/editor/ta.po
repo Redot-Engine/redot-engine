@@ -8555,7 +8555,7 @@ msgstr "சாதாரணமாகத் திருத்தவும்"
 msgid "Edit in Recovery Mode"
 msgstr "மீட்பு பயன்முறையில் திருத்து"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "முதலில் காப்புப்பிரதி திட்டம்"
 
 msgid "Convert Full Project"

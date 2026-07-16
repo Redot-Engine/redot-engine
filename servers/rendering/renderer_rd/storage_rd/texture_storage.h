@@ -462,6 +462,8 @@ private:
 	RenderTarget *get_render_target(RID p_rid) const { return render_target_owner.get_or_null(p_rid); }
 
 	void _clear_render_target(RenderTarget *rt);
+	/// Allocate GPU image (RenderTarget::color) and wires it to RenderTarget::texture,
+	/// which is the wrapper that gets exposed
 	void _update_render_target(RenderTarget *rt);
 	void _create_render_target_backbuffer(RenderTarget *rt);
 	void _render_target_allocate_sdf(RenderTarget *rt);

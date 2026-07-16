@@ -3375,6 +3375,16 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 	rt->color = RD::get_singleton()->texture_create(rd_color_attachment_format, rd_view);
 	ERR_FAIL_COND(rt->color.is_null());
 
+	// Vulkan (and Metal) textures are uninitialized on creation, unlike OpenGL which
+	// zero-initializes. RD's own lazy pending-clear mechanism (Texture::pending_clear /
+	// _texture_check_pending_clear) is only armed when the driver trait
+	// API_TRAIT_TEXTURE_OUTPUTS_REQUIRE_CLEARS is true, which D3D12 sets but Vulkan and
+	// Metal do not, so it never fires for this texture on those backends. Without an
+	// explicit clear here, a consumer (e.g. Sprite3D) can sample this texture before
+	// any draw ever writes to it (e.g. SubViewport with VIEWPORT_UPDATE_WHEN_VISIBLE,
+	// whose was_used starts false), reading uninitialized VRAM garbage for one frame.
+	RD::get_singleton()->texture_clear(rt->color, Color(0, 0, 0, 0), 0, 1, 0, rd_color_attachment_format.array_layers);
+
 	if (rt->msaa != RS::VIEWPORT_MSAA_DISABLED) {
 		// Use the texture format of the color attachment for the multisample color attachment.
 		RD::TextureFormat rd_color_multisample_format = rd_color_attachment_format;
@@ -3390,10 +3400,11 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 		rd_color_multisample_format.is_resolve_buffer = false;
 		rt->color_multisample = RD::get_singleton()->texture_create(rd_color_multisample_format, rd_view_multisample);
 		ERR_FAIL_COND(rt->color_multisample.is_null());
+
+		RD::get_singleton()->texture_clear(rt->color_multisample, Color(0, 0, 0, 0), 0, 1, 0, rd_color_multisample_format.array_layers);
 	}
 
 	{ //update texture
-
 		Texture *tex = get_texture(rt->texture);
 
 		//free existing textures
@@ -4322,9 +4333,9 @@ RD::DataFormat TextureStorage::render_target_get_color_format(bool p_use_hdr, bo
 
 uint32_t TextureStorage::render_target_get_color_usage_bits(bool p_msaa) {
 	if (p_msaa) {
-		return RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		return RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	} else {
 		/// @todo FIXME: Storage bit should only be requested when FSR is required.
-		return RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
+		return RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT | RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
 	}
 }

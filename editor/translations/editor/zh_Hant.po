@@ -8477,7 +8477,7 @@ msgstr "正常編輯"
 msgid "Edit in Recovery Mode"
 msgstr "在恢復模式中編輯"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "先備份專案"
 
 msgid "Convert Full Project"
