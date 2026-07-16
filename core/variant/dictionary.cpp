@@ -242,7 +242,7 @@ bool Dictionary::has_all(const Array &p_keys) const {
 
 Variant Dictionary::find_key(const Variant &p_value) const {
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed_value.validate(value, "find_key"), Variant());
+	ERR_FAIL_COND_V(!_p->typed_value.validate_for_lookup(value, "find_key"), Variant());
 	for (const KeyValue<Variant, Variant> &E : _p->variant_map) {
 		if (E.value == value) {
 			return E.key;
