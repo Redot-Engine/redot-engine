@@ -8844,7 +8844,7 @@ msgstr "通常の編集"
 msgid "Edit in Recovery Mode"
 msgstr "リカバリーモードで編集"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "先にプロジェクトをバックアップ"
 
 msgid "Convert Full Project"

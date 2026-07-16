@@ -8723,7 +8723,7 @@ msgstr "평범하게 편집"
 msgid "Edit in Recovery Mode"
 msgstr "복구 모드에서 편집"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "프로젝트를 먼저 백업"
 
 msgid "Convert Full Project"

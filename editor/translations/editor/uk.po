@@ -8844,7 +8844,7 @@ msgstr "Відредагуйте нормально"
 msgid "Edit in Recovery Mode"
 msgstr "Редагувати в режимі відновлення"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "Спочатку резервне копіювання проекту"
 
 msgid "Convert Full Project"

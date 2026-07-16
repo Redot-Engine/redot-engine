@@ -1763,7 +1763,7 @@ ProjectManager::ProjectManager() {
 		ask_update_label->set_v_size_flags(SIZE_EXPAND_FILL);
 		ask_update_vb->add_child(ask_update_label);
 		ask_update_backup = memnew(CheckBox);
-		ask_update_backup->set_text(TTRC("Backup project first"));
+		ask_update_backup->set_text(TTRC("Back up project first"));
 		ask_update_backup->set_h_size_flags(SIZE_SHRINK_CENTER);
 		ask_update_vb->add_child(ask_update_backup);
 		ask_update_settings->get_ok_button()->connect(SceneStringName(pressed), callable_mp(this, &ProjectManager::_open_selected_projects_with_migration));
