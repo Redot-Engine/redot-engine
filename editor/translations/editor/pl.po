@@ -8864,7 +8864,7 @@ msgstr "Edytuj normalnie"
 msgid "Edit in Recovery Mode"
 msgstr "Edytuj w Trybie awaryjnym"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "Zrób najpierw kopię zapasową"
 
 msgid "Convert Full Project"

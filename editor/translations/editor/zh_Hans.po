@@ -8525,7 +8525,7 @@ msgstr "正常编辑"
 msgid "Edit in Recovery Mode"
 msgstr "在恢复模式中编辑"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "事先备份项目"
 
 msgid "Convert Full Project"
