@@ -737,7 +737,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 									}
 									if (is_awaited) {
 										gen->write_call_async(result, base, call->function_name, arguments);
-									} else if (base.type.has_type && base.type.kind != GDScriptDataType::BUILTIN) {
+									} else if (base.type.has_type && base.type.kind != GDScriptDataType::BUILTIN && base.type.kind != GDScriptDataType::STRUCT) {
 										// Native method, use faster path.
 										StringName class_name;
 										if (base.type.kind == GDScriptDataType::NATIVE) {
@@ -775,7 +775,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 								}
 								if (is_awaited) {
 									gen->write_call_async(result, base, call->function_name, arguments);
-								} else if (base.type.has_type && base.type.kind != GDScriptDataType::BUILTIN) {
+								} else if (base.type.has_type && base.type.kind != GDScriptDataType::BUILTIN && base.type.kind != GDScriptDataType::STRUCT) {
 									// Native method, use faster path.
 									StringName class_name;
 									if (base.type.kind == GDScriptDataType::NATIVE) {
