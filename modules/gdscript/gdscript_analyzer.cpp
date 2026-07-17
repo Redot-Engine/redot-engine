@@ -52,6 +52,10 @@
 #include "core/templates/hash_map.h"
 #include "scene/main/node.h"
 
+#ifdef TOOLS_ENABLED
+#include "editor/settings/editor_settings.h"
+#endif
+
 #if defined(TOOLS_ENABLED) && !defined(DISABLE_DEPRECATED)
 #define SUGGEST_GODOT4_RENAMES
 #include "editor/project_upgrade/renames_map_3_to_4.h"
@@ -1627,6 +1631,22 @@ void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct,
 	if (p_struct->resolved_body) {
 		return;
 	}
+
+#ifdef TOOLS_ENABLED
+	// Structs are experimental: warn once per analysis on the first struct declaration.
+	// Editor-only, and suppressible via the editor setting.
+	if (!experimental_struct_warned) {
+		experimental_struct_warned = true;
+		bool show_warning = true;
+		const EditorSettings *editor_settings = EditorSettings::get_singleton();
+		if (editor_settings != nullptr && editor_settings->has_setting("text_editor/behavior/general/show_experimental_struct_warning")) {
+			show_warning = editor_settings->get_setting("text_editor/behavior/general/show_experimental_struct_warning");
+		}
+		if (show_warning) {
+			parser->push_warning(p_struct, GDScriptWarning::EXPERIMENTAL_STRUCT);
+		}
+	}
+#endif
 
 	// Set resolving sentinel before any recursive work
 	p_struct->resolving_body = true;

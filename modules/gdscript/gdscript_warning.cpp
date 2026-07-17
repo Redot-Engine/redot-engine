@@ -170,6 +170,10 @@ String GDScriptWarning::get_message() const {
 			return vformat(R"*(The default value uses "%s" which won't return nodes in the scene tree before "_ready()" is called. Use the "@onready" annotation to solve this.)*", symbols[0]);
 		case ONREADY_WITH_EXPORT:
 			return R"("@onready" will set the default value after "@export" takes effect and will override it.)";
+		case EXPERIMENTAL_STRUCT:
+			return "Struct usage detected. This feature is still experimental and potentially subject to change in future versions.\n"
+				   "If you run into any issues please open an issue on GitHub: https://github.com/Redot-Engine/redot-engine/issues\n"
+				   "This message can be disabled in Editor Settings > Text Editor > Behavior > General > Show Experimental Struct Warning.";
 #ifndef DISABLE_DEPRECATED
 		// Never produced. These warnings migrated from 3.x by mistake.
 		case PROPERTY_USED_AS_FUNCTION: // There is already an error.
@@ -246,6 +250,7 @@ String GDScriptWarning::get_name_from_code(Code p_code) {
 		PNAME("NATIVE_METHOD_OVERRIDE"),
 		PNAME("GET_NODE_DEFAULT_WITHOUT_ONREADY"),
 		PNAME("ONREADY_WITH_EXPORT"),
+		PNAME("EXPERIMENTAL_STRUCT"),
 #ifndef DISABLE_DEPRECATED
 		"PROPERTY_USED_AS_FUNCTION",
 		"CONSTANT_USED_AS_FUNCTION",
