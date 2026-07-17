@@ -252,7 +252,7 @@ int ColorPickerShape::get_edge_h_change(const Vector2 &p_color_change_vector) {
 float ColorPickerShape::get_h_on_circle_edge(const Vector2 &p_color_change_vector) {
 	int h_change = get_edge_h_change(p_color_change_vector);
 
-	float target_h = Math::wrapf(color_picker->h + h_change / 360.0, 0, 1);
+	float target_h = Math::wrapf(color_picker->h + h_change / 360.0, 0., 1.);
 	int current_quarter = color_picker->h * 4;
 	int future_quarter = target_h * 4;
 	if (p_color_change_vector.y > 0 && ((future_quarter == 0 && current_quarter == 1) || (future_quarter == 1 && current_quarter == 0))) {
@@ -581,7 +581,7 @@ void ColorPickerShapeOKHLRectangle::_value_slider_draw() {
 float ColorPickerShapeWheel::_get_h_on_wheel(const Vector2 &p_color_change_vector) {
 	int h_change = get_edge_h_change(p_color_change_vector);
 
-	float target_h = Math::wrapf(color_picker->h + h_change / 360.0, 0, 1);
+	float target_h = Math::wrapf(color_picker->h + h_change / 360.0, 0., 1.);
 	int current_quarter = color_picker->h * 4;
 	int future_quarter = target_h * 4;
 

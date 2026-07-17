@@ -472,7 +472,7 @@ void SplineIK3D::_process_joints(double p_delta, Skeleton3D *p_skeleton, SplineI
 				continue;
 			}
 		}
-		uint32_t nearest_next = p_curve->is_closed() ? Math::posmod(nearest + 1, point_count) : CLAMP(nearest + 1, (uint32_t)0, point_last);
+		uint32_t nearest_next = p_curve->is_closed() ? Math::posmod(static_cast<int64_t>(nearest + 1), point_count) : CLAMP(nearest + 1, (uint32_t)0, point_last);
 		p_setting->update_chain_coordinate(p_skeleton, TAIL, limit_length(p_setting->chain[HEAD], p_curve_space.xform(points[nearest].lerp(points[nearest_next], interpolate)), solver_info->length));
 		if (!is_fitting_first) {
 			p_setting->twists[HEAD] = Math::lerp((double)tilts[last_nearest], (double)tilts[last_nearest_next], last_interpolate);

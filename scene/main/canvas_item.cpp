@@ -957,8 +957,8 @@ void CanvasItem::draw_polygon(const Vector<Point2> &p_points, const Vector<Color
 
 		PackedVector2Array uvs = p_uvs;
 		for (Vector2 &p : uvs) {
-			p.x = Math::remap(p.x, 0, 1, remap_min.x, remap_max.x);
-			p.y = Math::remap(p.y, 0, 1, remap_min.y, remap_max.y);
+			p.x = Math::remap<real_t>(p.x, 0, 1, remap_min.x, remap_max.x);
+			p.y = Math::remap<real_t>(p.y, 0, 1, remap_min.y, remap_max.y);
 		}
 		RenderingServer::get_singleton()->canvas_item_add_polygon(canvas_item, p_points, p_colors, uvs, texture->get_rid());
 	} else {

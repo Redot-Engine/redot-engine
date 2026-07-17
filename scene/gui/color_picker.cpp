@@ -709,7 +709,7 @@ Color ColorPicker::_color_apply_intensity(const Color &col) const {
 	}
 	Color linear_color = col.srgb_to_linear();
 	Color result;
-	float multiplier = Math::pow(2, intensity);
+	float multiplier = Math::pow(2.f, intensity);
 	for (int i = 0; i < 3; i++) {
 		result.components[i] = linear_color.components[i] * multiplier;
 	}

@@ -413,13 +413,13 @@ Vector<Ref<Shape3D>> ResourceImporterScene::get_collision_shapes(const Ref<Impor
 
 			const real_t precision = real_t(precision_level - 1) / 9.0;
 
-			decomposition_settings->set_max_concavity(Math::lerp(real_t(1.0), real_t(0.001), precision));
-			decomposition_settings->set_min_volume_per_convex_hull(Math::lerp(real_t(0.01), real_t(0.0001), precision));
-			decomposition_settings->set_resolution(Math::lerp(10'000, 100'000, precision));
-			decomposition_settings->set_max_num_vertices_per_convex_hull(Math::lerp(32, 64, precision));
-			decomposition_settings->set_plane_downsampling(Math::lerp(3, 16, precision));
-			decomposition_settings->set_convex_hull_downsampling(Math::lerp(3, 16, precision));
-			decomposition_settings->set_max_convex_hulls(Math::lerp(1, 32, precision));
+			decomposition_settings->set_max_concavity(Math::lerp<float>(real_t(1.0), real_t(0.001), precision));
+			decomposition_settings->set_min_volume_per_convex_hull(Math::lerp<float>(real_t(0.01), real_t(0.0001), precision));
+			decomposition_settings->set_resolution(Math::lerp<float>(10'000, 100'000, precision));
+			decomposition_settings->set_max_num_vertices_per_convex_hull(Math::lerp<float>(32, 64, precision));
+			decomposition_settings->set_plane_downsampling(Math::lerp<float>(3, 16, precision));
+			decomposition_settings->set_convex_hull_downsampling(Math::lerp<float>(3, 16, precision));
+			decomposition_settings->set_max_convex_hulls(Math::lerp<float>(1, 32, precision));
 		}
 
 		return p_mesh->convex_decompose(decomposition_settings);

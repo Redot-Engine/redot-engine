@@ -1224,7 +1224,7 @@ void CopyEffects::cubemap_roughness(RID p_source_rd_texture, RID p_dest_texture,
 
 	RD::get_singleton()->compute_list_set_push_constant(compute_list, &roughness.push_constant, sizeof(CubemapRoughnessPushConstant));
 
-	int x_groups = Math::division_round_up(p_size, 8);
+	int x_groups = Math::division_round_up(static_cast<unsigned int>(p_size), 8u);
 	int y_groups = x_groups;
 
 	RD::get_singleton()->compute_list_dispatch(compute_list, x_groups, y_groups, p_face_id > 9 ? 6 : 1);

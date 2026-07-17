@@ -4130,7 +4130,7 @@ void TileMapLayerEditor::_layers_select_next_or_previous(bool p_next) {
 				break;
 			}
 		}
-		new_selected_layer = tile_map_layers_in_scene_cache[Math::posmod(edited_index + inc, tile_map_layers_in_scene_cache.size())];
+		new_selected_layer = tile_map_layers_in_scene_cache[Math::posmod(static_cast<int64_t>(edited_index + inc), tile_map_layers_in_scene_cache.size())];
 	}
 
 	ERR_FAIL_NULL(new_selected_layer);
