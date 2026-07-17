@@ -51,7 +51,6 @@ class GDScriptStruct;
 extern "C" {
 // These will be defined in gdscript.cpp with C linkage to avoid name mangling issues
 void gdscript_struct_instance_serialize(const GDScriptStructInstance *p_instance, Dictionary &r_dict);
-bool gdscript_struct_instance_get_type_name(const GDScriptStructInstance *p_instance, String &r_name);
 }
 
 // Helper function to serialize a struct
@@ -62,11 +61,6 @@ static Dictionary _serialize_struct(const GDScriptStructInstance *p_instance) {
 	Dictionary dict;
 	gdscript_struct_instance_serialize(p_instance, dict);
 	return dict;
-}
-#else
-// Stub implementation when GDScript module is disabled
-static Dictionary _serialize_struct(const void *p_instance) {
-	ERR_FAIL_V_MSG(Dictionary(), "STRUCT serialization requires MODULE_GDSCRIPT_ENABLED.");
 }
 #endif // MODULE_GDSCRIPT_ENABLED
 
