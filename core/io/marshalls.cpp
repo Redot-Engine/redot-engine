@@ -1310,9 +1310,16 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 		} break;
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case Variant::STRUCT: {
-			// Decode struct via GDScript helper function
-			Error err = gdscript_variant_decode_struct(buf, len, r_len, r_variant);
+			// Decode struct via GDScript helper function.
+			// The helper resets its length counter internally, so pass a local
+			// accumulator and add the bytes it consumed to r_len (which already
+			// counts the STRUCT header) instead of letting it overwrite it.
+			int used = 0;
+			Error err = gdscript_variant_decode_struct(buf, len, &used, r_variant);
 			ERR_FAIL_COND_V(err, err);
+			if (r_len) {
+				(*r_len) += used;
+			}
 		} break;
 #else
 		case Variant::STRUCT: {
@@ -2149,9 +2156,14 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 		} break;
 #ifdef MODULE_GDSCRIPT_ENABLED
 		case Variant::STRUCT: {
-			// Encode struct via GDScript helper function
-			Error err = gdscript_variant_encode_struct(p_variant, buf, r_len);
+			// Encode struct via GDScript helper function.
+			// The helper resets its length counter to 0 internally, so pass a
+			// local accumulator and add it to r_len (which already counts the
+			// STRUCT header) instead of letting it clobber the outer accounting.
+			int used = 0;
+			Error err = gdscript_variant_encode_struct(p_variant, buf, used);
 			ERR_FAIL_COND_V(err, err);
+			r_len += used;
 		} break;
 #else
 		case Variant::STRUCT: {
