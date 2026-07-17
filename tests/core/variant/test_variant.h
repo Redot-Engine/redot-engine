@@ -34,6 +34,7 @@
 
 #include "core/variant/variant.h"
 #include "core/variant/variant_parser.h"
+#include "core/variant/variant_utility.h"
 
 #include "tests/test_macros.h"
 
@@ -2294,6 +2295,84 @@ TEST_CASE("[Variant] Operator NOT") {
 		REQUIRE_EQ(result.get_type(), Variant::BOOL);
 		CHECK_EQ(!value.booleanize(), result.operator bool());
 	}
+}
+
+TEST_CASE("[Variant] VariantParser for Variant::NIL") {
+	String errs;
+	int line;
+	Variant result;
+	Error err;
+
+	// Test Variant::NIL
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Variant::NIL";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err == OK, "Variant::NIL should parse without error");
+		CHECK_MESSAGE(result.get_type() == Variant::NIL, "Variant::NIL should result in a nil Variant");
+	}
+
+	// Test null (regression)
+	{
+		VariantParser::StreamString ss;
+		ss.s = "null";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err == OK, "null should parse without error");
+		CHECK_MESSAGE(result.get_type() == Variant::NIL, "null should result in a nil Variant");
+	}
+
+	// Test nil (regression)
+	{
+		VariantParser::StreamString ss;
+		ss.s = "nil";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err == OK, "nil should parse without error");
+		CHECK_MESSAGE(result.get_type() == Variant::NIL, "nil should result in a nil Variant");
+	}
+
+	// Test Variant::INVALID (error case)
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Variant::INVALID";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err != OK, "Variant::INVALID should produce a parse error");
+		CHECK_MESSAGE(errs.contains("Unknown Variant constant 'INVALID'"), "Error message should mention unknown constant");
+	}
+
+	// Test Variant (alone)
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Variant";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line);
+		CHECK_MESSAGE(err != OK, "Variant alone should produce a parse error");
+		CHECK_MESSAGE(errs.contains("Expected '::' after 'Variant'"), "Error message should mention expected '::'");
+	}
+
+	// Test p_allow_objects security gating
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Object(RefCounted, {})";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line, nullptr, false); // p_allow_objects = false
+		CHECK_MESSAGE(err == ERR_UNAUTHORIZED, "Object parsing should be unauthorized when p_allow_objects is false");
+	}
+
+	{
+		VariantParser::StreamString ss;
+		ss.s = "Variant::NIL";
+		line = 1;
+		err = VariantParser::parse(&ss, result, errs, line, nullptr, false); // p_allow_objects = false
+		CHECK_MESSAGE(err == OK, "Variant::NIL should be allowed even when p_allow_objects is false");
+	}
+
+	// Test with str_to_var
+	Variant v = VariantUtilityFunctions::str_to_var("Variant::NIL");
+	CHECK_MESSAGE(v.get_type() == Variant::NIL, "str_to_var(\"Variant::NIL\") should result in a nil Variant");
 }
 
 } // namespace TestVariant

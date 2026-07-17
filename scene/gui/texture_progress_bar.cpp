@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_progress_bar.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_progress_bar.h"
 
 void TextureProgressBar::set_under_texture(const Ref<Texture2D> &p_texture) {

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file scene_shader_forward_clustered.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_shader_forward_clustered.h"
 #include "core/config/project_settings.h"
 #include "core/math/math_defs.h"

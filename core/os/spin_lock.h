@@ -32,14 +32,18 @@
 
 #pragma once
 
+/**
+ * @file spin_lock.h
+ *
+ * @brief Note the implementations below avoid false sharing by ensuring their
+ * sizes match the assumed cache line. We can't use align attributes
+ * because these objects may end up unaligned in semi-tightly packed arrays.
+ */
+
 #include "core/os/thread.h"
 #include "core/typedefs.h"
 
 #ifdef THREADS_ENABLED
-
-// Note the implementations below avoid false sharing by ensuring their
-// sizes match the assumed cache line. We can't use align attributes
-// because these objects may end up unaligned in semi-tightly packed arrays.
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -95,7 +99,7 @@ static_assert(std::atomic_bool::is_always_lock_free);
 
 class SpinLock {
 	union {
-		mutable std::atomic<bool> locked = ATOMIC_VAR_INIT(false);
+		mutable std::atomic<bool> locked = false;
 		char aligner[Thread::CACHE_LINE_BYTES];
 	};
 

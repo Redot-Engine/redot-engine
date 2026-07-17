@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file image_loader_hdr.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/image_loader.h"
 
 class ImageLoaderHDR : public ImageFormatLoader {

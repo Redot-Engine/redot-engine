@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file crypto.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "crypto.h"
 
 /// Resources
@@ -149,8 +155,6 @@ PackedByteArray Crypto::hmac_digest(HashingContext::HashType p_hash_type, const 
 	return ctx->finish();
 }
 
-// Compares two HMACS for equality without leaking timing information in order to prevent timing attacks.
-// @see: https://paragonie.com/blog/2015/11/preventing-timing-attacks-on-string-comparison-with-double-hmac-strategy
 bool Crypto::constant_time_compare(const PackedByteArray &p_trusted, const PackedByteArray &p_received) {
 	const uint8_t *t = p_trusted.ptr();
 	const uint8_t *r = p_received.ptr();

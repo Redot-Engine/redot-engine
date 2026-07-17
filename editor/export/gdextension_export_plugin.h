@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdextension_export_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/extension/gdextension_library_loader.h"
 #include "editor/export/editor_export.h"
 
@@ -151,7 +157,8 @@ void GDExtensionExportPlugin::_export_file(const String &p_path, const String &p
 			}
 		}
 
-		Vector<SharedObject> dependencies_shared_objects = GDExtensionLibraryLoader::find_extension_dependencies(p_path, config, [p_features](String p_feature) { return p_features.has(p_feature); });
+		Vector<SharedObject> dependencies_shared_objects = GDExtensionLibraryLoader::find_extension_dependencies(
+				p_path, config, [features_wo_arch, arch_tag](String p_feature) { return features_wo_arch.has(p_feature) || (p_feature == arch_tag); });
 		for (const SharedObject &shared_object : dependencies_shared_objects) {
 			_add_shared_object(shared_object);
 		}

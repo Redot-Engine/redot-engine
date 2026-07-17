@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_device_driver_vulkan.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_device_driver_vulkan.h"
 
 #include "core/config/project_settings.h"
@@ -379,7 +385,7 @@ uint32_t RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_stages_fla
 		flags += SHADER_STAGE_TESSELATION_EVALUATION_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
-		// FIXME: Add shader stage geometry bit.
+		/// @todo FIXME: Add shader stage geometry bit.
 	}
 	if (supported_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
 		flags += SHADER_STAGE_FRAGMENT_BIT;
@@ -536,8 +542,6 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions() {
 	_register_requested_device_extension(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME, false);
 
-	// We don't actually use this extension, but some runtime components on some platforms
-	// can and will fill the validation layers with useless info otherwise if not enabled.
 	_register_requested_device_extension(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, false);
 
 	if (Engine::get_singleton()->is_generate_spirv_debug_info_enabled()) {
@@ -657,36 +661,36 @@ Error RenderingDeviceDriverVulkan::_check_device_features() {
 		return ERR_CANT_CREATE;
 	}
 
-	// Opt-in to the features we actually need/use. These can be changed in the future.
-	// We do this for multiple reasons:
-	//
-	//	1. Certain features (like sparse* stuff) cause unnecessary internal driver allocations.
-	//	2. Others like shaderStorageImageMultisample are a huge red flag
-	//	   (MSAA + Storage is rarely needed).
-	//	3. Most features when turned off aren't actually off (we just promise the driver not to use them)
-	//	   and it is validation what will complain. This allows us to target a minimum baseline.
-	//
-	// TODO: Allow the user to override these settings (i.e. turn off more stuff) using profiles
-	// so they can target a broad range of HW. For example Mali HW does not have
-	// shaderClipDistance/shaderCullDistance; thus validation would complain if such feature is used;
-	// allowing them to fix the problem without even owning Mali HW to test on.
-	//
-	// The excluded features are:
-	// - robustBufferAccess (can hamper performance on some hardware)
-	// - occlusionQueryPrecise
-	// - pipelineStatisticsQuery
-	// - shaderStorageImageMultisample (unsupported by Intel Arc, prevents from using MSAA storage accidentally)
-	// - shaderResourceResidency
-	// - sparseBinding (we don't use sparse features and enabling them cause extra internal allocations inside the Vulkan driver we don't need)
-	// - sparseResidencyBuffer
-	// - sparseResidencyImage2D
-	// - sparseResidencyImage3D
-	// - sparseResidency2Samples
-	// - sparseResidency4Samples
-	// - sparseResidency8Samples
-	// - sparseResidency16Samples
-	// - sparseResidencyAliased
-	// - inheritedQueries
+	/// Opt-in to the features we actually need/use. These can be changed in the future.
+	/// We do this for multiple reasons:
+	///
+	///	1. Certain features (like sparse* stuff) cause unnecessary internal driver allocations.
+	///	2. Others like shaderStorageImageMultisample are a huge red flag
+	///	   (MSAA + Storage is rarely needed).
+	///	3. Most features when turned off aren't actually off (we just promise the driver not to use them)
+	///	   and it is validation what will complain. This allows us to target a minimum baseline.
+	///
+	/// @todo Allow the user to override these settings (i.e. turn off more stuff) using profiles
+	/// so they can target a broad range of HW. For example Mali HW does not have
+	/// shaderClipDistance/shaderCullDistance; thus validation would complain if such feature is used;
+	/// allowing them to fix the problem without even owning Mali HW to test on.
+	///
+	/// The excluded features are:
+	/// - robustBufferAccess (can hamper performance on some hardware)
+	/// - occlusionQueryPrecise
+	/// - pipelineStatisticsQuery
+	/// - shaderStorageImageMultisample (unsupported by Intel Arc, prevents from using MSAA storage accidentally)
+	/// - shaderResourceResidency
+	/// - sparseBinding (we don't use sparse features and enabling them cause extra internal allocations inside the Vulkan driver we don't need)
+	/// - sparseResidencyBuffer
+	/// - sparseResidencyImage2D
+	/// - sparseResidencyImage3D
+	/// - sparseResidency2Samples
+	/// - sparseResidency4Samples
+	/// - sparseResidency8Samples
+	/// - sparseResidency16Samples
+	/// - sparseResidencyAliased
+	/// - inheritedQueries
 
 #define VK_DEVICEFEATURE_ENABLE_IF(x)                             \
 	if (physical_device_features.x) {                             \
@@ -964,7 +968,7 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities() {
 				print_verbose("  Primitive fragment shading rate");
 			}
 			if (fsr_capabilities.attachment_supported) {
-				// TODO: Expose these somehow to the end user.
+				/// @todo Expose these somehow to the end user.
 				fsr_capabilities.min_texel_size.x = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
 				fsr_capabilities.min_texel_size.y = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
 				fsr_capabilities.max_texel_size.x = fsr_properties.maxFragmentShadingRateAttachmentTexelSize.width;
@@ -1537,6 +1541,14 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 		const uint32_t reset_descriptor_pool_fixed_driver_begin = VK_MAKE_VERSION(512u, 671u, 0u);
 		linear_descriptor_pools_enabled = physical_device_properties.driverVersion < reset_descriptor_pool_broken_driver_begin || physical_device_properties.driverVersion > reset_descriptor_pool_fixed_driver_begin;
 	}
+
+	// Workaround a driver bug on Adreno 5XX GPUs that causes a crash when
+	// there are empty descriptor set layouts placed between non-empty ones.
+	adreno_5xx_empty_descriptor_set_layout_workaround =
+			physical_device_properties.vendorID == RenderingContextDriver::Vendor::VENDOR_QUALCOMM &&
+			physical_device_properties.deviceID >= 0x5000000 &&
+			physical_device_properties.deviceID < 0x6000000;
+
 	frame_count = p_frame_count;
 
 	// Copy the queue family properties the context already retrieved.
@@ -2705,7 +2717,7 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 	}
 
 	for (uint32_t i = 0; i < p_wait_semaphores.size(); i++) {
-		// FIXME: Allow specifying the stage mask in more detail.
+		/// @todo FIXME: Allow specifying the stage mask in more detail.
 		wait_semaphores.push_back(VkSemaphore(p_wait_semaphores[i].id));
 		wait_semaphores_stages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 	}
@@ -3715,12 +3727,25 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(const Re
 
 	// Descriptor sets.
 	if (error_text.is_empty()) {
+		// For Adreno 5XX driver bug.
+		VkDescriptorSetLayoutBinding placeholder_binding = {};
+		placeholder_binding.binding = 0;
+		placeholder_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		placeholder_binding.descriptorCount = 1;
+		placeholder_binding.stageFlags = VK_SHADER_STAGE_ALL;
+
 		for (uint32_t i = 0; i < shader_refl.uniform_sets.size(); i++) {
 			// Empty ones are fine if they were not used according to spec (binding count will be 0).
 			VkDescriptorSetLayoutCreateInfo layout_create_info = {};
 			layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			layout_create_info.bindingCount = vk_set_bindings[i].size();
 			layout_create_info.pBindings = vk_set_bindings[i].ptr();
+
+			// ...not so fine on Adreno 5XX.
+			if (adreno_5xx_empty_descriptor_set_layout_workaround && layout_create_info.bindingCount == 0) {
+				layout_create_info.bindingCount = 1;
+				layout_create_info.pBindings = &placeholder_binding;
+			}
 
 			VkDescriptorSetLayout layout = VK_NULL_HANDLE;
 			res = vkCreateDescriptorSetLayout(vk_device, &layout_create_info, VKC::get_allocation_callbacks(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT), &layout);
@@ -3803,21 +3828,7 @@ void RenderingDeviceDriverVulkan::shader_destroy_modules(ShaderID p_shader) {
 /*********************/
 /**** UNIFORM SET ****/
 /*********************/
-VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_find_or_create(const DescriptorSetPoolKey &p_key, DescriptorSetPools::Iterator *r_pool_sets_it, int p_linear_pool_index) {
-	bool linear_pool = p_linear_pool_index >= 0;
-	DescriptorSetPools::Iterator pool_sets_it = linear_pool ? linear_descriptor_set_pools[p_linear_pool_index].find(p_key) : descriptor_set_pools.find(p_key);
-
-	if (pool_sets_it) {
-		for (KeyValue<VkDescriptorPool, uint32_t> &E : pool_sets_it->value) {
-			if (E.value < max_descriptor_sets_per_pool) {
-				*r_pool_sets_it = pool_sets_it;
-				return E.key;
-			}
-		}
-	}
-
-	// Create a new one.
-
+VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_create(const DescriptorSetPoolKey &p_key, bool p_linear_pool) {
 	// Here comes more vulkan API strangeness.
 	VkDescriptorPoolSize *vk_sizes = ALLOCA_ARRAY(VkDescriptorPoolSize, UNIFORM_TYPE_MAX);
 	uint32_t vk_sizes_count = 0;
@@ -3891,7 +3902,7 @@ VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_find_or_creat
 
 	VkDescriptorPoolCreateInfo descriptor_set_pool_create_info = {};
 	descriptor_set_pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	if (linear_descriptor_pools_enabled && linear_pool) {
+	if (linear_descriptor_pools_enabled && p_linear_pool) {
 		descriptor_set_pool_create_info.flags = 0;
 	} else {
 		descriptor_set_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // Can't think how somebody may NOT need this flag.
@@ -3906,18 +3917,6 @@ VkDescriptorPool RenderingDeviceDriverVulkan::_descriptor_set_pool_find_or_creat
 		ERR_FAIL_COND_V_MSG(res, VK_NULL_HANDLE, "vkCreateDescriptorPool failed with error " + itos(res) + ".");
 	}
 
-	// Bookkeep.
-
-	if (!pool_sets_it) {
-		if (linear_pool) {
-			pool_sets_it = linear_descriptor_set_pools[p_linear_pool_index].insert(p_key, HashMap<VkDescriptorPool, uint32_t>());
-		} else {
-			pool_sets_it = descriptor_set_pools.insert(p_key, HashMap<VkDescriptorPool, uint32_t>());
-		}
-	}
-	HashMap<VkDescriptorPool, uint32_t> &pool_rcs = pool_sets_it->value;
-	pool_rcs.insert(vk_pool, 0);
-	*r_pool_sets_it = pool_sets_it;
 	return vk_pool;
 }
 
@@ -3951,25 +3950,28 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(VectorView<Bou
 		vk_writes[writes_amount] = {};
 		vk_writes[writes_amount].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 
+		bool add_write = true;
 		uint32_t num_descriptors = 1;
 
 		switch (uniform.type) {
 			case UNIFORM_TYPE_SAMPLER: {
-				if (uniform.immutable_sampler && immutable_samplers_enabled) {
-					continue; // Skipping immutable samplers.
-				}
 				num_descriptors = uniform.ids.size();
-				VkDescriptorImageInfo *vk_img_infos = ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
 
-				for (uint32_t j = 0; j < num_descriptors; j++) {
-					vk_img_infos[j] = {};
-					vk_img_infos[j].sampler = (VkSampler)uniform.ids[j].id;
-					vk_img_infos[j].imageView = VK_NULL_HANDLE;
-					vk_img_infos[j].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+				if (uniform.immutable_sampler && immutable_samplers_enabled) {
+					add_write = false;
+				} else {
+					VkDescriptorImageInfo *vk_img_infos = ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
+
+					for (uint32_t j = 0; j < num_descriptors; j++) {
+						vk_img_infos[j] = {};
+						vk_img_infos[j].sampler = (VkSampler)uniform.ids[j].id;
+						vk_img_infos[j].imageView = VK_NULL_HANDLE;
+						vk_img_infos[j].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+					}
+
+					vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+					vk_writes[writes_amount].pImageInfo = vk_img_infos;
 				}
-
-				vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-				vk_writes[writes_amount].pImageInfo = vk_img_infos;
 			} break;
 			case UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: {
 				num_descriptors = uniform.ids.size() / 2;
@@ -4068,7 +4070,7 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(VectorView<Bou
 				vk_writes[writes_amount].pTexelBufferView = vk_buf_views;
 			} break;
 			case UNIFORM_TYPE_IMAGE_BUFFER: {
-				CRASH_NOW_MSG("Unimplemented!"); // TODO.
+				CRASH_NOW_MSG("Unimplemented!"); /// @todo
 			} break;
 			case UNIFORM_TYPE_UNIFORM_BUFFER: {
 				const BufferInfo *buf_info = (const BufferInfo *)uniform.ids[0].id;
@@ -4108,35 +4110,64 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(VectorView<Bou
 			}
 		}
 
-		vk_writes[writes_amount].dstBinding = uniform.binding;
-		vk_writes[writes_amount].descriptorCount = num_descriptors;
+		if (add_write) {
+			vk_writes[writes_amount].dstBinding = uniform.binding;
+			vk_writes[writes_amount].descriptorCount = num_descriptors;
+			writes_amount++;
+		}
 
-		ERR_FAIL_COND_V_MSG(pool_key.uniform_type[uniform.type] == MAX_UNIFORM_POOL_ELEMENT, UniformSetID(),
-				"Uniform set reached the limit of bindings for the same type (" + itos(MAX_UNIFORM_POOL_ELEMENT) + ").");
+		ERR_FAIL_COND_V_MSG(pool_key.uniform_type[uniform.type] == MAX_UNIFORM_POOL_ELEMENT, UniformSetID(), "Uniform set reached the limit of bindings for the same type (" + itos(MAX_UNIFORM_POOL_ELEMENT) + ").");
 		pool_key.uniform_type[uniform.type] += num_descriptors;
-		writes_amount++;
 	}
 
-	// Need a descriptor pool.
-	DescriptorSetPools::Iterator pool_sets_it;
-	VkDescriptorPool vk_pool = _descriptor_set_pool_find_or_create(pool_key, &pool_sets_it, p_linear_pool_index);
-	DEV_ASSERT(vk_pool);
-	pool_sets_it->value[vk_pool]++;
+	bool linear_pool = p_linear_pool_index >= 0;
+	DescriptorSetPools::Iterator pool_sets_it = linear_pool ? linear_descriptor_set_pools[p_linear_pool_index].find(pool_key) : descriptor_set_pools.find(pool_key);
+	if (!pool_sets_it) {
+		if (linear_pool) {
+			pool_sets_it = linear_descriptor_set_pools[p_linear_pool_index].insert(pool_key, HashMap<VkDescriptorPool, uint32_t>());
+		} else {
+			pool_sets_it = descriptor_set_pools.insert(pool_key, HashMap<VkDescriptorPool, uint32_t>());
+		}
+	}
 
 	VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {};
 	descriptor_set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	descriptor_set_allocate_info.descriptorPool = vk_pool;
 	descriptor_set_allocate_info.descriptorSetCount = 1;
 	const ShaderInfo *shader_info = (const ShaderInfo *)p_shader.id;
 	descriptor_set_allocate_info.pSetLayouts = &shader_info->vk_descriptor_set_layouts[p_set_index];
 
 	VkDescriptorSet vk_descriptor_set = VK_NULL_HANDLE;
+	for (KeyValue<VkDescriptorPool, uint32_t> &E : pool_sets_it->value) {
+		if (E.value < max_descriptor_sets_per_pool) {
+			descriptor_set_allocate_info.descriptorPool = E.key;
+			VkResult res = vkAllocateDescriptorSets(vk_device, &descriptor_set_allocate_info, &vk_descriptor_set);
 
-	VkResult res = vkAllocateDescriptorSets(vk_device, &descriptor_set_allocate_info, &vk_descriptor_set);
-	if (res) {
-		_descriptor_set_pool_unreference(pool_sets_it, vk_pool, p_linear_pool_index);
-		ERR_FAIL_V_MSG(UniformSetID(), "Cannot allocate descriptor sets, error " + itos(res) + ".");
+			// Break early on success.
+			if (res == VK_SUCCESS) {
+				break;
+			}
+
+			// "Fragmented pool" and "out of memory pool" errors are handled by creating more pools. Any other error is unexpected.
+			if (res != VK_ERROR_FRAGMENTED_POOL && res != VK_ERROR_OUT_OF_POOL_MEMORY) {
+				ERR_FAIL_V_MSG(UniformSetID(), "Cannot allocate descriptor sets, error " + itos(res) + ".");
+			}
+		}
 	}
+
+	// Create a new pool when no allocations could be made from the existing pools.
+	if (vk_descriptor_set == VK_NULL_HANDLE) {
+		descriptor_set_allocate_info.descriptorPool = _descriptor_set_pool_create(pool_key, linear_pool);
+		VkResult res = vkAllocateDescriptorSets(vk_device, &descriptor_set_allocate_info, &vk_descriptor_set);
+
+		// All errors are unexpected at this stage.
+		if (res) {
+			vkDestroyDescriptorPool(vk_device, descriptor_set_allocate_info.descriptorPool, VKC::get_allocation_callbacks(VK_OBJECT_TYPE_DESCRIPTOR_POOL));
+			ERR_FAIL_V_MSG(UniformSetID(), "Cannot allocate descriptor sets, error " + itos(res) + ".");
+		}
+	}
+
+	DEV_ASSERT(descriptor_set_allocate_info.descriptorPool != VK_NULL_HANDLE && vk_descriptor_set != VK_NULL_HANDLE);
+	pool_sets_it->value[descriptor_set_allocate_info.descriptorPool]++;
 
 	for (uint32_t i = 0; i < writes_amount; i++) {
 		vk_writes[i].dstSet = vk_descriptor_set;
@@ -4148,9 +4179,9 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(VectorView<Bou
 	UniformSetInfo *usi = VersatileResource::allocate<UniformSetInfo>(resources_allocator);
 	usi->vk_descriptor_set = vk_descriptor_set;
 	if (p_linear_pool_index >= 0) {
-		usi->vk_linear_descriptor_pool = vk_pool;
+		usi->vk_linear_descriptor_pool = descriptor_set_allocate_info.descriptorPool;
 	} else {
-		usi->vk_descriptor_pool = vk_pool;
+		usi->vk_descriptor_pool = descriptor_set_allocate_info.descriptorPool;
 	}
 	usi->pool_sets_it = pool_sets_it;
 
@@ -4457,9 +4488,9 @@ void RenderingDeviceDriverVulkan::pipeline_cache_free() {
 size_t RenderingDeviceDriverVulkan::pipeline_cache_query_size() {
 	DEV_ASSERT(pipelines_cache.vk_cache);
 
-	// FIXME:
-	// We're letting the cache grow unboundedly. We may want to set at limit and see if implementations use LRU or the like.
-	// If we do, we won't be able to assume any longer that the cache is dirty if, and only if, it has grown.
+	/// @todo FIXME:
+	/// We're letting the cache grow unboundedly. We may want to set at limit and see if implementations use LRU or the like.
+	/// If we do, we won't be able to assume any longer that the cache is dirty if, and only if, it has grown.
 	VkResult err = vkGetPipelineCacheData(vk_device, pipelines_cache.vk_cache, &pipelines_cache.current_size, nullptr);
 	ERR_FAIL_COND_V_MSG(err, 0, "vkGetPipelineCacheData failed with error " + itos(err) + ".");
 
@@ -5318,10 +5349,6 @@ void RenderingDeviceDriverVulkan::timestamp_query_pool_get_results(QueryPoolID p
 }
 
 uint64_t RenderingDeviceDriverVulkan::timestamp_query_result_to_time(uint64_t p_result) {
-	// This sucks because timestampPeriod multiplier is a float, while the timestamp is 64 bits nanosecs.
-	// So, in cases like nvidia which give you enormous numbers and 1 as multiplier, multiplying is next to impossible.
-	// Need to do 128 bits fixed point multiplication to get the right value.
-
 	auto mult64to128 = [](uint64_t u, uint64_t v, uint64_t &h, uint64_t &l) {
 		uint64_t u1 = (u & 0xffffffff);
 		uint64_t v1 = (v & 0xffffffff);
@@ -5600,7 +5627,7 @@ void RenderingDeviceDriverVulkan::print_lost_device_info() {
 			last_breadcrumb_offset = biggest_id * sizeof(uint32_t) * 2u;
 		}
 
-		const size_t entries_to_print = 8u; // Note: The value is arbitrary.
+		const size_t entries_to_print = 8u; /// @note The value is arbitrary.
 		for (size_t i = 0u; i < entries_to_print; ++i) {
 			const uint32_t last_breadcrumb = *reinterpret_cast<uint32_t *>(breadcrumb_ptr + last_breadcrumb_offset + sizeof(uint32_t));
 			const uint32_t phase = last_breadcrumb & uint32_t(~((1 << 16) - 1));

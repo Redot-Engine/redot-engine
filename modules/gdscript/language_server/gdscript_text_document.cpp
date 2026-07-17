@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_text_document.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_text_document.h"
 
 #include "../gdscript.h"
@@ -70,8 +76,6 @@ void GDScriptTextDocument::didOpen(const Variant &p_param) {
 }
 
 void GDScriptTextDocument::didClose(const Variant &p_param) {
-	// Left empty on purpose. Godot does nothing special on closing a document,
-	// but it satisfies LSP clients that require didClose be implemented.
 }
 
 void GDScriptTextDocument::didChange(const Variant &p_param) {
@@ -502,8 +506,8 @@ Array GDScriptTextDocument::find_symbols(const LSP::TextDocumentPositionParams &
 			if (file_checker->file_exists(path)) {
 				arr.push_back(location.to_json());
 			}
-			r_list.push_back(symbol);
 		}
+		r_list.push_back(symbol);
 	} else if (GDScriptLanguageProtocol::get_singleton()->is_smart_resolve_enabled()) {
 		List<const LSP::DocumentSymbol *> list;
 		GDScriptLanguageProtocol::get_singleton()->get_workspace()->resolve_related_symbols(p_location, list);

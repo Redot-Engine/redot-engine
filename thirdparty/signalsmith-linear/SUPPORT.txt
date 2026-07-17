@@ -1,0 +1,10 @@
+# https://github.com/geraintluff/SUPPORT.txt
+# These people have committed to maintain the project until at least these dates
+
+2027-01-01 Geraint Luff <geraint@signalsmith-audio.co.uk>
+
+FFTs and STFTs:
+2027-01-01 Geraint Luff <geraint@signalsmith-audio.co.uk>
+
+Linear:
+This is too experimental, you're on your own.

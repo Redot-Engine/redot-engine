@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file cpu_particles_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "cpu_particles_3d.h"
 #include "cpu_particles_3d.compat.inc"
 
@@ -829,7 +835,7 @@ void CPUParticles3D::_particles_process(double p_delta) {
 				tex_anim_offset = curve_parameters[PARAM_ANGLE]->sample(tv);
 			}
 
-			p.seed = seed + uint32_t(1) + i + cycle;
+			p.seed = seed + uint32_t(1) + i + cycle * pcount;
 			rng->set_seed(p.seed);
 			p.angle_rand = rng->randf();
 			p.scale_rand = rng->randf();
@@ -844,15 +850,21 @@ void CPUParticles3D::_particles_process(double p_delta) {
 
 			if (particle_flags[PARTICLE_FLAG_DISABLE_Z]) {
 				real_t angle1_rad = Math::atan2(direction.y, direction.x) + Math::deg_to_rad((rng->randf() * 2.0 - 1.0) * spread);
-				Vector3 rot = Vector3(Math::cos(angle1_rad), Math::sin(angle1_rad), 0.0);
+				real_t sc_sin, sc_cos;
+				Math::sin_cos(angle1_rad, sc_sin, sc_cos);
+				Vector3 rot = Vector3(sc_cos, sc_sin, 0.0);
 				p.velocity = rot * Math::lerp(parameters_min[PARAM_INITIAL_LINEAR_VELOCITY], parameters_max[PARAM_INITIAL_LINEAR_VELOCITY], rng->randf());
 			} else {
 				//initiate velocity spread in 3D
 				real_t angle1_rad = Math::deg_to_rad((rng->randf() * (real_t)2.0 - (real_t)1.0) * spread);
 				real_t angle2_rad = Math::deg_to_rad((rng->randf() * (real_t)2.0 - (real_t)1.0) * ((real_t)1.0 - flatness) * spread);
 
-				Vector3 direction_xz = Vector3(Math::sin(angle1_rad), 0, Math::cos(angle1_rad));
-				Vector3 direction_yz = Vector3(0, Math::sin(angle2_rad), Math::cos(angle2_rad));
+				real_t sc_sin1, sc_cos1;
+				Math::sin_cos(angle1_rad, sc_sin1, sc_cos1);
+				real_t sc_sin2, sc_cos2;
+				Math::sin_cos(angle2_rad, sc_sin2, sc_cos2);
+				Vector3 direction_xz = Vector3(sc_sin1, 0, sc_cos1);
+				Vector3 direction_yz = Vector3(0, sc_sin2, sc_cos2);
 				Vector3 spread_direction = Vector3(direction_xz.x * direction_yz.z, direction_yz.y, direction_xz.z * direction_yz.z);
 				Vector3 direction_nrm = direction;
 				if (direction_nrm.length_squared() > 0) {
@@ -891,13 +903,17 @@ void CPUParticles3D::_particles_process(double p_delta) {
 					real_t t = Math::TAU * rng->randf();
 					real_t x = rng->randf();
 					real_t radius = emission_sphere_radius * Math::sqrt(1.0 - s * s);
-					p.transform.origin = Vector3(0, 0, 0).lerp(Vector3(radius * Math::cos(t), radius * Math::sin(t), emission_sphere_radius * s), x);
+					real_t sc_sin, sc_cos;
+					Math::sin_cos(t, sc_sin, sc_cos);
+					p.transform.origin = Vector3(0, 0, 0).lerp(Vector3(radius * sc_cos, radius * sc_sin, emission_sphere_radius * s), x);
 				} break;
 				case EMISSION_SHAPE_SPHERE_SURFACE: {
 					real_t s = 2.0 * rng->randf() - 1.0;
 					real_t t = Math::TAU * rng->randf();
 					real_t radius = emission_sphere_radius * Math::sqrt(1.0 - s * s);
-					p.transform.origin = Vector3(radius * Math::cos(t), radius * Math::sin(t), emission_sphere_radius * s);
+					real_t sc_sin, sc_cos;
+					Math::sin_cos(t, sc_sin, sc_cos);
+					p.transform.origin = Vector3(radius * sc_cos, radius * sc_sin, emission_sphere_radius * s);
 				} break;
 				case EMISSION_SHAPE_BOX: {
 					p.transform.origin = Vector3(rng->randf() * 2.0 - 1.0, rng->randf() * 2.0 - 1.0, rng->randf() * 2.0 - 1.0) * emission_box_extents;
@@ -1129,8 +1145,8 @@ void CPUParticles3D::_particles_process(double p_delta) {
 		}
 
 		real_t hue_rot_angle = (tex_hue_variation)*Math::TAU * Math::lerp(parameters_min[PARAM_HUE_VARIATION], parameters_max[PARAM_HUE_VARIATION], p.hue_rot_rand);
-		real_t hue_rot_c = Math::cos(hue_rot_angle);
-		real_t hue_rot_s = Math::sin(hue_rot_angle);
+		real_t hue_rot_s, hue_rot_c;
+		Math::sin_cos(hue_rot_angle, hue_rot_s, hue_rot_c);
 
 		Basis hue_rot_mat;
 		{
@@ -1167,8 +1183,10 @@ void CPUParticles3D::_particles_process(double p_delta) {
 				p.transform.basis.set_column(2, Vector3(0, 0, 1));
 
 			} else {
-				p.transform.basis.set_column(0, Vector3(Math::cos(p.custom[0]), -Math::sin(p.custom[0]), 0.0));
-				p.transform.basis.set_column(1, Vector3(Math::sin(p.custom[0]), Math::cos(p.custom[0]), 0.0));
+				real_t sc_sin, sc_cos;
+				Math::sin_cos(p.custom[0], sc_sin, sc_cos);
+				p.transform.basis.set_column(0, Vector3(sc_cos, -sc_sin, 0.0));
+				p.transform.basis.set_column(1, Vector3(sc_sin, sc_cos, 0.0));
 				p.transform.basis.set_column(2, Vector3(0, 0, 1));
 			}
 
@@ -1550,7 +1568,7 @@ void CPUParticles3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("capture_aabb"), &CPUParticles3D::capture_aabb);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "emitting", PROPERTY_HINT_ONESHOT), "set_emitting", "is_emitting");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "amount", PROPERTY_HINT_RANGE, "1,1000000,1,exp"), "set_amount", "get_amount"); // FIXME: Evaluate support for `exp` in integer properties, or remove this.
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "amount", PROPERTY_HINT_RANGE, "1,1000000,1,exp"), "set_amount", "get_amount"); /// @todo FIXME: Evaluate support for `exp` in integer properties, or remove this.
 	ADD_GROUP("Time", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "lifetime", PROPERTY_HINT_RANGE, "0.01,600.0,0.01,or_greater,exp,suffix:s"), "set_lifetime", "get_lifetime");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "one_shot"), "set_one_shot", "get_one_shot");

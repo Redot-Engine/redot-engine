@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_export_platform_apple_embedded.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "plugin_config_apple_embedded.h"
 
 #include "core/config/project_settings.h"
@@ -50,12 +56,14 @@
 #include <sys/stat.h>
 #include <functional>
 
-// Optional environment variables for defining confidential information. If any
-// of these is set, they will override the values set in the credentials file.
+/// @name Optional environment variables for defining confidential information.
+/// If any  of these is set, they will override the values set in the credentials file.
+/// @{
 const String ENV_APPLE_PLATFORM_PROFILE_UUID_DEBUG = "GODOT_APPLE_PLATFORM_PROVISIONING_PROFILE_UUID_DEBUG";
 const String ENV_APPLE_PLATFORM_PROFILE_UUID_RELEASE = "GODOT_APPLE_PLATFORM_PROVISIONING_PROFILE_UUID_RELEASE";
 const String ENV_APPLE_PLATFORM_PROFILE_SPECIFIER_DEBUG = "GODOT_APPLE_PLATFORM_PROFILE_SPECIFIER_DEBUG";
 const String ENV_APPLE_PLATFORM_PROFILE_SPECIFIER_RELEASE = "GODOT_APPLE_PLATFORM_PROFILE_SPECIFIER_RELEASE";
+/// @}
 
 static const String storyboard_image_scale_mode[] = {
 	"center",
@@ -100,6 +108,13 @@ protected:
 		check_for_changes_thread.start(_check_for_changes_poll_thread, this);
 	}
 
+	void _stop_remote_device_poller_thread() {
+		quit_request.set();
+		if (check_for_changes_thread.is_started()) {
+			check_for_changes_thread.wait_to_finish();
+		}
+	}
+
 	int _execute(const String &p_path, const List<String> &p_arguments, std::function<void(const String &)> p_on_data);
 
 private:
@@ -138,7 +153,7 @@ private:
 
 	struct AppleEmbeddedExportAsset {
 		String exported_path;
-		bool is_framework = false; // framework is anything linked to the binary, otherwise it's a resource
+		bool is_framework = false; ///< framework is anything linked to the binary, otherwise it's a resource
 		bool should_embed = false;
 	};
 

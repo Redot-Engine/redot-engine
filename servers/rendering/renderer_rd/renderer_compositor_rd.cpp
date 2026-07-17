@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_compositor_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_compositor_rd.h"
 
 #include "core/config/project_settings.h"
@@ -76,8 +82,10 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServer::WindowID
 		const int screen_rotation_degrees = -RD::get_singleton()->screen_get_pre_rotation_degrees(p_screen);
 		float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
 
-		blit.push_constant.rotation_cos = Math::cos(screen_rotation);
-		blit.push_constant.rotation_sin = Math::sin(screen_rotation);
+		real_t sc_sin, sc_cos;
+		Math::sin_cos(screen_rotation, sc_sin, sc_cos);
+		blit.push_constant.rotation_cos = sc_cos;
+		blit.push_constant.rotation_sin = sc_sin;
 		// Swap width and height when the orientation is not the native one.
 		if (screen_rotation_degrees % 180 != 0) {
 			SWAP(screen_size.width, screen_size.height);
@@ -161,11 +169,6 @@ void RendererCompositorRD::initialize() {
 
 		blit.sampler = RD::get_singleton()->sampler_create(RD::SamplerState());
 	}
-#if defined(MACOS_ENABLED) && defined(__x86_64__)
-	if (scene) {
-		scene->get_sky()->check_cubemap_array();
-	}
-#endif
 }
 
 uint64_t RendererCompositorRD::frame = 1;
@@ -221,14 +224,13 @@ void RendererCompositorRD::set_boot_image(const Ref<Image> &p_image, const Color
 	}
 
 	Size2 window_size = DisplayServer::get_singleton()->window_get_size();
-
 	Rect2 imgrect(0, 0, p_image->get_width(), p_image->get_height());
 	Rect2 screenrect;
+
 	if (p_scale) {
 		screenrect = OS::get_singleton()->calculate_boot_screen_rect(window_size, imgrect.size);
 	} else {
-		screenrect = imgrect;
-		screenrect.position += ((window_size - screenrect.size) / 2.0).floor();
+		screenrect = DisplayServer::calculate_boot_image_rect(window_size, imgrect);
 	}
 
 	screenrect.position /= window_size;
@@ -242,8 +244,10 @@ void RendererCompositorRD::set_boot_image(const Ref<Image> &p_image, const Color
 
 	const int screen_rotation_degrees = -RD::get_singleton()->screen_get_pre_rotation_degrees(DisplayServer::MAIN_WINDOW_ID);
 	float screen_rotation = Math::deg_to_rad((float)screen_rotation_degrees);
-	blit.push_constant.rotation_cos = Math::cos(screen_rotation);
-	blit.push_constant.rotation_sin = Math::sin(screen_rotation);
+	real_t sc_sin, sc_cos;
+	Math::sin_cos(screen_rotation, sc_sin, sc_cos);
+	blit.push_constant.rotation_cos = sc_cos;
+	blit.push_constant.rotation_sin = sc_sin;
 	blit.push_constant.src_rect[0] = 0.0;
 	blit.push_constant.src_rect[1] = 0.0;
 	blit.push_constant.src_rect[2] = 1.0;
@@ -268,6 +272,48 @@ void RendererCompositorRD::set_boot_image(const Ref<Image> &p_image, const Color
 	RD::get_singleton()->draw_list_end();
 
 	RD::get_singleton()->swap_buffers(true);
+
+	// After the first commit, a tiling compositor (e.g. Hyprland via XWayland)
+	// may send a ConfigureNotify with the actual tiled window size.
+	// pump_resize_events() waits briefly, drains ConfigureNotify events, and
+	// calls _window_changed() which updates wd.size and recreates the Vulkan
+	// swapchain via rendering_context->window_set_size().
+	DisplayServer::get_singleton()->pump_resize_events();
+	Size2 new_window_size = DisplayServer::get_singleton()->window_get_size();
+
+	if (new_window_size != window_size && new_window_size.width > 0 && new_window_size.height > 0) {
+		// Swapchain was already recreated by _window_changed() inside pump_resize_events().
+		// screen_prepare_for_drawing() will use the new swapchain.
+		err = RD::get_singleton()->screen_prepare_for_drawing(DisplayServer::MAIN_WINDOW_ID);
+		if (err == OK) {
+			window_size = new_window_size;
+
+			Rect2 screenrect2;
+			if (p_scale) {
+				screenrect2 = OS::get_singleton()->calculate_boot_screen_rect(window_size, imgrect.size);
+			} else {
+				screenrect2 = DisplayServer::calculate_boot_image_rect(window_size, imgrect);
+			}
+			screenrect2.position /= window_size;
+			screenrect2.size /= window_size;
+
+			RD::DrawListID draw_list2 = RD::get_singleton()->draw_list_begin_for_screen(DisplayServer::MAIN_WINDOW_ID, p_color);
+			RD::get_singleton()->draw_list_bind_render_pipeline(draw_list2, blit.pipelines[BLIT_MODE_NORMAL_ALPHA]);
+			RD::get_singleton()->draw_list_bind_index_array(draw_list2, blit.array);
+			RD::get_singleton()->draw_list_bind_uniform_set(draw_list2, uset, 0);
+
+			// Reuse all push_constant fields from the first pass; only dst_rect changes.
+			blit.push_constant.dst_rect[0] = screenrect2.position.x;
+			blit.push_constant.dst_rect[1] = screenrect2.position.y;
+			blit.push_constant.dst_rect[2] = screenrect2.size.width;
+			blit.push_constant.dst_rect[3] = screenrect2.size.height;
+
+			RD::get_singleton()->draw_list_set_push_constant(draw_list2, &blit.push_constant, sizeof(BlitPushConstant));
+			RD::get_singleton()->draw_list_draw(draw_list2, true);
+			RD::get_singleton()->draw_list_end();
+			RD::get_singleton()->swap_buffers(true);
+		}
+	}
 
 	texture_storage->texture_free(texture);
 	RD::get_singleton()->free(sampler);

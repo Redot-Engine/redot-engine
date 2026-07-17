@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_select_action_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../action_map/openxr_action_map.h"
 
 #include "scene/gui/box_container.h"

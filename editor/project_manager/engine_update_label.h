@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file engine_update_label.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/link_button.h"
 
 class HTTPRequest;
@@ -48,7 +54,7 @@ public:
 	};
 
 private:
-	static constexpr int DEV_VERSION = 9999; // Version index for unnumbered builds (assumed to always be newest).
+	static constexpr int DEV_VERSION = 9999; ///< Version index for unnumbered builds (assumed to always be newest).
 
 	enum class VersionType {
 		STABLE,

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 
 class CodeTextEditor;
@@ -88,6 +94,7 @@ class ShaderEditorPlugin : public EditorPlugin {
 
 	ItemList *shader_list = nullptr;
 	TabContainer *shader_tabs = nullptr;
+	HBoxContainer *empty_menu = nullptr;
 
 	Button *button = nullptr;
 	MenuButton *file_menu = nullptr;

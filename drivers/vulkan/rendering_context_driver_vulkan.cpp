@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_context_driver_vulkan.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef VULKAN_ENABLED
 
 #include "rendering_context_driver_vulkan.h"
@@ -37,6 +43,7 @@
 #include "vk_enum_string_helper.h"
 
 #include "core/config/project_settings.h"
+#include "core/error/error_list.h"
 #include "core/version.h"
 
 #include "rendering_device_driver_vulkan.h"
@@ -864,23 +871,6 @@ Error RenderingContextDriverVulkan::_initialize_devices() {
 }
 
 void RenderingContextDriverVulkan::_check_driver_workarounds(const VkPhysicalDeviceProperties &p_device_properties, Device &r_device) {
-	// Workaround for the Adreno 6XX family of devices.
-	//
-	// There's a known issue with the Vulkan driver in this family of devices where it'll crash if a dynamic state for drawing is
-	// used in a command buffer before a dispatch call is issued. As both dynamic scissor and viewport are basic requirements for
-	// the engine to not bake this state into the PSO, the only known way to fix this issue is to reset the command buffer entirely.
-	//
-	// As the render graph has no built in limitations of whether it'll issue compute work before anything needs to draw on the
-	// frame, and there's no guarantee that compute work will never be dependent on rasterization in the future, this workaround
-	// will end recording on the current command buffer any time a compute list is encountered after a draw list was executed.
-	// A new command buffer will be created afterwards and the appropriate synchronization primitives will be inserted.
-	//
-	// Executing this workaround has the added cost of synchronization between all the command buffers that are created as well as
-	// all the individual submissions. This performance hit is accepted for the sake of being able to support these devices without
-	// limiting the design of the renderer.
-	//
-	// This bug was fixed in driver version 512.503.0, so we only enabled it on devices older than this.
-	//
 	r_device.workarounds.avoid_compute_after_draw =
 			r_device.vendor == Vendor::VENDOR_QUALCOMM &&
 			p_device_properties.deviceID >= 0x6000000 && // Adreno 6xx
@@ -914,14 +904,71 @@ Error RenderingContextDriverVulkan::_create_vulkan_instance(const VkInstanceCrea
 	return OK;
 }
 
-Error RenderingContextDriverVulkan::initialize() {
-	Error err;
+bool RenderingContextDriverVulkan::_vulkan_is_supported() {
+	if (VulkanHooks::get_singleton() != nullptr) {
+		VkPhysicalDevice hooked_device = VK_NULL_HANDLE;
+		return VulkanHooks::get_singleton()->get_physical_device(&hooked_device);
+	}
 
 #ifdef USE_VOLK
 	if (volkInitialize() != VK_SUCCESS) {
-		return FAILED;
+		return false;
+	}
+
+	if (!vkCreateInstance) {
+		return false;
 	}
 #endif
+
+	VkApplicationInfo app_info{};
+	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	app_info.apiVersion = VK_API_VERSION_1_0;
+
+	VkInstanceCreateInfo create_info{};
+	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	create_info.pApplicationInfo = &app_info;
+
+#if defined(USE_VOLK) && (defined(MACOS_ENABLED) || defined(IOS_ENABLED))
+	const char *probe_extensions[] = { VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME };
+	create_info.enabledExtensionCount = 1;
+	create_info.ppEnabledExtensionNames = probe_extensions;
+	create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+
+	VkInstance _instance;
+	if (vkCreateInstance(&create_info, nullptr, &_instance) != VK_SUCCESS) {
+		return false;
+	}
+
+#ifdef USE_VOLK
+	volkLoadInstance(_instance);
+#endif
+
+#ifdef USE_VOLK
+	if (!vkEnumeratePhysicalDevices) {
+		vkDestroyInstance(_instance, nullptr);
+		return false;
+	}
+#endif
+
+	uint32_t device_count = 0;
+	VkResult result = vkEnumeratePhysicalDevices(_instance, &device_count, nullptr);
+
+	vkDestroyInstance(_instance, nullptr);
+
+	if (result != VK_SUCCESS || device_count == 0) {
+		return false;
+	}
+
+	return true;
+}
+
+Error RenderingContextDriverVulkan::initialize() {
+	Error err;
+
+	if (!_vulkan_is_supported()) {
+		return ERR_UNAVAILABLE;
+	}
 
 	err = _initialize_vulkan_version();
 	ERR_FAIL_COND_V(err != OK, err);

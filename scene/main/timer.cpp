@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file timer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "timer.h"
 
 void Timer::_notification(int p_what) {
@@ -300,7 +306,9 @@ void Timer::_bind_methods() {
 	BIND_ENUM_CONSTANT(TIMER_PROCESS_PHYSICS);
 	BIND_ENUM_CONSTANT(TIMER_PROCESS_IDLE);
 
-	// bind enums
+	/// @name Bind Enums
+	/// @{
 	BIND_ENUM_CONSTANT(TIMER_PROCESS_TYPE_TIME);
 	BIND_ENUM_CONSTANT(TIMER_PROCESS_TYPE_FRAMES);
+	/// @}
 }

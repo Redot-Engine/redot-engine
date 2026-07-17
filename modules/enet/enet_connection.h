@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file enet_connection.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "enet_packet_peer.h"
 
 #include "core/crypto/crypto.h"

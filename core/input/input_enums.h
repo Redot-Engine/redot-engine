@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file input_enums.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/error/error_macros.h"
 
 enum class InputEventType {
@@ -76,7 +82,7 @@ enum class JoyAxis {
 	TRIGGER_LEFT = 4,
 	TRIGGER_RIGHT = 5,
 	SDL_MAX = 6,
-	MAX = 10, // OpenVR supports up to 5 Joysticks making a total of 10 axes.
+	MAX = 10, ///< OpenVR supports up to 5 Joysticks making a total of 10 axes.
 };
 
 enum class JoyButton {
@@ -103,7 +109,7 @@ enum class JoyButton {
 	PADDLE4 = 19,
 	TOUCHPAD = 20,
 	SDL_MAX = 21,
-	MAX = 128, // Android supports up to 36 buttons. DirectInput supports up to 128 buttons.
+	MAX = 128, ///< Android supports up to 36 buttons. DirectInput supports up to 128 buttons.
 };
 
 enum class MIDIMessage {
@@ -137,8 +143,8 @@ enum class MouseButton {
 	WHEEL_DOWN = 5,
 	WHEEL_LEFT = 6,
 	WHEEL_RIGHT = 7,
-	MB_XBUTTON1 = 8, // "XBUTTON1" is a reserved word on Windows.
-	MB_XBUTTON2 = 9, // "XBUTTON2" is a reserved word on Windows.
+	MB_XBUTTON1 = 8, ///< "XBUTTON1" is a reserved word on Windows.
+	MB_XBUTTON2 = 9, ///< "XBUTTON2" is a reserved word on Windows.
 };
 
 enum class MouseButtonMask {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_multiplayer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene_cache_interface.h"
 #include "scene_replication_interface.h"
 #include "scene_rpc_interface.h"
@@ -86,10 +92,10 @@ public:
 	};
 
 	enum {
-		SYS_CMD_SIZE = 6, // Command + sys command + peer_id (+ optional payload).
+		SYS_CMD_SIZE = 6, ///< Command + sys command + peer_id (+ optional payload).
 	};
 
-	// For each command, the 4 MSB can contain custom flags, as defined by subsystems.
+	/// For each command, the 4 MSB can contain custom flags, as defined by subsystems.
 	enum {
 		CMD_FLAG_0_SHIFT = 4,
 		CMD_FLAG_1_SHIFT = 5,
@@ -97,9 +103,9 @@ public:
 		CMD_FLAG_3_SHIFT = 7,
 	};
 
-	// This is the mask that will be used to extract the command.
+	/// This is the mask that will be used to extract the command.
 	enum {
-		CMD_MASK = 7, // 0x7 -> 0b00000111
+		CMD_MASK = 7, ///< 0x7 -> 0b00000111
 	};
 
 private:
@@ -111,7 +117,7 @@ private:
 
 	Ref<MultiplayerPeer> multiplayer_peer;
 	MultiplayerPeer::ConnectionStatus last_connection_status = MultiplayerPeer::CONNECTION_DISCONNECTED;
-	HashMap<int, PendingPeer> pending_peers; // true if locally finalized.
+	HashMap<int, PendingPeer> pending_peers; ///< `true` if locally finalized.
 	Callable auth_callback;
 	uint64_t auth_timeout = 3000;
 	HashSet<int> connected_peers;
@@ -131,7 +137,7 @@ private:
 
 #ifdef DEBUG_ENABLED
 	_FORCE_INLINE_ void _profile_bandwidth(const String &p_what, int p_value);
-	_FORCE_INLINE_ Error _send(const uint8_t *p_packet, int p_packet_len); // Also profiles.
+	_FORCE_INLINE_ Error _send(const uint8_t *p_packet, int p_packet_len); ///< Also profiles.
 #else
 	_FORCE_INLINE_ Error _send(const uint8_t *p_packet, int p_packet_len) {
 		return multiplayer_peer->put_packet(p_packet, p_packet_len);
@@ -166,7 +172,7 @@ public:
 
 	void clear();
 
-	// Usually from object_configuration_add/remove
+	/// Usually from object_configuration_add/remove
 	void set_root_path(const NodePath &p_path);
 	NodePath get_root_path() const;
 
@@ -180,7 +186,7 @@ public:
 	double get_auth_timeout() const;
 	Vector<int> get_authenticating_peer_ids();
 
-	Error send_command(int p_to, const uint8_t *p_packet, int p_packet_len); // Used internally to relay packets when needed.
+	Error send_command(int p_to, const uint8_t *p_packet, int p_packet_len); ///< Used internally to relay packets when needed.
 	Error send_bytes(Vector<uint8_t> p_data, int p_to = MultiplayerPeer::TARGET_PEER_BROADCAST, MultiplayerPeer::TransferMode p_mode = MultiplayerPeer::TRANSFER_MODE_RELIABLE, int p_channel = 0);
 	String get_rpc_md5(const Object *p_obj);
 

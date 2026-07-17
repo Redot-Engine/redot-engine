@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file check_button.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/button.h"
 
 class CheckButton : public Button {

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_native_shader_source_visualizer.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/dialogs.h"
 #include "scene/gui/tab_container.h"
 #include "scene/resources/syntax_highlighter.h"

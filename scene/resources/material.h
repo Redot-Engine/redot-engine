@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file material.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/templates/self_list.h"
 #include "scene/resources/shader.h"
@@ -66,7 +72,6 @@ protected:
 
 	void _mark_ready();
 	void _mark_initialized(const Callable &p_add_to_dirty_list, const Callable &p_update_shader);
-	bool _is_initialized() { return init_state == INIT_STATE_READY; }
 
 	GDVIRTUAL0RC_REQUIRED(RID, _get_shader_rid)
 	GDVIRTUAL0RC_REQUIRED(Shader::Mode, _get_shader_mode)
@@ -77,6 +82,9 @@ public:
 		RENDER_PRIORITY_MAX = RS::MATERIAL_RENDER_PRIORITY_MAX,
 		RENDER_PRIORITY_MIN = RS::MATERIAL_RENDER_PRIORITY_MIN,
 	};
+
+	bool _is_initialized() { return init_state == INIT_STATE_READY; }
+
 	void set_next_pass(const Ref<Material> &p_pass);
 	Ref<Material> get_next_pass() const;
 
@@ -333,7 +341,7 @@ public:
 		STENCIL_MODE_OUTLINE,
 		STENCIL_MODE_XRAY,
 		STENCIL_MODE_CUSTOM,
-		STENCIL_MODE_MAX // Not an actual mode, just the amount of modes.
+		STENCIL_MODE_MAX ///< Not an actual mode, just the amount of modes.
 	};
 
 	enum StencilFlags {
@@ -341,7 +349,7 @@ public:
 		STENCIL_FLAG_WRITE = 2,
 		STENCIL_FLAG_WRITE_DEPTH_FAIL = 4,
 
-		STENCIL_FLAG_NUM_BITS = 3 // Not an actual mode, just the amount of bits.
+		STENCIL_FLAG_NUM_BITS = 3 ///< Not an actual mode, just the amount of bits.
 	};
 
 	enum StencilCompare {
@@ -352,12 +360,13 @@ public:
 		STENCIL_COMPARE_GREATER,
 		STENCIL_COMPARE_NOT_EQUAL,
 		STENCIL_COMPARE_GREATER_OR_EQUAL,
-		STENCIL_COMPARE_MAX // Not an actual operator, just the amount of operators.
+		STENCIL_COMPARE_MAX ///< Not an actual operator, just the amount of operators.
 	};
 
 private:
 	struct MaterialKey {
-		// enum values
+		/// @name Enum Values
+		/// @{
 		uint64_t texture_filter : get_num_bits(TEXTURE_FILTER_MAX - 1);
 		uint64_t detail_uv : get_num_bits(DETAIL_UV_MAX - 1);
 		uint64_t transparency : get_num_bits(TRANSPARENCY_MAX - 1);
@@ -374,21 +383,24 @@ private:
 		uint64_t roughness_channel : get_num_bits(TEXTURE_CHANNEL_MAX - 1);
 		uint64_t emission_op : get_num_bits(EMISSION_OP_MAX - 1);
 		uint64_t distance_fade : get_num_bits(DISTANCE_FADE_MAX - 1);
-
-		// stencil
+		/// @}
+		/// @name Stencil
+		/// @{
 		uint64_t stencil_mode : get_num_bits(STENCIL_MODE_MAX - 1);
 		uint64_t stencil_flags : STENCIL_FLAG_NUM_BITS;
 		uint64_t stencil_compare : get_num_bits(STENCIL_COMPARE_MAX - 1);
 		uint64_t stencil_reference : 8;
-
-		// booleans
+		/// @}
+		/// @name Booleans
+		/// @{
 		uint64_t invalid_key : 1;
 		uint64_t deep_parallax : 1;
 		uint64_t grow : 1;
 		uint64_t proximity_fade : 1;
 		uint64_t orm : 1;
+		/// @}
 
-		// flag bitfield
+		/// flag bitfield
 		uint32_t feature_mask;
 		uint32_t flags;
 
@@ -542,7 +554,7 @@ private:
 	float roughness = 0.0f;
 	Color emission;
 	float emission_energy_multiplier = 1.0f;
-	float emission_intensity = 1000.0f; // In nits, equivalent to indoor lighting.
+	float emission_intensity = 1000.0f; ///< In nits, equivalent to indoor lighting.
 	float normal_scale = 0.0f;
 	float rim = 0.0f;
 	float rim_tint = 0.0f;
@@ -635,7 +647,7 @@ private:
 	void _prepare_stencil_effect();
 	Ref<BaseMaterial3D> _get_stencil_next_pass() const;
 
-	static HashMap<uint64_t, Ref<StandardMaterial3D>> materials_for_2d; //used by Sprite3D, Label3D and other stuff
+	static HashMap<uint64_t, Ref<StandardMaterial3D>> materials_for_2d; ///< Used by Sprite3D, Label3D and other stuff
 
 protected:
 	static void _bind_methods();
@@ -698,7 +710,7 @@ public:
 	void set_heightmap_deep_parallax_max_layers(int p_layer);
 	int get_heightmap_deep_parallax_max_layers() const;
 
-	void set_heightmap_deep_parallax_flip_tangent(bool p_flip);
+	void set_heightmap_deep_parallax_flip_tangent(bool p_flip); ///< Also sets binormal
 	bool get_heightmap_deep_parallax_flip_tangent() const;
 
 	void set_heightmap_deep_parallax_flip_binormal(bool p_flip);
@@ -915,7 +927,7 @@ class StandardMaterial3D : public BaseMaterial3D {
 	GDCLASS(StandardMaterial3D, BaseMaterial3D)
 protected:
 #ifndef DISABLE_DEPRECATED
-	// Kept for compatibility from 3.x to 4.0.
+	/// Kept for compatibility from 3.x to 4.0.
 	bool _set(const StringName &p_name, const Variant &p_value);
 #endif
 

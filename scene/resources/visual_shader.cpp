@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file visual_shader.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "visual_shader.h"
 
 #include "core/templates/rb_map.h"
@@ -967,6 +973,36 @@ void VisualShader::set_node_position(Type p_type, int p_id, const Vector2 &p_pos
 	Graph *g = &graph[p_type];
 	ERR_FAIL_COND(!g->nodes.has(p_id));
 	g->nodes[p_id].position = p_position;
+}
+
+int VisualShader::has_node_embeds() const {
+	bool external_embeds = false;
+	for (int i = 0; i < TYPE_MAX; i++) {
+		for (const KeyValue<int, Node> &E : graph[i].nodes) {
+			List<PropertyInfo> props;
+			E.value.node->get_property_list(&props);
+			// For classes that inherit from VisualShaderNode, the class properties start at the 12th, and the last value is always 'script'
+			for (int j = 12; j < props.size() - 1; j++) {
+				// VisualShaderNodeCustom cannot have embeds
+				if (props.get(j).name == "VisualShaderNodeCustom") {
+					break;
+				}
+				// Ref<Resource> properties get classed as type Variant::Object
+				if (props.get(j).type == Variant::OBJECT) {
+					Ref<Resource> res = E.value.node->get(props.get(j).name);
+					if (res.is_valid()) {
+						if (res->is_built_in()) {
+							return 2;
+						} else {
+							external_embeds = true;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return external_embeds;
 }
 
 Vector2 VisualShader::get_node_position(Type p_type, int p_id) const {
@@ -1919,7 +1955,7 @@ bool VisualShader::_get(const StringName &p_name, Variant &r_ret) const {
 }
 
 void VisualShader::reset_state() {
-	// TODO: Everything needs to be cleared here.
+	/// @todo Everything needs to be cleared here.
 	emit_changed();
 }
 
@@ -2157,7 +2193,7 @@ Error VisualShader::_write_node(Type type, StringBuilder *p_global_code, StringB
 
 			if (in_type == VisualShaderNode::PORT_TYPE_SAMPLER && out_type == VisualShaderNode::PORT_TYPE_SAMPLER) {
 				Ref<VisualShaderNode> ref = graph[type].nodes[from_node].node;
-				// FIXME: This needs to be refactored at some point.
+				/// @todo FIXME: This needs to be refactored at some point.
 				if (ref->has_method("get_input_real_name")) {
 					inputs[i] = ref->call("get_input_real_name");
 				} else if (ref->has_method("get_parameter_name")) {
@@ -4366,7 +4402,7 @@ bool VisualShaderNodeParameter::is_global_code_generated() const {
 }
 
 #ifndef DISABLE_DEPRECATED
-// Kept for compatibility from 3.x to 4.0.
+
 bool VisualShaderNodeParameter::_set(const StringName &p_name, const Variant &p_value) {
 	if (p_name == "uniform_name") {
 		set_parameter_name(p_value);

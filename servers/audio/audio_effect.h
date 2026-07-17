@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_effect.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/resource.h"
 #include "core/math/audio_frame.h"
 #include "core/object/gdvirtual.gen.inc"

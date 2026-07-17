@@ -30,13 +30,17 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file transform_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "transform_2d.h"
 
 #include "core/string/ustring.h"
 
 void Transform2D::invert() {
-	// FIXME: this function assumes the basis is a rotation matrix, with no scaling.
-	// Transform2D::affine_inverse can handle matrices with scaling, so GDScript should eventually use that.
 	SWAP(columns[0][1], columns[1][0]);
 	columns[2] = basis_xform(-columns[2]);
 }
@@ -87,8 +91,8 @@ real_t Transform2D::get_rotation() const {
 
 void Transform2D::set_rotation(real_t p_rot) {
 	Size2 scale = get_scale();
-	real_t cr = Math::cos(p_rot);
-	real_t sr = Math::sin(p_rot);
+	real_t cr, sr;
+	Math::sin_cos(p_rot, sr, cr);
 	columns[0][0] = cr;
 	columns[0][1] = sr;
 	columns[1][0] = -sr;
@@ -98,8 +102,8 @@ void Transform2D::set_rotation(real_t p_rot) {
 }
 
 Transform2D::Transform2D(real_t p_rot, const Vector2 &p_pos) {
-	real_t cr = Math::cos(p_rot);
-	real_t sr = Math::sin(p_rot);
+	real_t cr, sr;
+	Math::sin_cos(p_rot, sr, cr);
 	columns[0][0] = cr;
 	columns[0][1] = sr;
 	columns[1][0] = -sr;
@@ -108,10 +112,14 @@ Transform2D::Transform2D(real_t p_rot, const Vector2 &p_pos) {
 }
 
 Transform2D::Transform2D(real_t p_rot, const Size2 &p_scale, real_t p_skew, const Vector2 &p_pos) {
-	columns[0][0] = Math::cos(p_rot) * p_scale.x;
-	columns[1][1] = Math::cos(p_rot + p_skew) * p_scale.y;
-	columns[1][0] = -Math::sin(p_rot + p_skew) * p_scale.y;
-	columns[0][1] = Math::sin(p_rot) * p_scale.x;
+	real_t rot_sin, rot_cos;
+	Math::sin_cos(p_rot, rot_sin, rot_cos);
+	real_t skew_sin, skew_cos;
+	Math::sin_cos(p_rot + p_skew, skew_sin, skew_cos);
+	columns[0][0] = rot_cos * p_scale.x;
+	columns[1][1] = skew_cos * p_scale.y;
+	columns[1][0] = -skew_sin * p_scale.y;
+	columns[0][1] = rot_sin * p_scale.x;
 	columns[2] = p_pos;
 }
 
@@ -148,8 +156,6 @@ void Transform2D::translate_local(const Vector2 &p_translation) {
 }
 
 void Transform2D::orthonormalize() {
-	// Gram-Schmidt Process
-
 	Vector2 x = columns[0];
 	Vector2 y = columns[1];
 
@@ -221,14 +227,12 @@ Transform2D Transform2D::operator*(const Transform2D &p_transform) const {
 }
 
 Transform2D Transform2D::scaled(const Size2 &p_scale) const {
-	// Equivalent to left multiplication
 	Transform2D copy = *this;
 	copy.scale(p_scale);
 	return copy;
 }
 
 Transform2D Transform2D::scaled_local(const Size2 &p_scale) const {
-	// Equivalent to right multiplication
 	return Transform2D(columns[0] * p_scale.x, columns[1] * p_scale.y, columns[2]);
 }
 
@@ -239,22 +243,18 @@ Transform2D Transform2D::untranslated() const {
 }
 
 Transform2D Transform2D::translated(const Vector2 &p_offset) const {
-	// Equivalent to left multiplication
 	return Transform2D(columns[0], columns[1], columns[2] + p_offset);
 }
 
 Transform2D Transform2D::translated_local(const Vector2 &p_offset) const {
-	// Equivalent to right multiplication
 	return Transform2D(columns[0], columns[1], columns[2] + basis_xform(p_offset));
 }
 
 Transform2D Transform2D::rotated(real_t p_angle) const {
-	// Equivalent to left multiplication
 	return Transform2D(p_angle, Vector2()) * (*this);
 }
 
 Transform2D Transform2D::rotated_local(real_t p_angle) const {
-	// Equivalent to right multiplication
 	return (*this) * Transform2D(p_angle, Vector2()); // Could be optimized, because origin transform can be skipped.
 }
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file export_template_manager.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "export_template_manager.h"
 
 #include "core/io/dir_access.h"
@@ -799,7 +805,6 @@ String ExportTemplateManager::get_android_source_zip(const Ref<EditorExportPrese
 }
 
 String ExportTemplateManager::get_android_template_identifier(const Ref<EditorExportPreset> &p_preset) {
-	// The template identifier is the Redot version for the default template, and the full path plus md5 hash for custom templates.
 	if (p_preset.is_valid()) {
 		String android_source_zip = p_preset->get("gradle_build/android_source_template");
 		if (!android_source_zip.is_empty()) {
@@ -824,9 +829,6 @@ Error ExportTemplateManager::install_android_template(const Ref<EditorExportPres
 }
 
 Error ExportTemplateManager::install_android_template_from_file(const String &p_file, const Ref<EditorExportPreset> &p_preset) {
-	// To support custom Android builds, we install the Java source code and buildsystem
-	// from android_source.zip to the project's res://android folder.
-
 	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 	ERR_FAIL_COND_V(da.is_null(), ERR_CANT_CREATE);
 

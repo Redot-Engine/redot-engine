@@ -68,7 +68,7 @@ def get_android_ndk_root(env: "SConsEnvironment"):
 
 # This is kept in sync with the value in 'platform/android/java/app/config.gradle'.
 def get_ndk_version():
-    return "28.1.13356709"
+    return "29.0.14206865"
 
 
 # This is kept in sync with the value in 'platform/android/java/app/config.gradle'.
@@ -228,6 +228,7 @@ def configure(env: "SConsEnvironment"):
     # Link flags
 
     env.Append(LINKFLAGS=["-Wl,--gc-sections", "-Wl,--no-undefined", "-Wl,-z,now"])
+    env.Append(LINKFLAGS=["-Wl,--build-id"])
     env.Append(LINKFLAGS=["-Wl,-soname,libgodot_android.so"])
 
     env.Prepend(CPPPATH=["#platform/android"])

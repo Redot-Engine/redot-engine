@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_export_platform_apple_embedded.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_export_platform_apple_embedded.h"
 
 #include "core/io/json.h"
@@ -54,7 +60,8 @@ void EditorExportPlatformAppleEmbedded::get_preset_features(const Ref<EditorExpo
 	r_features->push_back("etc2");
 	r_features->push_back("astc");
 
-	if (p_preset->get("shader_baker/enabled")) {
+	if (!p_preset->is_dedicated_server() && p_preset->get("shader_baker/enabled")) {
+		// Don't use the shader baker if exporting as a dedicated server, as no rendering is performed.
 		r_features->push_back("shader_baker");
 	}
 
@@ -235,6 +242,10 @@ bool EditorExportPlatformAppleEmbedded::get_export_option_visibility(const Edito
 			p_option == "application/icon_interpolation" ||
 			p_option == "application/signature") {
 		return advanced_options_enabled;
+	}
+	if (p_option == "capabilities/performance_a12") {
+		String rendering_method = get_project_setting(Ref<EditorExportPreset>(p_preset), "rendering/renderer/rendering_method.mobile");
+		return !(rendering_method == "forward_plus" || rendering_method == "mobile");
 	}
 
 	return true;
@@ -502,6 +513,7 @@ void EditorExportPlatformAppleEmbedded::_fix_config_file(const Ref<EditorExportP
 			// Note that capabilities listed here are requirements for the app to be installed.
 			// They don't enable anything.
 			Vector<String> capabilities_list = p_config.capabilities;
+			String rendering_method = get_project_setting(p_preset, "rendering/renderer/rendering_method.mobile");
 
 			if ((bool)p_preset->get("capabilities/access_wifi") && !capabilities_list.has("wifi")) {
 				capabilities_list.push_back("wifi");
@@ -509,7 +521,7 @@ void EditorExportPlatformAppleEmbedded::_fix_config_file(const Ref<EditorExportP
 			if ((bool)p_preset->get("capabilities/performance_gaming_tier") && !capabilities_list.has("iphone-performance-gaming-tier")) {
 				capabilities_list.push_back("iphone-performance-gaming-tier");
 			}
-			if ((bool)p_preset->get("capabilities/performance_a12") && !capabilities_list.has("iphone-ipad-minimum-performance-a12")) {
+			if (((bool)p_preset->get("capabilities/performance_a12") || rendering_method == "forward_plus" || rendering_method == "mobile") && !capabilities_list.has("iphone-ipad-minimum-performance-a12")) {
 				capabilities_list.push_back("iphone-ipad-minimum-performance-a12");
 			}
 			for (int idx = 0; idx < capabilities_list.size(); idx++) {
@@ -807,8 +819,8 @@ void EditorExportPlatformAppleEmbedded::_fix_config_file(const Ref<EditorExportP
 		}
 	}
 
-	// !BAS! I'm assuming the 9 in the original code was a typo. I've added -1 or else it seems to also be adding our terminating zero...
-	// should apply the same fix in our macOS export.
+	/// !BAS! I'm assuming the 9 in the original code was a typo. I've added -1 or else it seems to also be adding our terminating zero...
+	/// @todo Should apply the same fix in our macOS export.
 	CharString cs = strnew.utf8();
 	pfile.resize(cs.size() - 1);
 	for (int i = 0; i < cs.size() - 1; i++) {
@@ -1903,9 +1915,9 @@ Error EditorExportPlatformAppleEmbedded::_export_project_helper(const Ref<Editor
 
 	err = _export_apple_embedded_plugins(p_preset, config_data, binary_dir, assets, p_debug);
 	if (err != OK) {
-		// TODO: Improve error reporting by using `add_message` throughout all methods called via `_export_apple_embedded_plugins`.
-		// For now a generic top level message would be fine, but we're ought to use proper reporting here instead of
-		// just fail macros and non-descriptive error return values.
+		/// @todo Improve error reporting by using `add_message` throughout all methods called via `_export_apple_embedded_plugins`.
+		/// For now a generic top level message would be fine, but we're ought to use proper reporting here instead of
+		/// just fail macros and non-descriptive error return values.
 		add_message(EXPORT_MESSAGE_ERROR, TTR("Apple Embedded Plugins"), vformat(TTR("Failed to export Apple Embedded plugins with code %d. Please check the output log."), err));
 		return err;
 	}
@@ -1957,7 +1969,7 @@ Error EditorExportPlatformAppleEmbedded::_export_project_helper(const Ref<Editor
 			project_file_data = data;
 		}
 
-		///@TODO need to parse logo files
+		/// @todo Need to parse logo files
 
 		if (data.size() > 0) {
 			file = file.replace("godot_" + get_platform_name(), binary_name);
@@ -2226,7 +2238,7 @@ Error EditorExportPlatformAppleEmbedded::_export_project_helper(const Ref<Editor
 
 bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates, bool p_debug) const {
 #if defined(MODULE_MONO_ENABLED) && !defined(MACOS_ENABLED)
-	// TODO: Remove this restriction when we don't rely on macOS tools to package up the native libraries anymore.
+	/// @todo Remove this restriction when we don't rely on macOS tools to package up the native libraries anymore.
 	r_error += TTR("Exporting to an Apple Embedded platform when using C#/.NET is experimental and requires macOS.") + "\n";
 	return false;
 #else
@@ -2895,10 +2907,4 @@ EditorExportPlatformAppleEmbedded::EditorExportPlatformAppleEmbedded(const char 
 }
 
 EditorExportPlatformAppleEmbedded::~EditorExportPlatformAppleEmbedded() {
-#ifdef MACOS_ENABLED
-	quit_request.set();
-	if (check_for_changes_thread.is_started()) {
-		check_for_changes_thread.wait_to_finish();
-	}
-#endif
 }

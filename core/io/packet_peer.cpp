@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file packet_peer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "packet_peer.h"
 
 #include "core/config/project_settings.h"

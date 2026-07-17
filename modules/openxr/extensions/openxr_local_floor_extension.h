@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_local_floor_extension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_extension_wrapper.h"
 
 class OpenXRLocalFloorExtension : public OpenXRExtensionWrapper {

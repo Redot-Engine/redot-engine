@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file color.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "color.h"
 
 #include "color_names.inc"
@@ -328,6 +334,15 @@ Color Color::inverted() const {
 	Color c = *this;
 	c.invert();
 	return c;
+}
+
+Color Color::apply_intensity(float p_intensity) const {
+	if (Math::is_zero_approx(p_intensity)) {
+		return Color(r, g, b, a);
+	}
+
+	float multiplier = Math::pow(2, p_intensity);
+	return Color(CLAMP(r * multiplier, 0.0f, 1.0f), CLAMP(g * multiplier, 0.0f, 1.0f), CLAMP(b * multiplier, 0.0f, 1.0f), a);
 }
 
 Color Color::html(const String &p_rgba) {

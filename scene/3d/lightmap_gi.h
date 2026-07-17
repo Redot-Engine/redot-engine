@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file lightmap_gi.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/local_vector.h"
 #include "scene/3d/light_3d.h"
 #include "scene/3d/lightmapper.h"
@@ -53,14 +59,17 @@ public:
 	};
 
 private:
-	// The 'merged' texture atlases actually used by the renderer.
+	/// @name The 'merged' texture atlases actually used by the renderer.
+	/// @{
 	Ref<TextureLayered> combined_light_texture;
 	Ref<TextureLayered> combined_shadowmask_texture;
+	/// @}
 
-	// The temporary texture atlas arrays which are used for storage.
-	// If a single atlas is too large, it's split and recombined during loading.
+	/// @name The temporary texture atlas arrays which are used for storage. If a single atlas is too large, it's split and recombined during loading.
+	/// @{
 	TypedArray<TextureLayered> storage_light_textures;
 	TypedArray<TextureLayered> storage_shadowmask_textures;
+	/// @}
 
 	bool uses_spherical_harmonics = false;
 	bool interior = false;
@@ -350,7 +359,11 @@ public:
 
 	AABB get_aabb() const override;
 
-	BakeError bake(Node *p_from_node, String p_image_data_path = "", Lightmapper::BakeStepFunc p_bake_step = nullptr, void *p_bake_userdata = nullptr);
+	static bool _dummy_bake_func_step(float p_progress, const String &p_description, void *, bool p_refresh);
+
+	BakeError bake(Node *p_from_node, String p_image_data_path = "");
+
+	BakeError _bake(Node *p_from_node, String p_image_data_path = "", Lightmapper::BakeStepFunc p_bake_step = nullptr, void *p_bake_userdata = nullptr);
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 

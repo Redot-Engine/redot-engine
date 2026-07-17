@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file grid_map_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "grid_map_editor_plugin.h"
 
 #include "core/os/keyboard.h"
@@ -205,7 +211,7 @@ void GridMapEditor::_update_cursor_transform() {
 			_set_selection(false);
 		}
 		// Rotation is only applied in paint mode, we don't want the cursor box to rotate otherwise.
-		cursor_transform.basis = node->get_basis_with_orthogonal_index(cursor_rot);
+		cursor_transform.basis *= node->get_basis_with_orthogonal_index(cursor_rot);
 		if (selected_palette >= 0 && node && node->get_mesh_library().is_valid()) {
 			cursor_transform *= node->get_mesh_library()->get_item_mesh_transform(selected_palette);
 		}
@@ -1056,7 +1062,7 @@ void GridMapEditor::edit(GridMap *p_gridmap) {
 }
 
 void GridMapEditor::update_grid() {
-	grid_xform.origin.x -= 1; // Force update in hackish way.
+	grid_xform.origin.x -= 1; /// @todo Force update in hackish way.
 
 	grid_ofs[edit_axis] = edit_floor[edit_axis] * node->get_cell_size()[edit_axis];
 
@@ -1265,9 +1271,10 @@ void GridMapEditor::_update_cursor_instance() {
 		cursor_instance = RenderingServer::get_singleton()->instance_create2(cursor_mesh, scenario);
 	}
 
-	// Make the cursor translucent so that it can be distinguished from already-placed tiles.
-	RenderingServer::get_singleton()->instance_geometry_set_transparency(cursor_instance, 0.5);
-
+	if (cursor_instance.is_valid()) {
+		// Make the cursor translucent so that it can be distinguished from already-placed tiles.
+		RenderingServer::get_singleton()->instance_geometry_set_transparency(cursor_instance, 0.5);
+	}
 	_update_cursor_transform();
 }
 

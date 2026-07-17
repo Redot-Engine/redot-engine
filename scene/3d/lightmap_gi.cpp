@@ -30,8 +30,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file lightmap_gi.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "lightmap_gi.h"
 
+#include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/io/config_file.h"
 #include "core/math/delaunay_3d.h"
@@ -42,6 +49,7 @@
 #include "scene/resources/environment.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/sky.h"
+#include "scene/resources/texture.h"
 
 #include "modules/modules_enabled.gen.h" // For lightmapper_rd.
 
@@ -834,57 +842,88 @@ LightmapGI::BakeError LightmapGI::_save_and_reimport_atlas_textures(const Ref<Li
 			texture_image->blit_rect(images[i * slices_per_texture + j], Rect2i(0, 0, slice_width, slice_height), Point2i(0, slice_height * j));
 		}
 
-		const String atlas_path = (texture_count > 1 ? p_base_name + "_" + itos(i) : p_base_name) + (p_is_shadowmask ? ".png" : ".exr");
-		const String config_path = atlas_path + ".import";
+		if (Engine::get_singleton()->is_editor_hint()) {
+			const String atlas_path = (texture_count > 1 ? p_base_name + "_" + itos(i) : p_base_name) + (p_is_shadowmask ? ".png" : ".exr");
+			const String config_path = atlas_path + ".import";
 
-		Ref<ConfigFile> config;
-		config.instantiate();
+			Ref<ConfigFile> config;
+			config.instantiate();
+			// Load an import configuration if present.
+			if (FileAccess::exists(config_path)) {
+				config->load(config_path);
+			}
 
-		// Load an import configuration if present.
-		if (FileAccess::exists(config_path)) {
-			config->load(config_path);
-		}
+			config->set_value("remap", "importer", "2d_array_texture");
+			config->set_value("remap", "type", "CompressedTexture2DArray");
+			if (!config->has_section_key("params", "compress/mode")) {
+				// Do not override an existing compression mode.
+				config->set_value("params", "compress/mode", 3);
+			}
+			config->set_value("params", "compress/channel_pack", 1);
+			config->set_value("params", "mipmaps/generate", false);
+			config->set_value("params", "slices/horizontal", 1);
+			config->set_value("params", "slices/vertical", texture_slice_count);
 
-		config->set_value("remap", "importer", "2d_array_texture");
-		config->set_value("remap", "type", "CompressedTexture2DArray");
-		if (!config->has_section_key("params", "compress/mode")) {
-			// Do not override an existing compression mode.
-			config->set_value("params", "compress/mode", 2);
-		}
-		config->set_value("params", "compress/channel_pack", 1);
-		config->set_value("params", "mipmaps/generate", false);
-		config->set_value("params", "slices/horizontal", 1);
-		config->set_value("params", "slices/vertical", texture_slice_count);
+			config->save(config_path);
 
-		config->save(config_path);
+			if (supersampling_enabled) {
+				texture_image->resize(texture_image->get_width() / supersampling_factor, texture_image->get_height() / supersampling_factor, Image::INTERPOLATE_TRILINEAR);
+			}
 
-		if (supersampling_enabled) {
-			texture_image->resize(texture_image->get_width() / supersampling_factor, texture_image->get_height() / supersampling_factor, Image::INTERPOLATE_TRILINEAR);
-		}
+			// Save the file.
+			Error save_err;
+			if (p_is_shadowmask) {
+				save_err = texture_image->save_png(atlas_path);
+			} else {
+				save_err = texture_image->save_exr(atlas_path, false);
+			}
 
-		// Save the file.
-		Error save_err;
-		if (p_is_shadowmask) {
-			save_err = texture_image->save_png(atlas_path);
+			ERR_FAIL_COND_V(save_err, LightmapGI::BAKE_ERROR_CANT_CREATE_IMAGE);
+
+			// Reimport the file.
+			Error import_err = ResourceLoader::import(atlas_path);
+			ERR_FAIL_COND_V(import_err != OK, LightmapGI::BAKE_ERROR_CANT_CREATE_IMAGE);
+			Ref<TextureLayered> t = ResourceLoader::load(atlas_path); // If already loaded, it will be updated on refocus?
+			ERR_FAIL_COND_V(t.is_null(), LightmapGI::BAKE_ERROR_CANT_CREATE_IMAGE);
+
+			// Store the atlas in the array.
+			r_textures[i] = t;
 		} else {
-			save_err = texture_image->save_exr(atlas_path, false);
+			const String atlas_path = (texture_count > 1 ? p_base_name + "_" + itos(i) : p_base_name) + (p_is_shadowmask ? ".png" : ".exr");
+			if (supersampling_enabled) {
+				texture_image->resize(texture_image->get_width() / supersampling_factor, texture_image->get_height() / supersampling_factor, Image::INTERPOLATE_TRILINEAR);
+			}
+			Vector<Ref<Image>> slice_images;
+			slice_images.resize(texture_slice_count);
+			for (int j = 0; j < texture_slice_count; j++) {
+				slice_images.set(j, images[i * slices_per_texture + j]);
+			}
+			Ref<Texture2DArray> texs;
+			texs.instantiate();
+			texs->create_from_images(slice_images);
+
+			Error err = ResourceSaver::save(texs, atlas_path);
+			ERR_FAIL_COND_V(err, BAKE_ERROR_CANT_CREATE_IMAGE);
+			Ref<TextureLayered> t = ResourceLoader::load(atlas_path);
+			ERR_FAIL_COND_V(t.is_null(), BAKE_ERROR_CANT_CREATE_IMAGE);
+			r_textures[i] = t;
 		}
-
-		ERR_FAIL_COND_V(save_err, LightmapGI::BAKE_ERROR_CANT_CREATE_IMAGE);
-
-		// Reimport the file.
-		ResourceLoader::import(atlas_path);
-		Ref<TextureLayered> t = ResourceLoader::load(atlas_path); // If already loaded, it will be updated on refocus?
-		ERR_FAIL_COND_V(t.is_null(), LightmapGI::BAKE_ERROR_CANT_CREATE_IMAGE);
-
-		// Store the atlas in the array.
-		r_textures[i] = t;
 	}
 
 	return LightmapGI::BAKE_ERROR_OK;
 }
 
-LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_path, Lightmapper::BakeStepFunc p_bake_step, void *p_bake_userdata) {
+bool LightmapGI::_dummy_bake_func_step(float p_progress, const String &p_description, void *, bool p_refresh) {
+	// No reporting needed, but baking logic is identical
+	return true;
+}
+
+LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_path) {
+	// is dummy bake func needed?
+	return _bake(p_from_node, p_image_data_path, _dummy_bake_func_step, nullptr);
+}
+
+LightmapGI::BakeError LightmapGI::_bake(Node *p_from_node, String p_image_data_path, Lightmapper::BakeStepFunc p_bake_step, void *p_bake_userdata) {
 	if (p_image_data_path.is_empty()) {
 		if (get_light_data().is_null()) {
 			return BAKE_ERROR_NO_SAVE_PATH;
@@ -933,8 +972,8 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 
 			Size2i mesh_lightmap_size = mf.mesh->get_lightmap_size_hint();
 			if (mesh_lightmap_size == Size2i(0, 0)) {
-				// TODO we should compute a size if no lightmap hint is set, as we did in 3.x.
-				// For now set to basic size to avoid crash.
+				/// @todo We should compute a size if no lightmap hint is set, as we did in 3.x.
+				/// For now set to basic size to avoid crash.
 				mesh_lightmap_size = Size2i(64, 64);
 			}
 			// Double lightmap texel density if downsampling is enabled, as the final texture size will be halved before saving lightmaps.
@@ -1234,14 +1273,39 @@ LightmapGI::BakeError LightmapGI::bake(Node *p_from_node, String p_image_data_pa
 					}
 
 					if (env.is_valid()) {
-						environment_image = RS::get_singleton()->environment_bake_panorama(env->get_rid(), true, Size2i(128, 64));
+						// environment_image = RS::get_singleton()->environment_bake_panorama(env->get_rid(), true, Size2i(128, 64));
 						environment_transform = Basis::from_euler(env->get_sky_rotation()).inverse();
+
+						Sky::RadianceSize old_radiance_size = Sky::RADIANCE_SIZE_MAX;
+						if (!Engine::get_singleton()->is_editor_hint()) {
+							Ref<Sky> sky = env->get_sky();
+							if (sky.is_valid()) {
+								old_radiance_size = sky->get_radiance_size();
+								sky->set_radiance_size(Sky::RADIANCE_SIZE_128);
+							}
+						}
+						environment_image = RS::get_singleton()->environment_bake_panorama(env->get_rid(), true, Size2i(128, 128));
+						if (old_radiance_size != Sky::RADIANCE_SIZE_MAX) { // If it's not max, it's been set and needs resetting
+							Ref<Sky> sky = env->get_sky();
+							if (sky.is_valid()) {
+								sky->set_radiance_size(old_radiance_size);
+							}
+						}
 					}
 				}
 			} break;
 			case ENVIRONMENT_MODE_CUSTOM_SKY: {
 				if (environment_custom_sky.is_valid()) {
-					environment_image = RS::get_singleton()->sky_bake_panorama(environment_custom_sky->get_rid(), environment_custom_energy, true, Size2i(128, 64));
+					// environment_image = RS::get_singleton()->sky_bake_panorama(environment_custom_sky->get_rid(), environment_custom_energy, true, Size2i(128, 64));
+					Sky::RadianceSize old_radiance_size = Sky::RADIANCE_SIZE_MAX;
+					if (!Engine::get_singleton()->is_editor_hint()) {
+						old_radiance_size = environment_custom_sky->get_radiance_size();
+						environment_custom_sky->set_radiance_size(Sky::RADIANCE_SIZE_128);
+					}
+					environment_image = RS::get_singleton()->sky_bake_panorama(environment_custom_sky->get_rid(), environment_custom_energy, true, Size2i(128, 128));
+					if (old_radiance_size != Sky::RADIANCE_SIZE_MAX) {
+						environment_custom_sky->set_radiance_size(old_radiance_size);
+					}
 				}
 
 			} break;
@@ -1893,6 +1957,7 @@ void LightmapGI::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_camera_attributes"), &LightmapGI::get_camera_attributes);
 
 	//	ClassDB::bind_method(D_METHOD("bake", "from_node"), &LightmapGI::bake, DEFVAL(Variant()));
+	ClassDB::bind_method(D_METHOD("bake", "from_node", "image_data_path"), &LightmapGI::bake, DEFVAL(""));
 
 	ADD_GROUP("Tweaks", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "quality", PROPERTY_HINT_ENUM, "Low,Medium,High,Ultra"), "set_bake_quality", "get_bake_quality");

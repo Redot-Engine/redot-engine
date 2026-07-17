@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file editor_locale_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/dialogs.h"
 
 class Button;

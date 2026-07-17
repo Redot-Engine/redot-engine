@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_scene_render_rd.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_scene_render_rd.h"
 
 #include "core/config/project_settings.h"
@@ -337,9 +343,13 @@ void RendererSceneRenderRD::_render_buffers_ensure_screen_texture(const RenderDa
 	if (reuse_blur_texture) {
 		rb->allocate_blur_textures();
 	} else {
-		uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
-		usage_bits |= can_use_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
-		rb->create_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_COLOR, rb->get_base_data_format(), usage_bits);
+		if (!rb->has_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_COLOR)) {
+			uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+			usage_bits |= can_use_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+			// This needs to have mipmaps if any shader needs textureLod to work on screen_texture
+			uint32_t mipmaps_required = Image::get_image_required_mipmaps(size.x, size.y, Image::FORMAT_RGBAH);
+			rb->create_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_COLOR, rb->get_base_data_format(), usage_bits, RenderingDeviceCommons::TEXTURE_SAMPLES_1, { 0, 0 }, 0U, mipmaps_required);
+		}
 	}
 }
 
@@ -455,7 +465,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 	// Glow, auto exposure and DoF (if enabled).
 
 	Size2i target_size = rb->get_target_size();
-	bool can_use_effects = target_size.x >= 8 && target_size.y >= 8; // FIXME I think this should check internal size, we do all our post processing at this size...
+	bool can_use_effects = target_size.x >= 8 && target_size.y >= 8; ///< @todo FIXME I think this should check internal size, we do all our post processing at this size...
 	can_use_effects &= _debug_draw_can_use_effects(debug_draw);
 	bool can_use_storage = _render_buffers_can_be_storage();
 
@@ -480,7 +490,14 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 
 	bool dest_is_msaa_2d = rb->get_view_count() == 1 && texture_storage->render_target_get_msaa(render_target) != RS::VIEWPORT_MSAA_DISABLED;
 
-	if (can_use_effects && RSG::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes)) {
+	bool using_dof = RSG::camera_attributes->camera_attributes_uses_dof(p_render_data->camera_attributes);
+
+	if (using_dof && p_render_data->transparent_bg) {
+		WARN_PRINT_ONCE("Depth of field is not supported in viewports with a transparent background. Disabling DoF in transparent viewport.");
+		using_dof = false;
+	}
+
+	if (can_use_effects && using_dof) {
 		RENDER_TIMESTAMP("Depth of Field");
 		RD::get_singleton()->draw_command_begin_label("DOF");
 
@@ -520,7 +537,7 @@ void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const Rende
 			for (uint32_t i = 0; i < rb->get_view_count(); i++) {
 				buffers.base_texture = use_upscaled_texture ? rb->get_upscaled_texture(i) : rb->get_internal_texture(i);
 				buffers.depth_texture = rb->get_depth_texture(i);
-				buffers.base_fb = FramebufferCacheRD::get_singleton()->get_cache(buffers.base_texture); // TODO move this into bokeh_dof_raster, we can do this internally
+				buffers.base_fb = FramebufferCacheRD::get_singleton()->get_cache(buffers.base_texture); ///< @todo Move this into bokeh_dof_raster, we can do this internally
 
 				// In stereo p_render_data->z_near and p_render_data->z_far can be offset for our combined frustum.
 				float z_near = p_render_data->scene_data->view_projection[i].get_z_near();
@@ -871,8 +888,8 @@ void RendererSceneRenderRD::_post_process_subpass(RID p_source_texture, RID p_fr
 	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
 	ERR_FAIL_COND(rb.is_null());
 
-	// FIXME: Our input it our internal_texture, shouldn't this be using internal_size ??
-	// Seeing we don't support FSR in our mobile renderer right now target_size = internal_size...
+	/// @todo FIXME: Our input it our internal_texture, shouldn't this be using internal_size ??
+	/// Seeing we don't support FSR in our mobile renderer right now target_size = internal_size...
 	Size2i target_size = rb->get_target_size();
 	bool can_use_effects = target_size.x >= 8 && target_size.y >= 8 && debug_draw == RS::VIEWPORT_DEBUG_DRAW_DISABLED;
 

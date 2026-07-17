@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rendering_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rendering_server.h"
 #include "rendering_server.compat.inc"
 
@@ -233,7 +239,7 @@ RID RenderingServer::_make_test_cube() {
 
 	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_DIFFUSE, Color(1, 1, 1) );
 	fixed_material_set_param( test_material, FIXED_MATERIAL_PARAM_SPECULAR, Color(1,1,1) );
-*/
+	*/
 	mesh_surface_set_material(test_cube, 0, test_material);
 
 	return test_cube;
@@ -335,8 +341,8 @@ void _get_axis_angle(const Vector3 &p_normal, const Vector4 &p_tangent, float &r
 	}
 }
 
-// The inputs to this function should match the outputs of _get_axis_angle. I.e. p_axis is a normalized vector
-// and p_angle includes the binormal direction.
+/// The inputs to this function should match the outputs of _get_axis_angle. I.e. p_axis is a normalized vector
+/// and p_angle includes the binormal direction.
 void _get_tbn_from_axis_angle(const Vector3 &p_axis, float p_angle, Vector3 &r_normal, Vector4 &r_tangent) {
 	float binormal_sign = p_angle > 0.5 ? 1.0 : -1.0;
 	float angle = Math::abs(p_angle * 2.0 - 1.0) * Math::PI;
@@ -1921,7 +1927,6 @@ int RenderingServer::global_shader_uniform_type_get_shader_datatype(GlobalShader
 }
 
 RenderingDevice *RenderingServer::get_rendering_device() const {
-	// Return the rendering device we're using globally.
 	return RenderingDevice::get_singleton();
 }
 
@@ -2068,7 +2073,7 @@ Dictionary RenderingServer::_mesh_get_surface(RID p_mesh, int p_idx) {
 			Dictionary ld;
 			ld["edge_length"] = sd.lods[i].edge_length;
 			ld["index_data"] = sd.lods[i].index_data;
-			lods.push_back(lods);
+			lods.push_back(ld);
 		}
 		d["lods"] = lods;
 	}
@@ -3682,9 +3687,9 @@ void RenderingServer::init() {
 	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/reflections/sky_reflections/ggx_samples", PROPERTY_HINT_RANGE, "0,256,1"), 32);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/reflections/sky_reflections/ggx_samples.mobile", PROPERTY_HINT_RANGE, "0,128,1"), 16);
 	GLOBAL_DEF("rendering/reflections/sky_reflections/fast_filter_high_quality", false);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/reflections/reflection_atlas/reflection_size", PROPERTY_HINT_RANGE, "0,4096,1"), 256);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/reflections/reflection_atlas/reflection_size.mobile", PROPERTY_HINT_RANGE, "0,2048,1"), 128);
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/reflections/reflection_atlas/reflection_count", PROPERTY_HINT_RANGE, "0,256,1"), 64);
+	GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/reflections/reflection_atlas/reflection_size", PROPERTY_HINT_RANGE, "4,4096,1"), 256);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/reflections/reflection_atlas/reflection_size.mobile", PROPERTY_HINT_RANGE, "4,2048,1"), 128);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/reflections/reflection_atlas/reflection_count", PROPERTY_HINT_RANGE, "1,256,1"), 64);
 	GLOBAL_DEF_RST("rendering/reflections/specular_occlusion/enabled", true);
 
 	GLOBAL_DEF("rendering/global_illumination/gi/use_half_resolution", false);

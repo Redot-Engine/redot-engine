@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_collision_object_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_broad_phase_2d.h"
 #include "godot_shape_2d.h"
 
@@ -58,7 +64,7 @@ private:
 		Transform2D xform;
 		Transform2D xform_inv;
 		GodotBroadPhase2D::ID bpid = 0;
-		Rect2 aabb_cache; //for rayqueries
+		Rect2 aabb_cache; ///< For rayqueries
 		GodotShape2D *shape = nullptr;
 		bool disabled = false;
 		bool one_way_collision = false;

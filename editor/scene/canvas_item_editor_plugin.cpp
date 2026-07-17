@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file canvas_item_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "canvas_item_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -181,7 +187,7 @@ public:
 		primary_grid_step_y->set_step(1);
 		primary_grid_step_y->set_max(SPIN_BOX_GRID_RANGE);
 		primary_grid_step_y->set_allow_greater(true);
-		primary_grid_step_y->set_suffix(TTRC("steps")); // TODO: Add suffix auto-translation.
+		primary_grid_step_y->set_suffix(TTRC("steps")); /// @todo Add suffix auto-translation.
 		primary_grid_step_y->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 		primary_grid_step_y->set_select_all_on_focus(true);
 		primary_grid_step_y->set_accessibility_name(TTRC("Y Primary Step"));
@@ -4170,7 +4176,6 @@ void CanvasItemEditor::_notification(int p_what) {
 		case NOTIFICATION_READY: {
 			_update_lock_and_group_button();
 
-			SceneTreeDock::get_singleton()->get_tree_editor()->connect("node_changed", callable_mp(this, &CanvasItemEditor::_update_lock_and_group_button));
 			ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &CanvasItemEditor::_project_settings_changed));
 		} break;
 
@@ -4178,7 +4183,7 @@ void CanvasItemEditor::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Canvas item editor")));
 		} break;
@@ -4468,6 +4473,11 @@ void CanvasItemEditor::_insert_animation_keys(bool p_location, bool p_rotation, 
 	AnimationTrackEditor *te = AnimationPlayerEditor::get_singleton()->get_track_editor();
 	ERR_FAIL_COND_MSG(te->get_current_animation().is_null(), "Cannot insert animation key. No animation selected.");
 
+	bool is_read_only = te->is_read_only();
+	if (is_read_only) {
+		te->popup_read_only_dialog();
+		return;
+	}
 	te->make_insert_queue();
 	for (const KeyValue<Node *, Object *> &E : selection) {
 		CanvasItem *ci = Object::cast_to<CanvasItem>(E.key);

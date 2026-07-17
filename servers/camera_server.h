@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file camera_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 #include "core/object/ref_counted.h"
 #include "core/os/thread_safe.h"
@@ -39,10 +45,9 @@
 #include "core/variant/variant.h"
 
 /**
-	The camera server is a singleton object that gives access to the various
-	camera feeds that can be used as the background for our environment.
-**/
-
+ * The camera server is a singleton object that gives access to the various
+ * camera feeds that can be used as the background for our environment.
+ */
 class CameraFeed;
 template <typename T>
 class TypedArray;
@@ -95,22 +100,22 @@ public:
 	virtual void set_monitoring_feeds(bool p_monitoring_feeds);
 	_FORCE_INLINE_ bool is_monitoring_feeds() const { return monitoring_feeds; }
 
-	// Right now we identify our feed by it's ID when it's used in the background.
-	// May see if we can change this to purely relying on CameraFeed objects or by name.
+	/// Right now we identify our feed by it's ID when it's used in the background.
+	/// May see if we can change this to purely relying on CameraFeed objects or by name.
 	int get_free_id();
 	int get_feed_index(int p_id);
 	Ref<CameraFeed> get_feed_by_id(int p_id);
 
-	// Add and remove feeds.
+	/// Add and remove feeds.
 	void add_feed(const Ref<CameraFeed> &p_feed);
 	void remove_feed(const Ref<CameraFeed> &p_feed);
 
-	// Get our feeds.
+	/// Get our feeds.
 	Ref<CameraFeed> get_feed(int p_index);
 	int get_feed_count();
 	TypedArray<CameraFeed> get_feeds();
 
-	// Intended for use with custom CameraServer implementation.
+	/// Intended for use with custom CameraServer implementation.
 	RID feed_texture(int p_id, FeedImage p_texture);
 
 	CameraServer();

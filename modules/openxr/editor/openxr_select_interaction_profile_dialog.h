@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file openxr_select_interaction_profile_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/label.h"

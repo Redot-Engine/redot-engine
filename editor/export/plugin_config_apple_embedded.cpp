@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file plugin_config_apple_embedded.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "plugin_config_apple_embedded.h"
 
 #include "core/config/project_settings.h"

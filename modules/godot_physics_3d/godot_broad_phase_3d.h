@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godot_broad_phase_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/aabb.h"
 #include "core/math/math_funcs.h"
 
@@ -48,7 +54,7 @@ public:
 	typedef void *(*PairCallback)(GodotCollisionObject3D *A, int p_subindex_A, GodotCollisionObject3D *B, int p_subindex_B, void *p_userdata);
 	typedef void (*UnpairCallback)(GodotCollisionObject3D *A, int p_subindex_A, GodotCollisionObject3D *B, int p_subindex_B, void *p_data, void *p_userdata);
 
-	// 0 is an invalid ID
+	/// 0 is an invalid ID
 	virtual ID create(GodotCollisionObject3D *p_object_, int p_subindex = 0, const AABB &p_aabb = AABB(), bool p_static = false) = 0;
 	virtual void move(ID p_id, const AABB &p_aabb) = 0;
 	virtual void set_static(ID p_id, bool p_static) = 0;

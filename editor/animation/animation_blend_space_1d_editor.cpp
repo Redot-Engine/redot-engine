@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_blend_space_1d_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_blend_space_1d_editor.h"
 
 #include "core/os/keyboard.h"

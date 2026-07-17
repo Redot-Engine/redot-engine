@@ -276,7 +276,6 @@
 			If [code]true[/code], [AnimationMixer] prints the warning of no matching object of the track path in the scene.
 		</member>
 		<member name="application/boot_splash/bg_color" type="Color" setter="" getter="" default="Color(0.14, 0.14, 0.14, 1)">
-			Background color for the boot splash.
 		</member>
 		<member name="application/boot_splash/fullsize" type="bool" setter="" getter="" default="true">
 			If [code]true[/code], scale the boot splash image to the full window size (preserving the aspect ratio) when the engine starts. If [code]false[/code], the engine will leave it at the default pixel size.
@@ -996,7 +995,9 @@
 			Main window initial position.
 			[code]0[/code] - "Absolute", [member display/window/size/initial_position] is used to set window position.
 			[code]1[/code] - "Primary Screen Center".
-			[code]2[/code] - "Other Screen Center", [member display/window/size/initial_screen] is used to set the screen.
+			[code]3[/code] - "Other Screen Center", [member display/window/size/initial_screen] is used to set the screen.
+			[code]4[/code] - "Center of Screen With Mouse Pointer".
+			[code]5[/code] - "Center of Screen With Keyboard Focus".
 			[b]Note:[/b] This setting only affects the exported project, or when the project is run from the command line. In the editor, the value of [member EditorSettings.run/window_placement/rect] is used instead.
 		</member>
 		<member name="display/window/size/initial_screen" type="int" setter="" getter="" default="0">
@@ -2325,6 +2326,12 @@
 		<member name="navigation/2d/use_edge_connections" type="bool" setter="" getter="" default="true">
 			If enabled 2D navigation regions will use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin. This setting only affects World2D default navigation maps.
 		</member>
+		<member name="navigation/2d/warnings/navmesh_cell_size_mismatch" type="bool" setter="" getter="" default="true">
+			If [code]true[/code], the navigation system will print warnings when a navigation mesh with a small cell size is used on a navigation map with a larger size as this commonly causes rasterization errors.
+		</member>
+		<member name="navigation/2d/warnings/navmesh_edge_merge_errors" type="bool" setter="" getter="" default="true">
+			If [code]true[/code], the navigation system will print warnings about navigation mesh edge merge errors occurring in navigation regions or maps.
+		</member>
 		<member name="navigation/3d/default_cell_height" type="float" setter="" getter="" default="0.25">
 			Default cell height for 3D navigation maps. See [method NavigationServer3D.map_set_cell_height].
 		</member>
@@ -2345,6 +2352,12 @@
 		</member>
 		<member name="navigation/3d/use_edge_connections" type="bool" setter="" getter="" default="true">
 			If enabled 3D navigation regions will use edge connections to connect with other navigation regions within proximity of the navigation map edge connection margin. This setting only affects World3D default navigation maps.
+		</member>
+		<member name="navigation/3d/warnings/navmesh_cell_size_mismatch" type="bool" setter="" getter="" default="true">
+			If [code]true[/code], the navigation system will print warnings when a navigation mesh with a small cell size (or in 3D height) is used on a navigation map with a larger size as this commonly causes rasterization errors.
+		</member>
+		<member name="navigation/3d/warnings/navmesh_edge_merge_errors" type="bool" setter="" getter="" default="true">
+			If [code]true[/code], the navigation system will print warnings about navigation mesh edge merge errors occurring in navigation regions or maps.
 		</member>
 		<member name="navigation/avoidance/thread_model/avoidance_use_high_priority_threads" type="bool" setter="" getter="" default="true">
 			If enabled and avoidance calculations use multiple threads the threads run with high priority.
@@ -2800,7 +2813,7 @@
 		<member name="rendering/driver/threads/thread_model" type="int" setter="" getter="" default="1" experimental="This setting has several known bugs which can lead to crashing, especially when using particles or resizing the window. Not recommended for use in production at this stage.">
 			The thread model to use for rendering. Rendering on a thread may improve performance, but synchronizing to the main thread can cause a bit more jitter.
 		</member>
-		<member name="rendering/environment/defaults/default_clear_color" type="Color" setter="" getter="" default="Color(0.128, 0.128, 0.128, 1)">
+		<member name="rendering/environment/defaults/default_clear_color" type="Color" setter="" getter="" default="Color(0.14, 0.14, 0.14, 1)">
 			Default background clear color. Overridable per [Viewport] using its [Environment]. See [member Environment.background_mode] and [member Environment.background_color] in particular. To change this default color programmatically, use [method RenderingServer.set_default_clear_color].
 		</member>
 		<member name="rendering/environment/defaults/default_environment" type="String" setter="" getter="" default="&quot;&quot;">
@@ -3041,19 +3054,19 @@
 			Use 16 bits for the omni/spot shadow depth map. Enabling this results in shadows having less precision and may result in shadow acne, but can lead to performance improvements on some devices.
 		</member>
 		<member name="rendering/lights_and_shadows/positional_shadow/atlas_quadrant_0_subdiv" type="int" setter="" getter="" default="2">
-			The subdivision amount of the first quadrant on the shadow atlas. See the [url=$DOCS_URL/tutorials/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
+			The subdivision amount of the first quadrant on the shadow atlas. See the [url=$DOCS_URL/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
 		</member>
 		<member name="rendering/lights_and_shadows/positional_shadow/atlas_quadrant_1_subdiv" type="int" setter="" getter="" default="2">
-			The subdivision amount of the second quadrant on the shadow atlas. See the [url=$DOCS_URL/tutorials/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
+			The subdivision amount of the second quadrant on the shadow atlas. See the [url=$DOCS_URL/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
 		</member>
 		<member name="rendering/lights_and_shadows/positional_shadow/atlas_quadrant_2_subdiv" type="int" setter="" getter="" default="3">
-			The subdivision amount of the third quadrant on the shadow atlas. See the [url=$DOCS_URL/tutorials/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
+			The subdivision amount of the third quadrant on the shadow atlas. See the [url=$DOCS_URL/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
 		</member>
 		<member name="rendering/lights_and_shadows/positional_shadow/atlas_quadrant_3_subdiv" type="int" setter="" getter="" default="4">
-			The subdivision amount of the fourth quadrant on the shadow atlas. See the [url=$DOCS_URL/tutorials/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
+			The subdivision amount of the fourth quadrant on the shadow atlas. See the [url=$DOCS_URL/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
 		</member>
 		<member name="rendering/lights_and_shadows/positional_shadow/atlas_size" type="int" setter="" getter="" default="4096">
-			The size of the shadow atlas used for [OmniLight3D] and [SpotLight3D] nodes. See the [url=$DOCS_URL/tutorials/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
+			The size of the shadow atlas used for [OmniLight3D] and [SpotLight3D] nodes. See the [url=$DOCS_URL/tutorials/3d/lights_and_shadows.html#shadow-atlas]documentation[/url] for more information.
 		</member>
 		<member name="rendering/lights_and_shadows/positional_shadow/atlas_size.mobile" type="int" setter="" getter="" default="2048">
 			Lower-end override for [member rendering/lights_and_shadows/positional_shadow/atlas_size] on mobile devices, due to performance concerns or driver support.

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdscript_function.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript_utility_functions.h"
 
 #include "core/object/ref_counted.h"
@@ -301,8 +307,8 @@ public:
 		OPCODE_GET_NAMED_VALIDATED,
 		OPCODE_SET_MEMBER,
 		OPCODE_GET_MEMBER,
-		OPCODE_SET_STATIC_VARIABLE, // Only for GDScript.
-		OPCODE_GET_STATIC_VARIABLE, // Only for GDScript.
+		OPCODE_SET_STATIC_VARIABLE, ///< Only for GDScript.
+		OPCODE_GET_STATIC_VARIABLE, ///< Only for GDScript.
 		OPCODE_ASSIGN,
 		OPCODE_ASSIGN_NULL,
 		OPCODE_ASSIGN_TRUE,
@@ -315,8 +321,8 @@ public:
 		OPCODE_CAST_TO_BUILTIN,
 		OPCODE_CAST_TO_NATIVE,
 		OPCODE_CAST_TO_SCRIPT,
-		OPCODE_CONSTRUCT, // Only for basic types!
-		OPCODE_CONSTRUCT_VALIDATED, // Only for basic types!
+		OPCODE_CONSTRUCT, ///< Only for basic types!
+		OPCODE_CONSTRUCT_VALIDATED, ///< Only for basic types!
 		OPCODE_CONSTRUCT_ARRAY,
 		OPCODE_CONSTRUCT_TYPED_ARRAY,
 		OPCODE_CONSTRUCT_DICTIONARY,
@@ -588,7 +594,7 @@ private:
 	Variant _get_default_variant_for_data_type(const GDScriptDataType &p_data_type);
 
 public:
-	static constexpr int MAX_CALL_DEPTH = 2048; // Limit to try to avoid crash because of a stack overflow.
+	static constexpr int MAX_CALL_DEPTH = 2048; ///< Limit to try to avoid crash because of a stack overflow.
 
 	struct CallState {
 		Signal completed;
@@ -650,7 +656,7 @@ public:
 	Variant resume(const Variant &p_arg = Variant());
 
 #ifdef DEBUG_ENABLED
-	// Returns a human-readable representation of the function.
+	/// @return A human-readable representation of the function.
 	String get_readable_function() {
 		return state.function_name;
 	}

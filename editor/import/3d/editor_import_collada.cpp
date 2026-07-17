@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_import_collada.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_import_collada.h"
 
 #include "core/config/project_settings.h"
@@ -66,8 +72,8 @@ struct ColladaImport {
 	bool use_mesh_builtin_materials = false;
 	float bake_fps = 30;
 
-	HashMap<String, NodeMap> node_map; //map from collada node to engine node
-	HashMap<String, String> node_name_map; //map from collada node to engine node
+	HashMap<String, NodeMap> node_map; ///< Map from collada node to engine node
+	HashMap<String, String> node_name_map; ///< Map from collada node to engine node
 	HashMap<String, Ref<ImporterMesh>> mesh_cache;
 	HashMap<String, Ref<Curve3D>> curve_cache;
 	HashMap<String, Ref<Material>> material_cache;
@@ -1037,7 +1043,8 @@ Error ColladaImport::_create_mesh_surfaces(bool p_optimize, Ref<ImporterMesh> &p
 
 			for (int mi = 0; mi < p_morph_meshes.size(); mi++) {
 				Array a = p_morph_meshes[mi]->get_surface_arrays(surface);
-				//add valid weight and bone arrays if they exist, TODO check if they are unique to shape (generally not)
+				/// Sdd valid weight and bone arrays if they exist
+				/// @todo Check if they are unique to shape (generally not)
 
 				// Enforce blend shape mask array format
 				for (int mj = 0; mj < Mesh::ARRAY_MAX; mj++) {

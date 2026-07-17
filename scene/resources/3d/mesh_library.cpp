@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh_library.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mesh_library.h"
 
 #ifndef PHYSICS_3D_DISABLED

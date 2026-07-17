@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file static_raycaster_embree.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef TOOLS_ENABLED
 
 #include "core/math/static_raycaster.h"

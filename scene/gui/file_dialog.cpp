@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_dialog.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "file_dialog.h"
 
 #include "core/config/project_settings.h"
@@ -393,7 +399,7 @@ void FileDialog::update_dir() {
 }
 
 void FileDialog::_dir_submitted(String p_dir) {
-	String new_dir = p_dir;
+	String new_dir = OS::get_singleton()->expand_path(p_dir);
 #ifdef WINDOWS_ENABLED
 	if (root_prefix.is_empty() && drives->is_visible() && !new_dir.is_network_share_path() && new_dir.is_absolute_path() && new_dir.find(":/") == -1 && new_dir.find(":\\") == -1) {
 		// Non network path without X:/ prefix on Windows, add drive letter.
@@ -466,6 +472,9 @@ void FileDialog::_action_pressed() {
 	}
 
 	String file_text = filename_edit->get_text();
+
+	file_text = OS::get_singleton()->expand_path(file_text);
+
 	String f = file_text.is_absolute_path() ? file_text : dir_access->get_current_dir().path_join(file_text);
 
 	if ((mode == FILE_MODE_OPEN_ANY || mode == FILE_MODE_OPEN_FILE) && (dir_access->file_exists(f) || dir_access->is_bundle(f))) {
@@ -1203,7 +1212,7 @@ String FileDialog::get_current_path() const {
 }
 
 void FileDialog::set_current_dir(const String &p_dir) {
-	_change_dir(p_dir);
+	_change_dir(OS::get_singleton()->expand_path(p_dir));
 
 	_push_history();
 }
@@ -1222,12 +1231,15 @@ void FileDialog::set_current_path(const String &p_path) {
 	if (!p_path.size()) {
 		return;
 	}
-	int pos = MAX(p_path.rfind_char('/'), p_path.rfind_char('\\'));
+
+	String path = OS::get_singleton()->expand_path(p_path);
+
+	int pos = MAX(path.rfind_char('/'), path.rfind_char('\\'));
 	if (pos == -1) {
-		set_current_file(p_path);
+		set_current_file(path);
 	} else {
-		String path_dir = p_path.substr(0, pos);
-		String path_file = p_path.substr(pos + 1);
+		String path_dir = path.substr(0, pos);
+		String path_file = path.substr(pos + 1);
 		set_current_dir(path_dir);
 		set_current_file(path_file);
 	}
@@ -1601,7 +1613,7 @@ void FileDialog::_update_favorite_list() {
 		favorited_names.append(name);
 	}
 
-	// EditorNode::disambiguate_filenames(favorited_paths, favorited_names); // TODO Needs a non-editor method.
+	// EditorNode::disambiguate_filenames(favorited_paths, favorited_names); ///< @todo Needs a non-editor method.
 
 	const int favorites_size = favorited_paths.size();
 	for (int i = 0; i < favorites_size; i++) {
@@ -1688,7 +1700,7 @@ void FileDialog::_update_recent_list() {
 		recent_dir_names.append(name);
 	}
 
-	// EditorNode::disambiguate_filenames(recent_dir_paths, recent_dir_names); // TODO Needs a non-editor method.
+	// EditorNode::disambiguate_filenames(recent_dir_paths, recent_dir_names); ///< @toodo Needs a non-editor method.
 
 	const int recent_size = recent_dir_paths.size();
 	for (int i = 0; i < recent_size; i++) {
@@ -1999,7 +2011,7 @@ void FileDialog::_bind_methods() {
 	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, FileDialog, file_icon_color);
 	BIND_THEME_ITEM(Theme::DATA_TYPE_COLOR, FileDialog, file_disabled_color);
 
-	// TODO: Define own colors?
+	///@todo Define own colors?
 	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_COLOR, FileDialog, icon_normal_color, "font_color", "Button");
 	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_COLOR, FileDialog, icon_hover_color, "font_hover_color", "Button");
 	BIND_THEME_ITEM_EXT(Theme::DATA_TYPE_COLOR, FileDialog, icon_focus_color, "font_focus_color", "Button");

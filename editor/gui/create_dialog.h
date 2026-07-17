@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file create_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/doc/editor_help.h"
 #include "scene/gui/button.h"
 #include "scene/gui/dialogs.h"

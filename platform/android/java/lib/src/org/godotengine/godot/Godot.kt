@@ -109,6 +109,8 @@ class Godot private constructor(val context: Context) {
 			}
 		}
 
+		private const val EXIT_RENDERER_TIMEOUT_IN_MS = 1500L
+
 		// Supported build flavors
 		private const val EDITOR_FLAVOR = "editor"
 		private const val TEMPLATE_FLAVOR = "template"
@@ -392,7 +394,7 @@ class Godot private constructor(val context: Context) {
 			}
 		} else {
 			if (rootView.rootWindowInsets != null) {
-				if (!useImmersive.get() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)) {
+				if (!useImmersive.get()) {
 					val windowInsets = WindowInsetsCompat.toWindowInsetsCompat(rootView.rootWindowInsets)
 					val insets = windowInsets.getInsets(getInsetType())
 					rootView.setPadding(insets.left, insets.top, insets.right, insets.bottom)
@@ -401,8 +403,7 @@ class Godot private constructor(val context: Context) {
 
 			ViewCompat.setOnApplyWindowInsetsListener(rootView) { v: View, insets: WindowInsetsCompat ->
 				v.post {
-					if (useImmersive.get() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-						// Fixes issue where padding remained visible in immersive mode on some devices.
+					if (useImmersive.get()) {
 						v.setPadding(0, 0, 0, 0)
 					} else {
 						val windowInsets = insets.getInsets(getInsetType())
@@ -624,8 +625,8 @@ class Godot private constructor(val context: Context) {
 				}
 
 				override fun onEnd(animation: WindowInsetsAnimationCompat) {
-					// Fixes issue on Android 7 and 8 where immersive mode gets auto disabled after the keyboard is hidden.
-					if (useImmersive.get() && Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+					// Fixes an issue on Android 10 and older where immersive mode gets auto disabled after the keyboard is hidden on some devices.
+					if (useImmersive.get() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
 						runOnHostThread {
 							enableImmersiveMode(true, true)
 						}
@@ -738,7 +739,12 @@ class Godot private constructor(val context: Context) {
 			plugin.onMainDestroy()
 		}
 
-		renderView?.onActivityDestroyed()
+		if (renderView?.blockingExitRenderer(EXIT_RENDERER_TIMEOUT_IN_MS) != true) {
+			Log.w(TAG, "Unable to exit the renderer within $EXIT_RENDERER_TIMEOUT_IN_MS ms... Force quitting the process.")
+			onGodotTerminating()
+			forceQuit(0)
+		}
+
 		this.primaryHost = null
 	}
 
@@ -751,7 +757,9 @@ class Godot private constructor(val context: Context) {
 		val newDarkMode = newConfig.uiMode.and(Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 		if (darkMode != newDarkMode) {
 			darkMode = newDarkMode
-			GodotLib.onNightModeChanged()
+			runOnRenderThread {
+				GodotLib.onNightModeChanged()
+			}
 		}
 	}
 
@@ -763,7 +771,9 @@ class Godot private constructor(val context: Context) {
 			plugin.onMainActivityResult(requestCode, resultCode, data)
 		}
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-			FilePicker.handleActivityResult(context, requestCode, resultCode, data)
+			runOnRenderThread {
+				FilePicker.handleActivityResult(context, requestCode, resultCode, data)
+			}
 		}
 	}
 
@@ -778,11 +788,13 @@ class Godot private constructor(val context: Context) {
 		for (plugin in pluginRegistry.allPlugins) {
 			plugin.onMainRequestPermissionsResult(requestCode, permissions, grantResults)
 		}
-		for (i in permissions.indices) {
-			GodotLib.requestPermissionResult(
-				permissions[i],
-				grantResults[i] == PackageManager.PERMISSION_GRANTED
-			)
+		runOnRenderThread {
+			for (i in permissions.indices) {
+				GodotLib.requestPermissionResult(
+					permissions[i],
+					grantResults[i] == PackageManager.PERMISSION_GRANTED
+				)
+			}
 		}
 	}
 
@@ -1091,7 +1103,7 @@ class Godot private constructor(val context: Context) {
 		for (plugin in pluginRegistry.allPlugins) {
 			plugin.onMainBackPressed()
 		}
-		renderView?.queueOnRenderThread { GodotLib.back() }
+		runOnRenderThread { GodotLib.back() }
 	}
 
 	/**

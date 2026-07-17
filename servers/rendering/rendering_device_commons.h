@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_device_commons.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object.h"
 #include "core/variant/type_info.h"
 
@@ -39,8 +45,8 @@
 
 #define STEPIFY(m_number, m_alignment) ((((m_number) + ((m_alignment) - 1)) / (m_alignment)) * (m_alignment))
 
-// This may one day be used in Godot for interoperability between C arrays, Vector and LocalVector.
-// (See https://github.com/godotengine/godot-proposals/issues/5144.)
+/// @todo This may one day be used in Godot for interoperability between C arrays, Vector and LocalVector.
+/// (See https://github.com/godotengine/godot-proposals/issues/5144.)
 template <typename T>
 class VectorView {
 	const T *_ptr = nullptr;
@@ -77,9 +83,8 @@ class RenderingDeviceCommons : public Object {
 public:
 	static const bool command_pool_reset_enabled = true;
 
-	/*****************/
-	/**** GENERIC ****/
-	/*****************/
+	/// @name GENERIC
+	/// @{
 
 	static const int INVALID_ID = -1;
 
@@ -319,41 +324,49 @@ public:
 		DATA_FORMAT_MAX,
 	};
 
-	// Breadcrumb markers are useful for debugging GPU crashes (i.e. DEVICE_LOST). Internally
-	// they're just an uint32_t to "tag" a GPU command. These are only used for debugging and do not
-	// (or at least shouldn't) alter the execution behavior in any way.
-	//
-	// When a GPU crashes and Redot was built in dev or debug mode; Redot will dump what commands
-	// were being executed and what tag they were marked with.
-	// This makes narrowing down the cause of a crash easier. Note that a GPU can be executing
-	// multiple commands at the same time. It is also useful to identify data hazards.
-	//
-	// For example if each LIGHTMAPPER_PASS must be executed in sequential order, but dumps
-	// indicated that pass (LIGHTMAPPER_PASS | 5) was being executed at the same time as
-	// (LIGHTMAPPER_PASS | 4), that would indicate there is a missing barrier or a render graph bug.
-	//
-	// The enums are bitshifted by 16 bits so it's possible to add user data via bitwise operations.
-	// Using this enum is not mandatory; but it is recommended so that all subsystems agree what each
-	// ID means when dumping info.
+	/// Breadcrumb markers are useful for debugging GPU crashes (i.e. DEVICE_LOST). Internally
+	/// they're just an uint32_t to "tag" a GPU command. These are only used for debugging and do not
+	/// (or at least shouldn't) alter the execution behavior in any way.
+	///
+	/// When a GPU crashes and Redot was built in dev or debug mode; Redot will dump what commands
+	/// were being executed and what tag they were marked with.
+	/// This makes narrowing down the cause of a crash easier. Note that a GPU can be executing
+	/// multiple commands at the same time. It is also useful to identify data hazards.
+	///
+	/// For example if each LIGHTMAPPER_PASS must be executed in sequential order, but dumps
+	/// indicated that pass (LIGHTMAPPER_PASS | 5) was being executed at the same time as
+	/// (LIGHTMAPPER_PASS | 4), that would indicate there is a missing barrier or a render graph bug.
+	///
+	/// The enums are bitshifted by 16 bits so it's possible to add user data via bitwise operations.
+	/// Using this enum is not mandatory; but it is recommended so that all subsystems agree what each
+	/// ID means when dumping info.
 	enum BreadcrumbMarker {
 		NONE = 0,
-		// Environment
+		/// Environment
+		/// @{
 		REFLECTION_PROBES = 1u << 16u,
 		SKY_PASS = 2u << 16u,
-		// Light mapping
+		/// @}
+		/// Light mapping
 		LIGHTMAPPER_PASS = 3u << 16u,
-		// Shadows
+		/// Shadows
+		/// @{
 		SHADOW_PASS_DIRECTIONAL = 4u << 16u,
 		SHADOW_PASS_CUBE = 5u << 16u,
-		// Geometry passes
+		/// @}
+		/// Geometry passes
+		/// @{
 		OPAQUE_PASS = 6u << 16u,
 		ALPHA_PASS = 7u << 16u,
 		TRANSPARENT_PASS = 8u << 16u,
-		// Screen effects
+		/// @}
+		/// Screen effects
+		/// @{
 		POST_PROCESSING_PASS = 9u << 16u,
 		BLIT_PASS = 10u << 16u,
 		UI_PASS = 11u << 16u,
-		// Other
+		/// @}
+		/// Other
 		DEBUG_PASS = 12u << 16u,
 	};
 
@@ -369,9 +382,9 @@ public:
 		COMPARE_OP_MAX
 	};
 
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
+	/// @}
+	/// @name TEXTURE
+	/// @{
 
 	enum TextureType {
 		TEXTURE_TYPE_1D,
@@ -407,21 +420,21 @@ public:
 		TEXTURE_USAGE_CAN_COPY_TO_BIT = (1 << 8),
 		TEXTURE_USAGE_INPUT_ATTACHMENT_BIT = (1 << 9),
 		TEXTURE_USAGE_VRS_ATTACHMENT_BIT = (1 << 10),
-		// When set, the texture is not backed by actual memory. It only ever lives in the cache.
-		// This is particularly useful for:
-		//	1. Depth/stencil buffers that are not needed after producing the colour output.
-		//	2. MSAA surfaces that are immediately resolved (i.e. its raw content isn't needed).
-		//
-		// This flag heavily improves performance & saves memory on TBDR GPUs (e.g. mobile).
-		// On Desktop this flag won't save memory but it still instructs the render graph that data will
-		// be discarded aggressively which may still improve some performance.
-		//
-		// It is not valid to perform copies from/to this texture, since it doesn't occupy actual RAM.
-		// It is also not valid to sample from this texture except using subpasses or via read/write
-		// pixel shader extensions (e.g. VK_EXT_rasterization_order_attachment_access).
-		//
-		// Try to set this bit as much as possible. If you set it, validation doesn't complain
-		// and it works fine on mobile, then go ahead.
+		/// When set, the texture is not backed by actual memory. It only ever lives in the cache.
+		/// This is particularly useful for:
+		///	1. Depth/stencil buffers that are not needed after producing the colour output.
+		///	2. MSAA surfaces that are immediately resolved (i.e. its raw content isn't needed).
+		///
+		/// This flag heavily improves performance & saves memory on TBDR GPUs (e.g. mobile).
+		/// On Desktop this flag won't save memory but it still instructs the render graph that data will
+		/// be discarded aggressively which may still improve some performance.
+		///
+		/// It is not valid to perform copies from/to this texture, since it doesn't occupy actual RAM.
+		/// It is also not valid to sample from this texture except using subpasses or via read/write
+		/// pixel shader extensions (e.g. VK_EXT_rasterization_order_attachment_access).
+		///
+		/// Try to set this bit as much as possible. If you set it, validation doesn't complain
+		/// and it works fine on mobile, then go ahead.
 		TEXTURE_USAGE_TRANSIENT_BIT = (1 << 11),
 		TEXTURE_USAGE_MAX_BIT = TEXTURE_USAGE_TRANSIENT_BIT,
 	};
@@ -489,10 +502,9 @@ public:
 		TEXTURE_SLICE_2D_ARRAY,
 		TEXTURE_SLICE_MAX
 	};
-
-	/*****************/
-	/**** SAMPLER ****/
-	/*****************/
+	/// @}
+	/// @name SAMPLER
+	/// @{
 
 	enum SamplerFilter {
 		SAMPLER_FILTER_NEAREST,
@@ -531,14 +543,13 @@ public:
 		bool enable_compare = false;
 		CompareOperator compare_op = COMPARE_OP_ALWAYS;
 		float min_lod = 0.0f;
-		float max_lod = 1e20; // Something very large should do.
+		float max_lod = 1e20; ///< Something very large should do.
 		SamplerBorderColor border_color = SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 		bool unnormalized_uvw = false;
 	};
-
-	/**********************/
-	/**** VERTEX ARRAY ****/
-	/**********************/
+	/// @}
+	/// @name VERTEX ARRAY
+	/// @{
 
 	enum IndexBufferFormat {
 		INDEX_BUFFER_FORMAT_UINT16,
@@ -551,22 +562,21 @@ public:
 	};
 
 	struct VertexAttribute {
-		uint32_t location = 0; // Shader location.
+		uint32_t location = 0; ///< Shader location.
 		uint32_t offset = 0;
 		DataFormat format = DATA_FORMAT_MAX;
 		uint32_t stride = 0;
 		VertexFrequency frequency = VERTEX_FREQUENCY_VERTEX;
 	};
-
-	/*********************/
-	/**** FRAMEBUFFER ****/
-	/*********************/
+	/// @}
+	/// @name FRAMEBUFFER
+	/// @{
 
 	static const int32_t ATTACHMENT_UNUSED = -1;
 
-	/****************/
-	/**** SHADER ****/
-	/****************/
+	/// @}
+	/// @name SHADER
+	/// @{
 
 	enum ShaderStage {
 		SHADER_STAGE_VERTEX,
@@ -610,30 +620,28 @@ public:
 		ShaderStage shader_stage = SHADER_STAGE_MAX;
 		Vector<uint8_t> spirv;
 	};
-
-	/*********************/
-	/**** UNIFORM SET ****/
-	/*********************/
+	/// @}
+	/// @name UNIFORM SET
+	/// @{
 
 	static const uint32_t MAX_UNIFORM_SETS = 16;
 
 	enum UniformType {
-		UNIFORM_TYPE_SAMPLER, // For sampling only (sampler GLSL type).
-		UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, // For sampling only, but includes a texture, (samplerXX GLSL type), first a sampler then a texture.
-		UNIFORM_TYPE_TEXTURE, // Only texture, (textureXX GLSL type).
-		UNIFORM_TYPE_IMAGE, // Storage image (imageXX GLSL type), for compute mostly.
-		UNIFORM_TYPE_TEXTURE_BUFFER, // Buffer texture (or TBO, textureBuffer type).
-		UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER, // Buffer texture with a sampler(or TBO, samplerBuffer type).
-		UNIFORM_TYPE_IMAGE_BUFFER, // Texel buffer, (imageBuffer type), for compute mostly.
-		UNIFORM_TYPE_UNIFORM_BUFFER, // Regular uniform buffer (or UBO).
-		UNIFORM_TYPE_STORAGE_BUFFER, // Storage buffer ("buffer" qualifier) like UBO, but supports storage, for compute mostly.
-		UNIFORM_TYPE_INPUT_ATTACHMENT, // Used for sub-pass read/write, for mobile mostly.
+		UNIFORM_TYPE_SAMPLER, ///< For sampling only (sampler GLSL type).
+		UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, ///< For sampling only, but includes a texture, (samplerXX GLSL type), first a sampler then a texture.
+		UNIFORM_TYPE_TEXTURE, ///< Only texture, (textureXX GLSL type).
+		UNIFORM_TYPE_IMAGE, ///< Storage image (imageXX GLSL type), for compute mostly.
+		UNIFORM_TYPE_TEXTURE_BUFFER, ///< Buffer texture (or TBO, textureBuffer type).
+		UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER, ///< Buffer texture with a sampler(or TBO, samplerBuffer type).
+		UNIFORM_TYPE_IMAGE_BUFFER, ///< Texel buffer, (imageBuffer type), for compute mostly.
+		UNIFORM_TYPE_UNIFORM_BUFFER, ///< Regular uniform buffer (or UBO).
+		UNIFORM_TYPE_STORAGE_BUFFER, ///< Storage buffer ("buffer" qualifier) like UBO, but supports storage, for compute mostly.
+		UNIFORM_TYPE_INPUT_ATTACHMENT, ///< Used for sub-pass read/write, for mobile mostly.
 		UNIFORM_TYPE_MAX
 	};
-
-	/******************/
-	/**** PIPELINE ****/
-	/******************/
+	/// @}
+	/// @name PIPELINE
+	/// @{
 
 	enum PipelineSpecializationConstantType {
 		PIPELINE_SPECIALIZATION_CONSTANT_TYPE_BOOL,
@@ -650,10 +658,9 @@ public:
 			bool bool_value;
 		};
 	};
-
-	/*******************/
-	/**** RENDERING ****/
-	/*******************/
+	/// @}
+	/// @name RENDERING
+	/// @{
 
 	// ----- PIPELINE -----
 
@@ -666,7 +673,7 @@ public:
 		RENDER_PRIMITIVE_TRIANGLES,
 		RENDER_PRIMITIVE_TRIANGLES_WITH_ADJACENCY,
 		RENDER_PRIMITIVE_TRIANGLE_STRIPS,
-		RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_AJACENCY, // TODO: Fix typo in "ADJACENCY" (in 5.0).
+		RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_AJACENCY, ///< @todo Fix typo in "ADJACENCY" (in 5.0).
 		RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX,
 		RENDER_PRIMITIVE_TESSELATION_PATCH,
 		RENDER_PRIMITIVE_MAX
@@ -744,7 +751,7 @@ public:
 		BLEND_OP_SUBTRACT,
 		BLEND_OP_REVERSE_SUBTRACT,
 		BLEND_OP_MINIMUM,
-		BLEND_OP_MAXIMUM, // Yes, this one is an actual operator.
+		BLEND_OP_MAXIMUM, ///< Yes, this one is an actual operator.
 		BLEND_OP_MAX
 	};
 
@@ -835,7 +842,7 @@ public:
 			return bs;
 		}
 
-		Vector<Attachment> attachments; // One per render target texture.
+		Vector<Attachment> attachments; ///< One per render target texture.
 		Color blend_constant;
 	};
 
@@ -848,13 +855,12 @@ public:
 		DYNAMIC_STATE_STENCIL_WRITE_MASK = (1 << 5),
 		DYNAMIC_STATE_STENCIL_REFERENCE = (1 << 6),
 	};
+	/// @}
+	/// @name MISC
+	/// @{
 
-	/**************/
-	/**** MISC ****/
-	/**************/
-
-	// This enum matches VkPhysicalDeviceType (except for `DEVICE_TYPE_MAX`).
-	// Unlike VkPhysicalDeviceType, DeviceType is exposed to the scripting API.
+	/// This enum matches VkPhysicalDeviceType (except for `DEVICE_TYPE_MAX`).
+	/// Unlike VkPhysicalDeviceType, DeviceType is exposed to the scripting API.
 	enum DeviceType {
 		DEVICE_TYPE_OTHER,
 		DEVICE_TYPE_INTEGRATED_GPU,
@@ -864,8 +870,8 @@ public:
 		DEVICE_TYPE_MAX
 	};
 
-	// Defined in an API-agnostic way.
-	// Some may not make sense for the underlying API; in that case, 0 is returned.
+	/// Defined in an API-agnostic way.
+	/// Some may not make sense for the underlying API; in that case, 0 is returned.
 	enum DriverResource {
 		DRIVER_RESOURCE_LOGICAL_DEVICE,
 		DRIVER_RESOURCE_PHYSICAL_DEVICE,
@@ -938,7 +944,7 @@ public:
 		LIMIT_SUBGROUP_SIZE,
 		LIMIT_SUBGROUP_MIN_SIZE,
 		LIMIT_SUBGROUP_MAX_SIZE,
-		LIMIT_SUBGROUP_IN_SHADERS, // Set flags using SHADER_STAGE_VERTEX_BIT, SHADER_STAGE_FRAGMENT_BIT, etc.
+		LIMIT_SUBGROUP_IN_SHADERS, ///< Set flags using SHADER_STAGE_VERTEX_BIT, SHADER_STAGE_FRAGMENT_BIT, etc.
 		LIMIT_SUBGROUP_OPERATIONS,
 		LIMIT_METALFX_TEMPORAL_SCALER_MIN_SCALE = 46,
 		LIMIT_METALFX_TEMPORAL_SCALER_MAX_SCALE,
@@ -951,7 +957,7 @@ public:
 		SUPPORTS_ATTACHMENT_VRS,
 		SUPPORTS_METALFX_SPATIAL,
 		SUPPORTS_METALFX_TEMPORAL,
-		// If not supported, a fragment shader with only side effects (i.e., writes  to buffers, but doesn't output to attachments), may be optimized down to no-op by the GPU driver.
+		/// If not supported, a fragment shader with only side effects (i.e., writes  to buffers, but doesn't output to attachments), may be optimized down to no-op by the GPU driver.
 		SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS,
 		SUPPORTS_BUFFER_DEVICE_ADDRESS,
 		SUPPORTS_IMAGE_ATOMIC_32_BIT,
@@ -968,6 +974,7 @@ public:
 		SUBGROUP_CLUSTERED_BIT = 64,
 		SUBGROUP_QUAD_BIT = 128,
 	};
+	/// @}
 
 	////////////////////////////////////////////
 	// PROTECTED STUFF
@@ -975,20 +982,19 @@ public:
 	// with RenderingDeviceDriver for convenience.
 	////////////////////////////////////////////
 protected:
-	/*****************/
-	/**** GENERIC ****/
-	/*****************/
+	/// @name GENERIC
+	/// @{
 
 	static const char *const FORMAT_NAMES[DATA_FORMAT_MAX];
-
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
+	/// @}
+	/// @name TEXTURE
+	/// @{
 
 	static const uint32_t MAX_IMAGE_FORMAT_PLANES = 2;
 
 	static const uint32_t TEXTURE_SAMPLES_COUNT[TEXTURE_SAMPLES_MAX];
 
+	/// https://www.khronos.org/registry/DataFormat/specs/1.1/dataformat.1.1.pdf
 	static void get_compressed_image_format_block_dimensions(DataFormat p_format, uint32_t &r_w, uint32_t &r_h);
 	uint32_t get_compressed_image_format_block_byte_size(DataFormat p_format) const;
 	static uint32_t get_compressed_image_format_pixel_rshift(DataFormat p_format);
@@ -996,29 +1002,25 @@ protected:
 	static uint32_t get_image_required_mipmaps(uint32_t p_width, uint32_t p_height, uint32_t p_depth);
 	static bool format_has_stencil(DataFormat p_format);
 	static uint32_t format_get_plane_count(DataFormat p_format);
-
-	/*****************/
-	/**** SAMPLER ****/
-	/*****************/
+	/// @}
+	/// @name SAMPLER
+	/// @{
 
 	static const Color SAMPLER_BORDER_COLOR_VALUE[SAMPLER_BORDER_COLOR_MAX];
-
-	/**********************/
-	/**** VERTEX ARRAY ****/
-	/**********************/
+	/// @}
+	/// @name VERTEX ARRAY
+	/// @{
 
 	static uint32_t get_format_vertex_size(DataFormat p_format);
-
+	/// @}
 public:
-	/*****************/
-	/**** TEXTURE ****/
-	/*****************/
+	/// @name TEXTURE
+	/// @{
 
 	static uint32_t get_image_format_pixel_size(DataFormat p_format);
-
-	/****************/
-	/**** SHADER ****/
-	/****************/
+	/// @}
+	/// @name SHADER
+	/// @{
 
 	static const char *SHADER_STAGE_NAMES[SHADER_STAGE_MAX];
 
@@ -1027,7 +1029,7 @@ public:
 		bool writable = false;
 		uint32_t binding = 0;
 		BitField<ShaderStage> stages = {};
-		uint32_t length = 0; // Size of arrays (in total elements), or ubos (in bytes * total elements).
+		uint32_t length = 0; ///< Size of arrays (in total elements), or ubos (in bytes * total elements).
 
 		bool operator!=(const ShaderUniform &p_other) const {
 			return binding != p_other.binding || type != p_other.type || writable != p_other.writable || stages != p_other.stages || length != p_other.length;
@@ -1075,4 +1077,5 @@ public:
 	};
 
 	static Error reflect_spirv(VectorView<ShaderStageSPIRVData> p_spirv, ShaderReflection &r_reflection);
+	/// @}
 };

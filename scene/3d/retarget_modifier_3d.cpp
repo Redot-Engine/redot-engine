@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file retarget_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "retarget_modifier_3d.h"
 
 PackedStringArray RetargetModifier3D::get_configuration_warnings() const {
@@ -251,7 +257,7 @@ void RetargetModifier3D::remove_child_notify(Node *p_child) {
 
 void RetargetModifier3D::_validate_property(PropertyInfo &p_property) const {
 	if (use_global_pose) {
-		if (p_property.name == "enable_flags") {
+		if (p_property.name == "enable") {
 			p_property.usage = PROPERTY_USAGE_NONE;
 		}
 	}

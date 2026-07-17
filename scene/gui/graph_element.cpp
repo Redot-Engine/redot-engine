@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file graph_element.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "graph_element.h"
 
 #include "scene/gui/graph_edit.h"

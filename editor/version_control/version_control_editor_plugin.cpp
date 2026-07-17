@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file version_control_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "version_control_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -103,7 +109,7 @@ void VersionControlEditorPlugin::popup_vcs_set_up_dialog(const Control *p_gui_ba
 
 		set_up_dialog->popup_centered_clamped(popup_size * EDSCALE);
 	} else {
-		// TODO: Give info to user on how to fix this error.
+		/// @todo Give info to user on how to fix this error.
 		EditorNode::get_singleton()->show_warning(TTR("No VCS plugins are available in the project. Install a VCS plugin to use VCS integration features."), TTR("Error"));
 	}
 }
@@ -398,7 +404,7 @@ void VersionControlEditorPlugin::_discard_file(const String &p_file_path, Editor
 		CHECK_PLUGIN_INITIALIZED();
 		EditorVCSInterface::get_singleton()->discard_file(p_file_path);
 	}
-	// FIXIT: The project.godot file shows weird behavior
+	// @todo FIXIT: The project.godot file shows weird behavior
 	EditorFileSystem::get_singleton()->update_file(p_file_path);
 }
 

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file collision_shape_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 #include "scene/resources/2d/shape_2d.h"
 
@@ -50,7 +56,7 @@ class CollisionShape2D : public Node2D {
 	void _shape_changed();
 	void _update_in_shape_owner(bool p_xform_only = false);
 
-	// Not wrapped in `#ifdef DEBUG_ENABLED` as it is used for rendering.
+	/// Not wrapped in `#ifdef DEBUG_ENABLED` as it is used for rendering.
 	Color debug_color = Color(0.0, 0.0, 0.0, 0.0);
 
 	Color _get_default_debug_color() const;

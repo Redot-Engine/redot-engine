@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_resource_picker.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_resource_picker.h"
 
 #include "editor/audio/audio_stream_preview.h"
@@ -486,8 +492,11 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 				Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorNode::get_singleton()->find_resource_conversion_plugin_for_resource(edited_resource);
 				ERR_FAIL_INDEX(to_type, conversions.size());
 
-				edited_resource = conversions[to_type]->convert(edited_resource);
-				_resource_changed();
+				Ref<Resource> converted_resource = conversions[to_type]->convert(edited_resource);
+				if (converted_resource.is_valid()) {
+					edited_resource = converted_resource;
+					_resource_changed();
+				}
 				break;
 			}
 
@@ -611,8 +620,12 @@ String EditorResourcePicker::_get_owner_path() const {
 
 	Node *node = Object::cast_to<Node>(obj);
 	if (node) {
+		Node *p_edited_scene_root = EditorNode::get_singleton()->get_editor_data().get_edited_scene_root();
 		if (node->get_scene_file_path().is_empty()) {
 			node = node->get_owner();
+		} else if (p_edited_scene_root != nullptr && p_edited_scene_root->get_scene_file_path() != node->get_scene_file_path()) {
+			// PackedScene should use root scene path.
+			return p_edited_scene_root->get_scene_file_path();
 		}
 		if (node) {
 			return node->get_scene_file_path();
@@ -624,7 +637,7 @@ String EditorResourcePicker::_get_owner_path() const {
 	if (res && !res->is_built_in()) {
 		return res->get_path();
 	}
-	// TODO: It would be nice to handle deeper Resource nesting.
+	/// @todo It would be nice to handle deeper Resource nesting.
 	return String();
 }
 
@@ -639,7 +652,7 @@ String EditorResourcePicker::_get_resource_type(const Ref<Resource> &p_resource)
 		return res_type;
 	}
 
-	// TODO: Replace with EditorFileSystem when PR #60606 is merged to use cached resource type.
+	/// @todo Replace with EditorFileSystem when PR #60606 is merged to use cached resource type.
 	String script_type = EditorNode::get_editor_data().script_class_get_name(res_script->get_path());
 	if (!script_type.is_empty()) {
 		res_type = script_type;
@@ -741,7 +754,7 @@ bool EditorResourcePicker::_is_drop_valid(const Dictionary &p_drag_data) const {
 
 		if (files.size() == 1) {
 			if (ResourceLoader::exists(files[0])) {
-				// TODO: Extract the typename of the dropped filepath's resource in a more performant way, without fully loading it.
+				/// @todo Extract the typename of the dropped filepath's resource in a more performant way, without fully loading it.
 				res = ResourceLoader::load(files[0]);
 			}
 		}
@@ -780,10 +793,19 @@ bool EditorResourcePicker::_is_type_valid(const String &p_type_name, const HashS
 }
 
 bool EditorResourcePicker::_is_custom_type_script() const {
-	Ref<Script> resource_as_script = edited_resource;
+	EditorProperty *editor_property = Object::cast_to<EditorProperty>(get_parent());
+	if (!editor_property) {
+		return false;
+	}
 
-	if (resource_as_script.is_valid() && resource_owner && resource_owner->has_meta(SceneStringName(_custom_type_script))) {
-		return true;
+	// Check if the property being edited is 'script'.
+	if (editor_property->get_edited_property() == CoreStringName(script)) {
+		// If there's currently a valid script assigned and the owning Node/Resource also has a custom type script assigned, then
+		// the currently assigned script is either the custom type script itself or an extension of it.
+		Ref<Script> resource_as_script = edited_resource;
+		if (resource_as_script.is_valid() && resource_owner && resource_owner->has_meta(SceneStringName(_custom_type_script))) {
+			return true;
+		}
 	}
 
 	return false;

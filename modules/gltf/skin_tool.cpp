@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skin_tool.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skin_tool.h"
 
 SkinNodeIndex SkinTool::_find_highest_node(Vector<Ref<GLTFNode>> &r_nodes, const Vector<GLTFNodeIndex> &p_subset) {
@@ -199,10 +205,6 @@ Error SkinTool::_expand_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_ski
 }
 
 Error SkinTool::_verify_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin) {
-	// This may seem duplicated from expand_skins, but this is really a sanity check! (so it kinda is)
-	// In case additional interpolating logic is added to the skins, this will help ensure that you
-	// do not cause it to self implode into a fiery blaze
-
 	// We are going to re-calculate the root nodes and compare them to the ones saved in the skin,
 	// then ensure the multiple trees (if they exist) are on the same sublevel
 
@@ -729,8 +731,8 @@ Error SkinTool::_create_skins(Vector<Ref<GLTFSkin>> &skins, Vector<Ref<GLTFNode>
 	return OK;
 }
 
-// FIXME: Duplicated from FBXDocument, very similar code in GLTFDocument too,
-// and even below in this class for bone names.
+/// @todo FIXME: Duplicated from FBXDocument, very similar code in GLTFDocument too,
+/// and even below in this class for bone names.
 String SkinTool::_gen_unique_name(HashSet<String> &unique_names, const String &p_name) {
 	const String s_name = p_name.validate_node_name();
 

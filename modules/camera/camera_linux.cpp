@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file camera_linux.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "camera_linux.h"
 
 #include "camera_feed_linux.h"
@@ -127,7 +133,7 @@ int CameraLinux::_open_device(const String &p_device_name) {
 	return open(p_device_name.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 }
 
-// TODO any cheaper/cleaner way to check if file descriptor is invalid?
+/// @todo Any cheaper/cleaner way to check if file descriptor is invalid?
 bool CameraLinux::_is_active(const String &p_device_name) {
 	struct v4l2_capability capability;
 	bool result = false;

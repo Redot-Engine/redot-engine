@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file canvas_group.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "canvas_group.h"
 
 void CanvasGroup::set_fit_margin(real_t p_fit_margin) {

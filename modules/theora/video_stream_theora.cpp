@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file video_stream_theora.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "video_stream_theora.h"
 
 #include "core/config/project_settings.h"
@@ -91,7 +97,6 @@ double VideoStreamPlaybackTheora::get_page_time(ogg_page *page) {
 	return page_time;
 }
 
-// Read one buffer worth of pages and feed them to the streams.
 int VideoStreamPlaybackTheora::feed_pages() {
 	int pages = 0;
 	ogg_page og;
@@ -112,8 +117,6 @@ int VideoStreamPlaybackTheora::feed_pages() {
 	return pages;
 }
 
-// Seek the video and audio streams simultaneously to find the granulepos where we should start decoding.
-// It will return the position where we should start reading pages, and the video and audio granulepos.
 int64_t VideoStreamPlaybackTheora::seek_streams(double p_time, int64_t &cur_video_granulepos, int64_t &cur_audio_granulepos) {
 	// Backtracking less than this is probably a waste of time.
 	const int64_t min_seek = 512 * 1024;
@@ -487,9 +490,9 @@ void VideoStreamPlaybackTheora::set_file(const String &p_file) {
 }
 
 double VideoStreamPlaybackTheora::get_time() const {
-	// FIXME: AudioServer output latency was fixed in af9bb0e, previously it used to
-	// systematically return 0. Now that it gives a proper latency, it broke this
-	// code where the delay compensation likely never really worked.
+	/// @todo FIXME: AudioServer output latency was fixed in af9bb0e, previously it used to
+	/// systematically return 0. Now that it gives a proper latency, it broke this
+	/// code where the delay compensation likely never really worked.
 	return time - /* AudioServer::get_singleton()->get_output_latency() - */ delay_compensation;
 }
 

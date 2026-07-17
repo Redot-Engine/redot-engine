@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_lsp.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef TOOLS_ENABLED
 
 #include "modules/modules_enabled.gen.h" // For jsonrpc.

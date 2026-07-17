@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file fog_volume.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/rid.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/material.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_plugin.h"
 #include "editor_plugin.compat.inc"
 
@@ -274,7 +280,6 @@ void EditorPlugin::forward_canvas_force_draw_over_viewport(Control *p_overlay) {
 	GDVIRTUAL_CALL(_forward_canvas_force_draw_over_viewport, p_overlay);
 }
 
-// Updates the overlays of the 2D viewport or, if in 3D mode, of every 3D viewport.
 int EditorPlugin::update_overlays() const {
 	if (Node3DEditor::get_singleton()->is_visible()) {
 		int count = 0;
@@ -508,14 +513,10 @@ int find(const PackedStringArray &a, const String &v) {
 }
 
 void EditorPlugin::enable_plugin() {
-	// Called when the plugin gets enabled in project settings, after it's added to the tree.
-	// You can implement it to register autoloads.
 	GDVIRTUAL_CALL(_enable_plugin);
 }
 
 void EditorPlugin::disable_plugin() {
-	// Last function called when the plugin gets disabled in project settings.
-	// Implement it to cleanup things from the project, such as unregister autoloads.
 	GDVIRTUAL_CALL(_disable_plugin);
 }
 

@@ -30,13 +30,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_loader_bmp.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_loader_bmp.h"
 
 #include "core/io/file_access_memory.h"
 
+/// @return Number of ones in the binary value of the parameter: mask.
+/// Uses a Simple pop_count.
 static uint8_t get_mask_width(uint16_t mask) {
-	// Returns number of ones in the binary value of the parameter: mask.
-	// Uses a Simple pop_count.
 	uint8_t c = 0u;
 	for (; mask != 0u; mask &= mask - 1u) {
 		c++;

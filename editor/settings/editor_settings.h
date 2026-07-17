@@ -32,6 +32,21 @@
 
 #pragma once
 
+/**
+ * @file editor_settings.h
+ *
+ * @brief Settings whose names begin with "_" (e.g. "_project_manager/my_setting")
+ * are treated as hidden internal settings:
+ *
+ * They are never shown in the  Editor Settings UI (no PROPERTY_USAGE_EDITOR), but are always written
+ * to disk (PROPERTY_USAGE_STORAGE is forced unconditionally). Use this
+ * convention for settings that should persist across sessions but have
+ * no business being user-visible in the settings dialog.
+ *
+ * Settings beginning with "projects/" follow the same hidden/always-saved
+ * rule and are used for per-project metadata.
+ */
+
 #include "core/input/shortcut.h"
 #include "core/io/config_file.h"
 #include "core/io/resource.h"
@@ -57,13 +72,22 @@ public:
 		Vector<String> install_files;
 	};
 
+	struct BuiltinTextEditorTheme {
+		const char *name;
+		/// nullptr = adaptive (computed from UI theme); non-null = static color set
+		HashMap<StringName, Color> (*get_static_colors)();
+		bool set_manually; ///< whether to override user's manual settings
+	};
+
+	static const BuiltinTextEditorTheme BUILTIN_TEXT_EDITOR_THEMES[];
+
 	enum NetworkMode {
 		NETWORK_OFFLINE,
 		NETWORK_ONLINE,
 	};
 
 	enum InitialScreen {
-		INITIAL_SCREEN_AUTO = -5, // Remembers last screen position.
+		INITIAL_SCREEN_AUTO = -5, ///< Remembers last screen position.
 		INITIAL_SCREEN_WITH_MOUSE_FOCUS = -4,
 		INITIAL_SCREEN_WITH_KEYBOARD_FOCUS = -3,
 		INITIAL_SCREEN_PRIMARY = -2,
@@ -106,7 +130,7 @@ private:
 	Vector<String> recent_dirs;
 
 	bool save_changed_setting = true;
-	bool optimize_save = true; //do not save stuff that came from config but was not set from engine
+	bool optimize_save = true; ///< Do not save stuff that came from config but was not set from engine
 	bool initialized = false;
 
 	bool _set(const StringName &p_name, const Variant &p_value);
@@ -138,7 +162,12 @@ public:
 	static EditorSettings *get_singleton();
 	static String get_existing_settings_path();
 	static String get_newest_settings_path();
+	static Variant get_setting_directly(const String &p_setting, const Variant &p_default = Variant());
+	static Color get_default_base_color();
 
+	/// @warning create() *must* create a valid EditorSettings singleton,
+	/// as the rest of the engine code will assume it. As such, it should never
+	/// return (incl. via ERR_FAIL) without initializing the singleton member.
 	static void create();
 	void setup_language();
 	void setup_network();

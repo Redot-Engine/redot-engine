@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file face3.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/aabb.h"
 #include "core/math/plane.h"
 #include "core/math/transform_3d.h"

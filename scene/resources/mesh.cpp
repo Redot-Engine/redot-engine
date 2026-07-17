@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mesh.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mesh.h"
 
 #include "core/math/convex_hull.h"
@@ -1779,7 +1785,7 @@ void ArrayMesh::_recompute_aabb() {
 	}
 }
 
-// TODO: Need to add binding to add_surface using future MeshSurfaceData object.
+/// @todo Need to add binding to add_surface using future MeshSurfaceData object.
 void ArrayMesh::add_surface(BitField<ArrayFormat> p_format, PrimitiveType p_primitive, const Vector<uint8_t> &p_array, const Vector<uint8_t> &p_attribute_array, const Vector<uint8_t> &p_skin_array, int p_vertex_count, const Vector<uint8_t> &p_index_array, int p_index_count, const AABB &p_aabb, const Vector<uint8_t> &p_blend_shape_data, const Vector<AABB> &p_bone_aabbs, const Vector<RS::SurfaceData::LOD> &p_lods, const Vector4 p_uv_scale) {
 	ERR_FAIL_COND(surfaces.size() == RS::MAX_MESH_SURFACES);
 	_create_if_empty();
@@ -2067,7 +2073,7 @@ void ArrayMesh::regen_normal_maps() {
 	}
 }
 
-//dirty hack
+/// @todo dirty hack
 bool (*array_mesh_lightmap_unwrap_callback)(float p_texel_size, const float *p_vertices, const float *p_normals, int p_vertex_count, const int *p_indices, int p_index_count, const uint8_t *p_cache_data, bool *r_use_cache, uint8_t **r_mesh_cache, int *r_mesh_cache_size, float **r_uv, int **r_vertex, int *r_vertex_count, int **r_index, int *r_index_count, int *r_size_hint_x, int *r_size_hint_y) = nullptr;
 
 struct ArrayMeshLightmapSurface {

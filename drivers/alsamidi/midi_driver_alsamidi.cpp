@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file midi_driver_alsamidi.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef ALSAMIDI_ENABLED
 
 #include "midi_driver_alsamidi.h"

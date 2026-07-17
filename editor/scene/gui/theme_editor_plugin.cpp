@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file theme_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "theme_editor_plugin.h"
 
 #include "editor/doc/editor_help.h"
@@ -2338,7 +2344,7 @@ ThemeTypeDialog::ThemeTypeDialog() {
 ///////////////////////
 
 Control *ThemeItemLabel::make_custom_tooltip(const String &p_text) const {
-	return EditorHelpBitTooltip::show_tooltip(const_cast<ThemeItemLabel *>(this), p_text);
+	return EditorHelpBitTooltip::make_tooltip(const_cast<ThemeItemLabel *>(this), p_text);
 }
 
 VBoxContainer *ThemeTypeEditor::_create_item_list(Theme::DataType p_data_type) {

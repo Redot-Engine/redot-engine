@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file camera_attributes_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/rid_owner.h"
 #include "servers/rendering_server.h"
 
@@ -42,7 +48,7 @@ private:
 	struct CameraAttributes {
 		float exposure_multiplier = 1.0;
 		float exposure_normalization = 1.0;
-		float exposure_sensitivity = 100.0; // In ISO.
+		float exposure_sensitivity = 100.0; ///< In ISO.
 
 		bool use_auto_exposure = false;
 		float auto_exposure_min_sensitivity = 50.0;

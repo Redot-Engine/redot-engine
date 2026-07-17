@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rendering_server_constants.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 // Use for constants etc. that need not be included as often as rendering_server.h
 // to reduce dependencies and prevent slow compilation.
 

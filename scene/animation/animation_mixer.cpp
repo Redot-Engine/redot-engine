@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_mixer.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_mixer.h"
 #include "animation_mixer.compat.inc"
 
@@ -108,8 +114,12 @@ bool AnimationMixer::_get(const StringName &p_name, Variant &r_ret) const {
 	return true;
 }
 
+uint32_t AnimationMixer::_get_libraries_property_usage() const {
+	return PROPERTY_USAGE_STORAGE;
+}
+
 void AnimationMixer::_get_property_list(List<PropertyInfo> *p_list) const {
-	p_list->push_back(PropertyInfo(Variant::DICTIONARY, PNAME("libraries"), PROPERTY_HINT_DICTIONARY_TYPE, "StringName;AnimationLibrary"));
+	p_list->push_back(PropertyInfo(Variant::DICTIONARY, PNAME("libraries"), PROPERTY_HINT_DICTIONARY_TYPE, "StringName;AnimationLibrary", _get_libraries_property_usage()));
 }
 
 void AnimationMixer::_validate_property(PropertyInfo &p_property) const {
@@ -128,7 +138,6 @@ void AnimationMixer::_validate_property(PropertyInfo &p_property) const {
 /* -------------------------------------------- */
 
 void AnimationMixer::_animation_set_cache_update() {
-	// Relatively fast function to update all animations.
 	animation_set_update_pass++;
 	bool clear_cache_needed = false;
 
@@ -664,6 +673,9 @@ bool AnimationMixer::_update_caches() {
 	for (const StringName &E : sname_list) {
 		Ref<Animation> anim = get_animation(E);
 		for (int i = 0; i < anim->get_track_count(); i++) {
+			if (!anim->track_is_enabled(i)) {
+				continue;
+			}
 			NodePath path = anim->track_get_path(i);
 			Animation::TypeHash thash = anim->track_get_type_hash(i);
 			Animation::TrackType track_src_type = anim->track_get_type(i);
@@ -709,7 +721,10 @@ bool AnimationMixer::_update_caches() {
 							track_value->object_id = child->get_instance_id();
 						}
 
-						track_value->is_using_angle = anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_LINEAR_ANGLE || anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_ANGLE;
+						track_value->is_using_angle =
+								anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_LINEAR_ANGLE ||
+								anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_ANGLE ||
+								anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE;
 
 						track_value->subpath = leftover_path;
 
@@ -728,15 +743,11 @@ bool AnimationMixer::_update_caches() {
 						// If there is a Reset Animation, it takes precedence by overwriting.
 						if (has_reset_anim) {
 							int rt = reset_anim->find_track(path, track_src_type);
-							if (rt >= 0) {
+							if (rt >= 0 && reset_anim->track_is_enabled(rt) && reset_anim->track_get_key_count(rt) > 0) {
 								if (is_value) {
-									if (reset_anim->track_get_key_count(rt) > 0) {
-										track_value->init_value = reset_anim->track_get_key_value(rt, 0);
-									}
+									track_value->init_value = reset_anim->track_get_key_value(rt, 0);
 								} else {
-									if (reset_anim->track_get_key_count(rt) > 0) {
-										track_value->init_value = (reset_anim->track_get_key_value(rt, 0).operator Array())[0];
-									}
+									track_value->init_value = (reset_anim->track_get_key_value(rt, 0).operator Array())[0];
 								}
 							}
 						}
@@ -803,7 +814,7 @@ bool AnimationMixer::_update_caches() {
 						// For non Skeleton3D bone animation.
 						if (has_reset_anim && !has_rest) {
 							int rt = reset_anim->find_track(path, track_src_type);
-							if (rt >= 0 && reset_anim->track_get_key_count(rt) > 0) {
+							if (rt >= 0 && reset_anim->track_is_enabled(rt) && reset_anim->track_get_key_count(rt) > 0) {
 								switch (track_src_type) {
 									case Animation::TYPE_POSITION_3D: {
 										track_xform->init_loc = reset_anim->track_get_key_value(rt, 0);
@@ -849,7 +860,7 @@ bool AnimationMixer::_update_caches() {
 
 						if (has_reset_anim) {
 							int rt = reset_anim->find_track(path, track_src_type);
-							if (rt >= 0 && reset_anim->track_get_key_count(rt) > 0) {
+							if (rt >= 0 && reset_anim->track_is_enabled(rt) && reset_anim->track_get_key_count(rt) > 0) {
 								track_bshape->init_value = reset_anim->track_get_key_value(rt, 0);
 							}
 						}
@@ -922,7 +933,10 @@ bool AnimationMixer::_update_caches() {
 					if (track_value->init_value.is_string() && anim->value_track_get_update_mode(i) != Animation::UPDATE_DISCRETE) {
 						WARN_PRINT_ONCE_ED(mixer_name + ": '" + String(E) + "', Value Track: '" + String(path) + "' blends String types. This is an experimental algorithm.");
 					}
-					track_value->is_using_angle = track_value->is_using_angle || anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_LINEAR_ANGLE || anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_ANGLE;
+					track_value->is_using_angle = track_value->is_using_angle ||
+							anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_LINEAR_ANGLE ||
+							anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_ANGLE ||
+							anim->track_get_interpolation_type(i) == Animation::INTERPOLATION_CUBIC_MONOTONIC_ANGLE;
 				}
 				if (check_angle_interpolation && (was_using_angle != track_value->is_using_angle)) {
 					WARN_PRINT_ED(mixer_name + ": '" + String(E) + "', Value Track: '" + String(path) + "' has different interpolation types for rotation between some animations which may be blended together. Blending prioritizes angle interpolation, so the blending result uses the shortest path referenced to the initial (RESET animation) value.");
@@ -983,11 +997,13 @@ void AnimationMixer::_process_animation(double p_delta, bool p_update_only) {
 		_blend_capture(p_delta);
 		_blend_calc_total_weight();
 		_blend_process(p_delta, p_update_only);
+		clear_animation_instances();
 		_blend_apply();
 		_blend_post_process();
 		emit_signal(SNAME("mixer_applied"));
-	};
-	clear_animation_instances();
+	} else {
+		clear_animation_instances();
+	}
 }
 
 Variant AnimationMixer::_post_process_key_value(const Ref<Animation> &p_anim, int p_track, Variant &p_value, ObjectID p_object_id, int p_object_sub_idx) {
@@ -1160,7 +1176,6 @@ void AnimationMixer::_blend_calc_total_weight() {
 }
 
 void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
-	// Apply value/transform/blend/bezier blends to track caches and execute method/audio/animation tracks.
 #ifdef TOOLS_ENABLED
 	bool can_call = is_inside_tree() && !Engine::get_singleton()->is_editor_hint();
 #endif // TOOLS_ENABLED
@@ -1778,7 +1793,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 					if (!player2) {
 						continue;
 					}
-					// TODO: Make it possible to embed section info in animation track keys.
+					/// @todo Make it possible to embed section info in animation track keys.
 					if (seeked) {
 						// Seek.
 						int idx = a->track_find_key(i, time, Animation::FIND_MODE_NEAREST, true);
@@ -1845,7 +1860,6 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 }
 
 void AnimationMixer::_blend_apply() {
-	// Finally, set the tracks.
 	for (const KeyValue<Animation::TypeHash, TrackCache *> &K : track_cache) {
 		TrackCache *track = K.value;
 		bool is_zero_amount = Math::is_zero_approx(track->total_weight);
@@ -2011,7 +2025,6 @@ void AnimationMixer::_blend_apply() {
 }
 
 void AnimationMixer::_call_object(ObjectID p_object_id, const StringName &p_method, const Vector<Variant> &p_params, bool p_deferred) {
-	// Separate function to use alloca() more efficiently
 	const Variant **argptrs = (const Variant **)alloca(sizeof(Variant *) * p_params.size());
 	const Variant *args = p_params.ptr();
 	uint32_t argcount = p_params.size();

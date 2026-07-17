@@ -89,7 +89,7 @@
 
 class WaylandThread {
 public:
-	// Messages used for exchanging information between Godot's and Wayland's thread.
+	/// Messages used for exchanging information between Godot's and Wayland's thread.
 	class Message : public RefCounted {
 		GDSOFTCLASS(Message, RefCounted);
 
@@ -105,13 +105,13 @@ public:
 		DisplayServer::WindowID id = DisplayServer::INVALID_WINDOW_ID;
 	};
 
-	// Message data for window rect changes.
+	/// Message data for window rect changes.
 	class WindowRectMessage : public WindowMessage {
 		GDSOFTCLASS(WindowRectMessage, WindowMessage);
 
 	public:
-		// NOTE: This is in "scaled" terms. For example, if there's a 1920x1080 rect
-		// with a scale factor of 2, the actual value of `rect` will be 3840x2160.
+		/// @note This is in "scaled" terms. For example, if there's a 1920x1080 rect
+		/// with a scale factor of 2, the actual value of `rect` will be 3840x2160.
 		Rect2i rect;
 	};
 
@@ -175,7 +175,7 @@ public:
 		struct xdg_wm_base *xdg_wm_base = nullptr;
 		uint32_t xdg_wm_base_name = 0;
 
-		// NOTE: Deprecated.
+		/// @note Deprecated.
 		struct zxdg_exporter_v1 *xdg_exporter_v1 = nullptr;
 		uint32_t xdg_exporter_v1_name = 0;
 
@@ -223,13 +223,13 @@ public:
 		struct zwp_text_input_manager_v3 *wp_text_input_manager = nullptr;
 		uint32_t wp_text_input_manager_name = 0;
 
-		// We're really not meant to use this one directly but we still need to know
-		// whether it's available.
+		/// We're really not meant to use this one directly but we still need to know
+		/// whether it's available.
 		uint32_t wp_fifo_manager_name = 0;
 	};
 
-	// General Wayland-specific states. Shouldn't be accessed directly.
-	// TODO: Make private?
+	/// General Wayland-specific states. Shouldn't be accessed directly.
+	/// @todo Make private?
 
 	struct WindowState {
 		DisplayServer::WindowID id = DisplayServer::INVALID_WINDOW_ID;
@@ -238,6 +238,8 @@ public:
 		Rect2i rect;
 		DisplayServer::WindowMode mode = DisplayServer::WINDOW_MODE_WINDOWED;
 		bool suspended = false;
+
+		bool initial_configure_done = false;
 
 		// These are true by default as it isn't guaranteed that we'll find an
 		// xdg-shell implementation with wm_capabilities available. If and once we
@@ -249,11 +251,11 @@ public:
 
 		HashSet<struct wl_output *> wl_outputs;
 
-		// NOTE: If for whatever reason this callback is destroyed _while_ the event
-		// thread is still running, it might be a good idea to set its user data to
-		// `nullptr`. From some initial testing of mine, it looks like it might still
-		// be called even after being destroyed, pointing to probably invalid window
-		// data by then and segfaulting hard.
+		/// @note If for whatever reason this callback is destroyed _while_ the event
+		/// thread is still running, it might be a good idea to set its user data to
+		/// `nullptr`. From some initial testing of mine, it looks like it might still
+		/// be called even after being destroyed, pointing to probably invalid window
+		/// data by then and segfaulting hard.
 		struct wl_callback *frame_callback = nullptr;
 		uint64_t last_frame_time = 0;
 
@@ -264,7 +266,7 @@ public:
 		struct wp_viewport *wp_viewport = nullptr;
 		struct wp_fractional_scale_v1 *wp_fractional_scale = nullptr;
 
-		// NOTE: Deprecated.
+		/// @note Deprecated.
 		struct zxdg_exported_v1 *xdg_exported_v1 = nullptr;
 
 		struct zxdg_exported_v2 *xdg_exported_v2 = nullptr;
@@ -273,23 +275,23 @@ public:
 
 		String exported_handle;
 
-		// Currently applied buffer scale.
+		//. Currently applied buffer scale.
 		int buffer_scale = 1;
 
-		// Buffer scale must be applied right before rendering but _after_ committing
-		// everything else or otherwise we might have an inconsistent state (e.g.
-		// double scale and odd resolution). This flag assists with that; when set,
-		// on the next frame, we'll commit whatever is set in `buffer_scale`.
+		/// Buffer scale must be applied right before rendering but _after_ committing
+		/// everything else or otherwise we might have an inconsistent state (e.g.
+		/// double scale and odd resolution). This flag assists with that; when set,
+		/// on the next frame, we'll commit whatever is set in `buffer_scale`.
 		bool buffer_scale_changed = false;
 
-		// NOTE: The preferred buffer scale is currently only dynamically calculated.
-		// It can be accessed by calling `window_state_get_preferred_buffer_scale`.
+		/// @note The preferred buffer scale is currently only dynamically calculated.
+		/// It can be accessed by calling `window_state_get_preferred_buffer_scale`.
 
-		// Override used by the fractional scale add-on object. If less or equal to 0
-		// (default) then the normal output-based scale is used instead.
+		/// Override used by the fractional scale add-on object. If less or equal to 0
+		/// (default) then the normal output-based scale is used instead.
 		double fractional_scale = 0;
 
-		// What the compositor is recommending us.
+		/// What the compositor is recommending us.
 		double preferred_fractional_scale = 0;
 
 		struct zxdg_toplevel_decoration_v1 *xdg_toplevel_decoration = nullptr;
@@ -297,9 +299,9 @@ public:
 		struct zwp_idle_inhibitor_v1 *wp_idle_inhibitor = nullptr;
 
 #ifdef LIBDECOR_ENABLED
-		// If this is null the xdg_* variables must be set and vice-versa. This way we
-		// can handle this mess gracefully enough to hopefully being able of getting
-		// rid of this cleanly once we have our own CSDs.
+		/// If this is null the xdg_* variables must be set and vice-versa. This way we
+		/// can handle this mess gracefully enough to hopefully being able of getting
+		/// rid of this cleanly once we have our own CSDs.
 		struct libdecor_frame *libdecor_frame = nullptr;
 		struct libdecor_configuration *pending_libdecor_configuration = nullptr;
 #endif
@@ -308,7 +310,7 @@ public:
 		WaylandThread *wayland_thread;
 	};
 
-	// "High level" Godot-side screen data.
+	/// "High level" Redot-side screen data.
 	struct ScreenData {
 		// Geometry data.
 		Point2i position;
@@ -347,7 +349,7 @@ public:
 		Point2 position;
 		uint32_t motion_time = 0;
 
-		// Relative motion has its own optional event and so needs its own time.
+		/// Relative motion has its own optional event and so needs its own time.
 		Vector2 relative_motion;
 		uint32_t relative_motion_time = 0;
 
@@ -359,7 +361,7 @@ public:
 		DisplayServer::WindowID pointed_id = DisplayServer::INVALID_WINDOW_ID;
 		DisplayServer::WindowID last_pointed_id = DisplayServer::INVALID_WINDOW_ID;
 
-		// This is needed to check for a new double click every time.
+		/// This is needed to check for a new double click every time.
 		bool double_click_begun = false;
 
 		uint32_t button_time = 0;
@@ -367,10 +369,10 @@ public:
 
 		uint32_t scroll_type = WL_POINTER_AXIS_SOURCE_WHEEL;
 
-		// The amount "scrolled" in pixels, in each direction.
+		/// The amount "scrolled" in pixels, in each direction.
 		Vector2 scroll_vector;
 
-		// The amount of scroll "clicks" in each direction, in fractions of 120.
+		/// The amount of scroll "clicks" in each direction, in fractions of 120.
 		Vector2i discrete_scroll_vector_120;
 
 		uint32_t pinch_scale = 1;
@@ -430,31 +432,31 @@ public:
 
 		struct zwp_pointer_gesture_pinch_v1 *wp_pointer_gesture_pinch = nullptr;
 
-		// NOTE: According to the wp_pointer_gestures protocol specification, there
-		// can be only one active gesture at a time.
+		/// @note According to the wp_pointer_gestures protocol specification, there
+		/// can be only one active gesture at a time.
 		Gesture active_gesture = Gesture::NONE;
 
-		// Used for delta calculations.
-		// NOTE: The wp_pointer_gestures protocol keeps track of the total scale of
-		// the pinch gesture, while godot instead wants its delta.
+		/// Used for delta calculations.
+		/// @note The wp_pointer_gestures protocol keeps track of the total scale of
+		/// the pinch gesture, while godot instead wants its delta.
 		wl_fixed_t old_pinch_scale = 0;
 
 		struct wl_surface *cursor_surface = nullptr;
 		struct wl_callback *cursor_frame_callback = nullptr;
 		uint32_t cursor_time_ms = 0;
 
-		// This variable is needed to buffer all pointer changes until a
-		// wl_pointer.frame event, as per Wayland's specification. Everything is
-		// first set in `data_buffer` and then `data` is set with its contents on
-		// an input frame event. All methods should generally read from
-		// `pointer_data` and write to `data_buffer`.
+		/// This variable is needed to buffer all pointer changes until a
+		/// wl_pointer.frame event, as per Wayland's specification. Everything is
+		/// first set in `data_buffer` and then `data` is set with its contents on
+		/// an input frame event. All methods should generally read from
+		/// `pointer_data` and write to `data_buffer`.
 		PointerData pointer_data_buffer;
 		PointerData pointer_data;
 
-		// Keyboard.
+		/// Keyboard.
 		struct wl_keyboard *wl_keyboard = nullptr;
 
-		// For key events.
+		/// For key events.
 		DisplayServer::WindowID focused_id = DisplayServer::INVALID_WINDOW_ID;
 
 		struct xkb_context *xkb_context = nullptr;
@@ -468,8 +470,11 @@ public:
 
 		xkb_layout_index_t current_layout_index = 0;
 
-		int32_t repeat_key_delay_msec = 0;
-		int32_t repeat_start_delay_msec = 0;
+		/// Clients with `wl_seat`s older than version 4 do not support
+		/// `wl_keyboard::repeat_info`, so we'll provide a reasonable default of 25
+		/// keys per second, with a start delay of 600 milliseconds.
+		int32_t repeat_key_delay_msec = 1000 / 25;
+		int32_t repeat_start_delay_msec = 600;
 
 		xkb_keycode_t repeating_keycode = XKB_KEYCODE_INVALID;
 		uint64_t last_repeat_start_msec = 0;
@@ -535,7 +540,7 @@ private:
 		struct wl_display *wl_display = nullptr;
 	};
 
-	// FIXME: Is this the right thing to do?
+	/// @todo FIXME: Is this the right thing to do?
 	inline static const char *proxy_tag = "godot";
 
 	Thread events_thread;
@@ -548,32 +553,32 @@ private:
 	String cursor_theme_name;
 	int unscaled_cursor_size = 24;
 
-	// NOTE: Regarding screen scale handling, the cursor cache is currently
-	// "static", by which I mean that we try to change it as little as possible and
-	// thus will be as big as the largest screen. This is mainly due to the fact
-	// that doing it dynamically doesn't look like it's worth it to me currently,
-	// especially as usually screen scales don't change continuously.
+	/// @note Regarding screen scale handling, the cursor cache is currently
+	/// "static", by which I mean that we try to change it as little as possible and
+	/// thus will be as big as the largest screen. This is mainly due to the fact
+	/// that doing it dynamically doesn't look like it's worth it to me currently,
+	/// especially as usually screen scales don't change continuously.
 	int cursor_scale = 1;
 
-	// Use cursor-shape-v1 protocol if the compositor supports it.
+	/// Use cursor-shape-v1 protocol if the compositor supports it.
 	wp_cursor_shape_device_v1_shape standard_cursors[DisplayServer::CURSOR_MAX] = {
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT, //CURSOR_ARROW
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT, //CURSOR_IBEAM
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER, //CURSOR_POINTING_HAND
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CROSSHAIR, //CURSOR_CROSS
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_WAIT, //CURSOR_WAIT
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_PROGRESS, //CURSOR_BUSY
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRAB, //CURSOR_DRAG
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRABBING, //CURSOR_CAN_DROP
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NO_DROP, //CURSOR_FORBIDDEN
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NS_RESIZE, //CURSOR_VSIZE
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_EW_RESIZE, //CURSOR_HSIZE
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE, //CURSOR_BDIAGSIZE
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NWSE_RESIZE, //CURSOR_FDIAGSIZE
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE, //CURSOR_MOVE
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ROW_RESIZE, //CURSOR_VSPLIT
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_COL_RESIZE, //CURSOR_HSPLIT
-		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_HELP, //CURSOR_HELP
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT, ///< CURSOR_ARROW
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT, ///< CURSOR_IBEAM
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER, ///< CURSOR_POINTING_HAND
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CROSSHAIR, ///< CURSOR_CROSS
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_WAIT, ///< CURSOR_WAIT
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_PROGRESS, ///< CURSOR_BUSY
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRAB, ///< CURSOR_DRAG
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_GRABBING, ///< CURSOR_CAN_DROP
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NO_DROP, ///< CURSOR_FORBIDDEN
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NS_RESIZE, ///< CURSOR_VSIZE
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_EW_RESIZE, ///< CURSOR_HSIZE
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE, ///< CURSOR_BDIAGSIZE
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NWSE_RESIZE, ///< CURSOR_FDIAGSIZE
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_MOVE, ///< CURSOR_MOVE
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ROW_RESIZE, ///< CURSOR_VSPLIT
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_COL_RESIZE, ///< CURSOR_HSPLIT
+		wp_cursor_shape_device_v1_shape::WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_HELP, ///< CURSOR_HELP
 	};
 
 	// Fallback to reading $XCURSOR and system themes if the compositor does not.
@@ -603,7 +608,7 @@ private:
 	struct libdecor *libdecor_context = nullptr;
 #endif // LIBDECOR_ENABLED
 
-	// Main polling method.
+	/// Main polling method.
 	static void _poll_events_thread(void *p_data);
 
 	// Core Wayland event handlers.
@@ -730,7 +735,7 @@ private:
 
 	static void _xdg_toplevel_decoration_on_configure(void *data, struct zxdg_toplevel_decoration_v1 *xdg_toplevel_decoration, uint32_t mode);
 
-	// NOTE: Deprecated.
+	/// @note Deprecated.
 	static void _xdg_exported_v1_on_handle(void *data, zxdg_exported_v1 *exported, const char *handle);
 
 	static void _xdg_exported_v2_on_handle(void *data, zxdg_exported_v2 *exported, const char *handle);
@@ -928,6 +933,9 @@ private:
 	// libdecor event handlers.
 	static void libdecor_on_error(struct libdecor *context, enum libdecor_error error, const char *message);
 
+	/// @note This is pretty much a reimplementation of _xdg_surface_on_configure
+	/// and _xdg_toplevel_on_configure. Libdecor really likes wrapping everything,
+	/// forcing us to do stuff like this.
 	static void libdecor_frame_on_configure(struct libdecor_frame *frame, struct libdecor_configuration *configuration, void *user_data);
 
 	static void libdecor_frame_on_close(struct libdecor_frame *frame, void *user_data);
@@ -1092,7 +1100,7 @@ public:
 
 	void selection_set_text(const String &p_text);
 
-	// Optional primary support - requires wp_primary_selection_unstable_v1
+	/// Optional primary support - requires wp_primary_selection_unstable_v1
 	bool primary_has_mime(const String &p_mime) const;
 	Vector<uint8_t> primary_get_mime(const String &p_mime) const;
 
@@ -1103,6 +1111,7 @@ public:
 	void set_frame();
 	bool get_reset_frame();
 	bool wait_frame_suspend_ms(int p_timeout);
+
 	bool is_fifo_available() const;
 
 	uint64_t window_get_last_frame_time(DisplayServer::WindowID p_window_id) const;
@@ -1111,6 +1120,7 @@ public:
 
 	Error init();
 	void destroy();
+	void roundtrip();
 };
 
 #endif // WAYLAND_ENABLED

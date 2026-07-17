@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tcp_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/io/ip.h"
 #include "core/io/net_socket.h"
 #include "core/io/stream_peer.h"
@@ -55,7 +61,7 @@ public:
 	bool is_connection_available() const;
 	Ref<StreamPeerTCP> take_connection();
 
-	void stop(); // Stop listening
+	void stop(); ///< Stop listening
 
 	TCPServer();
 	~TCPServer();

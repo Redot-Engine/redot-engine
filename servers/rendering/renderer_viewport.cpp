@@ -30,11 +30,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file renderer_viewport.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "renderer_viewport.h"
 
 #include "core/config/project_settings.h"
 #include "core/math/transform_interpolator.h"
 #include "core/object/worker_thread_pool.h"
+#include "main/main.h"
 #include "renderer_canvas_cull.h"
 #include "renderer_scene_cull.h"
 #include "rendering_server_globals.h"
@@ -89,20 +96,94 @@ static Transform2D _canvas_get_transform(RendererViewport::Viewport *p_viewport,
 	return xf;
 }
 
-Vector<RendererViewport::Viewport *> RendererViewport::_sort_active_viewports() {
-	// We need to sort the viewports in a "topological order", children first and
-	// parents last. We also need to keep sibling viewports in the original order
-	// from top to bottom.
+Vector<RendererViewport::Viewport *> RendererViewport::_topological_sort_siblings(const Vector<Viewport *> &p_siblings) {
+	// The parent node (the one calling this function) is NOT in p_siblings.
+	// The parent has already been placed in the result list before we call this.
+	// All viewports in p_siblings share the same parent, so they are siblings.
 
+	int number_of_siblings = p_siblings.size();
+	if (number_of_siblings <= 1) {
+		return p_siblings;
+	}
+
+	// Kahn's algorithm - each node (viewport) is ordered according to dependencies (the in_degree below)
+	// ...essentially what node must come before it.
+
+	// This stores the index of the sibling that consumes p_siblings[i]'s texture
+	// i.e. If adjacency_list[i] = j, then p_siblings[i]'s texture is consumed by p_siblings[j]
+	// In that case, p_siblings[i] must render BEFORE p_siblings[j],
+	// p_siblings[j] needs p_siblings[i]'s texture to be ready first
+	// (See for loop below)
+	LocalVector<int> adjacency_list;
+	adjacency_list.resize(number_of_siblings);
+
+	// in_degree[i] = number of siblings that must render before p_siblings[i].
+	LocalVector<int> in_degree;
+	in_degree.resize(number_of_siblings);
+
+	for (int i = 0; i < number_of_siblings; i++) {
+		adjacency_list[i] = -1;
+		in_degree[i] = 0;
+	}
+
+	// Build dependency graph with a linear search
+	for (int i = 0; i < number_of_siblings; i++) {
+		const RID used_by = p_siblings[i]->used_by_viewport;
+		if (!used_by.is_valid()) {
+			continue;
+		}
+		for (int j = 0; j < number_of_siblings; j++) {
+			if (p_siblings[j]->self == used_by) {
+				// p_siblings[i] must render before p_siblings[j]
+				adjacency_list[i] = j;
+				in_degree[j]++;
+				break;
+			}
+		}
+	}
+
+	// pre-allocated array used as a queue (no per-element allocation).
+	LocalVector<int> queue;
+	queue.resize(number_of_siblings);
+	int queue_head = 0;
+	int queue_tail = 0;
+
+	for (int i = 0; i < number_of_siblings; i++) {
+		if (in_degree[i] == 0) {
+			queue[queue_tail++] = i;
+		}
+	}
+
+	Vector<Viewport *> result;
+	while (queue_head < queue_tail) {
+		int idx = queue[queue_head++];
+		result.push_back(p_siblings[idx]);
+		if (adjacency_list[idx] != -1) {
+			int next_idx = adjacency_list[idx];
+			if (--in_degree[next_idx] == 0) {
+				queue[queue_tail++] = next_idx;
+			}
+		}
+	}
+
+	if (result.size() != number_of_siblings) {
+		WARN_PRINT_ONCE("Viewport sibling dependency cycle detected; falling back to original sort order.");
+		return p_siblings;
+	}
+
+	return result;
+}
+
+Vector<RendererViewport::Viewport *> RendererViewport::_sort_active_viewports() {
 	Vector<Viewport *> result;
 	List<Viewport *> nodes;
 
+	// Collect root viewports (no parent) in active_viewports order.
 	for (int i = active_viewports.size() - 1; i >= 0; --i) {
 		Viewport *viewport = active_viewports[i];
 		if (viewport->parent.is_valid()) {
 			continue;
 		}
-
 		nodes.push_back(viewport);
 		result.insert(0, viewport);
 	}
@@ -111,12 +192,23 @@ Vector<RendererViewport::Viewport *> RendererViewport::_sort_active_viewports() 
 		const Viewport *node = nodes.front()->get();
 		nodes.pop_front();
 
-		for (int i = active_viewports.size() - 1; i >= 0; --i) {
+		// Collect children of this node in active_viewports order.
+		// Note that all of these children are "siblings" because they're all 1 level down from this parent node
+		Vector<Viewport *> children;
+		for (int i = 0; i < active_viewports.size(); ++i) {
 			Viewport *child = active_viewports[i];
-			if (child->parent != node->self) {
-				continue;
+			if (child->parent == node->self) {
+				children.push_back(child);
 			}
+		}
 
+		// Topologically sort siblings so that a viewport whose texture is consumed by a sibling is drawn first.
+		Vector<Viewport *> sorted_children = _topological_sort_siblings(children);
+
+		// Insert sorted children before the parent (children-first order).
+		// Iterate in reverse so we start at the first child (at the "bottom", so to speak)
+		for (int i = sorted_children.size() - 1; i >= 0; --i) {
+			Viewport *child = sorted_children[i];
 			if (!nodes.find(child)) {
 				nodes.push_back(child);
 				result.insert(0, child);
@@ -746,7 +838,7 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
 #endif // XR_DISABLED
 
 	if (Engine::get_singleton()->is_editor_hint()) {
-		RSG::texture_storage->set_default_clear_color(GLOBAL_GET_CACHED(Color, "rendering/environment/defaults/default_clear_color"));
+		RSG::texture_storage->set_default_clear_color(Main::get_boot_splash_bg_color());
 	}
 
 	if (sorted_active_viewports_dirty) {
@@ -820,14 +912,32 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
 	int objects_drawn = 0;
 	int draw_calls_used = 0;
 
+	// Clear stale used_by_viewport data from the previous frame so that
+	// viewports that are no longer consuming a sibling's texture don't
+	// keep influencing the sort order.
+	for (Viewport *vp : active_viewports) {
+		vp->used_by_viewport = RID();
+	}
+
+	// Pre-allocate snapshot storage (avoids per-frame heap allocation).
+	LocalVector<bool> rt_was_used_snapshot;
+	rt_was_used_snapshot.resize(active_viewports.size());
+
 	for (int i = 0; i < sorted_active_viewports.size(); i++) {
 		Viewport *vp = sorted_active_viewports[i];
 
 		if (vp->last_pass != draw_viewports_pass) {
-			continue; //should not draw
+			continue; // should not draw
 		}
 
 		RENDER_TIMESTAMP("> Render Viewport " + itos(i));
+
+		// Snapshot was_used for every active viewport BEFORE rendering vp.
+		// Anything that flips false→true during _draw_viewport(vp) was
+		// consumed by vp, establishing a dependency for next frame's sort.
+		for (int j = 0; j < (int)active_viewports.size(); j++) {
+			rt_was_used_snapshot[j] = RSG::texture_storage->render_target_was_used(active_viewports[j]->render_target);
+		}
 
 		RSG::texture_storage->render_target_set_as_unused(vp->render_target);
 #ifndef XR_DISABLED
@@ -906,6 +1016,23 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
 						blits = &blit_to_screen_list.insert(vp->viewport_to_screen, Vector<BlitToScreen>())->value;
 					}
 					blits->push_back(blit);
+				}
+			}
+
+			// After rendering vp, detect which sibling viewports had their
+			// render target's was_used flag set for the first time this call.
+			// This is critical info for the topological search to resolve sibling viewport order
+			for (int j = 0; j < (int)active_viewports.size(); j++) {
+				Viewport *other_vp = active_viewports[j];
+				if (other_vp == vp) {
+					continue;
+				}
+				if (!rt_was_used_snapshot[j] &&
+						RSG::texture_storage->render_target_was_used(other_vp->render_target)) {
+					if (other_vp->used_by_viewport != vp->self) {
+						other_vp->used_by_viewport = vp->self;
+						sorted_active_viewports_dirty = true;
+					}
 				}
 			}
 		}
@@ -1089,6 +1216,7 @@ void RendererViewport::viewport_set_parent_viewport(RID p_viewport, RID p_parent
 	ERR_FAIL_NULL(viewport);
 
 	viewport->parent = p_parent_viewport;
+	sorted_active_viewports_dirty = true;
 }
 
 void RendererViewport::viewport_set_clear_mode(RID p_viewport, RS::ViewportClearMode p_clear_mode) {
@@ -1661,7 +1789,7 @@ void RendererViewport::viewport_set_canvas_cull_mask(RID p_viewport, uint32_t p_
 	viewport->canvas_cull_mask = p_canvas_cull_mask;
 }
 
-// Workaround for setting this on thread.
+/// Workaround for setting this on thread.
 void RendererViewport::call_set_vsync_mode(DisplayServer::VSyncMode p_mode, DisplayServer::WindowID p_window) {
 	DisplayServer::get_singleton()->window_set_vsync_mode(p_mode, p_window);
 }

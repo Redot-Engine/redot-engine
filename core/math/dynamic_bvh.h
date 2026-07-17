@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file dynamic_bvh.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/aabb.h"
 #include "core/templates/list.h"
 #include "core/templates/local_vector.h"
@@ -241,6 +247,9 @@ private:
 	_FORCE_INLINE_ void _insert_leaf(Node *p_root, Node *p_leaf);
 	_FORCE_INLINE_ Node *_remove_leaf(Node *leaf);
 	void _fetch_leaves(Node *p_root, LocalVector<Node *> &r_leaves, int p_depth = -1);
+	/// Partitions leaves such that leaves[0, n) are on the
+	/// left of axis, and leaves[n, count) are on the right
+	/// of axis. returns N.
 	static int _split(Node **leaves, int p_count, const Vector3 &p_org, const Vector3 &p_axis);
 	static Volume _bounds(Node **leaves, int p_count);
 	void _bottom_up(Node **leaves, int p_count);

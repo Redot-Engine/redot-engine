@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_effect_record.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_effect_record.h"
 
 #include "core/io/marshalls.h"

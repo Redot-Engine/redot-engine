@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_map_builder_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../nav_utils_3d.h"
 
 struct NavMapIterationBuild3D;

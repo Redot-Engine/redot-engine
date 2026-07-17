@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file core_bind.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core_bind.h"
 #include "core_bind.compat.inc"
 
@@ -354,6 +360,10 @@ String OS::get_executable_path() const {
 	return ::OS::get_singleton()->get_executable_path();
 }
 
+String OS::get_real_path(const String &p_path) const {
+	return ::OS::get_singleton()->get_real_path(p_path);
+}
+
 Error OS::shell_open(const String &p_uri) {
 	if (p_uri.begins_with("res://")) {
 		WARN_PRINT("Attempting to open an URL with the \"res://\" protocol. Use `ProjectSettings.globalize_path()` to convert a Redot-specific path to a system path before opening it with `OS.shell_open()`.");
@@ -598,7 +608,6 @@ Dictionary OS::get_memory_info() const {
 	return ::OS::get_singleton()->get_memory_info();
 }
 
-/** This method uses a signed argument for better error reporting as it's used from the scripting API. */
 void OS::delay_usec(int p_usec) const {
 	ERR_FAIL_COND_MSG(
 			p_usec < 0,
@@ -606,7 +615,6 @@ void OS::delay_usec(int p_usec) const {
 	::OS::get_singleton()->delay_usec(p_usec);
 }
 
-/** This method uses a signed argument for better error reporting as it's used from the scripting API. */
 void OS::delay_msec(int p_msec) const {
 	ERR_FAIL_COND_MSG(
 			p_msec < 0,
@@ -639,22 +647,18 @@ String OS::get_user_data_dir() const {
 }
 
 String OS::get_config_dir() const {
-	// Exposed as `get_config_dir()` instead of `get_config_path()` for consistency with other exposed OS methods.
 	return ::OS::get_singleton()->get_config_path();
 }
 
 String OS::get_data_dir() const {
-	// Exposed as `get_data_dir()` instead of `get_data_path()` for consistency with other exposed OS methods.
 	return ::OS::get_singleton()->get_data_path();
 }
 
 String OS::get_cache_dir() const {
-	// Exposed as `get_cache_dir()` instead of `get_cache_path()` for consistency with other exposed OS methods.
 	return ::OS::get_singleton()->get_cache_path();
 }
 
 String OS::get_temp_dir() const {
-	// Exposed as `get_temp_dir()` instead of `get_temp_path()` for consistency with other exposed OS methods.
 	return ::OS::get_singleton()->get_temp_path();
 }
 
@@ -767,6 +771,7 @@ void OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_system_font_path", "font_name", "weight", "stretch", "italic"), &OS::get_system_font_path, DEFVAL(400), DEFVAL(100), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("get_system_font_path_for_text", "font_name", "text", "locale", "script", "weight", "stretch", "italic"), &OS::get_system_font_path_for_text, DEFVAL(String()), DEFVAL(String()), DEFVAL(400), DEFVAL(100), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("get_executable_path"), &OS::get_executable_path);
+	ClassDB::bind_method(D_METHOD("get_real_path", "path"), &OS::get_real_path);
 
 	ClassDB::bind_method(D_METHOD("read_string_from_stdin", "buffer_size"), &OS::read_string_from_stdin, DEFVAL(1024));
 	ClassDB::bind_method(D_METHOD("read_buffer_from_stdin", "buffer_size"), &OS::read_buffer_from_stdin, DEFVAL(1024));
@@ -969,7 +974,7 @@ TypedArray<PackedVector2Array> Geometry2D::decompose_polygon_in_convex(const Vec
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t decomp_size = decomp.size() + 1;
+	size_t decomp_size = decomp.size();
 	ret.resize(decomp_size);
 
 	for (size_t i = 0; i < decomp_size; ++i) {
@@ -983,7 +988,7 @@ TypedArray<PackedVector2Array> Geometry2D::merge_polygons(const Vector<Vector2> 
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t polys_size = polys.size() + 1;
+	size_t polys_size = polys.size();
 	ret.resize(polys_size);
 
 	for (size_t i = 0; i < polys_size; ++i) {
@@ -997,7 +1002,7 @@ TypedArray<PackedVector2Array> Geometry2D::clip_polygons(const Vector<Vector2> &
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t polys_size = polys.size() + 1;
+	size_t polys_size = polys.size();
 	ret.resize(polys_size);
 
 	for (size_t i = 0; i < polys_size; ++i) {
@@ -1011,7 +1016,7 @@ TypedArray<PackedVector2Array> Geometry2D::intersect_polygons(const Vector<Vecto
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t polys_size = polys.size() + 1;
+	size_t polys_size = polys.size();
 	ret.resize(polys_size);
 
 	for (size_t i = 0; i < polys_size; ++i) {
@@ -1025,7 +1030,7 @@ TypedArray<PackedVector2Array> Geometry2D::exclude_polygons(const Vector<Vector2
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t polys_size = polys.size() + 1;
+	size_t polys_size = polys.size();
 	ret.resize(polys_size);
 
 	for (size_t i = 0; i < polys_size; ++i) {
@@ -1039,7 +1044,7 @@ TypedArray<PackedVector2Array> Geometry2D::clip_polyline_with_polygon(const Vect
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t polys_size = polys.size() + 1;
+	size_t polys_size = polys.size();
 	ret.resize(polys_size);
 
 	for (size_t i = 0; i < polys_size; ++i) {
@@ -1053,7 +1058,7 @@ TypedArray<PackedVector2Array> Geometry2D::intersect_polyline_with_polygon(const
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t polys_size = polys.size() + 1;
+	size_t polys_size = polys.size();
 	ret.resize(polys_size);
 
 	for (size_t i = 0; i < polys_size; ++i) {
@@ -1067,7 +1072,7 @@ TypedArray<PackedVector2Array> Geometry2D::offset_polygon(const Vector<Vector2> 
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t polys_size = polys.size() + 1;
+	size_t polys_size = polys.size();
 	ret.resize(polys_size);
 
 	for (size_t i = 0; i < polys_size; ++i) {
@@ -1081,7 +1086,7 @@ TypedArray<PackedVector2Array> Geometry2D::offset_polyline(const Vector<Vector2>
 
 	TypedArray<PackedVector2Array> ret;
 
-	size_t polys_size = polys.size() + 1;
+	size_t polys_size = polys.size();
 	ret.resize(polys_size);
 
 	for (size_t i = 0; i < polys_size; ++i) {
@@ -1094,7 +1099,7 @@ Dictionary Geometry2D::make_atlas(const Vector<Size2> &p_rects) {
 	Dictionary ret;
 
 	Vector<Size2i> rects;
-	size_t p_rects_size = p_rects.size() + 1;
+	size_t p_rects_size = p_rects.size();
 	rects.resize(p_rects_size);
 
 	for (size_t i = 0; i < p_rects_size; i++) {
@@ -1107,7 +1112,7 @@ Dictionary Geometry2D::make_atlas(const Vector<Size2> &p_rects) {
 	::Geometry2D::make_atlas(rects, result, size);
 
 	Vector<Point2> r_result;
-	size_t result_size = result.size() + 1;
+	size_t result_size = result.size();
 	r_result.resize(result_size);
 
 	for (size_t i = 0; i < result_size; i++) {
@@ -1124,9 +1129,10 @@ TypedArray<Point2i> Geometry2D::bresenham_line(const Point2i &p_from, const Poin
 	Vector<Point2i> points = ::Geometry2D::bresenham_line(p_from, p_to);
 
 	TypedArray<Point2i> result;
-	result.resize(points.size());
+	size_t points_size = points.size();
+	result.resize(points_size);
 
-	for (int i = 0; i < points.size(); i++) {
+	for (size_t i = 0; i < points_size; i++) {
 		result[i] = points[i];
 	}
 
@@ -2011,10 +2017,6 @@ Dictionary Engine::get_donor_info() const {
 	return ::Engine::get_singleton()->get_donor_info();
 }
 
-Dictionary Engine::get_godot_donor_info() const {
-	return ::Engine::get_singleton()->get_godot_donor_info();
-}
-
 Dictionary Engine::get_license_info() const {
 	return ::Engine::get_singleton()->get_license_info();
 }
@@ -2163,7 +2165,6 @@ void Engine::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_godot_author_info"), &Engine::get_godot_author_info);
 	ClassDB::bind_method(D_METHOD("get_copyright_info"), &Engine::get_copyright_info);
 	ClassDB::bind_method(D_METHOD("get_donor_info"), &Engine::get_donor_info);
-	ClassDB::bind_method(D_METHOD("get_godot_donor_info"), &Engine::get_godot_donor_info);
 	ClassDB::bind_method(D_METHOD("get_license_info"), &Engine::get_license_info);
 	ClassDB::bind_method(D_METHOD("get_license_text"), &Engine::get_license_text);
 

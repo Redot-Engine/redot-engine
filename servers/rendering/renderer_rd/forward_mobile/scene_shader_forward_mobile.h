@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_shader_forward_mobile.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/pipeline_hash_map_rd.h"
 #include "servers/rendering/renderer_rd/shaders/forward_mobile/scene_forward_mobile.glsl.gen.h"
@@ -184,7 +190,7 @@ public:
 			STENCIL_COMPARE_NOT_EQUAL,
 			STENCIL_COMPARE_GREATER_OR_EQUAL,
 			STENCIL_COMPARE_ALWAYS,
-			STENCIL_COMPARE_MAX // Not an actual operator, just the amount of operators.
+			STENCIL_COMPARE_MAX ///< Not an actual operator, just the amount of operators.
 		};
 
 		struct PipelineKey {
@@ -292,7 +298,8 @@ public:
 		}
 
 		_FORCE_INLINE_ bool uses_shared_shadow_material() const {
-			return !uses_particle_trails && !writes_modelview_or_projection && !uses_vertex && !uses_discard && !uses_depth_prepass_alpha && !uses_alpha_clip && !uses_alpha_antialiasing && !uses_world_coordinates && !wireframe && !stencil_enabled;
+			bool backface_culling = cull_mode == RS::CULL_MODE_BACK;
+			return !uses_particle_trails && !writes_modelview_or_projection && !uses_vertex && !uses_discard && !uses_depth_prepass_alpha && !uses_alpha_clip && !uses_alpha_antialiasing && !uses_point_size && !uses_world_coordinates && !wireframe && !stencil_enabled && backface_culling;
 		}
 
 		virtual void set_code(const String &p_Code);

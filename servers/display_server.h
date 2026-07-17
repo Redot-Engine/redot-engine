@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file display_server.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/input/input.h"
 #include "core/io/image.h"
 #include "core/io/resource.h"
@@ -70,8 +76,8 @@ public:
 		WINDOW_MODE_EXCLUSIVE_FULLSCREEN,
 	};
 
-	// Keep the VSyncMode enum values in sync with the `display/window/vsync/vsync_mode`
-	// project setting hint.
+	/// Keep the VSyncMode enum values in sync with the `display/window/vsync/vsync_mode`
+	/// project setting hint.
 	enum VSyncMode {
 		VSYNC_DISABLED,
 		VSYNC_ENABLED,
@@ -324,10 +330,10 @@ public:
 		SCREEN_WITH_MOUSE_FOCUS = -4,
 		SCREEN_WITH_KEYBOARD_FOCUS = -3,
 		SCREEN_PRIMARY = -2,
-		SCREEN_OF_MAIN_WINDOW = -1, // Note: for the main window, determine screen from position.
+		SCREEN_OF_MAIN_WINDOW = -1, ///< @note For the main window, determine screen from position.
 	};
 
-	const float SCREEN_REFRESH_RATE_FALLBACK = -1.0; // Returned by screen_get_refresh_rate if the method fails.
+	const float SCREEN_REFRESH_RATE_FALLBACK = -1.0; ///< Returned by screen_get_refresh_rate if the method fails.
 
 	int _get_screen_index(int p_screen) const {
 		switch (p_screen) {
@@ -359,6 +365,7 @@ public:
 	virtual Rect2i screen_get_usable_rect(int p_screen = SCREEN_OF_MAIN_WINDOW) const = 0;
 	virtual int screen_get_dpi(int p_screen = SCREEN_OF_MAIN_WINDOW) const = 0;
 	virtual float screen_get_scale(int p_screen = SCREEN_OF_MAIN_WINDOW) const;
+	static Rect2 calculate_boot_image_rect(const Size2 &p_window_size, const Rect2 &p_imgrect);
 	virtual float screen_get_max_scale() const {
 		float scale = 1.f;
 		int screen_count = get_screen_count();
@@ -373,8 +380,8 @@ public:
 	virtual Ref<Image> screen_get_image_rect(const Rect2i &p_rect) const { return Ref<Image>(); }
 	virtual bool is_touchscreen_available() const;
 
-	// Keep the ScreenOrientation enum values in sync with the `display/window/handheld/orientation`
-	// project setting hint.
+	/// Keep the ScreenOrientation enum values in sync with the `display/window/handheld/orientation`
+	/// project setting hint.
 	enum ScreenOrientation {
 		SCREEN_LANDSCAPE,
 		SCREEN_PORTRAIT,
@@ -419,7 +426,7 @@ public:
 		WINDOW_FLAG_MAX,
 	};
 
-	// Separate enum otherwise we get warnings in switches not handling all values.
+	/// Separate enum otherwise we get warnings in switches not handling all values.
 	enum WindowFlagsBit {
 		WINDOW_FLAG_RESIZE_DISABLED_BIT = (1 << WINDOW_FLAG_RESIZE_DISABLED),
 		WINDOW_FLAG_BORDERLESS_BIT = (1 << WINDOW_FLAG_BORDERLESS),
@@ -495,6 +502,11 @@ public:
 	virtual Size2i window_get_size(WindowID p_window = MAIN_WINDOW_ID) const = 0;
 	virtual Size2i window_get_size_with_decorations(WindowID p_window = MAIN_WINDOW_ID) const = 0;
 
+	/// After the first rendered frame is committed, tiling compositors may
+	/// send a resize event. This hook lets the display server pump those
+	/// events synchronously before the boot image is re-rendered.
+	virtual void pump_resize_events() {}
+
 	virtual void window_set_mode(WindowMode p_mode, WindowID p_window = MAIN_WINDOW_ID) = 0;
 	virtual WindowMode window_get_mode(WindowID p_window = MAIN_WINDOW_ID) const = 0;
 
@@ -541,7 +553,8 @@ public:
 
 	virtual void window_start_resize(WindowResizeEdge p_edge, WindowID p_window = MAIN_WINDOW_ID) {}
 
-	// Accessibility.
+	/// @name Accessibility
+	/// @{
 
 	enum AccessibilityMode {
 		ACCESSIBILITY_AUTO,
@@ -755,8 +768,9 @@ public:
 	virtual void accessibility_update_set_color_value(const RID &p_id, const Color &p_color);
 	virtual void accessibility_update_set_background_color(const RID &p_id, const Color &p_color);
 	virtual void accessibility_update_set_foreground_color(const RID &p_id, const Color &p_color);
+	/// @}
 
-	// necessary for GL focus, may be able to use one of the existing functions for this, not sure yet
+	/// Necessary for GL focus, may be able to use one of the existing functions for this, not sure yet
 	virtual void gl_window_make_current(DisplayServer::WindowID p_window_id);
 
 	virtual Point2i ime_get_selection() const;
@@ -776,7 +790,7 @@ public:
 	virtual void virtual_keyboard_show(const String &p_existing_text, const Rect2 &p_screen_rect = Rect2(), VirtualKeyboardType p_type = KEYBOARD_TYPE_DEFAULT, int p_max_length = -1, int p_cursor_start = -1, int p_cursor_end = -1);
 	virtual void virtual_keyboard_hide();
 
-	// returns height of the currently shown virtual keyboard (0 if keyboard is hidden)
+	/// @return Height of the currently shown virtual keyboard (0 if keyboard is hidden)
 	virtual int virtual_keyboard_get_height() const;
 
 	virtual bool has_hardware_keyboard() const;
@@ -851,7 +865,6 @@ public:
 	virtual void tablet_set_current_driver(const String &p_driver) {}
 
 	virtual void process_events() = 0;
-
 	virtual void force_process_and_drop_events();
 
 	virtual void release_rendering_thread();
@@ -888,8 +901,8 @@ public:
 		FAILURE,
 	};
 
-	// Used to cache the result of `can_create_rendering_device()` when RenderingDevice isn't currently being used.
-	// This is done as creating a RenderingDevice is quite slow.
+	/// Used to cache the result of `can_create_rendering_device()` when RenderingDevice isn't currently being used.
+	/// This is done as creating a RenderingDevice is quite slow.
 	static inline RenderingDeviceCreationStatus created_rendering_device = RenderingDeviceCreationStatus::UNKNOWN;
 	static bool can_create_rendering_device();
 

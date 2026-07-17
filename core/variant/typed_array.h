@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file typed_array.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object.h"
 #include "core/variant/array.h"
 #include "core/variant/binder_common.h"
@@ -75,8 +81,7 @@ struct VariantInternalAccessor<const TypedArray<T> &> {
 	static _FORCE_INLINE_ void set(Variant *v, const TypedArray<T> &p_array) { *VariantInternal::get_array(v) = p_array; }
 };
 
-//specialization for the rest of variant types
-
+/// Specialization for the rest of variant types
 #define MAKE_TYPED_ARRAY(m_type, m_variant_type)                                                                 \
 	template <>                                                                                                  \
 	class TypedArray<m_type> : public Array {                                                                    \

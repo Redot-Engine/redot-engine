@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_export_platform_pc.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_export_platform_pc.h"
 
 #include "core/config/project_settings.h"
@@ -44,7 +50,8 @@ void EditorExportPlatformPC::get_preset_features(const Ref<EditorExportPreset> &
 		r_features->push_back("etc2");
 		r_features->push_back("astc");
 	}
-	if (p_preset->get("shader_baker/enabled")) {
+	if (!p_preset->is_dedicated_server() && p_preset->get("shader_baker/enabled")) {
+		// Don't use the shader baker if exporting as a dedicated server, as no rendering is performed.
 		r_features->push_back("shader_baker");
 	}
 	// PC platforms only have one architecture per export, since

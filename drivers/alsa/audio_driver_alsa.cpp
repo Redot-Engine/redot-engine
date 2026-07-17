@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_driver_alsa.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_driver_alsa.h"
 
 #ifdef ALSA_ENABLED
@@ -74,9 +80,9 @@ Error AudioDriverALSA::init_output_device() {
 		ERR_FAIL_COND_V(m_cond, ERR_CANT_OPEN);                  \
 	}
 
-	//todo, add
-	//6 chans - "plug:surround51"
-	//4 chans - "plug:surround40";
+	/// @todo Add:
+	/// 6 chans - "plug:surround51"
+	/// 4 chans - "plug:surround40";
 
 	if (output_device_name == "Default") {
 		status = snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
@@ -103,7 +109,7 @@ Error AudioDriverALSA::init_output_device() {
 	status = snd_pcm_hw_params_set_format(pcm_handle, hwparams, SND_PCM_FORMAT_S16_LE);
 	CHECK_FAIL(status < 0);
 
-	//todo: support 4 and 6
+	/// @todo Support 4 and 6
 	status = snd_pcm_hw_params_set_channels(pcm_handle, hwparams, 2);
 	CHECK_FAIL(status < 0);
 

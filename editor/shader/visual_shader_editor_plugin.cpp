@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file visual_shader_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "visual_shader_editor_plugin.h"
 
 #include "core/config/project_settings.h"
@@ -43,6 +49,7 @@
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/file_system/editor_paths.h"
+#include "editor/gui/editor_toaster.h"
 #include "editor/inspector/editor_properties.h"
 #include "editor/inspector/editor_properties_vector.h"
 #include "editor/scene/curve_editor_plugin.h"
@@ -285,7 +292,7 @@ void VisualShaderGraphPlugin::update_node(VisualShader::Type p_type, int p_node_
 	remove_node(p_type, p_node_id, true);
 	add_node(p_type, p_node_id, true, true);
 
-	// TODO: Restore focus here?
+	/// @todo Restore focus here?
 }
 
 void VisualShaderGraphPlugin::set_input_port_default_value(VisualShader::Type p_type, int p_node_id, int p_port_id, const Variant &p_value) {
@@ -506,7 +513,6 @@ void VisualShaderGraphPlugin::update_parameter_refs() {
 	}
 }
 
-// Only updates the linked frames of the given node, not the node itself (in case it's a frame node).
 void VisualShaderGraphPlugin::update_frames(VisualShader::Type p_type, int p_node) {
 	GraphEdit *graph = editor->graph;
 	if (!graph) {
@@ -540,7 +546,7 @@ void VisualShaderGraphPlugin::update_frames(VisualShader::Type p_type, int p_nod
 
 void VisualShaderGraphPlugin::set_node_position(VisualShader::Type p_type, int p_id, const Vector2 &p_position) {
 	if (editor->get_current_shader_type() == p_type && links.has(p_id)) {
-		links[p_id].graph_element->set_position_offset(p_position);
+		links[p_id].graph_element->set_position_offset(p_position * editor->cached_theme_base_scale);
 	}
 }
 
@@ -737,7 +743,7 @@ void VisualShaderGraphPlugin::add_node(VisualShader::Type p_type, int p_id, bool
 		expression = expression_node->get_expression();
 	}
 
-	node->set_position_offset(visual_shader->get_node_position(p_type, p_id));
+	node->set_position_offset(visual_shader->get_node_position(p_type, p_id) * editor->cached_theme_base_scale);
 
 	node->connect("dragged", callable_mp(editor, &VisualShaderEditor::_node_dragged).bind(p_id));
 
@@ -879,7 +885,7 @@ void VisualShaderGraphPlugin::add_node(VisualShader::Type p_type, int p_id, bool
 			if (!prop_name.is_empty()) {
 				Label *label = memnew(Label);
 				label->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-				label->set_auto_translate_mode(Node::AUTO_TRANSLATE_MODE_DISABLED); // TODO: Implement proper translation switch.
+				label->set_auto_translate_mode(Node::AUTO_TRANSLATE_MODE_DISABLED); /// @todo Implement proper translation switch.
 				label->set_text(prop_name + ":");
 				hbox->add_child(label);
 			}
@@ -1153,7 +1159,7 @@ void VisualShaderGraphPlugin::add_node(VisualShader::Type p_type, int p_id, bool
 				} else {
 					Label *label = memnew(Label);
 					label->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-					label->set_auto_translate_mode(Node::AUTO_TRANSLATE_MODE_DISABLED); // TODO: Implement proper translation switch.
+					label->set_auto_translate_mode(Node::AUTO_TRANSLATE_MODE_DISABLED); /// @todo Implement proper translation switch.
 					label->set_text(name_left);
 					label->add_theme_style_override(CoreStringName(normal), editor->get_theme_stylebox(SNAME("label_style"), SNAME("VShaderEditor")));
 					hb->add_child(label);
@@ -1205,7 +1211,7 @@ void VisualShaderGraphPlugin::add_node(VisualShader::Type p_type, int p_id, bool
 				} else {
 					Label *label = memnew(Label);
 					label->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-					label->set_auto_translate_mode(Node::AUTO_TRANSLATE_MODE_DISABLED); // TODO: Implement proper translation switch.
+					label->set_auto_translate_mode(Node::AUTO_TRANSLATE_MODE_DISABLED); /// @todo Implement proper translation switch.
 					label->set_text(name_right);
 					label->add_theme_style_override(CoreStringName(normal), editor->get_theme_stylebox(SNAME("label_style"), SNAME("VShaderEditor"))); //more compact
 					hb->add_child(label);
@@ -1570,11 +1576,11 @@ void VisualShaderEditor::use_menu_bar_items(MenuButton *p_file_menu, Button *p_m
 }
 
 void VisualShaderEditor::apply_shaders() {
-	// Stub. TODO: Implement apply_shaders in visual shaders for parity with text shaders.
+	/// Stub. @todo Implement apply_shaders in visual shaders for parity with text shaders.
 }
 
 bool VisualShaderEditor::is_unsaved() const {
-	// Stub. TODO: Implement is_unsaved in visual shaders for parity with text shaders.
+	/// Stub. @todo Implement is_unsaved in visual shaders for parity with text shaders.
 	return false;
 }
 
@@ -1762,7 +1768,7 @@ void VisualShaderEditor::_update_custom_script(const Ref<Script> &p_script) {
 			if (add_options[i].is_custom && add_options[i].script == p_script) {
 				add_options.remove_at(i);
 				_update_options_menu();
-				// TODO: Make indication for the existed custom nodes with that script on graph to be disabled.
+				/// @todo Make indication for the existed custom nodes with that script on graph to be disabled.
 				break;
 			}
 		}
@@ -3102,7 +3108,6 @@ void VisualShaderEditor::_set_node_size(int p_type, int p_node, const Vector2 &p
 	graph_plugin->update_frames(type, p_node);
 }
 
-// Called once after the node was resized.
 void VisualShaderEditor::_node_resized(const Vector2 &p_new_size, int p_type, int p_node) {
 	Ref<VisualShaderNodeResizableBase> node = visual_shader->get_node(VisualShader::Type(p_type), p_node);
 	if (node.is_null()) {
@@ -3368,7 +3373,7 @@ void VisualShaderEditor::_edit_port_default_input(Object *p_button, int p_node, 
 		property_editor_popup->remove_child(property_editor);
 	}
 
-	// TODO: Define these properties with actual PropertyInfo and feed it to the property editor widget.
+	/// @todo Define these properties with actual PropertyInfo and feed it to the property editor widget.
 	property_editor = EditorInspector::instantiate_property_editor(edited_property_holder.ptr(), value.get_type(), "edited_property", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE, true);
 	ERR_FAIL_NULL_MSG(property_editor, "Failed to create property editor for type: " + Variant::get_type_name(value.get_type()));
 
@@ -3842,6 +3847,7 @@ void VisualShaderEditor::_add_node(int p_idx, const Vector<Variant> &p_ops, cons
 		position /= EDSCALE;
 	}
 	position /= graph->get_zoom();
+	position /= cached_theme_base_scale;
 	saved_node_pos_dirty = false;
 
 	int id_to_use = visual_shader->get_valid_node_id(type);
@@ -4168,7 +4174,7 @@ void VisualShaderEditor::_update_varyings() {
 
 void VisualShaderEditor::_node_dragged(const Vector2 &p_from, const Vector2 &p_to, int p_node) {
 	VisualShader::Type type = get_current_shader_type();
-	drag_buffer.push_back({ type, p_node, p_from, p_to });
+	drag_buffer.push_back({ type, p_node, p_from / cached_theme_base_scale, p_to / cached_theme_base_scale });
 	if (!drag_dirty) {
 		callable_mp(this, &VisualShaderEditor::_nodes_dragged).call_deferred();
 	}
@@ -4788,7 +4794,6 @@ void VisualShaderEditor::_detach_nodes_from_frame(int p_type, const List<int> &p
 }
 
 void VisualShaderEditor::_detach_nodes_from_frame_request() {
-	// Called from context menu.
 	List<int> to_detach_node_ids;
 	for (int i = 0; i < graph->get_child_count(); i++) {
 		GraphElement *gn = Object::cast_to<GraphElement>(graph->get_child(i));
@@ -5341,6 +5346,8 @@ void VisualShaderEditor::_notification(int p_what) {
 
 			tools->set_button_icon(get_editor_theme_icon(SNAME("Tools")));
 			preview_tools->set_button_icon(get_editor_theme_icon(SNAME("Tools")));
+
+			cached_theme_base_scale = get_theme_default_base_scale();
 
 			if (is_visible_in_tree()) {
 				_update_graph();
@@ -6899,7 +6906,7 @@ VisualShaderEditor::VisualShaderEditor() {
 	members = memnew(Tree);
 	members_vb->add_child(members);
 	SET_DRAG_FORWARDING_GCD(members, VisualShaderEditor);
-	members->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED); // TODO: Implement proper translation switch.
+	members->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED); /// @todo Implement proper translation switch.
 	members->set_h_size_flags(SIZE_EXPAND_FILL);
 	members->set_v_size_flags(SIZE_EXPAND_FILL);
 	members->set_hide_root(true);
@@ -7990,9 +7997,9 @@ public:
 		Ref<VisualShaderNode> vsnode = editor->get_visual_shader()->get_node(shader_type, node_id);
 		ERR_FAIL_COND(vsnode.is_null());
 
-		// Check for invalid connections due to removed ports.
-		// We need to know the new state of the node to generate the proper undo/redo instructions.
-		// Quite hacky but the best way I could come up with for now.
+		/// Check for invalid connections due to removed ports.
+		/// We need to know the new state of the node to generate the proper undo/redo instructions.
+		/// @todo Quite hacky but the best way I could come up with for now.
 		Ref<VisualShaderNode> vsnode_new = vsnode->duplicate();
 		vsnode_new->set(p_property, p_value);
 		const int input_port_count = vsnode_new->get_input_port_count();
@@ -8096,7 +8103,7 @@ public:
 			} else {
 				prop_name_str = prop_name_str.capitalize() + ":";
 			}
-			prop_name->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED); // TODO: Implement proper translation switch.
+			prop_name->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED); /// @todo Implement proper translation switch.
 			prop_name->set_text(prop_name_str);
 			prop_name->set_visible(false);
 			hbox->add_child(prop_name);
@@ -8448,6 +8455,20 @@ bool VisualShaderConversionPlugin::handles(const Ref<Resource> &p_resource) cons
 Ref<Resource> VisualShaderConversionPlugin::convert(const Ref<Resource> &p_resource) const {
 	Ref<VisualShader> vshader = p_resource;
 	ERR_FAIL_COND_V(vshader.is_null(), Ref<Resource>());
+	int embed = vshader->has_node_embeds();
+
+	EditorToaster *toast = EditorToaster::get_singleton();
+	if (toast == nullptr) {
+		ERR_FAIL_COND_V_MSG(embed == 2, Ref<Resource>(), "Cannot convert VisualShader to GDShader because VisualShader has embedded subresources.");
+		if (embed == 1) {
+			WARN_PRINT("Visual Shader conversion cannot convert external dependencies. Resource references from Nodes will have to be rebound as ShaderParameters on a Material.");
+		}
+	} else if (embed == 2) {
+		toast->popup_str(TTR("Cannot convert VisualShader to GDShader because VisualShader has embedded subresources."), EditorToaster::SEVERITY_ERROR);
+		return Ref<Resource>();
+	} else if (embed == 1) {
+		toast->popup_str(TTR("Visual Shader conversion cannot convert external dependencies. Resource references from Nodes will have to be rebound as ShaderParameters on a Material."), EditorToaster::SEVERITY_WARNING);
+	}
 
 	Ref<Shader> shader;
 	shader.instantiate();

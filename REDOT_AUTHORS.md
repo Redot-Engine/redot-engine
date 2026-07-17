@@ -38,5 +38,7 @@ name is available.
     DAShoe1
     decryptedchaos
     George L Albany (spartan322)
+    Jon (JoltedJon)
     McDubh (mcdubhghlas)
     Skogi (SkogiB)
+    Shakai (Shakai-Dev)

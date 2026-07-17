@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file animated_sprite_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/2d/node_2d.h"
 #include "scene/resources/sprite_frames.h"
 

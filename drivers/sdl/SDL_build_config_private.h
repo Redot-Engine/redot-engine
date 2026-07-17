@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file SDL_build_config_private.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #define SDL_build_config_h_
 
 #include <SDL3/SDL_platform_defines.h>
@@ -83,6 +89,7 @@
 #define SDL_PLATFORM_UNIX 1
 
 #define HAVE_STDIO_H 1
+#define HAVE_LIBC 1
 #define HAVE_LINUX_INPUT_H 1
 #define HAVE_POLL 1
 

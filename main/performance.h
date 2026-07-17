@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file performance.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/class_db.h"
 #include "core/templates/hash_map.h"
 

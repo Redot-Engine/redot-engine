@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_fonts.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_fonts.h"
 
 #include "core/io/dir_access.h"
@@ -288,7 +294,9 @@ void editor_register_fonts(const Ref<Theme> &p_theme) {
 			custom_font->set_fallbacks(fallback_custom);
 		}
 		bold_fc->set_base_font(custom_font);
-		bold_fc->set_variation_embolden(embolden_strength);
+		if (!custom_font->get_supported_variation_list().has(TS->name_to_tag("wght"))) {
+			bold_fc->set_variation_embolden(embolden_strength);
+		}
 	} else {
 		EditorSettings::get_singleton()->set_manually("interface/editor/main_font_bold", "");
 		bold_fc->set_base_font(default_font_bold);
@@ -315,7 +323,9 @@ void editor_register_fonts(const Ref<Theme> &p_theme) {
 			custom_font->set_fallbacks(fallback_custom);
 		}
 		bold_fc_msdf->set_base_font(custom_font);
-		bold_fc_msdf->set_variation_embolden(embolden_strength);
+		if (!custom_font->get_supported_variation_list().has(TS->name_to_tag("wght"))) {
+			bold_fc_msdf->set_variation_embolden(embolden_strength);
+		}
 	} else {
 		EditorSettings::get_singleton()->set_manually("interface/editor/main_font_bold", "");
 		bold_fc_msdf->set_base_font(default_font_bold_msdf);

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file animation_bezier_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "animation_bezier_editor.h"
 
 #include "editor/animation/animation_player_editor_plugin.h"
@@ -281,7 +287,7 @@ void AnimationBezierTrackEdit::_notification(int p_what) {
 			RID ae = get_accessibility_element();
 			ERR_FAIL_COND(ae.is_null());
 
-			//TODO
+			/// @todo
 			DisplayServer::get_singleton()->accessibility_update_set_role(ae, DisplayServer::AccessibilityRole::ROLE_STATIC_TEXT);
 			DisplayServer::get_singleton()->accessibility_update_set_value(ae, TTR(vformat("The %s is not accessible at this time.", "Animation bezier track editor")));
 		} break;
@@ -322,6 +328,60 @@ void AnimationBezierTrackEdit::_notification(int p_what) {
 			Color selected_track_color;
 			subtracks.clear();
 			subtrack_icons.clear();
+
+			// Marker sections.
+			{
+				float scale = timeline->get_zoom_scale();
+				int limit_end = get_size().width - timeline->get_buttons_width();
+
+				PackedStringArray section = editor->get_selected_section();
+				if (section.size() == 2) {
+					StringName start_marker = section[0];
+					StringName end_marker = section[1];
+					double start_time = animation->get_marker_time(start_marker);
+					double end_time = animation->get_marker_time(end_marker);
+
+					// When AnimationPlayer is playing, don't move the preview rect, so it still indicates the playback section.
+					AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+					if (editor->is_marker_moving_selection() && !(player && player->is_playing())) {
+						start_time += editor->get_marker_moving_selection_offset();
+						end_time += editor->get_marker_moving_selection_offset();
+					}
+
+					if (start_time < animation->get_length() && end_time >= 0) {
+						float start_ofs = MAX(0, start_time) - timeline->get_value();
+						float end_ofs = MIN(animation->get_length(), end_time) - timeline->get_value();
+						start_ofs = start_ofs * scale + limit;
+						end_ofs = end_ofs * scale + limit;
+						start_ofs = MAX(start_ofs, limit);
+						end_ofs = MIN(end_ofs, limit_end);
+						Rect2 rect;
+						rect.set_position(Vector2(start_ofs, 0));
+						rect.set_size(Vector2(end_ofs - start_ofs, get_size().height));
+
+						draw_rect(rect, Color(1, 0.1, 0.1, 0.2));
+					}
+				}
+			}
+
+			// Marker overlays.
+			{
+				float scale = timeline->get_zoom_scale();
+				PackedStringArray markers = animation->get_marker_names();
+				for (const StringName marker : markers) {
+					double time = animation->get_marker_time(marker);
+					if (editor->is_marker_selected(marker) && editor->is_marker_moving_selection()) {
+						time += editor->get_marker_moving_selection_offset();
+					}
+					if (time >= 0) {
+						float offset = time - timeline->get_value();
+						offset = offset * scale + limit;
+						Color marker_color = animation->get_marker_color(marker);
+						marker_color.a = 0.2;
+						draw_line(Point2(offset, 0), Point2(offset, get_size().height), marker_color, Math::round(EDSCALE));
+					}
+				}
+			}
 
 			RBMap<String, Vector<int>> track_indices;
 			int track_count = animation->get_track_count();
@@ -758,7 +818,6 @@ void AnimationBezierTrackEdit::_notification(int p_what) {
 	}
 }
 
-// Check if a track is displayed in the bezier editor (track type = bezier and track not filtered).
 bool AnimationBezierTrackEdit::_is_track_displayed(int p_track_index) {
 	if (animation->track_get_type(p_track_index) != Animation::TrackType::TYPE_BEZIER) {
 		return false;
@@ -780,7 +839,6 @@ bool AnimationBezierTrackEdit::_is_track_displayed(int p_track_index) {
 	return true;
 }
 
-// Check if the curves for a track are displayed in the editor (not hidden). Includes the check on the track visibility.
 bool AnimationBezierTrackEdit::_is_track_curves_displayed(int p_track_index) {
 	// Is the track is visible in the editor?
 	if (!_is_track_displayed(p_track_index)) {

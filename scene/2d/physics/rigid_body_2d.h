@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file rigid_body_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/vset.h"
 #include "scene/2d/physics/physics_body_2d.h"
 
@@ -232,7 +238,7 @@ public:
 	void set_constant_torque(real_t p_torque);
 	real_t get_constant_torque() const;
 
-	TypedArray<Node2D> get_colliding_bodies() const; //function for script
+	TypedArray<Node2D> get_colliding_bodies() const; ///< Function for script
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 

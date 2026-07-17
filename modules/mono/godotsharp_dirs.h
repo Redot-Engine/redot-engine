@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file godotsharp_dirs.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/ustring.h"
 
 namespace GodotSharpDirs {

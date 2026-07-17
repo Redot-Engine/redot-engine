@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file code_completion.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "code_completion.h"
 
 #include "core/config/project_settings.h"

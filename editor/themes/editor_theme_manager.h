@@ -32,8 +32,21 @@
 
 #pragma once
 
+/**
+ * @file editor_theme_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/themes/editor_theme.h"
 #include "scene/resources/style_box_flat.h"
+
+struct OutdatedSubsystems {
+	bool standard_styles = false;
+	bool text_editor_styles = false;
+	bool visual_shader_styles = false;
+};
+static inline OutdatedSubsystems outdated_subsystems;
 
 class EditorThemeManager {
 	static int benchmark_run;

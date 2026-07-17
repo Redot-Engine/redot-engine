@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_importer_ogg_vorbis.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_importer_ogg_vorbis.h"
 
 #include "core/io/file_access.h"

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skeleton_2d.h"
 
 #include "core/math/transform_interpolator.h"
@@ -188,8 +194,8 @@ void Bone2D::_notification(int p_what) {
 			cache_transform = tmp_trans;
 		} break;
 
-		// Bone2D Editor gizmo drawing.
-		// TODO: Bone2D gizmo drawing needs to be moved to an editor plugin.
+		/// Bone2D Editor gizmo drawing.
+		/// @todo Bone2D gizmo drawing needs to be moved to an editor plugin.
 		case NOTIFICATION_DRAW: {
 			// Only draw the gizmo in the editor!
 			if (Engine::get_singleton()->is_editor_hint() == false) {
@@ -495,7 +501,7 @@ Bone2D::Bone2D() {
 	autocalculate_length_and_angle = true;
 	set_notify_local_transform(true);
 	set_hide_clip_children(true);
-	//this is a clever hack so the bone knows no rest has been set yet, allowing to show an error.
+	// This is a clever hack so the bone knows no rest has been set yet, allowing to show an error.
 	for (int i = 0; i < 3; i++) {
 		rest[i] = Vector2(0, 0);
 	}
@@ -615,7 +621,7 @@ int Skeleton2D::get_bone_count() const {
 	ERR_FAIL_COND_V(!is_inside_tree(), 0);
 
 	if (bone_setup_dirty) {
-		// TODO: Is this necessary? It doesn't seem to change bones.size()
+		/// @todo Is this necessary? It doesn't seem to change bones.size()
 		const_cast<Skeleton2D *>(this)->_update_bone_setup();
 	}
 
@@ -799,7 +805,7 @@ void Skeleton2D::execute_modifications(real_t p_delta, int p_execution_mode) {
 					bones[i].local_pose_override_amount = 0.0;
 				}
 			} else {
-				// TODO: see if there is a way to undo the override without having to resort to setting every bone's transform.
+				/// @todo See if there is a way to undo the override without having to resort to setting every bone's transform.
 				bones[i].bone->remove_meta("_local_pose_override_enabled_");
 				bones[i].bone->set_transform(bones[i].bone->cache_transform);
 			}

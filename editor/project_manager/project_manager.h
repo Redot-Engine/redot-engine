@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file project_manager.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/dialogs.h"
 #include "scene/gui/scroll_container.h"
 
@@ -124,6 +130,8 @@ class ProjectManager : public Control {
 	AcceptDialog *error_dialog = nullptr;
 
 	void _show_error(const String &p_message, const Size2 &p_min_size = Size2());
+	/// This method must be called before calling `get_tree()->quit()`.
+	/// Otherwise, its effect won't be visible
 	void _dim_window();
 
 	// Quick settings.
@@ -164,6 +172,7 @@ class ProjectManager : public Control {
 	Button *manage_tags_btn = nullptr;
 	Button *erase_btn = nullptr;
 	Button *erase_missing_btn = nullptr;
+	Button *donate_btn = nullptr;
 
 	HBoxContainer *open_btn_container = nullptr;
 	PopupMenu *open_options_popup = nullptr;
@@ -172,8 +181,8 @@ class ProjectManager : public Control {
 
 	ConfirmationDialog *erase_ask = nullptr;
 	Label *erase_ask_label = nullptr;
-	// Comment out for now until we have a better warning system to
-	// ensure users delete their project only.
+	/// @todo Comment out for now until we have a better warning system to
+	/// ensure users delete their project only.
 	//CheckBox *delete_project_contents = nullptr;
 	ConfirmationDialog *erase_missing_ask = nullptr;
 	ConfirmationDialog *multi_open_ask = nullptr;
@@ -203,6 +212,7 @@ class ProjectManager : public Control {
 	void _update_project_buttons();
 	void _open_options_popup();
 	void _open_recovery_mode_ask(bool manual = false);
+	void _open_donate_page();
 
 	void _on_project_created(const String &dir, bool edit);
 	void _on_project_duplicated(const String &p_original_path, const String &p_duplicate_path, bool p_edit);

@@ -32,15 +32,20 @@
 
 #pragma once
 
+/**
+ * @file variant_internal.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "variant.h"
 
 #include "core/templates/simple_type.h"
 
-// For use when you want to access the internal pointer of a Variant directly.
-// Use with caution. You need to be sure that the type is correct.
-
 class RefCounted;
 
+/// For use when you want to access the internal pointer of a Variant directly.
+/// @warning Use with caution. You need to be sure that the type is correct.
 class VariantInternal {
 	friend class Variant;
 
@@ -131,7 +136,8 @@ public:
 		}
 	}
 
-	// Atomic types.
+	/// @name Atomic types
+	/// @{
 	_FORCE_INLINE_ static bool *get_bool(Variant *v) { return &v->_data._bool; }
 	_FORCE_INLINE_ static const bool *get_bool(const Variant *v) { return &v->_data._bool; }
 	_FORCE_INLINE_ static int64_t *get_int(Variant *v) { return &v->_data._int; }
@@ -141,7 +147,9 @@ public:
 	_FORCE_INLINE_ static String *get_string(Variant *v) { return reinterpret_cast<String *>(v->_data._mem); }
 	_FORCE_INLINE_ static const String *get_string(const Variant *v) { return reinterpret_cast<const String *>(v->_data._mem); }
 
-	// Math types.
+	/// @}
+	/// @name Math types
+	/// @{
 	_FORCE_INLINE_ static Vector2 *get_vector2(Variant *v) { return reinterpret_cast<Vector2 *>(v->_data._mem); }
 	_FORCE_INLINE_ static const Vector2 *get_vector2(const Variant *v) { return reinterpret_cast<const Vector2 *>(v->_data._mem); }
 	_FORCE_INLINE_ static Vector2i *get_vector2i(Variant *v) { return reinterpret_cast<Vector2i *>(v->_data._mem); }
@@ -173,7 +181,9 @@ public:
 	_FORCE_INLINE_ static Projection *get_projection(Variant *v) { return v->_data._projection; }
 	_FORCE_INLINE_ static const Projection *get_projection(const Variant *v) { return v->_data._projection; }
 
-	// Misc types.
+	/// @}
+	/// @name Misc types
+	/// @{
 	_FORCE_INLINE_ static Color *get_color(Variant *v) { return reinterpret_cast<Color *>(v->_data._mem); }
 	_FORCE_INLINE_ static const Color *get_color(const Variant *v) { return reinterpret_cast<const Color *>(v->_data._mem); }
 	_FORCE_INLINE_ static StringName *get_string_name(Variant *v) { return reinterpret_cast<StringName *>(v->_data._mem); }
@@ -191,7 +201,9 @@ public:
 	_FORCE_INLINE_ static Array *get_array(Variant *v) { return reinterpret_cast<Array *>(v->_data._mem); }
 	_FORCE_INLINE_ static const Array *get_array(const Variant *v) { return reinterpret_cast<const Array *>(v->_data._mem); }
 
-	// Typed arrays.
+	/// @}
+	/// @name Typed arrays
+	/// @{
 	_FORCE_INLINE_ static PackedByteArray *get_byte_array(Variant *v) { return &static_cast<Variant::PackedArrayRef<uint8_t> *>(v->_data.packed_array)->array; }
 	_FORCE_INLINE_ static const PackedByteArray *get_byte_array(const Variant *v) { return &static_cast<const Variant::PackedArrayRef<uint8_t> *>(v->_data.packed_array)->array; }
 	_FORCE_INLINE_ static PackedInt32Array *get_int32_array(Variant *v) { return &static_cast<Variant::PackedArrayRef<int32_t> *>(v->_data.packed_array)->array; }
@@ -212,6 +224,7 @@ public:
 	_FORCE_INLINE_ static const PackedColorArray *get_color_array(const Variant *v) { return &static_cast<const Variant::PackedArrayRef<Color> *>(v->_data.packed_array)->array; }
 	_FORCE_INLINE_ static PackedVector4Array *get_vector4_array(Variant *v) { return &static_cast<Variant::PackedArrayRef<Vector4> *>(v->_data.packed_array)->array; }
 	_FORCE_INLINE_ static const PackedVector4Array *get_vector4_array(const Variant *v) { return &static_cast<const Variant::PackedArrayRef<Vector4> *>(v->_data.packed_array)->array; }
+	/// @}
 
 	_FORCE_INLINE_ static Object **get_object(Variant *v) { return (Object **)&v->_get_obj().obj; }
 	_FORCE_INLINE_ static const Object **get_object(const Variant *v) { return (const Object **)&v->_get_obj().obj; }
@@ -227,10 +240,10 @@ public:
 		v->type = GetTypeInfo<T>::VARIANT_TYPE;
 	}
 
-	// Should be in the same order as Variant::Type for consistency.
-	// Those primitive and vector types don't need an `init_` method:
-	// Nil, bool, float, Vector2/i, Rect2/i, Vector3/i, Plane, Quat, RID.
-	// Object is a special case, handled via `object_reset_data`.
+	/// Should be in the same order as Variant::Type for consistency.
+	/// Those primitive and vector types don't need an `init_` method:
+	/// Nil, bool, float, Vector2/i, Rect2/i, Vector3/i, Plane, Quat, RID.
+	/// Object is a special case, handled via `object_reset_data`.
 	_FORCE_INLINE_ static void init_string(Variant *v) {
 		memnew_placement(v->_data._mem, String);
 		v->type = Variant::STRING;

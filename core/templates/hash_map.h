@@ -32,7 +32,14 @@
 
 #pragma once
 
+/**
+ * @file hash_map.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/os/memory.h"
+#include "core/string/print_string.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/pair.h"
 #include "core/templates/sort_list.h"
@@ -52,7 +59,6 @@
  *
  * The assignment operator copy the pairs from one map to the other.
  */
-
 template <typename TKey, typename TValue>
 struct HashMapElement {
 	HashMapElement *next = nullptr;
@@ -69,7 +75,7 @@ template <typename TKey, typename TValue,
 		typename Allocator = DefaultTypedAllocator<HashMapElement<TKey, TValue>>>
 class HashMap : private Allocator {
 public:
-	static constexpr uint32_t MIN_CAPACITY_INDEX = 2; // Use a prime.
+	static constexpr uint32_t MIN_CAPACITY_INDEX = 2; ///< Use a prime.
 	static constexpr float MAX_OCCUPANCY = 0.75;
 	static constexpr uint32_t EMPTY_HASH = 0;
 
@@ -111,7 +117,7 @@ private:
 		return elements != nullptr && num_elements > 0 && _lookup_pos_unchecked(p_key, _hash(p_key), r_pos);
 	}
 
-	/// Note: Assumes that elements != nullptr
+	/// @note Assumes that elements != nullptr
 	bool _lookup_pos_unchecked(const TKey &p_key, uint32_t p_hash, uint32_t &r_pos) const {
 		const uint32_t capacity = hash_table_size_primes[capacity_index];
 		const uint64_t capacity_inv = hash_table_size_primes_inv[capacity_index];
@@ -362,8 +368,8 @@ public:
 		return true;
 	}
 
-	// Replace the key of an entry in-place, without invalidating iterators or changing the entries position during iteration.
-	// p_old_key must exist in the map and p_new_key must not, unless it is equal to p_old_key.
+	/// Replace the key of an entry in-place, without invalidating iterators or changing the entries position during iteration.
+	/// p_old_key must exist in the map and p_new_key must not, unless it is equal to p_old_key.
 	bool replace_key(const TKey &p_old_key, const TKey &p_new_key) {
 		ERR_FAIL_COND_V(elements == nullptr || num_elements == 0, false);
 		if (p_old_key == p_new_key) {
@@ -397,10 +403,9 @@ public:
 		return true;
 	}
 
-	// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
-	// If adding a known (possibly large) number of elements at once, must be larger than old capacity.
+	/// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
+	/// If adding a known (possibly large) number of elements at once, must be larger than old capacity.
 	void reserve(uint32_t p_new_capacity) {
-		ERR_FAIL_COND_MSG(p_new_capacity < size(), "reserve() called with a capacity smaller than the current size. This is likely a mistake.");
 		uint32_t new_index = capacity_index;
 
 		while (hash_table_size_primes[new_index] < p_new_capacity) {
@@ -409,6 +414,9 @@ public:
 		}
 
 		if (new_index == capacity_index) {
+			if (p_new_capacity < size()) {
+				WARN_VERBOSE("reserve() called with a capacity smaller than the current size. This is likely a mistake.");
+			}
 			return;
 		}
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file skeleton_profile.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "skeleton_profile.h"
 
 bool SkeletonProfile::_set(const StringName &p_path, const Variant &p_value) {

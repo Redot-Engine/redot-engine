@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file image_frames_loader_png.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "image_frames_loader_png.h"
 
 #include "drivers/png/png_driver_common.h"

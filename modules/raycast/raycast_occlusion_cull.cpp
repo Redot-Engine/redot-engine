@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file raycast_occlusion_cull.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "raycast_occlusion_cull.h"
 
 #include "core/config/project_settings.h"
@@ -584,10 +590,10 @@ Vector2 RaycastOcclusionCull::_get_jitter(const Rect2 &p_viewport_rect, const Si
 	return jitter;
 }
 
+/// @note This assumes a rectangular projection plane, i.e. that:
+/// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
+/// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 Rect2 _get_viewport_rect(const Projection &p_cam_projection) {
-	// NOTE: This assumes a rectangular projection plane, i.e. that:
-	// - the matrix is a projection across z-axis (i.e. is invertible and columns[0][1], [0][3], [1][0] and [1][3] == 0)
-	// - the projection plane is rectangular (i.e. columns[0][2] and [1][2] == 0 if columns[2][3] != 0)
 	Size2 half_extents = p_cam_projection.get_viewport_half_extents();
 	Point2 bottom_left = -half_extents * Vector2(p_cam_projection.columns[3][0] * p_cam_projection.columns[3][3] + p_cam_projection.columns[2][0] * p_cam_projection.columns[2][3] + 1, p_cam_projection.columns[3][1] * p_cam_projection.columns[3][3] + p_cam_projection.columns[2][1] * p_cam_projection.columns[2][3] + 1);
 	return Rect2(bottom_left, 2 * half_extents);

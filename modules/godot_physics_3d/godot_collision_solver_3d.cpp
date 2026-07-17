@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_collision_solver_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "godot_collision_solver_3d.h"
 
 #include "godot_collision_solver_3d_sat.h"
@@ -63,8 +69,10 @@ bool GodotCollisionSolver3D::solve_static_world_boundary(const GodotShape3D *p_s
 		// Use 3 equidistant points on the circle.
 		for (int i = 0; i < 3; ++i) {
 			Vector3 vertex_pos = circle_pos;
-			vertex_pos += circle_axis_1 * Math::cos(2.0 * Math::PI * i / 3.0);
-			vertex_pos += circle_axis_2 * Math::sin(2.0 * Math::PI * i / 3.0);
+			double sc_sin, sc_cos;
+			Math::sin_cos(2.0 * Math::PI * i / 3.0, sc_sin, sc_cos);
+			vertex_pos += circle_axis_1 * sc_cos;
+			vertex_pos += circle_axis_2 * sc_sin;
 			supports[i] = vertex_pos;
 		}
 	}
@@ -490,8 +498,10 @@ bool GodotCollisionSolver3D::solve_distance_world_boundary(const GodotShape3D *p
 		// Use 3 equidistant points on the circle.
 		for (int i = 0; i < 3; ++i) {
 			Vector3 vertex_pos = circle_pos;
-			vertex_pos += circle_axis_1 * Math::cos(2.0 * Math::PI * i / 3.0);
-			vertex_pos += circle_axis_2 * Math::sin(2.0 * Math::PI * i / 3.0);
+			double sc_sin, sc_cos;
+			Math::sin_cos(2.0 * Math::PI * i / 3.0, sc_sin, sc_cos);
+			vertex_pos += circle_axis_1 * sc_cos;
+			vertex_pos += circle_axis_2 * sc_sin;
 			supports[i] = vertex_pos;
 		}
 	}

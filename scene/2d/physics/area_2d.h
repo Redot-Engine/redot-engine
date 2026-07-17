@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file area_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/templates/vset.h"
 #include "scene/2d/physics/collision_object_2d.h"
 
@@ -179,8 +185,8 @@ public:
 	void set_monitorable(bool p_enable);
 	bool is_monitorable() const;
 
-	TypedArray<Node2D> get_overlapping_bodies() const; //function for script
-	TypedArray<Area2D> get_overlapping_areas() const; //function for script
+	TypedArray<Node2D> get_overlapping_bodies() const; ///< Function for script
+	TypedArray<Area2D> get_overlapping_areas() const; ///< Function for script
 
 	bool has_overlapping_bodies() const;
 	bool has_overlapping_areas() const;

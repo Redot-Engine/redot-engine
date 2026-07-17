@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file convex_polygon_shape_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "convex_polygon_shape_2d.h"
 
 #include "core/math/geometry_2d.h"
@@ -41,7 +47,7 @@ bool ConvexPolygonShape2D::_edit_is_selected_on_click(const Point2 &p_point, dou
 }
 
 #ifdef DEBUG_ENABLED
-// Check if point p3 is to the left of [p1, p2] segment or on it.
+/// Check if point p3 is to the left of [p1, p2] segment or on it.
 bool left_test(const Vector2 &p1, const Vector2 &p2, const Vector2 &p3) {
 	Vector2 p12 = p2 - p1;
 	Vector2 p13 = p3 - p1;

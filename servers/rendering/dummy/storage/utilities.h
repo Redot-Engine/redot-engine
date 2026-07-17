@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file utilities.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering/storage/utilities.h"
 
 namespace RendererDummy {
@@ -46,16 +52,19 @@ public:
 	Utilities();
 	~Utilities();
 
-	/* INSTANCES */
+	/// @name INSTANCES
+	/// @{
 
 	virtual RS::InstanceType get_base_type(RID p_rid) const override;
 	virtual bool free(RID p_rid) override;
-
-	/* DEPENDENCIES */
+	/// @}
+	/// @name DEPENDENCIES
+	/// @{
 
 	virtual void base_update_dependency(RID p_base, DependencyTracker *p_instance) override;
-
-	/* VISIBILITY NOTIFIER */
+	/// @}
+	/// @name VISIBILITY NOTIFIER
+	/// @{
 
 	virtual RID visibility_notifier_allocate() override { return RID(); }
 	virtual void visibility_notifier_initialize(RID p_notifier) override {}
@@ -66,8 +75,9 @@ public:
 
 	virtual AABB visibility_notifier_get_aabb(RID p_notifier) const override { return AABB(); }
 	virtual void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) override {}
-
-	/* TIMING */
+	/// @}
+	/// @name TIMING
+	/// @{
 
 	virtual void capture_timestamps_begin() override {}
 	virtual void capture_timestamp(const String &p_name) override {}
@@ -76,8 +86,9 @@ public:
 	virtual uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) const override { return 0; }
 	virtual uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) const override { return 0; }
 	virtual String get_captured_timestamp_name(uint32_t p_index) const override { return String(); }
-
-	/* MISC */
+	/// @}
+	/// @name MISC
+	/// @{
 
 	virtual void update_dirty_resources() override {}
 	virtual void set_debug_generate_wireframes(bool p_generate) override {}
@@ -95,8 +106,9 @@ public:
 	virtual String get_video_adapter_api_version() const override { return String(); }
 
 	virtual Size2i get_maximum_viewport_size() const override { return Size2i(); }
-	virtual uint32_t get_maximum_shader_varyings() const override { return 31; } // Fair assumption for everything except old OpenGL-only phones.
-	virtual uint64_t get_maximum_uniform_buffer_size() const override { return 65536; } // Fair assumption for all devices.
+	virtual uint32_t get_maximum_shader_varyings() const override { return 31; } ///< Fair assumption for everything except old OpenGL-only phones.
+	virtual uint64_t get_maximum_uniform_buffer_size() const override { return 65536; } ///< Fair assumption for all devices.
+	/// @}
 };
 
 } // namespace RendererDummy

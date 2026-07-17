@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file multimesh_instance_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "multimesh_instance_3d.h"
 
 #ifndef NAVIGATION_3D_DISABLED

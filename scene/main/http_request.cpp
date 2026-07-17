@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file http_request.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "http_request.h"
 
 #include "scene/main/timer.h"
@@ -668,6 +674,7 @@ HTTPRequest::HTTPRequest() {
 	tls_options = TLSOptions::client();
 	timer = memnew(Timer);
 	timer->set_one_shot(true);
+	timer->set_ignore_time_scale(true);
 	timer->connect("timeout", callable_mp(this, &HTTPRequest::_timeout));
 	add_child(timer);
 }

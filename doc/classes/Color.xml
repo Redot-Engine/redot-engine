@@ -98,6 +98,15 @@
 		</constructor>
 	</constructors>
 	<methods>
+		<method name="apply_intensity" qualifiers="const">
+			<return type="Color" />
+			<param index="0" name="intensity" type="float" />
+			<description>
+				Adjusts the color's intensity by multiplying the RGB components with a factor derived from the given intensity.
+				The factor is calculated as 2 raised to the power of the provided intensity value.
+				The adjusted RGB values are clamped to the range [code]0.0[/code] and [code]1.0[/code].
+			</description>
+		</method>
 		<method name="blend" qualifiers="const">
 			<return type="Color" />
 			<param index="0" name="over" type="Color" />

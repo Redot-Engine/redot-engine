@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file register_types.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "register_types.h"
 
 #include "image_compress_basisu.h"

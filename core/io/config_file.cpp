@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file config_file.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "config_file.h"
 #include "config_file.compat.inc"
 
@@ -277,6 +283,9 @@ Error ConfigFile::_parse(const String &p_path, VariantParser::Stream *p_stream, 
 	String assign;
 	Variant value;
 	VariantParser::Tag next_tag;
+	if (p_path.to_lower().ends_with("project.godot")) {
+		p_allow_objects = true;
+	}
 
 	int lines = 0;
 	String error_text;

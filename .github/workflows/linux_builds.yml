@@ -8,7 +8,7 @@ env:
     dev_mode=yes
     module_text_server_fb_enabled=yes
     "accesskit_sdk_path=${{ github.workspace }}/accesskit-c-0.17.0/"
-  GODOT_CPP_BRANCH: 4.4
+  GODOT_CPP_BRANCH: 4.5
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   ASAN_OPTIONS: color=always:print_suppressions=1:suppressions=${{ github.workspace }}/misc/error_suppressions/asan.txt
@@ -19,7 +19,7 @@ env:
 jobs:
   build-linux:
     # Stay one LTS before latest to increase portability of Linux artifacts.
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: ${{ matrix.name }}
     timeout-minutes: 120
     strategy:
@@ -36,8 +36,6 @@ jobs:
             proj-conv: true
             api-compat: true
             artifact: true
-            # Validate godot-cpp compatibility on one arbitrary editor build.
-            godot-cpp: true
             # Validate redot-cpp compatibility on one arbitrary editor build.
             redot-cpp: true
 
@@ -83,7 +81,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -126,7 +124,7 @@ jobs:
 
       - name: Setup older .NET SDK as baseline
         if: matrix.build-mono
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           # Targeting the oldest version we want to support to ensure it still builds.
           dotnet-version: 8.0.100
@@ -153,21 +151,13 @@ jobs:
           platform: linuxbsd
           target: ${{ matrix.target }}
 
-      - name: Compilation (godot-cpp)
-        uses: ./.github/actions/godot-cpp-build
-        if: matrix.godot-cpp
-        with:
-          bin: ${{ matrix.bin }}
-          scons-flags: target=template_debug dev_build=yes verbose=yes
-          godot-cpp-branch: ${{ env.GODOT_CPP_BRANCH }}
-
       - name: Compilation (redot-cpp)
         uses: ./.github/actions/redot-cpp-build
         if: matrix.redot-cpp
         with:
           bin: ${{ matrix.bin }}
           scons-flags: target=template_debug dev_build=yes verbose=yes
-          redot-cpp-branch: ${{ env.GODOT_CPP_BRANCH }}
+          redot-cpp-branch: "master"
 
       - name: Save Godot build cache
         uses: ./.github/actions/godot-cache-save

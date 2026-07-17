@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file shader_create_dialog.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/dialogs.h"

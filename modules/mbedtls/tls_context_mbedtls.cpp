@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file tls_context_mbedtls.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "tls_context_mbedtls.h"
 
 #include "core/config/project_settings.h"
@@ -126,7 +132,7 @@ Error TLSContextMbedTLS::init_server(int p_transport, Ref<TLSOptions> p_options,
 	certs = p_options->get_own_certificate();
 	ERR_FAIL_COND_V(pkey.is_null() || certs.is_null(), ERR_INVALID_PARAMETER);
 
-	Error err = _setup(MBEDTLS_SSL_IS_SERVER, p_transport, MBEDTLS_SSL_VERIFY_NONE); // TODO client auth.
+	Error err = _setup(MBEDTLS_SSL_IS_SERVER, p_transport, MBEDTLS_SSL_VERIFY_NONE); /// @todo Client auth.
 	ERR_FAIL_COND_V(err != OK, err);
 
 	// Locking key and certificate(s)

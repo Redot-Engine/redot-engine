@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file texture_loader_dds.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "texture_loader_dds.h"
 
 #include "dds_enums.h"

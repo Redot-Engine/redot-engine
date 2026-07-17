@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file replication_editor.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../scene_replication_config.h"
 
 #include "editor/plugins/editor_plugin.h"

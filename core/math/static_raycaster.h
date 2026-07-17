@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file static_raycaster.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/ref_counted.h"
 
 class StaticRaycaster : public RefCounted {
@@ -40,9 +46,9 @@ protected:
 	static StaticRaycaster *(*create_function)();
 
 public:
-	// Compatible with embree4 rays.
+	/// Compatible with embree4 rays.
 	struct alignas(16) Ray {
-		const static unsigned int INVALID_GEOMETRY_ID = ((unsigned int)-1); // from rtcore_common.h
+		const static unsigned int INVALID_GEOMETRY_ID = ((unsigned int)-1); ///< From rtcore_common.h
 
 		/*! Default construction does nothing. */
 		_FORCE_INLINE_ Ray() :

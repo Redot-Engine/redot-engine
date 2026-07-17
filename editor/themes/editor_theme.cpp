@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_theme.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_theme.h"
 
 #include "editor/editor_string_names.h"
@@ -37,9 +43,8 @@
 
 Vector<StringName> EditorTheme::editor_theme_types;
 
-// TODO: Refactor these and corresponding Theme methods to use the bool get_xxx(r_value) pattern internally.
+/// @todo Refactor these and corresponding Theme methods to use the bool get_xxx(r_value) pattern internally.
 
-// Keep in sync with Theme::get_color.
 Color EditorTheme::get_color(const StringName &p_name, const StringName &p_theme_type) const {
 	if (color_map.has(p_theme_type) && color_map[p_theme_type].has(p_name)) {
 		return color_map[p_theme_type][p_name];
@@ -51,7 +56,6 @@ Color EditorTheme::get_color(const StringName &p_name, const StringName &p_theme
 	}
 }
 
-// Keep in sync with Theme::get_constant.
 int EditorTheme::get_constant(const StringName &p_name, const StringName &p_theme_type) const {
 	if (constant_map.has(p_theme_type) && constant_map[p_theme_type].has(p_name)) {
 		return constant_map[p_theme_type][p_name];
@@ -63,7 +67,6 @@ int EditorTheme::get_constant(const StringName &p_name, const StringName &p_them
 	}
 }
 
-// Keep in sync with Theme::get_font.
 Ref<Font> EditorTheme::get_font(const StringName &p_name, const StringName &p_theme_type) const {
 	if (font_map.has(p_theme_type) && font_map[p_theme_type].has(p_name) && font_map[p_theme_type][p_name].is_valid()) {
 		return font_map[p_theme_type][p_name];
@@ -80,7 +83,6 @@ Ref<Font> EditorTheme::get_font(const StringName &p_name, const StringName &p_th
 	}
 }
 
-// Keep in sync with Theme::get_font_size.
 int EditorTheme::get_font_size(const StringName &p_name, const StringName &p_theme_type) const {
 	if (font_size_map.has(p_theme_type) && font_size_map[p_theme_type].has(p_name) && (font_size_map[p_theme_type][p_name] > 0)) {
 		return font_size_map[p_theme_type][p_name];
@@ -97,7 +99,6 @@ int EditorTheme::get_font_size(const StringName &p_name, const StringName &p_the
 	}
 }
 
-// Keep in sync with Theme::get_icon.
 Ref<Texture2D> EditorTheme::get_icon(const StringName &p_name, const StringName &p_theme_type) const {
 	if (icon_map.has(p_theme_type) && icon_map[p_theme_type].has(p_name) && icon_map[p_theme_type][p_name].is_valid()) {
 		return icon_map[p_theme_type][p_name];
@@ -109,7 +110,6 @@ Ref<Texture2D> EditorTheme::get_icon(const StringName &p_name, const StringName 
 	}
 }
 
-// Keep in sync with Theme::get_stylebox.
 Ref<StyleBox> EditorTheme::get_stylebox(const StringName &p_name, const StringName &p_theme_type) const {
 	if (style_map.has(p_theme_type) && style_map[p_theme_type].has(p_name) && style_map[p_theme_type][p_name].is_valid()) {
 		return style_map[p_theme_type][p_name];

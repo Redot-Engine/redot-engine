@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file tab_container.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/container.h"
 #include "scene/gui/popup.h"
 #include "scene/gui/tab_bar.h"
@@ -57,7 +63,7 @@ private:
 	bool theme_changing = false;
 	Vector<Control *> children_removing;
 	bool drag_to_rearrange_enabled = false;
-	// Set the default setup current tab to be an invalid index.
+	/// Set the default setup current tab to be an invalid index.
 	int setup_current_tab = -2;
 	bool updating_visibility = false;
 

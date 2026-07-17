@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file resource_saver_png.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "resource_saver_png.h"
 
 #include "core/io/file_access.h"

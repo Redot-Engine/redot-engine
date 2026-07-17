@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file file_info.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "file_info.h"
 
 void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort_option) {

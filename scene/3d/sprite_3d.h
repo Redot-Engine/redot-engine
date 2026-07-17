@@ -32,13 +32,19 @@
 
 #pragma once
 
+/**
+ * @file sprite_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/sprite_frames.h"
 
 class SpriteBase3D : public GeometryInstance3D {
 	GDCLASS(SpriteBase3D, GeometryInstance3D);
 
-	mutable Ref<TriangleMesh> triangle_mesh; //cached
+	mutable Ref<TriangleMesh> triangle_mesh; ///< cached
 
 public:
 	enum DrawFlags {
@@ -94,6 +100,7 @@ private:
 	float alpha_antialiasing_edge = 0.0f;
 	StandardMaterial3D::BillboardMode billboard_mode = StandardMaterial3D::BILLBOARD_DISABLED;
 	StandardMaterial3D::TextureFilter texture_filter = StandardMaterial3D::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
+	bool redraw_needed = false;
 	bool pending_update = false;
 	void _im_update();
 
@@ -118,6 +125,7 @@ protected:
 	uint32_t skin_stride = 0;
 	uint32_t mesh_surface_format = 0;
 
+	/// The 3D equivalent of CanvasItem.queue_redraw().
 	void _queue_redraw();
 
 public:

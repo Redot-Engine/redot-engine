@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file height_map_shape_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "height_map_shape_3d.h"
 
 #include "core/io/image.h"

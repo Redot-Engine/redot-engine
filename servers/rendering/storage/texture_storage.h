@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file texture_storage.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "servers/rendering_server.h"
 
 class RendererTextureStorage {
@@ -47,7 +53,8 @@ public:
 		return default_clear_color;
 	}
 
-	/* Canvas Texture API */
+	/// @name Canvas Texture API
+	/// @{
 
 	virtual RID canvas_texture_allocate() = 0;
 	virtual void canvas_texture_initialize(RID p_rid) = 0;
@@ -58,8 +65,9 @@ public:
 
 	virtual void canvas_texture_set_texture_filter(RID p_item, RS::CanvasItemTextureFilter p_filter) = 0;
 	virtual void canvas_texture_set_texture_repeat(RID p_item, RS::CanvasItemTextureRepeat p_repeat) = 0;
-
-	/* Texture API */
+	/// @}
+	/// @name Texture API
+	/// @{
 
 	virtual ~RendererTextureStorage() {}
 
@@ -79,7 +87,7 @@ public:
 	virtual void texture_external_update(RID p_proxy, int p_width, int p_height, uint64_t p_external_buffer) = 0;
 	virtual void texture_proxy_update(RID p_proxy, RID p_base) = 0;
 
-	//these two APIs can be used together or in combination with the others.
+	// These two APIs can be used together or in combination with the others.
 	virtual void texture_2d_placeholder_initialize(RID p_texture) = 0;
 	virtual void texture_2d_layered_placeholder_initialize(RID p_texture, RenderingServer::TextureLayeredType p_layered_type) = 0;
 	virtual void texture_3d_placeholder_initialize(RID p_texture) = 0;
@@ -109,8 +117,9 @@ public:
 	virtual void texture_rd_initialize(RID p_texture, const RID &p_rd_texture, const RS::TextureLayeredType p_layer_type = RS::TEXTURE_LAYERED_2D_ARRAY) = 0;
 	virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const = 0;
 	virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const = 0;
-
-	/* Decal API */
+	/// @}
+	/// @name Decal API
+	/// @{
 	virtual RID decal_allocate() = 0;
 	virtual void decal_initialize(RID p_rid) = 0;
 	virtual void decal_free(RID p_rid) = 0;
@@ -130,22 +139,24 @@ public:
 
 	virtual void texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) = 0;
 	virtual void texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp = false) = 0;
-
-	/* DECAL INSTANCE */
+	/// @}
+	/// @name DECAL INSTANCE
+	/// @{
 
 	virtual RID decal_instance_create(RID p_decal) = 0;
 	virtual void decal_instance_free(RID p_decal_instance) = 0;
 	virtual void decal_instance_set_transform(RID p_decal_instance, const Transform3D &p_transform) = 0;
 	virtual void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) = 0;
-
-	/* RENDER TARGET */
+	/// @}
+	/// @name RENDER TARGET
+	/// @{
 
 	virtual RID render_target_create() = 0;
 	virtual void render_target_free(RID p_rid) = 0;
 
-	virtual void render_target_set_position(RID p_render_target, int p_x, int p_y) = 0; // Q change input to const Point2i &p_position ?
+	virtual void render_target_set_position(RID p_render_target, int p_x, int p_y) = 0; ///< @todo Q change input to const Point2i &p_position ?
 	virtual Point2i render_target_get_position(RID p_render_target) const = 0;
-	virtual void render_target_set_size(RID p_render_target, int p_width, int p_height, uint32_t p_view_count) = 0; // Q change input to const Size2i &p_size ?
+	virtual void render_target_set_size(RID p_render_target, int p_width, int p_height, uint32_t p_view_count) = 0; ///< @todo Q change input to const Size2i &p_size ?
 	virtual Size2i render_target_get_size(RID p_render_target) const = 0;
 	virtual void render_target_set_transparent(RID p_render_target, bool p_is_transparent) = 0;
 	virtual bool render_target_get_transparent(RID p_render_target) const = 0;
@@ -196,4 +207,5 @@ public:
 	// Motion vectors
 	virtual void render_target_set_velocity_target_size(RID p_render_target, const Size2i &p_target_size) = 0;
 	virtual Size2i render_target_get_velocity_target_size(RID p_render_target) const = 0;
+	/// @}
 };

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_help.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_help.h"
 
 #include "core/config/project_settings.h"
@@ -71,7 +77,7 @@
 #define CONTRIBUTE_URL vformat("%s/contributing/documentation/updating_the_class_reference.html", REDOT_VERSION_DOCS_URL)
 
 #ifdef MODULE_MONO_ENABLED
-// Sync with the types mentioned in https://docs.redotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_differences.html
+/// Sync with the types mentioned in https://docs.redotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_differences.html
 const Vector<String> classes_with_csharp_differences = {
 	"@GlobalScope",
 	"String",
@@ -170,7 +176,7 @@ static void _add_qualifiers_to_rt(const String &p_qualifiers, RichTextLabel *p_r
 	}
 }
 
-// Removes unnecessary prefix from `p_class_specifier` when within the `p_edited_class` context.
+/// Removes unnecessary prefix from `p_class_specifier` when within the `p_edited_class` context.
 static String _contextualize_class_specifier(const String &p_class_specifier, const String &p_edited_class) {
 	// If this is a completely different context than the current class, then keep full path.
 	if (!p_class_specifier.begins_with(p_edited_class)) {
@@ -484,7 +490,8 @@ void EditorHelp::_add_type_icon(const String &p_type, int p_size, const String &
 	class_desc->add_image(icon, size.width, size.height);
 }
 
-// Macros for assigning the deprecated/experimental marks to class members in overview.
+/// @name Macros for assigning the deprecated/experimental marks to class members in overview.
+/// @{
 
 #define DEPRECATED_DOC_TAG                                                                   \
 	class_desc->push_font(theme_cache.doc_bold_font);                                        \
@@ -537,6 +544,7 @@ void EditorHelp::_add_type_icon(const String &p_type, int p_size, const String &
 	} else {                                                                                    \
 		_add_text(m_message);                                                                   \
 	}
+/// @}
 
 void EditorHelp::_add_method(const DocData::MethodDoc &p_method, bool p_overview, bool p_override) {
 	if (p_override) {
@@ -3053,6 +3061,8 @@ void EditorHelp::_load_doc_thread(void *p_udata) {
 	}
 
 	OS::get_singleton()->benchmark_end_measure("EditorHelp", vformat("Generate Documentation (Run %d)", doc_generation_count));
+
+	_worker_thread_done.set();
 }
 
 void EditorHelp::_gen_doc_thread(void *p_udata) {
@@ -3086,6 +3096,8 @@ void EditorHelp::_gen_doc_thread(void *p_udata) {
 	}
 
 	OS::get_singleton()->benchmark_end_measure("EditorHelp", vformat("Generate Documentation (Run %d)", doc_generation_count));
+
+	_worker_thread_done.set();
 }
 
 void EditorHelp::_gen_extensions_docs() {
@@ -3101,6 +3113,10 @@ static void _load_script_doc_cache(bool p_changes) {
 }
 
 void EditorHelp::load_script_doc_cache() {
+	if (_cleanup_in_progress.is_set()) {
+		return;
+	}
+
 	if (!ProjectSettings::get_singleton()->is_project_loaded()) {
 		print_verbose("Skipping loading script doc cache since no project is open.");
 		return;
@@ -3124,6 +3140,7 @@ void EditorHelp::load_script_doc_cache() {
 		return;
 	}
 
+	_worker_thread_done.set_to(false);
 	worker_thread.start(_load_script_doc_cache_thread, nullptr);
 }
 
@@ -3144,13 +3161,18 @@ void EditorHelp::_process_postponed_docs() {
 
 void EditorHelp::_load_script_doc_cache_thread(void *p_udata) {
 	ERR_FAIL_COND_MSG(!ProjectSettings::get_singleton()->is_project_loaded(), "Error: cannot load script doc cache without a project.");
+	_worker_thread_done.set();
+	return;
 	ERR_FAIL_COND_MSG(!ResourceLoader::exists(get_script_doc_cache_full_path()), "Error: cannot load script doc cache from inexistent file.");
+	_worker_thread_done.set();
+	return;
 
 	Ref<Resource> script_doc_cache_res = ResourceLoader::load(get_script_doc_cache_full_path(), "", ResourceFormatLoader::CACHE_MODE_IGNORE);
 	if (script_doc_cache_res.is_null()) {
 		print_verbose("Script doc cache is corrupted. Regenerating it instead.");
 		_delete_script_doc_cache();
 		callable_mp_static(EditorHelp::regenerate_script_doc_cache).call_deferred();
+		_worker_thread_done.set();
 		return;
 	}
 
@@ -3167,14 +3189,20 @@ void EditorHelp::_load_script_doc_cache_thread(void *p_udata) {
 
 	// Always delete the doc cache after successful load since most uses of editor will change a script, invalidating cache.
 	_delete_script_doc_cache();
+
+	_worker_thread_done.set();
 }
 
-// Helper method to deal with "sources_changed" signal having a parameter.
+/// Helper method to deal with "sources_changed" signal having a parameter.
 static void _regenerate_script_doc_cache(bool p_changes) {
 	EditorHelp::regenerate_script_doc_cache();
 }
 
 void EditorHelp::regenerate_script_doc_cache() {
+	if (_cleanup_in_progress.is_set()) {
+		return;
+	}
+
 	if (EditorFileSystem::get_singleton()->is_scanning()) {
 		// Wait until EditorFileSystem scanning is complete to use updated filesystem structure.
 		EditorFileSystem::get_singleton()->connect(SNAME("sources_changed"), callable_mp_static(_regenerate_script_doc_cache), CONNECT_ONE_SHOT);
@@ -3183,20 +3211,20 @@ void EditorHelp::regenerate_script_doc_cache() {
 
 	_wait_for_thread(worker_thread);
 	_wait_for_thread(loader_thread);
+	_loader_thread_done.set_to(false);
 	loader_thread.start(_regen_script_doc_thread, EditorFileSystem::get_singleton()->get_filesystem());
 }
 
-// Runs on worker_thread since it writes to DocData.
 void EditorHelp::_finish_regen_script_doc_thread(void *p_udata) {
 	loader_thread.wait_to_finish();
 	_process_postponed_docs();
 	_script_docs_loaded.set();
 
 	OS::get_singleton()->benchmark_end_measure("EditorHelp", "Generate Script Documentation");
+
+	_worker_thread_done.set();
 }
 
-// Runs on loader_thread since _reload_scripts_documentation calls ResourceLoader::load().
-// Avoids deadlocks of worker_thread needing main thread for load task dispatching, but main thread waiting on worker_thread.
 void EditorHelp::_regen_script_doc_thread(void *p_udata) {
 	OS::get_singleton()->benchmark_begin_measure("EditorHelp", "Generate Script Documentation");
 
@@ -3209,6 +3237,9 @@ void EditorHelp::_regen_script_doc_thread(void *p_udata) {
 	_docs_to_remove_by_path.clear();
 
 	_reload_scripts_documentation(dir);
+
+	_loader_thread_done.set();
+	_worker_thread_done.set_to(false); // worker_thread is about to start
 
 	// All ResourceLoader::load() calls are done, so we can no longer deadlock with main thread.
 	// Switch to back to worker_thread from loader_thread to resynchronize access to DocData.
@@ -3260,6 +3291,10 @@ void EditorHelp::save_script_doc_cache() {
 }
 
 void EditorHelp::generate_doc(bool p_use_cache, bool p_use_script_cache) {
+	if (_cleanup_in_progress.is_set()) {
+		return;
+	}
+
 	doc_generation_count++;
 	OS::get_singleton()->benchmark_begin_measure("EditorHelp", vformat("Generate Documentation (Run %d)", doc_generation_count));
 
@@ -3275,10 +3310,12 @@ void EditorHelp::generate_doc(bool p_use_cache, bool p_use_script_cache) {
 	}
 
 	if (p_use_cache && FileAccess::exists(get_cache_full_path())) {
+		_worker_thread_done.set_to(false);
 		worker_thread.start(_load_doc_thread, (void *)p_use_script_cache);
 	} else {
 		print_verbose("Regenerating editor help cache");
 		doc->generate();
+		_worker_thread_done.set_to(false);
 		worker_thread.start(_gen_doc_thread, (void *)p_use_script_cache);
 	}
 }
@@ -3317,6 +3354,12 @@ void EditorHelp::_notification(int p_what) {
 
 		case NOTIFICATION_THEME_CHANGED: {
 			if (is_inside_tree()) {
+				if (is_visible_in_tree()) {
+					_update_doc();
+				} else {
+					update_pending = true;
+				}
+
 				_class_desc_resized(true);
 			}
 			update_toggle_files_button();
@@ -3365,7 +3408,28 @@ void EditorHelp::update_doc() {
 }
 
 void EditorHelp::cleanup_doc() {
-	_wait_for_thread();
+	_cleanup_in_progress.set();
+
+	// loader_thread runs _regen_script_doc_thread which calls ResourceLoader::load().
+	// Flush the message queue so load tasks can dispatch to the main thread.
+	if (loader_thread.is_started()) {
+		while (!_loader_thread_done.is_set()) {
+			MessageQueue::get_singleton()->flush();
+			OS::get_singleton()->delay_usec(1000);
+		}
+		loader_thread.wait_to_finish();
+	}
+
+	// worker_thread runs _load_doc_thread, _gen_doc_thread, _load_script_doc_cache_thread,
+	// or _finish_regen_script_doc_thread. All may post deferred calls needing the main thread.
+	if (worker_thread.is_started()) {
+		while (!_worker_thread_done.is_set()) {
+			MessageQueue::get_singleton()->flush();
+			OS::get_singleton()->delay_usec(1000);
+		}
+		worker_thread.wait_to_finish();
+	}
+
 	memdelete(doc);
 	doc = nullptr;
 }
@@ -4623,7 +4687,7 @@ void EditorHelpBitTooltip::_notification(int p_what) {
 	}
 }
 
-Control *EditorHelpBitTooltip::show_tooltip(Control *p_target, const String &p_symbol, const String &p_prologue, bool p_use_class_prefix) {
+Control *EditorHelpBitTooltip::make_tooltip(Control *p_target, const String &p_symbol, const String &p_prologue, bool p_use_class_prefix) {
 	ERR_FAIL_NULL_V(p_target, _make_invisible_control());
 
 	// Show the custom tooltip only if it is not already visible.
@@ -5041,7 +5105,6 @@ void FindBar::_hide_bar() {
 	hide();
 }
 
-// Implemented in input(..) as the LineEdit consumes the Escape pressed key.
 void FindBar::input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(p_event.is_null());
 

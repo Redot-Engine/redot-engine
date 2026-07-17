@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file rasterizer_gles3.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "rasterizer_gles3.h"
 #include "storage/utilities.h"
 
@@ -79,8 +85,8 @@
 #endif
 
 #if !defined(IOS_ENABLED) && !defined(WEB_ENABLED)
-// We include EGL below to get debug callback on GLES2 platforms,
-// but EGL is not available on iOS or the web.
+/// We include EGL below to get debug callback on GLES2 platforms,
+/// but EGL is not available on iOS or the web.
 #define CAN_DEBUG
 #endif
 
@@ -245,10 +251,10 @@ RasterizerGLES3::RasterizerGLES3() {
 	bool glad_loaded = false;
 
 #ifdef EGL_ENABLED
-	// There should be a more flexible system for getting the GL pointer, as
-	// different DisplayServers can have different ways. We can just use the GLAD
-	// version global to see if it loaded for now though, otherwise we fall back to
-	// the generic loader below.
+	/// @todo There should be a more flexible system for getting the GL pointer, as
+	/// different DisplayServers can have different ways. We can just use the GLAD
+	/// version global to see if it loaded for now though, otherwise we fall back to
+	/// the generic loader below.
 #if defined(EGL_STATIC)
 	bool has_egl = true;
 #else
@@ -276,9 +282,9 @@ RasterizerGLES3::RasterizerGLES3() {
 		}
 	}
 
-	// FIXME this is an early return from a constructor.  Any other code using this instance will crash or the finalizer will crash, because none of
-	// the members of this instance are initialized, so this just makes debugging harder.  It should either crash here intentionally,
-	// or we need to actually test for this situation before constructing this.
+	/// @todo FIXME this is an early return from a constructor.  Any other code using this instance will crash or the finalizer will crash, because none of
+	/// the members of this instance are initialized, so this just makes debugging harder.  It should either crash here intentionally,
+	/// or we need to actually test for this situation before constructing this.
 	ERR_FAIL_COND_MSG(!glad_loaded, "Error initializing GLAD.");
 
 	if (gles_over_gl) {
@@ -412,7 +418,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServer::WindowID p_sc
 	}
 #endif
 
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 
 	if (p_first) {
 		if (p_blit.dst_rect.position != Vector2() || p_blit.dst_rect.size != rt->size) {
@@ -458,7 +464,6 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServer::WindowID p_sc
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-// is this p_screen useless in a multi window environment?
 void RasterizerGLES3::blit_render_targets_to_screen(DisplayServer::WindowID p_screen, const BlitToScreen *p_render_targets, int p_amount) {
 	for (int i = 0; i < p_amount; i++) {
 		_blit_render_target_to_screen(p_screen, p_render_targets[i], i == 0);
@@ -484,23 +489,13 @@ void RasterizerGLES3::set_boot_image(const Ref<Image> &p_image, const Color &p_c
 	texture_storage->texture_2d_initialize(texture, p_image);
 
 	Rect2 imgrect(0, 0, p_image->get_width(), p_image->get_height());
+	// Size2 win_size_f = Size2(win_size); // This is needed for the .floor() function below because Size2i does not have a floor() function (but Size2 does)
 	Rect2 screenrect;
-	if (p_scale) {
-		if (win_size.width > win_size.height) {
-			//scale horizontally
-			screenrect.size.y = win_size.height;
-			screenrect.size.x = imgrect.size.x * win_size.height / imgrect.size.y;
-			screenrect.position.x = (win_size.width - screenrect.size.x) / 2;
 
-		} else {
-			//scale vertically
-			screenrect.size.x = win_size.width;
-			screenrect.size.y = imgrect.size.y * win_size.width / imgrect.size.x;
-			screenrect.position.y = (win_size.height - screenrect.size.y) / 2;
-		}
+	if (p_scale) {
+		screenrect = OS::get_singleton()->calculate_boot_screen_rect(win_size, imgrect.size);
 	} else {
-		screenrect = imgrect;
-		screenrect.position += ((Size2(win_size.width, win_size.height) - screenrect.size) / 2.0).floor();
+		screenrect = DisplayServer::calculate_boot_image_rect(win_size, imgrect);
 	}
 
 #ifdef WINDOWS_ENABLED
@@ -524,6 +519,43 @@ void RasterizerGLES3::set_boot_image(const Ref<Image> &p_image, const Color &p_c
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	gl_end_frame(true);
+
+	// After the first commit, a tiling compositor (e.g. Hyprland via XWayland)
+	// may have sent a ConfigureNotify with the actual window size.
+	// Pump events and re-render if the size changed.
+	DisplayServer::get_singleton()->pump_resize_events();
+	Size2i new_win_size = DisplayServer::get_singleton()->window_get_size();
+
+	if (new_win_size != win_size && new_win_size.width > 0 && new_win_size.height > 0) {
+		win_size = new_win_size;
+		glViewport(0, 0, win_size.width, win_size.height);
+		glClearColor(p_color.r, p_color.g, p_color.b,
+				OS::get_singleton()->is_layered_allowed() ? p_color.a : 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		Rect2 screenrect2;
+		if (p_scale) {
+			screenrect2 = OS::get_singleton()->calculate_boot_screen_rect(win_size, imgrect.size);
+		} else {
+			screenrect2 = DisplayServer::calculate_boot_image_rect(win_size, imgrect);
+		}
+#ifdef WINDOWS_ENABLED
+		if (!screen_flipped_y)
+#endif
+		{
+			screenrect2.position.y = win_size.y - screenrect2.position.y;
+			screenrect2.size.y = -screenrect2.size.y;
+		}
+		screenrect2.position /= win_size;
+		screenrect2.size /= win_size;
+
+		GLES3::Texture *t2 = texture_storage->get_texture(texture);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, t2->tex_id);
+		copy_effects->copy_to_rect(screenrect2);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		gl_end_frame(true);
+	}
 
 	texture_storage->texture_free(texture);
 }

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file vehicle_body_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "vehicle_body_3d.h"
 
 #include "core/config/engine.h"
@@ -43,7 +49,7 @@ public:
 	Vector3 m_bJ;
 	Vector3 m_0MinvJt;
 	Vector3 m_1MinvJt;
-	//Optimization: can be stored in the w/last component of one of the vectors
+	/// Optimization: can be stored in the w/last component of one of the vectors
 	real_t m_Adiag = 0.0;
 
 	real_t getDiagonal() const { return m_Adiag; }
@@ -586,7 +592,6 @@ void VehicleBody3D::_update_suspension(PhysicsDirectBodyState3D *s) {
 	}
 }
 
-//bilateral constraint between two dynamic objects
 void VehicleBody3D::_resolve_single_bilateral(PhysicsDirectBodyState3D *s, const Vector3 &pos1,
 		PhysicsBody3D *body2, const Vector3 &pos2, const Vector3 &normal, real_t &impulse, const real_t p_rollInfluence) {
 	real_t normalLenSqr = normal.length_squared();
@@ -636,9 +641,9 @@ void VehicleBody3D::_resolve_single_bilateral(PhysicsDirectBodyState3D *s, const
 			b2invinertia,
 			b2invmass);
 
-	// FIXME: rel_vel assignment here is overwritten by the following assignment.
-	// What seems to be intended in the next assignment is: rel_vel = normal.dot(rel_vel);
-	// Investigate why.
+	/// @todo FIXME: rel_vel assignment here is overwritten by the following assignment.
+	/// What seems to be intended in the next assignment is: rel_vel = normal.dot(rel_vel);
+	/// Investigate why.
 	real_t rel_vel = jac.getRelativeVelocity(
 			s->get_linear_velocity(),
 			s->get_transform().basis.transposed().xform(s->get_angular_velocity()),
@@ -682,7 +687,7 @@ VehicleBody3D::btVehicleWheelContactPoint::btVehicleWheelContactPoint(PhysicsDir
 		denom0 = s->get_inverse_mass() + frictionDirectionWorld.dot(vec);
 	}
 
-	/* TODO: Why is this code unused?
+	/** @todo Why is this code unused?
 	if (body1) {
 		Vector3 r0 = frictionPosWorld - body1->get_global_transform().origin;
 		Vector3 c0 = (r0).cross(frictionDirectionWorld);
@@ -868,9 +873,8 @@ void VehicleBody3D::_update_friction(PhysicsDirectBodyState3D *s) {
 #endif
 				s->apply_impulse(sideImp, rel_pos);
 
-				//apply friction impulse on the ground
-				//todo
-				//groundObject->applyImpulse(-sideImp,rel_pos2);
+				/// @todo apply friction impulse on the ground
+				/// groundObject->applyImpulse(-sideImp,rel_pos2);
 			}
 		}
 	}
@@ -942,7 +946,7 @@ void VehicleBody3D::_body_state_changed(PhysicsDirectBodyState3D *p_state) {
 	for (int i = 0; i < wheels.size(); i++) {
 		_ray_cast(i, p_state);
 		if (!use_fti) {
-			// TODO: can this path also just use world space directly instead of inverse parent space?
+			/// @todo Can this path also just use world space directly instead of inverse parent space?
 			wheels[i]->set_transform(p_state->get_transform().inverse() * wheels[i]->m_worldTransform);
 		}
 	}

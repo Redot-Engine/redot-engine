@@ -13,6 +13,7 @@ stages:
     - /root/scripts/Fetch_Deps.sh "$PLATFORM"
     - mkdir  -p out/$PLATFORM/$ARCH/$TYPE
     - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS target=$TARGET
+    - rm -rf bin/obj
     - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE/
   artifacts:
     expire_in: 3 days
@@ -27,6 +28,7 @@ stages:
     - /root/scripts/Fetch_Deps.sh "$PLATFORM"
     - mkdir  -p out/templates
     - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS target=$TARGET
+    - rm -rf bin/obj
     - cp -r bin/* out/templates
 
 .build-release-template-mono:
@@ -39,6 +41,7 @@ stages:
     - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
     - mkdir  -p out/templates-mono
     - $SCONS platform=$PLATFORM arch=$ARCH $OPTIONS module_mono_enabled=yes target=$TARGET
+    - rm -rf bin/obj
     - cp -r bin/* out/templates-mono
 
 .Template-Linux:
@@ -123,7 +126,8 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
   variables:
     PLATFORM: "windows"
 
@@ -134,7 +138,8 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
   variables:
     PLATFORM: "windows"
 
@@ -145,7 +150,8 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
   script:
     - !reference [ .build-release-template, script ]
   after_script:
@@ -173,7 +179,8 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa"
+    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
+    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
   script:
     - !reference [ .build-release-template-mono, script ]
   after_script:
@@ -332,6 +339,7 @@ stages:
     - cp -r mono-glue/GodotSharp/GodotSharp/Generated modules/mono/glue/GodotSharp/GodotSharp/
     - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
     - ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=$PLATFORM
+    - rm -rf bin/obj
     - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE-mono/
   artifacts:
     public: false
@@ -355,26 +363,26 @@ create-tarball:
     - status_version=$(grep -E '^status_version\s*=' version.py | sed -E "s/.*=\s*([0-9]+).*/\1/")
     - echo "$major.$minor.$patch-$status.$status_version"
     - |
-       if [ "$status" == "stable" ]
-         then
-         if [ "$patch" == "0" ]
-           then
-           export VERSIONSTRING="${major}.${minor}-stable"
-           export VERSIONTXT="${major}.${minor}.stable"
-         else
-           export VERSIONSTRING="${major}.${minor}.${patch}-stable"
-           export VERSIONTXT="${major}.${minor}.${patch}.stable"
-         fi
+      if [ "$status" == "stable" ]
+        then
+        if [ "$patch" == "0" ]
+          then
+          export VERSIONSTRING="${major}.${minor}-stable"
+          export VERSIONTXT="${major}.${minor}.stable"
         else
-         if [ "$patch" == "0" ]
-         then
-           export VERSIONSTRING="${major}.${minor}-${status}.${status_version}"
-           export VERSIONTXT="${major}.${minor}.${status}.${status_version}"
-         else
-           export VERSIONSTRING="${major}.${minor}.${patch}-${status}.${status_version}"
-           export VERSIONTXT="${major}.${minor}.${patch}.${status}.${status_version}"
-         fi
-       fi
+          export VERSIONSTRING="${major}.${minor}.${patch}-stable"
+          export VERSIONTXT="${major}.${minor}.${patch}.stable"
+        fi
+       else
+        if [ "$patch" == "0" ]
+        then
+          export VERSIONSTRING="${major}.${minor}-${status}.${status_version}"
+          export VERSIONTXT="${major}.${minor}.${status}.${status_version}"
+        else
+          export VERSIONSTRING="${major}.${minor}.${patch}-${status}.${status_version}"
+          export VERSIONTXT="${major}.${minor}.${patch}.${status}.${status_version}"
+        fi
+      fi
     - echo $VERSIONSTRING
     - TARBALL_NAME="redot-${VERSIONSTRING}.tar.xz"
     - FOLDER_NAME="redot-${VERSIONSTRING}"
@@ -393,7 +401,7 @@ linux-editor-x64-mono:
   tags: [ docker ]
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-linux:latest
   rules:
-    - when: always
+    - if: $DO_RELEASE == "true"
   stage: build
   before_script:
     - export SCONS="scons -j$(nproc) verbose=no warnings=no progress=no"
@@ -430,6 +438,7 @@ linux-editor-x64-mono:
     - cp -r mono-glue/GodotSharp/GodotSharp/Generated modules/mono/glue/GodotSharp/GodotSharp/
     - cp -r mono-glue/GodotSharp/GodotSharpEditor/Generated modules/mono/glue/GodotSharp/GodotSharpEditor/
     - ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=$PLATFORM
+    - rm -rf bin/obj
     - cp -r bin/* out/$PLATFORM/$ARCH/$TYPE-mono/
   variables:
     OPTIONS: "production=yes"
@@ -1192,8 +1201,8 @@ sign-mac-templates:
         if [ "$_is_mono" -eq 1 ]; then _mono_prefix="-mono"; _mono_suffix=".mono";fi
 
 
-        cp out/templates${_mono_prefix}/redot.macos.template_release.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_release.universal${_mono_suffix}
-        cp out/templates${_mono_prefix}/redot.macos.template_debug.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_debug.universal${_mono_suffix}
+        cp out/templates${_mono_prefix}/redot.macos.template_release.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_release.universal
+        cp out/templates${_mono_prefix}/redot.macos.template_debug.universal${_mono_suffix} tmp/macos_template.app/Contents/MacOS/redot_macos_debug.universal
         chmod +x tmp/macos_template.app/Contents/MacOS/redot_macos*
 
 

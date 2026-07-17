@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file lightmap_gi_editor_plugin.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "lightmap_gi_editor_plugin.h"
 
 #include "editor/editor_node.h"
@@ -70,9 +76,9 @@ void LightmapGIEditorPlugin::_bake_select_file(const String &p_file) {
 
 			if (err == LightmapGI::BAKE_ERROR_OK) {
 				if (get_tree()->get_edited_scene_root() == lightmap) {
-					err = lightmap->bake(lightmap, p_file, bake_func_step);
+					err = lightmap->_bake(lightmap, p_file, bake_func_step);
 				} else {
-					err = lightmap->bake(lightmap->get_parent(), p_file, bake_func_step);
+					err = lightmap->_bake(lightmap->get_parent(), p_file, bake_func_step);
 				}
 			}
 		} else {
@@ -183,8 +189,8 @@ void LightmapGIEditorPlugin::_bind_methods() {
 LightmapGIEditorPlugin::LightmapGIEditorPlugin() {
 	bake = memnew(Button);
 	bake->set_theme_type_variation(SceneStringName(FlatButton));
-	// TODO: Rework this as a dedicated toolbar control so we can hook into theme changes and update it
-	// when the editor theme updates.
+	/// @todo Rework this as a dedicated toolbar control so we can hook into theme changes and update it
+	/// when the editor theme updates.
 	bake->set_button_icon(EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("Bake"), EditorStringName(EditorIcons)));
 	bake->set_text(TTR("Bake Lightmaps"));
 

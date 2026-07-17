@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_accessor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_accessor.h"
 #include "gltf_accessor.compat.inc"
 
@@ -156,7 +162,7 @@ int GLTFAccessor::get_type() const {
 }
 
 void GLTFAccessor::set_type(int p_accessor_type) {
-	accessor_type = (GLTFAccessorType)p_accessor_type; // TODO: Register enum
+	accessor_type = (GLTFAccessorType)p_accessor_type; /// @todo Register enum
 }
 
 Vector<double> GLTFAccessor::get_min() const {

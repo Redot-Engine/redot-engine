@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_folding.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_folding.h"
 
 #include "core/io/config_file.h"

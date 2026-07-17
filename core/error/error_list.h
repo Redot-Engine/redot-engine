@@ -32,7 +32,14 @@
 
 #pragma once
 
-/** Error List. Please never compare an error against FAILED
+/**
+ * @file error_list.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
+/**
+ * Error List. Please never compare an error against FAILED
  * Either do result != OK , or !result. This way, Error fail
  * values can be more detailed in the future.
  *
@@ -44,7 +51,6 @@
  * - Are bound with BIND_CORE_ENUM_CONSTANT() in core/core_constants.cpp
  * - Have a matching Android version in platform/android/java/lib/src/org/godotengine/godot/error/Error.kt
  */
-
 enum Error {
 	OK, // (0)
 	FAILED, ///< Generic fail error

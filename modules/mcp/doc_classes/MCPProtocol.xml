@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MCPProtocol" inherits="JSONRPC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		MCP JSON-RPC protocol handler: capability negotiation, tool listing, and dispatch.
+	</brief_description>
+	<description>
+		Implements the Model Context Protocol request layer on top of the JSONRPC class. Handles the [code]initialize[/code] handshake with version negotiation, the [code]notifications/initialized[/code] lifecycle event, [code]ping[/code], [code]tools/list[/code], and [code]tools/call[/code]. Tool execution is delegated to the internal MCPTools class. The operation phase is gated until the [code]initialized[/code] notification is received, per spec.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="is_initialized" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] after the client has sent the [code]notifications/initialized[/code] handshake message, marking the start of the operation phase.
+			</description>
+		</method>
+	</methods>
+</class>

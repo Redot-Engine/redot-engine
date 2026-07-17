@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file skeleton_ik_3d_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 
 class Button;

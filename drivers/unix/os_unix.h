@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file os_unix.h
+ *
+ * @brief UNIX only handles the core functions. Inheriting platforms under unix (eg. X11) should handle the rest
+ */
+
 #ifdef UNIX_ENABLED
 
 #include "core/os/os.h"
@@ -77,9 +83,6 @@ class OS_Unix : public OS {
 	bool _check_pid_is_running(const pid_t p_pid, int *r_status) const;
 
 protected:
-	// UNIX only handles the core functions.
-	// inheriting platforms under unix (eg. X11) should handle the rest
-
 	virtual void initialize_core();
 	virtual int unix_initialize_audio(int p_audio_driver);
 
@@ -140,8 +143,11 @@ public:
 
 	virtual void initialize_debugging() override;
 
+	virtual String get_real_path(const String &p_path) const override;
 	virtual String get_executable_path() const override;
 	virtual String get_user_data_dir(const String &p_user_dir) const override;
+
+	virtual String expand_path(const String &p_path) const override;
 };
 
 class UnixTerminalLogger : public StdLogger {

@@ -31,6 +31,7 @@
 /**************************************************************************/
 
 #include "wayland_thread.h"
+#include "core/string/print_string.h"
 
 #ifdef WAYLAND_ENABLED
 
@@ -744,7 +745,7 @@ void WaylandThread::_wl_registry_on_global_remove(void *data, struct wl_registry
 
 	if (name == registry->wp_viewporter_name) {
 		for (KeyValue<DisplayServer::WindowID, WindowState> &pair : registry->wayland_thread->windows) {
-			WindowState ws = pair.value;
+			WindowState &ws = pair.value;
 			if (registry->wp_viewporter) {
 				wp_viewporter_destroy(registry->wp_viewporter);
 				registry->wp_viewporter = nullptr;
@@ -782,7 +783,7 @@ void WaylandThread::_wl_registry_on_global_remove(void *data, struct wl_registry
 
 	if (name == registry->wp_fractional_scale_manager_name) {
 		for (KeyValue<DisplayServer::WindowID, WindowState> &pair : registry->wayland_thread->windows) {
-			WindowState ws = pair.value;
+			WindowState &ws = pair.value;
 
 			if (registry->wp_fractional_scale_manager) {
 				wp_fractional_scale_manager_v1_destroy(registry->wp_fractional_scale_manager);
@@ -1257,6 +1258,8 @@ void WaylandThread::_xdg_toplevel_on_configure(void *data, struct xdg_toplevel *
 		window_state_update_size(ws, width, height);
 	}
 
+	ws->initial_configure_done = true;
+
 	DEBUG_LOG_WAYLAND_THREAD(vformat("XDG toplevel on configure width %d height %d.", width, height));
 }
 
@@ -1437,6 +1440,8 @@ void WaylandThread::libdecor_frame_on_configure(struct libdecor_frame *frame, st
 
 	window_state_update_size(ws, width, height);
 
+	ws->initial_configure_done = true;
+
 	DEBUG_LOG_WAYLAND_THREAD(vformat("libdecor frame on configure rect %s", ws->rect));
 }
 
@@ -1552,6 +1557,16 @@ void WaylandThread::_wl_seat_on_capabilities(void *data, struct wl_seat *wl_seat
 			ss->xkb_context = nullptr;
 		}
 
+		if (ss->xkb_keymap) {
+			xkb_keymap_unref(ss->xkb_keymap);
+			ss->xkb_keymap = nullptr;
+		}
+
+		if (ss->xkb_state) {
+			xkb_state_unref(ss->xkb_state);
+			ss->xkb_state = nullptr;
+		}
+
 		if (ss->wl_keyboard) {
 			wl_keyboard_destroy(ss->wl_keyboard);
 			ss->wl_keyboard = nullptr;
@@ -1597,6 +1612,10 @@ void WaylandThread::_wl_pointer_on_enter(void *data, struct wl_pointer *wl_point
 	seat_state_update_cursor(ss);
 
 	DEBUG_LOG_WAYLAND_THREAD(vformat("Pointer entered window %d.", ws->id));
+
+	if (wl_pointer_get_version(wl_pointer) < WL_POINTER_FRAME_SINCE_VERSION) {
+		_wl_pointer_on_frame(data, wl_pointer);
+	}
 }
 
 void WaylandThread::_wl_pointer_on_leave(void *data, struct wl_pointer *wl_pointer, uint32_t serial, struct wl_surface *surface) {
@@ -1620,6 +1639,10 @@ void WaylandThread::_wl_pointer_on_leave(void *data, struct wl_pointer *wl_point
 	pd.pressed_button_mask.clear();
 
 	DEBUG_LOG_WAYLAND_THREAD(vformat("Pointer left window %d.", id));
+
+	if (wl_pointer_get_version(wl_pointer) < WL_POINTER_FRAME_SINCE_VERSION) {
+		_wl_pointer_on_frame(data, wl_pointer);
+	}
 }
 
 void WaylandThread::_wl_pointer_on_motion(void *data, struct wl_pointer *wl_pointer, uint32_t time, wl_fixed_t surface_x, wl_fixed_t surface_y) {
@@ -1632,6 +1655,10 @@ void WaylandThread::_wl_pointer_on_motion(void *data, struct wl_pointer *wl_poin
 	pd.position.y = wl_fixed_to_double(surface_y);
 
 	pd.motion_time = time;
+
+	if (wl_pointer_get_version(wl_pointer) < WL_POINTER_FRAME_SINCE_VERSION) {
+		_wl_pointer_on_frame(data, wl_pointer);
+	}
 }
 
 void WaylandThread::_wl_pointer_on_button(void *data, struct wl_pointer *wl_pointer, uint32_t serial, uint32_t time, uint32_t button, uint32_t state) {
@@ -1679,6 +1706,10 @@ void WaylandThread::_wl_pointer_on_button(void *data, struct wl_pointer *wl_poin
 
 	pd.button_time = time;
 	pd.button_serial = serial;
+
+	if (wl_pointer_get_version(wl_pointer) < WL_POINTER_FRAME_SINCE_VERSION) {
+		_wl_pointer_on_frame(data, wl_pointer);
+	}
 }
 
 void WaylandThread::_wl_pointer_on_axis(void *data, struct wl_pointer *wl_pointer, uint32_t time, uint32_t axis, wl_fixed_t value) {
@@ -1698,6 +1729,10 @@ void WaylandThread::_wl_pointer_on_axis(void *data, struct wl_pointer *wl_pointe
 	}
 
 	pd.button_time = time;
+
+	if (wl_pointer_get_version(wl_pointer) < WL_POINTER_FRAME_SINCE_VERSION) {
+		_wl_pointer_on_frame(data, wl_pointer);
+	}
 }
 
 void WaylandThread::_wl_pointer_on_frame(void *data, struct wl_pointer *wl_pointer) {
@@ -2146,7 +2181,7 @@ void WaylandThread::_wl_keyboard_on_repeat_info(void *data, struct wl_keyboard *
 	SeatState *ss = (SeatState *)data;
 	ERR_FAIL_NULL(ss);
 
-	ss->repeat_key_delay_msec = 1000 / rate;
+	ss->repeat_key_delay_msec = rate ? 1000 / rate : 0;
 	ss->repeat_start_delay_msec = delay;
 }
 
@@ -3063,6 +3098,10 @@ struct wl_display *WaylandThread::get_wl_display() const {
 	return wl_display;
 }
 
+void WaylandThread::roundtrip() {
+	wl_display_roundtrip(wl_display);
+}
+
 // NOTE: Stuff like libdecor can (and will) register foreign proxies which
 // aren't formatted as we like. This method is needed to detect whether a proxy
 // has our tag. Also, be careful! The proxy has to be manually tagged or it
@@ -3254,7 +3293,7 @@ void WaylandThread::window_state_update_size(WindowState *p_ws, int p_width, int
 			DEBUG_LOG_WAYLAND_THREAD(vformat("Resizing the window from %s to %s (buffer scale x%d).", p_ws->rect.size, scaled_size, p_ws->buffer_scale));
 		}
 
-		// FIXME: Actually resize the hint instead of centering it.
+		/// @todo FIXME: Actually resize the hint instead of centering it.
 		p_ws->wayland_thread->pointer_set_hint(scaled_size / 2);
 
 		Ref<WindowRectMessage> rect_msg;
@@ -3559,7 +3598,15 @@ void WaylandThread::window_create(DisplayServer::WindowID p_window_id, int p_wid
 	wl_surface_commit(ws.wl_surface);
 
 	// Wait for the surface to be configured before continuing.
-	wl_display_roundtrip(wl_display);
+	// On some compositors (e.g., Hyprland under load), the configure event may
+	// not arrive within a single roundtrip. Loop until it does.
+	const int MAX_CONFIGURE_ROUNDTRIPS = 10;
+	for (int i = 0; i < MAX_CONFIGURE_ROUNDTRIPS && !ws.initial_configure_done; i++) {
+		wl_display_roundtrip(wl_display);
+	}
+	if (!ws.initial_configure_done) {
+		WARN_PRINT("WaylandThread: Surface was not configured after multiple roundtrips. Window may not appear.");
+	}
 
 	window_state_update_size(&ws, ws.rect.size.width, ws.rect.size.height);
 }
@@ -4833,7 +4880,8 @@ bool WaylandThread::wait_frame_suspend_ms(int p_timeout) {
 			return true;
 		}
 
-		remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;
+		// remaining_ms -= OS::get_singleton()->get_ticks_msec() - begin_ms;
+		remaining_ms = p_timeout - (int)(OS::get_singleton()->get_ticks_msec() - begin_ms);
 	}
 
 	DEBUG_LOG_WAYLAND_THREAD("Frame timeout.");

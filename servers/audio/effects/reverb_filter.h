@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file reverb_filter.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 class Reverb {
 public:
 	enum {
@@ -54,8 +60,8 @@ private:
 		int size = 0;
 		float *buffer = nullptr;
 		float feedback = 0;
-		float damp = 0; //lowpass
-		float damp_h = 0; //history
+		float damp = 0; ///< lowpass
+		float damp_h = 0; ///< history
 		int pos = 0;
 		int extra_spread_frames = 0;
 
@@ -102,8 +108,8 @@ public:
 	void set_damp(float p_damp);
 	void set_wet(float p_wet);
 	void set_dry(float p_dry);
-	void set_predelay(float p_predelay); // in ms
-	void set_predelay_feedback(float p_predelay_fb); // in ms
+	void set_predelay(float p_predelay); ///< in ms
+	void set_predelay_feedback(float p_predelay_fb); ///< in ms
 	void set_highpass(float p_frq);
 	void set_mix_rate(float p_mix_rate);
 	void set_extra_spread(float p_spread);

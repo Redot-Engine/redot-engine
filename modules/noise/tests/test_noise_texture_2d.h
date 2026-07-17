@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file test_noise_texture_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../noise_texture_2d.h"
 
 #include "tests/test_macros.h"

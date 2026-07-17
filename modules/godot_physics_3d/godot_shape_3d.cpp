@@ -30,29 +30,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file godot_shape_3d.cpp
+ *
+ * @brief GodotHeightMapShape3D is based on Bullet btHeightfieldTerrainShape.
+ *
+ * @details Bullet Continuous Collision Detection and Physics Library
+ * @copyright Copyright (c) 2003-2009 Erwin Coumans  http://bulletphysics.org
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the use of this software.
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it freely,
+ * subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ */
+
 #include "godot_shape_3d.h"
 
 #include "core/io/image.h"
 #include "core/math/convex_hull.h"
 #include "core/math/geometry_3d.h"
 #include "core/templates/sort_array.h"
-
-// GodotHeightMapShape3D is based on Bullet btHeightfieldTerrainShape.
-
-/*
-Bullet Continuous Collision Detection and Physics Library
-Copyright (c) 2003-2009 Erwin Coumans  http://bulletphysics.org
-
-This software is provided 'as-is', without any express or implied warranty.
-In no event will the authors be held liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it freely,
-subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-*/
 
 const double edge_support_threshold = 0.99999998;
 const double edge_support_threshold_lower = Math::sqrt(1.0 - edge_support_threshold * edge_support_threshold);

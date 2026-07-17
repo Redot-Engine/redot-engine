@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file display_server.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "display_server.h"
 #include "display_server.compat.inc"
 
@@ -571,6 +577,15 @@ DisplayServer::ScreenOrientation DisplayServer::screen_get_orientation(int p_scr
 
 float DisplayServer::screen_get_scale(int p_screen) const {
 	return 1.0f;
+}
+
+/// Compute a floor-centered, scaled image rect for a window (used by both rasterizers).
+Rect2 DisplayServer::calculate_boot_image_rect(const Size2 &p_window_size, const Rect2 &p_imgrect) {
+	float screen_scale = DisplayServer::get_singleton()->screen_get_scale();
+	Rect2 screenrect = p_imgrect;
+	screenrect.size *= screen_scale; // convert image rect to physical pixels - necessary for Wayland - should return 1.0 elsewhere
+	screenrect.position += ((p_window_size - screenrect.size) / 2.0).floor();
+	return screenrect;
 }
 
 bool DisplayServer::is_touchscreen_available() const {

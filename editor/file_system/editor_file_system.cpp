@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_file_system.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_file_system.h"
 
 #include "core/config/project_settings.h"
@@ -53,7 +59,7 @@ EditorFileSystem *EditorFileSystem::singleton = nullptr;
 int EditorFileSystem::nb_files_total = 0;
 EditorFileSystem::ScannedDirectory *EditorFileSystem::first_scan_root_dir = nullptr;
 
-//the name is the version, to keep compatibility with different versions of Godot
+/// The name is the version, to keep compatibility with different versions of Godot
 #define CACHE_FILE_NAME "filesystem_cache10"
 
 int EditorFileSystemDirectory::find_file_index(const String &p_file) const {
@@ -1724,8 +1730,9 @@ void EditorFileSystem::_notification(int p_what) {
 		case NOTIFICATION_EXIT_TREE: {
 			Thread &active_thread = thread.is_started() ? thread : thread_sources;
 			if (use_threads && active_thread.is_started()) {
+				const uint64_t TIMEOUT_USEC = 1000;
 				while (scanning) {
-					OS::get_singleton()->delay_usec(1000);
+					OS::get_singleton()->delay_usec(TIMEOUT_USEC);
 				}
 				active_thread.wait_to_finish();
 				WARN_PRINT("Scan thread aborted...");
@@ -1744,10 +1751,11 @@ void EditorFileSystem::_notification(int p_what) {
 
 		case NOTIFICATION_PROCESS: {
 			if (use_threads) {
-				/** This hack exists because of the EditorProgress nature
-				 *  of processing events recursively. This needs to be rewritten
-				 *  at some point entirely, but in the meantime the following
-				 *  hack prevents deadlock on import.
+				/**
+				 * @todo This hack exists because of the EditorProgress nature
+				 * of processing events recursively. This needs to be rewritten
+				 * at some point entirely, but in the meantime the following
+				 * hack prevents deadlock on import.
 				 */
 
 				static bool prevent_recursive_process_hack = false;
@@ -1858,7 +1866,7 @@ void EditorFileSystem::_save_filesystem_cache(EditorFileSystemDirectory *p_dir, 
 }
 
 bool EditorFileSystem::_find_file(const String &p_file, EditorFileSystemDirectory **r_d, int &r_file_pos) const {
-	//todo make faster
+	/// @todo Make faster
 
 	if (!filesystem || scanning) {
 		return false;
@@ -1866,7 +1874,7 @@ bool EditorFileSystem::_find_file(const String &p_file, EditorFileSystemDirector
 
 	String f = ProjectSettings::get_singleton()->localize_path(p_file);
 
-	// Note: Only checks if base directory is case sensitive.
+	/// @note Only checks if base directory is case sensitive.
 	Ref<DirAccess> dir = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	bool fs_case_sensitive = dir->is_case_sensitive("res://");
 
@@ -2796,6 +2804,7 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 
 	ResourceUID::ID uid = ResourceUID::INVALID_ID;
 	Variant generator_parameters;
+	String group_file;
 	if (p_generator_parameters) {
 		generator_parameters = *p_generator_parameters;
 	}
@@ -2823,6 +2832,10 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 				if (cf->has_section_key("remap", "uid")) {
 					String uidt = cf->get_value("remap", "uid");
 					uid = ResourceUID::get_singleton()->text_to_id(uidt);
+				}
+
+				if (cf->has_section_key("remap", "group_file")) {
+					group_file = cf->get_value("remap", "group_file");
 				}
 
 				if (!p_generator_parameters) {
@@ -2920,6 +2933,9 @@ Error EditorFileSystem::_reimport_file(const String &p_file, const HashMap<Strin
 		}
 
 		f->store_line("uid=\"" + ResourceUID::get_singleton()->id_to_text(uid) + "\""); // Store in readable format.
+		if (!group_file.is_empty()) {
+			f->store_line("group_file=\"" + group_file + "\"");
+		}
 
 		if (err == OK) {
 			if (importer->get_save_extension().is_empty()) {
@@ -3088,7 +3104,7 @@ Error EditorFileSystem::_copy_file(const String &p_from, const String &p_to) {
 		}
 
 		// Roll a new uid for this copied .import file to avoid conflict.
-		ResourceUID::ID res_uid = ResourceUID::get_singleton()->create_id();
+		ResourceUID::ID res_uid = ResourceUID::get_singleton()->create_id_for_path(p_to);
 
 		// Save the new .import file
 		Ref<ConfigFile> cfg;
@@ -3273,7 +3289,12 @@ void EditorFileSystem::reimport_files(const Vector<String> &p_files) {
 	// Emit the resource_reimporting signal for the single file before the actual importation.
 	emit_signal(SNAME("resources_reimporting"), reloads);
 
-#ifdef THREADS_ENABLED
+#ifdef WEB_ENABLED
+	// On web, busy-wait loops on the main thread block the JavaScript event loop,
+	// causing the browser tab to appear frozen. Disable threaded imports entirely.
+	// See GH-112072 for details.
+	bool use_multiple_threads = false;
+#elif defined(THREADS_ENABLED)
 	bool use_multiple_threads = GLOBAL_GET("editor/import/use_multiple_threads");
 #else
 	bool use_multiple_threads = false;
@@ -3444,7 +3465,7 @@ bool EditorFileSystem::_should_skip_directory(const String &p_path) {
 
 	if (FileAccess::exists(p_path.path_join("project.godot"))) {
 		// Skip if another project inside this.
-		if (EditorFileSystem::get_singleton()->first_scan) {
+		if (EditorFileSystem::get_singleton() == nullptr || EditorFileSystem::get_singleton()->first_scan) {
 			WARN_PRINT_ONCE(vformat("Detected another project.godot at %s. The folder will be ignored.", p_path));
 		}
 		return true;
@@ -3563,7 +3584,6 @@ Error EditorFileSystem::copy_file(const String &p_from, const String &p_to) {
 }
 
 Error EditorFileSystem::copy_directory(const String &p_from, const String &p_to) {
-	// Recursively copy directories and build a map of files to copy.
 	HashMap<String, String> files;
 	bool success = _copy_directory(p_from, p_to, &files);
 
@@ -3742,7 +3762,9 @@ void EditorFileSystem::remove_import_format_support_query(Ref<EditorFileSystemIm
 }
 
 EditorFileSystem::EditorFileSystem() {
-#ifdef THREADS_ENABLED
+#if defined(THREADS_ENABLED) && !defined(WEB_ENABLED)
+	// On web, threaded scanning blocks the browser's event loop, causing freezes.
+	// See GH-112072 for details.
 	use_threads = true;
 #endif
 

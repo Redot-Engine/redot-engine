@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file renderer_scene_occlusion_cull.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/projection.h"
 #include "core/templates/local_vector.h"
 #include "servers/rendering_server.h"

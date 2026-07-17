@@ -32,13 +32,19 @@
 
 #pragma once
 
+/**
+ * @file triangle2.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/vector2.h"
 
 struct Triangle2 {
 	Vector2 vertex[3];
 
 	real_t get_area() const {
-		return Math::sqrt((vertex[0] - vertex[1]).cross(vertex[0] - vertex[2])) * 0.5f;
+		return Math::abs((vertex[0] - vertex[1]).cross(vertex[0] - vertex[2])) * 0.5f;
 	}
 
 	Vector2 get_random_point_inside() const;

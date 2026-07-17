@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file collision_polygon_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "collision_polygon_2d.h"
 
 #include "core/math/geometry_2d.h"
@@ -58,19 +64,21 @@ void CollisionPolygon2D::_build_polygon() {
 		}
 
 	} else {
-		if (polygon.size() < 2) {
+		// Cache the size value so MSVC 2026+ does not complain about the later mod operation
+		auto polySize = polygon.size();
+		if (polySize < 2) {
 			return;
 		}
 
 		Ref<ConcavePolygonShape2D> concave = memnew(ConcavePolygonShape2D);
 
 		Vector<Vector2> segments;
-		segments.resize(polygon.size() * 2);
+		segments.resize(polySize * 2);
 		Vector2 *w = segments.ptrw();
 
-		for (int i = 0; i < polygon.size(); i++) {
+		for (int i = 0; i < polySize; i++) {
 			w[(i << 1) + 0] = polygon[i];
-			w[(i << 1) + 1] = polygon[(i + 1) % polygon.size()];
+			w[(i << 1) + 1] = polygon[(i + 1) % polySize];
 		}
 
 		concave->set_segments(segments);

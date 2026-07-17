@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file gdextension.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/extension/gdextension_interface.h"
 #include "core/extension/gdextension_loader.h"
 #include "core/io/config_file.h"
@@ -69,6 +75,7 @@ class GDExtension : public Resource {
 
 	struct ClassCreationDeprecatedInfo {
 #ifndef DISABLE_DEPRECATED
+		bool legacy_unexposed_class = false;
 		GDExtensionClassNotification notification_func = nullptr;
 		GDExtensionClassFreePropertyList free_property_list_func = nullptr;
 		GDExtensionClassCreateInstance create_instance_func = nullptr;
@@ -113,7 +120,7 @@ class GDExtension : public Resource {
 
 	void _clear_extension(Extension *p_extension);
 
-	// Only called by GDExtensionManager during the reload process.
+	/// Only called by GDExtensionManager during the reload process.
 	void prepare_reload();
 	void finish_reload();
 	void clear_instance_bindings();
@@ -131,7 +138,7 @@ protected:
 public:
 	HashMap<String, String> class_icon_paths;
 
-	virtual bool editor_can_reload_from_file() override { return false; } // Reloading is handled in a special way.
+	virtual bool editor_can_reload_from_file() override { return false; } ///< Reloading is handled in a special way.
 
 	static String get_extension_list_config_file();
 

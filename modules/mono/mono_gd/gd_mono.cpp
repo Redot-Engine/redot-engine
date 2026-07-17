@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gd_mono.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gd_mono.h"
 
 #include "../csharp_script.h"

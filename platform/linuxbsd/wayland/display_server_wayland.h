@@ -76,10 +76,10 @@ class DisplayServerWayland : public DisplayServer {
 
 		WindowID parent_id = INVALID_WINDOW_ID;
 
-		// For popups.
+		/// For popups.
 		WindowID root_id = INVALID_WINDOW_ID;
 
-		// For toplevels.
+		/// For toplevels.
 		List<WindowID> popup_stack;
 
 		Rect2i rect;
@@ -94,7 +94,7 @@ class DisplayServerWayland : public DisplayServer {
 		struct wl_egl_window *wl_egl_window = nullptr;
 #endif
 
-		// Flags whether we have allocated a buffer through the video drivers.
+		/// Flags whether we have allocated a buffer through the video drivers.
 		bool visible = false;
 
 		DisplayServer::VSyncMode vsync_mode = VSYNC_ENABLED;
@@ -119,9 +119,9 @@ class DisplayServerWayland : public DisplayServer {
 	};
 
 	enum class SuspendState {
-		NONE, // Unsuspended.
-		TIMEOUT, // Legacy fallback.
-		CAPABILITY, // New "suspended" wm_capability flag.
+		NONE, ///< Unsuspended.
+		TIMEOUT, ///< Legacy fallback.
+		CAPABILITY, ///< New "suspended" wm_capability flag.
 	};
 
 	CursorShape cursor_shape = CURSOR_ARROW;
@@ -141,10 +141,10 @@ class DisplayServerWayland : public DisplayServer {
 	Context context;
 	bool swap_cancel_ok = false;
 
-	// NOTE: These are the based on WINDOW_FLAG_POPUP, which does NOT imply what it
-	// seems. It's particularly confusing for our usecase, but just know that these
-	// are the "take all input thx" windows while the `popup_stack` variable keeps
-	// track of all the generic floating window concept.
+	/// @note These are the based on WINDOW_FLAG_POPUP, which does NOT imply what it
+	/// seems. It's particularly confusing for our usecase, but just know that these
+	/// are the "take all input thx" windows while the `popup_stack` variable keeps
+	/// track of all the generic floating window concept.
 	List<WindowID> popup_menu_list;
 	BitField<MouseButtonMask> last_mouse_monitor_mask = MouseButtonMask::NONE;
 

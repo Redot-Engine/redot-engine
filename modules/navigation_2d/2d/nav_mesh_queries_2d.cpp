@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file nav_mesh_queries_2d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "nav_mesh_queries_2d.h"
 
 #include "../nav_base_2d.h"
@@ -42,7 +48,7 @@
 
 using namespace Nav2D;
 
-#define THREE_POINTS_CROSS_PRODUCT(m_a, m_b, m_c) (((m_c) - (m_a)).cross((m_b) - (m_a)))
+#define THREE_POINTS_CROSS_PRODUCT(m_a, m_b, m_c) (-((m_c) - (m_a)).cross((m_b) - (m_a)))
 
 bool NavMeshQueries2D::emit_callback(const Callable &p_callback) {
 	ERR_FAIL_COND_V(!p_callback.is_valid(), false);
@@ -894,12 +900,12 @@ ClosestPointQueryResult NavMeshQueries2D::map_iteration_get_closest_point_info(c
 	ClosestPointQueryResult result;
 	real_t closest_point_distance_squared = FLT_MAX;
 
-	// TODO: Check for further 2D improvements.
+	/// @todo Check for further 2D improvements.
 
 	const LocalVector<Ref<NavRegionIteration2D>> &regions = p_map_iteration.region_iterations;
 	for (const Ref<NavRegionIteration2D> &region : regions) {
 		for (const Polygon &polygon : region->get_navmesh_polygons()) {
-			real_t cross = (polygon.vertices[1] - polygon.vertices[0]).cross(polygon.vertices[2] - polygon.vertices[0]);
+			real_t cross = -(polygon.vertices[1] - polygon.vertices[0]).cross(polygon.vertices[2] - polygon.vertices[0]);
 			Vector2 closest_on_polygon;
 			real_t closest = FLT_MAX;
 			bool inside = true;
@@ -907,7 +913,7 @@ ClosestPointQueryResult NavMeshQueries2D::map_iteration_get_closest_point_info(c
 			for (uint32_t point_id = 0; point_id < polygon.vertices.size(); ++point_id) {
 				Vector2 edge = polygon.vertices[point_id] - previous;
 				Vector2 to_point = p_point - previous;
-				real_t edge_to_point_cross = edge.cross(to_point);
+				real_t edge_to_point_cross = -edge.cross(to_point);
 				bool clockwise = (edge_to_point_cross * cross) > 0;
 				// If we are not clockwise, the point will never be inside the polygon and so the closest point will be on an edge.
 				if (!clockwise) {
@@ -1028,10 +1034,10 @@ ClosestPointQueryResult NavMeshQueries2D::polygons_get_closest_point_info(const 
 	ClosestPointQueryResult result;
 	real_t closest_point_distance_squared = FLT_MAX;
 
-	// TODO: Check for further 2D improvements.
+	/// @todo Check for further 2D improvements.
 
 	for (const Polygon &polygon : p_polygons) {
-		real_t cross = (polygon.vertices[1] - polygon.vertices[0]).cross(polygon.vertices[2] - polygon.vertices[0]);
+		real_t cross = -(polygon.vertices[1] - polygon.vertices[0]).cross(polygon.vertices[2] - polygon.vertices[0]);
 		Vector2 closest_on_polygon;
 		real_t closest = FLT_MAX;
 		bool inside = true;
@@ -1039,7 +1045,7 @@ ClosestPointQueryResult NavMeshQueries2D::polygons_get_closest_point_info(const 
 		for (uint32_t point_id = 0; point_id < polygon.vertices.size(); ++point_id) {
 			Vector2 edge = polygon.vertices[point_id] - previous;
 			Vector2 to_point = p_point - previous;
-			real_t edge_to_point_cross = edge.cross(to_point);
+			real_t edge_to_point_cross = -edge.cross(to_point);
 			bool clockwise = (edge_to_point_cross * cross) > 0;
 			// If we are not clockwise, the point will never be inside the polygon and so the closest point will be on an edge.
 			if (!clockwise) {

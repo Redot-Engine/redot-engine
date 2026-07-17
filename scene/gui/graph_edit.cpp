@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file graph_edit.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "graph_edit.h"
 #include "graph_edit.compat.inc"
 

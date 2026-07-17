@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "core/math/math_funcs.h"
 #include "tests/test_macros.h"
 
 namespace TestMath {
@@ -652,6 +653,50 @@ TEST_CASE_TEMPLATE("[Math] sigmoid_affine_approx", T, float, double) {
 	CHECK(Math::sigmoid_affine_approx((T)2.0, (T)2.0, (T)1.0) == doctest::Approx((T)2.6667));
 	CHECK(Math::sigmoid_affine_approx((T)-1.0, (T)3.0, (T)0.5) == doctest::Approx((T)1.4));
 	CHECK(Math::sigmoid_affine_approx((T)1.0, (T)2.0, (T)2.5) == doctest::Approx((T)3.9));
+}
+
+TEST_CASE_TEMPLATE("[Math] monotonic_cubic_interpolate", T, float, double) {
+	CHECK(Math::monotonic_cubic_interpolate((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)0.0) == doctest::Approx((T)0.2));
+	CHECK(Math::monotonic_cubic_interpolate((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)0.25) == doctest::Approx((T)0.33125));
+	CHECK(Math::monotonic_cubic_interpolate((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)0.5) == doctest::Approx((T)0.5));
+	CHECK(Math::monotonic_cubic_interpolate((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)0.75) == doctest::Approx((T)0.66875));
+	CHECK(Math::monotonic_cubic_interpolate((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)1.0) == doctest::Approx((T)0.8));
+
+	CHECK(Math::monotonic_cubic_interpolate((T)20.2, (T)30.1, (T)-100.0, (T)32.0, (T)-50.0) == doctest::Approx((T)-1639477.1));
+	CHECK(Math::monotonic_cubic_interpolate((T)20.2, (T)30.1, (T)-100.0, (T)32.0, (T)-5.0) == doctest::Approx((T)-2488.86));
+	CHECK(Math::monotonic_cubic_interpolate((T)20.2, (T)30.1, (T)-100.0, (T)32.0, (T)0.0) == doctest::Approx((T)20.2));
+	CHECK(Math::monotonic_cubic_interpolate((T)20.2, (T)30.1, (T)-100.0, (T)32.0, (T)1.0) == doctest::Approx((T)30.1));
+	CHECK(Math::monotonic_cubic_interpolate((T)20.2, (T)30.1, (T)-100.0, (T)32.0, (T)4.0) == doctest::Approx((T)421.8));
+}
+
+TEST_CASE_TEMPLATE("[Math] monotonic_cubic_interpolate_angle", T, float, double) {
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.0) == doctest::Approx((T)Math::PI * (1.0 / 6.0)));
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.25) == doctest::Approx((T)0.973566));
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.5) == doctest::Approx((T)Math::PI / 2.0));
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.75) == doctest::Approx((T)2.16803));
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)1.0) == doctest::Approx((T)Math::PI * (5.0 / 6.0)));
+
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)0.0, (T)0.0, (T)(Math::PI / 2.0), (T)(Math::PI / 2.0), (T)0.0) == doctest::Approx((T)0.0));
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)0.0, (T)0.0, (T)(Math::PI / 2.0), (T)(Math::PI / 2.0), (T)0.25) == doctest::Approx((T)0.0));
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)0.0, (T)0.0, (T)(Math::PI / 2.0), (T)(Math::PI / 2.0), (T)0.5) == doctest::Approx((T)0.0));
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)0.0, (T)0.0, (T)(Math::PI / 2.0), (T)(Math::PI / 2.0), (T)0.75) == doctest::Approx((T)0.0));
+	CHECK(Math::monotonic_cubic_interpolate_angle((T)0.0, (T)0.0, (T)(Math::PI / 2.0), (T)(Math::PI / 2.0), (T)1.0) == doctest::Approx((T)0.0));
+}
+
+TEST_CASE_TEMPLATE("[Math] monotonic_cubic_interpolate_in_time", T, float, double) {
+	CHECK(Math::monotonic_cubic_interpolate_in_time((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)0.0, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.2));
+	CHECK(Math::monotonic_cubic_interpolate_in_time((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)0.25, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.279687));
+	CHECK(Math::monotonic_cubic_interpolate_in_time((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)0.5, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.4625));
+	CHECK(Math::monotonic_cubic_interpolate_in_time((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)0.75, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.664062));
+	CHECK(Math::monotonic_cubic_interpolate_in_time((T)0.2, (T)0.8, (T)0.0, (T)1.0, (T)1.0, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.8));
+}
+
+TEST_CASE_TEMPLATE("[Math] monotonic_cubic_interpolate_angle_in_time", T, float, double) {
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.0, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)(Math::PI * (1.0 / 6.0))));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.25, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)0.811578));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.5, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)1.46608));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)0.75, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)2.17293));
+	CHECK(Math::monotonic_cubic_interpolate_angle_in_time((T)(Math::PI * (1.0 / 6.0)), (T)(Math::PI * (5.0 / 6.0)), (T)0.0, (T)Math::PI, (T)1.0, (T)0.5, (T)0.0, (T)1.0) == doctest::Approx((T)Math::PI * (5.0 / 6.0)));
 }
 
 } // namespace TestMath

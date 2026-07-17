@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_body_modifier_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_body_modifier_3d.h"
 
 #include "scene/3d/skeleton_3d.h"
@@ -68,6 +74,10 @@ StringName XRBodyModifier3D::get_body_tracker() const {
 
 void XRBodyModifier3D::set_body_update(BitField<BodyUpdate> p_body_update) {
 	body_update = p_body_update;
+
+	if (is_inside_tree()) {
+		_get_joint_data();
+	}
 }
 
 BitField<XRBodyModifier3D::BodyUpdate> XRBodyModifier3D::get_body_update() const {

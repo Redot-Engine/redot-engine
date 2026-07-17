@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file nav_mesh_generator_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef CLIPPER2_ENABLED
 
 #include "core/object/class_db.h"

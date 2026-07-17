@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file callable.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/object/object_id.h"
 #include "core/string/string_name.h"
 
@@ -39,14 +45,12 @@ class Object;
 class Variant;
 class CallableCustom;
 
-// This is an abstraction of things that can be called.
-// It is used for signals and other cases where efficient calling of functions
-// is required. It is designed for the standard case (object and method)
-// but can be optimized or customized.
-
-// Enforce 16 bytes with `alignas` to avoid arch-specific alignment issues on x86 vs armv7.
-
+/// This is an abstraction of things that can be called.
+/// It is used for signals and other cases where efficient calling of functions
+/// is required. It is designed for the standard case (object and method)
+/// but can be optimized or customized.
 class Callable {
+	// Enforce 16 bytes with `alignas` to avoid arch-specific alignment issues on x86 vs armv7.
 	alignas(8) StringName method;
 	union {
 		uint64_t object = 0;
@@ -58,9 +62,9 @@ public:
 		enum Error {
 			CALL_OK,
 			CALL_ERROR_INVALID_METHOD,
-			CALL_ERROR_INVALID_ARGUMENT, // expected is variant type
-			CALL_ERROR_TOO_MANY_ARGUMENTS, // expected is number of arguments
-			CALL_ERROR_TOO_FEW_ARGUMENTS, // expected is number of arguments
+			CALL_ERROR_INVALID_ARGUMENT, ///< Expected is variant type
+			CALL_ERROR_TOO_MANY_ARGUMENTS, ///< Expected is number of arguments
+			CALL_ERROR_TOO_FEW_ARGUMENTS, ///< Expected is number of arguments
 			CALL_ERROR_INSTANCE_IS_NULL,
 			CALL_ERROR_METHOD_NOT_CONST,
 		};
@@ -111,13 +115,13 @@ public:
 	CallableCustom *get_custom() const;
 	int get_argument_count(bool *r_is_valid = nullptr) const;
 	int get_bound_arguments_count() const;
-	void get_bound_arguments_ref(Vector<Variant> &r_arguments) const; // Internal engine use, the exposed one is below.
+	void get_bound_arguments_ref(Vector<Variant> &r_arguments) const; ///< Internal engine use, the exposed one is below.
 	Array get_bound_arguments() const;
 	int get_unbound_arguments_count() const;
 
 	uint32_t hash() const;
 
-	const Callable *get_base_comparator() const; //used for bind/unbind to do less precise comparisons (ignoring binds) in signal connect/disconnect
+	const Callable *get_base_comparator() const; ///< Used for bind/unbind to do less precise comparisons (ignoring binds) in signal connect/disconnect
 
 	bool operator==(const Callable &p_callable) const;
 	bool operator!=(const Callable &p_callable) const;
@@ -137,7 +141,7 @@ public:
 	~Callable();
 };
 
-// Zero-constructing Callable initializes method and object to 0 (and thus empty).
+/// Zero-constructing Callable initializes method and object to 0 (and thus empty).
 template <>
 struct is_zero_constructible<Callable> : std::true_type {};
 
@@ -170,13 +174,12 @@ public:
 	virtual ~CallableCustom() {}
 };
 
-// This is just a proxy object to object signals, its only
-// allocated on demand by/for scripting languages so it can
-// be put inside a Variant, but it is not
-// used by the engine itself.
-
-// Enforce 16 bytes with `alignas` to avoid arch-specific alignment issues on x86 vs armv7.
+/// This is just a proxy object to object signals, its only
+/// allocated on demand by/for scripting languages so it can
+/// be put inside a Variant, but it is not
+/// used by the engine itself.
 class Signal {
+	// Enforce 16 bytes with `alignas` to avoid arch-specific alignment issues on x86 vs armv7.
 	alignas(8) StringName name;
 	ObjectID object;
 
@@ -206,7 +209,7 @@ public:
 	Signal() {}
 };
 
-// Zero-constructing Signal initializes name and object to 0 (and thus empty).
+/// Zero-constructing Signal initializes name and object to 0 (and thus empty).
 template <>
 struct is_zero_constructible<Signal> : std::true_type {};
 

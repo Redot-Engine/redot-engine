@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file undo_redo.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "undo_redo.h"
 
 #include "core/io/resource.h"

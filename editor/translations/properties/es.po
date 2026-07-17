@@ -120,7 +120,7 @@ msgstr ""
 "Project-Id-Version: Godot Engine properties\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2025-08-26 18:03+0000\n"
+"PO-Revision-Date: 2025-12-04 15:00+0000\n"
 "Last-Translator: Javier <xavier.ocampos@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/godot-engine/"
 "godot-properties/es/>\n"
@@ -129,7 +129,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 msgid "Application"
 msgstr "Aplicación"
@@ -141,7 +141,7 @@ msgid "Name"
 msgstr "Nombre"
 
 msgid "Name Localized"
-msgstr "Nombre Localizado"
+msgstr "Nombre localizado"
 
 msgid "Description"
 msgstr "Descripción"
@@ -528,10 +528,10 @@ msgid "Pointing"
 msgstr "Puntero"
 
 msgid "Enable Long Press as Right Click"
-msgstr "Habilitar Pulsación Prolongada como Clic Derecho"
+msgstr "Activar Pulsación Larga como Clic Derecho"
 
 msgid "Enable Pan and Scale Gestures"
-msgstr "Habilitar Gestos de Desplazamiento y Escalado"
+msgstr "Activar Gestos de Paneo y Escala"
 
 msgid "Rotary Input Scroll Axis"
 msgstr "Eje Desplazamiento Entrada Rotatoria"
@@ -584,6 +584,12 @@ msgstr "Bakear Usando Múltiples Hilos"
 msgid "Baking Use High Priority Threads"
 msgstr "Bakear Usando Alta Prioridad de Hilos"
 
+msgid "NavMesh Edge Merge Errors"
+msgstr "Errores de Fusión de Bordes de NavMesh"
+
+msgid "NavMesh Cell Size Mismatch"
+msgstr "Tamaño de Celda de NavMesh Incompatible"
+
 msgid "Low Processor Usage Mode"
 msgstr "Modo de Bajo Uso del Procesador"
 
@@ -621,10 +627,10 @@ msgid "Use Accumulated Input"
 msgstr "Usar entrada acumulada"
 
 msgid "Emulate Mouse From Touch"
-msgstr "Emular Mouse con el Toque"
+msgstr "Emular Ratón con Toque"
 
 msgid "Emulate Touch From Mouse"
-msgstr "Emular Toque Desde El Mouse"
+msgstr "Emular Toque con Ratón"
 
 msgid "Compatibility"
 msgstr "Compatibilidad"
@@ -972,7 +978,7 @@ msgid "Easing"
 msgstr "Suavizar"
 
 msgid "Asset Library"
-msgstr "Biblioteca de Recursos"
+msgstr "Librería de Assets"
 
 msgid "Available URLs"
 msgstr "URLs Disponibles"
@@ -2467,7 +2473,7 @@ msgid "Word Wrap"
 msgstr "Ajuste de Palabras"
 
 msgid "Autowrap Mode"
-msgstr "Modo de Ajuste Automático de Línea"
+msgstr "Modo de Ajuste Automático"
 
 msgid "Whitespace"
 msgstr "Espacio en blanco"
@@ -2506,7 +2512,7 @@ msgid "Stay in Script Editor on Node Selected"
 msgstr "Permanecer en el Editor de Script al Seleccionar un Nodo"
 
 msgid "Open Script When Connecting Signal to Existing Method"
-msgstr "Abrir Script cuando se Conecte Señal a Método Existente"
+msgstr "Abrir Script al Conectar Señal a un Método Existente"
 
 msgid "Use Default Word Separators"
 msgstr "Uso de Separadores de Palabras Predeterminado"
@@ -2593,7 +2599,7 @@ msgid "External"
 msgstr "Externo"
 
 msgid "Exec Path"
-msgstr "Ruta de Ejecución"
+msgstr "Ruta del Ejecutable"
 
 msgid "Exec Flags"
 msgstr "Indicadores de Ejecución"
@@ -2626,7 +2632,7 @@ msgid "Add Type Hints"
 msgstr "Añadir Sugerencias de Tipo"
 
 msgid "Add String Name Literals"
-msgstr "Agregar Literales de Nombre de Cadena"
+msgstr "Agregar Literales de Nombre de String"
 
 msgid "Add Node Path Literals"
 msgstr "Agregar Literal NodePath"
@@ -4606,7 +4612,7 @@ msgid "Interaction Profile Path"
 msgstr "Interacción con la Ruta del Perfil"
 
 msgid "Runtime Paths"
-msgstr "Rutas de Ejecución"
+msgstr "Rutas en Tiempo de Ejecución"
 
 msgid "Action Set"
 msgstr "Conjunto de Acciones"
@@ -4741,7 +4747,7 @@ msgid "Names"
 msgstr "Nombres"
 
 msgid "Strings"
-msgstr "Cadenas"
+msgstr "Strings"
 
 msgid "Discover Multicast If"
 msgstr "Descubrir Multicast si"
@@ -4880,6 +4886,9 @@ msgstr "Directorio de Construcción de Gradle"
 
 msgid "Android Source Template"
 msgstr "Plantilla Fuente de Android"
+
+msgid "Compress Native Libraries"
+msgstr "Comprimir Bibliotecas Nativas"
 
 msgid "Export Format"
 msgstr "Formato de Exportación"
@@ -6289,7 +6298,7 @@ msgid "Linear"
 msgstr "Lineal"
 
 msgid "Damp Mode"
-msgstr "Modo de amortiguamiento"
+msgstr "Modo de amortiguación"
 
 msgid "Damp"
 msgstr "Humedad"
@@ -12313,7 +12322,7 @@ msgid "Shaders"
 msgstr "Shaders"
 
 msgid "Shader Language"
-msgstr "Lenguaje de Shader"
+msgstr "Lenguaje de shaders"
 
 msgid "Treat Warnings as Errors"
 msgstr "Tratar las Advertencias como Errores"

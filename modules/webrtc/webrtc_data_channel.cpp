@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file webrtc_data_channel.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webrtc_data_channel.h"
 
 #include "core/config/project_settings.h"

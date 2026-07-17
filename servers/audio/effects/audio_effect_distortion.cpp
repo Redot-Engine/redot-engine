@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file audio_effect_distortion.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "audio_effect_distortion.h"
 #include "core/math/math_funcs.h"
 #include "servers/audio_server.h"

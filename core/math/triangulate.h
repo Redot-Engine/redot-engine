@@ -32,24 +32,26 @@
 
 #pragma once
 
+/**
+ * @file triangulate.h
+ *
+ * https://www.flipcode.com/archives/Efficient_Polygon_Triangulation.shtml
+ */
+
 #include "core/math/vector2.h"
 #include "core/templates/vector.h"
 
-/*
-https://www.flipcode.com/archives/Efficient_Polygon_Triangulation.shtml
-*/
-
 class Triangulate {
 public:
-	// triangulate a contour/polygon, places results in STL vector
-	// as series of triangles.
+	/// Triangulate a contour/polygon, places results in STL vector
+	/// as series of triangles.
 	static bool triangulate(const Vector<Vector2> &contour, Vector<int> &result);
 
-	// compute area of a contour/polygon
+	/// compute area of a contour/polygon
 	static real_t get_area(const Vector<Vector2> &contour);
 
-	// decide if point Px/Py is inside triangle defined by
-	// (Ax,Ay) (Bx,By) (Cx,Cy)
+	/// Decides if point, P (Px/Py), is inside triangle defined by
+	/// A, B, C - (Ax,Ay) (Bx,By) (Cx,Cy)
 	static bool is_inside_triangle(real_t Ax, real_t Ay,
 			real_t Bx, real_t By,
 			real_t Cx, real_t Cy,

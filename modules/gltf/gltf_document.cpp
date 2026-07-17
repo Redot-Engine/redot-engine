@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gltf_document.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gltf_document.h"
 
 #include "extensions/gltf_document_extension_convert_importer_mesh.h"
@@ -73,7 +79,7 @@
 #include "modules/gridmap/grid_map.h"
 #endif
 
-// FIXME: Hardcoded to avoid editor dependency.
+/// @todo FIXME: Hardcoded to avoid editor dependency.
 #define GLTF_IMPORT_GENERATE_TANGENT_ARRAYS 8
 #define GLTF_IMPORT_USE_NAMED_SKIN_BINDS 16
 #define GLTF_IMPORT_DISCARD_MESHES_AND_MATERIALS 32
@@ -1206,7 +1212,7 @@ Error GLTFDocument::_encode_accessor_into_buffer_view(Ref<GLTFState> p_state, co
 	print_verbose("glTF: encoding accessor offset " + itos(offset) + " view offset: " + itos(bv->byte_offset) + " total buffer len: " + itos(gltf_buffer.size()) + " view len " + itos(bv->byte_length));
 
 	const int64_t buffer_end = (stride * (p_count - 1)) + component_size;
-	// TODO define bv->byte_stride
+	// / @todo Define bv->byte_stride
 	bv->byte_offset = gltf_buffer.size();
 	if (p_for_vertex_indices) {
 		bv->indices = true;
@@ -1413,7 +1419,7 @@ Error GLTFDocument::_encode_accessor_into_buffer_view(Ref<GLTFState> p_state, co
 					if (skip_every && j > 0 && (j % skip_every) == 0) {
 						dst_i += skip_bytes;
 					}
-					// FIXME: This can result in precision loss because int64_t can store some values that double can't.
+					/// @todo FIXME: This can result in precision loss because int64_t can store some values that double can't.
 					double d = *p_src;
 					encoded_data.write[dst_i] = d;
 					p_src++;
@@ -1435,7 +1441,7 @@ Error GLTFDocument::_encode_accessor_into_buffer_view(Ref<GLTFState> p_state, co
 					if (skip_every && j > 0 && (j % skip_every) == 0) {
 						dst_i += skip_bytes;
 					}
-					// FIXME: This can result in precision loss because int64_t can store some values that double can't.
+					/// @todo FIXME: This can result in precision loss because int64_t can store some values that double can't.
 					double d = *p_src;
 					encoded_data.write[dst_i] = d;
 					p_src++;
@@ -1800,8 +1806,6 @@ Vector<float> GLTFDocument::_decode_accessor_as_floats(Ref<GLTFState> p_state, c
 }
 
 void GLTFDocument::_round_min_max_components(Vector<double> &r_type_min, Vector<double> &r_type_max) {
-	// 3.6.2.5: For floating-point components, JSON-stored minimum and maximum values represent single precision
-	// floats and SHOULD be rounded to single precision before usage to avoid any potential boundary mismatches.
 	for (int32_t type_i = 0; type_i < r_type_min.size(); type_i++) {
 		r_type_min.write[type_i] = (double)(float)r_type_min[type_i];
 		r_type_max.write[type_i] = (double)(float)r_type_max[type_i];
@@ -2560,8 +2564,8 @@ Vector<Variant> GLTFDocument::_decode_accessor_as_variant(Ref<GLTFState> p_state
 						v = Vector4(attribs[i * component_count], attribs[i * component_count + 1], attribs[i * component_count + 2], attribs[i * component_count + 3]);
 					} break;
 				}
-				// Evil hack that relies on the structure of Variant, but it's the
-				// only way to accomplish this without a ton of code duplication.
+				/// @todo Evil hack that relies on the structure of Variant, but it's the
+				/// only way to accomplish this without a ton of code duplication.
 				*(Variant::Type *)&v = p_variant_type;
 				ret.write[i] = v;
 			} break;
@@ -2585,8 +2589,8 @@ Vector<Variant> GLTFDocument::_decode_accessor_as_variant(Ref<GLTFState> p_state
 						v = Vector4i((int32_t)attribs[i * component_count], (int32_t)attribs[i * component_count + 1], (int32_t)attribs[i * component_count + 2], (int32_t)attribs[i * component_count + 3]);
 					} break;
 				}
-				// Evil hack that relies on the structure of Variant, but it's the
-				// only way to accomplish this without a ton of code duplication.
+				/// @todo Evil hack that relies on the structure of Variant, but it's the
+				/// only way to accomplish this without a ton of code duplication.
 				*(Variant::Type *)&v = p_variant_type;
 				ret.write[i] = v;
 			} break;
@@ -3322,7 +3326,7 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> p_state) {
 					Mesh::PRIMITIVE_TRIANGLES, // 4 TRIANGLES
 					Mesh::PRIMITIVE_TRIANGLE_STRIP, // 5 TRIANGLE_STRIP
 					Mesh::PRIMITIVE_TRIANGLES, // 6 TRIANGLE_FAN fan not supported, should be converted
-					// TODO: Line loop and triangle fan are not supported and need to be converted to lines and triangles.
+					/// @todo Line loop and triangle fan are not supported and need to be converted to lines and triangles.
 				};
 
 				primitive = primitives2[mode];
@@ -6598,7 +6602,6 @@ void GLTFDocument::_generate_scene_node_compat_4pt4(Ref<GLTFState> p_state, cons
 	}
 }
 
-// Deprecated code used when naming_version is 0 or 1 (Godot 4.0 to 4.4).
 void GLTFDocument::_generate_skeleton_bone_node_compat_4pt4(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index, Node *p_scene_parent, Node *p_scene_root) {
 	Ref<GLTFNode> gltf_node = p_state->nodes[p_node_index];
 
@@ -8937,7 +8940,7 @@ Error GLTFDocument::append_from_scene(Node *p_node, Ref<GLTFState> p_state, uint
 Error GLTFDocument::append_from_buffer(PackedByteArray p_bytes, String p_base_path, Ref<GLTFState> p_state, uint32_t p_flags) {
 	Ref<GLTFState> state = p_state;
 	ERR_FAIL_COND_V(state.is_null(), FAILED);
-	// TODO Add missing texture and missing .bin file paths to r_missing_deps 2021-09-10 fire
+	/// @todo Add missing texture and missing .bin file paths to r_missing_deps 2021-09-10 fire
 	Error err = FAILED;
 	state->use_named_skin_binds = p_flags & GLTF_IMPORT_USE_NAMED_SKIN_BINDS;
 	state->discard_meshes_and_materials = p_flags & GLTF_IMPORT_DISCARD_MESHES_AND_MATERIALS;
@@ -8960,7 +8963,7 @@ Error GLTFDocument::append_from_buffer(PackedByteArray p_bytes, String p_base_pa
 
 Error GLTFDocument::append_from_file(String p_path, Ref<GLTFState> p_state, uint32_t p_flags, String p_base_path) {
 	Ref<GLTFState> state = p_state;
-	// TODO Add missing texture and missing .bin file paths to r_missing_deps 2021-09-10 fire
+	/// @todo Add missing texture and missing .bin file paths to r_missing_deps 2021-09-10 fire
 	if (state == Ref<GLTFState>()) {
 		state.instantiate();
 	}

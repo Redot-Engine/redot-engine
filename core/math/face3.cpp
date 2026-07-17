@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file face3.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "face3.h"
 
 #include "core/math/geometry_3d.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file audio_driver_pulseaudio.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef PULSEAUDIO_ENABLED
 
 #include "core/os/mutex.h"

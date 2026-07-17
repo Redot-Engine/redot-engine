@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file menu_button.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/gui/button.h"
 #include "scene/gui/popup_menu.h"
 #include "scene/property_list_helper.h"

@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file scene_shader_forward_clustered.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "../storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/pipeline_hash_map_rd.h"
 #include "servers/rendering/renderer_rd/shaders/forward_clustered/scene_forward_clustered.glsl.gen.h"
@@ -45,14 +51,14 @@ private:
 
 public:
 	enum ShaderGroup {
-		SHADER_GROUP_BASE, // Always compiled at the beginning.
+		SHADER_GROUP_BASE, ///< Always compiled at the beginning.
 		SHADER_GROUP_ADVANCED,
 		SHADER_GROUP_MULTIVIEW,
 		SHADER_GROUP_ADVANCED_MULTIVIEW,
 	};
 
-	// Not an enum because these values are constants that are processed as numbers
-	// to arrive at a unique version for a particular shader.
+	/// Not an enum because these values are constants that are processed as numbers
+	/// to arrive at a unique version for a particular shader.
 	struct ShaderVersion {
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS = 0;
 		constexpr static uint16_t SHADER_VERSION_DEPTH_PASS_DP = 1;
@@ -90,8 +96,8 @@ public:
 	};
 
 	enum PipelineColorPassFlags {
-		PIPELINE_COLOR_PASS_FLAG_TRANSPARENT = 1 << 0, // Can't combine with SEPARATE_SPECULAR.
-		PIPELINE_COLOR_PASS_FLAG_SEPARATE_SPECULAR = 1 << 1, // Can't combine with TRANSPARENT.
+		PIPELINE_COLOR_PASS_FLAG_TRANSPARENT = 1 << 0, ///< Can't combine with SEPARATE_SPECULAR.
+		PIPELINE_COLOR_PASS_FLAG_SEPARATE_SPECULAR = 1 << 1, ///< Can't combine with TRANSPARENT.
 		PIPELINE_COLOR_PASS_FLAG_LIGHTMAP = 1 << 2,
 		PIPELINE_COLOR_PASS_FLAG_MULTIVIEW = 1 << 3,
 		PIPELINE_COLOR_PASS_FLAG_MOTION_VECTORS = 1 << 4,
@@ -184,7 +190,7 @@ public:
 			STENCIL_COMPARE_NOT_EQUAL,
 			STENCIL_COMPARE_GREATER_OR_EQUAL,
 			STENCIL_COMPARE_ALWAYS,
-			STENCIL_COMPARE_MAX // Not an actual operator, just the amount of operators.
+			STENCIL_COMPARE_MAX ///< Not an actual operator, just the amount of operators.
 		};
 
 		struct PipelineKey {

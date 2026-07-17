@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file gdscript_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "gdscript.h"
 
 #include "gdscript_analyzer.h"
@@ -1060,7 +1066,7 @@ static void _list_available_types(bool p_inherit_only, GDScriptParser::Completio
 		}
 	}
 
-	// TODO: Unify with _find_identifiers_in_class.
+	/// @todo Unify with _find_identifiers_in_class.
 	if (p_context.current_class) {
 		if (!p_inherit_only && p_context.current_class->base_type.is_set()) {
 			// Native enums from base class
@@ -1072,7 +1078,7 @@ static void _list_available_types(bool p_inherit_only, GDScriptParser::Completio
 			}
 		}
 		// Check current class for potential types.
-		// TODO: Also check classes the current class inherits from.
+		/// @todo Also check classes the current class inherits from.
 		const GDScriptParser::ClassNode *current = p_context.current_class;
 		int location_offset = 0;
 		while (current) {
@@ -1272,7 +1278,7 @@ static void _find_identifiers_in_base(const GDScriptCompletionIdentifier &p_base
 				Ref<Script> scr = base_type.script_type;
 				if (scr.is_valid()) {
 					if (p_types_only) {
-						// TODO: Need to implement Script::get_script_enum_list and retrieve the enum list from a script.
+						/// @todo Need to implement Script::get_script_enum_list and retrieve the enum list from a script.
 					} else if (!p_only_functions) {
 						if (!base_type.is_meta_type) {
 							List<PropertyInfo> members;
@@ -1769,8 +1775,8 @@ static bool _is_expression_named_identifier(const GDScriptParser::ExpressionNode
 	return false;
 }
 
-// Creates a map of exemplary results for some functions that return a structured dictionary.
-// Setting this example as value allows autocompletion to suggest the specific keys in some cases.
+/// Creates a map of exemplary results for some functions that return a structured dictionary.
+/// Setting this example as value allows autocompletion to suggest the specific keys in some cases.
 static HashMap<String, Dictionary> make_structure_samples() {
 	HashMap<String, Dictionary> res;
 	const Array arr;
@@ -2382,16 +2388,16 @@ static bool _guess_identifier_type(GDScriptParser::CompletionContext &p_context,
 					}
 				} break;
 				default:
-					// TODO: Check sub blocks (control flow statements) as they might also reassign stuff.
+					/// @todo Check sub blocks (control flow statements) as they might also reassign stuff.
 					break;
 			}
 		}
 
 		if (suite->parent_if && suite->parent_if->condition && suite->parent_if->condition->type == GDScriptParser::Node::TYPE_TEST) {
-			// Operator `is` used, check if identifier is in there! this helps resolve in blocks that are (if (identifier is value)): which are very common..
-			// Super dirty hack, but very useful.
-			// Credit: Zylann.
-			// TODO: this could be hacked to detect AND-ed conditions too...
+			/// Operator `is` used, check if identifier is in there! this helps resolve in blocks that are (if (identifier is value)): which are very common..
+			/// @todo Super dirty hack, but very useful.
+			/// Credit: Zylann.
+			/// This could be hacked to detect AND-ed conditions too...
 			const GDScriptParser::TypeTestNode *type_test = static_cast<const GDScriptParser::TypeTestNode *>(suite->parent_if->condition);
 			if (type_test->operand && type_test->test_type && type_test->operand->type == GDScriptParser::Node::IDENTIFIER && static_cast<const GDScriptParser::IdentifierNode *>(type_test->operand)->name == p_identifier->name && static_cast<const GDScriptParser::IdentifierNode *>(type_test->operand)->source == p_identifier->source) {
 				// Bingo.
@@ -2583,7 +2589,7 @@ static bool _guess_identifier_type_from_base(GDScriptParser::CompletionContext &
 									}
 								}
 							}
-							// TODO: Check assignments in constructor.
+							/// @todo Check assignments in constructor.
 							return false;
 						case GDScriptParser::ClassNode::Member::ENUM:
 							r_type.type = member.m_enum->get_datatype();
@@ -3285,7 +3291,7 @@ static bool _get_subscript_type(GDScriptParser::CompletionContext &p_context, co
 					}
 				} break;
 				case GDScriptParser::IdentifierNode::Source::LOCAL_VARIABLE: {
-					// TODO: Do basic assignment flow analysis like in `_guess_expression_type`.
+					/// @todo Do basic assignment flow analysis like in `_guess_expression_type`.
 					const GDScriptParser::SuiteNode::Local local = identifier_node->suite->get_local(identifier_node->name);
 					switch (local.type) {
 						case GDScriptParser::SuiteNode::Local::CONSTANT: {
@@ -4079,7 +4085,7 @@ static Error _lookup_symbol_from_base(const GDScriptParser::DataType &p_base, co
 								r_result.type = ScriptLanguage::LOOKUP_RESULT_CLASS;
 								r_result.class_name = subclass->ptr()->get_doc_class_name();
 							}
-							// TODO: enums.
+							/// @todo enums.
 						}
 					}
 					if (!found_type) {
@@ -4261,7 +4267,7 @@ static Error _lookup_symbol_from_base(const GDScriptParser::DataType &p_base, co
 									r_result.class_member = p_symbol;
 									r_result.script = base_type.script_type;
 									r_result.script_path = base_type.script_path;
-									// TODO: Find a way to obtain enum value location for a script
+									/// @todo Find a way to obtain enum value location for a script
 									r_result.location = base_type.script_type->get_member_line(doc_enum_name.substr(dot_pos + 1));
 								} else {
 									r_result.class_name = doc_enum_name.left(dot_pos);
@@ -4308,6 +4314,12 @@ static Error _lookup_symbol_from_base(const GDScriptParser::DataType &p_base, co
 
 ::Error GDScriptLanguage::lookup_code(const String &p_code, const String &p_symbol, const String &p_path, Object *p_owner, LookupResult &r_result) {
 	// Before parsing, try the usual stuff.
+	if (p_symbol.is_empty()) {
+		r_result.type = ScriptLanguage::LOOKUP_RESULT_CLASS;
+		r_result.class_name = "Variant"; //Nil
+		return ERR_CANT_RESOLVE;
+	}
+
 	if (ClassDB::class_exists(p_symbol)) {
 		r_result.type = ScriptLanguage::LOOKUP_RESULT_CLASS;
 		r_result.class_name = p_symbol;

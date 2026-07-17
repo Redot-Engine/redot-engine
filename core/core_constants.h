@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file core_constants.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"

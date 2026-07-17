@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file webxr_interface.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "webxr_interface.h"
 #include "webxr_interface.compat.inc"
 

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file math_funcs.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "math_funcs.h"
 
 #include "core/error/error_macros.h"
@@ -86,8 +92,6 @@ int Math::step_decimals(double p_step) {
 	return 0;
 }
 
-// Only meant for editor usage in float ranges, where a step of 0
-// means that decimal digits should not be limited in String::num.
 int Math::range_step_decimals(double p_step) {
 	if (p_step < 0.0000000000001) {
 		return 16; // Max value hardcoded in String::num

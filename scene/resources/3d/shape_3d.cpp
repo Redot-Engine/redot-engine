@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file shape_3d.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "shape_3d.h"
 
 #include "scene/main/scene_tree.h"

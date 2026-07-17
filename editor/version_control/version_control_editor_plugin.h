@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file version_control_editor_plugin.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor/plugins/editor_plugin.h"
 #include "editor/version_control/editor_vcs_interface.h"
 #include "scene/gui/check_button.h"

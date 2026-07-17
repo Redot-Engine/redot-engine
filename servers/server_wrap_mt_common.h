@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file server_wrap_mt_common.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #ifdef DEBUG_ENABLED
 #define MAIN_THREAD_SYNC_CHECK                                                                         \
 	if (unlikely(Thread::is_main_thread() && Engine::get_singleton()->notify_frame_server_synced())) { \
@@ -66,7 +72,7 @@
 		return ret;                                                                 \
 	}
 
-//RID now returns directly, ensure thread safety yourself
+/// RID now returns directly, ensure thread safety yourself
 #define FUNCRID(m_type)                        \
 	virtual RID m_type##_create() override {   \
 		return server_name->m_type##_create(); \

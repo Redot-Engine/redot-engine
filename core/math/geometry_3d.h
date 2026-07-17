@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file geometry_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "core/math/delaunay_3d.h"
 #include "core/math/face3.h"
 #include "core/templates/local_vector.h"
@@ -39,6 +45,7 @@
 
 class Geometry3D {
 public:
+	/// Based on David Eberly's Computation of Distance Between Line Segments algorithm.
 	static void get_closest_points_between_segments(const Vector3 &p_p0, const Vector3 &p_p1, const Vector3 &p_q0, const Vector3 &p_q1, Vector3 &r_ps, Vector3 &r_qt);
 	static real_t get_closest_distance_between_segments(const Vector3 &p_p0, const Vector3 &p_p1, const Vector3 &p_q0, const Vector3 &p_q1);
 
@@ -430,7 +437,7 @@ public:
 			Vector3 n1 = verts[i] - verts[i + 1];
 			Vector3 n2 = p_sphere_pos - verts[i + 1];
 
-			///@TODO Maybe discard by range here to make the algorithm quicker.
+			/// @todo Maybe discard by range here to make the algorithm quicker.
 
 			// Check point within cylinder radius.
 			Vector3 axis = n1.cross(n2).cross(n1);
@@ -566,7 +573,7 @@ public:
 		return tetrahedrons;
 	}
 
-	// Create a "wrap" that encloses the given geometry.
+	/// Create a "wrap" that encloses the given geometry.
 	static Vector<Face3> wrap_geometry(const Vector<Face3> &p_array, real_t *p_error = nullptr);
 
 	struct MeshData {
@@ -727,14 +734,16 @@ public:
 		return false;                              \
 	}
 
+	/**
+	 * Use separating axis theorem to test overlap between triangle and box
+	 * need to test for overlap in these directions:
+	 * 1) the {x,y,z}-directions (actually, since we use the AABB of the triangle
+	 *    we do not even need to test these)
+	 * 2) normal of the triangle
+	 * 3) crossproduct(edge from tri, {x,y,z}-directin)
+	 *    this gives 3x3=9 more tests
+	 */
 	_FORCE_INLINE_ static bool triangle_box_overlap(const Vector3 &boxcenter, const Vector3 boxhalfsize, const Vector3 *triverts) {
-		/*    use separating axis theorem to test overlap between triangle and box */
-		/*    need to test for overlap in these directions: */
-		/*    1) the {x,y,z}-directions (actually, since we use the AABB of the triangle */
-		/*       we do not even need to test these) */
-		/*    2) normal of the triangle */
-		/*    3) crossproduct(edge from tri, {x,y,z}-directin) */
-		/*       this gives 3x3=9 more tests */
 		real_t min, max, p0, p1, p2, rad, fex, fey, fez;
 
 		/* This is the fastest branch on Sun */
@@ -848,8 +857,8 @@ public:
 #undef STP
 	}
 
+	/// https://twitter.com/Stubbesaurus/status/937994790553227264
 	_FORCE_INLINE_ static Vector3 octahedron_map_decode(const Vector2 &p_uv) {
-		// https://twitter.com/Stubbesaurus/status/937994790553227264
 		const Vector2 f = p_uv * 2.0f - Vector2(1.0f, 1.0f);
 		Vector3 n = Vector3(f.x, f.y, 1.0f - Math::abs(f.x) - Math::abs(f.y));
 		const real_t t = CLAMP(-n.z, 0.0f, 1.0f);

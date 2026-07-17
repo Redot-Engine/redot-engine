@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file editor_resource_tooltip_plugins.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "editor_resource_tooltip_plugins.h"
 
 #include "editor/editor_node.h"

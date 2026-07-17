@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file modifier_bone_target_3d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/3d/skeleton_modifier_3d.h"
 
 class ModifierBoneTarget3D : public SkeletonModifier3D {
@@ -47,6 +53,9 @@ protected:
 	virtual void _process_modification(double p_delta) override;
 
 public:
+#ifdef TOOLS_ENABLED
+	virtual bool is_processed_on_saving() const override { return true; }
+#endif
 	void set_bone_name(const String &p_bone_name);
 	String get_bone_name() const;
 	void set_bone(int p_bone);

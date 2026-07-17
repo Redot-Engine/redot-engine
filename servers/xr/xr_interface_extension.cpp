@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file xr_interface_extension.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "xr_interface_extension.h"
 #include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 
@@ -325,17 +331,17 @@ void XRInterfaceExtension::end_frame() {
 }
 
 RID XRInterfaceExtension::get_render_target_texture(RID p_render_target) {
-	// In due time this will need to be enhance to return the correct INTERNAL RID for the chosen rendering engine.
-	// So once a GLES driver is implemented we'll return that and the implemented plugin needs to handle this correctly too.
+	/// @todo In due time this will need to be enhance to return the correct INTERNAL RID for the chosen rendering engine.
+	/// So once a GLES driver is implemented we'll return that and the implemented plugin needs to handle this correctly too.
 	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
 	ERR_FAIL_NULL_V_MSG(texture_storage, RID(), "Texture storage not setup");
 
 	return texture_storage->render_target_get_rd_texture(p_render_target);
 }
 
-/*
-RID XRInterfaceExtension::get_render_target_depth(RID p_render_target) {
-	// TODO implement this, the problem is that our depth texture isn't part of our render target as it is used for 3D rendering only
-	// but we don't have access to our render buffers from here....
-}
-*/
+/**
+ *RID XRInterfaceExtension::get_render_target_depth(RID p_render_target) {
+ *	// @todo Implement this, the problem is that our depth texture isn't part of our render target as it is used for 3D rendering only
+ *	// but we don't have access to our render buffers from here....
+ *}
+ */

@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file openxr_action_map_editor.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "openxr_action_map_editor.h"
 
 #include "core/config/project_settings.h"
@@ -309,7 +315,7 @@ void OpenXRActionMapEditor::_on_save_action_map() {
 		return;
 	}
 
-	// TODO should clear undo/redo history
+	/// @todo Should clear undo/redo history
 
 	// out with the old
 	_clear_action_map();
@@ -319,7 +325,7 @@ void OpenXRActionMapEditor::_on_save_action_map() {
 }
 
 void OpenXRActionMapEditor::_on_reset_to_default_layout() {
-	// TODO should clear undo/redo history
+	/// @todo Should clear undo/redo history
 
 	// out with the old
 	_clear_action_map();
@@ -493,7 +499,5 @@ OpenXRActionMapEditor::OpenXRActionMapEditor() {
 	select_interaction_profile_dialog->connect("interaction_profile_selected", callable_mp(this, &OpenXRActionMapEditor::_on_interaction_profile_selected));
 	add_child(select_interaction_profile_dialog);
 
-	// Our Action map editor is only shown if openxr is enabled in project settings
-	// So load our action map and if it doesn't exist, create it right away.
 	_load_action_map(ResourceUID::ensure_path(GLOBAL_GET("xr/openxr/default_action_map")), true);
 }

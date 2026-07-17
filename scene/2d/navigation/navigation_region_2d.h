@@ -32,6 +32,12 @@
 
 #pragma once
 
+/**
+ * @file navigation_region_2d.h
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "scene/resources/2d/navigation_polygon.h"
 
 class NavigationRegion2D : public Node2D {
@@ -73,6 +79,7 @@ protected:
 	static void _bind_methods();
 
 #ifndef DISABLE_DEPRECATED
+	/// Compatibility with earlier 4.0 betas.
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 #endif // DISABLE_DEPRECATED
