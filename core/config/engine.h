@@ -140,6 +140,7 @@ public:
 
 	void set_time_scale(double p_scale);
 	double get_time_scale() const;
+	double get_effective_time_scale() const;
 	double get_unfrozen_time_scale() const;
 
 	void set_print_to_stdout(bool p_enabled);

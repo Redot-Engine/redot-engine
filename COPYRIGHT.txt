@@ -198,6 +198,16 @@ Copyright: 2013, Jorge Jimenez
  2013, Diego Gutierrez
 License: Expat
 
+Files: servers/rendering/renderer_rd/shaders/effects/motion_blur_blur.glsl
+  servers/rendering/renderer_rd/shaders/effects/motion_blur_preprocess.glsl
+  servers/rendering/renderer_rd/shaders/effects/motion_blur_tile_max_x.glsl
+  servers/rendering/renderer_rd/shaders/effects/motion_blur_tile_max_y.glsl
+  servers/rendering/renderer_rd/shaders/effects/motion_blur_neighbor_max.glsl
+Comment: sphynx-owner's motion blur effect
+Copyright: 2025, sphynx-owner
+License: MIT
+
+
 Files: thirdparty/accesskit/*
 Comment: AccessKit
 Copyright: 2023, The AccessKit Authors.

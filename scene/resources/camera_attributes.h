@@ -86,6 +86,19 @@ class CameraAttributesPractical : public CameraAttributes {
 	GDCLASS(CameraAttributesPractical, CameraAttributes);
 
 private:
+	/// @name Motion Blur
+	/// @{
+	bool motion_blur_enabled = false;
+	float motion_blur_intensity = 1.0;
+	bool motion_blur_clamp_velocities_to_tile = true;
+	float motion_blur_object_velocity_multiplier = 1.0;
+	float motion_blur_movement_velocity_multiplier = 1.0;
+	float motion_blur_rotation_velocity_multiplier = 1.0;
+	float motion_blur_velocity_lower_threshold = 0.0;
+	float motion_blur_velocity_upper_threshold = 0.0;
+	void _update_motion_blur();
+	/// @}
+
 	/// @name DOF Blur
 	/// @{
 	bool dof_blur_far_enabled = false;
@@ -107,6 +120,26 @@ protected:
 	void _validate_property(PropertyInfo &p_property) const;
 
 public:
+	/// @name Motion Blur
+	/// @{
+	void set_motion_blur_enabled(bool p_enabled);
+	bool is_motion_blur_enabled() const;
+	void set_motion_blur_intensity(float p_intensity);
+	float get_motion_blur_intensity() const;
+	void set_motion_blur_clamp_velocities_to_tile(bool p_clamp_velocities_to_tile);
+	bool is_motion_blur_clamp_velocities_to_tile() const;
+	void set_motion_blur_object_velocity_multiplier(float p_multiplier);
+	float get_motion_blur_object_velocity_multiplier() const;
+	void set_motion_blur_movement_velocity_multiplier(float p_multiplier);
+	float get_motion_blur_movement_velocity_multiplier() const;
+	void set_motion_blur_rotation_velocity_multiplier(float p_multiplier);
+	float get_motion_blur_rotation_velocity_multiplier() const;
+	void set_motion_blur_velocity_lower_threshold(float p_threshold);
+	float get_motion_blur_velocity_lower_threshold() const;
+	void set_motion_blur_velocity_upper_threshold(float p_threshold);
+	float get_motion_blur_velocity_upper_threshold() const;
+	/// @}
+
 	/// @name DOF Blur
 	/// @{
 	void set_dof_blur_far_enabled(bool p_enabled);
