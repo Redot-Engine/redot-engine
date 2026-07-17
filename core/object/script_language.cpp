@@ -553,14 +553,25 @@ void ScriptServer::save_global_classes() {
 /***************** STRUCT SERIALIZATION *****************/
 
 Variant ScriptServer::create_struct_instance(const String &p_fully_qualified_name, const Dictionary &p_data) {
-	MutexLock lock(languages_mutex);
-	if (!languages_ready) {
-		ERR_FAIL_V_MSG(Variant(), "Cannot create struct instance: languages not initialized.");
+	// Snapshot the languages under the lock, then release it before calling into
+	// language virtuals: create_struct_by_name() can re-enter the ScriptServer or
+	// take other locks, so holding languages_mutex across it risks deadlock.
+	ScriptLanguage *langs[MAX_LANGUAGES];
+	int lang_count = 0;
+	{
+		MutexLock lock(languages_mutex);
+		if (!languages_ready) {
+			ERR_FAIL_V_MSG(Variant(), "Cannot create struct instance: languages not initialized.");
+		}
+		lang_count = _language_count;
+		for (int i = 0; i < _language_count; i++) {
+			langs[i] = _languages[i];
+		}
 	}
 
 	// Try each language to see if it can create the struct
-	for (int i = 0; i < _language_count; i++) {
-		ScriptLanguage *lang = _languages[i];
+	for (int i = 0; i < lang_count; i++) {
+		ScriptLanguage *lang = langs[i];
 		if (lang && lang->can_create_struct_by_name()) {
 			Variant result = lang->create_struct_by_name(p_fully_qualified_name, p_data);
 			if (result.get_type() != Variant::NIL) {
@@ -573,14 +584,24 @@ Variant ScriptServer::create_struct_instance(const String &p_fully_qualified_nam
 }
 
 bool ScriptServer::global_struct_exists(const String &p_fully_qualified_name) {
-	MutexLock lock(languages_mutex);
-	if (!languages_ready) {
-		return false;
+	// Snapshot the languages under the lock, then release it before calling the
+	// language virtuals (see create_struct_instance() above).
+	ScriptLanguage *langs[MAX_LANGUAGES];
+	int lang_count = 0;
+	{
+		MutexLock lock(languages_mutex);
+		if (!languages_ready) {
+			return false;
+		}
+		lang_count = _language_count;
+		for (int i = 0; i < _language_count; i++) {
+			langs[i] = _languages[i];
+		}
 	}
 
 	// Check if any language can create this struct
-	for (int i = 0; i < _language_count; i++) {
-		ScriptLanguage *lang = _languages[i];
+	for (int i = 0; i < lang_count; i++) {
+		ScriptLanguage *lang = langs[i];
 		if (lang && lang->can_create_struct_by_name()) {
 			// Try to create with empty data to check if it exists
 			Variant result = lang->create_struct_by_name(p_fully_qualified_name, Dictionary());
