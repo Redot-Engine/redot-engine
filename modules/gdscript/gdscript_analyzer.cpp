@@ -1653,6 +1653,11 @@ void GDScriptAnalyzer::resolve_struct_body(GDScriptParser::StructNode *p_struct,
 		}
 	}
 
+	// Validate the constructor once at declaration time.
+	if (p_struct->constructor != nullptr && p_struct->constructor->return_type != nullptr) {
+		push_error("Struct constructor cannot have an explicit return type.", p_struct->constructor->return_type);
+	}
+
 	p_struct->resolved_body = true;
 
 	// Clear resolving sentinel on all exit paths
@@ -5980,12 +5985,9 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 			// struct_node is already declared and null-checked above
 			if (struct_node) {
 				if (struct_node->constructor) {
-					// Extract signature from the constructor function
+					// Extract signature from the constructor function.
+					// The lookup runs per call site and must not push errors.
 					const GDScriptParser::FunctionNode *ctor = struct_node->constructor;
-					if (ctor->return_type) {
-						// Constructors cannot have explicit return types
-						push_error("Struct constructor cannot have an explicit return type.", ctor->return_type);
-					}
 					for (const GDScriptParser::ParameterNode *param : ctor->parameters) {
 						if (param->datatype.is_set()) {
 							r_par_types.push_back(param->datatype);
@@ -6039,12 +6041,7 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 		if (struct_node->has_method(p_function)) {
 			const GDScriptParser::FunctionNode *func = struct_node->method_map[p_function];
 			if (func && func->resolved_signature) {
-				// Extract return type
-				if (func->return_type) {
-					r_return_type = type_from_metatype(resolve_datatype(func->return_type));
-				} else {
-					r_return_type.kind = GDScriptParser::DataType::VARIANT;
-				}
+				r_return_type = func->get_datatype();
 
 				// Extract parameter types
 				for (const GDScriptParser::ParameterNode *param : func->parameters) {
@@ -6079,12 +6076,7 @@ bool GDScriptAnalyzer::get_function_signature(GDScriptParser::Node *p_source, bo
 			if (current->has_method(p_function)) {
 				const GDScriptParser::FunctionNode *func = current->method_map[p_function];
 				if (func && func->resolved_signature) {
-					// Extract return type
-					if (func->return_type) {
-						r_return_type = type_from_metatype(resolve_datatype(func->return_type));
-					} else {
-						r_return_type.kind = GDScriptParser::DataType::VARIANT;
-					}
+					r_return_type = func->get_datatype();
 
 					// Extract parameter types
 					for (const GDScriptParser::ParameterNode *param : func->parameters) {
