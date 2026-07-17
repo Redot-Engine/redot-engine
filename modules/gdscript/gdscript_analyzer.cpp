@@ -4931,8 +4931,10 @@ void GDScriptAnalyzer::reduce_preload(GDScriptParser::PreloadNode *p_preload) {
 }
 
 void GDScriptAnalyzer::reduce_self(GDScriptParser::SelfNode *p_self) {
-	// Check if 'self' is being used outside of a class context (e.g., in a struct)
-	if (parser->current_class == nullptr) {
+	// Check if 'self' is being used outside of a class context (e.g., in a struct).
+	// A struct nested in a class still has current_class set to the enclosing
+	// class, so also reject when we're currently inside a struct body.
+	if (parser->current_class == nullptr || parser->current_struct != nullptr) {
 		p_self->is_constant = false;
 		// Emit a clear compile error: 'self' is not valid outside of class context
 		push_error(R"(Using "self" outside of a class context is not allowed.)", p_self);
