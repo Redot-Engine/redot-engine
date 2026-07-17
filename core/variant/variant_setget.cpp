@@ -1154,9 +1154,9 @@ struct VariantKeyedSetGetStruct {
 	}
 
 	static void ptr_get(const void *base, const void *key, void *value) {
-		// Avoid ptrconvert for performance
-		const Variant &base_var = *reinterpret_cast<const Variant *>(base);
-		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base_var._data._mem);
+		// base points directly to the in-place struct instance, matching ptr_set
+		// and the other in-place keyed types (e.g. Dictionary). It is NOT a Variant*.
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base);
 		ERR_FAIL_NULL(wrapper);
 		ERR_FAIL_COND(!wrapper->is_valid());
 
@@ -1255,9 +1255,9 @@ struct VariantKeyedSetGetStruct {
 	}
 
 	static uint32_t ptr_has(const void *base, const void *key) {
-		// Convert base to Variant first to match ptr_get/ptr_set calling convention
-		Variant base_var = PtrToArg<Variant>::convert(base);
-		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base_var._data._mem);
+		// base points directly to the in-place struct instance, matching ptr_set
+		// and the other in-place keyed types (e.g. Dictionary). It is NOT a Variant*.
+		const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(base);
 		ERR_FAIL_NULL_V(wrapper, false);
 		ERR_FAIL_COND_V(!wrapper->is_valid(), false);
 
