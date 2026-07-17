@@ -124,7 +124,6 @@ public:
 		NODE_PATH,
 		RID,
 		OBJECT,
-		STRUCT,
 		CALLABLE,
 		SIGNAL,
 		DICTIONARY,
@@ -141,6 +140,8 @@ public:
 		PACKED_VECTOR3_ARRAY,
 		PACKED_COLOR_ARRAY,
 		PACKED_VECTOR4_ARRAY,
+
+		STRUCT,
 
 		VARIANT_MAX
 	};
@@ -318,7 +319,6 @@ private:
 		true, //NODE_PATH,
 		false, //RID,
 		true, //OBJECT,
-		true, //STRUCT,
 		true, //CALLABLE,
 		true, //SIGNAL,
 		true, //DICTIONARY,
@@ -335,6 +335,8 @@ private:
 		true, //PACKED_VECTOR3_ARRAY,
 		true, //PACKED_COLOR_ARRAY,
 		true, //PACKED_VECTOR4_ARRAY,
+
+		true, //STRUCT,
 	};
 
 	_FORCE_INLINE_ void clear() {
