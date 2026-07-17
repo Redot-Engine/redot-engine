@@ -3245,6 +3245,9 @@ Error GDScriptCompiler::_compile_struct(GDScript *p_script, const GDScriptParser
 		struct_wrapper.instantiate();
 		struct_wrapper->set_struct_type(existing);
 
+		// Register the wrapper in the GLOBAL registry.
+		GDScriptLanguage::get_singleton()->register_struct_wrapper(p_struct->fqsn, struct_wrapper);
+
 		// Store the wrapper in constants so StructName.new() works
 		p_script->constants[p_struct->identifier->name] = struct_wrapper;
 
