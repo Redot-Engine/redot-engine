@@ -286,6 +286,12 @@ Dictionary GDExtensionAPIDump::generate_extension_api(bool p_include_docs) {
 			Array sizes;
 			for (int j = 0; j <= Variant::VARIANT_MAX; j++) {
 				Variant::Type t = type_size_array[j].type;
+				// Structs are a GDScript-internal type with no GDExtension ABI; keep
+				// them out of the extension API so bindings generators don't try to
+				// emit a (nonexistent) Struct type.
+				if (t == Variant::STRUCT) {
+					continue;
+				}
 				String name = t == Variant::VARIANT_MAX ? String("Variant") : Variant::get_type_name(t);
 				Dictionary d2;
 				d2["name"] = name;
@@ -661,6 +667,11 @@ Dictionary GDExtensionAPIDump::generate_extension_api(bool p_include_docs) {
 
 		for (int i = 0; i < Variant::VARIANT_MAX; i++) {
 			if (i == Variant::OBJECT) {
+				continue;
+			}
+			// Structs are a GDScript-internal type with no GDExtension ABI, so they
+			// are not exposed as a builtin class in the extension API.
+			if (i == Variant::STRUCT) {
 				continue;
 			}
 

@@ -3397,7 +3397,10 @@
 		<constant name="TYPE_PACKED_VECTOR4_ARRAY" value="38" enum="Variant.Type">
 			Variable is of type [PackedVector4Array].
 		</constant>
-		<constant name="TYPE_MAX" value="39" enum="Variant.Type">
+		<constant name="TYPE_STRUCT" value="39" enum="Variant.Type">
+			Variable is of type struct (a GDScript value-semantics struct).
+		</constant>
+		<constant name="TYPE_MAX" value="40" enum="Variant.Type">
 			Represents the size of the [enum Variant.Type] enum.
 		</constant>
 		<constant name="OP_EQUAL" value="0" enum="Variant.Operator">
