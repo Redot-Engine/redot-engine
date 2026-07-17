@@ -3831,6 +3831,8 @@ bool BindingsGenerator::_arg_default_value_is_assignable_to_type(const Variant &
 		case Variant::VECTOR4I:
 			return p_arg_type.name == name_cache.type_Vector4 ||
 					p_arg_type.name == Variant::get_type_name(p_val.get_type());
+		case Variant::STRUCT:
+			return false;
 		case Variant::VARIANT_MAX:
 			CRASH_NOW_MSG("Unexpected Variant type: " + itos(p_val.get_type()));
 			break;
@@ -4709,6 +4711,9 @@ bool BindingsGenerator::_arg_default_value_from_variant(const Variant &p_val, Ar
 			ERR_FAIL_COND_V_MSG(!p_val.is_zero(), false,
 					"Parameter of type '" + String(r_iarg.type.cname) + "' can only have null/zero as the default value.");
 			r_iarg.default_argument = "default";
+			break;
+		case Variant::STRUCT:
+			ERR_FAIL_V_MSG(false, "Structs cannot be used as a default argument value in bindings.");
 			break;
 		case Variant::VARIANT_MAX:
 			ERR_FAIL_V_MSG(false, "Unexpected Variant type: " + itos(p_val.get_type()));
