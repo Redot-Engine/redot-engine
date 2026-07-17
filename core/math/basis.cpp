@@ -125,7 +125,7 @@ bool Basis::is_diagonal() const {
 }
 
 bool Basis::is_rotation() const {
-	return is_conformal() && Math::is_equal_approx(determinant(), 1, (real_t)UNIT_EPSILON);
+	return is_conformal() && Math::is_equal_approx(determinant(), static_cast<real_t>(1.), static_cast<real_t>(UNIT_EPSILON));
 }
 
 #ifdef MATH_CHECKS

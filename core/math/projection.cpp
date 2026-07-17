@@ -856,7 +856,7 @@ bool Projection::is_orthogonal() const {
 
 real_t Projection::get_fov() const {
 	if (columns[2][0] == 0) {
-		return Math::rad_to_deg(2 * Math::atan2(1, columns[0][0]));
+		return Math::rad_to_deg(2 * std::atan2(1, columns[0][0]));
 	} else {
 		// The frustum is asymmetrical so we need to calculate the left and right angles separately.
 		real_t right = Math::atan2(columns[2][0] + 1, columns[0][0]);

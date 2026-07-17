@@ -155,10 +155,10 @@ void AnimationTrackEditColor::draw_key_link(int p_index, float p_pixels_sec, int
 
 	for (int i = 0; i < color_samples.size() - 1; i++) {
 		Vector<Vector2> points = {
-			Vector2(Math::lerp(x_from, x_to, float(i) / (color_samples.size() - 1)), y_from),
-			Vector2(Math::lerp(x_from, x_to, float(i + 1) / (color_samples.size() - 1)), y_from),
-			Vector2(Math::lerp(x_from, x_to, float(i + 1) / (color_samples.size() - 1)), y_from + fh),
-			Vector2(Math::lerp(x_from, x_to, float(i) / (color_samples.size() - 1)), y_from + fh)
+			Vector2(Math::lerp<float>(x_from, x_to, float(i) / (color_samples.size() - 1)), y_from),
+			Vector2(Math::lerp<float>(x_from, x_to, float(i + 1) / (color_samples.size() - 1)), y_from),
+			Vector2(Math::lerp<float>(x_from, x_to, float(i + 1) / (color_samples.size() - 1)), y_from + fh),
+			Vector2(Math::lerp<float>(x_from, x_to, float(i) / (color_samples.size() - 1)), y_from + fh)
 		};
 
 		Vector<Color> colors = {

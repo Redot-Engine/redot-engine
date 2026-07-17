@@ -43,16 +43,20 @@
 #include <limits>
 
 namespace Math {
-inline constexpr double SQRT2 = 1.4142135623730950488016887242;
-inline constexpr double SQRT3 = 1.7320508075688772935274463415059;
-inline constexpr double SQRT12 = 0.7071067811865475244008443621048490;
-inline constexpr double SQRT13 = 0.57735026918962576450914878050196;
-inline constexpr double LN2 = 0.6931471805599453094172321215;
-inline constexpr double TAU = 6.2831853071795864769252867666;
-inline constexpr double PI = 3.1415926535897932384626433833;
-inline constexpr double E = 2.7182818284590452353602874714;
-inline constexpr double INF = std::numeric_limits<double>::infinity();
-inline constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
+constexpr double SQRT2 = 1.4142135623730950488016887242;
+constexpr double SQRT3 = 1.7320508075688772935274463415059;
+constexpr double SQRT12 = 0.7071067811865475244008443621048490;
+constexpr double SQRT13 = 0.57735026918962576450914878050196;
+constexpr double LN2 = 0.6931471805599453094172321215;
+constexpr double TAU = 6.2831853071795864769252867666;
+constexpr double PI = 3.1415926535897932384626433833;
+constexpr double E = 2.7182818284590452353602874714;
+constexpr double INF = std::numeric_limits<double>::infinity();
+constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
+constexpr double DB_CONVERSION_GAIN = 8.6858896380650365530225783783321;
+constexpr double GAIN_CONVERSION_DB = 0.11512925464970228420089957273422;
+constexpr double UINT32_MAX_D = 1.0 / static_cast<double>(UINT32_MAX);
+constexpr float UINT32_MAX_F = 1.0f / static_cast<float>(UINT32_MAX);
 } // namespace Math
 
 #define CMP_EPSILON 0.00001

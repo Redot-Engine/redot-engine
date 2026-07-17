@@ -393,7 +393,7 @@ float EditorAudioBus::_normalized_volume_to_scaled_db(float normalized) {
 	} else if (normalized < 0.05f) {
 		return 830.72 * normalized - 80.0f;
 	} else {
-		return 45.0f * Math::pow(normalized - 1.0, 3);
+		return 45.0f * Math::pow(normalized - 1.f, 3.f);
 	}
 }
 

@@ -53,7 +53,7 @@ double Range::_snapped_r128(double p_value, double p_step) {
 	// so a step size finer than 2^-11 will lose precision, and in practice even 1e-3 can be problematic.
 	// By rescaling the value and step, we can shift precision into the higher bits (effectively turning R128 into a makeshift float).
 	const int decimals = MIN(18, 14 - Math::floor(std::log10(MAX(Math::abs(p_value), p_step))));
-	const double scale = Math::pow(10.0, decimals);
+	const double scale = Math::pow(10., static_cast<double>(decimals));
 	p_value *= scale;
 	p_step *= scale;
 	// All these lines are the equivalent of: p_value = Math::floor(p_value / p_step + 0.5) * p_step;
@@ -297,7 +297,7 @@ void Range::set_as_ratio(double p_value) {
 	if (shared->exp_ratio && get_min() >= 0) {
 		double exp_min = get_min() == 0 ? 0.0 : Math::log(get_min()) / Math::log((double)2);
 		double exp_max = Math::log(get_max()) / Math::log((double)2);
-		v = Math::pow(2, exp_min + (exp_max - exp_min) * p_value);
+		v = Math::pow(2., exp_min + (exp_max - exp_min) * p_value);
 	} else {
 		double percent = (get_max() - get_min()) * p_value;
 		if (get_step() > 0) {

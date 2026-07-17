@@ -42,15 +42,9 @@
 
 #include "thirdparty/tinyexr/tinyexr.h"
 
-Error ImageLoaderTinyEXR::load_image(Ref<Image> p_image, Ref<FileAccess> f, BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale) {
-	Vector<uint8_t> src_image;
-	uint64_t src_image_len = f->get_length();
-	ERR_FAIL_COND_V(src_image_len == 0, ERR_FILE_CORRUPT);
-	src_image.resize(src_image_len);
-
-	uint8_t *w = src_image.ptrw();
-
-	f->get_buffer(&w[0], src_image_len);
+Error ImageLoaderTinyEXR::load_image_from_buffer(Ref<Image> p_image, std::span<const unsigned char> buffer, BitField<LoaderFlags> p_flags, float) {
+	const uint8_t *w = buffer.data();
+	uint64_t src_image_len = buffer.size();
 
 	// Re-implementation of tinyexr's LoadEXRFromMemory using Godot types to store the Image data
 	// and Godot's error codes.
@@ -293,6 +287,20 @@ Error ImageLoaderTinyEXR::load_image(Ref<Image> p_image, Ref<FileAccess> f, BitF
 	FreeEXRImage(&exr_image);
 
 	return OK;
+}
+
+Error ImageLoaderTinyEXR::load_image(Ref<Image> p_image, Ref<FileAccess> f, BitField<LoaderFlags> p_flags, float p_scale) {
+	Vector<uint8_t> src_image;
+	uint64_t src_image_len = f->get_length();
+	ERR_FAIL_COND_V(src_image_len == 0, ERR_FILE_CORRUPT);
+	src_image.resize(src_image_len);
+
+	uint8_t *w = src_image.ptrw();
+	const uint64_t bytes_read = f->get_buffer(&w[0], src_image_len);
+	ERR_FAIL_COND_V(bytes_read != src_image_len, ERR_FILE_CANT_READ);
+	const std::span buffer{ w, src_image_len };
+
+	return load_image_from_buffer(p_image, buffer, p_flags, p_scale);
 }
 
 void ImageLoaderTinyEXR::get_recognized_extensions(List<String> *p_extensions) const {
