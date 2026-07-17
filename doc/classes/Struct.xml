@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Struct" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		A built-in [Variant] type representing a GDScript struct instance.
+	</brief_description>
+	<description>
+		The [Struct] type stores an instance of a struct declared in GDScript with the [code]struct[/code] keyword. Unlike objects, structs have value semantics: assigning a struct to a variable or passing it to a function copies its contents rather than sharing a reference.
+		[b]Note:[/b] Structs are an experimental feature. Their syntax and behavior may change in future versions.
+	</description>
+	<tutorials>
+	</tutorials>
+	<operators>
+		<operator name="operator []">
+			<return type="Variant" />
+			<param index="0" name="key" type="Variant" />
+			<description>
+				Returns the value of the struct member named [param key]. Fails if no member with that name exists.
+			</description>
+		</operator>
+	</operators>
+</class>
