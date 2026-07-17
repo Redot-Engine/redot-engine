@@ -4277,7 +4277,12 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 			p_identifier->set_datatype(base);
 			return;
 		} else {
-			// Accessing struct instance fields (e.g., point.x)
+			// Accessing struct instance fields (e.g., point.x).
+			// Ensure the struct body is resolved first so field datatypes are
+			// populated; otherwise valid field access can fail depending on the
+			// order in which structs and their users are analyzed. Guarded to be
+			// idempotent, so this is a no-op if already resolved.
+			resolve_struct_body(base.struct_type, p_identifier);
 			if (base.struct_type->has_field(name)) {
 				int field_index = base.struct_type->field_indices[name];
 				if (field_index >= 0 && field_index < base.struct_type->fields.size()) {
