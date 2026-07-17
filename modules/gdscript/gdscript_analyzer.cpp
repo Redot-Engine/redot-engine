@@ -3703,8 +3703,6 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 		} else {
 			reduce_expression(subscript->base);
 			base_type = subscript->base->get_datatype();
-			if (base_type.kind == GDScriptParser::DataType::STRUCT) {
-			}
 			is_self = subscript->base->type == GDScriptParser::Node::SELF;
 		}
 	} else {
@@ -3721,8 +3719,6 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 	List<GDScriptParser::DataType> par_types;
 
 	bool is_constructor = (base_type.is_meta_type || (p_call->callee && p_call->callee->type == GDScriptParser::Node::IDENTIFIER)) && p_call->function_name == SNAME("new");
-	if (p_call->function_name == SNAME("new") && base_type.kind == GDScriptParser::DataType::STRUCT) {
-	}
 
 	if (is_constructor) {
 		if (Engine::get_singleton()->has_singleton(base_type.native_type)) {
@@ -4543,9 +4539,6 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 
 void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_identifier, bool can_be_builtin) {
 	// TODO: This is an opportunity to further infer types.
-
-	if (p_identifier->name == StringName("TestStruct")) {
-	}
 
 	// Check if we are inside an enum. This allows enum values to access other elements of the same enum.
 	if (current_enum) {
