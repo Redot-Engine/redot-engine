@@ -56,19 +56,8 @@ GDScriptStruct::GDScriptStruct(const StringName &p_name) :
 }
 
 GDScriptStruct::~GDScriptStruct() {
-	// Clean up constructor function pointer
-	if (constructor != nullptr) {
-		delete constructor;
-		constructor = nullptr;
-	}
-
-	// Clean up method function pointers
-	for (const KeyValue<StringName, MethodInfo> &E : methods) {
-		if (E.value.function != nullptr) {
-			delete E.value.function;
-		}
-	}
 	methods.clear();
+	constructor = nullptr;
 }
 
 Variant GDScriptStruct::create_variant_instance(const Variant **p_args, int p_argcount) {
