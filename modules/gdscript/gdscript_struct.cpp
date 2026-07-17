@@ -592,5 +592,7 @@ bool GDScriptStructInstance::deserialize(const Dictionary &p_data) {
 	if (data.is_null()) {
 		return false;
 	}
+	// Ensure unique copy before modifying.
+	_ensure_unique();
 	return data->deserialize(p_data);
 }
