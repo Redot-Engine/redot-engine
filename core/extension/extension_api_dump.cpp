@@ -46,11 +46,11 @@
 #include "core/templates/pair.h"
 #include "core/version.h"
 
-// Forward declaration for struct type
-class GDScriptStructInstance;
-
 #ifdef TOOLS_ENABLED
 #include "editor/doc/editor_help.h"
+
+// Forward declaration for struct type
+class GDScriptStructInstance;
 
 static String get_builtin_or_variant_type_name(const Variant::Type p_type) {
 	if (p_type == Variant::NIL) {

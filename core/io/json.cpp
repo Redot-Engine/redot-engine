@@ -52,7 +52,8 @@ class GDScriptStruct;
 
 // We need to declare these methods without including the GDScript headers
 // This is a bit of a hack, but necessary due to layering (core/io can't include modules/gdscript)
-// In the future, this should be replaced with a proper Variant-level API
+// TODO: Replace this extern "C" bridge with a proper Variant-level struct serialization
+// API so core/io no longer needs to know about GDScript struct internals.
 
 extern "C" {
 // These will be defined in gdscript.cpp with C linkage to avoid name mangling issues
