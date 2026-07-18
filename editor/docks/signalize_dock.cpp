@@ -33,8 +33,8 @@
 #include "signalize_dock.h"
 
 #include "core/debugger/engine_debugger.h"
-#include "core/io/file_access.h"
 #include "core/input/input_event.h"
+#include "core/io/file_access.h"
 #include "core/object/class_db.h"
 #include "core/object/script_instance.h"
 #include "core/object/script_language.h"
@@ -548,8 +548,8 @@ void SignalizeDock::_build_graph() {
 
 						// Only filter connections TO specific internal node types (unless it's a self-connection)
 						if (target_node != node &&
-							(target_class.contains("PhysicalBoneSimulator3D") ||
-							 target_class.contains("BoneAttachment3D"))) {
+								(target_class.contains("PhysicalBoneSimulator3D") ||
+										target_class.contains("BoneAttachment3D"))) {
 							is_internal = true;
 						}
 
