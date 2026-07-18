@@ -400,6 +400,13 @@ Error GDScriptAnalyzer::resolve_class_inheritance(GDScriptParser::ClassNode *p_c
 	GDScriptParser::ClassNode *previous_class = parser->current_class;
 	parser->current_class = p_class;
 
+	if (p_class->type == GDScriptParser::Node::TRAIT) {
+		_warn_experimental_trait(p_class);
+		if (p_class->identifier != nullptr) {
+			_warn_experimental_trait(p_class->identifier);
+		}
+	}
+
 	if (p_class->identifier) {
 		StringName class_name = p_class->identifier->name;
 		if (GDScriptParser::get_builtin_type(class_name) < Variant::VARIANT_MAX) {
@@ -1720,7 +1727,9 @@ void GDScriptAnalyzer::resolve_class_uses(GDScriptParser::ClassNode *p_class, co
 			}
 			trait = ext_parser_ref->get_parser()->head;
 		} else {
+			_warn_experimental_trait(uses);
 			GDScriptParser::IdentifierNode *id = uses->name[use_index++];
+			_warn_experimental_trait(id);
 			const StringName &name = id->name;
 			trait_name = name;
 			trait_name_node = id;
@@ -1908,7 +1917,7 @@ void GDScriptAnalyzer::resolve_class_uses(GDScriptParser::ClassNode *p_class, co
 					// Check if copied over from a common trait.
 					GDScriptParser::ClassNode::Member trait_member = trait->get_member(member_name);
 					bool copied_over = trait_member.get_source_node()->trait_origin.has(p_class->fqcn);
-					for (const String &trait_fqcn : p_class->traits_fqtn) {
+					for (const StringName &trait_fqcn : p_class->traits_fqtn) {
 						if (!copied_over && trait_member.get_source_node()->trait_origin.has(trait_fqcn)) {
 							copied_over = true;
 							break;
@@ -2046,6 +2055,20 @@ void GDScriptAnalyzer::resolve_class_uses(GDScriptParser::ClassNode *p_class, bo
 			}
 		}
 	}
+}
+
+void GDScriptAnalyzer::_warn_experimental_trait(const GDScriptParser::Node *p_source) {
+	// show experimental warning
+#ifdef TOOLS_ENABLED
+	// @todo: remove experimental tag in 27.1-rc.1
+	if (!experimental_traits_warned) {
+		experimental_traits_warned = true;
+		bool show_warning = GLOBAL_GET("debug/gdscript/warnings/show_experimental_trait_warning");
+		if (show_warning) {
+			parser->push_warning(p_source, GDScriptWarning::EXPERIMENTAL_TRAIT);
+		}
+	}
+#endif
 }
 
 void GDScriptAnalyzer::resolve_node(GDScriptParser::Node *p_node, bool p_is_root) {
@@ -7153,7 +7176,7 @@ void GDScriptAnalyzer::extend_class(GDScriptParser::ClassNode *p_class, const GD
 			continue;
 		}
 		bool copied_over = false;
-		for (const String &trait_fqcn : p_class->traits_fqtn) {
+		for (const StringName &trait_fqcn : p_class->traits_fqtn) {
 			if (trait_member.get_source_node()->trait_origin.has(trait_fqcn)) {
 				copied_over = true;
 				break;

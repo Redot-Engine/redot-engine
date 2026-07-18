@@ -2770,6 +2770,7 @@ Vector<String> GDScriptLanguage::get_reserved_words() const {
 		"signal",
 		"static",
 		"trait",
+		"trait_name",
 		"uses",
 		"var",
 		// Other keywords.

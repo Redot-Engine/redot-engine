@@ -172,6 +172,10 @@ String GDScriptWarning::get_message() const {
 			return R"("@onready" will set the default value after "@export" takes effect and will override it.)";
 		case UNUSED_STATIC_OVERRIDING_TRAIT:
 			return R"(Overridden static without using "static" keyword.)";
+		case EXPERIMENTAL_TRAIT: // @todo: remove experimental tag in 27.1-rc.1
+			return "Trait usage detected. This feature is still experimental and potentially subject to change in future versions.\n"
+				   "If you run into any issues please open an issue on GitHub: https://github.com/Redot-Engine/redot-engine/issues\n"
+				   "This message can be disabled in Project Settings > Debug > GDScript > Show Experimental Trait Warning.";
 #ifndef DISABLE_DEPRECATED
 		// Never produced. These warnings migrated from 3.x by mistake.
 		case PROPERTY_USED_AS_FUNCTION: // There is already an error.
@@ -249,6 +253,7 @@ String GDScriptWarning::get_name_from_code(Code p_code) {
 		PNAME("GET_NODE_DEFAULT_WITHOUT_ONREADY"),
 		PNAME("ONREADY_WITH_EXPORT"),
 		PNAME("UNUSED_STATIC_OVERRIDING_TRAIT"),
+		PNAME("EXPERIMENTAL_TRAIT"),
 #ifndef DISABLE_DEPRECATED
 		"PROPERTY_USED_AS_FUNCTION",
 		"CONSTANT_USED_AS_FUNCTION",

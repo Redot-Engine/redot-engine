@@ -139,6 +139,19 @@ void finish_language() {
 
 StringName GDScriptTestRunner::test_function_name;
 
+bool GDScriptTestRunner::suppress_trait_warning() {
+	bool originalState = GLOBAL_GET("debug/gdscript/warnings/show_experimental_trait_warning");
+	ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/show_experimental_trait_warning", false);
+	return originalState;
+}
+
+void GDScriptTestRunner::restore_trait_warnings(const bool originalState) {
+	ProjectSettings *singleton = ProjectSettings::get_singleton();
+	if (singleton->has_setting("debug/gdscript/warnings/show_experimental_trait_warning")) {
+		singleton->set_setting("debug/gdscript/warnings/show_experimental_trait_warning", originalState);
+	}
+}
+
 GDScriptTestRunner::GDScriptTestRunner(const String &p_source_dir, bool p_init_language, bool p_print_filenames, bool p_use_binary_tokens) {
 	test_function_name = StringName("test");
 	do_init_languages = p_init_language;
@@ -194,13 +207,18 @@ static String strip_warnings(const String &p_expected) {
 #endif
 
 int GDScriptTestRunner::run_tests() {
+	// need to suppress warnings for traits tests
+	bool traitWarn = suppress_trait_warning();
+
 	if (!make_tests()) {
 		FAIL("An error occurred while making the tests.");
+		restore_trait_warnings(traitWarn);
 		return -1;
 	}
 
 	if (!generate_class_index()) {
 		FAIL("An error occurred while generating class index.");
+		restore_trait_warnings(traitWarn);
 		return -1;
 	}
 
@@ -224,19 +242,23 @@ int GDScriptTestRunner::run_tests() {
 
 		CHECK_MESSAGE(result.passed, (result.passed ? String() : result.output));
 	}
-
+	restore_trait_warnings(traitWarn);
 	return failed;
 }
 
 bool GDScriptTestRunner::generate_outputs() {
 	is_generating = true;
+	// need to suppress warnings for traits tests
+	bool traitWarn = suppress_trait_warning();
 
 	if (!make_tests()) {
 		print_line("Failed to generate a test output.");
+		restore_trait_warnings(traitWarn);
 		return false;
 	}
 
 	if (!generate_class_index()) {
+		restore_trait_warnings(traitWarn);
 		return false;
 	}
 
@@ -252,10 +274,12 @@ bool GDScriptTestRunner::generate_outputs() {
 
 		if (!result) {
 			print_line("\nCould not generate output for " + test.get_source_file());
+			restore_trait_warnings(traitWarn);
 			return false;
 		}
 	}
 	print_line("\nGenerated output files for " + itos(tests.size()) + " tests successfully.");
+	restore_trait_warnings(traitWarn);
 
 	return true;
 }

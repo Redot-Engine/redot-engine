@@ -65,6 +65,10 @@ class GDScriptAnalyzer {
 	HashMap<const GDScriptParser::ClassNode *, Ref<GDScriptParserRef>> external_class_parser_cache;
 	bool static_context = false;
 
+#ifdef TOOLS_ENABLED
+	//Traits are new and still experimental. Emit a warning once during analysis if their usage is detected.
+	bool experimental_traits_warned = false; // @todo: remove experimental tag in 27.1-rc.1
+#endif
 	/// @name Tests for detecting invalid overloading of script members
 	/// @{
 	static _FORCE_INLINE_ bool has_member_name_conflict_in_script_class(const StringName &p_name, const GDScriptParser::ClassNode *p_current_class_node, const GDScriptParser::Node *p_member);
@@ -90,6 +94,8 @@ class GDScriptAnalyzer {
 	void resolve_class_body(GDScriptParser::ClassNode *p_class, bool p_recursive);
 	void resolve_class_uses(GDScriptParser::ClassNode *p_class, const GDScriptParser::Node *p_source = nullptr);
 	void resolve_class_uses(GDScriptParser::ClassNode *p_class, bool p_recursive);
+	// Prints a warning the first time a trait is discovered unless the warning is suppressed
+	void _warn_experimental_trait(const GDScriptParser::Node *p_source);
 	void resolve_function_signature(GDScriptParser::FunctionNode *p_function, const GDScriptParser::Node *p_source = nullptr, bool p_is_lambda = false);
 	void resolve_function_body(GDScriptParser::FunctionNode *p_function, bool p_is_lambda = false);
 	void resolve_node(GDScriptParser::Node *p_node, bool p_is_root = true);
