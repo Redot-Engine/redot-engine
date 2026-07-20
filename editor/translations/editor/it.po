@@ -8988,7 +8988,7 @@ msgstr "Modifica normalmente"
 msgid "Edit in Recovery Mode"
 msgstr "Modifica in modalità di recupero"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "Fai prima un backup del progetto"
 
 msgid "Convert Full Project"

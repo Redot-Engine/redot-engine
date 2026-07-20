@@ -8758,7 +8758,7 @@ msgstr "ویرایش به طور معمول"
 msgid "Edit in Recovery Mode"
 msgstr "ویرایش در حالت بازیابی"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "نخست، گرفتن پشتیبانی از پروژه"
 
 msgid "Convert Full Project"

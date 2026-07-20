@@ -3394,6 +3394,19 @@ void TextureStorage::_update_render_target(RenderTarget *rt) {
 
 	{ //update texture
 
+		// Clear the newly allocated color texture to avoid sampling garbage data.
+		// Vulkan textures are uninitialized on creation. A SubViewport with
+		// VIEWPORT_UPDATE_WHEN_VISIBLE starts with was_used=false, so _draw_viewport()
+		// (and thus render_target_do_clear_request) is never called before the texture
+		// is first sampled by a Sprite3D or similar. This causes a one-frame flicker.
+		// OpenGL zero-initializes textures, so this only affects the RD backends.
+		{
+			Vector<Color> clear_colors;
+			clear_colors.push_back(Color(0, 0, 0, 0));
+			RD::get_singleton()->draw_list_begin(rt->get_framebuffer(), RD::DRAW_CLEAR_COLOR_0, clear_colors);
+			RD::get_singleton()->draw_list_end();
+		}
+
 		Texture *tex = get_texture(rt->texture);
 
 		//free existing textures

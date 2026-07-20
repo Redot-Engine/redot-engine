@@ -9010,7 +9010,7 @@ msgstr "Редактировать обычно"
 msgid "Edit in Recovery Mode"
 msgstr "Редактировать в режиме восстановления"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "Сначала сделать резервную копию проекта"
 
 msgid "Convert Full Project"

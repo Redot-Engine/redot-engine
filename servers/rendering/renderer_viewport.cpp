@@ -930,6 +930,11 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
 			continue; // should not draw
 		}
 
+		// print_verbose(vformat("[DRAW] rt=%d  used_by_vp=%d  was_used=%s",
+		//     vp->render_target.get_id(),
+		//     vp->used_by_viewport.get_id(),
+		//     RSG::texture_storage->render_target_was_used(vp->render_target) ? "Y" : "N"));
+
 		RENDER_TIMESTAMP("> Render Viewport " + itos(i));
 
 		// Snapshot was_used for every active viewport BEFORE rendering vp.

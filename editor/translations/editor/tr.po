@@ -8919,7 +8919,7 @@ msgstr "Normal şekilde düzenle"
 msgid "Edit in Recovery Mode"
 msgstr "Kurtarma Kipinde Düzenle"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "Önce projeyi yedekle"
 
 msgid "Convert Full Project"

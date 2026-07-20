@@ -8872,7 +8872,7 @@ msgstr "Cuir in eagar de ghnáth"
 msgid "Edit in Recovery Mode"
 msgstr "Cuir in Eagar i Mód Aisghabhála"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "Cúltaca den tionscadal ar dtús"
 
 msgid "Convert Full Project"

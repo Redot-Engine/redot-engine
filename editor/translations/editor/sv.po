@@ -8782,7 +8782,7 @@ msgstr "Redigera normalt"
 msgid "Edit in Recovery Mode"
 msgstr "Redigera i återställningsläge"
 
-msgid "Backup project first"
+msgid "Back up project first"
 msgstr "Säkerhetskopiera projektet först"
 
 msgid "Convert Full Project"
