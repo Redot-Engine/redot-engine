@@ -122,6 +122,29 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camera, con
 		Vector3 inters;
 		// Special case for primary handle, the handle id equals control point id.
 		const int idx = p_id;
+		if (Path3DEditorPlugin::singleton->snap_to_collider && (!Path3DEditorPlugin::singleton->_edit.waiting_handle_physics || !Path3DEditorPlugin::singleton->_edit.in_physics_frame)) {
+			Path3DEditorPlugin::singleton->_edit.waiting_handle_physics = true;
+			Path3DEditorPlugin::singleton->_edit.gizmo_handle = p_id;
+			Path3DEditorPlugin::singleton->_edit.gizmo_handle_secondary = p_secondary;
+			Path3DEditorPlugin::singleton->_edit.gizmo_camera = p_camera;
+			Path3DEditorPlugin::singleton->_edit.mouse_pos = p_point;
+			return;
+			// Only continue if inside physics frame and waiting for physics.
+		}
+		if (Path3DEditorPlugin::singleton->snap_to_collider) {
+			PhysicsDirectSpaceState3D *ss = p_camera->get_world_3d()->get_direct_space_state();
+
+			PhysicsDirectSpaceState3D::RayParameters ray_params;
+			ray_params.from = ray_from;
+			ray_params.to = ray_from + ray_dir * p_camera->get_far();
+			PhysicsDirectSpaceState3D::RayResult result;
+			if (ss->intersect_ray(ray_params, result)) {
+				Vector3 local = gi.xform(result.position);
+				c->set_point_position(idx, local);
+				return;
+			}
+			// Will continue and do the plane intersect_ray if doesn't hit anything.
+		}
 		if (p.intersects_ray(ray_from, ray_dir, &inters)) {
 			if (Node3DEditor::get_singleton()->is_snap_enabled()) {
 				float snap = Node3DEditor::get_singleton()->get_translate_snap();
@@ -417,6 +440,8 @@ void Path3DGizmo::redraw() {
 
 		_secondary_handles_info.resize(c->get_point_count() * 3);
 
+		const float disk_size = EDITOR_GET("editors/3d_gizmos/gizmo_settings/path3d_tilt_disk_size");
+
 		for (int idx = 0; idx < c->get_point_count(); idx++) {
 			// Collect primary-handles.
 			const Vector3 pos = c->get_point_position(idx);
@@ -547,9 +572,8 @@ void Path3DGizmo::_update_transform_gizmo() {
 	Node3DEditor::get_singleton()->update_transform_gizmo();
 }
 
-Path3DGizmo::Path3DGizmo(Path3D *p_path, float p_disk_size) {
+Path3DGizmo::Path3DGizmo(Path3D *p_path) {
 	path = p_path;
-	disk_size = p_disk_size;
 	set_node_3d(p_path);
 	orig_in_length = 0;
 	orig_out_length = 0;
@@ -676,9 +700,20 @@ EditorPlugin::AfterGUIInput Path3DEditorPlugin::forward_3d_gui_input(Camera3D *p
 				} else {
 					origin = gt.xform(c->get_point_position(c->get_point_count() - 1));
 				}
-				Plane p(p_camera->get_transform().basis.get_column(2), origin);
+
 				Vector3 ray_from = viewport->get_ray_pos(mbpos);
 				Vector3 ray_dir = viewport->get_ray(mbpos);
+
+				if (snap_to_collider) {
+					_edit.click_ray_pos = ray_from;
+					_edit.click_ray_dir = ray_dir * p_camera->get_far();
+					_edit.gizmo_camera = p_camera;
+					_edit.origin = origin;
+					_edit.waiting_point_physics = true;
+					return EditorPlugin::AFTER_GUI_INPUT_STOP;
+				}
+
+				Plane p(p_camera->get_transform().basis.get_column(2), origin);
 
 				Vector3 inters;
 				if (p.intersects_ray(ray_from, ray_dir, &inters)) {
@@ -693,6 +728,7 @@ EditorPlugin::AfterGUIInput Path3DEditorPlugin::forward_3d_gui_input(Camera3D *p
 			}
 
 		} else if (mb->is_pressed() && ((mb->get_button_index() == MouseButton::LEFT && curve_del->is_pressed()) || (mb->get_button_index() == MouseButton::RIGHT && curve_edit->is_pressed()))) {
+			const float disk_size = EDITOR_GET("editors/3d_gizmos/gizmo_settings/path3d_tilt_disk_size");
 			for (int i = 0; i < c->get_point_count(); i++) {
 				real_t dist_to_p = viewport->point_to_screen(gt.xform(c->get_point_position(i))).distance_to(mbpos);
 				real_t dist_to_p_out = viewport->point_to_screen(gt.xform(c->get_point_position(i) + c->get_point_out(i))).distance_to(mbpos);
@@ -755,7 +791,7 @@ void Path3DEditorPlugin::edit(Object *p_object) {
 	}
 
 	update_overlays();
-	//collision_polygon_editor->edit(Object::cast_to<Node>(p_object));
+	// collision_polygon_editor->edit(Object::cast_to<Node>(p_object));
 }
 
 bool Path3DEditorPlugin::handles(Object *p_object) const {
@@ -776,6 +812,8 @@ void Path3DEditorPlugin::make_visible(bool p_visible) {
 			}
 		}
 	}
+
+	set_physics_process(p_visible);
 }
 
 void Path3DEditorPlugin::_mode_changed(int p_mode) {
@@ -818,6 +856,11 @@ void Path3DEditorPlugin::_handle_option_pressed(int p_option) {
 			bool is_checked = pm->is_item_checked(HANDLE_OPTION_LENGTH);
 			mirror_handle_length = !is_checked;
 			pm->set_item_checked(HANDLE_OPTION_LENGTH, mirror_handle_length);
+		} break;
+		case HANDLE_OPTION_SNAP_COLLIDER: {
+			bool is_checked = pm->is_item_checked(HANDLE_OPTION_SNAP_COLLIDER);
+			snap_to_collider = !is_checked;
+			pm->set_item_checked(HANDLE_OPTION_SNAP_COLLIDER, snap_to_collider);
 		} break;
 	}
 }
@@ -905,14 +948,78 @@ void Path3DEditorPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_restore_curve_points"), &Path3DEditorPlugin::_restore_curve_points);
 }
 
+void Path3DEditorPlugin::_notification(int p_what) {
+	switch (p_what) {
+		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+			if (!path) {
+				return;
+			}
+
+			if (!EditorSettings::get_singleton()->check_changed_settings_in_group("editors/3d_gizmos/gizmo_settings")) {
+				return;
+			}
+
+			path->update_gizmos();
+		} break;
+		case NOTIFICATION_PHYSICS_PROCESS: {
+			if (_edit.waiting_point_physics) {
+				_edit.waiting_point_physics = false;
+				const Transform3D gt = path->get_global_transform();
+				const Transform3D it = gt.affine_inverse();
+				Ref<Curve3D> c = path->get_curve();
+				EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+				PhysicsDirectSpaceState3D *ss = get_tree()->get_root()->get_world_3d()->get_direct_space_state();
+				if (ss) {
+					PhysicsDirectSpaceState3D::RayParameters ray_params;
+					PhysicsDirectSpaceState3D::RayResult result;
+					ray_params.from = _edit.click_ray_pos;
+					ray_params.to = ray_params.from + _edit.click_ray_dir;
+					bool hit_something = false;
+					Vector3 inters;
+					if (ss->intersect_ray(ray_params, result)) {
+						inters = result.position;
+						hit_something = true;
+					} else {
+						Plane p(_edit.gizmo_camera->get_transform().basis.get_column(2), _edit.origin);
+						if (p.intersects_ray(ray_params.from, _edit.click_ray_dir, &inters)) {
+							hit_something = true;
+						}
+					}
+					if (hit_something) {
+						ur->create_action(TTR("Add Point to Curve"));
+						ur->add_do_method(c.ptr(), "add_point", it.xform(inters), Vector3(), Vector3(), -1);
+						ur->add_undo_method(c.ptr(), "remove_point", c->get_point_count());
+						ur->commit_action();
+					}
+				}
+			}
+			if (_edit.waiting_handle_physics) {
+				_edit.in_physics_frame = true;
+
+				// Find gizmo reference.
+				Vector<Ref<Node3DGizmo>> gizmos = path->get_gizmos();
+				for (Ref<EditorNode3DGizmo> seg : gizmos) {
+					if (seg.is_valid()) {
+						_edit.gizmo = seg;
+						break;
+					}
+				}
+
+				_edit.gizmo->set_handle(_edit.gizmo_handle, _edit.gizmo_handle_secondary, _edit.gizmo_camera, _edit.mouse_pos);
+				_edit.in_physics_frame = false;
+				_edit.waiting_handle_physics = false;
+			}
+		}
+	}
+}
+
 Path3DEditorPlugin::Path3DEditorPlugin() {
 	singleton = this;
 	mirror_handle_angle = true;
 	mirror_handle_length = true;
 
-	disk_size = EDITOR_GET("editors/3d_gizmos/gizmo_settings/path3d_tilt_disk_size");
-
-	Ref<Path3DGizmoPlugin> gizmo_plugin = memnew(Path3DGizmoPlugin(disk_size));
+	Ref<Path3DGizmoPlugin> gizmo_plugin;
+	gizmo_plugin.instantiate();
 	Node3DEditor::get_singleton()->add_gizmo_plugin(gizmo_plugin);
 	path_3d_gizmo_plugin = gizmo_plugin;
 
@@ -1002,6 +1109,8 @@ Path3DEditorPlugin::Path3DEditorPlugin() {
 	menu->set_item_checked(HANDLE_OPTION_ANGLE, mirror_handle_angle);
 	menu->add_check_item(TTR("Mirror Handle Lengths"));
 	menu->set_item_checked(HANDLE_OPTION_LENGTH, mirror_handle_length);
+	menu->add_check_item(TTR("Snap to Colliders"));
+	menu->set_item_checked(HANDLE_OPTION_SNAP_COLLIDER, snap_to_collider);
 	menu->connect(SceneStringName(id_pressed), callable_mp(this, &Path3DEditorPlugin::_handle_option_pressed));
 
 	curve_edit->set_pressed_no_signal(true);
@@ -1015,7 +1124,7 @@ Ref<EditorNode3DGizmo> Path3DGizmoPlugin::create_gizmo(Node3D *p_spatial) {
 
 	Path3D *path = Object::cast_to<Path3D>(p_spatial);
 	if (path) {
-		ref.instantiate(path, disk_size);
+		ref.instantiate(path);
 	}
 
 	return ref;
@@ -1193,10 +1302,9 @@ int Path3DGizmoPlugin::get_priority() const {
 	return -1;
 }
 
-Path3DGizmoPlugin::Path3DGizmoPlugin(float p_disk_size) {
+Path3DGizmoPlugin::Path3DGizmoPlugin() {
 	Color path_color = SceneTree::get_singleton()->get_debug_paths_color();
 	Color path_tilt_color = EDITOR_GET("editors/3d_gizmos/gizmo_colors/path_tilt");
-	disk_size = p_disk_size;
 
 	create_material("path_material", path_color);
 	create_material("path_thin_material", Color(0.6, 0.6, 0.6));
