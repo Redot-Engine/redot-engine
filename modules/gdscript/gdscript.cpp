@@ -2949,6 +2949,23 @@ String GDScriptLanguage::get_global_class_name(const String &p_path, String *r_b
 		return String(); // No class parsed.
 	}
 
+	if (parser.is_file_struct()) {
+		if (r_base_type) {
+			*r_base_type = String();
+		}
+		if (r_icon_path) {
+			*r_icon_path = String();
+		}
+		if (r_is_abstract) {
+			*r_is_abstract = false;
+		}
+		if (r_is_tool) {
+			*r_is_tool = parser.is_tool();
+		}
+		const GDScriptParser::StructNode *fs = parser.get_file_struct();
+		return fs != nullptr && fs->identifier != nullptr ? String(fs->identifier->name) : String();
+	}
+
 	/**
 	 * **WARNING**
 	 *

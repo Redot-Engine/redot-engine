@@ -468,6 +468,27 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 						}
 					}
 
+					if (in->get_datatype().kind == GDScriptParser::DataType::STRUCT && in->get_datatype().is_meta_type) {
+						Ref<GDScriptStructClass> struct_wrapper = GDScriptLanguage::get_singleton()->get_struct_wrapper(in->get_datatype().struct_type->fqsn);
+						if (struct_wrapper.is_null()) {
+							String global_struct_path = ScriptServer::get_global_class_path(identifier);
+							if (!global_struct_path.is_empty()) {
+								Error err = OK;
+								GDScriptCache::get_full_script(global_struct_path, err);
+								struct_wrapper = GDScriptLanguage::get_singleton()->get_struct_wrapper(in->get_datatype().struct_type->fqsn);
+							}
+						}
+						if (struct_wrapper.is_valid()) {
+							Variant wrapper_variant = struct_wrapper;
+							GDScriptCodeGenerator::Address result = codegen.add_constant(wrapper_variant);
+							result.type = _gdtype_from_datatype(in->get_datatype(), codegen.script);
+							return result;
+						}
+						_set_error(vformat(R"(Struct wrapper "%s" not found in global registry.)", identifier), in);
+						r_error = ERR_COMPILATION_FAILED;
+						return GDScriptCodeGenerator::Address();
+					}
+
 					// Try global classes.
 					if (ScriptServer::is_global_class(identifier)) {
 						const GDScriptParser::ClassNode *class_node = codegen.class_node;

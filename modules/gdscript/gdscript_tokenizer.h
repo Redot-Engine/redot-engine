@@ -132,6 +132,7 @@ public:
 			SIGNAL,
 			STATIC,
 			STRUCT,
+			STRUCT_NAME,
 			SUPER,
 			TRAIT,
 			VAR,

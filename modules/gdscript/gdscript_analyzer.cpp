@@ -798,7 +798,11 @@ GDScriptParser::DataType GDScriptAnalyzer::resolve_datatype(GDScriptParser::Type
 			result.native_type = first;
 		} else if (ScriptServer::is_global_class(first)) {
 			if (GDScript::is_canonically_equal_paths(parser->script_path, ScriptServer::get_global_class_path(first))) {
-				result = parser->head->get_datatype();
+				if (parser->is_file_struct()) {
+					result = make_struct_meta_type(parser->get_file_struct(), parser->script_path);
+				} else {
+					result = parser->head->get_datatype();
+				}
 			} else {
 				String path = ScriptServer::get_global_class_path(first);
 				String ext = path.get_extension();
@@ -808,7 +812,11 @@ GDScriptParser::DataType GDScriptAnalyzer::resolve_datatype(GDScriptParser::Type
 						push_error(vformat(R"(Could not parse global class "%s" from "%s".)", first, ScriptServer::get_global_class_path(first)), p_type);
 						return bad_type;
 					}
-					result = ref->get_parser()->head->get_datatype();
+					if (ref->get_parser()->is_file_struct()) {
+						result = make_struct_meta_type(ref->get_parser()->get_file_struct(), path);
+					} else {
+						result = ref->get_parser()->head->get_datatype();
+					}
 				} else {
 					result = make_script_meta_type(ResourceLoader::load(path, "Script"));
 				}
@@ -4032,10 +4040,30 @@ GDScriptParser::DataType GDScriptAnalyzer::make_global_class_meta_type(const Str
 			return type;
 		}
 
+		if (ref->get_parser()->is_file_struct()) {
+			return make_struct_meta_type(ref->get_parser()->get_file_struct(), path);
+		}
+
 		return ref->get_parser()->head->get_datatype();
 	} else {
 		return make_script_meta_type(ResourceLoader::load(path, "Script"));
 	}
+}
+
+GDScriptParser::DataType GDScriptAnalyzer::make_struct_meta_type(GDScriptParser::StructNode *p_struct, const String &p_script_path) {
+	GDScriptParser::DataType type;
+	if (p_struct == nullptr) {
+		type.type_source = GDScriptParser::DataType::UNDETECTED;
+		type.kind = GDScriptParser::DataType::VARIANT;
+		return type;
+	}
+	type.type_source = GDScriptParser::DataType::ANNOTATED_EXPLICIT;
+	type.kind = GDScriptParser::DataType::STRUCT;
+	type.struct_type = p_struct;
+	type.is_meta_type = true;
+	type.is_constant = true;
+	type.script_path = p_script_path;
+	return type;
 }
 
 Ref<GDScriptParserRef> GDScriptAnalyzer::ensure_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const GDScriptParser::ClassNode *p_from_class, const char *p_context, const GDScriptParser::Node *p_source) {

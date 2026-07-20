@@ -675,8 +675,7 @@ void GDScriptParser::parse_program() {
 		}
 	}
 
-	if (current.type == GDScriptTokenizer::Token::CLASS_NAME || current.type == GDScriptTokenizer::Token::EXTENDS) {
-		// Set range of the class to only start at extends or class_name if present.
+	if (current.type == GDScriptTokenizer::Token::CLASS_NAME || current.type == GDScriptTokenizer::Token::STRUCT_NAME || current.type == GDScriptTokenizer::Token::EXTENDS) {
 		reset_extents(head, current);
 	}
 
@@ -690,6 +689,17 @@ void GDScriptParser::parse_program() {
 					push_error(R"("class_name" can only be used once.)");
 				} else {
 					parse_class_name();
+				}
+				break;
+			case GDScriptTokenizer::Token::STRUCT_NAME:
+				PUSH_PENDING_ANNOTATIONS_TO_HEAD;
+				advance();
+				if (_is_struct_file) {
+					push_error(R"("struct_name" can only be used once.)");
+				} else if (head->identifier != nullptr) {
+					push_error(R"("struct_name" cannot be used together with "class_name".)");
+				} else {
+					parse_struct_name();
 				}
 				break;
 			case GDScriptTokenizer::Token::EXTENDS:
@@ -743,7 +753,11 @@ void GDScriptParser::parse_program() {
 		return;
 	}
 
-	parse_class_body(true);
+	if (_is_struct_file) {
+		parse_struct_file_body();
+	} else {
+		parse_class_body(true);
+	}
 
 	head->end_line = current.end_line;
 	head->end_column = current.end_column;
@@ -1041,6 +1055,101 @@ void GDScriptParser::parse_class_name() {
 	} else {
 		end_statement("class_name statement");
 	}
+}
+
+void GDScriptParser::parse_struct_name() {
+	_is_struct_file = true;
+
+	StructNode *n_struct = alloc_node<StructNode>();
+	n_struct->owner_class = head;
+	_file_struct = n_struct;
+
+	if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for the global struct name after "struct_name".)")) {
+		n_struct->identifier = parse_identifier();
+		n_struct->fqsn = String(n_struct->identifier->name);
+		head->add_member(n_struct);
+	}
+
+	// Allow single-struct inheritance on the same line
+	if (match(GDScriptTokenizer::Token::EXTENDS)) {
+		if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for base struct after "extends".)")) {
+			IdentifierNode *base_identifier = parse_identifier();
+			n_struct->extends.push_back(base_identifier);
+			while (match(GDScriptTokenizer::Token::PERIOD)) {
+				if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier after "." in extends chain.)")) {
+					IdentifierNode *next_part = parse_identifier();
+					n_struct->extends.push_back(next_part);
+				}
+			}
+		}
+	}
+
+	end_statement("struct_name statement");
+}
+
+void GDScriptParser::parse_struct_file_body() {
+	StructNode *n_struct = _file_struct;
+	if (n_struct == nullptr) {
+		return;
+	}
+
+	StructNode *previous_struct = current_struct;
+	current_struct = n_struct;
+
+	// The struct body lives at file scope, so parse until EOF.
+	while (!is_at_end()) {
+		GDScriptTokenizer::Token token = current;
+
+		if (token.type == GDScriptTokenizer::Token::NEWLINE) {
+			advance();
+			continue;
+		}
+
+		switch (token.type) {
+			case GDScriptTokenizer::Token::VAR: {
+				advance();
+				VariableNode *variable = parse_variable(false, true);
+				if (variable != nullptr) {
+					if (!n_struct->add_field(variable)) {
+						push_error(vformat(R"(Duplicate field "%s" in struct.)", variable->identifier->name), variable);
+					}
+				}
+				break;
+			}
+			case GDScriptTokenizer::Token::FUNC: {
+				advance();
+				FunctionNode *function = parse_function(false);
+				if (function != nullptr) {
+					if (!n_struct->add_method(function)) {
+						push_error(vformat(R"(Duplicate method "%s" in struct.)", function->identifier->name), function);
+					}
+					// Check for constructor
+					if (function->identifier->name == SNAME("_init")) {
+						n_struct->constructor = function;
+					}
+				}
+				break;
+			}
+			case GDScriptTokenizer::Token::PASS: {
+				advance();
+				end_statement(R"("pass")");
+				break;
+			}
+			default: {
+				push_error(vformat(R"(Unexpected "%s" in global struct body.)", token.get_debug_name()));
+				advance();
+				break;
+			}
+		}
+
+		if (panic_mode) {
+			synchronize();
+		}
+	}
+
+	complete_extents(n_struct);
+
+	current_struct = previous_struct;
 }
 
 void GDScriptParser::parse_extends() {
@@ -4338,6 +4447,7 @@ GDScriptParser::ParseRule *GDScriptParser::get_rule(GDScriptTokenizer::Token::Ty
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // SIGNAL,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STATIC,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STRUCT,
+		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STRUCT_NAME,
 		{ &GDScriptParser::parse_call,						nullptr,                                        PREC_NONE }, // SUPER,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // TRAIT,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // VAR,

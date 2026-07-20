@@ -1439,6 +1439,8 @@ private:
 	friend class GDScriptParserRef;
 
 	bool _is_tool = false;
+	bool _is_struct_file = false;
+	StructNode *_file_struct = nullptr;
 	String script_path;
 	bool for_completion = false;
 	bool parse_body = true;
@@ -1616,6 +1618,8 @@ private:
 	void parse_program();
 	ClassNode *parse_class(bool p_is_static);
 	StructNode *parse_struct(bool p_is_static);
+	void parse_struct_name();
+	void parse_struct_file_body();
 	void parse_class_name();
 	void parse_extends();
 	void parse_class_body(bool p_is_multiline);
@@ -1715,6 +1719,8 @@ public:
 	Error parse_binary(const Vector<uint8_t> &p_binary, const String &p_script_path);
 	ClassNode *get_tree() const { return head; }
 	bool is_tool() const { return _is_tool; }
+	bool is_file_struct() const { return _is_struct_file; }
+	StructNode *get_file_struct() const { return _file_struct; }
 	Ref<GDScriptParserRef> get_depended_parser_for(const String &p_path);
 	const HashMap<String, Ref<GDScriptParserRef>> &get_depended_parsers();
 	ClassNode *find_class(const String &p_qualified_name) const;
