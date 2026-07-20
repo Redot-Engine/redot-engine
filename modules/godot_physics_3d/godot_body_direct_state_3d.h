@@ -38,7 +38,7 @@
  * [Add any documentation that applies to the entire file here!]
  */
 
-#include "servers/physics_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 class GodotBody3D;
 

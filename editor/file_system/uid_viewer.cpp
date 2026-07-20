@@ -42,7 +42,7 @@
 #include "editor/docks/filesystem_dock.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/themes/editor_scale.h"
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 UIDViewer::UIDViewer() {
 	// Create container
