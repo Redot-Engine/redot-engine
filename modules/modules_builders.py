@@ -9,7 +9,9 @@ def modules_enabled_builder(target, source, env):
     modules = sorted(source[0].read())
     with methods.generated_wrapper(str(target[0])) as file:
         for module in modules:
+            file.write(f"#ifndef MODULE_{module.upper()}_ENABLED\n")
             file.write(f"#define MODULE_{module.upper()}_ENABLED\n")
+            file.write("#endif\n")
 
 
 def register_module_types_builder(target, source, env):

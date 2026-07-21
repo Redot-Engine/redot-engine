@@ -1,0 +1,7 @@
+GDTEST_OK
+~~ WARNING at line 1: (EXPERIMENTAL_STRUCT) Struct usage detected. This feature is still experimental and potentially subject to change in future versions.
+If you run into any issues please open an issue on GitHub: https://github.com/Redot-Engine/redot-engine/issues
+This message can be disabled in Editor Settings > Text Editor > Behavior > General > Show Experimental Struct Warning.
+p: 3 4
+after copy mutate -> p: 3 q: 99
+typed: 0 7

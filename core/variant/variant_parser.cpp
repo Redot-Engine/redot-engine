@@ -44,6 +44,9 @@
 #include "core/io/resource_uid.h"
 #include "core/object/script_language.h"
 #include "core/string/string_buffer.h"
+#ifdef MODULE_GDSCRIPT_ENABLED
+#include "modules/gdscript/gdscript_struct.h"
+#endif
 
 char32_t VariantParser::Stream::get_char() {
 	// is within buffer?
@@ -1036,6 +1039,84 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 				r_err_str = "Expected ')'";
 				return ERR_PARSE_ERROR;
 			}
+		} else if (id == "Struct") {
+#ifdef MODULE_GDSCRIPT_ENABLED
+			Error err = get_token(p_stream, token, line, r_err_str);
+
+			if (err != OK) {
+				return err;
+			}
+
+			if (token.type != TK_PARENTHESIS_OPEN) {
+				r_err_str = "Expected '(' after Struct";
+				return ERR_PARSE_ERROR;
+			}
+
+			err = get_token(p_stream, token, line, r_err_str);
+
+			if (err != OK) {
+				return err;
+			}
+
+			Variant dict_value;
+			err = parse_value(token, dict_value, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
+
+			if (err != OK) {
+				return err;
+			}
+
+			err = get_token(p_stream, token, line, r_err_str);
+
+			if (err != OK) {
+				return err;
+			}
+
+			if (token.type != TK_PARENTHESIS_CLOSE) {
+				r_err_str = "Expected ')' after Struct data";
+				return ERR_PARSE_ERROR;
+			}
+
+			if (dict_value.get_type() != Variant::DICTIONARY) {
+				r_err_str = "Expected a Dictionary inside Struct()";
+				return ERR_PARSE_ERROR;
+			}
+
+			const Dictionary struct_data = dict_value;
+
+			if (!struct_data.has("__type__")) {
+				r_err_str = "Invalid struct data: missing __type__ field";
+				return ERR_PARSE_ERROR;
+			}
+
+			// Requires explicit String/StringName tag.
+			const Variant type_value = struct_data["__type__"];
+
+			if (type_value.get_type() != Variant::STRING && type_value.get_type() != Variant::STRING_NAME) {
+				r_err_str = "Invalid struct data: __type__ must be a String or StringName";
+				return ERR_PARSE_ERROR;
+			}
+
+			const String type_name = type_value;
+
+			if (type_name.is_empty()) {
+				r_err_str = "Invalid struct data: empty __type__ field";
+				return ERR_PARSE_ERROR;
+			}
+
+			// Only assign the output once construction succeeds, so a failed
+			// factory call doesn't leave a partially-mutated value behind.
+			Variant struct_value = ScriptServer::create_struct_instance(type_name, struct_data);
+			if (struct_value.get_type() != Variant::STRUCT) {
+				r_err_str = vformat("Failed to create struct instance for type '%s'", type_name);
+				return ERR_PARSE_ERROR;
+			}
+
+			value = struct_value;
+			return OK;
+#else
+			r_err_str = "Struct decoding requires the GDScript module";
+			return ERR_PARSE_ERROR;
+#endif
 		} else if (id == "Object") {
 			if (!p_allow_objects) {
 				r_err_str = R"(Object decoding is prevented because "allow_objects" is false)";
@@ -2215,6 +2296,37 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 		} break;
 
 		// Misc types.
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case Variant::STRUCT: {
+			const GDScriptStructInstance *struct_instance = VariantGetInternalPtr<GDScriptStructInstance>::get_ptr(&p_variant);
+			ERR_FAIL_NULL_V_MSG(struct_instance, ERR_INVALID_DATA, "Invalid Struct Variant: missing internal struct instance.");
+
+			// This really shouldn't happen, but it is to be safe.
+			if (unlikely(p_recursion_count >= MAX_RECURSION)) {
+				ERR_PRINT("Max recursion reached");
+				p_store_string_func(p_store_string_ud, "null");
+				break;
+			}
+
+			const Dictionary dict = struct_instance->serialize();
+			const Variant *type_value = dict.getptr("__type__");
+			ERR_FAIL_COND_V_MSG(type_value == nullptr || (type_value->get_type() != Variant::STRING && type_value->get_type() != Variant::STRING_NAME) || String(*type_value).is_empty(), ERR_INVALID_DATA, "Struct serialization produced an invalid __type__.");
+
+			p_store_string_func(p_store_string_ud, "Struct(");
+			const Error err = write(dict, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count + 1, p_compat, p_full_objects);
+
+			if (err != OK) {
+				return err;
+			}
+
+			p_store_string_func(p_store_string_ud, ")");
+		} break;
+#else
+		case Variant::STRUCT: {
+			// Structs not available without GDScript module
+			p_store_string_func(p_store_string_ud, "null");
+		} break;
+#endif
 		case Variant::COLOR: {
 			Color c = p_variant;
 			p_store_string_func(p_store_string_ud, "Color(" + rtos_fix(c.r, p_compat) + ", " + rtos_fix(c.g, p_compat) + ", " + rtos_fix(c.b, p_compat) + ", " + rtos_fix(c.a, p_compat) + ")");

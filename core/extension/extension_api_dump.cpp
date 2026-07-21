@@ -49,6 +49,9 @@
 #ifdef TOOLS_ENABLED
 #include "editor/doc/editor_help.h"
 
+// Forward declaration for struct type
+class GDScriptStructInstance;
+
 static String get_builtin_or_variant_type_name(const Variant::Type p_type) {
 	if (p_type == Variant::NIL) {
 		return "Variant";
@@ -229,6 +232,7 @@ Dictionary GDExtensionAPIDump::generate_extension_api(bool p_include_docs) {
 			{ Variant::PACKED_VECTOR3_ARRAY, ptrsize_32 * 2, ptrsize_64 * 2, ptrsize_32 * 2, ptrsize_64 * 2 },
 			{ Variant::PACKED_COLOR_ARRAY, ptrsize_32 * 2, ptrsize_64 * 2, ptrsize_32 * 2, ptrsize_64 * 2 },
 			{ Variant::PACKED_VECTOR4_ARRAY, ptrsize_32 * 2, ptrsize_64 * 2, ptrsize_32 * 2, ptrsize_64 * 2 },
+			{ Variant::STRUCT, ptrsize_32, ptrsize_64, ptrsize_32, ptrsize_64 },
 			{ Variant::VARIANT_MAX, sizeof(uint64_t) + sizeof(float) * 4, sizeof(uint64_t) + sizeof(float) * 4, sizeof(uint64_t) + sizeof(double) * 4, sizeof(uint64_t) + sizeof(double) * 4 },
 		};
 
@@ -257,6 +261,7 @@ Dictionary GDExtensionAPIDump::generate_extension_api(bool p_include_docs) {
 		static_assert(type_size_array[Variant::NODE_PATH][sizeof(void *)] == sizeof(NodePath), "Size of NodePath mismatch");
 		static_assert(type_size_array[Variant::RID][sizeof(void *)] == sizeof(RID), "Size of RID mismatch");
 		static_assert(type_size_array[Variant::OBJECT][sizeof(void *)] == sizeof(Object *), "Size of Object mismatch");
+		static_assert(type_size_array[Variant::STRUCT][sizeof(void *)] == sizeof(GDScriptStructInstance *), "Size of Struct mismatch");
 		static_assert(type_size_array[Variant::CALLABLE][sizeof(void *)] == sizeof(Callable), "Size of Callable mismatch");
 		static_assert(type_size_array[Variant::SIGNAL][sizeof(void *)] == sizeof(Signal), "Size of Signal mismatch");
 		static_assert(type_size_array[Variant::DICTIONARY][sizeof(void *)] == sizeof(Dictionary), "Size of Dictionary mismatch");
@@ -281,6 +286,12 @@ Dictionary GDExtensionAPIDump::generate_extension_api(bool p_include_docs) {
 			Array sizes;
 			for (int j = 0; j <= Variant::VARIANT_MAX; j++) {
 				Variant::Type t = type_size_array[j].type;
+				// Structs are a GDScript-internal type with no GDExtension ABI; keep
+				// them out of the extension API so bindings generators don't try to
+				// emit a (nonexistent) Struct type.
+				if (t == Variant::STRUCT) {
+					continue;
+				}
 				String name = t == Variant::VARIANT_MAX ? String("Variant") : Variant::get_type_name(t);
 				Dictionary d2;
 				d2["name"] = name;
@@ -656,6 +667,11 @@ Dictionary GDExtensionAPIDump::generate_extension_api(bool p_include_docs) {
 
 		for (int i = 0; i < Variant::VARIANT_MAX; i++) {
 			if (i == Variant::OBJECT) {
+				continue;
+			}
+			// Structs are a GDScript-internal type with no GDExtension ABI, so they
+			// are not exposed as a builtin class in the extension API.
+			if (i == Variant::STRUCT) {
 				continue;
 			}
 
