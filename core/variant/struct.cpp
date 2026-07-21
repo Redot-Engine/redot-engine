@@ -154,6 +154,9 @@ Variant Struct::get_member(int p_index) const {
 void Struct::set_member(int p_index, const Variant &p_value) {
 	ERR_FAIL_NULL(_p);
 	ERR_FAIL_INDEX(p_index, _p->field_count);
+	ERR_FAIL_COND_MSG(!_p->info->is_value_compatible(p_index, p_value),
+			vformat(R"(Value of type "%s" is incompatible with struct field %d.)",
+					Variant::get_type_name(p_value.get_type()), p_index));
 	_p->values[p_index] = p_value;
 }
 
@@ -181,6 +184,9 @@ bool Struct::set_named(const StringName &p_name, const Variant &p_value) {
 		return false;
 	}
 	DEV_ASSERT(idx < _p->field_count);
+	ERR_FAIL_COND_V_MSG(!_p->info->is_value_compatible(idx, p_value), false,
+			vformat(R"(Value of type "%s" is incompatible with struct field "%s".)",
+					Variant::get_type_name(p_value.get_type()), p_name));
 	_p->values[idx] = p_value;
 	return true;
 }

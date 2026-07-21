@@ -214,6 +214,40 @@ TEST_CASE("[Struct] Typed fields require a concrete type") {
 	CHECK(info.is_null());
 }
 
+TEST_CASE("[Struct] A typed field's default must match its declared type") {
+	StructInfoBuilder b;
+	b.set_logical_type_id("BadDefault");
+	StructInfo::Field f;
+	f.name = "count";
+	f.type = Variant::INT;
+	f.is_typed = true;
+	f.default_value = "not an int";
+	b.add_field(f);
+	ERR_PRINT_OFF;
+	Ref<StructInfo> info = b.build();
+	ERR_PRINT_ON;
+	CHECK(info.is_null());
+}
+
+TEST_CASE("[Struct] Typed field assignment rejects incompatible values") {
+	Ref<StructInfo> info = make_point();
+	Struct s(info);
+
+	s.set_member(0, 42);
+	CHECK(int(s.get_member(0)) == 42);
+	CHECK(s.set_named("y", 7));
+
+	ERR_PRINT_OFF;
+	s.set_member(0, "text");
+	CHECK_FALSE(s.set_named("y", "text"));
+	ERR_PRINT_ON;
+
+	CHECK(int(s.get_member(0)) == 42);
+	Variant v;
+	s.get_named("y", v);
+	CHECK(int(v) == 7);
+}
+
 TEST_CASE("[Struct] Two fresh instances receive independent default containers") {
 	Ref<StructInfo> info = make_bag();
 	Struct s1(info);

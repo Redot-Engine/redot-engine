@@ -94,6 +94,8 @@ private:
 				ERR_FAIL_COND_V_MSG(f.type != Variant::NIL || f.class_name != StringName() || f.struct_type_id != StringName(),
 						ERR_INVALID_DATA, vformat(R"(Untyped struct field "%s" carries typed metadata.)", f.name));
 			}
+			ERR_FAIL_COND_V_MSG(!_value_matches_field(f, f.default_value), ERR_INVALID_DATA,
+					vformat(R"(Struct field "%s" default value is incompatible with its declared type.)", f.name));
 		}
 		uint64_t h = hash_murmur3_one_64(fields.size());
 		for (const Field &f : fields) {
@@ -106,6 +108,15 @@ private:
 		layout_hash = h;
 		frozen = true;
 		return OK;
+	}
+	static bool _value_matches_field(const Field &p_field, const Variant &p_value) {
+		if (!p_field.is_typed) {
+			return true;
+		}
+		if (p_value.get_type() == Variant::NIL) {
+			return true;
+		}
+		return p_value.get_type() == p_field.type;
 	}
 
 protected:
@@ -149,6 +160,11 @@ public:
 		ERR_FAIL_COND_V_MSG(!frozen, Variant(), "Cannot instantiate a default from an unfinished schema.");
 		ERR_FAIL_INDEX_V(p_index, fields.size(), Variant());
 		return fields[p_index].default_value.duplicate(true);
+	}
+
+	bool is_value_compatible(int p_index, const Variant &p_value) const {
+		ERR_FAIL_INDEX_V(p_index, fields.size(), false);
+		return _value_matches_field(fields[p_index], p_value);
 	}
 
 	bool is_same_layout_as(const StructInfo &p_other) const {
