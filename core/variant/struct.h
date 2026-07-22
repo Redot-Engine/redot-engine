@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  variant_destruct.h                                                    */
+/*  struct.h                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -32,47 +32,42 @@
 
 #pragma once
 
-/**
- * @file variant_destruct.h
- *
- * [Add any documentation that applies to the entire file here!]
- */
-
-#include "core/variant/variant.h"
-
-#include "core/object/class_db.h"
+#include "core/string/string_name.h"
 
 template <typename T>
-struct VariantDestruct {};
+class Ref;
+class Variant;
+class StructInfo;
+struct StructData;
 
-#define MAKE_PTRDESTRUCT(m_type)                               \
-	template <>                                                \
-	struct VariantDestruct<m_type> {                           \
-		_FORCE_INLINE_ static void ptr_destruct(void *p_ptr) { \
-			reinterpret_cast<m_type *>(p_ptr)->~m_type();      \
-		}                                                      \
-		_FORCE_INLINE_ static Variant::Type get_base_type() {  \
-			return GetTypeInfo<m_type>::VARIANT_TYPE;          \
-		}                                                      \
-	}
+class Struct {
+	StructData *_p = nullptr;
 
-MAKE_PTRDESTRUCT(String);
-MAKE_PTRDESTRUCT(StringName);
-MAKE_PTRDESTRUCT(NodePath);
-MAKE_PTRDESTRUCT(Callable);
-MAKE_PTRDESTRUCT(Signal);
-MAKE_PTRDESTRUCT(Struct);
-MAKE_PTRDESTRUCT(Dictionary);
-MAKE_PTRDESTRUCT(Array);
-MAKE_PTRDESTRUCT(PackedByteArray);
-MAKE_PTRDESTRUCT(PackedInt32Array);
-MAKE_PTRDESTRUCT(PackedInt64Array);
-MAKE_PTRDESTRUCT(PackedFloat32Array);
-MAKE_PTRDESTRUCT(PackedFloat64Array);
-MAKE_PTRDESTRUCT(PackedStringArray);
-MAKE_PTRDESTRUCT(PackedVector2Array);
-MAKE_PTRDESTRUCT(PackedVector3Array);
-MAKE_PTRDESTRUCT(PackedColorArray);
-MAKE_PTRDESTRUCT(PackedVector4Array);
+	void _free_data() noexcept;
+	static StructData *_copy_data(const StructData *p_from);
 
-#undef MAKE_PTRDESTRUCT
+public:
+	Struct() noexcept = default;
+	explicit Struct(const Ref<StructInfo> &p_info);
+	Struct(const Struct &p_from);
+	Struct(Struct &&p_from) noexcept;
+	Struct &operator=(const Struct &p_from);
+	Struct &operator=(Struct &&p_from) noexcept;
+	~Struct() noexcept;
+
+	bool is_null() const noexcept { return _p == nullptr; }
+
+	Ref<StructInfo> get_info() const;
+	StringName get_type_id() const;
+	uint64_t get_layout_hash() const noexcept;
+	int get_field_count() const noexcept;
+
+	Variant get_member(int p_index) const;
+	void set_member(int p_index, const Variant &p_value);
+
+	bool get_named(const StringName &p_name, Variant &r_value) const;
+	bool set_named(const StringName &p_name, const Variant &p_value);
+
+	bool operator==(const Struct &p_other) const;
+	bool operator!=(const Struct &p_other) const { return !(*this == p_other); }
+};

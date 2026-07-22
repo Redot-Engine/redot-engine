@@ -281,6 +281,7 @@ bool arg_default_value_is_assignable_to_type(const Context &p_context, const Var
 		case Variant::VECTOR4I:
 			return p_arg_type.name == p_context.names_cache.vector4_type ||
 					p_arg_type.name == Variant::get_type_name(p_val.get_type());
+		case Variant::STRUCT:
 		case Variant::VARIANT_MAX:
 			break;
 	}

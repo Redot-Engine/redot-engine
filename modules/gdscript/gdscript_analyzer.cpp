@@ -5003,6 +5003,7 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 								}
 								break;
 							// Here for completeness.
+							case Variant::STRUCT:
 							case Variant::VARIANT_MAX:
 								break;
 						}
@@ -5116,6 +5117,7 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 						}
 						break;
 					// Here for completeness.
+					case Variant::STRUCT:
 					case Variant::VARIANT_MAX:
 						break;
 				}

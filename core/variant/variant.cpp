@@ -196,6 +196,7 @@ static const std::array<String, Variant::Type::VARIANT_MAX> TYPE_STRING_TABLE = 
 	"PackedVector3Array",
 	"PackedColorArray",
 	"PackedVector4Array",
+	"Struct",
 };
 
 /*
@@ -364,6 +365,7 @@ static const std::unordered_map<std::string, Variant::Type> STRING_TO_TYPE_TBL =
 	{ "PackedVector3Array", Variant::PACKED_VECTOR3_ARRAY },
 	{ "PackedColorArray", Variant::PACKED_COLOR_ARRAY },
 	{ "PackedVector4Array", Variant::PACKED_VECTOR4_ARRAY },
+	{ "Struct", Variant::STRUCT },
 };
 
 String Variant::get_type_name(Variant::Type p_type) {
@@ -504,6 +506,9 @@ bool Variant::is_zero() const {
 		}
 		case SIGNAL: {
 			return reinterpret_cast<const Signal *>(_data._mem)->is_null();
+		}
+		case STRUCT: {
+			return reinterpret_cast<const Struct *>(_data._mem)->is_null();
 		}
 		case STRING_NAME: {
 			return *reinterpret_cast<const StringName *>(_data._mem) == StringName();
@@ -770,6 +775,9 @@ void Variant::reference(const Variant &p_variant) {
 				_data.packed_array = PACKED_ARRAY_CREATE_TBL[p_variant.type - PACKED_BYTE_ARRAY]();
 			}
 			return;
+		case STRUCT:
+			memnew_placement(_data._mem, Struct(*reinterpret_cast<const Struct *>(p_variant._data._mem)));
+			return;
 		default:
 			dst = _data._mem;
 			src = (void *)p_variant._data._mem;
@@ -864,6 +872,9 @@ void Variant::_clear_internal() {
 		case DICTIONARY:
 		case ARRAY: {
 			DESTRUCTOR_TABLE[type](_data._mem);
+		} break;
+		case STRUCT: {
+			reinterpret_cast<Struct *>(_data._mem)->~Struct();
 		} break;
 
 		// Math types.
@@ -1149,6 +1160,10 @@ String Variant::stringify(int recursion_count) const {
 		case SIGNAL: {
 			const Signal &s = *reinterpret_cast<const Signal *>(_data._mem);
 			return String(s);
+		}
+		case STRUCT: {
+			const Struct &s = *reinterpret_cast<const Struct *>(_data._mem);
+			return "Struct(" + String(s.get_type_id()) + ")";
 		}
 		case RID: {
 			const ::RID &s = *reinterpret_cast<const ::RID *>(_data._mem);
@@ -1492,6 +1507,14 @@ Variant::operator Callable() const {
 		return *reinterpret_cast<const Callable *>(_data._mem);
 	} else {
 		return Callable();
+	}
+}
+
+Variant::operator Struct() const {
+	if (type == STRUCT) {
+		return *reinterpret_cast<const Struct *>(_data._mem);
+	} else {
+		return Struct();
 	}
 }
 
@@ -1950,6 +1973,12 @@ Variant::Variant(const Signal &p_callable) :
 	static_assert(sizeof(Signal) <= sizeof(_data._mem));
 }
 
+Variant::Variant(const Struct &p_struct) :
+		type(STRUCT) {
+	memnew_placement(_data._mem, Struct(p_struct));
+	static_assert(sizeof(Struct) <= sizeof(_data._mem));
+}
+
 Variant::Variant(const Dictionary &p_dictionary) :
 		type(DICTIONARY) {
 	memnew_placement(_data._mem, Dictionary(p_dictionary));
@@ -2171,6 +2200,9 @@ void Variant::operator=(const Variant &p_variant) {
 		case SIGNAL: {
 			*reinterpret_cast<Signal *>(_data._mem) = *reinterpret_cast<const Signal *>(p_variant._data._mem);
 		} break;
+		case STRUCT: {
+			*reinterpret_cast<Struct *>(_data._mem) = *reinterpret_cast<const Struct *>(p_variant._data._mem);
+		} break;
 
 		case STRING_NAME: {
 			*reinterpret_cast<StringName *>(_data._mem) = *reinterpret_cast<const StringName *>(p_variant._data._mem);
@@ -2387,6 +2419,11 @@ uint32_t Variant::recursive_hash(int recursion_count) const {
 		case DICTIONARY: {
 			return reinterpret_cast<const Dictionary *>(_data._mem)->recursive_hash(recursion_count);
 
+		} break;
+		case STRUCT: {
+			const Struct &s = *reinterpret_cast<const Struct *>(_data._mem);
+			const uint64_t lh = s.get_layout_hash();
+			return s.get_type_id().hash() ^ (uint32_t)lh ^ (uint32_t)(lh >> 32) ^ (uint32_t)s.get_field_count();
 		} break;
 		case CALLABLE: {
 			return reinterpret_cast<const Callable *>(_data._mem)->hash();
