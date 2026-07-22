@@ -123,11 +123,11 @@ protected:
 	static void _bind_methods() {}
 
 public:
-	bool is_frozen() const { return frozen; }
+	bool is_frozen() const noexcept { return frozen; }
 	StringName get_logical_type_id() const { return logical_type_id; }
-	uint64_t get_layout_hash() const { return layout_hash; }
+	uint64_t get_layout_hash() const noexcept { return layout_hash; }
 
-	int get_field_count() const { return fields.size(); }
+	int get_field_count() const noexcept { return fields.size(); }
 
 	StringName get_field_name(int p_index) const {
 		ERR_FAIL_INDEX_V(p_index, fields.size(), StringName());

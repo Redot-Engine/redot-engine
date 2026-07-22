@@ -32,9 +32,10 @@
 
 #pragma once
 
-#include "core/object/ref_counted.h"
 #include "core/string/string_name.h"
 
+template <typename T>
+class Ref;
 class Variant;
 class StructInfo;
 struct StructData;
@@ -42,23 +43,24 @@ struct StructData;
 class Struct {
 	StructData *_p = nullptr;
 
-	void _free_data();
+	void _free_data() noexcept;
 	static StructData *_copy_data(const StructData *p_from);
 
 public:
-	Struct();
+	Struct() noexcept = default;
 	explicit Struct(const Ref<StructInfo> &p_info);
 	Struct(const Struct &p_from);
 	Struct(Struct &&p_from) noexcept;
 	Struct &operator=(const Struct &p_from);
 	Struct &operator=(Struct &&p_from) noexcept;
-	~Struct();
+	~Struct() noexcept;
 
-	bool is_null() const { return _p == nullptr; }
+	bool is_null() const noexcept { return _p == nullptr; }
 
 	Ref<StructInfo> get_info() const;
 	StringName get_type_id() const;
-	int get_field_count() const;
+	uint64_t get_layout_hash() const noexcept;
+	int get_field_count() const noexcept;
 
 	Variant get_member(int p_index) const;
 	void set_member(int p_index, const Variant &p_value);

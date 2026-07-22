@@ -87,14 +87,12 @@ StructData *Struct::_copy_data(const StructData *p_from) {
 	return d;
 }
 
-void Struct::_free_data() {
+void Struct::_free_data() noexcept {
 	if (_p) {
 		memdelete(_p);
 		_p = nullptr;
 	}
 }
-
-Struct::Struct() {}
 
 Struct::Struct(const Ref<StructInfo> &p_info) {
 	_p = StructData::create(p_info);
@@ -128,7 +126,7 @@ Struct &Struct::operator=(Struct &&p_from) noexcept {
 	return *this;
 }
 
-Struct::~Struct() {
+Struct::~Struct() noexcept {
 	_free_data();
 }
 
@@ -141,7 +139,11 @@ StringName Struct::get_type_id() const {
 	return _p ? _p->info->get_logical_type_id() : StringName();
 }
 
-int Struct::get_field_count() const {
+uint64_t Struct::get_layout_hash() const noexcept {
+	return _p ? _p->info->get_layout_hash() : 0;
+}
+
+int Struct::get_field_count() const noexcept {
 	return _p ? _p->field_count : 0;
 }
 

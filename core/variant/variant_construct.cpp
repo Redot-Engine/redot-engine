@@ -204,6 +204,9 @@ void Variant::_register_variant_constructors() {
 	add_constructor<VariantConstructor<Signal, Signal>>(sarray("from"));
 	add_constructor<VariantConstructorSignalArgs>(sarray("object", "signal"));
 
+	add_constructor<VariantConstructNoArgs<Struct>>(sarray());
+	add_constructor<VariantConstructor<Struct, Struct>>(sarray("from"));
+
 	add_constructor<VariantConstructNoArgs<Dictionary>>(sarray());
 	add_constructor<VariantConstructor<Dictionary, Dictionary>>(sarray("from"));
 	add_constructor<VariantConstructorTypedDictionary>(sarray("base", "key_type", "key_class_name", "key_script", "value_type", "value_class_name", "value_script"));

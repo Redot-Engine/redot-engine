@@ -69,6 +69,7 @@
 #include "core/variant/array.h"
 #include "core/variant/callable.h"
 #include "core/variant/dictionary.h"
+#include "core/variant/struct.h"
 #include "core/variant/variant_deep_duplicate.h"
 
 #include <array>
@@ -153,6 +154,7 @@ public:
 		PACKED_COLOR_ARRAY,
 		PACKED_VECTOR4_ARRAY,
 		/// @}
+		STRUCT,
 		VARIANT_MAX
 	};
 
@@ -329,6 +331,7 @@ private:
 			(1ull << Variant::OBJECT) |
 			(1ull << Variant::CALLABLE) |
 			(1ull << Variant::SIGNAL) |
+			(1ull << Variant::STRUCT) |
 			(1ull << Variant::DICTIONARY) |
 			(1ull << Variant::ARRAY) |
 			(1ull << Variant::PACKED_BYTE_ARRAY) |
@@ -478,6 +481,7 @@ public:
 
 	operator Callable() const;
 	operator Signal() const;
+	operator Struct() const;
 
 	operator Dictionary() const;
 	operator Array() const;
@@ -547,6 +551,7 @@ public:
 	Variant(const RefCounted *p_object, bool p_is_weak_ref = false);
 	Variant(const Callable &p_callable);
 	Variant(const Signal &p_signal);
+	Variant(const Struct &p_struct);
 	Variant(const Dictionary &p_dictionary);
 
 	Variant(std::initializer_list<Variant> p_init);

@@ -89,6 +89,9 @@ public:
 			case Variant::SIGNAL:
 				init_signal(v);
 				break;
+			case Variant::STRUCT:
+				init_struct(v);
+				break;
 			case Variant::DICTIONARY:
 				init_dictionary(v);
 				break;
@@ -193,6 +196,8 @@ public:
 	_FORCE_INLINE_ static const Callable *get_callable(const Variant *v) { return reinterpret_cast<const Callable *>(v->_data._mem); }
 	_FORCE_INLINE_ static Signal *get_signal(Variant *v) { return reinterpret_cast<Signal *>(v->_data._mem); }
 	_FORCE_INLINE_ static const Signal *get_signal(const Variant *v) { return reinterpret_cast<const Signal *>(v->_data._mem); }
+	_FORCE_INLINE_ static Struct *get_struct(Variant *v) { return reinterpret_cast<Struct *>(v->_data._mem); }
+	_FORCE_INLINE_ static const Struct *get_struct(const Variant *v) { return reinterpret_cast<const Struct *>(v->_data._mem); }
 	_FORCE_INLINE_ static Dictionary *get_dictionary(Variant *v) { return reinterpret_cast<Dictionary *>(v->_data._mem); }
 	_FORCE_INLINE_ static const Dictionary *get_dictionary(const Variant *v) { return reinterpret_cast<const Dictionary *>(v->_data._mem); }
 	_FORCE_INLINE_ static Array *get_array(Variant *v) { return reinterpret_cast<Array *>(v->_data._mem); }
@@ -285,6 +290,10 @@ public:
 	_FORCE_INLINE_ static void init_signal(Variant *v) {
 		memnew_placement(v->_data._mem, Signal);
 		v->type = Variant::SIGNAL;
+	}
+	_FORCE_INLINE_ static void init_struct(Variant *v) {
+		memnew_placement(v->_data._mem, Struct);
+		v->type = Variant::STRUCT;
 	}
 	_FORCE_INLINE_ static void init_dictionary(Variant *v) {
 		memnew_placement(v->_data._mem, Dictionary);
@@ -425,6 +434,8 @@ public:
 				return get_callable(v);
 			case Variant::SIGNAL:
 				return get_signal(v);
+			case Variant::STRUCT:
+				return get_struct(v);
 			case Variant::DICTIONARY:
 				return get_dictionary(v);
 			case Variant::ARRAY:
@@ -511,6 +522,8 @@ public:
 				return get_callable(v);
 			case Variant::SIGNAL:
 				return get_signal(v);
+			case Variant::STRUCT:
+				return get_struct(v);
 			case Variant::DICTIONARY:
 				return get_dictionary(v);
 			case Variant::ARRAY:
@@ -717,6 +730,12 @@ template <>
 struct VariantGetInternalPtr<Signal> {
 	static Signal *get_ptr(Variant *v) { return VariantInternal::get_signal(v); }
 	static const Signal *get_ptr(const Variant *v) { return VariantInternal::get_signal(v); }
+};
+
+template <>
+struct VariantGetInternalPtr<Struct> {
+	static Struct *get_ptr(Variant *v) { return VariantInternal::get_struct(v); }
+	static const Struct *get_ptr(const Variant *v) { return VariantInternal::get_struct(v); }
 };
 
 template <>
@@ -983,6 +1002,12 @@ struct VariantInternalAccessor<Signal> {
 };
 
 template <>
+struct VariantInternalAccessor<Struct> {
+	static _FORCE_INLINE_ const Struct &get(const Variant *v) { return *VariantInternal::get_struct(v); }
+	static _FORCE_INLINE_ void set(Variant *v, const Struct &p_value) { *VariantInternal::get_struct(v) = p_value; }
+};
+
+template <>
 struct VariantInternalAccessor<Dictionary> {
 	static _FORCE_INLINE_ const Dictionary &get(const Variant *v) { return *VariantInternal::get_dictionary(v); }
 	static _FORCE_INLINE_ void set(Variant *v, const Dictionary &p_value) { *VariantInternal::get_dictionary(v) = p_value; }
@@ -1141,6 +1166,11 @@ struct VariantInitializer<Callable> {
 template <>
 struct VariantInitializer<Signal> {
 	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_signal(v); }
+};
+
+template <>
+struct VariantInitializer<Struct> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_struct(v); }
 };
 
 template <>
@@ -1350,6 +1380,11 @@ struct VariantDefaultInitializer<Signal> {
 };
 
 template <>
+struct VariantDefaultInitializer<Struct> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_struct(v) = Struct(); }
+};
+
+template <>
 struct VariantDefaultInitializer<Dictionary> {
 	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_dictionary(v) = Dictionary(); }
 };
@@ -1412,13 +1447,13 @@ struct VariantDefaultInitializer<PackedVector4Array> {
 template <typename T>
 struct VariantTypeChanger {
 	static _FORCE_INLINE_ void change(Variant *v) {
-		if (v->get_type() != GetTypeInfo<T>::VARIANT_TYPE || GetTypeInfo<T>::VARIANT_TYPE >= Variant::PACKED_BYTE_ARRAY) { //second condition removed by optimizer
+		if (v->get_type() != GetTypeInfo<T>::VARIANT_TYPE || (GetTypeInfo<T>::VARIANT_TYPE >= Variant::PACKED_BYTE_ARRAY && GetTypeInfo<T>::VARIANT_TYPE <= Variant::PACKED_VECTOR4_ARRAY)) { //second condition removed by optimizer
 			VariantInternal::clear(v);
 			VariantInitializer<T>::init(v);
 		}
 	}
 	static _FORCE_INLINE_ void change_and_reset(Variant *v) {
-		if (v->get_type() != GetTypeInfo<T>::VARIANT_TYPE || GetTypeInfo<T>::VARIANT_TYPE >= Variant::PACKED_BYTE_ARRAY) { //second condition removed by optimizer
+		if (v->get_type() != GetTypeInfo<T>::VARIANT_TYPE || (GetTypeInfo<T>::VARIANT_TYPE >= Variant::PACKED_BYTE_ARRAY && GetTypeInfo<T>::VARIANT_TYPE <= Variant::PACKED_VECTOR4_ARRAY)) { //second condition removed by optimizer
 			VariantInternal::clear(v);
 			VariantInitializer<T>::init(v);
 		}

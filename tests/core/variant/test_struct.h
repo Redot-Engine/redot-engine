@@ -34,6 +34,7 @@
 
 #include "core/variant/struct.h"
 #include "core/variant/struct_info.h"
+#include "core/variant/variant_internal.h"
 
 #include "tests/test_macros.h"
 
@@ -46,6 +47,11 @@ static_assert(!std::is_copy_constructible_v<StructInfoBuilder>);
 static_assert(!std::is_copy_assignable_v<StructInfoBuilder>);
 static_assert(std::is_move_constructible_v<StructInfoBuilder>);
 static_assert(std::is_move_assignable_v<StructInfoBuilder>);
+
+static_assert(std::is_nothrow_default_constructible_v<Struct>);
+static_assert(std::is_nothrow_move_constructible_v<Struct>);
+static_assert(std::is_nothrow_move_assignable_v<Struct>);
+static_assert(std::is_nothrow_destructible_v<Struct>);
 
 static Ref<StructInfo> make_point() {
 	StructInfoBuilder b;
@@ -363,6 +369,97 @@ TEST_CASE("[Struct] Equality uses logical identity + exact layout, not pointer")
 	c.set_member(0, 2);
 	c.set_member(1, 1);
 	CHECK(a != c);
+}
+
+TEST_CASE("[Struct] Round-trips through a Variant with value semantics") {
+	Ref<StructInfo> info = make_point();
+	Struct s(info);
+	s.set_member(0, 3);
+	s.set_member(1, 4);
+
+	Variant v = s;
+	CHECK(v.get_type() == Variant::STRUCT);
+
+	Variant v2 = v;
+	Struct back = v2;
+	CHECK(int(back.get_member(0)) == 3);
+	CHECK(int(back.get_member(1)) == 4);
+
+	back.set_member(0, 99);
+	CHECK(int(s.get_member(0)) == 3);
+
+	Variant same = s;
+	CHECK(v == same);
+	Struct other(info);
+	other.set_member(0, 3);
+	other.set_member(1, 5);
+	Variant different = other;
+	CHECK(v != different);
+}
+
+TEST_CASE("[Struct] Variant copy allocates independent StructData") {
+	Ref<StructInfo> info = make_point();
+	Variant v = Struct(info);
+	VariantInternal::get_struct(&v)->set_member(0, 3);
+
+	Variant v2 = v;
+
+	VariantInternal::get_struct(&v2)->set_member(0, 99);
+	CHECK(int(VariantInternal::get_struct(&v)->get_member(0)) == 3);
+	CHECK(int(VariantInternal::get_struct(&v2)->get_member(0)) == 99);
+}
+
+TEST_CASE("[Struct] Same-type Variant assignment keeps independent storage") {
+	Ref<StructInfo> info = make_point();
+	Variant v = Struct(info);
+	VariantInternal::get_struct(&v)->set_member(0, 3);
+
+	Variant assigned = Struct(info);
+	assigned = v;
+
+	VariantInternal::get_struct(&assigned)->set_member(0, 77);
+	CHECK(int(VariantInternal::get_struct(&v)->get_member(0)) == 3);
+	CHECK(int(VariantInternal::get_struct(&assigned)->get_member(0)) == 77);
+}
+
+TEST_CASE("[Struct] Works as a dictionary key (hash + equality)") {
+	Ref<StructInfo> info = make_point();
+	Struct k(info);
+	k.set_member(0, 1);
+	k.set_member(1, 2);
+
+	Dictionary d;
+	d[Variant(k)] = 42;
+
+	Struct same(info);
+	same.set_member(0, 1);
+	same.set_member(1, 2);
+	CHECK(d.has(Variant(same)));
+	CHECK(int(d[Variant(same)]) == 42);
+
+	Struct different(info);
+	different.set_member(0, 9);
+	different.set_member(1, 9);
+	CHECK_FALSE(d.has(Variant(different)));
+
+	StructInfoBuilder rb;
+	rb.set_logical_type_id("Point");
+	StructInfo::Field fy;
+	fy.name = "y";
+	fy.type = Variant::INT;
+	fy.is_typed = true;
+	fy.default_value = 0;
+	rb.add_field(fy);
+	StructInfo::Field fx;
+	fx.name = "x";
+	fx.type = Variant::INT;
+	fx.is_typed = true;
+	fx.default_value = 0;
+	rb.add_field(fx);
+	Struct reordered(rb.build());
+	reordered.set_member(0, 2);
+	reordered.set_member(1, 1);
+	CHECK_FALSE(d.has(Variant(reordered)));
 }
 
 } //namespace TestStruct
