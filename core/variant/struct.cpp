@@ -36,6 +36,18 @@
 #include "core/variant/struct_info.h"
 #include "core/variant/variant.h"
 
+#include <type_traits>
+
+static_assert(!std::is_copy_constructible_v<StructInfoBuilder>);
+static_assert(!std::is_copy_assignable_v<StructInfoBuilder>);
+static_assert(std::is_move_constructible_v<StructInfoBuilder>);
+static_assert(std::is_move_assignable_v<StructInfoBuilder>);
+
+static_assert(std::is_nothrow_default_constructible_v<Struct>);
+static_assert(std::is_nothrow_move_constructible_v<Struct>);
+static_assert(std::is_nothrow_move_assignable_v<Struct>);
+static_assert(std::is_nothrow_destructible_v<Struct>);
+
 struct StructData {
 	Ref<StructInfo> info;
 	Variant *values = nullptr;
