@@ -60,7 +60,7 @@ struct Reader {
 	};
 	IO::Reader reader;
 	void *state;
-	VTbl *vtbl;
+	const VTbl *vtbl;
 
 	static IO::Error make(
 			Reader *dst,
@@ -86,7 +86,7 @@ struct Reader {
 	}
 
 	static inline void destroy(Reader *reader) noexcept {
-		if (reader->vtbl->destroy) {
+		if (reader->vtbl && reader->vtbl->destroy) {
 			reader->vtbl->destroy(reader->state);
 		}
 		*reader = {};
@@ -128,7 +128,7 @@ struct Writer {
 	}
 
 	static inline void destroy(Writer *writer) noexcept {
-		if (writer->vtbl->destroy) {
+		if (writer->vtbl && writer->vtbl->destroy) {
 			writer->vtbl->destroy(writer->state);
 		}
 		*writer = {};

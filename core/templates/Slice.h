@@ -63,7 +63,7 @@ constexpr inline void *Slice::get(
 		size_t index,
 		size_t size) noexcept {
 	void *ret = nullptr;
-	if ((size * (index + 1)) < self.length) {
+	if ((size * (index + 1)) <= self.length) {
 		ret = ((uint8_t *)self.data) + (size * index);
 	}
 	return ret;
@@ -74,7 +74,7 @@ constexpr inline bool Slice::subslice(
 		Slice src,
 		size_t begin,
 		size_t count) noexcept {
-	bool ret = !(src.length <= (begin + count));
+	bool ret = !(src.length >= (begin + count));
 	assert(dst);
 	if (ret) {
 		dst->data = &(((uint8_t *)src.data)[begin]);

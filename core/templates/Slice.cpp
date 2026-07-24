@@ -40,7 +40,7 @@ void Slice::copy(Slice dst, Slice src) noexcept {
 	uintptr_t d = (uintptr_t)dst.data;
 	size_t n = MIN(src.length, dst.length);
 	size_t i;
-	bool srcTailDoesntOverlapDstHead = s <= (d - n);
+	bool srcTailDoesntOverlapDstHead = s > (d - n);
 	const uint8_t *u8src = (const uint8_t *)src.data;
 	uint8_t *u8dst = (uint8_t *)dst.data;
 	if (srcTailDoesntOverlapDstHead) {

@@ -42,8 +42,12 @@ struct SliceState {
 
 IO::Error sliceRead(SliceState *state, size_t *read, Slice buffer) noexcept {
 	IO::Error ret = IO::Error::Okay;
+	Slice tmp = Slice::nil;
 	size_t count = buffer.length;
 	if (state->closed) {
+		if (read) {
+			*read = 0;
+		}
 		ret = IO::Error::Closed;
 	} else {
 		if ((state->buffer.length - state->offset) < buffer.length) {
@@ -51,7 +55,8 @@ IO::Error sliceRead(SliceState *state, size_t *read, Slice buffer) noexcept {
 			ret = IO::Error::Eof;
 		}
 		// the following will not error, and therefore, safe to ignore
-		Slice::copy(buffer, state->buffer);
+		Slice::subslice(&tmp, state->buffer, state->offset, count);
+		Slice::copy(buffer, tmp);
 		state->offset += count;
 		if (read) {
 			*read = count;

@@ -546,12 +546,15 @@ void Image::convert(Format p_new_format) {
 
 		const uint8_t *rptr = data.ptr() + mip_offset;
 		uint8_t *wptr = new_img.data.ptrw() + new_img.get_mipmap_offset(mip);
-		IO::Reader::make(
+		err = IO::Reader::make(
 				&reader,
 				{
 						.data = (void *)rptr,
 						.length = (size_t)mip_size,
 				});
+		if (err != IO::Error::Okay) {
+			return;
+		}
 		err = IO::Image::Reader::make(
 				&imReader,
 				reader,
@@ -559,7 +562,8 @@ void Image::convert(Format p_new_format) {
 				mip_width,
 				mip_height);
 		if (err != IO::Error::Okay) {
-			break;
+			IO::Reader::destroy(&reader);
+			return;
 		}
 		new_img.get_mipmap_offset_and_size(mip, mip_offset, mip_size);
 		err = IO::Writer::make(
@@ -569,6 +573,8 @@ void Image::convert(Format p_new_format) {
 						.length = (size_t)(mip_size),
 				});
 		if (err != IO::Error::Okay) {
+			IO::Image::Reader::destroy(&imReader);
+			IO::Reader::destroy(&reader);
 			return;
 		}
 		err = IO::Image::Writer::make(
@@ -578,6 +584,9 @@ void Image::convert(Format p_new_format) {
 				mip_width,
 				mip_height);
 		if (err != IO::Error::Okay) {
+			IO::Image::Reader::destroy(&imReader);
+			IO::Reader::destroy(&reader);
+			IO::Writer::destroy(&writer);
 			return;
 		}
 		do {

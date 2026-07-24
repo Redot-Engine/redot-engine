@@ -86,7 +86,7 @@ struct Reader {
 	static Error make(Reader *dst, Slice slice) noexcept;
 	// static Error make(Reader* dst, Ref<FileAccess> file) noexcept;
 	static void destroy(Reader *reader) noexcept {
-		if (reader->vtbl->destroy) {
+		if (reader->vtbl && reader->vtbl->destroy) {
 			reader->vtbl->destroy(reader->state);
 		}
 		*reader = {};
@@ -130,7 +130,7 @@ struct Writer {
 	static Error make(Writer *dst, Slice slice) noexcept;
 	// static Error make(Writer* dst, Ref<FileAccess> file) noexcept;
 	static void destroy(Writer *writer) noexcept {
-		if (writer->vtbl->destroy) {
+		if (writer->vtbl && writer->vtbl->destroy) {
 			writer->vtbl->destroy(writer->state);
 		}
 		*writer = {};

@@ -85,16 +85,17 @@ constexpr size_t CONSTANT_FACTORS[::Image::FORMAT_MAX] = {
 	1, // FORMAT_ASTC_8x8_HDR
 };
 
-static IO::Error constantFactorStateCtor(
+static IO::Error constantFactorWriterStateCtor(
 		UncompressedImageState **state,
 		uint32_t width,
 		uint32_t height,
 		::Image::Format format) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	// ensure we have enough 4x4 blocks to cover the width of the image
-	*state = (UncompressedImageState *)malloc(
+	*state = (UncompressedImageState *)Memory::alloc_aligned_static(
 			sizeof(UncompressedImageState) +
-			((((width << 2) * CONSTANT_FACTORS[format]) + ((size_t)0xFF)) & ~((size_t)0xFF)));
+					((((width << 2) * CONSTANT_FACTORS[format]) + ((size_t)0xFF)) & ~((size_t)0xFF)),
+			alignof(UncompressedImageState));
 	if (*state) {
 		(*state)->data.data = (*state)->blocks4x4;
 		(*state)->data.length = (width << 2) * CONSTANT_FACTORS[format];
@@ -108,13 +109,37 @@ static IO::Error constantFactorStateCtor(
 	return ret;
 }
 
+static IO::Error constantFactorReaderStateCtor(
+		UncompressedImageState **state,
+		uint32_t width,
+		uint32_t height,
+		::Image::Format format) noexcept {
+	IO::Error ret = IO::Error::Okay;
+	// ensure we have enough 4x4 blocks to cover the width of the image
+	*state = (UncompressedImageState *)Memory::alloc_aligned_static(
+			sizeof(UncompressedImageState) +
+					((((width << 2) * CONSTANT_FACTORS[format]) + ((size_t)0xFF)) & ~((size_t)0xFF)),
+			alignof(UncompressedImageState));
+	if (*state) {
+		(*state)->data.data = (*state)->blocks4x4;
+		(*state)->data.length = (width << 2) * CONSTANT_FACTORS[format];
+		(*state)->res[0] = width;
+		(*state)->res[1] = height;
+		(*state)->format = format;
+		(*state)->currentBlock = (width + 3) >> 2;
+	} else {
+		ret = IO::Error::OutOfMemory;
+	}
+	return ret;
+}
+
 static IO::Error l8ReadScalar(
 		IO::Reader reader,
 		UncompressedImageState *state,
 		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
-	size_t read;
+	size_t read = 0;
 	uint32_t width = state->res[0];
 	size_t block;
 	if (state->currentBlock >= ((width + 3) >> 2)) {
@@ -122,7 +147,7 @@ static IO::Error l8ReadScalar(
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay) {
+		if (read) {
 			state->currentBlock = 0;
 		}
 	}
@@ -146,7 +171,7 @@ static IO::Error l8ReadScalar(
 		state->currentBlock += 1;
 	}
 	for (size_t i = 0; i < 16; i += 1) {
-		colors->a[i] = 0;
+		colors->a[i] = 1;
 	}
 	return ret;
 }
@@ -165,9 +190,9 @@ static IO::Error l8WriteScalar(
 				(*sliceAt(
 						data,
 						uint8_t,
-						(((block << 2) + (width * i)) + j))) = (13938U * ((uint64_t)colors->r[(i << 2) + j] * 255) +
-																	   46869U * ((uint64_t)colors->g[(i << 2) + j] * 255) +
-																	   4729U * ((uint64_t)colors->b[(i << 2) + j] * 255) +
+						(((block << 2) + (width * i)) + j))) = (13938U * ((uint64_t)(colors->r[(i << 2) + j] * 255)) +
+																	   46869U * ((uint64_t)(colors->g[(i << 2) + j] * 255)) +
+																	   4729U * ((uint64_t)(colors->b[(i << 2) + j] * 255)) +
 																	   32768U) >>
 						16U;
 			}
@@ -195,7 +220,7 @@ static IO::Error la8ReadScalar(
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay) {
+		if (read) {
 			state->currentBlock = 0;
 		}
 	}
@@ -248,15 +273,15 @@ static IO::Error la8WriteScalar(
 				(*sliceAt(
 						data,
 						uint8_t,
-						(((block << 3) + (width * i)) + (j << 1)))) = (13938U * ((uint64_t)colors->r[(i << 2) + j] * 255) +
-																			  46869U * ((uint64_t)colors->g[(i << 2) + j] * 255) +
-																			  4729U * ((uint64_t)colors->b[(i << 2) + j] * 255) +
+						((((block << 3) + (width * i)) + j) << 1))) = (13938U * ((uint64_t)(colors->r[(i << 2) + j] * 255)) +
+																			  46869U * ((uint64_t)(colors->g[(i << 2) + j] * 255)) +
+																			  4729U * ((uint64_t)(colors->b[(i << 2) + j] * 255)) +
 																			  32768U) >>
 						16U;
 				(*sliceAt(
 						data,
 						uint8_t,
-						(((block << 3) + (width * i)) + (j << 1) + 1))) = (uint8_t)(colors->a[(i << 2) + j] * 255);
+						(((((block << 3) + (width * i)) + j) << 1) + 1))) = (uint8_t)(colors->a[(i << 2) + j] * 255);
 			}
 		}
 	}
@@ -326,7 +351,7 @@ static IO::Error rgba8ReadScalar(
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay) {
+		if (read) {
 			state->currentBlock = 0;
 		}
 	}
@@ -339,7 +364,7 @@ static IO::Error rgba8ReadScalar(
 						colors->c[c][(i << 2) + j] = (*sliceAt(
 								data,
 								uint8_t,
-								(((block << 2) + (width * i) + j) * COMPONENT_COUNT[format])));
+								(((block << 2) + (width * i) + j) * COMPONENT_COUNT[format]) + c));
 					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
@@ -408,7 +433,7 @@ static IO::Error rgbafReadScalar(
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay) {
+		if (read) {
 			state->currentBlock = 0;
 		}
 	}
@@ -421,7 +446,7 @@ static IO::Error rgbafReadScalar(
 						colors->c[c][(i << 2) + j] = (*sliceAt(
 								data,
 								T,
-								(((block << 2) + (width * i) + j) * COMPONENT_COUNT[format])));
+								(((block << 2) + (width * i) + j) * COMPONENT_COUNT[format]) + c));
 					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
@@ -460,7 +485,7 @@ static IO::Error rgbafWriteScalar(
 					(*sliceAt(
 							data,
 							T,
-							(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c))) = colors->c[c][(i << 2) + j];
+							(((block << 2) + (width * i) + j) * COMPONENT_COUNT[format]) + c)) = (T)(colors->c[c][(i << 2) + j]);
 				}
 			}
 		}
@@ -547,31 +572,36 @@ static IO::Error defaultFlush(
 				i * (state->res[0]) * CONSTANT_FACTORS[state->format],
 				(state->currentBlock * CONSTANT_FACTORS[state->format]) << 2);
 		err = IO::Writer::write(writer, nullptr, tmp);
-		if (err != IO::Error::Okay) {
-			return err;
+		switch (err) {
+			case IO::Error::Okay:
+			case IO::Error::Eof:
+				err = IO::Error::Okay;
+				[[fallthrough]];
+			default:
+				return err;
 		}
 	}
 	return err;
 }
 
 static Reader::VTbl READER_SCALAR_FUNCTIONS[::Image::FORMAT_MAX] = {
-	{ .read = (ReadProc)l8ReadScalar, .destroy = free }, // FORMAT_L8
-	{ .read = (ReadProc)la8ReadScalar, .destroy = free }, // FORMAT_LA8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_R8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RG8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RGB8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RGBA8
-	{ .read = (ReadProc)rgba4444ReadScalar, .destroy = free }, // FORMAT_RGBA4444
-	{ .read = nullptr, .destroy = free }, // FORMAT_RGB565
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGBF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGBAF
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGBH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGBAH
-	{ .read = nullptr, .destroy = free }, // FORMAT_RGBE9995
+	{ .read = (ReadProc)l8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_L8
+	{ .read = (ReadProc)la8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_LA8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_R8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RG8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA8
+	{ .read = (ReadProc)rgba4444ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA4444
+	{ .read = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB565
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAF
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAH
+	{ .read = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBE9995
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT1
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT3
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT5
@@ -597,65 +627,65 @@ static Reader::VTbl READER_SCALAR_FUNCTIONS[::Image::FORMAT_MAX] = {
 };
 
 static Writer::VTbl WRITER_SCALAR_FUNCTIONS[::Image::FORMAT_MAX] = {
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)l8WriteScalar, .destroy = free }, // FORMAT_L8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)la8WriteScalar, .destroy = free }, // FORMAT_LA8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_R8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RG8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RGB8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RGBA8
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGBA4444
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGB565
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGBF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGBAF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGBH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGBAH
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGBE9995
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT1
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT3
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_R
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBA
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBF
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBFU
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11S
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11S
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGBA8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8A1
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RA_AS_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5_RA_AS_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4_HDR
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)l8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_L8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)la8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_LA8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_R8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RG8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA8
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA4444
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB565
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAH
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBE9995
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT1
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT3
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_R
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBA
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBF
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBFU
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11S
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11S
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGBA8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8A1
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RA_AS_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5_RA_AS_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4_HDR
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
 };
 
 static Reader::VTbl READER_SSE42_FUNCTIONS[::Image::FORMAT_MAX] = {
-	{ .read = (ReadProc)l8ReadScalar, .destroy = free }, // FORMAT_L8
-	{ .read = (ReadProc)la8ReadScalar, .destroy = free }, // FORMAT_LA8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_R8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RG8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RGB8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RGBA8
-	{ .read = (ReadProc)rgba4444ReadScalar, .destroy = free }, // FORMAT_RGBA4444
-	{ .read = nullptr, .destroy = free }, // FORMAT_RGB565
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGBF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGBAF
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGBH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGBAH
-	{ .read = nullptr, .destroy = free }, // FORMAT_RGBE9995
+	{ .read = (ReadProc)l8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_L8
+	{ .read = (ReadProc)la8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_LA8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_R8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RG8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA8
+	{ .read = (ReadProc)rgba4444ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA4444
+	{ .read = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB565
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAF
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAH
+	{ .read = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBE9995
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT1
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT3
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT5
@@ -681,65 +711,65 @@ static Reader::VTbl READER_SSE42_FUNCTIONS[::Image::FORMAT_MAX] = {
 };
 
 static Writer::VTbl WRITER_SSE42_FUNCTIONS[::Image::FORMAT_MAX] = {
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)l8WriteScalar, .destroy = free }, // FORMAT_L8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)la8WriteScalar, .destroy = free }, // FORMAT_LA8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_R8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RG8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RGB8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RGBA8
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGBA4444
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGB565
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGBF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGBAF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGBH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGBAH
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGBE9995
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT1
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT3
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_R
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBA
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBF
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBFU
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11S
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11S
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGBA8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8A1
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RA_AS_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5_RA_AS_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4_HDR
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)l8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_L8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)la8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_LA8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_R8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RG8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA8
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA4444
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB565
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAH
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBE9995
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT1
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT3
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_R
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBA
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBF
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBFU
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11S
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11S
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGBA8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8A1
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RA_AS_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5_RA_AS_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4_HDR
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
 };
 
 static Reader::VTbl READER_AVX_FUNCTIONS[::Image::FORMAT_MAX] = {
-	{ .read = (ReadProc)l8ReadScalar, .destroy = free }, // FORMAT_L8
-	{ .read = (ReadProc)la8ReadScalar, .destroy = free }, // FORMAT_LA8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_R8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RG8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RGB8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RGBA8
-	{ .read = (ReadProc)rgba4444ReadScalar, .destroy = free }, // FORMAT_RGBA4444
-	{ .read = nullptr, .destroy = free }, // FORMAT_RGB565
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGBF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGBAF
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGBH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGBAH
-	{ .read = nullptr, .destroy = free }, // FORMAT_RGBE9995
+	{ .read = (ReadProc)l8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_L8
+	{ .read = (ReadProc)la8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_LA8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_R8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RG8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA8
+	{ .read = (ReadProc)rgba4444ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA4444
+	{ .read = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB565
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAF
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAH
+	{ .read = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBE9995
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT1
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT3
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT5
@@ -765,65 +795,65 @@ static Reader::VTbl READER_AVX_FUNCTIONS[::Image::FORMAT_MAX] = {
 };
 
 static Writer::VTbl WRITER_AVX_FUNCTIONS[::Image::FORMAT_MAX] = {
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)l8WriteScalar, .destroy = free }, // FORMAT_L8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)la8WriteScalar, .destroy = free }, // FORMAT_LA8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_R8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RG8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RGB8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RGBA8
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGBA4444
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGB565
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGBF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGBAF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGBH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGBAH
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGBE9995
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT1
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT3
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_R
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBA
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBF
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBFU
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11S
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11S
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGBA8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8A1
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RA_AS_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5_RA_AS_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4_HDR
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)l8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_L8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)la8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_LA8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_R8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RG8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA8
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA4444
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB565
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAH
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBE9995
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT1
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT3
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_R
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBA
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBF
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBFU
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11S
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11S
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGBA8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8A1
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RA_AS_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5_RA_AS_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4_HDR
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
 };
 
 static Reader::VTbl READER_AVX2_FUNCTIONS[::Image::FORMAT_MAX] = {
-	{ .read = (ReadProc)l8ReadScalar, .destroy = free }, // FORMAT_L8
-	{ .read = (ReadProc)la8ReadScalar, .destroy = free }, // FORMAT_LA8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_R8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RG8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RGB8
-	{ .read = (ReadProc)rgba8ReadScalar, .destroy = free }, // FORMAT_RGBA8
-	{ .read = (ReadProc)rgba4444ReadScalar, .destroy = free }, // FORMAT_RGBA4444
-	{ .read = nullptr, .destroy = free }, // FORMAT_RGB565
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGBF
-	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = free }, // FORMAT_RGBAF
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGBH
-	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = free }, // FORMAT_RGBAH
-	{ .read = nullptr, .destroy = free }, // FORMAT_RGBE9995
+	{ .read = (ReadProc)l8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_L8
+	{ .read = (ReadProc)la8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_LA8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_R8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RG8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB8
+	{ .read = (ReadProc)rgba8ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA8
+	{ .read = (ReadProc)rgba4444ReadScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA4444
+	{ .read = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB565
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBF
+	{ .read = (ReadProc)rgbafReadScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAF
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBH
+	{ .read = (ReadProc)rgbafReadScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAH
+	{ .read = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBE9995
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT1
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT3
 	{ .read = nullptr, .destroy = nullptr }, // FORMAT_DXT5
@@ -849,45 +879,45 @@ static Reader::VTbl READER_AVX2_FUNCTIONS[::Image::FORMAT_MAX] = {
 };
 
 static Writer::VTbl WRITER_AVX2_FUNCTIONS[::Image::FORMAT_MAX] = {
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)l8WriteScalar, .destroy = free }, // FORMAT_L8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)la8WriteScalar, .destroy = free }, // FORMAT_LA8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_R8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RG8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RGB8
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = free }, // FORMAT_RGBA8
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGBA4444
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGB565
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGBF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = free }, // FORMAT_RGBAF
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGBH
-	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = free }, // FORMAT_RGBAH
-	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = free }, // FORMAT_RGBE9995
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT1
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT3
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_R
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBA
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBF
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBFU
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11S
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11S
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGBA8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8A1
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RA_AS_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5_RA_AS_RG
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4_HDR
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8
-	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)l8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_L8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)la8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_LA8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_R8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RG8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB8
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgba8WriteScalar, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA8
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBA4444
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGB565
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<float>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAF
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBH
+	{ .flush = (FlushProc)defaultFlush, .write = (WriteProc)rgbafWriteScalar<_Float16>, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBAH
+	{ .flush = (FlushProc)defaultFlush, .write = nullptr, .destroy = (IO::DestroyProc)free }, // FORMAT_RGBE9995
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT1
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT3
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_R
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_RGTC_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBA
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBF
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_BPTC_RGBFU
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_R11S
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RG11S
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGBA8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RGB8A1
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ETC2_RA_AS_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_DXT5_RA_AS_RG
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_4x4_HDR
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8
+	{ .flush = nullptr, .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
 };
 
 using ConstructorProc = IO::Error (*)(
@@ -897,23 +927,23 @@ using ConstructorProc = IO::Error (*)(
 		::Image::Format format);
 
 static ConstructorProc READER_STATE_CONSTRUCTOR[::Image::FORMAT_MAX] = {
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_L8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_LA8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_R8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RG8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGB8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBA8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBA4444
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGB565
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RF
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGF
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBF
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBAF
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RH
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGH
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBH
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBAH
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBE9995
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_L8
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_LA8
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_R8
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RG8
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGB8
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGBA8
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGBA4444
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGB565
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RF
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGF
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGBF
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGBAF
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RH
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGH
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGBH
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGBAH
+	(ConstructorProc)constantFactorReaderStateCtor, // FORMAT_RGBE9995
 	nullptr, // FORMAT_DXT1
 	nullptr, // FORMAT_DXT3
 	nullptr, // FORMAT_DXT5
@@ -939,23 +969,23 @@ static ConstructorProc READER_STATE_CONSTRUCTOR[::Image::FORMAT_MAX] = {
 };
 
 static ConstructorProc WRITER_STATE_CONSTRUCTOR[::Image::FORMAT_MAX] = {
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_L8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_LA8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_R8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RG8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGB8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBA8
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBA4444
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGB565
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RF
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGF
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBF
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBAF
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RH
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGH
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBH
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBAH
-	(ConstructorProc)constantFactorStateCtor, // FORMAT_RGBE9995
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_L8
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_LA8
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_R8
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RG8
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGB8
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGBA8
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGBA4444
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGB565
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RF
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGF
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGBF
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGBAF
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RH
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGH
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGBH
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGBAH
+	(ConstructorProc)constantFactorWriterStateCtor, // FORMAT_RGBE9995
 	nullptr, // FORMAT_DXT1
 	nullptr, // FORMAT_DXT3
 	nullptr, // FORMAT_DXT5
@@ -987,6 +1017,7 @@ IO::Error Reader::make(
 		uint32_t width,
 		uint32_t height) noexcept {
 	dst->reader = r;
+#if (defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 	if (__builtin_cpu_supports("avx2")) {
 		dst->vtbl = &(READER_AVX2_FUNCTIONS[format]);
 	} else if (__builtin_cpu_supports("avx")) {
@@ -996,6 +1027,9 @@ IO::Error Reader::make(
 	} else {
 		dst->vtbl = &(READER_SCALAR_FUNCTIONS[format]);
 	}
+#else
+	dst->vtbl = &(READER_SCALAR_FUNCTIONS[format]);
+#endif
 	if (dst->vtbl->read == nullptr) {
 		return IO::Error::NotImplemented;
 	}
@@ -1012,6 +1046,7 @@ IO::Error Writer::make(
 		uint32_t width,
 		uint32_t height) noexcept {
 	dst->writer = w;
+#if (defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 	if (__builtin_cpu_supports("avx2")) {
 		dst->vtbl = &(WRITER_AVX2_FUNCTIONS[format]);
 	} else if (__builtin_cpu_supports("avx")) {
@@ -1021,6 +1056,9 @@ IO::Error Writer::make(
 	} else {
 		dst->vtbl = &(WRITER_SCALAR_FUNCTIONS[format]);
 	}
+#else
+	dst->vtbl = &(WRITER_SCALAR_FUNCTIONS[format]);
+#endif
 	if (dst->vtbl->write == nullptr) {
 		return IO::Error::NotImplemented;
 	}
