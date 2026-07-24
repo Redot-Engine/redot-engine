@@ -70,6 +70,19 @@ typedef Error (*SaveDDSFunc)(const String &p_path, const Ref<Image> &p_img);
 typedef Vector<uint8_t> (*SaveDDSBufferFunc)(const Ref<Image> &p_img);
 /// @}
 
+// by 16 for avx512 eventually (TM)
+union alignas(64) ColorRGBAF32x16
+{
+	struct
+	{
+		float r[16];
+		float g[16];
+		float b[16];
+		float a[16];
+	};
+	float c[4][16];
+};
+
 class Image : public Resource {
 	GDCLASS(Image, Resource);
 
