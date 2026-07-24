@@ -71,8 +71,7 @@ typedef Vector<uint8_t> (*SaveDDSBufferFunc)(const Ref<Image> &p_img);
 /// @}
 
 // by 16 for avx512 eventually (TM)
-union alignas(64) ColorRGBAF32x16
-{
+union alignas(64) ColorRGBAF32x16 {
 	struct
 	{
 		float r[16];

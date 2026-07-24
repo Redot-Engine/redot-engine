@@ -1,10 +1,41 @@
+/**************************************************************************/
+/*  image_rw.cpp                                                          */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             REDOT ENGINE                               */
+/*                        https://redotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2024-present Redot Engine contributors                   */
+/*                                          (see REDOT_AUTHORS.md)        */
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
 #include "image_rw.h"
 #include "core/io/image.h"
 
 using namespace IO::Image;
 
-struct UncompressedImageState
-{
+struct UncompressedImageState {
 	uint32_t currentBlock;
 	uint32_t res[2];
 	Slice data;
@@ -55,82 +86,62 @@ constexpr size_t CONSTANT_FACTORS[::Image::FORMAT_MAX] = {
 };
 
 static IO::Error constantFactorStateCtor(
-	UncompressedImageState **state,
-	uint32_t width,
-	uint32_t height,
-	::Image::Format format
-) noexcept
-{
+		UncompressedImageState **state,
+		uint32_t width,
+		uint32_t height,
+		::Image::Format format) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	// ensure we have enough 4x4 blocks to cover the width of the image
-	*state = (UncompressedImageState*)malloc(
-		sizeof(UncompressedImageState) +
-		((((width << 2) * CONSTANT_FACTORS[format]) + ((size_t)0xFF)) & ~((size_t)0xFF))
-	);
-	if (*state)
-	{
+	*state = (UncompressedImageState *)malloc(
+			sizeof(UncompressedImageState) +
+			((((width << 2) * CONSTANT_FACTORS[format]) + ((size_t)0xFF)) & ~((size_t)0xFF)));
+	if (*state) {
 		(*state)->data.data = (*state)->blocks4x4;
 		(*state)->data.length = (width << 2) * CONSTANT_FACTORS[format];
 		(*state)->res[0] = width;
 		(*state)->res[1] = height;
 		(*state)->format = format;
-	}
-	else
-	{
+	} else {
 		ret = IO::Error::OutOfMemory;
 	}
 	return ret;
 }
 
 static IO::Error l8ReadScalar(
-	IO::Reader reader,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Reader reader,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
 	uint32_t width = state->res[0];
 	size_t block = state->currentBlock;
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
-		if (!data.data)
-		{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
+		if (!data.data) {
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay)
-		{
+		if (ret == IO::Error::Okay) {
 			state->currentBlock = 0;
 		}
 	}
-	if (ret == IO::Error::Okay)
-	{
-		for (size_t c = 0; c < 3; c += 1)
-		{
-			for (size_t i = 0; i < 4; i += 1)
-			{
-				for (size_t j = 0; j < 4; j += 1)
-				{
-					if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-					{
+	if (ret == IO::Error::Okay) {
+		for (size_t c = 0; c < 3; c += 1) {
+			for (size_t i = 0; i < 4; i += 1) {
+				for (size_t j = 0; j < 4; j += 1) {
+					if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 						colors->c[c][(i << 2) + j] = (*sliceAt(
-							data,
-							uint8_t,
-							(((block << 2) + (width * i)) + j)
-						));
-					}
-					else
-					{
+								data,
+								uint8_t,
+								(((block << 2) + (width * i)) + j)));
+					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
 					colors->c[c][(i << 2) + j] /= 255;
 				}
 			}
 		}
-		for (size_t i = 0; i < 4; i += 1)
-		{
+		for (size_t i = 0; i < 4; i += 1) {
 			colors->a[(i << 2) + 0] = 1;
 			colors->a[(i << 2) + 1] = 1;
 			colors->a[(i << 2) + 2] = 1;
@@ -142,36 +153,29 @@ static IO::Error l8ReadScalar(
 }
 
 static IO::Error l8WriteScalar(
-	IO::Writer writer,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Writer writer,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	uint32_t width = state->res[0];
 	size_t block = state->currentBlock;
-	for (size_t i = 0; i < 4; i += 1)
-	{
-		for (size_t j = 0; j < 4; j += 1)
-		{
-			if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-			{
+	for (size_t i = 0; i < 4; i += 1) {
+		for (size_t j = 0; j < 4; j += 1) {
+			if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 				(*sliceAt(
-					data,
-					uint8_t,
-					(((block << 2) + (width * i)) + j)
-				)) = (13938U * ((uint64_t)colors->r[(i << 2) + j]) +
-					46869U * ((uint64_t)colors->g[(i << 2) + j]) +
-					4729U * ((uint64_t)colors->b[(i << 2) + j]) +
-					32768U
-				) >> 16U;
+						data,
+						uint8_t,
+						(((block << 2) + (width * i)) + j))) = (13938U * ((uint64_t)colors->r[(i << 2) + j]) +
+																	   46869U * ((uint64_t)colors->g[(i << 2) + j]) +
+																	   4729U * ((uint64_t)colors->b[(i << 2) + j]) +
+																	   32768U) >>
+						16U;
 			}
 		}
 	}
 	state->currentBlock += 1;
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
 		ret = writer.write(writer, nullptr, state->data);
 		state->currentBlock = 0;
 	}
@@ -179,66 +183,47 @@ static IO::Error l8WriteScalar(
 }
 
 static IO::Error la8ReadScalar(
-	IO::Reader reader,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Reader reader,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
 	uint32_t width = state->res[0];
 	size_t block = state->currentBlock;
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
-		if (!data.data)
-		{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
+		if (!data.data) {
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay)
-		{
+		if (ret == IO::Error::Okay) {
 			state->currentBlock = 0;
 		}
 	}
-	if (ret == IO::Error::Okay)
-	{
-		for (size_t c = 0; c < 3; c += 1)
-		{
-			for (size_t i = 0; i < 4; i += 1)
-			{
-				for (size_t j = 0; j < 4; j += 1)
-				{
-					if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-					{
+	if (ret == IO::Error::Okay) {
+		for (size_t c = 0; c < 3; c += 1) {
+			for (size_t i = 0; i < 4; i += 1) {
+				for (size_t j = 0; j < 4; j += 1) {
+					if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 						colors->c[c][(i << 2) + j] = (*sliceAt(
-							data,
-							uint8_t,
-							(((block << 2) + (width * i)) + (j << 1))
-						));
-					}
-					else
-					{
+								data,
+								uint8_t,
+								(((block << 2) + (width * i)) + (j << 1))));
+					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
 					colors->c[c][(i << 2) + j] /= 255;
 				}
 			}
 		}
-		for (size_t i = 0; i < 4; i += 1)
-		{
-			for (size_t j = 0; j < 4; j += 1)
-			{
-				if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-				{
+		for (size_t i = 0; i < 4; i += 1) {
+			for (size_t j = 0; j < 4; j += 1) {
+				if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 					colors->a[(i << 2) + j] = (*sliceAt(
-						data,
-						uint8_t,
-						(((block << 2) + (width * i)) + ((j << 1) + 1))
-					));
-				}
-				else
-				{
+							data,
+							uint8_t,
+							(((block << 2) + (width * i)) + ((j << 1) + 1))));
+				} else {
 					colors->a[(i << 2) + j] = 0;
 				}
 				colors->a[(i << 2) + j] /= 255;
@@ -250,41 +235,33 @@ static IO::Error la8ReadScalar(
 }
 
 static IO::Error la8WriteScalar(
-	IO::Writer writer,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Writer writer,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	uint32_t width = state->res[0];
 	size_t block = state->currentBlock;
-	for (size_t i = 0; i < 4; i += 1)
-	{
-		for (size_t j = 0; j < 4; j += 1)
-		{
-			if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-			{
+	for (size_t i = 0; i < 4; i += 1) {
+		for (size_t j = 0; j < 4; j += 1) {
+			if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 				(*sliceAt(
-					data,
-					uint8_t,
-					(((block << 2) + (width * i)) + (j << 1))
-				)) = (13938U * ((uint64_t)colors->r[(i << 2) + j]) +
-					46869U * ((uint64_t)colors->g[(i << 2) + j]) +
-					4729U * ((uint64_t)colors->b[(i << 2) + j]) +
-					32768U
-				) >> 16U;
+						data,
+						uint8_t,
+						(((block << 2) + (width * i)) + (j << 1)))) = (13938U * ((uint64_t)colors->r[(i << 2) + j]) +
+																			  46869U * ((uint64_t)colors->g[(i << 2) + j]) +
+																			  4729U * ((uint64_t)colors->b[(i << 2) + j]) +
+																			  32768U) >>
+						16U;
 				(*sliceAt(
-					data,
-					uint8_t,
-					(((block << 2) + (width * i)) + (j << 1) + 1)
-				)) = (uint8_t)(colors->a[(i << 2) + j] * 255);
+						data,
+						uint8_t,
+						(((block << 2) + (width * i)) + (j << 1) + 1))) = (uint8_t)(colors->a[(i << 2) + j] * 255);
 			}
 		}
 	}
 	state->currentBlock += 1;
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
 		ret = writer.write(writer, nullptr, state->data);
 		state->currentBlock = 0;
 	}
@@ -334,48 +311,35 @@ constexpr size_t COMPONENT_COUNT[::Image::FORMAT_MAX] = {
 };
 
 static IO::Error rgba8ReadScalar(
-	IO::Reader reader,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Reader reader,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
 	size_t block = state->currentBlock;
 	::Image::Format format = state->format;
 	uint32_t width = state->res[0];
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
-		if (!data.data)
-		{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
+		if (!data.data) {
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay)
-		{
+		if (ret == IO::Error::Okay) {
 			state->currentBlock = 0;
 		}
 	}
-	if (ret == IO::Error::Okay)
-	{
-		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1)
-		{
-			for (size_t i = 0; i < 4; i += 1)
-			{
-				for (size_t j = 0; j < 4; j += 1)
-				{
-					if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-					{
+	if (ret == IO::Error::Okay) {
+		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1) {
+			for (size_t i = 0; i < 4; i += 1) {
+				for (size_t j = 0; j < 4; j += 1) {
+					if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 						colors->c[c][(i << 2) + j] = (*sliceAt(
-							data,
-							uint8_t,
-							(((block << 2) + (width * i)) +
-								(j * COMPONENT_COUNT[format]) + c)
-						));
-					}
-					else
-					{
+								data,
+								uint8_t,
+								(((block << 2) + (width * i)) +
+										(j * COMPONENT_COUNT[format]) + c)));
+					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
 					colors->c[c][(i << 2) + j] /= 255;
@@ -388,85 +352,64 @@ static IO::Error rgba8ReadScalar(
 }
 
 static IO::Error rgba8WriteScalar(
-	IO::Writer writer,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Writer writer,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t block = state->currentBlock;
 	::Image::Format format = state->format;
 	uint32_t width = state->res[0];
-	for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1)
-	{
-		for (size_t i = 0; i < 4; i += 1)
-		{
-			for (size_t j = 0; j < 4; j += 1)
-			{
-				if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-				{
+	for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1) {
+		for (size_t i = 0; i < 4; i += 1) {
+			for (size_t j = 0; j < 4; j += 1) {
+				if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 					(*sliceAt(
-						data,
-						uint8_t,
-						(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c)
-					)) = colors->c[c][(i << 2) + j] * 255;
+							data,
+							uint8_t,
+							(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c))) = colors->c[c][(i << 2) + j] * 255;
 				}
 			}
 		}
 	}
 	state->currentBlock += 1;
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
 		ret = writer.write(writer, nullptr, state->data);
 		state->currentBlock = 0;
 	}
 	return ret;
 }
 
-template<typename T>
+template <typename T>
 static IO::Error rgbafReadScalar(
-	IO::Reader reader,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Reader reader,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
 	size_t block = state->currentBlock;
 	::Image::Format format = state->format;
 	uint32_t width = state->res[0];
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
-		if (!data.data)
-		{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
+		if (!data.data) {
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay)
-		{
+		if (ret == IO::Error::Okay) {
 			state->currentBlock = 0;
 		}
 	}
-	if (ret == IO::Error::Okay)
-	{
-		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1)
-		{
-			for (size_t i = 0; i < 4; i += 1)
-			{
-				for (size_t j = 0; j < 4; j += 1)
-				{
-					if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-					{
+	if (ret == IO::Error::Okay) {
+		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1) {
+			for (size_t i = 0; i < 4; i += 1) {
+				for (size_t j = 0; j < 4; j += 1) {
+					if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 						colors->c[c][(i << 2) + j] = (*sliceAt(
-							data,
-							T,
-							(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c)
-						));
-					}
-					else
-					{
+								data,
+								T,
+								(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c)));
+					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
 				}
@@ -477,38 +420,30 @@ static IO::Error rgbafReadScalar(
 	return ret;
 }
 
-template<typename T>
+template <typename T>
 static IO::Error rgbafWriteScalar(
-	IO::Writer writer,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Writer writer,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t block = state->currentBlock;
 	::Image::Format format = state->format;
 	uint32_t width = state->res[0];
-	for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1)
-	{
-		for (size_t i = 0; i < 4; i += 1)
-		{
-			for (size_t j = 0; j < 4; j += 1)
-			{
-				if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-				{
+	for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1) {
+		for (size_t i = 0; i < 4; i += 1) {
+			for (size_t j = 0; j < 4; j += 1) {
+				if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 					(*sliceAt(
-						data,
-						T,
-						(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c)
-					)) = colors->c[c][(i << 2) + j];
+							data,
+							T,
+							(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c))) = colors->c[c][(i << 2) + j];
 				}
 			}
 		}
 	}
 	state->currentBlock += 1;
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
 		ret = writer.write(writer, nullptr, state->data);
 		state->currentBlock = 0;
 	}
@@ -516,48 +451,37 @@ static IO::Error rgbafWriteScalar(
 }
 
 static IO::Error rgba4444ReadScalar(
-	IO::Reader reader,
-	UncompressedImageState *state,
-	ColorRGBAF32x16 *colors
-) noexcept
-{
+		IO::Reader reader,
+		UncompressedImageState *state,
+		ColorRGBAF32x16 *colors) noexcept {
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
 	size_t block = state->currentBlock;
 	::Image::Format format = state->format;
 	uint32_t width = state->res[0];
-	if (state->currentBlock >= ((width + 3) >> 2))
-	{
-		if (!data.data)
-		{
+	if (state->currentBlock >= ((width + 3) >> 2)) {
+		if (!data.data) {
 			return IO::Error::OutOfMemory;
 		}
 		ret = reader.read(reader, &read, data);
-		if (ret == IO::Error::Okay)
-		{
+		if (ret == IO::Error::Okay) {
 			state->currentBlock = 0;
 		}
 	}
-	if (ret == IO::Error::Okay)
-	{
-		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1)
-		{
-			for (size_t i = 0; i < 4; i += 1)
-			{
-				for (size_t j = 0; j < 4; j += 1)
-				{
-					if ((((block << 2) + (width * i)) + j) < (width * (i + 1)))
-					{
+	if (ret == IO::Error::Okay) {
+		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1) {
+			for (size_t i = 0; i < 4; i += 1) {
+				for (size_t j = 0; j < 4; j += 1) {
+					if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 						colors->c[c][(i << 2) + j] = ((*sliceAt(
-							data,
-							uint8_t,
-							(((block << 2) + (width * i)) +
-								(((j * (COMPONENT_COUNT[format])) + c) >> 1))
-						)) >> ((c & 1) << 2)) & 0x0f;
-					}
-					else
-					{
+															  data,
+															  uint8_t,
+															  (((block << 2) + (width * i)) +
+																	  (((j * (COMPONENT_COUNT[format])) + c) >> 1)))) >>
+															 ((c & 1) << 2)) &
+								0x0f;
+					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
 					colors->c[c][(i << 2) + j] /= 15;
@@ -570,39 +494,31 @@ static IO::Error rgba4444ReadScalar(
 }
 
 static IO::Error defaultFlush(
-	IO::Writer writer,
-	UncompressedImageState *state
-) noexcept
-{
+		IO::Writer writer,
+		UncompressedImageState *state) noexcept {
 	IO::Error err = IO::Error::Okay;
 	size_t cursor;
 	Slice tmp = {};
 	err = IO::Writer::seek(writer, 0, &cursor, IO::WHENCE_CURRENT);
-	if (state->currentBlock == 0)
-	{
+	if (state->currentBlock == 0) {
 		return err;
 	}
-	for (size_t i = 0; i < 4; i += 1)
-	{
+	for (size_t i = 0; i < 4; i += 1) {
 		err = IO::Writer::seek(
-			writer,
-			cursor + (i * (state->res[0])),
-			nullptr,
-			IO::WHENCE_SET
-		);
-		if (err != IO::Error::Okay)
-		{
+				writer,
+				cursor + (i * (state->res[0])),
+				nullptr,
+				IO::WHENCE_SET);
+		if (err != IO::Error::Okay) {
 			return err;
 		}
 		Slice::subslice(
-			&tmp,
-			state->data,
-			i * (state->res[0]),
-			(state->currentBlock * CONSTANT_FACTORS[state->format]) << 2
-		);
+				&tmp,
+				state->data,
+				i * (state->res[0]),
+				(state->currentBlock * CONSTANT_FACTORS[state->format]) << 2);
 		err = IO::Writer::write(writer, nullptr, tmp);
-		if (err != IO::Error::Okay)
-		{
+		if (err != IO::Error::Okay) {
 			return err;
 		}
 	}
@@ -945,12 +861,11 @@ static Writer::VTbl WRITER_AVX2_FUNCTIONS[::Image::FORMAT_MAX] = {
 	{ .write = nullptr, .destroy = nullptr }, // FORMAT_ASTC_8x8_HDR
 };
 
-using ConstructorProc = IO::Error(*)(
-	void **state,
-	uint32_t width,
-	uint32_t height,
-	::Image::Format format
-);
+using ConstructorProc = IO::Error (*)(
+		void **state,
+		uint32_t width,
+		uint32_t height,
+		::Image::Format format);
 
 static ConstructorProc READER_STATE_CONSTRUCTOR[::Image::FORMAT_MAX] = {
 	(ConstructorProc)constantFactorStateCtor, // FORMAT_L8
@@ -1037,72 +952,50 @@ static ConstructorProc WRITER_STATE_CONSTRUCTOR[::Image::FORMAT_MAX] = {
 };
 
 IO::Error Reader::make(
-	Reader *dst,
-	IO::Reader r,
-	::Image::Format format,
-	uint32_t width,
-	uint32_t height
-) noexcept
-{
+		Reader *dst,
+		IO::Reader r,
+		::Image::Format format,
+		uint32_t width,
+		uint32_t height) noexcept {
 	dst->reader = r;
-	if (__builtin_cpu_supports("avx2"))
-	{
+	if (__builtin_cpu_supports("avx2")) {
 		dst->vtbl = &(READER_AVX2_FUNCTIONS[format]);
-	}
-	else if (__builtin_cpu_supports("avx"))
-	{
+	} else if (__builtin_cpu_supports("avx")) {
 		dst->vtbl = &(READER_AVX_FUNCTIONS[format]);
-	}
-	else if (__builtin_cpu_supports("sse4.2"))
-	{
+	} else if (__builtin_cpu_supports("sse4.2")) {
 		dst->vtbl = &(READER_SSE42_FUNCTIONS[format]);
-	}
-	else
-	{
+	} else {
 		dst->vtbl = &(READER_SCALAR_FUNCTIONS[format]);
 	}
-	if (dst->vtbl->read == nullptr)
-	{
+	if (dst->vtbl->read == nullptr) {
 		return IO::Error::NotImplemented;
 	}
-	if (READER_STATE_CONSTRUCTOR[format])
-	{
+	if (READER_STATE_CONSTRUCTOR[format]) {
 		return READER_STATE_CONSTRUCTOR[format](&(dst->state), width, height, format);
 	}
 	return IO::Error::Okay;
 }
 
 IO::Error Writer::make(
-	Writer *dst,
-	IO::Writer w,
-	::Image::Format format,
-	uint32_t width,
-	uint32_t height
-) noexcept
-{
+		Writer *dst,
+		IO::Writer w,
+		::Image::Format format,
+		uint32_t width,
+		uint32_t height) noexcept {
 	dst->writer = w;
-	if (__builtin_cpu_supports("avx2"))
-	{
+	if (__builtin_cpu_supports("avx2")) {
 		dst->vtbl = &(WRITER_AVX2_FUNCTIONS[format]);
-	}
-	else if (__builtin_cpu_supports("avx"))
-	{
+	} else if (__builtin_cpu_supports("avx")) {
 		dst->vtbl = &(WRITER_AVX_FUNCTIONS[format]);
-	}
-	else if (__builtin_cpu_supports("sse4.2"))
-	{
+	} else if (__builtin_cpu_supports("sse4.2")) {
 		dst->vtbl = &(WRITER_SSE42_FUNCTIONS[format]);
-	}
-	else
-	{
+	} else {
 		dst->vtbl = &(WRITER_SCALAR_FUNCTIONS[format]);
 	}
-	if (dst->vtbl->write == nullptr)
-	{
+	if (dst->vtbl->write == nullptr) {
 		return IO::Error::NotImplemented;
 	}
-	if (WRITER_STATE_CONSTRUCTOR[format])
-	{
+	if (WRITER_STATE_CONSTRUCTOR[format]) {
 		return WRITER_STATE_CONSTRUCTOR[format](&(dst->state), width, height, format);
 	}
 	return IO::Error::Okay;
