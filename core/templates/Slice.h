@@ -54,7 +54,7 @@ struct Slice {
 			size_t count) noexcept;
 
 	static inline bool set(Slice dst, Slice src, size_t index) noexcept;
-	static bool copy(Slice dst, Slice src) noexcept;
+	static void copy(Slice dst, Slice src) noexcept;
 	static void set(Slice dst, uint8_t n) noexcept;
 };
 
@@ -63,7 +63,7 @@ constexpr inline void *Slice::get(
 		size_t index,
 		size_t size) noexcept {
 	void *ret = nullptr;
-	if ((size * index) < self.length) {
+	if ((size * (index + 1)) < self.length) {
 		ret = ((uint8_t *)self.data) + (size * index);
 	}
 	return ret;
@@ -74,9 +74,9 @@ constexpr inline bool Slice::subslice(
 		Slice src,
 		size_t begin,
 		size_t count) noexcept {
-	bool ret = (src.length - count) < begin;
+	bool ret = !(src.length <= (begin + count));
 	assert(dst);
-	if (!ret) {
+	if (ret) {
 		dst->data = &(((uint8_t *)src.data)[begin]);
 		dst->length = count;
 	}
@@ -88,7 +88,8 @@ inline bool Slice::set(Slice dst, Slice src, size_t index) noexcept {
 	if (!subslice(&tmp, dst, index, src.length)) {
 		return false;
 	}
-	return Slice::copy(tmp, src);
+	Slice::copy(tmp, src);
+	return true;
 }
 
 #define sliceAt(slice, t, i) ((t *)Slice::get(slice, i, sizeof(t)))

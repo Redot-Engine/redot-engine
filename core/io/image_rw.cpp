@@ -101,6 +101,7 @@ static IO::Error constantFactorStateCtor(
 		(*state)->res[0] = width;
 		(*state)->res[1] = height;
 		(*state)->format = format;
+		(*state)->currentBlock = 0;
 	} else {
 		ret = IO::Error::OutOfMemory;
 	}
@@ -115,7 +116,7 @@ static IO::Error l8ReadScalar(
 	Slice data = state->data;
 	size_t read;
 	uint32_t width = state->res[0];
-	size_t block = state->currentBlock;
+	size_t block;
 	if (state->currentBlock >= ((width + 3) >> 2)) {
 		if (!data.data) {
 			return IO::Error::OutOfMemory;
@@ -125,6 +126,7 @@ static IO::Error l8ReadScalar(
 			state->currentBlock = 0;
 		}
 	}
+	block = state->currentBlock;
 	if (ret == IO::Error::Okay) {
 		for (size_t c = 0; c < 3; c += 1) {
 			for (size_t i = 0; i < 4; i += 1) {
@@ -141,13 +143,10 @@ static IO::Error l8ReadScalar(
 				}
 			}
 		}
-		for (size_t i = 0; i < 4; i += 1) {
-			colors->a[(i << 2) + 0] = 1;
-			colors->a[(i << 2) + 1] = 1;
-			colors->a[(i << 2) + 2] = 1;
-			colors->a[(i << 2) + 3] = 1;
-		}
 		state->currentBlock += 1;
+	}
+	for (size_t i = 0; i < 16; i += 1) {
+		colors->a[i] = 0;
 	}
 	return ret;
 }
@@ -166,9 +165,9 @@ static IO::Error l8WriteScalar(
 				(*sliceAt(
 						data,
 						uint8_t,
-						(((block << 2) + (width * i)) + j))) = (13938U * ((uint64_t)colors->r[(i << 2) + j]) +
-																	   46869U * ((uint64_t)colors->g[(i << 2) + j]) +
-																	   4729U * ((uint64_t)colors->b[(i << 2) + j]) +
+						(((block << 2) + (width * i)) + j))) = (13938U * ((uint64_t)colors->r[(i << 2) + j] * 255) +
+																	   46869U * ((uint64_t)colors->g[(i << 2) + j] * 255) +
+																	   4729U * ((uint64_t)colors->b[(i << 2) + j] * 255) +
 																	   32768U) >>
 						16U;
 			}
@@ -190,7 +189,7 @@ static IO::Error la8ReadScalar(
 	Slice data = state->data;
 	size_t read;
 	uint32_t width = state->res[0];
-	size_t block = state->currentBlock;
+	size_t block;
 	if (state->currentBlock >= ((width + 3) >> 2)) {
 		if (!data.data) {
 			return IO::Error::OutOfMemory;
@@ -200,6 +199,7 @@ static IO::Error la8ReadScalar(
 			state->currentBlock = 0;
 		}
 	}
+	block = state->currentBlock;
 	if (ret == IO::Error::Okay) {
 		for (size_t c = 0; c < 3; c += 1) {
 			for (size_t i = 0; i < 4; i += 1) {
@@ -248,15 +248,15 @@ static IO::Error la8WriteScalar(
 				(*sliceAt(
 						data,
 						uint8_t,
-						(((block << 2) + (width * i)) + (j << 1)))) = (13938U * ((uint64_t)colors->r[(i << 2) + j]) +
-																			  46869U * ((uint64_t)colors->g[(i << 2) + j]) +
-																			  4729U * ((uint64_t)colors->b[(i << 2) + j]) +
+						(((block << 3) + (width * i)) + (j << 1)))) = (13938U * ((uint64_t)colors->r[(i << 2) + j] * 255) +
+																			  46869U * ((uint64_t)colors->g[(i << 2) + j] * 255) +
+																			  4729U * ((uint64_t)colors->b[(i << 2) + j] * 255) +
 																			  32768U) >>
 						16U;
 				(*sliceAt(
 						data,
 						uint8_t,
-						(((block << 2) + (width * i)) + (j << 1) + 1))) = (uint8_t)(colors->a[(i << 2) + j] * 255);
+						(((block << 3) + (width * i)) + (j << 1) + 1))) = (uint8_t)(colors->a[(i << 2) + j] * 255);
 			}
 		}
 	}
@@ -317,9 +317,10 @@ static IO::Error rgba8ReadScalar(
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
-	size_t block = state->currentBlock;
+	size_t block;
 	::Image::Format format = state->format;
 	uint32_t width = state->res[0];
+	size_t c;
 	if (state->currentBlock >= ((width + 3) >> 2)) {
 		if (!data.data) {
 			return IO::Error::OutOfMemory;
@@ -329,21 +330,31 @@ static IO::Error rgba8ReadScalar(
 			state->currentBlock = 0;
 		}
 	}
+	block = state->currentBlock;
 	if (ret == IO::Error::Okay) {
-		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1) {
+		for (c = 0; c < COMPONENT_COUNT[format]; c += 1) {
 			for (size_t i = 0; i < 4; i += 1) {
 				for (size_t j = 0; j < 4; j += 1) {
 					if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 						colors->c[c][(i << 2) + j] = (*sliceAt(
 								data,
 								uint8_t,
-								(((block << 2) + (width * i)) +
-										(j * COMPONENT_COUNT[format]) + c)));
+								(((block << 2) + (width * i) + j) * COMPONENT_COUNT[format])));
 					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
 					colors->c[c][(i << 2) + j] /= 255;
 				}
+			}
+		}
+		for (; c < 3; c += 1) {
+			for (size_t i = 0; i < 16; i += 1) {
+				colors->c[c][i] = 0;
+			}
+		}
+		for (; c < 4; c += 1) {
+			for (size_t i = 0; i < 16; i += 1) {
+				colors->c[c][i] = 1;
 			}
 		}
 		state->currentBlock += 1;
@@ -367,7 +378,7 @@ static IO::Error rgba8WriteScalar(
 					(*sliceAt(
 							data,
 							uint8_t,
-							(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c))) = colors->c[c][(i << 2) + j] * 255;
+							((((block << 2) + (width * i)) * COMPONENT_COUNT[format]) + (j * COMPONENT_COUNT[format]) + c))) = colors->c[c][(i << 2) + j] * 255;
 				}
 			}
 		}
@@ -388,9 +399,10 @@ static IO::Error rgbafReadScalar(
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
-	size_t block = state->currentBlock;
+	size_t block;
 	::Image::Format format = state->format;
 	uint32_t width = state->res[0];
+	size_t c;
 	if (state->currentBlock >= ((width + 3) >> 2)) {
 		if (!data.data) {
 			return IO::Error::OutOfMemory;
@@ -400,19 +412,30 @@ static IO::Error rgbafReadScalar(
 			state->currentBlock = 0;
 		}
 	}
+	block = state->currentBlock;
 	if (ret == IO::Error::Okay) {
-		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1) {
+		for (c = 0; c < COMPONENT_COUNT[format]; c += 1) {
 			for (size_t i = 0; i < 4; i += 1) {
 				for (size_t j = 0; j < 4; j += 1) {
 					if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
 						colors->c[c][(i << 2) + j] = (*sliceAt(
 								data,
 								T,
-								(((block << 2) + (width * i)) + (j * COMPONENT_COUNT[format]) + c)));
+								(((block << 2) + (width * i) + j) * COMPONENT_COUNT[format])));
 					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
 				}
+			}
+		}
+		for (; c < 3; c += 1) {
+			for (size_t i = 0; i < 16; i += 1) {
+				colors->c[c][i] = 0;
+			}
+		}
+		for (; c < 4; c += 1) {
+			for (size_t i = 0; i < 16; i += 1) {
+				colors->c[c][i] = 1;
 			}
 		}
 		state->currentBlock += 1;
@@ -457,9 +480,10 @@ static IO::Error rgba4444ReadScalar(
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
-	size_t block = state->currentBlock;
+	size_t block;
 	::Image::Format format = state->format;
 	uint32_t width = state->res[0];
+	size_t c;
 	if (state->currentBlock >= ((width + 3) >> 2)) {
 		if (!data.data) {
 			return IO::Error::OutOfMemory;
@@ -469,23 +493,28 @@ static IO::Error rgba4444ReadScalar(
 			state->currentBlock = 0;
 		}
 	}
+	block = state->currentBlock;
 	if (ret == IO::Error::Okay) {
-		for (size_t c = 0; c < COMPONENT_COUNT[format]; c += 1) {
+		for (c = 0; c < COMPONENT_COUNT[format]; c += 1) {
 			for (size_t i = 0; i < 4; i += 1) {
 				for (size_t j = 0; j < 4; j += 1) {
 					if ((((block << 2) + (width * i)) + j) < (width * (i + 1))) {
-						colors->c[c][(i << 2) + j] = ((*sliceAt(
-															  data,
-															  uint8_t,
-															  (((block << 2) + (width * i)) +
-																	  (((j * (COMPONENT_COUNT[format])) + c) >> 1)))) >>
-															 ((c & 1) << 2)) &
-								0x0f;
+						colors->c[c][(i << 2) + j] = ((*sliceAt(data, uint8_t, ((((block << 2) + (width * i)) * CONSTANT_FACTORS[::Image::FORMAT_RGBA4444]) + (((j * COMPONENT_COUNT[format]) + c) >> 1)))) >> ((c & 1) << 2)) & 0x0f;
 					} else {
 						colors->c[c][(i << 2) + j] = 0;
 					}
 					colors->c[c][(i << 2) + j] /= 15;
 				}
+			}
+		}
+		for (; c < 3; c += 1) {
+			for (size_t i = 0; i < 16; i += 1) {
+				colors->c[c][i] = 0;
+			}
+		}
+		for (; c < 4; c += 1) {
+			for (size_t i = 0; i < 16; i += 1) {
+				colors->c[c][i] = 1;
 			}
 		}
 		state->currentBlock += 1;
@@ -506,7 +535,7 @@ static IO::Error defaultFlush(
 	for (size_t i = 0; i < 4; i += 1) {
 		err = IO::Writer::seek(
 				writer,
-				cursor + (i * (state->res[0])),
+				cursor + (i * (state->res[0]) * CONSTANT_FACTORS[state->format]),
 				nullptr,
 				IO::WHENCE_SET);
 		if (err != IO::Error::Okay) {
@@ -515,7 +544,7 @@ static IO::Error defaultFlush(
 		Slice::subslice(
 				&tmp,
 				state->data,
-				i * (state->res[0]),
+				i * (state->res[0]) * CONSTANT_FACTORS[state->format],
 				(state->currentBlock * CONSTANT_FACTORS[state->format]) << 2);
 		err = IO::Writer::write(writer, nullptr, tmp);
 		if (err != IO::Error::Okay) {

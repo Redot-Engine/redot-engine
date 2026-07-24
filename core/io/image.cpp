@@ -569,14 +569,17 @@ void Image::convert(Format p_new_format) {
 						.length = (size_t)(mip_size),
 				});
 		if (err != IO::Error::Okay) {
-			break;
+			return;
 		}
-		IO::Image::Writer::make(
+		err = IO::Image::Writer::make(
 				&imWriter,
 				writer,
 				new_img.format,
 				mip_width,
 				mip_height);
+		if (err != IO::Error::Okay) {
+			return;
+		}
 		do {
 			err = IO::Image::Reader::read(imReader, &block);
 			if (err == IO::Error::Okay) {

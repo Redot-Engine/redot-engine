@@ -42,7 +42,6 @@ struct SliceState {
 
 IO::Error sliceRead(SliceState *state, size_t *read, Slice buffer) noexcept {
 	IO::Error ret = IO::Error::Okay;
-	Slice tmp = Slice::nil;
 	size_t count = buffer.length;
 	if (state->closed) {
 		ret = IO::Error::Closed;
@@ -52,8 +51,7 @@ IO::Error sliceRead(SliceState *state, size_t *read, Slice buffer) noexcept {
 			ret = IO::Error::Eof;
 		}
 		// the following will not error, and therefore, safe to ignore
-		Slice::subslice(&tmp, state->buffer, state->offset, count);
-		Slice::copy(buffer, tmp);
+		Slice::copy(buffer, state->buffer);
 		state->offset += count;
 		if (read) {
 			*read = count;
@@ -101,7 +99,7 @@ IO::Error sliceSeek(
 	if (whence > WHENCE_END) {
 		return IO::Error::InvalidWhence;
 	}
-	if (((size_t)(newOffsets[whence] + offset)) >= state->buffer.length) {
+	if (((size_t)(newOffsets[whence] + offset)) > state->buffer.length) {
 		return IO::Error::InvalidOffset;
 	}
 	state->offset = ((size_t)(newOffsets[whence] + offset));
@@ -162,6 +160,7 @@ IO::Error Reader::make(Reader *dst, Slice slice) noexcept {
 	} else {
 		state->buffer = slice;
 		state->offset = 0;
+		state->closed = false;
 		dst->vtbl = &SLICE_READER_VTABLE;
 		dst->state = (void *)state;
 	}
@@ -177,6 +176,7 @@ IO::Error Writer::make(Writer *dst, Slice slice) noexcept {
 	} else {
 		state->buffer = slice;
 		state->offset = 0;
+		state->closed = false;
 		dst->vtbl = &SLICE_WRITER_VTABLE;
 		dst->state = (void *)state;
 	}
