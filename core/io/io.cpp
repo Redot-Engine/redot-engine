@@ -90,7 +90,7 @@ IO::Error sliceWrite(SliceState *state, size_t *written, Slice buffer) noexcept 
 
 IO::Error sliceSeek(
 		SliceState *state,
-		ssize_t offset,
+		ptrdiff_t offset,
 		size_t *where,
 		Whence whence) noexcept {
 	size_t newOffsets[WHENCE_END + 1] = {

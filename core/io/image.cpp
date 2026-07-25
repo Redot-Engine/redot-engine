@@ -591,7 +591,7 @@ void Image::convert(Format p_new_format) {
 		}
 		do {
 			err = IO::Image::Reader::read(imReader, &block);
-			if (err == IO::Error::Okay) {
+			if ((err == IO::Error::Okay) | (err == IO::Error::Eof)) {
 				err = IO::Image::Writer::write(imWriter, &block);
 			}
 		} while (err == IO::Error::Okay);

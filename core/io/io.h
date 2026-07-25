@@ -63,7 +63,7 @@ using WriteProc = Error (*)(
 		Slice buffer) noexcept;
 using SeekProc = Error (*)(
 		void *state,
-		ssize_t offset,
+		ptrdiff_t offset,
 		size_t *where,
 		Whence whence) noexcept;
 using CloseProc = Error (*)(void *state) noexcept;
@@ -101,7 +101,7 @@ struct Reader {
 
 	constexpr static inline Error seek(
 			Reader reader,
-			ssize_t offset,
+			ptrdiff_t offset,
 			size_t *where,
 			Whence whence) noexcept {
 		return reader.vtbl->seek(reader.state, offset, where, whence);
@@ -145,7 +145,7 @@ struct Writer {
 
 	constexpr static inline Error seek(
 			Writer writer,
-			ssize_t offset,
+			ptrdiff_t offset,
 			size_t *where,
 			Whence whence) noexcept {
 		return writer.vtbl->seek(writer.state, offset, where, whence);

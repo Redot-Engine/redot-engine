@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "core/typedefs.h"
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -54,7 +55,7 @@ struct Slice {
 			size_t count) noexcept;
 
 	static inline bool set(Slice dst, Slice src, size_t index) noexcept;
-	static void copy(Slice dst, Slice src) noexcept;
+	static inline void copy(Slice dst, Slice src) noexcept;
 	static void set(Slice dst, uint8_t n) noexcept;
 };
 
@@ -69,12 +70,17 @@ constexpr inline void *Slice::get(
 	return ret;
 }
 
+inline void Slice::copy(Slice dst, Slice src) noexcept {
+	size_t n = MIN(src.length, dst.length);
+	memmove(dst.data, src.data, n);
+}
+
 constexpr inline bool Slice::subslice(
 		Slice *dst,
 		Slice src,
 		size_t begin,
 		size_t count) noexcept {
-	bool ret = !(src.length >= (begin + count));
+	bool ret = (src.length >= (begin + count));
 	assert(dst);
 	if (ret) {
 		dst->data = &(((uint8_t *)src.data)[begin]);
