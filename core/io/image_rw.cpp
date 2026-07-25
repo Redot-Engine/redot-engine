@@ -36,13 +36,13 @@
 
 using namespace IO::Image;
 
-struct UncompressedImageState {
+struct alignas(64) UncompressedImageState {
 	uint32_t currentBlock;
 	uint32_t currentRow;
 	uint32_t res[2];
 	Slice data;
 	::Image::Format format;
-	ColorRGBAF32x16 blocks4x4[];
+	// ColorRGBAF32x16 blocks4x4[]; // because windows :sillybastard:
 };
 
 union Iter {
