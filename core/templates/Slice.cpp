@@ -40,7 +40,7 @@ void Slice::set(Slice dst, uint8_t n) noexcept {
 	uint32_t n32 = 0x01010101 * n;
 	uint64_t n64 = 0x0101010101010101 * n;
 	size_t i = 0;
-	while (((((uintptr_t)dst.data) + i) & 7) & (i < dst.length)) {
+	while (((((uintptr_t)dst.data) + i) & 7) && (i < dst.length)) {
 		*((uint8_t *)get(dst, i, 1)) = n;
 		i += 1;
 	}

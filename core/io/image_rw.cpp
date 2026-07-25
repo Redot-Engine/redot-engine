@@ -185,9 +185,9 @@ static IO::Error l8ReadScalar(
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->r[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b));
-				colors->g[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b));
-				colors->b[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b));
+				colors->r[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b)) / 255.0;
+				colors->g[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b)) / 255.0;
+				colors->b[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b)) / 255.0;
 				b += 1;
 			} else {
 				colors->r[i.p] = 0;
@@ -619,8 +619,8 @@ static IO::Error rgba4444ReadScalar(
 	IO::Error ret = IO::Error::Okay;
 	Slice data = state->data;
 	size_t read;
-	uint32_t block = state->currentBlock;
-	uint32_t row = state->currentRow;
+	uint32_t block;
+	uint32_t row;
 	uint32_t width = state->res[0];
 	uint32_t height = state->res[1];
 	size_t b = 0;
@@ -636,13 +636,14 @@ static IO::Error rgba4444ReadScalar(
 		}
 	}
 	block = state->currentBlock;
+	row = state->currentRow;
 	if ((ret == IO::Error::Okay) | (ret == IO::Error::Eof)) {
 		for (; i.i < 64; i.i += 1) {
 			if (i.col == 0) {
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->c[i.c][i.p] = (*sliceAt(data, uint8_t, (((i.row * width) + (block << 2) + (block << 2) + b) << 1))) >> ((b & 0x1) * 4);
+				colors->c[i.c][i.p] = (*sliceAt(data, uint16_t, ((i.row * width) + (block << 2) + b))) >> (i.c << 2);
 				b += 1;
 			}
 		}
@@ -656,18 +657,19 @@ static IO::Error defaultFlush(
 		UncompressedImageState *state) noexcept {
 	IO::Error err = IO::Error::Okay;
 	size_t cursor;
+	size_t row = state->currentRow;
 	Slice tmp = {};
 	err = IO::Writer::seek(writer, 0, &cursor, IO::WHENCE_CURRENT);
 	// if (state->currentBlock == 0) { return err; }
-	for (size_t i = 0; i < 4; i += 1) {
+	for (size_t i = 0; row < state->res[1]; i += 1) {
+		row += 1;
 		err = IO::Writer::seek(
 				writer,
 				cursor + (i * (state->res[0]) * CONSTANT_FACTORS[state->format]),
 				nullptr,
 				IO::WHENCE_SET);
 		if (err != IO::Error::Okay) {
-			err = IO::Error::Okay;
-			break;
+			return err;
 		}
 		Slice::subslice(
 				&tmp,
