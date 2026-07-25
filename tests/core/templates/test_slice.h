@@ -153,7 +153,7 @@ TEST_CASE("[Slice] copy") {
 		Slice::copy(windowSlice, a);
 		Slice::copy(bOrigSlice, b);
 		Slice::copy(a, b);
-		for (size_t j = 0; j < MIN(i, 64); j += 1) {
+		for (size_t j = 0; j < MIN(i, 64U); j += 1) {
 			CHECK_EQ(*sliceAt(a, uint8_t, j), *sliceAt(bOrigSlice, uint8_t, j));
 		}
 		Slice::copy(a, windowSlice);
