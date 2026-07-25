@@ -116,7 +116,8 @@ static IO::Error constantFactorWriterStateCtor(
 					((width << 2) * CONSTANT_FACTORS[format]),
 			alignof(UncompressedImageState));
 	if (*state) {
-		(*state)->data.data = (*state)->blocks4x4;
+		// (*state)->data.data = (*state)->blocks4x4;
+		(*state)->data.data = (*state) + 1;
 		(*state)->data.length = (width << 2) * CONSTANT_FACTORS[format];
 		(*state)->res[0] = width;
 		(*state)->res[1] = height;
@@ -141,7 +142,8 @@ static IO::Error constantFactorReaderStateCtor(
 					((width << 2) * CONSTANT_FACTORS[format]),
 			alignof(UncompressedImageState));
 	if (*state) {
-		(*state)->data.data = (*state)->blocks4x4;
+		// (*state)->data.data = (*state)->blocks4x4;
+		(*state)->data.data = (*state) + 1;
 		(*state)->data.length = (width << 2) * CONSTANT_FACTORS[format];
 		(*state)->res[0] = width;
 		(*state)->res[1] = height;
