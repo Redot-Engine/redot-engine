@@ -1033,7 +1033,7 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 		} else {
 			light_data.shadow_opacity = 0.0;
 			// If shadow is off but we have a projector, compute the projector/shadow matrix manually
-			if (has_projector && type == RSE::LIGHT_SPOT) {
+			if (has_projector && type == RS::LIGHT_SPOT) {
 				Transform3D modelview = (inverse_transform * light_transform).inverse();
 				Projection bias;
 				bias.set_light_bias();
