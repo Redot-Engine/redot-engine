@@ -391,10 +391,8 @@ void WorldScape3DInstancer::_destroy_mmi_by_location(const Vector2i &p_region_lo
 		// Iterate over keys as functions will invalidate standard iterator
 		std::vector<Vector2i> keys;
 		keys.reserve(cell_mmi_dict.size());
-		int i = 0;
 		for (auto &it : cell_mmi_dict) {
 			keys.push_back(it.first);
-			i++;
 		}
 		for (auto &cell : keys) {
 			_destroy_mmi_by_cell(p_region_loc, p_mesh_id, cell);
@@ -515,10 +513,10 @@ void WorldScape3DInstancer::destroy() {
 	// Iterate over keys as subfunction will invalidate standard iterator
 	std::vector<Vector2i> keys;
 	keys.reserve(_mmi_nodes.size());
-	int i = 0;
+	//int i = 0;
 	for (auto &it : _mmi_nodes) {
 		keys.push_back(it.first);
-		i++;
+		//i++;
 	}
 	int mesh_count = _terrain->get_assets()->get_mesh_count();
 	for (auto &region_loc : keys) {
@@ -605,7 +603,7 @@ void WorldScape3DInstancer::add_instances(const Vector3 &p_global_position, cons
 
 	TypedArray<Transform3D> xforms;
 	PackedColorArray colors;
-	for (int i = 0; i < count; i++) {
+	for (size_t i = 0; i < count; i++) {
 		Transform3D t;
 
 		// Get random XZ position and height in a circle
@@ -638,11 +636,11 @@ void WorldScape3DInstancer::add_instances(const Vector3 &p_global_position, cons
 			}
 		}
 		real_t spin = (fixed_spin + random_spin * VariantUtilityFunctions::randf()) * Math_PI / 180.f;
-		if (abs(spin) > 0.001f) {
+		if (Math::abs(spin) > 0.001f) {
 			t.basis = t.basis.rotated(normal, spin);
 		}
 		real_t tilt = (fixed_tilt + random_tilt * (2.f * VariantUtilityFunctions::randf() - 1.f)) * Math_PI / 180.f;
-		if (abs(tilt) > 0.001f) {
+		if (Math::abs(tilt) > 0.001f) {
 			t.basis = t.basis.rotated(t.basis.get_column(0), tilt); // Rotate pitch, X-axis
 		}
 
@@ -685,8 +683,8 @@ void WorldScape3DInstancer::remove_instances(const Vector3 &p_global_position, c
 	real_t half_brush_size = brush_size * 0.5f + 1.f; // 1m margin
 	real_t radius = brush_size * .4f; // Ring1's inner radius
 	real_t strength = CLAMP(real_t(p_params.get("strength", .1f)), .01f, 100.f); // (premul) 1-10k%
-	real_t fixed_scale = CLAMP(real_t(p_params.get("fixed_scale", 100.f)) * .01f, .01f, 100.f); // 1-10k%
-	real_t random_scale = CLAMP(real_t(p_params.get("random_scale", 0.f)) * .01f, 0.f, 10.f); // +/- 1000%
+	//real_t fixed_scale = CLAMP(real_t(p_params.get("fixed_scale", 100.f)) * .01f, .01f, 100.f); // 1-10k%
+	//real_t random_scale = CLAMP(real_t(p_params.get("random_scale", 0.f)) * .01f, 0.f, 10.f); // +/- 1000%
 
 	Vector2 slope_range = p_params["slope"]; // 0-90 degrees already clamped in Editor
 	bool invert = p_params["modifier_alt"];
@@ -1210,8 +1208,8 @@ void WorldScape3DInstancer::dump_data() {
 				}
 				Array xforms = triple[0];
 				Array colors = triple[1];
-				bool modified = triple[2];
-				LOG(MESG, "Mesh: ", mesh_id, " cell: ", cell, " xforms: ", xforms.size(), " colors: ", colors.size(), " modified: ", modified);
+				//bool modified = triple[2];
+				//LOG(MESG, "Mesh: ", mesh_id, " cell: ", cell, " xforms: ", xforms.size(), " colors: ", colors.size(), " modified: ", modified);
 			}
 		}
 	}
@@ -1220,21 +1218,21 @@ void WorldScape3DInstancer::dump_data() {
 void WorldScape3DInstancer::dump_mmis() {
 	LOG(WARN, "Dumping MMI tree and node containers");
 	LOG(MESG, "_mmi_containers size: ", int(_mmi_containers.size()));
-	for (auto &it : _mmi_containers) {
-		LOG(MESG, "_mmi_containers region: ", it.first, ", node ptr: ", static_cast<uint64_t>(it.second));
-	}
+	// for (auto &it : _mmi_containers) {
+	// 	LOG(MESG, "_mmi_containers region: ", it.first, ", node ptr: ", static_cast<uint64_t>(it.second));
+	// }
 	LOG(MESG, "_mmi tree: ");
 	_terrain->get_mmi_parent()->print_tree();
 	LOG(MESG, "_mmi_nodes size: ", int(_mmi_nodes.size()));
-	for (auto &i : _mmi_nodes) {
-		LOG(MESG, "_mmi_nodes region: ", i.first, ", dict ptr: ", static_cast<uint64_t>(&i.second));
-		for (auto &j : i.second) {
-			LOG(MESG, "mesh_mmi_dict mesh: ", j.first, ", dict ptr: ", static_cast<uint64_t>(&j.second));
-			for (auto &k : j.second) {
-				LOG(MESG, "cell_mmi_dict cell: ", k.first, ", mmi ptr: ", static_cast<uint64_t>(k.second));
-			}
-		}
-	}
+	// for (auto &i : _mmi_nodes) {
+	// 	LOG(MESG, "_mmi_nodes region: ", i.first, ", dict ptr: ", static_cast<uint64_t>(&i.second));
+	// 	for (auto &j : i.second) {
+	// 		LOG(MESG, "mesh_mmi_dict mesh: ", j.first, ", dict ptr: ", static_cast<uint64_t>(&j.second));
+	// 		for (auto &k : j.second) {
+	// 			LOG(MESG, "cell_mmi_dict cell: ", k.first, ", mmi ptr: ", static_cast<uint64_t>(k.second));
+	// 		}
+	// 	}
+	// }
 }
 
 ///////////////////////////

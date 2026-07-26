@@ -334,7 +334,8 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 		build();
 		return;
 	}
-	int time = Time::get_singleton()->get_ticks_usec();
+	// FIXME implement LOG macro
+	//int time = Time::get_singleton()->get_ticks_usec();
 	real_t spacing = _terrain->get_vertex_spacing();
 
 	if (is_dynamic_mode()) {
@@ -407,8 +408,9 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 				continue;
 			}
 			if (!p_rebuild && grid[i] >= 0) {
-				Vector2i center_pos = v3v2i(_shape_get_position(i));
-				LOG(EXTREME, "grid[", i, ":", grid_loc, "] shape_pos : ", shape_pos, " act ", center_pos - shape_offset, " Has active shape id: ", grid[i]);
+				// FIXME implement LOG macro
+				//Vector2i center_pos = v3v2i(_shape_get_position(i));
+				//LOG(EXTREME, "grid[", i, ":", grid_loc, "] shape_pos : ", shape_pos, " act ", center_pos - shape_offset, " Has active shape id: ", grid[i]);
 				continue;
 			} else {
 				if (inactive_shape_ids.size() == 0) {
@@ -435,7 +437,7 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 
 	} else {
 		// Full collision
-		int shape_count = _terrain->get_data()->get_region_count();
+		//int shape_count = _terrain->get_data()->get_region_count();
 		int region_size = _terrain->get_region_size();
 		TypedArray<Vector2i> region_locs = _terrain->get_data()->get_region_locations();
 		for (int i = 0; i < region_locs.size(); i++) {
@@ -453,7 +455,7 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 			_shape_set_data(i, shape_data);
 		}
 	}
-	LOG(EXTREME, "Collision update time: ", Time::get_singleton()->get_ticks_usec() - time, " us");
+	//LOG(EXTREME, "Collision update time: ", Time::get_singleton()->get_ticks_usec() - time, " us");
 }
 
 void WorldScape3DCollision::destroy() {
@@ -476,7 +478,7 @@ void WorldScape3DCollision::destroy() {
 	}
 
 	// Scene Tree
-	for (int i = 0; i < _shapes.size(); i++) {
+	for (size_t i = 0; i < _shapes.size(); i++) {
 		CollisionShape3D *shape = _shapes[i];
 		LOG(DEBUG, "Freeing CollisionShape3D ", i, " ", shape->get_name());
 		remove_from_tree(shape);

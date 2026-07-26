@@ -190,7 +190,7 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 	int index = 0;
 	int line = 0;
 	//int comment_line_open = 0;
-	int comments_open = 0;
+	//int comments_open = 0;
 	int strings_open = 0;
 	const char32_t CURSOR = 0xFFFF;
 
@@ -245,10 +245,10 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 			} else if (p == '*') { // Start of a block comment.
 				index++;
 				//comment_line_open = line;
-				comments_open++;
+				//comments_open++;
 				while (advance('*')) {
 					if (peek() == '/') { // End of a block comment.
-						comments_open--;
+						//comments_open--;
 						index++;
 						break;
 					}
@@ -259,7 +259,7 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 		} else if (c == '*' && strings_open == 0) {
 			if (peek() == '/') { // Unmatched end of a block comment.
 				//comment_line_open = line;
-				comments_open--;
+				//comments_open--;
 			} else {
 				stripped.push_back(c);
 			}

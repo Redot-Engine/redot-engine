@@ -482,7 +482,7 @@ void WorldScape3DMesher::update_aabbs() {
 	IS_DATA_INIT(VOID);
 	real_t cull_margin = _terrain->get_cull_margin();
 	Vector2 height_range = _terrain->get_data()->get_height_range();
-	height_range.y += abs(height_range.x);
+	height_range.y += Math::abs(height_range.x);
 
 	auto rs = RenderingServer::get_singleton();
 
