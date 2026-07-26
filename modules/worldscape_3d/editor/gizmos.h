@@ -35,7 +35,6 @@
 #pragma once
 
 #include "../constants.h"
-#include "core/math/vector2.h"
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "scene/resources/material.h"
 

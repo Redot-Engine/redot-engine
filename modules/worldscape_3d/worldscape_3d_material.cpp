@@ -189,7 +189,7 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 	String code = p_shader;
 	int index = 0;
 	int line = 0;
-	int comment_line_open = 0;
+	//int comment_line_open = 0;
 	int comments_open = 0;
 	int strings_open = 0;
 	const char32_t CURSOR = 0xFFFF;
@@ -244,7 +244,7 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 				advance('\n');
 			} else if (p == '*') { // Start of a block comment.
 				index++;
-				comment_line_open = line;
+				//comment_line_open = line;
 				comments_open++;
 				while (advance('*')) {
 					if (peek() == '/') { // End of a block comment.
@@ -258,7 +258,7 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 			}
 		} else if (c == '*' && strings_open == 0) {
 			if (peek() == '/') { // Unmatched end of a block comment.
-				comment_line_open = line;
+				//comment_line_open = line;
 				comments_open--;
 			} else {
 				stripped.push_back(c);
@@ -840,7 +840,7 @@ Error WorldScape3DMaterial::save(const String &p_path) {
 	Array keys = _shader_params.keys();
 	for (int i = 0; i < keys.size(); i++) {
 		bool has = false;
-		StringName name = keys[i];
+		StringName key_name = keys[i];
 		// for (int j = 0; j < param_list.size(); j++) {
 		// 	Dictionary dict;
 		// 	StringName dname;
@@ -858,15 +858,15 @@ Error WorldScape3DMaterial::save(const String &p_path) {
 			StringName dname;
 			dict = param;
 			dname = dict["name"];
-			if (name == dname) {
+			if (key_name == dname) {
 				has = true;
 				break;
 			}
 		}
 
 		if (!has) {
-			LOG(DEBUG, "'", name, "' not found in shader parameters. Removing from dictionary.");
-			_shader_params.erase(name);
+			LOG(DEBUG, "'", key_name, "' not found in shader parameters. Removing from dictionary.");
+			_shader_params.erase(key_name);
 		}
 	}
 
@@ -907,11 +907,11 @@ void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const 
 	// 	Dictionary dict = param_list[i];
 	for (auto &param : param_list) {
 		Dictionary dict = param;
-		String name = dict["name"];
+		String the_name = dict["name"];
 
 		// Filter out private uniforms that start with _
-		if (!name.begins_with("_")) {
-			// Populate Godot's property list
+		if (!the_name.begins_with("_")) {
+			// Populate Redot property list
 			PropertyInfo pi;
 			// uint64_t use = dict["usage"];
 			// if (use == PROPERTY_USAGE_GROUP) {
@@ -922,7 +922,7 @@ void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const 
 			// 	pi.name = name;
 			// 	pi.usage = PROPERTY_USAGE_EDITOR;
 			// }
-			pi.name = name;
+			pi.name = the_name;
 			pi.class_name = dict["class_name"];
 			pi.type = Variant::Type(int(dict["type"]));
 			pi.hint = dict["hint"];
@@ -931,15 +931,15 @@ void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const 
 			p_list->push_back(pi);
 
 			// Populate list of public parameters for current shader
-			_active_params.push_back(name);
+			_active_params.push_back(the_name);
 
 			// Store this param in a dictionary that is saved in the resource file
 			// Initially set with default value
 			// Also acts as a cache for _get
 			// Property usage above set to EDITOR so it won't be redundantly saved,
 			// which won't get loaded since there is no bound property.
-			if (!_shader_params.has(name)) {
-				_property_get_revert(name, _shader_params[name]);
+			if (!_shader_params.has(the_name)) {
+				_property_get_revert(the_name, _shader_params[the_name]);
 			}
 		}
 	}

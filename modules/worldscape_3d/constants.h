@@ -37,6 +37,10 @@
 #include <numbers>
 
 #include "core/math/color.h"
+#include "core/math/vector2.h"
+#include "core/math/vector2i.h"
+#include "core/math/vector3.h"
+#include "core/math/vector3i.h"
 
 // Macros
 //#define PhysicsS PhysicsServer3D::get_singleton()

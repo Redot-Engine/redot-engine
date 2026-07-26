@@ -405,7 +405,7 @@ Variant WorldScape3DToolSettings::convert_setting(const String &setting) const {
 		// Adjust widths of all sliders on update of values
 		auto digits = static_cast<float>(count_digits(value));
 		auto scale = EditorInterface::get_singleton()->get_editor_scale();
-		auto width = Math::clamp((1.f + count_digits(value)) * 19.f, 50.f, 80.f) * Math::clamp(scale, 9.f, 2.f);
+		auto width = Math::clamp((1.f + digits) * 19.f, 50.f, 80.f) * Math::clamp(scale, 9.f, 2.f);
 		range->set_custom_minimum_size(Vector2{ width, 0 });
 		return value;
 	}
