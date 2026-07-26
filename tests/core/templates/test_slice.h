@@ -43,25 +43,25 @@ TEST_CASE("[Slice] at") {
 		.data = &value,
 		.length = 8
 	};
-	CHECK_EQ(*sliceAt(slice, uint8_t, 0), 0xDE);
-	CHECK_EQ(*sliceAt(slice, uint8_t, 1), 0xAD);
-	CHECK_EQ(*sliceAt(slice, uint8_t, 2), 0xBE);
-	CHECK_EQ(*sliceAt(slice, uint8_t, 3), 0xEF);
-	CHECK_EQ(*sliceAt(slice, uint8_t, 4), 0xDE);
-	CHECK_EQ(*sliceAt(slice, uint8_t, 5), 0xAD);
-	CHECK_EQ(*sliceAt(slice, uint8_t, 6), 0xBE);
-	CHECK_EQ(*sliceAt(slice, uint8_t, 7), 0xEF);
-	CHECK_EQ(sliceAt(slice, uint8_t, 8), nullptr);
-	CHECK_EQ(*sliceAt(slice, uint16_t, 0), 0xADDE);
-	CHECK_EQ(*sliceAt(slice, uint16_t, 1), 0xEFBE);
-	CHECK_EQ(*sliceAt(slice, uint16_t, 2), 0xADDE);
-	CHECK_EQ(*sliceAt(slice, uint16_t, 3), 0xEFBE);
-	CHECK_EQ(sliceAt(slice, uint16_t, 4), nullptr);
-	CHECK_EQ(*sliceAt(slice, uint32_t, 0), 0xEFBEADDE);
-	CHECK_EQ(*sliceAt(slice, uint32_t, 1), 0xEFBEADDE);
-	CHECK_EQ(sliceAt(slice, uint32_t, 2), nullptr);
-	CHECK_EQ(*sliceAt(slice, uint64_t, 0), 0xEFBEADDEEFBEADDE);
-	CHECK_EQ(sliceAt(slice, uint64_t, 1), nullptr);
+	CHECK_EQ(*Slice::at<uint8_t>(slice, 0), 0xDE);
+	CHECK_EQ(*Slice::at<uint8_t>(slice, 1), 0xAD);
+	CHECK_EQ(*Slice::at<uint8_t>(slice, 2), 0xBE);
+	CHECK_EQ(*Slice::at<uint8_t>(slice, 3), 0xEF);
+	CHECK_EQ(*Slice::at<uint8_t>(slice, 4), 0xDE);
+	CHECK_EQ(*Slice::at<uint8_t>(slice, 5), 0xAD);
+	CHECK_EQ(*Slice::at<uint8_t>(slice, 6), 0xBE);
+	CHECK_EQ(*Slice::at<uint8_t>(slice, 7), 0xEF);
+	CHECK_EQ(Slice::at<uint8_t>(slice, 8), nullptr);
+	CHECK_EQ(*Slice::at<uint16_t>(slice, 0), 0xADDE);
+	CHECK_EQ(*Slice::at<uint16_t>(slice, 1), 0xEFBE);
+	CHECK_EQ(*Slice::at<uint16_t>(slice, 2), 0xADDE);
+	CHECK_EQ(*Slice::at<uint16_t>(slice, 3), 0xEFBE);
+	CHECK_EQ(Slice::at<uint16_t>(slice, 4), nullptr);
+	CHECK_EQ(*Slice::at<uint32_t>(slice, 0), 0xEFBEADDE);
+	CHECK_EQ(*Slice::at<uint32_t>(slice, 1), 0xEFBEADDE);
+	CHECK_EQ(Slice::at<uint32_t>(slice, 2), nullptr);
+	CHECK_EQ(*Slice::at<uint64_t>(slice, 0), 0xEFBEADDEEFBEADDE);
+	CHECK_EQ(Slice::at<uint64_t>(slice, 1), nullptr);
 }
 
 TEST_CASE("[Slice] subslice") {
@@ -73,10 +73,10 @@ TEST_CASE("[Slice] subslice") {
 	Slice sub = Slice::nil;
 	CHECK(Slice::subslice(&sub, slice, 2, 4));
 	CHECK_EQ(sub.length, 4);
-	CHECK_EQ(*sliceAt(sub, uint8_t, 0), 0xBE);
-	CHECK_EQ(*sliceAt(sub, uint8_t, 1), 0xEF);
-	CHECK_EQ(*sliceAt(sub, uint8_t, 2), 0xDE);
-	CHECK_EQ(*sliceAt(sub, uint8_t, 3), 0xAD);
+	CHECK_EQ(*Slice::at<uint8_t>(sub, 0), 0xBE);
+	CHECK_EQ(*Slice::at<uint8_t>(sub, 1), 0xEF);
+	CHECK_EQ(*Slice::at<uint8_t>(sub, 2), 0xDE);
+	CHECK_EQ(*Slice::at<uint8_t>(sub, 3), 0xAD);
 }
 
 TEST_CASE("[Slice] subslice end") {
@@ -88,10 +88,10 @@ TEST_CASE("[Slice] subslice end") {
 	Slice sub = Slice::nil;
 	CHECK(Slice::subslice(&sub, slice, 4, 4));
 	CHECK_EQ(sub.length, 4);
-	CHECK_EQ(*sliceAt(sub, uint8_t, 0), 0xDE);
-	CHECK_EQ(*sliceAt(sub, uint8_t, 1), 0xAD);
-	CHECK_EQ(*sliceAt(sub, uint8_t, 2), 0xBE);
-	CHECK_EQ(*sliceAt(sub, uint8_t, 3), 0xEF);
+	CHECK_EQ(*Slice::at<uint8_t>(sub, 0), 0xDE);
+	CHECK_EQ(*Slice::at<uint8_t>(sub, 1), 0xAD);
+	CHECK_EQ(*Slice::at<uint8_t>(sub, 2), 0xBE);
+	CHECK_EQ(*Slice::at<uint8_t>(sub, 3), 0xEF);
 }
 
 TEST_CASE("[Slice] set byte") {
@@ -107,10 +107,10 @@ TEST_CASE("[Slice] set byte") {
 		Slice::subslice(&sub, slice, 0, i);
 		Slice::set(sub, i);
 		for (j = 0; j < i; j += 1) {
-			CHECK_EQ(*sliceAt(slice, uint8_t, j), i);
+			CHECK_EQ(*Slice::at<uint8_t>(slice, j), i);
 		}
 		for (; j < 64; j += 1) {
-			CHECK_EQ(*sliceAt(slice, uint8_t, j), 0);
+			CHECK_EQ(*Slice::at<uint8_t>(slice, j), 0);
 		}
 	}
 }
@@ -136,16 +136,16 @@ TEST_CASE("[Slice] copy") {
 		.length = 64
 	};
 	Slice b = Slice::nil;
-	for (size_t i = 0; i < sliceCount(slice, uint8_t); i += 1) {
-		*sliceAt(slice, uint8_t, i) = i;
+	for (size_t i = 0; i < Slice::count<uint8_t>(slice); i += 1) {
+		*Slice::at<uint8_t>(slice, i) = i;
 	}
 	for (size_t i = 0; i < 128; i += 1) {
 		Slice::subslice(&b, slice, i, i);
 		Slice::copy(windowSlice, b);
-		for (size_t j = 0; j < sliceCount(b, uint8_t); j += 1) {
+		for (size_t j = 0; j < Slice::count<uint8_t>(b); j += 1) {
 			CHECK_EQ(
-					*sliceAt(windowSlice, uint8_t, j),
-					*sliceAt(b, uint8_t, j));
+					*Slice::at<uint8_t>(windowSlice, j),
+					*Slice::at<uint8_t>(b, j));
 		}
 	}
 	for (size_t i = 0; i < 128; i += 1) {
@@ -154,7 +154,7 @@ TEST_CASE("[Slice] copy") {
 		Slice::copy(bOrigSlice, b);
 		Slice::copy(a, b);
 		for (size_t j = 0; j < MIN(i, 64U); j += 1) {
-			CHECK_EQ(*sliceAt(a, uint8_t, j), *sliceAt(bOrigSlice, uint8_t, j));
+			CHECK_EQ(*Slice::at<uint8_t>(a, j), *Slice::at<uint8_t>(bOrigSlice, j));
 		}
 		Slice::copy(a, windowSlice);
 	}

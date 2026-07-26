@@ -187,9 +187,9 @@ static IO::Error l8ReadScalar(
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->r[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b)) / 255.0;
-				colors->g[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b)) / 255.0;
-				colors->b[i.p] = (*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b)) / 255.0;
+				colors->r[i.p] = (*Slice::at<uint8_t>(data, (i.row * width) + (block << 2) + b)) / 255.0;
+				colors->g[i.p] = (*Slice::at<uint8_t>(data, (i.row * width) + (block << 2) + b)) / 255.0;
+				colors->b[i.p] = (*Slice::at<uint8_t>(data, (i.row * width) + (block << 2) + b)) / 255.0;
 				b += 1;
 			} else {
 				colors->r[i.p] = 0;
@@ -222,9 +222,9 @@ static IO::Error l8WriteScalar(
 			b = 0;
 		}
 		if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-			(*sliceAt(data, uint8_t, (i.row * width) + (block << 2) + b)) = (uint8_t)(((13938U * ((uint64_t)(colors->r[i.p] * 255.0))) +
-																							  (46869U * ((uint64_t)(colors->g[i.p] * 255.0))) +
-																							  (4729U * ((uint64_t)(colors->b[i.p] * 255.0))) + 32768U) >>
+			(*Slice::at<uint8_t>(data, (i.row * width) + (block << 2) + b)) = (uint8_t)(((13938U * ((uint64_t)(colors->r[i.p] * 255.0))) +
+																								(46869U * ((uint64_t)(colors->g[i.p] * 255.0))) +
+																								(4729U * ((uint64_t)(colors->b[i.p] * 255.0))) + 32768U) >>
 					16);
 			b += 1;
 		}
@@ -269,10 +269,10 @@ static IO::Error la8ReadScalar(
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->r[i.p] = (*sliceAt(data, uint8_t, (((i.row * width) + (block << 2) + b) << 1))) / 255.0;
-				colors->g[i.p] = (*sliceAt(data, uint8_t, (((i.row * width) + (block << 2) + b) << 1))) / 255.0;
-				colors->b[i.p] = (*sliceAt(data, uint8_t, (((i.row * width) + (block << 2) + b) << 1))) / 255.0;
-				colors->a[i.p] = (*sliceAt(data, uint8_t, (((i.row * width) + (block << 2) + b) << 1) + 1)) / 255.0;
+				colors->r[i.p] = (*Slice::at<uint8_t>(data, (((i.row * width) + (block << 2) + b) << 1))) / 255.0;
+				colors->g[i.p] = (*Slice::at<uint8_t>(data, (((i.row * width) + (block << 2) + b) << 1))) / 255.0;
+				colors->b[i.p] = (*Slice::at<uint8_t>(data, (((i.row * width) + (block << 2) + b) << 1))) / 255.0;
+				colors->a[i.p] = (*Slice::at<uint8_t>(data, (((i.row * width) + (block << 2) + b) << 1) + 1)) / 255.0;
 				b += 1;
 			} else {
 				colors->r[i.p] = 0;
@@ -305,11 +305,11 @@ static IO::Error la8WriteScalar(
 			b = 0;
 		}
 		if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-			(*sliceAt(data, uint8_t, ((i.row * width) + (block << 2) + b) << 1)) = (uint8_t)(((13938U * ((uint64_t)(colors->r[i.p] * 255.0))) +
-																									 (46869U * ((uint64_t)(colors->g[i.p] * 255.0))) +
-																									 (4729U * ((uint64_t)(colors->b[i.p] * 255.0))) + 32768U) >>
+			(*Slice::at<uint8_t>(data, ((i.row * width) + (block << 2) + b) << 1)) = (uint8_t)(((13938U * ((uint64_t)(colors->r[i.p] * 255.0))) +
+																									   (46869U * ((uint64_t)(colors->g[i.p] * 255.0))) +
+																									   (4729U * ((uint64_t)(colors->b[i.p] * 255.0))) + 32768U) >>
 					16);
-			(*sliceAt(data, uint8_t, (((i.row * width) + (block << 2) + b) << 1) + 1)) = (uint8_t)(colors->a[i.p] * 255);
+			(*Slice::at<uint8_t>(data, (((i.row * width) + (block << 2) + b) << 1) + 1)) = (uint8_t)(colors->a[i.p] * 255);
 			b += 1;
 		}
 	}
@@ -396,9 +396,8 @@ static IO::Error rgba8ReadScalar(
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->c[i.c][i.p] = (*sliceAt(
+				colors->c[i.c][i.p] = (*Slice::at<uint8_t>(
 											  data,
-											  uint8_t,
 											  (((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c)) /
 						255.0;
 				b += 1;
@@ -435,7 +434,7 @@ static IO::Error rgba8WriteScalar(
 			b = 0;
 		}
 		if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-			(*sliceAt(data, uint8_t, (((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c)) = colors->c[i.c][i.p] * 255;
+			(*Slice::at<uint8_t>(data, (((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c)) = colors->c[i.c][i.p] * 255;
 			b += 1;
 		}
 	}
@@ -480,7 +479,7 @@ static IO::Error rgbafReadScalar(
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->c[i.c][i.p] = (*sliceAt(data, float, (((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c));
+				colors->c[i.c][i.p] = (*Slice::at<float>(data, (((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c));
 				b += 1;
 			} else {
 				colors->c[i.c][i.p] = 0;
@@ -515,7 +514,7 @@ static IO::Error rgbafWriteScalar(
 			b = 0;
 		}
 		if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-			(*sliceAt(data, float, (((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c)) = colors->c[i.c][i.p];
+			(*Slice::at<float>(data, (((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c)) = colors->c[i.c][i.p];
 			b += 1;
 		}
 	}
@@ -560,9 +559,8 @@ static IO::Error rgbahReadScalar(
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->c[i.c][i.p] = Math::half_to_float(*sliceAt(
+				colors->c[i.c][i.p] = Math::half_to_float(*Slice::at<uint16_t>(
 						data,
-						uint16_t,
 						(((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c));
 				b += 1;
 			} else {
@@ -598,9 +596,8 @@ static IO::Error rgbahWriteScalar(
 			b = 0;
 		}
 		if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-			(*sliceAt(
+			(*Slice::at<uint16_t>(
 					data,
-					uint16_t,
 					((((i.row * width) + (block << 2) + b) * COMPONENT_COUNT[format]) + i.c))) = Math::make_half_float(colors->c[i.c][i.p]);
 			b += 1;
 		}
@@ -645,7 +642,7 @@ static IO::Error rgba4444ReadScalar(
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->c[i.c][i.p] = (*sliceAt(data, uint16_t, ((i.row * width) + (block << 2) + b))) >> (i.c << 2);
+				colors->c[i.c][i.p] = (*Slice::at<uint16_t>(data, ((i.row * width) + (block << 2) + b))) >> (i.c << 2);
 				b += 1;
 			}
 		}
