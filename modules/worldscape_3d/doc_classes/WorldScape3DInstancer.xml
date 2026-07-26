@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="WorldScape3DInstancer" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/redot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		This class places mesh instances defined in the WorldScape3D asset dock into MultiMeshInstance3Ds on the ground.
+		Data is currently stored in [member WorldScape3DRegion.instances] and loaded into MultiMeshInstances, which are attached to the scene tree and managed by this class.
+		[b]The methods available for adding instances are:[/b]
+		- [method add_transforms] - Accepts your list of transforms and parses them by region and cell location and stores in our data storage. Recommended for general API instancing.
+		- [method add_multimesh] - Pulls the transforms out of your MultiMesh and calls add_transforms.
+		- [method add_instances] - A feature rich function designed for hand editing.
+		- Creating your own instance data and inserting it directly into [member WorldScape3DRegion.instances]. It's not difficult to do this in GDScript, but a thorough understanding of the C++ code in this class is recommended.
+		[b]The methods available for removing instances are:[/b]
+		- [method remove_instances] - Like add_instances, this is can be used procedurally but is designed for hand editing.
+		- [method clear_by_mesh], [method clear_by_location] - To erase large sections of instances
+		- Editing [member WorldScape3DRegion.instances] directly.
+		After modifying region data, run [method update_mmis] to rebuild the MultiMeshInstance3Ds.
+		[b]Read More:[/b] [url=https://docs.redotengine.org/classes/class_multimesh]MultiMesh[/url]
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_instances">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+				Used during terrain editing to place instances, given many brush parameters. In addition to the brush position, it also uses the following parameters: asset_id, size, strength, fixed_scale, random_scale, fixed_spin, random_spin, fixed_tilt, random_tilt, align_to_normal, height_offset, random_height, vertex_color, random_hue, random_darken. All of these settings are set in the editor through tool_settings.gd.
+			</description>
+		</method>
+		<method name="add_multimesh">
+			<return type="void" />
+			<param index="0" name="mesh_id" type="int" />
+			<param index="1" name="multimesh" type="MultiMesh" />
+			<param index="2" name="transform" type="Transform3D" default="Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)" />
+			<param index="3" name="update" type="bool" default="true" />
+			<description>
+				Allows procedural placement of meshes, or importing from another MultiMeshInstancer placement tool. The specified mesh_id should already be setup as a [WorldScape3DMeshAsset] in the asset dock. This function extracts the instance transforms and colors from a multimesh and passes it to [method add_transforms].
+				Update will regenerate the MultiMeshInstances. Disable for bulk adding, then call at the end.
+			</description>
+		</method>
+		<method name="add_transforms">
+			<return type="void" />
+			<param index="0" name="mesh_id" type="int" />
+			<param index="1" name="transforms" type="Transform3D[]" />
+			<param index="2" name="colors" type="PackedColorArray" default="PackedColorArray()" />
+			<param index="3" name="update" type="bool" default="true" />
+			<description>
+				Allows procedural placement of meshes. The mesh_id should already be setup as a [WorldScape3DMeshAsset] in the asset dock. You provide the array of Transform3Ds and optional Colors, which will be parsed into our data storage.
+				This function adds the [member WorldScape3DMeshAsset.height_offset] to the transform along its local Y axis.
+				Update will regenerate the MultiMeshInstances. Disable for bulk adding, then call at the end.
+			</description>
+		</method>
+		<method name="append_location">
+			<return type="void" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<param index="1" name="mesh_id" type="int" />
+			<param index="2" name="transforms" type="Transform3D[]" />
+			<param index="3" name="colors" type="PackedColorArray" />
+			<param index="4" name="update" type="bool" default="true" />
+			<description>
+				Appends new transforms to the existing data within a region location. The mesh_id should already be setup as a [WorldScape3DMeshAsset] in the asset dock.
+				Update will regenerate the MultiMeshInstances. Disable for bulk adding, then call at the end.
+			</description>
+		</method>
+		<method name="append_region">
+			<return type="void" />
+			<param index="0" name="region" type="WorldScape3DRegion" />
+			<param index="1" name="mesh_id" type="int" />
+			<param index="2" name="transforms" type="Transform3D[]" />
+			<param index="3" name="colors" type="PackedColorArray" />
+			<param index="4" name="update" type="bool" default="true" />
+			<description>
+				Appends new transforms to the existing data within a region location. The mesh_id should already be setup as a [WorldScape3DMeshAsset] in the asset dock.
+				Update will regenerate the MultiMeshInstances. Disable for bulk adding, then call at the end.
+			</description>
+		</method>
+		<method name="clear_by_location">
+			<return type="void" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<param index="1" name="mesh_id" type="int" />
+			<description>
+				Removes all instancer data and MultiMeshInstance nodes attached to the tree for the specified region location and mesh id.
+			</description>
+		</method>
+		<method name="clear_by_mesh">
+			<return type="void" />
+			<param index="0" name="mesh_id" type="int" />
+			<description>
+				Removes all instancer data and MultiMeshInstance nodes attached to the tree for all regions for the specified mesh id.
+			</description>
+		</method>
+		<method name="clear_by_region">
+			<return type="void" />
+			<param index="0" name="region" type="WorldScape3DRegion" />
+			<param index="1" name="mesh_id" type="int" />
+			<description>
+				Removes all instancer data and MultiMeshInstance nodes attached to the tree for the specified region and mesh id.
+			</description>
+		</method>
+		<method name="dump_data">
+			<return type="void" />
+			<description>
+				Dumps the instancer data arrays and dictionaries for all regions.
+			</description>
+		</method>
+		<method name="dump_mmis">
+			<return type="void" />
+			<description>
+				Dumps the MultiMeshInstance3Ds attached to the tree and information about the nodes for all regions.
+			</description>
+		</method>
+		<method name="remove_instances">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="params" type="Dictionary" />
+			<description>
+				Uses parameters asset_id, size, strength, fixed_scale, random_scale, slope (Vector2), to randomly remove instances within the indicated brush position and size.
+			</description>
+		</method>
+		<method name="swap_ids">
+			<return type="void" />
+			<param index="0" name="src_id" type="int" />
+			<param index="1" name="dest_id" type="int" />
+			<description>
+				Swaps the ID of two meshes without changing the mesh instances on the ground.
+			</description>
+		</method>
+		<method name="update_mmis">
+			<return type="void" />
+			<param index="0" name="rebuild" type="bool" default="false" />
+			<description>
+				Rebuilds the MMIs in cells that have been modified or are missing. See [member WorldScape3DRegion.instances].
+				- rebuild - Destroys all MMIs first then rebuilds all of them from scratch.
+			</description>
+		</method>
+		<method name="update_transforms">
+			<return type="void" />
+			<param index="0" name="aabb" type="AABB" />
+			<description>
+				Reviews all existing instance transforms within an AABB and adjusts their heights to match the terrain.
+			</description>
+		</method>
+	</methods>
+</class>

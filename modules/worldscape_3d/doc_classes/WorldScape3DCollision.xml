@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="WorldScape3DCollision" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/redot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		This class manages collision.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="build">
+			<return type="void" />
+			<description>
+				Creates collision shapes and calls [method update] to shape them. Calls [method destroy] first, so it is safe to call this to fully rebuild collision any time.
+			</description>
+		</method>
+		<method name="destroy">
+			<return type="void" />
+			<description>
+				Removes all collision shapes and frees any memory used.
+			</description>
+		</method>
+		<method name="get_rid" qualifiers="const">
+			<return type="RID" />
+			<description>
+				Returns the RID of the active StaticBody.
+			</description>
+		</method>
+		<method name="is_dynamic_mode" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns true if [member mode] is [code skip-lint]Dynamic / Editor[/code] or [code skip-lint]Dynamic / Game[/code].
+			</description>
+		</method>
+		<method name="is_editor_mode" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns true if [member mode] is [code skip-lint]Full / Editor[/code] or [code skip-lint]Dynamic / Editor[/code].
+			</description>
+		</method>
+		<method name="is_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns true if [member mode] is not [code skip-lint]Disabled[/code].
+			</description>
+		</method>
+		<method name="update">
+			<return type="void" />
+			<param index="0" name="rebuild" type="bool" default="false" />
+			<description>
+				- If [member mode] is Full, recalculates the existing collision shapes. If regions have been added or removed, set [code skip-lint]rebuild[/code] to true or call [method build] instead. Can be slow.
+				- If [member mode] is Dynamic, repositions collision shapes around the camera and recalculates ones that moved. Set [code skip-lint]rebuild[/code] to true to recalculate all shapes within [member radius]. This is very fast, and can be updated at 60fps for little cost.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="layer" type="int" setter="set_layer" getter="get_layer" default="1">
+			The physics layers the terrain lives on. Sets [code skip-lint]CollisionObject3D.collision_layer[/code]. Also see [member mask].
+		</member>
+		<member name="mask" type="int" setter="set_mask" getter="get_mask" default="1">
+			The physics layers the physics body scans for colliding objects. Sets [code skip-lint]CollisionObject3D.collision_mask[/code]. Also see [member layer].
+		</member>
+		<member name="mode" type="int" setter="set_mode" getter="get_mode" enum="WorldScape3DCollision.CollisionMode" default="1">
+			The selected mode determines if collision is generated and how. See [enum CollisionMode] for details.
+		</member>
+		<member name="physics_material" type="PhysicsMaterial" setter="set_physics_material" getter="get_physics_material">
+			Applies a [code skip-lint]PhysicsMaterial[/code] override to the StaticBody.
+			There's no ability built into Redot to change physics material parameters based on texture or any other factor. However, it might be possible to extend `PhysicsMaterial` in order to inject code into the queries. It would need references to an object position and a terrain, and then it could run [method WorldScape3DData.get_texture_id] based on the position and return different physics settings per texture. That would change the settings for the entire terrain for that moment.
+		</member>
+		<member name="priority" type="float" setter="set_priority" getter="get_priority" default="1.0">
+			The priority with which the physics server uses to solve collisions. The higher the priority, the lower the penetration of a colliding object. Sets [code skip-lint]CollisionObject3D.collision_priority[/code].
+		</member>
+		<member name="radius" type="int" setter="set_radius" getter="get_radius" default="64">
+			If [member mode] is Dynamic, this is the distance range within which collision shapes will be generated.
+		</member>
+		<member name="shape_size" type="int" setter="set_shape_size" getter="get_shape_size" default="16">
+			If [member mode] is Dynamic, this is the size of each collision shape.
+		</member>
+	</members>
+	<constants>
+		<constant name="DISABLED" value="0" enum="CollisionMode">
+			No collision shapes will be generated.
+		</constant>
+		<constant name="DYNAMIC_GAME" value="1" enum="CollisionMode">
+			Collision shapes are generated around the camera as it moves; in game only.
+		</constant>
+		<constant name="DYNAMIC_EDITOR" value="2" enum="CollisionMode">
+			Collision shapes are generated around the camera as it moves; in the editor and in game. Enable [code skip-lint]View Gizmos[/code] in the viewport menu to see them.
+		</constant>
+		<constant name="FULL_GAME" value="3" enum="CollisionMode">
+			Collision shapes are generated for all regions in game only.
+		</constant>
+		<constant name="FULL_EDITOR" value="4" enum="CollisionMode">
+			Collision shapes are generated for all regions in the editor and in game. This mode is necessary for some 3rd party plugins to detect the terrain using collision. Enable [code skip-lint]View Gizmos[/code] in the viewport menu to see the collision mesh.
+		</constant>
+	</constants>
+</class>
