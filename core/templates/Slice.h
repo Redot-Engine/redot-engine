@@ -48,11 +48,24 @@ struct Slice {
 			size_t index,
 			size_t size) noexcept;
 
+	template <typename T>
+	constexpr static inline T *at(Slice self, size_t index) noexcept;
+
 	constexpr static inline bool subslice(
 			Slice *dst,
 			Slice src,
 			size_t begin,
 			size_t count) noexcept;
+
+	template <typename T>
+	constexpr static inline bool subslice(
+			Slice *dst,
+			Slice src,
+			size_t begin,
+			size_t count) noexcept;
+
+	template <typename T>
+	constexpr static inline size_t count(Slice slice) noexcept;
 
 	static inline bool set(Slice dst, Slice src, size_t index) noexcept;
 	static inline void copy(Slice dst, Slice src) noexcept;
@@ -68,6 +81,25 @@ constexpr inline void *Slice::get(
 		ret = ((uint8_t *)self.data) + (size * index);
 	}
 	return ret;
+}
+
+template <typename T>
+constexpr inline T *Slice::at(Slice self, size_t index) noexcept {
+	return (T *)Slice::get(self, index, sizeof(T));
+}
+
+template <typename T>
+constexpr inline bool Slice::subslice(
+		Slice *dst,
+		Slice src,
+		size_t begin,
+		size_t count) noexcept {
+	return Slice::subslice(dst, src, sizeof(T) * begin, sizeof(T) * count);
+}
+
+template <typename T>
+constexpr inline size_t Slice::count(Slice slice) noexcept {
+	return slice.length / sizeof(T);
 }
 
 inline void Slice::copy(Slice dst, Slice src) noexcept {
@@ -97,11 +129,3 @@ inline bool Slice::set(Slice dst, Slice src, size_t index) noexcept {
 	Slice::copy(tmp, src);
 	return true;
 }
-
-#define sliceAt(slice, t, i) ((t *)Slice::get(slice, i, sizeof(t)))
-#define subslice_t(dst, src, t, begin, count) subslice( \
-		(dst),                                          \
-		(src),                                          \
-		sizeof(t) * (begin),                            \
-		sizeof(t) * (count))
-#define sliceCount(self, t) ((self).length / sizeof(t))

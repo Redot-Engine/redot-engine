@@ -32,7 +32,6 @@
 
 #pragma once
 
-#include "core/io/file_access.h"
 #include "core/templates/Slice.h"
 #include <cstddef>
 
