@@ -3892,6 +3892,9 @@ GDScriptParser::TypeNode *GDScriptParser::parse_type(bool p_allow_void) {
 		} while (match(GDScriptTokenizer::Token::COMMA));
 		consume(GDScriptTokenizer::Token::BRACKET_CLOSE, R"(Expected closing "]" after collection type.)");
 		if (type != nullptr) {
+			if (match(GDScriptTokenizer::Token::QUESTION_MARK)) {
+				type->is_nullable = true;
+			}
 			complete_extents(type);
 		}
 		return type;
@@ -3904,6 +3907,10 @@ GDScriptParser::TypeNode *GDScriptParser::parse_type(bool p_allow_void) {
 			type_element = parse_identifier();
 			type->type_chain.push_back(type_element);
 		}
+	}
+
+	if (match(GDScriptTokenizer::Token::QUESTION_MARK)) {
+		type->is_nullable = true;
 	}
 
 	complete_extents(type);
@@ -5312,56 +5319,63 @@ String GDScriptParser::SuiteNode::Local::get_name() const {
 }
 
 String GDScriptParser::DataType::to_string() const {
-	switch (kind) {
-		case VARIANT:
-			return "Variant";
-		case BUILTIN:
-			if (builtin_type == Variant::NIL) {
-				return "null";
+	String type_name = [this]() -> String {
+		switch (kind) {
+			case VARIANT:
+				return "Variant";
+			case BUILTIN:
+				if (builtin_type == Variant::NIL) {
+					return "null";
+				}
+				if (builtin_type == Variant::ARRAY && has_container_element_type(0)) {
+					return vformat("Array[%s]", get_container_element_type(0).to_string());
+				}
+				if (builtin_type == Variant::DICTIONARY && has_container_element_types()) {
+					return vformat("Dictionary[%s, %s]", get_container_element_type_or_variant(0).to_string(), get_container_element_type_or_variant(1).to_string());
+				}
+				return Variant::get_type_name(builtin_type);
+			case NATIVE:
+				if (is_meta_type) {
+					return GDScriptNativeClass::get_class_static();
+				}
+				return native_type.operator String();
+			case TRAIT:
+			case CLASS:
+				if (class_type->identifier != nullptr) {
+					return class_type->identifier->name.operator String();
+				}
+				return class_type->fqcn;
+			case SCRIPT: {
+				if (is_meta_type) {
+					return script_type.is_valid() ? script_type->get_class_name().operator String() : "";
+				}
+				String name = script_type.is_valid() ? script_type->get_name() : "";
+				if (!name.is_empty()) {
+					return name;
+				}
+				name = script_path;
+				if (!name.is_empty()) {
+					return name;
+				}
+				return native_type.operator String();
 			}
-			if (builtin_type == Variant::ARRAY && has_container_element_type(0)) {
-				return vformat("Array[%s]", get_container_element_type(0).to_string());
+			case ENUM: {
+				// native_type contains either the native class defining the enum
+				// or the fully qualified class name of the script defining the enum
+				return String(native_type).get_file(); // Remove path, keep filename
 			}
-			if (builtin_type == Variant::DICTIONARY && has_container_element_types()) {
-				return vformat("Dictionary[%s, %s]", get_container_element_type_or_variant(0).to_string(), get_container_element_type_or_variant(1).to_string());
-			}
-			return Variant::get_type_name(builtin_type);
-		case NATIVE:
-			if (is_meta_type) {
-				return GDScriptNativeClass::get_class_static();
-			}
-			return native_type.operator String();
-		case TRAIT:
-		case CLASS:
-			if (class_type->identifier != nullptr) {
-				return class_type->identifier->name.operator String();
-			}
-			return class_type->fqcn;
-		case SCRIPT: {
-			if (is_meta_type) {
-				return script_type.is_valid() ? script_type->get_class_name().operator String() : "";
-			}
-			String name = script_type.is_valid() ? script_type->get_name() : "";
-			if (!name.is_empty()) {
-				return name;
-			}
-			name = script_path;
-			if (!name.is_empty()) {
-				return name;
-			}
-			return native_type.operator String();
+			case RESOLVING:
+			case UNRESOLVED:
+				return "<unresolved type>";
 		}
-		case ENUM: {
-			// native_type contains either the native class defining the enum
-			// or the fully qualified class name of the script defining the enum
-			return String(native_type).get_file(); // Remove path, keep filename
-		}
-		case RESOLVING:
-		case UNRESOLVED:
-			return "<unresolved type>";
-	}
 
-	ERR_FAIL_V_MSG("<unresolved type>", "Kind set outside the enum range.");
+		ERR_FAIL_V_MSG("<unresolved type>", "Kind set outside the enum range.");
+	}();
+
+	if (is_nullable && kind != VARIANT && !(kind == BUILTIN && builtin_type == Variant::NIL)) {
+		type_name += "?";
+	}
+	return type_name;
 }
 
 PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) const {
