@@ -1,0 +1,2 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 5: Cannot pass a value of type "String" as struct field "a" of type "int".

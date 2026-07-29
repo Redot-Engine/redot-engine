@@ -116,8 +116,9 @@ uint32_t GDScriptByteCodeGenerator::add_temporary(const GDScriptDataType &p_type
 			case Variant::PACKED_VECTOR3_ARRAY:
 			case Variant::PACKED_COLOR_ARRAY:
 			case Variant::PACKED_VECTOR4_ARRAY:
+			case Variant::STRUCT:
 			case Variant::VARIANT_MAX:
-				// Arrays, dictionaries, and objects are reference counted, so we don't use the pool for them.
+				// These types use generic Variant temporary storage rather than the typed pool.
 				temp_type = Variant::NIL;
 				break;
 		}
@@ -553,6 +554,7 @@ void GDScriptByteCodeGenerator::write_type_adjust(const Address &p_target, Varia
 			append_opcode(GDScriptFunction::OPCODE_TYPE_ADJUST_PACKED_VECTOR4_ARRAY);
 			break;
 		case Variant::NIL:
+		case Variant::STRUCT:
 		case Variant::VARIANT_MAX:
 			return;
 	}
@@ -857,6 +859,11 @@ void GDScriptByteCodeGenerator::write_get(const Address &p_target, const Address
 }
 
 void GDScriptByteCodeGenerator::write_set_named(const Address &p_target, const StringName &p_name, const Address &p_source) {
+	if (HAS_BUILTIN_TYPE(p_target) && p_target.type.builtin_type == Variant::STRUCT) {
+		// Struct fields are reached by name through the validated keyed setter.
+		write_set(p_target, get_name_constant_address(p_name), p_source);
+		return;
+	}
 	if (HAS_BUILTIN_TYPE(p_target) && Variant::get_member_validated_setter(p_target.type.builtin_type, p_name) &&
 			IS_BUILTIN_TYPE(p_source, Variant::get_member_type(p_target.type.builtin_type, p_name))) {
 		Variant::ValidatedSetter setter = Variant::get_member_validated_setter(p_target.type.builtin_type, p_name);
@@ -876,6 +883,11 @@ void GDScriptByteCodeGenerator::write_set_named(const Address &p_target, const S
 }
 
 void GDScriptByteCodeGenerator::write_get_named(const Address &p_target, const StringName &p_name, const Address &p_source) {
+	if (HAS_BUILTIN_TYPE(p_source) && p_source.type.builtin_type == Variant::STRUCT) {
+		// Struct fields are reached by name through the validated keyed getter.
+		write_get(p_target, get_name_constant_address(p_name), p_source);
+		return;
+	}
 	if (HAS_BUILTIN_TYPE(p_source) && Variant::get_member_validated_getter(p_source.type.builtin_type, p_name)) {
 		Variant::ValidatedGetter getter = Variant::get_member_validated_getter(p_source.type.builtin_type, p_name);
 		append_opcode(GDScriptFunction::OPCODE_GET_NAMED_VALIDATED);
@@ -1527,6 +1539,12 @@ void GDScriptByteCodeGenerator::write_construct_typed_dictionary(const Address &
 	append(p_value_type.builtin_type);
 	append(p_value_type.native_type);
 	ct.cleanup();
+}
+
+void GDScriptByteCodeGenerator::write_construct_struct(const Address &p_target, const Address &p_template) {
+	append_opcode(GDScriptFunction::OPCODE_CONSTRUCT_STRUCT);
+	append(p_target);
+	append(p_template);
 }
 
 void GDScriptByteCodeGenerator::write_await(const Address &p_target, const Address &p_operand) {

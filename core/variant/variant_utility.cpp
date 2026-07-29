@@ -979,6 +979,8 @@ Variant VariantUtilityFunctions::type_convert(const Variant &p_variant, const Va
 			return p_variant.operator PackedColorArray();
 		case Variant::Type::PACKED_VECTOR4_ARRAY:
 			return p_variant.operator PackedVector4Array();
+		case Variant::Type::STRUCT:
+			return p_variant.operator Struct();
 		case Variant::Type::VARIANT_MAX:
 			ERR_PRINT("Invalid type argument to type_convert(), use the TYPE_* constants. Returning the unconverted Variant.");
 	}
