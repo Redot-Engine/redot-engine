@@ -135,6 +135,7 @@ public:
 		bool is_meta_type = false;
 		bool is_pseudo_type = false; ///< For global names that can't be used standalone.
 		bool is_coroutine = false; ///< For function calls.
+		bool is_nullable = false;
 
 		Variant::Type builtin_type = Variant::NIL;
 		StringName native_type;
@@ -246,6 +247,7 @@ public:
 			is_meta_type = p_other.is_meta_type;
 			is_pseudo_type = p_other.is_pseudo_type;
 			is_coroutine = p_other.is_coroutine;
+			is_nullable = p_other.is_nullable;
 			builtin_type = p_other.builtin_type;
 			native_type = p_other.native_type;
 			enum_type = p_other.enum_type;
@@ -1211,6 +1213,7 @@ public:
 	struct TypeNode : public Node {
 		Vector<IdentifierNode *> type_chain;
 		Vector<TypeNode *> container_types;
+		bool is_nullable = false;
 
 		TypeNode *get_container_type_or_null(int p_index) const {
 			return p_index >= 0 && p_index < container_types.size() ? container_types[p_index] : nullptr;

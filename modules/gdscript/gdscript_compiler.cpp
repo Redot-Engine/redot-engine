@@ -101,6 +101,7 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 
 	GDScriptDataType result;
 	result.has_type = true;
+	result.is_nullable = p_datatype.is_nullable;
 
 	switch (p_datatype.kind) {
 		case GDScriptParser::DataType::VARIANT: {
@@ -720,7 +721,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 									} else {
 										gen->write_call(result, base, call->function_name, arguments);
 									}
-								} else if (base.type.has_type && base.type.kind == GDScriptDataType::BUILTIN) {
+								} else if (base.type.has_type && !base.type.is_nullable && base.type.kind == GDScriptDataType::BUILTIN) {
 									gen->write_call_builtin_type(result, base, base.type.builtin_type, call->function_name, arguments);
 								} else {
 									gen->write_call(result, base, call->function_name, arguments);
@@ -2390,7 +2391,7 @@ GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_
 			}
 
 			GDScriptDataType field_type = _gdtype_from_datatype(field->get_datatype(), codegen.script);
-			if (field_type.has_type) {
+			if (field_type.has_type && !field_type.is_nullable) {
 				codegen.generator->write_newline(field->start_line);
 
 				GDScriptCodeGenerator::Address dst_address(GDScriptCodeGenerator::Address::MEMBER, codegen.script->member_indices[field->identifier->name].index, field_type);

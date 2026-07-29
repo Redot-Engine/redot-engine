@@ -1,0 +1,7 @@
+GDTEST_OK
+~~ WARNING at line 3: (INT_AS_ENUM_WITHOUT_CAST) Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+~~ WARNING at line 7: (INT_AS_ENUM_WITHOUT_CAST) Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+~~ WARNING at line 7: (INT_AS_ENUM_WITHOUT_MATCH) Cannot assign 999 as Enum "nullable_enum_raw_integer.gd.State?": no enum member has matching value.
+1
+<null>
+999
