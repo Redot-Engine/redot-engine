@@ -45,6 +45,8 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
 
 #include "scene/scene_string_names.h"
 
@@ -628,7 +630,29 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 				arguments.push_back(arg);
 			}
 
-			if (!call->is_super && call->callee->type == GDScriptParser::Node::IDENTIFIER && GDScriptParser::get_builtin_type(call->function_name) < Variant::VARIANT_MAX) {
+			const GDScriptParser::StructNode *struct_construct = nullptr;
+			if (!call->is_super && call->function_name == SNAME("new") && call->callee->type == GDScriptParser::Node::SUBSCRIPT) {
+				const GDScriptParser::SubscriptNode *sub = static_cast<const GDScriptParser::SubscriptNode *>(call->callee);
+				const GDScriptParser::DataType base_dt = sub->base->get_datatype();
+				if (base_dt.is_meta_type && base_dt.kind == GDScriptParser::DataType::BUILTIN && base_dt.builtin_type == Variant::STRUCT && base_dt.struct_type != nullptr) {
+					if (!base_dt.struct_type->struct_info.is_valid()) {
+						_set_error("Compiler bug (please report): struct schema was not resolved for constructor.", call);
+						r_error = ERR_COMPILATION_FAILED;
+						return GDScriptCodeGenerator::Address();
+					}
+					struct_construct = base_dt.struct_type;
+				}
+			}
+
+			if (struct_construct != nullptr) {
+				if (result.mode != GDScriptCodeGenerator::Address::NIL) {
+					GDScriptCodeGenerator::Address template_addr = codegen.add_constant(Variant(Struct(struct_construct->struct_info)));
+					gen->write_construct_struct(result, template_addr);
+					for (int i = 0; i < arguments.size(); i++) {
+						gen->write_set(result, codegen.add_constant(i), arguments[i]);
+					}
+				}
+			} else if (!call->is_super && call->callee->type == GDScriptParser::Node::IDENTIFIER && GDScriptParser::get_builtin_type(call->function_name) < Variant::VARIANT_MAX) {
 				gen->write_construct(result, GDScriptParser::get_builtin_type(call->function_name), arguments);
 			} else if (!call->is_super && call->callee->type == GDScriptParser::Node::IDENTIFIER && Variant::has_utility_function(call->function_name)) {
 				// Variant utility function.

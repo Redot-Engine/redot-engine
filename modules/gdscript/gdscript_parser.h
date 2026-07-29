@@ -53,6 +53,7 @@
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
 #include "core/templates/vector.h"
+#include "core/variant/struct_info.h"
 #include "core/variant/variant.h"
 
 #ifdef DEBUG_ENABLED
@@ -97,6 +98,7 @@ public:
 	struct ReturnNode;
 	struct SelfNode;
 	struct SignalNode;
+	struct StructNode;
 	struct SubscriptNode;
 	struct SuiteNode;
 	struct TernaryOpNode;
@@ -142,6 +144,7 @@ public:
 		Ref<Script> script_type;
 		String script_path;
 		ClassNode *class_type = nullptr;
+		StructNode *struct_type = nullptr;
 
 		MethodInfo method_info; ///< For callable/signals.
 		HashMap<StringName, int64_t> enum_values; ///< For enums.
@@ -218,7 +221,16 @@ public:
 				case VARIANT:
 					return true; // All variants are the same.
 				case BUILTIN:
-					return builtin_type == p_other.builtin_type;
+					if (builtin_type != p_other.builtin_type) {
+						return false;
+					}
+					if (builtin_type == Variant::STRUCT) {
+						if (struct_type == nullptr || p_other.struct_type == nullptr) {
+							return struct_type == p_other.struct_type;
+						}
+						return struct_type == p_other.struct_type || struct_type->fqcn == p_other.struct_type->fqcn;
+					}
+					return true;
 				case NATIVE:
 				case ENUM: // Enums use native_type to identify the enum and its base class.
 					return native_type == p_other.native_type;
@@ -252,6 +264,7 @@ public:
 			script_type = p_other.script_type;
 			script_path = p_other.script_path;
 			class_type = p_other.class_type;
+			struct_type = p_other.struct_type;
 			method_info = p_other.method_info;
 			enum_values = p_other.enum_values;
 			container_element_types = p_other.container_element_types;
@@ -334,6 +347,7 @@ public:
 			RETURN,
 			SELF,
 			SIGNAL,
+			STRUCT,
 			SUBSCRIPT,
 			SUITE,
 			TERNARY_OPERATOR,
@@ -562,6 +576,31 @@ public:
 		}
 	};
 
+	struct StructNode : public Node {
+		IdentifierNode *identifier = nullptr;
+		Vector<VariableNode *> fields;
+		HashMap<StringName, int> fields_indices;
+		String fqcn;
+		ClassNode *outer = nullptr;
+		Ref<StructInfo> struct_info;
+		enum ResolveState {
+			UNRESOLVED,
+			RESOLVING,
+			RESOLVED,
+			FAILED,
+		};
+		ResolveState resolve_state = UNRESOLVED;
+#ifdef TOOLS_ENABLED
+		MemberDocData doc_data;
+#endif // TOOLS_ENABLED
+
+		bool has_field(const StringName &p_name) const { return fields_indices.has(p_name); }
+
+		StructNode() {
+			type = STRUCT;
+		}
+	};
+
 	struct ClassNode : public Node {
 		struct Member {
 			enum Type {
@@ -573,6 +612,7 @@ public:
 				VARIABLE,
 				ENUM,
 				ENUM_VALUE, ///< For unnamed enums.
+				STRUCT,
 				GROUP, ///< For member grouping.
 			};
 
@@ -585,6 +625,7 @@ public:
 				SignalNode *signal;
 				VariableNode *variable;
 				EnumNode *m_enum;
+				StructNode *m_struct;
 				AnnotationNode *annotation;
 			};
 			EnumNode::Value enum_value;
@@ -609,6 +650,8 @@ public:
 						return m_enum->identifier->name;
 					case ENUM_VALUE:
 						return enum_value.identifier->name;
+					case STRUCT:
+						return m_struct->identifier->name;
 					case GROUP:
 						return annotation->export_info.name;
 				}
@@ -633,6 +676,8 @@ public:
 						return "enum";
 					case ENUM_VALUE:
 						return "enum value";
+					case STRUCT:
+						return "struct";
 					case GROUP:
 						return "group";
 				}
@@ -653,6 +698,8 @@ public:
 						return enum_value.line;
 					case ENUM:
 						return m_enum->start_line;
+					case STRUCT:
+						return m_struct->start_line;
 					case SIGNAL:
 						return signal->start_line;
 					case GROUP:
@@ -677,6 +724,8 @@ public:
 						return m_enum->get_datatype();
 					case ENUM_VALUE:
 						return enum_value.identifier->get_datatype();
+					case STRUCT:
+						return m_struct->get_datatype();
 					case SIGNAL:
 						return signal->get_datatype();
 					case GROUP:
@@ -701,6 +750,8 @@ public:
 						return m_enum;
 					case ENUM_VALUE:
 						return enum_value.identifier;
+					case STRUCT:
+						return m_struct;
 					case SIGNAL:
 						return signal;
 					case GROUP:
@@ -740,6 +791,10 @@ public:
 			Member(const EnumNode::Value &p_enum_value) {
 				type = ENUM_VALUE;
 				enum_value = p_enum_value;
+			}
+			Member(StructNode *p_struct) {
+				type = STRUCT;
+				m_struct = p_struct;
 			}
 			Member(AnnotationNode *p_annotation) {
 				type = GROUP;
@@ -1525,6 +1580,7 @@ private:
 	void parse_class_member(T *(GDScriptParser::*p_parse_function)(bool), AnnotationInfo::TargetKind p_target, const String &p_member_kind, bool p_is_static = false);
 	SignalNode *parse_signal(bool p_is_static);
 	EnumNode *parse_enum(bool p_is_static);
+	StructNode *parse_struct(bool p_is_static);
 	ParameterNode *parse_parameter();
 	FunctionNode *parse_function(bool p_is_static);
 	bool parse_function_signature(FunctionNode *p_function, SuiteNode *p_body, const String &p_type, int p_signature_start);

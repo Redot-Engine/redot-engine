@@ -281,6 +281,7 @@ Error ScriptServer::unregister_language(const ScriptLanguage *p_language) {
 void ScriptServer::init_languages() {
 	{ // Load global classes.
 		global_classes_clear();
+		global_structs_clear();
 #ifndef DISABLE_DEPRECATED
 		if (ProjectSettings::get_singleton()->has_setting("_global_script_classes")) {
 			Array script_classes = GLOBAL_GET("_global_script_classes");
@@ -351,6 +352,7 @@ void ScriptServer::finish_languages() {
 	}
 
 	global_classes_clear();
+	global_structs_clear();
 }
 
 bool ScriptServer::are_languages_initialized() {
@@ -405,10 +407,60 @@ void ScriptServer::thread_exit() {
 HashMap<StringName, ScriptServer::GlobalScriptClass> ScriptServer::global_classes;
 HashMap<StringName, Vector<StringName>> ScriptServer::inheriters_cache;
 bool ScriptServer::inheriters_cache_dirty = true;
+HashMap<StringName, ScriptServer::GlobalScriptStruct> ScriptServer::global_structs;
 
 void ScriptServer::global_classes_clear() {
 	global_classes.clear();
 	inheriters_cache.clear();
+}
+
+void ScriptServer::global_structs_clear() {
+	global_structs.clear();
+}
+
+void ScriptServer::add_global_struct(const StringName &p_struct, const StringName &p_language, const String &p_path) {
+	GlobalScriptStruct *existing = global_structs.getptr(p_struct);
+	if (existing != nullptr) {
+		existing->language = p_language;
+		existing->path = p_path;
+		return;
+	}
+	GlobalScriptStruct g;
+	g.language = p_language;
+	g.path = p_path;
+	global_structs[p_struct] = g;
+}
+
+void ScriptServer::remove_global_struct_by_path(const String &p_path) {
+	List<StringName> to_remove;
+	for (const KeyValue<StringName, GlobalScriptStruct> &kv : global_structs) {
+		if (kv.value.path == p_path) {
+			to_remove.push_back(kv.key);
+		}
+	}
+	for (const StringName &name : to_remove) {
+		global_structs.erase(name);
+	}
+}
+
+bool ScriptServer::is_global_struct(const StringName &p_struct) {
+	return global_structs.has(p_struct);
+}
+
+StringName ScriptServer::get_global_struct_language(const StringName &p_struct) {
+	const GlobalScriptStruct *g = global_structs.getptr(p_struct);
+	return g ? g->language : StringName();
+}
+
+String ScriptServer::get_global_struct_path(const StringName &p_struct) {
+	const GlobalScriptStruct *g = global_structs.getptr(p_struct);
+	return g ? g->path : String();
+}
+
+void ScriptServer::get_global_struct_list(List<StringName> *r_global_structs) {
+	for (const KeyValue<StringName, GlobalScriptStruct> &kv : global_structs) {
+		r_global_structs->push_back(kv.key);
+	}
 }
 
 void ScriptServer::add_global_class(const StringName &p_class, const StringName &p_base, const StringName &p_language, const String &p_path, bool p_is_abstract, bool p_is_tool) {

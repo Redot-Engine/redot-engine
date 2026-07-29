@@ -135,6 +135,7 @@ void init_language(const String &p_base_path) {
 void finish_language() {
 	GDScriptLanguage::get_singleton()->finish();
 	ScriptServer::global_classes_clear();
+	ScriptServer::global_structs_clear();
 }
 
 StringName GDScriptTestRunner::test_function_name;
@@ -378,6 +379,15 @@ static bool generate_class_index_recursive(const String &p_dir) {
 			String source_file = current_dir.path_join(next);
 			bool is_abstract = false;
 			bool is_tool = false;
+
+			List<StringName> struct_names;
+			GDScriptLanguage::get_singleton()->get_global_struct_names(source_file, &struct_names);
+			for (const StringName &struct_name : struct_names) {
+				ERR_FAIL_COND_V_MSG(ScriptServer::is_global_struct(struct_name), false,
+						"Struct name '" + String(struct_name) + "' from " + source_file + " is already used in " + ScriptServer::get_global_struct_path(struct_name));
+				ScriptServer::add_global_struct(struct_name, gdscript_name, source_file);
+			}
+
 			String class_name = GDScriptLanguage::get_singleton()->get_global_class_name(source_file, &base_type, nullptr, &is_abstract, &is_tool);
 			if (class_name.is_empty()) {
 				next = dir->get_next();

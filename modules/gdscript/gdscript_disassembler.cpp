@@ -683,6 +683,14 @@ void GDScriptFunction::disassemble(const Vector<String> &p_code_lines) const {
 
 				incr += 9 + argc * 2;
 			} break;
+			case OPCODE_CONSTRUCT_STRUCT: {
+				text += "make_struct ";
+				text += DADDR(1);
+				text += " = ";
+				text += DADDR(2);
+
+				incr += 3;
+			} break;
 			case OPCODE_CALL:
 			case OPCODE_CALL_RETURN:
 			case OPCODE_CALL_ASYNC: {
