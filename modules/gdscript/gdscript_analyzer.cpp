@@ -792,6 +792,7 @@ GDScriptParser::DataType GDScriptAnalyzer::resolve_datatype(GDScriptParser::Type
 				const StringName qualified_name = String(first) + ENUM_SEPARATOR + String(p_type->type_chain[1]->name);
 				if (CoreConstants::is_global_enum(qualified_name)) {
 					result = make_global_enum_type(enum_name, first, true);
+					result.is_nullable = p_type->is_nullable;
 					return result;
 				} else {
 					push_error(vformat(R"(Name "%s" is not a nested type of "Variant".)", enum_name), p_type->type_chain[1]);
@@ -811,6 +812,7 @@ GDScriptParser::DataType GDScriptAnalyzer::resolve_datatype(GDScriptParser::Type
 				const StringName enum_name = p_type->type_chain[1]->name;
 				if (Variant::has_enum(builtin_type, enum_name)) {
 					result = make_builtin_enum_type(enum_name, builtin_type, true);
+					result.is_nullable = p_type->is_nullable;
 					return result;
 				} else {
 					push_error(vformat(R"(Name "%s" is not a nested type of "%s".)", enum_name, first), p_type->type_chain[1]);
@@ -2610,7 +2612,7 @@ void GDScriptAnalyzer::resolve_suite(GDScriptParser::SuiteNode *p_suite) {
 			const GDScriptParser::IfNode *if_node = static_cast<const GDScriptParser::IfNode *>(stmt);
 			const bool true_exits = if_node->true_block != nullptr && if_node->true_block->has_return;
 			const bool false_exits = if_node->false_block != nullptr && if_node->false_block->has_return;
-			if (true_exits && if_node->false_block == nullptr) {
+			if (true_exits && !false_exits) {
 				collect_non_null_narrowing(if_node->condition, false, narrowed_non_null);
 			} else if (false_exits && !true_exits) {
 				collect_non_null_narrowing(if_node->condition, true, narrowed_non_null);
