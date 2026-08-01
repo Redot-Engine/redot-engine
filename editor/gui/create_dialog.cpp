@@ -942,7 +942,7 @@ CreateDialog::CreateDialog() {
 	help_bit->set_accessibility_name(TTRC("Description:"));
 	help_bit->set_content_height_limits(80 * EDSCALE, 80 * EDSCALE);
 	help_bit->connect("request_hide", callable_mp(this, &CreateDialog::_hide_requested));
-	Control* bit_content = cast_to<Control>(help_bit->get_child(1));
+	Control *bit_content = cast_to<Control>(help_bit->get_child(1));
 	bit_content->set_v_size_flags(Control::SizeFlags::SIZE_EXPAND_FILL);
 	desc_vb->add_margin_child(TTR("Description:"), help_bit, true);
 
