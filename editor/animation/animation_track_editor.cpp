@@ -2318,12 +2318,14 @@ void AnimationTrackEdit::_notification(int p_what) {
 					get_editor_theme_icon(SNAME("InterpWrapClamp")),
 					get_editor_theme_icon(SNAME("InterpWrapLoop")),
 				};
-				Ref<Texture2D> interp_icon[5] = {
+				Ref<Texture2D> interp_icon[7] = {
 					get_editor_theme_icon(SNAME("InterpRaw")),
 					get_editor_theme_icon(SNAME("InterpLinear")),
 					get_editor_theme_icon(SNAME("InterpCubic")),
 					get_editor_theme_icon(SNAME("InterpLinearAngle")),
 					get_editor_theme_icon(SNAME("InterpCubicAngle")),
+					get_editor_theme_icon(SNAME("InterpMonotonic")),
+					get_editor_theme_icon(SNAME("InterpMonotonicAngle")),
 				};
 				Ref<Texture2D> cont_icon[3] = {
 					get_editor_theme_icon(SNAME("TrackContinuous")),
