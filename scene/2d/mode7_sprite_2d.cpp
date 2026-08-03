@@ -50,10 +50,14 @@
 // Embedded Mode 7 canvas_item shader.
 // The scanline table is a 2-wide, N-tall RGBAF texture:
 //   column x=0.25 (left pixel):  (a, b, c, d)  — the 2x2 affine matrix
-//   column x=0.75 (right pixel): (tx, ty, 0, 0) — the UV translation
+//   column x=0.75 (right pixel): (tx, ty, pivot_x, pivot_y) — translation & pivot
 // UV.y (0..1) is used to index the row, so each row maps to a horizontal
-// band of the output sprite.  When mode7_use_table is false, the global
-// mode7_matrix / mode7_offset uniforms are used instead.
+// band of the output sprite.
+//
+// All Mode 7 transforms operate in region-local [0,1]×[0,1] space. When no
+// region is active, REGION_RECT defaults to (0,0,1,1) and the math is a no-op,
+// so the full-texture behavior is preserved. This ensures pivots like (0.5,0.5)
+// always refer to the center of the visible area, not the center of the atlas.
 static const char *MODE7_SHADER_CODE = R"(
 shader_type canvas_item;
 
@@ -68,7 +72,9 @@ uniform float mode7_global_rotation = 0.0;
 uniform vec2  mode7_global_pivot    = vec2(0.5, 0.5);
 
 void fragment() {
-    vec2 uv = UV;
+    // Normalize UV to region-local [0,1]×[0,1] space.
+    // When no region is set, REGION_RECT = (0,0,1,1) and this is a no-op.
+    vec2 uv = (UV - REGION_RECT.xy) / REGION_RECT.zw;
 
     // Fetch per-scanline matrix (M7A-D) and offset/pivot from table
     vec4 abcd = texture(mode7_scanline_table, vec2(0.25, uv.y));
@@ -79,7 +85,7 @@ void fragment() {
     vec2 off = vec2(tp.r, tp.g);
     vec2 pivot = vec2(tp.b, tp.a);
 
-    // Apply per-scanline transform relative to pivot
+    // Apply per-scanline transform relative to pivot (always in local [0,1])
     uv = m * (uv - pivot) + pivot + off;
 
     // Apply global rotation (post-transform, around global pivot)
@@ -88,9 +94,11 @@ void fragment() {
     mat2 m_global = mat2(vec2(cr, sr), vec2(-sr, cr));
     uv = m_global * (uv - mode7_global_pivot) + mode7_global_pivot;
 
-    // Out-of-bounds check: transparent when tiling is off
-    bool out_of_bounds = !mode7_tiling && (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0);
-    COLOR = out_of_bounds ? vec4(0.0) : texture(TEXTURE, uv);
+    // Denormalize back to full-texture coordinates for sampling and bounds check
+    vec2 uv_full = uv * REGION_RECT.zw + REGION_RECT.xy;
+    bool out_of_bounds = !mode7_tiling &&
+        (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0);
+    COLOR = out_of_bounds ? vec4(0.0) : texture(TEXTURE, uv_full);
 }
 )";
 
