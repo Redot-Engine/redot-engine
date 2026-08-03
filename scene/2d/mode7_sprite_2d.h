@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  mode7_sprite_2d.h                                                           */
+/*  mode7_sprite_2d.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -38,11 +38,11 @@
  * [Add any documentation that applies to the entire file here!]
  */
 
+#include "scene/2d/mode7_scanline_override.h"
 #include "scene/2d/sprite_2d.h"
-#include "scene/resources/texture.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
-#include "scene/2d/mode7_scanline_override.h"
+#include "scene/resources/texture.h"
 
 class Mode7Sprite2D : public Sprite2D {
 	GDCLASS(Mode7Sprite2D, Sprite2D);
@@ -50,7 +50,7 @@ class Mode7Sprite2D : public Sprite2D {
 	/// @name Mode 7
 	/// @{
 	bool mode7_enabled = false;
-	TypedArray<Mode7ScanlineOverride> mode7_scanline_overrides;// Array of Transform2D, one per output row (UV.y band)
+	TypedArray<Mode7ScanlineOverride> mode7_scanline_overrides; // Array of Transform2D, one per output row (UV.y band)
 
 	Ref<ShaderMaterial> _mode7_material;
 	Ref<ImageTexture> _mode7_scanline_tex;
@@ -62,8 +62,15 @@ class Mode7Sprite2D : public Sprite2D {
 	bool mode7_tiling = false;
 	RS::CanvasItemTextureRepeat _saved_texture_repeat = RS::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
 
-	real_t  mode7_global_rotation = 0.0f;
-	Vector2 mode7_global_pivot    = Vector2(0.5f, 0.5f);
+	real_t mode7_global_rotation = 0.0f;
+	Vector2 mode7_global_pivot = Vector2(0.5f, 0.5f);
+
+	// Horizon masks: cull a region at the top or bottom of the sprite with optional tilt.
+	// Each acts independently — both can be active at the same time.
+	real_t mode7_top_horizon_mask_amount = 0.0f; // 0..1 fraction to make transparent (from top down)
+	real_t mode7_top_horizon_mask_tilt = 0.0f; // radians — rotates the culling line
+	real_t mode7_bottom_horizon_mask_amount = 0.0f; // 0..1 fraction to make transparent (from bottom up)
+	real_t mode7_bottom_horizon_mask_tilt = 0.0f; // radians — rotates the culling line
 	/// @}
 
 protected:
@@ -81,10 +88,24 @@ public:
 	void set_mode7_tiling(bool p_tiling);
 	bool is_mode7_tiling() const;
 
-	void    set_mode7_global_rotation(real_t p_radians);
-	real_t  get_mode7_global_rotation() const;
-	void    set_mode7_global_pivot(const Vector2 &p_pivot);
+	void set_mode7_global_rotation(real_t p_radians);
+	real_t get_mode7_global_rotation() const;
+	void set_mode7_global_pivot(const Vector2 &p_pivot);
 	Vector2 get_mode7_global_pivot() const;
+	/// @}
+	/// @name Top horizon mask (culls from top down)
+	/// @{
+	void set_mode7_top_horizon_mask_amount(real_t p_amount);
+	real_t get_mode7_top_horizon_mask_amount() const;
+	void set_mode7_top_horizon_mask_tilt(real_t p_radians);
+	real_t get_mode7_top_horizon_mask_tilt() const;
+	/// @}
+	/// @name Bottom horizon mask (culls from bottom up)
+	/// @{
+	void set_mode7_bottom_horizon_mask_amount(real_t p_amount);
+	real_t get_mode7_bottom_horizon_mask_amount() const;
+	void set_mode7_bottom_horizon_mask_tilt(real_t p_radians);
+	real_t get_mode7_bottom_horizon_mask_tilt() const;
 	/// @}
 
 	Mode7Sprite2D();
