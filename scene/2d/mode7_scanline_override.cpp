@@ -30,6 +30,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+/**
+ * @file mode7_scanline_override.cpp
+ *
+ * [Add any documentation that applies to the entire file here!]
+ */
+
 #include "mode7_scanline_override.h"
 
 void Mode7ScanlineOverride::set_transform(const Transform2D &p_transform) {
@@ -40,12 +46,12 @@ Transform2D Mode7ScanlineOverride::get_transform() const {
 	return transform;
 }
 
-void Mode7ScanlineOverride::set_rotation(real_t p_radians) {
-	transform.set_rotation_scale_and_skew(p_radians, transform.get_scale(), transform.get_skew());
+void Mode7ScanlineOverride::set_rotation(real_t p_degrees) {
+	transform.set_rotation_scale_and_skew(Math::deg_to_rad(p_degrees), transform.get_scale(), transform.get_skew());
 	emit_changed();
 }
 real_t Mode7ScanlineOverride::get_rotation() const {
-	return transform.get_rotation();
+	return Math::rad_to_deg(transform.get_rotation());
 }
 
 void Mode7ScanlineOverride::set_scale(const Vector2 &p_scale) {
@@ -53,7 +59,7 @@ void Mode7ScanlineOverride::set_scale(const Vector2 &p_scale) {
 	// the Transform2D irrecoverably).  We also reject negative values because
 	// they flip the UV orientation and create inconsistent state when round-
 	// tripping through get_scale().
-	const real_t MIN_SCALE = 0.1f;
+	const real_t MIN_SCALE = CMP_EPSILON;
 	Vector2 clamped(MAX(p_scale.x, MIN_SCALE), MAX(p_scale.y, MIN_SCALE));
 	Vector2 inv(1.0f / clamped.x, 1.0f / clamped.y);
 	transform.set_scale(inv);
@@ -70,12 +76,12 @@ Vector2 Mode7ScanlineOverride::get_scale() const {
 	return Vector2(1.0f / s.x, 1.0f / s.y);
 }
 
-void Mode7ScanlineOverride::set_skew(real_t p_radians) {
-	transform.set_rotation_scale_and_skew(transform.get_rotation(), transform.get_scale(), p_radians);
+void Mode7ScanlineOverride::set_skew(real_t p_degrees) {
+	transform.set_rotation_scale_and_skew(transform.get_rotation(), transform.get_scale(), Math::deg_to_rad(p_degrees));
 	emit_changed();
 }
 real_t Mode7ScanlineOverride::get_skew() const {
-	return transform.get_skew();
+	return Math::rad_to_deg(transform.get_skew());
 }
 
 void Mode7ScanlineOverride::set_pivot(const Vector2 &p_pivot) {
@@ -88,25 +94,42 @@ Vector2 Mode7ScanlineOverride::get_pivot() const {
 
 void Mode7ScanlineOverride::set_interpolation(InterpolationMode p_mode) {
 	interpolation = p_mode;
+	notify_property_list_changed();
 	emit_changed();
 }
 Mode7ScanlineOverride::InterpolationMode Mode7ScanlineOverride::get_interpolation() const {
 	return interpolation;
 }
 
+void Mode7ScanlineOverride::set_modulate(const Color &p_color) {
+	modulate = p_color;
+	emit_changed();
+}
+Color Mode7ScanlineOverride::get_modulate() const {
+	return modulate;
+}
+
+void Mode7ScanlineOverride::_validate_property(PropertyInfo &p_property) const {
+	if (interpolation == InterpolationMode::INTERPOLATION_PROJECTION && p_property.name == "skew") {
+		p_property.usage |= PROPERTY_USAGE_READ_ONLY;
+	}
+}
+
 void Mode7ScanlineOverride::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_transform", "transform"), &Mode7ScanlineOverride::set_transform);
 	ClassDB::bind_method(D_METHOD("get_transform"), &Mode7ScanlineOverride::get_transform);
-	ClassDB::bind_method(D_METHOD("set_rotation", "radians"), &Mode7ScanlineOverride::set_rotation);
+	ClassDB::bind_method(D_METHOD("set_rotation", "degrees"), &Mode7ScanlineOverride::set_rotation);
 	ClassDB::bind_method(D_METHOD("get_rotation"), &Mode7ScanlineOverride::get_rotation);
 	ClassDB::bind_method(D_METHOD("set_scale", "scale"), &Mode7ScanlineOverride::set_scale);
 	ClassDB::bind_method(D_METHOD("get_scale"), &Mode7ScanlineOverride::get_scale);
-	ClassDB::bind_method(D_METHOD("set_skew", "radians"), &Mode7ScanlineOverride::set_skew);
+	ClassDB::bind_method(D_METHOD("set_skew", "degrees"), &Mode7ScanlineOverride::set_skew);
 	ClassDB::bind_method(D_METHOD("get_skew"), &Mode7ScanlineOverride::get_skew);
 	ClassDB::bind_method(D_METHOD("set_pivot", "pivot"), &Mode7ScanlineOverride::set_pivot);
 	ClassDB::bind_method(D_METHOD("get_pivot"), &Mode7ScanlineOverride::get_pivot);
 	ClassDB::bind_method(D_METHOD("set_interpolation", "mode"), &Mode7ScanlineOverride::set_interpolation);
 	ClassDB::bind_method(D_METHOD("get_interpolation"), &Mode7ScanlineOverride::get_interpolation);
+	ClassDB::bind_method(D_METHOD("set_modulate", "color"), &Mode7ScanlineOverride::set_modulate);
+	ClassDB::bind_method(D_METHOD("get_modulate"), &Mode7ScanlineOverride::get_modulate);
 
 	BIND_ENUM_CONSTANT(INTERPOLATION_NONE);
 	BIND_ENUM_CONSTANT(INTERPOLATION_LERP);
@@ -114,14 +137,16 @@ void Mode7ScanlineOverride::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::TRANSFORM2D, "transform"), "set_transform", "get_transform");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation", PROPERTY_HINT_RANGE,
-						 "-360,360,0.1,radians_as_degrees"),
+						 "-360,360,0.1"),
 			"set_rotation", "get_rotation");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "scale"), "set_scale", "get_scale");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "skew", PROPERTY_HINT_RANGE,
-						 "-89.9,89.9,0.1,radians_as_degrees"),
+						 "-89.9,89.9,0.1"),
 			"set_skew", "get_skew");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "pivot"), "set_pivot", "get_pivot");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "interpolation", PROPERTY_HINT_ENUM,
 						 "None,Lerp,Projection"),
 			"set_interpolation", "get_interpolation");
+
+	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "modulate"), "set_modulate", "get_modulate");
 }

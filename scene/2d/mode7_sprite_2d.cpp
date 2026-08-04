@@ -31,21 +31,22 @@
 /**************************************************************************/
 
 /**
- * @file sprite_2d.cpp
+ * @file mode7_sprite2d.cpp
  *
  * [Add any documentation that applies to the entire file here!]
  */
 
 #include "mode7_sprite_2d.h"
+#include <functional>
 
 #include "core/input/input.h"
 #include "scene/2d/mode7_scanline_override.h"
 #include "scene/2d/mode7_sprite_2d.h"
+#include "scene/main/node.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
 #include "scene/resources/shader.h"
-#include "scene/main/node.h"
 
 // Embedded Mode 7 canvas_item shader.
 // The scanline table is a 2-wide, N-tall RGBAF texture:
@@ -61,79 +62,126 @@
 static const char *MODE7_SHADER_CODE = R"(
 shader_type canvas_item;
 
-// Per-scanline affine parameters (2×N texture: col0=M7A-D, col1=offset/pivot)
+// Per-scanline affine parameters (3×N texture: col0=M7A-D, col1=offset/pivot, col2=modulate)
+// This "texture" is really a hack to get data into a format for GPUs/shaders
+// This stores the per-scanline information to give us the same control as the Super Nintendo.
+// Each "row" is 3 pixels wide, each is a "Color," but we're simply after the vec4/data that's passed in.
+// Think of this as 3 columns of data in a table
+// Transform | Offset/Pivot | Modulate/Color/Bloom
 uniform sampler2D mode7_scanline_table : filter_nearest, repeat_disable;
 
-// Tiling: false=transparent out-of-bounds (SNES default), true=repeat texture
+// Tiling: false=transparent out-of-bounds, true=repeat texture
 uniform bool mode7_tiling = false;
 
-// Global rotation applied after all scanline transforms
+// Global parameters applied after all scanline transforms
 uniform float mode7_global_rotation = 0.0;
 uniform vec2  mode7_global_pivot    = vec2(0.5, 0.5);
+uniform vec2  mode7_global_offset   = vec2(0.0, 0.0);
 
-// Horizon masks: make a region at the top or bottom of the sprite transparent.
-// Each amount is 0..1 (fraction to cull). Each tilt rotates the culling boundary
-// around the center like an aircraft attitude indicator.
+// Horizon: angle of the horizon line for top and bottom regions.
+// Each tilt rotates the UV space around the center like an aircraft
+// attitude indicator. Amount controls how much of each region is masked;
+// tilt is always computed independently.
+// Masking is evaluated in raw screen-space (before per-scanline projection)
+// so that mask_amount maps directly to a visible-screen percentage regardless
+// of how extreme the projection interpolation transforms are.
 uniform float mode7_top_horizon_mask_amount  = 0.0;
-uniform float mode7_top_horizon_mask_tilt    = 0.0;
+uniform float mode7_top_horizon_tilt         = 0.0;
 uniform float mode7_bottom_horizon_mask_amount = 0.0;
-uniform float mode7_bottom_horizon_mask_tilt   = 0.0;
+uniform float mode7_bottom_horizon_tilt      = 0.0;
+
+// When true, global rotation and horizon tilts are computed as if the
+// active Region Rect were square (then re-mapped to fill the actual
+// region), so non-square regions don't skew rotations into shears.
+uniform bool mode7_override_region_aspect = true;
+
+// Builds a rotation matrix pre/post scaled to compensate for a non-square
+// region aspect ratio, so the visual rotation stays angle-preserving.
+// aspect = region_pixel_width / region_pixel_height.
+mat2 aspect_rotate(float angle, float aspect) {
+    float cr = cos(angle);
+    float sr = sin(angle);
+    return mat2(vec2(cr, sr * aspect), vec2(-sr / aspect, cr));
+}
 
 void fragment() {
-    // Normalize UV to region-local [0,1]×[0,1] space.
+    // When Region is used, we want the shader to apply to the resulting visible section,
+    // not the entire image.
     // When no region is set, REGION_RECT = (0,0,1,1) and this is a no-op.
     vec2 uv = (UV - REGION_RECT.xy) / REGION_RECT.zw;
 
-    // Fetch per-scanline matrix (M7A-D) and offset/pivot from table
-    vec4 abcd = texture(mode7_scanline_table, vec2(0.25, uv.y));
-    vec4 tp   = texture(mode7_scanline_table, vec2(0.75, uv.y));
+    // Compute the region's aspect ratio in actual texture pixels so that
+    // rotations can be corrected.
+    // This option is because, when only showing/transforming the selected region,
+    // the UVs here will be stretched if it's not square.  This enables keeping the transformation
+    // as expected, but still allowing any aspect for the region.
+    vec2 region_px = REGION_RECT.zw / TEXTURE_PIXEL_SIZE;
+    float region_aspect = mode7_override_region_aspect ? (region_px.x / region_px.y) : 1.0;
+
+    // Get the data we need from the scanline "table" above
+    vec4 transform_data   = texture(mode7_scanline_table, vec2(0.1667, uv.y));
+    vec4 offset_pivot_data     = texture(mode7_scanline_table, vec2(0.5, uv.y));
+    vec4 mod    = texture(mode7_scanline_table, vec2(0.8333, uv.y));
 
     // Reconstruct 2×2 affine matrix (column-major: col0, col1)
-    mat2 m   = mat2(vec2(abcd.r, abcd.b), vec2(abcd.g, abcd.a));
-    vec2 off = vec2(tp.r, tp.g);
-    vec2 pivot = vec2(tp.b, tp.a);
+    // NOTE: left untouched by the aspect fix — this comes from the
+    // scanline table's own inverse-depth math and must not be altered.
+    mat2 matrix_transformed   = mat2(vec2(transform_data.r, transform_data.b), vec2(transform_data.g, transform_data.a));
+    vec2 offset = vec2(offset_pivot_data.r, offset_pivot_data.g);
+    vec2 pivot = vec2(offset_pivot_data.b, offset_pivot_data.a);
+
+    // Horizon: compute the tilted UV space for both top and bottom horizons.
+    // Masking uses raw screen-space uv (pre per-scanline transform) so that
+    // mask_amount maps directly to a visible-screen percentage regardless of
+    // how much projection interpolation stretches the projected UVs.
+    // The tilt rotates around center like an aircraft attitude indicator.
+    float alpha_mult = 1.0;
+    vec2 uv_screen_space = (UV - REGION_RECT.xy) / REGION_RECT.zw;
+    vec2 uv_top_tilted  = aspect_rotate(mode7_top_horizon_tilt, region_aspect) * (uv_screen_space - vec2(0.5)) + vec2(0.5);
+    vec2 uv_bottom_tilted = aspect_rotate(mode7_bottom_horizon_tilt, region_aspect) * (uv_screen_space - vec2(0.5)) + vec2(0.5);
+
+    float horizon_line = 0.0;
+    // Top mask: make a region at the top transparent
+    horizon_line = mode7_top_horizon_mask_amount;
+    alpha_mult *= step(horizon_line, uv_top_tilted.y);
+
+    // Bottom mask: make a region at the bottom transparent
+    horizon_line = 1.0 - mode7_bottom_horizon_mask_amount;
+    alpha_mult *= 1.0 - step(horizon_line, uv_bottom_tilted.y);
 
     // Apply per-scanline transform relative to pivot (always in local [0,1])
-    uv = m * (uv - pivot) + pivot + off;
+    uv = matrix_transformed * (uv - pivot) + pivot + offset;
 
-    // Apply global rotation (post-transform, around global pivot)
-    float cr = cos(mode7_global_rotation);
-    float sr = sin(mode7_global_rotation);
-    mat2 m_global = mat2(vec2(cr, sr), vec2(-sr, cr));
-    uv = m_global * (uv - mode7_global_pivot) + mode7_global_pivot;
+    // Apply global rotation (post-transform, around global pivot),
+    // aspect-corrected so a non-square region doesn't shear the rotation.
+    mat2 matrix_global = aspect_rotate(mode7_global_rotation, region_aspect);
+    uv = matrix_global * (uv - mode7_global_pivot) + mode7_global_pivot;
 
-    // Horizon masking — make a rotated region at the top and/or bottom transparent.
-    // Works in local [0,1] space after all other transforms. Positive tilt
-    // rotates the horizon clockwise (right side drops), matching an aircraft
-    // attitude indicator.  amount = 0 leaves nothing culled; amount = 1
-    // hides the entire sprite.
-    float alpha_mult = 1.0;
+    // Apply global offset uniformly across the final image.
+    // We rotate the offset by the same angle so it shifts in the global (screen)
+    // frame rather than the warped UV frame -- this gives a uniform screen-space
+    // translation regardless of per-scanline scaling.
+    uv += matrix_global * mode7_global_offset;
 
-    // Bottom mask: cull from bottom up
-    if (mode7_bottom_horizon_mask_amount > 0.0) {
-        float ct = cos(mode7_bottom_horizon_mask_tilt);
-        float st = sin(mode7_bottom_horizon_mask_tilt);
-        mat2 m_h = mat2(vec2(ct, -st), vec2(st, ct));
-        vec2 uv_tilted = m_h * (uv - vec2(0.5)) + vec2(0.5);
-        float horizon_line = 1.0 - mode7_bottom_horizon_mask_amount;
-        alpha_mult *= 1.0 - step(horizon_line, uv_tilted.y);
-    }
-
-    // Top mask: cull from top down
-    if (mode7_top_horizon_mask_amount > 0.0) {
-        float ct = cos(mode7_top_horizon_mask_tilt);
-        float st = sin(mode7_top_horizon_mask_tilt);
-        mat2 m_h = mat2(vec2(ct, -st), vec2(st, ct));
-        vec2 uv_tilted = m_h * (uv - vec2(0.5)) + vec2(0.5);
-        float horizon_line = mode7_top_horizon_mask_amount;
-        alpha_mult *= step(horizon_line, uv_tilted.y);
-    }
-
-    // Denormalize back to full-texture coordinates for sampling and bounds check
+    // Denormalize back to full-texture coordinates before wrapping. Wrapping
+    // here instead of on the region-local uv is what lets an out-of-region
+    // UV reveal neighboring texture content instead of re-tiling the crop.
     vec2 uv_full = uv * REGION_RECT.zw + REGION_RECT.xy;
+
     bool out_of_bounds = !mode7_tiling &&
         (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0);
-    COLOR = out_of_bounds ? vec4(0.0) : texture(TEXTURE, uv_full);
+
+    if (out_of_bounds) {
+        discard;
+    } else {
+        // Tiling wraps against the whole texture, not just the region, so it
+        // works the same whether a region is set or not.
+        vec2 uv_sample = mode7_tiling ? fract(uv_full) : uv_full;
+        COLOR = texture(TEXTURE, uv_sample);
+    }
+
+    // Apply per-scanline modulate (color tint + alpha falloff)
+    COLOR *= mod;
     COLOR.a *= alpha_mult;
 }
 )";
@@ -148,14 +196,14 @@ void Mode7Sprite2D::_mode7_rebuild_material() {
 		_mode7_material->set_shader(shader);
 	}
 
-	// --- all set_shader_parameter calls go here ---
-	_mode7_material->set_shader_parameter("mode7_use_table", !mode7_scanline_overrides.is_empty());
+	// Set the shader parameters (will be passed to the uniforms)
 	_mode7_material->set_shader_parameter("mode7_global_rotation", mode7_global_rotation);
 	_mode7_material->set_shader_parameter("mode7_global_pivot", mode7_global_pivot);
+	_mode7_material->set_shader_parameter("mode7_global_offset", mode7_global_offset);
 	_mode7_material->set_shader_parameter("mode7_top_horizon_mask_amount", mode7_top_horizon_mask_amount);
-	_mode7_material->set_shader_parameter("mode7_top_horizon_mask_tilt", mode7_top_horizon_mask_tilt);
+	_mode7_material->set_shader_parameter("mode7_top_horizon_tilt", mode7_top_horizon_tilt);
 	_mode7_material->set_shader_parameter("mode7_bottom_horizon_mask_amount", mode7_bottom_horizon_mask_amount);
-	_mode7_material->set_shader_parameter("mode7_bottom_horizon_mask_tilt", mode7_bottom_horizon_mask_tilt);
+	_mode7_material->set_shader_parameter("mode7_bottom_horizon_tilt", mode7_bottom_horizon_tilt);
 
 	_mode7_rebuild_scanline_texture();
 	if (_mode7_scanline_tex.is_valid()) {
@@ -163,61 +211,64 @@ void Mode7Sprite2D::_mode7_rebuild_material() {
 				_mode7_scanline_tex);
 	}
 
-	_mode7_material->set_shader_parameter("mode7_tiling", mode7_tiling); // ← add here
+	_mode7_material->set_shader_parameter("mode7_tiling", mode7_tiling);
+	_mode7_material->set_shader_parameter("mode7_override_region_aspect", mode7_override_region_aspect);
 }
 
 void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 	int num_overrides = mode7_scanline_overrides.size();
-	if (num_overrides == 0) {
-		return;
-	}
 
-	int tex_h = 256;
-	if (get_texture().is_valid()) {
-		tex_h = is_region_enabled()
-				? MAX(1, (int)get_region_rect().size.y)
-				: MAX(1, get_texture()->get_height());
-	}
+	// (Vertical) Resolution for smooth per-scanline interpolation - mainly for modulate (color).
+	// Use a high power-of-2 height so nearest-neighbor sampling doesn't produce
+	// visible bands in alpha or color channels between adjacent overrides.
+	const int interpolate_resolution = 1024;
 
 	// Query the interpolation mode from the first entry (applied uniformly to
 	// the whole override array for this pass).
 	Ref<Mode7ScanlineOverride> first = mode7_scanline_overrides[0];
-	Mode7ScanlineOverride::InterpolationMode interp_mode =
-			first.is_valid() ? first->get_interpolation()
-							 : Mode7ScanlineOverride::INTERPOLATION_NONE;
+	Mode7ScanlineOverride::InterpolationMode interp_mode = first.is_valid() ? first->get_interpolation() : Mode7ScanlineOverride::INTERPOLATION_NONE;
 
-	// Pre-fetch Projection anchors (entry[0]=top/horizon, entry[last]=bottom/close).
+	// Make sure we have more than 1 scanline object to interpolate between
 	bool has_projection_anchors = false;
-	Transform2D xf_top, xf_bot;
-	Vector2 pivot_top, pivot_bot;
-	real_t scale_top = 1.0f, scale_bot = 1.0f;
-	real_t rot_top = 0.0f, rot_bot = 0.0f;
+	Transform2D transform_top, transform_bottom;
+	Vector2 pivot_top, pivot_bottom;
+	Color modulate_top, modulate_bottom;
+	real_t scale_top = 1.0f, scale_bottom = 1.0f;
+	real_t rotation_top = 0.0f, rotation_bottom = 0.0f;
 	if (interp_mode == Mode7ScanlineOverride::INTERPOLATION_PROJECTION && num_overrides >= 2) {
-		auto safe_xf = [&](int i) { Ref<Mode7ScanlineOverride> e = mode7_scanline_overrides[i]; return e.is_valid() ? e->get_transform()    : Transform2D(); };
-		auto safe_pivot = [&](int i) { Ref<Mode7ScanlineOverride> e = mode7_scanline_overrides[i]; return e.is_valid() ? e->get_pivot()       : Vector2(0.5f, 0.5f); };
-		xf_top = safe_xf(0);
+		// auto used here to hopefully inline/avoid heap allocation
+		// These just guard against invalid/null values and are reusable below
+		auto safe_transform = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_transform()    : Transform2D(); };
+		auto safe_pivot = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_pivot()       : Vector2(0.5f, 0.5f); };
+		auto safe_modulate = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_modulate()  : Color(1.0f, 1.0f, 1.0f, 1.0f); };
+
+		transform_top = safe_transform(0);
+		transform_bottom = safe_transform(num_overrides - 1);
 		pivot_top = safe_pivot(0);
-		xf_bot = safe_xf(num_overrides - 1);
-		pivot_bot = safe_pivot(num_overrides - 1);
+		pivot_bottom = safe_pivot(num_overrides - 1);
+		modulate_top = safe_modulate(0);
+		modulate_bottom = safe_modulate(num_overrides - 1);
+
 		// User-facing scale (already inverted by get_scale()).
-		Vector2 s_top = xf_top.get_scale();
-		Vector2 s_bot = xf_bot.get_scale();
+		Vector2 s_top = transform_top.get_scale();
+		Vector2 s_bot = transform_bottom.get_scale();
 		scale_top = 1.0f / MAX(s_top.x, 0.0001f);
-		scale_bot = 1.0f / MAX(s_bot.x, 0.0001f);
-		rot_top = xf_top.get_rotation();
-		rot_bot = xf_bot.get_rotation();
+		scale_bottom = 1.0f / MAX(s_bot.x, 0.0001f);
+		rotation_top = transform_top.get_rotation();
+		rotation_bottom = transform_bottom.get_rotation();
 		has_projection_anchors = true;
 	}
 
-	Ref<Image> img = Image::create_empty(2, tex_h, false, Image::FORMAT_RGBAF);
+	Ref<Image> img = Image::create_empty(3, interpolate_resolution, false, Image::FORMAT_RGBAF);
 
-	for (int y = 0; y < tex_h; y++) {
-		float uv_y = (y + 0.5f) / (float)tex_h;
-		Transform2D xf;
+	for (int y = 0; y < interpolate_resolution; y++) {
+		float uv_y = (y + 0.5f) / (float)interpolate_resolution;
+		Transform2D result_transform;
 		Vector2 pivot;
+		Color mod;
 
 		if (interp_mode == Mode7ScanlineOverride::INTERPOLATION_PROJECTION && has_projection_anchors) {
-			// ── Projection: per-scanline inverse-depth interpolation ────────
+			// Per-scanline inverse-depth interpolation
 			//
 			// In a true perspective projection of a flat plane, texture scale is
 			// inversely proportional to depth (S ~ 1/Z).  Therefore the VALUE
@@ -225,19 +276,19 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 			// We interpolate in inverse-scale space, then invert back to get
 			// the correct perspective-correct affine matrix for this scanline.
 			//
-			// entry[0]        = top / horizon anchor (small scale, far depth)
-			// entry[last-1]   = bottom / close anchor (large scale, near depth)
+			// first entry     = top / horizon anchor (small scale, far depth)
+			// last entry      = bottom / close anchor (large scale, near depth)
 
 			real_t t = uv_y;
 
 			// Inverse-depth interpolation of scale.
 			real_t inv_s_top = 1.0f / MAX(scale_top, 0.0001f);
-			real_t inv_s_bot = 1.0f / MAX(scale_bot, 0.0001f);
+			real_t inv_s_bot = 1.0f / MAX(scale_bottom, 0.0001f);
 			real_t inv_s_cur = inv_s_top + (inv_s_bot - inv_s_top) * t;
 			real_t S = 1.0f / MAX(inv_s_cur, 0.0001f); // Perspective-correct scale.
 
 			// Rotation interpolates linearly with screen height.
-			real_t theta = rot_top + (rot_bot - rot_top) * t;
+			real_t theta = rotation_top + (rotation_bottom - rotation_top) * t;
 			real_t cos_t = Math::cos(theta);
 			real_t sin_t = Math::sin(theta);
 
@@ -246,9 +297,12 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 			Vector2 col1(sin_t * S, cos_t * S);
 
 			// Pivot interpolates linearly.
-			pivot = pivot_top.lerp(pivot_bot, (real_t)t);
+			pivot = pivot_top.lerp(pivot_bottom, (real_t)t);
 
-			// ── Scroll offset correction (the critical fix) ───────────────
+			// Modulate interpolates linearly between horizon and close anchors.
+			mod = modulate_top.lerp(modulate_bottom, (real_t)t);
+
+			// Scroll offset correction
 			//
 			// Scaling around a fixed pivot with changing per-scanline scale
 			// causes the texture to warp unless the translation offset is also
@@ -256,19 +310,18 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 			// remain stable.  We correct the raw offset by adding a depth-
 			// proportional shift.
 
-			Vector2 off_raw =
-					(xf_bot.columns[2] - xf_top.columns[2]).lerp(xf_top.columns[2], (real_t)(1.0f - t));
+			Vector2 off_raw = transform_top.columns[2].lerp(transform_bottom.columns[2], (real_t)t);
 
 			// Perspective correction: the offset must be shifted in proportion
 			// to how much S deviates from a linear blend of the anchors.
-			real_t s_linear = scale_top + (scale_bot - scale_top) * t;
+			real_t s_linear = scale_top + (scale_bottom - scale_top) * t;
 			real_t depth_factor = (s_linear > 0.001f) ? (S / s_linear - 1.0f) : 0.0f;
 
-			off_raw += (xf_bot.columns[2] - xf_top.columns[2]) * depth_factor;
+			off_raw += (transform_bottom.columns[2] - transform_top.columns[2]) * depth_factor;
 
-			xf = Transform2D(col0, col1, off_raw);
-		} else {
-			// ── None / Lerp fallback ──────────────────────────────────────
+			result_transform = Transform2D(col0, col1, off_raw);
+		} // if we're doing projection
+		else { // Lerp or no interpolation
 			float idx_f = (num_overrides == 1) ? 0.0f : uv_y * (num_overrides - 1);
 			int idx_lo = CLAMP((int)idx_f, 0, num_overrides - 1);
 			int idx_hi = CLAMP(idx_lo + 1, 0, num_overrides - 1);
@@ -277,29 +330,36 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 			Ref<Mode7ScanlineOverride> entry_lo = mode7_scanline_overrides[idx_lo];
 			Transform2D xf_lo = entry_lo.is_valid() ? entry_lo->get_transform() : Transform2D();
 			Vector2 pivot_lo = entry_lo.is_valid() ? entry_lo->get_pivot() : Vector2(0.5f, 0.5f);
+			Color modulate_lo = entry_lo.is_valid() ? entry_lo->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
 			bool do_lerp = (interp_mode == Mode7ScanlineOverride::INTERPOLATION_LERP);
 
 			if (do_lerp && idx_hi != idx_lo && frac > 0.0f) {
 				Ref<Mode7ScanlineOverride> entry_hi = mode7_scanline_overrides[idx_hi];
 				Transform2D xf_hi = entry_hi.is_valid() ? entry_hi->get_transform() : Transform2D();
 				Vector2 pivot_hi = entry_hi.is_valid() ? entry_hi->get_pivot() : Vector2(0.5f, 0.5f);
-				xf = xf_lo.interpolate_with(xf_hi, frac);
+				Color modulate_hi = entry_hi.is_valid() ? entry_hi->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
+				result_transform = xf_lo.interpolate_with(xf_hi, frac);
 				pivot = pivot_lo.lerp(pivot_hi, frac);
+				mod = modulate_lo.lerp(modulate_hi, frac);
 			} else {
 				int idx_nearest = CLAMP((int)roundf(idx_f), 0, num_overrides - 1);
 				Ref<Mode7ScanlineOverride> entry_nearest = mode7_scanline_overrides[idx_nearest];
-				xf = entry_nearest.is_valid() ? entry_nearest->get_transform() : Transform2D();
+				result_transform = entry_nearest.is_valid() ? entry_nearest->get_transform() : Transform2D();
 				pivot = entry_nearest.is_valid() ? entry_nearest->get_pivot() : Vector2(0.5f, 0.5f);
+				mod = entry_nearest.is_valid() ? entry_nearest->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
 			}
 		}
 
-		img->set_pixel(0, y, Color(xf.columns[0].x, xf.columns[1].x, xf.columns[0].y, xf.columns[1].y));
-		// tx, ty in r,g — pivot_x, pivot_y in b,a
-		img->set_pixel(1, y, Color(xf.columns[2].x, xf.columns[2].y, pivot.x, pivot.y));
-	}
+		// These set the pixels for the "row" we're currently on (y)
+		// Transform/scale/rotation
+		img->set_pixel(0, y, Color(result_transform.columns[0].x, result_transform.columns[1].x, result_transform.columns[0].y, result_transform.columns[1].y));
+		// Scroll offset / pivot point
+		img->set_pixel(1, y, Color(result_transform.columns[2].x, result_transform.columns[2].y, pivot.x, pivot.y));
+		// Per-scanline modulate (RGBA)
+		img->set_pixel(2, y, mod);
+	} // end of for loop
 
-	if (_mode7_scanline_tex.is_null() ||
-			_mode7_scanline_tex->get_height() != tex_h) {
+	if (_mode7_scanline_tex.is_null() || _mode7_scanline_tex->get_height() != interpolate_resolution) {
 		_mode7_scanline_tex = ImageTexture::create_from_image(img);
 	} else {
 		_mode7_scanline_tex->update(img);
@@ -311,14 +371,12 @@ void Mode7Sprite2D::set_mode7_tiling(bool p_tiling) {
 		return;
 	}
 	mode7_tiling = p_tiling;
-	if (mode7_enabled) {
+	if (mode7_enabled && _mode7_material.is_valid()) {
+		_mode7_material->set_shader_parameter("mode7_tiling", p_tiling);
 		RS::get_singleton()->canvas_item_set_default_texture_repeat(
 				get_canvas_item(),
-				p_tiling ? RS::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED
-						 : RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
-		if (_mode7_material.is_valid()) {
-			_mode7_material->set_shader_parameter("mode7_tiling", p_tiling);
-		}
+				mode7_tiling ? RS::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED
+							 : RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
 		queue_redraw();
 	}
 }
@@ -327,26 +385,20 @@ bool Mode7Sprite2D::is_mode7_tiling() const {
 	return mode7_tiling;
 }
 
-void Mode7Sprite2D::set_mode7_global_rotation(real_t p_radians) {
-	if (mode7_global_rotation == p_radians) {
+void Mode7Sprite2D::set_mode7_global_rotation(real_t p_degrees) {
+	const real_t radians = Math::deg_to_rad(p_degrees);
+	if (mode7_global_rotation == radians) {
 		return;
 	}
-	mode7_global_rotation = p_radians;
+	mode7_global_rotation = radians;
 	if (mode7_enabled && _mode7_material.is_valid()) {
-		_mode7_material->set_shader_parameter("mode7_global_rotation", p_radians);
-		// When follow is enabled, sync both horizon mask tilts to the global rotation.
-		if (mode7_follow_horizon_tilts) {
-			mode7_top_horizon_mask_tilt = p_radians;
-			mode7_bottom_horizon_mask_tilt = p_radians;
-			_mode7_material->set_shader_parameter("mode7_top_horizon_mask_tilt", p_radians);
-			_mode7_material->set_shader_parameter("mode7_bottom_horizon_mask_tilt", p_radians);
-		}
+		_mode7_material->set_shader_parameter("mode7_global_rotation", radians);
 		queue_redraw();
 	}
 }
 
 real_t Mode7Sprite2D::get_mode7_global_rotation() const {
-	return mode7_global_rotation;
+	return Math::rad_to_deg(mode7_global_rotation);
 }
 
 void Mode7Sprite2D::set_mode7_global_pivot(const Vector2 &p_pivot) {
@@ -364,7 +416,32 @@ Vector2 Mode7Sprite2D::get_mode7_global_pivot() const {
 	return mode7_global_pivot;
 }
 
-// ── Top horizon mask ────────────────────────────────────────────────
+void Mode7Sprite2D::set_mode7_global_offset(const Vector2 &p_offset) {
+	if (mode7_global_offset == p_offset) {
+		return;
+	}
+	mode7_global_offset = p_offset;
+	if (mode7_enabled && _mode7_material.is_valid()) {
+		_mode7_material->set_shader_parameter("mode7_global_offset", p_offset);
+		queue_redraw();
+	}
+}
+
+Vector2 Mode7Sprite2D::get_mode7_global_offset() const {
+	return mode7_global_offset;
+}
+
+void Mode7Sprite2D::set_mode7_override_region_aspect(bool p_enabled) {
+	if (mode7_override_region_aspect == p_enabled) {
+		return;
+	}
+	mode7_override_region_aspect = p_enabled;
+	_mode7_rebuild_material();
+}
+
+bool Mode7Sprite2D::is_mode7_override_region_aspect() const {
+	return mode7_override_region_aspect;
+}
 
 void Mode7Sprite2D::set_mode7_top_horizon_mask_amount(real_t p_amount) {
 	if (mode7_top_horizon_mask_amount == p_amount) {
@@ -381,22 +458,21 @@ real_t Mode7Sprite2D::get_mode7_top_horizon_mask_amount() const {
 	return mode7_top_horizon_mask_amount;
 }
 
-void Mode7Sprite2D::set_mode7_top_horizon_mask_tilt(real_t p_radians) {
-	if (mode7_top_horizon_mask_tilt == p_radians) {
+void Mode7Sprite2D::set_mode7_top_horizon_tilt(real_t p_degrees) {
+	const real_t radians = Math::deg_to_rad(p_degrees);
+	if (mode7_top_horizon_tilt == radians) {
 		return;
 	}
-	mode7_top_horizon_mask_tilt = p_radians;
+	mode7_top_horizon_tilt = radians;
 	if (mode7_enabled && _mode7_material.is_valid()) {
-		_mode7_material->set_shader_parameter("mode7_top_horizon_mask_tilt", p_radians);
+		_mode7_material->set_shader_parameter("mode7_top_horizon_tilt", radians);
 		queue_redraw();
 	}
 }
 
-real_t Mode7Sprite2D::get_mode7_top_horizon_mask_tilt() const {
-	return mode7_top_horizon_mask_tilt;
+real_t Mode7Sprite2D::get_mode7_top_horizon_tilt() const {
+	return Math::rad_to_deg(mode7_top_horizon_tilt);
 }
-
-// ── Bottom horizon mask ─────────────────────────────────────────────
 
 void Mode7Sprite2D::set_mode7_bottom_horizon_mask_amount(real_t p_amount) {
 	if (mode7_bottom_horizon_mask_amount == p_amount) {
@@ -413,42 +489,23 @@ real_t Mode7Sprite2D::get_mode7_bottom_horizon_mask_amount() const {
 	return mode7_bottom_horizon_mask_amount;
 }
 
-void Mode7Sprite2D::set_mode7_bottom_horizon_mask_tilt(real_t p_radians) {
-	if (mode7_bottom_horizon_mask_tilt == p_radians) {
+void Mode7Sprite2D::set_mode7_bottom_horizon_tilt(real_t p_degrees) {
+	const real_t radians = Math::deg_to_rad(p_degrees);
+	if (mode7_bottom_horizon_tilt == radians) {
 		return;
 	}
-	mode7_bottom_horizon_mask_tilt = p_radians;
+	mode7_bottom_horizon_tilt = radians;
 	if (mode7_enabled && _mode7_material.is_valid()) {
-		_mode7_material->set_shader_parameter("mode7_bottom_horizon_mask_tilt", p_radians);
+		_mode7_material->set_shader_parameter("mode7_bottom_horizon_tilt", radians);
 		queue_redraw();
 	}
 }
 
-real_t Mode7Sprite2D::get_mode7_bottom_horizon_mask_tilt() const {
-	return mode7_bottom_horizon_mask_tilt;
+real_t Mode7Sprite2D::get_mode7_bottom_horizon_tilt() const {
+	return Math::rad_to_deg(mode7_bottom_horizon_tilt);
 }
 
-// ── Follow horizon tilts ───────────────────────────────────────────
-
-void Mode7Sprite2D::set_mode7_follow_horizon_tilts(bool p_enabled) {
-	if (mode7_follow_horizon_tilts == p_enabled) {
-		return;
-	}
-	mode7_follow_horizon_tilts = p_enabled;
-	// When enabling, immediately sync tilts to the current global rotation.
-	if (mode7_follow_horizon_tilts) {
-		mode7_top_horizon_mask_tilt = mode7_global_rotation;
-		mode7_bottom_horizon_mask_tilt = mode7_global_rotation;
-		if (mode7_enabled && _mode7_material.is_valid()) {
-			_mode7_material->set_shader_parameter("mode7_top_horizon_mask_tilt", mode7_global_rotation);
-			_mode7_material->set_shader_parameter("mode7_bottom_horizon_mask_tilt", mode7_global_rotation);
-		}
-	}
-	queue_redraw();
-}
-
-bool Mode7Sprite2D::is_mode7_follow_horizon_tilts() const {
-	return mode7_follow_horizon_tilts;
+void Mode7Sprite2D::_validate_property(PropertyInfo &p_property) const {
 }
 
 void Mode7Sprite2D::set_mode7_enabled(bool p_enabled) {
@@ -457,26 +514,34 @@ void Mode7Sprite2D::set_mode7_enabled(bool p_enabled) {
 	}
 	mode7_enabled = p_enabled;
 	if (mode7_enabled) {
+		// On initialization, we want 1 scanline override.  The user can add more, which allows interpolating between
+		// them.  This way, we don't need to do it, literally, like the Super Nintendo and specify each "scanline" individually.
+		// However, the scanline override is where the affine matrix, scale, skew, etc... options live, so even if
+		// doing the per-scanline transformation is not desired, a single object here will expose those parameters to be manipulated.
 		if (mode7_scanline_overrides.is_empty()) {
 			Ref<Mode7ScanlineOverride> def;
 			def.instantiate();
 			mode7_scanline_overrides.append(def);
-			def->connect_changed(callable_mp(this, &Mode7Sprite2D::_on_mode7_override_changed),
-					CONNECT_REFERENCE_COUNTED);
+			// Will be used to tell the Mode7Sprite2D to rebuild its material when we change these parameters.
+			def->connect_changed(callable_mp(this, &Mode7Sprite2D::_on_mode7_override_changed), CONNECT_REFERENCE_COUNTED);
 		}
+		_saved_material = get_material();
 		_mode7_rebuild_material();
-		set_material(_mode7_material); // ← only here, once
+		set_material(_mode7_material); // only here, once
 
 		// Save the node's current repeat mode so we can restore it on disable,
-		// then push the mode7 repeat state directly to the RenderingServer.
-		// We bypass set_texture_repeat() to avoid its notify_property_list_changed() call.
+		// then push the mode7 repeat state to both the sprite's own repeat
+		// (so the Sprite2D texture uses the correct GL sampler) and the canvas
+		// item default (fallback for custom shader TEXTURE samplers).
 		_saved_texture_repeat = (RS::CanvasItemTextureRepeat)get_texture_repeat();
 		RS::get_singleton()->canvas_item_set_default_texture_repeat(
 				get_canvas_item(),
 				mode7_tiling ? RS::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED
 							 : RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
-	} else {
-		set_material(Ref<Material>());
+	} // if (mode7_enabled)
+	else {
+		set_material(_saved_material);
+		_saved_material = Ref<Material>();
 
 		// Restore whatever repeat mode the node had before mode7 was enabled.
 		RS::get_singleton()->canvas_item_set_default_texture_repeat(
@@ -529,68 +594,75 @@ TypedArray<Mode7ScanlineOverride> Mode7Sprite2D::get_mode7_scanline_overrides() 
 // ── Region follow target ───────────────────────────────────────────────
 
 void Mode7Sprite2D::_notification(int p_what) {
-	Sprite2D::_notification(p_what);
-
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
-			mode7_follow_node = nullptr;
-			if (!mode7_region_follow_target.is_empty()) {
-				Node *target = get_node_or_null(mode7_region_follow_target);
-				if (target) {
-					mode7_follow_node = target;
-					mode7_follow_initialized = false;
-					set_physics_process(true);
-				} else {
-					set_physics_process(false);
-				}
+			_update_follow_cache();
+			if (mode7_follow_cache.is_valid()) {
+				set_physics_process(true);
+				mode7_follow_physics_active = true;
 			} else {
 				set_physics_process(false);
+				mode7_follow_physics_active = false;
 			}
+			mode7_follow_initialized = false;
 		} break;
 
 		case NOTIFICATION_EXIT_TREE: {
-			mode7_follow_node = nullptr;
+			mode7_follow_cache = ObjectID();
 			mode7_follow_initialized = false;
+			mode7_follow_physics_active = false;
 			set_physics_process(false);
 		} break;
 
 		case NOTIFICATION_PHYSICS_PROCESS: {
-			if (!mode7_follow_node) {
+			// Resolve the live node from the ObjectID cache each frame.
+			Node2D *target_2d = ObjectDB::get_instance<Node2D>(mode7_follow_cache);
+			if (!target_2d) {
+				// The target was freed or the path no longer resolves to a Node2D.
+				mode7_follow_cache = ObjectID();
+				set_physics_process(false);
+				mode7_follow_physics_active = false;
 				return;
+			} else if (!is_inside_tree() || !target_2d->is_inside_tree()) {
+				set_physics_process(false);
+				mode7_follow_physics_active = false;
+				return;
+			} else if (!is_region_enabled()) {
+				// Pause follow when region is disabled; don't kill the cache.
+				if (mode7_follow_physics_active) {
+					set_physics_process(false);
+					mode7_follow_physics_active = false;
+				}
+				return;
+			} else if (!mode7_follow_physics_active) {
+				// Resumed after region re-enabled — restart physics.
+				set_physics_process(true);
+				mode7_follow_physics_active = true;
 			}
 
-			Node2D *target_2d = Object::cast_to<Node2D>(mode7_follow_node);
-			if (!target_2d || !is_region_enabled()) {
-				set_physics_process(false);
-				mode7_follow_node = nullptr;
+			if (!is_inside_tree()) {
 				return;
 			}
 
 			Vector2 target_global_pos = target_2d->get_global_position();
 
 			if (!mode7_follow_initialized) {
-				mode7_follow_last_global_pos = target_global_pos;
 				mode7_follow_initialized = true;
 				return;
 			}
 
-			Vector2 delta_global = target_global_pos - mode7_follow_last_global_pos;
-			mode7_follow_last_global_pos = target_global_pos;
+			Rect2 rr = get_region_rect();
+			Size2 sprite_scale = get_scale();
 
-			if (delta_global != Vector2()) {
-				Size2 sprite_scale = get_scale();
-				Vector2 delta_region;
-				delta_region.x = delta_global.x / MAX(Math::abs(sprite_scale.x), 0.001f);
-				delta_region.y = delta_global.y / MAX(Math::abs(sprite_scale.y), 0.001f);
+			Vector2 half_size = rr.size * 0.5f;
+			Vector2 pivot_in_sprite_local = (target_global_pos - get_global_transform().get_origin()) / sprite_scale;
 
-				Rect2 rr = get_region_rect();
-				rr.position += delta_region;
-				set_region_rect(rr);
-			}
+			rr.position.x = pivot_in_sprite_local.x - half_size.x;
+			rr.position.y = pivot_in_sprite_local.y - half_size.y;
+			set_region_rect(rr);
 		} break;
 	}
 }
-
 
 void Mode7Sprite2D::set_mode7_region_follow_target(const NodePath &p_path) {
 	if (mode7_region_follow_target == p_path) {
@@ -599,20 +671,31 @@ void Mode7Sprite2D::set_mode7_region_follow_target(const NodePath &p_path) {
 	mode7_region_follow_target = p_path;
 
 	if (is_inside_tree()) {
-		mode7_follow_node = nullptr;
-		mode7_follow_initialized = false;
-		if (!p_path.is_empty()) {
-			Node *target = get_node_or_null(p_path);
-			if (target) {
-				mode7_follow_node = target;
-				set_physics_process(true);
-			} else {
-				set_physics_process(false);
-			}
-		} else {
-			mode7_follow_node = nullptr;
-			set_physics_process(false);
+		_update_follow_cache();
+		// Deferred call is the rename safety net: when the Scene dock renames
+		// the target node, the property rewrite is queued *before* set_name()
+		// fires, so a synchronous lookup would still use the old name.  If the
+		// immediate update already found the node, the deferred call is a no-op.
+		callable_mp(this, &Mode7Sprite2D::_update_follow_cache).call_deferred();
+		// Start follow if we found something immediately; otherwise the deferred
+		// update above will find it and start it (but that won't fire until next
+		// idle frame).  We can't defer physics-start because _update_follow_cache
+		// itself doesn't call set_physics_process — so do both here.
+		// Actually, simpler: just always ensure physics is running when a valid path exists.
+		if (mode7_follow_cache.is_valid()) {
+			set_physics_process(true);
+			mode7_follow_physics_active = true;
 		}
+	} else if (!p_path.is_empty()) {
+		// Node not in tree yet — defer starting physics too, until we're ready.
+		callable_mp(this, &Mode7Sprite2D::_ensure_follow_physics).call_deferred();
+	}
+}
+
+void Mode7Sprite2D::_ensure_follow_physics() {
+	if (is_inside_tree() && mode7_follow_cache.is_valid()) {
+		set_physics_process(true);
+		mode7_follow_physics_active = true;
 	}
 }
 
@@ -620,8 +703,24 @@ NodePath Mode7Sprite2D::get_mode7_region_follow_target() const {
 	return mode7_region_follow_target;
 }
 
+void Mode7Sprite2D::_update_follow_cache() {
+	mode7_follow_cache = ObjectID();
+	if (has_node(mode7_region_follow_target)) {
+		Node *node = get_node(mode7_region_follow_target);
+		if (node && this != node) {
+			// Only reject self; ancestors/descendants are allowed because we only read
+			// the target's position (unlike RemoteTransform2D which writes back to it).
+			mode7_follow_cache = node->get_instance_id();
+		}
+	}
+}
+
+void Mode7Sprite2D::force_update_follow_cache() {
+	_update_follow_cache();
+}
+
 void Mode7Sprite2D::_bind_methods() {
-	// Mode 7  -----------------------------------------------------------------------------------------------------------------------------------------
+	// Global bindings ---------------------------------------------------------
 	ClassDB::bind_method(D_METHOD("set_mode7_enabled", "enabled"), &Mode7Sprite2D::set_mode7_enabled);
 	ClassDB::bind_method(D_METHOD("is_mode7_enabled"), &Mode7Sprite2D::is_mode7_enabled);
 
@@ -631,62 +730,70 @@ void Mode7Sprite2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_mode7_tiling", "tiling"), &Mode7Sprite2D::set_mode7_tiling);
 	ClassDB::bind_method(D_METHOD("is_mode7_tiling"), &Mode7Sprite2D::is_mode7_tiling);
 
-	ClassDB::bind_method(D_METHOD("set_mode7_global_rotation", "radians"), &Mode7Sprite2D::set_mode7_global_rotation);
+	ClassDB::bind_method(D_METHOD("set_mode7_global_rotation", "degrees"), &Mode7Sprite2D::set_mode7_global_rotation);
 	ClassDB::bind_method(D_METHOD("get_mode7_global_rotation"), &Mode7Sprite2D::get_mode7_global_rotation);
 	ClassDB::bind_method(D_METHOD("set_mode7_global_pivot", "pivot"), &Mode7Sprite2D::set_mode7_global_pivot);
 	ClassDB::bind_method(D_METHOD("get_mode7_global_pivot"), &Mode7Sprite2D::get_mode7_global_pivot);
+	ClassDB::bind_method(D_METHOD("set_mode7_global_offset", "offset"), &Mode7Sprite2D::set_mode7_global_offset);
+	ClassDB::bind_method(D_METHOD("get_mode7_global_offset"), &Mode7Sprite2D::get_mode7_global_offset);
 
-	// Region follow target
+	ClassDB::bind_method(D_METHOD("set_mode7_override_region_aspect", "enabled"), &Mode7Sprite2D::set_mode7_override_region_aspect);
+	ClassDB::bind_method(D_METHOD("is_mode7_override_region_aspect"), &Mode7Sprite2D::is_mode7_override_region_aspect);
+
 	ClassDB::bind_method(D_METHOD("set_mode7_region_follow_target", "path"), &Mode7Sprite2D::set_mode7_region_follow_target);
 	ClassDB::bind_method(D_METHOD("get_mode7_region_follow_target"), &Mode7Sprite2D::get_mode7_region_follow_target);
+	ClassDB::bind_method(D_METHOD("force_update_follow_cache"), &Mode7Sprite2D::force_update_follow_cache);
 
 	// Top horizon mask
 	ClassDB::bind_method(D_METHOD("set_mode7_top_horizon_mask_amount", "amount"), &Mode7Sprite2D::set_mode7_top_horizon_mask_amount);
 	ClassDB::bind_method(D_METHOD("get_mode7_top_horizon_mask_amount"), &Mode7Sprite2D::get_mode7_top_horizon_mask_amount);
-	ClassDB::bind_method(D_METHOD("set_mode7_top_horizon_mask_tilt", "radians"), &Mode7Sprite2D::set_mode7_top_horizon_mask_tilt);
-	ClassDB::bind_method(D_METHOD("get_mode7_top_horizon_mask_tilt"), &Mode7Sprite2D::get_mode7_top_horizon_mask_tilt);
+	ClassDB::bind_method(D_METHOD("set_mode7_top_horizon_tilt", "degrees"), &Mode7Sprite2D::set_mode7_top_horizon_tilt);
+	ClassDB::bind_method(D_METHOD("get_mode7_top_horizon_tilt"), &Mode7Sprite2D::get_mode7_top_horizon_tilt);
 
 	// Bottom horizon mask
 	ClassDB::bind_method(D_METHOD("set_mode7_bottom_horizon_mask_amount", "amount"), &Mode7Sprite2D::set_mode7_bottom_horizon_mask_amount);
 	ClassDB::bind_method(D_METHOD("get_mode7_bottom_horizon_mask_amount"), &Mode7Sprite2D::get_mode7_bottom_horizon_mask_amount);
-	ClassDB::bind_method(D_METHOD("set_mode7_bottom_horizon_mask_tilt", "radians"), &Mode7Sprite2D::set_mode7_bottom_horizon_mask_tilt);
-	ClassDB::bind_method(D_METHOD("get_mode7_bottom_horizon_mask_tilt"), &Mode7Sprite2D::get_mode7_bottom_horizon_mask_tilt);
+	ClassDB::bind_method(D_METHOD("set_mode7_bottom_horizon_tilt", "degrees"), &Mode7Sprite2D::set_mode7_bottom_horizon_tilt);
+	ClassDB::bind_method(D_METHOD("get_mode7_bottom_horizon_tilt"), &Mode7Sprite2D::get_mode7_bottom_horizon_tilt);
 
-	// Follow horizon tilts
-	ClassDB::bind_method(D_METHOD("set_mode7_follow_horizon_tilts", "enabled"), &Mode7Sprite2D::set_mode7_follow_horizon_tilts);
-	ClassDB::bind_method(D_METHOD("is_mode7_follow_horizon_tilts"), &Mode7Sprite2D::is_mode7_follow_horizon_tilts);
+	// Properties (exposed in the Inspector) -----------------------------------
 
-	// -------------------------------------------------------------------------------------------------------------------------------------------------
+	// Global (un-grouped)
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_enabled", PROPERTY_HINT_GROUP_ENABLE), "set_mode7_enabled", "is_mode7_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "mode7_scanline_overrides",
+						 PROPERTY_HINT_ARRAY_TYPE, "Mode7ScanlineOverride"),
+			"set_mode7_scanline_overrides", "get_mode7_scanline_overrides");
 
-	ADD_GROUP("Mode 7", "mode7_");
+	// Global Parameters group
+	ADD_GROUP("Global Parameters", "mode7_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_tiling"), "set_mode7_tiling", "is_mode7_tiling");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_global_rotation",
-							 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
+						 PROPERTY_HINT_RANGE, "-360,360,0.1"),
 			"set_mode7_global_rotation", "get_mode7_global_rotation");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "mode7_global_pivot"),
 			"set_mode7_global_pivot", "get_mode7_global_pivot");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "mode7_global_offset"),
+			"set_mode7_global_offset", "get_mode7_global_offset");
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "mode7_region_follow_target",
-				PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Node2D"),
+						 PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Node2D"),
 			"set_mode7_region_follow_target", "get_mode7_region_follow_target");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_top_horizon_mask_amount",
-							 PROPERTY_HINT_RANGE, "0,1,0.001"),
-			"set_mode7_top_horizon_mask_amount", "get_mode7_top_horizon_mask_amount");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_top_horizon_mask_tilt",
-							 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
-			"set_mode7_top_horizon_mask_tilt", "get_mode7_top_horizon_mask_tilt");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_bottom_horizon_mask_amount",
-							 PROPERTY_HINT_RANGE, "0,1,0.001"),
-			"set_mode7_bottom_horizon_mask_amount", "get_mode7_bottom_horizon_mask_amount");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_bottom_horizon_mask_tilt",
-					 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
-		"set_mode7_bottom_horizon_mask_tilt", "get_mode7_bottom_horizon_mask_tilt");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_follow_horizon_tilts"),
-		"set_mode7_follow_horizon_tilts", "is_mode7_follow_horizon_tilts");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_override_region_aspect"),
+			"set_mode7_override_region_aspect", "is_mode7_override_region_aspect");
 
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_enabled", PROPERTY_HINT_GROUP_ENABLE), "set_mode7_enabled", "is_mode7_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "mode7_scanline_overrides",
-							 PROPERTY_HINT_ARRAY_TYPE, "Mode7ScanlineOverride"),
-			"set_mode7_scanline_overrides", "get_mode7_scanline_overrides");
+	// Horizon group
+	ADD_GROUP("Horizon", "mode7_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_top_horizon_mask_amount",
+						 PROPERTY_HINT_RANGE, "0,1,0.001"),
+			"set_mode7_top_horizon_mask_amount", "get_mode7_top_horizon_mask_amount");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_top_horizon_tilt",
+						 PROPERTY_HINT_RANGE, "-360,360,0.1"),
+			"set_mode7_top_horizon_tilt", "get_mode7_top_horizon_tilt");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_bottom_horizon_mask_amount",
+						 PROPERTY_HINT_RANGE, "0,1,0.001"),
+			"set_mode7_bottom_horizon_mask_amount", "get_mode7_bottom_horizon_mask_amount");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_bottom_horizon_tilt",
+						 PROPERTY_HINT_RANGE, "-360,360,0.1"),
+			"set_mode7_bottom_horizon_tilt", "get_mode7_bottom_horizon_tilt");
 }
 
 Mode7Sprite2D::Mode7Sprite2D() {

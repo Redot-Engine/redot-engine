@@ -32,6 +32,24 @@
 
 #pragma once
 
+/**
+ * @file mode7_scanline_override.h
+ *
+ * This class is a companion to mode7_sprite_2d.h
+ * One or more instances are intended to be used in an array in the Inspector.
+ * As the Super Nintendo was able to have a different transformation each scanline,
+ * it essentially manipulated each one when doing effects such as projections.
+ *
+ * The intent of this is to bring a more modern/intuitive tool to produce that effect.
+ * Using 2 Mode7ScanlineOverride objects in the array on the Mode7Sprite2D, interpolation
+ * can be set to Lerp or Projection.  Projection is designed around 2.
+ * Lerp will interpolate all of the values in between however many of these objects are
+ * added to the array.
+ *
+ * The Mode7Sprite2D will always start with just one Mode7ScanlineOverride,
+ * which can be used for a straight-up affine transformation.
+ */
+
 #include "core/io/resource.h"
 #include "core/variant/binder_common.h"
 
@@ -40,49 +58,67 @@ class Mode7ScanlineOverride : public Resource {
 
 public:
 	enum InterpolationMode {
-		INTERPOLATION_NONE, // Nearest-neighbor: snap to this entry's transform for its UV band.
-		INTERPOLATION_LERP, // Linear interpolation between adjacent entries in the override array.
-		INTERPOLATION_PROJECTION // Perspective projection via per-scanline inverse-depth interpolation.
-								 // Uses entry[0] as top/horizon and entry[last] as bottom/close anchor.
+		INTERPOLATION_NONE, ///< Nearest-neighbor: snap to this entry's transform for its UV band.
+		INTERPOLATION_LERP, ///< Linear interpolation between adjacent entries in the override array.
+		/// Perspective projection via per-scanline inverse-depth interpolation. Uses the first entry as top/horizon and the last as bottom/close anchor.
+		/// TLDR - use this with 2 Mode7ScanlineOverrides.
+		INTERPOLATION_PROJECTION
 	};
 
 private:
-	// Canonical storage. columns[0] and columns[1] are the 2x2 affine matrix
-	// (rotation/scale/skew); columns[2] is the translation offset.
+	/// columns[0] and columns[1] are the 2x2 affine matrix
+	/// (rotation/scale/skew); columns[2] is the translation offset.
 	Transform2D transform;
 
-	// Vanishing point around which the matrix is applied.
 	Vector2 pivot = Vector2(0.5f, 0.5f);
-
 	InterpolationMode interpolation = INTERPOLATION_NONE;
+
+	/// Exposes color/alpha/intensity (and therefore bloom) as a sort of bonus,
+	/// which will be interpolated between multiple Mode7ScanlineOverride objects in
+	/// Lerp or Projection mode, along with the transform parameters.
+	/// In Projection mode, this property is still just lerped.
+	Color modulate = Color(1.0f, 1.0f, 1.0f, 1.0f);
 
 protected:
 	static void _bind_methods();
+	void _validate_property(PropertyInfo &p_property) const;
 
 public:
-	// ── Raw matrix access ────────────────────────────────────────────────────
+	/// @name 2x2 affine matrix
+	/// @{
 	void set_transform(const Transform2D &p_transform);
 	Transform2D get_transform() const;
+	/// @}
 
-	// ── Decomposed convenience properties ────────────────────────────────────
-	// All three read/write through `transform` so the matrix stays canonical.
-	// Exposing all three (rotation + scale + skew) makes the round-trip exact.
-	void set_rotation(real_t p_radians);
+	/// @name Helper Properties (Intuitive parameters that handle affine matrix updates)
+	/// @{
+	void set_rotation(real_t p_degrees);
 	real_t get_rotation() const;
 
 	void set_scale(const Vector2 &p_scale);
 	Vector2 get_scale() const;
 
-	void set_skew(real_t p_radians);
+	void set_skew(real_t p_degrees);
 	real_t get_skew() const;
+	/// @}
 
-	// ── Pivot ────────────────────────────────────────────────────────────────
+	/// @name Pivot
+	/// @{
 	void set_pivot(const Vector2 &p_pivot);
 	Vector2 get_pivot() const;
+	/// @}
 
-	// ── Interpolation mode ───────────────────────────────────────────────────
+	/// @name Interpolation Mode
+	/// @{
 	void set_interpolation(InterpolationMode p_mode);
 	InterpolationMode get_interpolation() const;
+	/// @}
+
+	/// @name Modulate
+	/// @{
+	void set_modulate(const Color &p_color);
+	Color get_modulate() const;
+	/// @}
 };
 
 VARIANT_ENUM_CAST(Mode7ScanlineOverride::InterpolationMode);
