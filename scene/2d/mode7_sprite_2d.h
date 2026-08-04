@@ -50,7 +50,7 @@ class Mode7Sprite2D : public Sprite2D {
 	/// @name Mode 7
 	/// @{
 	bool mode7_enabled = false;
-	TypedArray<Mode7ScanlineOverride> mode7_scanline_overrides; // Array of Transform2D, one per output row (UV.y band)
+	TypedArray<Mode7ScanlineOverride> mode7_scanline_overrides; ///< Array of Transform2D, one per output row (UV.y band)
 
 	Ref<ShaderMaterial> _mode7_material;
 	Ref<ImageTexture> _mode7_scanline_tex;
@@ -67,13 +67,25 @@ class Mode7Sprite2D : public Sprite2D {
 
 	// Horizon masks: cull a region at the top or bottom of the sprite with optional tilt.
 	// Each acts independently — both can be active at the same time.
-	real_t mode7_top_horizon_mask_amount = 0.0f; // 0..1 fraction to make transparent (from top down)
-	real_t mode7_top_horizon_mask_tilt = 0.0f; // radians — rotates the culling line
-	real_t mode7_bottom_horizon_mask_amount = 0.0f; // 0..1 fraction to make transparent (from bottom up)
-	real_t mode7_bottom_horizon_mask_tilt = 0.0f; // radians — rotates the culling line
+	real_t mode7_top_horizon_mask_amount = 0.0f; ///< 0..1 fraction to make transparent (from top down)
+	real_t mode7_top_horizon_mask_tilt = 0.0f; ///< radians — rotates the culling line
+	real_t mode7_bottom_horizon_mask_amount = 0.0f; ///< 0..1 fraction to make transparent (from bottom up)
+	real_t mode7_bottom_horizon_mask_tilt = 0.0f; ///< radians — rotates the culling line
+
+	// When true, both horizon mask tilts are automatically synced to match
+	// mode7_global_rotation whenever it changes, preserving the visual effect.
+	bool mode7_follow_horizon_tilts = false;
+
+	// Region follow target: shift region_rect each physics frame so the Mode 7 viewport
+	// "follows" another Node2D while preserving its size/aspect/etc.
+	NodePath mode7_region_follow_target;
+	Node *mode7_follow_node           = nullptr;
+	bool    mode7_follow_initialized   = false;
+	Vector2 mode7_follow_last_global_pos;
 	/// @}
 
 protected:
+	void _notification(int p_what);
 	static void _bind_methods();
 
 public:
@@ -92,7 +104,13 @@ public:
 	real_t get_mode7_global_rotation() const;
 	void set_mode7_global_pivot(const Vector2 &p_pivot);
 	Vector2 get_mode7_global_pivot() const;
+
+	/// @name Region follow target
+	/// @{
+	void     set_mode7_region_follow_target(const NodePath &p_path);
+	NodePath  get_mode7_region_follow_target() const;
 	/// @}
+
 	/// @name Top horizon mask (culls from top down)
 	/// @{
 	void set_mode7_top_horizon_mask_amount(real_t p_amount);
@@ -106,6 +124,12 @@ public:
 	real_t get_mode7_bottom_horizon_mask_amount() const;
 	void set_mode7_bottom_horizon_mask_tilt(real_t p_radians);
 	real_t get_mode7_bottom_horizon_mask_tilt() const;
+	/// @}
+
+	/// @name Horizon mask follow
+	/// @{
+	void set_mode7_follow_horizon_tilts(bool p_enabled);
+	bool is_mode7_follow_horizon_tilts() const;
 	/// @}
 
 	Mode7Sprite2D();

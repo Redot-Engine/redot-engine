@@ -45,6 +45,7 @@
 #include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
 #include "scene/resources/shader.h"
+#include "scene/main/node.h"
 
 // Embedded Mode 7 canvas_item shader.
 // The scanline table is a 2-wide, N-tall RGBAF texture:
@@ -333,6 +334,13 @@ void Mode7Sprite2D::set_mode7_global_rotation(real_t p_radians) {
 	mode7_global_rotation = p_radians;
 	if (mode7_enabled && _mode7_material.is_valid()) {
 		_mode7_material->set_shader_parameter("mode7_global_rotation", p_radians);
+		// When follow is enabled, sync both horizon mask tilts to the global rotation.
+		if (mode7_follow_horizon_tilts) {
+			mode7_top_horizon_mask_tilt = p_radians;
+			mode7_bottom_horizon_mask_tilt = p_radians;
+			_mode7_material->set_shader_parameter("mode7_top_horizon_mask_tilt", p_radians);
+			_mode7_material->set_shader_parameter("mode7_bottom_horizon_mask_tilt", p_radians);
+		}
 		queue_redraw();
 	}
 }
@@ -420,6 +428,29 @@ real_t Mode7Sprite2D::get_mode7_bottom_horizon_mask_tilt() const {
 	return mode7_bottom_horizon_mask_tilt;
 }
 
+// ── Follow horizon tilts ───────────────────────────────────────────
+
+void Mode7Sprite2D::set_mode7_follow_horizon_tilts(bool p_enabled) {
+	if (mode7_follow_horizon_tilts == p_enabled) {
+		return;
+	}
+	mode7_follow_horizon_tilts = p_enabled;
+	// When enabling, immediately sync tilts to the current global rotation.
+	if (mode7_follow_horizon_tilts) {
+		mode7_top_horizon_mask_tilt = mode7_global_rotation;
+		mode7_bottom_horizon_mask_tilt = mode7_global_rotation;
+		if (mode7_enabled && _mode7_material.is_valid()) {
+			_mode7_material->set_shader_parameter("mode7_top_horizon_mask_tilt", mode7_global_rotation);
+			_mode7_material->set_shader_parameter("mode7_bottom_horizon_mask_tilt", mode7_global_rotation);
+		}
+	}
+	queue_redraw();
+}
+
+bool Mode7Sprite2D::is_mode7_follow_horizon_tilts() const {
+	return mode7_follow_horizon_tilts;
+}
+
 void Mode7Sprite2D::set_mode7_enabled(bool p_enabled) {
 	if (mode7_enabled == p_enabled) {
 		return;
@@ -495,6 +526,100 @@ TypedArray<Mode7ScanlineOverride> Mode7Sprite2D::get_mode7_scanline_overrides() 
 	return mode7_scanline_overrides;
 }
 
+// ── Region follow target ───────────────────────────────────────────────
+
+void Mode7Sprite2D::_notification(int p_what) {
+	Sprite2D::_notification(p_what);
+
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			mode7_follow_node = nullptr;
+			if (!mode7_region_follow_target.is_empty()) {
+				Node *target = get_node_or_null(mode7_region_follow_target);
+				if (target) {
+					mode7_follow_node = target;
+					mode7_follow_initialized = false;
+					set_physics_process(true);
+				} else {
+					set_physics_process(false);
+				}
+			} else {
+				set_physics_process(false);
+			}
+		} break;
+
+		case NOTIFICATION_EXIT_TREE: {
+			mode7_follow_node = nullptr;
+			mode7_follow_initialized = false;
+			set_physics_process(false);
+		} break;
+
+		case NOTIFICATION_PHYSICS_PROCESS: {
+			if (!mode7_follow_node) {
+				return;
+			}
+
+			Node2D *target_2d = Object::cast_to<Node2D>(mode7_follow_node);
+			if (!target_2d || !is_region_enabled()) {
+				set_physics_process(false);
+				mode7_follow_node = nullptr;
+				return;
+			}
+
+			Vector2 target_global_pos = target_2d->get_global_position();
+
+			if (!mode7_follow_initialized) {
+				mode7_follow_last_global_pos = target_global_pos;
+				mode7_follow_initialized = true;
+				return;
+			}
+
+			Vector2 delta_global = target_global_pos - mode7_follow_last_global_pos;
+			mode7_follow_last_global_pos = target_global_pos;
+
+			if (delta_global != Vector2()) {
+				Size2 sprite_scale = get_scale();
+				Vector2 delta_region;
+				delta_region.x = delta_global.x / MAX(Math::abs(sprite_scale.x), 0.001f);
+				delta_region.y = delta_global.y / MAX(Math::abs(sprite_scale.y), 0.001f);
+
+				Rect2 rr = get_region_rect();
+				rr.position += delta_region;
+				set_region_rect(rr);
+			}
+		} break;
+	}
+}
+
+
+void Mode7Sprite2D::set_mode7_region_follow_target(const NodePath &p_path) {
+	if (mode7_region_follow_target == p_path) {
+		return;
+	}
+	mode7_region_follow_target = p_path;
+
+	if (is_inside_tree()) {
+		mode7_follow_node = nullptr;
+		mode7_follow_initialized = false;
+		if (!p_path.is_empty()) {
+			Node *target = get_node_or_null(p_path);
+			if (target) {
+				mode7_follow_node = target;
+				set_physics_process(true);
+			} else {
+				set_physics_process(false);
+			}
+		} else {
+			mode7_follow_node = nullptr;
+			set_physics_process(false);
+		}
+	}
+}
+
+NodePath Mode7Sprite2D::get_mode7_region_follow_target() const {
+	return mode7_region_follow_target;
+}
+
 void Mode7Sprite2D::_bind_methods() {
 	// Mode 7  -----------------------------------------------------------------------------------------------------------------------------------------
 	ClassDB::bind_method(D_METHOD("set_mode7_enabled", "enabled"), &Mode7Sprite2D::set_mode7_enabled);
@@ -511,6 +636,10 @@ void Mode7Sprite2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_mode7_global_pivot", "pivot"), &Mode7Sprite2D::set_mode7_global_pivot);
 	ClassDB::bind_method(D_METHOD("get_mode7_global_pivot"), &Mode7Sprite2D::get_mode7_global_pivot);
 
+	// Region follow target
+	ClassDB::bind_method(D_METHOD("set_mode7_region_follow_target", "path"), &Mode7Sprite2D::set_mode7_region_follow_target);
+	ClassDB::bind_method(D_METHOD("get_mode7_region_follow_target"), &Mode7Sprite2D::get_mode7_region_follow_target);
+
 	// Top horizon mask
 	ClassDB::bind_method(D_METHOD("set_mode7_top_horizon_mask_amount", "amount"), &Mode7Sprite2D::set_mode7_top_horizon_mask_amount);
 	ClassDB::bind_method(D_METHOD("get_mode7_top_horizon_mask_amount"), &Mode7Sprite2D::get_mode7_top_horizon_mask_amount);
@@ -523,31 +652,40 @@ void Mode7Sprite2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_mode7_bottom_horizon_mask_tilt", "radians"), &Mode7Sprite2D::set_mode7_bottom_horizon_mask_tilt);
 	ClassDB::bind_method(D_METHOD("get_mode7_bottom_horizon_mask_tilt"), &Mode7Sprite2D::get_mode7_bottom_horizon_mask_tilt);
 
+	// Follow horizon tilts
+	ClassDB::bind_method(D_METHOD("set_mode7_follow_horizon_tilts", "enabled"), &Mode7Sprite2D::set_mode7_follow_horizon_tilts);
+	ClassDB::bind_method(D_METHOD("is_mode7_follow_horizon_tilts"), &Mode7Sprite2D::is_mode7_follow_horizon_tilts);
+
 	// -------------------------------------------------------------------------------------------------------------------------------------------------
 
 	ADD_GROUP("Mode 7", "mode7_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_tiling"), "set_mode7_tiling", "is_mode7_tiling");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_global_rotation",
-						 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
+							 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
 			"set_mode7_global_rotation", "get_mode7_global_rotation");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "mode7_global_pivot"),
 			"set_mode7_global_pivot", "get_mode7_global_pivot");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "mode7_region_follow_target",
+				PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Node2D"),
+			"set_mode7_region_follow_target", "get_mode7_region_follow_target");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_top_horizon_mask_amount",
-						 PROPERTY_HINT_RANGE, "0,1,0.001"),
+							 PROPERTY_HINT_RANGE, "0,1,0.001"),
 			"set_mode7_top_horizon_mask_amount", "get_mode7_top_horizon_mask_amount");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_top_horizon_mask_tilt",
-						 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
+							 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
 			"set_mode7_top_horizon_mask_tilt", "get_mode7_top_horizon_mask_tilt");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_bottom_horizon_mask_amount",
-						 PROPERTY_HINT_RANGE, "0,1,0.001"),
+							 PROPERTY_HINT_RANGE, "0,1,0.001"),
 			"set_mode7_bottom_horizon_mask_amount", "get_mode7_bottom_horizon_mask_amount");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_bottom_horizon_mask_tilt",
-						 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
-			"set_mode7_bottom_horizon_mask_tilt", "get_mode7_bottom_horizon_mask_tilt");
+					 PROPERTY_HINT_RANGE, "-360,360,0.1,radians_as_degrees"),
+		"set_mode7_bottom_horizon_mask_tilt", "get_mode7_bottom_horizon_mask_tilt");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_follow_horizon_tilts"),
+		"set_mode7_follow_horizon_tilts", "is_mode7_follow_horizon_tilts");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_enabled", PROPERTY_HINT_GROUP_ENABLE), "set_mode7_enabled", "is_mode7_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "mode7_scanline_overrides",
-						 PROPERTY_HINT_ARRAY_TYPE, "Mode7ScanlineOverride"),
+							 PROPERTY_HINT_ARRAY_TYPE, "Mode7ScanlineOverride"),
 			"set_mode7_scanline_overrides", "get_mode7_scanline_overrides");
 }
 
