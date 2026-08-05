@@ -39,6 +39,7 @@
  */
 
 #include "core/object/script_language.h"
+#include "core/typedefs.h"
 #include "core/variant/variant.h"
 
 struct ContainerType {
@@ -55,7 +56,7 @@ struct ContainerTypeValidate {
 
 private:
 	/// Coerces String and StringName into each other and int into float when needed.
-	_FORCE_INLINE_ bool _internal_validate(Variant &inout_variant, const char *p_operation, bool p_output_errors) const {
+	_FORCE_INLINE_ bool _internal_validate(Variant &inout_variant, const char *p_operation, bool p_output_errors, bool p_allow_freed = false) const {
 		if (type == Variant::NIL) {
 			return true;
 		}
@@ -86,10 +87,10 @@ private:
 			return true;
 		}
 
-		return _internal_validate_object(inout_variant, p_operation, p_output_errors);
+		return _internal_validate_object(inout_variant, p_operation, p_output_errors, p_allow_freed);
 	}
 
-	_FORCE_INLINE_ bool _internal_validate_object(const Variant &p_variant, const char *p_operation, bool p_output_errors) const {
+	_FORCE_INLINE_ bool _internal_validate_object(const Variant &p_variant, const char *p_operation, bool p_output_errors, bool p_allow_freed = false) const {
 		ERR_FAIL_COND_V(p_variant.get_type() != Variant::OBJECT, false);
 
 #ifdef DEBUG_ENABLED
@@ -99,6 +100,9 @@ private:
 		}
 		Object *object = ObjectDB::get_instance(object_id);
 		if (object == nullptr) {
+			if (p_allow_freed) {
+				return true;
+			}
 			if (p_output_errors) {
 				ERR_FAIL_V_MSG(false, vformat("Attempted to %s an invalid (previously freed?) object instance into a '%s'.", String(p_operation), String(where)));
 			} else {
@@ -152,6 +156,10 @@ private:
 public:
 	_FORCE_INLINE_ bool validate(Variant &inout_variant, const char *p_operation = "use") const {
 		return _internal_validate(inout_variant, p_operation, true);
+	}
+
+	_FORCE_INLINE_ bool validate_for_lookup(Variant &inout_variant, const char *p_operation = "use") const {
+		return _internal_validate(inout_variant, p_operation, true, true);
 	}
 
 	_FORCE_INLINE_ bool validate_object(const Variant &p_variant, const char *p_operation = "use") const {
