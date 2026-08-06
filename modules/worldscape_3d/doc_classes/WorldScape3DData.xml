@@ -1,0 +1,645 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="WorldScape3DData" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/redot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		WorldScape3D divides all data into regions which fit on a grid in the world. These coordinates are called region locations. The map data are stored in instances of [WorldScape3DRegion], which are saved to individual files. This class manages region loading, unloading, data retrieval and manipulation.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_region">
+			<return type="int" enum="Error" />
+			<param index="0" name="region" type="WorldScape3DRegion" />
+			<param index="1" name="update" type="bool" default="true" />
+			<description>
+				Adds a region for sculpting and painting.
+				The region should already be configured with the desired location and maps before sending to this function.
+				Upon saving, this region will be written to a data file stored in [member WorldScape3D.data_directory].
+				- update - regenerates the texture arrays if true. Set to false if bulk adding many regions, then true on the last one or use [method update_maps].
+			</description>
+		</method>
+		<method name="add_region_blank">
+			<return type="WorldScape3DRegion" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<param index="1" name="update" type="bool" default="true" />
+			<description>
+				Creates and adds a blank region at the specified location. See [method add_region].
+			</description>
+		</method>
+		<method name="add_region_blankp">
+			<return type="WorldScape3DRegion" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="update" type="bool" default="true" />
+			<description>
+				Creates and adds a blank region at a region location encompassing the specified global position. See [method add_region].
+			</description>
+		</method>
+		<method name="calc_height_range">
+			<return type="void" />
+			<param index="0" name="recursive" type="bool" default="false" />
+			<description>
+				Recalculates the master height range for the whole terrain by summing the height ranges of all active regions.
+				Recursive mode does the same, but has each region recalculate heights from each heightmap pixel. See [method WorldScape3DRegion.calc_height_range].
+			</description>
+		</method>
+		<method name="change_region_size">
+			<return type="void" />
+			<param index="0" name="region_size" type="int" />
+			<description>
+				Reslices terrain data to fit the new region size. This is a destructive process for which there is no undo. However Redot does make an undo entry, which will reslice in reverse. Files on disk are not added or removed until the scene is saved.
+			</description>
+		</method>
+		<method name="do_for_regions">
+			<return type="void" />
+			<param index="0" name="area" type="Rect2i" />
+			<param index="1" name="callback" type="Callable" />
+			<description>
+				Calls the callback function for every region within the given area. If using vertex_spacing, area values should be descaled.
+				The callable receives: source WorldScape3DRegion, source Rect2i, dest Rect2i, (bindings)
+				You may wish to append .bind() to the callback to pass along variables. For instance internally this function is called when changing region size. We bind the destination WorldScape3DRegion, then use do_for_regions to copy segments of source regions to segments of destination regions. See the code for change_region_size() for more.
+			</description>
+		</method>
+		<method name="export_image" qualifiers="const">
+			<return type="int" enum="Error" />
+			<param index="0" name="file_name" type="String" />
+			<param index="1" name="map_type" type="int" enum="WorldScape3DRegion.MapType" />
+			<description>
+				Exports the specified map type as one of r16/raw, exr, jpg, png, webp, res, tres.
+				R16 or exr are recommended for roundtrip external editing.
+				R16 can be edited by Krita, however you must know the dimensions and min/max before reimporting. This information is printed to the console.
+				Res/tres stores in Redot's native data format.
+			</description>
+		</method>
+		<method name="get_color" qualifiers="const">
+			<return type="Color" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the associated pixel on the color map at the requested position.
+				Returns [code skip-lint]Color(NAN, NAN, NAN, NAN)[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_color_maps_rid" qualifiers="const">
+			<return type="RID" />
+			<description>
+				Returns the resource ID of the generated height map Texture Array sent to the shader. You can use this RID with the RenderingServer to set it as a shader parameter for a sampler2DArray uniform in your own shader. See [url=https://terrain3d.readthedocs.io/en/stable/docs/tips.html#using-the-generated-height-map-in-other-shaders]Tips[/url] for an example.
+			</description>
+		</method>
+		<method name="get_control" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the associated pixel on the control map at the requested position.
+				Returns [code skip-lint]4,294,967,295[/code] aka [code skip-lint]UINT32_MAX[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_control_angle" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the angle, aka uv rotation, on the control map at the requested position. Values are fixed to 22.5 degree intervals, for a maximum of 16 angles. 360 / 16 = 22.5.
+				Returns [code skip-lint]NAN[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_control_auto" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns whether the autoshader is enabled on the control map at the requested position.
+				Returns [code skip-lint]false[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_control_base_id" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the base texture ID on the control map at the requested position. Values are 0 - 31, which matches the ID of the texture asset in the asset dock.
+				Returns [code skip-lint]4,294,967,295[/code] aka [code skip-lint]UINT32_MAX[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_control_blend" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the blend value between the base texture ID and the overlay texture ID. The value is clamped between 0.0 - 1.0 where 0.0 shows only the base texture, and 1.0 shows only the overlay texture.
+				Returns [code skip-lint]NAN[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_control_hole" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns whether there is a hole on the control map at the requested position.
+				Returns [code skip-lint]false[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_control_maps_rid" qualifiers="const">
+			<return type="RID" />
+			<description>
+				Returns the resource ID of the generated control map Texture Array sent to the shader. You can use this RID with the RenderingServer to set it as a shader parameter for a sampler2DArray uniform in your own shader. See [url=https://terrain3d.readthedocs.io/en/stable/docs/tips.html#using-the-generated-height-map-in-other-shaders]Tips[/url] for an example.
+			</description>
+		</method>
+		<method name="get_control_navigation" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns whether navigation is enabled on the control map at the requested position.
+				Returns [code skip-lint]false[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_control_overlay_id" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the overlay texture ID on the control map at the requested position. Values are 0 - 31, which matches the ID of the texture asset in the asset dock.
+				Returns [code skip-lint]4,294,967,295[/code] aka [code skip-lint]UINT32_MAX[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_control_scale" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the uv scale on the control map at the requested position. The value is rounded to the nearest 20% difference from 100%, ranging between -60% to +80%. Eg. +20% or -40%.
+				Returns [code skip-lint]NAN[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_height" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the height at the requested position. If the position is close to a vertex, the pixel height on the heightmap is returned. Otherwise the value is interpolated from the 4 vertices surrounding the position.
+				Returns [code skip-lint]NAN[/code] if the requested position is a hole or outside of defined regions.
+			</description>
+		</method>
+		<method name="get_height_maps_rid" qualifiers="const">
+			<return type="RID" />
+			<description>
+				Returns the resource ID of the generated height map texture array sent to the shader. You can use this RID with the RenderingServer to set it as a shader parameter for a sampler2DArray uniform in your own shader. See [url=https://terrain3d.readthedocs.io/en/stable/docs/tips.html#using-the-generated-height-map-in-other-shaders]Tips[/url] for an example.
+			</description>
+		</method>
+		<method name="get_height_range" qualifiers="const">
+			<return type="Vector2" />
+			<description>
+				Returns the highest and lowest heights for the sculpted terrain used to set the world AABB. See [method calc_height_range].
+				Any [member WorldScape3DMaterial.world_background] used that extends the mesh outside of this range will not change this variable. You need to set [member WorldScape3D.cull_margin] or the renderer will clip meshes.
+			</description>
+		</method>
+		<method name="get_maps" qualifiers="const">
+			<return type="Image[]" />
+			<param index="0" name="map_type" type="int" enum="WorldScape3DRegion.MapType" />
+			<description>
+				Returns an Array of Images from all regions of the specified map type.
+			</description>
+		</method>
+		<method name="get_mesh_vertex" qualifiers="const">
+			<return type="Vector3" />
+			<param index="0" name="lod" type="int" />
+			<param index="1" name="filter" type="int" enum="WorldScape3DData.HeightFilter" />
+			<param index="2" name="global_position" type="Vector3" />
+			<description>
+				Returns the position of a terrain vertex at a certain LOD. If the position is outside of defined regions or there is a hole, it returns [code skip-lint]NAN[/code] in the vector's Y coordinate.
+				[code skip-lint]lod[/code] - Determines how many heights around the given global position will be sampled. Range 0 - 8.
+				[code skip-lint]filter[/code] - Specifies how samples are filtered. See [enum HeightFilter].
+				[code skip-lint]global_position[/code] - X and Z coordinates of the vertex. Heights will be sampled around these coordinates.
+			</description>
+		</method>
+		<method name="get_normal" qualifiers="const">
+			<return type="Vector3" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the terrain normal at the specified position. This function uses [method get_height].
+				Returns [code skip-lint]Vector3(NAN, NAN, NAN)[/code] if the requested position is a hole or outside of defined regions.
+			</description>
+		</method>
+		<method name="get_pixel" qualifiers="const">
+			<return type="Color" />
+			<param index="0" name="map_type" type="int" enum="WorldScape3DRegion.MapType" />
+			<param index="1" name="global_position" type="Vector3" />
+			<description>
+				Returns the pixel for the map type associated with the specified position.
+				Returns [code skip-lint]Color(NAN, NAN, NAN, NAN)[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_region" qualifiers="const">
+			<return type="WorldScape3DRegion" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<description>
+				Return the [WorldScape3DRegion] at the specified location. This will return inactive regions marked for deletion. Check with [member WorldScape3DRegion.deleted].
+			</description>
+		</method>
+		<method name="get_region_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of active regions; those not marked for deletion.
+			</description>
+		</method>
+		<method name="get_region_id" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<description>
+				Returns -1 if no region or out of bounds at the given location, otherwise returns the current region id.
+				The region_id is the index into the TextureArrays sent to the shader, and can change at any time. Gamedevs should generally index regions by location. However, this function is useful to determine if the location is a valid region.
+			</description>
+		</method>
+		<method name="get_region_idp" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the region id at a global position. See [method get_region_id].
+			</description>
+		</method>
+		<method name="get_region_location" qualifiers="const">
+			<return type="Vector2i" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the calculated region location for the given global position. This is just a calculation and does no bounds checking or verification that a region exists. See [method get_region_map_index] for bounds checking, or [method has_region] for checking existence.
+			</description>
+		</method>
+		<method name="get_region_map" qualifiers="const">
+			<return type="PackedInt32Array" />
+			<description>
+				Returns a fully populated 32 x 32 array. The array location contains the region id + 1, or 0, which means no region.
+				See [method get_region_map_index].
+			</description>
+		</method>
+		<method name="get_region_map_index" qualifiers="static">
+			<return type="int" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<description>
+				Given a region location, returns the index into the region map array. See [method get_region_map].
+				You can use this function to quickly determine if a location is within the greater world bounds (-16,-16) to (15, 15). It returns -1 if not.
+			</description>
+		</method>
+		<method name="get_regionp" qualifiers="const">
+			<return type="WorldScape3DRegion" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the region at the specified global position. This will return inactive regions marked for deletion. Check with [member WorldScape3DRegion.deleted].
+			</description>
+		</method>
+		<method name="get_regions_active" qualifiers="const">
+			<return type="WorldScape3DRegion[]" />
+			<param index="0" name="copy" type="bool" default="false" />
+			<param index="1" name="deep" type="bool" default="false" />
+			<description>
+				Returns an array of active regions not marked for deletion. Each region knows its own location. See [member WorldScape3DRegion.location].
+				- copy - returns a shallow copy of the regions; region map references are copied.
+				- deep - returns a deep copy of the regions; region maps are full duplicates.
+			</description>
+		</method>
+		<method name="get_regions_all" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+				Returns all regions in a dictionary indexed by region location. Some regions may be marked for deletion.
+			</description>
+		</method>
+		<method name="get_roughness" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns the roughness modifier (wetness) on the color map alpha channel associated with the specified position.
+				Returns [code skip-lint]Color(NAN, NAN, NAN, NAN)[/code] if the position is outside of defined regions.
+			</description>
+		</method>
+		<method name="get_texture_id" qualifiers="const">
+			<return type="Vector3" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns [code skip-lint]Vector3(base texture id, overlay id, blend value)[/code].
+				Returns [code skip-lint]Vector3(NAN, NAN, NAN)[/code] if the position is a hole or outside of defined regions.
+				This is often used for playing sounds on footsteps. It's up to the gamedev to determine which is visually apparent based on shader settings.
+				Due to blending, it won't be pixel perfect. Try having your player controller print this value while walking around to see how the blending values look. Perhaps you'll find that the overlay texture is visible starting at a blend value of .3 to .5, otherwise the base is visible. You can also observe the control blend debug view with [member WorldScape3DMaterial.show_control_blend].
+				Observing how this is done in The Witcher 3, there are only about 6 sounds used (snow, foliage, dirt, gravel, rock, wood), and except for wood, they are not pixel perfect. Wood is easy to do by detecting if the player is walking on wood meshes. The other 5 sounds are played when the player is in an area where the textures are blending. So it might play rock while over a dirt area. This shows pixel perfect accuracy is not important. It will still provide a seamless audio visual experience.
+			</description>
+		</method>
+		<method name="has_region" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<description>
+				Returns true if the specified region location has an active region.
+			</description>
+		</method>
+		<method name="has_regionp" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="global_position" type="Vector3" />
+			<description>
+				Returns true if the specified global position has an active region.
+			</description>
+		</method>
+		<method name="import_images">
+			<return type="void" />
+			<param index="0" name="images" type="Image[]" />
+			<param index="1" name="global_position" type="Vector3" default="Vector3(0, 0, 0)" />
+			<param index="2" name="offset" type="float" default="0.0" />
+			<param index="3" name="scale" type="float" default="1.0" />
+			<description>
+				Imports an Image set (Height, Control, Color) into this resource. It does NOT normalize values to 0-1. You must do that using get_min_max() and adjusting scale and offset.
+				[code skip-lint]images[/code] - MapType.TYPE_MAX sized array of Images for Height, Control, Color. Images can be blank or null.
+				[code skip-lint]global_position[/code] - X,0,Z position on the region map. Valid range is [member WorldScape3D.vertex_spacing] * [member WorldScape3D.region_size] * (+/-16, +/-16).
+				[code skip-lint]offset[/code] - Add this factor to all height values, can be negative.
+				[code skip-lint]scale[/code] - Scale all height values by this factor (applied after offset).
+			</description>
+		</method>
+		<method name="is_in_slope" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="slope_range" type="Vector2" />
+			<param index="2" name="invert" type="bool" default="false" />
+			<description>
+				Returns true if the slope of the terrain at the given position is within the slope range. If invert is true, it returns true if the position is outside the given range.
+			</description>
+		</method>
+		<method name="is_region_deleted" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<description>
+				Returns true if the region at the  location exists and is marked as deleted. Syntactic sugar for [member WorldScape3DRegion.deleted].
+			</description>
+		</method>
+		<method name="is_region_modified" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<description>
+				Returns true if the region at the location exists and is marked as modified. Syntactic sugar for [member WorldScape3DRegion.modified].
+			</description>
+		</method>
+		<method name="layered_to_image" qualifiers="const">
+			<return type="Image" />
+			<param index="0" name="map_type" type="int" enum="WorldScape3DRegion.MapType" />
+			<description>
+				Returns an Image of the given map type that contains all regions in one large image. If the world has multiple islands, this function will return an image large enough to encompass all used regions, with black areas in between the islands.
+			</description>
+		</method>
+		<method name="load_directory">
+			<return type="void" />
+			<param index="0" name="directory" type="String" />
+			<description>
+				Loads all of the WorldScape3DRegion files found in the specified directory. Then it rebuilds all map arrays.
+			</description>
+		</method>
+		<method name="load_region">
+			<return type="void" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<param index="1" name="directory" type="String" />
+			<param index="2" name="update" type="bool" default="true" />
+			<description>
+				Loads the specified region location file.
+				- update - rebuild maps if true.
+			</description>
+		</method>
+		<method name="remove_region">
+			<return type="void" />
+			<param index="0" name="region" type="WorldScape3DRegion" />
+			<param index="1" name="update" type="bool" default="true" />
+			<description>
+				Marks the specified region as deleted. This deactivates it so it won't render it on screen once maps are updated, unless marked not deleted. The file will be deleted from disk upon saving.
+			</description>
+		</method>
+		<method name="remove_regionl">
+			<return type="void" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<param index="1" name="update" type="bool" default="true" />
+			<description>
+				Removes the region at the specified location. See [method remove_region].
+			</description>
+		</method>
+		<method name="remove_regionp">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="update" type="bool" default="true" />
+			<description>
+				Removes the region at the specified global_position. See [method remove_region].
+			</description>
+		</method>
+		<method name="save_directory">
+			<return type="void" />
+			<param index="0" name="directory" type="String" />
+			<description>
+				This saves all active regions into the specified directory.
+			</description>
+		</method>
+		<method name="save_region">
+			<return type="void" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<param index="1" name="directory" type="String" />
+			<param index="2" name="save_16_bit" type="bool" default="false" />
+			<description>
+				Saves the specified active region to the directory. See [method WorldScape3DRegion.save].
+				- region_location - the region to save.
+				- 16_bit - converts the edited 32-bit heightmap to 16-bit. This is a lossy operation.
+			</description>
+		</method>
+		<method name="set_color">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="color" type="Color" />
+			<description>
+				Sets the color on the color map pixel associated with the specified position. See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="control" type="int" />
+			<description>
+				Sets the value on the control map pixel associated with the specified position. See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control_angle">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="degrees" type="float" />
+			<description>
+				Sets the angle, aka uv rotation, on the control map at the requested position. Values are rounded to the nearest 22.5 degree interval, for a maximum of 16 angles. 360 / 16 = 22.5.
+				See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control_auto">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="enable" type="bool" />
+			<description>
+				Sets if the material should render the autoshader or manual texturing on the control map at the requested position.
+				See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control_base_id">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="texture_id" type="int" />
+			<description>
+				Sets the base texture ID on the control map at the requested position. Values are clamped to 0 - 31, matching the ID of the texture asset in the asset dock.
+				See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control_blend">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="blend_value" type="float" />
+			<description>
+				Sets the blend value between the base texture ID, and the overlay texture ID. The value is clamped between 0.0 - 1.0 where 0.0 shows only the base texture, and 1.0 shows only the overlay texture.
+				See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control_hole">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="enable" type="bool" />
+			<description>
+				Sets if a hole should be rendered on the control map at the requested position. See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control_navigation">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="enable" type="bool" />
+			<description>
+				Sets if navigation generation is enabled on the control map at the requested position. See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control_overlay_id">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="texture_id" type="int" />
+			<description>
+				Sets the overlay texture ID on the control map at the requested position. Values are clamped to 0 - 31, matching the ID of the texture asset in the asset dock.
+				See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_control_scale">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="percentage_modifier" type="float" />
+			<description>
+				Sets the uv scale on the control map at the requested position. The value is rounded to the nearest 20% difference from 100%, ranging between -60% to +80%.
+				See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="set_height">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="height" type="float" />
+			<description>
+				Sets the height value on the heightmap pixel associated with the specified position. See [method set_pixel] for important information.
+				Unlike [method get_height], which interpolates between vertices, this function does not and will set the pixel at floored coordinates.
+			</description>
+		</method>
+		<method name="set_pixel">
+			<return type="void" />
+			<param index="0" name="map_type" type="int" enum="WorldScape3DRegion.MapType" />
+			<param index="1" name="global_position" type="Vector3" />
+			<param index="2" name="pixel" type="Color" />
+			<description>
+				Sets the pixel for the map type associated with the specified position. This method is fine for setting a few pixels, but if you wish to modify thousands of pixels quickly, you should get the region and use [method WorldScape3DRegion.get_map], then edit the images directly.
+				After setting pixels you need to call [method update_maps]. You may also need to regenerate collision if you don't have dynamic collision enabled.
+			</description>
+		</method>
+		<method name="set_region_deleted">
+			<return type="void" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<param index="1" name="deleted" type="bool" />
+			<description>
+				Marks a region as deleted. It will stop displaying when maps are updated. The file will be removed on save.
+			</description>
+		</method>
+		<method name="set_region_modified">
+			<return type="void" />
+			<param index="0" name="region_location" type="Vector2i" />
+			<param index="1" name="modified" type="bool" />
+			<description>
+				Sets the region as modified. It will be written to disk when saved. Syntactic sugar for [member WorldScape3DRegion.modified].
+			</description>
+		</method>
+		<method name="set_roughness">
+			<return type="void" />
+			<param index="0" name="global_position" type="Vector3" />
+			<param index="1" name="roughness" type="float" />
+			<description>
+				Sets the roughness modifier (wetness) on the color map alpha channel associated with the specified position. See [method set_pixel] for important information.
+			</description>
+		</method>
+		<method name="update_maps">
+			<return type="void" />
+			<param index="0" name="map_type" type="int" enum="WorldScape3DRegion.MapType" default="3" />
+			<param index="1" name="all_regions" type="bool" default="true" />
+			<param index="2" name="generate_mipmaps" type="bool" default="false" />
+			<description>
+				Regenerates the region map and the TextureArrays that combine the requested map types. This function needs to be called after editing any of the maps.
+				By default, this function rebuilds all maps for all regions.
+				- map_type - Regenerate only maps of this type.
+				- all_regions - Regenerate all regions if true, otherwise only those marked with [member WorldScape3DRegion.edited].
+				- generate_mipmaps - Regenerate mipmaps if map_type is color or all (max), for the regions specified above. This can also be done on individual regions before calling this function with [code skip-lint]region.get_color_map().generate_mipmaps()[/code].
+				For frequent editing, rather than enabling all_regions, it is more optimal to only update changed regions as follows:
+				[codeblock]
+				terrain.data.set_height(global_position, 10.0)
+				var region:WorldScape3DRegion = terrain.data.get_regionp(global_position)
+				region.set_edited(true)
+				terrain.data.update_maps(WorldScape3DRegion.TYPE_HEIGHT, false)
+				region.set_edited(false)
+				[/codeblock]
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="color_maps" type="Image[]" setter="" getter="get_color_maps" default="[]">
+			An Array[Image] containing references to all of the color maps in all regions. See [member WorldScape3DRegion.color_map].
+		</member>
+		<member name="control_maps" type="Image[]" setter="" getter="get_control_maps" default="[]">
+			An Array[Image] containing references to all of the control maps in all regions. See [member WorldScape3DRegion.control_map].
+		</member>
+		<member name="height_maps" type="Image[]" setter="" getter="get_height_maps" default="[]">
+			An Array[Image] containing references to all of the height maps in all regions. See [member WorldScape3DRegion.height_map].
+		</member>
+		<member name="region_locations" type="Vector2i[]" setter="set_region_locations" getter="get_region_locations" default="[]">
+			The array of all active region locations; those not marked for deletion.
+		</member>
+	</members>
+	<signals>
+		<signal name="color_maps_changed">
+			<description>
+				Emitted when the color maps array is regenerated.
+			</description>
+		</signal>
+		<signal name="control_maps_changed">
+			<description>
+				Emitted when the control maps array is regenerated.
+			</description>
+		</signal>
+		<signal name="height_maps_changed">
+			<description>
+				Emitted when the height maps array is regenerated.
+			</description>
+		</signal>
+		<signal name="maps_changed">
+			<description>
+				Emitted when the region map or any map array has been regenerated.
+			</description>
+		</signal>
+		<signal name="maps_edited">
+			<param index="0" name="edited_area" type="AABB" />
+			<description>
+				This signal is emitted whenever the editor is used to:
+				- add or remove a region
+				- alter a region map with a brush tool
+				- undo or redo any of the above operations
+				The parameter contains the axis-aligned bounding box of the area edited.
+			</description>
+		</signal>
+		<signal name="region_map_changed">
+			<description>
+				Emitted when the region map is regenerated.
+			</description>
+		</signal>
+	</signals>
+	<constants>
+		<constant name="HEIGHT_FILTER_NEAREST" value="0" enum="HeightFilter">
+			Samples the height map at the exact coordinates given.
+		</constant>
+		<constant name="HEIGHT_FILTER_MINIMUM" value="1" enum="HeightFilter">
+			Samples (1 &lt;&lt; lod) * 2 heights around the given coordinates and returns the lowest.
+		</constant>
+		<constant name="REGION_MAP_SIZE" value="32">
+			Hard coded number of regions on a side. The total number of regions is this squared.
+		</constant>
+	</constants>
+</class>

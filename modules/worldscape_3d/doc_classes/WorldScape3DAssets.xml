@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="WorldScape3DAssets" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/redot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		This class contains arrays of [WorldScape3DTextureAsset] and [WorldScape3DMeshAsset] resources. It is a savable resource, so you can save it to disk and use the same asset list in multiple scenes that use WorldScape3D. The amount of data is small, so it can be saved as a git-friendly, text based .tres file or left within the scene file.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="clear_textures">
+			<return type="void" />
+			<param index="0" name="update" type="bool" default="false" />
+			<description>
+				After textures are loaded, they are combined into a TextureArray. The originals remain in VRAM and are only used if the [WorldScape3DTextureAsset] settings are changed and regenerating the TextureArrays are necessary. Use this function to clear the originals if not needed. It removes all textures from the asset list, freeing them if they are not referenced by other objects.
+				Update will regenerate the texture arrays housing the textures drawn on the terrain. This will remove all textures and turn the terrain checkerboard.
+				A similar [code skip-lint]clear_meshes[/code] is less useful so hasn't been included. However you can do the same thing with [code skip-lint]get_mesh_list().clear()[/code].
+			</description>
+		</method>
+		<method name="create_mesh_thumbnails">
+			<return type="void" />
+			<param index="0" name="id" type="int" default="-1" />
+			<param index="1" name="size" type="Vector2i" default="Vector2i(128, 128)" />
+			<description>
+				Generates mesh asset preview thumbnails for the asset dock, stored within each mesh asset. Specify id -1 to generate all.
+			</description>
+		</method>
+		<method name="get_albedo_array_rid" qualifiers="const">
+			<return type="RID" />
+			<description>
+				Returns the resource ID of the TextureArray generated from combining all albedo and height textures.
+			</description>
+		</method>
+		<method name="get_mesh_asset" qualifiers="const">
+			<return type="WorldScape3DMeshAsset" />
+			<param index="0" name="id" type="int" />
+			<description>
+				Returns the specified WorldScape3DMeshAsset resource.
+			</description>
+		</method>
+		<method name="get_mesh_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of mesh assets in the list.
+			</description>
+		</method>
+		<method name="get_normal_array_rid" qualifiers="const">
+			<return type="RID" />
+			<description>
+				Returns the resource ID of the TextureArray generated from combining all normal and roughness textures.
+			</description>
+		</method>
+		<method name="get_texture" qualifiers="const">
+			<return type="WorldScape3DTextureAsset" />
+			<param index="0" name="id" type="int" />
+			<description>
+				Returns the WorldScape3DTextureAsset with the requested ID.
+			</description>
+		</method>
+		<method name="get_texture_ao_strengths" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+				Returns the array of AO strengths for each texture asset, indexed by asset id.
+			</description>
+		</method>
+		<method name="get_texture_colors" qualifiers="const">
+			<return type="PackedColorArray" />
+			<description>
+				Returns the array of albedo tints for each texture asset, indexed by asset id.
+			</description>
+		</method>
+		<method name="get_texture_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of texture slots used.
+			</description>
+		</method>
+		<method name="get_texture_detiles" qualifiers="const">
+			<return type="PackedVector2Array" />
+			<description>
+				Returns the array of detiling values for each texture asset, indexed by asset id.
+			</description>
+		</method>
+		<method name="get_texture_normal_depths" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+				Returns the array of normal strengths for each texture asset, indexed by asset id.
+			</description>
+		</method>
+		<method name="get_texture_roughness_mods" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+				Returns the array of roughness modification values for each texture asset, indexed by asset id.
+			</description>
+		</method>
+		<method name="get_texture_uv_scales" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+				Returns the array of uv scale values for each texture asset, indexed by asset id.
+			</description>
+		</method>
+		<method name="save">
+			<return type="int" enum="Error" />
+			<param index="0" name="path" type="String" default="&quot;&quot;" />
+			<description>
+				Saves this texture list resource to disk, if saved as an external [code skip-lint].tres[/code] or [code skip-lint].res[/code] resource file.
+				path - specifies a directory and file name to use from now on.
+			</description>
+		</method>
+		<method name="set_mesh_asset">
+			<return type="void" />
+			<param index="0" name="id" type="int" />
+			<param index="1" name="mesh" type="WorldScape3DMeshAsset" />
+			<description>
+				Assigns the WorldScape3DMeshAsset to the specified ID slot. It can be null to clear the slot. See [method set_texture].
+			</description>
+		</method>
+		<method name="set_texture">
+			<return type="void" />
+			<param index="0" name="id" type="int" />
+			<param index="1" name="texture" type="WorldScape3DTextureAsset" />
+			<description>
+				Adds a WorldScape3DTextureAsset at the specified ID slot. The texture can be null to clear the slot, or remove it if its the last in the list. If the specified slot is full, it will be swapped with the source texture ID, or will find the next available ID.
+			</description>
+		</method>
+		<method name="update_mesh_list">
+			<return type="void" />
+			<description>
+				Updates the internal list of meshes used by the instancer.
+			</description>
+		</method>
+		<method name="update_texture_list">
+			<return type="void" />
+			<description>
+				Regenerates the texture arrays from the list of texture assets, which is sent to the shader.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="mesh_list" type="WorldScape3DMeshAsset[]" setter="set_mesh_list" getter="get_mesh_list" default="[]">
+			The list of mesh assets.
+		</member>
+		<member name="texture_list" type="WorldScape3DTextureAsset[]" setter="set_texture_list" getter="get_texture_list" default="[]">
+			The list of texture assets.
+		</member>
+	</members>
+	<signals>
+		<signal name="meshes_changed">
+			<description>
+				Emitted when the mesh list is updated, which happens as a result of a [WorldScape3DMeshAsset] changing.
+			</description>
+		</signal>
+		<signal name="textures_changed">
+			<description>
+				Emitted when this list is updated due to changes in the texture slots, or the files or settings of any [WorldScape3DTextureAsset].
+			</description>
+		</signal>
+	</signals>
+	<constants>
+		<constant name="TYPE_TEXTURE" value="0" enum="AssetType">
+			Asset is type WorldScape3DTextureAsset.
+		</constant>
+		<constant name="TYPE_MESH" value="1" enum="AssetType">
+			Asset is type WorldScape3DMeshAsset.
+		</constant>
+		<constant name="MAX_TEXTURES" value="32">
+			Hard coded maximum number of textures, with IDs in the range of 0-31. Cannot easily be expanded.
+		</constant>
+		<constant name="MAX_MESHES" value="256">
+			Limit of the maximum number of meshes. Arbitrary, easily expanded.
+		</constant>
+	</constants>
+</class>

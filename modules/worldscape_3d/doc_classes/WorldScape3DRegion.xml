@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="WorldScape3DRegion" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/redot/master/doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		This resource stores all map data for WorldScape3D.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="calc_height_range">
+			<return type="void" />
+			<description>
+				Recalculates the height range for this region by looking at every pixel in the heightmap.
+			</description>
+		</method>
+		<method name="duplicate">
+			<return type="WorldScape3DRegion" />
+			<param index="0" name="deep" type="bool" default="false" />
+			<description>
+				Returns a duplicate copy of this node, with references to the same image maps and multimeshes.
+				- deep - Also make complete duplicates of the maps and multimeshes.
+			</description>
+		</method>
+		<method name="get_data" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+				Returns all data in this region in a dictionary.
+			</description>
+		</method>
+		<method name="get_map" qualifiers="const">
+			<return type="Image" />
+			<param index="0" name="map_type" type="int" enum="WorldScape3DRegion.MapType" />
+			<description>
+				Returns the specified image map.
+			</description>
+		</method>
+		<method name="get_maps" qualifiers="const">
+			<return type="Image[]" />
+			<description>
+				Returns an Array[Image] with height, control, and color maps.
+			</description>
+		</method>
+		<method name="sanitize_map" qualifiers="const">
+			<return type="Image" />
+			<param index="0" name="map_type" type="int" enum="WorldScape3DRegion.MapType" />
+			<param index="1" name="map" type="Image" />
+			<description>
+				Validates and adjusts the map size and format if possible, or creates a usable blank image in the right size and format.
+			</description>
+		</method>
+		<method name="sanitize_maps">
+			<return type="void" />
+			<description>
+				Sanitizes all map types. See [method sanitize_map].
+			</description>
+		</method>
+		<method name="save">
+			<return type="int" enum="Error" />
+			<param index="0" name="path" type="String" default="&quot;&quot;" />
+			<param index="1" name="save_16_bit" type="bool" default="false" />
+			<description>
+				Saves this region to the current file name.
+				- path - specifies a directory and file name to use from now on.
+				- 16-bit - save this region with 16-bit height map instead of 32-bit. This process is lossy. Does not change the bit depth in memory.
+			</description>
+		</method>
+		<method name="set_data">
+			<return type="void" />
+			<param index="0" name="data" type="Dictionary" />
+			<description>
+				Overwrites all local variables with values in the dictionary.
+			</description>
+		</method>
+		<method name="set_map">
+			<return type="void" />
+			<param index="0" name="map_type" type="int" enum="WorldScape3DRegion.MapType" />
+			<param index="1" name="map" type="Image" />
+			<description>
+				Assigns the provided map to the desired map type.
+			</description>
+		</method>
+		<method name="set_maps">
+			<return type="void" />
+			<param index="0" name="maps" type="Image[]" />
+			<description>
+				Expects an array with three images in it, and assigns them to the height, control, and color maps.
+			</description>
+		</method>
+		<method name="update_height">
+			<return type="void" />
+			<param index="0" name="height" type="float" />
+			<description>
+				When sculpting, this is called to provide the current height. It may expand the vertical bounds, which is used to calculate the terrain AABB.
+			</description>
+		</method>
+		<method name="update_heights">
+			<return type="void" />
+			<param index="0" name="low_high" type="Vector2" />
+			<description>
+				When sculpting the terrain, this is called to provide both a low and high height. It may expand the vertical bounds, which is used to calculate the terrain AABB.
+			</description>
+		</method>
+		<method name="validate_map_size" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="map" type="Image" />
+			<description>
+				This validates the map size according to previously loaded maps.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="color_map" type="Image" setter="set_color_map" getter="get_color_map">
+			This map is used to paint color that blends in to the terrain textures.
+			Image format: FORMAT_RGBA8, 32-bits per pixel as four 8-bit components.
+			[b]RGB[/b] is used for color, which is multiplied by albedo in the shader. Multiply is a blend mode that only darkens.
+			[b]A[/b] is used for a roughness modifier. A value of 0.5 means no change to the existing texture roughness. Higher than this value increases roughness, lower decreases it.
+		</member>
+		<member name="control_map" type="Image" setter="set_control_map" getter="get_control_map">
+			This map tells the shader which textures to use where, how to blend, where to place holes, etc.
+			Image format: FORMAT_RF, 32-bit per pixel as full-precision floating-point.
+			However, we interpret these images as format: [url=https://docs.godotengine.org/en/stable/classes/class_renderingdevice.html#class-renderingdevice-constant-data-format-r32-uint]RenderingDevice.DATA_FORMAT_R32_UINT[/url] aka OpenGL RG32UI 32-bit per pixel as unsigned integer. See [url=https://terrain3d.readthedocs.io/en/stable/docs/controlmap_format.html]Control map format[/url].
+		</member>
+		<member name="deleted" type="bool" setter="set_deleted" getter="is_deleted">
+			This region is marked for deletion. It won't be rendered once [method WorldScape3DData.update_maps] rebuilds the map index. The file will be deleted from disk on [method save].
+		</member>
+		<member name="edited" type="bool" setter="set_edited" getter="is_edited">
+			This region is marked for updating by [method WorldScape3DData.update_maps] and for undo/redo tracking while the terrain is being edited. This flag serves a different purpose than [member modified].
+		</member>
+		<member name="height_map" type="Image" setter="set_height_map" getter="get_height_map">
+			This map contains the real value heights for the terrain.
+			Image format: FORMAT_RF, 32-bit per pixel as full-precision floating-point.
+			Heights sent to the vertex shader on the GPU which modifies the mesh in real-time.
+			Editing is always done in 32-bit. We do provide an option to save as 16-bit, see [member WorldScape3D.save_16_bit].
+		</member>
+		<member name="height_range" type="Vector2" setter="set_height_range" getter="get_height_range" default="Vector2(0, 0)">
+			The current minimum and maximum height range for this region, used to calculate the AABB of the terrain. Update it with [method update_height], and recalculate it with [method calc_height_range].
+		</member>
+		<member name="instances" type="Dictionary" setter="set_instances" getter="get_instances" default="{}">
+			A Dictionary that stores the instancer transforms for this region.
+			The format is instances{mesh_id:int} -&gt; cells{grid_location:Vector2i} -&gt; ( Array:Transform3D, PackedColorArray, modified:bool ). That is:
+			- A Dictionary keyed by mesh_id that returns:
+			- A Dictionary keyed by the grid location of the 32 x 32m cell that returns:
+			- A 3-item Array that contains:
+			- 0: An Array of Transform3Ds
+			- 1: A PackedColorArray with instance colors, same index as above
+			- 2: A bool that tracks if this cell has been modified
+			After changing this data, call [method WorldScape3DInstancer.update_mmis] to rebuild the MMIs.
+		</member>
+		<member name="location" type="Vector2i" setter="set_location" getter="get_location">
+			The location in region grid space [code skip-lint](world space / region_size)[/code] coordinates. e.g. (-1, 1) equates to (-1024, 1024) in world space given a [member region_size] of 1024.
+		</member>
+		<member name="modified" type="bool" setter="set_modified" getter="is_modified">
+			This region has been modified and will be saved to disk upon [method save]. This serves a different purpose than the temporary [member edited] setting.
+		</member>
+		<member name="region_size" type="int" setter="set_region_size" getter="get_region_size" default="0">
+			The current region size for this region, calculated from the dimensions of the first loaded map. It should match [member WorldScape3D.region_size].
+		</member>
+		<member name="version" type="float" setter="set_version" getter="get_version" default="0.8">
+			The data file version. This is independent of the WorldScape3D version, though they often align.
+		</member>
+		<member name="vertex_spacing" type="float" setter="set_vertex_spacing" getter="get_vertex_spacing" default="1.0">
+			Stored instancer transforms are laterally scaled by this value. This value is manage by the instancer on loading or when [member WorldScape3D.vertex_spacing] is set, and shouldn't be manually adjusted.
+		</member>
+	</members>
+	<constants>
+		<constant name="TYPE_HEIGHT" value="0" enum="MapType">
+			Height map - real values, eg. 10m, 44.5m.
+		</constant>
+		<constant name="TYPE_CONTROL" value="1" enum="MapType">
+			Control map - defines where textures and holes are placed.
+		</constant>
+		<constant name="TYPE_COLOR" value="2" enum="MapType">
+			Color map - paints color on the terrain
+		</constant>
+		<constant name="TYPE_MAX" value="3" enum="MapType">
+			The number of elements in this enum. Often used to specify all map types for functions that request one.
+		</constant>
+	</constants>
+</class>
