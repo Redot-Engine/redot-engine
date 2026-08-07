@@ -66,6 +66,7 @@ public:
 	Kind kind = UNINITIALIZED;
 
 	bool has_type = false;
+	bool is_nullable = false;
 	Variant::Type builtin_type = Variant::NIL;
 	StringName native_type;
 	Script *script_type = nullptr;
@@ -81,6 +82,9 @@ public:
 				break;
 			case BUILTIN: {
 				Variant::Type var_type = p_variant.get_type();
+				if (is_nullable && var_type == Variant::NIL) {
+					return true;
+				}
 				bool valid = builtin_type == var_type;
 				if (valid && builtin_type == Variant::ARRAY && has_container_element_type(0)) {
 					Array array = p_variant;
@@ -258,6 +262,7 @@ public:
 	void operator=(const GDScriptDataType &p_other) {
 		kind = p_other.kind;
 		has_type = p_other.has_type;
+		is_nullable = p_other.is_nullable;
 		builtin_type = p_other.builtin_type;
 		native_type = p_other.native_type;
 		script_type = p_other.script_type;
