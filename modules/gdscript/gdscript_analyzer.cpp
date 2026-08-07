@@ -2076,7 +2076,7 @@ void GDScriptAnalyzer::decide_suite_type(GDScriptParser::Node *p_suite, GDScript
 }
 
 void GDScriptAnalyzer::resolve_suite(GDScriptParser::SuiteNode *p_suite) {
-	const int narrow_mark = narrowed_non_null.size();
+	const uint32_t narrow_mark = narrowed_non_null.size();
 	for (int i = 0; i < p_suite->statements.size(); i++) {
 		GDScriptParser::Node *stmt = p_suite->statements[i];
 		// Apply annotations.
@@ -2297,9 +2297,9 @@ void GDScriptAnalyzer::invalidate_narrowing(const void *p_source) {
 	if (p_source == nullptr) {
 		return;
 	}
-	for (int i = 0; i < narrowed_non_null.size(); i++) {
+	for (uint32_t i = 0; i < narrowed_non_null.size(); i++) {
 		if (narrowed_non_null[i] == p_source) {
-			narrowed_non_null.write[i] = nullptr;
+			narrowed_non_null[i] = nullptr;
 		}
 	}
 }
@@ -2319,7 +2319,7 @@ const void *GDScriptAnalyzer::identifier_narrow_source(const GDScriptParser::Exp
 	}
 }
 
-void GDScriptAnalyzer::collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, Vector<const void *> &r_targets) {
+void GDScriptAnalyzer::collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<const void *> &r_targets) {
 	if (p_condition == nullptr) {
 		return;
 	}
@@ -2374,20 +2374,15 @@ void GDScriptAnalyzer::collect_non_null_narrowing(const GDScriptParser::Expressi
 void GDScriptAnalyzer::resolve_if(GDScriptParser::IfNode *p_if) {
 	reduce_expression(p_if->condition);
 
-	Vector<const void *> narrow_in_true;
-	Vector<const void *> narrow_in_false;
-	collect_non_null_narrowing(p_if->condition, true, narrow_in_true);
-	collect_non_null_narrowing(p_if->condition, false, narrow_in_false);
-
-	const int true_mark = narrowed_non_null.size();
-	narrowed_non_null.append_array(narrow_in_true);
+	const uint32_t true_mark = narrowed_non_null.size();
+	collect_non_null_narrowing(p_if->condition, true, narrowed_non_null);
 	resolve_suite(p_if->true_block);
 	narrowed_non_null.resize(true_mark);
 	p_if->set_datatype(p_if->true_block->get_datatype());
 
 	if (p_if->false_block != nullptr) {
-		const int false_mark = narrowed_non_null.size();
-		narrowed_non_null.append_array(narrow_in_false);
+		const uint32_t false_mark = narrowed_non_null.size();
+		collect_non_null_narrowing(p_if->condition, false, narrowed_non_null);
 		resolve_suite(p_if->false_block);
 		narrowed_non_null.resize(false_mark);
 		decide_suite_type(p_if, p_if->false_block);
@@ -3252,7 +3247,7 @@ void GDScriptAnalyzer::reduce_await(GDScriptParser::AwaitNode *p_await) {
 void GDScriptAnalyzer::reduce_binary_op(GDScriptParser::BinaryOpNode *p_binary_op) {
 	reduce_expression(p_binary_op->left_operand);
 
-	const int narrow_mark = narrowed_non_null.size();
+	const uint32_t narrow_mark = narrowed_non_null.size();
 	if (p_binary_op->variant_op == Variant::OP_AND || p_binary_op->variant_op == Variant::OP_OR) {
 		collect_non_null_narrowing(p_binary_op->left_operand, p_binary_op->variant_op == Variant::OP_AND, narrowed_non_null);
 	}

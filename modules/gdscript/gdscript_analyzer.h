@@ -43,6 +43,7 @@
 
 #include "core/object/object.h"
 #include "core/object/ref_counted.h"
+#include "core/templates/local_vector.h"
 
 class GDScriptAnalyzer {
 	GDScriptParser *parser = nullptr;
@@ -65,11 +66,11 @@ class GDScriptAnalyzer {
 	HashMap<const GDScriptParser::ClassNode *, Ref<GDScriptParserRef>> external_class_parser_cache;
 	bool static_context = false;
 
-	Vector<const void *> narrowed_non_null;
+	LocalVector<const void *> narrowed_non_null;
 	bool is_narrowed_non_null(const void *p_source) const;
 	void invalidate_narrowing(const void *p_source);
 	static const void *identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression);
-	static void collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, Vector<const void *> &r_targets);
+	static void collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<const void *> &r_targets);
 
 	/// @name Tests for detecting invalid overloading of script members
 	/// @{
