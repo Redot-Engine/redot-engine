@@ -953,11 +953,7 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 			light_data.projector_rect[3] = 0;
 		}
 
-		const bool needs_shadow =
-				p_using_shadows &&
-				owns_shadow_atlas(p_shadow_atlas) &&
-				shadow_atlas_owns_light_instance(p_shadow_atlas, light_instance->self) &&
-				light->shadow;
+		const bool needs_shadow = p_using_shadows && owns_shadow_atlas(p_shadow_atlas) && shadow_atlas_owns_light_instance(p_shadow_atlas, light_instance->self) && light->shadow;
 
 		bool in_shadow_range = true;
 		if (needs_shadow && light->distance_fade) {
@@ -967,7 +963,10 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 			}
 		}
 
-		if (needs_shadow && in_shadow_range) {
+		const bool has_shadow = needs_shadow && in_shadow_range;
+		const bool has_projector = projector.is_valid();
+
+		if (has_shadow) {
 			// fill in the shadow information
 
 			light_data.shadow_opacity = light->param[RS::LIGHT_PARAM_SHADOW_OPACITY] * shadow_opacity_fade;
@@ -1033,6 +1032,23 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 			}
 		} else {
 			light_data.shadow_opacity = 0.0;
+			// If shadow is off but we have a projector, compute the projector/shadow matrix manually
+			if (has_projector && type == RS::LIGHT_SPOT) {
+				Transform3D modelview = (inverse_transform * light_transform).inverse();
+				Projection bias;
+				bias.set_light_bias();
+
+				Projection correction;
+				correction.set_depth_correction(false, true, false);
+
+				// Compute camera projection frustum for the spotlight directly
+				Projection cm;
+				cm.set_perspective(spot_angle * 2.0, 1.0, 0.05, radius);
+				cm = correction * cm;
+
+				Projection shadow_mtx = bias * cm * modelview;
+				RendererRD::MaterialStorage::store_camera(shadow_mtx, light_data.shadow_matrix);
+			}
 		}
 
 		light_instance->cull_mask = light->cull_mask;
