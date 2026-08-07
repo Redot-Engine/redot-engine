@@ -712,7 +712,7 @@ String FindReplaceBar::get_search_text() const {
 }
 
 String FindReplaceBar::get_replace_text() const {
-	return replace_text->get_text();
+	return replace_text->get_text().c_unescape();
 }
 
 bool FindReplaceBar::is_case_sensitive() const {
