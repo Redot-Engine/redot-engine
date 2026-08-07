@@ -39,7 +39,87 @@
 #include "multiplayer_synchronizer.h"
 
 #include "core/config/engine.h"
+#include "core/io/marshalls.h"
+#include "core/math/math_funcs.h"
 #include "scene/main/multiplayer_api.h"
+
+static int _half_float_component_count(Variant::Type p_type) {
+	switch (p_type) {
+		case Variant::FLOAT:
+			return 1;
+		case Variant::VECTOR2:
+			return 2;
+		case Variant::VECTOR3:
+			return 3;
+		case Variant::VECTOR4:
+		case Variant::QUATERNION:
+		case Variant::COLOR:
+			return 4;
+		default:
+			return 0;
+	}
+}
+
+static void _variant_to_floats(const Variant &p_v, Variant::Type p_type, float *r_components) {
+	switch (p_type) {
+		case Variant::FLOAT:
+			r_components[0] = (float)(double)p_v;
+			break;
+		case Variant::VECTOR2: {
+			Vector2 v = p_v;
+			r_components[0] = v.x;
+			r_components[1] = v.y;
+		} break;
+		case Variant::VECTOR3: {
+			Vector3 v = p_v;
+			r_components[0] = v.x;
+			r_components[1] = v.y;
+			r_components[2] = v.z;
+		} break;
+		case Variant::VECTOR4: {
+			Vector4 v = p_v;
+			r_components[0] = v.x;
+			r_components[1] = v.y;
+			r_components[2] = v.z;
+			r_components[3] = v.w;
+		} break;
+		case Variant::QUATERNION: {
+			Quaternion q = p_v;
+			r_components[0] = q.x;
+			r_components[1] = q.y;
+			r_components[2] = q.z;
+			r_components[3] = q.w;
+		} break;
+		case Variant::COLOR: {
+			Color c = p_v;
+			r_components[0] = c.r;
+			r_components[1] = c.g;
+			r_components[2] = c.b;
+			r_components[3] = c.a;
+		} break;
+		default:
+			break;
+	}
+}
+
+static Variant _floats_to_variant(Variant::Type p_type, const float *p_components) {
+	switch (p_type) {
+		case Variant::FLOAT:
+			return (double)p_components[0];
+		case Variant::VECTOR2:
+			return Vector2(p_components[0], p_components[1]);
+		case Variant::VECTOR3:
+			return Vector3(p_components[0], p_components[1], p_components[2]);
+		case Variant::VECTOR4:
+			return Vector4(p_components[0], p_components[1], p_components[2], p_components[3]);
+		case Variant::QUATERNION:
+			return Quaternion(p_components[0], p_components[1], p_components[2], p_components[3]);
+		case Variant::COLOR:
+			return Color(p_components[0], p_components[1], p_components[2], p_components[3]);
+		default:
+			return Variant();
+	}
+}
 
 Object *MultiplayerSynchronizer::_get_prop_target(Object *p_obj, const NodePath &p_path) {
 	if (p_path.get_name_count() == 0) {
@@ -186,6 +266,61 @@ Error MultiplayerSynchronizer::set_state(const List<NodePath> &p_properties, Obj
 		ERR_FAIL_NULL_V(obj, FAILED);
 		obj->set_indexed(prop.get_subnames(), p_state[i]);
 		i += 1;
+	}
+	return OK;
+}
+
+Error MultiplayerSynchronizer::encode_state_quantized(const Variant **p_variants, const int *p_precisions, int p_count, uint8_t *p_buffer, int &r_len, bool p_allow_object_decoding) {
+	r_len = 0;
+	for (int i = 0; i < p_count; i++) {
+		const Variant &v = *p_variants[i];
+		if (p_precisions[i] == SceneReplicationConfig::PRECISION_HALF) {
+			const Variant::Type type = v.get_type();
+			const int nc = _half_float_component_count(type);
+			if (nc > 0) {
+				if (p_buffer) {
+					p_buffer[r_len] = (uint8_t)type;
+					float components[4];
+					_variant_to_floats(v, type, components);
+					for (int c = 0; c < nc; c++) {
+						encode_uint16(Math::make_half_float(components[c]), &p_buffer[r_len + 1 + c * 2]);
+					}
+				}
+				r_len += 1 + nc * 2;
+				continue;
+			}
+		}
+		int size = 0;
+		Error err = MultiplayerAPI::encode_and_compress_variant(v, p_buffer ? p_buffer + r_len : nullptr, size, p_allow_object_decoding);
+		ERR_FAIL_COND_V(err != OK, err);
+		r_len += size;
+	}
+	return OK;
+}
+
+Error MultiplayerSynchronizer::decode_state_quantized(Vector<Variant> &r_variants, const int *p_precisions, const uint8_t *p_buffer, int p_len, int &r_len, bool p_allow_object_decoding) {
+	r_len = 0;
+	const int count = r_variants.size();
+	for (int i = 0; i < count; i++) {
+		ERR_FAIL_COND_V(r_len >= p_len, ERR_INVALID_DATA);
+		if (p_precisions[i] == SceneReplicationConfig::PRECISION_HALF) {
+			const Variant::Type type = (Variant::Type)(p_buffer[r_len] & 0x3F);
+			const int nc = _half_float_component_count(type);
+			if (nc > 0) {
+				ERR_FAIL_COND_V(r_len + 1 + nc * 2 > p_len, ERR_INVALID_DATA);
+				float components[4] = { 0, 0, 0, 0 };
+				for (int c = 0; c < nc; c++) {
+					components[c] = Math::half_to_float(decode_uint16(&p_buffer[r_len + 1 + c * 2]));
+				}
+				r_variants.write[i] = _floats_to_variant(type, components);
+				r_len += 1 + nc * 2;
+				continue;
+			}
+		}
+		int vlen = 0;
+		Error err = MultiplayerAPI::decode_and_decompress_variant(r_variants.write[i], &p_buffer[r_len], p_len - r_len, &vlen, p_allow_object_decoding);
+		ERR_FAIL_COND_V(err != OK, err);
+		r_len += vlen;
 	}
 	return OK;
 }
@@ -380,7 +515,7 @@ void MultiplayerSynchronizer::set_multiplayer_authority(int p_peer_id, bool p_re
 
 Error MultiplayerSynchronizer::_watch_changes(uint64_t p_usec) {
 	ERR_FAIL_COND_V(replication_config.is_null(), FAILED);
-	const List<NodePath> props = replication_config->get_watch_properties();
+	const List<NodePath> &props = replication_config->get_watch_properties();
 	if (props.size() != watchers.size()) {
 		watchers.resize(props.size());
 	}
@@ -444,7 +579,7 @@ List<Variant> MultiplayerSynchronizer::get_delta_state(uint64_t p_cur_usec, uint
 List<NodePath> MultiplayerSynchronizer::get_delta_properties(uint64_t p_indexes) {
 	List<NodePath> out;
 	ERR_FAIL_COND_V(replication_config.is_null(), out);
-	const List<NodePath> watch_props = replication_config->get_watch_properties();
+	const List<NodePath> &watch_props = replication_config->get_watch_properties();
 	int idx = 0;
 	for (const NodePath &prop : watch_props) {
 		if ((p_indexes & (1ULL << idx++)) == 0) {
