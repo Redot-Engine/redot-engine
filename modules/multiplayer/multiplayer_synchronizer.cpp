@@ -283,7 +283,11 @@ Error MultiplayerSynchronizer::encode_state_quantized(const Variant **p_variants
 					float components[4];
 					_variant_to_floats(v, type, components);
 					for (int c = 0; c < nc; c++) {
-						encode_uint16(Math::make_half_float(components[c]), &p_buffer[r_len + 1 + c * 2]);
+						float f = components[c];
+						if (Math::is_finite(f)) {
+							f = CLAMP(f, -65504.0f, 65504.0f);
+						}
+						encode_uint16(Math::make_half_float(f), &p_buffer[r_len + 1 + c * 2]);
 					}
 				}
 				r_len += 1 + nc * 2;
