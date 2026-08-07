@@ -65,6 +65,7 @@ Dictionary Control::_edit_get_state() const {
 	s["rotation"] = get_rotation();
 	s["scale"] = get_scale();
 	s["pivot"] = get_pivot_offset();
+	s["pivot_ratio"] = get_pivot_offset_ratio();
 
 	Array anchors = { get_anchor(SIDE_LEFT), get_anchor(SIDE_TOP), get_anchor(SIDE_RIGHT), get_anchor(SIDE_BOTTOM) };
 	s["anchors"] = anchors;
@@ -81,13 +82,14 @@ Dictionary Control::_edit_get_state() const {
 void Control::_edit_set_state(const Dictionary &p_state) {
 	ERR_FAIL_COND(p_state.is_empty() ||
 			!p_state.has("rotation") || !p_state.has("scale") ||
-			!p_state.has("pivot") || !p_state.has("anchors") || !p_state.has("offsets") ||
+			!p_state.has("pivot") || !p_state.has("pivot_ratio") || !p_state.has("anchors") || !p_state.has("offsets") ||
 			!p_state.has("layout_mode") || !p_state.has("anchors_layout_preset"));
 	Dictionary state = p_state;
 
 	set_rotation(state["rotation"]);
 	set_scale(state["scale"]);
 	set_pivot_offset(state["pivot"]);
+	set_pivot_offset_ratio(state["pivot_ratio"]);
 
 	Array anchors = state["anchors"];
 
@@ -159,10 +161,11 @@ void Control::_edit_set_pivot(const Point2 &p_pivot) {
 	Vector2 move = Vector2((std::cos(data.rotation) - 1.0) * delta_pivot.x - std::sin(data.rotation) * delta_pivot.y, std::sin(data.rotation) * delta_pivot.x + (std::cos(data.rotation) - 1.0) * delta_pivot.y);
 	set_position(get_position() + move);
 	set_pivot_offset(p_pivot);
+	set_pivot_offset_ratio(Vector2());
 }
 
 Point2 Control::_edit_get_pivot() const {
-	return get_pivot_offset();
+	return get_combined_pivot_offset();
 }
 
 bool Control::_edit_use_pivot() const {
@@ -525,6 +528,8 @@ void Control::_validate_property(PropertyInfo &p_property) const {
 	}
 	// Validate which positioning properties should be displayed depending on the parent and the layout mode.
 	Control *parent_control = get_parent_control();
+	bool is_anchor_offset_property_name = p_property.name.begins_with("offset_") && !p_property.name.begins_with("offset_transform_");
+
 	if (Engine::get_singleton()->is_editor_hint() && !parent_control) {
 		// If there is no parent control, display both anchor and container options.
 
@@ -536,14 +541,14 @@ void Control::_validate_property(PropertyInfo &p_property) const {
 
 		// Use the layout mode to display or hide advanced anchoring properties.
 		bool use_custom_anchors = _get_anchors_layout_preset() == -1; // Custom "preset".
-		if (!use_custom_anchors && (p_property.name.begins_with("anchor_") || p_property.name.begins_with("offset_") || p_property.name.begins_with("grow_"))) {
+		if (!use_custom_anchors && (p_property.name.begins_with("anchor_") || is_anchor_offset_property_name || p_property.name.begins_with("grow_"))) {
 			p_property.usage ^= PROPERTY_USAGE_EDITOR;
 		}
 	} else if (Object::cast_to<Container>(parent_control)) {
 		// If the parent is a container, display only container-related properties.
-		if (p_property.name.begins_with("anchor_") || p_property.name.begins_with("offset_") || p_property.name.begins_with("grow_") || p_property.name == "anchors_preset") {
+		if (p_property.name.begins_with("anchor_") || is_anchor_offset_property_name || p_property.name.begins_with("grow_") || p_property.name == "anchors_preset") {
 			p_property.usage ^= PROPERTY_USAGE_DEFAULT;
-		} else if (p_property.name == "position" || p_property.name == "rotation" || p_property.name == "scale" || p_property.name == "size" || p_property.name == "pivot_offset") {
+		} else if (p_property.name == "position" || p_property.name == "rotation" || p_property.name == "scale" || p_property.name == "size" || p_property.name == "pivot_offset" || p_property.name == "pivot_offset_ratio") {
 			p_property.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY;
 		} else if (Engine::get_singleton()->is_editor_hint() && p_property.name == "layout_mode") {
 			// Set the layout mode to be disabled with the proper value.
@@ -603,11 +608,15 @@ void Control::_validate_property(PropertyInfo &p_property) const {
 		// Use the layout mode to display or hide advanced anchoring properties.
 		LayoutMode _layout = _get_layout_mode();
 		bool use_anchors = (_layout == LayoutMode::LAYOUT_MODE_ANCHORS || _layout == LayoutMode::LAYOUT_MODE_UNCONTROLLED);
+		// If using anchors, the position is, well...anchored based on the layout, so manipulating the position doesn't make sense
+		if (use_anchors && p_property.name == "position") {
+			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
+		}
 		if (!use_anchors && p_property.name == "anchors_preset") {
 			p_property.usage ^= PROPERTY_USAGE_EDITOR;
 		}
 		bool use_custom_anchors = use_anchors && _get_anchors_layout_preset() == -1; // Custom "preset".
-		if (!use_custom_anchors && (p_property.name.begins_with("anchor_") || p_property.name.begins_with("offset_") || p_property.name.begins_with("grow_"))) {
+		if (!use_custom_anchors && (p_property.name.begins_with("anchor_") || is_anchor_offset_property_name || p_property.name.begins_with("grow_"))) {
 			p_property.usage ^= PROPERTY_USAGE_EDITOR;
 		}
 	}
@@ -716,8 +725,13 @@ Size2 Control::get_parent_area_size() const {
 
 Transform2D Control::_get_internal_transform() const {
 	// T(pivot_offset) * R(rotation) * S(scale) * T(-pivot_offset)
-	Transform2D xform(data.rotation, data.scale, 0.0f, data.pivot_offset);
-	xform.translate_local(-data.pivot_offset);
+	Transform2D xform(data.rotation, data.scale, 0.0f, get_combined_pivot_offset());
+	xform.translate_local(-get_combined_pivot_offset());
+
+	if (is_offset_transform_enabled() && !data.offset_transform->visual_only) {
+		xform *= get_offset_transform();
+	}
+
 	return xform;
 }
 
@@ -728,6 +742,10 @@ void Control::_update_canvas_item_transform() {
 	// We use a little workaround to avoid flickering when moving the pivot with _edit_set_pivot()
 	if (is_inside_tree() && Math::abs(Math::sin(data.rotation * 4.0f)) < 0.00001f && get_viewport()->is_snap_controls_to_pixels_enabled()) {
 		xform[2] = (xform[2] + Vector2(0.5, 0.5)).floor();
+	}
+
+	if (is_offset_transform_enabled() && data.offset_transform->visual_only) {
+		xform *= get_offset_transform();
 	}
 
 	RenderingServer::get_singleton()->canvas_item_set_transform(get_canvas_item(), xform);
@@ -925,6 +943,7 @@ void Control::_set_layout_mode(LayoutMode p_mode) {
 		data.stored_use_custom_anchors = false;
 		set_anchors_and_offsets_preset(LayoutPreset::PRESET_TOP_LEFT, LayoutPresetMode::PRESET_MODE_KEEP_SIZE);
 		set_grow_direction_preset(LayoutPreset::PRESET_TOP_LEFT);
+		data.anchor_preset_active = false;
 	}
 
 	if (list_changed) {
@@ -1225,12 +1244,14 @@ void Control::set_anchors_preset(LayoutPreset p_preset, bool p_keep_offsets) {
 	}
 }
 
-void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_margin) {
+void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_preset_margin) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_INDEX((int)p_preset, 16);
 	ERR_FAIL_INDEX((int)p_resize_mode, 4);
 
-	// Calculate the size if the node is not resized
+	data.anchor_preset_active = true;
+	data.anchor_preset_margin = p_preset_margin;
+
 	Size2 min_size = get_minimum_size();
 	Size2 new_size = get_size();
 	if (p_resize_mode == PRESET_MODE_MINSIZE || p_resize_mode == PRESET_MODE_KEEP_HEIGHT) {
@@ -1240,37 +1261,59 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		new_size.y = min_size.y;
 	}
 
+	_compute_preset_offsets(p_preset, new_size, p_preset_margin);
+	_size_changed();
+}
+
+void Control::_compute_preset_offsets(LayoutPreset p_preset, const Size2 &p_size, int p_preset_margin) {
 	Rect2 parent_rect = get_parent_anchorable_rect();
 
 	real_t x = parent_rect.size.x;
 	if (is_layout_rtl()) {
-		x = parent_rect.size.x - x - new_size.x;
+		x = parent_rect.size.x - x - p_size.x;
 	}
-	//Left
+
+	const real_t pivot_corr_x = data.pivot_offset.x * (data.scale.x - 1.0f);
+	const real_t pivot_corr_y = data.pivot_offset.y * (data.scale.y - 1.0f);
+	const real_t scaled_width = p_size.x * data.scale.x;
+	const real_t scaled_height = p_size.y * data.scale.y;
+
+	// Left
 	switch (p_preset) {
 		case PRESET_TOP_LEFT:
 		case PRESET_BOTTOM_LEFT:
 		case PRESET_CENTER_LEFT:
-		case PRESET_TOP_WIDE:
-		case PRESET_BOTTOM_WIDE:
 		case PRESET_LEFT_WIDE:
-		case PRESET_HCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			data.offset[0] = x * (0.0 - data.anchor[0]) + p_margin + parent_rect.position.x;
+			// Fixed-size axis: visual left edge at p_margin.
+			data.offset[0] = x * (0.0 - data.anchor[0]) + pivot_corr_x + p_preset_margin + parent_rect.position.x;
+			break;
+
+		case PRESET_RIGHT_WIDE:
+			// Fixed-size axis: visual left edge at parent_right - scaled_width - margin.
+			data.offset[0] = x * (1.0 - data.anchor[0]) + pivot_corr_x - scaled_width - p_preset_margin + parent_rect.position.x;
 			break;
 
 		case PRESET_CENTER_TOP:
 		case PRESET_CENTER_BOTTOM:
 		case PRESET_CENTER:
 		case PRESET_VCENTER_WIDE:
-			data.offset[0] = x * (0.5 - data.anchor[0]) - new_size.x / 2 + parent_rect.position.x;
+			// Fixed-size axis: visual center at parent horizontal center.
+			data.offset[0] = x * (0.5 - data.anchor[0]) + pivot_corr_x - scaled_width / 2.0f + parent_rect.position.x;
 			break;
 
 		case PRESET_TOP_RIGHT:
 		case PRESET_BOTTOM_RIGHT:
 		case PRESET_CENTER_RIGHT:
-		case PRESET_RIGHT_WIDE:
-			data.offset[0] = x * (1.0 - data.anchor[0]) - new_size.x - p_margin + parent_rect.position.x;
+			// Fixed-size axis: visual right edge at parent_right - margin.
+			data.offset[0] = x * (1.0 - data.anchor[0]) + pivot_corr_x - scaled_width - p_preset_margin + parent_rect.position.x;
+			break;
+
+		case PRESET_TOP_WIDE:
+		case PRESET_BOTTOM_WIDE:
+		case PRESET_HCENTER_WIDE:
+		case PRESET_FULL_RECT:
+			// Stretching axis: visual left edge at margin, accounting for pivot.
+			data.offset[0] = x * (0.0 - data.anchor[0]) + pivot_corr_x + p_preset_margin + parent_rect.position.x;
 			break;
 	}
 
@@ -1279,26 +1322,37 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		case PRESET_TOP_LEFT:
 		case PRESET_TOP_RIGHT:
 		case PRESET_CENTER_TOP:
-		case PRESET_LEFT_WIDE:
-		case PRESET_RIGHT_WIDE:
 		case PRESET_TOP_WIDE:
-		case PRESET_VCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			data.offset[1] = parent_rect.size.y * (0.0 - data.anchor[1]) + p_margin + parent_rect.position.y;
+			// Fixed-size axis: visual top edge at p_margin.
+			data.offset[1] = parent_rect.size.y * (0.0 - data.anchor[1]) + pivot_corr_y + p_preset_margin + parent_rect.position.y;
+			break;
+
+		case PRESET_BOTTOM_WIDE:
+			// Fixed-size axis: visual top edge at parent_bottom - scaled_height - margin.
+			data.offset[1] = parent_rect.size.y * (1.0 - data.anchor[1]) + pivot_corr_y - scaled_height - p_preset_margin + parent_rect.position.y;
 			break;
 
 		case PRESET_CENTER_LEFT:
 		case PRESET_CENTER_RIGHT:
 		case PRESET_CENTER:
 		case PRESET_HCENTER_WIDE:
-			data.offset[1] = parent_rect.size.y * (0.5 - data.anchor[1]) - new_size.y / 2 + parent_rect.position.y;
+			// Fixed-size axis: visual center at parent vertical center.
+			data.offset[1] = parent_rect.size.y * (0.5 - data.anchor[1]) + pivot_corr_y - scaled_height / 2.0f + parent_rect.position.y;
 			break;
 
 		case PRESET_BOTTOM_LEFT:
 		case PRESET_BOTTOM_RIGHT:
 		case PRESET_CENTER_BOTTOM:
-		case PRESET_BOTTOM_WIDE:
-			data.offset[1] = parent_rect.size.y * (1.0 - data.anchor[1]) - new_size.y - p_margin + parent_rect.position.y;
+			// Fixed-size axis: visual bottom edge at parent_bottom - margin.
+			data.offset[1] = parent_rect.size.y * (1.0 - data.anchor[1]) + pivot_corr_y - scaled_height - p_preset_margin + parent_rect.position.y;
+			break;
+
+		case PRESET_LEFT_WIDE:
+		case PRESET_RIGHT_WIDE:
+		case PRESET_VCENTER_WIDE:
+		case PRESET_FULL_RECT:
+			// Stretching axis: visual top edge at margin, accounting for pivot.
+			data.offset[1] = parent_rect.size.y * (0.0 - data.anchor[1]) + pivot_corr_y + p_preset_margin + parent_rect.position.y;
 			break;
 	}
 
@@ -1308,25 +1362,33 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		case PRESET_BOTTOM_LEFT:
 		case PRESET_CENTER_LEFT:
 		case PRESET_LEFT_WIDE:
-			data.offset[2] = x * (0.0 - data.anchor[2]) + new_size.x + p_margin + parent_rect.position.x;
+			// Fixed-size axis: right = logical_left + p_size.x.
+			data.offset[2] = x * (0.0 - data.anchor[2]) + pivot_corr_x + p_size.x + p_preset_margin + parent_rect.position.x;
 			break;
 
 		case PRESET_CENTER_TOP:
 		case PRESET_CENTER_BOTTOM:
 		case PRESET_CENTER:
 		case PRESET_VCENTER_WIDE:
-			data.offset[2] = x * (0.5 - data.anchor[2]) + new_size.x / 2 + parent_rect.position.x;
+			// Fixed-size axis: centered.
+			data.offset[2] = x * (0.5 - data.anchor[2]) + pivot_corr_x + p_size.x - scaled_width / 2.0f + parent_rect.position.x;
 			break;
 
 		case PRESET_TOP_RIGHT:
 		case PRESET_BOTTOM_RIGHT:
 		case PRESET_CENTER_RIGHT:
-		case PRESET_TOP_WIDE:
 		case PRESET_RIGHT_WIDE:
+			// Fixed-size axis: right edge at parent_right - margin.
+			data.offset[2] = x * (1.0 - data.anchor[2]) + pivot_corr_x + p_size.x * (1.0f - data.scale.x) - p_preset_margin + parent_rect.position.x;
+			break;
+
+		case PRESET_TOP_WIDE:
 		case PRESET_BOTTOM_WIDE:
 		case PRESET_HCENTER_WIDE:
 		case PRESET_FULL_RECT:
-			data.offset[2] = x * (1.0 - data.anchor[2]) - p_margin + parent_rect.position.x;
+			// Stretching axis: visual right edge at parent_right - margin.
+			// Divide by scale so visual_width = parent_width - 2*margin regardless of scale.
+			data.offset[2] = pivot_corr_x + p_preset_margin + (x - 2.0f * p_preset_margin) / data.scale.x - x + parent_rect.position.x;
 			break;
 	}
 
@@ -1336,29 +1398,35 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		case PRESET_TOP_RIGHT:
 		case PRESET_CENTER_TOP:
 		case PRESET_TOP_WIDE:
-			data.offset[3] = parent_rect.size.y * (0.0 - data.anchor[3]) + new_size.y + p_margin + parent_rect.position.y;
+			// Fixed-size axis: bottom = logical_top + p_size.y.
+			data.offset[3] = parent_rect.size.y * (0.0 - data.anchor[3]) + pivot_corr_y + p_size.y + p_preset_margin + parent_rect.position.y;
 			break;
 
 		case PRESET_CENTER_LEFT:
 		case PRESET_CENTER_RIGHT:
 		case PRESET_CENTER:
 		case PRESET_HCENTER_WIDE:
-			data.offset[3] = parent_rect.size.y * (0.5 - data.anchor[3]) + new_size.y / 2 + parent_rect.position.y;
+			// Fixed-size axis: centered.
+			data.offset[3] = parent_rect.size.y * (0.5 - data.anchor[3]) + pivot_corr_y + p_size.y - scaled_height / 2.0f + parent_rect.position.y;
 			break;
 
 		case PRESET_BOTTOM_LEFT:
 		case PRESET_BOTTOM_RIGHT:
 		case PRESET_CENTER_BOTTOM:
+		case PRESET_BOTTOM_WIDE:
+			// Fixed-size axis: bottom edge at parent_bottom - margin.
+			data.offset[3] = parent_rect.size.y * (1.0 - data.anchor[3]) + pivot_corr_y + p_size.y * (1.0f - data.scale.y) - p_preset_margin + parent_rect.position.y;
+			break;
+
 		case PRESET_LEFT_WIDE:
 		case PRESET_RIGHT_WIDE:
-		case PRESET_BOTTOM_WIDE:
 		case PRESET_VCENTER_WIDE:
 		case PRESET_FULL_RECT:
-			data.offset[3] = parent_rect.size.y * (1.0 - data.anchor[3]) - p_margin + parent_rect.position.y;
+			// Stretching axis: visual bottom edge at parent_bottom - margin.
+			// Divide by scale so visual_height = parent_height - 2*margin regardless of scale.
+			data.offset[3] = pivot_corr_y + p_preset_margin + (parent_rect.size.y - 2.0f * p_preset_margin) / data.scale.y - parent_rect.size.y + parent_rect.position.y;
 			break;
 	}
-
-	_size_changed();
 }
 
 void Control::set_anchors_and_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_margin) {
@@ -1507,10 +1575,22 @@ void Control::set_size(const Size2 &p_size, bool p_keep_offsets) {
 	}
 #endif // TOOLS_ENABLED
 
+	// For corner/center anchor presets, re-align to the preset using the new size.
+	// Wide/full presets are driven by the parent rect, not by explicit size; skip them.
 	if (p_keep_offsets) {
 		_compute_anchors(Rect2(data.pos_cache, new_size), data.offset, data.anchor);
 	} else {
-		_compute_offsets(Rect2(data.pos_cache, new_size), data.anchor, data.offset);
+		bool preset_applied = false;
+		if (is_inside_tree() && data.anchor_preset_active) {
+			int current_preset = _get_anchors_layout_preset();
+			if (current_preset != -1) {
+				_compute_preset_offsets((LayoutPreset)current_preset, new_size, data.anchor_preset_margin);
+				preset_applied = true;
+			}
+		}
+		if (!preset_applied) {
+			_compute_offsets(Rect2(data.pos_cache, new_size), data.anchor, data.offset);
+		}
 	}
 	_size_changed();
 }
@@ -1576,6 +1656,16 @@ void Control::set_scale(const Vector2 &p_scale) {
 	if (data.scale.y == 0) {
 		data.scale.y = CMP_EPSILON;
 	}
+
+	// Re-apply the anchor preset offsets so that visual alignment (center, right-edge, etc.) stays correct for the new scale value.
+	if (is_inside_tree() && data.anchor_preset_active) {
+		int current_preset = _get_anchors_layout_preset();
+		if (current_preset != -1) {
+			_compute_preset_offsets((LayoutPreset)current_preset, get_size(), data.anchor_preset_margin);
+			_size_changed();
+		}
+	}
+
 	queue_redraw();
 	_notify_transform();
 	queue_accessibility_update();
@@ -1613,6 +1703,23 @@ real_t Control::get_rotation_degrees() const {
 	return Math::rad_to_deg(get_rotation());
 }
 
+void Control::set_pivot_offset_ratio(const Vector2 &p_ratio) {
+	ERR_MAIN_THREAD_GUARD;
+	if (data.pivot_offset_ratio == p_ratio) {
+		return;
+	}
+
+	data.pivot_offset_ratio = p_ratio;
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+Vector2 Control::get_pivot_offset_ratio() const {
+	ERR_READ_THREAD_GUARD_V(Vector2());
+	return data.pivot_offset_ratio;
+}
+
 void Control::set_pivot_offset(const Vector2 &p_pivot) {
 	ERR_MAIN_THREAD_GUARD;
 	if (data.pivot_offset == p_pivot) {
@@ -1620,6 +1727,16 @@ void Control::set_pivot_offset(const Vector2 &p_pivot) {
 	}
 
 	data.pivot_offset = p_pivot;
+
+	// Re-apply the anchor preset offsets so that visual alignment (center, right-edge, etc.) stays correct for the new scale value.
+	if (is_inside_tree() && data.anchor_preset_active) {
+		int current_preset = _get_anchors_layout_preset();
+		if (current_preset != -1) {
+			_compute_preset_offsets((LayoutPreset)current_preset, get_size(), data.anchor_preset_margin);
+			_size_changed();
+		}
+	}
+
 	queue_redraw();
 	_notify_transform();
 	queue_accessibility_update();
@@ -1628,6 +1745,11 @@ void Control::set_pivot_offset(const Vector2 &p_pivot) {
 Vector2 Control::get_pivot_offset() const {
 	ERR_READ_THREAD_GUARD_V(Vector2());
 	return data.pivot_offset;
+}
+
+Vector2 Control::get_combined_pivot_offset() const {
+	ERR_READ_THREAD_GUARD_V(Vector2());
+	return data.pivot_offset + data.pivot_offset_ratio * get_size();
 }
 
 /// Sizes.
@@ -1853,6 +1975,218 @@ void Control::set_stretch_ratio(real_t p_ratio) {
 real_t Control::get_stretch_ratio() const {
 	ERR_READ_THREAD_GUARD_V(0);
 	return data.expand;
+}
+
+// Offset transform.
+
+void Control::set_offset_transform_enabled(bool p_enabled) {
+	if (is_offset_transform_enabled() == p_enabled) {
+		return;
+	}
+
+	if (p_enabled) {
+		_ensure_allocated_offset_transform();
+		data.offset_transform->enabled = true;
+	} else {
+		// Never deallocate to not lose previously set values
+		data.offset_transform->enabled = false;
+	}
+
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+bool Control::is_offset_transform_enabled() const {
+	return data.offset_transform != nullptr && data.offset_transform->enabled;
+}
+
+void Control::set_offset_transform_position(const Vector2 &p_offset) {
+	if (get_offset_transform_position() == p_offset) {
+		return;
+	}
+
+	_ensure_allocated_offset_transform();
+	data.offset_transform->translation_absolute = p_offset;
+
+	if (!data.offset_transform->enabled) {
+		return;
+	}
+
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+Vector2 Control::get_offset_transform_position() const {
+	if (data.offset_transform == nullptr) {
+		return Data::OffsetTransform::DEFAULT_TRANSLATION_ABSOLUTE;
+	}
+
+	return data.offset_transform->translation_absolute;
+}
+
+void Control::set_offset_transform_position_ratio(const Vector2 &p_offset) {
+	if (get_offset_transform_position_ratio() == p_offset) {
+		return;
+	}
+
+	_ensure_allocated_offset_transform();
+	data.offset_transform->translation_relative = p_offset;
+
+	if (!data.offset_transform->enabled) {
+		return;
+	}
+
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+Vector2 Control::get_offset_transform_position_ratio() const {
+	if (data.offset_transform == nullptr) {
+		return Data::OffsetTransform::DEFAULT_TRANSLATION_RELATIVE;
+	}
+
+	return data.offset_transform->translation_relative;
+}
+
+void Control::set_offset_transform_scale(const Vector2 &p_scale) {
+	if (get_offset_transform_scale() == p_scale) {
+		return;
+	}
+
+	_ensure_allocated_offset_transform();
+	data.offset_transform->scale = p_scale;
+
+	if (!data.offset_transform->enabled) {
+		return;
+	}
+
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+Vector2 Control::get_offset_transform_scale() const {
+	if (data.offset_transform == nullptr) {
+		return Data::OffsetTransform::DEFAULT_SCALE;
+	}
+
+	return data.offset_transform->scale;
+}
+
+void Control::set_offset_transform_rotation(real_t p_rotation) {
+	if (get_offset_transform_rotation() == p_rotation) {
+		return;
+	}
+
+	_ensure_allocated_offset_transform();
+	data.offset_transform->rotation = p_rotation;
+
+	if (!data.offset_transform->enabled) {
+		return;
+	}
+
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+real_t Control::get_offset_transform_rotation() const {
+	if (data.offset_transform == nullptr) {
+		return Data::OffsetTransform::DEFAULT_ROTATION;
+	}
+
+	return data.offset_transform->rotation;
+}
+
+void Control::set_offset_transform_pivot(const Vector2 &p_pivot) {
+	if (get_offset_transform_pivot() == p_pivot) {
+		return;
+	}
+
+	_ensure_allocated_offset_transform();
+	data.offset_transform->pivot_absolute = p_pivot;
+
+	if (!data.offset_transform->enabled) {
+		return;
+	}
+
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+Vector2 Control::get_offset_transform_pivot() const {
+	if (data.offset_transform == nullptr) {
+		return Data::OffsetTransform::DEFAULT_PIVOT_ABSOLUTE;
+	}
+
+	return data.offset_transform->pivot_absolute;
+}
+
+void Control::set_offset_transform_pivot_ratio(const Vector2 &p_pivot) {
+	if (get_offset_transform_pivot_ratio() == p_pivot) {
+		return;
+	}
+
+	_ensure_allocated_offset_transform();
+	data.offset_transform->pivot_relative = p_pivot;
+
+	if (!data.offset_transform->enabled) {
+		return;
+	}
+
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+Vector2 Control::get_offset_transform_pivot_ratio() const {
+	if (data.offset_transform == nullptr) {
+		return Data::OffsetTransform::DEFAULT_PIVOT_RELATIVE;
+	}
+
+	return data.offset_transform->pivot_relative;
+}
+
+void Control::set_offset_transform_visual_only(bool p_enabled) {
+	if (is_offset_transform_visual_only() == p_enabled) {
+		return;
+	}
+
+	_ensure_allocated_offset_transform();
+	data.offset_transform->visual_only = p_enabled;
+
+	if (!data.offset_transform->enabled) {
+		return;
+	}
+
+	queue_redraw();
+	_notify_transform();
+	queue_accessibility_update();
+}
+
+bool Control::is_offset_transform_visual_only() const {
+	if (data.offset_transform == nullptr) {
+		return Data::OffsetTransform::DEFAULT_VISUAL_ONLY;
+	}
+
+	return data.offset_transform->visual_only;
+}
+
+Transform2D Control::get_offset_transform() const {
+	if (!is_offset_transform_enabled()) {
+		return Transform2D();
+	}
+
+	Vector2 combined_translation = data.offset_transform->translation_absolute + data.offset_transform->translation_relative * get_size();
+	Vector2 combined_pivot = data.offset_transform->pivot_absolute + data.offset_transform->pivot_relative * get_size();
+
+	Transform2D offset_xform(data.offset_transform->rotation, data.offset_transform->scale, 0.0f, combined_pivot + combined_translation);
+	offset_xform.translate_local(-combined_pivot);
+	return offset_xform;
 }
 
 // Input events.
@@ -3669,6 +4003,14 @@ Control *Control::make_custom_tooltip(const String &p_text) const {
 	return Object::cast_to<Control>(ret);
 }
 
+void Control::_ensure_allocated_offset_transform() {
+	if (data.offset_transform != nullptr) {
+		return;
+	}
+
+	data.offset_transform = memnew(Data::OffsetTransform);
+}
+
 // Base object overrides.
 
 void Control::_accessibility_action_foucs(const Variant &p_data) {
@@ -4006,6 +4348,7 @@ void Control::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_rotation_degrees", "degrees"), &Control::set_rotation_degrees);
 	ClassDB::bind_method(D_METHOD("set_scale", "scale"), &Control::set_scale);
 	ClassDB::bind_method(D_METHOD("set_pivot_offset", "pivot_offset"), &Control::set_pivot_offset);
+	ClassDB::bind_method(D_METHOD("set_pivot_offset_ratio", "ratio"), &Control::set_pivot_offset_ratio);
 	ClassDB::bind_method(D_METHOD("get_begin"), &Control::get_begin);
 	ClassDB::bind_method(D_METHOD("get_end"), &Control::get_end);
 	ClassDB::bind_method(D_METHOD("get_position"), &Control::get_position);
@@ -4014,6 +4357,8 @@ void Control::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_rotation_degrees"), &Control::get_rotation_degrees);
 	ClassDB::bind_method(D_METHOD("get_scale"), &Control::get_scale);
 	ClassDB::bind_method(D_METHOD("get_pivot_offset"), &Control::get_pivot_offset);
+	ClassDB::bind_method(D_METHOD("get_pivot_offset_ratio"), &Control::get_pivot_offset_ratio);
+	ClassDB::bind_method(D_METHOD("get_combined_pivot_offset"), &Control::get_combined_pivot_offset);
 	ClassDB::bind_method(D_METHOD("get_custom_minimum_size"), &Control::get_custom_minimum_size);
 	ClassDB::bind_method(D_METHOD("get_parent_area_size"), &Control::get_parent_area_size);
 	ClassDB::bind_method(D_METHOD("get_global_position"), &Control::get_global_position);
@@ -4040,6 +4385,23 @@ void Control::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_v_size_flags", "flags"), &Control::set_v_size_flags);
 	ClassDB::bind_method(D_METHOD("get_v_size_flags"), &Control::get_v_size_flags);
+
+	ClassDB::bind_method(D_METHOD("set_offset_transform_enabled", "enabled"), &Control::set_offset_transform_enabled);
+	ClassDB::bind_method(D_METHOD("is_offset_transform_enabled"), &Control::is_offset_transform_enabled);
+	ClassDB::bind_method(D_METHOD("set_offset_transform_position", "offset"), &Control::set_offset_transform_position);
+	ClassDB::bind_method(D_METHOD("get_offset_transform_position"), &Control::get_offset_transform_position);
+	ClassDB::bind_method(D_METHOD("set_offset_transform_position_ratio", "offset"), &Control::set_offset_transform_position_ratio);
+	ClassDB::bind_method(D_METHOD("get_offset_transform_position_ratio"), &Control::get_offset_transform_position_ratio);
+	ClassDB::bind_method(D_METHOD("set_offset_transform_scale", "scale"), &Control::set_offset_transform_scale);
+	ClassDB::bind_method(D_METHOD("get_offset_transform_scale"), &Control::get_offset_transform_scale);
+	ClassDB::bind_method(D_METHOD("set_offset_transform_rotation", "rotation"), &Control::set_offset_transform_rotation);
+	ClassDB::bind_method(D_METHOD("get_offset_transform_rotation"), &Control::get_offset_transform_rotation);
+	ClassDB::bind_method(D_METHOD("set_offset_transform_pivot", "pivot"), &Control::set_offset_transform_pivot);
+	ClassDB::bind_method(D_METHOD("get_offset_transform_pivot"), &Control::get_offset_transform_pivot);
+	ClassDB::bind_method(D_METHOD("set_offset_transform_pivot_ratio", "pivot"), &Control::set_offset_transform_pivot_ratio);
+	ClassDB::bind_method(D_METHOD("get_offset_transform_pivot_ratio"), &Control::get_offset_transform_pivot_ratio);
+	ClassDB::bind_method(D_METHOD("set_offset_transform_visual_only", "enabled"), &Control::set_offset_transform_visual_only);
+	ClassDB::bind_method(D_METHOD("is_offset_transform_visual_only"), &Control::is_offset_transform_visual_only);
 
 	ClassDB::bind_method(D_METHOD("set_theme", "theme"), &Control::set_theme);
 	ClassDB::bind_method(D_METHOD("get_theme"), &Control::get_theme);
@@ -4240,12 +4602,23 @@ void Control::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation", PROPERTY_HINT_RANGE, "-360,360,0.1,or_less,or_greater,radians_as_degrees"), "set_rotation", "get_rotation");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_degrees", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_rotation_degrees", "get_rotation_degrees");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "scale"), "set_scale", "get_scale");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "pivot_offset", PROPERTY_HINT_NONE, "suffix:px"), "set_pivot_offset", "get_pivot_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "pivot_offset", PROPERTY_HINT_NONE, "suffix:px", PROPERTY_USAGE_EDITOR), "set_pivot_offset", "get_pivot_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "pivot_offset_ratio"), "set_pivot_offset_ratio", "get_pivot_offset_ratio");
 
 	ADD_SUBGROUP("Container Sizing", "size_flags_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "size_flags_horizontal", PROPERTY_HINT_FLAGS, "Fill:1,Expand:2,Shrink Center:4,Shrink End:8"), "set_h_size_flags", "get_h_size_flags");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "size_flags_vertical", PROPERTY_HINT_FLAGS, "Fill:1,Expand:2,Shrink Center:4,Shrink End:8"), "set_v_size_flags", "get_v_size_flags");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "size_flags_stretch_ratio", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater"), "set_stretch_ratio", "get_stretch_ratio");
+
+	ADD_GROUP("Offset Transform", "offset_transform_");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "offset_transform_enabled", PROPERTY_HINT_GROUP_ENABLE), "set_offset_transform_enabled", "is_offset_transform_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset_transform_position", PROPERTY_HINT_NONE, "suffix:px"), "set_offset_transform_position", "get_offset_transform_position");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset_transform_position_ratio", PROPERTY_HINT_NONE), "set_offset_transform_position_ratio", "get_offset_transform_position_ratio");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset_transform_scale", PROPERTY_HINT_LINK), "set_offset_transform_scale", "get_offset_transform_scale");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "offset_transform_rotation", PROPERTY_HINT_RANGE, "-360,360,0.1,or_less,or_greater,radians_as_degrees"), "set_offset_transform_rotation", "get_offset_transform_rotation");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset_transform_pivot", PROPERTY_HINT_NONE, "suffix:px"), "set_offset_transform_pivot", "get_offset_transform_pivot");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset_transform_pivot_ratio", PROPERTY_HINT_NONE), "set_offset_transform_pivot_ratio", "get_offset_transform_pivot_ratio");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "offset_transform_visual_only", PROPERTY_HINT_NONE), "set_offset_transform_visual_only", "is_offset_transform_visual_only");
 
 	ADD_GROUP("Localization", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "localize_numeral_system"), "set_localize_numeral_system", "is_localizing_numeral_system");
@@ -4422,6 +4795,10 @@ Control::Control() {
 
 Control::~Control() {
 	memdelete(data.theme_owner);
+
+	if (data.offset_transform != nullptr) {
+		memdelete(data.offset_transform);
+	}
 
 	// Resources need to be disconnected.
 	for (KeyValue<StringName, Ref<Texture2D>> &E : data.theme_icon_override) {
