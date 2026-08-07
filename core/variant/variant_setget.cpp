@@ -266,6 +266,8 @@ void Variant::set_named(const StringName &p_member, const Variant &p_value, bool
 	} else if (type == Variant::DICTIONARY) {
 		Dictionary &dict = *VariantGetInternalPtr<Dictionary>::get_ptr(this);
 		r_valid = dict.set(p_member, p_value);
+	} else if (type == Variant::STRUCT) {
+		r_valid = VariantGetInternalPtr<Struct>::get_ptr(this)->set_named(p_member, p_value);
 	} else {
 		r_valid = false;
 	}
@@ -299,6 +301,13 @@ Variant Variant::get_named(const StringName &p_member, bool &r_valid) const {
 			if (v) {
 				r_valid = true;
 				return *v;
+			}
+		} break;
+		case Variant::STRUCT: {
+			Variant ret;
+			if (VariantGetInternalPtr<Struct>::get_ptr(this)->get_named(p_member, ret)) {
+				r_valid = true;
+				return ret;
 			}
 		} break;
 		default: {
@@ -1098,6 +1107,63 @@ struct VariantKeyedSetGetObject {
 	}
 };
 
+struct VariantKeyedSetGetStruct {
+	static int _resolve_index(const Struct &s, const Variant &key) {
+		switch (key.get_type()) {
+			case Variant::STRING_NAME:
+				return s.index_of(*VariantGetInternalPtr<StringName>::get_ptr(&key));
+			case Variant::STRING:
+				return s.index_of(StringName(*VariantGetInternalPtr<String>::get_ptr(&key)));
+			case Variant::INT: {
+				const int64_t idx = *VariantGetInternalPtr<int64_t>::get_ptr(&key);
+				return (idx >= 0 && idx < s.get_field_count()) ? (int)idx : -1;
+			}
+			default:
+				return -1;
+		}
+	}
+	static bool _get(const Struct &s, const Variant &key, Variant &r_value) {
+		const int idx = _resolve_index(s, key);
+		if (idx < 0) {
+			return false;
+		}
+		r_value = s.get_member(idx);
+		return true;
+	}
+	static bool _set(Struct &s, const Variant &key, const Variant &value) {
+		const int idx = _resolve_index(s, key);
+		return idx >= 0 && s.try_set_member(idx, value);
+	}
+	static bool _has(const Struct &s, const Variant &key) {
+		return _resolve_index(s, key) >= 0;
+	}
+
+	static void get(const Variant *base, const Variant *key, Variant *value, bool *r_valid) {
+		*r_valid = _get(*VariantGetInternalPtr<Struct>::get_ptr(base), *key, *value);
+	}
+	static void ptr_get(const void *base, const void *key, void *value) {
+		const Struct &s = *reinterpret_cast<const Struct *>(base);
+		Variant v;
+		_get(s, PtrToArg<Variant>::convert(key), v);
+		PtrToArg<Variant>::encode(v, value);
+	}
+	static void set(Variant *base, const Variant *key, const Variant *value, bool *r_valid) {
+		*r_valid = _set(*VariantGetInternalPtr<Struct>::get_ptr(base), *key, *value);
+	}
+	static void ptr_set(void *base, const void *key, const void *value) {
+		Struct &s = *reinterpret_cast<Struct *>(base);
+		_set(s, PtrToArg<Variant>::convert(key), PtrToArg<Variant>::convert(value));
+	}
+	static bool has(const Variant *base, const Variant *key, bool *r_valid) {
+		*r_valid = true;
+		return _has(*VariantGetInternalPtr<Struct>::get_ptr(base), *key);
+	}
+	static uint32_t ptr_has(const void *base, const void *key) {
+		const Struct &s = *reinterpret_cast<const Struct *>(base);
+		return _has(s, PtrToArg<Variant>::convert(key));
+	}
+};
+
 struct VariantKeyedSetterGetterInfo {
 	Variant::ValidatedKeyedSetter validated_setter = nullptr;
 	Variant::ValidatedKeyedGetter validated_getter = nullptr;
@@ -1131,6 +1197,7 @@ static void register_keyed_member(Variant::Type p_type) {
 static void register_keyed_setters_getters() {
 	register_keyed_member<VariantKeyedSetGetDictionary>(Variant::DICTIONARY);
 	register_keyed_member<VariantKeyedSetGetObject>(Variant::OBJECT);
+	register_keyed_member<VariantKeyedSetGetStruct>(Variant::STRUCT);
 }
 bool Variant::is_keyed(Variant::Type p_type) {
 	ERR_FAIL_INDEX_V(p_type, VARIANT_MAX, false);
@@ -1193,7 +1260,7 @@ void Variant::set(const Variant &p_index, const Variant &p_value, bool *r_valid,
 	if (err_code) {
 		*err_code = VariantSetError::SET_OK;
 	}
-	if (type == DICTIONARY || type == OBJECT) {
+	if (type == DICTIONARY || type == OBJECT || type == STRUCT) {
 		bool valid;
 		set_keyed(p_index, p_value, valid);
 		if (r_valid) {
@@ -1244,7 +1311,7 @@ Variant Variant::get(const Variant &p_index, bool *r_valid, VariantGetError *err
 		*err_code = VariantGetError::GET_OK;
 	}
 	Variant ret;
-	if (type == DICTIONARY || type == OBJECT) {
+	if (type == DICTIONARY || type == OBJECT || type == STRUCT) {
 		bool valid;
 		ret = get_keyed(p_index, valid);
 		if (r_valid) {
@@ -2025,6 +2092,8 @@ Variant Variant::recursive_duplicate(bool p_deep, ResourceDeepDuplicateMode p_de
 			return operator Vector<Color>().duplicate();
 		case PACKED_VECTOR4_ARRAY:
 			return operator Vector<Vector4>().duplicate();
+		case STRUCT:
+			return reinterpret_cast<const Struct *>(_data._mem)->recursive_duplicate(p_deep, p_deep_subresources_mode, recursion_count);
 		default:
 			return *this;
 	}

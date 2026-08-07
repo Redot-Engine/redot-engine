@@ -471,6 +471,38 @@ void ExtendGDScriptParser::parse_class_symbol(const GDScriptParser::ClassNode *p
 				parse_class_symbol(m.m_class, symbol);
 				r_symbol.children.push_back(symbol);
 			} break;
+			case ClassNode::Member::STRUCT: {
+				LSP::DocumentSymbol symbol;
+				symbol.name = m.m_struct->identifier->name;
+				symbol.kind = LSP::SymbolKind::Struct;
+				symbol.range = range_of_node(m.m_struct);
+				symbol.selectionRange = range_of_node(m.m_struct->identifier);
+				symbol.documentation = m.m_struct->doc_data.description;
+				symbol.uri = uri;
+				symbol.script_path = path;
+				symbol.detail = "struct " + String(m.m_struct->identifier->name);
+
+				for (const GDScriptParser::VariableNode *field : m.m_struct->fields) {
+					if (field->identifier == nullptr) {
+						continue;
+					}
+					LSP::DocumentSymbol child;
+					child.name = field->identifier->name;
+					child.kind = LSP::SymbolKind::Field;
+					child.deprecated = false;
+					child.range = range_of_node(field);
+					child.selectionRange = range_of_node(field->identifier);
+					child.uri = uri;
+					child.script_path = path;
+					child.detail = "var " + String(field->identifier->name);
+					if (field->get_datatype().is_hard_type()) {
+						child.detail += ": " + field->get_datatype().to_string();
+					}
+					symbol.children.push_back(child);
+				}
+
+				r_symbol.children.push_back(symbol);
+			} break;
 			case ClassNode::Member::GROUP:
 				break; // No-op, but silences warnings.
 			case ClassNode::Member::UNDEFINED:
@@ -1022,6 +1054,8 @@ Dictionary ExtendGDScriptParser::dump_class_api(const GDScriptParser::ClassNode 
 					methods.append(dump_function_api(m.function));
 				}
 			} break;
+			case ClassNode::Member::STRUCT:
+				break;
 			case ClassNode::Member::GROUP:
 				break; // No-op, but silences warnings.
 			case ClassNode::Member::UNDEFINED:

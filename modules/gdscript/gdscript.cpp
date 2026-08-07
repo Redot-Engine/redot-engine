@@ -2822,6 +2822,40 @@ bool GDScriptLanguage::handles_global_class_type(const String &p_type) const {
 	return p_type == "GDScript";
 }
 
+void GDScriptLanguage::get_global_struct_names(const String &p_path, List<StringName> *r_names) const {
+	Error err;
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
+	if (err) {
+		return;
+	}
+
+	String source = f->get_as_utf8_string();
+
+	if (!source.contains("struct")) {
+		return;
+	}
+
+	GDScriptParser parser;
+	parser.parse(source, p_path, false, true);
+
+	const GDScriptParser::ClassNode *c = parser.get_tree();
+	if (!c) {
+		return;
+	}
+
+	HashSet<StringName> seen;
+	for (int i = 0; i < c->members.size(); i++) {
+		const GDScriptParser::ClassNode::Member &m = c->members[i];
+		if (m.type == GDScriptParser::ClassNode::Member::STRUCT && m.m_struct->identifier != nullptr) {
+			const StringName &name = m.m_struct->identifier->name;
+			if (!seen.has(name)) {
+				seen.insert(name);
+				r_names->push_back(name);
+			}
+		}
+	}
+}
+
 String GDScriptLanguage::get_global_class_name(const String &p_path, String *r_base_type, String *r_icon_path, bool *r_is_abstract, bool *r_is_tool) const {
 	Error err;
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
