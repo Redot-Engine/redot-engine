@@ -38,8 +38,8 @@
  * [Add any documentation that applies to the entire file here!]
  */
 
+#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/storage/render_scene_buffers.h"
-#include "servers/rendering_server.h"
 
 #ifdef XR_DISABLED
 /// RendererSceneCull::render_camera is empty when 3D is disabled, but
