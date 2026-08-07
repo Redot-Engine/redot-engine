@@ -732,7 +732,8 @@ static bool _delta_precisions(SceneReplicationConfig *p_config, uint64_t p_index
 	const Vector<int> &watch = p_config->get_watch_precisions();
 	r_precisions.clear();
 	bool reduced = false;
-	for (int i = 0; i < watch.size(); i++) {
+	const int count = MIN(watch.size(), 64);
+	for (int i = 0; i < count; i++) {
 		if ((p_indexes & (1ULL << i)) != 0) {
 			r_precisions.push_back(watch[i]);
 			reduced |= watch[i] != SceneReplicationConfig::PRECISION_FULL;
@@ -953,7 +954,7 @@ Error SceneReplicationInterface::on_sync_receive(int p_from, const uint8_t *p_bu
 		const List<NodePath> &props = cfg->get_sync_properties();
 		Vector<Variant> vars;
 		vars.resize(props.size());
-		int consumed;
+		int consumed = 0;
 		Error err;
 		if (cfg->is_sync_reduced_precision()) {
 			err = MultiplayerSynchronizer::decode_state_quantized(vars, cfg->get_sync_precisions().ptr(), &p_buffer[ofs], size, consumed, false);
@@ -961,6 +962,7 @@ Error SceneReplicationInterface::on_sync_receive(int p_from, const uint8_t *p_bu
 			err = MultiplayerAPI::decode_and_decompress_variants(vars, &p_buffer[ofs], size, consumed);
 		}
 		ERR_FAIL_COND_V(err, err);
+		ERR_FAIL_COND_V(uint32_t(consumed) != size, ERR_INVALID_DATA);
 		err = MultiplayerSynchronizer::set_state(props, node, vars);
 		ERR_FAIL_COND_V(err, err);
 		ofs += size;

@@ -110,8 +110,10 @@ TEST_CASE("[SceneReplication][Benchmark] Size / accuracy / speed" * doctest::ski
 	for (int i = 0; i < state.size(); i++) {
 		ptrs.write[i] = &state[i];
 	}
+	int buf_size = 0;
+	MultiplayerSynchronizer::encode_state_quantized(ptrs.ptrw(), full.ptr(), ptrs.size(), nullptr, buf_size, false);
 	Vector<uint8_t> buf;
-	buf.resize(128);
+	buf.resize(buf_size);
 	Vector<Variant> out;
 	out.resize(state.size());
 

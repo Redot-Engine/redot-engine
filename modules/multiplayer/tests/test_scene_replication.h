@@ -34,6 +34,7 @@
 
 #include "tests/test_macros.h"
 
+#include "core/math/math_funcs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 
@@ -157,6 +158,17 @@ TEST_CASE("[Multiplayer][SceneReplication] Half on unsupported type falls back t
 
 	CHECK(((String)out[0]) == String("hello"));
 	CHECK(((Vector3)out[1]).is_equal_approx(Vector3(1.0, 2.0, 3.0)));
+}
+
+TEST_CASE("[Multiplayer][SceneReplication] Half precision loses out-of-range magnitudes") {
+	Vector<Variant> values;
+	values.push_back(Vector3(100000.0, -100000.0, 1e-9));
+	Vector<int> precisions = { SceneReplicationConfig::PRECISION_HALF };
+	Vector<Variant> out = _round_trip(values, precisions);
+	Vector3 v = out[0];
+	CHECK((Math::is_inf(v.x) || Math::is_nan(v.x)));
+	CHECK((Math::is_inf(v.y) || Math::is_nan(v.y)));
+	CHECK(v.z == 0.0f);
 }
 
 TEST_CASE("[Multiplayer][SceneReplication] Config precision setting persists and round-trips") {
