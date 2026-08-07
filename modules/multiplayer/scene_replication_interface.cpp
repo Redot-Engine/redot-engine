@@ -254,12 +254,15 @@ Error SceneReplicationInterface::on_replication_start(Object *p_obj, Variant p_c
 
 		// Try to apply spawn state (before ready).
 		if (pending_buffer_size > 0) {
-			ERR_FAIL_COND_V(!node || !sync->get_replication_config_ptr(), ERR_UNCONFIGURED);
+			SceneReplicationConfig *scfg = sync->get_replication_config_ptr();
+			ERR_FAIL_COND_V(!node || !scfg, ERR_UNCONFIGURED);
 			int consumed = 0;
-			const List<NodePath> props = sync->get_replication_config_ptr()->get_spawn_properties();
+			const List<NodePath> &props = scfg->get_spawn_properties();
 			Vector<Variant> vars;
 			vars.resize(props.size());
-			Error err = MultiplayerAPI::decode_and_decompress_variants(vars, pending_buffer, pending_buffer_size, consumed);
+			Error err = scfg->is_spawn_reduced_precision()
+					? MultiplayerSynchronizer::decode_state_quantized(vars, scfg->get_spawn_precisions().ptr(), pending_buffer, pending_buffer_size, consumed, false)
+					: MultiplayerAPI::decode_and_decompress_variants(vars, pending_buffer, pending_buffer_size, consumed);
 			ERR_FAIL_COND_V(err, err);
 			if (consumed > 0) {
 				pending_buffer += consumed;
@@ -496,6 +499,8 @@ Error SceneReplicationInterface::_make_spawn_packet(Node *p_node, MultiplayerSpa
 
 	// Prepare spawn state.
 	List<NodePath> state_props;
+	Vector<int> state_precisions;
+	bool spawn_reduced = false;
 	List<uint32_t> sync_ids;
 	const HashSet<ObjectID> synchronizers = tnode->synchronizers;
 	for (const ObjectID &sid : synchronizers) {
@@ -504,10 +509,16 @@ Error SceneReplicationInterface::_make_spawn_packet(Node *p_node, MultiplayerSpa
 			continue;
 		}
 		ERR_CONTINUE(!sync);
-		ERR_FAIL_NULL_V(sync->get_replication_config_ptr(), ERR_BUG);
-		for (const NodePath &prop : sync->get_replication_config_ptr()->get_spawn_properties()) {
+		SceneReplicationConfig *scfg = sync->get_replication_config_ptr();
+		ERR_FAIL_NULL_V(scfg, ERR_BUG);
+		for (const NodePath &prop : scfg->get_spawn_properties()) {
 			state_props.push_back(prop);
 		}
+		const Vector<int> &sprec = scfg->get_spawn_precisions();
+		for (int i = 0; i < sprec.size(); i++) {
+			state_precisions.push_back(sprec[i]);
+		}
+		spawn_reduced |= scfg->is_spawn_reduced_precision();
 		// Ensure the synchronizer has an ID.
 		if (sync->get_net_id() == 0) {
 			sync->set_net_id(++last_net_id);
@@ -520,7 +531,9 @@ Error SceneReplicationInterface::_make_spawn_packet(Node *p_node, MultiplayerSpa
 	if (state_props.size()) {
 		Error err = MultiplayerSynchronizer::get_state(state_props, p_node, state_vars, state_varp);
 		ERR_FAIL_COND_V_MSG(err != OK, err, "Unable to retrieve spawn state.");
-		err = MultiplayerAPI::encode_and_compress_variants(state_varp.ptrw(), state_varp.size(), nullptr, state_size);
+		err = spawn_reduced
+				? MultiplayerSynchronizer::encode_state_quantized(state_varp.ptrw(), state_precisions.ptr(), state_varp.size(), nullptr, state_size, false)
+				: MultiplayerAPI::encode_and_compress_variants(state_varp.ptrw(), state_varp.size(), nullptr, state_size);
 		ERR_FAIL_COND_V_MSG(err != OK, err, "Unable to encode spawn state.");
 	}
 
@@ -550,7 +563,9 @@ Error SceneReplicationInterface::_make_spawn_packet(Node *p_node, MultiplayerSpa
 	}
 	// Write state.
 	if (state_size) {
-		Error err = MultiplayerAPI::encode_and_compress_variants(state_varp.ptrw(), state_varp.size(), &ptr[ofs], state_size);
+		Error err = spawn_reduced
+				? MultiplayerSynchronizer::encode_state_quantized(state_varp.ptrw(), state_precisions.ptr(), state_varp.size(), &ptr[ofs], state_size, false)
+				: MultiplayerAPI::encode_and_compress_variants(state_varp.ptrw(), state_varp.size(), &ptr[ofs], state_size);
 		ERR_FAIL_COND_V(err, err);
 		ofs += state_size;
 	}
@@ -713,6 +728,20 @@ MultiplayerSynchronizer *SceneReplicationInterface::_find_synchronizer(int p_pee
 	return sync;
 }
 
+static bool _delta_precisions(SceneReplicationConfig *p_config, uint64_t p_indexes, Vector<int> &r_precisions) {
+	const Vector<int> &watch = p_config->get_watch_precisions();
+	r_precisions.clear();
+	bool reduced = false;
+	const int count = MIN(watch.size(), 64);
+	for (int i = 0; i < count; i++) {
+		if ((p_indexes & (1ULL << i)) != 0) {
+			r_precisions.push_back(watch[i]);
+			reduced |= watch[i] != SceneReplicationConfig::PRECISION_FULL;
+		}
+	}
+	return reduced;
+}
+
 void SceneReplicationInterface::_send_delta(int p_peer, const HashSet<ObjectID> &p_synchronizers, uint64_t p_usec, const HashMap<ObjectID, uint64_t> &p_last_watch_usecs) {
 	MAKE_ROOM(/* header */ 1 + /* element */ 4 + 8 + 4 + delta_mtu);
 	uint8_t *ptr = packet_cache.ptrw();
@@ -725,7 +754,8 @@ void SceneReplicationInterface::_send_delta(int p_peer, const HashSet<ObjectID> 
 		if (!_verify_synchronizer(p_peer, sync, net_id)) {
 			continue;
 		}
-		uint64_t last_usec = p_last_watch_usecs.has(oid) ? p_last_watch_usecs[oid] : 0;
+		const uint64_t *last_usec_ptr = p_last_watch_usecs.getptr(oid);
+		uint64_t last_usec = last_usec_ptr ? *last_usec_ptr : 0;
 		uint64_t indexes;
 		List<Variant> delta = sync->get_delta_state(p_usec, last_usec, indexes);
 
@@ -741,8 +771,15 @@ void SceneReplicationInterface::_send_delta(int p_peer, const HashSet<ObjectID> 
 			vptr[i] = &v;
 			i++;
 		}
+		Vector<int> precisions;
+		bool reduced = false;
+		if (sync->get_replication_config_ptr()->is_watch_reduced_precision()) {
+			reduced = _delta_precisions(sync->get_replication_config_ptr(), indexes, precisions);
+		}
 		int size;
-		Error err = MultiplayerAPI::encode_and_compress_variants(vptr, varp.size(), nullptr, size);
+		Error err = reduced
+				? MultiplayerSynchronizer::encode_state_quantized(vptr, precisions.ptr(), varp.size(), nullptr, size, false)
+				: MultiplayerAPI::encode_and_compress_variants(vptr, varp.size(), nullptr, size);
 		ERR_CONTINUE_MSG(err != OK, "Unable to encode delta state.");
 
 		ERR_CONTINUE_MSG(size > delta_mtu, vformat("Synchronizer delta bigger than MTU will not be sent (%d > %d): %s", size, delta_mtu, sync->get_path()));
@@ -756,7 +793,11 @@ void SceneReplicationInterface::_send_delta(int p_peer, const HashSet<ObjectID> 
 			ofs += encode_uint32(sync->get_net_id(), &ptr[ofs]);
 			ofs += encode_uint64(indexes, &ptr[ofs]);
 			ofs += encode_uint32(size, &ptr[ofs]);
-			MultiplayerAPI::encode_and_compress_variants(vptr, varp.size(), &ptr[ofs], size);
+			if (reduced) {
+				MultiplayerSynchronizer::encode_state_quantized(vptr, precisions.ptr(), varp.size(), &ptr[ofs], size, false);
+			} else {
+				MultiplayerAPI::encode_and_compress_variants(vptr, varp.size(), &ptr[ofs], size);
+			}
 			ofs += size;
 		}
 #ifdef DEBUG_ENABLED
@@ -791,7 +832,17 @@ Error SceneReplicationInterface::on_delta_receive(int p_from, const uint8_t *p_b
 		Vector<Variant> vars;
 		vars.resize(props.size());
 		int consumed = 0;
-		Error err = MultiplayerAPI::decode_and_decompress_variants(vars, p_buffer + ofs, size, consumed);
+		Error err;
+		Vector<int> precisions;
+		bool reduced = false;
+		if (sync->get_replication_config_ptr()->is_watch_reduced_precision()) {
+			reduced = _delta_precisions(sync->get_replication_config_ptr(), indexes, precisions);
+		}
+		if (reduced) {
+			err = MultiplayerSynchronizer::decode_state_quantized(vars, precisions.ptr(), p_buffer + ofs, size, consumed, false);
+		} else {
+			err = MultiplayerAPI::decode_and_decompress_variants(vars, p_buffer + ofs, size, consumed);
+		}
 		ERR_FAIL_COND_V(err != OK, err);
 		ERR_FAIL_COND_V(uint32_t(consumed) != size, ERR_INVALID_DATA);
 		err = MultiplayerSynchronizer::set_state(props, node, vars);
@@ -830,10 +881,16 @@ void SceneReplicationInterface::_send_sync(int p_peer, const HashSet<ObjectID> &
 		int size;
 		Vector<Variant> vars;
 		Vector<const Variant *> varp;
-		const List<NodePath> props = sync->get_replication_config_ptr()->get_sync_properties();
+		SceneReplicationConfig *cfg = sync->get_replication_config_ptr();
+		const List<NodePath> &props = cfg->get_sync_properties();
 		Error err = MultiplayerSynchronizer::get_state(props, node, vars, varp);
 		ERR_CONTINUE_MSG(err != OK, "Unable to retrieve sync state.");
-		err = MultiplayerAPI::encode_and_compress_variants(varp.ptrw(), varp.size(), nullptr, size);
+		const bool reduced = cfg->is_sync_reduced_precision();
+		if (reduced) {
+			err = MultiplayerSynchronizer::encode_state_quantized(varp.ptrw(), cfg->get_sync_precisions().ptr(), varp.size(), nullptr, size, false);
+		} else {
+			err = MultiplayerAPI::encode_and_compress_variants(varp.ptrw(), varp.size(), nullptr, size);
+		}
 		ERR_CONTINUE_MSG(err != OK, "Unable to encode sync state.");
 		/// @todo Handle single state above MTU.
 		ERR_CONTINUE_MSG(size > sync_mtu, vformat("Node states bigger than MTU will not be sent (%d > %d): %s", size, sync_mtu, node->get_path()));
@@ -845,7 +902,11 @@ void SceneReplicationInterface::_send_sync(int p_peer, const HashSet<ObjectID> &
 		if (size) {
 			ofs += encode_uint32(sync->get_net_id(), &ptr[ofs]);
 			ofs += encode_uint32(size, &ptr[ofs]);
-			MultiplayerAPI::encode_and_compress_variants(varp.ptrw(), varp.size(), &ptr[ofs], size);
+			if (reduced) {
+				MultiplayerSynchronizer::encode_state_quantized(varp.ptrw(), cfg->get_sync_precisions().ptr(), varp.size(), &ptr[ofs], size, false);
+			} else {
+				MultiplayerAPI::encode_and_compress_variants(varp.ptrw(), varp.size(), &ptr[ofs], size);
+			}
 			ofs += size;
 		}
 #ifdef DEBUG_ENABLED
@@ -889,12 +950,19 @@ Error SceneReplicationInterface::on_sync_receive(int p_from, const uint8_t *p_bu
 			ofs += size;
 			continue;
 		}
-		const List<NodePath> props = sync->get_replication_config_ptr()->get_sync_properties();
+		SceneReplicationConfig *cfg = sync->get_replication_config_ptr();
+		const List<NodePath> &props = cfg->get_sync_properties();
 		Vector<Variant> vars;
 		vars.resize(props.size());
-		int consumed;
-		Error err = MultiplayerAPI::decode_and_decompress_variants(vars, &p_buffer[ofs], size, consumed);
+		int consumed = 0;
+		Error err;
+		if (cfg->is_sync_reduced_precision()) {
+			err = MultiplayerSynchronizer::decode_state_quantized(vars, cfg->get_sync_precisions().ptr(), &p_buffer[ofs], size, consumed, false);
+		} else {
+			err = MultiplayerAPI::decode_and_decompress_variants(vars, &p_buffer[ofs], size, consumed);
+		}
 		ERR_FAIL_COND_V(err, err);
+		ERR_FAIL_COND_V(uint32_t(consumed) != size, ERR_INVALID_DATA);
 		err = MultiplayerSynchronizer::set_state(props, node, vars);
 		ERR_FAIL_COND_V(err, err);
 		ofs += size;

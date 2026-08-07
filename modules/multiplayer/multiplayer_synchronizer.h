@@ -89,6 +89,9 @@ public:
 	static Error get_state(const List<NodePath> &p_properties, Object *p_obj, Vector<Variant> &r_variant, Vector<const Variant *> &r_variant_ptrs);
 	static Error set_state(const List<NodePath> &p_properties, Object *p_obj, const Vector<Variant> &p_state);
 
+	static Error encode_state_quantized(const Variant **p_variants, const int *p_precisions, int p_count, uint8_t *p_buffer, int &r_len, bool p_allow_object_decoding);
+	static Error decode_state_quantized(Vector<Variant> &r_variants, const int *p_precisions, const uint8_t *p_buffer, int p_len, int &r_len, bool p_allow_object_decoding);
+
 	void reset();
 	Node *get_root_node();
 
