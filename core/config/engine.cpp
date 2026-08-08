@@ -128,6 +128,10 @@ double Engine::get_time_scale() const {
 	return freeze_time_scale ? 0 : _time_scale;
 }
 
+double Engine::get_effective_time_scale() const {
+	return freeze_time_scale ? 0.0 : _time_scale;
+}
+
 double Engine::get_unfrozen_time_scale() const {
 	return _time_scale;
 }
