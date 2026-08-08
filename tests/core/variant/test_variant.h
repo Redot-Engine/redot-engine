@@ -2278,6 +2278,12 @@ TEST_CASE("[Variant] Utility functions") {
 TEST_CASE("[Variant] Operator NOT") {
 	// Verify that operator NOT works for all types and is consistent with booleanize().
 	for (int i = 0; i < Variant::VARIANT_MAX; i++) {
+		// Structs have no generic (blueprint-less) constructor: they are built via
+		// GDScriptStructClass::new(), so Variant::construct() can't default-make one.
+		if (i == Variant::STRUCT) {
+			continue;
+		}
+
 		Variant value;
 		Callable::CallError err;
 		Variant::construct((Variant::Type)i, value, nullptr, 0, err);

@@ -105,6 +105,7 @@ public:
 	struct UnaryOpNode;
 	struct VariableNode;
 	struct WhileNode;
+	struct StructNode;
 
 	class DataType {
 	public:
@@ -115,6 +116,7 @@ public:
 			NATIVE,
 			SCRIPT,
 			CLASS, ///< GDScript.
+			STRUCT, ///< Struct.
 			ENUM, ///< Enumeration.
 			VARIANT, ///< Can be any type.
 			RESOLVING, ///< Currently resolving.
@@ -142,6 +144,7 @@ public:
 		Ref<Script> script_type;
 		String script_path;
 		ClassNode *class_type = nullptr;
+		StructNode *struct_type = nullptr;
 
 		MethodInfo method_info; ///< For callable/signals.
 		HashMap<StringName, int64_t> enum_values; ///< For enums.
@@ -226,6 +229,8 @@ public:
 					return script_type == p_other.script_type;
 				case CLASS:
 					return class_type == p_other.class_type || class_type->fqcn == p_other.class_type->fqcn;
+				case STRUCT:
+					return struct_type == p_other.struct_type;
 				case RESOLVING:
 				case UNRESOLVED:
 					break;
@@ -252,6 +257,7 @@ public:
 			script_type = p_other.script_type;
 			script_path = p_other.script_path;
 			class_type = p_other.class_type;
+			struct_type = p_other.struct_type;
 			method_info = p_other.method_info;
 			enum_values = p_other.enum_values;
 			container_element_types = p_other.container_element_types;
@@ -334,6 +340,7 @@ public:
 			RETURN,
 			SELF,
 			SIGNAL,
+			STRUCT,
 			SUBSCRIPT,
 			SUITE,
 			TERNARY_OPERATOR,
@@ -567,6 +574,7 @@ public:
 			enum Type {
 				UNDEFINED,
 				CLASS,
+				STRUCT,
 				CONSTANT,
 				FUNCTION,
 				SIGNAL,
@@ -580,6 +588,7 @@ public:
 
 			union {
 				ClassNode *m_class = nullptr;
+				StructNode *m_struct;
 				ConstantNode *constant;
 				FunctionNode *function;
 				SignalNode *signal;
@@ -596,6 +605,8 @@ public:
 					case CLASS:
 						// All class-type members have an id.
 						return m_class->identifier->name;
+					case STRUCT:
+						return m_struct->identifier->name;
 					case CONSTANT:
 						return constant->identifier->name;
 					case FUNCTION:
@@ -621,6 +632,8 @@ public:
 						return "???";
 					case CLASS:
 						return "class";
+					case STRUCT:
+						return "struct";
 					case CONSTANT:
 						return "constant";
 					case FUNCTION:
@@ -643,6 +656,8 @@ public:
 				switch (type) {
 					case CLASS:
 						return m_class->start_line;
+					case STRUCT:
+						return m_struct->start_line;
 					case CONSTANT:
 						return constant->start_line;
 					case FUNCTION:
@@ -667,6 +682,19 @@ public:
 				switch (type) {
 					case CLASS:
 						return m_class->get_datatype();
+					case STRUCT: {
+						ERR_FAIL_NULL_V(m_struct, DataType());
+						DataType dt;
+						dt.kind = DataType::STRUCT;
+						dt.type_source = DataType::ANNOTATED_EXPLICIT;
+						dt.struct_type = m_struct;
+						dt.is_meta_type = true;
+						dt.is_constant = true;
+						// Note: script_path needs to be set by the caller since Member doesn't have access to it
+						// This is set in reduce_identifier_from_base via p_identifier->set_datatype(member.get_datatype())
+						// followed by setting script_path from the current parser context
+						return dt;
+					}
 					case CONSTANT:
 						return constant->get_datatype();
 					case FUNCTION:
@@ -691,6 +719,8 @@ public:
 				switch (type) {
 					case CLASS:
 						return m_class;
+					case STRUCT:
+						return m_struct;
 					case CONSTANT:
 						return constant;
 					case FUNCTION:
@@ -716,6 +746,10 @@ public:
 			Member(ClassNode *p_class) {
 				type = CLASS;
 				m_class = p_class;
+			}
+			Member(StructNode *p_struct) {
+				type = STRUCT;
+				m_struct = p_struct;
 			}
 			Member(ConstantNode *p_constant) {
 				type = CONSTANT;
@@ -806,6 +840,67 @@ public:
 
 		ClassNode() {
 			type = CLASS;
+		}
+	};
+
+	struct StructNode : public Node {
+#ifdef TOOLS_ENABLED
+		MemberDocData doc_data;
+#endif // TOOLS_ENABLED
+
+		IdentifierNode *identifier = nullptr;
+		Vector<IdentifierNode *> extends; // Single inheritance from another struct
+
+		struct Field {
+			VariableNode *variable = nullptr;
+			int index = 0;
+		};
+		Vector<Field> fields;
+		HashMap<StringName, int> field_indices;
+
+		Vector<FunctionNode *> methods;
+		HashMap<StringName, FunctionNode *> method_map;
+
+		FunctionNode *constructor = nullptr; // Implicit _init method
+
+		DataType base_struct_type;
+		ClassNode *owner_class = nullptr; // Class that owns this struct
+
+		String fqsn; // Fully-qualified struct name
+
+		bool resolved_interface = false;
+		bool resolved_body = false;
+		bool resolving_body = false; // Sentinel for re-entrancy detection
+
+		bool add_field(VariableNode *p_variable) {
+			if (field_indices.has(p_variable->identifier->name)) {
+				return false; // Duplicate field
+			}
+			int idx = fields.size();
+			fields.push_back({ p_variable, idx });
+			field_indices[p_variable->identifier->name] = idx;
+			return true;
+		}
+
+		bool add_method(FunctionNode *p_function) {
+			if (method_map.has(p_function->identifier->name)) {
+				return false; // Duplicate method
+			}
+			methods.push_back(p_function);
+			method_map[p_function->identifier->name] = p_function;
+			return true;
+		}
+
+		bool has_field(const StringName &p_name) const {
+			return field_indices.has(p_name);
+		}
+
+		bool has_method(const StringName &p_name) const {
+			return method_map.has(p_name);
+		}
+
+		StructNode() {
+			type = Node::STRUCT;
 		}
 	};
 
@@ -1058,6 +1153,7 @@ public:
 
 	struct SelfNode : public ExpressionNode {
 		ClassNode *current_class = nullptr;
+		StructNode *current_struct = nullptr;
 
 		SelfNode() {
 			type = SELF;
@@ -1343,6 +1439,8 @@ private:
 	friend class GDScriptParserRef;
 
 	bool _is_tool = false;
+	bool _is_struct_file = false;
+	StructNode *_file_struct = nullptr;
 	String script_path;
 	bool for_completion = false;
 	bool parse_body = true;
@@ -1377,6 +1475,7 @@ private:
 	GDScriptTokenizer::Token current;
 
 	ClassNode *current_class = nullptr;
+	StructNode *current_struct = nullptr;
 	FunctionNode *current_function = nullptr;
 	LambdaNode *current_lambda = nullptr;
 	SuiteNode *current_suite = nullptr;
@@ -1518,6 +1617,9 @@ private:
 	/// @{
 	void parse_program();
 	ClassNode *parse_class(bool p_is_static);
+	StructNode *parse_struct(bool p_is_static);
+	void parse_struct_name();
+	void parse_struct_file_body();
 	void parse_class_name();
 	void parse_extends();
 	void parse_class_body(bool p_is_multiline);
@@ -1617,6 +1719,8 @@ public:
 	Error parse_binary(const Vector<uint8_t> &p_binary, const String &p_script_path);
 	ClassNode *get_tree() const { return head; }
 	bool is_tool() const { return _is_tool; }
+	bool is_file_struct() const { return _is_struct_file; }
+	StructNode *get_file_struct() const { return _file_struct; }
 	Ref<GDScriptParserRef> get_depended_parser_for(const String &p_path);
 	const HashMap<String, Ref<GDScriptParserRef>> &get_depended_parsers();
 	ClassNode *find_class(const String &p_qualified_name) const;
@@ -1691,6 +1795,7 @@ public:
 		void print_return(ReturnNode *p_return);
 		void print_self(SelfNode *p_self);
 		void print_signal(SignalNode *p_signal);
+		void print_struct(StructNode *p_struct);
 		void print_statement(Node *p_statement);
 		void print_subscript(SubscriptNode *p_subscript);
 		void print_suite(SuiteNode *p_suite);

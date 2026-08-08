@@ -44,6 +44,10 @@
 #include "core/io/resource.h"
 #include "core/math/math_funcs.h"
 #include "core/variant/variant_parser.h"
+#ifdef MODULE_GDSCRIPT_ENABLED
+#include "modules/gdscript/gdscript_struct.h"
+#endif
+
 #include <array>
 #include <cstdint>
 #include <unordered_map>
@@ -196,6 +200,7 @@ static const std::array<String, Variant::Type::VARIANT_MAX> TYPE_STRING_TABLE = 
 	"PackedVector3Array",
 	"PackedColorArray",
 	"PackedVector4Array",
+	"Struct",
 };
 
 /*
@@ -257,6 +262,7 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_CAST_TAB
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_VECTOR3_ARRAY), // packedvec3array
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_COLOR_ARRAY), // packedcolorarray
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_VECTOR4_ARRAY), // packedvec4array
+	0, // struct (not convertible to/from other types)
 };
 
 /*
@@ -318,6 +324,7 @@ static const std::array<std::uint64_t, Variant::Type::VARIANT_MAX> TYPE_STRICT_C
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_VECTOR3_ARRAY), // packedvec3array
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_COLOR_ARRAY), // packedcolorarray
 	(1ull << Variant::ARRAY) | (1ull << Variant::PACKED_VECTOR4_ARRAY), // packedvec4array
+	0, // struct (not convertible to/from other types)
 };
 
 /*
@@ -364,6 +371,7 @@ static const std::unordered_map<std::string, Variant::Type> STRING_TO_TYPE_TBL =
 	{ "PackedVector3Array", Variant::PACKED_VECTOR3_ARRAY },
 	{ "PackedColorArray", Variant::PACKED_COLOR_ARRAY },
 	{ "PackedVector4Array", Variant::PACKED_VECTOR4_ARRAY },
+	{ "Struct", Variant::STRUCT },
 };
 
 String Variant::get_type_name(Variant::Type p_type) {
@@ -770,6 +778,15 @@ void Variant::reference(const Variant &p_variant) {
 				_data.packed_array = PACKED_ARRAY_CREATE_TBL[p_variant.type - PACKED_BYTE_ARRAY]();
 			}
 			return;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case STRUCT: {
+			// COW: Copy the wrapper by value; the Ref<> inside handles reference counting.
+			// Placement new to copy the wrapper into _mem.
+			const GDScriptStructInstance *src_wrapper = reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem);
+			new (_data._mem) GDScriptStructInstance(*src_wrapper);
+			return;
+		}
+#endif
 		default:
 			dst = _data._mem;
 			src = (void *)p_variant._data._mem;
@@ -895,6 +912,16 @@ void Variant::_clear_internal() {
 		case PACKED_COLOR_ARRAY: {
 			PackedArrayRefBase::destroy(_data.packed_array);
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case STRUCT: {
+			// COW: Destroy the wrapper by calling its destructor.
+			// The Ref<> destructor handles reference counting automatically.
+			GDScriptStructInstance *wrapper = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			wrapper->~GDScriptStructInstance();
+			// Clear the memory
+			memset(_data._mem, 0, sizeof(_data._mem));
+		} break;
+#endif
 		default: {
 			// Not needed, there is no point. The following do not allocate memory:
 			// VECTOR2, VECTOR3, VECTOR4, RECT2, PLANE, QUATERNION, COLOR.
@@ -1154,6 +1181,18 @@ String Variant::stringify(int recursion_count) const {
 			const ::RID &s = *reinterpret_cast<const ::RID *>(_data._mem);
 			return "RID(" + itos(s.get_id()) + ")";
 		}
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case STRUCT: {
+			// Get the struct wrapper and convert to string
+			const GDScriptStructInstance *wrapper = reinterpret_cast<const GDScriptStructInstance *>(_data._mem);
+			if (wrapper && wrapper->is_valid()) {
+				// Simple string representation for now to avoid crashes
+				// TODO: Add proper field serialization
+				return String("<") + String(wrapper->get_struct_name()) + " struct>";
+			}
+			return "<Struct#null>";
+		}
+#endif
 		default: {
 			return "<" + get_type_name(type) + ">";
 		}
@@ -2216,6 +2255,16 @@ void Variant::operator=(const Variant &p_variant) {
 		case PACKED_VECTOR4_ARRAY: {
 			_data.packed_array = PackedArrayRef<Vector4>::reference_from(_data.packed_array, p_variant._data.packed_array);
 		} break;
+#ifdef MODULE_GDSCRIPT_ENABLED
+		case STRUCT: {
+			// COW: Destroy old wrapper, copy new wrapper by value
+			GDScriptStructInstance *old_wrapper = reinterpret_cast<GDScriptStructInstance *>(_data._mem);
+			old_wrapper->~GDScriptStructInstance();
+
+			const GDScriptStructInstance *new_wrapper = reinterpret_cast<const GDScriptStructInstance *>(p_variant._data._mem);
+			new (_data._mem) GDScriptStructInstance(*new_wrapper);
+		} break;
+#endif
 		default: {
 		}
 	}
@@ -2918,7 +2967,7 @@ void Variant::construct_from_string(const String &p_string, Variant &r_value, Ob
 
 String Variant::get_construct_string() const {
 	String vars;
-	VariantWriter::write_to_string(*this, vars, nullptr, nullptr, true, true);
+	VariantWriter::write_to_string(*this, vars);
 
 	return vars;
 }

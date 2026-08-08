@@ -393,3 +393,5 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 *.generated.props
+.gdbinit
+CLAUDE.md

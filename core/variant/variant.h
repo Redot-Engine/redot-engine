@@ -75,6 +75,7 @@
 
 class Object;
 class RefCounted;
+class GDScriptStructInstance;
 
 template <typename T>
 class Ref;
@@ -153,6 +154,9 @@ public:
 		PACKED_COLOR_ARRAY,
 		PACKED_VECTOR4_ARRAY,
 		/// @}
+
+		STRUCT,
+
 		VARIANT_MAX
 	};
 
@@ -202,6 +206,12 @@ private:
 
 	friend struct _VariantCall;
 	friend class VariantInternal;
+	friend class GDScriptStructClass; // Needed for proper struct construction
+	friend class GDScriptStruct; // Needed for struct instance creation
+	friend class GDScriptLanguage; // Needed for struct serialization and property list
+#ifdef MODULE_GDSCRIPT_ENABLED
+	friend struct VariantKeyedSetGetStruct; // Needed for struct keyed getter/setter
+#endif
 	// Variant takes 24 bytes when real_t is float, and 40 bytes if double.
 	// It only allocates extra memory for AABB/Transform2D (24, 48 if double),
 	// Basis/Transform3D (48, 96 if double), Projection (64, 128 if double),
@@ -340,7 +350,8 @@ private:
 			(1ull << Variant::PACKED_COLOR_ARRAY) |
 			(1ull << Variant::PACKED_VECTOR2_ARRAY) |
 			(1ull << Variant::PACKED_VECTOR3_ARRAY) |
-			(1ull << Variant::PACKED_VECTOR4_ARRAY);
+			(1ull << Variant::PACKED_VECTOR4_ARRAY) |
+			(1ull << Variant::STRUCT);
 
 	_FORCE_INLINE_ void clear() {
 		if (unlikely((needs_deinit & (1ull << type)) != 0)) { // Make it fast for types that don't need deinit.
