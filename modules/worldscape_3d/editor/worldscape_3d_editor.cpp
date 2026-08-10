@@ -43,8 +43,6 @@
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
 
-#include "../constants.h"
-#include "../logger.h"
 #include "scene/3d/navigation/navigation_region_3d.h"
 #include "scene/gui/separator.h"
 #include "scene/gui/subviewport_container.h"
@@ -52,9 +50,11 @@
 #include "scene/resources/image_texture.h"
 #include "scene/theme/theme_db.h"
 
-#include "../worldscape_3d.h"
-#include "../worldscape_3d_data.h"
-#include "../worldscape_3d_util.h"
+#include "modules/worldscape_3d/constants.h"
+#include "modules/worldscape_3d/logger.h"
+#include "modules/worldscape_3d/worldscape_3d.h"
+#include "modules/worldscape_3d/worldscape_3d_data.h"
+#include "modules/worldscape_3d/worldscape_3d_util.h"
 #include "ui/worldscape_3d_asset_dock.h"
 #include "ui/worldscape_3d_operations.h"
 #include "ui/worldscape_3d_ui.h"
@@ -873,7 +873,7 @@ void WorldScape3DEditor::backup_region(const Ref<WorldScape3DRegion> &p_region) 
 
 // Called on left mouse button released
 void WorldScape3DEditor::stop_operation() {
-	IS_DATA_INIT_MESG("Terrain isn't initialized", VOID);
+	IS_DATA_INIT_MESG("The terrain isn't initialized", VOID);
 	// If undo was created and terrain actually modified, store it
 	LOG(DEBUG, "Backed up regions: ", _original_regions.size(), ", Edited regions: ", _edited_regions.size(),
 			", Added/Removed regions: ", _added_removed_locations.size());

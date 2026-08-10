@@ -162,7 +162,6 @@ public:
 	bool is_inside_world() const { return _is_inside_world; }
 
 	// Terrain
-	String get_version() const { return _version; }
 	void set_debug_level(const DebugLevel p_level);
 	DebugLevel get_debug_level() const { return debug_level; }
 	void set_data_directory(String p_dir);
