@@ -49,10 +49,10 @@ public:
 		ADD_SIGNAL(MethodInfo("picked", PropertyInfo(Variant::INT, "index")));
 	}
 
-	explicit MultiPickerButton(const int index, Ref<Texture2D> icon) :
-			_point_index{ index } {
-		Button::set_meta("icon", icon);
-		Button::set_meta("point_index", index);
+	explicit MultiPickerButton(const int p_index, Ref<Texture2D> p_icon) :
+			_point_index{ p_index } {
+		Button::set_meta("icon", p_icon);
+		Button::set_meta("point_index", p_index);
 	}
 
 	void _notification(int what) {

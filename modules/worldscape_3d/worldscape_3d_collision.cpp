@@ -478,7 +478,7 @@ void WorldScape3DCollision::destroy() {
 	// Scene Tree
 	for (size_t i = 0; i < _shapes.size(); i++) {
 		CollisionShape3D *shape = _shapes[i];
-		LOG(DEBUG, "Freeing CollisionShape3D ", Variant(i), " ", shape->get_name());
+		LOG(DEBUG, "Freeing CollisionShape3D ", shape->get_name());
 		remove_from_tree(shape);
 		memdelete_safely(shape);
 	}
