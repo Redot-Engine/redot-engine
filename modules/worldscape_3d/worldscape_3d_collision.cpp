@@ -334,8 +334,7 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 		build();
 		return;
 	}
-	// FIXME implement LOG macro
-	//int time = Time::get_singleton()->get_ticks_usec();
+	int time = Time::get_singleton()->get_ticks_usec();
 	real_t spacing = _terrain->get_vertex_spacing();
 
 	if (is_dynamic_mode()) {
@@ -408,9 +407,8 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 				continue;
 			}
 			if (!p_rebuild && grid[i] >= 0) {
-				// FIXME implement LOG macro
-				//Vector2i center_pos = v3v2i(_shape_get_position(i));
-				//LOG(EXTREME, "grid[", i, ":", grid_loc, "] shape_pos : ", shape_pos, " act ", center_pos - shape_offset, " Has active shape id: ", grid[i]);
+				Vector2i center_pos = v3v2i(_shape_get_position(i));
+				LOG(EXTREME, "grid[", i, ":", grid_loc, "] shape_pos : ", shape_pos, " act ", center_pos - shape_offset, " Has active shape id: ", grid[i]);
 				continue;
 			} else {
 				if (inactive_shape_ids.size() == 0) {
@@ -455,7 +453,7 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 			_shape_set_data(i, shape_data);
 		}
 	}
-	//LOG(EXTREME, "Collision update time: ", Time::get_singleton()->get_ticks_usec() - time, " us");
+	LOG(EXTREME, "Collision update time: ", Time::get_singleton()->get_ticks_usec() - time, " us");
 }
 
 void WorldScape3DCollision::destroy() {

@@ -392,7 +392,7 @@ void WorldScape3DData::save_region(const Vector2i &p_region_loc, const String &p
 	}
 	Error err = region->save(path, p_16_bit);
 	if (!(err == OK || err == ERR_SKIP)) {
-		LOG(ERROR, "Could not save file: ", path, ", error: ", UtilityFunctions::error_string(err), " (", err, ")");
+		LOG(ERROR, "Could not save file: ", path, ", error: ", VariantUtilityFunctions::error_string(err), " (", err, ")");
 	}
 }
 

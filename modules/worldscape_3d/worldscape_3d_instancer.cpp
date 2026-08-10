@@ -147,7 +147,7 @@ void WorldScape3DInstancer::_update_mmis(const Vector2i &p_region_loc, const int
 					MultiMeshInstance3D *mmi;
 					if (cell_mmi_dict.count(cell) == 0) {
 						mmi = memnew(MultiMeshInstance3D);
-						LOG(DEBUG, "No MMI found, Created new MultiMeshInstance3D: ", static_cast<uint64_t>(mmi));
+						LOG(DEBUG, "No MMI found, Created new MultiMeshInstance3D: ", reinterpret_cast<uint64_t>(mmi));
 						// Node name is MMI3D_Cell##_##_Mesh#_LOD#
 						String cstring = "_C" + Util::location_to_string(cell).trim_prefix("_");
 						String mstring = "_M" + String::num_int64(mesh_id);
@@ -351,7 +351,7 @@ void WorldScape3DInstancer::_destroy_mmi_by_cell(const Vector2i &p_region_loc, c
 		// 	}
 		// }
 
-		//LOG(EXTREME, "Freeing ", ptr_to_str(mmi), " and erasing mmi cell ", p_cell);
+		LOG(EXTREME, "Freeing ", ptr_to_str(mmi), " and erasing mmi cell ", p_cell);
 		remove_from_tree(mmi);
 		memdelete_safely(mmi);
 		cell_mmi_dict.erase(p_cell);
@@ -864,7 +864,7 @@ void WorldScape3DInstancer::add_transforms(const int p_mesh_id, const TypedArray
 		Vector2i region_loc = region_locations[i];
 		TypedArray<Transform3D> xforms = xforms_dict[region_loc];
 		PackedColorArray colors = colors_dict[region_loc];
-		//LOG(MESG, "Appending ", xforms.size(), " xforms, ", colors, " colors to region location: ", region_loc);
+		LOG(MESG, "Appending ", xforms.size(), " xforms, ", colors, " colors to region location: ", region_loc);
 		append_location(region_loc, p_mesh_id, xforms, colors, p_update);
 	}
 }
@@ -1208,8 +1208,8 @@ void WorldScape3DInstancer::dump_data() {
 				}
 				Array xforms = triple[0];
 				Array colors = triple[1];
-				//bool modified = triple[2];
-				//LOG(MESG, "Mesh: ", mesh_id, " cell: ", cell, " xforms: ", xforms.size(), " colors: ", colors.size(), " modified: ", modified);
+				bool modified = triple[2];
+				LOG(MESG, "Mesh: ", mesh_id, " cell: ", cell, " xforms: ", xforms.size(), " colors: ", colors.size(), " modified: ", modified);
 			}
 		}
 	}

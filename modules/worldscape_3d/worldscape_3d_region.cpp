@@ -175,7 +175,7 @@ void WorldScape3DRegion::sanitize_maps() {
 }
 
 Ref<Image> WorldScape3DRegion::sanitize_map(const MapType p_map_type, const Ref<Image> &p_map) const {
-	//const char *type_str = TYPESTR[p_map_type];
+	const char *type_str = TYPESTR[p_map_type];
 	Image::Format format = FORMAT[p_map_type];
 	Color color = COLOR[p_map_type];
 	Ref<Image> map;
@@ -183,10 +183,10 @@ Ref<Image> WorldScape3DRegion::sanitize_map(const MapType p_map_type, const Ref<
 	if (p_map.is_valid()) {
 		if (validate_map_size(p_map)) {
 			if (p_map->get_format() == format) {
-				//LOG(DEBUG, "Map type ", type_str, " correct format, size. Mipmaps: ", p_map->has_mipmaps());
+				LOG(DEBUG, "Map type ", type_str, " correct format, size. Mipmaps: ", p_map->has_mipmaps());
 				map = p_map;
 			} else {
-				//LOG(DEBUG, "Provided ", type_str, " map wrong format: ", p_map->get_format(), ". Converting copy to: ", format);
+				LOG(DEBUG, "Provided ", type_str, " map wrong format: ", p_map->get_format(), ". Converting copy to: ", format);
 				map.instantiate();
 				map->copy_from(p_map);
 				map->convert(format);
@@ -195,14 +195,14 @@ Ref<Image> WorldScape3DRegion::sanitize_map(const MapType p_map_type, const Ref<
 					map.unref();
 				}
 			}
-		} /*else {
+		} else {
 			LOG(DEBUG, "Provided ", type_str, " map wrong size: ", p_map->get_size(), ". Creating blank");
-		}*/
-	} /*else {
+		}
+	} else {
 		LOG(DEBUG, "No provided ", type_str, " map. Creating blank");
-	}*/
+	}
 	if (map.is_null()) {
-		//LOG(DEBUG, "Making new image of type: ", type_str, " and generating mipmaps: ", p_map_type == TYPE_COLOR);
+		LOG(DEBUG, "Making new image of type: ", type_str, " and generating mipmaps: ", p_map_type == TYPE_COLOR);
 		return Util::get_filled_image(Vector2i(_region_size, _region_size), color, p_map_type == TYPE_COLOR, format);
 	} else {
 		return map;

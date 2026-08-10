@@ -754,16 +754,16 @@ void WorldScape3DEditor::set_brush_data(const Dictionary &p_data) {
 			_brush_data["brush_image"] = img;
 			_brush_data["brush_image_size"] = img->get_size();
 		} else {
-			print_error("Brush data doesn't contain a valid image");
+			LOG(ERROR, "Brush data doesn't contain a valid image");
 		}
 		Ref<Texture2D> tex = brush_images[1];
 		if (tex.is_valid() && tex->get_width() > 0 && tex->get_height() > 0) {
 			_brush_data["brush_texture"] = tex;
 		} else {
-			print_error("Brush data doesn't contain a valid texture");
+			LOG(ERROR, "Brush data doesn't contain a valid texture");
 		}
 	} else {
-		print_error("Brush data doesn't contain an image and texture");
+		LOG(ERROR, "Brush data doesn't contain an image and texture");
 	}
 
 	// Sanitize settings
