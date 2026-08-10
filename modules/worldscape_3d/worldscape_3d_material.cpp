@@ -1085,7 +1085,7 @@ void WorldScape3DMaterial::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "world_background", PROPERTY_HINT_ENUM, "None,Flat,Noise"), "set_world_background", "get_world_background");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "texture_filtering", PROPERTY_HINT_ENUM, "Linear,Nearest"), "set_texture_filtering", "get_texture_filtering");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_shader_enabled"), "set_auto_shader", "get_auto_shader");
-	//ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dual_scaling_enabled"), "set_dual_scaling", "get_dual_scaling");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dual_scaling_enabled"), "set_dual_scaling", "get_dual_scaling");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shader_override_enabled"), "enable_shader_override", "is_shader_override_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shader_override", PROPERTY_HINT_RESOURCE_TYPE, "Shader"), "set_shader_override", "get_shader_override");
 
