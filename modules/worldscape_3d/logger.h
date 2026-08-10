@@ -35,6 +35,7 @@
 // Terrain3D Godot plugin: Copyright © 2025 Cory Petkovsek, Roope Palmroos, and Contributors.
 
 #include "core/variant/variant_utility.h"
+#include "worldscape_3d.h"
 
 /**
  * Prints warnings, errors, and messages to the console.
@@ -49,16 +50,48 @@
  * attempting to quit.
  */
 
-// TODO find the push/print UtilityFunctions
-#if 0
-#define LOG(level, ...)                                                                                 \
-	do {                                                                                                \
-		if (level == ERROR)                                                                             \
-			UtilityFunctions::push_error(__class__, ":", __func__, ":", __LINE__, ": ", __VA_ARGS__);   \
-		else if (level == WARN)                                                                         \
-			UtilityFunctions::push_warning(__class__, ":", __func__, ":", __LINE__, ": ", __VA_ARGS__); \
-		else if (level <= WorldScape3D::debug_level)                                                    \
-			UtilityFunctions::print(__class__, ":", __func__, ":", __LINE__, ": ", __VA_ARGS__);        \
+namespace WS3DLogger {
+
+template <typename... Ts>
+void log_error(const Variant &p_arg1, const Ts &...p_args) {
+	std::array<Variant, sizeof...(Ts) + 1> variant_args{ Variant(p_arg1), Variant(p_args)... };
+	std::array<const Variant *, sizeof...(Ts) + 1> call_args;
+	for (size_t i = 0; i < variant_args.size(); ++i) {
+		call_args[i] = &variant_args[i];
+	}
+	ERR_PRINT(VariantUtilityFunctions::join_string(call_args.data(), variant_args.size()));
+}
+
+template <typename... Ts>
+void log_warning(const Variant &p_arg1, const Ts &...p_args) {
+	std::array<Variant, sizeof...(Ts) + 1> variant_args{ Variant(p_arg1), Variant(p_args)... };
+	std::array<const Variant *, sizeof...(Ts) + 1> call_args;
+	for (size_t i = 0; i < variant_args.size(); ++i) {
+		call_args[i] = &variant_args[i];
+	}
+	WARN_PRINT(VariantUtilityFunctions::join_string(call_args.data(), sizeof...(p_args) + 1));
+}
+
+template <typename... Ts>
+void log_info(const Variant &p_arg1, const Ts &...p_args) {
+	std::array<Variant, sizeof...(Ts) + 1> variant_args{ Variant(p_arg1), Variant(p_args)... };
+	std::array<const Variant *, sizeof...(Ts) + 1> call_args;
+	for (size_t i = 0; i < variant_args.size(); ++i) {
+		call_args[i] = &variant_args[i];
+	}
+	print_line(VariantUtilityFunctions::join_string(call_args.data(), sizeof...(p_args) + 1));
+}
+} //namespace WS3DLogger
+
+#ifdef DEBUG_ENABLED
+#define LOG(level, ...)                                                                          \
+	do {                                                                                         \
+		if (level == ERROR)                                                                      \
+			WS3DLogger::log_error(__class__, ":", __func__, ":", __LINE__, ": ", __VA_ARGS__);   \
+		else if (level == WARN)                                                                  \
+			WS3DLogger::log_warning(__class__, ":", __func__, ":", __LINE__, ": ", __VA_ARGS__); \
+		else if (level <= WorldScape3D::debug_level)                                             \
+			WS3DLogger::log_info(__class__, ":", __func__, ":", __LINE__, ": ", __VA_ARGS__);    \
 	} while (false); // Macro safety
 #else
 #define LOG(...)
