@@ -171,7 +171,7 @@ void ListEntry::draw() {
 				}
 			}
 		} else if (Ref<WorldScape3DMeshAsset> mesh_asset = _resource; mesh_asset.is_valid()) {
-			int id = mesh_asset->get_id();
+			//int id = mesh_asset->get_id();
 			_thumbnail = mesh_asset->get_thumbnail();
 			if (_thumbnail.is_valid()) {
 				draw_texture_rect(_thumbnail, rect, false);
@@ -393,10 +393,10 @@ void ListEntry::gui_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-bool ListEntry::can_drop_data(const Point2 &point, const Variant &data) const {
+bool ListEntry::can_drop_data(const Point2 &point, const Variant &p_dropped_data) const {
 	_drop_data = false;
-	if (data.get_type() == Variant::DICTIONARY) {
-		PackedStringArray files = Dictionary{ data }["files"];
+	if (p_dropped_data.get_type() == Variant::DICTIONARY) {
+		PackedStringArray files = Dictionary{ p_dropped_data }["files"];
 		if (files.size() == 1) {
 			const_cast<ListEntry *>(this)->queue_redraw(); // no const in GDScript
 			_drop_data = true;
@@ -405,9 +405,9 @@ bool ListEntry::can_drop_data(const Point2 &point, const Variant &data) const {
 	return _drop_data;
 }
 
-void ListEntry::drop_data(const Point2 &point, const Variant &data) {
-	if (data.get_type() == Variant::DICTIONARY) {
-		PackedStringArray files = Dictionary{ data }["files"];
+void ListEntry::drop_data(const Point2 &point, const Variant &p_dropped_data) {
+	if (p_dropped_data.get_type() == Variant::DICTIONARY) {
+		PackedStringArray files = Dictionary{ p_dropped_data }["files"];
 		Ref<Resource> res = ResourceLoader::load(files[0]);
 		if (Ref<Texture2D> texture = res; res.is_valid() && _type == WorldScape3DAssets::TYPE_TEXTURE) {
 			Ref ta = memnew(WorldScape3DTextureAsset);

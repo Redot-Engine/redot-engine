@@ -180,9 +180,9 @@ public:
 				PropertyInfo(Variant::STRING, "path", PROPERTY_HINT_NONE)));
 	}
 
-	bool can_drop_data(const Point2 &, const Variant &data) const override {
-		if (data.get_type() == Variant::DICTIONARY) {
-			PackedStringArray files = Dictionary{ data }["files"];
+	bool can_drop_data(const Point2 &, const Variant &p_dropped_data) const override {
+		if (p_dropped_data.get_type() == Variant::DICTIONARY) {
+			PackedStringArray files = Dictionary{ p_dropped_data }["files"];
 			if (files.size() == 1) {
 				auto ext = files[0].get_extension();
 				return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "exr" || ext == "hdr" || ext == "tga" || ext == "svg" || ext == "webp" || ext == "ktx" || ext == "dds";
@@ -191,9 +191,9 @@ public:
 		return false;
 	}
 
-	void drop_data(const Point2 &, const Variant &data) override {
-		if (data.get_type() == Variant::DICTIONARY) {
-			PackedStringArray files = Dictionary{ data }["files"];
+	void drop_data(const Point2 &, const Variant &p_dropped_data) override {
+		if (p_dropped_data.get_type() == Variant::DICTIONARY) {
+			PackedStringArray files = Dictionary{ p_dropped_data }["files"];
 			if (files.size() == 1) {
 				auto ext = files[0].get_extension();
 				if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "exr" || ext == "hdr" || ext == "tga" || ext == "svg" || ext == "webp" || ext == "ktx" || ext == "dds") {

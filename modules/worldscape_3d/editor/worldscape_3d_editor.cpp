@@ -1245,7 +1245,7 @@ EditorPlugin::AfterGUIInput WorldScape3DEditorPlugin::read_input(const Ref<Input
 	// Determine if user is moving camera or applying
 	Ref<InputEventMouseButton> mbevent = event;
 	if (input->is_mouse_button_pressed(MouseButton::LEFT) ||
-			mbevent.is_valid() && event->is_released() && mbevent->get_button_index() == MouseButton::LEFT) {
+			(mbevent.is_valid() && event->is_released() && mbevent->get_button_index() == MouseButton::LEFT)) {
 		_mouse_mode = Operating;
 	} else {
 		_mouse_mode = None;

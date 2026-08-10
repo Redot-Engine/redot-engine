@@ -323,8 +323,8 @@ void Baker::bake_mesh() {
 		return;
 	}
 
-	auto data = terrain->get_data();
-	if (!data || data->get_region_count() == 0) {
+	auto tdata = terrain->get_data();
+	if (!tdata || tdata->get_region_count() == 0) {
 		print_error("Terrain has no active regions to bake");
 		return;
 	}
@@ -371,8 +371,8 @@ void Baker::bake_occluder() {
 		return;
 	}
 
-	auto data = terrain->get_data();
-	if (!data || data->get_region_count() == 0) {
+	auto tdata = terrain->get_data();
+	if (!tdata || tdata->get_region_count() == 0) {
 		print_error("Terrain has no active regions to bake");
 		return;
 	}

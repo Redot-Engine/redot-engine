@@ -67,7 +67,9 @@
 #define ASSERT(cond, ret)
 #endif
 
+#ifndef VOID
 #define VOID // a return value for void, to avoid compiler warnings
+#endif
 
 #define IS_INIT(ret) \
 	if (!_terrain) { \

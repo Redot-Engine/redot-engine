@@ -64,7 +64,7 @@ void WorldScape3DRegionGizmo::update(const Vector2 position, const WorldScape3DE
 	_use_secondary_color = editor->get_operation() == WorldScape3DEditor::Operation::SUBTRACT;
 	_region_position = position;
 	auto terrain = editor->get_terrain();
-	_region_size = terrain->get_region_size() * terrain->get_vertex_spacing();
+	_region_size = static_cast<real_t>(terrain->get_region_size()) * terrain->get_vertex_spacing();
 	_grid = terrain->get_data()->get_region_locations();
 	terrain->update_gizmos();
 }

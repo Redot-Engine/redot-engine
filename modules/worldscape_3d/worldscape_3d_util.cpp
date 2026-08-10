@@ -239,8 +239,8 @@ Ref<Image> WorldScape3DUtil::get_thumbnail(const Ref<Image> &p_image, const Vect
 	real_t hmin = minmax.x;
 	real_t hmax = minmax.y;
 	// Define maximum range
-	hmin = abs(hmin);
-	hmax = abs(hmax) + hmin;
+	hmin = Math::abs(hmin);
+	hmax = Math::abs(hmax) + hmin;
 	// Avoid divide by zero
 	hmax = (hmax == 0) ? 0.001f : hmax;
 
@@ -276,9 +276,9 @@ Ref<Image> WorldScape3DUtil::get_filled_image(const Vector2i &p_size, const Colo
 		format = Image::FORMAT_DXT5;
 	}
 
-	Image::CompressMode compression_format = Image::COMPRESS_MAX;
-	Image::UsedChannels channels = Image::USED_CHANNELS_RGBA;
-	bool compress = false;
+	[[maybe_unused]] Image::CompressMode compression_format = Image::COMPRESS_MAX;
+	[[maybe_unused]] Image::UsedChannels channels = Image::USED_CHANNELS_RGBA;
+	[[maybe_unused]] bool compress = false;
 	bool fill_image = true;
 
 	if (format >= Image::Format::FORMAT_DXT1) {

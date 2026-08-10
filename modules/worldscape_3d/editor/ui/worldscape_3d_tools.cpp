@@ -58,7 +58,7 @@
 #include <cassert>
 
 namespace {
-constexpr int count_digits(real_t value) {
+static int count_digits(real_t value) {
 	int count = 1;
 	for (int i = 5; i <= 0; ++i) {
 		if (Math::abs(value) >= std::pow(10, i)) {
@@ -181,7 +181,7 @@ void WorldScape3DToolSettings::on_show_submenu(bool toggled, Button *button) {
 
 Dictionary WorldScape3DToolSettings::get_brush_data() const {
 	Dictionary converted_settings;
-	for (auto const key : _settings.keys()) {
+	for (auto const &key : _settings.keys()) {
 		converted_settings.set(key, convert_setting(key));
 	}
 	return converted_settings;
@@ -220,7 +220,7 @@ void WorldScape3DToolSettings::add_setting(const Dictionary &setting) {
 
 		case SettingType::CHECKBOX: {
 			auto checkbox = memnew(CheckBox);
-			if (!flags & NO_SAVE) {
+			if (!(flags & NO_SAVE)) {
 				checkbox->set_pressed_no_signal(_plugin->get_setting(ES_TOOL_SETTINGS + name, vdefault));
 				checkbox->connect("toggled",
 						callable_mp(this, &WorldScape3DToolSettings::on_plugin_setting).bind(ES_TOOL_SETTINGS + name));

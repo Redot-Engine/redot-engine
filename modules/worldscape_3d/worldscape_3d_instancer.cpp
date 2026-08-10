@@ -1208,7 +1208,7 @@ void WorldScape3DInstancer::dump_data() {
 				}
 				Array xforms = triple[0];
 				Array colors = triple[1];
-				bool modified = triple[2];
+				[[maybe_unused]] bool modified = triple[2];
 				LOG(MESG, "Mesh: ", mesh_id, " cell: ", cell, " xforms: ", xforms.size(), " colors: ", colors.size(), " modified: ", modified);
 			}
 		}

@@ -334,7 +334,7 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 		build();
 		return;
 	}
-	int time = Time::get_singleton()->get_ticks_usec();
+	[[maybe_unused]] int time = Time::get_singleton()->get_ticks_usec();
 	real_t spacing = _terrain->get_vertex_spacing();
 
 	if (is_dynamic_mode()) {
@@ -407,7 +407,7 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 				continue;
 			}
 			if (!p_rebuild && grid[i] >= 0) {
-				Vector2i center_pos = v3v2i(_shape_get_position(i));
+				[[maybe_unused]] Vector2i center_pos = v3v2i(_shape_get_position(i));
 				LOG(EXTREME, "grid[", i, ":", grid_loc, "] shape_pos : ", shape_pos, " act ", center_pos - shape_offset, " Has active shape id: ", grid[i]);
 				continue;
 			} else {
@@ -478,7 +478,7 @@ void WorldScape3DCollision::destroy() {
 	// Scene Tree
 	for (size_t i = 0; i < _shapes.size(); i++) {
 		CollisionShape3D *shape = _shapes[i];
-		LOG(DEBUG, "Freeing CollisionShape3D ", i, " ", shape->get_name());
+		LOG(DEBUG, "Freeing CollisionShape3D ", Variant(i), " ", shape->get_name());
 		remove_from_tree(shape);
 		memdelete_safely(shape);
 	}
