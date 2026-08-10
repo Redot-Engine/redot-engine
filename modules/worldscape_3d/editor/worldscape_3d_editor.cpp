@@ -153,7 +153,7 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 
 	bool modifier_alt = _brush_data["modifier_alt"];
 	bool modifier_ctrl = _brush_data["modifier_ctrl"];
-	bool modifier_shift = _brush_data["modifier_shift"];
+	//bool modifier_shift = _brush_data["modifier_shift"];
 
 	Image *brush_image = cast_to<Image>(_brush_data["brush_image"]);
 	if (!brush_image) {
@@ -356,8 +356,8 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 							Vector2 dir = point_2_xz - point_1_xz;
 							real_t weight = dir.normalized().dot(brush_xz - point_1_xz) / dir.length();
 							weight = Math::clamp(weight, (real_t)0.0f, (real_t)1.0f);
-							real_t height = Math::lerp(point_1.y, point_2.y, weight);
-							destf = Math::lerp(srcf, height, CLAMP(brush_alpha * strength, 0.f, 1.f));
+							real_t height2 = Math::lerp(point_1.y, point_2.y, weight);
+							destf = Math::lerp(srcf, height2, CLAMP(brush_alpha * strength, 0.f, 1.f));
 						}
 						break;
 					}
@@ -372,8 +372,8 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 
 			} else if (map_type == TYPE_CONTROL) {
 				// Get current bit field from pixel
-				uint32_t base_id = get_base(src.r);
-				uint32_t overlay_id = get_overlay(src.r);
+				int base_id = get_base(src.r);
+				int overlay_id = get_overlay(src.r);
 				real_t blend = real_t(get_blend(src.r)) / 255.f;
 				uint32_t uvrotation = get_uv_rotation(src.r);
 				uint32_t uvscale = get_uv_scale(src.r);
@@ -747,7 +747,7 @@ void WorldScape3DEditor::set_brush_data(const Dictionary &p_data) {
 
 	// Sanitize image and textures
 	Array brush_images = p_data["brush"];
-	bool error = false;
+	//bool error = false;
 	if (brush_images.size() == 2) {
 		Ref<Image> img = brush_images[0];
 		if (img.is_valid() && !img->is_empty()) {
@@ -1007,9 +1007,9 @@ void WorldScape3DEditorPlugin::edit(Object *object) {
 		}
 		_asset_dock->update_assets();
 		// Get alerted when the region map changes
-		auto data = terrain->get_data();
-		if (data && !data->is_connected("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid))) {
-			data->connect("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid));
+		auto tdata = terrain->get_data();
+		if (tdata && !tdata->is_connected("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid))) {
+			tdata->connect("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid));
 		}
 		update_region_grid();
 	} else if (is_terrain_valid(_last_terrain) && nav3d) {
@@ -1050,9 +1050,9 @@ void WorldScape3DEditorPlugin::clear() {
 	if (is_terrain_valid()) {
 		auto terrain = _editor->get_terrain();
 		if (terrain) {
-			auto data = terrain->get_data();
-			if (data->is_connected("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid))) {
-				data->disconnect("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid));
+			auto tdata = terrain->get_data();
+			if (tdata->is_connected("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid))) {
+				tdata->disconnect("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid));
 			}
 			terrain->clear_gizmos();
 		}
@@ -1155,7 +1155,7 @@ EditorPlugin::AfterGUIInput WorldScape3DEditorPlugin::forward_3d_gui_input(Camer
 		// Handle mouse movement
 		if (_mouse_mode != CameraMove) {
 			// Update region highlight
-			const Vector2 region_pos = (Vector2{ _mouse_global_position.x, _mouse_global_position.z } / (terrain->get_region_size() * terrain->get_vertex_spacing())).floor();
+			const Vector2 region_pos = (Vector2{ _mouse_global_position.x, _mouse_global_position.z } / (static_cast<real_t>(terrain->get_region_size()) * terrain->get_vertex_spacing())).floor();
 			if (_current_region_pos != region_pos) {
 				_current_region_pos = region_pos;
 				update_region_grid();
@@ -1256,12 +1256,12 @@ EditorPlugin::AfterGUIInput WorldScape3DEditorPlugin::read_input(const Ref<Input
 		case 2:
 		case 1: { // Modo, Maya
 			if (input->is_mouse_button_pressed(MouseButton::RIGHT) ||
-					input->is_key_pressed(Key::ALT) && input->is_mouse_button_pressed(MouseButton::LEFT)) {
+					(input->is_key_pressed(Key::ALT) && input->is_mouse_button_pressed(MouseButton::LEFT))) {
 				_mouse_mode = CameraMove;
 			}
 			if (mbevent.is_valid() && mbevent->is_released() &&
 					(mbevent->get_button_index() == MouseButton::RIGHT ||
-							input->is_key_pressed(Key::ALT) && mbevent->get_button_index() == MouseButton::LEFT)) {
+							(input->is_key_pressed(Key::ALT) && mbevent->get_button_index() == MouseButton::LEFT))) {
 				_rmb_release_time = time->get_ticks_msec();
 			}
 		} break;
