@@ -967,6 +967,7 @@ void FileSystemDock::_update_file_list(bool p_keep_selection) {
 		files->set_fixed_column_width(thumbnail_size * 3 / 2);
 		files->set_max_text_lines(2);
 		files->set_fixed_icon_size(Size2(thumbnail_size, thumbnail_size));
+		files->add_theme_constant_override("h_separation", 10 * EDSCALE);
 
 		const int icon_size = get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
 		files->set_fixed_tag_icon_size(Size2(icon_size, icon_size));

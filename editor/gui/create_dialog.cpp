@@ -45,6 +45,8 @@
 #include "editor/settings/editor_feature_profile.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
+#include "scene/gui/control.h"
+#include "scene/gui/split_container.h"
 
 void CreateDialog::popup_create(bool p_dont_clear, bool p_replace_mode, const String &p_current_type, const String &p_current_name) {
 	_fill_type_list();
@@ -863,13 +865,13 @@ CreateDialog::CreateDialog() {
 	HSplitContainer *hsc = memnew(HSplitContainer);
 	add_child(hsc);
 
-	VSplitContainer *vsc = memnew(VSplitContainer);
-	hsc->add_child(vsc);
+	VSplitContainer *left_vsc = memnew(VSplitContainer);
+	hsc->add_child(left_vsc);
 
 	VBoxContainer *fav_vb = memnew(VBoxContainer);
 	fav_vb->set_custom_minimum_size(Size2(150, 100) * EDSCALE);
 	fav_vb->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	vsc->add_child(fav_vb);
+	left_vsc->add_child(fav_vb);
 
 	favorites = memnew(Tree);
 	favorites->set_accessibility_name(TTRC("Favorites:"));
@@ -885,7 +887,7 @@ CreateDialog::CreateDialog() {
 	fav_vb->add_margin_child(TTR("Favorites:"), favorites, true);
 
 	VBoxContainer *rec_vb = memnew(VBoxContainer);
-	vsc->add_child(rec_vb);
+	left_vsc->add_child(rec_vb);
 	rec_vb->set_custom_minimum_size(Size2(150, 100) * EDSCALE);
 	rec_vb->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 
@@ -899,10 +901,14 @@ CreateDialog::CreateDialog() {
 	recent->add_theme_constant_override("draw_guides", 1);
 	recent->set_theme_type_variation("ItemListSecondary");
 
+	VSplitContainer *right_vsc = memnew(VSplitContainer);
+	hsc->add_child(right_vsc);
+
 	VBoxContainer *vbc = memnew(VBoxContainer);
 	vbc->set_custom_minimum_size(Size2(300, 0) * EDSCALE);
 	vbc->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	hsc->add_child(vbc);
+	vbc->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+	right_vsc->add_child(vbc);
 
 	search_box = memnew(LineEdit);
 	search_box->set_accessibility_name(TTRC("Search"));
@@ -929,11 +935,16 @@ CreateDialog::CreateDialog() {
 	search_options->connect("button_clicked", callable_mp(this, &CreateDialog::_script_button_clicked));
 	vbc->add_margin_child(TTR("Matches:"), search_options, true);
 
+	VBoxContainer *desc_vb = memnew(VBoxContainer);
+	right_vsc->add_child(desc_vb);
+
 	help_bit = memnew(EditorHelpBit);
 	help_bit->set_accessibility_name(TTRC("Description:"));
 	help_bit->set_content_height_limits(80 * EDSCALE, 80 * EDSCALE);
 	help_bit->connect("request_hide", callable_mp(this, &CreateDialog::_hide_requested));
-	vbc->add_margin_child(TTR("Description:"), help_bit);
+	Control *bit_content = cast_to<Control>(help_bit->get_child(1));
+	bit_content->set_v_size_flags(Control::SizeFlags::SIZE_EXPAND_FILL);
+	desc_vb->add_margin_child(TTR("Description:"), help_bit, true);
 
 	register_text_enter(search_box);
 	set_hide_on_ok(false);
