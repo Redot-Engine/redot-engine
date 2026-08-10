@@ -138,6 +138,8 @@ void DoubleSlider::gui_input(const Ref<InputEvent> &event) {
 					case MouseButton::WHEEL_UP:
 						set_slider(1.f, true);
 						break;
+					default:
+						break;
 				}
 			} else {
 				_grabbed_handle = 0;

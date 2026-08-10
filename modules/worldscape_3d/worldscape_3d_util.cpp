@@ -513,7 +513,7 @@ void WorldScape3DUtil::benchmark(WorldScape3D *p_terrain) {
 	if (!data) {
 		return;
 	}
-	uint64_t start_time;
+	[[maybe_unused]] uint64_t start_time;
 	Vector3 vec;
 	Color col;
 	for (int i = 0; i < 3; i++) {

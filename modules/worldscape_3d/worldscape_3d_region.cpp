@@ -175,7 +175,7 @@ void WorldScape3DRegion::sanitize_maps() {
 }
 
 Ref<Image> WorldScape3DRegion::sanitize_map(const MapType p_map_type, const Ref<Image> &p_map) const {
-	const char *type_str = TYPESTR[p_map_type];
+	[[maybe_unused]] const char *type_str = TYPESTR[p_map_type];
 	Image::Format format = FORMAT[p_map_type];
 	Color color = COLOR[p_map_type];
 	Ref<Image> map;

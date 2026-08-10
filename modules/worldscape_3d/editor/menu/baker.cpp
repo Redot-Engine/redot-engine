@@ -479,7 +479,7 @@ void Baker::bake_nav_mesh() {
 		for (auto &nav_region : nav_regions) {
 			bake_nav_region_nav_mesh(nav_region);
 		}
-		printf("WorldScape3DNavigation: Finished baking %ld NavigationMesh(es).", nav_regions.size());
+		//printf("WorldScape3DNavigation: Finished baking %ld NavigationMesh(es).", nav_regions.size());
 	}
 }
 
