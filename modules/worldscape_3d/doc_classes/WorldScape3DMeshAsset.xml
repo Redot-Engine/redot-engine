@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="WorldScape3DMeshAsset" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+<class name="WorldScape3DMeshAsset" inherits="WorldScape3DAssetResource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
 	</brief_description>
 	<description>
@@ -124,7 +124,7 @@
 		<member name="material_override" type="Material" setter="set_material_override" getter="get_material_override">
 			This sets [code skip-lint]GeometryInstance3D.material_override[/code], which replaces the rendered mesh material with this one.
 		</member>
-		<member name="name" type="String" setter="set_name" getter="get_name" default="&quot;New Mesh&quot;">
+		<member name="name" type="String" setter="set_name" getter="get_name" default="&quot;&quot;">
 			The user specified name for this asset.
 		</member>
 		<member name="scene_file" type="PackedScene" setter="set_scene_file" getter="get_scene_file">

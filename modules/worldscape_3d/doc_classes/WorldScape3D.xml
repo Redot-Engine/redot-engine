@@ -226,9 +226,6 @@
 		<member name="show_vertex_grid" type="bool" setter="set_show_vertex_grid" getter="get_show_vertex_grid" default="false">
 			Alias for [member WorldScape3DMaterial.show_vertex_grid]. Press `3` with the mouse in the viewport to toggle.
 		</member>
-		<member name="version" type="String" setter="" getter="get_version" default="&quot;1.0.1&quot;">
-			The current version of WorldScape3D.
-		</member>
 		<member name="vertex_spacing" type="float" setter="set_vertex_spacing" getter="get_vertex_spacing" default="1.0">
 			The distance between vertices. Redot units are typically considered to be meters. This laterally scales the terrain on X and Z axes.
 			This variable changes the global position of landscape features. A mountain peak might be at (512, 512), but with a vertex spacing of 2.0 it is now located at (1024, 1024).

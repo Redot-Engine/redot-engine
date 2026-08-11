@@ -14,14 +14,6 @@
 				Recalculates the height range for this region by looking at every pixel in the heightmap.
 			</description>
 		</method>
-		<method name="duplicate">
-			<return type="WorldScape3DRegion" />
-			<param index="0" name="deep" type="bool" default="false" />
-			<description>
-				Returns a duplicate copy of this node, with references to the same image maps and multimeshes.
-				- deep - Also make complete duplicates of the maps and multimeshes.
-			</description>
-		</method>
 		<method name="get_data" qualifiers="const">
 			<return type="Dictionary" />
 			<description>

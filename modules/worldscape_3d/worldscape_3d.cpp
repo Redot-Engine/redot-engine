@@ -1129,6 +1129,7 @@ void WorldScape3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(SIZE_512);
 	BIND_ENUM_CONSTANT(SIZE_1024);
 	BIND_ENUM_CONSTANT(SIZE_2048);
+	BIND_ENUM_CONSTANT(SIZE_4096);
 
 	ClassDB::bind_method(D_METHOD("set_debug_level", "level"), &WorldScape3D::set_debug_level);
 	ClassDB::bind_method(D_METHOD("get_debug_level"), &WorldScape3D::get_debug_level);
