@@ -67,9 +67,20 @@ private:
 	//             └────────────────────┴──┴─────────────┴──┴───────────...
 	// Offset:     ↑ REF_COUNT_OFFSET      ↑ SIZE_OFFSET    ↑ DATA_OFFSET
 
+	static_assert(alignof(USize) > 0);
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4724) // prevent false positive warning for potential modulo zero
+#endif
+
 	static constexpr size_t REF_COUNT_OFFSET = 0;
 	static constexpr size_t SIZE_OFFSET = ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) % alignof(USize) == 0) ? (REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) : ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) + alignof(USize) - ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) % alignof(USize)));
 	static constexpr size_t DATA_OFFSET = ((SIZE_OFFSET + sizeof(USize)) % alignof(max_align_t) == 0) ? (SIZE_OFFSET + sizeof(USize)) : ((SIZE_OFFSET + sizeof(USize)) + alignof(max_align_t) - ((SIZE_OFFSET + sizeof(USize)) % alignof(max_align_t)));
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 	mutable T *_ptr = nullptr;
 
