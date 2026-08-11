@@ -195,8 +195,8 @@ void WorldScape3DTextureAsset::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("setting_changed"));
 
 	ClassDB::bind_method(D_METHOD("clear"), &WorldScape3DTextureAsset::clear);
-	ClassDB::bind_method(D_METHOD("set_name", "name"), &WorldScape3DTextureAsset::set_name);
-	ClassDB::bind_method(D_METHOD("get_name"), &WorldScape3DTextureAsset::get_name);
+	//ClassDB::bind_method(D_METHOD("set_name", "name"), &WorldScape3DTextureAsset::set_name);
+	//ClassDB::bind_method(D_METHOD("get_name"), &WorldScape3DTextureAsset::get_name);
 	ClassDB::bind_method(D_METHOD("set_id", "id"), &WorldScape3DTextureAsset::set_id);
 	ClassDB::bind_method(D_METHOD("get_id"), &WorldScape3DTextureAsset::get_id);
 	ClassDB::bind_method(D_METHOD("set_albedo_color", "color"), &WorldScape3DTextureAsset::set_albedo_color);

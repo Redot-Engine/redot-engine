@@ -428,7 +428,7 @@ void WorldScape3DRegion::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_data", "data"), &WorldScape3DRegion::set_data);
 	ClassDB::bind_method(D_METHOD("get_data"), &WorldScape3DRegion::get_data);
-	ClassDB::bind_method(D_METHOD("duplicate", "deep"), &WorldScape3DRegion::duplicate, DEFVAL(false));
+	//ClassDB::bind_method(D_METHOD("duplicate", "deep"), &WorldScape3DRegion::duplicate, DEFVAL(false));
 
 	int ro_flags = PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY;
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "version", PROPERTY_HINT_NONE, "", ro_flags), "set_version", "get_version");
