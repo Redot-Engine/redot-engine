@@ -7,6 +7,25 @@
 		A script implemented in the GDScript programming language, saved with the [code].gd[/code] extension. The script extends the functionality of all objects that instantiate it.
 		Calling [method new] creates a new instance of the script. [method Object.set_script] extends an existing object, if that object's class matches one of the script's base classes.
 		If you are looking for GDScript's built-in functions, see [@GDScript] instead.
+		[b]Nullable static types:[/b] By default, a statically-typed value cannot be [code]null[/code]. Writing [code]?[/code] after a type hint makes the value [i]nullable[/i], allowing it to hold [code]null[/code] in addition to values of the base type. Untyped values and [Variant] can already hold [code]null[/code], so [Variant] is always nullable and does not take the [code]?[/code] suffix. The suffix is allowed on variables, members, parameters, and return types:
+		[codeblock]
+		var health: int?             # An int or null; uninitialized nullable values start as null.
+		var player_name: String? = null
+
+		func find_target() -> Node?: # May return null.
+			return null
+		[/codeblock]
+		The [code]?[/code] suffix works on built-in value types ([code]int?[/code], [code]String?[/code], [code]Vector2?[/code], and so on), enums (including nested enums such as [code]Vector2.Axis?[/code]), objects (such as [code]Node?[/code]), and collections, where the collection itself is nullable ([code]Array?[/code], [code]Array[int]?[/code], [code]Dictionary[String, int]?[/code]). It is [b]not[/b] allowed on [Variant] (already nullable), on [code]void[/code], or on element types: [code]Array[int?][/code] is rejected; write [code]Array[int]?[/code] instead.
+		After a [code]null[/code] check, the analyzer narrows the value to its non-nullable type, so it can be used safely:
+		[codeblock]
+		func take(v: int?) -> int:
+			if v == null:
+				return -1
+			return v + 1 # v is known to be non-null here.
+		[/codeblock]
+		Narrowing is recognized for [code]==[/code] and [code]!=[/code] [code]null[/code] guards — including [code]else[/code] branches, [code]while[/code] conditions, and [code]and[/code]/[code]or[/code] expressions — and is kept when the value is reassigned to a non-null value. It is not recognized after reassigning a nullable value, or across [code]break[/code] and [code]continue[/code] guards.
+		Using a nullable value of a [b]non-object built-in type[/b] (such as [code]int?[/code], [code]Array?[/code], or [code]Dictionary?[/code]) directly (in an operator, subscript, property access, or [code]for[/code] loop), or transferring [i]any[/i] nullable value to a non-nullable target (assigning, returning, or passing it as an argument), raises the [code]UNSAFE_NULLABLE_ACCESS[/code] warning. Set its severity with [member ProjectSettings.debug/gdscript/warnings/unsafe_nullable_access], or silence a single line with [annotation @GDScript.@warning_ignore].
+		Enforcement depends on the type. For non-object built-in types and enums, a [code]null[/code] reaching a non-nullable value raises a runtime error. Object references keep GDScript's existing behavior — they may hold [code]null[/code] whether or not the type uses [code]?[/code] — so on object types [code]?[/code] only enables narrowing and the transfer warning. Accessing a member or calling a method directly on a nullable object or enum is not flagged, but it still fails at runtime if the value is actually [code]null[/code], so narrow with a [code]null[/code] check first.
 	</description>
 	<tutorials>
 		<link title="GDScript documentation index">$DOCS_URL/tutorials/scripting/gdscript/index.html</link>
