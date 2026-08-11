@@ -12,13 +12,13 @@
 		var health: int?             # An int or null; uninitialized nullable values start as null.
 		var player_name: String? = null
 
-		func find_target() -> Node?: # May return null.
+		func find_target() -&gt; Node?: # May return null.
 			return null
 		[/codeblock]
 		The [code]?[/code] suffix works on built-in value types ([code]int?[/code], [code]String?[/code], [code]Vector2?[/code], and so on), enums (including nested enums such as [code]Vector2.Axis?[/code]), objects (such as [code]Node?[/code]), and collections, where the collection itself is nullable ([code]Array?[/code], [code]Array[int]?[/code], [code]Dictionary[String, int]?[/code]). It is [b]not[/b] allowed on [Variant] (already nullable), on [code]void[/code], or on element types: [code]Array[int?][/code] is rejected; write [code]Array[int]?[/code] instead.
 		After a [code]null[/code] check, the analyzer narrows the value to its non-nullable type, so it can be used safely:
 		[codeblock]
-		func take(v: int?) -> int:
+		func take(v: int?) -&gt; int:
 			if v == null:
 				return -1
 			return v + 1 # v is known to be non-null here.
