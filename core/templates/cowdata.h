@@ -69,18 +69,9 @@ private:
 
 	static_assert(alignof(USize) > 0);
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4724) // prevent false positive warning for potential modulo zero
-#endif
-
 	static constexpr size_t REF_COUNT_OFFSET = 0;
 	static constexpr size_t SIZE_OFFSET = ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) % alignof(USize) == 0) ? (REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) : ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) + alignof(USize) - ((REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>)) % alignof(USize)));
 	static constexpr size_t DATA_OFFSET = ((SIZE_OFFSET + sizeof(USize)) % alignof(max_align_t) == 0) ? (SIZE_OFFSET + sizeof(USize)) : ((SIZE_OFFSET + sizeof(USize)) + alignof(max_align_t) - ((SIZE_OFFSET + sizeof(USize)) % alignof(max_align_t)));
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 	mutable T *_ptr = nullptr;
 
@@ -178,6 +169,11 @@ public:
 		return _ptr;
 	}
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4724) // prevent false positive warning for potential modulo zero
+#endif
+
 	_FORCE_INLINE_ Size size() const {
 		USize *size = (USize *)_get_size();
 		if (size) {
@@ -186,6 +182,10 @@ public:
 			return 0;
 		}
 	}
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 	_FORCE_INLINE_ void clear() { _unref(); }
 	_FORCE_INLINE_ bool is_empty() const { return _ptr == nullptr; }
