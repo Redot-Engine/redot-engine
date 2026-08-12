@@ -408,13 +408,14 @@ void Baker::bake_occluder() {
 		undo->add_do_property(occluder_instance, SNAME("occluder"), occluder);
 		undo->add_undo_property(occluder_instance, SNAME("occluder"), occluder_instance->get_occluder());
 
-		if (!occluder_instance->get_occluder()->get_path().is_empty()) {
-			const auto path = occluder_instance->get_occluder()->get_path();
+		auto prev_occluder = occluder_instance->get_occluder();
+		if (prev_occluder.is_valid() && !prev_occluder->get_path().is_empty()) {
+			const auto path = prev_occluder->get_path();
 			undo->add_do_method(occluder, SNAME("take_over_path"), path);
-			undo->add_undo_method(occluder_instance->get_occluder().ptr(), SNAME("take_over_path"), path);
+			undo->add_undo_method(prev_occluder.ptr(), SNAME("take_over_path"), path);
 			const auto saver = CoreBind::ResourceSaver::get_singleton();
 			undo->add_do_method(saver, SNAME("save"), occluder);
-			undo->add_undo_method(saver, SNAME("save"), occluder_instance->get_occluder());
+			undo->add_undo_method(saver, SNAME("save"), prev_occluder);
 		}
 	}
 
@@ -423,7 +424,10 @@ void Baker::bake_occluder() {
 
 void Baker::bake_nav_region_nav_mesh(NavigationRegion3D *nav_region) {
 	auto nav_mesh = nav_region->get_navigation_mesh();
-	assert(nav_mesh.is_valid());
+	if (nav_mesh.is_null()) {
+		print_error("NavigationRegion3D does not have a navigation mesh");
+		return;
+	}
 
 	auto nav_server = NavigationServer3D::get_singleton();
 

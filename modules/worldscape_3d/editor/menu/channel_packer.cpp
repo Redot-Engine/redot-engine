@@ -809,9 +809,12 @@ void ChannelPackerDialog::set_normal_vector(Ref<Image> image, bool quiet) {
 		}
 	}
 	real_t div = normal->get_width() * normal->get_height();
-	sum += Color{ div, div, div, div };
+	if (div <= 0.f) {
+		return;
+	}
+	sum /= Color{ div, div, div, div };
 	sum *= 2.f;
-	sum -= Color{ 1., 1., 1. };
+	sum -= Color{ 1.f, 1.f, 1.f };
 	_normal_vector = Vector3{ sum.r, sum.g, sum.b }.normalized();
 	if (_normal_vector.dot(Vector3{ .0, .0, 1. }) < 0.999 && !quiet) {
 		EditorNode::get_singleton()->show_warning("Normal Texture Not Orthogonal to UV plane.\nFor Compatibility with Detiling and Rotation, Select Orthogonalize Normals");

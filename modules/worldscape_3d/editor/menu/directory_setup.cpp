@@ -149,7 +149,11 @@ DirectorySetup::~DirectorySetup() {
 }
 
 void DirectorySetup::directory_setup_popup() {
-	auto current_data_directory = _plugin->get_terrain()->get_data_directory();
+	auto terrain = _plugin->get_terrain();
+	if (!terrain) {
+		return;
+	}
+	auto current_data_directory = terrain->get_data_directory();
 	if (!current_data_directory.is_empty()) {
 		_dialog->get_dir_edit()->set_text(current_data_directory);
 	}
