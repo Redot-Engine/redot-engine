@@ -1412,7 +1412,7 @@ bool WorldScape3DEditorPlugin::consume_hotkey(Key code) {
 
 void WorldScape3DEditorPlugin::setup_editor_settings() {
 	_editor_settings = EditorInterface::get_singleton()->get_editor_settings();
-	if (!_editor_settings->has_setting("terrain_editor/config/alt_key_bindings")) {
+	if (!_editor_settings->has_setting("terrain_editor/config/alt_key_bind")) {
 		_editor_settings->set("terrain_editor/config/alt_key_bind", 0);
 	}
 	const PropertyInfo info{

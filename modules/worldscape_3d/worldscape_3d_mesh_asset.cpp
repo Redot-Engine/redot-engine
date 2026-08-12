@@ -249,13 +249,16 @@ void WorldScape3DMeshAsset::set_scene_file(const Ref<PackedScene> &p_scene_file)
 				LOG(INFO, "Setting name based on filename: ", _name);
 			}
 			// Duplicate the mesh to make each WorldScape3DMeshAsset unique
-			Ref<Mesh> mesh = mi->get_mesh()->duplicate();
-			// Apply the active material from the scene to the mesh, including MI or Geom overrides
-			for (int j = 0; j < mi->get_surface_override_material_count(); j++) {
-				Ref<Material> mat = mi->get_active_material(j);
-				mesh->surface_set_material(j, mat);
+			Ref<Mesh> orig_mesh = mi->get_mesh();
+			if (orig_mesh.is_valid()) {
+				Ref<Mesh> mesh = orig_mesh->duplicate();
+				// Apply the active material from the scene to the mesh, including MI or Geom overrides
+				for (int j = 0; j < mi->get_surface_override_material_count(); j++) {
+					Ref<Material> mat = mi->get_active_material(j);
+					mesh->surface_set_material(j, mat);
+				}
+				_meshes.push_back(mesh);
 			}
-			_meshes.push_back(mesh);
 		}
 		node->queue_free();
 	}

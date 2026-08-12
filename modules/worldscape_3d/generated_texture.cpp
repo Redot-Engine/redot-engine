@@ -65,9 +65,9 @@ RID GeneratedTexture::create(const TypedArray<Image> &p_layers) {
 			Ref<Image> img = p_layers[i];
 			if (img.is_valid()) {
 				layers.push_back(img);
-			}
-			if (WorldScape3D::debug_level >= DEBUG) {
-				LOG(EXTREME, i, ": ", img, ", empty: ", img->is_empty(), ", size: ", img->get_size(), ", format: ", img->get_format());
+				if (WorldScape3D::debug_level >= DEBUG) {
+					LOG(EXTREME, i, ": ", img, ", empty: ", img->is_empty(), ", size: ", img->get_size(), ", format: ", img->get_format());
+				}
 			}
 		}
 		_rid = RenderingServer::get_singleton()->texture_2d_layered_create(layers, RenderingServer::TEXTURE_LAYERED_2D_ARRAY);

@@ -411,9 +411,9 @@ void WorldScape3D::_generate_triangle_pair(PackedVector3Array &p_vertices, Packe
 	bool hole4 = ctrl4 != UINT32_MAX && is_hole(ctrl4);
 	// Navigation is where the control map is valid and the bit is set, or it's the region edge and nav1 is set
 	bool nav1 = ctrl1 != UINT32_MAX && is_nav(ctrl1);
-	bool nav2 = ctrl2 != (UINT32_MAX && is_nav(ctrl2)) || (nan2 && nav1);
-	bool nav3 = ctrl3 != (UINT32_MAX && is_nav(ctrl3)) || (nan3 && nav1);
-	bool nav4 = ctrl4 != (UINT32_MAX && is_nav(ctrl4)) || (nan4 && nav1);
+	bool nav2 = (ctrl2 != UINT32_MAX && is_nav(ctrl2)) || (nan2 && nav1);
+	bool nav3 = (ctrl3 != UINT32_MAX && is_nav(ctrl3)) || (nan3 && nav1);
+	bool nav4 = (ctrl4 != UINT32_MAX && is_nav(ctrl4)) || (nan4 && nav1);
 	//Bottom 143 triangle
 	if (!(hole1 || hole4 || hole3) && (!p_require_nav || (nav1 && nav4 && nav3))) {
 		p_vertices.push_back(v1);
