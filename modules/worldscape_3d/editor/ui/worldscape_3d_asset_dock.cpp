@@ -46,14 +46,14 @@
 #include "worldscape_3d_ui.h"
 
 namespace {
-constexpr auto ES_DOCK_SLOT = "terrain3d/dock/slot";
-constexpr auto ES_DOCK_TILE_SIZE = "terrain3d/dock/tile_size";
-constexpr auto ES_DOCK_FLOATING = "terrain3d/dock/floating";
-constexpr auto ES_DOCK_PINNED = "terrain3d/dock/always_on_top";
-constexpr auto ES_DOCK_WINDOW_POSITION = "terrain3d/dock/window_position";
-constexpr auto ES_DOCK_WINDOW_SIZE = "terrain3d/dock/window_size";
+constexpr auto ES_DOCK_SLOT = "terrain_editor/dock/slot";
+constexpr auto ES_DOCK_TILE_SIZE = "terrain_editor/dock/tile_size";
+constexpr auto ES_DOCK_FLOATING = "terrain_editor/dock/floating";
+constexpr auto ES_DOCK_PINNED = "terrain_editor/dock/always_on_top";
+constexpr auto ES_DOCK_WINDOW_POSITION = "terrain_editor/dock/window_position";
+constexpr auto ES_DOCK_WINDOW_SIZE = "terrain_editor/dock/window_size";
 // TODO Don't save tab until thumbnail generation is more reliable
-//constexpr auto ES_DOCK_TAB = "terrain3d/dock/tab";
+//constexpr auto ES_DOCK_TAB = "terrain_editor/dock/tab";
 
 constexpr uint64_t MAX_UPDATE_TIME = 1000;
 

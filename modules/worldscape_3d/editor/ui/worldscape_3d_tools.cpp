@@ -84,7 +84,7 @@ static int count_digits(real_t value) {
 	return count;
 }
 
-const String ES_TOOL_SETTINGS = "terrain3d/tool_settings/";
+const String ES_TOOL_SETTINGS = "terrain_editor/tool_settings/";
 
 constexpr int NONE = 0X0;
 constexpr int ALLOW_LARGER = 0x1;
@@ -169,7 +169,7 @@ void WorldScape3DToolSettings::on_show_submenu(bool toggled, Button *button) {
 	}
 
 	// Hide all submenus before possibly enabling the current one
-	get_tree()->call_group("terrain3d_submenus", "set_visible", false);
+	get_tree()->call_group("terrain_editor_submenus", "set_visible", false);
 	popup->set_visible(toggled);
 	auto popup_pos = button->get_screen_transform().get_origin();
 	popup_pos.y -= popup->get_size().y;
@@ -808,7 +808,7 @@ Container *WorldScape3DToolSettings::create_submenu(Control *parent, const Strin
 	Ref<StyleBox> panel_style = get_theme_stylebox("panel", "PopupMenu")->duplicate();
 	panel_style->set_content_margin_all(10);
 	submenu->set("theme_override_styles/panel", panel_style);
-	submenu->add_to_group("terrain3d_submenus");
+	submenu->add_to_group("terrain_editor_submenus");
 
 	// Pop up menu on hover, hide on exit
 	if (hover_pop) {

@@ -1290,7 +1290,7 @@ EditorPlugin::AfterGUIInput WorldScape3DEditorPlugin::read_input(const Ref<Input
 	_mod_ctrl = _ui->input_inverted() || (_use_meta ? input->is_key_pressed(Key::META) : input->is_key_pressed(Key::CTRL));
 
 	Key alt_key;
-	switch (int alt_key_bind = get_setting("terrain3d/config/alt_key_bind", 0); alt_key_bind) {
+	switch (int alt_key_bind = get_setting("terrain_editor/config/alt_key_bind", 0); alt_key_bind) {
 		case 3:
 			alt_key = Key::CAPSLOCK;
 			break;
@@ -1412,12 +1412,12 @@ bool WorldScape3DEditorPlugin::consume_hotkey(Key code) {
 
 void WorldScape3DEditorPlugin::setup_editor_settings() {
 	_editor_settings = EditorInterface::get_singleton()->get_editor_settings();
-	if (!_editor_settings->has_setting("terrain3d/config/alt_key_bindings")) {
-		_editor_settings->set("terrain3d/config/alt_key_bind", 0);
+	if (!_editor_settings->has_setting("terrain_editor/config/alt_key_bindings")) {
+		_editor_settings->set("terrain_editor/config/alt_key_bind", 0);
 	}
 	const PropertyInfo info{
 		Variant::Type::INT,
-		"terrain3d/config/alt_key_bind",
+		"terrain_editor/config/alt_key_bind",
 		PROPERTY_HINT_ENUM,
 		"Alt,Space,Meta,Capslock"
 	};
