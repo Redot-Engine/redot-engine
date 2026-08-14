@@ -60,6 +60,10 @@ void WorldScape3DRegionGizmo::update(const Vector2 position, const WorldScape3DE
 		return;
 	}
 
+	if (!editor) {
+		return;
+	}
+
 	_show_rect = editor->get_tool() == WorldScape3DEditor::Tool::REGION;
 	_use_secondary_color = editor->get_operation() == WorldScape3DEditor::Operation::SUBTRACT;
 	_region_position = position;
