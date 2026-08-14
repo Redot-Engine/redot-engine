@@ -581,8 +581,7 @@ Vector<WorldScape3D *> Baker::find_nav_region_terrains(NavigationRegion3D *nav_r
 	if (source_mode == NavigationMesh::SOURCE_GEOMETRY_ROOT_NODE_CHILDREN) {
 		auto terrains = nav_region->find_children("", "WorldScape3D");
 		for (const auto &node : terrains) {
-			auto terrain = cast_to<WorldScape3D>(node);
-			if (terrain) {
+			if (auto terrain = cast_to<WorldScape3D>(node); terrain) {
 				result.append(terrain);
 			}
 		}
@@ -591,13 +590,13 @@ Vector<WorldScape3D *> Baker::find_nav_region_terrains(NavigationRegion3D *nav_r
 	List<Node *> group_nodes;
 	nav_region->get_tree()->get_nodes_in_group(nav_mesh->get_source_group_name(), &group_nodes);
 	for (auto const &node : group_nodes) {
-		if (auto terrain = cast_to<WorldScape3D>(node)) {
+		if (auto terrain = cast_to<WorldScape3D>(node); terrain && !result.has(terrain)) {
 			result.append(terrain);
 		}
 		if (source_mode == NavigationMesh::SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN) {
 			auto children = nav_region->find_children("", "WorldScape3D");
 			for (const auto &child : children) {
-				if (auto terrain = cast_to<WorldScape3D>(child)) {
+				if (auto terrain = cast_to<WorldScape3D>(child); terrain && !result.has(terrain)) {
 					result.append((terrain));
 				}
 			}
