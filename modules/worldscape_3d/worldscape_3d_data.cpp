@@ -158,8 +158,8 @@ void WorldScape3DData::do_for_regions(const Rect2i &p_area, const Callable &p_ca
 
 void WorldScape3DData::change_region_size(int p_new_size) {
 	LOG(INFO, "Changing region size from: ", _region_size, " to ", p_new_size);
-	if (p_new_size < 64 || p_new_size > 2048 || !is_power_of_2(p_new_size)) {
-		LOG(ERROR, "Invalid region size: ", p_new_size, ". Must be 64, 128, 256, 512, 1024, 2048");
+	if (p_new_size < 64 || p_new_size > 4096 || !is_power_of_2(p_new_size)) {
+		LOG(ERROR, "Invalid region size: ", p_new_size, ". Must be 64, 128, 256, 512, 1024, 2048, 4096");
 		return;
 	}
 	if (p_new_size == _region_size) {
