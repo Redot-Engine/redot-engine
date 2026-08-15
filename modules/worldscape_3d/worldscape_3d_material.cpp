@@ -902,7 +902,7 @@ void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const 
 		RenderingServer::get_singleton()->get_shader_parameter_list(get_shader_rid(), &param_list);
 	}
 
-	_active_params.clear();
+	TypedArray<StringName> new_active_params;
 	// for (int i = 0; i < param_list.size(); i++) {
 	// 	Dictionary dict = param_list[i];
 	for (auto &param : param_list) {
@@ -931,7 +931,7 @@ void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const 
 			p_list->push_back(pi);
 
 			// Populate list of public parameters for current shader
-			_active_params.push_back(the_name);
+			new_active_params.push_back(the_name);
 
 			// Store this param in a dictionary that is saved in the resource file
 			// Initially set with default value
@@ -943,7 +943,7 @@ void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const 
 			}
 		}
 	}
-	return;
+	_active_params = new_active_params;
 }
 
 // Flag uniforms with non-default values
