@@ -306,7 +306,7 @@ void WorldScape3DRegion::set_location(const Vector2i &p_location) {
 	// In the future anywhere they want to put the location might be fine, but because of region_map
 	// We have a limitation of 16x16 and eventually 45x45.
 	if (WorldScape3DData::get_region_map_index(p_location) < 0) {
-		LOG(ERROR, "Location ", p_location, " out of bounds. Max: ",
+		LOG(DEBUG, "Location ", p_location, " out of bounds. Max: ",
 				-WorldScape3DData::REGION_MAP_SIZE / 2, " to ", WorldScape3DData::REGION_MAP_SIZE / 2 - 1);
 		return;
 	}

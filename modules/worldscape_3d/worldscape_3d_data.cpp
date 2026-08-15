@@ -290,8 +290,8 @@ Error WorldScape3DData::add_region(const Ref<WorldScape3DRegion> &p_region, cons
 
 	// Check bounds
 	if (get_region_map_index(region_loc) < 0) {
-		// LOG(ERROR, "Location ", region_loc, " out of bounds. Max: ",
-		// 		-REGION_MAP_SIZE / 2, " to ", REGION_MAP_SIZE / 2 - 1);
+		LOG(DEBUG, "Location ", region_loc, " out of bounds. Max: ",
+				-REGION_MAP_SIZE / 2, " to ", REGION_MAP_SIZE / 2 - 1);
 		return FAILED;
 	}
 	p_region->sanitize_maps();
