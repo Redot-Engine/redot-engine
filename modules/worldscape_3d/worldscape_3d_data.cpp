@@ -288,10 +288,10 @@ Error WorldScape3DData::add_region(const Ref<WorldScape3DRegion> &p_region, cons
 	Vector2i region_loc = p_region->get_location();
 	LOG(INFO, "Adding region at location ", region_loc, ", update maps: ", p_update ? "yes" : "no");
 
-	// Check bounds and slow report errors
+	// Check bounds
 	if (get_region_map_index(region_loc) < 0) {
-		LOG(ERROR, "Location ", region_loc, " out of bounds. Max: ",
-				-REGION_MAP_SIZE / 2, " to ", REGION_MAP_SIZE / 2 - 1);
+		// LOG(ERROR, "Location ", region_loc, " out of bounds. Max: ",
+		// 		-REGION_MAP_SIZE / 2, " to ", REGION_MAP_SIZE / 2 - 1);
 		return FAILED;
 	}
 	p_region->sanitize_maps();
