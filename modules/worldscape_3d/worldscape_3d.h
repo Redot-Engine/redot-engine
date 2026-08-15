@@ -99,11 +99,6 @@ private:
 	// X,Z Position of the camera during the previous snapping. Set to max real_t value to force a snap update.
 	Vector2 _camera_last_position = V2_MAX;
 
-	// Tracked Targets // FIXME not in stable
-	// TargetNode3D _clipmap_target;
-	// TargetNode3D _collision_target;
-	// TargetNode3D _camera; // Fallback target for clipmap and collision
-
 	// Regions
 	RegionSize _region_size = SIZE_256;
 	bool _save_16_bit = false;
@@ -185,14 +180,6 @@ public:
 
 	void set_camera(Camera3D *p_camera);
 	Camera3D *get_camera() const { return _camera; }
-	// FIXME not in stable
-	// Node3D *get_clipmap_target() const { return _clipmap_target.ptr(); }
-	// void set_clipmap_target(Node3D *p_node);
-	// Vector3 get_clipmap_target_position() const;
-	// Node3D *get_collision_target() const { return _collision_target.ptr(); }
-	// void set_collision_target(Node3D *p_node);
-	// Vector3 get_collision_target_position() const;
-	// void snap();
 
 	// Regions
 	void set_region_size(const RegionSize p_size);
@@ -233,7 +220,6 @@ public:
 
 	// Utility
 	Vector3 get_intersection(const Vector3 &p_src_pos, const Vector3 &p_direction, const bool p_gpu_mode = false);
-	//Dictionary get_raycast_result(const Vector3 &p_src_pos, const Vector3 &p_destination, const bool p_exclude_self = true) const;
 	Ref<Mesh> bake_mesh(const int p_lod, const WorldScape3DData::HeightFilter p_filter = WorldScape3DData::HEIGHT_FILTER_NEAREST) const;
 	PackedVector3Array generate_nav_mesh_source_geometry(const AABB &p_global_aabb, const bool p_require_nav = true) const;
 

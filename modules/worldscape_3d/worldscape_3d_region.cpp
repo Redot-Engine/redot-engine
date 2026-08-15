@@ -32,8 +32,6 @@
 
 // Terrain3D Godot plugin: Copyright © 2025 Cory Petkovsek, Roope Palmroos, and Contributors.
 
-//#include <godot_cpp/classes/resource_saver.hpp>
-
 #include "core/io/resource_saver.h"
 
 #include "logger.h"
@@ -47,28 +45,12 @@
 
 void WorldScape3DRegion::set_version(const real_t p_version) {
 	LOG(INFO, vformat("%.3f", p_version));
-	// if (_version > 0.8f && _version != p_version) {
-	// 	_modified = true;
-	// }
 	_version = p_version;
 	if (_version < WorldScape3DData::CURRENT_VERSION) {
 		LOG(WARN, "Region ", get_path(), " version ", vformat("%.3f", _version),
 				" will be updated to ", vformat("%.3f", WorldScape3DData::CURRENT_VERSION), " upon save");
 	}
 }
-
-// void WorldScape3DRegion::set_region_size(const int p_region_size) {
-// 	LOG(INFO, "Setting region ", _location, " size: ", p_region_size);
-// 	if (!is_valid_region_size(p_region_size)) {
-// 		LOG(ERROR, "Invalid region size: ", p_region_size, ". Must be power of 2, 64-2048");
-// 		return;
-// 	}
-// 	// If already initialized and we get a new value
-// 	if (_region_size > 0 && _region_size != p_region_size) {
-// 		_modified = true;
-// 	}
-// 	_region_size = p_region_size;
-// }
 
 void WorldScape3DRegion::set_map(const MapType p_map_type, const Ref<Image> &p_image) {
 	switch (p_map_type) {
@@ -254,13 +236,6 @@ void WorldScape3DRegion::calc_height_range() {
 	}
 }
 
-// void WorldScape3DRegion::set_instances(const Dictionary &p_instances) {
-// 	if (!_instances.is_empty() && _instances.id() != p_instances.id()) {
-// 		_modified = true;
-// 	}
-// 	_instances = p_instances;
-// }
-
 Error WorldScape3DRegion::save(const String &p_path, const bool p_16_bit) {
 	// Initiate save to external file. The scene will save itself.
 	if (_location.x == INT32_MAX) {
@@ -428,7 +403,6 @@ void WorldScape3DRegion::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_data", "data"), &WorldScape3DRegion::set_data);
 	ClassDB::bind_method(D_METHOD("get_data"), &WorldScape3DRegion::get_data);
-	//ClassDB::bind_method(D_METHOD("duplicate", "deep"), &WorldScape3DRegion::duplicate, DEFVAL(false));
 
 	int ro_flags = PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY;
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "version", PROPERTY_HINT_NONE, "", ro_flags), "set_version", "get_version");

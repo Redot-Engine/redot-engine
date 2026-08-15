@@ -509,10 +509,6 @@ void WorldScape3D::set_assets(const Ref<WorldScape3DAssets> &p_assets) {
 
 #ifdef TOOLS_ENABLED
 void WorldScape3D::set_editor(WorldScape3DEditor *p_editor) {
-	// if (p_editor && p_editor->is_queued_for_deletion()) {
-	// 	LOG(ERROR, "Attempted to set a node queued for deletion");
-	// 	return;
-	// }
 	_editor = p_editor;
 	if (_material.is_valid()) {
 		_material->update();
@@ -523,10 +519,6 @@ void WorldScape3D::set_editor(WorldScape3DEditor *p_editor) {
 
 #ifdef TOOLS_ENABLED
 void WorldScape3D::set_plugin(WorldScape3DEditorPlugin *p_plugin) {
-	// if (p_plugin && p_plugin->is_queued_for_deletion()) {
-	// 	LOG(ERROR, "Attempted to set a node queued for deletion");
-	// 	return;
-	// }
 	_plugin = p_plugin;
 	LOG(DEBUG, "Set EditorPlugin: ", p_plugin);
 }
@@ -547,53 +539,6 @@ void WorldScape3D::set_camera(Camera3D *p_camera) {
 		}
 	}
 }
-
-// void WorldScape3D::set_clipmap_target(Node3D *p_node) {
-// 	if (p_node && p_node->is_queued_for_deletion()) {
-// 		LOG(ERROR, "Attempted to set a node queued for deletion");
-// 		_clipmap_target.clear();
-// 		return;
-// 	}
-// 	LOG(INFO, "Setting clipmap target: ", p_node);
-// 	_clipmap_target.set_target(p_node);
-// 	set_physics_process(true);
-// }
-//
-// Vector3 WorldScape3D::get_clipmap_target_position() const {
-// 	if (!IS_EDITOR && _clipmap_target.is_inside_tree()) {
-// 		return _clipmap_target.ptr()->get_global_position();
-// 	}
-// 	if (_camera.is_inside_tree()) {
-// 		return _camera.ptr()->get_global_position();
-// 	}
-// 	return V3_ZERO;
-// }
-//
-// void WorldScape3D::set_collision_target(Node3D *p_node) {
-// 	if (p_node && p_node->is_queued_for_deletion()) {
-// 		LOG(ERROR, "Attempted to set a node queued for deletion");
-// 		_collision_target.clear();
-// 		return;
-// 	}
-// 	LOG(INFO, "Setting collision target: ", p_node);
-// 	_collision_target.set_target(p_node);
-// }
-//
-// Vector3 WorldScape3D::get_collision_target_position() const {
-// 	if (!IS_EDITOR && _collision_target.is_inside_tree()) {
-// 		return _collision_target.ptr()->get_global_position();
-// 	}
-// 	return get_clipmap_target_position();
-// }
-//
-// void WorldScape3D::snap() {
-// 	if (_mesher) {
-// 		_mesher->reset_target_position();
-// 	}
-// 	if (_collision) {
-// 		_collision->reset_target_position();
-// 	}
-// }
 
 void WorldScape3D::set_region_size(const RegionSize p_size) {
 	LOG(INFO, "Setting region size: ", p_size);
@@ -842,31 +787,6 @@ Vector3 WorldScape3D::get_intersection(const Vector3 &p_src_pos, const Vector3 &
 	return point;
 }
 
-/* Returns the results of a physics ray cast, optionally excluding the terrain
- *	p_src_pos (ray start position)
- *	p_direction (ray direction * magnitude)
- */
-// Dictionary WorldScape3D::get_raycast_result(const Vector3 &p_src_pos, const Vector3 &p_destination, const bool p_exclude_self) const {
-// 	Dictionary dic{};
-// 	if (!_is_inside_world) {
-// 		return dic;
-// 	}
-// 	PhysicsDirectSpaceState3D *space_state = get_world_3d()->get_direct_space_state();
-// 	PhysicsDirectSpaceState3D::RayParameters ray_params{
-// 		.from = p_src_pos,
-// 		.to = p_destination,
-// 	};
-// 	if (_collision && p_exclude_self) {
-// 		ray_params.exclude.insert(_collision->get_rid());
-// 	}
-// 	PhysicsDirectSpaceState3D::RayResult result{};
-// 	if (space_state->intersect_ray(ray_params, result)) {
-// 		dic["normal"] = result.normal;
-// 		dic["position"] = result.position;
-// 	}
-// 	return dic;
-// }
-
 /**
  * Generates a static ArrayMesh for the terrain.
  * p_lod (0-8): Determines the granularity of the generated mesh.
@@ -1065,7 +985,7 @@ void WorldScape3D::_notification(const int p_what) {
 #endif
 
 		case NOTIFICATION_CRASH: {
-			// Godot's crash handler reports engine is about to crash
+			// Redot's crash handler reports engine is about to crash
 			// Only works on desktop if the crash handler is enabled
 			LOG(INFO, "NOTIFICATION_CRASH");
 			break;
@@ -1144,20 +1064,9 @@ void WorldScape3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_assets"), &WorldScape3D::get_assets);
 	ClassDB::bind_method(D_METHOD("get_collision"), &WorldScape3D::get_collision);
 	ClassDB::bind_method(D_METHOD("get_instancer"), &WorldScape3D::get_instancer);
-	// ClassDB::bind_method(D_METHOD("set_editor", "editor"), &WorldScape3D::set_editor);
-	// ClassDB::bind_method(D_METHOD("get_editor"), &WorldScape3D::get_editor);
-	// ClassDB::bind_method(D_METHOD("set_plugin", "plugin"), &WorldScape3D::set_plugin);
-	// ClassDB::bind_method(D_METHOD("get_plugin"), &WorldScape3D::get_plugin);
 
 	ClassDB::bind_method(D_METHOD("set_camera", "camera"), &WorldScape3D::set_camera);
 	ClassDB::bind_method(D_METHOD("get_camera"), &WorldScape3D::get_camera);
-	// ClassDB::bind_method(D_METHOD("set_clipmap_target", "node"), &WorldScape3D::set_clipmap_target);
-	// ClassDB::bind_method(D_METHOD("get_clipmap_target"), &WorldScape3D::get_clipmap_target);
-	// ClassDB::bind_method(D_METHOD("get_clipmap_target_position"), &WorldScape3D::get_clipmap_target_position);
-	// ClassDB::bind_method(D_METHOD("set_collision_target", "node"), &WorldScape3D::set_collision_target);
-	// ClassDB::bind_method(D_METHOD("get_collision_target"), &WorldScape3D::get_collision_target);
-	// ClassDB::bind_method(D_METHOD("get_collision_target_position"), &WorldScape3D::get_collision_target_position);
-	// ClassDB::bind_method(D_METHOD("snap"), &WorldScape3D::snap);
 
 	// Regions
 	ClassDB::bind_method(D_METHOD("change_region_size", "size"), &WorldScape3D::change_region_size);
@@ -1257,7 +1166,6 @@ void WorldScape3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("bake_mesh", "lod", "filter"), &WorldScape3D::bake_mesh, DEFVAL(WorldScape3DData::HEIGHT_FILTER_NEAREST));
 	ClassDB::bind_method(D_METHOD("generate_nav_mesh_source_geometry", "global_aabb", "require_nav"), &WorldScape3D::generate_nav_mesh_source_geometry, DEFVAL(true));
 
-	//ADD_PROPERTY(PropertyInfo(Variant::STRING, "version", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_READ_ONLY), "", "get_version");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "debug_level", PROPERTY_HINT_ENUM, "Errors,Info,Debug,Extreme"), "set_debug_level", "get_debug_level");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "data_directory", PROPERTY_HINT_DIR), "set_data_directory", "get_data_directory");
 
@@ -1282,14 +1190,12 @@ void WorldScape3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_mask", "get_collision_mask");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "collision_priority", PROPERTY_HINT_RANGE, "0.1,256,.1"), "set_collision_priority", "get_collision_priority");
-	//ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "collision_target", PROPERTY_HINT_NODE_TYPE, "Node3D"), "set_collision_target", "get_collision_target");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "physics_material", PROPERTY_HINT_RESOURCE_TYPE, "PhysicsMaterial"), "set_physics_material", "get_physics_material");
 
 	ADD_GROUP("Mesh", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "mesh_lods", PROPERTY_HINT_RANGE, "1,10,1"), "set_mesh_lods", "get_mesh_lods");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "mesh_size", PROPERTY_HINT_RANGE, "8,64,2"), "set_mesh_size", "get_mesh_size");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "vertex_spacing", PROPERTY_HINT_RANGE, "0.25,10.0,0.05,or_greater"), "set_vertex_spacing", "get_vertex_spacing");
-	//ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "clipmap_target", PROPERTY_HINT_NODE_TYPE, "Node3D"), "set_clipmap_target", "get_clipmap_target");
 
 	ADD_GROUP("Rendering", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "render_layers", PROPERTY_HINT_LAYERS_3D_RENDER), "set_render_layers", "get_render_layers");

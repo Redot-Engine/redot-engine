@@ -990,17 +990,6 @@ void WorldScape3DData::import_images(const TypedArray<Image> &p_images, const Ve
 			TypedArray<Image> images;
 			images.resize(TYPE_MAX);
 
-			// Vector3 global_position = Vector3(descaled_position.x + start_coords.x, 0.f, descaled_position.z + start_coords.y) * _vertex_spacing;
-			// Vector2i region_loc = get_region_location(global_position);
-			// Ref<WorldScape3DRegion> region = get_region(region_loc);
-			// if (region.is_null()) {
-			// 	region.instantiate();
-			// 	region->set_location(region_loc);
-			// 	region->set_region_size(_region_size);
-			// 	region->set_vertex_spacing(_vertex_spacing);
-			// 	region->set_modified(true);
-			// 	add_region(region, false);
-			// }
 			for (int i = 0; i < TYPE_MAX; i++) {
 				Ref<Image> img = tmp_images[i];
 				Ref<Image> img_slice;

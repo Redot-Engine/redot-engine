@@ -89,7 +89,7 @@ Ref<WorldScape3DRegion> WorldScape3DEditor::_operate_region(const Vector2i &p_re
 	}
 	if (data->get_region_map_index(p_region_loc) < 0) {
 		if (can_print) {
-			print_line_rich("Location ", p_region_loc, " out of bounds. Max: ",
+			LOG(DEBUG, "Location ", p_region_loc, " out of bounds. Max: ",
 					-WorldScape3DData::REGION_MAP_SIZE / 2, " to ", WorldScape3DData::REGION_MAP_SIZE / 2 - 1);
 		}
 		return Ref<WorldScape3DRegion>();
@@ -108,7 +108,7 @@ Ref<WorldScape3DRegion> WorldScape3DEditor::_operate_region(const Vector2i &p_re
 			LOG(DEBUG, "Adding blank region at: ", p_region_loc, ", ptr: ", ptr_to_str(*region));
 			region = data->add_region_blank(p_region_loc);
 			if (region.is_null()) {
-				print_error("A new region cannot be created");
+				LOG(ERROR, "A new region cannot be created");
 				return region;
 			}
 			_edited_regions.push_back(region); // Ensure new region is added to the redo set
@@ -138,7 +138,7 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 
 	MapType map_type = _get_map_type();
 	if (map_type == TYPE_MAX) {
-		print_error("Invalid tool selected");
+		LOG(ERROR, "Invalid tool selected");
 		return;
 	}
 
