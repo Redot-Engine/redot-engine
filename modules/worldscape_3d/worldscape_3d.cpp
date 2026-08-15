@@ -1067,7 +1067,7 @@ void WorldScape3D::_notification(const int p_what) {
 		case NOTIFICATION_CRASH: {
 			// Godot's crash handler reports engine is about to crash
 			// Only works on desktop if the crash handler is enabled
-			LOG(WARN, "NOTIFICATION_CRASH");
+			LOG(INFO, "NOTIFICATION_CRASH");
 			break;
 		}
 
