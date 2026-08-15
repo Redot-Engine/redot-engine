@@ -75,11 +75,14 @@ void WorldScape3DGradientOperationBuilder::apply_operation(WorldScape3DEditor *e
 	}
 
 	auto points = picker->get_points();
-	assert(points.size() == 2);
-	assert(!is_drawable());
+	if (points.size() != 2 || is_drawable()) {
+		return;
+	}
 
 	real_t brush_size = get_brush_size();
-	assert(brush_size > 0.f);
+	if (brush_size <= 0.f) {
+		return;
+	}
 
 	auto start = points[0];
 	auto end = points[1];
