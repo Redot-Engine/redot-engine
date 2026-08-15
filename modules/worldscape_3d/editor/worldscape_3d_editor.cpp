@@ -187,7 +187,7 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 	bool enable_texture = _brush_data["enable_texture"];
 	bool texture_filter = _brush_data["texture_filter"];
 	int margin = _brush_data["margin"];
-	int asset_id = _brush_data["asset_id"];
+	uint32_t asset_id = _brush_data["asset_id"];
 
 	Vector2 slope_range = _brush_data["slope"];
 	bool enable_angle = _brush_data["enable_angle"];
@@ -207,7 +207,7 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 	}
 	// Rotate the decal to align with the brush
 	if (IS_EDITOR && _terrain->get_plugin()) {
-		cast_to<WorldScape3DEditorPlugin>(_terrain->get_plugin())->get_ui()->set_decal_rotation(rot);
+		_terrain->get_plugin()->get_ui()->set_decal_rotation(rot);
 	}
 	AABB edited_area;
 	edited_area.position = p_global_position - Vector3(brush_size, 0.f, brush_size) * .5f;
@@ -372,8 +372,8 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 
 			} else if (map_type == TYPE_CONTROL) {
 				// Get current bit field from pixel
-				int base_id = get_base(src.r);
-				int overlay_id = get_overlay(src.r);
+				uint32_t base_id = get_base(src.r);
+				uint32_t overlay_id = get_overlay(src.r);
 				real_t blend = real_t(get_blend(src.r)) / 255.f;
 				uint32_t uvrotation = get_uv_rotation(src.r);
 				uint32_t uvscale = get_uv_scale(src.r);
@@ -538,7 +538,7 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 					}
 					float src_ctrl = cmap->get_pixelv(map_pixel_position).r; // Must be float
 					int tex_id = (get_blend(src_ctrl) > 110 - margin) ? get_overlay(src_ctrl) : get_base(src_ctrl);
-					if (tex_id != asset_id) {
+					if (static_cast<uint32_t>(tex_id) != asset_id) {
 						continue;
 					}
 				}

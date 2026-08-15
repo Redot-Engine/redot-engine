@@ -57,10 +57,10 @@ void GeneratedTexture::clear() {
 
 RID GeneratedTexture::create(const TypedArray<Image> &p_layers) {
 	if (!p_layers.is_empty()) {
-		Vector<Ref<Image>> layers;
 		if (WorldScape3D::debug_level >= DEBUG) {
 			LOG(EXTREME, "RenderingServer creating Texture2DArray, layers size: ", p_layers.size());
 		}
+		Vector<Ref<Image>> layers;
 		for (int i = 0; i < p_layers.size(); i++) {
 			Ref<Image> img = p_layers[i];
 			if (img.is_valid()) {
