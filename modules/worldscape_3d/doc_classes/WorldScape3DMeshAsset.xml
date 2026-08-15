@@ -144,6 +144,9 @@
 			</description>
 		</signal>
 		<signal name="id_changed">
+			<param index="0" name="type" type="int" />
+			<param index="1" name="old_id" type="int" />
+			<param index="2" name="new_id" type="int" />
 			<description>
 				Emitted when [member id] is changed.
 			</description>
