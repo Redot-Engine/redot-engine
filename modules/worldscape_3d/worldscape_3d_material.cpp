@@ -320,7 +320,7 @@ String WorldScape3DMaterial::_inject_editor_code(const String &p_shader) const {
 	for (int i = 0; i < insert_names.size(); i++) {
 		String insert = _shader_code[insert_names[i]];
 		shader = shader.insert(idx, "\n" + insert);
-		idx += insert.length();
+		idx += insert.length() + 1;
 	}
 	insert_names.clear();
 
@@ -424,7 +424,7 @@ String WorldScape3DMaterial::_inject_editor_code(const String &p_shader) const {
 	for (int i = 0; i < insert_names.size(); i++) {
 		String insert = _shader_code[insert_names[i]];
 		shader = shader.insert(idx, "\n" + insert);
-		idx += insert.length();
+		idx += insert.length() + 1;
 	}
 	return shader;
 }
