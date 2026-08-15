@@ -627,7 +627,13 @@ void ListContainer::on_resource_changed(Ref<Resource> resource, int id) {
 
 	if (resource.is_null()) {
 		auto asset_dock = get_dock();
+		if (!asset_dock) {
+			return;
+		}
 		auto confirm_dialog = asset_dock->get_confirmation_dialog();
+		if (!confirm_dialog) {
+			return;
+		}
 		if (_type == WorldScape3DAssets::TYPE_TEXTURE) {
 			confirm_dialog->set_text("Are you sure you want to clear this texture?");
 		} else {
@@ -644,7 +650,13 @@ void ListContainer::on_resource_changed(Ref<Resource> resource, int id) {
 
 void ListContainer::resource_modify(Ref<Resource> resource, int id) {
 	auto asset_dock = get_dock();
+	if (!asset_dock) {
+		return;
+	}
 	auto confirm_dialog = asset_dock->get_confirmation_dialog();
+	if (!confirm_dialog) {
+		return;
+	}
 	if (confirm_dialog->is_connected("confirmed", callable_mp(this, &ListContainer::resource_modify).bind(resource, id))) {
 		confirm_dialog->disconnect("confirmed", callable_mp(this, &ListContainer::resource_modify).bind(resource, id));
 		if (!asset_dock->is_dialog_confirmed()) {
