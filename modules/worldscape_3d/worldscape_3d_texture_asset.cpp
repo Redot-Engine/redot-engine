@@ -190,7 +190,7 @@ void WorldScape3DTextureAsset::set_detiling_shift(const real_t p_detiling_shift)
 ///////////////////////////
 
 void WorldScape3DTextureAsset::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("id_changed"));
+	ADD_SIGNAL(MethodInfo("id_changed", PropertyInfo(Variant::INT, "type"), PropertyInfo(Variant::INT, "old_id"), PropertyInfo(Variant::INT, "new_id")));
 	ADD_SIGNAL(MethodInfo("file_changed"));
 	ADD_SIGNAL(MethodInfo("setting_changed"));
 
