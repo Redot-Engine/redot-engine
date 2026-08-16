@@ -115,34 +115,30 @@ void Parallax2D::_update_scroll() {
 	Point2 scroll_ofs = screen_offset;
 
 	if (!Engine::get_singleton()->is_editor_hint()) {
-		Size2 vps = get_viewport_rect().size;
+		Size2 viewport_size = get_viewport_rect().size;
 
-		if (limit_begin.x <= limit_end.x - vps.x) {
-			scroll_ofs.x = CLAMP(scroll_ofs.x, limit_begin.x, limit_end.x - vps.x);
+		if (limit_begin.x <= limit_end.x - viewport_size.x) {
+			scroll_ofs.x = CLAMP(scroll_ofs.x, limit_begin.x, limit_end.x - viewport_size.x);
 		}
-		if (limit_begin.y <= limit_end.y - vps.y) {
-			scroll_ofs.y = CLAMP(scroll_ofs.y, limit_begin.y, limit_end.y - vps.y);
+		if (limit_begin.y <= limit_end.y - viewport_size.y) {
+			scroll_ofs.y = CLAMP(scroll_ofs.y, limit_begin.y, limit_end.y - viewport_size.y);
 		}
 	}
 
 	scroll_ofs *= scroll_scale;
 
 	if (repeat_size.x) {
-		real_t mod = Math::fposmod(scroll_ofs.x - scroll_offset.x, repeat_size.x * get_scale().x);
+		real_t mod = Math::fposmod(scroll_ofs.x - scroll_offset.x - manual_scroll.x, repeat_size.x * get_scale().x);
 		scroll_ofs.x = screen_offset.x - mod;
 	} else {
-		scroll_ofs.x = screen_offset.x + scroll_offset.x - scroll_ofs.x;
+		scroll_ofs.x = screen_offset.x + scroll_offset.x + manual_scroll.x - scroll_ofs.x;
 	}
 
 	if (repeat_size.y) {
-		real_t mod = Math::fposmod(scroll_ofs.y - scroll_offset.y, repeat_size.y * get_scale().y);
+		real_t mod = Math::fposmod(scroll_ofs.y - scroll_offset.y - manual_scroll.y, repeat_size.y * get_scale().y);
 		scroll_ofs.y = screen_offset.y - mod;
 	} else {
-		scroll_ofs.y = screen_offset.y + scroll_offset.y - scroll_ofs.y;
-	}
-
-	if (!follow_viewport) {
-		scroll_ofs -= screen_offset;
+		scroll_ofs.y = screen_offset.y + scroll_offset.y + manual_scroll.y - scroll_ofs.y;
 	}
 
 	set_position(scroll_ofs);
@@ -224,6 +220,29 @@ Point2 Parallax2D::get_autoscroll() const {
 	return autoscroll;
 }
 
+void Parallax2D::set_manual_scroll(const Point2 &p_scroll) {
+	Point2 wrapped = p_scroll;
+
+	if (repeat_size.x) {
+		wrapped.x = Math::fposmod(wrapped.x, repeat_size.x * get_scale().x);
+	}
+	if (repeat_size.y) {
+		wrapped.y = Math::fposmod(wrapped.y, repeat_size.y * get_scale().y);
+	}
+
+	if (wrapped == manual_scroll) {
+		return;
+	}
+
+	manual_scroll = wrapped;
+
+	_update_scroll();
+}
+
+Point2 Parallax2D::get_manual_scroll() const {
+	return manual_scroll;
+}
+
 void Parallax2D::set_screen_offset(const Point2 &p_offset) {
 	if (p_offset == screen_offset) {
 		return;
@@ -280,6 +299,8 @@ void Parallax2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_repeat_times"), &Parallax2D::get_repeat_times);
 	ClassDB::bind_method(D_METHOD("set_autoscroll", "autoscroll"), &Parallax2D::set_autoscroll);
 	ClassDB::bind_method(D_METHOD("get_autoscroll"), &Parallax2D::get_autoscroll);
+	ClassDB::bind_method(D_METHOD("set_manual_scroll", "scroll"), &Parallax2D::set_manual_scroll);
+	ClassDB::bind_method(D_METHOD("get_manual_scroll"), &Parallax2D::get_manual_scroll);
 	ClassDB::bind_method(D_METHOD("set_scroll_offset", "offset"), &Parallax2D::set_scroll_offset);
 	ClassDB::bind_method(D_METHOD("get_scroll_offset"), &Parallax2D::get_scroll_offset);
 	ClassDB::bind_method(D_METHOD("set_screen_offset", "offset"), &Parallax2D::set_screen_offset);
@@ -299,6 +320,7 @@ void Parallax2D::_bind_methods() {
 	ADD_GROUP("Repeat", "");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "repeat_size"), "set_repeat_size", "get_repeat_size");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "autoscroll", PROPERTY_HINT_NONE, "suffix:px/s"), "set_autoscroll", "get_autoscroll");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "manual_scroll", PROPERTY_HINT_NONE, "suffix:px"), "set_manual_scroll", "get_manual_scroll");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "repeat_times"), "set_repeat_times", "get_repeat_times");
 
 	ADD_GROUP("Limit", "limit_");
