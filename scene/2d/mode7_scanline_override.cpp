@@ -39,6 +39,18 @@
 #include "mode7_scanline_override.h"
 #include "mode7_sprite_2d.h"
 
+void Mode7ScanlineOverride::set_owner_mode7_sprite(Mode7Sprite2D *p_owner) {
+	owner_id = p_owner ? p_owner->get_instance_id() : ObjectID();
+}
+Mode7Sprite2D *Mode7ScanlineOverride::get_owner_mode7_sprite() const {
+	if (owner_id.is_null()) {
+		return nullptr;
+	}
+	// ObjectDB returns nullptr once the owning node has been freed, so a
+	// destroyed owner is handled safely here.
+	return ObjectDB::get_instance<Mode7Sprite2D>(owner_id);
+}
+
 void Mode7ScanlineOverride::set_transform(const Transform2D &p_transform) {
 	transform = p_transform;
 	emit_changed();
@@ -102,10 +114,14 @@ Color Mode7ScanlineOverride::get_modulate() const {
 }
 
 void Mode7ScanlineOverride::_validate_property(PropertyInfo &p_property) const {
-	if (owner != nullptr && p_property.name == "skew") {
-		if (static_cast<Mode7Sprite2D *>(owner)->get_mode7_interpolation() == Mode7Sprite2D::Mode7InterpolationMode::INTERPOLATION_PROJECTION) {
-			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
-		}
+	if (p_property.name != "skew") {
+		return;
+	}
+	// Resolve through ObjectDB so a stale ID (missing or destroyed
+	// Mode7Sprite2D) yields nullptr instead of a dangling pointer.
+	const Mode7Sprite2D *sprite = get_owner_mode7_sprite();
+	if (sprite != nullptr && sprite->get_mode7_interpolation() == Mode7Sprite2D::Mode7InterpolationMode::INTERPOLATION_PROJECTION) {
+		p_property.usage |= PROPERTY_USAGE_READ_ONLY;
 	}
 }
 

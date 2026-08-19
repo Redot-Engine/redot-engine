@@ -13,7 +13,7 @@
 		- [b]Lerp:[/b] Linear interpolation between adjacent entries in the override array. The shader smoothly blends transforms, pivots, and modulate colors across all intervening scanlines. Add any number of overrides to create gradual transitions.
 		- [b]Projection:[/b] Perspective projection via per-scanline inverse-depth interpolation. Uses the first entry (index 0) as the top/horizon anchor and the last entry as the bottom/close anchor. Designed specifically for use with exactly 2 overrides — one at the horizon line and one closer to the camera.
 
-		The transforms are stored canonically as a [Transform2D], but you can also read/write decomposed rotation, scale, and skew properties for convenience. Values below [lb]0.00001.[rb] are clamped internally to prevent division-by-zero artifacts during inverse-depth interpolation.
+		The transforms are stored canonically as a [Transform2D], but you can also read/write decomposed rotation, scale, and skew properties for convenience. Values below [code]0.00001[/code] are clamped internally to prevent division-by-zero artifacts during inverse-depth interpolation.
 	</description>
 	<tutorials>
 	</tutorials>

@@ -55,17 +55,38 @@
 			Valid range is -360 to 360 degrees.
 		</member>
 		<member name="mode7_interpolation" type="int" setter="set_mode7_interpolation" getter="get_mode7_interpolation" enum="Mode7Sprite2D.Mode7InterpolationMode" default="0">
-			Determines how the shader blends this entry with its neighbors across the sprite height. Choose based on your effect: [constant INTERPOLATION_NONE] for per-scanline precision, [constant INTERPOLATION_LERP] for smooth transitions between any number of overrides, or [constant INTERPOLATION_PROJECTION] for perspective with exactly 2 entries.
+			Determines how the shader blends the elements in the scanline override array across the sprite height. Choose based on your effect: [constant INTERPOLATION_NONE] for per-scanline precision, [constant INTERPOLATION_LERP] for smooth transitions between any number of overrides, or [constant INTERPOLATION_PROJECTION] for perspective with exactly 2 entries.
 		</member>
 		<member name="mode7_override_region_aspect" type="bool" setter="set_mode7_override_region_aspect" getter="is_mode7_override_region_aspect" default="true">
 			When [code]true[/code] (default), non-square region rects have their rotations corrected to behave as if the region were square. This prevents rotations from skewing into shears when using a cropped region. Set to [code]false[/code] if you want raw, uncorrected UV behavior for creative warping effects.
+		</member>
+		<member name="mode7_projection_aspect_ratio" type="float" setter="set_mode7_projection_aspect_ratio" getter="get_mode7_projection_aspect_ratio" default="1.0">
+			Horizontal-to-vertical scale ratio for the perspective. 1.0 is uniform (classic Mode 7).
+			0.5 makes the horizontal scale half the vertical; values above 1.0 reverse the imbalance.
+			Useful for compensating non-square source art. Only applies in Projection interpolation mode. Recommended: 0.5–1.5, default 1.0.
+		</member>
+		<member name="mode7_projection_gamma" type="float" setter="set_mode7_projection_gamma" getter="get_mode7_projection_gamma" default="1.0">
+			Gamma/power exponent for the inverse-depth curve. 1.0 is the classic linear 1/d progression.
+			Values below 1.0 soften the falloff so distant scanlines keep more perspective influence;
+			values above 1.0 sharpen it so the aggressive warp concentrates near the close anchor.
+			Only applies in Projection interpolation mode. Recommended: 0.5–2.0, default 1.0.
+		</member>
+		<member name="mode7_projection_pixel_aspect" type="float" setter="set_mode7_projection_pixel_aspect" getter="get_mode7_projection_pixel_aspect" default="1.0">
+			Stretches/compresses the vertical coordinate before the inverse-depth calculation,
+			correcting for or exaggerating non-square display pixels (e.g. NTSC 8:7 ≈ 1.125).
+			Only applies in Projection interpolation mode. Recommended: 0.875–1.125, default 1.0 (square pixels).
+		</member>
+		<member name="mode7_projection_strength" type="float" setter="set_mode7_projection_strength" getter="get_mode7_projection_strength" default="1.0">
+			Blends between a flat, unwarped image (0.0) and the full inverse-depth projection (1.0).
+			Lets you dial the perspective intensity down without reshaping the curve.
+			Only applies in Projection interpolation mode. Recommended: 0.0–1.0, default 1.0.
 		</member>
 		<member name="mode7_region_follow_target" type="NodePath" setter="set_mode7_region_follow_target" getter="get_mode7_region_follow_target" default="NodePath(&quot;&quot;)">
 			Path to a [Node2D] target. When set, the sprite's [member Sprite2D.region_rect] shifts each physics frame so the Mode 7 viewport "follows" the target node while preserving its size and aspect ratio.
 			This creates the illusion of a moving camera or scrolling background. Only active when region mode is enabled on the sprite ([member Sprite2D.region_enabled] must be [code]true[/code]).
 		</member>
 		<member name="mode7_scanline_overrides" type="Mode7ScanlineOverride[]" setter="set_mode7_scanline_overrides" getter="get_mode7_scanline_overrides" default="[]">
-			Array of [Mode7ScanlineOverride] resources, one per output row (UV.y band). Each entry defines a 2x2 affine matrix (rotation, scale, skew), a translation offset, and a pivot point for its scanline.
+			Array of [Mode7ScanlineOverride] resources acting as anchors across the sprite height. Each entry defines a 2x2 affine matrix (rotation, scale, skew), a translation offset, and a pivot point, and the shader interpolates between adjacent entries for every output row (UV.y band).
 			When Mode 7 is enabled, a single default identity override is created automatically. Add more entries to interpolate between different transforms across the sprite height.
 		</member>
 		<member name="mode7_tiling" type="bool" setter="set_mode7_tiling" getter="is_mode7_tiling" default="false">

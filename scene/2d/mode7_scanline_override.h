@@ -53,13 +53,15 @@
 class Mode7Sprite2D;
 
 #include "core/io/resource.h"
-#include "core/variant/binder_common.h"
 
 class Mode7ScanlineOverride : public Resource {
 	GDCLASS(Mode7ScanlineOverride, Resource);
 
 private:
-	Mode7Sprite2D *owner = nullptr;
+	/// ID of the Mode7Sprite2D this resource is attached to (null when detached).
+	/// Stored as an ID rather than a raw pointer so a destroyed owner is never
+	/// dereferenced; it is resolved through ObjectDB on demand.
+	ObjectID owner_id;
 
 	/// columns[0] and columns[1] are the 2x2 affine matrix
 	/// (rotation/scale/skew); columns[2] is the translation offset.
@@ -77,8 +79,10 @@ protected:
 	void _validate_property(PropertyInfo &p_property) const;
 
 public:
-	void set_owner_mode7_sprite(Mode7Sprite2D *p_owner) { owner = p_owner; }
-	Mode7Sprite2D *get_owner_mode7_sprite() const { return owner; }
+	/// Assigns the owner (or clears the ID when `p_owner` is `nullptr`).
+	void set_owner_mode7_sprite(Mode7Sprite2D *p_owner);
+	/// Resolves the current owner through ObjectDB; returns `nullptr` if it no longer exists.
+	Mode7Sprite2D *get_owner_mode7_sprite() const;
 
 	/// @name 2x2 affine matrix
 	/// @{

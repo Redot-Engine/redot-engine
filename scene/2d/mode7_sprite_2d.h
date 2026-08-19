@@ -109,6 +109,18 @@ public:
 	real_t get_mode7_bottom_horizon_tilt() const;
 	/// @}
 
+	/// @name Projection perspective tuning (projection mode only)
+	/// @{
+	void set_mode7_projection_gamma(real_t p_value);
+	real_t get_mode7_projection_gamma() const;
+	void set_mode7_projection_strength(real_t p_value);
+	real_t get_mode7_projection_strength() const;
+	void set_mode7_projection_aspect_ratio(real_t p_value);
+	real_t get_mode7_projection_aspect_ratio() const;
+	void set_mode7_projection_pixel_aspect(real_t p_value);
+	real_t get_mode7_projection_pixel_aspect() const;
+	/// @}
+
 	/// Re-resolve the follow target from mode7_region_follow_target and store it in mode7_follow_cache.
 	/// Exposed for manual refresh (e.g., after a scene reload) without waiting for ENTER_TREE or setter calls.
 	void force_update_follow_cache();
@@ -132,6 +144,11 @@ private:
 	/// Builds the transform, pivot/offset and color/modulate as 3 "Color" values per row
 	/// We're only after an actual color for the modulate value, though.  The rest, we're using the vec4 for data.
 	void _mode7_rebuild_scanline_texture();
+	/// Shared tail for the projection tuning setters: these four parameters only feed the
+	/// scanline table (not the shader uniforms), so when the material already exists we
+	/// rebuild just the table (rebinding it to the material) and request a redraw —
+	/// skipping the redundant re-setting of every shader uniform in _mode7_rebuild_material().
+	void _mode7_refresh_projection_table();
 	void _on_mode7_override_changed();
 
 	bool mode7_tiling = false;
@@ -160,6 +177,13 @@ private:
 	real_t mode7_top_horizon_tilt = 0.0f; ///< Stored internally in radians; the mode7_top_horizon_tilt property is exposed in degrees.
 	real_t mode7_bottom_horizon_mask_amount = 0.0f; ///< 0..1 fraction to make transparent (from bottom up)
 	real_t mode7_bottom_horizon_tilt = 0.0f; ///< Stored internally in radians; the mode7_bottom_horizon_tilt property is exposed in degrees.
+	/// @}
+
+	/// @name Projection perspective tuning (applied in the scanline-table rebuild)
+	real_t mode7_projection_gamma = 1.0f; ///< 0.5..2.0 curve shape of the inverse-depth progression (1.0 = linear inverse)
+	real_t mode7_projection_strength = 1.0f; ///< 0.0..1.0 blend between flat image and full perspective
+	real_t mode7_projection_aspect_ratio = 1.0f; ///< 0.0..2.0 horizontal-to-vertical scale ratio (1.0 = uniform)
+	real_t mode7_projection_pixel_aspect = 1.0f; ///< 0.5..1.125 y-stretch applied before the inverse-depth calc
 	/// @}
 
 	/// Shift region_rect each physics frame so the Mode 7 viewport

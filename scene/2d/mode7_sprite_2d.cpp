@@ -37,21 +37,20 @@
  */
 
 #include "mode7_sprite_2d.h"
-#include <functional>
+#include <cmath>
 
-#include "core/input/input.h"
 #include "scene/2d/mode7_scanline_override.h"
 #include "scene/2d/mode7_sprite_2d.h"
 #include "scene/main/node.h"
-#include "scene/main/viewport.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
 #include "scene/resources/shader.h"
 
 // Embedded Mode 7 canvas_item shader.
-// The scanline table is a 2-wide, N-tall RGBAF texture:
-//   column x=0.25 (left pixel):  (a, b, c, d)  — the 2x2 affine matrix
-//   column x=0.75 (right pixel): (tx, ty, pivot_x, pivot_y) — translation & pivot
+// The scanline table is a 3-wide, N-tall RGBAF texture:
+//   column x=0.1667: (col0.x, col1.x, col0.y, col1.y) — the 2x2 affine matrix
+//   column x=0.5:    (tx, ty, pivot_x, pivot_y) — translation & pivot
+//   column x=0.8333: (r, g, b, a) — per-scanline modulate
 // UV.y (0..1) is used to index the row, so each row maps to a horizontal
 // band of the output sprite.
 //
@@ -301,20 +300,54 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 
 			real_t t = uv_y;
 
+			// Global projection tuning (projection mode only):
+			// pixel_aspect remaps the vertical coordinate (NTSC non-square pixel
+			// compensation), gamma reshapes the curve, strength blends the result
+			// toward a flat image, aspect_ratio scales x relative to y.
+
 			// Inverse-depth interpolation of scale.
 			real_t inv_s_top = 1.0f / MAX(scale_top, 0.0001f);
 			real_t inv_s_bot = 1.0f / MAX(scale_bottom, 0.0001f);
-			real_t inv_s_cur = inv_s_top + (inv_s_bot - inv_s_top) * t;
+
+			// Pixel aspect: stretch/compress the vertical progression about the
+			// center of the depth ramp so both endpoints stay pinned (f(0)=0,
+			// f(1)=1) — the top and bottom scanlines must always show the first
+			// and last anchor scales. 1.0 = no-op. Values <1.0 pull the curve
+			// toward the far (top) anchor; values >1.0 toward the near (bottom)
+			// anchor. (Square-pixel / NTSC 8:7 ≈ 1.125.)
+			real_t t_pa = (t * mode7_projection_pixel_aspect) / (t * mode7_projection_pixel_aspect + (1.0f - t));
+
+			// Gamma: reshape the progression (1.0 = linear inverse, <1.0 softens
+			// the falloff, >1.0 sharpens it). Math::pow keeps real_t precision
+			// instead of narrowing to float as powf would in double builds.
+			real_t t_g = Math::pow(t_pa, mode7_projection_gamma);
+
+			real_t inv_s_cur = inv_s_top + (inv_s_bot - inv_s_top) * t_g;
 			real_t S = 1.0f / MAX(inv_s_cur, 0.0001f); // Perspective-correct scale.
 
 			// Rotation interpolates linearly with screen height.
 			real_t theta = rotation_top + (rotation_bottom - rotation_top) * t;
+
+			// Strength: blend between a flat (uniform) transform and the full
+			// perspective result, without altering the curve shape itself.
+			if (mode7_projection_strength < 1.0f) {
+				real_t S_flat = (scale_top + scale_bottom) * 0.5f;
+				real_t theta_flat = (rotation_top + rotation_bottom) * 0.5f;
+				S = S_flat + (S - S_flat) * mode7_projection_strength;
+				theta = theta_flat + (theta - theta_flat) * mode7_projection_strength;
+			}
+
+			// Horizontal/vertical asymmetry: scale x relative to y
+			// (1.0 = uniform Mode 7-like, 0.5 = x is half of y, >1.0 reversed).
+			real_t Sx = S * mode7_projection_aspect_ratio;
+			real_t Sy = S;
+
 			real_t cos_t = Math::cos(theta);
 			real_t sin_t = Math::sin(theta);
 
-			// Affine matrix: A=S*cos, B=S*sin, C=-S*sin, D=S*cos.
-			Vector2 col0(cos_t * S, -sin_t * S);
-			Vector2 col1(sin_t * S, cos_t * S);
+			// Affine matrix: A=Sx*cos, B=-Sy*sin, C=Sx*sin, D=Sy*cos.
+			Vector2 col0(cos_t * Sx, -sin_t * Sy);
+			Vector2 col1(sin_t * Sx, cos_t * Sy);
 
 			// Pivot interpolates linearly.
 			pivot = pivot_top.lerp(pivot_bottom, (real_t)t);
@@ -333,8 +366,15 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 			Vector2 off_raw = transform_top.columns[2].lerp(transform_bottom.columns[2], (real_t)t);
 
 			// Perspective correction: the offset must be shifted in proportion
-			// to how much S deviates from a linear blend of the anchors.
+			// to how much the actual scale deviates from a linear blend of the
+			// anchors.  Uses the strength-blended uniform scale S (not Sx) so the
+			// correction stays zero at both anchors regardless of
+			// mode7_projection_aspect_ratio.
 			real_t s_linear = scale_top + (scale_bottom - scale_top) * t;
+			if (mode7_projection_strength < 1.0f) {
+				const real_t s_flat = (scale_top + scale_bottom) * 0.5f;
+				s_linear = s_flat + (s_linear - s_flat) * mode7_projection_strength;
+			}
 			real_t depth_factor = (s_linear > 0.001f) ? (S / s_linear - 1.0f) : 0.0f;
 
 			off_raw += (transform_bottom.columns[2] - transform_top.columns[2]) * depth_factor;
@@ -528,7 +568,88 @@ real_t Mode7Sprite2D::get_mode7_bottom_horizon_tilt() const {
 	return Math::rad_to_deg(mode7_bottom_horizon_tilt);
 }
 
+// ── Projection perspective tuning ──────────────────────────────────────────
+// All four are consumed by _mode7_rebuild_scanline_texture() when the
+// INTERPOLATION_PROJECTION branch is active, so changing any of them
+// rebuilds the scanline table (cheap: 1024 rows of scalar math).
+
+void Mode7Sprite2D::_mode7_refresh_projection_table() {
+	if (mode7_enabled && _mode7_material.is_valid()) {
+		_mode7_rebuild_scanline_texture();
+		if (_mode7_scanline_tex.is_valid()) {
+			_mode7_material->set_shader_parameter("mode7_scanline_table", _mode7_scanline_tex);
+		}
+		queue_redraw();
+	}
+}
+
+void Mode7Sprite2D::set_mode7_projection_gamma(real_t p_value) {
+	p_value = CLAMP(p_value, CMP_EPSILON, 10.0f);
+	if (mode7_projection_gamma == p_value) {
+		return;
+	}
+	mode7_projection_gamma = p_value;
+	_mode7_refresh_projection_table();
+}
+
+real_t Mode7Sprite2D::get_mode7_projection_gamma() const {
+	return mode7_projection_gamma;
+}
+
+void Mode7Sprite2D::set_mode7_projection_strength(real_t p_value) {
+	p_value = CLAMP(p_value, 0.0f, 1.0f);
+	if (mode7_projection_strength == p_value) {
+		return;
+	}
+	mode7_projection_strength = p_value;
+	_mode7_refresh_projection_table();
+}
+
+real_t Mode7Sprite2D::get_mode7_projection_strength() const {
+	return mode7_projection_strength;
+}
+
+void Mode7Sprite2D::set_mode7_projection_aspect_ratio(real_t p_value) {
+	// Reject 0.0: Sx = S * aspect_ratio would be 0, zeroing the matrix's first
+	// column and collapsing sampled uv.x for every scanline (singular matrix).
+	p_value = CLAMP(p_value, CMP_EPSILON, 2.0f);
+	if (mode7_projection_aspect_ratio == p_value) {
+		return;
+	}
+	mode7_projection_aspect_ratio = p_value;
+	_mode7_refresh_projection_table();
+}
+
+real_t Mode7Sprite2D::get_mode7_projection_aspect_ratio() const {
+	return mode7_projection_aspect_ratio;
+}
+
+void Mode7Sprite2D::set_mode7_projection_pixel_aspect(real_t p_value) {
+	p_value = CLAMP(p_value, 0.875f, 1.125f);
+	if (mode7_projection_pixel_aspect == p_value) {
+		return;
+	}
+	mode7_projection_pixel_aspect = p_value;
+	_mode7_refresh_projection_table();
+}
+
+real_t Mode7Sprite2D::get_mode7_projection_pixel_aspect() const {
+	return mode7_projection_pixel_aspect;
+}
+
 void Mode7Sprite2D::_validate_property(PropertyInfo &p_property) const {
+	// The projection tuning parameters only affect the scanline-table math in
+	// INTERPOLATION_PROJECTION mode, so lock them when any other mode is active.
+	// (Mirrors the Mode7ScanlineOverride::_validate_property pattern for skew.)
+	if (mode7_interpolation != INTERPOLATION_PROJECTION) {
+		const StringName &name = p_property.name;
+		if (name == "mode7_projection_gamma" ||
+				name == "mode7_projection_strength" ||
+				name == "mode7_projection_aspect_ratio" ||
+				name == "mode7_projection_pixel_aspect") {
+			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
+		}
+	}
 }
 
 String Mode7Sprite2D::_get_property_warning(const StringName &p_name) const {
@@ -598,9 +719,20 @@ void Mode7Sprite2D::set_mode7_interpolation(Mode7InterpolationMode p_mode) {
 		return;
 	}
 	mode7_interpolation = p_mode;
+	for (int i = 0; i < mode7_scanline_overrides.size(); i++) {
+		Ref<Mode7ScanlineOverride> entry = mode7_scanline_overrides[i];
+		if (entry.is_valid()) {
+			entry->notify_property_list_changed();
+		}
+	}
 	if (mode7_enabled && _mode7_material.is_valid()) {
 		_mode7_rebuild_material();
 	}
+	// The projection tuning properties are read-only unless interpolation is
+	// PROJECTION, so the editor must re-run _validate_property when the mode
+	// changes (otherwise the lock state from the previous mode is cached).
+	notify_property_list_changed();
+	queue_redraw();
 }
 
 Mode7Sprite2D::Mode7InterpolationMode Mode7Sprite2D::get_mode7_interpolation() const {
@@ -612,6 +744,8 @@ void Mode7Sprite2D::set_mode7_scanline_overrides(const TypedArray<Mode7ScanlineO
 	for (int i = 0; i < mode7_scanline_overrides.size(); i++) {
 		Ref<Mode7ScanlineOverride> entry = mode7_scanline_overrides[i];
 		if (entry.is_valid()) {
+			// Detach the owner (entries still present in the new array are reattached below).
+			entry->set_owner_mode7_sprite(nullptr);
 			Ref<Resource> res = entry;
 			res->disconnect_changed(callable_mp(this, &Mode7Sprite2D::_on_mode7_override_changed));
 		}
@@ -727,12 +861,10 @@ void Mode7Sprite2D::set_mode7_region_follow_target(const NodePath &p_path) {
 		// the target node, the property rewrite is queued *before* set_name()
 		// fires, so a synchronous lookup would still use the old name.  If the
 		// immediate update already found the node, the deferred call is a no-op.
-		callable_mp(this, &Mode7Sprite2D::_update_follow_cache).call_deferred();
-		// Start follow if we found something immediately; otherwise the deferred
-		// update above will find it and start it (but that won't fire until next
-		// idle frame).  We can't defer physics-start because _update_follow_cache
-		// itself doesn't call set_physics_process — so do both here.
-		// Actually, simpler: just always ensure physics is running when a valid path exists.
+		// Route through _ensure_follow_physics so that if the deferred lookup
+		// is what finally resolves the target, physics processing is started
+		// there too (a valid cache must enable physics, or follow never starts).
+		callable_mp(this, &Mode7Sprite2D::_ensure_follow_physics).call_deferred();
 		if (mode7_follow_cache.is_valid()) {
 			set_physics_process(true);
 			mode7_follow_physics_active = true;
@@ -744,6 +876,7 @@ void Mode7Sprite2D::set_mode7_region_follow_target(const NodePath &p_path) {
 }
 
 void Mode7Sprite2D::_ensure_follow_physics() {
+	_update_follow_cache();
 	if (is_inside_tree() && mode7_follow_cache.is_valid()) {
 		set_physics_process(true);
 		mode7_follow_physics_active = true;
@@ -816,6 +949,16 @@ void Mode7Sprite2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_mode7_bottom_horizon_tilt", "degrees"), &Mode7Sprite2D::set_mode7_bottom_horizon_tilt);
 	ClassDB::bind_method(D_METHOD("get_mode7_bottom_horizon_tilt"), &Mode7Sprite2D::get_mode7_bottom_horizon_tilt);
 
+	// Projection perspective tuning
+	ClassDB::bind_method(D_METHOD("set_mode7_projection_gamma", "value"), &Mode7Sprite2D::set_mode7_projection_gamma);
+	ClassDB::bind_method(D_METHOD("get_mode7_projection_gamma"), &Mode7Sprite2D::get_mode7_projection_gamma);
+	ClassDB::bind_method(D_METHOD("set_mode7_projection_strength", "value"), &Mode7Sprite2D::set_mode7_projection_strength);
+	ClassDB::bind_method(D_METHOD("get_mode7_projection_strength"), &Mode7Sprite2D::get_mode7_projection_strength);
+	ClassDB::bind_method(D_METHOD("set_mode7_projection_aspect_ratio", "value"), &Mode7Sprite2D::set_mode7_projection_aspect_ratio);
+	ClassDB::bind_method(D_METHOD("get_mode7_projection_aspect_ratio"), &Mode7Sprite2D::get_mode7_projection_aspect_ratio);
+	ClassDB::bind_method(D_METHOD("set_mode7_projection_pixel_aspect", "value"), &Mode7Sprite2D::set_mode7_projection_pixel_aspect);
+	ClassDB::bind_method(D_METHOD("get_mode7_projection_pixel_aspect"), &Mode7Sprite2D::get_mode7_projection_pixel_aspect);
+
 	// Properties (exposed in the Inspector) -----------------------------------
 
 	// Global (un-grouped)
@@ -857,6 +1000,21 @@ void Mode7Sprite2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_bottom_horizon_tilt",
 						 PROPERTY_HINT_RANGE, "-360,360,0.1"),
 			"set_mode7_bottom_horizon_tilt", "get_mode7_bottom_horizon_tilt");
+
+	// Projection group (only active when mode7_interpolation is Projection)
+	ADD_GROUP("Projection", "mode7_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_projection_gamma",
+						 PROPERTY_HINT_RANGE, "0.00001,10.0,0.001"),
+			"set_mode7_projection_gamma", "get_mode7_projection_gamma");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_projection_strength",
+						 PROPERTY_HINT_RANGE, "0,1,0.001"),
+			"set_mode7_projection_strength", "get_mode7_projection_strength");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_projection_aspect_ratio",
+						 PROPERTY_HINT_RANGE, "0.00001,2,0.001"),
+			"set_mode7_projection_aspect_ratio", "get_mode7_projection_aspect_ratio");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_projection_pixel_aspect",
+						 PROPERTY_HINT_RANGE, "0.875,1.125,0.001"),
+			"set_mode7_projection_pixel_aspect", "get_mode7_projection_pixel_aspect");
 }
 
 Mode7Sprite2D::Mode7Sprite2D() {
