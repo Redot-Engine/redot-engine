@@ -62,7 +62,15 @@
 static const char *MODE7_SHADER_CODE = R"(
 shader_type canvas_item;
 
-// Per-scanline affine parameters (3×N texture: col0=M7A-D, col1=offset/pivot, col2=modulate)
+// Preserve the incoming vertex color (e.g., Sprite2D self modulate) so the
+// fragment shader can tint the sampled texture with it.
+varying vec4 vc_vertex_color;
+
+void vertex() {
+    vc_vertex_color = COLOR;
+}
+
+// Per-scanline affine parameters (3×N texture: col0=transform, col1=offset/pivot, col2=modulate)
 // This "texture" is really a hack to get data into a format for GPUs/shaders
 // This stores the per-scanline information to give us the same control as the Super Nintendo.
 // Each "row" is 3 pixels wide, each is a "Color," but we're simply after the vec4/data that's passed in.
@@ -177,7 +185,7 @@ void fragment() {
         // Tiling wraps against the whole texture, not just the region, so it
         // works the same whether a region is set or not.
         vec2 uv_sample = mode7_tiling ? fract(uv_full) : uv_full;
-        COLOR = texture(TEXTURE, uv_sample);
+        COLOR = texture(TEXTURE, uv_sample) * vc_vertex_color;
     }
 
     // Apply per-scanline modulate (color tint + alpha falloff)
@@ -216,17 +224,21 @@ void Mode7Sprite2D::_mode7_rebuild_material() {
 }
 
 void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
-	int num_overrides = mode7_scanline_overrides.size();
-
 	// (Vertical) Resolution for smooth per-scanline interpolation - mainly for modulate (color).
 	// Use a high power-of-2 height so nearest-neighbor sampling doesn't produce
 	// visible bands in alpha or color channels between adjacent overrides.
 	const int interpolate_resolution = 1024;
 
-	// Query the interpolation mode from the first entry (applied uniformly to
-	// the whole override array for this pass).
-	Ref<Mode7ScanlineOverride> first = mode7_scanline_overrides[0];
-	Mode7ScanlineOverride::InterpolationMode interp_mode = first.is_valid() ? first->get_interpolation() : Mode7ScanlineOverride::INTERPOLATION_NONE;
+	// The interpolation mode is a single node-level setting that applies uniformly
+	// to the whole override array for this pass.
+	Mode7Sprite2D::Mode7InterpolationMode interp_mode = mode7_interpolation;
+
+	int num_overrides = mode7_scanline_overrides.size();
+
+	Ref<Mode7ScanlineOverride> first;
+	if (num_overrides > 0) {
+		first = mode7_scanline_overrides[0];
+	}
 
 	// Make sure we have more than 1 scanline object to interpolate between
 	bool has_projection_anchors = false;
@@ -235,7 +247,7 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 	Color modulate_top, modulate_bottom;
 	real_t scale_top = 1.0f, scale_bottom = 1.0f;
 	real_t rotation_top = 0.0f, rotation_bottom = 0.0f;
-	if (interp_mode == Mode7ScanlineOverride::INTERPOLATION_PROJECTION && num_overrides >= 2) {
+	if (interp_mode == Mode7Sprite2D::INTERPOLATION_PROJECTION && num_overrides >= 2) {
 		// auto used here to hopefully inline/avoid heap allocation
 		// These just guard against invalid/null values and are reusable below
 		auto safe_transform = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_transform()    : Transform2D(); };
@@ -267,7 +279,15 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 		Vector2 pivot;
 		Color mod;
 
-		if (interp_mode == Mode7ScanlineOverride::INTERPOLATION_PROJECTION && has_projection_anchors) {
+		if (num_overrides == 0) {
+			// Identity transform, centered pivot, white modulate.
+			img->set_pixel(0, y, Color(1.0f, 0.0f, 0.0f, 1.0f));
+			img->set_pixel(1, y, Color(0.0f, 0.0f, 0.5f, 0.5f));
+			img->set_pixel(2, y, Color(1.0f, 1.0f, 1.0f, 1.0f));
+			continue;
+		}
+
+		if (interp_mode == Mode7Sprite2D::INTERPOLATION_PROJECTION && has_projection_anchors) {
 			// Per-scanline inverse-depth interpolation
 			//
 			// In a true perspective projection of a flat plane, texture scale is
@@ -331,7 +351,7 @@ void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
 			Transform2D xf_lo = entry_lo.is_valid() ? entry_lo->get_transform() : Transform2D();
 			Vector2 pivot_lo = entry_lo.is_valid() ? entry_lo->get_pivot() : Vector2(0.5f, 0.5f);
 			Color modulate_lo = entry_lo.is_valid() ? entry_lo->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
-			bool do_lerp = (interp_mode == Mode7ScanlineOverride::INTERPOLATION_LERP);
+			bool do_lerp = (interp_mode == Mode7Sprite2D::INTERPOLATION_LERP);
 
 			if (do_lerp && idx_hi != idx_lo && frac > 0.0f) {
 				Ref<Mode7ScanlineOverride> entry_hi = mode7_scanline_overrides[idx_hi];
@@ -436,7 +456,10 @@ void Mode7Sprite2D::set_mode7_override_region_aspect(bool p_enabled) {
 		return;
 	}
 	mode7_override_region_aspect = p_enabled;
-	_mode7_rebuild_material();
+	if (mode7_enabled && _mode7_material.is_valid()) {
+		_mode7_material->set_shader_parameter("mode7_override_region_aspect", p_enabled);
+		queue_redraw();
+	}
 }
 
 bool Mode7Sprite2D::is_mode7_override_region_aspect() const {
@@ -508,6 +531,15 @@ real_t Mode7Sprite2D::get_mode7_bottom_horizon_tilt() const {
 void Mode7Sprite2D::_validate_property(PropertyInfo &p_property) const {
 }
 
+String Mode7Sprite2D::_get_property_warning(const StringName &p_name) const {
+	if (p_name == "mode7_scanline_overrides" &&
+			mode7_interpolation == INTERPOLATION_PROJECTION &&
+			mode7_scanline_overrides.size() > 2) {
+		return "PROJECTION interpolation only uses the first and last scanline overrides as anchors; any extra entries are ignored.";
+	}
+	return String();
+}
+
 void Mode7Sprite2D::set_mode7_enabled(bool p_enabled) {
 	if (mode7_enabled == p_enabled) {
 		return;
@@ -521,10 +553,16 @@ void Mode7Sprite2D::set_mode7_enabled(bool p_enabled) {
 		if (mode7_scanline_overrides.is_empty()) {
 			Ref<Mode7ScanlineOverride> def;
 			def.instantiate();
+			def->set_owner_mode7_sprite(this);
 			mode7_scanline_overrides.append(def);
-			// Will be used to tell the Mode7Sprite2D to rebuild its material when we change these parameters.
-			def->connect_changed(callable_mp(this, &Mode7Sprite2D::_on_mode7_override_changed), CONNECT_REFERENCE_COUNTED);
+
+			// Cast through Resource to avoid non-virtual inherited method resolution issues.
+			Ref<Resource> res = def;
+			res->connect_changed(
+					callable_mp(this, &Mode7Sprite2D::_on_mode7_override_changed),
+					CONNECT_REFERENCE_COUNTED);
 		}
+
 		_saved_material = get_material();
 		_mode7_rebuild_material();
 		set_material(_mode7_material); // only here, once
@@ -555,12 +593,27 @@ bool Mode7Sprite2D::is_mode7_enabled() const {
 	return mode7_enabled;
 }
 
+void Mode7Sprite2D::set_mode7_interpolation(Mode7InterpolationMode p_mode) {
+	if (mode7_interpolation == p_mode) {
+		return;
+	}
+	mode7_interpolation = p_mode;
+	if (mode7_enabled && _mode7_material.is_valid()) {
+		_mode7_rebuild_material();
+	}
+}
+
+Mode7Sprite2D::Mode7InterpolationMode Mode7Sprite2D::get_mode7_interpolation() const {
+	return mode7_interpolation;
+}
+
 void Mode7Sprite2D::set_mode7_scanline_overrides(const TypedArray<Mode7ScanlineOverride> &p_overrides) {
 	// Disconnect from all existing override resources.
 	for (int i = 0; i < mode7_scanline_overrides.size(); i++) {
 		Ref<Mode7ScanlineOverride> entry = mode7_scanline_overrides[i];
 		if (entry.is_valid()) {
-			entry->disconnect_changed(callable_mp(this, &Mode7Sprite2D::_on_mode7_override_changed));
+			Ref<Resource> res = entry;
+			res->disconnect_changed(callable_mp(this, &Mode7Sprite2D::_on_mode7_override_changed));
 		}
 	}
 
@@ -570,7 +623,9 @@ void Mode7Sprite2D::set_mode7_scanline_overrides(const TypedArray<Mode7ScanlineO
 	for (int i = 0; i < mode7_scanline_overrides.size(); i++) {
 		Ref<Mode7ScanlineOverride> entry = mode7_scanline_overrides[i];
 		if (entry.is_valid()) {
-			entry->connect_changed(
+			entry->set_owner_mode7_sprite(this);
+			Ref<Resource> res = entry;
+			res->connect_changed(
 					callable_mp(this, &Mode7Sprite2D::_on_mode7_override_changed),
 					CONNECT_REFERENCE_COUNTED);
 		}
@@ -628,16 +683,9 @@ void Mode7Sprite2D::_notification(int p_what) {
 				mode7_follow_physics_active = false;
 				return;
 			} else if (!is_region_enabled()) {
-				// Pause follow when region is disabled; don't kill the cache.
-				if (mode7_follow_physics_active) {
-					set_physics_process(false);
-					mode7_follow_physics_active = false;
-				}
+				// Skip the update while the region is disabled, but keep
+				// physics processing so follow resumes automatically.
 				return;
-			} else if (!mode7_follow_physics_active) {
-				// Resumed after region re-enabled — restart physics.
-				set_physics_process(true);
-				mode7_follow_physics_active = true;
 			}
 
 			if (!is_inside_tree()) {
@@ -652,10 +700,13 @@ void Mode7Sprite2D::_notification(int p_what) {
 			}
 
 			Rect2 rr = get_region_rect();
-			Size2 sprite_scale = get_scale();
 
 			Vector2 half_size = rr.size * 0.5f;
-			Vector2 pivot_in_sprite_local = (target_global_pos - get_global_transform().get_origin()) / sprite_scale;
+			const Transform2D global_xform = get_global_transform();
+			if (Math::is_zero_approx(global_xform.determinant())) {
+				return;
+			}
+			Vector2 pivot_in_sprite_local = global_xform.affine_inverse().xform(target_global_pos);
 
 			rr.position.x = pivot_in_sprite_local.x - half_size.x;
 			rr.position.y = pivot_in_sprite_local.y - half_size.y;
@@ -706,7 +757,7 @@ NodePath Mode7Sprite2D::get_mode7_region_follow_target() const {
 void Mode7Sprite2D::_update_follow_cache() {
 	mode7_follow_cache = ObjectID();
 	if (has_node(mode7_region_follow_target)) {
-		Node *node = get_node(mode7_region_follow_target);
+		Node2D *node = Object::cast_to<Node2D>(get_node(mode7_region_follow_target));
 		if (node && this != node) {
 			// Only reject self; ancestors/descendants are allowed because we only read
 			// the target's position (unlike RemoteTransform2D which writes back to it).
@@ -721,8 +772,17 @@ void Mode7Sprite2D::force_update_follow_cache() {
 
 void Mode7Sprite2D::_bind_methods() {
 	// Global bindings ---------------------------------------------------------
+	BIND_ENUM_CONSTANT(INTERPOLATION_NONE);
+	BIND_ENUM_CONSTANT(INTERPOLATION_LERP);
+	BIND_ENUM_CONSTANT(INTERPOLATION_PROJECTION);
+
+	ClassDB::bind_method(D_METHOD("_get_property_warning", "name"), &Mode7Sprite2D::_get_property_warning);
+
 	ClassDB::bind_method(D_METHOD("set_mode7_enabled", "enabled"), &Mode7Sprite2D::set_mode7_enabled);
 	ClassDB::bind_method(D_METHOD("is_mode7_enabled"), &Mode7Sprite2D::is_mode7_enabled);
+
+	ClassDB::bind_method(D_METHOD("set_mode7_interpolation", "mode"), &Mode7Sprite2D::set_mode7_interpolation);
+	ClassDB::bind_method(D_METHOD("get_mode7_interpolation"), &Mode7Sprite2D::get_mode7_interpolation);
 
 	ClassDB::bind_method(D_METHOD("set_mode7_scanline_overrides", "overrides"), &Mode7Sprite2D::set_mode7_scanline_overrides);
 	ClassDB::bind_method(D_METHOD("get_mode7_scanline_overrides"), &Mode7Sprite2D::get_mode7_scanline_overrides);
@@ -760,6 +820,9 @@ void Mode7Sprite2D::_bind_methods() {
 
 	// Global (un-grouped)
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mode7_enabled", PROPERTY_HINT_GROUP_ENABLE), "set_mode7_enabled", "is_mode7_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "mode7_interpolation", PROPERTY_HINT_ENUM,
+						 "None,Lerp,Projection"),
+			"set_mode7_interpolation", "get_mode7_interpolation");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "mode7_scanline_overrides",
 						 PROPERTY_HINT_ARRAY_TYPE, "Mode7ScanlineOverride"),
 			"set_mode7_scanline_overrides", "get_mode7_scanline_overrides");

@@ -50,33 +50,26 @@
  * which can be used for a straight-up affine transformation.
  */
 
+class Mode7Sprite2D;
+
 #include "core/io/resource.h"
 #include "core/variant/binder_common.h"
 
 class Mode7ScanlineOverride : public Resource {
 	GDCLASS(Mode7ScanlineOverride, Resource);
 
-public:
-	enum InterpolationMode {
-		INTERPOLATION_NONE, ///< Nearest-neighbor: snap to this entry's transform for its UV band.
-		INTERPOLATION_LERP, ///< Linear interpolation between adjacent entries in the override array.
-		/// Perspective projection via per-scanline inverse-depth interpolation. Uses the first entry as top/horizon and the last as bottom/close anchor.
-		/// TLDR - use this with 2 Mode7ScanlineOverrides.
-		INTERPOLATION_PROJECTION
-	};
-
 private:
+	Mode7Sprite2D *owner = nullptr;
+
 	/// columns[0] and columns[1] are the 2x2 affine matrix
 	/// (rotation/scale/skew); columns[2] is the translation offset.
 	Transform2D transform;
 
 	Vector2 pivot = Vector2(0.5f, 0.5f);
-	InterpolationMode interpolation = INTERPOLATION_NONE;
 
 	/// Exposes color/alpha/intensity (and therefore bloom) as a sort of bonus,
-	/// which will be interpolated between multiple Mode7ScanlineOverride objects in
-	/// Lerp or Projection mode, along with the transform parameters.
-	/// In Projection mode, this property is still just lerped.
+	/// which will be interpolated between multiple Mode7ScanlineOverride objects,
+	/// along with the transform parameters.
 	Color modulate = Color(1.0f, 1.0f, 1.0f, 1.0f);
 
 protected:
@@ -84,6 +77,9 @@ protected:
 	void _validate_property(PropertyInfo &p_property) const;
 
 public:
+	void set_owner_mode7_sprite(Mode7Sprite2D *p_owner) { owner = p_owner; }
+	Mode7Sprite2D *get_owner_mode7_sprite() const { return owner; }
+
 	/// @name 2x2 affine matrix
 	/// @{
 	void set_transform(const Transform2D &p_transform);
@@ -108,17 +104,9 @@ public:
 	Vector2 get_pivot() const;
 	/// @}
 
-	/// @name Interpolation Mode
-	/// @{
-	void set_interpolation(InterpolationMode p_mode);
-	InterpolationMode get_interpolation() const;
-	/// @}
-
 	/// @name Modulate
 	/// @{
 	void set_modulate(const Color &p_color);
 	Color get_modulate() const;
 	/// @}
 };
-
-VARIANT_ENUM_CAST(Mode7ScanlineOverride::InterpolationMode);

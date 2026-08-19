@@ -49,60 +49,14 @@
 class Mode7Sprite2D : public Sprite2D {
 	GDCLASS(Mode7Sprite2D, Sprite2D);
 
-	bool mode7_enabled = false;
-	TypedArray<Mode7ScanlineOverride> mode7_scanline_overrides; ///< Array of Transform2D, one per output row (UV.y band)
-
-	Ref<ShaderMaterial> _mode7_material;
-	/// This "texture" is really a hack to send data to the shader in a manner that speaks GPU
-	/// It's 3 pixels wide, each pixel stores a "Color"
-	/// First pixel is the transform matrix, second pixel is the offset & pivot, third pixel is the modulate (the only one that's "actually" a Color)
-	Ref<ImageTexture> _mode7_scanline_tex;
-
-	void _mode7_rebuild_material();
-	/// This is the function responsible for creating the "table" that gets passed to the shader
-	/// in the form of a texture.
-	/// Builds the transform, pivot/offset and color/modulate as 3 "Color" values per row
-	/// We're only after an actual color for the modulate value, though.  The rest, we're using the vec4 for data.
-	void _mode7_rebuild_scanline_texture();
-	void _on_mode7_override_changed();
-
-	bool mode7_tiling = false;
-	RS::CanvasItemTextureRepeat _saved_texture_repeat = RS::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
-
-	real_t mode7_global_rotation = 0.0f;
-	Vector2 mode7_global_pivot = Vector2(0.5f, 0.5f);
-	Vector2 mode7_global_offset = Vector2(0.0f, 0.0f);
-	bool mode7_override_region_aspect = true;
-
-	void _validate_property(PropertyInfo &p_property) const;
-
-	/// Resolve mode7_region_follow_target into the ObjectID cache (mode7_follow_cache).
-	/// Called on NOTIFICATION_ENTER_TREE and deferred from set_mode7_region_follow_target()
-	/// to handle the editor rename timing edge case.
-	void _update_follow_cache();
-
-	/// Verify that a valid follow target is cached, and start physics process if so.
-	/// Used as a call_deferred target from the setter when this node is not yet in the tree,
-	/// ensuring follow starts as soon as the tree is ready.
-	void _ensure_follow_physics();
-
-	/// @name Horizon masks
-	real_t mode7_top_horizon_mask_amount = 0.0f; ///< 0..1 fraction to make transparent (from top down)
-	real_t mode7_top_horizon_tilt = 0.0f; ///< Stored internally in radians; the mode7_top_horizon_tilt property is exposed in degrees.
-	real_t mode7_bottom_horizon_mask_amount = 0.0f; ///< 0..1 fraction to make transparent (from bottom up)
-	real_t mode7_bottom_horizon_tilt = 0.0f; ///< Stored internally in radians; the mode7_bottom_horizon_tilt property is exposed in degrees.
-	/// @}
-
-	/// Shift region_rect each physics frame so the Mode 7 viewport
-	/// "follows" another Node2D while preserving its size/aspect/etc.
-	/// @name Region follow target
-	NodePath mode7_region_follow_target; ///< Exported path to the target Node2D (rewritten automatically by the editor on rename)
-	ObjectID mode7_follow_cache; ///< Cached instance ID resolved from mode7_region_follow_target — degrades safely if the target node is freed
-	bool mode7_follow_initialized = false; ///< Whether the follow has reached its second physics frame (skips initial offset snap)
-	bool mode7_follow_physics_active = false; ///< Whether physics process is currently running for follow tracking
-	/// @endGroup
-
-	Ref<Material> _saved_material;
+public:
+	enum Mode7InterpolationMode {
+		INTERPOLATION_NONE, ///< Nearest-neighbor: snap each row to the nearest entry's transform, no blending.
+		INTERPOLATION_LERP, ///< Linear interpolation between adjacent entries across the sprite height.
+		/// Perspective projection via per-scanline inverse-depth interpolation. Uses the first entry as
+		/// top/horizon anchor and the last entry as bottom/close anchor. Use this with 2 overrides.
+		INTERPOLATION_PROJECTION
+	};
 
 protected:
 	void _notification(int p_what);
@@ -111,6 +65,9 @@ protected:
 public:
 	void set_mode7_enabled(bool p_enabled);
 	bool is_mode7_enabled() const;
+
+	void set_mode7_interpolation(Mode7InterpolationMode p_mode);
+	Mode7InterpolationMode get_mode7_interpolation() const;
 
 	void set_mode7_scanline_overrides(const TypedArray<Mode7ScanlineOverride> &p_overrides);
 	TypedArray<Mode7ScanlineOverride> get_mode7_scanline_overrides() const;
@@ -157,4 +114,64 @@ public:
 	void force_update_follow_cache();
 
 	Mode7Sprite2D();
+
+private:
+	bool mode7_enabled = false;
+	Mode7InterpolationMode mode7_interpolation = INTERPOLATION_NONE;
+	TypedArray<Mode7ScanlineOverride> mode7_scanline_overrides; ///< Array of Transform2D, one per output row (UV.y band)
+
+	Ref<ShaderMaterial> _mode7_material;
+	/// This "texture" is really a hack to send data to the shader in a manner that speaks GPU
+	/// It's 3 pixels wide, each pixel stores a "Color"
+	/// First pixel is the transform matrix, second pixel is the offset & pivot, third pixel is the modulate (the only one that's "actually" a Color)
+	Ref<ImageTexture> _mode7_scanline_tex;
+
+	void _mode7_rebuild_material();
+	/// This is the function responsible for creating the "table" that gets passed to the shader
+	/// in the form of a texture.
+	/// Builds the transform, pivot/offset and color/modulate as 3 "Color" values per row
+	/// We're only after an actual color for the modulate value, though.  The rest, we're using the vec4 for data.
+	void _mode7_rebuild_scanline_texture();
+	void _on_mode7_override_changed();
+
+	bool mode7_tiling = false;
+	RS::CanvasItemTextureRepeat _saved_texture_repeat = RS::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
+
+	real_t mode7_global_rotation = 0.0f;
+	Vector2 mode7_global_pivot = Vector2(0.5f, 0.5f);
+	Vector2 mode7_global_offset = Vector2(0.0f, 0.0f);
+	bool mode7_override_region_aspect = true;
+
+	void _validate_property(PropertyInfo &p_property) const;
+	String _get_property_warning(const StringName &p_name) const;
+
+	/// Resolve mode7_region_follow_target into the ObjectID cache (mode7_follow_cache).
+	/// Called on NOTIFICATION_ENTER_TREE and deferred from set_mode7_region_follow_target()
+	/// to handle the editor rename timing edge case.
+	void _update_follow_cache();
+
+	/// Verify that a valid follow target is cached, and start physics process if so.
+	/// Used as a call_deferred target from the setter when this node is not yet in the tree,
+	/// ensuring follow starts as soon as the tree is ready.
+	void _ensure_follow_physics();
+
+	/// @name Horizon masks
+	real_t mode7_top_horizon_mask_amount = 0.0f; ///< 0..1 fraction to make transparent (from top down)
+	real_t mode7_top_horizon_tilt = 0.0f; ///< Stored internally in radians; the mode7_top_horizon_tilt property is exposed in degrees.
+	real_t mode7_bottom_horizon_mask_amount = 0.0f; ///< 0..1 fraction to make transparent (from bottom up)
+	real_t mode7_bottom_horizon_tilt = 0.0f; ///< Stored internally in radians; the mode7_bottom_horizon_tilt property is exposed in degrees.
+	/// @}
+
+	/// Shift region_rect each physics frame so the Mode 7 viewport
+	/// "follows" another Node2D while preserving its size/aspect/etc.
+	/// @name Region follow target
+	NodePath mode7_region_follow_target; ///< Exported path to the target Node2D (rewritten automatically by the editor on rename)
+	ObjectID mode7_follow_cache; ///< Cached instance ID resolved from mode7_region_follow_target — degrades safely if the target node is freed
+	bool mode7_follow_initialized = false; ///< Whether the follow has reached its second physics frame (skips initial offset snap)
+	bool mode7_follow_physics_active = false; ///< Whether physics process is currently running for follow tracking
+	/// @endGroup
+
+	Ref<Material> _saved_material;
 };
+
+VARIANT_ENUM_CAST(Mode7Sprite2D::Mode7InterpolationMode);

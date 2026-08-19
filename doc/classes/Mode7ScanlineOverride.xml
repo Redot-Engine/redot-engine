@@ -18,9 +18,6 @@
 	<tutorials>
 	</tutorials>
 	<members>
-		<member name="interpolation" type="int" setter="set_interpolation" getter="get_interpolation" enum="Mode7ScanlineOverride.InterpolationMode" default="0">
-			Determines how the shader blends this entry with its neighbors across the sprite height. Choose based on your effect: [constant INTERPOLATION_NONE] for per-scanline precision, [constant INTERPOLATION_LERP] for smooth transitions between any number of overrides, or [constant INTERPOLATION_PROJECTION] for perspective with exactly 2 entries.
-		</member>
 		<member name="modulate" type="Color" setter="set_modulate" getter="get_modulate" default="Color(1, 1, 1, 1)">
 			Per-scanline color tint and alpha/intensity. The shader lerps this between adjacent overrides (just like the transform), enabling gradual fade-to-black into the distance for depth, bloom glow effects, or any per-band color correction. Fully supports RGBA — set alpha to blend the sprite transparently at specific scanline ranges.
 		</member>
@@ -43,15 +40,4 @@
 			[b]Translation offset (x0, y0)[/b] shifts where the Mode 7 plane appears on screen, analogous to moving the camera position.
 		</member>
 	</members>
-	<constants>
-		<constant name="INTERPOLATION_NONE" value="0" enum="InterpolationMode">
-			Nearest-neighbor: snap to this entry's transform for its UV band with no blending between rows. You typically only want this mode if you're scripting transformations for every scanline individually. For most cases, [constant INTERPOLATION_LERP] or [constant INTERPOLATION_PROJECTION] provides simpler and more intuitive control.
-		</constant>
-		<constant name="INTERPOLATION_LERP" value="1" enum="InterpolationMode">
-			Linear interpolation between adjacent entries in the override array. The shader uses standard lerping to blend transforms, pivots, and modulate colors across all intervening scanlines, creating smooth transitions regardless of how many overrides are in the array. Ideal for gradual effects like distance fog or terrain slope changes.
-		</constant>
-		<constant name="INTERPOLATION_PROJECTION" value="2" enum="InterpolationMode">
-			Perspective projection via per-scanline inverse-depth interpolation. Uses the first entry (index 0) as the top/horizon anchor and the last entry as the bottom/close anchor, mimicking how the SNES hardware projected a 3D plane onto the 2D screen. This mode requires exactly 2 scanline overrides in the array for correct behavior — additional entries are ignored.
-		</constant>
-	</constants>
 </class>

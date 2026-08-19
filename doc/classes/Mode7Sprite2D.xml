@@ -54,6 +54,9 @@
 			Global rotation angle in degrees, applied after all per-scanline transforms. Rotates the entire warped image around [member mode7_global_pivot].
 			Valid range is -360 to 360 degrees.
 		</member>
+		<member name="mode7_interpolation" type="int" setter="set_mode7_interpolation" getter="get_mode7_interpolation" enum="Mode7Sprite2D.Mode7InterpolationMode" default="0">
+			Determines how the shader blends this entry with its neighbors across the sprite height. Choose based on your effect: [constant INTERPOLATION_NONE] for per-scanline precision, [constant INTERPOLATION_LERP] for smooth transitions between any number of overrides, or [constant INTERPOLATION_PROJECTION] for perspective with exactly 2 entries.
+		</member>
 		<member name="mode7_override_region_aspect" type="bool" setter="set_mode7_override_region_aspect" getter="is_mode7_override_region_aspect" default="true">
 			When [code]true[/code] (default), non-square region rects have their rotations corrected to behave as if the region were square. This prevents rotations from skewing into shears when using a cropped region. Set to [code]false[/code] if you want raw, uncorrected UV behavior for creative warping effects.
 		</member>
@@ -75,4 +78,15 @@
 			Tilt angle in degrees that rotates the top horizon line around the center like an aircraft attitude indicator. Positive values tilt clockwise (right side drops). Valid range is -360 to 360 degrees. Independent of [member mode7_top_horizon_mask_amount] — always active and influences the horizon angle regardless of masking.
 		</member>
 	</members>
+	<constants>
+		<constant name="INTERPOLATION_NONE" value="0" enum="Mode7InterpolationMode">
+			Nearest-neighbor: snap to this entry's transform for its UV band with no blending between rows. You typically only want this mode if you're scripting transformations for every scanline individually. For most cases, [constant INTERPOLATION_LERP] or [constant INTERPOLATION_PROJECTION] provides simpler and more intuitive control.
+		</constant>
+		<constant name="INTERPOLATION_LERP" value="1" enum="Mode7InterpolationMode">
+			Linear interpolation between adjacent entries in the override array. The shader uses standard lerping to blend transforms, pivots, and modulate colors across all intervening scanlines, creating smooth transitions regardless of how many overrides are in the array. Ideal for gradual effects like distance fog or terrain slope changes.
+		</constant>
+		<constant name="INTERPOLATION_PROJECTION" value="2" enum="Mode7InterpolationMode">
+			Perspective projection via per-scanline inverse-depth interpolation. Uses the first entry (index 0) as the top/horizon anchor and the last entry as the bottom/close anchor, mimicking how the SNES hardware projected a 3D plane onto the 2D screen. This mode requires exactly 2 scanline overrides in the array for correct behavior — additional entries are ignored.
+		</constant>
+	</constants>
 </class>

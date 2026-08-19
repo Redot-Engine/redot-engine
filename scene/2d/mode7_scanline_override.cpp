@@ -37,6 +37,7 @@
  */
 
 #include "mode7_scanline_override.h"
+#include "mode7_sprite_2d.h"
 
 void Mode7ScanlineOverride::set_transform(const Transform2D &p_transform) {
 	transform = p_transform;
@@ -92,15 +93,6 @@ Vector2 Mode7ScanlineOverride::get_pivot() const {
 	return pivot;
 }
 
-void Mode7ScanlineOverride::set_interpolation(InterpolationMode p_mode) {
-	interpolation = p_mode;
-	notify_property_list_changed();
-	emit_changed();
-}
-Mode7ScanlineOverride::InterpolationMode Mode7ScanlineOverride::get_interpolation() const {
-	return interpolation;
-}
-
 void Mode7ScanlineOverride::set_modulate(const Color &p_color) {
 	modulate = p_color;
 	emit_changed();
@@ -110,8 +102,10 @@ Color Mode7ScanlineOverride::get_modulate() const {
 }
 
 void Mode7ScanlineOverride::_validate_property(PropertyInfo &p_property) const {
-	if (interpolation == InterpolationMode::INTERPOLATION_PROJECTION && p_property.name == "skew") {
-		p_property.usage |= PROPERTY_USAGE_READ_ONLY;
+	if (owner != nullptr && p_property.name == "skew") {
+		if (static_cast<Mode7Sprite2D *>(owner)->get_mode7_interpolation() == Mode7Sprite2D::Mode7InterpolationMode::INTERPOLATION_PROJECTION) {
+			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
+		}
 	}
 }
 
@@ -126,14 +120,8 @@ void Mode7ScanlineOverride::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_skew"), &Mode7ScanlineOverride::get_skew);
 	ClassDB::bind_method(D_METHOD("set_pivot", "pivot"), &Mode7ScanlineOverride::set_pivot);
 	ClassDB::bind_method(D_METHOD("get_pivot"), &Mode7ScanlineOverride::get_pivot);
-	ClassDB::bind_method(D_METHOD("set_interpolation", "mode"), &Mode7ScanlineOverride::set_interpolation);
-	ClassDB::bind_method(D_METHOD("get_interpolation"), &Mode7ScanlineOverride::get_interpolation);
 	ClassDB::bind_method(D_METHOD("set_modulate", "color"), &Mode7ScanlineOverride::set_modulate);
 	ClassDB::bind_method(D_METHOD("get_modulate"), &Mode7ScanlineOverride::get_modulate);
-
-	BIND_ENUM_CONSTANT(INTERPOLATION_NONE);
-	BIND_ENUM_CONSTANT(INTERPOLATION_LERP);
-	BIND_ENUM_CONSTANT(INTERPOLATION_PROJECTION);
 
 	ADD_PROPERTY(PropertyInfo(Variant::TRANSFORM2D, "transform"), "set_transform", "get_transform");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation", PROPERTY_HINT_RANGE,
@@ -144,9 +132,6 @@ void Mode7ScanlineOverride::_bind_methods() {
 						 "-89.9,89.9,0.1"),
 			"set_skew", "get_skew");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "pivot"), "set_pivot", "get_pivot");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "interpolation", PROPERTY_HINT_ENUM,
-						 "None,Lerp,Projection"),
-			"set_interpolation", "get_interpolation");
 
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "modulate"), "set_modulate", "get_modulate");
 }
