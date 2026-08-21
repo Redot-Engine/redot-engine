@@ -430,7 +430,25 @@ void AnimationPlayerEditor::_animation_selected(int p_which) {
 	String current = _get_current();
 
 	if (!current.is_empty()) {
-		player->set_assigned_animation(current);
+		String previous = player->get_assigned_animation();
+		// Only record an undo step for an actual user re-selection.
+		// - Skip when nothing changed.
+		// - Skip when there was no previously assigned animation: set_assigned_animation("")
+		//   is rejected by AnimationPlayer (ERR_FAIL_COND on animation_set.has("")), so there is
+		//   no way to undo back to the "unassigned" state; recording it would create a dead
+		//   undo entry that silently does nothing when triggered (e.g. from _update_player()
+		//   auto-selecting the first animation on a fresh player).
+		if (previous != current && !previous.is_empty()) {
+			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+			undo_redo->create_action(TTR("Change Animation"), UndoRedo::MERGE_DISABLE);
+			undo_redo->add_do_method(player, "set_assigned_animation", current);
+			undo_redo->add_do_method(player, "stop", false);
+			undo_redo->add_undo_method(player, "set_assigned_animation", previous);
+			undo_redo->add_undo_method(player, "stop", false);
+			undo_redo->commit_action();
+		} else {
+			player->set_assigned_animation(current);
+		}
 
 		Ref<Animation> anim = player->get_animation(current);
 		ERR_FAIL_COND(anim.is_null());
