@@ -58,8 +58,10 @@
 			This private dictionary stores all of the shader parameters in the resource. It is not a cache.
 		</member>
 		<member name="auto_shader_enabled" type="bool" setter="set_auto_shader" getter="get_auto_shader" default="false">
+			Enables selecting two texture IDs that will automatically be applied to the terrain based upon slope.
 		</member>
 		<member name="dual_scaling_enabled" type="bool" setter="set_dual_scaling" getter="get_dual_scaling" default="false">
+			Enables selecting one texture ID that will have multiple scales applied based upon camera distance. Use it for something like a rock texture so up close it will be nicely detailed, and far away mountains can be covered in the same rock texture. The two blend together at a specified distance.
 		</member>
 		<member name="shader_override" type="Shader" setter="set_shader_override" getter="get_shader_override">
 			If shader_override_enabled is true and this Shader is valid, the material will use this custom shader code. If this is blank when you enable the override, the system will generate a shader with the current settings. So if you have a debug view enabled, the generated shader will have all of that code. A visual shader will also work here. However we only generate a text based shader so currently a visual shader needs to be constructed with the base code before it can work.
