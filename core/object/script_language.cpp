@@ -306,6 +306,15 @@ void ScriptServer::init_languages() {
 			}
 			add_global_class(c["class"], c["base"], c["language"], c["path"], c["is_abstract"], c["is_tool"]);
 		}
+
+		Array script_structs = ProjectSettings::get_singleton()->get_global_struct_list();
+		for (const Variant &script_struct : script_structs) {
+			Dictionary c = script_struct;
+			if (!c.has("struct") || !c.has("language") || !c.has("path")) {
+				continue;
+			}
+			add_global_struct(c["struct"], c["language"], c["path"]);
+		}
 	}
 
 	HashSet<ScriptLanguage *> langs_to_init;
@@ -464,6 +473,21 @@ void ScriptServer::get_global_struct_list(List<StringName> *r_global_structs) {
 	}
 }
 
+void ScriptServer::save_global_structs() {
+	List<StringName> gs;
+	get_global_struct_list(&gs);
+	Array gsarr;
+	for (const StringName &E : gs) {
+		const GlobalScriptStruct &global_struct = global_structs[E];
+		Dictionary d;
+		d["struct"] = E;
+		d["language"] = global_struct.language;
+		d["path"] = global_struct.path;
+		gsarr.push_back(d);
+	}
+	ProjectSettings::get_singleton()->store_global_struct_list(gsarr);
+}
+
 void ScriptServer::add_global_class(const StringName &p_class, const StringName &p_base, const StringName &p_language, const String &p_path, bool p_is_abstract, bool p_is_tool) {
 	ERR_FAIL_COND_MSG(p_class == p_base || (global_classes.has(p_base) && get_global_class_native_base(p_base) == p_class), "Cyclic inheritance in script class.");
 	GlobalScriptClass *existing = global_classes.getptr(p_class);
@@ -610,6 +634,9 @@ void ScriptServer::save_global_classes() {
 		gcarr.push_back(d);
 	}
 	ProjectSettings::get_singleton()->store_global_class_list(gcarr);
+
+	// Keep the global struct cache in sync with the class cache.
+	save_global_structs();
 }
 
 Vector<Ref<ScriptBacktrace>> ScriptServer::capture_script_backtraces(bool p_include_variables) {

@@ -123,6 +123,7 @@ public:
 	static StringName get_global_struct_language(const StringName &p_struct);
 	static String get_global_struct_path(const StringName &p_struct);
 	static void get_global_struct_list(List<StringName> *r_global_structs);
+	static void save_global_structs();
 
 	static Vector<Ref<ScriptBacktrace>> capture_script_backtraces(bool p_include_variables = false);
 

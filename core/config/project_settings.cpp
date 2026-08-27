@@ -573,6 +573,9 @@ bool ProjectSettings::_load_resource_pack(const String &p_pack, bool p_replace_f
 		// This pack may have declared new global classes (make sure they are picked up).
 		refresh_global_class_list();
 
+		// This pack may have declared new global structs (make sure they are picked up).
+		refresh_global_struct_list();
+
 		// This pack may have defined new UIDs, make sure they are cached.
 		ResourceUID::get_singleton()->load_from_cache(false);
 	}
@@ -1337,6 +1340,48 @@ void ProjectSettings::store_global_class_list(const Array &p_classes) {
 	cf->save(get_global_class_list_path());
 
 	global_class_list = p_classes;
+}
+
+void ProjectSettings::refresh_global_struct_list() {
+	is_global_struct_list_loaded = false; // Make sure we read from the freshly mounted PCK.
+	Array structs = get_global_struct_list();
+	for (int i = 0; i < structs.size(); i++) {
+		Dictionary c = structs[i];
+		if (!c.has("struct") || !c.has("language") || !c.has("path")) {
+			continue;
+		}
+		ScriptServer::add_global_struct(c["struct"], c["language"], c["path"]);
+	}
+}
+
+TypedArray<Dictionary> ProjectSettings::get_global_struct_list() {
+	if (is_global_struct_list_loaded) {
+		return global_struct_list;
+	}
+
+	Ref<ConfigFile> cf;
+	cf.instantiate();
+	if (cf->load(get_global_struct_list_path()) == OK) {
+		global_struct_list = cf->get_value("", "list", Array());
+	}
+
+	// A project may legitimately have no structs, so a missing cache is not an error.
+	is_global_struct_list_loaded = true;
+
+	return global_struct_list;
+}
+
+String ProjectSettings::get_global_struct_list_path() const {
+	return get_project_data_path().path_join("global_struct_cache.cfg");
+}
+
+void ProjectSettings::store_global_struct_list(const Array &p_structs) {
+	Ref<ConfigFile> cf;
+	cf.instantiate();
+	cf->set_value("", "list", p_structs);
+	cf->save(get_global_struct_list_path());
+
+	global_struct_list = p_structs;
 }
 
 bool ProjectSettings::has_custom_feature(const String &p_feature) const {
