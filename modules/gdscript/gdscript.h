@@ -250,6 +250,7 @@ public:
 	}
 
 	_FORCE_INLINE_ StringName get_local_name() const { return local_name; }
+	_FORCE_INLINE_ bool has_trait(const StringName &p_trait) const { return traits_fqtn.has(p_trait); }
 
 	void clear(GDScript::ClearData *p_clear_data = nullptr);
 

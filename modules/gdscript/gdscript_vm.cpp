@@ -217,7 +217,7 @@ String GDScriptFunction::_get_callable_call_error(const String &p_where, const C
 
 bool GDScriptFunction::_is_class_using_trait(Script *p_class_script, const StringName &trait_type) {
 	GDScript *gdscript = Object::cast_to<GDScript>(p_class_script);
-	if (gdscript && gdscript->traits_fqtn.has(trait_type)) {
+	if (gdscript && gdscript->has_trait(trait_type)) {
 		return true;
 	}
 	return false;
@@ -1721,7 +1721,6 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				CHECK_SPACE(4);
 				GET_VARIANT_PTR(src, 0);
 				GET_VARIANT_PTR(dst, 1);
-				GET_VARIANT_PTR(to_type, 2);
 
 				int trait_type_idx = _code_ptr[ip + 3];
 				GD_ERR_BREAK(trait_type_idx < 0 || trait_type_idx >= _global_names_count);

@@ -688,7 +688,7 @@ void GDScriptParser::parse_program() {
 				PUSH_PENDING_ANNOTATIONS_TO_HEAD;
 				advance();
 				if (head->identifier != nullptr) {
-					push_error(R"("class_name"/ "trait_name" can only be used once.)");
+					push_error(R"("class_name"/"trait_name" can only be used once.)");
 				} else {
 					parse_class_name();
 				}
@@ -697,7 +697,7 @@ void GDScriptParser::parse_program() {
 				PUSH_PENDING_ANNOTATIONS_TO_HEAD;
 				advance();
 				if (head->identifier != nullptr) {
-					push_error(R"("trait_name"/ "class_name"  can only be used once.)");
+					push_error(R"("class_name"/"trait_name" can only be used once.)");
 				} else {
 					_is_trait_file = true;
 					_is_trait = true;
@@ -719,7 +719,7 @@ void GDScriptParser::parse_program() {
 				PUSH_PENDING_ANNOTATIONS_TO_HEAD;
 				advance();
 				parse_uses();
-				end_statement("superclass");
+				end_statement(R"("uses")");
 				break;
 			case GDScriptTokenizer::Token::TK_EOF:
 				PUSH_PENDING_ANNOTATIONS_TO_HEAD;
@@ -914,7 +914,7 @@ GDScriptParser::ClassNode *GDScriptParser::parse_class(bool p_is_static) {
 
 	while (match(GDScriptTokenizer::Token::USES)) {
 		parse_uses();
-		end_statement("superclass");
+		end_statement(R"("uses")");
 	}
 
 	parse_class_body(multiline);
@@ -989,7 +989,10 @@ void GDScriptParser::parse_uses() {
 			if (!match(GDScriptTokenizer::Token::PERIOD)) {
 				current_class->traits.push_back(uses);
 				complete_extents(uses);
-				return;
+				if (!match(GDScriptTokenizer::Token::COMMA)) {
+					return;
+				}
+				continue;
 			}
 		}
 
@@ -1741,12 +1744,12 @@ bool GDScriptParser::parse_function_signature(FunctionNode *p_function, SuiteNod
 	}
 #endif // TOOLS_ENABLED
 
-	if (_is_trait && !check(GDScriptTokenizer::Token::COLON)) {
-		p_function->is_bodyless = true;
-		return false;
-	} else if (p_type == "lambda") {
+	if (p_type == "lambda") {
 		/// @todo Improve token consumption so it synchronizes to a statement boundary. This way we can get into the function body with unrecognized tokens.
 		return consume(GDScriptTokenizer::Token::COLON, vformat(R"(Expected ":" after %s declaration.)", p_type));
+	} else if (_is_trait && !check(GDScriptTokenizer::Token::COLON)) {
+		p_function->is_bodyless = true;
+		return false;
 	}
 	// The colon may not be present in the case of abstract functions.
 	return match(GDScriptTokenizer::Token::COLON);

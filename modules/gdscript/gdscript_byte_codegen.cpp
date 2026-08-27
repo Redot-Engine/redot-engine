@@ -1067,7 +1067,7 @@ void GDScriptByteCodeGenerator::write_cast(const Address &p_target, const Addres
 			append_opcode(GDScriptFunction::OPCODE_CAST_TO_TRAIT);
 			append(p_source);
 			append(p_target);
-			append(p_target.type.trait_type);
+			append(p_type.trait_type);
 			return;
 		} break;
 		case GDScriptDataType::SCRIPT:

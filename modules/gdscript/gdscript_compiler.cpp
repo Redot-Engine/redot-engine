@@ -2740,20 +2740,20 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 	}
 	p_script->member_functions.clear();
 	for (const KeyValue<StringName, GDScriptFunction *> &E : member_functions) {
-		memdelete(E.value);
+		functions_to_delete.push_back(E.value);
 	}
 	member_functions.clear();
 
 	p_script->static_variables.clear();
 
 	if (p_script->implicit_initializer) {
-		memdelete(p_script->implicit_initializer);
+		functions_to_delete.push_back(p_script->implicit_initializer);
 	}
 	if (p_script->implicit_ready) {
-		memdelete(p_script->implicit_ready);
+		functions_to_delete.push_back(p_script->implicit_ready);
 	}
 	if (p_script->static_initializer) {
-		memdelete(p_script->static_initializer);
+		functions_to_delete.push_back(p_script->static_initializer);
 	}
 
 	p_script->member_functions.clear();
@@ -3318,6 +3318,12 @@ void GDScriptCompiler::_get_function_ptr_replacements(HashMap<GDScriptFunction *
 		const ScriptLambdaInfo &old_subinfo = old_kv.value;
 		const ScriptLambdaInfo *new_subinfo = p_new_info != nullptr ? p_new_info->subclass_info.getptr(old_kv.key) : nullptr;
 		_get_function_ptr_replacements(r_replacements, old_subinfo, new_subinfo);
+	}
+}
+
+GDScriptCompiler::~GDScriptCompiler() {
+	for (GDScriptFunction *function : functions_to_delete) {
+		memdelete(function);
 	}
 }
 
