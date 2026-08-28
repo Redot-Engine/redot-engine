@@ -528,7 +528,7 @@ constexpr bool is_equal_approx(T p_left, T p_right, T p_tolerance) noexcept {
 		return true;
 	}
 	// Then check for approximate equality.
-	return abs(p_left - p_right) <= p_tolerance;
+	return abs(p_left - p_right) < p_tolerance;
 }
 
 template <std::floating_point T>
@@ -541,7 +541,7 @@ constexpr bool is_equal_approx(T p_left, T p_right) noexcept {
 	// Compute tolerance by magnitude.
 	const T tolerance = (T(CMP_EPSILON) * abs(p_left) < T(CMP_EPSILON)) ? T(CMP_EPSILON) : T(CMP_EPSILON) * abs(p_left);
 
-	return abs(p_left - p_right) <= tolerance;
+	return abs(p_left - p_right) < tolerance;
 }
 
 template <std::floating_point T, std::convertible_to<T> C>
