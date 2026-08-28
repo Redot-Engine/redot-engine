@@ -5804,7 +5804,9 @@ void GDScriptAnalyzer::reduce_type_test(GDScriptParser::TypeTestNode *p_type_tes
 		} else {
 			if (operand_type.is_hard_type() && !is_using_trait && !can_type_overlap_trait(operand_type, test_type) && operand_type.kind != GDScriptParser::DataType::VARIANT) {
 				push_error(vformat(R"(Expression is of type "%s" so it can't be of type "%s".)", operand_type.to_string(), test_type.to_string()), p_type_test->operand);
-			} else {
+			} else if (!operand_type.is_hard_type()) {
+				// Only weakly-typed operands get their type source downgraded; a hard-typed
+				// operand keeps its declared type after `is <Trait>` (the test just yields bool).
 				downgrade_node_type_source(p_type_test->operand);
 			}
 		}

@@ -18,9 +18,12 @@ func test() -> void:
 	var damageable := value as Damageable
 	print(damageable != null)
 	print(value is Damageable)
-	accept_damageable(Enemy.new())
+	var other := Enemy.new()
+	accept_damageable(other)
 	accept_damageable(damageable)
 	accept_damageable(null)
 	var empty: Damageable = null
 	print(empty == null)
 	print(null_damageable() == null)
+	other.free()
+	value.free()
