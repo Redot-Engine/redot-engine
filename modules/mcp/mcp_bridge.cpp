@@ -203,6 +203,15 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 	return err;
 }
 
+void MCPBridge::disconnect_peer() {
+	MutexLock lock(mutex);
+	if (connection.is_valid()) {
+		connection->disconnect_from_host();
+		connection.unref();
+	}
+	partial_data = "";
+}
+
 void MCPBridge::update() {
 	MutexLock lock(mutex);
 	if (is_host) {

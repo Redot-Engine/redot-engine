@@ -292,6 +292,9 @@ Error MCPServer::stop_game_process() {
 	if (OS::get_singleton()->is_process_running(pid_to_kill)) {
 		return ERR_TIMEOUT;
 	}
+	if (bridge) {
+		bridge->disconnect_peer();
+	}
 
 	MutexLock lock(process_mutex);
 	if (game_pid == pid_to_kill) {
