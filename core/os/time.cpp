@@ -91,7 +91,7 @@ static const uint8_t MONTH_DAYS_TABLE[2][12] = {
 	uint8_t hour, minute, second;                                                                                        \
 	{                                                                                                                    \
 		/* The time of the day (in seconds since start of day). */                                                       \
-		uint32_t day_clock = Math::posmod(static_cast<int64_t>(p_unix_time_val), static_cast<int64_t>(SECONDS_PER_DAY)); \
+		uint32_t day_clock = Math::posmod(static_cast<int32_t>(p_unix_time_val), static_cast<int32_t>(SECONDS_PER_DAY)); \
 		/* On x86 these 4 lines can be optimized to only 2 divisions. */                                                 \
 		second = day_clock % 60;                                                                                         \
 		day_clock /= 60;                                                                                                 \
