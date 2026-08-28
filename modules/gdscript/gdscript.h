@@ -196,6 +196,7 @@ private:
 	StringName global_name; ///< `class_name`.
 	String fully_qualified_name;
 	String simplified_icon_path;
+	Vector<StringName> traits_fqtn; // Fully-qualified trait names used by script.
 	SelfList<GDScript> script_list;
 
 	SelfList<GDScriptFunctionState>::List pending_func_states;
@@ -249,6 +250,7 @@ public:
 	}
 
 	_FORCE_INLINE_ StringName get_local_name() const { return local_name; }
+	_FORCE_INLINE_ bool has_trait(const StringName &p_trait) const { return traits_fqtn.has(p_trait); }
 
 	void clear(GDScript::ClearData *p_clear_data = nullptr);
 
