@@ -321,21 +321,22 @@ constexpr T division_round_up(T p_num, T p_den) {
 }
 
 template <std::floating_point T>
-constexpr T fposmod(T x, T y) noexcept {
-	T value = fmod(x, y);
-	// mask based on sign mismatch.
-	T mask = T(value != 0 && ((value < T(0))) != (y < T(0)));
-	// convert bool to 0.0 or 1.0
-	mask = static_cast<T>(mask);
-	return value + mask * y;
+constexpr T fposmod(T p_x, T p_y) noexcept {
+	T value = fmod(p_x, p_y);
+	if (((value < T{ 0 }) && (p_y > T{ 0 })) || ((value > T{ 0 }) && (p_y < T{ 0 }))) {
+		value += p_y;
+	}
+	value += T{ 0 };
+	return value;
 }
 
 template <std::floating_point T>
-constexpr T fposmodp(T x, T y) noexcept {
-	T value = fmod(x, y);
-
-	value += (value < T(0)) ? y : T(0);
-
+constexpr T fposmodp(T p_x, T p_y) noexcept {
+	T value = fmod(p_x, p_y);
+	if (value < T{ 0 }) {
+		value += p_y;
+	}
+	value += T{ 0 };
 	return value;
 }
 
