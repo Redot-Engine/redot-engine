@@ -80,6 +80,7 @@ public:
 	Error connect_to_server(const String &p_host, int p_port);
 
 	/// Communication
-	Dictionary send_command(const String &p_action, const Dictionary &p_args = Dictionary());
+	/// Sends a command and optionally waits for its response.
+	Dictionary send_command(const String &p_action, const Dictionary &p_args = Dictionary(), bool p_wait_for_response = true);
 	void update(); ///< Called by MainLoop or Server loop
 };

@@ -73,7 +73,10 @@ MCPServer::MCPServer() {
 
 MCPServer::~MCPServer() {
 	if (is_game_running()) {
-		stop_game_process();
+		Error err = stop_game_process();
+		if (err != OK) {
+			ERR_PRINT("Failed to stop the MCP-owned game process during server destruction: " + itos(err));
+		}
 	}
 	stop();
 
@@ -267,12 +270,10 @@ Error MCPServer::stop_game_process() {
 
 	MCPBridge *bridge = MCPBridge::get_singleton();
 	if (bridge && bridge->is_client_connected()) {
-		Dictionary response = bridge->send_command("quit");
-		if (!response.has("error")) {
-			uint64_t start = OS::get_singleton()->get_ticks_msec();
-			while (OS::get_singleton()->is_process_running(pid_to_kill) && OS::get_singleton()->get_ticks_msec() - start < 3000) {
-				OS::get_singleton()->delay_usec(10000);
-			}
+		bridge->send_command("quit", Dictionary(), /* p_wait_for_response = */ false);
+		uint64_t start = OS::get_singleton()->get_ticks_msec();
+		while (OS::get_singleton()->is_process_running(pid_to_kill) && OS::get_singleton()->get_ticks_msec() - start < 3000) {
+			OS::get_singleton()->delay_usec(10000);
 		}
 	}
 
@@ -350,7 +351,10 @@ void MCPServer::_server_loop() {
 	}
 
 	if (is_game_running()) {
-		stop_game_process();
+		Error err = stop_game_process();
+		if (err != OK) {
+			ERR_PRINT("Failed to stop the MCP-owned game process during server shutdown: " + itos(err));
+		}
 	}
 	should_stop = true;
 	bridge_thread.wait_to_finish();

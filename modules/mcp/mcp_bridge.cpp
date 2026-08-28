@@ -110,7 +110,7 @@ Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
 	return connection->connect_to_host(p_host, p_port);
 }
 
-Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args) {
+Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args, bool p_wait_for_response) {
 	Ref<StreamPeerTCP> conn;
 	{
 		MutexLock lock(mutex);
@@ -130,6 +130,9 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 	CharString utf8 = json.utf8();
 	conn->put_data((const uint8_t *)utf8.get_data(), utf8.length());
 	conn->put_u8('\n');
+	if (!p_wait_for_response) {
+		return Dictionary();
+	}
 
 	// Wait for response (blocking with timeout)
 	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
