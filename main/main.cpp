@@ -4774,6 +4774,7 @@ int Main::start() {
 			OS::get_singleton()->print("Error: MCPServer singleton is null.\n");
 			return EXIT_FAILURE;
 		}
+		OS::get_singleton()->delete_main_loop();
 		return EXIT_SUCCESS;
 	}
 

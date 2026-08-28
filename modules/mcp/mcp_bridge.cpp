@@ -518,6 +518,14 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 			_trigger_action_event(action_name);
 			resp["status"] = "triggered_action";
 		}
+	} else if (action == "quit") {
+		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+		if (st) {
+			st->quit();
+			resp["status"] = "quitting";
+		} else {
+			resp["error"] = "No scene tree found";
+		}
 	} else if (action == "wait") {
 		resp["status"] = "wait_is_server_side";
 	} else {
