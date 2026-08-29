@@ -2276,14 +2276,14 @@ void GDScriptLanguage::init() {
 
 	//populate native classes
 
-	List<StringName> class_list;
-	ClassDB::get_class_list(&class_list);
-	for (const StringName &n : class_list) {
-		if (globals.has(n)) {
+	LocalVector<StringName> class_list;
+	ClassDB::get_class_list(class_list);
+	for (const StringName &class_name : class_list) {
+		if (globals.has(class_name)) {
 			continue;
 		}
-		Ref<GDScriptNativeClass> nc = memnew(GDScriptNativeClass(n));
-		_add_global(n, nc);
+		Ref<GDScriptNativeClass> nc = memnew(GDScriptNativeClass(class_name));
+		_add_global(class_name, nc);
 	}
 
 	//populate singletons
@@ -2769,7 +2769,9 @@ Vector<String> GDScriptLanguage::get_reserved_words() const {
 		"namespace", // Reserved for potential future use.
 		"signal",
 		"static",
-		"trait", // Reserved for potential future use.
+		"trait",
+		"trait_name",
+		"uses",
 		"var",
 		// Other keywords.
 		"await",

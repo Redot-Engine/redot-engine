@@ -147,6 +147,10 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 			result.script_type = result.script_type_ref.ptr();
 			result.native_type = p_datatype.native_type;
 		} break;
+		case GDScriptParser::DataType::TRAIT: {
+			result.kind = GDScriptDataType::GDTRAIT;
+			result.trait_type = p_datatype.class_type->fqcn;
+		} break;
 		case GDScriptParser::DataType::CLASS: {
 			if (p_handle_metatype && p_datatype.is_meta_type) {
 				result.kind = GDScriptDataType::NATIVE;
@@ -366,6 +370,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 					}
 				} break;
 				case GDScriptParser::IdentifierNode::MEMBER_CONSTANT:
+				case GDScriptParser::IdentifierNode::MEMBER_TRAIT:
 				case GDScriptParser::IdentifierNode::MEMBER_CLASS: {
 					// Try class constants.
 					GDScript *owner = codegen.script;
@@ -2735,20 +2740,20 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 	}
 	p_script->member_functions.clear();
 	for (const KeyValue<StringName, GDScriptFunction *> &E : member_functions) {
-		memdelete(E.value);
+		functions_to_delete.push_back(E.value);
 	}
 	member_functions.clear();
 
 	p_script->static_variables.clear();
 
 	if (p_script->implicit_initializer) {
-		memdelete(p_script->implicit_initializer);
+		functions_to_delete.push_back(p_script->implicit_initializer);
 	}
 	if (p_script->implicit_ready) {
-		memdelete(p_script->implicit_ready);
+		functions_to_delete.push_back(p_script->implicit_ready);
 	}
 	if (p_script->static_initializer) {
-		memdelete(p_script->static_initializer);
+		functions_to_delete.push_back(p_script->static_initializer);
 	}
 
 	p_script->member_functions.clear();
@@ -3000,6 +3005,11 @@ Error GDScriptCompiler::_prepare_compilation(GDScript *p_script, const GDScriptP
 }
 
 Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser::ClassNode *p_class, bool p_keep_state) {
+	if (p_class->type == GDScriptParser::Node::TRAIT) {
+		// No need to compile traits.
+		return OK;
+	}
+
 	// Compile member functions, getters, and setters.
 	for (int i = 0; i < p_class->members.size(); i++) {
 		const GDScriptParser::ClassNode::Member &member = p_class->members[i];
@@ -3148,6 +3158,7 @@ void GDScriptCompiler::make_scripts(GDScript *p_script, const GDScriptParser::Cl
 	p_script->local_name = p_class->identifier ? p_class->identifier->name : StringName();
 	p_script->global_name = p_class->get_global_name();
 	p_script->simplified_icon_path = p_class->simplified_icon_path;
+	p_script->traits_fqtn = p_class->traits_fqtn;
 
 	HashMap<StringName, Ref<GDScript>> old_subclasses;
 
@@ -3310,6 +3321,12 @@ void GDScriptCompiler::_get_function_ptr_replacements(HashMap<GDScriptFunction *
 	}
 }
 
+GDScriptCompiler::~GDScriptCompiler() {
+	for (GDScriptFunction *function : functions_to_delete) {
+		memdelete(function);
+	}
+}
+
 Error GDScriptCompiler::compile(const GDScriptParser *p_parser, GDScript *p_script, bool p_keep_state) {
 	err_line = -1;
 	err_column = -1;
@@ -3324,6 +3341,11 @@ Error GDScriptCompiler::compile(const GDScriptParser *p_parser, GDScript *p_scri
 
 	// Create scripts for subclasses beforehand so they can be referenced
 	make_scripts(p_script, root, p_keep_state);
+
+	if (parser->is_file_trait()) {
+		// No need to compile traits.
+		return GDScriptCache::finish_compiling(main_script->path);
+	}
 
 	main_script->_owner = nullptr;
 	Error err = _prepare_compilation(main_script, parser->get_tree(), p_keep_state);
