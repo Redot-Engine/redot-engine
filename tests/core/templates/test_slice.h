@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "core/templates/Slice.h"
+#include "core/templates/slice.h"
 #include "tests/test_macros.h"
 
 namespace TestSlice {

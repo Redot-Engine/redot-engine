@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  Slice.h                                                               */
+/*  slice.h                                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -41,7 +41,7 @@ struct Slice {
 	void *data;
 	size_t length;
 
-	static Slice nil = {};
+	static Slice nil;
 
 	constexpr static inline void *get(
 			Slice self,
@@ -69,7 +69,7 @@ struct Slice {
 
 	static inline bool set(Slice dst, Slice src, size_t index) noexcept;
 	static inline void copy(Slice dst, Slice src) noexcept;
-	static void set(Slice dst, uint8_t n) noexcept;
+	static inline void set(Slice dst, uint8_t n) noexcept;
 };
 
 constexpr inline void *Slice::get(
