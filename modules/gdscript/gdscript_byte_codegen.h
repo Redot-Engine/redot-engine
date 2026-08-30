@@ -245,6 +245,14 @@ class GDScriptByteCodeGenerator : public GDScriptCodeGenerator {
 		return pos;
 	}
 
+	Address get_name_constant_address(const StringName &p_name) {
+		GDScriptDataType type;
+		type.has_type = true;
+		type.kind = GDScriptDataType::BUILTIN;
+		type.builtin_type = Variant::STRING_NAME;
+		return Address(Address::CONSTANT, get_constant_pos(p_name), type);
+	}
+
 	int get_operation_pos(const Variant::ValidatedOperatorEvaluator p_operation) {
 		if (operator_func_map.has(p_operation)) {
 			return operator_func_map[p_operation];
@@ -544,6 +552,7 @@ public:
 	virtual void write_construct_typed_array(const Address &p_target, const GDScriptDataType &p_element_type, const Vector<Address> &p_arguments) override;
 	virtual void write_construct_dictionary(const Address &p_target, const Vector<Address> &p_arguments) override;
 	virtual void write_construct_typed_dictionary(const Address &p_target, const GDScriptDataType &p_key_type, const GDScriptDataType &p_value_type, const Vector<Address> &p_arguments) override;
+	virtual void write_construct_struct(const Address &p_target, const Address &p_template) override;
 	virtual void write_await(const Address &p_target, const Address &p_operand) override;
 	virtual void write_if(const Address &p_condition) override;
 	virtual void write_else() override;
