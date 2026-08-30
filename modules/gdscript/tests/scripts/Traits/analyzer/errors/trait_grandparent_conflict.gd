@@ -13,4 +13,4 @@ class Child extends Parent:
 	uses AddsGreeting
 
 func test() -> void:
-	pass
+	Child.new().greet()
