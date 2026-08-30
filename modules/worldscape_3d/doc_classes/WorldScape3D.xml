@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="WorldScape3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		WorldScape3D is a clipmap based terrain system that supports terrains from 64x64m up to 65.5x65.5km with multiple LODs, 32 textures, with imported or locally created terrains.
+		This class handles mesh generation, and management of the whole system.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="bake_mesh" qualifiers="const">
+			<return type="Mesh" />
+			<param index="0" name="lod" type="int" />
+			<param index="1" name="filter" type="int" enum="WorldScape3DData.HeightFilter" default="0" />
+			<description>
+				Generates a static ArrayMesh for the terrain.
+				[code skip-lint]lod[/code] - Determines the granularity of the generated mesh. The range is 0-8. 4 is recommended.
+				[code skip-lint]filter[/code] - Controls how vertex Y coordinates are generated from the height map. See [enum WorldScape3DData.HeightFilter].
+			</description>
+		</method>
+		<method name="generate_nav_mesh_source_geometry" qualifiers="const">
+			<return type="PackedVector3Array" />
+			<param index="0" name="global_aabb" type="AABB" />
+			<param index="1" name="require_nav" type="bool" default="true" />
+			<description>
+				Generates source geometry faces for input to nav mesh baking. Geometry is only generated where there are no holes and the terrain has been painted as navigable.
+				[code skip-lint]global_aabb[/code] - If non-empty, geometry will be generated only within this AABB. If empty, geometry will be generated for the entire terrain.
+				[code skip-lint]require_nav[/code] - If true, this function will only generate geometry for terrain marked navigable. Otherwise, geometry is generated for the entire terrain within the AABB (which can be useful for dynamic and/or runtime nav mesh baking).
+			</description>
+		</method>
+		<method name="get_camera" qualifiers="const">
+			<return type="Camera3D" />
+			<description>
+				Returns the camera the terrain is currently snapping to.
+			</description>
+		</method>
+		<method name="get_intersection">
+			<return type="Vector3" />
+			<param index="0" name="src_pos" type="Vector3" />
+			<param index="1" name="direction" type="Vector3" />
+			<param index="2" name="gpu_mode" type="bool" default="false" />
+			<description>
+				Casts a ray from [code skip-lint]src_pos[/code] pointing towards [code skip-lint]direction[/code], attempting to intersect the terrain. This operation is does not use physics, so enabling collision is unnecessary.
+
+				This function can operate in one of two modes defined by [code skip-lint]gpu_mode[/code]:
+				- If gpu_mode is disabled (default), it raymarches from the camera until the terrain is intersected, up to 4000m away. This works with one function call, but only where regions exist. It is slower than gpu_mode and gets increasingly slower the farther away the terrain is, though you may not notice.
+
+				- If gpu_mode is enabled, it uses the GPU to detect the mouse. This works wherever the terrain is visible, even outside of regions, but may need to be called twice.
+
+				GPU mode places a camera at the specified point and "looks" at the terrain. It uses the depth texture to determine how far away the intersection point is. It requires the use of an editor render layer (default 32) while using this function. See [member mouse_layer].
+
+				The main caveats of using this mode is that the call to get_intersection() requests a viewport be drawn, but cannot wait for it to finish as Redot currently does not support co-routines nor forcing redraw in C++. So the return value is one frame behind, and invalid on the first call. This also means the function cannot be used more than once per frame. This mode works well when used continuously, once per frame, where one frame of difference won't matter. The editor uses this mode to place the mouse cursor decal.
+
+				This mode can also be used by your plugins and games, such as a space ship firing lasers at the terrain and causing an explosion at the hit point. However if the calls aren't continuous, eg driven by the mouse, you'll need to call once to capture the viewport image, wait for it to be drawn, then call again to get the result:
+				[codeblock]
+				var target_point = terrain.get_intersection(camera_pos, camera_dir, true)
+				await RenderingServer.frame_post_draw
+				target_point = terrain.get_intersection(camera_pos, camera_dir, true)
+				[/codeblock]
+
+				Possible return values:
+				- If the terrain is hit, the intersection point is returned.
+				- If there is no intersection, eg. the ray points towards the sky, it returns the maximum double float value [code skip-lint]Vector3(3.402823466e+38F,...)[/code]. You can check this case with this code: [code skip-lint]if point.z &gt; 3.4e38:[/code]
+				- On error, it returns [code skip-lint]Vector3(NAN, NAN, NAN)[/code] and prints a message to the console.
+			</description>
+		</method>
+		<method name="get_snapped_position" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Returns the last position the terrain was centered on.
+			</description>
+		</method>
+		<method name="set_camera">
+			<return type="void" />
+			<param index="0" name="camera" type="Camera3D" />
+			<description>
+				Sets the camera the terrain snaps to.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="assets" type="WorldScape3DAssets" setter="set_assets" getter="get_assets">
+			The list of texture and mesh assets used by WorldScape3D. You can optionally save this as an external [code skip-lint].tres[/code] text file if you wish to share it with WorldScape3D nodes in other scenes.
+		</member>
+		<member name="cast_shadows" type="int" setter="set_cast_shadows" getter="get_cast_shadows" enum="RenderingServer.ShadowCastingSetting" default="1">
+			Tells the renderer how to cast shadows from the terrain onto other objects. This sets [code skip-lint]GeometryInstance3D.ShadowCastingSetting[/code] in the engine.
+		</member>
+		<member name="collision" type="WorldScape3DCollision" setter="" getter="get_collision">
+			The active [WorldScape3DCollision] object.
+		</member>
+		<member name="collision_layer" type="int" setter="set_collision_layer" getter="get_collision_layer" default="1">
+			Alias for [member WorldScape3DCollision.layer].
+		</member>
+		<member name="collision_mask" type="int" setter="set_collision_mask" getter="get_collision_mask" default="1">
+			Alias for [member WorldScape3DCollision.mask].
+		</member>
+		<member name="collision_mode" type="int" setter="set_collision_mode" getter="get_collision_mode" enum="WorldScape3DCollision.CollisionMode" default="1">
+			Alias for [member WorldScape3DCollision.mode].
+		</member>
+		<member name="collision_priority" type="float" setter="set_collision_priority" getter="get_collision_priority" default="1.0">
+			Alias for [member WorldScape3DCollision.priority].
+		</member>
+		<member name="collision_radius" type="int" setter="set_collision_radius" getter="get_collision_radius" default="64">
+			Alias for [member WorldScape3DCollision.radius].
+		</member>
+		<member name="collision_shape_size" type="int" setter="set_collision_shape_size" getter="get_collision_shape_size" default="16">
+			Alias for [member WorldScape3DCollision.shape_size].
+		</member>
+		<member name="cull_margin" type="float" setter="set_cull_margin" getter="get_cull_margin" default="0.0">
+			This margin is added to the vertical component of the terrain bounding box (AABB). The terrain already sets its AABB from [method WorldScape3DData.get_height_range], which is calculated while sculpting. This setting only needs to be used if the shader has expanded the terrain beyond the AABB and the terrain meshes are being culled at certain viewing angles. This might happen from using [member WorldScape3DMaterial.world_background] with NOISE and a height value larger than the terrain heights. This setting is similar to [code skip-lint]GeometryInstance3D.extra_cull_margin[/code], but it only affects the Y axis.
+		</member>
+		<member name="data" type="WorldScape3DData" setter="" getter="get_data">
+			This class manages loading, saving, adding, and removing of WorldScape3DRegions and access to their content.
+		</member>
+		<member name="data_directory" type="String" setter="set_data_directory" getter="get_data_directory" default="&quot;&quot;">
+			The directory where terrain data will be saved to and loaded from.
+		</member>
+		<member name="debug_level" type="int" setter="set_debug_level" getter="get_debug_level" enum="WorldScape3D.DebugLevel" default="0">
+			The verbosity of debug messages printed to the console. Errors and warnings are always printed. This can also be set via command line using [code skip-lint]--terrain-debug=LEVEL[/code] where [code skip-lint]LEVEL[/code] is one of [code skip-lint]ERROR, INFO, DEBUG, EXTREME[/code]. The last includes continuously recurring messages like position updates for the mesh as the camera moves around.
+		</member>
+		<member name="free_editor_textures" type="bool" setter="set_free_editor_textures" getter="get_free_editor_textures" default="true">
+			Frees ground textures used for editing in _ready(). These textures are used to generate the TextureArrays, so if you don't change any [WorldScape3DTextureAsset] settings in game, this can be enabled. Also reloads the texture asset list in _enter_tree() in case you load scenes via code and need the textures again. Calls [method WorldScape3DAssets.clear_textures].
+		</member>
+		<member name="gi_mode" type="int" setter="set_gi_mode" getter="get_gi_mode" enum="GeometryInstance3D.GIMode" default="1">
+			Tells the renderer which global illumination mode to use for WorldScape3D. This sets [code skip-lint]GeometryInstance3D.gi_mode[/code] in the engine.
+		</member>
+		<member name="instancer" type="WorldScape3DInstancer" setter="" getter="get_instancer">
+			The active [WorldScape3DInstancer] object.
+		</member>
+		<member name="label_distance" type="float" setter="set_label_distance" getter="get_label_distance" default="0.0">
+			If label_distance is non-zero (try 1024-4096) it will generate and display region coordinates in the viewport so you can identify the exact region files you are editing. This setting is the visible distance of the labels.
+		</member>
+		<member name="label_size" type="int" setter="set_label_size" getter="get_label_size" default="48">
+			Sets the font size for region labels. See [member label_distance].
+		</member>
+		<member name="material" type="WorldScape3DMaterial" setter="set_material" getter="get_material">
+			A custom material for WorldScape3D. You can optionally save this as an external [code skip-lint].tres[/code] text file if you wish to share it with instances of WorldScape3D in other scenes. See [WorldScape3DMaterial].
+		</member>
+		<member name="mesh_lods" type="int" setter="set_mesh_lods" getter="get_mesh_lods" default="7">
+			The number of lods generated in the mesh. Enable wireframe mode in the viewport to see them.
+		</member>
+		<member name="mesh_size" type="int" setter="set_mesh_size" getter="get_mesh_size" default="48">
+			The correlated size of the terrain meshes. Lod0 has [code skip-lint]4*mesh_size + 2[/code] quads per side. E.g. when mesh_size=8, lod0 has 34 quads to a side, including 2 quads for seams.
+		</member>
+		<member name="mouse_layer" type="int" setter="set_mouse_layer" getter="get_mouse_layer" default="32">
+			Redot supports 32 render layers. For most objects, only layers 1-20 are available for selection in the inspector. 21-32 are settable via code, and are considered reserved for editor plugins.
+			This variable sets the editor render layer (21-32) to be used by [code skip-lint]get_intersection[/code], which the mouse cursor uses.
+			You may place other objects on this layer, however [code skip-lint]get_intersection[/code] will report intersections with them. So either dedicate this layer to WorldScape3D, or if you must use all 32 layers, dedicate this one during editing or when using [code skip-lint]get_intersection[/code], and then you can use it during game play.
+			See [method get_intersection].`
+		</member>
+		<member name="physics_material" type="PhysicsMaterial" setter="set_physics_material" getter="get_physics_material">
+			Alias for [member WorldScape3DCollision.physics_material].
+		</member>
+		<member name="region_size" type="int" setter="change_region_size" getter="get_region_size" enum="WorldScape3D.RegionSize" default="256">
+			The number of vertices in each region, and the number of pixels for each map in [WorldScape3DRegion]. 1 pixel always corresponds to 1 vertex. [member WorldScape3D.vertex_spacing] laterally scales regions, but does not change the number of vertices or pixels in each.
+			There is no undo for this operation. However you can apply it again to reslice, as long as your data doesn't hit the maximum boundaries.
+		</member>
+		<member name="render_layers" type="int" setter="set_render_layers" getter="get_render_layers" default="2147483649">
+			The render layers the terrain is drawn on. This sets [code skip-lint]VisualInstance3D.layers[/code] in the engine. The defaults is layer 1 and 32 (for the mouse cursor). When you set this, make sure the layer for [member mouse_layer] is included, or set that variable again after this so that the mouse cursor works.
+		</member>
+		<member name="save_16_bit" type="bool" setter="set_save_16_bit" getter="get_save_16_bit" default="false">
+			If enabled, heightmaps are saved as 16-bit half-precision to reduce file size. Files are always loaded in 32-bit for editing. Upon save, a copy of the heightmap is converted to 16-bit for writing. It does not change what is currently in memory.
+			This process is lossy. 16-bit precision gets increasingly worse with every power of 2. At a height of 256m, the precision interval is .25m. At 512m it is .5m. At 1024m it is 1m. Saving a height of 1024.4m will be rounded down to 1024m.
+		</member>
+		<member name="show_autoshader" type="bool" setter="set_show_autoshader" getter="get_show_autoshader" default="false">
+			Alias for [member WorldScape3DMaterial.show_autoshader].
+		</member>
+		<member name="show_checkered" type="bool" setter="set_show_checkered" getter="get_show_checkered" default="false">
+			Alias for [member WorldScape3DMaterial.show_checkered].
+		</member>
+		<member name="show_colormap" type="bool" setter="set_show_colormap" getter="get_show_colormap" default="false">
+			Alias for [member WorldScape3DMaterial.show_colormap].
+		</member>
+		<member name="show_contours" type="bool" setter="set_show_contours" getter="get_show_contours" default="false">
+			Alias for [member WorldScape3DMaterial.show_contours]. Press `4` with the mouse in the viewport to toggle. Customize in the material.
+		</member>
+		<member name="show_control_angle" type="bool" setter="set_show_control_angle" getter="get_show_control_angle" default="false">
+			Alias for [member WorldScape3DMaterial.show_control_angle].
+		</member>
+		<member name="show_control_blend" type="bool" setter="set_show_control_blend" getter="get_show_control_blend" default="false">
+			Alias for [member WorldScape3DMaterial.show_control_blend].
+		</member>
+		<member name="show_control_scale" type="bool" setter="set_show_control_scale" getter="get_show_control_scale" default="false">
+			Alias for [member WorldScape3DMaterial.show_control_scale].
+		</member>
+		<member name="show_control_texture" type="bool" setter="set_show_control_texture" getter="get_show_control_texture" default="false">
+			Alias for [member WorldScape3DMaterial.show_control_texture].
+		</member>
+		<member name="show_grey" type="bool" setter="set_show_grey" getter="get_show_grey" default="false">
+			Alias for [member WorldScape3DMaterial.show_grey].
+		</member>
+		<member name="show_grid" type="bool" setter="set_show_region_grid" getter="get_show_region_grid" default="false">
+			Alias for [member WorldScape3DMaterial.show_region_grid]. Press `1` with the mouse in the viewport to toggle.
+		</member>
+		<member name="show_heightmap" type="bool" setter="set_show_heightmap" getter="get_show_heightmap" default="false">
+			Alias for [member WorldScape3DMaterial.show_heightmap].
+		</member>
+		<member name="show_instancer_grid" type="bool" setter="set_show_instancer_grid" getter="get_show_instancer_grid" default="false">
+			Alias for [member WorldScape3DMaterial.show_instancer_grid]. Press `2` with the mouse in the viewport to toggle.
+		</member>
+		<member name="show_instances" type="bool" setter="set_show_instances" getter="get_show_instances" default="true">
+			Shows or hides all instancer meshes.
+		</member>
+		<member name="show_jaggedness" type="bool" setter="set_show_jaggedness" getter="get_show_jaggedness" default="false">
+			Alias for [member WorldScape3DMaterial.show_jaggedness].
+		</member>
+		<member name="show_navigation" type="bool" setter="set_show_navigation" getter="get_show_navigation" default="false">
+			Alias for [member WorldScape3DMaterial.show_navigation].
+		</member>
+		<member name="show_region_grid" type="bool" setter="set_show_region_grid" getter="get_show_region_grid" default="false">
+			Alias for [member WorldScape3DMaterial.show_region_grid]. Press `1` with the mouse in the viewport to toggle.
+		</member>
+		<member name="show_roughmap" type="bool" setter="set_show_roughmap" getter="get_show_roughmap" default="false">
+			Alias for [member WorldScape3DMaterial.show_roughmap].
+		</member>
+		<member name="show_texture_height" type="bool" setter="set_show_texture_height" getter="get_show_texture_height" default="false">
+			Alias for [member WorldScape3DMaterial.show_texture_height].
+		</member>
+		<member name="show_texture_normal" type="bool" setter="set_show_texture_normal" getter="get_show_texture_normal" default="false">
+			Alias for [member WorldScape3DMaterial.show_texture_normal].
+		</member>
+		<member name="show_texture_rough" type="bool" setter="set_show_texture_rough" getter="get_show_texture_rough" default="false">
+			Alias for [member WorldScape3DMaterial.show_texture_rough].
+		</member>
+		<member name="show_vertex_grid" type="bool" setter="set_show_vertex_grid" getter="get_show_vertex_grid" default="false">
+			Alias for [member WorldScape3DMaterial.show_vertex_grid]. Press `3` with the mouse in the viewport to toggle.
+		</member>
+		<member name="vertex_spacing" type="float" setter="set_vertex_spacing" getter="get_vertex_spacing" default="1.0">
+			The distance between vertices. Redot units are typically considered to be meters. This laterally scales the terrain on X and Z axes.
+			This variable changes the global position of landscape features. A mountain peak might be at (512, 512), but with a vertex spacing of 2.0 it is now located at (1024, 1024).
+			All WorldScape3D functions with a global_position expect an absolute global value. If you would normally use [method WorldScape3DData.import_images] to import an image in the region at (-1024, -1024), with a vertex_spacing of 2, you'll need to import that image at (-2048, -2048) to place it in the same region.
+			To scale heights, export the height map and reimport it with a new height scale.
+		</member>
+	</members>
+	<signals>
+		<signal name="assets_changed">
+			<description>
+				Emitted when [member assets] is changed.
+			</description>
+		</signal>
+		<signal name="material_changed">
+			<description>
+				Emitted when [member material] is changed.
+			</description>
+		</signal>
+	</signals>
+	<constants>
+		<constant name="ERROR" value="0" enum="DebugLevel">
+			Errors and warnings always print.
+		</constant>
+		<constant name="INFO" value="1" enum="DebugLevel">
+			Typically every function call and other important informational messages.
+		</constant>
+		<constant name="DEBUG" value="2" enum="DebugLevel">
+			Detailed steps within functions.
+		</constant>
+		<constant name="EXTREME" value="3" enum="DebugLevel">
+			Messages for continuous operations like snapping and editing.
+		</constant>
+		<constant name="SIZE_64" value="64" enum="RegionSize">
+			The region size is 64 x 64 meters, vertices, and pixels on Image maps.
+		</constant>
+		<constant name="SIZE_128" value="128" enum="RegionSize">
+			The region size is 128 x 128 meters, vertices, and pixels on Image maps.
+		</constant>
+		<constant name="SIZE_256" value="256" enum="RegionSize">
+			The region size is 256 x 256 meters, vertices, and pixels on Image maps. (default)
+		</constant>
+		<constant name="SIZE_512" value="512" enum="RegionSize">
+			The region size is 512 x 512 meters, vertices, and pixels on Image maps.
+		</constant>
+		<constant name="SIZE_1024" value="1024" enum="RegionSize">
+			The region size is 1024 x 1024 meters, vertices, and pixels on Image maps.
+		</constant>
+		<constant name="SIZE_2048" value="2048" enum="RegionSize">
+			The region size is 2048 x 2048 meters, vertices, and pixels on Image maps.
+		</constant>
+		<constant name="SIZE_4096" value="4096" enum="RegionSize">
+			The region size is 4096 x 4096 meters, vertices, and pixels on Image maps.
+		</constant>
+	</constants>
+</class>
