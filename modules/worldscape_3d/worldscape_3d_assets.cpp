@@ -36,7 +36,7 @@
 #include "core/io/resource_saver.h"
 #include "scene/resources/environment.h"
 #include "scene/resources/image_texture.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 #include "logger.h"
 #include "worldscape_3d.h"

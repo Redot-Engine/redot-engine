@@ -45,8 +45,8 @@
 #include "scene/resources/environment.h"
 #include "scene/resources/material.h"
 #include "scene/resources/surface_tool.h"
-#include "servers/physics_server_3d.h"
-#include "servers/rendering_server.h"
+#include "servers/physics_3d/physics_server_3d.h"
+#include "servers/rendering/rendering_server.h"
 #ifdef TOOLS_ENABLED
 #include "editor/editor_interface.h"
 #include "editor/inspector/editor_preview_plugins.h"

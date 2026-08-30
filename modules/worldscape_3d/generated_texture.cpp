@@ -32,7 +32,7 @@
 
 // Terrain3D Godot plugin: Copyright © 2025 Cory Petkovsek, Roope Palmroos, and Contributors.
 
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 #include "generated_texture.h"
 #include "logger.h"

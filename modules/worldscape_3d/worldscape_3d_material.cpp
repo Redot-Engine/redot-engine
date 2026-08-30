@@ -38,7 +38,7 @@
 #include "modules/noise/noise_texture_2d.h"
 #include "modules/regex/regex.h"
 #include "scene/resources/gradient.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 #include "logger.h"
 #include "worldscape_3d.h"
