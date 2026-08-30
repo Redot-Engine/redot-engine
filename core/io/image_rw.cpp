@@ -658,8 +658,10 @@ static IO::Error defaultFlush(
 	size_t cursor;
 	size_t row = state->currentRow;
 	Slice tmp = {};
-	err = IO::Writer::seek(writer, 0, &cursor, IO::WHENCE_CURRENT);
-	// if (state->currentBlock == 0) { return err; }
+	err = IO::Writer::seek(writer, 0, &cursor, IO::WHENCE_CURRENT); // shouldn't ever error, but fine, pedantic ass clanker
+	if (err != IO::Error::Okay) {
+		return err;
+	}
 	for (size_t i = 0; row < state->res[1]; i += 1) {
 		row += 1;
 		err = IO::Writer::seek(
