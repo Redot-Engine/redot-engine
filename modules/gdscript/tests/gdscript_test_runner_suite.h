@@ -40,9 +40,62 @@
 
 #include "gdscript_test_runner.h"
 
+#include "../gdscript_analyzer.h"
+#include "../gdscript_parser.h"
+#include "../gdscript_warning.h"
+
+#include "core/config/project_settings.h"
+
 #include "tests/test_macros.h"
 
 namespace GDScriptTests {
+
+#if defined(TOOLS_ENABLED) && defined(DEBUG_ENABLED)
+TEST_CASE("[Modules][GDScript] Experimental struct warning") {
+	const String warning_setting = GDScriptWarning::get_settings_path_from_code(GDScriptWarning::EXPERIMENTAL_STRUCT);
+	const String show_warning_setting = "debug/gdscript/warnings/show_experimental_struct_warning";
+	const int original_warning_level = GLOBAL_GET(warning_setting);
+	const bool original_show_warning = GLOBAL_GET(show_warning_setting);
+	const bool original_warnings_enabled = GLOBAL_GET("debug/gdscript/warnings/enable");
+	ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/enable", true);
+
+	auto count_struct_warnings = [&](bool p_show_warning, GDScriptWarning::WarnLevel p_level) {
+		ProjectSettings::get_singleton()->set_setting(show_warning_setting, p_show_warning);
+		ProjectSettings::get_singleton()->set_setting(warning_setting, p_level);
+
+		GDScriptParser parser;
+		const Error parse_error = parser.parse(R"(
+struct First:
+	var value: int
+
+struct Second:
+	var value: int
+)",
+				"res://experimental_struct_warning.gd", false);
+		CHECK(parse_error == OK);
+
+		GDScriptAnalyzer analyzer(&parser);
+		const Error analyze_error = analyzer.analyze();
+		CHECK(analyze_error == OK);
+
+		int warning_count = 0;
+		for (const GDScriptWarning &warning : parser.get_warnings()) {
+			if (warning.code == GDScriptWarning::EXPERIMENTAL_STRUCT) {
+				warning_count++;
+			}
+		}
+		return warning_count;
+	};
+
+	CHECK(count_struct_warnings(true, GDScriptWarning::WARN) == 1);
+	CHECK(count_struct_warnings(false, GDScriptWarning::WARN) == 0);
+	CHECK(count_struct_warnings(true, GDScriptWarning::IGNORE) == 0);
+
+	ProjectSettings::get_singleton()->set_setting(warning_setting, original_warning_level);
+	ProjectSettings::get_singleton()->set_setting(show_warning_setting, original_show_warning);
+	ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/enable", original_warnings_enabled);
+}
+#endif
 
 /// @todo Handle some cases failing on release builds. See: https://github.com/godotengine/godot/pull/88452
 #ifdef TOOLS_ENABLED

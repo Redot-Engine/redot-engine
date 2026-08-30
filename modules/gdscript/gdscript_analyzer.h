@@ -68,8 +68,9 @@ class GDScriptAnalyzer {
 	bool static_context = false;
 
 #ifdef TOOLS_ENABLED
-	//Traits are new and still experimental. Emit a warning once during analysis if their usage is detected.
+	// Traits and structs are still experimental. Emit each warning once during analysis if their usage is detected.
 	bool experimental_traits_warned = false; // @todo: remove experimental tag in 27.1-rc.1
+	bool experimental_struct_warned = false;
 #endif
 
 	LocalVector<const void *> narrowed_non_null;
@@ -105,6 +106,8 @@ class GDScriptAnalyzer {
 	void resolve_class_uses(GDScriptParser::ClassNode *p_class, bool p_recursive);
 	// Prints a warning the first time a trait is discovered unless the warning is suppressed
 	void _warn_experimental_trait(const GDScriptParser::Node *p_source);
+	// Prints a warning the first time a struct is discovered unless the warning is suppressed.
+	void _warn_experimental_struct(const GDScriptParser::Node *p_source);
 	void resolve_function_signature(GDScriptParser::FunctionNode *p_function, const GDScriptParser::Node *p_source = nullptr, bool p_is_lambda = false);
 	void resolve_function_body(GDScriptParser::FunctionNode *p_function, bool p_is_lambda = false);
 	void resolve_node(GDScriptParser::Node *p_node, bool p_is_root = true);

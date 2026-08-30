@@ -100,6 +100,7 @@ public:
 		ONREADY_WITH_EXPORT, //< The `@onready` annotation will set the value after `@export` which is likely not intended.
 		UNUSED_STATIC_OVERRIDING_TRAIT, // Overridden static without using "static" keyword.
 		EXPERIMENTAL_TRAIT, //< Traits are still experimental, and their syntax and behavior may change in future releases.
+		EXPERIMENTAL_STRUCT, //< Structs are still experimental, and their syntax and behavior may change in future releases.
 #ifndef DISABLE_DEPRECATED
 		PROPERTY_USED_AS_FUNCTION, //< Function not found, but there's a property with the same name.
 		CONSTANT_USED_AS_FUNCTION, //< Function not found, but there's a constant with the same name.
@@ -160,6 +161,7 @@ public:
 		ERROR, // ONREADY_WITH_EXPORT // May not work as expected.
 		WARN, // UNUSED_STATIC_OVERRIDING_TRAIT
 		WARN, // EXPERIMENTAL_TRAIT
+		WARN, // EXPERIMENTAL_STRUCT
 #ifndef DISABLE_DEPRECATED
 		WARN, // PROPERTY_USED_AS_FUNCTION
 		WARN, // CONSTANT_USED_AS_FUNCTION

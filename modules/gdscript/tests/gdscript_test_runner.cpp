@@ -153,6 +153,20 @@ void GDScriptTestRunner::restore_trait_warnings(const bool originalState) {
 	}
 }
 
+bool GDScriptTestRunner::suppress_struct_warning() {
+	const String setting = "debug/gdscript/warnings/show_experimental_struct_warning";
+	const bool original_state = GLOBAL_GET(setting);
+	ProjectSettings::get_singleton()->set_setting(setting, false);
+	return original_state;
+}
+
+void GDScriptTestRunner::restore_struct_warning(bool p_original_state) {
+	const String setting = "debug/gdscript/warnings/show_experimental_struct_warning";
+	if (ProjectSettings::get_singleton()->has_setting(setting)) {
+		ProjectSettings::get_singleton()->set_setting(setting, p_original_state);
+	}
+}
+
 GDScriptTestRunner::GDScriptTestRunner(const String &p_source_dir, bool p_init_language, bool p_print_filenames, bool p_use_binary_tokens) {
 	test_function_name = StringName("test");
 	do_init_languages = p_init_language;
@@ -210,16 +224,19 @@ static String strip_warnings(const String &p_expected) {
 int GDScriptTestRunner::run_tests() {
 	// need to suppress warnings for traits tests
 	bool traitWarn = suppress_trait_warning();
+	bool struct_warn = suppress_struct_warning();
 
 	if (!make_tests()) {
 		FAIL("An error occurred while making the tests.");
 		restore_trait_warnings(traitWarn);
+		restore_struct_warning(struct_warn);
 		return -1;
 	}
 
 	if (!generate_class_index()) {
 		FAIL("An error occurred while generating class index.");
 		restore_trait_warnings(traitWarn);
+		restore_struct_warning(struct_warn);
 		return -1;
 	}
 
@@ -244,6 +261,7 @@ int GDScriptTestRunner::run_tests() {
 		CHECK_MESSAGE(result.passed, (result.passed ? String() : result.output));
 	}
 	restore_trait_warnings(traitWarn);
+	restore_struct_warning(struct_warn);
 	return failed;
 }
 
@@ -251,15 +269,18 @@ bool GDScriptTestRunner::generate_outputs() {
 	is_generating = true;
 	// need to suppress warnings for traits tests
 	bool traitWarn = suppress_trait_warning();
+	bool struct_warn = suppress_struct_warning();
 
 	if (!make_tests()) {
 		print_line("Failed to generate a test output.");
 		restore_trait_warnings(traitWarn);
+		restore_struct_warning(struct_warn);
 		return false;
 	}
 
 	if (!generate_class_index()) {
 		restore_trait_warnings(traitWarn);
+		restore_struct_warning(struct_warn);
 		return false;
 	}
 
@@ -276,11 +297,13 @@ bool GDScriptTestRunner::generate_outputs() {
 		if (!result) {
 			print_line("\nCould not generate output for " + test.get_source_file());
 			restore_trait_warnings(traitWarn);
+			restore_struct_warning(struct_warn);
 			return false;
 		}
 	}
 	print_line("\nGenerated output files for " + itos(tests.size()) + " tests successfully.");
 	restore_trait_warnings(traitWarn);
+	restore_struct_warning(struct_warn);
 
 	return true;
 }

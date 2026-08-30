@@ -2148,6 +2148,18 @@ void GDScriptAnalyzer::_warn_experimental_trait(const GDScriptParser::Node *p_so
 #endif
 }
 
+void GDScriptAnalyzer::_warn_experimental_struct(const GDScriptParser::Node *p_source) {
+#ifdef TOOLS_ENABLED
+	if (!experimental_struct_warned) {
+		experimental_struct_warned = true;
+		bool show_warning = GLOBAL_GET("debug/gdscript/warnings/show_experimental_struct_warning");
+		if (show_warning) {
+			parser->push_warning(p_source, GDScriptWarning::EXPERIMENTAL_STRUCT);
+		}
+	}
+#endif
+}
+
 void GDScriptAnalyzer::resolve_node(GDScriptParser::Node *p_node, bool p_is_root) {
 	ERR_FAIL_NULL_MSG(p_node, "Trying to resolve type of a null node.");
 
@@ -2838,6 +2850,7 @@ void GDScriptAnalyzer::resolve_struct(GDScriptParser::StructNode *p_struct) {
 		case SN::UNRESOLVED:
 			break;
 	}
+	_warn_experimental_struct(p_struct);
 	p_struct->resolve_state = SN::RESOLVING;
 
 	{
