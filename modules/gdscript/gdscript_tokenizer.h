@@ -131,8 +131,11 @@ public:
 			SELF,
 			SIGNAL,
 			STATIC,
+			STRUCT,
 			SUPER,
 			TRAIT,
+			TRAIT_NAME,
+			USES,
 			VAR,
 			TK_VOID, ///< Conflict with WinAPI.
 			YIELD,

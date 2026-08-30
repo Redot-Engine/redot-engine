@@ -1657,9 +1657,9 @@ void EditorFileSystem::_thread_func_sources(void *_userdata) {
 }
 
 bool EditorFileSystem::_remove_invalid_global_class_names(const HashSet<String> &p_existing_class_names) {
-	List<StringName> global_classes;
+	LocalVector<StringName> global_classes;
 	bool must_save = false;
-	ScriptServer::get_global_class_list(&global_classes);
+	ScriptServer::get_global_class_list(global_classes);
 	for (const StringName &class_name : global_classes) {
 		if (!p_existing_class_names.has(class_name)) {
 			ScriptServer::remove_global_class(class_name);
@@ -2554,6 +2554,18 @@ HashSet<String> EditorFileSystem::get_valid_extensions() const {
 
 void EditorFileSystem::_register_global_class_script(const String &p_search_path, const String &p_target_path, const ScriptClassInfoUpdate &p_script_update) {
 	ScriptServer::remove_global_class_by_path(p_search_path); // First remove, just in case it changed
+	ScriptServer::remove_global_struct_by_path(p_search_path);
+
+	for (int j = 0; j < ScriptServer::get_language_count(); j++) {
+		if (ScriptServer::get_language(j)->handles_global_class_type(p_script_update.type)) {
+			List<StringName> struct_names;
+			ScriptServer::get_language(j)->get_global_struct_names(p_target_path, &struct_names);
+			for (const StringName &struct_name : struct_names) {
+				ScriptServer::add_global_struct(struct_name, ScriptServer::get_language(j)->get_name(), p_target_path);
+			}
+			break;
+		}
+	}
 
 	if (p_script_update.name.is_empty()) {
 		return;

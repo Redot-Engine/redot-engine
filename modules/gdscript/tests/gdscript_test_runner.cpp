@@ -135,9 +135,37 @@ void init_language(const String &p_base_path) {
 void finish_language() {
 	GDScriptLanguage::get_singleton()->finish();
 	ScriptServer::global_classes_clear();
+	ScriptServer::global_structs_clear();
 }
 
 StringName GDScriptTestRunner::test_function_name;
+
+bool GDScriptTestRunner::suppress_trait_warning() {
+	bool originalState = GLOBAL_GET("debug/gdscript/warnings/show_experimental_trait_warning");
+	ProjectSettings::get_singleton()->set_setting("debug/gdscript/warnings/show_experimental_trait_warning", false);
+	return originalState;
+}
+
+void GDScriptTestRunner::restore_trait_warnings(const bool originalState) {
+	ProjectSettings *singleton = ProjectSettings::get_singleton();
+	if (singleton->has_setting("debug/gdscript/warnings/show_experimental_trait_warning")) {
+		singleton->set_setting("debug/gdscript/warnings/show_experimental_trait_warning", originalState);
+	}
+}
+
+bool GDScriptTestRunner::suppress_struct_warning() {
+	const String setting = "debug/gdscript/warnings/show_experimental_struct_warning";
+	const bool original_state = GLOBAL_GET(setting);
+	ProjectSettings::get_singleton()->set_setting(setting, false);
+	return original_state;
+}
+
+void GDScriptTestRunner::restore_struct_warning(bool p_original_state) {
+	const String setting = "debug/gdscript/warnings/show_experimental_struct_warning";
+	if (ProjectSettings::get_singleton()->has_setting(setting)) {
+		ProjectSettings::get_singleton()->set_setting(setting, p_original_state);
+	}
+}
 
 GDScriptTestRunner::GDScriptTestRunner(const String &p_source_dir, bool p_init_language, bool p_print_filenames, bool p_use_binary_tokens) {
 	test_function_name = StringName("test");
@@ -194,13 +222,21 @@ static String strip_warnings(const String &p_expected) {
 #endif
 
 int GDScriptTestRunner::run_tests() {
+	// need to suppress warnings for traits tests
+	bool traitWarn = suppress_trait_warning();
+	bool struct_warn = suppress_struct_warning();
+
 	if (!make_tests()) {
 		FAIL("An error occurred while making the tests.");
+		restore_trait_warnings(traitWarn);
+		restore_struct_warning(struct_warn);
 		return -1;
 	}
 
 	if (!generate_class_index()) {
 		FAIL("An error occurred while generating class index.");
+		restore_trait_warnings(traitWarn);
+		restore_struct_warning(struct_warn);
 		return -1;
 	}
 
@@ -224,19 +260,27 @@ int GDScriptTestRunner::run_tests() {
 
 		CHECK_MESSAGE(result.passed, (result.passed ? String() : result.output));
 	}
-
+	restore_trait_warnings(traitWarn);
+	restore_struct_warning(struct_warn);
 	return failed;
 }
 
 bool GDScriptTestRunner::generate_outputs() {
 	is_generating = true;
+	// need to suppress warnings for traits tests
+	bool traitWarn = suppress_trait_warning();
+	bool struct_warn = suppress_struct_warning();
 
 	if (!make_tests()) {
 		print_line("Failed to generate a test output.");
+		restore_trait_warnings(traitWarn);
+		restore_struct_warning(struct_warn);
 		return false;
 	}
 
 	if (!generate_class_index()) {
+		restore_trait_warnings(traitWarn);
+		restore_struct_warning(struct_warn);
 		return false;
 	}
 
@@ -252,10 +296,14 @@ bool GDScriptTestRunner::generate_outputs() {
 
 		if (!result) {
 			print_line("\nCould not generate output for " + test.get_source_file());
+			restore_trait_warnings(traitWarn);
+			restore_struct_warning(struct_warn);
 			return false;
 		}
 	}
 	print_line("\nGenerated output files for " + itos(tests.size()) + " tests successfully.");
+	restore_trait_warnings(traitWarn);
+	restore_struct_warning(struct_warn);
 
 	return true;
 }
@@ -378,6 +426,15 @@ static bool generate_class_index_recursive(const String &p_dir) {
 			String source_file = current_dir.path_join(next);
 			bool is_abstract = false;
 			bool is_tool = false;
+
+			List<StringName> struct_names;
+			GDScriptLanguage::get_singleton()->get_global_struct_names(source_file, &struct_names);
+			for (const StringName &struct_name : struct_names) {
+				ERR_FAIL_COND_V_MSG(ScriptServer::is_global_struct(struct_name), false,
+						"Struct name '" + String(struct_name) + "' from " + source_file + " is already used in " + ScriptServer::get_global_struct_path(struct_name));
+				ScriptServer::add_global_struct(struct_name, gdscript_name, source_file);
+			}
+
 			String class_name = GDScriptLanguage::get_singleton()->get_global_class_name(source_file, &base_type, nullptr, &is_abstract, &is_tool);
 			if (class_name.is_empty()) {
 				next = dir->get_next();

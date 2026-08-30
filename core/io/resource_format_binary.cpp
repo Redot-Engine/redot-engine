@@ -43,6 +43,9 @@
 #include "core/io/file_access_compressed.h"
 #include "core/io/missing_resource.h"
 #include "core/object/script_language.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
+#include "core/variant/variant_internal.h"
 #include "core/version.h"
 #include "scene/property_utils.h"
 #include "scene/resources/packed_scene.h"
@@ -94,6 +97,7 @@ enum {
 	VARIANT_VECTOR4I = 51,
 	VARIANT_PROJECTION = 52,
 	VARIANT_PACKED_VECTOR4_ARRAY = 53,
+	VARIANT_STRUCT = 54,
 	OBJECT_EMPTY = 0,
 	OBJECT_EXTERNAL_RESOURCE = 1,
 	OBJECT_INTERNAL_RESOURCE = 2,
@@ -512,6 +516,53 @@ Error ResourceLoaderBinary::parse_variant(Variant &r_v) {
 				a[i] = val;
 			}
 			r_v = a;
+
+		} break;
+		case VARIANT_STRUCT: {
+			Variant id_v;
+			Error err = parse_variant(id_v);
+			ERR_FAIL_COND_V_MSG(err, ERR_FILE_CORRUPT, "Error parsing struct id.");
+			const String id = id_v;
+			if (id.is_empty()) {
+				r_v = Struct();
+				break;
+			}
+			uint32_t version = f->get_32();
+			ERR_FAIL_COND_V_MSG(version != StructInfo::SERIALIZATION_VERSION, ERR_FILE_CORRUPT, "Unsupported struct schema version.");
+			uint32_t field_count = f->get_32();
+			StructInfoBuilder b;
+			b.set_logical_type_id(StringName(id));
+			for (uint32_t i = 0; i < field_count; i++) {
+				StructInfo::Field field;
+				Variant v;
+				err = parse_variant(v);
+				ERR_FAIL_COND_V_MSG(err, ERR_FILE_CORRUPT, "Error parsing struct field name.");
+				field.name = StringName(String(v));
+				err = parse_variant(v);
+				ERR_FAIL_COND_V_MSG(err, ERR_FILE_CORRUPT, "Error parsing struct field type.");
+				field.type = StructInfo::type_from_token(String(v));
+				ERR_FAIL_COND_V_MSG(field.type == Variant::VARIANT_MAX, ERR_FILE_CORRUPT, "Unknown struct field type token.");
+				field.is_typed = f->get_32() != 0;
+				err = parse_variant(v);
+				ERR_FAIL_COND_V_MSG(err, ERR_FILE_CORRUPT, "Error parsing struct field class_name.");
+				field.class_name = StringName(String(v));
+				err = parse_variant(v);
+				ERR_FAIL_COND_V_MSG(err, ERR_FILE_CORRUPT, "Error parsing struct field struct_type_id.");
+				field.struct_type_id = StringName(String(v));
+				err = parse_variant(field.default_value);
+				ERR_FAIL_COND_V_MSG(err, ERR_FILE_CORRUPT, "Error parsing struct field default.");
+				b.add_field(field);
+			}
+			Ref<StructInfo> info = b.build();
+			ERR_FAIL_COND_V(info.is_null(), ERR_FILE_CORRUPT);
+			Struct s(info);
+			for (uint32_t i = 0; i < field_count; i++) {
+				Variant val;
+				err = parse_variant(val);
+				ERR_FAIL_COND_V_MSG(err, ERR_FILE_CORRUPT, "Error parsing struct value.");
+				ERR_FAIL_COND_V_MSG(!s.try_set_member(i, val), ERR_FILE_CORRUPT, "Struct value incompatible with its field schema.");
+			}
+			r_v = s;
 
 		} break;
 		case VARIANT_PACKED_BYTE_ARRAY: {
@@ -1922,6 +1973,31 @@ void ResourceFormatSaverBinaryInstance::write_variant(Ref<FileAccess> f, const V
 			}
 
 		} break;
+		case Variant::STRUCT: {
+			f->store_32(VARIANT_STRUCT);
+			const Struct &s = *VariantInternal::get_struct(&p_property);
+			const Ref<StructInfo> info = s.get_info();
+			const int field_count = info.is_valid() ? info->get_field_count() : 0;
+
+			write_variant(f, info.is_valid() ? String(info->get_logical_type_id()) : String(), resource_map, external_resources, string_map);
+			if (info.is_null()) {
+				break;
+			}
+			f->store_32(StructInfo::SERIALIZATION_VERSION);
+			f->store_32(uint32_t(field_count));
+			for (int i = 0; i < field_count; i++) {
+				write_variant(f, String(info->get_field_name(i)), resource_map, external_resources, string_map);
+				write_variant(f, String(StructInfo::type_to_token(info->get_field_type(i))), resource_map, external_resources, string_map);
+				f->store_32(info->is_field_typed(i) ? 1 : 0);
+				write_variant(f, String(info->get_field_class_name(i)), resource_map, external_resources, string_map);
+				write_variant(f, String(info->get_field_struct_type_id(i)), resource_map, external_resources, string_map);
+				write_variant(f, Struct::_make_serializable(info->_get_field_default_raw(i)), resource_map, external_resources, string_map);
+			}
+			for (int i = 0; i < field_count; i++) {
+				write_variant(f, s.get_member_serializable(i), resource_map, external_resources, string_map);
+			}
+
+		} break;
 		case Variant::PACKED_BYTE_ARRAY: {
 			f->store_32(VARIANT_PACKED_BYTE_ARRAY);
 			Vector<uint8_t> arr = p_property;
@@ -2117,6 +2193,18 @@ void ResourceFormatSaverBinaryInstance::_find_resources(const Variant &p_variant
 			for (const KeyValue<Variant, Variant> &kv : d) {
 				_find_resources(kv.key);
 				_find_resources(kv.value);
+			}
+		} break;
+		case Variant::STRUCT: {
+			const Struct &s = *VariantInternal::get_struct(&p_variant);
+			const Ref<StructInfo> info = s.get_info();
+			if (info.is_valid()) {
+				for (int i = 0; i < info->get_field_count(); i++) {
+					_find_resources(info->_get_field_default_raw(i));
+				}
+			}
+			for (int i = 0; i < s.get_field_count(); i++) {
+				_find_resources(s.get_member(i));
 			}
 		} break;
 		case Variant::NODE_PATH: {

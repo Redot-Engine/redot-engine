@@ -116,8 +116,9 @@ uint32_t GDScriptByteCodeGenerator::add_temporary(const GDScriptDataType &p_type
 			case Variant::PACKED_VECTOR3_ARRAY:
 			case Variant::PACKED_COLOR_ARRAY:
 			case Variant::PACKED_VECTOR4_ARRAY:
+			case Variant::STRUCT:
 			case Variant::VARIANT_MAX:
-				// Arrays, dictionaries, and objects are reference counted, so we don't use the pool for them.
+				// These types use generic Variant temporary storage rather than the typed pool.
 				temp_type = Variant::NIL;
 				break;
 		}
@@ -431,10 +432,10 @@ void GDScriptByteCodeGenerator::set_initial_line(int p_line) {
 }
 
 #define HAS_BUILTIN_TYPE(m_var) \
-	(m_var.type.has_type && m_var.type.kind == GDScriptDataType::BUILTIN)
+	(m_var.type.has_type && !m_var.type.is_nullable && m_var.type.kind == GDScriptDataType::BUILTIN)
 
 #define IS_BUILTIN_TYPE(m_var, m_type) \
-	(m_var.type.has_type && m_var.type.kind == GDScriptDataType::BUILTIN && m_var.type.builtin_type == m_type && m_type != Variant::NIL)
+	(m_var.type.has_type && !m_var.type.is_nullable && m_var.type.kind == GDScriptDataType::BUILTIN && m_var.type.builtin_type == m_type && m_type != Variant::NIL)
 
 void GDScriptByteCodeGenerator::write_type_adjust(const Address &p_target, Variant::Type p_new_type) {
 	switch (p_new_type) {
@@ -553,6 +554,7 @@ void GDScriptByteCodeGenerator::write_type_adjust(const Address &p_target, Varia
 			append_opcode(GDScriptFunction::OPCODE_TYPE_ADJUST_PACKED_VECTOR4_ARRAY);
 			break;
 		case Variant::NIL:
+		case Variant::STRUCT:
 		case Variant::VARIANT_MAX:
 			return;
 	}
@@ -681,6 +683,12 @@ void GDScriptByteCodeGenerator::write_type_test(const Address &p_target, const A
 			append(p_target);
 			append(p_source);
 			append(p_type.native_type);
+		} break;
+		case GDScriptDataType::GDTRAIT: {
+			append_opcode(GDScriptFunction::OPCODE_TYPE_TEST_TRAIT);
+			append(p_target);
+			append(p_source);
+			append(p_type.trait_type);
 		} break;
 		case GDScriptDataType::SCRIPT:
 		case GDScriptDataType::GDSCRIPT: {
@@ -851,6 +859,11 @@ void GDScriptByteCodeGenerator::write_get(const Address &p_target, const Address
 }
 
 void GDScriptByteCodeGenerator::write_set_named(const Address &p_target, const StringName &p_name, const Address &p_source) {
+	if (HAS_BUILTIN_TYPE(p_target) && p_target.type.builtin_type == Variant::STRUCT) {
+		// Struct fields are reached by name through the validated keyed setter.
+		write_set(p_target, get_name_constant_address(p_name), p_source);
+		return;
+	}
 	if (HAS_BUILTIN_TYPE(p_target) && Variant::get_member_validated_setter(p_target.type.builtin_type, p_name) &&
 			IS_BUILTIN_TYPE(p_source, Variant::get_member_type(p_target.type.builtin_type, p_name))) {
 		Variant::ValidatedSetter setter = Variant::get_member_validated_setter(p_target.type.builtin_type, p_name);
@@ -870,6 +883,11 @@ void GDScriptByteCodeGenerator::write_set_named(const Address &p_target, const S
 }
 
 void GDScriptByteCodeGenerator::write_get_named(const Address &p_target, const StringName &p_name, const Address &p_source) {
+	if (HAS_BUILTIN_TYPE(p_source) && p_source.type.builtin_type == Variant::STRUCT) {
+		// Struct fields are reached by name through the validated keyed getter.
+		write_get(p_target, get_name_constant_address(p_name), p_source);
+		return;
+	}
 	if (HAS_BUILTIN_TYPE(p_source) && Variant::get_member_validated_getter(p_source.type.builtin_type, p_name)) {
 		Variant::ValidatedGetter getter = Variant::get_member_validated_getter(p_source.type.builtin_type, p_name);
 		append_opcode(GDScriptFunction::OPCODE_GET_NAMED_VALIDATED);
@@ -924,6 +942,7 @@ void GDScriptByteCodeGenerator::write_assign_with_conversion(const Address &p_ta
 				append(get_constant_pos(element_type.script_type) | (GDScriptFunction::ADDR_TYPE_CONSTANT << GDScriptFunction::ADDR_BITS));
 				append(element_type.builtin_type);
 				append(element_type.native_type);
+				append(p_target.type.is_nullable ? 1 : 0);
 			} else if (p_target.type.builtin_type == Variant::DICTIONARY && p_target.type.has_container_element_types()) {
 				const GDScriptDataType &key_type = p_target.type.get_container_element_type_or_variant(0);
 				const GDScriptDataType &value_type = p_target.type.get_container_element_type_or_variant(1);
@@ -936,11 +955,13 @@ void GDScriptByteCodeGenerator::write_assign_with_conversion(const Address &p_ta
 				append(key_type.native_type);
 				append(value_type.builtin_type);
 				append(value_type.native_type);
+				append(p_target.type.is_nullable ? 1 : 0);
 			} else {
 				append_opcode(GDScriptFunction::OPCODE_ASSIGN_TYPED_BUILTIN);
 				append(p_target);
 				append(p_source);
 				append(p_target.type.builtin_type);
+				append(p_target.type.is_nullable ? 1 : 0);
 			}
 		} break;
 		case GDScriptDataType::NATIVE: {
@@ -982,6 +1003,7 @@ void GDScriptByteCodeGenerator::write_assign(const Address &p_target, const Addr
 		append(get_constant_pos(element_type.script_type) | (GDScriptFunction::ADDR_TYPE_CONSTANT << GDScriptFunction::ADDR_BITS));
 		append(element_type.builtin_type);
 		append(element_type.native_type);
+		append(p_target.type.is_nullable ? 1 : 0);
 	} else if (p_target.type.kind == GDScriptDataType::BUILTIN && p_target.type.builtin_type == Variant::DICTIONARY && p_target.type.has_container_element_types()) {
 		const GDScriptDataType &key_type = p_target.type.get_container_element_type_or_variant(0);
 		const GDScriptDataType &value_type = p_target.type.get_container_element_type_or_variant(1);
@@ -994,12 +1016,14 @@ void GDScriptByteCodeGenerator::write_assign(const Address &p_target, const Addr
 		append(key_type.native_type);
 		append(value_type.builtin_type);
 		append(value_type.native_type);
+		append(p_target.type.is_nullable ? 1 : 0);
 	} else if (p_target.type.kind == GDScriptDataType::BUILTIN && p_source.type.kind == GDScriptDataType::BUILTIN && p_target.type.builtin_type != p_source.type.builtin_type) {
 		// Need conversion.
 		append_opcode(GDScriptFunction::OPCODE_ASSIGN_TYPED_BUILTIN);
 		append(p_target);
 		append(p_source);
 		append(p_target.type.builtin_type);
+		append(p_target.type.is_nullable ? 1 : 0);
 	} else {
 		append_opcode(GDScriptFunction::OPCODE_ASSIGN);
 		append(p_target);
@@ -1056,6 +1080,13 @@ void GDScriptByteCodeGenerator::write_cast(const Address &p_target, const Addres
 			Variant nc = GDScriptLanguage::get_singleton()->get_global_array()[class_idx];
 			append_opcode(GDScriptFunction::OPCODE_CAST_TO_NATIVE);
 			index = get_constant_pos(nc) | (GDScriptFunction::ADDR_TYPE_CONSTANT << GDScriptFunction::ADDR_BITS);
+		} break;
+		case GDScriptDataType::GDTRAIT: {
+			append_opcode(GDScriptFunction::OPCODE_CAST_TO_TRAIT);
+			append(p_source);
+			append(p_target);
+			append(p_type.trait_type);
+			return;
 		} break;
 		case GDScriptDataType::SCRIPT:
 		case GDScriptDataType::GDSCRIPT: {
@@ -1510,6 +1541,12 @@ void GDScriptByteCodeGenerator::write_construct_typed_dictionary(const Address &
 	ct.cleanup();
 }
 
+void GDScriptByteCodeGenerator::write_construct_struct(const Address &p_target, const Address &p_template) {
+	append_opcode(GDScriptFunction::OPCODE_CONSTRUCT_STRUCT);
+	append(p_target);
+	append(p_template);
+}
+
 void GDScriptByteCodeGenerator::write_await(const Address &p_target, const Address &p_operand) {
 	append_opcode(GDScriptFunction::OPCODE_AWAIT);
 	append(p_operand);
@@ -1855,6 +1892,7 @@ void GDScriptByteCodeGenerator::write_return(const Address &p_return_value) {
 				append(get_constant_pos(element_type.script_type) | (GDScriptFunction::ADDR_TYPE_CONSTANT << GDScriptFunction::ADDR_BITS));
 				append(element_type.builtin_type);
 				append(element_type.native_type);
+				append(function->return_type.is_nullable ? 1 : 0);
 			} else if (function->return_type.kind == GDScriptDataType::BUILTIN && function->return_type.builtin_type == Variant::DICTIONARY &&
 					function->return_type.has_container_element_types()) {
 				// Typed dictionary.
@@ -1868,11 +1906,17 @@ void GDScriptByteCodeGenerator::write_return(const Address &p_return_value) {
 				append(key_type.native_type);
 				append(value_type.builtin_type);
 				append(value_type.native_type);
-			} else if (function->return_type.kind == GDScriptDataType::BUILTIN && p_return_value.type.kind == GDScriptDataType::BUILTIN && function->return_type.builtin_type != p_return_value.type.builtin_type) {
-				// Add conversion.
+				append(function->return_type.is_nullable ? 1 : 0);
+			} else if (function->return_type.kind == GDScriptDataType::BUILTIN && p_return_value.type.kind == GDScriptDataType::BUILTIN &&
+					(function->return_type.builtin_type != p_return_value.type.builtin_type ||
+							// Equal builtin types don't imply compatible nullability: a nullable
+							// source may hold `null`, which the non-null return type must reject.
+							(p_return_value.type.is_nullable && !function->return_type.is_nullable))) {
+				// Add conversion (also enforces the non-null return contract).
 				append_opcode(GDScriptFunction::OPCODE_RETURN_TYPED_BUILTIN);
 				append(p_return_value);
 				append(function->return_type.builtin_type);
+				append(function->return_type.is_nullable ? 1 : 0);
 			} else {
 				// Just assign.
 				append_opcode(GDScriptFunction::OPCODE_RETURN);
@@ -1892,6 +1936,7 @@ void GDScriptByteCodeGenerator::write_return(const Address &p_return_value) {
 					append(get_constant_pos(element_type.script_type) | (GDScriptFunction::ADDR_TYPE_CONSTANT << GDScriptFunction::ADDR_BITS));
 					append(element_type.builtin_type);
 					append(element_type.native_type);
+					append(function->return_type.is_nullable ? 1 : 0);
 				} else if (function->return_type.builtin_type == Variant::DICTIONARY && function->return_type.has_container_element_types()) {
 					const GDScriptDataType &key_type = function->return_type.get_container_element_type_or_variant(0);
 					const GDScriptDataType &value_type = function->return_type.get_container_element_type_or_variant(1);
@@ -1903,10 +1948,12 @@ void GDScriptByteCodeGenerator::write_return(const Address &p_return_value) {
 					append(key_type.native_type);
 					append(value_type.builtin_type);
 					append(value_type.native_type);
+					append(function->return_type.is_nullable ? 1 : 0);
 				} else {
 					append_opcode(GDScriptFunction::OPCODE_RETURN_TYPED_BUILTIN);
 					append(p_return_value);
 					append(function->return_type.builtin_type);
+					append(function->return_type.is_nullable ? 1 : 0);
 				}
 			} break;
 			case GDScriptDataType::NATIVE: {
@@ -1966,7 +2013,9 @@ void GDScriptByteCodeGenerator::clear_address(const Address &p_address) {
 	// Do not check `is_local_dirty()` here! Always clear the address since the codegen doesn't track the compiler.
 	// Also, this method is used to initialize local variables of built-in types, since they cannot be `null`.
 
-	if (p_address.type.has_type && p_address.type.kind == GDScriptDataType::BUILTIN) {
+	if (p_address.type.is_nullable) {
+		write_assign_null(p_address);
+	} else if (p_address.type.has_type && p_address.type.kind == GDScriptDataType::BUILTIN) {
 		switch (p_address.type.builtin_type) {
 			case Variant::BOOL:
 				write_assign_false(p_address);

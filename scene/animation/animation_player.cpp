@@ -186,21 +186,21 @@ void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, f
 		} break;
 
 		case Animation::LOOP_LINEAR: {
-			if (Animation::is_less_approx(next_pos, start) && Animation::is_greater_or_equal_approx(cd.pos, start)) {
+			if (next_pos < start && Animation::is_greater_or_equal_approx(cd.pos, start)) {
 				looped_flag = Animation::LOOPED_FLAG_START;
 			}
-			if (Animation::is_greater_approx(next_pos, end) && Animation::is_less_or_equal_approx(cd.pos, end)) {
+			if (next_pos > end && Animation::is_less_or_equal_approx(cd.pos, end)) {
 				looped_flag = Animation::LOOPED_FLAG_END;
 			}
 			next_pos = Math::fposmod(next_pos - start, end - start) + start;
 		} break;
 
 		case Animation::LOOP_PINGPONG: {
-			if (Animation::is_less_approx(next_pos, start) && Animation::is_greater_or_equal_approx(cd.pos, start)) {
+			if (next_pos < start && Animation::is_greater_or_equal_approx(cd.pos, start)) {
 				cd.speed_scale *= -1.0;
 				looped_flag = Animation::LOOPED_FLAG_START;
 			}
-			if (Animation::is_greater_approx(next_pos, end) && Animation::is_less_or_equal_approx(cd.pos, end)) {
+			if (next_pos > end && Animation::is_less_or_equal_approx(cd.pos, end)) {
 				cd.speed_scale *= -1.0;
 				looped_flag = Animation::LOOPED_FLAG_END;
 			}

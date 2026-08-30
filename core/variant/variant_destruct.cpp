@@ -51,6 +51,7 @@ void Variant::_register_variant_destructors() {
 	add_destructor<VariantDestruct<NodePath>>();
 	add_destructor<VariantDestruct<Callable>>();
 	add_destructor<VariantDestruct<Signal>>();
+	add_destructor<VariantDestruct<Struct>>();
 	add_destructor<VariantDestruct<Dictionary>>();
 	add_destructor<VariantDestruct<Array>>();
 	add_destructor<VariantDestruct<PackedByteArray>>();

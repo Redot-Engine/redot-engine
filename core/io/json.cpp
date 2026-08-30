@@ -41,6 +41,8 @@
 #include "core/config/engine.h"
 #include "core/object/script_language.h"
 #include "core/variant/container_type_validate.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
 
 const char *JSON::tk_name[TK_MAX] = {
 	"'{'",
@@ -1023,6 +1025,49 @@ Variant JSON::_from_native(const Variant &p_variant, bool p_full_objects, int p_
 			RETURN_ARGS;
 		} break;
 
+		case Variant::STRUCT: {
+			ERR_FAIL_COND_V_MSG(p_depth > Variant::MAX_RECURSION_DEPTH, Variant(), "Variant is too deep. Bailing.");
+			const Struct s = p_variant;
+			Ref<StructInfo> info = s.get_info();
+			Dictionary ret;
+			ret[TYPE] = "Struct";
+			if (info.is_null()) {
+				return ret;
+			}
+
+			Dictionary schema;
+			schema["version"] = StructInfo::SERIALIZATION_VERSION;
+			schema["id"] = String(info->get_logical_type_id());
+			Array fields_arr;
+			Array defaults_arr;
+			for (int i = 0; i < info->get_field_count(); i++) {
+				Dictionary fd;
+				fd["name"] = String(info->get_field_name(i));
+				fd["type"] = String(StructInfo::type_to_token(info->get_field_type(i)));
+				fd["typed"] = info->is_field_typed(i);
+				if (info->get_field_class_name(i) != StringName()) {
+					fd["class_name"] = String(info->get_field_class_name(i));
+				}
+				if (info->get_field_struct_type_id(i) != StringName()) {
+					fd["struct_type_id"] = String(info->get_field_struct_type_id(i));
+				}
+				fields_arr.push_back(fd);
+				defaults_arr.push_back(_from_native(Struct::_make_serializable(info->_get_field_default_raw(i)), p_full_objects, p_depth + 1));
+			}
+			schema["fields"] = fields_arr;
+			schema["defaults"] = defaults_arr;
+
+			Array values_arr;
+			for (int i = 0; i < s.get_field_count(); i++) {
+				values_arr.push_back(_from_native(s.get_member_serializable(i), p_full_objects, p_depth + 1));
+			}
+
+			Dictionary args;
+			args["schema"] = schema;
+			args["values"] = values_arr;
+			ret[ARGS] = args;
+			return ret;
+		} break;
 		case Variant::VARIANT_MAX: {
 			// Nothing to do.
 		} break;
@@ -1068,6 +1113,23 @@ static bool _decode_container_type(const Dictionary &p_dict, const String &p_key
 	}
 
 	ERR_FAIL_V_MSG(false, vformat(R"(Invalid type "%s".)", type_name));
+}
+
+static bool _json_decode_ok(const Variant &p_src, const Variant &p_decoded) {
+	if (p_decoded.get_type() != Variant::NIL) {
+		return true;
+	}
+	if (p_src.get_type() == Variant::NIL) {
+		return true;
+	}
+	if (p_src.get_type() == Variant::DICTIONARY) {
+		const Dictionary d = p_src;
+		const String type_name = d.get("type", String());
+		if (Variant::get_type_by_name(type_name) == Variant::OBJECT || ClassDB::class_exists(type_name)) {
+			return true;
+		}
+	}
+	return false;
 }
 
 Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_depth) {
@@ -1325,7 +1387,10 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 					ERR_FAIL_COND_V_MSG(p_depth > Variant::MAX_RECURSION_DEPTH, ret, "Variant is too deep. Bailing.");
 
 					for (int i = 0; i < args.size() / 2; i++) {
-						ret[_to_native(args[i * 2 + 0], p_allow_objects, p_depth + 1)] = _to_native(args[i * 2 + 1], p_allow_objects, p_depth + 1);
+						const Variant k = _to_native(args[i * 2 + 0], p_allow_objects, p_depth + 1);
+						const Variant v = _to_native(args[i * 2 + 1], p_allow_objects, p_depth + 1);
+						ERR_FAIL_COND_V_MSG(!_json_decode_ok(args[i * 2 + 0], k) || !_json_decode_ok(args[i * 2 + 1], v), Variant(), "Failed to decode a nested dictionary entry.");
+						ret[k] = v;
 					}
 
 					return ret;
@@ -1350,7 +1415,9 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 					size_t args_size = args.size();
 					ret.resize(args_size);
 					for (size_t i = 0; i < args_size; i++) {
-						ret[i] = _to_native(args[i], p_allow_objects, p_depth + 1);
+						const Variant e = _to_native(args[i], p_allow_objects, p_depth + 1);
+						ERR_FAIL_COND_V_MSG(!_json_decode_ok(args[i], e), Variant(), "Failed to decode a nested array element.");
+						ret[i] = e;
 					}
 
 					return ret;
@@ -1477,6 +1544,61 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 					return arr;
 				} break;
 
+				case Variant::STRUCT: {
+					ERR_FAIL_COND_V_MSG(p_depth > Variant::MAX_RECURSION_DEPTH, Variant(), "Variant is too deep. Bailing.");
+					if (!dict.has(ARGS)) {
+						return Struct();
+					}
+					ERR_FAIL_COND_V_MSG(dict.get(ARGS, Variant()).get_type() != Variant::DICTIONARY, Variant(), R"(Struct "args" must be a Dictionary.)");
+					Dictionary args = dict[ARGS];
+					ERR_FAIL_COND_V_MSG(args.get("schema", Variant()).get_type() != Variant::DICTIONARY, Variant(), R"(Struct is missing a Dictionary "schema".)");
+					Dictionary schema = args["schema"];
+					ERR_FAIL_COND_V_MSG(uint32_t(int64_t(schema.get("version", 0))) != StructInfo::SERIALIZATION_VERSION, Variant(), "Unsupported struct schema version.");
+					ERR_FAIL_COND_V_MSG(schema.get("id", Variant()).get_type() != Variant::STRING, Variant(), "Struct schema id must be a String.");
+					const String id = schema["id"];
+					ERR_FAIL_COND_V_MSG(id.is_empty(), Variant(), "Struct schema has an empty logical id.");
+					ERR_FAIL_COND_V_MSG(schema.get("fields", Variant()).get_type() != Variant::ARRAY, Variant(), R"(Struct "fields" must be an Array.)");
+					ERR_FAIL_COND_V_MSG(schema.get("defaults", Variant()).get_type() != Variant::ARRAY, Variant(), R"(Struct "defaults" must be an Array.)");
+					Array fields_arr = schema["fields"];
+					Array defaults_arr = schema["defaults"];
+					ERR_FAIL_COND_V_MSG(defaults_arr.size() != fields_arr.size(), Variant(), "Struct defaults do not match its field count.");
+
+					StructInfoBuilder b;
+					b.set_logical_type_id(StringName(id));
+					for (int i = 0; i < fields_arr.size(); i++) {
+						ERR_FAIL_COND_V_MSG(fields_arr[i].get_type() != Variant::DICTIONARY, Variant(), "Struct field descriptor must be a Dictionary.");
+						Dictionary fd = fields_arr[i];
+						StructInfo::Field f;
+						f.name = StringName(String(fd.get("name", String())));
+						f.type = StructInfo::type_from_token(String(fd.get("type", "nil")));
+						ERR_FAIL_COND_V_MSG(f.type == Variant::VARIANT_MAX, Variant(), "Unknown struct field type token.");
+						f.is_typed = bool(fd.get("typed", false));
+						if (fd.has("class_name")) {
+							f.class_name = StringName(String(fd["class_name"]));
+						}
+						if (fd.has("struct_type_id")) {
+							f.struct_type_id = StringName(String(fd["struct_type_id"]));
+						}
+						const Variant def_src = defaults_arr[i];
+						f.default_value = _to_native(def_src, p_allow_objects, p_depth + 1);
+						ERR_FAIL_COND_V_MSG(!_json_decode_ok(def_src, f.default_value), Variant(), "Failed to decode a nested struct default.");
+						b.add_field(f);
+					}
+					Ref<StructInfo> info = b.build();
+					ERR_FAIL_COND_V_MSG(info.is_null(), Variant(), "Failed to rebuild StructInfo from JSON.");
+
+					Struct s(info);
+					ERR_FAIL_COND_V_MSG(args.get("values", Variant()).get_type() != Variant::ARRAY, Variant(), R"(Struct "values" must be an Array.)");
+					Array values_arr = args["values"];
+					ERR_FAIL_COND_V_MSG(values_arr.size() != s.get_field_count(), Variant(), "Struct value count does not match its field count.");
+					for (int i = 0; i < values_arr.size(); i++) {
+						const Variant val_src = values_arr[i];
+						const Variant val = _to_native(val_src, p_allow_objects, p_depth + 1);
+						ERR_FAIL_COND_V_MSG(!_json_decode_ok(val_src, val), Variant(), "Failed to decode a nested struct value.");
+						ERR_FAIL_COND_V_MSG(!s.try_set_member(i, val), Variant(), "Struct value incompatible with its field schema.");
+					}
+					return s;
+				} break;
 				case Variant::VARIANT_MAX: {
 					// Nothing to do.
 				} break;
@@ -1513,6 +1635,7 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 				for (int i = 0; i < props.size() / 2; i++) {
 					const StringName name = props[i * 2 + 0];
 					const Variant value = _to_native(props[i * 2 + 1], p_allow_objects, p_depth + 1);
+					ERR_FAIL_COND_V_MSG(!_json_decode_ok(props[i * 2 + 1], value), Variant(), "Failed to decode a nested object property.");
 
 					if (name == CoreStringName(script) && value.get_type() != Variant::NIL) {
 						const String path = value;
@@ -1544,7 +1667,9 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 			size_t arr_size = arr.size();
 			ret.resize(arr_size);
 			for (size_t i = 0; i < arr_size; i++) {
-				ret[i] = _to_native(arr[i], p_allow_objects, p_depth + 1);
+				const Variant e = _to_native(arr[i], p_allow_objects, p_depth + 1);
+				ERR_FAIL_COND_V_MSG(!_json_decode_ok(arr[i], e), Variant(), "Failed to decode a nested array element.");
+				ret[i] = e;
 			}
 
 			return ret;

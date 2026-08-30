@@ -78,6 +78,12 @@ class ScriptServer {
 	static HashMap<StringName, Vector<StringName>> inheriters_cache;
 	static bool inheriters_cache_dirty;
 
+	struct GlobalScriptStruct {
+		StringName language;
+		String path;
+	};
+	static HashMap<StringName, GlobalScriptStruct> global_structs;
+
 public:
 	static ScriptEditRequestFunction edit_request_func;
 
@@ -106,9 +112,18 @@ public:
 	static StringName get_global_class_native_base(const String &p_class);
 	static bool is_global_class_abstract(const String &p_class);
 	static bool is_global_class_tool(const String &p_class);
-	static void get_global_class_list(List<StringName> *r_global_classes);
+	static void get_global_class_list(LocalVector<StringName> &r_global_classes);
 	static void get_inheriters_list(const StringName &p_base_type, List<StringName> *r_classes);
 	static void save_global_classes();
+
+	static void global_structs_clear();
+	static void add_global_struct(const StringName &p_struct, const StringName &p_language, const String &p_path);
+	static void remove_global_struct_by_path(const String &p_path);
+	static bool is_global_struct(const StringName &p_struct);
+	static StringName get_global_struct_language(const StringName &p_struct);
+	static String get_global_struct_path(const StringName &p_struct);
+	static void get_global_struct_list(List<StringName> *r_global_structs);
+	static void save_global_structs();
 
 	static Vector<Ref<ScriptBacktrace>> capture_script_backtraces(bool p_include_variables = false);
 
@@ -471,6 +486,7 @@ public:
 
 	virtual bool handles_global_class_type(const String &p_type) const { return false; }
 	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_is_abstract = nullptr, bool *r_is_tool = nullptr) const { return String(); }
+	virtual void get_global_struct_names(const String &p_path, List<StringName> *r_names) const {}
 
 	virtual ~ScriptLanguage() {}
 };

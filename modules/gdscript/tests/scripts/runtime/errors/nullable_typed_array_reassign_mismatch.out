@@ -1,0 +1,2 @@
+GDTEST_RUNTIME_ERROR
+>> SCRIPT ERROR at runtime/errors/nullable_typed_array_reassign_mismatch.gd:4 on test(): Trying to assign an array of type "Array" to a variable of type "Array[int]".
