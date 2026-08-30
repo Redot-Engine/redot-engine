@@ -142,6 +142,15 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 		return;
 	}
 
+	// The slope tool must not be used until both points have been picked
+	PackedVector3Array gradient_points = _brush_data["gradient_points"];
+	if (map_type == TYPE_HEIGHT && _operation == GRADIENT) {
+		if (gradient_points[0].is_equal_approx(gradient_points[1])) {
+			LOG(ERROR, "The slope tool requires two distinct points to be picked");
+			return;
+		}
+	}
+
 	int region_size = _terrain->get_region_size();
 	Vector2i region_vsize = Vector2i(region_size, region_size);
 
@@ -198,7 +207,6 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 	real_t scale = _brush_data["scale"];
 
 	real_t gamma = _brush_data["gamma"];
-	PackedVector3Array gradient_points = _brush_data["gradient_points"];
 
 	real_t randf = VariantUtilityFunctions::randf();
 	real_t rot = randf * std::numbers::pi_v<real_t> * real_t{ _brush_data["jitter"] };
