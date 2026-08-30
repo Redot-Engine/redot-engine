@@ -101,6 +101,7 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 
 	GDScriptDataType result;
 	result.has_type = true;
+	result.is_nullable = p_datatype.is_nullable;
 
 	switch (p_datatype.kind) {
 		case GDScriptParser::DataType::VARIANT: {
@@ -705,13 +706,16 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 								}
 								if (is_awaited) {
 									gen->write_call_async(result, base, call->function_name, arguments);
-								} else if (base.type.has_type && base.type.kind != GDScriptDataType::BUILTIN) {
-									// Native method, use faster path.
+								} else if (base.type.has_type &&
+										(base.type.kind == GDScriptDataType::NATIVE || base.type.kind == GDScriptDataType::SCRIPT || base.type.kind == GDScriptDataType::GDSCRIPT)) {
+									// Native method, use faster path when the receiver has a concrete native base type.
 									StringName class_name;
 									if (base.type.kind == GDScriptDataType::NATIVE) {
 										class_name = base.type.native_type;
-									} else {
-										class_name = base.type.native_type == StringName() ? base.type.script_type->get_instance_base_type() : base.type.native_type;
+									} else if (base.type.native_type != StringName()) {
+										class_name = base.type.native_type;
+									} else if (base.type.script_type != nullptr) {
+										class_name = base.type.script_type->get_instance_base_type();
 									}
 									if (ClassDB::class_exists(class_name) && ClassDB::has_method(class_name, call->function_name)) {
 										MethodBind *method = ClassDB::get_method(class_name, call->function_name);
@@ -725,7 +729,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 									} else {
 										gen->write_call(result, base, call->function_name, arguments);
 									}
-								} else if (base.type.has_type && base.type.kind == GDScriptDataType::BUILTIN) {
+								} else if (base.type.has_type && !base.type.is_nullable && base.type.kind == GDScriptDataType::BUILTIN) {
 									gen->write_call_builtin_type(result, base, base.type.builtin_type, call->function_name, arguments);
 								} else {
 									gen->write_call(result, base, call->function_name, arguments);
@@ -2395,7 +2399,7 @@ GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_
 			}
 
 			GDScriptDataType field_type = _gdtype_from_datatype(field->get_datatype(), codegen.script);
-			if (field_type.has_type) {
+			if (field_type.has_type && !field_type.is_nullable) {
 				codegen.generator->write_newline(field->start_line);
 
 				GDScriptCodeGenerator::Address dst_address(GDScriptCodeGenerator::Address::MEMBER, codegen.script->member_indices[field->identifier->name].index, field_type);

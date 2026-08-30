@@ -71,6 +71,9 @@ bool GDScriptDataType::is_type(const Variant &p_variant, bool p_allow_implicit_c
 			break;
 		case BUILTIN: {
 			Variant::Type var_type = p_variant.get_type();
+			if (is_nullable && var_type == Variant::NIL) {
+				return true;
+			}
 			bool valid = builtin_type == var_type;
 			if (valid && builtin_type == Variant::ARRAY && has_container_element_type(0)) {
 				Array array = p_variant;

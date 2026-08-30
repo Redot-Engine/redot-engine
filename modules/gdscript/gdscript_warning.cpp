@@ -111,6 +111,9 @@ String GDScriptWarning::get_message() const {
 		case UNSAFE_CALL_ARGUMENT:
 			CHECK_SYMBOLS(5);
 			return vformat(R"*(The argument %s of the %s "%s()" requires the subtype "%s" but the supertype "%s" was provided.)*", symbols[0], symbols[1], symbols[2], symbols[3], symbols[4]);
+		case UNSAFE_NULLABLE_ACCESS:
+			CHECK_SYMBOLS(1);
+			return vformat(R"(The value of type "%s" may be null; using it without a null check may fail at runtime.)", symbols[0]);
 		case UNSAFE_VOID_RETURN:
 			CHECK_SYMBOLS(2);
 			return vformat(R"*(The method "%s()" returns "void" but it's trying to return a call to "%s()" that can't be ensured to also be "void".)*", symbols[0], symbols[1]);
@@ -229,6 +232,7 @@ String GDScriptWarning::get_name_from_code(Code p_code) {
 		PNAME("UNSAFE_METHOD_ACCESS"),
 		PNAME("UNSAFE_CAST"),
 		PNAME("UNSAFE_CALL_ARGUMENT"),
+		PNAME("UNSAFE_NULLABLE_ACCESS"),
 		PNAME("UNSAFE_VOID_RETURN"),
 		PNAME("RETURN_VALUE_DISCARDED"),
 		PNAME("STATIC_CALLED_ON_INSTANCE"),

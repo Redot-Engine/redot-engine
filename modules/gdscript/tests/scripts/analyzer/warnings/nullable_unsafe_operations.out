@@ -1,0 +1,9 @@
+GDTEST_OK
+~~ WARNING at line 3: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 4: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 6: (UNSAFE_NULLABLE_ACCESS) The value of type "Vector2?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 8: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+6
+-5
+1.0
+10

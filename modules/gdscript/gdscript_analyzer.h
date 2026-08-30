@@ -43,6 +43,7 @@
 
 #include "core/object/object.h"
 #include "core/object/ref_counted.h"
+#include "core/templates/local_vector.h"
 
 class GDScriptAnalyzer {
 	GDScriptParser *parser = nullptr;
@@ -70,6 +71,13 @@ class GDScriptAnalyzer {
 	//Traits are new and still experimental. Emit a warning once during analysis if their usage is detected.
 	bool experimental_traits_warned = false; // @todo: remove experimental tag in 27.1-rc.1
 #endif
+
+	LocalVector<const void *> narrowed_non_null;
+	bool is_narrowed_non_null(const void *p_source) const;
+	void invalidate_narrowing(const void *p_source);
+	static const void *identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression);
+	static void collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<const void *> &r_targets);
+
 	/// @name Tests for detecting invalid overloading of script members
 	/// @{
 	static _FORCE_INLINE_ bool has_member_name_conflict_in_script_class(const StringName &p_name, const GDScriptParser::ClassNode *p_current_class_node, const GDScriptParser::Node *p_member);
