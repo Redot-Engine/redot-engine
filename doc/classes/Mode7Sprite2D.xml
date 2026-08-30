@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Mode7Sprite2D" inherits="Sprite2D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Extends Sprite2D to offer SNES Mode 7-style affine transformations per scanline.
+	</brief_description>
+	<description>
+		This class extends [Sprite2D] to replicate the Super Nintendo's Mode 7 graphics capabilities, which allowed affine transformations to be controlled per scanline.
+		This enabled the iconic perspective projection effect used in games like [url=https://en.wikipedia.org/wiki/Super_Mario_World]Super Mario World[/url] and [url=https://en.wikipedia.org/wiki/F-Zero]F-Zero[/url].
+
+		"Scanlines" were just how old televisions drew images - horizontal lines from the top down.  The term is used in this class in deference to the Super Nintendo
+		behavior it's designed to reproduce, but in modern parlance a UV.y "band" is what this loosely equates to.
+		The "per-scanline" effect is driven by an array of [Mode7ScanlineOverride] resources ([member mode7_scanline_overrides]), each encoding a 2x2 affine matrix (rotation, scale, skew), a translation offset,
+		and a pivot point for one horizontal band of the output. The shader interpolates between adjacent entries per-scanline using None, Lerp, or Projection modes.
+		Most of the time, you'll want Lerp or Projection.  These interpolate between the values you set in each scanline override object in the array.
+		This is the mechanism by which it's not necessary to specify each individual scanline :).
+
+		Global rotation, pivot, and offset are applied after all per-scanline transforms.
+		Horizon masks cull transparent regions at the top or bottom of the sprite with optional tilt angles, matching an aircraft attitude indicator.
+		A region follow target lets the Mode 7 viewport track another [Node2D] each physics frame.  This can be set in code, but moving an object and having the
+		viewing area "follow" that object, is a useful convenience.
+
+		[b]How it works:[/b] One [Mode7Sprite2D] instance replaces the standard Sprite2D material with a custom canvas_item shader.
+		The shader reads per-scanline transforms from a 3-pixel-wide texture (transform matrix, offset/pivot, and modulate).
+		This approach allows intuitive property-based control while maintaining GPU-efficient per-fragment execution.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="force_update_follow_cache">
+			<return type="void" />
+			<description>
+				Re-resolve the follow target from [member mode7_region_follow_target] and store it in the internal follow cache. Useful after a scene reload when you need to refresh the tracked target without waiting for [constant Node.NOTIFICATION_ENTER_TREE].
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="mode7_bottom_horizon_mask_amount" type="float" setter="set_mode7_bottom_horizon_mask_amount" getter="get_mode7_bottom_horizon_mask_amount" default="0.0">
+			Fraction (0..1) of the sprite to make transparent from the bottom up. 0 means no masking visible; 1 hides the entire sprite. Works independently of the top mask — both can be active simultaneously.
+		</member>
+		<member name="mode7_bottom_horizon_tilt" type="float" setter="set_mode7_bottom_horizon_tilt" getter="get_mode7_bottom_horizon_tilt" default="0.0">
+			Tilt angle in degrees that rotates the bottom horizon line around the center like an aircraft attitude indicator. Positive values tilt clockwise (right side drops). Independent of [member mode7_bottom_horizon_mask_amount] — always active and influences the horizon angle regardless of masking.
+		</member>
+		<member name="mode7_enabled" type="bool" setter="set_mode7_enabled" getter="is_mode7_enabled" default="false">
+			Enable or disable Mode 7 shader effects. When [code]false[/code], the sprite renders normally with no overhead from the custom material.
+			Acts as a master toggle — all other [code]mode7_[/code] properties only take effect when this is [code]true[/code].
+		</member>
+		<member name="mode7_global_offset" type="Vector2" setter="set_mode7_global_offset" getter="get_mode7_global_offset" default="Vector2(0, 0)">
+			Additive offset applied after all per-scanline transforms and global rotation. The offset is rotated by the same angle so it shifts in the global (screen) frame rather than the warped UV frame, giving a uniform screen-space translation regardless of per-scanline scaling.
+		</member>
+		<member name="mode7_global_pivot" type="Vector2" setter="set_mode7_global_pivot" getter="get_mode7_global_pivot" default="Vector2(0.5, 0.5)">
+			Pivot point in normalized [lb]0..1[rb] UV space around which [member mode7_global_rotation] is applied. Defaults to center of the texture. Used for both global rotation and per-scanline transform anchoring.
+		</member>
+		<member name="mode7_global_rotation" type="float" setter="set_mode7_global_rotation" getter="get_mode7_global_rotation" default="0.0">
+			Global rotation angle in degrees, applied after all per-scanline transforms. Rotates the entire warped image around [member mode7_global_pivot].
+			Valid range is -360 to 360 degrees.
+		</member>
+		<member name="mode7_interpolation" type="int" setter="set_mode7_interpolation" getter="get_mode7_interpolation" enum="Mode7Sprite2D.Mode7InterpolationMode" default="0">
+			Determines how the shader blends the elements in the scanline override array across the sprite height. Choose based on your effect: [constant INTERPOLATION_NONE] for per-scanline precision, [constant INTERPOLATION_LERP] for smooth transitions between any number of overrides, or [constant INTERPOLATION_PROJECTION] for perspective with exactly 2 entries.
+		</member>
+		<member name="mode7_override_region_aspect" type="bool" setter="set_mode7_override_region_aspect" getter="is_mode7_override_region_aspect" default="true">
+			When [code]true[/code] (default), non-square region rects have their rotations corrected to behave as if the region were square. This prevents rotations from skewing into shears when using a cropped region. Set to [code]false[/code] if you want raw, uncorrected UV behavior for creative warping effects.
+		</member>
+		<member name="mode7_projection_aspect_ratio" type="float" setter="set_mode7_projection_aspect_ratio" getter="get_mode7_projection_aspect_ratio" default="1.0">
+			Horizontal-to-vertical scale ratio for the perspective. 1.0 is uniform (classic Mode 7).
+			0.5 makes the horizontal scale half the vertical; values above 1.0 reverse the imbalance.
+			Useful for compensating non-square source art. Only applies in Projection interpolation mode. Recommended: 0.5–1.5, default 1.0.
+		</member>
+		<member name="mode7_projection_gamma" type="float" setter="set_mode7_projection_gamma" getter="get_mode7_projection_gamma" default="1.0">
+			Gamma/power exponent for the inverse-depth curve. 1.0 is the classic linear 1/d progression.
+			Values below 1.0 soften the falloff so distant scanlines keep more perspective influence;
+			values above 1.0 sharpen it so the aggressive warp concentrates near the close anchor.
+			Only applies in Projection interpolation mode. Recommended: 0.5–2.0, default 1.0.
+		</member>
+		<member name="mode7_projection_pixel_aspect" type="float" setter="set_mode7_projection_pixel_aspect" getter="get_mode7_projection_pixel_aspect" default="1.0">
+			Stretches/compresses the vertical coordinate before the inverse-depth calculation,
+			correcting for or exaggerating non-square display pixels (e.g. NTSC 8:7 ≈ 1.125).
+			Only applies in Projection interpolation mode. Recommended: 0.875–1.125, default 1.0 (square pixels).
+		</member>
+		<member name="mode7_projection_strength" type="float" setter="set_mode7_projection_strength" getter="get_mode7_projection_strength" default="1.0">
+			Blends between a flat, unwarped image (0.0) and the full inverse-depth projection (1.0).
+			Lets you dial the perspective intensity down without reshaping the curve.
+			Only applies in Projection interpolation mode. Recommended: 0.0–1.0, default 1.0.
+		</member>
+		<member name="mode7_region_follow_target" type="NodePath" setter="set_mode7_region_follow_target" getter="get_mode7_region_follow_target" default="NodePath(&quot;&quot;)">
+			Path to a [Node2D] target. When set, the sprite's [member Sprite2D.region_rect] shifts each physics frame so the Mode 7 viewport "follows" the target node while preserving its size and aspect ratio.
+			This creates the illusion of a moving camera or scrolling background. Only active when region mode is enabled on the sprite ([member Sprite2D.region_enabled] must be [code]true[/code]).
+		</member>
+		<member name="mode7_scanline_overrides" type="Mode7ScanlineOverride[]" setter="set_mode7_scanline_overrides" getter="get_mode7_scanline_overrides" default="[]">
+			Array of [Mode7ScanlineOverride] resources acting as anchors across the sprite height. Each entry defines a 2x2 affine matrix (rotation, scale, skew), a translation offset, and a pivot point, and the shader interpolates between adjacent entries for every output row (UV.y band).
+			When Mode 7 is enabled, a single default identity override is created automatically. Add more entries to interpolate between different transforms across the sprite height.
+		</member>
+		<member name="mode7_tiling" type="bool" setter="set_mode7_tiling" getter="is_mode7_tiling" default="false">
+			Whether out-of-bounds UV coordinates wrap (repeat) or become transparent. Enable this to make the texture tile seamlessly when the Mode 7 warp pushes UVs outside the [lb]0..1[rb] range.
+		</member>
+		<member name="mode7_top_horizon_mask_amount" type="float" setter="set_mode7_top_horizon_mask_amount" getter="get_mode7_top_horizon_mask_amount" default="0.0">
+			Fraction (0..1) of the sprite to make transparent from the top down. 0 means no masking visible; 1 hides the entire sprite. Works independently of the bottom mask — both can be active simultaneously.
+		</member>
+		<member name="mode7_top_horizon_tilt" type="float" setter="set_mode7_top_horizon_tilt" getter="get_mode7_top_horizon_tilt" default="0.0">
+			Tilt angle in degrees that rotates the top horizon line around the center like an aircraft attitude indicator. Positive values tilt clockwise (right side drops). Valid range is -360 to 360 degrees. Independent of [member mode7_top_horizon_mask_amount] — always active and influences the horizon angle regardless of masking.
+		</member>
+	</members>
+	<constants>
+		<constant name="INTERPOLATION_NONE" value="0" enum="Mode7InterpolationMode">
+			Nearest-neighbor: snap to this entry's transform for its UV band with no blending between rows. You typically only want this mode if you're scripting transformations for every scanline individually. For most cases, [constant INTERPOLATION_LERP] or [constant INTERPOLATION_PROJECTION] provides simpler and more intuitive control.
+		</constant>
+		<constant name="INTERPOLATION_LERP" value="1" enum="Mode7InterpolationMode">
+			Linear interpolation between adjacent entries in the override array. The shader uses standard lerping to blend transforms, pivots, and modulate colors across all intervening scanlines, creating smooth transitions regardless of how many overrides are in the array. Ideal for gradual effects like distance fog or terrain slope changes.
+		</constant>
+		<constant name="INTERPOLATION_PROJECTION" value="2" enum="Mode7InterpolationMode">
+			Perspective projection via per-scanline inverse-depth interpolation. Uses the first entry (index 0) as the top/horizon anchor and the last entry as the bottom/close anchor, mimicking how the SNES hardware projected a 3D plane onto the 2D screen. This mode requires exactly 2 scanline overrides in the array for correct behavior — additional entries are ignored.
+		</constant>
+	</constants>
+</class>
