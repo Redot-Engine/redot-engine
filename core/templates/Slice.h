@@ -41,7 +41,7 @@ struct Slice {
 	void *data;
 	size_t length;
 
-	static Slice nil;
+	static Slice nil = {};
 
 	constexpr static inline void *get(
 			Slice self,
@@ -107,12 +107,16 @@ inline void Slice::copy(Slice dst, Slice src) noexcept {
 	memmove(dst.data, src.data, n);
 }
 
+void Slice::set(Slice dst, uint8_t n) noexcept {
+	memset(dst.data, n, dst.length);
+}
+
 constexpr inline bool Slice::subslice(
 		Slice *dst,
 		Slice src,
 		size_t begin,
 		size_t count) noexcept {
-	bool ret = (src.length >= (begin + count));
+	bool ret = (src.length > begin) & (src.length >= (begin + count));
 	assert(dst);
 	if (ret) {
 		dst->data = &(((uint8_t *)src.data)[begin]);

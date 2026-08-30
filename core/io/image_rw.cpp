@@ -642,7 +642,7 @@ static IO::Error rgba4444ReadScalar(
 				b = 0;
 			}
 			if ((((block << 2) + i.col) < width) & ((row + i.row) < height)) {
-				colors->c[i.c][i.p] = (*Slice::at<uint16_t>(data, ((i.row * width) + (block << 2) + b))) >> (i.c << 2);
+				colors->c[i.c][i.p] = (((*Slice::at<uint16_t>(data, ((i.row * width) + (block << 2) + b))) >> (i.c << 2)) & 0xFF) / 15.0;
 				b += 1;
 			}
 		}
