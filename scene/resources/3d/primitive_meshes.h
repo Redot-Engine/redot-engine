@@ -40,7 +40,7 @@
 
 #include "scene/resources/font.h"
 #include "scene/resources/mesh.h"
-#include "servers/text_server.h"
+#include "servers/text/text_server.h"
 
 /// @todo Probably should change a few integers to unsigned integers...
 

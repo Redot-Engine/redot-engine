@@ -35,7 +35,7 @@
 #include "core/version.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/3d/world_3d.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 #include "logger.h"
 #include "worldscape_3d.h"

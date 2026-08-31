@@ -37,7 +37,7 @@
  */
 
 #include "audio_effect_spectrum_analyzer.h"
-#include "servers/audio_server.h"
+#include "servers/audio/audio_server.h"
 
 /**
  * FFT routine, @copyright (C)1996 S.M.Bernsee. Sign = -1 is FFT, 1 is iFFT (inverse)

@@ -39,7 +39,7 @@
  */
 
 #include "servers/rendering/rendering_method.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 
 class RendererCanvasRender {
 public:

@@ -39,7 +39,7 @@
  */
 
 #include "core/object/ref_counted.h"
-#include "servers/physics_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 class CharacterBody2D;
 class PhysicsBody2D;
