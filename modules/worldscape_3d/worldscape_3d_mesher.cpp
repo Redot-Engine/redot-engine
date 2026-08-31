@@ -351,7 +351,7 @@ void WorldScape3DMesher::destroy() {
 }
 
 void WorldScape3DMesher::snap(const Vector3 &p_tracked_pos) {
-	IS_INIT(VOID);
+	IS_INIT(WS3D_RETURN_VOID);
 	const real_t mesh_density = _terrain->get_vertex_spacing();
 	Vector3 pos = Vector3{ 0.f, 0.f, 0.f };
 
@@ -429,7 +429,7 @@ void WorldScape3DMesher::snap(const Vector3 &p_tracked_pos) {
 
 // Iterates over every instance of every mesh and updates all properties.
 void WorldScape3DMesher::update() {
-	IS_INIT(VOID);
+	IS_INIT(WS3D_RETURN_VOID);
 	if (!_terrain->is_inside_world()) {
 		LOG(DEBUG, "WorldScape3D's world3D is null");
 		return;
@@ -479,7 +479,7 @@ void WorldScape3DMesher::update() {
 // Iterates over all meshes and updates their AABBs
 // All instances of each mesh inherit the updated AABB
 void WorldScape3DMesher::update_aabbs() {
-	IS_DATA_INIT(VOID);
+	IS_DATA_INIT(WS3D_RETURN_VOID);
 	real_t cull_margin = _terrain->get_cull_margin();
 	Vector2 height_range = _terrain->get_data()->get_height_range();
 	height_range.y += Math::abs(height_range.x);

@@ -67,11 +67,7 @@
 #define ASSERT(cond, ret)
 #endif
 
-#ifdef VOID
-#undef VOID
-#endif
-
-#define VOID // a return value for void, to avoid compiler warnings
+#define WS3D_RETURN_VOID // Empty return expression for validation macros.
 
 #define IS_INIT(ret) \
 	if (!_terrain) { \

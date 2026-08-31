@@ -430,7 +430,7 @@ String WorldScape3DMaterial::_inject_editor_code(const String &p_shader) const {
 }
 
 void WorldScape3DMaterial::_update_shader() {
-	IS_INIT(VOID);
+	IS_INIT(WS3D_RETURN_VOID);
 	LOG(INFO, "Updating shader");
 	String code;
 	Ref<RegEx> regex;
@@ -521,7 +521,7 @@ void WorldScape3DMaterial::_update_shader() {
 }
 
 void WorldScape3DMaterial::_update_maps() {
-	IS_DATA_INIT(VOID);
+	IS_DATA_INIT(WS3D_RETURN_VOID);
 	LOG(EXTREME, "Updating maps in shader");
 
 	WorldScape3DData *data = _terrain->get_data();
@@ -570,7 +570,7 @@ void WorldScape3DMaterial::_update_maps() {
 
 // Called from signal connected in WorldScape3D, emitted by texture_list
 void WorldScape3DMaterial::_update_texture_arrays() {
-	IS_DATA_INIT(VOID);
+	IS_DATA_INIT(WS3D_RETURN_VOID);
 	Ref<WorldScape3DAssets> asset_list = _terrain->get_assets();
 	LOG(INFO, "Updating texture arrays in shader");
 	if (asset_list.is_null() || !asset_list->is_initialized()) {
@@ -892,7 +892,7 @@ Error WorldScape3DMaterial::save(const String &p_path) {
 // Add shader uniforms to properties. Hides uniforms that begin with _
 void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const {
 	Resource::_get_property_list(p_list);
-	IS_INIT(VOID);
+	IS_INIT(WS3D_RETURN_VOID);
 	List<PropertyInfo> param_list;
 	if (_shader_override_enabled && _shader_override.is_valid()) {
 		// Get shader parameters from custom shader
