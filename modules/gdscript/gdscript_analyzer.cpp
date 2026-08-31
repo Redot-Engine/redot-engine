@@ -4677,21 +4677,40 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 	p_call->set_datatype(call_type);
 }
 
-bool GDScriptAnalyzer::can_type_overlap_trait(const GDScriptParser::DataType &p_type, const GDScriptParser::DataType &p_trait) {
-	if (p_trait.kind != GDScriptParser::DataType::TRAIT || p_trait.class_type == nullptr) {
+GDScriptParser::DataType GDScriptAnalyzer::get_type_constraint_for_overlap(const GDScriptParser::DataType &p_type) {
+	if (p_type.kind != GDScriptParser::DataType::TRAIT || p_type.class_type == nullptr) {
+		return p_type;
+	}
+
+	if (p_type.class_type->extends_used) {
+		return p_type.class_type->base_type;
+	}
+
+	// Traits reuse the class default of RefCounted internally, but an unconstrained
+	// trait can be used by classes from any Object-derived inheritance branch.
+	GDScriptParser::DataType object_type;
+	object_type.type_source = GDScriptParser::DataType::ANNOTATED_INFERRED;
+	object_type.kind = GDScriptParser::DataType::NATIVE;
+	object_type.builtin_type = Variant::OBJECT;
+	object_type.native_type = SNAME("Object");
+	return object_type;
+}
+
+bool GDScriptAnalyzer::can_types_overlap(const GDScriptParser::DataType &p_left, const GDScriptParser::DataType &p_right) {
+	if (p_left.kind != GDScriptParser::DataType::TRAIT && p_right.kind != GDScriptParser::DataType::TRAIT) {
+		return false;
+	}
+	if (p_left.is_meta_type || p_right.is_meta_type) {
+		return false;
+	}
+	if ((p_left.kind == GDScriptParser::DataType::TRAIT && p_left.class_type == nullptr) ||
+			(p_right.kind == GDScriptParser::DataType::TRAIT && p_right.class_type == nullptr)) {
 		return false;
 	}
 
-	GDScriptParser::DataType type_constraint = p_type;
-	if (type_constraint.kind == GDScriptParser::DataType::TRAIT) {
-		if (type_constraint.class_type == nullptr) {
-			return false;
-		}
-		type_constraint = type_constraint.class_type->base_type;
-	}
-
-	const GDScriptParser::DataType &trait_constraint = p_trait.class_type->base_type;
-	return is_type_compatible(type_constraint, trait_constraint) || is_type_compatible(trait_constraint, type_constraint);
+	GDScriptParser::DataType left_constraint = get_type_constraint_for_overlap(p_left);
+	GDScriptParser::DataType right_constraint = get_type_constraint_for_overlap(p_right);
+	return is_type_compatible(left_constraint, right_constraint) || is_type_compatible(right_constraint, left_constraint);
 }
 
 void GDScriptAnalyzer::reduce_cast(GDScriptParser::CastNode *p_cast) {
@@ -4732,7 +4751,7 @@ void GDScriptAnalyzer::reduce_cast(GDScriptParser::CastNode *p_cast) {
 			if (operand_type.class_type && cast_type.class_type) {
 				is_using_trait = operand_type.class_type->traits_fqtn.has(cast_type.class_type->fqcn);
 			}
-			if (operand_type.is_hard_type() && !is_using_trait && !can_type_overlap_trait(operand_type, cast_type) && operand_type.kind != GDScriptParser::DataType::VARIANT) {
+			if (operand_type.is_hard_type() && !is_using_trait && !can_types_overlap(operand_type, cast_type) && operand_type.kind != GDScriptParser::DataType::VARIANT) {
 				push_error(vformat(R"(Invalid cast. Cannot convert from "%s" to "%s".)", p_cast->operand->get_datatype().to_string(), cast_type.to_string()), p_cast->cast_type);
 			} else {
 				mark_node_unsafe(p_cast);
@@ -4759,6 +4778,10 @@ void GDScriptAnalyzer::reduce_cast(GDScriptParser::CastNode *p_cast) {
 				valid = Variant::can_convert_strict(op_type.builtin_type, cast_type.builtin_type);
 			} else if (op_type.kind != GDScriptParser::DataType::BUILTIN && cast_type.kind != GDScriptParser::DataType::BUILTIN) {
 				valid = is_type_compatible(cast_type, op_type) || is_type_compatible(op_type, cast_type);
+				if (!valid && can_types_overlap(op_type, cast_type)) {
+					mark_node_unsafe(p_cast);
+					valid = true;
+				}
 			}
 
 			if (!valid) {
@@ -6225,7 +6248,7 @@ void GDScriptAnalyzer::reduce_type_test(GDScriptParser::TypeTestNode *p_type_tes
 				push_error(vformat(R"(Expression is of type "%s" so it can't be of type "%s".)", operand_type.to_string(), test_type.to_string()), p_type_test->operand);
 			}
 		} else {
-			if (operand_type.is_hard_type() && !is_using_trait && !can_type_overlap_trait(operand_type, test_type) && operand_type.kind != GDScriptParser::DataType::VARIANT) {
+			if (operand_type.is_hard_type() && !is_using_trait && !can_types_overlap(operand_type, test_type) && operand_type.kind != GDScriptParser::DataType::VARIANT) {
 				push_error(vformat(R"(Expression is of type "%s" so it can't be of type "%s".)", operand_type.to_string(), test_type.to_string()), p_type_test->operand);
 			} else if (!operand_type.is_hard_type()) {
 				// Only weakly-typed operands get their type source downgraded; a hard-typed
@@ -6249,7 +6272,7 @@ void GDScriptAnalyzer::reduce_type_test(GDScriptParser::TypeTestNode *p_type_tes
 		return;
 	}
 
-	if (!is_type_compatible(test_type, operand_type) && !is_type_compatible(operand_type, test_type)) {
+	if (!is_type_compatible(test_type, operand_type) && !is_type_compatible(operand_type, test_type) && !can_types_overlap(operand_type, test_type)) {
 		if (operand_type.is_hard_type()) {
 			push_error(vformat(R"(Expression is of type "%s" so it can't be of type "%s".)", operand_type.to_string(), test_type.to_string()), p_type_test->operand);
 		} else {
@@ -7298,17 +7321,37 @@ bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &
 			}
 			break;
 		case GDScriptParser::DataType::TRAIT:
+			if (p_source.is_meta_type) {
+				src_native = GDScript::get_class_static();
+			} else {
+				src_class = p_source.class_type;
+				if (src_class != nullptr && !src_class->extends_used) {
+					src_native = SNAME("Object");
+					break;
+				}
+				const GDScriptParser::ClassNode *base = src_class;
+				while (base != nullptr && base->base_type.kind == GDScriptParser::DataType::CLASS) {
+					base = base->base_type.class_type;
+				}
+				if (base != nullptr) {
+					src_native = base->base_type.native_type;
+					src_script = base->base_type.script_type;
+				}
+			}
+			break;
 		case GDScriptParser::DataType::CLASS:
 			if (p_source.is_meta_type) {
 				src_native = GDScript::get_class_static();
 			} else {
 				src_class = p_source.class_type;
 				const GDScriptParser::ClassNode *base = src_class;
-				while (base->base_type.kind == GDScriptParser::DataType::CLASS) {
+				while (base != nullptr && base->base_type.kind == GDScriptParser::DataType::CLASS) {
 					base = base->base_type.class_type;
 				}
-				src_native = base->base_type.native_type;
-				src_script = base->base_type.script_type;
+				if (base != nullptr) {
+					src_native = base->base_type.native_type;
+					src_script = base->base_type.script_type;
+				}
 			}
 			break;
 		case GDScriptParser::DataType::VARIANT:

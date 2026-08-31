@@ -177,7 +177,8 @@ class GDScriptAnalyzer {
 	/// This function determines which type is that (if any).
 	void update_dictionary_literal_element_type(GDScriptParser::DictionaryNode *p_dictionary, const GDScriptParser::DataType &p_key_element_type, const GDScriptParser::DataType &p_value_element_type);
 	bool is_type_compatible(const GDScriptParser::DataType &p_target, const GDScriptParser::DataType &p_source, bool p_allow_implicit_conversion = false, const GDScriptParser::Node *p_source_node = nullptr);
-	bool can_type_overlap_trait(const GDScriptParser::DataType &p_type, const GDScriptParser::DataType &p_trait);
+	GDScriptParser::DataType get_type_constraint_for_overlap(const GDScriptParser::DataType &p_type);
+	bool can_types_overlap(const GDScriptParser::DataType &p_left, const GDScriptParser::DataType &p_right);
 	void push_error(const String &p_message, const GDScriptParser::Node *p_origin = nullptr);
 	void mark_node_unsafe(const GDScriptParser::Node *p_node);
 	void downgrade_node_type_source(GDScriptParser::Node *p_node);
