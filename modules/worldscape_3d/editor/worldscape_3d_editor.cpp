@@ -610,7 +610,7 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 }
 
 void WorldScape3DEditor::_store_undo() {
-	IS_INIT_COND_MESG(!_terrain->get_plugin(), "_terrain isn't initialized, returning", VOID);
+	IS_INIT_COND_MESG(!_terrain->get_plugin(), "_terrain isn't initialized, returning", WS3D_RETURN_VOID);
 	if (_tool < 0 || _tool >= TOOL_MAX) {
 		return;
 	}
@@ -659,7 +659,7 @@ void WorldScape3DEditor::_store_undo() {
 }
 
 void WorldScape3DEditor::_apply_undo(const Dictionary &p_data) {
-	IS_INIT_COND_MESG(!_terrain->get_plugin(), "_terrain isn't initialized, returning", VOID);
+	IS_INIT_COND_MESG(!_terrain->get_plugin(), "_terrain isn't initialized, returning", WS3D_RETURN_VOID);
 	LOG(INFO, "Applying Undo/Redo data");
 
 	WorldScape3DData *data = _terrain->get_data();
@@ -824,7 +824,7 @@ void WorldScape3DEditor::set_tool(const Tool p_tool) {
 
 // Called on mouse click
 void WorldScape3DEditor::start_operation(const Vector3 &p_global_position) {
-	IS_DATA_INIT_MESG("Terrain isn't initialized", VOID);
+	IS_DATA_INIT_MESG("Terrain isn't initialized", WS3D_RETURN_VOID);
 	LOG(INFO, "Setting up undo snapshot");
 	_undo_data.clear();
 	_undo_data["region_locations"] = _terrain->get_data()->get_region_locations().duplicate();
@@ -841,7 +841,7 @@ void WorldScape3DEditor::start_operation(const Vector3 &p_global_position) {
 
 // Called on mouse movement with left mouse button down
 void WorldScape3DEditor::operate(const Vector3 &p_global_position, const real_t p_camera_direction) {
-	IS_DATA_INIT_MESG("Terrain isn't initialized", VOID);
+	IS_DATA_INIT_MESG("Terrain isn't initialized", WS3D_RETURN_VOID);
 	if (!_is_operating) {
 		LOG(ERROR, "Run start_operation() before operating");
 		return;
@@ -881,7 +881,7 @@ void WorldScape3DEditor::backup_region(const Ref<WorldScape3DRegion> &p_region) 
 
 // Called on left mouse button released
 void WorldScape3DEditor::stop_operation() {
-	IS_DATA_INIT_MESG("The terrain isn't initialized", VOID);
+	IS_DATA_INIT_MESG("The terrain isn't initialized", WS3D_RETURN_VOID);
 	// If undo was created and terrain actually modified, store it
 	LOG(DEBUG, "Backed up regions: ", _original_regions.size(), ", Edited regions: ", _edited_regions.size(),
 			", Added/Removed regions: ", _added_removed_locations.size());

@@ -189,7 +189,7 @@ void WorldScape3DAssets::_set_asset(const AssetType p_type, const int p_id, cons
 }
 
 void WorldScape3DAssets::_update_texture_files() {
-	IS_INIT(VOID);
+	IS_INIT(WS3D_RETURN_VOID);
 	LOG(DEBUG, "Received texture_changed signal");
 	_generated_albedo_textures.clear();
 	_generated_normal_textures.clear();
@@ -383,7 +383,7 @@ void WorldScape3DAssets::_update_texture_settings() {
 }
 
 void WorldScape3DAssets::_setup_thumbnail_creation() {
-	IS_INIT(VOID);
+	IS_INIT(WS3D_RETURN_VOID);
 	if (_scenario.is_valid()) {
 		return;
 	}
@@ -536,7 +536,7 @@ void WorldScape3DAssets::set_mesh_asset(const int p_id, const Ref<WorldScape3DMe
 	LOG(INFO, "Setting mesh id: ", p_id, ", ", p_mesh_asset);
 	_set_asset(TYPE_MESH, p_id, p_mesh_asset);
 	if (p_mesh_asset.is_null()) {
-		IS_INSTANCER_INIT(VOID);
+		IS_INSTANCER_INIT(WS3D_RETURN_VOID);
 		_terrain->get_instancer()->clear_by_mesh(p_id);
 	}
 	update_mesh_list();
@@ -634,7 +634,7 @@ void WorldScape3DAssets::create_mesh_thumbnails(const int p_id, const Vector2i &
 }
 
 void WorldScape3DAssets::update_mesh_list() {
-	IS_INSTANCER_INIT(VOID);
+	IS_INSTANCER_INIT(WS3D_RETURN_VOID);
 	LOG(INFO, "Updating mesh list");
 	if (_mesh_list.size() == 0) {
 		LOG(DEBUG, "Mesh list empty, clearing instancer and adding a default mesh");

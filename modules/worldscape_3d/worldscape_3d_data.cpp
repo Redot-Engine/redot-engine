@@ -895,7 +895,7 @@ void WorldScape3DData::calc_height_range(const bool p_recursive) {
  *	p_scale - Scale all height values by this factor (applied after offset)
  */
 void WorldScape3DData::import_images(const TypedArray<Image> &p_images, const Vector3 &p_global_position, const real_t p_offset, const real_t p_scale) {
-	IS_INIT_MESG("Data not initialized", VOID);
+	IS_INIT_MESG("Data not initialized", WS3D_RETURN_VOID);
 	if (p_images.size() != TYPE_MAX) {
 		LOG(ERROR, "p_images.size() is ", p_images.size(), ". It should be ", TYPE_MAX, " even if some Images are blank or null");
 		return;

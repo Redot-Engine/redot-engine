@@ -236,7 +236,7 @@ void WorldScape3DCollision::initialize(WorldScape3D *p_terrain) {
 }
 
 void WorldScape3DCollision::build() {
-	IS_DATA_INIT(VOID);
+	IS_DATA_INIT(WS3D_RETURN_VOID);
 	if (!_terrain->is_inside_world()) {
 		LOG(ERROR, "Terrain isn't inside world. Returning.");
 		return;
