@@ -35,10 +35,11 @@ name is available.
     Andevrs (tindrew)
     Arctis Fireblight
     ChocolateChipAussie (Logan-ReXDev)
+	DaveTheEggman
     DAShoe1
     decryptedchaos
+	GeneralProtectionFault
     George L Albany (spartan322)
     Jon (JoltedJon)
     McDubh (mcdubhghlas)
     Skogi (SkogiB)
-    Shakai (Shakai-Dev)
