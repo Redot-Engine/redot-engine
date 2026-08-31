@@ -100,7 +100,7 @@ struct Second:
 /// @todo Handle some cases failing on release builds. See: https://github.com/godotengine/godot/pull/88452
 #ifdef TOOLS_ENABLED
 TEST_SUITE("[Modules][GDScript]") {
-	TEST_CASE("Script compilation and runtime") {
+	TEST_CASE("[SceneTree] Script compilation and runtime") {
 		bool print_filenames = OS::get_singleton()->get_cmdline_args().find("--print-filenames") != nullptr;
 		bool use_binary_tokens = OS::get_singleton()->get_cmdline_args().find("--use-binary-tokens") != nullptr;
 		GDScriptTestRunner runner("modules/gdscript/tests/scripts", true, print_filenames, use_binary_tokens);
