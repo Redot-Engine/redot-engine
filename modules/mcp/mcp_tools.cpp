@@ -517,9 +517,13 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 				if (script_res.is_valid()) {
 					_ensure_callback_exists(script_res->get_path(), method);
 				}
-				source->connect(sig, Callable(target, method));
-				should_save = true;
-				result.add_text("Connected signal '" + sig + "' to '" + method + "'");
+				Error err = source->connect(sig, Callable(target, method), CONNECT_PERSIST);
+				if (err != OK) {
+					result.set_error("Failed to connect signal '" + sig + "': " + itos(err));
+				} else {
+					should_save = true;
+					result.add_text("Connected signal '" + sig + "' to '" + method + "'");
+				}
 			}
 		}
 	} else if (action == "reparent") {
