@@ -180,6 +180,7 @@ void GodotCollisionObject2D::_update_shapes() {
 		Rect2 shape_aabb = s.shape->get_aabb();
 		Transform2D xform = transform * s.xform;
 		shape_aabb = xform.xform(shape_aabb);
+		s.aabb_tight = shape_aabb;
 		shape_aabb.grow_by((s.aabb_cache.size.x + s.aabb_cache.size.y) * 0.5 * 0.05);
 		s.aabb_cache = shape_aabb;
 
@@ -208,6 +209,7 @@ void GodotCollisionObject2D::_update_shapes_with_motion(const Vector2 &p_motion)
 		Transform2D xform = transform * s.xform;
 		shape_aabb = xform.xform(shape_aabb);
 		shape_aabb = shape_aabb.merge(Rect2(shape_aabb.position + p_motion, shape_aabb.size)); //use motion
+		s.aabb_tight = shape_aabb;
 		s.aabb_cache = shape_aabb;
 
 		if (s.bpid == 0) {

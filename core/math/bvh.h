@@ -94,6 +94,11 @@ public:
 		BVH_LOCKED_FUNCTION
 		tree.params_set_pairing_expansion(p_value);
 	}
+
+	void params_set_size_relative_margin(bool p_enable, real_t p_ratio = -1.0) {
+		BVH_LOCKED_FUNCTION
+		tree.params_set_size_relative_margin(p_enable, p_ratio);
+	}
 	/// @}
 
 	void set_pair_callback(PairCallback p_callback, void *p_userdata) {

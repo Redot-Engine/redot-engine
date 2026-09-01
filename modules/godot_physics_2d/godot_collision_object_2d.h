@@ -64,7 +64,8 @@ private:
 		Transform2D xform;
 		Transform2D xform_inv;
 		GodotBroadPhase2D::ID bpid = 0;
-		Rect2 aabb_cache; ///< For rayqueries
+		Rect2 aabb_cache; ///< Grown, for broadphase and rayqueries
+		Rect2 aabb_tight; ///< Ungrown world AABB, for narrow-phase reject
 		GodotShape2D *shape = nullptr;
 		bool disabled = false;
 		bool one_way_collision = false;
@@ -135,6 +136,10 @@ public:
 	_FORCE_INLINE_ const Rect2 &get_shape_aabb(int p_index) const {
 		CRASH_BAD_INDEX(p_index, shapes.size());
 		return shapes[p_index].aabb_cache;
+	}
+	_FORCE_INLINE_ const Rect2 &get_shape_tight_aabb(int p_index) const {
+		CRASH_BAD_INDEX(p_index, shapes.size());
+		return shapes[p_index].aabb_tight;
 	}
 
 	_FORCE_INLINE_ const Transform2D &get_transform() const { return transform; }
