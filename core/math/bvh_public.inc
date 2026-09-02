@@ -115,7 +115,11 @@ bool item_move(BVHHandle p_handle, const BOUNDS &p_aabb) {
 		if (_size_relative_margin) {
 			// Margin proportional to object size (capped), so small objects don't
 			// pair with far-away neighbors while large ones still get hysteresis.
-			const real_t extent = (p_aabb.size.x + p_aabb.size.y) * 0.5;
+			real_t extent = 0.0;
+			for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
+				extent += p_aabb.size[axis];
+			}
+			extent /= POINT::AXIS_COUNT;
 			abb.expand(MIN(_pairing_expansion, extent * _pairing_expansion_ratio));
 		} else {
 			// scale the pairing expansion by the number of pairs.

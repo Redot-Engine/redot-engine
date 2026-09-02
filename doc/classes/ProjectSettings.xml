@@ -2505,6 +2505,9 @@
 			Default solver bias for all physics contacts. Defines how much bodies react to enforce contact separation. See [constant PhysicsServer2D.SPACE_PARAM_CONTACT_DEFAULT_BIAS].
 			Individual shapes can have a specific bias value (see [member Shape2D.custom_solver_bias]).
 		</member>
+		<member name="physics/2d/solver/pairing_expansion" type="float" setter="" getter="" default="25.0">
+			Maximum broadphase pairing margin, in pixels. Each object's collision pairs are kept alive within a margin that scales with its size (up to this maximum), so large moving objects (such as big [Area2D] sensors) re-pair less often, improving performance in scenes with many large overlapping shapes. Small objects keep a proportionally tiny margin so dense scenes do not accumulate excess pairs. Set to [code]0[/code] to disable and use the legacy pair-count-based margin.
+		</member>
 		<member name="physics/2d/solver/solver_iterations" type="int" setter="" getter="" default="16">
 			Number of solver iterations for all contacts and constraints. The greater the number of iterations, the more accurate the collisions will be. However, a greater number of iterations requires more CPU power, which can decrease performance. See [constant PhysicsServer2D.SPACE_PARAM_SOLVER_ITERATIONS].
 		</member>
