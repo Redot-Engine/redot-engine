@@ -57,6 +57,7 @@
 
 #ifdef MODULE_GDSCRIPT_ENABLED
 #include "modules/gdscript/gdscript_parser.h"
+#include "modules/gdscript/gdscript_tokenizer.h"
 #endif
 
 #include "core/doc_data.h"
@@ -134,7 +135,9 @@ Error MCPTools::_ensure_callback_exists(const String &p_script_path, const Strin
 		content += "\n";
 	}
 	content += "\nfunc " + p_callback_name + "():\n\tpass # Added by MCP\n";
-	f->store_string(content);
+	if (!f->store_string(content)) {
+		return ERR_FILE_CANT_WRITE;
+	}
 	return OK;
 }
 
@@ -201,7 +204,7 @@ Array MCPTools::get_tool_definitions() {
 		props["value"] = MCPSchemaBuilder::make_object_property("Value (supports numbers, strings, and objects like {x:0, y:0})");
 		props["signal"] = MCPSchemaBuilder::make_string_property("Signal name");
 		props["target_node"] = MCPSchemaBuilder::make_string_property("Target node path for connect/reparent");
-		props["method"] = MCPSchemaBuilder::make_string_property("Method name for connect");
+		props["method"] = MCPSchemaBuilder::make_string_property("Valid GDScript method identifier for connect");
 		props["instance_path"] = MCPSchemaBuilder::make_string_property("Path to scene to instance");
 
 		Array required;
@@ -503,8 +506,23 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		String sig = p_args.get("signal", "");
 		String target_path = p_args.get("target_node", ".");
 		String method = p_args.get("method", "");
+		bool valid_method = method.is_valid_unicode_identifier();
+#ifdef MODULE_GDSCRIPT_ENABLED
+		if (valid_method) {
+			GDScriptTokenizerText tokenizer;
+			tokenizer.set_source_code(method);
+			GDScriptTokenizer::Token identifier = tokenizer.scan();
+			GDScriptTokenizer::Token end = tokenizer.scan();
+			if (end.type == GDScriptTokenizer::Token::NEWLINE) {
+				end = tokenizer.scan();
+			}
+			valid_method = identifier.is_identifier() && end.type == GDScriptTokenizer::Token::TK_EOF;
+		}
+#endif
 		if (sig.is_empty() || method.is_empty()) {
 			result.set_error("Missing signal or method");
+		} else if (!valid_method) {
+			result.set_error("Invalid method identifier: " + method);
 		} else {
 			Node *source = (node_path == "." || node_path.is_empty()) ? root : root->get_node_or_null(node_path);
 			Node *target = (target_path == "." || target_path.is_empty()) ? root : root->get_node_or_null(target_path);
@@ -514,12 +532,21 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 				result.set_error("Signal '" + sig + "' does not exist on " + source->get_class());
 			} else {
 				Ref<Resource> script_res = target->get_script();
-				if (script_res.is_valid()) {
-					_ensure_callback_exists(script_res->get_path(), method);
+				Error callback_err = OK;
+				if (script_res.is_valid() && !target->has_method(method)) {
+					callback_err = _ensure_callback_exists(script_res->get_path(), method);
 				}
-				source->connect(sig, Callable(target, method));
-				should_save = true;
-				result.add_text("Connected signal '" + sig + "' to '" + method + "'");
+				if (callback_err != OK) {
+					result.set_error("Failed to create callback '" + method + "': " + itos(callback_err));
+				} else {
+					Error err = source->connect(sig, Callable(target, method), CONNECT_PERSIST);
+					if (err != OK) {
+						result.set_error("Failed to connect signal '" + sig + "': " + itos(err));
+					} else {
+						should_save = true;
+						result.add_text("Connected signal '" + sig + "' to '" + method + "'");
+					}
+				}
 			}
 		}
 	} else if (action == "reparent") {
@@ -542,8 +569,10 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 		Ref<PackedScene> new_scene;
 		new_scene.instantiate();
 		if (new_scene.is_valid()) {
-			new_scene->pack(root);
-			Error err = ResourceSaver::save(new_scene, normalized_scene);
+			Error err = new_scene->pack(root);
+			if (err == OK) {
+				err = ResourceSaver::save(new_scene, normalized_scene);
+			}
 			if (err != OK) {
 				result.set_error("Failed to save scene: " + itos(err));
 			}
