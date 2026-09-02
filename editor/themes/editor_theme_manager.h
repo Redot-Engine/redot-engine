@@ -157,6 +157,7 @@ class EditorThemeManager {
 		Ref<StyleBoxFlat> panel_container_style;
 		Ref<StyleBoxFlat> content_panel_style;
 		Ref<StyleBoxFlat> tree_panel_style;
+		Ref<StyleBoxFlat> project_manager_panel_style;
 
 		Vector2 widget_margin;
 
