@@ -121,6 +121,19 @@ void GodotBroadPhase2DBVH::update() {
 	bvh.update();
 }
 
+void GodotBroadPhase2DBVH::set_pairing_expansion(real_t p_expansion) {
+	if (p_expansion <= 0.0) {
+		// Disabled: keep the BVH's stock pair-count margin scaling.
+		return;
+	}
+	// Use a size-relative margin (capped at p_expansion) instead of the BVH's
+	// pair-count scaling: large objects (e.g. sensor areas) get useful hysteresis
+	// so they don't re-pair every frame, while small objects keep a tiny margin so
+	// dense small-object scenes don't blow up their pair counts.
+	bvh.params_set_pairing_expansion(p_expansion);
+	bvh.params_set_size_relative_margin(true);
+}
+
 GodotBroadPhase2D *GodotBroadPhase2DBVH::_create() {
 	return memnew(GodotBroadPhase2DBVH);
 }

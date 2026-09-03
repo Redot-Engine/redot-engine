@@ -202,6 +202,14 @@ bool _auto_node_expansion = true;
 // we can either use auto mode, where the expansion is based on the root node size, or specify manually
 real_t _pairing_expansion = 0.1;
 
+// Size-relative pairing margin. When enabled, each object's margin is
+// (average AABB extent * _pairing_expansion_ratio), capped at _pairing_expansion.
+// This gives large objects (e.g. sensor areas) useful hysteresis while keeping
+// small objects (e.g. bullets) near-zero margin, so dense small-object scenes
+// don't suffer pair-count blow-up. Used by 2D physics.
+bool _size_relative_margin = false;
+real_t _pairing_expansion_ratio = 0.05;
+
 #ifdef BVH_ALLOW_AUTO_EXPANSION
 bool _auto_pairing_expansion = true;
 #endif

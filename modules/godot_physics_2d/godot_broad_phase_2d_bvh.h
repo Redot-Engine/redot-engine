@@ -101,6 +101,8 @@ public:
 
 	virtual void update() override;
 
+	virtual void set_pairing_expansion(real_t p_expansion) override;
+
 	static GodotBroadPhase2D *_create();
 	GodotBroadPhase2DBVH();
 };

@@ -1230,6 +1230,7 @@ GodotSpace2D::GodotSpace2D() {
 	broadphase = GodotBroadPhase2D::create_func();
 	broadphase->set_pair_callback(_broadphase_pair, this);
 	broadphase->set_unpair_callback(_broadphase_unpair, this);
+	broadphase->set_pairing_expansion(GLOBAL_GET("physics/2d/solver/pairing_expansion"));
 
 	direct_access = memnew(GodotPhysicsDirectSpaceState2D);
 	direct_access->space = this;

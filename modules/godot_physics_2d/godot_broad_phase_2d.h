@@ -72,5 +72,7 @@ public:
 
 	virtual void update() = 0;
 
+	virtual void set_pairing_expansion(real_t p_expansion) {}
+
 	virtual ~GodotBroadPhase2D();
 };
