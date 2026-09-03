@@ -2912,7 +2912,7 @@ void GDScriptAnalyzer::resolve_struct(GDScriptParser::StructNode *p_struct) {
 
 		if (field->initializer != nullptr && field->initializer->is_constant) {
 			f.default_value = field->initializer->reduced_value;
-		} else if (f.is_typed && f.type != Variant::NIL && f.type != Variant::STRUCT) {
+		} else if (!field_type.is_nullable && f.is_typed && f.type != Variant::NIL && f.type != Variant::STRUCT) {
 			Callable::CallError err;
 			Variant zero;
 			Variant::construct(f.type, zero, nullptr, 0, err);
