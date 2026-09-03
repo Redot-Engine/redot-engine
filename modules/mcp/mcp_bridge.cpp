@@ -110,7 +110,7 @@ Error MCPBridge::connect_to_server(const String &p_host, int p_port) {
 	return connection->connect_to_host(p_host, p_port);
 }
 
-Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args) {
+Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_args, bool p_wait_for_response) {
 	Ref<StreamPeerTCP> conn;
 	{
 		MutexLock lock(mutex);
@@ -130,6 +130,9 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 	CharString utf8 = json.utf8();
 	conn->put_data((const uint8_t *)utf8.get_data(), utf8.length());
 	conn->put_u8('\n');
+	if (!p_wait_for_response) {
+		return Dictionary();
+	}
 
 	// Wait for response (blocking with timeout)
 	uint64_t start_time = OS::get_singleton()->get_ticks_msec();
@@ -198,6 +201,15 @@ Dictionary MCPBridge::send_command(const String &p_action, const Dictionary &p_a
 	Dictionary err;
 	err["error"] = "Bridge invalid response: " + response_str;
 	return err;
+}
+
+void MCPBridge::disconnect_peer() {
+	MutexLock lock(mutex);
+	if (connection.is_valid()) {
+		connection->disconnect_from_host();
+		connection.unref();
+	}
+	partial_data = "";
 }
 
 void MCPBridge::update() {
@@ -517,6 +529,14 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 		} else {
 			_trigger_action_event(action_name);
 			resp["status"] = "triggered_action";
+		}
+	} else if (action == "quit") {
+		SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+		if (st) {
+			st->quit();
+			resp["status"] = "quitting";
+		} else {
+			resp["error"] = "No scene tree found";
 		}
 	} else if (action == "wait") {
 		resp["status"] = "wait_is_server_side";
