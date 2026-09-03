@@ -5216,6 +5216,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 
 				case GDScriptParser::ClassNode::Member::STRUCT: {
 					p_identifier->set_datatype(member.get_datatype());
+					p_identifier->is_constant = true;
 					p_identifier->source = GDScriptParser::IdentifierNode::MEMBER_CLASS;
 					return;
 				}
@@ -5790,7 +5791,9 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 
 		GDScriptParser::DataType base_type = p_subscript->base->get_datatype();
 
-		if (base_type.is_constant && base_type.kind == GDScriptParser::DataType::TRAIT) {
+		const GDScriptParser::ClassNode *trait_class = base_type.class_type;
+		const bool is_trait_struct = trait_class != nullptr && trait_class->has_member(p_subscript->attribute->name) && trait_class->get_member(p_subscript->attribute->name).type == GDScriptParser::ClassNode::Member::STRUCT;
+		if (base_type.is_constant && base_type.kind == GDScriptParser::DataType::TRAIT && !is_trait_struct) {
 			push_error(vformat(R"*(Cannot access a trait's members directly; access through a class that uses it instead.)*"), p_subscript->attribute);
 			return;
 		}
@@ -7707,6 +7710,10 @@ void GDScriptAnalyzer::extend_class(GDScriptParser::ClassNode *p_class, const GD
 				case GDScriptParser::ClassNode::Member::ENUM_VALUE:
 					// Copied over trait enum_values.
 					p_class->add_member(trait_member.enum_value);
+					break;
+				case GDScriptParser::ClassNode::Member::STRUCT:
+					// Copied over trait struct.
+					p_class->add_member(trait_member.m_struct);
 					break;
 				case GDScriptParser::ClassNode::Member::SIGNAL:
 					// Copied over trait signal.
