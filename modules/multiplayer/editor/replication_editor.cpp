@@ -265,7 +265,7 @@ ReplicationEditor::ReplicationEditor() {
 
 	tree = memnew(Tree);
 	tree->set_hide_root(true);
-	tree->set_columns(4);
+	tree->set_columns(5);
 	tree->set_column_titles_visible(true);
 	tree->set_column_title(0, TTR("Properties"));
 	tree->set_column_expand(0, true);
@@ -275,7 +275,10 @@ ReplicationEditor::ReplicationEditor() {
 	tree->set_column_title(2, TTR("Replicate"));
 	tree->set_column_custom_minimum_width(2, 100);
 	tree->set_column_expand(2, false);
+	tree->set_column_title(3, TTR("Precision"));
+	tree->set_column_custom_minimum_width(3, 100);
 	tree->set_column_expand(3, false);
+	tree->set_column_expand(4, false);
 	tree->create_item();
 	tree->connect("button_clicked", callable_mp(this, &ReplicationEditor::_tree_button_pressed));
 	tree->connect("item_edited", callable_mp(this, &ReplicationEditor::_tree_item_edited));
@@ -410,7 +413,7 @@ void ReplicationEditor::_tree_item_edited() {
 		return;
 	}
 	int column = tree->get_edited_column();
-	ERR_FAIL_COND(column < 1 || column > 2);
+	ERR_FAIL_COND(column < 1 || column > 3);
 	const NodePath prop = ti->get_metadata(0);
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 
@@ -434,6 +437,15 @@ void ReplicationEditor::_tree_item_edited() {
 		}
 		undo_redo->add_do_method(config.ptr(), "property_set_replication_mode", prop, value);
 		undo_redo->add_undo_method(config.ptr(), "property_set_replication_mode", prop, old_value);
+		undo_redo->add_do_method(this, "_update_value", prop, column, value);
+		undo_redo->add_undo_method(this, "_update_value", prop, column, old_value);
+		undo_redo->commit_action();
+	} else if (column == 3) {
+		undo_redo->create_action(TTR("Set property precision"));
+		int value = ti->get_range(column);
+		int old_value = config->property_get_precision(prop);
+		undo_redo->add_do_method(config.ptr(), "property_set_precision", prop, value);
+		undo_redo->add_undo_method(config.ptr(), "property_set_precision", prop, old_value);
 		undo_redo->add_do_method(this, "_update_value", prop, column, value);
 		undo_redo->add_undo_method(this, "_update_value", prop, column, old_value);
 		undo_redo->commit_action();
@@ -465,12 +477,14 @@ void ReplicationEditor::_dialog_closed(bool p_confirmed) {
 		int idx = config->property_get_index(prop);
 		bool spawn = config->property_get_spawn(prop);
 		SceneReplicationConfig::ReplicationMode mode = config->property_get_replication_mode(prop);
+		SceneReplicationConfig::ReplicationPrecision precision = config->property_get_precision(prop);
 		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->create_action(TTR("Remove Property"));
 		undo_redo->add_do_method(config.ptr(), "remove_property", prop);
 		undo_redo->add_undo_method(config.ptr(), "add_property", prop, idx);
 		undo_redo->add_undo_method(config.ptr(), "property_set_spawn", prop, spawn);
 		undo_redo->add_undo_method(config.ptr(), "property_set_replication_mode", prop, mode);
+		undo_redo->add_undo_method(config.ptr(), "property_set_precision", prop, precision);
 		undo_redo->add_do_method(this, "_update_config");
 		undo_redo->add_undo_method(this, "_update_config");
 		undo_redo->commit_action();
@@ -487,7 +501,7 @@ void ReplicationEditor::_update_value(const NodePath &p_prop, int p_column, int 
 		if (ti->get_metadata(0).operator NodePath() == p_prop) {
 			if (p_column == 1) {
 				ti->set_checked(p_column, p_value != 0);
-			} else if (p_column == 2) {
+			} else if (p_column == 2 || p_column == 3) {
 				ti->set_range(p_column, p_value);
 			}
 			return;
@@ -510,7 +524,7 @@ void ReplicationEditor::_update_config() {
 	}
 	for (int i = 0; i < props.size(); i++) {
 		const NodePath path = props[i];
-		_add_property(path, config->property_get_spawn(path), config->property_get_replication_mode(path));
+		_add_property(path, config->property_get_spawn(path), config->property_get_replication_mode(path), config->property_get_precision(path));
 	}
 }
 
@@ -552,13 +566,14 @@ static bool can_sync(const Variant &p_var) {
 	}
 }
 
-void ReplicationEditor::_add_property(const NodePath &p_property, bool p_spawn, SceneReplicationConfig::ReplicationMode p_mode) {
+void ReplicationEditor::_add_property(const NodePath &p_property, bool p_spawn, SceneReplicationConfig::ReplicationMode p_mode, SceneReplicationConfig::ReplicationPrecision p_precision) {
 	String prop = String(p_property);
 	TreeItem *item = tree->create_item();
 	item->set_selectable(0, false);
 	item->set_selectable(1, false);
 	item->set_selectable(2, false);
 	item->set_selectable(3, false);
+	item->set_selectable(4, false);
 	item->set_text(0, prop);
 	item->set_metadata(0, prop);
 	Node *root_node = current && !current->get_root_path().is_empty() ? current->get_node(current->get_root_path()) : nullptr;
@@ -583,7 +598,7 @@ void ReplicationEditor::_add_property(const NodePath &p_property, bool p_spawn, 
 	} else {
 		item->set_icon(0, icon);
 	}
-	item->add_button(3, get_theme_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
+	item->add_button(4, get_theme_icon(SNAME("Remove"), EditorStringName(EditorIcons)));
 	item->set_text_alignment(1, HORIZONTAL_ALIGNMENT_CENTER);
 	item->set_cell_mode(1, TreeItem::CELL_MODE_CHECK);
 	item->set_checked(1, p_spawn);
@@ -594,4 +609,10 @@ void ReplicationEditor::_add_property(const NodePath &p_property, bool p_spawn, 
 	item->set_text(2, TTR("Never", "Replication Mode") + "," + TTR("Always", "Replication Mode") + "," + TTR("On Change", "Replication Mode"));
 	item->set_range(2, (int)p_mode);
 	item->set_editable(2, true);
+	item->set_text_alignment(3, HORIZONTAL_ALIGNMENT_CENTER);
+	item->set_cell_mode(3, TreeItem::CELL_MODE_RANGE);
+	item->set_range_config(3, 0, 1, 1);
+	item->set_text(3, TTR("Full", "Replication Precision") + "," + TTR("Half", "Replication Precision"));
+	item->set_range(3, (int)p_precision);
+	item->set_editable(3, true);
 }

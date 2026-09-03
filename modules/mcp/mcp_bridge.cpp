@@ -52,7 +52,7 @@
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/main/window.h"
-#include "servers/rendering_server.h"
+#include "servers/rendering/rendering_server.h"
 #include <functional>
 
 MCPBridge *MCPBridge::singleton = nullptr;

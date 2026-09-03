@@ -48,7 +48,7 @@
 
 #ifdef DEBUG_ENABLED
 #include "core/string/string_builder.h"
-#include "servers/text_server.h"
+#include "servers/text/text_server.h"
 #endif
 
 #ifdef TOOLS_ENABLED
@@ -928,6 +928,74 @@ GDScriptParser::ClassNode *GDScriptParser::parse_class(bool p_is_static) {
 	return n_class;
 }
 
+GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
+	StructNode *n_struct = alloc_node<StructNode>();
+	n_struct->outer = current_class;
+
+	if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for the struct name after "struct".)")) {
+		n_struct->identifier = parse_identifier();
+		String fqcn = current_class != nullptr ? current_class->fqcn : String();
+		if (fqcn.is_empty()) {
+			fqcn = GDScript::canonicalize_path(script_path);
+		}
+		n_struct->fqcn = fqcn + "::" + n_struct->identifier->name;
+	}
+
+	consume(GDScriptTokenizer::Token::COLON, R"(Expected ":" after struct declaration.)");
+
+	bool multiline = match(GDScriptTokenizer::Token::NEWLINE);
+	if (multiline && !consume(GDScriptTokenizer::Token::INDENT, R"(Expected indented block after struct declaration.)")) {
+		complete_extents(n_struct);
+		return n_struct;
+	}
+
+	bool struct_end = false;
+	while (!struct_end && !is_at_end()) {
+		switch (current.type) {
+			case GDScriptTokenizer::Token::VAR: {
+				advance();
+				VariableNode *field = parse_variable(false, false);
+				if (field != nullptr && field->identifier != nullptr) {
+					if (n_struct->fields_indices.has(field->identifier->name)) {
+						push_error(vformat(R"(Struct field "%s" is declared more than once.)", field->identifier->name), field->identifier);
+					} else {
+						n_struct->fields_indices[field->identifier->name] = n_struct->fields.size();
+						n_struct->fields.push_back(field);
+					}
+				}
+			} break;
+			case GDScriptTokenizer::Token::DEDENT:
+				struct_end = true;
+				break;
+			case GDScriptTokenizer::Token::NEWLINE:
+				advance();
+				break;
+			case GDScriptTokenizer::Token::PASS:
+				advance();
+				end_statement(R"("pass")");
+				break;
+			default:
+				push_error(R"(Only "var" field declarations are allowed inside a struct.)");
+				advance();
+				break;
+		}
+		if (panic_mode) {
+			synchronize();
+		}
+		if (!multiline) {
+			break;
+		}
+	}
+
+	complete_extents(n_struct);
+
+	if (multiline) {
+		consume(GDScriptTokenizer::Token::DEDENT, R"(Missing unindent at the end of the struct body.)");
+	}
+
+	return n_struct;
+}
+
 void GDScriptParser::parse_class_name() {
 	if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for the global class name after "class_name".)")) {
 		current_class->identifier = parse_identifier();
@@ -1126,6 +1194,9 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 			} break;
 			case GDScriptTokenizer::Token::ENUM:
 				parse_class_member(&GDScriptParser::parse_enum, AnnotationInfo::NONE, "enum");
+				break;
+			case GDScriptTokenizer::Token::STRUCT:
+				parse_class_member(&GDScriptParser::parse_struct, AnnotationInfo::NONE, "struct");
 				break;
 			case GDScriptTokenizer::Token::STATIC: {
 				advance();
@@ -3892,6 +3963,9 @@ GDScriptParser::TypeNode *GDScriptParser::parse_type(bool p_allow_void) {
 		} while (match(GDScriptTokenizer::Token::COMMA));
 		consume(GDScriptTokenizer::Token::BRACKET_CLOSE, R"(Expected closing "]" after collection type.)");
 		if (type != nullptr) {
+			if (match(GDScriptTokenizer::Token::QUESTION_MARK)) {
+				type->is_nullable = true;
+			}
 			complete_extents(type);
 		}
 		return type;
@@ -3904,6 +3978,10 @@ GDScriptParser::TypeNode *GDScriptParser::parse_type(bool p_allow_void) {
 			type_element = parse_identifier();
 			type->type_chain.push_back(type_element);
 		}
+	}
+
+	if (match(GDScriptTokenizer::Token::QUESTION_MARK)) {
+		type->is_nullable = true;
 	}
 
 	complete_extents(type);
@@ -4297,6 +4375,7 @@ GDScriptParser::ParseRule *GDScriptParser::get_rule(GDScriptTokenizer::Token::Ty
 		{ &GDScriptParser::parse_self,                   	nullptr,                                        PREC_NONE }, // SELF,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // SIGNAL,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STATIC,
+		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STRUCT,
 		{ &GDScriptParser::parse_call,						nullptr,                                        PREC_NONE }, // SUPER,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // TRAIT,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // TRAIT_NAME,
@@ -5312,56 +5391,66 @@ String GDScriptParser::SuiteNode::Local::get_name() const {
 }
 
 String GDScriptParser::DataType::to_string() const {
-	switch (kind) {
-		case VARIANT:
-			return "Variant";
-		case BUILTIN:
-			if (builtin_type == Variant::NIL) {
-				return "null";
+	String type_name = [this]() -> String {
+		switch (kind) {
+			case VARIANT:
+				return "Variant";
+			case BUILTIN:
+				if (builtin_type == Variant::NIL) {
+					return "null";
+				}
+				if (builtin_type == Variant::ARRAY && has_container_element_type(0)) {
+					return vformat("Array[%s]", get_container_element_type(0).to_string());
+				}
+				if (builtin_type == Variant::DICTIONARY && has_container_element_types()) {
+					return vformat("Dictionary[%s, %s]", get_container_element_type_or_variant(0).to_string(), get_container_element_type_or_variant(1).to_string());
+				}
+				if (builtin_type == Variant::STRUCT && struct_type != nullptr && struct_type->identifier != nullptr) {
+					return struct_type->identifier->name.operator String();
+				}
+				return Variant::get_type_name(builtin_type);
+			case NATIVE:
+				if (is_meta_type) {
+					return GDScriptNativeClass::get_class_static();
+				}
+				return native_type.operator String();
+			case TRAIT:
+			case CLASS:
+				if (class_type->identifier != nullptr) {
+					return class_type->identifier->name.operator String();
+				}
+				return class_type->fqcn;
+			case SCRIPT: {
+				if (is_meta_type) {
+					return script_type.is_valid() ? script_type->get_class_name().operator String() : "";
+				}
+				String name = script_type.is_valid() ? script_type->get_name() : "";
+				if (!name.is_empty()) {
+					return name;
+				}
+				name = script_path;
+				if (!name.is_empty()) {
+					return name;
+				}
+				return native_type.operator String();
 			}
-			if (builtin_type == Variant::ARRAY && has_container_element_type(0)) {
-				return vformat("Array[%s]", get_container_element_type(0).to_string());
+			case ENUM: {
+				// native_type contains either the native class defining the enum
+				// or the fully qualified class name of the script defining the enum
+				return String(native_type).get_file(); // Remove path, keep filename
 			}
-			if (builtin_type == Variant::DICTIONARY && has_container_element_types()) {
-				return vformat("Dictionary[%s, %s]", get_container_element_type_or_variant(0).to_string(), get_container_element_type_or_variant(1).to_string());
-			}
-			return Variant::get_type_name(builtin_type);
-		case NATIVE:
-			if (is_meta_type) {
-				return GDScriptNativeClass::get_class_static();
-			}
-			return native_type.operator String();
-		case TRAIT:
-		case CLASS:
-			if (class_type->identifier != nullptr) {
-				return class_type->identifier->name.operator String();
-			}
-			return class_type->fqcn;
-		case SCRIPT: {
-			if (is_meta_type) {
-				return script_type.is_valid() ? script_type->get_class_name().operator String() : "";
-			}
-			String name = script_type.is_valid() ? script_type->get_name() : "";
-			if (!name.is_empty()) {
-				return name;
-			}
-			name = script_path;
-			if (!name.is_empty()) {
-				return name;
-			}
-			return native_type.operator String();
+			case RESOLVING:
+			case UNRESOLVED:
+				return "<unresolved type>";
 		}
-		case ENUM: {
-			// native_type contains either the native class defining the enum
-			// or the fully qualified class name of the script defining the enum
-			return String(native_type).get_file(); // Remove path, keep filename
-		}
-		case RESOLVING:
-		case UNRESOLVED:
-			return "<unresolved type>";
-	}
 
-	ERR_FAIL_V_MSG("<unresolved type>", "Kind set outside the enum range.");
+		ERR_FAIL_V_MSG("<unresolved type>", "Kind set outside the enum range.");
+	}();
+
+	if (is_nullable && kind != VARIANT && !(kind == BUILTIN && builtin_type == Variant::NIL)) {
+		type_name += "?";
+	}
+	return type_name;
 }
 
 PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) const {
@@ -5956,6 +6045,8 @@ void GDScriptParser::TreePrinter::print_class(ClassNode *p_class) {
 				break;
 			case ClassNode::Member::ENUM_VALUE:
 				break; // Nothing. Will be printed by enum.
+			case ClassNode::Member::STRUCT:
+				break;
 			case ClassNode::Member::GROUP:
 				break; // Nothing. Groups are only used by inspector.
 			case ClassNode::Member::UNDEFINED:

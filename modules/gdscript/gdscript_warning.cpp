@@ -111,6 +111,9 @@ String GDScriptWarning::get_message() const {
 		case UNSAFE_CALL_ARGUMENT:
 			CHECK_SYMBOLS(5);
 			return vformat(R"*(The argument %s of the %s "%s()" requires the subtype "%s" but the supertype "%s" was provided.)*", symbols[0], symbols[1], symbols[2], symbols[3], symbols[4]);
+		case UNSAFE_NULLABLE_ACCESS:
+			CHECK_SYMBOLS(1);
+			return vformat(R"(The value of type "%s" may be null; using it without a null check may fail at runtime.)", symbols[0]);
 		case UNSAFE_VOID_RETURN:
 			CHECK_SYMBOLS(2);
 			return vformat(R"*(The method "%s()" returns "void" but it's trying to return a call to "%s()" that can't be ensured to also be "void".)*", symbols[0], symbols[1]);
@@ -176,6 +179,10 @@ String GDScriptWarning::get_message() const {
 			return "Trait usage detected. This feature is still experimental and potentially subject to change in future versions.\n"
 				   "If you run into any issues please open an issue on GitHub: https://github.com/Redot-Engine/redot-engine/issues\n"
 				   "This message can be disabled in Project Settings > Debug > GDScript > Show Experimental Trait Warning.";
+		case EXPERIMENTAL_STRUCT:
+			return "Struct usage detected. This feature is still experimental and potentially subject to change in future versions.\n"
+				   "If you run into any issues please open an issue on GitHub: https://github.com/Redot-Engine/redot-engine/issues\n"
+				   "This message can be disabled in Project Settings > Debug > GDScript > Show Experimental Struct Warning.";
 #ifndef DISABLE_DEPRECATED
 		// Never produced. These warnings migrated from 3.x by mistake.
 		case PROPERTY_USED_AS_FUNCTION: // There is already an error.
@@ -229,6 +236,7 @@ String GDScriptWarning::get_name_from_code(Code p_code) {
 		PNAME("UNSAFE_METHOD_ACCESS"),
 		PNAME("UNSAFE_CAST"),
 		PNAME("UNSAFE_CALL_ARGUMENT"),
+		PNAME("UNSAFE_NULLABLE_ACCESS"),
 		PNAME("UNSAFE_VOID_RETURN"),
 		PNAME("RETURN_VALUE_DISCARDED"),
 		PNAME("STATIC_CALLED_ON_INSTANCE"),
@@ -254,6 +262,7 @@ String GDScriptWarning::get_name_from_code(Code p_code) {
 		PNAME("ONREADY_WITH_EXPORT"),
 		PNAME("UNUSED_STATIC_OVERRIDING_TRAIT"),
 		PNAME("EXPERIMENTAL_TRAIT"),
+		PNAME("EXPERIMENTAL_STRUCT"),
 #ifndef DISABLE_DEPRECATED
 		"PROPERTY_USED_AS_FUNCTION",
 		"CONSTANT_USED_AS_FUNCTION",

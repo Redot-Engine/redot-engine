@@ -38,7 +38,7 @@
  * [Add any documentation that applies to the entire file here!]
  */
 
-#include "servers/display_server.h"
+#include "servers/display/display_server.h"
 
 class RenderingDeviceDriver;
 

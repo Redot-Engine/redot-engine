@@ -1027,7 +1027,14 @@ Dictionary EditorExportPlatform::get_internal_export_files(const Ref<EditorExpor
 Vector<String> EditorExportPlatform::get_forced_export_files(const Ref<EditorExportPreset> &p_preset) {
 	Vector<String> files;
 
-	files.push_back(ProjectSettings::get_singleton()->get_global_class_list_path());
+	ProjectSettings *ps = ProjectSettings::get_singleton();
+
+	files.push_back(ps->get_global_class_list_path());
+
+	const String global_struct_list_path = ps->get_global_struct_list_path();
+	if (FileAccess::exists(global_struct_list_path)) {
+		files.push_back(global_struct_list_path);
+	}
 
 	String icon = ResourceUID::ensure_path(get_project_setting(p_preset, "application/config/icon"));
 	String splash = ResourceUID::ensure_path(get_project_setting(p_preset, "application/boot_splash/image"));

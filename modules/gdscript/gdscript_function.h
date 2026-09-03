@@ -67,6 +67,7 @@ public:
 	Kind kind = UNINITIALIZED;
 
 	bool has_type = false;
+	bool is_nullable = false;
 	Variant::Type builtin_type = Variant::NIL;
 	StringName native_type;
 	StringName trait_type;
@@ -145,6 +146,7 @@ public:
 	void operator=(const GDScriptDataType &p_other) {
 		kind = p_other.kind;
 		has_type = p_other.has_type;
+		is_nullable = p_other.is_nullable;
 		builtin_type = p_other.builtin_type;
 		native_type = p_other.native_type;
 		trait_type = p_other.trait_type;
@@ -204,6 +206,7 @@ public:
 		OPCODE_CONSTRUCT_TYPED_ARRAY,
 		OPCODE_CONSTRUCT_DICTIONARY,
 		OPCODE_CONSTRUCT_TYPED_DICTIONARY,
+		OPCODE_CONSTRUCT_STRUCT,
 		OPCODE_CALL,
 		OPCODE_CALL_RETURN,
 		OPCODE_CALL_ASYNC,

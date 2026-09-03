@@ -41,6 +41,7 @@
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
+#include "scene/2d/mode7_sprite_2d.h"
 #include "scene/animation/animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_space_2d.h"
 #include "scene/animation/animation_blend_tree.h"
@@ -188,6 +189,8 @@
 #include "scene/2d/line_2d.h"
 #include "scene/2d/marker_2d.h"
 #include "scene/2d/mesh_instance_2d.h"
+#include "scene/2d/mode7_scanline_override.h"
+#include "scene/2d/mode7_sprite_2d.h"
 #include "scene/2d/multimesh_instance_2d.h"
 #include "scene/2d/parallax_2d.h"
 #include "scene/2d/path_2d.h"
@@ -915,9 +918,11 @@ void register_scene_types() {
 	GDREGISTER_CLASS(CanvasGroup);
 	GDREGISTER_CLASS(CPUParticles2D);
 	GDREGISTER_CLASS(GPUParticles2D);
+	GDREGISTER_CLASS(Mode7ScanlineOverride);
 	GDREGISTER_CLASS(Sprite2D);
 	GDREGISTER_CLASS(SpriteFrames);
 	GDREGISTER_CLASS(AnimatedSprite2D);
+	GDREGISTER_CLASS(Mode7Sprite2D);
 	GDREGISTER_CLASS(Marker2D);
 	GDREGISTER_CLASS(Line2D);
 	GDREGISTER_CLASS(MeshInstance2D);

@@ -140,6 +140,8 @@ public:
 
 	static bool suppress_trait_warning();
 	static void restore_trait_warnings(bool originalState);
+	static bool suppress_struct_warning();
+	static void restore_struct_warning(bool p_original_state);
 	GDScriptTestRunner(const String &p_source_dir, bool p_init_language, bool p_print_filenames = false, bool p_use_binary_tokens = false);
 	~GDScriptTestRunner();
 };
