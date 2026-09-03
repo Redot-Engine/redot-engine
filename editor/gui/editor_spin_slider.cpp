@@ -41,6 +41,7 @@
 #include "core/input/input.h"
 #include "core/math/expression.h"
 #include "core/os/keyboard.h"
+#include "editor/editor_string_names.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/theme/theme_db.h"
@@ -526,13 +527,26 @@ Size2 EditorSpinSlider::get_minimum_size() const {
 	int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("LineEdit"));
 
 	Size2 ms = sb->get_minimum_size();
+
+	const int sep = 4 * EDSCALE + sb->get_offset().x;
+	const int label_width = font->get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).width;
+
+	ms.width += label_width + sep;
+
+	if (!hide_slider && editing_integer) {
+		Ref<Texture2D> updown = read_only ? theme_cache.updown_disabled_icon : theme_cache.updown_icon;
+		ms.width += updown->get_width();
+	}
+
 	ms.height += font->get_height(font_size);
+	ms.height = MAX(ms.height, get_theme_constant(SNAME("inspector_property_height"), EditorStringName(Editor)));
 
 	return ms;
 }
 
 void EditorSpinSlider::set_hide_slider(bool p_hide) {
 	hide_slider = p_hide;
+	update_minimum_size();
 	queue_redraw();
 }
 
@@ -546,6 +560,7 @@ void EditorSpinSlider::set_editing_integer(bool p_editing_integer) {
 	}
 
 	editing_integer = p_editing_integer;
+	update_minimum_size();
 	queue_redraw();
 }
 
@@ -555,6 +570,7 @@ bool EditorSpinSlider::is_editing_integer() const {
 
 void EditorSpinSlider::set_label(const String &p_label) {
 	label = p_label;
+	update_minimum_size();
 	queue_redraw();
 }
 
@@ -657,6 +673,7 @@ void EditorSpinSlider::set_read_only(bool p_enable) {
 		value_input->release_focus();
 	}
 
+	update_minimum_size();
 	queue_redraw();
 }
 
