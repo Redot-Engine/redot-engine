@@ -35,10 +35,10 @@ name is available.
     Andevrs (tindrew)
     Arctis Fireblight
     ChocolateChipAussie (Logan-ReXDev)
-	DaveTheEggman
+    DaveTheEggman
     DAShoe1
     decryptedchaos
-	GeneralProtectionFault
+    GeneralProtectionFault
     George L Albany (spartan322)
     Jon (JoltedJon)
     McDubh (mcdubhghlas)
