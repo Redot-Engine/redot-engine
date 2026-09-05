@@ -1064,9 +1064,9 @@ void WorldScape3DEditorPlugin::clear() {
 			}
 			terrain->clear_gizmos();
 		}
-		_editor->set_terrain(nullptr);
-		_ui->clear_picking();
 	}
+	_editor->set_terrain(nullptr);
+	_ui->clear_picking();
 	_region_gizmo->clear();
 }
 
@@ -1110,7 +1110,7 @@ EditorPlugin::AfterGUIInput WorldScape3DEditorPlugin::forward_3d_gui_input(Camer
 	}
 
 	auto terrain = _editor->get_terrain();
-	if (!terrain) {
+	if (!terrain || !ObjectDB::get_instance(terrain->get_instance_id())) {
 		return AfterGUIInput::AFTER_GUI_INPUT_PASS;
 	}
 
