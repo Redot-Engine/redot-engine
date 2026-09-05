@@ -897,6 +897,40 @@ Dictionary MeshInstance3D::intersect_ray(const Vector3 &p_origin, const Vector3 
 	return result;
 }
 
+Dictionary MeshInstance3D::intersect_segment(const Vector3 &p_from, const Vector3 &p_to, const bool p_include_uv) const {
+	Dictionary result;
+
+	result["success"] = false;
+
+	if (mesh.is_valid()) {
+		Ref<TriangleMesh> tri_mesh = mesh->generate_triangle_mesh();
+
+		if (tri_mesh.is_valid()) {
+			Transform3D gl_tform = get_global_transform();
+			Transform3D in_tform = gl_tform.affine_inverse();
+
+			Vector3 local_from = in_tform.xform(p_from);
+			Vector3 local_to = in_tform.xform(p_to);
+
+			Vector3 local_point;
+			Vector3 local_normal;
+			int32_t surf_index;
+			int32_t face_index;
+
+			bool intersected = tri_mesh->intersect_segment(local_from, local_to, local_point, local_normal, &surf_index, &face_index);
+
+			if (intersected) {
+				Vector3 global_point = gl_tform.xform(local_point);
+				Vector3 global_normal = in_tform.basis.transposed().xform(local_normal).normalized();
+
+				_create_intersection_dictionary(result, global_point, global_normal, local_point, local_normal, surf_index, face_index, p_include_uv);
+			}
+		}
+	}
+
+	return result;
+}
+
 // Convert a face in the merged TriangleMesh to positions in the surface's
 // vertex array (or index array, for indexed surfaces).
 Vector3i MeshInstance3D::_get_surface_face_positions(const Ref<Mesh> &p_mesh, const int32_t surface_index, const int32_t face_index) const {
@@ -930,40 +964,6 @@ Vector3i MeshInstance3D::_get_surface_face_positions(const Ref<Mesh> &p_mesh, co
 	}
 
 	return Vector3i(local_face_idx * 3, local_face_idx * 3 + 1, local_face_idx * 3 + 2);
-}
-
-Dictionary MeshInstance3D::intersect_segment(const Vector3 &p_from, const Vector3 &p_to, const bool p_include_uv) const {
-	Dictionary result;
-
-	result["success"] = false;
-
-	if (mesh.is_valid()) {
-		Ref<TriangleMesh> tri_mesh = mesh->generate_triangle_mesh();
-
-		if (tri_mesh.is_valid()) {
-			Transform3D gl_tform = get_global_transform();
-			Transform3D in_tform = gl_tform.affine_inverse();
-
-			Vector3 local_from = in_tform.xform(p_from);
-			Vector3 local_to = in_tform.xform(p_to);
-
-			Vector3 local_point;
-			Vector3 local_normal;
-			int32_t surf_index;
-			int32_t face_index;
-
-			bool intersected = tri_mesh->intersect_segment(local_from, local_to, local_point, local_normal, &surf_index, &face_index);
-
-			if (intersected) {
-				Vector3 global_point = gl_tform.xform(local_point);
-				Vector3 global_normal = in_tform.basis.transposed().xform(local_normal).normalized();
-
-				_create_intersection_dictionary(result, global_point, global_normal, local_point, local_normal, surf_index, face_index, p_include_uv);
-			}
-		}
-	}
-
-	return result;
 }
 
 void MeshInstance3D::_create_intersection_dictionary(Dictionary &result, const Vector3 &global_point, const Vector3 &global_normal, const Vector3 &local_point, const Vector3 &local_normal, const int32_t surf_index, const int32_t face_index, const bool p_include_uv) const {
