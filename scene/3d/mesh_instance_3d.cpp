@@ -40,6 +40,8 @@
 
 #include "scene/3d/skeleton_3d.h"
 
+#include "core/math/geometry_3d.h"
+
 #ifndef PHYSICS_3D_DISABLED
 #include "scene/3d/physics/collision_shape_3d.h"
 #include "scene/3d/physics/static_body_3d.h"
@@ -861,6 +863,170 @@ Ref<TriangleMesh> MeshInstance3D::generate_triangle_mesh() const {
 	return Ref<TriangleMesh>();
 }
 
+Dictionary MeshInstance3D::intersect_ray(const Vector3 &p_origin, const Vector3 &p_dir, const bool p_include_uv) const {
+	Dictionary result;
+
+	result["success"] = false;
+
+	if (mesh.is_valid()) {
+		Ref<TriangleMesh> tri_mesh = mesh->generate_triangle_mesh();
+
+		if (tri_mesh.is_valid()) {
+			Transform3D gl_tform = get_global_transform();
+			Transform3D in_tform = gl_tform.affine_inverse();
+
+			Vector3 local_from = in_tform.xform(p_origin);
+			Vector3 local_dir = in_tform.basis.xform(p_dir).normalized();
+
+			Vector3 local_point;
+			Vector3 local_normal;
+			int32_t surf_index;
+			int32_t face_index;
+
+			bool intersected = tri_mesh->intersect_ray(local_from, local_dir, local_point, local_normal, &surf_index, &face_index);
+
+			if (intersected) {
+				Vector3 global_point = gl_tform.xform(local_point);
+				Vector3 global_normal = in_tform.basis.transposed().xform(local_normal).normalized();
+
+				_create_intersection_dictionary(result, global_point, global_normal, local_point, local_normal, surf_index, face_index, p_include_uv);
+			}
+		}
+	}
+
+	return result;
+}
+
+Dictionary MeshInstance3D::intersect_segment(const Vector3 &p_from, const Vector3 &p_to, const bool p_include_uv) const {
+	Dictionary result;
+
+	result["success"] = false;
+
+	if (mesh.is_valid()) {
+		Ref<TriangleMesh> tri_mesh = mesh->generate_triangle_mesh();
+
+		if (tri_mesh.is_valid()) {
+			Transform3D gl_tform = get_global_transform();
+			Transform3D in_tform = gl_tform.affine_inverse();
+
+			Vector3 local_from = in_tform.xform(p_from);
+			Vector3 local_to = in_tform.xform(p_to);
+
+			Vector3 local_point;
+			Vector3 local_normal;
+			int32_t surf_index;
+			int32_t face_index;
+
+			bool intersected = tri_mesh->intersect_segment(local_from, local_to, local_point, local_normal, &surf_index, &face_index);
+
+			if (intersected) {
+				Vector3 global_point = gl_tform.xform(local_point);
+				Vector3 global_normal = in_tform.basis.transposed().xform(local_normal).normalized();
+
+				_create_intersection_dictionary(result, global_point, global_normal, local_point, local_normal, surf_index, face_index, p_include_uv);
+			}
+		}
+	}
+
+	return result;
+}
+
+// Convert a face in the merged TriangleMesh to positions in the surface's
+// vertex array (or index array, for indexed surfaces).
+Vector3i MeshInstance3D::_get_surface_face_positions(const Ref<Mesh> &p_mesh, const int32_t surface_index, const int32_t face_index) const {
+	int32_t local_face_idx = face_index;
+
+	for (int i = 0; i < surface_index; i++) {
+		const Mesh::PrimitiveType primitive = p_mesh->surface_get_primitive_type(i);
+		const BitField<Mesh::ArrayFormat> format = p_mesh->surface_get_format(i);
+
+		if (format.has_flag(Mesh::ARRAY_FLAG_USES_EMPTY_VERTEX_ARRAY)) {
+			continue;
+		}
+
+		// Match the surfaces and triangle counts used by generate_triangle_mesh().
+		const int len = format.has_flag(Mesh::ARRAY_FORMAT_INDEX)
+			? p_mesh->surface_get_array_index_len(i)
+			: p_mesh->surface_get_array_len(i);
+
+		if (primitive == Mesh::PRIMITIVE_TRIANGLES && len % 3 == 0) {
+			local_face_idx -= len / 3;
+		} else if (primitive == Mesh::PRIMITIVE_TRIANGLE_STRIP && len >= 3) {
+			local_face_idx -= len - 2;
+		}
+	}
+
+	if (p_mesh->surface_get_primitive_type(surface_index) == Mesh::PRIMITIVE_TRIANGLE_STRIP) {
+		// Strip triangles share vertices and alternate winding.
+		return local_face_idx % 2 == 0
+			? Vector3i(local_face_idx, local_face_idx + 1, local_face_idx + 2)
+			: Vector3i(local_face_idx, local_face_idx + 2, local_face_idx + 1);
+	}
+
+	return Vector3i(local_face_idx * 3, local_face_idx * 3 + 1, local_face_idx * 3 + 2);
+}
+
+void MeshInstance3D::_create_intersection_dictionary(Dictionary &result, const Vector3 &global_point, const Vector3 &global_normal, const Vector3 &local_point, const Vector3 &local_normal, const int32_t surf_index, const int32_t face_index, const bool p_include_uv) const {
+	Ref<Material> material = get_active_material(surf_index);
+
+	result["position"] = global_point;
+	result["normal"] = global_normal;
+	result["surface_index"] = surf_index;
+	result["face_index"] = face_index;
+	result["material"] = material;
+
+	if (p_include_uv) {
+		const BitField<Mesh::ArrayFormat> surf_fmt = mesh->surface_get_format(surf_index);
+
+		if (surf_fmt.has_flag(Mesh::ArrayFormat::ARRAY_FORMAT_TEX_UV) || surf_fmt.has_flag(Mesh::ArrayFormat::ARRAY_FORMAT_TEX_UV2)) {
+			const Array surf_arrays = mesh->surface_get_arrays(surf_index);
+
+			const Vector<Vector3> &vertices = surf_arrays[Mesh::ArrayType::ARRAY_VERTEX];
+
+			const Vector3i face_positions = _get_surface_face_positions(mesh, surf_index, face_index);
+
+			int32_t f0 = face_positions.x;
+			int32_t f1 = face_positions.y;
+			int32_t f2 = face_positions.z;
+
+			if (surf_fmt.has_flag(Mesh::ArrayFormat::ARRAY_FORMAT_INDEX)) {
+				const Vector<int32_t> &indices = surf_arrays[Mesh::ArrayType::ARRAY_INDEX];
+				f0 = indices[f0];
+				f1 = indices[f1];
+				f2 = indices[f2];
+			}
+
+			const Vector3 barycoords = Geometry3D::triangle_get_barycentric_coords(
+					vertices[f0],
+					vertices[f1],
+					vertices[f2],
+					local_point);
+
+			if (surf_fmt.has_flag(Mesh::ArrayFormat::ARRAY_FORMAT_TEX_UV)) {
+				const Vector<Vector2> &tex_uv = surf_arrays[Mesh::ArrayType::ARRAY_TEX_UV];
+
+				Vector2 uv1 = tex_uv[f0];
+				Vector2 uv2 = tex_uv[f1];
+				Vector2 uv3 = tex_uv[f2];
+
+				result["uv"] = barycoords.x * uv1 + barycoords.y * uv2 + barycoords.z * uv3;
+			}
+
+			if (surf_fmt.has_flag(Mesh::ArrayFormat::ARRAY_FORMAT_TEX_UV2)) {
+				const Vector<Vector2> &tex_uv2 = surf_arrays[Mesh::ArrayType::ARRAY_TEX_UV2];
+
+				Vector2 uv1 = tex_uv2[f0];
+				Vector2 uv2 = tex_uv2[f1];
+				Vector2 uv3 = tex_uv2[f2];
+
+				result["uv2"] = barycoords.x * uv1 + barycoords.y * uv2 + barycoords.z * uv3;
+			}
+		}
+	}
+
+	result["success"] = true;
+}
+
 #ifndef NAVIGATION_3D_DISABLED
 void MeshInstance3D::navmesh_parse_init() {
 	ERR_FAIL_NULL(NavigationServer3D::get_singleton());
@@ -921,6 +1087,9 @@ void MeshInstance3D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("bake_mesh_from_current_blend_shape_mix", "existing"), &MeshInstance3D::bake_mesh_from_current_blend_shape_mix, DEFVAL(Ref<ArrayMesh>()));
 	ClassDB::bind_method(D_METHOD("bake_mesh_from_current_skeleton_pose", "existing"), &MeshInstance3D::bake_mesh_from_current_skeleton_pose, DEFVAL(Ref<ArrayMesh>()));
+
+	ClassDB::bind_method(D_METHOD("intersect_ray", "origin", "dir", "include_uv"), &MeshInstance3D::intersect_ray, DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("intersect_segment", "from", "to", "include_uv"), &MeshInstance3D::intersect_segment, DEFVAL(false));
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh", PROPERTY_HINT_RESOURCE_TYPE, "Mesh"), "set_mesh", "get_mesh");
 	ADD_GROUP("Skeleton", "");

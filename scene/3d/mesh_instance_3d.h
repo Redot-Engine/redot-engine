@@ -79,6 +79,10 @@ protected:
 	bool _property_can_revert(const StringName &p_name) const;
 	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
 
+private:
+	Vector3i _get_surface_face_positions(const Ref<Mesh> &p_mesh, int32_t surface_index, int32_t face_index) const;
+	void _create_intersection_dictionary(Dictionary& result, const Vector3 &global_point, const Vector3 &global_normal, const Vector3 &local_point, const Vector3 &local_normal, const int32_t surf_index, const int32_t face_index, const bool p_include_uv) const;
+
 public:
 	void set_mesh(const Ref<Mesh> &p_mesh);
 	Ref<Mesh> get_mesh() const;
@@ -122,6 +126,9 @@ public:
 
 	virtual Ref<TriangleMesh> generate_triangle_mesh() const override;
 
+	Dictionary intersect_ray(const Vector3 &p_origin, const Vector3 &p_dir, const bool p_include_uv = false) const;
+	Dictionary intersect_segment(const Vector3 &p_from, const Vector3 &p_to, const bool p_include_uv = false) const;
+	
 #ifndef NAVIGATION_3D_DISABLED
 private:
 	static Callable _navmesh_source_geometry_parsing_callback;
