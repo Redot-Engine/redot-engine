@@ -967,7 +967,7 @@ Dictionary MeshInstance3D::intersect_segment(const Vector3 &p_from, const Vector
 }
 
 void MeshInstance3D::_create_intersection_dictionary(Dictionary &result, const Vector3 &global_point, const Vector3 &global_normal, const Vector3 &local_point, const Vector3 &local_normal, const int32_t surf_index, const int32_t face_index, const bool p_include_uv) const {
-	Ref<Material> material = mesh->surface_get_material(surf_index);
+	Ref<Material> material = get_active_material(surf_index);
 
 	result["position"] = global_point;
 	result["normal"] = global_normal;
