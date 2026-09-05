@@ -79,6 +79,11 @@ protected:
 	bool _property_can_revert(const StringName &p_name) const;
 	bool _property_get_revert(const StringName &p_name, Variant &r_property) const;
 
+private:
+
+	Vector3i _get_surface_face_positions(const Ref<Mesh> &p_mesh, int32_t surface_index, int32_t face_index) const;
+	void _create_intersection_dictionary(Dictionary& result, const Vector3 &global_point, const Vector3 &global_normal, const Vector3 &local_point, const Vector3 &local_normal, const int32_t surf_index, const int32_t face_index, const bool p_include_uv) const;
+
 public:
 	void set_mesh(const Ref<Mesh> &p_mesh);
 	Ref<Mesh> get_mesh() const;
