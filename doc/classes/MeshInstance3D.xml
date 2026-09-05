@@ -114,7 +114,7 @@
 			<description>
 				Performs a ray intersection test against the visual mesh.
 				Returns a [Dictionary] with the following keys: [code]success[/code], [code]position[/code], [code]normal[/code], [code]surface_index[/code], [code]face_index[/code], and [code]material[/code].
-				The keys [code]surface[/code] and [code]face[/code] are indices into their respective mesh data, [code]position[/code] and [code]normal[/code] returns the position the mesh was intersected at and the normal of the intersected face, and [code]material[/code] is the material of the intersected face.
+				The keys [code]surface_index[/code] and [code]face_index[/code] are indices into their respective mesh data, [code]position[/code] and [code]normal[/code] returns the position the mesh was intersected at and the normal of the intersected face, and [code]material[/code] is the material of the intersected face.
 				If [param include_uv] is [code]true[/code], then the UV and UV2 of the face at the intersected point is calculated and returned as the keys [code]uv[/code] and [code]uv2[/code].
 				If the key [code]success[/code] is true, then the ray intersected the mesh.
 			</description>
