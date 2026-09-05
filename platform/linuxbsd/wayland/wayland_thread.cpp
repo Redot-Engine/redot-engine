@@ -339,23 +339,23 @@ bool WaylandThread::_load_cursor_theme(int p_cursor_size) {
 	ERR_FAIL_NULL_V_MSG(wl_cursor_theme, false, "Can't load any cursor theme.");
 
 	static const char *cursor_names[] = {
-		"left_ptr",
-		"xterm",
-		"hand2",
-		"cross",
-		"watch",
-		"left_ptr_watch",
-		"fleur",
-		"dnd-move",
-		"crossed_circle",
-		"v_double_arrow",
-		"h_double_arrow",
-		"size_bdiag",
-		"size_fdiag",
-		"move",
-		"row_resize",
-		"col_resize",
-		"question_arrow"
+		"left_ptr", // CURSOR_ARROW
+		"xterm", // CURSOR_IBEAM
+		"hand2", // CURSOR_POINTING_HAND
+		"cross", // CURSOR_CROSS
+		"watch", // CURSOR_WAIT
+		"left_ptr_watch", // CURSOR_BUSY
+		"grab", // CURSOR_DRAG
+		"grabbing", // CURSOR_CAN_DROP
+		"crossed_circle", // CURSOR_FORBIDDEN
+		"v_double_arrow", // CURSOR_VSIZE
+		"h_double_arrow", // CURSOR_HSIZE
+		"size_bdiag", // CURSOR_BDIAGSIZE
+		"size_fdiag", // CURSOR_FDIAGSIZE
+		"fleur", // CURSOR_MOVE
+		"row_resize", // CURSOR_VSPLIT
+		"col_resize", // CURSOR_HSPLIT
+		"question_arrow" // CURSOR_HELP
 	};
 
 	static const char *cursor_names_fallback[] = {
@@ -372,7 +372,7 @@ bool WaylandThread::_load_cursor_theme(int p_cursor_size) {
 		"ew-resize",
 		"fd_double_arrow",
 		"bd_double_arrow",
-		"fleur",
+		"move",
 		"sb_v_double_arrow",
 		"sb_h_double_arrow",
 		"help"

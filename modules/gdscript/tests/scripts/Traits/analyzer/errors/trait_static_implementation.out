@@ -1,0 +1,2 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 8: Static function "required" cannot implement the non-static function declared in trait "RequiresInstance".

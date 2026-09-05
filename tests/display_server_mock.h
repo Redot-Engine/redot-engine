@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "servers/display_server_headless.h"
+#include "servers/display/display_server_headless.h"
 
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 

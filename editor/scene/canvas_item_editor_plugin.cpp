@@ -2851,7 +2851,7 @@ void CanvasItemEditor::_update_cursor() {
 			break;
 	}
 	if (pan_pressed) {
-		c = CURSOR_DRAG;
+		c = CURSOR_CAN_DROP;
 	}
 	set_default_cursor_shape(c);
 }
@@ -2966,7 +2966,7 @@ Control::CursorShape CanvasItemEditor::get_cursor_shape(const Point2 &p_pos) con
 	}
 
 	if (pan_pressed) {
-		c = CURSOR_DRAG;
+		c = CURSOR_CAN_DROP;
 	}
 	return c;
 }

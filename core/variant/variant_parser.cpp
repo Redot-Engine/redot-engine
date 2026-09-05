@@ -44,6 +44,9 @@
 #include "core/io/resource_uid.h"
 #include "core/object/script_language.h"
 #include "core/string/string_buffer.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
+#include "core/variant/variant_internal.h"
 
 char32_t VariantParser::Stream::get_char() {
 	// is within buffer?
@@ -1136,6 +1139,108 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 					at_key = true;
 				}
 			}
+		} else if (id == "Struct") {
+			get_token(p_stream, token, line, r_err_str);
+			if (token.type != TK_PARENTHESIS_OPEN) {
+				r_err_str = "Expected '('";
+				return ERR_PARSE_ERROR;
+			}
+
+			Variant version_v;
+			Variant id_v;
+			Variant fields_v;
+			Variant values_v;
+			Variant *slots[4] = { &version_v, &id_v, &fields_v, &values_v };
+			for (int s = 0; s < 4; s++) {
+				get_token(p_stream, token, line, r_err_str);
+				Error err = parse_value(token, *slots[s], p_stream, line, r_err_str, p_res_parser, p_allow_objects);
+				if (err) {
+					return err;
+				}
+				get_token(p_stream, token, line, r_err_str);
+				const bool last = (s == 3);
+				if (token.type != (last ? TK_PARENTHESIS_CLOSE : TK_COMMA)) {
+					r_err_str = last ? "Expected ')'" : "Expected ','";
+					return ERR_PARSE_ERROR;
+				}
+			}
+
+			if (version_v.get_type() != Variant::INT) {
+				r_err_str = "Struct version must be an integer.";
+				return ERR_PARSE_ERROR;
+			}
+			if (uint32_t(int64_t(version_v)) != StructInfo::SERIALIZATION_VERSION) {
+				r_err_str = "Unsupported struct schema version.";
+				return ERR_PARSE_ERROR;
+			}
+
+			if (id_v.get_type() != Variant::STRING) {
+				r_err_str = "Struct logical id must be a String.";
+				return ERR_PARSE_ERROR;
+			}
+			if (fields_v.get_type() != Variant::ARRAY) {
+				r_err_str = "Struct fields must be an Array.";
+				return ERR_PARSE_ERROR;
+			}
+			if (values_v.get_type() != Variant::ARRAY) {
+				r_err_str = "Struct values must be an Array.";
+				return ERR_PARSE_ERROR;
+			}
+
+			const String sid = id_v;
+			if (sid.is_empty()) {
+				value = Struct();
+				return OK;
+			}
+			const Array fields = fields_v;
+			const Array values = values_v;
+			StructInfoBuilder b;
+			b.set_logical_type_id(StringName(sid));
+			for (int i = 0; i < fields.size(); i++) {
+				if (fields[i].get_type() != Variant::DICTIONARY) {
+					r_err_str = "Struct field descriptor must be a Dictionary.";
+					return ERR_PARSE_ERROR;
+				}
+				const Dictionary fd = fields[i];
+				StructInfo::Field f;
+				f.name = StringName(String(fd.get("name", String())));
+				f.type = StructInfo::type_from_token(String(fd.get("type", "nil")));
+				if (f.type == Variant::VARIANT_MAX) {
+					r_err_str = "Unknown struct field type token.";
+					return ERR_PARSE_ERROR;
+				}
+				f.is_typed = bool(fd.get("typed", false));
+				if (fd.has("class_name")) {
+					f.class_name = StringName(String(fd["class_name"]));
+				}
+				if (fd.has("struct_type_id")) {
+					f.struct_type_id = StringName(String(fd["struct_type_id"]));
+				}
+				if (!fd.has("default")) {
+					r_err_str = "Struct field is missing its default value.";
+					return ERR_PARSE_ERROR;
+				}
+				f.default_value = fd["default"];
+				b.add_field(f);
+			}
+			Ref<StructInfo> info = b.build();
+			if (info.is_null()) {
+				r_err_str = "Failed to rebuild StructInfo from text.";
+				return ERR_PARSE_ERROR;
+			}
+			Struct st(info);
+			if (values.size() != st.get_field_count()) {
+				r_err_str = "Struct value count does not match its field count.";
+				return ERR_PARSE_ERROR;
+			}
+			for (int i = 0; i < values.size(); i++) {
+				if (!st.try_set_member(i, values[i])) {
+					r_err_str = "Struct value incompatible with its field schema.";
+					return ERR_PARSE_ERROR;
+				}
+			}
+			value = st;
+			return OK;
 		} else if (id == "Resource" || id == "SubResource" || id == "ExtResource") {
 			if (!p_allow_objects) {
 				r_err_str = R"(Object decoding is prevented because "allow_objects" is false)";
@@ -2414,6 +2519,44 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 			if (dict.is_typed()) {
 				p_store_string_func(p_store_string_ud, ")");
 			}
+		} break;
+
+		case Variant::STRUCT: {
+			const Struct &s = *VariantInternal::get_struct(&p_variant);
+			const Ref<StructInfo> info = s.get_info();
+			p_store_string_func(p_store_string_ud, "Struct(" + itos(StructInfo::SERIALIZATION_VERSION) + ", ");
+			if (info.is_null()) {
+				p_store_string_func(p_store_string_ud, R"("", [], []))");
+				break;
+			}
+
+			write(String(info->get_logical_type_id()), p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+			p_store_string_func(p_store_string_ud, ", ");
+
+			Array fields;
+			for (int i = 0; i < info->get_field_count(); i++) {
+				Dictionary fd;
+				fd["name"] = String(info->get_field_name(i));
+				fd["type"] = String(StructInfo::type_to_token(info->get_field_type(i)));
+				fd["typed"] = info->is_field_typed(i);
+				if (info->get_field_class_name(i) != StringName()) {
+					fd["class_name"] = String(info->get_field_class_name(i));
+				}
+				if (info->get_field_struct_type_id(i) != StringName()) {
+					fd["struct_type_id"] = String(info->get_field_struct_type_id(i));
+				}
+				fd["default"] = Struct::_make_serializable(info->_get_field_default_raw(i));
+				fields.push_back(fd);
+			}
+			write(fields, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+			p_store_string_func(p_store_string_ud, ", ");
+
+			Array values;
+			for (int i = 0; i < s.get_field_count(); i++) {
+				values.push_back(s.get_member_serializable(i));
+			}
+			write(values, p_store_string_func, p_store_string_ud, p_encode_res_func, p_encode_res_ud, p_recursion_count, p_compat, p_full_objects);
+			p_store_string_func(p_store_string_ud, ")");
 		} break;
 
 		case Variant::ARRAY: {

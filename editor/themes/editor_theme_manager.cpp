@@ -730,6 +730,19 @@ void EditorThemeManager::_create_shared_styles(const Ref<EditorTheme> &p_theme, 
 			} else {
 				p_config.tree_panel_style->set_border_color(p_config.dark_color_3);
 			}
+
+			// Project Manager panel.
+
+			p_config.project_manager_panel_style = p_config.base_style->duplicate();
+			p_config.project_manager_panel_style->set_bg_color(p_config.dark_color_1);
+			p_config.project_manager_panel_style->set_border_color(p_config.dark_color_2);
+
+			if (p_config.draw_extra_borders) {
+				p_config.project_manager_panel_style->set_border_width_all(Math::round(EDSCALE));
+				p_config.project_manager_panel_style->set_border_color(p_config.extra_border_color_1);
+			} else {
+				p_config.project_manager_panel_style->set_border_width_all(0);
+			}
 		}
 	}
 }
@@ -1887,6 +1900,7 @@ void EditorThemeManager::_populate_editor_styles(const Ref<EditorTheme> &p_theme
 	// Project manager.
 	{
 		p_theme->set_stylebox("project_list", "ProjectManager", p_config.tree_panel_style);
+		p_theme->set_stylebox("panel", "ProjectManager", p_config.project_manager_panel_style);
 		p_theme->set_constant("sidebar_button_icon_separation", "ProjectManager", int(6 * EDSCALE));
 		p_theme->set_icon("browse_folder", "ProjectManager", p_theme->get_icon(SNAME("FolderBrowse"), EditorStringName(EditorIcons)));
 		p_theme->set_icon("browse_file", "ProjectManager", p_theme->get_icon(SNAME("FileBrowse"), EditorStringName(EditorIcons)));
@@ -1897,24 +1911,27 @@ void EditorThemeManager::_populate_editor_styles(const Ref<EditorTheme> &p_theme
 
 			Ref<StyleBoxFlat> tag = p_config.button_style->duplicate();
 			tag->set_bg_color(p_config.dark_theme ? tag->get_bg_color().lightened(0.2) : tag->get_bg_color().darkened(0.2));
+			const int tag_corner_radius = Math::round(p_config.corner_radius * EDSCALE);
 			tag->set_corner_radius(CORNER_TOP_LEFT, 0);
 			tag->set_corner_radius(CORNER_BOTTOM_LEFT, 0);
-			tag->set_corner_radius(CORNER_TOP_RIGHT, 4);
-			tag->set_corner_radius(CORNER_BOTTOM_RIGHT, 4);
+			tag->set_corner_radius(CORNER_TOP_RIGHT, p_config.corner_radius);
+			tag->set_corner_radius(CORNER_BOTTOM_RIGHT, p_config.corner_radius);
+			tag->set_corner_radius(CORNER_TOP_RIGHT, tag_corner_radius);
+			tag->set_corner_radius(CORNER_BOTTOM_RIGHT, tag_corner_radius);
 			p_theme->set_stylebox(CoreStringName(normal), "ProjectTagButton", tag);
 
 			tag = p_config.button_style_hover->duplicate();
 			tag->set_corner_radius(CORNER_TOP_LEFT, 0);
 			tag->set_corner_radius(CORNER_BOTTOM_LEFT, 0);
-			tag->set_corner_radius(CORNER_TOP_RIGHT, 4);
-			tag->set_corner_radius(CORNER_BOTTOM_RIGHT, 4);
+			tag->set_corner_radius(CORNER_TOP_RIGHT, tag_corner_radius);
+			tag->set_corner_radius(CORNER_BOTTOM_RIGHT, tag_corner_radius);
 			p_theme->set_stylebox(SceneStringName(hover), "ProjectTagButton", tag);
 
 			tag = p_config.button_style_pressed->duplicate();
 			tag->set_corner_radius(CORNER_TOP_LEFT, 0);
 			tag->set_corner_radius(CORNER_BOTTOM_LEFT, 0);
-			tag->set_corner_radius(CORNER_TOP_RIGHT, 4);
-			tag->set_corner_radius(CORNER_BOTTOM_RIGHT, 4);
+			tag->set_corner_radius(CORNER_TOP_RIGHT, tag_corner_radius);
+			tag->set_corner_radius(CORNER_BOTTOM_RIGHT, tag_corner_radius);
 			p_theme->set_stylebox(SceneStringName(pressed), "ProjectTagButton", tag);
 		}
 	}

@@ -49,6 +49,7 @@ class GDScriptCompiler {
 	const GDScriptParser *parser = nullptr;
 	HashSet<GDScript *> parsed_classes;
 	HashSet<GDScript *> parsing_classes;
+	Vector<GDScriptFunction *> functions_to_delete;
 	GDScript *main_script = nullptr;
 
 	struct FunctionLambdaInfo {
@@ -197,4 +198,5 @@ public:
 	int get_error_column() const;
 
 	GDScriptCompiler();
+	~GDScriptCompiler();
 };

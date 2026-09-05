@@ -48,6 +48,7 @@ class Parallax2D : public Node2D {
 	String group_name;
 	Size2 scroll_scale = Size2(1, 1);
 	Point2 scroll_offset;
+	Point2 manual_scroll;
 	Point2 screen_offset;
 	Vector2 repeat_size;
 	int repeat_times = 1;
@@ -82,6 +83,14 @@ public:
 
 	void set_autoscroll(const Point2 &p_autoscroll);
 	Point2 get_autoscroll() const;
+
+	/// Manually scrolls this [Parallax2D]'s position by the given offset, in pixels.
+	/// Unlike [member autoscroll], which continuously moves the node each frame,
+	/// this allows programmatic control over scrolling for infinite scroll behavior
+	/// without relying on the camera or auto-scroll system.
+	void set_manual_scroll(const Point2 &p_scroll);
+	/// Returns the current manual scroll offset, in pixels.
+	Point2 get_manual_scroll() const;
 
 	void set_scroll_offset(const Point2 &p_offset);
 	Point2 get_scroll_offset() const;

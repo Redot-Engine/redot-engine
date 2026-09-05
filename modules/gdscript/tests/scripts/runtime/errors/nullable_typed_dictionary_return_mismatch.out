@@ -1,0 +1,3 @@
+GDTEST_RUNTIME_ERROR
+>> SCRIPT ERROR at runtime/errors/nullable_typed_dictionary_return_mismatch.gd:2 on bad(): Trying to return a dictionary of type "Dictionary" where expected return type is "Dictionary[String, int]".
+{  }

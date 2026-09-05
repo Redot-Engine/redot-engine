@@ -74,6 +74,7 @@ public:
 		UNSAFE_METHOD_ACCESS, //< Function not found in the detected type (but can be in subtypes).
 		UNSAFE_CAST, //< Casting a `Variant` value to non-`Variant`.
 		UNSAFE_CALL_ARGUMENT, //< Function call argument is of a supertype of the required type.
+		UNSAFE_NULLABLE_ACCESS, //< A member, method, index or operator is used on a nullable value that may be null.
 		UNSAFE_VOID_RETURN, //< Function returns void but returned a call to a function that can't be type checked.
 		RETURN_VALUE_DISCARDED, //< Function call returns something but the value isn't used.
 		STATIC_CALLED_ON_INSTANCE, //< A static method was called on an instance of a class instead of on the class itself.
@@ -97,6 +98,9 @@ public:
 		NATIVE_METHOD_OVERRIDE, //< The script method overrides a native one, this may not work as intended.
 		GET_NODE_DEFAULT_WITHOUT_ONREADY, //< A class variable uses `get_node()` (or the `$` notation) as its default value, but does not use the @onready annotation.
 		ONREADY_WITH_EXPORT, //< The `@onready` annotation will set the value after `@export` which is likely not intended.
+		UNUSED_STATIC_OVERRIDING_TRAIT, // Overridden static without using "static" keyword.
+		EXPERIMENTAL_TRAIT, //< Traits are still experimental, and their syntax and behavior may change in future releases.
+		EXPERIMENTAL_STRUCT, //< Structs are still experimental, and their syntax and behavior may change in future releases.
 #ifndef DISABLE_DEPRECATED
 		PROPERTY_USED_AS_FUNCTION, //< Function not found, but there's a property with the same name.
 		CONSTANT_USED_AS_FUNCTION, //< Function not found, but there's a constant with the same name.
@@ -131,6 +135,7 @@ public:
 		IGNORE, // UNSAFE_METHOD_ACCESS // Too common in untyped scenarios.
 		IGNORE, // UNSAFE_CAST // Too common in untyped scenarios.
 		IGNORE, // UNSAFE_CALL_ARGUMENT // Too common in untyped scenarios.
+		WARN, // UNSAFE_NULLABLE_ACCESS
 		WARN, // UNSAFE_VOID_RETURN
 		IGNORE, // RETURN_VALUE_DISCARDED // Too spammy by default on common cases (connect, Tween, etc.).
 		WARN, // STATIC_CALLED_ON_INSTANCE
@@ -154,6 +159,9 @@ public:
 		ERROR, // NATIVE_METHOD_OVERRIDE // May not work as expected.
 		ERROR, // GET_NODE_DEFAULT_WITHOUT_ONREADY // May not work as expected.
 		ERROR, // ONREADY_WITH_EXPORT // May not work as expected.
+		WARN, // UNUSED_STATIC_OVERRIDING_TRAIT
+		WARN, // EXPERIMENTAL_TRAIT
+		WARN, // EXPERIMENTAL_STRUCT
 #ifndef DISABLE_DEPRECATED
 		WARN, // PROPERTY_USED_AS_FUNCTION
 		WARN, // CONSTANT_USED_AS_FUNCTION

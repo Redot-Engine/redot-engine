@@ -1033,8 +1033,21 @@ void SpriteFramesEditor::_animation_selected() {
 	edited_anim = selected->get_text(0);
 
 	if (animated_sprite) {
+		String previous = animated_sprite->call("get_animation");
 		sprite_node_updating = true;
-		animated_sprite->call("set_animation", edited_anim);
+		// Only record an undo step for an actual change with a valid previous animation to
+		// restore to. AnimatedSprite2D/3D::set_animation() rejects names not present in
+		// `frames` (ERR_FAIL_MSG), so if `previous` is empty or no longer valid there is no
+		// way to undo back to it; just apply the change directly in that case.
+		if (previous != edited_anim && !previous.is_empty() && frames.is_valid() && frames->has_animation(previous)) {
+			EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+			undo_redo->create_action(TTR("Change Animation"), UndoRedo::MERGE_DISABLE, animated_sprite);
+			undo_redo->add_do_method(animated_sprite, "set_animation", edited_anim);
+			undo_redo->add_undo_method(animated_sprite, "set_animation", previous);
+			undo_redo->commit_action();
+		} else {
+			animated_sprite->call("set_animation", edited_anim);
+		}
 		sprite_node_updating = false;
 	}
 

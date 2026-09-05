@@ -44,6 +44,7 @@
 #include "editor/script/script_create_dialog.h"
 #include "editor/script/script_editor_plugin.h"
 #include "scene/gui/box_container.h"
+#include "scene/gui/color_picker.h"
 #include "scene/gui/control.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/menu_button.h"
@@ -189,6 +190,9 @@ private:
 
 	PopupMenu *file_list_popup = nullptr;
 	PopupMenu *tree_popup = nullptr;
+	AcceptDialog *folder_color_dialog = nullptr;
+	ColorPicker *folder_color_picker = nullptr;
+	Vector<String> custom_color_selected_folders;
 
 	DependencyEditor *deps_editor = nullptr;
 	DependencyEditorOwners *owners_editor = nullptr;
@@ -338,6 +342,9 @@ private:
 	void _file_sort_popup(int p_id);
 
 	void _folder_color_index_pressed(int p_index, PopupMenu *p_menu);
+	void _set_folder_color(const Vector<String> &p_selected_folders, const Variant &p_color);
+	Vector<String> _get_selected_folders();
+	void _folder_color_confirmed();
 	void _file_and_folders_fill_popup(PopupMenu *p_popup, const Vector<String> &p_paths, bool p_display_path_dependent_options = true);
 	void _tree_rmb_select(const Vector2 &p_pos, MouseButton p_button);
 	void _file_list_item_clicked(int p_item, const Vector2 &p_pos, MouseButton p_mouse_button_index);

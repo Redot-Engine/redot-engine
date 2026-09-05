@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Struct" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		A schema-backed container of named, typed fields with value semantics.
+	</brief_description>
+	<description>
+		[Struct] is a fixed-layout container whose fields are described by a shared schema (name, type, and optional default per field). Unlike [Dictionary], a struct has value semantics: copying a struct copies its field values, and two structs compare equal when they share the same field layout and all field values are equal.
+		Fields are accessed by name (a [StringName] or [String]) or by integer index through the [code][][/code] operator. Values assigned to a field are validated against the schema and coerced to the field's declared type; incompatible values are rejected.
+		[b]Note:[/b] The schema itself is created and managed internally; structs are typically obtained from typed APIs or from GDScript [code]struct[/code] declarations rather than constructed field-by-field from script.
+	</description>
+	<tutorials>
+	</tutorials>
+	<constructors>
+		<constructor name="Struct">
+			<return type="Struct" />
+			<description>
+				Constructs an empty [Struct] with no schema (a null struct).
+			</description>
+		</constructor>
+		<constructor name="Struct">
+			<return type="Struct" />
+			<param index="0" name="from" type="Struct" />
+			<description>
+				Constructs a [Struct] as a copy of [param from], duplicating its schema reference and field values.
+			</description>
+		</constructor>
+	</constructors>
+	<operators>
+		<operator name="operator !=">
+			<return type="bool" />
+			<param index="0" name="right" type="Struct" />
+			<description>
+				Returns [code]true[/code] if the two structs are not equal, that is, if they have a different field layout or any field value differs.
+			</description>
+		</operator>
+		<operator name="operator ==">
+			<return type="bool" />
+			<param index="0" name="right" type="Struct" />
+			<description>
+				Returns [code]true[/code] if the two structs are equal. Structs are equal when they share the same field layout and all corresponding field values compare equal; structs with different layouts are never equal.
+			</description>
+		</operator>
+		<operator name="operator []">
+			<return type="Variant" />
+			<param index="0" name="key" type="Variant" />
+			<description>
+				Accesses a struct field. The key may be the field name (a [StringName] or [String]) or the integer field index. Assignment is validated against the struct's schema: incompatible values are rejected, and accepted values are coerced to the field's declared type.
+			</description>
+		</operator>
+	</operators>
+</class>

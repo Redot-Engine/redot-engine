@@ -3829,6 +3829,8 @@ bool BindingsGenerator::_arg_default_value_is_assignable_to_type(const Variant &
 		case Variant::VECTOR4I:
 			return p_arg_type.name == name_cache.type_Vector4 ||
 					p_arg_type.name == Variant::get_type_name(p_val.get_type());
+		case Variant::STRUCT:
+			return false;
 		case Variant::VARIANT_MAX:
 			CRASH_NOW_MSG("Unexpected Variant type: " + itos(p_val.get_type()));
 			break;
@@ -3858,35 +3860,28 @@ struct SortMethodWithHashes {
 bool BindingsGenerator::_populate_object_type_interfaces() {
 	obj_types.clear();
 
-	List<StringName> class_list;
-	ClassDB::get_class_list(&class_list);
-	class_list.sort_custom<StringName::AlphCompare>();
+	LocalVector<StringName> class_list;
+	ClassDB::get_class_list(class_list);
 
-	while (class_list.size()) {
-		StringName type_cname = class_list.front()->get();
-
+	for (const StringName &type_cname : class_list) {
 		ClassDB::APIType api_type = ClassDB::get_api_type(type_cname);
 
 		if (api_type == ClassDB::API_NONE) {
-			class_list.pop_front();
 			continue;
 		}
 
 		if (ignored_types.has(type_cname)) {
 			_log("Ignoring type '%s' because it's in the list of ignored types\n", String(type_cname).utf8().get_data());
-			class_list.pop_front();
 			continue;
 		}
 
 		if (!ClassDB::is_class_exposed(type_cname)) {
 			_log("Ignoring type '%s' because it's not exposed\n", String(type_cname).utf8().get_data());
-			class_list.pop_front();
 			continue;
 		}
 
 		if (!ClassDB::is_class_enabled(type_cname)) {
 			_log("Ignoring type '%s' because it's not enabled\n", String(type_cname).utf8().get_data());
-			class_list.pop_front();
 			continue;
 		}
 
@@ -4447,8 +4442,6 @@ bool BindingsGenerator::_populate_object_type_interfaces() {
 
 			obj_types.insert(itype.name + CS_SINGLETON_INSTANCE_SUFFIX, itype);
 		}
-
-		class_list.pop_front();
 	}
 
 	return true;
@@ -4707,6 +4700,9 @@ bool BindingsGenerator::_arg_default_value_from_variant(const Variant &p_val, Ar
 			ERR_FAIL_COND_V_MSG(!p_val.is_zero(), false,
 					"Parameter of type '" + String(r_iarg.type.cname) + "' can only have null/zero as the default value.");
 			r_iarg.default_argument = "default";
+			break;
+		case Variant::STRUCT:
+			ERR_FAIL_V_MSG(false, "Struct default values are not supported in C# bindings.");
 			break;
 		case Variant::VARIANT_MAX:
 			ERR_FAIL_V_MSG(false, "Unexpected Variant type: " + itos(p_val.get_type()));

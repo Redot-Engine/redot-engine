@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="WorldScape3DEditor" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		This class handles all of the sculpting and painting operations for WorldScape3D.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="apply_undo">
+			<return type="void" />
+			<param index="0" name="data" type="Dictionary" />
+			<description>
+				Undo the previous changes, with the provided data. Used by Redot, not gamedevs.
+			</description>
+		</method>
+		<method name="backup_region">
+			<return type="void" />
+			<param index="0" name="region" type="WorldScape3DRegion" />
+			<description>
+				Adds a region to the currently pending operation undo snapshot. [method is_operating] must be true.
+			</description>
+		</method>
+		<method name="get_operation" qualifiers="const">
+			<return type="int" enum="WorldScape3DEditor.Operation" />
+			<description>
+				Returns the current selected tool operation (eg. add, subtract).
+			</description>
+		</method>
+		<method name="get_terrain" qualifiers="const">
+			<return type="WorldScape3D" />
+			<description>
+				Returns the instance of WorldScape3D this class is connected to.
+			</description>
+		</method>
+		<method name="get_tool" qualifiers="const">
+			<return type="int" enum="WorldScape3DEditor.Tool" />
+			<description>
+				Returns the current tool selected in the editor plugin.
+			</description>
+		</method>
+		<method name="is_operating" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns true if currently in the middle of a brushing operation.
+			</description>
+		</method>
+		<method name="operate">
+			<return type="void" />
+			<param index="0" name="position" type="Vector3" />
+			<param index="1" name="camera_direction" type="float" />
+			<description>
+				Start brushing.
+			</description>
+		</method>
+		<method name="set_brush_data">
+			<return type="void" />
+			<param index="0" name="data" type="Dictionary" />
+			<description>
+				Sets all brush settings used in the editor plugin.
+			</description>
+		</method>
+		<method name="set_operation">
+			<return type="void" />
+			<param index="0" name="operation" type="int" enum="WorldScape3DEditor.Operation" />
+			<description>
+				Sets the tool operation used in the editor plugin.
+			</description>
+		</method>
+		<method name="set_terrain">
+			<return type="void" />
+			<param index="0" name="terrain" type="WorldScape3D" />
+			<description>
+				Sets the instance of WorldScape3D this class is connected to.
+			</description>
+		</method>
+		<method name="set_tool">
+			<return type="void" />
+			<param index="0" name="tool" type="int" enum="WorldScape3DEditor.Tool" />
+			<description>
+				Sets the tool selected in the editor plugin.
+			</description>
+		</method>
+		<method name="start_operation">
+			<return type="void" />
+			<param index="0" name="position" type="Vector3" />
+			<description>
+				Begin a sculpting or painting operation. Prepares to create an undo/redo commit.
+			</description>
+		</method>
+		<method name="stop_operation">
+			<return type="void" />
+			<description>
+				End a sculpting or painting operation. Commits any regions marked with [member WorldScape3DRegion.edited] in the undo/redo system and clears that flag.
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="ADD" value="0" enum="Operation">
+			Additive operations.
+		</constant>
+		<constant name="SUBTRACT" value="1" enum="Operation">
+			Subtractive operations.
+		</constant>
+		<constant name="REPLACE" value="2" enum="Operation">
+			Replacing operations.
+		</constant>
+		<constant name="AVERAGE" value="3" enum="Operation">
+			Averaging operations.
+		</constant>
+		<constant name="GRADIENT" value="4" enum="Operation">
+			Gradient operations.
+		</constant>
+		<constant name="OP_MAX" value="5" enum="Operation">
+			The number of elements in this enum.
+		</constant>
+		<constant name="SCULPT" value="1" enum="Tool">
+		</constant>
+		<constant name="HEIGHT" value="2" enum="Tool">
+			Sculpt heights.
+		</constant>
+		<constant name="TEXTURE" value="3" enum="Tool">
+			Paint textures.
+		</constant>
+		<constant name="COLOR" value="4" enum="Tool">
+			Paint on the color map.
+		</constant>
+		<constant name="ROUGHNESS" value="5" enum="Tool">
+			Paint a roughness modifier, aka wetness.
+		</constant>
+		<constant name="ANGLE" value="10" enum="Tool">
+			Paint textures rotated by an angle.
+		</constant>
+		<constant name="SCALE" value="11" enum="Tool">
+			Paint textures scaled by a value.
+		</constant>
+		<constant name="AUTOSHADER" value="6" enum="Tool">
+			Paint where the shader automatically textures.
+		</constant>
+		<constant name="HOLES" value="7" enum="Tool">
+			Paint where vertices will be invalidated to leave holes.
+		</constant>
+		<constant name="NAVIGATION" value="8" enum="Tool">
+			Paint where navigation will be generated.
+		</constant>
+		<constant name="INSTANCER" value="9" enum="Tool">
+			Paint MultiMesh instances on the ground.
+		</constant>
+		<constant name="REGION" value="0" enum="Tool">
+			Add/remove regions.
+		</constant>
+		<constant name="TOOL_MAX" value="12" enum="Tool">
+			The number of elements in this enum.
+		</constant>
+	</constants>
+</class>

@@ -70,16 +70,16 @@
 #include "scene/gui/separator.h"
 #include "scene/main/window.h"
 #include "scene/theme/theme_db.h"
-#include "servers/display_server.h"
-#include "servers/navigation_server_3d.h"
-
-#ifndef PHYSICS_3D_DISABLED
-#include "servers/physics_server_3d.h"
-#endif // PHYSICS_3D_DISABLED
+#include "servers/display/display_server.h"
+#include "servers/navigation_3d/navigation_server_3d.h"
 
 #ifndef PHYSICS_2D_DISABLED
-#include "servers/physics_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // PHYSICS_2D_DISABLED
+
+#ifndef PHYSICS_3D_DISABLED
+#include "servers/physics_3d/physics_server_3d.h"
+#endif // PHYSICS_3D_DISABLED
 
 constexpr int GODOT4_CONFIG_VERSION = 5;
 
@@ -240,7 +240,7 @@ void ProjectManager::_update_theme(bool p_skip_creation) {
 		main_vbox->add_theme_constant_override("separation", top_bar_separation);
 
 		background_panel->add_theme_style_override(SceneStringName(panel), get_theme_stylebox(SNAME("Background"), EditorStringName(EditorStyles)));
-		main_view_container->add_theme_style_override(SceneStringName(panel), get_theme_stylebox(SceneStringName(panel), SNAME("TabContainer")));
+		main_view_container->add_theme_style_override(SceneStringName(panel), get_theme_stylebox(SNAME("panel"), SNAME("ProjectManager")));
 
 		title_bar_logo->set_button_icon(get_editor_theme_icon(SNAME("TitleBarLogo")));
 
@@ -1399,7 +1399,7 @@ ProjectManager::ProjectManager() {
 
 		title_bar_logo = memnew(Button);
 		title_bar_logo->set_flat(true);
-		title_bar_logo->set_tooltip_text(TTR("About Godot"));
+		title_bar_logo->set_tooltip_text(TTR("About Redot"));
 		left_hbox->add_child(title_bar_logo);
 		title_bar_logo->connect(SceneStringName(pressed), callable_mp(this, &ProjectManager::_show_about));
 

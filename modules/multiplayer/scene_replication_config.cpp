@@ -60,6 +60,12 @@ bool SceneReplicationConfig::_set(const StringName &p_name, const Variant &p_val
 			ERR_FAIL_COND_V(mode < REPLICATION_MODE_NEVER || mode > REPLICATION_MODE_ON_CHANGE, false);
 			property_set_replication_mode(prop.name, mode);
 			return true;
+		} else if (what == "precision") {
+			ERR_FAIL_COND_V(p_value.get_type() != Variant::INT, false);
+			ReplicationPrecision precision = (ReplicationPrecision)p_value.operator int();
+			ERR_FAIL_COND_V(precision < PRECISION_FULL || precision > PRECISION_HALF, false);
+			property_set_precision(prop.name, precision);
+			return true;
 		}
 		ERR_FAIL_COND_V(p_value.get_type() != Variant::BOOL, false);
 		if (what == "spawn") {
@@ -95,6 +101,9 @@ bool SceneReplicationConfig::_get(const StringName &p_name, Variant &r_ret) cons
 		} else if (what == "replication_mode") {
 			r_ret = prop.mode;
 			return true;
+		} else if (what == "precision") {
+			r_ret = prop.precision;
+			return true;
 		}
 	}
 	return false;
@@ -105,15 +114,23 @@ void SceneReplicationConfig::_get_property_list(List<PropertyInfo> *p_list) cons
 		p_list->push_back(PropertyInfo(Variant::STRING, "properties/" + itos(i) + "/path", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
 		p_list->push_back(PropertyInfo(Variant::STRING, "properties/" + itos(i) + "/spawn", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
 		p_list->push_back(PropertyInfo(Variant::INT, "properties/" + itos(i) + "/replication_mode", PROPERTY_HINT_ENUM, "Never,Always,On Change", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
+		p_list->push_back(PropertyInfo(Variant::INT, "properties/" + itos(i) + "/precision", PROPERTY_HINT_ENUM, "Full,Half", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
 	}
 }
 
 void SceneReplicationConfig::reset_state() {
 	dirty = false;
+	reduced_precision = false;
+	spawn_reduced_precision = false;
+	sync_reduced_precision = false;
+	watch_reduced_precision = false;
 	properties.clear();
 	sync_props.clear();
 	spawn_props.clear();
 	watch_props.clear();
+	sync_precisions.clear();
+	spawn_precisions.clear();
+	watch_precisions.clear();
 }
 
 TypedArray<NodePath> SceneReplicationConfig::get_properties() const {
@@ -230,24 +247,86 @@ void SceneReplicationConfig::property_set_replication_mode(const NodePath &p_pat
 	dirty = true;
 }
 
+SceneReplicationConfig::ReplicationPrecision SceneReplicationConfig::property_get_precision(const NodePath &p_path) {
+	List<ReplicationProperty>::Element *E = properties.find(p_path);
+	ERR_FAIL_COND_V(!E, PRECISION_FULL);
+	return E->get().precision;
+}
+
+void SceneReplicationConfig::property_set_precision(const NodePath &p_path, ReplicationPrecision p_precision) {
+	ERR_FAIL_COND(p_precision < PRECISION_FULL || p_precision > PRECISION_HALF);
+	List<ReplicationProperty>::Element *E = properties.find(p_path);
+	ERR_FAIL_COND(!E);
+	if (E->get().precision == p_precision) {
+		return;
+	}
+	E->get().precision = p_precision;
+	dirty = true;
+}
+
+bool SceneReplicationConfig::has_reduced_precision() {
+	if (dirty) {
+		_update();
+	}
+	return reduced_precision;
+}
+
+bool SceneReplicationConfig::is_spawn_reduced_precision() {
+	if (dirty) {
+		_update();
+	}
+	return spawn_reduced_precision;
+}
+
+bool SceneReplicationConfig::is_sync_reduced_precision() {
+	if (dirty) {
+		_update();
+	}
+	return sync_reduced_precision;
+}
+
+bool SceneReplicationConfig::is_watch_reduced_precision() {
+	if (dirty) {
+		_update();
+	}
+	return watch_reduced_precision;
+}
+
 void SceneReplicationConfig::_update() {
 	if (!dirty) {
 		return;
 	}
 	dirty = false;
+	reduced_precision = false;
+	spawn_reduced_precision = false;
+	sync_reduced_precision = false;
+	watch_reduced_precision = false;
 	sync_props.clear();
 	spawn_props.clear();
 	watch_props.clear();
+	sync_precisions.clear();
+	spawn_precisions.clear();
+	watch_precisions.clear();
 	for (const ReplicationProperty &prop : properties) {
+		const bool prop_reduced = prop.precision != PRECISION_FULL;
+		if (prop_reduced) {
+			reduced_precision = true;
+		}
 		if (prop.spawn) {
 			spawn_props.push_back(prop.name);
+			spawn_precisions.push_back(prop.precision);
+			spawn_reduced_precision |= prop_reduced;
 		}
 		switch (prop.mode) {
 			case REPLICATION_MODE_ALWAYS:
 				sync_props.push_back(prop.name);
+				sync_precisions.push_back(prop.precision);
+				sync_reduced_precision |= prop_reduced;
 				break;
 			case REPLICATION_MODE_ON_CHANGE:
 				watch_props.push_back(prop.name);
+				watch_precisions.push_back(prop.precision);
+				watch_reduced_precision |= prop_reduced;
 				break;
 			default:
 				break;
@@ -276,6 +355,27 @@ const List<NodePath> &SceneReplicationConfig::get_watch_properties() {
 	return watch_props;
 }
 
+const Vector<int> &SceneReplicationConfig::get_spawn_precisions() {
+	if (dirty) {
+		_update();
+	}
+	return spawn_precisions;
+}
+
+const Vector<int> &SceneReplicationConfig::get_sync_precisions() {
+	if (dirty) {
+		_update();
+	}
+	return sync_precisions;
+}
+
+const Vector<int> &SceneReplicationConfig::get_watch_precisions() {
+	if (dirty) {
+		_update();
+	}
+	return watch_precisions;
+}
+
 void SceneReplicationConfig::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_properties"), &SceneReplicationConfig::get_properties);
 	ClassDB::bind_method(D_METHOD("add_property", "path", "index"), &SceneReplicationConfig::add_property, DEFVAL(-1));
@@ -286,10 +386,15 @@ void SceneReplicationConfig::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("property_set_spawn", "path", "enabled"), &SceneReplicationConfig::property_set_spawn);
 	ClassDB::bind_method(D_METHOD("property_get_replication_mode", "path"), &SceneReplicationConfig::property_get_replication_mode);
 	ClassDB::bind_method(D_METHOD("property_set_replication_mode", "path", "mode"), &SceneReplicationConfig::property_set_replication_mode);
+	ClassDB::bind_method(D_METHOD("property_get_precision", "path"), &SceneReplicationConfig::property_get_precision);
+	ClassDB::bind_method(D_METHOD("property_set_precision", "path", "precision"), &SceneReplicationConfig::property_set_precision);
 
 	BIND_ENUM_CONSTANT(REPLICATION_MODE_NEVER);
 	BIND_ENUM_CONSTANT(REPLICATION_MODE_ALWAYS);
 	BIND_ENUM_CONSTANT(REPLICATION_MODE_ON_CHANGE);
+
+	BIND_ENUM_CONSTANT(PRECISION_FULL);
+	BIND_ENUM_CONSTANT(PRECISION_HALF);
 
 	// Deprecated.
 	ClassDB::bind_method(D_METHOD("property_get_sync", "path"), &SceneReplicationConfig::property_get_sync);

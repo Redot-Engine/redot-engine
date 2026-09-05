@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+from misc.utility.scons_hints import *
+
+Import("env")
+Import("env_modules")
+
+env_worldscape3d = env_modules.Clone()
+
+env_worldscape3d.add_source_files(env.modules_sources, "./*.cpp")
+
+if env.editor_build:
+    env_worldscape3d.Append(CPPDEFINES=["TOOLS_ENABLED"])
+    env_worldscape3d.add_source_files(env.modules_sources, "editor/*.cpp")
+    env_worldscape3d.add_source_files(env.modules_sources, "editor/menu/*.cpp")
+    env_worldscape3d.add_source_files(env.modules_sources, "editor/ui/*.cpp")

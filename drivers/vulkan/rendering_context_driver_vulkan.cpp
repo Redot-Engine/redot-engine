@@ -905,60 +905,15 @@ Error RenderingContextDriverVulkan::_create_vulkan_instance(const VkInstanceCrea
 }
 
 bool RenderingContextDriverVulkan::_vulkan_is_supported() {
-	if (VulkanHooks::get_singleton() != nullptr) {
-		VkPhysicalDevice hooked_device = VK_NULL_HANDLE;
-		return VulkanHooks::get_singleton()->get_physical_device(&hooked_device);
-	}
-
 #ifdef USE_VOLK
 	if (volkInitialize() != VK_SUCCESS) {
 		return false;
 	}
 
-	if (!vkCreateInstance) {
+	if (!vkGetInstanceProcAddr) {
 		return false;
 	}
 #endif
-
-	VkApplicationInfo app_info{};
-	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	app_info.apiVersion = VK_API_VERSION_1_0;
-
-	VkInstanceCreateInfo create_info{};
-	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	create_info.pApplicationInfo = &app_info;
-
-#if defined(USE_VOLK) && (defined(MACOS_ENABLED) || defined(IOS_ENABLED))
-	const char *probe_extensions[] = { VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME };
-	create_info.enabledExtensionCount = 1;
-	create_info.ppEnabledExtensionNames = probe_extensions;
-	create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-#endif
-
-	VkInstance _instance;
-	if (vkCreateInstance(&create_info, nullptr, &_instance) != VK_SUCCESS) {
-		return false;
-	}
-
-#ifdef USE_VOLK
-	volkLoadInstance(_instance);
-#endif
-
-#ifdef USE_VOLK
-	if (!vkEnumeratePhysicalDevices) {
-		vkDestroyInstance(_instance, nullptr);
-		return false;
-	}
-#endif
-
-	uint32_t device_count = 0;
-	VkResult result = vkEnumeratePhysicalDevices(_instance, &device_count, nullptr);
-
-	vkDestroyInstance(_instance, nullptr);
-
-	if (result != VK_SUCCESS || device_count == 0) {
-		return false;
-	}
 
 	return true;
 }

@@ -1,0 +1,2 @@
+GDTEST_RUNTIME_ERROR
+>> SCRIPT ERROR at runtime/errors/nullable_typed_dictionary_reassign_mismatch.gd:4 on test(): Trying to assign a dictionary of type "Dictionary" to a variable of type "Dictionary[String, int]".

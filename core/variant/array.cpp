@@ -346,7 +346,7 @@ void Array::fill(const Variant &p_value) {
 void Array::erase(const Variant &p_value) {
 	ERR_FAIL_COND_MSG(_p->read_only, "Array is in read-only state.");
 	Variant value = p_value;
-	ERR_FAIL_COND(!_p->typed.validate(value, "erase"));
+	ERR_FAIL_COND(!_p->typed.validate_for_lookup(value, "erase"));
 	_p->array.erase(value);
 }
 
@@ -370,7 +370,7 @@ int Array::find(const Variant &p_value, int p_from) const {
 		return -1;
 	}
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "find"), -1);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "find"), -1);
 
 	int ret = -1;
 
@@ -421,7 +421,7 @@ int Array::rfind(const Variant &p_value, int p_from) const {
 		return -1;
 	}
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "rfind"), -1);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "rfind"), -1);
 
 	if (p_from < 0) {
 		// Relative offset from the end
@@ -478,7 +478,7 @@ int Array::rfind_custom(const Callable &p_callable, int p_from) const {
 
 int Array::count(const Variant &p_value) const {
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "count"), 0);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "count"), 0);
 	if (_p->array.is_empty()) {
 		return 0;
 	}
@@ -495,7 +495,7 @@ int Array::count(const Variant &p_value) const {
 
 bool Array::has(const Variant &p_value) const {
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "use 'has'"), false);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "use 'has'"), false);
 
 	return find(value) != -1;
 }
@@ -754,7 +754,7 @@ void Array::shuffle() {
 
 int Array::bsearch(const Variant &p_value, bool p_before) const {
 	Variant value = p_value;
-	ERR_FAIL_COND_V(!_p->typed.validate(value, "binary search"), -1);
+	ERR_FAIL_COND_V(!_p->typed.validate_for_lookup(value, "binary search"), -1);
 	return _p->array.span().bisect<_ArrayVariantSort>(value, p_before);
 }
 

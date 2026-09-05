@@ -48,15 +48,12 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <cstdio>
-#include <iostream>
-#include <string>
 
 #ifndef WINDOWS_ENABLED
 #include <poll.h>
 #include <unistd.h>
 #else
-#include <io.h>
-#define STDIN_FILENO 0
+#include <windows.h>
 #endif
 
 MCPServer *MCPServer::singleton = nullptr;
@@ -70,12 +67,17 @@ MCPServer::MCPServer() {
 		wake_fds[1] = -1;
 	}
 #else
-	wake_fds[0] = -1;
-	wake_fds[1] = -1;
+	wake_event = CreateEventW(nullptr, TRUE, FALSE, nullptr);
 #endif
 }
 
 MCPServer::~MCPServer() {
+	if (is_game_running()) {
+		Error err = stop_game_process();
+		if (err != OK) {
+			ERR_PRINT("Failed to stop the MCP-owned game process during server destruction: " + itos(err));
+		}
+	}
 	stop();
 
 	// Wait for server loop to exit to prevent use-after-free of protocol
@@ -95,6 +97,11 @@ MCPServer::~MCPServer() {
 	if (wake_fds[1] != -1) {
 		close(wake_fds[1]);
 	}
+#else
+	if (wake_event) {
+		CloseHandle((HANDLE)wake_event);
+		wake_event = nullptr;
+	}
 #endif
 
 	if (protocol) {
@@ -112,13 +119,43 @@ void MCPServer::_bind_methods() {
 
 String MCPServer::_read_line() {
 #ifdef WINDOWS_ENABLED
-	// On Windows, raw non-blocking reading from stdin is complex.
-	// Fallback to simpler blocking read for now to ensure compatibility.
-	std::string line;
-	if (std::getline(std::cin, line)) {
-		return String::utf8(line.c_str());
+	HANDLE stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
+	if (stdin_handle == INVALID_HANDLE_VALUE || stdin_handle == nullptr) {
+		should_stop = true;
+		return String();
 	}
-	should_stop = true;
+
+	HANDLE handles[2] = { stdin_handle, (HANDLE)wake_event };
+	DWORD handle_count = wake_event ? 2 : 1;
+
+	while (!should_stop) {
+		int newline_pos = stdin_buffer.find("\n");
+		if (newline_pos != -1) {
+			String line = stdin_buffer.substr(0, newline_pos);
+			stdin_buffer = stdin_buffer.substr(newline_pos + 1);
+			return line.strip_edges();
+		}
+
+		DWORD wait_result = WaitForMultipleObjects(handle_count, handles, FALSE, 100);
+		if (wait_result == WAIT_TIMEOUT) {
+			continue;
+		}
+		if (wait_result == WAIT_FAILED) {
+			should_stop = true;
+			return String();
+		}
+		if (wake_event && wait_result == WAIT_OBJECT_0 + 1) {
+			return String();
+		}
+
+		char buffer[4096];
+		DWORD bytes_read = 0;
+		if (!ReadFile(stdin_handle, buffer, sizeof(buffer), &bytes_read, nullptr) || bytes_read == 0) {
+			should_stop = true;
+			return String();
+		}
+		stdin_buffer += String::utf8(buffer, bytes_read);
+	}
 	return String();
 #else
 	while (!should_stop) {
@@ -205,13 +242,20 @@ void MCPServer::_check_game_process() {
 }
 
 Error MCPServer::start_game_process(const List<String> &p_args, const String &p_log_path) {
+	if (is_game_running()) {
+		Error err = stop_game_process();
+		if (err != OK) {
+			return err;
+		}
+	}
+
 	MutexLock lock(process_mutex);
-	if (game_pid != 0) {
-		OS::get_singleton()->kill(game_pid);
+	game_log_path = p_log_path;
+	Error err = OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), p_args, &game_pid);
+	if (err != OK) {
 		game_pid = 0;
 	}
-	game_log_path = p_log_path;
-	return OS::get_singleton()->create_process(OS::get_singleton()->get_executable_path(), p_args, &game_pid);
+	return err;
 }
 
 Error MCPServer::stop_game_process() {
@@ -224,19 +268,39 @@ Error MCPServer::stop_game_process() {
 		pid_to_kill = game_pid;
 	}
 
-	Error err = OS::get_singleton()->kill(pid_to_kill);
-	if (err == OK) {
-		// Wait up to 1s for it to exit and be reaped
+	MCPBridge *bridge = MCPBridge::get_singleton();
+	if (bridge && bridge->is_client_connected()) {
+		bridge->send_command("quit", Dictionary(), /* p_wait_for_response = */ false);
+		uint64_t start = OS::get_singleton()->get_ticks_msec();
+		while (OS::get_singleton()->is_process_running(pid_to_kill) && OS::get_singleton()->get_ticks_msec() - start < 3000) {
+			OS::get_singleton()->delay_usec(10000);
+		}
+	}
+
+	if (OS::get_singleton()->is_process_running(pid_to_kill)) {
+		Error err = OS::get_singleton()->kill(pid_to_kill);
+		if (err != OK) {
+			return err;
+		}
+
 		uint64_t start = OS::get_singleton()->get_ticks_msec();
 		while (OS::get_singleton()->is_process_running(pid_to_kill) && OS::get_singleton()->get_ticks_msec() - start < 1000) {
 			OS::get_singleton()->delay_usec(10000);
 		}
-		MutexLock lock(process_mutex);
-		if (game_pid == pid_to_kill) {
-			game_pid = 0;
-		}
 	}
-	return err;
+
+	if (OS::get_singleton()->is_process_running(pid_to_kill)) {
+		return ERR_TIMEOUT;
+	}
+	if (bridge) {
+		bridge->disconnect_peer();
+	}
+
+	MutexLock lock(process_mutex);
+	if (game_pid == pid_to_kill) {
+		game_pid = 0;
+	}
+	return OK;
 }
 
 bool MCPServer::is_game_running() const {
@@ -259,6 +323,11 @@ OS::ProcessID MCPServer::get_game_pid() const {
 
 void MCPServer::_server_loop() {
 	should_stop = false;
+#ifdef WINDOWS_ENABLED
+	if (wake_event) {
+		ResetEvent((HANDLE)wake_event);
+	}
+#endif
 	bridge_thread.start(_bridge_thread_func, this);
 	fprintf(stderr, "[MCP] Redot MCP Server started\n");
 	fflush(stderr);
@@ -284,6 +353,12 @@ void MCPServer::_server_loop() {
 		}
 	}
 
+	if (is_game_running()) {
+		Error err = stop_game_process();
+		if (err != OK) {
+			ERR_PRINT("Failed to stop the MCP-owned game process during server shutdown: " + itos(err));
+		}
+	}
 	should_stop = true;
 	bridge_thread.wait_to_finish();
 	fprintf(stderr, "[MCP] Redot MCP Server stopped\n");
@@ -309,6 +384,10 @@ void MCPServer::stop() {
 		char c = 0;
 		int r = write(wake_fds[1], &c, 1);
 		(void)r;
+	}
+#else
+	if (wake_event) {
+		SetEvent((HANDLE)wake_event);
 	}
 #endif
 }

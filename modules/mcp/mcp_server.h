@@ -105,6 +105,11 @@ private:
 	String game_log_path;
 	mutable Mutex process_mutex; ///< Protects game_pid and game_log_path
 	void _check_game_process(); ///< Reaper logic
+
+#ifdef WINDOWS_ENABLED
+	void *wake_event = nullptr;
+#else
 	int wake_fds[2];
+#endif
 	String stdin_buffer;
 };

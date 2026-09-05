@@ -196,6 +196,7 @@ private:
 	StringName global_name; ///< `class_name`.
 	String fully_qualified_name;
 	String simplified_icon_path;
+	Vector<StringName> traits_fqtn; // Fully-qualified trait names used by script.
 	SelfList<GDScript> script_list;
 
 	SelfList<GDScriptFunctionState>::List pending_func_states;
@@ -249,6 +250,7 @@ public:
 	}
 
 	_FORCE_INLINE_ StringName get_local_name() const { return local_name; }
+	_FORCE_INLINE_ bool has_trait(const StringName &p_trait) const { return traits_fqtn.has(p_trait); }
 
 	void clear(GDScript::ClearData *p_clear_data = nullptr);
 
@@ -679,6 +681,7 @@ public:
 	/// @{
 	virtual bool handles_global_class_type(const String &p_type) const override;
 	virtual String get_global_class_name(const String &p_path, String *r_base_type = nullptr, String *r_icon_path = nullptr, bool *r_is_abstract = nullptr, bool *r_is_tool = nullptr) const override;
+	virtual void get_global_struct_names(const String &p_path, List<StringName> *r_names) const override;
 	/// @}
 
 	void add_orphan_subclass(const String &p_qualified_name, const ObjectID &p_subclass);

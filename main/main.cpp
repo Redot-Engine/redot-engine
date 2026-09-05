@@ -77,39 +77,39 @@
 #include "scene/resources/packed_scene.h"
 #include "scene/theme/theme_db.h"
 #include "servers/audio/audio_driver_dummy.h"
-#include "servers/audio_server.h"
-#include "servers/camera_server.h"
-#include "servers/display_server.h"
+#include "servers/audio/audio_server.h"
+#include "servers/camera/camera_server.h"
+#include "servers/display/display_server.h"
 #include "servers/movie_writer/movie_writer.h"
 #include "servers/register_server_types.h"
 #include "servers/rendering/rendering_server_default.h"
+#include "servers/text/text_server.h"
 #include "servers/text/text_server_dummy.h"
-#include "servers/text_server.h"
 
 // 2D
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_server_2d.h"
-#include "servers/navigation_server_2d_dummy.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/navigation_2d/navigation_server_2d_dummy.h"
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-#include "servers/physics_server_2d.h"
-#include "servers/physics_server_2d_dummy.h"
+#include "servers/physics_2d/physics_server_2d.h"
+#include "servers/physics_2d/physics_server_2d_dummy.h"
 #endif // PHYSICS_2D_DISABLED
 
 // 3D
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/navigation_server_3d.h"
-#include "servers/navigation_server_3d_dummy.h"
+#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/navigation_3d/navigation_server_3d_dummy.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED
-#include "servers/physics_server_3d.h"
-#include "servers/physics_server_3d_dummy.h"
+#include "servers/physics_3d/physics_server_3d.h"
+#include "servers/physics_3d/physics_server_3d_dummy.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
-#include "servers/xr_server.h"
+#include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
 #ifdef TESTS_ENABLED
@@ -4774,6 +4774,7 @@ int Main::start() {
 			OS::get_singleton()->print("Error: MCPServer singleton is null.\n");
 			return EXIT_FAILURE;
 		}
+		OS::get_singleton()->delete_main_loop();
 		return EXIT_SUCCESS;
 	}
 
@@ -4838,10 +4839,10 @@ bool Main::iteration() {
 
 	const uint64_t ticks_elapsed = ticks - last_ticks;
 
-	const int physics_ticks_per_second = Engine::get_singleton()->get_physics_ticks_per_second();
+	const int physics_ticks_per_second = Engine::get_singleton()->get_user_physics_ticks_per_second();
 	const double physics_step = 1.0 / physics_ticks_per_second;
 
-	const double time_scale = Engine::get_singleton()->get_time_scale();
+	const double time_scale = Engine::get_singleton()->get_effective_time_scale();
 
 	MainFrameTime advance = main_timer_sync.advance(physics_step, physics_ticks_per_second);
 	double process_step = advance.process_step;
@@ -4860,7 +4861,7 @@ bool Main::iteration() {
 
 	last_ticks = ticks;
 
-	const int max_physics_steps = Engine::get_singleton()->get_max_physics_steps_per_frame();
+	const int max_physics_steps = Engine::get_singleton()->get_user_max_physics_steps_per_frame();
 	if (fixed_fps == -1 && advance.physics_steps > max_physics_steps) {
 		process_step -= (advance.physics_steps - max_physics_steps) * physics_step;
 		advance.physics_steps = max_physics_steps;
