@@ -946,8 +946,8 @@ Vector3i MeshInstance3D::_get_surface_face_positions(const Ref<Mesh> &p_mesh, co
 
 		// Match the surfaces and triangle counts used by generate_triangle_mesh().
 		const int len = format.has_flag(Mesh::ARRAY_FORMAT_INDEX)
-			? p_mesh->surface_get_array_index_len(i)
-			: p_mesh->surface_get_array_len(i);
+				? p_mesh->surface_get_array_index_len(i)
+				: p_mesh->surface_get_array_len(i);
 
 		if (primitive == Mesh::PRIMITIVE_TRIANGLES && len % 3 == 0) {
 			local_face_idx -= len / 3;
@@ -959,8 +959,8 @@ Vector3i MeshInstance3D::_get_surface_face_positions(const Ref<Mesh> &p_mesh, co
 	if (p_mesh->surface_get_primitive_type(surface_index) == Mesh::PRIMITIVE_TRIANGLE_STRIP) {
 		// Strip triangles share vertices and alternate winding.
 		return local_face_idx % 2 == 0
-			? Vector3i(local_face_idx, local_face_idx + 1, local_face_idx + 2)
-			: Vector3i(local_face_idx, local_face_idx + 2, local_face_idx + 1);
+				? Vector3i(local_face_idx, local_face_idx + 1, local_face_idx + 2)
+				: Vector3i(local_face_idx, local_face_idx + 2, local_face_idx + 1);
 	}
 
 	return Vector3i(local_face_idx * 3, local_face_idx * 3 + 1, local_face_idx * 3 + 2);
