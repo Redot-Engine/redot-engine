@@ -64,6 +64,13 @@ for f in sys.argv[1:]:
         text = header.replace("$filename", fsingle)
     text += "\n"
 
+    # Most files already have the expected header. We should avoid reading and rebuilding
+    # their entire contents, which can be especially expensive for large files.
+    header_bytes = text.encode("utf-8")
+    with open(fname.strip(), "rb") as fileread:
+        if fileread.read(len(header_bytes)) == header_bytes:
+            continue
+
     # We now have the proper header, so we want to ignore the one in the original file
     # and potentially empty lines and badly formatted lines, while keeping comments that
     # come after the header, and then keep everything non-header unchanged.
@@ -71,6 +78,7 @@ for f in sys.argv[1:]:
     # In a second pass, we skip all consecutive comment lines starting with "/*",
     # then we can append the rest (step 2).
 
+    body = []
     with open(fname.strip(), "r", encoding="utf-8") as fileread:
         line = fileread.readline()
         header_done = False
@@ -86,12 +94,14 @@ for f in sys.argv[1:]:
             if line.find("/*") != 0:  # No more starting with a comment
                 header_done = True
                 if line.strip() != "":
-                    text += line
+                    body.append(line)
             line = fileread.readline()
 
         while line != "":  # Dump everything until EOF
-            text += line
+            body.append(line)
             line = fileread.readline()
+
+    text += "".join(body)
 
     # Write
     with open(fname.strip(), "w", encoding="utf-8", newline="\n") as filewrite:
