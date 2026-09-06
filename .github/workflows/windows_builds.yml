@@ -12,6 +12,8 @@ env:
     "accesskit_sdk_path=${{ github.workspace }}/accesskit-c-0.17.0/"
   SCONS_CACHE_MSVC_CONFIG: true
   PYTHONIOENCODING: utf8
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
   build-windows:
@@ -88,7 +90,7 @@ jobs:
       - name: Download pre-built AccessKit
         uses: dsaltares/fetch-gh-release-asset@1.1.2
         with:
-          repo: AccessKit/accesskit-c
+          repo: godotengine/godot-accesskit-c-static
           version: tags/0.17.0
           file: accesskit-c-0.17.0.zip
           target: accesskit-c-0.17.0/accesskit_c.zip
@@ -125,3 +127,139 @@ jobs:
           ${{ matrix.bin }} --version
           ${{ matrix.bin }} --help
           ${{ matrix.bin }} --test --force-colors
+
+  build-windows-mono:
+    runs-on: ubuntu-24.04
+    name: Editor w/ Mono (cross-compiled with LLVM)
+    timeout-minutes: 120
+    env:
+      LLVM_MINGW_VERSION: "20251118"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Restore Godot build cache
+        uses: ./.github/actions/godot-cache-restore
+        with:
+          cache-name: windows-editor-mono-llvm-${{ env.LLVM_MINGW_VERSION }}
+        continue-on-error: true
+
+      - name: Setup Python and SCons
+        uses: ./.github/actions/godot-deps
+
+      - name: Free disk space on runner
+        run: sudo rm -rf /usr/local/lib/android
+
+      - name: Setup LLVM-MinGW
+        shell: bash
+        run: |
+          archive="${RUNNER_TEMP}/llvm-mingw.tar.xz"
+          toolchain="${RUNNER_TEMP}/llvm-mingw"
+          curl --fail --location --retry 3 \
+            --output "${archive}" \
+            "https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_VERSION}/llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-ubuntu-22.04-x86_64.tar.xz"
+          mkdir -p "${toolchain}"
+          tar -xf "${archive}" --strip-components=1 -C "${toolchain}"
+          echo "${toolchain}/bin" >> "${GITHUB_PATH}"
+
+      - name: Download pre-built AccessKit
+        uses: dsaltares/fetch-gh-release-asset@1.1.2
+        with:
+          repo: godotengine/godot-accesskit-c-static
+          version: tags/0.17.0
+          file: accesskit-c-0.17.0.zip
+          target: accesskit-c-0.17.0/accesskit_c.zip
+
+      - name: Extract pre-built AccessKit
+        run: unzip -o accesskit-c-0.17.0/accesskit_c.zip
+
+      - name: Verify LLVM AccessKit static library
+        shell: bash
+        run: test -f accesskit-c-0.17.0/lib/windows/x86_64/mingw-llvm/static/libaccesskit.a
+
+      - name: Compilation
+        uses: ./.github/actions/godot-build
+        with:
+          scons-flags: >-
+            dev_mode=yes
+            module_text_server_fb_enabled=yes
+            debug_symbols=no
+            module_mono_enabled=yes
+            use_mingw=yes
+            use_llvm=yes
+            windows_subsystem=console
+            "mingw_prefix=${{ runner.temp }}/llvm-mingw"
+            "accesskit_sdk_path=${{ github.workspace }}/accesskit-c-0.17.0/"
+          platform: windows
+          target: editor
+
+      - name: Save Godot build cache
+        uses: ./.github/actions/godot-cache-save
+        with:
+          cache-name: windows-editor-mono-llvm-${{ env.LLVM_MINGW_VERSION }}
+        continue-on-error: true
+
+      - name: Upload cross-compiled editor
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: windows-editor-mono-llvm-native
+          path: |
+            bin/redot.windows.editor.x86_64.llvm.mono.exe
+            bin/*.dll
+
+  test-windows-mono:
+    needs: build-windows-mono
+    runs-on: windows-latest
+    name: Editor w/ Mono (.NET glue and tests)
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Download cross-compiled editor
+        uses: ./.github/actions/download-artifact
+        with:
+          name: windows-editor-mono-llvm-native
+          path: bin
+
+      - name: Setup Python and SCons
+        uses: ./.github/actions/godot-deps
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.100
+
+      - name: Generate C# glue
+        shell: pwsh
+        run: |
+          ./bin/redot.windows.editor.x86_64.llvm.mono.exe --headless --generate-mono-glue ./modules/mono/glue
+
+      - name: Build RedotSharp and tools
+        shell: pwsh
+        run: |
+          dotnet --info
+          python ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=windows --werror
+
+      - name: Upload artifact
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: windows-editor-mono-llvm
+
+      - name: Unit tests
+        shell: pwsh
+        run: |
+          ./bin/redot.windows.editor.x86_64.llvm.mono.exe --version
+          ./bin/redot.windows.editor.x86_64.llvm.mono.exe --help
+          ./bin/redot.windows.editor.x86_64.llvm.mono.exe --headless --test --force-colors
+
+      - name: .NET source generators tests
+        shell: pwsh
+        run: |
+          dotnet test modules/mono/editor/Godot.NET.Sdk/Godot.SourceGenerators.Tests
