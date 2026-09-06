@@ -318,6 +318,7 @@ void (*type_init_function_table[])(Variant *) = {
 		&&OPCODE_CALL_GDSCRIPT_UTILITY,                  \
 		&&OPCODE_CALL_BUILTIN_TYPE_VALIDATED,            \
 		&&OPCODE_CALL_SELF_BASE,                         \
+		&&OPCODE_CALL_SELF_TRAIT,                        \
 		&&OPCODE_CALL_METHOD_BIND,                       \
 		&&OPCODE_CALL_METHOD_BIND_RET,                   \
 		&&OPCODE_CALL_BUILTIN_STATIC,                    \
@@ -2629,6 +2630,43 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 					String methodstr = *methodname;
 					err_text = _get_call_error("function '" + methodstr + "'", (const Variant **)argptrs, argc, *dst, err);
 
+					OPCODE_BREAK;
+				}
+
+				ip += 3;
+			}
+			DISPATCH_OPCODE;
+
+			OPCODE(OPCODE_CALL_SELF_TRAIT) {
+				LOAD_INSTRUCTION_ARGS
+				CHECK_SPACE(3 + instr_arg_count);
+
+				ip += instr_arg_count;
+
+				int argc = _code_ptr[ip + 1];
+				GD_ERR_BREAK(argc < 0);
+				if (_trait_super_function == nullptr) {
+					err_text = "compiler bug, trait super function not found";
+					OPCODE_BREAK;
+				}
+
+				int self_fun = _code_ptr[ip + 2];
+#ifdef DEBUG_ENABLED
+				if (self_fun < 0 || self_fun >= _global_names_count) {
+					err_text = "compiler bug, function name not found";
+					OPCODE_BREAK;
+				}
+#endif
+				const StringName *methodname = &_global_names_ptr[self_fun];
+				Variant **argptrs = instruction_args;
+
+				GET_INSTRUCTION_ARG(dst, argc);
+
+				Callable::CallError err;
+				*dst = _trait_super_function->call(p_instance, (const Variant **)argptrs, argc, err);
+				if (err.error != Callable::CallError::CALL_OK) {
+					String methodstr = *methodname;
+					err_text = _get_call_error("trait function '" + methodstr + "'", (const Variant **)argptrs, argc, *dst, err);
 					OPCODE_BREAK;
 				}
 

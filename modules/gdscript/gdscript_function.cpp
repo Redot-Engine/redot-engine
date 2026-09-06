@@ -273,6 +273,9 @@ GDScriptFunction::~GDScriptFunction() {
 	for (int i = 0; i < lambdas.size(); i++) {
 		memdelete(lambdas[i]);
 	}
+	if (_trait_super_function != nullptr) {
+		memdelete(_trait_super_function);
+	}
 
 	for (int i = 0; i < argument_types.size(); i++) {
 		argument_types.write[i].script_type_ref = Ref<Script>();

@@ -165,7 +165,7 @@ class GDScriptCompiler {
 	/// Avoid keeping in the stack long-lived references to objects, which may prevent `RefCounted` objects from being freed.
 	void _clear_block_locals(CodeGen &codegen, const List<GDScriptCodeGenerator::Address> &p_locals);
 	Error _parse_block(CodeGen &codegen, const GDScriptParser::SuiteNode *p_block, bool p_add_locals = true, bool p_clear_locals = true);
-	GDScriptFunction *_parse_function(Error &r_error, GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::FunctionNode *p_func, bool p_for_ready = false, bool p_for_lambda = false);
+	GDScriptFunction *_parse_function(Error &r_error, GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::FunctionNode *p_func, bool p_for_ready = false, bool p_for_lambda = false, bool p_for_trait_super = false);
 	GDScriptFunction *_make_static_initializer(Error &r_error, GDScript *p_script, const GDScriptParser::ClassNode *p_class);
 	Error _parse_setter_getter(GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::VariableNode *p_variable, bool p_is_setter);
 	/// Prepares given script, and inner class scripts, for compilation. It populates class members and

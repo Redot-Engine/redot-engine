@@ -672,7 +672,7 @@ GDScriptCodeGenerator::Address GDScriptCompiler::_parse_expression(CodeGen &code
 
 				if (call->is_super) {
 					// Super call.
-					gen->write_super_call(result, call->function_name, arguments);
+					gen->write_super_call(result, call->function_name, arguments, call->is_trait_super);
 				} else {
 					if (callee->type == GDScriptParser::Node::IDENTIFIER) {
 						// Self function call.
@@ -2329,7 +2329,7 @@ Error GDScriptCompiler::_parse_block(CodeGen &codegen, const GDScriptParser::Sui
 	return OK;
 }
 
-GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::FunctionNode *p_func, bool p_for_ready, bool p_for_lambda) {
+GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_script, const GDScriptParser::ClassNode *p_class, const GDScriptParser::FunctionNode *p_func, bool p_for_ready, bool p_for_lambda, bool p_for_trait_super) {
 	r_error = OK;
 	CodeGen codegen;
 	codegen.generator = memnew(GDScriptByteCodeGenerator);
@@ -2547,7 +2547,7 @@ GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_
 
 	GDScriptFunction *gd_function = codegen.generator->write_end();
 
-	if (is_initializer) {
+	if (is_initializer && !p_for_trait_super) {
 		p_script->initializer = gd_function;
 	} else if (is_implicit_initializer) {
 		p_script->implicit_initializer = gd_function;
@@ -2574,7 +2574,7 @@ GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_
 
 	gd_function->method_info = method_info;
 
-	if (!is_implicit_initializer && !is_implicit_ready && !p_for_lambda) {
+	if (!is_implicit_initializer && !is_implicit_ready && !p_for_lambda && !p_for_trait_super) {
 		p_script->member_functions[func_name] = gd_function;
 	}
 
@@ -3044,10 +3044,21 @@ Error GDScriptCompiler::_compile_class(GDScript *p_script, const GDScriptParser:
 		if (member.type == member.FUNCTION) {
 			const GDScriptParser::FunctionNode *function = member.function;
 			Error err = OK;
-			_parse_function(err, p_script, p_class, function);
+			GDScriptFunction *trait_super_function = nullptr;
+			if (function->trait_super_function != nullptr) {
+				trait_super_function = _parse_function(err, p_script, p_class, function->trait_super_function, false, false, true);
+				if (err) {
+					return err;
+				}
+			}
+			GDScriptFunction *compiled_function = _parse_function(err, p_script, p_class, function);
 			if (err) {
+				if (trait_super_function != nullptr) {
+					memdelete(trait_super_function);
+				}
 				return err;
 			}
+			compiled_function->_trait_super_function = trait_super_function;
 		} else if (member.type == member.VARIABLE) {
 			const GDScriptParser::VariableNode *variable = member.variable;
 			if (variable->property == GDScriptParser::VariableNode::PROP_INLINE) {
@@ -3253,9 +3264,12 @@ GDScriptCompiler::FunctionLambdaInfo GDScriptCompiler::_get_function_replacement
 
 Vector<GDScriptCompiler::FunctionLambdaInfo> GDScriptCompiler::_get_function_lambda_replacement_info(GDScriptFunction *p_func, int p_depth, GDScriptFunction *p_parent_func) {
 	Vector<FunctionLambdaInfo> result;
-	// Only scrape the lambdas inside p_func.
+	// Scrape nested functions owned by p_func.
 	for (int i = 0; i < p_func->lambdas.size(); ++i) {
 		result.push_back(_get_function_replacement_info(p_func->lambdas[i], i, p_depth + 1, p_func));
+	}
+	if (p_func->_trait_super_function != nullptr) {
+		result.push_back(_get_function_replacement_info(p_func->_trait_super_function, p_func->lambdas.size(), p_depth + 1, p_func));
 	}
 	return result;
 }

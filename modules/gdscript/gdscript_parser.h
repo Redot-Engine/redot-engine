@@ -534,6 +534,7 @@ public:
 		Vector<ExpressionNode *> arguments;
 		StringName function_name;
 		bool is_super = false;
+		bool is_trait_super = false;
 		bool is_static = false;
 
 		CallNode() {
@@ -949,6 +950,7 @@ public:
 		Variant rpc_config;
 		MethodInfo info;
 		LambdaNode *source_lambda = nullptr;
+		const FunctionNode *trait_super_function = nullptr;
 		Vector<Variant> default_arg_values;
 #ifdef TOOLS_ENABLED
 		MemberDocData doc_data;

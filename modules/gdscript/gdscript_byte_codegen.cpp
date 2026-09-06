@@ -1133,8 +1133,8 @@ void GDScriptByteCodeGenerator::write_call(const Address &p_target, const Addres
 	ct.cleanup();
 }
 
-void GDScriptByteCodeGenerator::write_super_call(const Address &p_target, const StringName &p_function_name, const Vector<Address> &p_arguments) {
-	append_opcode_and_argcount(GDScriptFunction::OPCODE_CALL_SELF_BASE, 1 + p_arguments.size());
+void GDScriptByteCodeGenerator::write_super_call(const Address &p_target, const StringName &p_function_name, const Vector<Address> &p_arguments, bool p_is_trait_super) {
+	append_opcode_and_argcount(p_is_trait_super ? GDScriptFunction::OPCODE_CALL_SELF_TRAIT : GDScriptFunction::OPCODE_CALL_SELF_BASE, 1 + p_arguments.size());
 	for (int i = 0; i < p_arguments.size(); i++) {
 		append(p_arguments[i]);
 	}

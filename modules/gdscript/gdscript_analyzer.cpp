@@ -4529,7 +4529,28 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 		return;
 	}
 
-	if (get_function_signature(p_call, is_constructor, base_type, p_call->function_name, return_type, par_types, default_arg_count, method_flags)) {
+	const GDScriptParser::FunctionNode *trait_super_function = nullptr;
+	if (p_call->is_super && p_call->callee == nullptr && parser->current_function != nullptr && parser->current_function->trait_super_function != nullptr) {
+		trait_super_function = parser->current_function->trait_super_function;
+		p_call->is_trait_super = true;
+		for (const GDScriptParser::ParameterNode *parameter : trait_super_function->parameters) {
+			par_types.push_back(parameter->get_datatype());
+			if (parameter->initializer != nullptr) {
+				default_arg_count++;
+			}
+		}
+		if (trait_super_function->is_vararg()) {
+			method_flags.set_flag(METHOD_FLAG_VARARG);
+		}
+		if (trait_super_function->is_static) {
+			method_flags.set_flag(METHOD_FLAG_STATIC);
+		}
+		return_type = trait_super_function->get_datatype();
+		return_type.is_meta_type = false;
+		return_type.is_coroutine = trait_super_function->is_coroutine;
+	}
+
+	if (trait_super_function != nullptr || get_function_signature(p_call, is_constructor, base_type, p_call->function_name, return_type, par_types, default_arg_count, method_flags)) {
 		p_call->is_static = method_flags.has_flag(METHOD_FLAG_STATIC);
 		// If the method is implemented in the class hierarchy, the virtual/abstract flag will not be set for that `MethodInfo` and the search stops there.
 		// Virtual/abstract check only possible for super calls because class hierarchy is known. Objects may have scripts attached we don't know of at compile-time.
@@ -7536,6 +7557,9 @@ bool GDScriptAnalyzer::class_exists(const StringName &p_class) const {
 
 void GDScriptAnalyzer::override_member_function(GDScriptParser::FunctionNode *p_target_function, const GDScriptParser::FunctionNode *p_source_function, const String &p_trait_name) {
 	resolve_function_signature(p_target_function);
+	if (!p_source_function->is_bodyless) {
+		p_target_function->trait_super_function = p_source_function;
+	}
 
 	// Check function signature.
 	String function_signature = p_source_function->identifier->name;

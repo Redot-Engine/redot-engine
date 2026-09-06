@@ -215,6 +215,7 @@ public:
 		OPCODE_CALL_GDSCRIPT_UTILITY,
 		OPCODE_CALL_BUILTIN_TYPE_VALIDATED,
 		OPCODE_CALL_SELF_BASE,
+		OPCODE_CALL_SELF_TRAIT,
 		OPCODE_CALL_METHOD_BIND,
 		OPCODE_CALL_METHOD_BIND_RET,
 		OPCODE_CALL_BUILTIN_STATIC,
@@ -398,6 +399,7 @@ private:
 	Vector<GDScriptUtilityFunctions::FunctionPtr> gds_utilities;
 	Vector<MethodBind *> methods;
 	Vector<GDScriptFunction *> lambdas;
+	GDScriptFunction *_trait_super_function = nullptr;
 
 	int _code_size = 0;
 	int _default_arg_count = 0;
