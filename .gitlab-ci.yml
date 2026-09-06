@@ -126,8 +126,7 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
+    - export OPTIONS="production=yes use_mingw=yes use_llvm=yes mingw_prefix=$MINGW_PREFIX angle_libs=$WINDOWS_DEPS_ROOT/angle mesa_libs=$WINDOWS_DEPS_ROOT/mesa agility_sdk_path=$WINDOWS_DEPS_ROOT/agility_sdk d3d12=yes"
   variables:
     PLATFORM: "windows"
 
@@ -138,8 +137,7 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
+    - export OPTIONS="production=yes use_mingw=yes use_llvm=yes mingw_prefix=$MINGW_PREFIX angle_libs=$WINDOWS_DEPS_ROOT/angle mesa_libs=$WINDOWS_DEPS_ROOT/mesa agility_sdk_path=$WINDOWS_DEPS_ROOT/agility_sdk d3d12=yes"
   variables:
     PLATFORM: "windows"
 
@@ -150,20 +148,13 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
+    - export OPTIONS="production=yes use_mingw=yes use_llvm=yes mingw_prefix=$MINGW_PREFIX angle_libs=$WINDOWS_DEPS_ROOT/angle mesa_libs=$WINDOWS_DEPS_ROOT/mesa agility_sdk_path=$WINDOWS_DEPS_ROOT/agility_sdk d3d12=yes"
   script:
     - !reference [ .build-release-template, script ]
   after_script:
     - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
-    - |
-      if [ "$ARCH" == "arm64" ]; then
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.console.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
-      else
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
-      mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.console.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
-      fi
+    - mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+    - mv "out/templates/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.console.exe" "out/templates/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
   variables:
     PLATFORM: "windows"
   artifacts:
@@ -179,20 +170,13 @@ stages:
   image: $CI_REGISTRY/redot-engine/redot-production-containers/redot-windows:latest
   before_script:
     - !reference [.template-build, before_script]
-    - python3 ./misc/scripts/install_d3d12_sdk_windows.py
-    - export OPTIONS="production=yes use_mingw=yes angle_libs=$(pwd)/deps/angle mesa_libs=$(pwd)/deps/mesa d3d12=yes"
+    - export OPTIONS="production=yes use_mingw=yes use_llvm=yes mingw_prefix=$MINGW_PREFIX angle_libs=$WINDOWS_DEPS_ROOT/angle mesa_libs=$WINDOWS_DEPS_ROOT/mesa agility_sdk_path=$WINDOWS_DEPS_ROOT/agility_sdk d3d12=yes"
   script:
     - !reference [ .build-release-template-mono, script ]
   after_script:
     - if [ "$TARGET" == "template_debug" ]; then export FRIENDLY_TARGET="debug"; else export FRIENDLY_TARGET="release"; fi
-    - |
-      if [ "$ARCH" == "arm64" ]; then
-      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
-      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.console.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
-      else
-      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
-      mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.mono.console.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
-      fi
+    - mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}.exe"
+    - mv "out/templates-mono/redot.${PLATFORM}.${TARGET}.${ARCH}.llvm.mono.console.exe" "out/templates-mono/windows_${FRIENDLY_TARGET}_${ARCH}_console.exe"
   variables:
     PLATFORM: "windows"
   artifacts:
