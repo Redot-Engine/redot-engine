@@ -9,7 +9,7 @@ jobs:
   # First stage: Only static checks, fast and prevent expensive builds from running.
 
   static-checks:
-    if: ${{ !vars.DISABLE_GODOT_CI || github.run_attempt > 1 }}
+    if: ${{ (!vars.DISABLE_GODOT_CI || github.run_attempt > 1) && !(github.event_name == 'push' && github.event.deleted) }}
     name: 📊 Static checks
     uses: ./.github/workflows/static_checks.yml
 

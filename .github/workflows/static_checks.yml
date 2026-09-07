@@ -8,41 +8,37 @@ env:
 jobs:
   static-checks:
     name: Code style, file formatting, and docs
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+          persist-credentials: false
 
       # This needs to happen before Python and npm execution; it must happen before any extra files are written.
       - name: .gitignore checks (gitignore_check.sh)
         run: |
           bash ./misc/scripts/gitignore_check.sh
 
-      - name: Get changed files
-        if: ${{ env.DISABLE_REDOT_GET_CHANGED_FILES != 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            files=$(git diff-tree --no-commit-id --name-only -r HEAD^1..HEAD 2> /dev/null || true)
-          elif [ "${{ github.event_name }}" == "push" -a "${{ github.event.forced }}" == "false" -a "${{ github.event.created }}" == "false" ]; then
-            files=$(git diff-tree --no-commit-id --name-only -r ${{ github.event.before }}..${{ github.event.after }} 2> /dev/null || true)
-          fi
-          files=$(echo "$files" | xargs -I {} sh -c 'echo "\"./{}\""' | tr '\n' ' ')
-          echo "CHANGED_FILES=$files" >> $GITHUB_ENV
-
-      - name: Style checks via pre-commit
-        if: ${{ env.DISABLE_REDOT_GET_CHANGED_FILES != 'true' }}
-        uses: pre-commit/action@v3.0.1
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          extra_args: --files ${{ env.CHANGED_FILES }}
+          python-version: "3.11"
+
+      - name: Install pre-commit
+        run: python -m pip install pre-commit==4.6.2
+
+      - name: Test lint scope selection
+        run: python tests/python_build/test_ci_lint.py
 
       - name: Style checks via pre-commit
-        if: ${{ env.DISABLE_REDOT_GET_CHANGED_FILES == 'true' }}
-        uses: pre-commit/action@v3.0.1
+        env:
+          LINT_ALL_FILES: ${{ env.DISABLE_REDOT_GET_CHANGED_FILES }}
+        run: python misc/scripts/ci_lint.py
 
       - name: Class reference schema checks
         run: |
