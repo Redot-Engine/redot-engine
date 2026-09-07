@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 def main() -> int:
+    """Check clean headless editor exits at three frame limits in a fresh project."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("editor", type=Path)
     args = parser.parse_args()
@@ -32,7 +33,7 @@ def main() -> int:
                 "60",
             ]
             try:
-                result = subprocess.run(command, capture_output=True, text=True, timeout=60)
+                result = subprocess.run(command, capture_output=True, text=True, timeout=60, check=False)
             except subprocess.TimeoutExpired:
                 print(f"FAIL: editor shutdown timed out after {frames} frames")
                 return 1
