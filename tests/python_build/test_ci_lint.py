@@ -27,6 +27,9 @@ class LintScopeTests(unittest.TestCase):
         self.git("config", "user.name", "Lint Test")
         self.git("config", "user.email", "lint@example.invalid")
         self.git("config", "core.autocrlf", "false")
+        self.git("config", "commit.gpgsign", "false")
+        self.git("config", "tag.gpgsign", "false")
+        self.git("config", "core.hooksPath", "")
         Path("old.txt").write_text("old\n")
         self.base = self.commit()
         Path("changed.txt").write_text("new\n")
@@ -237,12 +240,14 @@ class LintScopeTests(unittest.TestCase):
         command = [sys.executable, "-m", "pre_commit", "run"]
         for scope, status in ((args, 0), (["--all-files"], 1)):
             with self.subTest(scope=scope):
-                result = subprocess.run([*command, *scope], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                result = subprocess.run(
+                    [*command, *scope], check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+                )
                 self.assertEqual(result.returncode, status, result.stdout)
         Path("changed.txt").write_text("BAD\n")
         head = self.commit()
         args, _ = lint_args("push", self.push(before=base, after=head), head)
-        result = subprocess.run([*command, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result = subprocess.run([*command, *args], check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         self.assertEqual(result.returncode, 1, result.stdout)
 
 

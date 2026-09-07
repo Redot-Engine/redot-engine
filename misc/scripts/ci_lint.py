@@ -66,10 +66,8 @@ def lint_args(
             or path.endswith((".yaml", ".yml", ".toml", ".csproj", ".props", ".targets", ".sln", ".slnx"))
             or path.rsplit("/", 1)[-1] in (".clang-format", ".editorconfig", "global.json")
             or path in ("custom_dict.txt", "gles3_builders.py", "glsl_builders.py", "methods.py", "platform_methods.py")
-            or path.startswith("platform/web/")
-            and ("eslint" in path or "jsdoc2rst/" in path or "package" in path)
-            or path.endswith(".xml")
-            and (path.startswith("doc/classes/") or "/doc_classes/" in path)
+            or (path.startswith("platform/web/") and ("eslint" in path or "jsdoc2rst/" in path or "package" in path))
+            or (path.endswith(".xml") and (path.startswith("doc/classes/") or "/doc_classes/" in path))
         ):
             return ["--all-files"], "lint-inputs-changed"
     return ["--from-ref", base, "--to-ref", head], "verified-range"
