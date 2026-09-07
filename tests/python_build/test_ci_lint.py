@@ -123,7 +123,14 @@ class LintScopeTests(unittest.TestCase):
             self.assertEqual(lint_args("push", self.push(), self.head)[0], ["--all-files"])
 
     def test_configuration_and_deleted_docs_use_all_files(self) -> None:
-        for filename in (".pre-commit-config.yaml", "misc/scripts/helper.py", "doc/classes/Example.xml"):
+        for filename in (
+            ".pre-commit-config.yaml",
+            "misc/scripts/helper.py",
+            "doc/classes/Example.xml",
+            "modules/mono/.editorconfig",
+            "methods.py",
+            "tests/python_build/fixtures/example.glsl",
+        ):
             with self.subTest(filename=filename):
                 self.git("checkout", "-q", self.head)
                 Path(filename).parent.mkdir(parents=True, exist_ok=True)

@@ -62,9 +62,10 @@ def lint_args(
         return ["--all-files"], "diff-unavailable"
     for path in paths:
         if (
-            path.startswith((".github/", "misc/scripts/", "misc/utility/", "doc/tools/"))
-            or path.endswith((".yaml", ".yml", ".toml", ".csproj", ".props", ".sln", ".slnx"))
-            or path in (".clang-format", ".editorconfig", "custom_dict.txt", "gles3_builders.py", "glsl_builders.py")
+            path.startswith((".github/", "misc/scripts/", "misc/utility/", "doc/tools/", "tests/python_build/"))
+            or path.endswith((".yaml", ".yml", ".toml", ".csproj", ".props", ".targets", ".sln", ".slnx"))
+            or path.rsplit("/", 1)[-1] in (".clang-format", ".editorconfig", "global.json")
+            or path in ("custom_dict.txt", "gles3_builders.py", "glsl_builders.py", "methods.py", "platform_methods.py")
             or path.startswith("platform/web/")
             and ("eslint" in path or "jsdoc2rst/" in path or "package" in path)
             or path.endswith(".xml")
