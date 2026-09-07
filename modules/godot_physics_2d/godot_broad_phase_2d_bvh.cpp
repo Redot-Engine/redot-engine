@@ -124,6 +124,7 @@ void GodotBroadPhase2DBVH::update() {
 void GodotBroadPhase2DBVH::set_pairing_expansion(real_t p_expansion) {
 	if (p_expansion <= 0.0) {
 		// Disabled: keep the BVH's stock pair-count margin scaling.
+		bvh.params_set_size_relative_margin(false);
 		return;
 	}
 	// Use a size-relative margin (capped at p_expansion) instead of the BVH's
