@@ -90,9 +90,26 @@ public:
 		}
 	}
 
+	/// @brief Sets the margin by which leaf AABBs are expanded to keep collision
+	/// pairs alive between frames, reducing broadphase pair churn.
+	/// @param p_value Expansion margin in world units. A negative value restores
+	/// automatic expansion (when @c BVH_ALLOW_AUTO_EXPANSION is enabled).
 	void params_set_pairing_expansion(real_t p_value) {
 		BVH_LOCKED_FUNCTION
 		tree.params_set_pairing_expansion(p_value);
+	}
+
+	/// @brief Enables a size-relative pairing margin, where each item's expansion
+	/// scales with its own average extent (capped at the pairing expansion) instead
+	/// of scaling with its current pair count.
+	/// @details Keeps small objects from pairing with distant neighbors while still
+	/// giving large objects useful hysteresis.
+	/// @param p_enable Whether to use the size-relative margin.
+	/// @param p_ratio Fraction of an item's average extent used as its margin.
+	/// Negative values leave the current ratio unchanged.
+	void params_set_size_relative_margin(bool p_enable, real_t p_ratio = -1.0) {
+		BVH_LOCKED_FUNCTION
+		tree.params_set_size_relative_margin(p_enable, p_ratio);
 	}
 	/// @}
 
