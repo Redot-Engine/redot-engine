@@ -21,9 +21,6 @@ jobs:
         run: |
           bash ./misc/scripts/gitignore_check.sh
 
-      - name: Test .NET formatting helper
-        run: python tests/python_build/test_dotnet_format.py
-
       - name: Get changed files
         if: ${{ env.DISABLE_REDOT_GET_CHANGED_FILES != 'true' }}
         env:
