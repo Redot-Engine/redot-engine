@@ -63,7 +63,6 @@ public:
 	};
 
 	explicit WorldScape3DMenu(WorldScape3DEditorPlugin *plugin);
-	~WorldScape3DMenu() override;
 
 	void pressed() override;
 

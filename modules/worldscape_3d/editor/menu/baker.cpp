@@ -278,15 +278,6 @@ void BakerLODDialog::on_lod_box_value_changed(real_t) {
 	_lod = static_cast<int>(_lodbox->get_value());
 }
 
-BakerLODDialog::~BakerLODDialog() {
-	_description_label->queue_free();
-	_lodbox->queue_free();
-	_label->queue_free();
-	_hbox->queue_free();
-	_vbox->queue_free();
-	_margin->queue_free();
-}
-
 void BakerLODDialog::_notification(int what) {
 	if (what == NOTIFICATION_POSTINITIALIZE) {
 		init();

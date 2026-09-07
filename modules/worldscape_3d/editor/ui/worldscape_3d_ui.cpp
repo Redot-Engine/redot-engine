@@ -309,9 +309,6 @@ WorldScape3DUI::~WorldScape3DUI() {
 		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_BOTTOM, _tool_settings);
 		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_SIDE_LEFT, _toolbar);
 	}
-	if (_editor_decal_timer) {
-		_editor_decal_timer->queue_free();
-	}
 	if (_toolbar) {
 		_toolbar->queue_free();
 	}

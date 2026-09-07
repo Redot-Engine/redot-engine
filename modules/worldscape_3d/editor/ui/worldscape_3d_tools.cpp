@@ -101,16 +101,6 @@ constexpr int NO_SAVE = 0x20; // Don't save this in EditorSettings
 WorldScape3DToolSettings::WorldScape3DToolSettings(WorldScape3DEditorPlugin *plugin) :
 		_plugin{ plugin } {}
 
-WorldScape3DToolSettings::~WorldScape3DToolSettings() {
-	_select_brush_button->queue_free();
-	_scale_list->queue_free();
-	_color_list->queue_free();
-	_rotation_list->queue_free();
-	_height_list->queue_free();
-	_advanced_list->queue_free();
-	_main_list->queue_free();
-}
-
 class ToolSubMenu : public PopupPanel {
 	GDCLASS(ToolSubMenu, PopupPanel)
 

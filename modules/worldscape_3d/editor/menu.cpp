@@ -66,12 +66,6 @@ WorldScape3DMenu::WorldScape3DMenu(WorldScape3DEditorPlugin *plugin) :
 	p->connect("id_pressed", callable_mp(this, &WorldScape3DMenu::on_menu_entry));
 }
 
-WorldScape3DMenu::~WorldScape3DMenu() {
-	_baker->queue_free();
-	_packer_dialog->queue_free();
-	_dir_setup->queue_free();
-}
-
 void WorldScape3DMenu::pressed() {
 	on_menu_about_to_popup();
 	MenuButton::pressed();

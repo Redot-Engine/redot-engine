@@ -927,7 +927,6 @@ WorldScape3DEditorPlugin::WorldScape3DEditorPlugin() :
 
 WorldScape3DEditorPlugin::~WorldScape3DEditorPlugin() {
 	_asset_dock->queue_free();
-	_ui->queue_free();
 
 	if (_rex_editor_window && _rex_editor_window->is_connected("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered))) {
 		_rex_editor_window->disconnect("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered));
