@@ -132,6 +132,13 @@ public:
 		add_child(_option);
 	}
 
+	void _notification(int what) {
+		if (what == NOTIFICATION_PREDELETE) {
+			memdelete(_option);
+			memdelete(_label);
+		}
+	}
+
 	void set_channels(int used_channels) {
 		int channel_count = 4;
 		switch (used_channels) {
@@ -495,6 +502,11 @@ public:
 	void _notification(const int what) {
 		if (what == NOTIFICATION_ENTER_TREE) {
 			init();
+		} else if (what == NOTIFICATION_PREDELETE) {
+			memdelete(_outer_margin);
+			if (_open_file_dialog) {
+				memdelete(_open_file_dialog);
+			}
 		}
 	}
 };
@@ -637,6 +649,9 @@ ChannelPackerDialog::ChannelPackerDialog() {
 void ChannelPackerDialog::_notification(const int what) {
 	if (what == NOTIFICATION_POSTINITIALIZE) {
 		init();
+	} else if (what == NOTIFICATION_PREDELETE) {
+		memdelete(_vbox);
+		memdelete(_margin);
 	}
 }
 

@@ -281,6 +281,8 @@ void BakerLODDialog::on_lod_box_value_changed(real_t) {
 void BakerLODDialog::_notification(int what) {
 	if (what == NOTIFICATION_POSTINITIALIZE) {
 		init();
+	} else if (what == NOTIFICATION_PREDELETE) {
+		memdelete(_margin);
 	}
 }
 
@@ -554,8 +556,9 @@ Baker::Baker(WorldScape3DEditorPlugin *plugin) :
 }
 
 Baker::~Baker() {
-	_confirm_dlg->queue_free();
-	_bake_lod_dlg->queue_free();
+	// These dialogs are unparented while hidden, so Node cannot release them.
+	memdelete(_confirm_dlg);
+	memdelete(_bake_lod_dlg);
 }
 
 Vector<WorldScape3D *> Baker::find_nav_region_terrains(NavigationRegion3D *nav_region) const {

@@ -66,6 +66,15 @@ WorldScape3DMenu::WorldScape3DMenu(WorldScape3DEditorPlugin *plugin) :
 	p->connect("id_pressed", callable_mp(this, &WorldScape3DMenu::on_menu_entry));
 }
 
+void WorldScape3DMenu::_notification(int what) {
+	if (what == NOTIFICATION_PREDELETE) {
+		// Child pointers are still valid here, before Node's predelete notification.
+		memdelete(_baker);
+		memdelete(_packer_dialog);
+		memdelete(_dir_setup);
+	}
+}
+
 void WorldScape3DMenu::pressed() {
 	on_menu_about_to_popup();
 	MenuButton::pressed();

@@ -110,22 +110,6 @@ ListEntry::ListEntry(const WorldScape3DAssets::AssetType type) {
 	_button_enabled = memnew(TextureButton);
 }
 
-ListEntry::~ListEntry() {
-	if (_count_label) {
-		_count_label->queue_free();
-	}
-	if (_name_label) {
-		_name_label->queue_free();
-	}
-	_button_enabled->queue_free();
-	_spacer->queue_free();
-	_button_edit->queue_free();
-	_button_clear->queue_free();
-	_button_row->queue_free();
-	_margin->queue_free();
-	_label_rows->queue_free();
-}
-
 void ListEntry::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("hovered"));
 	ADD_SIGNAL(MethodInfo("selected"));
@@ -135,6 +119,22 @@ void ListEntry::_bind_methods() {
 
 void ListEntry::_notification(int what) {
 	switch (what) {
+		case NOTIFICATION_PREDELETE:
+			// Also release controls that have not been parented by init().
+			if (_count_label) {
+				memdelete(_count_label);
+			}
+			if (_name_label) {
+				memdelete(_name_label);
+			}
+			memdelete(_button_enabled);
+			memdelete(_spacer);
+			memdelete(_button_edit);
+			memdelete(_button_clear);
+			memdelete(_button_row);
+			memdelete(_margin);
+			memdelete(_label_rows);
+			break;
 		case NOTIFICATION_POST_ENTER_TREE:
 			init();
 			break;
@@ -715,6 +715,11 @@ void ListContainer::redraw() {
 void ListContainer::_notification(int what) {
 	if (what == NOTIFICATION_SORT_CHILDREN) {
 		redraw();
+	} else if (what == NOTIFICATION_PREDELETE) {
+		for (ListEntry *entry : _entries) {
+			memdelete(entry);
+		}
+		_entries.clear();
 	}
 }
 
@@ -1307,6 +1312,11 @@ void WorldScape3DAssetDock::_bind_methods() {
 void WorldScape3DAssetDock::_notification(int what) {
 	if (what == NOTIFICATION_POSTINITIALIZE) {
 		init();
+	} else if (what == NOTIFICATION_PREDELETE) {
+		memdelete(_box);
+		if (_confirm_dialog) {
+			memdelete(_confirm_dialog);
+		}
 	}
 }
 

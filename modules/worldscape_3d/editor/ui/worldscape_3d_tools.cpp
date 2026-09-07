@@ -630,9 +630,10 @@ void WorldScape3DToolSettings::_bind_methods() {
 }
 
 void WorldScape3DToolSettings::_notification(int what) {
-	PanelContainer::_notification(what);
 	if (what == NOTIFICATION_POST_ENTER_TREE) {
 		init();
+	} else if (what == NOTIFICATION_PREDELETE && _main_list) {
+		memdelete(_main_list);
 	}
 }
 

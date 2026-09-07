@@ -310,10 +310,10 @@ WorldScape3DUI::~WorldScape3DUI() {
 		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_SIDE_LEFT, _toolbar);
 	}
 	if (_toolbar) {
-		_toolbar->queue_free();
+		memdelete(_toolbar);
 	}
 	if (_menu) {
-		_menu->queue_free();
+		memdelete(_menu);
 	}
 	if (_tool_settings) {
 		if (_tool_settings->is_connected("setting_changed", callable_mp(this, &WorldScape3DUI::on_setting_changed))) {
@@ -322,7 +322,7 @@ WorldScape3DUI::~WorldScape3DUI() {
 		if (_tool_settings->is_connected("picking", callable_mp(_tool_settings, &WorldScape3DToolSettings::on_pick))) {
 			_tool_settings->disconnect("picking", callable_mp(_tool_settings, &WorldScape3DToolSettings::on_pick));
 		}
-		_tool_settings->queue_free();
+		memdelete(_tool_settings);
 	}
 }
 
@@ -938,8 +938,13 @@ void WorldScape3DUI::_bind_methods() {
 }
 
 void WorldScape3DUI::_notification(int what) {
-	Node::_notification(what);
 	switch (what) {
+		case NOTIFICATION_PREDELETE: {
+			if (_editor_decal_timer) {
+				memdelete(_editor_decal_timer);
+			}
+			break;
+		}
 		case NOTIFICATION_ENTER_TREE: {
 			on_tool_changed(WorldScape3DEditor::Tool::REGION, WorldScape3DEditor::Operation::ADD);
 			break;

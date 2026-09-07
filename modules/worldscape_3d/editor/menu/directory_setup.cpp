@@ -104,6 +104,12 @@ DirectorySetupDialog::DirectorySetupDialog() {
 	ConfirmationDialog::set_visible(true);
 }
 
+void DirectorySetupDialog::_notification(int what) {
+	if (what == NOTIFICATION_PREDELETE) {
+		memdelete(_margin);
+	}
+}
+
 void DirectorySetup::setup_layout() {
 	_file_dialog->set_filters({ "*.res" });
 	_file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
@@ -133,7 +139,7 @@ DirectorySetup::DirectorySetup(WorldScape3DEditorPlugin *plugin) :
 }
 
 DirectorySetup::~DirectorySetup() {
-	_dialog->queue_free();
+	memdelete(_dialog);
 }
 
 void DirectorySetup::directory_setup_popup() {
