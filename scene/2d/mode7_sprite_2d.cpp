@@ -812,10 +812,17 @@ void Mode7Sprite2D::_notification(int p_what) {
 				set_physics_process(false);
 				mode7_follow_physics_active = false;
 				return;
-			} else if (!is_inside_tree() || !target_2d->is_inside_tree()) {
-				set_physics_process(false);
-				mode7_follow_physics_active = false;
-				return;
+			} else if (!is_inside_tree()) {
+			    // The sprite itself left the tree; NOTIFICATION_EXIT_TREE already
+			    // disables physics processing in this case, but bail out safely.
+			    set_physics_process(false);
+			    mode7_follow_physics_active = false;
+			    return;
+			} else if (!target_2d->is_inside_tree()) {
+			    // The target is only temporarily detached (e.g. mid-reparent).
+			    // Skip this update but keep physics processing active so follow
+			    // resumes automatically once the target re-enters the tree.
+			    return;
 			} else if (!is_region_enabled()) {
 				// Skip the update while the region is disabled, but keep
 				// physics processing so follow resumes automatically.
