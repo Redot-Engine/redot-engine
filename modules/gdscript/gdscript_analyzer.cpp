@@ -415,6 +415,8 @@ Error GDScriptAnalyzer::resolve_class_inheritance(GDScriptParser::ClassNode *p_c
 			push_error(vformat(R"(Class "%s" hides a native class.)", class_name), p_class->identifier);
 		} else if (ScriptServer::is_global_class(class_name) && (!GDScript::is_canonically_equal_paths(ScriptServer::get_global_class_path(class_name), parser->script_path) || p_class != parser->head)) {
 			push_error(vformat(R"(Class "%s" hides a global script class.)", class_name), p_class->identifier);
+		} else if (ScriptServer::is_global_struct(class_name) && !GDScript::is_canonically_equal_paths(ScriptServer::get_global_struct_path(class_name), parser->script_path)) {
+			push_error(vformat(R"(Class "%s" hides a global struct.)", class_name), p_class->identifier);
 		} else if (ProjectSettings::get_singleton()->has_autoload(class_name) && ProjectSettings::get_singleton()->get_autoload(class_name).is_singleton) {
 			push_error(vformat(R"(Class "%s" hides an autoload singleton.)", class_name), p_class->identifier);
 		}
@@ -866,6 +868,20 @@ GDScriptParser::DataType GDScriptAnalyzer::resolve_datatype(GDScriptParser::Type
 				} else {
 					result = make_script_meta_type(ResourceLoader::load(path, "Script"));
 				}
+			}
+		} else if (ScriptServer::is_global_struct(first) && !GDScript::is_canonically_equal_paths(parser->script_path, ScriptServer::get_global_struct_path(first))) {
+			String path = ScriptServer::get_global_struct_path(first);
+			Ref<GDScriptParserRef> ref = parser->get_depended_parser_for(path);
+			if (ref.is_null() || ref->raise_status(GDScriptParserRef::INTERFACE_SOLVED) != OK) {
+				push_error(vformat(R"(Could not parse global struct "%s" from "%s".)", first, path), p_type);
+				return bad_type;
+			}
+			GDScriptParser::ClassNode *ext_head = ref->get_parser()->head;
+			if (ext_head->has_member(first) && ext_head->get_member(first).type == GDScriptParser::ClassNode::Member::STRUCT) {
+				result = ext_head->get_member(first).get_datatype();
+			} else {
+				push_error(vformat(R"(Global struct "%s" was not found in "%s".)", first, path), p_type);
+				return bad_type;
 			}
 		} else if (ProjectSettings::get_singleton()->has_autoload(first) && ProjectSettings::get_singleton()->get_autoload(first).is_singleton) {
 			const ProjectSettings::AutoloadInfo &autoload = ProjectSettings::get_singleton()->get_autoload(first);
@@ -2847,6 +2863,18 @@ void GDScriptAnalyzer::resolve_struct(GDScriptParser::StructNode *p_struct) {
 		nominal.type_source = GDScriptParser::DataType::ANNOTATED_EXPLICIT;
 		nominal.is_meta_type = true;
 		p_struct->set_datatype(nominal);
+	}
+
+	// A `struct_name` struct enters the global namespace, so it must not collide with a
+	// global class or a global struct declared in another file. Local structs (plain
+	// `struct`) never register globally and may freely shadow such names.
+	if (p_struct->is_global && p_struct->identifier != nullptr) {
+		const StringName struct_name = p_struct->identifier->name;
+		if (ScriptServer::is_global_class(struct_name)) {
+			push_error(vformat(R"(Global struct "%s" conflicts with a global script class of the same name.)", struct_name), p_struct->identifier);
+		} else if (ScriptServer::is_global_struct(struct_name) && !GDScript::is_canonically_equal_paths(ScriptServer::get_global_struct_path(struct_name), parser->script_path)) {
+			push_error(vformat(R"(Global struct "%s" conflicts with a global struct of the same name declared in another file.)", struct_name), p_struct->identifier);
+		}
 	}
 
 	StructInfoBuilder builder;
@@ -5541,6 +5569,18 @@ void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_ident
 	if (ScriptServer::is_global_class(name)) {
 		p_identifier->set_datatype(make_global_class_meta_type(name, p_identifier));
 		return;
+	}
+
+	if (ScriptServer::is_global_struct(name) && !GDScript::is_canonically_equal_paths(parser->script_path, ScriptServer::get_global_struct_path(name))) {
+		const String path = ScriptServer::get_global_struct_path(name);
+		Ref<GDScriptParserRef> ref = parser->get_depended_parser_for(path);
+		if (ref.is_valid() && ref->raise_status(GDScriptParserRef::INTERFACE_SOLVED) == OK) {
+			GDScriptParser::ClassNode *ext_head = ref->get_parser()->head;
+			if (ext_head->has_member(name) && ext_head->get_member(name).type == GDScriptParser::ClassNode::Member::STRUCT) {
+				p_identifier->set_datatype(ext_head->get_member(name).get_datatype());
+				return;
+			}
+		}
 	}
 
 	// Try singletons.

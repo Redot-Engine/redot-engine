@@ -1069,6 +1069,9 @@ void EditorData::script_class_save_global_classes() {
 		array_classes.push_back(d);
 	}
 	ProjectSettings::get_singleton()->store_global_class_list(array_classes);
+
+	// Keep the global struct cache in sync with the class cache.
+	ScriptServer::save_global_structs();
 }
 
 void EditorData::script_class_load_icon_paths() {

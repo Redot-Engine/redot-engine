@@ -121,6 +121,9 @@ protected:
 	Array global_class_list;
 	bool is_global_class_list_loaded = false;
 
+	Array global_struct_list;
+	bool is_global_struct_list_loaded = false;
+
 	String project_data_dir_name;
 
 	bool _set(const StringName &p_name, const Variant &p_value);
@@ -204,6 +207,11 @@ public:
 	void refresh_global_class_list(); ///< This is called after mounting a new PCK file to pick up class changes.
 	void store_global_class_list(const Array &p_classes);
 	String get_global_class_list_path() const;
+
+	TypedArray<Dictionary> get_global_struct_list();
+	void refresh_global_struct_list();
+	void store_global_struct_list(const Array &p_structs);
+	String get_global_struct_list_path() const;
 
 	bool has_setting(const String &p_var) const;
 	String localize_path(const String &p_path) const;
