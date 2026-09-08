@@ -993,7 +993,7 @@ public:
 	String tr(const StringName &p_message, const StringName &p_context = "") const;
 	String tr_n(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context = "") const;
 
-	bool _is_queued_for_deletion = false; ///< Set to true by SceneTree::queue_delete().
+	std::atomic<bool> _is_queued_for_deletion = false; ///< Set to true by SceneTree::queue_delete().
 	bool is_queued_for_deletion() const;
 
 	_FORCE_INLINE_ void set_message_translation(bool p_enable) { _can_translate = p_enable; }
