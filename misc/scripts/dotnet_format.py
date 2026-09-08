@@ -25,13 +25,13 @@ os.environ["GodotSkipGenerated"] = "true"
 
 # Match all the input files to their respective C# project.
 projects = {
-    path: " ".join([f for f in sys.argv[1:] if os.path.commonpath([f, path]) == path])
+    path: [f for f in sys.argv[1:] if os.path.commonpath([f, path]) == path]
     for path in [os.path.dirname(f) for f in glob.glob("**/*.csproj", recursive=True)]
 }
 
 # Run dotnet format on all projects with more than 0 modified files.
 for path, files in projects.items():
     if files:
-        result = subprocess.run(f"dotnet format {path} --include {files}", shell=True, check=False)
+        result = subprocess.run(["dotnet", "format", path, "--include", *files], check=False)
         if result.returncode:
             sys.exit(result.returncode)
