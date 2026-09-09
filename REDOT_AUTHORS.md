@@ -1,4 +1,4 @@
-# Redot Engine LTS authors
+# Redot Engine authors
 
 Redot is a Fork of the Godot Engine that is developed by a community of
 voluntary contributors who contribute code, bug reports, documentation,
