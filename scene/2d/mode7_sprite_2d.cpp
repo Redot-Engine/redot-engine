@@ -638,6 +638,13 @@ real_t Mode7Sprite2D::get_mode7_projection_pixel_aspect() const {
 }
 
 void Mode7Sprite2D::_validate_property(PropertyInfo &p_property) const {
+ 	if (p_property.name == "material" && mode7_enabled) {
+        // The active material is always regenerated from mode7_* properties
+        // via _mode7_rebuild_material(); never persist the generated
+        // ShaderMaterial as if it were the user's original material.
+        p_property.usage &= ~PROPERTY_USAGE_STORAGE;
+    }
+
 	// The projection tuning parameters only affect the scanline-table math in
 	// INTERPOLATION_PROJECTION mode, so lock them when any other mode is active.
 	// (Mirrors the Mode7ScanlineOverride::_validate_property pattern for skew.)
