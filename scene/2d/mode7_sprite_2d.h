@@ -125,6 +125,12 @@ public:
 	/// Exposed for manual refresh (e.g., after a scene reload) without waiting for ENTER_TREE or setter calls.
 	void force_update_follow_cache();
 
+	/// Computes the resulting point, in normalized region-local UV space [0,1]x[0,1],
+	/// after applying the same per-scanline + global Mode 7 transformation that the
+	/// shader's fragment() function applies to UV. This is the CPU-side equivalent of
+	/// "where does this point move to" for a single x/y coordinate.
+	Vector2 mode7_transform_point(const Vector2 &p_uv) const;
+
 	Mode7Sprite2D();
 
 private:
@@ -144,6 +150,23 @@ private:
 	/// Builds the transform, pivot/offset and color/modulate as 3 "Color" values per row
 	/// We're only after an actual color for the modulate value, though.  The rest, we're using the vec4 for data.
 	void _mode7_rebuild_scanline_texture();
+
+	/// Computes the interpolated per-scanline Transform2D and pivot for a given
+	/// normalized row coordinate (region-local uv.y, 0..1), using whichever
+	/// mode7_interpolation mode is active (NONE/LERP/PROJECTION). This is the
+	/// single shared implementation of the "row data" math used both by
+	/// _mode7_rebuild_scanline_texture() (baking the scanline table) and by
+	/// mode7_transform_point() (exact per-point evaluation, not limited to the
+	/// scanline table's 1024-row resolution/precision).
+	void _mode7_compute_scanline_data(real_t p_uv_y, Transform2D &r_transform, Vector2 &r_pivot, Color &r_modulate) const;
+
+	/// C++ equivalent of the shader's aspect_rotate(angle, aspect) helper:
+	/// builds a rotation basis pre/post scaled by aspect so a non-square
+	/// region doesn't shear the rotation. Returned as a Transform2D with a
+	/// zero origin (only the basis columns matter); origin/pivot handling is
+	/// left to the caller.
+	static Transform2D _mode7_aspect_rotate(real_t p_angle, real_t p_aspect);
+
 	/// Shared tail for the projection tuning setters: these four parameters only feed the
 	/// scanline table (not the shader uniforms), so when the material already exists we
 	/// rebuild just the table (rebinding it to the material) and request a redraw —
