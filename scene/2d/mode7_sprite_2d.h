@@ -125,11 +125,10 @@ public:
 	/// Exposed for manual refresh (e.g., after a scene reload) without waiting for ENTER_TREE or setter calls.
 	void force_update_follow_cache();
 
-	/// Computes the resulting point, in normalized region-local UV space [0,1]x[0,1],
-	/// after applying the same per-scanline + global Mode 7 transformation that the
-	/// shader's fragment() function applies to UV. This is the CPU-side equivalent of
-	/// "where does this point move to" for a single x/y coordinate.
-	Vector2 mode7_transform_point(const Vector2 &p_uv) const;
+	/// Takes a point in this node's parent-local space, on the undistorted source artwork,
+	/// @return The point in the same space after the per-scanline global Mode 7 transformation that the shader's fragment() function applies.
+	/// This is the CPU-side equivalent of "where does this point move to?"
+	Vector2 mode7_transform_point(const Vector2 &p_point) const;
 
 	Mode7Sprite2D();
 
@@ -166,6 +165,16 @@ private:
 	/// zero origin (only the basis columns matter); origin/pivot handling is
 	/// left to the caller.
 	static Transform2D _mode7_aspect_rotate(real_t p_angle, real_t p_aspect);
+
+	/// Computes the same src_rect/dst_rect pairing Sprite2D::_get_rects() would
+	/// produce, but always against the FULL, uncropped texture (ignoring
+	/// region_enabled/region_rect). This represents "where would this sprite's
+	/// full artwork be positioned in local space," independent of which slice
+	/// is currently visible through the region crop. Used by
+	/// mode7_transform_point() so that point-space conversion stays anchored
+	/// to the whole image, while the region only ever affects the region-local
+	/// normalization step in between.
+	void _mode7_get_full_rects(Rect2 &r_src_rect, Rect2 &r_dst_rect) const;
 
 	/// Shared tail for the projection tuning setters: these four parameters only feed the
 	/// scanline table (not the shader uniforms), so when the material already exists we
