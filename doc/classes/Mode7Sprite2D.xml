@@ -32,6 +32,16 @@
 				Re-resolve the follow target from [member mode7_region_follow_target] and store it in the internal follow cache. Useful after a scene reload when you need to refresh the tracked target without waiting for [constant Node.NOTIFICATION_ENTER_TREE].
 			</description>
 		</method>
+		<method name="mode7_transform_point" qualifiers="const">
+			<return type="Vector2" />
+			<param index="0" name="point" type="Vector2" />
+			<description>
+				Provide a (Vector2) position, which should be the "real" position on the un-transformed sprite (Mode 7 disabled).
+				The function will return a position, which will be that same place on the sprite after the Mode 7 transformations are applied.
+				This can be used to place/move an object on the sprite consistent with the Mode 7 transformation.
+				WARNING:  There are edge cases where this will not work, such as the full sprite (not using region) with tiling, essentially if you're looking for a point that is outside the entire sprite's UV space (essentially, on one of the "tiles").
+			</description>
+		</method>
 	</methods>
 	<members>
 		<member name="mode7_bottom_horizon_mask_amount" type="float" setter="set_mode7_bottom_horizon_mask_amount" getter="get_mode7_bottom_horizon_mask_amount" default="0.0">
