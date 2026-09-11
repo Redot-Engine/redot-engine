@@ -58,6 +58,9 @@ class ConnectionInfoDialog : public AcceptDialog {
 
 public:
 	void popup_connections(const String &p_method, const Vector<Node *> &p_nodes);
+	// Public wrappers for editor plugins / modules
+	void open_script_tab(Script *script);
+	void jump_to_method(Script *script, const StringName &method_name);
 
 	ConnectionInfoDialog();
 };
