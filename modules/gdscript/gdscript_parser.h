@@ -880,9 +880,7 @@ public:
 			members.push_back(Member(p_enum_value));
 		}
 		void add_member_group(AnnotationNode *p_annotation_node) {
-			// Avoid name conflict. See GH-78252.
-			StringName name = vformat("@group_%d_%s", members.size(), p_annotation_node->export_info.name);
-			members_indices[name] = members.size();
+			// Groups are ordered Inspector metadata, not named class members.
 			members.push_back(Member(p_annotation_node));
 		}
 
