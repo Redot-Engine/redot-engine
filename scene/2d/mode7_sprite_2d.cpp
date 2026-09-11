@@ -638,12 +638,12 @@ real_t Mode7Sprite2D::get_mode7_projection_pixel_aspect() const {
 }
 
 void Mode7Sprite2D::_validate_property(PropertyInfo &p_property) const {
- 	if (p_property.name == "material" && mode7_enabled) {
-        // The active material is always regenerated from mode7_* properties
-        // via _mode7_rebuild_material(); never persist the generated
-        // ShaderMaterial as if it were the user's original material.
-        p_property.usage &= ~PROPERTY_USAGE_STORAGE;
-    }
+	if (p_property.name == "material" && mode7_enabled) {
+		// The active material is always regenerated from mode7_* properties
+		// via _mode7_rebuild_material(); never persist the generated
+		// ShaderMaterial as if it were the user's original material.
+		p_property.usage &= ~PROPERTY_USAGE_STORAGE;
+	}
 
 	// The projection tuning parameters only affect the scanline-table math in
 	// INTERPOLATION_PROJECTION mode, so lock them when any other mode is active.
@@ -820,23 +820,22 @@ void Mode7Sprite2D::_notification(int p_what) {
 				mode7_follow_physics_active = false;
 				return;
 			} else if (!is_inside_tree()) {
-			    // The sprite itself left the tree; NOTIFICATION_EXIT_TREE already
-			    // disables physics processing in this case, but bail out safely.
-			    set_physics_process(false);
-			    mode7_follow_physics_active = false;
-			    return;
+				// This node itself is not in the tree. NOTIFICATION_EXIT_TREE already
+				// resets mode7_follow_cache/mode7_follow_initialized/mode7_follow_physics_active
+				// and disarms physics_process unconditionally, so don't duplicate or
+				// race with that logic here — just bail out for this frame.
+				return;
 			} else if (!target_2d->is_inside_tree()) {
-			    // The target is only temporarily detached (e.g. mid-reparent).
-			    // Skip this update but keep physics processing active so follow
-			    // resumes automatically once the target re-enters the tree.
-			    return;
+				// Only the target is temporarily out of the tree (e.g. being
+				// re-parented). This is recoverable, so keep polling instead of
+				// disarming physics processing — otherwise follow never resumes
+				// once the target re-enters the tree. Force a re-snap once it's
+				// back, so the region doesn't jump on resume.
+				mode7_follow_initialized = false;
+				return;
 			} else if (!is_region_enabled()) {
 				// Skip the update while the region is disabled, but keep
 				// physics processing so follow resumes automatically.
-				return;
-			}
-
-			if (!is_inside_tree()) {
 				return;
 			}
 
@@ -914,7 +913,7 @@ void Mode7Sprite2D::_update_follow_cache() {
 }
 
 void Mode7Sprite2D::force_update_follow_cache() {
-	_update_follow_cache();
+	_ensure_follow_physics();
 }
 
 void Mode7Sprite2D::_bind_methods() {
