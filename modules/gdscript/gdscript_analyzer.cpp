@@ -2062,6 +2062,9 @@ void GDScriptAnalyzer::resolve_class_uses(GDScriptParser::ClassNode *p_class, co
 			GDScriptParser::DataType class_base_type = p_class->base_type;
 			if (class_base_type.kind == GDScriptParser::DataType::NATIVE && class_base_type.native_type != SNAME("RefCounted")) {
 				for (const GDScriptParser::ClassNode::Member &member : trait->members) {
+					if (member.type == GDScriptParser::ClassNode::Member::GROUP) {
+						continue;
+					}
 					if (ClassDB::has_enum(class_base_type.native_type, member.get_name()) ||
 							ClassDB::has_signal(class_base_type.native_type, member.get_name()) ||
 							ClassDB::has_method(class_base_type.native_type, member.get_name()) ||
@@ -2074,6 +2077,9 @@ void GDScriptAnalyzer::resolve_class_uses(GDScriptParser::ClassNode *p_class, co
 				GDScriptParser::ClassNode *parent = class_base_type.class_type;
 				while (parent != nullptr && inheritance_match) {
 					for (const GDScriptParser::ClassNode::Member &member : trait->members) {
+						if (member.type == GDScriptParser::ClassNode::Member::GROUP) {
+							continue;
+						}
 						if (parent->has_member(member.get_name())) {
 							inheritance_match = false;
 							break;
@@ -7650,6 +7656,23 @@ void GDScriptAnalyzer::extend_class(GDScriptParser::ClassNode *p_class, const GD
 	for (int i = 0; i < p_trait->members.size(); i++) {
 		GDScriptParser::ClassNode::Member trait_member = p_trait->members[i];
 		if (trait_member.type == GDScriptParser::ClassNode::Member::TRAIT) {
+			continue;
+		}
+		if (trait_member.type == GDScriptParser::ClassNode::Member::GROUP) {
+			bool copied_over = trait_member.get_source_node()->trait_origin.has(p_class->fqcn);
+			for (const StringName &trait_fqcn : p_class->traits_fqtn) {
+				if (!copied_over && trait_member.get_source_node()->trait_origin.has(trait_fqcn)) {
+					copied_over = true;
+					break;
+				}
+			}
+			if (copied_over) {
+				continue;
+			}
+			p_class->add_member_group(trait_member.annotation);
+			if (!trait_member.get_source_node()->trait_origin.has(p_trait->fqcn)) {
+				trait_member.get_source_node()->trait_origin.append(p_trait->fqcn);
+			}
 			continue;
 		}
 
