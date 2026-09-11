@@ -415,6 +415,8 @@ Error GDScriptAnalyzer::resolve_class_inheritance(GDScriptParser::ClassNode *p_c
 			push_error(vformat(R"(Class "%s" hides a native class.)", class_name), p_class->identifier);
 		} else if (ScriptServer::is_global_class(class_name) && (!GDScript::is_canonically_equal_paths(ScriptServer::get_global_class_path(class_name), parser->script_path) || p_class != parser->head)) {
 			push_error(vformat(R"(Class "%s" hides a global script class.)", class_name), p_class->identifier);
+		} else if (ScriptServer::is_global_struct(class_name) && !GDScript::is_canonically_equal_paths(ScriptServer::get_global_struct_path(class_name), parser->script_path)) {
+			push_error(vformat(R"(%s "%s" hides a global struct.)", p_class->type == GDScriptParser::Node::TRAIT ? "Trait" : "Class", class_name), p_class->identifier);
 		} else if (ProjectSettings::get_singleton()->has_autoload(class_name) && ProjectSettings::get_singleton()->get_autoload(class_name).is_singleton) {
 			push_error(vformat(R"(Class "%s" hides an autoload singleton.)", class_name), p_class->identifier);
 		}
@@ -2863,12 +2865,16 @@ void GDScriptAnalyzer::resolve_struct(GDScriptParser::StructNode *p_struct) {
 		p_struct->set_datatype(nominal);
 	}
 
-	if (p_struct->identifier != nullptr) {
+	// A `struct_name` struct enters the global namespace, so it must not collide with a
+	// global class or a global struct declared in another file. Local structs (plain
+	// `struct`) never register globally and may freely shadow such names.
+	if (p_struct->is_global && p_struct->identifier != nullptr) {
 		const StringName struct_name = p_struct->identifier->name;
 		if (ScriptServer::is_global_class(struct_name)) {
-			push_error(vformat(R"(Struct "%s" hides a global script class.)", struct_name), p_struct->identifier);
+			// Traits are registered in the same global namespace as classes.
+			push_error(vformat(R"(Global struct "%s" conflicts with a global class or trait of the same name.)", struct_name), p_struct->identifier);
 		} else if (ScriptServer::is_global_struct(struct_name) && !GDScript::is_canonically_equal_paths(ScriptServer::get_global_struct_path(struct_name), parser->script_path)) {
-			push_error(vformat(R"(Struct "%s" hides a global struct declared in "%s".)", struct_name, ScriptServer::get_global_struct_path(struct_name)), p_struct->identifier);
+			push_error(vformat(R"(Global struct "%s" conflicts with a global struct of the same name declared in another file.)", struct_name), p_struct->identifier);
 		}
 	}
 
