@@ -603,6 +603,10 @@ void Control::_validate_property(PropertyInfo &p_property) const {
 		// Use the layout mode to display or hide advanced anchoring properties.
 		LayoutMode _layout = _get_layout_mode();
 		bool use_anchors = (_layout == LayoutMode::LAYOUT_MODE_ANCHORS || _layout == LayoutMode::LAYOUT_MODE_UNCONTROLLED);
+		// If using anchors, the position is, well...anchored based on the layout, so manipulating the position doesn't make sense
+		if (use_anchors && p_property.name == "position") {
+			p_property.usage |= PROPERTY_USAGE_READ_ONLY;
+		}
 		if (!use_anchors && p_property.name == "anchors_preset") {
 			p_property.usage ^= PROPERTY_USAGE_EDITOR;
 		}
@@ -785,6 +789,9 @@ void Control::set_anchor(Side p_side, real_t p_anchor, bool p_keep_offset, bool 
 	queue_redraw();
 }
 
+/// @brief Get a particular  side (LEFT, TOP, RIGHT or BOTTOM) of an anchor preset
+/// @param `p_side` here is just 0, 1, 2 or 3, based on the Side enum (math_defs.h)
+/// @return The value of the anchor at the passed-in side, typically 0.0, 0.5 or 1.0
 real_t Control::get_anchor(Side p_side) const {
 	ERR_READ_THREAD_GUARD_V(0);
 	ERR_FAIL_INDEX_V(int(p_side), 4, 0.0);
@@ -925,6 +932,7 @@ void Control::_set_layout_mode(LayoutMode p_mode) {
 		data.stored_use_custom_anchors = false;
 		set_anchors_and_offsets_preset(LayoutPreset::PRESET_TOP_LEFT, LayoutPresetMode::PRESET_MODE_KEEP_SIZE);
 		set_grow_direction_preset(LayoutPreset::PRESET_TOP_LEFT);
+		data.anchor_preset_active = false;
 	}
 
 	if (list_changed) {
@@ -1034,203 +1042,106 @@ void Control::_set_anchors_layout_preset(int p_preset) {
 }
 
 int Control::_get_anchors_layout_preset() const {
-	// If this is a layout mode that doesn't rely on anchors, avoid excessive checks.
-	if (data.stored_layout_mode != LayoutMode::LAYOUT_MODE_UNCONTROLLED && data.stored_layout_mode != LayoutMode::LAYOUT_MODE_ANCHORS) {
+	// Early exit for non-anchor layout modes
+	if (data.stored_layout_mode != LayoutMode::LAYOUT_MODE_UNCONTROLLED &&
+			data.stored_layout_mode != LayoutMode::LAYOUT_MODE_ANCHORS) {
 		return LayoutPreset::PRESET_TOP_LEFT;
 	}
-
-	// If the custom preset was selected by user, use it.
 	if (data.stored_use_custom_anchors) {
 		return -1;
 	}
 
-	// Check anchors to determine if the current state matches a preset, or not.
+	// Pack anchor values (each 0.0, 0.5, or 1.0) into a single byte
+	// 0 stays the same, we'll map 0.5 to 1 and 1 to 2, so we can store them in a bit.
+	std::function<int(real_t)> encode = [](real_t val) -> int {
+		if (val == 0.0f) {
+			return 0;
+		}
+		if (val == 0.5f) {
+			return 1;
+		}
+		if (val == 1.0f) {
+			return 2;
+		}
+		return -1; // Handle unexpected values
+	};
 
-	float left = get_anchor(SIDE_LEFT);
-	float right = get_anchor(SIDE_RIGHT);
-	float top = get_anchor(SIDE_TOP);
-	float bottom = get_anchor(SIDE_BOTTOM);
+	uint8_t key = (encode(get_anchor(SIDE_LEFT)) << 6) | (encode(get_anchor(SIDE_TOP)) << 4) |
+			(encode(get_anchor(SIDE_RIGHT)) << 2) | encode(get_anchor(SIDE_BOTTOM));
 
-	if (left == (float)ANCHOR_BEGIN && right == (float)ANCHOR_BEGIN && top == (float)ANCHOR_BEGIN && bottom == (float)ANCHOR_BEGIN) {
-		return (int)LayoutPreset::PRESET_TOP_LEFT;
-	}
-	if (left == (float)ANCHOR_END && right == (float)ANCHOR_END && top == (float)ANCHOR_BEGIN && bottom == (float)ANCHOR_BEGIN) {
-		return (int)LayoutPreset::PRESET_TOP_RIGHT;
-	}
-	if (left == (float)ANCHOR_BEGIN && right == (float)ANCHOR_BEGIN && top == (float)ANCHOR_END && bottom == (float)ANCHOR_END) {
-		return (int)LayoutPreset::PRESET_BOTTOM_LEFT;
-	}
-	if (left == (float)ANCHOR_END && right == (float)ANCHOR_END && top == (float)ANCHOR_END && bottom == (float)ANCHOR_END) {
-		return (int)LayoutPreset::PRESET_BOTTOM_RIGHT;
-	}
+	// Static lookup table with dynamic initialization
+	static const int *PRESET_LOOKUP = []() -> const int * {
+		static int table[256];
+		// Initialize all entries to -1 (invalid combinations)
+		// We're storing all possible values in an int using a bitmask.
+		// Even though we only need 16 for the presets, all other combinations are invalid and need to be populated to return -1
+		for (int i = 0; i < 256; ++i) {
+			table[i] = -1;
+		}
+		// Map valid combinations						// LEFT | TOP | RIGHT | BOTTOM
+		table[0x00] = LayoutPreset::PRESET_TOP_LEFT; // 0.0, 0.0, 0.0, 0.0
+		table[0x88] = LayoutPreset::PRESET_TOP_RIGHT; // 1.0, 0.0, 1.0, 0.0
+		table[0x22] = LayoutPreset::PRESET_BOTTOM_LEFT; // 0.0, 1.0, 0.0, 1.0
+		table[0xAA] = LayoutPreset::PRESET_BOTTOM_RIGHT; // 1.0, 1.0, 1.0, 1.0
+		table[0x11] = LayoutPreset::PRESET_CENTER_LEFT; // 0.0, 0.5, 0.0, 0.5
+		table[0x99] = LayoutPreset::PRESET_CENTER_RIGHT; // 1.0, 0.5, 1.0, 0.5
+		table[0x44] = LayoutPreset::PRESET_CENTER_TOP; // 0.5, 0.0, 0.5, 0.0
+		table[0x66] = LayoutPreset::PRESET_CENTER_BOTTOM; // 0.5, 1.0, 0.5, 1.0
+		table[0x55] = LayoutPreset::PRESET_CENTER; // 0.5, 0.5, 0.5, 0.5
+		table[0x02] = LayoutPreset::PRESET_LEFT_WIDE; // 0.0, 0.0, 0.0, 1.0
+		table[0x8A] = LayoutPreset::PRESET_RIGHT_WIDE; // 1.0, 0.0, 1.0, 1.0
+		table[0x08] = LayoutPreset::PRESET_TOP_WIDE; // 0.0, 0.0, 1.0, 0.0
+		table[0x2A] = LayoutPreset::PRESET_BOTTOM_WIDE; // 0.0, 1.0, 1.0, 1.0
+		table[0x46] = LayoutPreset::PRESET_VCENTER_WIDE; // 0.5, 0.0, 0.5, 1.0
+		table[0x19] = LayoutPreset::PRESET_HCENTER_WIDE; // 0.0, 0.5, 1.0, 0.5
+		table[0xA] = LayoutPreset::PRESET_FULL_RECT; // 0.0, 0.0, 1.0, 1.0
+		return table;
+	}();
 
-	if (left == (float)ANCHOR_BEGIN && right == (float)ANCHOR_BEGIN && top == 0.5 && bottom == 0.5) {
-		return (int)LayoutPreset::PRESET_CENTER_LEFT;
-	}
-	if (left == (float)ANCHOR_END && right == (float)ANCHOR_END && top == 0.5 && bottom == 0.5) {
-		return (int)LayoutPreset::PRESET_CENTER_RIGHT;
-	}
-	if (left == 0.5 && right == 0.5 && top == (float)ANCHOR_BEGIN && bottom == (float)ANCHOR_BEGIN) {
-		return (int)LayoutPreset::PRESET_CENTER_TOP;
-	}
-	if (left == 0.5 && right == 0.5 && top == (float)ANCHOR_END && bottom == (float)ANCHOR_END) {
-		return (int)LayoutPreset::PRESET_CENTER_BOTTOM;
-	}
-	if (left == 0.5 && right == 0.5 && top == 0.5 && bottom == 0.5) {
-		return (int)LayoutPreset::PRESET_CENTER;
-	}
-
-	if (left == (float)ANCHOR_BEGIN && right == (float)ANCHOR_BEGIN && top == (float)ANCHOR_BEGIN && bottom == (float)ANCHOR_END) {
-		return (int)LayoutPreset::PRESET_LEFT_WIDE;
-	}
-	if (left == (float)ANCHOR_END && right == (float)ANCHOR_END && top == (float)ANCHOR_BEGIN && bottom == (float)ANCHOR_END) {
-		return (int)LayoutPreset::PRESET_RIGHT_WIDE;
-	}
-	if (left == (float)ANCHOR_BEGIN && right == (float)ANCHOR_END && top == (float)ANCHOR_BEGIN && bottom == (float)ANCHOR_BEGIN) {
-		return (int)LayoutPreset::PRESET_TOP_WIDE;
-	}
-	if (left == (float)ANCHOR_BEGIN && right == (float)ANCHOR_END && top == (float)ANCHOR_END && bottom == (float)ANCHOR_END) {
-		return (int)LayoutPreset::PRESET_BOTTOM_WIDE;
-	}
-
-	if (left == 0.5 && right == 0.5 && top == (float)ANCHOR_BEGIN && bottom == (float)ANCHOR_END) {
-		return (int)LayoutPreset::PRESET_VCENTER_WIDE;
-	}
-	if (left == (float)ANCHOR_BEGIN && right == (float)ANCHOR_END && top == 0.5 && bottom == 0.5) {
-		return (int)LayoutPreset::PRESET_HCENTER_WIDE;
-	}
-
-	if (left == (float)ANCHOR_BEGIN && right == (float)ANCHOR_END && top == (float)ANCHOR_BEGIN && bottom == (float)ANCHOR_END) {
-		return (int)LayoutPreset::PRESET_FULL_RECT;
-	}
-
-	// Does not match any preset, return "Custom".
-	return -1;
+	return PRESET_LOOKUP[key]; // Will return -1 if an invalid or "custom" preset
 }
 
 void Control::set_anchors_preset(LayoutPreset p_preset, bool p_keep_offsets) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_INDEX((int)p_preset, 16);
 
-	//Left
-	switch (p_preset) {
-		case PRESET_TOP_LEFT:
-		case PRESET_BOTTOM_LEFT:
-		case PRESET_CENTER_LEFT:
-		case PRESET_TOP_WIDE:
-		case PRESET_BOTTOM_WIDE:
-		case PRESET_LEFT_WIDE:
-		case PRESET_HCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			set_anchor(SIDE_LEFT, ANCHOR_BEGIN, p_keep_offsets);
-			break;
+	// Lookup table: [preset][side] = anchor_value
+	// Sides: 0=LEFT, 1=TOP, 2=RIGHT, 3=BOTTOM
+	// KEEP IN SAME ORDER AS LayoutPreset enum!
+	static constexpr float ANCHOR_TABLE[16][4] = {
+		{ 0.0f, 0.0f, 0.0f, 0.0f }, // PRESET_TOP_LEFT
+		{ 1.0f, 0.0f, 1.0f, 0.0f }, // PRESET_TOP_RIGHT
+		{ 0.0f, 1.0f, 0.0f, 1.0f }, // PRESET_BOTTOM_LEFT
+		{ 1.0f, 1.0f, 1.0f, 1.0f }, // PRESET_BOTTOM_RIGHT
+		{ 0.0f, 0.5f, 0.0f, 0.5f }, // PRESET_CENTER_LEFT
+		{ 0.5f, 0.0f, 0.5f, 0.0f }, // PRESET_CENTER_TOP
+		{ 1.0f, 0.5f, 1.0f, 0.5f }, // PRESET_CENTER_RIGHT
+		{ 0.5f, 1.0f, 0.5f, 1.0f }, // PRESET_CENTER_BOTTOM
+		{ 0.5f, 0.5f, 0.5f, 0.5f }, // PRESET_CENTER
+		{ 0.0f, 0.0f, 0.0f, 1.0f }, // PRESET_LEFT_WIDE
+		{ 0.0f, 0.0f, 1.0f, 0.0f }, // PRESET_TOP_WIDE
+		{ 1.0f, 0.0f, 1.0f, 1.0f }, // PRESET_RIGHT_WIDE
+		{ 0.0f, 1.0f, 1.0f, 1.0f }, // PRESET_BOTTOM_WIDE
+		{ 0.5f, 0.0f, 0.5f, 1.0f }, // PRESET_VCENTER_WIDE
+		{ 0.0f, 0.5f, 1.0f, 0.5f }, // PRESET_HCENTER_WIDE
+		{ 0.0f, 0.0f, 1.0f, 1.0f }, // PRESET_FULL_RECT
+	};
 
-		case PRESET_CENTER_TOP:
-		case PRESET_CENTER_BOTTOM:
-		case PRESET_CENTER:
-		case PRESET_VCENTER_WIDE:
-			set_anchor(SIDE_LEFT, 0.5, p_keep_offsets);
-			break;
-
-		case PRESET_TOP_RIGHT:
-		case PRESET_BOTTOM_RIGHT:
-		case PRESET_CENTER_RIGHT:
-		case PRESET_RIGHT_WIDE:
-			set_anchor(SIDE_LEFT, ANCHOR_END, p_keep_offsets);
-			break;
-	}
-
-	// Top
-	switch (p_preset) {
-		case PRESET_TOP_LEFT:
-		case PRESET_TOP_RIGHT:
-		case PRESET_CENTER_TOP:
-		case PRESET_LEFT_WIDE:
-		case PRESET_RIGHT_WIDE:
-		case PRESET_TOP_WIDE:
-		case PRESET_VCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			set_anchor(SIDE_TOP, ANCHOR_BEGIN, p_keep_offsets);
-			break;
-
-		case PRESET_CENTER_LEFT:
-		case PRESET_CENTER_RIGHT:
-		case PRESET_CENTER:
-		case PRESET_HCENTER_WIDE:
-			set_anchor(SIDE_TOP, 0.5, p_keep_offsets);
-			break;
-
-		case PRESET_BOTTOM_LEFT:
-		case PRESET_BOTTOM_RIGHT:
-		case PRESET_CENTER_BOTTOM:
-		case PRESET_BOTTOM_WIDE:
-			set_anchor(SIDE_TOP, ANCHOR_END, p_keep_offsets);
-			break;
-	}
-
-	// Right
-	switch (p_preset) {
-		case PRESET_TOP_LEFT:
-		case PRESET_BOTTOM_LEFT:
-		case PRESET_CENTER_LEFT:
-		case PRESET_LEFT_WIDE:
-			set_anchor(SIDE_RIGHT, ANCHOR_BEGIN, p_keep_offsets);
-			break;
-
-		case PRESET_CENTER_TOP:
-		case PRESET_CENTER_BOTTOM:
-		case PRESET_CENTER:
-		case PRESET_VCENTER_WIDE:
-			set_anchor(SIDE_RIGHT, 0.5, p_keep_offsets);
-			break;
-
-		case PRESET_TOP_RIGHT:
-		case PRESET_BOTTOM_RIGHT:
-		case PRESET_CENTER_RIGHT:
-		case PRESET_TOP_WIDE:
-		case PRESET_RIGHT_WIDE:
-		case PRESET_BOTTOM_WIDE:
-		case PRESET_HCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			set_anchor(SIDE_RIGHT, ANCHOR_END, p_keep_offsets);
-			break;
-	}
-
-	// Bottom
-	switch (p_preset) {
-		case PRESET_TOP_LEFT:
-		case PRESET_TOP_RIGHT:
-		case PRESET_CENTER_TOP:
-		case PRESET_TOP_WIDE:
-			set_anchor(SIDE_BOTTOM, ANCHOR_BEGIN, p_keep_offsets);
-			break;
-
-		case PRESET_CENTER_LEFT:
-		case PRESET_CENTER_RIGHT:
-		case PRESET_CENTER:
-		case PRESET_HCENTER_WIDE:
-			set_anchor(SIDE_BOTTOM, 0.5, p_keep_offsets);
-			break;
-
-		case PRESET_BOTTOM_LEFT:
-		case PRESET_BOTTOM_RIGHT:
-		case PRESET_CENTER_BOTTOM:
-		case PRESET_LEFT_WIDE:
-		case PRESET_RIGHT_WIDE:
-		case PRESET_BOTTOM_WIDE:
-		case PRESET_VCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			set_anchor(SIDE_BOTTOM, ANCHOR_END, p_keep_offsets);
-			break;
-	}
+	const auto &row = ANCHOR_TABLE[p_preset];
+	set_anchor(SIDE_LEFT, row[0], p_keep_offsets);
+	set_anchor(SIDE_TOP, row[1], p_keep_offsets);
+	set_anchor(SIDE_RIGHT, row[2], p_keep_offsets);
+	set_anchor(SIDE_BOTTOM, row[3], p_keep_offsets);
 }
 
-void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_margin) {
+void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_preset_margin) {
 	ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_INDEX((int)p_preset, 16);
 	ERR_FAIL_INDEX((int)p_resize_mode, 4);
 
-	// Calculate the size if the node is not resized
+	data.anchor_preset_active = true;
+	data.anchor_preset_margin = p_preset_margin;
+
 	Size2 min_size = get_minimum_size();
 	Size2 new_size = get_size();
 	if (p_resize_mode == PRESET_MODE_MINSIZE || p_resize_mode == PRESET_MODE_KEEP_HEIGHT) {
@@ -1240,125 +1151,31 @@ void Control::set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resiz
 		new_size.y = min_size.y;
 	}
 
+	_compute_preset_offsets(p_preset, new_size, p_preset_margin);
+	_size_changed();
+}
+
+void Control::_compute_preset_offsets(LayoutPreset p_preset, const Size2 &p_size, int p_preset_margin) {
 	Rect2 parent_rect = get_parent_anchorable_rect();
 
-	real_t x = parent_rect.size.x;
-	if (is_layout_rtl()) {
-		x = parent_rect.size.x - x - new_size.x;
-	}
-	//Left
-	switch (p_preset) {
-		case PRESET_TOP_LEFT:
-		case PRESET_BOTTOM_LEFT:
-		case PRESET_CENTER_LEFT:
-		case PRESET_TOP_WIDE:
-		case PRESET_BOTTOM_WIDE:
-		case PRESET_LEFT_WIDE:
-		case PRESET_HCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			data.offset[0] = x * (0.0 - data.anchor[0]) + p_margin + parent_rect.position.x;
-			break;
+	OffsetCalcParams params{
+		.parent_x_size = parent_rect.size.x,
+		.parent_y_size = parent_rect.size.y,
+		.pivot_x_correction = data.pivot_offset.x * (data.scale.x - 1.0f),
+		.pivot_y_correction = data.pivot_offset.y * (data.scale.y - 1.0f),
+		.scaled_width = p_size.x * data.scale.x,
+		.scaled_height = p_size.y * data.scale.y,
+		.size_x = p_size.x,
+		.size_y = p_size.y,
+		.scale_x = data.scale.x,
+		.scale_y = data.scale.y,
+		.preset_margin = p_preset_margin,
+		.parent_x_position = parent_rect.position.x,
+		.parent_y_position = parent_rect.position.y
+	};
 
-		case PRESET_CENTER_TOP:
-		case PRESET_CENTER_BOTTOM:
-		case PRESET_CENTER:
-		case PRESET_VCENTER_WIDE:
-			data.offset[0] = x * (0.5 - data.anchor[0]) - new_size.x / 2 + parent_rect.position.x;
-			break;
-
-		case PRESET_TOP_RIGHT:
-		case PRESET_BOTTOM_RIGHT:
-		case PRESET_CENTER_RIGHT:
-		case PRESET_RIGHT_WIDE:
-			data.offset[0] = x * (1.0 - data.anchor[0]) - new_size.x - p_margin + parent_rect.position.x;
-			break;
-	}
-
-	// Top
-	switch (p_preset) {
-		case PRESET_TOP_LEFT:
-		case PRESET_TOP_RIGHT:
-		case PRESET_CENTER_TOP:
-		case PRESET_LEFT_WIDE:
-		case PRESET_RIGHT_WIDE:
-		case PRESET_TOP_WIDE:
-		case PRESET_VCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			data.offset[1] = parent_rect.size.y * (0.0 - data.anchor[1]) + p_margin + parent_rect.position.y;
-			break;
-
-		case PRESET_CENTER_LEFT:
-		case PRESET_CENTER_RIGHT:
-		case PRESET_CENTER:
-		case PRESET_HCENTER_WIDE:
-			data.offset[1] = parent_rect.size.y * (0.5 - data.anchor[1]) - new_size.y / 2 + parent_rect.position.y;
-			break;
-
-		case PRESET_BOTTOM_LEFT:
-		case PRESET_BOTTOM_RIGHT:
-		case PRESET_CENTER_BOTTOM:
-		case PRESET_BOTTOM_WIDE:
-			data.offset[1] = parent_rect.size.y * (1.0 - data.anchor[1]) - new_size.y - p_margin + parent_rect.position.y;
-			break;
-	}
-
-	// Right
-	switch (p_preset) {
-		case PRESET_TOP_LEFT:
-		case PRESET_BOTTOM_LEFT:
-		case PRESET_CENTER_LEFT:
-		case PRESET_LEFT_WIDE:
-			data.offset[2] = x * (0.0 - data.anchor[2]) + new_size.x + p_margin + parent_rect.position.x;
-			break;
-
-		case PRESET_CENTER_TOP:
-		case PRESET_CENTER_BOTTOM:
-		case PRESET_CENTER:
-		case PRESET_VCENTER_WIDE:
-			data.offset[2] = x * (0.5 - data.anchor[2]) + new_size.x / 2 + parent_rect.position.x;
-			break;
-
-		case PRESET_TOP_RIGHT:
-		case PRESET_BOTTOM_RIGHT:
-		case PRESET_CENTER_RIGHT:
-		case PRESET_TOP_WIDE:
-		case PRESET_RIGHT_WIDE:
-		case PRESET_BOTTOM_WIDE:
-		case PRESET_HCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			data.offset[2] = x * (1.0 - data.anchor[2]) - p_margin + parent_rect.position.x;
-			break;
-	}
-
-	// Bottom
-	switch (p_preset) {
-		case PRESET_TOP_LEFT:
-		case PRESET_TOP_RIGHT:
-		case PRESET_CENTER_TOP:
-		case PRESET_TOP_WIDE:
-			data.offset[3] = parent_rect.size.y * (0.0 - data.anchor[3]) + new_size.y + p_margin + parent_rect.position.y;
-			break;
-
-		case PRESET_CENTER_LEFT:
-		case PRESET_CENTER_RIGHT:
-		case PRESET_CENTER:
-		case PRESET_HCENTER_WIDE:
-			data.offset[3] = parent_rect.size.y * (0.5 - data.anchor[3]) + new_size.y / 2 + parent_rect.position.y;
-			break;
-
-		case PRESET_BOTTOM_LEFT:
-		case PRESET_BOTTOM_RIGHT:
-		case PRESET_CENTER_BOTTOM:
-		case PRESET_LEFT_WIDE:
-		case PRESET_RIGHT_WIDE:
-		case PRESET_BOTTOM_WIDE:
-		case PRESET_VCENTER_WIDE:
-		case PRESET_FULL_RECT:
-			data.offset[3] = parent_rect.size.y * (1.0 - data.anchor[3]) - p_margin + parent_rect.position.y;
-			break;
-	}
-
-	_size_changed();
+	std::copy(std::begin(data.anchor), std::end(data.anchor), std::begin(params.anchor_position));
+	apply_anchor_preset_offset(p_preset, params);
 }
 
 void Control::set_anchors_and_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode, int p_margin) {
@@ -1441,6 +1258,9 @@ void Control::set_position(const Point2 &p_point, bool p_keep_offsets) {
 	}
 #endif // TOOLS_ENABLED
 
+	ERR_FAIL_COND_MSG(_get_layout_mode() == LayoutMode::LAYOUT_MODE_ANCHORS,
+			"Cannot set position on a Control whose Layout Mode is Anchors. Set anchor offsets instead.");
+
 	if (p_keep_offsets) {
 		_compute_anchors(Rect2(p_point, data.size_cache), data.offset, data.anchor);
 	} else {
@@ -1507,10 +1327,23 @@ void Control::set_size(const Size2 &p_size, bool p_keep_offsets) {
 	}
 #endif // TOOLS_ENABLED
 
+	// For corner/center anchor presets, re-align to the preset using the new size.
 	if (p_keep_offsets) {
 		_compute_anchors(Rect2(data.pos_cache, new_size), data.offset, data.anchor);
 	} else {
-		_compute_offsets(Rect2(data.pos_cache, new_size), data.anchor, data.offset);
+		bool preset_applied = false;
+		LayoutMode layout = _get_layout_mode();
+		if (is_inside_tree() && data.anchor_preset_active &&
+				(layout == LayoutMode::LAYOUT_MODE_ANCHORS || layout == LayoutMode::LAYOUT_MODE_UNCONTROLLED)) {
+			int current_preset = _get_anchors_layout_preset();
+			if (current_preset != -1) {
+				_compute_preset_offsets((LayoutPreset)current_preset, new_size, data.anchor_preset_margin);
+				preset_applied = true;
+			}
+		}
+		if (!preset_applied) {
+			_compute_offsets(Rect2(data.pos_cache, new_size), data.anchor, data.offset);
+		}
 	}
 	_size_changed();
 }
@@ -1576,6 +1409,18 @@ void Control::set_scale(const Vector2 &p_scale) {
 	if (data.scale.y == 0) {
 		data.scale.y = CMP_EPSILON;
 	}
+
+	// Re-apply the anchor preset offsets so that visual alignment (center, right-edge, etc.) stays correct for the new scale value.
+	LayoutMode layout = _get_layout_mode();
+	if (is_inside_tree() && data.anchor_preset_active &&
+			(layout == LayoutMode::LAYOUT_MODE_ANCHORS || layout == LayoutMode::LAYOUT_MODE_UNCONTROLLED)) {
+		int current_preset = _get_anchors_layout_preset();
+		if (current_preset != -1) {
+			_compute_preset_offsets((LayoutPreset)current_preset, get_size(), data.anchor_preset_margin);
+			_size_changed();
+		}
+	}
+
 	queue_redraw();
 	_notify_transform();
 	queue_accessibility_update();
@@ -1620,6 +1465,18 @@ void Control::set_pivot_offset(const Vector2 &p_pivot) {
 	}
 
 	data.pivot_offset = p_pivot;
+
+	// Re-apply the anchor preset offsets so that visual alignment (center, right-edge, etc.) stays correct for the new pivot value.
+	LayoutMode layout = _get_layout_mode();
+	if (is_inside_tree() && data.anchor_preset_active &&
+			(layout == LayoutMode::LAYOUT_MODE_ANCHORS || layout == LayoutMode::LAYOUT_MODE_UNCONTROLLED)) {
+		int current_preset = _get_anchors_layout_preset();
+		if (current_preset != -1) {
+			_compute_preset_offsets((LayoutPreset)current_preset, get_size(), data.anchor_preset_margin);
+			_size_changed();
+		}
+	}
+
 	queue_redraw();
 	_notify_transform();
 	queue_accessibility_update();
@@ -1757,6 +1614,9 @@ void Control::_size_changed() {
 		new_size_cache.width = minimum_size.width;
 	}
 
+	/// @todo This "mirrors" a Control node horizontally, presumably to account for languages like Arabic & Hebrew
+	/// However, this doesn't discriminate.  It should not affect anchor presets (left & right presets, specifically)
+	/// Need to make this a bit conditional to exclude those.  A part of me thinks it might not be right here alone :')
 	if (is_layout_rtl()) {
 		new_pos_cache.x = parent_rect.size.x + 2 * parent_rect.position.x - new_pos_cache.x - new_size_cache.x;
 	}
