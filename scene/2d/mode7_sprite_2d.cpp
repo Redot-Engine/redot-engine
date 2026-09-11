@@ -193,6 +193,28 @@ void fragment() {
 }
 )";
 
+PackedStringArray Mode7Sprite2D::get_configuration_warnings() const {
+	PackedStringArray warnings = Sprite2D::get_configuration_warnings();
+
+	if (!mode7_region_follow_target.is_empty()) {
+		Node *target = has_node(mode7_region_follow_target) ? get_node(mode7_region_follow_target) : nullptr;
+		if (!target || !Object::cast_to<Node2D>(target)) {
+			warnings.push_back(RTR("Region follow target path must point to a valid Node2D node to work."));
+		} else if (target == this) {
+			warnings.push_back(RTR("Region follow target cannot be this node."));
+		}
+	}
+
+	return warnings;
+}
+
+void Mode7Sprite2D::set_mode7_saved_material(const Ref<Material> &p_material) {
+	_saved_material = p_material;
+}
+Ref<Material> Mode7Sprite2D::get_mode7_saved_material() const {
+	return _saved_material;
+}
+
 void Mode7Sprite2D::_mode7_rebuild_material() {
 	if (_mode7_material.is_null()) {
 		Ref<Shader> shader;
@@ -882,6 +904,8 @@ void Mode7Sprite2D::set_mode7_region_follow_target(const NodePath &p_path) {
 			set_physics_process(true);
 			mode7_follow_physics_active = true;
 		}
+
+		update_configuration_warnings();
 	} else if (!p_path.is_empty()) {
 		// Node not in tree yet — defer starting physics too, until we're ready.
 		callable_mp(this, &Mode7Sprite2D::_ensure_follow_physics).call_deferred();
@@ -972,6 +996,9 @@ void Mode7Sprite2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_mode7_projection_pixel_aspect", "value"), &Mode7Sprite2D::set_mode7_projection_pixel_aspect);
 	ClassDB::bind_method(D_METHOD("get_mode7_projection_pixel_aspect"), &Mode7Sprite2D::get_mode7_projection_pixel_aspect);
 
+	ClassDB::bind_method(D_METHOD("set_mode7_saved_material", "material"), &Mode7Sprite2D::set_mode7_saved_material);
+	ClassDB::bind_method(D_METHOD("get_mode7_saved_material"), &Mode7Sprite2D::get_mode7_saved_material);
+
 	// Properties (exposed in the Inspector) -----------------------------------
 
 	// Global (un-grouped)
@@ -1028,6 +1055,9 @@ void Mode7Sprite2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_projection_pixel_aspect",
 						 PROPERTY_HINT_RANGE, "0.875,1.125,0.001"),
 			"set_mode7_projection_pixel_aspect", "get_mode7_projection_pixel_aspect");
+
+	// Internal - for persistence
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mode7_saved_material", PROPERTY_HINT_RESOURCE_TYPE, "Material", PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_NO_EDITOR), "set_mode7_saved_material", "get_mode7_saved_material");
 }
 
 Mode7Sprite2D::Mode7Sprite2D() {
