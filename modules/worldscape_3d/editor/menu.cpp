@@ -66,10 +66,13 @@ WorldScape3DMenu::WorldScape3DMenu(WorldScape3DEditorPlugin *plugin) :
 	p->connect("id_pressed", callable_mp(this, &WorldScape3DMenu::on_menu_entry));
 }
 
-WorldScape3DMenu::~WorldScape3DMenu() {
-	_baker->queue_free();
-	_packer_dialog->queue_free();
-	_dir_setup->queue_free();
+void WorldScape3DMenu::_notification(int what) {
+	if (what == NOTIFICATION_PREDELETE) {
+		// Child pointers are still valid here, before Node's predelete notification.
+		memdelete(_baker);
+		memdelete(_packer_dialog);
+		memdelete(_dir_setup);
+	}
 }
 
 void WorldScape3DMenu::pressed() {

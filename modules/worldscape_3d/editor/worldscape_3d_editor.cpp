@@ -926,9 +926,6 @@ WorldScape3DEditorPlugin::WorldScape3DEditorPlugin() :
 }
 
 WorldScape3DEditorPlugin::~WorldScape3DEditorPlugin() {
-	_asset_dock->queue_free();
-	_ui->queue_free();
-
 	if (_rex_editor_window && _rex_editor_window->is_connected("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered))) {
 		_rex_editor_window->disconnect("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered));
 	}
@@ -1101,6 +1098,15 @@ void WorldScape3DEditorPlugin::_notification(int p_what) {
 	if (p_what == NOTIFICATION_POST_ENTER_TREE) {
 		init();
 		set_input_event_forwarding_always_enabled();
+	} else if (p_what == NOTIFICATION_PREDELETE) {
+		if (_ui) {
+			memdelete(_ui);
+			_ui = nullptr;
+		}
+		if (_asset_dock) {
+			memdelete(_asset_dock);
+			_asset_dock = nullptr;
+		}
 	}
 }
 

@@ -97,7 +97,6 @@ class ListEntry : public MarginContainer {
 
 public:
 	explicit ListEntry(WorldScape3DAssets::AssetType type);
-	~ListEntry() override;
 
 	void set_assets(Ref<WorldScape3DAssets> assets_list) {
 		_asset_list = assets_list;
@@ -148,7 +147,6 @@ class ListContainer : public Container {
 
 public:
 	explicit ListContainer(WorldScape3DEditorPlugin *plugin);
-	~ListContainer() override;
 
 	void redraw();
 	void clear();
@@ -245,7 +243,6 @@ class WorldScape3DAssetDock final : public PanelContainer {
 
 public:
 	explicit WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin);
-	~WorldScape3DAssetDock() override;
 
 	ListContainer *get_current_list() const { return _current_list; }
 	ConfirmationDialog *get_confirmation_dialog() const { return _confirm_dialog; }
