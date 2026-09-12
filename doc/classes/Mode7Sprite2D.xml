@@ -85,6 +85,9 @@
 			Path to a [Node2D] target. When set, the sprite's [member Sprite2D.region_rect] shifts each physics frame so the Mode 7 viewport "follows" the target node while preserving its size and aspect ratio.
 			This creates the illusion of a moving camera or scrolling background. Only active when region mode is enabled on the sprite ([member Sprite2D.region_enabled] must be [code]true[/code]).
 		</member>
+		<member name="mode7_saved_material" type="Material" setter="set_mode7_saved_material" getter="get_mode7_saved_material">
+			(Non-editor) Property to save the material the user had before enabling Mode 7.
+		</member>
 		<member name="mode7_scanline_overrides" type="Mode7ScanlineOverride[]" setter="set_mode7_scanline_overrides" getter="get_mode7_scanline_overrides" default="[]">
 			Array of [Mode7ScanlineOverride] resources acting as anchors across the sprite height. Each entry defines a 2x2 affine matrix (rotation, scale, skew), a translation offset, and a pivot point, and the shader interpolates between adjacent entries for every output row (UV.y band).
 			When Mode 7 is enabled, a single default identity override is created automatically. Add more entries to interpolate between different transforms across the sprite height.

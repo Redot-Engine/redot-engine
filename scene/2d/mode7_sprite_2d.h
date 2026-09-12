@@ -172,6 +172,10 @@ private:
 	/// ensuring follow starts as soon as the tree is ready.
 	void _ensure_follow_physics();
 
+	/// Surfaces a warning icon in the Scene dock when mode7_region_follow_target is set
+	/// but does not currently resolve to a Node2D
+	PackedStringArray get_configuration_warnings() const override;
+
 	/// @name Horizon masks
 	real_t mode7_top_horizon_mask_amount = 0.0f; ///< 0..1 fraction to make transparent (from top down)
 	real_t mode7_top_horizon_tilt = 0.0f; ///< Stored internally in radians; the mode7_top_horizon_tilt property is exposed in degrees.
@@ -196,6 +200,8 @@ private:
 	/// @endGroup
 
 	Ref<Material> _saved_material;
+	void set_mode7_saved_material(const Ref<Material> &p_material);
+	Ref<Material> get_mode7_saved_material() const;
 };
 
 VARIANT_ENUM_CAST(Mode7Sprite2D::Mode7InterpolationMode);
