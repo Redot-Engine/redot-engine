@@ -66,7 +66,6 @@ class Sprite2D : public Node2D {
 	int vframes = 1;
 	int hframes = 1;
 
-	void _get_rects(Rect2 &r_src_rect, Rect2 &r_dst_rect, bool &r_filter_clip_enabled) const;
 	Point2 _get_rect_offset(const Size2i &p_size) const;
 
 	/// Changes to the texture need to trigger an update to make
@@ -80,6 +79,8 @@ protected:
 	static void _bind_methods();
 
 	void _validate_property(PropertyInfo &p_property) const;
+
+	void _get_rects(Rect2 &r_src_rect, Rect2 &r_dst_rect, bool &r_filter_clip_enabled) const;
 
 public:
 #ifdef TOOLS_ENABLED
