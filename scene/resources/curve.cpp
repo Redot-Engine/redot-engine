@@ -797,6 +797,41 @@ Vector2 Curve2D::get_point_out(int p_index) const {
 	return points[p_index].out;
 }
 
+void Curve2D::reset_point_handles(int p_index) {
+	ERR_FAIL_INDEX(p_index, (int)points.size());
+	set_point_in(p_index, Vector2());
+	set_point_out(p_index, Vector2());
+}
+
+void Curve2D::reset_all_points_handles() {
+	int pc = points.size();
+	for (int i = 0; i < pc; i++) {
+		reset_point_handles(i); // reuses the single-point reset instead of duplicating logic
+	}
+}
+
+void Curve2D::smooth_all_points() {
+	int pc = points.size();
+	if (pc < 3) {
+		return; // nothing to smooth with fewer than 3 points
+	}
+
+	for (int i = 0; i < pc; i++) {
+		if (i == 0 || i == pc - 1) {
+			// Endpoints: leave sharp (no previous/next neighbor on both sides).
+			set_point_in(i, Vector2());
+			set_point_out(i, Vector2());
+			continue;
+		}
+		Vector2 prev = get_point_position(i - 1);
+		Vector2 next = get_point_position(i + 1);
+		// Catmull-Rom -> Bezier tangent conversion (1/6 chord factor).
+		Vector2 tangent = (next - prev) / 6.0;
+		set_point_in(i, -tangent);
+		set_point_out(i, tangent);
+	}
+}
+
 void Curve2D::_remove_point(int p_index) {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, points.size());
 	points.remove_at(p_index);
@@ -1415,6 +1450,9 @@ void Curve2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_point_in", "idx"), &Curve2D::get_point_in);
 	ClassDB::bind_method(D_METHOD("set_point_out", "idx", "position"), &Curve2D::set_point_out);
 	ClassDB::bind_method(D_METHOD("get_point_out", "idx"), &Curve2D::get_point_out);
+	ClassDB::bind_method(D_METHOD("reset_point_handles", "idx"), &Curve2D::reset_point_handles);
+	ClassDB::bind_method(D_METHOD("reset_all_points_handles"), &Curve2D::reset_all_points_handles);
+	ClassDB::bind_method(D_METHOD("smooth_all_points"), &Curve2D::smooth_all_points);
 	ClassDB::bind_method(D_METHOD("remove_point", "idx"), &Curve2D::remove_point);
 	ClassDB::bind_method(D_METHOD("clear_points"), &Curve2D::clear_points);
 	ClassDB::bind_method(D_METHOD("sample", "idx", "t"), &Curve2D::sample);
@@ -2488,6 +2526,7 @@ void Curve3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_point_in", "idx"), &Curve3D::get_point_in);
 	ClassDB::bind_method(D_METHOD("set_point_out", "idx", "position"), &Curve3D::set_point_out);
 	ClassDB::bind_method(D_METHOD("get_point_out", "idx"), &Curve3D::get_point_out);
+
 	ClassDB::bind_method(D_METHOD("remove_point", "idx"), &Curve3D::remove_point);
 	ClassDB::bind_method(D_METHOD("clear_points"), &Curve3D::clear_points);
 	ClassDB::bind_method(D_METHOD("sample", "idx", "t"), &Curve3D::sample);
