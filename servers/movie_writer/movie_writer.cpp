@@ -175,6 +175,9 @@ void MovieWriter::_bind_methods() {
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "editor/movie_writer/ogv/audio_quality", PROPERTY_HINT_RANGE, "-0.1,1.0,0.01"), 0.5);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/ogv/encoding_speed", PROPERTY_HINT_ENUM, "Fastest (Lowest Efficiency):4,Fast (Low Efficiency):3,Slow (High Efficiency):2,Slowest (Highest Efficiency):1"), 4);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/ogv/keyframe_interval", PROPERTY_HINT_RANGE, "1,1024,1"), 64);
+	// PNG (.png) output bit depth per channel. 16-bit is deep color (avoids banding) and needs
+	// "rendering/viewport/hdr_2d" for the added precision to be meaningful.
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/png/bit_depth", PROPERTY_HINT_ENUM, "8-bit:8,16-bit:16"), 8);
 	// EXR (.exr) output channel storage. Needs "rendering/viewport/hdr_2d" for the added precision that avoids banding.
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/exr/bit_depth", PROPERTY_HINT_ENUM, "16-bit (Half Float):0,32-bit (Full Float):1"), 0);
 

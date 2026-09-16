@@ -39,8 +39,11 @@
 #include "png_driver_common.h"
 
 #include "core/config/engine.h"
+#include "core/math/math_funcs.h"
+#include "core/templates/local_vector.h"
 
 #include <png.h>
+#include <string.h>
 
 namespace PNGDriverCommon {
 
@@ -207,6 +210,78 @@ Error image_to_png(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer) {
 	// trim buffer size to content
 	Error err = p_buffer.resize(buffer_offset + compressed_size);
 	ERR_FAIL_COND_V(err, err);
+
+	return OK;
+}
+
+Error image_to_png_16bit(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer) {
+	ERR_FAIL_COND_V(p_image.is_null() || p_image->is_empty(), ERR_INVALID_PARAMETER);
+
+	// Float formats hold linear light and are sRGB-encoded below; 8-bit sources are already sRGB.
+	const bool linear_input = p_image->get_format() == Image::FORMAT_RGBAH || p_image->get_format() == Image::FORMAT_RGBAF;
+	Ref<Image> source = p_image;
+	if (source->get_format() != Image::FORMAT_RGBAF) {
+		source = source->duplicate();
+		source->convert(Image::FORMAT_RGBAF);
+	}
+
+	const int width = source->get_width();
+	const int height = source->get_height();
+	const Vector<uint8_t> src_data = source->get_data();
+	const float *src = reinterpret_cast<const float *>(src_data.ptr());
+
+	// Convert to 16-bit sRGB integer samples (RGB is gamma-encoded, alpha stays linear).
+	LocalVector<uint16_t> samples;
+	samples.resize((uint32_t)width * (uint32_t)height * 4);
+	for (int64_t p = 0; p < (int64_t)width * height; p++) {
+		for (int c = 0; c < 4; c++) {
+			float v = src[p * 4 + c];
+			if (linear_input && c < 3) {
+				v = v <= 0.0031308f ? 12.92f * v : 1.055f * Math::pow(v, 1.0f / 2.4f) - 0.055f;
+			}
+			v = CLAMP(v, 0.0f, 1.0f);
+			samples[p * 4 + c] = (uint16_t)Math::round(v * 65535.0f);
+		}
+	}
+
+	png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+	ERR_FAIL_NULL_V(png_ptr, FAILED);
+	png_infop info_ptr = png_create_info_struct(png_ptr);
+	if (info_ptr == nullptr) {
+		png_destroy_write_struct(&png_ptr, nullptr);
+		ERR_FAIL_V(FAILED);
+	}
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		png_destroy_write_struct(&png_ptr, &info_ptr);
+		ERR_FAIL_V_MSG(FAILED, "Failed to encode 16-bit PNG.");
+	}
+
+	png_set_write_fn(
+			png_ptr, &p_buffer,
+			[](png_structp p_png, png_bytep p_data, png_size_t p_length) {
+				Vector<uint8_t> *buffer = static_cast<Vector<uint8_t> *>(png_get_io_ptr(p_png));
+				const int64_t ofs = buffer->size();
+				buffer->resize(ofs + (int64_t)p_length);
+				memcpy(buffer->ptrw() + ofs, p_data, p_length);
+			},
+			nullptr);
+
+	png_set_IHDR(png_ptr, info_ptr, width, height, 16, PNG_COLOR_TYPE_RGB_ALPHA,
+			PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	png_set_sRGB_gAMA_and_cHRM(png_ptr, info_ptr, PNG_sRGB_INTENT_PERCEPTUAL);
+	png_write_info(png_ptr, info_ptr);
+#ifndef BIG_ENDIAN_ENABLED
+	png_set_swap(png_ptr); // PNG stores 16-bit samples big-endian; swap on little-endian hosts.
+#endif
+
+	LocalVector<png_bytep> rows;
+	rows.resize(height);
+	for (int y = 0; y < height; y++) {
+		rows[y] = reinterpret_cast<png_bytep>(&samples[(uint32_t)y * (uint32_t)width * 4]);
+	}
+	png_write_image(png_ptr, rows.ptr());
+	png_write_end(png_ptr, info_ptr);
+	png_destroy_write_struct(&png_ptr, &info_ptr);
 
 	return OK;
 }
