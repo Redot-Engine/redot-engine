@@ -48,6 +48,24 @@
 MovieWriter *MovieWriter::writers[MovieWriter::MAX_WRITERS];
 uint32_t MovieWriter::writer_count = 0;
 
+Size2i MovieWriter::get_output_size() {
+	Size2i movie_size = Size2i(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
+	const String stretch_mode = GLOBAL_GET("display/window/stretch/mode");
+	if (stretch_mode != "viewport") {
+		// `canvas_items` and `disabled` modes use the window size override instead,
+		// which allows for higher resolution recording with 2D elements designed for a lower resolution.
+		const int window_width_override = GLOBAL_GET("display/window/size/window_width_override");
+		if (window_width_override > 0) {
+			movie_size.width = window_width_override;
+		}
+		const int window_height_override = GLOBAL_GET("display/window/size/window_height_override");
+		if (window_height_override > 0) {
+			movie_size.height = window_height_override;
+		}
+	}
+	return movie_size;
+}
+
 void MovieWriter::add_writer(MovieWriter *p_writer) {
 	ERR_FAIL_COND(writer_count == MAX_WRITERS);
 	writers[writer_count++] = p_writer;
