@@ -71,6 +71,12 @@ protected:
 	virtual uint32_t get_audio_mix_rate() const;
 	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const;
 
+	// Writers that output floating-point / deep-color frames (e.g. EXR) return true so add_frame()
+	// keeps the linear float image instead of converting it to 8-bit sRGB. Note this is
+	// display-referred deep color (more bits of precision to avoid banding), not scene-referred
+	// HDR: the frame is still the tonemapped [0,1] output, just stored at higher precision.
+	virtual bool wants_float_output() const { return false; }
+
 	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path);
 	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data);
 	virtual void write_end();

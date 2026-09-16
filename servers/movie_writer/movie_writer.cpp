@@ -175,6 +175,8 @@ void MovieWriter::_bind_methods() {
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "editor/movie_writer/ogv/audio_quality", PROPERTY_HINT_RANGE, "-0.1,1.0,0.01"), 0.5);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/ogv/encoding_speed", PROPERTY_HINT_ENUM, "Fastest (Lowest Efficiency):4,Fast (Low Efficiency):3,Slow (High Efficiency):2,Slowest (Highest Efficiency):1"), 4);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/ogv/keyframe_interval", PROPERTY_HINT_RANGE, "1,1024,1"), 64);
+	// EXR (.exr) output channel storage. Needs "rendering/viewport/hdr_2d" for the added precision that avoids banding.
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/movie_writer/exr/bit_depth", PROPERTY_HINT_ENUM, "16-bit (Half Float):0,32-bit (Full Float):1"), 0);
 
 	// Used by the editor.
 	GLOBAL_DEF_BASIC("editor/movie_writer/movie_file", "");
@@ -251,7 +253,9 @@ void MovieWriter::add_frame() {
 		vp_tex->resize(movie_size.width, movie_size.height, Image::INTERPOLATE_BILINEAR);
 	}
 
-	if (RenderingServer::get_singleton()->viewport_is_using_hdr_2d(main_vp_rid)) {
+	if (RenderingServer::get_singleton()->viewport_is_using_hdr_2d(main_vp_rid) && !wants_float_output()) {
+		// Standard 8-bit writers convert the floating-point viewport frame to 8-bit sRGB.
+		// Float writers (e.g. EXR) keep the linear floating-point frame to avoid banding.
 		vp_tex->convert(Image::FORMAT_RGBA8);
 		vp_tex->linear_to_srgb();
 	}
