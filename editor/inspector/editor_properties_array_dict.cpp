@@ -1612,6 +1612,17 @@ void EditorPropertyStruct::_property_changed(const String &p_property, Variant p
 		return;
 	}
 
+	// The inner field editor edits this adapter, not the owning Resource, so its own recursion guard
+	// never runs. Reject a field value that would store the edited Resource inside itself.
+	if (p_value.get_type() == Variant::OBJECT) {
+		Resource *edited_resource = Object::cast_to<Resource>(get_edited_object());
+		if (edited_resource && editor_property_has_recursive_resource(edited_resource, struct_value)) {
+			EditorNode::get_singleton()->show_warning(TTR("Recursion detected, unable to assign resource to property."));
+			update_property();
+			return;
+		}
+	}
+
 	object->set_struct(struct_value);
 	emit_changed(get_edited_property(), struct_value, p_name, p_changing);
 }

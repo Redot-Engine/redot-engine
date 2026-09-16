@@ -2925,6 +2925,11 @@ void GDScriptAnalyzer::resolve_struct(GDScriptParser::StructNode *p_struct) {
 
 		if (field->initializer != nullptr && field->initializer->is_constant) {
 			f.default_value = field->initializer->reduced_value;
+		} else if (!field_type.is_nullable && field_type.kind == GDScriptParser::DataType::BUILTIN &&
+				field_type.builtin_type == Variant::STRUCT && field_type.struct_type != nullptr) {
+			// A non-nullable nested struct field defaults to its own schema default, so a required
+			// field is never left null (cyclic value dependencies are already rejected above).
+			f.default_value = make_struct_schema_default(field_type.struct_type);
 		} else if (!field_type.is_nullable && f.is_typed && f.type != Variant::NIL && f.type != Variant::STRUCT) {
 			Callable::CallError err;
 			Variant zero;
