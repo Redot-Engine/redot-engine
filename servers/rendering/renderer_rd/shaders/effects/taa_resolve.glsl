@@ -377,5 +377,7 @@ void main() {
 	const vec2 uv = (gl_GlobalInvocationID.xy + 0.5f) / params.resolution;
 
 	vec3 result = temporal_antialiasing(pos_group_top_left, pos_group, pos_screen, uv, history_buffer);
-	imageStore(output_buffer, ivec2(gl_GlobalInvocationID.xy), vec4(result, 1.0));
+	// Carry the current frame's alpha through so transparent viewport backgrounds survive TAA.
+	float alpha = imageLoad(color_buffer, ivec2(gl_GlobalInvocationID.xy)).a;
+	imageStore(output_buffer, ivec2(gl_GlobalInvocationID.xy), vec4(result, alpha));
 }
