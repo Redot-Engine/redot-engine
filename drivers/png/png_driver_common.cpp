@@ -264,7 +264,10 @@ Error image_to_png_16bit(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer) {
 			[](png_structp p_png, png_bytep p_data, png_size_t p_length) {
 				Vector<uint8_t> *buffer = static_cast<Vector<uint8_t> *>(png_get_io_ptr(p_png));
 				const int64_t ofs = buffer->size();
-				buffer->resize(ofs + (int64_t)p_length);
+				if (buffer->resize(ofs + (int64_t)p_length) != OK) {
+					// Enter libpng's error path (setjmp) rather than writing past the allocation.
+					png_error(p_png, "Out of memory while encoding 16-bit PNG.");
+				}
 				memcpy(buffer->ptrw() + ofs, p_data, p_length);
 			},
 			nullptr);
