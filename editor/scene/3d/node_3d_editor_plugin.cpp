@@ -110,6 +110,7 @@
 #include "scene/resources/3d/sky_material.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/resources/surface_tool.h"
+#include "servers/movie_writer/movie_writer.h"
 
 constexpr real_t DISTANCE_DEFAULT = 4;
 
@@ -3119,6 +3120,7 @@ void Node3DEditorViewport::_notification(int p_what) {
 
 		case NOTIFICATION_RESIZED: {
 			callable_mp(this, &Node3DEditorViewport::update_transform_gizmo_view).call_deferred();
+			_update_movie_preview_size();
 		} break;
 
 		case NOTIFICATION_PROCESS: {
@@ -3568,30 +3570,69 @@ void Node3DEditorViewport::_draw() {
 				Math::round(2 * EDSCALE));
 	}
 	if (previewing) {
-		Size2 ss = Size2(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
-		float aspect = ss.aspect();
-		Size2 s = get_size();
+		const Size2 s = get_size();
 
-		Rect2 draw_rect;
+		if (movie_mode) {
+			// `movie_preview_vp` renders the previewed camera through a viewport with Movie
+			// Writer's output aspect, so Camera3D's keep-aspect behavior matches the recorded
+			// framing (same framing, not every rendering property) for any panel/target aspect.
+			// Use the preview viewport's actual integer size as the displayed frame so the
+			// texture maps 1:1 into the panel (no rescale); _update_movie_preview_size() already
+			// fits it inside the panel. Fall back to an aspect-fit before it has been sized.
+			Rect2 frame_rect;
+			if (movie_preview_vp && movie_preview_vp->get_size() != Size2i()) {
+				frame_rect.size = movie_preview_vp->get_size();
+			} else {
+				const float aspect = Size2(MovieWriter::get_output_size()).aspect();
+				if (s.aspect() > aspect) {
+					frame_rect.size = Size2(s.height * aspect, s.height);
+				} else {
+					frame_rect.size = Size2(s.width, s.width / aspect);
+				}
+			}
+			frame_rect.position = ((s - frame_rect.size) * 0.5).floor();
+			frame_rect = Rect2(Vector2(), s).intersection(frame_rect);
 
-		switch (previewing->get_keep_aspect_mode()) {
-			case Camera3D::KEEP_WIDTH: {
-				draw_rect.size = Size2(s.width, s.width / aspect);
-				draw_rect.position.x = 0;
-				draw_rect.position.y = (s.height - draw_rect.size.y) * 0.5;
+			if (movie_preview_vp) {
+				const Ref<Texture2D> frame_tex = movie_preview_vp->get_texture();
+				if (frame_tex.is_valid()) {
+					surface->draw_texture_rect(frame_tex, frame_rect, false);
+				}
+			}
 
-			} break;
-			case Camera3D::KEEP_HEIGHT: {
-				draw_rect.size = Size2(s.height * aspect, s.height);
-				draw_rect.position.y = 0;
-				draw_rect.position.x = (s.width - draw_rect.size.x) * 0.5;
+			// Fill the area outside the Movie Writer output aspect ratio with opaque black.
+			const Color letterbox_color = Color(0, 0, 0, 1);
+			const real_t rect_right = frame_rect.position.x + frame_rect.size.x;
+			const real_t rect_bottom = frame_rect.position.y + frame_rect.size.y;
+			surface->draw_rect(Rect2(0, 0, s.width, frame_rect.position.y), letterbox_color, true);
+			surface->draw_rect(Rect2(0, rect_bottom, s.width, s.height - rect_bottom), letterbox_color, true);
+			surface->draw_rect(Rect2(0, frame_rect.position.y, frame_rect.position.x, frame_rect.size.y), letterbox_color, true);
+			surface->draw_rect(Rect2(rect_right, frame_rect.position.y, s.width - rect_right, frame_rect.size.y), letterbox_color, true);
 
-			} break;
+			surface->draw_rect(frame_rect, Color(0.6, 0.6, 0.1, 0.5), false, Math::round(2 * EDSCALE));
+		} else {
+			// Historical preview outline: the project viewport aspect region within the
+			// full-panel camera preview, using the camera's keep-aspect mode.
+			const Size2 ss = Size2(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
+			const float aspect = ss.aspect();
+
+			Rect2 draw_rect;
+			switch (previewing->get_keep_aspect_mode()) {
+				case Camera3D::KEEP_WIDTH: {
+					draw_rect.size = Size2(s.width, s.width / aspect);
+					draw_rect.position.x = 0;
+					draw_rect.position.y = (s.height - draw_rect.size.y) * 0.5;
+				} break;
+				case Camera3D::KEEP_HEIGHT: {
+					draw_rect.size = Size2(s.height * aspect, s.height);
+					draw_rect.position.y = 0;
+					draw_rect.position.x = (s.width - draw_rect.size.x) * 0.5;
+				} break;
+			}
+
+			draw_rect = Rect2(Vector2(), s).intersection(draw_rect);
+			surface->draw_rect(draw_rect, Color(0.6, 0.6, 0.1, 0.5), false, Math::round(2 * EDSCALE));
 		}
-
-		draw_rect = Rect2(Vector2(), s).intersection(draw_rect);
-
-		surface->draw_rect(draw_rect, Color(0.6, 0.6, 0.1, 0.5), false, Math::round(2 * EDSCALE));
 
 	} else {
 		if (zoom_indicator_delay > 0.0) {
@@ -3900,6 +3941,12 @@ void Node3DEditorViewport::_menu_option(int p_option) {
 				}
 			}
 		} break;
+		case VIEW_MOVIE_MODE: {
+			int idx = view_display_menu->get_popup()->get_item_index(VIEW_MOVIE_MODE);
+			movie_mode = !view_display_menu->get_popup()->is_item_checked(idx);
+			view_display_menu->get_popup()->set_item_checked(idx, movie_mode);
+			_update_movie_preview();
+		} break;
 		case VIEW_GIZMOS: {
 			int idx = view_display_menu->get_popup()->get_item_index(VIEW_GIZMOS);
 			bool current = view_display_menu->get_popup()->is_item_checked(idx);
@@ -4185,6 +4232,7 @@ void Node3DEditorViewport::_toggle_camera_preview(bool p_activate) {
 		if (!preview) {
 			preview_camera->hide();
 		}
+		_update_movie_preview();
 		surface->queue_redraw();
 
 	} else {
@@ -4192,7 +4240,55 @@ void Node3DEditorViewport::_toggle_camera_preview(bool p_activate) {
 		previewing->connect(SceneStringName(tree_exiting), callable_mp(this, &Node3DEditorViewport::_preview_exited_scene));
 		previewing->connect(CoreStringName(property_list_changed), callable_mp(this, &Node3DEditorViewport::_preview_camera_property_changed));
 		RS::get_singleton()->viewport_attach_camera(viewport->get_viewport_rid(), preview->get_camera()); //replace
+		_update_movie_preview();
 		surface->queue_redraw();
+	}
+}
+
+void Node3DEditorViewport::_update_movie_preview() {
+	// When previewing a camera with Movie Mode on, render that camera through a dedicated
+	// SubViewport with Movie Writer's output aspect (sized to the displayed frame, see
+	// _update_movie_preview_size()) so Camera3D's keep-aspect behavior matches the recorded
+	// framing, for both keep-aspect modes and whether the panel is wider or narrower than output.
+	const bool active = previewing != nullptr && movie_mode;
+	if (active && !movie_preview_vp) {
+		movie_preview_vp = memnew(SubViewport);
+		movie_preview_vp->set_disable_input(true);
+		add_child(movie_preview_vp);
+	}
+	if (movie_preview_vp) {
+		if (active) {
+			movie_preview_vp->set_world_3d(viewport->find_world_3d());
+			movie_preview_vp->set_update_mode(SubViewport::UPDATE_ALWAYS);
+			RS::get_singleton()->viewport_attach_camera(movie_preview_vp->get_viewport_rid(), previewing->get_camera());
+			_update_movie_preview_size();
+		} else {
+			RS::get_singleton()->viewport_attach_camera(movie_preview_vp->get_viewport_rid(), RID());
+			movie_preview_vp->set_update_mode(SubViewport::UPDATE_DISABLED);
+		}
+	}
+	surface->queue_redraw();
+}
+
+void Node3DEditorViewport::_update_movie_preview_size() {
+	// Render only at the displayed frame size (preserving Movie Writer's output aspect), not at
+	// the full output resolution: the framing depends only on the aspect, so this avoids a
+	// second 4K/8K render per frame just to show it letterboxed in the panel.
+	if (!movie_preview_vp || previewing == nullptr || !movie_mode) {
+		return;
+	}
+	const Size2 s = get_size();
+	const float output_aspect = Size2(MovieWriter::get_output_size()).aspect();
+	Size2i preview_size;
+	if (s.aspect() > output_aspect) {
+		preview_size = Size2i(Math::round(s.height * output_aspect), Math::round(s.height));
+	} else {
+		preview_size = Size2i(Math::round(s.width), Math::round(s.width / output_aspect));
+	}
+	preview_size.x = MAX(preview_size.x, 1);
+	preview_size.y = MAX(preview_size.y, 1);
+	if (movie_preview_vp->get_size() != preview_size) {
+		movie_preview_vp->set_size(preview_size);
 	}
 }
 
@@ -4215,6 +4311,7 @@ void Node3DEditorViewport::_toggle_cinema_preview(bool p_activate) {
 			preview_camera->show();
 		}
 		view_display_menu->show();
+		_update_movie_preview();
 		surface->queue_redraw();
 	}
 }
@@ -4461,6 +4558,12 @@ void Node3DEditorViewport::set_state(const Dictionary &p_state) {
 			surface->queue_redraw();
 		}
 	}
+	if (p_state.has("movie_mode")) {
+		movie_mode = p_state["movie_mode"];
+
+		int idx = view_display_menu->get_popup()->get_item_index(VIEW_MOVIE_MODE);
+		view_display_menu->get_popup()->set_item_checked(idx, movie_mode);
+	}
 
 	if (preview_camera->is_connected(SceneStringName(toggled), callable_mp(this, &Node3DEditorViewport::_toggle_camera_preview))) {
 		preview_camera->disconnect(SceneStringName(toggled), callable_mp(this, &Node3DEditorViewport::_toggle_camera_preview));
@@ -4479,6 +4582,9 @@ void Node3DEditorViewport::set_state(const Dictionary &p_state) {
 		}
 	}
 	preview_camera->connect(SceneStringName(toggled), callable_mp(this, &Node3DEditorViewport::_toggle_camera_preview));
+
+	// Reconcile the Movie Mode preview now that both `movie_mode` and `previewing` are restored.
+	_update_movie_preview();
 }
 
 Dictionary Node3DEditorViewport::get_state() const {
@@ -4518,6 +4624,7 @@ Dictionary Node3DEditorViewport::get_state() const {
 	d["frame_time"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_FRAME_TIME));
 	d["half_res"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_HALF_RESOLUTION));
 	d["cinematic_preview"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_CINEMATIC_PREVIEW));
+	d["movie_mode"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_MOVIE_MODE));
 	if (previewing) {
 		d["previewing"] = EditorNode::get_singleton()->get_edited_scene()->get_path_to(previewing);
 	}
@@ -5741,6 +5848,10 @@ Node3DEditorViewport::Node3DEditorViewport(Node3DEditor *p_spatial_editor, int p
 	add_child(surface);
 	surface->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
 	surface->set_clip_contents(true);
+
+	// Keep the Movie Mode preview render in sync with the project's Movie Writer output
+	// resolution (panel resizing is handled in NOTIFICATION_RESIZED).
+	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &Node3DEditorViewport::_update_movie_preview));
 	camera = memnew(Camera3D);
 	camera->set_disable_gizmos(true);
 	camera->set_cull_mask(((1 << 20) - 1) | (1 << (GIZMO_BASE_LAYER + p_index)) | (1 << GIZMO_EDIT_LAYER) | (1 << GIZMO_GRID_LAYER) | (1 << MISC_TOOL_LAYER));
@@ -5867,6 +5978,7 @@ Node3DEditorViewport::Node3DEditorViewport(Node3DEditor *p_spatial_editor, int p
 
 	view_display_menu->get_popup()->add_separator();
 	view_display_menu->get_popup()->add_check_shortcut(ED_SHORTCUT("spatial_editor/view_cinematic_preview", TTRC("Cinematic Preview")), VIEW_CINEMATIC_PREVIEW);
+	view_display_menu->get_popup()->add_check_shortcut(ED_SHORTCUT("spatial_editor/view_movie_mode", TTRC("Movie Mode")), VIEW_MOVIE_MODE);
 
 	view_display_menu->get_popup()->add_separator();
 	view_display_menu->get_popup()->add_shortcut(ED_GET_SHORTCUT("spatial_editor/focus_origin"), VIEW_CENTER_TO_ORIGIN);
