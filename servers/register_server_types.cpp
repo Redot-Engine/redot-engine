@@ -66,8 +66,8 @@
 #include "debugger/servers_debugger.h"
 #include "display/display_server.h"
 #include "display/native_menu.h"
-#include "movie_writer/movie_writer.h"
 #include "modules/modules_enabled.gen.h" // For MODULE_TINYEXR_ENABLED.
+#include "movie_writer/movie_writer.h"
 #ifdef MODULE_TINYEXR_ENABLED
 #include "movie_writer/movie_writer_exr.h"
 #endif
