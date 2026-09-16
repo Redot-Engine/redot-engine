@@ -503,6 +503,7 @@ private:
 	void _update_centered_labels();
 	void _update_movie_preview();
 	void _update_movie_preview_size();
+	Rect2 _movie_frame_rect() const;
 	void _toggle_camera_preview(bool);
 	void _toggle_cinema_preview(bool);
 	void _init_gizmo_instance(int p_idx);

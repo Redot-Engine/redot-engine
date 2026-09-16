@@ -217,8 +217,11 @@ Error image_to_png(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer) {
 Error image_to_png_16bit(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer) {
 	ERR_FAIL_COND_V(p_image.is_null() || p_image->is_empty(), ERR_INVALID_PARAMETER);
 
-	// Float formats hold linear light and are sRGB-encoded below; 8-bit sources are already sRGB.
-	const bool linear_input = p_image->get_format() == Image::FORMAT_RGBAH || p_image->get_format() == Image::FORMAT_RGBAF;
+	// Float/HDR formats hold linear light and are sRGB-encoded below; 8-bit sources are already sRGB.
+	const Image::Format input_format = p_image->get_format();
+	const bool linear_input = input_format == Image::FORMAT_RGBH || input_format == Image::FORMAT_RGBAH ||
+			input_format == Image::FORMAT_RGBF || input_format == Image::FORMAT_RGBAF ||
+			input_format == Image::FORMAT_RGBE9995;
 	Ref<Image> source = p_image;
 	if (source->get_format() != Image::FORMAT_RGBAF) {
 		source = source->duplicate();

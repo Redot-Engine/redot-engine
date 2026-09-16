@@ -3115,6 +3115,8 @@ void Node3DEditorViewport::_notification(int p_what) {
 			} else {
 				set_freelook_active(false);
 			}
+			// Stop/resume the Movie Mode preview render with the viewport's visibility.
+			_update_movie_preview();
 			callable_mp(this, &Node3DEditorViewport::update_transform_gizmo_view).call_deferred();
 		} break;
 
@@ -3168,6 +3170,7 @@ void Node3DEditorViewport::_notification(int p_what) {
 					previewing->connect(SceneStringName(tree_exited), callable_mp(this, &Node3DEditorViewport::_preview_exited_scene));
 					previewing->connect(CoreStringName(property_list_changed), callable_mp(this, &Node3DEditorViewport::_preview_camera_property_changed));
 					RS::get_singleton()->viewport_attach_camera(viewport->get_viewport_rid(), cam->get_camera());
+					_update_movie_preview();
 					surface->queue_redraw();
 				}
 			}
@@ -3501,6 +3504,26 @@ static void draw_indicator_bar(Control &p_surface, real_t p_fill, const Ref<Text
 }
 
 void Node3DEditorViewport::_draw() {
+	// Draw the Movie Mode frame first (the rendered camera texture and the opaque letterbox) so
+	// that editor overlays such as the focus border, selection box, messages and the rotation line
+	// render on top of it. The frame outline is drawn later, near the end of this method.
+	if (previewing && movie_mode && movie_preview_vp) {
+		const Size2 s = get_size();
+		const Rect2 frame_rect = _movie_frame_rect();
+		const Ref<Texture2D> frame_tex = movie_preview_vp->get_texture();
+		if (frame_tex.is_valid()) {
+			surface->draw_texture_rect(frame_tex, frame_rect, false);
+		}
+		// Fill the area outside the Movie Writer output aspect ratio with opaque black.
+		const Color letterbox_color = Color(0, 0, 0, 1);
+		const real_t rect_right = frame_rect.position.x + frame_rect.size.x;
+		const real_t rect_bottom = frame_rect.position.y + frame_rect.size.y;
+		surface->draw_rect(Rect2(0, 0, s.width, frame_rect.position.y), letterbox_color, true);
+		surface->draw_rect(Rect2(0, rect_bottom, s.width, s.height - rect_bottom), letterbox_color, true);
+		surface->draw_rect(Rect2(0, frame_rect.position.y, frame_rect.position.x, frame_rect.size.y), letterbox_color, true);
+		surface->draw_rect(Rect2(rect_right, frame_rect.position.y, s.width - rect_right, frame_rect.size.y), letterbox_color, true);
+	}
+
 	EditorPluginList *over_plugin_list = EditorNode::get_singleton()->get_editor_plugins_over();
 	if (!over_plugin_list->is_empty()) {
 		over_plugin_list->forward_3d_draw_over_viewport(surface);
@@ -3573,43 +3596,9 @@ void Node3DEditorViewport::_draw() {
 		const Size2 s = get_size();
 
 		if (movie_mode) {
-			// `movie_preview_vp` renders the previewed camera through a viewport with Movie
-			// Writer's output aspect, so Camera3D's keep-aspect behavior matches the recorded
-			// framing (same framing, not every rendering property) for any panel/target aspect.
-			// Use the preview viewport's actual integer size as the displayed frame so the
-			// texture maps 1:1 into the panel (no rescale); _update_movie_preview_size() already
-			// fits it inside the panel. Fall back to an aspect-fit before it has been sized.
-			Rect2 frame_rect;
-			if (movie_preview_vp && movie_preview_vp->get_size() != Size2i()) {
-				frame_rect.size = movie_preview_vp->get_size();
-			} else {
-				const float aspect = Size2(MovieWriter::get_output_size()).aspect();
-				if (s.aspect() > aspect) {
-					frame_rect.size = Size2(s.height * aspect, s.height);
-				} else {
-					frame_rect.size = Size2(s.width, s.width / aspect);
-				}
-			}
-			frame_rect.position = ((s - frame_rect.size) * 0.5).floor();
-			frame_rect = Rect2(Vector2(), s).intersection(frame_rect);
-
-			if (movie_preview_vp) {
-				const Ref<Texture2D> frame_tex = movie_preview_vp->get_texture();
-				if (frame_tex.is_valid()) {
-					surface->draw_texture_rect(frame_tex, frame_rect, false);
-				}
-			}
-
-			// Fill the area outside the Movie Writer output aspect ratio with opaque black.
-			const Color letterbox_color = Color(0, 0, 0, 1);
-			const real_t rect_right = frame_rect.position.x + frame_rect.size.x;
-			const real_t rect_bottom = frame_rect.position.y + frame_rect.size.y;
-			surface->draw_rect(Rect2(0, 0, s.width, frame_rect.position.y), letterbox_color, true);
-			surface->draw_rect(Rect2(0, rect_bottom, s.width, s.height - rect_bottom), letterbox_color, true);
-			surface->draw_rect(Rect2(0, frame_rect.position.y, frame_rect.position.x, frame_rect.size.y), letterbox_color, true);
-			surface->draw_rect(Rect2(rect_right, frame_rect.position.y, s.width - rect_right, frame_rect.size.y), letterbox_color, true);
-
-			surface->draw_rect(frame_rect, Color(0.6, 0.6, 0.1, 0.5), false, Math::round(2 * EDSCALE));
+			// The Movie Writer frame texture and letterbox were drawn at the start of _draw (before
+			// overlays); draw the frame outline here so it sits on top of them.
+			surface->draw_rect(_movie_frame_rect(), Color(0.6, 0.6, 0.1, 0.5), false, Math::round(2 * EDSCALE));
 		} else {
 			// Historical preview outline: the project viewport aspect region within the
 			// full-panel camera preview, using the camera's keep-aspect mode.
@@ -4250,7 +4239,7 @@ void Node3DEditorViewport::_update_movie_preview() {
 	// SubViewport with Movie Writer's output aspect (sized to the displayed frame, see
 	// _update_movie_preview_size()) so Camera3D's keep-aspect behavior matches the recorded
 	// framing, for both keep-aspect modes and whether the panel is wider or narrower than output.
-	const bool active = previewing != nullptr && movie_mode;
+	const bool active = previewing != nullptr && movie_mode && is_visible_in_tree();
 	if (active && !movie_preview_vp) {
 		movie_preview_vp = memnew(SubViewport);
 		movie_preview_vp->set_disable_input(true);
@@ -4290,6 +4279,25 @@ void Node3DEditorViewport::_update_movie_preview_size() {
 	if (movie_preview_vp->get_size() != preview_size) {
 		movie_preview_vp->set_size(preview_size);
 	}
+}
+
+Rect2 Node3DEditorViewport::_movie_frame_rect() const {
+	// The rectangle within the panel that shows the Movie Writer output frame (aspect-fit).
+	const Size2 s = get_size();
+	Rect2 frame_rect;
+	if (movie_preview_vp && movie_preview_vp->get_size() != Size2i()) {
+		// Use the preview viewport's actual integer size so its texture maps 1:1 (no rescale).
+		frame_rect.size = movie_preview_vp->get_size();
+	} else {
+		const float aspect = Size2(MovieWriter::get_output_size()).aspect();
+		if (s.aspect() > aspect) {
+			frame_rect.size = Size2(s.height * aspect, s.height);
+		} else {
+			frame_rect.size = Size2(s.width, s.width / aspect);
+		}
+	}
+	frame_rect.position = ((s - frame_rect.size) * 0.5).floor();
+	return Rect2(Vector2(), s).intersection(frame_rect);
 }
 
 void Node3DEditorViewport::_toggle_cinema_preview(bool p_activate) {
