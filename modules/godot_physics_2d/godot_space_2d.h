@@ -100,7 +100,7 @@ private:
 
 	GodotArea2D *area = nullptr;
 
-	enum { SOLVER_SETUP_HISTORY_MAX = 8 };
+	static constexpr int SOLVER_SETUP_HISTORY_MAX = 8;
 
 	int solver_iterations = 0;
 	int solver_min_constraints_for_threading = 256;
