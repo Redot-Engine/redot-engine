@@ -425,15 +425,35 @@ void Mode7Sprite2D::_mode7_get_full_rects(Rect2 &r_src_rect, Rect2 &r_dst_rect) 
 	}
 }
 
-Vector2 Mode7Sprite2D::mode7_transform_point(const Vector2 &p_point) const {
+Variant Mode7Sprite2D::mode7_transform_point(const Vector2 &p_point, bool p_visible_area_only) const {
 	// CPU-side inverse of the Mode7 fragment shader's per-pixel sampling math.
-	// The shader computes, per screen pixel ("dest"), which texture coordinate
-	// to sample ("source"): source = GlobalTransform(PerScanlineTransform(dest)).
-	// Callers want the opposite: given a point on the UNDISTORTED source artwork,
-	// find where it visually ends up once Mode7's warping is applied -- i.e.
-	// solve for "dest" given "source". Because the per-scanline matrix is itself
-	// selected using dest.y (the very thing being solved for), this requires a
-	// numeric solve (bisection), not a closed-form formula.
+	//
+	// FORWARD (the shader), per dest pixel v in the drawn region quad (region-local [0,1]^2):
+	//     uv      = M(r)*(v - p(r)) + p(r) + o(r)      // per-row affine, r = v.y
+	//     uv      = G*(uv - gp) + gp + G*go            // global rotation about gp, then offset
+	//     uv_full = uv*R.zw + R.xy                     // denormalize to full-texture UV
+	//     sampled = tiling ? fract(uv_full) : uv_full  // R = REGION_RECT (normalized)
+	//     (discarded if !tiling && uv outside [0,1]^2; horizon-masked alpha per v)
+	//
+	// INVERSE (this function): given a target texel T (full-texture UV of the input point),
+	// find the dest pixel v where the sprite displays T. Everything is exact algebra except the
+	// row r = v.y, which appears both as the self-consistency condition and inside M(r), p(r),
+	// o(r). That leaves a single 1-D equation H(r) = v(r).y - r = 0 (r in [0,1]), solved by a
+	// deterministic grid scan + local refinement. This is robust across NONE / LERP (any number
+	// of overrides) / PROJECTION and needs no global-monotonicity assumption (the old single
+	// bisection assumed one sign change and fell back to a wrong endpoint, causing the
+	// "spiral"/"jump" with LERP/NONE and region+projection).
+	//
+	// With tiling, fract(T(v)) = fract(P) has candidates T = P + n (n integer). Each candidate has
+	// at most one valid dest (a self-consistent root that is NOT a degenerate 180-degree fold
+	// and that lies inside the quad). The correct one is chosen by the candidate n whose forward
+	// map actually equals P + n (a validity gate that eliminates spurious roots), preferring the n
+	// nearest the region -- i.e. the tile the input point belongs to. This is a deterministic
+	// selection based on where the input point is, not a guess, and does not use visibility.
+	//
+	// Returns the dest position in the same (parent-local) space p_point was given in, or
+	// null when p_visible_area_only is true and the point has no visible (drawn, unmasked)
+	// destination.
 
 	// Mode 7 is off, so the sprite draws unwarped and the point does not move.
 	if (!mode7_enabled) {
@@ -449,250 +469,220 @@ Vector2 Mode7Sprite2D::mode7_transform_point(const Vector2 &p_point) const {
 		return p_point;
 	}
 
-	// --- 1) p_point (parent-local space, a point on the undistorted source
-	//     artwork) -> texture-pixel space -> normalized full-texture UV.
-	//     This MUST use the full, uncropped virtual rects, not
-	//     Sprite2D::_get_rects() -- region_rect only says which slice is
-	//     currently visible, it doesn't move where the full artwork sits.
-	//     Using the cropped rects here would extrapolate from the tiny
-	//     visible quad and produce garbage for points outside the region. ---
+	// --- 1) p_point (parent-local, a point on the undistorted source artwork)
+	//     -> local drawing space -> full-texture UV. Uses the full, uncropped
+	//     virtual rects so points outside the visible region crop still map to
+	//     the correct texel. (Same as before.) ---
 	Rect2 full_src_rect, full_dst_rect;
 	_mode7_get_full_rects(full_src_rect, full_dst_rect);
 
-	// Undo this node's own Transform2D so we're working in the sprite's own
-	// local drawing space, the same space full_dst_rect is defined in.
 	Vector2 local_point = get_transform().affine_inverse().xform(p_point);
-
-	// Map local_point from full_dst_rect (local space) into full_src_rect
-	// (texture-pixel space) by ratio, then normalize by the full texture size.
-	// This is "source_full_uv" -- the same UV space REGION_RECT is defined in.
 	Vector2 tex_point = full_src_rect.position + (local_point - full_dst_rect.position) * (full_src_rect.size / full_dst_rect.size);
 	Vector2 source_full_uv = tex_point / tex_size;
 
-	// DEBUG: print_line(vformat("source_full_uv=%s", source_full_uv));
-
-	// --- 2) Resolve the active region, in pixel space and normalized
-	//     full-texture UV. No region enabled == whole texture, matching the
-	//     shader's REGION_RECT = (0,0,1,1) no-op case. ---
+	// --- 2) Active region in normalized full-texture UV (no region == whole texture).
 	Rect2 region_px = is_region_enabled() ? get_region_rect() : Rect2(Vector2(), tex_size);
 	if (region_px.size.x == 0.0f || region_px.size.y == 0.0f) {
-		// Defensive: a degenerate region would otherwise divide by zero below.
 		region_px.size = tex_size;
 	}
-	Rect2 region_rect_norm(region_px.position / tex_size, region_px.size / tex_size);
+	Rect2 R(region_px.position / tex_size, region_px.size / tex_size); // REGION_RECT
 
-	// Region aspect ratio in real texture pixels -- only used to correct the
-	// GLOBAL rotation step below when the region isn't square (mirrors the
-	// shader's region_aspect, which only ever feeds aspect_rotate() for
-	// mode7_global_rotation, never the per-scanline scale itself).
+	// Region aspect for the aspect-corrected global rotation (mirrors the shader).
 	real_t region_aspect = 1.0f;
 	if (mode7_override_region_aspect && region_px.size.y != 0.0f) {
 		region_aspect = region_px.size.x / region_px.size.y;
 	}
 
-	// DEBUG: print_line(vformat("region_px=%s region_rect_norm.pos=%s region_rect_norm.size=%s source_full_uv=%s",
-	// 		region_px, region_rect_norm.position, region_rect_norm.size, source_full_uv));
+	// --- 3) The GLOBAL step (rotation about gp, then offset) as one affine map on
+	//     region-local uv: v_global(u) = G*u + d.
+	Transform2D G = _mode7_aspect_rotate(mode7_global_rotation, region_aspect);
+	Vector2 gp = mode7_global_pivot;
+	Vector2 go = mode7_global_offset;
+	Transform2D G_inv = G.affine_inverse();
+	Vector2 d = gp - G.basis_xform(gp) + G.basis_xform(go); // so v_global(u) = G*u + d
 
-	// --- 3) Invert the GLOBAL transform step (rotation about
-	//     mode7_global_pivot, then offset). This part IS closed-form, since
-	//     global rotation doesn't depend on the unknown per-scanline row.
-	//     Exact algebraic inverse of the shader's:
-	//         uv = matrix_global * (uv - mode7_global_pivot) + mode7_global_pivot;
-	//         uv += matrix_global * mode7_global_offset;
-	//     -> inter = matrix_global^-1 * (target - pivot - matrix_global*offset) + pivot ---
-	Transform2D matrix_global = _mode7_aspect_rotate(mode7_global_rotation, region_aspect);
-	Transform2D matrix_global_inv = matrix_global.affine_inverse();
-
-	// Per-scanline inverse solve for a single candidate row "p_dy": given a
-	// target point in region-local UV space, find "dest" such that the
-	// per-scanline transform (looked up at p_dy) maps dest -> the target.
-	// Same lookup _mode7_rebuild_scanline_texture() uses to bake the scanline
-	// table, evaluated here at full precision instead of the table's
-	// 1024-row resolution.
-	auto solve_dest_for_v = [&](const Vector2 &p_v, real_t p_dy, Vector2 &r_dest) -> bool {
+	// Per-row inverse solve for a single candidate row dy: given the "after-per-row"
+	// target u1 (region-local), find dest v such that v_global(M(r)(v-p(r))+p(r)+o(r)) = u1_global.
+	// v = M(r)^-1 * (u1 - p(r) - o(r)) + p(r).
+	auto solve_dest_for_v = [&](const Vector2 &p_u1, real_t p_dy, Vector2 &r_dest, bool &r_ok) {
 		Transform2D scan_transform;
 		Vector2 pivot;
 		Color unused_modulate;
 		_mode7_compute_scanline_data(p_dy, scan_transform, pivot, unused_modulate);
 
 		Vector2 scan_offset = scan_transform.columns[2];
-		// Strip translation to invert the 2x2 basis alone; affine_inverse()
-		// is a true general inverse (not assuming orthonormality), which
-		// matters once rotation/skew are non-zero.
 		Transform2D matrix_transformed(scan_transform.columns[0], scan_transform.columns[1], Vector2());
 		if (Math::is_zero_approx(matrix_transformed.determinant())) {
-			// A degenerate override basis (zero scale or collinear columns) has no
-			// inverse; the row collapses and no source point maps through it.
-			r_dest = Vector2(p_v.x, p_dy);
-			return false;
-		}
-		Transform2D matrix_transformed_inv = matrix_transformed.affine_inverse();
-
-		// Inverse of: target = matrix_transformed * (dest - pivot) + pivot + scan_offset
-		r_dest = matrix_transformed_inv.basis_xform(p_v - pivot - scan_offset) + pivot;
-		return true;
-	};
-
-	// Solves for "dest" given a full candidate target "p_v" (already in
-	// region-local UV space). Bisects on dy in [0,1] to find the row whose
-	// per-scanline transform is self-consistent (dest.y == dy). Reports
-	// whether a genuine root exists (sign change across [0,1]) via
-	// r_is_valid_root -- a "dest" that merely lands inside [0,1] after the
-	// no-sign-change clamp fallback is NOT a valid mapping and must not be
-	// mistaken for one by the wrap-candidate search in step 4.
-	auto solve_for_candidate = [&](const Vector2 &p_v, Vector2 &r_dest, bool &r_is_valid_root) {
-		Vector2 inter = matrix_global_inv.basis_xform(p_v - mode7_global_pivot - matrix_global.basis_xform(mode7_global_offset)) + mode7_global_pivot;
-
-		real_t lo = 0.0f, hi = 1.0f;
-		Vector2 dest_lo, dest_hi;
-		const bool ok_lo = solve_dest_for_v(inter, lo, dest_lo);
-		const bool ok_hi = solve_dest_for_v(inter, hi, dest_hi);
-		if (!ok_lo || !ok_hi) {
-			r_dest = ok_lo ? dest_lo : dest_hi;
-			r_is_valid_root = false;
+			// Degenerate row (zero scale / collinear columns): no inverse, no valid dest through it.
+			r_dest = Vector2(p_u1.x, p_dy);
+			r_ok = false;
 			return;
 		}
-
-		real_t residual_lo = dest_lo.y - lo;
-		real_t residual_hi = dest_hi.y - hi;
-
-		Vector2 dest = dest_lo;
-		if (SIGN(residual_lo) != SIGN(residual_hi) || residual_lo == 0.0f || residual_hi == 0.0f) {
-			// Sign change: a genuine root exists in this interval. Standard
-			// bisection; ~40 iterations is comfortably enough for
-			// float/real_t precision on a unit interval.
-			for (int i = 0; i < 40; i++) {
-				real_t mid = (lo + hi) * 0.5f;
-				Vector2 dest_mid;
-				if (!solve_dest_for_v(inter, mid, dest_mid)) {
-					break;
-				}
-				real_t residual_mid = dest_mid.y - mid;
-
-				if (SIGN(residual_mid) == SIGN(residual_lo)) {
-					lo = mid;
-					residual_lo = residual_mid;
-				} else {
-					hi = mid;
-					residual_hi = residual_mid;
-				}
-				dest = dest_mid;
-			}
-			r_is_valid_root = true;
-		} else {
-			// No sign change: no row satisfies the self-consistency equation
-			// for this candidate -- it doesn't map anywhere onto the visible
-			// transformed image. The clamp-to-nearest-endpoint value is only
-			// useful as a last-resort fallback, never a real answer.
-			dest = (Math::abs(residual_lo) < Math::abs(residual_hi)) ? dest_lo : dest_hi;
-			r_is_valid_root = false;
-		}
-		r_dest = dest;
+		Transform2D matrix_transformed_inv = matrix_transformed.affine_inverse();
+		r_dest = matrix_transformed_inv.basis_xform(p_u1 - pivot - scan_offset) + pivot;
+		r_ok = true;
 	};
 
-	// --- 4) Resolve which tiled copy of source_full_uv is the correct one to
-	//     feed the solver. Only matters when mode7_tiling is enabled: the
-	//     region can drift arbitrarily far outside [0, tex_size] (that's the
-	//     point of mode7_region_follow_target + tiling -- a seamlessly
-	//     scrolling region), and the shader only wraps at the very end
-	//     (fract(uv_full)), after all per-scanline/global math. Going
-	//     backwards, one source point can correspond to several
-	//     integer-shifted candidates in region-local space, but only some of
-	//     those are real (self-consistent) roots at all.
-	//
-	//     A single "nearest wrap to region center" guess isn't reliable once
-	//     the region is large/off-center relative to the texture (a source
-	//     point near one edge of a big region can need a different wrap than
-	//     the region's own center) -- so instead this searches a small grid
-	//     of wraps around that center guess, keeps only candidates that are
-	//     BOTH a genuine root AND land inside [0,1]x[0,1], and among those
-	//     picks the one whose unwrapped position is closest to the region
-	//     center. If none qualify, falls back to the original center-nearest
-	//     guess so there's always some answer. ---
-	Vector2 dest;
-	if (mode7_tiling) {
-		Vector2 region_center_full_uv = region_rect_norm.position + region_rect_norm.size * 0.5f;
-		Vector2 n_center = (region_center_full_uv - source_full_uv).round();
+	// Returns true if the forward map of dest (at row root_row) actually equals target T,
+	// i.e. dest is a genuine preimage of T (not a degenerate fold root). With tiling the
+	// equality is modulo 1 (the shader wraps with fract), so the difference may be small
+	// or ~1 (across a tile boundary).
+	auto forward_maps_to = [&](const Vector2 &p_dest, real_t p_root_row, const Vector2 &p_T) -> bool {
+		Transform2D scan_transform;
+		Vector2 pivot;
+		Color unused_modulate;
+		_mode7_compute_scanline_data(p_root_row, scan_transform, pivot, unused_modulate);
+		Vector2 fwd = G.basis_xform(scan_transform.basis_xform(p_dest - pivot) + pivot + scan_transform.columns[2] - gp) + gp + G.basis_xform(go);
+		Vector2 fwd_full = Vector2(fwd.x * R.size.x + R.position.x, fwd.y * R.size.y + R.position.y);
+		real_t dx = Math::abs(fwd_full.x - p_T.x);
+		real_t dy = Math::abs(fwd_full.y - p_T.y);
+		real_t tol = 0.02f;
+		if (mode7_tiling) {
+			dx = Math::abs(dx - Math::round(dx)); // distance to the nearest integer
+			dx = Math::abs(dx - Math::round(dx));
+		}
+		return dx <= tol && dy <= tol;
+	};
 
-		bool found_valid = false;
-		real_t best_dist = 0.0f;
-		Vector2 best_dest;
-		Vector2 fallback_dest;
-		bool have_fallback = false;
+	// Resolves the dest v for one full-texture target T, or the zero vector if none is valid.
+	//  - u1 = inverse-global of T (row independent).
+	//  - find ALL self-consistent rows r of H(r) = v(r).y - r on [0,1] (grid scan of sign
+	//    changes, then bisection-refine each bracket). There can be more than one for LERP/NONE.
+	//  - keep the first root whose forward map actually equals T (forward_maps_to): this
+	//    eliminates degenerate 180-degree-fold roots that are self-consistent (v.y == r) but
+	//    map to the antipodal texel rather than T, and disambiguates multiple roots.
+	auto resolve_dest_for = [&](const Vector2 &p_T, bool &r_found) -> Vector2 {
+		r_found = false;
+		// Inverse of the global step: u2 = (T - R.xy)/R.zw ; u1 = G^-1*(u2 - d).
+		Vector2 u2 = Vector2((p_T.x - R.position.x) / R.size.x, (p_T.y - R.position.y) / R.size.y);
+		Vector2 u1 = G_inv.basis_xform(u2 - d);
 
-		const int SEARCH_RADIUS = 2;
-		for (int kx = -SEARCH_RADIUS; kx <= SEARCH_RADIUS; kx++) {
-			for (int ky = -SEARCH_RADIUS; ky <= SEARCH_RADIUS; ky++) {
-				Vector2 n = n_center + Vector2((real_t)kx, (real_t)ky);
-				Vector2 candidate_full_uv = source_full_uv + n;
-				Vector2 candidate_region_local = (candidate_full_uv - region_rect_norm.position) / region_rect_norm.size;
+		const int N = 256; // scan resolution across the row interval [0,1]
+		int prev_sign = 0;
+		int prev_i = -1;
+		real_t prev_absH = 1e30f;
+		Vector2 best_touch;
+		bool have_touch = false;
 
-				Vector2 candidate_dest;
-				bool is_valid_root = false;
-				solve_for_candidate(candidate_region_local, candidate_dest, is_valid_root);
-
-				// Keep the center-nearest candidate as a fallback regardless
-				// of validity, in case nothing in the grid qualifies.
-				if (n.is_equal_approx(n_center)) {
-					fallback_dest = candidate_dest;
-					have_fallback = true;
+		for (int i = 0; i <= N; i++) {
+			real_t row = (real_t)i / (real_t)N;
+			Vector2 v_i;
+			bool ok_i = false;
+			solve_dest_for_v(u1, row, v_i, ok_i);
+			if (!ok_i) {
+				prev_sign = 0; // a degenerate row breaks any sign-change bracket
+				prev_i = -1;
+				continue;
+			}
+			real_t H_i = v_i.y - row;
+			real_t aH = Math::abs(H_i);
+			if (aH < 1e-3f && aH < prev_absH) {
+				best_touch = v_i;
+				have_touch = true;
+				prev_absH = aH;
+			}
+			int s_i = (H_i > 0.0f) ? 1 : (H_i < 0.0f ? -1 : 0);
+			if (prev_sign != 0 && s_i != 0 && s_i != prev_sign && prev_i >= 0) {
+				// A genuine root is bracketed in (prev_i, i]: refine it.
+				real_t r_lo = (real_t)prev_i / (real_t)N;
+				real_t r_hi = (real_t)i / (real_t)N;
+				Vector2 v_lo;
+				bool ok_lo = false;
+				solve_dest_for_v(u1, r_lo, v_lo, ok_lo);
+				for (int it = 0; it < 40; it++) {
+					real_t mid = (r_lo + r_hi) * 0.5f;
+					Vector2 v_mid;
+					bool ok_mid = false;
+					solve_dest_for_v(u1, mid, v_mid, ok_mid);
+					if (!ok_mid) {
+						break;
+					}
+					real_t H_lo = (ok_lo ? v_lo.y : 0.0f) - r_lo;
+					real_t H_mid = v_mid.y - mid;
+					if (H_lo * H_mid <= 0.0f) {
+						r_hi = mid;
+					} else {
+						r_lo = mid;
+						v_lo = v_mid;
+						ok_lo = true;
+					}
 				}
-
-				bool in_range = candidate_dest.x >= 0.0f && candidate_dest.x <= 1.0f &&
-						candidate_dest.y >= 0.0f && candidate_dest.y <= 1.0f;
-				if (!is_valid_root || !in_range) {
-					continue;
+				real_t root_row = (r_lo + r_hi) * 0.5f;
+				bool ok_root = false;
+				Vector2 dest;
+				solve_dest_for_v(u1, root_row, dest, ok_root);
+				if (ok_root && dest.x >= 0.0f && dest.x <= 1.0f && dest.y >= 0.0f && dest.y <= 1.0f) {
+					// Validity gate: the forward map of this dest must equal the target T.
+					if (forward_maps_to(dest, root_row, p_T)) {
+						r_found = true;
+						return dest;
+					}
 				}
+			}
+			prev_sign = s_i;
+			prev_i = i;
+			prev_absH = aH;
+		}
 
-				real_t dist = n.distance_squared_to(n_center);
-				if (!found_valid || dist < best_dist) {
-					found_valid = true;
-					best_dist = dist;
-					best_dest = candidate_dest;
+		// No sign-change root (or none passed the gate): fall back to a near-touch of H=0
+		// (e.g. a fold), if it is inside the quad and maps to T.
+		if (have_touch) {
+			Vector2 dest = best_touch;
+			if (dest.x >= 0.0f && dest.x <= 1.0f && dest.y >= 0.0f && dest.y <= 1.0f) {
+				if (forward_maps_to(dest, dest.y, p_T)) {
+					r_found = true;
+					return dest;
 				}
 			}
 		}
+		return Vector2(); // this target is not reached by the forward map at a valid dest
+	};
 
-		dest = found_valid ? best_dest : (have_fallback ? fallback_dest : Vector2());
+	// --- 4) Resolve the destination for the input point.
+	//     The input point source_full_uv is already an exact location in the infinitely-
+	//     tilled texture plane: its integer part encodes WHICH tile copy it is in, and its
+	//     fractional part encodes WHERE within that copy. resolve_dest_for() inverts the
+	//     full forward map (per-row affine, then global step, then the tiling wrap) for
+	//     that exact target, so the destination it returns already lands on the correct
+	//     tile. There is no ambiguity to resolve here and no need to re-anchor the
+	//     candidate on the region center -- doing so (as before) would pick a different
+	//     tile copy than the one the input point actually belongs to.
+	Vector2 dest;
+	bool have_dest = false;
 
-		// DEBUG: print_line(vformat("n_center=%s found_valid=%s dest=%s", n_center, found_valid ? "true" : "false", dest));
-	} else {
-		// No tiling: source_full_uv is unambiguous, so region-local mapping
-		// is a single direct divide -- no wraparound ambiguity to resolve.
-		Vector2 source_region_local = (source_full_uv - region_rect_norm.position) / region_rect_norm.size;
-		bool unused_is_valid_root = false;
-		solve_for_candidate(source_region_local, dest, unused_is_valid_root);
+	bool found = false;
+	Vector2 dv = resolve_dest_for(source_full_uv, found);
+	if (found) {
+		dest = dv;
+		have_dest = true;
 	}
 
-	// --- 5) dest (region-local UV, the resolved screen-space coordinate) ->
-	//     full-texture UV -> texture-pixel space -> back through the actual,
-	//     region-cropped dst_rect/src_rect (forward direction this time) ->
-	//     back through this node's own Transform2D, landing in the same
-	//     space p_point was given in. mode7_tiling wrap is intentionally NOT
-	//     re-applied here: dest is already the resolved, unambiguous
-	//     screen-space answer -- wrapping only applies to the shader's own
-	//     forward sampling step. This step deliberately uses the REAL,
-	//     region-cropped rects (unlike step 1), because that's what the
-	//     renderer actually draws: the visible sprite is only as big as the
-	//     cropped region's quad, not the full texture. ---
+	// --- 5) dest (region-local [0,1]^2) -> full-texture UV -> local drawing space ->
+	//     parent-local space. Uses the REAL, region-cropped rects (what the renderer draws).
 	Rect2 cropped_src_rect, cropped_dst_rect;
 	bool unused_filter_clip = false;
 	_get_rects(cropped_src_rect, cropped_dst_rect, unused_filter_clip);
 
 	if (cropped_src_rect.size.x == 0.0f || cropped_src_rect.size.y == 0.0f) {
-		// Same degeneracy the region_px guard above handles: a zero-size region
-		// leaves no quad to map back into, so there is no meaningful answer.
+		// Degenerate region: no quad to map into.
+		if (p_visible_area_only) {
+			return Variant();
+		}
 		return p_point;
 	}
 
-	Vector2 dest_full_uv = dest * region_rect_norm.size + region_rect_norm.position;
+	Vector2 dest_full_uv = Vector2(dest.x * R.size.x + R.position.x, dest.y * R.size.y + R.position.y);
 	Vector2 tex_point_out = dest_full_uv * tex_size;
 	Vector2 local_point_out = cropped_dst_rect.position + (tex_point_out - cropped_src_rect.position) * (cropped_dst_rect.size / cropped_src_rect.size);
+	Vector2 result = get_transform().xform(local_point_out);
 
-	// DEBUG: print_line(vformat("dest_full_uv=%s tex_point_out=%s cropped_src_rect=%s cropped_dst_rect=%s",
-	// 		dest_full_uv, tex_point_out, cropped_src_rect, cropped_dst_rect));
-
-	return get_transform().xform(local_point_out);
+	// visible_area_only: return null unless the point has a real destination that is
+	// actually drawn (inside the region quad, i.e. have_dest is set). The point's
+	// position itself is always the correct (deterministic) transformed location.
+	if (p_visible_area_only && !have_dest) {
+		return Variant();
+	}
+	return result;
 }
 
 void Mode7Sprite2D::set_mode7_tiling(bool p_tiling) {
@@ -1245,7 +1235,7 @@ void Mode7Sprite2D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_mode7_saved_material", "material"), &Mode7Sprite2D::set_mode7_saved_material);
 	ClassDB::bind_method(D_METHOD("get_mode7_saved_material"), &Mode7Sprite2D::get_mode7_saved_material);
-	ClassDB::bind_method(D_METHOD("mode7_transform_point", "point"), &Mode7Sprite2D::mode7_transform_point);
+	ClassDB::bind_method(D_METHOD("mode7_transform_point", "point", "visible_area_only"), &Mode7Sprite2D::mode7_transform_point, DEFVAL(false));
 
 	// Properties (exposed in the Inspector) -----------------------------------
 
