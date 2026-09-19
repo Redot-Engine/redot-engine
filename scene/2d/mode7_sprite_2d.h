@@ -126,9 +126,13 @@ public:
 	void force_update_follow_cache();
 
 	/// Takes a point in this node's parent-local space, on the undistorted source artwork,
-	/// @return The point in the same space after the per-scanline global Mode 7 transformation that the shader's fragment() function applies.
+	/// @param p_visible_area_only If true, return null when the point has no drawn destination
+	/// (e.g. it lies in the area the Mode 7 transform does not cover). When false (default),
+	/// always return the correct transformed location even if that area is not currently drawn.
+	/// @return The point in the same space after the per-scanline global Mode 7 transformation
+	/// that the shader's fragment() function applies (or null per p_visible_area_only).
 	/// This is the CPU-side equivalent of "where does this point move to?"
-	Vector2 mode7_transform_point(const Vector2 &p_point) const;
+	Variant mode7_transform_point(const Vector2 &p_point, bool p_visible_area_only = false) const;
 
 	Mode7Sprite2D();
 

@@ -33,13 +33,21 @@
 			</description>
 		</method>
 		<method name="mode7_transform_point" qualifiers="const">
-			<return type="Vector2" />
+			<return type="Variant" />
 			<param index="0" name="point" type="Vector2" />
+			<param index="1" name="visible_area_only" type="bool" default="false" />
 			<description>
 				Provide a (Vector2) position, which should be the "real" position on the un-transformed sprite (Mode 7 disabled).
 				The function will return a position, which will be that same place on the sprite after the Mode 7 transformations are applied.
 				This can be used to place/move an object on the sprite consistent with the Mode 7 transformation.
-				WARNING:  There are edge cases where this will not work, such as the full sprite (not using region) with tiling, essentially if you're looking for a point that is outside the entire sprite's UV space (essentially, on one of the "tiles").
+
+				This is the CPU-side inverse of the shader's per-pixel sampling: it finds where on the (drawn) sprite the given texel ends up, exactly matching the on-screen result.
+				It works whether or not a region is enabled, and handles None/Lerp (any number of scanline overrides) and Projection interpolation.
+
+				With [member mode7_tiling] enabled, a point that lies outside the sprite's own UV space (on a repeated tile) is resolved to the correct position on that tile, taking global rotation into account.
+
+				[b]visible_area_only:[/b] When [code]true[/code], the method returns [code]null[/code] if the point has no drawn destination (for example, it falls in the area the Mode 7 warp does not cover, such as the "blank" band a projection leaves when tiling is off).
+				When [code]false[/code] (default), it always returns the correct transformed location even if that area is not currently drawn, so you can still position objects there.
 			</description>
 		</method>
 	</methods>
