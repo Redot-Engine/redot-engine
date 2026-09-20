@@ -69,6 +69,16 @@ class AbstractPolygon2DEditor : public HBoxContainer {
 
 		int polygon = -1;
 		int vertex = -1;
+
+		uint32_t hash() const {
+			return hash_murmur3_buffer(this, sizeof(Vertex));
+		}
+	};
+
+	struct VertexHasher {
+		static uint32_t hash(const Vertex &p_vertex) {
+			return hash_one_uint64((uint64_t(uint32_t(p_vertex.polygon)) << 32) | uint32_t(p_vertex.vertex));
+		}
 	};
 
 	struct PosVertex : public Vertex {
@@ -88,6 +98,17 @@ class AbstractPolygon2DEditor : public HBoxContainer {
 	Vertex selected_point; ///< currently selected
 	PosVertex edge_point; ///< adding an edge point?
 	Vector2 original_mouse_pos;
+
+	/// @name Multi-select state
+	/// @{
+	HashSet<Vertex, VertexHasher> selected_points;
+	HashMap<Vertex, Point2, VertexHasher> multi_move_start_positions; ///< Per-vertex position snapshot at drag-start.
+
+	bool box_selecting = false;
+	bool box_select_additive = false; ///< True = Shift held when the box-select drag started; preserves prior selection instead of replacing it.
+	Point2 box_select_from;
+	Point2 box_select_to;
+	/// @}
 
 	Vector<Vector2> pre_move_edit;
 	Vector<Vector2> wip;
@@ -121,6 +142,7 @@ protected:
 	void _wip_close();
 	void _wip_cancel();
 
+	static void _bind_methods();
 	void _notification(int p_what);
 	void _node_removed(Node *p_node);
 
@@ -130,6 +152,12 @@ protected:
 	Vertex get_active_point() const;
 	PosVertex closest_point(const Vector2 &p_pos) const;
 	PosVertex closest_edge_point(const Vector2 &p_pos) const;
+
+	void _select_point(const Vertex &p_vertex, bool p_add_to_selection, bool p_toggle);
+	void _box_select_confirm(bool p_additive);
+	void _delete_selection();
+	void _clear_selection();
+	void _clear_point_selection();
 
 	bool _is_empty() const;
 
