@@ -2591,6 +2591,14 @@ Vector<uint8_t> Image::save_png_to_buffer() const {
 	return save_png_buffer_func(Ref<Image>((Image *)this));
 }
 
+Vector<uint8_t> Image::save_png_16bit_to_buffer() const {
+	if (save_png_16bit_buffer_func != nullptr) {
+		return save_png_16bit_buffer_func(Ref<Image>((Image *)this));
+	}
+	// Fall back to the 8-bit encoder if no 16-bit PNG backend is available.
+	return save_png_to_buffer();
+}
+
 Vector<uint8_t> Image::save_jpg_to_buffer(float p_quality) const {
 	if (save_jpg_buffer_func == nullptr) {
 		return Vector<uint8_t>();

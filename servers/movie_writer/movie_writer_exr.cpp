@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  movie_writer_pngwav.cpp                                               */
+/*  movie_writer_exr.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -30,32 +30,30 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-/**
- * @file movie_writer_pngwav.cpp
- *
- * [Add any documentation that applies to the entire file here!]
- */
+#include "movie_writer_exr.h"
 
-#include "movie_writer_pngwav.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/rendering_server.h"
 
-uint32_t MovieWriterPNGWAV::get_audio_mix_rate() const {
+uint32_t MovieWriterEXR::get_audio_mix_rate() const {
 	return mix_rate;
 }
-AudioServer::SpeakerMode MovieWriterPNGWAV::get_audio_speaker_mode() const {
+
+AudioServer::SpeakerMode MovieWriterEXR::get_audio_speaker_mode() const {
 	return speaker_mode;
 }
 
-void MovieWriterPNGWAV::get_supported_extensions(List<String> *r_extensions) const {
-	r_extensions->push_back("png");
+void MovieWriterEXR::get_supported_extensions(List<String> *r_extensions) const {
+	r_extensions->push_back("exr");
 }
 
-bool MovieWriterPNGWAV::handles_file(const String &p_path) const {
-	return p_path.get_extension().to_lower() == "png";
+bool MovieWriterEXR::handles_file(const String &p_path) const {
+	return p_path.get_extension().to_lower() == "exr";
 }
 
-String MovieWriterPNGWAV::zeros_str(uint32_t p_index) {
+String MovieWriterEXR::zeros_str(uint32_t p_index) {
 	char zeros[MAX_TRAILING_ZEROS + 1];
 	for (uint32_t i = 0; i < MAX_TRAILING_ZEROS; i++) {
 		uint32_t idx = MAX_TRAILING_ZEROS - i - 1;
@@ -66,29 +64,35 @@ String MovieWriterPNGWAV::zeros_str(uint32_t p_index) {
 	return zeros;
 }
 
-Error MovieWriterPNGWAV::write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) {
-	// Quick & Dirty PNGWAV Code based on - https://docs.microsoft.com/en-us/windows/win32/directshow/avi-riff-file-reference
-
+Error MovieWriterEXR::write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) {
 	base_path = p_base_path.get_basename();
 	if (base_path.is_relative_path()) {
 		base_path = "res://" + base_path;
 	}
 
 	frame_count = 0;
-	bit_depth_16 = int(GLOBAL_GET("editor/movie_writer/png/bit_depth")) == 16;
+	full_float = int(GLOBAL_GET("editor/movie_writer/exr/bit_depth")) == 1;
+
+	// The captured frame is only floating-point (and thus band-free) when the viewport renders at
+	// floating-point precision, controlled by rendering/viewport/hdr_2d.
+	const RID main_vp = RenderingServer::get_singleton()->viewport_find_from_screen_attachment(DisplayServer::MAIN_WINDOW_ID);
+	if (main_vp.is_valid() && !RenderingServer::get_singleton()->viewport_is_using_hdr_2d(main_vp)) {
+		WARN_PRINT("MovieWriter: EXR output works best with 'rendering/viewport/hdr_2d' enabled; without it the frame is captured at 8-bit precision and will still band.");
+	}
 
 	{
-		//Remove existing files before writing anew
-		uint32_t idx = 0;
+		// Remove existing frames before writing anew.
 		Ref<DirAccess> d = DirAccess::open(base_path.get_base_dir());
 		ERR_FAIL_COND_V(d.is_null(), FAILED);
 
 		String file = base_path.get_file();
+		uint32_t idx = 0;
 		while (true) {
-			String path = file + zeros_str(idx) + ".png";
+			String path = file + zeros_str(idx) + ".exr";
 			if (d->remove(path) != OK) {
 				break;
 			}
+			idx++;
 		}
 	}
 
@@ -99,7 +103,7 @@ Error MovieWriterPNGWAV::write_begin(const Size2i &p_movie_size, uint32_t p_fps,
 
 	f_wav->store_buffer((const uint8_t *)"RIFF", 4);
 	int total_size = 4 /* WAVE */ + 8 /* fmt+size */ + 16 /* format */ + 8 /* data+size */;
-	f_wav->store_32(total_size); //will store final later
+	f_wav->store_32(total_size); // Will store final later.
 	f_wav->store_buffer((const uint8_t *)"WAVE", 4);
 
 	/* FORMAT CHUNK */
@@ -122,13 +126,11 @@ Error MovieWriterPNGWAV::write_begin(const Size2i &p_movie_size, uint32_t p_fps,
 			break;
 	}
 
-	f_wav->store_32(16); //standard format, no extra fields
-	f_wav->store_16(1); // compression code, standard PCM
-	f_wav->store_16(channels); //CHANNELS: 2
+	f_wav->store_32(16); // Standard format, no extra fields.
+	f_wav->store_16(1); // Compression code, standard PCM.
+	f_wav->store_16(channels);
 
 	f_wav->store_32(mix_rate);
-
-	/* useless stuff the format asks for */
 
 	int bits_per_sample = 32;
 	int blockalign = bits_per_sample / 8 * channels;
@@ -137,26 +139,36 @@ Error MovieWriterPNGWAV::write_begin(const Size2i &p_movie_size, uint32_t p_fps,
 	audio_block_size = (mix_rate / fps) * blockalign;
 
 	f_wav->store_32(bytes_per_sec);
-	f_wav->store_16(blockalign); // block align (unused)
+	f_wav->store_16(blockalign);
 	f_wav->store_16(bits_per_sample);
 
 	/* DATA CHUNK */
 
 	f_wav->store_buffer((const uint8_t *)"data", 4);
-
-	f_wav->store_32(0); //data size... wooh
+	f_wav->store_32(0); // Data size, stored on end.
 	wav_data_size_pos = f_wav->get_position();
 
 	return OK;
 }
 
-Error MovieWriterPNGWAV::write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) {
+Error MovieWriterEXR::write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) {
 	ERR_FAIL_COND_V(f_wav.is_null(), ERR_UNCONFIGURED);
 
-	Vector<uint8_t> png_buffer = bit_depth_16 ? p_image->save_png_16bit_to_buffer() : p_image->save_png_to_buffer();
+	// save_exr requires a floating-point format; keep the frame linear at the requested precision.
+	const Image::Format target = full_float ? Image::FORMAT_RGBAF : Image::FORMAT_RGBAH;
+	Ref<Image> frame = p_image;
+	if (frame->get_format() != target) {
+		frame = frame->duplicate();
+		frame->convert(target);
+	}
 
-	Ref<FileAccess> fi = FileAccess::open(base_path + zeros_str(frame_count) + ".png", FileAccess::WRITE);
-	fi->store_buffer(png_buffer.ptr(), png_buffer.size());
+	Vector<uint8_t> exr_buffer = frame->save_exr_to_buffer(false);
+	ERR_FAIL_COND_V_MSG(exr_buffer.is_empty(), ERR_UNAVAILABLE, "MovieWriter: Failed to encode EXR frame (is the TinyEXR module enabled?).");
+
+	Ref<FileAccess> fi = FileAccess::open(base_path + zeros_str(frame_count) + ".exr", FileAccess::WRITE);
+	ERR_FAIL_COND_V(fi.is_null(), ERR_CANT_CREATE);
+	fi->store_buffer(exr_buffer.ptr(), exr_buffer.size());
+
 	f_wav->store_buffer((const uint8_t *)p_audio_data, audio_block_size);
 
 	frame_count++;
@@ -164,7 +176,7 @@ Error MovieWriterPNGWAV::write_frame(const Ref<Image> &p_image, const int32_t *p
 	return OK;
 }
 
-void MovieWriterPNGWAV::write_end() {
+void MovieWriterEXR::write_end() {
 	if (f_wav.is_valid()) {
 		uint32_t total_size = 4 /* WAVE */ + 8 /* fmt+size */ + 16 /* format */ + 8 /* data+size */;
 		uint32_t datasize = f_wav->get_position() - wav_data_size_pos;
@@ -175,7 +187,7 @@ void MovieWriterPNGWAV::write_end() {
 	}
 }
 
-MovieWriterPNGWAV::MovieWriterPNGWAV() {
+MovieWriterEXR::MovieWriterEXR() {
 	mix_rate = GLOBAL_GET("editor/movie_writer/mix_rate");
 	speaker_mode = AudioServer::SpeakerMode(int(GLOBAL_GET("editor/movie_writer/speaker_mode")));
 }

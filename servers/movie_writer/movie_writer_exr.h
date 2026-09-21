@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  resource_saver_png.h                                                  */
+/*  movie_writer_exr.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             REDOT ENGINE                               */
@@ -32,24 +32,47 @@
 
 #pragma once
 
-/**
- * @file resource_saver_png.h
- *
- * [Add any documentation that applies to the entire file here!]
- */
+// Writes a numbered sequence of OpenEXR frames (plus a sidecar .wav for audio), preserving the
+// frame as floating-point deep color so smooth gradients / shadow terminators do not band as they
+// do in 8-bit output. Enable "rendering/viewport/hdr_2d" for the added precision. Note: frames are
+// the tonemapped, display-referred [0,1] output at higher bit depth, not scene-referred HDR.
 
-#include "core/io/image.h"
-#include "core/io/resource_saver.h"
+#include "servers/movie_writer/movie_writer.h"
 
-class ResourceSaverPNG : public ResourceFormatSaver {
+class MovieWriterEXR : public MovieWriter {
+	GDCLASS(MovieWriterEXR, MovieWriter)
+
+	enum {
+		MAX_TRAILING_ZEROS = 8
+	};
+
+	uint32_t mix_rate = 48000;
+	AudioServer::SpeakerMode speaker_mode = AudioServer::SPEAKER_MODE_STEREO;
+	String base_path;
+	uint32_t frame_count = 0;
+	uint32_t fps = 0;
+	bool full_float = false;
+
+	uint32_t audio_block_size = 0;
+
+	Ref<FileAccess> f_wav;
+	uint32_t wav_data_size_pos = 0;
+
+	String zeros_str(uint32_t p_index);
+
+protected:
+	virtual uint32_t get_audio_mix_rate() const override;
+	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const override;
+	virtual void get_supported_extensions(List<String> *r_extensions) const override;
+
+	virtual bool wants_float_output() const override { return true; }
+
+	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) override;
+	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) override;
+	virtual void write_end() override;
+
+	virtual bool handles_file(const String &p_path) const override;
+
 public:
-	static Error save_image(const String &p_path, const Ref<Image> &p_img);
-	static Vector<uint8_t> save_image_to_buffer(const Ref<Image> &p_img);
-	static Vector<uint8_t> save_image_16bit_to_buffer(const Ref<Image> &p_img);
-
-	virtual Error save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags = 0) override;
-	virtual bool recognize(const Ref<Resource> &p_resource) const override;
-	virtual void get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) const override;
-
-	ResourceSaverPNG();
+	MovieWriterEXR();
 };

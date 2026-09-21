@@ -80,6 +80,13 @@ Vector<uint8_t> ResourceSaverPNG::save_image_to_buffer(const Ref<Image> &p_img) 
 	return buffer;
 }
 
+Vector<uint8_t> ResourceSaverPNG::save_image_16bit_to_buffer(const Ref<Image> &p_img) {
+	Vector<uint8_t> buffer;
+	Error err = PNGDriverCommon::image_to_png_16bit(p_img, buffer);
+	ERR_FAIL_COND_V_MSG(err, Vector<uint8_t>(), "Can't convert image to 16-bit PNG.");
+	return buffer;
+}
+
 bool ResourceSaverPNG::recognize(const Ref<Resource> &p_resource) const {
 	return (p_resource.is_valid() && p_resource->is_class("ImageTexture"));
 }
@@ -93,4 +100,5 @@ void ResourceSaverPNG::get_recognized_extensions(const Ref<Resource> &p_resource
 ResourceSaverPNG::ResourceSaverPNG() {
 	Image::save_png_func = &save_image;
 	Image::save_png_buffer_func = &save_image_to_buffer;
+	Image::save_png_16bit_buffer_func = &save_image_16bit_to_buffer;
 }
