@@ -99,6 +99,7 @@ public:
 	VBoxContainer *color_list() const { return _color_list; }
 
 	Variant convert_setting(const String &setting) const;
+	Variant get_setting(const String &setting) const;
 	void set_setting(const String &setting, Variant value);
 	void show_settings(const PackedStringArray &settings);
 	void on_setting_changed(Variant setting = {});

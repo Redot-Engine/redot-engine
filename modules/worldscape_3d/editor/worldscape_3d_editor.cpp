@@ -145,7 +145,7 @@ void WorldScape3DEditor::_operate_map(const Vector3 &p_global_position, const re
 	// The slope tool must not be used until both points have been picked
 	PackedVector3Array gradient_points = _brush_data["gradient_points"];
 	if (map_type == TYPE_HEIGHT && _operation == GRADIENT) {
-		if (gradient_points[0].is_equal_approx(gradient_points[1])) {
+		if (gradient_points[0].distance_squared_to(gradient_points[1]) < 0.125f) {
 			LOG(ERROR, "The slope tool requires two distinct points to be picked");
 			return;
 		}

@@ -41,7 +41,7 @@
 #include <cassert>
 
 MultiPicker *WorldScape3DGradientOperationBuilder::get_point_picker() const {
-	return Object::cast_to<MultiPicker>(_tool_settings->convert_setting("gradient_points"));
+	return Object::cast_to<MultiPicker>(_tool_settings->get_setting("gradient_points"));
 }
 
 real_t WorldScape3DGradientOperationBuilder::get_brush_size() const {

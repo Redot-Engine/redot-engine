@@ -529,6 +529,9 @@ void WorldScape3DUI::update_decal() {
 		}
 	}
 
+	editor_decal_visible.set(1, false);
+	editor_decal_visible.set(2, false);
+
 	if (_active_operation == WorldScape3DEditor::Operation::GRADIENT && _brush_data.has("gradient_points")) {
 		if (auto points = static_cast<PackedVector3Array>(_brush_data["gradient_points"]); points.size() == 2) {
 			auto point1 = points[0];
@@ -546,9 +549,6 @@ void WorldScape3DUI::update_decal() {
 				editor_decal_position.set(2, Vector2{ point2.x, point2.z });
 			}
 		}
-	} else {
-		editor_decal_visible.set(1, false);
-		editor_decal_visible.set(2, false);
 	}
 
 	editor_decal_color.set(0, color);

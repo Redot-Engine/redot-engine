@@ -395,6 +395,10 @@ void WorldScape3DToolSettings::add_setting(const Dictionary &setting) {
 	list->add_child(container, true);
 }
 
+Variant WorldScape3DToolSettings::get_setting(const String &setting) const {
+	return _settings[setting];
+}
+
 Variant WorldScape3DToolSettings::convert_setting(const String &setting) const {
 	Variant obj = _settings[setting];
 	if (obj.is_null()) {
