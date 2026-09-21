@@ -68,8 +68,8 @@ bool LightOccluder2DEditor::_is_line() const {
 
 int LightOccluder2DEditor::_get_polygon_count() const {
 	Ref<OccluderPolygon2D> occluder = node->get_occluder_polygon();
-	if (occluder.is_valid()) {
-		return occluder->get_polygon().size();
+	if (occluder.is_valid() && !occluder->get_polygon().is_empty()) {
+		return 1;
 	} else {
 		return 0;
 	}
