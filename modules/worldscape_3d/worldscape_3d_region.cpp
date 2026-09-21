@@ -201,8 +201,8 @@ bool WorldScape3DRegion::validate_map_size(const Ref<Image> &p_map) const {
 		LOG(ERROR, "Image dimensions are not a power of 2: ", region_sizev);
 		return false;
 	}
-	if (region_sizev.x < 64 || region_sizev.y > 2048) {
-		LOG(ERROR, "Image size out of bounds (64-2048): ", region_sizev);
+	if (region_sizev.x < 64 || region_sizev.y > 4096) {
+		LOG(ERROR, "Image size out of bounds (64-4096): ", region_sizev);
 		return false;
 	}
 	if (_region_size == 0) {

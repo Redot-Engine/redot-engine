@@ -119,7 +119,7 @@ constexpr Vector3 v2v3(const Vector2 p_v2) {
 ///////////////////////////
 
 constexpr bool is_valid_region_size(int value) {
-	return value >= 64 && value <= 2048 && is_power_of_2(value);
+	return value >= 64 && value <= 4096 && is_power_of_2(value);
 }
 
 // Integer round to multiples
