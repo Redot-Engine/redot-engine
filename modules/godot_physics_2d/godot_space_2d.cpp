@@ -1173,6 +1173,15 @@ void GodotSpace2D::set_param(PhysicsServer2D::SpaceParameter p_param, real_t p_v
 		case PhysicsServer2D::SPACE_PARAM_SOLVER_ITERATIONS:
 			solver_iterations = p_value;
 			break;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_MIN_CONSTRAINTS_FOR_THREADING:
+			solver_min_constraints_for_threading = MAX(0, (int)p_value);
+			break;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_SETUP_THREADING_MODE:
+			solver_setup_threading_mode = CLAMP((int)p_value, 0, PhysicsServer2D::SOLVER_SETUP_THREADING_PREDICTED_BIASED);
+			break;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_SETUP_PREDICTION_WINDOW:
+			solver_setup_prediction_window = CLAMP((int)p_value, 1, SOLVER_SETUP_HISTORY_MAX);
+			break;
 	}
 }
 
@@ -1196,6 +1205,12 @@ real_t GodotSpace2D::get_param(PhysicsServer2D::SpaceParameter p_param) const {
 			return constraint_bias;
 		case PhysicsServer2D::SPACE_PARAM_SOLVER_ITERATIONS:
 			return solver_iterations;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_MIN_CONSTRAINTS_FOR_THREADING:
+			return solver_min_constraints_for_threading;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_SETUP_THREADING_MODE:
+			return solver_setup_threading_mode;
+		case PhysicsServer2D::SPACE_PARAM_SOLVER_SETUP_PREDICTION_WINDOW:
+			return solver_setup_prediction_window;
 	}
 	return 0;
 }
@@ -1221,6 +1236,9 @@ GodotSpace2D::GodotSpace2D() {
 	body_angular_velocity_sleep_threshold = GLOBAL_GET("physics/2d/sleep_threshold_angular");
 	body_time_to_sleep = GLOBAL_GET("physics/2d/time_before_sleep");
 	solver_iterations = GLOBAL_GET("physics/2d/solver/solver_iterations");
+	solver_min_constraints_for_threading = GLOBAL_GET("physics/2d/solver/min_constraints_for_threading");
+	solver_setup_threading_mode = GLOBAL_GET("physics/2d/solver/setup_threading_mode");
+	solver_setup_prediction_window = CLAMP((int)GLOBAL_GET("physics/2d/solver/setup_prediction_window"), 1, SOLVER_SETUP_HISTORY_MAX);
 	contact_recycle_radius = GLOBAL_GET("physics/2d/solver/contact_recycle_radius");
 	contact_max_separation = GLOBAL_GET("physics/2d/solver/contact_max_separation");
 	contact_max_allowed_penetration = GLOBAL_GET("physics/2d/solver/contact_max_allowed_penetration");

@@ -280,6 +280,15 @@ public:
 		SPACE_PARAM_BODY_TIME_TO_SLEEP,
 		SPACE_PARAM_CONSTRAINT_DEFAULT_BIAS,
 		SPACE_PARAM_SOLVER_ITERATIONS,
+		SPACE_PARAM_SOLVER_MIN_CONSTRAINTS_FOR_THREADING,
+		SPACE_PARAM_SOLVER_SETUP_THREADING_MODE,
+		SPACE_PARAM_SOLVER_SETUP_PREDICTION_WINDOW,
+	};
+
+	enum SolverSetupThreadingMode {
+		SOLVER_SETUP_THREADING_STATIC, // gate on raw candidate count, no prediction
+		SOLVER_SETUP_THREADING_PREDICTED, // scale candidate count by previous step's active/candidate ratio
+		SOLVER_SETUP_THREADING_PREDICTED_BIASED, // as PREDICTED, but max over the last two steps (biased toward threading)
 	};
 
 	virtual void space_set_param(RID p_space, SpaceParameter p_param, real_t p_value) = 0;
@@ -858,6 +867,7 @@ public:
 
 VARIANT_ENUM_CAST(PhysicsServer2D::ShapeType);
 VARIANT_ENUM_CAST(PhysicsServer2D::SpaceParameter);
+VARIANT_ENUM_CAST(PhysicsServer2D::SolverSetupThreadingMode);
 VARIANT_ENUM_CAST(PhysicsServer2D::AreaParameter);
 VARIANT_ENUM_CAST(PhysicsServer2D::AreaSpaceOverrideMode);
 VARIANT_ENUM_CAST(PhysicsServer2D::BodyMode);

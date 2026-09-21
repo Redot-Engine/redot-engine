@@ -100,7 +100,21 @@ private:
 
 	GodotArea2D *area = nullptr;
 
+	static constexpr int SOLVER_SETUP_HISTORY_MAX = 8;
+
 	int solver_iterations = 0;
+	int solver_min_constraints_for_threading = 256;
+	int solver_setup_threading_mode = PhysicsServer2D::SOLVER_SETUP_THREADING_PREDICTED;
+	// Number of past steps the biased mode maxes over (K). Clamped to [1, MAX].
+	int solver_setup_prediction_window = 2;
+
+	// Ring of the last few completed steps' (setup, active) constraint counts,
+	// used to predict how much useful work this step's setup will contain
+	// (candidate count is a poor proxy when most pairs don't actually collide).
+	// A setup count of 0 means no history for that slot -> static-gate fallback.
+	uint32_t solver_setup_hist_setup[SOLVER_SETUP_HISTORY_MAX] = {};
+	uint32_t solver_setup_hist_active[SOLVER_SETUP_HISTORY_MAX] = {};
+	uint32_t solver_setup_hist_head = 0; // next write slot; (head-1) is most recent
 
 	real_t contact_recycle_radius = 0.0;
 	real_t contact_max_separation = 0.0;
@@ -163,6 +177,21 @@ public:
 	const HashSet<GodotCollisionObject2D *> &get_objects() const;
 
 	_FORCE_INLINE_ int get_solver_iterations() const { return solver_iterations; }
+	_FORCE_INLINE_ int get_solver_min_constraints_for_threading() const { return solver_min_constraints_for_threading; }
+	_FORCE_INLINE_ int get_solver_setup_threading_mode() const { return solver_setup_threading_mode; }
+	_FORCE_INLINE_ int get_solver_setup_prediction_window() const { return solver_setup_prediction_window; }
+	// p_back == 0 is the most recent completed step, 1 the one before it, etc.
+	_FORCE_INLINE_ uint32_t get_solver_prev_setup_at(uint32_t p_back) const {
+		return solver_setup_hist_setup[(solver_setup_hist_head + SOLVER_SETUP_HISTORY_MAX - 1 - p_back) % SOLVER_SETUP_HISTORY_MAX];
+	}
+	_FORCE_INLINE_ uint32_t get_solver_prev_active_at(uint32_t p_back) const {
+		return solver_setup_hist_active[(solver_setup_hist_head + SOLVER_SETUP_HISTORY_MAX - 1 - p_back) % SOLVER_SETUP_HISTORY_MAX];
+	}
+	_FORCE_INLINE_ void set_solver_prev_constraint_counts(uint32_t p_setup, uint32_t p_active) {
+		solver_setup_hist_setup[solver_setup_hist_head] = p_setup;
+		solver_setup_hist_active[solver_setup_hist_head] = p_active;
+		solver_setup_hist_head = (solver_setup_hist_head + 1) % SOLVER_SETUP_HISTORY_MAX;
+	}
 	_FORCE_INLINE_ real_t get_contact_recycle_radius() const { return contact_recycle_radius; }
 	_FORCE_INLINE_ real_t get_contact_max_separation() const { return contact_max_separation; }
 	_FORCE_INLINE_ real_t get_contact_max_allowed_penetration() const { return contact_max_allowed_penetration; }
