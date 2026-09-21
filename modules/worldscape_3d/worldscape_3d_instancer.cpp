@@ -51,7 +51,7 @@
 // Creates MMIs based on stored Multimesh data
 void WorldScape3DInstancer::_update_mmis(const Vector2i &p_region_loc, const int p_mesh_id) {
 	IS_DATA_INIT(WS3D_RETURN_VOID);
-	LOG(INFO, "Updating MMIs for ", (p_region_loc.x == INT32_MAX) ? "all regions" : "region " + String(p_region_loc),
+	LOG(DEBUG, "Updating MMIs for ", (p_region_loc.x == INT32_MAX) ? "all regions" : "region " + String(p_region_loc),
 			(p_mesh_id == -1) ? ", all meshes" : ", mesh " + String::num_int64(p_mesh_id));
 
 	// For specified region_location, or max for all
@@ -502,13 +502,13 @@ void WorldScape3DInstancer::initialize(WorldScape3D *p_terrain) {
 		_terrain = p_terrain;
 	}
 	IS_DATA_INIT_MESG("WorldScape3D not initialized yet", WS3D_RETURN_VOID);
-	LOG(INFO, "Initializing Instancer");
+	LOG(DEBUG, "Initializing Instancer");
 	_update_mmis();
 }
 
 void WorldScape3DInstancer::destroy() {
 	IS_DATA_INIT(WS3D_RETURN_VOID);
-	LOG(INFO, "Destroying all MMIs");
+	LOG(DEBUG, "Destroying all MMIs");
 
 	// Iterate over keys as subfunction will invalidate standard iterator
 	std::vector<Vector2i> keys;
@@ -527,7 +527,7 @@ void WorldScape3DInstancer::destroy() {
 }
 
 void WorldScape3DInstancer::clear_by_mesh(const int p_mesh_id) {
-	LOG(INFO, "Deleting Multimeshes in all regions with mesh_id: ", p_mesh_id);
+	LOG(DEBUG, "Deleting Multimeshes in all regions with mesh_id: ", p_mesh_id);
 	Array region_locations = _terrain->get_data()->get_region_locations();
 	for (int i = 0; i < region_locations.size(); i++) {
 		clear_by_location(region_locations[i], p_mesh_id);
@@ -537,7 +537,7 @@ void WorldScape3DInstancer::clear_by_mesh(const int p_mesh_id) {
 }
 
 void WorldScape3DInstancer::clear_by_location(const Vector2i &p_region_loc, const int p_mesh_id) {
-	LOG(INFO, "Deleting Multimeshes w/ mesh_id: ", p_mesh_id, " in region: ", p_region_loc);
+	LOG(DEBUG, "Deleting Multimeshes w/ mesh_id: ", p_mesh_id, " in region: ", p_region_loc);
 	Ref<WorldScape3DRegion> region = _terrain->get_data()->get_region(p_region_loc);
 	clear_by_region(region, p_mesh_id);
 }
@@ -548,7 +548,7 @@ void WorldScape3DInstancer::clear_by_region(const Ref<WorldScape3DRegion> &p_reg
 		return;
 	}
 	Vector2i region_loc = p_region->get_location();
-	LOG(INFO, "Deleting Multimeshes w/ mesh_id: ", p_mesh_id, " in region: ", region_loc);
+	LOG(DEBUG, "Deleting Multimeshes w/ mesh_id: ", p_mesh_id, " in region: ", region_loc);
 	Dictionary mesh_inst_dict = p_region->get_instances();
 	if (mesh_inst_dict.has(p_mesh_id)) {
 		_backup_region(p_region);
@@ -805,7 +805,7 @@ void WorldScape3DInstancer::remove_instances(const Vector3 &p_global_position, c
 }
 
 void WorldScape3DInstancer::add_multimesh(const int p_mesh_id, const Ref<MultiMesh> &p_multimesh, const Transform3D &p_xform, const bool p_update) {
-	LOG(INFO, "Extracting ", p_multimesh->get_instance_count(), " transforms from multimesh");
+	LOG(DEBUG, "Extracting ", p_multimesh->get_instance_count(), " transforms from multimesh");
 	TypedArray<Transform3D> xforms;
 	PackedColorArray colors;
 	for (int i = 0; i < p_multimesh->get_instance_count(); i++) {
@@ -835,7 +835,7 @@ void WorldScape3DInstancer::add_transforms(const int p_mesh_id, const TypedArray
 	Ref<WorldScape3DMeshAsset> mesh_asset = _terrain->get_assets()->get_mesh_asset(p_mesh_id);
 
 	// Separate incoming transforms/colors by region Dict{ region_loc => Array() }
-	LOG(INFO, "Separating ", p_xforms.size(), " transforms and ", p_colors.size(), " colors into regions");
+	LOG(DEBUG, "Separating ", p_xforms.size(), " transforms and ", p_colors.size(), " colors into regions");
 	for (int i = 0; i < p_xforms.size(); i++) {
 		// Get adjusted xform/color
 		Transform3D trns = p_xforms[i];
@@ -1074,7 +1074,7 @@ void WorldScape3DInstancer::copy_paste_dfr(const WorldScape3DRegion *p_src_regio
 		LOG(ERROR, "Source (", p_src_region, ") or destination (", p_dst_region, ") regions are null");
 		return;
 	}
-	LOG(INFO, "Copying foliage data from src ", p_src_region->get_location(), " to dest ", p_dst_region->get_location());
+	LOG(DEBUG, "Copying foliage data from src ", p_src_region->get_location(), " to dest ", p_dst_region->get_location());
 
 	real_t vertex_spacing = _terrain->get_vertex_spacing();
 	// Offset to dst from src
@@ -1130,7 +1130,7 @@ void WorldScape3DInstancer::swap_ids(const int p_src_id, const int p_dst_id) {
 	IS_DATA_INIT_MESG("Instancer isn't initialized.", WS3D_RETURN_VOID);
 	Ref<WorldScape3DAssets> assets = _terrain->get_assets();
 	int mesh_count = assets->get_mesh_count();
-	LOG(INFO, "Swapping IDs of multimeshes: ", p_src_id, " and ", p_dst_id);
+	LOG(DEBUG, "Swapping IDs of multimeshes: ", p_src_id, " and ", p_dst_id);
 	if (p_src_id >= 0 && p_src_id < mesh_count && p_dst_id >= 0 && p_dst_id < mesh_count) {
 		Array region_locations = _terrain->get_data()->get_region_locations();
 		for (int i = 0; i < region_locations.size(); i++) {

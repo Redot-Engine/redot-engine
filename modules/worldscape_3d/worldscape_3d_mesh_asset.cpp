@@ -154,7 +154,7 @@ WorldScape3DMeshAsset::WorldScape3DMeshAsset() {
 }
 
 void WorldScape3DMeshAsset::clear() {
-	LOG(INFO, "Clearing MeshAsset");
+	LOG(DEBUG, "Clearing MeshAsset");
 	_name = "New Mesh";
 	_id = 0;
 	_enabled = true;
@@ -177,7 +177,7 @@ void WorldScape3DMeshAsset::clear() {
 }
 
 void WorldScape3DMeshAsset::set_name(const String &p_name) {
-	LOG(INFO, "Setting name: ", p_name);
+	LOG(DEBUG, "Setting name: ", p_name);
 	_name = p_name;
 	emit_signal("setting_changed");
 }
@@ -185,18 +185,18 @@ void WorldScape3DMeshAsset::set_name(const String &p_name) {
 void WorldScape3DMeshAsset::set_id(const int p_new_id) {
 	int old_id = _id;
 	_id = CLAMP(p_new_id, 0, WorldScape3DAssets::MAX_MESHES);
-	LOG(INFO, "Setting mesh id: ", _id);
+	LOG(DEBUG, "Setting mesh id: ", _id);
 	emit_signal("id_changed", WorldScape3DAssets::TYPE_MESH, old_id, p_new_id);
 }
 
 void WorldScape3DMeshAsset::set_enabled(const bool p_enabled) {
 	_enabled = p_enabled;
-	LOG(INFO, "Setting enabled: ", p_enabled);
+	LOG(DEBUG, "Setting enabled: ", p_enabled);
 	emit_signal("instancer_setting_changed");
 }
 
 void WorldScape3DMeshAsset::set_scene_file(const Ref<PackedScene> &p_scene_file) {
-	LOG(INFO, "Setting scene file and instantiating node: ", p_scene_file);
+	LOG(DEBUG, "Setting scene file and instantiating node: ", p_scene_file);
 	_packed_scene = p_scene_file;
 	_meshes.clear();
 	if (_packed_scene.is_valid()) {
@@ -217,7 +217,7 @@ void WorldScape3DMeshAsset::set_scene_file(const Ref<PackedScene> &p_scene_file)
 		// First look for XXXXLOD# meshes, sorted by last digit
 		mesh_instances = node->find_children("*LOD?", "MeshInstance3D");
 		if (mesh_instances.size() > 0) {
-			LOG(INFO, "Found ", mesh_instances.size(), " meshes using LOD# naming convention, using the first ", MAX_LOD_COUNT);
+			LOG(DEBUG, "Found ", mesh_instances.size(), " meshes using LOD# naming convention, using the first ", MAX_LOD_COUNT);
 			mesh_instances.sort_custom(callable_mp_static(&WorldScape3DMeshAsset::_sort_lod_nodes));
 		}
 
@@ -225,14 +225,14 @@ void WorldScape3DMeshAsset::set_scene_file(const Ref<PackedScene> &p_scene_file)
 		if (mesh_instances.size() == 0) {
 			mesh_instances = node->find_children("*", "MeshInstance3D");
 			if (mesh_instances.size() > 0) {
-				LOG(INFO, "No meshes with LOD# suffixes found, using the first ", MAX_LOD_COUNT, " meshes as LOD0-LOD3");
+				LOG(DEBUG, "No meshes with LOD# suffixes found, using the first ", MAX_LOD_COUNT, " meshes as LOD0-LOD3");
 			}
 		}
 
 		// Fallback to the scene root mesh
 		if (mesh_instances.size() == 0) {
 			if (node->is_class("MeshInstance3D")) {
-				LOG(INFO, "No LOD# meshes found, assuming the root mesh is LOD0");
+				LOG(WARN, "No LOD# meshes found, assuming the root mesh is LOD0");
 				mesh_instances.push_back(node);
 			}
 		}
@@ -246,7 +246,7 @@ void WorldScape3DMeshAsset::set_scene_file(const Ref<PackedScene> &p_scene_file)
 			LOG(DEBUG, "Found mesh: ", mi->get_name());
 			if (_name == "New Mesh") {
 				_name = _packed_scene->get_path().get_file().get_basename();
-				LOG(INFO, "Setting name based on filename: ", _name);
+				LOG(DEBUG, "Setting name based on filename: ", _name);
 			}
 			// Duplicate the mesh to make each WorldScape3DMeshAsset unique
 			Ref<Mesh> orig_mesh = mi->get_mesh();
@@ -280,7 +280,7 @@ void WorldScape3DMeshAsset::set_scene_file(const Ref<PackedScene> &p_scene_file)
 
 void WorldScape3DMeshAsset::set_generated_type(const GenType p_type) {
 	_generated_type = p_type;
-	LOG(INFO, "Setting is_generated: ", p_type);
+	LOG(DEBUG, "Setting is_generated: ", p_type);
 	if (p_type == TYPE_NONE && _packed_scene.is_null()) {
 		_generated_type = TYPE_TEXTURE_CARD;
 	}
@@ -314,18 +314,18 @@ Ref<Mesh> WorldScape3DMeshAsset::get_mesh(const int p_lod) const {
 
 void WorldScape3DMeshAsset::set_height_offset(const real_t p_offset) {
 	_height_offset = CLAMP(p_offset, -50.f, 50.f);
-	LOG(INFO, "Setting height offset: ", _height_offset);
+	LOG(DEBUG, "Setting height offset: ", _height_offset);
 	emit_signal("setting_changed");
 }
 
 void WorldScape3DMeshAsset::set_density(const real_t p_density) {
-	LOG(INFO, "Setting mesh density: ", p_density);
+	LOG(DEBUG, "Setting mesh density: ", p_density);
 	_density = CLAMP(p_density, 0.01f, 10.f);
 }
 
 void WorldScape3DMeshAsset::set_cast_shadows(const ShadowCasting p_cast_shadows) {
 	_cast_shadows = p_cast_shadows;
-	LOG(INFO, "Setting shadow casting mode: ", _cast_shadows);
+	LOG(DEBUG, "Setting shadow casting mode: ", _cast_shadows);
 	emit_signal("instancer_setting_changed");
 }
 
@@ -355,7 +355,7 @@ ShadowCasting WorldScape3DMeshAsset::get_lod_cast_shadows(const int p_lod_id) co
 }
 
 void WorldScape3DMeshAsset::set_material_override(const Ref<Material> &p_material) {
-	LOG(INFO, _name, ": Setting material override: ", p_material);
+	LOG(DEBUG, _name, ": Setting material override: ", p_material);
 	_material_override = p_material;
 	LOG(DEBUG, "Emitting setting_changed");
 	emit_signal("file_changed");
@@ -363,7 +363,7 @@ void WorldScape3DMeshAsset::set_material_override(const Ref<Material> &p_materia
 }
 
 void WorldScape3DMeshAsset::set_material_overlay(const Ref<Material> &p_material) {
-	LOG(INFO, _name, ": Setting material overlay: ", p_material);
+	LOG(DEBUG, _name, ": Setting material overlay: ", p_material);
 	_material_overlay = p_material;
 	LOG(DEBUG, "Emitting setting_changed");
 	emit_signal("file_changed");
@@ -373,7 +373,7 @@ void WorldScape3DMeshAsset::set_material_overlay(const Ref<Material> &p_material
 void WorldScape3DMeshAsset::set_generated_faces(const int p_count) {
 	if (_generated_faces != p_count) {
 		_generated_faces = CLAMP(p_count, 1, 3);
-		LOG(INFO, "Setting generated face count: ", _generated_faces);
+		LOG(DEBUG, "Setting generated face count: ", _generated_faces);
 		if (_generated_type > TYPE_NONE && _generated_type < TYPE_MAX && _meshes.size() == 1) {
 			_meshes[0] = _get_generated_mesh();
 			if (_material_override.is_null()) {
@@ -389,7 +389,7 @@ void WorldScape3DMeshAsset::set_generated_faces(const int p_count) {
 void WorldScape3DMeshAsset::set_generated_size(const Vector2 &p_size) {
 	if (_generated_size != p_size) {
 		_generated_size = p_size;
-		LOG(INFO, "Setting generated size: ", _generated_faces);
+		LOG(DEBUG, "Setting generated size: ", _generated_faces);
 		if (_generated_type > TYPE_NONE && _generated_type < TYPE_MAX && _meshes.size() == 1) {
 			_meshes[0] = _get_generated_mesh();
 			if (_material_override.is_null()) {
@@ -411,7 +411,7 @@ void WorldScape3DMeshAsset::set_last_lod(const int p_lod) {
 	if (_shadow_impostor > _last_lod) {
 		_shadow_impostor = _last_lod;
 	}
-	LOG(INFO, "Setting last LOD: ", _last_lod);
+	LOG(DEBUG, "Setting last LOD: ", _last_lod);
 	emit_signal("instancer_setting_changed");
 }
 
@@ -420,13 +420,13 @@ void WorldScape3DMeshAsset::set_last_shadow_lod(const int p_lod) {
 	if (_shadow_impostor > _last_shadow_lod) {
 		_shadow_impostor = _last_shadow_lod;
 	}
-	LOG(INFO, "Setting last shadow LOD: ", _last_shadow_lod);
+	LOG(DEBUG, "Setting last shadow LOD: ", _last_shadow_lod);
 	emit_signal("instancer_setting_changed");
 }
 
 void WorldScape3DMeshAsset::set_shadow_impostor(const int p_lod) {
 	_shadow_impostor = CLAMP(p_lod, 0, MIN(_last_lod, _last_shadow_lod));
-	LOG(INFO, "Setting shadow imposter LOD: ", _shadow_impostor);
+	LOG(DEBUG, "Setting shadow imposter LOD: ", _shadow_impostor);
 	emit_signal("instancer_setting_changed");
 }
 
@@ -435,7 +435,7 @@ void WorldScape3DMeshAsset::set_lod_range(const int p_lod, const real_t p_distan
 		return;
 	}
 	_lod_ranges.set(p_lod, CLAMP(p_distance, 0.f, 100000.f));
-	LOG(INFO, "Setting LOD ", p_lod, " visibility range: ", _lod_ranges[p_lod]);
+	LOG(DEBUG, "Setting LOD ", p_lod, " visibility range: ", _lod_ranges[p_lod]);
 	emit_signal("instancer_setting_changed");
 }
 
@@ -465,7 +465,7 @@ real_t WorldScape3DMeshAsset::get_lod_range_end(const int p_lod) const {
 void WorldScape3DMeshAsset::set_fade_margin(const real_t p_fade_margin) {
 	int max_range = CLAMP(_lod_ranges[1] - _lod_ranges[0], 0.f, 64.f);
 	_fade_margin = CLAMP(p_fade_margin, 0.f, max_range);
-	LOG(INFO, "Setting visibility margin: ", _fade_margin);
+	LOG(DEBUG, "Setting visibility margin: ", _fade_margin);
 	emit_signal("instancer_setting_changed");
 }
 

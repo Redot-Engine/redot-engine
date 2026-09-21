@@ -154,7 +154,7 @@ String WorldScape3DMaterial::_apply_inserts(const String &p_shader, const Array 
 }
 
 String WorldScape3DMaterial::_generate_shader_code() const {
-	LOG(INFO, "Generating default shader code");
+	LOG(DEBUG, "Generating default shader code");
 	Array excludes;
 	if (_world_background != NOISE) {
 		excludes.push_back("WORLD_NOISE1");
@@ -431,7 +431,7 @@ String WorldScape3DMaterial::_inject_editor_code(const String &p_shader) const {
 
 void WorldScape3DMaterial::_update_shader() {
 	IS_INIT(WS3D_RETURN_VOID);
-	LOG(INFO, "Updating shader");
+	LOG(DEBUG, "Updating shader");
 	String code;
 	Ref<RegEx> regex;
 	Ref<RegExMatch> match;
@@ -483,7 +483,7 @@ void WorldScape3DMaterial::_update_shader() {
 
 	// If no noise texture, generate one
 	if (_active_params.has("noise_texture") && rs->material_get_param(_material, "noise_texture").get_type() == Variant::NIL) {
-		LOG(INFO, "Generating default noise_texture for shader");
+		LOG(DEBUG, "Generating default noise_texture for shader");
 		Ref<FastNoiseLite> fnoise;
 		fnoise.instantiate();
 		fnoise->set_noise_type(FastNoiseLite::TYPE_CELLULAR);
@@ -572,7 +572,7 @@ void WorldScape3DMaterial::_update_maps() {
 void WorldScape3DMaterial::_update_texture_arrays() {
 	IS_DATA_INIT(WS3D_RETURN_VOID);
 	Ref<WorldScape3DAssets> asset_list = _terrain->get_assets();
-	LOG(INFO, "Updating texture arrays in shader");
+	LOG(DEBUG, "Updating texture arrays in shader");
 	if (asset_list.is_null() || !asset_list->is_initialized()) {
 		LOG(ERROR, "Asset list is not initialized");
 		return;
@@ -601,7 +601,7 @@ void WorldScape3DMaterial::_update_texture_arrays() {
 }
 
 void WorldScape3DMaterial::_set_shader_parameters(const Dictionary &p_dict) {
-	LOG(INFO, "Setting shader params dictionary: ", p_dict.size());
+	LOG(DEBUG, "Setting shader params dictionary: ", p_dict.size());
 	_shader_params = p_dict;
 }
 
@@ -619,7 +619,7 @@ void WorldScape3DMaterial::initialize(WorldScape3D *p_terrain) {
 		LOG(ERROR, "Initialization failed, p_terrain is null");
 		return;
 	}
-	LOG(INFO, "Initializing material");
+	LOG(DEBUG, "Initializing material");
 	_preload_shaders();
 	if (!_material.is_valid()) {
 		_material = RenderingServer::get_singleton()->material_create();
@@ -630,12 +630,12 @@ void WorldScape3DMaterial::initialize(WorldScape3D *p_terrain) {
 }
 
 void WorldScape3DMaterial::uninitialize() {
-	LOG(INFO, "Uninitializing material");
+	LOG(DEBUG, "Uninitializing material");
 	_terrain = nullptr;
 }
 
 void WorldScape3DMaterial::destroy() {
-	LOG(INFO, "Destroying material");
+	LOG(DEBUG, "Destroying material");
 	_terrain = nullptr;
 	_shader.unref();
 	_shader_code.clear();
@@ -653,31 +653,31 @@ void WorldScape3DMaterial::update() {
 }
 
 void WorldScape3DMaterial::set_world_background(const WorldBackground p_background) {
-	LOG(INFO, "Enable world background: ", p_background);
+	LOG(DEBUG, "Enable world background: ", p_background);
 	_world_background = p_background;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_texture_filtering(const TextureFiltering p_filtering) {
-	LOG(INFO, "Setting texture filtering: ", p_filtering);
+	LOG(DEBUG, "Setting texture filtering: ", p_filtering);
 	_texture_filtering = p_filtering;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_auto_shader(const bool p_enabled) {
-	LOG(INFO, "Enable auto shader: ", p_enabled);
+	LOG(DEBUG, "Enable auto shader: ", p_enabled);
 	_auto_shader = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_dual_scaling(const bool p_enabled) {
-	LOG(INFO, "Enable dual scaling: ", p_enabled);
+	LOG(DEBUG, "Enable dual scaling: ", p_enabled);
 	_dual_scaling = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::enable_shader_override(const bool p_enabled) {
-	LOG(INFO, "Enable shader override: ", p_enabled);
+	LOG(DEBUG, "Enable shader override: ", p_enabled);
 	_shader_override_enabled = p_enabled;
 	if (_shader_override_enabled && _shader_override.is_null()) {
 		LOG(DEBUG, "Instantiating new _shader_override");
@@ -687,133 +687,133 @@ void WorldScape3DMaterial::enable_shader_override(const bool p_enabled) {
 }
 
 void WorldScape3DMaterial::set_shader_override(const Ref<Shader> &p_shader) {
-	LOG(INFO, "Setting override shader");
+	LOG(DEBUG, "Setting override shader");
 	_shader_override = p_shader;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_shader_param(const StringName &p_name, const Variant &p_value) {
-	LOG(INFO, "Setting shader parameter: ", p_name);
+	LOG(DEBUG, "Setting shader parameter: ", p_name);
 	_set(p_name, p_value);
 }
 
 Variant WorldScape3DMaterial::get_shader_param(const StringName &p_name) const {
-	LOG(INFO, "Getting shader parameter: ", p_name);
+	LOG(DEBUG, "Getting shader parameter: ", p_name);
 	Variant value;
 	_get(p_name, value);
 	return value;
 }
 
 void WorldScape3DMaterial::set_show_region_grid(const bool p_enabled) {
-	LOG(INFO, "Enable show_region_grid: ", p_enabled);
+	LOG(DEBUG, "Enable show_region_grid: ", p_enabled);
 	_show_region_grid = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_instancer_grid(const bool p_enabled) {
-	LOG(INFO, "Enable show_instancer_grid: ", p_enabled);
+	LOG(DEBUG, "Enable show_instancer_grid: ", p_enabled);
 	_show_instancer_grid = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_vertex_grid(const bool p_enabled) {
-	LOG(INFO, "Enable show_vertex_grid: ", p_enabled);
+	LOG(DEBUG, "Enable show_vertex_grid: ", p_enabled);
 	_show_vertex_grid = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_contours(const bool p_enabled) {
-	LOG(INFO, "Enable show_contours: ", p_enabled);
+	LOG(DEBUG, "Enable show_contours: ", p_enabled);
 	_show_contours = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_navigation(const bool p_enabled) {
-	LOG(INFO, "Enable show_navigation: ", p_enabled);
+	LOG(DEBUG, "Enable show_navigation: ", p_enabled);
 	_show_navigation = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_checkered(const bool p_enabled) {
-	LOG(INFO, "Enable set_show_checkered: ", p_enabled);
+	LOG(DEBUG, "Enable set_show_checkered: ", p_enabled);
 	_debug_view_checkered = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_grey(const bool p_enabled) {
-	LOG(INFO, "Enable show_grey: ", p_enabled);
+	LOG(DEBUG, "Enable show_grey: ", p_enabled);
 	_debug_view_grey = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_heightmap(const bool p_enabled) {
-	LOG(INFO, "Enable show_heightmap: ", p_enabled);
+	LOG(DEBUG, "Enable show_heightmap: ", p_enabled);
 	_debug_view_heightmap = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_jaggedness(const bool p_enabled) {
-	LOG(INFO, "Enable show_jaggedness: ", p_enabled);
+	LOG(DEBUG, "Enable show_jaggedness: ", p_enabled);
 	_debug_view_jaggedness = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_colormap(const bool p_enabled) {
-	LOG(INFO, "Enable show_colormap: ", p_enabled);
+	LOG(DEBUG, "Enable show_colormap: ", p_enabled);
 	_debug_view_colormap = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_roughmap(const bool p_enabled) {
-	LOG(INFO, "Enable show_roughmap: ", p_enabled);
+	LOG(DEBUG, "Enable show_roughmap: ", p_enabled);
 	_debug_view_roughmap = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_control_texture(const bool p_enabled) {
-	LOG(INFO, "Enable show_control_texture: ", p_enabled);
+	LOG(DEBUG, "Enable show_control_texture: ", p_enabled);
 	_debug_view_control_texture = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_control_angle(const bool p_enabled) {
-	LOG(INFO, "Enable show_control_angle: ", p_enabled);
+	LOG(DEBUG, "Enable show_control_angle: ", p_enabled);
 	_debug_view_control_angle = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_control_scale(const bool p_enabled) {
-	LOG(INFO, "Enable show_control_scale: ", p_enabled);
+	LOG(DEBUG, "Enable show_control_scale: ", p_enabled);
 	_debug_view_control_scale = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_control_blend(const bool p_enabled) {
-	LOG(INFO, "Enable show_control_blend: ", p_enabled);
+	LOG(DEBUG, "Enable show_control_blend: ", p_enabled);
 	_debug_view_control_blend = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_autoshader(const bool p_enabled) {
-	LOG(INFO, "Enable show_autoshader: ", p_enabled);
+	LOG(DEBUG, "Enable show_autoshader: ", p_enabled);
 	_debug_view_autoshader = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_texture_height(const bool p_enabled) {
-	LOG(INFO, "Enable show_texture_height: ", p_enabled);
+	LOG(DEBUG, "Enable show_texture_height: ", p_enabled);
 	_debug_view_tex_height = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_texture_normal(const bool p_enabled) {
-	LOG(INFO, "Enable show_texture_normal: ", p_enabled);
+	LOG(DEBUG, "Enable show_texture_normal: ", p_enabled);
 	_debug_view_tex_normal = p_enabled;
 	_update_shader();
 }
 
 void WorldScape3DMaterial::set_show_texture_rough(const bool p_enabled) {
-	LOG(INFO, "Enable show_texture_rough: ", p_enabled);
+	LOG(DEBUG, "Enable show_texture_rough: ", p_enabled);
 	_debug_view_tex_rough = p_enabled;
 	_update_shader();
 }
@@ -877,7 +877,7 @@ Error WorldScape3DMaterial::save(const String &p_path) {
 		LOG(DEBUG, "Attempting to save external file: " + path);
 		err = ResourceSaver::save(this, path, ResourceSaver::FLAG_COMPRESS);
 		if (err == OK) {
-			LOG(INFO, "File saved successfully: ", path);
+			LOG(DEBUG, "File saved successfully: ", path);
 		} else {
 			LOG(ERROR, "Cannot save file: ", path, ". Error code: ", ERROR, ". Look up @GlobalScope Error enum in the Godot docs");
 		}

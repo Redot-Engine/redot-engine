@@ -643,7 +643,7 @@ void WorldScape3DEditor::_store_undo() {
 
 	// Store data in Godot's Undo/Redo Manager
 	EditorUndoRedoManager *undo_redo = _terrain->get_plugin()->get_undo_redo();
-	LOG(INFO, "Storing undo snapshot");
+	LOG(DEBUG, "Storing undo snapshot");
 	String action_name = String("WorldScape3D ") + OPNAME[_operation] + String(" ") + TOOLNAME[_tool];
 	LOG(DEBUG, "Creating undo action: '", action_name, "'");
 	undo_redo->create_action(action_name, UndoRedo::MERGE_DISABLE, _terrain);
@@ -660,7 +660,7 @@ void WorldScape3DEditor::_store_undo() {
 
 void WorldScape3DEditor::_apply_undo(const Dictionary &p_data) {
 	IS_INIT_COND_MESG(!_terrain->get_plugin(), "_terrain isn't initialized, returning", WS3D_RETURN_VOID);
-	LOG(INFO, "Applying Undo/Redo data");
+	LOG(DEBUG, "Applying Undo/Redo data");
 
 	WorldScape3DData *data = _terrain->get_data();
 
@@ -825,7 +825,7 @@ void WorldScape3DEditor::set_tool(const Tool p_tool) {
 // Called on mouse click
 void WorldScape3DEditor::start_operation(const Vector3 &p_global_position) {
 	IS_DATA_INIT_MESG("Terrain isn't initialized", WS3D_RETURN_VOID);
-	LOG(INFO, "Setting up undo snapshot");
+	LOG(WorldScape3D::DEBUG, "Setting up undo snapshot");
 	_undo_data.clear();
 	_undo_data["region_locations"] = _terrain->get_data()->get_region_locations().duplicate();
 	_is_operating = true;

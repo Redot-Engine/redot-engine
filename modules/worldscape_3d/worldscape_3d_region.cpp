@@ -44,7 +44,7 @@
 /////////////////////
 
 void WorldScape3DRegion::set_version(const real_t p_version) {
-	LOG(INFO, vformat("%.3f", p_version));
+	LOG(DEBUG, vformat("%.3f", p_version));
 	_version = p_version;
 	if (_version < WorldScape3DData::CURRENT_VERSION) {
 		LOG(WARN, "Region ", get_path(), " version ", vformat("%.3f", _version),
@@ -109,7 +109,7 @@ void WorldScape3DRegion::set_maps(const TypedArray<Image> &p_maps) {
 }
 
 TypedArray<Image> WorldScape3DRegion::get_maps() const {
-	LOG(INFO, "Retrieving maps from region: ", _location);
+	LOG(DEBUG, "Retrieving maps from region: ", _location);
 	TypedArray<Image> maps;
 	maps.push_back(_height_map);
 	maps.push_back(_control_map);
@@ -118,7 +118,7 @@ TypedArray<Image> WorldScape3DRegion::get_maps() const {
 }
 
 void WorldScape3DRegion::set_height_map(const Ref<Image> &p_map) {
-	LOG(INFO, "Setting height map for region: ", (_location.x != INT32_MAX) ? String(_location) : "(new)");
+	LOG(DEBUG, "Setting height map for region: ", (_location.x != INT32_MAX) ? String(_location) : "(new)");
 	if (_region_size == 0) {
 		set_region_size((p_map.is_valid()) ? p_map->get_width() : 0);
 	}
@@ -127,7 +127,7 @@ void WorldScape3DRegion::set_height_map(const Ref<Image> &p_map) {
 }
 
 void WorldScape3DRegion::set_control_map(const Ref<Image> &p_map) {
-	LOG(INFO, "Setting control map for region: ", (_location.x != INT32_MAX) ? String(_location) : "(new)");
+	LOG(DEBUG, "Setting control map for region: ", (_location.x != INT32_MAX) ? String(_location) : "(new)");
 	if (_region_size == 0) {
 		set_region_size((p_map.is_valid()) ? p_map->get_width() : 0);
 	}
@@ -135,7 +135,7 @@ void WorldScape3DRegion::set_control_map(const Ref<Image> &p_map) {
 }
 
 void WorldScape3DRegion::set_color_map(const Ref<Image> &p_map) {
-	LOG(INFO, "Setting color map for region: ", (_location.x != INT32_MAX) ? String(_location) : "(new)");
+	LOG(DEBUG, "Setting color map for region: ", (_location.x != INT32_MAX) ? String(_location) : "(new)");
 	if (_region_size == 0) {
 		set_region_size((p_map.is_valid()) ? p_map->get_width() : 0);
 	}
@@ -217,7 +217,7 @@ bool WorldScape3DRegion::validate_map_size(const Ref<Image> &p_map) const {
 }
 
 void WorldScape3DRegion::set_height_range(const Vector2 &p_range) {
-	LOG(INFO, vformat("%.2v", p_range));
+	LOG(DEBUG, vformat("%.2v", p_range));
 	if (_height_range != p_range) {
 		// If initial value, we're loading it from disk, else mark modified
 		if (_height_range != V2_ZERO) {
@@ -270,7 +270,7 @@ Error WorldScape3DRegion::save(const String &p_path, const bool p_16_bit) {
 	}
 	if (err == OK) {
 		_modified = false;
-		LOG(INFO, "File saved successfully");
+		LOG(DEBUG, "File saved successfully");
 	} else {
 		LOG(ERROR, "Cannot save region file: ", get_path(), ". Error code: ", ERROR, ". Look up @GlobalScope Error enum in the Godot docs");
 	}
@@ -285,7 +285,7 @@ void WorldScape3DRegion::set_location(const Vector2i &p_location) {
 				-WorldScape3DData::REGION_MAP_SIZE / 2, " to ", WorldScape3DData::REGION_MAP_SIZE / 2 - 1);
 		return;
 	}
-	LOG(INFO, "Set location: ", p_location);
+	LOG(DEBUG, "Set location: ", p_location);
 	_location = p_location;
 }
 
