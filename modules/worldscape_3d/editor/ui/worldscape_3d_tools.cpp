@@ -674,15 +674,15 @@ void WorldScape3DToolSettings::init() {
 
 	make_setting("name", "size", "type", SettingType::SLIDER, "list", _main_list,
 			"default", 20, "unit", "m", "range", Vector3{ 0.1, 200, 1 },
-			"flags", ALLOW_LARGER | ADD_SPACER);
+			"flags", ADD_SPACER);
 
 	make_setting("name", "strength", "type", SettingType::SLIDER, "list", _main_list,
 			"default", 33, "unit", "%", "range", Vector3{ 1, 100, 1 },
-			"flags", ALLOW_LARGER);
+			"flags", ADD_SPACER);
 
 	make_setting("name", "height", "type", SettingType::SLIDER, "list", _main_list,
 			"default", 20, "unit", "m", "range", Vector3{ -500, 500, 0.1 },
-			"flags", ALLOW_OUT_OF_BOUNDS);
+			"flags", ADD_SPACER);
 	make_setting("name", "height_picker", "type", SettingType::PICKER, "list", _main_list,
 			"default", WorldScape3DEditor::Tool::HEIGHT, "flags", NO_LABEL);
 
@@ -706,7 +706,7 @@ void WorldScape3DToolSettings::init() {
 
 	// Slope painting filter
 	make_setting("name", "slope", "type", SettingType::DOUBLE_SLIDER, "list", _main_list,
-			"default", Vector2{ 0, 90 }, "unit", deg, "range", Vector3{ 0, 90, 1 }, "flags", ADD_SEPARATOR);
+			"default", Vector2{ 0, 90 }, "unit", deg, "range", Vector3{ 0, 90, 1 }, "flags", ADD_SPACER | ADD_SEPARATOR);
 
 	make_setting("name", "enable_angle", "label", "Angle", "list", _main_list,
 			"type", SettingType::CHECKBOX, "default", true, "flags", ADD_SEPARATOR);
@@ -737,15 +737,15 @@ void WorldScape3DToolSettings::init() {
 	// Instancer
 	_height_list = cast_to<VBoxContainer>(create_submenu(_main_list, "Height", Layout::VERTICAL));
 	make_setting("name", "height_offset", "type", SettingType::SLIDER, "list", _height_list, "default", 0, "unit", "m",
-			"range", Vector3{ -10, 10, 0.05 }, "flags", ALLOW_OUT_OF_BOUNDS);
+			"range", Vector3{ -10, 10, 0.05 }, "flags", NONE);
 	make_setting("name", "random_height", "label", "Random Height " + pm, "type", SettingType::SLIDER, "list", _height_list,
-			"default", 0, "unit", "m", "range", Vector3{ 0, 10, 0.05 }, "flags", ALLOW_OUT_OF_BOUNDS);
+			"default", 0, "unit", "m", "range", Vector3{ 0, 10, 0.05 }, "flags", NONE);
 
 	_scale_list = cast_to<VBoxContainer>(create_submenu(_main_list, "Scale", Layout::VERTICAL));
 	make_setting("name", "fixed_scale", "type", SettingType::SLIDER, "list", _scale_list, "default", 100, "unit", "%",
-			"range", Vector3{ 0, 1000, 1 }, "flags", ALLOW_OUT_OF_BOUNDS);
+			"range", Vector3{ 0, 1000, 1 }, "flags", NONE);
 	make_setting("name", "random_scale", "label", "Random Scale " + pm, "type", SettingType::SLIDER, "list", _scale_list,
-			"default", 20, "unit", "%", "range", Vector3{ 0, 99, 1 }, "flags", ALLOW_OUT_OF_BOUNDS);
+			"default", 20, "unit", "%", "range", Vector3{ 0, 99, 1 }, "flags", NONE);
 
 	_rotation_list = cast_to<VBoxContainer>(create_submenu(_main_list, "Rotation", Layout::VERTICAL));
 	make_setting("name", "fixed_spin", "label", "Fixed Spin (Around Y)", "type", SettingType::SLIDER,
@@ -753,9 +753,9 @@ void WorldScape3DToolSettings::init() {
 	make_setting("name", "random_spin", "type", SettingType::SLIDER, "list", _rotation_list,
 			"default", 360, "unit", deg, "range", Vector3{ 0, 360, 1 });
 	make_setting("name", "fixed_tilt", "label", "Fixed Tilt", "type", SettingType::SLIDER, "list", _rotation_list,
-			"default", 0, "unit", deg, "range", Vector3{ -85, 85, 1 }, "flags", ALLOW_OUT_OF_BOUNDS);
+			"default", 0, "unit", deg, "range", Vector3{ -85, 85, 1 }, "flags", NONE);
 	make_setting("name", "fixed_tilt", "label", "Random Tilt " + pm, "type", SettingType::SLIDER, "list", _rotation_list,
-			"default", 10, "unit", deg, "range", Vector3{ 0, 85, 1 }, "flags", ALLOW_OUT_OF_BOUNDS);
+			"default", 10, "unit", deg, "range", Vector3{ 0, 85, 1 }, "flags", NONE);
 	make_setting("name", "align_to_normal", "type", SettingType::CHECKBOX, "list", _rotation_list, "default", false);
 
 	_color_list = cast_to<VBoxContainer>(create_submenu(_main_list, "Color", Layout::VERTICAL));
