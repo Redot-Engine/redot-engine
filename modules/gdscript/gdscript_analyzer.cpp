@@ -2925,18 +2925,25 @@ void GDScriptAnalyzer::resolve_struct(GDScriptParser::StructNode *p_struct) {
 			continue;
 		}
 
+		const bool field_is_struct = field_type.kind == GDScriptParser::DataType::BUILTIN &&
+				field_type.builtin_type == Variant::STRUCT && field_type.struct_type != nullptr;
+
 		if (field->initializer != nullptr && field->initializer->is_constant) {
 			f.default_value = field->initializer->reduced_value;
-		} else if (field->initializer != nullptr && !_is_default_struct_constructor(field->initializer, field_type)) {
-			// A struct field default is baked into the schema, so it must be constant-foldable.
-			push_error(vformat(R"(Struct field "%s" initializer must be a constant expression.)", f.name), field->initializer);
-			ok = false;
-			continue;
-		} else if (!field_type.is_nullable && field_type.kind == GDScriptParser::DataType::BUILTIN &&
-				field_type.builtin_type == Variant::STRUCT && field_type.struct_type != nullptr) {
-			// A non-nullable nested struct field defaults to its own schema default, so a required
-			// field is never left null (cyclic value dependencies are already rejected above). A
-			// zero-argument `T.new()` initializer also lands here, matching the same default.
+		} else if (field_is_struct && field->initializer != nullptr) {
+			// A nested struct field default is baked into the schema. A zero-argument `T.new()`
+			// initializer equals that schema default (nullable or not); any other non-constant
+			// initializer can't be folded into the schema and is rejected.
+			if (!_is_default_struct_constructor(field->initializer, field_type)) {
+				push_error(vformat(R"(Struct field "%s" initializer must be a constant expression.)", f.name), field->initializer);
+				ok = false;
+				continue;
+			}
+			f.default_value = make_struct_schema_default(field_type.struct_type);
+		} else if (field_is_struct && !field_type.is_nullable) {
+			// A non-nullable nested struct field with no initializer defaults to its own schema
+			// default, so a required field is never left null (cyclic value dependencies are
+			// already rejected above).
 			f.default_value = make_struct_schema_default(field_type.struct_type);
 		} else if (!field_type.is_nullable && f.is_typed && f.type != Variant::NIL && f.type != Variant::STRUCT) {
 			Callable::CallError err;
@@ -6629,17 +6636,19 @@ Variant GDScriptAnalyzer::make_variable_default_value(GDScriptParser::VariableNo
 	Variant result = Variant();
 
 	GDScriptParser::DataType datatype = p_variable->get_datatype();
-	const bool is_struct = datatype.is_hard_type() && !datatype.is_nullable &&
+	const bool is_struct_type = datatype.is_hard_type() &&
 			datatype.kind == GDScriptParser::DataType::BUILTIN && datatype.builtin_type == Variant::STRUCT &&
 			datatype.struct_type != nullptr;
+	const bool is_struct = is_struct_type && !datatype.is_nullable;
 
 	if (p_variable->initializer) {
 		bool is_initializer_value_reduced = false;
 		Variant initializer_value = make_expression_reduced_value(p_variable->initializer, is_initializer_value_reduced);
 		if (is_initializer_value_reduced) {
 			result = initializer_value;
-		} else if (is_struct && _is_default_struct_constructor(p_variable->initializer, datatype)) {
+		} else if (is_struct_type && _is_default_struct_constructor(p_variable->initializer, datatype)) {
 			// `@export var s: T = T.new()`: not constant-foldable, but equal to the schema default.
+			// Honored even when `T` is nullable, since the initializer names an explicit value.
 			result = make_struct_schema_default(datatype.struct_type);
 		}
 	} else if (datatype.is_hard_type() && !datatype.is_nullable) {
