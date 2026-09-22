@@ -746,6 +746,18 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 		class_names[class_name] = usertype_color;
 	}
 
+	// Global structs (declared with `struct_name`).
+	List<StringName> global_structs;
+	ScriptServer::get_global_struct_list(&global_structs);
+	for (const StringName &struct_name : global_structs) {
+		class_names[struct_name] = usertype_color;
+	}
+
+	// Local structs declared in the edited script (not registered globally).
+	for (const StringName &struct_name : _get_local_struct_names()) {
+		class_names[struct_name] = usertype_color;
+	}
+
 	/* Autoloads. */
 	for (const KeyValue<StringName, ProjectSettings::AutoloadInfo> &E : ProjectSettings::get_singleton()->get_autoload_list()) {
 		const ProjectSettings::AutoloadInfo &info = E.value;
@@ -933,6 +945,44 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 	for (int i = 0; i < notice_list.size(); i++) {
 		comment_markers[notice_list[i]] = COMMENT_MARKER_NOTICE;
 	}
+}
+
+Vector<StringName> GDScriptSyntaxHighlighter::_get_local_struct_names() const {
+	// Structs are declared at file scope with `struct Name:` or `struct_name Name:`.
+	// They aren't exposed on the compiled script, so scan the source for their names
+	// to highlight the type name at its declaration and at every use.
+	Vector<StringName> names;
+	if (text_edit == nullptr) {
+		return names;
+	}
+	const int line_count = text_edit->get_line_count();
+	for (int i = 0; i < line_count; i++) {
+		const String line = text_edit->get_line(i).strip_edges();
+		String keyword;
+		if (line.begins_with("struct_name")) {
+			keyword = "struct_name";
+		} else if (line.begins_with("struct")) {
+			keyword = "struct";
+		} else {
+			continue;
+		}
+		int pos = keyword.length();
+		if (pos >= line.length() || !is_whitespace(line[pos])) {
+			continue; // Part of a longer identifier, not the keyword.
+		}
+		while (pos < line.length() && is_whitespace(line[pos])) {
+			pos++;
+		}
+		const int start = pos;
+		if (pos < line.length() && is_unicode_identifier_start(line[pos])) {
+			pos++;
+			while (pos < line.length() && is_unicode_identifier_continue(line[pos])) {
+				pos++;
+			}
+			names.push_back(line.substr(start, pos - start));
+		}
+	}
+	return names;
 }
 
 void GDScriptSyntaxHighlighter::add_color_region(ColorRegion::Type p_type, const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only, bool p_r_prefix) {

@@ -116,6 +116,8 @@ private:
 
 	void add_color_region(ColorRegion::Type p_type, const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only = false, bool p_r_prefix = false);
 
+	Vector<StringName> _get_local_struct_names() const;
+
 public:
 	virtual void _update_cache() override;
 	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override;
