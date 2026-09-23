@@ -40,6 +40,7 @@
 
 #include "core/os/keyboard.h"
 #include "editor/editor_node.h"
+#include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/scene/canvas_item_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
@@ -56,6 +57,8 @@ void Path2DEditor::_notification(int p_what) {
 			curve_del->set_button_icon(get_editor_theme_icon(SNAME("CurveDelete")));
 			curve_close->set_button_icon(get_editor_theme_icon(SNAME("CurveClose")));
 			curve_clear_points->set_button_icon(get_editor_theme_icon(SNAME("Clear")));
+			curve_smooth_points->set_button_icon(get_editor_theme_icon(SNAME("CurveInOut")));
+			curve_reset_handles->set_button_icon(get_editor_theme_icon(SNAME("CurveLinear")));
 
 			create_curve_button->set_button_icon(get_editor_theme_icon(SNAME("Curve2D")));
 		} break;
@@ -89,6 +92,14 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 
 	real_t grab_threshold = EDITOR_GET("editors/polygon_editor/point_grab_radius");
 
+	Ref<InputEventKey> k = p_event;
+	if (k.is_valid() && k->is_pressed() && action == ACTION_NONE && !box_selecting &&
+			!selected_points.is_empty() &&
+			(k->get_keycode() == Key::KEY_DELETE || k->get_keycode() == Key::BACKSPACE)) {
+		_delete_selection();
+		return true;
+	}
+
 	Ref<InputEventMouseButton> mb = p_event;
 	if (mb.is_valid()) {
 		Transform2D xform = canvas_item_editor->get_canvas_transform() * node->get_screen_transform();
@@ -112,10 +123,28 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 					if (mode == MODE_EDIT && !mb->is_shift_pressed() && dist_to_p < grab_threshold) {
 						// Points can only be moved in edit mode.
 
+						bool ctrl_or_cmd = mb->is_command_or_control_pressed();
+						if (ctrl_or_cmd && selected_points.has(i)) {
+							// Ctrl-click on an already-selected point toggles it off.
+							selected_points.erase(i);
+							canvas_item_editor->update_viewport();
+							return true;
+						}
+						if (!selected_points.has(i)) {
+							_select_point(i, ctrl_or_cmd, false);
+						}
+
 						action = ACTION_MOVING_POINT;
 						action_point = i;
 						moving_from = curve->get_point_position(i);
 						moving_screen_from = gpoint;
+
+						multi_move_start_positions.clear();
+						if (selected_points.size() > 1) {
+							for (int sel : selected_points) {
+								multi_move_start_positions[sel] = curve->get_point_position(sel);
+							}
+						}
 						return true;
 					} else if (mode == MODE_EDIT || mode == MODE_EDIT_CURVE) {
 						control_points_in_range = 0;
@@ -149,6 +178,8 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 						undo_redo->create_action(TTR("Remove Point from Curve"));
 						undo_redo->add_do_method(curve.ptr(), "remove_point", i);
 						undo_redo->add_undo_method(curve.ptr(), "add_point", curve->get_point_position(i), curve->get_point_in(i), curve->get_point_out(i), i);
+						undo_redo->add_do_method(this, "_clear_point_selection");
+						undo_redo->add_undo_method(this, "_clear_point_selection");
 						undo_redo->add_do_method(canvas_item_editor, "update_viewport");
 						undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
 						undo_redo->commit_action();
@@ -172,6 +203,21 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 					}
 				}
 			}
+
+			// Nothing was hit by the loop above — start box selection instead of
+			// falling through to CanvasItemEditor's node box-select.
+			if (mb->get_button_index() == MouseButton::LEFT && mode == MODE_EDIT &&
+					!mb->is_command_or_control_pressed() && !on_edge) {
+				box_selecting = true;
+				box_select_from = gpoint;
+				box_select_to = gpoint;
+				box_select_additive = mb->is_shift_pressed();
+				if (!box_select_additive) {
+					selected_points.clear();
+				}
+				canvas_item_editor->update_viewport();
+				return true;
+			}
 		}
 
 		if (action != ACTION_NONE && mb->is_pressed() && mb->get_button_index() == MouseButton::RIGHT) {
@@ -180,7 +226,8 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 		}
 
 		// Check for point creation.
-		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && ((mb->is_command_or_control_pressed() && mode == MODE_EDIT) || mode == MODE_CREATE)) {
+		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && ((mb->is_command_or_control_pressed() && mode == MODE_EDIT) || mode == MODE_CREATE) &&
+				action == ACTION_NONE) {
 			Ref<Curve2D> curve = node->get_curve();
 			curve->add_point(cpoint);
 			moving_from = cpoint;
@@ -196,7 +243,8 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 		}
 
 		// Check for segment split.
-		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && mode == MODE_EDIT && on_edge) {
+		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && mode == MODE_EDIT && on_edge &&
+				action == ACTION_NONE) {
 			Vector2 gpoint2 = mb->get_position();
 			Ref<Curve2D> curve = node->get_curve();
 
@@ -241,13 +289,26 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 
 				case ACTION_MOVING_POINT:
 					if (original_mouse_pos != gpoint) {
-						undo_redo->create_action(TTR("Move Point in Curve"));
-						undo_redo->add_undo_method(curve.ptr(), "set_point_position", action_point, moving_from);
-						undo_redo->add_do_method(curve.ptr(), "set_point_position", action_point, cpoint);
-						undo_redo->add_do_method(canvas_item_editor, "update_viewport");
-						undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
-						undo_redo->commit_action(false);
+						if (multi_move_start_positions.size() > 1) {
+							Vector2 delta = cpoint - moving_from;
+							undo_redo->create_action(TTR("Move Points in Curve"));
+							for (const KeyValue<int, Point2> &kv : multi_move_start_positions) {
+								undo_redo->add_do_method(curve.ptr(), "set_point_position", kv.key, kv.value + delta);
+								undo_redo->add_undo_method(curve.ptr(), "set_point_position", kv.key, kv.value);
+							}
+							undo_redo->add_do_method(canvas_item_editor, "update_viewport");
+							undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
+							undo_redo->commit_action(false);
+						} else {
+							undo_redo->create_action(TTR("Move Point in Curve"));
+							undo_redo->add_undo_method(curve.ptr(), "set_point_position", action_point, moving_from);
+							undo_redo->add_do_method(curve.ptr(), "set_point_position", action_point, cpoint);
+							undo_redo->add_do_method(canvas_item_editor, "update_viewport");
+							undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
+							undo_redo->commit_action(false);
+						}
 					}
+					multi_move_start_positions.clear();
 					break;
 				case ACTION_MOVING_NEW_POINT: {
 					undo_redo->create_action(TTR("Add Point to Curve"));
@@ -264,6 +325,10 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 					undo_redo->add_do_method(curve.ptr(), "add_point", Vector2(), Vector2(), Vector2(), action_point);
 					undo_redo->add_do_method(curve.ptr(), "set_point_position", action_point, cpoint);
 					undo_redo->add_undo_method(curve.ptr(), "remove_point", action_point);
+					undo_redo->add_do_method(this, "_clear_point_selection");
+					undo_redo->add_undo_method(this, "_clear_point_selection");
+					_clear_point_selection();
+					canvas_item_editor->update_viewport();
 					undo_redo->add_do_method(canvas_item_editor, "update_viewport");
 					undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
 					undo_redo->commit_action(false);
@@ -306,11 +371,25 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 
 			return true;
 		}
+
+		// End of the drag selection box
+		if (!mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && box_selecting) {
+			box_selecting = false;
+			_box_select_confirm(box_select_additive);
+			canvas_item_editor->update_viewport();
+			return true;
+		}
 	}
 
 	Ref<InputEventMouseMotion> mm = p_event;
 
 	if (mm.is_valid()) {
+		if (box_selecting) {
+			box_select_to = mm->get_position();
+			canvas_item_editor->update_viewport();
+			return true;
+		}
+
 		// When both control points were in range of click,
 		// pick the point that drags the curve outwards.
 		if (control_points_in_range == 2) {
@@ -398,7 +477,14 @@ bool Path2DEditor::forward_gui_input(const Ref<InputEvent> &p_event) {
 				case ACTION_MOVING_POINT:
 				case ACTION_MOVING_NEW_POINT:
 				case ACTION_MOVING_NEW_POINT_FROM_SPLIT: {
-					curve->set_point_position(action_point, cpoint);
+					if (action == ACTION_MOVING_POINT && multi_move_start_positions.size() > 1) {
+						Vector2 delta = cpoint - moving_from;
+						for (const KeyValue<int, Point2> &kv : multi_move_start_positions) {
+							curve->set_point_position(kv.key, kv.value + delta);
+						}
+					} else {
+						curve->set_point_position(action_point, cpoint);
+					}
 				} break;
 
 				case ACTION_MOVING_IN: {
@@ -454,7 +540,9 @@ void Path2DEditor::forward_canvas_draw_over_viewport(Control *p_overlay) {
 	debug_handle_lines.clear();
 	debug_handle_curve_transforms.clear();
 	debug_handle_sharp_transforms.clear();
+	debug_handle_sharp_indices.clear();
 	debug_handle_smooth_transforms.clear();
+	debug_handle_smooth_indices.clear();
 
 	Transform2D handle_curve_transform = Transform2D().scaled(curve_handle_size * 0.5);
 	Transform2D handle_point_transform = Transform2D().scaled(handle_size * 0.5);
@@ -489,8 +577,10 @@ void Path2DEditor::forward_canvas_draw_over_viewport(Control *p_overlay) {
 		handle_point_transform.set_origin(point);
 		if (smooth) {
 			debug_handle_smooth_transforms.push_back(handle_point_transform);
+			debug_handle_smooth_indices.push_back(i);
 		} else {
 			debug_handle_sharp_transforms.push_back(handle_point_transform);
+			debug_handle_sharp_indices.push_back(i);
 		}
 	}
 
@@ -523,26 +613,31 @@ void Path2DEditor::forward_canvas_draw_over_viewport(Control *p_overlay) {
 	rs->multimesh_set_visible_instances(debug_handle_curve_multimesh_rid, 0);
 	if (handle_curve_count > 0) {
 		if (rs->multimesh_get_instance_count(debug_handle_curve_multimesh_rid) != int(handle_curve_count)) {
-			rs->multimesh_allocate_data(debug_handle_curve_multimesh_rid, handle_curve_count, RS::MULTIMESH_TRANSFORM_2D);
+			rs->multimesh_allocate_data(debug_handle_curve_multimesh_rid, handle_curve_count, RS::MULTIMESH_TRANSFORM_2D, true /* p_use_colors */);
 		}
 
 		Vector<float> multimesh_buffer;
-		multimesh_buffer.resize(8 * handle_curve_count);
+		multimesh_buffer.resize(12 * handle_curve_count);
 		float *multimesh_buffer_ptrw = multimesh_buffer.ptrw();
 
 		const Transform2D *debug_handle_transforms_ptr = debug_handle_curve_transforms.ptr();
+		const Color control_point_color = Color(0.85, 0.65, 0.3, 0.85); // Muted amber; blue-yellow axis, low saturation.
 
 		for (uint32_t i = 0; i < handle_curve_count; i++) {
 			const Transform2D &handle_transform = debug_handle_transforms_ptr[i];
 
-			multimesh_buffer_ptrw[i * 8 + 0] = handle_transform[0][0];
-			multimesh_buffer_ptrw[i * 8 + 1] = handle_transform[1][0];
-			multimesh_buffer_ptrw[i * 8 + 2] = 0;
-			multimesh_buffer_ptrw[i * 8 + 3] = handle_transform[2][0];
-			multimesh_buffer_ptrw[i * 8 + 4] = handle_transform[0][1];
-			multimesh_buffer_ptrw[i * 8 + 5] = handle_transform[1][1];
-			multimesh_buffer_ptrw[i * 8 + 6] = 0;
-			multimesh_buffer_ptrw[i * 8 + 7] = handle_transform[2][1];
+			multimesh_buffer_ptrw[i * 12 + 0] = handle_transform[0][0];
+			multimesh_buffer_ptrw[i * 12 + 1] = handle_transform[1][0];
+			multimesh_buffer_ptrw[i * 12 + 2] = 0;
+			multimesh_buffer_ptrw[i * 12 + 3] = handle_transform[2][0];
+			multimesh_buffer_ptrw[i * 12 + 4] = handle_transform[0][1];
+			multimesh_buffer_ptrw[i * 12 + 5] = handle_transform[1][1];
+			multimesh_buffer_ptrw[i * 12 + 6] = 0;
+			multimesh_buffer_ptrw[i * 12 + 7] = handle_transform[2][1];
+			multimesh_buffer_ptrw[i * 12 + 8] = control_point_color.r;
+			multimesh_buffer_ptrw[i * 12 + 9] = control_point_color.g;
+			multimesh_buffer_ptrw[i * 12 + 10] = control_point_color.b;
+			multimesh_buffer_ptrw[i * 12 + 11] = control_point_color.a;
 		}
 
 		rs->multimesh_set_buffer(debug_handle_curve_multimesh_rid, multimesh_buffer);
@@ -556,26 +651,35 @@ void Path2DEditor::forward_canvas_draw_over_viewport(Control *p_overlay) {
 	rs->multimesh_set_visible_instances(debug_handle_sharp_multimesh_rid, 0);
 	if (handle_sharp_count > 0) {
 		if (rs->multimesh_get_instance_count(debug_handle_sharp_multimesh_rid) != int(handle_sharp_count)) {
-			rs->multimesh_allocate_data(debug_handle_sharp_multimesh_rid, handle_sharp_count, RS::MULTIMESH_TRANSFORM_2D);
+			rs->multimesh_allocate_data(debug_handle_sharp_multimesh_rid, handle_sharp_count, RS::MULTIMESH_TRANSFORM_2D, true /* p_use_colors */);
 		}
 
 		Vector<float> multimesh_buffer;
-		multimesh_buffer.resize(8 * handle_sharp_count);
+		multimesh_buffer.resize(12 * handle_sharp_count); // 8 transform floats + 4 color floats.
 		float *multimesh_buffer_ptrw = multimesh_buffer.ptrw();
 
 		const Transform2D *debug_handle_transforms_ptr = debug_handle_sharp_transforms.ptr();
+		const int *debug_handle_indices_ptr = debug_handle_sharp_indices.ptr();
+
+		const Color selected_color = Color(0.4, 1, 1);
+		const Color unselected_color = Color(1, 1, 1);
 
 		for (uint32_t i = 0; i < handle_sharp_count; i++) {
 			const Transform2D &handle_transform = debug_handle_transforms_ptr[i];
+			const Color &c = selected_points.has(debug_handle_indices_ptr[i]) ? selected_color : unselected_color;
 
-			multimesh_buffer_ptrw[i * 8 + 0] = handle_transform[0][0];
-			multimesh_buffer_ptrw[i * 8 + 1] = handle_transform[1][0];
-			multimesh_buffer_ptrw[i * 8 + 2] = 0;
-			multimesh_buffer_ptrw[i * 8 + 3] = handle_transform[2][0];
-			multimesh_buffer_ptrw[i * 8 + 4] = handle_transform[0][1];
-			multimesh_buffer_ptrw[i * 8 + 5] = handle_transform[1][1];
-			multimesh_buffer_ptrw[i * 8 + 6] = 0;
-			multimesh_buffer_ptrw[i * 8 + 7] = handle_transform[2][1];
+			multimesh_buffer_ptrw[i * 12 + 0] = handle_transform[0][0];
+			multimesh_buffer_ptrw[i * 12 + 1] = handle_transform[1][0];
+			multimesh_buffer_ptrw[i * 12 + 2] = 0;
+			multimesh_buffer_ptrw[i * 12 + 3] = handle_transform[2][0];
+			multimesh_buffer_ptrw[i * 12 + 4] = handle_transform[0][1];
+			multimesh_buffer_ptrw[i * 12 + 5] = handle_transform[1][1];
+			multimesh_buffer_ptrw[i * 12 + 6] = 0;
+			multimesh_buffer_ptrw[i * 12 + 7] = handle_transform[2][1];
+			multimesh_buffer_ptrw[i * 12 + 8] = c.r;
+			multimesh_buffer_ptrw[i * 12 + 9] = c.g;
+			multimesh_buffer_ptrw[i * 12 + 10] = c.b;
+			multimesh_buffer_ptrw[i * 12 + 11] = c.a;
 		}
 
 		rs->multimesh_set_buffer(debug_handle_sharp_multimesh_rid, multimesh_buffer);
@@ -589,32 +693,60 @@ void Path2DEditor::forward_canvas_draw_over_viewport(Control *p_overlay) {
 	rs->multimesh_set_visible_instances(debug_handle_smooth_multimesh_rid, 0);
 	if (handle_smooth_count > 0) {
 		if (rs->multimesh_get_instance_count(debug_handle_smooth_multimesh_rid) != int(handle_smooth_count)) {
-			rs->multimesh_allocate_data(debug_handle_smooth_multimesh_rid, handle_smooth_count, RS::MULTIMESH_TRANSFORM_2D);
+			rs->multimesh_allocate_data(debug_handle_smooth_multimesh_rid, handle_smooth_count, RS::MULTIMESH_TRANSFORM_2D, true /* p_use_colors */);
 		}
 
 		Vector<float> multimesh_buffer;
-		multimesh_buffer.resize(8 * handle_smooth_count);
+		multimesh_buffer.resize(12 * handle_smooth_count);
 		float *multimesh_buffer_ptrw = multimesh_buffer.ptrw();
 
 		const Transform2D *debug_handle_transforms_ptr = debug_handle_smooth_transforms.ptr();
+		const int *debug_handle_indices_ptr = debug_handle_smooth_indices.ptr();
+
+		const Color selected_color = Color(0.4, 1, 1);
+		const Color unselected_color = Color(1, 1, 1);
 
 		for (uint32_t i = 0; i < handle_smooth_count; i++) {
 			const Transform2D &handle_transform = debug_handle_transforms_ptr[i];
+			const Color &c = selected_points.has(debug_handle_indices_ptr[i]) ? selected_color : unselected_color;
 
-			multimesh_buffer_ptrw[i * 8 + 0] = handle_transform[0][0];
-			multimesh_buffer_ptrw[i * 8 + 1] = handle_transform[1][0];
-			multimesh_buffer_ptrw[i * 8 + 2] = 0;
-			multimesh_buffer_ptrw[i * 8 + 3] = handle_transform[2][0];
-			multimesh_buffer_ptrw[i * 8 + 4] = handle_transform[0][1];
-			multimesh_buffer_ptrw[i * 8 + 5] = handle_transform[1][1];
-			multimesh_buffer_ptrw[i * 8 + 6] = 0;
-			multimesh_buffer_ptrw[i * 8 + 7] = handle_transform[2][1];
+			multimesh_buffer_ptrw[i * 12 + 0] = handle_transform[0][0];
+			multimesh_buffer_ptrw[i * 12 + 1] = handle_transform[1][0];
+			multimesh_buffer_ptrw[i * 12 + 2] = 0;
+			multimesh_buffer_ptrw[i * 12 + 3] = handle_transform[2][0];
+			multimesh_buffer_ptrw[i * 12 + 4] = handle_transform[0][1];
+			multimesh_buffer_ptrw[i * 12 + 5] = handle_transform[1][1];
+			multimesh_buffer_ptrw[i * 12 + 6] = 0;
+			multimesh_buffer_ptrw[i * 12 + 7] = handle_transform[2][1];
+			multimesh_buffer_ptrw[i * 12 + 8] = c.r;
+			multimesh_buffer_ptrw[i * 12 + 9] = c.g;
+			multimesh_buffer_ptrw[i * 12 + 10] = c.b;
+			multimesh_buffer_ptrw[i * 12 + 11] = c.a;
 		}
 
 		rs->multimesh_set_buffer(debug_handle_smooth_multimesh_rid, multimesh_buffer);
 		rs->multimesh_set_visible_instances(debug_handle_smooth_multimesh_rid, handle_smooth_count);
 
 		rs->canvas_item_add_multimesh(vpc->get_canvas_item(), debug_handle_smooth_multimesh_rid, curve_handle->get_rid());
+	}
+
+	if (box_selecting) {
+		Point2 bsfrom = box_select_from;
+		Point2 bsto = box_select_to;
+		if (bsfrom.x > bsto.x) {
+			SWAP(bsfrom.x, bsto.x);
+		}
+		if (bsfrom.y > bsto.y) {
+			SWAP(bsfrom.y, bsto.y);
+		}
+		p_overlay->draw_rect(
+				Rect2(bsfrom, bsto - bsfrom),
+				get_theme_color(SNAME("box_selection_fill_color"), EditorStringName(Editor)));
+		p_overlay->draw_rect(
+				Rect2(bsfrom, bsto - bsfrom),
+				get_theme_color(SNAME("box_selection_stroke_color"), EditorStringName(Editor)),
+				false,
+				Math::round(EDSCALE));
 	}
 }
 
@@ -637,12 +769,13 @@ void Path2DEditor::_update_toolbar() {
 }
 
 void Path2DEditor::edit(Node *p_path2d) {
-	if (!canvas_item_editor) {
-		canvas_item_editor = CanvasItemEditor::get_singleton();
-	}
-
 	if (action != ACTION_NONE) {
 		_cancel_current_action();
+	}
+	_clear_selection();
+
+	if (!canvas_item_editor) {
+		canvas_item_editor = CanvasItemEditor::get_singleton();
 	}
 
 	if (p_path2d) {
@@ -667,6 +800,7 @@ void Path2DEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_update_toolbar"), &Path2DEditor::_update_toolbar);
 	ClassDB::bind_method(D_METHOD("_clear_curve_points"), &Path2DEditor::_clear_curve_points);
 	ClassDB::bind_method(D_METHOD("_restore_curve_points"), &Path2DEditor::_restore_curve_points);
+	ClassDB::bind_method(D_METHOD("_clear_point_selection"), &Path2DEditor::_clear_point_selection);
 }
 
 void Path2DEditor::_mode_selected(int p_mode) {
@@ -725,6 +859,42 @@ void Path2DEditor::_mode_selected(int p_mode) {
 		undo_redo->create_action(TTR("Clear Curve Points"), UndoRedo::MERGE_DISABLE, node);
 		undo_redo->add_do_method(this, "_clear_curve_points", node);
 		undo_redo->add_undo_method(this, "_restore_curve_points", node, points);
+		undo_redo->add_do_method(this, "_clear_point_selection");
+		undo_redo->add_undo_method(this, "_clear_point_selection");
+		undo_redo->add_do_method(canvas_item_editor, "update_viewport");
+		undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
+		undo_redo->commit_action();
+		return;
+	} else if (p_mode == MODE_SMOOTH_ALL_POINTS) {
+		if (node->get_curve().is_null() || node->get_curve()->get_point_count() < 3) {
+			return;
+		}
+		Ref<Curve2D> curve = node->get_curve();
+		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		Dictionary before = curve->call("_get_data");
+		curve->smooth_all_points();
+		Dictionary after = curve->call("_get_data");
+
+		undo_redo->create_action(TTR("Smooth All Points"));
+		undo_redo->add_do_method(curve.ptr(), "_set_data", after);
+		undo_redo->add_undo_method(curve.ptr(), "_set_data", before);
+		undo_redo->add_do_method(canvas_item_editor, "update_viewport");
+		undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
+		undo_redo->commit_action();
+		return;
+	} else if (p_mode == MODE_RESET_ALL_HANDLES) {
+		if (node->get_curve().is_null() || node->get_curve()->get_point_count() == 0) {
+			return;
+		}
+		Ref<Curve2D> curve = node->get_curve();
+		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		Dictionary before = curve->call("_get_data");
+		curve->reset_all_points_handles();
+		Dictionary after = curve->call("_get_data");
+
+		undo_redo->create_action(TTR("Reset All Handles"));
+		undo_redo->add_do_method(curve.ptr(), "_set_data", after);
+		undo_redo->add_undo_method(curve.ptr(), "_set_data", before);
 		undo_redo->add_do_method(canvas_item_editor, "update_viewport");
 		undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
 		undo_redo->commit_action();
@@ -759,7 +929,13 @@ void Path2DEditor::_cancel_current_action() {
 
 	switch (action) {
 		case ACTION_MOVING_POINT: {
-			curve->set_point_position(action_point, moving_from);
+			if (multi_move_start_positions.size() > 1) {
+				for (const KeyValue<int, Point2> &kv : multi_move_start_positions) {
+					curve->set_point_position(kv.key, kv.value);
+				}
+			} else {
+				curve->set_point_position(action_point, moving_from);
+			}
 		} break;
 
 		case ACTION_MOVING_NEW_POINT: {
@@ -785,7 +961,100 @@ void Path2DEditor::_cancel_current_action() {
 	}
 
 	canvas_item_editor->update_viewport();
+	multi_move_start_positions.clear();
 	action = ACTION_NONE;
+}
+
+void Path2DEditor::_select_point(int p_idx, bool p_add_to_selection, bool p_toggle) {
+	if (!p_add_to_selection) {
+		selected_points.clear();
+	}
+	if (p_toggle && selected_points.has(p_idx)) {
+		selected_points.erase(p_idx);
+	} else {
+		selected_points.insert(p_idx);
+	}
+	canvas_item_editor->update_viewport();
+}
+
+void Path2DEditor::_box_select_confirm(bool p_additive) {
+	Ref<Curve2D> curve = node->get_curve();
+	if (curve.is_null()) {
+		return;
+	}
+	Transform2D xform = canvas_item_editor->get_canvas_transform() * node->get_screen_transform();
+
+	// Normalize the rect: Rect2::has_point() requires a non-negative size.
+	Point2 bsfrom = box_select_from;
+	Point2 bsto = box_select_to;
+	if (bsfrom.x > bsto.x) {
+		SWAP(bsfrom.x, bsto.x);
+	}
+	if (bsfrom.y > bsto.y) {
+		SWAP(bsfrom.y, bsto.y);
+	}
+	Rect2 rect(bsfrom, bsto - bsfrom);
+
+	if (!p_additive) {
+		selected_points.clear();
+	}
+	for (int i = 0; i < curve->get_point_count(); i++) {
+		Vector2 screen_pos = xform.xform(curve->get_point_position(i));
+		if (rect.has_point(screen_pos)) {
+			selected_points.insert(i);
+		}
+	}
+	canvas_item_editor->update_viewport();
+}
+
+void Path2DEditor::_delete_selection() {
+	if (selected_points.is_empty()) {
+		return;
+	}
+
+	Ref<Curve2D> curve = node->get_curve();
+	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+
+	// Sort ascending once; iterate it both ways.
+	Vector<int> indices;
+	for (int idx : selected_points) {
+		indices.push_back(idx);
+	}
+	indices.sort();
+
+	undo_redo->create_action(TTR("Delete Points from Curve"));
+
+	// DO: remove from highest index to lowest, so earlier removals
+	// don't shift the indices of points not yet removed.
+	for (int i = indices.size() - 1; i >= 0; i--) {
+		undo_redo->add_do_method(curve.ptr(), "remove_point", indices[i]);
+	}
+
+	// UNDO: add back from lowest index to highest. UndoRedo runs undo_ops
+	// in the SAME order they were added (not reversed), so this order
+	// must independently reconstruct the original point list correctly,
+	// which is to say, the lowest missing index first.
+	for (int i = 0; i < indices.size(); i++) {
+		int idx = indices[i];
+		undo_redo->add_undo_method(curve.ptr(), "add_point",
+				curve->get_point_position(idx), curve->get_point_in(idx), curve->get_point_out(idx), idx);
+	}
+
+	undo_redo->add_do_method(this, "_clear_point_selection");
+	undo_redo->add_undo_method(this, "_clear_point_selection");
+	undo_redo->add_do_method(canvas_item_editor, "update_viewport");
+	undo_redo->add_undo_method(canvas_item_editor, "update_viewport");
+	undo_redo->commit_action();
+}
+
+void Path2DEditor::_clear_selection() {
+	selected_points.clear();
+	box_selecting = false;
+	multi_move_start_positions.clear();
+}
+
+void Path2DEditor::_clear_point_selection() {
+	selected_points.clear();
 }
 
 void Path2DEditor::_create_curve() {
@@ -857,7 +1126,10 @@ Path2DEditor::Path2DEditor() {
 	curve_edit->set_toggle_mode(true);
 	curve_edit->set_pressed(true);
 	curve_edit->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
-	curve_edit->set_tooltip_text(TTR("Select Points") + "\n" + TTR("Shift+Drag: Select Control Points") + "\n" + keycode_get_string((Key)KeyModifierMask::CMD_OR_CTRL) + TTR("Click: Add Point") + "\n" + TTR("Left Click: Split Segment (in curve)") + "\n" + TTR("Right Click: Delete Point"));
+	curve_edit->set_tooltip_text(TTR("Select Points") + "\n" + TTR("Click: Select single point | (In Curve): Split Segment") + "\n" +
+			vformat(TTR("%sClick: Add Point | (On Point): Add/remove point from selection"), keycode_get_string((Key)KeyModifierMask::CMD_OR_CTRL)) + "\n" +
+			TTR("Drag on empty space: Box-select points") + "\n" + TTR("Shift+Drag: Add to box selection") + "\n" +
+			TTR("Delete/Backspace: Delete selected points") + "\n" + TTR("Right Click: Delete Point"));
 	curve_edit->set_accessibility_name(TTRC("Select Points"));
 	curve_edit->connect(SceneStringName(pressed), callable_mp(this, &Path2DEditor::_mode_selected).bind(MODE_EDIT));
 	toolbar->add_child(curve_edit);
@@ -901,6 +1173,22 @@ Path2DEditor::Path2DEditor() {
 	curve_clear_points->set_tooltip_text(TTR("Clear Points"));
 	curve_clear_points->connect(SceneStringName(pressed), callable_mp(this, &Path2DEditor::_confirm_clear_points));
 	toolbar->add_child(curve_clear_points);
+
+	curve_smooth_points = memnew(Button);
+	curve_smooth_points->set_theme_type_variation(SceneStringName(FlatButton));
+	curve_smooth_points->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
+	curve_smooth_points->set_tooltip_text(TTR("Smooth All Points"));
+	curve_smooth_points->set_accessibility_name(TTRC("Smooth All Points"));
+	curve_smooth_points->connect(SceneStringName(pressed), callable_mp(this, &Path2DEditor::_mode_selected).bind(MODE_SMOOTH_ALL_POINTS));
+	toolbar->add_child(curve_smooth_points);
+
+	curve_reset_handles = memnew(Button);
+	curve_reset_handles->set_theme_type_variation(SceneStringName(FlatButton));
+	curve_reset_handles->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
+	curve_reset_handles->set_tooltip_text(TTR("Reset All Handles"));
+	curve_reset_handles->set_accessibility_name(TTRC("Reset All Handles"));
+	curve_reset_handles->connect(SceneStringName(pressed), callable_mp(this, &Path2DEditor::_mode_selected).bind(MODE_RESET_ALL_HANDLES));
+	toolbar->add_child(curve_reset_handles);
 
 	clear_points_dialog = memnew(ConfirmationDialog);
 	clear_points_dialog->set_title(TTR("Please Confirm..."));
