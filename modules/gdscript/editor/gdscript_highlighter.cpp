@@ -951,12 +951,12 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 	}
 }
 
-Vector<StringName> GDScriptSyntaxHighlighter::_get_local_struct_names() {
+LocalVector<StringName> GDScriptSyntaxHighlighter::_get_local_struct_names() {
 	// Structs are declared at file scope with `struct Name:` or `struct_name Name:`.
 	// They aren't exposed on the compiled script, so scan the source for their names
 	// to highlight the type name at its declaration and at every use. Also record the
 	// lines that make up each struct body so their `var` fields read as members.
-	Vector<StringName> names;
+	LocalVector<StringName> names;
 	struct_body_lines.clear();
 	if (text_edit == nullptr) {
 		return names;
