@@ -480,6 +480,10 @@ Dictionary GDScriptSyntaxHighlighter::_get_line_syntax_highlighting_impl(int p_l
 					}
 				} else if (prev_text == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::VAR) || prev_text == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::FOR) || prev_text == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::TK_CONST)) {
 					in_var_const_declaration = true;
+					// A `var` field inside a struct body reads as a member variable.
+					if (prev_text == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::VAR) && struct_body_lines.has(p_line)) {
+						in_member_variable = true;
+					}
 				}
 
 				// Check for lambda.
@@ -947,17 +951,42 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 	}
 }
 
-Vector<StringName> GDScriptSyntaxHighlighter::_get_local_struct_names() const {
+Vector<StringName> GDScriptSyntaxHighlighter::_get_local_struct_names() {
 	// Structs are declared at file scope with `struct Name:` or `struct_name Name:`.
 	// They aren't exposed on the compiled script, so scan the source for their names
-	// to highlight the type name at its declaration and at every use.
+	// to highlight the type name at its declaration and at every use. Also record the
+	// lines that make up each struct body so their `var` fields read as members.
 	Vector<StringName> names;
+	struct_body_lines.clear();
 	if (text_edit == nullptr) {
 		return names;
 	}
 	const int line_count = text_edit->get_line_count();
+	int struct_indent = -1; // Indentation of the enclosing struct header, or -1 when outside a struct.
 	for (int i = 0; i < line_count; i++) {
-		const String line = text_edit->get_line(i).strip_edges();
+		const String raw = text_edit->get_line(i);
+		int indent = 0;
+		while (indent < raw.length() && is_whitespace(raw[indent])) {
+			indent++;
+		}
+		const String line = raw.substr(indent).strip_edges();
+
+		if (line.is_empty() || line.begins_with("#")) {
+			// Blank and comment lines don't end a struct body.
+			if (struct_indent >= 0) {
+				struct_body_lines.insert(i);
+			}
+			continue;
+		}
+
+		if (struct_indent >= 0) {
+			if (indent > struct_indent) {
+				struct_body_lines.insert(i);
+				continue;
+			}
+			struct_indent = -1; // Dedent closes the struct body.
+		}
+
 		String keyword;
 		if (line.begins_with("struct_name")) {
 			keyword = "struct_name";
@@ -980,6 +1009,7 @@ Vector<StringName> GDScriptSyntaxHighlighter::_get_local_struct_names() const {
 				pos++;
 			}
 			names.push_back(line.substr(start, pos - start));
+			struct_indent = indent;
 		}
 	}
 	return names;
