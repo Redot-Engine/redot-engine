@@ -50,9 +50,14 @@ class EditorSpinSlider;
 class EditorVariantTypePopupMenu;
 class MenuButton;
 class PropertySelector;
+class Resource;
 class SceneTreeDialog;
 class TextEdit;
 class TextureButton;
+
+// Returns true if assigning `p_value` to a property of `p_owner` would create a resource storage
+// cycle (a resource that transitively contains itself), traversing arrays, dictionaries and structs.
+bool editor_property_has_recursive_resource(Resource *p_owner, const Variant &p_value);
 
 class EditorPropertyNil : public EditorProperty {
 	GDCLASS(EditorPropertyNil, EditorProperty);
