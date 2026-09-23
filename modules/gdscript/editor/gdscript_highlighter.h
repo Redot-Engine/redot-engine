@@ -69,6 +69,7 @@ private:
 	HashMap<StringName, Color> reserved_keywords;
 	HashMap<StringName, Color> member_keywords;
 	HashSet<StringName> global_functions;
+	HashSet<int> struct_body_lines; ///< Lines inside a local struct body, for member-coloring its fields.
 
 	enum Type {
 		NONE,
@@ -115,6 +116,8 @@ private:
 	HashMap<String, CommentMarkerLevel> comment_markers;
 
 	void add_color_region(ColorRegion::Type p_type, const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only = false, bool p_r_prefix = false);
+
+	LocalVector<StringName> _get_local_struct_names();
 
 public:
 	virtual void _update_cache() override;
