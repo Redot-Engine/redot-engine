@@ -175,6 +175,7 @@ class Node3DEditorViewport : public Control {
 
 		VIEW_LOCK_ROTATION,
 		VIEW_CINEMATIC_PREVIEW,
+		VIEW_MOVIE_MODE,
 		VIEW_AUTO_ORTHOGONAL,
 		VIEW_MAX
 	};
@@ -492,10 +493,17 @@ private:
 
 	bool previewing_camera = false;
 	bool previewing_cinema = false;
+	bool movie_mode = false;
+	// Renders the previewed camera at Movie Writer's output aspect so the framing shown in
+	// Movie Mode matches the recorded output regardless of editor panel/target aspect.
+	SubViewport *movie_preview_vp = nullptr;
 	bool _is_node_locked(const Node *p_node) const;
 	void _preview_exited_scene();
 	void _preview_camera_property_changed();
 	void _update_centered_labels();
+	void _update_movie_preview();
+	void _update_movie_preview_size();
+	Rect2 _movie_frame_rect() const;
 	void _toggle_camera_preview(bool);
 	void _toggle_cinema_preview(bool);
 	void _init_gizmo_instance(int p_idx);

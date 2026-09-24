@@ -2033,7 +2033,7 @@ Variant::Type Object::get_static_property_type_indexed(const Vector<StringName> 
 }
 
 bool Object::is_queued_for_deletion() const {
-	return _is_queued_for_deletion;
+	return _is_queued_for_deletion.load();
 }
 
 #ifdef TOOLS_ENABLED

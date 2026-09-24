@@ -819,6 +819,13 @@ void PhysicsServer2D::_bind_methods() {
 	BIND_ENUM_CONSTANT(SPACE_PARAM_BODY_TIME_TO_SLEEP);
 	BIND_ENUM_CONSTANT(SPACE_PARAM_CONSTRAINT_DEFAULT_BIAS);
 	BIND_ENUM_CONSTANT(SPACE_PARAM_SOLVER_ITERATIONS);
+	BIND_ENUM_CONSTANT(SPACE_PARAM_SOLVER_MIN_CONSTRAINTS_FOR_THREADING);
+	BIND_ENUM_CONSTANT(SPACE_PARAM_SOLVER_SETUP_THREADING_MODE);
+	BIND_ENUM_CONSTANT(SPACE_PARAM_SOLVER_SETUP_PREDICTION_WINDOW);
+
+	BIND_ENUM_CONSTANT(SOLVER_SETUP_THREADING_STATIC);
+	BIND_ENUM_CONSTANT(SOLVER_SETUP_THREADING_PREDICTED);
+	BIND_ENUM_CONSTANT(SOLVER_SETUP_THREADING_PREDICTED_BIASED);
 
 	BIND_ENUM_CONSTANT(SHAPE_WORLD_BOUNDARY);
 	BIND_ENUM_CONSTANT(SHAPE_SEPARATION_RAY);
@@ -920,11 +927,15 @@ PhysicsServer2D::PhysicsServer2D() {
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/2d/sleep_threshold_angular", PROPERTY_HINT_RANGE, "0,90,0.1,radians_as_degrees"), Math::deg_to_rad(8.0));
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/2d/time_before_sleep", PROPERTY_HINT_RANGE, "0,5,0.01,or_greater,suffix:s"), 0.5);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/2d/solver/solver_iterations", PROPERTY_HINT_RANGE, "1,32,1,or_greater"), 16);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/2d/solver/min_constraints_for_threading", PROPERTY_HINT_RANGE, "0,4096,1,or_greater"), 256);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/2d/solver/setup_threading_mode", PROPERTY_HINT_ENUM, "Static,Predicted,Predicted Biased"), PhysicsServer2D::SOLVER_SETUP_THREADING_PREDICTED);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/2d/solver/setup_prediction_window", PROPERTY_HINT_RANGE, "1,8,1"), 2);
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/2d/solver/contact_recycle_radius", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater"), 1.0);
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/2d/solver/contact_max_separation", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater"), 1.5);
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/2d/solver/contact_max_allowed_penetration", PROPERTY_HINT_RANGE, "0.01,10,0.01,or_greater"), 0.3);
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/2d/solver/default_contact_bias", PROPERTY_HINT_RANGE, "0,1,0.01"), 0.8);
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/2d/solver/default_constraint_bias", PROPERTY_HINT_RANGE, "0,1,0.01"), 0.2);
+	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/2d/solver/pairing_expansion", PROPERTY_HINT_RANGE, "0,200,0.1,or_greater,suffix:px"), 25.0);
 }
 
 PhysicsServer2D::~PhysicsServer2D() {

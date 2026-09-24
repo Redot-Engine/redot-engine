@@ -67,7 +67,7 @@ WorldScape3D::DebugLevel WorldScape3D::debug_level{ ERROR };
 ///////////////////////////
 
 void WorldScape3D::_initialize() {
-	LOG(INFO, "Instantiating main subsystems");
+	LOG(DEBUG, "Instantiating main subsystems");
 
 	// Make blank objects if needed
 	if (!_data) {
@@ -129,7 +129,7 @@ void WorldScape3D::_initialize() {
 
 	// Initialize the system
 	if (!_initialized && _is_inside_world && is_inside_tree()) {
-		LOG(INFO, "Initializing main subsystems");
+		LOG(DEBUG, "Initializing main subsystems");
 		_data->initialize(this);
 		_material->initialize(this);
 		_assets->initialize(this);
@@ -224,12 +224,12 @@ void WorldScape3D::_destroy_labels() {
 }
 
 void WorldScape3D::_destroy_instancer() {
-	LOG(INFO, "Destroying Instancer");
+	LOG(DEBUG, "Destroying Instancer");
 	memdelete_safely(_instancer);
 }
 
 void WorldScape3D::_destroy_collision(const bool p_final) {
-	LOG(INFO, "Destroying Collision");
+	LOG(DEBUG, "Destroying Collision");
 	if (_collision) {
 		_collision->destroy();
 	}
@@ -239,7 +239,7 @@ void WorldScape3D::_destroy_collision(const bool p_final) {
 }
 
 void WorldScape3D::_destroy_mesher(const bool p_final) {
-	LOG(INFO, "Destroying GeoMesh");
+	LOG(DEBUG, "Destroying GeoMesh");
 	if (_mesher) {
 		_mesher->destroy();
 		if (p_final) {
@@ -254,7 +254,7 @@ void WorldScape3D::_setup_mouse_picking() {
 		LOG(ERROR, "Not inside the tree, skipping mouse setup");
 		return;
 	}
-	LOG(INFO, "Setting up mouse picker and get_intersection viewport, camera & screen quad");
+	LOG(DEBUG, "Setting up mouse picker and get_intersection viewport, camera & screen quad");
 	_mouse_vp = memnew(SubViewport);
 	_mouse_vp->set_name("MouseViewport");
 	add_child(_mouse_vp, true);
@@ -462,12 +462,12 @@ WorldScape3D::WorldScape3D() {
 }
 
 void WorldScape3D::set_debug_level(const DebugLevel p_level) {
-	LOG(INFO, "Setting debug level: ", p_level);
+	LOG(DEBUG, "Setting debug level: ", p_level);
 	debug_level = CLAMP(p_level, ERROR, EXTREME);
 }
 
 void WorldScape3D::set_data_directory(String p_dir) {
-	LOG(INFO, "Setting data directory to ", p_dir);
+	LOG(DEBUG, "Setting data directory to ", p_dir);
 	if (_data_directory != p_dir) {
 		if (_data_directory.is_empty() && Util::get_files(p_dir, "terrain*.res").size() == 0) {
 			// If _data_directory was empty and now specified, and has no data
@@ -490,7 +490,7 @@ void WorldScape3D::set_data_directory(String p_dir) {
 void WorldScape3D::set_material(const Ref<WorldScape3DMaterial> &p_material) {
 	if (_material != p_material) {
 		_initialized = false;
-		LOG(INFO, "Setting material");
+		LOG(DEBUG, "Setting material");
 		_material = p_material;
 		_initialize();
 		emit_signal("material_changed");
@@ -500,7 +500,7 @@ void WorldScape3D::set_material(const Ref<WorldScape3DMaterial> &p_material) {
 void WorldScape3D::set_assets(const Ref<WorldScape3DAssets> &p_assets) {
 	if (_assets != p_assets) {
 		_initialized = false;
-		LOG(INFO, "Setting asset list");
+		LOG(DEBUG, "Setting asset list");
 		_assets = p_assets;
 		_initialize();
 		emit_signal("assets_changed");
@@ -541,7 +541,7 @@ void WorldScape3D::set_camera(Camera3D *p_camera) {
 }
 
 void WorldScape3D::set_region_size(const RegionSize p_size) {
-	LOG(INFO, "Setting region size: ", p_size);
+	LOG(DEBUG, "Setting region size: ", p_size);
 	ERR_FAIL_COND(p_size < SIZE_64);
 	ERR_FAIL_COND(p_size > SIZE_4096);
 	_region_size = p_size;
@@ -555,13 +555,13 @@ void WorldScape3D::set_region_size(const RegionSize p_size) {
 }
 
 void WorldScape3D::set_save_16_bit(const bool p_enabled) {
-	LOG(INFO, p_enabled);
+	LOG(DEBUG, p_enabled);
 	_save_16_bit = p_enabled;
 }
 
 void WorldScape3D::set_label_distance(const real_t p_distance) {
 	real_t distance = CLAMP(p_distance, 0.f, 100000.f);
-	LOG(INFO, "Setting region label distance: ", distance);
+	LOG(DEBUG, "Setting region label distance: ", distance);
 	if (_label_distance != distance) {
 		_label_distance = distance;
 		update_region_labels();
@@ -570,7 +570,7 @@ void WorldScape3D::set_label_distance(const real_t p_distance) {
 
 void WorldScape3D::set_label_size(const int p_size) {
 	int size = CLAMP(p_size, 24, 128);
-	LOG(INFO, "Setting region label size: ", size);
+	LOG(DEBUG, "Setting region label size: ", size);
 	if (_label_size != size) {
 		_label_size = size;
 		update_region_labels();
@@ -611,7 +611,7 @@ void WorldScape3D::update_region_labels() {
 
 void WorldScape3D::set_mesh_lods(const int p_count) {
 	if (_mesh_lods != p_count) {
-		LOG(INFO, "Setting mesh levels: ", p_count);
+		LOG(DEBUG, "Setting mesh levels: ", p_count);
 		_mesh_lods = p_count;
 		if (_mesher) {
 			_mesher->initialize(this);
@@ -621,7 +621,7 @@ void WorldScape3D::set_mesh_lods(const int p_count) {
 
 void WorldScape3D::set_mesh_size(const int p_size) {
 	if (_mesh_size != p_size) {
-		LOG(INFO, "Setting mesh size: ", p_size);
+		LOG(DEBUG, "Setting mesh size: ", p_size);
 		_mesh_size = p_size;
 		if (_mesher && _material.is_valid()) {
 			_material->_update_maps();
@@ -634,7 +634,7 @@ void WorldScape3D::set_vertex_spacing(const real_t p_spacing) {
 	real_t spacing = CLAMP(p_spacing, 0.25f, 100.0f);
 	if (_vertex_spacing != spacing) {
 		_vertex_spacing = spacing;
-		LOG(INFO, "Setting vertex spacing: ", _vertex_spacing);
+		LOG(DEBUG, "Setting vertex spacing: ", _vertex_spacing);
 		if (_collision && _data && _instancer && _material.is_valid()) {
 			_data->_vertex_spacing = _vertex_spacing;
 			update_region_labels();
@@ -653,7 +653,7 @@ void WorldScape3D::set_vertex_spacing(const real_t p_spacing) {
 }
 
 void WorldScape3D::set_render_layers(const uint32_t p_layers) {
-	LOG(INFO, "Setting terrain render layers to: ", p_layers);
+	LOG(DEBUG, "Setting terrain render layers to: ", p_layers);
 	_render_layers = p_layers;
 	if (_mesher) {
 		_mesher->update();
@@ -664,7 +664,7 @@ void WorldScape3D::set_mouse_layer(const uint32_t p_layer) {
 	uint32_t layer = CLAMP(p_layer, 21u, 32u);
 	_mouse_layer = layer;
 	uint32_t mouse_mask = 1 << (_mouse_layer - 1);
-	LOG(INFO, "Setting mouse layer: ", layer, " (", mouse_mask, ") on terrain mesh, material, mouse camera, mouse quad");
+	LOG(DEBUG, "Setting mouse layer: ", layer, " (", mouse_mask, ") on terrain mesh, material, mouse camera, mouse quad");
 
 	// Set terrain meshes to mouse layer
 	// Mask off editor render layers by ORing user layers 1-20 and current mouse layer
@@ -698,7 +698,7 @@ void WorldScape3D::set_gi_mode(const GeometryInstance3D::GIMode p_gi_mode) {
 }
 
 void WorldScape3D::set_cull_margin(const real_t p_margin) {
-	LOG(INFO, "Setting extra cull margin: ", p_margin);
+	LOG(DEBUG, "Setting extra cull margin: ", p_margin);
 	_cull_margin = p_margin;
 	if (_mesher) {
 		_mesher->update_aabbs();
@@ -797,7 +797,7 @@ Vector3 WorldScape3D::get_intersection(const Vector3 &p_src_pos, const Vector3 &
  *   generated mesh will not extend above or outside the clipmap at any LOD.
  */
 Ref<Mesh> WorldScape3D::bake_mesh(const int p_lod, const WorldScape3DData::HeightFilter p_filter) const {
-	LOG(INFO, "Baking mesh at lod: ", p_lod, " with filter: ", p_filter);
+	LOG(DEBUG, "Baking mesh at lod: ", p_lod, " with filter: ", p_filter);
 	Ref<Mesh> result;
 	ERR_FAIL_COND_V(_data == nullptr, result);
 
@@ -833,7 +833,7 @@ Ref<Mesh> WorldScape3D::bake_mesh(const int p_lod, const WorldScape3DData::Heigh
  *  dynamic and/or runtime nav mesh baking).
  */
 PackedVector3Array WorldScape3D::generate_nav_mesh_source_geometry(const AABB &p_global_aabb, const bool p_require_nav) const {
-	LOG(INFO, "Generating NavMesh source geometry from terrain");
+	LOG(DEBUG, "Generating NavMesh source geometry from terrain");
 	PackedVector3Array faces;
 	_generate_triangles(faces, nullptr, 0, WorldScape3DData::HEIGHT_FILTER_NEAREST, p_require_nav, p_global_aabb);
 	return faces;
@@ -877,7 +877,7 @@ void WorldScape3D::_notification(const int p_what) {
 
 		case NOTIFICATION_POSTINITIALIZE: {
 			// Object initialized, before script is attached
-			LOG(INFO, "NOTIFICATION_POSTINITIALIZE");
+			LOG(DEBUG, "NOTIFICATION_POSTINITIALIZE");
 			_build_containers();
 			break;
 		}
@@ -885,7 +885,7 @@ void WorldScape3D::_notification(const int p_what) {
 		case NOTIFICATION_ENTER_WORLD: {
 			// Node3D registered to new World3D resource
 			// Sent on scene changes
-			LOG(INFO, "NOTIFICATION_ENTER_WORLD");
+			LOG(DEBUG, "NOTIFICATION_ENTER_WORLD");
 			_is_inside_world = true;
 			if (_mesher) {
 				_mesher->update();
@@ -896,14 +896,14 @@ void WorldScape3D::_notification(const int p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			// Node entered a SceneTree
 			// Sent on scene changes
-			LOG(INFO, "NOTIFICATION_ENTER_TREE");
+			LOG(DEBUG, "NOTIFICATION_ENTER_TREE");
 			set_as_top_level(true); // Don't inherit transforms from parent. Global only.
 			set_transform(Transform3D());
 			set_notify_transform(true);
 			set_meta("_edit_lock_", true);
 			_setup_mouse_picking();
 			if (_free_editor_textures && !IS_EDITOR && _assets.is_valid() && !_assets->get_path().contains("WorldScape3DAssets")) {
-				LOG(INFO, "free_editor_textures enabled, reloading Assets path: ", _assets->get_path());
+				LOG(DEBUG, "free_editor_textures enabled, reloading Assets path: ", _assets->get_path());
 				_assets = ResourceLoader::load(_assets->get_path(), "", ResourceFormatLoader::CACHE_MODE_IGNORE);
 			}
 			_initialize(); // Rebuild anything freed: meshes, collision, instancer
@@ -913,12 +913,12 @@ void WorldScape3D::_notification(const int p_what) {
 
 		case NOTIFICATION_READY: {
 			// Node is ready
-			LOG(INFO, "NOTIFICATION_READY");
+			LOG(DEBUG, "NOTIFICATION_READY");
 			if (_free_editor_textures && !IS_EDITOR && _assets.is_valid()) {
 				if (_assets->get_path().contains("WorldScape3DAssets")) {
 					LOG(WARN, "free_editor_textures requires `Assets` be saved to a file. Do so, or disable the former to turn off this warning");
 				} else {
-					LOG(INFO, "free_editor_textures enabled, clearing texture assets");
+					LOG(DEBUG, "free_editor_textures enabled, clearing texture assets");
 					_assets->clear_textures();
 				}
 			}
@@ -939,7 +939,7 @@ void WorldScape3D::_notification(const int p_what) {
 
 		case NOTIFICATION_VISIBILITY_CHANGED: {
 			// Node3D visibility changed
-			LOG(INFO, "NOTIFICATION_VISIBILITY_CHANGED");
+			LOG(DEBUG, "NOTIFICATION_VISIBILITY_CHANGED");
 			if (_mesher) {
 				_mesher->update();
 			}
@@ -948,14 +948,14 @@ void WorldScape3D::_notification(const int p_what) {
 
 		case NOTIFICATION_EXTENSION_RELOADED: {
 			// Object finished hot reloading
-			LOG(INFO, "NOTIFICATION_EXTENSION_RELOADED");
+			LOG(DEBUG, "NOTIFICATION_EXTENSION_RELOADED");
 			break;
 		}
 
 #ifdef TOOLS_ENABLED
 		case NOTIFICATION_EDITOR_PRE_SAVE: {
 			// Editor Node is about to save the current scene
-			LOG(INFO, "NOTIFICATION_EDITOR_PRE_SAVE");
+			LOG(DEBUG, "NOTIFICATION_EDITOR_PRE_SAVE");
 			if (_data_directory.is_empty()) {
 				LOG(ERROR, "Data directory is empty. Set it to save regions to disk.");
 			} else if (!_data) {
@@ -987,7 +987,7 @@ void WorldScape3D::_notification(const int p_what) {
 		case NOTIFICATION_CRASH: {
 			// Redot's crash handler reports engine is about to crash
 			// Only works on desktop if the crash handler is enabled
-			LOG(INFO, "NOTIFICATION_CRASH");
+			LOG(DEBUG, "NOTIFICATION_CRASH");
 			break;
 		}
 
@@ -996,7 +996,7 @@ void WorldScape3D::_notification(const int p_what) {
 		case NOTIFICATION_EXIT_TREE: {
 			// Node is about to exit a SceneTree
 			// Sent on scene changes
-			LOG(INFO, "NOTIFICATION_EXIT_TREE");
+			LOG(DEBUG, "NOTIFICATION_EXIT_TREE");
 			set_physics_process(false);
 			_destroy_mesher();
 			_destroy_mouse_picking();
@@ -1013,14 +1013,14 @@ void WorldScape3D::_notification(const int p_what) {
 		case NOTIFICATION_EXIT_WORLD: {
 			// Node3D unregistered from current World3D
 			// Sent on scene changes
-			LOG(INFO, "NOTIFICATION_EXIT_WORLD");
+			LOG(DEBUG, "NOTIFICATION_EXIT_WORLD");
 			_is_inside_world = false;
 			break;
 		}
 
 		case NOTIFICATION_PREDELETE: {
 			// Object is about to be deleted
-			LOG(INFO, "NOTIFICATION_PREDELETE");
+			LOG(DEBUG, "NOTIFICATION_PREDELETE");
 			_destroy_mesher(true);
 			_destroy_instancer();
 			_destroy_collision(true);

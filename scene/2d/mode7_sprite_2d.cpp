@@ -193,6 +193,28 @@ void fragment() {
 }
 )";
 
+PackedStringArray Mode7Sprite2D::get_configuration_warnings() const {
+	PackedStringArray warnings = Sprite2D::get_configuration_warnings();
+
+	if (!mode7_region_follow_target.is_empty()) {
+		Node *target = has_node(mode7_region_follow_target) ? get_node(mode7_region_follow_target) : nullptr;
+		if (!target || !Object::cast_to<Node2D>(target)) {
+			warnings.push_back(RTR("Region follow target path must point to a valid Node2D node to work."));
+		} else if (target == this) {
+			warnings.push_back(RTR("Region follow target cannot be this node."));
+		}
+	}
+
+	return warnings;
+}
+
+void Mode7Sprite2D::set_mode7_saved_material(const Ref<Material> &p_material) {
+	_saved_material = p_material;
+}
+Ref<Material> Mode7Sprite2D::get_mode7_saved_material() const {
+	return _saved_material;
+}
+
 void Mode7Sprite2D::_mode7_rebuild_material() {
 	if (_mode7_material.is_null()) {
 		Ref<Shader> shader;
@@ -638,6 +660,13 @@ real_t Mode7Sprite2D::get_mode7_projection_pixel_aspect() const {
 }
 
 void Mode7Sprite2D::_validate_property(PropertyInfo &p_property) const {
+	if (p_property.name == "material" && mode7_enabled) {
+		// The active material is always regenerated from mode7_* properties
+		// via _mode7_rebuild_material(); never persist the generated
+		// ShaderMaterial as if it were the user's original material.
+		p_property.usage &= ~PROPERTY_USAGE_STORAGE;
+	}
+
 	// The projection tuning parameters only affect the scanline-table math in
 	// INTERPOLATION_PROJECTION mode, so lock them when any other mode is active.
 	// (Mirrors the Mode7ScanlineOverride::_validate_property pattern for skew.)
@@ -812,17 +841,23 @@ void Mode7Sprite2D::_notification(int p_what) {
 				set_physics_process(false);
 				mode7_follow_physics_active = false;
 				return;
-			} else if (!is_inside_tree() || !target_2d->is_inside_tree()) {
-				set_physics_process(false);
-				mode7_follow_physics_active = false;
+			} else if (!is_inside_tree()) {
+				// This node itself is not in the tree. NOTIFICATION_EXIT_TREE already
+				// resets mode7_follow_cache/mode7_follow_initialized/mode7_follow_physics_active
+				// and disarms physics_process unconditionally, so don't duplicate or
+				// race with that logic here — just bail out for this frame.
+				return;
+			} else if (!target_2d->is_inside_tree()) {
+				// Only the target is temporarily out of the tree (e.g. being
+				// re-parented). This is recoverable, so keep polling instead of
+				// disarming physics processing — otherwise follow never resumes
+				// once the target re-enters the tree. Force a re-snap once it's
+				// back, so the region doesn't jump on resume.
+				mode7_follow_initialized = false;
 				return;
 			} else if (!is_region_enabled()) {
 				// Skip the update while the region is disabled, but keep
 				// physics processing so follow resumes automatically.
-				return;
-			}
-
-			if (!is_inside_tree()) {
 				return;
 			}
 
@@ -869,6 +904,8 @@ void Mode7Sprite2D::set_mode7_region_follow_target(const NodePath &p_path) {
 			set_physics_process(true);
 			mode7_follow_physics_active = true;
 		}
+
+		update_configuration_warnings();
 	} else if (!p_path.is_empty()) {
 		// Node not in tree yet — defer starting physics too, until we're ready.
 		callable_mp(this, &Mode7Sprite2D::_ensure_follow_physics).call_deferred();
@@ -900,7 +937,7 @@ void Mode7Sprite2D::_update_follow_cache() {
 }
 
 void Mode7Sprite2D::force_update_follow_cache() {
-	_update_follow_cache();
+	_ensure_follow_physics();
 }
 
 void Mode7Sprite2D::_bind_methods() {
@@ -959,6 +996,9 @@ void Mode7Sprite2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_mode7_projection_pixel_aspect", "value"), &Mode7Sprite2D::set_mode7_projection_pixel_aspect);
 	ClassDB::bind_method(D_METHOD("get_mode7_projection_pixel_aspect"), &Mode7Sprite2D::get_mode7_projection_pixel_aspect);
 
+	ClassDB::bind_method(D_METHOD("set_mode7_saved_material", "material"), &Mode7Sprite2D::set_mode7_saved_material);
+	ClassDB::bind_method(D_METHOD("get_mode7_saved_material"), &Mode7Sprite2D::get_mode7_saved_material);
+
 	// Properties (exposed in the Inspector) -----------------------------------
 
 	// Global (un-grouped)
@@ -1015,6 +1055,9 @@ void Mode7Sprite2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mode7_projection_pixel_aspect",
 						 PROPERTY_HINT_RANGE, "0.875,1.125,0.001"),
 			"set_mode7_projection_pixel_aspect", "get_mode7_projection_pixel_aspect");
+
+	// Internal - for persistence
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mode7_saved_material", PROPERTY_HINT_RESOURCE_TYPE, "Material", PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_NO_EDITOR), "set_mode7_saved_material", "get_mode7_saved_material");
 }
 
 Mode7Sprite2D::Mode7Sprite2D() {

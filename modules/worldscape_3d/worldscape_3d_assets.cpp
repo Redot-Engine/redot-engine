@@ -48,7 +48,7 @@
 ///////////////////////////
 
 void WorldScape3DAssets::_swap_ids(const AssetType p_type, const int p_src_id, const int p_dst_id) {
-	LOG(INFO, "Swapping asset id: ", p_src_id, " and id: ", p_dst_id);
+	LOG(DEBUG, "Swapping asset id: ", p_src_id, " and id: ", p_dst_id);
 	Array list;
 	switch (p_type) {
 		case TYPE_TEXTURE:
@@ -288,7 +288,7 @@ void WorldScape3DAssets::_update_texture_files() {
 	// Generate TextureArrays and replace nulls with a empty image
 
 	if (_generated_albedo_textures.is_dirty() && albedo_size != V2I_ZERO) {
-		LOG(INFO, "Regenerating albedo texture array");
+		LOG(DEBUG, "Regenerating albedo texture array");
 		Array albedo_texture_array;
 		for (int i = 0; i < _texture_list.size(); i++) {
 			Ref<WorldScape3DTextureAsset> texture_set = _texture_list[i];
@@ -319,7 +319,7 @@ void WorldScape3DAssets::_update_texture_files() {
 	}
 
 	if (_generated_normal_textures.is_dirty() && normal_size != V2I_ZERO) {
-		LOG(INFO, "Regenerating normal texture arrays");
+		LOG(DEBUG, "Regenerating normal texture arrays");
 
 		Array normal_texture_array;
 
@@ -356,7 +356,7 @@ void WorldScape3DAssets::_update_texture_files() {
 void WorldScape3DAssets::_update_texture_settings() {
 	LOG(DEBUG, "Received setting_changed signal");
 	if (!_texture_list.is_empty()) {
-		LOG(INFO, "Updating terrain color and scale arrays");
+		LOG(DEBUG, "Updating terrain color and scale arrays");
 		_texture_colors.clear();
 		_texture_normal_depths.clear();
 		_texture_ao_strengths.clear();
@@ -387,7 +387,7 @@ void WorldScape3DAssets::_setup_thumbnail_creation() {
 	if (_scenario.is_valid()) {
 		return;
 	}
-	LOG(INFO, "Setting up mesh thumbnail creation viewports");
+	LOG(DEBUG, "Setting up mesh thumbnail creation viewports");
 	const auto rs = RenderingServer::get_singleton();
 	// Setup Mesh preview environment
 	_scenario = rs->scenario_create();
@@ -435,7 +435,7 @@ void WorldScape3DAssets::initialize(WorldScape3D *p_terrain) {
 		LOG(ERROR, "Initialization failed, p_terrain is null");
 		return;
 	}
-	LOG(INFO, "Initializing assets");
+	LOG(DEBUG, "Initializing assets");
 #ifdef TOOLS_ENABLED
 	if (IS_EDITOR) {
 		_setup_thumbnail_creation();
@@ -448,12 +448,12 @@ void WorldScape3DAssets::initialize(WorldScape3D *p_terrain) {
 }
 
 void WorldScape3DAssets::uninitialize() {
-	LOG(INFO, "Uninitializing assets");
+	LOG(DEBUG, "Uninitializing assets");
 	_terrain = nullptr;
 }
 
 void WorldScape3DAssets::destroy() {
-	LOG(INFO, "Destroying assets");
+	LOG(DEBUG, "Destroying assets");
 	_terrain = nullptr;
 	_generated_albedo_textures.clear();
 	_generated_normal_textures.clear();
@@ -489,20 +489,20 @@ void WorldScape3DAssets::destroy() {
 
 void WorldScape3DAssets::set_texture(const int p_id, const Ref<WorldScape3DTextureAsset> &p_texture) {
 	if (_texture_list.size() <= p_id || p_texture != _texture_list[p_id]) {
-		LOG(INFO, "Setting texture id: ", p_id);
+		LOG(DEBUG, "Setting texture id: ", p_id);
 		_set_asset(TYPE_TEXTURE, p_id, p_texture);
 		update_texture_list();
 	}
 }
 
 void WorldScape3DAssets::set_texture_list(const TypedArray<WorldScape3DTextureAsset> &p_texture_list) {
-	LOG(INFO, "Setting texture list with ", p_texture_list.size(), " entries");
+	LOG(DEBUG, "Setting texture list with ", p_texture_list.size(), " entries");
 	_set_asset_list(TYPE_TEXTURE, p_texture_list);
 	update_texture_list();
 }
 
 void WorldScape3DAssets::clear_textures(const bool p_update) {
-	LOG(INFO, "Clearing texture list");
+	LOG(DEBUG, "Clearing texture list");
 	_texture_list.clear();
 	if (p_update) {
 		update_texture_list();
@@ -510,7 +510,7 @@ void WorldScape3DAssets::clear_textures(const bool p_update) {
 }
 
 void WorldScape3DAssets::update_texture_list() {
-	LOG(INFO, "Reconnecting texture signals");
+	LOG(DEBUG, "Reconnecting texture signals");
 	for (int i = 0; i < _texture_list.size(); i++) {
 		Ref<WorldScape3DTextureAsset> texture_set = _texture_list[i];
 		if (texture_set.is_null()) {
@@ -533,7 +533,7 @@ void WorldScape3DAssets::update_texture_list() {
 }
 
 void WorldScape3DAssets::set_mesh_asset(const int p_id, const Ref<WorldScape3DMeshAsset> &p_mesh_asset) {
-	LOG(INFO, "Setting mesh id: ", p_id, ", ", p_mesh_asset);
+	LOG(DEBUG, "Setting mesh id: ", p_id, ", ", p_mesh_asset);
 	_set_asset(TYPE_MESH, p_id, p_mesh_asset);
 	if (p_mesh_asset.is_null()) {
 		IS_INSTANCER_INIT(WS3D_RETURN_VOID);
@@ -550,7 +550,7 @@ Ref<WorldScape3DMeshAsset> WorldScape3DAssets::get_mesh_asset(const int p_id) co
 }
 
 void WorldScape3DAssets::set_mesh_list(const TypedArray<WorldScape3DMeshAsset> &p_mesh_list) {
-	LOG(INFO, "Setting mesh list with ", p_mesh_list.size(), " entries");
+	LOG(DEBUG, "Setting mesh list with ", p_mesh_list.size(), " entries");
 	_set_asset_list(TYPE_MESH, p_mesh_list);
 	update_mesh_list();
 }
@@ -558,7 +558,7 @@ void WorldScape3DAssets::set_mesh_list(const TypedArray<WorldScape3DMeshAsset> &
 // p_id = -1 for all meshes
 // Adapted from godot\editor\plugins\editor_preview_plugins.cpp:EditorMeshPreviewPlugin
 void WorldScape3DAssets::create_mesh_thumbnails(const int p_id, const Vector2i &p_size) {
-	LOG(INFO, "Creating mesh thumbnails");
+	LOG(DEBUG, "Creating mesh thumbnails");
 	int start, end;
 	int max = get_mesh_count();
 	if (p_id < 0) {
@@ -570,7 +570,7 @@ void WorldScape3DAssets::create_mesh_thumbnails(const int p_id, const Vector2i &
 	}
 	Vector2i size = CLAMP(p_size, Vector2i(1, 1), Vector2i(4096, 4096));
 
-	LOG(INFO, "Creating thumbnails for ids: ", start, " through ", end - 1);
+	LOG(DEBUG, "Creating thumbnails for ids: ", start, " through ", end - 1);
 	const auto rs = RenderingServer::get_singleton();
 	for (int i = start; i < end; i++) {
 		Ref<WorldScape3DMeshAsset> ma = get_mesh_asset(i);
@@ -635,7 +635,7 @@ void WorldScape3DAssets::create_mesh_thumbnails(const int p_id, const Vector2i &
 
 void WorldScape3DAssets::update_mesh_list() {
 	IS_INSTANCER_INIT(WS3D_RETURN_VOID);
-	LOG(INFO, "Updating mesh list");
+	LOG(DEBUG, "Updating mesh list");
 	if (_mesh_list.size() == 0) {
 		LOG(DEBUG, "Mesh list empty, clearing instancer and adding a default mesh");
 		_terrain->get_instancer()->destroy();
@@ -695,7 +695,7 @@ Error WorldScape3DAssets::save(const String &p_path) {
 		LOG(DEBUG, "Attempting to save external file: " + path);
 		err = ResourceSaver::save(this, path, ResourceSaver::FLAG_COMPRESS);
 		if (err == OK) {
-			LOG(INFO, "File saved successfully: ", path);
+			LOG(DEBUG, "File saved successfully: ", path);
 		} else {
 			LOG(ERROR, "Cannot save file: ", path, ". Error code: ", ERROR, ". Look up @GlobalScope Error enum in the Godot docs");
 		}

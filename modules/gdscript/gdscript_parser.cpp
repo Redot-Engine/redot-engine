@@ -931,6 +931,11 @@ GDScriptParser::ClassNode *GDScriptParser::parse_class(bool p_is_static) {
 GDScriptParser::StructNode *GDScriptParser::parse_struct(bool p_is_static) {
 	StructNode *n_struct = alloc_node<StructNode>();
 	n_struct->outer = current_class;
+	n_struct->is_global = _next_struct_is_global;
+
+	if (n_struct->is_global && current_class != head) {
+		push_error(R"(Only top-level structs can be declared with "struct_name". Use "struct" for nested structs.)");
+	}
 
 	if (consume(GDScriptTokenizer::Token::IDENTIFIER, R"(Expected identifier for the struct name after "struct".)")) {
 		n_struct->identifier = parse_identifier();
@@ -1197,6 +1202,11 @@ void GDScriptParser::parse_class_body(bool p_is_multiline) {
 				break;
 			case GDScriptTokenizer::Token::STRUCT:
 				parse_class_member(&GDScriptParser::parse_struct, AnnotationInfo::NONE, "struct");
+				break;
+			case GDScriptTokenizer::Token::STRUCT_NAME:
+				_next_struct_is_global = true;
+				parse_class_member(&GDScriptParser::parse_struct, AnnotationInfo::NONE, "struct");
+				_next_struct_is_global = false;
 				break;
 			case GDScriptTokenizer::Token::STATIC: {
 				advance();
@@ -4376,6 +4386,7 @@ GDScriptParser::ParseRule *GDScriptParser::get_rule(GDScriptTokenizer::Token::Ty
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // SIGNAL,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STATIC,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STRUCT,
+		{ nullptr,                                          nullptr,                                        PREC_NONE }, // STRUCT_NAME,
 		{ &GDScriptParser::parse_call,						nullptr,                                        PREC_NONE }, // SUPER,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // TRAIT,
 		{ nullptr,                                          nullptr,                                        PREC_NONE }, // TRAIT_NAME,

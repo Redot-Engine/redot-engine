@@ -47,7 +47,7 @@
 
 void WorldScape3DMesher::_generate_mesh_types(const int p_size) {
 	_clear_mesh_types();
-	LOG(INFO, "Generating all Mesh segments for clipmap of size ", p_size);
+	LOG(DEBUG, "Generating all Mesh segments for clipmap of size ", p_size);
 	// Create initial set of Mesh blocks to build the clipmap
 	// # 0 TILE - mesh_size x mesh_size tiles
 	_mesh_rids.push_back(_generate_mesh(Vector2i(p_size, p_size)));
@@ -220,7 +220,7 @@ void WorldScape3DMesher::_generate_clipmap(const int p_size, const int p_lods, c
 // Precomputes all instance offset data into lookup arrays that match created instances.
 // All meshes are created with 0,0 as their origin and grow along +xz. Offsets account for this.
 void WorldScape3DMesher::_generate_offset_data(const int p_size) {
-	LOG(INFO, "Computing all clipmap instance positioning offsets");
+	LOG(DEBUG, "Computing all clipmap instance positioning offsets");
 	_tile_pos_lod_0.clear();
 	_trim_a_pos.clear();
 	_trim_b_pos.clear();
@@ -287,7 +287,7 @@ void WorldScape3DMesher::_generate_offset_data(const int p_size) {
 
 // Frees all clipmap instance RIDs. Mesh rids must be freed separately.
 void WorldScape3DMesher::_clear_clipmap() {
-	LOG(INFO, "Freeing all clipmap instances");
+	LOG(DEBUG, "Freeing all clipmap instances");
 	auto rs = RenderingServer::get_singleton();
 	for (int lod = 0; lod < _clipmap_rids.size(); lod++) {
 		Array lod_array = _clipmap_rids[lod];
@@ -306,7 +306,7 @@ void WorldScape3DMesher::_clear_clipmap() {
 
 // Frees all Mesh RIDs use for clipmap instances.
 void WorldScape3DMesher::_clear_mesh_types() {
-	LOG(INFO, "Freeing all clipmap meshes");
+	LOG(DEBUG, "Freeing all clipmap meshes");
 	auto rs = RenderingServer::get_singleton();
 	for (int m = 0; m < _mesh_rids.size(); m++) {
 		rs->free(_mesh_rids[m]);
@@ -329,7 +329,7 @@ void WorldScape3DMesher::initialize(WorldScape3D *p_terrain) {
 		LOG(DEBUG, "WorldScape3D's world3D is null");
 		return;
 	}
-	LOG(INFO, "Initializing GeoMesh");
+	LOG(DEBUG, "Initializing GeoMesh");
 	int size = _terrain->get_mesh_size();
 	int lods = _terrain->get_mesh_lods();
 	_generate_clipmap(size, lods, _terrain->get_world_3d()->get_scenario());
@@ -339,7 +339,7 @@ void WorldScape3DMesher::initialize(WorldScape3D *p_terrain) {
 }
 
 void WorldScape3DMesher::destroy() {
-	LOG(INFO, "Destroying clipmap");
+	LOG(DEBUG, "Destroying clipmap");
 	_clear_clipmap();
 	_clear_mesh_types();
 	_tile_pos_lod_0.clear();
@@ -458,7 +458,7 @@ void WorldScape3DMesher::update() {
 	bool visible = _terrain->is_visible_in_tree();
 
 	auto rs = RenderingServer::get_singleton();
-	LOG(INFO, "Updating all mesh instances for ", _clipmap_rids.size(), " LODs");
+	LOG(DEBUG, "Updating all mesh instances for ", _clipmap_rids.size(), " LODs");
 	for (int lod = 0; lod < _clipmap_rids.size(); ++lod) {
 		Array lod_array = _clipmap_rids[lod];
 		for (int mesh = 0; mesh < lod_array.size(); ++mesh) {
@@ -486,7 +486,7 @@ void WorldScape3DMesher::update_aabbs() {
 
 	auto rs = RenderingServer::get_singleton();
 
-	LOG(INFO, "Updating ", _mesh_rids.size(), " meshes AABBs")
+	LOG(DEBUG, "Updating ", _mesh_rids.size(), " meshes AABBs")
 	for (int m = 0; m < _mesh_rids.size(); m++) {
 		RID mesh = _mesh_rids[m];
 		AABB aabb = rs->mesh_get_custom_aabb(mesh);

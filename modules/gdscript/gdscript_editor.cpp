@@ -1153,6 +1153,16 @@ static void _list_available_types(bool p_inherit_only, bool p_include_trait, GDS
 		r_result.insert(option.display, option);
 	}
 
+	// Global structs (declared with `struct_name`). Not inheritable, so only as plain types.
+	if (!p_inherit_only) {
+		List<StringName> global_structs;
+		ScriptServer::get_global_struct_list(&global_structs);
+		for (const StringName &struct_name : global_structs) {
+			ScriptLanguage::CodeCompletionOption option(struct_name, ScriptLanguage::CODE_COMPLETION_KIND_CLASS, ScriptLanguage::LOCATION_OTHER_USER_CODE);
+			r_result.insert(option.display, option);
+		}
+	}
+
 	// Global enums
 	if (!p_inherit_only) {
 		_find_global_enums(r_result);
@@ -1635,7 +1645,7 @@ static void _find_identifiers(const GDScriptParser::CompletionContext &p_context
 	}
 
 	static const char *_keywords_with_space[] = {
-		"and", "not", "or", "in", "as", "class", "class_name", "trait", "trait_name", "extends", "uses", "is", "func", "signal", "await",
+		"and", "not", "or", "in", "as", "class", "class_name", "trait", "trait_name", "struct", "struct_name", "extends", "uses", "is", "func", "signal", "await",
 		"const", "enum", "static", "var", "if", "elif", "else", "for", "match", "when", "while",
 		nullptr
 	};
@@ -1703,6 +1713,14 @@ static void _find_identifiers(const GDScriptParser::CompletionContext &p_context
 	ScriptServer::get_global_class_list(global_classes);
 	for (const StringName &class_name : global_classes) {
 		ScriptLanguage::CodeCompletionOption option(class_name, ScriptLanguage::CODE_COMPLETION_KIND_CLASS, ScriptLanguage::LOCATION_OTHER_USER_CODE);
+		r_result.insert(option.display, option);
+	}
+
+	// Global structs (declared with `struct_name`).
+	List<StringName> global_structs;
+	ScriptServer::get_global_struct_list(&global_structs);
+	for (const StringName &struct_name : global_structs) {
+		ScriptLanguage::CodeCompletionOption option(struct_name, ScriptLanguage::CODE_COMPLETION_KIND_CLASS, ScriptLanguage::LOCATION_OTHER_USER_CODE);
 		r_result.insert(option.display, option);
 	}
 }

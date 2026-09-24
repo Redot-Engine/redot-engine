@@ -1122,6 +1122,11 @@
 			If [code]true[/code], requests V-Sync to be disabled when writing a movie (similar to setting [member display/window/vsync/vsync_mode] to [b]Disabled[/b]). This can speed up video writing if the hardware is fast enough to render, encode and save the video at a framerate higher than the monitor's refresh rate.
 			[b]Note:[/b] [member editor/movie_writer/disable_vsync] has no effect if the operating system or graphics driver forces V-Sync with no way for applications to disable it.
 		</member>
+		<member name="editor/movie_writer/exr/bit_depth" type="int" setter="" getter="" default="0">
+			The channel storage used when writing an OpenEXR image sequence ([code].exr[/code] file extension): [code]0[/code] for 16-bit half-float channels (smaller files), [code]1[/code] for 32-bit full-float channels.
+			EXR output stores each frame in floating point, which avoids the color banding visible in 8-bit formats such as PNG on smooth gradients and shadows. For the added precision to be meaningful, enable [member rendering/viewport/hdr_2d]; otherwise the frame is captured at 8-bit precision and simply stored in a floating-point file.
+			[b]Note:[/b] Frames are the tonemapped, display-referred output stored at higher precision (deep color), not scene-referred high dynamic range. Requires the TinyEXR module to be enabled at build time.
+		</member>
 		<member name="editor/movie_writer/fps" type="int" setter="" getter="" default="60">
 			The number of frames per second to record in the video when writing a movie. Simulation speed will adjust to always match the specified framerate, which means the engine will appear to run slower at higher [member editor/movie_writer/fps] values. Certain FPS values will require you to adjust [member editor/movie_writer/mix_rate] to prevent audio from desynchronizing over time.
 			This can be specified manually on the command line using the [code]--fixed-fps &lt;fps&gt;[/code] [url=$DOCS_URL/tutorials/editor/command_line_tutorial.html]command line argument[/url].
@@ -1131,10 +1136,11 @@
 		</member>
 		<member name="editor/movie_writer/movie_file" type="String" setter="" getter="" default="&quot;&quot;">
 			The output path for the movie. The file extension determines the [MovieWriter] that will be used.
-			Redot has 3 built-in [MovieWriter]s:
+			Redot has 4 built-in [MovieWriter]s:
 			- OGV container with Theora for video and Vorbis for audio ([code].ogv[/code] file extension). Lossy compression, medium file sizes, fast encoding. The lossy compression quality can be adjusted by changing [member ProjectSettings.editor/movie_writer/video_quality] and [member ProjectSettings.editor/movie_writer/ogv/audio_quality]. The resulting file can be viewed in Redot with [VideoStreamPlayer] and most video players, but not web browsers as they don't support Theora.
 			- AVI container with MJPEG for video and uncompressed audio ([code].avi[/code] file extension). Lossy compression, medium file sizes, fast encoding. The lossy compression quality can be adjusted by changing [member ProjectSettings.editor/movie_writer/video_quality]. The resulting file can be viewed in most video players, but it must be converted to another format for viewing on the web or by Redot with [VideoStreamPlayer]. MJPEG does not support transparency. AVI output is currently limited to a file of 4 GB in size at most.
-			- PNG image sequence for video and WAV for audio ([code].png[/code] file extension). Lossless compression, large file sizes, slow encoding. Designed to be encoded to a video file with another tool such as [url=https://ffmpeg.org/]FFmpeg[/url] after recording. Transparency is currently not supported, even if the root viewport is set to be transparent.
+			- PNG image sequence for video and WAV for audio ([code].png[/code] file extension). Lossless compression, large file sizes, slow encoding. Designed to be encoded to a video file with another tool such as [url=https://ffmpeg.org/]FFmpeg[/url] after recording. Can be written at 8-bit or, to avoid color banding, 16-bit per channel (see [member editor/movie_writer/png/bit_depth]). Transparency is currently not supported, even if the root viewport is set to be transparent.
+			- OpenEXR image sequence for video and WAV for audio ([code].exr[/code] file extension). Stores each frame in floating point (16-bit half or 32-bit full, see [member editor/movie_writer/exr/bit_depth]) to avoid the color banding of 8-bit formats on smooth gradients and shadows. Enable [member rendering/viewport/hdr_2d] for the added precision. Designed for compositing/grading; encode to a video file afterwards with another tool. Requires the TinyEXR module.
 			If you need to encode to a different format or pipe a stream through third-party software, you can extend this [MovieWriter] class to create your own movie writers.
 			When using PNG output, the frame number will be appended at the end of the file name. It starts from 0 and is padded with 8 digits to ensure correct sorting and easier processing. For example, if the output path is [code]/tmp/hello.png[/code], the first two frames will be [code]/tmp/hello00000000.png[/code] and [code]/tmp/hello00000001.png[/code]. The audio will be saved at [code]/tmp/hello.wav[/code].
 		</member>
@@ -1147,6 +1153,10 @@
 		</member>
 		<member name="editor/movie_writer/ogv/keyframe_interval" type="int" setter="" getter="" default="64">
 			Forces keyframes at the specified interval (in frame count). Higher values can improve compression up to a certain level at the expense of higher latency when seeking.
+		</member>
+		<member name="editor/movie_writer/png/bit_depth" type="int" setter="" getter="" default="8">
+			The bits per channel used when writing a PNG image sequence ([code].png[/code] file extension): [code]8[/code] for a standard 8-bit PNG, [code]16[/code] for a 16-bit sRGB PNG.
+			16-bit output is deep color and avoids the banding visible in 8-bit on smooth gradients and shadows, while remaining a normal PNG that opens in any image tool. For the added precision to be meaningful, enable [member rendering/viewport/hdr_2d]; otherwise the frame is captured at 8-bit precision and simply stored in a 16-bit file.
 		</member>
 		<member name="editor/movie_writer/speaker_mode" type="int" setter="" getter="" default="0">
 			The speaker mode to use in the recorded audio when writing a movie. See [enum AudioServer.SpeakerMode] for possible values.
@@ -2504,6 +2514,25 @@
 		<member name="physics/2d/solver/default_contact_bias" type="float" setter="" getter="" default="0.8">
 			Default solver bias for all physics contacts. Defines how much bodies react to enforce contact separation. See [constant PhysicsServer2D.SPACE_PARAM_CONTACT_DEFAULT_BIAS].
 			Individual shapes can have a specific bias value (see [member Shape2D.custom_solver_bias]).
+		</member>
+		<member name="physics/2d/solver/min_constraints_for_threading" type="int" setter="" getter="" default="256">
+			Minimum number of constraints a 2D physics step must have before constraint setup and eligible island solving are distributed across the [WorkerThreadPool]. Below this threshold the work runs on the calling thread instead, avoiding thread dispatch and synchronization overhead that would otherwise outweigh the benefit for light workloads (such as scenes with many fast, mostly-separated bodies).
+			How constraint setup compares against this threshold depends on [member physics/2d/solver/setup_threading_mode]: [b]Static[/b] uses the raw candidate constraint count; [b]Predicted[/b] scales the candidate count by the previous completed step's ratio of active (post-prune) to candidate constraints (falling back to the raw count when there is no usable previous-step ratio, e.g. the first step); [b]Predicted Biased[/b] takes the maximum of that estimate over the last [member physics/2d/solver/setup_prediction_window] steps. The predicted modes reduce unnecessary threading in scenes with many broadphase pairs but few real contacts. Island solving always uses the [i]actual[/i] current post-prune constraint count, and additionally requires more than one non-empty island, since each island is a single unit of parallel work, so reaching the threshold does not by itself thread solving.
+			A value of [code]0[/code] threads as aggressively as possible, that is, whenever there is actual parallel work to distribute. Raising it keeps more steps single-threaded; lowering it threads sooner. See [constant PhysicsServer2D.SPACE_PARAM_SOLVER_MIN_CONSTRAINTS_FOR_THREADING].
+			[b]Note:[/b] The setup estimate assumes temporal coherence between consecutive physics steps. An abrupt workload change may cause one step to choose a suboptimal scheduling path, and workloads that repeatedly alternate between sparse and dense contacts can defeat the estimate. For persistent workloads, the estimate typically adapts on the following step.
+			[b]Note:[/b] This value is read when a physics space is created, so changing it at runtime does not affect existing physics spaces. Use [method PhysicsServer2D.space_set_param] to change it for an existing space.
+		</member>
+		<member name="physics/2d/solver/pairing_expansion" type="float" setter="" getter="" default="25.0">
+			Maximum broadphase pairing margin, in pixels. Each object's collision pairs are kept alive within a margin that scales with its size (up to this maximum), so large moving objects (such as big [Area2D] sensors) re-pair less often, improving performance in scenes with many large overlapping shapes. Small objects keep a proportionally tiny margin so dense scenes do not accumulate excess pairs. Set to [code]0[/code] to disable and use the legacy pair-count-based margin.
+			[b]Note:[/b] This value is read when a physics space is created, so changing it at runtime does not affect existing physics spaces.
+		</member>
+		<member name="physics/2d/solver/setup_prediction_window" type="int" setter="" getter="" default="2">
+			Number of past steps the [constant PhysicsServer2D.SOLVER_SETUP_THREADING_PREDICTED_BIASED] mode maxes its setup-work estimate over (the [i]K[/i] in max-over-K), clamped to 1–8. [code]1[/code] makes biased behave like plain predicted; larger values bias further toward threading. Only used by the biased mode. See [constant PhysicsServer2D.SPACE_PARAM_SOLVER_SETUP_PREDICTION_WINDOW].
+			[b]Note:[/b] This value is read when a physics space is created, so changing it at runtime does not affect existing physics spaces. Use [method PhysicsServer2D.space_set_param] to change it for an existing space.
+		</member>
+		<member name="physics/2d/solver/setup_threading_mode" type="int" setter="" getter="" default="1">
+			How the 2D solver decides whether to distribute constraint setup across the [WorkerThreadPool]: [code]0[/code] static (raw candidate count), [code]1[/code] predicted (default; scale by the previous step's active/candidate ratio), [code]2[/code] predicted biased (max over the last two steps, biased toward threading). See [enum PhysicsServer2D.SolverSetupThreadingMode] for the trade-offs, and [member physics/2d/solver/min_constraints_for_threading] for the threshold itself. Only affects setup; island solving always uses the actual post-prune work.
+			[b]Note:[/b] This value is read when a physics space is created, so changing it at runtime does not affect existing physics spaces. Use [method PhysicsServer2D.space_set_param] to change it for an existing space.
 		</member>
 		<member name="physics/2d/solver/solver_iterations" type="int" setter="" getter="" default="16">
 			Number of solver iterations for all contacts and constraints. The greater the number of iterations, the more accurate the collisions will be. However, a greater number of iterations requires more CPU power, which can decrease performance. See [constant PhysicsServer2D.SPACE_PARAM_SOLVER_ITERATIONS].

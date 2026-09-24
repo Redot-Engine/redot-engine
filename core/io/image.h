@@ -53,6 +53,7 @@ class Image;
 /// @{
 typedef Error (*SavePNGFunc)(const String &p_path, const Ref<Image> &p_img);
 typedef Vector<uint8_t> (*SavePNGBufferFunc)(const Ref<Image> &p_img);
+typedef Vector<uint8_t> (*SavePNG16BitBufferFunc)(const Ref<Image> &p_img);
 
 typedef Error (*SaveJPGFunc)(const String &p_path, const Ref<Image> &p_img, float p_quality);
 typedef Vector<uint8_t> (*SaveJPGBufferFunc)(const Ref<Image> &p_img, float p_quality);
@@ -205,6 +206,7 @@ public:
 	static inline SaveWebPFunc save_webp_func = nullptr;
 	static inline SaveDDSFunc save_dds_func = nullptr;
 	static inline SavePNGBufferFunc save_png_buffer_func = nullptr;
+	static inline SavePNG16BitBufferFunc save_png_16bit_buffer_func = nullptr;
 	static inline SaveEXRBufferFunc save_exr_buffer_func = nullptr;
 	static inline SaveJPGBufferFunc save_jpg_buffer_func = nullptr;
 	static inline SaveWebPBufferFunc save_webp_buffer_func = nullptr;
@@ -377,6 +379,9 @@ public:
 	Error save_jpg(const String &p_path, float p_quality = 0.75) const;
 	Error save_dds(const String &p_path) const;
 	Vector<uint8_t> save_png_to_buffer() const;
+	// Encodes a 16-bit-per-channel sRGB PNG (deep color, avoids 8-bit banding). Falls back to
+	// the 8-bit encoder if no 16-bit PNG backend is available.
+	Vector<uint8_t> save_png_16bit_to_buffer() const;
 	Vector<uint8_t> save_jpg_to_buffer(float p_quality = 0.75) const;
 	Vector<uint8_t> save_exr_to_buffer(bool p_grayscale = false) const;
 	Vector<uint8_t> save_dds_to_buffer() const;

@@ -214,6 +214,7 @@ repos:
         name: dotnet-format
         language: python
         entry: python misc/scripts/dotnet_format.py
+        require_serial: true
         types_or: [c#]
 #
 # End of upstream Godot pre-commit hooks.

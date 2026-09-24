@@ -983,6 +983,12 @@ void GDScriptByteCodeGenerator::write_assign_with_conversion(const Address &p_ta
 			append(p_source);
 			append(idx);
 		} break;
+		case GDScriptDataType::GDTRAIT: {
+			append_opcode(GDScriptFunction::OPCODE_ASSIGN_TYPED_TRAIT);
+			append(p_target);
+			append(p_source);
+			append(p_target.type.trait_type);
+		} break;
 		default: {
 			ERR_PRINT("Compiler bug: unresolved assign.");
 

@@ -66,7 +66,11 @@
 #include "debugger/servers_debugger.h"
 #include "display/display_server.h"
 #include "display/native_menu.h"
+#include "modules/modules_enabled.gen.h" // For MODULE_TINYEXR_ENABLED.
 #include "movie_writer/movie_writer.h"
+#ifdef MODULE_TINYEXR_ENABLED
+#include "movie_writer/movie_writer_exr.h"
+#endif
 #include "movie_writer/movie_writer_pngwav.h"
 #include "rendering/renderer_rd/framebuffer_cache_rd.h"
 #include "rendering/renderer_rd/storage_rd/render_data_rd.h"
@@ -143,6 +147,9 @@ static bool has_server_feature_callback(const String &p_feature) {
 }
 
 static MovieWriterPNGWAV *writer_pngwav = nullptr;
+#ifdef MODULE_TINYEXR_ENABLED
+static MovieWriterEXR *writer_exr = nullptr;
+#endif
 
 void register_server_types() {
 	OS::get_singleton()->benchmark_begin_measure("Servers", "Register Extensions");
@@ -357,6 +364,13 @@ void register_server_types() {
 		MovieWriter::add_writer(writer_pngwav);
 	}
 
+#ifdef MODULE_TINYEXR_ENABLED
+	if (GD_IS_CLASS_ENABLED(MovieWriterEXR)) {
+		writer_exr = memnew(MovieWriterEXR);
+		MovieWriter::add_writer(writer_exr);
+	}
+#endif
+
 	OS::get_singleton()->benchmark_end_measure("Servers", "Register Extensions");
 }
 
@@ -368,6 +382,11 @@ void unregister_server_types() {
 	if (GD_IS_CLASS_ENABLED(MovieWriterPNGWAV)) {
 		memdelete(writer_pngwav);
 	}
+#ifdef MODULE_TINYEXR_ENABLED
+	if (GD_IS_CLASS_ENABLED(MovieWriterEXR)) {
+		memdelete(writer_exr);
+	}
+#endif
 
 	OS::get_singleton()->benchmark_end_measure("Servers", "Unregister Extensions");
 }

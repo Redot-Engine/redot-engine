@@ -52,7 +52,7 @@
 ///////////////////////////
 
 void WorldScape3DData::_clear() {
-	LOG(INFO, "Clearing data");
+	LOG(DEBUG, "Clearing data");
 	_region_map_dirty = true;
 	_region_map.clear();
 	_region_map.resize(REGION_MAP_SIZE * REGION_MAP_SIZE);
@@ -89,7 +89,7 @@ void WorldScape3DData::initialize(WorldScape3D *p_terrain) {
 		LOG(ERROR, "Initialization failed, p_terrain is null");
 		return;
 	}
-	LOG(INFO, "Initializing data");
+	LOG(DEBUG, "Initializing data");
 	bool prev_initialized = _terrain != nullptr;
 	_terrain = p_terrain;
 	_region_map.resize(REGION_MAP_SIZE * REGION_MAP_SIZE);
@@ -110,7 +110,7 @@ void WorldScape3DData::initialize(WorldScape3D *p_terrain) {
 }
 
 void WorldScape3DData::set_region_locations(const TypedArray<Vector2i> &p_locations) {
-	LOG(INFO, "Setting _region_locations with array sized: ", p_locations.size());
+	LOG(DEBUG, "Setting _region_locations with array sized: ", p_locations.size());
 	_region_locations = p_locations;
 	_region_map_dirty = true;
 	update_maps(TYPE_MAX, false, false); // only rebuild region map
@@ -157,7 +157,7 @@ void WorldScape3DData::do_for_regions(const Rect2i &p_area, const Callable &p_ca
 }
 
 void WorldScape3DData::change_region_size(int p_new_size) {
-	LOG(INFO, "Changing region size from: ", _region_size, " to ", p_new_size);
+	LOG(DEBUG, "Changing region size from: ", _region_size, " to ", p_new_size);
 	if (p_new_size < 64 || p_new_size > 4096 || !is_power_of_2(p_new_size)) {
 		LOG(ERROR, "Invalid region size: ", p_new_size, ". Must be 64, 128, 256, 512, 1024, 2048, 4096");
 		return;
@@ -286,7 +286,7 @@ Error WorldScape3DData::add_region(const Ref<WorldScape3DRegion> &p_region, cons
 		return FAILED;
 	}
 	Vector2i region_loc = p_region->get_location();
-	LOG(INFO, "Adding region at location ", region_loc, ", update maps: ", p_update ? "yes" : "no");
+	LOG(DEBUG, "Adding region at location ", region_loc, ", update maps: ", p_update ? "yes" : "no");
 
 	// Check bounds
 	if (get_region_map_index(region_loc) < 0) {
@@ -299,7 +299,7 @@ Error WorldScape3DData::add_region(const Ref<WorldScape3DRegion> &p_region, cons
 	if (!_region_locations.has(region_loc)) {
 		_region_locations.push_back(region_loc);
 	} else {
-		LOG(INFO, "Overwriting ", (_regions.has(region_loc)) ? "deleted" : "existing", " region at ", region_loc);
+		LOG(DEBUG, "Overwriting ", (_regions.has(region_loc)) ? "deleted" : "existing", " region at ", region_loc);
 	}
 	_regions[region_loc] = p_region;
 	_region_map_dirty = true;
@@ -331,7 +331,7 @@ void WorldScape3DData::remove_region(const Ref<WorldScape3DRegion> &p_region, co
 
 	Vector2i region_loc = p_region->get_location();
 	int region_id = _region_locations.find(region_loc);
-	LOG(INFO, "Marking region ", region_loc, " for deletion. update_maps: ", p_update ? "yes" : "no");
+	LOG(DEBUG, "Marking region ", region_loc, " for deletion. update_maps: ", p_update ? "yes" : "no");
 	if (region_id < 0) {
 		LOG(ERROR, "Region ", region_loc, " not found in region_locations. Returning");
 		return;
@@ -348,7 +348,7 @@ void WorldScape3DData::remove_region(const Ref<WorldScape3DRegion> &p_region, co
 }
 
 void WorldScape3DData::save_directory(const String &p_dir) {
-	LOG(INFO, "Saving data files to ", p_dir);
+	LOG(DEBUG, "Saving data files to ", p_dir);
 	Array locations = _regions.keys();
 	for (int i = 0; i < locations.size(); i++) {
 		save_region(locations[i], p_dir, _terrain->get_save_16_bit());
@@ -375,7 +375,7 @@ void WorldScape3DData::save_region(const Vector2i &p_region_loc, const String &p
 		_regions.erase(p_region_loc);
 		LOG(DEBUG, "File to be deleted: ", path);
 		if (!FileAccess::exists(path)) {
-			LOG(INFO, "File to delete ", path, " doesn't exist. (Maybe from add, undo, save)");
+			LOG(DEBUG, "File to delete ", path, " doesn't exist. (Maybe from add, undo, save)");
 			return;
 		}
 		Ref<DirAccess> da = DirAccess::open(p_dir);
@@ -387,7 +387,7 @@ void WorldScape3DData::save_region(const Vector2i &p_region_loc, const String &p
 		if (err != OK) {
 			LOG(ERROR, "Could not remove file: ", fname, ", error code: ", err);
 		}
-		LOG(INFO, "File ", path, " deleted");
+		LOG(DEBUG, "File ", path, " deleted");
 		return;
 	}
 	Error err = region->save(path, p_16_bit);
@@ -402,10 +402,10 @@ void WorldScape3DData::load_directory(const String &p_dir) {
 		return;
 	}
 
-	LOG(INFO, "Loading region files from ", p_dir);
+	LOG(DEBUG, "Loading region files from ", p_dir);
 	PackedStringArray files = Util::get_files(p_dir, "terrain*.res");
 	if (files.size() == 0) {
-		LOG(INFO, "No WorldScape3D region files found in: ", p_dir);
+		LOG(WARN, "No WorldScape3D region files found in: ", p_dir);
 		return;
 	}
 
@@ -424,7 +424,7 @@ void WorldScape3DData::load_directory(const String &p_dir) {
 			LOG(ERROR, "Cannot load region at ", path);
 			continue;
 		}
-		LOG(INFO, "Loaded region: ", loc, " size: ", region->get_region_size());
+		LOG(DEBUG, "Loaded region: ", loc, " size: ", region->get_region_size());
 		if (_regions.is_empty()) {
 			_terrain->set_region_size(static_cast<WorldScape3D::RegionSize>(region->get_region_size()));
 		} else {
@@ -444,7 +444,7 @@ void WorldScape3DData::load_directory(const String &p_dir) {
 
 //TODO have load_directory call load_region, or make a load_file that loads a specific path
 void WorldScape3DData::load_region(const Vector2i &p_region_loc, const String &p_dir, const bool p_update) {
-	LOG(INFO, "Loading region from location ", p_region_loc);
+	LOG(DEBUG, "Loading region from location ", p_region_loc);
 	String path = p_dir + String("/") + Util::location_to_filename(p_region_loc);
 	if (!FileAccess::exists(path)) {
 		LOG(ERROR, "File ", path, " doesn't exist");
@@ -826,7 +826,7 @@ Vector3 WorldScape3DData::get_texture_id(const Vector3 &p_global_position) const
  * p_global_position: X and Z coordinates of the vertex. Heights will be sampled around these coordinates.
  */
 Vector3 WorldScape3DData::get_mesh_vertex(const int32_t p_lod, const HeightFilter p_filter, const Vector3 &p_global_position) const {
-	LOG(INFO, "Calculating vertex location");
+	LOG(DEBUG, "Calculating vertex location");
 	int32_t step = 1 << CLAMP(p_lod, 0, 8);
 	real_t height = 0.0f;
 
@@ -905,9 +905,9 @@ void WorldScape3DData::import_images(const TypedArray<Image> &p_images, const Ve
 	for (int i = 0; i < TYPE_MAX; i++) {
 		Ref<Image> img = p_images[i];
 		if (img.is_valid() && !img->is_empty()) {
-			LOG(INFO, "Importing image type ", TYPESTR[i], ", size: ", img->get_size(), ", format: ", img->get_format());
+			LOG(DEBUG, "Importing image type ", TYPESTR[i], ", size: ", img->get_size(), ", format: ", img->get_format());
 			if (i == TYPE_HEIGHT) {
-				LOG(INFO, "Applying offset: ", p_offset, ", scale: ", p_scale);
+				LOG(DEBUG, "Applying offset: ", p_offset, ", scale: ", p_scale);
 			}
 			if (img_size == V2I_ZERO) {
 				img_size = img->get_size();
@@ -1113,7 +1113,7 @@ Error WorldScape3DData::export_image(const String &p_file_name, const MapType p_
 }
 
 Ref<Image> WorldScape3DData::layered_to_image(const MapType p_map_type) const {
-	LOG(INFO, "Generating a full sized image for all regions including empty regions");
+	LOG(DEBUG, "Generating a full sized image for all regions including empty regions");
 	MapType map_type = p_map_type;
 	if (map_type >= TYPE_MAX) {
 		map_type = TYPE_HEIGHT;
@@ -1153,12 +1153,12 @@ Ref<Image> WorldScape3DData::layered_to_image(const MapType p_map_type) const {
 }
 
 void WorldScape3DData::print_audit_data() const {
-	LOG(INFO, "Dumping data");
-	LOG(INFO, "Region_locations size: ", _region_locations.size(), " ", _region_locations);
-	LOG(INFO, "Region map");
+	LOG(DEBUG, "Dumping data");
+	LOG(DEBUG, "Region_locations size: ", _region_locations.size(), " ", _region_locations);
+	LOG(DEBUG, "Region map");
 	for (int i = 0; i < _region_map.size(); i++) {
 		if (_region_map[i]) {
-			LOG(INFO, "Region id: ", _region_map[i], " array index: ", i);
+			LOG(DEBUG, "Region id: ", _region_map[i], " array index: ", i);
 		}
 	}
 	Util::dump_maps(_height_maps, "Height maps");

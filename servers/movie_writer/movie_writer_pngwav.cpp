@@ -74,6 +74,9 @@ Error MovieWriterPNGWAV::write_begin(const Size2i &p_movie_size, uint32_t p_fps,
 		base_path = "res://" + base_path;
 	}
 
+	frame_count = 0;
+	bit_depth_16 = int(GLOBAL_GET("editor/movie_writer/png/bit_depth")) == 16;
+
 	{
 		//Remove existing files before writing anew
 		uint32_t idx = 0;
@@ -150,7 +153,7 @@ Error MovieWriterPNGWAV::write_begin(const Size2i &p_movie_size, uint32_t p_fps,
 Error MovieWriterPNGWAV::write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) {
 	ERR_FAIL_COND_V(f_wav.is_null(), ERR_UNCONFIGURED);
 
-	Vector<uint8_t> png_buffer = p_image->save_png_to_buffer();
+	Vector<uint8_t> png_buffer = bit_depth_16 ? p_image->save_png_16bit_to_buffer() : p_image->save_png_to_buffer();
 
 	Ref<FileAccess> fi = FileAccess::open(base_path + zeros_str(frame_count) + ".png", FileAccess::WRITE);
 	fi->store_buffer(png_buffer.ptr(), png_buffer.size());

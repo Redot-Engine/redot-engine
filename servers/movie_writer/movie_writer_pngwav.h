@@ -52,6 +52,8 @@ class MovieWriterPNGWAV : public MovieWriter {
 	String base_path;
 	uint32_t frame_count = 0;
 	uint32_t fps = 0;
+	// When true, frames are written as 16-bit-per-channel PNGs (deep color, avoids banding).
+	bool bit_depth_16 = false;
 
 	uint32_t audio_block_size = 0;
 
@@ -64,6 +66,9 @@ protected:
 	virtual uint32_t get_audio_mix_rate() const override;
 	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const override;
 	virtual void get_supported_extensions(List<String> *r_extensions) const override;
+
+	// 16-bit PNG output keeps the linear float frame so it can be encoded at full precision.
+	virtual bool wants_float_output() const override { return bit_depth_16; }
 
 	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) override;
 	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) override;

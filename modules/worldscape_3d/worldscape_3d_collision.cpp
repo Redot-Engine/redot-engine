@@ -258,7 +258,7 @@ void WorldScape3DCollision::build() {
 
 	// Create StaticBody3D
 	if (is_editor_mode()) {
-		LOG(INFO, "Building editor collision");
+		LOG(DEBUG, "Building editor collision");
 		_static_body = memnew(StaticBody3D);
 		_static_body->set_name("StaticBody3D");
 		_static_body->set_as_top_level(true);
@@ -268,7 +268,7 @@ void WorldScape3DCollision::build() {
 		_static_body->set_collision_layer(_layer);
 		_static_body->set_collision_priority(_priority);
 	} else {
-		LOG(INFO, "Building collision with Physics Server");
+		LOG(DEBUG, "Building collision with Physics Server");
 		_static_body_rid = ps->body_create();
 		ps->body_set_mode(_static_body_rid, PhysicsServer3D::BODY_MODE_STATIC);
 		ps->body_set_space(_static_body_rid, _terrain->get_world_3d()->get_space());
@@ -491,7 +491,7 @@ void WorldScape3DCollision::destroy() {
 }
 
 void WorldScape3DCollision::set_mode(const CollisionMode p_mode) {
-	LOG(INFO, "Setting collision mode: ", p_mode);
+	LOG(DEBUG, "Setting collision mode: ", p_mode);
 	if (p_mode != _mode) {
 		_mode = p_mode;
 		if (is_enabled()) {
@@ -505,7 +505,7 @@ void WorldScape3DCollision::set_mode(const CollisionMode p_mode) {
 void WorldScape3DCollision::set_shape_size(const uint16_t p_size) {
 	int size = CLAMP(p_size, 8, 64);
 	size = int_round_mult(size, 8);
-	LOG(INFO, "Setting collision dynamic shape size: ", size);
+	LOG(DEBUG, "Setting collision dynamic shape size: ", size);
 	_shape_size = size;
 	// Ensure size:radius always results in at least one valid shape
 	if (_shape_size > _radius - 8) {
@@ -518,7 +518,7 @@ void WorldScape3DCollision::set_shape_size(const uint16_t p_size) {
 void WorldScape3DCollision::set_radius(const uint16_t p_radius) {
 	int radius = CLAMP(p_radius, 16, 256);
 	radius = int_ceil_pow2(radius, 16);
-	LOG(INFO, "Setting collision dynamic radius: ", radius);
+	LOG(DEBUG, "Setting collision dynamic radius: ", radius);
 	_radius = radius;
 	// Ensure size:radius always results in at least one valid shape
 	if (_radius < _shape_size + 8) {
@@ -531,7 +531,7 @@ void WorldScape3DCollision::set_radius(const uint16_t p_radius) {
 }
 
 void WorldScape3DCollision::set_layer(const uint32_t p_layers) {
-	LOG(INFO, "Setting collision layers: ", p_layers);
+	LOG(DEBUG, "Setting collision layers: ", p_layers);
 	_layer = p_layers;
 	if (is_editor_mode()) {
 		if (_static_body) {
@@ -545,7 +545,7 @@ void WorldScape3DCollision::set_layer(const uint32_t p_layers) {
 }
 
 void WorldScape3DCollision::set_mask(const uint32_t p_mask) {
-	LOG(INFO, "Setting collision mask: ", p_mask);
+	LOG(DEBUG, "Setting collision mask: ", p_mask);
 	_mask = p_mask;
 	if (is_editor_mode()) {
 		if (_static_body) {
@@ -559,7 +559,7 @@ void WorldScape3DCollision::set_mask(const uint32_t p_mask) {
 }
 
 void WorldScape3DCollision::set_priority(const real_t p_priority) {
-	LOG(INFO, "Setting collision priority: ", p_priority);
+	LOG(DEBUG, "Setting collision priority: ", p_priority);
 	_priority = p_priority;
 	if (is_editor_mode()) {
 		if (_static_body) {
@@ -573,7 +573,7 @@ void WorldScape3DCollision::set_priority(const real_t p_priority) {
 }
 
 void WorldScape3DCollision::set_physics_material(const Ref<PhysicsMaterial> &p_mat) {
-	LOG(INFO, "Setting physics material: ", p_mat);
+	LOG(DEBUG, "Setting physics material: ", p_mat);
 	if (_physics_material.is_valid()) {
 		if (_physics_material->is_connected("changed", callable_mp(this, &WorldScape3DCollision::_reload_physics_material))) {
 			LOG(DEBUG, "Disconnecting _physics_material::changed signal to _reload_physics_material()");

@@ -96,7 +96,7 @@ public:
 
 	void set_version(const real_t p_version);
 	real_t get_version() const { return _version; }
-	void set_region_size(const int p_region_size) { _region_size = CLAMP(p_region_size, 64, 2048); }
+	void set_region_size(const int p_region_size) { _region_size = CLAMP(p_region_size, 64, 4096); }
 	int get_region_size() const { return _region_size; }
 
 	// Maps

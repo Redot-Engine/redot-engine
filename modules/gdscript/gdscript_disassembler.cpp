@@ -501,6 +501,16 @@ void GDScriptFunction::disassemble(const Vector<String> &p_code_lines) const {
 
 				incr += 4;
 			} break;
+			case OPCODE_ASSIGN_TYPED_TRAIT: {
+				text += "assign typed trait (";
+				text += get_global_name(_code_ptr[ip + 3]);
+				text += ") ";
+				text += DADDR(1);
+				text += " = ";
+				text += DADDR(2);
+
+				incr += 4;
+			} break;
 			case OPCODE_CAST_TO_BUILTIN: {
 				text += "cast builtin ";
 				text += DADDR(2);

@@ -87,25 +87,25 @@ void WorldScape3DTextureAsset::set_name(const String &p_name) {
 void WorldScape3DTextureAsset::set_id(const int p_new_id) {
 	int old_id = _id;
 	_id = CLAMP(p_new_id, 0, WorldScape3DAssets::MAX_TEXTURES);
-	LOG(INFO, "Setting texture id: ", _id);
+	LOG(DEBUG, "Setting texture id: ", _id);
 	emit_signal("id_changed", WorldScape3DAssets::TYPE_TEXTURE, old_id, _id);
 }
 
 void WorldScape3DTextureAsset::set_albedo_color(const Color &p_color) {
-	LOG(INFO, "Setting color: ", p_color);
+	LOG(DEBUG, "Setting color: ", p_color);
 	_albedo_color = p_color;
 	emit_signal("setting_changed");
 }
 
 void WorldScape3DTextureAsset::set_albedo_texture(const Ref<Texture2D> &p_texture) {
-	LOG(INFO, "Setting albedo texture: ", p_texture);
+	LOG(DEBUG, "Setting albedo texture: ", p_texture);
 	if (_is_valid_format(p_texture)) {
 		_albedo_texture = p_texture;
 		if (p_texture.is_valid()) {
 			String filename = p_texture->get_path().get_file().get_basename();
 			if (_name == "New Texture") {
 				_name = filename;
-				LOG(INFO, "Naming texture based on filename: ", _name);
+				LOG(DEBUG, "Naming texture based on filename: ", _name);
 			}
 			Ref<Image> img = p_texture->get_image();
 			if (!img->has_mipmaps()) {
@@ -123,7 +123,7 @@ void WorldScape3DTextureAsset::set_albedo_texture(const Ref<Texture2D> &p_textur
 }
 
 void WorldScape3DTextureAsset::set_normal_texture(const Ref<Texture2D> &p_texture) {
-	LOG(INFO, "Setting normal texture: ", p_texture);
+	LOG(DEBUG, "Setting normal texture: ", p_texture);
 	if (_is_valid_format(p_texture)) {
 		_normal_texture = p_texture;
 		if (p_texture.is_valid()) {
@@ -145,43 +145,43 @@ void WorldScape3DTextureAsset::set_normal_texture(const Ref<Texture2D> &p_textur
 
 void WorldScape3DTextureAsset::set_normal_depth(const real_t p_normal_depth) {
 	_normal_depth = CLAMP(p_normal_depth, 0.0f, 2.0f);
-	LOG(INFO, "Setting normal_depth: ", _normal_depth);
+	LOG(DEBUG, "Setting normal_depth: ", _normal_depth);
 	emit_signal("setting_changed");
 }
 
 void WorldScape3DTextureAsset::set_ao_strength(const real_t p_ao_strength) {
 	_ao_strength = CLAMP(p_ao_strength, 0.0f, 2.0f);
-	LOG(INFO, "Setting ao_strength: ", _ao_strength);
+	LOG(DEBUG, "Setting ao_strength: ", _ao_strength);
 	emit_signal("setting_changed");
 }
 
 void WorldScape3DTextureAsset::set_roughness(const real_t p_roughness) {
 	_roughness = CLAMP(p_roughness, -1.0f, 1.0f);
-	LOG(INFO, "Setting roughness modifier: ", _roughness);
+	LOG(DEBUG, "Setting roughness modifier: ", _roughness);
 	emit_signal("setting_changed");
 }
 
 void WorldScape3DTextureAsset::set_uv_scale(const real_t p_scale) {
 	_uv_scale = CLAMP(p_scale, 0.001f, 100.0f);
-	LOG(INFO, "Setting uv_scale: ", _uv_scale);
+	LOG(DEBUG, "Setting uv_scale: ", _uv_scale);
 	emit_signal("setting_changed");
 }
 
 // void WorldScape3DTextureAsset::set_vertical_projection(const bool p_projection) {
 // 	_vertical_projection = p_projection;
-// 	LOG(INFO, "Setting uv projection: ", _vertical_projection);
+// 	LOG(DEBUG, "Setting uv projection: ", _vertical_projection);
 // 	emit_signal("setting_changed");
 // }
 
 void WorldScape3DTextureAsset::set_detiling_rotation(const real_t p_detiling_rotation) {
 	_detiling_rotation = CLAMP(p_detiling_rotation, 0.0f, 1.0f);
-	LOG(INFO, "Setting detiling_rotation: ", _detiling_rotation);
+	LOG(DEBUG, "Setting detiling_rotation: ", _detiling_rotation);
 	emit_signal("setting_changed");
 }
 
 void WorldScape3DTextureAsset::set_detiling_shift(const real_t p_detiling_shift) {
 	_detiling_shift = CLAMP(p_detiling_shift, 0.0f, 1.0f);
-	LOG(INFO, "Setting detiling_shift: ", _detiling_shift);
+	LOG(DEBUG, "Setting detiling_shift: ", _detiling_shift);
 	emit_signal("setting_changed");
 }
 

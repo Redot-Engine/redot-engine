@@ -40,6 +40,8 @@
 
 #include "core/input/input.h"
 #include "core/io/marshalls.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
@@ -1533,6 +1535,248 @@ EditorPropertyDictionary::EditorPropertyDictionary() {
 	value_subtype = Variant::NIL;
 	value_subtype_hint = PROPERTY_HINT_NONE;
 	value_subtype_hint_string = "";
+}
+
+///////////////////// STRUCT ///////////////////////////
+
+// Synthetic per-field property paths exposed by the adapter object take the form `field/<name>`.
+static constexpr char STRUCT_FIELD_PREFIX[] = "field/";
+
+// Resolve the type an editor should be built for. Typed fields use their declared type; untyped
+// fields fall back to the current value's type (so an untyped field still gets a sensible editor).
+static Variant::Type _resolve_struct_field_type(const Ref<StructInfo> &p_info, const Struct &p_struct, int p_index) {
+	if (p_info->is_field_typed(p_index)) {
+		const Variant::Type declared = p_info->get_field_type(p_index);
+		if (declared != Variant::NIL) {
+			return declared;
+		}
+	}
+	return p_struct.get_member(p_index).get_type();
+}
+
+// Extract `<name>` from a `field/<name>` synthetic path, or an empty name if it isn't one.
+static StringName _struct_field_name(const StringName &p_property) {
+	const String property = p_property;
+	if (!property.begins_with(STRUCT_FIELD_PREFIX)) {
+		return StringName();
+	}
+	return property.trim_prefix(STRUCT_FIELD_PREFIX);
+}
+
+bool EditorPropertyStructObject::_set(const StringName &p_name, const Variant &p_value) {
+	const StringName field = _struct_field_name(p_name);
+	if (field == StringName() || struct_value.get_type() != Variant::STRUCT) {
+		return false;
+	}
+
+	bool valid = false;
+	struct_value.set_named(field, p_value, valid);
+	return valid;
+}
+
+bool EditorPropertyStructObject::_get(const StringName &p_name, Variant &r_ret) const {
+	const StringName field = _struct_field_name(p_name);
+	if (field == StringName() || struct_value.get_type() != Variant::STRUCT) {
+		return false;
+	}
+
+	bool valid = false;
+	r_ret = struct_value.get_named(field, valid);
+	return valid;
+}
+
+void EditorPropertyStructObject::set_struct(const Variant &p_struct) {
+	struct_value = p_struct;
+}
+
+Variant EditorPropertyStructObject::get_struct() const {
+	return struct_value;
+}
+
+void EditorPropertyStruct::_property_changed(const String &p_property, Variant p_value, const String &p_name, bool p_changing) {
+	const StringName field = _struct_field_name(p_property);
+	if (field == StringName()) {
+		return;
+	}
+
+	if (p_value.get_type() == Variant::OBJECT && p_value.is_null()) {
+		p_value = Variant(); // `EditorResourcePicker` resets to `Ref<Resource>()`. See GH-82716.
+	}
+
+	// Structs have value semantics: edit an independent copy and write it back whole. Keep the
+	// adapter's working copy synchronized before emitting so sibling fields observe the update.
+	Variant struct_value = object->get_struct();
+	bool valid = false;
+	struct_value.set_named(field, p_value, valid);
+	if (!valid) {
+		return;
+	}
+
+	// The inner field editor edits this adapter, not the owning Resource, so its own recursion guard
+	// never runs. Reject a field value that would store the edited Resource inside itself.
+	if (p_value.get_type() == Variant::OBJECT) {
+		Resource *edited_resource = Object::cast_to<Resource>(get_edited_object());
+		if (edited_resource && editor_property_has_recursive_resource(edited_resource, struct_value)) {
+			EditorNode::get_singleton()->show_warning(TTR("Recursion detected, unable to assign resource to property."));
+			update_property();
+			return;
+		}
+	}
+
+	object->set_struct(struct_value);
+	emit_changed(get_edited_property(), struct_value, p_name, p_changing);
+}
+
+void EditorPropertyStruct::_object_id_selected(const StringName &p_property, ObjectID p_id) {
+	emit_signal(SNAME("object_id_selected"), p_property, p_id);
+}
+
+void EditorPropertyStruct::_resource_selected(const String &p_path, Ref<Resource> p_resource) {
+	emit_signal(SNAME("resource_selected"), get_edited_property(), p_resource);
+}
+
+void EditorPropertyStruct::_edit_pressed() {
+	get_edited_object()->editor_set_section_unfold(get_edited_property(), edit->is_pressed());
+	update_property();
+}
+
+void EditorPropertyStruct::_clear_property_editors() {
+	if (!container) {
+		return;
+	}
+
+	set_bottom_editor(nullptr);
+	memdelete(container);
+	container = nullptr;
+	property_vbox = nullptr;
+	slots.clear();
+	built_layout_hash = 0;
+}
+
+void EditorPropertyStruct::_rebuild_property_editors(const Variant &p_value) {
+	_clear_property_editors();
+
+	const Struct s = p_value;
+	const Ref<StructInfo> info = s.get_info();
+
+	container = memnew(PanelContainer);
+	add_child(container);
+	set_bottom_editor(container);
+
+	property_vbox = memnew(VBoxContainer);
+	property_vbox->set_h_size_flags(SIZE_EXPAND_FILL);
+	container->add_child(property_vbox);
+
+	const int field_count = info.is_valid() ? info->get_field_count() : 0;
+	for (int i = 0; i < field_count; i++) {
+		const StringName field_name = info->get_field_name(i);
+		const Variant::Type field_type = _resolve_struct_field_type(info, s, i);
+
+		PropertyHint hint = PROPERTY_HINT_NONE;
+		String hint_string;
+		bool is_resource = false;
+		if (field_type == Variant::OBJECT) {
+			// Only Resource fields get a typed picker. A Node reference is not meaningfully editable
+			// through a value-semantics struct (a NODE_TYPE editor edits a NodePath, not an object),
+			// so non-resource objects fall back to the generic object editor.
+			const StringName class_name = info->get_field_class_name(i);
+			if (class_name != StringName() && ClassDB::is_parent_class(class_name, SNAME("Resource"))) {
+				hint = PROPERTY_HINT_RESOURCE_TYPE;
+				hint_string = class_name;
+				is_resource = true;
+			}
+		}
+
+		EditorProperty *prop = EditorInspector::instantiate_property_editor(this, field_type, "", hint, hint_string, PROPERTY_USAGE_NONE);
+		if (!prop) {
+			continue;
+		}
+		prop->set_object_and_property(object.ptr(), STRUCT_FIELD_PREFIX + String(field_name));
+		prop->set_label(String(field_name).capitalize());
+		prop->set_selectable(false);
+		prop->set_use_folding(is_using_folding());
+		prop->set_h_size_flags(SIZE_EXPAND_FILL);
+		prop->set_read_only(is_read_only());
+		prop->connect(SNAME("property_changed"), callable_mp(this, &EditorPropertyStruct::_property_changed));
+		prop->connect(SNAME("object_id_selected"), callable_mp(this, &EditorPropertyStruct::_object_id_selected));
+		if (is_resource) {
+			prop->connect("resource_selected", callable_mp(this, &EditorPropertyStruct::_resource_selected), CONNECT_DEFERRED);
+		}
+		property_vbox->add_child(prop);
+
+		Slot slot;
+		slot.prop = prop;
+		slot.field_index = i;
+		slot.type = field_type;
+		slots.push_back(slot);
+	}
+
+	built_layout_hash = info.is_valid() ? info->get_layout_hash() : 0;
+}
+
+void EditorPropertyStruct::update_property() {
+	Variant value = get_edited_property_value();
+
+	if (value.get_type() != Variant::STRUCT) {
+		edit->set_text(TTR("(unset)"));
+		edit->set_disabled(true);
+		edit->set_pressed(false);
+		_clear_property_editors();
+		return;
+	}
+	edit->set_disabled(false);
+
+	const Struct s = value;
+	const Ref<StructInfo> info = s.get_info();
+	edit->set_text(info.is_valid() ? String(info->get_logical_type_id()) : TTR("Struct"));
+
+	const bool unfolded = get_edited_object()->editor_is_section_unfolded(get_edited_property());
+	if (edit->is_pressed() != unfolded) {
+		edit->set_pressed(unfolded);
+	}
+
+	object->set_struct(value);
+
+	if (!unfolded) {
+		_clear_property_editors();
+		return;
+	}
+
+	// Rebuild the field editors when the struct layout changes (layout hash covers declared fields,
+	// types, and object class names), or when an untyped field's runtime type no longer matches the
+	// editor built for it (the layout hash can't capture that).
+	const uint64_t layout_hash = info.is_valid() ? info->get_layout_hash() : 0;
+	bool needs_rebuild = !container || built_layout_hash != layout_hash;
+	if (!needs_rebuild) {
+		for (const Slot &slot : slots) {
+			if (slot.type != _resolve_struct_field_type(info, s, slot.field_index)) {
+				needs_rebuild = true;
+				break;
+			}
+		}
+	}
+	if (needs_rebuild) {
+		_rebuild_property_editors(value);
+	}
+
+	for (const Slot &slot : slots) {
+		slot.prop->update_property();
+	}
+}
+
+EditorPropertyStruct::EditorPropertyStruct() {
+	object.instantiate();
+
+	edit = memnew(Button);
+	edit->set_accessibility_name(TTRC("Edit"));
+	edit->set_h_size_flags(SIZE_EXPAND_FILL);
+	edit->set_clip_text(true);
+	edit->connect(SceneStringName(pressed), callable_mp(this, &EditorPropertyStruct::_edit_pressed));
+	edit->set_toggle_mode(true);
+	add_child(edit);
+	add_focusable(edit);
+
+	has_borders = true;
 }
 
 ///////////////////// LOCALIZABLE STRING ///////////////////////////

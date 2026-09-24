@@ -101,6 +101,13 @@ public:
 
 	virtual void update() override;
 
+	/// @brief Configures the BVH to use a size-relative pairing margin capped at
+	/// @p p_expansion, so large objects gain hysteresis while small objects keep a
+	/// tiny margin.
+	/// @param p_expansion Maximum pairing margin in pixels. Values <= 0 leave the
+	/// BVH's default pair-count-based margin scaling in place.
+	virtual void set_pairing_expansion(real_t p_expansion) override;
+
 	static GodotBroadPhase2D *_create();
 	GodotBroadPhase2DBVH();
 };

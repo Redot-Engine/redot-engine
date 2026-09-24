@@ -2769,6 +2769,8 @@ Vector<String> GDScriptLanguage::get_reserved_words() const {
 		"namespace", // Reserved for potential future use.
 		"signal",
 		"static",
+		"struct",
+		"struct_name",
 		"trait",
 		"trait_name",
 		"uses",
@@ -2833,7 +2835,8 @@ void GDScriptLanguage::get_global_struct_names(const String &p_path, List<String
 
 	String source = f->get_as_utf8_string();
 
-	if (!source.contains("struct")) {
+	// Only structs declared with `struct_name` are registered globally.
+	if (!source.contains("struct_name")) {
 		return;
 	}
 
@@ -2848,7 +2851,7 @@ void GDScriptLanguage::get_global_struct_names(const String &p_path, List<String
 	HashSet<StringName> seen;
 	for (int i = 0; i < c->members.size(); i++) {
 		const GDScriptParser::ClassNode::Member &m = c->members[i];
-		if (m.type == GDScriptParser::ClassNode::Member::STRUCT && m.m_struct->identifier != nullptr) {
+		if (m.type == GDScriptParser::ClassNode::Member::STRUCT && m.m_struct->is_global && m.m_struct->identifier != nullptr) {
 			const StringName &name = m.m_struct->identifier->name;
 			if (!seen.has(name)) {
 				seen.insert(name);

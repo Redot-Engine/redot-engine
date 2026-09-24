@@ -1,0 +1,2 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 1: Global struct "TraitStructClash" conflicts with a global class or trait of the same name.

@@ -72,5 +72,13 @@ public:
 
 	virtual void update() = 0;
 
+	/// @brief Sets the broadphase pairing margin used to keep collision pairs alive
+	/// between frames, reducing pair churn for large or overlapping shapes.
+	/// @details Read once when a physics space is created (see GodotSpace2D). The base
+	/// implementation is a no-op; backends that support it override this.
+	/// @param p_expansion Maximum pairing margin in pixels. Values <= 0 disable the
+	/// feature and fall back to the backend's default margin behavior.
+	virtual void set_pairing_expansion(real_t p_expansion) {}
+
 	virtual ~GodotBroadPhase2D();
 };

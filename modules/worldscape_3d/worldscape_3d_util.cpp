@@ -209,7 +209,7 @@ Vector2 WorldScape3DUtil::get_min_max(const Ref<Image> &p_image) {
 		}
 	}
 
-	LOG(INFO, "Calculating minimum and maximum values of the image: ", min_max);
+	LOG(DEBUG, "Calculating minimum and maximum values of the image: ", min_max);
 	return min_max;
 }
 
@@ -227,7 +227,7 @@ Ref<Image> WorldScape3DUtil::get_thumbnail(const Ref<Image> &p_image, const Vect
 	}
 	Vector2i size = Vector2i(CLAMP(p_size.x, 8, 16384), CLAMP(p_size.y, 8, 16384));
 
-	LOG(INFO, "Drawing a thumbnail sized: ", size);
+	LOG(DEBUG, "Drawing a thumbnail sized: ", size);
 	// Create a temporary work image scaled to desired width
 	Ref<Image> img;
 	img.instantiate();
@@ -355,7 +355,7 @@ Ref<Image> WorldScape3DUtil::load_image(const String &p_file_name, const int p_c
 
 	// Load file based on extension
 	Ref<Image> img;
-	LOG(INFO, "Attempting to load: ", p_file_name);
+	LOG(DEBUG, "Attempting to load: ", p_file_name);
 	String ext = p_file_name.get_extension().to_lower();
 	PackedStringArray imgloader_extensions{ "bmp", "dds", "exr", "hdr", "jpg", "jpeg", "png", "tga", "svg", "webp" };
 
@@ -445,7 +445,7 @@ Ref<Image> WorldScape3DUtil::pack_image(const Ref<Image> &p_src_rgb, const Ref<I
 	}
 
 	Ref<Image> dst = Image::create_empty(p_src_rgb->get_width(), p_src_rgb->get_height(), false, Image::FORMAT_RGBA8);
-	LOG(INFO, "Creating image from source RGB + source channel images");
+	LOG(DEBUG, "Creating image from source RGB + source channel images");
 	for (int y = 0; y < p_src_rgb->get_height(); y++) {
 		for (int x = 0; x < p_src_rgb->get_width(); x++) {
 			Color col = p_src_rgb->get_pixel(x, y);

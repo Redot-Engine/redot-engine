@@ -592,6 +592,7 @@ public:
 		Vector<VariableNode *> fields;
 		HashMap<StringName, int> fields_indices;
 		String fqcn;
+		bool is_global = false; // Declared with `struct_name`: registered globally, usable by bare name across files.
 		ClassNode *outer = nullptr;
 		Ref<StructInfo> struct_info;
 		enum ResolveState {
@@ -879,9 +880,7 @@ public:
 			members.push_back(Member(p_enum_value));
 		}
 		void add_member_group(AnnotationNode *p_annotation_node) {
-			// Avoid name conflict. See GH-78252.
-			StringName name = vformat("@group_%d_%s", members.size(), p_annotation_node->export_info.name);
-			members_indices[name] = members.size();
+			// Groups are ordered Inspector metadata, not named class members.
 			members.push_back(Member(p_annotation_node));
 		}
 
@@ -1448,6 +1447,7 @@ private:
 
 	bool _is_trait = false; // True when parsing a trait, not a class.
 	bool _is_trait_file = false;
+	bool _next_struct_is_global = false; // Set when the pending struct was declared with `struct_name`.
 	bool _is_tool = false;
 	String script_path;
 	bool for_completion = false;

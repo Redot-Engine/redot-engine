@@ -234,7 +234,9 @@ TEST_CASE("[Multiplayer][SceneReplication] Truncated buffer decodes to an error,
 	Vector<Variant> out;
 	out.resize(1);
 	int consumed = 0;
+	ERR_PRINT_OFF;
 	Error err = MultiplayerSynchronizer::decode_state_quantized(out, half.ptr(), buffer.ptr(), size - 1, consumed, false);
+	ERR_PRINT_ON;
 	CHECK(err != OK);
 }
 
@@ -256,7 +258,9 @@ TEST_CASE("[Multiplayer][SceneReplication] Half/full precision mismatch is rejec
 	Vector<Variant> out;
 	out.resize(1);
 	int consumed = 0;
+	ERR_PRINT_OFF;
 	Error err = MultiplayerSynchronizer::decode_state_quantized(out, full.ptr(), buffer.ptr(), size, consumed, false);
+	ERR_PRINT_ON;
 	CHECK((err != OK || consumed != size));
 }
 
