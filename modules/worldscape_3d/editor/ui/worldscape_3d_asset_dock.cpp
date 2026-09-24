@@ -110,22 +110,6 @@ ListEntry::ListEntry(const WorldScape3DAssets::AssetType type) {
 	_button_enabled = memnew(TextureButton);
 }
 
-ListEntry::~ListEntry() {
-	if (_count_label) {
-		_count_label->queue_free();
-	}
-	if (_name_label) {
-		_name_label->queue_free();
-	}
-	_button_enabled->queue_free();
-	_spacer->queue_free();
-	_button_edit->queue_free();
-	_button_clear->queue_free();
-	_button_row->queue_free();
-	_margin->queue_free();
-	_label_rows->queue_free();
-}
-
 void ListEntry::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("hovered"));
 	ADD_SIGNAL(MethodInfo("selected"));
@@ -135,6 +119,22 @@ void ListEntry::_bind_methods() {
 
 void ListEntry::_notification(int what) {
 	switch (what) {
+		case NOTIFICATION_PREDELETE:
+			// Also release controls that have not been parented by init().
+			if (_count_label) {
+				memdelete(_count_label);
+			}
+			if (_name_label) {
+				memdelete(_name_label);
+			}
+			memdelete(_button_enabled);
+			memdelete(_spacer);
+			memdelete(_button_edit);
+			memdelete(_button_clear);
+			memdelete(_button_row);
+			memdelete(_margin);
+			memdelete(_label_rows);
+			break;
 		case NOTIFICATION_POST_ENTER_TREE:
 			init();
 			break;
@@ -499,10 +499,6 @@ ListContainer::ListContainer(WorldScape3DEditorPlugin *plugin) :
 	set_h_size_flags(SIZE_EXPAND_FILL);
 }
 
-ListContainer::~ListContainer() {
-	clear();
-}
-
 void ListContainer::clear() {
 	for (auto *e : _entries) {
 		e->queue_free();
@@ -719,6 +715,11 @@ void ListContainer::redraw() {
 void ListContainer::_notification(int what) {
 	if (what == NOTIFICATION_SORT_CHILDREN) {
 		redraw();
+	} else if (what == NOTIFICATION_PREDELETE) {
+		for (ListEntry *entry : _entries) {
+			memdelete(entry);
+		}
+		_entries.clear();
 	}
 }
 
@@ -948,24 +949,6 @@ WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 	load_editor_settings();
 
 	_initialized = true;
-}
-
-WorldScape3DAssetDock::~WorldScape3DAssetDock() {
-	_mesh_list->clear();
-	_mesh_list->queue_free();
-	_texture_list->clear();
-	_texture_list->queue_free();
-
-	_placement_opt->queue_free();
-	_floating_btn->queue_free();
-	_pinned_btn->queue_free();
-	_size_slider->queue_free();
-	_box->queue_free();
-	_buttons->queue_free();
-	_textures_btn->queue_free();
-	_meshes_btn->queue_free();
-	_asset_container->queue_free();
-	_confirm_dialog->queue_free();
 }
 
 // Dock placement
@@ -1329,6 +1312,11 @@ void WorldScape3DAssetDock::_bind_methods() {
 void WorldScape3DAssetDock::_notification(int what) {
 	if (what == NOTIFICATION_POSTINITIALIZE) {
 		init();
+	} else if (what == NOTIFICATION_PREDELETE) {
+		memdelete(_box);
+		if (_confirm_dialog) {
+			memdelete(_confirm_dialog);
+		}
 	}
 }
 
