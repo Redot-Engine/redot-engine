@@ -50,7 +50,8 @@ static_assert(std::is_nothrow_destructible_v<Struct>);
 
 struct StructData {
 	Ref<StructInfo> info;
-	int field_count = 0;
+
+	_FORCE_INLINE_ int field_count() const { return info->get_field_count(); }
 
 	StructData() = default;
 	StructData(const StructData &) = delete;
@@ -73,7 +74,6 @@ struct StructData {
 		uint8_t *mem = (uint8_t *)memalloc(bytes);
 		ERR_FAIL_NULL_V(mem, nullptr);
 		StructData *d = memnew_placement(mem, StructData);
-		d->field_count = p_field_count;
 		return d;
 	}
 
@@ -82,7 +82,8 @@ struct StructData {
 			return;
 		}
 		Variant *v = p_data->values();
-		for (int i = 0; i < p_data->field_count; i++) {
+		const int fc = p_data->field_count();
+		for (int i = 0; i < fc; i++) {
 			v[i].~Variant();
 		}
 		p_data->~StructData();
@@ -95,11 +96,12 @@ struct StructData {
 		ERR_FAIL_COND_V_MSG(!p_info->is_frozen(), nullptr,
 				"Cannot construct a Struct from an unfinished (unfrozen) schema.");
 
-		StructData *d = alloc(p_info->get_field_count());
+		const int fc = p_info->get_field_count();
+		StructData *d = alloc(fc);
 		ERR_FAIL_NULL_V(d, nullptr);
 		d->info = p_info;
 		Variant *v = d->values();
-		for (int i = 0; i < d->field_count; i++) {
+		for (int i = 0; i < fc; i++) {
 			memnew_placement(&v[i], Variant(p_info->instantiate_default(i)));
 		}
 		return d;
@@ -112,14 +114,14 @@ StructData *Struct::_copy_data(const StructData *p_from) {
 	}
 	DEV_ASSERT(p_from->info.is_valid());
 	DEV_ASSERT(p_from->info->is_frozen());
-	DEV_ASSERT(p_from->field_count >= 0);
 
-	StructData *d = StructData::alloc(p_from->field_count);
+	const int fc = p_from->field_count();
+	StructData *d = StructData::alloc(fc);
 	ERR_FAIL_NULL_V(d, nullptr);
 	d->info = p_from->info;
 	Variant *dst = d->values();
 	const Variant *src = p_from->values();
-	for (int i = 0; i < d->field_count; i++) {
+	for (int i = 0; i < fc; i++) {
 		memnew_placement(&dst[i], Variant(src[i]));
 	}
 	return d;
@@ -182,12 +184,12 @@ uint64_t Struct::get_layout_hash() const noexcept {
 }
 
 int Struct::get_field_count() const noexcept {
-	return _p ? _p->field_count : 0;
+	return _p ? _p->field_count() : 0;
 }
 
 Variant Struct::get_member(int p_index) const {
 	ERR_FAIL_NULL_V(_p, Variant());
-	ERR_FAIL_INDEX_V(p_index, _p->field_count, Variant());
+	ERR_FAIL_INDEX_V(p_index, _p->field_count(), Variant());
 	return _p->values()[p_index];
 }
 
@@ -204,7 +206,7 @@ Variant Struct::get_member_serializable(int p_index) const {
 
 void Struct::set_member(int p_index, const Variant &p_value) {
 	ERR_FAIL_NULL(_p);
-	ERR_FAIL_INDEX(p_index, _p->field_count);
+	ERR_FAIL_INDEX(p_index, _p->field_count());
 	Variant normalized;
 	ERR_FAIL_COND_MSG(!_p->info->normalize_value(p_index, p_value, normalized),
 			vformat(R"(Value of type "%s" is incompatible with struct field %d.)",
@@ -222,7 +224,7 @@ bool Struct::get_named(const StringName &p_name, Variant &r_value) const {
 	if (idx < 0) {
 		return false;
 	}
-	DEV_ASSERT(idx < _p->field_count);
+	DEV_ASSERT(idx < _p->field_count());
 	r_value = _p->values()[idx];
 	return true;
 }
@@ -235,7 +237,7 @@ bool Struct::set_named(const StringName &p_name, const Variant &p_value) {
 	if (idx < 0) {
 		return false;
 	}
-	DEV_ASSERT(idx < _p->field_count);
+	DEV_ASSERT(idx < _p->field_count());
 	Variant normalized;
 	ERR_FAIL_COND_V_MSG(!_p->info->normalize_value(idx, p_value, normalized), false,
 			vformat(R"(Value of type "%s" is incompatible with struct field "%s".)",
@@ -254,7 +256,7 @@ uint32_t Struct::recursive_hash(int recursion_count) const {
 		h = hash_murmur3_one_32(_p->info->get_logical_type_id().hash(), h);
 		h = hash_murmur3_one_64(_p->info->get_layout_hash(), h);
 		recursion_count++;
-		for (int i = 0; i < _p->field_count; i++) {
+		for (int i = 0; i < _p->field_count(); i++) {
 			h = hash_murmur3_one_32(_p->values()[i].recursive_hash(recursion_count), h);
 		}
 	}
@@ -267,7 +269,7 @@ int Struct::index_of(const StringName &p_name) const {
 
 bool Struct::try_set_member(int p_index, const Variant &p_value) {
 	Variant normalized;
-	if (!_p || p_index < 0 || p_index >= _p->field_count || !_p->info->normalize_value(p_index, p_value, normalized)) {
+	if (!_p || p_index < 0 || p_index >= _p->field_count() || !_p->info->normalize_value(p_index, p_value, normalized)) {
 		return false;
 	}
 	_p->values()[p_index] = normalized;
@@ -284,7 +286,7 @@ Struct Struct::recursive_duplicate(bool p_deep, ResourceDeepDuplicateMode p_deep
 	}
 	recursion_count++;
 	Struct dup = *this;
-	for (int i = 0; i < dup._p->field_count; i++) {
+	for (int i = 0; i < dup._p->field_count(); i++) {
 		dup._p->values()[i] = dup._p->values()[i].recursive_duplicate(p_deep, p_deep_subresources_mode, recursion_count);
 	}
 	return dup;
@@ -304,7 +306,7 @@ bool Struct::operator==(const Struct &p_other) const {
 	if (lhs_info != rhs_info && !lhs_info->is_same_layout_as(*rhs_info)) {
 		return false;
 	}
-	for (int i = 0; i < _p->field_count; i++) {
+	for (int i = 0; i < _p->field_count(); i++) {
 		if (!(_p->values()[i] == p_other._p->values()[i])) {
 			return false;
 		}
