@@ -48,6 +48,27 @@ static_assert(std::is_nothrow_move_constructible_v<Struct>);
 static_assert(std::is_nothrow_move_assignable_v<Struct>);
 static_assert(std::is_nothrow_destructible_v<Struct>);
 
+template <typename T>
+struct StructFieldOps {
+	static void construct(void *p_slot, const Variant &p_default) {
+		memnew_placement(p_slot, T(p_default.operator T()));
+	}
+	static void copy(void *p_dst, const void *p_src) {
+		memnew_placement(p_dst, T(*static_cast<const T *>(p_src)));
+	}
+	static void destruct(void *p_slot) {
+		if constexpr (!std::is_trivially_destructible_v<T>) {
+			static_cast<T *>(p_slot)->~T();
+		}
+	}
+	static Variant get(const void *p_slot) {
+		return Variant(*static_cast<const T *>(p_slot));
+	}
+	static void set(void *p_slot, const Variant &p_value) {
+		*static_cast<T *>(p_slot) = p_value.operator T();
+	}
+};
+
 struct StructData {
 	Ref<StructInfo> info;
 
@@ -57,23 +78,100 @@ struct StructData {
 	StructData(const StructData &) = delete;
 	StructData &operator=(const StructData &) = delete;
 
-	static constexpr size_t values_offset() {
+	static constexpr size_t data_offset() {
 		return (sizeof(StructData) + alignof(Variant) - 1) & ~(alignof(Variant) - 1);
 	}
 
-	_FORCE_INLINE_ Variant *values() {
-		return reinterpret_cast<Variant *>(reinterpret_cast<uint8_t *>(this) + values_offset());
+	_FORCE_INLINE_ uint8_t *data() {
+		return reinterpret_cast<uint8_t *>(this) + data_offset();
+	}
+	_FORCE_INLINE_ const uint8_t *data() const {
+		return reinterpret_cast<const uint8_t *>(this) + data_offset();
+	}
+	_FORCE_INLINE_ void *slot(int p_index) { return data() + info->get_field_offset(p_index); }
+	_FORCE_INLINE_ const void *slot(int p_index) const { return data() + info->get_field_offset(p_index); }
+
+	void construct_default(int p_index) {
+		void *s = slot(p_index);
+		switch (info->get_field_storage(p_index)) {
+#define _STRUCT_CONSTRUCT(m_suffix, m_type)                                       \
+	case StructInfo::STORAGE_##m_suffix:                                          \
+		StructFieldOps<m_type>::construct(s, info->instantiate_default(p_index)); \
+		return;
+			STRUCT_NATIVE_STORAGE_TYPES(_STRUCT_CONSTRUCT)
+#undef _STRUCT_CONSTRUCT
+			default:
+				memnew_placement(s, Variant(info->instantiate_default(p_index)));
+				return;
+		}
 	}
 
-	_FORCE_INLINE_ const Variant *values() const {
-		return reinterpret_cast<const Variant *>(reinterpret_cast<const uint8_t *>(this) + values_offset());
+	void copy_construct(int p_index, const StructData &p_from) {
+		void *d = slot(p_index);
+		const void *sc = p_from.slot(p_index);
+		switch (info->get_field_storage(p_index)) {
+#define _STRUCT_COPY(m_suffix, m_type)       \
+	case StructInfo::STORAGE_##m_suffix:     \
+		StructFieldOps<m_type>::copy(d, sc); \
+		return;
+			STRUCT_NATIVE_STORAGE_TYPES(_STRUCT_COPY)
+#undef _STRUCT_COPY
+			default:
+				memnew_placement(d, Variant(*static_cast<const Variant *>(sc)));
+				return;
+		}
 	}
 
-	static StructData *alloc(int p_field_count) {
-		const size_t bytes = values_offset() + (size_t)MAX(p_field_count, 0) * sizeof(Variant);
+	void destruct(int p_index) {
+		void *s = slot(p_index);
+		switch (info->get_field_storage(p_index)) {
+#define _STRUCT_DESTRUCT(m_suffix, m_type)   \
+	case StructInfo::STORAGE_##m_suffix:     \
+		StructFieldOps<m_type>::destruct(s); \
+		return;
+			STRUCT_NATIVE_STORAGE_TYPES(_STRUCT_DESTRUCT)
+#undef _STRUCT_DESTRUCT
+			default:
+				static_cast<Variant *>(s)->~Variant();
+				return;
+		}
+	}
+
+	Variant get(int p_index) const {
+		const void *s = slot(p_index);
+		switch (info->get_field_storage(p_index)) {
+#define _STRUCT_GET(m_suffix, m_type)    \
+	case StructInfo::STORAGE_##m_suffix: \
+		return StructFieldOps<m_type>::get(s);
+			STRUCT_NATIVE_STORAGE_TYPES(_STRUCT_GET)
+#undef _STRUCT_GET
+			default:
+				return *static_cast<const Variant *>(s);
+		}
+	}
+
+	// p_value must already be normalized to the field's type by the caller.
+	void set(int p_index, const Variant &p_value) {
+		void *s = slot(p_index);
+		switch (info->get_field_storage(p_index)) {
+#define _STRUCT_SET(m_suffix, m_type)            \
+	case StructInfo::STORAGE_##m_suffix:         \
+		StructFieldOps<m_type>::set(s, p_value); \
+		return;
+			STRUCT_NATIVE_STORAGE_TYPES(_STRUCT_SET)
+#undef _STRUCT_SET
+			default:
+				*static_cast<Variant *>(s) = p_value;
+				return;
+		}
+	}
+
+	static StructData *alloc(const Ref<StructInfo> &p_info) {
+		const size_t bytes = data_offset() + p_info->get_data_size();
 		uint8_t *mem = (uint8_t *)memalloc(bytes);
 		ERR_FAIL_NULL_V(mem, nullptr);
 		StructData *d = memnew_placement(mem, StructData);
+		d->info = p_info;
 		return d;
 	}
 
@@ -81,10 +179,9 @@ struct StructData {
 		if (!p_data) {
 			return;
 		}
-		Variant *v = p_data->values();
 		const int fc = p_data->field_count();
 		for (int i = 0; i < fc; i++) {
-			v[i].~Variant();
+			p_data->destruct(i);
 		}
 		p_data->~StructData();
 		memfree(p_data);
@@ -96,13 +193,11 @@ struct StructData {
 		ERR_FAIL_COND_V_MSG(!p_info->is_frozen(), nullptr,
 				"Cannot construct a Struct from an unfinished (unfrozen) schema.");
 
-		const int fc = p_info->get_field_count();
-		StructData *d = alloc(fc);
+		StructData *d = alloc(p_info);
 		ERR_FAIL_NULL_V(d, nullptr);
-		d->info = p_info;
-		Variant *v = d->values();
+		const int fc = d->field_count();
 		for (int i = 0; i < fc; i++) {
-			memnew_placement(&v[i], Variant(p_info->instantiate_default(i)));
+			d->construct_default(i);
 		}
 		return d;
 	}
@@ -115,14 +210,11 @@ StructData *Struct::_copy_data(const StructData *p_from) {
 	DEV_ASSERT(p_from->info.is_valid());
 	DEV_ASSERT(p_from->info->is_frozen());
 
-	const int fc = p_from->field_count();
-	StructData *d = StructData::alloc(fc);
+	StructData *d = StructData::alloc(p_from->info);
 	ERR_FAIL_NULL_V(d, nullptr);
-	d->info = p_from->info;
-	Variant *dst = d->values();
-	const Variant *src = p_from->values();
+	const int fc = d->field_count();
 	for (int i = 0; i < fc; i++) {
-		memnew_placement(&dst[i], Variant(src[i]));
+		d->copy_construct(i, *p_from);
 	}
 	return d;
 }
@@ -190,7 +282,7 @@ int Struct::get_field_count() const noexcept {
 Variant Struct::get_member(int p_index) const {
 	ERR_FAIL_NULL_V(_p, Variant());
 	ERR_FAIL_INDEX_V(p_index, _p->field_count(), Variant());
-	return _p->values()[p_index];
+	return _p->get(p_index);
 }
 
 Variant Struct::_make_serializable(const Variant &p_value) {
@@ -211,7 +303,7 @@ void Struct::set_member(int p_index, const Variant &p_value) {
 	ERR_FAIL_COND_MSG(!_p->info->normalize_value(p_index, p_value, normalized),
 			vformat(R"(Value of type "%s" is incompatible with struct field %d.)",
 					Variant::get_type_name(p_value.get_type()), p_index));
-	_p->values()[p_index] = normalized;
+	_p->set(p_index, normalized);
 }
 
 bool Struct::get_named(const StringName &p_name, Variant &r_value) const {
@@ -225,7 +317,7 @@ bool Struct::get_named(const StringName &p_name, Variant &r_value) const {
 		return false;
 	}
 	DEV_ASSERT(idx < _p->field_count());
-	r_value = _p->values()[idx];
+	r_value = _p->get(idx);
 	return true;
 }
 
@@ -242,7 +334,7 @@ bool Struct::set_named(const StringName &p_name, const Variant &p_value) {
 	ERR_FAIL_COND_V_MSG(!_p->info->normalize_value(idx, p_value, normalized), false,
 			vformat(R"(Value of type "%s" is incompatible with struct field "%s".)",
 					Variant::get_type_name(p_value.get_type()), p_name));
-	_p->values()[idx] = normalized;
+	_p->set(idx, normalized);
 	return true;
 }
 
@@ -257,7 +349,7 @@ uint32_t Struct::recursive_hash(int recursion_count) const {
 		h = hash_murmur3_one_64(_p->info->get_layout_hash(), h);
 		recursion_count++;
 		for (int i = 0; i < _p->field_count(); i++) {
-			h = hash_murmur3_one_32(_p->values()[i].recursive_hash(recursion_count), h);
+			h = hash_murmur3_one_32(_p->get(i).recursive_hash(recursion_count), h);
 		}
 	}
 	return hash_fmix32(h);
@@ -272,7 +364,7 @@ bool Struct::try_set_member(int p_index, const Variant &p_value) {
 	if (!_p || p_index < 0 || p_index >= _p->field_count() || !_p->info->normalize_value(p_index, p_value, normalized)) {
 		return false;
 	}
-	_p->values()[p_index] = normalized;
+	_p->set(p_index, normalized);
 	return true;
 }
 
@@ -287,7 +379,7 @@ Struct Struct::recursive_duplicate(bool p_deep, ResourceDeepDuplicateMode p_deep
 	recursion_count++;
 	Struct dup = *this;
 	for (int i = 0; i < dup._p->field_count(); i++) {
-		dup._p->values()[i] = dup._p->values()[i].recursive_duplicate(p_deep, p_deep_subresources_mode, recursion_count);
+		dup._p->set(i, dup._p->get(i).recursive_duplicate(p_deep, p_deep_subresources_mode, recursion_count));
 	}
 	return dup;
 }
@@ -307,7 +399,7 @@ bool Struct::operator==(const Struct &p_other) const {
 		return false;
 	}
 	for (int i = 0; i < _p->field_count(); i++) {
-		if (!(_p->values()[i] == p_other._p->values()[i])) {
+		if (!(_p->get(i) == p_other._p->get(i))) {
 			return false;
 		}
 	}

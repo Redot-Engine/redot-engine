@@ -2818,6 +2818,7 @@ void GDScriptAnalyzer::resolve_assignable(GDScriptParser::AssignableNode *p_assi
 
 bool GDScriptAnalyzer::struct_field_from_datatype(const GDScriptParser::DataType &p_type, StructInfo::Field &r_field) {
 	using DT = GDScriptParser::DataType;
+	r_field.is_nullable = p_type.is_nullable;
 	if (!p_type.is_hard_type() || p_type.kind == DT::VARIANT) {
 		r_field.is_typed = false;
 		r_field.type = Variant::NIL;
