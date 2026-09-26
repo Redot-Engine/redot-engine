@@ -14,6 +14,7 @@
 # - Build configuration
 # - Godot generated files
 # - General build output
+# - Coding agent configuration
 # - IDE and tool specific
 # - Visual Studio specific
 # - OS specific
@@ -106,6 +107,34 @@ platform/web/node_modules/
 # Misc
 *.debug
 
+##################################
+### Coding agent configuration ###
+##################################
+
+.agent/
+.agents/
+.augment/
+.claude/
+.cline/
+.clinerules/
+.codex/
+.continue/
+.cursor/
+.devin/
+.gemini/
+.github/agents/
+.github/copilot/
+.github/instructions/
+.junie/
+.kilo/
+.kilocode/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.windsurf/
+
 #############################
 ### IDE and tool specific ###
 #############################
@@ -162,7 +191,6 @@ gmon.out
 # Jetbrains IDEs
 .idea/
 .fleet/
-.junie/
 
 # Kate
 *.kate-swp
