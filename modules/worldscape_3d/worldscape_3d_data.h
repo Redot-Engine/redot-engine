@@ -273,9 +273,9 @@ inline int WorldScape3DData::get_region_idp(const Vector3 &p_global_position) co
 	return get_region_id(get_region_location(p_global_position));
 }
 
-// This function is slower than the version below, but safer when interacting with Godot, which requires
+// This function is slower than the version below, but safer when interacting with Redot, which requires
 // References. This includes backing up regions in the UndoRedoManager.
-// Ref<> has a pointer constructor, so a reference can be created with Ref<>(ptr). Godot detects the
+// Ref<> has a pointer constructor, so a reference can be created with Ref<>(ptr). Redot detects the
 // pointer is already tracked and increments the reference counter.
 // Passing the pointer to a function with a Ref<> parameter works, and there's an implicit conversion to Ref.
 // However, let's require explicit conversions for clarity, so wrap a Ref around it:
