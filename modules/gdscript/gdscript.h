@@ -269,6 +269,7 @@ public:
 	GDScript *get_root_script();
 	bool is_root_script() const { return _owner == nullptr; }
 	String get_fully_qualified_name() const { return fully_qualified_name; }
+	StringName get_qualified_class_name() const override { return fully_qualified_name; }
 	const HashMap<StringName, Ref<GDScript>> &get_subclasses() const { return subclasses; }
 	const HashMap<StringName, Variant> &get_constants() const { return constants; }
 	const HashSet<StringName> &get_members() const { return members; }

@@ -1,0 +1,2 @@
+GDTEST_ANALYZER_ERROR
+>> ERROR at line 11: Cannot pass a value of type "Unrelated" as struct field "value" of type "Payload".

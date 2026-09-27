@@ -74,6 +74,11 @@ void Script::_notification(int p_what) {
 	}
 }
 
+StringName Script::get_qualified_class_name() const {
+	const StringName global_name = get_global_name();
+	return global_name != StringName() ? global_name : StringName(get_path());
+}
+
 Variant Script::_get_property_default_value(const StringName &p_property) {
 	Variant ret;
 	get_property_default_value(p_property, ret);

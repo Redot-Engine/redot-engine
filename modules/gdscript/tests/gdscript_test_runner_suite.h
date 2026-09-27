@@ -46,7 +46,13 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
+#include "core/io/json.h"
+#include "core/io/marshalls.h"
 #include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
+#include "core/variant/struct.h"
+#include "core/variant/struct_info.h"
+#include "core/variant/variant_parser.h"
 #include "scene/resources/packed_scene.h"
 
 #include "tests/test_macros.h"
@@ -116,6 +122,182 @@ TEST_SUITE("[Modules][GDScript]") {
 #endif // TOOLS_ENABLED
 
 #ifdef TOOLS_ENABLED
+TEST_CASE("[Modules][GDScript] Struct object fields retain script and trait constraints") {
+	GDScriptLanguage::get_singleton()->init();
+	Ref<GDScript> script;
+	script.instantiate();
+	script->set_source_code(R"(
+class_name StructConstraintRoot
+
+class Base:
+	var value: int = 7
+
+class Derived extends Base:
+	pass
+
+trait Feature:
+	var marker: int = 42
+
+trait ExtraFeature:
+	uses Feature
+
+class Implementer extends Base:
+	uses ExtraFeature
+
+class InheritedImplementer extends Implementer:
+	pass
+
+class Unrelated:
+	pass
+
+struct Record:
+	var object: Base
+	var feature: Feature
+
+func make_record():
+	return Record.new()
+)");
+	REQUIRE(script->reload() == OK);
+	Ref<RefCounted> owner;
+	owner.instantiate();
+	owner->set_script(script);
+	Struct record = owner->call("make_record");
+	REQUIRE_FALSE(record.is_null());
+	const Ref<StructInfo> info = record.get_info();
+	CHECK(info->get_field_class_name(0) == StringName(script->get_fully_qualified_name() + "::Base"));
+	CHECK(info->get_field_class_name(1) == StringName(script->get_fully_qualified_name() + "::Feature"));
+
+	auto instantiate = [&](const String &p_class) {
+		Ref<RefCounted> object;
+		object.instantiate();
+		object->set_script(script->find_class(p_class));
+		return object;
+	};
+	Ref<RefCounted> base = instantiate("Base");
+	Ref<RefCounted> derived = instantiate("Derived");
+	Ref<RefCounted> implementer = instantiate("InheritedImplementer");
+	Ref<RefCounted> unrelated = instantiate("Unrelated");
+	Ref<RefCounted> native;
+	native.instantiate();
+
+	auto check_constraints = [&](Struct p_record) {
+		REQUIRE_FALSE(p_record.is_null());
+		CHECK(p_record.get_info()->is_same_layout_as(*info.ptr()));
+		CHECK(p_record.get_info()->get_schema_fingerprint() == info->get_schema_fingerprint());
+		CHECK(p_record.try_set_member(0, base));
+		CHECK(p_record.try_set_member(0, derived));
+		CHECK(p_record.try_set_member(0, implementer));
+		CHECK_FALSE(p_record.try_set_member(0, unrelated));
+		CHECK_FALSE(p_record.try_set_member(0, native));
+		CHECK(p_record.try_set_member(1, implementer));
+		CHECK_FALSE(p_record.try_set_member(1, base));
+		CHECK_FALSE(p_record.try_set_member(1, unrelated));
+		CHECK_FALSE(p_record.try_set_member(1, native));
+		Variant dynamic = p_record;
+		bool valid = true;
+		ERR_PRINT_OFF;
+		dynamic.set_named("object", unrelated, valid);
+		ERR_PRINT_ON;
+		CHECK_FALSE(valid);
+		ERR_PRINT_OFF;
+		dynamic.set(1, base, &valid);
+		ERR_PRINT_ON;
+		CHECK_FALSE(valid);
+		CHECK(Struct(dynamic).get_member(0) == Variant(implementer));
+		CHECK(Struct(dynamic).get_member(1) == Variant(implementer));
+		CHECK(p_record.try_set_member(0, Variant()));
+		CHECK(p_record.try_set_member(1, Variant()));
+	};
+	check_constraints(record);
+
+	String text;
+	VariantWriter::write_to_string(record, text);
+	VariantParser::StreamString stream;
+	stream.s = text;
+	Variant restored;
+	String error;
+	int line = 0;
+	REQUIRE(VariantParser::parse(&stream, restored, error, line) == OK);
+	check_constraints(restored);
+	check_constraints(JSON::to_native(JSON::from_native(record, true), true));
+	int length = 0;
+	REQUIRE(encode_variant(record, nullptr, length, false) == OK);
+	Vector<uint8_t> bytes;
+	bytes.resize(length);
+	REQUIRE(encode_variant(record, bytes.ptrw(), length, false) == OK);
+	REQUIRE(decode_variant(restored, bytes.ptr(), bytes.size(), nullptr, false) == OK);
+	check_constraints(restored);
+
+	Ref<Resource> resource;
+	resource.instantiate();
+	resource->set_meta("record", record);
+	for (const char *extension : { "tres", "res" }) {
+		const String path = TestUtils::get_temp_path(String("struct_script_constraints.") + extension);
+		REQUIRE(ResourceSaver::save(resource, path) == OK);
+		Ref<Resource> loaded = ResourceLoader::load(path, "", ResourceFormatLoader::CACHE_MODE_IGNORE);
+		REQUIRE(loaded.is_valid());
+		check_constraints(loaded->get_meta("record"));
+	}
+	REQUIRE(script->reload(true) == OK);
+	Ref<RefCounted> reloaded_implementer = instantiate("InheritedImplementer");
+	Struct old_schema(info);
+	CHECK(old_schema.try_set_member(0, reloaded_implementer));
+	CHECK(old_schema.try_set_member(1, reloaded_implementer));
+	CHECK(old_schema.try_set_member(0, Variant()));
+	CHECK(old_schema.try_set_member(1, Variant()));
+}
+
+TEST_CASE("[Modules][GDScript] Struct script and trait resource fields survive save and load") {
+	if (ProjectSettings::get_singleton()->get_resource_path().is_empty()) {
+		REQUIRE(ProjectSettings::get_singleton()->setup("modules/gdscript/tests/scripts", String(), true) == OK);
+	}
+	GDScriptLanguage::get_singleton()->init();
+	const String fixture_dir = ProjectSettings::get_singleton()->localize_path(TestUtils::get_executable_dir().path_join("../modules/gdscript/tests/scripts/runtime/features").simplify_path());
+	Ref<GDScript> script = ResourceLoader::load(fixture_dir.path_join("struct_reference_payload.notest.gd"));
+	Ref<GDScript> trait = ResourceLoader::load(fixture_dir.path_join("struct_reference_trait.notest.gd"));
+	REQUIRE(script.is_valid());
+	REQUIRE(script->is_valid());
+	REQUIRE(trait.is_valid());
+	REQUIRE(trait->is_trait());
+	Ref<Resource> payload;
+	payload.instantiate();
+	payload->set_script(script);
+	payload->set("custom_field", 23);
+	StructInfoBuilder builder;
+	builder.set_logical_type_id("SavedReferences");
+	StructInfo::Field field;
+	field.name = "object";
+	field.is_typed = true;
+	field.type = Variant::OBJECT;
+	field.class_name = script->get_qualified_class_name();
+	builder.add_field(field);
+	field.name = "trait";
+	field.class_name = trait->get_qualified_class_name();
+	builder.add_field(field);
+	Struct record(builder.build());
+	REQUIRE(record.try_set_member(0, payload));
+	REQUIRE(record.try_set_member(1, payload));
+	Ref<Resource> resource;
+	resource.instantiate();
+	resource->set_meta("record", record);
+	for (const char *extension : { "tres", "res" }) {
+		const String path = TestUtils::get_temp_path(String("struct_script_resource.") + extension);
+		REQUIRE(ResourceSaver::save(resource, path) == OK);
+		Ref<Resource> loaded = ResourceLoader::load(path, "", ResourceFormatLoader::CACHE_MODE_IGNORE);
+		REQUIRE(loaded.is_valid());
+		Struct restored = loaded->get_meta("record");
+		REQUIRE_FALSE(restored.is_null());
+		CHECK(restored.get_info()->is_same_layout_as(*record.get_info().ptr()));
+		for (int i = 0; i < 2; i++) {
+			Ref<Resource> restored_payload = restored.get_member(i);
+			REQUIRE(restored_payload.is_valid());
+			CHECK(int(restored_payload->get("custom_field")) == 23);
+			CHECK_FALSE(restored.try_set_member(i, resource));
+		}
+		CHECK(restored.get_member(0) == restored.get_member(1));
+	}
+}
+
 TEST_CASE("[Modules][GDScript] Trait edits refresh consumer exports") {
 	if (ProjectSettings::get_singleton()->get_resource_path().is_empty()) {
 		REQUIRE(ProjectSettings::get_singleton()->setup("modules/gdscript/tests/scripts", String(), true) == OK);

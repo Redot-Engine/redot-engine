@@ -169,6 +169,8 @@ public:
 
 	virtual Ref<Script> get_base_script() const = 0; //< For script inheritance
 	virtual StringName get_global_name() const = 0;
+	/// Returns a persistent class identifier, including the enclosing classes for inner classes.
+	virtual StringName get_qualified_class_name() const;
 	virtual bool inherits_script(const Ref<Script> &p_script) const = 0;
 	/// Returns whether this script defines a trait.
 	virtual bool is_trait() const { return false; }

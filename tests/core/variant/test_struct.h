@@ -672,7 +672,10 @@ TEST_CASE("[Struct] Typed OBJECT field enforces class_name (subclasses and null 
 	ERR_PRINT_OFF;
 	CHECK_FALSE(holder.set_named("o", Variant(obj)));
 	ERR_PRINT_ON;
+	Variant freed = obj;
 	memdelete(obj);
+	CHECK_FALSE(holder.try_set_member(0, freed));
+	CHECK(holder.try_set_member(0, Variant(static_cast<Object *>(nullptr))));
 }
 
 TEST_CASE("[Struct] Typed STRUCT field is a nominal (type-id) constraint, not exact-layout") {
