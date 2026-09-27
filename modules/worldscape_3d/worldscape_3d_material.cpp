@@ -607,8 +607,8 @@ void WorldScape3DMaterial::_init_shader_params() {
 	if (_shader_params.is_empty()) {
 		_shader_params["auto_slope"] = 1.f;
 		_shader_params["auto_height_reduction"] = 0.1f;
-		_shader_params["auto_base_texture"] = 0;        // textures must be added by the user
-		_shader_params["auto_overlay_texture"] = 1;     // textures must be added by the user
+		_shader_params["auto_base_texture"] = 0; // textures must be added by the user
+		_shader_params["auto_overlay_texture"] = 1; // textures must be added by the user
 		// Dual scaling
 		_shader_params["dual_scale_texture"] = 0;
 		_shader_params["dual_scale_reduction"] = 0.3f;
@@ -626,13 +626,13 @@ void WorldScape3DMaterial::_init_shader_params() {
 		_shader_params["bias_distance"] = 512.f;
 		// Macro variation
 		_shader_params["enable_macro_variation"] = true;
-		_shader_params["macro_variation1"] = Color{1.f, 1.f, 1.f};
-		_shader_params["macro_variation2"] = Color{1.f, 1.f, 1.f};
+		_shader_params["macro_variation1"] = Color{ 1.f, 1.f, 1.f };
+		_shader_params["macro_variation2"] = Color{ 1.f, 1.f, 1.f };
 		_shader_params["macro_variation_slope"] = 0.333f;
 		// Generic noise
 		_shader_params["noise1_scale"] = 0.04f;
 		_shader_params["noise1_angle"] = 0.f;
-		_shader_params["noise1_offset"] = Vector2{.5f, .5f};
+		_shader_params["noise1_offset"] = Vector2{ .5f, .5f };
 		_shader_params["noise2_scale"] = 0.076f;
 		// World noise
 		_shader_params["world_noise_fragment_normals"] = false;
@@ -642,7 +642,7 @@ void WorldScape3DMaterial::_init_shader_params() {
 		_shader_params["world_noise_lod_distance"] = 7500.f;
 		_shader_params["world_noise_scale"] = 5.f;
 		_shader_params["world_noise_height"] = 48.f;
-		_shader_params["world_noise_offset"] = Vector3{0.f, 0.f, 0.f};
+		_shader_params["world_noise_offset"] = Vector3{ 0.f, 0.f, 0.f };
 	}
 }
 
@@ -943,12 +943,12 @@ void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const 
 			PropertyInfo pi;
 			uint64_t use = info.usage;
 			if (use == PROPERTY_USAGE_GROUP) {
-			     Vector<String> split_name = info.name.split("::");
-			     pi.name = split_name[MAX(split_name.size() - 1, 0)].capitalize();
-			     pi.usage = (info.name.contains("::") ? PROPERTY_USAGE_SUBGROUP : PROPERTY_USAGE_GROUP) | PROPERTY_USAGE_EDITOR;
+				Vector<String> split_name = info.name.split("::");
+				pi.name = split_name[MAX(split_name.size() - 1, 0)].capitalize();
+				pi.usage = (info.name.contains("::") ? PROPERTY_USAGE_SUBGROUP : PROPERTY_USAGE_GROUP) | PROPERTY_USAGE_EDITOR;
 			} else {
-			     pi.name = info.name;
-			     pi.usage = PROPERTY_USAGE_EDITOR;
+				pi.name = info.name;
+				pi.usage = PROPERTY_USAGE_EDITOR;
 			}
 			pi.class_name = info.class_name;
 			pi.type = info.type;
