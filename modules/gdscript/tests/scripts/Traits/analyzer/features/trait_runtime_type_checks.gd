@@ -33,6 +33,8 @@ func test() -> void:
 	var empty_typed: Array[Damageable] = []
 	Utils.check(empty_typed.get_typed_builtin() == TYPE_OBJECT)
 	Utils.check(str_to_var(var_to_str(empty_typed)) is Array[Damageable])
+	var empty_dictionary: Dictionary[Damageable, Damageable] = {}
+	Utils.check(str_to_var(var_to_str(empty_dictionary)) is Dictionary[Damageable, Damageable])
 
 	var value: Node = Enemy.new()
 	var damageable := value as Damageable

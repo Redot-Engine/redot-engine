@@ -260,15 +260,15 @@ void EditorPropertyArray::initialize_array(Variant &p_array) {
 				} else if (script_path.contains("::")) {
 					script_path = script_path.get_slice("::", 0);
 				}
-				Ref<Script> script;
+				Ref<Script> hint_script;
 				if (script_path.is_resource_file()) {
-					script = ResourceLoader::load(script_path);
+					hint_script = ResourceLoader::load(script_path);
 				}
-				if (script.is_valid() && (script->is_trait() || subtype_hint_string.contains("::"))) {
+				if (hint_script.is_valid() && (hint_script->is_trait() || subtype_hint_string.contains("::"))) {
 					subtype_class = subtype_hint_string;
-				} else if (script.is_valid()) {
-					subtype_class = script->get_instance_base_type();
-					subtype_script = script;
+				} else if (hint_script.is_valid()) {
+					subtype_class = hint_script->get_instance_base_type();
+					subtype_script = hint_script;
 				}
 			}
 		}
