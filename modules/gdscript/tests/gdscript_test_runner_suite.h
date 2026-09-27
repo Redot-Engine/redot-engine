@@ -44,9 +44,11 @@
 #include "../gdscript_parser.h"
 #include "../gdscript_warning.h"
 
+#include "core/config/engine.h"
 #include "core/config/project_settings.h"
 
 #include "tests/test_macros.h"
+#include "tests/test_utils.h"
 
 namespace GDScriptTests {
 
@@ -108,6 +110,137 @@ TEST_SUITE("[Modules][GDScript]") {
 		INFO("Make sure `*.out` files have expected results.");
 		REQUIRE_MESSAGE(fail_count == 0, "All GDScript tests should pass.");
 	}
+}
+#endif // TOOLS_ENABLED
+
+#ifdef TOOLS_ENABLED
+TEST_CASE("[Modules][GDScript] Trait edits refresh consumer exports") {
+	if (ProjectSettings::get_singleton()->get_resource_path().is_empty()) {
+		REQUIRE(ProjectSettings::get_singleton()->setup("modules/gdscript/tests/scripts", String(), true) == OK);
+	}
+	GDScriptLanguage::get_singleton()->init();
+	const String fixture_dir = ProjectSettings::get_singleton()->localize_path(TestUtils::get_executable_dir().path_join("../modules/gdscript/tests/scripts/Traits/analyzer/features").simplify_path());
+	const String trait_path = fixture_dir.path_join("trait_export_refresh_trait.notest.gd");
+	const String consumer_path = fixture_dir.path_join("trait_export_refresh_consumer.notest.gd");
+	const String transitive_path = fixture_dir.path_join("trait_export_refresh_transitive.notest.gd");
+	const String inner_path = fixture_dir.path_join("trait_export_refresh_inner.notest.gd");
+	const String extra_path = fixture_dir.path_join("trait_export_refresh_extra.notest.gd");
+	Ref<GDScript> trait = ResourceLoader::load(trait_path);
+	Ref<GDScript> consumer = ResourceLoader::load(consumer_path);
+	Ref<GDScript> transitive = ResourceLoader::load(transitive_path);
+	Ref<GDScript> inner_root = ResourceLoader::load(inner_path);
+	Ref<GDScript> extra = ResourceLoader::load(extra_path);
+	CHECK(trait.is_valid());
+	CHECK(consumer.is_valid());
+	CHECK(transitive.is_valid());
+	CHECK(inner_root.is_valid());
+	CHECK(extra.is_valid());
+	if (trait.is_null() || consumer.is_null() || transitive.is_null() || inner_root.is_null() || extra.is_null()) {
+		return;
+	}
+	CHECK(trait_path.is_resource_file());
+	CHECK(trait->get_path().is_resource_file());
+	CHECK_FALSE(trait->get_fully_qualified_name().is_empty());
+	CHECK(consumer->has_trait(StringName(trait->get_fully_qualified_name())));
+	REQUIRE(consumer->is_valid());
+	REQUIRE(transitive->is_valid());
+	REQUIRE(inner_root->is_valid());
+	if (!consumer->is_valid() || !transitive->is_valid() || !inner_root->is_valid()) {
+		return;
+	}
+	Ref<GDScript> inner = inner_root->find_class("Inner");
+	REQUIRE(inner.is_valid());
+	if (inner.is_null()) {
+		return;
+	}
+	CHECK_FALSE(inner_root->has_trait(StringName(trait->get_fully_qualified_name())));
+	CHECK(inner->has_trait(StringName(trait->get_fully_qualified_name())));
+	const bool old_editor_hint = Engine::get_singleton()->is_editor_hint();
+	Engine::get_singleton()->set_editor_hint(false);
+	Ref<RefCounted> live_object;
+	live_object.instantiate();
+	live_object->set_script(consumer);
+	ScriptInstance *live_instance = live_object->get_script_instance();
+	CHECK(live_instance != nullptr);
+	if (live_instance == nullptr) {
+		Engine::get_singleton()->set_editor_hint(old_editor_hint);
+		return;
+	}
+	CHECK_FALSE(live_instance->is_placeholder());
+	live_object->set(SNAME("own"), 42);
+	CHECK(int(live_object->get(SNAME("own"))) == 42);
+
+	Ref<RefCounted> object;
+	object.instantiate();
+	PlaceHolderScriptInstance *placeholder = consumer->placeholder_instance_create(object.ptr());
+	Ref<RefCounted> transitive_object;
+	transitive_object.instantiate();
+	PlaceHolderScriptInstance *transitive_placeholder = transitive->placeholder_instance_create(transitive_object.ptr());
+	Ref<RefCounted> inner_object;
+	inner_object.instantiate();
+	PlaceHolderScriptInstance *inner_placeholder = inner->placeholder_instance_create(inner_object.ptr());
+	Ref<RefCounted> inner_root_object;
+	inner_root_object.instantiate();
+	PlaceHolderScriptInstance *inner_root_placeholder = inner_root->placeholder_instance_create(inner_root_object.ptr());
+	const String original_source = trait->get_source_code();
+	const String original_extra_source = extra->get_source_code();
+	Engine::get_singleton()->set_editor_hint(true);
+
+	auto has_export = [](PlaceHolderScriptInstance *p_placeholder, const StringName &p_name) {
+		List<PropertyInfo> properties;
+		p_placeholder->get_property_list(&properties);
+		for (const PropertyInfo &property : properties) {
+			if (property.name == p_name) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	CHECK(has_export(placeholder, SNAME("own")));
+	CHECK_FALSE(has_export(placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(transitive_placeholder, SNAME("added")));
+	CHECK(has_export(inner_placeholder, SNAME("inner_own")));
+	CHECK(has_export(inner_placeholder, SNAME("original")));
+	CHECK_FALSE(has_export(inner_placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(inner_root_placeholder, SNAME("original")));
+	CHECK(placeholder->set(SNAME("own"), 42));
+	trait->set_source_code(original_source + "\n@export var added: int = 3\n");
+	trait->update_exports();
+	CHECK(has_export(placeholder, SNAME("added")));
+	CHECK(has_export(transitive_placeholder, SNAME("added")));
+	CHECK(has_export(inner_placeholder, SNAME("added")));
+	CHECK(consumer->debug_get_member_indices().has(SNAME("added")));
+	CHECK(inner->debug_get_member_indices().has(SNAME("added")));
+	CHECK(int(live_object->get(SNAME("own"))) == 42);
+	Variant own_value;
+	CHECK(placeholder->get(SNAME("own"), own_value));
+	CHECK(int(own_value) == 42);
+	trait->set_source_code(original_source);
+	trait->update_exports();
+	CHECK_FALSE(has_export(placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(transitive_placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(inner_placeholder, SNAME("added")));
+	CHECK_FALSE(consumer->debug_get_member_indices().has(SNAME("added")));
+	CHECK(has_export(placeholder, SNAME("own")));
+
+	trait->set_source_code(original_source.replace("trait_name ExportRefreshTrait", "trait_name ExportRefreshTrait\nuses \"trait_export_refresh_extra.notest.gd\""));
+	trait->update_exports();
+	CHECK(consumer->has_trait(StringName(extra->get_fully_qualified_name())));
+	extra->set_source_code(original_extra_source + "\n@export var extra_added: int = 6\n");
+	extra->update_exports();
+	CHECK(has_export(placeholder, SNAME("extra_added")));
+	CHECK(consumer->debug_get_member_indices().has(SNAME("extra_added")));
+	extra->set_source_code(original_extra_source);
+	extra->update_exports();
+	trait->set_source_code(original_source);
+	trait->update_exports();
+
+	Engine::get_singleton()->set_editor_hint(old_editor_hint);
+	memdelete(placeholder);
+	memdelete(transitive_placeholder);
+	memdelete(inner_placeholder);
+	memdelete(inner_root_placeholder);
 }
 #endif // TOOLS_ENABLED
 
