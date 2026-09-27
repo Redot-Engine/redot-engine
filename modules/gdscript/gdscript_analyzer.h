@@ -192,6 +192,8 @@ class GDScriptAnalyzer {
 	/// Since https://github.com/godotengine/godot/pull/94871 there can technically be multiple parsers for the same script in the same parser tree.
 	/// Even if unlikely, getting the wrong parser could lead to strange undefined behavior without errors.
 	Ref<GDScriptParserRef> ensure_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const GDScriptParser::ClassNode *p_from_class, const char *p_context, const GDScriptParser::Node *p_source);
+	/// Retains external parsers for a struct field's type, including nested structs and container elements.
+	void ensure_cached_external_parsers_for_struct_field(const GDScriptParser::DataType &p_type, const GDScriptParser::ClassNode *p_from_class, const GDScriptParser::Node *p_source);
 	Ref<GDScriptParserRef> find_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const Ref<GDScriptParserRef> &p_dependant_parser);
 	Ref<GDScriptParserRef> find_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, GDScriptParser *p_dependant_parser);
 	Ref<GDScript> get_depended_shallow_script(const String &p_path, Error &r_error);

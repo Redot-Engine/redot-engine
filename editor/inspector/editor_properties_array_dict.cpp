@@ -1680,6 +1680,35 @@ void EditorPropertyStruct::_clear_property_editors() {
 	built_layout_hash = 0;
 }
 
+/// Resolves script class names without retaining scripts in the shared struct schema.
+static String _struct_resource_hint(const StringName &p_class_name) {
+	if (ClassDB::is_parent_class(p_class_name, SNAME("Resource"))) {
+		return p_class_name;
+	}
+	const Vector<String> names = String(p_class_name).split("::");
+	String path = names[0];
+	if (ScriptServer::is_global_class(path)) {
+		path = ScriptServer::get_global_class_path(path);
+	}
+	if (!path.is_resource_file()) {
+		return String();
+	}
+	Ref<Script> script = ResourceLoader::load(path, "Script");
+	for (int i = 1; script.is_valid() && i < names.size(); i++) {
+		HashMap<StringName, Variant> constants;
+		script->get_constants(&constants);
+		const Variant *inner = constants.getptr(names[i]);
+		script = inner != nullptr ? Ref<Script>(*inner) : Ref<Script>();
+	}
+	if (script.is_null() || !ClassDB::is_parent_class(script->get_instance_base_type(), SNAME("Resource"))) {
+		return String();
+	}
+	if (!script->is_trait() && script->get_global_name() != StringName()) {
+		return script->get_global_name();
+	}
+	return script->get_instance_base_type();
+}
+
 void EditorPropertyStruct::_rebuild_property_editors(const Variant &p_value) {
 	_clear_property_editors();
 
@@ -1707,9 +1736,11 @@ void EditorPropertyStruct::_rebuild_property_editors(const Variant &p_value) {
 			// through a value-semantics struct (a NODE_TYPE editor edits a NodePath, not an object),
 			// so non-resource objects fall back to the generic object editor.
 			const StringName class_name = info->get_field_class_name(i);
-			if (class_name != StringName() && ClassDB::is_parent_class(class_name, SNAME("Resource"))) {
+			if (class_name != StringName()) {
+				hint_string = _struct_resource_hint(class_name);
+			}
+			if (!hint_string.is_empty()) {
 				hint = PROPERTY_HINT_RESOURCE_TYPE;
-				hint_string = class_name;
 				is_resource = true;
 			}
 		}

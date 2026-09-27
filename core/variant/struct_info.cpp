@@ -34,6 +34,7 @@
 
 #include "core/object/class_db.h"
 #include "core/object/object.h"
+#include "core/object/script_language.h"
 #include "core/string/ustring.h"
 #include "core/variant/struct.h"
 #include "core/variant/variant_internal.h"
@@ -229,12 +230,23 @@ String StructInfo::get_schema_fingerprint() const {
 
 bool StructInfo::_field_metadata_ok(const Field &p_field, const Variant &p_value) {
 	if (p_field.type == Variant::OBJECT && p_field.class_name != StringName()) {
-		Object *obj = p_value.get_validated_object();
+		bool was_freed = false;
+		Object *obj = p_value.get_validated_object_with_check(was_freed);
 		if (obj == nullptr) {
-			return true;
+			return !was_freed;
 		}
 		const StringName &obj_class = obj->get_class_name();
-		return obj_class == p_field.class_name || ClassDB::is_parent_class(obj_class, p_field.class_name);
+		if (obj_class == p_field.class_name || ClassDB::is_parent_class(obj_class, p_field.class_name)) {
+			return true;
+		}
+		Ref<Script> script = obj->get_script();
+		while (script.is_valid()) {
+			if (script->get_qualified_class_name() == p_field.class_name || script->has_trait(p_field.class_name)) {
+				return true;
+			}
+			script = script->get_base_script();
+		}
+		return false;
 	}
 	if (p_field.type == Variant::STRUCT && p_field.struct_type_id != StringName()) {
 		const Struct *s = VariantInternal::get_struct(&p_value);

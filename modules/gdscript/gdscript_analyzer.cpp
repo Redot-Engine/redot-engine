@@ -2836,9 +2836,13 @@ bool GDScriptAnalyzer::struct_field_from_datatype(const GDScriptParser::DataType
 			r_field.class_name = p_type.native_type;
 			return true;
 		case DT::SCRIPT:
-		case DT::CLASS:
 			r_field.type = Variant::OBJECT;
-			r_field.class_name = p_type.native_type;
+			r_field.class_name = p_type.script_type->get_qualified_class_name();
+			return r_field.class_name != StringName();
+		case DT::CLASS:
+		case DT::TRAIT:
+			r_field.type = Variant::OBJECT;
+			r_field.class_name = p_type.class_type->fqcn;
 			return true;
 		case DT::ENUM:
 			r_field.type = Variant::INT;
@@ -4978,6 +4982,16 @@ Ref<GDScriptParserRef> GDScriptAnalyzer::ensure_cached_external_parser_for_class
 	return parser_ref;
 }
 
+void GDScriptAnalyzer::ensure_cached_external_parsers_for_struct_field(const GDScriptParser::DataType &p_type, const GDScriptParser::ClassNode *p_from_class, const GDScriptParser::Node *p_source) {
+	ensure_cached_external_parser_for_class(p_type.class_type, p_from_class, "Trying to resolve datatype of struct field", p_source);
+	if (p_type.struct_type != nullptr) {
+		ensure_cached_external_parser_for_class(p_type.struct_type->outer, p_from_class, "Trying to resolve nested struct field", p_source);
+	}
+	for (int i = 0; i < p_type.get_container_element_type_count(); i++) {
+		ensure_cached_external_parsers_for_struct_field(p_type.get_container_element_type(i), p_from_class, p_source);
+	}
+}
+
 Ref<GDScriptParserRef> GDScriptAnalyzer::find_cached_external_parser_for_class(const GDScriptParser::ClassNode *p_class, const Ref<GDScriptParserRef> &p_dependant_parser) {
 	if (p_dependant_parser.is_null()) {
 		return nullptr;
@@ -5918,9 +5932,11 @@ void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscri
 			}
 		} else if (base_type.kind == GDScriptParser::DataType::BUILTIN && base_type.builtin_type == Variant::STRUCT && !base_type.is_meta_type && base_type.struct_type != nullptr) {
 			GDScriptParser::StructNode *struct_type = base_type.struct_type;
+			ensure_cached_external_parser_for_class(struct_type->outer, nullptr, "Trying to resolve struct field", p_subscript);
 			resolve_struct(struct_type);
 			if (struct_type->fields_indices.has(p_subscript->attribute->name)) {
 				result_type = struct_type->fields[struct_type->fields_indices[p_subscript->attribute->name]]->get_datatype();
+				ensure_cached_external_parsers_for_struct_field(result_type, struct_type->outer, p_subscript);
 				result_type.type_source = base_type.type_source;
 				result_type.is_constant = false;
 				p_subscript->attribute->set_datatype(result_type);
