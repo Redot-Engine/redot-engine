@@ -605,12 +605,56 @@ void WorldScape3DMaterial::_set_shader_parameters(const Dictionary &p_dict) {
 	_shader_params = p_dict;
 }
 
+void WorldScape3DMaterial::_init_shader_params() {
+	// On WorldScape3D node creation, initialize the shader uniforms
+	if (_shader_params.is_empty()) {
+		_shader_params["auto_slope"] = 1.f;
+		_shader_params["auto_height_reduction"] = 0.1f;
+		_shader_params["auto_base_texture"] = 0;        // textures must be added by the user
+		_shader_params["auto_overlay_texture"] = 1;     // textures must be added by the user
+		// Dual scaling
+		_shader_params["dual_scale_texture"] = 0;
+		_shader_params["dual_scale_reduction"] = 0.3f;
+		_shader_params["tri_scale_reduction"] = 0.3f;
+		_shader_params["dual_scale_far"] = 170.f;
+		_shader_params["dual_scale_near"] = 100.f;
+
+		_shader_params["blend_sharpness"] = 0.5f;
+		_shader_params["flat_terrain_normals"] = false;
+		_shader_params["enable_projection"] = true;
+		_shader_params["projection_threshold"] = 0.8f;
+
+		_shader_params["mipmap_bias"] = 1.f;
+		_shader_params["depth_blur"] = 0.f;
+		_shader_params["bias_distance"] = 512.f;
+		// Macro variation
+		_shader_params["enable_macro_variation"] = true;
+		_shader_params["macro_variation1"] = Color{1.f, 1.f, 1.f};
+		_shader_params["macro_variation2"] = Color{1.f, 1.f, 1.f};
+		_shader_params["macro_variation_slope"] = 0.333f;
+		// Generic noise
+		_shader_params["noise1_scale"] = 0.04f;
+		_shader_params["noise1_angle"] = 0.f;
+		_shader_params["noise1_offset"] = Vector2{.5f, .5f};
+		_shader_params["noise2_scale"] = 0.076f;
+		// World noise
+		_shader_params["world_noise_fragment_normals"] = false;
+		_shader_params["world_noise_region_blend"] = 0.75f;
+		_shader_params["world_noise_max_octaves"] = 4;
+		_shader_params["world_noise_min_octaves"] = 2;
+		_shader_params["world_noise_lod_distance"] = 7500.f;
+		_shader_params["world_noise_scale"] = 5.f;
+		_shader_params["world_noise_height"] = 64.f;
+		_shader_params["world_noise_offset"] = Vector3{0.f, 0.f, 0.f};
+	}
+}
+
 ///////////////////////////
 // Public Functions
 ///////////////////////////
 
 // This function serves as the constructor which is initialized by the class WorldScape3D.
-// Godot likes to create resource objects at startup, so this prevents it from creating
+// Redot likes to create resource objects at startup, so this prevents it from creating
 // uninitialized materials.
 void WorldScape3DMaterial::initialize(WorldScape3D *p_terrain) {
 	if (p_terrain) {
@@ -1084,17 +1128,17 @@ void WorldScape3DMaterial::_bind_methods() {
 	// These must be different from the names of uniform groups
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "world_background", PROPERTY_HINT_ENUM, "None,Flat,Noise"), "set_world_background", "get_world_background");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "texture_filtering", PROPERTY_HINT_ENUM, "Linear,Nearest"), "set_texture_filtering", "get_texture_filtering");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_shader_enabled"), "set_auto_shader", "get_auto_shader");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dual_scaling_enabled"), "set_dual_scaling", "get_dual_scaling");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_shader"), "set_auto_shader", "get_auto_shader");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dual_scaling"), "set_dual_scaling", "get_dual_scaling");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shader_override_enabled"), "enable_shader_override", "is_shader_override_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shader_override", PROPERTY_HINT_RESOURCE_TYPE, "Shader"), "set_shader_override", "get_shader_override");
 
 	ADD_GROUP("Overlays", "show_");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_region_grid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_region_grid", "get_show_region_grid");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_instancer_grid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_instancer_grid", "get_show_instancer_grid");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_vertex_grid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_vertex_grid", "get_show_vertex_grid");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_contours", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_contours", "get_show_contours");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_navigation", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_navigation", "get_show_navigation");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_region_grid"), "set_show_region_grid", "get_show_region_grid");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_instancer_grid"), "set_show_instancer_grid", "get_show_instancer_grid");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_vertex_grid"), "set_show_vertex_grid", "get_show_vertex_grid");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_contours"), "set_show_contours", "get_show_contours");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_navigation"), "set_show_navigation", "get_show_navigation");
 
 	ADD_GROUP("Debug Views", "show_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_checkered"), "set_show_checkered", "get_show_checkered");
