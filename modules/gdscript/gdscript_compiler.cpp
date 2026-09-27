@@ -153,6 +153,8 @@ GDScriptDataType GDScriptCompiler::_gdtype_from_datatype(const GDScriptParser::D
 		case GDScriptParser::DataType::TRAIT: {
 			result.kind = GDScriptDataType::GDTRAIT;
 			result.trait_type = p_datatype.class_type->fqcn;
+			result.builtin_type = Variant::OBJECT;
+			result.native_type = result.trait_type;
 		} break;
 		case GDScriptParser::DataType::CLASS: {
 			if (p_handle_metatype && p_datatype.is_meta_type) {

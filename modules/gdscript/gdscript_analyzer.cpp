@@ -6544,8 +6544,12 @@ Array GDScriptAnalyzer::make_array_from_element_datatype(const GDScriptParser::D
 	Array array;
 
 	if (p_element_datatype.builtin_type == Variant::OBJECT) {
+		if (p_element_datatype.kind == GDScriptParser::DataType::TRAIT) {
+			array.set_typed(Variant::OBJECT, p_element_datatype.class_type->fqcn, Variant());
+			return array;
+		}
 		Ref<Script> script_type = p_element_datatype.script_type;
-		if ((p_element_datatype.kind == GDScriptParser::DataType::CLASS || p_element_datatype.kind == GDScriptParser::DataType::TRAIT) && script_type.is_null()) {
+		if (p_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
 			Error err = OK;
 			Ref<GDScript> scr = get_depended_shallow_script(p_element_datatype.script_path, err);
 			if (err) {
@@ -6571,35 +6575,43 @@ Dictionary GDScriptAnalyzer::make_dictionary_from_element_datatype(const GDScrip
 	Variant value_script;
 
 	if (p_key_element_datatype.builtin_type == Variant::OBJECT) {
-		Ref<Script> script_type = p_key_element_datatype.script_type;
-		if (p_key_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
-			Error err = OK;
-			Ref<GDScript> scr = get_depended_shallow_script(p_key_element_datatype.script_path, err);
-			if (err) {
-				push_error(vformat(R"(Error while getting cache for script "%s".)", p_key_element_datatype.script_path), p_source_node);
-				return dictionary;
+		if (p_key_element_datatype.kind == GDScriptParser::DataType::TRAIT) {
+			key_name = p_key_element_datatype.class_type->fqcn;
+		} else {
+			Ref<Script> script_type = p_key_element_datatype.script_type;
+			if (p_key_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
+				Error err = OK;
+				Ref<GDScript> scr = get_depended_shallow_script(p_key_element_datatype.script_path, err);
+				if (err) {
+					push_error(vformat(R"(Error while getting cache for script "%s".)", p_key_element_datatype.script_path), p_source_node);
+					return dictionary;
+				}
+				script_type.reference_ptr(scr->find_class(p_key_element_datatype.class_type->fqcn));
 			}
-			script_type.reference_ptr(scr->find_class(p_key_element_datatype.class_type->fqcn));
-		}
 
-		key_name = p_key_element_datatype.native_type;
-		key_script = script_type;
+			key_name = p_key_element_datatype.native_type;
+			key_script = script_type;
+		}
 	}
 
 	if (p_value_element_datatype.builtin_type == Variant::OBJECT) {
-		Ref<Script> script_type = p_value_element_datatype.script_type;
-		if (p_value_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
-			Error err = OK;
-			Ref<GDScript> scr = get_depended_shallow_script(p_value_element_datatype.script_path, err);
-			if (err) {
-				push_error(vformat(R"(Error while getting cache for script "%s".)", p_value_element_datatype.script_path), p_source_node);
-				return dictionary;
+		if (p_value_element_datatype.kind == GDScriptParser::DataType::TRAIT) {
+			value_name = p_value_element_datatype.class_type->fqcn;
+		} else {
+			Ref<Script> script_type = p_value_element_datatype.script_type;
+			if (p_value_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
+				Error err = OK;
+				Ref<GDScript> scr = get_depended_shallow_script(p_value_element_datatype.script_path, err);
+				if (err) {
+					push_error(vformat(R"(Error while getting cache for script "%s".)", p_value_element_datatype.script_path), p_source_node);
+					return dictionary;
+				}
+				script_type.reference_ptr(scr->find_class(p_value_element_datatype.class_type->fqcn));
 			}
-			script_type.reference_ptr(scr->find_class(p_value_element_datatype.class_type->fqcn));
-		}
 
-		value_name = p_value_element_datatype.native_type;
-		value_script = script_type;
+			value_name = p_value_element_datatype.native_type;
+			value_script = script_type;
+		}
 	}
 
 	dictionary.set_typed(p_key_element_datatype.builtin_type, key_name, key_script, p_value_element_datatype.builtin_type, value_name, value_script);

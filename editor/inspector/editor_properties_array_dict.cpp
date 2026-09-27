@@ -40,6 +40,8 @@
 
 #include "core/input/input.h"
 #include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
+#include "core/object/script_language.h"
 #include "core/variant/struct.h"
 #include "core/variant/struct_info.h"
 #include "editor/docks/inspector_dock.h"
@@ -251,6 +253,23 @@ void EditorPropertyArray::initialize_array(Variant &p_array) {
 		if (subtype == Variant::OBJECT && !subtype_hint_string.is_empty()) {
 			if (ClassDB::class_exists(subtype_hint_string)) {
 				subtype_class = subtype_hint_string;
+			} else {
+				String script_path = subtype_hint_string;
+				if (ScriptServer::is_global_class(subtype_hint_string)) {
+					script_path = ScriptServer::get_global_class_path(subtype_hint_string);
+				} else if (script_path.contains("::")) {
+					script_path = script_path.get_slice("::", 0);
+				}
+				Ref<Script> script;
+				if (script_path.is_resource_file()) {
+					script = ResourceLoader::load(script_path);
+				}
+				if (script.is_valid() && (script->is_trait() || subtype_hint_string.contains("::"))) {
+					subtype_class = subtype_hint_string;
+				} else if (script.is_valid()) {
+					subtype_class = script->get_instance_base_type();
+					subtype_script = script;
+				}
 			}
 		}
 		array.set_typed(subtype, subtype_class, subtype_script);

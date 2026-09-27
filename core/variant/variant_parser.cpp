@@ -1494,10 +1494,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			get_token(p_stream, token, line, r_err_str);
-			if (token.type != TK_IDENTIFIER) {
-				r_err_str = "Expected type identifier";
+			if (token.type != TK_IDENTIFIER && token.type != TK_STRING) {
+				r_err_str = "Expected type identifier or string";
 				return ERR_PARSE_ERROR;
 			}
+			const bool quoted_class_name = token.type == TK_STRING;
 
 			static HashMap<String, Variant::Type> builtin_types;
 			if (builtin_types.is_empty()) {
@@ -1508,7 +1509,9 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 
 			Array array = Array();
 			bool got_bracket_token = false;
-			if (builtin_types.has(token.value)) {
+			if (quoted_class_name) {
+				array.set_typed(Variant::OBJECT, token.value, Variant());
+			} else if (builtin_types.has(token.value)) {
 				array.set_typed(builtin_types.get(token.value), StringName(), Variant());
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				if (!p_allow_objects) {
@@ -1535,6 +1538,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 				}
 			} else if (ClassDB::class_exists(token.value)) {
 				array.set_typed(Variant::OBJECT, token.value, Variant());
+			} else if (ScriptServer::is_global_class(token.value)) {
+				Ref<Script> script = ResourceLoader::load(ScriptServer::get_global_class_path(token.value));
+				if (script.is_valid() && script->is_trait()) {
+					array.set_typed(Variant::OBJECT, token.value, Variant());
+				}
 			}
 
 			if (!got_bracket_token) {
@@ -2590,7 +2598,8 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 						p_store_string_func(p_store_string_ud, class_name);
 					}
 				} else if (class_name != StringName()) {
-					p_store_string_func(p_store_string_ud, class_name);
+					String type_name = class_name;
+					p_store_string_func(p_store_string_ud, type_name.is_valid_identifier() ? type_name : "\"" + type_name.c_escape() + "\"");
 				} else {
 					p_store_string_func(p_store_string_ud, Variant::get_type_name(builtin_type));
 				}

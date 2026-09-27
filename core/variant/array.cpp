@@ -233,9 +233,8 @@ void Array::assign(const Array &p_array) {
 	const Variant *source = p_array._p->array.ptr();
 	int size = p_array._p->array.size();
 
-	if ((source_typed.type == Variant::NIL && typed.type == Variant::OBJECT) || (source_typed.type == Variant::OBJECT && source_typed.can_reference(typed))) {
-		// from variants to objects or
-		// from base classes to subclasses
+	if ((source_typed.type == Variant::NIL && typed.type == Variant::OBJECT) || (source_typed.type == Variant::OBJECT && typed.type == Variant::OBJECT)) {
+		// From variants or another object type, validate each element against the destination type.
 		for (int i = 0; i < size; i++) {
 			const Variant &element = source[i];
 			if (element.get_type() != Variant::NIL && (element.get_type() != Variant::OBJECT || !typed.validate_object(element, "assign"))) {

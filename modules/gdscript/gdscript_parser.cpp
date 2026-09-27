@@ -4703,6 +4703,7 @@ static StringName _find_narrowest_native_or_global_class(const GDScriptParser::D
 			return _find_narrowest_native_or_global_class(base_type);
 		} break;
 		case GDScriptParser::DataType::TRAIT:
+			return p_type.class_type != nullptr ? StringName(p_type.class_type->fqcn) : p_type.native_type;
 		case GDScriptParser::DataType::CLASS: {
 			if (p_type.is_meta_type) {
 				return GDScript::get_class_static();
@@ -5497,6 +5498,9 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 						}
 						break;
 					case TRAIT:
+						result.hint = PROPERTY_HINT_ARRAY_TYPE;
+						result.hint_string = elem_type.class_type != nullptr ? elem_type.class_type->fqcn : String(elem_type.native_type);
+						break;
 					case CLASS:
 						result.hint = PROPERTY_HINT_ARRAY_TYPE;
 						if (elem_type.class_type != nullptr && elem_type.class_type->get_global_name() != StringName()) {
@@ -5537,6 +5541,8 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 						}
 						break;
 					case TRAIT:
+						key_hint = key_type.class_type != nullptr ? key_type.class_type->fqcn : String(key_type.native_type);
+						break;
 					case CLASS:
 						if (key_type.class_type != nullptr && key_type.class_type->get_global_name() != StringName()) {
 							key_hint = key_type.class_type->get_global_name();
@@ -5566,6 +5572,8 @@ PropertyInfo GDScriptParser::DataType::to_property_info(const String &p_name) co
 						}
 						break;
 					case TRAIT:
+						value_hint = value_type.class_type != nullptr ? value_type.class_type->fqcn : String(value_type.native_type);
+						break;
 					case CLASS:
 						if (value_type.class_type != nullptr && value_type.class_type->get_global_name() != StringName()) {
 							value_hint = value_type.class_type->get_global_name();

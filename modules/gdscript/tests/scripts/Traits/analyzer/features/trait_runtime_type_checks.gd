@@ -7,6 +7,9 @@ trait Damageable extends Node:
 class Enemy extends Node:
 	uses Damageable
 
+class Owner extends Node:
+	@export var targets: Array[Damageable] = []
+
 trait UnconstrainedDamageable:
 	func take_damage() -> void:
 		print("damaged")
@@ -27,6 +30,10 @@ func null_damageable() -> Damageable:
 	return null
 
 func test() -> void:
+	var empty_typed: Array[Damageable] = []
+	Utils.check(empty_typed.get_typed_builtin() == TYPE_OBJECT)
+	Utils.check(str_to_var(var_to_str(empty_typed)) is Array[Damageable])
+
 	var value: Node = Enemy.new()
 	var damageable := value as Damageable
 	print(damageable != null)
