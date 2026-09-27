@@ -46,6 +46,8 @@
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
+#include "core/io/resource_loader.h"
+#include "scene/resources/packed_scene.h"
 
 #include "tests/test_macros.h"
 #include "tests/test_utils.h"
@@ -241,6 +243,79 @@ TEST_CASE("[Modules][GDScript] Trait edits refresh consumer exports") {
 	memdelete(transitive_placeholder);
 	memdelete(inner_placeholder);
 	memdelete(inner_root_placeholder);
+}
+#endif // TOOLS_ENABLED
+
+#ifdef TOOLS_ENABLED
+TEST_CASE("[Modules][GDScript] Trait-typed exported arrays retain node references") {
+	if (ProjectSettings::get_singleton()->get_resource_path().is_empty()) {
+		REQUIRE(ProjectSettings::get_singleton()->setup("modules/gdscript/tests/scripts", String(), true) == OK);
+	}
+	GDScriptLanguage::get_singleton()->init();
+	const String script_path = ProjectSettings::get_singleton()->localize_path(TestUtils::get_executable_dir().path_join("../modules/gdscript/tests/scripts/Traits/analyzer/features/trait_exported_array_scene.notest.gd").simplify_path());
+	Ref<GDScript> script = ResourceLoader::load(script_path);
+	REQUIRE(script.is_valid());
+	REQUIRE(script->is_valid());
+	Ref<GDScript> owner_script = script->find_class("Owner");
+	Ref<GDScript> enemy_script = script->find_class("Enemy");
+	REQUIRE(owner_script.is_valid());
+	REQUIRE(enemy_script.is_valid());
+
+	Node *owner = memnew(Node);
+	owner->set_name("Owner");
+	owner->set_script(owner_script);
+	Node *enemy = memnew(Node);
+	enemy->set_name("Enemy");
+	enemy->set_script(enemy_script);
+	owner->add_child(enemy);
+	enemy->set_owner(owner);
+
+	Array targets = owner->get("targets");
+	const StringName damageable_trait = script->get_fully_qualified_name() + "::Damageable";
+	CHECK(targets.get_typed_builtin() == Variant::OBJECT);
+	CHECK(targets.get_typed_class_name() == damageable_trait);
+	CHECK(enemy_script->has_trait(targets.get_typed_class_name()));
+	targets.push_back(enemy);
+	CHECK(targets.size() == 1);
+	Array nodes;
+	nodes.set_typed(Variant::OBJECT, "Node", Variant());
+	nodes.assign(targets);
+	CHECK(nodes.size() == 1);
+	Array converted;
+	converted.set_typed(Variant::OBJECT, targets.get_typed_class_name(), Variant());
+	converted.assign(nodes);
+	CHECK(converted.size() == 1);
+
+	Node *unrelated = memnew(Node);
+	ERR_PRINT_OFF;
+	targets.push_back(unrelated);
+	ERR_PRINT_ON;
+	CHECK(targets.size() == 1);
+	nodes.push_back(unrelated);
+	ERR_PRINT_OFF;
+	converted.assign(nodes);
+	ERR_PRINT_ON;
+	CHECK(converted.size() == 1);
+	memdelete(unrelated);
+
+	bool valid = false;
+	owner->set("targets", targets, &valid);
+	CHECK(valid);
+	CHECK(Array(owner->get("targets")).size() == 1);
+
+	Ref<PackedScene> scene;
+	scene.instantiate();
+	CHECK(scene->pack(owner) == OK);
+	Node *loaded = scene->instantiate();
+	REQUIRE(loaded != nullptr);
+	Array loaded_targets = loaded->get("targets");
+	REQUIRE(loaded_targets.size() == 1);
+	CHECK(loaded_targets.get_typed_class_name() == targets.get_typed_class_name());
+	Object *loaded_target = loaded_targets[0];
+	CHECK(loaded_target == loaded->get_node(NodePath("Enemy")));
+
+	memdelete(loaded);
+	memdelete(owner);
 }
 #endif // TOOLS_ENABLED
 

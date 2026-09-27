@@ -170,6 +170,10 @@ public:
 	virtual Ref<Script> get_base_script() const = 0; //< For script inheritance
 	virtual StringName get_global_name() const = 0;
 	virtual bool inherits_script(const Ref<Script> &p_script) const = 0;
+	/// Returns whether this script defines a trait.
+	virtual bool is_trait() const { return false; }
+	/// Returns whether instances of this script implement the named trait.
+	virtual bool has_trait(const StringName &p_trait) const { return false; }
 
 	virtual StringName get_instance_base_type() const = 0; ///< This may not work in all scripts, will return empty if so
 	virtual ScriptInstance *instance_create(Object *p_this) = 0;

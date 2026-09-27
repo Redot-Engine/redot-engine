@@ -6544,8 +6544,12 @@ Array GDScriptAnalyzer::make_array_from_element_datatype(const GDScriptParser::D
 	Array array;
 
 	if (p_element_datatype.builtin_type == Variant::OBJECT) {
+		if (p_element_datatype.kind == GDScriptParser::DataType::TRAIT) {
+			array.set_typed(Variant::OBJECT, p_element_datatype.class_type->fqcn, Variant());
+			return array;
+		}
 		Ref<Script> script_type = p_element_datatype.script_type;
-		if ((p_element_datatype.kind == GDScriptParser::DataType::CLASS || p_element_datatype.kind == GDScriptParser::DataType::TRAIT) && script_type.is_null()) {
+		if (p_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
 			Error err = OK;
 			Ref<GDScript> scr = get_depended_shallow_script(p_element_datatype.script_path, err);
 			if (err) {
@@ -6571,35 +6575,43 @@ Dictionary GDScriptAnalyzer::make_dictionary_from_element_datatype(const GDScrip
 	Variant value_script;
 
 	if (p_key_element_datatype.builtin_type == Variant::OBJECT) {
-		Ref<Script> script_type = p_key_element_datatype.script_type;
-		if (p_key_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
-			Error err = OK;
-			Ref<GDScript> scr = get_depended_shallow_script(p_key_element_datatype.script_path, err);
-			if (err) {
-				push_error(vformat(R"(Error while getting cache for script "%s".)", p_key_element_datatype.script_path), p_source_node);
-				return dictionary;
+		if (p_key_element_datatype.kind == GDScriptParser::DataType::TRAIT) {
+			key_name = p_key_element_datatype.class_type->fqcn;
+		} else {
+			Ref<Script> script_type = p_key_element_datatype.script_type;
+			if (p_key_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
+				Error err = OK;
+				Ref<GDScript> scr = get_depended_shallow_script(p_key_element_datatype.script_path, err);
+				if (err) {
+					push_error(vformat(R"(Error while getting cache for script "%s".)", p_key_element_datatype.script_path), p_source_node);
+					return dictionary;
+				}
+				script_type.reference_ptr(scr->find_class(p_key_element_datatype.class_type->fqcn));
 			}
-			script_type.reference_ptr(scr->find_class(p_key_element_datatype.class_type->fqcn));
-		}
 
-		key_name = p_key_element_datatype.native_type;
-		key_script = script_type;
+			key_name = p_key_element_datatype.native_type;
+			key_script = script_type;
+		}
 	}
 
 	if (p_value_element_datatype.builtin_type == Variant::OBJECT) {
-		Ref<Script> script_type = p_value_element_datatype.script_type;
-		if (p_value_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
-			Error err = OK;
-			Ref<GDScript> scr = get_depended_shallow_script(p_value_element_datatype.script_path, err);
-			if (err) {
-				push_error(vformat(R"(Error while getting cache for script "%s".)", p_value_element_datatype.script_path), p_source_node);
-				return dictionary;
+		if (p_value_element_datatype.kind == GDScriptParser::DataType::TRAIT) {
+			value_name = p_value_element_datatype.class_type->fqcn;
+		} else {
+			Ref<Script> script_type = p_value_element_datatype.script_type;
+			if (p_value_element_datatype.kind == GDScriptParser::DataType::CLASS && script_type.is_null()) {
+				Error err = OK;
+				Ref<GDScript> scr = get_depended_shallow_script(p_value_element_datatype.script_path, err);
+				if (err) {
+					push_error(vformat(R"(Error while getting cache for script "%s".)", p_value_element_datatype.script_path), p_source_node);
+					return dictionary;
+				}
+				script_type.reference_ptr(scr->find_class(p_value_element_datatype.class_type->fqcn));
 			}
-			script_type.reference_ptr(scr->find_class(p_value_element_datatype.class_type->fqcn));
-		}
 
-		value_name = p_value_element_datatype.native_type;
-		value_script = script_type;
+			value_name = p_value_element_datatype.native_type;
+			value_script = script_type;
+		}
 	}
 
 	dictionary.set_typed(p_key_element_datatype.builtin_type, key_name, key_script, p_value_element_datatype.builtin_type, value_name, value_script);
@@ -6813,6 +6825,36 @@ GDScriptParser::DataType GDScriptAnalyzer::type_from_property(const PropertyInfo
 	} else {
 		result.kind = GDScriptParser::DataType::BUILTIN;
 		result.builtin_type = p_property.type;
+		auto resolve_trait_hint = [&](const StringName &p_type_name, GDScriptParser::DataType &r_type) -> bool {
+			const String type_name = p_type_name;
+			String script_path;
+			if (ScriptServer::is_global_class(p_type_name)) {
+				script_path = ScriptServer::get_global_class_path(p_type_name);
+			} else if (type_name.contains("::")) {
+				script_path = type_name.get_slice("::", 0);
+			} else {
+				return false;
+			}
+			if (script_path.get_extension() != GDScriptLanguage::get_singleton()->get_extension()) {
+				return false;
+			}
+
+			GDScriptParser::ClassNode *trait = nullptr;
+			if (script_path == parser->script_path) {
+				trait = parser->find_class(type_name);
+			} else {
+				Ref<GDScriptParserRef> ref = parser->get_depended_parser_for(script_path);
+				if (ref.is_valid() && ref->raise_status(GDScriptParserRef::INHERITANCE_SOLVED) == OK) {
+					trait = ref->get_parser()->find_class(type_name);
+				}
+			}
+			if (trait == nullptr || trait->type != GDScriptParser::Node::TRAIT) {
+				return false;
+			}
+			r_type = type_from_metatype(trait->get_datatype());
+			r_type.type_source = GDScriptParser::DataType::ANNOTATED_EXPLICIT;
+			return true;
+		};
 		if (p_property.type == Variant::ARRAY && p_property.hint == PROPERTY_HINT_ARRAY_TYPE) {
 			// Check element type.
 			StringName elem_type_name = p_property.hint_string;
@@ -6828,15 +6870,14 @@ GDScriptParser::DataType GDScriptAnalyzer::type_from_property(const PropertyInfo
 				elem_type.kind = GDScriptParser::DataType::NATIVE;
 				elem_type.builtin_type = Variant::OBJECT;
 				elem_type.native_type = elem_type_name;
-			} else if (ScriptServer::is_global_class(elem_type_name)) {
+			} else if (!resolve_trait_hint(elem_type_name, elem_type)) {
+				ERR_FAIL_COND_V_MSG(!ScriptServer::is_global_class(elem_type_name), result, "Could not find element type from property hint of a typed array.");
 				// Just load this as it shouldn't be a GDScript.
 				Ref<Script> script = ResourceLoader::load(ScriptServer::get_global_class_path(elem_type_name));
 				elem_type.kind = GDScriptParser::DataType::SCRIPT;
 				elem_type.builtin_type = Variant::OBJECT;
 				elem_type.native_type = script->get_instance_base_type();
 				elem_type.script_type = script;
-			} else {
-				ERR_FAIL_V_MSG(result, "Could not find element type from property hint of a typed array.");
 			}
 			elem_type.is_constant = false;
 			result.set_container_element_type(0, elem_type);
@@ -6855,15 +6896,14 @@ GDScriptParser::DataType GDScriptAnalyzer::type_from_property(const PropertyInfo
 				key_elem_type.kind = GDScriptParser::DataType::NATIVE;
 				key_elem_type.builtin_type = Variant::OBJECT;
 				key_elem_type.native_type = key_elem_type_name;
-			} else if (ScriptServer::is_global_class(key_elem_type_name)) {
+			} else if (!resolve_trait_hint(key_elem_type_name, key_elem_type)) {
+				ERR_FAIL_COND_V_MSG(!ScriptServer::is_global_class(key_elem_type_name), result, "Could not find element type from property hint of a typed dictionary.");
 				// Just load this as it shouldn't be a GDScript.
 				Ref<Script> script = ResourceLoader::load(ScriptServer::get_global_class_path(key_elem_type_name));
 				key_elem_type.kind = GDScriptParser::DataType::SCRIPT;
 				key_elem_type.builtin_type = Variant::OBJECT;
 				key_elem_type.native_type = script->get_instance_base_type();
 				key_elem_type.script_type = script;
-			} else {
-				ERR_FAIL_V_MSG(result, "Could not find element type from property hint of a typed dictionary.");
 			}
 			key_elem_type.is_constant = false;
 
@@ -6880,15 +6920,14 @@ GDScriptParser::DataType GDScriptAnalyzer::type_from_property(const PropertyInfo
 				value_elem_type.kind = GDScriptParser::DataType::NATIVE;
 				value_elem_type.builtin_type = Variant::OBJECT;
 				value_elem_type.native_type = value_elem_type_name;
-			} else if (ScriptServer::is_global_class(value_elem_type_name)) {
+			} else if (!resolve_trait_hint(value_elem_type_name, value_elem_type)) {
+				ERR_FAIL_COND_V_MSG(!ScriptServer::is_global_class(value_elem_type_name), result, "Could not find element type from property hint of a typed dictionary.");
 				// Just load this as it shouldn't be a GDScript.
 				Ref<Script> script = ResourceLoader::load(ScriptServer::get_global_class_path(value_elem_type_name));
 				value_elem_type.kind = GDScriptParser::DataType::SCRIPT;
 				value_elem_type.builtin_type = Variant::OBJECT;
 				value_elem_type.native_type = script->get_instance_base_type();
 				value_elem_type.script_type = script;
-			} else {
-				ERR_FAIL_V_MSG(result, "Could not find element type from property hint of a typed dictionary.");
 			}
 			value_elem_type.is_constant = false;
 

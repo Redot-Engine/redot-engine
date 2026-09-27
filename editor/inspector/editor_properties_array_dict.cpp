@@ -40,6 +40,8 @@
 
 #include "core/input/input.h"
 #include "core/io/marshalls.h"
+#include "core/io/resource_loader.h"
+#include "core/object/script_language.h"
 #include "core/variant/struct.h"
 #include "core/variant/struct_info.h"
 #include "editor/docks/inspector_dock.h"
@@ -243,15 +245,40 @@ String EditorPropertyDictionaryObject::get_label_for_index(int p_index) {
 
 ///////////////////// ARRAY ///////////////////////////
 
+static void _resolve_typed_object_hint(const String &p_hint_string, StringName &r_class, Ref<Script> &r_script) {
+	if (p_hint_string.is_empty()) {
+		return;
+	}
+	if (ClassDB::class_exists(p_hint_string)) {
+		r_class = p_hint_string;
+		return;
+	}
+
+	String script_path = p_hint_string;
+	if (ScriptServer::is_global_class(p_hint_string)) {
+		script_path = ScriptServer::get_global_class_path(p_hint_string);
+	} else if (script_path.contains("::")) {
+		script_path = script_path.get_slice("::", 0);
+	}
+	Ref<Script> hint_script;
+	if (script_path.is_resource_file()) {
+		hint_script = ResourceLoader::load(script_path);
+	}
+	if (hint_script.is_valid() && (hint_script->is_trait() || p_hint_string.contains("::"))) {
+		r_class = p_hint_string;
+	} else if (hint_script.is_valid()) {
+		r_class = hint_script->get_instance_base_type();
+		r_script = hint_script;
+	}
+}
+
 void EditorPropertyArray::initialize_array(Variant &p_array) {
 	if (array_type == Variant::ARRAY && subtype != Variant::NIL) {
 		Array array;
 		StringName subtype_class;
 		Ref<Script> subtype_script;
-		if (subtype == Variant::OBJECT && !subtype_hint_string.is_empty()) {
-			if (ClassDB::class_exists(subtype_hint_string)) {
-				subtype_class = subtype_hint_string;
-			}
+		if (subtype == Variant::OBJECT) {
+			_resolve_typed_object_hint(subtype_hint_string, subtype_class, subtype_script);
 		}
 		array.set_typed(subtype, subtype_class, subtype_script);
 		p_array = array;
@@ -993,13 +1020,13 @@ void EditorPropertyDictionary::initialize_dictionary(Variant &p_dictionary) {
 		Dictionary dict;
 		StringName key_subtype_class;
 		Ref<Script> key_subtype_script;
-		if (key_subtype == Variant::OBJECT && !key_subtype_hint_string.is_empty() && ClassDB::class_exists(key_subtype_hint_string)) {
-			key_subtype_class = key_subtype_hint_string;
+		if (key_subtype == Variant::OBJECT) {
+			_resolve_typed_object_hint(key_subtype_hint_string, key_subtype_class, key_subtype_script);
 		}
 		StringName value_subtype_class;
 		Ref<Script> value_subtype_script;
-		if (value_subtype == Variant::OBJECT && !value_subtype_hint_string.is_empty() && ClassDB::class_exists(value_subtype_hint_string)) {
-			value_subtype_class = value_subtype_hint_string;
+		if (value_subtype == Variant::OBJECT) {
+			_resolve_typed_object_hint(value_subtype_hint_string, value_subtype_class, value_subtype_script);
 		}
 		dict.set_typed(key_subtype, key_subtype_class, key_subtype_script, value_subtype, value_subtype_class, value_subtype_script);
 		p_dictionary = dict;

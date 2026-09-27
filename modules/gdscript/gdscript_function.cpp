@@ -86,7 +86,7 @@ bool GDScriptDataType::is_type(const Variant &p_variant, bool p_allow_implicit_c
 					if (array_script_type_ref.is_valid()) {
 						valid = (elem_type.kind == SCRIPT || elem_type.kind == GDSCRIPT) && elem_type.script_type == array_script_type_ref.ptr();
 					} else if (array_native_type != StringName()) {
-						valid = elem_type.kind == NATIVE && elem_type.native_type == array_native_type;
+						valid = (elem_type.kind == NATIVE && elem_type.native_type == array_native_type) || (elem_type.kind == GDTRAIT && elem_type.trait_type == array_native_type);
 					} else {
 						valid = elem_type.kind == BUILTIN && elem_type.builtin_type == array_builtin_type;
 					}
@@ -105,7 +105,7 @@ bool GDScriptDataType::is_type(const Variant &p_variant, bool p_allow_implicit_c
 						if (key_script_type_ref.is_valid()) {
 							valid = (key.kind == SCRIPT || key.kind == GDSCRIPT) && key.script_type == key_script_type_ref.ptr();
 						} else if (key_native_type != StringName()) {
-							valid = key.kind == NATIVE && key.native_type == key_native_type;
+							valid = (key.kind == NATIVE && key.native_type == key_native_type) || (key.kind == GDTRAIT && key.trait_type == key_native_type);
 						} else {
 							valid = key.kind == BUILTIN && key.builtin_type == key_builtin_type;
 						}
@@ -120,7 +120,7 @@ bool GDScriptDataType::is_type(const Variant &p_variant, bool p_allow_implicit_c
 						if (value_script_type_ref.is_valid()) {
 							valid = (value.kind == SCRIPT || value.kind == GDSCRIPT) && value.script_type == value_script_type_ref.ptr();
 						} else if (value_native_type != StringName()) {
-							valid = value.kind == NATIVE && value.native_type == value_native_type;
+							valid = (value.kind == NATIVE && value.native_type == value_native_type) || (value.kind == GDTRAIT && value.trait_type == value_native_type);
 						} else {
 							valid = value.kind == BUILTIN && value.builtin_type == value_builtin_type;
 						}

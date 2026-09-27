@@ -1354,10 +1354,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			get_token(p_stream, token, line, r_err_str);
-			if (token.type != TK_IDENTIFIER) {
-				r_err_str = "Expected type identifier for key";
+			if (token.type != TK_IDENTIFIER && token.type != TK_STRING) {
+				r_err_str = "Expected type identifier or string for key";
 				return ERR_PARSE_ERROR;
 			}
+			const bool quoted_key_class_name = token.type == TK_STRING;
 
 			static HashMap<StringName, Variant::Type> builtin_types;
 			if (builtin_types.is_empty()) {
@@ -1371,7 +1372,10 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			StringName key_class_name;
 			Variant key_script;
 			bool got_comma_token = false;
-			if (builtin_types.has(token.value)) {
+			if (quoted_key_class_name) {
+				key_type = Variant::OBJECT;
+				key_class_name = token.value;
+			} else if (builtin_types.has(token.value)) {
 				key_type = builtin_types.get(token.value);
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				Variant resource;
@@ -1397,6 +1401,12 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			} else if (ClassDB::class_exists(token.value)) {
 				key_type = Variant::OBJECT;
 				key_class_name = token.value;
+			} else if (ScriptServer::is_global_class(token.value)) {
+				Ref<Script> trait_script = ResourceLoader::load(ScriptServer::get_global_class_path(token.value));
+				if (trait_script.is_valid() && trait_script->is_trait()) {
+					key_type = Variant::OBJECT;
+					key_class_name = token.value;
+				}
 			}
 
 			if (!got_comma_token) {
@@ -1408,16 +1418,20 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			get_token(p_stream, token, line, r_err_str);
-			if (token.type != TK_IDENTIFIER) {
-				r_err_str = "Expected type identifier for value";
+			if (token.type != TK_IDENTIFIER && token.type != TK_STRING) {
+				r_err_str = "Expected type identifier or string for value";
 				return ERR_PARSE_ERROR;
 			}
+			const bool quoted_value_class_name = token.type == TK_STRING;
 
 			Variant::Type value_type = Variant::NIL;
 			StringName value_class_name;
 			Variant value_script;
 			bool got_bracket_token = false;
-			if (builtin_types.has(token.value)) {
+			if (quoted_value_class_name) {
+				value_type = Variant::OBJECT;
+				value_class_name = token.value;
+			} else if (builtin_types.has(token.value)) {
 				value_type = builtin_types.get(token.value);
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				Variant resource;
@@ -1443,6 +1457,12 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			} else if (ClassDB::class_exists(token.value)) {
 				value_type = Variant::OBJECT;
 				value_class_name = token.value;
+			} else if (ScriptServer::is_global_class(token.value)) {
+				Ref<Script> trait_script = ResourceLoader::load(ScriptServer::get_global_class_path(token.value));
+				if (trait_script.is_valid() && trait_script->is_trait()) {
+					value_type = Variant::OBJECT;
+					value_class_name = token.value;
+				}
 			}
 
 			if (key_type != Variant::NIL || value_type != Variant::NIL) {
@@ -1494,10 +1514,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			get_token(p_stream, token, line, r_err_str);
-			if (token.type != TK_IDENTIFIER) {
-				r_err_str = "Expected type identifier";
+			if (token.type != TK_IDENTIFIER && token.type != TK_STRING) {
+				r_err_str = "Expected type identifier or string";
 				return ERR_PARSE_ERROR;
 			}
+			const bool quoted_class_name = token.type == TK_STRING;
 
 			static HashMap<String, Variant::Type> builtin_types;
 			if (builtin_types.is_empty()) {
@@ -1508,7 +1529,9 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 
 			Array array = Array();
 			bool got_bracket_token = false;
-			if (builtin_types.has(token.value)) {
+			if (quoted_class_name) {
+				array.set_typed(Variant::OBJECT, token.value, Variant());
+			} else if (builtin_types.has(token.value)) {
 				array.set_typed(builtin_types.get(token.value), StringName(), Variant());
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				if (!p_allow_objects) {
@@ -1535,6 +1558,11 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 				}
 			} else if (ClassDB::class_exists(token.value)) {
 				array.set_typed(Variant::OBJECT, token.value, Variant());
+			} else if (ScriptServer::is_global_class(token.value)) {
+				Ref<Script> script = ResourceLoader::load(ScriptServer::get_global_class_path(token.value));
+				if (script.is_valid() && script->is_trait()) {
+					array.set_typed(Variant::OBJECT, token.value, Variant());
+				}
 			}
 
 			if (!got_bracket_token) {
@@ -2446,7 +2474,8 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 						p_store_string_func(p_store_string_ud, key_class_name);
 					}
 				} else if (key_class_name != StringName()) {
-					p_store_string_func(p_store_string_ud, key_class_name);
+					String type_name = key_class_name;
+					p_store_string_func(p_store_string_ud, type_name.is_valid_identifier() ? type_name : "\"" + type_name.c_escape() + "\"");
 				} else if (key_builtin_type == Variant::NIL) {
 					p_store_string_func(p_store_string_ud, "Variant");
 				} else {
@@ -2475,7 +2504,8 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 						p_store_string_func(p_store_string_ud, value_class_name);
 					}
 				} else if (value_class_name != StringName()) {
-					p_store_string_func(p_store_string_ud, value_class_name);
+					String type_name = value_class_name;
+					p_store_string_func(p_store_string_ud, type_name.is_valid_identifier() ? type_name : "\"" + type_name.c_escape() + "\"");
 				} else if (value_builtin_type == Variant::NIL) {
 					p_store_string_func(p_store_string_ud, "Variant");
 				} else {
@@ -2590,7 +2620,8 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 						p_store_string_func(p_store_string_ud, class_name);
 					}
 				} else if (class_name != StringName()) {
-					p_store_string_func(p_store_string_ud, class_name);
+					String type_name = class_name;
+					p_store_string_func(p_store_string_ud, type_name.is_valid_identifier() ? type_name : "\"" + type_name.c_escape() + "\"");
 				} else {
 					p_store_string_func(p_store_string_ud, Variant::get_type_name(builtin_type));
 				}
