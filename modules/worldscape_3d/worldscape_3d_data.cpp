@@ -94,6 +94,8 @@ void WorldScape3DData::initialize(WorldScape3D *p_terrain) {
 	_terrain = p_terrain;
 	_region_map.resize(REGION_MAP_SIZE * REGION_MAP_SIZE);
 	_vertex_spacing = _terrain->get_vertex_spacing();
+	_region_size = _terrain->get_region_size();
+	_region_sizev = Vector2i(_region_size, _region_size);
 	if (!prev_initialized) {
 #ifdef TOOLS_ENABLED
 		if (_terrain->get_data_directory().is_empty()) {
@@ -105,8 +107,6 @@ void WorldScape3DData::initialize(WorldScape3D *p_terrain) {
 			load_directory(_terrain->get_data_directory());
 		}
 	}
-	_region_size = _terrain->get_region_size();
-	_region_sizev = Vector2i(_region_size, _region_size);
 }
 
 void WorldScape3DData::set_region_locations(const TypedArray<Vector2i> &p_locations) {

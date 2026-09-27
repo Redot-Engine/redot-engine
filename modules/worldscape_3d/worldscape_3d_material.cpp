@@ -637,11 +637,11 @@ void WorldScape3DMaterial::_init_shader_params() {
 		// World noise
 		_shader_params["world_noise_fragment_normals"] = false;
 		_shader_params["world_noise_region_blend"] = 0.75f;
-		_shader_params["world_noise_max_octaves"] = 4;
-		_shader_params["world_noise_min_octaves"] = 2;
+		_shader_params["world_noise_max_octaves"] = 6;
+		_shader_params["world_noise_min_octaves"] = 1;
 		_shader_params["world_noise_lod_distance"] = 7500.f;
 		_shader_params["world_noise_scale"] = 5.f;
-		_shader_params["world_noise_height"] = 64.f;
+		_shader_params["world_noise_height"] = 48.f;
 		_shader_params["world_noise_offset"] = Vector3{0.f, 0.f, 0.f};
 	}
 }
