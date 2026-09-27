@@ -107,9 +107,9 @@ void WorldScape3D::_initialize() {
 		_data->connect("region_map_changed", callable_mp(_collision, &WorldScape3DCollision::build));
 	}
 	// Any map was regenerated or regions changed, update material
-	if (!_data->is_connected("maps_changed", callable_mp(_material.ptr(), &WorldScape3DMaterial::_update_maps))) {
-		LOG(DEBUG, "Connecting _data::maps_changed signal to _material->_update_maps()");
-		_data->connect("maps_changed", callable_mp(_material.ptr(), &WorldScape3DMaterial::_update_maps));
+	if (!_data->is_connected("maps_changed", callable_mp(_material.ptr(), &WorldScape3DMaterial::update))) {
+		LOG(DEBUG, "Connecting _data::maps_changed signal to _material->update()");
+		_data->connect("maps_changed", callable_mp(_material.ptr(), &WorldScape3DMaterial::update));
 	}
 	// Height map was regenerated, update aabbs
 	if (!_data->is_connected("height_maps_changed", callable_mp(this, &WorldScape3D::_update_mesher_aabbs))) {
