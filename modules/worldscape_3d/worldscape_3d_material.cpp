@@ -190,7 +190,7 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 	int index = 0;
 	int line = 0;
 	[[maybe_unused]] int comment_line_open = 0;
-	int comments_open = 0;
+	[[maybe_unused]] int comments_open = 0;
 	int strings_open = 0;
 	const char32_t CURSOR = 0xFFFF;
 
