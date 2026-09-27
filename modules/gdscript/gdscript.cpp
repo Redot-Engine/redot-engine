@@ -658,17 +658,27 @@ void GDScript::update_exports() {
 		return;
 	}
 
-	// Trait members are copied into consumers, so their export caches must be rebuilt.
+	// Trait members are copied into consumers, so recompile them before refreshing their exports.
 	GDScriptCache::remove_parser(get_path());
 	Vector<Ref<GDScript>> consumers;
+	Vector<Ref<GDScript>> consumer_roots;
+	HashSet<ObjectID> seen_roots;
 	{
 		MutexLock lock(GDScriptLanguage::singleton->mutex);
 		for (SelfList<GDScript> *elem = GDScriptLanguage::singleton->script_list.first(); elem; elem = elem->next()) {
-			GDScript *script = elem->self();
-			if (script != this && script->traits_fqtn.has(fully_qualified_name)) {
-				consumers.push_back(Ref<GDScript>(script));
+			GDScript *candidate = elem->self();
+			if (candidate != this && candidate->traits_fqtn.has(fully_qualified_name)) {
+				consumers.push_back(Ref<GDScript>(candidate));
+				GDScript *root = candidate->get_root_script();
+				if (!seen_roots.has(root->get_instance_id())) {
+					seen_roots.insert(root->get_instance_id());
+					consumer_roots.push_back(Ref<GDScript>(root));
+				}
 			}
 		}
+	}
+	for (const Ref<GDScript> &consumer_root : consumer_roots) {
+		consumer_root->reload(true);
 	}
 	for (const Ref<GDScript> &consumer : consumers) {
 		consumer->source_changed_cache = true;
