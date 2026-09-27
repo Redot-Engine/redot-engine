@@ -2836,6 +2836,9 @@ bool GDScriptAnalyzer::struct_field_from_datatype(const GDScriptParser::DataType
 			r_field.class_name = p_type.native_type;
 			return true;
 		case DT::SCRIPT:
+			if (p_type.script_type.is_null()) {
+				return false;
+			}
 			r_field.type = Variant::OBJECT;
 			r_field.class_name = p_type.script_type->get_qualified_class_name();
 			return r_field.class_name != StringName();
