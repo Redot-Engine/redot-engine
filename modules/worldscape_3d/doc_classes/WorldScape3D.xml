@@ -152,7 +152,7 @@
 		<member name="physics_material" type="PhysicsMaterial" setter="set_physics_material" getter="get_physics_material">
 			Alias for [member WorldScape3DCollision.physics_material].
 		</member>
-		<member name="region_size" type="int" setter="change_region_size" getter="get_region_size" enum="WorldScape3D.RegionSize" default="256">
+		<member name="region_size" type="int" setter="change_region_size" getter="get_region_size" enum="WorldScape3D.RegionSize" default="512">
 			The number of vertices in each region, and the number of pixels for each map in [WorldScape3DRegion]. 1 pixel always corresponds to 1 vertex. [member WorldScape3D.vertex_spacing] laterally scales regions, but does not change the number of vertices or pixels in each.
 			There is no undo for this operation. However you can apply it again to reslice, as long as your data doesn't hit the maximum boundaries.
 		</member>
@@ -229,7 +229,8 @@
 		<member name="vertex_spacing" type="float" setter="set_vertex_spacing" getter="get_vertex_spacing" default="1.0">
 			The distance between vertices. Redot units are typically considered to be meters. This laterally scales the terrain on X and Z axes.
 			This variable changes the global position of landscape features. A mountain peak might be at (512, 512), but with a vertex spacing of 2.0 it is now located at (1024, 1024).
-			All WorldScape3D functions with a global_position expect an absolute global value. If you would normally use [method WorldScape3DData.import_images] to import an image in the region at (-1024, -1024), with a vertex_spacing of 2, you'll need to import that image at (-2048, -2048) to place it in the same region.
+			All WorldScape3D functions with a global_position expect an absolute global value.
+			If you would normally use [method WorldScape3DData.import_images] to import an image in the region at (-1024, -1024), with a vertex_spacing of 2, you'll need to import that image at (-2048, -2048) to place it in the same region.
 			To scale heights, export the height map and reimport it with a new height scale.
 		</member>
 	</members>
@@ -257,15 +258,6 @@
 		</constant>
 		<constant name="EXTREME" value="3" enum="DebugLevel">
 			Messages for continuous operations like snapping and editing.
-		</constant>
-		<constant name="SIZE_64" value="64" enum="RegionSize">
-			The region size is 64 x 64 meters, vertices, and pixels on Image maps.
-		</constant>
-		<constant name="SIZE_128" value="128" enum="RegionSize">
-			The region size is 128 x 128 meters, vertices, and pixels on Image maps.
-		</constant>
-		<constant name="SIZE_256" value="256" enum="RegionSize">
-			The region size is 256 x 256 meters, vertices, and pixels on Image maps. (default)
 		</constant>
 		<constant name="SIZE_512" value="512" enum="RegionSize">
 			The region size is 512 x 512 meters, vertices, and pixels on Image maps.

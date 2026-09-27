@@ -92,7 +92,7 @@ void WorldScape3DMaterial::_preload_shaders() {
  */
 void WorldScape3DMaterial::_parse_shader(const String &p_shader, const String &p_name) {
 	if (p_name.is_empty()) {
-		print_error("No dictionary key for saving shader snippets specified");
+		LOG(ERROR, "No dictionary key for saving shader snippets specified");
 		return;
 	}
 	PackedStringArray parsed = p_shader.split("//INSERT:");
