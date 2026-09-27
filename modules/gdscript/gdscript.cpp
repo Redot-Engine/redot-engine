@@ -437,6 +437,9 @@ PlaceHolderScriptInstance *GDScript::placeholder_instance_create(Object *p_this)
 #ifdef TOOLS_ENABLED
 	PlaceHolderScriptInstance *si = memnew(PlaceHolderScriptInstance(GDScriptLanguage::get_singleton(), Ref<Script>(this), p_this));
 	placeholders.insert(si);
+	if (_owner && members_cache.is_empty()) {
+		source_changed_cache = true;
+	}
 	_update_exports(nullptr, false, si);
 	return si;
 #else
@@ -536,17 +539,21 @@ bool GDScript::_update_exports(bool *r_err, bool p_recursive_call, PlaceHolderSc
 
 		GDScriptParser parser;
 		GDScriptAnalyzer analyzer(&parser);
-		Error err = parser.parse(source, path, false);
+		Error err = parser.parse(get_root_script()->source, path, false);
 
 		if (err == OK && analyzer.analyze() == OK) {
-			const GDScriptParser::ClassNode *c = parser.get_tree();
+			const GDScriptParser::ClassNode *c = parser.find_class(fully_qualified_name);
+			if (c == nullptr) {
+				placeholder_fallback_enabled = true;
+				return false;
+			}
 
 			if (base_cache.is_valid()) {
 				base_cache->inheriters_cache.erase(get_instance_id());
 				base_cache = Ref<GDScript>();
 			}
 
-			GDScriptParser::DataType base_type = parser.get_tree()->base_type;
+			GDScriptParser::DataType base_type = c->base_type;
 			if (base_type.kind == GDScriptParser::DataType::CLASS) {
 				Ref<GDScript> bf = GDScriptCache::get_full_script(base_type.script_path, err, path);
 				if (err == OK) {
@@ -645,7 +652,28 @@ bool GDScript::_update_exports(bool *r_err, bool p_recursive_call, PlaceHolderSc
 
 void GDScript::update_exports() {
 #ifdef TOOLS_ENABLED
+	const bool trait_changed = file_trait && source_changed_cache;
 	_update_exports_down(false);
+	if (!trait_changed || placeholder_fallback_enabled || !get_path().is_resource_file()) {
+		return;
+	}
+
+	// Trait members are copied into consumers, so their export caches must be rebuilt.
+	GDScriptCache::remove_parser(get_path());
+	Vector<Ref<GDScript>> consumers;
+	{
+		MutexLock lock(GDScriptLanguage::singleton->mutex);
+		for (SelfList<GDScript> *elem = GDScriptLanguage::singleton->script_list.first(); elem; elem = elem->next()) {
+			GDScript *script = elem->self();
+			if (script != this && script->traits_fqtn.has(fully_qualified_name)) {
+				consumers.push_back(Ref<GDScript>(script));
+			}
+		}
+	}
+	for (const Ref<GDScript> &consumer : consumers) {
+		consumer->source_changed_cache = true;
+		consumer->_update_exports_down(false);
+	}
 #endif
 }
 

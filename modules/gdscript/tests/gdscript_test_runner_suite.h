@@ -44,6 +44,7 @@
 #include "../gdscript_parser.h"
 #include "../gdscript_warning.h"
 
+#include "core/config/engine.h"
 #include "core/config/project_settings.h"
 
 #include "tests/test_macros.h"
@@ -108,6 +109,85 @@ TEST_SUITE("[Modules][GDScript]") {
 		INFO("Make sure `*.out` files have expected results.");
 		REQUIRE_MESSAGE(fail_count == 0, "All GDScript tests should pass.");
 	}
+}
+#endif // TOOLS_ENABLED
+
+#ifdef TOOLS_ENABLED
+TEST_CASE("[Modules][GDScript] Trait edits refresh consumer exports") {
+	GDScriptLanguage::get_singleton()->init();
+	const String trait_path = "res://modules/gdscript/tests/scripts/Traits/analyzer/features/trait_export_refresh_trait.notest.gd";
+	const String consumer_path = "res://modules/gdscript/tests/scripts/Traits/analyzer/features/trait_export_refresh_consumer.notest.gd";
+	const String transitive_path = "res://modules/gdscript/tests/scripts/Traits/analyzer/features/trait_export_refresh_transitive.notest.gd";
+	const String inner_path = "res://modules/gdscript/tests/scripts/Traits/analyzer/features/trait_export_refresh_inner.notest.gd";
+	Ref<GDScript> trait = ResourceLoader::load(trait_path);
+	Ref<GDScript> consumer = ResourceLoader::load(consumer_path);
+	Ref<GDScript> transitive = ResourceLoader::load(transitive_path);
+	Ref<GDScript> inner_root = ResourceLoader::load(inner_path);
+	REQUIRE(trait.is_valid());
+	REQUIRE(consumer.is_valid());
+	REQUIRE(consumer->is_valid());
+	REQUIRE(transitive.is_valid());
+	REQUIRE(transitive->is_valid());
+	REQUIRE(inner_root.is_valid());
+	REQUIRE(inner_root->is_valid());
+	Ref<GDScript> inner = inner_root->find_class("Inner");
+	REQUIRE(inner.is_valid());
+
+	Ref<RefCounted> object;
+	object.instantiate();
+	PlaceHolderScriptInstance *placeholder = consumer->placeholder_instance_create(object.ptr());
+	Ref<RefCounted> transitive_object;
+	transitive_object.instantiate();
+	PlaceHolderScriptInstance *transitive_placeholder = transitive->placeholder_instance_create(transitive_object.ptr());
+	Ref<RefCounted> inner_object;
+	inner_object.instantiate();
+	PlaceHolderScriptInstance *inner_placeholder = inner->placeholder_instance_create(inner_object.ptr());
+	Ref<RefCounted> inner_root_object;
+	inner_root_object.instantiate();
+	PlaceHolderScriptInstance *inner_root_placeholder = inner_root->placeholder_instance_create(inner_root_object.ptr());
+	const String original_source = trait->get_source_code();
+	const bool old_editor_hint = Engine::get_singleton()->is_editor_hint();
+	Engine::get_singleton()->set_editor_hint(true);
+
+	auto has_export = [](PlaceHolderScriptInstance *p_placeholder, const StringName &p_name) {
+		List<PropertyInfo> properties;
+		p_placeholder->get_property_list(&properties);
+		for (const PropertyInfo &property : properties) {
+			if (property.name == p_name) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	CHECK(has_export(placeholder, SNAME("own")));
+	CHECK_FALSE(has_export(placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(transitive_placeholder, SNAME("added")));
+	CHECK(has_export(inner_placeholder, SNAME("inner_own")));
+	CHECK(has_export(inner_placeholder, SNAME("original")));
+	CHECK_FALSE(has_export(inner_placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(inner_root_placeholder, SNAME("original")));
+	CHECK(placeholder->set(SNAME("own"), 42));
+	trait->set_source_code(original_source + "\n@export var added: int = 3\n");
+	trait->update_exports();
+	CHECK(has_export(placeholder, SNAME("added")));
+	CHECK(has_export(transitive_placeholder, SNAME("added")));
+	CHECK(has_export(inner_placeholder, SNAME("added")));
+	Variant own_value;
+	CHECK(placeholder->get(SNAME("own"), own_value));
+	CHECK(int(own_value) == 42);
+	trait->set_source_code(original_source);
+	trait->update_exports();
+	CHECK_FALSE(has_export(placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(transitive_placeholder, SNAME("added")));
+	CHECK_FALSE(has_export(inner_placeholder, SNAME("added")));
+	CHECK(has_export(placeholder, SNAME("own")));
+
+	Engine::get_singleton()->set_editor_hint(old_editor_hint);
+	memdelete(placeholder);
+	memdelete(transitive_placeholder);
+	memdelete(inner_placeholder);
+	memdelete(inner_root_placeholder);
 }
 #endif // TOOLS_ENABLED
 

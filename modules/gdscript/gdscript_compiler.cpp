@@ -3383,6 +3383,7 @@ Error GDScriptCompiler::compile(const GDScriptParser *p_parser, GDScript *p_scri
 
 	// Create scripts for subclasses beforehand so they can be referenced
 	make_scripts(p_script, root, p_keep_state);
+	p_script->file_trait = parser->is_file_trait();
 
 	if (parser->is_file_trait()) {
 		// No need to compile traits.

@@ -92,6 +92,7 @@ class GDScript : public Script {
 	friend class GDScriptInstance;
 	friend class GDScriptFunction;
 	friend class GDScriptAnalyzer;
+	friend class GDScriptCache;
 	friend class GDScriptCompiler;
 	friend class GDScriptDocGen;
 	friend class GDScriptLambdaCallable;
@@ -197,6 +198,7 @@ private:
 	String fully_qualified_name;
 	String simplified_icon_path;
 	Vector<StringName> traits_fqtn; // Fully-qualified trait names used by script.
+	bool file_trait = false; ///< Whether this script defines a file-level trait.
 	SelfList<GDScript> script_list;
 
 	SelfList<GDScriptFunctionState>::List pending_func_states;
