@@ -1114,6 +1114,12 @@ static void _list_available_types(bool p_inherit_only, bool p_include_trait, GDS
 						ScriptLanguage::CodeCompletionOption option(member.m_class->identifier->name, ScriptLanguage::CODE_COMPLETION_KIND_CLASS, ScriptLanguage::LOCATION_LOCAL + location_offset);
 						r_result.insert(option.display, option);
 					} break;
+					case GDScriptParser::ClassNode::Member::STRUCT: {
+						if (!p_inherit_only) {
+							ScriptLanguage::CodeCompletionOption option(member.m_struct->identifier->name, ScriptLanguage::CODE_COMPLETION_KIND_CLASS, ScriptLanguage::LOCATION_LOCAL + location_offset);
+							r_result.insert(option.display, option);
+						}
+					} break;
 					case GDScriptParser::ClassNode::Member::TRAIT: {
 						if (p_include_trait) {
 							ScriptLanguage::CodeCompletionOption option(member.m_class->identifier->name, ScriptLanguage::CODE_COMPLETION_KIND_CLASS, ScriptLanguage::LOCATION_LOCAL + location_offset);
