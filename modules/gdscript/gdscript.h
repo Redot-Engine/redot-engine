@@ -162,6 +162,7 @@ private:
 	HashMap<StringName, Variant> member_default_values;
 	List<PropertyInfo> members_cache;
 	HashMap<StringName, Variant> member_default_values_cache;
+	HashMap<StringName, Variant> member_array_element_defaults_cache;
 	Ref<GDScript> base_cache;
 	HashSet<ObjectID> inheriters_cache;
 	bool source_changed_cache = false;
@@ -335,6 +336,7 @@ public:
 	Vector<uint8_t> get_as_binary_tokens() const;
 
 	bool get_property_default_value(const StringName &p_property, Variant &r_value) const override;
+	bool get_property_array_element_default_value(const StringName &p_property, Variant &r_value) const override;
 
 	virtual void get_script_method_list(List<MethodInfo> *p_list) const override;
 	virtual bool has_method(const StringName &p_method) const override;

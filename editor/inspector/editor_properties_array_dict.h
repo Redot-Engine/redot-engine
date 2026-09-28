@@ -139,6 +139,7 @@ class EditorPropertyArray : public EditorProperty {
 	int reorder_to_index = -1;
 	float reorder_mouse_y_delta = 0.0f;
 	void initialize_array(Variant &p_array);
+	bool _get_struct_element_default(Variant &r_value);
 
 	void _page_changed(int p_page);
 

@@ -287,6 +287,15 @@ void EditorPropertyArray::initialize_array(Variant &p_array) {
 	}
 }
 
+bool EditorPropertyArray::_get_struct_element_default(Variant &r_value) {
+	if (subtype != Variant::STRUCT || !get_edited_object()) {
+		return false;
+	}
+	Ref<Script> script = get_edited_object()->get_script();
+	return script.is_valid() && script->get_property_array_element_default_value(get_edited_property(), r_value) &&
+			r_value.get_type() == Variant::STRUCT && !Struct(r_value).is_null();
+}
+
 void EditorPropertyArray::_property_changed(const String &p_property, Variant p_value, const String &p_name, bool p_changing) {
 	if (!p_property.begins_with("indices")) {
 		return;
@@ -863,7 +872,14 @@ void EditorPropertyArray::_length_changed(double p_page) {
 	}
 
 	Variant array = object->get_array().duplicate();
+	const int old_size = array.call("size");
 	array.call("resize", int(p_page));
+	Variant element_default;
+	if (_get_struct_element_default(element_default)) {
+		for (int i = old_size; i < int(p_page); i++) {
+			array.set(i, element_default);
+		}
+	}
 
 	emit_changed(get_edited_property(), array);
 }
