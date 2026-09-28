@@ -51,7 +51,9 @@ static_assert(std::is_nothrow_destructible_v<Struct>);
 template <typename T>
 struct StructFieldOps {
 	static void construct(void *p_slot, const Variant &p_default) {
-		if constexpr (std::is_same_v<T, Array> || std::is_same_v<T, Dictionary>) {
+		if (p_default.get_type() == Variant::NIL) {
+			memnew_placement(p_slot, T());
+		} else if constexpr (std::is_same_v<T, Array> || std::is_same_v<T, Dictionary>) {
 			memnew_placement(p_slot, T(p_default.duplicate(true).operator T()));
 		} else {
 			memnew_placement(p_slot, T(p_default.operator T()));

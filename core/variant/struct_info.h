@@ -280,7 +280,7 @@ protected:
 	static void _bind_methods() {}
 
 public:
-	static constexpr uint32_t SERIALIZATION_VERSION = 1;
+	static constexpr uint32_t SERIALIZATION_VERSION = 2;
 
 	bool is_frozen() const noexcept { return frozen; }
 	StringName get_logical_type_id() const { return logical_type_id; }
@@ -310,6 +310,10 @@ public:
 	bool is_field_typed(int p_index) const {
 		ERR_FAIL_INDEX_V(p_index, fields.size(), false);
 		return fields[p_index].is_typed;
+	}
+	bool is_field_nullable(int p_index) const {
+		ERR_FAIL_INDEX_V(p_index, fields.size(), false);
+		return fields[p_index].is_nullable;
 	}
 	StringName get_field_class_name(int p_index) const {
 		ERR_FAIL_INDEX_V(p_index, fields.size(), StringName());

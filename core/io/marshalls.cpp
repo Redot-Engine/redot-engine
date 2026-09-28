@@ -1364,6 +1364,13 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 				if (r_len) {
 					(*r_len) += 4;
 				}
+				ERR_FAIL_COND_V(len < 4, ERR_INVALID_DATA);
+				f.is_nullable = decode_uint32(buf) != 0;
+				buf += 4;
+				len -= 4;
+				if (r_len) {
+					(*r_len) += 4;
+				}
 				{
 					String cn;
 					Error err = _decode_string(buf, len, r_len, cn);
@@ -2041,6 +2048,11 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len, bo
 				_encode_string(String(StructInfo::type_to_token(info->get_field_type(i))), buf, r_len);
 				if (buf) {
 					encode_uint32(info->is_field_typed(i) ? 1 : 0, buf);
+					buf += 4;
+				}
+				r_len += 4;
+				if (buf) {
+					encode_uint32(info->is_field_nullable(i) ? 1 : 0, buf);
 					buf += 4;
 				}
 				r_len += 4;
