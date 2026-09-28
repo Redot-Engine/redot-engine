@@ -199,6 +199,7 @@ private:
 			h = hash_murmur3_one_64(f.name.hash(), h);
 			h = hash_murmur3_one_64((uint64_t)f.type, h);
 			h = hash_murmur3_one_64(f.is_typed ? 1 : 0, h);
+			h = hash_murmur3_one_64(f.is_nullable ? 1 : 0, h);
 			h = hash_murmur3_one_64(f.class_name.hash(), h);
 			h = hash_murmur3_one_64(f.struct_type_id.hash(), h);
 		}
@@ -215,6 +216,8 @@ private:
 
 			storage_traits(f.storage, sz, al);
 			off = (off + al - 1) & ~(al - 1);
+			ERR_FAIL_COND_V_MSG(off > UINT32_MAX, ERR_INVALID_DATA,
+					"Struct layout is too large to represent.");
 			f.offset = (uint32_t)off;
 			off += sz;
 
@@ -223,8 +226,11 @@ private:
 			}
 		}
 
+		const size_t total = (off + max_align - 1) & ~(max_align - 1);
+		ERR_FAIL_COND_V_MSG(total > UINT32_MAX, ERR_INVALID_DATA,
+				"Struct layout is too large to represent.");
 		data_align = (uint32_t)max_align;
-		data_size = (uint32_t)((off + max_align - 1) & ~(max_align - 1));
+		data_size = (uint32_t)total;
 		frozen = true;
 
 		return OK;
@@ -236,7 +242,7 @@ private:
 		}
 		const Variant::Type vt = p_value.get_type();
 		if (vt == Variant::NIL) {
-			return true;
+			return p_field.is_nullable || p_field.storage == STORAGE_VARIANT;
 		}
 		if (vt == p_field.type) {
 			return _field_metadata_ok(p_field, p_value);
@@ -366,6 +372,7 @@ public:
 			const Field &a = fields[i];
 			const Field &b = p_other.fields[i];
 			if (a.name != b.name || a.type != b.type || a.is_typed != b.is_typed ||
+					a.is_nullable != b.is_nullable ||
 					a.class_name != b.class_name || a.struct_type_id != b.struct_type_id) {
 				return false;
 			}

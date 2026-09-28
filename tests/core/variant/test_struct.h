@@ -1127,8 +1127,8 @@ TEST_CASE("[Struct][D8] Type tokens match the frozen vocabulary exactly") {
 
 TEST_CASE("[Struct][D8] Fingerprints are frozen to known golden values (portable)") {
 	Ref<StructInfo> info = make_point();
-	CHECK(info->get_layout_fingerprint() == "ed9ca167c5baca2d5534eed31d0c1f87");
-	CHECK(info->get_schema_fingerprint() == "2d4d71795eee415fa7349f8a5ff53c8f");
+	CHECK(info->get_layout_fingerprint() == "a1cd0ed1ed8a4d383f0ee283b9b97a19");
+	CHECK(info->get_schema_fingerprint() == "b0cac3de4e067709ee6cd52a9f4b186b");
 }
 
 TEST_CASE("[Struct][D8] A malformed nested struct fails the whole JSON decode") {

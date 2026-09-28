@@ -51,7 +51,11 @@ static_assert(std::is_nothrow_destructible_v<Struct>);
 template <typename T>
 struct StructFieldOps {
 	static void construct(void *p_slot, const Variant &p_default) {
-		memnew_placement(p_slot, T(p_default.operator T()));
+		if constexpr (std::is_same_v<T, Array> || std::is_same_v<T, Dictionary>) {
+			memnew_placement(p_slot, T(p_default.duplicate(true).operator T()));
+		} else {
+			memnew_placement(p_slot, T(p_default.operator T()));
+		}
 	}
 	static void copy(void *p_dst, const void *p_src) {
 		memnew_placement(p_dst, T(*static_cast<const T *>(p_src)));
@@ -94,9 +98,9 @@ struct StructData {
 	void construct_default(int p_index) {
 		void *s = slot(p_index);
 		switch (info->get_field_storage(p_index)) {
-#define _STRUCT_CONSTRUCT(m_suffix, m_type)                                       \
-	case StructInfo::STORAGE_##m_suffix:                                          \
-		StructFieldOps<m_type>::construct(s, info->instantiate_default(p_index)); \
+#define _STRUCT_CONSTRUCT(m_suffix, m_type)                                          \
+	case StructInfo::STORAGE_##m_suffix:                                             \
+		StructFieldOps<m_type>::construct(s, info->_get_field_default_raw(p_index)); \
 		return;
 			STRUCT_NATIVE_STORAGE_TYPES(_STRUCT_CONSTRUCT)
 #undef _STRUCT_CONSTRUCT
