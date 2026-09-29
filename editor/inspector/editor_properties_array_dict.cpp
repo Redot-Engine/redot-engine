@@ -291,8 +291,8 @@ bool EditorPropertyArray::_get_struct_element_default(Variant &r_value) {
 	if (subtype != Variant::STRUCT || !get_edited_object()) {
 		return false;
 	}
-	Ref<Script> script = get_edited_object()->get_script();
-	return script.is_valid() && script->get_property_array_element_default_value(get_edited_property(), r_value) &&
+	Ref<Script> editedScript = get_edited_object()->get_script();
+	return editedScript.is_valid() && editedScript->get_property_array_element_default_value(get_edited_property(), r_value) &&
 			r_value.get_type() == Variant::STRUCT && !Struct(r_value).is_null();
 }
 
