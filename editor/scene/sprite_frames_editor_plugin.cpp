@@ -43,6 +43,7 @@
 #include "editor/docks/filesystem_dock.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/file_system/editor_file_system.h"
@@ -597,7 +598,7 @@ Size2i SpriteFramesEditor::_estimate_sprite_sheet_size(const Ref<Texture2D> p_te
 void SpriteFramesEditor::_prepare_sprite_sheet(const String &p_file) {
 	Ref<Texture2D> texture = ResourceLoader::load(p_file);
 	if (texture.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("Unable to load images"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Unable to load images"));
 		ERR_FAIL_COND(texture.is_null());
 	}
 	frames_selected.clear();
@@ -1078,7 +1079,7 @@ void SpriteFramesEditor::_select_animation(const String &p_name, bool p_update_n
 }
 
 static void _find_anim_sprites(Node *p_node, List<Node *> *r_nodes, Ref<SpriteFrames> p_sfames) {
-	Node *edited = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (!edited) {
 		return;
 	}
@@ -1160,7 +1161,7 @@ void SpriteFramesEditor::_animation_name_edited() {
 
 void SpriteFramesEditor::_rename_node_animation(EditorUndoRedoManager *undo_redo, bool is_undo, const String &p_filter, const String &p_new_animation, const String &p_new_autoplay) {
 	List<Node *> nodes;
-	_find_anim_sprites(EditorNode::get_singleton()->get_edited_scene(), &nodes, Ref<SpriteFrames>(frames));
+	_find_anim_sprites(EditorSceneManager::get_singleton()->get_edited_scene(), &nodes, Ref<SpriteFrames>(frames));
 
 	if (is_undo) {
 		for (Node *E : nodes) {
@@ -1235,7 +1236,7 @@ void SpriteFramesEditor::_animation_duplicate() {
 	}
 
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->create_action(TTR("Duplicate Animation"), UndoRedo::MERGE_DISABLE, EditorNode::get_singleton()->get_edited_scene());
+	undo_redo->create_action(TTR("Duplicate Animation"), UndoRedo::MERGE_DISABLE, EditorSceneManager::get_singleton()->get_edited_scene());
 	undo_redo->add_do_method(frames.ptr(), "duplicate_animation", edited_anim, new_name);
 	undo_redo->add_undo_method(frames.ptr(), "remove_animation", new_name);
 	undo_redo->add_do_method(this, "_select_animation", new_name);
@@ -1636,7 +1637,7 @@ void SpriteFramesEditor::edit(Ref<SpriteFrames> p_frames) {
 	}
 
 	frames = p_frames;
-	read_only = EditorNode::get_singleton()->is_resource_read_only(p_frames);
+	read_only = EditorCore::get_singleton()->is_resource_read_only(p_frames);
 
 	if (!p_frames->has_animation(edited_anim)) {
 		List<StringName> anim_names;
@@ -1704,7 +1705,7 @@ Variant SpriteFramesEditor::get_drag_data_fw(const Point2 &p_point, Control *p_f
 		return Variant();
 	}
 
-	Dictionary drag_data = EditorNode::get_singleton()->drag_resource(frame, p_from);
+	Dictionary drag_data = EditorCore::get_singleton()->get_shell()->drag_resource(frame, p_from);
 	drag_data["frame"] = idx; // store the frame, in case we want to reorder frames inside 'drop_data_fw'
 	return drag_data;
 }
@@ -1856,7 +1857,7 @@ void SpriteFramesEditor::_remove_sprite_node() {
 
 void SpriteFramesEditor::_fetch_sprite_node() {
 	Node *selected = nullptr;
-	EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	const List<Node *> &top_node_list = editor_selection->get_top_selected_node_list();
 	if (top_node_list.size() == 1) {
 		selected = top_node_list.front()->get();
@@ -2595,11 +2596,11 @@ bool SpriteFramesEditorPlugin::handles(Object *p_object) const {
 void SpriteFramesEditorPlugin::make_visible(bool p_visible) {
 	if (p_visible) {
 		button->show();
-		EditorNode::get_bottom_panel()->make_item_visible(frames_editor);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(frames_editor);
 	} else {
 		button->hide();
 		if (frames_editor->is_visible_in_tree()) {
-			EditorNode::get_bottom_panel()->hide_bottom_panel();
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 		}
 	}
 }
@@ -2607,6 +2608,6 @@ void SpriteFramesEditorPlugin::make_visible(bool p_visible) {
 SpriteFramesEditorPlugin::SpriteFramesEditorPlugin() {
 	frames_editor = memnew(SpriteFramesEditor);
 	frames_editor->set_custom_minimum_size(Size2(0, 300) * EDSCALE);
-	button = EditorNode::get_bottom_panel()->add_item(TTRC("SpriteFrames"), frames_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_sprite_frames_bottom_panel", TTRC("Toggle SpriteFrames Bottom Panel")));
+	button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("SpriteFrames"), frames_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_sprite_frames_bottom_panel", TTRC("Toggle SpriteFrames Bottom Panel")));
 	button->hide();
 }

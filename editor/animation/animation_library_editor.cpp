@@ -43,6 +43,7 @@
 #include "core/templates/vector.h"
 #include "core/variant/variant.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/file_system/editor_paths.h"
@@ -170,7 +171,7 @@ void AnimationLibraryEditor::_file_popup_selected(int p_id) {
 	switch (p_id) {
 		case FILE_MENU_SAVE_LIBRARY: {
 			if (al->get_path().is_resource_file() && !FileAccess::exists(al->get_path() + ".import")) {
-				EditorNode::get_singleton()->save_resource(al);
+				EditorCore::get_singleton()->save_resource(al);
 				break;
 			}
 			[[fallthrough]];
@@ -223,7 +224,7 @@ void AnimationLibraryEditor::_file_popup_selected(int p_id) {
 			al->get_animation_list(&animation_list);
 			for (const StringName &animation_name : animation_list) {
 				Ref<Animation> animation = al->get_animation(animation_name);
-				if (EditorNode::get_singleton()->is_resource_read_only(animation)) {
+				if (EditorCore::get_singleton()->is_resource_read_only(animation)) {
 					animation = animation->duplicate();
 				}
 				ald->add_animation(animation_name, animation);
@@ -243,12 +244,12 @@ void AnimationLibraryEditor::_file_popup_selected(int p_id) {
 
 		} break;
 		case FILE_MENU_EDIT_LIBRARY: {
-			EditorNode::get_singleton()->push_item(al.ptr());
+			EditorSceneManager::get_singleton()->push_item(al.ptr());
 		} break;
 
 		case FILE_MENU_SAVE_ANIMATION: {
 			if (anim->get_path().is_resource_file() && !FileAccess::exists(anim->get_path() + ".import")) {
-				EditorNode::get_singleton()->save_resource(anim);
+				EditorCore::get_singleton()->save_resource(anim);
 				break;
 			}
 			[[fallthrough]];
@@ -311,7 +312,7 @@ void AnimationLibraryEditor::_file_popup_selected(int p_id) {
 			update_tree();
 		} break;
 		case FILE_MENU_EDIT_ANIMATION: {
-			EditorNode::get_singleton()->push_item(anim.ptr());
+			EditorSceneManager::get_singleton()->push_item(anim.ptr());
 		} break;
 	}
 }
@@ -321,7 +322,7 @@ void AnimationLibraryEditor::_load_file(const String &p_path) {
 		case FILE_DIALOG_ACTION_SAVE_LIBRARY: {
 			Ref<AnimationLibrary> al = mixer->get_animation_library(file_dialog_library);
 			String prev_path = al->get_path();
-			EditorNode::get_singleton()->save_resource_in_path(al, p_path);
+			EditorCore::get_singleton()->save_resource_in_path(al, p_path);
 
 			if (al->get_path() != prev_path) { // Save successful.
 				EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
@@ -343,7 +344,7 @@ void AnimationLibraryEditor::_load_file(const String &p_path) {
 				ERR_FAIL_COND(anim.is_null());
 			}
 			String prev_path = anim->get_path();
-			EditorNode::get_singleton()->save_resource_in_path(anim, p_path);
+			EditorCore::get_singleton()->save_resource_in_path(anim, p_path);
 			if (anim->get_path() != prev_path) { // Save successful.
 				EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 
@@ -1004,12 +1005,12 @@ void AnimationLibraryEditor::shortcut_input(const Ref<InputEvent> &p_event) {
 		bool handled = false;
 
 		if (ED_IS_SHORTCUT("ui_undo", p_event)) {
-			EditorNode::get_singleton()->undo();
+			EditorSceneManager::get_singleton()->undo();
 			handled = true;
 		}
 
 		if (ED_IS_SHORTCUT("ui_redo", p_event)) {
-			EditorNode::get_singleton()->redo();
+			EditorSceneManager::get_singleton()->redo();
 			handled = true;
 		}
 

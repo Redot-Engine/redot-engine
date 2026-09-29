@@ -74,8 +74,8 @@ void GameViewDebugger::_session_started(Ref<EditorDebuggerSession> p_session) {
 	settings["editors/panning/2d_editor_pan_speed"] = EDITOR_GET("editors/panning/2d_editor_pan_speed");
 	settings["editors/polygon_editor/point_grab_radius"] = EDITOR_GET("editors/polygon_editor/point_grab_radius");
 	settings["canvas_item_editor/pan_view"] = DebuggerMarshalls::serialize_key_shortcut(ED_GET_SHORTCUT("canvas_item_editor/pan_view"));
-	settings["box_selection_fill_color"] = EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("box_selection_fill_color"), EditorStringName(Editor));
-	settings["box_selection_stroke_color"] = EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("box_selection_stroke_color"), EditorStringName(Editor));
+	settings["box_selection_fill_color"] = EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("box_selection_fill_color"), EditorStringName(Editor));
+	settings["box_selection_stroke_color"] = EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("box_selection_stroke_color"), EditorStringName(Editor));
 	settings["editors/3d/default_fov"] = EDITOR_GET("editors/3d/default_fov");
 	settings["editors/3d/default_z_near"] = EDITOR_GET("editors/3d/default_z_near");
 	settings["editors/3d/default_z_far"] = EDITOR_GET("editors/3d/default_z_far");
@@ -439,7 +439,7 @@ void GameView::_play_pressed() {
 	}
 
 	if (!window_wrapper->get_window_enabled()) {
-		screen_index_before_start = EditorNode::get_singleton()->get_editor_main_screen()->get_selected_index();
+		screen_index_before_start = EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_selected_index();
 	}
 
 	if (embed_on_play && _get_embed_available() == EMBED_AVAILABLE) {
@@ -449,9 +449,9 @@ void GameView::_play_pressed() {
 		EditorNode::get_singleton()->set_unfocused_low_processor_usage_mode_enabled(false);
 		_update_embed_window_size();
 		if (!window_wrapper->get_window_enabled()) {
-			EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_GAME);
+			EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_GAME);
 			// Reset the normal size of the bottom panel when fully expanded.
-			EditorNode::get_singleton()->get_bottom_panel()->set_expanded(false);
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->set_expanded(false);
 			embedded_process->grab_focus();
 		}
 		embedded_process->embed_process(current_process_id);
@@ -475,9 +475,9 @@ void GameView::_stop_pressed() {
 		window_wrapper->set_window_enabled(false);
 	}
 
-	if (screen_index_before_start >= 0 && EditorNode::get_singleton()->get_editor_main_screen()->get_selected_index() == EditorMainScreen::EDITOR_GAME) {
+	if (screen_index_before_start >= 0 && EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_selected_index() == EditorMainScreen::EDITOR_GAME) {
 		// We go back to the screen where the user was before starting the game.
-		EditorNode::get_singleton()->get_editor_main_screen()->select(screen_index_before_start);
+		EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(screen_index_before_start);
 	}
 
 	screen_index_before_start = -1;
@@ -504,7 +504,7 @@ void GameView::_embedded_process_updated() {
 
 void GameView::_embedded_process_focused() {
 	if (embed_on_play && !window_wrapper->get_window_enabled()) {
-		EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_GAME);
+		EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_GAME);
 	}
 }
 
@@ -1045,7 +1045,7 @@ void GameView::_update_arguments_for_instance(int p_idx, List<String> &r_argumen
 		Size2 old_min_size = embedded_process->get_custom_minimum_size();
 		embedded_process->set_custom_minimum_size(Size2i());
 
-		Control *container = EditorNode::get_singleton()->get_editor_main_screen()->get_control();
+		Control *container = EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_control();
 		rect = container->get_global_rect();
 
 		Size2 wrapped_min_size = window_wrapper->get_minimum_size();
@@ -1403,7 +1403,7 @@ void GameViewPluginBase::setup(Ref<GameViewDebugger> p_debugger, EmbeddedProcess
 
 	window_wrapper->set_wrapped_control(game_view, nullptr);
 
-	EditorNode::get_singleton()->get_editor_main_screen()->get_control()->add_child(window_wrapper);
+	EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_control()->add_child(window_wrapper);
 	window_wrapper->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	window_wrapper->hide();
 	window_wrapper->connect("window_visibility_changed", callable_mp(this, &GameViewPlugin::_focus_another_editor).unbind(1));
@@ -1438,7 +1438,7 @@ void GameViewPluginBase::_save_last_editor(const String &p_editor) {
 void GameViewPluginBase::_focus_another_editor() {
 	if (_is_window_wrapper_enabled()) {
 		if (last_editor.is_empty()) {
-			EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_2D);
+			EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_2D);
 		} else {
 			EditorInterface::get_singleton()->set_main_screen_editor(last_editor);
 		}

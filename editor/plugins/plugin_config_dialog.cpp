@@ -79,7 +79,7 @@ void PluginConfigDialog::_on_confirmed() {
 	_create_script_for_plugin(path, cf, lang_index);
 	// Save and inform the editor.
 	cf->save(path.path_join("plugin.cfg"));
-	EditorNode::get_singleton()->get_project_settings()->update_plugins();
+	EditorCore::get_singleton()->get_project_settings_editor()->update_plugins();
 	EditorFileSystem::get_singleton()->scan();
 	_clear_fields();
 }

@@ -113,7 +113,9 @@ private:
 
 		void set_message_count(int p_count) {
 			message_count = p_count;
-			toggle_button->set_text(itos(message_count));
+			if (toggle_button) {
+				toggle_button->set_text(itos(message_count));
+				}
 		}
 
 		bool is_active() {

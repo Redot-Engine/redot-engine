@@ -86,7 +86,7 @@ class EditorExportPlatformWeb : public EditorExportPlatform {
 			icon = _load_icon_or_splash_image(icon_path, &err);
 		}
 		if (icon_path.is_empty() || err != OK || icon.is_null() || icon->is_empty()) {
-			return EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("DefaultProjectIcon"), EditorStringName(EditorIcons))->get_image();
+			return EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("DefaultProjectIcon"), EditorStringName(EditorIcons))->get_image();
 		}
 		return icon;
 	}

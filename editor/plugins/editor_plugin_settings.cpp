@@ -57,7 +57,7 @@ void EditorPluginSettings::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_READY: {
-			plugin_config_dialog->connect("plugin_ready", callable_mp(EditorNode::get_singleton(), &EditorNode::_on_plugin_ready));
+			plugin_config_dialog->connect("plugin_ready", callable_mp(EditorPluginManager::get_singleton(), &EditorPluginManager::_on_plugin_ready));
 			plugin_list->connect("button_clicked", callable_mp(this, &EditorPluginSettings::_cell_button_pressed));
 		} break;
 
@@ -109,7 +109,7 @@ void EditorPluginSettings::update_plugins() {
 				String description = cfg->get_value("plugin", "description");
 				String scr = cfg->get_value("plugin", "script");
 
-				bool is_enabled = EditorNode::get_singleton()->is_addon_plugin_enabled(path);
+				bool is_enabled = EditorPluginManager::get_singleton()->is_addon_plugin_enabled(path);
 				Color disabled_color = get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor));
 
 				const PackedInt32Array boundaries = TS->string_get_word_breaks(description, "", 80);
@@ -155,9 +155,9 @@ void EditorPluginSettings::_plugin_activity_changed() {
 	bool checked = ti->is_checked(COLUMN_STATUS);
 	String name = ti->get_metadata(COLUMN_NAME);
 
-	EditorNode::get_singleton()->set_addon_plugin_enabled(name, checked, true);
+	EditorPluginManager::get_singleton()->set_addon_plugin_enabled(name, checked, true);
 
-	bool is_enabled = EditorNode::get_singleton()->is_addon_plugin_enabled(name);
+	bool is_enabled = EditorPluginManager::get_singleton()->is_addon_plugin_enabled(name);
 
 	if (is_enabled != checked) {
 		updating = true;

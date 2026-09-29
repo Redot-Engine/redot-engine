@@ -37,6 +37,8 @@
  */
 
 #include "main.h"
+#include "editor/editor_core.h"
+#include "editor/editor_scene_manager.h"
 
 #include "core/config/project_settings.h"
 #include "core/core_globals.h"
@@ -4542,6 +4544,10 @@ int Main::start() {
 				translation_server->get_editor_domain()->set_pseudolocalization_enabled(true);
 			}
 
+			EditorCore *editor_core = memnew(EditorCore);
+			sml->get_root()->add_child(editor_core);
+			editor_core->initialize();
+
 			editor_node = memnew(EditorNode);
 			sml->get_root()->add_child(editor_node);
 
@@ -4669,7 +4675,7 @@ int Main::start() {
 #ifdef TOOLS_ENABLED
 			if (editor) {
 				if (!recovery_mode && (game_path != ResourceUID::ensure_path(String(GLOBAL_GET("application/run/main_scene"))) || !editor_node->has_scenes_in_session())) {
-					Error serr = editor_node->load_scene(local_game_path);
+					Error serr = EditorSceneManager::get_singleton()->load_scene(local_game_path);
 					if (serr != OK) {
 						ERR_PRINT("Failed to load scene");
 					}
@@ -5116,7 +5122,7 @@ bool Main::iteration() {
 
 #ifdef TOOLS_ENABLED
 	if (exit && quit_after_timeout && EditorNode::get_singleton()) {
-		EditorNode::get_singleton()->unload_editor_addons();
+		EditorCore::get_singleton()->get_editor_plugin_manager()->unload_editor_addons();
 	}
 #endif
 

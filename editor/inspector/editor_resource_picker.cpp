@@ -43,6 +43,7 @@
 #include "editor/docks/filesystem_dock.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/gui/editor_quick_open_dialog.h"
@@ -74,7 +75,7 @@ void EditorResourcePicker::_update_resource() {
 			assign_button->set_text(TTR("<empty>"));
 			assign_button->set_tooltip_text("");
 		} else {
-			assign_button->set_button_icon(EditorNode::get_singleton()->get_object_icon(edited_resource.operator->(), SNAME("Object")));
+			assign_button->set_button_icon(EditorCore::get_singleton()->get_object_icon(edited_resource.operator->(), SNAME("Object")));
 
 			if (!edited_resource->get_name().is_empty()) {
 				assign_button->set_text(edited_resource->get_name());
@@ -158,7 +159,7 @@ void EditorResourcePicker::_file_selected(const String &p_path) {
 		Ref<Script> res_script = loaded_resource->get_script();
 		bool is_global_class = false;
 		if (res_script.is_valid()) {
-			String script_type = EditorNode::get_editor_data().script_class_get_name(res_script->get_path());
+			String script_type = EditorCore::get_singleton()->get_editor_data().script_class_get_name(res_script->get_path());
 			if (!script_type.is_empty()) {
 				is_global_class = true;
 				res_type = script_type;
@@ -168,7 +169,7 @@ void EditorResourcePicker::_file_selected(const String &p_path) {
 		for (int i = 0; i < base_type.get_slice_count(","); i++) {
 			String base = base_type.get_slicec(',', i);
 
-			any_type_matches = is_global_class ? EditorNode::get_editor_data().script_class_is_parent(res_type, base) : loaded_resource->is_class(base);
+			any_type_matches = is_global_class ? EditorCore::get_singleton()->get_editor_data().script_class_is_parent(res_type, base) : loaded_resource->is_class(base);
 
 			if (any_type_matches) {
 				break;
@@ -176,7 +177,7 @@ void EditorResourcePicker::_file_selected(const String &p_path) {
 		}
 
 		if (!any_type_matches) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("The selected resource (%s) does not match any type expected for this property (%s)."), res_type, base_type));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("The selected resource (%s) does not match any type expected for this property (%s)."), res_type, base_type));
 			return;
 		}
 	}
@@ -228,7 +229,7 @@ void EditorResourcePicker::_update_menu_items() {
 	// Add options for changing existing value of the resource.
 	if (edited_resource.is_valid()) {
 		// Determine if the edited resource is part of another scene (foreign) which was imported
-		bool is_edited_resource_foreign_import = EditorNode::get_singleton()->is_resource_read_only(edited_resource, true);
+		bool is_edited_resource_foreign_import = EditorCore::get_singleton()->is_resource_read_only(edited_resource, true);
 
 		// If the resource is determined to be foreign and imported, change the menu entry's description to 'inspect' rather than 'edit'
 		// since will only be able to view its properties in read-only mode.
@@ -281,7 +282,7 @@ void EditorResourcePicker::_update_menu_items() {
 			for (int i = 0; i < base_type.get_slice_count(","); i++) {
 				String base = base_type.get_slicec(',', i);
 
-				paste_valid = ClassDB::is_parent_class(res_type, base) || EditorNode::get_editor_data().script_class_is_parent(res_type, base);
+				paste_valid = ClassDB::is_parent_class(res_type, base) || EditorCore::get_singleton()->get_editor_data().script_class_is_parent(res_type, base);
 
 				if (paste_valid) {
 					break;
@@ -305,7 +306,7 @@ void EditorResourcePicker::_update_menu_items() {
 
 	// Add options to convert existing resource to another type of resource.
 	if (is_editable() && edited_resource.is_valid()) {
-		Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorNode::get_singleton()->find_resource_conversion_plugin_for_resource(edited_resource);
+		Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorPluginManager::get_singleton()->find_resource_conversion_plugin_for_resource(edited_resource);
 		if (!conversions.is_empty()) {
 			edit_menu->add_separator();
 		}
@@ -368,7 +369,7 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 				base_types.push_back(type);
 			}
 
-			EditorNode::get_singleton()->get_quick_open_dialog()->popup_dialog(base_types, callable_mp(this, &EditorResourcePicker::_file_selected));
+			EditorCore::get_singleton()->get_quick_open_dialog()->popup_dialog(base_types, callable_mp(this, &EditorResourcePicker::_file_selected));
 		} break;
 
 		case OBJ_MENU_INSPECT: {
@@ -431,7 +432,7 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 			if (edited_resource.is_null()) {
 				return;
 			}
-			EditorNode::get_singleton()->save_resource(edited_resource);
+			EditorCore::get_singleton()->save_resource(edited_resource);
 		} break;
 
 		case OBJ_MENU_SAVE_AS: {
@@ -440,9 +441,9 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 			}
 			Callable resource_saved = callable_mp(this, &EditorResourcePicker::_resource_saved);
 			if (!EditorNode::get_singleton()->is_connected("resource_saved", resource_saved)) {
-				EditorNode::get_singleton()->connect("resource_saved", resource_saved);
+				EditorCore::get_singleton()->connect("resource_saved", resource_saved);
 			}
-			EditorNode::get_singleton()->save_resource_as(edited_resource);
+			EditorCore::get_singleton()->save_resource_as(edited_resource);
 		} break;
 
 		case OBJ_MENU_COPY: {
@@ -454,7 +455,7 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 			bool make_unique = true;
 
 			// Automatically make resource unique if it belongs to another scene or resource.
-			if (!EditorNode::get_singleton()->get_edited_scene() || !edited_resource->is_built_in() || edited_resource->get_path().get_slice("::", 0) == EditorNode::get_singleton()->get_edited_scene()->get_scene_file_path()) {
+			if (!EditorSceneManager::get_singleton()->get_edited_scene() || !edited_resource->is_built_in() || edited_resource->get_path().get_slice("::", 0) == EditorSceneManager::get_singleton()->get_edited_scene()->get_scene_file_path()) {
 				make_unique = false;
 			} else if (resource_owner) {
 				Resource *res = Object::cast_to<Resource>(resource_owner);
@@ -489,7 +490,7 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 
 			if (p_which >= CONVERT_BASE_ID) {
 				int to_type = p_which - CONVERT_BASE_ID;
-				Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorNode::get_singleton()->find_resource_conversion_plugin_for_resource(edited_resource);
+				Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorPluginManager::get_singleton()->find_resource_conversion_plugin_for_resource(edited_resource);
 				ERR_FAIL_INDEX(to_type, conversions.size());
 
 				Ref<Resource> converted_resource = conversions[to_type]->convert(edited_resource);
@@ -506,20 +507,20 @@ void EditorResourcePicker::_edit_menu_cbk(int p_which) {
 			Variant obj;
 
 			if (ScriptServer::is_global_class(intype)) {
-				obj = EditorNode::get_editor_data().script_class_instance(intype);
+				obj = EditorCore::get_singleton()->get_editor_data().script_class_instance(intype);
 			} else {
 				obj = ClassDB::instantiate(intype);
 			}
 
 			if (!obj) {
-				obj = EditorNode::get_editor_data().instantiate_custom_type(intype, "Resource");
+				obj = EditorCore::get_singleton()->get_editor_data().instantiate_custom_type(intype, "Resource");
 			}
 
 			Resource *resp = Object::cast_to<Resource>(obj);
 			ERR_BREAK(!resp);
 			resp->set_path(_get_owner_path() + "::" + resp->generate_scene_unique_id()); // Assign a base path for built-in Resources.
 
-			EditorNode::get_editor_data().instantiate_object_properties(obj);
+			EditorCore::get_singleton()->get_editor_data().instantiate_object_properties(obj);
 
 			// Prevent freeing of the object until the end of the update of the resource (GH-88286).
 			Ref<Resource> old_edited_resource = edited_resource;
@@ -555,7 +556,7 @@ void EditorResourcePicker::set_create_options(Object *p_menu_node) {
 
 			inheritors_array.push_back(t);
 
-			Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(t, "Object");
+			Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(t, "Object");
 			int id = TYPE_BASE_ID + idx;
 			edit_menu->add_icon_item(icon, t, id);
 			edit_menu->set_item_auto_translate_mode(-1, AUTO_TRANSLATE_MODE_DISABLED);
@@ -620,7 +621,7 @@ String EditorResourcePicker::_get_owner_path() const {
 
 	Node *node = Object::cast_to<Node>(obj);
 	if (node) {
-		Node *p_edited_scene_root = EditorNode::get_singleton()->get_editor_data().get_edited_scene_root();
+		Node *p_edited_scene_root = EditorCore::get_singleton()->get_editor_data().get_edited_scene_root();
 		if (node->get_scene_file_path().is_empty()) {
 			node = node->get_owner();
 		} else if (p_edited_scene_root != nullptr && p_edited_scene_root->get_scene_file_path() != node->get_scene_file_path()) {
@@ -653,7 +654,7 @@ String EditorResourcePicker::_get_resource_type(const Ref<Resource> &p_resource)
 	}
 
 	/// @todo Replace with EditorFileSystem when PR #60606 is merged to use cached resource type.
-	String script_type = EditorNode::get_editor_data().script_class_get_name(res_script->get_path());
+	String script_type = EditorCore::get_singleton()->get_editor_data().script_class_get_name(res_script->get_path());
 	if (!script_type.is_empty()) {
 		res_type = script_type;
 	}
@@ -771,7 +772,7 @@ bool EditorResourcePicker::_is_drop_valid(const Dictionary &p_drag_data) const {
 		}
 
 		if (res->get_script()) {
-			StringName custom_class = EditorNode::get_singleton()->get_object_custom_type_name(res->get_script());
+			StringName custom_class = EditorCore::get_singleton()->get_object_custom_type_name(res->get_script());
 			if (_is_type_valid(custom_class, allowed_types)) {
 				return true;
 			}
@@ -784,7 +785,7 @@ bool EditorResourcePicker::_is_drop_valid(const Dictionary &p_drag_data) const {
 bool EditorResourcePicker::_is_type_valid(const String &p_type_name, const HashSet<StringName> &p_allowed_types) const {
 	for (const StringName &E : p_allowed_types) {
 		String at = E;
-		if (p_type_name == at || ClassDB::is_parent_class(p_type_name, at) || EditorNode::get_editor_data().script_class_is_parent(p_type_name, at)) {
+		if (p_type_name == at || ClassDB::is_parent_class(p_type_name, at) || EditorCore::get_singleton()->get_editor_data().script_class_is_parent(p_type_name, at)) {
 			return true;
 		}
 	}
@@ -813,7 +814,7 @@ bool EditorResourcePicker::_is_custom_type_script() const {
 
 Variant EditorResourcePicker::get_drag_data_fw(const Point2 &p_point, Control *p_from) {
 	if (edited_resource.is_valid()) {
-		Dictionary drag_data = EditorNode::get_singleton()->drag_resource(edited_resource, p_from);
+		Dictionary drag_data = EditorCore::get_singleton()->get_shell()->drag_resource(edited_resource, p_from);
 		drag_data["source_picker"] = get_instance_id();
 		return drag_data;
 	}
@@ -984,7 +985,7 @@ void EditorResourcePicker::set_base_type(const String &p_base_type) {
 		StringName custom_class;
 		bool is_custom = false;
 		if (edited_resource->get_script()) {
-			custom_class = EditorNode::get_singleton()->get_object_custom_type_name(edited_resource->get_script());
+			custom_class = EditorCore::get_singleton()->get_object_custom_type_name(edited_resource->get_script());
 			is_custom = _is_type_valid(custom_class, allowed_types);
 		}
 
@@ -1030,7 +1031,7 @@ void EditorResourcePicker::set_edited_resource(Ref<Resource> p_resource) {
 		StringName custom_class;
 		bool is_custom = false;
 		if (p_resource->get_script()) {
-			custom_class = EditorNode::get_singleton()->get_object_custom_type_name(p_resource->get_script());
+			custom_class = EditorCore::get_singleton()->get_object_custom_type_name(p_resource->get_script());
 			is_custom = _is_type_valid(custom_class, allowed_types);
 		}
 
@@ -1111,7 +1112,7 @@ void EditorResourcePicker::_gather_resources_to_duplicate(const Ref<Resource> p_
 		p_item->set_text(0, vformat("%s (%s)", p_resource->get_class(), res_name));
 	}
 
-	p_item->set_icon(0, EditorNode::get_singleton()->get_object_icon(p_resource.ptr()));
+	p_item->set_icon(0, EditorCore::get_singleton()->get_object_icon(p_resource.ptr()));
 	p_item->set_editable(0, true);
 
 	Array meta = { p_resource };
@@ -1455,7 +1456,7 @@ void EditorAudioStreamPicker::_preview_draw() {
 			icon_modulate = Color(1, 0.5, 0.5, 1); // get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 		}
 	} else {
-		icon = EditorNode::get_singleton()->get_object_icon(audio_stream.operator->(), "Object");
+		icon = EditorCore::get_singleton()->get_object_icon(audio_stream.operator->(), "Object");
 	}
 	String text;
 	if (!audio_stream->get_name().is_empty()) {

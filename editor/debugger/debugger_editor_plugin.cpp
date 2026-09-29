@@ -63,7 +63,7 @@ DebuggerEditorPlugin::DebuggerEditorPlugin(PopupMenu *p_debug_menu) {
 	file_server = memnew(EditorFileServer);
 
 	EditorDebuggerNode *debugger = memnew(EditorDebuggerNode);
-	Button *db = EditorNode::get_bottom_panel()->add_item(TTRC("Debugger"), debugger, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_debugger_bottom_panel", TTRC("Toggle Debugger Bottom Panel"), KeyModifierMask::ALT | Key::D));
+	Button *db = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Debugger"), debugger, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_debugger_bottom_panel", TTRC("Toggle Debugger Bottom Panel"), KeyModifierMask::ALT | Key::D));
 	debugger->set_tool_button(db);
 
 	// Main editor debug menu.
@@ -109,7 +109,7 @@ DebuggerEditorPlugin::DebuggerEditorPlugin(PopupMenu *p_debug_menu) {
 	debug_menu->connect(SceneStringName(id_pressed), callable_mp(this, &DebuggerEditorPlugin::_menu_option));
 
 	run_instances_dialog = memnew(RunInstancesDialog);
-	EditorNode::get_singleton()->get_gui_base()->add_child(run_instances_dialog);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(run_instances_dialog);
 }
 
 DebuggerEditorPlugin::~DebuggerEditorPlugin() {

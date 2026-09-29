@@ -44,6 +44,7 @@
 #include "editor/docks/editor_dock_manager.h"
 #include "editor/docks/node_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/file_system/editor_file_system.h"
@@ -363,7 +364,7 @@ void SceneTreeEditor::_update_node_subtree(Node *p_node, TreeItem *p_parent, boo
 		bool valid = false;
 		for (const StringName &E : valid_types) {
 			if (p_node->is_class(E) ||
-					EditorNode::get_singleton()->is_object_of_custom_type(p_node, E)) {
+					EditorCore::get_singleton()->is_object_of_custom_type(p_node, E)) {
 				valid = true;
 				break;
 			} else {
@@ -412,7 +413,7 @@ void SceneTreeEditor::_update_node(Node *p_node, TreeItem *p_item, bool p_part_o
 		}
 	}
 
-	Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(p_node, "Node");
+	Ref<Texture2D> icon = EditorCore::get_singleton()->get_object_icon(p_node, "Node");
 	p_item->set_icon(0, icon);
 	p_item->set_metadata(0, p_node->get_path());
 
@@ -435,7 +436,7 @@ void SceneTreeEditor::_update_node(Node *p_node, TreeItem *p_item, bool p_part_o
 		Ref<Script> scr = p_node->get_script();
 		if (scr.is_valid()) {
 			p_item->add_button(0, get_editor_theme_icon(SNAME("Script")), BUTTON_SCRIPT);
-			if (EditorNode::get_singleton()->get_object_custom_type_base(p_node) == scr) {
+			if (EditorCore::get_singleton()->get_object_custom_type_base(p_node) == scr) {
 				// Disable button on custom scripts (pure visual cue).
 				p_item->set_button_disabled(0, p_item->get_button_count(0) - 1, true);
 			}
@@ -446,7 +447,7 @@ void SceneTreeEditor::_update_node(Node *p_node, TreeItem *p_item, bool p_part_o
 		Color accent = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 
 		Ref<Script> scr = p_node->get_script();
-		bool has_custom_script = scr.is_valid() && EditorNode::get_singleton()->get_object_custom_type_base(p_node) == scr;
+		bool has_custom_script = scr.is_valid() && EditorCore::get_singleton()->get_object_custom_type_base(p_node) == scr;
 		if (scr.is_null() || has_custom_script) {
 			_set_item_custom_color(p_item, get_theme_color(SNAME("font_disabled_color"), EditorStringName(Editor)));
 			p_item->set_selectable(0, false);
@@ -519,7 +520,7 @@ void SceneTreeEditor::_update_node(Node *p_node, TreeItem *p_item, bool p_part_o
 		}
 
 		if (p_node->is_unique_name_in_owner()) {
-			const bool disabled = p_node->get_owner() != EditorNode::get_singleton()->get_edited_scene();
+			const bool disabled = p_node->get_owner() != EditorSceneManager::get_singleton()->get_edited_scene();
 			String button_text = vformat(TTR("This node can be accessed from anywhere within the scene it belongs to by using the '%s' prefix in the node path."), UNIQUE_NODE_PREFIX);
 			if (!disabled) {
 				button_text += "\n" + TTR("Click to disable this.");
@@ -597,7 +598,7 @@ void SceneTreeEditor::_update_node(Node *p_node, TreeItem *p_item, bool p_part_o
 					button_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 				}
 			}
-			if (EditorNode::get_singleton()->get_object_custom_type_base(p_node) == scr) {
+			if (EditorCore::get_singleton()->get_object_custom_type_base(p_node) == scr) {
 				additional_notes += "\n" + TTR("This script is a custom type.");
 				button_color.a = 0.5;
 			}
@@ -685,7 +686,7 @@ void SceneTreeEditor::_update_node_tooltip(Node *p_node, TreeItem *p_item) {
 		tooltip += String("\n" + TTR("Instance:") + " " + p_node->get_scene_file_path());
 	}
 
-	StringName custom_type = EditorNode::get_singleton()->get_object_custom_type_name(p_node);
+	StringName custom_type = EditorCore::get_singleton()->get_object_custom_type_name(p_node);
 	tooltip += "\n" + TTR("Type:") + " " + (custom_type != StringName() ? String(custom_type) : p_node->get_class());
 
 	if (!p_node->get_editor_description().is_empty()) {
@@ -872,11 +873,11 @@ void SceneTreeEditor::_node_added(Node *p_node) {
 }
 
 void SceneTreeEditor::_node_removed(Node *p_node) {
-	if (EditorNode::get_singleton()->is_exiting()) {
+	if (EditorCore::get_singleton()->get_shell()->is_exiting()) {
 		return; // Speed up exit.
 	}
 
-	if (EditorNode::get_singleton()->is_changing_scene()) {
+	if (EditorSceneManager::get_singleton()->is_changing_scene()) {
 		return; // Switching tabs we will be destroying node cache anyway.
 	}
 
@@ -1006,7 +1007,7 @@ bool SceneTreeEditor::_update_filter(TreeItem *p_parent, bool p_scroll_to_select
 			selectable = false;
 			for (const StringName &E : valid_types) {
 				if (n->is_class(E) ||
-						EditorNode::get_singleton()->is_object_of_custom_type(n, E)) {
+						EditorCore::get_singleton()->is_object_of_custom_type(n, E)) {
 					selectable = true;
 					break;
 				} else {
@@ -1250,7 +1251,7 @@ void SceneTreeEditor::_tree_process_mode_changed() {
 }
 
 void SceneTreeEditor::_tree_changed() {
-	if (EditorNode::get_singleton()->is_exiting()) {
+	if (EditorCore::get_singleton()->get_shell()->is_exiting()) {
 		return; // Speed up exit.
 	}
 
@@ -2244,14 +2245,14 @@ void SceneTreeDialog::set_valid_types(const Vector<StringName> &p_valid) {
 
 		// Attempt to get the correct name and icon for script path types.
 		String name = type;
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(type);
+		Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(type);
 
 		// If we can't find a global class icon, try to find one for the script.
 		if (icon.is_null() && ResourceLoader::exists(type, "Script")) {
 			Ref<Script> node_script = ResourceLoader::load(type);
 			if (node_script.is_valid()) {
 				name = name.get_file();
-				icon = EditorNode::get_singleton()->get_object_icon(node_script.ptr());
+				icon = EditorCore::get_singleton()->get_object_icon(node_script.ptr());
 			}
 		}
 

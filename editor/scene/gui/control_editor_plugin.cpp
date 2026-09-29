@@ -399,7 +399,7 @@ void EditorPropertySizeFlags::setup(const Vector<String> &p_options, bool p_vert
 		flag_checks.append(cb);
 	}
 
-	Control *gui_base = EditorNode::get_singleton()->get_gui_base();
+	Control *gui_base = EditorCore::get_singleton()->get_shell()->get_gui_base();
 	StringName wide_preset_icon = SNAME("ControlAlignHCenterWide");
 	StringName begin_preset_icon = SNAME("ControlAlignCenterLeft");
 	StringName end_preset_icon = SNAME("ControlAlignCenterRight");
@@ -934,7 +934,7 @@ List<Control *> ControlEditorToolbar::_get_edited_controls() {
 	List<Control *> selection;
 	for (const KeyValue<Node *, Object *> &E : editor_selection->get_selection()) {
 		Control *control = Object::cast_to<Control>(E.key);
-		if (control && control->is_visible_in_tree() && control->get_viewport() == EditorNode::get_singleton()->get_scene_root() && !_is_node_locked(control)) {
+		if (control && control->is_visible_in_tree() && control->get_viewport() == EditorCore::get_singleton()->get_shell()->get_scene_root() && !_is_node_locked(control)) {
 			selection.push_back(control);
 		}
 	}
@@ -1149,7 +1149,7 @@ ControlEditorToolbar::ControlEditorToolbar() {
 	container_v_picker->connect("expand_flag_toggled", callable_mp(this, &ControlEditorToolbar::_expand_flag_toggled).bind(true));
 
 	// Editor connections.
-	editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	editor_selection->add_editor_plugin(this);
 	editor_selection->connect("selection_changed", callable_mp(this, &ControlEditorToolbar::_selection_changed));
 

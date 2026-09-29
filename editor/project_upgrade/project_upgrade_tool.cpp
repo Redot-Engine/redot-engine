@@ -40,6 +40,7 @@
 
 #include "core/io/dir_access.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/scene/editor_scene_tabs.h"
 #include "editor/settings/editor_settings.h"
@@ -76,7 +77,7 @@ void ProjectUpgradeTool::popup_dialog() {
 		upgrade_dialog->set_text(TTRC("Different engine version may have minor differences in various Resources, like additional fields or removed properties. When upgrading the project to a new version, such changes can cause diffs when saving scenes or resources, or reimporting.\n\nThis tool ensures that such changes are performed all at once. It will:\n- Regenerate UID cache\n- Load and re-save every text/binary Resource\n- Reimport every importable Resource\n\nFull upgrade will take considerable amount of time, but afterwards saving/reimporting any scene/resource should not cause unintended changes."));
 		upgrade_dialog->get_ok_button()->set_text(TTRC("Restart & Upgrade"));
 		upgrade_dialog->get_label()->set_custom_minimum_size(Size2(750 * EDSCALE, 0));
-		EditorNode::get_singleton()->get_gui_base()->add_child(upgrade_dialog);
+		EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(upgrade_dialog);
 		upgrade_dialog->connect(SceneStringName(confirmed), callable_mp(this, &ProjectUpgradeTool::prepare_upgrade));
 	}
 	upgrade_dialog->popup_centered();
@@ -95,7 +96,7 @@ void ProjectUpgradeTool::prepare_upgrade() {
 	EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RESAVE_RESOURCES, resave_resources);
 
 	// Delay to avoid deadlocks, since this dialog can be triggered by loading a scene.
-	callable_mp(EditorNode::get_singleton(), &EditorNode::restart_editor).call_deferred(false);
+	callable_mp(EditorCore::get_singleton()->get_shell(), &EditorShell::restart_editor).call_deferred(false);
 }
 
 void ProjectUpgradeTool::begin_upgrade() {
@@ -104,7 +105,7 @@ void ProjectUpgradeTool::begin_upgrade() {
 }
 
 void ProjectUpgradeTool::finish_upgrade() {
-	EditorNode::get_singleton()->trigger_menu_option(EditorSceneTabs::SCENE_CLOSE_ALL, true);
+	EditorCore::get_singleton()->get_shell()->trigger_menu_option(EditorSceneTabs::SCENE_CLOSE_ALL, true);
 
 	Vector<String> paths = EditorSettings::get_singleton()->get_project_metadata(META_PROJECT_UPGRADE_TOOL, META_REIMPORT_PATHS, Vector<String>());
 	EditorFileSystem::get_singleton()->reimport_files(paths);
@@ -117,9 +118,9 @@ void ProjectUpgradeTool::finish_upgrade() {
 		int step = 0;
 		for (const String &file_path : paths) {
 			ep.step(TTR("Re-saving scene:") + " " + file_path, step++);
-			EditorNode::get_singleton()->load_scene(file_path);
-			EditorNode::get_singleton()->trigger_menu_option(EditorNode::SCENE_SAVE_SCENE, true);
-			EditorNode::get_singleton()->trigger_menu_option(EditorNode::SCENE_CLOSE, true);
+			EditorSceneManager::get_singleton()->load_scene(file_path);
+			EditorCore::get_singleton()->get_shell()->trigger_menu_option(EditorShell::SCENE_SAVE_SCENE, true);
+			EditorCore::get_singleton()->get_shell()->trigger_menu_option(EditorShell::SCENE_CLOSE, true);
 		}
 		EditorSettings::get_singleton()->set_project_metadata(META_PROJECT_UPGRADE_TOOL, META_RESAVE_SCENES, Variant());
 	}

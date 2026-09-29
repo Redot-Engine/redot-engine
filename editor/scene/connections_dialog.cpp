@@ -1215,7 +1215,7 @@ void ConnectionsDock::_go_to_method(TreeItem &p_item) {
 	}
 
 	if (scr.is_valid() && ScriptEditor::get_singleton()->script_goto_method(scr, cd.method)) {
-		EditorNode::get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+		EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 	}
 }
 
@@ -1223,7 +1223,7 @@ void ConnectionsDock::_handle_class_menu_option(int p_option) {
 	switch (p_option) {
 		case CLASS_MENU_OPEN_DOCS:
 			ScriptEditor::get_singleton()->goto_help("class:" + class_menu_doc_class_name);
-			EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+			EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 			break;
 	}
 }
@@ -1253,7 +1253,7 @@ void ConnectionsDock::_handle_signal_menu_option(int p_option) {
 		} break;
 		case SIGNAL_MENU_OPEN_DOCS: {
 			ScriptEditor::get_singleton()->goto_help("class_signal:" + String(meta["class"]) + ":" + String(meta["name"]));
-			EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+			EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 		} break;
 	}
 }
@@ -1458,7 +1458,7 @@ void ConnectionsDock::update_tree() {
 
 	TreeItem *root = tree->create_item();
 	DocTools *doc_data = EditorHelp::get_doc_data();
-	EditorData &editor_data = EditorNode::get_editor_data();
+	EditorData &editor_data = EditorCore::get_singleton()->get_editor_data();
 	StringName native_base = selected_node->get_class();
 	Ref<Script> script_base = selected_node->get_script();
 

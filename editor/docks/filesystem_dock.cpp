@@ -50,6 +50,7 @@
 #include "editor/docks/import_dock.h"
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/create_dialog.h"
@@ -1226,7 +1227,7 @@ HashSet<String> FileSystemDock::_get_valid_conversions_for_file_paths(const Vect
 			return HashSet<String>();
 		}
 
-		Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorNode::get_singleton()->find_resource_conversion_plugin_for_type_name(EditorFileSystem::get_singleton()->get_file_type(fpath));
+		Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorPluginManager::get_singleton()->find_resource_conversion_plugin_for_type_name(EditorFileSystem::get_singleton()->get_file_type(fpath));
 
 		if (conversions.is_empty()) {
 			// This resource can't convert to anything, so return an empty list.
@@ -1273,7 +1274,7 @@ void FileSystemDock::_select_file(const String &p_path, bool p_select_in_favorit
 				if (config->has_section_key("remap", "importer")) {
 					String importer = config->get_value("remap", "importer");
 					if (importer == "keep" || importer == "skip") {
-						EditorNode::get_singleton()->show_warning(TTRC("Importing has been disabled for this file, so it can't be opened for editing."));
+						EditorCore::get_singleton()->get_shell()->show_warning(TTRC("Importing has been disabled for this file, so it can't be opened for editing."));
 						return;
 					}
 				}
@@ -1298,7 +1299,7 @@ void FileSystemDock::_select_file(const String &p_path, bool p_select_in_favorit
 			if (is_imported) {
 				SceneImportSettingsDialog::get_singleton()->open_settings(p_path, resource_type);
 			} else {
-				EditorNode::get_singleton()->load_scene_or_resource(fpath);
+				EditorCore::get_singleton()->load_scene_or_resource(fpath);
 			}
 		} else if (ResourceLoader::is_imported(fpath)) {
 			// If the importer has advanced settings, show them.
@@ -1316,10 +1317,10 @@ void FileSystemDock::_select_file(const String &p_path, bool p_select_in_favorit
 			}
 
 			if (!used_advanced_settings) {
-				EditorNode::get_singleton()->load_resource(fpath);
+				EditorCore::get_singleton()->load_resource(fpath);
 			}
 		} else {
-			EditorNode::get_singleton()->load_resource(fpath);
+			EditorCore::get_singleton()->load_resource(fpath);
 		}
 	}
 	if (p_navigate) {
@@ -1486,11 +1487,11 @@ void FileSystemDock::_try_move_item(const FileOrFolder &p_item, const String &p_
 	if (new_path == old_path) {
 		return;
 	} else if (old_path == "res://") {
-		EditorNode::get_singleton()->add_io_error(TTR("Cannot move/rename resources root."));
+		EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Cannot move/rename resources root."));
 		return;
 	} else if (!p_item.is_file && new_path.begins_with(old_path)) {
 		// This check doesn't erroneously catch renaming to a longer name as folder paths always end with "/".
-		EditorNode::get_singleton()->add_io_error(TTR("Cannot move a folder into itself.") + "\n" + old_path + "\n");
+		EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Cannot move a folder into itself.") + "\n" + old_path + "\n");
 		return;
 	}
 
@@ -1512,26 +1513,26 @@ void FileSystemDock::_try_move_item(const FileOrFolder &p_item, const String &p_
 		if (p_item.is_file && FileAccess::exists(old_path + ".import")) {
 			err = da->rename(old_path + ".import", new_path + ".import");
 			if (err != OK) {
-				EditorNode::get_singleton()->add_io_error(TTR("Error moving:") + "\n" + old_path + ".import\n");
+				EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Error moving:") + "\n" + old_path + ".import\n");
 			}
 		}
 
 		if (p_item.is_file && FileAccess::exists(old_path + ".uid")) {
 			err = da->rename(old_path + ".uid", new_path + ".uid");
 			if (err != OK) {
-				EditorNode::get_singleton()->add_io_error(TTR("Error moving:") + "\n" + old_path + ".uid\n");
+				EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Error moving:") + "\n" + old_path + ".uid\n");
 			}
 		}
 
 		// Update scene if it is open.
 		for (int i = 0; i < file_changed_paths.size(); ++i) {
 			String new_item_path = p_item.is_file ? new_path : file_changed_paths[i].replace_first(old_path, new_path);
-			if (ResourceLoader::get_resource_type(new_item_path) == "PackedScene" && EditorNode::get_singleton()->is_scene_open(file_changed_paths[i])) {
-				EditorData *ed = &EditorNode::get_editor_data();
+			if (ResourceLoader::get_resource_type(new_item_path) == "PackedScene" && EditorSceneManager::get_singleton()->is_scene_open(file_changed_paths[i])) {
+				EditorData *ed = &EditorCore::get_singleton()->get_editor_data();
 				for (int j = 0; j < ed->get_edited_scene_count(); j++) {
 					if (ed->get_scene_path(j) == file_changed_paths[i]) {
 						ed->get_edited_scene_root(j)->set_scene_file_path(new_item_path);
-						EditorNode::get_singleton()->save_editor_layout_delayed();
+						EditorCore::get_singleton()->get_shell()->save_editor_layout_delayed();
 						break;
 					}
 				}
@@ -1549,7 +1550,7 @@ void FileSystemDock::_try_move_item(const FileOrFolder &p_item, const String &p_
 			emit_signal(SNAME("folder_moved"), folder_changed_paths[i], p_folder_renames[folder_changed_paths[i]].substr(0, p_folder_renames[folder_changed_paths[i]].length() - 1));
 		}
 	} else {
-		EditorNode::get_singleton()->add_io_error(TTR("Error moving:") + "\n" + old_path + "\n");
+		EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Error moving:") + "\n" + old_path + "\n");
 	}
 }
 
@@ -1561,11 +1562,11 @@ void FileSystemDock::_try_duplicate_item(const FileOrFolder &p_item, const Strin
 	if (new_path == old_path) {
 		return;
 	} else if (old_path == "res://") {
-		EditorNode::get_singleton()->add_io_error(TTR("Cannot move/rename resources root."));
+		EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Cannot move/rename resources root."));
 		return;
 	} else if (!p_item.is_file && new_path.begins_with(old_path)) {
 		// This check doesn't erroneously catch renaming to a longer name as folder paths always end with "/".
-		EditorNode::get_singleton()->add_io_error(TTR("Cannot move a folder into itself.") + "\n" + old_path + "\n");
+		EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Cannot move a folder into itself.") + "\n" + old_path + "\n");
 		return;
 	}
 
@@ -1577,12 +1578,12 @@ void FileSystemDock::_try_duplicate_item(const FileOrFolder &p_item, const Strin
 
 		Error err = EditorFileSystem::get_singleton()->copy_file(old_path, new_path);
 		if (err != OK) {
-			EditorNode::get_singleton()->add_io_error(TTR("Error duplicating:") + "\n" + old_path + ": " + error_names[err] + "\n");
+			EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Error duplicating:") + "\n" + old_path + ": " + error_names[err] + "\n");
 		}
 	} else {
 		Error err = EditorFileSystem::get_singleton()->copy_directory(old_path, new_path);
 		if (err != OK) {
-			EditorNode::get_singleton()->add_io_error(TTR("Error duplicating directory:") + "\n" + old_path + "\n");
+			EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Error duplicating directory:") + "\n" + old_path + "\n");
 		}
 	}
 }
@@ -1619,7 +1620,7 @@ void FileSystemDock::_update_resource_paths_after_move(const HashMap<String, Str
 		}
 	}
 
-	EditorNode::get_editor_data().script_class_save_global_classes();
+	EditorCore::get_singleton()->get_editor_data().script_class_save_global_classes();
 	EditorFileSystem::get_singleton()->emit_signal(SNAME("script_classes_updated"));
 }
 
@@ -1629,7 +1630,7 @@ void FileSystemDock::_update_dependencies_after_move(const HashMap<String, Strin
 	// 2) ResourceLoader can use the new paths without needing to call rescan.
 
 	// The currently edited scene should be reloaded first, so get it's path (GH-82652).
-	const String &edited_scene_path = EditorNode::get_editor_data().get_scene_path(EditorNode::get_editor_data().get_edited_scene());
+	const String &edited_scene_path = EditorCore::get_singleton()->get_editor_data().get_scene_path(EditorCore::get_singleton()->get_editor_data().get_edited_scene());
 	List<String> scenes_to_reload;
 	for (const String &E : p_file_owners) {
 		// Because we haven't called a rescan yet the found remap might still be an old path itself.
@@ -1646,12 +1647,12 @@ void FileSystemDock::_update_dependencies_after_move(const HashMap<String, Strin
 				}
 			}
 		} else {
-			EditorNode::get_singleton()->add_io_error(TTR("Unable to update dependencies for:") + "\n" + E + "\n");
+			EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Unable to update dependencies for:") + "\n" + E + "\n");
 		}
 	}
 
 	for (const String &E : scenes_to_reload) {
-		EditorNode::get_singleton()->reload_scene(E);
+		EditorSceneManager::get_singleton()->reload_scene(E);
 	}
 }
 
@@ -1743,17 +1744,17 @@ void FileSystemDock::_update_favorites_after_move(const HashMap<String, String> 
 void FileSystemDock::_make_scene_confirm() {
 	const String scene_path = make_scene_dialog->get_scene_path();
 
-	int idx = EditorNode::get_singleton()->new_scene();
-	EditorNode::get_editor_data().set_scene_path(idx, scene_path);
-	EditorNode::get_singleton()->set_edited_scene(make_scene_dialog->create_scene_root());
-	EditorNode::get_singleton()->save_scene_if_open(scene_path);
+	int idx = EditorSceneManager::get_singleton()->new_scene();
+	EditorCore::get_singleton()->get_editor_data().set_scene_path(idx, scene_path);
+	EditorSceneManager::get_singleton()->set_edited_scene(make_scene_dialog->create_scene_root());
+	EditorSceneManager::get_singleton()->save_scene_if_open(scene_path);
 }
 
 void FileSystemDock::_resource_removed(const Ref<Resource> &p_resource) {
 	const Ref<Script> &scr = p_resource;
 	if (scr.is_valid()) {
 		ScriptServer::remove_global_class_by_path(scr->get_path());
-		EditorNode::get_editor_data().script_class_save_global_classes();
+		EditorCore::get_singleton()->get_editor_data().script_class_save_global_classes();
 		EditorFileSystem::get_singleton()->emit_signal(SNAME("script_classes_updated"));
 	}
 	emit_signal(SNAME("resource_removed"), p_resource);
@@ -1817,17 +1818,17 @@ void FileSystemDock::_rename_operation_confirm() {
 
 	bool rename_error = false;
 	if (new_name.length() == 0) {
-		EditorNode::get_singleton()->show_warning(TTRC("No name provided."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTRC("No name provided."));
 		rename_error = true;
 	} else if (new_name.contains_char('/') || new_name.contains_char('\\') || new_name.contains_char(':')) {
-		EditorNode::get_singleton()->show_warning(TTRC("Name contains invalid characters."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTRC("Name contains invalid characters."));
 		rename_error = true;
 	} else if (new_name[0] == '.') {
-		EditorNode::get_singleton()->show_warning(TTRC("This filename begins with a dot rendering the file invisible to the editor.\nIf you want to rename it anyway, use your operating system's file manager."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTRC("This filename begins with a dot rendering the file invisible to the editor.\nIf you want to rename it anyway, use your operating system's file manager."));
 		rename_error = true;
 	} else if (to_rename.is_file && to_rename.path.get_extension() != new_name.get_extension()) {
 		if (!EditorFileSystem::get_singleton()->get_valid_extensions().find(new_name.get_extension())) {
-			EditorNode::get_singleton()->show_warning(TTRC("This file extension is not recognized by the editor.\nIf you want to rename it anyway, use your operating system's file manager.\nAfter renaming to an unknown extension, the file won't be shown in the editor anymore."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTRC("This file extension is not recognized by the editor.\nIf you want to rename it anyway, use your operating system's file manager.\nAfter renaming to an unknown extension, the file won't be shown in the editor anymore."));
 			rename_error = true;
 		}
 	}
@@ -1858,7 +1859,7 @@ void FileSystemDock::_rename_operation_confirm() {
 		new_exist = new_exist && (new_path.to_lower() != old_path.to_lower());
 	}
 	if (new_exist) {
-		EditorNode::get_singleton()->show_warning(TTRC("A file or folder with this name already exists."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTRC("A file or folder with this name already exists."));
 		if (ti) {
 			ti->set_text(col_index, old_name);
 		}
@@ -1895,7 +1896,7 @@ void FileSystemDock::_duplicate_operation_confirm(const String &p_path) {
 	if (!DirAccess::dir_exists_absolute(base_dir)) {
 		Error err = EditorFileSystem::get_singleton()->make_dir_recursive(base_dir);
 		if (err != OK) {
-			EditorNode::get_singleton()->show_warning(vformat(TTR("Could not create base directory: %s"), error_names[err]));
+			EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Could not create base directory: %s"), error_names[err]));
 			return;
 		}
 	}
@@ -1918,7 +1919,7 @@ void FileSystemDock::_convert_dialog_action() {
 	Vector<Ref<Resource>> converted_resources;
 	HashSet<Ref<Resource>> resources_to_erase_history_for;
 	for (Ref<Resource> res : selected_resources) {
-		Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorNode::get_singleton()->find_resource_conversion_plugin_for_resource(res);
+		Vector<Ref<EditorResourceConversionPlugin>> conversions = EditorPluginManager::get_singleton()->find_resource_conversion_plugin_for_resource(res);
 		for (const Ref<EditorResourceConversionPlugin> &conversion : conversions) {
 			int conversion_id = 0;
 			for (const String &target : cached_valid_conversion_targets) {
@@ -1942,7 +1943,7 @@ void FileSystemDock::_convert_dialog_action() {
 	}
 
 	// Updates all the resources existing as node properties.
-	EditorNode::get_singleton()->replace_resources_in_scenes(selected_resources, converted_resources);
+	EditorCore::get_singleton()->replace_resources_in_scenes(selected_resources, converted_resources);
 
 	// Overwrite the old resources.
 	for (int i = 0; i < converted_resources.size(); i++) {
@@ -2085,7 +2086,7 @@ void FileSystemDock::_before_move(HashMap<String, ResourceUID::ID> &r_uids, Hash
 
 	// Open scenes with dependencies on the ones about to be moved will be reloaded,
 	// so save them first to prevent losing unsaved changes.
-	EditorNode::get_singleton()->save_scene_list(r_file_owners);
+	EditorSceneManager::get_singleton()->save_scene_list(r_file_owners);
 }
 
 Vector<String> FileSystemDock::_tree_get_selected(bool remove_self_inclusion, bool p_include_unselected_cursor) const {
@@ -2641,7 +2642,7 @@ void FileSystemDock::_file_option(int p_option, const Vector<String> &p_selected
 				const String &fpath = p_selected[0];
 				Ref<Script> scr = ResourceLoader::load(fpath);
 				ERR_FAIL_COND(scr.is_null());
-				EditorNode::get_singleton()->run_editor_script(scr);
+				EditorCore::get_singleton()->run_editor_script(scr);
 			}
 		} break;
 
@@ -2748,8 +2749,8 @@ void FileSystemDock::_resource_created() {
 		memdelete(node);
 	}
 
-	EditorNode::get_singleton()->push_item(r);
-	EditorNode::get_singleton()->save_resource_as(Ref<Resource>(r), fpath);
+	EditorSceneManager::get_singleton()->push_item(r);
+	EditorCore::get_singleton()->save_resource_as(Ref<Resource>(r), fpath);
 }
 
 void FileSystemDock::_search_changed(const String &p_text, const Control *p_from) {
@@ -2866,7 +2867,7 @@ void FileSystemDock::create_directory(const String &p_path, const String &p_base
 	}
 	Error err = EditorFileSystem::get_singleton()->make_dir_recursive(trimmed_path, p_base_dir);
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Could not create folder: %s"), error_names[err]));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Could not create folder: %s"), error_names[err]));
 	}
 }
 
@@ -2962,7 +2963,7 @@ Variant FileSystemDock::get_drag_data_fw(const Point2 &p_point, Control *p_from)
 		return Variant();
 	}
 
-	Dictionary drag_data = EditorNode::get_singleton()->drag_files_and_dirs(paths, p_from);
+	Dictionary drag_data = EditorCore::get_singleton()->get_shell()->drag_files_and_dirs(paths, p_from);
 	if (!all_not_favorites) {
 		drag_data["favorite"] = all_favorites ? "all" : "mixed";
 	}
@@ -3121,8 +3122,8 @@ void FileSystemDock::drop_data_fw(const Point2 &p_point, const Variant &p_data, 
 		}
 
 		if (res.is_valid() && !to_dir.is_empty()) {
-			EditorNode::get_singleton()->push_item(res.ptr());
-			EditorNode::get_singleton()->save_resource_as(res, to_dir);
+			EditorSceneManager::get_singleton()->push_item(res.ptr());
+			EditorCore::get_singleton()->save_resource_as(res, to_dir);
 		}
 	}
 

@@ -65,7 +65,7 @@
 
 void ProjectExportTextureFormatError::_on_fix_texture_format_pressed() {
 	export_dialog->hide();
-	ProjectSettingsEditor *project_settings = EditorNode::get_singleton()->get_project_settings();
+	ProjectSettingsEditor *project_settings = EditorCore::get_singleton()->get_project_settings_editor();
 	project_settings->set_general_page("rendering/textures");
 	project_settings->set_filter(setting_identifier);
 	project_settings->popup_project_settings(false);
@@ -1060,7 +1060,7 @@ bool ProjectExportDialog::_fill_tree(EditorFileSystemDirectory *p_dir, TreeItem 
 
 		String path = p_dir->get_file_path(i);
 
-		file->set_icon(0, EditorNode::get_singleton()->get_class_icon(type));
+		file->set_icon(0, EditorCore::get_singleton()->get_class_icon(type));
 		file->set_editable(0, true);
 		file->set_metadata(0, path);
 
@@ -1283,7 +1283,7 @@ void ProjectExportDialog::_export_pck_zip_selected(const String &p_path) {
 
 void ProjectExportDialog::_open_export_template_manager() {
 	hide();
-	EditorNode::get_singleton()->open_export_template_manager();
+	EditorCore::get_singleton()->get_shell()->open_export_template_manager();
 }
 
 void ProjectExportDialog::_validate_export_path(const String &p_path) {
@@ -1712,7 +1712,7 @@ ProjectExportDialog::ProjectExportDialog() {
 	script_key_error = memnew(Label);
 	script_key_error->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 	script_key_error->set_text(String::utf8("•  ") + TTR("Invalid Encryption Key (must be 64 hexadecimal characters long)"));
-	script_key_error->add_theme_color_override(SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
+	script_key_error->add_theme_color_override(SceneStringName(font_color), EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
 	sec_vb->add_margin_child(TTR("Encryption Key (256-bits as hexadecimal):"), script_key);
 	sec_vb->add_child(script_key_error);
 	sections->add_child(sec_scroll_container);
@@ -1812,14 +1812,14 @@ ProjectExportDialog::ProjectExportDialog() {
 	main_vb->add_child(export_error);
 	export_error->hide();
 	export_error->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_WORD_ELLIPSIS);
-	export_error->add_theme_color_override(SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
+	export_error->add_theme_color_override(SceneStringName(font_color), EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
 
 	export_warning = memnew(Label);
 	export_warning->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 	main_vb->add_child(export_warning);
 	export_warning->hide();
 	export_warning->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_WORD_ELLIPSIS);
-	export_warning->add_theme_color_override(SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("warning_color"), EditorStringName(Editor)));
+	export_warning->add_theme_color_override(SceneStringName(font_color), EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("warning_color"), EditorStringName(Editor)));
 
 	export_templates_error = memnew(HBoxContainer);
 	main_vb->add_child(export_templates_error);
@@ -1829,7 +1829,7 @@ ProjectExportDialog::ProjectExportDialog() {
 	export_error2->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 	export_templates_error->add_child(export_error2);
 	export_error2->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_WORD_ELLIPSIS);
-	export_error2->add_theme_color_override(SceneStringName(font_color), EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
+	export_error2->add_theme_color_override(SceneStringName(font_color), EditorCore::get_singleton()->get_editor_theme()->get_color(SNAME("error_color"), EditorStringName(Editor)));
 	export_error2->set_text(String::utf8("•  ") + TTR("Export templates for this platform are missing:") + " ");
 
 	result_dialog = memnew(AcceptDialog);

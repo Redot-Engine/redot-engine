@@ -43,6 +43,7 @@
 #include "editor/docks/filesystem_dock.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -108,7 +109,7 @@ void InspectorDock::_menu_option_confirm(int p_option, bool p_confirmed) {
 
 		case OBJECT_REQUEST_HELP: {
 			if (current) {
-				EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+				EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 				emit_signal(SNAME("request_help"), current->get_class());
 			}
 		} break;
@@ -206,7 +207,7 @@ void InspectorDock::_menu_option_confirm(int p_option, bool p_confirmed) {
 				int history_id = EditorUndoRedoManager::get_singleton()->get_history_id_for_object(current);
 				EditorUndoRedoManager::get_singleton()->clear_history(history_id);
 
-				EditorNode::get_singleton()->edit_item(current, inspector);
+				EditorSceneManager::get_singleton()->edit_item(current, inspector);
 			}
 
 		} break;
@@ -275,7 +276,7 @@ void InspectorDock::_resource_file_selected(const String &p_file) {
 		return;
 	};
 
-	EditorNode::get_singleton()->push_item(res.operator->());
+	EditorSceneManager::get_singleton()->push_item(res.operator->());
 }
 
 void InspectorDock::_save_resource(bool save_as) {
@@ -283,9 +284,9 @@ void InspectorDock::_save_resource(bool save_as) {
 	ERR_FAIL_COND(current_res.is_null());
 
 	if (save_as) {
-		EditorNode::get_singleton()->save_resource_as(current_res);
+		EditorCore::get_singleton()->save_resource_as(current_res);
 	} else {
-		EditorNode::get_singleton()->save_resource(current_res);
+		EditorCore::get_singleton()->save_resource(current_res);
 	}
 }
 
@@ -293,7 +294,7 @@ void InspectorDock::_unref_resource() {
 	Ref<Resource> current_res = _get_current_resource();
 	ERR_FAIL_COND(current_res.is_null());
 	current_res->set_path("");
-	EditorNode::get_singleton()->edit_current();
+	EditorCore::get_singleton()->get_shell()->_edit_current();
 }
 
 void InspectorDock::_copy_resource() {
@@ -305,7 +306,7 @@ void InspectorDock::_copy_resource() {
 void InspectorDock::_paste_resource() {
 	Ref<Resource> r = EditorSettings::get_singleton()->get_resource_clipboard();
 	if (r.is_valid()) {
-		EditorNode::get_singleton()->push_item(EditorSettings::get_singleton()->get_resource_clipboard().ptr(), String());
+		EditorSceneManager::get_singleton()->push_item(EditorSettings::get_singleton()->get_resource_clipboard().ptr(), String());
 	}
 }
 
@@ -319,13 +320,13 @@ void InspectorDock::_prepare_resource_extra_popup() {
 }
 
 Ref<Resource> InspectorDock::_get_current_resource() const {
-	ObjectID current_id = EditorNode::get_singleton()->get_editor_selection_history()->get_current();
+	ObjectID current_id = EditorCore::get_singleton()->get_editor_selection_history()->get_current();
 	Object *current_obj = current_id.is_valid() ? ObjectDB::get_instance(current_id) : nullptr;
 	return Ref<Resource>(Object::cast_to<Resource>(current_obj));
 }
 
 void InspectorDock::_prepare_history() {
-	EditorSelectionHistory *editor_history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory *editor_history = EditorCore::get_singleton()->get_editor_selection_history();
 	editor_history->cleanup_history();
 
 	int history_to = MAX(0, editor_history->get_history_len() - 25);
@@ -345,7 +346,7 @@ void InspectorDock::_prepare_history() {
 
 		already.insert(id);
 
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(obj, "Object");
+		Ref<Texture2D> icon = EditorCore::get_singleton()->get_object_icon(obj, "Object");
 
 		String text;
 		if (obj->has_method("_get_editor_name")) {
@@ -376,12 +377,12 @@ void InspectorDock::_prepare_history() {
 
 void InspectorDock::_select_history(int p_idx) {
 	// Push it to the top, it is not correct, but it's more useful.
-	ObjectID id = EditorNode::get_singleton()->get_editor_selection_history()->get_history_obj(p_idx);
+	ObjectID id = EditorCore::get_singleton()->get_editor_selection_history()->get_history_obj(p_idx);
 	Object *obj = ObjectDB::get_instance(id);
 	if (!obj) {
 		return;
 	}
-	EditorNode::get_singleton()->push_item(obj);
+	EditorSceneManager::get_singleton()->push_item(obj);
 
 	if (const EditorDebuggerRemoteObjects *robjs = Object::cast_to<EditorDebuggerRemoteObjects>(obj)) {
 		EditorDebuggerNode::get_singleton()->set_remote_selection(robjs->remote_object_ids.duplicate());
@@ -395,7 +396,7 @@ void InspectorDock::_resource_created() {
 	Resource *r = Object::cast_to<Resource>(c);
 	ERR_FAIL_NULL(r);
 
-	EditorNode::get_singleton()->push_item(r);
+	EditorSceneManager::get_singleton()->push_item(r);
 }
 
 void InspectorDock::_resource_selected(const Ref<Resource> &p_res, const String &p_property) {
@@ -404,7 +405,7 @@ void InspectorDock::_resource_selected(const Ref<Resource> &p_res, const String 
 	}
 
 	Ref<Resource> r = p_res;
-	EditorNode::get_singleton()->push_item(r.operator->(), p_property);
+	EditorSceneManager::get_singleton()->push_item(r.operator->(), p_property);
 }
 
 void InspectorDock::_files_moved(const String &p_old_file, const String &p_new_file) {
@@ -413,7 +414,7 @@ void InspectorDock::_files_moved(const String &p_old_file, const String &p_new_f
 		return;
 	}
 
-	ObjectID current_id = EditorNode::get_singleton()->get_editor_selection_history()->get_current();
+	ObjectID current_id = EditorCore::get_singleton()->get_editor_selection_history()->get_current();
 	Ref<Resource> res(current_id.is_valid() ? ObjectDB::get_instance(current_id) : nullptr);
 	// We only care about updating the path if the current object is the one being renamed.
 	if (res.is_valid() && p_old_file == res->get_path()) {
@@ -423,8 +424,8 @@ void InspectorDock::_files_moved(const String &p_old_file, const String &p_new_f
 }
 
 void InspectorDock::_edit_forward() {
-	if (EditorNode::get_singleton()->get_editor_selection_history()->next()) {
-		EditorNode::get_singleton()->edit_current();
+	if (EditorCore::get_singleton()->get_editor_selection_history()->next()) {
+		EditorCore::get_singleton()->get_shell()->_edit_current();
 
 		if (const EditorDebuggerRemoteObjects *robjs = Object::cast_to<EditorDebuggerRemoteObjects>(current)) {
 			EditorDebuggerNode::get_singleton()->set_remote_selection(robjs->remote_object_ids.duplicate());
@@ -433,9 +434,9 @@ void InspectorDock::_edit_forward() {
 }
 
 void InspectorDock::_edit_back() {
-	EditorSelectionHistory *editor_history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory *editor_history = EditorCore::get_singleton()->get_editor_selection_history();
 	if ((current && editor_history->previous()) || editor_history->get_path_size() == 1) {
-		EditorNode::get_singleton()->edit_current();
+		EditorCore::get_singleton()->get_shell()->_edit_current();
 
 		if (const EditorDebuggerRemoteObjects *robjs = Object::cast_to<EditorDebuggerRemoteObjects>(current)) {
 			EditorDebuggerNode::get_singleton()->set_remote_selection(robjs->remote_object_ids.duplicate());
@@ -545,7 +546,7 @@ void InspectorDock::clear() {
 }
 
 void InspectorDock::update(Object *p_object) {
-	EditorSelectionHistory *editor_history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory *editor_history = EditorCore::get_singleton()->get_editor_selection_history();
 
 	backward_button->set_disabled(editor_history->is_at_beginning());
 	forward_button->set_disabled(editor_history->is_at_end());
@@ -791,7 +792,7 @@ InspectorDock::InspectorDock(EditorData &p_editor_data) {
 
 	HBoxContainer *subresource_hb = memnew(HBoxContainer);
 	add_child(subresource_hb);
-	object_selector = memnew(EditorObjectSelector(EditorNode::get_singleton()->get_editor_selection_history()));
+	object_selector = memnew(EditorObjectSelector(EditorCore::get_singleton()->get_editor_selection_history()));
 	object_selector->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	subresource_hb->add_child(object_selector);
 
@@ -804,7 +805,7 @@ InspectorDock::InspectorDock(EditorData &p_editor_data) {
 	open_docs_button->connect(SceneStringName(pressed), callable_mp(this, &InspectorDock::_menu_option).bind(OBJECT_REQUEST_HELP));
 
 	new_resource_dialog = memnew(CreateDialog);
-	EditorNode::get_singleton()->get_gui_base()->add_child(new_resource_dialog);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(new_resource_dialog);
 	new_resource_dialog->set_base_type("Resource");
 	new_resource_dialog->connect("create", callable_mp(this, &InspectorDock::_resource_created));
 
@@ -857,7 +858,7 @@ InspectorDock::InspectorDock(EditorData &p_editor_data) {
 	unique_resources_confirmation->connect(SceneStringName(confirmed), callable_mp(this, &InspectorDock::_menu_confirm_current));
 
 	info_dialog = memnew(AcceptDialog);
-	EditorNode::get_singleton()->get_gui_base()->add_child(info_dialog);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(info_dialog);
 
 	load_resource_dialog = memnew(EditorFileDialog);
 	add_child(load_resource_dialog);

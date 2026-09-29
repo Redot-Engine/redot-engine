@@ -160,7 +160,7 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {
 		GLOBAL_DEF_RST("filesystem/import/blender/enabled.android", false);
 		GLOBAL_DEF_RST("filesystem/import/blender/enabled.web", false);
 
-		EditorNode::add_init_callback(_editor_init);
+		EditorPluginManager::add_init_callback(_editor_init);
 	}
 #endif // TOOLS_ENABLED
 }

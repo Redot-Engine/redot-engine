@@ -51,6 +51,7 @@
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_log.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -143,7 +144,7 @@ void ScriptEditorDebugger::debug_continue() {
 	ERR_FAIL_COND(!is_breaked());
 
 	// Allow focus stealing only if we actually run this client for security.
-	if (remote_pid && EditorNode::get_singleton()->has_child_process(remote_pid)) {
+	if (remote_pid && EditorCore::get_singleton()->get_shell()->has_child_process(remote_pid)) {
 		DisplayServer::get_singleton()->enable_for_stealing_focus(remote_pid);
 	}
 
@@ -566,7 +567,7 @@ void ScriptEditorDebugger::_msg_output(uint64_t p_thread_id, const Array &p_data
 				msg_type = EditorLog::MSG_TYPE_STD;
 			} break;
 		}
-		EditorNode::get_log()->add_message(output_strings[i], msg_type);
+		EditorCore::get_singleton()->get_log()->add_message(output_strings[i], msg_type);
 		emit_signal(SceneStringName(output), output_strings[i], msg_type);
 	}
 }
@@ -1401,7 +1402,7 @@ int ScriptEditorDebugger::_get_res_path_cache(const String &p_path) {
 }
 
 void ScriptEditorDebugger::_method_changed(Object *p_base, const StringName &p_name, const Variant **p_args, int p_argcount) {
-	if (!p_base || !live_debug || !is_session_active() || !EditorNode::get_singleton()->get_edited_scene()) {
+	if (!p_base || !live_debug || !is_session_active() || !EditorSceneManager::get_singleton()->get_edited_scene()) {
 		return;
 	}
 
@@ -1415,7 +1416,7 @@ void ScriptEditorDebugger::_method_changed(Object *p_base, const StringName &p_n
 	}
 
 	if (node) {
-		NodePath path = EditorNode::get_singleton()->get_edited_scene()->get_path_to(node);
+		NodePath path = EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(node);
 		int pathid = _get_node_path_cache(path);
 
 		Array msg = { pathid, p_name };
@@ -1446,14 +1447,14 @@ void ScriptEditorDebugger::_method_changed(Object *p_base, const StringName &p_n
 }
 
 void ScriptEditorDebugger::_property_changed(Object *p_base, const StringName &p_property, const Variant &p_value) {
-	if (!p_base || !live_debug || !EditorNode::get_singleton()->get_edited_scene()) {
+	if (!p_base || !live_debug || !EditorSceneManager::get_singleton()->get_edited_scene()) {
 		return;
 	}
 
 	Node *node = Object::cast_to<Node>(p_base);
 
 	if (node) {
-		NodePath path = EditorNode::get_singleton()->get_edited_scene()->get_path_to(node);
+		NodePath path = EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(node);
 		int pathid = _get_node_path_cache(path);
 
 		if (p_value.is_ref_counted()) {
@@ -1558,24 +1559,24 @@ void ScriptEditorDebugger::_live_edit_set() {
 
 	NodePath np = path;
 
-	EditorNode::get_editor_data().set_edited_scene_live_edit_root(np);
+	EditorCore::get_singleton()->get_editor_data().set_edited_scene_live_edit_root(np);
 
 	update_live_edit_root();
 }
 
 void ScriptEditorDebugger::_live_edit_clear() {
 	NodePath np = NodePath("/root");
-	EditorNode::get_editor_data().set_edited_scene_live_edit_root(np);
+	EditorCore::get_singleton()->get_editor_data().set_edited_scene_live_edit_root(np);
 
 	update_live_edit_root();
 }
 
 void ScriptEditorDebugger::update_live_edit_root() {
-	NodePath np = EditorNode::get_editor_data().get_edited_scene_live_edit_root();
+	NodePath np = EditorCore::get_singleton()->get_editor_data().get_edited_scene_live_edit_root();
 
 	Array msg = { np };
-	if (EditorNode::get_singleton()->get_edited_scene()) {
-		msg.push_back(EditorNode::get_singleton()->get_edited_scene()->get_scene_file_path());
+	if (EditorSceneManager::get_singleton()->get_edited_scene()) {
+		msg.push_back(EditorSceneManager::get_singleton()->get_edited_scene()->get_scene_file_path());
 	} else {
 		msg.push_back("");
 	}

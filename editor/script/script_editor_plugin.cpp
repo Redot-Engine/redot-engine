@@ -57,6 +57,7 @@
 #include "editor/editor_interface.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/gui/code_editor.h"
@@ -515,7 +516,7 @@ void ScriptEditor::_breaked(bool p_breaked, bool p_can_debug) {
 }
 
 void ScriptEditor::_script_created(Ref<Script> p_script) {
-	EditorNode::get_singleton()->push_item(p_script.operator->());
+	EditorSceneManager::get_singleton()->push_item(p_script.operator->());
 }
 
 void ScriptEditor::_goto_script_line2(int p_line) {
@@ -529,7 +530,7 @@ void ScriptEditor::_goto_script_line(Ref<RefCounted> p_script, int p_line) {
 	Ref<Script> scr = Object::cast_to<Script>(*p_script);
 	if (scr.is_valid() && (scr->has_source_code() || scr->get_path().is_resource_file())) {
 		if (edit(p_script, p_line, 0)) {
-			EditorNode::get_singleton()->push_item(p_script.ptr());
+			EditorSceneManager::get_singleton()->push_item(p_script.ptr());
 
 			ScriptEditorBase *current = _get_current_editor();
 			if (ScriptTextEditor *script_text_editor = Object::cast_to<ScriptTextEditor>(current)) {
@@ -850,7 +851,7 @@ void ScriptEditor::_open_recent_script(int p_idx) {
 	} else if (path.contains("::")) {
 		// built-in script
 		String res_path = path.get_slice("::", 0);
-		EditorNode::get_singleton()->load_scene_or_resource(res_path, false, false);
+		EditorCore::get_singleton()->load_scene_or_resource(res_path, false, false);
 
 		Ref<Script> scr = ResourceLoader::load(path);
 		if (scr.is_valid()) {
@@ -1079,7 +1080,7 @@ void ScriptEditor::_resave_scripts(const String &p_str) {
 			_save_text_file(text_file, text_file->get_path());
 			break;
 		} else {
-			EditorNode::get_singleton()->save_resource(scr);
+			EditorCore::get_singleton()->save_resource(scr);
 		}
 		se->tag_saved_version();
 	}
@@ -1315,7 +1316,7 @@ void ScriptEditor::_file_dialog_action(const String &p_file) {
 			{
 				Ref<FileAccess> file = FileAccess::open(p_file, FileAccess::WRITE, &err);
 				if (err) {
-					EditorNode::get_singleton()->show_warning(TTR("Error writing TextFile:") + "\n" + p_file, TTR("Error!"));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("Error writing TextFile:") + "\n" + p_file, TTR("Error!"));
 					break;
 				}
 			}
@@ -1343,7 +1344,7 @@ void ScriptEditor::_file_dialog_action(const String &p_file) {
 				Error err = _save_text_file(resource, path);
 
 				if (err != OK) {
-					EditorNode::get_singleton()->show_accept(TTR("Error saving file!"), TTR("OK"));
+					EditorCore::get_singleton()->get_shell()->show_accept(TTR("Error saving file!"), TTR("OK"));
 					return;
 				}
 
@@ -1448,12 +1449,12 @@ void ScriptEditor::_menu_option(int p_option) {
 			if (extensions.find(path.get_extension()) || built_in) {
 				if (built_in) {
 					String res_path = path.get_slice("::", 0);
-					EditorNode::get_singleton()->load_scene_or_resource(res_path, false, false);
+					EditorCore::get_singleton()->load_scene_or_resource(res_path, false, false);
 				}
 
 				Ref<Resource> scr = ResourceLoader::load(path);
 				if (scr.is_null()) {
-					EditorNode::get_singleton()->show_warning(TTR("Could not load file at:") + "\n\n" + path, TTR("Error!"));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("Could not load file at:") + "\n\n" + path, TTR("Error!"));
 					file_dialog_option = -1;
 					return;
 				}
@@ -1464,7 +1465,7 @@ void ScriptEditor::_menu_option(int p_option) {
 				Error error;
 				Ref<TextFile> text_file = _load_text_file(path, &error);
 				if (error != OK) {
-					EditorNode::get_singleton()->show_warning(TTR("Could not load file at:") + "\n\n" + path, TTR("Error!"));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("Could not load file at:") + "\n\n" + path, TTR("Error!"));
 				}
 
 				if (text_file.is_valid()) {
@@ -1580,8 +1581,8 @@ void ScriptEditor::_menu_option(int p_option) {
 					clear_docs_from_script(scr);
 				}
 
-				EditorNode::get_singleton()->push_item(resource.ptr());
-				EditorNode::get_singleton()->save_resource_as(resource);
+				EditorSceneManager::get_singleton()->push_item(resource.ptr());
+				EditorCore::get_singleton()->save_resource_as(resource);
 
 				if (scr.is_valid()) {
 					update_docs_from_script(scr);
@@ -1591,11 +1592,11 @@ void ScriptEditor::_menu_option(int p_option) {
 			case FILE_MENU_SOFT_RELOAD_TOOL: {
 				Ref<Script> scr = current->get_edited_resource();
 				if (scr.is_null()) {
-					EditorNode::get_singleton()->show_warning(TTR("Can't obtain the script for reloading."));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't obtain the script for reloading."));
 					break;
 				}
 				if (!scr->is_tool()) {
-					EditorNode::get_singleton()->show_warning(TTR("Reload only takes effect on tool scripts."));
+					EditorCore::get_singleton()->get_shell()->show_warning(TTR("Reload only takes effect on tool scripts."));
 					return;
 				}
 				scr->reload(true);
@@ -1611,7 +1612,7 @@ void ScriptEditor::_menu_option(int p_option) {
 
 				current->apply_code();
 
-				EditorNode::get_singleton()->run_editor_script(scr);
+				EditorCore::get_singleton()->run_editor_script(scr);
 			} break;
 
 			case FILE_MENU_CLOSE: {
@@ -1869,10 +1870,10 @@ void ScriptEditor::_notification(int p_what) {
 			get_tree()->connect("tree_changed", callable_mp(this, &ScriptEditor::_tree_changed));
 			InspectorDock::get_singleton()->connect("request_help", callable_mp(this, &ScriptEditor::_help_class_open));
 			EditorNode::get_singleton()->connect("request_help_search", callable_mp(this, &ScriptEditor::_help_search));
-			EditorNode::get_singleton()->connect("scene_closed", callable_mp(this, &ScriptEditor::_close_builtin_scripts_from_scene));
+			EditorSceneManager::get_singleton()->connect("scene_closed", callable_mp(this, &ScriptEditor::_close_builtin_scripts_from_scene));
 			EditorNode::get_singleton()->connect("script_add_function_request", callable_mp(this, &ScriptEditor::_add_callback));
-			EditorNode::get_singleton()->connect("resource_saved", callable_mp(this, &ScriptEditor::_res_saved_callback));
-			EditorNode::get_singleton()->connect("scene_saved", callable_mp(this, &ScriptEditor::_scene_saved_callback));
+			EditorCore::get_singleton()->connect("resource_saved", callable_mp(this, &ScriptEditor::_res_saved_callback));
+			EditorSceneManager::get_singleton()->connect("scene_saved", callable_mp(this, &ScriptEditor::_scene_saved_callback));
 			FileSystemDock::get_singleton()->connect("files_moved", callable_mp(this, &ScriptEditor::_files_moved));
 			FileSystemDock::get_singleton()->connect("file_removed", callable_mp(this, &ScriptEditor::_file_removed));
 			script_list->connect(SceneStringName(item_selected), callable_mp(this, &ScriptEditor::_script_selected));
@@ -2270,7 +2271,7 @@ void ScriptEditor::_update_script_names() {
 	}
 
 	HashSet<Ref<Script>> used;
-	Node *edited = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (edited && EDITOR_GET("text_editor/script_list/highlight_scene_scripts")) {
 		_find_scripts(edited, edited, used);
 	}
@@ -2377,7 +2378,7 @@ void ScriptEditor::_update_script_names() {
 		full_script_paths.append(sedata[j].tooltip);
 	}
 
-	EditorNode::disambiguate_filenames(full_script_paths, disambiguated_script_names);
+	EditorCore::disambiguate_filenames(full_script_paths, disambiguated_script_names);
 
 	for (int j = 0; j < sedata.size(); j++) {
 		if (sedata[j].name.ends_with("(*)")) {
@@ -2551,7 +2552,7 @@ bool ScriptEditor::edit(const Ref<Resource> &p_resource, int p_line, int p_col, 
 
 	const bool open_dominant = EDITOR_GET("text_editor/behavior/files/open_dominant_script_on_scene_change");
 
-	const bool should_open = (open_dominant && !use_external_editor) || !EditorNode::get_singleton()->is_changing_scene();
+	const bool should_open = (open_dominant && !use_external_editor) || !EditorSceneManager::get_singleton()->is_changing_scene();
 
 	if (scr.is_valid() && scr->get_language()->overrides_external_editor()) {
 		if (should_open) {
@@ -2805,7 +2806,7 @@ void ScriptEditor::save_current_script() {
 		clear_docs_from_script(scr);
 	}
 
-	EditorNode::get_singleton()->save_resource(resource);
+	EditorCore::get_singleton()->save_resource(resource);
 
 	if (scr.is_valid()) {
 		update_docs_from_script(scr);
@@ -2856,7 +2857,7 @@ void ScriptEditor::save_all_scripts() {
 			}
 
 			// External script, save it.
-			EditorNode::get_singleton()->save_resource(edited_res);
+			EditorCore::get_singleton()->save_resource(edited_res);
 		} else {
 			// For built-in scripts, save their scenes instead.
 			const String scene_path = edited_res->get_path().get_slice("::", 0);
@@ -2871,7 +2872,7 @@ void ScriptEditor::save_all_scripts() {
 	}
 
 	if (!scenes_to_save.is_empty()) {
-		EditorNode::get_singleton()->save_scene_list(scenes_to_save);
+		EditorSceneManager::get_singleton()->save_scene_list(scenes_to_save);
 	}
 
 	_update_script_names();
@@ -2982,7 +2983,7 @@ Ref<Resource> ScriptEditor::open_file(const String &p_file) {
 	if (extensions.find(p_file.get_extension())) {
 		Ref<Resource> scr = ResourceLoader::load(p_file);
 		if (scr.is_null()) {
-			EditorNode::get_singleton()->show_warning(TTR("Could not load file at:") + "\n\n" + p_file, TTR("Error!"));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Could not load file at:") + "\n\n" + p_file, TTR("Error!"));
 			return Ref<Resource>();
 		}
 
@@ -2993,7 +2994,7 @@ Ref<Resource> ScriptEditor::open_file(const String &p_file) {
 	Error error;
 	Ref<TextFile> text_file = _load_text_file(p_file, &error);
 	if (error != OK) {
-		EditorNode::get_singleton()->show_warning(TTR("Could not load file at:") + "\n\n" + p_file, TTR("Error!"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Could not load file at:") + "\n\n" + p_file, TTR("Error!"));
 		return Ref<Resource>();
 	}
 
@@ -3024,7 +3025,7 @@ void ScriptEditor::_add_callback(Object *p_obj, const String &p_function, const 
 		return;
 	}
 
-	EditorNode::get_singleton()->push_item(scr.ptr());
+	EditorSceneManager::get_singleton()->push_item(scr.ptr());
 
 	for (int i = 0; i < tab_container->get_tab_count(); i++) {
 		ScriptEditorBase *se = Object::cast_to<ScriptEditorBase>(tab_container->get_tab_control(i));
@@ -3051,7 +3052,7 @@ void ScriptEditor::_add_callback(Object *p_obj, const String &p_function, const 
 
 	// Move back to the previously edited node to reselect it in the Inspector and the NodeDock.
 	// We assume that the previous item is the node on which the callbacks were added.
-	EditorNode::get_singleton()->edit_previous_item();
+	EditorSceneManager::get_singleton()->edit_previous_item();
 }
 
 void ScriptEditor::_save_editor_state(ScriptEditorBase *p_editor) {
@@ -3073,7 +3074,7 @@ void ScriptEditor::_save_layout() {
 		return;
 	}
 
-	EditorNode::get_singleton()->save_editor_layout_delayed();
+	EditorCore::get_singleton()->get_shell()->save_editor_layout_delayed();
 }
 
 void ScriptEditor::_editor_settings_changed() {
@@ -3652,7 +3653,7 @@ void ScriptEditor::set_window_layout(Ref<ConfigFile> p_layout) {
 		// Cap of 128 scripts as a safety measure to prevent too many args passed to a process.
 		// Some platforms limit this by arg count or by a certain number of characters.
 		if (external_scripts.size() > 128) {
-			EditorNode::get_singleton()->show_warning(TTR("Too many scripts to open in external editor (max 128)."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Too many scripts to open in external editor (max 128)."));
 			external_scripts.resize(128);
 		}
 		_open_external_editor_bulk(external_scripts);
@@ -4124,7 +4125,7 @@ void ScriptEditor::_on_find_in_files_result_selected(const String &fpath, int li
 		Ref<Resource> res = ResourceLoader::load(fpath);
 
 		if (fpath.get_extension() == "gdshader") {
-			ShaderEditorPlugin *shader_editor = Object::cast_to<ShaderEditorPlugin>(EditorNode::get_editor_data().get_editor_by_name("Shader"));
+			ShaderEditorPlugin *shader_editor = Object::cast_to<ShaderEditorPlugin>(EditorCore::get_singleton()->get_editor_data().get_editor_by_name("Shader"));
 			shader_editor->edit(res.ptr());
 			shader_editor->make_visible(true);
 			TextShaderEditor *text_shader_editor = Object::cast_to<TextShaderEditor>(shader_editor->get_shader_editor(res));
@@ -4185,7 +4186,7 @@ void ScriptEditor::_on_find_in_files_result_selected(const String &fpath, int li
 				break;
 			}
 
-			EditorNode::get_singleton()->load_scene(fpath);
+			EditorSceneManager::get_singleton()->load_scene(fpath);
 
 			if (is_script_found && !scr_id.is_empty()) {
 				Ref<Script> scr = ResourceLoader::load(fpath + "::" + scr_id, "Script");
@@ -4252,7 +4253,7 @@ void ScriptEditor::_start_find_in_files(bool with_replace) {
 		find_in_files_button->show();
 	}
 
-	EditorNode::get_bottom_panel()->make_item_visible(find_in_files);
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(find_in_files);
 }
 
 void ScriptEditor::_on_find_in_files_modified_files(const PackedStringArray &paths) {
@@ -4275,7 +4276,7 @@ void ScriptEditor::_update_code_editor_zoom_factor(CodeTextEditor *p_code_text_e
 }
 
 void ScriptEditor::_on_find_in_files_close_button_clicked() {
-	EditorNode::get_bottom_panel()->hide_bottom_panel();
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 	find_in_files_button->hide();
 }
 
@@ -4646,7 +4647,7 @@ ScriptEditor::ScriptEditor(WindowWrapper *p_wrapper) {
 	find_in_files_dialog->connect(FindInFilesDialog::SIGNAL_REPLACE_REQUESTED, callable_mp(this, &ScriptEditor::_start_find_in_files).bind(true));
 	add_child(find_in_files_dialog);
 	find_in_files = memnew(FindInFilesPanel);
-	find_in_files_button = EditorNode::get_bottom_panel()->add_item(TTRC("Search Results"), find_in_files, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_search_results_bottom_panel", TTRC("Toggle Search Results Bottom Panel")));
+	find_in_files_button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("Search Results"), find_in_files, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_search_results_bottom_panel", TTRC("Toggle Search Results Bottom Panel")));
 	find_in_files->set_custom_minimum_size(Size2(0, 200) * EDSCALE);
 	find_in_files->connect(FindInFilesPanel::SIGNAL_RESULT_SELECTED, callable_mp(this, &ScriptEditor::_on_find_in_files_result_selected));
 	find_in_files->connect(FindInFilesPanel::SIGNAL_FILES_MODIFIED, callable_mp(this, &ScriptEditor::_on_find_in_files_modified_files));
@@ -4720,7 +4721,7 @@ void ScriptEditorPlugin::edit(Object *p_object) {
 		String res_path = p_script->get_path().get_slice("::", 0);
 
 		if (p_script->is_built_in() && !res_path.is_empty()) {
-			EditorNode::get_singleton()->load_scene_or_resource(res_path, false, false);
+			EditorCore::get_singleton()->load_scene_or_resource(res_path, false, false);
 		}
 		script_editor->edit(p_script);
 	} else if (Object::cast_to<JSON>(p_object)) {
@@ -4808,7 +4809,7 @@ String ScriptEditorPlugin::get_unsaved_status(const String &p_for_scene) const {
 }
 
 void ScriptEditorPlugin::save_external_data() {
-	if (!EditorNode::get_singleton()->is_exiting()) {
+	if (!EditorCore::get_singleton()->get_shell()->is_exiting()) {
 		script_editor->save_all_scripts();
 	}
 }
@@ -4876,7 +4877,7 @@ ScriptEditorPlugin::ScriptEditorPlugin() {
 	Ref<Shortcut> make_floating_shortcut = ED_SHORTCUT_AND_COMMAND("script_editor/make_floating", TTRC("Make Floating"));
 	window_wrapper->set_wrapped_control(script_editor, make_floating_shortcut);
 
-	EditorNode::get_singleton()->get_editor_main_screen()->get_control()->add_child(window_wrapper);
+	EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_control()->add_child(window_wrapper);
 	window_wrapper->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	window_wrapper->hide();
 	window_wrapper->connect("window_visibility_changed", callable_mp(this, &ScriptEditorPlugin::_window_visibility_changed));

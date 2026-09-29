@@ -812,7 +812,7 @@ void SceneImportSettingsDialog::open_settings(const String &p_path, const String
 
 	scene = ResourceImporterScene::get_scene_singleton()->pre_import(p_path, defaults); // Use the scene singleton here because we want to see the full thing.
 	if (scene == nullptr) {
-		EditorNode::get_singleton()->show_warning(TTR("Error opening scene"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Error opening scene"));
 		return;
 	}
 
@@ -1666,7 +1666,7 @@ void SceneImportSettingsDialog::_save_dir_confirm() {
 
 				Error err = ResourceSaver::save(md.material, path);
 				if (err != OK) {
-					EditorNode::get_singleton()->add_io_error(TTR("Can't make material external to file, write error:") + "\n\t" + path);
+					EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Can't make material external to file, write error:") + "\n\t" + path);
 					continue;
 				}
 				uid_path = ResourceUID::path_to_uid(path);

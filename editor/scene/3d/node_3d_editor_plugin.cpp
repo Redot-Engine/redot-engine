@@ -49,6 +49,7 @@
 #include "editor/docks/scene_tree_dock.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_spin_slider.h"
@@ -784,7 +785,7 @@ void Node3DEditorViewport::_select_clicked(bool p_allow_locked) {
 		return;
 	}
 
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 
 	// Prevent selection of nodes not owned by the edited scene.
 	while (node && node != edited_scene->get_parent()) {
@@ -823,13 +824,13 @@ void Node3DEditorViewport::_select_clicked(bool p_allow_locked) {
 			if (!editor_selection->is_selected(selected)) {
 				editor_selection->clear();
 				editor_selection->add_node(selected);
-				EditorNode::get_singleton()->edit_node(selected);
+				EditorSceneManager::get_singleton()->edit_node(selected);
 			}
 		}
 
 		const List<Node *> &top_node_list = editor_selection->get_top_selected_node_list();
 		if (top_node_list.size() == 1) {
-			EditorNode::get_singleton()->edit_node(top_node_list.front()->get());
+			EditorSceneManager::get_singleton()->edit_node(top_node_list.front()->get());
 		}
 	}
 }
@@ -1126,7 +1127,7 @@ void Node3DEditorViewport::_select_region() {
 		// Replace the node by the group if grouped
 		if (node->is_class("Node3D")) {
 			Node3D *sel = Object::cast_to<Node3D>(node);
-			while (node && node != EditorNode::get_singleton()->get_edited_scene()->get_parent()) {
+			while (node && node != EditorSceneManager::get_singleton()->get_edited_scene()->get_parent()) {
 				Node3D *selected_tmp = Object::cast_to<Node3D>(node);
 				if (selected_tmp && node->has_meta("_edit_group_")) {
 					sel = selected_tmp;
@@ -1161,7 +1162,7 @@ void Node3DEditorViewport::_select_region() {
 
 	const List<Node *> &top_node_list = editor_selection->get_top_selected_node_list();
 	if (top_node_list.size() == 1) {
-		EditorNode::get_singleton()->edit_node(top_node_list.front()->get());
+		EditorSceneManager::get_singleton()->edit_node(top_node_list.front()->get());
 	}
 }
 
@@ -1609,7 +1610,7 @@ void Node3DEditorViewport::_list_select(Ref<InputEventMouseButton> b) {
 	Vector<_RayResult> potential_selection_results;
 	_find_items_at_pos(b->get_position(), potential_selection_results, b->is_alt_pressed());
 
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 
 	// Filter to a list of nodes which include either the edited scene or nodes directly owned by the edited scene.
 	// If a node has an invalid owner, recursively check their parents until a valid node is found.
@@ -1647,7 +1648,7 @@ void Node3DEditorViewport::_list_select(Ref<InputEventMouseButton> b) {
 		for (int i = 0; i < selection_results.size(); i++) {
 			Node3D *spat = selection_results[i];
 
-			Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(spat, "Node");
+			Ref<Texture2D> icon = EditorCore::get_singleton()->get_object_icon(spat, "Node");
 
 			String node_path = "/" + root_name + "/" + String(root_path.rel_path_to(spat->get_path()));
 
@@ -1655,7 +1656,7 @@ void Node3DEditorViewport::_list_select(Ref<InputEventMouseButton> b) {
 			if (_is_node_locked(spat)) {
 				locked = 1;
 			} else {
-				Node *ed_scene = EditorNode::get_singleton()->get_edited_scene();
+				Node *ed_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 				Node *node = spat;
 
 				while (node && node != ed_scene->get_parent()) {
@@ -1734,8 +1735,7 @@ void Node3DEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 
 	EditorPlugin::AfterGUIInput after = EditorPlugin::AFTER_GUI_INPUT_PASS;
 	{
-		EditorNode *en = EditorNode::get_singleton();
-		EditorPluginList *force_input_forwarding_list = en->get_editor_plugins_force_input_forwarding();
+		EditorPluginList *force_input_forwarding_list = EditorPluginManager::get_singleton()->get_editor_plugins_force_input_forwarding();
 		if (!force_input_forwarding_list->is_empty()) {
 			EditorPlugin::AfterGUIInput discard = force_input_forwarding_list->forward_3d_gui_input(camera, p_event, true);
 			if (discard == EditorPlugin::AFTER_GUI_INPUT_STOP) {
@@ -1747,8 +1747,7 @@ void Node3DEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 		}
 	}
 	{
-		EditorNode *en = EditorNode::get_singleton();
-		EditorPluginList *over_plugin_list = en->get_editor_plugins_over();
+		EditorPluginList *over_plugin_list = EditorPluginManager::get_singleton()->get_editor_plugins_over();
 		if (!over_plugin_list->is_empty()) {
 			EditorPlugin::AfterGUIInput discard = over_plugin_list->forward_3d_gui_input(camera, p_event, false);
 			if (discard == EditorPlugin::AFTER_GUI_INPUT_STOP) {
@@ -1887,7 +1886,7 @@ void Node3DEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 					}
 
 					if (spatial_editor->get_tool_mode() == Node3DEditor::TOOL_RULER) {
-						EditorNode::get_singleton()->get_scene_root()->add_child(ruler);
+						EditorCore::get_singleton()->get_shell()->get_scene_root()->add_child(ruler);
 						collision_reposition = true;
 						break;
 					}
@@ -2090,7 +2089,7 @@ void Node3DEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 					surface->queue_redraw();
 				} else {
 					if (ruler->is_inside_tree()) {
-						EditorNode::get_singleton()->get_scene_root()->remove_child(ruler);
+						EditorCore::get_singleton()->get_shell()->get_scene_root()->remove_child(ruler);
 						ruler_start_point->set_visible(false);
 						ruler_end_point->set_visible(false);
 						ruler_label->set_visible(false);
@@ -3435,7 +3434,7 @@ void Node3DEditorViewport::_notification(int p_what) {
 
 			view_display_menu->set_button_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
 			preview_camera->set_button_icon(get_editor_theme_icon(SNAME("Camera3D")));
-			Control *gui_base = EditorNode::get_singleton()->get_gui_base();
+			Control *gui_base = EditorCore::get_singleton()->get_shell()->get_gui_base();
 
 			const Ref<StyleBox> &information_3d_stylebox = gui_base->get_theme_stylebox(SNAME("Information3dViewport"), EditorStringName(EditorStyles));
 
@@ -3524,12 +3523,12 @@ void Node3DEditorViewport::_draw() {
 		surface->draw_rect(Rect2(rect_right, frame_rect.position.y, s.width - rect_right, frame_rect.size.y), letterbox_color, true);
 	}
 
-	EditorPluginList *over_plugin_list = EditorNode::get_singleton()->get_editor_plugins_over();
+	EditorPluginList *over_plugin_list = EditorPluginManager::get_singleton()->get_editor_plugins_over();
 	if (!over_plugin_list->is_empty()) {
 		over_plugin_list->forward_3d_draw_over_viewport(surface);
 	}
 
-	EditorPluginList *force_over_plugin_list = EditorNode::get_singleton()->get_editor_plugins_force_over();
+	EditorPluginList *force_over_plugin_list = EditorPluginManager::get_singleton()->get_editor_plugins_force_over();
 	if (!force_over_plugin_list->is_empty()) {
 		force_over_plugin_list->forward_3d_force_draw_over_viewport(surface);
 	}
@@ -4577,7 +4576,7 @@ void Node3DEditorViewport::set_state(const Dictionary &p_state) {
 		preview_camera->disconnect(SceneStringName(toggled), callable_mp(this, &Node3DEditorViewport::_toggle_camera_preview));
 	}
 	if (p_state.has("previewing")) {
-		Node *pv = EditorNode::get_singleton()->get_edited_scene()->get_node(p_state["previewing"]);
+		Node *pv = EditorSceneManager::get_singleton()->get_edited_scene()->get_node(p_state["previewing"]);
 		if (Object::cast_to<Camera3D>(pv)) {
 			previewing = Object::cast_to<Camera3D>(pv);
 			previewing->connect(SceneStringName(tree_exiting), callable_mp(this, &Node3DEditorViewport::_preview_exited_scene));
@@ -4634,7 +4633,7 @@ Dictionary Node3DEditorViewport::get_state() const {
 	d["cinematic_preview"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_CINEMATIC_PREVIEW));
 	d["movie_mode"] = view_display_menu->get_popup()->is_item_checked(view_display_menu->get_popup()->get_item_index(VIEW_MOVIE_MODE));
 	if (previewing) {
-		d["previewing"] = EditorNode::get_singleton()->get_edited_scene()->get_path_to(previewing);
+		d["previewing"] = EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(previewing);
 	}
 	d["lock_rotation"] = lock_rotation;
 
@@ -4909,7 +4908,7 @@ void Node3DEditorViewport::_create_preview_node(const Vector<String> &files) con
 		}
 	}
 	if (add_preview) {
-		EditorNode::get_singleton()->get_scene_root()->add_child(preview_node);
+		EditorCore::get_singleton()->get_shell()->get_scene_root()->add_child(preview_node);
 	}
 
 	*preview_bounds = _calculate_spatial_bounds(preview_node);
@@ -4923,7 +4922,7 @@ void Node3DEditorViewport::_remove_preview_node() {
 			node->queue_free();
 			preview_node->remove_child(node);
 		}
-		EditorNode::get_singleton()->get_scene_root()->remove_child(preview_node);
+		EditorCore::get_singleton()->get_shell()->get_scene_root()->remove_child(preview_node);
 	}
 }
 
@@ -5074,8 +5073,8 @@ bool Node3DEditorViewport::_create_instance(Node *p_parent, const String &p_path
 		return false;
 	}
 
-	if (!EditorNode::get_singleton()->get_edited_scene()->get_scene_file_path().is_empty()) { // Cyclic instantiation.
-		if (_cyclical_dependency_exists(EditorNode::get_singleton()->get_edited_scene()->get_scene_file_path(), instantiated_scene)) {
+	if (!EditorSceneManager::get_singleton()->get_edited_scene()->get_scene_file_path().is_empty()) { // Cyclic instantiation.
+		if (_cyclical_dependency_exists(EditorSceneManager::get_singleton()->get_edited_scene()->get_scene_file_path(), instantiated_scene)) {
 			memdelete(instantiated_scene);
 			return false;
 		}
@@ -5087,15 +5086,15 @@ bool Node3DEditorViewport::_create_instance(Node *p_parent, const String &p_path
 
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->add_do_method(p_parent, "add_child", instantiated_scene, true);
-	undo_redo->add_do_method(instantiated_scene, "set_owner", EditorNode::get_singleton()->get_edited_scene());
+	undo_redo->add_do_method(instantiated_scene, "set_owner", EditorSceneManager::get_singleton()->get_edited_scene());
 	undo_redo->add_do_reference(instantiated_scene);
 	undo_redo->add_undo_method(p_parent, "remove_child", instantiated_scene);
 	undo_redo->add_do_method(editor_selection, "add_node", instantiated_scene);
 
 	String new_name = p_parent->validate_child_name(instantiated_scene);
 	EditorDebuggerNode *ed = EditorDebuggerNode::get_singleton();
-	undo_redo->add_do_method(ed, "live_debug_instantiate_node", EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent), p_path, new_name);
-	undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
+	undo_redo->add_do_method(ed, "live_debug_instantiate_node", EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(p_parent), p_path, new_name);
+	undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
 
 	Node3D *node3d = Object::cast_to<Node3D>(instantiated_scene);
 	if (node3d) {
@@ -5134,15 +5133,15 @@ bool Node3DEditorViewport::_create_audio_node(Node *p_parent, const String &p_pa
 
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->add_do_method(p_parent, "add_child", audio_player, true);
-	undo_redo->add_do_method(audio_player, "set_owner", EditorNode::get_singleton()->get_edited_scene());
+	undo_redo->add_do_method(audio_player, "set_owner", EditorSceneManager::get_singleton()->get_edited_scene());
 	undo_redo->add_do_reference(audio_player);
 	undo_redo->add_undo_method(p_parent, "remove_child", audio_player);
 	undo_redo->add_do_method(editor_selection, "add_node", audio_player);
 
 	const String new_name = p_parent->validate_child_name(audio_player);
 	EditorDebuggerNode *ed = EditorDebuggerNode::get_singleton();
-	undo_redo->add_do_method(ed, "live_debug_create_node", EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent), audio_player->get_class(), new_name);
-	undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
+	undo_redo->add_do_method(ed, "live_debug_create_node", EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(p_parent), audio_player->get_class(), new_name);
+	undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorSceneManager::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
 
 	Transform3D parent_tf;
 	Node3D *parent_node3d = Object::cast_to<Node3D>(p_parent);
@@ -5260,7 +5259,7 @@ bool Node3DEditorViewport::can_drop_data_fw(const Point2 &p_point, const Variant
 						if (!instantiated_scene) {
 							continue;
 						}
-						Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+						Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 						if (edited_scene && !edited_scene->get_scene_file_path().is_empty() && _cyclical_dependency_exists(edited_scene->get_scene_file_path(), instantiated_scene)) {
 							memdelete(instantiated_scene);
 							can_instantiate = false;
@@ -5344,8 +5343,8 @@ void Node3DEditorViewport::drop_data_fw(const Point2 &p_point, const Variant &p_
 		selected_files = d["files"];
 	}
 
-	List<Node *> selected_nodes = EditorNode::get_singleton()->get_editor_selection()->get_top_selected_node_list();
-	Node *root_node = EditorNode::get_singleton()->get_edited_scene();
+	List<Node *> selected_nodes = EditorCore::get_singleton()->get_editor_selection()->get_top_selected_node_list();
+	Node *root_node = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (selected_nodes.size() > 0) {
 		Node *selected_node = selected_nodes.front()->get();
 		if (is_alt) {
@@ -5833,7 +5832,7 @@ Node3DEditorViewport::Node3DEditorViewport(Node3DEditor *p_spatial_editor, int p
 	_edit.gizmo_handle_secondary = false;
 
 	index = p_index;
-	editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	editor_selection = EditorCore::get_singleton()->get_editor_selection();
 
 	orthogonal = false;
 	auto_orthogonal = false;
@@ -8496,7 +8495,7 @@ void Node3DEditor::_snap_selected_nodes_to_floor() {
 
 			undo_redo->commit_action();
 		} else {
-			EditorNode::get_singleton()->show_warning(TTR("Couldn't find a solid floor to snap the selection to."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Couldn't find a solid floor to snap the selection to."));
 		}
 	}
 }
@@ -8852,7 +8851,7 @@ void Node3DEditor::_request_gizmo(Object *p_obj) {
 
 	bool is_selected = (sp == selected);
 
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	if (edited_scene && (sp == edited_scene || (sp->get_owner() && edited_scene->is_ancestor_of(sp)))) {
 		for (int i = 0; i < gizmo_plugins_by_priority.size(); ++i) {
 			Ref<EditorNode3DGizmo> seg = gizmo_plugins_by_priority.write[i]->get_gizmo(sp);
@@ -8984,7 +8983,7 @@ void Node3DEditor::_viewport_clicked(int p_viewport_idx) {
 }
 
 void Node3DEditor::_node_added(Node *p_node) {
-	if (EditorNode::get_singleton()->get_scene_root()->is_ancestor_of(p_node)) {
+	if (EditorCore::get_singleton()->get_shell()->get_scene_root()->is_ancestor_of(p_node)) {
 		if (Object::cast_to<WorldEnvironment>(p_node)) {
 			world_env_count++;
 			if (world_env_count == 1) {
@@ -9000,7 +8999,7 @@ void Node3DEditor::_node_added(Node *p_node) {
 }
 
 void Node3DEditor::_node_removed(Node *p_node) {
-	if (EditorNode::get_singleton()->get_scene_root()->is_ancestor_of(p_node)) {
+	if (EditorCore::get_singleton()->get_shell()->get_scene_root()->is_ancestor_of(p_node)) {
 		if (Object::cast_to<WorldEnvironment>(p_node)) {
 			world_env_count--;
 			if (world_env_count == 0) {
@@ -9393,12 +9392,12 @@ void Node3DEditor::PreviewSunEnvPopup::shortcut_input(const Ref<InputEvent> &p_e
 		bool handled = false;
 
 		if (ED_IS_SHORTCUT("ui_undo", p_event)) {
-			EditorNode::get_singleton()->undo();
+			EditorSceneManager::get_singleton()->undo();
 			handled = true;
 		}
 
 		if (ED_IS_SHORTCUT("ui_redo", p_event)) {
-			EditorNode::get_singleton()->redo();
+			EditorSceneManager::get_singleton()->redo();
 			handled = true;
 		}
 
@@ -9418,7 +9417,7 @@ Node3DEditor::Node3DEditor() {
 	custom_camera = nullptr;
 	ERR_FAIL_COND_MSG(singleton != nullptr, "A Node3DEditor singleton already exists.");
 	singleton = this;
-	editor_selection = EditorNode::get_singleton()->get_editor_selection();
+	editor_selection = EditorCore::get_singleton()->get_editor_selection();
 	editor_selection->add_editor_plugin(this);
 
 	snap_enabled = false;
@@ -9665,7 +9664,7 @@ Node3DEditor::Node3DEditor() {
 	p->set_hide_on_checkable_item_selection(false);
 
 	accept = memnew(AcceptDialog);
-	EditorNode::get_singleton()->get_gui_base()->add_child(accept);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(accept);
 
 	p->add_radio_check_shortcut(ED_SHORTCUT("spatial_editor/1_viewport", TTRC("1 Viewport"), KeyModifierMask::CMD_OR_CTRL + Key::KEY_1), MENU_VIEW_USE_1_VIEWPORT);
 	p->add_radio_check_shortcut(ED_SHORTCUT("spatial_editor/2_viewports", TTRC("2 Viewports"), KeyModifierMask::CMD_OR_CTRL + Key::KEY_2), MENU_VIEW_USE_2_VIEWPORTS);
@@ -9948,7 +9947,7 @@ void fragment() {
 		sun_color->set_edit_alpha(false);
 		sun_vb->add_margin_child(TTRC("Sun Color"), sun_color);
 		sun_color->connect("color_changed", callable_mp(this, &Node3DEditor::_sun_set_color));
-		sun_color->get_popup()->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(sun_color->get_picker()));
+		sun_color->get_popup()->connect("about_to_popup", callable_mp(EditorCore::get_singleton(), &EditorCore::setup_color_picker).bind(sun_color->get_picker()));
 
 		sun_energy = memnew(EditorSpinSlider);
 		sun_energy->set_max(64.0);
@@ -9996,17 +9995,17 @@ void fragment() {
 		environ_sky_color = memnew(ColorPickerButton);
 		environ_sky_color->set_edit_alpha(false);
 		environ_sky_color->connect("color_changed", callable_mp(this, &Node3DEditor::_environ_set_sky_color));
-		environ_sky_color->get_popup()->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(environ_sky_color->get_picker()));
+		environ_sky_color->get_popup()->connect("about_to_popup", callable_mp(EditorCore::get_singleton(), &EditorCore::setup_color_picker).bind(environ_sky_color->get_picker()));
 		environ_vb->add_margin_child(TTRC("Sky Color"), environ_sky_color);
 		environ_hz_color = memnew(ColorPickerButton);
 		environ_hz_color->set_edit_alpha(false);
 		environ_hz_color->connect("color_changed", callable_mp(this, &Node3DEditor::_preview_settings_changed).unbind(1));
-		environ_hz_color->get_popup()->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(environ_hz_color->get_picker()));
+		environ_hz_color->get_popup()->connect("about_to_popup", callable_mp(EditorCore::get_singleton(), &EditorCore::setup_color_picker).bind(environ_hz_color->get_picker()));
 		environ_vb->add_margin_child(TTRC("Horizon Color"), environ_hz_color);
 		environ_ground_color = memnew(ColorPickerButton);
 		environ_ground_color->connect("color_changed", callable_mp(this, &Node3DEditor::_environ_set_ground_color));
 		environ_ground_color->set_edit_alpha(false);
-		environ_ground_color->get_popup()->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(environ_ground_color->get_picker()));
+		environ_ground_color->get_popup()->connect("about_to_popup", callable_mp(EditorCore::get_singleton(), &EditorCore::setup_color_picker).bind(environ_ground_color->get_picker()));
 		environ_vb->add_margin_child(TTRC("Ground Color"), environ_ground_color);
 		environ_energy = memnew(EditorSpinSlider);
 		environ_energy->set_max(8.0);
@@ -10131,7 +10130,7 @@ Size2i Node3DEditor::get_camera_viewport_size(Camera3D *p_camera) {
 	SubViewport *sub_viewport = Object::cast_to<SubViewport>(viewport);
 	ERR_FAIL_NULL_V(sub_viewport, Size2i());
 
-	if (sub_viewport == EditorNode::get_singleton()->get_scene_root()) {
+	if (sub_viewport == EditorCore::get_singleton()->get_shell()->get_scene_root()) {
 		return Size2(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
 	}
 
@@ -10256,7 +10255,7 @@ Vector<Node3D *> Node3DEditor::gizmo_bvh_frustum_query(const Vector<Plane> &p_fr
 Node3DEditorPlugin::Node3DEditorPlugin() {
 	spatial_editor = memnew(Node3DEditor);
 	spatial_editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	EditorNode::get_singleton()->get_editor_main_screen()->get_control()->add_child(spatial_editor);
+	EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_control()->add_child(spatial_editor);
 
 	spatial_editor->hide();
 }

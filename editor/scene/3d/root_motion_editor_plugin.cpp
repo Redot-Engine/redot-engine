@@ -61,14 +61,14 @@ void EditorPropertyRootMotion::_confirmed() {
 void EditorPropertyRootMotion::_node_assign() {
 	AnimationMixer *mixer = Object::cast_to<AnimationMixer>(get_edited_object());
 	if (!mixer) {
-		EditorNode::get_singleton()->show_warning(TTR("Path to AnimationMixer is invalid"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Path to AnimationMixer is invalid"));
 		return;
 	}
 
 	Node *base = mixer->get_node(mixer->get_root_node());
 
 	if (!base) {
-		EditorNode::get_singleton()->show_warning(TTR("AnimationMixer has no valid root node path, so unable to retrieve track names."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("AnimationMixer has no valid root node path, so unable to retrieve track names."));
 		return;
 	}
 
@@ -116,7 +116,7 @@ void EditorPropertyRootMotion::_node_assign() {
 
 				if (base->has_node(accum)) {
 					Node *node = base->get_node(accum);
-					ti->set_icon(0, EditorNode::get_singleton()->get_object_icon(node, "Node"));
+					ti->set_icon(0, EditorCore::get_singleton()->get_object_icon(node, "Node"));
 				}
 
 			} else {

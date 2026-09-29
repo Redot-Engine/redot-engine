@@ -71,7 +71,7 @@ void HistoryDock::refresh_history() {
 		return;
 	}
 
-	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
 	const EditorUndoRedoManager::History &global_history = ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 
 	Vector<EditorUndoRedoManager::Action> full_history;
@@ -140,7 +140,7 @@ void HistoryDock::refresh_version() {
 		return;
 	}
 
-	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	const EditorUndoRedoManager::History &current_scene_history = ur_manager->get_or_create_history(EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
 	const EditorUndoRedoManager::History &global_history = ur_manager->get_or_create_history(EditorUndoRedoManager::GLOBAL_HISTORY);
 	double newest_undo_timestamp = 0;
 
@@ -201,7 +201,7 @@ void HistoryDock::seek_history(int p_index) {
 	if (!include_scene && !include_global) {
 		return;
 	}
-	int current_scene_id = EditorNode::get_editor_data().get_current_edited_scene_history_id();
+	int current_scene_id = EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id();
 
 	while (current_version < p_index) {
 		if (include_scene) {
@@ -231,7 +231,7 @@ void HistoryDock::seek_history(int p_index) {
 void HistoryDock::_notification(int p_notification) {
 	switch (p_notification) {
 		case NOTIFICATION_READY: {
-			EditorNode::get_singleton()->connect("scene_changed", callable_mp(this, &HistoryDock::on_history_changed));
+			EditorSceneManager::get_singleton()->connect("scene_changed", callable_mp(this, &HistoryDock::on_history_changed));
 		} break;
 
 		case NOTIFICATION_VISIBILITY_CHANGED: {

@@ -302,7 +302,7 @@ void register_editor_types() {
 
 	GLOBAL_DEF("editor/naming/default_signal_callback_name", "_on_{node_name}_{signal_name}");
 	GLOBAL_DEF("editor/naming/default_signal_callback_to_self_name", "_on_{signal_name}");
-	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/scene_name_casing", PROPERTY_HINT_ENUM, "Auto,PascalCase,snake_case,kebab-case,camelCase"), EditorNode::SCENE_NAME_CASING_SNAKE_CASE);
+	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/scene_name_casing", PROPERTY_HINT_ENUM, "Auto,PascalCase,snake_case,kebab-case,camelCase"), EditorCore::SCENE_NAME_CASING_SNAKE_CASE);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "editor/naming/script_name_casing", PROPERTY_HINT_ENUM, "Auto,PascalCase,snake_case,kebab-case,camelCase"), ScriptLanguage::SCRIPT_NAME_CASING_AUTO);
 
 	GLOBAL_DEF("editor/import/reimport_missing_imported_files", true);
@@ -330,7 +330,7 @@ void register_editor_types() {
 void unregister_editor_types() {
 	OS::get_singleton()->benchmark_begin_measure("Editor", "Unregister Types");
 
-	EditorNode::cleanup();
+	EditorPluginManager::get_singleton()->cleanup();
 	EditorInterface::free();
 
 	if (EditorPaths::get_singleton()) {

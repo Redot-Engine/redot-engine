@@ -45,6 +45,7 @@
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_toaster.h"
@@ -1259,7 +1260,7 @@ void EditorProperty::set_object_and_property(Object *p_object, const StringName 
 /// a) The node is foreign (inheriting or an instance), so the original value may come from another scene.
 /// b) The node belongs to the scene, but the original value comes from somewhere but the builtin class (i.e., a script).
 static bool _is_value_potential_override(Node *p_node, const String &p_property) {
-	Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+	Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 	Vector<SceneState::PackState> states_stack = PropertyUtils::get_node_states_stack(p_node, edited_scene);
 	if (states_stack.size()) {
 		return true;
@@ -1283,8 +1284,8 @@ void EditorProperty::_update_flags() {
 		// Avoid errors down the road by ignoring nodes which are not part of a scene
 		if (!node->get_owner()) {
 			bool is_scene_root = false;
-			for (int i = 0; i < EditorNode::get_editor_data().get_edited_scene_count(); ++i) {
-				if (EditorNode::get_editor_data().get_edited_scene_root(i) == node) {
+			for (int i = 0; i < EditorCore::get_singleton()->get_editor_data().get_edited_scene_count(); ++i) {
+				if (EditorCore::get_singleton()->get_editor_data().get_edited_scene_root(i) == node) {
 					is_scene_root = true;
 					break;
 				}
@@ -1377,7 +1378,7 @@ void EditorProperty::menu_option(int p_option) {
 		} break;
 		case MENU_OPEN_DOCUMENTATION: {
 			ScriptEditor::get_singleton()->goto_help(doc_path);
-			EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+			EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 		} break;
 	}
 }
@@ -1610,7 +1611,7 @@ void EditorInspectorPlugin::_bind_methods() {
 ////////////////////////////////////////////////
 
 static Ref<Script> _get_category_script(const PropertyInfo &p_info) {
-	if (!p_info.hint_string.is_empty() && !EditorNode::get_editor_data().is_type_recognized(p_info.name) && ResourceLoader::exists(p_info.hint_string, "Script")) {
+	if (!p_info.hint_string.is_empty() && !EditorCore::get_singleton()->get_editor_data().is_type_recognized(p_info.name) && ResourceLoader::exists(p_info.hint_string, "Script")) {
 		return ResourceLoader::load(p_info.hint_string, "Script");
 	}
 	return Ref<Script>();
@@ -1714,7 +1715,7 @@ void EditorInspectorCategory::set_property_info(const PropertyInfo &p_info) {
 
 	Ref<Script> scr = _get_category_script(info);
 	if (scr.is_valid()) {
-		StringName script_name = EditorNode::get_editor_data().script_class_get_name(scr->get_path());
+		StringName script_name = EditorCore::get_singleton()->get_editor_data().script_class_get_name(scr->get_path());
 		if (script_name != StringName()) {
 			label = script_name;
 		}
@@ -1750,7 +1751,7 @@ void EditorInspectorCategory::_handle_menu_option(int p_option) {
 	switch (p_option) {
 		case MENU_OPEN_DOCS: {
 			ScriptEditor::get_singleton()->goto_help("class:" + doc_class_name);
-			EditorNode::get_singleton()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
+			EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select(EditorMainScreen::EDITOR_SCRIPT);
 		} break;
 
 		case MENU_UNFAVORITE_ALL: {
@@ -1802,15 +1803,15 @@ void EditorInspectorCategory::_update_icon() {
 
 	Ref<Script> scr = _get_category_script(info);
 	if (scr.is_valid()) {
-		StringName script_name = EditorNode::get_editor_data().script_class_get_name(scr->get_path());
+		StringName script_name = EditorCore::get_singleton()->get_editor_data().script_class_get_name(scr->get_path());
 		if (script_name == StringName()) {
-			icon = EditorNode::get_singleton()->get_object_icon(scr.ptr(), "Object");
+			icon = EditorCore::get_singleton()->get_object_icon(scr.ptr(), "Object");
 		} else {
-			icon = EditorNode::get_singleton()->get_class_icon(script_name);
+			icon = EditorCore::get_singleton()->get_class_icon(script_name);
 		}
 	}
 	if (icon.is_null() && !info.name.is_empty()) {
-		icon = EditorNode::get_singleton()->get_class_icon(info.name);
+		icon = EditorCore::get_singleton()->get_class_icon(info.name);
 	}
 }
 
@@ -2635,7 +2636,7 @@ void EditorInspectorArray::_move_element(int p_element_index, int p_to_pos) {
 	undo_redo->create_action(action_name);
 	if (mode == MODE_USE_MOVE_ARRAY_ELEMENT_FUNCTION) {
 		// Call the function.
-		Callable move_function = EditorNode::get_editor_data().get_move_array_element_function(object->get_class_name());
+		Callable move_function = EditorCore::get_singleton()->get_editor_data().get_move_array_element_function(object->get_class_name());
 		if (move_function.is_valid()) {
 			move_function.call(undo_redo, object, array_element_prefix, p_element_index, p_to_pos);
 		} else {
@@ -2776,7 +2777,7 @@ void EditorInspectorArray::_clear_array() {
 	if (mode == MODE_USE_MOVE_ARRAY_ELEMENT_FUNCTION) {
 		for (int i = count - 1; i >= 0; i--) {
 			// Call the function.
-			Callable move_function = EditorNode::get_editor_data().get_move_array_element_function(object->get_class_name());
+			Callable move_function = EditorCore::get_singleton()->get_editor_data().get_move_array_element_function(object->get_class_name());
 			if (move_function.is_valid()) {
 				move_function.call(undo_redo, object, array_element_prefix, i, -1);
 			} else {
@@ -2824,7 +2825,7 @@ void EditorInspectorArray::_resize_array(int p_size) {
 		if (mode == MODE_USE_MOVE_ARRAY_ELEMENT_FUNCTION) {
 			for (int i = count; i < p_size; i++) {
 				// Call the function.
-				Callable move_function = EditorNode::get_editor_data().get_move_array_element_function(object->get_class_name());
+				Callable move_function = EditorCore::get_singleton()->get_editor_data().get_move_array_element_function(object->get_class_name());
 				if (move_function.is_valid()) {
 					move_function.call(undo_redo, object, array_element_prefix, -1, -1);
 				} else {
@@ -2839,7 +2840,7 @@ void EditorInspectorArray::_resize_array(int p_size) {
 		if (mode == MODE_USE_MOVE_ARRAY_ELEMENT_FUNCTION) {
 			for (int i = count - 1; i > p_size - 1; i--) {
 				// Call the function.
-				Callable move_function = EditorNode::get_editor_data().get_move_array_element_function(object->get_class_name());
+				Callable move_function = EditorCore::get_singleton()->get_editor_data().get_move_array_element_function(object->get_class_name());
 				if (move_function.is_valid()) {
 					move_function.call(undo_redo, object, array_element_prefix, i, -1);
 				} else {
@@ -3715,7 +3716,7 @@ void EditorInspector::update_tree() {
 		}
 
 		Node *nod = Object::cast_to<Node>(object);
-		Node *es = EditorNode::get_singleton()->get_edited_scene();
+		Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 		if (nod && es != nod && nod->get_owner() != es) {
 			// Draw in warning color edited nodes that are not in the currently edited scene,
 			// as changes may be lost in the future.
@@ -3724,7 +3725,7 @@ void EditorInspector::update_tree() {
 			if (!all_read_only) {
 				Resource *res = Object::cast_to<Resource>(object);
 				if (res) {
-					all_read_only = EditorNode::get_singleton()->is_resource_read_only(res);
+					all_read_only = EditorCore::get_singleton()->is_resource_read_only(res);
 				}
 			}
 		}
@@ -3849,7 +3850,7 @@ void EditorInspector::update_tree() {
 				doc_name = p.name;
 
 				// Use category's owner script to update some of its information.
-				if (!EditorNode::get_editor_data().is_type_recognized(p.name) && ResourceLoader::exists(p.hint_string, "Script")) {
+				if (!EditorCore::get_singleton()->get_editor_data().is_type_recognized(p.name) && ResourceLoader::exists(p.hint_string, "Script")) {
 					Ref<Script> scr = ResourceLoader::load(p.hint_string, "Script");
 					if (scr.is_valid()) {
 						doc_name = scr->get_doc_class_name();
@@ -4376,7 +4377,7 @@ void EditorInspector::update_tree() {
 
 		Vector<SceneState::PackState> sstack;
 		if (node != nullptr) {
-			const Node *es = EditorNode::get_singleton()->get_edited_scene();
+			const Node *es = EditorSceneManager::get_singleton()->get_edited_scene();
 			sstack = PropertyUtils::get_node_states_stack(node, es);
 		}
 
@@ -4660,7 +4661,7 @@ void EditorInspector::update_tree() {
 
 	if (is_main_editor_inspector()) {
 		// Updating inspector might invalidate some editing owners.
-		EditorNode::get_singleton()->hide_unused_editors();
+		EditorSceneManager::get_singleton()->hide_unused_editors();
 	}
 
 	if (root_inspector_was_following_focus) {
@@ -4712,7 +4713,7 @@ void EditorInspector::_clear(bool p_hide_plugins) {
 	restart_request_props.clear();
 
 	if (p_hide_plugins && is_main_editor_inspector()) {
-		EditorNode::get_singleton()->hide_unused_editors(this);
+		EditorSceneManager::get_singleton()->hide_unused_editors(this);
 	}
 }
 
@@ -5036,7 +5037,7 @@ void EditorInspector::_edit_set(const String &p_name, const Variant &p_value, bo
 		Variant v_undo_redo = undo_redo;
 		Variant v_object = object;
 		Variant v_name = p_name;
-		const Vector<Callable> &callbacks = EditorNode::get_editor_data().get_undo_redo_inspector_hook_callback();
+		const Vector<Callable> &callbacks = EditorCore::get_singleton()->get_editor_data().get_undo_redo_inspector_hook_callback();
 		for (int i = 0; i < callbacks.size(); i++) {
 			const Callable &callback = callbacks[i];
 

@@ -42,6 +42,7 @@
 #include "core/math/geometry_2d.h"
 #include "core/os/keyboard.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/settings/editor_settings.h"
@@ -67,7 +68,7 @@ void AnimationNodeStateMachineEditor::edit(const Ref<AnimationNode> &p_node) {
 	read_only = false;
 
 	if (state_machine.is_valid()) {
-		read_only = EditorNode::get_singleton()->is_resource_read_only(state_machine);
+		read_only = EditorCore::get_singleton()->is_resource_read_only(state_machine);
 
 		selected_transition_from = StringName();
 		selected_transition_to = StringName();
@@ -221,7 +222,7 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 				_update_connected_nodes(selected_node);
 
 				Ref<AnimationNode> anode = state_machine->get_node(selected_node);
-				EditorNode::get_singleton()->push_item(anode.ptr(), "", true);
+				EditorSceneManager::get_singleton()->push_item(anode.ptr(), "", true);
 				state_machine_draw->queue_redraw();
 				dragging_selected_attempt = true;
 				dragging_selected = false;
@@ -285,10 +286,10 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 
 			Ref<AnimationNodeStateMachineTransition> tr = state_machine->get_transition(closest);
 			if (!state_machine->is_transition_across_group(closest)) {
-				EditorNode::get_singleton()->push_item(tr.ptr(), "", true);
+				EditorSceneManager::get_singleton()->push_item(tr.ptr(), "", true);
 			} else {
-				EditorNode::get_singleton()->push_item(tr.ptr(), "", true);
-				EditorNode::get_singleton()->push_item(nullptr, "", true);
+				EditorSceneManager::get_singleton()->push_item(tr.ptr(), "", true);
+				EditorSceneManager::get_singleton()->push_item(nullptr, "", true);
 			}
 		}
 
@@ -349,7 +350,7 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 			Ref<AnimationNodeEndState> end_node = node;
 
 			if (state_machine->has_transition(connecting_from, connecting_to_node) && state_machine->can_edit_node(connecting_to_node) && anodesm.is_null()) {
-				EditorNode::get_singleton()->show_warning(TTR("Transition exists!"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Transition exists!"));
 				connecting = false;
 			} else {
 				_add_transition();
@@ -426,7 +427,7 @@ void AnimationNodeStateMachineEditor::_state_machine_gui_input(const Ref<InputEv
 
 		if (clicked_node != StringName()) {
 			Ref<AnimationNode> anode = state_machine->get_node(clicked_node);
-			EditorNode::get_singleton()->push_item(anode.ptr(), "", true);
+			EditorSceneManager::get_singleton()->push_item(anode.ptr(), "", true);
 			dragging_selected_attempt = true;
 			dragging_selected = false;
 			drag_from = mb->get_position();
@@ -747,7 +748,7 @@ void AnimationNodeStateMachineEditor::_file_opened(const String &p_file) {
 	if (file_loaded.is_valid()) {
 		_add_menu_type(MENU_LOAD_FILE_CONFIRM);
 	} else {
-		EditorNode::get_singleton()->show_warning(TTR("This type of node can't be used. Only animation nodes are allowed."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("This type of node can't be used. Only animation nodes are allowed."));
 	}
 }
 
@@ -783,7 +784,7 @@ void AnimationNodeStateMachineEditor::_add_menu_type(int p_index) {
 	}
 
 	if (node.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("This type of node can't be used. Only root nodes are allowed."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("This type of node can't be used. Only root nodes are allowed."));
 		return;
 	}
 
@@ -846,7 +847,7 @@ void AnimationNodeStateMachineEditor::_connect_to(int p_index) {
 void AnimationNodeStateMachineEditor::_add_transition(const bool p_nested_action) {
 	if (connecting_from != StringName() && connecting_to_node != StringName()) {
 		if (state_machine->has_transition(connecting_from, connecting_to_node)) {
-			EditorNode::get_singleton()->show_warning("Transition exists!");
+			EditorCore::get_singleton()->get_shell()->show_warning("Transition exists!");
 			connecting = false;
 			return;
 		}
@@ -877,10 +878,10 @@ void AnimationNodeStateMachineEditor::_add_transition(const bool p_nested_action
 		selected_transition_index = transition_lines.size();
 
 		if (!state_machine->is_transition_across_group(selected_transition_index)) {
-			EditorNode::get_singleton()->push_item(tr.ptr(), "", true);
+			EditorSceneManager::get_singleton()->push_item(tr.ptr(), "", true);
 		} else {
-			EditorNode::get_singleton()->push_item(tr.ptr(), "", true);
-			EditorNode::get_singleton()->push_item(nullptr, "", true);
+			EditorSceneManager::get_singleton()->push_item(tr.ptr(), "", true);
+			EditorSceneManager::get_singleton()->push_item(nullptr, "", true);
 		}
 		_update_mode();
 	}

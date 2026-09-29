@@ -209,7 +209,7 @@ void ResourcePreloaderEditor::_update_library() {
 		ERR_CONTINUE(r.is_null());
 
 		String type = r->get_class();
-		ti->set_icon(0, EditorNode::get_singleton()->get_class_icon(type, "Object"));
+		ti->set_icon(0, EditorCore::get_singleton()->get_class_icon(type, "Object"));
 		ti->set_tooltip_text(0, TTR("Instance:") + " " + r->get_path() + "\n" + TTR("Type:") + " " + type);
 
 		ti->set_text(1, r->get_path());
@@ -272,7 +272,7 @@ Variant ResourcePreloaderEditor::get_drag_data_fw(const Point2 &p_point, Control
 		return Variant();
 	}
 
-	return EditorNode::get_singleton()->drag_resource(res, p_from);
+	return EditorCore::get_singleton()->get_shell()->drag_resource(res, p_from);
 }
 
 bool ResourcePreloaderEditor::can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const {
@@ -354,7 +354,7 @@ void ResourcePreloaderEditor::_bind_methods() {
 }
 
 ResourcePreloaderEditor::ResourcePreloaderEditor() {
-	//add_style_override("panel", EditorNode::get_singleton()->get_gui_base()->get_stylebox("panel","Panel"));
+	//add_style_override("panel", EditorCore::get_singleton()->get_shell()->get_gui_base()->get_stylebox("panel","Panel"));
 
 	VBoxContainer *vbc = memnew(VBoxContainer);
 	add_child(vbc);
@@ -415,11 +415,11 @@ void ResourcePreloaderEditorPlugin::make_visible(bool p_visible) {
 	if (p_visible) {
 		//preloader_editor->show();
 		button->show();
-		EditorNode::get_bottom_panel()->make_item_visible(preloader_editor);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(preloader_editor);
 		//preloader_editor->set_process(true);
 	} else {
 		if (preloader_editor->is_visible_in_tree()) {
-			EditorNode::get_bottom_panel()->hide_bottom_panel();
+			EditorCore::get_singleton()->get_shell()->get_bottom_panel()->hide_bottom_panel();
 		}
 		button->hide();
 		//preloader_editor->hide();
@@ -431,6 +431,6 @@ ResourcePreloaderEditorPlugin::ResourcePreloaderEditorPlugin() {
 	preloader_editor = memnew(ResourcePreloaderEditor);
 	preloader_editor->set_custom_minimum_size(Size2(0, 250) * EDSCALE);
 
-	button = EditorNode::get_bottom_panel()->add_item(TTRC("ResourcePreloader"), preloader_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_resource_preloader_bottom_panel", TTRC("Toggle ResourcePreloader Bottom Panel")));
+	button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(TTRC("ResourcePreloader"), preloader_editor, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_resource_preloader_bottom_panel", TTRC("Toggle ResourcePreloader Bottom Panel")));
 	button->hide();
 }

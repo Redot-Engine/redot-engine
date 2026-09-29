@@ -42,6 +42,7 @@
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/file_system/editor_file_system.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/settings/editor_settings.h"
@@ -214,7 +215,7 @@ void DependencyEditor::_update_list() {
 
 		String name = path.get_file();
 
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(type);
+		Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(type);
 		item->set_text(0, name);
 		item->set_icon(0, icon);
 		item->set_metadata(0, type);
@@ -239,10 +240,10 @@ void DependencyEditor::edit(const String &p_path) {
 	_update_list();
 	popup_centered_ratio(0.4);
 
-	if (EditorNode::get_singleton()->is_scene_open(p_path)) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Scene '%s' is currently being edited.\nChanges will only take effect when reloaded."), p_path.get_file()));
+	if (EditorSceneManager::get_singleton()->is_scene_open(p_path)) {
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Scene '%s' is currently being edited.\nChanges will only take effect when reloaded."), p_path.get_file()));
 	} else if (ResourceCache::has(p_path)) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Resource '%s' is in use.\nChanges will only take effect when reloaded."), p_path.get_file()));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Resource '%s' is in use.\nChanges will only take effect when reloaded."), p_path.get_file()));
 	}
 }
 
@@ -326,7 +327,7 @@ void DependencyEditorOwners::_list_rmb_clicked(int p_item, const Vector2 &p_pos,
 
 void DependencyEditorOwners::_select_file(int p_idx) {
 	String fpath = owners->get_item_text(p_idx);
-	EditorNode::get_singleton()->load_scene_or_resource(fpath);
+	EditorCore::get_singleton()->load_scene_or_resource(fpath);
 
 	hide();
 	emit_signal(SceneStringName(confirmed));
@@ -377,7 +378,7 @@ void DependencyEditorOwners::_fill_owners(EditorFileSystemDirectory *efsd) {
 			continue;
 		}
 
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(efsd->get_file_type(i));
+		Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(efsd->get_file_type(i));
 
 		owners->add_item(efsd->get_file_path(i), icon);
 	}
@@ -524,7 +525,7 @@ void DependencyRemoveDialog::_build_removed_dependency_tree(const Vector<Removed
 		}
 
 		//List this file under this dependency
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(rd.file_type);
+		Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(rd.file_type);
 		TreeItem *file_item = owners->create_item(tree_items[rd.dependency]);
 		file_item->set_text(0, rd.file);
 		file_item->set_icon(0, icon);
@@ -614,7 +615,7 @@ void DependencyRemoveDialog::ok_pressed() {
 		print_verbose("Moving to trash: " + path);
 		Error err = OS::get_singleton()->move_to_trash(path);
 		if (err != OK) {
-			EditorNode::get_singleton()->add_io_error(TTR("Cannot remove:") + "\n" + file + "\n");
+			EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Cannot remove:") + "\n" + file + "\n");
 		} else {
 			emit_signal(SNAME("file_removed"), file);
 		}
@@ -634,7 +635,7 @@ void DependencyRemoveDialog::ok_pressed() {
 			print_verbose("Moving to trash: " + path);
 			Error err = OS::get_singleton()->move_to_trash(path);
 			if (err != OK) {
-				EditorNode::get_singleton()->add_io_error(TTR("Cannot remove:") + "\n" + dirs_to_delete[i] + "\n");
+				EditorCore::get_singleton()->get_shell()->add_io_error(TTR("Cannot remove:") + "\n" + dirs_to_delete[i] + "\n");
 			} else {
 				emit_signal(SNAME("folder_removed"), dirs_to_delete[i]);
 			}
@@ -736,7 +737,7 @@ void DependencyErrorDialog::show(const String &p_for_file, const Vector<String> 
 			type = report[i].get_slice("::", 1);
 		}
 
-		Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(type);
+		Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(type);
 
 		TreeItem *ti = files->create_item(root);
 		ti->set_text(0, dep);
@@ -747,11 +748,11 @@ void DependencyErrorDialog::show(const String &p_for_file, const Vector<String> 
 }
 
 void DependencyErrorDialog::ok_pressed() {
-	EditorNode::get_singleton()->load_scene_or_resource(for_file, true);
+	EditorCore::get_singleton()->load_scene_or_resource(for_file, true);
 }
 
 void DependencyErrorDialog::custom_action(const String &) {
-	EditorNode::get_singleton()->fix_dependencies(for_file);
+	EditorCore::get_singleton()->fix_dependencies(for_file);
 }
 
 DependencyErrorDialog::DependencyErrorDialog() {
@@ -835,7 +836,7 @@ bool OrphanResourcesDialog::_fill_owners(EditorFileSystemDirectory *efsd, HashMa
 
 				String type = efsd->get_file_type(i);
 
-				Ref<Texture2D> icon = EditorNode::get_singleton()->get_class_icon(type);
+				Ref<Texture2D> icon = EditorCore::get_singleton()->get_class_icon(type);
 				ti->set_icon(0, icon);
 				int ds = efsd->get_file_deps(i).size();
 				ti->set_text(1, itos(ds));

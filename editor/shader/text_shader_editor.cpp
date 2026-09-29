@@ -375,8 +375,8 @@ void ShaderTextEditor::_load_theme_settings() {
 
 	if (warnings_panel) {
 		// Warnings panel.
-		warnings_panel->add_theme_font_override("normal_font", EditorNode::get_singleton()->get_editor_theme()->get_font(SNAME("main"), EditorStringName(EditorFonts)));
-		warnings_panel->add_theme_font_size_override("normal_font_size", EditorNode::get_singleton()->get_editor_theme()->get_font_size(SNAME("main_size"), EditorStringName(EditorFonts)));
+		warnings_panel->add_theme_font_override("normal_font", EditorCore::get_singleton()->get_editor_theme()->get_font(SNAME("main"), EditorStringName(EditorFonts)));
+		warnings_panel->add_theme_font_size_override("normal_font_size", EditorCore::get_singleton()->get_editor_theme()->get_font_size(SNAME("main_size"), EditorStringName(EditorFonts)));
 	}
 
 	syntax_highlighter->set_uint_suffix_enabled(true);
@@ -1292,7 +1292,7 @@ TextShaderEditor::TextShaderEditor() {
 	menu_bar_hbox->add_child(site_search);
 	menu_bar_hbox->add_child(memnew(VSeparator));
 
-	menu_bar_hbox->add_theme_style_override(SceneStringName(panel), EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("ScriptEditorPanel"), EditorStringName(EditorStyles)));
+	menu_bar_hbox->add_theme_style_override(SceneStringName(panel), EditorCore::get_singleton()->get_editor_theme()->get_stylebox(SNAME("ScriptEditorPanel"), EditorStringName(EditorStyles)));
 
 	VSplitContainer *editor_box = memnew(VSplitContainer);
 	main_container->add_child(editor_box);

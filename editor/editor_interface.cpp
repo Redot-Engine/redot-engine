@@ -44,6 +44,7 @@
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_main_screen.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/gui/create_dialog.h"
@@ -72,9 +73,9 @@ EditorInterface *EditorInterface::singleton = nullptr;
 
 void EditorInterface::restart_editor(bool p_save) {
 	if (p_save) {
-		EditorNode::get_singleton()->save_all_scenes();
+		EditorSceneManager::get_singleton()->save_all_open_scenes();
 	}
-	EditorNode::get_singleton()->restart_editor();
+	EditorCore::get_singleton()->get_shell()->restart_editor();
 }
 
 // Editor tools.
@@ -96,7 +97,7 @@ EditorResourcePreview *EditorInterface::get_resource_previewer() const {
 }
 
 EditorSelection *EditorInterface::get_selection() const {
-	return EditorNode::get_singleton()->get_editor_selection();
+	return EditorCore::get_singleton()->get_editor_selection();
 }
 
 Ref<EditorSettings> EditorInterface::get_editor_settings() const {
@@ -244,7 +245,7 @@ void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, in
 	ERR_FAIL_COND_MSG(p_path.is_empty(), "Path is empty, cannot generate preview.");
 	ERR_FAIL_NULL_MSG(p_scene, "The provided scene is null, cannot generate preview.");
 	ERR_FAIL_COND_MSG(p_scene->is_inside_tree(), "The scene must not be inside the tree.");
-	ERR_FAIL_NULL_MSG(EditorNode::get_singleton(), "EditorNode doesn't exist.");
+	ERR_FAIL_NULL_MSG(EditorCore::get_singleton()->get_shell(), "Editor shell doesn't exist.");
 
 	SubViewport *sub_viewport_node = memnew(SubViewport);
 	AABB scene_aabb;
@@ -372,25 +373,25 @@ void EditorInterface::make_scene_preview(const String &p_path, Node *p_scene, in
 }
 
 void EditorInterface::set_plugin_enabled(const String &p_plugin, bool p_enabled) {
-	EditorNode::get_singleton()->set_addon_plugin_enabled(p_plugin, p_enabled, true);
+	EditorPluginManager::get_singleton()->set_addon_plugin_enabled(p_plugin, p_enabled, true);
 }
 
 bool EditorInterface::is_plugin_enabled(const String &p_plugin) const {
-	return EditorNode::get_singleton()->is_addon_plugin_enabled(p_plugin);
+	return EditorPluginManager::get_singleton()->is_addon_plugin_enabled(p_plugin);
 }
 
 // Editor GUI.
 
 Ref<Theme> EditorInterface::get_editor_theme() const {
-	return EditorNode::get_singleton()->get_editor_theme();
+	return EditorCore::get_singleton()->get_editor_theme();
 }
 
 Control *EditorInterface::get_base_control() const {
-	return EditorNode::get_singleton()->get_gui_base();
+	return EditorCore::get_singleton()->get_shell()->get_gui_base();
 }
 
 VBoxContainer *EditorInterface::get_editor_main_screen() const {
-	return EditorNode::get_singleton()->get_editor_main_screen()->get_control();
+	return EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->get_control();
 }
 
 ScriptEditor *EditorInterface::get_script_editor() const {
@@ -398,7 +399,7 @@ ScriptEditor *EditorInterface::get_script_editor() const {
 }
 
 SubViewport *EditorInterface::get_editor_viewport_2d() const {
-	return EditorNode::get_singleton()->get_scene_root();
+	return EditorCore::get_singleton()->get_shell()->get_scene_root();
 }
 
 SubViewport *EditorInterface::get_editor_viewport_3d(int p_idx) const {
@@ -407,19 +408,19 @@ SubViewport *EditorInterface::get_editor_viewport_3d(int p_idx) const {
 }
 
 void EditorInterface::set_main_screen_editor(const String &p_name) {
-	EditorNode::get_singleton()->get_editor_main_screen()->select_by_name(p_name);
+	EditorCore::get_singleton()->get_shell()->get_editor_main_screen()->select_by_name(p_name);
 }
 
 void EditorInterface::set_distraction_free_mode(bool p_enter) {
-	EditorNode::get_singleton()->set_distraction_free_mode(p_enter);
+	EditorCore::get_singleton()->get_shell()->set_distraction_free_mode(p_enter);
 }
 
 bool EditorInterface::is_distraction_free_mode_enabled() const {
-	return EditorNode::get_singleton()->is_distraction_free_mode_enabled();
+	return EditorCore::get_singleton()->get_shell()->is_distraction_free_mode_enabled();
 }
 
 bool EditorInterface::is_multi_window_enabled() const {
-	return EditorNode::get_singleton()->is_multi_window_enabled();
+	return EditorCore::get_singleton()->is_multi_window_enabled();
 }
 
 float EditorInterface::get_editor_scale() const {
@@ -513,12 +514,12 @@ void EditorInterface::popup_quick_open(const Callable &p_callback, const TypedAr
 	} else {
 		for (int i = 0; i < p_base_types.size(); i++) {
 			StringName type = p_base_types[i];
-			ERR_FAIL_COND_MSG(!(ClassDB::is_parent_class(type, required_type) || EditorNode::get_editor_data().script_class_is_parent(type, required_type)), "Only types deriving from Resource are supported in the quick open dialog.");
+			ERR_FAIL_COND_MSG(!(ClassDB::is_parent_class(type, required_type) || EditorCore::get_singleton()->get_editor_data().script_class_is_parent(type, required_type)), "Only types deriving from Resource are supported in the quick open dialog.");
 			base_types.append(type);
 		}
 	}
 
-	EditorQuickOpenDialog *quick_open = EditorNode::get_singleton()->get_quick_open_dialog();
+	EditorQuickOpenDialog *quick_open = EditorCore::get_singleton()->get_quick_open_dialog();
 	quick_open->connect(SNAME("canceled"), callable_mp(this, &EditorInterface::_quick_open).bind(String(), p_callback));
 	quick_open->popup_dialog(base_types, callable_mp(this, &EditorInterface::_quick_open).bind(p_callback));
 }
@@ -588,7 +589,7 @@ void EditorInterface::_method_selected(const String &p_method_name, const Callab
 }
 
 void EditorInterface::_quick_open(const String &p_file_path, const Callable &p_callback) {
-	EditorQuickOpenDialog *quick_open = EditorNode::get_singleton()->get_quick_open_dialog();
+	EditorQuickOpenDialog *quick_open = EditorCore::get_singleton()->get_quick_open_dialog();
 	quick_open->disconnect(SNAME("canceled"), callable_mp(this, &EditorInterface::_quick_open));
 	_call_dialog_callback(p_callback, p_file_path, "quick open");
 }
@@ -639,15 +640,15 @@ EditorInspector *EditorInterface::get_inspector() const {
 // Object/Resource/Node editing.
 
 void EditorInterface::inspect_object(Object *p_obj, const String &p_for_property, bool p_inspector_only) {
-	EditorNode::get_singleton()->push_item(p_obj, p_for_property, p_inspector_only);
+	EditorSceneManager::get_singleton()->push_item(p_obj, p_for_property, p_inspector_only);
 }
 
 void EditorInterface::edit_resource(const Ref<Resource> &p_resource) {
-	EditorNode::get_singleton()->edit_resource(p_resource);
+	EditorSceneManager::get_singleton()->edit_resource(p_resource);
 }
 
 void EditorInterface::edit_node(Node *p_node) {
-	EditorNode::get_singleton()->edit_node(p_node);
+	EditorSceneManager::get_singleton()->edit_node(p_node);
 }
 
 void EditorInterface::edit_script(const Ref<Script> &p_script, int p_line, int p_col, bool p_grab_focus) {
@@ -655,27 +656,27 @@ void EditorInterface::edit_script(const Ref<Script> &p_script, int p_line, int p
 }
 
 void EditorInterface::open_scene_from_path(const String &scene_path, bool p_set_inherited) {
-	if (EditorNode::get_singleton()->is_changing_scene()) {
+	if (EditorSceneManager::get_singleton()->is_changing_scene()) {
 		return;
 	}
-	EditorNode::get_singleton()->load_scene(scene_path, false, p_set_inherited);
+	EditorSceneManager::get_singleton()->load_scene(scene_path, false, p_set_inherited);
 }
 
 void EditorInterface::reload_scene_from_path(const String &scene_path) {
-	if (EditorNode::get_singleton()->is_changing_scene()) {
+	if (EditorSceneManager::get_singleton()->is_changing_scene()) {
 		return;
 	}
 
-	EditorNode::get_singleton()->reload_scene(scene_path);
+	EditorSceneManager::get_singleton()->reload_scene(scene_path);
 }
 
 Node *EditorInterface::get_edited_scene_root() const {
-	return EditorNode::get_singleton()->get_edited_scene();
+	return EditorSceneManager::get_singleton()->get_edited_scene();
 }
 
 PackedStringArray EditorInterface::get_open_scenes() const {
 	PackedStringArray ret;
-	Vector<EditorData::EditedScene> scenes = EditorNode::get_editor_data().get_edited_scenes();
+	Vector<EditorData::EditedScene> scenes = EditorCore::get_singleton()->get_editor_data().get_edited_scenes();
 
 	for (EditorData::EditedScene &edited_scene : scenes) {
 		if (edited_scene.root == nullptr) {
@@ -688,7 +689,7 @@ PackedStringArray EditorInterface::get_open_scenes() const {
 
 TypedArray<Node> EditorInterface::get_open_scene_roots() const {
 	TypedArray<Node> ret;
-	Vector<EditorData::EditedScene> scenes = EditorNode::get_editor_data().get_edited_scenes();
+	Vector<EditorData::EditedScene> scenes = EditorCore::get_singleton()->get_editor_data().get_edited_scenes();
 
 	for (EditorData::EditedScene &edited_scene : scenes) {
 		if (edited_scene.root == nullptr) {
@@ -712,20 +713,20 @@ Error EditorInterface::save_scene() {
 }
 
 void EditorInterface::save_scene_as(const String &p_scene, bool p_with_preview) {
-	EditorNode::get_singleton()->save_scene_to_path(p_scene, p_with_preview);
+	EditorSceneManager::get_singleton()->save_scene_to_path(p_scene, p_with_preview);
 }
 
 void EditorInterface::mark_scene_as_unsaved() {
-	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+	EditorUndoRedoManager::get_singleton()->set_history_as_unsaved(EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
 	EditorSceneTabs::get_singleton()->update_scene_tabs();
 }
 
 void EditorInterface::save_all_scenes() {
-	EditorNode::get_singleton()->save_all_scenes();
+	EditorSceneManager::get_singleton()->save_all_open_scenes();
 }
 
 Error EditorInterface::close_scene() {
-	return EditorNode::get_singleton()->close_scene() ? OK : ERR_DOES_NOT_EXIST;
+	return EditorCore::get_singleton()->get_shell()->close_scene() ? OK : ERR_DOES_NOT_EXIST;
 }
 
 // Scene playback.

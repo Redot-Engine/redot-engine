@@ -110,7 +110,7 @@ Error ResourceImporterShaderFile::import(ResourceUID::ID p_source_id, const Stri
 
 	if (err != OK) {
 		if (!ShaderFileEditor::singleton->is_visible_in_tree()) {
-			callable_mp_static(&EditorNode::add_io_error).call_deferred(vformat(TTR("Error importing GLSL shader file: '%s'. Open the file in the filesystem dock in order to see the reason."), p_source_file));
+			callable_mp(EditorCore::get_singleton()->get_shell(), &EditorShell::add_io_error).call_deferred(vformat(TTR("Error importing GLSL shader file: '%s'. Open the file in the filesystem dock in order to see the reason."), p_source_file));
 		}
 	}
 

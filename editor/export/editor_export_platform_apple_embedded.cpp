@@ -2344,7 +2344,7 @@ Ref<Texture2D> EditorExportPlatformAppleEmbedded::get_option_icon(int p_index) c
 
 	Ref<Texture2D> icon;
 	if (p_index >= 0 || p_index < devices.size()) {
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
+		Ref<Theme> theme = EditorCore::get_singleton()->get_editor_theme();
 		if (theme.is_valid()) {
 			if (devices[p_index].wifi) {
 				icon = theme->get_icon("IOSDeviceWireless", EditorStringName(EditorIcons));
@@ -2888,7 +2888,7 @@ Error EditorExportPlatformAppleEmbedded::run(const Ref<EditorExportPreset> &p_pr
 }
 
 EditorExportPlatformAppleEmbedded::EditorExportPlatformAppleEmbedded(const char *p_platform_logo_svg, const char *p_run_icon_svg) {
-	if (EditorNode::get_singleton()) {
+	if (EditorCore::get_singleton()->get_shell()) {
 		Ref<Image> img = memnew(Image);
 		const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
 

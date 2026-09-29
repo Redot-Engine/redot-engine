@@ -551,7 +551,7 @@ void Skeleton3DEditor::create_physical_skeleton() {
 	const int bone_count = skeleton->get_bone_count();
 
 	if (!bone_count) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Cannot create a physical skeleton for a Skeleton3D node with no bones.")));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Cannot create a physical skeleton for a Skeleton3D node with no bones.")));
 		return;
 	}
 
@@ -649,7 +649,7 @@ PhysicalBone3D *Skeleton3DEditor::create_physical_bone(int bone_id, int bone_chi
 
 void Skeleton3DEditor::export_skeleton_profile() {
 	if (!skeleton->get_bone_count()) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Cannot export a SkeletonProfile for a Skeleton3D node with no bones.")));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Cannot export a SkeletonProfile for a Skeleton3D node with no bones.")));
 		return;
 	}
 
@@ -712,7 +712,7 @@ void Skeleton3DEditor::_file_selected(const String &p_file) {
 	Error err = ResourceSaver::save(sp, p_file);
 
 	if (err != OK) {
-		EditorNode::get_singleton()->show_warning(vformat(TTR("Error saving file: %s"), p_file));
+		EditorCore::get_singleton()->get_shell()->show_warning(vformat(TTR("Error saving file: %s"), p_file));
 		return;
 	}
 }
@@ -1337,7 +1337,7 @@ void fragment() {
 }
 )");
 	handle_material->set_shader(handle_shader);
-	Ref<Texture2D> handle = EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("EditorBoneHandle"), EditorStringName(EditorIcons));
+	Ref<Texture2D> handle = EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("EditorBoneHandle"), EditorStringName(EditorIcons));
 	handle_material->set_shader_parameter("point_size", handle->get_width());
 	handle_material->set_shader_parameter("texture_albedo", handle);
 

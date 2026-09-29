@@ -45,6 +45,7 @@
 #include "editor/animation/animation_player_editor_plugin.h"
 #include "editor/docks/inspector_dock.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_spin_slider.h"
@@ -1418,15 +1419,15 @@ void AnimationTimelineEdit::_anim_loop_pressed() {
 
 		if (FileAccess::exists(base + ".import")) {
 			if (ResourceLoader::get_resource_type(base) == "PackedScene") {
-				EditorNode::get_singleton()->show_warning(TTR("Can't change loop mode on animation instanced from an imported scene.\n\nTo change this animation's loop mode, navigate to the scene's Advanced Import settings and select the animation.\nYou can then change the loop mode from the inspector menu."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't change loop mode on animation instanced from an imported scene.\n\nTo change this animation's loop mode, navigate to the scene's Advanced Import settings and select the animation.\nYou can then change the loop mode from the inspector menu."));
 			} else {
-				EditorNode::get_singleton()->show_warning(TTR("Can't change loop mode on animation instanced from an imported resource."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't change loop mode on animation instanced from an imported resource."));
 			}
 		} else {
 			if (ResourceLoader::get_resource_type(base) == "PackedScene") {
-				EditorNode::get_singleton()->show_warning(TTR("Can't change loop mode on animation embedded in another scene.\n\nYou must open this scene and change the animation's loop mode from there."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't change loop mode on animation embedded in another scene.\n\nYou must open this scene and change the animation's loop mode from there."));
 			} else {
-				EditorNode::get_singleton()->show_warning(TTR("Can't change loop mode on animation embedded in another resource."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Can't change loop mode on animation embedded in another resource."));
 			}
 		}
 
@@ -2168,7 +2169,7 @@ void AnimationTrackEdit::_notification(int p_what) {
 
 				String text;
 				Color text_color = color;
-				if (node && EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
+				if (node && EditorCore::get_singleton()->get_editor_selection()->is_selected(node)) {
 					text_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 				}
 
@@ -2184,7 +2185,7 @@ void AnimationTrackEdit::_notification(int p_what) {
 					}
 					text_color.a *= 0.7;
 				} else if (node) {
-					Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(node, "Node");
+					Ref<Texture2D> icon = EditorCore::get_singleton()->get_object_icon(node, "Node");
 					const Vector2 icon_size = Vector2(1, 1) * get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
 
 					icon_rect = Rect2(Point2(ofs, (get_size().height - check->get_height()) / 2).round(), icon->get_size());
@@ -3047,7 +3048,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 			}
 
 			if (icon_rect.has_point(pos)) {
-				EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+				EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 				editor_selection->clear();
 				Node *n = root->get_node_or_null(node_path);
 				if (n) {
@@ -3771,7 +3772,7 @@ void AnimationTrackEditGroup::_notification(int p_what) {
 
 			if (root) {
 				Node *n = root->get_node_or_null(node);
-				if (n && EditorNode::get_singleton()->get_editor_selection()->is_selected(n)) {
+				if (n && EditorCore::get_singleton()->get_editor_selection()->is_selected(n)) {
 					color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 				}
 			}
@@ -3864,7 +3865,7 @@ void AnimationTrackEditGroup::gui_input(const Ref<InputEvent> &p_event) {
 		Rect2 node_name_rect = Rect2(0, 0, timeline->get_name_limit(), get_size().height);
 
 		if (node_name_rect.has_point(pos)) {
-			EditorSelection *editor_selection = EditorNode::get_singleton()->get_editor_selection();
+			EditorSelection *editor_selection = EditorCore::get_singleton()->get_editor_selection();
 			editor_selection->clear();
 			Node *n = root->get_node_or_null(node);
 			if (n) {
@@ -4046,7 +4047,7 @@ Node *AnimationTrackEditor::get_root() const {
 void AnimationTrackEditor::update_keying() {
 	bool keying_enabled = false;
 
-	EditorSelectionHistory *editor_history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory *editor_history = EditorCore::get_singleton()->get_editor_selection_history();
 	if (is_visible_in_tree() && animation.is_valid() && editor_history->get_path_size() > 0) {
 		Object *obj = ObjectDB::get_instance(editor_history->get_path_object(0));
 		keying_enabled = Object::cast_to<Node>(obj) != nullptr || Object::cast_to<MultiNodeEdit>(obj) != nullptr;
@@ -4130,7 +4131,7 @@ void AnimationTrackEditor::_track_remove_request(int p_track) {
 
 void AnimationTrackEditor::_animation_track_remove_request(int p_track, Ref<Animation> p_from_animation) {
 	if (p_from_animation->track_is_compressed(p_track)) {
-		EditorNode::get_singleton()->show_warning(TTR("Compressed tracks can't be edited or removed. Re-import the animation with compression disabled in order to edit."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Compressed tracks can't be edited or removed. Re-import the animation with compression disabled in order to edit."));
 		return;
 	}
 	int idx = p_track;
@@ -4512,14 +4513,14 @@ void AnimationTrackEditor::insert_node_value_key(Node *p_node, const String &p_p
 
 	if (Object::cast_to<AnimationPlayer>(p_node) && p_property == "current_animation") {
 		if (p_node == AnimationPlayerEditor::get_singleton()->get_player()) {
-			EditorNode::get_singleton()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
 			return;
 		}
 		_insert_animation_key(path, value);
 		return;
 	}
 
-	EditorSelectionHistory *history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory *history = EditorCore::get_singleton()->get_editor_selection_history();
 	for (int i = 1; i < history->get_path_size(); i++) {
 		String prop = history->get_path_property(i);
 		ERR_FAIL_COND(prop.is_empty());
@@ -4620,7 +4621,7 @@ void AnimationTrackEditor::insert_value_key(const String &p_property, bool p_adv
 		return;
 	}
 
-	EditorSelectionHistory *history = EditorNode::get_singleton()->get_editor_selection_history();
+	EditorSelectionHistory *history = EditorCore::get_singleton()->get_editor_selection_history();
 
 	ERR_FAIL_NULL(root);
 	ERR_FAIL_COND(history->get_path_size() == 0);
@@ -4628,7 +4629,7 @@ void AnimationTrackEditor::insert_value_key(const String &p_property, bool p_adv
 
 	Ref<MultiNodeEdit> multi_node_edit(obj);
 	if (multi_node_edit.is_valid()) {
-		Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+		Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 		ERR_FAIL_NULL(edited_scene);
 
 		make_insert_queue();
@@ -5083,7 +5084,7 @@ void AnimationTrackEditor::_update_tracks() {
 				if (!node) {
 					continue; // No node, no filter.
 				}
-				if (!EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
+				if (!EditorCore::get_singleton()->get_editor_selection()->is_selected(node)) {
 					continue; // Skip track due to not selected.
 				}
 			}
@@ -5173,7 +5174,7 @@ void AnimationTrackEditor::_update_tracks() {
 				if (root) {
 					Node *n = root->get_node_or_null(base_path);
 					if (n) {
-						icon = EditorNode::get_singleton()->get_object_icon(n, "Node");
+						icon = EditorCore::get_singleton()->get_object_icon(n, "Node");
 						name = n->get_name();
 						tooltip = String(root->get_path_to(n));
 					}
@@ -5442,7 +5443,7 @@ void AnimationTrackEditor::_notification(int p_what) {
 		} break;
 
 		case NOTIFICATION_READY: {
-			EditorNode::get_singleton()->get_editor_selection()->connect("selection_changed", callable_mp(this, &AnimationTrackEditor::_selection_changed));
+			EditorCore::get_singleton()->get_editor_selection()->connect("selection_changed", callable_mp(this, &AnimationTrackEditor::_selection_changed));
 		} break;
 
 		case NOTIFICATION_VISIBILITY_CHANGED: {
@@ -5510,12 +5511,12 @@ void AnimationTrackEditor::_new_track_node_selected(NodePath p_path) {
 	NodePath path_to = root->get_path_to(node, true);
 
 	if (adding_track_type == Animation::TYPE_BLEND_SHAPE && !node->is_class("MeshInstance3D")) {
-		EditorNode::get_singleton()->show_warning(TTR("Blend Shape tracks only apply to MeshInstance3D nodes."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Blend Shape tracks only apply to MeshInstance3D nodes."));
 		return;
 	}
 
 	if ((adding_track_type == Animation::TYPE_POSITION_3D || adding_track_type == Animation::TYPE_ROTATION_3D || adding_track_type == Animation::TYPE_SCALE_3D) && !node->is_class("Node3D")) {
-		EditorNode::get_singleton()->show_warning(TTR("Position/Rotation/Scale 3D tracks only apply to 3D-based nodes."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Position/Rotation/Scale 3D tracks only apply to 3D-based nodes."));
 		return;
 	}
 
@@ -5560,7 +5561,7 @@ void AnimationTrackEditor::_new_track_node_selected(NodePath p_path) {
 		} break;
 		case Animation::TYPE_AUDIO: {
 			if (!node->is_class("AudioStreamPlayer") && !node->is_class("AudioStreamPlayer2D") && !node->is_class("AudioStreamPlayer3D")) {
-				EditorNode::get_singleton()->show_warning(TTR("Audio tracks can only point to nodes of type:\n-AudioStreamPlayer\n-AudioStreamPlayer2D\n-AudioStreamPlayer3D"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Audio tracks can only point to nodes of type:\n-AudioStreamPlayer\n-AudioStreamPlayer2D\n-AudioStreamPlayer3D"));
 				return;
 			}
 
@@ -5574,12 +5575,12 @@ void AnimationTrackEditor::_new_track_node_selected(NodePath p_path) {
 		} break;
 		case Animation::TYPE_ANIMATION: {
 			if (!node->is_class("AnimationPlayer")) {
-				EditorNode::get_singleton()->show_warning(TTR("Animation tracks can only point to AnimationPlayer nodes."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Animation tracks can only point to AnimationPlayer nodes."));
 				return;
 			}
 
 			if (node == AnimationPlayerEditor::get_singleton()->get_player()) {
-				EditorNode::get_singleton()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
 				return;
 			}
 
@@ -5601,7 +5602,7 @@ void AnimationTrackEditor::_add_track(int p_type) {
 	}
 	Node *root_node = ap->get_node_or_null(ap->get_root_node());
 	if (!root_node) {
-		EditorNode::get_singleton()->show_warning(TTR("Not possible to add a new track without a root"));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Not possible to add a new track without a root"));
 		return;
 	}
 	adding_track_type = p_type;
@@ -5705,7 +5706,7 @@ void AnimationTrackEditor::_new_track_property_selected(const String &p_name) {
 			bool valid;
 			subindices = _get_bezier_subindices_for_type(h.type, &valid);
 			if (!valid) {
-				EditorNode::get_singleton()->show_warning(TTR("Invalid track for Bezier (no suitable sub-properties)"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Invalid track for Bezier (no suitable sub-properties)"));
 				return;
 			}
 		}
@@ -5784,7 +5785,7 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 
 	Node *node = root->get_node_or_null(animation->track_get_path(p_track));
 	if (!node) {
-		EditorNode::get_singleton()->show_warning(TTR("Track path is invalid, so can't add a key."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Track path is invalid, so can't add a key."));
 		return;
 	}
 
@@ -5812,7 +5813,7 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 			Node3D *base = Object::cast_to<Node3D>(node);
 
 			if (!base) {
-				EditorNode::get_singleton()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
 				return;
 			}
 
@@ -5822,7 +5823,7 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 			Node3D *base = Object::cast_to<Node3D>(node);
 
 			if (!base) {
-				EditorNode::get_singleton()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
 				return;
 			}
 
@@ -5832,7 +5833,7 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 			Node3D *base = Object::cast_to<Node3D>(node);
 
 			if (!base) {
-				EditorNode::get_singleton()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Track is not of type Node3D, can't insert key"));
 				return;
 			}
 
@@ -5842,7 +5843,7 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 			MeshInstance3D *base = Object::cast_to<MeshInstance3D>(node);
 
 			if (!base) {
-				EditorNode::get_singleton()->show_warning(TTR("Track is not of type MeshInstance3D, can't insert key"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Track is not of type MeshInstance3D, can't insert key"));
 				return;
 			}
 
@@ -5890,7 +5891,7 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 
 void AnimationTrackEditor::_add_method_key(const String &p_method) {
 	if (!root->has_node(animation->track_get_path(insert_key_from_track_call_track))) {
-		EditorNode::get_singleton()->show_warning(TTR("Track path is invalid, so can't add a method key."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("Track path is invalid, so can't add a method key."));
 		return;
 	}
 	Node *base = root->get_node_or_null(animation->track_get_path(insert_key_from_track_call_track));
@@ -5930,7 +5931,7 @@ void AnimationTrackEditor::_add_method_key(const String &p_method) {
 		}
 	}
 
-	EditorNode::get_singleton()->show_warning(TTR("Method not found in object:") + " " + p_method);
+	EditorCore::get_singleton()->get_shell()->show_warning(TTR("Method not found in object:") + " " + p_method);
 }
 
 void AnimationTrackEditor::_key_selected(int p_key, bool p_single, int p_track) {
@@ -5991,7 +5992,7 @@ void AnimationTrackEditor::_clear_key_edit() {
 	if (key_edit) {
 		// If key edit is the object being inspected, remove it first.
 		if (InspectorDock::get_inspector_singleton()->get_edited_object() == key_edit) {
-			EditorNode::get_singleton()->push_item(nullptr);
+			EditorSceneManager::get_singleton()->push_item(nullptr);
 		}
 
 		// Then actually delete it.
@@ -6001,7 +6002,7 @@ void AnimationTrackEditor::_clear_key_edit() {
 
 	if (multi_key_edit) {
 		if (InspectorDock::get_inspector_singleton()->get_edited_object() == multi_key_edit) {
-			EditorNode::get_singleton()->push_item(nullptr);
+			EditorSceneManager::get_singleton()->push_item(nullptr);
 		}
 
 		memdelete(multi_key_edit);
@@ -6046,7 +6047,7 @@ void AnimationTrackEditor::_update_key_edit() {
 		key_edit->hint = _find_hint_for_track(key_edit->track, np);
 		key_edit->base = np;
 
-		EditorNode::get_singleton()->push_item(key_edit);
+		EditorSceneManager::get_singleton()->push_item(key_edit);
 	} else if (selection.size() > 1) {
 		multi_key_edit = memnew(AnimationMultiTrackKeyEdit);
 		multi_key_edit->animation = animation;
@@ -6080,7 +6081,7 @@ void AnimationTrackEditor::_update_key_edit() {
 		multi_key_edit->use_fps = timeline->is_using_fps();
 		multi_key_edit->root_path = root;
 
-		EditorNode::get_singleton()->push_item(multi_key_edit);
+		EditorSceneManager::get_singleton()->push_item(multi_key_edit);
 	}
 }
 
@@ -6880,7 +6881,7 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 		} break;
 		case EDIT_PASTE_TRACKS: {
 			if (track_clipboard.is_empty()) {
-				EditorNode::get_singleton()->show_warning(TTR("Clipboard is empty!"));
+				EditorCore::get_singleton()->get_shell()->show_warning(TTR("Clipboard is empty!"));
 				break;
 			}
 
@@ -7727,17 +7728,17 @@ float AnimationTrackEditor::get_snap_unit() {
 
 void AnimationTrackEditor::_show_imported_anim_warning() {
 	// It looks terrible on a single line but the TTR extractor doesn't support line breaks yet.
-	EditorNode::get_singleton()->show_warning(
+	EditorCore::get_singleton()->get_shell()->show_warning(
 			TTR("This animation belongs to an imported scene, so changes to imported tracks will not be saved.\n\nTo modify this animation, navigate to the scene's Advanced Import settings and select the animation.\nSome options, including looping, are available here. To add custom tracks, enable \"Save To File\" and\n\"Keep Custom Tracks\"."));
 }
 
 void AnimationTrackEditor::_show_dummy_player_warning() {
-	EditorNode::get_singleton()->show_warning(
+	EditorCore::get_singleton()->get_shell()->show_warning(
 			TTR("Some AnimationPlayerEditor's options are disabled since this is the dummy AnimationPlayer for preview.\n\nThe dummy player is forced active, non-deterministic and doesn't have the root motion track. Furthermore, the original node is inactive temporary."));
 }
 
 void AnimationTrackEditor::_show_inactive_player_warning() {
-	EditorNode::get_singleton()->show_warning(
+	EditorCore::get_singleton()->get_shell()->show_warning(
 			TTR("AnimationPlayer is inactive. The playback will not be processed."));
 }
 
@@ -8649,7 +8650,7 @@ void AnimationMarkerEdit::_update_key_edit() {
 		key_edit->use_fps = timeline->is_using_fps();
 		key_edit->marker_edit = this;
 
-		EditorNode::get_singleton()->push_item(key_edit);
+		EditorSceneManager::get_singleton()->push_item(key_edit);
 
 		InspectorDock::get_singleton()->set_info(TTR("Marker name is read-only in the inspector."), TTR("A marker's name can only be changed by right-clicking it in the animation editor and selecting \"Rename Marker\", in order to make sure that marker names are all unique."), true);
 	} else if (selection.size() > 1) {
@@ -8661,7 +8662,7 @@ void AnimationMarkerEdit::_update_key_edit() {
 			multi_key_edit->marker_names.push_back(name);
 		}
 
-		EditorNode::get_singleton()->push_item(multi_key_edit);
+		EditorSceneManager::get_singleton()->push_item(multi_key_edit);
 	}
 }
 
@@ -8669,7 +8670,7 @@ void AnimationMarkerEdit::_clear_key_edit() {
 	if (key_edit) {
 		// If key edit is the object being inspected, remove it first.
 		if (InspectorDock::get_inspector_singleton()->get_edited_object() == key_edit) {
-			EditorNode::get_singleton()->push_item(nullptr);
+			EditorSceneManager::get_singleton()->push_item(nullptr);
 		}
 
 		// Then actually delete it.
@@ -8679,7 +8680,7 @@ void AnimationMarkerEdit::_clear_key_edit() {
 
 	if (multi_key_edit) {
 		if (InspectorDock::get_inspector_singleton()->get_edited_object() == multi_key_edit) {
-			EditorNode::get_singleton()->push_item(nullptr);
+			EditorSceneManager::get_singleton()->push_item(nullptr);
 		}
 
 		memdelete(multi_key_edit);
@@ -9456,7 +9457,7 @@ AnimationMarkerEdit::AnimationMarkerEdit() {
 	marker_insert_vbox->add_child(_create_hbox_labeled_control(TTR("Marker Name"), marker_insert_new_name));
 	marker_insert_color = memnew(ColorPickerButton);
 	marker_insert_color->set_edit_alpha(false);
-	marker_insert_color->get_popup()->connect("about_to_popup", callable_mp(EditorNode::get_singleton(), &EditorNode::setup_color_picker).bind(marker_insert_color->get_picker()));
+	marker_insert_color->get_popup()->connect("about_to_popup", callable_mp(EditorCore::get_singleton(), &EditorCore::setup_color_picker).bind(marker_insert_color->get_picker()));
 	marker_insert_vbox->add_child(_create_hbox_labeled_control(TTR("Marker Color"), marker_insert_color));
 	marker_insert_error_dialog = memnew(AcceptDialog);
 	marker_insert_error_dialog->set_ok_button_text(TTR("Close"));

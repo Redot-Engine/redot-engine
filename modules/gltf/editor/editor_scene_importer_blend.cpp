@@ -564,7 +564,7 @@ bool EditorFileSystemImportFormatSupportQueryBlend::query() {
 
 		blender_path->connect(SceneStringName(text_changed), callable_mp(this, &EditorFileSystemImportFormatSupportQueryBlend::_validate_path));
 
-		EditorNode::get_singleton()->get_gui_base()->add_child(configure_blender_dialog);
+		EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(configure_blender_dialog);
 
 		configure_blender_dialog->set_ok_button_text(TTR("Confirm Path"));
 		configure_blender_dialog->set_cancel_button_text(TTR("Disable '.blend' Import"));
@@ -576,7 +576,7 @@ bool EditorFileSystemImportFormatSupportQueryBlend::query() {
 		browse_dialog->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_FILE);
 		browse_dialog->connect("file_selected", callable_mp(this, &EditorFileSystemImportFormatSupportQueryBlend::_select_install));
 
-		EditorNode::get_singleton()->get_gui_base()->add_child(browse_dialog);
+		EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(browse_dialog);
 
 		/// Update icons.
 		/// @todo This is a hack because we can't rely on notifications here as we don't receive them.
@@ -614,10 +614,10 @@ bool EditorFileSystemImportFormatSupportQueryBlend::query() {
 		ProjectSettings::get_singleton()->set("filesystem/import/blender/enabled", false);
 		ProjectSettings::get_singleton()->save();
 
-		if (EditorNode::immediate_confirmation_dialog(TTR("Disabling '.blend' file import requires restarting the editor."), TTR("Save & Restart"), TTR("Restart"))) {
-			EditorNode::get_singleton()->save_all_scenes();
+		if (EditorCore::get_singleton()->get_shell()->immediate_confirmation_dialog(TTR("Disabling '.blend' file import requires restarting the editor."), TTR("Save & Restart"), TTR("Restart"))) {
+			EditorSceneManager::get_singleton()->save_all_open_scenes();
 		}
-		EditorNode::get_singleton()->restart_editor();
+		EditorCore::get_singleton()->get_shell()->restart_editor();
 		return true;
 	}
 

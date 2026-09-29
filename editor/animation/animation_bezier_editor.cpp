@@ -420,7 +420,7 @@ void AnimationBezierTrackEdit::_notification(int p_what) {
 					if (node) {
 						int ofs = 0;
 
-						Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(node, "Node");
+						Ref<Texture2D> icon = EditorCore::get_singleton()->get_object_icon(node, "Node");
 
 						text = node->get_name();
 						ofs += h_separation;
@@ -830,7 +830,7 @@ bool AnimationBezierTrackEdit::_is_track_displayed(int p_track_index) {
 			if (!node) {
 				return false; // No node, no filter.
 			}
-			if (!EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
+			if (!EditorCore::get_singleton()->get_editor_selection()->is_selected(node)) {
 				return false; // Skip track due to not selected.
 			}
 		}
@@ -963,7 +963,7 @@ void AnimationBezierTrackEdit::set_filtered(bool p_filtered) {
 	if (is_filtered) {
 		if (root && root->has_node(base_path)) {
 			Node *node = root->get_node(base_path);
-			if (!node || !EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
+			if (!node || !EditorCore::get_singleton()->get_editor_selection()->is_selected(node)) {
 				for (int i = 0; i < animation->get_track_count(); ++i) {
 					if (animation->track_get_type(i) != Animation::TrackType::TYPE_BEZIER) {
 						continue;
@@ -975,7 +975,7 @@ void AnimationBezierTrackEdit::set_filtered(bool p_filtered) {
 						if (!node) {
 							continue; // No node, no filter.
 						}
-						if (!EditorNode::get_singleton()->get_editor_selection()->is_selected(node)) {
+						if (!EditorCore::get_singleton()->get_editor_selection()->is_selected(node)) {
 							continue; // Skip track due to not selected.
 						}
 

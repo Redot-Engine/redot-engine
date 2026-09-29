@@ -40,6 +40,7 @@
 
 #include "core/io/config_file.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/settings/editor_settings.h"
@@ -174,7 +175,7 @@ void EditorMainScreen::select_by_name(const String &p_name) {
 }
 
 void EditorMainScreen::select(int p_index) {
-	if (EditorNode::get_singleton()->is_changing_scene()) {
+	if (EditorSceneManager::get_singleton()->is_changing_scene()) {
 		return;
 	}
 
@@ -203,13 +204,13 @@ void EditorMainScreen::select(int p_index) {
 	selected_plugin->make_visible(true);
 	selected_plugin->selected_notify();
 
-	EditorData &editor_data = EditorNode::get_editor_data();
+	EditorData &editor_data = EditorCore::get_singleton()->get_editor_data();
 	int plugin_count = editor_data.get_editor_plugin_count();
 	for (int i = 0; i < plugin_count; i++) {
 		editor_data.get_editor_plugin(i)->notify_main_screen_changed(selected_plugin->get_plugin_name());
 	}
 
-	EditorNode::get_singleton()->update_distraction_free_mode();
+	EditorCore::get_singleton()->get_shell()->update_distraction_free_mode();
 }
 
 int EditorMainScreen::get_selected_index() const {

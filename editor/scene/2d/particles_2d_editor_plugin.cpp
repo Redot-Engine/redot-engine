@@ -191,7 +191,7 @@ Particles2DEditorPlugin::Particles2DEditorPlugin() {
 	}
 
 	file->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_FILE);
-	EditorNode::get_singleton()->get_gui_base()->add_child(file);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(file);
 	file->connect("file_selected", callable_mp(this, &Particles2DEditorPlugin::_file_selected));
 
 	emission_mask = memnew(ConfirmationDialog);
@@ -214,7 +214,7 @@ Particles2DEditorPlugin::Particles2DEditorPlugin() {
 	emission_colors = memnew(CheckBox(TTR("Capture Colors from Pixel")));
 	optionsvb->add_child(emission_colors);
 
-	EditorNode::get_singleton()->get_gui_base()->add_child(emission_mask);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(emission_mask);
 
 	emission_mask->connect(SceneStringName(confirmed), callable_mp(this, &Particles2DEditorPlugin::_generate_emission_mask));
 }
@@ -238,7 +238,7 @@ void Particles2DEditorPlugin::_set_show_gizmos(Node *p_node, bool p_show) {
 }
 
 void Particles2DEditorPlugin::_selection_changed() {
-	List<Node *> current_selection = EditorNode::get_singleton()->get_editor_selection()->get_top_selected_node_list();
+	List<Node *> current_selection = EditorCore::get_singleton()->get_editor_selection()->get_top_selected_node_list();
 	if (selected_particles.is_empty() && current_selection.is_empty()) {
 		return;
 	}
@@ -316,7 +316,7 @@ void GPUParticles2DEditorPlugin::_generate_visibility_rect() {
 void Particles2DEditorPlugin::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
-			EditorNode::get_singleton()->get_editor_selection()->connect("selection_changed", callable_mp(this, &Particles2DEditorPlugin::_selection_changed));
+			EditorCore::get_singleton()->get_editor_selection()->connect("selection_changed", callable_mp(this, &Particles2DEditorPlugin::_selection_changed));
 		} break;
 	}
 }
@@ -325,7 +325,7 @@ void Particles2DEditorPlugin::_menu_callback(int p_idx) {
 	if (p_idx == MENU_LOAD_EMISSION_MASK) {
 		GPUParticles2D *particles = Object::cast_to<GPUParticles2D>(edited_node);
 		if (particles && particles->get_process_material().is_null()) {
-			EditorNode::get_singleton()->show_warning(TTR("Loading emission mask requires ParticleProcessMaterial."));
+			EditorCore::get_singleton()->get_shell()->show_warning(TTR("Loading emission mask requires ParticleProcessMaterial."));
 			return;
 		}
 
@@ -460,7 +460,7 @@ GPUParticles2DEditorPlugin::GPUParticles2DEditorPlugin() {
 	generate_seconds->set_value(2);
 	genvb->add_margin_child(TTR("Generation Time (sec):"), generate_seconds);
 
-	EditorNode::get_singleton()->get_gui_base()->add_child(generate_visibility_rect);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(generate_visibility_rect);
 
 	generate_visibility_rect->connect(SceneStringName(confirmed), callable_mp(this, &GPUParticles2DEditorPlugin::_generate_visibility_rect));
 }

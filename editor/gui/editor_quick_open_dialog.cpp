@@ -465,7 +465,7 @@ void QuickOpenResultContainer::_find_filepaths_in_folder(EditorFileSystemDirecto
 		const StringName &actual_type = is_engine_type ? engine_type : script_type;
 
 		for (const StringName &parent_type : base_types) {
-			bool is_valid = ClassDB::is_parent_class(engine_type, parent_type) || (!is_engine_type && EditorNode::get_editor_data().script_class_is_parent(script_type, parent_type));
+			bool is_valid = ClassDB::is_parent_class(engine_type, parent_type) || (!is_engine_type && EditorCore::get_singleton()->get_editor_data().script_class_is_parent(script_type, parent_type));
 
 			if (is_valid) {
 				filepaths.append(file_path);

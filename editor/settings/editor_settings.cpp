@@ -1065,8 +1065,8 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("run/auto_save/save_before_running", true, true);
 
 	// Bottom panel
-	EDITOR_SETTING_BASIC(Variant::INT, PROPERTY_HINT_ENUM, "run/bottom_panel/action_on_play", EditorNode::ACTION_ON_PLAY_OPEN_OUTPUT, "Do Nothing,Open Output,Open Debugger")
-	EDITOR_SETTING_BASIC(Variant::INT, PROPERTY_HINT_ENUM, "run/bottom_panel/action_on_stop", EditorNode::ACTION_ON_STOP_DO_NOTHING, "Do Nothing,Close Bottom Panel")
+	EDITOR_SETTING_BASIC(Variant::INT, PROPERTY_HINT_ENUM, "run/bottom_panel/action_on_play", EditorShell::ACTION_ON_PLAY_OPEN_OUTPUT, "Do Nothing,Open Output,Open Debugger")
+	EDITOR_SETTING_BASIC(Variant::INT, PROPERTY_HINT_ENUM, "run/bottom_panel/action_on_stop", EditorShell::ACTION_ON_STOP_DO_NOTHING, "Do Nothing,Close Bottom Panel")
 
 	// Output
 	EDITOR_SETTING_BASIC(Variant::INT, PROPERTY_HINT_RANGE, "run/output/font_size", 13, "8,48,1")
@@ -1718,7 +1718,7 @@ void EditorSettings::load_favorites_and_recent_dirs() {
 
 		for (String &E : secs) {
 			PackedStringArray properties = PackedStringArray(cf->get_value(E, "properties"));
-			if (EditorNode::get_editor_data().is_type_recognized(E) || ResourceLoader::exists(E, "Script")) {
+			if (EditorCore::get_singleton()->get_editor_data().is_type_recognized(E) || ResourceLoader::exists(E, "Script")) {
 				for (const String &property : properties) {
 					if (!favorite_properties[E].has(property)) {
 						favorite_properties[E].push_back(property);

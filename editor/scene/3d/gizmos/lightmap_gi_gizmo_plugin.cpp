@@ -64,7 +64,7 @@ LightmapGIGizmoPlugin::LightmapGIGizmoPlugin() {
 
 	add_material("lightmap_probe_material", mat);
 
-	create_icon_material("baked_indirect_light_icon", EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoLightmapGI"), EditorStringName(EditorIcons)));
+	create_icon_material("baked_indirect_light_icon", EditorCore::get_singleton()->get_editor_theme()->get_icon(SNAME("GizmoLightmapGI"), EditorStringName(EditorIcons)));
 }
 
 bool LightmapGIGizmoPlugin::has_gizmo(Node3D *p_spatial) {

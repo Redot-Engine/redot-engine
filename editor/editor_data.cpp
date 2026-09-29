@@ -43,6 +43,7 @@
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/inspector/editor_context_menu_plugin.h"
 #include "editor/inspector/multi_node_edit.h"
@@ -59,7 +60,7 @@ void EditorSelectionHistory::cleanup_history() {
 				// If the node is a MultiNodeEdit node, examine it and see if anything is missing from it.
 				Ref<MultiNodeEdit> multi_node_edit = history[i].path[j].ref;
 				if (multi_node_edit.is_valid()) {
-					Node *root = EditorNode::get_singleton()->get_edited_scene();
+					Node *root = EditorSceneManager::get_singleton()->get_edited_scene();
 					if (root) {
 						for (int k = 0; k < multi_node_edit->get_node_count(); k++) {
 							NodePath np = multi_node_edit->get_node(k);
@@ -738,7 +739,7 @@ bool EditorData::check_and_update_scene(int p_idx) {
 
 		new_scene->set_scene_file_path(edited_scene[p_idx].root->get_scene_file_path());
 		Node *old_root = edited_scene[p_idx].root;
-		EditorNode::get_singleton()->set_edited_scene(new_scene);
+		EditorSceneManager::get_singleton()->set_edited_scene(new_scene);
 		memdelete(old_root);
 		edited_scene.write[p_idx].selection = new_selection;
 

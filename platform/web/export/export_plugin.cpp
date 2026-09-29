@@ -931,7 +931,7 @@ EditorExportPlatformWeb::EditorExportPlatformWeb() {
 		ImageLoaderSVG::create_image_from_string(img, _web_run_icon_svg, EDSCALE, upsample, false);
 		run_icon = ImageTexture::create_from_image(img);
 
-		Ref<Theme> theme = EditorNode::get_singleton()->get_editor_theme();
+		Ref<Theme> theme = EditorCore::get_singleton()->get_editor_theme();
 		if (theme.is_valid()) {
 			stop_icon = theme->get_icon(SNAME("Stop"), EditorStringName(EditorIcons));
 			restart_icon = theme->get_icon(SNAME("Reload"), EditorStringName(EditorIcons));

@@ -63,7 +63,7 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin() {
 	_file_dialog->add_filter("*.glb");
 	_file_dialog->add_filter("*.gltf");
 	_file_dialog->set_title(TTR("Export Scene to glTF 2.0 File"));
-	EditorNode::get_singleton()->get_gui_base()->add_child(_file_dialog);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(_file_dialog);
 	// Set up the export settings menu.
 	_export_settings.instantiate();
 	_export_settings->generate_property_list(_gltf_document);
@@ -80,7 +80,7 @@ SceneExporterGLTFPlugin::SceneExporterGLTFPlugin() {
 void SceneExporterGLTFPlugin::_popup_gltf_export_dialog() {
 	Node *root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
 	if (!root) {
-		EditorNode::get_singleton()->show_accept(TTR("This operation can't be done without a scene."), TTR("OK"));
+		EditorCore::get_singleton()->get_shell()->show_accept(TTR("This operation can't be done without a scene."), TTR("OK"));
 		return;
 	}
 	// Set the file dialog's file name to the scene name.
@@ -100,7 +100,7 @@ void SceneExporterGLTFPlugin::_popup_gltf_export_dialog() {
 void SceneExporterGLTFPlugin::_export_scene_as_gltf(const String &p_file_path) {
 	Node *root = EditorNode::get_singleton()->get_tree()->get_edited_scene_root();
 	if (!root) {
-		EditorNode::get_singleton()->show_accept(TTR("This operation can't be done without a scene."), TTR("OK"));
+		EditorCore::get_singleton()->get_shell()->show_accept(TTR("This operation can't be done without a scene."), TTR("OK"));
 		return;
 	}
 	List<String> deps;

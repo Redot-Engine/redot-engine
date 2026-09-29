@@ -40,6 +40,7 @@
 
 #include "core/os/keyboard.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_file_dialog.h"
@@ -143,7 +144,7 @@ void AnimationNodeBlendSpace1DEditor::_blend_space_gui_input(const Ref<InputEven
 				selected_point = i;
 
 				Ref<AnimationNode> node = blend_space->get_blend_point_node(i);
-				EditorNode::get_singleton()->push_item(node.ptr(), "", true);
+				EditorSceneManager::get_singleton()->push_item(node.ptr(), "", true);
 				dragging_selected_attempt = true;
 				drag_from = mb->get_position();
 				_update_tool_erase();
@@ -399,7 +400,7 @@ void AnimationNodeBlendSpace1DEditor::_file_opened(const String &p_file) {
 	if (file_loaded.is_valid()) {
 		_add_menu_type(MENU_LOAD_FILE_CONFIRM);
 	} else {
-		EditorNode::get_singleton()->show_warning(TTR("This type of node can't be used. Only animation nodes are allowed."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("This type of node can't be used. Only animation nodes are allowed."));
 	}
 }
 
@@ -431,7 +432,7 @@ void AnimationNodeBlendSpace1DEditor::_add_menu_type(int p_index) {
 	}
 
 	if (node.is_null()) {
-		EditorNode::get_singleton()->show_warning(TTR("This type of node can't be used. Only root nodes are allowed."));
+		EditorCore::get_singleton()->get_shell()->show_warning(TTR("This type of node can't be used. Only root nodes are allowed."));
 		return;
 	}
 
@@ -636,7 +637,7 @@ void AnimationNodeBlendSpace1DEditor::edit(const Ref<AnimationNode> &p_node) {
 	read_only = false;
 
 	if (blend_space.is_valid()) {
-		read_only = EditorNode::get_singleton()->is_resource_read_only(blend_space);
+		read_only = EditorCore::get_singleton()->is_resource_read_only(blend_space);
 
 		_update_space();
 	}

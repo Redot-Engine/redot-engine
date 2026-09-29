@@ -289,7 +289,7 @@ void EditorDockManager::_dock_drag_stopped() {
 }
 
 void EditorDockManager::_dock_split_dragged(int p_offset) {
-	EditorNode::get_singleton()->save_editor_layout_delayed();
+	EditorCore::get_singleton()->get_shell()->save_editor_layout_delayed();
 }
 
 void EditorDockManager::_dock_container_gui_input(const Ref<InputEvent> &p_input, TabContainer *p_dock_container) {
@@ -328,12 +328,12 @@ void EditorDockManager::_dock_container_update_visibility(TabContainer *p_dock_c
 }
 
 void EditorDockManager::_update_layout() {
-	if (!dock_context_popup->is_inside_tree() || EditorNode::get_singleton()->is_exiting()) {
+	if (!dock_context_popup->is_inside_tree() || EditorCore::get_singleton()->get_shell()->is_exiting()) {
 		return;
 	}
 	dock_context_popup->docks_updated();
 	update_docks_menu();
-	EditorNode::get_singleton()->save_editor_layout_delayed();
+	EditorCore::get_singleton()->get_shell()->save_editor_layout_delayed();
 }
 
 void EditorDockManager::update_docks_menu() {
@@ -422,7 +422,7 @@ void EditorDockManager::_open_dock_in_window(Control *p_dock, bool p_show_window
 	wrapper->set_window_title(vformat(TTR("%s - Redot Engine"), all_docks[p_dock].title));
 	wrapper->set_margins_enabled(true);
 
-	EditorNode::get_singleton()->get_gui_base()->add_child(wrapper);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(wrapper);
 
 	_move_dock(p_dock, nullptr);
 	wrapper->set_wrapped_control(p_dock);
@@ -435,7 +435,7 @@ void EditorDockManager::_open_dock_in_window(Control *p_dock, bool p_show_window
 	dock_windows.push_back(wrapper);
 
 	if (p_show_window) {
-		wrapper->restore_window(Rect2i(dock_screen_pos, dock_size), EditorNode::get_singleton()->get_gui_base()->get_window()->get_current_screen());
+		wrapper->restore_window(Rect2i(dock_screen_pos, dock_size), EditorCore::get_singleton()->get_shell()->get_gui_base()->get_window()->get_current_screen());
 		_update_layout();
 		if (p_reset_size) {
 			// Use a default size of one third the current window size.
@@ -467,16 +467,16 @@ void EditorDockManager::_dock_move_to_bottom(Control *p_dock, bool p_visible) {
 	p_dock->call("_set_dock_horizontal", true);
 
 	// Force docks moved to the bottom to appear first in the list, and give them their associated shortcut to toggle their bottom panel.
-	Button *bottom_button = EditorNode::get_bottom_panel()->add_item(all_docks[p_dock].title, p_dock, all_docks[p_dock].shortcut, true);
+	Button *bottom_button = EditorCore::get_singleton()->get_shell()->get_bottom_panel()->add_item(all_docks[p_dock].title, p_dock, all_docks[p_dock].shortcut, true);
 	bottom_button->connect(SceneStringName(gui_input), callable_mp(this, &EditorDockManager::_bottom_dock_button_gui_input).bind(bottom_button).bind(p_dock));
-	EditorNode::get_bottom_panel()->make_item_visible(p_dock, p_visible);
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(p_dock, p_visible);
 }
 
 void EditorDockManager::_dock_remove_from_bottom(Control *p_dock) {
 	all_docks[p_dock].at_bottom = false;
 	all_docks[p_dock].previous_at_bottom = true;
 
-	EditorNode::get_bottom_panel()->remove_item(p_dock);
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->remove_item(p_dock);
 	p_dock->call("_set_dock_horizontal", false);
 }
 
@@ -701,7 +701,7 @@ void EditorDockManager::load_docks_from_config(Ref<ConfigFile> p_layout, const S
 	Array dock_bottom = p_layout->get_value(p_section, "dock_bottom", Array());
 	Array closed_docks = p_layout->get_value(p_section, "dock_closed", Array());
 
-	bool allow_floating_docks = EditorNode::get_singleton()->is_multi_window_enabled() && (!p_first_load || EDITOR_GET("interface/multi_window/restore_windows_on_load"));
+	bool allow_floating_docks = EditorCore::get_singleton()->is_multi_window_enabled() && (!p_first_load || EDITOR_GET("interface/multi_window/restore_windows_on_load"));
 
 	// Store the docks by name for easy lookup.
 	HashMap<String, Control *> dock_map;
@@ -801,7 +801,7 @@ void EditorDockManager::bottom_dock_show_placement_popup(const Rect2i &p_positio
 	Vector2 popup_pos = p_position.position;
 	popup_pos.y += p_position.size.height;
 
-	if (!EditorNode::get_singleton()->get_gui_base()->is_layout_rtl()) {
+	if (!EditorCore::get_singleton()->get_shell()->get_gui_base()->is_layout_rtl()) {
 		popup_pos.x -= dock_context_popup->get_size().width;
 		popup_pos.x += p_position.size.width;
 	}
@@ -892,7 +892,7 @@ void EditorDockManager::focus_dock(Control *p_dock) {
 	}
 
 	if (all_docks[p_dock].at_bottom) {
-		EditorNode::get_bottom_panel()->make_item_visible(p_dock, true, true);
+		EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(p_dock, true, true);
 		return;
 	}
 
@@ -1009,7 +1009,7 @@ void EditorDockManager::register_dock_slot(DockSlot p_dock_slot, TabContainer *p
 	dock_drag_rects[p_dock_slot] = memnew(EditorDockDragHint);
 	dock_drag_rects[p_dock_slot]->set_slot(p_dock_slot);
 	dock_drag_rects[p_dock_slot]->hide();
-	EditorNode::get_singleton()->get_gui_base()->add_child(dock_drag_rects[p_dock_slot]);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(dock_drag_rects[p_dock_slot]);
 }
 
 int EditorDockManager::get_vsplit_count() const {
@@ -1023,15 +1023,15 @@ PopupMenu *EditorDockManager::get_docks_menu() {
 EditorDockManager::EditorDockManager() {
 	singleton = this;
 
-	closed_dock_parent = EditorNode::get_singleton()->get_gui_base();
+	closed_dock_parent = EditorCore::get_singleton()->get_shell()->get_gui_base();
 
 	dock_context_popup = memnew(DockContextPopup);
-	EditorNode::get_singleton()->get_gui_base()->add_child(dock_context_popup);
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->add_child(dock_context_popup);
 
 	docks_menu = memnew(PopupMenu);
 	docks_menu->set_hide_on_item_selection(false);
 	docks_menu->connect(SceneStringName(id_pressed), callable_mp(this, &EditorDockManager::_docks_menu_option));
-	EditorNode::get_singleton()->get_gui_base()->connect(SceneStringName(theme_changed), callable_mp(this, &EditorDockManager::update_docks_menu));
+	EditorCore::get_singleton()->get_shell()->get_gui_base()->connect(SceneStringName(theme_changed), callable_mp(this, &EditorDockManager::update_docks_menu));
 }
 
 ////////////////////////////////////////////////
@@ -1306,9 +1306,9 @@ DockContextPopup::DockContextPopup() {
 
 	make_float_button = memnew(Button);
 	make_float_button->set_text(TTR("Make Floating"));
-	if (!EditorNode::get_singleton()->is_multi_window_enabled()) {
+	if (!EditorCore::get_singleton()->is_multi_window_enabled()) {
 		make_float_button->set_disabled(true);
-		make_float_button->set_tooltip_text(EditorNode::get_singleton()->get_multiwindow_support_tooltip_text());
+		make_float_button->set_tooltip_text(EditorCore::get_singleton()->get_multiwindow_support_tooltip_text());
 	} else {
 		make_float_button->set_tooltip_text(TTR("Make this dock floating."));
 	}

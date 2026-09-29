@@ -45,6 +45,7 @@
 #include "editor/debugger/editor_debugger_node.h"
 #include "editor/editor_log.h"
 #include "editor/editor_node.h"
+#include "editor/editor_scene_manager.h"
 #include "scene/main/node.h"
 
 EditorUndoRedoManager *EditorUndoRedoManager::singleton = nullptr;
@@ -56,7 +57,7 @@ EditorUndoRedoManager::History &EditorUndoRedoManager::get_or_create_history(int
 		history.id = p_idx;
 		history_map[p_idx] = history;
 
-		EditorNode::get_singleton()->get_log()->register_undo_redo(history.undo_redo);
+		EditorCore::get_singleton()->get_log()->register_undo_redo(history.undo_redo);
 		EditorDebuggerNode::get_singleton()->register_undo_redo(history.undo_redo);
 	}
 	return history_map[p_idx];
@@ -75,10 +76,10 @@ int EditorUndoRedoManager::get_history_id_for_object(Object *p_object) const {
 	}
 
 	if (Node *node = Object::cast_to<Node>(p_object)) {
-		Node *edited_scene = EditorNode::get_singleton()->get_edited_scene();
+		Node *edited_scene = EditorSceneManager::get_singleton()->get_edited_scene();
 
 		if (edited_scene && (node == edited_scene || edited_scene->is_ancestor_of(node))) {
-			int idx = EditorNode::get_editor_data().get_current_edited_scene_history_id();
+			int idx = EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id();
 			if (idx > 0) {
 				history_id = idx;
 			}
@@ -88,12 +89,12 @@ int EditorUndoRedoManager::get_history_id_for_object(Object *p_object) const {
 	if (Resource *res = Object::cast_to<Resource>(p_object)) {
 		if (res->is_built_in()) {
 			if (res->get_path().is_empty()) {
-				int idx = EditorNode::get_editor_data().get_current_edited_scene_history_id();
+				int idx = EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id();
 				if (idx > 0) {
 					history_id = idx;
 				}
 			} else {
-				int idx = EditorNode::get_editor_data().get_scene_history_id_from_path(res->get_path().get_slice("::", 0));
+				int idx = EditorCore::get_singleton()->get_editor_data().get_scene_history_id_from_path(res->get_path().get_slice("::", 0));
 				if (idx > 0) {
 					history_id = idx;
 				}
@@ -351,7 +352,7 @@ bool EditorUndoRedoManager::redo() {
 	}
 
 	{
-		History &history = get_or_create_history(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+		History &history = get_or_create_history(EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
 		if (!history.redo_stack.is_empty() && history.redo_stack.back()->get().timestamp < global_timestamp) {
 			selected_history = history.id;
 		}
@@ -419,7 +420,7 @@ bool EditorUndoRedoManager::is_history_unsaved(int p_id) {
 
 bool EditorUndoRedoManager::has_undo() {
 	for (const KeyValue<int, History> &E : history_map) {
-		if ((E.key == GLOBAL_HISTORY || E.key == REMOTE_HISTORY || E.key == EditorNode::get_editor_data().get_current_edited_scene_history_id()) && !E.value.undo_stack.is_empty()) {
+		if ((E.key == GLOBAL_HISTORY || E.key == REMOTE_HISTORY || E.key == EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id()) && !E.value.undo_stack.is_empty()) {
 			return true;
 		}
 	}
@@ -428,7 +429,7 @@ bool EditorUndoRedoManager::has_undo() {
 
 bool EditorUndoRedoManager::has_redo() {
 	for (const KeyValue<int, History> &E : history_map) {
-		if ((E.key == GLOBAL_HISTORY || E.key == REMOTE_HISTORY || E.key == EditorNode::get_editor_data().get_current_edited_scene_history_id()) && !E.value.redo_stack.is_empty()) {
+		if ((E.key == GLOBAL_HISTORY || E.key == REMOTE_HISTORY || E.key == EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id()) && !E.value.redo_stack.is_empty()) {
 			return true;
 		}
 	}
@@ -518,7 +519,7 @@ EditorUndoRedoManager::History *EditorUndoRedoManager::_get_newest_undo() {
 	}
 
 	{
-		History &history = get_or_create_history(EditorNode::get_editor_data().get_current_edited_scene_history_id());
+		History &history = get_or_create_history(EditorCore::get_singleton()->get_editor_data().get_current_edited_scene_history_id());
 		if (!history.undo_stack.is_empty() && history.undo_stack.back()->get().timestamp > global_timestamp) {
 			selected_history = &history;
 		}

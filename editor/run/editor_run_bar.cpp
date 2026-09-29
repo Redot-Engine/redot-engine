@@ -213,7 +213,7 @@ void EditorRunBar::_play_custom_pressed(int p_id) {
 	if (editor_run.get_status() == EditorRun::STATUS_STOP || current_mode != RunMode::RUN_CUSTOM) {
 		stop_playing();
 
-		EditorNode::get_singleton()->get_quick_open_dialog()->popup_dialog({ "PackedScene" }, callable_mp(this, &EditorRunBar::_quick_run_selected).bind(p_id));
+		EditorCore::get_singleton()->get_quick_open_dialog()->popup_dialog({ "PackedScene" }, callable_mp(this, &EditorRunBar::_quick_run_selected).bind(p_id));
 		play_custom_scene_button->set_pressed(false);
 	} else {
 		Vector<String> play_args = _get_xr_mode_play_args(p_id);
@@ -242,7 +242,7 @@ void EditorRunBar::_run_scene(const String &p_scene_path, const Vector<String> &
 		return;
 	}
 
-	if (!EditorNode::get_singleton()->validate_custom_directory()) {
+	if (!EditorCore::get_singleton()->get_shell()->validate_custom_directory()) {
 		return;
 	}
 
@@ -255,9 +255,9 @@ void EditorRunBar::_run_scene(const String &p_scene_path, const Vector<String> &
 			if (p_scene_path.is_empty()) {
 				scene_root = get_tree()->get_edited_scene_root();
 			} else {
-				int scene_index = EditorNode::get_editor_data().get_edited_scene_from_path(p_scene_path);
+				int scene_index = EditorCore::get_singleton()->get_editor_data().get_edited_scene_from_path(p_scene_path);
 				if (scene_index >= 0) {
-					scene_root = EditorNode::get_editor_data().get_edited_scene_root(scene_index);
+					scene_root = EditorCore::get_singleton()->get_editor_data().get_edited_scene_root(scene_index);
 				}
 			}
 
@@ -275,7 +275,7 @@ void EditorRunBar::_run_scene(const String &p_scene_path, const Vector<String> &
 
 		if (write_movie_file.is_empty()) {
 			/// @todo Provide options to directly resolve the issue with a custom dialog.
-			EditorNode::get_singleton()->show_accept(TTR("Movie Maker mode is enabled, but no movie file path has been specified.\nA default movie file path can be specified in the project settings under the Editor > Movie Writer category.\nAlternatively, for running single scenes, a `movie_file` string metadata can be added to the root node,\nspecifying the path to a movie file that will be used when recording that scene."), TTR("OK"));
+			EditorCore::get_singleton()->get_shell()->show_accept(TTR("Movie Maker mode is enabled, but no movie file path has been specified.\nA default movie file path can be specified in the project settings under the Editor > Movie Writer category.\nAlternatively, for running single scenes, a `movie_file` string metadata can be added to the root node,\nspecifying the path to a movie file that will be used when recording that scene."), TTR("OK"));
 			return;
 		}
 	}
@@ -296,12 +296,12 @@ void EditorRunBar::_run_scene(const String &p_scene_path, const Vector<String> &
 
 			Node *scene_root = get_tree()->get_edited_scene_root();
 			if (!scene_root) {
-				EditorNode::get_singleton()->show_accept(TTR("There is no defined scene to run."), TTR("OK"));
+				EditorCore::get_singleton()->get_shell()->show_accept(TTR("There is no defined scene to run."), TTR("OK"));
 				return;
 			}
 
 			if (scene_root->get_scene_file_path().is_empty()) {
-				EditorNode::get_singleton()->save_before_run();
+				EditorSceneManager::get_singleton()->save_before_run();
 				return;
 			}
 
@@ -310,7 +310,7 @@ void EditorRunBar::_run_scene(const String &p_scene_path, const Vector<String> &
 		} break;
 
 		default: {
-			if (!EditorNode::get_singleton()->ensure_main_scene(false)) {
+			if (!EditorCore::get_singleton()->get_shell()->ensure_main_scene(false)) {
 				return;
 			}
 
@@ -318,8 +318,8 @@ void EditorRunBar::_run_scene(const String &p_scene_path, const Vector<String> &
 		} break;
 	}
 
-	EditorNode::get_singleton()->try_autosave();
-	if (!EditorNode::get_singleton()->call_build()) {
+	EditorSceneManager::get_singleton()->try_autosave();
+	if (!EditorPluginManager::get_singleton()->call_build()) {
 		return;
 	}
 
@@ -327,7 +327,7 @@ void EditorRunBar::_run_scene(const String &p_scene_path, const Vector<String> &
 	Error error = editor_run.run(run_filename, write_movie_file, p_run_args);
 	if (error != OK) {
 		EditorDebuggerNode::get_singleton()->stop();
-		EditorNode::get_singleton()->show_accept(TTR("Could not start subprocess(es)!"), TTR("OK"));
+		EditorCore::get_singleton()->get_shell()->show_accept(TTR("Could not start subprocess(es)!"), TTR("OK"));
 		return;
 	}
 
@@ -338,12 +338,12 @@ void EditorRunBar::_run_scene(const String &p_scene_path, const Vector<String> &
 }
 
 void EditorRunBar::_run_native(const Ref<EditorExportPreset> &p_preset) {
-	EditorNode::get_singleton()->try_autosave();
+	EditorSceneManager::get_singleton()->try_autosave();
 
 	if (run_native->is_deploy_debug_remote_enabled()) {
 		stop_playing();
 
-		if (!EditorNode::get_singleton()->call_build()) {
+		if (!EditorPluginManager::get_singleton()->call_build()) {
 			return; // Build failed.
 		}
 
@@ -355,7 +355,7 @@ void EditorRunBar::_run_native(const Ref<EditorExportPreset> &p_preset) {
 
 void EditorRunBar::_profiler_autostart_indicator_pressed() {
 	// Switch to the first profiler tab in the bottom panel.
-	EditorNode::get_singleton()->get_bottom_panel()->make_item_visible(EditorDebuggerNode::get_singleton(), true);
+	EditorCore::get_singleton()->get_shell()->get_bottom_panel()->make_item_visible(EditorDebuggerNode::get_singleton(), true);
 
 	if (EditorSettings::get_singleton()->get_project_metadata("debug_options", "autostart_profiler", false)) {
 		EditorDebuggerNode::get_singleton()->get_current_debugger()->switch_to_debugger(3);
@@ -372,7 +372,7 @@ void EditorRunBar::recovery_mode_show_dialog() {
 }
 
 void EditorRunBar::recovery_mode_reload_project() {
-	EditorNode::get_singleton()->trigger_menu_option(EditorNode::PROJECT_RELOAD_CURRENT_PROJECT, false);
+	EditorCore::get_singleton()->get_shell()->trigger_menu_option(EditorShell::PROJECT_RELOAD_CURRENT_PROJECT, false);
 }
 
 void EditorRunBar::play_main_scene(bool p_from_native) {
@@ -399,7 +399,7 @@ void EditorRunBar::play_current_scene(bool p_reload, const Vector<String> &p_pla
 
 	String last_current_scene = run_current_filename; // This is necessary to have a copy of the string.
 
-	EditorNode::get_singleton()->save_default_environment();
+	EditorCore::get_singleton()->save_default_environment();
 	stop_playing();
 
 	current_mode = RunMode::RUN_CURRENT;
