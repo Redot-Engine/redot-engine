@@ -877,7 +877,7 @@ void EditorPropertyArray::_length_changed(double p_page) {
 	Variant element_default;
 	if (_get_struct_element_default(element_default)) {
 		for (int i = old_size; i < int(p_page); i++) {
-			array.set(i, element_default);
+			array.set(i, element_default.duplicate(true));
 		}
 	}
 
