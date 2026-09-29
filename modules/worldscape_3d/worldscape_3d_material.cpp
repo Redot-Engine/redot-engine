@@ -92,7 +92,7 @@ void WorldScape3DMaterial::_preload_shaders() {
  */
 void WorldScape3DMaterial::_parse_shader(const String &p_shader, const String &p_name) {
 	if (p_name.is_empty()) {
-		print_error("No dictionary key for saving shader snippets specified");
+		LOG(ERROR, "No dictionary key for saving shader snippets specified");
 		return;
 	}
 	PackedStringArray parsed = p_shader.split("//INSERT:");
@@ -189,8 +189,8 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 	String code = p_shader;
 	int index = 0;
 	int line = 0;
-	//int comment_line_open = 0;
-	//int comments_open = 0;
+	[[maybe_unused]] int comment_line_open = 0;
+	[[maybe_unused]] int comments_open = 0;
 	int strings_open = 0;
 	const char32_t CURSOR = 0xFFFF;
 
@@ -244,11 +244,11 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 				advance('\n');
 			} else if (p == '*') { // Start of a block comment.
 				index++;
-				//comment_line_open = line;
-				//comments_open++;
+				comment_line_open = line;
+				comments_open++;
 				while (advance('*')) {
 					if (peek() == '/') { // End of a block comment.
-						//comments_open--;
+						comments_open--;
 						index++;
 						break;
 					}
@@ -258,8 +258,8 @@ String WorldScape3DMaterial::_strip_comments(const String &p_shader) const {
 			}
 		} else if (c == '*' && strings_open == 0) {
 			if (peek() == '/') { // Unmatched end of a block comment.
-				//comment_line_open = line;
-				//comments_open--;
+				comment_line_open = line;
+				comments_open--;
 			} else {
 				stripped.push_back(c);
 			}
@@ -310,17 +310,14 @@ String WorldScape3DMaterial::_inject_editor_code(const String &p_shader) const {
 		insert_names.push_back("EDITOR_DECAL_SETUP");
 	}
 #endif
-	// if (_debug_view_heightmap) {
-	// 	insert_names.push_back("DEBUG_HEIGHTMAP_SETUP");
-	// }
 	if (_show_contours) {
 		insert_names.push_back("OVERLAY_CONTOURS_SETUP");
 	}
 	// Apply pending inserts
-	for (int i = 0; i < insert_names.size(); i++) {
+	for (int i = 0; i < insert_names.size(); ++i) {
 		String insert = _shader_code[insert_names[i]];
 		shader = shader.insert(idx, "\n" + insert);
-		idx += insert.length() + 1;
+		idx += insert.length();
 	}
 	insert_names.clear();
 
@@ -424,7 +421,7 @@ String WorldScape3DMaterial::_inject_editor_code(const String &p_shader) const {
 	for (int i = 0; i < insert_names.size(); i++) {
 		String insert = _shader_code[insert_names[i]];
 		shader = shader.insert(idx, "\n" + insert);
-		idx += insert.length() + 1;
+		idx += insert.length();
 	}
 	return shader;
 }
@@ -577,8 +574,8 @@ void WorldScape3DMaterial::_update_texture_arrays() {
 		LOG(ERROR, "Asset list is not initialized");
 		return;
 	}
+	auto rs = RenderingServer::get_singleton();
 
-	const auto rs = RenderingServer::get_singleton();
 	rs->material_set_param(_material, "_texture_array_albedo", asset_list->get_albedo_array_rid());
 	rs->material_set_param(_material, "_texture_array_normal", asset_list->get_normal_array_rid());
 	rs->material_set_param(_material, "_texture_color_array", asset_list->get_texture_colors());
@@ -605,12 +602,56 @@ void WorldScape3DMaterial::_set_shader_parameters(const Dictionary &p_dict) {
 	_shader_params = p_dict;
 }
 
+void WorldScape3DMaterial::_init_shader_params() {
+	// On WorldScape3D node creation, initialize the shader uniforms
+	if (_shader_params.is_empty()) {
+		_shader_params["auto_slope"] = 1.f;
+		_shader_params["auto_height_reduction"] = 0.1f;
+		_shader_params["auto_base_texture"] = 0; // textures must be added by the user
+		_shader_params["auto_overlay_texture"] = 1; // textures must be added by the user
+		// Dual scaling
+		_shader_params["dual_scale_texture"] = 0;
+		_shader_params["dual_scale_reduction"] = 0.3f;
+		_shader_params["tri_scale_reduction"] = 0.3f;
+		_shader_params["dual_scale_far"] = 170.f;
+		_shader_params["dual_scale_near"] = 100.f;
+
+		_shader_params["blend_sharpness"] = 0.5f;
+		_shader_params["flat_terrain_normals"] = false;
+		_shader_params["enable_projection"] = true;
+		_shader_params["projection_threshold"] = 0.8f;
+
+		_shader_params["mipmap_bias"] = 1.f;
+		_shader_params["depth_blur"] = 0.f;
+		_shader_params["bias_distance"] = 512.f;
+		// Macro variation
+		_shader_params["enable_macro_variation"] = true;
+		_shader_params["macro_variation1"] = Color{ 1.f, 1.f, 1.f };
+		_shader_params["macro_variation2"] = Color{ 1.f, 1.f, 1.f };
+		_shader_params["macro_variation_slope"] = 0.333f;
+		// Generic noise
+		_shader_params["noise1_scale"] = 0.04f;
+		_shader_params["noise1_angle"] = 0.f;
+		_shader_params["noise1_offset"] = Vector2{ .5f, .5f };
+		_shader_params["noise2_scale"] = 0.076f;
+		// World noise
+		_shader_params["world_noise_fragment_normals"] = false;
+		_shader_params["world_noise_region_blend"] = 0.75f;
+		_shader_params["world_noise_max_octaves"] = 6;
+		_shader_params["world_noise_min_octaves"] = 1;
+		_shader_params["world_noise_lod_distance"] = 7500.f;
+		_shader_params["world_noise_scale"] = 5.f;
+		_shader_params["world_noise_height"] = 48.f;
+		_shader_params["world_noise_offset"] = Vector3{ 0.f, 0.f, 0.f };
+	}
+}
+
 ///////////////////////////
 // Public Functions
 ///////////////////////////
 
 // This function serves as the constructor which is initialized by the class WorldScape3D.
-// Godot likes to create resource objects at startup, so this prevents it from creating
+// Redot likes to create resource objects at startup, so this prevents it from creating
 // uninitialized materials.
 void WorldScape3DMaterial::initialize(WorldScape3D *p_terrain) {
 	if (p_terrain) {
@@ -625,6 +666,7 @@ void WorldScape3DMaterial::initialize(WorldScape3D *p_terrain) {
 		_material = RenderingServer::get_singleton()->material_create();
 	}
 	_shader.instantiate();
+	_init_shader_params();
 	_update_shader();
 	_update_maps();
 }
@@ -838,35 +880,25 @@ Error WorldScape3DMaterial::save(const String &p_path) {
 
 	// Remove saved shader params that don't exist in either shader
 	Array keys = _shader_params.keys();
-	for (int i = 0; i < keys.size(); i++) {
+	for (int i = 0; i < keys.size(); ++i) {
 		bool has = false;
-		StringName key_name = keys[i];
-		// for (int j = 0; j < param_list.size(); j++) {
-		// 	Dictionary dict;
-		// 	StringName dname;
-		// 	if (j < param_list.size()) {
-		// 		dict = param_list[j];
-		// 		dname = dict["name"];
-		// 		if (name == dname) {
-		// 			has = true;
-		// 			break;
-		// 		}
-		// 	}
-		// }
-		for (auto &param : param_list) {
-			Dictionary dict;
+		StringName kname = keys[i];
+		for (int j = 0; j < param_list.size(); j++) {
+			PropertyInfo info;
 			StringName dname;
-			dict = param;
-			dname = dict["name"];
-			if (key_name == dname) {
-				has = true;
-				break;
+			if (j < param_list.size()) {
+				info = param_list.get(j);
+				dname = info.name;
+				if (kname == dname) {
+					has = true;
+					break;
+				}
 			}
 		}
 
 		if (!has) {
-			LOG(DEBUG, "'", key_name, "' not found in shader parameters. Removing from dictionary.");
-			_shader_params.erase(key_name);
+			LOG(DEBUG, "'", kname, "' not found in shader parameters. Removing from dictionary.");
+			_shader_params.erase(kname);
 		}
 	}
 
@@ -879,7 +911,7 @@ Error WorldScape3DMaterial::save(const String &p_path) {
 		if (err == OK) {
 			LOG(DEBUG, "File saved successfully: ", path);
 		} else {
-			LOG(ERROR, "Cannot save file: ", path, ". Error code: ", ERROR, ". Look up @GlobalScope Error enum in the Godot docs");
+			LOG(ERROR, "Cannot save file: ", path, ". Error code: ", ERROR, ". Look up @GlobalScope Error enum in the Redot docs");
 		}
 	}
 	return err;
@@ -902,48 +934,42 @@ void WorldScape3DMaterial::_get_property_list(List<PropertyInfo> *p_list) const 
 		RenderingServer::get_singleton()->get_shader_parameter_list(get_shader_rid(), &param_list);
 	}
 
-	TypedArray<StringName> new_active_params;
-	// for (int i = 0; i < param_list.size(); i++) {
-	// 	Dictionary dict = param_list[i];
-	for (auto &param : param_list) {
-		Dictionary dict = param;
-		String the_name = dict["name"];
-
+	_active_params.clear();
+	for (int i = 0; i < param_list.size(); i++) {
+		PropertyInfo info = param_list.get(i);
 		// Filter out private uniforms that start with _
-		if (!the_name.begins_with("_")) {
+		if (!info.name.begins_with("_")) {
 			// Populate Redot property list
 			PropertyInfo pi;
-			// uint64_t use = dict["usage"];
-			// if (use == PROPERTY_USAGE_GROUP) {
-			// 	Vector<String> split_name = name.split("::");
-			// 	pi.name = split_name[MAX(split_name.size() - 1, 0)].capitalize();
-			// 	pi.usage = (name.contains("::") ? PROPERTY_USAGE_SUBGROUP : PROPERTY_USAGE_GROUP) | PROPERTY_USAGE_EDITOR;
-			// } else {
-			// 	pi.name = name;
-			// 	pi.usage = PROPERTY_USAGE_EDITOR;
-			// }
-			pi.name = the_name;
-			pi.class_name = dict["class_name"];
-			pi.type = Variant::Type(int(dict["type"]));
-			pi.hint = dict["hint"];
-			pi.hint_string = dict["hint_string"];
-			pi.usage = PROPERTY_USAGE_EDITOR;
+			uint64_t use = info.usage;
+			if (use == PROPERTY_USAGE_GROUP) {
+				Vector<String> split_name = info.name.split("::");
+				pi.name = split_name[MAX(split_name.size() - 1, 0)].capitalize();
+				pi.usage = (info.name.contains("::") ? PROPERTY_USAGE_SUBGROUP : PROPERTY_USAGE_GROUP) | PROPERTY_USAGE_EDITOR;
+			} else {
+				pi.name = info.name;
+				pi.usage = PROPERTY_USAGE_EDITOR;
+			}
+			pi.class_name = info.class_name;
+			pi.type = info.type;
+			pi.hint = info.hint;
+			pi.hint_string = info.hint_string;
 			p_list->push_back(pi);
 
 			// Populate list of public parameters for current shader
-			new_active_params.push_back(the_name);
+			_active_params.push_back(info.name);
 
 			// Store this param in a dictionary that is saved in the resource file
 			// Initially set with default value
 			// Also acts as a cache for _get
 			// Property usage above set to EDITOR so it won't be redundantly saved,
 			// which won't get loaded since there is no bound property.
-			if (!_shader_params.has(the_name)) {
-				_property_get_revert(the_name, _shader_params[the_name]);
+			if (!_shader_params.has(info.name)) {
+				_property_get_revert(info.name, _shader_params[info.name]);
 			}
 		}
 	}
-	_active_params = new_active_params;
+	return;
 }
 
 // Flag uniforms with non-default values
@@ -1084,17 +1110,17 @@ void WorldScape3DMaterial::_bind_methods() {
 	// These must be different from the names of uniform groups
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "world_background", PROPERTY_HINT_ENUM, "None,Flat,Noise"), "set_world_background", "get_world_background");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "texture_filtering", PROPERTY_HINT_ENUM, "Linear,Nearest"), "set_texture_filtering", "get_texture_filtering");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_shader_enabled"), "set_auto_shader", "get_auto_shader");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dual_scaling_enabled"), "set_dual_scaling", "get_dual_scaling");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_shader"), "set_auto_shader", "get_auto_shader");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dual_scaling"), "set_dual_scaling", "get_dual_scaling");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shader_override_enabled"), "enable_shader_override", "is_shader_override_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shader_override", PROPERTY_HINT_RESOURCE_TYPE, "Shader"), "set_shader_override", "get_shader_override");
 
 	ADD_GROUP("Overlays", "show_");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_region_grid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_region_grid", "get_show_region_grid");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_instancer_grid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_instancer_grid", "get_show_instancer_grid");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_vertex_grid", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_vertex_grid", "get_show_vertex_grid");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_contours", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_contours", "get_show_contours");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_navigation", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_show_navigation", "get_show_navigation");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_region_grid"), "set_show_region_grid", "get_show_region_grid");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_instancer_grid"), "set_show_instancer_grid", "get_show_instancer_grid");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_vertex_grid"), "set_show_vertex_grid", "get_show_vertex_grid");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_contours"), "set_show_contours", "get_show_contours");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_navigation"), "set_show_navigation", "get_show_navigation");
 
 	ADD_GROUP("Debug Views", "show_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_checkered"), "set_show_checkered", "get_show_checkered");

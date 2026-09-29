@@ -66,9 +66,6 @@ public: // Constants
 	};
 
 	enum RegionSize {
-		SIZE_64 = 64,
-		SIZE_128 = 128,
-		SIZE_256 = 256,
 		SIZE_512 = 512,
 		SIZE_1024 = 1024,
 		SIZE_2048 = 2048,
@@ -100,7 +97,7 @@ private:
 	Vector2 _camera_last_position = V2_MAX;
 
 	// Regions
-	RegionSize _region_size = SIZE_256;
+	RegionSize _region_size = SIZE_512;
 	bool _save_16_bit = false;
 	real_t _label_distance = 0.f;
 	int _label_size = 48;

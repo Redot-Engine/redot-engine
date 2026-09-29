@@ -94,6 +94,8 @@ void WorldScape3DData::initialize(WorldScape3D *p_terrain) {
 	_terrain = p_terrain;
 	_region_map.resize(REGION_MAP_SIZE * REGION_MAP_SIZE);
 	_vertex_spacing = _terrain->get_vertex_spacing();
+	_region_size = _terrain->get_region_size();
+	_region_sizev = Vector2i(_region_size, _region_size);
 	if (!prev_initialized) {
 #ifdef TOOLS_ENABLED
 		if (_terrain->get_data_directory().is_empty()) {
@@ -105,8 +107,6 @@ void WorldScape3DData::initialize(WorldScape3D *p_terrain) {
 			load_directory(_terrain->get_data_directory());
 		}
 	}
-	_region_size = _terrain->get_region_size();
-	_region_sizev = Vector2i(_region_size, _region_size);
 }
 
 void WorldScape3DData::set_region_locations(const TypedArray<Vector2i> &p_locations) {
@@ -158,8 +158,8 @@ void WorldScape3DData::do_for_regions(const Rect2i &p_area, const Callable &p_ca
 
 void WorldScape3DData::change_region_size(int p_new_size) {
 	LOG(DEBUG, "Changing region size from: ", _region_size, " to ", p_new_size);
-	if (p_new_size < 64 || p_new_size > 4096 || !is_power_of_2(p_new_size)) {
-		LOG(ERROR, "Invalid region size: ", p_new_size, ". Must be 64, 128, 256, 512, 1024, 2048, 4096");
+	if (p_new_size < 512 || p_new_size > 4096 || !is_power_of_2(p_new_size)) {
+		LOG(ERROR, "Invalid region size: ", p_new_size, ". Must be 512, 1024, 2048, 4096");
 		return;
 	}
 	if (p_new_size == _region_size) {

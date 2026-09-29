@@ -45,7 +45,7 @@
 // Note a null texture is considered a valid format
 bool WorldScape3DTextureAsset::_is_valid_format(const Ref<Texture2D> &p_texture) const {
 	if (p_texture.is_null()) {
-		print_line_rich("Provided texture is null.");
+		LOG(WARN, "Provided texture is null.");
 		return true;
 	}
 
@@ -55,7 +55,7 @@ bool WorldScape3DTextureAsset::_is_valid_format(const Ref<Texture2D> &p_texture)
 		format = img->get_format();
 	}
 	if (format < 0 || format >= Image::FORMAT_MAX) {
-		print_error("Invalid texture format. See documentation for format specification.");
+		LOG(ERROR, "Invalid texture format. See documentation for format specification.");
 		return false;
 	}
 
@@ -79,7 +79,7 @@ void WorldScape3DTextureAsset::clear() {
 }
 
 void WorldScape3DTextureAsset::set_name(const String &p_name) {
-	print_line_rich("Setting name: ", p_name);
+	LOG(DEBUG, "Setting name: ", p_name);
 	_name = p_name;
 	emit_signal("setting_changed");
 }

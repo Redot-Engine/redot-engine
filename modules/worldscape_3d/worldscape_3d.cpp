@@ -107,9 +107,9 @@ void WorldScape3D::_initialize() {
 		_data->connect("region_map_changed", callable_mp(_collision, &WorldScape3DCollision::build));
 	}
 	// Any map was regenerated or regions changed, update material
-	if (!_data->is_connected("maps_changed", callable_mp(_material.ptr(), &WorldScape3DMaterial::_update_maps))) {
-		LOG(DEBUG, "Connecting _data::maps_changed signal to _material->_update_maps()");
-		_data->connect("maps_changed", callable_mp(_material.ptr(), &WorldScape3DMaterial::_update_maps));
+	if (!_data->is_connected("maps_changed", callable_mp(_material.ptr(), &WorldScape3DMaterial::update))) {
+		LOG(DEBUG, "Connecting _data::maps_changed signal to _material->update()");
+		_data->connect("maps_changed", callable_mp(_material.ptr(), &WorldScape3DMaterial::update));
 	}
 	// Height map was regenerated, update aabbs
 	if (!_data->is_connected("height_maps_changed", callable_mp(this, &WorldScape3D::_update_mesher_aabbs))) {
@@ -542,7 +542,7 @@ void WorldScape3D::set_camera(Camera3D *p_camera) {
 
 void WorldScape3D::set_region_size(const RegionSize p_size) {
 	LOG(DEBUG, "Setting region size: ", p_size);
-	ERR_FAIL_COND(p_size < SIZE_64);
+	ERR_FAIL_COND(p_size < SIZE_512);
 	ERR_FAIL_COND(p_size > SIZE_4096);
 	_region_size = p_size;
 	if (_data) {
@@ -1043,9 +1043,6 @@ void WorldScape3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(DEBUG);
 	BIND_ENUM_CONSTANT(EXTREME);
 
-	BIND_ENUM_CONSTANT(SIZE_64);
-	BIND_ENUM_CONSTANT(SIZE_128);
-	BIND_ENUM_CONSTANT(SIZE_256);
 	BIND_ENUM_CONSTANT(SIZE_512);
 	BIND_ENUM_CONSTANT(SIZE_1024);
 	BIND_ENUM_CONSTANT(SIZE_2048);
@@ -1177,7 +1174,7 @@ void WorldScape3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "instancer", PROPERTY_HINT_NONE, "WorldScape3DInstancer", PROPERTY_USAGE_NONE), "", "get_instancer");
 
 	ADD_GROUP("Regions", "");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "region_size", PROPERTY_HINT_ENUM, "64:64,128:128,256:256,512:512,1024:1024,2048:2048,4096:4096", PROPERTY_USAGE_EDITOR), "change_region_size", "get_region_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "region_size", PROPERTY_HINT_ENUM, "512:512,1024:1024,2048:2048,4096:4096", PROPERTY_USAGE_EDITOR), "change_region_size", "get_region_size");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "save_16_bit"), "set_save_16_bit", "get_save_16_bit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "label_distance", PROPERTY_HINT_RANGE, "0.0,10000.0,0.5,or_greater"), "set_label_distance", "get_label_distance");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "label_size", PROPERTY_HINT_RANGE, "24,128,1"), "set_label_size", "get_label_size");

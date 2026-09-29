@@ -111,9 +111,10 @@ private:
 	void _update_texture_arrays();
 	void _set_shader_parameters(const Dictionary &p_dict);
 	Dictionary _get_shader_parameters() const { return _shader_params; }
+	void _init_shader_params();
 
 public:
-	WorldScape3DMaterial() {}
+	WorldScape3DMaterial() = default;
 	~WorldScape3DMaterial() override { destroy(); }
 	void initialize(WorldScape3D *p_terrain);
 	bool is_initialized() { return _terrain != nullptr; }
