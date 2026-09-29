@@ -212,6 +212,8 @@ public:
 	virtual void get_script_signal_list(List<MethodInfo> *r_signals) const = 0;
 
 	virtual bool get_property_default_value(const StringName &p_property, Variant &r_value) const = 0;
+	/// Returns a schema-backed default for elements of a script-defined array property, when available.
+	virtual bool get_property_array_element_default_value(const StringName &p_property, Variant &r_value) const { return false; }
 
 	virtual void update_exports() {} ///< Editor tool
 	virtual void get_script_method_list(List<MethodInfo> *p_list) const = 0;

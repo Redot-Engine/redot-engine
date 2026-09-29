@@ -412,6 +412,20 @@ bool GDScript::get_property_default_value(const StringName &p_property, Variant 
 	return false;
 }
 
+bool GDScript::get_property_array_element_default_value(const StringName &p_property, Variant &r_value) const {
+#ifdef TOOLS_ENABLED
+	HashMap<StringName, Variant>::ConstIterator E = member_array_element_defaults_cache.find(p_property);
+	if (E) {
+		r_value = E->value;
+		return true;
+	}
+	if (base_cache.is_valid()) {
+		return base_cache->get_property_array_element_default_value(p_property, r_value);
+	}
+#endif
+	return false;
+}
+
 ScriptInstance *GDScript::instance_create(Object *p_this) {
 	ERR_FAIL_COND_V_MSG(!valid, nullptr, "Script is invalid!");
 
@@ -567,6 +581,7 @@ bool GDScript::_update_exports(bool *r_err, bool p_recursive_call, PlaceHolderSc
 
 			members_cache.clear();
 			member_default_values_cache.clear();
+			member_array_element_defaults_cache.clear();
 			_signals.clear();
 
 			members_cache.push_back(get_class_category());
@@ -583,6 +598,17 @@ bool GDScript::_update_exports(bool *r_err, bool p_recursive_call, PlaceHolderSc
 						members_cache.push_back(member.variable->export_info);
 						Variant default_value = analyzer.make_variable_default_value(member.variable);
 						member_default_values_cache[member.variable->identifier->name] = default_value;
+						const GDScriptParser::DataType type = member.variable->get_datatype();
+						if (type.kind == GDScriptParser::DataType::BUILTIN && type.builtin_type == Variant::ARRAY && type.has_container_element_type(0)) {
+							const GDScriptParser::DataType element_type = type.get_container_element_type(0);
+							if (element_type.kind == GDScriptParser::DataType::BUILTIN && element_type.builtin_type == Variant::STRUCT &&
+									element_type.struct_type != nullptr && !element_type.is_nullable) {
+								Variant element_default = analyzer.make_struct_schema_default(element_type.struct_type);
+								if (element_default.get_type() == Variant::STRUCT) {
+									member_array_element_defaults_cache[member.variable->identifier->name] = element_default;
+								}
+							}
+						}
 					} break;
 					case GDScriptParser::ClassNode::Member::SIGNAL: {
 						_signals[member.signal->identifier->name] = member.signal->method_info;

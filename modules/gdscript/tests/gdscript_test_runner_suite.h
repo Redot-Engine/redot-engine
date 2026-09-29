@@ -122,6 +122,32 @@ TEST_SUITE("[Modules][GDScript]") {
 #endif // TOOLS_ENABLED
 
 #ifdef TOOLS_ENABLED
+TEST_CASE("[Modules][GDScript] Exported struct array elements retain schema defaults") {
+	GDScriptLanguage::get_singleton()->init();
+	Ref<GDScript> script;
+	script.instantiate();
+	script->set_source_code(R"(
+extends Resource
+
+struct Record:
+	var enabled: bool = true
+	var count: int = 4
+
+@export var records: Array[Record]
+)");
+	REQUIRE(script->reload() == OK);
+	script->update_exports();
+
+	Variant element_default;
+	REQUIRE(script->get_property_array_element_default_value("records", element_default));
+	REQUIRE(element_default.get_type() == Variant::STRUCT);
+	Struct record = element_default;
+	REQUIRE_FALSE(record.is_null());
+	REQUIRE(record.get_field_count() == 2);
+	CHECK(bool(record.get_member(0)) == true);
+	CHECK(int(record.get_member(1)) == 4);
+}
+
 TEST_CASE("[Modules][GDScript] Struct object fields retain script and trait constraints") {
 	GDScriptLanguage::get_singleton()->init();
 	Ref<GDScript> script;
