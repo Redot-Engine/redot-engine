@@ -887,6 +887,63 @@ TEST_CASE("[Struct][D8] Text (.tres/variant_parser) round-trip") {
 	CHECK(r.get_info()->get_schema_fingerprint() == info->get_schema_fingerprint());
 }
 
+TEST_CASE("[Struct][D8] Nullable field survives every serialization format") {
+	StructInfoBuilder b;
+	b.set_logical_type_id("Opt");
+	StructInfo::Field f;
+	f.name = "name";
+	f.type = Variant::STRING;
+	f.is_typed = true;
+	f.is_nullable = true;
+	f.default_value = Variant();
+	b.add_field(f);
+	Ref<StructInfo> info = b.build();
+
+	Struct s(info);
+	s.set_member(0, Variant());
+	CHECK(s.get_member(0).get_type() == Variant::NIL);
+
+	// JSON.
+	{
+		Struct r = JSON::to_native(JSON::from_native(Variant(s), true), true);
+		CHECK(r.get_info()->is_field_nullable(0));
+		CHECK(r.get_info()->get_schema_fingerprint() == info->get_schema_fingerprint());
+		CHECK(r.get_member(0).get_type() == Variant::NIL);
+	}
+
+	// Binary.
+	{
+		int len = 0;
+		encode_variant(Variant(s), nullptr, len, true);
+		Vector<uint8_t> buf;
+		buf.resize(len);
+		encode_variant(Variant(s), buf.ptrw(), len, true);
+		Variant decoded;
+		int used = 0;
+		CHECK(decode_variant(decoded, buf.ptr(), buf.size(), &used, true) == OK);
+		Struct r = decoded;
+		CHECK(r.get_info()->is_field_nullable(0));
+		CHECK(r.get_info()->get_schema_fingerprint() == info->get_schema_fingerprint());
+		CHECK(r.get_member(0).get_type() == Variant::NIL);
+	}
+
+	// Text.
+	{
+		String text;
+		CHECK(VariantWriter::write_to_string(Variant(s), text) == OK);
+		VariantParser::StreamString ss;
+		ss.s = text;
+		Variant result;
+		String err_str;
+		int err_line = 0;
+		CHECK(VariantParser::parse(&ss, result, err_str, err_line) == OK);
+		Struct r = result;
+		CHECK(r.get_info()->is_field_nullable(0));
+		CHECK(r.get_info()->get_schema_fingerprint() == info->get_schema_fingerprint());
+		CHECK(r.get_member(0).get_type() == Variant::NIL);
+	}
+}
+
 TEST_CASE("[Struct][D8] Null struct round-trips through every format") {
 	const Variant null_struct = Struct();
 
@@ -1127,8 +1184,8 @@ TEST_CASE("[Struct][D8] Type tokens match the frozen vocabulary exactly") {
 
 TEST_CASE("[Struct][D8] Fingerprints are frozen to known golden values (portable)") {
 	Ref<StructInfo> info = make_point();
-	CHECK(info->get_layout_fingerprint() == "ed9ca167c5baca2d5534eed31d0c1f87");
-	CHECK(info->get_schema_fingerprint() == "2d4d71795eee415fa7349f8a5ff53c8f");
+	CHECK(info->get_layout_fingerprint() == "a1cd0ed1ed8a4d383f0ee283b9b97a19");
+	CHECK(info->get_schema_fingerprint() == "b0cac3de4e067709ee6cd52a9f4b186b");
 }
 
 TEST_CASE("[Struct][D8] A malformed nested struct fails the whole JSON decode") {
@@ -1192,7 +1249,7 @@ TEST_CASE("[Struct][D8] A malformed struct nested inside an array field fails th
 }
 
 TEST_CASE("[Struct][D8] Text parser rejects a field missing its default") {
-	const String text = R"(Struct(1, "P", [{"name": "x", "type": "int", "typed": true}], [5]))";
+	const String text = R"(Struct(2, "P", [{"name": "x", "type": "int", "typed": true}], [5]))";
 	VariantParser::StreamString ss;
 	ss.s = text;
 	Variant v;
@@ -1270,11 +1327,11 @@ TEST_CASE("[Struct][D8] Text parser rejects malformed Struct arguments") {
 	const char *bad[] = {
 		R"(Struct("P", [], []))",
 		R"(Struct("x", "P", [], []))",
-		R"(Struct(2, "P", [], []))",
-		R"(Struct(1, 123, [], []))",
-		R"(Struct(1, "P", 12, []))",
-		R"(Struct(1, "P", [], 7))",
-		R"(Struct(1, "P", [42], []))",
+		R"(Struct(99, "P", [], []))",
+		R"(Struct(2, 123, [], []))",
+		R"(Struct(2, "P", 12, []))",
+		R"(Struct(2, "P", [], 7))",
+		R"(Struct(2, "P", [42], []))",
 	};
 	for (const char *text : bad) {
 		VariantParser::StreamString ss;

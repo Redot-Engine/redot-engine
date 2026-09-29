@@ -1210,6 +1210,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 					return ERR_PARSE_ERROR;
 				}
 				f.is_typed = bool(fd.get("typed", false));
+				f.is_nullable = bool(fd.get("nullable", false));
 				if (fd.has("class_name")) {
 					f.class_name = StringName(String(fd["class_name"]));
 				}
@@ -2569,6 +2570,7 @@ Error VariantWriter::write(const Variant &p_variant, StoreStringFunc p_store_str
 				fd["name"] = String(info->get_field_name(i));
 				fd["type"] = String(StructInfo::type_to_token(info->get_field_type(i)));
 				fd["typed"] = info->is_field_typed(i);
+				fd["nullable"] = info->is_field_nullable(i);
 				if (info->get_field_class_name(i) != StringName()) {
 					fd["class_name"] = String(info->get_field_class_name(i));
 				}

@@ -1045,6 +1045,7 @@ Variant JSON::_from_native(const Variant &p_variant, bool p_full_objects, int p_
 				fd["name"] = String(info->get_field_name(i));
 				fd["type"] = String(StructInfo::type_to_token(info->get_field_type(i)));
 				fd["typed"] = info->is_field_typed(i);
+				fd["nullable"] = info->is_field_nullable(i);
 				if (info->get_field_class_name(i) != StringName()) {
 					fd["class_name"] = String(info->get_field_class_name(i));
 				}
@@ -1573,6 +1574,7 @@ Variant JSON::_to_native(const Variant &p_json, bool p_allow_objects, int p_dept
 						f.type = StructInfo::type_from_token(String(fd.get("type", "nil")));
 						ERR_FAIL_COND_V_MSG(f.type == Variant::VARIANT_MAX, Variant(), "Unknown struct field type token.");
 						f.is_typed = bool(fd.get("typed", false));
+						f.is_nullable = bool(fd.get("nullable", false));
 						if (fd.has("class_name")) {
 							f.class_name = StringName(String(fd["class_name"]));
 						}

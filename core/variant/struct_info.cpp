@@ -205,12 +205,13 @@ static String _h128_hex(const Vector<uint8_t> &p_bytes) {
 
 Vector<uint8_t> StructInfo::get_layout_descriptor() const {
 	Vector<uint8_t> buf;
-	buf.push_back(1);
+	buf.push_back(2);
 	_append_u32_le(buf, (uint32_t)fields.size());
 	for (const Field &f : fields) {
 		_append_lp(buf, String(f.name));
 		_append_lp(buf, String(type_to_token(f.type)));
 		buf.push_back(f.is_typed ? 1 : 0);
+		buf.push_back(f.is_nullable ? 1 : 0);
 		_append_lp(buf, String(f.class_name));
 		_append_lp(buf, String(f.struct_type_id));
 	}
