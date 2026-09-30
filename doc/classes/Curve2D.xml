@@ -83,6 +83,19 @@
 				Deletes the point [param idx] from the curve. Sends an error to the console if [param idx] is out of bounds.
 			</description>
 		</method>
+		<method name="reset_all_points_handles">
+			<return type="void" />
+			<description>
+				All control points are reset, effectively removing all "smoothness."
+			</description>
+		</method>
+		<method name="reset_point_handles">
+			<return type="void" />
+			<param index="0" name="idx" type="int" />
+			<description>
+				Sets the control handles for the specified point to 0.
+			</description>
+		</method>
 		<method name="sample" qualifiers="const">
 			<return type="Vector2" />
 			<param index="0" name="idx" type="int" />
@@ -147,6 +160,12 @@
 			<param index="1" name="position" type="Vector2" />
 			<description>
 				Sets the position for the vertex [param idx]. If the index is out of bounds, the function sends an error to the console.
+			</description>
+		</method>
+		<method name="smooth_all_points">
+			<return type="void" />
+			<description>
+				Automatically interpolates control handles for all points, creating a smooth curve.
 			</description>
 		</method>
 		<method name="tessellate" qualifiers="const">
