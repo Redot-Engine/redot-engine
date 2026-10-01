@@ -118,6 +118,20 @@
 				[b]Note:[/b] Some Android devices might require the [code]CHANGE_WIFI_MULTICAST_STATE[/code] permission and this option to be enabled to receive broadcast packets too.
 			</description>
 		</method>
+		<method name="set_reuse_address">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				Enable or disable [code]SO_REUSEADDR[/code] flag on the socket. This only works before [code]bind[/code] method.
+			</description>
+		</method>
+		<method name="set_reuse_port">
+			<return type="void" />
+			<param index="0" name="enabled" type="bool" />
+			<description>
+				Enable or disable the [code]SO_REUSEPORT[/code] flag on the socket. This only works before [code]bind[/code] method.
+			</description>
+		</method>
 		<method name="set_dest_address">
 			<return type="int" enum="Error" />
 			<param index="0" name="host" type="String" />
