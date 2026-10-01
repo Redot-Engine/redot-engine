@@ -80,8 +80,11 @@ public:
 	RBSet(const RBSet &p_set) :
 			Super(p_set) {}
 
-	RBSet(std::initializer_list<T> p_init) :
-			Super(p_init) {}
+	RBSet(std::initializer_list<T> p_init) {
+		for (const T &E : p_init) {
+			insert(E);
+		}
+	}
 
 	_FORCE_INLINE_ RBSet() :
 			Super() {}
