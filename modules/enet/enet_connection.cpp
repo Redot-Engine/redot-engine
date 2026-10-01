@@ -341,7 +341,9 @@ Array ENetConnection::_service(int p_timeout) {
 Array ENetConnection::_check_events() {
 	Event event;
 	EventType event_type = EVENT_NONE;
-	check_events(event_type, event);
+	if (check_events(event_type, event) < 0) {
+		event_type = EVENT_ERROR;
+	}
 	Array out = { event_type, event.peer, event.data, event.channel_id };
 	if (event.packet && event.peer.is_valid()) {
 		event.peer->_queue_packet(event.packet);
