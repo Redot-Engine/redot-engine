@@ -1230,10 +1230,42 @@ bool VariantUtilityFunctions::is_same(const Variant &p_a, const Variant &p_b) {
 	return p_a.identity_compare(p_b);
 }
 
-bool _deep_equals(const Variant &p_a, const Variant &p_b, int p_max_depth) {
+struct DeepEqualsPair {
+	Variant::Type type;
+	const void *a;
+	const void *b;
+
+	bool operator==(const DeepEqualsPair &p_other) const {
+		return type == p_other.type &&
+				a == p_other.a &&
+				b == p_other.b;
+	}
+};
+
+struct DeepEqualsPairHasher {
+	static _FORCE_INLINE_ uint32_t hash(const DeepEqualsPair &p_pair) {
+		uint32_t hash = hash_murmur3_one_32(p_pair.type);
+		hash = hash_murmur3_one_32(HashMapHasherDefault::hash(p_pair.a), hash);
+		hash = hash_murmur3_one_32(HashMapHasherDefault::hash(p_pair.b), hash);
+		return hash_fmix32(hash);
+	}
+};
+
+using DeepEqualsPairs = HashSet<DeepEqualsPair, DeepEqualsPairHasher>;
+
+struct DeepEqualsPairGuard {
+	DeepEqualsPairs &pairs;
+	DeepEqualsPair pair;
+
+	~DeepEqualsPairGuard() {
+		pairs.erase(pair);
+	}
+};
+
+bool _deep_equals(const Variant &p_a, const Variant &p_b, int p_max_depth, DeepEqualsPairs &r_active_pairs) {
 	if (p_max_depth <= 0) {
 		ERR_PRINT("Maximum recursion depth reached");
-		return true;
+		return false;
 	}
 
 	const Variant::Type type_a = p_a.get_type();
@@ -1256,12 +1288,25 @@ bool _deep_equals(const Variant &p_a, const Variant &p_b, int p_max_depth) {
 		const Array arr_b = p_b;
 		const int64_t size_a = arr_a.size();
 
+		if (arr_a.id() == arr_b.id()) {
+			return true;
+		}
+
 		if (size_a != arr_b.size()) {
 			return false;
 		}
 
+		const DeepEqualsPair pair = { Variant::Type::ARRAY, arr_a.id(), arr_b.id() };
+
+		if (r_active_pairs.has(pair)) {
+			return true;
+		}
+
+		r_active_pairs.insert(pair);
+		DeepEqualsPairGuard guard{ r_active_pairs, pair };
+
 		for (int64_t i = 0; i < size_a; ++i) {
-			if (!_deep_equals(arr_a[i], arr_b[i], p_max_depth - 1)) {
+			if (!_deep_equals(arr_a[i], arr_b[i], p_max_depth - 1, r_active_pairs)) {
 				return false;
 			}
 		}
@@ -1273,19 +1318,31 @@ bool _deep_equals(const Variant &p_a, const Variant &p_b, int p_max_depth) {
 		const Dictionary dict_a = p_a;
 		const Dictionary dict_b = p_b;
 
-		const Array keys_a = dict_a.keys();
-		const Array keys_b = dict_b.keys();
+		if (dict_a.id() == dict_b.id()) {
+			return true;
+		}
 
-		if (keys_a.size() != keys_b.size()) {
+		if (dict_a.size() != dict_b.size()) {
 			return false;
 		}
+
+		const DeepEqualsPair pair = { Variant::Type::DICTIONARY, dict_a.id(), dict_b.id() };
+
+		if (r_active_pairs.has(pair)) {
+			return true;
+		}
+
+		r_active_pairs.insert(pair);
+		DeepEqualsPairGuard guard{ r_active_pairs, pair };
+
+		const Array keys_a = dict_a.keys();
 
 		for (int64_t i = 0; i < keys_a.size(); ++i) {
 			const Variant &key = keys_a[i];
 			if (!dict_b.has(key)) {
 				return false;
 			}
-			if (!_deep_equals(dict_a[key], dict_b[key], p_max_depth - 1)) {
+			if (!_deep_equals(dict_a[key], dict_b[key], p_max_depth - 1, r_active_pairs)) {
 				return false;
 			}
 		}
@@ -1309,6 +1366,15 @@ bool _deep_equals(const Variant &p_a, const Variant &p_b, int p_max_depth) {
 			return true;
 		}
 
+		const DeepEqualsPair pair = { Variant::Type::OBJECT, obj_a_ptr, obj_b_ptr };
+
+		if (r_active_pairs.has(pair)) {
+			return true;
+		}
+
+		r_active_pairs.insert(pair);
+		DeepEqualsPairGuard guard{ r_active_pairs, pair };
+
 		List<PropertyInfo> props_a;
 		obj_a_ptr->get_property_list(&props_a);
 		List<PropertyInfo> props_b;
@@ -1325,7 +1391,7 @@ bool _deep_equals(const Variant &p_a, const Variant &p_b, int p_max_depth) {
 		}
 
 		for (const PropertyInfo &prop_info : props_a) {
-			if (!_deep_equals(obj_a_ptr->get(prop_info.name), obj_b_ptr->get(prop_info.name), p_max_depth - 1)) {
+			if (!_deep_equals(obj_a_ptr->get(prop_info.name), obj_b_ptr->get(prop_info.name), p_max_depth - 1, r_active_pairs)) {
 				return false;
 			}
 		}
@@ -1338,7 +1404,8 @@ bool _deep_equals(const Variant &p_a, const Variant &p_b, int p_max_depth) {
 }
 
 bool VariantUtilityFunctions::deep_equals(const Variant &a, const Variant &b) {
-	return _deep_equals(a, b, MAX_RECURSION);
+	DeepEqualsPairs active_pairs;
+	return _deep_equals(a, b, MAX_RECURSION, active_pairs);
 }
 
 String VariantUtilityFunctions::join_string(const Variant **p_args, int p_arg_count) {

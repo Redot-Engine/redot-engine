@@ -378,6 +378,66 @@ TEST_CASE("[VariantUtility] deep_equals") {
 		mixed_d2c["id"] = 1;
 		CHECK_FALSE_MESSAGE(VariantUtilityFunctions::deep_equals(mixed_d2a, mixed_d2c), "Dictionaries containing unequal arrays should not be equal.");
 	}
+
+	SUBCASE("Circular arrays") {
+		Array array_a;
+		Array array_b;
+
+		array_a.push_back(array_a);
+		array_b.push_back(array_b);
+
+		CHECK(VariantUtilityFunctions::deep_equals(array_a, array_b));
+	}
+
+	SUBCASE("Multiple Circular References") {
+		Array array_a;
+		Array array_b;
+
+		array_a.push_back(array_a);
+		array_a.push_back(array_a);
+
+		array_b.push_back(array_b);
+		array_b.push_back(array_b);
+
+		CHECK(VariantUtilityFunctions::deep_equals(array_a, array_b));
+	}
+
+	SUBCASE("Different Circular References") {
+		Array array_a;
+		Array array_b;
+
+		array_a.push_back(array_a);
+		array_a.push_back(123);
+
+		array_b.push_back(array_b);
+		array_b.push_back(456);
+
+		CHECK_FALSE(VariantUtilityFunctions::deep_equals(array_a, array_b));
+	}
+
+	SUBCASE("Depth Exhaustion not Equal") {
+		Array array_a;
+		Array array_b;
+
+		Array *current_a = &array_a;
+		Array *current_b = &array_b;
+
+		for (int i = 0; i < MAX_RECURSION; ++i) {
+			Array next_a;
+			Array next_b;
+
+			current_a->push_back(next_a);
+			current_b->push_back(next_b);
+
+			*current_a = (*current_a)[0];
+			*current_b = (*current_b)[0];
+		}
+
+		current_a->push_back(123);
+		current_b->push_back(456);
+
+		CHECK_FALSE(VariantUtilityFunctions::deep_equals(array_a, array_b));
+	}
 }
 
 } // namespace TestVariantUtility
