@@ -571,6 +571,15 @@ void NetSocketUnix::set_reuse_address_enabled(bool p_enabled) {
 	}
 }
 
+void NetSocketUnix::set_reuse_port_enabled(bool p_enabled) {
+	ERR_FAIL_COND(!is_open());
+
+	int par = p_enabled ? 1 : 0;
+	if (setsockopt(_sock, SOL_SOCKET, SO_REUSEPORT, &par, sizeof(int)) < 0) {
+		WARN_PRINT("Unable to set socket REUSEPORT option.");
+	}
+}
+
 bool NetSocketUnix::is_open() const {
 	return _sock != -1;
 }

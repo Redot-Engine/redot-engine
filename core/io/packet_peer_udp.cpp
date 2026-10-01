@@ -214,8 +214,7 @@ Error PacketPeerUDP::bind(int p_port, const IPAddress &p_bind_address, int p_rec
 	_sock->set_blocking_enabled(false);
 	_sock->set_broadcasting_enabled(broadcast);
 	_sock->set_reuse_address_enabled(reuse_address);
-	// FIXME this doesn't compile because there's no existing impl for reuse_port
-	// _sock->set_reuse_port_enabled(reuse_port);
+	_sock->set_reuse_port_enabled(reuse_port);
 	err = _sock->bind(p_bind_address, p_port);
 
 	if (err != OK) {
