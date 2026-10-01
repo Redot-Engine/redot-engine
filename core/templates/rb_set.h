@@ -40,7 +40,6 @@
 
 #include "core/templates/rb_map.h"
 
-// TODO Ideally, we want this to be truly empty, but this appears to be difficult to achieve.
 struct RBEmptyValue {};
 
 template <typename T, typename C = Comparator<T>, typename A = DefaultAllocator>
