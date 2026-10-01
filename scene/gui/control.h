@@ -208,7 +208,10 @@ private:
 		LayoutMode stored_layout_mode = LayoutMode::LAYOUT_MODE_POSITION;
 		bool stored_use_custom_anchors = false;
 
+		/// Offsets from anchor points for each side: [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]
+		/// Distance in pixels from the anchor point to the control's edge.
 		real_t offset[4] = { 0.0, 0.0, 0.0, 0.0 };
+		/// Normalized 0-1 values:
 		real_t anchor[4] = { ANCHOR_BEGIN, ANCHOR_BEGIN, ANCHOR_BEGIN, ANCHOR_BEGIN };
 		FocusMode focus_mode = FOCUS_NONE;
 		FocusBehaviorRecursive focus_behavior_recursive = FOCUS_BEHAVIOR_INHERITED;
@@ -230,6 +233,8 @@ private:
 		bool block_minimum_size_adjust = false;
 
 		bool size_warning = true;
+		int anchor_preset_margin = 0;
+		bool anchor_preset_active = false;
 		/// @}
 		/// Container Sizing
 		/// @{
@@ -306,6 +311,132 @@ private:
 
 	} data;
 
+	/// @brief All the parameters needed to calculate offsets when using anchor presets
+	struct OffsetCalcParams {
+		real_t anchor_position[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; ///< 0.0 - 1.0
+		real_t parent_x_size = 0.0f;
+		real_t parent_y_size = 0.0f;
+		real_t pivot_x_correction = 0.0f;
+		real_t pivot_y_correction = 0.0f;
+		real_t scaled_width = 0.0f;
+		real_t scaled_height = 0.0f;
+		real_t size_x = 0.0f;
+		real_t size_y = 0.0f;
+		real_t scale_x = 0.0f;
+		real_t scale_y = 0.0f;
+		int preset_margin = 0;
+		real_t parent_x_position = 0.0f;
+		real_t parent_y_position = 0.0f;
+	};
+
+	/// @name Left offset calculation functions
+	/// @{
+	static real_t _calculate_left_offset_left_justified(const OffsetCalcParams &p) {
+		return p.parent_x_size * (0.0 - p.anchor_position[0]) + p.pivot_x_correction + p.preset_margin + p.parent_x_position;
+	}
+
+	static real_t _calculate_left_offset_right_justified(const OffsetCalcParams &p) {
+		return p.parent_x_size * (1.0 - p.anchor_position[0]) + p.pivot_x_correction - p.scaled_width - p.preset_margin + p.parent_x_position;
+	}
+
+	static real_t _calculate_left_offset_center_justified(const OffsetCalcParams &p) {
+		return p.parent_x_size * (0.5 - p.anchor_position[0]) + p.pivot_x_correction - p.scaled_width / 2.0f + p.parent_x_position;
+	}
+	/// @}
+	/// @name Top offset calculation functions
+	/// @{
+	static real_t _calculate_top_offset_top_justified(const OffsetCalcParams &p) {
+		return p.parent_y_size * (0.0 - p.anchor_position[1]) + p.pivot_y_correction + p.preset_margin + p.parent_y_position;
+	}
+
+	static real_t _calculate_top_offset_bottom_justified(const OffsetCalcParams &p) {
+		return p.parent_y_size * (1.0 - p.anchor_position[1]) + p.pivot_y_correction - p.scaled_height - p.preset_margin + p.parent_y_position;
+	}
+
+	static real_t _calculate_top_offset_center_justified(const OffsetCalcParams &p) {
+		return p.parent_y_size * (0.5 - p.anchor_position[1]) + p.pivot_y_correction - p.scaled_height / 2.0f + p.parent_y_position;
+	}
+	/// @}
+
+	/// @name Right offset calculation functions
+	/// @{
+	static real_t _calculate_right_offset_left_justified(const OffsetCalcParams &p) {
+		return p.parent_x_size * (0.0 - p.anchor_position[2]) + p.pivot_x_correction + p.size_x + p.preset_margin + p.parent_x_position;
+	}
+
+	static real_t _calculate_right_offset_center_justified(const OffsetCalcParams &p) {
+		return p.parent_x_size * (0.5 - p.anchor_position[2]) + p.pivot_x_correction + p.size_x - p.scaled_width / 2.0f + p.parent_x_position;
+	}
+
+	static real_t _calculate_right_offset_right_justified(const OffsetCalcParams &p) {
+		return p.parent_x_size * (1.0 - p.anchor_position[2]) + p.pivot_x_correction + p.size_x * (1.0f - p.scale_x) - p.preset_margin + p.parent_x_position;
+	}
+
+	static real_t _calculate_right_offset_wide(const OffsetCalcParams &p) {
+		return p.pivot_x_correction + p.preset_margin + (p.parent_x_size - 2.0f * p.preset_margin) / p.scale_x - p.parent_x_size + p.parent_x_position;
+	}
+	/// @}
+
+	/// @name Bottom offset calculation functions
+	/// @{
+	static real_t _calculate_bottom_offset_top_justified(const OffsetCalcParams &p) {
+		return p.parent_y_size * (0.0 - p.anchor_position[3]) + p.pivot_y_correction + p.size_y + p.preset_margin + p.parent_y_position;
+	}
+
+	static real_t _calculate_bottom_offset_center_justified(const OffsetCalcParams &p) {
+		return p.parent_y_size * (0.5 - p.anchor_position[3]) + p.pivot_y_correction + p.size_y - p.scaled_height / 2.0f + p.parent_y_position;
+	}
+
+	static real_t _calculate_bottom_offset_bottom_justified(const OffsetCalcParams &p) {
+		return p.parent_y_size * (1.0 - p.anchor_position[3]) + p.pivot_y_correction + p.size_y * (1.0f - p.scale_y) - p.preset_margin + p.parent_y_position;
+	}
+
+	static real_t _calculate_bottom_offset_wide(const OffsetCalcParams &p) {
+		return p.pivot_y_correction + p.preset_margin + (p.parent_y_size - 2.0f * p.preset_margin) / p.scale_y - p.parent_y_size + p.parent_y_position;
+	}
+/// @}
+
+/// @name Anchor Preset - Actual Offset Calculation
+/// {
+// Preset list: name, left, top, right, bottom
+#define LAYOUT_PRESET_LIST                                                                                                                                                                                      \
+	X(LayoutPreset::PRESET_TOP_LEFT, _calculate_left_offset_left_justified, _calculate_top_offset_top_justified, _calculate_right_offset_left_justified, _calculate_bottom_offset_top_justified)                \
+	X(LayoutPreset::PRESET_TOP_RIGHT, _calculate_left_offset_right_justified, _calculate_top_offset_top_justified, _calculate_right_offset_right_justified, _calculate_bottom_offset_top_justified)             \
+	X(LayoutPreset::PRESET_BOTTOM_LEFT, _calculate_left_offset_left_justified, _calculate_top_offset_bottom_justified, _calculate_right_offset_left_justified, _calculate_bottom_offset_bottom_justified)       \
+	X(LayoutPreset::PRESET_BOTTOM_RIGHT, _calculate_left_offset_right_justified, _calculate_top_offset_bottom_justified, _calculate_right_offset_right_justified, _calculate_bottom_offset_bottom_justified)    \
+	X(LayoutPreset::PRESET_CENTER_LEFT, _calculate_left_offset_left_justified, _calculate_top_offset_center_justified, _calculate_right_offset_left_justified, _calculate_bottom_offset_center_justified)       \
+	X(LayoutPreset::PRESET_CENTER_TOP, _calculate_left_offset_center_justified, _calculate_top_offset_top_justified, _calculate_right_offset_center_justified, _calculate_bottom_offset_top_justified)          \
+	X(LayoutPreset::PRESET_CENTER_RIGHT, _calculate_left_offset_right_justified, _calculate_top_offset_center_justified, _calculate_right_offset_right_justified, _calculate_bottom_offset_center_justified)    \
+	X(LayoutPreset::PRESET_CENTER_BOTTOM, _calculate_left_offset_center_justified, _calculate_top_offset_bottom_justified, _calculate_right_offset_center_justified, _calculate_bottom_offset_bottom_justified) \
+	X(LayoutPreset::PRESET_CENTER, _calculate_left_offset_center_justified, _calculate_top_offset_center_justified, _calculate_right_offset_center_justified, _calculate_bottom_offset_center_justified)        \
+	X(LayoutPreset::PRESET_LEFT_WIDE, _calculate_left_offset_left_justified, _calculate_top_offset_top_justified, _calculate_right_offset_left_justified, _calculate_bottom_offset_wide)                        \
+	X(LayoutPreset::PRESET_TOP_WIDE, _calculate_left_offset_left_justified, _calculate_top_offset_top_justified, _calculate_right_offset_wide, _calculate_bottom_offset_top_justified)                          \
+	X(LayoutPreset::PRESET_RIGHT_WIDE, _calculate_left_offset_right_justified, _calculate_top_offset_top_justified, _calculate_right_offset_right_justified, _calculate_bottom_offset_wide)                     \
+	X(LayoutPreset::PRESET_BOTTOM_WIDE, _calculate_left_offset_left_justified, _calculate_top_offset_bottom_justified, _calculate_right_offset_wide, _calculate_bottom_offset_bottom_justified)                 \
+	X(LayoutPreset::PRESET_VCENTER_WIDE, _calculate_left_offset_center_justified, _calculate_top_offset_top_justified, _calculate_right_offset_center_justified, _calculate_bottom_offset_wide)                 \
+	X(LayoutPreset::PRESET_HCENTER_WIDE, _calculate_left_offset_left_justified, _calculate_top_offset_center_justified, _calculate_right_offset_wide, _calculate_bottom_offset_center_justified)                \
+	X(LayoutPreset::PRESET_FULL_RECT, _calculate_left_offset_left_justified, _calculate_top_offset_top_justified, _calculate_right_offset_wide, _calculate_bottom_offset_wide)
+
+	// switch seems to be the way to have a jump table without templates that I'm not smart enough to make :')
+	// (Custom anchor presets mean even the values passed into the function aren't known at compile time)
+	// This (and the above LAYOUT_PRESET_LIST) will at least keep the code from looking like a violent sneeze and keep the calculations readable
+	void apply_anchor_preset_offset(LayoutPreset preset, OffsetCalcParams &params) {
+		switch (preset) {
+#define X(preset_enum, left_fn, top_fn, right_fn, bottom_fn) \
+	case preset_enum:                                        \
+		data.offset[0] = left_fn(params);                    \
+		data.offset[1] = top_fn(params);                     \
+		data.offset[2] = right_fn(params);                   \
+		data.offset[3] = bottom_fn(params);                  \
+		break;
+			LAYOUT_PRESET_LIST
+#undef X
+		}
+	}
+#undef LAYOUT_PRESET_LIST
+
+	/// @}
+
 	/// @name Dynamic Properties
 	/// @{
 	static constexpr unsigned properties_managed_by_container_count = 12;
@@ -334,6 +465,8 @@ private:
 	LayoutMode _get_default_layout_mode() const;
 	void _set_anchors_layout_preset(int p_preset);
 	int _get_anchors_layout_preset() const;
+
+	void _compute_preset_offsets(LayoutPreset p_preset, const Size2 &p_size, int p_margin = 0);
 
 	void _update_minimum_size_cache() const;
 	void _update_minimum_size();
@@ -512,6 +645,10 @@ public:
 	GrowDirection get_v_grow_direction() const;
 
 	void set_anchors_preset(LayoutPreset p_preset, bool p_keep_offsets = true);
+	/// Sets the control's offsets to align with a layout preset.
+	/// @param p_preset: The layout preset from LayoutPreset enum.
+	/// @param p_resize_mode: How to determine the resulting size (PRESET_MODE_MINSIZE, PRESET_MODE_KEEP_SIZE, etc.).
+	/// @param p_margin: Gap between the control and parent edges.
 	void set_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
 	void set_anchors_and_offsets_preset(LayoutPreset p_preset, LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
 	void set_grow_direction_preset(LayoutPreset p_preset);
@@ -721,6 +858,7 @@ public:
 	/// @{
 	void set_layout_direction(LayoutDirection p_direction);
 	LayoutDirection get_layout_direction() const;
+	/// Whether a control should render right-to-left
 	virtual bool is_layout_rtl() const;
 
 	void set_localize_numeral_system(bool p_enable);
