@@ -74,6 +74,7 @@ private:
 	uint64_t prev_ticks = 0;
 
 	void _update_proxy();
+	void _frame_texture_changed(int p_frame);
 	void _finish_non_thread_safe_setup();
 
 protected:

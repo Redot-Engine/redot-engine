@@ -107,6 +107,19 @@ void AnimatedTexture::_update_proxy() {
 	}
 }
 
+void AnimatedTexture::_frame_texture_changed(int p_frame) {
+	bool changed = false;
+
+	{
+		RWLockRead r(rw_lock);
+		changed = current_frame == p_frame;
+	}
+
+	if (changed) {
+		emit_changed();
+	}
+}
+
 void AnimatedTexture::set_frames(int p_frames) {
 	ERR_FAIL_COND(p_frames < 1 || p_frames > MAX_FRAMES);
 
@@ -126,6 +139,7 @@ void AnimatedTexture::set_current_frame(int p_frame) {
 		RWLockWrite r(rw_lock);
 
 		if (current_frame == p_frame) {
+			time = 0;
 			return;
 		}
 
@@ -171,7 +185,16 @@ void AnimatedTexture::set_frame_texture(int p_frame, const Ref<Texture2D> &p_tex
 			return;
 		}
 
+		if (frames[p_frame].texture.is_valid()) {
+			frames[p_frame].texture->disconnect_changed(callable_mp(this, &AnimatedTexture::_frame_texture_changed).bind(p_frame));
+		}
+
 		frames[p_frame].texture = p_texture;
+
+		if (frames[p_frame].texture.is_valid()) {
+			frames[p_frame].texture->connect_changed(callable_mp(this, &AnimatedTexture::_frame_texture_changed).bind(p_frame), CONNECT_REFERENCE_COUNTED); // The same texture can be assigned to multiple animation frames
+		}
+
 		changed = p_frame == current_frame;
 	}
 
