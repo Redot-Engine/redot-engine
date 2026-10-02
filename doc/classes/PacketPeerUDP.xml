@@ -122,14 +122,20 @@
 			<return type="void" />
 			<param index="0" name="enabled" type="bool" />
 			<description>
-				Enable or disable [code]SO_REUSEADDR[/code] flag on the socket. This only works before [code]bind[/code] method.
+				Allow or deny reuse of local addresses.
+				Sets [code]SO_REUSEADDR[/code] flag on the socket.
+				[b]Note:[/b] Only takes effect before [method bind] method.
+				[b]Warning:[/b] On Windows this option additionally enables the possibility of binding multiple sockets to the same port, having same effect as [method set_reuse_port].
 			</description>
 		</method>
 		<method name="set_reuse_port">
 			<return type="void" />
 			<param index="0" name="enabled" type="bool" />
 			<description>
-				Enable or disable the [code]SO_REUSEPORT[/code] flag on the socket. This only works before [code]bind[/code] method.
+				Allow or deny binding multiple sockets on the same host to the same port. Must be set for all sockets that want to bind to the same port.
+				Sets [code]SO_REUSEPORT[/code] flag on the socket.
+				[b]Note:[/b] Only takes effect before [method bind] method.
+				[b]Warning:[/b] Does nothing on Windows. To enable binding to the same port refer to [method set_reuse_address].
 			</description>
 		</method>
 		<method name="set_dest_address">
