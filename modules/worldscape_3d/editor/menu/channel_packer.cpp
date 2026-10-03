@@ -132,9 +132,11 @@ public:
 		add_child(_option);
 	}
 
-	~ChannelSelector() override {
-		_option->queue_free();
-		_label->queue_free();
+	void _notification(int what) {
+		if (what == NOTIFICATION_PREDELETE) {
+			memdelete(_option);
+			memdelete(_label);
+		}
 	}
 
 	void set_channels(int used_channels) {
@@ -420,21 +422,6 @@ public:
 		setup_layout();
 	}
 
-	~ChannelPanel() override {
-		_height_label->queue_free();
-		_width_label->queue_free();
-		_wh_hbox->queue_free();
-		_margin->queue_free();
-		_texture_button->queue_free();
-		_preview->queue_free();
-		_preview_panel->queue_free();
-		_pick_btn->queue_free();
-		_path_edit->queue_free();
-		_label->queue_free();
-		_outer_hbox->queue_free();
-		_vbox->queue_free();
-	}
-
 	void add(Control *control) {
 		if (_vbox2) {
 			_vbox2->add_child(control);
@@ -515,6 +502,11 @@ public:
 	void _notification(const int what) {
 		if (what == NOTIFICATION_ENTER_TREE) {
 			init();
+		} else if (what == NOTIFICATION_PREDELETE) {
+			memdelete(_outer_margin);
+			if (_open_file_dialog) {
+				memdelete(_open_file_dialog);
+			}
 		}
 	}
 };
@@ -654,21 +646,12 @@ ChannelPackerDialog::ChannelPackerDialog() {
 	init_file_dialog();
 }
 
-ChannelPackerDialog::~ChannelPackerDialog() {
-	_general_options_panel->queue_free();
-	_roughness_panel->queue_free();
-	_normal_panel->queue_free();
-	_bottom_hbox->queue_free();
-	_height_panel->queue_free();
-	_albedo_panel->queue_free();
-	_top_hbox->queue_free();
-	_vbox->queue_free();
-	_margin->queue_free();
-}
-
 void ChannelPackerDialog::_notification(const int what) {
 	if (what == NOTIFICATION_POSTINITIALIZE) {
 		init();
+	} else if (what == NOTIFICATION_PREDELETE) {
+		memdelete(_vbox);
+		memdelete(_margin);
 	}
 }
 
