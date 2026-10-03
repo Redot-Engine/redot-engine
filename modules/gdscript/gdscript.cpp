@@ -447,7 +447,7 @@ bool GDScript::_placeholder_value_is_valid(const StringName &p_name, const Varia
 		if (!object) {
 			return !was_freed;
 		}
-		if (!ClassDB::is_parent_class(object->get_class_name(), expected->native_type)) {
+		if (expected->native_type != StringName() && !ClassDB::is_parent_class(object->get_class_name(), expected->native_type)) {
 			return false;
 		}
 		if (expected->script_type == StringName()) {

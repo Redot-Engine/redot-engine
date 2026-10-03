@@ -51,6 +51,7 @@
 #include "core/io/marshalls.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
+#include "core/object/script_language_extension.h"
 #include "core/variant/struct.h"
 #include "core/variant/struct_info.h"
 #include "core/variant/variant_parser.h"
@@ -443,6 +444,63 @@ class Implementer extends Node:
 	memdelete(owner);
 	memdelete(feature);
 	memdelete(native);
+}
+
+TEST_CASE("[Modules][GDScript] Exported script references without a native base retain compatible values") {
+	class ScriptWithoutNativeBase : public ScriptExtension {
+	public:
+		StringName get_instance_base_type() const override { return StringName(); }
+		StringName get_global_name() const override { return StringName(); }
+		Ref<Script> get_base_script() const override { return Ref<Script>(); }
+	};
+	GDScriptLanguage::get_singleton()->init();
+	Ref<ScriptWithoutNativeBase> external_script;
+	external_script.instantiate();
+	external_script->set_path("res://gdscript_export_without_native_base.script");
+	REQUIRE(external_script->get_instance_base_type().is_empty());
+	Ref<ScriptWithoutNativeBase> unrelated_script;
+	unrelated_script.instantiate();
+	unrelated_script->set_path("res://gdscript_export_unrelated.script");
+	Ref<GDScript> script;
+	script.instantiate();
+	const String source = R"(
+extends RefCounted
+
+const External = preload("res://gdscript_export_without_native_base.script")
+
+@export_storage var stored: External
+@export_custom(PROPERTY_HINT_NONE, "") var custom: External
+)";
+	script->set_source_code(source);
+	REQUIRE(script->reload() == OK);
+	Ref<Resource> matching;
+	matching.instantiate();
+	matching->set_script_instance(memnew(PlaceHolderScriptInstance(GDScriptLanguage::get_singleton(), external_script, matching.ptr())));
+	Ref<Resource> unrelated;
+	unrelated.instantiate();
+	unrelated->set_script_instance(memnew(PlaceHolderScriptInstance(GDScriptLanguage::get_singleton(), unrelated_script, unrelated.ptr())));
+	Ref<RefCounted> matching_owner;
+	matching_owner.instantiate();
+	matching_owner->set_script_instance(script->placeholder_instance_create(matching_owner.ptr()));
+	Ref<RefCounted> unrelated_owner;
+	unrelated_owner.instantiate();
+	unrelated_owner->set_script_instance(script->placeholder_instance_create(unrelated_owner.ptr()));
+	for (const StringName &property : { SNAME("stored"), SNAME("custom") }) {
+		matching_owner->set(property, matching);
+		unrelated_owner->set(property, unrelated);
+		CHECK(matching_owner->get(property) == Variant(matching));
+		CHECK(unrelated_owner->get(property) == Variant(unrelated));
+	}
+
+	script->set_source_code(source + "\n@export var added: int = 3\n");
+	script->update_exports();
+	for (const StringName &property : { SNAME("stored"), SNAME("custom") }) {
+		CHECK(matching_owner->get(property) == Variant(matching));
+		CHECK(unrelated_owner->get(property).is_null());
+	}
+	matching->set_script_instance(nullptr);
+	unrelated->set_script_instance(nullptr);
+	GDScriptCache::remove_script(script->get_script_path());
 }
 
 TEST_CASE("[Modules][GDScript] Trait base edits refresh type reference exports") {
