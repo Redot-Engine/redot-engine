@@ -34,6 +34,7 @@
 
 #include "worldscape_3d_asset_dock.h"
 
+#include "editor/docks/editor_dock_manager.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/event_listener_line_edit.h"
 #include "scene/gui/dialogs.h"
@@ -925,6 +926,10 @@ void WorldScape3DAssetDock::init() {
 
 WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 		_plugin{ plugin } {
+	_editor_dock = memnew(EditorDock);
+	_editor_dock->set_title("Terrain Assets");
+	_editor_dock->set_name("TerrainAssetsDock");
+
 	create_layout();
 	_rex_editor_last_state = _plugin->get_rex_editor_window()->get_mode();
 
@@ -951,6 +956,15 @@ WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 }
 
 WorldScape3DAssetDock::~WorldScape3DAssetDock() {
+	if (_editor_dock) {
+		if (_state == State::SIDEBAR) {
+			_plugin->remove_dock(_editor_dock);
+		}
+
+		_editor_dock->queue_free();
+		_editor_dock = nullptr;
+	}
+
 	_mesh_list->clear();
 	_mesh_list->queue_free();
 	_texture_list->clear();
@@ -985,7 +999,11 @@ void WorldScape3DAssetDock::set_slot(const int slot) {
 void WorldScape3DAssetDock::remove_dock(const bool force) {
 	switch (_state) {
 		case State::SIDEBAR:
-			_plugin->remove_control_from_docks(this);
+			_plugin->remove_dock(_editor_dock);
+
+			if (get_parent() == _editor_dock) {
+				_editor_dock->remove_child(this);
+			}
 			_state = State::HIDDEN;
 			break;
 		case State::BOTTOM:
@@ -1029,7 +1047,12 @@ void WorldScape3DAssetDock::update_dock() {
 	remove_dock();
 	if (_slot < POS_BOTTOM) { // Sidebar
 		_state = SIDEBAR;
-		_plugin->add_control_to_dock(static_cast<EditorPlugin::DockSlot>(_slot), this);
+
+		_editor_dock->set_default_slot(
+				static_cast<EditorDockManager::DockSlot>(_slot));
+
+		_editor_dock->add_child(this);
+		_plugin->add_dock(_editor_dock);
 	} else if (_slot == POS_BOTTOM) { // Bottom
 		_state = BOTTOM;
 		_plugin->add_control_to_bottom_panel(this, "Terrain Assets");
