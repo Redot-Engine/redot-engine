@@ -149,6 +149,8 @@ protected:
 
 	friend class PlaceHolderScriptInstance;
 	virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {}
+	/// Checks language-specific export constraints before preserving a placeholder value.
+	virtual bool _placeholder_value_is_valid(const StringName &p_name, const Variant &p_value) const { return true; }
 
 	Variant _get_property_default_value(const StringName &p_property);
 	TypedArray<Dictionary> _get_script_property_list();
