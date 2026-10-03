@@ -64,6 +64,8 @@ protected:
 	bool connected = false;
 	bool blocking = true;
 	bool broadcast = false;
+	bool reuse_address = false;
+	bool reuse_port = false;
 	UDPServer *udp_server = nullptr;
 	Ref<NetSocket> _sock;
 
@@ -76,6 +78,8 @@ protected:
 
 public:
 	void set_blocking_mode(bool p_enable);
+	void set_reuse_address(bool p_reuse);
+	void set_reuse_port(bool p_reuse);
 
 	Error bind(int p_port, const IPAddress &p_bind_address = IPAddress("*"), int p_recv_buffer_size = 65536);
 	void close();
