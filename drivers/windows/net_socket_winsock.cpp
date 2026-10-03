@@ -560,7 +560,7 @@ void NetSocketWinSock::set_reuse_address_enabled(bool p_enabled) {
 	// It is fine for UDP tho!
 	if (!_is_stream) {
 		int par = p_enabled ? 1 : 0;
-		if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &par, sizeof(int)) < 0) {
+		if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&par, sizeof(int)) < 0) {
 			WARN_PRINT("Unable to set socket REUSEADDR option.");
 		}
 	}
