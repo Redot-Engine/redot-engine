@@ -34,9 +34,10 @@
 
 #include "worldscape_3d_asset_dock.h"
 
+#include "editor/editor_core.h"
 #include "editor/editor_interface.h"
 #include "editor/editor_log.h"
-#include "editor/editor_node.h"
+#include "editor/editor_shell.h"
 #include "editor/gui/editor_bottom_panel.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/settings/event_listener_line_edit.h"
@@ -936,6 +937,10 @@ void WorldScape3DAssetDock::init() {
 
 WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 		_plugin{ plugin } {
+	_editor_dock = memnew(EditorDock);
+	_editor_dock->set_title("Terrain Assets");
+	_editor_dock->set_name("TerrainAssetsDock");
+
 	create_layout();
 	_redot_editor_last_state = _plugin->get_redot_editor_window()->get_mode();
 
@@ -963,6 +968,17 @@ WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 	_initialized = true;
 }
 
+WorldScape3DAssetDock::~WorldScape3DAssetDock() {
+	if (_editor_dock) {
+		if (_state == State::SIDEBAR) {
+			_plugin->remove_dock(_editor_dock);
+		}
+
+		_editor_dock->queue_free();
+		_editor_dock = nullptr;
+	}
+}
+
 // Dock placement
 
 void WorldScape3DAssetDock::set_slot(const int slot) {
@@ -980,7 +996,11 @@ void WorldScape3DAssetDock::set_slot(const int slot) {
 void WorldScape3DAssetDock::remove_dock(const bool force) {
 	switch (_state) {
 		case State::SIDEBAR:
-			_plugin->remove_control_from_docks(this);
+			_plugin->remove_dock(_editor_dock);
+
+			if (get_parent() == _editor_dock) {
+				_editor_dock->remove_child(this);
+			}
 			_state = State::HIDDEN;
 			break;
 		case State::BOTTOM:
@@ -1015,7 +1035,7 @@ void WorldScape3DAssetDock::remove_dock(const bool force) {
 }
 
 void WorldScape3DAssetDock::create_bottom_panel() {
-	EditorNode::get_bottom_panel()->add_item(TTRC("Terrain Assets"), this, ED_SHORTCUT("bottom_panels/toggle_terrain_assets_bottom_panel", TTRC("Toggle Terrain Assets Bottom Panel"), KeyModifierMask::ALT | Key::T));
+	_plugin->add_control_to_bottom_panel(this, TTRC("Terrain Assets"), ED_SHORTCUT("bottom_panels/toggle_terrain_assets_bottom_panel", TTRC("Toggle Terrain Assets Bottom Panel"), KeyModifierMask::ALT | Key::T));
 	_plugin->make_bottom_panel_item_visible(this);
 }
 
@@ -1031,7 +1051,11 @@ void WorldScape3DAssetDock::update_dock() {
 	if (is_visible()) {
 		if (_slot < POS_BOTTOM) { // Sidebar
 			_state = SIDEBAR;
-			_plugin->add_control_to_dock(static_cast<EditorPlugin::DockSlot>(_slot), this);
+			_editor_dock->set_default_slot(
+					static_cast<EditorDockManager::DockSlot>(_slot));
+
+			_editor_dock->add_child(this);
+			_plugin->add_dock(_editor_dock);
 		} else if (_slot == POS_BOTTOM) { // Bottom
 			_state = BOTTOM;
 			create_bottom_panel();
