@@ -389,8 +389,8 @@ void PacketPeerUDP::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_local_port"), &PacketPeerUDP::get_local_port);
 	ClassDB::bind_method(D_METHOD("set_dest_address", "host", "port"), &PacketPeerUDP::_set_dest_address);
 	ClassDB::bind_method(D_METHOD("set_broadcast_enabled", "enabled"), &PacketPeerUDP::set_broadcast_enabled);
-	ClassDB::bind_method(D_METHOD("set_reuse_address"), &PacketPeerUDP::set_reuse_address);
-	ClassDB::bind_method(D_METHOD("set_reuse_port"), &PacketPeerUDP::set_reuse_port);
+	ClassDB::bind_method(D_METHOD("set_reuse_address", "enabled"), &PacketPeerUDP::set_reuse_address);
+	ClassDB::bind_method(D_METHOD("set_reuse_port", "enabled"), &PacketPeerUDP::set_reuse_port);
 	ClassDB::bind_method(D_METHOD("join_multicast_group", "multicast_address", "interface_name"), &PacketPeerUDP::join_multicast_group);
 	ClassDB::bind_method(D_METHOD("leave_multicast_group", "multicast_address", "interface_name"), &PacketPeerUDP::leave_multicast_group);
 }
