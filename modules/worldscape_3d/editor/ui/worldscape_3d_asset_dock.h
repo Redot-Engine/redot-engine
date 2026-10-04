@@ -34,6 +34,8 @@
 
 // Terrain3D Godot plugin: Copyright © 2025 Cory Petkovsek, Roope Palmroos, and Contributors.
 
+#include "editor/docks/editor_dock.h"
+#include "editor/docks/editor_dock_manager.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/flow_container.h"
 #include "scene/gui/margin_container.h"
@@ -191,6 +193,7 @@ class WorldScape3DAssetDock final : public PanelContainer {
 	GDCLASS(WorldScape3DAssetDock, PanelContainer);
 
 	WorldScape3DEditorPlugin *_plugin = nullptr;
+	EditorDock *_editor_dock = nullptr;
 
 	ListContainer *_texture_list = nullptr;
 	ListContainer *_mesh_list = nullptr;
