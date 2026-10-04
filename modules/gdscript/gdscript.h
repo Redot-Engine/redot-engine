@@ -163,6 +163,19 @@ private:
 	List<PropertyInfo> members_cache;
 	HashMap<StringName, Variant> member_default_values_cache;
 	HashMap<StringName, Variant> member_array_element_defaults_cache;
+	struct ExportObjectType {
+		StringName native_type;
+		StringName script_type;
+		bool is_trait = false;
+	};
+	HashMap<StringName, ExportObjectType> member_object_types_cache;
+	struct ExportStructType {
+		Ref<StructInfo> info;
+		bool is_nullable = false;
+	};
+	HashMap<StringName, ExportStructType> member_struct_types_cache;
+	/// Retains type dependencies after parser invalidation during reload.
+	HashSet<String> export_dependencies_cache;
 	Ref<GDScript> base_cache;
 	HashSet<ObjectID> inheriters_cache;
 	bool source_changed_cache = false;
@@ -214,6 +227,7 @@ private:
 	HashSet<PlaceHolderScriptInstance *> placeholders;
 	//void _update_placeholder(PlaceHolderScriptInstance *p_placeholder);
 	virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder) override;
+	virtual bool _placeholder_value_is_valid(const StringName &p_name, const Variant &p_value) const override;
 	void _update_exports_down(bool p_base_exports_changed);
 #endif
 
