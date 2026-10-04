@@ -116,6 +116,8 @@ private:
 protected:
 	static void _bind_methods();
 
+	bool main_window_close_requested = false;
+
 #ifndef DISABLE_DEPRECATED
 	static void _bind_compatibility_methods();
 #endif
@@ -865,6 +867,7 @@ public:
 
 	virtual void process_events() = 0;
 	virtual void force_process_and_drop_events();
+	bool consume_main_window_close_request();
 
 	virtual void release_rendering_thread();
 	virtual void swap_buffers();

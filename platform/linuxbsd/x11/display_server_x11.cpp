@@ -4628,6 +4628,15 @@ void DisplayServerX11::_poll_events() {
 }
 
 void DisplayServerX11::_check_pending_events(LocalVector<XEvent> &r_events) {
+	// Remove events dropped while the debugger was paused, away from any reentrant resize callbacks.
+	uint32_t remaining = 0;
+	for (uint32_t i = 0; i < r_events.size(); ++i) {
+		if (r_events[i].type != 0) {
+			r_events[remaining++] = r_events[i];
+		}
+	}
+	r_events.resize(remaining);
+
 	// Flush to make sure to gather all pending events.
 	XFlush(x11_display);
 
@@ -4807,6 +4816,30 @@ bool DisplayServerX11::_window_focus_check() {
 	return has_focus;
 }
 
+void DisplayServerX11::force_process_and_drop_events() {
+	ERR_FAIL_COND(!Thread::is_main_thread());
+
+	_THREAD_SAFE_METHOD_
+	MutexLock mutex_lock(events_mutex);
+	for (XEvent &event : polled_events) {
+		if (event.type == ClientMessage && event.xclient.window == windows[MAIN_WINDOW_ID].x11_window && (unsigned int)event.xclient.data.l[0] == (unsigned int)wm_delete) {
+			main_window_close_requested = true;
+			event.type = 0;
+		}
+		bool input_event = event.type == KeyPress || event.type == KeyRelease || event.type == ButtonPress || event.type == ButtonRelease || event.type == MotionNotify;
+		if (event.type == GenericEvent && event.xcookie.extension == xi.opcode && event.xcookie.evtype != XI_HierarchyChanged && event.xcookie.evtype != XI_DeviceChanged) {
+			input_event = true;
+		}
+		if (input_event) {
+			if (XGetEventData(x11_display, &event.xcookie)) {
+				XFreeEventData(x11_display, &event.xcookie);
+			}
+			// Keep the vector stable if a resize callback reentered the debugger.
+			event.type = 0;
+		}
+	}
+}
+
 void DisplayServerX11::process_events() {
 	ERR_FAIL_COND(!Thread::is_main_thread());
 
@@ -4864,6 +4897,9 @@ void DisplayServerX11::process_events() {
 
 	for (uint32_t event_index = 0; event_index < events.size(); ++event_index) {
 		XEvent &event = events[event_index];
+		if (event.type == 0) {
+			continue;
+		}
 
 		bool ime_window_event = false;
 		WindowID window_id = MAIN_WINDOW_ID;

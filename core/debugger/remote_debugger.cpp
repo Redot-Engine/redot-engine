@@ -615,6 +615,10 @@ void RemoteDebugger::debug(bool p_can_continue, bool p_is_error_breakpoint) {
 			if (Thread::get_caller_id() == Thread::get_main_id()) {
 				// If this is a busy loop on the main thread, events still need to be processed.
 				DisplayServer::get_singleton()->force_process_and_drop_events();
+				if (DisplayServer::get_singleton()->consume_main_window_close_request()) {
+					// Let the editor stop the process without resuming the paused script or calling its close handlers.
+					send_message("request_quit", Array());
+				}
 			}
 		}
 	}
