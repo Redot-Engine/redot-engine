@@ -191,6 +191,8 @@ private:
 class WorldScape3DAssetDock final : public PanelContainer {
 	GDCLASS(WorldScape3DAssetDock, PanelContainer);
 
+	friend WorldScape3DUI;
+
 	WorldScape3DEditorPlugin *_plugin = nullptr;
 
 	ListContainer *_texture_list = nullptr;

@@ -746,6 +746,8 @@ void WorldScape3DUI::set_visible(bool visible, bool menu_only) {
 		return;
 	}
 	_visible = visible;
+	_asset_dock->set_visible(_visible);
+	_asset_dock->update_dock();
 	_menu->set_visible(_visible);
 	_toolbar->set_visible(menu_only ? false : _visible);
 	_tool_settings->set_visible(menu_only ? false : _visible);

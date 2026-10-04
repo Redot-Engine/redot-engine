@@ -1019,7 +1019,7 @@ void WorldScape3DEditorPlugin::edit(Object *object) {
 			if (!terrain->is_connected("assets_changed", callable_mp(dock, &WorldScape3DAssetDock::update_assets))) {
 				terrain->connect("assets_changed", callable_mp(dock, &WorldScape3DAssetDock::update_assets));
 			}
-			dock->update_assets();
+			dock->update_dock();
 		}
 	
 		// Get alerted when the region map changes

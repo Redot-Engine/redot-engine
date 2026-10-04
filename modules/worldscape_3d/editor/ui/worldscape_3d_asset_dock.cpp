@@ -35,6 +35,9 @@
 #include "worldscape_3d_asset_dock.h"
 
 #include "editor/editor_interface.h"
+#include "editor/editor_node.h"
+#include "editor/gui/editor_bottom_panel.h"
+#include "editor/editor_log.h"
 #include "editor/settings/event_listener_line_edit.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/label.h"
@@ -947,6 +950,8 @@ WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 
 	load_editor_settings();
 
+	set_visible(false);
+
 	_initialized = true;
 }
 
@@ -990,6 +995,7 @@ void WorldScape3DAssetDock::remove_dock(const bool force) {
 			break;
 		case State::BOTTOM:
 			_plugin->remove_control_from_bottom_panel(this);
+			EditorNode::get_bottom_panel()->make_item_visible(EditorNode::get_log());
 			_state = State::HIDDEN;
 			break;
 		case State::WINDOWED: {
@@ -1027,13 +1033,15 @@ void WorldScape3DAssetDock::update_dock() {
 
 	// Move dock to new destination
 	remove_dock();
-	if (_slot < POS_BOTTOM) { // Sidebar
-		_state = SIDEBAR;
-		_plugin->add_control_to_dock(static_cast<EditorPlugin::DockSlot>(_slot), this);
-	} else if (_slot == POS_BOTTOM) { // Bottom
-		_state = BOTTOM;
-		_plugin->add_control_to_bottom_panel(this, "Terrain Assets");
-		_plugin->make_bottom_panel_item_visible(this);
+	if (is_visible()) {
+		if (_slot < POS_BOTTOM) { // Sidebar
+			_state = SIDEBAR;
+			_plugin->add_control_to_dock(static_cast<EditorPlugin::DockSlot>(_slot), this);
+		} else if (_slot == POS_BOTTOM) { // Bottom
+			_state = BOTTOM;
+			_plugin->add_control_to_bottom_panel(this, "Terrain Assets");
+			_plugin->make_bottom_panel_item_visible(this);
+		}
 	}
 }
 
