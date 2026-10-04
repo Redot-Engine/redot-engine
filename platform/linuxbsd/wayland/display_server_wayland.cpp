@@ -1623,6 +1623,29 @@ void DisplayServerWayland::try_suspend() {
 	}
 }
 
+void DisplayServerWayland::force_process_and_drop_events() {
+	ERR_FAIL_COND(!Thread::is_main_thread());
+
+	MutexLock mutex_lock(wayland_thread.mutex);
+	LocalVector<Ref<WaylandThread::Message>> deferred_messages;
+	while (wayland_thread.has_message()) {
+		Ref<WaylandThread::Message> msg = wayland_thread.pop_message();
+		Ref<WaylandThread::WindowEventMessage> window_event = msg;
+		if (window_event.is_valid() && window_event->id == MAIN_WINDOW_ID && window_event->event == WINDOW_EVENT_CLOSE_REQUEST) {
+			main_window_close_requested = true;
+			continue;
+		}
+		Ref<WaylandThread::WindowRectMessage> window_rect = msg;
+		if (window_rect.is_valid() || window_event.is_valid()) {
+			// Apply window state changes after continuing, without running callbacks while paused.
+			deferred_messages.push_back(msg);
+		}
+	}
+	for (const Ref<WaylandThread::Message> &msg : deferred_messages) {
+		wayland_thread.push_message(msg);
+	}
+}
+
 void DisplayServerWayland::process_events() {
 	wayland_thread.mutex.lock();
 
