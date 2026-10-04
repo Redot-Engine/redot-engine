@@ -103,6 +103,18 @@
 				Deletes the point [param idx] from the curve. Sends an error to the console if [param idx] is out of bounds.
 			</description>
 		</method>
+		<method name="reset_all_points_handles">
+			<return type="void" />
+			<description>
+				Applies to ENTIRE curve. Opposite of autosmooth, sets all handle values to 0.  Every point will be an immediate "turn" with no smoothing.
+			</description>
+		</method>
+		<method name="reset_point_handles">
+			<return type="void" />
+			<param index="0" name="idx" type="int" />
+			<description>
+			</description>
+		</method>
 		<method name="sample" qualifiers="const">
 			<return type="Vector3" />
 			<param index="0" name="idx" type="int" />
@@ -177,6 +189,12 @@
 			<description>
 				Sets the tilt angle in radians for the point [param idx]. If the index is out of bounds, the function sends an error to the console.
 				The tilt controls the rotation along the look-at axis an object traveling the path would have. In the case of a curve controlling a [PathFollow3D], this tilt is an offset over the natural tilt the [PathFollow3D] calculates.
+			</description>
+		</method>
+		<method name="smooth_all_points">
+			<return type="void" />
+			<description>
+				Applies to ENTIRE curve.  Automatically interpolates a smooth transition (sets handles accordingly) between all points.  Use if a smooth curve is desired on creation, etc...
 			</description>
 		</method>
 		<method name="tessellate" qualifiers="const">
