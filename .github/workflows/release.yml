@@ -9,9 +9,9 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
-          repository: Redot-Engine/redot-engine # Adjust this to the actual repo
+          repository: Redot-Engine/redot-engine
           ref: master
 
       - name: Install Dependencies
@@ -36,7 +36,7 @@ jobs:
           scons platform=linuxbsd production=yes
 
       - name: Upload Linux dev artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redot-linux-dev
           path: bin
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           repository: Redot-Engine/redot-engine
           ref: master
@@ -73,7 +73,7 @@ jobs:
           scons platform=linuxbsd target=template_release
 
       - name: Upload Linux Template Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redot-linux-template
           path: bin
@@ -83,7 +83,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           repository: Redot-Engine/redot-engine
           ref: master
@@ -99,7 +99,7 @@ jobs:
           scons platform=windows production=yes
 
       - name: Upload Windows dev artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redot-windows-dev
           path: bin
@@ -109,7 +109,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           repository: Redot-Engine/redot-engine
           ref: master
@@ -125,7 +125,7 @@ jobs:
           scons platform=windows target=template_release
 
       - name: Upload Windows Template Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redot-windows-template
           path: bin
@@ -135,7 +135,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           repository: Redot-Engine/redot-engine
           ref: master
@@ -151,7 +151,7 @@ jobs:
           scons platform=macos arch=x64 production=yes
 
       - name: Upload macOS x64 dev artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redot-macos-x64-dev
           path: bin
@@ -161,7 +161,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           repository: Redot-Engine/redot-engine
           ref: master
@@ -178,7 +178,7 @@ jobs:
           scons platform=macos arch=arm64
 
       - name: Upload macOS arm64 dev artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redot-macos-arm64-dev
           path: bin
@@ -188,7 +188,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           repository: Redot-Engine/redot-engine
           ref: master
@@ -204,7 +204,7 @@ jobs:
           scons platform=macos arch=x64 target=template_release
 
       - name: Upload macOS x64 Template Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redot-macos-x64-template
           path: bin
@@ -214,7 +214,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           repository: Redot-Engine/redot-engine
           ref: master
@@ -230,7 +230,7 @@ jobs:
           scons platform=macos arch=arm64 target=template_release
 
       - name: Upload macOS arm64 Template Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redot-macos-arm64-template
           path: bin
@@ -243,49 +243,49 @@ jobs:
 
     steps:
       - name: Download Linux dev artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: redot-linux-dev
           path: redot-linux-dev
 
       - name: Download Windows dev artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: redot-windows-dev
           path: redot-windows-dev
 
       - name: Download Linux template artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: redot-linux-template
           path: redot-linux-template
 
       - name: Download Windows template artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: redot-windows-template
           path: redot-windows-template
 
       - name: Download macOS x64 dev artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: redot-macos-x64-dev
           path: redot-macos-x64-dev
 
       - name: Download macOS arm64 dev artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: redot-macos-arm64-dev
           path: redot-macos-arm64-dev
 
       - name: Download macOS x64 template artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: redot-macos-x64-template
           path: redot-macos-x64-template
 
       - name: Download macOS arm64 template artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: redot-macos-arm64-template
           path: redot-macos-arm64-template
@@ -306,7 +306,7 @@ jobs:
           zip -r redot-macos-arm64-template.zip redot-macos-arm64-template/*
 
       # - name: Upload release artifacts
-      #   uses: actions/upload-artifact@v4
+      #   uses: actions/upload-artifact@v7
       #   with:
       #     name: redot-release-${{ env.CURRENT_DATE }}
       #     path: |
