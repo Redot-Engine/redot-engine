@@ -300,6 +300,8 @@ WorldScape3DUI::WorldScape3DUI(WorldScape3DEditorPlugin *plugin) :
 	img->convert(Image::FORMAT_R8);
 	_ring_texture = ImageTexture::create_from_image(img);
 	editor_ring_texture_rid = _ring_texture->get_rid();
+
+	_asset_dock = memnew(WorldScape3DAssetDock(plugin));
 }
 
 WorldScape3DUI::~WorldScape3DUI() {
@@ -308,15 +310,19 @@ WorldScape3DUI::~WorldScape3DUI() {
 		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, _menu);
 		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_BOTTOM, _tool_settings);
 		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_SIDE_LEFT, _toolbar);
+		_plugin = nullptr;
 	}
 	if (_editor_decal_timer) {
 		_editor_decal_timer->queue_free();
+		_editor_decal_timer = nullptr;
 	}
 	if (_toolbar) {
 		_toolbar->queue_free();
+		_toolbar = nullptr;
 	}
 	if (_menu) {
 		_menu->queue_free();
+		_menu = nullptr;
 	}
 	if (_tool_settings) {
 		if (_tool_settings->is_connected("setting_changed", callable_mp(this, &WorldScape3DUI::on_setting_changed))) {
@@ -326,6 +332,11 @@ WorldScape3DUI::~WorldScape3DUI() {
 			_tool_settings->disconnect("picking", callable_mp(_tool_settings, &WorldScape3DToolSettings::on_pick));
 		}
 		_tool_settings->queue_free();
+		_tool_settings = nullptr;
+	}
+	if (_asset_dock) {
+			_asset_dock->queue_free();
+			_asset_dock = nullptr;
 	}
 }
 
@@ -905,13 +916,12 @@ void WorldScape3DUI::on_tool_changed(const WorldScape3DEditor::Tool tool, const 
 }
 
 void WorldScape3DUI::on_setting_changed(const Variant &setting) {
-	auto asset_dock = _plugin->get_asset_dock();
-	if (!asset_dock) {
+	if (!_asset_dock) {
 		return; // Skip function if not ready
 	}
 
 	_brush_data = _tool_settings->get_brush_data();
-	_brush_data.set("asset_id", asset_dock->get_current_list()->get_selected_id());
+	_brush_data.set("asset_id", _asset_dock->get_current_list()->get_selected_id());
 	if (auto editor = _plugin->get_editor(); editor) {
 		editor->set_brush_data(_brush_data);
 	}
@@ -945,6 +955,9 @@ void WorldScape3DUI::_notification(int what) {
 	switch (what) {
 		case NOTIFICATION_ENTER_TREE: {
 			on_tool_changed(WorldScape3DEditor::Tool::REGION, WorldScape3DEditor::Operation::ADD);
+			if (_asset_dock) {
+				_asset_dock->init();
+			}
 			break;
 		}
 		default:

@@ -46,6 +46,7 @@
 #include "../../worldscape_3d_assets.h"
 #include "../worldscape_3d_editor.h"
 #include "scene/main/window.h"
+#include "worldscape_3d_ui.h"
 
 class ConfirmationDialog;
 class ScrollContainer;

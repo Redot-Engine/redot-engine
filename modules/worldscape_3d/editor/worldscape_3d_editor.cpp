@@ -912,8 +912,6 @@ void WorldScape3DEditorPlugin::init() {
 	_ui = memnew(WorldScape3DUI(this));
 	add_child(_ui);
 
-	_asset_dock = memnew(WorldScape3DAssetDock(this));
-
 	EditorPlugin::connect("scene_changed", callable_mp(this, &WorldScape3DEditorPlugin::on_scene_changed));
 
 	_use_meta = OS::get_singleton()->get_name() == "macOS";
@@ -926,7 +924,6 @@ WorldScape3DEditorPlugin::WorldScape3DEditorPlugin() :
 }
 
 WorldScape3DEditorPlugin::~WorldScape3DEditorPlugin() {
-	_asset_dock->queue_free();
 	_ui->queue_free();
 
 	if (_rex_editor_window && _rex_editor_window->is_connected("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered))) {
@@ -937,6 +934,10 @@ WorldScape3DEditorPlugin::~WorldScape3DEditorPlugin() {
 
 WorldScape3DEditor *WorldScape3DEditorPlugin::get_editor() const {
 	return _editor.get();
+}
+
+WorldScape3DAssetDock *WorldScape3DEditorPlugin::get_asset_dock() const {
+	return _ui->get_asset_dock();
 }
 
 WorldScape3D *WorldScape3DEditorPlugin::get_terrain() const {
@@ -972,9 +973,12 @@ void WorldScape3DEditorPlugin::make_visible(const bool visible) {
 	} else {
 		_ui->set_visible(false);
 	}
-	if (_asset_dock->is_visible() != visible) {
-		_asset_dock->set_visible(visible);
-		_asset_dock->update_dock();
+	auto dock = _ui->get_asset_dock();
+	if (dock) {
+		if (dock->is_visible() != visible) {
+			dock->set_visible(visible);
+			dock->update_dock();
+		}
 	}
 }
 
@@ -1010,10 +1014,14 @@ void WorldScape3DEditorPlugin::edit(Object *object) {
 		}
 
 		// Get alerted when a new asset list is loaded
-		if (!terrain->is_connected("assets_changed", callable_mp(_asset_dock, &WorldScape3DAssetDock::update_assets))) {
-			terrain->connect("assets_changed", callable_mp(_asset_dock, &WorldScape3DAssetDock::update_assets));
+		auto dock = _ui->get_asset_dock();
+		if (dock) {
+			if (!terrain->is_connected("assets_changed", callable_mp(dock, &WorldScape3DAssetDock::update_assets))) {
+				terrain->connect("assets_changed", callable_mp(dock, &WorldScape3DAssetDock::update_assets));
+			}
+			dock->update_assets();
 		}
-		_asset_dock->update_assets();
+	
 		// Get alerted when the region map changes
 		auto tdata = terrain->get_data();
 		if (tdata && !tdata->is_connected("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid))) {
@@ -1067,6 +1075,7 @@ void WorldScape3DEditorPlugin::clear() {
 	}
 	_editor->set_terrain(nullptr);
 	_ui->clear_picking();
+	_ui->set_visible(false);
 	_region_gizmo->clear();
 }
 
@@ -1081,14 +1090,18 @@ void WorldScape3DEditorPlugin::on_scene_changed(Node *scene_root) {
 	// 	t3dobj->editor_setup(this);
 	// }
 
-	_asset_dock->update_assets();
+	auto dock = _ui->get_asset_dock();
+	if (dock) {
+		dock->update_assets();
+	}
 	_scene_change_timer = get_tree()->create_timer(2.);
 	_scene_change_timer->connect("timeout", callable_mp(this, &WorldScape3DEditorPlugin::on_scene_change_timeout));
 }
 
 void WorldScape3DEditorPlugin::on_scene_change_timeout() {
-	if (_asset_dock) {
-		_asset_dock->update_thumbnails();
+	auto dock = _ui->get_asset_dock();
+	if (dock) {
+		dock->update_thumbnails();
 	}
 }
 

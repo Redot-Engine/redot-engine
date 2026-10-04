@@ -1326,10 +1326,7 @@ void WorldScape3DAssetDock::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("confirmation_canceled"));
 }
 
-void WorldScape3DAssetDock::_notification(int what) {
-	if (what == NOTIFICATION_POSTINITIALIZE) {
-		init();
-	}
+void WorldScape3DAssetDock::_notification(int /*what*/) {
 }
 
 void WorldScape3DAssetDock::dialog_confirm() {
