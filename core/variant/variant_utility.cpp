@@ -1230,6 +1230,184 @@ bool VariantUtilityFunctions::is_same(const Variant &p_a, const Variant &p_b) {
 	return p_a.identity_compare(p_b);
 }
 
+struct DeepEqualsPair {
+	Variant::Type type;
+	const void *a;
+	const void *b;
+
+	bool operator==(const DeepEqualsPair &p_other) const {
+		return type == p_other.type &&
+				a == p_other.a &&
+				b == p_other.b;
+	}
+};
+
+struct DeepEqualsPairHasher {
+	static _FORCE_INLINE_ uint32_t hash(const DeepEqualsPair &p_pair) {
+		uint32_t hash = hash_murmur3_one_32(p_pair.type);
+		hash = hash_murmur3_one_32(HashMapHasherDefault::hash(p_pair.a), hash);
+		hash = hash_murmur3_one_32(HashMapHasherDefault::hash(p_pair.b), hash);
+		return hash_fmix32(hash);
+	}
+};
+
+using DeepEqualsPairs = HashSet<DeepEqualsPair, DeepEqualsPairHasher>;
+
+struct DeepEqualsPairGuard {
+	DeepEqualsPairs &pairs;
+	DeepEqualsPair pair;
+
+	~DeepEqualsPairGuard() {
+		pairs.erase(pair);
+	}
+};
+
+bool _deep_equals(const Variant &p_a, const Variant &p_b, int p_max_depth, DeepEqualsPairs &r_active_pairs) {
+	if (p_max_depth <= 0) {
+		ERR_PRINT("Maximum recursion depth reached");
+		return false;
+	}
+
+	const Variant::Type type_a = p_a.get_type();
+	const Variant::Type type_b = p_b.get_type();
+
+	if (type_a != type_b) {
+		return false;
+	}
+
+	// Handle non-recursive types.
+	if (type_a != Variant::Type::DICTIONARY &&
+			type_a != Variant::Type::OBJECT &&
+			type_a != Variant::Type::ARRAY) {
+		return p_a == p_b;
+	}
+
+	// Handle recursive types, e.g., Array, Dictionary, and Object.
+	if (type_a == Variant::Type::ARRAY) {
+		const Array arr_a = p_a;
+		const Array arr_b = p_b;
+		const int64_t size_a = arr_a.size();
+
+		if (arr_a.id() == arr_b.id()) {
+			return true;
+		}
+
+		if (size_a != arr_b.size()) {
+			return false;
+		}
+
+		const DeepEqualsPair pair = { Variant::Type::ARRAY, arr_a.id(), arr_b.id() };
+
+		if (r_active_pairs.has(pair)) {
+			return true;
+		}
+
+		r_active_pairs.insert(pair);
+		DeepEqualsPairGuard guard{ r_active_pairs, pair };
+
+		for (int64_t i = 0; i < size_a; ++i) {
+			if (!_deep_equals(arr_a[i], arr_b[i], p_max_depth - 1, r_active_pairs)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	if (type_a == Variant::Type::DICTIONARY) {
+		const Dictionary dict_a = p_a;
+		const Dictionary dict_b = p_b;
+
+		if (dict_a.id() == dict_b.id()) {
+			return true;
+		}
+
+		if (dict_a.size() != dict_b.size()) {
+			return false;
+		}
+
+		const DeepEqualsPair pair = { Variant::Type::DICTIONARY, dict_a.id(), dict_b.id() };
+
+		if (r_active_pairs.has(pair)) {
+			return true;
+		}
+
+		r_active_pairs.insert(pair);
+		DeepEqualsPairGuard guard{ r_active_pairs, pair };
+
+		const Array keys_a = dict_a.keys();
+
+		for (int64_t i = 0; i < keys_a.size(); ++i) {
+			const Variant &key = keys_a[i];
+			if (!dict_b.has(key)) {
+				return false;
+			}
+			if (!_deep_equals(dict_a[key], dict_b[key], p_max_depth - 1, r_active_pairs)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	if (type_a == Variant::Type::OBJECT) {
+		const Object *obj_a_ptr = p_a;
+		const Object *obj_b_ptr = p_b;
+
+		if (obj_a_ptr == nullptr && obj_b_ptr == nullptr) {
+			return true;
+		}
+		if (obj_a_ptr == nullptr || obj_b_ptr == nullptr) {
+			return false;
+		}
+
+		// Optimization: Check for instance equality.
+		if (obj_a_ptr == obj_b_ptr) {
+			return true;
+		}
+
+		const DeepEqualsPair pair = { Variant::Type::OBJECT, obj_a_ptr, obj_b_ptr };
+
+		if (r_active_pairs.has(pair)) {
+			return true;
+		}
+
+		r_active_pairs.insert(pair);
+		DeepEqualsPairGuard guard{ r_active_pairs, pair };
+
+		List<PropertyInfo> props_a;
+		obj_a_ptr->get_property_list(&props_a);
+		List<PropertyInfo> props_b;
+		obj_b_ptr->get_property_list(&props_b);
+
+		if (props_a.size() != props_b.size()) {
+			return false;
+		}
+
+		for (const PropertyInfo &prop_info : props_a) {
+			if (props_b.find(prop_info) == nullptr) {
+				return false;
+			}
+		}
+
+		for (const PropertyInfo &prop_info : props_a) {
+			if (!_deep_equals(obj_a_ptr->get(prop_info.name), obj_b_ptr->get(prop_info.name), p_max_depth - 1, r_active_pairs)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	ERR_PRINT("Unhandled Variant type in deep_equals. This is a bug.");
+	return false;
+}
+
+bool VariantUtilityFunctions::deep_equals(const Variant &a, const Variant &b) {
+	DeepEqualsPairs active_pairs;
+	return _deep_equals(a, b, MAX_RECURSION, active_pairs);
+}
+
 String VariantUtilityFunctions::join_string(const Variant **p_args, int p_arg_count) {
 	String s;
 	for (int i = 0; i < p_arg_count; i++) {
@@ -1803,6 +1981,8 @@ void Variant::_register_variant_utility_functions() {
 	bind_fn_vuf(rid_from_int64, Variant::UTILITY_FUNC_TYPE_GENERAL, "base");
 
 	bind_fn_vuf(is_same, Variant::UTILITY_FUNC_TYPE_GENERAL, "a", "b");
+
+	bind_fn_vuf(deep_equals, Variant::UTILITY_FUNC_TYPE_GENERAL, "a", "b");
 }
 
 void Variant::_unregister_variant_utility_functions() {
