@@ -1021,7 +1021,7 @@ void WorldScape3DEditorPlugin::edit(Object *object) {
 			}
 			dock->update_dock();
 		}
-	
+
 		// Get alerted when the region map changes
 		auto tdata = terrain->get_data();
 		if (tdata && !tdata->is_connected("region_map_changed", callable_mp(this, &WorldScape3DEditorPlugin::update_region_grid))) {

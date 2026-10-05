@@ -35,9 +35,9 @@
 #include "worldscape_3d_asset_dock.h"
 
 #include "editor/editor_interface.h"
+#include "editor/editor_log.h"
 #include "editor/editor_node.h"
 #include "editor/gui/editor_bottom_panel.h"
-#include "editor/editor_log.h"
 #include "editor/settings/event_listener_line_edit.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/label.h"

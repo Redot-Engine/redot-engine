@@ -335,8 +335,8 @@ WorldScape3DUI::~WorldScape3DUI() {
 		_tool_settings = nullptr;
 	}
 	if (_asset_dock) {
-			_asset_dock->queue_free();
-			_asset_dock = nullptr;
+		_asset_dock->queue_free();
+		_asset_dock = nullptr;
 	}
 }
 
