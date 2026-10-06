@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="AudioEffectNoiseGate" inherits="AudioEffect" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Adds a noise gate filter to the audio bus.
+	</brief_description>
+	<description>
+		Attenuates or silences sound above [member threshold_db].
+	</description>
+	<tutorials>
+		<link title="Audio buses">$DOCS_URL/tutorials/audio/audio_buses.html</link>
+	</tutorials>
+	<members>
+		<member name="attack_ms" type="float" setter="set_attack_ms" getter="get_attack_ms" default="10.0">
+			How long, in milliseconds, the gate takes to approach fully open, once the incoming sound gets loud enough to pass the [member threshold_db]. Short values let the start of a sound through almost instantly. Longer values soften or clip the beginning of each sound.
+		</member>
+		<member name="attenuation_db" type="float" setter="set_attenuation_db" getter="get_attenuation_db" default="-60.0">
+			How much to attenuate (lower the volume) any audio lower than [member threshold_db]. -80 silences completely.
+		</member>
+		<member name="release_ms" type="float" setter="set_release_ms" getter="get_release_ms" default="200.0">
+			How long, in milliseconds, the gate takes to fully close once the incoming sound drops back below the [member threshold_db]. Short values shut the gate quickly. Longer values let the tail of a sound fade out naturally instead of cutting off abruptly.
+		</member>
+		<member name="threshold_db" type="float" setter="set_threshold_db" getter="get_threshold_db" default="-40.0">
+			The volume level, in decibels, that separates wanted sound from unwanted noise. Audio louder than this level opens the gate and passes through, while quieter audio is reduced by the [member attenuation_db]. Values closer to 0 require louder sound to open the gate, and more negative values let quieter sounds through.
+		</member>
+	</members>
+</class>
