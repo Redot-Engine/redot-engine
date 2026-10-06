@@ -1250,7 +1250,6 @@ void SkyRD::setup_sky(const RenderDataRD *p_render_data, const SkyRenderData &p_
 void SkyRD::update_radiance_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, const SkyRenderData &p_env, const Vector3 &p_global_pos, double p_time, float p_luminance_multiplier, float p_brightness_multiplier) {
 	ERR_FAIL_COND(p_render_buffers.is_null());
 	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
-	ERR_FAIL_COND(p_env.sky.is_null());
 
 	Sky *sky = get_sky(p_env.sky);
 	ERR_FAIL_NULL(sky);
@@ -1424,7 +1423,6 @@ void SkyRD::update_radiance_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, 
 void SkyRD::update_res_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, const SkyRenderData &p_env, double p_time, float p_luminance_multiplier, float p_brightness_multiplier) {
 	ERR_FAIL_COND(p_render_buffers.is_null());
 	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
-	ERR_FAIL_COND(p_env.sky.is_null());
 
 	Sky *sky = get_sky(p_env.sky);
 
@@ -1521,7 +1519,6 @@ void SkyRD::update_res_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, const
 void SkyRD::draw_sky(RD::DrawListID p_draw_list, Ref<RenderSceneBuffersRD> p_render_buffers, const SkyRenderData &p_env, RID p_fb, double p_time, float p_luminance_multiplier, float p_brightness_multiplier) {
 	ERR_FAIL_COND(p_render_buffers.is_null());
 	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
-	ERR_FAIL_COND(p_env.sky.is_null());
 
 	Sky *sky = get_sky(p_env.sky);
 
