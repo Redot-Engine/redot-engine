@@ -123,6 +123,53 @@ TEST_CASE("[PackedScene] Signals Preserved when Packing Scene") {
 	memdelete(main_scene_root);
 }
 
+TEST_CASE("[PackedScene] Missing properties are preserved when packing") {
+	// Regression test for #938: overrides that can't be applied on load because the
+	// node's script failed to parse must not be lost when the scene is re-saved.
+	// The `_missing_properties` meta is the in-memory holding area that `instantiate()`
+	// fills in that case; `pack()` must re-emit its values as regular node properties
+	// while never storing the meta key itself.
+	Node *scene = memnew(Node);
+	scene->set_name("TestScene");
+
+	Dictionary missing_properties;
+	missing_properties["caption"] = "hello";
+	missing_properties["amount"] = 42;
+	scene->set_meta("_missing_properties", missing_properties);
+
+	PackedScene packed_scene;
+	const Error err = packed_scene.pack(scene);
+	CHECK(err == OK);
+
+	Ref<SceneState> state = packed_scene.get_state();
+	REQUIRE(state.is_valid());
+	REQUIRE(state->get_node_count() == 1);
+
+	bool found_caption = false;
+	bool found_amount = false;
+	bool found_meta = false;
+	for (int i = 0; i < state->get_node_property_count(0); i++) {
+		const StringName name = state->get_node_property_name(0, i);
+		if (name == StringName("caption")) {
+			found_caption = true;
+			CHECK(state->get_node_property_value(0, i) == Variant("hello"));
+		} else if (name == StringName("amount")) {
+			found_amount = true;
+			CHECK(state->get_node_property_value(0, i) == Variant(42));
+		} else if (name == StringName("metadata/_missing_properties")) {
+			found_meta = true;
+		}
+	}
+
+	// The preserved values are stored as regular properties
+	CHECK(found_caption);
+	CHECK(found_amount);
+	// but the holding meta is never written to the scene.
+	CHECK_FALSE(found_meta);
+
+	memdelete(scene);
+}
+
 TEST_CASE("[PackedScene] Clear Packed Scene") {
 	// Create a scene to pack.
 	Node *scene = memnew(Node);
