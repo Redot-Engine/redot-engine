@@ -250,7 +250,6 @@ class WorldScape3DAssetDock final : public PanelContainer {
 
 public:
 	explicit WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin);
-	~WorldScape3DAssetDock() override;
 
 	ListContainer *get_current_list() const { return _current_list; }
 	ConfirmationDialog *get_confirmation_dialog() const { return _confirm_dialog; }

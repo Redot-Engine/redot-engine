@@ -957,24 +957,6 @@ WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 	_initialized = true;
 }
 
-WorldScape3DAssetDock::~WorldScape3DAssetDock() {
-	_mesh_list->clear();
-	_mesh_list->queue_free();
-	_texture_list->clear();
-	_texture_list->queue_free();
-
-	_placement_opt->queue_free();
-	_floating_btn->queue_free();
-	_pinned_btn->queue_free();
-	_size_slider->queue_free();
-	_box->queue_free();
-	_buttons->queue_free();
-	_textures_btn->queue_free();
-	_meshes_btn->queue_free();
-	_asset_container->queue_free();
-	_confirm_dialog->queue_free();
-}
-
 // Dock placement
 
 void WorldScape3DAssetDock::set_slot(const int slot) {
