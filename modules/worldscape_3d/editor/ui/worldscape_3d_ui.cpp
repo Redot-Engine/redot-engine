@@ -957,6 +957,9 @@ void WorldScape3DUI::_notification(int what) {
 	switch (what) {
 		case NOTIFICATION_ENTER_TREE: {
 			on_tool_changed(WorldScape3DEditor::Tool::REGION, WorldScape3DEditor::Operation::ADD);
+			break;
+		}
+		case Node::NOTIFICATION_POST_ENTER_TREE: {
 			if (_asset_dock) {
 				_asset_dock->init();
 			}

@@ -244,6 +244,8 @@ class WorldScape3DAssetDock final : public PanelContainer {
 
 	void create_layout();
 
+	void setup_theme();
+
 	void init();
 
 public:

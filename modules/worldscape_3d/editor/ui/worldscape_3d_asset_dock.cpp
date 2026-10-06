@@ -867,6 +867,19 @@ void WorldScape3DAssetDock::create_layout() {
 	}
 }
 
+void WorldScape3DAssetDock::setup_theme() {
+	// Setup styles
+	set("theme_override_styles/panel", get_theme_stylebox("panel", "Panel"));
+	// Avoid saving icon resources in tscn when editing w/ a tool script
+	auto scene_root = EditorInterface::get_singleton()->get_edited_scene_root();
+	if (scene_root != this) {
+		_pinned_btn->set_button_icon(get_theme_icon("Pin", "EditorIcons"));
+		_pinned_btn->set_text("");
+		_floating_btn->set_button_icon(get_theme_icon("MakeFloating", "EditorIcons"));
+		_floating_btn->set_text("");
+	}
+}
+
 void WorldScape3DAssetDock::init() {
 	if (!_initialized) {
 		return;
@@ -913,17 +926,6 @@ void WorldScape3DAssetDock::init() {
 
 	update_dock();
 	update_layout();
-
-	// Setup styles
-	set("theme_override_styles/panel", get_theme_stylebox("panel", "Panel"));
-	// Avoid saving icon resources in tscn when editing w/ a tool script
-	auto scene_root = EditorInterface::get_singleton()->get_edited_scene_root();
-	if (scene_root != this) {
-		_pinned_btn->set_button_icon(get_theme_icon("Pin", "EditorIcons"));
-		_pinned_btn->set_text("");
-		_floating_btn->set_button_icon(get_theme_icon("MakeFloating", "EditorIcons"));
-		_floating_btn->set_text("");
-	}
 }
 
 WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
@@ -1334,7 +1336,10 @@ void WorldScape3DAssetDock::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("confirmation_canceled"));
 }
 
-void WorldScape3DAssetDock::_notification(int /*what*/) {
+void WorldScape3DAssetDock::_notification(int what) {
+	if (what == Node::NOTIFICATION_POST_ENTER_TREE) {
+		setup_theme();
+	}
 }
 
 void WorldScape3DAssetDock::dialog_confirm() {
