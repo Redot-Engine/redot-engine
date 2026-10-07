@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "scene/2d/node_2d.h"
 #include "scene/resources/packed_scene.h"
 
 #include "tests/test_macros.h"
@@ -166,6 +167,72 @@ TEST_CASE("[PackedScene] Missing properties are preserved when packing") {
 	CHECK(found_amount);
 	// but the holding meta is never written to the scene.
 	CHECK_FALSE(found_meta);
+
+	memdelete(scene);
+}
+
+TEST_CASE("[PackedScene] Missing node-reference properties are preserved as node paths") {
+	// Node-typed exports are applied as deferred NodePaths; when the script fails to
+	// parse they must be preserved and re-emitted with the node-path flag so the
+	// reference round-trips.
+	Node *scene = memnew(Node);
+	scene->set_name("TestScene");
+
+	Dictionary missing_node_properties;
+	missing_node_properties["target"] = NodePath("../Target");
+	scene->set_meta("_missing_node_properties", missing_node_properties);
+
+	PackedScene packed_scene;
+	const Error err = packed_scene.pack(scene);
+	CHECK(err == OK);
+
+	Ref<SceneState> state = packed_scene.get_state();
+	REQUIRE(state.is_valid());
+	REQUIRE(state->get_node_count() == 1);
+
+	bool found_target = false;
+	for (int i = 0; i < state->get_node_property_count(0); i++) {
+		if (state->get_node_property_name(0, i) == StringName("target")) {
+			found_target = true;
+			CHECK(state->get_node_property_value(0, i) == Variant(NodePath("../Target")));
+		}
+	}
+	CHECK(found_target);
+
+	// It must be flagged as a node path so it is deferred again on the next load.
+	const Vector<String> node_paths = state->get_node_deferred_nodepath_properties(0);
+	CHECK(node_paths.has("target"));
+
+	memdelete(scene);
+}
+
+TEST_CASE("[PackedScene] Stale missing properties are not restored once the property exists") {
+	// If the script is fixed and the recovered property is left at its default, the
+	// regular loop omits it; the stale value lingering in the meta must not resurrect.
+	Node *scene = memnew(Node);
+	scene->set_name("TestScene");
+
+	// "process_mode" exists on the node and is left at its default; the meta holds a
+	// different, stale value that must not be written back.
+	Dictionary missing_properties;
+	missing_properties["process_mode"] = Node::PROCESS_MODE_ALWAYS;
+	scene->set_meta("_missing_properties", missing_properties);
+
+	PackedScene packed_scene;
+	const Error err = packed_scene.pack(scene);
+	CHECK(err == OK);
+
+	Ref<SceneState> state = packed_scene.get_state();
+	REQUIRE(state.is_valid());
+	REQUIRE(state->get_node_count() == 1);
+
+	bool found_process_mode = false;
+	for (int i = 0; i < state->get_node_property_count(0); i++) {
+		if (state->get_node_property_name(0, i) == StringName("process_mode")) {
+			found_process_mode = true;
+		}
+	}
+	CHECK_FALSE(found_process_mode);
 
 	memdelete(scene);
 }

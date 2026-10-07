@@ -41,6 +41,7 @@
 #include "core/config/engine.h"
 #include "core/io/missing_resource.h"
 #include "core/io/resource_loader.h"
+#include "core/object/script_language.h"
 #include "core/templates/local_vector.h"
 #include "scene/2d/node_2d.h"
 #include "scene/gui/control.h"
@@ -56,6 +57,8 @@
 
 #define META_MISSING_PROPERTIES "_missing_properties"
 #define META_PROPERTY_MISSING_PROPERTIES "metadata/_missing_properties"
+#define META_MISSING_NODE_PROPERTIES "_missing_node_properties"
+#define META_PROPERTY_MISSING_NODE_PROPERTIES "metadata/_missing_node_properties"
 
 #ifdef TOOLS_ENABLED
 SceneState::InstantiationWarningNotify SceneState::instantiation_warn_notify = nullptr;
@@ -569,6 +572,21 @@ Node *SceneState::instantiate(GenEditState p_edit_state) const {
 		// Replace properties stored as NodePaths with actual Nodes.
 		Node *base = ObjectDB::get_instance<Node>(dnp.base);
 		ERR_CONTINUE_EDMSG(!base, vformat("Failed to set deferred property '%s' as the base node disappeared.", dnp.property));
+
+		if (p_edit_state != GEN_EDIT_STATE_DISABLED) {
+			bool prop_exists = false;
+			base->get(dnp.property, &prop_exists);
+			if (!prop_exists) {
+				Ref<Script> base_script = base->get_script();
+				if (base_script.is_valid() && !base_script->is_valid()) {
+					Dictionary missing = base->get_meta(META_MISSING_NODE_PROPERTIES, Dictionary());
+					missing[dnp.property] = dnp.value;
+					base->set_meta(META_MISSING_NODE_PROPERTIES, missing);
+					continue;
+				}
+			}
+		}
+
 		if (dnp.value.get_type() == Variant::ARRAY) {
 			Array paths = dnp.value;
 
@@ -838,7 +856,7 @@ Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Has
 			continue; // Ignore this property when packing.
 		}
 
-		if (E.name == META_PROPERTY_MISSING_PROPERTIES) {
+		if (E.name == META_PROPERTY_MISSING_PROPERTIES || E.name == META_PROPERTY_MISSING_NODE_PROPERTIES) {
 			continue; // The stored values are re-emitted individually below.
 		}
 
@@ -978,25 +996,38 @@ Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Has
 	// Re-emit overrides that couldn't be applied on load because the node's script
 	// failed to parse, so their values aren't lost when the scene is re-saved.
 	Dictionary missing_properties = p_node->get_meta(META_MISSING_PROPERTIES, Dictionary());
-	for (const KeyValue<Variant, Variant> &E : missing_properties) {
-		const StringName name = E.key;
-		if (saved_properties.has(name)) {
-			continue;
-		}
-		const Variant &value = E.value;
-
-		if (!pinned_props.has(name)) {
-			bool is_valid_default = false;
-			Variant default_value = PropertyUtils::get_property_default_value(p_node, name, &is_valid_default, &states_stack, true);
-			if (is_valid_default && !PropertyUtils::is_property_value_different(p_node, value, default_value)) {
+	Dictionary missing_node_properties = p_node->get_meta(META_MISSING_NODE_PROPERTIES, Dictionary());
+	for (int pass = 0; pass < 2; pass++) {
+		const Dictionary &missing = pass == 0 ? missing_properties : missing_node_properties;
+		for (const KeyValue<Variant, Variant> &E : missing) {
+			const StringName name = E.key;
+			if (saved_properties.has(name)) {
 				continue;
 			}
-		}
+			bool prop_exists = false;
+			p_node->get(name, &prop_exists);
+			if (prop_exists) {
+				continue;
+			}
+			const Variant &value = E.value;
 
-		NodeData::Property prop;
-		prop.name = _nm_get_string(name, name_map);
-		prop.value = _vm_get_variant(value, variant_map);
-		nd.properties.push_back(prop);
+			if (!pinned_props.has(name)) {
+				bool is_valid_default = false;
+				Variant default_value = PropertyUtils::get_property_default_value(p_node, name, &is_valid_default, &states_stack, true);
+				if (is_valid_default && !PropertyUtils::is_property_value_different(p_node, value, default_value)) {
+					continue;
+				}
+			}
+
+			NodeData::Property prop;
+			prop.name = _nm_get_string(name, name_map);
+			prop.value = _vm_get_variant(value, variant_map);
+			if (pass == 1) {
+				prop.name |= FLAG_PATH_PROPERTY_IS_NODE;
+			}
+			nd.properties.push_back(prop);
+			saved_properties.insert(name);
+		}
 	}
 
 	// save the groups this node is into
