@@ -35,6 +35,9 @@
 #include "worldscape_3d_asset_dock.h"
 
 #include "editor/editor_interface.h"
+#include "editor/editor_log.h"
+#include "editor/editor_node.h"
+#include "editor/gui/editor_bottom_panel.h"
 #include "editor/settings/event_listener_line_edit.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/label.h"
@@ -864,6 +867,19 @@ void WorldScape3DAssetDock::create_layout() {
 	}
 }
 
+void WorldScape3DAssetDock::setup_theme() {
+	// Setup styles
+	set("theme_override_styles/panel", get_theme_stylebox("panel", "Panel"));
+	// Avoid saving icon resources in tscn when editing w/ a tool script
+	auto scene_root = EditorInterface::get_singleton()->get_edited_scene_root();
+	if (scene_root != this) {
+		_pinned_btn->set_button_icon(get_theme_icon("Pin", "EditorIcons"));
+		_pinned_btn->set_text("");
+		_floating_btn->set_button_icon(get_theme_icon("MakeFloating", "EditorIcons"));
+		_floating_btn->set_text("");
+	}
+}
+
 void WorldScape3DAssetDock::init() {
 	if (!_initialized) {
 		return;
@@ -910,17 +926,6 @@ void WorldScape3DAssetDock::init() {
 
 	update_dock();
 	update_layout();
-
-	// Setup styles
-	set("theme_override_styles/panel", get_theme_stylebox("panel", "Panel"));
-	// Avoid saving icon resources in tscn when editing w/ a tool script
-	auto scene_root = EditorInterface::get_singleton()->get_edited_scene_root();
-	if (scene_root != this) {
-		_pinned_btn->set_button_icon(get_theme_icon("Pin", "EditorIcons"));
-		_pinned_btn->set_text("");
-		_floating_btn->set_button_icon(get_theme_icon("MakeFloating", "EditorIcons"));
-		_floating_btn->set_text("");
-	}
 }
 
 WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
@@ -947,25 +952,9 @@ WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 
 	load_editor_settings();
 
+	set_visible(false);
+
 	_initialized = true;
-}
-
-WorldScape3DAssetDock::~WorldScape3DAssetDock() {
-	_mesh_list->clear();
-	_mesh_list->queue_free();
-	_texture_list->clear();
-	_texture_list->queue_free();
-
-	_placement_opt->queue_free();
-	_floating_btn->queue_free();
-	_pinned_btn->queue_free();
-	_size_slider->queue_free();
-	_box->queue_free();
-	_buttons->queue_free();
-	_textures_btn->queue_free();
-	_meshes_btn->queue_free();
-	_asset_container->queue_free();
-	_confirm_dialog->queue_free();
 }
 
 // Dock placement
@@ -990,6 +979,7 @@ void WorldScape3DAssetDock::remove_dock(const bool force) {
 			break;
 		case State::BOTTOM:
 			_plugin->remove_control_from_bottom_panel(this);
+			EditorNode::get_bottom_panel()->make_item_visible(EditorNode::get_log());
 			_state = State::HIDDEN;
 			break;
 		case State::WINDOWED: {
@@ -1027,13 +1017,15 @@ void WorldScape3DAssetDock::update_dock() {
 
 	// Move dock to new destination
 	remove_dock();
-	if (_slot < POS_BOTTOM) { // Sidebar
-		_state = SIDEBAR;
-		_plugin->add_control_to_dock(static_cast<EditorPlugin::DockSlot>(_slot), this);
-	} else if (_slot == POS_BOTTOM) { // Bottom
-		_state = BOTTOM;
-		_plugin->add_control_to_bottom_panel(this, "Terrain Assets");
-		_plugin->make_bottom_panel_item_visible(this);
+	if (is_visible()) {
+		if (_slot < POS_BOTTOM) { // Sidebar
+			_state = SIDEBAR;
+			_plugin->add_control_to_dock(static_cast<EditorPlugin::DockSlot>(_slot), this);
+		} else if (_slot == POS_BOTTOM) { // Bottom
+			_state = BOTTOM;
+			_plugin->add_control_to_bottom_panel(this, "Terrain Assets");
+			_plugin->make_bottom_panel_item_visible(this);
+		}
 	}
 }
 
@@ -1327,8 +1319,8 @@ void WorldScape3DAssetDock::_bind_methods() {
 }
 
 void WorldScape3DAssetDock::_notification(int what) {
-	if (what == NOTIFICATION_POSTINITIALIZE) {
-		init();
+	if (what == Node::NOTIFICATION_POST_ENTER_TREE) {
+		setup_theme();
 	}
 }
 
