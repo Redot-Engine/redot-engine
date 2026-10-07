@@ -281,6 +281,10 @@ class DisplayServerX11 : public DisplayServer {
 		HashMap<int, bool> pen_inverted_devices;
 		XIEventMask all_event_mask;
 		HashMap<int, Vector2> state;
+#ifdef TOUCH_ENABLED
+		List<Ref<InputEventScreenTouch>> pending_touch_releases;
+		bool flushing_touch_releases = false;
+#endif
 		double pressure;
 		bool pressure_supported;
 		bool pen_inverted;
@@ -293,6 +297,9 @@ class DisplayServerX11 : public DisplayServer {
 	} xi;
 
 	bool _refresh_device_info();
+#ifdef TOUCH_ENABLED
+	void _flush_pending_touch_releases();
+#endif
 
 	Rect2i _screen_get_rect(int p_screen) const;
 

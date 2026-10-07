@@ -4514,8 +4514,30 @@ DisplayServer::WindowID DisplayServerX11::_get_focused_window_or_popup() const {
 }
 
 void DisplayServerX11::_dispatch_input_events(const Ref<InputEvent> &p_event) {
-	static_cast<DisplayServerX11 *>(get_singleton())->_dispatch_input_event(p_event);
+	DisplayServerX11 *display_server = static_cast<DisplayServerX11 *>(get_singleton());
+	display_server->_dispatch_input_event(p_event);
+#ifdef TOUCH_ENABLED
+	// A callback may have paused the debugger while a touch ended.
+	display_server->_flush_pending_touch_releases();
+#endif
 }
+
+#ifdef TOUCH_ENABLED
+void DisplayServerX11::_flush_pending_touch_releases() {
+	if (!Thread::is_main_thread() || xi.flushing_touch_releases) {
+		return;
+	}
+
+	// Touch-to-mouse emulation can reenter input dispatch before the touch is delivered.
+	xi.flushing_touch_releases = true;
+	while (xi.pending_touch_releases.front()) {
+		Ref<InputEventScreenTouch> release = xi.pending_touch_releases.front()->get();
+		xi.pending_touch_releases.pop_front();
+		Input::get_singleton()->parse_input_event(release);
+	}
+	xi.flushing_touch_releases = false;
+}
+#endif
 
 void DisplayServerX11::_dispatch_input_event(const Ref<InputEvent> &p_event) {
 	{
@@ -4832,6 +4854,27 @@ void DisplayServerX11::force_process_and_drop_events() {
 		}
 		if (input_event) {
 			if (XGetEventData(x11_display, &event.xcookie)) {
+#ifdef TOUCH_ENABLED
+				if (event.type == GenericEvent && event.xcookie.extension == xi.opcode && event.xcookie.evtype == XI_TouchEnd) {
+					const XIDeviceEvent *touch = static_cast<const XIDeviceEvent *>(event.xcookie.data);
+					if (xi.state.erase(touch->detail)) {
+						Ref<InputEventScreenTouch> release;
+						release.instantiate();
+						release->set_index(touch->detail);
+						release->set_position(Vector2(touch->event_x, touch->event_y));
+						release->set_pressed(false);
+						release->set_window_id(MAIN_WINDOW_ID);
+						for (const KeyValue<WindowID, WindowData> &window : windows) {
+							if (window.value.x11_window == touch->event) {
+								release->set_window_id(window.key);
+								break;
+							}
+						}
+						// Reconcile input after continuing, without calling scripts while paused.
+						xi.pending_touch_releases.push_back(release);
+					}
+				}
+#endif
 				XFreeEventData(x11_display, &event.xcookie);
 			}
 			// Keep the vector stable if a resize callback reentered the debugger.
@@ -4896,6 +4939,9 @@ void DisplayServerX11::process_events() {
 	}
 
 	for (uint32_t event_index = 0; event_index < events.size(); ++event_index) {
+#ifdef TOUCH_ENABLED
+		_flush_pending_touch_releases();
+#endif
 		XEvent &event = events[event_index];
 		if (event.type == 0) {
 			continue;
@@ -5726,6 +5772,9 @@ void DisplayServerX11::process_events() {
 
 	_THREAD_SAFE_UNLOCK_
 
+#ifdef TOUCH_ENABLED
+	_flush_pending_touch_releases();
+#endif
 	Input::get_singleton()->flush_buffered_events();
 }
 
