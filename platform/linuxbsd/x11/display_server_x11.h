@@ -385,6 +385,13 @@ class DisplayServerX11 : public DisplayServer {
 	Thread events_thread;
 	SafeFlag events_thread_done;
 	LocalVector<XEvent> polled_events;
+	struct EventBatch {
+		LocalVector<XEvent> events;
+		uint32_t index = 0;
+		bool in_progress = false;
+		EventBatch *previous = nullptr;
+	};
+	EventBatch *active_event_batch = nullptr;
 	static void _poll_events_thread(void *ud);
 	bool _wait_for_events(int timeout_seconds = 1, int timeout_microseconds = 0) const;
 	void _poll_events();

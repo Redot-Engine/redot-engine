@@ -4843,44 +4843,53 @@ void DisplayServerX11::force_process_and_drop_events() {
 
 	_THREAD_SAFE_METHOD_
 	MutexLock mutex_lock(events_mutex);
-	for (XEvent &event : polled_events) {
-		if (event.type == ClientMessage && event.xclient.window == windows[MAIN_WINDOW_ID].x11_window && (unsigned int)event.xclient.data.l[0] == (unsigned int)wm_delete) {
-			main_window_close_requested = true;
-			event.type = 0;
-		}
-		bool input_event = event.type == KeyPress || event.type == KeyRelease || event.type == ButtonPress || event.type == ButtonRelease || event.type == MotionNotify;
-		if (event.type == GenericEvent && event.xcookie.extension == xi.opcode && event.xcookie.evtype != XI_HierarchyChanged && event.xcookie.evtype != XI_DeviceChanged) {
-			input_event = true;
-		}
-		if (input_event) {
-			if (XGetEventData(x11_display, &event.xcookie)) {
-#ifdef TOUCH_ENABLED
-				if (event.type == GenericEvent && event.xcookie.extension == xi.opcode && event.xcookie.evtype == XI_TouchEnd) {
-					const XIDeviceEvent *touch = static_cast<const XIDeviceEvent *>(event.xcookie.data);
-					if (xi.state.erase(touch->detail)) {
-						Ref<InputEventScreenTouch> release;
-						release.instantiate();
-						release->set_index(touch->detail);
-						release->set_position(Vector2(touch->event_x, touch->event_y));
-						release->set_pressed(false);
-						release->set_window_id(MAIN_WINDOW_ID);
-						for (const KeyValue<WindowID, WindowData> &window : windows) {
-							if (window.value.x11_window == touch->event) {
-								release->set_window_id(window.key);
-								break;
-							}
-						}
-						// Reconcile input after continuing, without calling scripts while paused.
-						xi.pending_touch_releases.push_back(release);
-					}
-				}
-#endif
-				XFreeEventData(x11_display, &event.xcookie);
+	auto drop_events = [&](LocalVector<XEvent> &r_events, uint32_t p_start) {
+		for (uint32_t i = p_start; i < r_events.size(); ++i) {
+			XEvent &event = r_events[i];
+			if (event.type == ClientMessage && event.xclient.window == windows[MAIN_WINDOW_ID].x11_window && (unsigned int)event.xclient.data.l[0] == (unsigned int)wm_delete) {
+				main_window_close_requested = true;
+				event.type = 0;
 			}
-			// Keep the vector stable if a resize callback reentered the debugger.
-			event.type = 0;
+			// Preserve key and mouse-button releases to reconcile Input after resuming.
+			bool input_event = event.type == KeyPress || event.type == ButtonPress || event.type == MotionNotify;
+			if (event.type == GenericEvent && event.xcookie.extension == xi.opcode && event.xcookie.evtype != XI_HierarchyChanged && event.xcookie.evtype != XI_DeviceChanged) {
+				input_event = true;
+			}
+			if (input_event) {
+				if (XGetEventData(x11_display, &event.xcookie)) {
+#ifdef TOUCH_ENABLED
+					if (event.type == GenericEvent && event.xcookie.extension == xi.opcode && event.xcookie.evtype == XI_TouchEnd) {
+						const XIDeviceEvent *touch = static_cast<const XIDeviceEvent *>(event.xcookie.data);
+						if (xi.state.erase(touch->detail)) {
+							Ref<InputEventScreenTouch> release;
+							release.instantiate();
+							release->set_index(touch->detail);
+							release->set_position(Vector2(touch->event_x, touch->event_y));
+							release->set_pressed(false);
+							release->set_window_id(MAIN_WINDOW_ID);
+							for (const KeyValue<WindowID, WindowData> &window : windows) {
+								if (window.value.x11_window == touch->event) {
+									release->set_window_id(window.key);
+									break;
+								}
+							}
+							// Reconcile input after continuing, without calling scripts while paused.
+							xi.pending_touch_releases.push_back(release);
+						}
+					}
+#endif
+					XFreeEventData(x11_display, &event.xcookie);
+				}
+				// Keep the vector stable if a resize callback reentered the debugger.
+				event.type = 0;
+			}
 		}
+	};
+	// A callback can pause with an unprocessed batch already outside polled_events.
+	for (EventBatch *batch = active_event_batch; batch; batch = batch->previous) {
+		drop_events(batch->events, batch->index + (batch->in_progress ? 1 : 0));
 	}
+	drop_events(polled_events, 0);
 }
 
 void DisplayServerX11::process_events() {
@@ -4930,7 +4939,8 @@ void DisplayServerX11::process_events() {
 	xi.tilt = Vector2();
 	xi.pressure_supported = false;
 
-	LocalVector<XEvent> events;
+	EventBatch batch;
+	LocalVector<XEvent> &events = batch.events;
 	{
 		// Block events polling while flushing events.
 		MutexLock mutex_lock(events_mutex);
@@ -4938,10 +4948,15 @@ void DisplayServerX11::process_events() {
 		polled_events.clear();
 	}
 
-	for (uint32_t event_index = 0; event_index < events.size(); ++event_index) {
+	batch.previous = active_event_batch;
+	active_event_batch = &batch;
+	for (uint32_t &event_index = batch.index; event_index < events.size(); ++event_index) {
+		batch.in_progress = false;
 #ifdef TOUCH_ENABLED
 		_flush_pending_touch_releases();
 #endif
+		// Do not drain the event whose callback is currently on the stack.
+		batch.in_progress = true;
 		XEvent &event = events[event_index];
 		if (event.type == 0) {
 			continue;
@@ -5745,6 +5760,8 @@ void DisplayServerX11::process_events() {
 				break;
 		}
 	}
+
+	active_event_batch = batch.previous;
 
 	XFlush(x11_display);
 
