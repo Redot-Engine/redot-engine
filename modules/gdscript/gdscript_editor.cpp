@@ -4134,6 +4134,11 @@ static Error _lookup_symbol_from_base(const GDScriptParser::DataType &p_base, co
 						break;
 				}
 
+				const GDScriptParser::ClassNode *declaring_class = member.get_source_node()->declaring_class;
+				if (declaring_class != nullptr) {
+					base_type = declaring_class->get_datatype();
+				}
+
 				if (member.type != GDScriptParser::ClassNode::Member::TRAIT && member.type != GDScriptParser::ClassNode::Member::CLASS && member.type != GDScriptParser::ClassNode::Member::STRUCT) {
 					String doc_type_name;
 					String doc_enum_name;

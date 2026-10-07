@@ -376,6 +376,10 @@ public:
 
 		Vector<String> trait_origin; // Indicates origin of Node if copied over from trait.
 
+#ifdef TOOLS_ENABLED
+		ClassNode *declaring_class = nullptr; // Preserved when a member is copied from a trait.
+#endif // TOOLS_ENABLED
+
 		virtual DataType get_datatype() const { return datatype; }
 		virtual void set_datatype(const DataType &p_datatype) { datatype = p_datatype; }
 
@@ -872,10 +876,20 @@ public:
 		}
 		template <typename T>
 		void add_member(T *p_member_node) {
+#ifdef TOOLS_ENABLED
+			if (p_member_node->declaring_class == nullptr) {
+				p_member_node->declaring_class = this;
+			}
+#endif // TOOLS_ENABLED
 			members_indices[p_member_node->identifier->name] = members.size();
 			members.push_back(Member(p_member_node));
 		}
 		void add_member(const EnumNode::Value &p_enum_value) {
+#ifdef TOOLS_ENABLED
+			if (p_enum_value.identifier->declaring_class == nullptr) {
+				p_enum_value.identifier->declaring_class = this;
+			}
+#endif // TOOLS_ENABLED
 			members_indices[p_enum_value.identifier->name] = members.size();
 			members.push_back(Member(p_enum_value));
 		}
