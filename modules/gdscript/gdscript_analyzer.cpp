@@ -3881,7 +3881,18 @@ void GDScriptAnalyzer::reduce_assignment(GDScriptParser::AssignmentNode *p_assig
 		// The storage type stays nullable even when reads were narrowed by a guard.
 		p_assignment->assignee->set_datatype(narrow_source->get_datatype());
 	}
-	if (narrow_source == nullptr || member_narrow_sources.has(narrow_source)) {
+	bool builtin_element_assignment = false;
+	if (p_assignment->assignee->type == GDScriptParser::Node::SUBSCRIPT) {
+		const GDScriptParser::SubscriptNode *subscript = static_cast<const GDScriptParser::SubscriptNode *>(p_assignment->assignee);
+		if (subscript->base != nullptr) {
+			const GDScriptParser::DataType &base_type = subscript->base->get_datatype();
+			builtin_element_assignment = base_type.is_hard_type() && base_type.kind == GDScriptParser::DataType::BUILTIN &&
+					!base_type.is_meta_type && base_type.builtin_type != Variant::OBJECT && base_type.builtin_type != Variant::NIL;
+		}
+	}
+	// Changing a built-in's field or element preserves the containing value's nullability.
+	// Calls and accessors in the value, base, or index have already invalidated member proofs.
+	if ((narrow_source == nullptr && !builtin_element_assignment) || member_narrow_sources.has(narrow_source)) {
 		invalidate_member_narrowing();
 	}
 
