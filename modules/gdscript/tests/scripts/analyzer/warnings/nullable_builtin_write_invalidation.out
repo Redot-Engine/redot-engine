@@ -1,0 +1,5 @@
+GDTEST_OK
+~~ WARNING at line 18: (UNSAFE_NULLABLE_ACCESS) The value of type "Payload?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 24: (UNSAFE_NULLABLE_ACCESS) The value of type "Payload?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 29: (UNSAFE_NULLABLE_ACCESS) The value of type "Payload?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 34: (UNSAFE_NULLABLE_ACCESS) The value of type "Payload?" may be null; using it without a null check may fail at runtime.
