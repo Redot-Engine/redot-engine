@@ -931,7 +931,7 @@ void WorldScape3DAssetDock::init() {
 WorldScape3DAssetDock::WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin) :
 		_plugin{ plugin } {
 	create_layout();
-	_rex_editor_last_state = _plugin->get_rex_editor_window()->get_mode();
+	_redot_editor_last_state = _plugin->get_redot_editor_window()->get_mode();
 
 	// FIXME: this would leak?
 	//_floating_btn->set_owner(nullptr);
@@ -987,10 +987,10 @@ void WorldScape3DAssetDock::remove_dock(const bool force) {
 				if (auto parent = get_parent(); parent) {
 					parent->remove_child(this);
 				}
-				auto rex = _plugin->get_rex_editor_window();
-				rex->disconnect("mouse_entered", callable_mp(this, &WorldScape3DAssetDock::on_rex_window_entered));
-				rex->disconnect("focus_entered", callable_mp(this, &WorldScape3DAssetDock::on_rex_focus_entered));
-				rex->disconnect("focus_exited", callable_mp(this, &WorldScape3DAssetDock::on_rex_focus_exited));
+				auto redot = _plugin->get_redot_editor_window();
+				redot->disconnect("mouse_entered", callable_mp(this, &WorldScape3DAssetDock::on_redot_window_entered));
+				redot->disconnect("focus_entered", callable_mp(this, &WorldScape3DAssetDock::on_redot_focus_entered));
+				redot->disconnect("focus_exited", callable_mp(this, &WorldScape3DAssetDock::on_redot_focus_exited));
 				_window->hide();
 				_window->queue_free();
 				_window = nullptr;
@@ -1201,10 +1201,10 @@ void WorldScape3DAssetDock::make_dock_float() {
 	_window->connect("focus_exited", callable_mp(this, &WorldScape3DAssetDock::save_editor_settings));
 	_window->connect("mouse_exited", callable_mp(this, &WorldScape3DAssetDock::save_editor_settings));
 	_window->connect("size_changed", callable_mp(this, &WorldScape3DAssetDock::save_editor_settings));
-	const auto editor_window = _plugin->get_rex_editor_window();
-	editor_window->connect("mouse_entered", callable_mp(this, &WorldScape3DAssetDock::on_rex_window_entered));
-	editor_window->connect("focus_entered", callable_mp(this, &WorldScape3DAssetDock::on_rex_focus_entered));
-	editor_window->connect("focus_exited", callable_mp(this, &WorldScape3DAssetDock::on_rex_focus_exited));
+	const auto editor_window = _plugin->get_redot_editor_window();
+	editor_window->connect("mouse_entered", callable_mp(this, &WorldScape3DAssetDock::on_redot_window_entered));
+	editor_window->connect("focus_entered", callable_mp(this, &WorldScape3DAssetDock::on_redot_focus_entered));
+	editor_window->connect("focus_exited", callable_mp(this, &WorldScape3DAssetDock::on_redot_focus_exited));
 	editor_window->grab_focus();
 	update_assets();
 	save_editor_settings();
@@ -1253,28 +1253,28 @@ void WorldScape3DAssetDock::on_window_input(Ref<InputEvent> event) {
 	}
 }
 
-void WorldScape3DAssetDock::on_rex_window_entered() {
+void WorldScape3DAssetDock::on_redot_window_entered() {
 	if (_window && _window->has_focus()) {
-		_plugin->get_rex_editor_window()->grab_focus();
+		_plugin->get_redot_editor_window()->grab_focus();
 	}
 }
 
-void WorldScape3DAssetDock::on_rex_focus_entered() {
-	// If asset dock is windowed, and ReX was minimized, and now is not, restore asset dock window
+void WorldScape3DAssetDock::on_redot_focus_entered() {
+	// If asset dock is windowed, and Redot was minimized, and now is not, restore asset dock window
 	if (_window) {
-		auto editor_window = _plugin->get_rex_editor_window();
-		if (_rex_editor_last_state == Window::MODE_MINIMIZED && editor_window->get_mode() != Window::MODE_MINIMIZED) {
+		auto editor_window = _plugin->get_redot_editor_window();
+		if (_redot_editor_last_state == Window::MODE_MINIMIZED && editor_window->get_mode() != Window::MODE_MINIMIZED) {
 			_window->show();
-			_rex_editor_last_state = editor_window->get_mode();
+			_redot_editor_last_state = editor_window->get_mode();
 			editor_window->grab_focus();
 		}
 	}
 }
 
-void WorldScape3DAssetDock::on_rex_focus_exited() {
-	if (auto editor_window = _plugin->get_rex_editor_window(); _window && editor_window->get_mode() == Window::MODE_MINIMIZED) {
+void WorldScape3DAssetDock::on_redot_focus_exited() {
+	if (auto editor_window = _plugin->get_redot_editor_window(); _window && editor_window->get_mode() == Window::MODE_MINIMIZED) {
 		_window->hide();
-		_rex_editor_last_state = editor_window->get_mode();
+		_redot_editor_last_state = editor_window->get_mode();
 	}
 }
 
