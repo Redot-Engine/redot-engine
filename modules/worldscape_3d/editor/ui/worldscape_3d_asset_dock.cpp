@@ -1302,7 +1302,8 @@ void WorldScape3DAssetDock::save_editor_settings() {
 	clamp_window_position();
 	_plugin->set_setting(ES_DOCK_SLOT, _slot);
 	_plugin->set_setting(ES_DOCK_TILE_SIZE, _size_slider->get_value());
-	_plugin->set_setting(ES_DOCK_FLOATING, _floating_btn->is_pressed());
+	// TODO For now, never start with a floating dock - this ensures predictable behavior 
+	_plugin->set_setting(ES_DOCK_FLOATING, false /*_floating_btn->is_pressed()*/);
 	_plugin->set_setting(ES_DOCK_PINNED, _pinned_btn->is_pressed());
 	// TODO Don't save tab until thumbnail generation is more reliable
 	//_plugin->set_setting(ES_DOCK_TAB, _current_list == _texture_list ? 0 : 1);
