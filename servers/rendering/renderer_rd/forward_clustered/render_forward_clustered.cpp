@@ -39,6 +39,7 @@
 #include "render_forward_clustered.h"
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/environment/fog.h"
+#include "servers/rendering/renderer_rd/environment/sky.h"
 #include "servers/rendering/renderer_rd/framebuffer_cache_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
@@ -1990,6 +1991,8 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 	Color clear_color;
 	bool load_color = false;
 
+	RendererRD::SkyRD::SkyRenderData sky_env;
+
 	if (debug_draw_mode == RS::VIEWPORT_DEBUG_DRAW_OVERDRAW) {
 		clear_color = Color(0, 0, 0, 1); //in overdraw mode, BG should always be black
 	} else if (is_environment(p_render_data->environment)) {
@@ -2048,14 +2051,28 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 			RENDER_TIMESTAMP("Setup Sky");
 			RD::get_singleton()->draw_command_begin_label("Setup Sky");
 
+			sky_env.sky = environment_get_sky(p_render_data->environment);
+			sky_env.background = environment_get_background(p_render_data->environment);
+			sky_env.sky_orientation = environment_get_sky_orientation(p_render_data->environment);
+			sky_env.custom_fov = environment_get_sky_custom_fov(p_render_data->environment);
+
+			sky_env.fog_enabled = environment_get_fog_enabled(p_render_data->environment);
+			sky_env.fog_density = environment_get_fog_density(p_render_data->environment);
+			sky_env.fog_aerial_perspective = environment_get_fog_aerial_perspective(p_render_data->environment);
+			sky_env.fog_light_color = environment_get_fog_light_color(p_render_data->environment);
+			sky_env.fog_light_energy = environment_get_fog_light_energy(p_render_data->environment);
+			sky_env.fog_sun_scatter = environment_get_fog_sun_scatter(p_render_data->environment);
+			sky_env.fog_sky_affect = environment_get_fog_sky_affect(p_render_data->environment);
+			sky_env.volumetric_fog_sky_affect = environment_get_volumetric_fog_sky_affect(p_render_data->environment);
+
 			// Setup our sky render information for this frame/viewport
-			sky.setup_sky(p_render_data, screen_size);
+			sky.setup_sky(p_render_data, sky_env, screen_size);
 
 			sky_brightness_multiplier *= bg_energy_multiplier;
 
-			RID sky_rid = environment_get_sky(p_render_data->environment);
+			RID sky_rid = sky_env.sky;
 			if (sky_rid.is_valid()) {
-				sky.update_radiance_buffers(rb, p_render_data->environment, scene_data->cam_transform.origin, time, sky_luminance_multiplier, sky_brightness_multiplier);
+				sky.update_radiance_buffers(rb, sky_env, scene_data->cam_transform.origin, time, sky_luminance_multiplier, sky_brightness_multiplier);
 				radiance_texture = sky.sky_get_radiance_texture_rd(sky_rid);
 			} else {
 				// do not try to draw sky if invalid
@@ -2064,7 +2081,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 
 			if (draw_sky || draw_sky_fog_only) {
 				// update sky half/quarter res buffers (if required)
-				sky.update_res_buffers(rb, p_render_data->environment, time, sky_luminance_multiplier, sky_brightness_multiplier);
+				sky.update_res_buffers(rb, sky_env, time, sky_luminance_multiplier, sky_brightness_multiplier);
 			}
 
 			RD::get_singleton()->draw_command_end_label();
@@ -2275,7 +2292,7 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 		RD::get_singleton()->draw_command_begin_label("Draw Sky");
 		RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(color_only_framebuffer, RD::DRAW_DEFAULT_ALL, Vector<Color>(), 1.0f, 0u, p_render_data->render_region);
 
-		sky.draw_sky(draw_list, rb, p_render_data->environment, color_only_framebuffer, time, sky_luminance_multiplier, sky_brightness_multiplier);
+		sky.draw_sky(draw_list, rb, sky_env, color_only_framebuffer, time, sky_luminance_multiplier, sky_brightness_multiplier);
 
 		RD::get_singleton()->draw_list_end();
 		RD::get_singleton()->draw_command_end_label();
