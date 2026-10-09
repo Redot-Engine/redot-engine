@@ -73,17 +73,26 @@ class GDScriptAnalyzer {
 	bool experimental_struct_warned = false;
 #endif
 
-	LocalVector<const GDScriptParser::AssignableNode *> narrowed_non_null;
+	struct NarrowTarget {
+		const GDScriptParser::AssignableNode *base = nullptr;
+		const GDScriptParser::AssignableNode *source = nullptr;
+
+		bool is_valid() const { return source != nullptr; }
+		bool operator==(const NarrowTarget &p_other) const { return base == p_other.base && source == p_other.source; }
+	};
+
+	LocalVector<NarrowTarget> narrowed_non_null;
 	HashSet<const GDScriptParser::AssignableNode *> member_narrow_sources;
 	HashMap<const GDScriptParser::ExpressionNode *, uint64_t> member_read_generations;
 	uint64_t member_state_generation = 0;
-	bool is_narrowed_non_null(const GDScriptParser::AssignableNode *p_source) const;
-	void invalidate_narrowing(const GDScriptParser::AssignableNode *p_source);
+	bool is_narrowed_non_null(const NarrowTarget &p_target) const;
+	bool is_member_narrow_target(const NarrowTarget &p_target) const;
+	void invalidate_narrowing(const NarrowTarget &p_target);
 	void invalidate_member_narrowing();
 	void invalidate_loop_narrowing(const GDScriptParser::Node *p_node);
-	const GDScriptParser::AssignableNode *identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression);
+	NarrowTarget identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression);
 	void apply_non_null_narrowing(GDScriptParser::ExpressionNode *p_expression);
-	void collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<const GDScriptParser::AssignableNode *> &r_targets);
+	void collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<NarrowTarget> &r_targets);
 
 	/// @name Tests for detecting invalid overloading of script members
 	/// @{
