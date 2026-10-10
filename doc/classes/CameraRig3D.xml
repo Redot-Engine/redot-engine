@@ -24,7 +24,8 @@
 			If [code]true[/code], the managed camera points towards the target.
 		</member>
 		<member name="position_smoothing_enabled" type="bool" setter="set_position_smoothing_enabled" getter="is_position_smoothing_enabled" default="true">
-			If [code]true[/code], the rig smoothly interpolates towards its desired position. Otherwise, it moves directly to the desired position.
+			If [code]true[/code], the rig smoothly interpolates towards its desired position after initialization. Otherwise, it moves directly to the desired position.
+			[b]Note:[/b] During initialization, the rig is placed directly at the desired position.
 		</member>
 		<member name="position_smoothing_speed" type="float" setter="set_position_smoothing_speed" getter="get_position_smoothing_speed" default="8.0">
 			Controls how quickly the rig approaches its desired position when [member position_smoothing_enabled] is enabled. Higher values make the rig follow more quickly.

@@ -39,7 +39,13 @@
 #include "camera_rig_3d.h"
 
 #include "core/math/math_funcs.h"
+#include "core/templates/list.h"
 #include "scene/3d/camera_3d.h"
+#include "scene/main/viewport.h"
+
+bool CameraRig3D::_is_valid_target(Node3D *p_target) const {
+	return !p_target || (p_target != this && !is_ancestor_of(p_target));
+}
 
 Camera3D *CameraRig3D::get_managed_camera() const {
 	return ObjectDB::get_instance<Camera3D>(camera_id);
@@ -56,8 +62,37 @@ void CameraRig3D::_setup_camera() {
 				return;
 			}
 		}
+
+		List<Node *> pending_nodes;
+
+		for (int i = 0; i < get_child_count(); i++) {
+			pending_nodes.push_back(get_child(i));
+		}
+
+		while (!pending_nodes.is_empty()) {
+			Node *node = pending_nodes.front()->get();
+			pending_nodes.pop_front();
+
+			// Don't adopt cameras from nested viewports since they belong to a different viewport
+			if (Object::cast_to<Viewport>(node)) {
+				continue;
+			}
+
+			Camera3D *camera = Object::cast_to<Camera3D>(node);
+
+			if (camera) {
+				camera_id = camera->get_instance_id();
+				camera->make_current();
+				return;
+			}
+
+			for (int i = 0; i < node->get_child_count(); i++) {
+				pending_nodes.push_back(node->get_child(i));
+			}
+		}
 	}
 
+	// Create a camera when adoption is disabled or no direct child camera exists
 	Camera3D *camera = memnew(Camera3D);
 	camera->set_name("Camera3D");
 	add_child(camera);
@@ -77,12 +112,16 @@ void CameraRig3D::_notification(int p_what) {
 }
 
 void CameraRig3D::_update_process_state() {
+	// Avoid processing every frame when no target-dependent behavior is enabled
 	set_process(ObjectDB::get_instance<Node3D>(target_id) != nullptr && (follow_target || look_at_target));
 }
 
 void CameraRig3D::set_target(Node3D *p_target) {
+	// A target inside the rig's hierarchy would move with the rig, feeding its
+	// own movement back into the next desired position
+	ERR_FAIL_COND_MSG(!_is_valid_target(p_target), "CameraRig3D can't target itself or one of its descendants.");
+
 	target_id = p_target ? p_target->get_instance_id() : ObjectID();
-	position_initialized = false;
 	_update_process_state();
 }
 
@@ -125,6 +164,7 @@ bool CameraRig3D::is_position_smoothing_enabled() const {
 }
 
 void CameraRig3D::set_position_smoothing_speed(real_t p_speed) {
+	// Keep the interpolation speed positive to avoid a stationary or divergent exponential interpolation
 	position_smoothing_speed = MAX(real_t(0.01), p_speed);
 }
 
@@ -145,7 +185,15 @@ void CameraRig3D::_ready_rig() {
 
 	Node3D *target = get_target();
 
+	// The hierarchy may have changed after set_target() was called
+	if (!_is_valid_target(target)) {
+		target_id = ObjectID();
+		target = nullptr;
+		ERR_PRINT("CameraRig3D target became the rig itself or one of its descendants.");
+	}
+
 	if (target && follow_target) {
+		// Initialize directly so the camera starts at the expected position
 		set_global_position(target->to_global(follow_offset));
 		position_initialized = true;
 	}
@@ -159,6 +207,7 @@ void CameraRig3D::_ready_rig() {
 			if (direction.length_squared() > CMP_EPSILON) {
 				Vector3 up(0.0, 1.0, 0.0);
 
+				// look_at() can't use an up vector parallel to the viewing direction
 				if (Math::abs(direction.normalized().dot(up)) > 0.999) {
 					up = Vector3(0.0, 0.0, 1.0);
 				}
@@ -181,15 +230,26 @@ void CameraRig3D::_process_rig(double p_delta) {
 		return;
 	}
 
+	// Reparenting can make a previously valid target dependent on the rig's transform,
+	// so validate the relationship again while processing
+	if (!_is_valid_target(target)) {
+		target_id = ObjectID();
+		_update_process_state();
+		ERR_PRINT("CameraRig3D target became the rig itself or one of its descendants.");
+		return;
+	}
+
 	Camera3D *camera = get_managed_camera();
 
 	if (follow_target) {
+		// Transform the offset through the target so it follows the target's orientation
 		const Vector3 desired_position = target->to_global(follow_offset);
 
 		if (!position_initialized || !position_smoothing_enabled) {
 			set_global_position(desired_position);
 			position_initialized = true;
 		} else {
+			// Exponential interpolation gives consistent smoothing across frame rates
 			const real_t weight = 1.0 - Math::exp(-position_smoothing_speed * p_delta);
 			set_global_position(get_global_position().lerp(desired_position, weight));
 		}
@@ -202,6 +262,7 @@ void CameraRig3D::_process_rig(double p_delta) {
 		if (direction.length_squared() > CMP_EPSILON) {
 			Vector3 up(0.0, 1.0, 0.0);
 
+			// Avoid a degenerate look-at basis when looking almost vertically
 			if (Math::abs(direction.normalized().dot(up)) > 0.999) {
 				up = Vector3(0.0, 0.0, 1.0);
 			}

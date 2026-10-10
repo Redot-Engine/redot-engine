@@ -55,7 +55,12 @@ class CameraRig3D : public Node3D {
 	bool position_smoothing_enabled = true;
 	real_t position_smoothing_speed = 8.0;
 	bool adopt_existing_camera = true;
+
+	// Prevents the first update from interpolating from an uninitialized position
 	bool position_initialized = false;
+
+	// A target can't be the rig itself or a node whose transform depends on the rig
+	bool _is_valid_target(Node3D *p_target) const;
 
 	Camera3D *get_managed_camera() const;
 	void _setup_camera();
