@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="CameraRig3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		A 3D camera rig that follows a target, smoothly adjusts its position, and keeps its camera pointed at the target.
+	</brief_description>
+	<description>
+		CameraRig3D is a camera controller that manages a Camera3D node to provide target following, position smoothing, and automatic look-at behavior. The rig can create its own Camera3D child or adopt an existing Camera3D child, depending on [member adopt_existing_camera]. The managed camera is made current when the rig is initialized.
+		The [member target] property specifies the Node3D that the rig follows and looks at. The [member follow_offset] property defines the camera rig's desired position relative to the target. When position smoothing is enabled, the rig moves towards this position gradually instead of snapping to it.
+		CameraRig3D can be used as a foundation for third-person cameras and other camera setups. Mouse input, orbit controls, and obstacle avoidance can be implemented separately or combined with other nodes such as [SpringArm3D].
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="adopt_existing_camera" type="bool" setter="set_adopt_existing_camera" getter="is_adopt_existing_camera_enabled" default="true">
+			If [code]true[/code], the rig uses the first direct child that is a [Camera3D] instead of creating a new camera. If no suitable child is found, a new [Camera3D] is created.
+		</member>
+		<member name="follow_offset" type="Vector3" setter="set_follow_offset" getter="get_follow_offset" default="Vector3(0, 2, 5)">
+			The desired position offset from the target, expressed in the target's local space. The offset is transformed by the target's global transform.
+		</member>
+		<member name="follow_target" type="bool" setter="set_follow_target" getter="is_follow_target_enabled" default="true">
+			If [code]true[/code], the rig follows the target using [member follow_offset].
+		</member>
+		<member name="look_at_target" type="bool" setter="set_look_at_target" getter="is_look_at_target_enabled" default="true">
+			If [code]true[/code], the managed camera points towards the target.
+		</member>
+		<member name="position_smoothing_enabled" type="bool" setter="set_position_smoothing_enabled" getter="is_position_smoothing_enabled" default="true">
+			If [code]true[/code], the rig smoothly interpolates towards its desired position. Otherwise, it moves directly to the desired position.
+		</member>
+		<member name="position_smoothing_speed" type="float" setter="set_position_smoothing_speed" getter="get_position_smoothing_speed" default="8.0">
+			Controls how quickly the rig approaches its desired position when [member position_smoothing_enabled] is enabled. Higher values make the rig follow more quickly.
+		</member>
+		<member name="target" type="Node3D" setter="set_target" getter="get_target">
+			The [Node3D] that the rig follows and looks at. If no target is assigned, target-following and look-at updates are not performed.
+		</member>
+	</members>
+</class>

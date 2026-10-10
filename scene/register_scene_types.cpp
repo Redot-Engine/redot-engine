@@ -233,6 +233,7 @@
 #include "scene/3d/bone_constraint_3d.h"
 #include "scene/3d/bone_twist_disperser_3d.h"
 #include "scene/3d/camera_3d.h"
+#include "scene/3d/camera_rig_3d.h"
 #include "scene/3d/ccd_ik_3d.h"
 #include "scene/3d/chain_ik_3d.h"
 #include "scene/3d/convert_transform_modifier_3d.h"
@@ -645,6 +646,7 @@ void register_scene_types() {
 	GDREGISTER_VIRTUAL_CLASS(VisualInstance3D);
 	GDREGISTER_VIRTUAL_CLASS(GeometryInstance3D);
 	GDREGISTER_CLASS(Camera3D);
+	GDREGISTER_CLASS(CameraRig3D);
 	GDREGISTER_CLASS(AudioListener3D);
 #ifndef XR_DISABLED
 	GDREGISTER_CLASS(XRCamera3D);
