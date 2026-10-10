@@ -42,6 +42,7 @@
 #include "scene/2d/mode7_scanline_override.h"
 #include "scene/2d/mode7_sprite_2d.h"
 #include "scene/main/node.h"
+#include "scene/main/viewport.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
 #include "scene/resources/shader.h"
@@ -245,207 +246,443 @@ void Mode7Sprite2D::_mode7_rebuild_material() {
 }
 
 void Mode7Sprite2D::_mode7_rebuild_scanline_texture() {
-	// (Vertical) Resolution for smooth per-scanline interpolation - mainly for modulate (color).
-	// Use a high power-of-2 height so nearest-neighbor sampling doesn't produce
-	// visible bands in alpha or color channels between adjacent overrides.
 	const int interpolate_resolution = 1024;
-
-	// The interpolation mode is a single node-level setting that applies uniformly
-	// to the whole override array for this pass.
-	Mode7Sprite2D::Mode7InterpolationMode interp_mode = mode7_interpolation;
-
 	int num_overrides = mode7_scanline_overrides.size();
-
-	Ref<Mode7ScanlineOverride> first;
-	if (num_overrides > 0) {
-		first = mode7_scanline_overrides[0];
-	}
-
-	// Make sure we have more than 1 scanline object to interpolate between
-	bool has_projection_anchors = false;
-	Transform2D transform_top, transform_bottom;
-	Vector2 pivot_top, pivot_bottom;
-	Color modulate_top, modulate_bottom;
-	real_t scale_top = 1.0f, scale_bottom = 1.0f;
-	real_t rotation_top = 0.0f, rotation_bottom = 0.0f;
-	if (interp_mode == Mode7Sprite2D::INTERPOLATION_PROJECTION && num_overrides >= 2) {
-		// auto used here to hopefully inline/avoid heap allocation
-		// These just guard against invalid/null values and are reusable below
-		auto safe_transform = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_transform()    : Transform2D(); };
-		auto safe_pivot = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_pivot()       : Vector2(0.5f, 0.5f); };
-		auto safe_modulate = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_modulate()  : Color(1.0f, 1.0f, 1.0f, 1.0f); };
-
-		transform_top = safe_transform(0);
-		transform_bottom = safe_transform(num_overrides - 1);
-		pivot_top = safe_pivot(0);
-		pivot_bottom = safe_pivot(num_overrides - 1);
-		modulate_top = safe_modulate(0);
-		modulate_bottom = safe_modulate(num_overrides - 1);
-
-		// User-facing scale (already inverted by get_scale()).
-		Vector2 s_top = transform_top.get_scale();
-		Vector2 s_bot = transform_bottom.get_scale();
-		scale_top = 1.0f / MAX(s_top.x, 0.0001f);
-		scale_bottom = 1.0f / MAX(s_bot.x, 0.0001f);
-		rotation_top = transform_top.get_rotation();
-		rotation_bottom = transform_bottom.get_rotation();
-		has_projection_anchors = true;
-	}
 
 	Ref<Image> img = Image::create_empty(3, interpolate_resolution, false, Image::FORMAT_RGBAF);
 
 	for (int y = 0; y < interpolate_resolution; y++) {
 		float uv_y = (y + 0.5f) / (float)interpolate_resolution;
-		Transform2D result_transform;
-		Vector2 pivot;
-		Color mod;
 
 		if (num_overrides == 0) {
-			// Identity transform, centered pivot, white modulate.
 			img->set_pixel(0, y, Color(1.0f, 0.0f, 0.0f, 1.0f));
 			img->set_pixel(1, y, Color(0.0f, 0.0f, 0.5f, 0.5f));
 			img->set_pixel(2, y, Color(1.0f, 1.0f, 1.0f, 1.0f));
 			continue;
 		}
 
-		if (interp_mode == Mode7Sprite2D::INTERPOLATION_PROJECTION && has_projection_anchors) {
-			// Per-scanline inverse-depth interpolation
-			//
-			// In a true perspective projection of a flat plane, texture scale is
-			// inversely proportional to depth (S ~ 1/Z).  Therefore the VALUE
-			// that varies linearly with screen height is 1/S, not S itself.
-			// We interpolate in inverse-scale space, then invert back to get
-			// the correct perspective-correct affine matrix for this scanline.
-			//
-			// first entry     = top / horizon anchor (small scale, far depth)
-			// last entry      = bottom / close anchor (large scale, near depth)
+		Transform2D result_transform;
+		Vector2 pivot;
+		Color mod;
+		_mode7_compute_scanline_data((real_t)uv_y, result_transform, pivot, mod);
 
-			real_t t = uv_y;
-
-			// Global projection tuning (projection mode only):
-			// pixel_aspect remaps the vertical coordinate (NTSC non-square pixel
-			// compensation), gamma reshapes the curve, strength blends the result
-			// toward a flat image, aspect_ratio scales x relative to y.
-
-			// Inverse-depth interpolation of scale.
-			real_t inv_s_top = 1.0f / MAX(scale_top, 0.0001f);
-			real_t inv_s_bot = 1.0f / MAX(scale_bottom, 0.0001f);
-
-			// Pixel aspect: stretch/compress the vertical progression about the
-			// center of the depth ramp so both endpoints stay pinned (f(0)=0,
-			// f(1)=1) — the top and bottom scanlines must always show the first
-			// and last anchor scales. 1.0 = no-op. Values <1.0 pull the curve
-			// toward the far (top) anchor; values >1.0 toward the near (bottom)
-			// anchor. (Square-pixel / NTSC 8:7 ≈ 1.125.)
-			real_t t_pa = (t * mode7_projection_pixel_aspect) / (t * mode7_projection_pixel_aspect + (1.0f - t));
-
-			// Gamma: reshape the progression (1.0 = linear inverse, <1.0 softens
-			// the falloff, >1.0 sharpens it). Math::pow keeps real_t precision
-			// instead of narrowing to float as powf would in double builds.
-			real_t t_g = Math::pow(t_pa, mode7_projection_gamma);
-
-			real_t inv_s_cur = inv_s_top + (inv_s_bot - inv_s_top) * t_g;
-			real_t S = 1.0f / MAX(inv_s_cur, 0.0001f); // Perspective-correct scale.
-
-			// Rotation interpolates linearly with screen height.
-			real_t theta = rotation_top + (rotation_bottom - rotation_top) * t;
-
-			// Strength: blend between a flat (uniform) transform and the full
-			// perspective result, without altering the curve shape itself.
-			if (mode7_projection_strength < 1.0f) {
-				real_t S_flat = (scale_top + scale_bottom) * 0.5f;
-				real_t theta_flat = (rotation_top + rotation_bottom) * 0.5f;
-				S = S_flat + (S - S_flat) * mode7_projection_strength;
-				theta = theta_flat + (theta - theta_flat) * mode7_projection_strength;
-			}
-
-			// Horizontal/vertical asymmetry: scale x relative to y
-			// (1.0 = uniform Mode 7-like, 0.5 = x is half of y, >1.0 reversed).
-			real_t Sx = S * mode7_projection_aspect_ratio;
-			real_t Sy = S;
-
-			real_t cos_t = Math::cos(theta);
-			real_t sin_t = Math::sin(theta);
-
-			// Affine matrix: A=Sx*cos, B=-Sy*sin, C=Sx*sin, D=Sy*cos.
-			Vector2 col0(cos_t * Sx, -sin_t * Sy);
-			Vector2 col1(sin_t * Sx, cos_t * Sy);
-
-			// Pivot interpolates linearly.
-			pivot = pivot_top.lerp(pivot_bottom, (real_t)t);
-
-			// Modulate interpolates linearly between horizon and close anchors.
-			mod = modulate_top.lerp(modulate_bottom, (real_t)t);
-
-			// Scroll offset correction
-			//
-			// Scaling around a fixed pivot with changing per-scanline scale
-			// causes the texture to warp unless the translation offset is also
-			// adjusted so that world-space coordinates at the screen center
-			// remain stable.  We correct the raw offset by adding a depth-
-			// proportional shift.
-
-			Vector2 off_raw = transform_top.columns[2].lerp(transform_bottom.columns[2], (real_t)t);
-
-			// Perspective correction: the offset must be shifted in proportion
-			// to how much the actual scale deviates from a linear blend of the
-			// anchors.  Uses the strength-blended uniform scale S (not Sx) so the
-			// correction stays zero at both anchors regardless of
-			// mode7_projection_aspect_ratio.
-			real_t s_linear = scale_top + (scale_bottom - scale_top) * t;
-			if (mode7_projection_strength < 1.0f) {
-				const real_t s_flat = (scale_top + scale_bottom) * 0.5f;
-				s_linear = s_flat + (s_linear - s_flat) * mode7_projection_strength;
-			}
-			real_t depth_factor = (s_linear > 0.001f) ? (S / s_linear - 1.0f) : 0.0f;
-
-			off_raw += (transform_bottom.columns[2] - transform_top.columns[2]) * depth_factor;
-
-			result_transform = Transform2D(col0, col1, off_raw);
-		} // if we're doing projection
-		else { // Lerp or no interpolation
-			float idx_f = (num_overrides == 1) ? 0.0f : uv_y * (num_overrides - 1);
-			int idx_lo = CLAMP((int)idx_f, 0, num_overrides - 1);
-			int idx_hi = CLAMP(idx_lo + 1, 0, num_overrides - 1);
-			float frac = idx_f - (float)idx_lo;
-
-			Ref<Mode7ScanlineOverride> entry_lo = mode7_scanline_overrides[idx_lo];
-			Transform2D xf_lo = entry_lo.is_valid() ? entry_lo->get_transform() : Transform2D();
-			Vector2 pivot_lo = entry_lo.is_valid() ? entry_lo->get_pivot() : Vector2(0.5f, 0.5f);
-			Color modulate_lo = entry_lo.is_valid() ? entry_lo->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
-			bool do_lerp = (interp_mode == Mode7Sprite2D::INTERPOLATION_LERP);
-
-			if (do_lerp && idx_hi != idx_lo && frac > 0.0f) {
-				Ref<Mode7ScanlineOverride> entry_hi = mode7_scanline_overrides[idx_hi];
-				Transform2D xf_hi = entry_hi.is_valid() ? entry_hi->get_transform() : Transform2D();
-				Vector2 pivot_hi = entry_hi.is_valid() ? entry_hi->get_pivot() : Vector2(0.5f, 0.5f);
-				Color modulate_hi = entry_hi.is_valid() ? entry_hi->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
-				result_transform = xf_lo.interpolate_with(xf_hi, frac);
-				pivot = pivot_lo.lerp(pivot_hi, frac);
-				mod = modulate_lo.lerp(modulate_hi, frac);
-			} else {
-				int idx_nearest = CLAMP((int)roundf(idx_f), 0, num_overrides - 1);
-				Ref<Mode7ScanlineOverride> entry_nearest = mode7_scanline_overrides[idx_nearest];
-				result_transform = entry_nearest.is_valid() ? entry_nearest->get_transform() : Transform2D();
-				pivot = entry_nearest.is_valid() ? entry_nearest->get_pivot() : Vector2(0.5f, 0.5f);
-				mod = entry_nearest.is_valid() ? entry_nearest->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
-			}
-		}
-
-		// These set the pixels for the "row" we're currently on (y)
-		// Transform/scale/rotation
 		img->set_pixel(0, y, Color(result_transform.columns[0].x, result_transform.columns[1].x, result_transform.columns[0].y, result_transform.columns[1].y));
-		// Scroll offset / pivot point
 		img->set_pixel(1, y, Color(result_transform.columns[2].x, result_transform.columns[2].y, pivot.x, pivot.y));
-		// Per-scanline modulate (RGBA)
 		img->set_pixel(2, y, mod);
-	} // end of for loop
+	}
 
 	if (_mode7_scanline_tex.is_null() || _mode7_scanline_tex->get_height() != interpolate_resolution) {
 		_mode7_scanline_tex = ImageTexture::create_from_image(img);
 	} else {
 		_mode7_scanline_tex->update(img);
 	}
+}
+
+void Mode7Sprite2D::_mode7_compute_scanline_data(real_t p_uv_y, Transform2D &r_transform, Vector2 &r_pivot, Color &r_modulate) const {
+	Mode7Sprite2D::Mode7InterpolationMode interp_mode = mode7_interpolation;
+	int num_overrides = mode7_scanline_overrides.size();
+
+	if (num_overrides == 0) {
+		r_transform = Transform2D();
+		r_pivot = Vector2(0.5f, 0.5f);
+		r_modulate = Color(1.0f, 1.0f, 1.0f, 1.0f);
+		return;
+	}
+
+	if (interp_mode == Mode7Sprite2D::INTERPOLATION_PROJECTION && num_overrides >= 2) {
+		auto safe_transform = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_transform() : Transform2D(); };
+		auto safe_pivot = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_pivot() : Vector2(0.5f, 0.5f); };
+		auto safe_modulate = [&](int i) { Ref<Mode7ScanlineOverride> s = mode7_scanline_overrides[i]; return s.is_valid() ? s->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f); };
+
+		Transform2D transform_top = safe_transform(0);
+		Transform2D transform_bottom = safe_transform(num_overrides - 1);
+		Vector2 pivot_top = safe_pivot(0);
+		Vector2 pivot_bottom = safe_pivot(num_overrides - 1);
+		Color modulate_top = safe_modulate(0);
+		Color modulate_bottom = safe_modulate(num_overrides - 1);
+
+		Vector2 s_top = transform_top.get_scale();
+		Vector2 s_bot = transform_bottom.get_scale();
+		real_t scale_top = 1.0f / MAX(s_top.x, 0.0001f);
+		real_t scale_bottom = 1.0f / MAX(s_bot.x, 0.0001f);
+		real_t rotation_top = transform_top.get_rotation();
+		real_t rotation_bottom = transform_bottom.get_rotation();
+
+		real_t t = p_uv_y;
+
+		real_t inv_s_top = 1.0f / MAX(scale_top, 0.0001f);
+		real_t inv_s_bot = 1.0f / MAX(scale_bottom, 0.0001f);
+
+		real_t t_pa = (t * mode7_projection_pixel_aspect) / (t * mode7_projection_pixel_aspect + (1.0f - t));
+		real_t t_g = Math::pow(t_pa, mode7_projection_gamma);
+
+		real_t inv_s_cur = inv_s_top + (inv_s_bot - inv_s_top) * t_g;
+		real_t S = 1.0f / MAX(inv_s_cur, 0.0001f);
+
+		real_t theta = rotation_top + (rotation_bottom - rotation_top) * t;
+
+		if (mode7_projection_strength < 1.0f) {
+			real_t S_flat = (scale_top + scale_bottom) * 0.5f;
+			real_t theta_flat = (rotation_top + rotation_bottom) * 0.5f;
+			S = S_flat + (S - S_flat) * mode7_projection_strength;
+			theta = theta_flat + (theta - theta_flat) * mode7_projection_strength;
+		}
+
+		real_t Sx = S * mode7_projection_aspect_ratio;
+		real_t Sy = S;
+
+		real_t cos_t = Math::cos(theta);
+		real_t sin_t = Math::sin(theta);
+
+		Vector2 col0(cos_t * Sx, -sin_t * Sy);
+		Vector2 col1(sin_t * Sx, cos_t * Sy);
+
+		r_pivot = pivot_top.lerp(pivot_bottom, (real_t)t);
+		r_modulate = modulate_top.lerp(modulate_bottom, (real_t)t);
+
+		Vector2 off_raw = transform_top.columns[2].lerp(transform_bottom.columns[2], (real_t)t);
+
+		real_t s_linear = scale_top + (scale_bottom - scale_top) * t;
+		if (mode7_projection_strength < 1.0f) {
+			const real_t s_flat = (scale_top + scale_bottom) * 0.5f;
+			s_linear = s_flat + (s_linear - s_flat) * mode7_projection_strength;
+		}
+		real_t depth_factor = (s_linear > 0.001f) ? (S / s_linear - 1.0f) : 0.0f;
+
+		off_raw += (transform_bottom.columns[2] - transform_top.columns[2]) * depth_factor;
+
+		r_transform = Transform2D(col0, col1, off_raw);
+	} else { // Lerp or no interpolation
+		float idx_f = (num_overrides == 1) ? 0.0f : p_uv_y * (num_overrides - 1);
+		int idx_lo = CLAMP((int)idx_f, 0, num_overrides - 1);
+		int idx_hi = CLAMP(idx_lo + 1, 0, num_overrides - 1);
+		float frac = idx_f - (float)idx_lo;
+
+		Ref<Mode7ScanlineOverride> entry_lo = mode7_scanline_overrides[idx_lo];
+		Transform2D xf_lo = entry_lo.is_valid() ? entry_lo->get_transform() : Transform2D();
+		Vector2 pivot_lo = entry_lo.is_valid() ? entry_lo->get_pivot() : Vector2(0.5f, 0.5f);
+		Color modulate_lo = entry_lo.is_valid() ? entry_lo->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
+		bool do_lerp = (interp_mode == Mode7Sprite2D::INTERPOLATION_LERP);
+
+		if (do_lerp && idx_hi != idx_lo && frac > 0.0f) {
+			Ref<Mode7ScanlineOverride> entry_hi = mode7_scanline_overrides[idx_hi];
+			Transform2D xf_hi = entry_hi.is_valid() ? entry_hi->get_transform() : Transform2D();
+			Vector2 pivot_hi = entry_hi.is_valid() ? entry_hi->get_pivot() : Vector2(0.5f, 0.5f);
+			Color modulate_hi = entry_hi.is_valid() ? entry_hi->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
+			r_transform = xf_lo.interpolate_with(xf_hi, frac);
+			r_pivot = pivot_lo.lerp(pivot_hi, frac);
+			r_modulate = modulate_lo.lerp(modulate_hi, frac);
+		} else {
+			int idx_nearest = CLAMP((int)roundf(idx_f), 0, num_overrides - 1);
+			Ref<Mode7ScanlineOverride> entry_nearest = mode7_scanline_overrides[idx_nearest];
+			r_transform = entry_nearest.is_valid() ? entry_nearest->get_transform() : Transform2D();
+			r_pivot = entry_nearest.is_valid() ? entry_nearest->get_pivot() : Vector2(0.5f, 0.5f);
+			r_modulate = entry_nearest.is_valid() ? entry_nearest->get_modulate() : Color(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	}
+}
+
+Transform2D Mode7Sprite2D::_mode7_aspect_rotate(real_t p_angle, real_t p_aspect) {
+	real_t cr = Math::cos(p_angle);
+	real_t sr = Math::sin(p_angle);
+	// Mirrors the shader's mat2(vec2(cr, sr*aspect), vec2(-sr/aspect, cr)):
+	// col0 = (cr, sr*aspect), col1 = (-sr/aspect, cr). Origin unused by caller.
+	return Transform2D(Vector2(cr, sr * p_aspect), Vector2(-sr / p_aspect, cr), Vector2());
+}
+
+void Mode7Sprite2D::_mode7_get_full_rects(Rect2 &r_src_rect, Rect2 &r_dst_rect) const {
+	// Mirrors Sprite2D::_get_rects() exactly, except base_rect is always the
+	// full texture, never the cropped region_rect -- this is the "virtual"
+	// full-image placement that point-space conversion needs, so that a
+	// point far outside the currently-visible region crop still maps
+	// correctly instead of being linearly extrapolated from a tiny quad.
+	Ref<Texture2D> tex = get_texture();
+	Rect2 base_rect = Rect2(0, 0, tex->get_width(), tex->get_height());
+
+	Size2 frame_size = base_rect.size / Size2(get_hframes(), get_vframes());
+	Point2 frame_offset = Point2(get_frame() % get_hframes(), get_frame() / get_hframes());
+	frame_offset *= frame_size;
+
+	r_src_rect.size = frame_size;
+	r_src_rect.position = base_rect.position + frame_offset;
+
+	Point2 dest_offset = get_offset();
+	if (is_centered()) {
+		dest_offset -= frame_size / 2;
+	}
+
+	if (get_viewport() && get_viewport()->is_snap_2d_transforms_to_pixel_enabled()) {
+		dest_offset = (dest_offset + Point2(0.5, 0.5)).floor();
+	}
+
+	r_dst_rect = Rect2(dest_offset, frame_size);
+
+	if (is_flipped_h()) {
+		r_dst_rect.size.x = -r_dst_rect.size.x;
+	}
+	if (is_flipped_v()) {
+		r_dst_rect.size.y = -r_dst_rect.size.y;
+	}
+}
+
+Variant Mode7Sprite2D::mode7_transform_point(const Vector2 &p_point, bool p_visible_area_only) const {
+	// CPU-side inverse of the Mode7 fragment shader's per-pixel sampling math.
+	//
+	// FORWARD (the shader), per dest pixel v in the drawn region quad (region-local [0,1]^2):
+	//     uv      = M(r)*(v - p(r)) + p(r) + o(r)      // per-row affine, r = v.y
+	//     uv      = G*(uv - gp) + gp + G*go            // global rotation about gp, then offset
+	//     uv_full = uv*R.zw + R.xy                     // denormalize to full-texture UV
+	//     sampled = tiling ? fract(uv_full) : uv_full  // R = REGION_RECT (normalized)
+	//     (discarded if !tiling && uv outside [0,1]^2; horizon-masked alpha per v)
+	//
+	// INVERSE (this function): given a target texel T (full-texture UV of the input point),
+	// find the dest pixel v where the sprite displays T. Everything is exact algebra except the
+	// row r = v.y, which appears both as the self-consistency condition and inside M(r), p(r),
+	// o(r). That leaves a single 1-D equation H(r) = v(r).y - r = 0 (r in [0,1]), solved by a
+	// deterministic grid scan + local refinement. This is robust across NONE / LERP (any number
+	// of overrides) / PROJECTION and needs no global-monotonicity assumption (the old single
+	// bisection assumed one sign change and fell back to a wrong endpoint, causing the
+	// "spiral"/"jump" with LERP/NONE and region+projection).
+	//
+	// With tiling, fract(T(v)) = fract(P) has candidates T = P + n (n integer). Each candidate has
+	// at most one valid dest (a self-consistent root that is NOT a degenerate 180-degree fold
+	// and that lies inside the quad). The correct one is chosen by the candidate n whose forward
+	// map actually equals P + n (a validity gate that eliminates spurious roots), preferring the n
+	// nearest the region -- i.e. the tile the input point belongs to. This is a deterministic
+	// selection based on where the input point is, not a guess, and does not use visibility.
+	//
+	// Returns the dest position in the same (parent-local) space p_point was given in, or
+	// null when p_visible_area_only is true and the point has no visible (drawn, unmasked)
+	// destination.
+
+	// Mode 7 is off, so the sprite draws unwarped and the point does not move.
+	if (!mode7_enabled) {
+		return p_point;
+	}
+
+	Ref<Texture2D> tex = get_texture();
+	if (tex.is_null()) {
+		return p_point;
+	}
+	Vector2 tex_size = tex->get_size();
+	if (tex_size.x <= 0.0f || tex_size.y <= 0.0f) {
+		return p_point;
+	}
+
+	// --- 1) p_point (parent-local, a point on the undistorted source artwork)
+	//     -> local drawing space -> full-texture UV. Uses the full, uncropped
+	//     virtual rects so points outside the visible region crop still map to
+	//     the correct texel. (Same as before.) ---
+	Rect2 full_src_rect, full_dst_rect;
+	_mode7_get_full_rects(full_src_rect, full_dst_rect);
+
+	Vector2 local_point = get_transform().affine_inverse().xform(p_point);
+	Vector2 tex_point = full_src_rect.position + (local_point - full_dst_rect.position) * (full_src_rect.size / full_dst_rect.size);
+	Vector2 source_full_uv = tex_point / tex_size;
+
+	// --- 2) Active region in normalized full-texture UV (no region == whole texture).
+	Rect2 region_px = is_region_enabled() ? get_region_rect() : Rect2(Vector2(), tex_size);
+	if (region_px.size.x == 0.0f || region_px.size.y == 0.0f) {
+		region_px.size = tex_size;
+	}
+	Rect2 R(region_px.position / tex_size, region_px.size / tex_size); // REGION_RECT
+
+	// Region aspect for the aspect-corrected global rotation (mirrors the shader).
+	real_t region_aspect = 1.0f;
+	if (mode7_override_region_aspect && region_px.size.y != 0.0f) {
+		region_aspect = region_px.size.x / region_px.size.y;
+	}
+
+	// --- 3) The GLOBAL step (rotation about gp, then offset) as one affine map on
+	//     region-local uv: v_global(u) = G*u + d.
+	Transform2D G = _mode7_aspect_rotate(mode7_global_rotation, region_aspect);
+	Vector2 gp = mode7_global_pivot;
+	Vector2 go = mode7_global_offset;
+	Transform2D G_inv = G.affine_inverse();
+	Vector2 d = gp - G.basis_xform(gp) + G.basis_xform(go); // so v_global(u) = G*u + d
+
+	// Per-row inverse solve for a single candidate row dy: given the "after-per-row"
+	// target u1 (region-local), find dest v such that v_global(M(r)(v-p(r))+p(r)+o(r)) = u1_global.
+	// v = M(r)^-1 * (u1 - p(r) - o(r)) + p(r).
+	auto solve_dest_for_v = [&](const Vector2 &p_u1, real_t p_dy, Vector2 &r_dest, bool &r_ok) {
+		Transform2D scan_transform;
+		Vector2 pivot;
+		Color unused_modulate;
+		_mode7_compute_scanline_data(p_dy, scan_transform, pivot, unused_modulate);
+
+		Vector2 scan_offset = scan_transform.columns[2];
+		Transform2D matrix_transformed(scan_transform.columns[0], scan_transform.columns[1], Vector2());
+		if (Math::is_zero_approx(matrix_transformed.determinant())) {
+			// Degenerate row (zero scale / collinear columns): no inverse, no valid dest through it.
+			r_dest = Vector2(p_u1.x, p_dy);
+			r_ok = false;
+			return;
+		}
+		Transform2D matrix_transformed_inv = matrix_transformed.affine_inverse();
+		r_dest = matrix_transformed_inv.basis_xform(p_u1 - pivot - scan_offset) + pivot;
+		r_ok = true;
+	};
+
+	// Returns true if the forward map of dest (at row root_row) actually equals target T,
+	// i.e. dest is a genuine preimage of T (not a degenerate fold root). With tiling the
+	// equality is modulo 1 (the shader wraps with fract), so the difference may be small
+	// or ~1 (across a tile boundary).
+	auto forward_maps_to = [&](const Vector2 &p_dest, real_t p_root_row, const Vector2 &p_T) -> bool {
+		Transform2D scan_transform;
+		Vector2 pivot;
+		Color unused_modulate;
+		_mode7_compute_scanline_data(p_root_row, scan_transform, pivot, unused_modulate);
+		Vector2 fwd = G.basis_xform(scan_transform.basis_xform(p_dest - pivot) + pivot + scan_transform.columns[2] - gp) + gp + G.basis_xform(go);
+		Vector2 fwd_full = Vector2(fwd.x * R.size.x + R.position.x, fwd.y * R.size.y + R.position.y);
+		real_t dx = Math::abs(fwd_full.x - p_T.x);
+		real_t dy = Math::abs(fwd_full.y - p_T.y);
+		real_t tol = 0.02f;
+		if (mode7_tiling) {
+			dx = Math::abs(dx - Math::round(dx)); // distance to the nearest integer
+			dx = Math::abs(dx - Math::round(dx));
+		}
+		return dx <= tol && dy <= tol;
+	};
+
+	// Resolves the dest v for one full-texture target T, or the zero vector if none is valid.
+	//  - u1 = inverse-global of T (row independent).
+	//  - find ALL self-consistent rows r of H(r) = v(r).y - r on [0,1] (grid scan of sign
+	//    changes, then bisection-refine each bracket). There can be more than one for LERP/NONE.
+	//  - keep the first root whose forward map actually equals T (forward_maps_to): this
+	//    eliminates degenerate 180-degree-fold roots that are self-consistent (v.y == r) but
+	//    map to the antipodal texel rather than T, and disambiguates multiple roots.
+	auto resolve_dest_for = [&](const Vector2 &p_T, bool &r_found) -> Vector2 {
+		r_found = false;
+		// Inverse of the global step: u2 = (T - R.xy)/R.zw ; u1 = G^-1*(u2 - d).
+		Vector2 u2 = Vector2((p_T.x - R.position.x) / R.size.x, (p_T.y - R.position.y) / R.size.y);
+		Vector2 u1 = G_inv.basis_xform(u2 - d);
+
+		const int N = 256; // scan resolution across the row interval [0,1]
+		int prev_sign = 0;
+		int prev_i = -1;
+		real_t prev_absH = 1e30f;
+		Vector2 best_touch;
+		bool have_touch = false;
+
+		for (int i = 0; i <= N; i++) {
+			real_t row = (real_t)i / (real_t)N;
+			Vector2 v_i;
+			bool ok_i = false;
+			solve_dest_for_v(u1, row, v_i, ok_i);
+			if (!ok_i) {
+				prev_sign = 0; // a degenerate row breaks any sign-change bracket
+				prev_i = -1;
+				continue;
+			}
+			real_t H_i = v_i.y - row;
+			real_t aH = Math::abs(H_i);
+			if (aH < 1e-3f && aH < prev_absH) {
+				best_touch = v_i;
+				have_touch = true;
+				prev_absH = aH;
+			}
+			int s_i = (H_i > 0.0f) ? 1 : (H_i < 0.0f ? -1 : 0);
+			if (prev_sign != 0 && s_i != 0 && s_i != prev_sign && prev_i >= 0) {
+				// A genuine root is bracketed in (prev_i, i]: refine it.
+				real_t r_lo = (real_t)prev_i / (real_t)N;
+				real_t r_hi = (real_t)i / (real_t)N;
+				Vector2 v_lo;
+				bool ok_lo = false;
+				solve_dest_for_v(u1, r_lo, v_lo, ok_lo);
+				for (int it = 0; it < 40; it++) {
+					real_t mid = (r_lo + r_hi) * 0.5f;
+					Vector2 v_mid;
+					bool ok_mid = false;
+					solve_dest_for_v(u1, mid, v_mid, ok_mid);
+					if (!ok_mid) {
+						break;
+					}
+					real_t H_lo = (ok_lo ? v_lo.y : 0.0f) - r_lo;
+					real_t H_mid = v_mid.y - mid;
+					if (H_lo * H_mid <= 0.0f) {
+						r_hi = mid;
+					} else {
+						r_lo = mid;
+						v_lo = v_mid;
+						ok_lo = true;
+					}
+				}
+				real_t root_row = (r_lo + r_hi) * 0.5f;
+				bool ok_root = false;
+				Vector2 dest;
+				solve_dest_for_v(u1, root_row, dest, ok_root);
+				if (ok_root && dest.x >= 0.0f && dest.x <= 1.0f && dest.y >= 0.0f && dest.y <= 1.0f) {
+					// Validity gate: the forward map of this dest must equal the target T.
+					if (forward_maps_to(dest, root_row, p_T)) {
+						r_found = true;
+						return dest;
+					}
+				}
+			}
+			prev_sign = s_i;
+			prev_i = i;
+			prev_absH = aH;
+		}
+
+		// No sign-change root (or none passed the gate): fall back to a near-touch of H=0
+		// (e.g. a fold), if it is inside the quad and maps to T.
+		if (have_touch) {
+			Vector2 dest = best_touch;
+			if (dest.x >= 0.0f && dest.x <= 1.0f && dest.y >= 0.0f && dest.y <= 1.0f) {
+				if (forward_maps_to(dest, dest.y, p_T)) {
+					r_found = true;
+					return dest;
+				}
+			}
+		}
+		return Vector2(); // this target is not reached by the forward map at a valid dest
+	};
+
+	// --- 4) Resolve the destination for the input point.
+	//     The input point source_full_uv is already an exact location in the infinitely-
+	//     tilled texture plane: its integer part encodes WHICH tile copy it is in, and its
+	//     fractional part encodes WHERE within that copy. resolve_dest_for() inverts the
+	//     full forward map (per-row affine, then global step, then the tiling wrap) for
+	//     that exact target, so the destination it returns already lands on the correct
+	//     tile. There is no ambiguity to resolve here and no need to re-anchor the
+	//     candidate on the region center -- doing so (as before) would pick a different
+	//     tile copy than the one the input point actually belongs to.
+	Vector2 dest;
+	bool have_dest = false;
+
+	bool found = false;
+	Vector2 dv = resolve_dest_for(source_full_uv, found);
+	if (found) {
+		dest = dv;
+		have_dest = true;
+	}
+
+	// --- 5) dest (region-local [0,1]^2) -> full-texture UV -> local drawing space ->
+	//     parent-local space. Uses the REAL, region-cropped rects (what the renderer draws).
+	Rect2 cropped_src_rect, cropped_dst_rect;
+	bool unused_filter_clip = false;
+	_get_rects(cropped_src_rect, cropped_dst_rect, unused_filter_clip);
+
+	if (cropped_src_rect.size.x == 0.0f || cropped_src_rect.size.y == 0.0f) {
+		// Degenerate region: no quad to map into.
+		if (p_visible_area_only) {
+			return Variant();
+		}
+		return p_point;
+	}
+
+	Vector2 dest_full_uv = Vector2(dest.x * R.size.x + R.position.x, dest.y * R.size.y + R.position.y);
+	Vector2 tex_point_out = dest_full_uv * tex_size;
+	Vector2 local_point_out = cropped_dst_rect.position + (tex_point_out - cropped_src_rect.position) * (cropped_dst_rect.size / cropped_src_rect.size);
+	Vector2 result = get_transform().xform(local_point_out);
+
+	// visible_area_only: return null unless the point has a real destination that is
+	// actually drawn (inside the region quad, i.e. have_dest is set). The point's
+	// position itself is always the correct (deterministic) transformed location.
+	if (p_visible_area_only && !have_dest) {
+		return Variant();
+	}
+	return result;
 }
 
 void Mode7Sprite2D::set_mode7_tiling(bool p_tiling) {
@@ -998,6 +1235,7 @@ void Mode7Sprite2D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_mode7_saved_material", "material"), &Mode7Sprite2D::set_mode7_saved_material);
 	ClassDB::bind_method(D_METHOD("get_mode7_saved_material"), &Mode7Sprite2D::get_mode7_saved_material);
+	ClassDB::bind_method(D_METHOD("mode7_transform_point", "point", "visible_area_only"), &Mode7Sprite2D::mode7_transform_point, DEFVAL(false));
 
 	// Properties (exposed in the Inspector) -----------------------------------
 
