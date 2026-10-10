@@ -1349,7 +1349,28 @@ void RenderForwardClustered::_update_volumetric_fog(Ref<RenderSceneBuffersRD> p_
 		settings.cluster_builder = rb_data->cluster_builder;
 		settings.rbgi = rbgi;
 		settings.sdfgi = sdfgi;
-		settings.env = p_environment;
+
+		settings.environment.length = environment_get_volumetric_fog_length(p_environment);
+		settings.environment.detail_spread = environment_get_volumetric_fog_detail_spread(p_environment);
+		settings.environment.temporal_reprojection = environment_get_volumetric_fog_temporal_reprojection(p_environment);
+		settings.environment.temporal_reprojection_amount = environment_get_volumetric_fog_temporal_reprojection_amount(p_environment);
+
+		settings.environment.sky = environment_get_sky(p_environment);
+		settings.environment.sdfgi_enabled = environment_get_sdfgi_enabled(p_environment);
+
+		settings.environment.ambient_light_energy = environment_get_ambient_light_energy(p_environment);
+		settings.environment.ambient_light = environment_get_ambient_light(p_environment);
+		settings.environment.ambient_sky_contribution = environment_get_ambient_sky_contribution(p_environment);
+
+		settings.environment.ambient_inject = environment_get_volumetric_fog_ambient_inject(p_environment);
+		settings.environment.emission = environment_get_volumetric_fog_emission(p_environment);
+		settings.environment.emission_energy = environment_get_volumetric_fog_emission_energy(p_environment);
+		settings.environment.density = environment_get_volumetric_fog_density(p_environment);
+		settings.environment.scattering = environment_get_volumetric_fog_scattering(p_environment);
+		settings.environment.anisotropy = environment_get_volumetric_fog_anisotropy(p_environment);
+		settings.environment.gi_inject = environment_get_volumetric_fog_gi_inject(p_environment);
+		settings.environment.sky_orientation = environment_get_sky_orientation(p_environment);
+
 		settings.sky = &sky;
 		settings.gi = &gi;
 
