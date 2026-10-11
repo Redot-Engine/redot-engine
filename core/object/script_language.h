@@ -257,10 +257,18 @@ public:
 	};
 
 	struct ScriptError {
+		struct RelatedError {
+			String path;
+			int line = -1;
+			int column = -1;
+			String message;
+		};
+
 		String path;
 		int line = -1;
 		int column = -1;
 		String message;
+		RelatedError related_error;
 	};
 
 	enum TemplateLocation {

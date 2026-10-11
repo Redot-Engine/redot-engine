@@ -180,6 +180,7 @@ bool GDScriptLanguage::validate(const String &p_script, const String &p_path, Li
 				e.line = pe.line;
 				e.column = pe.column;
 				e.message = pe.message;
+				e.related_error = pe.related_error;
 				r_errors->push_back(e);
 			}
 
@@ -191,6 +192,7 @@ bool GDScriptLanguage::validate(const String &p_script, const String &p_path, Li
 					e.line = pe.line;
 					e.column = pe.column;
 					e.message = pe.message;
+					e.related_error = pe.related_error;
 					r_errors->push_back(e);
 				}
 			}
