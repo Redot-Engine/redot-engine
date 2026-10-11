@@ -698,6 +698,14 @@ void PhysXBody3D::reset_mass_properties() {
 	// scaling to the user-supplied mass. Mirrors godot_physics_3d, where mass
 	// is an explicit body property and the inertia tensor is derived from the
 	// shapes.
+	//
+	// Godot's contract: BODY_PARAM_CENTER_OF_MASS / BODY_PARAM_INERTIA
+	// overrides live until THIS call — RigidBody3D invokes it when the
+	// center-of-mass mode returns to AUTO (and re-applies its own inertia
+	// param right after if the user set one). Clear both overrides here or a
+	// custom COM would silently survive the switch back to AUTO.
+	center_of_mass_set = false;
+	inertia_set = false;
 	update_inertia();
 }
 
@@ -932,10 +940,82 @@ void PhysXBody3D::_update_kinematic_velocity(float p_step) {
 // Forces / impulses
 // ---------------------------------------------------------------------------
 
+// PhysX's addForce/addTorque dereference the body's Sc::BodySim, which only
+// exists once the actor is in a PxScene — a force applied before that (e.g.
+// from SceneTree._initialize(), where godot_physics_3d happily accepts it and
+// applies it once simulation starts) crashes. Buffer such calls and apply
+// them from _add_to_scene(), when the actor joins the scene.
+bool PhysXBody3D::_apply_force_op(const PendingForceOp &p_op) {
+	physx::PxRigidDynamic *dyn = get_px_dynamic();
+	if (!dyn) {
+		return false;
+	}
+	// PhysX forbids addForce/addTorque on kinematic/static bodies.
+	if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC || mode == PhysicsServer3D::BODY_MODE_STATIC) {
+		return false;
+	}
+	if (!px_actor->getScene()) {
+		// Still sceneless (e.g. queued while static and since flipped) — keep
+		// buffering; the next scene entry flushes again.
+		return false;
+	}
+
+	const physx::PxVec3 v((physx::PxReal)p_op.vec.x, (physx::PxReal)p_op.vec.y, (physx::PxReal)p_op.vec.z);
+	switch (p_op.kind) {
+		case PendingForceOp::CENTRAL_IMPULSE: {
+			dyn->addForce(v, physx::PxForceMode::eIMPULSE);
+		} break;
+		case PendingForceOp::TORQUE_IMPULSE: {
+			dyn->addTorque(v, physx::PxForceMode::eIMPULSE);
+		} break;
+		case PendingForceOp::CENTRAL_FORCE: {
+			dyn->addForce(v, physx::PxForceMode::eFORCE);
+		} break;
+		case PendingForceOp::TORQUE: {
+			dyn->addTorque(v, physx::PxForceMode::eFORCE);
+		} break;
+		case PendingForceOp::IMPULSE_AT:
+		case PendingForceOp::FORCE_AT: {
+			// Godot's p_position is an OFFSET from the body origin in GLOBAL
+			// coordinates (RigidBody3D.apply_impulse contract; godot_physics_3d
+			// computes the torque arm as (position - center_of_mass), where its
+			// center_of_mass is the origin-relative COM in global axes).
+			// PxRigidBodyExt::addForceAtPos takes an absolute world position, so
+			// translate the offset by the actor origin; PhysX then applies the
+			// identical (world - COM) torque arm.
+			const physx::PxTransform pose = dyn->getGlobalPose();
+			const physx::PxVec3 world(pose.p.x + (physx::PxReal)p_op.offset.x,
+					pose.p.y + (physx::PxReal)p_op.offset.y,
+					pose.p.z + (physx::PxReal)p_op.offset.z);
+			physx::PxRigidBodyExt::addForceAtPos(*dyn, v, world,
+					p_op.kind == PendingForceOp::IMPULSE_AT ? physx::PxForceMode::eIMPULSE : physx::PxForceMode::eFORCE);
+		} break;
+	}
+	return true;
+}
+
+void PhysXBody3D::_flush_pending_force_ops() {
+	// Apply in order, then compact: an op only leaves the buffer once its
+	// actor can actually take it (a flush while still sceneless keeps it).
+	for (uint32_t i = 0; i < pending_force_ops.size(); i++) {
+		if (_apply_force_op(pending_force_ops[i])) {
+			pending_force_ops.remove_at_unordered(i);
+			i--;
+		}
+	}
+}
+
 void PhysXBody3D::apply_central_impulse(const Vector3 &p_impulse) {
 	if (physx::PxRigidDynamic *dyn = get_px_dynamic()) {
 		// PhysX forbids addForce on kinematic/static bodies.
 		if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC || mode == PhysicsServer3D::BODY_MODE_STATIC) {
+			return;
+		}
+		if (!px_actor->getScene()) {
+			PendingForceOp op;
+			op.kind = PendingForceOp::CENTRAL_IMPULSE;
+			op.vec = p_impulse;
+			pending_force_ops.push_back(op);
 			return;
 		}
 		dyn->addForce(physx::PxVec3(p_impulse.x, p_impulse.y, p_impulse.z), physx::PxForceMode::eIMPULSE);
@@ -945,6 +1025,14 @@ void PhysXBody3D::apply_central_impulse(const Vector3 &p_impulse) {
 void PhysXBody3D::apply_impulse(const Vector3 &p_impulse, const Vector3 &p_position) {
 	if (physx::PxRigidDynamic *dyn = get_px_dynamic()) {
 		if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC || mode == PhysicsServer3D::BODY_MODE_STATIC) {
+			return;
+		}
+		if (!px_actor->getScene()) {
+			PendingForceOp op;
+			op.kind = PendingForceOp::IMPULSE_AT;
+			op.vec = p_impulse;
+			op.offset = p_position;
+			pending_force_ops.push_back(op);
 			return;
 		}
 		// Godot's p_position is an OFFSET from the body origin in GLOBAL
@@ -969,6 +1057,13 @@ void PhysXBody3D::apply_torque_impulse(const Vector3 &p_impulse) {
 		if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC || mode == PhysicsServer3D::BODY_MODE_STATIC) {
 			return;
 		}
+		if (!px_actor->getScene()) {
+			PendingForceOp op;
+			op.kind = PendingForceOp::TORQUE_IMPULSE;
+			op.vec = p_impulse;
+			pending_force_ops.push_back(op);
+			return;
+		}
 		dyn->addTorque(physx::PxVec3(p_impulse.x, p_impulse.y, p_impulse.z), physx::PxForceMode::eIMPULSE);
 	}
 }
@@ -978,6 +1073,13 @@ void PhysXBody3D::apply_central_force(const Vector3 &p_force) {
 		if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC || mode == PhysicsServer3D::BODY_MODE_STATIC) {
 			return;
 		}
+		if (!px_actor->getScene()) {
+			PendingForceOp op;
+			op.kind = PendingForceOp::CENTRAL_FORCE;
+			op.vec = p_force;
+			pending_force_ops.push_back(op);
+			return;
+		}
 		dyn->addForce(physx::PxVec3(p_force.x, p_force.y, p_force.z), physx::PxForceMode::eFORCE);
 	}
 }
@@ -985,6 +1087,14 @@ void PhysXBody3D::apply_central_force(const Vector3 &p_force) {
 void PhysXBody3D::apply_force(const Vector3 &p_force, const Vector3 &p_position) {
 	if (physx::PxRigidDynamic *dyn = get_px_dynamic()) {
 		if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC || mode == PhysicsServer3D::BODY_MODE_STATIC) {
+			return;
+		}
+		if (!px_actor->getScene()) {
+			PendingForceOp op;
+			op.kind = PendingForceOp::FORCE_AT;
+			op.vec = p_force;
+			op.offset = p_position;
+			pending_force_ops.push_back(op);
 			return;
 		}
 		// Same position contract as apply_impulse: offset from the body origin
@@ -1002,6 +1112,13 @@ void PhysXBody3D::apply_force(const Vector3 &p_force, const Vector3 &p_position)
 void PhysXBody3D::apply_torque(const Vector3 &p_torque) {
 	if (physx::PxRigidDynamic *dyn = get_px_dynamic()) {
 		if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC || mode == PhysicsServer3D::BODY_MODE_STATIC) {
+			return;
+		}
+		if (!px_actor->getScene()) {
+			PendingForceOp op;
+			op.kind = PendingForceOp::TORQUE;
+			op.vec = p_torque;
+			pending_force_ops.push_back(op);
 			return;
 		}
 		dyn->addTorque(physx::PxVec3(p_torque.x, p_torque.y, p_torque.z), physx::PxForceMode::eFORCE);
@@ -1539,6 +1656,10 @@ void PhysXBody3D::_add_to_scene() {
 	}
 	space->add_actor(px_actor);
 	body_added_to_scene = true;
+	// Forces/impulses buffered while the actor was sceneless (before entering
+	// a world) are now legal to apply — PhysX's addForce needs the BodySim
+	// that scene membership creates.
+	_flush_pending_force_ops();
 	// Dormant joints configured against this body can now come alive: the
 	// rebuild is idempotent and quietly stays dormant for the ones that still
 	// lack a dynamic actor. This also covers the fresh actor after a

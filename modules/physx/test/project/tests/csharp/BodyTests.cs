@@ -90,7 +90,7 @@ internal static class BodyTests {
         s.Add("PHYSX-BODY-066", "force integration callback stops while asleep, resumes on wake", FiCallbackSleepCadence);
         s.Add("PHYSX-BODY-067", "param writes on a sleeping body do not wake it", ParamSetKeepsSleeping);
         s.Add("PHYSX-BODY-068", "damp-mode params round-trip", DampModeParamRoundTrip);
-        s.Add("PHYSX-BODY-069", "tilted scaled body with custom COM keeps COM world position and round-trips", ScaledCustomComTiltRoundTrip);
+        s.Add("PHYSX-BODY-069", "tilted scaled body with custom COM keeps origin-relative COM and round-trips", ScaledCustomComTiltRoundTrip);
         s.Add("PHYSX-BODY-070", "axis locks are WORLD-frame on rotated bodies (OBJ-13 probe)", AxisLockFrameProbe);
     }
 
@@ -1121,7 +1121,11 @@ internal static class BodyTests {
     }
 
     // Completion-criteria scenario: a tilted, scaled body with a custom COM
-    // keeps the COM world position under rotation and round-trips scale.
+    // keeps the origin-relative COM under rotation and round-trips scale.
+    // (DirectBodyState3D.CenterOfMass is a WORLD-frame OFFSET from the
+    // transform origin — the built-in godot_physics_3d stores and returns it
+    // exactly that way (basis.xform(center_of_mass_local)); it is NOT the
+    // global COM position.)
     static IEnumerator ScaledCustomComTiltRoundTrip() {
         using var w = new PhysxWorld(false);
         var b = w.MakeBody(w.Box(0.5f), new Vector3(0, 5, 0), mass: 1f);
@@ -1134,8 +1138,8 @@ internal static class BodyTests {
         yield return Wait.Frames(2);
         var st = w.Direct(b);
         var R = new Basis(basis.GetRotationQuaternion());
-        Assert.ExpectVecNear(st.CenterOfMass, xf.Origin + R * com, 1e-3f,
-            "custom COM world position follows the tilted frame");
+        Assert.ExpectVecNear(st.CenterOfMass, R * com, 1e-3f,
+            "custom COM origin-relative offset follows the tilted frame");
         var back = w.Pos(b);
         Assert.ExpectVecNear(back.Basis.Scale, xf.Basis.Scale, 1e-3f, "scale survives the tilt round-trip (get_scale)");
         Assert.Expect(back.Basis.GetRotationQuaternion().AngleTo(xf.Basis.GetRotationQuaternion()) < 1e-3f, "tilt orientation round-trips");

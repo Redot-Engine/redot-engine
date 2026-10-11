@@ -233,6 +233,28 @@ public:
 	/// skips, and Godot would never see the body leave.
 	void _emit_all_area_exits();
 
+	// Forces/impulses applied while the actor is not in a PxScene yet (e.g.
+	// from SceneTree._initialize(), before the body enters a world) — PhysX
+	// crashes in addForce without a BodySim, while godot_physics_3d applies
+	// them once simulation starts. Buffered here and flushed by
+	// _flush_pending_force_ops() from _add_to_scene().
+	struct PendingForceOp {
+		enum Kind {
+			CENTRAL_IMPULSE,
+			IMPULSE_AT,
+			TORQUE_IMPULSE,
+			CENTRAL_FORCE,
+			FORCE_AT,
+			TORQUE,
+		};
+		Kind kind;
+		Vector3 vec; // impulse / force / torque
+		Vector3 offset; // body-origin offset, for the *_AT kinds
+	};
+	LocalVector<PendingForceOp> pending_force_ops;
+	bool _apply_force_op(const PendingForceOp &p_op);
+	void _flush_pending_force_ops();
+
 	// --- Callbacks ---
 	void set_state_sync_callback(const Callable &p_callable) { state_sync_callback = p_callable; }
 	void set_force_integration_callback(const Callable &p_callable, const Variant &p_userdata) {

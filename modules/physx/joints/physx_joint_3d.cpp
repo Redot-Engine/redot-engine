@@ -506,7 +506,7 @@ void PhysXJoint3D::_apply_params() {
 			}
 			revolute->setRevoluteJointFlag(physx::PxRevoluteJointFlag::eDRIVE_ENABLED, hinge_params.enable_motor);
 			if (hinge_params.enable_motor) {
-				revolute->setDriveVelocity(-hinge_params.motor_target_velocity); // the other way round too (see the limits)
+				revolute->setDriveVelocity(-hinge_params.motor_target_velocity); // runs the other way round too (see _apply_hinge_limit)
 				revolute->setDriveForceLimit(hinge_params.motor_max_impulse);
 			}
 		} break;
@@ -709,14 +709,19 @@ void PhysXJoint3D::_apply_hinge_limit() {
 		return;
 	}
 	physx::PxRevoluteJoint *revolute = static_cast<physx::PxRevoluteJoint *>(px_joint);
-	// Godot's hinge angle runs the other way round to PhysX's (body B's
-	// counter-clockwise turn about the axis relative to A): [lower, upper] is
-	// [-upper, -lower] here, as Jolt maps it. Passed straight through, a
-	// ragdoll's knees bent backwards.
+	// Godot's hinge angle runs the other way round to PhysX's (the built-in's
+	// get_hinge_angle() measures B's clockwise turn about the axis relative to
+	// A, and Jolt negates the same way): [lower, upper] is [-upper, -lower]
+	// here. Passed straight through, a ragdoll's knees bent backwards.
+	//
+	// Godot's limit_softness/relaxation/bias are deliberately NOT mapped:
+	// HingeJoint3D's node defaults push softness=1.0, and PhysX treats any
+	// stiffness > 0 as a limit SPRING -- mapping softness straight through
+	// turned every node-created hinge limit into a weak spring the joint
+	// drags straight through. A hard limit (stiffness = 0) is what the
+	// built-in and Jolt do (Jolt warns "softness is not supported"), so the
+	// SDK defaults stay.
 	physx::PxJointAngularLimitPair limit(-hinge_params.limit_upper, -hinge_params.limit_lower);
-	limit.stiffness = hinge_params.limit_softness;
-	limit.damping = hinge_params.limit_relaxation;
-	limit.bounceThreshold = hinge_params.limit_bias;
 	revolute->setLimit(limit);
 }
 
@@ -779,7 +784,7 @@ void PhysXJoint3D::set_hinge_param(PhysicsServer3D::HingeJointParam p_param, rea
 		case PhysicsServer3D::HINGE_JOINT_MOTOR_TARGET_VELOCITY: {
 			hinge_params.motor_target_velocity = (float)p_value;
 			if (px_joint && hinge_params.enable_motor) {
-				static_cast<physx::PxRevoluteJoint *>(px_joint)->setDriveVelocity(-hinge_params.motor_target_velocity); // the other way round too (see the limits)
+				static_cast<physx::PxRevoluteJoint *>(px_joint)->setDriveVelocity(-hinge_params.motor_target_velocity); // runs the other way round too (see _apply_hinge_limit)
 			}
 			break;
 		}
@@ -837,7 +842,7 @@ void PhysXJoint3D::set_hinge_flag(PhysicsServer3D::HingeJointFlag p_flag, bool p
 			if (revolute) {
 				revolute->setRevoluteJointFlag(physx::PxRevoluteJointFlag::eDRIVE_ENABLED, p_enabled);
 				if (p_enabled) {
-					revolute->setDriveVelocity(-hinge_params.motor_target_velocity); // the other way round too (see the limits)
+					revolute->setDriveVelocity(-hinge_params.motor_target_velocity); // runs the other way round too (see _apply_hinge_limit)
 					revolute->setDriveForceLimit(hinge_params.motor_max_impulse);
 				}
 			}

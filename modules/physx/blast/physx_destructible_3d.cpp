@@ -96,6 +96,9 @@ void PhysXDestructible3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_blast_asset", "asset"), &PhysXDestructible3D::set_blast_asset);
 	ClassDB::bind_method(D_METHOD("get_blast_asset"), &PhysXDestructible3D::get_blast_asset);
 	ClassDB::bind_method(D_METHOD("is_loaded"), &PhysXDestructible3D::is_loaded);
+	ClassDB::bind_method(D_METHOD("get_piece_count"), &PhysXDestructible3D::get_piece_count);
+	ClassDB::bind_method(D_METHOD("get_piece_transform", "index"), &PhysXDestructible3D::get_piece_transform);
+	ClassDB::bind_method(D_METHOD("get_piece_chunk", "index"), &PhysXDestructible3D::get_piece_chunk);
 	ClassDB::bind_method(D_METHOD("set_material_override", "material"), &PhysXDestructible3D::set_material_override);
 	ClassDB::bind_method(D_METHOD("get_material_override"), &PhysXDestructible3D::get_material_override);
 	ClassDB::bind_method(D_METHOD("set_gi_mode", "mode"), &PhysXDestructible3D::set_gi_mode);
@@ -922,6 +925,20 @@ void PhysXDestructible3D::_free_all_pieces() {
 	}
 	pieces.clear();
 	actor_pieces.clear();
+}
+
+Transform3D PhysXDestructible3D::get_piece_transform(int p_index) const {
+	if (p_index < 0 || p_index >= (int)pieces.size() || !pieces[p_index].body.is_valid()) {
+		return Transform3D();
+	}
+	return PhysicsServer3D::get_singleton()->body_get_state(pieces[p_index].body, PhysicsServer3D::BODY_STATE_TRANSFORM);
+}
+
+uint32_t PhysXDestructible3D::get_piece_chunk(int p_index) const {
+	if (p_index < 0 || p_index >= (int)pieces.size()) {
+		return UINT32_MAX;
+	}
+	return pieces[p_index].chunk_index;
 }
 
 bool PhysXDestructible3D::_actor_has_live_piece(NvBlastActor *p_actor) const {

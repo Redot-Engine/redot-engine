@@ -328,6 +328,16 @@ public:
 	/// bytes) — the node then renders nothing and cannot be damaged.
 	bool is_loaded() const { return loaded; }
 
+	// Live-piece diagnostics (tests, tooling). A piece is one spawned chunk
+	// body (or its render-only editor counterpart).
+	int get_piece_count() const { return (int)pieces.size(); }
+	// World transform of piece p_index's body; identity for a render-only
+	// (editor) piece or an out-of-range index.
+	Transform3D get_piece_transform(int p_index) const;
+	// Which authored chunk piece p_index renders/simulates; UINT32_MAX when
+	// the index is out of range.
+	uint32_t get_piece_chunk(int p_index) const;
+
 	PhysXDestructible3D();
 	~PhysXDestructible3D();
 

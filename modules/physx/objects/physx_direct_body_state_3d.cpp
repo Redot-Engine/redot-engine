@@ -67,11 +67,18 @@ real_t PhysXDirectBodyState3D::get_total_angular_damp() const {
 
 Vector3 PhysXDirectBodyState3D::get_center_of_mass() const {
 	if (const physx::PxRigidDynamic *dyn = _dyn(body)) {
-		// World-space center of mass = global pose * local COM offset.
+		// Godot's contract (godot_physics_3d's direct-state center_of_mass):
+		// a WORLD-frame OFFSET from the body's transform origin — the local
+		// COM rotated into world axes, NOT translated by the pose (the
+		// built-in stores and returns it exactly that way; its own
+		// get_velocity_in_local_point(rel_pos) subtracts it from a
+		// world-origin-relative point). Returning the global COM position
+		// here leaks the body's world position into every caller.
 		physx::PxTransform gp = dyn->getGlobalPose();
 		physx::PxTransform com_local = dyn->getCMassLocalPose();
 		physx::PxVec3 com_world = gp.transform(com_local.p);
-		return Vector3(com_world.x, com_world.y, com_world.z);
+		physx::PxVec3 offset = com_world - gp.p;
+		return Vector3(offset.x, offset.y, offset.z);
 	}
 	return Vector3();
 }
@@ -199,10 +206,17 @@ Vector3 PhysXDirectBodyState3D::get_velocity_at_local_position(const Vector3 &p_
 	if (!dyn) {
 		return Vector3();
 	}
-	// p_position is local to the body; convert to world then use PxRigidBodyExt.
-	physx::PxTransform gp = dyn->getGlobalPose();
-	physx::PxVec3 world_pos = gp.transform(physx::PxVec3(p_position.x, p_position.y, p_position.z));
-	physx::PxVec3 vel = physx::PxRigidBodyExt::getVelocityAtPos(*const_cast<physx::PxRigidDynamic *>(dyn), world_pos);
+	// Godot's contract (godot_physics_3d's get_velocity_in_local_point, which
+	// the scene's CharacterBody3D platform-velocity path relies on): despite
+	// the name, p_position is a WORLD-frame OFFSET from the body's transform
+	// origin, used as-is -- NO rotation applied. (CharacterBody3D passes
+	// gt.origin - platform.origin; rotating that by the platform's pose
+	// computes the velocity at a different point, and a rider standing on a
+	// spinning platform under-measures the ride velocity.) The spin
+	// contribution is measured about the center of mass, at origin + offset.
+	const physx::PxTransform gp = dyn->getGlobalPose();
+	const physx::PxVec3 world_point(gp.p.x + p_position.x, gp.p.y + p_position.y, gp.p.z + p_position.z);
+	physx::PxVec3 vel = physx::PxRigidBodyExt::getVelocityAtPos(*const_cast<physx::PxRigidDynamic *>(dyn), world_point);
 	return Vector3(vel.x, vel.y, vel.z);
 }
 

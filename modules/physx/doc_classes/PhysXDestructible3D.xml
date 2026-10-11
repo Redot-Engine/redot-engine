@@ -15,6 +15,26 @@
 				Returns [code]true[/code] once the assigned [member blast_asset] has been loaded and its chunk scene spawned.
 			</description>
 		</method>
+		<method name="get_piece_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				How many chunk pieces are currently alive (intact placeholder included, before the first fracture). Diagnostics for tests and tooling.
+			</description>
+		</method>
+		<method name="get_piece_transform" qualifiers="const">
+			<return type="Transform3D" />
+			<param index="0" name="index" type="int" />
+			<description>
+				World transform of piece [param index]'s body; identity for an out-of-range index or an editor (render-only) piece.
+			</description>
+		</method>
+		<method name="get_piece_chunk" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Which authored chunk piece [param index] renders/simulates; [code]4294967295[/code] when the index is out of range.
+			</description>
+		</method>
 		<method name="apply_radial_damage">
 			<return type="void" />
 			<param index="0" name="world_position" type="Vector3" />

@@ -634,7 +634,11 @@ internal static class ShapeTests {
         PhysicsServer3D.ShapeSetData(shared, new Vector3(0.8f, 0.8f, 0.8f));
         PhysicsServer3D.BodySetState(a, PhysicsServer3D.BodyState.Sleeping, false);
         PhysicsServer3D.BodySetState(b, PhysicsServer3D.BodyState.Sleeping, false);
-        yield return Wait.UntilOrFail(() => Math.Abs(w.Vel(a).Y) < 0.05f && Math.Abs(w.Vel(b).Y) < 0.05f, 300, "bodies re-settle after resize");
+        // Wait on the POSITION, not the velocity: with the project's
+        // max_depenetration_velocity cap the bodies creep up at a bounded
+        // rate, and their velocity can dip below the settle threshold while
+        // they are still well below the new rest height.
+        yield return Wait.UntilOrFail(() => w.Pos(a).Origin.Y > 0.7f && w.Pos(b).Origin.Y > 0.7f, 300, "bodies rise to the new half-extent");
         Assert.Expect(w.Pos(a).Origin.Y > 0.6f && w.Pos(a).Origin.Y < 1.0f, $"body A follows shared resize (y={w.Pos(a).Origin.Y:F2})");
         Assert.Expect(w.Pos(b).Origin.Y > 0.6f && w.Pos(b).Origin.Y < 1.0f, $"body B follows shared resize (y={w.Pos(b).Origin.Y:F2})");
     }
