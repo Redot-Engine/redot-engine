@@ -21,11 +21,11 @@
 		</method>
 	</methods>
 	<members>
-		<member name="camera_mode" type="int" setter="set_camera_mode" getter="get_camera_mode" enum="CameraRig3D.CameraMode" default="0">
-			The camera control mode. See [enum CameraMode].
-		</member>
 		<member name="adopt_existing_camera" type="bool" setter="set_adopt_existing_camera" getter="is_adopt_existing_camera_enabled" default="true">
 			If [code]true[/code], the rig searches for an existing [Camera3D] in its hierarchy instead of creating a new camera. Cameras inside nested viewports are ignored.
+		</member>
+		<member name="camera_mode" type="int" setter="set_camera_mode" getter="get_camera_mode" enum="CameraRig3D.CameraMode" default="0">
+			The camera control mode. See [enum CameraMode].
 		</member>
 		<member name="follow_offset" type="Vector3" setter="set_follow_offset" getter="get_follow_offset" default="Vector3(0, 2, 5)">
 			The desired position offset from the target, expressed in the target's local space. The offset is transformed by the target's global transform. In third-person mode with mouse orbit enabled, the offset's Z component determines the orbit distance, while its X and Y components remain positional offsets.
