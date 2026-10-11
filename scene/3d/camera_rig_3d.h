@@ -40,8 +40,10 @@
 
 #include "core/object/object.h"
 #include "scene/3d/node_3d.h"
+#include "scene/main/node.h"
 
 class Camera3D;
+class InputEvent;
 
 class CameraRig3D : public Node3D {
 	GDCLASS(CameraRig3D, Node3D);
@@ -49,12 +51,21 @@ class CameraRig3D : public Node3D {
 	ObjectID target_id;
 	ObjectID camera_id;
 
+	// Camera settings
 	Vector3 follow_offset = Vector3(0.0, 2.0, 5.0);
 	bool follow_target = true;
 	bool look_at_target = true;
 	bool position_smoothing_enabled = true;
 	real_t position_smoothing_speed = 8.0;
 	bool adopt_existing_camera = true;
+
+	// Mouse orbit settings
+	bool mouse_orbit_enabled = false;
+	real_t mouse_orbit_sensitivity = 0.003;
+	real_t mouse_orbit_pitch_min = -1.2;
+	real_t mouse_orbit_pitch_max = 1.2;
+	real_t mouse_orbit_yaw = 0.0;
+	real_t mouse_orbit_pitch = 0.0;
 
 	// Prevents the first update from interpolating from an uninitialized position
 	bool position_initialized = false;
@@ -65,6 +76,8 @@ class CameraRig3D : public Node3D {
 	Camera3D *get_managed_camera() const;
 	void _setup_camera();
 	void _update_process_state();
+
+	Vector3 _get_effective_follow_offset() const;
 
 protected:
 	static void _bind_methods();
@@ -90,6 +103,22 @@ public:
 
 	void set_adopt_existing_camera(bool p_enabled);
 	bool is_adopt_existing_camera_enabled() const;
+
+	void set_mouse_orbit_enabled(bool p_enabled);
+	bool is_mouse_orbit_enabled() const;
+
+	void set_mouse_orbit_sensitivity(real_t p_sensitivity);
+	real_t get_mouse_orbit_sensitivity() const;
+
+	void set_mouse_orbit_pitch_min(real_t p_pitch);
+	real_t get_mouse_orbit_pitch_min() const;
+
+	void set_mouse_orbit_pitch_max(real_t p_pitch);
+	real_t get_mouse_orbit_pitch_max() const;
+
+	real_t get_mouse_orbit_yaw() const;
+
+	void unhandled_input(const Ref<InputEvent> &p_event) override;
 
 	void _notification(int p_what);
 

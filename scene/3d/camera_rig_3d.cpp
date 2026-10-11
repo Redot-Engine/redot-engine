@@ -38,6 +38,8 @@
 
 #include "camera_rig_3d.h"
 
+#include "core/input/input.h"
+#include "core/input/input_event.h"
 #include "core/math/math_funcs.h"
 #include "core/templates/list.h"
 #include "scene/3d/camera_3d.h"
@@ -92,7 +94,7 @@ void CameraRig3D::_setup_camera() {
 		}
 	}
 
-	// Create a camera when adoption is disabled or no direct child camera exists
+	// Create a camera when adoption is disabled or no suitable camera exists
 	Camera3D *camera = memnew(Camera3D);
 	camera->set_name("Camera3D");
 	add_child(camera);
@@ -121,7 +123,17 @@ void CameraRig3D::set_target(Node3D *p_target) {
 	// own movement back into the next desired position
 	ERR_FAIL_COND_MSG(!_is_valid_target(p_target), "CameraRig3D can't target itself or one of its descendants.");
 
-	target_id = p_target ? p_target->get_instance_id() : ObjectID();
+	const ObjectID new_target_id = p_target ? p_target->get_instance_id() : ObjectID();
+
+	if (target_id == new_target_id) {
+		return;
+	}
+
+	target_id = new_target_id;
+	mouse_orbit_yaw = 0.0;
+	mouse_orbit_pitch = 0.0;
+	position_initialized = false;
+
 	_update_process_state();
 }
 
@@ -180,6 +192,72 @@ bool CameraRig3D::is_adopt_existing_camera_enabled() const {
 	return adopt_existing_camera;
 }
 
+Vector3 CameraRig3D::_get_effective_follow_offset() const {
+	if (!mouse_orbit_enabled) {
+		return follow_offset;
+	}
+
+	Vector3 offset = Basis(Vector3(1.0, 0.0, 0.0), mouse_orbit_pitch).xform(Vector3(0.0, 0.0, follow_offset.z));
+	offset = Basis(Vector3(0.0, 1.0, 0.0), mouse_orbit_yaw).xform(offset);
+	return offset + Vector3(follow_offset.x, follow_offset.y, 0.0);
+}
+
+void CameraRig3D::set_mouse_orbit_enabled(bool p_enabled) {
+	mouse_orbit_enabled = p_enabled;
+	set_process_unhandled_input(p_enabled);
+}
+
+bool CameraRig3D::is_mouse_orbit_enabled() const {
+	return mouse_orbit_enabled;
+}
+
+void CameraRig3D::set_mouse_orbit_sensitivity(real_t p_sensitivity) {
+	mouse_orbit_sensitivity = MAX(real_t(0.0), p_sensitivity);
+}
+
+real_t CameraRig3D::get_mouse_orbit_sensitivity() const {
+	return mouse_orbit_sensitivity;
+}
+
+void CameraRig3D::set_mouse_orbit_pitch_min(real_t p_pitch) {
+	mouse_orbit_pitch_min = MIN(p_pitch, mouse_orbit_pitch_max);
+	mouse_orbit_pitch = CLAMP(mouse_orbit_pitch, mouse_orbit_pitch_min, mouse_orbit_pitch_max);
+}
+
+real_t CameraRig3D::get_mouse_orbit_pitch_min() const {
+	return mouse_orbit_pitch_min;
+}
+
+void CameraRig3D::set_mouse_orbit_pitch_max(real_t p_pitch) {
+	mouse_orbit_pitch_max = MAX(p_pitch, mouse_orbit_pitch_min);
+	mouse_orbit_pitch = CLAMP(mouse_orbit_pitch, mouse_orbit_pitch_min, mouse_orbit_pitch_max);
+}
+
+real_t CameraRig3D::get_mouse_orbit_pitch_max() const {
+	return mouse_orbit_pitch_max;
+}
+
+void CameraRig3D::unhandled_input(const Ref<InputEvent> &p_event) {
+	if (!mouse_orbit_enabled || Input::get_singleton()->get_mouse_mode() != Input::MOUSE_MODE_CAPTURED) {
+		return;
+	}
+
+	Ref<InputEventMouseMotion> mouse_motion = p_event;
+
+	if (mouse_motion.is_null()) {
+		return;
+	}
+
+	const Vector2 relative = mouse_motion->get_relative();
+
+	mouse_orbit_yaw -= relative.x * mouse_orbit_sensitivity;
+	mouse_orbit_pitch = CLAMP(mouse_orbit_pitch - relative.y * mouse_orbit_sensitivity, mouse_orbit_pitch_min, mouse_orbit_pitch_max);
+}
+
+real_t CameraRig3D::get_mouse_orbit_yaw() const {
+	return mouse_orbit_yaw;
+}
+
 void CameraRig3D::_ready_rig() {
 	_setup_camera();
 
@@ -194,11 +272,12 @@ void CameraRig3D::_ready_rig() {
 
 	if (target && follow_target) {
 		// Initialize directly so the camera starts at the expected position
-		set_global_position(target->to_global(follow_offset));
+		set_global_position(target->to_global(_get_effective_follow_offset()));
 		position_initialized = true;
 	}
 
 	Camera3D *camera = get_managed_camera();
+	set_process_unhandled_input(mouse_orbit_enabled);
 
 	if (camera) {
 		if (target && look_at_target) {
@@ -243,7 +322,7 @@ void CameraRig3D::_process_rig(double p_delta) {
 
 	if (follow_target) {
 		// Transform the offset through the target so it follows the target's orientation
-		const Vector3 desired_position = target->to_global(follow_offset);
+		const Vector3 desired_position = target->to_global(_get_effective_follow_offset());
 
 		if (!position_initialized || !position_smoothing_enabled) {
 			set_global_position(desired_position);
@@ -288,6 +367,16 @@ void CameraRig3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_adopt_existing_camera", "enabled"), &CameraRig3D::set_adopt_existing_camera);
 	ClassDB::bind_method(D_METHOD("is_adopt_existing_camera_enabled"), &CameraRig3D::is_adopt_existing_camera_enabled);
 
+	ClassDB::bind_method(D_METHOD("set_mouse_orbit_enabled", "enabled"), &CameraRig3D::set_mouse_orbit_enabled);
+	ClassDB::bind_method(D_METHOD("is_mouse_orbit_enabled"), &CameraRig3D::is_mouse_orbit_enabled);
+	ClassDB::bind_method(D_METHOD("set_mouse_orbit_sensitivity", "sensitivity"), &CameraRig3D::set_mouse_orbit_sensitivity);
+	ClassDB::bind_method(D_METHOD("get_mouse_orbit_sensitivity"), &CameraRig3D::get_mouse_orbit_sensitivity);
+	ClassDB::bind_method(D_METHOD("set_mouse_orbit_pitch_min", "pitch"), &CameraRig3D::set_mouse_orbit_pitch_min);
+	ClassDB::bind_method(D_METHOD("get_mouse_orbit_pitch_min"), &CameraRig3D::get_mouse_orbit_pitch_min);
+	ClassDB::bind_method(D_METHOD("set_mouse_orbit_pitch_max", "pitch"), &CameraRig3D::set_mouse_orbit_pitch_max);
+	ClassDB::bind_method(D_METHOD("get_mouse_orbit_pitch_max"), &CameraRig3D::get_mouse_orbit_pitch_max);
+	ClassDB::bind_method(D_METHOD("get_mouse_orbit_yaw"), &CameraRig3D::get_mouse_orbit_yaw);
+
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "target", PROPERTY_HINT_NODE_TYPE, "Node3D"), "set_target", "get_target");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "follow_offset"), "set_follow_offset", "get_follow_offset");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "follow_target"), "set_follow_target", "is_follow_target_enabled");
@@ -295,4 +384,9 @@ void CameraRig3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "position_smoothing_enabled"), "set_position_smoothing_enabled", "is_position_smoothing_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "position_smoothing_speed", PROPERTY_HINT_RANGE, "0.01,30.0,0.01,or_greater"), "set_position_smoothing_speed", "get_position_smoothing_speed");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "adopt_existing_camera"), "set_adopt_existing_camera", "is_adopt_existing_camera_enabled");
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mouse_orbit_enabled"), "set_mouse_orbit_enabled", "is_mouse_orbit_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mouse_orbit_sensitivity", PROPERTY_HINT_RANGE, "0.0,0.02,0.0001,or_greater"), "set_mouse_orbit_sensitivity", "get_mouse_orbit_sensitivity");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mouse_orbit_pitch_min", PROPERTY_HINT_RANGE, "-1.5708,1.5708,0.01"), "set_mouse_orbit_pitch_min", "get_mouse_orbit_pitch_min");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mouse_orbit_pitch_max", PROPERTY_HINT_RANGE, "-1.5708,1.5708,0.01"), "set_mouse_orbit_pitch_max", "get_mouse_orbit_pitch_max");
 }
