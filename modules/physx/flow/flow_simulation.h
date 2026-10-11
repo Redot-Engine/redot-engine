@@ -34,6 +34,7 @@
 
 #ifdef GODOT_PHYSX_FLOW
 
+#include "flow_context_rd.h"
 #include "flow_runtime.h"
 
 #include "core/math/basis.h"
@@ -98,6 +99,21 @@ struct FlowSimSettings {
 	bool pressure_enabled = true;
 };
 
+// Render-path settings: Flow's own ray marcher draws the grid with a
+// colormap (temperature normalized over temperature_range -> linear RGB,
+// opacity from smoke) and self-shadows the gas toward light_direction.
+// Filled by the node every step; consumed by step() when it commits the
+// offscreen/render layer params.
+struct FlowRenderSettings {
+	static constexpr int COLORMAP_POINTS = 32;
+	float attenuation = 0.05f; // per unit of smoke, per unit distance
+	float temperature_range = 2.0f;
+	float shadow_min_intensity = 0.125f;
+	int shadow_steps = 48; // 0 disables shadowing
+	Vector3 light_direction = Vector3(0.3, 1.0, 0.2).normalized();
+	float colormap_rgb[COLORMAP_POINTS][3] = {};
+};
+
 // An injection source (sphere or box) in Godot world space.
 struct FlowEmitterData {
 	uint64_t luid = 0;
@@ -160,6 +176,8 @@ public:
 
 	bool is_available() const { return runtime != nullptr && runtime->is_available(); }
 	String get_unavailable_reason() const { return runtime ? runtime->get_unavailable_reason() : String(); }
+	// "rd" on the RenderingDevice path, or the fallback device's API name.
+	String get_backend_name() const;
 
 	void set_diag_flags(uint32_t p_flags) { diag_flags = p_flags; }
 
@@ -172,13 +190,26 @@ public:
 	// parameter storage). force_clear resets the sparse grids.
 	void step(double p_absolute_time, float p_delta, const FlowEmitterData *p_emitters, int p_emitter_count,
 			const FlowColliderData *p_colliders, int p_collider_count, const FlowSimSettings &p_settings,
-			bool p_force_clear, bool p_paused);
+			const FlowRenderSettings &p_render, bool p_force_clear, bool p_paused, bool p_want_readback);
 
 	void reset();
 
 	// Consumes the newest completed readback frame. Returns true when
 	// out_frame was filled with data newer than the last consume.
 	bool poll_readback(FlowReadbackFrame &r_frame);
+
+	// Renders the grid with Flow's own GPU ray marcher (RenderingDevice path
+	// only) into the scene color image (RID id p_color_rid), occluded by the
+	// scene depth (RID id p_depth_rid at its own size). view/projection are
+	// row-vector 4x4 world->clip matrices in Flow units (Godot's units, so
+	// no scaling). Returns the RID id of the composited color texture -- copy
+	// it over the scene color before render_finish() -- or 0.
+	uint64_t render(const float p_view[16], const float p_projection[16], uint32_t p_width, uint32_t p_height,
+			uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid);
+	// Ends the render's Flow frame; call after the result has been copied.
+	void render_finish();
+
+	bool is_using_rd() const { return using_rd && rd_context != nullptr; }
 
 	uint32_t get_active_block_count() const;
 	uint64_t get_simulated_frame_count() const { return frames_simulated; }
@@ -192,7 +223,9 @@ public:
 	TimingStats get_timing_stats() const { return timing; }
 
 private:
-	FlowRuntime *runtime = nullptr; // acquired in configure()
+	FlowRuntime *runtime = nullptr; // acquired in configure() (loader always; device only on the fallback path)
+	FlowContextRD::Context *rd_context = nullptr; // RenderingDevice-backed Flow context, null on the fallback path
+	bool using_rd = false;
 	NvFlowGrid *grid = nullptr;
 	FlowSimGridConfig grid_config;
 
@@ -222,6 +255,18 @@ private:
 		LocalVector<int> face_counts; // vertices per face (3)
 	};
 	LocalVector<MeshArrays> mesh_arrays;
+
+	// Render-path parameters, kept alive across one step()'s commit ->
+	// offscreen/render: the snapshot database points into these.
+	NvFlowGridOffscreenLayerParams offscreen_params = NvFlowGridOffscreenLayerParams_default;
+	NvFlowGridRenderLayerParams render_layer_params = NvFlowGridRenderLayerParams_default;
+	NvFlowUint8 *offscreen_ptr = nullptr;
+	NvFlowUint8 *render_ptr = nullptr;
+	float colormap_x[FlowRenderSettings::COLORMAP_POINTS] = {};
+	NvFlowFloat4 colormap_rgba[FlowRenderSettings::COLORMAP_POINTS] = {};
+	float colormap_scale[FlowRenderSettings::COLORMAP_POINTS] = {};
+
+	void _apply_render_params(const FlowRenderSettings &p_render);
 
 	// Readback pipeline: TWO buffer slots, recorded in alternation, so a
 	// frame's copies stay intact on the GPU until its completion id is
@@ -263,6 +308,13 @@ private:
 	void _release_readback_buffers();
 	void _record_readback_copies(ReadbackSlot &r_slot, NvFlowContextInterface *p_ci, NvFlowGridInterface *p_gi);
 	bool _decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_frame);
+
+	NvFlowContextInterface *_context_iface() const; // valid while a grid is alive
+	NvFlowContext *_context() const;
+	// Closes a Flow frame: schedules this frame's readbacks and a fence that
+	// marks it complete; r_frame_id receives the id completion is gated on.
+	void _flush_frame(uint64_t *r_frame_id);
+	uint64_t _last_frame_completed() const;
 
 	static NvFlowFloat4x4 _to_flow_matrix(const Transform3D &p_xform);
 	static NvFlowFloat4x4 _to_flow_velocity_matrix(const Transform3D &p_xform, const Vector3 &p_linear, const Vector3 &p_angular);

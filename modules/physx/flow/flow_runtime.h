@@ -79,7 +79,8 @@ private:
 	int references = 0;
 
 	bool initialized = false;
-	bool available = false;
+	bool available = false; // DLLs loaded + interface tables duplicated
+	bool device_ready = false; // own-device fallback created (never on the RD path)
 	String unavailable_reason;
 
 	NvFlowContextApi active_api = eNvFlowContextApi_cpu;
@@ -110,6 +111,7 @@ private:
 
 	bool _init();
 	void _destroy();
+	bool _ensure_device_locked();
 	static void _log_print(NvFlowLogLevel p_level, const char *p_format, ...);
 	static void _loader_error(const char *p_str, void *p_userdata);
 
@@ -122,11 +124,20 @@ public:
 	// stale GPU device.
 	void release_for_shutdown();
 
+	// True once nvflow.dll/nvflowext.dll are loaded and their interface
+	// tables duplicated -- grids on Godot's RenderingDevice only need this.
 	bool is_available() const { return available; }
 	String get_unavailable_reason() const { return unavailable_reason; }
 
+	// Creates the SDK's own Vulkan/CPU device (the fallback path for
+	// headless / Compatibility, where no RenderingDevice exists). False,
+	// with the reason in get_unavailable_reason(), when that fails too.
+	bool ensure_device();
+	bool is_device_ready() const { return device_ready; }
+
 	NvFlowContextInterface *context_interface() const { return ctx_interface; }
 	NvFlowContext *context() const { return ctx; }
+	String get_backend_name() const;
 	NvFlowOpList *get_op_list() { return &op_list; }
 	NvFlowExtOpList *get_ext_op_list() { return &ext_op_list; }
 	NvFlowGridInterface *get_grid_interface() const {

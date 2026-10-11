@@ -36,13 +36,17 @@
 
 #include "physx_flow_collider_3d.h"
 #include "physx_flow_emitter_3d.h"
+#include "physx_flow_render_effect.h"
 
-#include "core/io/image.h"
+#include "core/config/engine.h"
 #include "core/object/class_db.h"
+#include "core/object/object_id.h"
 #include "core/os/os.h"
-#include "scene/3d/fog_volume.h"
+#include "scene/3d/camera_3d.h"
+#include "scene/3d/light_3d.h"
 #include "scene/3d/physics/collision_object_3d.h"
 #include "scene/3d/physics/collision_shape_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/resources/3d/box_shape_3d.h"
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
@@ -50,40 +54,10 @@
 #include "scene/resources/3d/sphere_shape_3d.h"
 #include "scene/resources/3d/world_3d.h"
 #include "scene/resources/environment.h"
-#include "scene/resources/image_texture.h"
-#include "scene/resources/material.h"
-#include "scene/resources/shader.h"
 #include "servers/physics_3d/physics_server_3d.h"
+#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server.h"
-
-namespace {
-// Fog shader for the Flow volume. The readback texture packs the Flow grid's
-// density texture as RGBA half: A = smoke density, RGB = the solver's
-// colorized channels (fire colormap output when combustion is active -- see
-// flow_simulation.cpp's decode; channel semantics validated by the readback
-// test). Emission fires only where RGB is non-zero, so a pure-smoke scene
-// shades as plain albedo fog and a burning one glows without any extra pass.
-const char *FLOW_FOG_SHADER_SOURCE = R"(
-shader_type fog;
-
-uniform sampler3D flow_tex;
-uniform float density_scale = 24.0;
-uniform vec3 smoke_albedo = vec3(0.9);
-uniform bool fire_emission = true;
-uniform float emission_strength = 6.0;
-
-void fog() {
-	vec4 s = texture(flow_tex, UVW);
-	float d = s.a;
-	float edge = pow(clamp(-2.0 * SDF / min(min(SIZE.x, SIZE.y), SIZE.z), 0.0, 1.0), 1.0);
-	DENSITY = d * density_scale * edge;
-	ALBEDO = smoke_albedo;
-	if (fire_emission) {
-		EMISSION = s.rgb * emission_strength * edge;
-	}
-}
-)";
-} // namespace
+#include "servers/rendering/rendering_server_default.h"
 
 PhysXFlowSimulation3D::~PhysXFlowSimulation3D() {
 	if (simulation != nullptr) {
@@ -128,11 +102,29 @@ void PhysXFlowSimulation3D::_ensure_simulation() {
 		sim_settings_dirty = false;
 	}
 	available = simulation->is_available();
+	if (available && volumetric_render) {
+		// Capture the device once: the grid runs on Godot's RenderingDevice
+		// when one exists, and only then is there anything to draw.
+		if (rendering_device == nullptr) {
+			rendering_device = RenderingServer::get_singleton()->get_rendering_device();
+		}
+		if (rendering_device != nullptr && get_world_3d().is_valid()) {
+			// Registers with the render effect and installs it on this world
+			// (idempotent; re-run every step so swapped compositors keep it).
+			PhysXFlowRenderEffect::register_flow(this);
+			PhysXFlowRenderEffect::attach_world(get_world_3d().ptr());
+			attached_world = get_world_3d()->get_instance_id();
+			PhysXFlowRenderEffect::install(get_world_3d().ptr(),
+					get_viewport() != nullptr ? get_viewport()->get_camera_3d() : nullptr);
+		}
+	}
 }
 
 // ---- Emitters -------------------------------------------------------------
 
 void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_emitters) {
+	bool first_emitter = true;
+	AABB emitter_bounds;
 	for (int i = 0; i < emitters.size(); i++) {
 		Node *n = get_node_or_null(emitters[i]);
 		Node3D *node = Object::cast_to<Node3D>(n);
@@ -143,12 +135,13 @@ void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_em
 			if (!fe->enabled) {
 				continue;
 			}
+			const Transform3D xf = fe->get_global_transform();
 			FlowEmitterData e;
 			e.luid = _luid_for(fe->get_instance_id());
 			e.enabled = true;
 			e.is_box = fe->shape == PhysXFlowEmitter3D::SHAPE_BOX;
-			e.world_xform = fe->get_global_transform();
-			e.velocity = fe->get_global_transform().basis.get_rotation_quaternion().xform(fe->velocity);
+			e.world_xform = xf;
+			e.velocity = xf.basis.get_rotation_quaternion().xform(fe->velocity);
 			e.radius = fe->radius;
 			e.half_size = fe->size * 0.5f;
 			e.divergence = fe->divergence;
@@ -158,9 +151,13 @@ void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_em
 			e.couple_rate = fe->couple_rate;
 			e.sub_steps = (uint32_t)fe->sub_steps;
 			r_emitters.push_back(e);
+			if (first_emitter) {
+				emitter_bounds = AABB(xf.origin, Vector3());
+				first_emitter = false;
+			} else {
+				emitter_bounds.expand_to(xf.origin);
+			}
 		} else {
-			// Plain Node3D fallback: a small smoke sphere at the node, aimed
-			// by its transform (same pattern as PhysXGas3D's emitter list).
 			FlowEmitterData e;
 			e.luid = _luid_for(node->get_instance_id());
 			e.enabled = true;
@@ -172,8 +169,15 @@ void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_em
 			e.fuel = 0.0f;
 			e.smoke = 1.0f;
 			r_emitters.push_back(e);
+			if (first_emitter) {
+				emitter_bounds = AABB(node->get_global_transform().origin, Vector3());
+				first_emitter = false;
+			} else {
+				emitter_bounds.expand_to(node->get_global_transform().origin);
+			}
 		}
 	}
+	draw_center = first_emitter ? get_global_position() : emitter_bounds.get_center();
 }
 
 // ---- Colliders (analytic nodes + PhysicsServer3D bridge) -------------------
@@ -536,19 +540,24 @@ void PhysXFlowSimulation3D::_step(double p_delta) {
 	}
 
 	sim_time_accum += p_delta; // monotonic sim clock owned by this node
+	// The GPU render path never reads the CPU copy; it exists only for the
+	// query API (and always, on the fallback path, where it's the only data
+	// channel the headless tests read).
+	FlowRenderSettings render_settings;
+	_fill_render_settings(render_settings);
+	const bool fallback_path = !simulation->is_using_rd();
+	const bool want_readback = (fallback_path || cpu_readback) &&
+			((frame_count % READBACK_INTERVAL) == 0);
 	simulation->step(sim_time_accum, (float)p_delta,
 			resolved_emitters.ptr(), resolved_emitters.size(),
 			resolved_colliders.ptr(), resolved_colliders.size(),
-			settings, false, paused);
+			settings, render_settings, false, paused, want_readback);
 
-	// Consume any completed readback (typically 1-2 frames behind). A NEW
-	// frame marks the fog texture dirty; _update_volumetric_render (below in
-	// the same tick) is the only consumer.
+	// Consume any completed readback (typically 1-2 frames behind): the query
+	// surface (max smoke, bounds) and the FLOW-1 diagnostics.
 	FlowReadbackFrame frame;
 	if (simulation->poll_readback(frame)) {
 		last_frame = frame;
-		texture_dirty = true;
-		texture_update_count++;
 	}
 	frame_count++;
 	if (debug_stats) {
@@ -556,81 +565,124 @@ void PhysXFlowSimulation3D::_step(double p_delta) {
 	} else {
 		simulation->set_diag_flags(FlowSimulation::DIAG_NONE);
 	}
+	if (get_world_3d().is_valid() && attached_world.is_valid()) {
+		// The user may have swapped the world's (or camera's) compositor.
+		PhysXFlowRenderEffect::install(get_world_3d().ptr(),
+				get_viewport() != nullptr ? get_viewport()->get_camera_3d() : nullptr);
+	}
+}
+
+// ---- Light + render settings -------------------------------------------------
+
+// The first visible DirectionalLight3D in the scene, re-found every ~60
+// steps; the gas self-shadows along its -Z (toward the light is +Z).
+void PhysXFlowSimulation3D::_gather_light(Vector3 &r_direction, Color &r_color, Color &r_ambient) {
+	DirectionalLight3D *light = Object::cast_to<DirectionalLight3D>(ObjectDB::get_instance(light_id));
+	if (light == nullptr || !light->is_inside_tree() || light_search_countdown-- <= 0) {
+		light_search_countdown = 60;
+		light = nullptr;
+		Node *root = get_tree()->get_edited_scene_root();
+		if (root == nullptr) {
+			root = get_tree()->get_current_scene();
+		}
+		if (root != nullptr) {
+			TypedArray<Node> lights = root->find_children("*", "DirectionalLight3D", true, false);
+			for (int i = 0; i < lights.size(); i++) {
+				DirectionalLight3D *l = Object::cast_to<DirectionalLight3D>(lights[i]);
+				if (l != nullptr && l->is_visible_in_tree()) {
+					light = l;
+					break;
+				}
+			}
+		}
+		light_id = light != nullptr ? light->get_instance_id() : ObjectID();
+	}
+	r_direction = Vector3(0.3, 1.0, 0.2).normalized();
+	r_color = Color(1, 1, 1);
+	if (light != nullptr && light->is_visible_in_tree()) {
+		r_direction = light->get_global_transform().basis.get_column(2).normalized();
+		r_color = light->get_color().srgb_to_linear() * light->get_param(Light3D::PARAM_ENERGY);
+	}
+	r_ambient = Color(0.25, 0.27, 0.3);
+	if (get_world_3d().is_valid() && get_world_3d()->get_environment().is_valid()) {
+		Ref<Environment> env = get_world_3d()->get_environment();
+		r_ambient = env->get_ambient_light_color().srgb_to_linear() * env->get_ambient_light_energy();
+	}
+}
+
+// Flow colors the gas by temperature through a 32-point colormap and lights
+// it with its own self-shadowing: the smoke's albedo under the scene light,
+// with a built-in fire ramp glowing where the heat is (the glow REPLACES the
+// lit smoke instead of adding to it -- bright smoke plus orange reads pink).
+void PhysXFlowSimulation3D::_fill_render_settings(FlowRenderSettings &r_settings) {
+	Vector3 light_dir;
+	Color light_color;
+	Color ambient_color;
+	_gather_light(light_dir, light_color, ambient_color);
+	for (int i = 0; i < FlowRenderSettings::COLORMAP_POINTS; i++) {
+		const float t = (float)i / (float)(FlowRenderSettings::COLORMAP_POINTS - 1);
+		// Built-in fire ramp (a Gradient resource can't be a property
+		// default): cool -> nothing, warm -> deep orange glow, hot ->
+		// yellow-white.
+		const Color cool(0, 0, 0, 0);
+		const Color warm(0.9f, 0.25f, 0.03f, 0.6f);
+		const Color hot(1.0f, 0.85f, 0.5f, 1.0f);
+		constexpr float WARM_AT = 0.35f;
+		const Color heat = t < WARM_AT ? cool.lerp(warm, t / WARM_AT) : warm.lerp(hot, (t - WARM_AT) / (1.0f - WARM_AT));
+		const Color smoke = smoke_albedo.srgb_to_linear();
+		const float glow_amount = fire_emission && fire_emission_strength > 0.0f ? CLAMP(heat.a, 0.0f, 1.0f) : 0.0f;
+		const Color glow = heat.srgb_to_linear() * (heat.a * fire_emission_strength);
+		r_settings.colormap_rgb[i][0] = smoke.r * light_color.r * (1.0f - glow_amount) + glow.r;
+		r_settings.colormap_rgb[i][1] = smoke.g * light_color.g * (1.0f - glow_amount) + glow.g;
+		r_settings.colormap_rgb[i][2] = smoke.b * light_color.b * (1.0f - glow_amount) + glow.b;
+	}
+	r_settings.temperature_range = temperature_range;
+	// fog_density was the FogVolume's linear scale; the ray marcher's
+	// attenuation is exponential -- keep the authored look at 1/10th.
+	r_settings.attenuation = fog_density * 0.1f;
+	r_settings.light_direction[0] = light_dir.x;
+	r_settings.light_direction[1] = light_dir.y;
+	r_settings.light_direction[2] = light_dir.z;
+	// Ambient as the floor of the self-shadowing, relative to the sun.
+	r_settings.shadow_min_intensity = CLAMP(ambient_color.get_luminance() / MAX(light_color.get_luminance(), 0.001f), 0.02f, 1.0f);
+	r_settings.shadow_steps = shadow_steps;
+}
+
+// ---- Render (called by the effect, on the render thread) ----------------------
+
+void PhysXFlowSimulation3D::render_rd(PhysXFlowRenderEffect *p_effect, RenderingDevice *p_rd,
+		const float p_view[16], const float p_projection[16], const Size2i &p_size,
+		const RID &p_depth, const RID &p_color) {
+	if (simulation == nullptr || !simulation->is_using_rd() || p_rd != rendering_device) {
+		return;
+	}
+	const uint64_t out = simulation->render(p_view, p_projection, p_size.x, p_size.y,
+			p_depth.get_id(), p_size.x, p_size.y, p_color.get_id());
+	render_calls++;
+	render_outputs += out != 0 ? 1 : 0;
+	if (out != 0 && out != p_color.get_id()) {
+		// Flow composited into its own transient; copy it over the scene
+		// color before the next Flow call borrows that texture.
+		p_effect->copy_texture(p_rd, RID::from_uint64(out), p_color, p_size);
+	}
+	simulation->render_finish();
 }
 
 // ---- Render -------------------------------------------------------------------
 
-void PhysXFlowSimulation3D::_ensure_fog_volume() {
-	if (fog_volume != nullptr) {
-		return;
-	}
-	if (flow_shader.is_null()) {
-		flow_shader.instantiate();
-		flow_shader->set_code(FLOW_FOG_SHADER_SOURCE);
-	}
-	flow_material.instantiate();
-	flow_material->set_shader(flow_shader);
-	flow_material->set_shader_parameter("density_scale", fog_density);
-	flow_material->set_shader_parameter("smoke_albedo", smoke_albedo);
-	flow_material->set_shader_parameter("fire_emission", fire_emission);
-	flow_material->set_shader_parameter("emission_strength", fire_emission_strength);
-
-	fog_volume = memnew(FogVolume);
-	fog_volume->set_shape(RS::FOG_VOLUME_SHAPE_BOX);
-	fog_volume->set_material(flow_material);
-	// The volume follows the active sparse block bounds in world space (set
-	// per update), so keep it out of this node's transform chain.
-	fog_volume->set_as_top_level(true);
-	add_child(fog_volume, false, INTERNAL_MODE_BACK);
-}
-
-void PhysXFlowSimulation3D::_update_volumetric_render() {
-	// FLOW-1: only re-encode + re-upload the fog texture when poll_readback
-	// actually delivered a NEW decoded frame. The old path re-ran whenever
-	// last_frame.valid -- after the first decode it stayed true forever, so
-	// up to ~32 MB of slices were copied/re-imaged/re-uploaded at physics
-	// rate even when zero new frames arrived (paused, stalled, or
-	// slow-decoding).
-	if (!last_frame.valid || last_frame.dims.x <= 0) {
-		return;
-	}
-	if (!texture_dirty) {
-		return;
-	}
-	texture_dirty = false; // consumed
-	const Vector3i dims = last_frame.dims;
-
-	// One Image slice per Z layer; voxels are already RGBA half (4x16-bit).
-	Vector<Ref<Image>> slices;
-	slices.resize(dims.z);
-	const int slice_voxels = dims.x * dims.y;
-	const int slice_u16 = slice_voxels * 4;
-	for (int z = 0; z < dims.z; z++) {
-		Vector<uint8_t> bytes;
-		bytes.resize(slice_u16 * (int)sizeof(uint16_t));
-		memcpy(bytes.ptrw(), last_frame.voxels_rgbaH.ptr() + (size_t)z * slice_u16, bytes.size());
-		slices.write[z] = Image::create_from_data(dims.x, dims.y, false, Image::FORMAT_RGBAH, bytes);
-	}
-
-	if (density_texture.is_null() || density_texture_dims != dims) {
-		density_texture.instantiate();
-		density_texture->create(Image::FORMAT_RGBAH, dims.x, dims.y, dims.z, false, slices);
-		density_texture_dims = dims;
-		flow_material->set_shader_parameter("flow_tex", density_texture);
-	} else {
-		density_texture->update(slices);
-	}
-
-	fog_volume->set_size(last_frame.world_size.maxf(0.05f));
-	fog_volume->set_position(last_frame.world_min + last_frame.world_size * 0.5f);
-}
+// ---- Render wiring -------------------------------------------------------------
+// The drawing itself happens in the render effect's callback (see
+// render_rd above); per tick this only re-asserts the effect's presence in
+// the world's compositor (cheap no-ops when nothing changed).
 
 void PhysXFlowSimulation3D::_update_render() {
-	if (volumetric_render && simulation != nullptr && simulation->is_available()) {
-		_ensure_fog_volume();
-		_update_volumetric_render();
+	if (volumetric_render && simulation != nullptr && simulation->is_available() &&
+			get_world_3d().is_valid()) {
+		PhysXFlowRenderEffect::install(get_world_3d().ptr(),
+				get_viewport() != nullptr ? get_viewport()->get_camera_3d() : nullptr);
 	}
 }
+
 
 // ---- Notifications -------------------------------------------------------------
 
@@ -651,12 +703,13 @@ void PhysXFlowSimulation3D::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_EXIT_WORLD: {
 			set_physics_process_internal(false);
-			if (fog_volume != nullptr) {
-				fog_volume->queue_free();
-				fog_volume = nullptr;
+			PhysXFlowRenderEffect::unregister_flow(this);
+			if (attached_world.is_valid()) {
+				PhysXFlowRenderEffect::detach_world(attached_world);
+				attached_world = ObjectID();
 			}
-			density_texture.unref();
-			density_texture_dims = Vector3i();
+			rendering_device = nullptr;
+			draw_center = Vector3();
 			// The FlowSimulation (and its grid) is kept alive: blocks and GPU
 			// state survive scene reloads, matching how the shared runtime
 			// does. reset_simulation() clears them on demand.
@@ -696,14 +749,15 @@ void PhysXFlowSimulation3D::step_once() {
 		_resolve_transients(dt, resolved_emitters);
 		_resolve_colliders(resolved_colliders, dt);
 		sim_time_accum += dt;
+		FlowRenderSettings render_settings;
+		_fill_render_settings(render_settings);
 		simulation->step(sim_time_accum, (float)dt,
 				resolved_emitters.ptr(), resolved_emitters.size(),
 				resolved_colliders.ptr(), resolved_colliders.size(),
-				settings, false, /*paused=*/false);
+				settings, render_settings, false, /*paused=*/false, /*want_readback=*/true);
 		FlowReadbackFrame frame;
 		if (simulation->poll_readback(frame)) {
 			last_frame = frame;
-			texture_dirty = true;
 			texture_update_count++;
 		}
 		frame_count++;
@@ -730,22 +784,24 @@ Dictionary PhysXFlowSimulation3D::get_diagnostics() const {
 		out["unavailable_reason"] = simulation != nullptr ? simulation->get_unavailable_reason() : String("not initialized");
 		return out;
 	}
-	FlowRuntime::Stats stats;
-	if (FlowRuntime *rt = FlowRuntime::get_singleton()) {
-		stats = rt->get_stats();
-	}
-	out["backend"] = stats.backend_name;
-	out["simulations"] = stats.simulation_count;
+	out["backend"] = simulation->get_backend_name();
+	out["simulations"] = FlowRuntime::get_singleton() != nullptr ? (int)FlowRuntime::get_singleton()->get_stats().simulation_count : 1;
 	out["active_blocks"] = simulation->get_active_block_count();
 	out["max_blocks"] = max_blocks;
 	out["frames_simulated"] = simulation->get_simulated_frame_count();
 	out["sim_time"] = simulation->get_sim_time();
-	out["device_memory_mb"] = stats.device_memory_bytes / (1024.0 * 1024.0);
-	out["readback_memory_mb"] = stats.readback_memory_bytes / (1024.0 * 1024.0);
+	if (!simulation->is_using_rd()) {
+		const FlowRuntime::Stats stats = FlowRuntime::get_singleton() != nullptr ? FlowRuntime::get_singleton()->get_stats() : FlowRuntime::Stats();
+		out["device_memory_mb"] = stats.device_memory_bytes / (1024.0 * 1024.0);
+		out["readback_memory_mb"] = stats.readback_memory_bytes / (1024.0 * 1024.0);
+	}
 	const FlowSimulation::TimingStats timing = simulation->get_timing_stats();
 	out["last_submit_usec"] = timing.last_submit_usec;
 	out["last_flush_usec"] = timing.last_flush_usec;
 	out["last_decode_usec"] = timing.last_decode_usec;
+	out["readback_updates"] = (int64_t)texture_update_count;
+	out["render_calls"] = (int64_t)render_calls;
+	out["render_outputs"] = (int64_t)render_outputs;
 	return out;
 }
 
@@ -755,8 +811,9 @@ int PhysXFlowSimulation3D::get_active_block_count() const {
 
 PackedStringArray PhysXFlowSimulation3D::get_configuration_warnings() const {
 	PackedStringArray warnings = Node3D::get_configuration_warnings();
-	if (volumetric_render && OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
-		warnings.push_back(RTR("PhysXFlowSimulation3D's volumetric render needs the Forward+ renderer (it draws through a FogVolume)."));
+	if (volumetric_render && OS::get_singleton()->get_current_rendering_method() != "forward_plus" &&
+			OS::get_singleton()->get_current_rendering_method() != "mobile") {
+		warnings.push_back(RTR("PhysXFlowSimulation3D's render needs the Forward+ (or Mobile) renderer: Flow's ray marcher draws through a CompositorEffect on the RenderingDevice. On Compatibility/headless the simulation still runs on Flow's own fallback device, but nothing is drawn."));
 	}
 	return warnings;
 }
@@ -835,41 +892,49 @@ void PhysXFlowSimulation3D::set_pressure_projection(bool p_enabled) {
 }
 
 void PhysXFlowSimulation3D::set_volumetric_render(bool p_enabled) {
+	if (volumetric_render == p_enabled) {
+		return;
+	}
 	volumetric_render = p_enabled;
-	if (!volumetric_render && fog_volume != nullptr) {
-		fog_volume->queue_free();
-		fog_volume = nullptr;
-		density_texture.unref();
-		density_texture_dims = Vector3i();
+	if (!volumetric_render) {
+		// Stop drawing: leave the effect's world lists.
+		PhysXFlowRenderEffect::unregister_flow(this);
+		if (attached_world.is_valid()) {
+			PhysXFlowRenderEffect::detach_world(attached_world);
+			attached_world = ObjectID();
+		}
+		rendering_device = nullptr;
+	} else if (is_inside_world()) {
+		_ensure_simulation();
 	}
 }
 
 void PhysXFlowSimulation3D::set_fog_density(float p_density) {
 	fog_density = MAX(p_density, 0.0f);
-	if (flow_material.is_valid()) {
-		flow_material->set_shader_parameter("density_scale", fog_density);
-	}
 }
 
 void PhysXFlowSimulation3D::set_smoke_albedo(const Color &p_color) {
 	smoke_albedo = p_color;
-	if (flow_material.is_valid()) {
-		flow_material->set_shader_parameter("smoke_albedo", Vector3(p_color.r, p_color.g, p_color.b));
-	}
 }
 
 void PhysXFlowSimulation3D::set_fire_emission(bool p_enabled) {
 	fire_emission = p_enabled;
-	if (flow_material.is_valid()) {
-		flow_material->set_shader_parameter("fire_emission", fire_emission);
-	}
 }
 
 void PhysXFlowSimulation3D::set_fire_emission_strength(float p_strength) {
 	fire_emission_strength = MAX(p_strength, 0.0f);
-	if (flow_material.is_valid()) {
-		flow_material->set_shader_parameter("emission_strength", fire_emission_strength);
-	}
+}
+
+void PhysXFlowSimulation3D::set_temperature_range(float p_range) {
+	temperature_range = MAX(p_range, 0.001f);
+}
+
+void PhysXFlowSimulation3D::set_shadow_steps(int p_steps) {
+	shadow_steps = CLAMP(p_steps, 0, 128);
+}
+
+void PhysXFlowSimulation3D::set_cpu_readback(bool p_enabled) {
+	cpu_readback = p_enabled;
 }
 
 void PhysXFlowSimulation3D::set_debug_stats(bool p_enabled) {
@@ -949,6 +1014,12 @@ void PhysXFlowSimulation3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_fire_emission"), &PhysXFlowSimulation3D::get_fire_emission);
 	ClassDB::bind_method(D_METHOD("set_fire_emission_strength", "strength"), &PhysXFlowSimulation3D::set_fire_emission_strength);
 	ClassDB::bind_method(D_METHOD("get_fire_emission_strength"), &PhysXFlowSimulation3D::get_fire_emission_strength);
+	ClassDB::bind_method(D_METHOD("set_temperature_range", "range"), &PhysXFlowSimulation3D::set_temperature_range);
+	ClassDB::bind_method(D_METHOD("get_temperature_range"), &PhysXFlowSimulation3D::get_temperature_range);
+	ClassDB::bind_method(D_METHOD("set_shadow_steps", "steps"), &PhysXFlowSimulation3D::set_shadow_steps);
+	ClassDB::bind_method(D_METHOD("get_shadow_steps"), &PhysXFlowSimulation3D::get_shadow_steps);
+	ClassDB::bind_method(D_METHOD("set_cpu_readback", "enabled"), &PhysXFlowSimulation3D::set_cpu_readback);
+	ClassDB::bind_method(D_METHOD("get_cpu_readback"), &PhysXFlowSimulation3D::get_cpu_readback);
 	ClassDB::bind_method(D_METHOD("set_debug_stats", "enabled"), &PhysXFlowSimulation3D::set_debug_stats);
 	ClassDB::bind_method(D_METHOD("get_debug_stats"), &PhysXFlowSimulation3D::get_debug_stats);
 
@@ -984,8 +1055,12 @@ void PhysXFlowSimulation3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "fog_density", PROPERTY_HINT_RANGE, "0.0,64.0,0.1"), "set_fog_density", "get_fog_density");
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "smoke_albedo"), "set_smoke_albedo", "get_smoke_albedo");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "fire_emission"), "set_fire_emission", "get_fire_emission");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "temperature_range", PROPERTY_HINT_RANGE, "0.01,20.0,0.01,or_greater"), "set_temperature_range", "get_temperature_range");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "shadow_steps", PROPERTY_HINT_RANGE, "0,128,1"), "set_shadow_steps", "get_shadow_steps");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "fire_emission_strength", PROPERTY_HINT_RANGE, "0.0,32.0,0.1"), "set_fire_emission_strength", "get_fire_emission_strength");
-	ADD_GROUP("Debug", "debug");
+	ADD_GROUP("Queries", "");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cpu_readback"), "set_cpu_readback", "get_cpu_readback");
+	ADD_GROUP("Debug", "debug_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug_stats"), "set_debug_stats", "get_debug_stats");
 }
 

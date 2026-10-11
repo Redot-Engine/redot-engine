@@ -38,6 +38,7 @@
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/templates/vector.h"
+#include "servers/rendering/rendering_server.h"
 
 #include <string.h>
 
@@ -73,6 +74,57 @@ NvFlowFloat4x4 FlowSimulation::_to_flow_velocity_matrix(const Transform3D &p_xfo
 	return m;
 }
 
+// ---- Context (RenderingDevice or the SDK's own fallback device) -----------
+
+NvFlowContextInterface *FlowSimulation::_context_iface() const {
+	if (using_rd && rd_context != nullptr) {
+		return FlowContextRD::get_interface();
+	}
+	return runtime != nullptr ? runtime->context_interface() : nullptr;
+}
+
+NvFlowContext *FlowSimulation::_context() const {
+	if (using_rd && rd_context != nullptr) {
+		return FlowContextRD::get_flow_context(rd_context);
+	}
+	return runtime != nullptr ? runtime->context() : nullptr;
+}
+
+void FlowSimulation::_flush_frame(uint64_t *r_frame_id) {
+	if (using_rd && rd_context != nullptr) {
+		// The RD context fences every frame it submits; completion is gated
+		// on the context's own frame id (the one this flush is about to
+		// schedule its fence under).
+		if (r_frame_id != nullptr) {
+			*r_frame_id = FlowContextRD::get_interface()->getCurrentFrame(FlowContextRD::get_flow_context(rd_context));
+		}
+		FlowContextRD::flush(rd_context);
+		return;
+	}
+	if (runtime != nullptr) {
+		runtime->flush(r_frame_id);
+	} else if (r_frame_id != nullptr) {
+		*r_frame_id = 0;
+	}
+}
+
+uint64_t FlowSimulation::_last_frame_completed() const {
+	if (using_rd && rd_context != nullptr) {
+		return FlowContextRD::get_interface()->getLastFrameCompleted(FlowContextRD::get_flow_context(rd_context));
+	}
+	return runtime != nullptr ? runtime->get_last_frame_completed() : 0;
+}
+
+String FlowSimulation::get_backend_name() const {
+	if (using_rd && rd_context != nullptr) {
+		return "rd";
+	}
+	if (runtime != nullptr && runtime->is_available()) {
+		return runtime->get_backend_name();
+	}
+	return String();
+}
+
 // ---- Lifecycle -----------------------------------------------------------
 
 FlowSimulation::~FlowSimulation() {
@@ -95,12 +147,20 @@ void FlowSimulation::_destroy_grid() {
 	}
 	if (grid != nullptr && runtime != nullptr) {
 		// Make sure no in-flight GPU work still references the grid before
-		// destroying it (the grid's transient resources retire with frames).
-		runtime->wait_idle();
-		runtime->get_grid_interface()->destroyGrid(runtime->context(), grid);
+		// destroying it (the grid's transient resources retire with frames;
+		// on the RD path everything defers behind flush() instead).
+		if (!using_rd) {
+			runtime->wait_idle();
+		}
+		runtime->get_grid_interface()->destroyGrid(_context(), grid);
 		runtime->grid_destroyed();
 		grid = nullptr;
 	}
+	if (rd_context != nullptr) {
+		FlowContextRD::destroy(rd_context);
+		rd_context = nullptr;
+	}
+	using_rd = false;
 }
 
 void FlowSimulation::configure(const FlowSimGridConfig &p_config) {
@@ -118,6 +178,18 @@ void FlowSimulation::configure(const FlowSimGridConfig &p_config) {
 	}
 	grid_config = p_config;
 
+	// The grid runs on Godot's own RenderingDevice whenever one exists (the
+	// gas never leaves VRAM; Flow's ray marcher composites it into the scene
+	// color). Headless and Compatibility have no RenderingDevice: fall back
+	// to the SDK's own Vulkan/CPU device -- the v1 path the headless test
+	// suite still drives. A grid can't switch context families while alive,
+	// so a device change rebuilds it.
+	RenderingDevice *rd = RenderingServer::get_singleton()->get_rendering_device();
+	const bool want_rd = rd != nullptr;
+	if (grid != nullptr && using_rd != want_rd) {
+		_destroy_grid();
+	}
+
 	NvFlowGridInterface *gi = runtime->get_grid_interface();
 	if (gi->createGrid == nullptr) {
 		return;
@@ -129,8 +201,19 @@ void FlowSimulation::configure(const FlowSimGridConfig &p_config) {
 	if (grid != nullptr) {
 		_destroy_grid();
 	}
-	grid = gi->createGrid(runtime->context_interface(), runtime->context(),
-			runtime->get_op_list(), runtime->get_ext_op_list(), &desc);
+	if (want_rd) {
+		rd_context = FlowContextRD::create(rd);
+		grid = gi->createGrid(FlowContextRD::get_interface(), FlowContextRD::get_flow_context(rd_context),
+				runtime->get_op_list(), runtime->get_ext_op_list(), &desc);
+		using_rd = grid != nullptr;
+	} else {
+		if (!runtime->ensure_device()) {
+			using_rd = false;
+			return;
+		}
+		grid = gi->createGrid(runtime->context_interface(), runtime->context(),
+				runtime->get_op_list(), runtime->get_ext_op_list(), &desc);
+	}
 	if (grid != nullptr) {
 		runtime->grid_created();
 		// Fresh grid -> fresh params database (they are paired by the grid's
@@ -141,19 +224,26 @@ void FlowSimulation::configure(const FlowSimGridConfig &p_config) {
 		}
 	} else {
 		ERR_PRINT("[Flow] createGrid failed.");
+		if (rd_context != nullptr) {
+			FlowContextRD::destroy(rd_context);
+			rd_context = nullptr;
+		}
+		using_rd = false;
 	}
 }
 
 void FlowSimulation::reset() {
-	if (grid == nullptr || runtime == nullptr || !runtime->is_available()) {
+	if (grid == nullptr || runtime == nullptr || _context() == nullptr) {
 		return;
 	}
 	NvFlowGridInterface *gi = runtime->get_grid_interface();
 	NvFlowGridDesc desc = {};
 	desc.maxLocations = MAX(64u, grid_config.max_blocks);
 	desc.maxLocationsIsosurface = 0u;
-	runtime->wait_idle();
-	gi->resetGrid(runtime->context(), grid, &desc);
+	if (!using_rd) {
+		runtime->wait_idle();
+	}
+	gi->resetGrid(_context(), grid, &desc);
 	for (ReadbackSlot &s : slots) {
 		s.inflight.frame_index = 0;
 		s.consumed = true;
@@ -205,16 +295,61 @@ static void apply_settings_to_layer(NvFlowGridSimulateLayerParams &r_layer, cons
 	r_layer.summaryAllocate = NvFlowSummaryAllocateParams_default;
 }
 
+// Fills the offscreen (colormap + shadow) and render (raymarch tuning) layer
+// params from the node's render settings. The snapshot database points into
+// these members, so they live for the duration of the committed frame.
+void FlowSimulation::_apply_render_params(const FlowRenderSettings &p_render) {
+	const float colormap_max = MAX(p_render.temperature_range, 0.001f);
+
+	offscreen_params = NvFlowGridOffscreenLayerParams_default;
+	offscreen_params.luid = 1;
+	offscreen_params.layer = 0;
+	offscreen_params.level = 0;
+	NvFlowShadowParams &shadow = offscreen_params.shadow;
+	shadow.enabled = p_render.shadow_steps > 0 ? NV_FLOW_TRUE : NV_FLOW_FALSE;
+	shadow.lightDirection = { p_render.light_direction.x, p_render.light_direction.y, p_render.light_direction.z };
+	shadow.attenuation = 0.9f * p_render.attenuation;
+	shadow.minIntensity = p_render.shadow_min_intensity;
+	shadow.numSteps = (NvFlowUint)MAX(1, p_render.shadow_steps);
+	shadow.colormapXMin = 0.0f;
+	shadow.colormapXMax = colormap_max;
+	for (int i = 0; i < FlowRenderSettings::COLORMAP_POINTS; i++) {
+		colormap_x[i] = (float)i / (float)(FlowRenderSettings::COLORMAP_POINTS - 1);
+		colormap_rgba[i] = { p_render.colormap_rgb[i][0], p_render.colormap_rgb[i][1], p_render.colormap_rgb[i][2], 1.0f };
+		colormap_scale[i] = 1.0f;
+	}
+	NvFlowRayMarchColormapParams &colormap = offscreen_params.colormap;
+	colormap.xPoints = colormap_x;
+	colormap.xPointCount = FlowRenderSettings::COLORMAP_POINTS;
+	colormap.rgbaPoints = colormap_rgba;
+	colormap.rgbaPointCount = FlowRenderSettings::COLORMAP_POINTS;
+	colormap.colorScalePoints = colormap_scale;
+	colormap.colorScalePointCount = FlowRenderSettings::COLORMAP_POINTS;
+	colormap.colorScale = 1.0f;
+
+	render_layer_params = NvFlowGridRenderLayerParams_default;
+	render_layer_params.luid = 1;
+	render_layer_params.layer = 0;
+	render_layer_params.level = 0;
+	render_layer_params.rayMarch.attenuation = p_render.attenuation;
+	render_layer_params.rayMarch.colormapXMin = 0.0f;
+	render_layer_params.rayMarch.colormapXMax = colormap_max;
+	offscreen_ptr = (NvFlowUint8 *)&offscreen_params;
+	render_ptr = (NvFlowUint8 *)&render_layer_params;
+}
+
 void FlowSimulation::step(double p_absolute_time, float p_delta,
 		const FlowEmitterData *p_emitters, int p_emitter_count,
 		const FlowColliderData *p_colliders, int p_collider_count,
-		const FlowSimSettings &p_settings, bool p_force_clear, bool p_paused) {
-	if (grid == nullptr || runtime == nullptr || !runtime->is_available()) {
+		const FlowSimSettings &p_settings, const FlowRenderSettings &p_render,
+		bool p_force_clear, bool p_paused, bool p_want_readback) {
+	NvFlowGridInterface *gi = runtime != nullptr ? runtime->get_grid_interface() : nullptr;
+	NvFlowContextInterface *ci = _context_iface();
+	NvFlowContext *fc = _context();
+	if (grid == nullptr || gi == nullptr || ci == nullptr || fc == nullptr) {
 		return; // slots age out via consumed flags; nothing to invalidate
 	}
 	step_entry_time = p_absolute_time; // FLOW-8: readback stamps use THIS step's time
-	NvFlowContextInterface *ci = runtime->context_interface();
-	NvFlowGridInterface *gi = runtime->get_grid_interface();
 	const uint64_t usec0 = Time::get_singleton()->get_ticks_usec();
 
 	apply_settings_to_layer(layer_params, p_settings);
@@ -386,11 +521,19 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 	static const NvFlowReflectDataType *kSphereType = &NvFlowGridEmitterSphereParams_NvFlowReflectDataType;
 	static const NvFlowReflectDataType *kBoxType = &NvFlowGridEmitterBoxParams_NvFlowReflectDataType;
 	static const NvFlowReflectDataType *kMeshType = &NvFlowGridEmitterMeshParams_NvFlowReflectDataType;
+	static const NvFlowReflectDataType *kOffscreenType = &NvFlowGridOffscreenLayerParams_NvFlowReflectDataType;
+	static const NvFlowReflectDataType *kRenderType = &NvFlowGridRenderLayerParams_NvFlowReflectDataType;
+
+	// Render-path params (offscreen colormap/shadow + raymarch tuning); the
+	// snapshot database points into the members, so they live on the sim.
+	_apply_render_params(p_render);
 
 	// instanceDatas is an array of POINTERS to instances.
 	NvFlowGridSimulateLayerParams *layer_ptr = &layer_params;
+	NvFlowGridOffscreenLayerParams *offscreen_ptr_ptr = &offscreen_params;
+	NvFlowGridRenderLayerParams *render_ptr_ptr = &render_layer_params;
 
-	NvFlowDatabaseTypeSnapshot type_snapshots[4] = {};
+	NvFlowDatabaseTypeSnapshot type_snapshots[6] = {};
 	type_snapshots[0].version = 1;
 	type_snapshots[0].dataType = kSimLayerType;
 	type_snapshots[0].instanceDatas = reinterpret_cast<NvFlowUint8 **>(&layer_ptr);
@@ -407,11 +550,19 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 	type_snapshots[3].dataType = kMeshType;
 	type_snapshots[3].instanceDatas = reinterpret_cast<NvFlowUint8 **>(mesh_ptrs.ptr());
 	type_snapshots[3].instanceCount = mesh_ptrs.size();
+	type_snapshots[4].version = 1;
+	type_snapshots[4].dataType = kOffscreenType;
+	type_snapshots[4].instanceDatas = reinterpret_cast<NvFlowUint8 **>(&offscreen_ptr_ptr);
+	type_snapshots[4].instanceCount = 1;
+	type_snapshots[5].version = 1;
+	type_snapshots[5].dataType = kRenderType;
+	type_snapshots[5].instanceDatas = reinterpret_cast<NvFlowUint8 **>(&render_ptr_ptr);
+	type_snapshots[5].instanceCount = 1;
 
 	NvFlowDatabaseSnapshot db_snapshot = {};
 	db_snapshot.version = 1;
 	db_snapshot.typeSnapshots = type_snapshots;
-	db_snapshot.typeSnapshotCount = 4;
+	db_snapshot.typeSnapshotCount = 6;
 
 	NvFlowGridParamsDescSnapshot snapshot = {};
 	snapshot.snapshot = db_snapshot;
@@ -469,28 +620,31 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 		print_line(dump);
 	}
 
-	gi->simulate(runtime->context(), grid, &params_desc, p_force_clear ? NV_FLOW_TRUE : NV_FLOW_FALSE);
+	gi->simulate(fc, grid, &params_desc, p_force_clear ? NV_FLOW_TRUE : NV_FLOW_FALSE);
 
 	// --- Record readback copies for this frame (alternating slot) ------------
 	// FLOW-1 (paused): the uploaded fog texture already holds the last decoded
 	// frame and persists on the GPU -- recording fresh copies while paused
 	// made poll_readback deliver "new" (identical) frames forever, so the
 	// node re-uploaded identical data at physics rate. Skip recording when
-	// paused without the keep-simulating escape hatch.
-	const bool record_readback = !p_paused || p_settings.simulate_when_paused;
+	// paused without the keep-simulating escape hatch. On the RenderingDevice
+	// path the readback is also opt-in (p_want_readback): the GPU raymarcher
+	// renders straight from the grid, so the CPU copy exists only for the
+	// query API (smoke sampling / bounds).
+	const bool record_readback = p_want_readback && (!p_paused || p_settings.simulate_when_paused);
 	ReadbackSlot &slot = slots[record_slot & 1]; // the flush tail stamps this slot
 	if (record_readback) {
 		record_slot++;
 		_record_readback_copies(slot, ci, gi);
 	}
 
-	gi->offscreen(runtime->context(), grid, &params_desc);
+	gi->offscreen(fc, grid, &params_desc);
 
 	if (diag_flags & DIAG_SPARSE_LAYOUT) {
 		static int dump_frame = 0;
 		if ((dump_frame++ % 30) == 0) {
 			NvFlowGridRenderData rd = {};
-			gi->getRenderData(runtime->context(), grid, &rd);
+			gi->getRenderData(fc, grid, &rd);
 			const NvFlowSparseParams &sp2 = rd.sparseParams;
 			print_line(vformat("[Flow] renderData: densityTex=%d sparseBuf=%d levels=%d layers=%d locs=%d activeBlocks=%d",
 					rd.densityTexture != nullptr ? 1 : 0, rd.sparseBuffer != nullptr ? 1 : 0,
@@ -521,13 +675,13 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 	frames_simulated++;
 	sim_time = p_absolute_time;
 
-	// Flush, then stamp this slot's copy with the frame id the queue
-	// reports. flush() returns 0 when nothing was submitted (e.g. the grid
-	// had no render data yet) -- the copy then stays unstampable and is
-	// dropped rather than left waiting on an id that never completes.
+	// Flush, then stamp this slot's copy with the frame id completion is
+	// gated on. The id is 0 when nothing was submitted (e.g. the grid had no
+	// render data yet) -- the copy then stays unstampable and is dropped
+	// rather than left waiting on an id that never completes.
 	const uint64_t usec1 = Time::get_singleton()->get_ticks_usec();
 	uint64_t flushed_frame = 0;
-	runtime->flush(&flushed_frame);
+	_flush_frame(&flushed_frame);
 	if (flushed_frame > 0) {
 		slot.inflight.frame_index = flushed_frame;
 		slot.consumed = false;
@@ -539,11 +693,12 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 // Records texture + sparse-table copies into the persistent readback
 // buffers, and snapshots the CPU-side sparse layout that matches the frame.
 void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContextInterface *p_ci, NvFlowGridInterface *p_gi) {
-	if (runtime == nullptr || !runtime->is_available()) {
+	NvFlowContext *fc = _context();
+	if (fc == nullptr || p_ci == nullptr) {
 		return;
 	}
 	NvFlowGridRenderData render_data = {};
-	p_gi->getRenderData(runtime->context(), grid, &render_data);
+	p_gi->getRenderData(fc, grid, &render_data);
 	if (render_data.densityTexture == nullptr || render_data.sparseBuffer == nullptr) {
 		return;
 	}
@@ -573,7 +728,7 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 		return;
 	}
 
-	NvFlowBufferTransient *dst_tex = p_ci->registerBufferAsTransient(runtime->context(), r_slot.texture_buffer);
+	NvFlowBufferTransient *dst_tex = p_ci->registerBufferAsTransient(fc, r_slot.texture_buffer);
 	if (dst_tex == nullptr) {
 		return;
 	}
@@ -587,7 +742,7 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 	copy_tex.bufferRowPitch = level.dim.x * bytes_per_pixel;
 	copy_tex.bufferDepthPitch = (uint64_t)level.dim.x * level.dim.y * bytes_per_pixel;
 	copy_tex.debugLabel = "godotFlowDensityReadback";
-	p_ci->addPassCopyTextureToBuffer(runtime->context(), &copy_tex);
+	p_ci->addPassCopyTextureToBuffer(fc, &copy_tex);
 
 	// Sparse table copy: bytes needed = last offset used by the level
 	// (blockLevelOffsetLocal + 32 uints per location, plus slack).
@@ -595,7 +750,7 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 	if (table_bytes > 0) {
 		_ensure_readback_buffers(r_slot, texture_bytes, table_bytes);
 		if (r_slot.table_buffer != nullptr) {
-			NvFlowBufferTransient *dst_table = p_ci->registerBufferAsTransient(runtime->context(), r_slot.table_buffer);
+			NvFlowBufferTransient *dst_table = p_ci->registerBufferAsTransient(fc, r_slot.table_buffer);
 			if (dst_table != nullptr) {
 				NvFlowPassCopyBufferParams copy_tbl = {};
 				copy_tbl.src = render_data.sparseBuffer;
@@ -604,7 +759,7 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 				copy_tbl.dstOffset = 0;
 				copy_tbl.numBytes = table_bytes;
 				copy_tbl.debugLabel = "godotFlowTableReadback";
-				p_ci->addPassCopyBuffer(runtime->context(), &copy_tbl);
+				p_ci->addPassCopyBuffer(fc, &copy_tbl);
 			}
 		}
 	}
@@ -641,18 +796,25 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 // ---- Readback buffers ----------------------------------------------------
 
 void FlowSimulation::_ensure_readback_buffers(ReadbackSlot &r_slot, uint64_t p_texture_bytes, uint64_t p_table_bytes) {
-	NvFlowContextInterface *ci = runtime->context_interface();
-	NvFlowContext *ctx = runtime->context();
+	NvFlowContextInterface *ci = _context_iface();
+	NvFlowContext *fc = _context();
+	if (ci == nullptr || fc == nullptr) {
+		return;
+	}
 	if (p_texture_bytes > 0 && (r_slot.texture_buffer == nullptr || r_slot.texture_buffer_bytes < p_texture_bytes)) {
 		if (r_slot.texture_buffer != nullptr) {
-			runtime->wait_idle();
-			ci->destroyBuffer(ctx, r_slot.texture_buffer);
+			// The RD context defers frees behind flush(); only the fallback
+			// device needs an explicit idle before destroying.
+			if (!using_rd) {
+				runtime->wait_idle();
+			}
+			ci->destroyBuffer(fc, r_slot.texture_buffer);
 			r_slot.texture_buffer = nullptr;
 		}
 		NvFlowBufferDesc desc = {};
 		desc.usageFlags = eNvFlowBufferUsage_bufferCopyDst;
 		desc.sizeInBytes = p_texture_bytes;
-		r_slot.texture_buffer = ci->createBuffer(ctx, eNvFlowMemoryType_readback, &desc);
+		r_slot.texture_buffer = ci->createBuffer(fc, eNvFlowMemoryType_readback, &desc);
 		r_slot.texture_buffer_bytes = p_texture_bytes;
 		if (r_slot.texture_buffer == nullptr) {
 			ERR_PRINT(vformat("[Flow] failed to allocate %d byte density readback buffer.", (int64_t)p_texture_bytes));
@@ -661,14 +823,16 @@ void FlowSimulation::_ensure_readback_buffers(ReadbackSlot &r_slot, uint64_t p_t
 	}
 	if (p_table_bytes > 0 && (r_slot.table_buffer == nullptr || r_slot.table_buffer_bytes < p_table_bytes)) {
 		if (r_slot.table_buffer != nullptr) {
-			runtime->wait_idle();
-			ci->destroyBuffer(ctx, r_slot.table_buffer);
+			if (!using_rd) {
+				runtime->wait_idle();
+			}
+			ci->destroyBuffer(fc, r_slot.table_buffer);
 			r_slot.table_buffer = nullptr;
 		}
 		NvFlowBufferDesc desc = {};
 		desc.usageFlags = eNvFlowBufferUsage_bufferCopyDst;
 		desc.sizeInBytes = p_table_bytes;
-		r_slot.table_buffer = ci->createBuffer(ctx, eNvFlowMemoryType_readback, &desc);
+		r_slot.table_buffer = ci->createBuffer(fc, eNvFlowMemoryType_readback, &desc);
 		r_slot.table_buffer_bytes = p_table_bytes;
 		if (r_slot.table_buffer == nullptr) {
 			ERR_PRINT(vformat("[Flow] failed to allocate %d byte table readback buffer.", (int64_t)p_table_bytes));
@@ -681,17 +845,19 @@ void FlowSimulation::_release_readback_buffers() {
 	if (runtime == nullptr) {
 		return;
 	}
-	if (runtime->is_available()) {
-		runtime->wait_idle();
-		NvFlowContextInterface *ci = runtime->context_interface();
-		NvFlowContext *ctx = runtime->context();
+	NvFlowContextInterface *ci = _context_iface();
+	NvFlowContext *fc = _context();
+	if (ci != nullptr && fc != nullptr) {
+		if (!using_rd) {
+			runtime->wait_idle();
+		}
 		for (ReadbackSlot &s : slots) {
 			if (s.texture_buffer != nullptr) {
-				ci->destroyBuffer(ctx, s.texture_buffer);
+				ci->destroyBuffer(fc, s.texture_buffer);
 				s.texture_buffer = nullptr;
 			}
 			if (s.table_buffer != nullptr) {
-				ci->destroyBuffer(ctx, s.table_buffer);
+				ci->destroyBuffer(fc, s.table_buffer);
 				s.table_buffer = nullptr;
 			}
 			s.texture_buffer_bytes = 0;
@@ -743,10 +909,10 @@ static float half_to_float_fast(uint16_t h) {
 }
 
 bool FlowSimulation::poll_readback(FlowReadbackFrame &r_frame) {
-	if (runtime == nullptr || !runtime->is_available()) {
+	if (runtime == nullptr) {
 		return false;
 	}
-	const uint64_t completed = runtime->get_last_frame_completed();
+	const uint64_t completed = _last_frame_completed();
 	for (ReadbackSlot &s : slots) {
 		if (s.consumed || s.inflight.frame_index == 0) {
 			continue;
@@ -764,19 +930,19 @@ bool FlowSimulation::poll_readback(FlowReadbackFrame &r_frame) {
 }
 
 bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_frame) {
-	NvFlowContextInterface *ci = runtime->context_interface();
-	NvFlowContext *ctx = runtime->context();
-	if (r_slot.texture_buffer == nullptr || r_slot.table_buffer == nullptr) {
+	NvFlowContextInterface *ci = _context_iface();
+	NvFlowContext *fc = _context();
+	if (ci == nullptr || fc == nullptr || r_slot.texture_buffer == nullptr || r_slot.table_buffer == nullptr) {
 		return false;
 	}
-	const uint32_t *table = static_cast<const uint32_t *>(ci->mapBuffer(ctx, r_slot.table_buffer));
-	const uint16_t *tex = static_cast<const uint16_t *>(ci->mapBuffer(ctx, r_slot.texture_buffer));
+	const uint32_t *table = static_cast<const uint32_t *>(ci->mapBuffer(fc, r_slot.table_buffer));
+	const uint16_t *tex = static_cast<const uint16_t *>(ci->mapBuffer(fc, r_slot.texture_buffer));
 	if (table == nullptr || tex == nullptr) {
 		if (tex != nullptr) {
-			ci->unmapBuffer(ctx, r_slot.texture_buffer);
+			ci->unmapBuffer(fc, r_slot.texture_buffer);
 		}
 		if (table != nullptr) {
-			ci->unmapBuffer(ctx, r_slot.table_buffer);
+			ci->unmapBuffer(fc, r_slot.table_buffer);
 		}
 		return false;
 	}
@@ -821,8 +987,8 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 	}
 	if (dims[0] < 1 || dims[1] < 1 || dims[2] < 1 ||
 			(uint64_t)dims[0] * dims[1] * dims[2] > (64u << 20)) {
-		ci->unmapBuffer(ctx, r_slot.texture_buffer);
-		ci->unmapBuffer(ctx, r_slot.table_buffer);
+		ci->unmapBuffer(fc, r_slot.texture_buffer);
+		ci->unmapBuffer(fc, r_slot.table_buffer);
 		return false;
 	}
 	if (diag_flags & DIAG_READBACK_STATS) {
@@ -901,8 +1067,8 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 		}
 	}
 
-	ci->unmapBuffer(ctx, r_slot.texture_buffer);
-	ci->unmapBuffer(ctx, r_slot.table_buffer);
+	ci->unmapBuffer(fc, r_slot.texture_buffer);
+	ci->unmapBuffer(fc, r_slot.table_buffer);
 	r_frame.active_blocks = valid_blocks;
 	r_frame.valid = true;
 
@@ -912,6 +1078,65 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 				dims[0], dims[1], dims[2], stride, r_frame.cell_size, r_frame.max_smoke, r_frame.max_temperature));
 	}
 	return true;
+}
+
+// ---- Render (Flow's own ray marcher, RenderingDevice path only) ------------
+
+uint64_t FlowSimulation::render(const float p_view[16], const float p_projection[16], uint32_t p_width, uint32_t p_height,
+		uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid) {
+	if (!is_using_rd() || grid == nullptr || runtime == nullptr || p_width == 0 || p_height == 0) {
+		return 0;
+	}
+	NvFlowContextInterface *ci = _context_iface();
+	NvFlowContext *fc = _context();
+	NvFlowGridInterface *gi = runtime->get_grid_interface();
+	NvFlowGridParamsInterface *gpi = runtime->get_grid_params_interface();
+	if (ci == nullptr || fc == nullptr || gi == nullptr || gpi == nullptr) {
+		return 0;
+	}
+
+	// The params snapshot from the step that last committed (sim_time) drives
+	// the offscreen colorization + the raymarch's render layer.
+	NvFlowGridParamsSnapshot *params_snapshot = gpi->getParamsSnapshot(grid_params, sim_time, 0llu);
+	NvFlowGridParamsDesc params_desc = {};
+	bool mapped = false;
+	if (params_snapshot != nullptr) {
+		mapped = gpi->mapParamsDesc(grid_params, params_snapshot, &params_desc);
+	}
+	if (!mapped) {
+		if (params_snapshot != nullptr) {
+			gpi->unmapParamsDesc(grid_params, params_snapshot);
+		}
+		return 0;
+	}
+
+	NvFlowFloat4x4 view;
+	NvFlowFloat4x4 projection;
+	memcpy(&view, p_view, sizeof(view));
+	memcpy(&projection, p_projection, sizeof(projection));
+
+	// Godot's scene depth (r32 float, reverse-Z in 0..1) and scene color
+	// (rgba16f), borrowed as transients for this frame only.
+	NvFlowTextureTransient *depth = (NvFlowTextureTransient *)FlowContextRD::import_texture(rd_context,
+			p_depth_rid, p_depth_width, p_depth_height, eNvFlowFormat_r32_float);
+	NvFlowTextureTransient *color = (NvFlowTextureTransient *)FlowContextRD::import_texture(rd_context,
+			p_color_rid, p_width, p_height, eNvFlowFormat_r16g16b16a16_float);
+	NvFlowTextureTransient *out = nullptr;
+	// offscreen() colorizes the grid (colormap + shadowing from the committed
+	// offscreen layer), render() raymarches it with the scene depth for
+	// occlusion and composites over the color.
+	gi->offscreen(fc, grid, &params_desc);
+	gi->render(fc, grid, &params_desc, &view, &projection, &projection,
+			p_width, p_height, p_depth_width, p_depth_height,
+			1.0f, depth, eNvFlowFormat_r16g16b16a16_float, color, &out);
+	gpi->unmapParamsDesc(grid_params, params_snapshot);
+	return out != nullptr ? FlowContextRD::transient_texture_rid(out) : 0;
+}
+
+void FlowSimulation::render_finish() {
+	if (is_using_rd() && rd_context != nullptr) {
+		FlowContextRD::flush(rd_context);
+	}
 }
 
 uint32_t FlowSimulation::get_active_block_count() const {

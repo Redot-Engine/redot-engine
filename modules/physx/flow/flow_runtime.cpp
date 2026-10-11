@@ -93,6 +93,54 @@ bool FlowRuntime::_init() {
 	ERR_FAIL_COND_V(initialized, false);
 	initialized = true;
 
+	NvFlowLoader *loader = memnew(NvFlowLoader);
+	loader_storage = loader;
+
+	String load_reason;
+	NvFlowLoaderInit(loader, _loader_error, &load_reason);
+	if (loader->module_nvflow == nullptr || loader->module_nvflowext == nullptr) {
+		unavailable_reason = load_reason.is_empty() ? String("nvflow.dll / nvflowext.dll not found next to the executable") : load_reason;
+		print_line(vformat("[Flow] runtime unavailable: %s", unavailable_reason));
+		NvFlowLoaderDestroy(loader);
+		memdelete(loader);
+		loader_storage = nullptr;
+		return false;
+	}
+
+	// Duplicate the interface tables out of the DLLs (ABI-safe copies).
+	op_list = loader->opList;
+	ext_op_list = loader->extOpList;
+	grid_interface = loader->gridInterface;
+	context_opt_interface = loader->contextOptInterface;
+	device_interface = loader->deviceInterface;
+	// The GridParams transaction interface isn't part of NvFlowLoader's
+	// struct -- fetch it from the ext DLL directly (same pattern as the
+	// thread pool below).
+	{
+		PFN_NvFlowGetGridParamsInterface get_gpi =
+				(PFN_NvFlowGetGridParamsInterface)NvFlowGetProcAddress(loader->module_nvflowext, "NvFlowGetGridParamsInterface");
+		if (get_gpi != nullptr) {
+			NvFlowGridParamsInterface *gpi = get_gpi();
+			if (gpi != nullptr) {
+				NvFlowGridParamsInterface_duplicate(&grid_params_interface, gpi);
+			}
+		}
+	}
+
+	available = true;
+	print_line("[Flow] NVIDIA Flow 2.2 loaded (grids on Godot's RenderingDevice; SDK device created only on fallback).");
+	return true;
+}
+
+bool FlowRuntime::_ensure_device_locked() {
+	if (device_ready) {
+		return true;
+	}
+	if (!available || loader_storage == nullptr) {
+		return false;
+	}
+	NvFlowLoader *loader = static_cast<NvFlowLoader *>(loader_storage);
+
 	// The Flow device settings live under physics/physx_3d/flow (registered
 	// with all module settings at SERVERS init). Read just these three keys
 	// here -- GLOBAL_GET falls back to the registered defaults if the runtime
@@ -109,12 +157,10 @@ bool FlowRuntime::_init() {
 	const bool validation = false;
 #endif
 
-	NvFlowLoader *loader = memnew(NvFlowLoader);
-	loader_storage = loader;
-
 	// Try the preferred API first, then the remaining candidates. AUTO means
 	// vulkan then cpu (d3d12 is reserved for a future same-backend fast path;
-	// it buys nothing for the CPU-readback render bridge of v1).
+	// the fallback path only serves headless runs and CPU readback, where
+	// vulkan is the useful one).
 	NvFlowContextApi candidates[2] = { eNvFlowContextApi_vulkan, eNvFlowContextApi_cpu };
 	if (api_preference == API_CPU) {
 		candidates[0] = eNvFlowContextApi_cpu;
@@ -132,30 +178,16 @@ bool FlowRuntime::_init() {
 		NvFlowLoaderInitDeviceAPI(loader, _loader_error, &attempt_reason, api);
 		if (loader->module_nvflow == nullptr || loader->module_nvflowext == nullptr) {
 			fail_reason = attempt_reason;
-			// DLLs load once per process; retrying the other API cannot fix a
-			// missing module, but the interface fetches below still must not run.
 			break;
 		}
 
-		// Duplicate the interface tables out of the DLLs (ABI-safe copies).
+		// Re-duplicate the interface tables for this API (the device
+		// interface export differs per API; the rest are stable).
 		op_list = loader->opList;
 		ext_op_list = loader->extOpList;
 		grid_interface = loader->gridInterface;
 		context_opt_interface = loader->contextOptInterface;
 		device_interface = loader->deviceInterface;
-		// The GridParams transaction interface isn't part of NvFlowLoader's
-		// struct -- fetch it from the ext DLL directly (same pattern as the
-		// thread pool below).
-		{
-			PFN_NvFlowGetGridParamsInterface get_gpi =
-					(PFN_NvFlowGetGridParamsInterface)NvFlowGetProcAddress(loader->module_nvflowext, "NvFlowGetGridParamsInterface");
-			if (get_gpi != nullptr) {
-				NvFlowGridParamsInterface *gpi = get_gpi();
-				if (gpi != nullptr) {
-					NvFlowGridParamsInterface_duplicate(&grid_params_interface, gpi);
-				}
-			}
-		}
 
 		if (device_interface.createDeviceManager == nullptr) {
 			fail_reason = "NvFlowDeviceInterface incomplete";
@@ -202,7 +234,7 @@ bool FlowRuntime::_init() {
 
 		NvFlowDeviceDesc device_desc = {};
 		device_desc.deviceIndex = resolved_device_index;
-		device_desc.enableExternalUsage = NV_FLOW_FALSE; // v1: CPU readback only, no external interop
+		device_desc.enableExternalUsage = NV_FLOW_FALSE; // fallback only: CPU readback, no external interop
 		device_desc.logPrint = &_log_print;
 		device = device_interface.createDevice(device_manager, &device_desc);
 		if (device == nullptr) {
@@ -255,29 +287,43 @@ bool FlowRuntime::_init() {
 		context_opt_interface.getContext(context_opt, &ctx_interface, &ctx);
 
 		active_api = api;
-		available = true;
-		print_line(vformat("[Flow] NVIDIA Flow 2.2 runtime initialized (backend=%s, deviceIndex=%d).",
+		device_ready = true;
+		print_line(vformat("[Flow] NVIDIA Flow 2.2 fallback device initialized (backend=%s, deviceIndex=%d).",
 				api == eNvFlowContextApi_vulkan ? "vulkan" : (api == eNvFlowContextApi_d3d12 ? "d3d12" : "cpu"),
 				device_desc.deviceIndex));
 		return true;
 	}
 
-	unavailable_reason = fail_reason.is_empty() ? "nvflow.dll/nvflowext.dll not found" : fail_reason;
-	print_line(vformat("[Flow] runtime unavailable: %s", unavailable_reason));
-	// Loader modules stay loaded only on success; otherwise release them.
-	if (!available) {
-		NvFlowLoaderDestroy(loader);
-		memdelete(loader);
-		loader_storage = nullptr;
-	}
+	unavailable_reason = fail_reason.is_empty() ? String("no Flow fallback device could be created") : fail_reason;
+	print_line(vformat("[Flow] fallback device unavailable: %s", unavailable_reason));
 	return false;
+}
+
+bool FlowRuntime::ensure_device() {
+	return _ensure_device_locked();
+}
+
+String FlowRuntime::get_backend_name() const {
+	if (device_ready) {
+		switch (active_api) {
+			case eNvFlowContextApi_vulkan:
+				return "vulkan";
+			case eNvFlowContextApi_d3d12:
+				return "d3d12";
+			case eNvFlowContextApi_cpu:
+				return "cpu";
+			default:
+				break;
+		}
+	}
+	return String();
 }
 
 void FlowRuntime::_destroy() {
 	if (loader_storage == nullptr) {
 		return;
 	}
-	if (available) {
+	if (device_ready) {
 		// No grids may outlive the runtime (each FlowSimulation releases its
 		// grid in its own destructor while holding a runtime reference).
 		if (grid_count != 0) {
@@ -303,13 +349,15 @@ void FlowRuntime::_destroy() {
 			thread_pool_interface_storage.destroy(thread_pool_storage);
 			thread_pool_storage = nullptr;
 		}
-		NvFlowLoader *loader = static_cast<NvFlowLoader *>(loader_storage);
-		NvFlowLoaderDestroy(loader);
-		memdelete(loader);
-		loader_storage = nullptr;
-		available = false;
-		print_line("[Flow] runtime shut down.");
+		device_ready = false;
+		print_line("[Flow] fallback device shut down.");
 	}
+	NvFlowLoader *loader = static_cast<NvFlowLoader *>(loader_storage);
+	NvFlowLoaderDestroy(loader);
+	memdelete(loader);
+	loader_storage = nullptr;
+	available = false;
+	print_line("[Flow] runtime shut down.");
 }
 
 FlowRuntime *FlowRuntime::acquire() {
@@ -348,7 +396,10 @@ void FlowRuntime::release_for_shutdown() {
 }
 
 void FlowRuntime::flush(uint64_t *r_flushed_frame_id) {
-	if (!available) {
+	if (!device_ready) {
+		if (r_flushed_frame_id != nullptr) {
+			*r_flushed_frame_id = 0;
+		}
 		return;
 	}
 	// Passes recorded through the ContextOpt wrapper (ours AND the grids')
@@ -371,14 +422,14 @@ void FlowRuntime::flush(uint64_t *r_flushed_frame_id) {
 }
 
 uint64_t FlowRuntime::get_last_frame_completed() const {
-	if (!available || queue == nullptr) {
+	if (!device_ready || queue == nullptr) {
 		return 0;
 	}
 	return device_interface.getLastFrameCompleted(queue);
 }
 
 void FlowRuntime::wait_idle() {
-	if (!available || queue == nullptr) {
+	if (!device_ready || queue == nullptr) {
 		return;
 	}
 	device_interface.waitIdle(queue);
@@ -386,7 +437,7 @@ void FlowRuntime::wait_idle() {
 
 FlowRuntime::Stats FlowRuntime::get_stats() const {
 	Stats stats;
-	if (!available) {
+	if (!device_ready) {
 		return stats;
 	}
 	switch (active_api) {

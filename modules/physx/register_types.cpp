@@ -83,6 +83,7 @@
 
 #ifdef GODOT_PHYSX_FLOW
 #include "flow/flow_runtime.h"
+#include "flow/physx_flow_render_effect.h"
 #include "flow/physx_flow_collider_3d.h"
 #include "flow/physx_flow_emitter_3d.h"
 #include "flow/physx_flow_simulation_3d.h"
@@ -209,5 +210,8 @@ void uninitialize_physx_module(ModuleInitializationLevel p_level) {
 	if (FlowRuntime::get_singleton() != nullptr) {
 		FlowRuntime::get_singleton()->release_for_shutdown();
 	}
+	// The shared render effect holds RenderingServer RIDs (its compositor
+	// effect + copy pipeline); release it while the RS can still free them.
+	PhysXFlowRenderEffect::free_shared();
 #endif
 }

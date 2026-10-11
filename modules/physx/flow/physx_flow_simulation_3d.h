@@ -41,16 +41,12 @@
 #include "core/variant/typed_array.h"
 #include "scene/3d/node_3d.h"
 
-class FogVolume;
-class ImageTexture3D;
-class ShaderMaterial;
-class Shader;
-class Gradient;
-class GradientTexture1D;
+class PhysXFlowRenderEffect;
 class PhysXFlowEmitter3D;
 class PhysXFlowCollider3D;
 class CollisionObject3D;
 class PhysicsBody3D;
+class RenderingDevice;
 
 // A NVIDIA Flow sparse-grid fluid/fire/smoke simulation (Flow 2.2, loaded at
 // runtime from nvflow.dll/nvflowext.dll -- see flow/docs/IMPLEMENTATION_
@@ -58,15 +54,15 @@ class PhysicsBody3D;
 // Flow grid is unbounded and sparse: blocks allocate anywhere in world space
 // around whatever the emitters touch, bounded by max_blocks. There is no
 // domain to freeze or reposition -- emitter/collider world transforms are
-// the whole authoring surface, and the FogVolume follows the active block
-// bounds each frame.
+// the whole authoring surface.
 //
-// Simulated on the shared Flow GPU runtime (one device for every
-// PhysXFlowSimulation3D in the process), stepped from the internal physics
-// tick. Rendering: the sparse density volume is read back (sparse data only)
-// and baked into an ImageTexture3D sampled by a stock FogVolume through a
-// small fog shader -- the same presentation path as PhysXGas3D, but with
-// Flow's real combustion channels behind it.
+// Simulated on Godot's own RenderingDevice whenever one exists (Forward+ and
+// Mobile): the gas never leaves VRAM, and PhysXFlowRenderEffect draws it
+// into the frame with Flow's own ray marcher (self-shadowed by the scene's
+// first DirectionalLight3D). Nothing crosses to the CPU except the opt-in
+// cpu_readback query copy. On headless / Compatibility there is no
+// RenderingDevice: the grid falls back to the SDK's own Vulkan/CPU device
+// (the v1 path the headless test suite still drives), with no drawing.
 class PhysXFlowSimulation3D : public Node3D {
 	GDCLASS(PhysXFlowSimulation3D, Node3D);
 
@@ -134,28 +130,58 @@ class PhysXFlowSimulation3D : public Node3D {
 	HashMap<RID, CachedShapeMesh> shape_mesh_cache;
 	HashSet<ObjectID> active_collider_ids; // current-pass collider nodes (FLOW-4 pruning)
 	int cache_validate_countdown = 60; // 1/sec at 60 Hz
-	bool texture_dirty = false; // FLOW-1: a decoded frame awaits texture upload
-	uint64_t texture_update_count = 0; // FLOW-1 diagnostics
 	uint64_t frame_count = 0;
 
 	// Body transforms of kinematic bodies that report no velocity, for
 	// finite-difference estimates (keyed by node instance id).
 	HashMap<ObjectID, Transform3D> kinematic_last_transforms;
 
-	// --- Rendering ----------------------------------------------------------
+	// --- Rendering (Flow's own GPU ray marcher) ------------------------------
 	bool volumetric_render = true;
-	float fog_density = 24.0f;
+	// Smoke opacity in the ray march, per unit of smoke per meter. The old
+	// FogVolume's density scale was linear (24 read well there); the ray
+	// marcher's attenuation is exponential, so the default maps 1/10th.
+	float fog_density = 2.4f;
 	Color smoke_albedo = Color(0.9f, 0.9f, 0.9f);
 	bool fire_emission = true;
 	float fire_emission_strength = 6.0f;
+	// Temperature the colormap spans (the colormap's x axis: 0..range).
+	float temperature_range = 2.0f;
+	// Self-shadowing reach of the gas, in steps of 3/4 of a cell: 48 covers
+	// ~1.8 m at the default 25 cm cells -- fewer leaves wide gas lit almost
+	// evenly. 0 disables shadowing.
+	int shadow_steps = 48;
 	bool debug_stats = false;
 
-	FogVolume *fog_volume = nullptr;
-	Ref<ImageTexture3D> density_texture;
-	Vector3i density_texture_dims;
-	Ref<ShaderMaterial> flow_material;
-	Ref<Shader> flow_shader;
+	// Optional CPU copy of the gas for the query API (get_last_max_smoke,
+	// bounds): one full decode every READBACK_INTERVAL steps. The GPU render
+	// path never touches it. On the fallback path (no RenderingDevice) there
+	// is no render to show and readback is the only data channel, so it runs
+	// regardless of this flag.
+	bool cpu_readback = true;
+	static constexpr int READBACK_INTERVAL = 4;
+
 	FlowReadbackFrame last_frame;
+	uint64_t texture_update_count = 0; // decoded readback frames (FLOW-1 diagnostic)
+
+	// The render effect calls this per view, on the render thread.
+	friend class PhysXFlowRenderEffect;
+	void render_rd(PhysXFlowRenderEffect *p_effect, RenderingDevice *p_rd, const float p_view[16], const float p_projection[16],
+			const Size2i &p_size, const RID &p_depth, const RID &p_color);
+	// Where the gas roughly is (its emitters' middle), for drawing flows
+	// back to front. Written by _step, read on the render thread.
+	Vector3 draw_center;
+
+	RenderingDevice *rendering_device = nullptr; // captured at start; null on the fallback path
+	ObjectID attached_world;
+
+	// Render-side counters (diagnostics).
+	uint64_t render_calls = 0;
+	uint64_t render_outputs = 0;
+
+	// First visible DirectionalLight3D, looked up every so often.
+	ObjectID light_id;
+	int light_search_countdown = 0;
 
 	// Editor-friendly diagnostics (also the test hooks).
 	bool available = false;
@@ -168,8 +194,8 @@ class PhysXFlowSimulation3D : public Node3D {
 	void _resolve_transients(double p_delta, LocalVector<FlowEmitterData> &r_emitters);
 	void _resolve_colliders(LocalVector<FlowColliderData> &r_colliders, double p_delta);
 	void _update_render();
-	void _ensure_fog_volume();
-	void _update_volumetric_render();
+	void _gather_light(Vector3 &r_direction, Color &r_color, Color &r_ambient);
+	void _fill_render_settings(FlowRenderSettings &r_settings);
 	uint64_t _luid_for(ObjectID p_id);
 
 	bool _build_server_shape_mesh(const RID &p_shape_rid, CachedShapeMesh &r_cache);
@@ -263,8 +289,17 @@ public:
 	bool get_fire_emission() const { return fire_emission; }
 	void set_fire_emission_strength(float p_strength);
 	float get_fire_emission_strength() const { return fire_emission_strength; }
+	void set_temperature_range(float p_range);
+	float get_temperature_range() const { return temperature_range; }
+	void set_shadow_steps(int p_steps);
+	int get_shadow_steps() const { return shadow_steps; }
+	void set_cpu_readback(bool p_enabled);
+	bool get_cpu_readback() const { return cpu_readback; }
 	void set_debug_stats(bool p_enabled);
 	bool get_debug_stats() const { return debug_stats; }
+
+	// For the render effect's back-to-front sort (render thread).
+	Vector3 get_draw_center() const { return draw_center; }
 
 	PhysXFlowSimulation3D() {}
 	~PhysXFlowSimulation3D();
