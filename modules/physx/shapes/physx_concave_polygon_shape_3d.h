@@ -48,6 +48,7 @@ public:
 	virtual int translate_face_index(int p_face_index) const override {
 		return back_face_collision ? p_face_index / 2 : p_face_index;
 	}
+	virtual bool has_backface_collision() const override { return back_face_collision; }
 
 	virtual void set_data(const Variant &p_data) override;
 	virtual Variant get_data() const override;

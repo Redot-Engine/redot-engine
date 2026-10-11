@@ -125,6 +125,43 @@ physx::PxQueryHitType::Enum PhysXQueryFilterCallback::postFilter(
 		const physx::PxQueryHit &hit,
 		const physx::PxShape *shape,
 		const physx::PxRigidActor *actor) {
-	// Pre-filter already applied all Godot semantics; no post-filter needed.
+	// Raycast back-face rule (only armed by intersect_ray). Everything else
+	// pre-filters all Godot semantics; no post-filter needed.
+	if (ray_backface_filtering && shape && shape->userData) {
+		const PhysXShape3D *shape_bp = static_cast<const PhysXShape3D *>(shape->userData);
+		if (!shape_bp->has_backface_collision() && shape_bp->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON) {
+			// One-sided mesh: a hit from the back NEVER counts, even when the
+			// query asked for back faces (eMESH_BOTH_SIDES made PhysX report
+			// it; Godot's one-sided trimeshes stay one-sided for rays).
+			// Geometric test: the hit is a back hit when the triangle's front
+			// normal points along the ray.
+			const physx::PxTriangleMeshGeometry &mesh_geom = static_cast<const physx::PxTriangleMeshGeometry &>(shape->getGeometry());
+			const physx::PxTransform mesh_pose = actor ? actor->getGlobalPose() * shape->getLocalPose() : physx::PxTransform(physx::PxIdentity);
+			physx::PxTriangle tri;
+			physx::PxMeshQuery::getTriangle(mesh_geom, mesh_pose, hit.faceIndex, tri);
+			physx::PxVec3 tri_n;
+			tri.normal(tri_n);
+			// getTriangle's normal is Godot's face front (the cook's winding
+			// reversal puts the CCW normal where Godot's clockwise front
+			// points). A back hit has the face front running ALONG the ray.
+			const physx::PxVec3 rd(ray_dir_x, ray_dir_y, ray_dir_z);
+			if (tri_n.dot(rd) > 0.0f) {
+				return physx::PxQueryHitType::eNONE;
+			}
+			return physx::PxQueryHitType::eBLOCK;
+		}
+		if (shape_bp->has_backface_collision()) {
+			// The doubled cook fronts every triangle twice: the flipped copy
+			// is a BACK-face hit and only counts when the query asked for it.
+			// (Redot interleaves the copies -- original at even cooked
+			// indices, flipped at odd -- so the parity of the cooked face
+			// index tells them apart; translate_face_index() maps both to the
+			// same source face for the reported face_index.)
+			const bool flipped_copy = (hit.faceIndex & 1) != 0;
+			if (flipped_copy && !ray_hit_back_faces) {
+				return physx::PxQueryHitType::eNONE;
+			}
+		}
+	}
 	return physx::PxQueryHitType::eBLOCK;
 }

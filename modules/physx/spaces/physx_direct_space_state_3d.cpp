@@ -125,6 +125,14 @@ static constexpr int PHYSX_QUERY_MAX_RESULTS = 256;
 // artifact.
 static bool _sweep_forward_hit_blocking(const physx::PxSweepHit &p_hit, physx::PxVec3 &r_normal);
 
+// One-sided concave meshes (backface_collision off) never interact from
+// their back side; defined below (used by rest_info, the motion recovery,
+// cast and collide phases). Zero motion dir disables the moving-out
+// shortcut and lets the behind-every-overlapped-triangle test decide.
+static bool _skip_one_sided_overlap(const PhysXShape3D *p_blueprint, physx::PxShape *p_mesh_shape,
+		const physx::PxTransform &p_mesh_pose, float p_depth, const physx::PxVec3 &p_push_dir,
+		const physx::PxVec3 &p_motion_dir, const physx::PxGeometry &p_mover_geom, const physx::PxTransform &p_mover_pose);
+
 PhysXDirectSpaceState3D::PhysXDirectSpaceState3D(PhysXSpace3D *p_space) {
 	space = p_space;
 }
@@ -259,6 +267,18 @@ bool PhysXDirectSpaceState3D::intersect_ray(const RayParameters &p_parameters, R
 	if (p_parameters.hit_back_faces) {
 		hit_flags |= physx::PxHitFlag::eMESH_BOTH_SIDES;
 	}
+
+	// Back-face rule for doubled-cook concave meshes: without the post-filter,
+	// a backface_collision-enabled mesh's flipped copies hit rays that never
+	// asked for back faces (the flipped triangle fronts the ray from behind).
+	filter_cb.ray_backface_filtering = true;
+	filter_cb.ray_hit_back_faces = p_parameters.hit_back_faces;
+	{
+		filter_cb.ray_dir_x = godot_dir.x;
+		filter_cb.ray_dir_y = godot_dir.y;
+		filter_cb.ray_dir_z = godot_dir.z;
+	}
+	filter_data.flags |= physx::PxQueryFlag::ePOSTFILTER;
 
 	// When hit_from_inside is true, the origin may be inside a shape. PhysX
 	// raycasts don't reliably report zero-distance inside hits (especially for
@@ -756,6 +776,24 @@ bool PhysXDirectSpaceState3D::rest_info(const ShapeParameters &p_parameters, Sha
 			continue;
 		}
 
+		// One-sided concave meshes (backface_collision off): a query
+		// overlapping the mesh from its BACK gets no rest result — Godot's
+		// one-sided trimeshes have no "resting on the back side", and
+		// reporting the far face's plane lets the scene-side depenetration
+		// fling a one-way platform's understider up onto it (the platform
+		// jump-snap). Zero motion dir: the moving-out shortcut can't fire;
+		// the behind-every-overlapped-triangle test decides.
+		{
+			const PhysXShape3D *shape_bp = overlap.shape && overlap.shape->userData
+					? static_cast<const PhysXShape3D *>(overlap.shape->userData)
+					: nullptr;
+			if (_skip_one_sided_overlap(shape_bp, overlap.shape, hit_pose,
+						penetration_depth, mtd_dir, physx::PxVec3(0.0f),
+						query_geom.any(), query_pose)) {
+				continue;
+			}
+		}
+
 		if (penetration_depth > best_depth) {
 			best_depth = penetration_depth;
 			best = &overlap;
@@ -976,7 +1014,7 @@ bool PhysXDirectSpaceState3D::body_test_motion(const PhysXBody3D &p_body, const 
 	// RECOVER (Depenetrate initial overlaps)
 	Vector3 recovery;
 	_motion_shapes_fill(p_body);
-	bool recovered = _body_motion_recover(p_body, transform, margin, _motion_shape_scratch, self_and_excluded, p_parameters.exclude_objects, recovery);
+	bool recovered = _body_motion_recover(p_body, transform, motion.normalized(), margin, _motion_shape_scratch, self_and_excluded, p_parameters.exclude_objects, recovery);
 	// Godot always lifts the working pose by the recovery (godot_space_3d
 	// test_body_motion: body_transform.origin += recover_motion) — the cast
 	// and contact gather must run from the depenetrated position in both
@@ -1123,7 +1161,39 @@ void PhysXDirectSpaceState3D::_motion_shapes_fill(const PhysXBody3D &p_body) con
 	}
 }
 
-bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, const Transform3D &p_transform, float p_margin,
+static bool _skip_one_sided_overlap(const PhysXShape3D *p_blueprint, physx::PxShape *p_mesh_shape,
+		const physx::PxTransform &p_mesh_pose, float p_depth, const physx::PxVec3 &p_push_dir,
+		const physx::PxVec3 &p_motion_dir, const physx::PxGeometry &p_mover_geom, const physx::PxTransform &p_mover_pose) {
+	if (!p_blueprint || p_blueprint->get_type() != PhysicsServer3D::SHAPE_CONCAVE_POLYGON || p_blueprint->has_backface_collision()) {
+		return false;
+	}
+	if (p_motion_dir.dot(p_push_dir) > 0.5f) {
+		return true; // (a) leaving along the push
+	}
+	if (p_depth >= 0.0f && p_depth <= 0.05f) {
+		return false; // shallow front-side overlap: a real block
+	}
+	const physx::PxTriangleMeshGeometry &mesh_geom = static_cast<const physx::PxTriangleMeshGeometry &>(p_mesh_shape->getGeometry());
+	constexpr physx::PxU32 MAX_TRIS = 64;
+	physx::PxU32 tris[MAX_TRIS];
+	bool overflow = false;
+	const physx::PxU32 count = physx::PxMeshQuery::findOverlapTriangleMesh(p_mover_geom, p_mover_pose, mesh_geom, p_mesh_pose, tris, MAX_TRIS, 0, overflow);
+	if (count == 0 || overflow) {
+		return false;
+	}
+	for (physx::PxU32 i = 0; i < count; i++) {
+		physx::PxTriangle tri;
+		physx::PxMeshQuery::getTriangle(mesh_geom, p_mesh_pose, tris[i], tri);
+		physx::PxVec3 tri_n;
+		tri.normal(tri_n);
+		if (tri_n.dot(p_mover_pose.p - tri.verts[0]) >= 0.0f) {
+			return false; // in front of at least one overlapped triangle: a real block
+		}
+	}
+	return true; // behind every overlapped triangle: approached from the back
+}
+
+bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, const Transform3D &p_transform, const Vector3 &p_motion_dir, float p_margin,
 		const LocalVector<MotionShapeRef> &p_shapes, const HashSet<RID> &p_self_and_excluded, const HashSet<ObjectID> &p_excluded_objects, Vector3 &r_recovery) const {
 	r_recovery = Vector3();
 
@@ -1273,6 +1343,13 @@ bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, co
 					// rest separation, not a stuck body -- leave it alone.
 					const float effective_depth = penetration_depth - min_contact_depth;
 					if (is_pen && effective_depth > MIN_PENETRATION_THRESHOLD) {
+						// One-sided concave meshes (backface_collision off) are
+						// exempt from back-side recovery (see
+						// _skip_one_sided_overlap).
+						const physx::PxVec3 px_motion_dir(p_motion_dir.x, p_motion_dir.y, p_motion_dir.z);
+						if (overlap.shape && _skip_one_sided_overlap(ref.blueprint, overlap.shape, physx::PxShapeExt::getGlobalPose(*overlap.shape, *overlap.actor), penetration_depth, mtd_dir, px_motion_dir, body_geom.any(), global_shape_pose)) {
+							continue;
+						}
 						penetrating_in_this_iter = true;
 						Vector3 recovery_dir(mtd_dir.x, mtd_dir.y, mtd_dir.z);
 						_recover_scratch.push_back({ recovery_dir, effective_depth,
@@ -1326,6 +1403,13 @@ bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, co
 	return recovered;
 }
 
+// One-sided concave meshes (backface_collision off) never block from their
+// back side: PhysX's overlap/MTD treats every mesh triangle two-sided, so a
+// body jumping up through a one-way platform, or resting against a wall's
+// back, reads as stuck/overlapping on a face whose front points away from
+// the approach. Skipped when (a) the mover is leaving along the push, or
+// (b) the overlap is deep and the mover's query-pose origin is behind EVERY
+// overlapped triangle (it approached from the back).
 bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const Transform3D &p_transform,
 		const Vector3 &p_motion, bool p_collide_separation_ray, float p_rest_slack, const LocalVector<MotionShapeRef> &p_shapes,
 		const HashSet<RID> &p_self_and_excluded, const HashSet<ObjectID> &p_excluded_objects,
@@ -1442,6 +1526,15 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 				// slack-level overlaps because its margin-inflated recovery
 				// ejects to margin separation; see the documented module gap
 				// on query-margin inflation.)
+				// One-sided concave meshes (backface_collision off) are exempt
+				// from the stuck verdict when approached from their back (see
+				// _skip_one_sided_overlap).
+				if (-touch.distance > p_rest_slack && touch.actor && touch.shape &&
+						_skip_one_sided_overlap(shape_ref.blueprint, touch.shape,
+								physx::PxShapeExt::getGlobalPose(*touch.shape, *touch.actor),
+								-touch.distance, touch.normal, px_dir, geom.any(), shape_pose)) {
+					continue;
+				}
 				if (-touch.distance > p_rest_slack) {
 					shape_overlapped = true;
 					if (!stuck_hit || touch.distance < deepest_overlap) {
@@ -1456,6 +1549,16 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 			physx::PxVec3 face_normal;
 			if (!_sweep_forward_hit_blocking(touch, face_normal)) {
 				continue; // mesh edge artifact: not a forward block
+			}
+			// One-sided concave meshes (backface_collision off): a sweep hit
+			// whose triangle front normal points ALONG the motion is a hit on
+			// the face's BACK (the mover approached from behind) — Godot's
+			// one-sided trimeshes don't block from the back, so disregard it.
+			if (shape_ref.blueprint &&
+					shape_ref.blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
+					!shape_ref.blueprint->has_backface_collision() &&
+					face_normal.dot(px_dir) > 0.0f) {
+				continue; // back-face hit on a one-sided mesh: not a block
 			}
 
 			if (touch.distance <= min_hit_distance) {
@@ -1557,17 +1660,17 @@ bool PhysXDirectSpaceState3D::_body_motion_collide(const PhysXBody3D &p_body, co
 				// Scaled ray length, as in the recover phase.
 				const real_t ray_length = sep_ray->get_length() * p_body.get_body_scale().z;
 
-					physx::PxTransform shape_pose = body_pose * shape_ref.local_pose;
+				physx::PxTransform shape_pose = body_pose * shape_ref.local_pose;
 
-					// Ray direction = the SHAPE's composed +Z axis (see the
-					// recover phase: the placement rotation lives in
-					// ref.local_pose, not in the body transform).
-					const physx::PxVec3 px_shape_dir = shape_pose.q.rotate(physx::PxVec3(0, 0, 1));
+				// Ray direction = the SHAPE's composed +Z axis (see the
+				// recover phase: the placement rotation lives in
+				// ref.local_pose, not in the body transform).
+				const physx::PxVec3 px_shape_dir = shape_pose.q.rotate(physx::PxVec3(0, 0, 1));
 
-					// Adjust the ray origin to the base of the separation-ray shape
-					// (see the recover phase: the local pose carries the forward
-					// scaled half-length offset).
-					shape_pose.p -= px_shape_dir * (ray_length * 0.5f);
+				// Adjust the ray origin to the base of the separation-ray shape
+				// (see the recover phase: the local pose carries the forward
+				// scaled half-length offset).
+				shape_pose.p -= px_shape_dir * (ray_length * 0.5f);
 
 				// Single-hit callback (see the recover phase): the shared
 				// multi_hit callback's eTOUCH hits fall out of a default
@@ -1650,6 +1753,18 @@ bool PhysXDirectSpaceState3D::_body_motion_collide(const PhysXBody3D &p_body, co
 
 				// Godot: contacts shallower than min_allowed_depth are rest
 				// separation, not a collision (MIN(motion_length, margin*0.05)).
+				// One-sided concave meshes (backface_collision off) are exempt
+				// from back-side contacts (see _skip_one_sided_overlap) -- a
+				// character jumping up through a one-way platform must not be
+				// caught by the platform's top face while straddling it.
+				const Vector3 motion_dir_n = p_motion == Vector3() ? Vector3() : (p_motion / p_motion.length());
+				const physx::PxVec3 px_motion_dir(motion_dir_n.x, motion_dir_n.y, motion_dir_n.z);
+				if (is_pen && (real_t)penetration_depth >= (real_t)p_min_allowed_depth &&
+						_skip_one_sided_overlap(shape_ref.blueprint, overlap.shape,
+								physx::PxShapeExt::getGlobalPose(*overlap.shape, *overlap.actor),
+								penetration_depth, mtd_dir, px_motion_dir, body_geom.any(), global_shape_pose)) {
+					continue;
+				}
 				if (is_pen && (real_t)penetration_depth >= (real_t)p_min_allowed_depth) {
 					PhysicsServer3D::MotionCollision col;
 

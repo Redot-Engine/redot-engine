@@ -86,6 +86,20 @@ public:
 	/// point/shape/sweep queries never consult it (reference: godot_physics_3d
 	/// gathers pickable objects for _intersect_ray alone).
 	bool pick_ray = false;
+	/// Back-face rule for raycasts (intersect_ray only). Godot's contract: a
+	/// mesh back face counts as a hit only when the SHAPE has
+	/// backface_collision enabled AND the query asked for hit_back_faces.
+	/// Redot's concave cook duplicates every triangle with reversed winding
+	/// when backface_collision is on (front copies at even cooked indices,
+	/// flipped copies at odd ones), so the postFilter can tell them apart by
+	/// the cooked face index.
+	bool ray_backface_filtering = false;
+	bool ray_hit_back_faces = false;
+	/// Normalized ray direction (intersect_ray only), for the geometric
+	/// front/back test on one-sided meshes.
+	float ray_dir_x = 0.0f;
+	float ray_dir_y = 0.0f;
+	float ray_dir_z = 0.0f;
 
 	virtual physx::PxQueryHitType::Enum preFilter(
 			const physx::PxFilterData &filterData,

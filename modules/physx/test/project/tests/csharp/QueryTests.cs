@@ -41,7 +41,7 @@ internal static class QueryTests {
         s.Add("PHYSX-QUERY-028", "ray_pickable across bodies and areas; enforcement is ray-only", RayPickableMixed);
         s.Add("PHYSX-QUERY-029", "cast_motion overlapped start hits the wall behind the overlap", CastMotionOverlapDisregard);
         s.Add("PHYSX-QUERY-030", "rest_info picks the deepest of several overlaps", RestInfoDeepest);
-        s.Add("PHYSX-QUERY-031", "interior ray against backfaces reports the far wall at its real position", RayBackfaceInterior);
+        s.Add("PHYSX-QUERY-031", "one-sided wall never reports its back face, even to hit_back_faces rays", RayBackfaceInterior);
         s.Add("PHYSX-QUERY-032", "query margin inflates primitive query shapes (godot_physics contract)", QueryMarginInflation);
     }
 
@@ -374,11 +374,14 @@ internal static class QueryTests {
         w.AdoptShape(wall);
         w.MakeStatic(wall, Vector3.Zero);
 
+        // One-sided means one-sided for rays too (matching the built-in and
+        // Jolt): the wall's face front points away from the room, so a ray
+        // from inside sees only its back — and a back face on a
+        // backface_collision=false shape is never reported, not even with
+        // hit_back_faces=true (the query flag opts INTO back faces; the SHAPE
+        // still decides whether it has any).
         var hit = w.Ray(new Vector3(0, 1, 0), new Vector3(4, 1, 0), backFaces: true);
-        Assert.Require(hit.Count > 0, "backface-enabled ray hits the far wall from inside the room");
-        Assert.ExpectNear(hit["position"].AsVector3().X, 2f, 0.01f,
-            $"hit at the wall plane (got {hit["position"].AsVector3()})");
-        Assert.Expect(System.Math.Abs(hit["normal"].AsVector3().X) > 0.9f, "normal is the wall's face normal");
+        Assert.Expect(hit.Count == 0, "backface-enabled ray does not hit a one-sided wall's back face");
 
         var miss = w.Ray(new Vector3(0, 1, 0), new Vector3(4, 1, 0));
         Assert.Expect(miss.Count == 0, "with hit_back_faces=false the backface hit is not reported");

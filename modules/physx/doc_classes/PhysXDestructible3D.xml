@@ -47,6 +47,9 @@
 		</method>
 	</methods>
 	<members>
+		<member name="anchor" type="int" setter="set_anchor" getter="get_anchor" enum="PhysXDestructible3D.Anchor" default="0">
+			Static destructibles only ([member dynamic] off): which pieces of a fractured wall stay put instead of falling. [b]Framed[/b] keeps every piece still touching the intact mesh's sides, bottom or top (a wall built into something holds its place); [b]Grounded[/b] keeps only bottom-touching pieces (a freestanding wall drops its upper half in one rigid chunk); [b]None[/b] drops everything. Leaf debris always falls regardless of the mode.
+		</member>
 		<member name="asset_path" type="String" setter="set_asset_path" getter="get_asset_path">
 			Optional path override for where fracture chunks are spawned from.
 		</member>
@@ -106,4 +109,15 @@
 			</description>
 		</signal>
 	</signals>
+	<constants>
+		<constant name="ANCHOR_FRAMED" value="0" enum="Anchor">
+			Pieces still touching the intact mesh's sides, bottom or top stay static.
+		</constant>
+		<constant name="ANCHOR_GROUNDED" value="1" enum="Anchor">
+			Only pieces touching the intact mesh's bottom stay static.
+		</constant>
+		<constant name="ANCHOR_NONE" value="2" enum="Anchor">
+			Everything falls when fractured.
+		</constant>
+	</constants>
 </class>

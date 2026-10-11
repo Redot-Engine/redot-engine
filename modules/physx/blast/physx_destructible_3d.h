@@ -259,6 +259,20 @@ public:
 	void set_impact_strength(float p_strength) { impact_strength = p_strength; }
 	float get_impact_strength() const { return impact_strength; }
 
+	// Static destructibles only (dynamic ones burst into kicked debris):
+	// which pieces of a fractured wall stay put instead of falling. FRAMED
+	// keeps every piece still touching the intact mesh's side/bottom/top
+	// bounds (a wall built into something holds its place), GROUNDED keeps
+	// only bottom-touching pieces (a freestanding wall drops its upper half
+	// as a rigid, kick-less chunk), NONE drops everything.
+	enum Anchor {
+		ANCHOR_FRAMED,
+		ANCHOR_GROUNDED,
+		ANCHOR_NONE,
+	};
+	void set_anchor(Anchor p_anchor) { anchor = p_anchor; }
+	Anchor get_anchor() const { return anchor; }
+
 	// dynamic-only: damage fed into apply_radial_damage() per unit of
 	// impulse magnitude above impact_strength -- how readily an impact that
 	// does exceed the threshold actually breaks bonds.
@@ -364,6 +378,7 @@ private:
 	float mass = 1.0f;
 	bool auto_mass = true;
 	bool dynamic = false;
+	Anchor anchor = ANCHOR_FRAMED;
 	float health = 1.0f;
 	float impact_strength = 5.0f;
 	float impact_damage_scale = 1.0f;
@@ -388,6 +403,10 @@ private:
 	// set_mass() for why.
 	LocalVector<double> chunk_volumes;
 	double total_leaf_volume = 0.0;
+
+	// Per-chunk touching-face bits (ANCHOR_FACE_*), computed once per load
+	// against chunk 0's (the intact mesh's) bounds with a 2% tolerance.
+	LocalVector<uint8_t> chunk_faces;
 
 	struct ChunkVisual {
 		RID body;
@@ -450,6 +469,8 @@ private:
 	// (freeing its family slot); also drops its actor_pieces record.
 	void _retire_actor(NvBlastActor *p_actor);
 	void _compute_chunk_volumes();
+	void _compute_chunk_faces();
+	bool _island_anchored(const LocalVector<uint32_t> &p_chunks) const;
 	// mass distributed proportional to p_chunk_index's share of
 	// total_leaf_volume (floored so a sliver never gets a near-zero mass),
 	// except chunk 0 (the whole intact mesh), which just gets `mass` itself.
@@ -468,7 +489,8 @@ private:
 	// the viewport -- ChunkVisual::body/shape stay RID() in that case.
 	// p_actor: the live NvBlast actor this piece stands for, recorded for
 	// kill_y retirement (see _actor_has_live_piece).
-	void _spawn_piece(uint32_t p_chunk_index, const Transform3D &p_transform, const Vector3 &p_linear_velocity, bool p_physics = true, NvBlastActor *p_actor = nullptr);
+	void _spawn_piece(uint32_t p_chunk_index, const Transform3D &p_transform, const Vector3 &p_linear_velocity, bool p_physics = true, NvBlastActor *p_actor = nullptr,
+			PhysicsServer3D::BodyMode p_body_mode = PhysicsServer3D::BODY_MODE_RIGID, RID p_attach_body = RID());
 	// See set_gi_mode()'s own note on why this is needed at all.
 	void _apply_gi_mode(RenderingServer *p_rs, RID p_instance) const;
 	// Same idea as _apply_gi_mode(), covering the rest of the
@@ -490,6 +512,7 @@ private:
 	void _check_impact_fracture();
 };
 
+VARIANT_ENUM_CAST(PhysXDestructible3D::Anchor);
 VARIANT_ENUM_CAST(PhysXDestructible3D::GIMode);
 VARIANT_ENUM_CAST(PhysXDestructible3D::ShadowCastingSetting);
 VARIANT_ENUM_CAST(PhysXDestructible3D::VisibilityRangeFadeMode);

@@ -137,6 +137,11 @@ public:
 	 * implementation is the identity.
 	 */
 	virtual int translate_face_index(int p_face_index) const { return p_face_index; }
+	/// Whether this shape collides from both sides (ConcavePolygonShape3D's
+	/// backface_collision). Queries that must honor Godot's back-face rule
+	/// (a back face only counts when the shape allows it AND the query asks
+	/// for it) consult this through the shape blueprint.
+	virtual bool has_backface_collision() const { return false; }
 
 	// Shape data
 	virtual void set_data(const Variant &p_data) = 0;
