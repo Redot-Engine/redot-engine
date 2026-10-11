@@ -572,6 +572,19 @@ GDScriptTokenizer::Token GDScriptTokenizerText::annotation() {
 #define MIN_KEYWORD_LENGTH 2
 #define MAX_KEYWORD_LENGTH 11
 
+bool GDScriptTokenizer::Token::is_keyword() const {
+#define KEYWORD_CASE(keyword, token_type) case token_type:
+#define KEYWORD_GROUP_IGNORE(group)
+	switch (type) {
+		KEYWORDS(KEYWORD_GROUP_IGNORE, KEYWORD_CASE)
+		return true;
+		default:
+			return false;
+	}
+#undef KEYWORD_CASE
+#undef KEYWORD_GROUP_IGNORE
+}
+
 #ifdef DEBUG_ENABLED
 void GDScriptTokenizerText::make_keyword_list() {
 #define KEYWORD_LINE(keyword, token_type) keyword,

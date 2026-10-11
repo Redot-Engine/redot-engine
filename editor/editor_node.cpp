@@ -3502,7 +3502,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			OS::get_singleton()->shell_open("https://github.com/Redot-Engine/redot-proposals#readme");
 		} break;
 		case HELP_SEND_DOCS_FEEDBACK: {
-			OS::get_singleton()->shell_open("https://github.com/Redot-Engine/redot-docs/issues");
+			OS::get_singleton()->shell_open("https://github.com/Redot-Engine/Redot-Documentation/issues");
 		} break;
 		case HELP_COMMUNITY: {
 			OS::get_singleton()->shell_open("https://redotengine.org/community");

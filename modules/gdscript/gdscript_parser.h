@@ -297,6 +297,7 @@ public:
 		// Type type = NO_ERROR;
 		String message;
 		int line = 0, column = 0;
+		ScriptLanguage::ScriptError::RelatedError related_error;
 	};
 
 #ifdef TOOLS_ENABLED
@@ -1608,7 +1609,7 @@ private:
 	}
 
 	void clear();
-	void push_error(const String &p_message, const Node *p_origin = nullptr);
+	void push_error(const String &p_message, const Node *p_origin = nullptr, const ScriptLanguage::ScriptError::RelatedError &p_related_error = {});
 #ifdef DEBUG_ENABLED
 	void push_warning(const Node *p_source, GDScriptWarning::Code p_code, const Vector<String> &p_symbols);
 	template <typename... Symbols>
