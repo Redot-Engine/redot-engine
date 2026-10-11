@@ -115,7 +115,23 @@ void CameraRig3D::_notification(int p_what) {
 
 void CameraRig3D::_update_process_state() {
 	// Avoid processing every frame when no target-dependent behavior is enabled
-	set_process(ObjectDB::get_instance<Node3D>(target_id) != nullptr && (follow_target || look_at_target));
+	set_process(ObjectDB::get_instance<Node3D>(target_id) != nullptr && (follow_target || (look_at_target && camera_mode == THIRD_PERSON)));
+}
+
+void CameraRig3D::set_camera_mode(CameraMode p_mode) {
+	ERR_FAIL_COND(p_mode != THIRD_PERSON && p_mode != FIRST_PERSON);
+
+	if (camera_mode == p_mode) {
+		return;
+	}
+
+	camera_mode = p_mode;
+	position_initialized = false;
+	_update_process_state();
+}
+
+CameraRig3D::CameraMode CameraRig3D::get_camera_mode() const {
+	return camera_mode;
 }
 
 void CameraRig3D::set_target(Node3D *p_target) {
@@ -193,7 +209,7 @@ bool CameraRig3D::is_adopt_existing_camera_enabled() const {
 }
 
 Vector3 CameraRig3D::_get_effective_follow_offset() const {
-	if (!mouse_orbit_enabled) {
+	if (!mouse_orbit_enabled || camera_mode == FIRST_PERSON) {
 		return follow_offset;
 	}
 
@@ -250,7 +266,16 @@ void CameraRig3D::unhandled_input(const Ref<InputEvent> &p_event) {
 
 	const Vector2 relative = mouse_motion->get_relative();
 
-	mouse_orbit_yaw -= relative.x * mouse_orbit_sensitivity;
+	if (camera_mode == FIRST_PERSON) {
+		Node3D *target = get_target();
+
+		if (target) {
+			target->rotate_y(-relative.x * mouse_orbit_sensitivity);
+		}
+	} else {
+		mouse_orbit_yaw -= relative.x * mouse_orbit_sensitivity;
+	}
+
 	mouse_orbit_pitch = CLAMP(mouse_orbit_pitch - relative.y * mouse_orbit_sensitivity, mouse_orbit_pitch_min, mouse_orbit_pitch_max);
 }
 
@@ -276,11 +301,15 @@ void CameraRig3D::_ready_rig() {
 		position_initialized = true;
 	}
 
+	if (target && camera_mode == FIRST_PERSON) {
+		set_global_rotation(Vector3(0.0, target->get_global_rotation().y, 0.0));
+	}
+
 	Camera3D *camera = get_managed_camera();
 	set_process_unhandled_input(mouse_orbit_enabled);
 
 	if (camera) {
-		if (target && look_at_target) {
+		if (target && look_at_target && camera_mode == THIRD_PERSON) {
 			const Vector3 direction = target->get_global_position() - camera->get_global_position();
 
 			if (direction.length_squared() > CMP_EPSILON) {
@@ -293,6 +322,10 @@ void CameraRig3D::_ready_rig() {
 
 				camera->look_at(target->get_global_position(), up);
 			}
+		}
+
+		if (camera_mode == FIRST_PERSON) {
+			camera->set_rotation(Vector3(mouse_orbit_pitch, 0.0, 0.0));
 		}
 
 		camera->make_current();
@@ -324,7 +357,15 @@ void CameraRig3D::_process_rig(double p_delta) {
 		// Transform the offset through the target so it follows the target's orientation
 		const Vector3 desired_position = target->to_global(_get_effective_follow_offset());
 
-		if (!position_initialized || !position_smoothing_enabled) {
+		if (camera_mode == FIRST_PERSON) {
+			set_global_position(desired_position);
+			set_global_rotation(Vector3(0.0, target->get_global_rotation().y, 0.0));
+			position_initialized = true;
+
+			if (camera) {
+				camera->set_rotation(Vector3(mouse_orbit_pitch, 0.0, 0.0));
+			}
+		} else if (!position_initialized || !position_smoothing_enabled) {
 			set_global_position(desired_position);
 			position_initialized = true;
 		} else {
@@ -334,7 +375,7 @@ void CameraRig3D::_process_rig(double p_delta) {
 		}
 	}
 
-	if (look_at_target && camera) {
+	if (look_at_target && camera && camera_mode == THIRD_PERSON) {
 		const Vector3 target_position = target->get_global_position();
 		const Vector3 direction = target_position - camera->get_global_position();
 
@@ -352,6 +393,8 @@ void CameraRig3D::_process_rig(double p_delta) {
 }
 
 void CameraRig3D::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_camera_mode", "mode"), &CameraRig3D::set_camera_mode);
+	ClassDB::bind_method(D_METHOD("get_camera_mode"), &CameraRig3D::get_camera_mode);
 	ClassDB::bind_method(D_METHOD("set_target", "target"), &CameraRig3D::set_target);
 	ClassDB::bind_method(D_METHOD("get_target"), &CameraRig3D::get_target);
 	ClassDB::bind_method(D_METHOD("set_follow_offset", "offset"), &CameraRig3D::set_follow_offset);
@@ -377,6 +420,10 @@ void CameraRig3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_mouse_orbit_pitch_max"), &CameraRig3D::get_mouse_orbit_pitch_max);
 	ClassDB::bind_method(D_METHOD("get_mouse_orbit_yaw"), &CameraRig3D::get_mouse_orbit_yaw);
 
+	BIND_ENUM_CONSTANT(THIRD_PERSON);
+	BIND_ENUM_CONSTANT(FIRST_PERSON);
+
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "camera_mode", PROPERTY_HINT_ENUM, "Third Person,First Person"), "set_camera_mode", "get_camera_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "target", PROPERTY_HINT_NODE_TYPE, "Node3D"), "set_target", "get_target");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "follow_offset"), "set_follow_offset", "get_follow_offset");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "follow_target"), "set_follow_target", "is_follow_target_enabled");

@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="CameraRig3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
 	<brief_description>
-		A 3D camera rig that follows a target, smoothly adjusts its position, and keeps its camera pointed at the target.
+		A 3D camera rig that follows a target and supports first-person and third-person camera control.
 	</brief_description>
 	<description>
-		CameraRig3D is a camera controller that manages a Camera3D node to provide target following, position smoothing, automatic look-at behavior, and optional mouse orbit controls. The rig can create its own Camera3D child or adopt an existing Camera3D in its hierarchy, depending on [member adopt_existing_camera]. The managed camera is made current when the rig is initialized.
-		The [member target] property specifies the Node3D that the rig follows and looks at. The [member follow_offset] property defines the desired position relative to the target. When position smoothing is enabled, the rig moves towards this position gradually instead of snapping to it.
-		When [member mouse_orbit_enabled] is enabled, captured mouse movement rotates the follow offset around the target. The [member mouse_orbit_sensitivity], [member mouse_orbit_pitch_min], and [member mouse_orbit_pitch_max] properties control the orbit sensitivity and vertical rotation limits. The [method get_mouse_orbit_yaw] method returns the current horizontal orbit angle, which can be used for camera-relative movement.
-		CameraRig3D can be used for third-person cameras and other camera setups. Nodes such as [SpringArm3D] can be used to handle camera collision.
+		CameraRig3D is a camera controller that manages a [Camera3D] node to provide target following, position smoothing, automatic look-at behavior, and optional mouse controls. The rig can create its own Camera3D child or adopt an existing Camera3D in its hierarchy, depending on [member adopt_existing_camera]. The managed camera is made current when the rig is initialized.
+		The [member target] property specifies the [Node3D] that the rig follows. The [member follow_offset] property defines the desired position relative to the target. When position smoothing is enabled, the rig moves towards this position gradually instead of snapping to it.
+		The [member camera_mode] property selects between [constant THIRD_PERSON] and [constant FIRST_PERSON], as defined by [enum CameraMode]. In third-person mode, captured mouse movement rotates the follow offset around the target, and the camera can automatically look at the target. In first-person mode, horizontal mouse movement rotates the target, while vertical mouse movement controls the camera's pitch.
+		The [member mouse_orbit_enabled] property enables mouse controls. The [member mouse_orbit_sensitivity], [member mouse_orbit_pitch_min], and [member mouse_orbit_pitch_max] properties control mouse sensitivity and vertical rotation limits. The [method get_mouse_orbit_yaw] method returns the horizontal orbit angle used by third-person mode, which can be used for camera-relative movement.
+		CameraRig3D can be used for third-person cameras and first-person setups. Nodes such as [SpringArm3D] can be used to handle camera collision in third-person mode.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -15,44 +16,55 @@
 		<method name="get_mouse_orbit_yaw" qualifiers="const">
 			<return type="float" />
 			<description>
-				Returns the current horizontal mouse orbit angle in radians. This can be used to make character movement relative to the camera's horizontal orientation.
+				Returns the current horizontal mouse orbit angle in radians. This can be used to make character movement relative to the camera's horizontal orientation in third-person mode.
 			</description>
 		</method>
 	</methods>
 	<members>
+		<member name="camera_mode" type="int" setter="set_camera_mode" getter="get_camera_mode" enum="CameraRig3D.CameraMode" default="0">
+			The camera control mode. See [enum CameraMode].
+		</member>
 		<member name="adopt_existing_camera" type="bool" setter="set_adopt_existing_camera" getter="is_adopt_existing_camera_enabled" default="true">
 			If [code]true[/code], the rig searches for an existing [Camera3D] in its hierarchy instead of creating a new camera. Cameras inside nested viewports are ignored.
 		</member>
 		<member name="follow_offset" type="Vector3" setter="set_follow_offset" getter="get_follow_offset" default="Vector3(0, 2, 5)">
-			The desired position offset from the target, expressed in the target's local space. The offset is transformed by the target's global transform. When mouse orbit is enabled, the offset's Z component determines the orbit distance, while its X and Y components remain positional offsets.
+			The desired position offset from the target, expressed in the target's local space. The offset is transformed by the target's global transform. In third-person mode with mouse orbit enabled, the offset's Z component determines the orbit distance, while its X and Y components remain positional offsets.
 		</member>
 		<member name="follow_target" type="bool" setter="set_follow_target" getter="is_follow_target_enabled" default="true">
 			If [code]true[/code], the rig follows the target using [member follow_offset].
 		</member>
 		<member name="look_at_target" type="bool" setter="set_look_at_target" getter="is_look_at_target_enabled" default="true">
-			If [code]true[/code], the managed camera points towards the target.
+			If [code]true[/code], the managed camera points towards the target in third-person mode.
 		</member>
 		<member name="mouse_orbit_enabled" type="bool" setter="set_mouse_orbit_enabled" getter="is_mouse_orbit_enabled" default="false">
-			If [code]true[/code], captured mouse movement rotates the follow offset around the target. Mouse input is ignored while the mouse is not captured.
+			If [code]true[/code], captured mouse movement controls the camera. In third-person mode, it rotates the follow offset. In first-person mode, it rotates the target horizontally and the camera vertically. Mouse input is ignored while the mouse is not captured.
 		</member>
 		<member name="mouse_orbit_pitch_max" type="float" setter="set_mouse_orbit_pitch_max" getter="get_mouse_orbit_pitch_max" default="1.2">
-			The maximum vertical orbit angle in radians.
+			The maximum vertical mouse rotation angle in radians.
 		</member>
 		<member name="mouse_orbit_pitch_min" type="float" setter="set_mouse_orbit_pitch_min" getter="get_mouse_orbit_pitch_min" default="-1.2">
-			The minimum vertical orbit angle in radians.
+			The minimum vertical mouse rotation angle in radians.
 		</member>
 		<member name="mouse_orbit_sensitivity" type="float" setter="set_mouse_orbit_sensitivity" getter="get_mouse_orbit_sensitivity" default="0.003">
-			Scales mouse movement when calculating horizontal and vertical orbit angles. Higher values make the camera orbit faster.
+			Scales mouse movement when calculating horizontal and vertical rotation. Higher values make the camera controls more sensitive.
 		</member>
 		<member name="position_smoothing_enabled" type="bool" setter="set_position_smoothing_enabled" getter="is_position_smoothing_enabled" default="true">
-			If [code]true[/code], the rig smoothly interpolates towards its desired position after initialization. Otherwise, it moves directly to the desired position.
+			If [code]true[/code], the rig smoothly interpolates towards its desired position after initialization. Otherwise, it moves directly to the desired position. First-person mode updates the follow position directly.
 			[b]Note:[/b] During initialization, the rig is placed directly at the desired position.
 		</member>
 		<member name="position_smoothing_speed" type="float" setter="set_position_smoothing_speed" getter="get_position_smoothing_speed" default="8.0">
-			Controls how quickly the rig approaches its desired position when [member position_smoothing_enabled] is enabled. Higher values make the rig follow more quickly.
+			Controls how quickly the rig approaches its desired position when [member position_smoothing_enabled] is enabled. Higher values make the camera follow more quickly.
 		</member>
 		<member name="target" type="Node3D" setter="set_target" getter="get_target">
-			The [Node3D] that the rig follows and looks at. If no target is assigned, target-following and look-at updates are not performed. Changing the target resets the mouse orbit angles.
+			The [Node3D] that the rig follows and, in third-person mode, looks at. If no target is assigned, target-dependent updates are not performed. Changing the target resets the mouse orbit angles.
 		</member>
 	</members>
+	<constants>
+		<constant name="THIRD_PERSON" value="0" enum="CameraMode">
+			The camera orbits around the target and can look towards it.
+		</constant>
+		<constant name="FIRST_PERSON" value="1" enum="CameraMode">
+			The target controls horizontal rotation, while the camera controls vertical rotation.
+		</constant>
+	</constants>
 </class>

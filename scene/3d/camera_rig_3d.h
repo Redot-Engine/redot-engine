@@ -48,6 +48,13 @@ class InputEvent;
 class CameraRig3D : public Node3D {
 	GDCLASS(CameraRig3D, Node3D);
 
+public:
+	enum CameraMode {
+		THIRD_PERSON,
+		FIRST_PERSON,
+	};
+
+private:
 	ObjectID target_id;
 	ObjectID camera_id;
 
@@ -58,6 +65,7 @@ class CameraRig3D : public Node3D {
 	bool position_smoothing_enabled = true;
 	real_t position_smoothing_speed = 8.0;
 	bool adopt_existing_camera = true;
+	CameraMode camera_mode = THIRD_PERSON;
 
 	// Mouse orbit settings
 	bool mouse_orbit_enabled = false;
@@ -83,6 +91,9 @@ protected:
 	static void _bind_methods();
 
 public:
+	void set_camera_mode(CameraMode p_mode);
+	CameraMode get_camera_mode() const;
+
 	void set_target(Node3D *p_target);
 	Node3D *get_target() const;
 
@@ -125,3 +136,5 @@ public:
 	void _process_rig(double p_delta);
 	void _ready_rig();
 };
+
+VARIANT_ENUM_CAST(CameraRig3D::CameraMode);
