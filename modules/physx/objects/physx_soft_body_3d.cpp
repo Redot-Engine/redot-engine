@@ -539,6 +539,14 @@ void PhysXSoftBody3D::_refresh_contacts() {
 	contact_n.resize(n);
 	contact_p.resize(n);
 	contact_hit.resize(n);
+	// Grow the per-vertex tunneling memory (value-initialized; shrink is just
+	// a truncation).
+	while (contact_n_prev.size() < (uint32_t)n) {
+		contact_n_prev.push_back(Vector3());
+		contact_p_prev.push_back(Vector3());
+	}
+	contact_n_prev.resize(n);
+	contact_p_prev.resize(n);
 	for (int i = 0; i < n; i++) {
 		contact_hit[i] = 0;
 	}
@@ -568,11 +576,46 @@ void PhysXSoftBody3D::_refresh_contacts() {
 	const LocalVector<Vector3> &pos = solver.get_positions();
 	for (int i = 0; i < n; i++) {
 		if (solver.is_pinned(i)) {
+			contact_n_prev[i] = Vector3();
 			continue;
 		}
 		params.transform = Transform3D(Basis(), pos[i]);
 		PhysicsDirectSpaceState3D::ShapeRestInfo info;
-		if (!ss->rest_info(params, &info)) {
+		const bool has_hit = ss->rest_info(params, &info);
+
+		// Anti-tunnelling memory: a vertex squeezed past a thin collider's
+		// mid-plane flips rest_info's deepest-hit MTD to the FAR face, whose
+		// plane sits UNDER the vertex -- _resolve_contacts() would then read
+		// that as the allowed side and release it (a cascade blob escaped at
+		// y = -10 this way). While the vertex is still behind LAST frame's
+		// contact plane AND the query still sees a collider, that remembered
+		// plane is the truth for a static track: keep it, unless this frame's
+		// plane points in ROUGHLY the same direction (dot > 0.25 -- a genuinely
+		// rolling vertex's normal changes gradually, while a far face or a
+		// perpendicular side face sits at/below zero; accepting perpendicular
+		// planes would let a squeeze walk the memory around the box face by
+		// face and out). Once back on the plane's allowed side (or free of the
+		// collider), contact memory updates normally again.
+		if (contact_n_prev[i] != Vector3() &&
+				(pos[i] - contact_p_prev[i]).dot(contact_n_prev[i]) < 0.0f) {
+			if (has_hit && info.normal.dot(contact_n_prev[i]) > 0.25f) {
+				// A same-side hit: the fresh plane is the truth.
+				contact_n[i] = info.normal;
+				contact_p[i] = info.point;
+				contact_n_prev[i] = info.normal;
+				contact_p_prev[i] = info.point;
+			} else {
+				// Far-side plane, or no hit at all: hold the remembered
+				// top-side plane so the resolver keeps pushing the vertex out.
+				contact_n[i] = contact_n_prev[i];
+				contact_p[i] = contact_p_prev[i];
+			}
+			contact_hit[i] = 1;
+			contact_count++;
+			continue;
+		}
+		if (!has_hit) {
+			contact_n_prev[i] = Vector3();
 			continue;
 		}
 		// This backend's rest_info reports info.point as the closest point ON
@@ -587,6 +630,8 @@ void PhysXSoftBody3D::_refresh_contacts() {
 		const float penetration = radius - dist_to_surface;
 		contact_n[i] = info.normal;
 		contact_p[i] = info.point;
+		contact_n_prev[i] = info.normal;
+		contact_p_prev[i] = info.point;
 		contact_hit[i] = 1;
 		if (penetration > 0.0f) {
 			contact_count++;

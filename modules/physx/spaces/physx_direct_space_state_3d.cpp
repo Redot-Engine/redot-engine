@@ -1191,21 +1191,34 @@ bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, co
 
 					physx::PxTransform shape_pose = body_pose * ref.local_pose;
 
-					// Ray direction = the body-transformed local +Z axis. Don't
-					// hand-roll quaternion basis extraction — xform() is exact.
-					const Vector3 shape_dir = current_transform.basis.xform(Vector3(0, 0, 1)).normalized();
-					const physx::PxVec3 px_shape_dir(shape_dir.x, shape_dir.y, shape_dir.z);
+					// Ray direction = the SHAPE's composed +Z axis. The ray's
+					// rotation lives in the CollisionShape3D placement (baked
+					// into ref.local_pose), NOT in the body transform -- using
+					// the body basis alone cast the ray sideways for any
+					// rotated placement (e.g. the 90-degree X rotation that
+					// points a character's ray straight down).
+					const physx::PxVec3 px_shape_dir = shape_pose.q.rotate(physx::PxVec3(0, 0, 1));
 
 					// Adjust the ray origin to the base of the separation-ray shape.
 					// The attached PxShape's local pose carries the forward
 					// half-length offset (length * body Z scale — see the
 					// shape's get_local_pose), so walk back the same scaled
-					// half-length along the body's +Z axis to reach the base.
-					shape_pose.p -= px_shape_dir * (ray_length * p_body.get_body_scale().z * 0.5f);
+					// half-length along the shape's own +Z axis.
+					shape_pose.p -= px_shape_dir * (ray_length * 0.5f);
 
+					// The phase callback runs with multi_hit=true (the overlap
+					// path collects every overlap), which makes the preFilter
+					// return eTOUCH -- and this raycast uses a default
+					// PxRaycastBuffer whose touch capacity is ZERO: PhysX
+					// discards eTOUCH hits it cannot record and the query
+					// always reports a miss. The ray wants the single closest
+					// hit, so give it a single-hit callback.
+					PhysXQueryFilterCallback ray_filter_cb = filter_cb;
+					ray_filter_cb.multi_hit = false;
 					physx::PxRaycastBuffer ray_hit;
-					if (space->get_px_scene()->raycast(shape_pose.p, px_shape_dir, ray_length, ray_hit,
-								physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL, filter_data, &filter_cb)) {
+					const bool raycast_hit = space->get_px_scene()->raycast(shape_pose.p, px_shape_dir, ray_length, ray_hit,
+							physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL, filter_data, &ray_filter_cb);
+					if (raycast_hit) {
 						if (ray_hit.hasBlock) {
 							// Depth is how far the ray tip has passed the surface.
 							// block.distance is measured along the ray from its origin,
@@ -1544,19 +1557,25 @@ bool PhysXDirectSpaceState3D::_body_motion_collide(const PhysXBody3D &p_body, co
 				// Scaled ray length, as in the recover phase.
 				const real_t ray_length = sep_ray->get_length() * p_body.get_body_scale().z;
 
-				physx::PxTransform shape_pose = body_pose * shape_ref.local_pose;
+					physx::PxTransform shape_pose = body_pose * shape_ref.local_pose;
 
-				// Ray direction = body-transformed local +Z axis (see recover phase).
-				const Vector3 shape_dir = p_transform.basis.xform(Vector3(0, 0, 1)).normalized();
-				const physx::PxVec3 px_shape_dir(shape_dir.x, shape_dir.y, shape_dir.z);
+					// Ray direction = the SHAPE's composed +Z axis (see the
+					// recover phase: the placement rotation lives in
+					// ref.local_pose, not in the body transform).
+					const physx::PxVec3 px_shape_dir = shape_pose.q.rotate(physx::PxVec3(0, 0, 1));
 
-				// Adjust the ray origin to the base of the separation-ray shape
-				// (see the recover phase: the local pose carries the forward
-				// scaled half-length offset).
-				shape_pose.p -= px_shape_dir * (ray_length * p_body.get_body_scale().z * 0.5f);
+					// Adjust the ray origin to the base of the separation-ray shape
+					// (see the recover phase: the local pose carries the forward
+					// scaled half-length offset).
+					shape_pose.p -= px_shape_dir * (ray_length * 0.5f);
 
+				// Single-hit callback (see the recover phase): the shared
+				// multi_hit callback's eTOUCH hits fall out of a default
+				// PxRaycastBuffer.
+				PhysXQueryFilterCallback ray_filter_cb = filter_cb;
+				ray_filter_cb.multi_hit = false;
 				physx::PxRaycastBuffer ray_hit;
-				if (space->get_px_scene()->raycast(shape_pose.p, px_shape_dir, ray_length, ray_hit, physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL, filter_data, &filter_cb)) {
+				if (space->get_px_scene()->raycast(shape_pose.p, px_shape_dir, ray_length, ray_hit, physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL, filter_data, &ray_filter_cb)) {
 					if (ray_hit.hasBlock) {
 						PhysicsServer3D::MotionCollision col;
 

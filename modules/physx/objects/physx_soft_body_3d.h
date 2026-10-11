@@ -217,6 +217,14 @@ private:
 	LocalVector<Vector3> contact_n;
 	LocalVector<Vector3> contact_p;
 	LocalVector<uint8_t> contact_hit;
+	// Last frame's contact plane per vertex (the anti-tunnelling memory): a
+	// vertex squeezed past a thin collider's mid-plane flips rest_info's
+	// deepest-hit MTD to the far face, whose plane sits UNDER the vertex --
+	// without this memory the resolver would read that as the allowed side
+	// and release the vertex through the track. While a vertex is behind its
+	// remembered plane, that plane stays authoritative.
+	LocalVector<Vector3> contact_n_prev;
+	LocalVector<Vector3> contact_p_prev;
 	int contact_count = 0; // penetrating vertices at the last refresh
 
 	// Render point index -> live rigid attachment (GPU path, GAP-15).

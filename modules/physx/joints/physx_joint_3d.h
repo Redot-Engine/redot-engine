@@ -294,6 +294,15 @@ private:
 	/// joint X/Y/Z) to the drive rotation as an Euler-derived quaternion that
 	/// PhysX decomposes into twist/swing.
 	void _apply_g6dof_drive_position();
+	/// Resolves the axis's single PxD6Drive slot: a Godot 6DOF spring and
+	/// motor share one PhysX drive per axis, and the node pushes its
+	/// configuration in a fixed order (params, then flags — with
+	/// ENABLE_LINEAR_MOTOR last), so "last push wins" let a DISABLED motor's
+	/// zero-force-limit velocity servo clobber an installed spring. Resolves
+	/// the winner from the cached flags (spring > motor > no drive) and frees
+	/// the axis motion when a spring sits on a degenerate limit range (a
+	/// drive can only act on an axis that is not locked).
+	void _apply_g6dof_axis_drive(physx::PxD6Joint *p_d6, Vector3::Axis p_axis, bool p_angular);
 	/// Rebuilds and applies the cone-twist swing + twist limits from cone_twist_params.
 	void _apply_cone_twist_limits();
 	/// Applies the g6dof angular limit to the correct PhysX limit slot
