@@ -1170,13 +1170,14 @@ void destroy(Context *p_context) {
 	}
 	for (int i = 0; i < 3; i++) {
 		CopyTextureToBuffer &variant = c->copy_tex_to_buf[i];
-		if (variant.shader.is_valid()) {
-			c->rd->free(variant.shader);
-		}
 		for (int k = 0; k < 3; k++) {
 			if (variant.pipelines[k].is_valid()) {
 				c->rd->free(variant.pipelines[k]);
+				variant.pipelines[k] = RID();
 			}
+		}
+		if (variant.shader.is_valid()) {
+			c->rd->free(variant.shader);
 		}
 	}
 	c->rd->free(c->fence);

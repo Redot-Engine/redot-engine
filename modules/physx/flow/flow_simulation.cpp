@@ -129,7 +129,6 @@ String FlowSimulation::get_backend_name() const {
 
 FlowSimulation::~FlowSimulation() {
 	_destroy_grid();
-	_release_readback_buffers();
 	if (runtime != nullptr) {
 		runtime->release();
 		runtime = nullptr;
@@ -137,6 +136,11 @@ FlowSimulation::~FlowSimulation() {
 }
 
 void FlowSimulation::_destroy_grid() {
+	// Readback buffers FIRST: they live in the context, and this function
+	// destroys that context -- releasing them through it afterwards would
+	// hand freed pointers to a dead Context (v1's context outlived them;
+	// the RD path's does not).
+	_release_readback_buffers();
 	if (mapped_snapshot != nullptr && runtime != nullptr) {
 		runtime->get_grid_params_interface()->unmapParamsDesc(grid_params, mapped_snapshot);
 		mapped_snapshot = nullptr;
@@ -720,6 +724,20 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 			(uint64_t)level.dim.x * level.dim.y * level.dim.z * bytes_per_pixel;
 
 	if (texture_bytes == 0) {
+		return;
+	}
+	// The copy covers the level's FULL virtual dimension, which grows with
+	// the block budget: past ~512 MB a readback is not a query anymore, it
+	// is a device-spanning copy every step. Skip with a one-time warning
+	// instead -- rendering is unaffected; only the CPU query surface (max
+	// smoke / bounds) goes quiet.
+	constexpr uint64_t READBACK_BYTES_LIMIT = 512ull << 20;
+	if (texture_bytes > READBACK_BYTES_LIMIT) {
+		if (!readback_limit_warned) {
+			readback_limit_warned = true;
+			WARN_PRINT(vformat("[Flow] readback skipped: the grid's virtual volume is %d MB (limit %d MB). Rendering is unaffected; the CPU query surface (max smoke / bounds) is unavailable at this block budget.",
+					texture_bytes >> 20, READBACK_BYTES_LIMIT >> 20));
+		}
 		return;
 	}
 	_ensure_readback_buffers(r_slot, texture_bytes, 0);

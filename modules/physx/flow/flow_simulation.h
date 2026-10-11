@@ -295,6 +295,7 @@ private:
 	};
 	ReadbackSlot slots[2];
 	uint32_t record_slot = 0;
+	bool readback_limit_warned = false; // one warn per grid life
 
 	FlowReadbackFrame last_readback;
 	uint64_t frames_simulated = 0;

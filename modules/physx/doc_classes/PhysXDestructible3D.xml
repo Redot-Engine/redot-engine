@@ -9,10 +9,21 @@
 	<tutorials>
 	</tutorials>
 	<methods>
-		<method name="is_loaded" qualifiers="const">
-			<return type="bool" />
+		<method name="apply_radial_damage">
+			<return type="int" />
+			<param index="0" name="world_position" type="Vector3" />
+			<param index="1" name="damage" type="float" />
+			<param index="2" name="min_radius" type="float" />
+			<param index="3" name="max_radius" type="float" />
 			<description>
-				Returns [code]true[/code] once the assigned [member blast_asset] has been loaded and its chunk scene spawned.
+				Applies explosion-style damage at [param world_position], falloff from [param max_radius] to [param min_radius]. Chunks whose accumulated damage exceeds their health fracture off and [signal chunks_fractured] fires.
+			</description>
+		</method>
+		<method name="get_piece_chunk" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Which authored chunk piece [param index] renders/simulates; [code]4294967295[/code] when the index is out of range.
 			</description>
 		</method>
 		<method name="get_piece_count" qualifiers="const">
@@ -28,21 +39,10 @@
 				World transform of piece [param index]'s body; identity for an out-of-range index or an editor (render-only) piece.
 			</description>
 		</method>
-		<method name="get_piece_chunk" qualifiers="const">
-			<return type="int" />
-			<param index="0" name="index" type="int" />
+		<method name="is_loaded" qualifiers="const">
+			<return type="bool" />
 			<description>
-				Which authored chunk piece [param index] renders/simulates; [code]4294967295[/code] when the index is out of range.
-			</description>
-		</method>
-		<method name="apply_radial_damage">
-			<return type="void" />
-			<param index="0" name="world_position" type="Vector3" />
-			<param index="1" name="damage" type="float" />
-			<param index="2" name="min_radius" type="float" />
-			<param index="3" name="max_radius" type="float" />
-			<description>
-				Applies explosion-style damage at [param world_position], falloff from [param max_radius] to [param min_radius]. Chunks whose accumulated damage exceeds their health fracture off and [signal chunks_fractured] fires.
+				Returns [code]true[/code] once the assigned [member blast_asset] has been loaded and its chunk scene spawned.
 			</description>
 		</method>
 	</methods>
@@ -50,7 +50,7 @@
 		<member name="anchor" type="int" setter="set_anchor" getter="get_anchor" enum="PhysXDestructible3D.Anchor" default="0">
 			Static destructibles only ([member dynamic] off): which pieces of a fractured wall stay put instead of falling. [b]Framed[/b] keeps every piece still touching the intact mesh's sides, bottom or top (a wall built into something holds its place); [b]Grounded[/b] keeps only bottom-touching pieces (a freestanding wall drops its upper half in one rigid chunk); [b]None[/b] drops everything. Leaf debris always falls regardless of the mode.
 		</member>
-		<member name="asset_path" type="String" setter="set_asset_path" getter="get_asset_path">
+		<member name="asset_path" type="String" setter="set_asset_path" getter="get_asset_path" default="&quot;&quot;">
 			Optional path override for where fracture chunks are spawned from.
 		</member>
 		<member name="auto_mass" type="bool" setter="set_auto_mass" getter="get_auto_mass" default="true">
@@ -59,7 +59,9 @@
 		<member name="blast_asset" type="PhysXBlastAsset" setter="set_blast_asset" getter="get_blast_asset">
 			The authored asset to instance and fracture. See [PhysXBlastAuthoring] for authoring.
 		</member>
-		<member name="chunks_path" type="String" setter="set_chunks_path" getter="get_chunks_path">
+		<member name="cast_shadow" type="int" setter="set_cast_shadow" getter="get_cast_shadow" enum="PhysXDestructible3D.ShadowCastingSetting" default="1">
+		</member>
+		<member name="chunks_path" type="String" setter="set_chunks_path" getter="get_chunks_path" default="&quot;&quot;">
 			Optional path override for the spawned chunk debris.
 		</member>
 		<member name="collision_layer" type="int" setter="set_collision_layer" getter="get_collision_layer" default="1">
@@ -71,8 +73,15 @@
 		<member name="dynamic" type="bool" setter="set_dynamic" getter="get_dynamic" default="false">
 			If [code]true[/code], the intact destructible participates in physics; if [code]false[/code] it is static until fractured.
 		</member>
+		<member name="extra_cull_margin" type="float" setter="set_extra_cull_margin" getter="get_extra_cull_margin" default="0.0">
+		</member>
+		<member name="gi_mode" type="int" setter="set_gi_mode" getter="get_gi_mode" enum="PhysXDestructible3D.GIMode" default="1">
+		</member>
 		<member name="health" type="float" setter="set_health" getter="get_health" default="1.0">
 			Global damage pool. Reaching zero fractures the whole destructible.
+		</member>
+		<member name="ignore_occlusion_culling" type="bool" setter="set_ignore_occlusion_culling" getter="get_ignore_occlusion_culling" default="false">
+			If [code]true[/code], the chunk pieces' render instances are never occlusion-culled, mirroring [member GeometryInstance3D.ignore_occlusion_culling]. Applied to every existing piece on set and to pieces spawned afterwards.
 		</member>
 		<member name="impact_damage_scale" type="float" setter="set_impact_damage_scale" getter="get_impact_damage_scale" default="1.0">
 			Multiplier applied to collision impact damage.
@@ -83,20 +92,33 @@
 		<member name="impact_strength" type="float" setter="set_impact_strength" getter="get_impact_strength" default="5.0">
 			Minimum impulse magnitude that counts as a damaging impact.
 		</member>
-		<member name="ignore_occlusion_culling" type="bool" setter="set_ignore_occlusion_culling" getter="get_ignore_occlusion_culling" default="false">
-			If [code]true[/code], the chunk pieces' render instances are never occlusion-culled, mirroring [member GeometryInstance3D.ignore_occlusion_culling]. Applied to every existing piece on set and to pieces spawned afterwards.
-		</member>
 		<member name="kill_y" type="float" setter="set_kill_y" getter="get_kill_y" default="-1000.0">
 			World-space Y below which detached chunks are freed (and their Blast actors retired, so a later hit cannot re-spawn them).
 		</member>
+		<member name="lod_bias" type="float" setter="set_lod_bias" getter="get_lod_bias" default="1.0">
+		</member>
 		<member name="mass" type="float" setter="set_mass" getter="get_mass" default="1.0">
 			Mass used for detached chunks when [member auto_mass] is off.
+		</member>
+		<member name="material_overlay" type="Material" setter="set_material_overlay" getter="get_material_overlay">
+		</member>
+		<member name="material_override" type="Material" setter="set_material_override" getter="get_material_override">
 		</member>
 		<member name="shatter_speed" type="float" setter="set_shatter_speed" getter="get_shatter_speed" default="8.0">
 			Impact speed above which an impact is treated as an immediate shatter.
 		</member>
 		<member name="transparency" type="float" setter="set_transparency" getter="get_transparency" default="0.0">
 			Opacity of the chunk pieces' render instances ([code]0.0[/code] = fully opaque, [code]1.0[/code] = fully transparent). Applied to every existing piece on set and to pieces spawned afterwards.
+		</member>
+		<member name="visibility_range_begin" type="float" setter="set_visibility_range_begin" getter="get_visibility_range_begin" default="0.0">
+		</member>
+		<member name="visibility_range_begin_margin" type="float" setter="set_visibility_range_begin_margin" getter="get_visibility_range_begin_margin" default="0.0">
+		</member>
+		<member name="visibility_range_end" type="float" setter="set_visibility_range_end" getter="get_visibility_range_end" default="0.0">
+		</member>
+		<member name="visibility_range_end_margin" type="float" setter="set_visibility_range_end_margin" getter="get_visibility_range_end_margin" default="0.0">
+		</member>
+		<member name="visibility_range_fade_mode" type="int" setter="set_visibility_range_fade_mode" getter="get_visibility_range_fade_mode" enum="PhysXDestructible3D.VisibilityRangeFadeMode" default="0">
 		</member>
 	</members>
 	<signals>
@@ -110,6 +132,22 @@
 		</signal>
 	</signals>
 	<constants>
+		<constant name="GI_MODE_DISABLED" value="0" enum="GIMode">
+		</constant>
+		<constant name="GI_MODE_STATIC" value="1" enum="GIMode">
+		</constant>
+		<constant name="GI_MODE_DYNAMIC" value="2" enum="GIMode">
+		</constant>
+		<constant name="SHADOW_CASTING_SETTING_OFF" value="0" enum="ShadowCastingSetting">
+		</constant>
+		<constant name="SHADOW_CASTING_SETTING_ON" value="1" enum="ShadowCastingSetting">
+		</constant>
+		<constant name="SHADOW_CASTING_SETTING_DOUBLE_SIDED" value="2" enum="ShadowCastingSetting">
+		</constant>
+		<constant name="SHADOW_CASTING_SETTING_SHADOWS_ONLY" value="3" enum="ShadowCastingSetting">
+		</constant>
+		<constant name="VISIBILITY_RANGE_FADE_DISABLED" value="0" enum="VisibilityRangeFadeMode">
+		</constant>
 		<constant name="ANCHOR_FRAMED" value="0" enum="Anchor">
 			Pieces still touching the intact mesh's sides, bottom or top stay static.
 		</constant>
@@ -118,6 +156,10 @@
 		</constant>
 		<constant name="ANCHOR_NONE" value="2" enum="Anchor">
 			Everything falls when fractured.
+		</constant>
+		<constant name="VISIBILITY_RANGE_FADE_SELF" value="1" enum="VisibilityRangeFadeMode">
+		</constant>
+		<constant name="VISIBILITY_RANGE_FADE_DEPENDENCIES" value="2" enum="VisibilityRangeFadeMode">
 		</constant>
 	</constants>
 </class>

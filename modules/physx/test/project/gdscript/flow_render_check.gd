@@ -42,9 +42,10 @@ func _initialize() -> void:
 
 	sim = ClassDB.instantiate("PhysXFlowSimulation3D") as Node
 	holder.add_child(sim)
+	# Known-good readback budget: the sparse-copy readback decodes reliably
+	# at this block count (see READBACK_BYTES_LIMIT in flow_simulation.cpp).
 	sim.set("max_blocks", 1024)
 	sim.set("cell_size", 0.2)
-	sim.set("debug_stats", false)
 
 	var emitter: Node3D = ClassDB.instantiate("PhysXFlowEmitter3D") as Node3D
 	sim.add_child(emitter)

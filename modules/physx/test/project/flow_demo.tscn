@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://flowdemo0000001"]
+[gd_scene load_steps=6 format=3 uid="uid://flowdemo0000001"]
 
 [ext_resource type="Script" path="res://gdscript/flow_demo_drone.gd" id="1_drone"]
 
@@ -14,13 +14,6 @@ size = Vector3(40, 1, 40)
 
 [sub_resource type="BoxMesh" id="ground_mesh"]
 size = Vector3(40, 1, 40)
-
-[sub_resource type="SphereShape3D" id="ball_shape"]
-radius = 0.5
-
-[sub_resource type="SphereMesh" id="ball_mesh"]
-radius = 0.5
-height = 1.0
 
 [node name="FlowDemo" type="Node3D"]
 
@@ -43,19 +36,11 @@ shape = SubResource("ground_shape")
 [node name="Visual" type="MeshInstance3D" parent="Ground"]
 mesh = SubResource("ground_mesh")
 
-[node name="Ball" type="RigidBody3D" parent="."]
-position = Vector3(0, 1.2, 2)
-
-[node name="Shape" type="CollisionShape3D" parent="Ball"]
-shape = SubResource("ball_shape")
-
-[node name="Visual" type="MeshInstance3D" parent="Ball"]
-mesh = SubResource("ball_mesh")
-
 [node name="Flow" type="PhysXFlowSimulation3D" parent="."]
-max_blocks = 2048
+max_blocks = 1024
 cell_size = 0.25
-colliders = Array[NodePath]([NodePath("../Ground"), NodePath("../Ball")])
+emitters = Array[NodePath]([NodePath("FireEmitter"), NodePath("SmokeEmitter")])
+colliders = Array[NodePath]([NodePath("../Ground")])
 
 [node name="FireEmitter" type="PhysXFlowEmitter3D" parent="Flow"]
 position = Vector3(0, 0.3, 0)

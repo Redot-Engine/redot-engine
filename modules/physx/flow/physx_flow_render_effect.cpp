@@ -229,6 +229,29 @@ Ref<PhysXFlowRenderEffect> PhysXFlowRenderEffect::get_shared() {
 }
 
 void PhysXFlowRenderEffect::free_shared() {
+	// Godot's Compositor holds Refs to its effects (a TypedArray next to the
+	// RID list), and WorldState.created holds the Compositor we made. Releasing
+	// only the shared Ref here would leave that cycle alive: the static worlds
+	// map outlives the whole shutdown, so the Compositor and CompositorEffect
+	// RIDs would still be alive at RenderingServer::finish (reported as exit
+	// leaks) and this object's destructor would run afterwards, too late to
+	// free its RenderingDevice copies. Tear the world state down ourselves,
+	// while every server can still free what it owns -- quit paths that never
+	// delivered EXIT_WORLD (script mode) end here too.
+	for (const KeyValue<ObjectID, WorldState> &kv : worlds) {
+		for (const KeyValue<ObjectID, LocalVector<RID>> &inj : kv.value.injected) {
+			_restore(inj.key);
+		}
+		World3D *world = Object::cast_to<World3D>(ObjectDB::get_instance(kv.key));
+		if (world != nullptr && kv.value.created.is_valid() && world->get_compositor() == kv.value.created) {
+			world->set_compositor(Ref<Compositor>());
+		}
+	}
+	worlds.clear();
+	// Raw node pointers; nothing dereferences them past this point.
+	flows.clear();
+	// Last: drops the last Ref (the compositors above are gone), so the
+	// destructor's RenderingDevice frees happen against a live device.
 	shared_effect.unref();
 }
 

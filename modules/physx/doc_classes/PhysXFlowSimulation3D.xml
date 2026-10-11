@@ -116,6 +116,9 @@
 		<member name="cooling_rate" type="float" setter="set_cooling_rate" getter="get_cooling_rate" default="1.5">
 			Exponential temperature cooling rate.
 		</member>
+		<member name="cpu_readback" type="bool" setter="set_cpu_readback" getter="get_cpu_readback" default="true">
+			Copies the gas back to the CPU once every few steps for the query API ([method get_last_max_smoke], bounds). The GPU render path never touches it; only turn this off if you read none of the query values.
+		</member>
 		<member name="debug_stats" type="bool" setter="set_debug_stats" getter="get_debug_stats" default="false">
 			Prints per-step sparse layout and readback statistics to the console (diagnostics only).
 		</member>
@@ -131,7 +134,7 @@
 		<member name="fire_emission_strength" type="float" setter="set_fire_emission_strength" getter="get_fire_emission_strength" default="6.0">
 			Emission intensity scale.
 		</member>
-		<member name="fog_density" type="float" setter="set_fog_density" getter="get_fog_density" default="24.0">
+		<member name="fog_density" type="float" setter="set_fog_density" getter="get_fog_density" default="2.4">
 			Fog density multiplier applied to the smoke channel.
 		</member>
 		<member name="fuel_fade" type="float" setter="set_fuel_fade" getter="get_fuel_fade" default="0.0">
@@ -152,6 +155,9 @@
 		<member name="pressure_projection" type="bool" setter="set_pressure_projection" getter="get_pressure_projection" default="true">
 			Pressure projection (divergence-free velocity). Off is cheaper but lets emitters push through walls.
 		</member>
+		<member name="shadow_steps" type="int" setter="set_shadow_steps" getter="get_shadow_steps" default="48">
+			Self-shadowing reach of the gas, in steps of ~3/4 of a cell: 48 covers about 1.8 m at the default 25 cm cells. Fewer steps leave wide gas lit almost evenly; 0 disables self-shadowing.
+		</member>
 		<member name="simulate_when_paused" type="bool" setter="set_simulate_when_paused" getter="get_simulate_when_paused" default="false">
 			Keeps simulating while [member paused] (emitters keep injecting) -- for editor preview.
 		</member>
@@ -166,6 +172,9 @@
 		</member>
 		<member name="temperature_fade" type="float" setter="set_temperature_fade" getter="get_temperature_fade" default="0.0">
 			Extra temperature dissipation on top of [member cooling_rate].
+		</member>
+		<member name="temperature_range" type="float" setter="set_temperature_range" getter="get_temperature_range" default="2.0">
+			Temperature the render colormap spans: the emitter temperature is mapped to [code]0..temperature_range[/code] and colored through the fire ramp.
 		</member>
 		<member name="time_scale" type="float" setter="set_time_scale" getter="get_time_scale" default="1.0">
 			Scales simulated time (slow motion / fast forward).

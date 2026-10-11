@@ -12,7 +12,8 @@ func _ready() -> void:
 	_collider.size = Vector3(0.8, 0.5, 0.8)
 	add_child(_collider)
 	var flow: Node3D = get_parent().get_node("Flow")
-	flow.colliders = Array[NodePath]([NodePath("../Ground"), NodePath("../Ball"), NodePath(get_path_to(_collider))])
+	var paths: Array[NodePath] = [NodePath("../Ground"), NodePath("../Ball"), get_path_to(_collider)]
+	flow.set("colliders", paths)
 
 func _process(delta: float) -> void:
 	_angle += delta * 1.2
