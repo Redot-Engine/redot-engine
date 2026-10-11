@@ -1026,9 +1026,9 @@ void NV_FLOW_ABI addPassCopyTextureToBuffer(NvFlowContext *p_context, const NvFl
 		case eNvFlowFormat_r32_float:
 			words_per_texel = 1;
 			break;
-	default:
-		ERR_PRINT_ONCE(vformat("Flow: readback copy doesn't support texture format %d.", (int)src->desc.format));
-		return;
+		default:
+			ERR_PRINT_ONCE(vformat("Flow: readback copy doesn't support texture format %d.", (int)src->desc.format));
+			return;
 	}
 	RID copy_shader;
 	const RID pipeline = copy_tex_to_buf_pipeline(c, words_per_texel, to_rd_format(src->desc.format), &copy_shader);

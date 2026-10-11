@@ -83,9 +83,9 @@
 
 #ifdef GODOT_PHYSX_FLOW
 #include "flow/flow_runtime.h"
-#include "flow/physx_flow_render_effect.h"
 #include "flow/physx_flow_collider_3d.h"
 #include "flow/physx_flow_emitter_3d.h"
+#include "flow/physx_flow_render_effect.h"
 #include "flow/physx_flow_simulation_3d.h"
 #if defined(GODOT_PHYSX_BLAST)
 #include "flow/physx_flow_blast_bridge_3d.h"

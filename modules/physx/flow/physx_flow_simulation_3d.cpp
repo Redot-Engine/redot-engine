@@ -683,7 +683,6 @@ void PhysXFlowSimulation3D::_update_render() {
 	}
 }
 
-
 // ---- Notifications -------------------------------------------------------------
 
 void PhysXFlowSimulation3D::_notification(int p_what) {
