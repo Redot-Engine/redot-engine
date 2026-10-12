@@ -42,6 +42,7 @@
 #include "core/io/tcp_server.h"
 #include "core/object/class_db.h"
 #include "core/os/mutex.h"
+#include "core/templates/hash_map.h"
 #include "core/variant/dictionary.h"
 
 class MCPBridge : public Object {
@@ -57,10 +58,12 @@ private:
 	bool is_host = false;
 	int port = 0;
 	String partial_data;
+	HashMap<String, int> held_inputs; ///< Active trigger_action holds per input
 
 	/// Internal command handling
 	Dictionary _process_command(const Dictionary &p_cmd);
-	void _trigger_action_event(const StringName &p_action);
+	void _trigger_action_event(const StringName &p_action, double p_hold_sec = 0.1);
+	void _release_held_input(const String &p_key, const Ref<InputEvent> &p_release);
 
 protected:
 	static void _bind_methods();
