@@ -266,11 +266,22 @@ private:
 	// offscreen/render: the snapshot database points into these.
 	NvFlowGridOffscreenLayerParams offscreen_params = NvFlowGridOffscreenLayerParams_default;
 	NvFlowGridRenderLayerParams render_layer_params = NvFlowGridRenderLayerParams_default;
+	NvFlowUint8 *layer_ptr = nullptr;
 	NvFlowUint8 *offscreen_ptr = nullptr;
 	NvFlowUint8 *render_ptr = nullptr;
 	float colormap_x[FlowRenderSettings::COLORMAP_POINTS] = {};
 	NvFlowFloat4 colormap_rgba[FlowRenderSettings::COLORMAP_POINTS] = {};
 	float colormap_scale[FlowRenderSettings::COLORMAP_POINTS] = {};
+
+	// The params database shallow-copies the committed desc (GridParams.cpp
+	// commitParams keeps the typeSnapshots/instanceDatas POINTERS), and the
+	// draw-time offscreen() re-reads them after step() has returned. The whole
+	// commit chain must therefore live in stable storage, never on step()'s
+	// stack (stack copies made every offscreen lookup fall back to the SDK's
+	// default white colormap).
+	NvFlowDatabaseTypeSnapshot commit_type_snapshots[6] = {};
+	NvFlowDatabaseSnapshot commit_db_snapshot = {};
+	NvFlowGridParamsDescSnapshot commit_snapshot = {};
 
 	void _apply_render_params(const FlowRenderSettings &p_render);
 
@@ -302,7 +313,7 @@ private:
 	ReadbackSlot slots[2];
 	uint32_t record_slot = 0;
 	bool readback_limit_warned = false;
-	bool cmap_probe_done = false;
+	bool cmap_read_done = false;
 	mutable bool render_diag_done = false; // TEMP diagnostics // one warn per grid life
 
 	FlowReadbackFrame last_readback;

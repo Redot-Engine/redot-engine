@@ -535,49 +535,55 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 	// snapshot database points into the members, so they live on the sim.
 	_apply_render_params(p_render);
 
-	// instanceDatas is an array of POINTERS to instances.
-	NvFlowGridSimulateLayerParams *layer_ptr = &layer_params;
-	NvFlowGridOffscreenLayerParams *offscreen_ptr_ptr = &offscreen_params;
-	NvFlowGridRenderLayerParams *render_ptr_ptr = &render_layer_params;
+	// instanceDatas is an array of POINTERS to instances; every level of this
+	// chain is member storage because the database only shallow-copies the
+	// desc and re-reads these pointers at draw time (see flow_simulation.h).
+	layer_ptr = (NvFlowUint8 *)&layer_params;
+	offscreen_ptr = (NvFlowUint8 *)&offscreen_params;
+	render_ptr = (NvFlowUint8 *)&render_layer_params;
 
-	NvFlowDatabaseTypeSnapshot type_snapshots[6] = {};
+	NvFlowDatabaseTypeSnapshot *type_snapshots = commit_type_snapshots;
+	type_snapshots[0] = {};
 	type_snapshots[0].version = 1;
 	type_snapshots[0].dataType = kSimLayerType;
-	type_snapshots[0].instanceDatas = reinterpret_cast<NvFlowUint8 **>(&layer_ptr);
+	type_snapshots[0].instanceDatas = &layer_ptr;
 	type_snapshots[0].instanceCount = 1;
+	type_snapshots[1] = {};
 	type_snapshots[1].version = 1;
 	type_snapshots[1].dataType = kSphereType;
 	type_snapshots[1].instanceDatas = reinterpret_cast<NvFlowUint8 **>(sphere_ptrs.ptr());
 	type_snapshots[1].instanceCount = sphere_ptrs.size();
+	type_snapshots[2] = {};
 	type_snapshots[2].version = 1;
 	type_snapshots[2].dataType = kBoxType;
 	type_snapshots[2].instanceDatas = reinterpret_cast<NvFlowUint8 **>(box_ptrs.ptr());
 	type_snapshots[2].instanceCount = box_ptrs.size();
+	type_snapshots[3] = {};
 	type_snapshots[3].version = 1;
 	type_snapshots[3].dataType = kMeshType;
 	type_snapshots[3].instanceDatas = reinterpret_cast<NvFlowUint8 **>(mesh_ptrs.ptr());
 	type_snapshots[3].instanceCount = mesh_ptrs.size();
+	type_snapshots[4] = {};
 	type_snapshots[4].version = 1;
 	type_snapshots[4].dataType = kOffscreenType;
-	type_snapshots[4].instanceDatas = reinterpret_cast<NvFlowUint8 **>(&offscreen_ptr_ptr);
+	type_snapshots[4].instanceDatas = &offscreen_ptr;
 	type_snapshots[4].instanceCount = 1;
+	type_snapshots[5] = {};
 	type_snapshots[5].version = 1;
 	type_snapshots[5].dataType = kRenderType;
-	type_snapshots[5].instanceDatas = reinterpret_cast<NvFlowUint8 **>(&render_ptr_ptr);
+	type_snapshots[5].instanceDatas = &render_ptr;
 	type_snapshots[5].instanceCount = 1;
 
-	NvFlowDatabaseSnapshot db_snapshot = {};
-	db_snapshot.version = 1;
-	db_snapshot.typeSnapshots = type_snapshots;
-	db_snapshot.typeSnapshotCount = 6;
+	commit_db_snapshot = {};
+	commit_db_snapshot.version = 1;
+	commit_db_snapshot.typeSnapshots = type_snapshots;
+	commit_db_snapshot.typeSnapshotCount = 6;
 
-	NvFlowGridParamsDescSnapshot snapshot = {};
-	snapshot.snapshot = db_snapshot;
-	snapshot.absoluteSimTime = p_absolute_time;
-	snapshot.deltaTime = p_delta;
-	snapshot.globalForceClear = p_force_clear ? NV_FLOW_TRUE : NV_FLOW_FALSE;
-
-	NvFlowGridParamsDescSnapshot committed = snapshot;
+	commit_snapshot = {};
+	commit_snapshot.snapshot = commit_db_snapshot;
+	commit_snapshot.absoluteSimTime = p_absolute_time;
+	commit_snapshot.deltaTime = p_delta;
+	commit_snapshot.globalForceClear = p_force_clear ? NV_FLOW_TRUE : NV_FLOW_FALSE;
 
 	// Route the frame's params through the SDK's transaction database:
 	// commit ours, pull the processed snapshot, and map the desc simulate()
@@ -586,10 +592,11 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 	// silently ignored -- context ran, zero blocks ever allocated).
 	NvFlowGridParamsInterface *gpi = runtime->get_grid_params_interface();
 	if (grid_params != nullptr && gpi->commitParams != nullptr) {
+		NvFlowGridParamsDescSnapshot committed = commit_snapshot;
 		gpi->commitParams(grid_params, &committed);
 	}
 	NvFlowGridParamsDesc params_desc = {};
-	params_desc.snapshots = &snapshot;
+	params_desc.snapshots = &commit_snapshot;
 	params_desc.snapshotCount = 1;
 	if (grid_params != nullptr && gpi->getParamsSnapshot != nullptr && gpi->mapParamsDesc != nullptr) {
 		if (mapped_snapshot != nullptr) {
@@ -612,7 +619,7 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 		} else {
 			mapped_snapshot = nullptr;
 			// Fall back to our raw desc (degenerate but keeps work flowing).
-			params_desc.snapshots = &snapshot;
+			params_desc.snapshots = &commit_snapshot;
 			params_desc.snapshotCount = 1;
 		}
 	}
@@ -1154,33 +1161,20 @@ uint64_t FlowSimulation::render(const float p_view[16], const float p_projection
 	// offscreen() colorizes the grid (colormap + shadowing from the committed
 	// offscreen layer), render() raymarches it with the scene depth for
 	// occlusion and composites over the color.
-	if (!cmap_probe_done) {
-		cmap_probe_done = true;
-		print_line(vformat("[odiag] desc snapshots=%d", (int)params_desc.snapshotCount));
-		for (uint64_t si = 0; si < params_desc.snapshotCount; si++) {
-			const NvFlowGridParamsDescSnapshot &gs = params_desc.snapshots[si];
-			print_line(vformat("[odiag] snapshot %d: types=%d", (int)si, (int)gs.snapshot.typeSnapshotCount));
-			for (uint64_t ki = 0; ki < gs.snapshot.typeSnapshotCount; ki++) {
-				const NvFlowDatabaseTypeSnapshot &ts = gs.snapshot.typeSnapshots[ki];
-				print_line(vformat("[odiag]   type[%d]=%s count=%d data=%d", (int)ki,
-						ts.dataType && ts.dataType->structTypename ? ts.dataType->structTypename : "null",
-						(int)ts.instanceCount, ts.instanceDatas != nullptr ? 1 : 0));
-			}
-		}
-	}
 	gi->offscreen(fc, grid, &params_desc);
-	// TEMP PROBE: read back the colormap texture the update op just wrote.
-	{
+	// Dark-colormap probe (first render only): read back the colormap texture
+	// the update op just wrote. Per-preset ramp values here mean the committed
+	// offscreen params reached the texture; the SDK's default ramp reads as
+	// 2.25-gray (0.9 x colorScale 2.5).
+	if (!cmap_read_done) {
+		cmap_read_done = true;
 		NvFlowGridRenderData rd_probe = {};
 		gi->getRenderData(fc, grid, &rd_probe);
-		if (rd_probe.colormap != nullptr && !cmap_probe_done) {
-			cmap_probe_done = true;
-			RID tex_rid = FlowContextRD::transient_texture_rid(rd_probe.colormap) == 0 ? RID() : RID::from_uint64(FlowContextRD::transient_texture_rid(rd_probe.colormap));
-			if (tex_rid == RID()) {
-				print_line("[cdiag] colormap transient has no rid");
-				return 0;
-			}
-			PackedByteArray bytes = RD::get_singleton()->texture_get_data(tex_rid, 0);
+		uint64_t cmap_rid = rd_probe.colormap != nullptr ? FlowContextRD::transient_texture_rid(rd_probe.colormap) : 0;
+		if (cmap_rid == 0) {
+			print_line("[cdiag] colormap transient has no rid");
+		} else {
+			PackedByteArray bytes = RD::get_singleton()->texture_get_data(RID::from_uint64(cmap_rid), 0);
 			uint32_t row_bytes = 32 * 8;
 			uint32_t mid_u = 16;
 			const uint8_t *mid = bytes.ptr() + mid_u * 8;
