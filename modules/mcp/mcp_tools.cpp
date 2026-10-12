@@ -374,7 +374,7 @@ Array MCPTools::get_tool_definitions() {
 		props["action_name"] = MCPSchemaBuilder::make_string_property("Action name for 'trigger_action' (e.g. ui_cancel)");
 		props["x"] = MCPSchemaBuilder::make_object_property("X coord for click");
 		props["y"] = MCPSchemaBuilder::make_object_property("Y coord for click");
-		props["seconds"] = MCPSchemaBuilder::make_object_property("Wait duration");
+		props["seconds"] = MCPSchemaBuilder::make_number_property("Duration for 'wait', or how long 'trigger_action' holds the action (default 0.1)");
 		props["recursive"] = MCPSchemaBuilder::make_boolean_property("Recursive tree dump (for inspect_live)");
 		props["depth"] = MCPSchemaBuilder::make_object_property("Max depth for recursive dump");
 
