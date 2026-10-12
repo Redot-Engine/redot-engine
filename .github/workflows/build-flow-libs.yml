@@ -89,7 +89,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p stage
-          find ../flow/_build -name "libnvflow.so" -o \
+          find physx-sdk/flow/_build -name "libnvflow.so" -o \
                -name "libnvflowext.so" | xargs -I{} cp {} stage/
           ls -la stage
 
