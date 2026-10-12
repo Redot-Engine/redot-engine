@@ -84,3 +84,33 @@ func deferred_read():
 	if member.inner != null:
 		var _callback = func() -> int:
 			return member.inner
+
+func string_key_write(value: Payload) -> int:
+	if value.inner != null:
+		value["inner"] = null
+		return value.inner
+	return -1
+
+func string_name_key_write() -> int:
+	if member.inner != null:
+		self.member[&"inner"] = null
+		return member.inner
+	return -1
+
+func integer_key_write(value: Payload) -> int:
+	if value.inner != null:
+		value[0] = null
+		return value.inner
+	return -1
+
+func dynamic_key_write(value: Payload, key: String) -> int:
+	if value.inner != null:
+		value[key] = null
+		return value.inner
+	return -1
+
+func known_field_write(value: Payload) -> int:
+	if value.inner != null:
+		value.other = null
+		return value.inner
+	return -1

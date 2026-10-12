@@ -3927,9 +3927,14 @@ void GDScriptAnalyzer::reduce_assignment(GDScriptParser::AssignmentNode *p_assig
 			const GDScriptParser::DataType &base_type = subscript->base->get_datatype();
 			builtin_element_assignment = base_type.is_hard_type() && base_type.kind == GDScriptParser::DataType::BUILTIN &&
 					!base_type.is_meta_type && base_type.builtin_type != Variant::OBJECT && base_type.builtin_type != Variant::NIL;
+			if (builtin_element_assignment && base_type.builtin_type == Variant::STRUCT && !subscript->is_attribute) {
+				// An indexed write may change any struct field unless its target is known.
+				builtin_element_assignment = narrow_target.is_valid();
+			}
 		}
 	}
-	// Changing a built-in's field or element preserves the containing value's nullability.
+	// Built-in field and element writes preserve the containing value's nullability,
+	// but unidentified indexed struct writes must invalidate member proofs.
 	// Known field proofs were invalidated above without clearing unrelated member proofs.
 	// Calls and accessors in the value, base, or index have already invalidated member proofs.
 	if (!builtin_element_assignment && (!narrow_target.is_valid() || is_member_narrow_target(narrow_target))) {
