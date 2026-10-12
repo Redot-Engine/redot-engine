@@ -1281,7 +1281,7 @@ void WorldScape3DAssetDock::on_redot_focus_exited() {
 // Manage Editor Settings
 
 void WorldScape3DAssetDock::load_editor_settings() {
-	_floating_btn->set_pressed(_plugin->get_setting(ES_DOCK_FLOATING, false));
+	_floating_btn->set_pressed(false); // do not use _plugin->get_setting(ES_DOCK_FLOATING, false) for now
 	_pinned_btn->set_pressed(_plugin->get_setting(ES_DOCK_PINNED, true));
 	_size_slider->set_value(_plugin->get_setting(ES_DOCK_TILE_SIZE, 90.f));
 	on_slider_changed(_size_slider->get_value());
