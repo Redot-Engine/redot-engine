@@ -48,6 +48,7 @@
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_theme_manager.h"
 #include "scene/gui/text_edit.h"
+#include "scene/main/scene_tree.h"
 
 namespace {
 
@@ -1166,7 +1167,7 @@ PackedStringArray GDScriptSyntaxHighlighter::_get_supported_languages() const {
 
 void GDScriptSyntaxHighlighter::_update_cache() {
 	// A declaration can affect colors before the edited line as well as after it.
-	const Callable source_changed = callable_mp(this, &GDScriptSyntaxHighlighter::_source_changed).unbind(2);
+	const Callable source_changed = callable_mp(this, &GDScriptSyntaxHighlighter::_source_changed);
 	if (source_text_edit_id != text_edit->get_instance_id()) {
 		TextEdit *previous = Object::cast_to<TextEdit>(ObjectDB::get_instance(source_text_edit_id));
 		if (previous) {
@@ -1418,11 +1419,56 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 	}
 }
 
-void GDScriptSyntaxHighlighter::_source_changed() {
+void GDScriptSyntaxHighlighter::_source_changed(int p_from_line, int p_to_line) {
+	// SyntaxHighlighter already invalidates edited lines. Keep preceding region
+	// states, and discard source positions that may have shifted during the edit.
+	const int first_line = MAX(0, MIN(p_from_line, p_to_line) - 1);
+	for (HashMap<int, int>::Iterator E = color_region_cache.begin(); E;) {
+		const int line = E->key;
+		++E;
+		if (line >= first_line) {
+			color_region_cache.erase(line);
+		}
+	}
+	for (HashMap<int, HashMap<int, Type>>::Iterator E = source_symbols.begin(); E;) {
+		const int line = E->key;
+		++E;
+		if (line >= first_line) {
+			source_symbols.erase(line);
+		}
+	}
+	if (source_cache_dirty) {
+		return; // The initial cache still needs to be built on demand.
+	}
+	SceneTree *tree = text_edit->is_inside_tree() ? text_edit->get_tree() : nullptr;
+	if (!tree) {
+		clear_highlighting_cache();
+		return;
+	}
+	// Coalesce keystrokes while lexical highlighting continues incrementally.
+	constexpr double source_rebuild_delay = 0.15;
+	if (source_rebuild_timer.is_valid()) {
+		source_rebuild_timer->set_time_left(source_rebuild_delay);
+	} else {
+		source_rebuild_timer = tree->create_timer(source_rebuild_delay);
+		source_rebuild_timer->connect(SNAME("timeout"), callable_mp(this, &GDScriptSyntaxHighlighter::_source_rebuild_timeout));
+	}
+}
+
+void GDScriptSyntaxHighlighter::_source_rebuild_timeout() {
+	source_rebuild_timer.unref();
 	clear_highlighting_cache();
+	TextEdit *edit = Object::cast_to<TextEdit>(ObjectDB::get_instance(source_text_edit_id));
+	if (edit && edit == text_edit) {
+		edit->queue_redraw();
+	}
 }
 
 void GDScriptSyntaxHighlighter::_clear_highlighting_cache() {
+	if (source_rebuild_timer.is_valid()) {
+		source_rebuild_timer->disconnect(SNAME("timeout"), callable_mp(this, &GDScriptSyntaxHighlighter::_source_rebuild_timeout));
+		source_rebuild_timer.unref();
+	}
 	color_region_cache.clear();
 	source_cache_dirty = true;
 }
@@ -1432,13 +1478,13 @@ void GDScriptSyntaxHighlighter::_update_source_cache() {
 	source_symbols.clear();
 	const String source = text_edit->get_text();
 	GDScriptParser parser;
-	const Ref<Script> script = _get_edited_resource();
+	const Ref<Script> edited_script = _get_edited_resource();
 	// Keep recovered declarations when the user is in the middle of an edit.
-	parser.parse(source, script.is_valid() ? script->get_path() : String(), false);
+	parser.parse(source, edited_script.is_valid() ? edited_script->get_path() : String(), false);
 	if (!parser.get_tree()) {
 		return;
 	}
-	GDScriptHighlighterSource symbols(parser.get_tree(), script.is_valid() ? script->get_path() : String());
+	GDScriptHighlighterSource symbols(parser.get_tree(), edited_script.is_valid() ? edited_script->get_path() : String());
 	GDScriptTokenizerText tokenizer;
 	tokenizer.set_source_code(source);
 	const int tab_size = EDITOR_GET("text_editor/behavior/indent/size");

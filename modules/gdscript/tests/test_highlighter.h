@@ -361,15 +361,35 @@ func get_text() -> int:
 	}
 
 	SUBCASE("Recovered declarations and editing invalidate earlier references") {
-		code_edit->set_text("func before():\n\treturn LaterTrait\ntrait LaterTrait:\n\tvar field: int = 0\n\tfunc broken():\n\t\treturn field +\n");
+		code_edit->set_text("func before():\n\treturn LaterTrait\n\ntrait LaterTrait:\n\tvar field: int = 0\n\tfunc broken():\n\t\treturn field +\n");
 		highlighter->update_cache();
 		check_word("return LaterTrait", "LaterTrait", type_color);
 		check_word("var field: int = 0", "field", member_color);
 		check_word("return field +", "field", member_color);
-		// A later declaration changes an already cached line without update_cache().
-		code_edit->set_line(2, "trait RenamedTrait:");
+		const Dictionary earlier_line = highlighter->get_line_syntax_highlighting(1);
+		// Ordinary edits keep preceding lines cached and update lexical colors immediately.
+		code_edit->set_line(6, "\t\treturn \"edited text\"");
+		check_word("return \"edited text\"", "edited text", Color(EDITOR_GET("text_editor/theme/highlighting/string_color")));
+		CHECK(earlier_line.is_same_instance(highlighter->get_line_syntax_highlighting(1)));
+		SceneTree::get_singleton()->process(0.1);
+		code_edit->set_line(6, "\t\treturn \"more text\"");
+		SceneTree::get_singleton()->process(0.1);
+		// Another keystroke restarts the delay, rather than rebuilding on each frame.
+		CHECK(earlier_line.is_same_instance(highlighter->get_line_syntax_highlighting(1)));
+		// A later declaration changes an earlier reference after typing settles.
+		code_edit->set_line(3, "trait RenamedTrait:");
+		check_word("return LaterTrait", "LaterTrait", type_color);
+		SceneTree::get_singleton()->process(0.2);
 		check_word("return LaterTrait", "LaterTrait", font_color);
 		check_word("trait RenamedTrait:", "RenamedTrait", type_color);
+	}
+
+	SUBCASE("Multiline region edits update immediately while source parsing is deferred") {
+		code_edit->set_text("const TEXT = \"\"\"\nfirst line\nsecond line\n\"\"\"\nfunc read():\n\treturn TEXT\n");
+		highlighter->update_cache();
+		check_word("return TEXT", "TEXT", member_color);
+		code_edit->set_line(3, "third line");
+		check_word("return TEXT", "TEXT", Color(EDITOR_GET("text_editor/theme/highlighting/string_color")));
 	}
 
 	memdelete(code_edit);

@@ -41,6 +41,7 @@
 #include "editor/script/script_editor_plugin.h"
 
 class GDScriptParserRef;
+class SceneTreeTimer;
 
 class GDScriptSyntaxHighlighter : public EditorSyntaxHighlighter {
 	GDCLASS(GDScriptSyntaxHighlighter, EditorSyntaxHighlighter)
@@ -93,6 +94,7 @@ private:
 	Vector<Ref<GDScriptParserRef>> source_dependencies;
 	bool source_cache_dirty = true;
 	ObjectID source_text_edit_id;
+	Ref<SceneTreeTimer> source_rebuild_timer;
 
 	/// @name Colors
 	/// @{
@@ -125,7 +127,8 @@ private:
 	void add_color_region(ColorRegion::Type p_type, const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only = false, bool p_r_prefix = false);
 
 	void _update_source_cache();
-	void _source_changed();
+	void _source_changed(int p_from_line, int p_to_line);
+	void _source_rebuild_timeout();
 
 public:
 	virtual void _clear_highlighting_cache() override;
