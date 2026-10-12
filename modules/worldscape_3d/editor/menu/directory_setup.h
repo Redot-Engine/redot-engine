@@ -82,7 +82,6 @@ class DirectorySetup final : public Node {
 
 public:
 	explicit DirectorySetup(WorldScape3DEditorPlugin *plugin);
-	~DirectorySetup() override;
 
 	void directory_setup_popup();
 

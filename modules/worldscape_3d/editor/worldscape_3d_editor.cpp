@@ -924,8 +924,6 @@ WorldScape3DEditorPlugin::WorldScape3DEditorPlugin() :
 }
 
 WorldScape3DEditorPlugin::~WorldScape3DEditorPlugin() {
-	_ui->queue_free();
-
 	if (_redot_editor_window && _redot_editor_window->is_connected("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered))) {
 		_redot_editor_window->disconnect("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered));
 	}
