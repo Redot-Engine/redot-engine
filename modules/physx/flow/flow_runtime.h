@@ -114,6 +114,9 @@ private:
 	bool _ensure_device_locked();
 	static void _log_print(NvFlowLogLevel p_level, const char *p_format, ...);
 	static void _loader_error(const char *p_str, void *p_userdata);
+	// NvFlowLoaderInit* with absolute library paths next to the executable
+	// (loader type is hidden here, hence the void *).
+	static void _loader_init(void *p_loader, NvFlowContextApi p_api, String *r_reason);
 
 public:
 	static FlowRuntime *acquire(); // get-or-create, +1 ref

@@ -15,7 +15,7 @@ records evidence per the master prompt (§72 Evidence Requirements).
 | PhysX | 5.11 (`PhysX-5.11_vc17_win64_mt_cuda12.8.2`) | `thirdparty/physx/README.md`, zip name |
 | Blast | 5.x SDK, DLL-based, Windows-only in this fork | `thirdparty/blast/`, `modules/physx/SCsub` (`blast=yes` default, Windows only) |
 | Flow | **NVIDIA Flow 2.2.0** (`Flow-2.2.0_vc17_win64_cuda12.8.2_release`) | `thirdparty/flow/Flow-2.2.0_*.zip` |
-| Flow libs | `nvflow.lib`, `nvflowext.lib` (+ `_rtx` variants); runtime DLLs `nvflow.dll`, `nvflowext.dll` (+ RTX) | `thirdparty/flow/lib/windows/x86_64/release/` |
+| Flow libs | Windows: `nvflow.dll`/`nvflowext.dll` (+ RTX, import `.lib` in `lib/`); Linux: `libnvflow.so`/`libnvflowext.so`, CI-built from NVIDIA-Omniverse/PhysX by `.github/workflows/build-flow-libs.yml` | `thirdparty/flow/bin/{windows,linux}/x86_64/release/` |
 | Flow license | BSD-3-Clause (NVIDIA, 2008-2025) — redistribution-compatible | `thirdparty/flow/LICENSE.md` |
 | Toolchain | MSVC (VS 18 install), SCons 4.10.1 via `python -m SCons`, Python 3.14 | build environment probe |
 | Previous build | Windows editor build succeeded in-tree (`bin/redot.windows.editor.x86_64.exe`, `bin/obj/modules/physx/*`) | `bin/` listing |

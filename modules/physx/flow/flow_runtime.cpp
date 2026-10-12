@@ -89,6 +89,25 @@ void FlowRuntime::_loader_error(const char *p_str, void *p_userdata) {
 	}
 }
 
+void FlowRuntime::_loader_init(void *p_loader, NvFlowContextApi p_api, String *r_reason) {
+	// The libraries sit next to the engine binary. A bare soname (dlopen
+	// "libnvflow.so") never searches that directory on Linux -- only rpath,
+	// LD_LIBRARY_PATH and the system dirs do -- so hand the vendored loader's
+	// Custom entry point absolute paths on every platform.
+	const String base = OS::get_singleton()->get_executable_path().get_base_dir();
+#ifdef WINDOWS_ENABLED
+	const String nvflow_path = base.path_join("nvflow.dll");
+	const String ext_path = base.path_join("nvflowext.dll");
+#else
+	const String nvflow_path = base.path_join("libnvflow.so");
+	const String ext_path = base.path_join("libnvflowext.so");
+#endif
+	CharString nvflow_cs = nvflow_path.utf8();
+	CharString ext_cs = ext_path.utf8();
+	NvFlowLoaderInitDeviceAPICustom(static_cast<NvFlowLoader *>(p_loader), _loader_error, r_reason, p_api,
+			nvflow_cs.ptr(), nvflow_cs.ptr(), ext_cs.ptr(), ext_cs.ptr());
+}
+
 bool FlowRuntime::_init() {
 	ERR_FAIL_COND_V(initialized, false);
 	initialized = true;
@@ -97,9 +116,9 @@ bool FlowRuntime::_init() {
 	loader_storage = loader;
 
 	String load_reason;
-	NvFlowLoaderInit(loader, _loader_error, &load_reason);
+	_loader_init(loader, eNvFlowContextApi_vulkan, &load_reason);
 	if (loader->module_nvflow == nullptr || loader->module_nvflowext == nullptr) {
-		unavailable_reason = load_reason.is_empty() ? String("nvflow.dll / nvflowext.dll not found next to the executable") : load_reason;
+		unavailable_reason = load_reason.is_empty() ? String("nvflow / nvflowext libraries not found next to the executable") : load_reason;
 		print_line(vformat("[Flow] runtime unavailable: %s", unavailable_reason));
 		NvFlowLoaderDestroy(loader);
 		memdelete(loader);
@@ -175,7 +194,7 @@ bool FlowRuntime::_ensure_device_locked() {
 		}
 
 		String attempt_reason;
-		NvFlowLoaderInitDeviceAPI(loader, _loader_error, &attempt_reason, api);
+		_loader_init(loader, api, &attempt_reason);
 		if (loader->module_nvflow == nullptr || loader->module_nvflowext == nullptr) {
 			fail_reason = attempt_reason;
 			break;

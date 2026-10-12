@@ -39,13 +39,16 @@ own packaging: one SDK family, three independent engines). Concretely:
 
 * `scons ... flow=no` compiles the module exactly as before (all Flow code is
   `GODOT_PHYSX_FLOW`-guarded). Default `flow=yes`.
-* Runtime needs `nvflow.dll` + `nvflowext.dll` next to the engine binary —
-  SCons copies them from `thirdparty/flow` automatically. A missing DLL at
-  runtime is **not fatal**: nodes report unavailable (see
-  `is_flow_available()` / `get_diagnostics()`), scenes run normally.
-* Windows x64 only today (the vendored SDK ships Win64 binaries only); other
-  platforms would need the loader given the right `.so`/`.dylib` — the code
-  is portable C++.
+* Runtime needs `nvflow.dll` + `nvflowext.dll` (Windows) or `libnvflow.so` +
+  `libnvflowext.so` (Linux) next to the engine binary — SCons copies them
+  from `thirdparty/flow` automatically, and the runtime dlopens them by
+  absolute path. A missing library at runtime is **not fatal**: nodes report
+  unavailable (see `is_flow_available()` / `get_diagnostics()`), scenes run
+  normally.
+* Platforms: Windows x64 (verified); Linux x86_64 wired — CI builds the
+  `.so` pair into `thirdparty/flow/bin/linux` (workflow
+  `build-flow-libs.yml`), pending on-metal verification. macOS would need
+  the loader given `.dylib` builds — the code is portable C++.
 * Settings: `physics/physx_3d/flow/device_api` (Auto/Vulkan/CPU),
   `device_index`, `device_validation`, `verbose_logs`.
 

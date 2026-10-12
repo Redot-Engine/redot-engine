@@ -286,8 +286,9 @@ flow_enabled = ARGUMENTS.get("flow", "yes") not in ("no", "0", "false", "False")
 flow_dir = Dir("#thirdparty/flow")
 if flow_enabled:
     env_physx.Append(CPPDEFINES=["GODOT_PHYSX_FLOW"])
-    # NvFlowLoader.h includes Windows.h and the SDK headers live in two roots
-    # (nvflow/, nvflowext/) with same-directory #includes.
+    # NvFlowLoader.h includes Windows.h on Win32 only (dlopen elsewhere) and
+    # the SDK headers live in two roots (nvflow/, nvflowext/) with
+    # same-directory #includes.
     env_physx.PrependUnique(
         CPPPATH=[
             flow_dir.Dir("include/nvflow").abspath,
@@ -295,14 +296,25 @@ if flow_enabled:
         ]
     )
 
-    # Runtime DLLs next to the engine binary (only the base pair -- the _rtx
-    # variants cover Flow's own raytraced composite path, unused here).
+    # Runtime libraries next to the engine binary (only the base pair -- the
+    # _rtx variants cover Flow's own raytraced composite path, unused here).
+    # The runtime resolves them by absolute path next to the executable
+    # (flow_runtime.cpp _loader_init), which is also what makes dlopen work
+    # on Linux -- a bare soname never searches the binary's directory there.
     if env["platform"] == "windows":
         flow_dll_dir = flow_dir.Dir("bin/windows/x86_64/release")
         for dll_name in ["nvflow.dll", "nvflowext.dll"]:
             env.Command(
                 File("#bin/" + dll_name),
                 flow_dll_dir.File(dll_name),
+                Copy("$TARGET", "$SOURCE"),
+            )
+    elif env["platform"] == "linux":
+        flow_so_dir = flow_dir.Dir("bin/linux/x86_64/release")
+        for so_name in ["libnvflow.so", "libnvflowext.so"]:
+            env.Command(
+                File("#bin/" + so_name),
+                flow_so_dir.File(so_name),
                 Copy("$TARGET", "$SOURCE"),
             )
 # --- Blast (NvBlast + authoring/shaders extensions) --------------------------
