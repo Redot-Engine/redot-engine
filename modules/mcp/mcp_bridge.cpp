@@ -426,7 +426,7 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 				resp["error"] = "No root window found";
 				return resp;
 			}
-			String path = args.get("path", ".");
+			String path = args.get("node_path", args.get("path", "."));
 			Node *node = (path == "." || path.is_empty()) ? (Node *)root_window : root_window->get_node_or_null(path);
 			if (node) {
 				bool recursive = args.get("recursive", false);
