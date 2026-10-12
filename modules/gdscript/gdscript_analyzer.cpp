@@ -3101,7 +3101,7 @@ GDScriptAnalyzer::NarrowTarget GDScriptAnalyzer::identifier_narrow_source(const 
 	}
 	if (p_expression->type == GDScriptParser::Node::SUBSCRIPT) {
 		const GDScriptParser::SubscriptNode *subscript = static_cast<const GDScriptParser::SubscriptNode *>(p_expression);
-		if (!subscript->is_attribute || subscript->base == nullptr) {
+		if (!subscript->is_attribute || subscript->base == nullptr || subscript->attribute == nullptr) {
 			return target;
 		}
 		if (subscript->base->type != GDScriptParser::Node::SELF) {
@@ -3111,6 +3111,18 @@ GDScriptAnalyzer::NarrowTarget GDScriptAnalyzer::identifier_narrow_source(const 
 				return target;
 			}
 			target.base = base.source;
+		}
+		const GDScriptParser::DataType base_type = subscript->base->get_datatype();
+		if (base_type.is_hard_type() && base_type.kind == GDScriptParser::DataType::BUILTIN && base_type.builtin_type == Variant::STRUCT && !base_type.is_meta_type && base_type.struct_type != nullptr) {
+			// Struct attributes carry a type, but no identifier source. Track the field
+			// declaration with its receiver and invalidate it like other member storage.
+			const int *field_index = base_type.struct_type->fields_indices.getptr(subscript->attribute->name);
+			if (field_index == nullptr) {
+				return NarrowTarget();
+			}
+			target.source = base_type.struct_type->fields[*field_index];
+			member_narrow_sources.insert(target.source);
+			return target;
 		}
 		p_expression = subscript->attribute;
 	}
@@ -3918,8 +3930,9 @@ void GDScriptAnalyzer::reduce_assignment(GDScriptParser::AssignmentNode *p_assig
 		}
 	}
 	// Changing a built-in's field or element preserves the containing value's nullability.
+	// Known field proofs were invalidated above without clearing unrelated member proofs.
 	// Calls and accessors in the value, base, or index have already invalidated member proofs.
-	if ((!narrow_target.is_valid() && !builtin_element_assignment) || is_member_narrow_target(narrow_target)) {
+	if (!builtin_element_assignment && (!narrow_target.is_valid() || is_member_narrow_target(narrow_target))) {
 		invalidate_member_narrowing();
 	}
 
