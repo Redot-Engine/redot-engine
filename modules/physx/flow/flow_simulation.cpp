@@ -1175,7 +1175,6 @@ uint64_t FlowSimulation::render(const float p_view[16], const float p_projection
 			print_line("[cdiag] colormap transient has no rid");
 		} else {
 			PackedByteArray bytes = RD::get_singleton()->texture_get_data(RID::from_uint64(cmap_rid), 0);
-			uint32_t row_bytes = 32 * 8;
 			uint32_t mid_u = 16;
 			const uint8_t *mid = bytes.ptr() + mid_u * 8;
 			float r, g, b, a;
