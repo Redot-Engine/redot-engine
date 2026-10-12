@@ -1,0 +1,76 @@
+name: 🌊 Build Flow SDK libs (nvflow)
+
+# Builds NVIDIA Flow (nvflow / nvflowext) from the upstream NVIDIA-Omniverse/PhysX
+# monorepo on GitHub runners (Windows has the v143 toolset these projects target;
+# the local machine's VS2026 toolset does not). Produces runtime DLLs/SOs plus
+# PDBs for symbolized crash debugging.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows (nvflow.dll, nvflowext.dll)
+    runs-on: windows-2022
+    steps:
+      - name: Checkout NVIDIA-Omniverse/PhysX
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA-Omniverse/PhysX
+          ref: main
+          path: physx-sdk
+
+      - name: Build Flow (debug + release)
+        shell: cmd
+        run: |
+          cd physx-sdk\flow
+          build.bat
+
+      - name: Stage binaries
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path stage | Out-Null
+          Get-ChildItem -Recurse physx-sdk/flow -Include `
+            nvflow.dll, nvflowext.dll, nvflow_rtx.dll, nvflowext_rtx.dll,
+            nvflow.pdb, nvflowext.pdb, nvflow_rtx.pdb, nvflowext_rtx.pdb |
+            Where-Object { $_.FullName -match 'release' } |
+            Copy-Item -Destination stage
+          Get-ChildItem stage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-libs-windows-x64
+          path: stage/
+
+  linux:
+    name: Linux (libnvflow.so, libnvflowext.so)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout NVIDIA-Omniverse/PhysX
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA-Omniverse/PhysX
+          ref: main
+          path: physx-sdk
+
+      - name: Build Flow (debug + release)
+        shell: bash
+        run: |
+          cd physx-sdk/flow
+          chmod +x build.sh generate_projects.sh buildtools/packman/packman external/premake/linux-x86_64/premake5
+          ./build.sh
+
+      - name: Stage binaries
+        shell: bash
+        run: |
+          mkdir -p stage
+          find physx-sdk/flow/_build -name "libnvflow.so" -o \
+               -name "libnvflowext.so" | xargs -I{} cp {} stage/
+          ls -la stage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-libs-linux-x64
+          path: stage/

@@ -1154,7 +1154,45 @@ uint64_t FlowSimulation::render(const float p_view[16], const float p_projection
 	// offscreen() colorizes the grid (colormap + shadowing from the committed
 	// offscreen layer), render() raymarches it with the scene depth for
 	// occlusion and composites over the color.
+	if (!cmap_probe_done) {
+		cmap_probe_done = true;
+		print_line(vformat("[odiag] desc snapshots=%d", (int)params_desc.snapshotCount));
+		for (uint64_t si = 0; si < params_desc.snapshotCount; si++) {
+			const NvFlowGridParamsDescSnapshot &gs = params_desc.snapshots[si];
+			print_line(vformat("[odiag] snapshot %d: types=%d", (int)si, (int)gs.snapshot.typeSnapshotCount));
+			for (uint64_t ki = 0; ki < gs.snapshot.typeSnapshotCount; ki++) {
+				const NvFlowDatabaseTypeSnapshot &ts = gs.snapshot.typeSnapshots[ki];
+				print_line(vformat("[odiag]   type[%d]=%s count=%d data=%d", (int)ki,
+						ts.dataType && ts.dataType->structTypename ? ts.dataType->structTypename : "null",
+						(int)ts.instanceCount, ts.instanceDatas != nullptr ? 1 : 0));
+			}
+		}
+	}
 	gi->offscreen(fc, grid, &params_desc);
+	// TEMP PROBE: read back the colormap texture the update op just wrote.
+	{
+		NvFlowGridRenderData rd_probe = {};
+		gi->getRenderData(fc, grid, &rd_probe);
+		if (rd_probe.colormap != nullptr && !cmap_probe_done) {
+			cmap_probe_done = true;
+			RID tex_rid = FlowContextRD::transient_texture_rid(rd_probe.colormap) == 0 ? RID() : RID::from_uint64(FlowContextRD::transient_texture_rid(rd_probe.colormap));
+			if (tex_rid == RID()) {
+				print_line("[cdiag] colormap transient has no rid");
+				return 0;
+			}
+			PackedByteArray bytes = RD::get_singleton()->texture_get_data(tex_rid, 0);
+			uint32_t row_bytes = 32 * 8;
+			uint32_t mid_u = 16;
+			const uint8_t *mid = bytes.ptr() + mid_u * 8;
+			float r, g, b, a;
+			r = Math::half_to_float(mid[0] | (mid[1] << 8));
+			g = Math::half_to_float(mid[2] | (mid[3] << 8));
+			b = Math::half_to_float(mid[4] | (mid[5] << 8));
+			a = Math::half_to_float(mid[6] | (mid[7] << 8));
+			print_line(vformat("[cdiag] colormap mid-pixel rgba = %f,%f,%f,%f (bytes %d)",
+					r, g, b, a, bytes.size()));
+		}
+	}
 	gi->render(fc, grid, &params_desc, &view, &projection, &projection,
 			p_width, p_height, p_depth_width, p_depth_height,
 			1.0f, depth, eNvFlowFormat_r16g16b16a16_float, color, &out);

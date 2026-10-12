@@ -47,6 +47,8 @@ func _initialize() -> void:
 	sim.set("max_blocks", 1024)
 	sim.set("cell_size", 0.2)
 	sim.set("cpu_readback", true) # the check asserts on the query surface
+	sim.set("smoke_albedo", Color(0.05, 0.05, 0.05)) # DARK: if the plume renders white the colormap is not applied
+	sim.set("cpu_readback", true) # the check asserts on the query surface
 	sim.set("fog_density", 2.4)
 
 	var emitter: Node3D = ClassDB.instantiate("PhysXFlowEmitter3D") as Node3D

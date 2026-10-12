@@ -302,6 +302,7 @@ private:
 	ReadbackSlot slots[2];
 	uint32_t record_slot = 0;
 	bool readback_limit_warned = false;
+	bool cmap_probe_done = false;
 	mutable bool render_diag_done = false; // TEMP diagnostics // one warn per grid life
 
 	FlowReadbackFrame last_readback;
