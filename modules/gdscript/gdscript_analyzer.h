@@ -194,7 +194,8 @@ class GDScriptAnalyzer {
 	bool is_type_compatible(const GDScriptParser::DataType &p_target, const GDScriptParser::DataType &p_source, bool p_allow_implicit_conversion = false, const GDScriptParser::Node *p_source_node = nullptr);
 	GDScriptParser::DataType get_type_constraint_for_overlap(const GDScriptParser::DataType &p_type);
 	bool can_types_overlap(const GDScriptParser::DataType &p_left, const GDScriptParser::DataType &p_right);
-	void push_error(const String &p_message, const GDScriptParser::Node *p_origin = nullptr);
+	void push_error(const String &p_message, const GDScriptParser::Node *p_origin = nullptr, const ScriptLanguage::ScriptError::RelatedError &p_related_error = {});
+	void push_dependency_error(const String &p_message, const Ref<GDScriptParserRef> &p_dependency, const GDScriptParser::Node *p_origin);
 	void mark_node_unsafe(const GDScriptParser::Node *p_node);
 	void downgrade_node_type_source(GDScriptParser::Node *p_node);
 	void mark_lambda_use_self();

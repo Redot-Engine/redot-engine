@@ -194,6 +194,7 @@ class CodeTextEditor : public VBoxContainer {
 	RichTextLabel *error = nullptr;
 	int error_line;
 	int error_column;
+	String error_path;
 
 	bool preview_navigation_change = false;
 	Dictionary previous_state;
@@ -286,7 +287,7 @@ public:
 
 	void update_editor_settings();
 	void set_error(const String &p_error);
-	void set_error_pos(int p_line, int p_column);
+	void set_error_pos(int p_line, int p_column, const String &p_path = String());
 	Point2i get_error_pos() const;
 	void update_line_and_column() { _line_col_changed(); }
 	CodeEdit *get_text_editor() { return text_editor; }

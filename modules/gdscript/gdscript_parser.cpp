@@ -182,15 +182,15 @@ void GDScriptParser::clear() {
 	*this = GDScriptParser();
 }
 
-void GDScriptParser::push_error(const String &p_message, const Node *p_origin) {
+void GDScriptParser::push_error(const String &p_message, const Node *p_origin, const ScriptLanguage::ScriptError::RelatedError &p_related_error) {
 	/// @todo Improve error reporting by pointing at source code.
 	/// @todo Errors might point at more than one place at once (e.g. show previous declaration).
 	panic_mode = true;
 	/// @todo Improve positional information.
 	if (p_origin == nullptr) {
-		errors.push_back({ p_message, previous.start_line, previous.start_column });
+		errors.push_back({ p_message, previous.start_line, previous.start_column, p_related_error });
 	} else {
-		errors.push_back({ p_message, p_origin->start_line, p_origin->start_column });
+		errors.push_back({ p_message, p_origin->start_line, p_origin->start_column, p_related_error });
 	}
 }
 
@@ -518,7 +518,13 @@ bool GDScriptParser::consume(GDScriptTokenizer::Token::Type p_token_type, const 
 	if (match(p_token_type)) {
 		return true;
 	}
-	push_error(p_error_message);
+	if (p_token_type == GDScriptTokenizer::Token::IDENTIFIER && current.is_keyword()) {
+		push_error(vformat(R"(%s "%s" is a reserved keyword and cannot be used as an identifier.)", p_error_message, current.get_name()));
+		errors.back()->get().line = current.start_line;
+		errors.back()->get().column = current.start_column;
+	} else {
+		push_error(p_error_message);
+	}
 	return false;
 }
 
