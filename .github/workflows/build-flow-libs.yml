@@ -1,9 +1,8 @@
 name: 🌊 Build Flow SDK libs (nvflow)
 
 # Builds NVIDIA Flow (nvflow / nvflowext) from the upstream NVIDIA-Omniverse/PhysX
-# monorepo on GitHub runners (Windows has the v143 toolset these projects target;
-# the local machine's VS2026 toolset does not). Produces runtime DLLs/SOs plus
-# PDBs for symbolized crash debugging.
+# monorepo on GitHub runners. Windows has the v143 toolset these projects target;
+# Linux premake comes from packman (fetched inside build.sh).
 
 on:
   workflow_dispatch:
@@ -12,6 +11,8 @@ jobs:
   windows:
     name: Windows (nvflow.dll, nvflowext.dll)
     runs-on: windows-2022
+    strategy:
+      fail-fast: false
     steps:
       - name: Checkout NVIDIA-Omniverse/PhysX
         uses: actions/checkout@v4
@@ -46,6 +47,8 @@ jobs:
   linux:
     name: Linux (libnvflow.so, libnvflowext.so)
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
     steps:
       - name: Checkout NVIDIA-Omniverse/PhysX
         uses: actions/checkout@v4
@@ -54,11 +57,18 @@ jobs:
           ref: main
           path: physx-sdk
 
+      - name: Fetch packman dependencies (includes Linux premake)
+        shell: bash
+        run: |
+          cd physx-sdk/flow
+          chmod +x build.sh generate_projects.sh buildtools/packman/packman
+          ./buildtools/packman/packman pull ./dependencies.xml -p linux-x86_64
+
       - name: Build Flow (debug + release)
         shell: bash
         run: |
           cd physx-sdk/flow
-          chmod +x build.sh generate_projects.sh buildtools/packman/packman external/premake/linux-x86_64/premake5
+          chmod +x external/premake/linux-x86_64/premake5 generate_projects.sh
           ./build.sh
 
       - name: Stage binaries
