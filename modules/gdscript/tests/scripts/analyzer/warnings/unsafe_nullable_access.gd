@@ -1,3 +1,5 @@
-func test():
-	var v: Vector2? = Vector2(3, 4)
+func access(v: Vector2?):
 	print(v.x)
+
+func test():
+	access(Vector2(3, 4))

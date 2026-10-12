@@ -46,6 +46,7 @@
 #include "../../worldscape_3d_assets.h"
 #include "../worldscape_3d_editor.h"
 #include "scene/main/window.h"
+#include "worldscape_3d_ui.h"
 
 class ConfirmationDialog;
 class ScrollContainer;
@@ -190,6 +191,8 @@ private:
 class WorldScape3DAssetDock final : public PanelContainer {
 	GDCLASS(WorldScape3DAssetDock, PanelContainer);
 
+	friend WorldScape3DUI;
+
 	WorldScape3DEditorPlugin *_plugin = nullptr;
 
 	ListContainer *_texture_list = nullptr;
@@ -241,11 +244,12 @@ class WorldScape3DAssetDock final : public PanelContainer {
 
 	void create_layout();
 
+	void setup_theme();
+
 	void init();
 
 public:
 	explicit WorldScape3DAssetDock(WorldScape3DEditorPlugin *plugin);
-	~WorldScape3DAssetDock() override;
 
 	ListContainer *get_current_list() const { return _current_list; }
 	ConfirmationDialog *get_confirmation_dialog() const { return _confirm_dialog; }

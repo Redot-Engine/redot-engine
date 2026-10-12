@@ -297,6 +297,7 @@ public:
 		// Type type = NO_ERROR;
 		String message;
 		int line = 0, column = 0;
+		ScriptLanguage::ScriptError::RelatedError related_error;
 	};
 
 #ifdef TOOLS_ENABLED
@@ -375,6 +376,10 @@ public:
 		DataType datatype;
 
 		Vector<String> trait_origin; // Indicates origin of Node if copied over from trait.
+
+#ifdef TOOLS_ENABLED
+		ClassNode *declaring_class = nullptr; // Preserved when a member is copied from a trait.
+#endif // TOOLS_ENABLED
 
 		virtual DataType get_datatype() const { return datatype; }
 		virtual void set_datatype(const DataType &p_datatype) { datatype = p_datatype; }
@@ -872,10 +877,20 @@ public:
 		}
 		template <typename T>
 		void add_member(T *p_member_node) {
+#ifdef TOOLS_ENABLED
+			if (p_member_node->declaring_class == nullptr) {
+				p_member_node->declaring_class = this;
+			}
+#endif // TOOLS_ENABLED
 			members_indices[p_member_node->identifier->name] = members.size();
 			members.push_back(Member(p_member_node));
 		}
 		void add_member(const EnumNode::Value &p_enum_value) {
+#ifdef TOOLS_ENABLED
+			if (p_enum_value.identifier->declaring_class == nullptr) {
+				p_enum_value.identifier->declaring_class = this;
+			}
+#endif // TOOLS_ENABLED
 			members_indices[p_enum_value.identifier->name] = members.size();
 			members.push_back(Member(p_enum_value));
 		}
@@ -1594,7 +1609,7 @@ private:
 	}
 
 	void clear();
-	void push_error(const String &p_message, const Node *p_origin = nullptr);
+	void push_error(const String &p_message, const Node *p_origin = nullptr, const ScriptLanguage::ScriptError::RelatedError &p_related_error = {});
 #ifdef DEBUG_ENABLED
 	void push_warning(const Node *p_source, GDScriptWarning::Code p_code, const Vector<String> &p_symbols);
 	template <typename... Symbols>

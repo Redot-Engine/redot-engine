@@ -4,8 +4,11 @@ func takes_int(v: int) -> int:
 func passthrough(v: int?) -> int:
 	return v
 
+func nullable_int() -> int?:
+	return 5
+
 func test():
-	var a: int? = 5
+	var a: int? = nullable_int()
 	var b: int = a
 	print(b)
 	print(takes_int(a))

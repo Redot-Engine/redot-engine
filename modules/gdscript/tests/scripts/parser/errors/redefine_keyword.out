@@ -1,2 +1,2 @@
 GDTEST_PARSER_ERROR
-Expected variable name after "var".
+Expected variable name after "var". "while" is a reserved keyword and cannot be used as an identifier.

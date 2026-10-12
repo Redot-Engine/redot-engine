@@ -41,6 +41,7 @@
 #include "core/config/engine.h"
 #include "core/io/missing_resource.h"
 #include "core/io/resource_loader.h"
+#include "core/object/script_language.h"
 #include "core/templates/local_vector.h"
 #include "scene/2d/node_2d.h"
 #include "scene/gui/control.h"
@@ -53,6 +54,11 @@
 #endif // _3D_DISABLED
 
 #define PACKED_SCENE_VERSION 3
+
+#define META_MISSING_PROPERTIES "_missing_properties"
+#define META_PROPERTY_MISSING_PROPERTIES "metadata/_missing_properties"
+#define META_MISSING_NODE_PROPERTIES "_missing_node_properties"
+#define META_PROPERTY_MISSING_NODE_PROPERTIES "metadata/_missing_node_properties"
 
 #ifdef TOOLS_ENABLED
 SceneState::InstantiationWarningNotify SceneState::instantiation_warn_notify = nullptr;
@@ -315,6 +321,7 @@ Node *SceneState::instantiate(GenEditState p_edit_state) const {
 				const NodeData::Property *nprops = &n.properties[0];
 
 				Dictionary missing_resource_properties;
+				Dictionary failed_properties;
 				HashMap<Ref<Resource>, Ref<Resource>> resources_local_to_sub_scene; // Record the mappings in the sub-scene.
 
 				for (int j = 0; j < nprop_count; j++) {
@@ -441,6 +448,9 @@ Node *SceneState::instantiate(GenEditState p_edit_state) const {
 
 						if (set_valid) {
 							node->set(snames[nprops[j].name], value, &valid);
+							if (!valid && p_edit_state != GEN_EDIT_STATE_DISABLED) {
+								failed_properties[snames[nprops[j].name]] = value;
+							}
 						}
 						if (p_edit_state == GEN_EDIT_STATE_INSTANCE && value.get_type() != Variant::OBJECT) {
 							value = value.duplicate(true); // Duplicate arrays and dictionaries for the editor.
@@ -449,6 +459,15 @@ Node *SceneState::instantiate(GenEditState p_edit_state) const {
 				}
 				if (!missing_resource_properties.is_empty()) {
 					node->set_meta(META_MISSING_RESOURCES, missing_resource_properties);
+				}
+
+				if (!failed_properties.is_empty()) {
+					// Only preserve the values when an invalid script is the reason they couldn't
+					// be applied, so a genuinely removed property doesn't linger forever.
+					Ref<Script> node_script = node->get_script();
+					if (node_script.is_valid() && !node_script->is_valid()) {
+						node->set_meta(META_MISSING_PROPERTIES, failed_properties);
+					}
 				}
 
 				for (KeyValue<Ref<Resource>, Ref<Resource>> &E : resources_local_to_sub_scene) {
@@ -553,6 +572,21 @@ Node *SceneState::instantiate(GenEditState p_edit_state) const {
 		// Replace properties stored as NodePaths with actual Nodes.
 		Node *base = ObjectDB::get_instance<Node>(dnp.base);
 		ERR_CONTINUE_EDMSG(!base, vformat("Failed to set deferred property '%s' as the base node disappeared.", dnp.property));
+
+		if (p_edit_state != GEN_EDIT_STATE_DISABLED) {
+			bool prop_exists = false;
+			base->get(dnp.property, &prop_exists);
+			if (!prop_exists) {
+				Ref<Script> base_script = base->get_script();
+				if (base_script.is_valid() && !base_script->is_valid()) {
+					Dictionary missing = base->get_meta(META_MISSING_NODE_PROPERTIES, Dictionary());
+					missing[dnp.property] = dnp.value;
+					base->set_meta(META_MISSING_NODE_PROPERTIES, missing);
+					continue;
+				}
+			}
+		}
+
 		if (dnp.value.get_type() == Variant::ARRAY) {
 			Array paths = dnp.value;
 
@@ -811,6 +845,7 @@ Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Has
 
 	Array pinned_props = _sanitize_node_pinned_properties(p_node);
 	Dictionary missing_resource_properties = p_node->get_meta(META_MISSING_RESOURCES, Dictionary());
+	HashSet<StringName> saved_properties;
 
 	for (const PropertyInfo &E : plist) {
 		if (!(E.usage & PROPERTY_USAGE_STORAGE) && !missing_resource_properties.has(E.name)) {
@@ -819,6 +854,10 @@ Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Has
 
 		if (E.name == META_PROPERTY_MISSING_RESOURCES) {
 			continue; // Ignore this property when packing.
+		}
+
+		if (E.name == META_PROPERTY_MISSING_PROPERTIES || E.name == META_PROPERTY_MISSING_NODE_PROPERTIES) {
+			continue; // The stored values are re-emitted individually below.
 		}
 
 		// If instance or inheriting, not saving if property requested so.
@@ -951,6 +990,44 @@ Error SceneState::_parse_node(Node *p_owner, Node *p_node, int p_parent_idx, Has
 			prop.name |= FLAG_PATH_PROPERTY_IS_NODE;
 		}
 		nd.properties.push_back(prop);
+		saved_properties.insert(name);
+	}
+
+	// Re-emit overrides that couldn't be applied on load because the node's script
+	// failed to parse, so their values aren't lost when the scene is re-saved.
+	Dictionary missing_properties = p_node->get_meta(META_MISSING_PROPERTIES, Dictionary());
+	Dictionary missing_node_properties = p_node->get_meta(META_MISSING_NODE_PROPERTIES, Dictionary());
+	for (int pass = 0; pass < 2; pass++) {
+		const Dictionary &missing = pass == 0 ? missing_properties : missing_node_properties;
+		for (const KeyValue<Variant, Variant> &E : missing) {
+			const StringName name = E.key;
+			if (saved_properties.has(name)) {
+				continue;
+			}
+			bool prop_exists = false;
+			p_node->get(name, &prop_exists);
+			if (prop_exists) {
+				continue;
+			}
+			const Variant &value = E.value;
+
+			if (!pinned_props.has(name)) {
+				bool is_valid_default = false;
+				Variant default_value = PropertyUtils::get_property_default_value(p_node, name, &is_valid_default, &states_stack, true);
+				if (is_valid_default && !PropertyUtils::is_property_value_different(p_node, value, default_value)) {
+					continue;
+				}
+			}
+
+			NodeData::Property prop;
+			prop.name = _nm_get_string(name, name_map);
+			prop.value = _vm_get_variant(value, variant_map);
+			if (pass == 1) {
+				prop.name |= FLAG_PATH_PROPERTY_IS_NODE;
+			}
+			nd.properties.push_back(prop);
+			saved_properties.insert(name);
+		}
 	}
 
 	// save the groups this node is into

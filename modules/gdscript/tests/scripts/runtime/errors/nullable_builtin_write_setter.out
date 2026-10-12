@@ -1,0 +1,7 @@
+GDTEST_RUNTIME_ERROR
+~~ WARNING at line 12: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 18: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+>> SCRIPT ERROR at runtime/errors/nullable_builtin_write_setter.gd:12 on bare_write_back(): Invalid access to property or key '0' on a base object of type 'Nil'.
+Bare property setter returned to caller.
+>> SCRIPT ERROR at runtime/errors/nullable_builtin_write_setter.gd:18 on explicit_write_back(): Invalid access to property or key '0' on a base object of type 'Nil'.
+Explicit property setter returned to caller.

@@ -17,7 +17,7 @@ env:
 
 jobs:
   build-windows:
-    # Windows 10 with latest image
+    # The image of Window's latest build
     runs-on: windows-latest
     name: ${{ matrix.name }}
     timeout-minutes: 120

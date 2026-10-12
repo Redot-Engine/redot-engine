@@ -1224,6 +1224,12 @@ bool DisplayServer::color_picker(const Callable &p_callback) {
 void DisplayServer::force_process_and_drop_events() {
 }
 
+bool DisplayServer::consume_main_window_close_request() {
+	bool requested = main_window_close_requested;
+	main_window_close_requested = false;
+	return requested;
+}
+
 void DisplayServer::release_rendering_thread() {
 	WARN_PRINT("Rendering thread not supported by this display server.");
 }

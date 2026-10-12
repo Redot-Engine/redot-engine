@@ -1,0 +1,22 @@
+GDTEST_RUNTIME_ERROR
+~~ WARNING at line 19: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 35: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 40: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 45: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 50: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 57: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 64: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+>> SCRIPT ERROR at runtime/errors/nullable_member_operand_invalidation.gd:35 on array_index(): Invalid access to property or key '0' on a base object of type 'Nil'.
+Array null access returned to caller.
+>> SCRIPT ERROR at runtime/errors/nullable_member_operand_invalidation.gd:40 on arithmetic(): Invalid operands 'Nil' and 'int' in operator '+'.
+Arithmetic null access returned to caller.
+>> SCRIPT ERROR at runtime/errors/nullable_member_operand_invalidation.gd:45 on utility_argument(): Invalid type in utility function "maxi()". Cannot convert argument 1 from Nil to int.
+Utility null argument returned to caller.
+>> SCRIPT ERROR at runtime/errors/nullable_member_operand_invalidation.gd:50 on bare_argument(): Invalid type in function 'consume' in base 'RefCounted (nullable_member_operand_invalidation.gd)'. Cannot convert argument 1 from Nil to int.
+Bare member null argument returned to caller.
+>> SCRIPT ERROR at runtime/errors/nullable_member_operand_invalidation.gd:57 on dynamic_property(): Invalid access to property or key '0' on a base object of type 'Nil'.
+Dynamic property null access returned to caller.
+>> SCRIPT ERROR at runtime/errors/nullable_member_operand_invalidation.gd:64 on dynamic_index(): Invalid access to property or key '0' on a base object of type 'Nil'.
+Dynamic index null access returned to caller.
+>> SCRIPT ERROR at runtime/errors/nullable_member_operand_invalidation.gd:19 on NativeAccessor.native_property(): Invalid access to property or key '0' on a base object of type 'Nil'.
+Native property null access returned to caller.

@@ -1,0 +1,8 @@
+GDTEST_OK
+~~ WARNING at line 18: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 33: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 37: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 41: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 45: (UNSAFE_NULLABLE_ACCESS) The value of type "int?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 51: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.
+~~ WARNING at line 57: (UNSAFE_NULLABLE_ACCESS) The value of type "Array?" may be null; using it without a null check may fail at runtime.

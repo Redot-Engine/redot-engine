@@ -467,7 +467,7 @@ Error GDScriptAnalyzer::resolve_class_inheritance(GDScriptParser::ClassNode *p_c
 
 			Error err = ext_parser->raise_status(GDScriptParserRef::INHERITANCE_SOLVED);
 			if (err != OK) {
-				push_error(vformat(R"(Could not resolve super class inheritance from "%s".)", p_class->extends_path), p_class);
+				push_dependency_error(vformat(R"(Could not resolve super class inheritance from "%s".)", p_class->extends_path), ext_parser, p_class);
 				return err;
 			}
 
@@ -502,7 +502,7 @@ Error GDScriptAnalyzer::resolve_class_inheritance(GDScriptParser::ClassNode *p_c
 
 					Error err = base_parser->raise_status(GDScriptParserRef::INHERITANCE_SOLVED);
 					if (err != OK) {
-						push_error(vformat(R"(Could not resolve super class inheritance from "%s".)", name), id);
+						push_dependency_error(vformat(R"(Could not resolve super class inheritance from "%s".)", name), base_parser, id);
 						return err;
 					}
 
@@ -530,7 +530,7 @@ Error GDScriptAnalyzer::resolve_class_inheritance(GDScriptParser::ClassNode *p_c
 
 				Error err = info_parser->raise_status(GDScriptParserRef::INHERITANCE_SOLVED);
 				if (err != OK) {
-					push_error(vformat(R"(Could not resolve super class inheritance from "%s".)", name), id);
+					push_dependency_error(vformat(R"(Could not resolve super class inheritance from "%s".)", name), info_parser, id);
 					return err;
 				}
 
@@ -861,8 +861,12 @@ GDScriptParser::DataType GDScriptAnalyzer::resolve_datatype(GDScriptParser::Type
 				String ext = path.get_extension();
 				if (ext == GDScriptLanguage::get_singleton()->get_extension()) {
 					Ref<GDScriptParserRef> ref = parser->get_depended_parser_for(path);
-					if (ref.is_null() || ref->raise_status(GDScriptParserRef::USES_SOLVED) != OK) {
+					if (ref.is_null()) {
 						push_error(vformat(R"(Could not parse global class "%s" from "%s".)", first, ScriptServer::get_global_class_path(first)), p_type);
+						return bad_type;
+					}
+					if (ref->raise_status(GDScriptParserRef::USES_SOLVED) != OK) {
+						push_dependency_error(vformat(R"(Could not parse global class "%s" from "%s".)", first, path), ref, p_type);
 						return bad_type;
 					}
 					result = ref->get_parser()->head->get_datatype();
@@ -1777,7 +1781,7 @@ void GDScriptAnalyzer::resolve_class_uses(GDScriptParser::ClassNode *p_class, co
 			}
 			Error err = ext_parser_ref->raise_status(GDScriptParserRef::BODY_SOLVED);
 			if (err) {
-				push_error(vformat(R"(Could not resolve trait's body from "%s".)", uses->path), uses);
+				push_dependency_error(vformat(R"(Could not resolve trait's body from "%s".)", uses->path), ext_parser_ref, uses);
 				continue;
 			}
 			trait = ext_parser_ref->get_parser()->head;
@@ -2656,17 +2660,6 @@ void GDScriptAnalyzer::resolve_suite(GDScriptParser::SuiteNode *p_suite) {
 		resolve_node(stmt);
 		resolve_pending_lambda_bodies();
 		decide_suite_type(p_suite, stmt);
-
-		if (stmt->type == GDScriptParser::Node::IF) {
-			const GDScriptParser::IfNode *if_node = static_cast<const GDScriptParser::IfNode *>(stmt);
-			const bool true_exits = if_node->true_block != nullptr && if_node->true_block->has_return;
-			const bool false_exits = if_node->false_block != nullptr && if_node->false_block->has_return;
-			if (true_exits && !false_exits) {
-				collect_non_null_narrowing(if_node->condition, false, narrowed_non_null);
-			} else if (false_exits && !true_exits) {
-				collect_non_null_narrowing(if_node->condition, true, narrowed_non_null);
-			}
-		}
 	}
 	narrowed_non_null.resize(narrow_mark);
 }
@@ -2983,6 +2976,12 @@ void GDScriptAnalyzer::resolve_struct(GDScriptParser::StructNode *p_struct) {
 void GDScriptAnalyzer::resolve_variable(GDScriptParser::VariableNode *p_variable, bool p_is_local) {
 	static constexpr const char *kind = "variable";
 	resolve_assignable(p_variable, kind);
+	if (p_is_local && p_variable->get_datatype().is_nullable && p_variable->initializer != nullptr) {
+		const GDScriptParser::DataType &initializer_type = p_variable->initializer->get_datatype();
+		if (initializer_type.is_hard_type() && !initializer_type.is_nullable && initializer_type.kind == GDScriptParser::DataType::BUILTIN && initializer_type.builtin_type != Variant::OBJECT && initializer_type.builtin_type != Variant::NIL) {
+			narrowed_non_null.push_back({ nullptr, p_variable });
+		}
+	}
 
 #ifdef DEBUG_ENABLED
 	if (p_is_local) {
@@ -3013,45 +3012,167 @@ void GDScriptAnalyzer::resolve_parameter(GDScriptParser::ParameterNode *p_parame
 	resolve_assignable(p_parameter, kind);
 }
 
-bool GDScriptAnalyzer::is_narrowed_non_null(const void *p_source) const {
-	if (p_source == nullptr) {
+bool GDScriptAnalyzer::is_narrowed_non_null(const NarrowTarget &p_target) const {
+	if (!p_target.is_valid()) {
 		return false;
 	}
-	for (const void *source : narrowed_non_null) {
-		if (source == p_source) {
+	for (const NarrowTarget &target : narrowed_non_null) {
+		if (target == p_target) {
 			return true;
 		}
 	}
 	return false;
 }
 
-void GDScriptAnalyzer::invalidate_narrowing(const void *p_source) {
-	if (p_source == nullptr) {
+bool GDScriptAnalyzer::is_member_narrow_target(const NarrowTarget &p_target) const {
+	return member_narrow_sources.has(p_target.source) || (p_target.base != nullptr && member_narrow_sources.has(p_target.base));
+}
+
+void GDScriptAnalyzer::invalidate_narrowing(const NarrowTarget &p_target) {
+	if (!p_target.is_valid()) {
 		return;
 	}
-	for (uint32_t i = 0; i < narrowed_non_null.size(); i++) {
-		if (narrowed_non_null[i] == p_source) {
-			narrowed_non_null[i] = nullptr;
+	// A member write may alias any instance. A plain write also rebinds members accessed through it.
+	for (NarrowTarget &target : narrowed_non_null) {
+		if (target.source == p_target.source || (p_target.base == nullptr && target.base == p_target.source)) {
+			target = NarrowTarget();
 		}
 	}
 }
 
-const void *GDScriptAnalyzer::identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression) {
+void GDScriptAnalyzer::invalidate_member_narrowing() {
+	member_state_generation++;
+	// Direct member operands use live storage until their enclosing instruction runs.
+	// Restore earlier reads too: a later operand may change that storage to null.
+	for (const KeyValue<const GDScriptParser::ExpressionNode *, uint64_t> &read : member_read_generations) {
+		const NarrowTarget target = identifier_narrow_source(read.key);
+		if (target.is_valid()) {
+			const_cast<GDScriptParser::ExpressionNode *>(read.key)->set_datatype(target.source->get_datatype());
+		}
+	}
+	member_read_generations.clear();
+	for (NarrowTarget &target : narrowed_non_null) {
+		if (is_member_narrow_target(target)) {
+			target = NarrowTarget();
+		}
+	}
+}
+
+void GDScriptAnalyzer::invalidate_loop_narrowing(const GDScriptParser::Node *p_node) {
+	if (p_node == nullptr) {
+		return;
+	}
+	// A write later in the loop can precede a guarded read on the next iteration.
+	switch (p_node->type) {
+		case GDScriptParser::Node::SUITE:
+			for (const GDScriptParser::Node *statement : static_cast<const GDScriptParser::SuiteNode *>(p_node)->statements) {
+				invalidate_loop_narrowing(statement);
+			}
+			break;
+		case GDScriptParser::Node::ASSIGNMENT:
+			invalidate_narrowing(identifier_narrow_source(static_cast<const GDScriptParser::AssignmentNode *>(p_node)->assignee));
+			break;
+		case GDScriptParser::Node::IF: {
+			const GDScriptParser::IfNode *if_node = static_cast<const GDScriptParser::IfNode *>(p_node);
+			invalidate_loop_narrowing(if_node->true_block);
+			invalidate_loop_narrowing(if_node->false_block);
+		} break;
+		case GDScriptParser::Node::FOR:
+			invalidate_loop_narrowing(static_cast<const GDScriptParser::ForNode *>(p_node)->loop);
+			break;
+		case GDScriptParser::Node::WHILE:
+			invalidate_loop_narrowing(static_cast<const GDScriptParser::WhileNode *>(p_node)->loop);
+			break;
+		case GDScriptParser::Node::MATCH:
+			for (const GDScriptParser::MatchBranchNode *branch : static_cast<const GDScriptParser::MatchNode *>(p_node)->branches) {
+				invalidate_loop_narrowing(branch->guard_body);
+				invalidate_loop_narrowing(branch->block);
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+GDScriptAnalyzer::NarrowTarget GDScriptAnalyzer::identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression) {
+	NarrowTarget target;
+	if (p_expression == nullptr) {
+		return target;
+	}
+	if (p_expression->type == GDScriptParser::Node::SUBSCRIPT) {
+		const GDScriptParser::SubscriptNode *subscript = static_cast<const GDScriptParser::SubscriptNode *>(p_expression);
+		if (!subscript->is_attribute || subscript->base == nullptr || subscript->attribute == nullptr) {
+			return target;
+		}
+		if (subscript->base->type != GDScriptParser::Node::SELF) {
+			// Members of another instance are keyed by the variable holding it.
+			const NarrowTarget base = identifier_narrow_source(subscript->base);
+			if (!base.is_valid() || base.base != nullptr) {
+				return target;
+			}
+			target.base = base.source;
+		}
+		const GDScriptParser::DataType base_type = subscript->base->get_datatype();
+		if (base_type.is_hard_type() && base_type.kind == GDScriptParser::DataType::BUILTIN && base_type.builtin_type == Variant::STRUCT && !base_type.is_meta_type && base_type.struct_type != nullptr) {
+			// Struct attributes carry a type, but no identifier source. Track the field
+			// declaration with its receiver and invalidate it like other member storage.
+			const int *field_index = base_type.struct_type->fields_indices.getptr(subscript->attribute->name);
+			if (field_index == nullptr) {
+				return NarrowTarget();
+			}
+			target.source = base_type.struct_type->fields[*field_index];
+			member_narrow_sources.insert(target.source);
+			return target;
+		}
+		p_expression = subscript->attribute;
+	}
 	if (p_expression == nullptr || p_expression->type != GDScriptParser::Node::IDENTIFIER) {
-		return nullptr;
+		return NarrowTarget();
 	}
 	const GDScriptParser::IdentifierNode *id = static_cast<const GDScriptParser::IdentifierNode *>(p_expression);
 	switch (id->source) {
 		case GDScriptParser::IdentifierNode::FUNCTION_PARAMETER:
-			return id->parameter_source;
+			if (target.base == nullptr) {
+				target.source = id->parameter_source;
+			}
+			break;
 		case GDScriptParser::IdentifierNode::LOCAL_VARIABLE:
-			return id->variable_source;
+			if (target.base == nullptr) {
+				target.source = id->variable_source;
+			}
+			break;
+		case GDScriptParser::IdentifierNode::MEMBER_VARIABLE:
+		case GDScriptParser::IdentifierNode::STATIC_VARIABLE:
+			if (id->variable_source != nullptr && id->variable_source->property == GDScriptParser::VariableNode::PROP_NONE) {
+				member_narrow_sources.insert(id->variable_source);
+				target.source = id->variable_source;
+			}
+			break;
 		default:
-			return nullptr;
+			break;
+	}
+	if (!target.is_valid()) {
+		return NarrowTarget();
+	}
+	return target;
+}
+
+void GDScriptAnalyzer::apply_non_null_narrowing(GDScriptParser::ExpressionNode *p_expression) {
+	const NarrowTarget target = identifier_narrow_source(p_expression);
+	if (!target.is_valid()) {
+		return;
+	}
+	if (is_member_narrow_target(target)) {
+		member_read_generations[p_expression] = member_state_generation;
+	}
+	GDScriptParser::DataType datatype = p_expression->get_datatype();
+	if (datatype.is_nullable && is_narrowed_non_null(target)) {
+		datatype.is_nullable = false;
+		p_expression->set_datatype(datatype);
 	}
 }
 
-void GDScriptAnalyzer::collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<const void *> &r_targets) {
+void GDScriptAnalyzer::collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<NarrowTarget> &r_targets) {
 	if (p_condition == nullptr) {
 		return;
 	}
@@ -3063,6 +3184,12 @@ void GDScriptAnalyzer::collect_non_null_narrowing(const GDScriptParser::Expressi
 		return;
 	}
 	if (p_condition->type != GDScriptParser::Node::BINARY_OPERATOR) {
+		if (p_when_true && p_condition->get_datatype().is_nullable) {
+			const NarrowTarget target = identifier_narrow_source(p_condition);
+			if (target.is_valid() && (!is_member_narrow_target(target) || (member_read_generations.has(p_condition) && member_read_generations[p_condition] == member_state_generation))) {
+				r_targets.push_back(target);
+			}
+		}
 		return;
 	}
 	const GDScriptParser::BinaryOpNode *op = static_cast<const GDScriptParser::BinaryOpNode *>(p_condition);
@@ -3091,9 +3218,10 @@ void GDScriptAnalyzer::collect_non_null_narrowing(const GDScriptParser::Expressi
 				value = op->right_operand;
 			}
 			if (value != nullptr && value->get_datatype().is_nullable) {
-				const void *source = identifier_narrow_source(value);
-				if (source != nullptr) {
-					r_targets.push_back(source);
+				const NarrowTarget target = identifier_narrow_source(value);
+				// A call later in the condition may have invalidated an earlier member guard.
+				if (target.is_valid() && (!is_member_narrow_target(target) || (member_read_generations.has(value) && member_read_generations[value] == member_state_generation))) {
+					r_targets.push_back(target);
 				}
 			}
 			return;
@@ -3106,19 +3234,50 @@ void GDScriptAnalyzer::collect_non_null_narrowing(const GDScriptParser::Expressi
 void GDScriptAnalyzer::resolve_if(GDScriptParser::IfNode *p_if) {
 	reduce_expression(p_if->condition);
 
-	const uint32_t true_mark = narrowed_non_null.size();
-	collect_non_null_narrowing(p_if->condition, true, narrowed_non_null);
+	// Each branch starts from the condition's state. A call or write in one
+	// branch must not invalidate the guard used exclusively by the other.
+	const LocalVector<NarrowTarget> incoming = narrowed_non_null;
+	LocalVector<NarrowTarget> true_targets;
+	LocalVector<NarrowTarget> false_targets;
+	collect_non_null_narrowing(p_if->condition, true, true_targets);
+	collect_non_null_narrowing(p_if->condition, false, false_targets);
+	for (const NarrowTarget &target : true_targets) {
+		narrowed_non_null.push_back(target);
+	}
 	resolve_suite(p_if->true_block);
-	narrowed_non_null.resize(true_mark);
+	const LocalVector<NarrowTarget> true_state = narrowed_non_null;
 	p_if->set_datatype(p_if->true_block->get_datatype());
 
+	narrowed_non_null = incoming;
+	for (const NarrowTarget &target : false_targets) {
+		narrowed_non_null.push_back(target);
+	}
 	if (p_if->false_block != nullptr) {
-		const uint32_t false_mark = narrowed_non_null.size();
-		collect_non_null_narrowing(p_if->condition, false, narrowed_non_null);
 		resolve_suite(p_if->false_block);
-		narrowed_non_null.resize(false_mark);
 		decide_suite_type(p_if, p_if->false_block);
 	}
+
+	const bool true_exits = p_if->true_block->has_return;
+	const bool false_exits = p_if->false_block != nullptr && p_if->false_block->has_return;
+	if (true_exits && !false_exits) {
+		return; // Keep the surviving false branch's facts, including its guard.
+	}
+	if (false_exits && !true_exits) {
+		narrowed_non_null = true_state;
+		return;
+	}
+	// For two continuing branches, retain only incoming facts valid in both.
+	for (uint32_t i = 0; i < incoming.size(); i++) {
+		const NarrowTarget &target = incoming[i];
+		bool valid_in_true = false;
+		for (const NarrowTarget &true_target : true_state) {
+			valid_in_true |= target.is_valid() && true_target == target;
+		}
+		if (!valid_in_true || !is_narrowed_non_null(target)) {
+			narrowed_non_null[i] = NarrowTarget();
+		}
+	}
+	narrowed_non_null.resize(incoming.size());
 }
 
 void GDScriptAnalyzer::resolve_for(GDScriptParser::ForNode *p_for) {
@@ -3239,6 +3398,8 @@ void GDScriptAnalyzer::resolve_for(GDScriptParser::ForNode *p_for) {
 		}
 	}
 
+	invalidate_member_narrowing();
+	invalidate_loop_narrowing(p_for->loop);
 	resolve_suite(p_for->loop);
 	p_for->set_datatype(p_for->loop->get_datatype());
 #ifdef DEBUG_ENABLED
@@ -3249,9 +3410,15 @@ void GDScriptAnalyzer::resolve_for(GDScriptParser::ForNode *p_for) {
 }
 
 void GDScriptAnalyzer::resolve_while(GDScriptParser::WhileNode *p_while) {
+	invalidate_member_narrowing();
+	invalidate_loop_narrowing(p_while->loop);
 	resolve_node(p_while->condition, false);
 
+	const uint32_t narrow_mark = narrowed_non_null.size();
+	collect_non_null_narrowing(p_while->condition, true, narrowed_non_null);
 	resolve_suite(p_while->loop);
+	narrowed_non_null.resize(narrow_mark);
+	invalidate_member_narrowing();
 	p_while->set_datatype(p_while->loop->get_datatype());
 }
 
@@ -3746,18 +3913,38 @@ void GDScriptAnalyzer::reduce_assignment(GDScriptParser::AssignmentNode *p_assig
 	}
 #endif // DEBUG_ENABLED
 
-	const void *narrow_source = nullptr;
-	if (p_assignment->assignee->type == GDScriptParser::Node::IDENTIFIER) {
-		narrow_source = identifier_narrow_source(p_assignment->assignee);
-		invalidate_narrowing(narrow_source);
+	reduce_expression(p_assignment->assignee);
+	const NarrowTarget narrow_target = identifier_narrow_source(p_assignment->assignee);
+	if (narrow_target.is_valid()) {
+		invalidate_narrowing(narrow_target);
+		// The storage type stays nullable even when reads were narrowed by a guard.
+		p_assignment->assignee->set_datatype(narrow_target.source->get_datatype());
+	}
+	bool builtin_element_assignment = false;
+	if (p_assignment->assignee->type == GDScriptParser::Node::SUBSCRIPT) {
+		const GDScriptParser::SubscriptNode *subscript = static_cast<const GDScriptParser::SubscriptNode *>(p_assignment->assignee);
+		if (subscript->base != nullptr) {
+			const GDScriptParser::DataType &base_type = subscript->base->get_datatype();
+			builtin_element_assignment = base_type.is_hard_type() && base_type.kind == GDScriptParser::DataType::BUILTIN &&
+					!base_type.is_meta_type && base_type.builtin_type != Variant::OBJECT && base_type.builtin_type != Variant::NIL;
+			if (builtin_element_assignment && base_type.builtin_type == Variant::STRUCT && !subscript->is_attribute) {
+				// An indexed write may change any struct field unless its target is known.
+				builtin_element_assignment = narrow_target.is_valid();
+			}
+		}
+	}
+	// Built-in field and element writes preserve the containing value's nullability,
+	// but unidentified indexed struct writes must invalidate member proofs.
+	// Known field proofs were invalidated above without clearing unrelated member proofs.
+	// Calls and accessors in the value, base, or index have already invalidated member proofs.
+	if (!builtin_element_assignment && (!narrow_target.is_valid() || is_member_narrow_target(narrow_target))) {
+		invalidate_member_narrowing();
 	}
 
-	reduce_expression(p_assignment->assignee);
-
-	if (narrow_source != nullptr && p_assignment->operation == GDScriptParser::AssignmentNode::OP_NONE && p_assignment->assignee->get_datatype().is_nullable) {
+	if (p_assignment->assigned_value != nullptr && narrow_target.is_valid() && p_assignment->operation == GDScriptParser::AssignmentNode::OP_NONE && p_assignment->assignee->get_datatype().is_nullable) {
 		const GDScriptParser::DataType rhs_type = p_assignment->assigned_value->get_datatype();
 		if (rhs_type.is_set() && rhs_type.is_hard_type() && !rhs_type.is_nullable && rhs_type.kind == GDScriptParser::DataType::BUILTIN && rhs_type.builtin_type != Variant::OBJECT && rhs_type.builtin_type != Variant::NIL) {
-			narrowed_non_null.push_back(narrow_source);
+			narrowed_non_null.push_back(narrow_target);
 		}
 	}
 
@@ -3955,6 +4142,7 @@ void GDScriptAnalyzer::reduce_assignment(GDScriptParser::AssignmentNode *p_assig
 }
 
 void GDScriptAnalyzer::reduce_await(GDScriptParser::AwaitNode *p_await) {
+	Finally invalidate_members([this]() { invalidate_member_narrowing(); });
 	if (p_await->to_await == nullptr) {
 		GDScriptParser::DataType await_type;
 		await_type.kind = GDScriptParser::DataType::VARIANT;
@@ -4142,6 +4330,7 @@ const char *check_for_renamed_identifier(String identifier, GDScriptParser::Node
 #endif // SUGGEST_GODOT4_RENAMES
 
 void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_await, bool p_is_root) {
+	Finally invalidate_members([this]() { invalidate_member_narrowing(); });
 	bool all_is_constant = true;
 	HashMap<int, GDScriptParser::ArrayNode *> arrays; // For array literal to potentially type when passing.
 	HashMap<int, GDScriptParser::DictionaryNode *> dictionaries; // Same, but for dictionaries.
@@ -4922,7 +5111,7 @@ GDScriptParser::DataType GDScriptAnalyzer::make_global_class_meta_type(const Str
 
 		Error err = ref->raise_status(GDScriptParserRef::USES_SOLVED);
 		if (err) {
-			push_error(vformat(R"(Could not resolve class "%s", because of a parser error.)", p_class_name), p_source);
+			push_dependency_error(vformat(R"(Could not resolve class "%s".)", p_class_name), ref, p_source);
 			type.type_source = GDScriptParser::DataType::UNDETECTED;
 			type.kind = GDScriptParser::DataType::VARIANT;
 			return type;
@@ -5418,6 +5607,14 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 }
 
 void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_identifier, bool can_be_builtin) {
+	Finally narrow_read([this, p_identifier]() {
+		if (p_identifier->source == GDScriptParser::IdentifierNode::INHERITED_VARIABLE ||
+				((p_identifier->source == GDScriptParser::IdentifierNode::MEMBER_VARIABLE || p_identifier->source == GDScriptParser::IdentifierNode::STATIC_VARIABLE) &&
+						(p_identifier->variable_source == nullptr || p_identifier->variable_source->property != GDScriptParser::VariableNode::PROP_NONE))) {
+			invalidate_member_narrowing();
+		}
+		apply_non_null_narrowing(p_identifier);
+	});
 	/// @todo This is an opportunity to further infer types.
 
 	// Check if we are inside an enum. This allows enum values to access other elements of the same enum.
@@ -5449,9 +5646,6 @@ void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_ident
 	switch (p_identifier->source) {
 		case GDScriptParser::IdentifierNode::FUNCTION_PARAMETER: {
 			GDScriptParser::DataType datatype = p_identifier->parameter_source->get_datatype();
-			if (datatype.is_nullable && is_narrowed_non_null(p_identifier->parameter_source)) {
-				datatype.is_nullable = false;
-			}
 			p_identifier->set_datatype(datatype);
 			found_source = true;
 		} break;
@@ -5476,9 +5670,6 @@ void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_ident
 		case GDScriptParser::IdentifierNode::STATIC_VARIABLE:
 		case GDScriptParser::IdentifierNode::LOCAL_VARIABLE: {
 			GDScriptParser::DataType datatype = p_identifier->variable_source->get_datatype();
-			if (p_identifier->source == GDScriptParser::IdentifierNode::LOCAL_VARIABLE && datatype.is_nullable && is_narrowed_non_null(p_identifier->variable_source)) {
-				datatype.is_nullable = false;
-			}
 			p_identifier->set_datatype(datatype);
 			found_source = true;
 		}
@@ -5843,6 +6034,22 @@ void GDScriptAnalyzer::reduce_self(GDScriptParser::SelfNode *p_self) {
 }
 
 void GDScriptAnalyzer::reduce_subscript(GDScriptParser::SubscriptNode *p_subscript, bool p_can_be_pseudo_type) {
+	Finally narrow_read([this, p_subscript]() {
+		if (p_subscript->base != nullptr) {
+			const GDScriptParser::DataType &base_type = p_subscript->base->get_datatype();
+			if (base_type.kind == GDScriptParser::DataType::VARIANT || base_type.builtin_type == Variant::OBJECT) {
+				const GDScriptParser::IdentifierNode *attribute = p_subscript->attribute;
+				const bool plain_storage = p_subscript->is_attribute && attribute != nullptr &&
+						(attribute->source == GDScriptParser::IdentifierNode::MEMBER_VARIABLE || attribute->source == GDScriptParser::IdentifierNode::STATIC_VARIABLE || attribute->source == GDScriptParser::IdentifierNode::INHERITED_VARIABLE) &&
+						attribute->variable_source != nullptr && attribute->variable_source->property == GDScriptParser::VariableNode::PROP_NONE;
+				// Object and dynamic accesses can invoke a getter, including _get().
+				if (!plain_storage) {
+					invalidate_member_narrowing();
+				}
+			}
+		}
+		apply_non_null_narrowing(p_subscript);
+	});
 	if (p_subscript->base == nullptr) {
 		return;
 	}
@@ -6372,7 +6579,7 @@ void GDScriptAnalyzer::reduce_unary_op(GDScriptParser::UnaryOpNode *p_unary_op) 
 	GDScriptParser::DataType operand_type = p_unary_op->operand->get_datatype();
 
 #ifdef DEBUG_ENABLED
-	if (operand_type.is_nullable && operand_type.kind == GDScriptParser::DataType::BUILTIN && !operand_type.is_meta_type) {
+	if (p_unary_op->variant_op != Variant::OP_NOT && operand_type.is_nullable && operand_type.kind == GDScriptParser::DataType::BUILTIN && !operand_type.is_meta_type) {
 		parser->push_warning(p_unary_op, GDScriptWarning::UNSAFE_NULLABLE_ACCESS, operand_type.to_string());
 	}
 #endif // DEBUG_ENABLED
@@ -7568,9 +7775,25 @@ bool GDScriptAnalyzer::check_type_compatibility(const GDScriptParser::DataType &
 	return false;
 }
 
-void GDScriptAnalyzer::push_error(const String &p_message, const GDScriptParser::Node *p_origin) {
+void GDScriptAnalyzer::push_error(const String &p_message, const GDScriptParser::Node *p_origin, const ScriptLanguage::ScriptError::RelatedError &p_related_error) {
 	mark_node_unsafe(p_origin);
-	parser->push_error(p_message, p_origin);
+	parser->push_error(p_message, p_origin, p_related_error);
+}
+
+void GDScriptAnalyzer::push_dependency_error(const String &p_message, const Ref<GDScriptParserRef> &p_dependency, const GDScriptParser::Node *p_origin) {
+	const List<GDScriptParser::ParserError> &dependency_errors = p_dependency->get_parser()->get_errors();
+	if (dependency_errors.is_empty()) {
+		push_error(p_message + " " + vformat(R"(Could not parse "%s".)", p_dependency->get_path()), p_origin);
+		return;
+	}
+
+	const GDScriptParser::ParserError &dependency_error = dependency_errors.front()->get();
+	ScriptLanguage::ScriptError::RelatedError related_error = dependency_error.related_error;
+	if (related_error.path.is_empty()) {
+		related_error = { p_dependency->get_path(), dependency_error.line, dependency_error.column, dependency_error.message };
+	}
+	// Reuse the original cause through dependency chains without nesting diagnostic messages.
+	push_error(p_message + " " + vformat("%s:%d:%d: %s", related_error.path, related_error.line, related_error.column, related_error.message), p_origin, related_error);
 }
 
 void GDScriptAnalyzer::mark_node_unsafe(const GDScriptParser::Node *p_node) {
@@ -7645,10 +7868,18 @@ void GDScriptAnalyzer::resolve_pending_lambda_bodies() {
 	pending_body_resolution_lambdas.clear();
 
 	for (GDScriptParser::LambdaNode *lambda : lambdas) {
+		const LocalVector<NarrowTarget> previous_narrowing = narrowed_non_null;
+		const uint64_t previous_generation = member_state_generation;
+		const HashMap<const GDScriptParser::ExpressionNode *, uint64_t> previous_reads = member_read_generations;
+		member_read_generations.clear();
+		invalidate_member_narrowing();
 		current_lambda = lambda;
 		static_context = lambda->function->is_static;
 
 		resolve_function_body(lambda->function, true);
+		narrowed_non_null = previous_narrowing;
+		member_state_generation = previous_generation;
+		member_read_generations = previous_reads;
 
 		int captures_amount = lambda->captures.size();
 		if (captures_amount > 0) {

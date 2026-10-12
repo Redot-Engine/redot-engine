@@ -200,7 +200,6 @@ private:
 
 	WorldScape3DUI *_ui = nullptr;
 	WorldScape3D *_last_terrain = nullptr;
-	WorldScape3DAssetDock *_asset_dock = nullptr;
 	NavigationRegion3D *_nav_region = nullptr;
 	Ref<SceneTreeTimer> _scene_change_timer;
 
@@ -230,7 +229,7 @@ public:
 	WorldScape3D *get_last_terrain() const;
 	NavigationRegion3D *get_nav_region() const { return _nav_region; }
 
-	WorldScape3DAssetDock *get_asset_dock() const { return _asset_dock; }
+	WorldScape3DAssetDock *get_asset_dock() const;
 	Window *get_rex_editor_window() const { return _rex_editor_window; }
 
 	bool is_selected() const;

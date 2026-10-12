@@ -73,11 +73,26 @@ class GDScriptAnalyzer {
 	bool experimental_struct_warned = false;
 #endif
 
-	LocalVector<const void *> narrowed_non_null;
-	bool is_narrowed_non_null(const void *p_source) const;
-	void invalidate_narrowing(const void *p_source);
-	static const void *identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression);
-	static void collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<const void *> &r_targets);
+	struct NarrowTarget {
+		const GDScriptParser::AssignableNode *base = nullptr;
+		const GDScriptParser::AssignableNode *source = nullptr;
+
+		bool is_valid() const { return source != nullptr; }
+		bool operator==(const NarrowTarget &p_other) const { return base == p_other.base && source == p_other.source; }
+	};
+
+	LocalVector<NarrowTarget> narrowed_non_null;
+	HashSet<const GDScriptParser::AssignableNode *> member_narrow_sources;
+	HashMap<const GDScriptParser::ExpressionNode *, uint64_t> member_read_generations;
+	uint64_t member_state_generation = 0;
+	bool is_narrowed_non_null(const NarrowTarget &p_target) const;
+	bool is_member_narrow_target(const NarrowTarget &p_target) const;
+	void invalidate_narrowing(const NarrowTarget &p_target);
+	void invalidate_member_narrowing();
+	void invalidate_loop_narrowing(const GDScriptParser::Node *p_node);
+	NarrowTarget identifier_narrow_source(const GDScriptParser::ExpressionNode *p_expression);
+	void apply_non_null_narrowing(GDScriptParser::ExpressionNode *p_expression);
+	void collect_non_null_narrowing(const GDScriptParser::ExpressionNode *p_condition, bool p_when_true, LocalVector<NarrowTarget> &r_targets);
 
 	/// @name Tests for detecting invalid overloading of script members
 	/// @{
@@ -179,7 +194,8 @@ class GDScriptAnalyzer {
 	bool is_type_compatible(const GDScriptParser::DataType &p_target, const GDScriptParser::DataType &p_source, bool p_allow_implicit_conversion = false, const GDScriptParser::Node *p_source_node = nullptr);
 	GDScriptParser::DataType get_type_constraint_for_overlap(const GDScriptParser::DataType &p_type);
 	bool can_types_overlap(const GDScriptParser::DataType &p_left, const GDScriptParser::DataType &p_right);
-	void push_error(const String &p_message, const GDScriptParser::Node *p_origin = nullptr);
+	void push_error(const String &p_message, const GDScriptParser::Node *p_origin = nullptr, const ScriptLanguage::ScriptError::RelatedError &p_related_error = {});
+	void push_dependency_error(const String &p_message, const Ref<GDScriptParserRef> &p_dependency, const GDScriptParser::Node *p_origin);
 	void mark_node_unsafe(const GDScriptParser::Node *p_node);
 	void downgrade_node_type_source(GDScriptParser::Node *p_node);
 	void mark_lambda_use_self();
