@@ -123,6 +123,7 @@ class ChannelPackerDialog : public AcceptDialog {
 
 public:
 	ChannelPackerDialog();
+	~ChannelPackerDialog() override;
 
 	void _notification(int what);
 

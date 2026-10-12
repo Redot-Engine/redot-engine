@@ -143,6 +143,11 @@ DirectorySetup::DirectorySetup(WorldScape3DEditorPlugin *plugin) :
 	setup_layout();
 }
 
+DirectorySetup::~DirectorySetup() {
+	_file_dialog->queue_free();
+	_dialog->queue_free();
+}
+
 void DirectorySetup::directory_setup_popup() {
 	auto terrain = _plugin->get_terrain();
 	if (!terrain) {

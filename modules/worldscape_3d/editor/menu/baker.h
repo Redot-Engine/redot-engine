@@ -64,6 +64,8 @@ class BakerLODDialog final : public ConfirmationDialog {
 	void on_lod_box_value_changed(real_t value);
 
 public:
+	~BakerLODDialog() override;
+
 	void set_description(const String &description) { _description = description; }
 
 	int get_lod() const { return _lod; }
@@ -91,6 +93,7 @@ class Baker : public Node {
 
 public:
 	explicit Baker(WorldScape3DEditorPlugin *plugin);
+	~Baker() override;
 
 	Vector<WorldScape3D *> find_nav_region_terrains(NavigationRegion3D *nav_region) const;
 	Vector<NavigationRegion3D *> find_terrain_nav_regions(WorldScape3D *terrain) const;
