@@ -46,6 +46,8 @@ func _initialize() -> void:
 	# at this block count (see READBACK_BYTES_LIMIT in flow_simulation.cpp).
 	sim.set("max_blocks", 1024)
 	sim.set("cell_size", 0.2)
+	sim.set("cpu_readback", true) # the check asserts on the query surface
+	sim.set("fog_density", 2.4)
 
 	var emitter: Node3D = ClassDB.instantiate("PhysXFlowEmitter3D") as Node3D
 	sim.add_child(emitter)

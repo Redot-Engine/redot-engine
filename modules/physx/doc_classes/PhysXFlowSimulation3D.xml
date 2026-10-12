@@ -116,7 +116,7 @@
 		<member name="cooling_rate" type="float" setter="set_cooling_rate" getter="get_cooling_rate" default="1.5">
 			Exponential temperature cooling rate.
 		</member>
-		<member name="cpu_readback" type="bool" setter="set_cpu_readback" getter="get_cpu_readback" default="true">
+		<member name="cpu_readback" type="bool" setter="set_cpu_readback" getter="get_cpu_readback" default="false">
 			Copies the gas back to the CPU once every few steps for the query API ([method get_last_max_smoke], bounds). The GPU render path never touches it; only turn this off if you read none of the query values.
 		</member>
 		<member name="debug_stats" type="bool" setter="set_debug_stats" getter="get_debug_stats" default="false">
@@ -134,7 +134,7 @@
 		<member name="fire_emission_strength" type="float" setter="set_fire_emission_strength" getter="get_fire_emission_strength" default="6.0">
 			Emission intensity scale.
 		</member>
-		<member name="fog_density" type="float" setter="set_fog_density" getter="get_fog_density" default="2.4">
+		<member name="fog_density" type="float" setter="set_fog_density" getter="get_fog_density" default="4.0">
 			Fog density multiplier applied to the smoke channel.
 		</member>
 		<member name="fuel_fade" type="float" setter="set_fuel_fade" getter="get_fuel_fade" default="0.0">
@@ -143,7 +143,7 @@
 		<member name="gravity" type="Vector3" setter="set_gravity" getter="get_gravity" default="Vector3(0, -100, 0)">
 			Buoyancy reference gravity inside the solver (Flow's own units; [member buoyancy_per_temp] works against this). Redot's world gravity does not automatically apply -- a Flow volume is its own world.
 		</member>
-		<member name="max_blocks" type="int" setter="set_max_blocks" getter="get_max_blocks" default="4096">
+		<member name="max_blocks" type="int" setter="set_max_blocks" getter="get_max_blocks" default="1024">
 			Sparse block budget (allocation cap). Changing it recreates the grid (clears the simulation).
 		</member>
 		<member name="max_steps_per_simulate" type="int" setter="set_max_steps_per_simulate" getter="get_max_steps_per_simulate" default="4">

@@ -237,6 +237,12 @@ private:
 	// this database, which is also what the SDK sample path uses).
 	NvFlowGridParams *grid_params = nullptr;
 	NvFlowGridParamsSnapshot *mapped_snapshot = nullptr;
+	// The desc mapped over the CURRENT snapshot, kept alive across the frame:
+	// render() composites with the SAME committed params step() simulated
+	// with (offscreen colormap / raymarch tuning). Re-pulling by time in
+	// render() handed the SDK a stale snapshot and crashed.
+	NvFlowGridParamsDesc mapped_desc = {};
+	bool desc_active = false;
 	uint64_t pull_id = 1;
 
 	// SDK parameter storage (stable for the duration of a recorded frame).
@@ -295,7 +301,8 @@ private:
 	};
 	ReadbackSlot slots[2];
 	uint32_t record_slot = 0;
-	bool readback_limit_warned = false; // one warn per grid life
+	bool readback_limit_warned = false;
+	mutable bool render_diag_done = false; // TEMP diagnostics // one warn per grid life
 
 	FlowReadbackFrame last_readback;
 	uint64_t frames_simulated = 0;

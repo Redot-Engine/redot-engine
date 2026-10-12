@@ -39,6 +39,7 @@ func _initialize() -> void:
 	holder.add_child(sim)
 	sim.set("max_blocks", 1024)
 	sim.set("cell_size", 0.25) # explicit: auto-cellsize is a debug suspect
+	sim.set("cpu_readback", true) # the test asserts on the query surface
 	sim.set("debug_stats", true)
 
 	emitter = ClassDB.instantiate("PhysXFlowEmitter3D")

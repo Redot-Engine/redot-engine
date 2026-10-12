@@ -639,7 +639,9 @@ void PhysXFlowSimulation3D::_fill_render_settings(FlowRenderSettings &r_settings
 	r_settings.temperature_range = temperature_range;
 	// fog_density was the FogVolume's linear scale; the ray marcher's
 	// attenuation is exponential -- keep the authored look at 1/10th.
-	r_settings.attenuation = fog_density * 0.1f;
+	// 1:1: fog_density IS the ray-march attenuation per meter (upstream
+	// smoke_density semantics), so master-authored densities port as-is.
+	r_settings.attenuation = fog_density;
 	r_settings.light_direction[0] = light_dir.x;
 	r_settings.light_direction[1] = light_dir.y;
 	r_settings.light_direction[2] = light_dir.z;

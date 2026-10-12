@@ -71,7 +71,7 @@ class PhysXFlowSimulation3D : public Node3D {
 	// --- Simulation settings (FlowSimSettings mirror) ---------------------
 	bool enabled = true;
 	bool paused = false;
-	int max_blocks = 4096;
+	int max_blocks = 1024; // upstream PhysXFlow3D parity; 4096 x several sims exhausts VRAM
 	// Voxel size. 0 would mean the SDK's auto-cellsize, but that resolves no
 	// allocation in 2.2.0 without a seeded densityCellSize (measured), so the
 	// default is a real 0.25 m voxel -- keep 0 only for experiments.
@@ -141,7 +141,7 @@ class PhysXFlowSimulation3D : public Node3D {
 	// Smoke opacity in the ray march, per unit of smoke per meter. The old
 	// FogVolume's density scale was linear (24 read well there); the ray
 	// marcher's attenuation is exponential, so the default maps 1/10th.
-	float fog_density = 2.4f;
+	float fog_density = 4.0f; // 1:1 ray-march attenuation (upstream smoke_density)
 	Color smoke_albedo = Color(0.9f, 0.9f, 0.9f);
 	bool fire_emission = true;
 	float fire_emission_strength = 6.0f;
@@ -158,7 +158,7 @@ class PhysXFlowSimulation3D : public Node3D {
 	// path never touches it. On the fallback path (no RenderingDevice) there
 	// is no render to show and readback is the only data channel, so it runs
 	// regardless of this flag.
-	bool cpu_readback = true;
+	bool cpu_readback = false; // opt-in: serves only the query API now (upstream default)
 	static constexpr int READBACK_INTERVAL = 4;
 
 	FlowReadbackFrame last_frame;

@@ -152,6 +152,8 @@ struct Context {
 	HashMap<uint64_t, Buffer *> buffers_by_id;
 	LocalVector<BufferTransient *> buffer_transients;
 	LocalVector<TextureTransient *> texture_transients;
+	LocalVector<BufferTransient *> free_buffer_transients; // pooled wrappers
+	LocalVector<TextureTransient *> free_texture_transients;
 	LocalVector<BufferAcquire *> buffer_acquires;
 	LocalVector<TextureAcquire *> texture_acquires;
 	LocalVector<Buffer *> dead_buffers; // freed at the next flush
@@ -399,7 +401,10 @@ NvFlowBufferTransient *NV_FLOW_ABI getBufferTransient(NvFlowContext *p_context, 
 		found->pooled = true;
 	}
 	found->last_frame = c->frame;
-	BufferTransient *t = memnew(BufferTransient);
+	BufferTransient *t = c->free_buffer_transients.is_empty() ? memnew(BufferTransient) : c->free_buffer_transients[c->free_buffer_transients.size() - 1];
+	if (!c->free_buffer_transients.is_empty()) {
+		c->free_buffer_transients.remove_at(c->free_buffer_transients.size() - 1);
+	}
 	t->desc = *p_desc;
 	t->buffer = found;
 	c->buffer_transients.push_back(t);
@@ -410,7 +415,10 @@ NvFlowBufferTransient *NV_FLOW_ABI registerBufferAsTransient(NvFlowContext *p_co
 	Context *c = ctx(p_context);
 	Buffer *b = reinterpret_cast<Buffer *>(p_buffer);
 	b->last_frame = c->frame;
-	BufferTransient *t = memnew(BufferTransient);
+	BufferTransient *t = c->free_buffer_transients.is_empty() ? memnew(BufferTransient) : c->free_buffer_transients[c->free_buffer_transients.size() - 1];
+	if (!c->free_buffer_transients.is_empty()) {
+		c->free_buffer_transients.remove_at(c->free_buffer_transients.size() - 1);
+	}
 	t->desc = b->desc;
 	t->buffer = b;
 	c->buffer_transients.push_back(t);
@@ -584,7 +592,10 @@ NvFlowTextureTransient *NV_FLOW_ABI getTextureTransient(NvFlowContext *p_context
 		found->pooled = true;
 	}
 	found->last_frame = c->frame;
-	TextureTransient *tt = memnew(TextureTransient);
+	TextureTransient *tt = c->free_texture_transients.is_empty() ? memnew(TextureTransient) : c->free_texture_transients[c->free_texture_transients.size() - 1];
+	if (!c->free_texture_transients.is_empty()) {
+		c->free_texture_transients.remove_at(c->free_texture_transients.size() - 1);
+	}
 	tt->desc = *p_desc;
 	tt->texture = found;
 	c->texture_transients.push_back(tt);
@@ -595,7 +606,10 @@ NvFlowTextureTransient *NV_FLOW_ABI registerTextureAsTransient(NvFlowContext *p_
 	Context *c = ctx(p_context);
 	Texture *t = reinterpret_cast<Texture *>(p_texture);
 	t->last_frame = c->frame;
-	TextureTransient *tt = memnew(TextureTransient);
+	TextureTransient *tt = c->free_texture_transients.is_empty() ? memnew(TextureTransient) : c->free_texture_transients[c->free_texture_transients.size() - 1];
+	if (!c->free_texture_transients.is_empty()) {
+		c->free_texture_transients.remove_at(c->free_texture_transients.size() - 1);
+	}
 	tt->desc = t->desc;
 	tt->texture = t;
 	c->texture_transients.push_back(tt);
@@ -1143,6 +1157,12 @@ void destroy(Context *p_context) {
 	for (TextureTransient *t : c->texture_transients) {
 		memdelete(t);
 	}
+	for (BufferTransient *t : c->free_buffer_transients) {
+		memdelete(t);
+	}
+	for (TextureTransient *t : c->free_texture_transients) {
+		memdelete(t);
+	}
 	for (BufferAcquire *a : c->buffer_acquires) {
 		memdelete(a);
 	}
@@ -1257,11 +1277,11 @@ void flush(Context *p_context) {
 		}
 	}
 	for (BufferTransient *t : c->buffer_transients) {
-		memdelete(t);
+		c->free_buffer_transients.push_back(t); // pooled: Flow re-asks every pass
 	}
 	c->buffer_transients.clear();
 	for (TextureTransient *t : c->texture_transients) {
-		memdelete(t);
+		c->free_texture_transients.push_back(t);
 	}
 	c->texture_transients.clear();
 

@@ -261,6 +261,9 @@ void FlowSimulation::reset() {
 
 static void apply_settings_to_layer(NvFlowGridSimulateLayerParams &r_layer, const FlowSimSettings &p_settings) {
 	r_layer = NvFlowGridSimulateLayerParams_default;
+	// The sim layer keeps v1's explicit luid: the SDK dereferences the
+	// layer by it (0 crashes). Offscreen/render request 0 and let the
+	// params database bind them to the committed sim layer.
 	r_layer.luid = 1;
 	r_layer.layer = 0;
 	r_layer.level = 0;
@@ -592,9 +595,12 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 		if (mapped_snapshot != nullptr) {
 			gpi->unmapParamsDesc(grid_params, mapped_snapshot);
 			mapped_snapshot = nullptr;
+			desc_active = false;
 		}
 		mapped_snapshot = gpi->getParamsSnapshot(grid_params, p_absolute_time, pull_id++);
-		if (mapped_snapshot != nullptr && gpi->mapParamsDesc(grid_params, mapped_snapshot, &params_desc)) {
+		if (mapped_snapshot != nullptr && gpi->mapParamsDesc(grid_params, mapped_snapshot, &mapped_desc)) {
+			params_desc = mapped_desc;
+			desc_active = true;
 			// desc now points at the database's processed snapshots.
 			if (diag_flags & DIAG_SPARSE_LAYOUT) {
 				static bool once = false;
@@ -671,11 +677,8 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 		}
 	}
 
-	// The desc pointed into the database's snapshot; done consuming it.
-	if (mapped_snapshot != nullptr) {
-		runtime->get_grid_params_interface()->unmapParamsDesc(grid_params, mapped_snapshot);
-		mapped_snapshot = nullptr;
-	}
+	// The mapped desc STAYS alive: render() composites this frame with the
+	// same committed params; the next step() unmaps it.
 	frames_simulated++;
 	sim_time = p_absolute_time;
 
@@ -813,13 +816,26 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 
 // ---- Readback buffers ----------------------------------------------------
 
+// Readback buffers grow in 16 MB buckets and never shrink: the grid's
+// virtual dimension (and so the copy size) climbs in small steps while a
+// plume develops -- an exact-size buffer would be destroyed and recreated
+// every few steps (each recreation a 10-100 MB alloc, plus a device sync
+// on the fallback path), per slot, per simulation.
+constexpr uint64_t READBACK_BUCKET = 16ull << 20;
+
+static uint64_t readback_bucket(uint64_t p_bytes) {
+	return (p_bytes + READBACK_BUCKET - 1) / READBACK_BUCKET * READBACK_BUCKET;
+}
+
 void FlowSimulation::_ensure_readback_buffers(ReadbackSlot &r_slot, uint64_t p_texture_bytes, uint64_t p_table_bytes) {
 	NvFlowContextInterface *ci = _context_iface();
 	NvFlowContext *fc = _context();
 	if (ci == nullptr || fc == nullptr) {
 		return;
 	}
-	if (p_texture_bytes > 0 && (r_slot.texture_buffer == nullptr || r_slot.texture_buffer_bytes < p_texture_bytes)) {
+	const uint64_t texture_bucket = readback_bucket(p_texture_bytes);
+	const uint64_t table_bucket = readback_bucket(p_table_bytes);
+	if (p_texture_bytes > 0 && (r_slot.texture_buffer == nullptr || r_slot.texture_buffer_bytes < texture_bucket)) {
 		if (r_slot.texture_buffer != nullptr) {
 			// The RD context defers frees behind flush(); only the fallback
 			// device needs an explicit idle before destroying.
@@ -831,15 +847,15 @@ void FlowSimulation::_ensure_readback_buffers(ReadbackSlot &r_slot, uint64_t p_t
 		}
 		NvFlowBufferDesc desc = {};
 		desc.usageFlags = eNvFlowBufferUsage_bufferCopyDst;
-		desc.sizeInBytes = p_texture_bytes;
+		desc.sizeInBytes = texture_bucket;
 		r_slot.texture_buffer = ci->createBuffer(fc, eNvFlowMemoryType_readback, &desc);
-		r_slot.texture_buffer_bytes = p_texture_bytes;
+		r_slot.texture_buffer_bytes = texture_bucket;
 		if (r_slot.texture_buffer == nullptr) {
 			ERR_PRINT(vformat("[Flow] failed to allocate %d byte density readback buffer.", (int64_t)p_texture_bytes));
 			r_slot.texture_buffer_bytes = 0;
 		}
 	}
-	if (p_table_bytes > 0 && (r_slot.table_buffer == nullptr || r_slot.table_buffer_bytes < p_table_bytes)) {
+	if (p_table_bytes > 0 && (r_slot.table_buffer == nullptr || r_slot.table_buffer_bytes < table_bucket)) {
 		if (r_slot.table_buffer != nullptr) {
 			if (!using_rd) {
 				runtime->wait_idle();
@@ -849,9 +865,9 @@ void FlowSimulation::_ensure_readback_buffers(ReadbackSlot &r_slot, uint64_t p_t
 		}
 		NvFlowBufferDesc desc = {};
 		desc.usageFlags = eNvFlowBufferUsage_bufferCopyDst;
-		desc.sizeInBytes = p_table_bytes;
+		desc.sizeInBytes = table_bucket;
 		r_slot.table_buffer = ci->createBuffer(fc, eNvFlowMemoryType_readback, &desc);
-		r_slot.table_buffer_bytes = p_table_bytes;
+		r_slot.table_buffer_bytes = table_bucket;
 		if (r_slot.table_buffer == nullptr) {
 			ERR_PRINT(vformat("[Flow] failed to allocate %d byte table readback buffer.", (int64_t)p_table_bytes));
 			r_slot.table_buffer_bytes = 0;
@@ -1113,20 +1129,15 @@ uint64_t FlowSimulation::render(const float p_view[16], const float p_projection
 		return 0;
 	}
 
-	// The params snapshot from the step that last committed (sim_time) drives
-	// the offscreen colorization + the raymarch's render layer.
-	NvFlowGridParamsSnapshot *params_snapshot = gpi->getParamsSnapshot(grid_params, sim_time, 0llu);
-	NvFlowGridParamsDesc params_desc = {};
-	bool mapped = false;
-	if (params_snapshot != nullptr) {
-		mapped = gpi->mapParamsDesc(grid_params, params_snapshot, &params_desc);
+	// The desc step() mapped is still alive (until the next step unmaps it):
+	// render composites with the SAME committed offscreen/raymarch params the
+	// simulation ran with. Re-pulling the snapshot by time here returned the
+	// database's freed staging state after the first pull and crashed the
+	// SDK's render (five sims, first second).
+	if (!desc_active) {
+		return 0; // no committed params yet this frame
 	}
-	if (!mapped) {
-		if (params_snapshot != nullptr) {
-			gpi->unmapParamsDesc(grid_params, params_snapshot);
-		}
-		return 0;
-	}
+	const NvFlowGridParamsDesc &params_desc = mapped_desc;
 
 	NvFlowFloat4x4 view;
 	NvFlowFloat4x4 projection;
@@ -1147,7 +1158,7 @@ uint64_t FlowSimulation::render(const float p_view[16], const float p_projection
 	gi->render(fc, grid, &params_desc, &view, &projection, &projection,
 			p_width, p_height, p_depth_width, p_depth_height,
 			1.0f, depth, eNvFlowFormat_r16g16b16a16_float, color, &out);
-	gpi->unmapParamsDesc(grid_params, params_snapshot);
+	// The desc stays mapped until the next step (see above).
 	return out != nullptr ? FlowContextRD::transient_texture_rid(out) : 0;
 }
 
