@@ -3432,7 +3432,7 @@ void TextEdit::_update_caches() {
 	if (syntax_highlighter.is_valid()) {
 		syntax_highlighter->set_text_edit(this);
 	}
-	_clear_syntax_highlighting_cache();
+	clear_syntax_highlighting_cache();
 	queue_accessibility_update();
 }
 
@@ -3478,7 +3478,7 @@ void TextEdit::_update_ime_text() {
 			emit_signal(SNAME("lines_edited_from"), l, l);
 		}
 	}
-	_clear_syntax_highlighting_cache();
+	clear_syntax_highlighting_cache();
 	queue_accessibility_update();
 	queue_redraw();
 }
@@ -6965,7 +6965,7 @@ void TextEdit::set_syntax_highlighter(Ref<SyntaxHighlighter> p_syntax_highlighte
 	if (syntax_highlighter.is_valid()) {
 		syntax_highlighter->set_text_edit(this);
 	}
-	_clear_syntax_highlighting_cache();
+	clear_syntax_highlighting_cache();
 	queue_redraw();
 }
 
@@ -9005,7 +9005,7 @@ Vector<Pair<int64_t, Color>> TextEdit::_get_line_syntax_highlighting(int p_line)
 	return result;
 }
 
-void TextEdit::_clear_syntax_highlighting_cache() {
+void TextEdit::clear_syntax_highlighting_cache() {
 	syntax_highlighting_cache.clear();
 }
 
@@ -9032,7 +9032,7 @@ int TextEdit::get_selection_column(int p_caret) const {
 /*** Super internal Core API. Everything builds on it. ***/
 
 void TextEdit::_text_changed() {
-	_clear_syntax_highlighting_cache();
+	clear_syntax_highlighting_cache();
 	_cancel_drag_and_drop_text();
 	queue_redraw();
 

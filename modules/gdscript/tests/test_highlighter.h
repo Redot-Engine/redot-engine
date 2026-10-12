@@ -49,6 +49,16 @@
 
 namespace GDScriptTests {
 
+class DrawingGDScriptHighlighter : public GDScriptSyntaxHighlighter {
+public:
+	HashSet<int> highlighted_lines;
+
+	Dictionary _get_line_syntax_highlighting_impl(int p_line) override {
+		highlighted_lines.insert(p_line);
+		return GDScriptSyntaxHighlighter::_get_line_syntax_highlighting_impl(p_line);
+	}
+};
+
 TEST_CASE("[Editor][Modules][GDScript] Static variables use member highlighting") {
 	GDScriptLanguage::get_singleton()->init();
 	const String base_path = TestUtils::get_temp_path("static_highlighting_base.gd");
@@ -392,6 +402,28 @@ func get_text() -> int:
 		check_word("return TEXT", "TEXT", Color(EDITOR_GET("text_editor/theme/highlighting/string_color")));
 	}
 
+	memdelete(code_edit);
+}
+
+TEST_CASE("[Editor][Modules][GDScript] Delayed highlighting refresh invalidates drawn line colors") {
+	CodeEdit *code_edit = memnew(CodeEdit);
+	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	code_edit->set_size(Size2(600, 300));
+	Ref<DrawingGDScriptHighlighter> highlighter;
+	highlighter.instantiate();
+	code_edit->set_syntax_highlighter(highlighter);
+	code_edit->set_text("func before():\n\treturn LaterTrait\n\ntrait LaterTrait:\n\tvar field: int\n");
+	MessageQueue::get_singleton()->flush();
+	REQUIRE(highlighter->highlighted_lines.has(1));
+
+	code_edit->set_line(3, "trait RenamedTrait:");
+	// Draw during the debounce interval, caching the old classification in TextEdit.
+	MessageQueue::get_singleton()->flush();
+	highlighter->highlighted_lines.clear();
+	SceneTree::get_singleton()->process(0.2);
+	MessageQueue::get_singleton()->flush();
+	// The delayed redraw must consult the highlighter again without another edit.
+	CHECK(highlighter->highlighted_lines.has(1));
 	memdelete(code_edit);
 }
 

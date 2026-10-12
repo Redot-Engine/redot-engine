@@ -1460,6 +1460,7 @@ void GDScriptSyntaxHighlighter::_source_rebuild_timeout() {
 	clear_highlighting_cache();
 	TextEdit *edit = Object::cast_to<TextEdit>(ObjectDB::get_instance(source_text_edit_id));
 	if (edit && edit == text_edit) {
+		edit->clear_syntax_highlighting_cache();
 		edit->queue_redraw();
 	}
 }
