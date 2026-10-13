@@ -189,9 +189,12 @@ physx_libs = [
     "PhysXFoundation_static_64",
 ]
 
-# CPU-only outside Windows (see the physx_gpu note): keep only the CPU libs.
-# (Explicit list rather than a substring filter -- PhysXCudaContextManager
-# is GPU-only without carrying "Gpu" in its name.)
+# GPU-enabled Linux SDK build (CUDA present at configure time: no
+# DISABLE_CUDA_PHYSX). The CPU libs reference the GPU dispatch and OmniPVD
+# entry points. The dispatch comes from the closed PhysXGpu runtime .so
+# (same split as Windows) -- NOT from the open-source GPU static archive,
+# whose framework fatbins proved host-arch-fragile. See the link block
+# after the PhysX lib conversion below.
 if env["platform"] != "windows":
     physx_libs = [
         "PhysXVehicle_static_64",
@@ -203,14 +206,24 @@ if env["platform"] != "windows":
         # single-pass GNU/MinGW linkers; MSVC is order-insensitive.
         "PhysX_static_64",
         "PhysXPvdSDK_static_64",
+        # OmniPVD writers (referenced by PhysXPvdSDK/NpOmniPvd).
+        "PVDRuntime_static_64",
         "PhysXCommon_static_64",
         "PhysXFoundation_static_64",
     ]
 
-    # Linux links CPU-only (see the GPU note above): the GPU archive's
-    # cudamanager references the CUDA driver API directly, making -lcuda a
-    # hard link requirement. Re-enable PhysXGpu_static_64 here only with a
-    # driver/stub library available to the link environment.
+    # GPU dispatch (PxCreatePhysXGpu, PxGpuGetCudaFunctionTable, ...) via the
+    # closed runtime .so, mirroring the Windows "PhysXGpu_64" import-lib
+    # entry. The runtime sits in the bin/ vendor dir and is staged next to
+    # the engine binary, where the engine's RUNPATH $ORIGIN finds it; the
+    # SDK's own PxLoadPhysxGPUModule() also dlopens it by soname at init.
+    if env["platform"] in ("linux", "linuxbsd"):
+        physx_bin_dir = Dir("#thirdparty/physx/bin/linux/x86_64/release")
+        env.PrependUnique(LIBPATH=[physx_bin_dir.abspath])
+        # The runtime .so (linked after the archives below) carries undefined
+        # cu* driver references, satisfied at runtime by the SDK's
+        # PxLoadPhysxGPUModule() dlopening libcuda.so.1 RTLD_GLOBAL.
+        env.Append(LINKFLAGS=["-Wl,--allow-shlib-undefined"])
 
 # Prebuilt PhysX libraries use plain ".lib" names. MSVC's linker resolves
 # them from LIBPATH (SCons would otherwise append $LIBSUFFIX to env.LIBS
@@ -231,6 +244,9 @@ else:
         env.Append(LIBS=[physx_lib_path.File(lib + ".lib") for lib in physx_libs])
     else:
         env.Append(LIBS=[physx_lib_path.File(f"lib{lib}.a") for lib in physx_libs])
+        # GPU dispatch via the closed PhysXGpu runtime .so, AFTER the static
+        # archives (single-pass ld; also keeps it alive under --as-needed).
+        env.Append(LIBS=["PhysXGpu_64"])
 
 # Linux GPU dynamics: link NVIDIA's prebuilt runtime directly (it exports
 # the GPU entry points the CPU statics don't carry) and place it next to
@@ -325,13 +341,16 @@ if flow_enabled:
 #                               DLLs, so these are only import stubs)
 #   bin/windows/x86_64/release  runtime DLLs, copied next to the built binary
 #                               like PhysXGpu_64.dll above
+#   bin/linux/x86_64/release    runtime .so, copied next to the built binary;
+#                               no import stubs exist on Linux, the engine
+#                               links the runtime .so directly. The vendored
+#                               copies carry sonames + $ORIGIN rpath (patchelf
+#                               pass at vendoring time).
 # Disable with `blast=no` -- the module then builds exactly as before, with no
 # Blast support compiled in (all Blast code is GODOT_PHYSX_BLAST-guarded).
-# Non-Windows platforms have no library wiring here yet; on them Blast
-# compiles out entirely.
 blast_enabled = ARGUMENTS.get("blast", "yes") not in ("no", "0", "false", "False")
 blast_dir = Dir("#thirdparty/blast")
-if blast_enabled and env["platform"] == "windows":
+if blast_enabled and env["platform"] in ("windows", "linux", "linuxbsd"):
     blast_inc = blast_dir.Dir("include")
     # Blast's headers #include each other with flat names (e.g.
     # NvBlastExtAuthoring.h does #include "NvBlastExtAuthoringTypes.h"),
@@ -357,40 +376,67 @@ if blast_enabled and env["platform"] == "windows":
     # the shaders extension (pre-built radial/falloff damage programs). NvBlastTk/
     # serialization/stress aren't linked -- nothing in the module uses them.
     blast_libs = ["NvBlast", "NvBlastGlobals", "NvBlastExtAuthoring", "NvBlastExtShaders"]
-    blast_lib_path = blast_dir.Dir("lib/windows/x86_64/release")
-    env.PrependUnique(LIBPATH=[blast_lib_path.abspath])
-    # Bare .lib names resolve via LIBPATH for MSVC only (see the PhysX block).
-    if env.msvc:
-        env.Append(LINKFLAGS=[x + ".lib" for x in blast_libs])
+    # Copy the full runtime set: NvBlastExtAuthoring may pull in the others at
+    # load time, and a missing one fails the engine load.
+    if env["platform"] == "windows":
+        blast_lib_path = blast_dir.Dir("lib/windows/x86_64/release")
+        env.PrependUnique(LIBPATH=[blast_lib_path.abspath])
+        # Bare .lib names resolve via LIBPATH for MSVC only (see the PhysX block).
+        if env.msvc:
+            env.Append(LINKFLAGS=[x + ".lib" for x in blast_libs])
+        else:
+            env.Append(LIBS=[blast_lib_path.File(x + ".lib") for x in blast_libs])
+        blast_dll_dir = blast_dir.Dir("bin/windows/x86_64/release")
+        for dll_name in [
+            "NvBlast.dll",
+            "NvBlastExtAssetUtils.dll",
+            "NvBlastExtAuthoring.dll",
+            "NvBlastExtSerialization.dll",
+            "NvBlastExtShaders.dll",
+            "NvBlastExtStress.dll",
+            "NvBlastExtTkSerialization.dll",
+            "NvBlastGlobals.dll",
+            "NvBlastTk.dll",
+        ]:
+            env.Command(
+                File("#bin/" + dll_name),
+                blast_dll_dir.File(dll_name),
+                Copy("$TARGET", "$SOURCE"),
+            )
     else:
-        env.Append(LIBS=[blast_lib_path.File(x + ".lib") for x in blast_libs])
-    # Copy the full runtime DLL set: NvBlastExtAuthoring.dll may pull in the
-    # other NvBlast DLLs at load time, and a missing one fails the engine load.
-    blast_dll_dir = blast_dir.Dir("bin/windows/x86_64/release")
-    for dll_name in [
-        "NvBlast.dll",
-        "NvBlastExtAssetUtils.dll",
-        "NvBlastExtAuthoring.dll",
-        "NvBlastExtSerialization.dll",
-        "NvBlastExtShaders.dll",
-        "NvBlastExtStress.dll",
-        "NvBlastExtTkSerialization.dll",
-        "NvBlastGlobals.dll",
-        "NvBlastTk.dll",
-    ]:
-        env.Command(
-            File("#bin/" + dll_name),
-            blast_dll_dir.File(dll_name),
-            Copy("$TARGET", "$SOURCE"),
-        )
+        # Linux: link the runtime .so directly and find them again at startup
+        # via $ORIGIN -- bare sonames never search the binary's directory
+        # there (same constraint the Flow loader solves by absolute dlopen).
+        # The $$ renders a literal $ through scons; the single quotes keep
+        # the shell from expanding it before ld sees it.
+        blast_so_dir = blast_dir.Dir("bin/linux/x86_64/release")
+        env.PrependUnique(LIBPATH=[blast_so_dir.abspath])
+        env.Append(LIBS=blast_libs)
+        env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
+        for so_name in [
+            "libNvBlast.so",
+            "libNvBlastExtAssetUtils.so",
+            "libNvBlastExtAuthoring.so",
+            "libNvBlastExtSerialization.so",
+            "libNvBlastExtShaders.so",
+            "libNvBlastExtStress.so",
+            "libNvBlastExtTkSerialization.so",
+            "libNvBlastGlobals.so",
+            "libNvBlastTk.so",
+        ]:
+            env.Command(
+                File("#bin/" + so_name),
+                blast_so_dir.File(so_name),
+                Copy("$TARGET", "$SOURCE"),
+            )
 
 # The NVIDIA SDK headers (NvFlow.h, NvFlowExt.h, NvFlowLoader.h, Blast) carry
 # style-level warnings that the CI's werror turns fatal; the taming now lives
 # on env_physx (see the relaxations block at the top) because any module TU
 # can reach those headers through includes.
-if blast_enabled and env["platform"] == "windows":
+if blast_enabled and env["platform"] in ("windows", "linux", "linuxbsd"):
     env_physx.add_source_files(env.modules_sources, "blast/*.cpp")
-elif blast_enabled and env["platform"] != "windows":
+elif blast_enabled:
     print(
         "physx: blast=yes has no library wiring for platform '{}' yet; building without Blast.".format(env["platform"])
     )
