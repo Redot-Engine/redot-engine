@@ -372,6 +372,13 @@ if blast_enabled and env["platform"] in ("windows", "linux", "linuxbsd"):
 
     env_physx.Append(CPPDEFINES=["GODOT_PHYSX_BLAST"])
 
+    # Blast's shared/NvFoundation/NvPreprocessor.h hard-errors when NDEBUG and
+    # _DEBUG are BOTH undefined -- Godot's dev_build defines neither. _DEBUG is
+    # otherwise inert on non-MSVC toolchains, so scope the workaround to them
+    # and leave Windows toolchain behavior untouched.
+    if env["dev_build"] and env["platform"] != "windows":
+        env_physx.Append(CPPDEFINES=["_DEBUG"])
+
     # Low-level API, the authoring extension (offline fracture authoring), and
     # the shaders extension (pre-built radial/falloff damage programs). NvBlastTk/
     # serialization/stress aren't linked -- nothing in the module uses them.
