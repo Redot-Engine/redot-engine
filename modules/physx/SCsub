@@ -309,7 +309,7 @@ if flow_enabled:
                 flow_dll_dir.File(dll_name),
                 Copy("$TARGET", "$SOURCE"),
             )
-    elif env["platform"] == "linux":
+    elif env["platform"] in ("linux", "linuxbsd"):
         flow_so_dir = flow_dir.Dir("bin/linux/x86_64/release")
         for so_name in ["libnvflow.so", "libnvflowext.so"]:
             env.Command(
