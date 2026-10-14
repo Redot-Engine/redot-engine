@@ -75,6 +75,7 @@
 #include "../cloth/xpbd_cloth_solver.h"
 #include "physx_object_3d.h"
 #include "physx_soft_volume_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 #include "core/math/aabb.h"
 #include "core/math/transform_3d.h"
@@ -84,6 +85,10 @@
 #include "core/templates/rid.h"
 
 class PhysicsServer3DRenderingServerHandler;
+
+namespace physx {
+class PxActor;
+} //namespace physx
 
 class PhysXSoftBody3D : public PhysXObject3D {
 public:

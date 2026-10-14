@@ -142,7 +142,7 @@ bool PhysXSoftVolume3D::build(PhysXSpace3D *p_space, const Vector<Vector3> &p_wo
 	LocalVector<PxVec3> verts;
 	verts.resize(nv);
 	for (int i = 0; i < nv; i++) {
-		verts[i] = physx_to_px(p_xform.xform(p_world_verts[i]));
+		verts[i] = godot_to_px(p_xform.xform(p_world_verts[i]));
 	}
 	LocalVector<PxU32> tris;
 	tris.resize(ni);
@@ -416,7 +416,7 @@ void PhysXSoftVolume3D::add_central_impulse(const Vector3 &p_impulse) {
 		return;
 	}
 	const uint32_t sim_nv = base_inv_mass.size();
-	const PxVec3 dv = physx_to_px(p_impulse / total_mass);
+	const PxVec3 dv = godot_to_px(p_impulse / total_mass);
 	if (!sim_vel_scratch) {
 		sim_vel_scratch = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cuda, sim_nv);
 	}
@@ -445,7 +445,7 @@ void PhysXSoftVolume3D::add_point_impulse(uint32_t p_welded_index, const Vector3
 		return; // pinned
 	}
 	const uint32_t sim_nv = base_inv_mass.size();
-	const PxVec3 dv = physx_to_px(p_impulse * base_inv_mass[s]);
+	const PxVec3 dv = godot_to_px(p_impulse * base_inv_mass[s]);
 	if (!sim_vel_scratch) {
 		sim_vel_scratch = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cuda, sim_nv);
 	}

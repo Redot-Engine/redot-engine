@@ -98,7 +98,7 @@ bool PhysXVehicleProbe::initialize(RID p_space, const Vector3 &p_position, real_
 	}
 
 	Vehicle4W &v = impl->vehicle;
-	const PxTransform startPose(physx_to_px(p_position), PxQuat(PxIdentity));
+	const PxTransform startPose(godot_to_px(p_position), PxQuat(PxIdentity));
 	v.physxActor.rigidBody->setGlobalPose(startPose);
 	scene->addActor(*v.physxActor.rigidBody);
 	v.physxActor.rigidBody->setName("PhysXVehicleProbe");
@@ -122,12 +122,12 @@ void PhysXVehicleProbe::step(real_t p_dt, real_t p_throttle, real_t p_brake, rea
 
 Vector3 PhysXVehicleProbe::get_position() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.rigidBodyState.pose.p);
+	return px_to_godot(impl->vehicle.rigidBodyState.pose.p);
 }
 
 Vector3 PhysXVehicleProbe::get_linear_velocity() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
+	return px_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
 }
 
 real_t PhysXVehicleProbe::get_forward_speed() const {
@@ -143,7 +143,7 @@ real_t PhysXVehicleProbe::get_forward_speed() const {
 
 Vector3 PhysXVehicleProbe::get_actor_position() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
 }
 
 Vector3 PhysXVehicleProbe::get_wheel_position(int p_wheel) const {
@@ -155,7 +155,7 @@ Vector3 PhysXVehicleProbe::get_wheel_position(int p_wheel) const {
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
 	const PxTransform cmass_local_pose = impl->vehicle.physxActor.rigidBody->getCMassLocalPose();
 	const PxTransform wheel_world = actor_pose * cmass_local_pose * impl->vehicle.wheelLocalPoses[p_wheel].localPose;
-	return physx_to_godot(wheel_world.p);
+	return px_to_godot(wheel_world.p);
 }
 
 real_t PhysXVehicleProbe::get_wheel_jounce(int p_wheel) const {

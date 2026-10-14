@@ -217,7 +217,7 @@ public:
 		PhysXArea3D *area = nullptr; ///< The trigger area (dispatches the callback).
 		PhysXBody3D *body = nullptr; ///< The other body, if this is a body-monitor event.
 		PhysXArea3D *other_area = nullptr; ///< The other area, if this is an area-vs-area event.
-		int status = 0; ///< AREA_BODY_ADDED / AREA_BODY_REMOVED.
+		PhysicsServer3D::AreaBodyStatus status = PhysicsServer3D::AREA_BODY_ADDED;
 		int other_shape = 0; ///< Shape index of the other actor.
 		int area_shape = 0; ///< Shape index of this area.
 		bool is_area_vs_area = false; ///< Selects area_monitor vs body_monitor dispatch.

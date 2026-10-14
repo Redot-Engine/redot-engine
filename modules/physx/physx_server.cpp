@@ -2532,8 +2532,8 @@ void PhysXServer3D::free(RID p_rid) {
 		// Release any soft-body rigid attachments referencing this body BEFORE
 		// the space detach/actor release (GAP-15): a live PxDeformableAttachment
 		// must never dangle on a freed rigid.
-		if (b->get_px_actor() && b->get_space()) {
-			b->get_space()->release_soft_body_attachments_for(b->get_px_actor());
+		if (b->get_rigid_actor() && b->get_space()) {
+			b->get_space()->release_soft_body_attachments_for(b->get_rigid_actor());
 		}
 
 		// Detach from the space first (godot-physics parity): unregisters the
@@ -2892,8 +2892,8 @@ void PhysXServer3D::init() {
  */
 void PhysXServer3D::finish() {
 	// Free wrappers before releasing PxPhysics, so their PxActors are removed
-	// from still-valid scenes. Order: joints â†’ vehicles â†’ bodies â†’ areas â†’
-	// shapes â†’ spaces. Vehicles come before bodies because they borrow the
+	// from still-valid scenes. Order: joints -> vehicles -> bodies -> areas ->
+	// shapes -> spaces. Vehicles come before bodies because they borrow the
 	// chassis PxRigidDynamic, and before spaces because release() calls
 	// space->unregister_vehicle(). Bodies/areas need their spaces alive when
 	// their destructors call _destroy_actor which accesses space->remove_actor().

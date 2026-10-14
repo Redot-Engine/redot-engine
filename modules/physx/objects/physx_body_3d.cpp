@@ -395,9 +395,9 @@ void PhysXBody3D::set_state(PhysicsServer3D::BodyState p_state, const Variant &p
 				refresh_shape_scaling();
 			}
 			physx::PxTransform pose(physx::PxIdentity);
-			// physx_to_px clamps NaN/degenerate quaternions before they can
+			// godot_to_px clamps NaN/degenerate quaternions before they can
 			// reach PhysX (physx_conversions.h); scale was captured above.
-			pose = physx_to_px(p_value.operator Transform3D());
+			pose = godot_to_px(p_value.operator Transform3D());
 			if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC) {
 				// Kinematic bodies must use setKinematicTarget() for the solver
 				// to interpolate — but that requires the body to be in a scene.
@@ -960,7 +960,7 @@ bool PhysXBody3D::_apply_force_op(const PendingForceOp &p_op) {
 		return false;
 	}
 
-	const physx::PxVec3 v((physx::PxReal)p_op.vec.x, (physx::PxReal)p_op.vec.y, (physx::PxReal)p_op.vec.z);
+	const physx::PxVec3 v((physx::PxReal)p_op.force_vector.x, (physx::PxReal)p_op.force_vector.y, (physx::PxReal)p_op.force_vector.z);
 	switch (p_op.kind) {
 		case PendingForceOp::CENTRAL_IMPULSE: {
 			dyn->addForce(v, physx::PxForceMode::eIMPULSE);
@@ -1014,7 +1014,7 @@ void PhysXBody3D::apply_central_impulse(const Vector3 &p_impulse) {
 		if (!px_actor->getScene()) {
 			PendingForceOp op;
 			op.kind = PendingForceOp::CENTRAL_IMPULSE;
-			op.vec = p_impulse;
+			op.force_vector = p_impulse;
 			pending_force_ops.push_back(op);
 			return;
 		}
@@ -1030,7 +1030,7 @@ void PhysXBody3D::apply_impulse(const Vector3 &p_impulse, const Vector3 &p_posit
 		if (!px_actor->getScene()) {
 			PendingForceOp op;
 			op.kind = PendingForceOp::IMPULSE_AT;
-			op.vec = p_impulse;
+			op.force_vector = p_impulse;
 			op.offset = p_position;
 			pending_force_ops.push_back(op);
 			return;
@@ -1060,7 +1060,7 @@ void PhysXBody3D::apply_torque_impulse(const Vector3 &p_impulse) {
 		if (!px_actor->getScene()) {
 			PendingForceOp op;
 			op.kind = PendingForceOp::TORQUE_IMPULSE;
-			op.vec = p_impulse;
+			op.force_vector = p_impulse;
 			pending_force_ops.push_back(op);
 			return;
 		}
@@ -1076,7 +1076,7 @@ void PhysXBody3D::apply_central_force(const Vector3 &p_force) {
 		if (!px_actor->getScene()) {
 			PendingForceOp op;
 			op.kind = PendingForceOp::CENTRAL_FORCE;
-			op.vec = p_force;
+			op.force_vector = p_force;
 			pending_force_ops.push_back(op);
 			return;
 		}
@@ -1092,7 +1092,7 @@ void PhysXBody3D::apply_force(const Vector3 &p_force, const Vector3 &p_position)
 		if (!px_actor->getScene()) {
 			PendingForceOp op;
 			op.kind = PendingForceOp::FORCE_AT;
-			op.vec = p_force;
+			op.force_vector = p_force;
 			op.offset = p_position;
 			pending_force_ops.push_back(op);
 			return;
@@ -1117,7 +1117,7 @@ void PhysXBody3D::apply_torque(const Vector3 &p_torque) {
 		if (!px_actor->getScene()) {
 			PendingForceOp op;
 			op.kind = PendingForceOp::TORQUE;
-			op.vec = p_torque;
+			op.force_vector = p_torque;
 			pending_force_ops.push_back(op);
 			return;
 		}

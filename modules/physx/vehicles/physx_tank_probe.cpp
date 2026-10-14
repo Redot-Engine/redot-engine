@@ -86,7 +86,7 @@ bool PhysXTankProbe::initialize(RID p_space, const Vector3 &p_position, const Pa
 	}
 
 	VehicleTrack &v = impl->vehicle;
-	const PxTransform startPose(physx_to_px(p_position), PxQuat(PxIdentity));
+	const PxTransform startPose(godot_to_px(p_position), PxQuat(PxIdentity));
 	v.physxActor.rigidBody->setGlobalPose(startPose);
 	scene->addActor(*v.physxActor.rigidBody);
 	v.physxActor.rigidBody->setName("PhysXTankProbe");
@@ -105,19 +105,19 @@ void PhysXTankProbe::step(real_t p_dt, real_t p_left_ratio, real_t p_right_ratio
 
 Vector3 PhysXTankProbe::get_position() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.rigidBodyState.pose.p);
+	return px_to_godot(impl->vehicle.rigidBodyState.pose.p);
 }
 
 Vector3 PhysXTankProbe::get_linear_velocity() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
+	return px_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
 }
 
 Vector3 PhysXTankProbe::get_angular_velocity() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL_V(dynamic_body, Vector3());
-	return physx_to_godot(dynamic_body->getAngularVelocity());
+	return px_to_godot(dynamic_body->getAngularVelocity());
 }
 
 real_t PhysXTankProbe::get_forward_speed() const {
@@ -134,7 +134,7 @@ real_t PhysXTankProbe::get_forward_speed() const {
 Vector3 PhysXTankProbe::get_up() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3(0, 1, 0));
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return physx_to_godot(actor_pose.q.getBasisVector1());
+	return px_to_godot(actor_pose.q.getBasisVector1());
 }
 
 Vector3 PhysXTankProbe::get_forward() const {
@@ -142,7 +142,7 @@ Vector3 PhysXTankProbe::get_forward() const {
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
 	// Godot forward is -Z, PxVehicleFrame::eNegZ (see configure_vehicle_track()) --
 	// basis vector 2 is the local Z axis, negate it.
-	return -physx_to_godot(actor_pose.q.getBasisVector2());
+	return -px_to_godot(actor_pose.q.getBasisVector2());
 }
 
 real_t PhysXTankProbe::get_wheel_jounce(int p_wheel) const {
@@ -159,7 +159,7 @@ real_t PhysXTankProbe::get_wheel_separation(int p_wheel) const {
 
 Vector3 PhysXTankProbe::get_actor_position() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
 }
 
 void PhysXTankProbe::_bind_methods() {

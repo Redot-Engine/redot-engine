@@ -166,7 +166,7 @@ bool PhysXTank3D::_build() {
 	}
 
 	VehicleTrack &v = impl->vehicle;
-	v.physxActor.rigidBody->setGlobalPose(physx_to_px(get_global_transform()));
+	v.physxActor.rigidBody->setGlobalPose(godot_to_px(get_global_transform()));
 	impl->sleep_threshold = (PxReal)space->get_sleep_energy_threshold();
 	impl->time_before_sleep = (PxReal)space->get_time_before_sleep();
 	PxRigidDynamic *dynamic_body = v.physxActor.rigidBody->is<PxRigidDynamic>();
@@ -245,10 +245,10 @@ void PhysXTank3D::_notification(int p_what) {
 			// Same CoM-vs-actor-origin frame notes as PhysXVehicle3D/
 			// PhysXMotorcycle3D's own identical code -- see PhysXVehicle3D's
 			// comment for the SDK source citations that confirmed this.
-			set_global_transform(physx_to_godot(v.physxActor.rigidBody->getGlobalPose()));
+			set_global_transform(px_to_godot(v.physxActor.rigidBody->getGlobalPose()));
 			const PxTransform cmass_local_pose = v.physxActor.rigidBody->getCMassLocalPose();
 			for (uint32_t i = 0; i < wheels.size(); i++) {
-				wheels[i]->set_transform(physx_to_godot(cmass_local_pose * v.wheelLocalPoses[i].localPose));
+				wheels[i]->set_transform(px_to_godot(cmass_local_pose * v.wheelLocalPoses[i].localPose));
 			}
 		} break;
 	}
@@ -258,7 +258,7 @@ Vector3 PhysXTank3D::get_linear_velocity() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return physx_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
+	return px_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
 }
 
 Vector3 PhysXTank3D::get_angular_velocity() const {
@@ -267,7 +267,7 @@ Vector3 PhysXTank3D::get_angular_velocity() const {
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL_V(dynamic_body, Vector3());
-	return physx_to_godot(dynamic_body->getAngularVelocity());
+	return px_to_godot(dynamic_body->getAngularVelocity());
 }
 
 real_t PhysXTank3D::get_forward_speed() const {
@@ -288,7 +288,7 @@ Vector3 PhysXTank3D::get_up() const {
 		return Vector3(0, 1, 0);
 	}
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return physx_to_godot(actor_pose.q.getBasisVector1());
+	return px_to_godot(actor_pose.q.getBasisVector1());
 }
 
 Vector3 PhysXTank3D::get_forward() const {
@@ -296,7 +296,7 @@ Vector3 PhysXTank3D::get_forward() const {
 		return -get_global_transform().basis.get_column(2);
 	}
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return -physx_to_godot(actor_pose.q.getBasisVector2());
+	return -px_to_godot(actor_pose.q.getBasisVector2());
 }
 
 real_t PhysXTank3D::get_wheel_jounce(int p_wheel) const {
@@ -319,7 +319,7 @@ Vector3 PhysXTank3D::get_actor_position() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return physx_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
 }
 
 PackedStringArray PhysXTank3D::get_configuration_warnings() const {

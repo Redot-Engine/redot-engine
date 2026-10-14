@@ -175,7 +175,7 @@ int PhysXArticulation3D::add_link(int p_parent_index,
 	// world space (parent_frame carries the chain layout, the child frame the
 	// inbound joint anchor inside the new link).
 	physx::PxArticulationLink *link = px_articulation->createLink(
-			parent_link, physx_to_px(p_child_frame));
+			parent_link, godot_to_px(p_child_frame));
 	if (!link) {
 		// Restore the scene membership even on failure -- the articulation
 		// stays usable.
@@ -204,7 +204,7 @@ int PhysXArticulation3D::add_link(int p_parent_index,
 	if (parent_link) {
 		auto *joint = static_cast<physx::PxArticulationJointReducedCoordinate *>(link->getInboundJoint());
 		joint->setJointType(_map_joint_type(p_joint_type));
-		joint->setParentPose(physx_to_px(p_parent_frame));
+		joint->setParentPose(godot_to_px(p_parent_frame));
 		joint->setChildPose(physx::PxTransform(physx::PxIdentity));
 	}
 
@@ -277,7 +277,7 @@ void PhysXArticulation3D::set_link_shape(int p_link_index, PhysXShape3D *p_shape
 			server->get_default_material(),
 			flags);
 	ERR_FAIL_NULL_MSG(shape, "PhysX: failed to create articulation link shape.");
-	shape->setLocalPose(physx_to_px(p_transform) * p_shape->get_local_pose(physx::PxVec3(scale.x, scale.y, scale.z)));
+	shape->setLocalPose(godot_to_px(p_transform) * p_shape->get_local_pose(physx::PxVec3(scale.x, scale.y, scale.z)));
 	rec->link->attachShape(*shape);
 	// The link owns the shape after attach (refcount 2 -> 1 on release).
 	shape->release();

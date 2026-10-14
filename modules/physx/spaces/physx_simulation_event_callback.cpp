@@ -45,7 +45,9 @@
 // ---------------------------------------------------------------------------
 
 void PhysXSimulationEventCallback::onConstraintBreak(physx::PxConstraintInfo *constraints, physx::PxU32 count) {
-	// Joint break notifications — wired when joints are implemented (Phase 4).
+	// Intentionally empty: Godot's joint API has no breakage support and
+	// PhysXJoint3D never enables eBREAKABLE, so PhysX cannot report a broken
+	// constraint here.
 }
 
 void PhysXSimulationEventCallback::onWake(physx::PxActor **actors, physx::PxU32 count) {
@@ -251,7 +253,7 @@ void PhysXSimulationEventCallback::onTrigger(physx::PxTriggerPair *pairs, physx:
 		// This bookkeeping runs in-step because the next step's gravity/damp
 		// resolution reads overlapping_areas/overlapping_bodies. Only the Godot
 		// monitor *callbacks* are deferred to flush_queries().
-		const int status = (tp.status == physx::PxPairFlag::eNOTIFY_TOUCH_FOUND) ? PhysicsServer3D::AREA_BODY_ADDED : PhysicsServer3D::AREA_BODY_REMOVED;
+		const PhysicsServer3D::AreaBodyStatus status = (tp.status == physx::PxPairFlag::eNOTIFY_TOUCH_FOUND) ? PhysicsServer3D::AREA_BODY_ADDED : PhysicsServer3D::AREA_BODY_REMOVED;
 
 		if (other_data->object && other_data->object->get_type() == PhysXObject3D::OBJECT_TYPE_BODY) {
 			// Body-area overlap: add/remove body from area's list and vice versa.

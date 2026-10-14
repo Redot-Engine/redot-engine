@@ -87,7 +87,7 @@ bool PhysXMotorcycleProbe::initialize(RID p_space, const Vector3 &p_position) {
 	}
 
 	Vehicle2W &v = impl->vehicle;
-	const PxTransform startPose(physx_to_px(p_position), PxQuat(PxIdentity));
+	const PxTransform startPose(godot_to_px(p_position), PxQuat(PxIdentity));
 	v.physxActor.rigidBody->setGlobalPose(startPose);
 	scene->addActor(*v.physxActor.rigidBody);
 	v.physxActor.rigidBody->setName("PhysXMotorcycleProbe");
@@ -113,24 +113,24 @@ void PhysXMotorcycleProbe::apply_torque_impulse(const Vector3 &p_impulse) {
 	ERR_FAIL_COND(!impl->initialized);
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->addTorque(physx_to_px(p_impulse), PxForceMode::eIMPULSE);
+	dynamic_body->addTorque(godot_to_px(p_impulse), PxForceMode::eIMPULSE);
 }
 
 void PhysXMotorcycleProbe::set_angular_velocity(const Vector3 &p_angular_velocity) {
 	ERR_FAIL_COND(!impl->initialized);
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->setAngularVelocity(physx_to_px(p_angular_velocity));
+	dynamic_body->setAngularVelocity(godot_to_px(p_angular_velocity));
 }
 
 Vector3 PhysXMotorcycleProbe::get_position() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.rigidBodyState.pose.p);
+	return px_to_godot(impl->vehicle.rigidBodyState.pose.p);
 }
 
 Vector3 PhysXMotorcycleProbe::get_linear_velocity() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
+	return px_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
 }
 
 real_t PhysXMotorcycleProbe::get_forward_speed() const {
@@ -147,7 +147,7 @@ real_t PhysXMotorcycleProbe::get_forward_speed() const {
 Vector3 PhysXMotorcycleProbe::get_up() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3(0, 1, 0));
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return physx_to_godot(actor_pose.q.getBasisVector1());
+	return px_to_godot(actor_pose.q.getBasisVector1());
 }
 
 Vector3 PhysXMotorcycleProbe::get_forward() const {
@@ -155,14 +155,14 @@ Vector3 PhysXMotorcycleProbe::get_forward() const {
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
 	// Godot forward is -Z, PxVehicleFrame::eNegZ (see configure_vehicle2w()) --
 	// basis vector 2 is the local Z axis, negate it.
-	return -physx_to_godot(actor_pose.q.getBasisVector2());
+	return -px_to_godot(actor_pose.q.getBasisVector2());
 }
 
 Vector3 PhysXMotorcycleProbe::get_angular_velocity() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL_V(dynamic_body, Vector3());
-	return physx_to_godot(dynamic_body->getAngularVelocity());
+	return px_to_godot(dynamic_body->getAngularVelocity());
 }
 
 real_t PhysXMotorcycleProbe::get_roll_angle() const {
@@ -179,7 +179,7 @@ real_t PhysXMotorcycleProbe::get_roll_angle() const {
 
 Vector3 PhysXMotorcycleProbe::get_actor_position() const {
 	ERR_FAIL_COND_V(!impl->initialized, Vector3());
-	return physx_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
 }
 
 real_t PhysXMotorcycleProbe::get_wheel_jounce(int p_wheel) const {

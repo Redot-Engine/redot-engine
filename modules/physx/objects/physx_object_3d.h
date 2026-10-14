@@ -48,12 +48,8 @@
 
 #include "core/object/object.h"
 #include "physx_rid_owner.h"
-#include "physx_server.h"
-
-#include <PxPhysicsAPI.h>
 
 class PhysXSpace3D;
-class PxActor;
 
 class PhysXObject3D {
 public:

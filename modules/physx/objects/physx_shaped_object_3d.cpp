@@ -83,7 +83,7 @@ physx::PxMaterial *PhysXShapedObject3D::_get_shape_material() {
 physx::PxTransform PhysXShapedObject3D::to_physx_transform(const Transform3D &p_transform) {
 	// Shared module conversion (physx_conversions.h): clamps degenerate/NaN
 	// transforms to identity rotation instead of passing them into PhysX.
-	return physx_to_px(p_transform);
+	return godot_to_px(p_transform);
 }
 
 Vector3 PhysXShapedObject3D::_shape_geometry_scale(const Transform3D &p_shape_transform) const {

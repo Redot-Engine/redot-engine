@@ -67,8 +67,8 @@
 static int s_debug_spaces_refcount = 0;
 
 PhysXSpace3D::PhysXSpace3D() {
-	pair_filter_callback = new PhysXPairFilterCallback();
-	contact_modify_callback = new PhysXContactModifyCallback();
+	pair_filter_callback = memnew(PhysXPairFilterCallback);
+	contact_modify_callback = memnew(PhysXContactModifyCallback);
 	event_callback = memnew(PhysXSimulationEventCallback(this));
 	_initialize_scene();
 	// Only build the query wrapper if the scene was created successfully;
@@ -95,13 +95,11 @@ PhysXSpace3D::~PhysXSpace3D() {
 		event_callback = nullptr;
 	}
 	if (pair_filter_callback) {
-		// Allocated with plain `new` in the ctor (see :34), so free with
-		// `delete` — not memdelete (CR-06: new must pair with delete).
-		delete pair_filter_callback;
+		memdelete(pair_filter_callback);
 		pair_filter_callback = nullptr;
 	}
 	if (contact_modify_callback) {
-		delete contact_modify_callback;
+		memdelete(contact_modify_callback);
 		contact_modify_callback = nullptr;
 	}
 	// Drop any deferred monitor events; their area/body pointers may be gone
@@ -556,7 +554,7 @@ void PhysXSpace3D::set_param(PhysicsServer3D::SpaceParameter p_param, double p_v
 		case PhysicsServer3D::SPACE_PARAM_SOLVER_ITERATIONS: {
 			solver_iteration_count = (int)p_value;
 			for (PhysXBody3D *body : bodies) {
-				physx::PxRigidActor *actor = body->get_px_actor();
+				physx::PxRigidActor *actor = body->get_rigid_actor();
 				if (actor && actor->is<physx::PxRigidDynamic>()) {
 					physx::PxRigidDynamic *dyn = static_cast<physx::PxRigidDynamic *>(actor);
 					dyn->setSolverIterationCounts(solver_iteration_count, solver_iteration_count);
@@ -655,7 +653,7 @@ void PhysXSpace3D::register_body(PhysXBody3D *p_body) {
 	bodies.push_back(p_body);
 
 	// Apply cached solver iterations to newly registered bodies.
-	physx::PxRigidActor *actor = p_body->get_px_actor();
+	physx::PxRigidActor *actor = p_body->get_rigid_actor();
 	if (actor && actor->is<physx::PxRigidDynamic>()) {
 		physx::PxRigidDynamic *dyn = static_cast<physx::PxRigidDynamic *>(actor);
 		dyn->setSolverIterationCounts(solver_iteration_count, solver_iteration_count);

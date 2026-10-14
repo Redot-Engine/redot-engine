@@ -80,7 +80,7 @@ PhysXParticleFluid3D::SolverBackend PhysXParticleFluid3D::_resolved_solver() con
 	// The PBD particle buffer factory ships only in the Windows SDK libraries
 	// (PhysXGPUParticleFluid3D::supports_diffuse_particles); on other platforms
 	// there is no CUDA fluid to pick even when a CUDA device is present.
-	return (server && server->has_gpu() && server->particle_fluid_supports_diffuse()) ? SOLVER_PBD : SOLVER_MPM;
+	return (server && server->is_gpu_dynamics_enabled() && server->particle_fluid_supports_diffuse()) ? SOLVER_PBD : SOLVER_MPM;
 }
 
 // particle_size inflates the MPM isosurface the way it does on the PBD path
@@ -1845,10 +1845,10 @@ PackedStringArray PhysXParticleFluid3D::get_configuration_warnings() const {
 	if (!on_mpm && !server) {
 		warnings.push_back(RTR("The PhysX physics server is not active. Set the 3D physics engine to \"PhysX\", or set Solver to \"MPM (compute)\"."));
 	}
-	if (solver == SOLVER_PBD && server && !server->has_gpu()) {
+	if (solver == SOLVER_PBD && server && !server->is_gpu_dynamics_enabled()) {
 		warnings.push_back(RTR("Solver is \"PBD (CUDA)\" but no CUDA device is available (or Enhanced Determinism is on) -- the fluid will be inert. Use \"Auto\" or \"MPM (compute)\"."));
 	}
-	if (solver == SOLVER_PBD && server && server->has_gpu() && !server->particle_fluid_supports_diffuse()) {
+	if (solver == SOLVER_PBD && server && server->is_gpu_dynamics_enabled() && !server->particle_fluid_supports_diffuse()) {
 		warnings.push_back(RTR("Solver is \"PBD (CUDA)\" but this platform's PhysX SDK lacks the CUDA particle buffer factory (Windows only through PhysX 5.11) -- the fluid will be inert. Use \"Auto\" or \"MPM (compute)\"."));
 	}
 	if (on_mpm && (int)mpm_colliders.size() > 32) {

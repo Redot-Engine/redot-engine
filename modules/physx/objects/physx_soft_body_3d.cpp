@@ -824,7 +824,7 @@ void PhysXSoftBody3D::attach_point_to_body(int p_point_index, const RID &p_body)
 		return;
 	}
 	PhysXBody3D *body = PhysXServer3D::get_singleton()->get_body(p_body);
-	if (!body || !body->get_px_actor()) {
+	if (!body || !body->get_rigid_actor()) {
 		ERR_FAIL_MSG("PhysXSoftBody3D: attach_point_to_body target is not a valid body.");
 		return;
 	}
@@ -836,7 +836,7 @@ void PhysXSoftBody3D::attach_point_to_body(int p_point_index, const RID &p_body)
 	detach_point_from_body(p_point_index);
 	Vector<int> welded;
 	welded.push_back((int)map_visual_to_physics[p_point_index]);
-	physx::PxDeformableAttachment *att = volume->create_rigid_attachment(welded, body->get_px_actor());
+	physx::PxDeformableAttachment *att = volume->create_rigid_attachment(welded, body->get_rigid_actor());
 	if (att) {
 		point_attachments.insert(p_point_index, att);
 	}

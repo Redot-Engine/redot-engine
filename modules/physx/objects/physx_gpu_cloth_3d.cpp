@@ -174,7 +174,7 @@ bool PhysXGPUCloth3D::_cook_and_create(const Vector<Vector3> &p_positions, const
 	LocalVector<PxVec3> verts;
 	verts.resize(nv);
 	for (int i = 0; i < nv; i++) {
-		verts[i] = physx_to_px(p_positions[i]);
+		verts[i] = godot_to_px(p_positions[i]);
 	}
 	LocalVector<PxU32> tris;
 	tris.resize(ni);
@@ -475,7 +475,7 @@ void PhysXGPUCloth3D::apply_wind(const Vector3 &p_wind, float p_drag, float p_li
 	}
 
 	if (wind_applied) {
-		const PxVec3 wind = physx_to_px(p_wind);
+		const PxVec3 wind = godot_to_px(p_wind);
 		for (uint32_t t = 0; t + 2 < indices.size(); t += 3) {
 			const uint32_t a = indices[t];
 			const uint32_t b = indices[t + 1];

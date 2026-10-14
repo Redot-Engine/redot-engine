@@ -103,7 +103,7 @@ void PhysXCloth3D::_rebuild() {
 
 bool PhysXCloth3D::_gpu_available() {
 	PhysXServer3D *server = PhysXServer3D::get_singleton();
-	return server && server->has_gpu();
+	return server && server->is_gpu_dynamics_enabled();
 }
 
 bool PhysXCloth3D::_try_build_gpu() {
@@ -111,7 +111,7 @@ bool PhysXCloth3D::_try_build_gpu() {
 		return false;
 	}
 	PhysXServer3D *server = PhysXServer3D::get_singleton();
-	if (!server || !server->has_gpu() || get_world_3d().is_null()) {
+	if (!server || !server->is_gpu_dynamics_enabled() || get_world_3d().is_null()) {
 		return false;
 	}
 	gpu_cloth = server->cloth_create();

@@ -36,7 +36,9 @@
  */
 
 #include "physx_shape_3d.h"
+
 #include "objects/physx_shaped_object_3d.h"
+#include "physx_server.h"
 
 // PhysX
 #include "PxMaterial.h"

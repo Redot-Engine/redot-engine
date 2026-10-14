@@ -207,7 +207,7 @@ bool PhysXVehicle3D::_build() {
 	}
 
 	Vehicle4W &v = impl->vehicle;
-	v.physxActor.rigidBody->setGlobalPose(physx_to_px(get_global_transform()));
+	v.physxActor.rigidBody->setGlobalPose(godot_to_px(get_global_transform()));
 	impl->sleep_threshold = (PxReal)space->get_sleep_energy_threshold();
 	impl->time_before_sleep = (PxReal)space->get_time_before_sleep();
 	PxRigidDynamic *dynamic_body = v.physxActor.rigidBody->is<PxRigidDynamic>();
@@ -280,7 +280,7 @@ void PhysXVehicle3D::_notification(int p_what) {
 				const Transform3D node_xform = get_global_transform();
 				if (!_last_synced_valid || !node_xform.is_equal_approx(_last_synced_xform)) {
 					if (PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>()) {
-						dynamic_body->setGlobalPose(physx_to_px(node_xform), true);
+						dynamic_body->setGlobalPose(godot_to_px(node_xform), true);
 						dynamic_body->setLinearVelocity(PxVec3(0, 0, 0));
 						dynamic_body->setAngularVelocity(PxVec3(0, 0, 0));
 					}
@@ -325,7 +325,7 @@ void PhysXVehicle3D::_notification(int p_what) {
 			// collision geometry actually sits at rest, and made that offset
 			// visibly swing whenever the body rotated (braking, cornering, a
 			// bump) since it rotates with the body.
-			_last_synced_xform = physx_to_godot(v.physxActor.rigidBody->getGlobalPose());
+			_last_synced_xform = px_to_godot(v.physxActor.rigidBody->getGlobalPose());
 			_last_synced_valid = true;
 			set_global_transform(_last_synced_xform);
 			// Push each wheel's live pose (suspension jounce + steer angle +
@@ -350,7 +350,7 @@ void PhysXVehicle3D::_notification(int p_what) {
 			// offset instead).
 			const PxTransform cmass_local_pose = v.physxActor.rigidBody->getCMassLocalPose();
 			for (uint32_t i = 0; i < 4; i++) {
-				wheels[impl->wheel_order[i]]->set_transform(physx_to_godot(cmass_local_pose * v.wheelLocalPoses[i].localPose));
+				wheels[impl->wheel_order[i]]->set_transform(px_to_godot(cmass_local_pose * v.wheelLocalPoses[i].localPose));
 			}
 		} break;
 	}
@@ -360,7 +360,7 @@ Vector3 PhysXVehicle3D::get_linear_velocity() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return physx_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
+	return px_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
 }
 
 real_t PhysXVehicle3D::get_forward_speed() const {
@@ -528,7 +528,7 @@ Vector3 PhysXVehicle3D::get_actor_position() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return physx_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
 }
 
 PackedStringArray PhysXVehicle3D::get_configuration_warnings() const {

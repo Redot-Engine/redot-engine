@@ -62,18 +62,10 @@
 #include "core/templates/hash_map.h"
 #include "core/variant/variant.h"
 #include "physx_rid_owner.h"
-
-// --- Physics server ---
-#include "physx_server.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 // --- PhysX API ---
 #include <PxPhysicsAPI.h>
-
-class PxPhysics;
-class PxShape;
-class PxMaterial;
-class PxVec3;
-class PxGeometryHolder;
 
 class PhysXShapedObject3D;
 

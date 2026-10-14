@@ -315,7 +315,7 @@ bool PhysXDirectSpaceState3D::intersect_ray(const RayParameters &p_parameters, R
 			if (overlap.shape && overlap.shape->userData) {
 				r_result.shape = physx_resolve_shape_index(overlap.actor, overlap.shape);
 			} else {
-				r_result.shape = 0;
+				r_result.shape = -1;
 			}
 			// face_index is undefined for origin-inside hits; leave as default.
 			return true;
@@ -359,7 +359,7 @@ bool PhysXDirectSpaceState3D::intersect_ray(const RayParameters &p_parameters, R
 			if (block.shape && block.shape->userData) {
 				r_result.shape = physx_resolve_shape_index(block.actor, block.shape);
 			} else {
-				r_result.shape = 0;
+				r_result.shape = -1;
 			}
 			return true;
 		}
@@ -852,7 +852,7 @@ Vector3 PhysXDirectSpaceState3D::get_closest_point_to_object_volume(RID p_object
 		return p_point;
 	}
 
-	physx::PxRigidActor *actor = body->get_px_actor();
+	physx::PxRigidActor *actor = body->get_rigid_actor();
 	if (!actor) {
 		return p_point;
 	}
@@ -1140,7 +1140,7 @@ static real_t _collision_priority_of(const physx::PxRigidActor *p_actor) {
 // recovery iteration).
 void PhysXDirectSpaceState3D::_motion_shapes_fill(const PhysXBody3D &p_body) const {
 	_motion_shape_scratch.clear();
-	physx::PxRigidActor *actor = p_body.get_px_actor();
+	physx::PxRigidActor *actor = p_body.get_rigid_actor();
 	if (!actor) {
 		return;
 	}

@@ -904,7 +904,7 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 	}
 
 	v.rigidBodyParams.mass = (PxReal)cfg.mass;
-	v.rigidBodyParams.moi = physx_to_px(cfg.moment_of_inertia);
+	v.rigidBodyParams.moi = godot_to_px(cfg.moment_of_inertia);
 
 	for (PxU32 i = 0; i < 4; i++) {
 		const Vehicle4WWheelConfig &w = cfg.wheels[slot[i]];
@@ -945,8 +945,8 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 		const PxReal restLoadEstimate = v.suspensionForceParams[i].sprungMass * 9.81f;
 		const PxReal jounceAtRest = (w.suspension_stiffness > 0.0) ? PxClamp(restLoadEstimate / (PxReal)w.suspension_stiffness, 0.0f, (PxReal)w.suspension_travel) : 0.0f;
 		const Vector3 attachment_local = (w.position - cfg.chassis_com_local) - travel_dir_local * (real_t)((PxReal)w.suspension_travel - jounceAtRest);
-		v.suspensionParams[i].suspensionAttachment = PxTransform(physx_to_px(attachment_local), physx_to_px(w.basis.get_rotation_quaternion()));
-		v.suspensionParams[i].suspensionTravelDir = physx_to_px(travel_dir_local);
+		v.suspensionParams[i].suspensionAttachment = PxTransform(godot_to_px(attachment_local), godot_to_px(w.basis.get_rotation_quaternion()));
+		v.suspensionParams[i].suspensionTravelDir = godot_to_px(travel_dir_local);
 		v.suspensionParams[i].suspensionTravelDist = (PxReal)w.suspension_travel;
 		v.suspensionParams[i].wheelAttachment = PxTransform(PxIdentity);
 
@@ -998,9 +998,9 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 	v.wheel_query_filter.collision_mask = (PxU32)cfg.collision_mask;
 	v.physxRoadGeometryQueryParams.filterDataEntries = nullptr;
 
-	v.physxActorCMassLocalPose = PxTransform(physx_to_px(cfg.chassis_com_local));
-	v.physxActorBoxShapeHalfExtents = physx_to_px(cfg.chassis_half_extents);
-	v.physxActorBoxShapeLocalPose = PxTransform(physx_to_px(cfg.chassis_box_center_local));
+	v.physxActorCMassLocalPose = PxTransform(godot_to_px(cfg.chassis_com_local));
+	v.physxActorBoxShapeHalfExtents = godot_to_px(cfg.chassis_half_extents);
+	v.physxActorBoxShapeLocalPose = PxTransform(godot_to_px(cfg.chassis_box_center_local));
 
 	// --- Engine drive seeding (mirrors build_engine_drive in the server) ----
 	if (cfg.engineDrive) {

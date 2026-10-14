@@ -98,7 +98,6 @@ public:
 	void set_mode(PhysicsServer3D::BodyMode p_mode);
 
 	// --- PhysX Internal Access ---
-	physx::PxRigidActor *get_px_actor() const { return get_rigid_actor(); }
 	/// Returns the actor as PxRigidDynamic, or nullptr if this is a static body.
 	physx::PxRigidDynamic *get_px_dynamic() const;
 	/// PxMaterial used by this body's shapes (lazily created on first call) —
@@ -109,7 +108,6 @@ public:
 	/// on_pre_step() skips its manual gravity application — the vehicle2
 	/// simulation context owns gravity for the chassis (the actor also has
 	/// eDISABLE_GRAVITY set, per the PxVehiclePhysXActor requirement).
-	bool is_vehicle_chassis = false;
 	bool get_is_vehicle_chassis() const { return is_vehicle_chassis; }
 	void set_is_vehicle_chassis(bool p_enabled) { is_vehicle_chassis = p_enabled; }
 
@@ -248,7 +246,7 @@ public:
 			TORQUE,
 		};
 		Kind kind;
-		Vector3 vec; // impulse / force / torque
+		Vector3 force_vector; // impulse / force / torque, selected by kind
 		Vector3 offset; // body-origin offset, for the *_AT kinds
 	};
 	LocalVector<PendingForceOp> pending_force_ops;
@@ -415,6 +413,8 @@ private:
 	// writes it on an actual flip (flag writes dirty the actor in PhysX).
 	// Recreated actors start with gravity enabled, matching the initial value.
 	bool gravity_disabled_cached = false;
+	/// Mirrors set_is_vehicle_chassis(); see the accessor above.
+	bool is_vehicle_chassis = false;
 
 	void _create_actor();
 	/// Destroys the actor. p_space routes the release when the body's own

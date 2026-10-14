@@ -188,7 +188,7 @@ bool PhysXMotorcycle3D::_build() {
 	}
 
 	Vehicle2W &v = impl->vehicle;
-	v.physxActor.rigidBody->setGlobalPose(physx_to_px(get_global_transform()));
+	v.physxActor.rigidBody->setGlobalPose(godot_to_px(get_global_transform()));
 	impl->sleep_threshold = (PxReal)space->get_sleep_energy_threshold();
 	impl->time_before_sleep = (PxReal)space->get_time_before_sleep();
 	PxRigidDynamic *dynamic_body = v.physxActor.rigidBody->is<PxRigidDynamic>();
@@ -255,10 +255,10 @@ void PhysXMotorcycle3D::_notification(int p_what) {
 			// Same CoM-vs-actor-origin frame notes as PhysXVehicle3D's own
 			// identical code -- see that class's comment for the SDK source
 			// citations that confirmed this.
-			set_global_transform(physx_to_godot(v.physxActor.rigidBody->getGlobalPose()));
+			set_global_transform(px_to_godot(v.physxActor.rigidBody->getGlobalPose()));
 			const PxTransform cmass_local_pose = v.physxActor.rigidBody->getCMassLocalPose();
 			for (uint32_t i = 0; i < 2; i++) {
-				wheels[impl->wheel_order[i]]->set_transform(physx_to_godot(cmass_local_pose * v.wheelLocalPoses[i].localPose));
+				wheels[impl->wheel_order[i]]->set_transform(px_to_godot(cmass_local_pose * v.wheelLocalPoses[i].localPose));
 			}
 		} break;
 	}
@@ -270,7 +270,7 @@ void PhysXMotorcycle3D::apply_torque_impulse(const Vector3 &p_impulse) {
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->addTorque(physx_to_px(p_impulse), PxForceMode::eIMPULSE);
+	dynamic_body->addTorque(godot_to_px(p_impulse), PxForceMode::eIMPULSE);
 }
 
 void PhysXMotorcycle3D::apply_force_at_local_position(const Vector3 &p_force, const Vector3 &p_local_position) {
@@ -285,7 +285,7 @@ void PhysXMotorcycle3D::apply_force_at_local_position(const Vector3 &p_force, co
 	// mismatch wrong with the sibling PxRigidBodyExt overloads. eFORCE (not
 	// eIMPULSE) since this is meant to be applied continuously across ticks
 	// (e.g. a small ongoing rear-wheel slide force), not a one-shot kick.
-	PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, physx_to_px(p_force), physx_to_px(p_local_position), PxForceMode::eFORCE);
+	PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force), godot_to_px(p_local_position), PxForceMode::eFORCE);
 }
 
 void PhysXMotorcycle3D::set_angular_velocity(const Vector3 &p_angular_velocity) {
@@ -294,7 +294,7 @@ void PhysXMotorcycle3D::set_angular_velocity(const Vector3 &p_angular_velocity) 
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL(dynamic_body);
-	dynamic_body->setAngularVelocity(physx_to_px(p_angular_velocity));
+	dynamic_body->setAngularVelocity(godot_to_px(p_angular_velocity));
 }
 
 Vector3 PhysXMotorcycle3D::get_angular_velocity() const {
@@ -303,7 +303,7 @@ Vector3 PhysXMotorcycle3D::get_angular_velocity() const {
 	}
 	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
 	ERR_FAIL_NULL_V(dynamic_body, Vector3());
-	return physx_to_godot(dynamic_body->getAngularVelocity());
+	return px_to_godot(dynamic_body->getAngularVelocity());
 }
 
 Vector3 PhysXMotorcycle3D::get_up() const {
@@ -311,7 +311,7 @@ Vector3 PhysXMotorcycle3D::get_up() const {
 		return Vector3(0, 1, 0);
 	}
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return physx_to_godot(actor_pose.q.getBasisVector1());
+	return px_to_godot(actor_pose.q.getBasisVector1());
 }
 
 Vector3 PhysXMotorcycle3D::get_forward() const {
@@ -319,7 +319,7 @@ Vector3 PhysXMotorcycle3D::get_forward() const {
 		return -get_global_transform().basis.get_column(2);
 	}
 	const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-	return -physx_to_godot(actor_pose.q.getBasisVector2());
+	return -px_to_godot(actor_pose.q.getBasisVector2());
 }
 
 real_t PhysXMotorcycle3D::get_roll_angle() const {
@@ -336,7 +336,7 @@ Vector3 PhysXMotorcycle3D::get_linear_velocity() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return physx_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
+	return px_to_godot(impl->vehicle.rigidBodyState.linearVelocity);
 }
 
 real_t PhysXMotorcycle3D::get_forward_speed() const {
@@ -389,9 +389,9 @@ real_t PhysXMotorcycle3D::get_wheel_lateral_force(int p_wheel) const {
 	ERR_FAIL_INDEX_V(p_wheel, (int)wheels.size(), 0.0);
 	for (uint32_t i = 0; i < 2; i++) {
 		if (impl->wheel_order[i] == (uint32_t)p_wheel) {
-			const Vector3 lateral_force_world = physx_to_godot(impl->vehicle.tireForces[i].forces[PxVehicleTireDirectionModes::eLATERAL]);
+			const Vector3 lateral_force_world = px_to_godot(impl->vehicle.tireForces[i].forces[PxVehicleTireDirectionModes::eLATERAL]);
 			const PxTransform actor_pose = impl->vehicle.physxActor.rigidBody->getGlobalPose();
-			const Vector3 right_now = physx_to_godot(actor_pose.q.getBasisVector0());
+			const Vector3 right_now = px_to_godot(actor_pose.q.getBasisVector0());
 			return lateral_force_world.dot(right_now);
 		}
 	}
@@ -418,7 +418,7 @@ Vector3 PhysXMotorcycle3D::get_wheel_lateral_direction(int p_wheel) const {
 	ERR_FAIL_INDEX_V(p_wheel, (int)wheels.size(), Vector3());
 	for (uint32_t i = 0; i < 2; i++) {
 		if (impl->wheel_order[i] == (uint32_t)p_wheel) {
-			return physx_to_godot(impl->vehicle.tireDirectionStates[i].directions[PxVehicleTireDirectionModes::eLATERAL]);
+			return px_to_godot(impl->vehicle.tireDirectionStates[i].directions[PxVehicleTireDirectionModes::eLATERAL]);
 		}
 	}
 	return Vector3();
@@ -431,7 +431,7 @@ Vector3 PhysXMotorcycle3D::get_wheel_lateral_force_vector(int p_wheel) const {
 	ERR_FAIL_INDEX_V(p_wheel, (int)wheels.size(), Vector3());
 	for (uint32_t i = 0; i < 2; i++) {
 		if (impl->wheel_order[i] == (uint32_t)p_wheel) {
-			return physx_to_godot(impl->vehicle.tireForces[i].forces[PxVehicleTireDirectionModes::eLATERAL]);
+			return px_to_godot(impl->vehicle.tireForces[i].forces[PxVehicleTireDirectionModes::eLATERAL]);
 		}
 	}
 	return Vector3();
@@ -445,7 +445,7 @@ Vector3 PhysXMotorcycle3D::get_wheel_lateral_velocity(int p_wheel) const {
 	for (uint32_t i = 0; i < 2; i++) {
 		if (impl->wheel_order[i] == (uint32_t)p_wheel) {
 			const PxVec3 &direction = impl->vehicle.tireDirectionStates[i].directions[PxVehicleTireDirectionModes::eLATERAL];
-			return physx_to_godot(direction * impl->vehicle.tireSpeedStates[i].speedStates[PxVehicleTireDirectionModes::eLATERAL]);
+			return px_to_godot(direction * impl->vehicle.tireSpeedStates[i].speedStates[PxVehicleTireDirectionModes::eLATERAL]);
 		}
 	}
 	return Vector3();
@@ -468,7 +468,7 @@ Vector3 PhysXMotorcycle3D::get_actor_position() const {
 	if (!impl->built) {
 		return Vector3();
 	}
-	return physx_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
+	return px_to_godot(impl->vehicle.physxActor.rigidBody->getGlobalPose().p);
 }
 
 PackedStringArray PhysXMotorcycle3D::get_configuration_warnings() const {

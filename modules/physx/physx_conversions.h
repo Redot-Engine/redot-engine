@@ -54,19 +54,19 @@
 #include <foundation/PxTransform.h>
 #include <foundation/PxVec3.h>
 
-_FORCE_INLINE_ physx::PxVec3 physx_to_px(const Vector3 &p_v) {
+_FORCE_INLINE_ physx::PxVec3 godot_to_px(const Vector3 &p_v) {
 	return physx::PxVec3((physx::PxReal)p_v.x, (physx::PxReal)p_v.y, (physx::PxReal)p_v.z);
 }
 
-_FORCE_INLINE_ Vector3 physx_to_godot(const physx::PxVec3 &p_v) {
+_FORCE_INLINE_ Vector3 px_to_godot(const physx::PxVec3 &p_v) {
 	return Vector3((real_t)p_v.x, (real_t)p_v.y, (real_t)p_v.z);
 }
 
-_FORCE_INLINE_ physx::PxQuat physx_to_px(const Quaternion &p_q) {
+_FORCE_INLINE_ physx::PxQuat godot_to_px(const Quaternion &p_q) {
 	return physx::PxQuat((physx::PxReal)p_q.x, (physx::PxReal)p_q.y, (physx::PxReal)p_q.z, (physx::PxReal)p_q.w);
 }
 
-_FORCE_INLINE_ Quaternion physx_to_godot(const physx::PxQuat &p_q) {
+_FORCE_INLINE_ Quaternion px_to_godot(const physx::PxQuat &p_q) {
 	return Quaternion((real_t)p_q.x, (real_t)p_q.y, (real_t)p_q.z, (real_t)p_q.w);
 }
 
@@ -77,17 +77,17 @@ _FORCE_INLINE_ Quaternion physx_to_godot(const physx::PxQuat &p_q) {
  * from script would assert or crash PhysX, so it is clamped to identity
  * rotation (position kept when finite).
  */
-_FORCE_INLINE_ physx::PxTransform physx_to_px(const Transform3D &p_xform) {
-	physx::PxVec3 p = physx_to_px(p_xform.origin);
-	physx::PxQuat q = physx_to_px(p_xform.basis.get_rotation_quaternion());
+_FORCE_INLINE_ physx::PxTransform godot_to_px(const Transform3D &p_xform) {
+	physx::PxVec3 p = godot_to_px(p_xform.origin);
+	physx::PxQuat q = godot_to_px(p_xform.basis.get_rotation_quaternion());
 	if (!p.isFinite() || !q.isFinite() || q.magnitudeSquared() < 1e-6f) {
 		return physx::PxTransform(p.isFinite() ? p : physx::PxVec3(0.0f), physx::PxQuat(physx::PxIdentity));
 	}
 	return physx::PxTransform(p, q.getNormalized());
 }
 
-_FORCE_INLINE_ Transform3D physx_to_godot(const physx::PxTransform &p_xform) {
-	return Transform3D(Basis(physx_to_godot(p_xform.q)), physx_to_godot(p_xform.p));
+_FORCE_INLINE_ Transform3D px_to_godot(const physx::PxTransform &p_xform) {
+	return Transform3D(Basis(px_to_godot(p_xform.q)), px_to_godot(p_xform.p));
 }
 
 #endif // PHYSX_CONVERSIONS_H

@@ -71,15 +71,15 @@ static constexpr float G6DOF_MOTOR_DAMPING = 1.0e6f;
 // ---------------------------------------------------------------------------
 
 physx::PxTransform PhysXJoint3D::to_physx_transform(const Transform3D &p_transform) {
-	return physx_to_px(p_transform);
+	return godot_to_px(p_transform);
 }
 
 physx::PxVec3 PhysXJoint3D::to_physx_vec3(const Vector3 &p_vec) {
-	return physx_to_px(p_vec);
+	return godot_to_px(p_vec);
 }
 
 Vector3 PhysXJoint3D::to_godot_vec3(const physx::PxVec3 &p_vec) {
-	return physx_to_godot(p_vec);
+	return px_to_godot(p_vec);
 }
 
 /**
@@ -262,7 +262,7 @@ void PhysXJoint3D::_destroy_px_joint() {
 		if (!body) {
 			continue;
 		}
-		physx::PxRigidActor *actor = body->get_px_actor();
+		physx::PxRigidActor *actor = body->get_rigid_actor();
 		if (actor && actor->getScene() && actor->is<physx::PxRigidDynamic>()) {
 			physx::PxRigidDynamic *dyn = static_cast<physx::PxRigidDynamic *>(actor);
 			if (!(dyn->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC)) {
@@ -275,8 +275,8 @@ void PhysXJoint3D::_destroy_px_joint() {
 }
 
 physx::PxJoint *PhysXJoint3D::_create() {
-	physx::PxRigidActor *actor_a = body_a ? body_a->get_px_actor() : nullptr;
-	physx::PxRigidActor *actor_b = body_b ? body_b->get_px_actor() : nullptr;
+	physx::PxRigidActor *actor_a = body_a ? body_a->get_rigid_actor() : nullptr;
+	physx::PxRigidActor *actor_b = body_b ? body_b->get_rigid_actor() : nullptr;
 
 	// PhysX joints require at least one dynamic rigid actor; a Joint3D node
 	// transiently configures the joint as soon as the first node path is set
@@ -733,7 +733,7 @@ void PhysXJoint3D::_apply_g6dof_drive_position() {
 	// angular measures run opposite to the D6's.
 	const Quaternion q = Quaternion::from_euler(-ang);
 	physx::PxD6Joint *d6 = static_cast<physx::PxD6Joint *>(px_joint);
-	d6->setDrivePosition(physx::PxTransform(physx_to_px(lin), physx_to_px(q)));
+	d6->setDrivePosition(physx::PxTransform(godot_to_px(lin), godot_to_px(q)));
 }
 
 void PhysXJoint3D::set_hinge_param(PhysicsServer3D::HingeJointParam p_param, real_t p_value) {

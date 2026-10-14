@@ -188,8 +188,6 @@ public:
 	/// usable device + determinism not forced); null otherwise.
 	physx::PxCudaContextManager *get_cuda_context() const { return px_cuda_context; }
 	bool is_gpu_dynamics_enabled() const { return gpu_dynamics_enabled; }
-	/// Alias used by the PhysXCloth3D / PhysXParticleFluid3D nodes.
-	bool has_gpu() const { return gpu_dynamics_enabled; }
 
 	// ------------------------------------------------------------------
 	// SHAPE API — collision geometry resources (shared, not per-body).

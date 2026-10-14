@@ -1024,7 +1024,7 @@ void PhysXGPUParticleFluid3D::_write_particles(uint32_t p_at, const Vector<Vecto
 	// near FLUID_DENSITY.
 	const PxReal particle_mass = FLUID_DENSITY * spacing * spacing * spacing;
 	const PxReal inv_mass = particle_mass > 0.0f ? 1.0f / particle_mass : 1.0f;
-	const PxVec4 vel(physx_to_px(p_velocity), 0.0f);
+	const PxVec4 vel(godot_to_px(p_velocity), 0.0f);
 
 	LocalVector<PxVec4> positions;
 	LocalVector<PxVec4> velocities;
@@ -1034,7 +1034,7 @@ void PhysXGPUParticleFluid3D::_write_particles(uint32_t p_at, const Vector<Vecto
 	phases.resize(n);
 	const Vector3 *src = p_positions.ptr();
 	for (uint32_t i = 0; i < n; i++) {
-		positions[i] = PxVec4(physx_to_px(src[i]), inv_mass);
+		positions[i] = PxVec4(godot_to_px(src[i]), inv_mass);
 		velocities[i] = vel;
 		phases[i] = fluid_phase;
 	}

@@ -42,6 +42,7 @@
 #include "physx_shaped_object_3d.h"
 
 // Forward declarations
+class PhysXBody3D;
 namespace physx {
 class PxRigidActor;
 }
