@@ -356,6 +356,29 @@ public:
 	void init_fog_shader(uint32_t p_max_directional_lights, int p_roughness_layers, bool p_is_using_radiance_cubemap_array);
 	void free_fog_shader();
 
+	struct VolumetricFogEnvironment {
+		float length;
+		float detail_spread;
+		bool temporal_reprojection;
+		float temporal_reprojection_amount;
+
+		RID sky;
+		bool sdfgi_enabled;
+
+		float ambient_light_energy;
+		Color ambient_light;
+		float ambient_sky_contribution;
+
+		float ambient_inject;
+		Color emission;
+		float emission_energy;
+		float density;
+		Color scattering;
+		float anisotropy;
+		float gi_inject;
+		Basis sky_orientation;
+	};
+
 	struct VolumetricFogSettings {
 		Vector2i rb_size;
 		double time;
@@ -370,13 +393,14 @@ public:
 		RID directional_shadow_depth;
 		RID directional_light_buffer;
 
+		VolumetricFogEnvironment environment;
+
 		// Objects related to our render buffer
 		Ref<VolumetricFog> vfog;
 		ClusterBuilderRD *cluster_builder;
 		GI *gi;
 		Ref<GI::SDFGI> sdfgi;
 		Ref<GI::RenderBuffersGI> rbgi;
-		RID env;
 		SkyRD *sky;
 	};
 	void volumetric_fog_update(const VolumetricFogSettings &p_settings, const Projection &p_cam_projection, const Transform3D &p_cam_transform, const Transform3D &p_prev_cam_inv_transform, RID p_shadow_atlas, int p_directional_light_count, bool p_use_directional_shadows, int p_positional_light_count, int p_voxel_gi_count, const PagedArray<RID> &p_fog_volumes);
