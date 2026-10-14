@@ -58,8 +58,6 @@ public:
 	explicit WorldScape3DGradientOperationBuilder(WorldScape3DToolSettings *tool_settings) :
 			_tool_settings(tool_settings) {}
 
-	~WorldScape3DGradientOperationBuilder() override = default;
-
 	MultiPicker *get_point_picker() const;
 	real_t get_brush_size() const;
 	bool is_drawable() const;
