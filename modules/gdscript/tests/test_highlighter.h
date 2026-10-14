@@ -127,7 +127,7 @@ TEST_CASE("[Editor][Modules][GDScript] Static variables use member highlighting"
 		highlighter->update_cache();
 		check_word_color(1, "derived_test", member_color);
 		check_word_color(2, "derived_static_test", member_color);
-		for (const String &word : { "test", "static_test", "derived_test", "derived_static_test" }) {
+		for (const String word : { "test", "static_test", "derived_test", "derived_static_test" }) {
 			check_word_color(5, word, member_color);
 		}
 		// Resource's built-in properties are not members of the edited script.
@@ -364,7 +364,7 @@ func get_text() -> int:
 	return PhantomStruct + PhantomTrait + CommentStruct + CommentTrait
 )GD");
 		highlighter->update_cache();
-		for (const String &name : { "PhantomStruct", "PhantomTrait", "CommentStruct", "CommentTrait" }) {
+		for (const String name : { "PhantomStruct", "PhantomTrait", "CommentStruct", "CommentTrait" }) {
 			check_word("var " + name + ": int = 0", name, font_color);
 			check_word("return PhantomStruct + PhantomTrait + CommentStruct + CommentTrait", name, font_color);
 		}
