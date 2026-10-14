@@ -391,7 +391,6 @@ void Baker::bake_occluder() {
 
 	auto arrays = mesh->surface_get_arrays(0);
 	assert(arrays.size() > Mesh::ARRAY_INDEX);
-	assert(!arrays[Mesh::ARRAY_INDEX].is_null());
 	occluder->set_arrays(arrays[Mesh::ARRAY_VERTEX], arrays[Mesh::ARRAY_INDEX]);
 
 	auto occluder_instance = cast_to<OccluderInstance3D>(terrain->get_node_or_null(NodePath{ "OccluderInstance3D" }));

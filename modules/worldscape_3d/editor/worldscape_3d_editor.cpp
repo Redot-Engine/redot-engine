@@ -905,9 +905,9 @@ void WorldScape3DEditor::stop_operation() {
 void WorldScape3DEditorPlugin::init() {
 	_editor_settings = EditorSettings::get_singleton();
 
-	// Get the ReX Editor window. Structure is root:Window/EditorNode/Base Control
-	_rex_editor_window = cast_to<Window>(EditorInterface::get_singleton()->get_base_control()->get_parent()->get_parent());
-	_rex_editor_window->connect("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered));
+	// Get the Redot Editor window. Structure is root:Window/EditorNode/Base Control
+	_redot_editor_window = cast_to<Window>(EditorInterface::get_singleton()->get_base_control()->get_parent()->get_parent());
+	_redot_editor_window->connect("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered));
 
 	_ui = memnew(WorldScape3DUI(this));
 	add_child(_ui);
@@ -924,10 +924,8 @@ WorldScape3DEditorPlugin::WorldScape3DEditorPlugin() :
 }
 
 WorldScape3DEditorPlugin::~WorldScape3DEditorPlugin() {
-	_ui->queue_free();
-
-	if (_rex_editor_window && _rex_editor_window->is_connected("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered))) {
-		_rex_editor_window->disconnect("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered));
+	if (_redot_editor_window && _redot_editor_window->is_connected("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered))) {
+		_redot_editor_window->disconnect("focus_entered", callable_mp(this, &WorldScape3DEditorPlugin::on_focus_entered));
 	}
 	EditorPlugin::disconnect("scene_changed", callable_mp(this, &WorldScape3DEditorPlugin::on_scene_changed));
 }
