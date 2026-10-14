@@ -865,8 +865,8 @@ Dictionary GDScriptSyntaxHighlighter::_get_line_syntax_highlighting_impl(int p_l
 
 			String word = str.substr(j, to - j);
 			Color col;
-			const HashMap<int, Type> *line_symbols = source_symbols.getptr(p_line);
-			const Type *source_symbol = line_symbols ? line_symbols->getptr(j) : nullptr;
+			const SourceLine *line_symbols = source_symbols.getptr(p_line);
+			const Type *source_symbol = line_symbols ? line_symbols->symbols.getptr(j) : nullptr;
 			if (source_symbol) {
 				if (*source_symbol == TYPE) {
 					col = user_type_color;
@@ -1421,20 +1421,13 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 
 void GDScriptSyntaxHighlighter::_source_changed(int p_from_line, int p_to_line) {
 	// SyntaxHighlighter already invalidates edited lines. Keep preceding region
-	// states, and discard source positions that may have shifted during the edit.
+	// states while updating multiline strings and comments immediately.
 	const int first_line = MAX(0, MIN(p_from_line, p_to_line) - 1);
 	for (HashMap<int, int>::Iterator E = color_region_cache.begin(); E;) {
 		const int line = E->key;
 		++E;
 		if (line >= first_line) {
 			color_region_cache.erase(line);
-		}
-	}
-	for (HashMap<int, HashMap<int, Type>>::Iterator E = source_symbols.begin(); E;) {
-		const int line = E->key;
-		++E;
-		if (line >= first_line) {
-			source_symbols.erase(line);
 		}
 	}
 	if (source_cache_dirty) {
@@ -1444,6 +1437,62 @@ void GDScriptSyntaxHighlighter::_source_changed(int p_from_line, int p_to_line) 
 	if (!tree) {
 		clear_highlighting_cache();
 		return;
+	}
+
+	// Keep unchanged identifiers colored during the debounce interval. Insertions
+	// report (old start, new end), and removals report (old end, new start).
+	const int first_edited_line = MIN(p_from_line, p_to_line);
+	const int line_delta = p_to_line - p_from_line;
+	HashMap<int, SourceLine> remapped;
+	auto retain_symbols = [&](const SourceLine &p_old, int p_line, bool p_prefix) {
+		const String current = text_edit->get_line(p_line);
+		const int old_length = p_old.text.length();
+		const int new_length = current.length();
+		int unchanged = 0;
+		while (unchanged < MIN(old_length, new_length) &&
+				p_old.text[p_prefix ? unchanged : old_length - unchanged - 1] == current[p_prefix ? unchanged : new_length - unchanged - 1]) {
+			unchanged++;
+		}
+		for (const KeyValue<int, Type> &symbol : p_old.symbols) {
+			int end = symbol.key;
+			while (end < old_length && !is_symbol(p_old.text[end])) {
+				end++;
+			}
+			if (p_prefix ? end > unchanged : symbol.key < old_length - unchanged) {
+				continue;
+			}
+			const int column = symbol.key + (p_prefix ? 0 : new_length - old_length);
+			const int new_end = column + end - symbol.key;
+			// Adding identifier characters at either boundary changes the token.
+			if ((column > 0 && !is_symbol(current[column - 1])) || (new_end < new_length && !is_symbol(current[new_end]))) {
+				continue;
+			}
+			SourceLine &retained = remapped[p_line];
+			retained.text = current;
+			retained.symbols[column] = symbol.value;
+		}
+	};
+	for (HashMap<int, SourceLine>::Iterator E = source_symbols.begin(); E;) {
+		const int line = E->key;
+		if (line < first_edited_line || (line > p_from_line && line_delta == 0)) {
+			++E;
+			continue;
+		}
+		if (line > p_from_line) {
+			remapped[line + line_delta] = E->value;
+		} else {
+			if (line == first_edited_line) {
+				retain_symbols(E->value, first_edited_line, true);
+			}
+			if (line == p_from_line) {
+				retain_symbols(E->value, p_to_line, false);
+			}
+		}
+		++E;
+		source_symbols.erase(line);
+	}
+	for (const KeyValue<int, SourceLine> &line : remapped) {
+		source_symbols[line.key] = line.value;
 	}
 	// Coalesce keystrokes while lexical highlighting continues incrementally.
 	constexpr double source_rebuild_delay = 0.15;
@@ -1502,7 +1551,9 @@ void GDScriptSyntaxHighlighter::_update_source_cache() {
 					visual_column += line[column] == '\t' ? tab_size : 1;
 					column++;
 				}
-				source_symbols[token.start_line - 1][column] = symbol == GDScriptHighlighterSource::TYPE ? TYPE : (symbol == GDScriptHighlighterSource::MEMBER ? MEMBER : IDENTIFIER);
+				SourceLine &line_symbols = source_symbols[token.start_line - 1];
+				line_symbols.text = line;
+				line_symbols.symbols[column] = symbol == GDScriptHighlighterSource::TYPE ? TYPE : (symbol == GDScriptHighlighterSource::MEMBER ? MEMBER : IDENTIFIER);
 			}
 			qualified = false;
 		} else if (token.type == GDScriptTokenizer::Token::PERIOD) {

@@ -427,6 +427,79 @@ TEST_CASE("[Editor][Modules][GDScript] Delayed highlighting refresh invalidates 
 	memdelete(code_edit);
 }
 
+TEST_CASE("[Editor][Modules][GDScript] Edits keep unchanged source symbols highlighted until parsing resumes") {
+	CodeEdit *code_edit = memnew(CodeEdit);
+	SceneTree::get_singleton()->get_root()->add_child(code_edit);
+	const Color font_color(0.8, 0.8, 0.8);
+	code_edit->add_theme_color_override("font_color", font_color);
+	Ref<GDScriptSyntaxHighlighter> highlighter;
+	highlighter.instantiate();
+	code_edit->set_syntax_highlighter(highlighter);
+	code_edit->set_text("extends Node\nstruct TestStruct:\n\tvar test: int? = 1\ntrait TestTrait:\n\tvar a: bool? = true\n\tfunc read():\n\t\treturn a\n");
+	highlighter->update_cache();
+	const Color member_color = EDITOR_GET("text_editor/theme/highlighting/member_variable_color");
+	const Color type_color = EDITOR_GET("text_editor/theme/highlighting/user_type_color");
+
+	auto check_word = [&](int p_line, const String &p_word, const Color &p_expected) {
+		const int column = code_edit->get_line(p_line).find(p_word);
+		REQUIRE(column >= 0);
+		const Dictionary regions = highlighter->get_line_syntax_highlighting(p_line);
+		Array keys = regions.keys();
+		keys.sort();
+		Color color = font_color;
+		for (const Variant &key : keys) {
+			if (int(key) > column) {
+				break;
+			}
+			const Dictionary region = regions[key];
+			color = region["color"];
+		}
+		INFO("Line: ", p_line, ", word: ", p_word);
+		CHECK(color == p_expected);
+	};
+
+	check_word(4, "a:", member_color);
+	check_word(6, "a", member_color);
+	// The edited initializer, previous declaration, and following reads stay colored.
+	code_edit->insert_text("1", 2, code_edit->get_line(2).length());
+	check_word(2, "test", member_color);
+	check_word(1, "TestStruct", type_color);
+	check_word(3, "TestTrait", type_color);
+	check_word(4, "a:", member_color);
+	check_word(6, "a", member_color);
+	// Columns and line numbers can move before the deferred parser catches up.
+	code_edit->insert_text(" ", 6, 2);
+	check_word(6, "a", member_color);
+	code_edit->insert_text("\n", 1, 0);
+	check_word(2, "TestStruct", type_color);
+	check_word(5, "a:", member_color);
+	check_word(7, "a", member_color);
+	code_edit->remove_text(1, 0, 2, 0);
+	check_word(1, "TestStruct", type_color);
+	check_word(6, "a", member_color);
+	// Extending an identifier must not reuse its old declaration's color.
+	code_edit->insert_text("bsent", 6, code_edit->get_line(6).length());
+	check_word(6, "absent", font_color);
+	SceneTree::get_singleton()->process(0.2);
+	check_word(6, "absent", font_color);
+	check_word(4, "a:", member_color);
+	// Splitting and joining a row must retain symbols from both endpoints.
+	code_edit->set_text("struct TestStruct:\n\tvar test: int = 1\ntrait TestTrait:\n\tvar field: TestStruct = TestStruct.new()\n");
+	highlighter->update_cache();
+	check_word(3, "field", member_color);
+	check_word(3, "TestStruct.new", type_color);
+	const int split_column = code_edit->get_line(3).find("=");
+	code_edit->insert_text("\n", 3, split_column);
+	check_word(3, "field", member_color);
+	check_word(3, "TestStruct", type_color);
+	check_word(4, "TestStruct.new", type_color);
+	code_edit->remove_text(3, split_column, 4, 0);
+	check_word(3, "field", member_color);
+	check_word(3, "TestStruct", type_color);
+	check_word(3, "TestStruct.new", type_color);
+	memdelete(code_edit);
+}
+
 } // namespace GDScriptTests
 
 #endif // TOOLS_ENABLED

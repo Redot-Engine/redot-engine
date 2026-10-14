@@ -90,7 +90,11 @@ private:
 		TYPE,
 	};
 
-	HashMap<int, HashMap<int, Type>> source_symbols;
+	struct SourceLine {
+		String text;
+		HashMap<int, Type> symbols;
+	};
+	HashMap<int, SourceLine> source_symbols;
 	Vector<Ref<GDScriptParserRef>> source_dependencies;
 	bool source_cache_dirty = true;
 	ObjectID source_text_edit_id;
