@@ -217,6 +217,14 @@ public:
 
 	bool is_ready() const { return px_system != nullptr; }
 
+	/// True when this platform's SDK libraries provide the CUDA particle+diffuse
+	/// buffer factory (ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer). It
+	/// ships only in the GPU-enabled Windows libraries; elsewhere the module
+	/// stubs it (see physx_extgpu_stub_linux.cpp) and no PBD fluid buffer can
+	/// be created, foam or not. The MPM (Vulkan compute) backend is the
+	/// cross-platform path.
+	static bool supports_diffuse_particles();
+
 	PhysXGPUParticleFluid3D() {}
 	~PhysXGPUParticleFluid3D();
 };

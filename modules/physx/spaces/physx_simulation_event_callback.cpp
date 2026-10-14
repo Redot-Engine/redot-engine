@@ -66,6 +66,53 @@ void PhysXSimulationEventCallback::onAdvance(const physx::PxRigidBody *const *bo
 // onContact — populate per-body contact buffers
 // ---------------------------------------------------------------------------
 
+// Fills one body's contact list from one side of a contact pair. The two call
+// sites below are the same contact seen from each body's perspective: the
+// second body's normal and impulse are negated, and the local/collider roles
+// (shape indices, userData, dynamic actors) are swapped.
+static void _fill_body_contact(PhysXBody3D *p_body, const physx::PxContactPairPoint &p_cp,
+		bool p_second_perspective, int p_local_shape, int p_collider_shape,
+		const PhysXActorUserData *p_collider_data,
+		physx::PxRigidDynamic *p_local_dyn, physx::PxRigidDynamic *p_collider_dyn) {
+	const float sign = p_second_perspective ? -1.0f : 1.0f;
+
+	LocalVector<PhysXBodyContact> &contacts = p_body->get_contacts();
+	PhysXBodyContact bc;
+	bc.local_position = Vector3(p_cp.position.x, p_cp.position.y, p_cp.position.z);
+	bc.local_normal = Vector3(sign * p_cp.normal.x, sign * p_cp.normal.y, sign * p_cp.normal.z);
+	bc.impulse = Vector3(sign * p_cp.impulse.x, sign * p_cp.impulse.y, sign * p_cp.impulse.z);
+	bc.local_shape = p_local_shape >= 0 ? p_local_shape : 0;
+	bc.collider = p_collider_data->rid;
+	bc.collider_id = p_collider_data->object_id;
+	bc.collider_shape = p_collider_shape >= 0 ? p_collider_shape : 0;
+	bc.collider_position = Vector3(p_cp.position.x, p_cp.position.y, p_cp.position.z);
+	bc.depth = -p_cp.separation; // negative separation == penetration depth
+	// Velocities at the contact point.
+	if (p_collider_dyn) {
+		const physx::PxVec3 v = physx::PxRigidBodyExt::getVelocityAtPos(*p_collider_dyn, p_cp.position);
+		bc.collider_velocity = Vector3(v.x, v.y, v.z);
+	}
+	if (p_local_dyn) {
+		const physx::PxVec3 v = physx::PxRigidBodyExt::getVelocityAtPos(*p_local_dyn, p_cp.position);
+		bc.local_velocity = Vector3(v.x, v.y, v.z);
+	}
+	// Godot's replacement policy: at capacity, a DEEPER contact replaces the
+	// shallowest stored one instead of being dropped.
+	if ((int)contacts.size() < p_body->get_max_contacts_reported()) {
+		contacts.push_back(bc);
+	} else {
+		int shallowest = 0;
+		for (int ci = 1; ci < (int)contacts.size(); ci++) {
+			if (contacts[ci].depth < contacts[shallowest].depth) {
+				shallowest = ci;
+			}
+		}
+		if (bc.depth > contacts[shallowest].depth) {
+			contacts[shallowest] = bc;
+		}
+	}
+}
+
 void PhysXSimulationEventCallback::onContact(const physx::PxContactPairHeader &pairHeader, const physx::PxContactPair *pairs, physx::PxU32 nbPairs) {
 	// Resolve both actors to our wrapper objects via userData.
 	if (!pairHeader.actors[0] || !pairHeader.actors[1]) {
@@ -139,79 +186,12 @@ void PhysXSimulationEventCallback::onContact(const physx::PxContactPairHeader &p
 			// Body 0's perspective: normal points from shape[1] to shape[0]
 			// (i.e., toward body0). Godot's local normal points toward self.
 			if (body0 && body0->get_max_contacts_reported() > 0) {
-				LocalVector<PhysXBodyContact> &contacts = body0->get_contacts();
-				PhysXBodyContact bc;
-				bc.local_position = Vector3(cp.position.x, cp.position.y, cp.position.z);
-				bc.local_normal = Vector3(cp.normal.x, cp.normal.y, cp.normal.z);
-				bc.impulse = Vector3(cp.impulse.x, cp.impulse.y, cp.impulse.z);
-				bc.local_shape = shape0_idx >= 0 ? shape0_idx : 0;
-				bc.collider = a1->rid;
-				bc.collider_id = a1->object_id;
-				bc.collider_shape = shape1_idx >= 0 ? shape1_idx : 0;
-				bc.collider_position = Vector3(cp.position.x, cp.position.y, cp.position.z);
-				bc.depth = -cp.separation; // negative separation == penetration depth
-				// Velocities at the contact point.
-				if (dyn1) {
-					const physx::PxVec3 v = physx::PxRigidBodyExt::getVelocityAtPos(*dyn1, cp.position);
-					bc.collider_velocity = Vector3(v.x, v.y, v.z);
-				}
-				if (dyn0) {
-					const physx::PxVec3 v = physx::PxRigidBodyExt::getVelocityAtPos(*dyn0, cp.position);
-					bc.local_velocity = Vector3(v.x, v.y, v.z);
-				}
-				// Godot's replacement policy: at capacity, a DEEPER contact
-				// replaces the shallowest stored one instead of being dropped.
-				if ((int)contacts.size() < body0->get_max_contacts_reported()) {
-					contacts.push_back(bc);
-				} else {
-					int shallowest = 0;
-					for (int ci = 1; ci < (int)contacts.size(); ci++) {
-						if (contacts[ci].depth < contacts[shallowest].depth) {
-							shallowest = ci;
-						}
-					}
-					if (bc.depth > contacts[shallowest].depth) {
-						contacts[shallowest] = bc;
-					}
-				}
+				_fill_body_contact(body0, cp, false, shape0_idx, shape1_idx, a1, dyn0, dyn1);
 			}
 
 			// Body 1's perspective: normal is flipped.
 			if (body1 && body1->get_max_contacts_reported() > 0) {
-				LocalVector<PhysXBodyContact> &contacts = body1->get_contacts();
-				PhysXBodyContact bc;
-				bc.local_position = Vector3(cp.position.x, cp.position.y, cp.position.z);
-				bc.local_normal = Vector3(-cp.normal.x, -cp.normal.y, -cp.normal.z);
-				bc.impulse = Vector3(-cp.impulse.x, -cp.impulse.y, -cp.impulse.z);
-				bc.local_shape = shape1_idx >= 0 ? shape1_idx : 0;
-				bc.collider = a0->rid;
-				bc.collider_id = a0->object_id;
-				bc.collider_shape = shape0_idx >= 0 ? shape0_idx : 0;
-				bc.collider_position = Vector3(cp.position.x, cp.position.y, cp.position.z);
-				bc.depth = -cp.separation;
-				// Velocities at the contact point (swapped perspective).
-				if (dyn0) {
-					const physx::PxVec3 v = physx::PxRigidBodyExt::getVelocityAtPos(*dyn0, cp.position);
-					bc.collider_velocity = Vector3(v.x, v.y, v.z);
-				}
-				if (dyn1) {
-					const physx::PxVec3 v = physx::PxRigidBodyExt::getVelocityAtPos(*dyn1, cp.position);
-					bc.local_velocity = Vector3(v.x, v.y, v.z);
-				}
-				// Same depth-replacement policy as body 0.
-				if ((int)contacts.size() < body1->get_max_contacts_reported()) {
-					contacts.push_back(bc);
-				} else {
-					int shallowest = 0;
-					for (int ci = 1; ci < (int)contacts.size(); ci++) {
-						if (contacts[ci].depth < contacts[shallowest].depth) {
-							shallowest = ci;
-						}
-					}
-					if (bc.depth > contacts[shallowest].depth) {
-						contacts[shallowest] = bc;
-					}
-				}
+				_fill_body_contact(body1, cp, true, shape1_idx, shape0_idx, a0, dyn1, dyn0);
 			}
 		}
 	}

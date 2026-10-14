@@ -357,6 +357,12 @@
 			<description>
 			</description>
 		</method>
+		<method name="particle_fluid_supports_diffuse" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when this platform's PhysX SDK can create the CUDA PBD particle buffer. The SDK's particle buffer factory ships only in the GPU-enabled Windows libraries through PhysX 5.11, so [code]false[/code] means the [PhysXParticleFluid3D] node's [code]Auto[/code] solver rule resolves to its MPM solver and an explicitly pinned PBD fluid stays inert.
+			</description>
+		</method>
 		<method name="soft_body_attach_point_to_body">
 			<return type="void" />
 			<param index="0" name="soft_body" type="RID" />

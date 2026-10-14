@@ -56,7 +56,10 @@ else:
 # a usable CUDA device the server logs a warning and simulates on the CPU. Opt
 # out with `physx_gpu=no` -- GODOT_PHYSX_GPU is then not defined, so the server
 # never touches CUDA (the GPU fluid object still compiles but stays inert, and
-# the cloth node falls back to its CPU solver).
+# the cloth node falls back to its CPU solver). On Linux that also keeps the
+# PhysXGpu runtime off the link line and out of bin/ (the CPU libs' two GPU
+# dispatch references resolve from physx_gpu_dispatch_stub.cpp instead); on
+# Windows the PhysXGpu_64 import library stays linked in every configuration.
 physx_gpu = ARGUMENTS.get("physx_gpu", "yes") not in ("no", "0", "false", "False")
 
 # 1. PhysX Defines
@@ -68,12 +71,11 @@ physx_gpu = ARGUMENTS.get("physx_gpu", "yes") not in ("no", "0", "false", "False
 #
 # GPU platforms: Windows (PhysXGpu_64.dll runtime) and Linux (NVIDIA's
 # prebuilt libPhysXGpu_64.so runtime, vendored under bin/linux). The Linux
-# route mirrors Windows: the static CPU libs stay self-contained and the
-# closed-source runtime provides the GPU entry points (PxCreatePhysXGpu,
-# PxCreateCudaContextManager, ...) at link time from the .so directly --
-# it carries NO libcuda dependency itself (the driver is contacted at
-# runtime), so engines built this way still boot on non-NVIDIA machines
-# and take the CPU fallback. Building the GPU libs from source instead
+# route mirrors Windows: the closed-source runtime provides the GPU entry
+# points (PxCreatePhysXGpu, PxCreateCudaContextManager, ...) and carries NO
+# libcuda dependency itself (the driver is contacted at run time), so
+# engines built with physx_gpu=yes still boot on non-NVIDIA machines and
+# take the CPU fallback. Building the GPU libs from source instead
 # (the linux-clang-rd-gpu preset) drags the CUDA driver API into the link
 # (-lcuda), which CI cannot satisfy; that route stays closed.
 physx_defines = [
@@ -189,12 +191,16 @@ physx_libs = [
     "PhysXFoundation_static_64",
 ]
 
-# GPU-enabled Linux SDK build (CUDA present at configure time: no
-# DISABLE_CUDA_PHYSX). The CPU libs reference the GPU dispatch and OmniPVD
-# entry points. The dispatch comes from the closed PhysXGpu runtime .so
-# (same split as Windows) -- NOT from the open-source GPU static archive,
-# whose framework fatbins proved host-arch-fragile. See the link block
-# after the PhysX lib conversion below.
+# Linux/BSD SDK build (CUDA-enabled SDK configure: no DISABLE_CUDA_PHYSX).
+# The CPU libs are NOT fully self-contained: PhysX core and the PVD SDK
+# reference two GPU-dispatch entry points (PxCreatePhysXGpu,
+# PxSetPhysXGpuProfilerCallback) that only the closed PhysXGpu runtime
+# provides. With physx_gpu=yes that runtime joins the link (see the GPU
+# dispatch block after the lib conversion below); with physx_gpu=no the
+# references resolve from physx_gpu_dispatch_stub.cpp's inert stand-ins
+# instead. NOT the open-source GPU static archive, whose framework fatbins
+# proved host-arch-fragile. Other platforms link no PhysX SDK archives at
+# all, so both routes are irrelevant there.
 if env["platform"] != "windows":
     physx_libs = [
         "PhysXVehicle_static_64",
@@ -206,24 +212,11 @@ if env["platform"] != "windows":
         # single-pass GNU/MinGW linkers; MSVC is order-insensitive.
         "PhysX_static_64",
         "PhysXPvdSDK_static_64",
-        # OmniPVD writers (referenced by PhysXPvdSDK/NpOmniPvd).
+        # OmniPVD writers (referenced by PhysXPvdSDK/NpOmniPVD).
         "PVDRuntime_static_64",
         "PhysXCommon_static_64",
         "PhysXFoundation_static_64",
     ]
-
-    # GPU dispatch (PxCreatePhysXGpu, PxGpuGetCudaFunctionTable, ...) via the
-    # closed runtime .so, mirroring the Windows "PhysXGpu_64" import-lib
-    # entry. The runtime sits in the bin/ vendor dir and is staged next to
-    # the engine binary, where the engine's RUNPATH $ORIGIN finds it; the
-    # SDK's own PxLoadPhysxGPUModule() also dlopens it by soname at init.
-    if env["platform"] in ("linux", "linuxbsd"):
-        physx_bin_dir = Dir("#thirdparty/physx/bin/linux/x86_64/release")
-        env.PrependUnique(LIBPATH=[physx_bin_dir.abspath])
-        # The runtime .so (linked after the archives below) carries undefined
-        # cu* driver references, satisfied at runtime by the SDK's
-        # PxLoadPhysxGPUModule() dlopening libcuda.so.1 RTLD_GLOBAL.
-        env.Append(LINKFLAGS=["-Wl,--allow-shlib-undefined"])
 
 # Prebuilt PhysX libraries use plain ".lib" names. MSVC's linker resolves
 # them from LIBPATH (SCons would otherwise append $LIBSUFFIX to env.LIBS
@@ -244,32 +237,33 @@ else:
         env.Append(LIBS=[physx_lib_path.File(lib + ".lib") for lib in physx_libs])
     else:
         env.Append(LIBS=[physx_lib_path.File(f"lib{lib}.a") for lib in physx_libs])
-        # GPU dispatch via the closed PhysXGpu runtime .so, AFTER the static
-        # archives (single-pass ld; also keeps it alive under --as-needed).
-        env.Append(LIBS=["PhysXGpu_64"])
 
-# Linux GPU dynamics: link NVIDIA's prebuilt runtime directly (it exports
-# the GPU entry points the CPU statics don't carry) and place it next to
-# the binary; the engine's $ORIGIN rpath finds it there. The runtime has
-# no libcuda dependency itself, so non-NVIDIA machines keep booting with
-# the CPU fallback. Only linked when GODOT_PHYSX_GPU is defined. NVIDIA
-# ships a single config-agnostic runtime for Linux (unlike the per-config
-# Windows DLLs), so it lives once under bin/linux/x86_64/release and both
-# SDK configurations link the same file; a checked/ sibling can take over
-# if NVIDIA ever ships one.
+# Linux GPU dispatch (physx_gpu=yes only). The CPU libs reference two GPU
+# entry points (PxCreatePhysXGpu, PxSetPhysXGpuProfilerCallback) that only
+# the closed runtime .so defines, so it joins the link -- AFTER the static
+# archives: single-pass GNU ld resolves the two references from it, and
+# --as-needed then keeps it DT_NEEDED precisely because those references
+# precede it on the link line (placed before the archives, it would be
+# dropped and GPU dynamics would vanish at load). The runtime is staged
+# next to the engine binary, where the engine's $ORIGIN RUNPATH finds it --
+# a bare soname never searches the binary's directory on Linux. It has no
+# libcuda dependency of its own (cu* resolves at run time via dlopen), so
+# driverless machines still boot and take the CPU fallback. NVIDIA ships a
+# single config-agnostic runtime for Linux (unlike the per-config Windows
+# DLLs), so it lives once under bin/linux/x86_64/release and both SDK
+# configurations link the same file.
+# With physx_gpu=no nothing here runs: the runtime is neither linked nor
+# staged, and the two references resolve from physx_gpu_dispatch_stub.cpp's
+# inert stand-ins instead.
 if physx_gpu and env["platform"] in ("linux", "linuxbsd"):
-    # Runtime-only on Linux: the 346 MB .so must NOT join the link (ld
-    # loads the whole object and stalls for the better part of an hour,
-    # plus its cu* driver symbols would need -lcuda). The module instead
-    # dlopens the runtime and dlsyms the GPU entry points at init; the
-    # copy below places the .so next to the engine binary where the
-    # module's dlopen finds it. No link-time GPU dependency remains.
+    physx_bin_dir = Dir("#thirdparty/physx/bin/linux/x86_64/release")
+    env.PrependUnique(LIBPATH=[physx_bin_dir.abspath])
+    # The runtime .so carries undefined cu* driver references; ld must not
+    # reject them -- they resolve at run time when libcuda.so.1 is dlopen'd
+    # RTLD_GLOBAL (preloaded first in PhysXServer3D::init()).
+    env.Append(LINKFLAGS=["-Wl,--allow-shlib-undefined"])
+    env.Append(LIBS=["PhysXGpu_64"])
     gpu_so = thirdparty_dir.File("bin/linux/x86_64/release/libPhysXGpu_64.so")
-    env.Command(
-        File("#bin/libPhysXGpu_64.so"),
-        gpu_so,
-        Copy("$TARGET", "$SOURCE"),
-    )
     env.Command(
         File("#bin/libPhysXGpu_64.so"),
         gpu_so,

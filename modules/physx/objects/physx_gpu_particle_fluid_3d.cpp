@@ -945,8 +945,25 @@ void PhysXGPUParticleFluid3D::set_foam_size(real_t p_v) {
 	}
 }
 
+bool PhysXGPUParticleFluid3D::supports_diffuse_particles() {
+#if defined(_WIN32)
+	return true;
+#else
+	// physx_extgpu_stub_linux.cpp stands in for the factory on this platform.
+	return false;
+#endif
+}
+
 void PhysXGPUParticleFluid3D::_ensure_buffer() {
 	if (px_buffer) {
+		return;
+	}
+	if (!supports_diffuse_particles()) {
+		// The particle+diffuse buffer factory only ships in the GPU-enabled
+		// Windows libraries (see physx_extgpu_stub_linux.cpp); without it no
+		// PBD fluid buffer can exist on this platform, foam or not. The node's
+		// solver resolution routes to the MPM backend before reaching here.
+		WARN_PRINT_ONCE("PhysX: the CUDA particle fluid buffer factory is unavailable on this platform (Windows only through PhysX 5.11); the PBD fluid stays inert -- use the MPM solver.");
 		return;
 	}
 	_ensure_system();

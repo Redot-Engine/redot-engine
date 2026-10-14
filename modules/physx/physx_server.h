@@ -44,12 +44,13 @@
  * Threading: PhysXServer3D itself is not thread-safe. When run on a separate
  * thread, it is wrapped by PhysicsServer3DWrapMT which serializes calls via
  * a command queue. The server does not need to know which mode it is in.
- * EXCEPTION: the ClassDB-bound module APIs (the vehicle, articulation,
+ * NOTE: the ClassDB-bound module APIs (the vehicle, articulation,
  * particle-fluid and cloth method families) bypass the wrapper's queue —
  * scripts call them directly on this inner server from the main thread.
- * They, together with the physics pipeline (step/sync/flush_queries/free),
- * are serialized by api_mutex; see the note above _bind_methods in
- * physx_server.cpp.
+ * They, the physics pipeline (step/sync/flush_queries/free) and the WrapMT
+ * pump task's marshaled-command batches are all serialized by api_mutex
+ * (the pump brackets via command_flush_begin/end); see the note above
+ * api_mutex below and _bind_methods in physx_server.cpp.
  */
 
 #ifndef PHYSX_SERVER_H
@@ -103,9 +104,11 @@ class PhysXServer3D : public PhysicsServer3D {
 	// ------------------------------------------------------------------
 	// API guard — serializes the ClassDB-bound module APIs (called directly
 	// on this inner server from the main thread, bypassing WrapMT) against
-	// the physics pipeline (step/sync/flush_queries/free). This fork's Mutex
-	// is recursive: step/flush dispatch script Callables that may legally
-	// call back into these APIs on the same thread.
+	// the physics pipeline (step/sync/flush_queries/free) AND against the
+	// WrapMT pump task's marshaled-command batches (bracketed via
+	// command_flush_begin/end). This fork's Mutex is recursive: step/flush
+	// dispatch script Callables that may legally call back into these APIs
+	// on the same thread.
 	// ------------------------------------------------------------------
 	mutable Mutex api_mutex;
 	// ------------------------------------------------------------------
@@ -150,13 +153,15 @@ private:
 	/// one heap copy per call, several per frame.
 	LocalVector<RID> _space_list;
 
-	/// One-shot warning: module extension APIs (vehicles, GPU fluids/cloths,
-	/// articulations, water/flow probes) assume single-threaded physics —
-	/// under physics/3d/run_on_separate_thread their ClassDB calls run on the
-	/// main thread and can interleave with marshaled server commands executing
-	/// on the physics thread (the module APIs hold PhysXServer3D::api_mutex,
-	/// the marshaled commands do not). Called from the module API creation
-	/// entry points.
+	/// One-shot warning tripwire: module extension APIs (vehicles, GPU
+	/// fluids/cloths, articulations, water/flow probes) are serialized against
+	/// the pipeline and the WrapMT marshaled-command batches by api_mutex (see
+	/// command_flush_begin), but under physics/physx_3d/simulation/async_step
+	/// a module mutation from the main thread cannot fetch a solve the pump
+	/// thread kicked (PhysX requires simulate/fetchResults on one thread) —
+	/// it proceeds against the last fetched state and warns once. Keep async
+	/// stepping off for projects that mutate module objects from scripts.
+	/// Called from the module API creation entry points.
 	void _warn_module_api_separate_thread();
 
 public:
@@ -551,6 +556,13 @@ public:
 	// Inert unless the build has GPU support and a CUDA device is present.
 	// ------------------------------------------------------------------
 	RID particle_fluid_create();
+	/// True when this platform's SDK can create the CUDA PBD particle buffer.
+	/// The diffuse-particle factory ships only in the GPU-enabled Windows
+	/// libraries through PhysX 5.11 (stubbed elsewhere, see
+	/// objects/physx_extgpu_stub_linux.cpp), so false means the
+	/// PhysXParticleFluid3D node's Auto rule resolves to its MPM solver and an
+	/// explicitly pinned PBD fluid stays inert.
+	bool particle_fluid_supports_diffuse() const;
 	void particle_fluid_set_space(RID p_fluid, RID p_space);
 	void particle_fluid_set_param(RID p_fluid, int p_param, real_t p_value);
 	void particle_fluid_set_capacity(RID p_fluid, int p_max);
@@ -681,6 +693,16 @@ public:
 
 	virtual void flush_queries() override;
 	virtual bool is_flushing_queries() const override;
+
+	/// Serializes the WrapMT pump task's marshaled-command batches against the
+	/// ClassDB-bound module APIs (which take api_mutex on the main thread).
+	/// Together with the api_mutex that step/sync/flush_queries and the module
+	/// APIs already hold, this closes the last unsynchronized path: previously
+	/// marshaled commands could interleave with a module API mid-call under
+	/// physics/3d/run_on_separate_thread. The recursive mutex keeps script
+	/// callbacks fired from flush_queries() legal.
+	virtual void command_flush_begin() override { api_mutex.lock(); }
+	virtual void command_flush_end() override { api_mutex.unlock(); }
 
 	virtual int get_process_info(PhysicsServer3D::ProcessInfo p_process_info) override;
 };

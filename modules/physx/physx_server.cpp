@@ -105,13 +105,16 @@
 //   These ClassDB-bound methods bypass PhysicsServer3DWrapMT (scripts call
 //   the inner server directly from the main thread), so every method below
 //   takes the server's api_mutex first; the physics pipeline (step / sync /
-//   flush_queries / free) takes the same lock. This serializes module API
-//   calls against the actual simulation, callback dispatch and RID frees —
+//   flush_queries / free) takes the same lock, and the WrapMT pump task's
+//   marshaled-command batches are bracketed with it via
+//   command_flush_begin/end. This serializes module API calls against the
+//   actual simulation, callback dispatch, RID frees and marshaled commands —
 //   including under physics/physx_3d/simulation/async_step and with
-//   run_on_separate_thread=true. Residual caveat in separate-thread mode:
-//   ordinary marshaled server commands executing between steps on the
-//   physics thread do not hold the lock, so keep that mode out of projects
-//   that lean on the module APIs.
+//   run_on_separate_thread=true. Residual caveat: with async stepping on a
+//   separate thread, a module mutation from the main thread cannot fetch a
+//   solve the physics thread kicked (PhysX requires simulate/fetchResults on
+//   one thread) and proceeds against the last fetched state (_warn_module_
+//   api_separate_thread tripwires it once).
 //
 // USAGE (per frame): write control inputs in _PhysicsProcess (pre-step); read
 //   telemetry (vehicle_get_wheel_states / vehicle_get_engine_state) afterwards
@@ -202,6 +205,7 @@ void PhysXServer3D::_bind_methods() {
 	// node from C++, bound here so GDScript/C# tools like the debug lab can
 	// build fluid volumes through the raw server API).
 	ClassDB::bind_method(D_METHOD("particle_fluid_create"), &PhysXServer3D::particle_fluid_create);
+	ClassDB::bind_method(D_METHOD("particle_fluid_supports_diffuse"), &PhysXServer3D::particle_fluid_supports_diffuse);
 	ClassDB::bind_method(D_METHOD("particle_fluid_set_space", "fluid", "space"), &PhysXServer3D::particle_fluid_set_space);
 	ClassDB::bind_method(D_METHOD("particle_fluid_set_param", "fluid", "param", "value"), &PhysXServer3D::particle_fluid_set_param);
 	ClassDB::bind_method(D_METHOD("particle_fluid_set_capacity", "fluid", "max"), &PhysXServer3D::particle_fluid_set_capacity);
@@ -1138,10 +1142,11 @@ PhysicsDirectBodyState3D *PhysXServer3D::body_get_direct_state(RID p_body) {
 void PhysXServer3D::_warn_module_api_separate_thread() {
 	if ((bool)GLOBAL_GET("physics/3d/run_on_separate_thread")) {
 		WARN_PRINT_ONCE(
-				"PhysX: module extension APIs (vehicles, GPU fluids/cloths, articulations) assume "
-				"single-threaded physics; with physics/3d/run_on_separate_thread their calls run on the "
-				"main thread and can interleave with marshaled server commands executing on the physics "
-				"thread. Keep that mode off for projects using these APIs.");
+				"PhysX: module extension APIs (vehicles, GPU fluids/cloths, articulations) are serialized "
+				"against the physics pipeline, but with physics/physx_3d/simulation/async_step a module "
+				"mutation from the main thread cannot fetch a solve the physics thread kicked and proceeds "
+				"against the last fetched state. Keep async stepping off for projects that mutate module "
+				"objects from scripts.");
 	}
 }
 
@@ -1855,6 +1860,10 @@ bool PhysXServer3D::soft_body_is_point_pinned(RID p_body, int p_point_index) con
 }
 
 /* PARTICLE FLUID */
+
+bool PhysXServer3D::particle_fluid_supports_diffuse() const {
+	return PhysXGPUParticleFluid3D::supports_diffuse_particles();
+}
 
 RID PhysXServer3D::particle_fluid_create() {
 	MutexLock lock(api_mutex);
@@ -2752,13 +2761,13 @@ void PhysXServer3D::init() {
 	// present. A GPU build without a usable CUDA device falls back to CPU.
 	if (!PhysXProjectSettings::enhanced_determinism) {
 #if defined(__linux__)
-		// Linux loads the GPU runtime dynamically instead of linking it: the
-		// 346 MB libPhysXGpu_64.so makes ld pathologically slow as a direct
-		// link input, and dlopen keeps the engine bootable on driverless
-		// machines. Chain: preload the CUDA driver (its cu* symbols must sit
-		// in the global namespace before the runtime loads), then the
-		// runtime, then fetch the GPU entry point. Any failure falls back
-		// to CPU simulation.
+		// The GPU runtime is linked into the engine and staged next to it by
+		// the module SCsub (physx_gpu=yes only); this dlopen acquires its
+		// handle to fetch the entry point through. Chain: preload the CUDA
+		// driver (its cu* symbols must sit in the global namespace before
+		// the runtime's deferred cu* references resolve), then the runtime,
+		// then fetch the GPU entry point. Any failure falls back to CPU
+		// simulation.
 		void *cuda_driver = dlopen("libcuda.so.1", RTLD_NOW | RTLD_GLOBAL);
 		if (cuda_driver == nullptr) {
 			WARN_PRINT(vformat("PhysX: libcuda.so.1 could not be loaded (%s); falling back to CPU simulation.", dlerror()));
