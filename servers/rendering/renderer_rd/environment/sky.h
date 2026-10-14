@@ -48,11 +48,7 @@
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/shader_compiler.h"
 
-/// Forward declare RendererSceneRenderRD so we can pass it into some of our methods, these classes are pretty tightly bound
-/// @{
-class RendererSceneRenderRD;
 class RenderSceneBuffersRD;
-/// @}
 
 namespace RendererRD {
 
@@ -75,6 +71,22 @@ public:
 		float size;
 		uint32_t enabled;
 		uint32_t pad[3];
+	};
+
+	struct SkyRenderData {
+		RID sky;
+		RS::EnvironmentBG background;
+		Basis sky_orientation;
+		float custom_fov = 0.0;
+
+		bool fog_enabled = false;
+		float fog_density = 0.0;
+		float fog_aerial_perspective = 0.0;
+		Color fog_light_color;
+		float fog_light_energy = 0.0;
+		float fog_sun_scatter = 0.0;
+		float fog_sky_affect = 0.0;
+		float volumetric_fog_sky_affect = 0.0;
 	};
 
 private:
@@ -309,10 +321,10 @@ public:
 	void set_texture_format(RD::DataFormat p_texture_format);
 	~SkyRD();
 
-	void setup_sky(const RenderDataRD *p_render_data, const Size2i p_screen_size);
-	void update_radiance_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env, const Vector3 &p_global_pos, double p_time, float p_luminance_multiplier = 1.0, float p_brightness_multiplier = 1.0);
-	void update_res_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env, double p_time, float p_luminance_multiplier = 1.0, float p_brightness_multiplier = 1.0);
-	void draw_sky(RD::DrawListID p_draw_list, Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env, RID p_fb, double p_time, float p_luminance_multiplier = 1.0, float p_brightness_multiplier = 1.0);
+	void setup_sky(const RenderDataRD *p_render_data, const SkyRenderData &p_env, const Size2i p_screen_size);
+	void update_radiance_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, const SkyRenderData &p_env, const Vector3 &p_global_pos, double p_time, float p_luminance_multiplier = 1.0, float p_brightness_multiplier = 1.0);
+	void update_res_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, const SkyRenderData &p_env, double p_time, float p_luminance_multiplier = 1.0, float p_brightness_multiplier = 1.0);
+	void draw_sky(RD::DrawListID p_draw_list, Ref<RenderSceneBuffersRD> p_render_buffers, const SkyRenderData &p_env, RID p_fb, double p_time, float p_luminance_multiplier = 1.0, float p_brightness_multiplier = 1.0);
 
 	void invalidate_sky(Sky *p_sky);
 	void update_dirty_skys();
