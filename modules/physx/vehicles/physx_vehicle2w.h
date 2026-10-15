@@ -531,12 +531,12 @@ struct Vehicle2WConfig {
 };
 
 // Same role as configure_vehicle4w() (see that function's own doc comment) --
-// fills every param struct on v from cfg, builds the real PxRigidDynamic
+// fills every param struct on v from config, builds the real PxRigidDynamic
 // chassis+wheel shapes, the suspension-limit/sticky-tire constraints, the
 // component sequence, and out_context. Does NOT add the actor to the scene or
 // set its start pose. Returns false (with an ERR_PRINT) on any real
 // validation failure.
-inline bool configure_vehicle2w(Vehicle2W &v, const Vehicle2WConfig &cfg, PxPhysics &physics, PxScene &scene, PxVehiclePhysXSimulationContext &out_context) {
+inline bool configure_vehicle2w(Vehicle2W &v, const Vehicle2WConfig &config, PxPhysics &physics, PxScene &scene, PxVehiclePhysXSimulationContext &out_context) {
 	v.setToDefault();
 
 	// Right-handed triple (lng x lat = vrt), shared with the 4W/server stacks.
@@ -559,22 +559,22 @@ inline bool configure_vehicle2w(Vehicle2W &v, const Vehicle2WConfig &cfg, PxPhys
 
 	// Single brake response entry: both wheels get full brake response
 	// (no separate handbrake convention for a 2-wheel vehicle).
-	v.brakeResponseParams[0].maxResponse = (PxReal)cfg.max_brake_torque;
+	v.brakeResponseParams[0].maxResponse = (PxReal)config.max_brake_torque;
 	v.brakeResponseParams[0].wheelResponseMultipliers[Vehicle2W::WHEEL_FRONT] = 1.0f;
 	v.brakeResponseParams[0].wheelResponseMultipliers[Vehicle2W::WHEEL_REAR] = 1.0f;
 
-	v.steerResponseParams.maxResponse = (PxReal)cfg.max_steer_angle;
+	v.steerResponseParams.maxResponse = (PxReal)config.max_steer_angle;
 	v.steerResponseParams.wheelResponseMultipliers[Vehicle2W::WHEEL_FRONT] = 1.0f;
 	v.steerResponseParams.wheelResponseMultipliers[Vehicle2W::WHEEL_REAR] = 0.0f;
 
-	v.directDriveThrottleResponseParams.maxResponse = (PxReal)cfg.max_engine_torque;
+	v.directDriveThrottleResponseParams.maxResponse = (PxReal)config.max_engine_torque;
 	v.directDriveThrottleResponseParams.wheelResponseMultipliers[Vehicle2W::WHEEL_FRONT] = 0.0f;
 	v.directDriveThrottleResponseParams.wheelResponseMultipliers[Vehicle2W::WHEEL_REAR] = 1.0f;
 
-	v.rigidBodyParams.mass = (PxReal)cfg.mass;
-	v.rigidBodyParams.moi = godot_to_px(cfg.moment_of_inertia);
+	v.rigidBodyParams.mass = (PxReal)config.mass;
+	v.rigidBodyParams.moi = godot_to_px(config.moment_of_inertia);
 
-	const Vehicle2WWheelConfig *wheel_cfgs[2] = { &cfg.front_wheel, &cfg.rear_wheel };
+	const Vehicle2WWheelConfig *wheel_cfgs[2] = { &config.front_wheel, &config.rear_wheel };
 	for (PxU32 i = 0; i < 2; i++) {
 		const Vehicle2WWheelConfig &w = *wheel_cfgs[i];
 
@@ -603,7 +603,7 @@ inline bool configure_vehicle2w(Vehicle2W &v, const Vehicle2WConfig &cfg, PxPhys
 		const Vector3 travel_dir_local = w.basis.xform(Vector3(0.0f, -1.0f, 0.0f)).normalized();
 		const PxReal restLoadEstimate = v.suspensionForceParams[i].sprungMass * 9.81f;
 		const PxReal jounceAtRest = (w.suspension_stiffness > 0.0) ? PxClamp(restLoadEstimate / (PxReal)w.suspension_stiffness, 0.0f, (PxReal)w.suspension_travel) : 0.0f;
-		const Vector3 attachment_local = (w.position - cfg.chassis_com_local) - travel_dir_local * (real_t)((PxReal)w.suspension_travel - jounceAtRest);
+		const Vector3 attachment_local = (w.position - config.chassis_com_local) - travel_dir_local * (real_t)((PxReal)w.suspension_travel - jounceAtRest);
 		v.suspensionParams[i].suspensionAttachment = PxTransform(godot_to_px(attachment_local), godot_to_px(w.basis.get_rotation_quaternion()));
 		v.suspensionParams[i].suspensionTravelDir = godot_to_px(travel_dir_local);
 		v.suspensionParams[i].suspensionTravelDist = (PxReal)w.suspension_travel;
@@ -651,23 +651,23 @@ inline bool configure_vehicle2w(Vehicle2W &v, const Vehicle2WConfig &cfg, PxPhys
 	// collision_mask, like a Godot raycast — never an Area3D.
 	v.physxRoadGeometryQueryParams.defaultFilterData = PxQueryFilterData(PxFilterData(0, 0, 0, 0), PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER);
 	v.physxRoadGeometryQueryParams.filterCallback = &v.wheel_query_filter;
-	v.wheel_query_filter.collision_mask = (PxU32)cfg.collision_mask;
+	v.wheel_query_filter.collision_mask = (PxU32)config.collision_mask;
 	v.physxRoadGeometryQueryParams.filterDataEntries = nullptr;
 
-	v.physxActorCMassLocalPose = PxTransform(godot_to_px(cfg.chassis_com_local));
-	v.physxActorBoxShapeHalfExtents = godot_to_px(cfg.chassis_half_extents);
-	v.physxActorBoxShapeLocalPose = PxTransform(godot_to_px(cfg.chassis_box_center_local));
+	v.physxActorCMassLocalPose = PxTransform(godot_to_px(config.chassis_com_local));
+	v.physxActorBoxShapeHalfExtents = godot_to_px(config.chassis_half_extents);
+	v.physxActorBoxShapeLocalPose = PxTransform(godot_to_px(config.chassis_box_center_local));
 
-	PxMaterial *wheel_material = physics.createMaterial((PxReal)cfg.front_wheel.tire_friction, (PxReal)cfg.front_wheel.tire_friction, 0.1f);
+	PxMaterial *wheel_material = physics.createMaterial((PxReal)config.front_wheel.tire_friction, (PxReal)config.front_wheel.tire_friction, 0.1f);
 	// Same rationale as configure_vehicle4w(): the chassis box is a real
 	// simulation shape (so other bodies can hit it) with its own material,
 	// not the wheels' tire-friction one. The contact-modify combiner
 	// overrides it on the CPU path (chassis actor userData, from
-	// cfg.chassis_friction/bounce); the GPU path solves straight from it.
+	// config.chassis_friction/bounce); the GPU path solves straight from it.
 	PxMaterial *chassis_material = physics.createMaterial(
-			(PxReal)(cfg.chassis_friction < 0.0f ? -cfg.chassis_friction : cfg.chassis_friction),
-			(PxReal)(cfg.chassis_friction < 0.0f ? -cfg.chassis_friction : cfg.chassis_friction),
-			(PxReal)CLAMP(cfg.chassis_bounce, 0.0f, 1.0f));
+			(PxReal)(config.chassis_friction < 0.0f ? -config.chassis_friction : config.chassis_friction),
+			(PxReal)(config.chassis_friction < 0.0f ? -config.chassis_friction : config.chassis_friction),
+			(PxReal)CLAMP(config.chassis_bounce, 0.0f, 1.0f));
 	if (!wheel_material || !chassis_material) {
 		if (wheel_material) {
 			wheel_material->release();
@@ -684,7 +684,7 @@ inline bool configure_vehicle2w(Vehicle2W &v, const Vehicle2WConfig &cfg, PxPhys
 		// Same eSIMULATION_SHAPE-only, non-scene-query chassis convention as
 		// configure_vehicle4w() -- see that function's own comment on why
 		// eSCENE_QUERY_SHAPE would break the wheels' own road-geometry raycasts.
-		const PxFilterData chassisFilterData((PxU32)cfg.collision_layer, (PxU32)cfg.collision_mask, 0, 0);
+		const PxFilterData chassisFilterData((PxU32)config.collision_layer, (PxU32)config.collision_mask, 0, 0);
 		const PxShapeFlags chassisShapeFlags(PxShapeFlag::eSIMULATION_SHAPE | PxShapeFlag::eVISUALIZATION);
 		const PxVehiclePhysXRigidActorParams actorParams(v.rigidBodyParams, nullptr);
 		const PxBoxGeometry boxGeom(v.physxActorBoxShapeHalfExtents);

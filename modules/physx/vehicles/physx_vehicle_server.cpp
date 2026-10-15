@@ -83,10 +83,10 @@ static constexpr unsigned MAX_SURFACE_PAIRS = 8;
 // ============================================================================
 
 static physx::PxTransform _to_px_transform(const Transform3D &p_t) {
-	const Quaternion q = p_t.basis.get_rotation_quaternion();
+	const Quaternion rotation_quaternion = p_t.basis.get_rotation_quaternion();
 	return physx::PxTransform(
 			physx::PxVec3((float)p_t.origin.x, (float)p_t.origin.y, (float)p_t.origin.z),
-			physx::PxQuat((float)q.x, (float)q.y, (float)q.z, (float)q.w));
+			physx::PxQuat((float)rotation_quaternion.x, (float)rotation_quaternion.y, (float)rotation_quaternion.z, (float)rotation_quaternion.w));
 }
 
 static void _set_wheel_param_defaults(physx::PxVehicleWheelParams &p_wp,
@@ -1149,10 +1149,10 @@ PhysXVehicleServer::Vehicle2State *PhysXVehicleServer::build_engine_drive(
 	// --- Differential: open 4-wheel with equal torque split (ratios sum to 1). ---
 	s->diff_params.setToDefault();
 	if (p_wheel_count > 0) {
-		const float r = 1.0f / (float)p_wheel_count;
+		const float equal_wheel_ratio = 1.0f / (float)p_wheel_count;
 		for (int i = 0; i < p_wheel_count; i++) {
-			s->diff_params.torqueRatios[i] = r;
-			s->diff_params.aveWheelSpeedRatios[i] = r;
+			s->diff_params.torqueRatios[i] = equal_wheel_ratio;
+			s->diff_params.aveWheelSpeedRatios[i] = equal_wheel_ratio;
 		}
 	}
 	// frontWheelIds/rearWheelIds/biases stay 0 -> open diff (not validated).
@@ -1243,9 +1243,9 @@ void PhysXVehicleServer::_regroup_axles_from_poses() {
 	for (int i = 0; i < nb_z; i++) {
 		for (int j = i + 1; j < nb_z; j++) {
 			if (zs[j] < zs[i]) {
-				const float t = zs[i];
+				const float z_swap_temp = zs[i];
 				zs[i] = zs[j];
-				zs[j] = t;
+				zs[j] = z_swap_temp;
 			}
 		}
 	}
@@ -1253,13 +1253,13 @@ void PhysXVehicleServer::_regroup_axles_from_poses() {
 	physx::PxVehicleAxleDescription fresh;
 	fresh.setToDefault();
 	for (int a = 0; a < nb_z; a++) {
-		int n = 0;
+		int wheels_in_axle = 0;
 		for (int i = 0; i < wheel_count; i++) {
 			if (Math::abs(zs[a] - z[i]) < 0.05f) {
-				ids[n++] = (physx::PxU32)i;
+				ids[wheels_in_axle++] = (physx::PxU32)i;
 			}
 		}
-		fresh.addAxle((physx::PxU32)n, ids);
+		fresh.addAxle((physx::PxU32)wheels_in_axle, ids);
 	}
 	v2->axle_description = fresh;
 }
@@ -1271,15 +1271,15 @@ void PhysXVehicleServer::_reseed_tire_rest_load() {
 	if (!v2 || wheel_count <= 0) {
 		return;
 	}
-	float g = 9.81f;
+	float gravity_mps2 = 9.81f;
 	if (space && space->get_px_scene()) {
 		const float sg = space->get_px_scene()->getGravity().magnitude();
 		if (sg > 0.0f) {
-			g = sg;
+			gravity_mps2 = sg;
 		}
 	}
 	for (int i = 0; i < wheel_count; i++) {
-		v2->tire_params[i].restLoad = v2->suspension_force_params[i].sprungMass * g;
+		v2->tire_params[i].restLoad = v2->suspension_force_params[i].sprungMass * gravity_mps2;
 	}
 }
 
@@ -1335,11 +1335,11 @@ void PhysXVehicleServer::_update_response_params() {
 				nb_driven++;
 			}
 		}
-		const float r = (nb_driven > 0) ? (1.0f / (float)nb_driven) : (1.0f / (float)wheel_count);
+		const float driven_torque_ratio = (nb_driven > 0) ? (1.0f / (float)nb_driven) : (1.0f / (float)wheel_count);
 		for (int i = 0; i < wheel_count; i++) {
 			const bool driven = (nb_driven > 0) ? wheel_flags[i].traction : true;
-			v2->diff_params.torqueRatios[i] = driven ? r : 0.0f;
-			v2->diff_params.aveWheelSpeedRatios[i] = driven ? r : 0.0f;
+			v2->diff_params.torqueRatios[i] = driven ? driven_torque_ratio : 0.0f;
+			v2->diff_params.aveWheelSpeedRatios[i] = driven ? driven_torque_ratio : 0.0f;
 		}
 	}
 }
@@ -1510,7 +1510,7 @@ void PhysXVehicleServer::write_commands() {
 		// (torque = maxResponse * multiplier * command). Per-channel auto-detect
 		// lets the scalar and per-wheel paths coexist. When a channel is NOT in
 		// per-wheel mode its multipliers are re-seeded from the wheel flags, so
-		// a previous per-wheel encoding doesn't stick.
+		// a previous per-wheel encoding doesn'wheel_drive_torque stick.
 		// Drive
 		bool pw_drive = false;
 		float drive_sum = 0.0f;
@@ -1527,7 +1527,7 @@ void PhysXVehicleServer::write_commands() {
 			// The gear flips the sign of the throttle response for the whole
 			// vehicle, so it follows the DOMINANT commanded direction (the
 			// sign of the torque sum) and each wheel's multiplier carries its
-			// own sign relative to that: multiplier = t * gearSign * inv.
+			// own sign relative to that: multiplier = wheel_drive_torque * gearSign * inv.
 			// gearSign^2 == 1 cancels out of the applied torque, so every
 			// wheel drives in ITS commanded direction -- counter-rotating
 			// wheels (skid steering) work instead of silently clamping to
@@ -1537,8 +1537,8 @@ void PhysXVehicleServer::write_commands() {
 					? physx::PxVehicleDirectDriveTransmissionCommandState::eFORWARD
 					: physx::PxVehicleDirectDriveTransmissionCommandState::eREVERSE;
 			for (int i = 0; i < wheel_count; i++) {
-				const float t = in_wheel_drive_torque[i];
-				const float demand = (t >= 0.0f) ? t : -t;
+				const float wheel_drive_torque = in_wheel_drive_torque[i];
+				const float demand = (wheel_drive_torque >= 0.0f) ? wheel_drive_torque : -wheel_drive_torque;
 				if (demand * inv > 1.0f) {
 					// A wheel torque above maxResponse would encode a multiplier > 1 --
 					// outside the response contract. Raise maxResponse to the largest
@@ -1547,7 +1547,7 @@ void PhysXVehicleServer::write_commands() {
 					v2->throttle_response_params.maxResponse = demand;
 					inv = 1.0f / demand;
 				}
-				v2->throttle_response_params.wheelResponseMultipliers[i] = t * gear_sign * inv;
+				v2->throttle_response_params.wheelResponseMultipliers[i] = wheel_drive_torque * gear_sign * inv;
 			}
 		} else {
 			// Scalar mode: restore the TUNED baseline (see the snapshot in
@@ -1572,10 +1572,10 @@ void PhysXVehicleServer::write_commands() {
 			v2->command_state.brakes[0] = 1.0f;
 			// Brake magnitude only: a brake torque resists wheel rotation, it
 			// has no direction of its own, so the sign of the command is
-			// meaningless and |t| is the intended semantics.
+			// meaningless and |wheel_drive_torque| is the intended semantics.
 			for (int i = 0; i < wheel_count; i++) {
-				const float t = in_wheel_brake_torque[i];
-				const float demand = (t < 0.0f ? -t : t);
+				const float wheel_drive_torque = in_wheel_brake_torque[i];
+				const float demand = (wheel_drive_torque < 0.0f ? -wheel_drive_torque : wheel_drive_torque);
 				if (demand * inv > 1.0f) {
 					// Same contract as the drive channel: a brake torque above
 					// maxResponse must raise maxResponse, not clamp the multiplier.
@@ -1621,7 +1621,7 @@ void PhysXVehicleServer::write_commands() {
 	} else if (ackermann_enabled) {
 		// Geometry: wheelbase/track from the tuned values when given, else
 		// derived from the suspension attachments (chassis space, forward = -Z
-		// per the vehicle frame below: the steered axle is the more negative z).
+		// per the vehicle frame below: the steered axle is the more negative wheel_local_z).
 		float wheelbase = tune_ackermann_wheelbase;
 		float track = tune_ackermann_track;
 		if (wheelbase <= 0.0f || track <= 0.0f) {
@@ -1630,20 +1630,20 @@ void PhysXVehicleServer::write_commands() {
 			float min_x = 0.0f, max_x = 0.0f;
 			bool have_x = false;
 			for (int i = 0; i < wheel_count; i++) {
-				const float x = v2->wheel_shape_local_poses[i].p.x;
-				const float z = v2->wheel_shape_local_poses[i].p.z;
+				const float wheel_local_x = v2->wheel_shape_local_poses[i].p.x;
+				const float wheel_local_z = v2->wheel_shape_local_poses[i].p.z;
 				if (wheel_flags[i].steer) {
-					z_steer += z;
+					z_steer += wheel_local_z;
 					n_steer++;
-					if (!have_x || x < min_x) {
-						min_x = x;
+					if (!have_x || wheel_local_x < min_x) {
+						min_x = wheel_local_x;
 					}
-					if (!have_x || x > max_x) {
-						max_x = x;
+					if (!have_x || wheel_local_x > max_x) {
+						max_x = wheel_local_x;
 					}
 					have_x = true;
 				} else {
-					z_rest += z;
+					z_rest += wheel_local_z;
 					n_rest++;
 				}
 			}
@@ -1662,14 +1662,14 @@ void PhysXVehicleServer::write_commands() {
 			// Work on |delta| and re-apply the sign: cot(delta) is negative for
 			// a right-hand (negative) command, and atan2(1, negative) returns a
 			// second-quadrant angle (~pi) which would steer the wheels clean
-			// around. Plain atan(1/x) on positive x stays in the right quadrant;
-			// positive-steer results are unchanged (atan2(1, x>0) == atan(1/x)).
+			// around. Plain atan(1/wheel_local_x) on positive wheel_local_x stays in the right quadrant;
+			// positive-steer results are unchanged (atan2(1, wheel_local_x>0) == atan(1/wheel_local_x)).
 			const float adelta = Math::abs(delta);
 			const float cot = Math::cos(adelta) / Math::sin(adelta);
 			const float half_track_over_L = (0.5f * track) / wheelbase;
 			const float inner = Math::atan(1.0f / MAX(cot - half_track_over_L, 0.001f));
 			const float outer = Math::atan(1.0f / MAX(cot + half_track_over_L, 0.001f));
-			const float p = CLAMP(ackermann_percent, 0.0f, 100.0f) / 100.0f;
+			const float ackermann_blend = CLAMP(ackermann_percent, 0.0f, 100.0f) / 100.0f;
 			// Turn direction: delta > 0 yaws the vehicle toward its -X side
 			// (frame lng = -Z, lat = -X; validated by PHYSX-VEHI-014, which
 			// measures the yaw response rather than trusting this comment).
@@ -1680,7 +1680,7 @@ void PhysXVehicleServer::write_commands() {
 					const bool wheel_on_neg_x = v2->wheel_shape_local_poses[i].p.x < 0.0f;
 					const bool is_inner = (wheel_on_neg_x == turn_toward_neg_x);
 					const float target = (delta > 0.0f ? 1.0f : -1.0f) *
-							(adelta + p * ((is_inner ? inner : outer) - adelta));
+							(adelta + ackermann_blend * ((is_inner ? inner : outer) - adelta));
 					computed_steer_angles[i] = target;
 					v2->steer_response_params.wheelResponseMultipliers[i] = target * steer_inv;
 				} else {
@@ -1899,13 +1899,13 @@ void PhysXVehicleServer::apply_wheel_params(int p_idx, const Dictionary &p_param
 	}
 
 	if (p_params.has("tire_friction")) {
-		const float f = (float)(double)p_params["tire_friction"];
+		const float tire_friction = (float)(double)p_params["tire_friction"];
 		tp.frictionVsSlip[0][0] = 0.0f;
-		tp.frictionVsSlip[0][1] = f;
+		tp.frictionVsSlip[0][1] = tire_friction;
 		tp.frictionVsSlip[1][0] = 0.1f;
-		tp.frictionVsSlip[1][1] = f;
+		tp.frictionVsSlip[1][1] = tire_friction;
 		tp.frictionVsSlip[2][0] = 1.0f;
-		tp.frictionVsSlip[2][1] = f;
+		tp.frictionVsSlip[2][1] = tire_friction;
 	}
 	if (p_params.has("tire_long_stiffness")) {
 		tp.longStiff = (float)(double)p_params["tire_long_stiffness"];
@@ -1924,26 +1924,26 @@ void PhysXVehicleServer::apply_wheel_params(int p_idx, const Dictionary &p_param
 		const Dictionary pairs = p_params["surface_frictions"];
 		physx::PxVehiclePhysXMaterialFriction *dst = v2->surface_pairs + p_idx * MAX_SURFACE_PAIRS;
 		RID *dst_bodies = v2->surface_pair_bodies + p_idx * MAX_SURFACE_PAIRS;
-		int n = 0;
+		int surface_pair_count = 0;
 		for (const KeyValue<Variant, Variant> &kv : pairs) {
-			if (n >= (int)MAX_SURFACE_PAIRS) {
+			if (surface_pair_count >= (int)MAX_SURFACE_PAIRS) {
 				break;
 			}
 			PhysXBody3D *ground = PhysXServer3D::get_singleton()->get_body(kv.key);
 			ERR_CONTINUE_MSG(!ground, "PhysX: surface_frictions key is not a body RID.");
-			dst[n].material = ground->get_shape_material();
-			dst[n].friction = (float)(double)kv.value;
-			dst_bodies[n] = ground->get_rid();
-			n++;
+			dst[surface_pair_count].material = ground->get_shape_material();
+			dst[surface_pair_count].friction = (float)(double)kv.value;
+			dst_bodies[surface_pair_count] = ground->get_rid();
+			surface_pair_count++;
 		}
 		// Stale RIDs beyond the live count must not resurface: a later call
 		// rewrites 0..n-1 wholesale, but invalidate_surface_pairs_for_body()
 		// matches on RID and would otherwise compare dead slots.
-		for (int i = n; i < (int)MAX_SURFACE_PAIRS; i++) {
+		for (int i = surface_pair_count; i < (int)MAX_SURFACE_PAIRS; i++) {
 			dst_bodies[i] = RID();
 		}
 		v2->material_friction_params[p_idx].materialFrictions = dst;
-		v2->material_friction_params[p_idx].nbMaterialFrictions = n;
+		v2->material_friction_params[p_idx].nbMaterialFrictions = surface_pair_count;
 	}
 
 	if (p_params.has("steer")) {
@@ -2173,11 +2173,11 @@ void PhysXVehicleServer::set_balance_params(const Dictionary &p_params) {
 }
 
 Dictionary PhysXVehicleServer::get_balance_state() const {
-	Dictionary d;
-	d["lean_angle"] = (real_t)balance_lean_angle;
-	d["roll_rate"] = (real_t)balance_roll_rate;
-	d["steer_assist"] = (real_t)balance_steer_assist;
-	return d;
+	Dictionary state;
+	state["lean_angle"] = (real_t)balance_lean_angle;
+	state["roll_rate"] = (real_t)balance_roll_rate;
+	state["steer_assist"] = (real_t)balance_steer_assist;
+	return state;
 }
 
 void PhysXVehicleServer::set_wheel_drive_torque(int p_idx, float p_torque) {
@@ -2235,8 +2235,8 @@ void PhysXVehicleServer::set_engine_params(const Dictionary &p_params) {
 		v2->engine_params.torqueCurve.clear();
 		PackedFloat32Array pts = p_params["torque_curve"];
 		const float *r = pts.ptr();
-		const int n = pts.size() / 2;
-		for (int i = 0; i < n; i++) {
+		const int curve_point_count = pts.size() / 2;
+		for (int i = 0; i < curve_point_count; i++) {
 			v2->engine_params.torqueCurve.addPair(r[i * 2], r[i * 2 + 1]);
 		}
 	}
@@ -2277,15 +2277,15 @@ void PhysXVehicleServer::set_gearbox_params(const Dictionary &p_params) {
 	if (p_params.has("ratios")) {
 		PackedFloat32Array ratios = p_params["ratios"];
 		const float *r = ratios.ptr();
-		int n = ratios.size();
+		int gear_ratio_count = ratios.size();
 		const int cap = (int)physx::PxVehicleGearboxParams::eMAX_NB_GEARS;
-		if (n > cap) {
-			n = cap;
+		if (gear_ratio_count > cap) {
+			gear_ratio_count = cap;
 		}
-		for (int i = 0; i < n; i++) {
+		for (int i = 0; i < gear_ratio_count; i++) {
 			v2->gearbox_params.ratios[i] = r[i];
 		}
-		v2->gearbox_params.nbRatios = n;
+		v2->gearbox_params.nbRatios = gear_ratio_count;
 	}
 }
 
@@ -2296,15 +2296,15 @@ void PhysXVehicleServer::set_autobox_params(const Dictionary &p_params) {
 	cached_autobox_params = p_params;
 	const int cap = (int)physx::PxVehicleGearboxParams::eMAX_NB_GEARS;
 	if (p_params.has("up_ratio")) {
-		const float v = (float)(double)p_params["up_ratio"];
+		const float up_shift_ratio = (float)(double)p_params["up_ratio"];
 		for (int i = 0; i < cap; i++) {
-			v2->autobox_params.upRatios[i] = v;
+			v2->autobox_params.upRatios[i] = up_shift_ratio;
 		}
 	}
 	if (p_params.has("down_ratio")) {
-		const float v = (float)(double)p_params["down_ratio"];
+		const float up_shift_ratio = (float)(double)p_params["down_ratio"];
 		for (int i = 0; i < cap; i++) {
-			v2->autobox_params.downRatios[i] = v;
+			v2->autobox_params.downRatios[i] = up_shift_ratio;
 		}
 	}
 	if (p_params.has("latency")) {
@@ -2343,18 +2343,18 @@ void PhysXVehicleServer::set_differential_params(const Dictionary &p_params) {
 	}
 	if (p_params.has("front_wheel_ids")) {
 		PackedInt32Array ids = p_params["front_wheel_ids"];
-		const int32_t *r = ids.ptr();
-		const int n = ids.size() < 2 ? ids.size() : 2;
-		for (int i = 0; i < n; i++) {
-			v2->diff_params.frontWheelIds[i] = (physx::PxU32)r[i];
+		const int32_t *wheel_ids_ptr = ids.ptr();
+		const int driven_wheel_count = ids.size() < 2 ? ids.size() : 2;
+		for (int i = 0; i < driven_wheel_count; i++) {
+			v2->diff_params.frontWheelIds[i] = (physx::PxU32)wheel_ids_ptr[i];
 		}
 	}
 	if (p_params.has("rear_wheel_ids")) {
 		PackedInt32Array ids = p_params["rear_wheel_ids"];
-		const int32_t *r = ids.ptr();
-		const int n = ids.size() < 2 ? ids.size() : 2;
-		for (int i = 0; i < n; i++) {
-			v2->diff_params.rearWheelIds[i] = (physx::PxU32)r[i];
+		const int32_t *wheel_ids_ptr = ids.ptr();
+		const int driven_wheel_count = ids.size() < 2 ? ids.size() : 2;
+		for (int i = 0; i < driven_wheel_count; i++) {
+			v2->diff_params.rearWheelIds[i] = (physx::PxU32)wheel_ids_ptr[i];
 		}
 	}
 }

@@ -479,8 +479,8 @@ real_t plane_mesh_xz_winding() {
 		return 1.0;
 	}
 	const Face3 &f = faces[0];
-	const Vector2 a(f.vertex[0].x, f.vertex[0].z), b(f.vertex[1].x, f.vertex[1].z), c(f.vertex[2].x, f.vertex[2].z);
-	return (b - a).cross(c - a) < 0 ? -1.0 : 1.0;
+	const Vector2 tri_a(f.vertex[0].x, f.vertex[0].z), tri_b(f.vertex[1].x, f.vertex[1].z), tri_c(f.vertex[2].x, f.vertex[2].z);
+	return (tri_b - tri_a).cross(tri_c - tri_a) < 0 ? -1.0 : 1.0;
 }
 
 // Inside or on the edge of triangle abc, either winding.
@@ -496,18 +496,18 @@ bool point_in_triangle(const Vector2 &p_p, const Vector2 &p_a, const Vector2 &p_
 // Liang-Barsky: does segment p0-p1 touch the box [p_min, p_max]?
 bool segment_touches_box(const Vector2 &p_p0, const Vector2 &p_p1, const Vector2 &p_min, const Vector2 &p_max) {
 	real_t t0 = 0.0, t1 = 1.0;
-	const Vector2 d = p_p1 - p_p0;
+	const Vector2 segment_delta = p_p1 - p_p0;
 	for (int axis = 0; axis < 2; axis++) {
 		const real_t q0 = p_min[axis] - p_p0[axis];
 		const real_t q1 = p_max[axis] - p_p0[axis];
-		if (Math::abs(d[axis]) < (real_t)1e-12) {
+		if (Math::abs(segment_delta[axis]) < (real_t)1e-12) {
 			if (q0 > 0 || q1 < 0) {
 				return false;
 			}
 			continue;
 		}
-		real_t ta = q0 / d[axis];
-		real_t tb = q1 / d[axis];
+		real_t ta = q0 / segment_delta[axis];
+		real_t tb = q1 / segment_delta[axis];
 		if (ta > tb) {
 			SWAP(ta, tb);
 		}
@@ -524,14 +524,14 @@ bool segment_touches_box(const Vector2 &p_p0, const Vector2 &p_p1, const Vector2
 void clip_to_triangle(LocalVector<Vector2> &r_poly, const Vector2 p_tri[3]) {
 	LocalVector<Vector2> out;
 	for (int e = 0; e < 3 && r_poly.size() >= 3; e++) {
-		const Vector2 a = p_tri[e];
-		const Vector2 edge = p_tri[(e + 1) % 3] - a;
+		const Vector2 clip_vertex = p_tri[e];
+		const Vector2 edge = p_tri[(e + 1) % 3] - clip_vertex;
 		out.clear();
 		for (uint32_t i = 0; i < r_poly.size(); i++) {
 			const Vector2 cur = r_poly[i];
 			const Vector2 prev = r_poly[(i + r_poly.size() - 1) % r_poly.size()];
-			const real_t side_cur = edge.cross(cur - a);
-			const real_t side_prev = edge.cross(prev - a);
+			const real_t side_cur = edge.cross(cur - clip_vertex);
+			const real_t side_prev = edge.cross(prev - clip_vertex);
 			if (side_cur >= 0) {
 				if (side_prev < 0) {
 					out.push_back(prev + (cur - prev) * (side_prev / (side_prev - side_cur)));
@@ -708,9 +708,9 @@ void PhysXWaterSurface3D::set_ripple_amplitude(float p_amplitude) {
 void PhysXWaterSurface3D::set_ocean_grid_resolution(int p_n) {
 	// Must stay a power of two -- the Stockham FFT passes require it (see
 	// water_solver.h). Round up rather than silently misbehave.
-	int n = MAX(p_n, 4);
+	int clamped_resolution = MAX(p_n, 4);
 	int pow2 = 4;
-	while (pow2 < n) {
+	while (pow2 < clamped_resolution) {
 		pow2 <<= 1;
 	}
 	ocean_grid_resolution = pow2;
@@ -993,42 +993,42 @@ void PhysXWaterSurface3D::_sample_seabed() {
 	constexpr real_t PROBE_ABOVE = 100.0;
 	constexpr real_t PROBE_BELOW = 1000.0;
 	constexpr int MAX_SKIPS = 8;
-	const int n = grid_resolution;
-	cell_depth.resize(n * n);
+	const int grid_size = grid_resolution;
+	cell_depth.resize(grid_size * grid_size);
 	float *dw = cell_depth.ptrw();
 	const real_t surface_y = get_global_position().y + water_level;
-	const Vector2 cell = active_domain_size / (real_t)n;
+	const Vector2 cell = active_domain_size / (real_t)grid_size;
 	const Vector2 grid_min = grid_center - active_domain_size * 0.5f;
 	PhysicsDirectSpaceState3D *space = get_world_3d()->get_direct_space_state();
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 	int hits = 0;
-	for (int z = 0; z < n; z++) {
-		for (int x = 0; x < n; x++) {
-			const int i = z * n + x;
+	for (int z = 0; z < grid_size; z++) {
+		for (int x = 0; x < grid_size; x++) {
+			const int i = z * grid_size + x;
 			if (!footprint_mask.is_empty() && !footprint_mask[i]) {
 				dw[i] = WaterSolver::WALL_DEPTH;
 				continue;
 			}
-			const Vector2 p = grid_min + Vector2(x + 0.5f, z + 0.5f) * cell;
+			const Vector2 sample_center = grid_min + Vector2(x + 0.5f, z + 0.5f) * cell;
 			PhysicsDirectSpaceState3D::RayParameters ray;
-			ray.from = Vector3(p.x, surface_y + PROBE_ABOVE, p.y);
-			ray.to = Vector3(p.x, surface_y - PROBE_BELOW, p.y);
+			ray.from = Vector3(sample_center.x, surface_y + PROBE_ABOVE, sample_center.y);
+			ray.to = Vector3(sample_center.x, surface_y - PROBE_BELOW, sample_center.y);
 			ray.collision_mask = seabed_collision_mask;
 			ray.collide_with_areas = false;
-			float d = depth; // nothing below: open water of the constant depth
+			float seabed_depth = depth; // nothing below: open water of the constant depth
 			for (int skip = 0; skip < MAX_SKIPS; skip++) {
 				PhysicsDirectSpaceState3D::RayResult result;
 				if (space == nullptr || !space->intersect_ray(ray, result)) {
 					break;
 				}
 				if (ps->body_get_mode(result.rid) == PhysicsServer3D::BODY_MODE_STATIC) {
-					d = surface_y - result.position.y;
+					seabed_depth = surface_y - result.position.y;
 					hits++;
 					break;
 				}
 				ray.exclude.insert(result.rid);
 			}
-			dw[i] = d;
+			dw[i] = seabed_depth;
 		}
 	}
 	if (hits == 0) {
@@ -1046,25 +1046,25 @@ void PhysXWaterSurface3D::_update_cell_fade() {
 
 void PhysXWaterSurface3D::_configure_solver() {
 	_update_cell_fade();
-	WaterSolver::Settings s;
-	s.grid_resolution = grid_resolution;
-	s.domain_size = active_domain_size;
-	s.grid_center = grid_center;
-	s.cell_depth = cell_depth;
-	s.shallow_fade_depth = shallow_fade_depth;
-	s.depth = depth;
-	s.damping = damping;
-	s.ripple_amplitude = ripple_amplitude;
-	s.gravity = 9.81f;
-	s.water_level = water_level;
-	s.ocean_grid_resolution = ocean_grid_resolution;
-	s.ocean_domain_size = ocean_domain_size;
-	s.wind_speed = wind_speed;
-	s.wind_direction = wind_direction;
-	s.wave_amplitude = wave_amplitude;
-	s.fetch = get_effective_fetch();
-	s.caustics_enabled = caustics_enabled;
-	solver.configure(s);
+	WaterSolver::Settings solver_settings;
+	solver_settings.grid_resolution = grid_resolution;
+	solver_settings.domain_size = active_domain_size;
+	solver_settings.grid_center = grid_center;
+	solver_settings.cell_depth = cell_depth;
+	solver_settings.shallow_fade_depth = shallow_fade_depth;
+	solver_settings.depth = depth;
+	solver_settings.damping = damping;
+	solver_settings.ripple_amplitude = ripple_amplitude;
+	solver_settings.gravity = 9.81f;
+	solver_settings.water_level = water_level;
+	solver_settings.ocean_grid_resolution = ocean_grid_resolution;
+	solver_settings.ocean_domain_size = ocean_domain_size;
+	solver_settings.wind_speed = wind_speed;
+	solver_settings.wind_direction = wind_direction;
+	solver_settings.wave_amplitude = wave_amplitude;
+	solver_settings.fetch = get_effective_fetch();
+	solver_settings.caustics_enabled = caustics_enabled;
+	solver.configure(solver_settings);
 	solver.set_foam_settings(foam_enabled, choppiness, foam_threshold, foam_persistence, shore_foam_band, shore_undertow);
 	solver.set_swash_settings(swash_run_up, swash_drain_speed, wet_sand_dry_time);
 	if (!solver.has_device() && !warned_no_device) {
@@ -1326,31 +1326,31 @@ float PhysXWaterSurface3D::sample_height_excluding_wake(Vector3 p_world_pos, Obj
 	if (!is_wet(p_world_pos)) {
 		return -Math::INF;
 	}
-	const float x = p_world_pos.x - grid_center.x;
-	const float z = p_world_pos.z - grid_center.y;
-	// The ripple readback already includes water_level (it's the composed
+	const float grid_local_x = p_world_pos.x - grid_center.x;
+	const float grid_local_z = p_world_pos.z - grid_center.y;
+	// The ripple readback already includes water_level (it'displacement_scale the composed
 	// height the renderer draws), so only fall back to it before the first
 	// readback lands. Both are relative to the node, like the rendered mesh.
 	// Past the simulated square the ripples ease back to still water, as the
 	// shader draws them.
-	float ripple = cached_ripple_height.is_empty() ? water_level : _bilinear_sample(cached_ripple_height, cached_ripple_n, cached_ripple_domain, x, z);
+	float ripple = cached_ripple_height.is_empty() ? water_level : _bilinear_sample(cached_ripple_height, cached_ripple_n, cached_ripple_domain, grid_local_x, grid_local_z);
 	if (!cached_ripple_height.is_empty()) {
-		const float from_center = MAX(Math::abs(x / cached_ripple_domain.x), Math::abs(z / cached_ripple_domain.y));
+		const float from_center = MAX(Math::abs(grid_local_x / cached_ripple_domain.x), Math::abs(grid_local_z / cached_ripple_domain.y));
 		const float inside = 1.0f - Math::smoothstep(0.46f, 0.5f, from_center);
 		ripple = Math::lerp(water_level, ripple, inside);
 	}
-	const float fade = cell_fade.is_empty() ? 1.0f : _bilinear_sample(cell_fade, grid_resolution, active_domain_size, x, z);
-	// With choppy displacement the surface point above (x, z) rested
-	// somewhere else: find p0 with p0 + s * D(p0) = (x, z) by fixed-point
-	// iteration (s matches the shader's -choppiness * fade), then read the
+	const float fade = cell_fade.is_empty() ? 1.0f : _bilinear_sample(cell_fade, grid_resolution, active_domain_size, grid_local_x, grid_local_z);
+	// With choppy displacement the surface point above (grid_local_x, grid_local_z) rested
+	// somewhere else: find p0 with p0 + displacement_scale * D(p0) = (grid_local_x, grid_local_z) by fixed-point
+	// iteration (displacement_scale matches the shader'displacement_scale -choppiness * fade), then read the
 	// ocean height there.
-	Vector2 p0(x, z);
-	const float s = -choppiness * fade;
-	if (s != 0.0f && cached_ocean_dx.size() == cached_ocean_height.size() && cached_ocean_dz.size() == cached_ocean_height.size()) {
+	Vector2 p0(grid_local_x, grid_local_z);
+	const float displacement_scale = -choppiness * fade;
+	if (displacement_scale != 0.0f && cached_ocean_dx.size() == cached_ocean_height.size() && cached_ocean_dz.size() == cached_ocean_height.size()) {
 		for (int i = 0; i < 4; i++) {
-			const Vector2 d(_bilinear_sample(cached_ocean_dx, cached_ocean_n, cached_ocean_domain, p0.x, p0.y, true),
+			const Vector2 displacement(_bilinear_sample(cached_ocean_dx, cached_ocean_n, cached_ocean_domain, p0.x, p0.y, true),
 					_bilinear_sample(cached_ocean_dz, cached_ocean_n, cached_ocean_domain, p0.x, p0.y, true));
-			p0 = Vector2(x, z) - d * s;
+			p0 = Vector2(grid_local_x, grid_local_z) - displacement * displacement_scale;
 		}
 	}
 	const float ocean = _bilinear_sample(cached_ocean_height, cached_ocean_n, cached_ocean_domain, p0.x, p0.y, true) * fade;
@@ -1362,13 +1362,13 @@ float PhysXWaterSurface3D::sample_height_excluding_wake(Vector3 p_world_pos, Obj
 		}
 		const PhysXWaterWake3D *w = ObjectDB::get_instance<PhysXWaterWake3D>(wakes[i]);
 		if (w != nullptr) {
-			const float out = Math::smoothstep(0.46f, 0.5f, MAX(Math::abs(x / active_domain_size.x), Math::abs(z / active_domain_size.y)));
+			const float out = Math::smoothstep(0.46f, 0.5f, MAX(Math::abs(grid_local_x / active_domain_size.x), Math::abs(grid_local_z / active_domain_size.y)));
 			wake += w->sample_height(p_world_pos) * Math::lerp(1.0f, out, w->get_shore_grid_fade());
 		}
 	}
 	// Not over dry sand (as the shader): fades out over the last 30 cm of depth.
 	if (wake != 0.0f && !cell_depth.is_empty()) {
-		wake *= Math::smoothstep(0.0f, 0.3f, _bilinear_sample(cell_depth, grid_resolution, active_domain_size, x, z));
+		wake *= Math::smoothstep(0.0f, 0.3f, _bilinear_sample(cell_depth, grid_resolution, active_domain_size, grid_local_x, grid_local_z));
 	}
 	return get_global_position().y + ripple + ocean + wake;
 }
@@ -1390,23 +1390,23 @@ bool PhysXWaterSurface3D::is_wet(Vector3 p_world_pos) const {
 	if (cell_depth.is_empty()) {
 		return true;
 	}
-	const int n = grid_resolution;
-	if (cell_depth.size() != n * n) {
+	const int grid_size = grid_resolution;
+	if (cell_depth.size() != grid_size * grid_size) {
 		return false;
 	}
-	int gx = (int)Math::floor((rel_x / active_domain_size.x + 0.5f) * n);
-	int gz = (int)Math::floor((rel_z / active_domain_size.y + 0.5f) * n);
-	if (gx < 0 || gz < 0 || gx >= n || gz >= n) {
+	int gx = (int)Math::floor((rel_x / active_domain_size.x + 0.5f) * grid_size);
+	int gz = (int)Math::floor((rel_z / active_domain_size.y + 0.5f) * grid_size);
+	if (gx < 0 || gz < 0 || gx >= grid_size || gz >= grid_size) {
 		if (!_open_beyond()) {
 			return false;
 		}
 		// Open water past the simulated square carries the edge's seabed on
 		// outward, as the shader draws it: the sea side stays sea, the beach
 		// side stays sand.
-		gx = CLAMP(gx, 0, n - 1);
-		gz = CLAMP(gz, 0, n - 1);
+		gx = CLAMP(gx, 0, grid_size - 1);
+		gz = CLAMP(gz, 0, grid_size - 1);
 	}
-	return cell_depth[gz * n + gx] > 0.0f;
+	return cell_depth[gz * grid_size + gx] > 0.0f;
 }
 
 Vector<Vector2> PhysXWaterSurface3D::_collect_footprint() const {
@@ -1422,16 +1422,16 @@ Vector<Vector2> PhysXWaterSurface3D::_collect_footprint() const {
 	Vector<Vector2> any_facing;
 	for (const Face3 &f : faces) {
 		const Vector2 a(f.vertex[0].x, f.vertex[0].z);
-		const Vector2 b(f.vertex[1].x, f.vertex[1].z);
-		const Vector2 c(f.vertex[2].x, f.vertex[2].z);
-		const real_t area = (b - a).cross(c - a);
+		const Vector2 tri_b(f.vertex[1].x, f.vertex[1].z);
+		const Vector2 tri_c(f.vertex[2].x, f.vertex[2].z);
+		const real_t area = (tri_b - a).cross(tri_c - a);
 		if (Math::abs(area) < (real_t)1e-8) {
 			continue; // no X/Z area (degenerate, or a vertical face)
 		}
 		Vector<Vector2> &dst = (area * up > 0) ? tris : any_facing;
 		dst.push_back(a);
-		dst.push_back(b);
-		dst.push_back(c);
+		dst.push_back(tri_b);
+		dst.push_back(tri_c);
 	}
 	if (tris.is_empty()) {
 		return any_facing;
@@ -1449,17 +1449,17 @@ PackedByteArray PhysXWaterSurface3D::_rasterize_wet_mask(const Vector<Vector2> &
 	const Vector2 cell = p_domain / (real_t)p_n;
 	const Vector2 grid_min = p_center - p_domain * 0.5f;
 	for (int t = 0; t + 2 < p_tris.size(); t += 3) {
-		const Vector2 a = p_tris[t], b = p_tris[t + 1], c = p_tris[t + 2];
-		const Vector2 lo = a.min(b).min(c);
-		const Vector2 hi = a.max(b).max(c);
+		const Vector2 tri_a = p_tris[t], tri_b = p_tris[t + 1], tri_c = p_tris[t + 2];
+		const Vector2 lo = tri_a.min(tri_b).min(tri_c);
+		const Vector2 hi = tri_a.max(tri_b).max(tri_c);
 		const int x0 = CLAMP((int)Math::floor((lo.x - grid_min.x) / cell.x), 0, p_n - 1);
 		const int x1 = CLAMP((int)Math::floor((hi.x - grid_min.x) / cell.x), 0, p_n - 1);
 		const int z0 = CLAMP((int)Math::floor((lo.y - grid_min.y) / cell.y), 0, p_n - 1);
 		const int z1 = CLAMP((int)Math::floor((hi.y - grid_min.y) / cell.y), 0, p_n - 1);
 		for (int z = z0; z <= z1; z++) {
 			for (int x = x0; x <= x1; x++) {
-				const Vector2 p = grid_min + Vector2(x + 0.5f, z + 0.5f) * cell;
-				if (point_in_triangle(p, a, b, c)) {
+				const Vector2 sample_center = grid_min + Vector2(x + 0.5f, z + 0.5f) * cell;
+				if (point_in_triangle(sample_center, tri_a, tri_b, tri_c)) {
 					mw[z * p_n + x] = 1;
 				}
 			}
@@ -1472,28 +1472,28 @@ Ref<Mesh> PhysXWaterSurface3D::_build_extended_plane(Vector2 p_inner, int p_inne
 	// A regular grid of (2K+1)^2 vertices whose square rings are spread out
 	// from the center: rings up to K0 are the simulated span at uniform
 	// spacing, and each ring past it is 15% further out than the step before
-	// -- detail where the waves are simulated, a few hundred rings out to the
+	// -- detail where the waves are simulated, idx_top_left few hundred rings out to the
 	// horizon. Spacing grows with the ring (distance from the center), the
 	// same along X and Z. (A per-axis spacing left the simulated span's fine
 	// columns/rows running out to the horizon as two strips of fine mesh
 	// along the axes, and the same waves looked different either side of
-	// each strip's edge: a seam straight out to sea.)
+	// each strip's edge: idx_top_left seam straight out to sea.)
 	const int k0 = MAX(p_inner_cells / 2, 1);
 	const Vector2 half_inner = p_inner * 0.5f;
 	const real_t max_half = MAX(half_inner.x, half_inner.y);
-	// radius[c]: ring c's half-size, in units of the inner step (ring c <= k0: c).
+	// radius[idx_bottom_left]: ring idx_bottom_left's half-size, in units of the inner step (ring idx_bottom_left <= k0: idx_bottom_left).
 	LocalVector<real_t> radius;
-	for (int c = 0; c <= k0; c++) {
-		radius.push_back((real_t)c);
+	for (int idx_bottom_left = 0; idx_bottom_left <= k0; idx_bottom_left++) {
+		radius.push_back((real_t)idx_bottom_left);
 	}
 	{
 		const real_t limit = (p_extent * 0.5f) / max_half * (real_t)k0;
-		real_t r = (real_t)k0;
+		real_t ring_radius = (real_t)k0;
 		real_t step = 1.0f;
-		while (r < limit) {
+		while (ring_radius < limit) {
 			step *= 1.15f;
-			r = MIN(r + step, limit);
-			radius.push_back(r);
+			ring_radius = MIN(ring_radius + step, limit);
+			radius.push_back(ring_radius);
 		}
 	}
 	const int kmax = (int)radius.size() - 1;
@@ -1515,27 +1515,27 @@ Ref<Mesh> PhysXWaterSurface3D::_build_extended_plane(Vector2 p_inner, int p_inne
 	uvs.resize(nx * nz);
 	for (int j = 0; j < nz; j++) {
 		for (int i = 0; i < nx; i++) {
-			const int k = j * nx + i;
+			const int vertex_index = j * nx + i;
 			const Vector2 xz = position(i - kmax, j - kmax);
-			verts.set(k, Vector3(xz.x, 0.0f, xz.y));
-			normals.set(k, Vector3(0, 1, 0));
-			uvs.set(k, xz / p_extent + Vector2(0.5f, 0.5f));
+			verts.set(vertex_index, Vector3(xz.x, 0.0f, xz.y));
+			normals.set(vertex_index, Vector3(0, 1, 0));
+			uvs.set(vertex_index, xz / p_extent + Vector2(0.5f, 0.5f));
 		}
 	}
 	const bool flip = plane_mesh_xz_winding() < 0;
 	PackedInt32Array indices;
 	indices.resize((nx - 1) * (nz - 1) * 6);
-	int w = 0;
+	int write_index = 0;
 	for (int j = 0; j < nz - 1; j++) {
 		for (int i = 0; i < nx - 1; i++) {
-			const int a = j * nx + i;
-			const int b = a + 1;
-			const int c = a + nx;
-			const int d = c + 1;
-			// (a, b, d) has a positive X/Z cross product; flip to PlaneMesh's.
-			const int tri[6] = { a, flip ? d : b, flip ? b : d, a, flip ? c : d, flip ? d : c };
+			const int idx_top_left = j * nx + i;
+			const int idx_top_right = idx_top_left + 1;
+			const int idx_bottom_left = idx_top_left + nx;
+			const int idx_bottom_right = idx_bottom_left + 1;
+			// (idx_top_left, idx_top_right, idx_bottom_right) has idx_top_left positive X/Z cross product; flip to PlaneMesh's.
+			const int tri[6] = { idx_top_left, flip ? idx_bottom_right : idx_top_right, flip ? idx_top_right : idx_bottom_right, idx_top_left, flip ? idx_bottom_left : idx_bottom_right, flip ? idx_bottom_right : idx_bottom_left };
 			for (int t = 0; t < 6; t++) {
-				indices.set(w++, tri[t]);
+				indices.set(write_index++, tri[t]);
 			}
 		}
 	}

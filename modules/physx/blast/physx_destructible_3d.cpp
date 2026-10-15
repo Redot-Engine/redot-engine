@@ -549,19 +549,19 @@ void PhysXDestructible3D::_notification(int p_what) {
 				// node->body when !dynamic, so this doesn't loop back on itself.
 				PhysicsDirectBodyState3D *state = PhysicsServer3D::get_singleton()->body_get_direct_state(pieces[0].body);
 				if (state) {
-					Transform3D t = state->get_transform();
-					if (t.origin.y < kill_y) {
+					Transform3D piece_transform = state->get_transform();
+					if (piece_transform.origin.y < kill_y) {
 						// Fell out of the scene before ever taking a hit -- same
 						// cleanup _sync_transforms() does for fractured debris,
 						// just for the still-intact single piece.
 						_free_all_pieces();
 					} else {
-						// t.basis is a pure rotation here (see spawn_scale's own
+						// piece_transform.basis is a pure rotation here (see spawn_scale's own
 						// note) -- re-apply the real scale in the object's own
 						// local axes before this goes anywhere, or it's lost.
-						t.basis = t.basis.scaled_local(spawn_scale);
-						set_global_transform(t);
-						RenderingServer::get_singleton()->instance_set_transform(pieces[0].instance, t);
+						piece_transform.basis = piece_transform.basis.scaled_local(spawn_scale);
+						set_global_transform(piece_transform);
+						RenderingServer::get_singleton()->instance_set_transform(pieces[0].instance, piece_transform);
 						_check_impact_fracture();
 					}
 				}
@@ -951,13 +951,13 @@ void PhysXDestructible3D::_spawn_piece(uint32_t p_chunk_index, const Transform3D
 	PackedVector3Array normals;
 	normals.resize(points.size());
 	for (uint32_t t = 0; t < tri_count; t++) {
-		const Vector3 a = points[t * 3 + 0];
-		const Vector3 b = points[t * 3 + 1];
-		const Vector3 c = points[t * 3 + 2];
-		const Vector3 n = (c - a).cross(b - a).normalized();
-		normals.write[t * 3 + 0] = n;
-		normals.write[t * 3 + 1] = n;
-		normals.write[t * 3 + 2] = n;
+		const Vector3 corner_a = points[t * 3 + 0];
+		const Vector3 corner_b = points[t * 3 + 1];
+		const Vector3 corner_c = points[t * 3 + 2];
+		const Vector3 face_normal = (corner_c - corner_a).cross(corner_b - corner_a).normalized();
+		normals.write[t * 3 + 0] = face_normal;
+		normals.write[t * 3 + 1] = face_normal;
+		normals.write[t * 3 + 2] = face_normal;
 	}
 
 	RenderingServer *rs = RenderingServer::get_singleton();
@@ -1034,11 +1034,11 @@ uint32_t PhysXDestructible3D::get_piece_chunk(int p_index) const {
 }
 
 bool PhysXDestructible3D::_actor_has_live_piece(NvBlastActor *p_actor) const {
-	HashMap<NvBlastActor *, LocalVector<uint32_t>>::ConstIterator it = actor_pieces.find(p_actor);
-	if (!it) {
+	HashMap<NvBlastActor *, LocalVector<uint32_t>>::ConstIterator actor_entry = actor_pieces.find(p_actor);
+	if (!actor_entry) {
 		return false;
 	}
-	for (const uint32_t chunk_index : it->value) {
+	for (const uint32_t chunk_index : actor_entry->value) {
 		for (const ChunkVisual &piece : pieces) {
 			if (piece.chunk_index == chunk_index) {
 				return true;
@@ -1065,8 +1065,8 @@ void PhysXDestructible3D::_retire_actor(NvBlastActor *p_actor) {
 }
 
 void PhysXDestructible3D::_free_pieces_of_actor(NvBlastActor *p_actor) {
-	HashMap<NvBlastActor *, LocalVector<uint32_t>>::Iterator it = actor_pieces.find(p_actor);
-	if (!it) {
+	HashMap<NvBlastActor *, LocalVector<uint32_t>>::Iterator actor_entry = actor_pieces.find(p_actor);
+	if (!actor_entry) {
 		return;
 	}
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
@@ -1075,7 +1075,7 @@ void PhysXDestructible3D::_free_pieces_of_actor(NvBlastActor *p_actor) {
 	// exactly one actor at a time — a Blast invariant), so matching by chunk
 	// index is unambiguous even though the pieces array is compacted with
 	// swap-removal as we go.
-	for (uint32_t chunk_index : it->value) {
+	for (uint32_t chunk_index : actor_entry->value) {
 		for (int64_t i = (int64_t)pieces.size() - 1; i >= 0; i--) {
 			if (pieces[i].chunk_index != chunk_index) {
 				continue;
@@ -1106,8 +1106,8 @@ void PhysXDestructible3D::_sync_transforms() {
 		if (!state) {
 			continue;
 		}
-		Transform3D t = state->get_transform();
-		if (t.origin.y < kill_y) {
+		Transform3D piece_transform = state->get_transform();
+		if (piece_transform.origin.y < kill_y) {
 			// Nothing else was ever going to free a piece that's just fallen
 			// out of the scene entirely (there's no owning Node a kill-floor
 			// Area3D could catch it with -- these are raw PhysicsServer3D
@@ -1131,11 +1131,11 @@ void PhysXDestructible3D::_sync_transforms() {
 			}
 			continue;
 		}
-		// t.basis is a pure rotation (see spawn_scale's own note) -- every
+		// piece_transform.basis is a pure rotation (see spawn_scale's own note) -- every
 		// piece was authored from the same intact mesh at the same original
 		// scale, so the same spawn_scale applies to all of them here too.
-		t.basis = t.basis.scaled_local(spawn_scale);
-		rs->instance_set_transform(piece.instance, t);
+		piece_transform.basis = piece_transform.basis.scaled_local(spawn_scale);
+		rs->instance_set_transform(piece.instance, piece_transform);
 	}
 }
 

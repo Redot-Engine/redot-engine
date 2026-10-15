@@ -792,7 +792,7 @@ struct Vehicle4WConfig {
 	int gear_neutral = 1;
 };
 
-// Fills every param struct on v from cfg, builds the real PxRigidDynamic
+// Fills every param struct on v from config, builds the real PxRigidDynamic
 // chassis+wheel shapes (PxVehiclePhysXActorCreate), the suspension-limit/
 // sticky-tire constraints (PxVehicleConstraintsCreate), the component
 // sequence, and out_context -- everything PhysXVehicleProbe::initialize()
@@ -800,17 +800,17 @@ struct Vehicle4WConfig {
 // pose -- the caller does that (probe/node have different start-pose
 // conventions: a bare position vs. a node's own global_transform).
 // Returns false (with an ERR_PRINT) on any real validation failure --
-// including cfg.wheels not containing exactly 2 use_as_steering==true and
+// including config.wheels not containing exactly 2 use_as_steering==true and
 // 2 ==false entries, which this fixed direct-drive/Ackermann composition
 // requires.
-// out_wheel_order[Vehicle4W::WHEEL_FL/FR/RL/RR] = the index into cfg.wheels[]
+// out_wheel_order[Vehicle4W::WHEEL_FL/FR/RL/RR] = the index into config.wheels[]
 // that ended up in that canonical slot -- callers that keep their own
-// per-wheel objects in cfg.wheels[] order (e.g. PhysXVehicle3D's own
+// per-wheel objects in config.wheels[] order (e.g. PhysXVehicle3D's own
 // PhysXVehicleWheel3D children) need this to know which of their own
 // objects corresponds to v.wheelLocalPoses[WHEEL_FL] etc. each tick.
-inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhysics &physics, PxScene &scene, PxVehiclePhysXSimulationContext &out_context, PxU32 out_wheel_order[4]) {
+inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &config, PxPhysics &physics, PxScene &scene, PxVehiclePhysXSimulationContext &out_context, PxU32 out_wheel_order[4]) {
 	v.setToDefault();
-	v.engineDrive = cfg.engineDrive; // the node's command/telemetry paths read THIS flag
+	v.engineDrive = config.engineDrive; // the node's command/telemetry paths read THIS flag
 
 	// Godot convention: forward = -Z, right = +X, up = +Y (matches
 	// godot_physx_conversions.h's 1:1 PhysX<->Godot component mapping, so no
@@ -827,12 +827,12 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 	v.frame = physx_vehicle_frame(); // right-handed (eNegZ, eNegX, ePosY); see the helper
 	v.scale.scale = 1.0f;
 
-	// Classify cfg.wheels[0..3] (arbitrary caller order) into canonical
+	// Classify config.wheels[0..3] (arbitrary caller order) into canonical
 	// FL/FR/RL/RR slots by (use_as_steering, position.x sign).
 	PxU32 front[2], rear[2];
 	PxU32 nb_front = 0, nb_rear = 0;
 	for (PxU32 i = 0; i < 4; i++) {
-		if (cfg.wheels[i].use_as_steering) {
+		if (config.wheels[i].use_as_steering) {
 			if (nb_front < 2) {
 				front[nb_front++] = i;
 			}
@@ -846,13 +846,13 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 		ERR_PRINT("PhysX vehicle: need exactly 2 steering (front) and 2 non-steering (rear) wheels.");
 		return false;
 	}
-	if (cfg.wheels[front[0]].position.x > cfg.wheels[front[1]].position.x) {
+	if (config.wheels[front[0]].position.x > config.wheels[front[1]].position.x) {
 		SWAP(front[0], front[1]);
 	}
-	if (cfg.wheels[rear[0]].position.x > cfg.wheels[rear[1]].position.x) {
+	if (config.wheels[rear[0]].position.x > config.wheels[rear[1]].position.x) {
 		SWAP(rear[0], rear[1]);
 	}
-	// slot[Vehicle4W::WHEEL_FL] = index into cfg.wheels[] for that slot.
+	// slot[Vehicle4W::WHEEL_FL] = index into config.wheels[] for that slot.
 	PxU32 slot[4];
 	slot[Vehicle4W::WHEEL_FL] = front[0]; // negative (left) x
 	slot[Vehicle4W::WHEEL_FR] = front[1]; // positive (right) x
@@ -872,42 +872,42 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 	v.suspensionStateCalculationParams.limitSuspensionExpansionVelocity = false;
 
 	// Regular brake: all 4 wheels; handbrake: rear only.
-	v.brakeResponseParams[0].maxResponse = (PxReal)cfg.max_brake_torque;
-	v.brakeResponseParams[1].maxResponse = (PxReal)(cfg.handbrake_torque > 0.0f ? cfg.handbrake_torque : cfg.max_brake_torque);
+	v.brakeResponseParams[0].maxResponse = (PxReal)config.max_brake_torque;
+	v.brakeResponseParams[1].maxResponse = (PxReal)(config.handbrake_torque > 0.0f ? config.handbrake_torque : config.max_brake_torque);
 	for (PxU32 i = 0; i < 4; i++) {
 		v.brakeResponseParams[0].wheelResponseMultipliers[i] = 1.0f;
 		v.brakeResponseParams[1].wheelResponseMultipliers[i] = (i == Vehicle4W::WHEEL_RL || i == Vehicle4W::WHEEL_RR) ? 1.0f : 0.0f;
 	}
-	v.steerResponseParams.maxResponse = (PxReal)cfg.max_steer_angle;
+	v.steerResponseParams.maxResponse = (PxReal)config.max_steer_angle;
 	for (PxU32 i = 0; i < 4; i++) {
 		v.steerResponseParams.wheelResponseMultipliers[i] = (i == Vehicle4W::WHEEL_FL || i == Vehicle4W::WHEEL_FR) ? 1.0f : 0.0f;
 	}
-	const Vector3 &fl_pos = cfg.wheels[slot[Vehicle4W::WHEEL_FL]].position;
-	const Vector3 &fr_pos = cfg.wheels[slot[Vehicle4W::WHEEL_FR]].position;
-	const Vector3 &rl_pos = cfg.wheels[slot[Vehicle4W::WHEEL_RL]].position;
+	const Vector3 &fl_pos = config.wheels[slot[Vehicle4W::WHEEL_FL]].position;
+	const Vector3 &fr_pos = config.wheels[slot[Vehicle4W::WHEEL_FR]].position;
+	const Vector3 &rl_pos = config.wheels[slot[Vehicle4W::WHEEL_RL]].position;
 	v.ackermannParams[0].wheelIds[0] = Vehicle4W::WHEEL_FL;
 	v.ackermannParams[0].wheelIds[1] = Vehicle4W::WHEEL_FR;
 	v.ackermannParams[0].wheelBase = (PxReal)Math::abs(fl_pos.z - rl_pos.z);
 	v.ackermannParams[0].trackWidth = (PxReal)Math::abs(fr_pos.x - fl_pos.x);
-	v.ackermannParams[0].strength = (PxReal)cfg.ackermann_strength;
+	v.ackermannParams[0].strength = (PxReal)config.ackermann_strength;
 
 	v.antiRollForceParams[0].wheel0 = Vehicle4W::WHEEL_FL;
 	v.antiRollForceParams[0].wheel1 = Vehicle4W::WHEEL_FR;
-	v.antiRollForceParams[0].stiffness = (PxReal)cfg.front_anti_roll_stiffness;
+	v.antiRollForceParams[0].stiffness = (PxReal)config.front_anti_roll_stiffness;
 	v.antiRollForceParams[1].wheel0 = Vehicle4W::WHEEL_RL;
 	v.antiRollForceParams[1].wheel1 = Vehicle4W::WHEEL_RR;
-	v.antiRollForceParams[1].stiffness = (PxReal)cfg.rear_anti_roll_stiffness;
+	v.antiRollForceParams[1].stiffness = (PxReal)config.rear_anti_roll_stiffness;
 
-	v.directDriveThrottleResponseParams.maxResponse = (PxReal)cfg.max_engine_torque;
+	v.directDriveThrottleResponseParams.maxResponse = (PxReal)config.max_engine_torque;
 	for (PxU32 i = 0; i < 4; i++) {
-		v.directDriveThrottleResponseParams.wheelResponseMultipliers[i] = cfg.wheels[slot[i]].use_as_traction ? 1.0f : 0.0f;
+		v.directDriveThrottleResponseParams.wheelResponseMultipliers[i] = config.wheels[slot[i]].use_as_traction ? 1.0f : 0.0f;
 	}
 
-	v.rigidBodyParams.mass = (PxReal)cfg.mass;
-	v.rigidBodyParams.moi = godot_to_px(cfg.moment_of_inertia);
+	v.rigidBodyParams.mass = (PxReal)config.mass;
+	v.rigidBodyParams.moi = godot_to_px(config.moment_of_inertia);
 
 	for (PxU32 i = 0; i < 4; i++) {
-		const Vehicle4WWheelConfig &w = cfg.wheels[slot[i]];
+		const Vehicle4WWheelConfig &w = config.wheels[slot[i]];
 
 		v.wheelParams[i].radius = (PxReal)w.radius;
 		v.wheelParams[i].halfWidth = (PxReal)w.half_width;
@@ -944,7 +944,7 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 		const Vector3 travel_dir_local = w.basis.xform(Vector3(0.0f, -1.0f, 0.0f)).normalized();
 		const PxReal restLoadEstimate = v.suspensionForceParams[i].sprungMass * 9.81f;
 		const PxReal jounceAtRest = (w.suspension_stiffness > 0.0) ? PxClamp(restLoadEstimate / (PxReal)w.suspension_stiffness, 0.0f, (PxReal)w.suspension_travel) : 0.0f;
-		const Vector3 attachment_local = (w.position - cfg.chassis_com_local) - travel_dir_local * (real_t)((PxReal)w.suspension_travel - jounceAtRest);
+		const Vector3 attachment_local = (w.position - config.chassis_com_local) - travel_dir_local * (real_t)((PxReal)w.suspension_travel - jounceAtRest);
 		v.suspensionParams[i].suspensionAttachment = PxTransform(godot_to_px(attachment_local), godot_to_px(w.basis.get_rotation_quaternion()));
 		v.suspensionParams[i].suspensionTravelDir = godot_to_px(travel_dir_local);
 		v.suspensionParams[i].suspensionTravelDist = (PxReal)w.suspension_travel;
@@ -995,21 +995,21 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 	// collision_mask, like a Godot raycast — never an Area3D.
 	v.physxRoadGeometryQueryParams.defaultFilterData = PxQueryFilterData(PxFilterData(0, 0, 0, 0), PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER);
 	v.physxRoadGeometryQueryParams.filterCallback = &v.wheel_query_filter;
-	v.wheel_query_filter.collision_mask = (PxU32)cfg.collision_mask;
+	v.wheel_query_filter.collision_mask = (PxU32)config.collision_mask;
 	v.physxRoadGeometryQueryParams.filterDataEntries = nullptr;
 
-	v.physxActorCMassLocalPose = PxTransform(godot_to_px(cfg.chassis_com_local));
-	v.physxActorBoxShapeHalfExtents = godot_to_px(cfg.chassis_half_extents);
-	v.physxActorBoxShapeLocalPose = PxTransform(godot_to_px(cfg.chassis_box_center_local));
+	v.physxActorCMassLocalPose = PxTransform(godot_to_px(config.chassis_com_local));
+	v.physxActorBoxShapeHalfExtents = godot_to_px(config.chassis_half_extents);
+	v.physxActorBoxShapeLocalPose = PxTransform(godot_to_px(config.chassis_box_center_local));
 
 	// --- Engine drive seeding (mirrors build_engine_drive in the server) ----
-	if (cfg.engineDrive) {
+	if (config.engineDrive) {
 		// PxVehicleEngineParams has no setToDefault in this SDK -- every used
 		// field is assigned here and in the composition's reset path.
 		v.engineParams.moi = 1.0f;
-		v.engineParams.peakTorque = (PxReal)cfg.engine_peak_torque;
-		v.engineParams.idleOmega = (PxReal)cfg.engine_idle_omega;
-		v.engineParams.maxOmega = (PxReal)cfg.engine_max_omega;
+		v.engineParams.peakTorque = (PxReal)config.engine_peak_torque;
+		v.engineParams.idleOmega = (PxReal)config.engine_idle_omega;
+		v.engineParams.maxOmega = (PxReal)config.engine_max_omega;
 		v.engineParams.dampingRateFullThrottle = 0.15f;
 		v.engineParams.dampingRateZeroThrottleClutchEngaged = 2.0f;
 		v.engineParams.dampingRateZeroThrottleClutchDisengaged = 0.35f;
@@ -1020,14 +1020,14 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 
 		v.clutchParams.accuracyMode = PxVehicleClutchAccuracyMode::eBEST_POSSIBLE;
 		v.clutchParams.estimateIterations = 4;
-		v.clutchResponseParams.maxResponse = (PxReal)cfg.clutch_strength;
+		v.clutchResponseParams.maxResponse = (PxReal)config.clutch_strength;
 
-		v.gearboxParams.neutralGear = cfg.gear_neutral;
-		v.gearboxParams.finalRatio = (PxReal)cfg.gear_final_ratio;
-		v.gearboxParams.switchTime = (PxReal)cfg.gear_switch_time;
-		const int nb = MIN((int)cfg.gear_ratios.size(), (int)PxVehicleGearboxParams::eMAX_NB_GEARS);
+		v.gearboxParams.neutralGear = config.gear_neutral;
+		v.gearboxParams.finalRatio = (PxReal)config.gear_final_ratio;
+		v.gearboxParams.switchTime = (PxReal)config.gear_switch_time;
+		const int nb = MIN((int)config.gear_ratios.size(), (int)PxVehicleGearboxParams::eMAX_NB_GEARS);
 		for (int g = 0; g < nb; g++) {
-			v.gearboxParams.ratios[g] = (PxReal)cfg.gear_ratios[g];
+			v.gearboxParams.ratios[g] = (PxReal)config.gear_ratios[g];
 		}
 		v.gearboxParams.nbRatios = nb;
 
@@ -1036,12 +1036,12 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 		// zeroed params the up/down thresholds are all 0 -> shift-storm at
 		// idle -> pathological autobox state (measured segfault). The
 		// params/state pointers are ALWAYS provided to the SDK -- never null.
-		v.useAutobox = cfg.use_autobox;
+		v.useAutobox = config.use_autobox;
 		for (PxU32 i = 0; i < PxVehicleGearboxParams::eMAX_NB_GEARS; i++) {
-			v.autoboxParams.upRatios[i] = (PxReal)cfg.autobox_up_ratio;
-			v.autoboxParams.downRatios[i] = (PxReal)cfg.autobox_down_ratio;
+			v.autoboxParams.upRatios[i] = (PxReal)config.autobox_up_ratio;
+			v.autoboxParams.downRatios[i] = (PxReal)config.autobox_down_ratio;
 		}
-		v.autoboxParams.latency = (PxReal)cfg.autobox_latency;
+		v.autoboxParams.latency = (PxReal)config.autobox_latency;
 
 		v.differentialParams.setToDefault();
 		const PxU32 nw = v.axleDescription.nbWheels;
@@ -1068,20 +1068,20 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 	// Wheel shapes stay non-simulating (flags(0) below), so this material's
 	// friction/restitution never actually gets consumed by them -- it only
 	// exists because PxVehiclePhysXWheelShapeParams requires one.
-	PxMaterial *wheel_material = physics.createMaterial((PxReal)cfg.wheels[0].tire_friction, (PxReal)cfg.wheels[0].tire_friction, 0.1f);
+	PxMaterial *wheel_material = physics.createMaterial((PxReal)config.wheels[0].tire_friction, (PxReal)config.wheels[0].tire_friction, 0.1f);
 	// Chassis gets its own material (NOT the wheels' tire-friction one: the
 	// chassis box is a REAL simulation shape now (see below), and reusing the
 	// wheel's friction=1.0 material on it froze the car in place once this
 	// shape went from PxShapeFlags(0) to a real simulation shape -- found via
 	// a real regression). On the CPU path the contact-modify combiner
 	// overrides this material anyway (it reads the chassis actor's userData,
-	// authored from cfg.chassis_friction/bounce); the GPU path solves straight
+	// authored from config.chassis_friction/bounce); the GPU path solves straight
 	// from the material, so author it from the same values to keep both paths
 	// in agreement.
 	PxMaterial *chassis_material = physics.createMaterial(
-			(PxReal)(cfg.chassis_friction < 0.0f ? -cfg.chassis_friction : cfg.chassis_friction),
-			(PxReal)(cfg.chassis_friction < 0.0f ? -cfg.chassis_friction : cfg.chassis_friction),
-			(PxReal)CLAMP(cfg.chassis_bounce, 0.0f, 1.0f));
+			(PxReal)(config.chassis_friction < 0.0f ? -config.chassis_friction : config.chassis_friction),
+			(PxReal)(config.chassis_friction < 0.0f ? -config.chassis_friction : config.chassis_friction),
+			(PxReal)CLAMP(config.chassis_bounce, 0.0f, 1.0f));
 	if (!wheel_material || !chassis_material) {
 		// Release whichever side DID create -- a plain return leaked it.
 		if (wheel_material) {
@@ -1120,7 +1120,7 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 		// road-geometry raycast + suspension, not real shape collision, and
 		// making them real simulation shapes too would double-apply ground
 		// reaction forces on top of that.
-		const PxFilterData chassisFilterData((PxU32)cfg.collision_layer, (PxU32)cfg.collision_mask, 0, 0);
+		const PxFilterData chassisFilterData((PxU32)config.collision_layer, (PxU32)config.collision_mask, 0, 0);
 		const PxShapeFlags chassisShapeFlags(PxShapeFlag::eSIMULATION_SHAPE | PxShapeFlag::eVISUALIZATION);
 		const PxVehiclePhysXRigidActorParams actorParams(v.rigidBodyParams, nullptr);
 		const PxBoxGeometry boxGeom(v.physxActorBoxShapeHalfExtents);
@@ -1151,7 +1151,7 @@ inline bool configure_vehicle4w(Vehicle4W &v, const Vehicle4WConfig &cfg, PxPhys
 
 	PxVehicleConstraintsCreate(v.axleDescription, physics, *v.physxActor.rigidBody, v.physxConstraints);
 
-	v.initComponentSequence(cfg.engineDrive);
+	v.initComponentSequence(config.engineDrive);
 	v.transmissionCommandState.gear = PxVehicleDirectDriveTransmissionCommandState::eFORWARD;
 
 	out_context.setToDefault();

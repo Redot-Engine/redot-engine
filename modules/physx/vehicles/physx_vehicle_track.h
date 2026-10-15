@@ -578,7 +578,7 @@ struct VehicleTrackConfig {
 };
 
 // Same role as configure_vehicle2w()/configure_vehicle4w() (see either
-// function's own doc comment) -- fills every param struct on v from cfg,
+// function's own doc comment) -- fills every param struct on v from config,
 // builds the real PxRigidDynamic chassis+wheel shapes, the suspension-limit/
 // sticky-tire constraints, the component sequence, and out_context. Does NOT
 // add the actor to the scene or set its start pose. Returns false (with an
@@ -594,8 +594,8 @@ struct VehicleTrackConfig {
 // exactly at X=0 is rejected -- a real tank never has a wheel on the
 // centerline, so this is treated as a real configuration error, not silently
 // guessed.
-inline bool configure_vehicle_track(VehicleTrack &v, const VehicleTrackConfig &cfg, PxPhysics &physics, PxScene &scene, PxVehiclePhysXSimulationContext &out_context) {
-	const uint32_t wheel_count = cfg.wheels.size();
+inline bool configure_vehicle_track(VehicleTrack &v, const VehicleTrackConfig &config, PxPhysics &physics, PxScene &scene, PxVehiclePhysXSimulationContext &out_context) {
+	const uint32_t wheel_count = config.wheels.size();
 	if (wheel_count < 2 || wheel_count > VehicleTrack::MAX_WHEELS) {
 		ERR_PRINT(vformat("PhysX tank: wheel count must be between 2 and %d (got %d).", VehicleTrack::MAX_WHEELS, wheel_count));
 		return false;
@@ -614,11 +614,11 @@ inline bool configure_vehicle_track(VehicleTrack &v, const VehicleTrackConfig &c
 	v.numLeftWheels = 0;
 	v.numRightWheels = 0;
 	for (uint32_t i = 0; i < wheel_count; i++) {
-		if (Math::is_zero_approx(cfg.wheels[i].position.x)) {
+		if (Math::is_zero_approx(config.wheels[i].position.x)) {
 			ERR_PRINT(vformat("PhysX tank: wheel %d sits exactly on the centerline (local X = 0) -- can't tell which track it belongs to.", i));
 			return false;
 		}
-		v.wheelIsLeftTrack[i] = cfg.wheels[i].position.x < 0.0f;
+		v.wheelIsLeftTrack[i] = config.wheels[i].position.x < 0.0f;
 		if (v.wheelIsLeftTrack[i]) {
 			v.numLeftWheels++;
 		} else {
@@ -633,7 +633,7 @@ inline bool configure_vehicle_track(VehicleTrack &v, const VehicleTrackConfig &c
 
 	// Single brake response entry: every wheel gets full brake response --
 	// same "no separate handbrake convention" choice Vehicle2W makes.
-	v.brakeResponseParams[0].maxResponse = (PxReal)cfg.max_brake_torque;
+	v.brakeResponseParams[0].maxResponse = (PxReal)config.max_brake_torque;
 	for (uint32_t i = 0; i < wheel_count; i++) {
 		v.brakeResponseParams[0].wheelResponseMultipliers[i] = 1.0f;
 	}
@@ -649,16 +649,16 @@ inline bool configure_vehicle_track(VehicleTrack &v, const VehicleTrackConfig &c
 	// Real per-wheel multipliers are set every tick by setDriverInput(), not
 	// here -- maxResponse alone scales the [-1, 1] signed command into real
 	// torque.
-	v.directDriveThrottleResponseParams.maxResponse = (PxReal)cfg.max_engine_torque;
+	v.directDriveThrottleResponseParams.maxResponse = (PxReal)config.max_engine_torque;
 	for (uint32_t i = 0; i < wheel_count; i++) {
 		v.directDriveThrottleResponseParams.wheelResponseMultipliers[i] = 0.0f;
 	}
 
-	v.rigidBodyParams.mass = (PxReal)cfg.mass;
-	v.rigidBodyParams.moi = godot_to_px(cfg.moment_of_inertia);
+	v.rigidBodyParams.mass = (PxReal)config.mass;
+	v.rigidBodyParams.moi = godot_to_px(config.moment_of_inertia);
 
 	for (uint32_t i = 0; i < wheel_count; i++) {
-		const VehicleTrackWheelConfig &w = cfg.wheels[i];
+		const VehicleTrackWheelConfig &w = config.wheels[i];
 
 		v.wheelParams[i].radius = (PxReal)w.radius;
 		v.wheelParams[i].halfWidth = (PxReal)w.half_width;
@@ -680,7 +680,7 @@ inline bool configure_vehicle_track(VehicleTrack &v, const VehicleTrackConfig &c
 		const Vector3 travel_dir_local = w.basis.xform(Vector3(0.0f, -1.0f, 0.0f)).normalized();
 		const PxReal restLoadEstimate = v.suspensionForceParams[i].sprungMass * 9.81f;
 		const PxReal jounceAtRest = (w.suspension_stiffness > 0.0) ? PxClamp(restLoadEstimate / (PxReal)w.suspension_stiffness, 0.0f, (PxReal)w.suspension_travel) : 0.0f;
-		const Vector3 attachment_local = (w.position - cfg.chassis_com_local) - travel_dir_local * (real_t)((PxReal)w.suspension_travel - jounceAtRest);
+		const Vector3 attachment_local = (w.position - config.chassis_com_local) - travel_dir_local * (real_t)((PxReal)w.suspension_travel - jounceAtRest);
 		v.suspensionParams[i].suspensionAttachment = PxTransform(godot_to_px(attachment_local), godot_to_px(w.basis.get_rotation_quaternion()));
 		v.suspensionParams[i].suspensionTravelDir = godot_to_px(travel_dir_local);
 		v.suspensionParams[i].suspensionTravelDist = (PxReal)w.suspension_travel;
@@ -728,23 +728,23 @@ inline bool configure_vehicle_track(VehicleTrack &v, const VehicleTrackConfig &c
 	// collision_mask, like a Godot raycast — never an Area3D.
 	v.physxRoadGeometryQueryParams.defaultFilterData = PxQueryFilterData(PxFilterData(0, 0, 0, 0), PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER);
 	v.physxRoadGeometryQueryParams.filterCallback = &v.wheel_query_filter;
-	v.wheel_query_filter.collision_mask = (PxU32)cfg.collision_mask;
+	v.wheel_query_filter.collision_mask = (PxU32)config.collision_mask;
 	v.physxRoadGeometryQueryParams.filterDataEntries = nullptr;
 
-	v.physxActorCMassLocalPose = PxTransform(godot_to_px(cfg.chassis_com_local));
-	v.physxActorBoxShapeHalfExtents = godot_to_px(cfg.chassis_half_extents);
-	v.physxActorBoxShapeLocalPose = PxTransform(godot_to_px(cfg.chassis_box_center_local));
+	v.physxActorCMassLocalPose = PxTransform(godot_to_px(config.chassis_com_local));
+	v.physxActorBoxShapeHalfExtents = godot_to_px(config.chassis_half_extents);
+	v.physxActorBoxShapeLocalPose = PxTransform(godot_to_px(config.chassis_box_center_local));
 
-	PxMaterial *wheel_material = physics.createMaterial((PxReal)cfg.wheels[0].tire_friction, (PxReal)cfg.wheels[0].tire_friction, 0.1f);
+	PxMaterial *wheel_material = physics.createMaterial((PxReal)config.wheels[0].tire_friction, (PxReal)config.wheels[0].tire_friction, 0.1f);
 	// Same rationale as configure_vehicle2w()/configure_vehicle4w(): the
 	// chassis box is a real simulation shape with its own material, not the
 	// wheels' tire-friction one. The contact-modify combiner overrides it on
-	// the CPU path (chassis actor userData, from cfg.chassis_friction/bounce);
+	// the CPU path (chassis actor userData, from config.chassis_friction/bounce);
 	// the GPU path solves straight from it.
 	PxMaterial *chassis_material = physics.createMaterial(
-			(PxReal)(cfg.chassis_friction < 0.0f ? -cfg.chassis_friction : cfg.chassis_friction),
-			(PxReal)(cfg.chassis_friction < 0.0f ? -cfg.chassis_friction : cfg.chassis_friction),
-			(PxReal)CLAMP(cfg.chassis_bounce, 0.0f, 1.0f));
+			(PxReal)(config.chassis_friction < 0.0f ? -config.chassis_friction : config.chassis_friction),
+			(PxReal)(config.chassis_friction < 0.0f ? -config.chassis_friction : config.chassis_friction),
+			(PxReal)CLAMP(config.chassis_bounce, 0.0f, 1.0f));
 	if (!wheel_material || !chassis_material) {
 		if (wheel_material) {
 			wheel_material->release();
@@ -762,7 +762,7 @@ inline bool configure_vehicle_track(VehicleTrack &v, const VehicleTrackConfig &c
 		// configure_vehicle2w()/configure_vehicle4w() -- see either
 		// function's own comment on why eSCENE_QUERY_SHAPE would break the
 		// wheels' own road-geometry raycasts.
-		const PxFilterData chassisFilterData((PxU32)cfg.collision_layer, (PxU32)cfg.collision_mask, 0, 0);
+		const PxFilterData chassisFilterData((PxU32)config.collision_layer, (PxU32)config.collision_mask, 0, 0);
 		const PxShapeFlags chassisShapeFlags(PxShapeFlag::eSIMULATION_SHAPE | PxShapeFlag::eVISUALIZATION);
 		const PxVehiclePhysXRigidActorParams actorParams(v.rigidBodyParams, nullptr);
 		const PxBoxGeometry boxGeom(v.physxActorBoxShapeHalfExtents);

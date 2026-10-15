@@ -135,23 +135,23 @@ void PhysXWaterSpray3D::_add_emitters(const TypedArray<NodePath> &p_paths, Role 
 		if (particles == nullptr) {
 			continue;
 		}
-		Emitter e;
-		e.id = particles->get_instance_id();
-		e.role = p_role;
-		e.rest = to_body * particles->get_global_transform();
-		e.base_ratio = particles->get_amount_ratio();
+		Emitter emitter;
+		emitter.id = particles->get_instance_id();
+		emitter.role = p_role;
+		emitter.rest = to_body * particles->get_global_transform();
+		emitter.base_ratio = particles->get_amount_ratio();
 		// Our own copy of its process material: its launch speed is scaled
 		// per emitter, and the resource may be shared.
 		Ref<ParticleProcessMaterial> material = particles->get_process_material();
 		if (material.is_valid()) {
 			material = material->duplicate();
 			particles->set_process_material(material);
-			e.material = material;
-			e.base_velocity_min = material->get_param_min(ParticleProcessMaterial::PARAM_INITIAL_LINEAR_VELOCITY);
-			e.base_velocity_max = material->get_param_max(ParticleProcessMaterial::PARAM_INITIAL_LINEAR_VELOCITY);
-			e.inherit_velocity = material->get_inherit_velocity_ratio();
-			e.gravity = MAX(-material->get_gravity().y, 0.1f);
-			e.friction = material->get_collision_mode() == ParticleProcessMaterial::COLLISION_RIGID ? material->get_collision_friction() : 0.0f;
+			emitter.material = material;
+			emitter.base_velocity_min = material->get_param_min(ParticleProcessMaterial::PARAM_INITIAL_LINEAR_VELOCITY);
+			emitter.base_velocity_max = material->get_param_max(ParticleProcessMaterial::PARAM_INITIAL_LINEAR_VELOCITY);
+			emitter.inherit_velocity = material->get_inherit_velocity_ratio();
+			emitter.gravity = MAX(-material->get_gravity().y, 0.1f);
+			emitter.friction = material->get_collision_mode() == ParticleProcessMaterial::COLLISION_RIGID ? material->get_collision_friction() : 0.0f;
 			// Where it launches from: a few spots along its emission points
 			// (averaged in groups), or the emitter itself.
 			const Ref<Texture2D> points_tex = material->get_emission_point_texture();
@@ -163,26 +163,26 @@ void PhysXWaterSpray3D::_add_emitters(const TypedArray<NodePath> &p_paths, Role 
 			if (count > 0 && material->get_emission_shape() >= ParticleProcessMaterial::EMISSION_SHAPE_POINTS) {
 				const int groups = MIN(count, 6);
 				for (int g = 0; g < groups; g++) {
-					Vector3 p;
-					Vector3 d;
+					Vector3 splash_position;
+					Vector3 splash_direction;
 					const int from = g * count / groups;
 					const int to = (g + 1) * count / groups;
 					for (int pi = from; pi < to; pi++) {
-						const Color c = points->get_pixel(pi % points->get_width(), pi / points->get_width());
-						p += Vector3(c.r, c.g, c.b);
+						const Color position_pixel = points->get_pixel(pi % points->get_width(), pi / points->get_width());
+						splash_position += Vector3(position_pixel.r, position_pixel.g, position_pixel.b);
 						if (directed) {
-							const Color n = normals->get_pixel(pi % normals->get_width(), pi / normals->get_width());
-							d += Vector3(n.r, n.g, n.b);
+							const Color normal_pixel = normals->get_pixel(pi % normals->get_width(), pi / normals->get_width());
+							splash_direction += Vector3(normal_pixel.r, normal_pixel.g, normal_pixel.b);
 						}
 					}
-					e.launch_points.push_back(p / MAX(to - from, 1));
+					emitter.launch_points.push_back(splash_position / MAX(to - from, 1));
 					// Directed points turn the material's direction (+Z) onto
 					// each point's normal: the spray there goes along it.
-					e.launch_dirs.push_back(directed && d.length_squared() > 1e-8f ? d.normalized() : material->get_direction().normalized());
+					emitter.launch_dirs.push_back(directed && splash_direction.length_squared() > 1e-8f ? splash_direction.normalized() : material->get_direction().normalized());
 				}
 			} else {
-				e.launch_points.push_back(Vector3());
-				e.launch_dirs.push_back(material->get_direction().normalized());
+				emitter.launch_points.push_back(Vector3());
+				emitter.launch_dirs.push_back(material->get_direction().normalized());
 			}
 		}
 		if (p_role == ROLE_SLAM) {
@@ -191,7 +191,7 @@ void PhysXWaterSpray3D::_add_emitters(const TypedArray<NodePath> &p_paths, Role 
 			particles->set_amount_ratio(0.0f);
 			particles->set_emitting(true);
 		}
-		emitters.push_back(e);
+		emitters.push_back(emitter);
 	}
 }
 
@@ -233,12 +233,12 @@ void PhysXWaterSpray3D::_update_collider(const PhysXWaterSurface3D *p_water, con
 	// without the hull's own wake).
 	const Vector3 ax = p_level.get_column(0) * collision_fit_radius;
 	const Vector3 az = p_level.get_column(2) * collision_fit_radius;
-	const float h = p_water->sample_height_excluding_wake(p_center, wake_id);
+	const float water_height = p_water->sample_height_excluding_wake(p_center, wake_id);
 	const float hxp = p_water->sample_height_excluding_wake(p_center + ax, wake_id);
 	const float hxn = p_water->sample_height_excluding_wake(p_center - ax, wake_id);
 	const float hzp = p_water->sample_height_excluding_wake(p_center + az, wake_id);
 	const float hzn = p_water->sample_height_excluding_wake(p_center - az, wake_id);
-	if (!Math::is_finite(h) || !Math::is_finite(hxp) || !Math::is_finite(hxn) || !Math::is_finite(hzp) || !Math::is_finite(hzn)) {
+	if (!Math::is_finite(water_height) || !Math::is_finite(hxp) || !Math::is_finite(hxn) || !Math::is_finite(hzp) || !Math::is_finite(hzn)) {
 		// Near dry land: no plane to fit.
 		collider->set_visible(false);
 		have_smooth = false;
@@ -254,17 +254,17 @@ void PhysXWaterSpray3D::_update_collider(const PhysXWaterSurface3D *p_water, con
 	const Vector3 fitted = tz.cross(tx).normalized();
 	const float ease = collision_smoothing > 0.0f ? 1.0f - Math::exp(-(float)p_delta / collision_smoothing) : 1.0f;
 	if (!have_smooth) {
-		smooth_height = h;
+		smooth_height = water_height;
 		smooth_normal = fitted;
 		have_smooth = true;
 	} else {
-		smooth_height = Math::lerp(smooth_height, h, ease);
+		smooth_height = Math::lerp(smooth_height, water_height, ease);
 		smooth_normal = smooth_normal.lerp(fitted, ease).normalized();
 	}
 	const Vector3 normal = smooth_normal;
 	const Vector3 lx = p_level.get_column(0);
-	const Vector3 x = (lx - normal * lx.dot(normal)).normalized();
-	const Vector3 z = x.cross(normal).normalized();
+	const Vector3 surface_tangent = (lx - normal * lx.dot(normal)).normalized();
+	const Vector3 surface_bitangent = surface_tangent.cross(normal).normalized();
 	const float depth = 2.0f;
 	const Vector3 box_size(collision_size, depth, collision_size);
 	if (!collider->get_size().is_equal_approx(box_size)) {
@@ -274,7 +274,7 @@ void PhysXWaterSpray3D::_update_collider(const PhysXWaterSurface3D *p_water, con
 	plane_point = Vector3(p_center.x, smooth_height, p_center.z);
 	plane_normal = normal;
 	have_plane = true;
-	const Transform3D placed(Basis(normal.cross(z), normal, z), plane_point - normal * (depth * 0.5f));
+	const Transform3D placed(Basis(normal.cross(surface_bitangent), normal, surface_bitangent), plane_point - normal * (depth * 0.5f));
 	collider_from = have_collider_xform ? collider_to : placed;
 	collider_to = placed;
 	if (!have_collider_xform) {
@@ -291,7 +291,7 @@ void PhysXWaterSpray3D::_deposit_foam(const Emitter &p_emitter, const GPUParticl
 	// Each launch spot's spray, flown out: launched at the mean speed along
 	// its direction plus the share of the hull's velocity it inherits, it
 	// comes back down to the water (collision_margin below where it left)
-	// after t, then skids on: the material's friction takes that share of its
+	// after airborne_time, then skids on: the material's friction takes that share of its
 	// speed off each particle step (fixed_fps, else 60/s assumed) until its
 	// lifetime runs out.
 	const Transform3D xf = p_particles->get_global_transform();
@@ -303,26 +303,26 @@ void PhysXWaterSpray3D::_deposit_foam(const Emitter &p_emitter, const GPUParticl
 		if (rng.randf() >= spray_foam_density * p_ratio) {
 			continue;
 		}
-		const Vector3 v = xf.basis.xform(p_emitter.launch_dirs[i]).normalized() * speed + p_body_velocity * p_emitter.inherit_velocity;
-		const float g = p_emitter.gravity;
-		const float t = (v.y + Math::sqrt(MAX(v.y * v.y + 2.0f * g * collision_margin, 0.0f))) / g;
+		const Vector3 drop_velocity = xf.basis.xform(p_emitter.launch_dirs[i]).normalized() * speed + p_body_velocity * p_emitter.inherit_velocity;
+		const float drop_gravity = p_emitter.gravity;
+		const float airborne_time = (drop_velocity.y + Math::sqrt(MAX(drop_velocity.y * drop_velocity.y + 2.0f * drop_gravity * collision_margin, 0.0f))) / drop_gravity;
 		// Somewhere along the landing and skid of spray landing now: launched
-		// t (+ ts into the skid) ago, from where the launch point was then --
+		// airborne_time (+ ts into the skid) ago, from where the launch point was then --
 		// the hull has moved on since. (Placing it where this tick's spray will
 		// land put the foam ahead of the spray.)
-		const float u = rng.randf();
+		const float scatter_fraction = rng.randf();
 		float ts = 0.0f;
 		Vector3 skid;
 		if (slow > 0.0f) {
-			const float left = MAX((float)p_particles->get_lifetime() - t, 0.0f);
-			const float reach = u * (1.0f - Math::exp(-left / slow));
+			const float left = MAX((float)p_particles->get_lifetime() - airborne_time, 0.0f);
+			const float reach = scatter_fraction * (1.0f - Math::exp(-left / slow));
 			ts = -slow * Math::log(1.0f - reach);
-			skid = Vector3(v.x, 0.0f, v.z) * slow * reach;
+			skid = Vector3(drop_velocity.x, 0.0f, drop_velocity.z) * slow * reach;
 		}
-		Vector3 out(v.x, 0.0f, v.z);
+		Vector3 out(drop_velocity.x, 0.0f, drop_velocity.z);
 		out = out.length_squared() > 1e-6f ? out.normalized() : Vector3();
 		const Vector3 across(out.z, 0.0f, -out.x);
-		const Vector3 at = xf.xform(p_emitter.launch_points[i]) + v * t + skid - p_body_velocity * (t + ts) + out * (spray_foam_offset + rng.random(-0.15f, 0.15f)) + across * rng.random(-0.25f, 0.25f);
+		const Vector3 at = xf.xform(p_emitter.launch_points[i]) + drop_velocity * airborne_time + skid - p_body_velocity * (airborne_time + ts) + out * (spray_foam_offset + rng.random(-0.15f, 0.15f)) + across * rng.random(-0.25f, 0.25f);
 		// A one-off speck: its whole amount this step.
 		wake->add_foam(at, rng.random(0.12f, 0.25f), spray_foam / (float)p_delta);
 	}
@@ -469,8 +469,8 @@ void PhysXWaterSpray3D::_notification(int p_what) {
 			// Between the last two ticks' planes: spray steps every frame, and
 			// a collider that only moved each tick stair-stepped under it.
 			if (collider != nullptr && have_collider_xform && collider->is_visible()) {
-				const real_t f = Engine::get_singleton()->get_physics_interpolation_fraction();
-				collider->set_global_transform(collider_from.interpolate_with(collider_to, f));
+				const real_t physics_interp_fraction = Engine::get_singleton()->get_physics_interpolation_fraction();
+				collider->set_global_transform(collider_from.interpolate_with(collider_to, physics_interp_fraction));
 			}
 		} break;
 		case NOTIFICATION_EXIT_TREE: {

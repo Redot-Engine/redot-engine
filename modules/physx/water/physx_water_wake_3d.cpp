@@ -211,13 +211,13 @@ void PhysXWaterWake3D::_physics_step(double p_delta) {
 	Vector<WaterWakeSolver::Source> sources;
 	const Vector3 bow = xf.origin + fwd * bow_z;
 	for (int i = 0; i < source_count; i++) {
-		const float t = source_count > 1 ? (float)i / (source_count - 1) : 0.5f;
-		const Vector3 p = bow - fwd * (length * t);
-		WaterWakeSolver::Source s;
-		s.world_xz = Vector2(p.x, p.z);
-		s.radius = beam * Math::lerp(0.45f, 0.6f, t);
-		s.depth = depth * Math::lerp(1.0f, 0.55f, t);
-		sources.push_back(s);
+		const float bow_stern_fraction = source_count > 1 ? (float)i / (source_count - 1) : 0.5f;
+		const Vector3 source_position = bow - fwd * (length * bow_stern_fraction);
+		WaterWakeSolver::Source source;
+		source.world_xz = Vector2(source_position.x, source_position.z);
+		source.radius = beam * Math::lerp(0.45f, 0.6f, bow_stern_fraction);
+		source.depth = depth * Math::lerp(1.0f, 0.55f, bow_stern_fraction);
+		sources.push_back(source);
 	}
 	// Propeller wash: foam only, behind the propeller, with the thrust.
 	PhysXBoat3D *boat = nullptr;
@@ -228,12 +228,12 @@ void PhysXWaterWake3D::_physics_step(double p_delta) {
 		const float churn = Math::abs(boat->get_applied_thrust()) / boat->get_max_thrust();
 		if (churn > 0.0f) {
 			const Vector3 prop = xf.xform(boat->get_propeller_position()) - fwd * 0.6f;
-			WaterWakeSolver::Source s;
-			s.world_xz = Vector2(prop.x, prop.z);
-			s.radius = MAX(beam * 0.35f, 0.25f);
-			s.depth = 0.0f;
-			s.foam = propeller_foam * churn;
-			sources.push_back(s);
+			WaterWakeSolver::Source source;
+			source.world_xz = Vector2(prop.x, prop.z);
+			source.radius = MAX(beam * 0.35f, 0.25f);
+			source.depth = 0.0f;
+			source.foam = propeller_foam * churn;
+			sources.push_back(source);
 		}
 	}
 	// Foam other nodes added (landing spray, splashes).
@@ -283,13 +283,13 @@ void PhysXWaterWake3D::add_foam(const Vector3 &p_world_pos, float p_radius, floa
 	if (p_amount_per_second <= 0.0f || pending_foam.size() >= WaterWakeSolverGPU::MAX_SOURCES) {
 		return;
 	}
-	WaterWakeSolver::Source s;
-	s.world_xz = Vector2(p_world_pos.x, p_world_pos.z);
-	s.radius = MAX(p_radius, 0.05f);
-	s.depth = 0.0f; // foam only, no dip
-	s.foam = p_amount_per_second;
-	s.drift = p_drift;
-	pending_foam.push_back(s);
+	WaterWakeSolver::Source source;
+	source.world_xz = Vector2(p_world_pos.x, p_world_pos.z);
+	source.radius = MAX(p_radius, 0.05f);
+	source.depth = 0.0f; // foam only, no dip
+	source.foam = p_amount_per_second;
+	source.drift = p_drift;
+	pending_foam.push_back(source);
 }
 
 float PhysXWaterWake3D::sample_height(const Vector3 &p_world_pos) const {

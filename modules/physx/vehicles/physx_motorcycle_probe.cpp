@@ -77,12 +77,12 @@ bool PhysXMotorcycleProbe::initialize(RID p_space, const Vector3 &p_position) {
 	// A ~220kg motorcycle: wheelbase 1.4m (front +0.7, rear -0.7), wheels on
 	// the ground plane at rest (y matches Vehicle4W's own probe convention of
 	// a small positive offset the suspension settles into).
-	Vehicle2WConfig cfg;
-	cfg.front_wheel.position = Vector3(0.0f, 0.05f, 0.7f);
-	cfg.rear_wheel.position = Vector3(0.0f, 0.05f, -0.7f);
+	Vehicle2WConfig config;
+	config.front_wheel.position = Vector3(0.0f, 0.05f, 0.7f);
+	config.rear_wheel.position = Vector3(0.0f, 0.05f, -0.7f);
 
 	PxVehiclePhysXSimulationContext &out_context = impl->simulationContext;
-	if (!configure_vehicle2w(impl->vehicle, cfg, *physics, *scene, out_context)) {
+	if (!configure_vehicle2w(impl->vehicle, config, *physics, *scene, out_context)) {
 		return false;
 	}
 

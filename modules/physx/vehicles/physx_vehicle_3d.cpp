@@ -132,56 +132,56 @@ bool PhysXVehicle3D::_build() {
 		return false;
 	}
 
-	Vehicle4WConfig cfg;
-	cfg.mass = mass;
-	cfg.moment_of_inertia = moment_of_inertia;
-	cfg.chassis_half_extents = box_shape->get_size() * 0.5;
-	cfg.chassis_box_center_local = chassis_shape_node->get_position();
-	cfg.chassis_com_local = center_of_mass_mode == CENTER_OF_MASS_MODE_CUSTOM ? center_of_mass : chassis_shape_node->get_position();
-	cfg.max_engine_torque = max_engine_torque;
-	cfg.max_brake_torque = max_brake_torque;
-	cfg.handbrake_torque = handbrake_torque;
-	cfg.max_steer_angle = max_steer_angle;
-	cfg.ackermann_strength = ackermann_strength;
-	cfg.front_anti_roll_stiffness = front_anti_roll_stiffness;
-	cfg.rear_anti_roll_stiffness = rear_anti_roll_stiffness;
-	cfg.collision_layer = collision_layer;
-	cfg.collision_mask = collision_mask;
+	Vehicle4WConfig config;
+	config.mass = mass;
+	config.moment_of_inertia = moment_of_inertia;
+	config.chassis_half_extents = box_shape->get_size() * 0.5;
+	config.chassis_box_center_local = chassis_shape_node->get_position();
+	config.chassis_com_local = center_of_mass_mode == CENTER_OF_MASS_MODE_CUSTOM ? center_of_mass : chassis_shape_node->get_position();
+	config.max_engine_torque = max_engine_torque;
+	config.max_brake_torque = max_brake_torque;
+	config.handbrake_torque = handbrake_torque;
+	config.max_steer_angle = max_steer_angle;
+	config.ackermann_strength = ackermann_strength;
+	config.front_anti_roll_stiffness = front_anti_roll_stiffness;
+	config.rear_anti_roll_stiffness = rear_anti_roll_stiffness;
+	config.collision_layer = collision_layer;
+	config.collision_mask = collision_mask;
 	{
 		real_t friction, bounce;
 		_chassis_material(friction, bounce);
-		cfg.chassis_friction = (float)friction;
-		cfg.chassis_bounce = (float)bounce;
+		config.chassis_friction = (float)friction;
+		config.chassis_bounce = (float)bounce;
 	}
-	cfg.engineDrive = use_gearbox;
+	config.engineDrive = use_gearbox;
 	if (use_gearbox) {
-		cfg.engine_peak_torque = engine_peak_torque;
-		cfg.engine_idle_omega = engine_idle_omega;
-		cfg.engine_max_omega = engine_max_omega;
-		cfg.clutch_strength = clutch_strength;
-		cfg.gear_final_ratio = gear_final_ratio;
-		cfg.gear_switch_time = gear_switch_time;
-		cfg.autobox_latency = autobox_latency;
-		cfg.autobox_up_ratio = autobox_up_ratio;
-		cfg.autobox_down_ratio = autobox_down_ratio;
-		cfg.use_autobox = use_autobox;
-		cfg.gear_neutral = 1;
+		config.engine_peak_torque = engine_peak_torque;
+		config.engine_idle_omega = engine_idle_omega;
+		config.engine_max_omega = engine_max_omega;
+		config.clutch_strength = clutch_strength;
+		config.gear_final_ratio = gear_final_ratio;
+		config.gear_switch_time = gear_switch_time;
+		config.autobox_latency = autobox_latency;
+		config.autobox_up_ratio = autobox_up_ratio;
+		config.autobox_down_ratio = autobox_down_ratio;
+		config.use_autobox = use_autobox;
+		config.gear_neutral = 1;
 		// Empty PackedFloat32Array = keep the composition's default ratio
 		// table (Vehicle4WConfig::gear_ratios). Copying unconditionally left
 		// nbRatios at 0, which fails PxVehicleGearboxParams::isValid and
 		// silently no-ops the whole gearbox/engine-drivetrain update (an
 		// idle-locked engine that never shifts or drives).
 		if (gear_ratios.size() > 0) {
-			cfg.gear_ratios.clear();
+			config.gear_ratios.clear();
 			for (int g = 0; g < gear_ratios.size(); g++) {
-				cfg.gear_ratios.push_back(gear_ratios[g]);
+				config.gear_ratios.push_back(gear_ratios[g]);
 			}
 		}
 	}
 
 	for (int i = 0; i < 4; i++) {
 		PhysXVehicleWheel3D *w = wheels[i];
-		Vehicle4WWheelConfig &wc = cfg.wheels[i];
+		Vehicle4WWheelConfig &wc = config.wheels[i];
 		wc.position = w->get_authored_position();
 		wc.basis = w->get_authored_basis();
 		wc.radius = w->get_radius();
@@ -202,7 +202,7 @@ bool PhysXVehicle3D::_build() {
 		wc.use_as_traction = w->is_used_as_traction();
 	}
 
-	if (!configure_vehicle4w(impl->vehicle, cfg, *physics, *scene, impl->simulationContext, impl->wheel_order)) {
+	if (!configure_vehicle4w(impl->vehicle, config, *physics, *scene, impl->simulationContext, impl->wheel_order)) {
 		return false;
 	}
 
@@ -220,8 +220,8 @@ bool PhysXVehicle3D::_build() {
 	// friction/bounce from this userData during the solve (the chassis
 	// PxMaterial authored in configure_vehicle4w is the GPU-path fallback).
 	impl->chassis_user_data = PhysXActorUserData();
-	impl->chassis_user_data.friction = cfg.chassis_friction;
-	impl->chassis_user_data.bounce = cfg.chassis_bounce;
+	impl->chassis_user_data.friction = config.chassis_friction;
+	impl->chassis_user_data.bounce = config.chassis_bounce;
 	v.physxActor.rigidBody->userData = &impl->chassis_user_data;
 
 	impl->scene = scene;

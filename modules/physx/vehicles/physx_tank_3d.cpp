@@ -117,21 +117,21 @@ bool PhysXTank3D::_build() {
 		return false;
 	}
 
-	VehicleTrackConfig cfg;
-	cfg.mass = mass;
-	cfg.moment_of_inertia = moment_of_inertia;
-	cfg.chassis_half_extents = box_shape->get_size() * 0.5;
-	cfg.chassis_box_center_local = chassis_shape_node->get_position();
-	cfg.chassis_com_local = center_of_mass_mode == CENTER_OF_MASS_MODE_CUSTOM ? center_of_mass : chassis_shape_node->get_position();
-	cfg.max_engine_torque = max_engine_torque;
-	cfg.max_brake_torque = max_brake_torque;
-	cfg.collision_layer = collision_layer;
-	cfg.collision_mask = collision_mask;
+	VehicleTrackConfig config;
+	config.mass = mass;
+	config.moment_of_inertia = moment_of_inertia;
+	config.chassis_half_extents = box_shape->get_size() * 0.5;
+	config.chassis_box_center_local = chassis_shape_node->get_position();
+	config.chassis_com_local = center_of_mass_mode == CENTER_OF_MASS_MODE_CUSTOM ? center_of_mass : chassis_shape_node->get_position();
+	config.max_engine_torque = max_engine_torque;
+	config.max_brake_torque = max_brake_torque;
+	config.collision_layer = collision_layer;
+	config.collision_mask = collision_mask;
 	{
 		real_t friction, bounce;
 		_chassis_material(friction, bounce);
-		cfg.chassis_friction = (float)friction;
-		cfg.chassis_bounce = (float)bounce;
+		config.chassis_friction = (float)friction;
+		config.chassis_bounce = (float)bounce;
 	}
 
 	// Unlike PhysXMotorcycle3D's front/rear reordering, wheels are used in
@@ -139,10 +139,10 @@ bool PhysXTank3D::_build() {
 	// infers each wheel's track side from its own local X position, so there's
 	// no canonical slot order to reorder into (see this class's own doc
 	// comment for why).
-	cfg.wheels.resize(wheels.size());
+	config.wheels.resize(wheels.size());
 	for (uint32_t i = 0; i < wheels.size(); i++) {
 		PhysXVehicleWheel3D *w = wheels[i];
-		VehicleTrackWheelConfig &wc = cfg.wheels[i];
+		VehicleTrackWheelConfig &wc = config.wheels[i];
 		wc.position = w->get_authored_position();
 		wc.basis = w->get_authored_basis();
 		wc.radius = w->get_radius();
@@ -161,7 +161,7 @@ bool PhysXTank3D::_build() {
 		wc.tire_slide_grip = w->get_tire_slide_grip();
 	}
 
-	if (!configure_vehicle_track(impl->vehicle, cfg, *physics, *scene, impl->simulationContext)) {
+	if (!configure_vehicle_track(impl->vehicle, config, *physics, *scene, impl->simulationContext)) {
 		return false;
 	}
 
@@ -179,8 +179,8 @@ bool PhysXTank3D::_build() {
 	// friction/bounce from this userData during the solve (the hull PxMaterial
 	// authored in configure_vehicle_track is the GPU-path fallback).
 	impl->chassis_user_data = PhysXActorUserData();
-	impl->chassis_user_data.friction = cfg.chassis_friction;
-	impl->chassis_user_data.bounce = cfg.chassis_bounce;
+	impl->chassis_user_data.friction = config.chassis_friction;
+	impl->chassis_user_data.bounce = config.chassis_bounce;
 	v.physxActor.rigidBody->userData = &impl->chassis_user_data;
 
 	impl->scene = scene;
@@ -342,10 +342,10 @@ PackedStringArray PhysXTank3D::get_configuration_warnings() const {
 	} else {
 		int nb_left = 0, nb_right = 0, nb_centerline = 0;
 		for (uint32_t i = 0; i < wheels.size(); i++) {
-			real_t x = wheels[i]->get_position().x;
-			if (Math::is_zero_approx(x)) {
+			real_t wheel_x = wheels[i]->get_position().x;
+			if (Math::is_zero_approx(wheel_x)) {
 				nb_centerline++;
-			} else if (x < 0.0) {
+			} else if (wheel_x < 0.0) {
 				nb_left++;
 			} else {
 				nb_right++;

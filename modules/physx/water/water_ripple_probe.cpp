@@ -126,9 +126,9 @@ float WaterRippleProbe::sample_height(float p_world_x, float p_world_z) const {
 
 void WaterRippleProbe::refresh_ocean_height_grid() {
 	solver.sync_now();
-	int n;
+	int grid_size;
 	Vector2 domain;
-	solver.get_ocean_height_grid(cached_ocean_height, cached_ocean_imag, n, domain);
+	solver.get_ocean_height_grid(cached_ocean_height, cached_ocean_imag, grid_size, domain);
 	solver.get_ocean_slope_x_grid(cached_ocean_slope_x);
 }
 

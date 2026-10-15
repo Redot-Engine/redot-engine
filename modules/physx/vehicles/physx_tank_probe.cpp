@@ -72,16 +72,16 @@ bool PhysXTankProbe::initialize(RID p_space, const Vector3 &p_position, const Pa
 	ERR_FAIL_NULL_V(physics, false);
 	ERR_FAIL_NULL_V(scene, false);
 
-	VehicleTrackConfig cfg;
-	cfg.wheels.resize(p_wheel_positions_local.size());
+	VehicleTrackConfig config;
+	config.wheels.resize(p_wheel_positions_local.size());
 	for (int i = 0; i < p_wheel_positions_local.size(); i++) {
 		VehicleTrackWheelConfig wc;
 		wc.position = p_wheel_positions_local[i];
-		cfg.wheels[i] = wc;
+		config.wheels[i] = wc;
 	}
 
 	PxVehiclePhysXSimulationContext &out_context = impl->simulationContext;
-	if (!configure_vehicle_track(impl->vehicle, cfg, *physics, *scene, out_context)) {
+	if (!configure_vehicle_track(impl->vehicle, config, *physics, *scene, out_context)) {
 		return false;
 	}
 

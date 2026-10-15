@@ -76,24 +76,24 @@ bool PhysXVehicleProbe::initialize(RID p_space, const Vector3 &p_position, real_
 	// rear -1.35) -- explicit here (not just Vehicle4WWheelConfig's own
 	// defaults) since wheel *position* has no sensible default of its own,
 	// unlike every other per-wheel field.
-	Vehicle4WConfig cfg;
-	cfg.wheels[0].position = Vector3(-0.75f, 0.05f, 1.35f); // FL
-	cfg.wheels[0].use_as_steering = true;
-	cfg.wheels[1].position = Vector3(0.75f, 0.05f, 1.35f); // FR
-	cfg.wheels[1].use_as_steering = true;
-	cfg.wheels[2].position = Vector3(-0.75f, 0.05f, -1.35f); // RL
-	cfg.wheels[2].use_as_steering = false;
-	cfg.wheels[3].position = Vector3(0.75f, 0.05f, -1.35f); // RR
-	cfg.wheels[3].use_as_steering = false;
+	Vehicle4WConfig config;
+	config.wheels[0].position = Vector3(-0.75f, 0.05f, 1.35f); // FL
+	config.wheels[0].use_as_steering = true;
+	config.wheels[1].position = Vector3(0.75f, 0.05f, 1.35f); // FR
+	config.wheels[1].use_as_steering = true;
+	config.wheels[2].position = Vector3(-0.75f, 0.05f, -1.35f); // RL
+	config.wheels[2].use_as_steering = false;
+	config.wheels[3].position = Vector3(0.75f, 0.05f, -1.35f); // RR
+	config.wheels[3].use_as_steering = false;
 
 	if (p_wheel_radius > 0.0) {
 		for (int i = 0; i < 4; i++) {
-			cfg.wheels[i].radius = p_wheel_radius;
+			config.wheels[i].radius = p_wheel_radius;
 		}
 	}
 
 	PxU32 wheel_order[4];
-	if (!configure_vehicle4w(impl->vehicle, cfg, *physics, *scene, impl->simulationContext, wheel_order)) {
+	if (!configure_vehicle4w(impl->vehicle, config, *physics, *scene, impl->simulationContext, wheel_order)) {
 		return false;
 	}
 

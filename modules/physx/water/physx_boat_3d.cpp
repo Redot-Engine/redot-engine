@@ -126,8 +126,8 @@ void PhysXBoat3D::_physics_step() {
 	const float prop_depth = buoyancy->get_water_height(prop_world) - prop_world.y;
 	const float prop_in_water = CLAMP(prop_depth / 0.1f, 0.0f, 1.0f);
 	if (prop_in_water > 0.0f) {
-		const float t = throttle >= 0.0f ? throttle : throttle * reverse_thrust_ratio;
-		applied_thrust = t * max_thrust * prop_in_water;
+		const float effective_throttle = throttle >= 0.0f ? throttle : throttle * reverse_thrust_ratio;
+		applied_thrust = effective_throttle * max_thrust * prop_in_water;
 		body->apply_force(leg_dir * applied_thrust, prop_offset);
 
 		// The leg is a plate in the water: the flow across it (the boat

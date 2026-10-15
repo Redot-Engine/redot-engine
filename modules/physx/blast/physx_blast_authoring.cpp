@@ -184,24 +184,24 @@ public:
 // pixel, not the 1-byte/pixel the public header claims) so this reads the
 // pattern exactly the way the SDK itself will.
 bool cutout_pattern_has_floating_wall_island(const PackedByteArray &p_gray, uint32_t p_w, uint32_t p_h) {
-	const int64_t n = (int64_t)p_w * (int64_t)p_h;
-	if (n == 0) {
+	const int64_t grid_vertex_count = (int64_t)p_w * (int64_t)p_h;
+	if (grid_vertex_count == 0) {
 		return false;
 	}
 
 	LocalVector<bool> is_wall;
-	is_wall.resize((uint32_t)n);
+	is_wall.resize((uint32_t)grid_vertex_count);
 	{
 		const uint8_t *g = p_gray.ptr();
-		for (int64_t i = 0; i < n; i++) {
+		for (int64_t i = 0; i < grid_vertex_count; i++) {
 			const uint32_t pix = 16777216u * (uint32_t)g[i]; // (5033165+9898557+1845494) * gray, R=G=B
 			is_wall[(uint32_t)i] = (pix >> 28) != 0;
 		}
 	}
 
 	LocalVector<int32_t> visited; // -1 = unvisited wall pixel, else already assigned to a checked component
-	visited.resize((uint32_t)n);
-	for (uint32_t i = 0; i < (uint32_t)n; i++) {
+	visited.resize((uint32_t)grid_vertex_count);
+	for (uint32_t i = 0; i < (uint32_t)grid_vertex_count; i++) {
 		visited[i] = -1;
 	}
 
@@ -296,8 +296,8 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 		// A flat placeholder if the mesh has none -- Blast's Voronoi split
 		// doesn't need correct normals, and nothing downstream ever reads
 		// them back (see GodotConvexMeshBuilder's own comment).
-		const Vector3 n = (i < src_normals.size()) ? src_normals[i] : Vector3(0, 1, 0);
-		normals[i] = { n.x, n.y, n.z };
+		const Vector3 vertex_normal = (i < src_normals.size()) ? src_normals[i] : Vector3(0, 1, 0);
+		normals[i] = { vertex_normal.x, vertex_normal.y, vertex_normal.z };
 		uvs[i] = { 0.0f, 0.0f };
 	}
 
@@ -404,8 +404,8 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 				{
 					uint8_t *dst = pixels.ptrw();
 					const uint8_t *src = gray.ptr();
-					const int64_t n = (int64_t)pw * ph;
-					for (int64_t i = 0; i < n; i++) {
+					const int64_t expanded_vertex_count = (int64_t)pw * ph;
+					for (int64_t i = 0; i < expanded_vertex_count; i++) {
 						dst[i * 3 + 0] = src[i];
 						dst[i * 3 + 1] = src[i];
 						dst[i * 3 + 2] = src[i];

@@ -104,50 +104,50 @@ void WaterWakeSolverGPU::rt_free(Ref<WaterWakeSolverGPU> p_self) {
 	}
 }
 
-void WaterWakeSolverGPU::rt_build(Ref<WaterWakeSolverGPU> p_self, int p_n) {
+void WaterWakeSolverGPU::rt_build(Ref<WaterWakeSolverGPU> p_self, int p_grid_size) {
 	if (rd == nullptr || shader.is_null()) {
 		return;
 	}
 	rt_free_buffers();
-	n = p_n;
+	grid_size = p_grid_size;
 	buf_params = rd->uniform_buffer_create(PARAMS_BYTES);
-	buf_state_a = storage(rd, n * n * 16);
-	buf_state_b = storage(rd, n * n * 16);
+	buf_state_a = storage(rd, grid_size * grid_size * 16);
+	buf_state_b = storage(rd, grid_size * grid_size * 16);
 	buf_sources = storage(rd, MAX_SOURCES * 32);
 
 	RD::TextureFormat tf;
 	tf.format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
-	tf.width = n;
-	tf.height = n;
+	tf.width = grid_size;
+	tf.height = grid_size;
 	tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT;
 	Vector<uint8_t> zeros;
-	zeros.resize(n * n * 8); // rgba16f
+	zeros.resize(grid_size * grid_size * 8); // rgba16f
 	memset(zeros.ptrw(), 0, zeros.size());
 	Vector<Vector<uint8_t>> data;
 	data.push_back(zeros);
 	tex_height = rd->texture_create(tf, RD::TextureView(), data);
 
 	auto make_set = [&](RID p_in, RID p_out) {
-		Vector<RD::Uniform> u;
-		RD::Uniform p;
-		p.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
-		p.binding = 0;
-		p.append_id(buf_params);
-		u.push_back(p);
+		Vector<RD::Uniform> uniforms;
+		RD::Uniform params_uniform;
+		params_uniform.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+		params_uniform.binding = 0;
+		params_uniform.append_id(buf_params);
+		uniforms.push_back(params_uniform);
 		const RID bufs[3] = { p_in, p_out, buf_sources };
 		for (int i = 0; i < 3; i++) {
-			RD::Uniform s;
-			s.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
-			s.binding = i + 1;
-			s.append_id(bufs[i]);
-			u.push_back(s);
+			RD::Uniform buffer_uniform;
+			buffer_uniform.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			buffer_uniform.binding = i + 1;
+			buffer_uniform.append_id(bufs[i]);
+			uniforms.push_back(buffer_uniform);
 		}
 		RD::Uniform img;
 		img.uniform_type = RD::UNIFORM_TYPE_IMAGE;
 		img.binding = 4;
 		img.append_id(tex_height);
-		u.push_back(img);
-		return rd->uniform_set_create(u, shader, 0);
+		uniforms.push_back(img);
+		return rd->uniform_set_create(uniforms, shader, 0);
 	};
 	uset_atob = make_set(buf_state_a, buf_state_b);
 	uset_btoa = make_set(buf_state_b, buf_state_a);
@@ -171,13 +171,13 @@ void WaterWakeSolverGPU::rt_step(Ref<WaterWakeSolverGPU> p_self, PackedByteArray
 	RD::ComputeListID cl = rd->compute_list_begin();
 	rd->compute_list_bind_compute_pipeline(cl, pipeline);
 	rd->compute_list_bind_uniform_set(cl, set, 0);
-	const uint32_t groups = (uint32_t)((n + 7) / 8);
+	const uint32_t groups = (uint32_t)((grid_size + 7) / 8);
 	rd->compute_list_dispatch(cl, groups, groups, 1);
 	rd->compute_list_end();
 	a_is_current = !a_is_current;
 	if (p_readback) {
 		const RID current = a_is_current ? buf_state_a : buf_state_b;
-		rd->buffer_get_data_async(current, callable_mp(this, &WaterWakeSolverGPU::rt_on_readback).bind(p_self, p_origin), 0, n * n * 16);
+		rd->buffer_get_data_async(current, callable_mp(this, &WaterWakeSolverGPU::rt_on_readback).bind(p_self, p_origin), 0, grid_size * grid_size * 16);
 	}
 	if (local) {
 		rd->submit();
@@ -250,10 +250,10 @@ void WaterWakeSolver::_dispatch(const Callable &p_call) const {
 }
 
 void WaterWakeSolver::build(int p_cells, float p_size) {
-	n = MAX(p_cells, 16);
+	grid_size = MAX(p_cells, 16);
 	size = MAX(p_size, 1.0f);
 	have_origin = false;
-	_dispatch(callable_mp(gpu.ptr(), &WaterWakeSolverGPU::rt_build).bind(gpu, n));
+	_dispatch(callable_mp(gpu.ptr(), &WaterWakeSolverGPU::rt_build).bind(gpu, grid_size));
 	if (gpu.is_valid() && !gpu->local) {
 		// The texture RID must exist before the caller wraps it.
 		RenderingServer::get_singleton()->sync();
@@ -266,12 +266,12 @@ void WaterWakeSolver::step(double p_delta, const Vector2 &p_center, const Vector
 	}
 	const float dx = get_cell_size();
 	const float dt = (float)CLAMP(p_delta, 1.0 / 240.0, 1.0 / 20.0);
-	const Vector2i new_origin((int)Math::floor(p_center.x / dx) - n / 2, (int)Math::floor(p_center.y / dx) - n / 2);
+	const Vector2i new_origin((int)Math::floor(p_center.x / dx) - grid_size / 2, (int)Math::floor(p_center.y / dx) - grid_size / 2);
 	Vector2i shift;
 	if (have_origin) {
 		shift = new_origin - origin_cell;
-		if (Math::abs(shift.x) >= n || Math::abs(shift.y) >= n) {
-			shift = Vector2i(n, n); // teleported: start from still water
+		if (Math::abs(shift.x) >= grid_size || Math::abs(shift.y) >= grid_size) {
+			shift = Vector2i(grid_size, grid_size); // teleported: start from still water
 		}
 	}
 	origin_cell = new_origin;
@@ -282,10 +282,10 @@ void WaterWakeSolver::step(double p_delta, const Vector2 &p_center, const Vector
 	uint8_t *w = params.ptrw();
 	// Redot: Vector::size() is this fork's wider Size type -- narrow it
 	// explicitly (upstream godot_physx relies on size() returning int).
-	const int32_t grid[4] = { n, (int32_t)MIN(p_sources.size(), (int64_t)WaterWakeSolverGPU::MAX_SOURCES), shift.x, shift.y };
+	const int32_t grid[4] = { grid_size, (int32_t)MIN(p_sources.size(), (int64_t)WaterWakeSolverGPU::MAX_SOURCES), shift.x, shift.y };
 	// The explicit scheme is stable up to 0.5; wave speed is capped to keep it there.
-	const float k = MIN(p_wave_speed * p_wave_speed * dt * dt / (dx * dx), 0.45f);
-	const float wave[4] = { k, p_damping * dt, p_border_damping * dt, p_border_width };
+	const float stability_factor = MIN(p_wave_speed * p_wave_speed * dt * dt / (dx * dx), 0.45f);
+	const float wave[4] = { stability_factor, p_damping * dt, p_border_damping * dt, p_border_width };
 	const Vector2 origin = get_origin();
 	const float cell[4] = { dx, CLAMP(6.0f * dt, 0.0f, 1.0f), origin.x, origin.y };
 	memcpy(w, grid, 16);
@@ -324,22 +324,22 @@ float WaterWakeSolver::sample_height(const Vector2 &p_world_xz) const {
 	}
 	MutexLock lock(gpu->cache_mtx);
 	const Vector<float> &h = gpu->height_cache;
-	if (h.size() != n * n) {
+	if (h.size() != grid_size * grid_size) {
 		return 0.0f;
 	}
 	const float dx = get_cell_size();
 	const float gx = (p_world_xz.x - gpu->cache_origin.x) / dx - 0.5f;
 	const float gz = (p_world_xz.y - gpu->cache_origin.y) / dx - 0.5f;
-	if (gx < 0.0f || gz < 0.0f || gx > n - 1 || gz > n - 1) {
+	if (gx < 0.0f || gz < 0.0f || gx > grid_size - 1 || gz > grid_size - 1) {
 		return 0.0f;
 	}
-	const int x0 = MIN((int)gx, n - 2);
-	const int z0 = MIN((int)gz, n - 2);
+	const int x0 = MIN((int)gx, grid_size - 2);
+	const int z0 = MIN((int)gz, grid_size - 2);
 	const float fx = gx - x0;
 	const float fz = gz - z0;
-	const float a = Math::lerp(h[z0 * n + x0], h[z0 * n + x0 + 1], fx);
-	const float b = Math::lerp(h[(z0 + 1) * n + x0], h[(z0 + 1) * n + x0 + 1], fx);
+	const float top_row = Math::lerp(h[z0 * grid_size + x0], h[z0 * grid_size + x0 + 1], fx);
+	const float bottom_row = Math::lerp(h[(z0 + 1) * grid_size + x0], h[(z0 + 1) * grid_size + x0 + 1], fx);
 	// Same edge fade the water shader applies.
-	const float u = MIN(MIN(gx, gz), MIN((float)(n - 1) - gx, (float)(n - 1) - gz)) / n;
-	return Math::lerp(a, b, fz) * Math::smoothstep(0.0f, 0.1f, u);
+	const float edge_fade = MIN(MIN(gx, gz), MIN((float)(grid_size - 1) - gx, (float)(grid_size - 1) - gz)) / grid_size;
+	return Math::lerp(top_row, bottom_row, fz) * Math::smoothstep(0.0f, 0.1f, edge_fade);
 }

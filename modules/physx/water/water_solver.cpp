@@ -68,11 +68,11 @@ uint32_t groups_for(int p_count) {
 }
 
 int log2i(int p_v) {
-	int r = 0;
-	while ((1 << r) < p_v) {
-		r++;
+	int log2_result = 0;
+	while ((1 << log2_result) < p_v) {
+		log2_result++;
 	}
-	return r;
+	return log2_result;
 }
 } // namespace
 
@@ -186,10 +186,10 @@ void WaterSolverGPU::_rt_free_buffers() {
 		&uset_fft_spec_to_a, &uset_fft_atob, &uset_fft_btoa, &uset_fft_dz_to_c, &uset_fft_ctod, &uset_fft_dtoc,
 		&uset_fft_c_to_e, &uset_fft_etof, &uset_fft_ftoe, &uset_fft_d_to_g, &uset_fft_gtoh, &uset_fft_htog,
 		&uset_blit_ripple, &uset_blit_ocean, &uset_caustics, &uset_foam, &uset_shore_foam, &uset_shore_foam_copy, &uset_swash, &uset_swash_copy };
-	for (RID *u : usets) {
-		if (u->is_valid()) {
-			rd->free(*u);
-			*u = RID();
+	for (RID *uniform : usets) {
+		if (uniform->is_valid()) {
+			rd->free(*uniform);
+			*uniform = RID();
 		}
 	}
 	RID *framebuffers[] = { &caustics_framebuffer };
@@ -233,8 +233,8 @@ void WaterSolverGPU::_rt_free_buffers() {
 }
 
 void WaterSolverGPU::_rt_build_buffers() {
-	const int n = grid_resolution;
-	const int cells = n * n;
+	const int grid_size = grid_resolution;
+	const int cells = grid_size * grid_size;
 	const int on = ocean_grid_resolution;
 	const int ocells = on * on;
 	ocean_log2n = log2i(on);
@@ -272,15 +272,15 @@ void WaterSolverGPU::_rt_build_buffers() {
 		shore_bytes.resize(cells * sizeof(uint16_t));
 		uint16_t *sw = (uint16_t *)shore_bytes.ptrw();
 		for (int i = 0; i < cells; i++) {
-			const float d = has_cell_depth ? _init_cell_depth[i] : _init_depth;
-			dw[i] = Math::make_half_float(d);
-			fw[i] = (uint8_t)Math::round(WaterSolver::shallow_fade(d, shallow_fade_depth) * 255.0f);
-			sw[i] = Math::make_half_float(d <= WaterSolver::WALL_DEPTH * 0.5f ? 100.0f : d);
+			const float column_depth = has_cell_depth ? _init_cell_depth[i] : _init_depth;
+			dw[i] = Math::make_half_float(column_depth);
+			fw[i] = (uint8_t)Math::round(WaterSolver::shallow_fade(column_depth, shallow_fade_depth) * 255.0f);
+			sw[i] = Math::make_half_float(column_depth <= WaterSolver::WALL_DEPTH * 0.5f ? 100.0f : column_depth);
 		}
 		RD::TextureFormat depth_tf;
 		depth_tf.format = RD::DATA_FORMAT_R16_SFLOAT;
-		depth_tf.width = n;
-		depth_tf.height = n;
+		depth_tf.width = grid_size;
+		depth_tf.height = grid_size;
 		depth_tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT;
 		Vector<Vector<uint8_t>> depth_data;
 		depth_data.push_back(depth_bytes);
@@ -301,11 +301,11 @@ void WaterSolverGPU::_rt_build_buffers() {
 		const RID by_binding[6] = { buf_params, p_state_in, p_state_out, buf_height, buf_spheres, buf_impulses };
 		Vector<RD::Uniform> uniforms;
 		for (int bnd = 0; bnd < 6; bnd++) {
-			RD::Uniform u;
-			u.uniform_type = (bnd == 0) ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_STORAGE_BUFFER;
-			u.binding = bnd;
-			u.append_id(by_binding[bnd]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = (bnd == 0) ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			uniform.binding = bnd;
+			uniform.append_id(by_binding[bnd]);
+			uniforms.push_back(uniform);
 		}
 		RD::Uniform depth_uniform;
 		depth_uniform.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
@@ -340,11 +340,11 @@ void WaterSolverGPU::_rt_build_buffers() {
 		Vector<RD::Uniform> uniforms;
 		const RID by_binding[2] = { buf_ocean_init_params, buf_h0 };
 		for (int bnd = 0; bnd < 2; bnd++) {
-			RD::Uniform u;
-			u.uniform_type = (bnd == 0) ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_STORAGE_BUFFER;
-			u.binding = bnd;
-			u.append_id(by_binding[bnd]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = (bnd == 0) ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			uniform.binding = bnd;
+			uniform.append_id(by_binding[bnd]);
+			uniforms.push_back(uniform);
 		}
 		uset_spectrum_init = rd->uniform_set_create(uniforms, shader_spectrum_init, 0);
 	}
@@ -352,11 +352,11 @@ void WaterSolverGPU::_rt_build_buffers() {
 		Vector<RD::Uniform> uniforms;
 		const RID by_binding[3] = { p_params, p_in, p_out };
 		for (int bnd = 0; bnd < 3; bnd++) {
-			RD::Uniform u;
-			u.uniform_type = (bnd == 0) ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_STORAGE_BUFFER;
-			u.binding = bnd;
-			u.append_id(by_binding[bnd]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = (bnd == 0) ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			uniform.binding = bnd;
+			uniform.append_id(by_binding[bnd]);
+			uniforms.push_back(uniform);
 		}
 		return rd->uniform_set_create(uniforms, p_shader, 0);
 	};
@@ -364,11 +364,11 @@ void WaterSolverGPU::_rt_build_buffers() {
 		Vector<RD::Uniform> uniforms;
 		const RID by_binding[6] = { buf_ocean_evolve_params, buf_h0, buf_ocean_spec, buf_ocean_spec_dz, buf_ocean_spec_c, buf_ocean_spec_d };
 		for (int bnd = 0; bnd < 6; bnd++) {
-			RD::Uniform u;
-			u.uniform_type = (bnd == 0) ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_STORAGE_BUFFER;
-			u.binding = bnd;
-			u.append_id(by_binding[bnd]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = (bnd == 0) ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			uniform.binding = bnd;
+			uniform.append_id(by_binding[bnd]);
+			uniforms.push_back(uniform);
 		}
 		uset_spectrum_evolve = rd->uniform_set_create(uniforms, shader_spectrum_evolve, 0);
 	}
@@ -389,8 +389,8 @@ void WaterSolverGPU::_rt_build_buffers() {
 	// renderer via a caller-side Texture2DRD -- see the header for why.
 	RD::TextureFormat ripple_tf;
 	ripple_tf.format = RD::DATA_FORMAT_R32_SFLOAT;
-	ripple_tf.width = n;
-	ripple_tf.height = n;
+	ripple_tf.width = grid_size;
+	ripple_tf.height = grid_size;
 	ripple_tf.usage_bits = RD::TEXTURE_USAGE_STORAGE_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT;
 	tex_ripple_height = rd->texture_create(ripple_tf, RD::TextureView());
 
@@ -416,18 +416,18 @@ void WaterSolverGPU::_rt_build_buffers() {
 	buf_blit_ripple_params = rd->uniform_buffer_create(BLIT_PARAMS_BYTES);
 	buf_blit_ocean_params = rd->uniform_buffer_create(BLIT_PARAMS_BYTES);
 	{
-		int32_t v[4] = { n, 0, 0, 0 };
-		PackedByteArray b;
-		b.resize(BLIT_PARAMS_BYTES);
-		memcpy(b.ptrw(), v, sizeof(v));
-		rd->buffer_update(buf_blit_ripple_params, 0, BLIT_PARAMS_BYTES, b.ptr());
+		int32_t v[4] = { grid_size, 0, 0, 0 };
+		PackedByteArray params_bytes;
+		params_bytes.resize(BLIT_PARAMS_BYTES);
+		memcpy(params_bytes.ptrw(), v, sizeof(v));
+		rd->buffer_update(buf_blit_ripple_params, 0, BLIT_PARAMS_BYTES, params_bytes.ptr());
 	}
 	{
 		int32_t v[4] = { on, 0, 0, 0 };
-		PackedByteArray b;
-		b.resize(BLIT_PARAMS_BYTES);
-		memcpy(b.ptrw(), v, sizeof(v));
-		rd->buffer_update(buf_blit_ocean_params, 0, BLIT_PARAMS_BYTES, b.ptr());
+		PackedByteArray params_bytes;
+		params_bytes.resize(BLIT_PARAMS_BYTES);
+		memcpy(params_bytes.ptrw(), v, sizeof(v));
+		rd->buffer_update(buf_blit_ocean_params, 0, BLIT_PARAMS_BYTES, params_bytes.ptr());
 	}
 	auto make_blit_uset = [&](RID p_shader, RID p_params, RID p_in_buf, RID p_out_tex) {
 		Vector<RD::Uniform> uniforms;
@@ -456,11 +456,11 @@ void WaterSolverGPU::_rt_build_buffers() {
 			RD::UNIFORM_TYPE_STORAGE_BUFFER, RD::UNIFORM_TYPE_IMAGE, RD::UNIFORM_TYPE_STORAGE_BUFFER, RD::UNIFORM_TYPE_STORAGE_BUFFER,
 			RD::UNIFORM_TYPE_IMAGE };
 		for (int bnd = 0; bnd < 8; bnd++) {
-			RD::Uniform u;
-			u.uniform_type = types[bnd];
-			u.binding = bnd;
-			u.append_id(ids[bnd]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = types[bnd];
+			uniform.binding = bnd;
+			uniform.append_id(ids[bnd]);
+			uniforms.push_back(uniform);
 		}
 		uset_blit_ocean = rd->uniform_set_create(uniforms, shader_blit_ocean, 0);
 	}
@@ -469,11 +469,11 @@ void WaterSolverGPU::_rt_build_buffers() {
 		Vector<RD::Uniform> uniforms;
 		const RID ids[4] = { buf_foam_params, tex_ocean_deriv, tex_ocean_disp, tex_ocean_foam };
 		for (int bnd = 0; bnd < 4; bnd++) {
-			RD::Uniform u;
-			u.uniform_type = bnd == 0 ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_IMAGE;
-			u.binding = bnd;
-			u.append_id(ids[bnd]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = bnd == 0 ? RD::UNIFORM_TYPE_UNIFORM_BUFFER : RD::UNIFORM_TYPE_IMAGE;
+			uniform.binding = bnd;
+			uniform.append_id(ids[bnd]);
+			uniforms.push_back(uniform);
 		}
 		uset_foam = rd->uniform_set_create(uniforms, shader_foam, 0);
 	}
@@ -501,8 +501,8 @@ void WaterSolverGPU::_rt_build_buffers() {
 	buf_shore_foam_params = rd->uniform_buffer_create(SHORE_FOAM_PARAMS_BYTES);
 	buf_shore_foam_copy_params = rd->uniform_buffer_create(SHORE_FOAM_PARAMS_BYTES);
 	{
-		// Copy-mode params never change: just n and the copy flag.
-		int32_t copy_res[4] = { n, 1, 1, 0 };
+		// Copy-mode params never change: just grid_size and the copy flag.
+		int32_t copy_res[4] = { grid_size, 1, 1, 0 };
 		Vector<uint8_t> cb;
 		cb.resize(SHORE_FOAM_PARAMS_BYTES);
 		memset(cb.ptrw(), 0, cb.size());
@@ -520,20 +520,20 @@ void WaterSolverGPU::_rt_build_buffers() {
 		uniforms.push_back(u0);
 		const RID sampled[3] = { tex_cell_depth, tex_ripple_height, tex_ocean_height };
 		for (int i = 0; i < 3; i++) {
-			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
-			u.binding = i + 1;
-			u.append_id(sampler_linear);
-			u.append_id(sampled[i]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+			uniform.binding = i + 1;
+			uniform.append_id(sampler_linear);
+			uniform.append_id(sampled[i]);
+			uniforms.push_back(uniform);
 		}
 		const RID images[2] = { p_src, p_dst };
 		for (int i = 0; i < 2; i++) {
-			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
-			u.binding = 4 + i;
-			u.append_id(images[i]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+			uniform.binding = 4 + i;
+			uniform.append_id(images[i]);
+			uniforms.push_back(uniform);
 		}
 		RD::Uniform us;
 		us.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
@@ -549,7 +549,7 @@ void WaterSolverGPU::_rt_build_buffers() {
 	buf_swash_params = rd->uniform_buffer_create(SWASH_PARAMS_BYTES);
 	buf_swash_copy_params = rd->uniform_buffer_create(SWASH_PARAMS_BYTES);
 	{
-		int32_t copy_res[4] = { n, 1, 0, 0 };
+		int32_t copy_res[4] = { grid_size, 1, 0, 0 };
 		Vector<uint8_t> cb;
 		cb.resize(SWASH_PARAMS_BYTES);
 		memset(cb.ptrw(), 0, cb.size());
@@ -565,20 +565,20 @@ void WaterSolverGPU::_rt_build_buffers() {
 		uniforms.push_back(u0);
 		const RID sampled[3] = { tex_cell_depth, tex_ripple_height, tex_ocean_height };
 		for (int i = 0; i < 3; i++) {
-			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
-			u.binding = i + 1;
-			u.append_id(sampler_linear);
-			u.append_id(sampled[i]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+			uniform.binding = i + 1;
+			uniform.append_id(sampler_linear);
+			uniform.append_id(sampled[i]);
+			uniforms.push_back(uniform);
 		}
 		const RID images[2] = { p_src, p_dst };
 		for (int i = 0; i < 2; i++) {
-			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
-			u.binding = 4 + i;
-			u.append_id(images[i]);
-			uniforms.push_back(u);
+			RD::Uniform uniform;
+			uniform.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+			uniform.binding = 4 + i;
+			uniform.append_id(images[i]);
+			uniforms.push_back(uniform);
 		}
 		return rd->uniform_set_create(uniforms, shader_swash, 0);
 	};
@@ -633,35 +633,35 @@ void WaterSolverGPU::_rt_build_buffers() {
 }
 
 void WaterSolverGPU::_rt_build_caustics_grid() {
-	const int n = MAX(ocean_grid_resolution * 4, CAUSTICS_GRID_MIN_RESOLUTION);
-	const int vertex_count = n * n;
+	const int caustics_grid_size = MAX(ocean_grid_resolution * 4, CAUSTICS_GRID_MIN_RESOLUTION);
+	const int vertex_count = caustics_grid_size * caustics_grid_size;
 	Vector<float> vertices;
 	vertices.resize(vertex_count * 2);
-	for (int z = 0; z < n; z++) {
-		for (int x = 0; x < n; x++) {
-			const int i = (z * n + x) * 2;
-			vertices.write[i] = ((float)x / (n - 1) - 0.5f) * ocean_domain_size.x * CAUSTICS_TILE_MARGIN;
-			vertices.write[i + 1] = ((float)z / (n - 1) - 0.5f) * ocean_domain_size.y * CAUSTICS_TILE_MARGIN;
+	for (int z = 0; z < caustics_grid_size; z++) {
+		for (int x = 0; x < caustics_grid_size; x++) {
+			const int i = (z * caustics_grid_size + x) * 2;
+			vertices.write[i] = ((float)x / (caustics_grid_size - 1) - 0.5f) * ocean_domain_size.x * CAUSTICS_TILE_MARGIN;
+			vertices.write[i + 1] = ((float)z / (caustics_grid_size - 1) - 0.5f) * ocean_domain_size.y * CAUSTICS_TILE_MARGIN;
 		}
 	}
 	caustics_vertex_buffer = rd->vertex_buffer_create(vertices.size() * sizeof(float), vertices.span().reinterpret<uint8_t>());
 
-	caustics_index_count = (n - 1) * (n - 1) * 6;
+	caustics_index_count = (caustics_grid_size - 1) * (caustics_grid_size - 1) * 6;
 	Vector<uint32_t> indices;
 	indices.resize(caustics_index_count);
 	int index = 0;
-	for (int z = 0; z < n - 1; z++) {
-		for (int x = 0; x < n - 1; x++) {
-			const uint32_t a = z * n + x;
-			const uint32_t b = a + 1;
-			const uint32_t c = a + n;
-			const uint32_t d = c + 1;
-			indices.write[index++] = a;
-			indices.write[index++] = c;
-			indices.write[index++] = b;
-			indices.write[index++] = b;
-			indices.write[index++] = c;
-			indices.write[index++] = d;
+	for (int z = 0; z < caustics_grid_size - 1; z++) {
+		for (int x = 0; x < caustics_grid_size - 1; x++) {
+			const uint32_t idx_top_left = z * caustics_grid_size + x;
+			const uint32_t idx_top_right = idx_top_left + 1;
+			const uint32_t idx_bottom_left = idx_top_left + caustics_grid_size;
+			const uint32_t idx_bottom_right = idx_bottom_left + 1;
+			indices.write[index++] = idx_top_left;
+			indices.write[index++] = idx_bottom_left;
+			indices.write[index++] = idx_top_right;
+			indices.write[index++] = idx_top_right;
+			indices.write[index++] = idx_bottom_left;
+			indices.write[index++] = idx_bottom_right;
 		}
 	}
 	caustics_index_buffer = rd->index_buffer_create(caustics_index_count, RD::INDEX_BUFFER_FORMAT_UINT32, indices.span().reinterpret<uint8_t>());
@@ -740,14 +740,14 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 	if (rd == nullptr || !shaders_ok || buf_params.is_null()) {
 		return;
 	}
-	const int n = grid_resolution;
+	const int grid_size = grid_resolution;
 	const int on = ocean_grid_resolution;
 
 	// Ripple layer params + body data.
 	{
-		Vector<uint8_t> b;
-		b.resize(PARAMS_BYTES);
-		uint8_t *w = b.ptrw();
+		Vector<uint8_t> params_payload;
+		params_payload.resize(PARAMS_BYTES);
+		uint8_t *w = params_payload.ptrw();
 		auto put_f = [&](int off, float v) { memcpy(w + off, &v, sizeof(float)); };
 		auto put_i = [&](int off, int32_t v) { memcpy(w + off, &v, sizeof(int32_t)); };
 		put_f(0, domain_size.x * 0.5f);
@@ -756,9 +756,9 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 		put_f(12, (float)p_delta);
 		put_f(16, p_damping);
 		put_f(20, p_gravity);
-		put_f(24, domain_size.x / (float)n);
+		put_f(24, domain_size.x / (float)grid_size);
 		put_f(28, p_water_level);
-		put_i(32, n);
+		put_i(32, grid_size);
 		put_i(36, p_spheres.size() / 4);
 		put_i(40, p_impulses.size() / 4);
 		put_i(44, 0);
@@ -766,14 +766,14 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 		put_f(52, 0.0f);
 		put_f(56, 0.0f);
 		put_f(60, 0.0f);
-		rd->buffer_update(buf_params, 0, PARAMS_BYTES, b.ptr());
+		rd->buffer_update(buf_params, 0, PARAMS_BYTES, params_payload.ptr());
 	}
 	{
-		Vector<uint8_t> sb;
-		sb.resize(MAX_SPHERES * 4 * sizeof(float));
-		memset(sb.ptrw(), 0, sb.size());
-		memcpy(sb.ptrw(), p_spheres.ptr(), MIN((size_t)p_spheres.size() * sizeof(float), (size_t)sb.size()));
-		rd->buffer_update(buf_spheres, 0, sb.size(), sb.ptr());
+		Vector<uint8_t> spheres_payload;
+		spheres_payload.resize(MAX_SPHERES * 4 * sizeof(float));
+		memset(spheres_payload.ptrw(), 0, spheres_payload.size());
+		memcpy(spheres_payload.ptrw(), p_spheres.ptr(), MIN((size_t)p_spheres.size() * sizeof(float), (size_t)spheres_payload.size()));
+		rd->buffer_update(buf_spheres, 0, spheres_payload.size(), spheres_payload.ptr());
 	}
 	{
 		Vector<uint8_t> ib;
@@ -786,7 +786,7 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 		RD::ComputeListID cl = rd->compute_list_begin();
 		rd->compute_list_bind_compute_pipeline(cl, pipeline_ripple);
 		rd->compute_list_bind_uniform_set(cl, a_is_current ? uset_atob : uset_btoa, 0);
-		rd->compute_list_dispatch(cl, groups_for(n), groups_for(n), 1);
+		rd->compute_list_dispatch(cl, groups_for(grid_size), groups_for(grid_size), 1);
 		rd->compute_list_end();
 	}
 	a_is_current = !a_is_current;
@@ -862,7 +862,7 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 		RD::ComputeListID cl = rd->compute_list_begin();
 		rd->compute_list_bind_compute_pipeline(cl, pipeline_blit_ripple);
 		rd->compute_list_bind_uniform_set(cl, uset_blit_ripple, 0);
-		rd->compute_list_dispatch(cl, groups_for(n), groups_for(n), 1);
+		rd->compute_list_dispatch(cl, groups_for(grid_size), groups_for(grid_size), 1);
 		rd->compute_list_end();
 	}
 	{
@@ -893,21 +893,21 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 		float sp[12] = {
 			Math::exp(-(float)p_delta / MAX(foam_persistence * 1.5f, 0.01f)), shore_foam_band, 0.2f, p_water_level,
 			domain_size.x, domain_size.y, ocean_domain_size.x, ocean_domain_size.y,
-			(float)p_delta, domain_size.x / (float)n, shore_undertow, p_gravity
+			(float)p_delta, domain_size.x / (float)grid_size, shore_undertow, p_gravity
 		};
-		int32_t sr[4] = { n, (foam_enabled && shore_foam_band > 0.0f) ? 1 : 0, 0, 0 };
-		Vector<uint8_t> sb;
-		sb.resize(SHORE_FOAM_PARAMS_BYTES);
-		memcpy(sb.ptrw(), sp, sizeof(sp));
-		memcpy(sb.ptrw() + sizeof(sp), sr, sizeof(sr));
-		rd->buffer_update(buf_shore_foam_params, 0, SHORE_FOAM_PARAMS_BYTES, sb.ptr());
+		int32_t sr[4] = { grid_size, (foam_enabled && shore_foam_band > 0.0f) ? 1 : 0, 0, 0 };
+		Vector<uint8_t> spheres_payload;
+		spheres_payload.resize(SHORE_FOAM_PARAMS_BYTES);
+		memcpy(spheres_payload.ptrw(), sp, sizeof(sp));
+		memcpy(spheres_payload.ptrw() + sizeof(sp), sr, sizeof(sr));
+		rd->buffer_update(buf_shore_foam_params, 0, SHORE_FOAM_PARAMS_BYTES, spheres_payload.ptr());
 		RD::ComputeListID cl = rd->compute_list_begin();
 		rd->compute_list_bind_compute_pipeline(cl, pipeline_shore_foam);
 		rd->compute_list_bind_uniform_set(cl, uset_shore_foam, 0);
-		rd->compute_list_dispatch(cl, groups_for(n), groups_for(n), 1);
+		rd->compute_list_dispatch(cl, groups_for(grid_size), groups_for(grid_size), 1);
 		rd->compute_list_add_barrier(cl);
 		rd->compute_list_bind_uniform_set(cl, uset_shore_foam_copy, 0);
-		rd->compute_list_dispatch(cl, groups_for(n), groups_for(n), 1);
+		rd->compute_list_dispatch(cl, groups_for(grid_size), groups_for(grid_size), 1);
 		rd->compute_list_end();
 	}
 	// Swash run-up and wet sand, on the ripple grid.
@@ -918,7 +918,7 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 			domain_size.x, domain_size.y, ocean_domain_size.x, ocean_domain_size.y,
 			p_water_level, (float)Math::fmod(ocean_time_accum, 10000.0), 0.25f, 1.0f - Math::exp(-dt / 6.0f)
 		};
-		int32_t wr[4] = { n, 0, 0, 0 };
+		int32_t wr[4] = { grid_size, 0, 0, 0 };
 		Vector<uint8_t> wb;
 		wb.resize(SWASH_PARAMS_BYTES);
 		memcpy(wb.ptrw(), wp, sizeof(wp));
@@ -927,10 +927,10 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 		RD::ComputeListID cl = rd->compute_list_begin();
 		rd->compute_list_bind_compute_pipeline(cl, pipeline_swash);
 		rd->compute_list_bind_uniform_set(cl, uset_swash, 0);
-		rd->compute_list_dispatch(cl, groups_for(n), groups_for(n), 1);
+		rd->compute_list_dispatch(cl, groups_for(grid_size), groups_for(grid_size), 1);
 		rd->compute_list_add_barrier(cl);
 		rd->compute_list_bind_uniform_set(cl, uset_swash_copy, 0);
-		rd->compute_list_dispatch(cl, groups_for(n), groups_for(n), 1);
+		rd->compute_list_dispatch(cl, groups_for(grid_size), groups_for(grid_size), 1);
 		rd->compute_list_end();
 	}
 
@@ -938,10 +938,10 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 		rd->submit();
 		rd->sync();
 		MutexLock lock(cache_mtx);
-		Vector<uint8_t> rraw = rd->buffer_get_data(buf_height, 0, n * n * sizeof(float));
-		ripple_height_cache.resize(n * n);
+		Vector<uint8_t> rraw = rd->buffer_get_data(buf_height, 0, grid_size * grid_size * sizeof(float));
+		ripple_height_cache.resize(grid_size * grid_size);
 		if (rraw.size() > 0) {
-			memcpy(ripple_height_cache.ptrw(), rraw.ptr(), MIN((size_t)rraw.size(), (size_t)(n * n * sizeof(float))));
+			memcpy(ripple_height_cache.ptrw(), rraw.ptr(), MIN((size_t)rraw.size(), (size_t)(grid_size * grid_size * sizeof(float))));
 		}
 		Vector<uint8_t> oraw = rd->buffer_get_data(buf_fft_b, 0, on * on * 2 * sizeof(float));
 		ocean_height_cache.resize(on * on);
@@ -975,7 +975,7 @@ void WaterSolverGPU::rt_step(Ref<WaterSolverGPU> p_self, double p_delta, float p
 	// lands a few frames later on the render thread and refreshes the
 	// caches; each callback binds a Ref to us so we survive the wait, same
 	// convention as every other async readback in this module.
-	rd->buffer_get_data_async(buf_height, callable_mp(this, &WaterSolverGPU::rt_on_ripple_height).bind(p_self), 0, n * n * sizeof(float));
+	rd->buffer_get_data_async(buf_height, callable_mp(this, &WaterSolverGPU::rt_on_ripple_height).bind(p_self), 0, grid_size * grid_size * sizeof(float));
 	rd->buffer_get_data_async(buf_fft_b, callable_mp(this, &WaterSolverGPU::rt_on_ocean_height).bind(p_self), 0, on * on * 2 * sizeof(float));
 	rd->buffer_get_data_async(buf_fft_d, callable_mp(this, &WaterSolverGPU::rt_on_ocean_dz).bind(p_self), 0, on * on * 2 * sizeof(float));
 }
@@ -1044,10 +1044,10 @@ void WaterSolverGPU::rt_render_caustics(Ref<WaterSolverGPU> p_self, Vector3 p_su
 
 void WaterSolverGPU::rt_on_ripple_height(const PackedByteArray &p_data, Ref<WaterSolverGPU> p_self) {
 	MutexLock lock(cache_mtx);
-	const int n = grid_resolution;
-	ripple_height_cache.resize(n * n);
+	const int grid_size = grid_resolution;
+	ripple_height_cache.resize(grid_size * grid_size);
 	if (p_data.size() > 0) {
-		memcpy(ripple_height_cache.ptrw(), p_data.ptr(), MIN((size_t)p_data.size(), (size_t)(n * n * sizeof(float))));
+		memcpy(ripple_height_cache.ptrw(), p_data.ptr(), MIN((size_t)p_data.size(), (size_t)(grid_size * grid_size * sizeof(float))));
 	}
 	height_ready.set();
 }
@@ -1400,8 +1400,8 @@ float WaterSolver::shallow_fade(float p_depth, float p_fade_depth) {
 		return 1.0f;
 	}
 	// smoothstep(0, fade_depth, depth) -- matches the caustics pass.
-	const float t = CLAMP(p_depth / MAX(p_fade_depth, 1e-3f), 0.0f, 1.0f);
-	return t * t * (3.0f - 2.0f * t);
+	const float fade_fraction = CLAMP(p_depth / MAX(p_fade_depth, 1e-3f), 0.0f, 1.0f);
+	return fade_fraction * fade_fraction * (3.0f - 2.0f * fade_fraction);
 }
 
 RID WaterSolver::get_caustics_texture_rd_rid() const {

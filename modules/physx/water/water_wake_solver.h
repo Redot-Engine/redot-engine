@@ -59,7 +59,7 @@ public:
 	RID tex_height;
 	RID uset_atob, uset_btoa;
 	bool a_is_current = true;
-	int n = 0;
+	int grid_size = 0;
 
 	// Last readback: heights (m) on the grid, and the grid origin (world xz
 	// of cell 0's corner) they were computed at.
@@ -68,7 +68,7 @@ public:
 	Vector2 cache_origin;
 
 	void rt_compile(Ref<WaterWakeSolverGPU> p_self);
-	void rt_build(Ref<WaterWakeSolverGPU> p_self, int p_n);
+	void rt_build(Ref<WaterWakeSolverGPU> p_self, int p_grid_size);
 	// p_params: packed as the shader's Params; p_sources: 8 floats per source.
 	void rt_step(Ref<WaterWakeSolverGPU> p_self, PackedByteArray p_params, PackedFloat32Array p_sources, Vector2 p_origin, bool p_readback);
 	void rt_on_readback(const PackedByteArray &p_data, Ref<WaterWakeSolverGPU> p_self, Vector2 p_origin);
@@ -82,7 +82,7 @@ class WaterWakeSolver {
 	Ref<WaterWakeSolverGPU> gpu;
 	void _dispatch(const Callable &p_call) const;
 
-	int n = 128;
+	int grid_size = 128;
 	float size = 32.0f;
 	bool have_origin = false;
 	Vector2i origin_cell; // grid origin in whole cells of the world
@@ -109,9 +109,9 @@ public:
 	// second (at the bow) into a band just outside p_hull_half_beam.
 	void step(double p_delta, const Vector2 &p_center, const Vector<Source> &p_sources, float p_wave_speed, float p_damping, float p_border_damping, float p_border_width, float p_foam_persistence, float p_foam_slope, float p_foam_slope_gain, const Vector2 &p_bow, const Vector2 &p_stern, float p_foam_spread, float p_foam_spread_falloff, float p_hull_half_beam, float p_hull_foam);
 
-	int get_cells() const { return n; }
+	int get_cells() const { return grid_size; }
 	float get_size() const { return size; }
-	float get_cell_size() const { return size / n; }
+	float get_cell_size() const { return size / grid_size; }
 	// World xz of the grid's corner (cell 0), as last stepped.
 	Vector2 get_origin() const { return Vector2(origin_cell) * get_cell_size(); }
 	RID get_height_texture_rd_rid() const;

@@ -140,27 +140,27 @@ bool PhysXMotorcycle3D::_build() {
 		return false;
 	}
 
-	Vehicle2WConfig cfg;
-	cfg.mass = mass;
-	cfg.moment_of_inertia = moment_of_inertia;
-	cfg.chassis_half_extents = box_shape->get_size() * 0.5;
-	cfg.chassis_box_center_local = chassis_shape_node->get_position();
-	cfg.chassis_com_local = center_of_mass_mode == CENTER_OF_MASS_MODE_CUSTOM ? center_of_mass : chassis_shape_node->get_position();
-	cfg.max_engine_torque = max_engine_torque;
-	cfg.max_brake_torque = max_brake_torque;
-	cfg.max_steer_angle = max_steer_angle;
-	cfg.collision_layer = collision_layer;
-	cfg.collision_mask = collision_mask;
+	Vehicle2WConfig config;
+	config.mass = mass;
+	config.moment_of_inertia = moment_of_inertia;
+	config.chassis_half_extents = box_shape->get_size() * 0.5;
+	config.chassis_box_center_local = chassis_shape_node->get_position();
+	config.chassis_com_local = center_of_mass_mode == CENTER_OF_MASS_MODE_CUSTOM ? center_of_mass : chassis_shape_node->get_position();
+	config.max_engine_torque = max_engine_torque;
+	config.max_brake_torque = max_brake_torque;
+	config.max_steer_angle = max_steer_angle;
+	config.collision_layer = collision_layer;
+	config.collision_mask = collision_mask;
 	{
 		real_t friction, bounce;
 		_chassis_material(friction, bounce);
-		cfg.chassis_friction = (float)friction;
-		cfg.chassis_bounce = (float)bounce;
+		config.chassis_friction = (float)friction;
+		config.chassis_bounce = (float)bounce;
 	}
 
 	PhysXVehicleWheel3D *front_wheel = wheels[front_idx];
 	PhysXVehicleWheel3D *rear_wheel = wheels[rear_idx];
-	Vehicle2WWheelConfig *wheel_cfgs[2] = { &cfg.front_wheel, &cfg.rear_wheel };
+	Vehicle2WWheelConfig *wheel_cfgs[2] = { &config.front_wheel, &config.rear_wheel };
 	PhysXVehicleWheel3D *wheel_nodes[2] = { front_wheel, rear_wheel };
 	for (int i = 0; i < 2; i++) {
 		Vehicle2WWheelConfig &wc = *wheel_cfgs[i];
@@ -183,7 +183,7 @@ bool PhysXMotorcycle3D::_build() {
 		wc.tire_slide_grip = w->get_tire_slide_grip();
 	}
 
-	if (!configure_vehicle2w(impl->vehicle, cfg, *physics, *scene, impl->simulationContext)) {
+	if (!configure_vehicle2w(impl->vehicle, config, *physics, *scene, impl->simulationContext)) {
 		return false;
 	}
 
@@ -201,8 +201,8 @@ bool PhysXMotorcycle3D::_build() {
 	// friction/bounce from this userData during the solve (the chassis
 	// PxMaterial authored in configure_vehicle2w is the GPU-path fallback).
 	impl->chassis_user_data = PhysXActorUserData();
-	impl->chassis_user_data.friction = cfg.chassis_friction;
-	impl->chassis_user_data.bounce = cfg.chassis_bounce;
+	impl->chassis_user_data.friction = config.chassis_friction;
+	impl->chassis_user_data.bounce = config.chassis_bounce;
 	v.physxActor.rigidBody->userData = &impl->chassis_user_data;
 
 	impl->scene = scene;

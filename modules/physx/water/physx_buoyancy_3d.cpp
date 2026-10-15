@@ -140,14 +140,14 @@ void PhysXBuoyancy3D::_resolve() {
 	if (points.is_empty()) {
 		const bool long_z = bounds.size.z >= bounds.size.x;
 		const Vector3 inset = bounds.size * 0.15f;
-		const float y = bounds.position.y;
+		const float sample_bottom_y = bounds.position.y;
 		for (int l = 0; l < 3; l++) {
 			for (int a = 0; a < 2; a++) {
 				const float tl = l / 2.0f;
 				const float ta = (float)a;
-				const float x = long_z ? Math::lerp(bounds.position.x + inset.x, bounds.get_end().x - inset.x, ta) : Math::lerp(bounds.position.x + inset.x, bounds.get_end().x - inset.x, tl);
-				const float z = long_z ? Math::lerp(bounds.position.z + inset.z, bounds.get_end().z - inset.z, tl) : Math::lerp(bounds.position.z + inset.z, bounds.get_end().z - inset.z, ta);
-				points.push_back(Vector3(x, y, z));
+				const float sample_x = long_z ? Math::lerp(bounds.position.x + inset.x, bounds.get_end().x - inset.x, ta) : Math::lerp(bounds.position.x + inset.x, bounds.get_end().x - inset.x, tl);
+				const float sample_z = long_z ? Math::lerp(bounds.position.z + inset.z, bounds.get_end().z - inset.z, tl) : Math::lerp(bounds.position.z + inset.z, bounds.get_end().z - inset.z, ta);
+				points.push_back(Vector3(sample_x, sample_bottom_y, sample_z));
 			}
 		}
 	}
@@ -167,11 +167,11 @@ void PhysXBuoyancy3D::_physics_step() {
 		return;
 	}
 	const Transform3D xf = body->get_global_transform();
-	const float g = body->get_gravity().length();
+	const float gravity_magnitude = body->get_gravity().length();
 	const Vector3 up = body->get_gravity().length_squared() > 0.0f ? -body->get_gravity().normalized() : Vector3(0, 1, 0);
 	const Vector3 lin = body->get_linear_velocity();
 	const Vector3 ang = body->get_angular_velocity();
-	const float a = area / points.size();
+	const float area_per_sample = area / points.size();
 	float used = 0.0f;
 	for (int i = 0; i < points.size(); i++) {
 		const Vector3 wp = xf.xform(points[i]);
@@ -180,14 +180,14 @@ void PhysXBuoyancy3D::_physics_step() {
 		if (!(depth > 0.0f)) {
 			continue;
 		}
-		const float d = MIN(depth, height);
-		used += d;
+		const float submerged_depth = MIN(depth, height);
+		used += submerged_depth;
 		const Vector3 offset = wp - xf.origin;
-		const Vector3 v = lin + ang.cross(offset);
+		const Vector3 sample_velocity = lin + ang.cross(offset);
 		// Archimedes for this point's share of the footprint, plus drag on
 		// the part that's in the water.
-		Vector3 force = up * (water_density * g * a * d);
-		force -= v * (linear_drag * a * (d / height));
+		Vector3 force = up * (water_density * gravity_magnitude * area_per_sample * submerged_depth);
+		force -= sample_velocity * (linear_drag * area_per_sample * (submerged_depth / height));
 		body->apply_force(force, offset);
 	}
 	submerged_fraction = used / (points.size() * height);
@@ -196,7 +196,7 @@ void PhysXBuoyancy3D::_physics_step() {
 	}
 
 	if (disturb_water) {
-		// Only near the surface, harder the faster it moves -- a still
+		// Only near the surface, harder the faster it moves -- area_per_sample still
 		// floater only dimples the water.
 		const float above = xf.origin.y - water->sample_height_excluding_wake(xf.origin, wake_id);
 		const float proximity = CLAMP(1.0f - above / radius, 0.0f, 1.0f);
