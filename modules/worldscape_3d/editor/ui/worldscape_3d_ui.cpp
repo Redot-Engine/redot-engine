@@ -184,18 +184,6 @@ WorldScape3DToolbar::WorldScape3DToolbar(WorldScape3DEditor *editor) :
 			SNAME("TerrainInstancer"), WorldScape3DEditor::Operation::SUBTRACT, "Remove Meshes (I)");
 }
 
-WorldScape3DToolbar::~WorldScape3DToolbar() {
-	_add_tools->disconnect("pressed", callable_mp(this, &WorldScape3DToolbar::on_tool_selected));
-	_sub_tools->disconnect("pressed", callable_mp(this, &WorldScape3DToolbar::on_tool_selected));
-	List<BaseButton *> buttons;
-	_add_tools->get_buttons(&buttons);
-	_sub_tools->get_buttons(&buttons);
-	for (auto *button : buttons) {
-		button->set_button_group(nullptr);
-		button->queue_free();
-	}
-}
-
 Button *WorldScape3DToolbar::find_button(const StringName &icon) const {
 	List<BaseButton *> buttons;
 	_add_tools->get_buttons(&buttons);
@@ -302,42 +290,6 @@ WorldScape3DUI::WorldScape3DUI(WorldScape3DEditorPlugin *plugin) :
 	editor_ring_texture_rid = _ring_texture->get_rid();
 
 	_asset_dock = memnew(WorldScape3DAssetDock(plugin));
-}
-
-WorldScape3DUI::~WorldScape3DUI() {
-	if (_plugin) {
-		using enum EditorPlugin::CustomControlContainer;
-		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, _menu);
-		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_BOTTOM, _tool_settings);
-		_plugin->remove_control_from_container(CONTAINER_SPATIAL_EDITOR_SIDE_LEFT, _toolbar);
-		_plugin = nullptr;
-	}
-	if (_editor_decal_timer) {
-		_editor_decal_timer->queue_free();
-		_editor_decal_timer = nullptr;
-	}
-	if (_toolbar) {
-		_toolbar->queue_free();
-		_toolbar = nullptr;
-	}
-	if (_menu) {
-		_menu->queue_free();
-		_menu = nullptr;
-	}
-	if (_tool_settings) {
-		if (_tool_settings->is_connected("setting_changed", callable_mp(this, &WorldScape3DUI::on_setting_changed))) {
-			_tool_settings->disconnect("setting_changed", callable_mp(this, &WorldScape3DUI::on_setting_changed));
-		}
-		if (_tool_settings->is_connected("picking", callable_mp(_tool_settings, &WorldScape3DToolSettings::on_pick))) {
-			_tool_settings->disconnect("picking", callable_mp(_tool_settings, &WorldScape3DToolSettings::on_pick));
-		}
-		_tool_settings->queue_free();
-		_tool_settings = nullptr;
-	}
-	if (_asset_dock) {
-		_asset_dock->queue_free();
-		_asset_dock = nullptr;
-	}
 }
 
 void WorldScape3DUI::on_visible_update() {

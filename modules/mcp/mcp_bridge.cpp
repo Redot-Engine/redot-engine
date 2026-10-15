@@ -276,7 +276,30 @@ void MCPBridge::update() {
 	}
 }
 
-void MCPBridge::_trigger_action_event(const StringName &p_action) {
+// Identifies the key or button an event stands for. Modifiers are separate keys, so they're left out.
+static String _held_input_key(const Ref<InputEvent> &p_event) {
+	Ref<InputEventKey> k = p_event;
+	if (k.is_valid()) {
+		return vformat("%d:key:%d:%d:%d:%d", p_event->get_device(), (int64_t)k->get_keycode(), (int64_t)k->get_physical_keycode(), (int64_t)k->get_key_label(), (int)k->get_location());
+	}
+	Ref<InputEventMouseButton> mb = p_event;
+	return vformat("%d:mouse:%d", p_event->get_device(), (int)mb->get_button_index());
+}
+
+// Whether the key or button an event stands for is currently down.
+static bool _is_input_down(const Ref<InputEvent> &p_event) {
+	Input *input = Input::get_singleton();
+	Ref<InputEventKey> k = p_event;
+	if (k.is_null()) {
+		Ref<InputEventMouseButton> mb = p_event;
+		return input->is_mouse_button_pressed(mb->get_button_index());
+	}
+	return (k->get_keycode() == Key::NONE || input->is_key_pressed(k->get_keycode())) &&
+			(k->get_physical_keycode() == Key::NONE || input->is_physical_key_pressed(k->get_physical_keycode())) &&
+			(k->get_key_label() == Key::NONE || input->is_key_label_pressed(k->get_key_label()));
+}
+
+void MCPBridge::_trigger_action_event(const StringName &p_action, double p_hold_sec) {
 	if (!InputMap::get_singleton()->has_action(p_action)) {
 		return;
 	}
@@ -308,12 +331,38 @@ void MCPBridge::_trigger_action_event(const StringName &p_action) {
 				m_up->set_pressed(false);
 			}
 
-			Input::get_singleton()->parse_input_event(press_ev);
-			OS::get_singleton()->delay_usec(50000); // 50ms hold
-			Input::get_singleton()->parse_input_event(release_ev);
+			// Release on a timer instead of blocking, so the game sees the action held across frames.
+			// Overlapping holds of the same input keep it pressed until the last one ends.
+			SceneTree *st = Object::cast_to<SceneTree>(OS::get_singleton()->get_main_loop());
+			if (st) {
+				String key = _held_input_key(press_ev);
+				int &holds = held_inputs[key];
+				// A repeat while the input is still down is sent as an echo, like a held key, so handlers
+				// don't see a second press. If something released it in the meantime, it's pressed again.
+				if (holds == 0 || !_is_input_down(press_ev)) {
+					Input::get_singleton()->parse_input_event(press_ev);
+				} else if (key_ev.is_valid()) {
+					Ref<InputEventKey>(press_ev)->set_echo(true);
+					Input::get_singleton()->parse_input_event(press_ev);
+				}
+				holds++;
+				st->create_timer(p_hold_sec, true, false, true)->connect(SNAME("timeout"), callable_mp(this, &MCPBridge::_release_held_input).bind(key, release_ev), CONNECT_ONE_SHOT);
+			} else {
+				Input::get_singleton()->parse_input_event(press_ev);
+				Input::get_singleton()->parse_input_event(release_ev);
+			}
 			return; // Triggered one valid event for the action
 		}
 	}
+}
+
+void MCPBridge::_release_held_input(const String &p_key, const Ref<InputEvent> &p_release) {
+	int *holds = held_inputs.getptr(p_key);
+	if (holds && --(*holds) > 0) {
+		return;
+	}
+	held_inputs.erase(p_key);
+	Input::get_singleton()->parse_input_event(p_release);
 }
 
 Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
@@ -426,7 +475,7 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 				resp["error"] = "No root window found";
 				return resp;
 			}
-			String path = args.get("path", ".");
+			String path = args.get("node_path", args.get("path", "."));
 			Node *node = (path == "." || path.is_empty()) ? (Node *)root_window : root_window->get_node_or_null(path);
 			if (node) {
 				bool recursive = args.get("recursive", false);
@@ -527,7 +576,8 @@ Dictionary MCPBridge::_process_command(const Dictionary &p_cmd) {
 		} else if (!InputMap::get_singleton()->has_action(action_name)) {
 			resp["error"] = "Action not found: " + action_name;
 		} else {
-			_trigger_action_event(action_name);
+			double hold_sec = args.get("seconds", 0.1);
+			_trigger_action_event(action_name, MAX(hold_sec, 0.0));
 			resp["status"] = "triggered_action";
 		}
 	} else if (action == "quit") {

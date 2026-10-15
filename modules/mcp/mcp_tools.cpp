@@ -47,6 +47,7 @@
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/object/class_db.h"
+#include "core/object/script_language.h"
 #include "core/os/keyboard.h"
 #include "core/version.h"
 #include "mcp_bridge.h"
@@ -81,6 +82,90 @@ Variant MCPTools::_json_to_variant(const Variant &p_json, Variant::Type p_type) 
 		}
 	}
 	return p_json;
+}
+
+// Checks a resource against a comma-separated type list, including script classes and traits.
+// Types prefixed with "-" are excluded.
+static bool _resource_matches_type(const Ref<Resource> &p_res, const String &p_types) {
+	Vector<String> types = p_types.split(",");
+	for (const String &type_name : types) {
+		String type = type_name.strip_edges();
+		if (type.begins_with("-") && p_res->is_class(type.substr(1))) {
+			return false;
+		}
+	}
+	Ref<Script> res_script = p_res->get_script();
+	for (const String &type_name : types) {
+		String type = type_name.strip_edges();
+		if (type.begins_with("-")) {
+			continue;
+		}
+		if (p_res->is_class(type) || (res_script.is_valid() && res_script->has_trait(type))) {
+			return true;
+		}
+		for (Ref<Script> scr = res_script; scr.is_valid(); scr = scr->get_base_script()) {
+			if (scr->get_global_name() == StringName(type)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool MCPTools::_set_property(Object *p_object, const String &p_property, const Variant &p_json, String &r_error) {
+	Variant value = _json_to_variant(p_json);
+
+	bool is_object_property = false;
+	List<PropertyInfo> plist;
+	p_object->get_property_list(&plist);
+	for (const PropertyInfo &p : plist) {
+		if (p.name != p_property || p.type != Variant::OBJECT) {
+			continue;
+		}
+		is_object_property = true;
+
+		// Object properties (script, shape, texture, ...) take a resource path.
+		if (value.get_type() == Variant::STRING) {
+			String path = value;
+			if (!validate_path(path)) {
+				r_error = "Invalid resource path: " + path;
+				return false;
+			}
+			Ref<Resource> res = ResourceLoader::load(normalize_path(path));
+			if (res.is_null()) {
+				r_error = "Failed to load resource: " + path;
+				return false;
+			}
+			if (p.hint == PROPERTY_HINT_RESOURCE_TYPE && !p.hint_string.is_empty() && !_resource_matches_type(res, p.hint_string)) {
+				r_error = "Resource " + path + " is a " + res->get_class() + ", expected " + p.hint_string;
+				return false;
+			}
+			Ref<Script> scr = res;
+			if (p_property == "script" && scr.is_valid() && !ClassDB::is_parent_class(p_object->get_class_name(), scr->get_instance_base_type())) {
+				r_error = "Script " + path + " extends " + scr->get_instance_base_type() + " and can't be attached to a " + p_object->get_class();
+				return false;
+			}
+			value = res;
+		} else if (value.get_type() != Variant::OBJECT && value.get_type() != Variant::NIL) {
+			r_error = "Property '" + p_property + "' expects a resource path or null";
+			return false;
+		}
+		break;
+	}
+
+	Variant previous = is_object_property ? p_object->get(p_property) : Variant();
+	bool changes = is_object_property && previous != value && !(previous.is_null() && value.is_null());
+	bool valid = false;
+	p_object->set(p_property, value, &valid);
+	// Object setters often reject a value with an error but still report success, leaving the old
+	// value or none (like a script whose instance can't be created). Any other result counts, since
+	// some setters store a copy.
+	Variant result = changes ? p_object->get(p_property) : Variant();
+	if (!valid || (changes && (result == previous || (result.is_null() && !value.is_null())))) {
+		r_error = "Failed to set property '" + p_property + "'";
+		return false;
+	}
+	return true;
 }
 
 Error MCPTools::_ensure_callback_exists(const String &p_script_path, const String &p_callback_name) {
@@ -289,7 +374,7 @@ Array MCPTools::get_tool_definitions() {
 		props["action_name"] = MCPSchemaBuilder::make_string_property("Action name for 'trigger_action' (e.g. ui_cancel)");
 		props["x"] = MCPSchemaBuilder::make_object_property("X coord for click");
 		props["y"] = MCPSchemaBuilder::make_object_property("Y coord for click");
-		props["seconds"] = MCPSchemaBuilder::make_object_property("Wait duration");
+		props["seconds"] = MCPSchemaBuilder::make_number_property("Duration for 'wait', or how long 'trigger_action' holds the action (default 0.1)");
 		props["recursive"] = MCPSchemaBuilder::make_boolean_property("Recursive tree dump (for inspect_live)");
 		props["depth"] = MCPSchemaBuilder::make_object_property("Max depth for recursive dump");
 
@@ -492,12 +577,13 @@ MCPTools::ToolResult MCPTools::tool_scene_action(const Dictionary &p_args) {
 	} else if (action == "set_prop") {
 		String node_path = p_args.get("node_path", ".");
 		String property = p_args.get("property", "");
-		Variant value = _json_to_variant(p_args.get("value", Variant()));
 		Node *target = (node_path == "." || node_path.is_empty()) ? root : root->get_node_or_null(node_path);
+		String set_error;
 		if (!target) {
 			result.set_error("Node not found");
+		} else if (!_set_property(target, property, p_args.get("value", Variant()), set_error)) {
+			result.set_error(set_error);
 		} else {
-			target->set(property, value);
 			should_save = true;
 			result.add_text("Set property '" + property + "'");
 		}
@@ -652,8 +738,11 @@ MCPTools::ToolResult MCPTools::tool_resource_action(const Dictionary &p_args) {
 		result.add_text(JSON::stringify(props, "  "));
 	} else if (action == "modify") {
 		String prop = p_args.get("property", "");
-		Variant val = _json_to_variant(p_args.get("value", Variant()));
-		res->set(prop, val);
+		String set_error;
+		if (!_set_property(res.ptr(), prop, p_args.get("value", Variant()), set_error)) {
+			result.set_error(set_error);
+			return result;
+		}
 		Error err = ResourceSaver::save(res, normalized);
 		if (err != OK) {
 			result.set_error("Failed to save modified resource: " + itos(err));

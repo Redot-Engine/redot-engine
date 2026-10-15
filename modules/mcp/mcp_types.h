@@ -140,6 +140,13 @@ public:
 		return prop;
 	}
 
+	static Dictionary make_number_property(const String &description) {
+		Dictionary prop;
+		prop["type"] = "number";
+		prop["description"] = description;
+		return prop;
+	}
+
 	static Dictionary make_object_property(const String &description) {
 		Dictionary prop;
 		prop["type"] = "object";

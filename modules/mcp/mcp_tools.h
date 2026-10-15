@@ -104,6 +104,7 @@ private:
 	/// @name Helpers
 	/// @{
 	static Variant _json_to_variant(const Variant &p_json, Variant::Type p_type = Variant::NIL);
+	static bool _set_property(Object *p_object, const String &p_property, const Variant &p_json, String &r_error);
 	static Error _ensure_callback_exists(const String &p_script_path, const String &p_callback_name);
 	/// @}
 };

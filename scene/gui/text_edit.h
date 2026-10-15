@@ -645,7 +645,6 @@ private:
 	HashMap<int, Vector<Pair<int64_t, Color>>> syntax_highlighting_cache;
 
 	Vector<Pair<int64_t, Color>> _get_line_syntax_highlighting(int p_line);
-	void _clear_syntax_highlighting_cache();
 	/// @}
 
 	/* Visual. */
@@ -1235,6 +1234,7 @@ public:
 	/// @{
 	void set_syntax_highlighter(Ref<SyntaxHighlighter> p_syntax_highlighter);
 	Ref<SyntaxHighlighter> get_syntax_highlighter() const;
+	void clear_syntax_highlighting_cache();
 	/// @}
 	/// @name Visual
 	/// @{

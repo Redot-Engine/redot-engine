@@ -52,7 +52,6 @@ class DoubleSlider final : public Control {
 
 public:
 	DoubleSlider();
-	~DoubleSlider() override = default;
 
 	real_t get_min() const { return _min_value; }
 	void set_min(real_t value);

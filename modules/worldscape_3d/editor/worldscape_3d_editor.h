@@ -214,7 +214,7 @@ private:
 	Vector3 _mouse_global_position;
 	Vector2 _current_region_pos;
 	Ref<WorldScape3DRegionGizmo> _region_gizmo;
-	Window *_rex_editor_window = nullptr;
+	Window *_redot_editor_window = nullptr;
 
 	void init();
 
@@ -230,7 +230,7 @@ public:
 	NavigationRegion3D *get_nav_region() const { return _nav_region; }
 
 	WorldScape3DAssetDock *get_asset_dock() const;
-	Window *get_rex_editor_window() const { return _rex_editor_window; }
+	Window *get_redot_editor_window() const { return _redot_editor_window; }
 
 	bool is_selected() const;
 	void select_terrain();
