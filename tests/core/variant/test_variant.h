@@ -1986,6 +1986,34 @@ TEST_CASE("[Variant] Parser typed dictionary with objects") {
 		}
 	}
 
+	SUBCASE("Object keys") {
+		const String encoded = "Dictionary[Resource, int]({\nObject(Resource,\"script\":null,\"resource_name\":\"key\"): 1\n})";
+
+		ss.s = encoded;
+		ERR_PRINT_OFF;
+		Error error = VariantParser::parse(&ss, parsed, errs, line);
+		ERR_PRINT_ON;
+
+		CHECK_EQ(error, ERR_UNAUTHORIZED);
+
+		ss = VariantParser::StreamString();
+		ss.s = encoded;
+		error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK_EQ(dict.get_typed_key_class_name(), Resource::get_class_static());
+		CHECK_EQ(dict.size(), 1);
+		if (dict.size() == 1) {
+			Ref<Resource> key = dict.keys()[0];
+			CHECK(key.is_valid());
+			if (key.is_valid()) {
+				CHECK_EQ(key->get_name(), "key");
+				CHECK_EQ(dict[key], Variant(1));
+			}
+		}
+	}
+
 	SUBCASE("Resource key type") {
 		ss.s = "Dictionary[Resource, int]({\n})";
 		Error error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
