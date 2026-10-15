@@ -83,7 +83,7 @@ public:
 	// Creates a per-actor PxShape instance (server default material when
 	// p_material is null). Returns refcount 1; the caller must attachShape()
 	// then release() to transfer ownership to the actor.
-	
+
 	virtual physx::PxShape *create_shape(
 			physx::PxPhysics &p_physics,
 			const physx::PxVec3 &p_scale,

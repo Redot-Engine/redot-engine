@@ -471,7 +471,6 @@ void PhysXSpace3D::_finish_step() {
 	for (PhysXVehicleServer *vehicle : vehicles) {
 		vehicle->post_step(last_step);
 	}
-
 }
 
 void PhysXSpace3D::set_active(bool p_active) {
@@ -625,7 +624,7 @@ void PhysXSpace3D::_refresh_body_sleep_policies() {
 	}
 }
 
-	// Body / Area registration
+// Body / Area registration
 
 void PhysXSpace3D::register_body(PhysXBody3D *p_body) {
 	ERR_FAIL_NULL(p_body);
@@ -706,7 +705,7 @@ void PhysXSpace3D::unregister_articulation(PhysXArticulation3D *p_articulation) 
 	}
 }
 
-	// Vehicle registration
+// Vehicle registration
 
 void PhysXSpace3D::register_vehicle(PhysXVehicleServer *p_vehicle) {
 	ERR_FAIL_NULL(p_vehicle);
@@ -729,7 +728,7 @@ void PhysXSpace3D::unregister_vehicle(PhysXVehicleServer *p_vehicle) {
 	}
 }
 
-	// GPU fluid / cloth registration
+// GPU fluid / cloth registration
 
 void PhysXSpace3D::register_fluid(PhysXGPUParticleFluid3D *p_fluid) {
 	ERR_FAIL_NULL(p_fluid);
@@ -777,16 +776,16 @@ physx::PxCudaContextManager *PhysXSpace3D::get_px_cuda() const {
 	return server ? server->get_cuda_context() : nullptr;
 }
 
-	// ---------------------------------------------------------------------------
-	// Deferred monitor/event dispatch.
-	//
-	// onTrigger/onContact run inside fetchResults() (physics thread, outside
-	// Godot's unlocked callback window); Area3D monitor callbacks must fire
-	// during flush_queries(), so onTrigger records TriggerEvents here and they
-	// dispatch there. The overlap-list bookkeeping stays in onTrigger -- the
-	// next step's gravity/damp resolution reads it; only the *Godot callbacks*
-	// are deferred.
-	// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Deferred monitor/event dispatch.
+//
+// onTrigger/onContact run inside fetchResults() (physics thread, outside
+// Godot's unlocked callback window); Area3D monitor callbacks must fire
+// during flush_queries(), so onTrigger records TriggerEvents here and they
+// dispatch there. The overlap-list bookkeeping stays in onTrigger -- the
+// next step's gravity/damp resolution reads it; only the *Godot callbacks*
+// are deferred.
+// ---------------------------------------------------------------------------
 
 void PhysXSpace3D::queue_trigger(const TriggerEvent &p_event) {
 	pending_trigger_events.push_back(p_event);

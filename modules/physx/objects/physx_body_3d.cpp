@@ -141,9 +141,9 @@ void PhysXBody3D::_create_actor() {
 		px_actor = dynamic_actor;
 	}
 
-		// The actor carries a PhysXActorUserData so raycasts/overlaps/sweeps and
-		// simulation callbacks can recover the Godot RID/ObjectID — the ONLY
-		// type that may be stored in PxActor::userData.
+	// The actor carries a PhysXActorUserData so raycasts/overlaps/sweeps and
+	// simulation callbacks can recover the Godot RID/ObjectID — the ONLY
+	// type that may be stored in PxActor::userData.
 	if (px_actor) {
 		actor_user_data.object = this;
 		actor_user_data.rid = get_rid();
@@ -288,7 +288,7 @@ void PhysXBody3D::set_mode(PhysicsServer3D::BodyMode p_mode) {
 		// The old actor dies here: an area the body overlaps would never see
 		// it leave (its trigger pairs come back as REMOVED, skipped by the
 		// event callback). Queue explicit exits — the rebuilt actor re-enters
-		// on the next touch, cancelling out in Godot's refcounted monitors.
+		// on the next touch, canceling out in Godot's refcounted monitors.
 		if (space) {
 			_emit_all_area_exits();
 		}
@@ -334,10 +334,10 @@ void PhysXBody3D::set_mode(PhysicsServer3D::BodyMode p_mode) {
 		if (physx::PxRigidDynamic *dyn = get_px_dynamic()) {
 			const bool is_kinematic = (mode == PhysicsServer3D::BODY_MODE_KINEMATIC);
 			if (is_kinematic) {
-			// Snapshot the dynamic velocity into the kinematic tracking
-			// members before flipping the flag: once kinematic, getLinearVelocity()
-			// no longer reflects simulated motion and setLinearVelocity() becomes
-			// illegal. Preserves momentum for rigid->kinematic.
+				// Snapshot the dynamic velocity into the kinematic tracking
+				// members before flipping the flag: once kinematic, getLinearVelocity()
+				// no longer reflects simulated motion and setLinearVelocity() becomes
+				// illegal. Preserves momentum for rigid->kinematic.
 				const physx::PxVec3 lv = dyn->getLinearVelocity();
 				const physx::PxVec3 av = dyn->getAngularVelocity();
 				kinematic_linear_velocity = Vector3(lv.x, lv.y, lv.z);
@@ -473,13 +473,13 @@ Variant PhysXBody3D::get_state(PhysicsServer3D::BodyState p_state) const {
 			Transform3D t;
 			t.origin = Vector3(pose.p.x, pose.p.y, pose.p.z);
 			Quaternion q(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
-		// The set path decomposes the node basis via get_scale() (per-axis
-		// lengths, stored as body_scale and baked into shape geometry) and
-		// get_rotation_quaternion() (the actor pose). Rebuild with a LOCAL
-		// scale composition — Basis(q) * diag(body_scale) — so the axis
-		// lengths and rotation both round-trip: this is the fixed point of
-		// that decomposition pair; native scaled() is a GLOBAL-axis scale and
-		// does not reproduce get_scale().
+			// The set path decomposes the node basis via get_scale() (per-axis
+			// lengths, stored as body_scale and baked into shape geometry) and
+			// get_rotation_quaternion() (the actor pose). Rebuild with a LOCAL
+			// scale composition — Basis(q) * diag(body_scale) — so the axis
+			// lengths and rotation both round-trip: this is the fixed point of
+			// that decomposition pair; native scaled() is a GLOBAL-axis scale and
+			// does not reproduce get_scale().
 			t.basis = Basis(q).scaled_local(body_scale);
 			return t;
 		}
@@ -1008,8 +1008,8 @@ void PhysXBody3D::apply_impulse(const Vector3 &p_impulse, const Vector3 &p_posit
 			pending_force_ops.push_back(op);
 			return;
 		}
-	// Same position contract as apply_impulse (offset from the body origin in
-	// global coordinates, translated to a world point for addForceAtPos).
+		// Same position contract as apply_impulse (offset from the body origin in
+		// global coordinates, translated to a world point for addForceAtPos).
 		const physx::PxTransform pose = dyn->getGlobalPose();
 		const physx::PxVec3 world(pose.p.x + (physx::PxReal)p_position.x,
 				pose.p.y + (physx::PxReal)p_position.y,

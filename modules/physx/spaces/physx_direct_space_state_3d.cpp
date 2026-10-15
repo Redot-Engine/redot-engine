@@ -183,8 +183,8 @@ static bool _build_query_shape(const RID &p_shape_rid,
 	// both shapes by p_parameters.margin for intersect_shape / collide_shape /
 	// cast_motion / rest_info). PhysX-native equivalent for the primitives we
 	// can grow in place; cooked meshes (convex/concave/heightfield) and the
-// custom cylinder/cone are exact -- Godot's GJK margin can't be reproduced
-// without re-cooking, so those stay uninflated (a documented module gap).
+	// custom cylinder/cone are exact -- Godot's GJK margin can't be reproduced
+	// without re-cooking, so those stay uninflated (a documented module gap).
 	if (p_margin > 0.0f) {
 		switch (r_geometry.getType()) {
 			case physx::PxGeometryType::eSPHERE:

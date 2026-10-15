@@ -388,7 +388,7 @@ public:
 	int vehicle_add_wheel(RID p_vehicle);
 	void vehicle_set_wheel_params(RID p_vehicle, int p_idx, const Dictionary &p_params);
 
-	// Control + EngineDrive config 
+	// Control + EngineDrive config
 	void vehicle_set_control_inputs(RID p_vehicle, real_t p_throttle, real_t p_brake, real_t p_steer, real_t p_handbrake);
 	void vehicle_set_gear_command(RID p_vehicle, int p_gear);
 	void vehicle_set_response_params(RID p_vehicle, const Dictionary &p_params);
@@ -399,7 +399,7 @@ public:
 	void vehicle_set_autobox_params(RID p_vehicle, const Dictionary &p_params);
 	void vehicle_set_differential_params(RID p_vehicle, const Dictionary &p_params);
 
-	// DirectDrive per-wheel control 
+	// DirectDrive per-wheel control
 	void vehicle_set_wheel_drive_torque(RID p_vehicle, int p_idx, real_t p_torque);
 	void vehicle_set_wheel_brake_torque(RID p_vehicle, int p_idx, real_t p_torque);
 	void vehicle_set_wheel_steer_angle(RID p_vehicle, int p_idx, real_t p_angle);

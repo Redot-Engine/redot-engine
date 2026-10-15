@@ -41,7 +41,7 @@
 #include "core/math/math_defs.h"
 #include "core/math/math_funcs.h"
 
-	// Lifecycle
+// Lifecycle
 
 PhysXArea3D::PhysXArea3D() :
 		PhysXShapedObject3D(OBJECT_TYPE_AREA) {
@@ -94,7 +94,7 @@ PhysXArea3D::~PhysXArea3D() {
 	}
 }
 
-	// Space Management
+// Space Management
 
 void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 	if (space == p_space) {
@@ -102,10 +102,10 @@ void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 	}
 
 	if (space) {
-	// Queue exit events for all overlapping bodies/areas before leaving the
-	// space -- trigger events may not fire (e.g., when a body is freed while
-	// overlapping this area), and the overlap lists must not retain dangling
-	// pointers.
+		// Queue exit events for all overlapping bodies/areas before leaving the
+		// space -- trigger events may not fire (e.g., when a body is freed while
+		// overlapping this area), and the overlap lists must not retain dangling
+		// pointers.
 		for (unsigned int i = 0; i < overlapping_bodies.size(); i++) {
 			PhysXBody3D *body = overlapping_bodies[i];
 			// Remove the body from this area's overlap list.
@@ -164,7 +164,7 @@ void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 	}
 }
 
-	// Transform
+// Transform
 
 void PhysXArea3D::set_transform(const Transform3D &p_transform) {
 	transform = p_transform;
@@ -279,7 +279,7 @@ Transform3D PhysXArea3D::get_transform() const {
 	return transform;
 }
 
-	// Shape Management
+// Shape Management
 
 void PhysXArea3D::_configure_shape_as_trigger(physx::PxShape *p_shape) const {
 	// Areas never simulate; their shapes are either triggers (when the area
@@ -732,10 +732,10 @@ void PhysXArea3D::_emit_area_exit_events() {
 	overlapping_areas.clear();
 }
 
-	// Wind force at a world position (same convention as the Area3D wind
-	// module): constant magnitude along wind_direction, attenuated over
-	// downwind distance from wind_source when wind_attenuation_factor is
-	// nonzero. Zero when wind is unused, so the common case adds no work.
+// Wind force at a world position (same convention as the Area3D wind
+// module): constant magnitude along wind_direction, attenuated over
+// downwind distance from wind_source when wind_attenuation_factor is
+// nonzero. Zero when wind is unused, so the common case adds no work.
 physx::PxBounds3 PhysXArea3D::get_world_bounds() const {
 	if (!px_actor || px_actor->getNbShapes() == 0) {
 		return physx::PxBounds3::empty();

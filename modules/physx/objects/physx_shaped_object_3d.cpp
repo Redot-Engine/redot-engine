@@ -124,8 +124,8 @@ Vector3 PhysXShapedObject3D::_shape_geometry_scale_for(const PhysXShape3D *p_sha
 	return _shape_geometry_scale(p_shape_transform);
 }
 
-	// Called by the PhysXShape3D destructor: nullify the attached pointer so
-	// a later remove_owner() does not dereference the freed shape.
+// Called by the PhysXShape3D destructor: nullify the attached pointer so
+// a later remove_owner() does not dereference the freed shape.
 void PhysXShapedObject3D::nullify_shape(PhysXShape3D *p_shape) {
 	for (AttachedShape &record : attached_shapes) {
 		if (record.shape_blueprint == p_shape) {
@@ -226,11 +226,11 @@ void PhysXShapedObject3D::detach_shape(PhysXShape3D *p_shape) {
 	}
 }
 
-	// Called by PhysXShape3D when its geometry changes (e.g. editor resize):
-	// updates every attached instance's PxGeometry in place (PxShape::
-	// setGeometry() is mutable -- no detach/re-attach), respecting the current
-	// body scale. Dynamic bodies are woken since the inertia tensor may have
-	// changed.
+// Called by PhysXShape3D when its geometry changes (e.g. editor resize):
+// updates every attached instance's PxGeometry in place (PxShape::
+// setGeometry() is mutable -- no detach/re-attach), respecting the current
+// body scale. Dynamic bodies are woken since the inertia tensor may have
+// changed.
 void PhysXShapedObject3D::shape_changed(PhysXShape3D *p_shape) {
 	for (AttachedShape &record : attached_shapes) {
 		if (record.shape_blueprint == p_shape && (record.shape_instance || record.detection_shape)) {
@@ -279,10 +279,10 @@ void PhysXShapedObject3D::shape_changed(PhysXShape3D *p_shape) {
 	}
 }
 
-	// Attaches a shape blueprint to this object: creates the PxShape instance
-	// with the body's current scale, positions it via its local pose, attaches
-	// it, then releases our reference -- the actor owns the instance from that
-	// point (refcount drops from 2 to 1).
+// Attaches a shape blueprint to this object: creates the PxShape instance
+// with the body's current scale, positions it via its local pose, attaches
+// it, then releases our reference -- the actor owns the instance from that
+// point (refcount drops from 2 to 1).
 void PhysXShapedObject3D::add_shape(PhysXShape3D *p_shape, const Transform3D &p_transform, bool p_disabled) {
 	// attachShape() below mutates the scene's broadphase — forbidden while a
 	// solve is in flight (async stepping). Fetch first; mutating frames lose
@@ -304,10 +304,10 @@ void PhysXShapedObject3D::add_shape(PhysXShape3D *p_shape, const Transform3D &p_
 	p_shape->add_owner(this);
 
 	if (px_actor) {
-	// Body scale AND per-shape transform scale are baked into the geometry
-	// (e.g. a 1x1 trimesh quad whose shape offset scales it (50,1,50) into a
-	// floor -- the standard Godot idiom). Convex polygon meshes additionally
-	// receive the signed (mirror-capable) scale.
+		// Body scale AND per-shape transform scale are baked into the geometry
+		// (e.g. a 1x1 trimesh quad whose shape offset scales it (50,1,50) into a
+		// floor -- the standard Godot idiom). Convex polygon meshes additionally
+		// receive the signed (mirror-capable) scale.
 		const Vector3 geom_scale = _shape_geometry_scale_for(p_shape, p_transform);
 		physx::PxVec3 total_scale(geom_scale.x, geom_scale.y, geom_scale.z);
 		physx::PxPhysics &physics = PhysXServer3D::get_singleton()->get_physics();
@@ -353,21 +353,21 @@ void PhysXShapedObject3D::add_shape(PhysXShape3D *p_shape, const Transform3D &p_
 		record.shape_instance = p_shape->create_shape(physics, total_scale, _get_shape_material(), shape_flags);
 
 		if (record.shape_instance) {
-	// Set the shape's local pose (placement * shape alignment). The placement
-	// is body-relative with its origin scaled by the body scale (a child
-	// offset sits at offset*scale, matching a scaled Godot node); the
-	// alignment is the shape's intrinsic axis rotation (e.g. capsule Z-90 to
-	// map PhysX's X-axis to Godot's Y-axis). create_shape() applied the
-	// alignment once already; compose both so neither is lost.
+			// Set the shape's local pose (placement * shape alignment). The placement
+			// is body-relative with its origin scaled by the body scale (a child
+			// offset sits at offset*scale, matching a scaled Godot node); the
+			// alignment is the shape's intrinsic axis rotation (e.g. capsule Z-90 to
+			// map PhysX's X-axis to Godot's Y-axis). create_shape() applied the
+			// alignment once already; compose both so neither is lost.
 			Transform3D placed_tr = p_transform;
 			placed_tr.origin *= body_scale;
 			const physx::PxTransform composed = to_physx_transform(placed_tr) * p_shape->get_local_pose(total_scale);
 			record.shape_instance->setLocalPose(composed);
 
-	// Apply the owner's collision filter BEFORE attaching: PxShape creation
-	// leaves the filter data zeroed (layer=0, mask=0), which the simulation
-	// filter shader treats as "collides with nothing" -- without this, bodies
-	// fall through everything.
+			// Apply the owner's collision filter BEFORE attaching: PxShape creation
+			// leaves the filter data zeroed (layer=0, mask=0), which the simulation
+			// filter shader treats as "collides with nothing" -- without this, bodies
+			// fall through everything.
 			physx::PxFilterData filter_data;
 			filter_data.word0 = collision_layer;
 			filter_data.word1 = collision_mask;
@@ -376,9 +376,9 @@ void PhysXShapedObject3D::add_shape(PhysXShape3D *p_shape, const Transform3D &p_
 			record.shape_instance->setQueryFilterData(filter_data);
 			physx_apply_space_rest_offset(record.shape_instance, p_shape->get_margin(), space);
 
-	// Attach to the actor. attachShape() returns void, not a status: for the
-	// concave-on-dynamic case it succeeds but the simulation silently ignores
-	// the shape. Attach anyway so the actor's shape list stays consistent.
+			// Attach to the actor. attachShape() returns void, not a status: for the
+			// concave-on-dynamic case it succeeds but the simulation silently ignores
+			// the shape. Attach anyway so the actor's shape list stays consistent.
 			if (physx::PxRigidActor *rigid_actor = px_actor->is<physx::PxRigidActor>()) {
 				rigid_actor->attachShape(*record.shape_instance);
 			}
@@ -537,9 +537,9 @@ void PhysXShapedObject3D::rebuild_shapes() {
 	// Is this actor a non-kinematic dynamic body? The per-shape is_convex()
 	// check happens inside the loop (exactly like add_shape()): concave shapes
 	// on such actors must be created query-only, but convex shapes must keep
-		// eSIMULATION_SHAPE -- otherwise a body that went through an actor-recreating
-		// mode switch (static <-> dynamic) would lose simulation on ALL of its
-		// shapes and fall through the world.
+	// eSIMULATION_SHAPE -- otherwise a body that went through an actor-recreating
+	// mode switch (static <-> dynamic) would lose simulation on ALL of its
+	// shapes and fall through the world.
 	physx::PxRigidDynamic *dyn = px_actor->is<physx::PxRigidDynamic>();
 	const bool dynamic_non_kinematic = dyn && !(dyn->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC);
 
