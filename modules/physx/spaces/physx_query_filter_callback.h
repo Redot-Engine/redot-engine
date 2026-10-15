@@ -45,7 +45,7 @@
  * All filtering reads from the PhysXActorUserData attached to each actor, so
  * every actor this module puts into a scene must carry one.
  *
- * Note: PxShape::userData points at the shared PhysXShape3D* blueprint.
+ * Note: PxShape::userData points at the shared PhysXShape3D* shape_blueprint.
  */
 
 #ifndef PHYSX_QUERY_FILTER_CALLBACK_H

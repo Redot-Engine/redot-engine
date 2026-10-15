@@ -127,12 +127,11 @@ void PhysXSpace3D::_initialize_scene() {
 
 	physx::PxSceneDesc scene_desc(physics->getTolerancesScale());
 
-	// Gravity comes from project settings: a magnitude (physics/3d/default_gravity,
-	// default 9.8) times a direction (physics/3d/default_gravity_vector, default
-	// (0,-1,0)). Their product is the actual world gravity vector, which must
-	// match the space's default-area gravity so that PhysX's native scene gravity
-	// equals the resolved default gravity (PhysXBody3D::on_pre_step applies only
-	// the area-override delta on top of it — zero in the default case).
+	// Gravity: physics/3d/default_gravity times physics/3d/default_gravity_vector.
+	// The product is the world gravity vector, which must match the space's
+	// default-area gravity so PhysX's native scene gravity equals the resolved
+	// default (PhysXBody3D::on_pre_step applies only the area-override delta
+	// on top of it -- zero in the default case).
 	const real_t g = GLOBAL_GET("physics/3d/default_gravity");
 	const Vector3 g_dir = GLOBAL_GET("physics/3d/default_gravity_vector");
 	// Cached for the per-step consumers (PhysXBody3D::on_pre_step delta,
@@ -148,13 +147,11 @@ void PhysXSpace3D::_initialize_scene() {
 	// Simulation event callback (contacts, triggers, wake/sleep).
 	scene_desc.simulationEventCallback = event_callback;
 
-	// Custom filter shader: wraps PxDefaultSimulationFilterShader (which
-	// implements Godot's layer/mask test) and additionally requests contact-
-	// point notifications for shape pairs where either side has the
-	// PHYSX_FILTER_FLAG_CONTACT_NOTIFY marker (set when a body has
-	// max_contacts_reported > 0).
-	// Returns eNOTIFY for simulation pairs so the filter callback gets invoked
-	// to check collision exceptions.
+	// Custom filter shader implementing Godot's layer/mask test; requests
+	// contact-point notifications for shape pairs where either side carries
+	// PHYSX_FILTER_FLAG_CONTACT_NOTIFY (set when a body has
+	// max_contacts_reported > 0), and returns eNOTIFY for simulation pairs so
+	// the pair filter callback can check collision exceptions.
 	scene_desc.filterShader = physx_simulation_filter_shader;
 
 	// Pair filter callback: enforces collision exceptions between bodies.
@@ -194,10 +191,9 @@ void PhysXSpace3D::_initialize_scene() {
 	}
 
 	// GPU dynamics (GODOT_PHYSX_GPU build + usable CUDA device): the whole
-	// scene simulates on the GPU. Buffer capacities sized for tens of
-	// thousands of colliding rigid bodies plus a particle-contact budget;
-	// PhysX grows some of these on demand but warns when the initial
-	// capacity is exceeded.
+	// scene simulates on the GPU. Capacities sized for tens of thousands of
+	// colliding rigid bodies plus a particle-contact budget; PhysX grows some
+	// on demand but warns when the initial capacity is exceeded.
 	if (server->is_gpu_dynamics_enabled()) {
 		physx::PxCudaContextManager *cuda = server->get_cuda_context();
 		if (cuda) {
@@ -281,43 +277,39 @@ void PhysXSpace3D::step(float p_step) {
 	debug_contacts_count = 0;
 
 	// Pre-step: apply constant forces, clear contact buffers, resolve area
-	// gravity/damp overrides, and run custom integrators. Iterate the space's
-	// own body registration list (maintained by register_body/unregister_body)
-	// rather than querying the scene — this avoids the per-step getActors()
-	// round-trip, has no 1024-actor cap, and skips the userData round-trip
-	// since we already hold the typed wrapper.
+	// gravity/damp overrides, and run custom integrators. Iterates the space's
+	// own body registration list rather than querying the scene -- no per-step
+	// getActors() round-trip, no 1024-actor cap, no userData round-trip.
 	for (PhysXBody3D *body : bodies) {
 		body->on_pre_step(p_step);
 	}
 
 	// Batched multi-fluid isosurface readback: with more than one fluid,
-	// onPostSolve kicks each fluid's smoothing kernel WITHOUT syncing and the
+	// onPostSolve kicks each fluid's smoothing kernel WITHOUT syncing, and the
 	// sync + outlier clamp + extraction happen in finish_isosurface_extraction()
-	// after fetchResults (below) -- syncing inline would serialize N GPU stalls
-	// mid-solve, because PhysX invokes each fluid's onPostSolve in turn and
-	// system 2's kernel would not be issued until system 1's callback finished
-	// blocking. Single-fluid spaces keep the inline path.
+	// after fetchResults -- syncing inline would serialize N GPU stalls, because
+	// PhysX invokes each fluid's onPostSolve in turn. Single-fluid spaces keep
+	// the inline path.
 	batched_isosurface = fluids.size() > 1;
 	for (PhysXGPUParticleFluid3D *fluid : fluids) {
 		fluid->set_deferred_extraction(batched_isosurface);
 	}
 
-	// Vehicle update (pre-step): read state from PhysX actor, apply commands,
-	// write state back. This runs before simulate so the vehicle2 state is
-	// consistent during the physics step.
+	// Vehicle pre-step: read state from the PhysX actor, apply commands, write
+	// state back before simulate so the vehicle2 state is consistent during the step.
 	for (PhysXVehicleServer *vehicle : vehicles) {
 		vehicle->update(p_step);
 	}
 
-	// Synchronous mode (default): simulate + block in the same call — the
-	// historic behavior. Async mode (physics/physx_3d/simulation/async_step):
-	// return with the solve in flight; sync() — called by the engine at the
-	// START of the next tick, before scripts — does the fetch and the whole
-	// post-solve pipeline, so the solve overlaps the rest of this frame.
-	// stepping marks the exact simulate→fetch span: pre-step hooks run before
-	// it (queries there see the idle scene), and _finish_step runs after it is
-	// cleared — _finish_step itself issues scene queries (CPU soft bodies), and
-	// a re-entrant sync() while stepping is still set would recurse.
+	// Synchronous mode (default): simulate + block in the same call. Async
+	// mode (physics/physx_3d/simulation/async_step): return with the solve in
+	// flight; sync() -- called by the engine at the START of the next tick,
+	// before scripts -- does the fetch and the whole post-solve pipeline, so
+	// the solve overlaps the rest of the frame. stepping marks the exact
+	// simulate->fetch span: pre-step hooks run before it (queries there see
+	// the idle scene), and _finish_step runs after it is cleared -- it issues
+	// scene queries (CPU soft bodies), and a re-entrant sync() while stepping
+	// is still set would fetch-and-recurse.
 	stepping = true;
 	// Record the simulating thread: ensure_synced() refuses to fetch from any
 	// other thread (PhysX requires simulate/fetchResults on one thread).
@@ -342,7 +334,7 @@ void PhysXSpace3D::sync() {
 	_finish_step();
 }
 
-// GAP-15 safety net: a rigid actor being freed must not leave a live
+// Safety net: a rigid actor being freed must not leave a live
 // PxDeformableAttachment pointing at it. Walks the space's soft bodies and
 // drops every attachment that references the actor.
 void PhysXSpace3D::release_soft_body_attachments_for(physx::PxActor *p_actor) {
@@ -356,12 +348,11 @@ void PhysXSpace3D::ensure_synced() {
 		return;
 	}
 	// Only the thread that called simulate() may fetchResults. A query or
-	// mutation arriving from another thread (e.g. a node's frame callback
-	// while the WrapMT physics thread is inside step()) must not touch the
-	// scene — it reads the last fetched state instead, and the physics thread
-	// fetches at the next tick. The server-tick sync() path is exempt: the
-	// WrapMT sync drains the command queue (physics thread idle by
-	// construction) before fetching on the main thread.
+	// mutation arriving from another thread must not touch the scene -- it
+	// reads the last fetched state instead, and the physics thread fetches at
+	// the next tick. The server-tick sync() path is exempt: the WrapMT sync
+	// drains the command queue (physics thread idle by construction) before
+	// fetching on the main thread.
 	if (Thread::get_caller_id() != stepping_thread) {
 		WARN_PRINT_ONCE(
 				"PhysX: a query/mutation from a non-simulating thread raced an in-flight solve; "
@@ -381,11 +372,11 @@ void PhysXSpace3D::_finish_step() {
 	_flush_actor_ops();
 
 	// GPU fluid/cloth read-back: copy particle/vertex positions GPU -> host so
-	// the nodes can render them. Must run while the scene is still valid
-	// (after fetchResults, before the next simulate). In batched mode the
-	// finish pass completes each fluid's deferred isosurface extraction first
-	// (sync + clamp + extraction kicks) -- every fluid's smoothing kernel was
-	// kicked during the solve, so the first sync absorbs the whole batch.
+	// the nodes can render them. Must run while the scene is still valid (after
+	// fetchResults, before the next simulate). In batched mode the finish pass
+	// completes each fluid's deferred isosurface extraction first -- every
+	// fluid's smoothing kernel was kicked during the solve, so the first sync
+	// absorbs the whole batch.
 	if (batched_isosurface) {
 		for (PhysXGPUParticleFluid3D *fluid : fluids) {
 			fluid->finish_isosurface_extraction();
@@ -413,7 +404,7 @@ void PhysXSpace3D::_finish_step() {
 		sb->step(last_step, gravity);
 	}
 
-	// Post-step sync, gated on actual activity (F-11): state-sync callbacks
+	// Post-step sync, gated on actual activity: state-sync callbacks
 	// and kinematic velocity derivation only run for bodies whose simulation
 	// state changed this step -- the active actors, every kinematic (Godot
 	// fires their state callback every tick, and AnimatableBody3D's platform
@@ -421,8 +412,7 @@ void PhysXSpace3D::_finish_step() {
 	// bodies synced last step that are no longer active (they just fell
 	// asleep; one final sync delivers the resting pose to the node).
 	// Continuously sleeping bodies cost zero callbacks -- a RigidBody3D's
-	// node sync only resumes when the body wakes. The three buffers are
-	// members (cleared here) so a steady-state step does not allocate.
+	// node sync only resumes when the body wakes.
 	_finish_sync_bodies.clear();
 	_finish_sync_set.clear();
 	_finish_now_active.clear();
@@ -467,8 +457,7 @@ void PhysXSpace3D::_finish_step() {
 	for (PhysXBody3D *body : prev_active_bodies) {
 		// Newly asleep: fire the callback once more so the node sees the
 		// final resting pose. prev_active_bodies is replaced by the CURRENT
-		// active set below, so this fires exactly once per sleep transition
-		// -- not once per tick for the rest of the body's life.
+		// active set below, so this fires exactly once per sleep transition.
 		push_sync(body);
 	}
 	prev_active_bodies = now_active;
@@ -483,8 +472,6 @@ void PhysXSpace3D::_finish_step() {
 		vehicle->post_step(last_step);
 	}
 
-	// INFO_ACTIVE_OBJECTS now comes from the same getActiveActors() query the
-	// sync gate above consumed (reflects the solve that just completed).
 }
 
 void PhysXSpace3D::set_active(bool p_active) {
@@ -497,7 +484,7 @@ void PhysXSpace3D::add_actor(physx::PxActor *p_actor) {
 	if (stepping) {
 		// Async in-flight window: PhysX forbids scene mutation during the
 		// solve. Apply right after the fetch (see _flush_actor_ops).
-		pending_actor_ops.push_back({ p_actor, true, false, false });
+		pending_actor_ops.push_back({ p_actor, PendingActorOp::KIND_ADD });
 		return;
 	}
 	px_scene->addActor(*p_actor);
@@ -512,7 +499,7 @@ void PhysXSpace3D::remove_actor(physx::PxActor *p_actor) {
 		return;
 	}
 	if (stepping) {
-		pending_actor_ops.push_back({ p_actor, false, true, false });
+		pending_actor_ops.push_back({ p_actor, PendingActorOp::KIND_REMOVE });
 		return;
 	}
 	px_scene->removeActor(*p_actor);
@@ -525,7 +512,7 @@ void PhysXSpace3D::remove_actor(physx::PxActor *p_actor) {
 void PhysXSpace3D::release_actor(physx::PxActor *p_actor) {
 	ERR_FAIL_NULL(p_actor);
 	if (stepping && px_scene) {
-		pending_actor_ops.push_back({ p_actor, false, false, true });
+		pending_actor_ops.push_back({ p_actor, PendingActorOp::KIND_RELEASE });
 		return;
 	}
 	p_actor->release();
@@ -533,12 +520,11 @@ void PhysXSpace3D::release_actor(physx::PxActor *p_actor) {
 
 void PhysXSpace3D::_flush_actor_ops() {
 	for (const PendingActorOp &op : pending_actor_ops) {
-		if (op.add && px_scene) {
+		if (op.kind == PendingActorOp::KIND_ADD && px_scene) {
 			px_scene->addActor(*op.actor);
-		} else if (op.remove && px_scene) {
+		} else if (op.kind == PendingActorOp::KIND_REMOVE && px_scene) {
 			px_scene->removeActor(*op.actor);
-		}
-		if (op.release) {
+		} else if (op.kind == PendingActorOp::KIND_RELEASE) {
 			op.actor->release();
 		}
 	}
@@ -639,9 +625,7 @@ void PhysXSpace3D::_refresh_body_sleep_policies() {
 	}
 }
 
-// --------------------------------------------------------------------
-// Body / Area registration
-// --------------------------------------------------------------------
+	// Body / Area registration
 
 void PhysXSpace3D::register_body(PhysXBody3D *p_body) {
 	ERR_FAIL_NULL(p_body);
@@ -722,9 +706,7 @@ void PhysXSpace3D::unregister_articulation(PhysXArticulation3D *p_articulation) 
 	}
 }
 
-// --------------------------------------------------------------------
-// Vehicle registration
-// --------------------------------------------------------------------
+	// Vehicle registration
 
 void PhysXSpace3D::register_vehicle(PhysXVehicleServer *p_vehicle) {
 	ERR_FAIL_NULL(p_vehicle);
@@ -747,9 +729,7 @@ void PhysXSpace3D::unregister_vehicle(PhysXVehicleServer *p_vehicle) {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// GPU fluid / cloth registration
-// ---------------------------------------------------------------------------
+	// GPU fluid / cloth registration
 
 void PhysXSpace3D::register_fluid(PhysXGPUParticleFluid3D *p_fluid) {
 	ERR_FAIL_NULL(p_fluid);
@@ -797,17 +777,16 @@ physx::PxCudaContextManager *PhysXSpace3D::get_px_cuda() const {
 	return server ? server->get_cuda_context() : nullptr;
 }
 
-// ---------------------------------------------------------------------------
-// Deferred monitor/event dispatch.
-//
-// onTrigger/onContact run inside fetchResults() during step(), i.e. on the
-// physics thread and outside Godot's unlocked callback window. Area3D monitor
-// callbacks (body_entered/area_entered/...) must fire during flush_queries()
-// instead, so onTrigger records a TriggerEvent here and flush_queries()
-// dispatches it. The overlap-list bookkeeping (add_overlapping_body/area) still
-// happens during onTrigger because that state is needed for the next step's
-// gravity/damp resolution — only the *Godot callbacks* are deferred.
-// ---------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// Deferred monitor/event dispatch.
+	//
+	// onTrigger/onContact run inside fetchResults() (physics thread, outside
+	// Godot's unlocked callback window); Area3D monitor callbacks must fire
+	// during flush_queries(), so onTrigger records TriggerEvents here and they
+	// dispatch there. The overlap-list bookkeeping stays in onTrigger -- the
+	// next step's gravity/damp resolution reads it; only the *Godot callbacks*
+	// are deferred.
+	// ---------------------------------------------------------------------------
 
 void PhysXSpace3D::queue_trigger(const TriggerEvent &p_event) {
 	pending_trigger_events.push_back(p_event);
@@ -825,23 +804,23 @@ void PhysXSpace3D::flush_pending_callbacks() {
 		// The body/area identity is cached in the event, so nothing else is
 		// dereferenced here — removal events MUST still dispatch after the
 		// body/area has been freed (Godot emits body_exited on removal).
-		if (!ev.area || areas.find(ev.area) == -1) {
+		if (!ev.trigger_area || areas.find(ev.trigger_area) == -1) {
 			continue;
 		}
 		if (ev.is_area_vs_area) {
-			ev.area->dispatch_area_monitor(
+			ev.trigger_area->dispatch_area_monitor(
 					ev.status,
 					ev.other_area_rid,
 					ev.other_area_id,
-					ev.other_shape,
-					ev.area_shape);
+					ev.other_shape_idx,
+					ev.area_shape_idx);
 		} else {
-			ev.area->dispatch_body_monitor(
+			ev.trigger_area->dispatch_body_monitor(
 					ev.status,
 					ev.body_rid,
 					ev.body_id,
-					ev.other_shape,
-					ev.area_shape);
+					ev.other_shape_idx,
+					ev.area_shape_idx);
 		}
 	}
 

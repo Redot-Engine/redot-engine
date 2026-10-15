@@ -38,7 +38,7 @@
  * parameters, invokes the corresponding PxScene method, and maps PhysX hit
  * results back to Godot's RayResult / ShapeResult / ShapeRestInfo / MotionResult
  * via the PhysXActorUserData attached to each actor (PxShape::userData points at
- * the shared PhysXShape3D* blueprint).
+ * the shared PhysXShape3D* shape_blueprint).
  */
 
 #include "physx_direct_space_state_3d.h"
@@ -103,12 +103,12 @@ static inline int physx_resolve_shape_index(const physx::PxRigidActor *p_actor,
 }
 
 // Translates a raw PhysX ray face index into the author-facing index: a
-// backface-cooked concave mesh doubles every triangle, and its blueprint
+// backface-cooked concave mesh doubles every triangle, and its shape_blueprint
 // (PxShape::userData) knows how to map back. Identity for every other shape.
 static int _resolve_face_index(const physx::PxRaycastHit &p_block) {
 	if (p_block.shape && p_block.shape->userData) {
-		const PhysXShape3D *shape_bp = static_cast<const PhysXShape3D *>(p_block.shape->userData);
-		return shape_bp->translate_face_index((int)p_block.faceIndex);
+		const PhysXShape3D *shape_blueprint = static_cast<const PhysXShape3D *>(p_block.shape->userData);
+		return shape_blueprint->translate_face_index((int)p_block.faceIndex);
 	}
 	return (int)p_block.faceIndex;
 }
@@ -140,7 +140,7 @@ PhysXDirectSpaceState3D::PhysXDirectSpaceState3D(PhysXSpace3D *p_space) {
 // ---------------------------------------------------------------------------
 // _build_query_shape — shared geometry/pose builder for shape-based queries.
 //
-// Resolves a Godot shape RID to its PhysXShape3D blueprint, generates the
+// Resolves a Godot shape RID to its PhysXShape3D shape_blueprint, generates the
 // scaled PxGeometry via the shape's own get_physx_geometry() (so every shape
 // type — box/sphere/capsule/convex/concave/heightmap/cylinder/cone — is
 // supported, with scale and axis alignment baked in), and composes the query
@@ -183,9 +183,8 @@ static bool _build_query_shape(const RID &p_shape_rid,
 	// both shapes by p_parameters.margin for intersect_shape / collide_shape /
 	// cast_motion / rest_info). PhysX-native equivalent for the primitives we
 	// can grow in place; cooked meshes (convex/concave/heightfield) and the
-	// custom cylinder/cone are exact — Godot's GJK margin can't be reproduced
-	// without re-cooking, so those stay uninflated (documented module gap,
-	// audit §4 "query margin inflation contract").
+// custom cylinder/cone are exact -- Godot's GJK margin can't be reproduced
+// without re-cooking, so those stay uninflated (a documented module gap).
 	if (p_margin > 0.0f) {
 		switch (r_geometry.getType()) {
 			case physx::PxGeometryType::eSPHERE:
@@ -784,10 +783,10 @@ bool PhysXDirectSpaceState3D::rest_info(const ShapeParameters &p_parameters, Sha
 		// jump-snap). Zero motion dir: the moving-out shortcut can't fire;
 		// the behind-every-overlapped-triangle test decides.
 		{
-			const PhysXShape3D *shape_bp = overlap.shape && overlap.shape->userData
+			const PhysXShape3D *shape_blueprint = overlap.shape && overlap.shape->userData
 					? static_cast<const PhysXShape3D *>(overlap.shape->userData)
 					: nullptr;
-			if (_skip_one_sided_overlap(shape_bp, overlap.shape, hit_pose,
+			if (_skip_one_sided_overlap(shape_blueprint, overlap.shape, hit_pose,
 						penetration_depth, mtd_dir, physx::PxVec3(0.0f),
 						query_geom.any(), query_pose)) {
 				continue;
@@ -1116,7 +1115,7 @@ bool PhysXDirectSpaceState3D::body_test_motion(const PhysXBody3D &p_body, const 
 	// contacts. Returning true with an empty collision list violates Godot's
 	// contract — body_test_motion must never report a hit without collisions
 	// (CharacterBody3D exposes those as slide collisions, and reading them
-	// errors with "index out of bounds"). (REG-0012)
+	// errors with "index out of bounds").
 	return hit || (p_parameters.recovery_as_collision && recovered && r_result != nullptr && r_result->collision_count > 0);
 }
 
@@ -1135,9 +1134,8 @@ static real_t _collision_priority_of(const physx::PxRigidActor *p_actor) {
 
 // Fills the shared per-call shape cache for the body_test_motion phases: one
 // getShapes() fetch, one userData read, one getLocalPose() and one
-// find_shape_index() per shape for the entire call (the phases previously
-// repeated all of these per phase, and the rotation quaternion per shape per
-// recovery iteration).
+// find_shape_index() per shape for the entire call, shared by recover/cast/
+// collide.
 void PhysXDirectSpaceState3D::_motion_shapes_fill(const PhysXBody3D &p_body) const {
 	_motion_shape_scratch.clear();
 	physx::PxRigidActor *actor = p_body.get_rigid_actor();
@@ -1154,10 +1152,10 @@ void PhysXDirectSpaceState3D::_motion_shapes_fill(const PhysXBody3D &p_body) con
 	_motion_shape_scratch.resize(nb_shapes);
 	for (physx::PxU32 s = 0; s < nb_shapes; ++s) {
 		MotionShapeRef &ref = _motion_shape_scratch[s];
-		ref.px_shape = _motion_shape_ptr_scratch[s];
-		ref.blueprint = ref.px_shape->userData ? static_cast<PhysXShape3D *>(ref.px_shape->userData) : nullptr;
-		ref.local_pose = ref.px_shape->getLocalPose();
-		ref.body_index = p_body.find_shape_index(ref.px_shape);
+		ref.shape_instance = _motion_shape_ptr_scratch[s];
+		ref.shape_blueprint = ref.shape_instance->userData ? static_cast<PhysXShape3D *>(ref.shape_instance->userData) : nullptr;
+		ref.local_pose = ref.shape_instance->getLocalPose();
+		ref.body_index = p_body.find_shape_index(ref.shape_instance);
 	}
 }
 
@@ -1248,13 +1246,13 @@ bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, co
 
 		for (physx::PxU32 s = 0; s < nb_shapes; ++s) {
 			const MotionShapeRef &ref = p_shapes[s];
-			physx::PxShape *body_shape = ref.px_shape;
+			physx::PxShape *body_shape = ref.shape_instance;
 
 			// Handle separation-ray shapes as raycasts against the floor.
-			if (ref.blueprint) {
-				const PhysXShape3D *shape_bp = ref.blueprint;
-				if (shape_bp && shape_bp->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
-					const PhysXSeparationRayShape3D *sep_ray = static_cast<const PhysXSeparationRayShape3D *>(shape_bp);
+			if (ref.shape_blueprint) {
+				const PhysXShape3D *shape_blueprint = ref.shape_blueprint;
+				if (shape_blueprint && shape_blueprint->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
+					const PhysXSeparationRayShape3D *sep_ray = static_cast<const PhysXSeparationRayShape3D *>(shape_blueprint);
 					// The ray length scales with the body (the shape's baked
 					// geometry does) — cast and measure in scaled units.
 					const real_t ray_length = sep_ray->get_length() * p_body.get_body_scale().z;
@@ -1347,7 +1345,7 @@ bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, co
 						// exempt from back-side recovery (see
 						// _skip_one_sided_overlap).
 						const physx::PxVec3 px_motion_dir(p_motion_dir.x, p_motion_dir.y, p_motion_dir.z);
-						if (overlap.shape && _skip_one_sided_overlap(ref.blueprint, overlap.shape, physx::PxShapeExt::getGlobalPose(*overlap.shape, *overlap.actor), penetration_depth, mtd_dir, px_motion_dir, body_geom.any(), global_shape_pose)) {
+						if (overlap.shape && _skip_one_sided_overlap(ref.shape_blueprint, overlap.shape, physx::PxShapeExt::getGlobalPose(*overlap.shape, *overlap.actor), penetration_depth, mtd_dir, px_motion_dir, body_geom.any(), global_shape_pose)) {
 							continue;
 						}
 						penetrating_in_this_iter = true;
@@ -1384,7 +1382,7 @@ bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, co
 			// against the recovery accumulated SO FAR — recover shrinks the
 			// residual of contacts it already moved away from, so contact
 			// order cannot double-count or cancel weighted contributions.
-			const real_t residual = contact.depth - contact.normal.dot(step_recovery);
+			const real_t residual = contact.penetration_depth - contact.normal.dot(step_recovery);
 			if (residual > MIN_PENETRATION_THRESHOLD) {
 				step_recovery += contact.normal * (residual * recovery_scale * contact.weight * inv_total_weight);
 			}
@@ -1479,7 +1477,7 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 
 	for (physx::PxU32 s = 0; s < nb_shapes; ++s) {
 		const MotionShapeRef &shape_ref = p_shapes[s];
-		physx::PxShape *shape = shape_ref.px_shape;
+		physx::PxShape *shape = shape_ref.shape_instance;
 
 		// Separation rays are not swept as a volume in the cast phase — they
 		// participate only in recover/collide. Godot's contract
@@ -1490,10 +1488,10 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 		// ray's thin-box representation, because a downward raycast distance
 		// is not comparable to a horizontal sweep distance and would
 		// incorrectly clamp horizontal motion.
-		if (shape_ref.blueprint) {
-			const PhysXShape3D *shape_bp = shape_ref.blueprint;
-			if (shape_bp && shape_bp->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
-				const PhysXSeparationRayShape3D *sep_ray = static_cast<const PhysXSeparationRayShape3D *>(shape_bp);
+		if (shape_ref.shape_blueprint) {
+			const PhysXShape3D *shape_blueprint = shape_ref.shape_blueprint;
+			if (shape_blueprint && shape_blueprint->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
+				const PhysXSeparationRayShape3D *sep_ray = static_cast<const PhysXSeparationRayShape3D *>(shape_blueprint);
 				if (!p_collide_separation_ray && !sep_ray->get_slide_on_slope()) {
 					continue;
 				}
@@ -1530,7 +1528,7 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 				// from the stuck verdict when approached from their back (see
 				// _skip_one_sided_overlap).
 				if (-touch.distance > p_rest_slack && touch.actor && touch.shape &&
-						_skip_one_sided_overlap(shape_ref.blueprint, touch.shape,
+						_skip_one_sided_overlap(shape_ref.shape_blueprint, touch.shape,
 								physx::PxShapeExt::getGlobalPose(*touch.shape, *touch.actor),
 								-touch.distance, touch.normal, px_dir, geom.any(), shape_pose)) {
 					continue;
@@ -1554,9 +1552,9 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 			// whose triangle front normal points ALONG the motion is a hit on
 			// the face's BACK (the mover approached from behind) — Godot's
 			// one-sided trimeshes don't block from the back, so disregard it.
-			if (shape_ref.blueprint &&
-					shape_ref.blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
-					!shape_ref.blueprint->has_backface_collision() &&
+			if (shape_ref.shape_blueprint &&
+					shape_ref.shape_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
+					!shape_ref.shape_blueprint->has_backface_collision() &&
 					face_normal.dot(px_dir) > 0.0f) {
 				continue; // back-face hit on a one-sided mesh: not a block
 			}
@@ -1650,13 +1648,13 @@ bool PhysXDirectSpaceState3D::_body_motion_collide(const PhysXBody3D &p_body, co
 
 	for (physx::PxU32 s = 0; s < nb_shapes; ++s) {
 		const MotionShapeRef &shape_ref = p_shapes[s];
-		physx::PxShape *body_shape = shape_ref.px_shape;
+		physx::PxShape *body_shape = shape_ref.shape_instance;
 
 		// Handle separation-ray shapes in collide phase (when collide_separation_ray is true)
-		if (shape_ref.blueprint) {
-			const PhysXShape3D *shape_bp = shape_ref.blueprint;
-			if (shape_bp && shape_bp->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
-				const PhysXSeparationRayShape3D *sep_ray = static_cast<const PhysXSeparationRayShape3D *>(shape_bp);
+		if (shape_ref.shape_blueprint) {
+			const PhysXShape3D *shape_blueprint = shape_ref.shape_blueprint;
+			if (shape_blueprint && shape_blueprint->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
+				const PhysXSeparationRayShape3D *sep_ray = static_cast<const PhysXSeparationRayShape3D *>(shape_blueprint);
 				// Scaled ray length, as in the recover phase.
 				const real_t ray_length = sep_ray->get_length() * p_body.get_body_scale().z;
 
@@ -1760,7 +1758,7 @@ bool PhysXDirectSpaceState3D::_body_motion_collide(const PhysXBody3D &p_body, co
 				const Vector3 motion_dir_n = p_motion == Vector3() ? Vector3() : (p_motion / p_motion.length());
 				const physx::PxVec3 px_motion_dir(motion_dir_n.x, motion_dir_n.y, motion_dir_n.z);
 				if (is_pen && (real_t)penetration_depth >= (real_t)p_min_allowed_depth &&
-						_skip_one_sided_overlap(shape_ref.blueprint, overlap.shape,
+						_skip_one_sided_overlap(shape_ref.shape_blueprint, overlap.shape,
 								physx::PxShapeExt::getGlobalPose(*overlap.shape, *overlap.actor),
 								penetration_depth, mtd_dir, px_motion_dir, body_geom.any(), global_shape_pose)) {
 					continue;

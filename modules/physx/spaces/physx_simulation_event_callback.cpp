@@ -88,15 +88,15 @@ static void _fill_body_contact(PhysXBody3D *p_body, const physx::PxContactPairPo
 	bc.collider_id = p_collider_data->object_id;
 	bc.collider_shape = p_collider_shape >= 0 ? p_collider_shape : 0;
 	bc.collider_position = Vector3(p_cp.position.x, p_cp.position.y, p_cp.position.z);
-	bc.depth = -p_cp.separation; // negative separation == penetration depth
+	bc.penetration_depth = -p_cp.separation; // negative separation == penetration depth
 	// Velocities at the contact point.
 	if (p_collider_dyn) {
 		const physx::PxVec3 v = physx::PxRigidBodyExt::getVelocityAtPos(*p_collider_dyn, p_cp.position);
-		bc.collider_velocity = Vector3(v.x, v.y, v.z);
+		bc.collider_contact_velocity = Vector3(v.x, v.y, v.z);
 	}
 	if (p_local_dyn) {
 		const physx::PxVec3 v = physx::PxRigidBodyExt::getVelocityAtPos(*p_local_dyn, p_cp.position);
-		bc.local_velocity = Vector3(v.x, v.y, v.z);
+		bc.local_contact_velocity = Vector3(v.x, v.y, v.z);
 	}
 	// Godot's replacement policy: at capacity, a DEEPER contact replaces the
 	// shallowest stored one instead of being dropped.
@@ -105,11 +105,11 @@ static void _fill_body_contact(PhysXBody3D *p_body, const physx::PxContactPairPo
 	} else {
 		int shallowest = 0;
 		for (int ci = 1; ci < (int)contacts.size(); ci++) {
-			if (contacts[ci].depth < contacts[shallowest].depth) {
+			if (contacts[ci].penetration_depth < contacts[shallowest].penetration_depth) {
 				shallowest = ci;
 			}
 		}
-		if (bc.depth > contacts[shallowest].depth) {
+		if (bc.penetration_depth > contacts[shallowest].penetration_depth) {
 			contacts[shallowest] = bc;
 		}
 	}
@@ -162,7 +162,7 @@ void PhysXSimulationEventCallback::onContact(const physx::PxContactPairHeader &p
 		}
 
 		// Resolve the per-instance shape indices ONCE per pair (not per contact).
-		// PxShape::userData points at the shared blueprint, so the body-local
+		// PxShape::userData points at the shared shape_blueprint, so the body-local
 		// index must be recovered via the owning wrapper's find_shape_index().
 		const int shape0_idx = body0 ? body0->find_shape_index(pair.shapes[0]) : -1;
 		const int shape1_idx = body1 ? body1->find_shape_index(pair.shapes[1]) : -1;
@@ -237,7 +237,7 @@ void PhysXSimulationEventCallback::onTrigger(physx::PxTriggerPair *pairs, physx:
 		const bool body_exited = (tp.status == physx::PxPairFlag::eNOTIFY_TOUCH_LOST);
 
 		// Resolve shape indices from the owning wrappers' shapes[] vectors.
-		// (PxShape::userData points at the shared blueprint, not a per-instance
+		// (PxShape::userData points at the shared shape_blueprint, not a per-instance
 		// index, so we look the pointer up in the owner instead.)
 		const int area_shape_raw = area->find_shape_index(tp.triggerShape);
 		const int area_shape = area_shape_raw >= 0 ? area_shape_raw : 0;
@@ -268,13 +268,13 @@ void PhysXSimulationEventCallback::onTrigger(physx::PxTriggerPair *pairs, physx:
 			// Queue the body_monitor dispatch for flush_queries().
 			if (space) {
 				PhysXSpace3D::TriggerEvent ev;
-				ev.area = area;
+				ev.trigger_area = area;
 				ev.body = body;
 				ev.body_rid = body->get_rid();
 				ev.body_id = body->get_instance_id();
 				ev.status = status;
-				ev.other_shape = other_shape;
-				ev.area_shape = area_shape;
+				ev.other_shape_idx = other_shape;
+				ev.area_shape_idx = area_shape;
 				ev.is_area_vs_area = false;
 				space->queue_trigger(ev);
 			}
@@ -290,7 +290,7 @@ void PhysXSimulationEventCallback::onTrigger(physx::PxTriggerPair *pairs, physx:
 				other_area->remove_overlapping_area(area);
 			}
 			// Each direction of an area-vs-area overlap arrives as its own
-			// PhysX trigger event (REG-0011): the pair that fires is (this
+			// PhysX trigger event: the pair that fires is (this
 			// area's trigger shape, other area's non-trigger detection shape),
 			// so "area" is always the detector and "other_area" the detected
 			// one. Queue only THIS direction — the reverse direction arrives
@@ -298,13 +298,13 @@ void PhysXSimulationEventCallback::onTrigger(physx::PxTriggerPair *pairs, physx:
 			// Exits always dispatch so overlap state can be cleaned up.
 			if (space && (body_exited || other_area->get_monitorable())) {
 				PhysXSpace3D::TriggerEvent ev;
-				ev.area = area;
+				ev.trigger_area = area;
 				ev.other_area = other_area;
 				ev.other_area_rid = other_area->get_rid();
 				ev.other_area_id = other_area->get_instance_id();
 				ev.status = status;
-				ev.other_shape = other_shape;
-				ev.area_shape = area_shape;
+				ev.other_shape_idx = other_shape;
+				ev.area_shape_idx = area_shape;
 				ev.is_area_vs_area = true;
 				space->queue_trigger(ev);
 			}

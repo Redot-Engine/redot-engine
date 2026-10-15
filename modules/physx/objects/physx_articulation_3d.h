@@ -122,8 +122,8 @@ public:
 	bool is_sleeping() const;
 
 	/// Replaces the link's collision shape with a per-link instance of the
-	/// shared PhysXShape3D blueprint, placed at p_transform. Concave shapes
-	/// degrade to query-only on links (links simulate — REG-0014). Mass
+	/// shared PhysXShape3D shape_blueprint, placed at p_transform. Concave shapes
+	/// degrade to query-only on links (links simulate). Mass
 	/// properties are recomputed from all attached shapes at the link's
 	/// stored density.
 	void set_link_shape(int p_link_index, PhysXShape3D *p_shape, const Transform3D &p_transform);

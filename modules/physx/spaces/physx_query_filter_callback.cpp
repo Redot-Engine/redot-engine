@@ -67,8 +67,8 @@ physx::PxQueryHitType::Enum PhysXQueryFilterCallback::preFilter(
 	// a raycast/overlap/sweep reports the thin box that emulates the ray.
 	// (Mirrors the type check in the _body_motion_cast path.)
 	if (shape->userData) {
-		const PhysXShape3D *shape_bp = static_cast<const PhysXShape3D *>(shape->userData);
-		if (shape_bp && shape_bp->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
+		const PhysXShape3D *shape_blueprint = static_cast<const PhysXShape3D *>(shape->userData);
+		if (shape_blueprint && shape_blueprint->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
 			return physx::PxQueryHitType::eNONE;
 		}
 	}
@@ -128,8 +128,8 @@ physx::PxQueryHitType::Enum PhysXQueryFilterCallback::postFilter(
 	// Raycast back-face rule (only armed by intersect_ray). Everything else
 	// pre-filters all Godot semantics; no post-filter needed.
 	if (ray_backface_filtering && shape && shape->userData) {
-		const PhysXShape3D *shape_bp = static_cast<const PhysXShape3D *>(shape->userData);
-		if (!shape_bp->has_backface_collision() && shape_bp->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON) {
+		const PhysXShape3D *shape_blueprint = static_cast<const PhysXShape3D *>(shape->userData);
+		if (!shape_blueprint->has_backface_collision() && shape_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON) {
 			// One-sided mesh: a hit from the back NEVER counts, even when the
 			// query asked for back faces (eMESH_BOTH_SIDES made PhysX report
 			// it; Godot's one-sided trimeshes stay one-sided for rays).
@@ -150,7 +150,7 @@ physx::PxQueryHitType::Enum PhysXQueryFilterCallback::postFilter(
 			}
 			return physx::PxQueryHitType::eBLOCK;
 		}
-		if (shape_bp->has_backface_collision()) {
+		if (shape_blueprint->has_backface_collision()) {
 			// The doubled cook fronts every triangle twice: the flipped copy
 			// is a BACK-face hit and only counts when the query asked for it.
 			// (Redot interleaves the copies -- original at even cooked

@@ -48,7 +48,7 @@ class StandardMaterial3D;
 // Ctrl+LMB smooths. Fill sets every vertex; Ramp starts from the height
 // ramp (pin_height / max_distance). Each stroke is one undo step.
 //
-// Ported from the reference module's editor toolset (Phase 12, RD-10); the
+// Ported from the reference module's editor toolset; the
 // node-side data path (max_distances / effective / height ramp) was already
 // in place.
 class PhysXClothPaintPlugin : public EditorPlugin {

@@ -34,20 +34,9 @@
 
 /**
  * @file physx_space_3d.h
- * @brief A physics world — owns one PxScene and its supporting infrastructure.
- *
- * PhysXSpace3D represents a single physics simulation context. It owns:
- *   - A PxScene (the PhysX world)
- *   - A CPU dispatcher (worker threads)
- *   - A PhysXSimulationEventCallback (contacts, triggers, wake/sleep)
- *   - A PhysXDirectSpaceState3D (query interface)
- *
- * Stepping is flag-gated (physics/physx_3d/simulation/async_step). With the
- * flag off (default), step() runs the whole pipeline synchronously: pre-step
- * hooks → simulate() → fetchResults() → post-step hooks. With the flag on,
- * step() only kicks simulate(); sync() — which the engine calls at the start
- * of the next tick, before scripts — fetches and runs the post-solve
- * pipeline (_finish_step), letting the solve overlap the rest of the frame.
+ * @brief A physics world — owns one PxScene and its supporting infrastructure:
+ * the simulation event / pair filter / contact modify callbacks and the
+ * PhysXDirectSpaceState3D query interface.
  */
 
 #ifndef PHYSX_SPACE_3D_H
@@ -57,7 +46,6 @@
 #include "core/templates/hash_set.h"
 #include "core/templates/local_vector.h"
 #include "servers/physics_3d/physics_server_3d.h"
-// Forward declarations of PhysX types to keep the header clean
 namespace physx {
 class PxScene;
 class PxActor;
@@ -86,13 +74,11 @@ public:
 	PhysXSpace3D();
 	~PhysXSpace3D();
 
-	// Simulation Loop
 	// Async stepping (physics/physx_3d/simulation/async_step): step() kicks
 	// PxScene::simulate() and returns; sync() — which the engine calls at the
 	// start of the next tick, BEFORE scripts — does the fetchResults and the
 	// whole post-solve pipeline (_finish_step). With the flag off, step()
-	// fetches inline and sync() is a no-op, byte-identical to the historic
-	// behavior.
+	// fetches inline and sync() is a no-op.
 	void step(float p_step);
 	void sync();
 	/// Fetches an in-flight solve immediately (no-op when idle) so structural
@@ -142,14 +128,9 @@ public:
 	// attached shapes only.
 	real_t get_shape_rest_offset() const { return shape_rest_offset; }
 
-	// --------------------------------------------------------------------
-	// Sleep policy (Godot SpaceParameters, mapped onto PhysX's energy-based
-	// sleep threshold + wake counter).
-	// Godot expresses sleep as separate linear/angular velocity thresholds
-	// (m/s and rad/s) plus a time-to-sleep; PhysX takes a mass-normalized
-	// kinetic-energy threshold below which a body may sleep, plus a wake
-	// counter in seconds.
-	// --------------------------------------------------------------------
+	// Godot SpaceParameters (separate linear/angular velocity thresholds plus
+	// time-to-sleep) mapped onto PhysX's mass-normalized kinetic-energy sleep
+	// threshold + wake counter.
 	real_t get_sleep_threshold_linear() const { return sleep_threshold_linear; }
 	real_t get_sleep_threshold_angular() const { return sleep_threshold_angular; }
 	real_t get_time_before_sleep() const { return time_before_sleep; }
@@ -159,19 +140,16 @@ public:
 
 	PhysXDirectSpaceState3D *get_direct_state() { return direct_state; }
 
-	// Actor Management
 	// While a solve is in flight (async mode), scene mutations are queued and
 	// applied right after the fetch — PhysX forbids add/remove while the
 	// simulation runs. The mid-flight window is real: deferred engine calls
-	// and node destruction (message_queue flush / iteration_end) run between
-	// step() and the next sync(). release_actor lets wrappers transfer
-	// PxActor ownership to the space so a freed body's actor is released
-	// only after the fetch, never mid-solve.
+	// and node destruction run between step() and the next sync().
+	// release_actor lets wrappers transfer PxActor ownership to the space so
+	// a freed body's actor is released only after the fetch, never mid-solve.
 	void add_actor(physx::PxActor *p_actor);
 	void remove_actor(physx::PxActor *p_actor);
 	void release_actor(physx::PxActor *p_actor);
 
-	// PhysX-specific getter for helper classes (like DirectSpaceState)
 	physx::PxScene *get_px_scene() const { return px_scene; }
 
 	PhysXArea3D *get_default_area() const { return default_area; }
@@ -179,19 +157,15 @@ public:
 
 	/// Releases every soft-body rigid attachment referencing p_actor — called
 	/// from the server's body-free path BEFORE the actor is released, so a
-	/// live PxDeformableAttachment never dangles on a freed rigid (GAP-15).
+	/// live PxDeformableAttachment never dangles on a freed rigid.
 	void release_soft_body_attachments_for(physx::PxActor *p_actor);
 
-	// --------------------------------------------------------------------
 	// Debug contacts — drives the "Visible Collision Shapes" contact overlay.
-	//
-	// space_set_debug_contacts() allocates the buffer; onContact appends up to
-	// the buffer's capacity each step; the count is reset at the start of step.
-	// Enabling debug contacts on any space flips a module-global flag so the
-	// stateless simulation filter shader requests contact-point notifications
-	// for all pairs (not just those with max_contacts_reported > 0).
-	// Matches GodotPhysics' GodotSpace3D debug-contact semantics.
-	// --------------------------------------------------------------------
+	// set_debug_contacts() allocates the buffer; onContact appends each step;
+	// enabling it on any space flips a module-global flag so the stateless
+	// simulation filter shader requests contact-point notifications for all
+	// pairs (not just those with max_contacts_reported > 0). Matches
+	// godot_physics_3d's debug-contact semantics.
 	void set_debug_contacts(int p_amount);
 	_FORCE_INLINE_ bool is_debugging_contacts() const { return !debug_contacts_buffer.is_empty(); }
 	_FORCE_INLINE_ void add_debug_contact(const Vector3 &p_contact) {
@@ -202,24 +176,19 @@ public:
 	_FORCE_INLINE_ Vector<Vector3> get_debug_contacts() const { return debug_contacts_buffer; }
 	_FORCE_INLINE_ int get_debug_contact_count() const { return debug_contacts_count; }
 
-	// --------------------------------------------------------------------
-	// Deferred monitor/event dispatch.
-	//
-	// onTrigger/onContact run inside fetchResults() during step(), i.e. outside
-	// Godot's "safe" callback window. Godot expects Area3D monitor callbacks
-	// (body_entered/area_entered/...) to fire during PhysicsServer3D::flush_queries,
-	// which runs AFTER sync, with the world unlocked. We therefore record the
-	// events here during step() and dispatch them in flush_queries().
-	// --------------------------------------------------------------------
-
+	// onTrigger/onContact run inside fetchResults(), outside Godot's "safe"
+	// callback window: Area3D monitor callbacks must fire during
+	// PhysicsServer3D::flush_queries() (after sync, world unlocked), so
+	// onTrigger records events here and flush_pending_callbacks() dispatches
+	// them in the flush_queries() window.
 	/// A deferred area/body monitor event (from onTrigger).
 	struct TriggerEvent {
-		PhysXArea3D *area = nullptr; ///< The trigger area (dispatches the callback).
+		PhysXArea3D *trigger_area = nullptr; ///< The trigger area (dispatches the callback).
 		PhysXBody3D *body = nullptr; ///< The other body, if this is a body-monitor event.
 		PhysXArea3D *other_area = nullptr; ///< The other area, if this is an area-vs-area event.
 		PhysicsServer3D::AreaBodyStatus status = PhysicsServer3D::AREA_BODY_ADDED;
-		int other_shape = 0; ///< Shape index of the other actor.
-		int area_shape = 0; ///< Shape index of this area.
+		int other_shape_idx = 0; ///< Shape index of the other actor.
+		int area_shape_idx = 0; ///< Shape index of this area.
 		bool is_area_vs_area = false; ///< Selects area_monitor vs body_monitor dispatch.
 		/// Identity is cached at queue time: the body/area may be freed before
 		/// flush_queries() dispatches (body_exited must still fire), so the
@@ -230,34 +199,24 @@ public:
 		ObjectID other_area_id;
 	};
 
-	/// A deferred contact event (from onContact). Points at the body whose
-	/// contact buffer was already filled during step(); nothing to do at flush
-	/// time today, but the queue reserves the hook for state-sync dispatch.
+	/// A deferred contact event (from onContact); reserves the hook for
+	/// state-sync dispatch at flush time.
 	struct ContactEvent {
 		PhysXBody3D *body = nullptr;
 	};
 
-	/// Records a trigger event for later dispatch (called by onTrigger).
 	void queue_trigger(const TriggerEvent &p_event);
-	/// Dispatches all queued trigger events and clears the queue. Called by
-	/// PhysXServer3D::flush_queries().
 	void flush_pending_callbacks();
 
 	bool is_flushing_callbacks() const { return flushing_callbacks; }
 
-	// --------------------------------------------------------------------
-	// Body / Area registration
-	// --------------------------------------------------------------------
-
+	// --- Registration (unregister drops the back-pointer; see the member
+	// comments below for why each list is tracked) ---
 	void register_body(PhysXBody3D *p_body);
 	void unregister_body(PhysXBody3D *p_body);
 
 	void register_area(PhysXArea3D *p_area);
 	void unregister_area(PhysXArea3D *p_area);
-
-	// --------------------------------------------------------------------
-	// Vehicle registration
-	// --------------------------------------------------------------------
 
 	void register_vehicle(PhysXVehicleServer *p_vehicle);
 	void unregister_vehicle(PhysXVehicleServer *p_vehicle);
@@ -265,10 +224,6 @@ public:
 	const LocalVector<PhysXVehicleServer *> &get_vehicles() const {
 		return vehicles;
 	}
-
-	// --------------------------------------------------------------------
-	// GPU fluid / cloth registration (PhysXGPUParticleFluid3D/PhysXGPUCloth3D)
-	// --------------------------------------------------------------------
 
 	void register_fluid(PhysXGPUParticleFluid3D *p_fluid);
 	void unregister_fluid(PhysXGPUParticleFluid3D *p_fluid);
@@ -282,10 +237,6 @@ public:
 		return cloths;
 	}
 
-	// --------------------------------------------------------------------
-	// Soft body registration (PhysXSoftBody3D — the soft_body_* server API).
-	// --------------------------------------------------------------------
-
 	void register_soft_body(PhysXSoftBody3D *p_sb) {
 		if (soft_bodies.find(p_sb) == -1) {
 			soft_bodies.push_back(p_sb);
@@ -298,12 +249,8 @@ public:
 		}
 	}
 
-	// --------------------------------------------------------------------
-	// Articulation registration (PhysXArticulation3D — script-level API).
-	// Tracked so freeing the space can detach them (their wrappers survive
-	// the space and must not keep a dangling space/scene pointer).
-	// --------------------------------------------------------------------
-
+	// Articulations are tracked so freeing the space can detach them: their
+	// wrappers survive the space and must not keep a dangling scene pointer.
 	void register_articulation(PhysXArticulation3D *p_articulation);
 	void unregister_articulation(PhysXArticulation3D *p_articulation);
 
@@ -324,20 +271,16 @@ public:
 	}
 
 private:
-	// Core PhysX elements
 	physx::PxScene *px_scene = nullptr;
 	physx::PxDefaultCpuDispatcher *px_dispatcher = nullptr;
 
-	// Simulation event callback (contacts, triggers, wake/sleep).
 	PhysXSimulationEventCallback *event_callback = nullptr;
 
-	// Pair filter callback (collision exceptions).
 	PhysXPairFilterCallback *pair_filter_callback = nullptr;
 
-	// Contact modify callback (Godot material combiner: absorbent/rough).
+	// Godot material combiner: absorbent/rough.
 	PhysXContactModifyCallback *contact_modify_callback = nullptr;
 
-	// Godot/Redot tracking
 	PhysXDirectSpaceState3D *direct_state = nullptr;
 	RID rid;
 	bool active = false;
@@ -350,13 +293,16 @@ private:
 	int active_objects = 0;
 	int cached_contact_pairs = 0;
 
-	// Queued scene mutations from the async in-flight window (see
-	// add_actor/remove_actor/release_actor), applied in order at fetch time.
+	// Queued scene mutations from the async in-flight window, applied in
+	// order at fetch time (see add_actor/remove_actor/release_actor).
 	struct PendingActorOp {
+		enum Kind {
+			KIND_ADD,
+			KIND_REMOVE,
+			KIND_RELEASE,
+		};
 		physx::PxActor *actor = nullptr;
-		bool add = false;
-		bool remove = false;
-		bool release = false;
+		Kind kind = KIND_ADD;
 	};
 	LocalVector<PendingActorOp> pending_actor_ops;
 	void _flush_actor_ops();
@@ -379,16 +325,14 @@ private:
 	real_t sleep_threshold_angular = Math::deg_to_rad(8.0);
 	real_t time_before_sleep = 0.5;
 
-	// Provides world-default gravity/damp
+	// Provides world-default gravity/damp.
 	PhysXArea3D *default_area = nullptr;
 
-	// World gravity the PxScene was initialized with (project settings; the
-	// module never mutates scene gravity after creation). Serves the per-step
-	// consumers (body pre-step delta, CPU soft-body step) without a virtual
-	// PxScene::getGravity() round-trip per body per step.
+	// Scene gravity cached at creation (the module never mutates it after);
+	// serves the per-step consumers without a virtual PxScene::getGravity()
+	// round-trip per body per step.
 	Vector3 scene_gravity;
 
-	// Object registration
 	LocalVector<PhysXBody3D *> bodies;
 	LocalVector<PhysXArea3D *> areas;
 	LocalVector<PhysXVehicleServer *> vehicles;
@@ -397,11 +341,11 @@ private:
 	LocalVector<PhysXSoftBody3D *> soft_bodies;
 	LocalVector<PhysXArticulation3D *> articulations;
 
-	// Deferred monitor events (filled during step, drained in flush_queries).
+	// Filled during step, drained in flush_queries.
 	LocalVector<TriggerEvent> pending_trigger_events;
 	bool flushing_callbacks = false;
 
-	// Bodies that were ACTIVE during the previous step (F-11 sync gating):
+	// Bodies that were ACTIVE during the previous step (sync gating):
 	// bodies in this list that are no longer active just fell asleep and get
 	// one final sync. Tracking the *active* set (not the synced set) is what
 	// makes the final sync happen exactly once. Cleaned in unregister_body().
@@ -414,12 +358,10 @@ private:
 	HashSet<PhysXBody3D *> _finish_sync_set;
 	LocalVector<PhysXBody3D *> _finish_now_active;
 
-	// Debug-contact buffer for the "Visible Collision Shapes" overlay.
 	// Reset (count = 0) at the start of each step; filled by onContact.
 	Vector<Vector3> debug_contacts_buffer;
 	int debug_contacts_count = 0;
 
-	// Private helper to initialize/destroy the scene + vehicle context
 	void _initialize_scene();
 	void _terminate_scene();
 	/// Shared tail of step()/sync(): everything after fetchResults — queued

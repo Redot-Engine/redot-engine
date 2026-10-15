@@ -36,17 +36,10 @@
  * @file physx_shape_3d.h
  * @brief Abstract base class for collision shape resources.
  *
- * PhysXShape3D is the shared, RID-tracked collision geometry resource (the
- * Godot analog of a CollisionShape3D's shape). It is NOT a PxShape — it is a
- * *blueprint*. When a body attaches this shape, it calls create_shape() to
- * produce a per-actor PxShape instance from the blueprint.
- *
- * Subclasses (box, sphere, capsule, etc.) implement get_physx_geometry() to
- * produce the specific PxGeometry, handling scale where needed.
- *
- * Shape sharing: multiple bodies can reference the same PhysXShape3D. The
- * owners map tracks how many bodies use it so that geometry changes can be
- * propagated to all attached instances via _notify_shape_changed().
+ * PhysXShape3D is the shared, RID-tracked shape blueprint (the Godot analog
+ * of a CollisionShape3D's shape); it is never a PxShape itself. Subclasses
+ * implement get_physx_geometry(). The owners map lets geometry changes
+ * propagate to every attached instance via _notify_shape_changed().
  */
 
 #ifndef PHYSX_SHAPE_3D_H
@@ -84,50 +77,31 @@ public:
 	void set_rid(const RID &p_rid) { physx_rid.set_rid(p_rid); }
 	RID get_rid() const { return physx_rid.get_rid(); }
 
-	/**
-	 * @brief Produces the PxGeometry for this shape, scaled by p_scale.
-	 *
-	 * Each subclass implements this to generate its specific geometry type
-	 * (PxBoxGeometry, PxSphereGeometry, etc.) applying the scale factor.
-	 * @return true if geometry generation succeeded.
-	 */
+	// Produces this shape's PxGeometry with p_scale applied; false on failure.
 	virtual bool get_physx_geometry(physx::PxGeometryHolder &p_geometry_holder, const physx::PxVec3 &p_scale) const = 0;
 
-	/**
-	 * @brief Creates a per-actor PxShape from this blueprint.
-	 *
-	 * If p_material is nullptr, the server's default material is used.
-	 * The returned PxShape has refcount 1; the caller must attachShape()
-	 * then release() to transfer ownership to the actor.
-	 */
+	// Creates a per-actor PxShape instance (server default material when
+	// p_material is null). Returns refcount 1; the caller must attachShape()
+	// then release() to transfer ownership to the actor.
+	
 	virtual physx::PxShape *create_shape(
 			physx::PxPhysics &p_physics,
 			const physx::PxVec3 &p_scale,
 			const physx::PxMaterial *p_material,
 			physx::PxShapeFlags p_flags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE);
 
-	/**
-	 * @brief Returns the local alignment pose for geometries that need it.
-	 *
-	 * For example, PhysX capsules are X-axis aligned but Godot's are Y-axis,
-	 * so the capsule subclass returns a 90-degree rotation around Z. Shapes
-	 * whose geometry the body scale also scales (heightfields: the
-	 * quantization-restore lift; separation rays: the forward half-length
-	 * offset) apply the same scale to their pose translation — the consumer
-	 * passes the identical scale it gave get_physx_geometry().
-	 */
+	// Local alignment pose for geometries that need one (PhysX capsules are
+	// X-axis aligned, Godot's are Y-axis -> 90-degree Z rotation). Shapes whose
+	// pose translation the body scale also scales (heightfield lift, separation
+	// ray half-length) apply it here -- the consumer passes the identical scale
+	// it gave get_physx_geometry().
 	virtual physx::PxTransform get_local_pose(const physx::PxVec3 &p_scale = physx::PxVec3(1.0f)) const {
 		return physx::PxTransform(physx::PxIdentity);
 	}
 
-	/**
-	 * @brief Translates a raw PhysX face index into the user-facing index.
-	 *
-	 * Concave shapes cooked with backface collision duplicate every triangle
-	 * (reversed winding), so raw PhysX face indices index the DOUBLED mesh;
-	 * Godot consumers expect indices into their own faces array. The base
-	 * implementation is the identity.
-	 */
+	// Raw PhysX face indices index the DOUBLED mesh when a concave shape is
+	// cooked with backface collision (every triangle duplicated, reversed
+	// winding); Godot consumers index the original faces array.
 	virtual int translate_face_index(int p_face_index) const { return p_face_index; }
 	/// Whether this shape collides from both sides (ConcavePolygonShape3D's
 	/// backface_collision). Queries that must honor Godot's back-face rule
@@ -150,12 +124,9 @@ public:
 	virtual void set_margin(float p_margin);
 	float get_margin() const { return margin; }
 
-	/** @brief Detach PxShape from all owners.
-	 *
-	 * Called during destruction when the shape holds external pointers
-	 * (e.g. PxCustomGeometry callbacks) that must not outlive the PxShape
-	 * instances. Derived classes override this to perform the detachment.
-	 */
+	// Detaches (and releases) the PxShape instances on every owner. Needed on
+	// destruction when the blueprint holds external pointers (e.g.
+	// PxCustomGeometry callbacks) that must not outlive those instances.
 	virtual void detach_from_owners();
 
 	virtual float get_solver_bias() const {
@@ -176,16 +147,12 @@ protected:
 	PhysXRIDOwner physx_rid;
 	HashMap<PhysXShapedObject3D *, int> owners;
 	mutable Mutex owners_mutex;
-	// Contact offset (PhysX uses the SUM of both shapes' contact offsets for pair
-	// contact generation). The previous default of 0.04 produced a combined zone
-	// of 0.08 m — large enough that a sphere moving at even moderate speed (6 m/s
-	// → 0.1 m/step at 60 Hz) enters the zone and gets a *speculative* contact
-	// (positive separation). PhysX's solver applies restitution to speculative
-	// contacts but applies ZERO friction to them, so the sphere bounces without
-	// rolling. A smaller offset (0.01 → combined 0.02 m) ensures fast-moving
-	// bodies penetrate before the contact fires, producing penetrating contacts
-	// that receive full friction. The trade-off is minor: slightly deeper initial
-	// penetration per step, corrected by the solver's Baumgarte stabilization.
+	// Contact offset (PhysX sums both shapes' offsets for pair contact
+	// generation). 0.04 gave a 0.08 m combined zone where a moderately fast
+	// sphere got *speculative* contacts -- restitution but ZERO friction, so it
+	// bounced without rolling. 0.01 (0.02 m combined) lets fast bodies
+	// penetrate into fully-frictioned contacts; the slightly deeper initial
+	// penetration is corrected by Baumgarte stabilization.
 	float margin = 0.01f;
 	float default_solver_bias = 0.0f;
 };

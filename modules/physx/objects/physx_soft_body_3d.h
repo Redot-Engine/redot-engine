@@ -153,7 +153,7 @@ public:
 	void apply_central_impulse(const Vector3 &p_impulse);
 	void apply_central_force(const Vector3 &p_force, double p_delta);
 
-	// Rigid attachment (GAP-15, GPU path only): ties a render vertex to a
+	// Rigid attachment (GPU path only): ties a render vertex to a
 	// rigid body with a PxDeformableAttachment, so the vertex follows the
 	// body exactly instead of being dragged by per-frame forces. The CPU
 	// XPBD path has no SDK constraint facility — warn and ignore there.
@@ -232,7 +232,7 @@ private:
 	LocalVector<Vector3> contact_p_prev;
 	int contact_count = 0; // penetrating vertices at the last refresh
 
-	// Render point index -> live rigid attachment (GPU path, GAP-15).
+	// Render point index -> live rigid attachment (GPU path).
 	HashMap<int, physx::PxDeformableAttachment *> point_attachments;
 
 	void _apply_solver_settings();

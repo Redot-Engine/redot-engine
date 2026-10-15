@@ -38,7 +38,7 @@
 
 // Thin RefCounted bridge exposing WaterSolver to GDScript, same precedent as
 // GodotPhysXVehicleProbe/GodotPhysXBlastProbe -- exists purely so a real
-// windowed GDScript test can drive the Phase 1 ripple layer end to end before
+// windowed GDScript test can drive the ripple layer end to end before
 // PhysXWaterSurface3D (the real node) is built. Not a real node itself.
 class WaterRippleProbe : public RefCounted {
 	GDCLASS(WaterRippleProbe, RefCounted);

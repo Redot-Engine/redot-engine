@@ -809,7 +809,7 @@ void PhysXSoftBody3D::set_exception_slot(uint32_t p_slot) {
 }
 
 // ---------------------------------------------------------------------------
-// Rigid attachments (GAP-15)
+// Rigid attachments
 // ---------------------------------------------------------------------------
 
 void PhysXSoftBody3D::attach_point_to_body(int p_point_index, const RID &p_body) {

@@ -103,7 +103,7 @@ void PhysXShape3D::detach_from_owners() {
 // Destructor — nullify shape pointers in all owners before destruction.
 //
 // When this shape is freed, every body/area that references it still holds
-// a raw pointer in AttachedShape::shareable_shape. If the body is destroyed
+// a raw pointer in AttachedShape::shape_blueprint. If the body is destroyed
 // after the shape, its destructor calls remove_owner() on the freed pointer
 // → use-after-free. Nullifying the pointer prevents that.
 // ---------------------------------------------------------------------------
@@ -122,7 +122,7 @@ PhysXShape3D::~PhysXShape3D() {
 }
 
 // ---------------------------------------------------------------------------
-// PxShape creation — produces a per-actor instance from this blueprint.
+// PxShape creation — produces a per-actor instance from this shape_blueprint.
 // ---------------------------------------------------------------------------
 
 physx::PxShape *PhysXShape3D::create_shape(physx::PxPhysics &p_physics, const physx::PxVec3 &p_scale, const physx::PxMaterial *p_material, physx::PxShapeFlags p_flags) {

@@ -87,10 +87,8 @@ class PhysXServer3D : public PhysicsServer3D {
 	GDCLASS(PhysXServer3D, PhysicsServer3D);
 
 	static PhysXServer3D *singleton_ptr;
-	// ------------------------------------------------------------------
-	// RID Owners — map Godot RIDs to internal wrapper objects.
-	// The `true` template parameter enables thread-safe atomics.
-	// ------------------------------------------------------------------
+	// RID Owners — map Godot RIDs to internal wrapper objects; the `true`
+	// template parameter enables thread-safe atomics.
 	mutable RID_PtrOwner<PhysXShape3D, true> shape_owner;
 	mutable RID_PtrOwner<PhysXBody3D, true> body_owner{ 65536, 1048576 };
 	mutable RID_PtrOwner<PhysXSpace3D, true> space_owner;
@@ -101,15 +99,12 @@ class PhysXServer3D : public PhysicsServer3D {
 	mutable RID_PtrOwner<PhysXGPUParticleFluid3D, true> fluid_owner;
 	mutable RID_PtrOwner<PhysXGPUCloth3D, true> cloth_owner;
 	mutable RID_PtrOwner<PhysXArticulation3D, true> articulation_owner;
-	// ------------------------------------------------------------------
 	// API guard — serializes the ClassDB-bound module APIs (called directly
 	// on this inner server from the main thread, bypassing WrapMT) against
 	// the physics pipeline (step/sync/flush_queries/free) AND against the
 	// WrapMT pump task's marshaled-command batches (bracketed via
-	// command_flush_begin/end). This fork's Mutex is recursive: step/flush
-	// dispatch script Callables that may legally call back into these APIs
-	// on the same thread.
-	// ------------------------------------------------------------------
+	// command_flush_begin/end). Recursive Mutex: step/flush dispatch script
+	// Callables that may legally call back into these APIs on the same thread.
 	mutable Mutex api_mutex;
 	// ------------------------------------------------------------------
 	// PhysX SDK singletons (created in init(), released in finish()).
@@ -141,7 +136,6 @@ class PhysXServer3D : public PhysicsServer3D {
 	bool async_stepping = false;
 
 private:
-	/** @brief Creates a shape of type T, registers it, and returns its RID. */
 	template <typename T>
 	RID _make_shape();
 
@@ -189,10 +183,7 @@ public:
 	physx::PxCudaContextManager *get_cuda_context() const { return px_cuda_context; }
 	bool is_gpu_dynamics_enabled() const { return gpu_dynamics_enabled; }
 
-	// ------------------------------------------------------------------
-	// SHAPE API — collision geometry resources (shared, not per-body).
-	// Each create() returns a RID registered in shape_owner.
-	// ------------------------------------------------------------------
+	// --- SHAPE API — shared collision geometry resources (RID per blueprint) ---
 	virtual RID world_boundary_shape_create() override;
 	virtual RID separation_ray_shape_create() override;
 	virtual RID sphere_shape_create() override;
@@ -215,9 +206,7 @@ public:
 	virtual void shape_set_custom_solver_bias(RID p_shape, real_t p_bias) override;
 	virtual real_t shape_get_custom_solver_bias(RID p_shape) const override;
 
-	// ------------------------------------------------------------------
-	// SPACE API — a physics world (one PxScene per space).
-	// ------------------------------------------------------------------
+	// --- SPACE API — one PxScene per space ---
 	virtual RID space_create() override;
 
 	virtual void space_set_active(RID p_space, bool p_active) override;
@@ -232,10 +221,7 @@ public:
 	virtual PackedVector3Array space_get_contacts(RID p_space) const override;
 	virtual int space_get_contact_count(RID p_space) const override;
 
-	// ------------------------------------------------------------------
-	// AREA API — trigger volumes (kinematic actor + trigger shape [+ detection
-	// shape when monitorable — see REG-0011]).
-	// ------------------------------------------------------------------
+	// --- AREA API — trigger volumes (kinematic actor + trigger shape [+ detection shape when monitorable]) ---
 	virtual RID area_create() override;
 
 	virtual void area_set_space(RID p_area, RID p_space) override;
@@ -278,10 +264,7 @@ public:
 	virtual void area_set_monitor_callback(RID p_area, const Callable &p_callback) override;
 	virtual void area_set_area_monitor_callback(RID p_area, const Callable &p_callback) override;
 
-	// ------------------------------------------------------------------
-	// BODY API — dynamic/static/kinematic rigid bodies.
-	// Each setter resolves the RID → PhysXBody3D* and forwards the call.
-	// ------------------------------------------------------------------
+	// --- BODY API — dynamic/static/kinematic rigid bodies ---
 	PhysXBody3D *get_body(RID p_rid) const;
 	PhysXArea3D *get_area(RID p_rid) const;
 	PhysXShape3D *get_shape(RID p_rid) const;
@@ -381,21 +364,16 @@ public:
 
 	virtual PhysicsDirectBodyState3D *body_get_direct_state(RID p_body) override;
 
-	// ------------------------------------------------------------------
-	// VEHICLE API — vehicle2 wrapper.
-	//   vehicle_create           make a vehicle RID of the given archetype.
-	//   vehicle_set_chassis_body attach a dynamic body as the chassis.
-	//   vehicle_set_space        set/change the vehicle's space membership.
-	// Teardown is handled by free(RID) (release + memdelete) and finish()
-	// (frees vehicles before bodies — they borrow the chassis PxRigidDynamic).
-	// ------------------------------------------------------------------
+	// --- VEHICLE API — vehicle2 wrapper. Teardown: free(RID) (release +
+	// memdelete) and finish() free vehicles before bodies — they borrow the
+	// chassis PxRigidDynamic.
 	// Module extension: per-body soft-body solver-path override
 	// (-1 follow project setting, 0 Auto, 1 CPU, 2 GPU).
 	void soft_body_set_solver_mode(RID p_body, int p_mode);
 	int soft_body_get_solver_mode(RID p_body) const;
 
 	// Module extension: rigid attachment of a soft-body render vertex to a
-	// rigid body (PxDeformableAttachment, GPU solver path — GAP-15).
+	// rigid body (PxDeformableAttachment, GPU solver path).
 	void soft_body_attach_point_to_body(RID p_body, int p_point_index, RID p_rigid_body);
 	void soft_body_detach_point_from_body(RID p_body, int p_point_index);
 
@@ -410,7 +388,7 @@ public:
 	int vehicle_add_wheel(RID p_vehicle);
 	void vehicle_set_wheel_params(RID p_vehicle, int p_idx, const Dictionary &p_params);
 
-	// Control + EngineDrive config (Phase 8).
+	// Control + EngineDrive config 
 	void vehicle_set_control_inputs(RID p_vehicle, real_t p_throttle, real_t p_brake, real_t p_steer, real_t p_handbrake);
 	void vehicle_set_gear_command(RID p_vehicle, int p_gear);
 	void vehicle_set_response_params(RID p_vehicle, const Dictionary &p_params);
@@ -421,12 +399,12 @@ public:
 	void vehicle_set_autobox_params(RID p_vehicle, const Dictionary &p_params);
 	void vehicle_set_differential_params(RID p_vehicle, const Dictionary &p_params);
 
-	// DirectDrive per-wheel control (Phase 9).
+	// DirectDrive per-wheel control 
 	void vehicle_set_wheel_drive_torque(RID p_vehicle, int p_idx, real_t p_torque);
 	void vehicle_set_wheel_brake_torque(RID p_vehicle, int p_idx, real_t p_torque);
 	void vehicle_set_wheel_steer_angle(RID p_vehicle, int p_idx, real_t p_angle);
 
-	// Telemetry readback (Phase 10). Polled; valid after the step.
+	// Telemetry readback Polled; valid after the step.
 	Array vehicle_get_wheel_states(RID p_vehicle) const;
 	Dictionary vehicle_get_engine_state(RID p_vehicle) const;
 
@@ -465,8 +443,8 @@ public:
 	bool articulation_is_sleeping(RID p_articulation) const;
 
 	/// Replaces a link's collision shape with a per-link instance of the
-	/// shared PhysXShape3D blueprint (concave shapes degrade to query-only
-	/// per REG-0014; mass recomputed at the link's stored density).
+	/// shared PhysXShape3D shape_blueprint (concave shapes degrade to query-only
+	/// mass recomputed at the link's stored density).
 	void articulation_set_link_shape(RID p_articulation, int p_link_index, RID p_shape, const Transform3D &p_transform);
 	/// Per-link collision filtering (shape filter data word0/word1).
 	void articulation_set_link_collision_layer(RID p_articulation, int p_link_index, uint32_t p_layer);
@@ -607,9 +585,7 @@ public:
 	bool cloth_is_ready(RID p_cloth) const;
 	int cloth_get_mesh(RID p_cloth, PackedVector3Array &r_positions, PackedInt32Array &r_indices, uint32_t &r_version) const;
 
-	// ------------------------------------------------------------------
-	// JOINT API — constraints between bodies
-	// ------------------------------------------------------------------
+	// --- JOINT API — constraints between bodies ---
 	virtual RID joint_create() override;
 
 	virtual void joint_clear(RID p_joint) override;
@@ -661,9 +637,7 @@ public:
 	virtual void joint_disable_collisions_between_bodies(RID p_joint, bool p_disable) override;
 	virtual bool joint_is_disabled_collisions_between_bodies(RID p_joint) const override;
 
-	// ------------------------------------------------------------------
-	// LIFECYCLE & SIMULATION — init/finish PhysX, step all spaces.
-	// ------------------------------------------------------------------
+	// --- LIFECYCLE & SIMULATION — init/finish PhysX, step all spaces ---
 	virtual void free(RID p_rid) override;
 
 	// --- Internal helpers (called by bodies/joints/vehicles during lifecycle) ---

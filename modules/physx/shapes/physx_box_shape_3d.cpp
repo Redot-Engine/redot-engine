@@ -33,10 +33,8 @@
 #include "physx_box_shape_3d.h"
 
 PhysXBoxShape3D::PhysXBoxShape3D() {
-	// Server contract for SHAPE_BOX data is HALF-EXTENTS (core BoxShape3D
-	// passes size / 2, and godot_physics / Jolt both treat the data as
-	// half-extents). Godot's default BoxShape3D size is (1, 1, 1), so the
-	// contract-correct default here is (0.5, 0.5, 0.5).
+	// Half-extents of Godot's default (1,1,1) box; set_data documents the
+	// half-extents server contract.
 	half_extents = Vector3(0.5, 0.5, 0.5);
 }
 
@@ -46,7 +44,7 @@ void PhysXBoxShape3D::set_data(const Variant &p_data) {
 	// reference backends (godot_physics_3d's GodotBoxShape3D and
 	// jolt_physics_3d) interpret the data as half-extents. Treating it as
 	// full size and halving it here shrinks every box to a quarter of its
-	// volume (REG: P5 probe measured boxes resting at exactly half height
+	// volume (a probe measured boxes resting at exactly half height
 	// and a 2 m cube reporting a 1 m cube's inertia).
 	const Vector3 new_half_extents = Vector3(p_data);
 	// Negative half-extents are invalid data — rejected before they are stored

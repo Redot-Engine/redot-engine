@@ -95,7 +95,7 @@ public:
 
 	virtual bool get_physx_geometry(physx::PxGeometryHolder &holder, const physx::PxVec3 &scale) const override {
 		// One callback instance per distinct (quantized) scale: the shape
-		// blueprint is shared across bodies, and a single shared callback
+		// shape_blueprint is shared across bodies, and a single shared callback
 		// mutated per request made two differently-scaled owners fight over
 		// its radius/height (last write won for both). Each PxShape holds a
 		// PxCustomGeometry bound to its own scale's instance.

@@ -50,8 +50,6 @@ Variant PhysXSphereShape3D::get_data() const {
 }
 
 AABB PhysXSphereShape3D::get_aabb() const {
-	// AABB is local to the shape.
-	// Center is 0,0,0, extent is radius in all directions.
 	return AABB(Vector3(-radius, -radius, -radius), Vector3(radius * 2.0, radius * 2.0, radius * 2.0));
 }
 

@@ -484,7 +484,7 @@ void PhysXSoftVolume3D::set_exception_slot(uint32_t p_slot) {
 }
 
 // ---------------------------------------------------------------------------
-// Rigid attachments (GAP-15) — PxDeformableAttachment between welded soft-body
+// Rigid attachments — PxDeformableAttachment between welded soft-body
 // vertices and a rigid actor. SDK positional constraints; active only while
 // both actors live in the same scene.
 // ---------------------------------------------------------------------------

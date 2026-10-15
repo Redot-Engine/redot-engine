@@ -42,7 +42,7 @@
  * PhysX scene). It exposes the vehicle archetype (DirectDrive or EngineDrive)
  * and provides build_/adopt/release/update/post_step lifecycle methods.
  *
- * P0 - vehicle2 verification (GATE):
+ * vehicle2 compile/link surface (verification gate):
  *   Compile-probe symbol: PxVehicleAPI.h (exists at thirdparty/physx/include/vehicle/PxVehicleAPI.h).
  *   SDK init/shutdown: PxInitVehicleExtension(foundation) / PxCloseVehicleExtension().
  *   DirectDrive component classes: PxVehicleDrivetrainStates, PxVehicleDrivetrainParams,
@@ -121,7 +121,7 @@ struct WheelTelemetry {
  * @brief Per-wheel drivetrain/role flags.
  *
  * Stored Godot-side because the vehicle2 param structs don't model them.
- * Consumed by the Phase 7 axle description and the Phase 8/9 command, brake
+ * Consumed by the axle description and the command, brake
  * and steer response components.
  */
 struct WheelFlags {
@@ -238,7 +238,7 @@ private:
 	// from the scalar steer command through the Ackermann geometry (inner
 	// wheel of a turn steers more than the outer). Geometry derives from the
 	// wheel suspension attachments unless overridden. Applied to steer-flagged
-	// wheels in write_commands(); per-wheel steer mode (P9) bypasses it.
+	// wheels in write_commands(); per-wheel steer mode bypasses it.
 	bool ackermann_enabled = false;
 	float ackermann_percent = 100.0f; // 0 = parallel steer, 100 = pure Ackermann.
 	float tune_ackermann_wheelbase = -1.0f; // <0 = derive from wheel attachments.
@@ -285,7 +285,7 @@ private:
 	struct Vehicle2State;
 	Vehicle2State *v2 = nullptr;
 
-	// Phase 7 component subclasses (defined in the .cpp; bind getData to the
+	// Component subclasses (defined in the .cpp; bind getData to the
 	// Vehicle2State arrays). Forward-declared here so they can be defined
 	// out-of-line as nested classes.
 	class BeginComponent;
@@ -347,7 +347,7 @@ private:
 	void allocate_wheel_buffers(int p_count);
 	void apply_wheel_params(int p_idx, const Dictionary &p_params);
 
-	// --- control inputs (Phase 8) ---
+	// --- control inputs ---
 	void set_control_inputs(float p_throttle, float p_brake, float p_steer, float p_handbrake);
 	void set_gear_command(int p_gear);
 	// Tuned command-response limits (steer + brake channels on both
@@ -368,14 +368,14 @@ private:
 	// Balance telemetry: lean_angle / roll_rate / steer_assist.
 	Dictionary get_balance_state() const;
 
-	// --- EngineDrive config (Phase 8); no-op unless archetype == ENGINE_DRIVE ---
+	// --- EngineDrive config; no-op unless archetype == ENGINE_DRIVE ---
 	void set_engine_params(const Dictionary &p_params);
 	void set_clutch_params(const Dictionary &p_params);
 	void set_gearbox_params(const Dictionary &p_params);
 	void set_autobox_params(const Dictionary &p_params);
 	void set_differential_params(const Dictionary &p_params);
 
-	// --- DirectDrive per-wheel control (Phase 9) ---
+	// --- DirectDrive per-wheel control ---
 	void set_wheel_drive_torque(int p_idx, float p_torque);
 	void set_wheel_brake_torque(int p_idx, float p_torque);
 	void set_wheel_steer_angle(int p_idx, float p_angle);

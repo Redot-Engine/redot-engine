@@ -34,10 +34,10 @@
  * @file physx_vehicle_3d.cpp
  * @brief Implementation of PhysXVehicleServer — vehicle2 wrapper.
  *
- * Phase 7: both archetypes assembled end-to-end and integrated through the
+ * Both archetypes are assembled end-to-end and integrated through the
  * PhysX actor path.
- *   - DirectDrive (7A): per-wheel torque, no gearbox.
- *   - EngineDrive (7B): engine + clutch + gearbox + autobox + differential.
+ *   - DirectDrive: per-wheel torque, no gearbox.
+ *   - EngineDrive: engine + clutch + gearbox + autobox + differential.
  *
  * vehicle2 component model: each component is a base class we subclass and
  * bind to the vehicle's arrays by overriding getDataFor...Component(...).
@@ -51,7 +51,7 @@
  *   -> EngineDriveActuationState -> RoadGeom -> Suspension -> Tire
  *   -> EngineDrivetrain -> Constraint -> End
  *
- * TODOs flagged inline: the gravity/eDISABLE_GRAVITY hand-off (plan R3), Godot
+ * Hand-offs flagged inline: the gravity/eDISABLE_GRAVITY hand-off, Godot
  * frame calibration, wheel PxShape creation, telemetry readback.
  */
 
@@ -992,7 +992,7 @@ bool PhysXVehicleServer::adopt(physx::PxRigidDynamic *p_chassis, PhysXBody3D *p_
 
 	// vehicle2 applies gravity through the simulation context, so the chassis
 	// must be gravity-disabled. Mark the body as a vehicle chassis so its
-	// on_pre_step() skips manual gravity (avoids double-gravity — plan R3).
+	// on_pre_step() skips manual gravity (avoids double-gravity).
 	p_chassis->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, true);
 	if (chassis_body) {
 		chassis_body->set_is_vehicle_chassis(true);
@@ -1504,11 +1504,11 @@ void PhysXVehicleServer::write_commands() {
 					physx::PxVehicleDirectDriveTransmissionCommandState::eNEUTRAL;
 		}
 
-		// Per-wheel control (P9): if any per-wheel value is non-zero, that
+		// Per-wheel control: if any per-wheel value is non-zero, that
 		// channel switches to per-wheel mode — the scalar command becomes 1.0
 		// and the per-wheel value is encoded in the response multipliers
 		// (torque = maxResponse * multiplier * command). Per-channel auto-detect
-		// lets scalar (P8) and per-wheel (P9) coexist. When a channel is NOT in
+		// lets the scalar and per-wheel paths coexist. When a channel is NOT in
 		// per-wheel mode its multipliers are re-seeded from the wheel flags, so
 		// a previous per-wheel encoding doesn't stick.
 		// Drive
@@ -1600,7 +1600,7 @@ void PhysXVehicleServer::write_commands() {
 	}
 
 	// --- Steer resolution (shared by both archetypes) ---
-	// Priority: per-wheel steer mode (P9) > Ackermann geometry > flat scalar.
+	// Priority: per-wheel steer mode > Ackermann geometry > flat scalar.
 	// The per-wheel road-wheel angles are cached for vehicle_get_wheel_steer_
 	// angles(); multipliers encode them as fractions of the steer lock.
 	computed_steer_angles.resize(wheel_count);
@@ -1735,7 +1735,7 @@ void PhysXVehicleServer::update(float p_step) {
 	ctx.physxScene = px_scene;
 	ctx.gravity = px_scene->getGravity();
 	// Godot frame: forward -Z, up +Y (lateral -X for a proper right-handed frame).
-	// TODO(P13): calibrate lateral sign + verify against Godot's conventions.
+	// TODO: calibrate lateral sign against Godot's conventions.
 	ctx.frame.lngAxis = physx::PxVehicleAxes::eNegZ;
 	ctx.frame.latAxis = physx::PxVehicleAxes::eNegX;
 	ctx.frame.vrtAxis = physx::PxVehicleAxes::ePosY;
@@ -1800,7 +1800,7 @@ void PhysXVehicleServer::post_step(float p_step) {
 }
 
 // ============================================================================
-// Wheel configuration helpers (Phase 6)
+// Wheel configuration helpers
 // ============================================================================
 
 void PhysXVehicleServer::allocate_wheel_buffers(int p_count) {
@@ -1991,7 +1991,7 @@ void PhysXVehicleServer::invalidate_surface_pairs_for_body(const PhysXBody3D *p_
 }
 
 // ============================================================================
-// Control inputs + EngineDrive config (Phase 8)
+// Control inputs + EngineDrive config
 // ============================================================================
 
 void PhysXVehicleServer::set_control_inputs(float p_throttle, float p_brake, float p_steer, float p_handbrake) {

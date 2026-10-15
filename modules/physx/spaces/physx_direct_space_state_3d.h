@@ -87,7 +87,7 @@ private:
 	// sweep/motion call in the CharacterBody3D hot path.
 	struct RecoverContact {
 		Vector3 normal; // MTD push-out direction (collider -> mover)
-		real_t depth = 0; // net penetration beyond the rest-depth slack
+		real_t penetration_depth = 0; // net penetration beyond the rest-depth slack
 		real_t weight = 1; // the collider body's collision_priority
 	};
 	mutable LocalVector<physx::PxSweepHit> _sweep_touch_scratch;
@@ -99,8 +99,8 @@ private:
 	// used to heap-fetch the actor's shape list and re-derive the body
 	// rotation quaternion per shape per iteration.
 	struct MotionShapeRef {
-		physx::PxShape *px_shape = nullptr;
-		PhysXShape3D *blueprint = nullptr; // shape->userData; null for raw shapes
+		physx::PxShape *shape_instance = nullptr;
+		PhysXShape3D *shape_blueprint = nullptr; // shape->userData; null for raw shapes
 		physx::PxTransform local_pose; // attached local pose (constant per call)
 		int body_index = -1; // index in the body's shape list (-1 if foreign)
 	};

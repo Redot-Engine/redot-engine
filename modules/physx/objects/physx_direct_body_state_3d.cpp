@@ -125,7 +125,7 @@ Basis PhysXDirectBodyState3D::get_inverse_inertia_tensor() const {
 		// rotation relative to the actor is getCMassLocalPose().q (the same
 		// value get_principal_inertia_axes() reports). World rotation of that
 		// frame = actor rotation ∘ COM-frame rotation — using the actor
-		// rotation alone is wrong for every asymmetric body (OBJ-2).
+		// rotation alone is wrong for every asymmetric body.
 		// World-space tensor = R * diag(inv) * Rᵀ.
 		const physx::PxQuat px_rot = dyn->getGlobalPose().q * dyn->getCMassLocalPose().q;
 		Basis R(Quaternion(px_rot.x, px_rot.y, px_rot.z, px_rot.w));
@@ -354,7 +354,7 @@ int PhysXDirectBodyState3D::get_contact_local_shape(int p_contact_idx) const {
 
 Vector3 PhysXDirectBodyState3D::get_contact_local_velocity_at_position(int p_contact_idx) const {
 	ERR_FAIL_INDEX_V(p_contact_idx, get_contact_count(), Vector3());
-	return body->get_report_contacts()[p_contact_idx].local_velocity;
+	return body->get_report_contacts()[p_contact_idx].local_contact_velocity;
 }
 
 RID PhysXDirectBodyState3D::get_contact_collider(int p_contact_idx) const {
@@ -379,7 +379,7 @@ int PhysXDirectBodyState3D::get_contact_collider_shape(int p_contact_idx) const 
 
 Vector3 PhysXDirectBodyState3D::get_contact_collider_velocity_at_position(int p_contact_idx) const {
 	ERR_FAIL_INDEX_V(p_contact_idx, get_contact_count(), Vector3());
-	return body->get_report_contacts()[p_contact_idx].collider_velocity;
+	return body->get_report_contacts()[p_contact_idx].collider_contact_velocity;
 }
 
 real_t PhysXDirectBodyState3D::get_step() const {

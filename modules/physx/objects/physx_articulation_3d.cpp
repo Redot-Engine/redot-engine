@@ -254,7 +254,7 @@ void PhysXArticulation3D::set_link_shape(int p_link_index, PhysXShape3D *p_shape
 	}
 
 	// Same dispatch as PhysXShapedObject3D::_shape_geometry_scale_for: convex
-	// polygon meshes consume the signed (mirror-capable) scale — the blueprint
+	// polygon meshes consume the signed (mirror-capable) scale — the shape_blueprint
 	// bakes the mirror — every other geometry the absolute scale. Links have
 	// no separate body scale.
 	const bool convex_poly = p_shape->get_type() == PhysicsServer3D::SHAPE_CONVEX_POLYGON;
@@ -262,7 +262,7 @@ void PhysXArticulation3D::set_link_shape(int p_link_index, PhysXShape3D *p_shape
 			? p_transform.basis.get_scale()
 			: p_transform.basis.get_scale_abs();
 
-	// Links simulate, so the REG-0014 rule applies: concave geometries
+	// Links simulate, so concave geometries
 	// (triangle mesh/heightfield/plane) must be query-only on them.
 	physx::PxShapeFlags flags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE |
 			physx::PxShapeFlag::eSIMULATION_SHAPE;

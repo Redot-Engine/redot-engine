@@ -253,7 +253,7 @@ private:
 
 /* ===================================================================== */
 /*  WaterSolver -- CPU-side front. Preps payloads, posts render work.      */
-/*  Same public shape as Phase 1/2's original single-class WaterSolver,   */
+/*  Same public shape as the original single-class WaterSolver,           */
 /*  so WaterRippleProbe/PhysXWaterSurface3D don't need to change how they */
 /*  call it -- only the internals moved to the shared-device/async model. */
 /* ===================================================================== */
@@ -264,7 +264,7 @@ public:
 		Vector2 domain_size = Vector2(20, 20); // world-space extents (full width/depth, not half)
 		float depth = 3.0f; // used by the FFT layer's dispersion relation
 		// ALPHA in water_ripple.glsl. Originally tuned to 0.5 purely so the
-		// Phase 1 probe test's impulse would settle within ~90 steps -- that
+		// probe test's impulse would settle within ~90 steps -- that
 		// was optimizing for a fast, bounded test, not for how real water
 		// actually looks. At 0.5, ripples die out almost as fast as they're
 		// created and never travel far, reading as thick/viscous ("jello or
@@ -272,14 +272,14 @@ public:
 		// ripples persist and travel a meaningfully longer distance before
 		// dissipating -- see the probe test for the real before/after decay
 		// numbers this was checked against, including over a longer horizon
-		// than Phase 1's original ~90-step window to confirm it stays
+		// than the probe's original ~90-step window to confirm it stays
 		// bounded/stable, not just slower to settle.
 		float damping = 0.08f;
 		float gravity = 9.81f;
 		float water_level = 0.0f; // mean surface world Y
 		float ripple_amplitude = 1.0f; // multiplier on body-driven ripple displacement
 
-		// FFT ocean spectrum layer (Phase 2). Independent grid/resolution from
+		// FFT ocean spectrum layer. Independent grid/resolution from
 		// the ripple layer above -- see water_solver.h's own note on why these
 		// stay architecturally separate. MUST be a power of two -- the
 		// Stockham FFT passes require it.

@@ -101,7 +101,7 @@ PhysXSoftExceptionRegistry g_physx_soft_exceptions;
  *     only purpose is to let another area's trigger fire against it (PhysX 5
  *     does not report trigger-vs-trigger pairs), and areas are never solid.
  *
- * NOTE (REG-0011): area actors are kinematic rigid bodies, not static —
+ * NOTE: area actors are kinematic rigid bodies, not static —
  * PhysX never calls this shader for pairs of two static rigid actors, so
  * static areas could never produce area-vs-area trigger events.
  */
@@ -120,7 +120,7 @@ physx::PxFilterFlags physx_simulation_filter_shader(
 	// --- Trigger detection (either side marked as a trigger shape) ---
 	const bool is_trigger_pair = physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1);
 
-	// --- Areas never collide (REG-0011) ---
+	// --- Areas never collide ---
 	// A monitorable area owns a second, non-trigger simulation "detection"
 	// shape so that another area's trigger shape can fire against it (PhysX 5
 	// does not report trigger-vs-trigger pairs). Those detection shapes must
@@ -168,7 +168,7 @@ physx::PxFilterFlags physx_simulation_filter_shader(
 		// trigger side's mask matches the other side's layer; otherwise kill it.
 		// Area-vs-area: the trigger side is one area's trigger shape, the other
 		// side the other area's non-trigger detection shape — same one-directional
-		// rule (the reverse direction is its own pair/event, REG-0011).
+		// rule (the reverse direction is its own pair/event).
 		bool trigger_match = false;
 		if (physx::PxFilterObjectIsTrigger(attributes0)) {
 			trigger_match = (filterData0.word1 & filterData1.word0) != 0;

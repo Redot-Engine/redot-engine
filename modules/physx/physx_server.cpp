@@ -233,13 +233,9 @@ PhysXServer3D *PhysXServer3D::singleton_ptr = nullptr;
 // px_foundation (PhysX holds raw pointers to them).
 // ---------------------------------------------------------------------------
 
-/**
- * @brief Bridges PhysX allocations to Godot's Memory::alloc_static().
- *
- * Uses the aligned variant (p_aligned = true) because PhysX SIMD paths
- * require at least 16-byte alignment. The matching deallocate() must use
- * the same alignment flag.
- */
+// Bridges PhysX allocations to Memory::alloc_static(). The ALIGNED variant
+// is mandatory: PhysX SIMD paths require >=16-byte alignment, and the
+// matching deallocate() must pass the same flag.
 class PhysXAllocatorCallback : public physx::PxAllocatorCallback {
 public:
 	virtual ~PhysXAllocatorCallback() override {}
@@ -256,13 +252,9 @@ public:
 		Memory::free_static(ptr, true);
 	}
 };
-/**
- * @brief Routes PhysX error/warning messages to Godot's logging macros.
- *
- * In release builds this is a no-op (PhysX still requires the object to
- * exist, but messages are discarded). In debug builds each error code is
- * mapped to the appropriate Godot log level (ERR_PRINT, WARN_PRINT, etc.).
- */
+// Routes PhysX errors/warnings to Godot's logging macros (no-op body in
+// release builds @DASH@ PhysX still requires the object to exist). Debug
+// builds map each error code to the matching Godot log level.
 class PhysXErrorCallback : public physx::PxErrorCallback {
 public:
 	virtual ~PhysXErrorCallback() override {}
@@ -411,7 +403,7 @@ real_t PhysXServer3D::shape_get_custom_solver_bias(RID p_shape) const {
 }
 
 RID PhysXServer3D::space_create() {
-	// CORE-1: same degraded-boot discipline as body_create/area_create —
+	// Same degraded-boot discipline as body_create/area_create —
 	// the space's default area (created below) needs PxPhysics.
 	ERR_FAIL_NULL_V_MSG(px_physics, RID(),
 			"PhysX: space_create() called before PhysX initialization. "
@@ -494,7 +486,7 @@ PhysXShape3D *PhysXServer3D::get_shape(RID p_rid) const {
 }
 
 RID PhysXServer3D::area_create() {
-	// CORE-1: degrade gracefully like body_create() — the area constructor
+	// Degrade gracefully like body_create() — the area constructor
 	// needs PxPhysics to create its kinematic actor, so constructing one
 	// before init() (or after a failed init) would crash.
 	ERR_FAIL_NULL_V_MSG(px_physics, RID(),
@@ -2482,13 +2474,8 @@ bool PhysXServer3D::joint_is_disabled_collisions_between_bodies(RID p_joint) con
 	return joint->is_disabled_collisions();
 }
 
-/**
- * @brief Frees a RID and its associated object.
- *
- * Dispatches on which RID owner owns the handle, then removes the entry
- * and deletes the wrapper. Each owner will be added as its subsystem is
- * implemented (area/joint/soft_body pending).
- */
+// Frees a RID and its wrapper: dispatches on the owning RID table. Branch
+// comments below carry each kind's teardown ordering.
 void PhysXServer3D::free(RID p_rid) {
 	MutexLock lock(api_mutex);
 	// Freeing a null/invalid RID is a no-op (standard Godot convention —the
@@ -2530,7 +2517,7 @@ void PhysXServer3D::free(RID p_rid) {
 		b = body_owner.get_or_null(p_rid);
 
 		// Release any soft-body rigid attachments referencing this body BEFORE
-		// the space detach/actor release (GAP-15): a live PxDeformableAttachment
+		// the space detach/actor release: a live PxDeformableAttachment
 		// must never dangle on a freed rigid.
 		if (b->get_rigid_actor() && b->get_space()) {
 			b->get_space()->release_soft_body_attachments_for(b->get_rigid_actor());
@@ -2706,18 +2693,10 @@ bool PhysXServer3D::space_is_active(RID p_space) const {
 	PhysXSpace3D *space = space_owner.get_or_null(p_space);
 	return space && space->is_active();
 }
-/**
- * @brief Bootstraps the PhysX SDK.
- *
- * Creates the foundation, PVD (debug only), physics singleton, extensions,
- * and the default material. Order matters:
- *   1. Foundation (needs allocator + error callbacks)
- *   2. PVD + transport (must exist before physics, since PxCreatePhysics
- *      takes the pvd pointer)
- *   3. Physics singleton
- *   4. Extensions (joints, dispatcher, PVD helpers)
- *   5. Default material (used by shapes that don't specify one)
- */
+// Bootstraps the PhysX SDK. Ordering constraints:
+//  - the allocator/error callbacks must outlive the foundation (they are
+//    static for that reason);
+//  - PVD must exist before PxCreatePhysics, which takes the pvd pointer.
 void PhysXServer3D::init() {
 	// Static so the callbacks outlive px_foundation (PhysX holds raw pointers).
 	static PhysXAllocatorCallback s_allocator;
@@ -2729,7 +2708,7 @@ void PhysXServer3D::init() {
 
 #ifdef DEBUG_ENABLED
 	// PVD must be connected BEFORE PxCreatePhysics, which takes the pvd pointer.
-	// Opt-in via the project setting (CORE-5): connecting unconditionally made
+	// Opt-in via the project setting: connecting unconditionally made
 	// every debug build dial localhost:5425 with eALL instrumentation.
 	if (GLOBAL_GET("physics/physx_3d/debug/pvd")) {
 		px_pvd_transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
@@ -2880,16 +2859,8 @@ void PhysXServer3D::init() {
 	px_default_material = px_physics->createMaterial(0.5f, 0.5f, 0.1f);
 	ERR_FAIL_NULL(px_default_material);
 }
-/**
- * @brief Tears down the PhysX SDK in reverse init order.
- *
- * Wrappers must be freed BEFORE releasing PxPhysics, so their PxActors are
- * removed from still-valid scenes. The order is: joints -> vehicles ->
- * bodies -> areas -> soft bodies -> articulations -> fluids -> cloths ->
- * shapes -> spaces (vehicles borrow the chassis PxRigidDynamic; bodies/
- * areas need their spaces alive when their destructors call
- * _destroy_actor, which accesses space->remove_actor()).
- */
+// Tears down the PhysX SDK in reverse init order; see the ordering comment
+// at the top of the body for why each kind precedes the next.
 void PhysXServer3D::finish() {
 	// Free wrappers before releasing PxPhysics, so their PxActors are removed
 	// from still-valid scenes. Order: joints -> vehicles -> bodies -> areas ->
@@ -2975,26 +2946,18 @@ void PhysXServer3D::finish() {
 		px_foundation = nullptr;
 	}
 }
-/**
- * @brief Server-global simulation gate.
- *
- * This is INDEPENDENT of per-space activation (space_set_active). The editor
- * calls set_active(false) once at startup (editor_node.cpp) so physics stays
- * frozen in the viewport; the running game uses a fresh server with
- * active=true. Mirrors Jolt/godot_physics_3d. Do NOT propagate this into
- * per-space state —World3D::get_space() re-enables individual spaces as
- * worlds are (re)created, which must not override the global freeze.
- */
+// Server-global simulation gate, INDEPENDENT of per-space activation: the
+// editor calls set_active(false) once at startup so physics stays frozen in
+// the viewport; the running game uses a fresh server with active=true
+// (mirrors Jolt/godot_physics_3d). Do NOT propagate this into per-space
+// state @DASH@ World3D::get_space() re-enables individual spaces as worlds
+// are (re)created, which must not override the global freeze.
 void PhysXServer3D::set_active(bool p_active) {
 	active = p_active;
 }
-/**
- * @brief Advances the simulation by p_step seconds.
- *
- * Iterates all active spaces and calls step() on each. In the current
- * synchronous model, each space does simulate() + fetchResults(true),
- * so this call blocks until all physics is computed.
- */
+// Advances every active space by p_step. With async stepping off, each
+// space blocks in simulate()+fetchResults(); with it on, step() only kicks
+// the solve and the next tick's sync() fetches (see PhysXSpace3D::step).
 void PhysXServer3D::step(real_t p_step) {
 	MutexLock lock(api_mutex);
 	if (!active) {

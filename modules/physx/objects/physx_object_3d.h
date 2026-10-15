@@ -53,8 +53,6 @@ class PhysXSpace3D;
 
 class PhysXObject3D {
 public:
-	/// Identifies the concrete subtype for safe downcasting (e.g. in
-	/// PhysXQueryFilterCallback and PhysXSimulationEventCallback).
 	enum ObjectType {
 		OBJECT_TYPE_INVALID,
 		OBJECT_TYPE_BODY,
@@ -81,27 +79,20 @@ public:
 	/// (bodies add/remove a PxActor; areas manage a kinematic trigger actor).
 	virtual void set_space(PhysXSpace3D *p_space) = 0;
 
-	// --- Collision Layers ---
-	// Stored in PxShape's SimulationFilterData as word0 (layer) / word1 (mask)
-	// by PhysXShapedObject3D::update_shapes_collision_filter().
+	// --- Collision Layers (PxFilterData word0/word1 via update_shapes_collision_filter) ---
 	uint32_t get_collision_layer() const { return collision_layer; }
 	void set_collision_layer(uint32_t p_layer);
 
 	uint32_t get_collision_mask() const { return collision_mask; }
 	void set_collision_mask(uint32_t p_mask);
 
-	// --- Ray pickable ---
-	// Whether intersect_ray may report this object. Godot applies the flag to
-	// raycasts ONLY — point/shape/sweep queries ignore it (reference:
-	// godot_physics_3d gathers pickable objects for _intersect_ray alone).
-	// Bodies default true; areas default false (each wrapper holds the member).
+	// intersect_ray honors this flag ONLY — point/shape/sweep queries ignore
+	// it (godot_physics_3d gathers pickable objects for _intersect_ray alone).
 	virtual bool is_ray_pickable() const { return true; }
 
-	// --- Soft-body collision exceptions ---
-	// Shapes of exception participants carry this slot in PxFilterData.word2;
-	// the simulation filter shader matches (soft-body slot, body slot) pairs
-	// against the module registry (see spaces/physx_filter_shader.h). 0 =
-	// "no slot"; allocated lazily on the first exception involving the object.
+	// Soft-body collision exceptions: participant shapes carry the slot in
+	// PxFilterData.word2; the simulation filter shader matches slot pairs
+	// against the module registry (spaces/physx_filter_shader.h). 0 = none.
 	uint32_t get_or_alloc_exception_slot();
 	uint32_t get_exception_slot() const { return exception_slot; }
 
@@ -114,12 +105,10 @@ protected:
 	PhysXSpace3D *space = nullptr;
 
 	// Godot collision bits: layer = "what I am", mask = "what I collide with".
-	uint32_t collision_layer = 1;
-	uint32_t collision_mask = 1;
-	uint32_t exception_slot = 0;
+	uint32_t collision_layer = 1; ///< "What I am" (PxFilterData word0).
+	uint32_t collision_mask = 1; ///< "What I collide with" (PxFilterData word1).
+	uint32_t exception_slot = 0; ///< Collision-exception registry key (PxFilterData word2); 0 = none.
 
-	/// Re-applies collision filter data to all shapes. Called when
-	/// layer/mask/contact-notify changes. Implemented by shaped objects.
 	virtual void _update_shapes() = 0;
 };
 #endif // PHYSX_OBJECT_3D_H

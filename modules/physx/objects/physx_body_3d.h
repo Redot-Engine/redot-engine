@@ -34,16 +34,12 @@
 
 /**
  * @file physx_body_3d.h
- * @brief Rigid body wrapper — the core physics object.
+ * @brief Rigid body wrapper -- owns a PxRigidStatic/PxRigidDynamic and its
+ * full lifecycle (mode switching, state, parameters, forces, CCD, axis
+ * locks, exceptions, contact reporting, per-step hooks).
  *
- * PhysXBody3D owns a PxRigidActor (either PxRigidStatic or PxRigidDynamic,
- * depending on BodyMode) and manages its full lifecycle: creation, mode
- * switching, state (transform/velocity/sleep), parameters (mass/friction/
- * damping/gravity), forces/impulses, CCD, axis locks, collision exceptions,
- * contact reporting, and per-step hooks.
- *
- * The body also owns a PhysXActorUserData that is attached to the PxActor's
- * userData field, bridging PhysX query/callback results back to Godot.
+ * The body owns a PhysXActorUserData attached to the PxActor's userData,
+ * bridging PhysX query/callback results back to Godot.
  */
 
 #ifndef PHYSX_BODY_3D_H
@@ -65,12 +61,8 @@ class PhysXVehicleServer;
 class PhysXSpace3D;
 class PhysXDirectBodyState3D;
 
-/**
- * @brief One contact point recorded against this body during the last step.
- *
- * Populated by PhysXSimulationEventCallback::onContact and read by
- * PhysXDirectBodyState3D's contact getters (get_contact_local_position, etc.).
- */
+/// One contact point from the last step (filled by onContact, read by
+/// PhysXDirectBodyState3D's contact getters).
 struct PhysXBodyContact {
 	Vector3 local_position; ///< World-space contact point on the local body side.
 	Vector3 local_normal; ///< Contact normal pointing toward the local body.
@@ -79,10 +71,10 @@ struct PhysXBodyContact {
 	RID collider; ///< RID of the other body.
 	ObjectID collider_id; ///< ObjectID of the other body's Godot node.
 	int collider_shape = 0; ///< Shape index of the other body.
-	Vector3 collider_velocity; ///< Velocity of the collider at the contact point.
-	Vector3 local_velocity; ///< Velocity of the local body at the contact point.
-	Vector3 collider_position; ///< World-space contact point on the collider side.
-	real_t depth = 0.0f; ///< Penetration depth at this contact (Godot's replacement policy ranks by it).
+	Vector3 collider_contact_velocity; ///< Velocity of the collider at the contact point.
+	Vector3 local_contact_velocity; ///< Velocity of the local body at the contact point.
+	Vector3 collider_position; ///< Same world point as local_position.
+	real_t penetration_depth = 0.0f; ///< Penetration depth (Godot's replacement policy ranks by it).
 };
 
 class PhysXBody3D : public PhysXShapedObject3D {
@@ -145,7 +137,7 @@ public:
 	void set_constant_torque(const Vector3 &p_torque);
 	Vector3 get_constant_torque() const { return constant_torque; }
 
-	// --- Axis velocity (Godot-specific: adds velocity along one axis) ---
+	// --- Axis velocity ---
 	void set_axis_velocity(const Vector3 &p_axis_velocity);
 
 	// --- Axis lock ---

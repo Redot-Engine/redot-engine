@@ -56,7 +56,7 @@ void PhysXProjectSettings::register_settings() {
 	// 0 = off (unbounded). Applied per rigid body in _apply_surface_params_to_actor.
 	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/physx_3d/simulation/max_depenetration_velocity", PROPERTY_HINT_RANGE, "0,100,0.1,suffix:m/s"), 4.0);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/physx_3d/soft_body/mode", PROPERTY_HINT_ENUM, "Auto,CPU,GPU"), 0);
-	// CORE-5: PVD used to connect unconditionally on every debug build.
+	// PVD used to connect unconditionally on every debug build.
 	GLOBAL_DEF(PropertyInfo(Variant::BOOL, "physics/physx_3d/debug/pvd"), false);
 	// NVIDIA Flow runtime device selection (see flow/flow_runtime.cpp).
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/physx_3d/flow/device_api", PROPERTY_HINT_ENUM, "Auto,Vulkan,CPU"), 0);

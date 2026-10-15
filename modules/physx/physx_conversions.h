@@ -34,13 +34,11 @@
 
 /**
  * @file physx_conversions.h
- * @brief Inline Godot ↔ PhysX math conversions shared across the module.
+ * @brief Inline Godot <-> PhysX math conversions shared across the module.
  *
- * Every conversion lives in
- * one header so objects/shapes/spaces/joints stop maintaining private copies,
- * and Transform3D → PxTransform clamps degenerate input instead of passing
- * NaN / zero-length quaternions into PhysX (which asserts or corrupts the
- * scene in checked builds).
+ * godot_to_px(Transform3D) clamps degenerate input instead of passing NaN /
+ * zero-length quaternions into PhysX (which asserts or corrupts the scene in
+ * checked builds).
  */
 
 #ifndef PHYSX_CONVERSIONS_H

@@ -41,21 +41,18 @@
 #include "core/math/math_defs.h"
 #include "core/math/math_funcs.h"
 
-// ============================================================================
-// Lifecycle
-// ============================================================================
+	// Lifecycle
 
 PhysXArea3D::PhysXArea3D() :
 		PhysXShapedObject3D(OBJECT_TYPE_AREA) {
-	// Areas are KINEMATIC rigid bodies, not static ones (REG-0011):
+	// Areas are KINEMATIC rigid bodies, not static ones:
 	// - PhysX never runs the simulation filter shader for pairs of two static
 	//   rigid actors, so static-vs-static area pairs could never generate the
 	//   trigger events that drive area-vs-area monitoring.
 	// - Kinematic-vs-kinematic pairs are filtered normally when one side is a
 	//   trigger shape, which is what areas are (PxFiltering.h).
 	// Kinematic bodies are unaffected by gravity, never sleep, and are moved
-	// manually via set_transform (setKinematicTarget() once in a scene — see
-	// REG-0024) — the semantics a Godot area needs. The detection shapes
+	// manually via set_transform (setKinematicTarget() once in a scene) -- the semantics a Godot area needs. The detection shapes
 	// (see _sync_detection_shape) make them detectable by other areas.
 	physx::PxPhysics &physics = PhysXServer3D::get_singleton()->get_physics();
 	physx::PxRigidDynamic *dynamic = physics.createRigidDynamic(physx::PxTransform(physx::PxIdentity));
@@ -97,9 +94,7 @@ PhysXArea3D::~PhysXArea3D() {
 	}
 }
 
-// ============================================================================
-// Space Management
-// ============================================================================
+	// Space Management
 
 void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 	if (space == p_space) {
@@ -107,10 +102,10 @@ void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 	}
 
 	if (space) {
-		// Queue exit events for all overlapping bodies/areas before leaving the
-		// space — trigger events may not fire (e.g., when a body is freed while
-		// overlapping this area). We must emit these events so Godot does not
-		// leak state and so the overlap lists do not retain dangling pointers.
+	// Queue exit events for all overlapping bodies/areas before leaving the
+	// space -- trigger events may not fire (e.g., when a body is freed while
+	// overlapping this area), and the overlap lists must not retain dangling
+	// pointers.
 		for (unsigned int i = 0; i < overlapping_bodies.size(); i++) {
 			PhysXBody3D *body = overlapping_bodies[i];
 			// Remove the body from this area's overlap list.
@@ -118,13 +113,13 @@ void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 			// Queue the body_monitor dispatch for flush_queries().
 			if (space) {
 				PhysXSpace3D::TriggerEvent ev;
-				ev.area = this;
+				ev.trigger_area = this;
 				ev.body = body;
 				ev.body_rid = body->get_rid();
 				ev.body_id = body->get_instance_id();
 				ev.status = PhysicsServer3D::AREA_BODY_REMOVED;
-				ev.other_shape = 0;
-				ev.area_shape = 0;
+				ev.other_shape_idx = 0;
+				ev.area_shape_idx = 0;
 				ev.is_area_vs_area = false;
 				space->queue_trigger(ev);
 			}
@@ -138,13 +133,13 @@ void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 			// Queue the area_monitor dispatch for flush_queries().
 			if (space) {
 				PhysXSpace3D::TriggerEvent ev;
-				ev.area = this;
+				ev.trigger_area = this;
 				ev.other_area = other_area;
 				ev.other_area_rid = other_area->get_rid();
 				ev.other_area_id = other_area->get_instance_id();
 				ev.status = PhysicsServer3D::AREA_BODY_REMOVED;
-				ev.other_shape = 0;
-				ev.area_shape = 0;
+				ev.other_shape_idx = 0;
+				ev.area_shape_idx = 0;
 				ev.is_area_vs_area = true;
 				space->queue_trigger(ev);
 			}
@@ -169,18 +164,15 @@ void PhysXArea3D::set_space(PhysXSpace3D *p_space) {
 	}
 }
 
-// ============================================================================
-// Transform
-// ============================================================================
+	// Transform
 
 void PhysXArea3D::set_transform(const Transform3D &p_transform) {
 	transform = p_transform;
 
 	// Same node-scale bake as bodies (see PhysXBody3D::set_state): the
-	// trigger/override geometry is re-baked against the captured scale, so a
-	// scaled Area3D covers the scaled volume ( PhysX actor poses carry no
-	// scale). Runs before the pose push so world bounds queried by the wake
-	// pass below already reflect the new size.
+	// trigger/override geometry is re-baked against the captured scale (PhysX
+	// actor poses carry no scale). Runs before the pose push so the world
+	// bounds queried by the wake pass below already reflect the new size.
 	const Vector3 new_scale = p_transform.basis.get_scale();
 	if (!new_scale.is_equal_approx(body_scale)) {
 		body_scale = new_scale;
@@ -193,18 +185,15 @@ void PhysXArea3D::set_transform(const Transform3D &p_transform) {
 
 	const physx::PxTransform pose = to_physx_transform(p_transform);
 
-	// REG-0024: areas are kinematic actors (REG-0011). Kinematic actors must
-	// be moved through the kinematic pipeline — not with a raw setGlobalPose().
-	// setGlobalPose() on a kinematic actor only rewrites the stored pose; the
-	// broadphase/pair-cache update driven by the kinematic motion never runs,
-	// so relocating an area never re-evaluated its trigger pairs and the
-	// enter/exit events stopped firing. (PxRigidActor::setGlobalPose() itself
-	// points to setKinematicTarget() for such actors.) The target move is
-	// carried out fully during the next simulation step, with trigger events
-	// generated as usual. setKinematicTarget() requires the actor to already
-	// be in a scene; an area's transform may be set before area_set_space(),
-	// so fall back to setGlobalPose() until then (same pattern as
-	// PhysXBody3D::set_state for kinematic bodies).
+	// Areas are kinematic actors and must move through
+	// the kinematic pipeline -- setGlobalPose() on a kinematic actor only
+	// rewrites the stored pose; the broadphase/pair-cache update driven by
+	// kinematic motion never runs, so relocating an area never re-evaluated
+	// its trigger pairs and enter/exit events stopped firing (the SDK's own
+	// docs point to setKinematicTarget() for such actors). setKinematicTarget()
+	// requires the actor to be in a scene; an area's transform may be set
+	// before area_set_space(), so fall back to setGlobalPose() until then
+	// (same pattern as PhysXBody3D::set_state).
 	if (physx::PxRigidDynamic *dyn = px_actor->is<physx::PxRigidDynamic>()) {
 		if (space && space->get_px_scene()) {
 			dyn->setKinematicTarget(pose);
@@ -216,23 +205,20 @@ void PhysXArea3D::set_transform(const Transform3D &p_transform) {
 	}
 
 	// The kinematic target only takes effect during the next simulation step,
-	// and moving a trigger actor does not by itself wake dynamic bodies at
-	// the destination in a timely way. Without an explicit wake, overrides
-	// (gravity/damp) and contact-driven state would be delayed until those
-	// bodies wake for another reason. Wake the bodies overlapping the area's
-	// NEW world AABB via a single batched overlap query — cheaper and more
-	// correct than walking every dynamic actor in the scene.
-	// The wake pass reads actor bounds and runs a scene overlap query — both
-	// forbidden while a solve is in flight (async stepping). Skip it
-	// mid-flight: the kinematic target still applies, and bodies at the
-	// destination wake through normal solver interaction.
-	// Gated on override presence (F-13): the wake exists so gravity/damp
-	// overrides apply promptly at the destination — a pure monitoring area
-	// imposes nothing on the bodies it sweeps over, so waking them (and
-	// paying the overlap query per move) is pure overhead that keeps
-	// sleeping stacks from ever settling. Wind is unaffected: sleeping
-	// bodies receive it from their own pre-step, and the trigger pairs
-	// driving the overlap lists are re-evaluated by the kinematic move.
+	// and moving a trigger actor does not by itself wake dynamic bodies at the
+	// destination in a timely way -- overrides (gravity/damp) and contact-
+	// driven state would be delayed until those bodies wake for another
+	// reason. Wake the bodies overlapping the area's NEW world AABB via one
+	// batched overlap query. The pass reads actor bounds and runs a scene
+	// query -- both forbidden mid-solve (async stepping), so it is skipped in
+	// the in-flight window; the target still applies and bodies wake through
+	// normal solver interaction.
+	// Gated on override presence: a pure monitoring area imposes
+	// nothing on the bodies it sweeps over, so waking them (and paying the
+	// overlap query per move) is pure overhead that keeps sleeping stacks
+	// from ever settling. Wind is unaffected: sleeping bodies receive it
+	// from their own pre-step, and the kinematic move re-evaluates the
+	// trigger pairs driving the overlap lists.
 	if (!space || !space->is_stepping()) {
 		if (has_gravity_override() || has_linear_damp_override() || has_angular_damp_override()) {
 			_wake_overlapping_dynamic_bodies(pose);
@@ -247,10 +233,9 @@ void PhysXArea3D::_wake_overlapping_dynamic_bodies(const physx::PxTransform &p_t
 	physx::PxScene *scene = space->get_px_scene();
 
 	// Use the area's world-space bounds (PxRigidActor aggregates its shapes).
-	// The kinematic target is only applied during the next simulation step,
-	// so before then the actor still reports its PREVIOUS pose — transform
-	// the bounds by the rigid delta to the target pose so the query covers
-	// the area's destination, not the place it was just moved from.
+	// The kinematic target applies only during the next simulation step, so
+	// before then the actor reports its PREVIOUS pose -- transform the bounds
+	// by the rigid delta so the query covers the destination.
 	physx::PxBounds3 bounds = px_actor->getWorldBounds(1.0f);
 	if (bounds.isEmpty()) {
 		return;
@@ -294,19 +279,15 @@ Transform3D PhysXArea3D::get_transform() const {
 	return transform;
 }
 
-// ============================================================================
-// Shape Management
-// ============================================================================
+	// Shape Management
 
 void PhysXArea3D::_configure_shape_as_trigger(physx::PxShape *p_shape) const {
 	// Areas never simulate; their shapes are either triggers (when the area
-	// detects, can be detected, or exerts space overrides) or purely
-	// scene-query shapes. Godot decouples monitoring (this area detects
-	// bodies/areas) from monitorable (other areas may detect this area) — a
-	// shape must be a trigger for EITHER. Override modes also require trigger
-	// pairs: a plain gravity area (no monitoring) must still track the bodies
-	// inside it so on_pre_step can resolve the override.
-	// Keeping eSCENE_QUERY_SHAPE lets raycasts/overlaps still hit the area.
+	// detects, can be detected, or exerts space overrides -- a plain gravity
+	// area must still track the bodies inside it so on_pre_step can resolve
+	// the override) or purely scene-query shapes. Godot decouples monitoring
+	// from monitorable -- a shape must be a trigger for EITHER. Keeping
+	// eSCENE_QUERY_SHAPE lets raycasts/overlaps still hit the area.
 	const bool detects = monitor_callback.is_valid() || area_monitor_callback.is_valid();
 	const bool overrides = has_gravity_override() || has_linear_damp_override() || has_angular_damp_override();
 	p_shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, false);
@@ -329,8 +310,8 @@ void PhysXArea3D::set_shape(int p_shape_idx, PhysXShape3D *p_shape) {
 	// Preserve the original local transform + disabled state across the swap;
 	// Godot expects body/area_set_shape to keep them. The base remove + append
 	// would discard the transform and reorder the slot, so we capture first.
-	const Transform3D saved_transform = shapes[p_shape_idx].relative_transform;
-	const bool saved_disabled = shapes[p_shape_idx].disabled;
+	const Transform3D saved_transform = attached_shapes[p_shape_idx].relative_transform;
+	const bool saved_disabled = attached_shapes[p_shape_idx].disabled;
 
 	// Detach old shape and remove owner tracking.
 	remove_shape(p_shape_idx);
@@ -343,7 +324,7 @@ void PhysXArea3D::set_shape(int p_shape_idx, PhysXShape3D *p_shape) {
 
 	const int last_idx = get_shape_count() - 1;
 	if (last_idx != p_shape_idx) {
-		SWAP(shapes[p_shape_idx], shapes[last_idx]);
+		SWAP(attached_shapes[p_shape_idx], attached_shapes[last_idx]);
 	}
 }
 
@@ -361,23 +342,23 @@ void PhysXArea3D::set_shape_disabled(int p_shape_idx, bool p_disabled) {
 		space->ensure_synced();
 	}
 
-	if (p_disabled == shapes[p_shape_idx].disabled) {
+	if (p_disabled == attached_shapes[p_shape_idx].disabled) {
 		return;
 	}
 
-	shapes[p_shape_idx].disabled = p_disabled;
+	attached_shapes[p_shape_idx].disabled = p_disabled;
 
-	if (shapes[p_shape_idx].px_shape) {
+	if (attached_shapes[p_shape_idx].shape_instance) {
 		const bool detects = monitor_callback.is_valid() || area_monitor_callback.is_valid();
 		const bool overrides = has_gravity_override() || has_linear_damp_override() || has_angular_damp_override();
-		shapes[p_shape_idx].px_shape->setFlag(
+		attached_shapes[p_shape_idx].shape_instance->setFlag(
 				physx::PxShapeFlag::eTRIGGER_SHAPE, !p_disabled && (detects || monitorable || overrides));
-		shapes[p_shape_idx].px_shape->setFlag(
+		attached_shapes[p_shape_idx].shape_instance->setFlag(
 				physx::PxShapeFlag::eSCENE_QUERY_SHAPE, !p_disabled);
 	}
 	// A disabled shape cannot be detected by other areas — drop its detection
 	// shape (and recreate it when re-enabled).
-	_sync_detection_shape(shapes[p_shape_idx]);
+	_sync_detection_shape(attached_shapes[p_shape_idx]);
 }
 
 void PhysXArea3D::remove_shape(int p_shape_idx) {
@@ -512,9 +493,7 @@ bool PhysXArea3D::get_monitorable() const {
 }
 
 void PhysXArea3D::set_monitoring(bool p_enable) {
-	// Monitoring is controlled purely by callback validity — see the
-	// PhysX module-local fix: Area3D::set_monitoring() installs the
-	// callback and Godot never tells the server about a separate flag.
+	// Monitoring is controlled purely by callback validity (see dispatch_body_monitor).
 }
 
 bool PhysXArea3D::get_monitoring() const {
@@ -535,8 +514,8 @@ bool PhysXArea3D::is_ray_pickable() const {
 
 void PhysXArea3D::dispatch_body_monitor(int p_status, const RID &p_body_rid, ObjectID p_body_id, int p_body_shape, int p_area_shape) {
 	// Godot gates purely on callback validity (Area3D::set_monitoring installs
-	// the callback and never tells the server about a separate flag). The local
-	// `monitoring` member was never wired and stayed false, dropping every event.
+	// the callback and never tells the server about a separate flag); a local
+	// `monitoring` member would stay false and drop every event.
 	if (!monitor_callback.is_valid()) {
 		return;
 	}
@@ -637,14 +616,14 @@ void PhysXArea3D::_update_shapes() {
 	update_shapes_collision_filter();
 
 	// Ensure all shapes have the correct trigger flags and detection shapes.
-	for (AttachedShape &record : shapes) {
-		if (record.px_shape) {
-			_configure_shape_as_trigger(record.px_shape);
+	for (AttachedShape &record : attached_shapes) {
+		if (record.shape_instance) {
+			_configure_shape_as_trigger(record.shape_instance);
 			if (record.disabled) {
 				// Mirror set_shape_disabled(): a disabled area shape neither
 				// triggers nor answers scene queries.
-				record.px_shape->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, false);
-				record.px_shape->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+				record.shape_instance->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, false);
+				record.shape_instance->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, false);
 			}
 		}
 		_sync_detection_shape(record);
@@ -653,13 +632,13 @@ void PhysXArea3D::_update_shapes() {
 
 void PhysXArea3D::_sync_detection_shape(AttachedShape &p_record) {
 	// A monitorable area is detectable by other areas only through a second,
-	// non-trigger simulation shape (REG-0011). It is never queryable (the
+	// non-trigger simulation shape. It is never queryable (the
 	// trigger shape already answers queries) and the filter shader kills any
 	// non-trigger pair involving it, so it can never collide.
 	if (p_record.detection_shape) {
 		// Once created, the detection shape lives until the record is removed
-		// (mirroring px_shape's lifetime). It is only destroyed on explicit
-		// state changes — not when the blueprint pointer was nullified by
+		// (mirroring shape_instance's lifetime). It is only destroyed on explicit
+		// state changes — not when the shape_blueprint pointer was nullified by
 		// shape-resource destruction (the PxShape keeps its geometry copy,
 		// exactly like the trigger shape does).
 		if (!monitorable || p_record.disabled) {
@@ -673,7 +652,7 @@ void PhysXArea3D::_sync_detection_shape(AttachedShape &p_record) {
 		return;
 	}
 
-	const bool needed = monitorable && !p_record.disabled && px_actor != nullptr && p_record.shareable_shape != nullptr;
+	const bool needed = monitorable && !p_record.disabled && px_actor != nullptr && p_record.shape_blueprint != nullptr;
 	if (!needed) {
 		return;
 	}
@@ -681,13 +660,13 @@ void PhysXArea3D::_sync_detection_shape(AttachedShape &p_record) {
 	physx::PxPhysics &physics = PhysXServer3D::get_singleton()->get_physics();
 	// Body scale + per-shape transform scale, matching PhysXShapedObject3D::add_shape()
 	// (convex polygon shapes receive the signed/mirror-capable scale).
-	const Vector3 geom_scale = _shape_geometry_scale_for(p_record.shareable_shape, p_record.relative_transform);
+	const Vector3 geom_scale = _shape_geometry_scale_for(p_record.shape_blueprint, p_record.relative_transform);
 	physx::PxVec3 total_scale(geom_scale.x, geom_scale.y, geom_scale.z);
 	// Plain simulation shape: no trigger (that would be the trigger shape's
 	// job), no scene query (avoids double query hits), no visualization
 	// (avoids double debug drawing).
 	const physx::PxShapeFlags flags = physx::PxShapeFlag::eSIMULATION_SHAPE;
-	physx::PxShape *detection = p_record.shareable_shape->create_shape(physics, total_scale, _get_shape_material(), flags);
+	physx::PxShape *detection = p_record.shape_blueprint->create_shape(physics, total_scale, _get_shape_material(), flags);
 	if (!detection) {
 		return;
 	}
@@ -696,7 +675,7 @@ void PhysXArea3D::_sync_detection_shape(AttachedShape &p_record) {
 	// shape's intrinsic alignment pose).
 	Transform3D final_tr = p_record.relative_transform;
 	final_tr.origin *= body_scale;
-	detection->setLocalPose(to_physx_transform(final_tr) * p_record.shareable_shape->get_local_pose(total_scale));
+	detection->setLocalPose(to_physx_transform(final_tr) * p_record.shape_blueprint->get_local_pose(total_scale));
 
 	// Areas never collide (see physx_simulation_filter_shader).
 	physx::PxFilterData filter_data;
@@ -706,7 +685,7 @@ void PhysXArea3D::_sync_detection_shape(AttachedShape &p_record) {
 	detection->setSimulationFilterData(filter_data);
 	detection->setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, false);
 	detection->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, false);
-	physx_apply_space_rest_offset(detection, p_record.shareable_shape->get_margin(), space);
+	physx_apply_space_rest_offset(detection, p_record.shape_blueprint->get_margin(), space);
 
 	if (physx::PxRigidActor *rigid_actor = px_actor->is<physx::PxRigidActor>()) {
 		rigid_actor->attachShape(*detection);
@@ -729,37 +708,34 @@ void PhysXArea3D::_emit_area_exit_events() {
 		}
 		// "This area detects the other": this area's callback hears about the exit.
 		PhysXSpace3D::TriggerEvent ev;
-		ev.area = this;
+		ev.trigger_area = this;
 		ev.other_area = other_area;
 		ev.other_area_rid = other_area->get_rid();
 		ev.other_area_id = other_area->get_instance_id();
 		ev.status = PhysicsServer3D::AREA_BODY_REMOVED;
-		ev.other_shape = 0;
-		ev.area_shape = 0;
+		ev.other_shape_idx = 0;
+		ev.area_shape_idx = 0;
 		ev.is_area_vs_area = true;
 		space->queue_trigger(ev);
 		// "The other area detects this": the other area's callback hears about the exit.
 		PhysXSpace3D::TriggerEvent ev2;
-		ev2.area = other_area;
+		ev2.trigger_area = other_area;
 		ev2.other_area = this;
 		ev2.other_area_rid = get_rid();
 		ev2.other_area_id = get_instance_id();
 		ev2.status = PhysicsServer3D::AREA_BODY_REMOVED;
-		ev2.other_shape = 0;
-		ev2.area_shape = 0;
+		ev2.other_shape_idx = 0;
+		ev2.area_shape_idx = 0;
 		ev2.is_area_vs_area = true;
 		space->queue_trigger(ev2);
 	}
 	overlapping_areas.clear();
 }
 
-// ---------------------------------------------------------------------------
-// Wind force at a world position (same convention as the Area3D wind
-// module). Applies the Godot-4 Area3D wind parameters: a constant magnitude
-// along wind_direction, attenuated over downwind distance from wind_source
-// when wind_attenuation_factor is nonzero. Zero when wind is unused, so the
-// common case adds no work.
-// ---------------------------------------------------------------------------
+	// Wind force at a world position (same convention as the Area3D wind
+	// module): constant magnitude along wind_direction, attenuated over
+	// downwind distance from wind_source when wind_attenuation_factor is
+	// nonzero. Zero when wind is unused, so the common case adds no work.
 physx::PxBounds3 PhysXArea3D::get_world_bounds() const {
 	if (!px_actor || px_actor->getNbShapes() == 0) {
 		return physx::PxBounds3::empty();

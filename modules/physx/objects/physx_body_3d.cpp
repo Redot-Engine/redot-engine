@@ -51,9 +51,7 @@
 #include "physx_area_3d.h"
 #include "physx_direct_body_state_3d.h"
 
-// ---------------------------------------------------------------------------
 // Overlap tracking (maintained by PhysXSimulationEventCallback)
-// ---------------------------------------------------------------------------
 
 void PhysXBody3D::add_overlapping_area(PhysXArea3D *p_area) {
 	if (p_area == nullptr) {
@@ -143,10 +141,9 @@ void PhysXBody3D::_create_actor() {
 		px_actor = dynamic_actor;
 	}
 
-	// 2. The Bridge: Map PhysX back to Godot!
-	// The actor carries a PhysXActorUserData so that raycasts, overlaps,
-	// sweeps and simulation callbacks can recover the Godot RID/ObjectID.
-	// This is the ONLY type that may be stored in PxActor::userData.
+		// The actor carries a PhysXActorUserData so raycasts/overlaps/sweeps and
+		// simulation callbacks can recover the Godot RID/ObjectID — the ONLY
+		// type that may be stored in PxActor::userData.
 	if (px_actor) {
 		actor_user_data.object = this;
 		actor_user_data.rid = get_rid();
@@ -235,20 +232,15 @@ void PhysXBody3D::set_space(PhysXSpace3D *p_space) {
 }
 
 /**
- * @brief Changes the body's simulation mode.
+ * Changes the body's simulation mode.
  *
- * Two paths depending on whether the static/dynamic boundary is crossed:
- *
- * 1. Static ↔ Dynamic: requires full actor recreation, because PxRigidStatic
- *    and PxRigidDynamic are distinct C++ types. The old actor is released
- *    (which also releases all attached PxShapes), a new one is created, the
- *    cached global pose is restored, all shapes are rebuilt via
- *    rebuild_shapes(), and the body rejoins its space.
- *
- * 2. Dynamic ↔ Kinematic (or Rigid ↔ RigidLinear): fast path — toggles the
- *    eKINEMATIC flag on the existing PxRigidDynamic (re-waking the body when
- *    leaving kinematic, since idle kinematics may be asleep). No recreation
- *    needed.
+ * Static <-> Dynamic requires full actor recreation (PxRigidStatic and
+ * PxRigidDynamic are distinct types): the old actor is released (its shapes
+ * die with it), a new one is created, the cached pose/velocity restored,
+ * attached_shapes rebuilt via rebuild_shapes(), and the body rejoins its
+ * space. Dynamic <-> Kinematic / RigidLinear is the fast path: toggling
+ * eKINEMATIC on the existing actor (re-waking when leaving kinematic, since
+ * idle kinematics may be asleep).
  */
 void PhysXBody3D::set_mode(PhysicsServer3D::BodyMode p_mode) {
 	if (mode == p_mode) {
@@ -317,9 +309,9 @@ void PhysXBody3D::set_mode(PhysicsServer3D::BodyMode p_mode) {
 			// Restore velocity on the new dynamic actor (no-op for static).
 			// PhysX forbids setLinearVelocity/setAngularVelocity on kinematic
 			// bodies — cache into the kinematic tracking members instead, so a
-			// dynamic→static→kinematic round-trip preserves the requested
-			// velocity (the engine contract is that setting velocity on a
-			// kinematic body is legal and must not error). See set_state().
+			// dynamic->static->kinematic round-trip preserves the requested
+			// velocity (setting velocity on a kinematic body is legal and must
+			// not error). See set_state().
 			if (physx::PxRigidDynamic *new_dyn = get_px_dynamic()) {
 				if (mode == PhysicsServer3D::BODY_MODE_KINEMATIC) {
 					kinematic_linear_velocity = Vector3(cached_lin_vel.x, cached_lin_vel.y, cached_lin_vel.z);
@@ -342,11 +334,10 @@ void PhysXBody3D::set_mode(PhysicsServer3D::BodyMode p_mode) {
 		if (physx::PxRigidDynamic *dyn = get_px_dynamic()) {
 			const bool is_kinematic = (mode == PhysicsServer3D::BODY_MODE_KINEMATIC);
 			if (is_kinematic) {
-				// Snapshot the dynamic velocity into the kinematic tracking
-				// members before flipping the flag — once kinematic, PhysX's
-				// getLinearVelocity() no longer reflects simulated motion, and
-				// setLinearVelocity() becomes illegal. This preserves momentum
-				// for a rigid→kinematic transition.
+			// Snapshot the dynamic velocity into the kinematic tracking
+			// members before flipping the flag: once kinematic, getLinearVelocity()
+			// no longer reflects simulated motion and setLinearVelocity() becomes
+			// illegal. Preserves momentum for rigid->kinematic.
 				const physx::PxVec3 lv = dyn->getLinearVelocity();
 				const physx::PxVec3 av = dyn->getAngularVelocity();
 				kinematic_linear_velocity = Vector3(lv.x, lv.y, lv.z);
@@ -356,7 +347,7 @@ void PhysXBody3D::set_mode(PhysicsServer3D::BodyMode p_mode) {
 			if (!is_kinematic && body_added_to_scene) {
 				// Leaving kinematic: an idle kinematic body may be asleep, and
 				// clearing eKINEMATIC does not wake it — without this the body
-				// would stay inert instead of resuming simulation (REG-0015).
+				// would stay inert instead of resuming simulation.
 				// The static->rigid path gets a fresh (awake) actor on
 				// recreation, so mirror that here.
 				dyn->wakeUp();
@@ -482,15 +473,13 @@ Variant PhysXBody3D::get_state(PhysicsServer3D::BodyState p_state) const {
 			Transform3D t;
 			t.origin = Vector3(pose.p.x, pose.p.y, pose.p.z);
 			Quaternion q(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
-			// The set path decomposes the node basis via get_scale() (per-axis
-			// lengths, stored as body_scale and baked into shape geometry) and
-			// get_rotation_quaternion() (the actor pose). Rebuild with a LOCAL
-			// scale composition — Basis(q) * diag(body_scale) — so the axis
-			// lengths and rotation both round-trip: this is the fixed point of
-			// that decomposition pair (native scaled() is a GLOBAL-axis scale
-			// and does not reproduce get_scale()). The previous form composed
-			// the scale and then overwrote the whole basis with
-			// set_quaternion — the scale was silently dropped (OBJ-1).
+		// The set path decomposes the node basis via get_scale() (per-axis
+		// lengths, stored as body_scale and baked into shape geometry) and
+		// get_rotation_quaternion() (the actor pose). Rebuild with a LOCAL
+		// scale composition — Basis(q) * diag(body_scale) — so the axis
+		// lengths and rotation both round-trip: this is the fixed point of
+		// that decomposition pair; native scaled() is a GLOBAL-axis scale and
+		// does not reproduce get_scale().
 			t.basis = Basis(q).scaled_local(body_scale);
 			return t;
 		}
@@ -534,7 +523,7 @@ Variant PhysXBody3D::get_state(PhysicsServer3D::BodyState p_state) const {
 // ---------------------------------------------------------------------------
 
 void PhysXBody3D::set_param(PhysicsServer3D::BodyParameter p_param, const Variant &p_value) {
-	// No-op writes are skipped entirely (OBJ-6): the apply path below runs
+	// No-op writes are skipped entirely: the apply path below runs
 	// _apply_sleep_policy() and rewrites the actor's material/damping/flags —
 	// re-assigning the same value (RigidBody3D setter churn, inspector, scene
 	// reload) must not dirty the actor for nothing.
@@ -694,16 +683,12 @@ Variant PhysXBody3D::get_param(PhysicsServer3D::BodyParameter p_param) const {
 }
 
 void PhysXBody3D::reset_mass_properties() {
-	// Re-compute mass and inertia tensor from the attached shapes' geometries,
-	// scaling to the user-supplied mass. Mirrors godot_physics_3d, where mass
-	// is an explicit body property and the inertia tensor is derived from the
-	// shapes.
-	//
-	// Godot's contract: BODY_PARAM_CENTER_OF_MASS / BODY_PARAM_INERTIA
-	// overrides live until THIS call — RigidBody3D invokes it when the
-	// center-of-mass mode returns to AUTO (and re-applies its own inertia
-	// param right after if the user set one). Clear both overrides here or a
-	// custom COM would silently survive the switch back to AUTO.
+	// Re-derive mass and the inertia tensor from the attached shapes' geometries
+	// at the user-supplied mass (mirrors godot_physics_3d, where mass is explicit
+	// and inertia is derived). Godot's contract: BODY_PARAM_CENTER_OF_MASS /
+	// BODY_PARAM_INERTIA overrides live until THIS call — RigidBody3D invokes it
+	// when the center-of-mass mode returns to AUTO — so clear both overrides
+	// here or a custom COM would silently survive the switch back to AUTO.
 	center_of_mass_set = false;
 	inertia_set = false;
 	update_inertia();
@@ -720,14 +705,11 @@ bool PhysXBody3D::update_inertia() {
 	// the mass to the user value AND computes the inertia tensor + center of mass
 	// from the shapes' geometries scaled to that mass.
 	//
-	// Do NOT use updateMassAndInertia(density): that overload requires density > 0
-	// (passing 0 is invalid input per the SDK docs — "The density must be greater
-	// than 0") and it overwrites the user mass. The previous density=0 call was a
-	// no-op that left the inertia tensor at its default (1,1,1). For a sphere of
-	// radius 0.5 / mass 1.0 the correct inertia is (2/5)*m*r^2 = 0.1, so the
-	// default (1,1,1) was ~10x too high: ramp-friction torque produced too little
-	// angular acceleration and the sphere slid instead of rolling. With a
-	// geometry-derived inertia the contact torque spins the sphere correctly.
+	// Do NOT use updateMassAndInertia(density): the SDK requires density > 0 and
+	// it overwrites the user mass. The previous density=0 call was a no-op that
+	// left the inertia tensor at its (1,1,1) default — ~10x too high for a
+	// typical sphere, so ramp-friction torque under-spun it and it slid instead
+	// of rolling.
 	//
 	// includeNonSimShapes=false so disabled/query-only shapes don't contribute.
 	const physx::PxU32 nb_shapes = px_actor->getNbShapes();
@@ -779,13 +761,11 @@ void PhysXBody3D::_apply_sleep_policy(physx::PxRigidDynamic *p_dyn) {
 	if (space && mode != PhysicsServer3D::BODY_MODE_KINEMATIC) {
 		// Godot's velocity thresholds (m/s, rad/s) mapped onto PhysX's
 		// mass-normalized kinetic-energy threshold, and time-before-sleep
-		// onto the wake counter. The wake counter is only (re-)armed while
-		// the body can actually be sleeping: a positive counter on a sleeping
-		// body wakes it, and a policy re-apply (param writes, space param
-		// changes) must never wake anything (OBJ-6). isSleeping() itself is
-		// only meaningful for scene actors — sleep state is maintained by the
-		// simulation — so bodies outside a scene always arm the counter, like
-		// before.
+		// onto the wake counter. The counter is only (re-)armed while the body
+		// can actually be sleeping: a positive counter on a sleeping body wakes
+		// it, and a policy re-apply must never wake anything.
+		// isSleeping() is only meaningful for scene actors, so bodies outside a
+		// scene always arm the counter.
 		p_dyn->setSleepThreshold((float)space->get_sleep_energy_threshold());
 		if (!body_added_to_scene || !p_dyn->isSleeping()) {
 			p_dyn->setWakeCounter((float)space->get_time_before_sleep());
@@ -819,13 +799,11 @@ physx::PxMaterial *PhysXBody3D::_get_shape_material() {
 	return px_material;
 }
 
-/**
- * @brief Lock flags actually enforced on the actor.
- *
- * Combines the user-set axis locks (axis_lock_flags) with the mode-derived
- * locks: BODY_MODE_RIGID_LINEAR is Godot's "moves but never rotates" mode, so
- * all three angular axes stay locked regardless of axis_lock_flags (REG-0017).
- */
+//
+// Lock flags actually enforced: the user-set axis locks plus the mode-derived
+// ones — BODY_MODE_RIGID_LINEAR is Godot's "moves but never rotates" mode,
+// so all three angular axes stay locked regardless of axis_lock_flags.
+//
 physx::PxRigidDynamicLockFlags PhysXBody3D::_effective_lock_flags() const {
 	physx::PxRigidDynamicLockFlags effective = axis_lock_flags;
 	if (mode == PhysicsServer3D::BODY_MODE_RIGID_LINEAR) {
@@ -853,12 +831,10 @@ void PhysXBody3D::_apply_surface_params_to_actor() {
 	actor_user_data.bounce = (float)bounce;
 	actor_user_data.friction = (float)friction;
 
-	// Apply bounce/friction to the body's PRIVATE material (created lazily by
-	// _get_shape_material when shapes are attached). This material is shared by
-	// all of this body's shapes, so we update it once here rather than walking
-	// the per-shape material lists (which would also touch the shared default
-	// material if any shape still references it). Values are clamped/abs'd for
-	// the material itself — the signed values live in userData for the combiner.
+	// Apply bounce/friction to the body's PRIVATE material (all of this body's
+	// shapes share it), not the per-shape lists — which would also touch the
+	// shared default material if any shape still references it. The signed
+	// values for the combiner live in userData.
 	if (px_material) {
 		const float mat_bounce = CLAMP((float)bounce, 0.0f, 1.0f);
 		const float mat_friction = Math::abs((float)friction);
@@ -900,13 +876,10 @@ void PhysXBody3D::_apply_params_to_actor() {
 }
 
 /**
- * @brief Derives linear/angular velocity for a kinematic body from its pose delta.
- *
- * PhysX kinematic bodies do not simulate velocity (getLinearVelocity() returns
- * the last manually-set value, default zero). Godot's AnimatableBody3D reads
- * velocity from PhysicsDirectBodyState3D every step via _body_state_changed,
- * so we compute it as (pose_now - pose_prev) / step. Must run AFTER
- * fetchResults() so the kinematic pose reflects the target set this step.
+ * Derives linear/angular velocity for a kinematic body from its pose delta:
+ * PhysX kinematics do not simulate velocity (getLinearVelocity() returns the
+ * last manually-set value), but Godot's AnimatableBody3D reads it from
+ * PhysicsDirectBodyState3D every step. Must run AFTER fetchResults().
  */
 void PhysXBody3D::_update_kinematic_velocity(float p_step) {
 	if (mode != PhysicsServer3D::BODY_MODE_KINEMATIC || !px_actor || p_step <= 0.0f) {
@@ -1035,13 +1008,8 @@ void PhysXBody3D::apply_impulse(const Vector3 &p_impulse, const Vector3 &p_posit
 			pending_force_ops.push_back(op);
 			return;
 		}
-		// Godot's p_position is an OFFSET from the body origin in GLOBAL
-		// coordinates (RigidBody3D.apply_impulse contract; godot_physics_3d
-		// computes the torque arm as (position - center_of_mass), where its
-		// center_of_mass is the origin-relative COM in global axes).
-		// PxRigidBodyExt::addForceAtPos takes an absolute world position, so
-		// translate the offset by the actor origin; PhysX then applies the
-		// identical (world - COM) torque arm.
+	// Same position contract as apply_impulse (offset from the body origin in
+	// global coordinates, translated to a world point for addForceAtPos).
 		const physx::PxTransform pose = dyn->getGlobalPose();
 		const physx::PxVec3 world(pose.p.x + (physx::PxReal)p_position.x,
 				pose.p.y + (physx::PxReal)p_position.y,
@@ -1314,7 +1282,7 @@ void PhysXBody3D::set_omit_force_integration(bool p_enable) {
 
 void PhysXBody3D::set_shape_disabled(int p_shape_idx, bool p_disabled) {
 	ERR_FAIL_INDEX(p_shape_idx, get_shape_count());
-	if (p_disabled == shapes[p_shape_idx].disabled) {
+	if (p_disabled == attached_shapes[p_shape_idx].disabled) {
 		return;
 	}
 
@@ -1325,24 +1293,24 @@ void PhysXBody3D::set_shape_disabled(int p_shape_idx, bool p_disabled) {
 		space->ensure_synced();
 	}
 
-	shapes[p_shape_idx].disabled = p_disabled;
+	attached_shapes[p_shape_idx].disabled = p_disabled;
 
-	if (shapes[p_shape_idx].px_shape) {
+	if (attached_shapes[p_shape_idx].shape_instance) {
 		// A body shape is a simulation shape (not a trigger). Disabling it
 		// means removing it from both simulation and queries until re-enabled.
 		// Re-enabling must NOT restore eSIMULATION_SHAPE on a concave shape
 		// attached to a non-kinematic dynamic body: those shapes were created
 		// query-only because PhysX forbids mesh/heightfield/plane simulation
-		// shapes on dynamic actors (REG-0014).
+		// shapes on dynamic actors.
 		physx::PxRigidDynamic *dyn = get_px_dynamic();
 		const bool sim_allowed = dyn == nullptr ||
 				(dyn->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC) ||
-				!shapes[p_shape_idx].shareable_shape ||
-				(shapes[p_shape_idx].shareable_shape->is_convex() &&
-						shapes[p_shape_idx].shareable_shape->get_type() != PhysicsServer3D::SHAPE_SEPARATION_RAY);
-		shapes[p_shape_idx].px_shape->setFlag(
+				!attached_shapes[p_shape_idx].shape_blueprint ||
+				(attached_shapes[p_shape_idx].shape_blueprint->is_convex() &&
+						attached_shapes[p_shape_idx].shape_blueprint->get_type() != PhysicsServer3D::SHAPE_SEPARATION_RAY);
+		attached_shapes[p_shape_idx].shape_instance->setFlag(
 				physx::PxShapeFlag::eSIMULATION_SHAPE, !p_disabled && sim_allowed);
-		shapes[p_shape_idx].px_shape->setFlag(
+		attached_shapes[p_shape_idx].shape_instance->setFlag(
 				physx::PxShapeFlag::eSCENE_QUERY_SHAPE, !p_disabled);
 	}
 }
@@ -1356,15 +1324,15 @@ void PhysXBody3D::set_shape(int p_shape_idx, PhysXShape3D *p_shape) {
 	// slot, so we capture first, then SWAP the freshly-appended record into
 	// the original index. A PxShape is position-independent (its placement is
 	// dictated by its local pose), so reordering the bookkeeping vector is safe.
-	const Transform3D saved_transform = shapes[p_shape_idx].relative_transform;
-	const bool saved_disabled = shapes[p_shape_idx].disabled;
+	const Transform3D saved_transform = attached_shapes[p_shape_idx].relative_transform;
+	const bool saved_disabled = attached_shapes[p_shape_idx].disabled;
 
 	remove_shape(p_shape_idx);
 	add_shape(p_shape, saved_transform, saved_disabled);
 
 	const int last_idx = get_shape_count() - 1;
 	if (last_idx != p_shape_idx) {
-		SWAP(shapes[p_shape_idx], shapes[last_idx]);
+		SWAP(attached_shapes[p_shape_idx], attached_shapes[last_idx]);
 	}
 }
 
@@ -1373,19 +1341,12 @@ void PhysXBody3D::set_shape(int p_shape_idx, PhysXShape3D *p_shape) {
 // ---------------------------------------------------------------------------
 
 /**
- * @brief Pre-step hook — called by PhysXSpace3D::step() before simulate().
- *
- * 1. Clears the per-step contact buffer (will be repopulated by onContact).
- * 2. Checks for overlapping areas and computes effective gravity/damping.
- * 3. Applies area override gravity as acceleration force if an area has
- *    a different gravity direction than the scene.
- * 4. Applies gravity_scale (only when no area gravity override is active,
- *    since PhysX already applies scene gravity).
- * 5. Applies constant force/torque accumulators (Godot semantics: these
- *    persist across steps until explicitly cleared).
- * 6. If custom force integration is enabled (omit_force_integration), invokes
- *    the user callback instead of steps 3-5, passing the DirectBodyState.
- * 7. Applies linear/angular damping overrides from areas.
+ * Pre-step hook, called by PhysXSpace3D::step() before simulate(): clears the
+ * contact buffer, resolves overlapping-area gravity/damping overrides (plus
+ * wind), applies the gravity-scale correction delta and the constant force/
+ * torque accumulators, and invokes the custom integrator instead of all of
+ * that when omit_force_integration is set. See the sleep-cadence contract
+ * at the integrator call below.
  */
 void PhysXBody3D::on_pre_step(float p_step) {
 	if (!px_actor) {
@@ -1516,20 +1477,18 @@ void PhysXBody3D::on_pre_step(float p_step) {
 	}
 
 	// --- Apply gravity ---
-	// Native scene gravity (PhysXSpace3D::_initialize_scene) is the base
-	// gravity for dynamic bodies, so a resting body can reach PhysX's sleep
-	// threshold. (A per-step addForce of the full gravity wakes the body every
-	// step and resets the sleep accumulator, which prevented auto-sleep.)
-	// Rigid bodies in this PhysX version have no per-actor gravity scale, so we
-	// keep native gravity at scene strength and apply only the correction delta:
+	// Native scene gravity is the base gravity for dynamic bodies, so a resting
+	// body can reach PhysX's sleep threshold. (A per-step addForce of the full
+	// gravity wakes the body every step and resets the sleep accumulator, which
+	// prevented auto-sleep.) This PhysX version has no per-actor gravity scale,
+	// so native gravity stays at scene strength and on_pre_step applies only the
+	// correction delta:
 	//     delta = total_gravity * gravity_scale - scene_gravity
 	// which is zero in the default (gravity_scale == 1, no area override) case.
 	// A vehicle2 chassis and a custom force integrator own their gravity, so
-	// native gravity is disabled for them (eDISABLE_GRAVITY).
-	//
-	// Forces/damping are only valid on simulated dynamic bodies — PhysX forbids
-	// addForce/addTorque/setLinearDamping on kinematic/static bodies. We still
-	// keep the cached totals so get_total_gravity/get_total_*_damp are correct.
+	// native gravity is disabled for them (eDISABLE_GRAVITY). PhysX forbids
+	// addForce/damping on kinematic/static bodies; the cached totals below keep
+	// get_total_gravity/get_total_*_damp correct regardless.
 	if (is_simulated) {
 		const bool use_native = !is_vehicle_chassis && !omit_force_integration;
 		// Flag writes are not free in PhysX (they dirty the actor); only push
@@ -1542,8 +1501,8 @@ void PhysXBody3D::on_pre_step(float p_step) {
 		const bool apply_forces = !omit_force_integration && !dyn->isSleeping();
 		if (apply_forces) {
 			// Apply the correction delta on top of native gravity (skipped for
-			// the vehicle chassis / integrator, which apply their own gravity —
-			// plan R3). Zero in the default case, so no addForce and bodies can
+			// the vehicle chassis / integrator, which apply their own gravity.
+			// Zero in the default case, so no addForce and bodies can
 			// sleep.
 			if (use_native) {
 				// Cached on the space at scene creation (gravity is never
@@ -1591,7 +1550,7 @@ void PhysXBody3D::on_pre_step(float p_step) {
 	cached_total_linear_damp = total_linear_damp;
 	cached_total_angular_damp = total_angular_damp;
 
-	// OBJ-3: Godot runs _integrate_forces only for bodies that integrate —
+	// Godot runs _integrate_forces only for bodies that integrate —
 	// a sleeping body gets no callback. The cadence matches godot_physics
 	// without a synthesized extra call: the last invocation fires on the last
 	// awake step (isSleeping() still reads false at that pre-step; PhysX puts
@@ -1679,13 +1638,13 @@ void PhysXBody3D::_emit_all_area_exits() {
 		PhysXArea3D *area = overlapping_areas[i];
 		area->remove_overlapping_body(this);
 		PhysXSpace3D::TriggerEvent ev;
-		ev.area = area;
+		ev.trigger_area = area;
 		ev.body = this;
 		ev.body_rid = get_rid();
 		ev.body_id = get_instance_id();
 		ev.status = PhysicsServer3D::AREA_BODY_REMOVED;
-		ev.other_shape = 0;
-		ev.area_shape = 0;
+		ev.other_shape_idx = 0;
+		ev.area_shape_idx = 0;
 		ev.is_area_vs_area = false;
 		space->queue_trigger(ev);
 	}

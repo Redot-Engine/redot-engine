@@ -45,7 +45,7 @@
  * userData set to the appropriate struct below. Consumers MUST cast to the
  * documented type — never to PhysXObject3D* or PhysXBody3D* directly.
  *
- * Note: PxShape::userData points at the shared PhysXShape3D* blueprint
+ * Note: PxShape::userData points at the shared PhysXShape3D* shape_blueprint
  * (the same pointer returned by PhysXShape3D::create_shape's caller).
  * The shape_index for each PxShape is tracked in the owning body/area's
  * shapes[] array, not stored in the shape itself.
