@@ -80,18 +80,29 @@ TIER_TIMEOUTS = {"fast": 1500, "extended": 3600, "nightly": 6 * 3600}
 def parse_args():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--godot", default=str(DEFAULT_GODOT), help="engine binary (default: %(default)s)")
-    ap.add_argument("--suite", action="append", choices=sorted(SUITES.keys() | {"all"}), default=None,
-                    help="suite to run (repeatable; default: all = %s)" % " ".join(DEFAULT_SUITES))
+    ap.add_argument(
+        "--suite",
+        action="append",
+        choices=sorted(SUITES.keys() | {"all"}),
+        default=None,
+        help="suite to run (repeatable; default: all = %s)" % " ".join(DEFAULT_SUITES),
+    )
     ap.add_argument("--tier", choices=["fast", "extended", "nightly"], default="fast")
     ap.add_argument("--category", action="append", default=[], help="restrict to category (repeatable)")
     ap.add_argument("--test", action="append", default=[], help="restrict to test ID (repeatable)")
     ap.add_argument("--seed", type=int, default=None, help="seed for randomized tests")
-    ap.add_argument("--out", default=str(HERE / "test_results"),
-                help="directory for JSON reports (default: modules/physx/test/test_results)")
+    ap.add_argument(
+        "--out",
+        default=str(HERE / "test_results"),
+        help="directory for JSON reports (default: modules/physx/test/test_results)",
+    )
     ap.add_argument("--timeout", type=int, default=None, help="wall-clock seconds per process (overrides tier)")
     ap.add_argument("--skip-build", action="store_true", help="skip dotnet build of the C# assembly")
-    ap.add_argument("--per-category", action="store_true",
-                    help="run each category in its own process (crash isolation; default for nightly)")
+    ap.add_argument(
+        "--per-category",
+        action="store_true",
+        help="run each category in its own process (crash isolation; default for nightly)",
+    )
     ap.add_argument("--list", action="store_true", help="list tests instead of running them")
     return ap.parse_args()
 
@@ -103,11 +114,14 @@ def build_csharp() -> bool:
         (PROJECT / ".godot").mkdir(exist_ok=True)
     print(f"[driver] building {csproj}")
     try:
-        r = subprocess.run(["dotnet", "build", str(csproj), "-v", "q", "-nologo"],
-                           cwd=str(PROJECT), capture_output=True, text=True)
+        r = subprocess.run(
+            ["dotnet", "build", str(csproj), "-v", "q", "-nologo"], cwd=str(PROJECT), capture_output=True, text=True
+        )
     except FileNotFoundError:
-        print("[driver] ERROR: dotnet not found -- C# suite requires the .NET SDK "
-              "(engine must be built with module_mono_enabled=yes)")
+        print(
+            "[driver] ERROR: dotnet not found -- C# suite requires the .NET SDK "
+            "(engine must be built with module_mono_enabled=yes)"
+        )
         return False
     if r.returncode != 0:
         print("[driver] C# build FAILED:\n" + (r.stdout or "") + (r.stderr or ""))
@@ -121,7 +135,6 @@ def run_engine(godot: str, script: str, extra_user_args, out_json: pathlib.Path,
     cmd = [godot, "--headless", "--fixed-fps", "60", "--path", str(PROJECT), "--script", script, "--"]
     cmd += extra_user_args + [f"--json={out_json}"]
     print(f"[driver] {' '.join(str(c) for c in cmd)}")
-    t0 = time.time()
     if out_json.exists():
         out_json.unlink()
     try:
@@ -194,8 +207,8 @@ def main():
     per_category = args.per_category or (args.tier == "nightly")
 
     suites = []
-    for requested in (args.suite or ["all"]):
-        for s in (DEFAULT_SUITES if requested == "all" else [requested]):
+    for requested in args.suite or ["all"]:
+        for s in DEFAULT_SUITES if requested == "all" else [requested]:
             if s not in suites:
                 suites.append(s)
 
@@ -228,7 +241,9 @@ def main():
                 label = f"{suite}/{pathlib.Path(script).stem}"
 
             if per_category and suite in CATEGORIZABLE_SUITES and not args.list:
-                categories = args.category if args.category else list_categories(godot, script, user_args, timeout, out_dir)
+                categories = (
+                    args.category if args.category else list_categories(godot, script, user_args, timeout, out_dir)
+                )
                 for cat in categories:
                     cat_args = [a for a in user_args if not a.startswith("--category=")] + [f"--category={cat}"]
                     # '*' (and None) are display fallbacks, not legal filename
@@ -251,7 +266,9 @@ def main():
                     with open(out_json, "w", encoding="utf-8") as f:
                         json.dump(report, f, indent=2)
                 totals = suite_totals(report, label)
-                all_reports.append((suite, "*" if len(SUITES[suite]) == 1 else pathlib.Path(script).stem, totals, report))
+                all_reports.append(
+                    (suite, "*" if len(SUITES[suite]) == 1 else pathlib.Path(script).stem, totals, report)
+                )
                 if status != "done" or code not in (0,):
                     failed_processes += 1
                 if status in ("crash", "timeout"):
@@ -283,9 +300,11 @@ def main():
     print("  MERGED RESULT")
     print("=" * 52)
     for suite, cat, totals, _ in all_reports:
-        print(f"  {suite + ('/' + cat if cat != '*' else ''):<22} "
-              f"{totals['status'].upper():<8} {totals['passed']}/{totals['total']} "
-              f"(fail={totals['failed']} skip={totals['skipped']} timeout={totals['timeout']})")
+        print(
+            f"  {suite + ('/' + cat if cat != '*' else ''):<22} "
+            f"{totals['status'].upper():<8} {totals['passed']}/{totals['total']} "
+            f"(fail={totals['failed']} skip={totals['skipped']} timeout={totals['timeout']})"
+        )
     print(f"  merged JSON: {merged_path}")
     print("=" * 52)
     print(f"RESULT: {'FAILURE' if any_failed else 'SUCCESS'}")
