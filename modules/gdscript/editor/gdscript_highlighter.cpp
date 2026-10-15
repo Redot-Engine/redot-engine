@@ -39,6 +39,8 @@
 #include "gdscript_highlighter.h"
 
 #include "../gdscript.h"
+#include "../gdscript_cache.h"
+#include "../gdscript_parser.h"
 #include "../gdscript_tokenizer.h"
 
 #include "core/config/project_settings.h"
@@ -46,8 +48,455 @@
 #include "editor/settings/editor_settings.h"
 #include "editor/themes/editor_theme_manager.h"
 #include "scene/gui/text_edit.h"
+#include "scene/main/scene_tree.h"
+
+namespace {
+
+// Keep source declarations separate from runtime reflection: traits and structs
+// do not have their own compiled script properties.
+class GDScriptHighlighterSource {
+	using Parser = GDScriptParser;
+
+public:
+	enum Symbol { UNKNOWN,
+		LOCAL,
+		MEMBER,
+		TYPE };
+
+private:
+	struct Scope {
+		const Parser::Node *node = nullptr;
+		int parent = -1;
+		bool in_source = true;
+		String path;
+		HashMap<StringName, int> types;
+		HashSet<StringName> members;
+		HashMap<StringName, const Parser::Node *> locals;
+		Vector<const Parser::UsesNode *> uses;
+	};
+	LocalVector<Scope> scopes;
+	HashMap<uint64_t, Symbol> declarations;
+	HashMap<StringName, int> global_types;
+	HashMap<String, int> external_types;
+	String source_path;
+	HashMap<const Parser::Node *, int> resolved_types;
+	Vector<Ref<GDScriptParserRef>> dependencies;
+	struct ScopeBoundary {
+		uint64_t position;
+		int scope;
+		bool enter;
+
+		bool operator<(const ScopeBoundary &p_other) const {
+			if (position != p_other.position) {
+				return position < p_other.position;
+			}
+			if (enter != p_other.enter) {
+				return !enter;
+			}
+			return enter ? scope < p_other.scope : scope > p_other.scope;
+		}
+	};
+	LocalVector<ScopeBoundary> boundaries;
+	LocalVector<int> active_scopes;
+	uint32_t next_boundary = 0;
+
+	static uint64_t position(int p_line, int p_column) {
+		return (uint64_t(p_line) << 32) | uint32_t(p_column);
+	}
+
+	void declare(const Parser::IdentifierNode *p_identifier, Symbol p_symbol) {
+		if (p_identifier) {
+			declarations[position(p_identifier->start_line, p_identifier->start_column)] = p_symbol;
+		}
+	}
+
+	int add_scope(const Parser::Node *p_node, int p_parent, bool p_in_source = true) {
+		Scope scope;
+		scope.node = p_node;
+		scope.parent = p_parent;
+		scope.in_source = p_in_source;
+		scope.path = p_parent >= 0 ? scopes[p_parent].path : source_path;
+		scopes.push_back(scope);
+		return scopes.size() - 1;
+	}
+
+	int collect(const Parser::Node *p_node, int p_scope) {
+		if (!p_node) {
+			return p_scope;
+		}
+		switch (p_node->type) {
+			case Parser::Node::CLASS:
+			case Parser::Node::TRAIT: {
+				const Parser::ClassNode *node = static_cast<const Parser::ClassNode *>(p_node);
+				p_scope = add_scope(node, p_scope);
+				declare(node->identifier, TYPE);
+				for (const Parser::ClassNode::Member &member : node->members) {
+					if (member.type == Parser::ClassNode::Member::CLASS || member.type == Parser::ClassNode::Member::TRAIT || member.type == Parser::ClassNode::Member::STRUCT) {
+						int child = collect(member.get_source_node(), p_scope);
+						scopes[p_scope].types[member.get_name()] = child;
+					} else {
+						collect(member.get_source_node(), p_scope);
+					}
+				}
+				for (const Parser::UsesNode *uses : node->traits) {
+					scopes[p_scope].uses.push_back(uses);
+				}
+			} break;
+			case Parser::Node::STRUCT: {
+				const Parser::StructNode *node = static_cast<const Parser::StructNode *>(p_node);
+				p_scope = add_scope(node, p_scope);
+				declare(node->identifier, TYPE);
+				for (const Parser::VariableNode *field : node->fields) {
+					collect(field, p_scope);
+				}
+			} break;
+			case Parser::Node::FUNCTION: {
+				const Parser::FunctionNode *node = static_cast<const Parser::FunctionNode *>(p_node);
+				p_scope = add_scope(node, p_scope);
+				for (const Parser::ParameterNode *parameter : node->parameters) {
+					collect(parameter, p_scope);
+				}
+				collect(node->rest_parameter, p_scope);
+				collect(node->body, p_scope);
+			} break;
+			case Parser::Node::SIGNAL: {
+				const Parser::SignalNode *node = static_cast<const Parser::SignalNode *>(p_node);
+				p_scope = add_scope(node, p_scope);
+				for (const Parser::ParameterNode *parameter : node->parameters) {
+					collect(parameter, p_scope);
+				}
+			} break;
+			case Parser::Node::SUITE: {
+				const Parser::SuiteNode *node = static_cast<const Parser::SuiteNode *>(p_node);
+				p_scope = add_scope(node, p_scope);
+				for (const Parser::SuiteNode::Local &local : node->locals) {
+					if (local.type == Parser::SuiteNode::Local::FOR_VARIABLE || local.type == Parser::SuiteNode::Local::PATTERN_BIND) {
+						scopes[p_scope].locals[local.name] = local.bind;
+						declare(local.bind, LOCAL);
+					}
+				}
+				for (const Parser::Node *statement : node->statements) {
+					collect(statement, p_scope);
+				}
+			} break;
+			case Parser::Node::VARIABLE:
+			case Parser::Node::CONSTANT:
+			case Parser::Node::PARAMETER: {
+				const Parser::AssignableNode *node = static_cast<const Parser::AssignableNode *>(p_node);
+				if (node->identifier) {
+					Parser::Node::Type scope_type = scopes[p_scope].node->type;
+					if (scope_type == Parser::Node::CLASS || scope_type == Parser::Node::TRAIT || scope_type == Parser::Node::STRUCT) {
+						scopes[p_scope].members.insert(node->identifier->name);
+						declare(node->identifier, MEMBER);
+					} else {
+						scopes[p_scope].locals[node->identifier->name] = node->identifier;
+						declare(node->identifier, LOCAL);
+					}
+				}
+				collect(node->initializer, p_scope);
+				if (node->type == Parser::Node::VARIABLE) {
+					const Parser::VariableNode *variable = static_cast<const Parser::VariableNode *>(node);
+					if (variable->property == Parser::VariableNode::PROP_INLINE) {
+						collect(variable->getter, p_scope);
+						collect(variable->setter, p_scope);
+					}
+				}
+			} break;
+			case Parser::Node::IF: {
+				const Parser::IfNode *node = static_cast<const Parser::IfNode *>(p_node);
+				collect(node->condition, p_scope);
+				collect(node->true_block, p_scope);
+				collect(node->false_block, p_scope);
+			} break;
+			case Parser::Node::FOR: {
+				const Parser::ForNode *node = static_cast<const Parser::ForNode *>(p_node);
+				declare(node->variable, LOCAL);
+				collect(node->list, p_scope);
+				collect(node->loop, p_scope);
+			} break;
+			case Parser::Node::WHILE: {
+				const Parser::WhileNode *node = static_cast<const Parser::WhileNode *>(p_node);
+				collect(node->condition, p_scope);
+				collect(node->loop, p_scope);
+			} break;
+			case Parser::Node::MATCH: {
+				const Parser::MatchNode *node = static_cast<const Parser::MatchNode *>(p_node);
+				collect(node->test, p_scope);
+				for (const Parser::MatchBranchNode *branch : node->branches) {
+					collect(branch->guard_body, p_scope);
+					collect(branch->block, p_scope);
+				}
+			} break;
+			case Parser::Node::LAMBDA:
+				collect(static_cast<const Parser::LambdaNode *>(p_node)->function, p_scope);
+				break;
+			case Parser::Node::RETURN:
+				collect(static_cast<const Parser::ReturnNode *>(p_node)->return_value, p_scope);
+				break;
+			case Parser::Node::ARRAY:
+				for (const Parser::ExpressionNode *element : static_cast<const Parser::ArrayNode *>(p_node)->elements) {
+					collect(element, p_scope);
+				}
+				break;
+			case Parser::Node::DICTIONARY:
+				for (const Parser::DictionaryNode::Pair &pair : static_cast<const Parser::DictionaryNode *>(p_node)->elements) {
+					collect(pair.key, p_scope);
+					collect(pair.value, p_scope);
+				}
+				break;
+			case Parser::Node::CALL: {
+				const Parser::CallNode *node = static_cast<const Parser::CallNode *>(p_node);
+				collect(node->callee, p_scope);
+				for (const Parser::ExpressionNode *argument : node->arguments) {
+					collect(argument, p_scope);
+				}
+			} break;
+			case Parser::Node::SUBSCRIPT: {
+				const Parser::SubscriptNode *node = static_cast<const Parser::SubscriptNode *>(p_node);
+				collect(node->base, p_scope);
+				if (!node->is_attribute) {
+					collect(node->index, p_scope);
+				}
+			} break;
+			case Parser::Node::ASSIGNMENT: {
+				const Parser::AssignmentNode *node = static_cast<const Parser::AssignmentNode *>(p_node);
+				collect(node->assignee, p_scope);
+				collect(node->assigned_value, p_scope);
+			} break;
+			case Parser::Node::BINARY_OPERATOR: {
+				const Parser::BinaryOpNode *node = static_cast<const Parser::BinaryOpNode *>(p_node);
+				collect(node->left_operand, p_scope);
+				collect(node->right_operand, p_scope);
+			} break;
+			case Parser::Node::TERNARY_OPERATOR: {
+				const Parser::TernaryOpNode *node = static_cast<const Parser::TernaryOpNode *>(p_node);
+				collect(node->condition, p_scope);
+				collect(node->true_expr, p_scope);
+				collect(node->false_expr, p_scope);
+			} break;
+			case Parser::Node::UNARY_OPERATOR:
+				collect(static_cast<const Parser::UnaryOpNode *>(p_node)->operand, p_scope);
+				break;
+			case Parser::Node::AWAIT:
+				collect(static_cast<const Parser::AwaitNode *>(p_node)->to_await, p_scope);
+				break;
+			case Parser::Node::CAST:
+				collect(static_cast<const Parser::CastNode *>(p_node)->operand, p_scope);
+				break;
+			case Parser::Node::TYPE_TEST:
+				collect(static_cast<const Parser::TypeTestNode *>(p_node)->operand, p_scope);
+				break;
+			case Parser::Node::ASSERT: {
+				const Parser::AssertNode *node = static_cast<const Parser::AssertNode *>(p_node);
+				collect(node->condition, p_scope);
+				collect(node->message, p_scope);
+			} break;
+			default:
+				break;
+		}
+		return p_scope;
+	}
+
+	int find_type(int p_scope, const Vector<Parser::IdentifierNode *> &p_path) {
+		if (p_path.is_empty()) {
+			return -1;
+		}
+		int type = -1;
+		for (int scope = p_scope; scope >= 0; scope = scopes[scope].parent) {
+			const int *child = scopes[scope].types.getptr(p_path[0]->name);
+			if (child) {
+				type = *child;
+				break;
+			}
+		}
+		if (type < 0) {
+			type = get_global_type(p_path[0]->name);
+		}
+		for (int i = 1; type >= 0 && i < p_path.size(); i++) {
+			const int *child = scopes[type].types.getptr(p_path[i]->name);
+			type = child ? *child : -1;
+		}
+		return type;
+	}
+
+	void merge_members(const Parser::ClassNode *p_class, int p_scope) {
+		resolved_types[p_class] = p_scope;
+		for (const Parser::UsesNode *uses : p_class->traits) {
+			scopes[p_scope].uses.push_back(uses);
+		}
+		for (const Parser::ClassNode::Member &member : p_class->members) {
+			if (member.type == Parser::ClassNode::Member::VARIABLE || member.type == Parser::ClassNode::Member::CONSTANT) {
+				scopes[p_scope].members.insert(member.get_name());
+			} else if (member.type == Parser::ClassNode::Member::CLASS || member.type == Parser::ClassNode::Member::TRAIT || member.type == Parser::ClassNode::Member::STRUCT) {
+				const int *resolved = resolved_types.getptr(member.get_source_node());
+				if (resolved) {
+					scopes[p_scope].types[member.get_name()] = *resolved;
+					continue;
+				}
+				const int *existing = scopes[p_scope].types.getptr(member.get_name());
+				int child = existing ? *existing : add_scope(member.get_source_node(), p_scope, false);
+				scopes[p_scope].types[member.get_name()] = child;
+				resolved_types[member.get_source_node()] = child;
+				if (member.type == Parser::ClassNode::Member::STRUCT) {
+					for (const Parser::VariableNode *field : member.m_struct->fields) {
+						if (field->identifier) {
+							scopes[child].members.insert(field->identifier->name);
+						}
+					}
+				} else {
+					merge_members(member.m_class, child);
+				}
+			}
+		}
+	}
+
+	int get_external_type(const String &p_path) {
+		const String path = GDScript::canonicalize_path(p_path);
+		if (const int *existing = external_types.getptr(path)) {
+			return *existing;
+		}
+		external_types[path] = -1;
+		Error error = OK;
+		// Only parse declarations. This does not compile or instantiate the dependency.
+		Ref<GDScriptParserRef> parser = GDScriptCache::get_parser(path, GDScriptParserRef::PARSED, error);
+		if (error != OK || parser.is_null() || !parser->get_parser()->get_tree()) {
+			return -1;
+		}
+		dependencies.push_back(parser);
+		if (const int *resolved = resolved_types.getptr(parser->get_parser()->get_tree())) {
+			external_types[path] = *resolved;
+			return *resolved;
+		}
+		int scope = add_scope(parser->get_parser()->get_tree(), -1, false);
+		scopes[scope].path = path;
+		external_types[path] = scope;
+		merge_members(parser->get_parser()->get_tree(), scope);
+		return scope;
+	}
+
+	int get_global_type(const StringName &p_name) {
+		if (const int *existing = global_types.getptr(p_name)) {
+			return *existing;
+		}
+		int scope = -1;
+		if (ScriptServer::is_global_class(p_name) && ScriptServer::get_global_class_language(p_name) == SNAME("GDScript")) {
+			scope = get_external_type(ScriptServer::get_global_class_path(p_name));
+		}
+		global_types[p_name] = scope;
+		return scope;
+	}
+
+public:
+	GDScriptHighlighterSource(const Parser::ClassNode *p_root, const String &p_path) :
+			source_path(p_path) {
+		collect(p_root, -1);
+		external_types[GDScript::canonicalize_path(p_path)] = 0;
+		if (p_root->identifier) {
+			global_types[p_root->identifier->name] = 0;
+		}
+		// Resolve trait composition using declarations, including newly discovered files.
+		for (uint32_t pass = 0; pass < scopes.size(); pass++) {
+			bool changed = false;
+			for (uint32_t i = 0; i < scopes.size(); i++) {
+				const Vector<const Parser::UsesNode *> uses_list = scopes[i].uses;
+				for (const Parser::UsesNode *uses : uses_list) {
+					int trait = -1;
+					if (uses->path.is_empty()) {
+						trait = find_type(i, uses->name);
+					} else {
+						const String path = uses->path.is_absolute_path() ? uses->path : scopes[i].path.get_base_dir().path_join(uses->path);
+						trait = get_external_type(path);
+						for (const Parser::IdentifierNode *part : uses->name) {
+							const int *child = trait >= 0 ? scopes[trait].types.getptr(part->name) : nullptr;
+							trait = child ? *child : -1;
+						}
+					}
+					if (trait < 0 || trait == int(i)) {
+						continue;
+					}
+					for (const StringName &member : scopes[trait].members) {
+						if (!scopes[i].members.has(member)) {
+							scopes[i].members.insert(member);
+							changed = true;
+						}
+					}
+					for (const KeyValue<StringName, int> &type : scopes[trait].types) {
+						if (!scopes[i].types.has(type.key)) {
+							scopes[i].types[type.key] = type.value;
+							changed = true;
+						}
+					}
+				}
+			}
+			if (!changed) {
+				break;
+			}
+		}
+		for (uint32_t i = 1; i < scopes.size(); i++) {
+			if (!scopes[i].in_source) {
+				continue;
+			}
+			const Parser::Node *node = scopes[i].node;
+			uint64_t start = position(node->start_line, node->start_column);
+			uint64_t end = position(node->end_line, node->end_column);
+			if (end > start) {
+				boundaries.push_back({ start, int(i), true });
+				boundaries.push_back({ end, int(i), false });
+			}
+		}
+		boundaries.sort();
+	}
+
+	const Vector<Ref<GDScriptParserRef>> &get_dependencies() const { return dependencies; }
+
+	Symbol lookup(const GDScriptTokenizer::Token &p_token, bool p_qualified, int &r_type) {
+		const uint64_t token_position = position(p_token.start_line, p_token.start_column);
+		while (next_boundary < boundaries.size() && boundaries[next_boundary].position <= token_position) {
+			const ScopeBoundary &boundary = boundaries[next_boundary++];
+			if (boundary.enter) {
+				active_scopes.push_back(boundary.scope);
+			} else {
+				active_scopes.erase(boundary.scope);
+			}
+		}
+		const Symbol *declaration = declarations.getptr(position(p_token.start_line, p_token.start_column));
+		if (declaration) {
+			r_type = -1;
+			return *declaration;
+		}
+		const StringName name = p_token.get_identifier();
+		if (p_qualified) {
+			const int *child = r_type >= 0 ? scopes[r_type].types.getptr(name) : nullptr;
+			r_type = child ? *child : -1;
+			return child ? TYPE : UNKNOWN;
+		}
+		r_type = -1;
+		int scope = active_scopes.is_empty() ? 0 : active_scopes[active_scopes.size() - 1];
+		for (; scope >= 0; scope = scopes[scope].parent) {
+			const Parser::Node *const *local = scopes[scope].locals.getptr(name);
+			if (local && token_position >= position((*local)->start_line, (*local)->start_column)) {
+				return LOCAL;
+			}
+			const int *child = scopes[scope].types.getptr(name);
+			if (child) {
+				r_type = *child;
+				return TYPE;
+			}
+			if (scopes[scope].members.has(name)) {
+				return MEMBER;
+			}
+		}
+		r_type = get_global_type(name);
+		return r_type >= 0 ? TYPE : UNKNOWN;
+	}
+};
+
+} // namespace
 
 Dictionary GDScriptSyntaxHighlighter::_get_line_syntax_highlighting_impl(int p_line) {
+	if (source_cache_dirty) {
+		_update_source_cache();
+	}
 	Dictionary color_map;
 
 	Type next_type = NONE;
@@ -416,7 +865,16 @@ Dictionary GDScriptSyntaxHighlighter::_get_line_syntax_highlighting_impl(int p_l
 
 			String word = str.substr(j, to - j);
 			Color col;
-			if (global_functions.has(word)) {
+			const SourceLine *line_symbols = source_symbols.getptr(p_line);
+			const Type *source_symbol = line_symbols ? line_symbols->symbols.getptr(j) : nullptr;
+			if (source_symbol) {
+				if (*source_symbol == TYPE) {
+					col = user_type_color;
+				} else if (*source_symbol == MEMBER) {
+					col = member_variable_color;
+					in_member_variable = true;
+				}
+			} else if (global_functions.has(word)) {
 				// "assert" and "preload" are reserved, so highlight even if not followed by a bracket.
 				if (word == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::ASSERT) || word == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::PRELOAD)) {
 					col = global_function_color;
@@ -444,7 +902,7 @@ Dictionary GDScriptSyntaxHighlighter::_get_line_syntax_highlighting_impl(int p_l
 
 			if (col != Color()) {
 				for (int k = j - 1; k >= 0; k--) {
-					if (str[k] == '.') {
+					if (str[k] == '.' && (!source_symbol || *source_symbol != TYPE)) {
 						col = Color(); // Keyword, member & global func indexing not allowed.
 						break;
 					} else if (str[k] > 32) {
@@ -480,10 +938,6 @@ Dictionary GDScriptSyntaxHighlighter::_get_line_syntax_highlighting_impl(int p_l
 					}
 				} else if (prev_text == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::VAR) || prev_text == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::FOR) || prev_text == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::TK_CONST)) {
 					in_var_const_declaration = true;
-					// A `var` field inside a struct body reads as a member variable.
-					if (prev_text == GDScriptTokenizer::get_token_name(GDScriptTokenizer::Token::VAR) && struct_body_lines.has(p_line)) {
-						in_member_variable = true;
-					}
 				}
 
 				// Check for lambda.
@@ -712,6 +1166,17 @@ PackedStringArray GDScriptSyntaxHighlighter::_get_supported_languages() const {
 }
 
 void GDScriptSyntaxHighlighter::_update_cache() {
+	// A declaration can affect colors before the edited line as well as after it.
+	const Callable source_changed = callable_mp(this, &GDScriptSyntaxHighlighter::_source_changed);
+	if (source_text_edit_id != text_edit->get_instance_id()) {
+		TextEdit *previous = Object::cast_to<TextEdit>(ObjectDB::get_instance(source_text_edit_id));
+		if (previous) {
+			previous->disconnect(SNAME("lines_edited_from"), source_changed);
+		}
+		source_text_edit_id = text_edit->get_instance_id();
+		text_edit->connect(SNAME("lines_edited_from"), source_changed);
+	}
+
 	class_names.clear();
 	reserved_keywords.clear();
 	member_keywords.clear();
@@ -743,30 +1208,25 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 	}
 
 	/* User types. */
-	const Color usertype_color = EDITOR_GET("text_editor/theme/highlighting/user_type_color");
+	user_type_color = EDITOR_GET("text_editor/theme/highlighting/user_type_color");
 	LocalVector<StringName> global_classes;
 	ScriptServer::get_global_class_list(global_classes);
 	for (const StringName &class_name : global_classes) {
-		class_names[class_name] = usertype_color;
+		class_names[class_name] = user_type_color;
 	}
 
 	// Global structs (declared with `struct_name`).
 	List<StringName> global_structs;
 	ScriptServer::get_global_struct_list(&global_structs);
 	for (const StringName &struct_name : global_structs) {
-		class_names[struct_name] = usertype_color;
-	}
-
-	// Local structs declared in the edited script (not registered globally).
-	for (const StringName &struct_name : _get_local_struct_names()) {
-		class_names[struct_name] = usertype_color;
+		class_names[struct_name] = user_type_color;
 	}
 
 	/* Autoloads. */
 	for (const KeyValue<StringName, ProjectSettings::AutoloadInfo> &E : ProjectSettings::get_singleton()->get_autoload_list()) {
 		const ProjectSettings::AutoloadInfo &info = E.value;
 		if (info.is_singleton) {
-			class_names[info.name] = usertype_color;
+			class_names[info.name] = user_type_color;
 		}
 	}
 
@@ -890,6 +1350,14 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 
 		List<PropertyInfo> scr_property_list;
 		scr->get_script_property_list(&scr_property_list);
+		// Static variables are properties of the script resource, rather than its instances.
+		List<PropertyInfo> static_property_list;
+		scr->get_property_list(&static_property_list);
+		for (const PropertyInfo &E : static_property_list) {
+			if (E.usage & PROPERTY_USAGE_SCRIPT_VARIABLE) {
+				scr_property_list.push_back(E);
+			}
+		}
 		for (const PropertyInfo &E : scr_property_list) {
 			String prop_name = E.name;
 			if (E.usage & PROPERTY_USAGE_CATEGORY || E.usage & PROPERTY_USAGE_GROUP || E.usage & PROPERTY_USAGE_SUBGROUP) {
@@ -951,68 +1419,152 @@ void GDScriptSyntaxHighlighter::_update_cache() {
 	}
 }
 
-LocalVector<StringName> GDScriptSyntaxHighlighter::_get_local_struct_names() {
-	// Structs are declared at file scope with `struct Name:` or `struct_name Name:`.
-	// They aren't exposed on the compiled script, so scan the source for their names
-	// to highlight the type name at its declaration and at every use. Also record the
-	// lines that make up each struct body so their `var` fields read as members.
-	LocalVector<StringName> names;
-	struct_body_lines.clear();
-	if (text_edit == nullptr) {
-		return names;
+void GDScriptSyntaxHighlighter::_source_changed(int p_from_line, int p_to_line) {
+	// SyntaxHighlighter already invalidates edited lines. Keep preceding region
+	// states while updating multiline strings and comments immediately.
+	const int first_line = MAX(0, MIN(p_from_line, p_to_line) - 1);
+	for (HashMap<int, int>::Iterator E = color_region_cache.begin(); E;) {
+		const int line = E->key;
+		++E;
+		if (line >= first_line) {
+			color_region_cache.erase(line);
+		}
 	}
-	const int line_count = text_edit->get_line_count();
-	int struct_indent = -1; // Indentation of the enclosing struct header, or -1 when outside a struct.
-	for (int i = 0; i < line_count; i++) {
-		const String raw = text_edit->get_line(i);
-		int indent = 0;
-		while (indent < raw.length() && is_whitespace(raw[indent])) {
-			indent++;
-		}
-		const String line = raw.substr(indent).strip_edges();
+	if (source_cache_dirty) {
+		return; // The initial cache still needs to be built on demand.
+	}
+	SceneTree *tree = text_edit->is_inside_tree() ? text_edit->get_tree() : nullptr;
+	if (!tree) {
+		clear_highlighting_cache();
+		return;
+	}
 
-		if (line.is_empty() || line.begins_with("#")) {
-			// Blank and comment lines don't end a struct body.
-			if (struct_indent >= 0) {
-				struct_body_lines.insert(i);
+	// Keep unchanged identifiers colored during the debounce interval. Insertions
+	// report (old start, new end), and removals report (old end, new start).
+	const int first_edited_line = MIN(p_from_line, p_to_line);
+	const int line_delta = p_to_line - p_from_line;
+	HashMap<int, SourceLine> remapped;
+	auto retain_symbols = [&](const SourceLine &p_old, int p_line, bool p_prefix) {
+		const String current = text_edit->get_line(p_line);
+		const int old_length = p_old.text.length();
+		const int new_length = current.length();
+		int unchanged = 0;
+		while (unchanged < MIN(old_length, new_length) &&
+				p_old.text[p_prefix ? unchanged : old_length - unchanged - 1] == current[p_prefix ? unchanged : new_length - unchanged - 1]) {
+			unchanged++;
+		}
+		for (const KeyValue<int, Type> &symbol : p_old.symbols) {
+			int end = symbol.key;
+			while (end < old_length && !is_symbol(p_old.text[end])) {
+				end++;
 			}
-			continue;
-		}
-
-		if (struct_indent >= 0) {
-			if (indent > struct_indent) {
-				struct_body_lines.insert(i);
+			if (p_prefix ? end > unchanged : symbol.key < old_length - unchanged) {
 				continue;
 			}
-			struct_indent = -1; // Dedent closes the struct body.
+			const int column = symbol.key + (p_prefix ? 0 : new_length - old_length);
+			const int new_end = column + end - symbol.key;
+			// Adding identifier characters at either boundary changes the token.
+			if ((column > 0 && !is_symbol(current[column - 1])) || (new_end < new_length && !is_symbol(current[new_end]))) {
+				continue;
+			}
+			SourceLine &retained = remapped[p_line];
+			retained.text = current;
+			retained.symbols[column] = symbol.value;
 		}
-
-		String keyword;
-		if (line.begins_with("struct_name")) {
-			keyword = "struct_name";
-		} else if (line.begins_with("struct")) {
-			keyword = "struct";
-		} else {
+	};
+	for (HashMap<int, SourceLine>::Iterator E = source_symbols.begin(); E;) {
+		const int line = E->key;
+		if (line < first_edited_line || (line > p_from_line && line_delta == 0)) {
+			++E;
 			continue;
 		}
-		int pos = keyword.length();
-		if (pos >= line.length() || !is_whitespace(line[pos])) {
-			continue; // Part of a longer identifier, not the keyword.
-		}
-		while (pos < line.length() && is_whitespace(line[pos])) {
-			pos++;
-		}
-		const int start = pos;
-		if (pos < line.length() && is_unicode_identifier_start(line[pos])) {
-			pos++;
-			while (pos < line.length() && is_unicode_identifier_continue(line[pos])) {
-				pos++;
+		if (line > p_from_line) {
+			remapped[line + line_delta] = E->value;
+		} else {
+			if (line == first_edited_line) {
+				retain_symbols(E->value, first_edited_line, true);
 			}
-			names.push_back(line.substr(start, pos - start));
-			struct_indent = indent;
+			if (line == p_from_line) {
+				retain_symbols(E->value, p_to_line, false);
+			}
+		}
+		++E;
+		source_symbols.erase(line);
+	}
+	for (const KeyValue<int, SourceLine> &line : remapped) {
+		source_symbols[line.key] = line.value;
+	}
+	// Coalesce keystrokes while lexical highlighting continues incrementally.
+	constexpr double source_rebuild_delay = 0.15;
+	if (source_rebuild_timer.is_valid()) {
+		source_rebuild_timer->set_time_left(source_rebuild_delay);
+	} else {
+		source_rebuild_timer = tree->create_timer(source_rebuild_delay);
+		source_rebuild_timer->connect(SNAME("timeout"), callable_mp(this, &GDScriptSyntaxHighlighter::_source_rebuild_timeout));
+	}
+}
+
+void GDScriptSyntaxHighlighter::_source_rebuild_timeout() {
+	source_rebuild_timer.unref();
+	clear_highlighting_cache();
+	TextEdit *edit = Object::cast_to<TextEdit>(ObjectDB::get_instance(source_text_edit_id));
+	if (edit && edit == text_edit) {
+		edit->clear_syntax_highlighting_cache();
+		edit->queue_redraw();
+	}
+}
+
+void GDScriptSyntaxHighlighter::_clear_highlighting_cache() {
+	if (source_rebuild_timer.is_valid()) {
+		source_rebuild_timer->disconnect(SNAME("timeout"), callable_mp(this, &GDScriptSyntaxHighlighter::_source_rebuild_timeout));
+		source_rebuild_timer.unref();
+	}
+	color_region_cache.clear();
+	source_cache_dirty = true;
+}
+
+void GDScriptSyntaxHighlighter::_update_source_cache() {
+	source_cache_dirty = false;
+	source_symbols.clear();
+	const String source = text_edit->get_text();
+	GDScriptParser parser;
+	const Ref<Script> edited_script = _get_edited_resource();
+	// Keep recovered declarations when the user is in the middle of an edit.
+	parser.parse(source, edited_script.is_valid() ? edited_script->get_path() : String(), false);
+	if (!parser.get_tree()) {
+		return;
+	}
+	GDScriptHighlighterSource symbols(parser.get_tree(), edited_script.is_valid() ? edited_script->get_path() : String());
+	GDScriptTokenizerText tokenizer;
+	tokenizer.set_source_code(source);
+	const int tab_size = EDITOR_GET("text_editor/behavior/indent/size");
+	int type_scope = -1;
+	bool qualified = false;
+	for (GDScriptTokenizer::Token token = tokenizer.scan(); token.type != GDScriptTokenizer::Token::TK_EOF; token = tokenizer.scan()) {
+		if (token.type == GDScriptTokenizer::Token::IDENTIFIER) {
+			const GDScriptHighlighterSource::Symbol symbol = symbols.lookup(token, qualified, type_scope);
+			if (symbol != GDScriptHighlighterSource::UNKNOWN && token.start_line > 0 && token.start_line <= text_edit->get_line_count()) {
+				const String line = text_edit->get_line(token.start_line - 1);
+				int column = 0;
+				int visual_column = 1;
+				while (column < line.length() && visual_column < token.start_column) {
+					visual_column += line[column] == '\t' ? tab_size : 1;
+					column++;
+				}
+				SourceLine &line_symbols = source_symbols[token.start_line - 1];
+				line_symbols.text = line;
+				line_symbols.symbols[column] = symbol == GDScriptHighlighterSource::TYPE ? TYPE : (symbol == GDScriptHighlighterSource::MEMBER ? MEMBER : IDENTIFIER);
+			}
+			qualified = false;
+		} else if (token.type == GDScriptTokenizer::Token::PERIOD) {
+			qualified = true;
+		} else if (token.type != GDScriptTokenizer::Token::NEWLINE && token.type != GDScriptTokenizer::Token::INDENT && token.type != GDScriptTokenizer::Token::DEDENT) {
+			type_scope = -1;
+			qualified = false;
 		}
 	}
-	return names;
+	// Keep parsed dependencies available across keystrokes; normal script reloads invalidate them.
+	source_dependencies = symbols.get_dependencies();
 }
 
 void GDScriptSyntaxHighlighter::add_color_region(ColorRegion::Type p_type, const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only, bool p_r_prefix) {

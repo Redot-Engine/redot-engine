@@ -40,6 +40,9 @@
 
 #include "editor/script/script_editor_plugin.h"
 
+class GDScriptParserRef;
+class SceneTreeTimer;
+
 class GDScriptSyntaxHighlighter : public EditorSyntaxHighlighter {
 	GDCLASS(GDScriptSyntaxHighlighter, EditorSyntaxHighlighter)
 
@@ -69,7 +72,6 @@ private:
 	HashMap<StringName, Color> reserved_keywords;
 	HashMap<StringName, Color> member_keywords;
 	HashSet<StringName> global_functions;
-	HashSet<int> struct_body_lines; ///< Lines inside a local struct body, for member-coloring its fields.
 
 	enum Type {
 		NONE,
@@ -88,6 +90,16 @@ private:
 		TYPE,
 	};
 
+	struct SourceLine {
+		String text;
+		HashMap<int, Type> symbols;
+	};
+	HashMap<int, SourceLine> source_symbols;
+	Vector<Ref<GDScriptParserRef>> source_dependencies;
+	bool source_cache_dirty = true;
+	ObjectID source_text_edit_id;
+	Ref<SceneTreeTimer> source_rebuild_timer;
+
 	/// @name Colors
 	/// @{
 	Color font_color;
@@ -104,6 +116,7 @@ private:
 	Color annotation_color;
 	Color string_name_color;
 	Color type_color;
+	Color user_type_color;
 	/// @}
 
 	enum CommentMarkerLevel {
@@ -117,9 +130,12 @@ private:
 
 	void add_color_region(ColorRegion::Type p_type, const String &p_start_key, const String &p_end_key, const Color &p_color, bool p_line_only = false, bool p_r_prefix = false);
 
-	LocalVector<StringName> _get_local_struct_names();
+	void _update_source_cache();
+	void _source_changed(int p_from_line, int p_to_line);
+	void _source_rebuild_timeout();
 
 public:
+	virtual void _clear_highlighting_cache() override;
 	virtual void _update_cache() override;
 	virtual Dictionary _get_line_syntax_highlighting_impl(int p_line) override;
 

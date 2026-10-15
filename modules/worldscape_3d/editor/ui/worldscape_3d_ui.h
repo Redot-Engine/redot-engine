@@ -57,7 +57,6 @@ class WorldScape3DToolbar final : public VFlowContainer {
 
 public:
 	explicit WorldScape3DToolbar(WorldScape3DEditor *editor);
-	~WorldScape3DToolbar() override;
 
 	Button *find_button(const StringName &icon) const;
 
@@ -135,7 +134,6 @@ class WorldScape3DUI final : public Node {
 public:
 	explicit WorldScape3DUI(WorldScape3DEditorPlugin *plugin);
 	WorldScape3DUI() = default;
-	~WorldScape3DUI() override;
 
 	void on_visible_update();
 

@@ -81,7 +81,6 @@ public:
 	};
 
 	explicit WorldScape3DToolSettings(WorldScape3DEditorPlugin *plugin);
-	~WorldScape3DToolSettings() override;
 
 	void on_show_submenu(bool toggled, Button *button);
 
