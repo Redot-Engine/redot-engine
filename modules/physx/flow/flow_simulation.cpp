@@ -391,7 +391,7 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 			p.luid = e.luid;
 			p.enabled = NV_FLOW_TRUE;
 			p.localToWorld = _to_flow_matrix(e.world_xform);
-			p.localToWorldVelocity = _to_flow_velocity_matrix(e.world_xform, Vector3(), Vector3());
+			p.localToWorldVelocity = _to_flow_matrix(e.world_xform);
 			p.velocityIsWorldSpace = NV_FLOW_FALSE;
 			p.layer = 0;
 			p.level = 0;
@@ -413,7 +413,7 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 			p.luid = e.luid;
 			p.enabled = NV_FLOW_TRUE;
 			p.localToWorld = _to_flow_matrix(e.world_xform);
-			p.localToWorldVelocity = _to_flow_velocity_matrix(e.world_xform, Vector3(), Vector3());
+			p.localToWorldVelocity = _to_flow_matrix(e.world_xform);
 			p.velocityIsWorldSpace = NV_FLOW_FALSE;
 			p.position = { 0.0f, 0.0f, 0.0f };
 			p.layer = 0;
@@ -454,9 +454,13 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 			p.fuel = 0.0f;
 			p.smoke = 0.0f;
 			p.burn = 0.0f;
-			p.coupleRateVelocity = 0.0f; // physics collision couples via physicsVelocityScale
-			p.physicsVelocityScale = 1.0f;
-			p.isPhysicsCollision = NV_FLOW_TRUE;
+			p.divergence = 0.0f;
+			p.coupleRateVelocity = 100.0f;
+			p.coupleRateDivergence = 100.0f;
+			p.coupleRateTemperature = 100.0f;
+			p.coupleRateFuel = 100.0f;
+			p.coupleRateBurn = 100.0f;
+			p.coupleRateSmoke = 100.0f;
 			MeshArrays arrays;
 			const int vtx_count = c.mesh_positions.size() / 3;
 			arrays.positions.resize(vtx_count);
@@ -506,7 +510,19 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 			p.fuel = 0.0f;
 			p.smoke = 0.0f;
 			p.burn = 0.0f;
-			p.coupleRateVelocity = 0.0f;
+			p.divergence = 0.0f;
+			// Solid idiom (matches the reference flow_backend): zero injection
+			// with full-channel coupling and post-pressure apply -- this is what
+			// makes the gas deflect around the wall instead of blowing through
+			// it. No allocation: a solid only acts where gas already is.
+			p.coupleRateVelocity = 100.0f;
+			p.coupleRateDivergence = 100.0f;
+			p.coupleRateTemperature = 100.0f;
+			p.coupleRateFuel = 100.0f;
+			p.coupleRateBurn = 100.0f;
+			p.coupleRateSmoke = 100.0f;
+			p.applyPostPressure = NV_FLOW_TRUE;
+			p.allocationScale = 0.0f;
 			p.physicsVelocityScale = 1.0f;
 			p.isPhysicsCollision = NV_FLOW_TRUE;
 			box_params.push_back(p);

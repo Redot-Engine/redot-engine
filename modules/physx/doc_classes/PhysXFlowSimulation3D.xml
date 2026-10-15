@@ -67,6 +67,11 @@
 				Highest temperature in the last decoded frame.
 			</description>
 		</method>
+		<method name="get_stats" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+			</description>
+		</method>
 		<method name="get_texture_update_count" qualifiers="const">
 			<return type="int" />
 			<description>
@@ -143,6 +148,8 @@
 		<member name="gravity" type="Vector3" setter="set_gravity" getter="get_gravity" default="Vector3(0, -100, 0)">
 			Buoyancy reference gravity inside the solver (Flow's own units; [member buoyancy_per_temp] works against this). Redot's world gravity does not automatically apply -- a Flow volume is its own world.
 		</member>
+		<member name="light_scattering" type="bool" setter="set_light_scattering" getter="is_light_scattering" default="true">
+		</member>
 		<member name="max_blocks" type="int" setter="set_max_blocks" getter="get_max_blocks" default="1024">
 			Sparse block budget (allocation cap). Changing it recreates the grid (clears the simulation).
 		</member>
@@ -155,38 +162,29 @@
 		<member name="pressure_projection" type="bool" setter="set_pressure_projection" getter="get_pressure_projection" default="true">
 			Pressure projection (divergence-free velocity). Off is cheaper but lets emitters push through walls.
 		</member>
+		<member name="scattering_receive_shadows" type="int" setter="set_scattering_receive_shadows" getter="get_scattering_receive_shadows" default="3">
+		</member>
 		<member name="shadow_steps" type="int" setter="set_shadow_steps" getter="get_shadow_steps" default="48">
-			Self-shadowing reach of the gas, in steps of ~3/4 of a cell: 48 covers about 1.8 m at the default 25 cm cells. Fewer steps leave wide gas lit almost evenly; 0 disables self-shadowing.
 		</member>
 		<member name="simulate_when_paused" type="bool" setter="set_simulate_when_paused" getter="get_simulate_when_paused" default="false">
-			Keeps simulating while [member paused] (emitters keep injecting) -- for editor preview.
 		</member>
 		<member name="smoke_albedo" type="Color" setter="set_smoke_albedo" getter="get_smoke_albedo" default="Color(0.9, 0.9, 0.9, 1)">
-			Scattering color of the smoke.
 		</member>
 		<member name="smoke_fade" type="float" setter="set_smoke_fade" getter="get_smoke_fade" default="0.65">
-			Smoke dissipation per second (0 = immortal smoke).
 		</member>
 		<member name="steps_per_second" type="float" setter="set_steps_per_second" getter="get_steps_per_second" default="60.0">
-			Fixed-rate solver frequency; the grid accumulates engine delta time and runs whole steps ([member max_steps_per_simulate] caps catch-up per tick).
 		</member>
 		<member name="temperature_fade" type="float" setter="set_temperature_fade" getter="get_temperature_fade" default="0.0">
-			Extra temperature dissipation on top of [member cooling_rate].
 		</member>
 		<member name="temperature_range" type="float" setter="set_temperature_range" getter="get_temperature_range" default="2.0">
-			Temperature the render colormap spans: the emitter temperature is mapped to [code]0..temperature_range[/code] and colored through the fire ramp.
 		</member>
 		<member name="time_scale" type="float" setter="set_time_scale" getter="get_time_scale" default="1.0">
-			Scales simulated time (slow motion / fast forward).
 		</member>
 		<member name="velocity_substeps" type="int" setter="set_velocity_substeps" getter="get_velocity_substeps" default="1">
-			Velocity-solver substeps per step (quality knob for fast-moving colliders).
 		</member>
 		<member name="volumetric_render" type="bool" setter="set_volumetric_render" getter="get_volumetric_render" default="true">
-			Renders the readback volume through a child FogVolume (Forward+ only -- see [code]get_configuration_warnings[/code]).
 		</member>
 		<member name="vorticity" type="float" setter="set_vorticity" getter="get_vorticity" default="0.6">
-			Vorticity confinement strength (curl reinstatement; higher = curlier plumes).
 		</member>
 	</members>
 </class>

@@ -151,6 +151,11 @@ class PhysXFlowSimulation3D : public Node3D {
 	// ~1.8 m at the default 25 cm cells -- fewer leaves wide gas lit almost
 	// evenly. 0 disables shadowing.
 	int shadow_steps = 48;
+	// Light scattering: the gas is lit and self-shadows toward the scene's
+	// light (scattering_receive_shadows nonzero = shadows sample). Maps the
+	// reference Flow node's light_scattering / scattering_receive_shadows.
+	bool light_scattering = true;
+	int scattering_receive_shadows = 3;
 	bool debug_stats = false;
 
 	// Optional CPU copy of the gas for the query API (get_last_max_smoke,
@@ -293,6 +298,10 @@ public:
 	float get_temperature_range() const { return temperature_range; }
 	void set_shadow_steps(int p_steps);
 	int get_shadow_steps() const { return shadow_steps; }
+	void set_light_scattering(bool p_enabled) { light_scattering = p_enabled; }
+	bool is_light_scattering() const { return light_scattering; }
+	void set_scattering_receive_shadows(int p_flags) { scattering_receive_shadows = p_flags; }
+	int get_scattering_receive_shadows() const { return scattering_receive_shadows; }
 	void set_cpu_readback(bool p_enabled);
 	bool get_cpu_readback() const { return cpu_readback; }
 	void set_debug_stats(bool p_enabled);

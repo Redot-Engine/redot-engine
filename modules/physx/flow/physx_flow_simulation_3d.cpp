@@ -129,6 +129,14 @@ void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_em
 		Node *n = get_node_or_null(emitters[i]);
 		Node3D *node = Object::cast_to<Node3D>(n);
 		if (node == nullptr) {
+			// One-shot per path: a NodePath that never resolves (wrong base
+			// node, renamed sibling) otherwise shows up only as "no flames".
+			static HashSet<String> warned_paths;
+			String path_text = emitters[i];
+			if (!warned_paths.has(path_text)) {
+				warned_paths.insert(path_text);
+				WARN_PRINT(vformat("PhysXFlowSimulation3D: emitter path \"%s\" did not resolve to a Node3D (relative to the flow node).", path_text));
+			}
 			continue;
 		}
 		if (PhysXFlowEmitter3D *fe = Object::cast_to<PhysXFlowEmitter3D>(node)) {
@@ -263,6 +271,14 @@ void PhysXFlowSimulation3D::_resolve_colliders(LocalVector<FlowColliderData> &r_
 	for (int i = 0; i < colliders.size(); i++) {
 		Node *n = get_node_or_null(colliders[i]);
 		if (n == nullptr) {
+			// One-shot per path: an unresolved collider otherwise only shows
+			// up as "the gas ignores that wall".
+			static HashSet<String> warned_collider_paths;
+			String path_text = colliders[i];
+			if (!warned_collider_paths.has(path_text)) {
+				warned_collider_paths.insert(path_text);
+				WARN_PRINT(vformat("PhysXFlowSimulation3D: collider path \"%s\" did not resolve to a Node3D (relative to the flow node).", path_text));
+			}
 			continue;
 		}
 
@@ -647,7 +663,9 @@ void PhysXFlowSimulation3D::_fill_render_settings(FlowRenderSettings &r_settings
 	r_settings.light_direction[2] = light_dir.z;
 	// Ambient as the floor of the self-shadowing, relative to the sun.
 	r_settings.shadow_min_intensity = CLAMP(ambient_color.get_luminance() / MAX(light_color.get_luminance(), 0.001f), 0.02f, 1.0f);
-	r_settings.shadow_steps = shadow_steps;
+	// Light scattering off, or receive-shadows 0, disables the shadow sample:
+	// the gas still draws, but no light shafts and no self-shadows.
+	r_settings.shadow_steps = (light_scattering && scattering_receive_shadows != 0) ? shadow_steps : 0;
 }
 
 // ---- Render (called by the effect, on the render thread) ----------------------
@@ -800,6 +818,7 @@ Dictionary PhysXFlowSimulation3D::get_diagnostics() const {
 	out["last_submit_usec"] = timing.last_submit_usec;
 	out["last_flush_usec"] = timing.last_flush_usec;
 	out["last_decode_usec"] = timing.last_decode_usec;
+	out["step_ms"] = timing.last_submit_usec / 1000.0;
 	out["readback_updates"] = (int64_t)texture_update_count;
 	out["render_calls"] = (int64_t)render_calls;
 	out["render_outputs"] = (int64_t)render_outputs;
@@ -1019,6 +1038,11 @@ void PhysXFlowSimulation3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_temperature_range"), &PhysXFlowSimulation3D::get_temperature_range);
 	ClassDB::bind_method(D_METHOD("set_shadow_steps", "steps"), &PhysXFlowSimulation3D::set_shadow_steps);
 	ClassDB::bind_method(D_METHOD("get_shadow_steps"), &PhysXFlowSimulation3D::get_shadow_steps);
+	ClassDB::bind_method(D_METHOD("set_light_scattering", "enabled"), &PhysXFlowSimulation3D::set_light_scattering);
+	ClassDB::bind_method(D_METHOD("is_light_scattering"), &PhysXFlowSimulation3D::is_light_scattering);
+	ClassDB::bind_method(D_METHOD("set_scattering_receive_shadows", "flags"), &PhysXFlowSimulation3D::set_scattering_receive_shadows);
+	ClassDB::bind_method(D_METHOD("get_scattering_receive_shadows"), &PhysXFlowSimulation3D::get_scattering_receive_shadows);
+	ClassDB::bind_method(D_METHOD("get_stats"), &PhysXFlowSimulation3D::get_diagnostics);
 	ClassDB::bind_method(D_METHOD("set_cpu_readback", "enabled"), &PhysXFlowSimulation3D::set_cpu_readback);
 	ClassDB::bind_method(D_METHOD("get_cpu_readback"), &PhysXFlowSimulation3D::get_cpu_readback);
 	ClassDB::bind_method(D_METHOD("set_debug_stats", "enabled"), &PhysXFlowSimulation3D::set_debug_stats);
@@ -1058,6 +1082,8 @@ void PhysXFlowSimulation3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "fire_emission"), "set_fire_emission", "get_fire_emission");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "temperature_range", PROPERTY_HINT_RANGE, "0.01,20.0,0.01,or_greater"), "set_temperature_range", "get_temperature_range");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "shadow_steps", PROPERTY_HINT_RANGE, "0,128,1"), "set_shadow_steps", "get_shadow_steps");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "light_scattering"), "set_light_scattering", "is_light_scattering");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "scattering_receive_shadows", PROPERTY_HINT_FLAGS, "Omni:1,Spot:2,Directional:4"), "set_scattering_receive_shadows", "get_scattering_receive_shadows");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "fire_emission_strength", PROPERTY_HINT_RANGE, "0.0,32.0,0.1"), "set_fire_emission_strength", "get_fire_emission_strength");
 	ADD_GROUP("Queries", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "cpu_readback"), "set_cpu_readback", "get_cpu_readback");
