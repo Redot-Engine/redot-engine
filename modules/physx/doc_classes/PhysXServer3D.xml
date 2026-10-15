@@ -240,9 +240,21 @@
 			<description>
 			</description>
 		</method>
+		<method name="get_gpu_device_name" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the CUDA device name GPU dynamics runs on (for example [code]NVIDIA GeForce RTX 4080 SUPER[/code]), or an empty [String] when GPU dynamics is unavailable: a CPU-only build, no usable CUDA device, or [code]physics/physx_3d/simulation/enhanced_determinism[/code] forcing the CPU path.
+			</description>
+		</method>
 		<method name="get_singleton" qualifiers="static">
 			<return type="PhysXServer3D" />
 			<description>
+			</description>
+		</method>
+		<method name="is_gpu_dynamics_enabled" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when GPU dynamics is active (a GODOT_PHYSX_GPU build with a usable CUDA device, and [code]physics/physx_3d/simulation/enhanced_determinism[/code] off). PBD fluids and GPU cloth only simulate when this is [code]true[/code].
 			</description>
 		</method>
 		<method name="particle_fluid_clear">

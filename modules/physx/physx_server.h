@@ -182,6 +182,10 @@ public:
 	/// usable device + determinism not forced); null otherwise.
 	physx::PxCudaContextManager *get_cuda_context() const { return px_cuda_context; }
 	bool is_gpu_dynamics_enabled() const { return gpu_dynamics_enabled; }
+	/// Script-facing GPU query (PhysXServer3D singleton): device name from the
+	/// CUDA context, empty when GPU dynamics is unavailable (CPU-only build,
+	/// no usable device, or enhanced_determinism).
+	String get_gpu_device_name() const;
 
 	// --- SHAPE API — shared collision geometry resources (RID per blueprint) ---
 	virtual RID world_boundary_shape_create() override;

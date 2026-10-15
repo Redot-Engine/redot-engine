@@ -123,6 +123,8 @@
 void PhysXServer3D::_bind_methods() {
 	// Singleton (static) —lets script reach the inner server.
 	ClassDB::bind_static_method("PhysXServer3D", D_METHOD("get_singleton"), &PhysXServer3D::get_singleton);
+	ClassDB::bind_method(D_METHOD("is_gpu_dynamics_enabled"), &PhysXServer3D::is_gpu_dynamics_enabled);
+	ClassDB::bind_method(D_METHOD("get_gpu_device_name"), &PhysXServer3D::get_gpu_device_name);
 
 	// Lifecycle.
 	ClassDB::bind_method(D_METHOD("soft_body_set_solver_mode", "soft_body", "mode"), &PhysXServer3D::soft_body_set_solver_mode);
@@ -400,6 +402,15 @@ real_t PhysXServer3D::shape_get_custom_solver_bias(RID p_shape) const {
 	ERR_FAIL_NULL_V(shape, 0.0);
 
 	return shape->get_solver_bias();
+}
+
+String PhysXServer3D::get_gpu_device_name() const {
+#ifdef GODOT_PHYSX_GPU
+	if (px_cuda_context) {
+		return String(px_cuda_context->getDeviceName());
+	}
+#endif
+	return String();
 }
 
 RID PhysXServer3D::space_create() {
