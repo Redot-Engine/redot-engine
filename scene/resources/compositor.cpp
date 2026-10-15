@@ -67,6 +67,10 @@ void CompositorEffect::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_needs_normal_roughness"), &CompositorEffect::get_needs_normal_roughness);
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "needs_normal_roughness"), "set_needs_normal_roughness", "get_needs_normal_roughness");
 
+	ClassDB::bind_method(D_METHOD("set_needs_albedo", "enable"), &CompositorEffect::set_needs_albedo);
+	ClassDB::bind_method(D_METHOD("get_needs_albedo"), &CompositorEffect::get_needs_albedo);
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "needs_albedo"), "set_needs_albedo", "get_needs_albedo");
+
 	ClassDB::bind_method(D_METHOD("set_needs_separate_specular", "enable"), &CompositorEffect::set_needs_separate_specular);
 	ClassDB::bind_method(D_METHOD("get_needs_separate_specular"), &CompositorEffect::get_needs_separate_specular);
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "needs_separate_specular"), "set_needs_separate_specular", "get_needs_separate_specular");
@@ -82,14 +86,22 @@ void CompositorEffect::_bind_methods() {
 }
 
 void CompositorEffect::_validate_property(PropertyInfo &p_property) const {
-	if (p_property.name == "access_resolved_color" && effect_callback_type == EFFECT_CALLBACK_TYPE_POST_TRANSPARENT) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	if (p_property.name == "access_resolved_depth" && effect_callback_type == EFFECT_CALLBACK_TYPE_POST_TRANSPARENT) {
-		p_property.usage = PROPERTY_USAGE_NONE;
-	}
-	if (p_property.name == "needs_separate_specular" && effect_callback_type != EFFECT_CALLBACK_TYPE_POST_SKY) {
-		p_property.usage = PROPERTY_USAGE_NONE;
+	if (p_property.name == "access_resolved_color") {
+		if (effect_callback_type == EFFECT_CALLBACK_TYPE_POST_TRANSPARENT) {
+			p_property.usage = PROPERTY_USAGE_NONE;
+		}
+	} else if (p_property.name == "access_resolved_depth") {
+		if (effect_callback_type == EFFECT_CALLBACK_TYPE_POST_TRANSPARENT) {
+			p_property.usage = PROPERTY_USAGE_NONE;
+		}
+	} else if (p_property.name == "needs_albedo") {
+		if (effect_callback_type == EFFECT_CALLBACK_TYPE_PRE_OPAQUE) {
+			p_property.usage = PROPERTY_USAGE_NONE;
+		}
+	} else if (p_property.name == "needs_separate_specular") {
+		if (effect_callback_type != EFFECT_CALLBACK_TYPE_POST_SKY) {
+			p_property.usage = PROPERTY_USAGE_NONE;
+		}
 	}
 }
 
@@ -175,6 +187,16 @@ void CompositorEffect::set_needs_normal_roughness(bool p_enabled) {
 
 bool CompositorEffect::get_needs_normal_roughness() const {
 	return needs_normal_roughness;
+}
+
+void CompositorEffect::set_needs_albedo(bool p_enabled) {
+	needs_albedo = p_enabled;
+	if (rid.is_valid()) {
+		RenderingServer::get_singleton()->compositor_effect_set_flag(rid, RS::CompositorEffectFlags::COMPOSITOR_EFFECT_FLAG_NEEDS_ALBEDO, needs_albedo);
+	}
+}
+bool CompositorEffect::get_needs_albedo() const {
+	return needs_albedo;
 }
 
 void CompositorEffect::set_needs_separate_specular(bool p_enabled) {
