@@ -75,7 +75,7 @@ internal static class StressTests
 		foreach (var a in args) if (a.StartsWith("--seed=")) long.TryParse(a[7..], out seed);
 		var skipOps = new HashSet<int>();
 		foreach (var a in args) if (a.StartsWith("--skip-ops="))
-				foreach (var s in a[11..].Split(',')) if (int.TryParse(s, out int v)) skipOps.Add(v);
+			foreach (var s in a[11..].Split(',')) if (int.TryParse(s, out int v)) skipOps.Add(v);
 		var rnd = new Random(unchecked((int)seed));
 
 		using var w = new PhysxWorld();
