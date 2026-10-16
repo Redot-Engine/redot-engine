@@ -42,21 +42,39 @@
 
 namespace StringSIMD {
 
+// djb2 reaches hash*33^n + sum(c_i * 33^(n-1-i)) after n characters. Rather than reduce every block,
+// two lane-accumulators carry the per-position partial sums with no horizontal step in the loop, and
+// are collapsed once at the end; two independent chains hide the multiply latency. Bit-identical to
+// the scalar loop (all arithmetic is mod 2^32, matching uint32 overflow).
 HashBlocks hash_blocks(const char32_t *p_chr, int64_t p_length, uint32_t p_hash) {
-	// h*33^4 + c0*33^3 + c1*33^2 + c2*33 + c3 (mod 2^32) per block of four.
 	const char32_t *chr = p_chr;
-	const __m128i weights = _mm_setr_epi32(33 * 33 * 33, 33 * 33, 33, 1);
+	const uint32_t p1 = 33u, p2 = p1 * 33u, p3 = p2 * 33u, p4 = p3 * 33u;
+	const uint32_t p5 = p4 * 33u, p6 = p5 * 33u, p7 = p6 * 33u, p8 = p4 * p4;
+	const __m128i step = _mm_set1_epi32((int)p8);
 	const __m128i zero = _mm_setzero_si128();
+	__m128i acc0 = zero;
+	__m128i acc1 = zero;
+	uint32_t pown = 1; // 33^(characters consumed so far)
 	int64_t i = 0;
-	for (; i + 4 <= p_length; i += 4) {
-		__m128i c = _mm_loadu_si128((const __m128i *)(chr + i));
-		if (_mm_movemask_epi8(_mm_cmpeq_epi32(c, zero)) != 0) {
+	for (; i + 8 <= p_length; i += 8) {
+		const __m128i ca = _mm_loadu_si128((const __m128i *)(chr + i));
+		const __m128i cb = _mm_loadu_si128((const __m128i *)(chr + i + 4));
+		if (_mm_movemask_epi8(_mm_or_si128(_mm_cmpeq_epi32(ca, zero), _mm_cmpeq_epi32(cb, zero))) != 0) {
 			break;
 		}
-		__m128i m = _mm_mullo_epi32(c, weights);
+		// Even and odd 4-blocks run as independent chains; combined with the right powers at the end.
+		acc0 = _mm_add_epi32(_mm_mullo_epi32(acc0, step), ca);
+		acc1 = _mm_add_epi32(_mm_mullo_epi32(acc1, step), cb);
+		pown *= p8;
+	}
+	if (i > 0) {
+		// Positions 8e+j weigh 33^(7-j) (first block of the pair) and 33^(3-j) (second block).
+		const __m128i w0 = _mm_setr_epi32((int)p7, (int)p6, (int)p5, (int)p4);
+		const __m128i w1 = _mm_setr_epi32((int)p3, (int)p2, (int)p1, 1);
+		__m128i m = _mm_add_epi32(_mm_mullo_epi32(acc0, w0), _mm_mullo_epi32(acc1, w1));
 		m = _mm_add_epi32(m, _mm_shuffle_epi32(m, _MM_SHUFFLE(1, 0, 3, 2)));
 		m = _mm_add_epi32(m, _mm_shuffle_epi32(m, _MM_SHUFFLE(2, 3, 0, 1)));
-		p_hash = p_hash * (33u * 33u * 33u * 33u) + (uint32_t)_mm_cvtsi128_si32(m);
+		p_hash = p_hash * pown + (uint32_t)_mm_cvtsi128_si32(m);
 	}
 	return { p_hash, i };
 }

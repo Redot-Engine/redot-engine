@@ -1887,8 +1887,8 @@ void Image::flip_x() {
 		uint8_t down[16];
 		uint32_t pixel_size = get_format_pixel_size(format);
 
-		int simd_block = 0;
 #ifdef GODOT_IMAGE_SIMD_BYTES
+		int simd_block = 0;
 		u8x16_t vtable = _mm_setzero_si128();
 		// The reversal table only depends on pixel_size, so build it once. Narrow rows that cannot fit
 		// two whole blocks skip SIMD entirely; otherwise the per-row setup is slower than the scalar swap.

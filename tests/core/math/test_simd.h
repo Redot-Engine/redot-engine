@@ -234,11 +234,15 @@ static const DispatchMode DISPATCH_MODES[] = {
 
 template <typename F>
 void for_each_dispatch(F p_func) {
+	// Scope guard: a failing REQUIRE inside p_func throws, and the override must still be cleared so
+	// later test cases run with the CPU's real feature set rather than a leftover SSE-only override.
+	struct ResetGuard {
+		~ResetGuard() { CPUFeatures::reset_override(); }
+	} reset_guard;
 	for (const DispatchMode &mode : DISPATCH_MODES) {
 		CPUFeatures::set_override(mode.mask);
 		p_func(mode.name);
 	}
-	CPUFeatures::reset_override();
 }
 
 TEST_CASE("[SIMD] Runtime CPU feature dispatch") {
