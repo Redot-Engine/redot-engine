@@ -40,6 +40,7 @@
 
 #include "core/error/error_macros.h"
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 #include "core/string/ustring.h"
 
 struct Basis;
@@ -274,6 +275,13 @@ Vector3 Vector3::slerp(const Vector3 &p_to, real_t p_weight) const {
 
 Vector3 Vector3::cubic_interpolate(const Vector3 &p_b, const Vector3 &p_pre_a, const Vector3 &p_post_b, real_t p_weight) const {
 	Vector3 res = *this;
+#ifdef GODOT_SIMD_REAL_F32X4
+	if (simd::has_fused_cubic()) {
+		using namespace simd;
+		store3(&res.x, cubic_interpolate4_fma(load3(&x), load3(&p_b.x), load3(&p_pre_a.x), load3(&p_post_b.x), p_weight));
+		return res;
+	}
+#endif
 	res.x = Math::cubic_interpolate(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight);
 	res.y = Math::cubic_interpolate(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight);
 	res.z = Math::cubic_interpolate(res.z, p_b.z, p_pre_a.z, p_post_b.z, p_weight);
@@ -282,6 +290,13 @@ Vector3 Vector3::cubic_interpolate(const Vector3 &p_b, const Vector3 &p_pre_a, c
 
 Vector3 Vector3::cubic_interpolate_in_time(const Vector3 &p_b, const Vector3 &p_pre_a, const Vector3 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const {
 	Vector3 res = *this;
+#ifdef GODOT_SIMD_REAL_F32X4
+	{
+		using namespace simd;
+		store3(&res.x, cubic_interpolate_in_time4(load3(&x), load3(&p_b.x), load3(&p_pre_a.x), load3(&p_post_b.x), p_weight, p_b_t, p_pre_a_t, p_post_b_t));
+		return res;
+	}
+#endif
 	res.x = Math::cubic_interpolate_in_time(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
 	res.y = Math::cubic_interpolate_in_time(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
 	res.z = Math::cubic_interpolate_in_time(res.z, p_b.z, p_pre_a.z, p_post_b.z, p_weight, p_b_t, p_pre_a_t, p_post_b_t);

@@ -40,6 +40,7 @@
  */
 
 #include "core/math/plane.h"
+#include "core/math/simd.h"
 #include "core/math/vector3.h"
 
 class Variant;
@@ -143,6 +144,19 @@ struct [[nodiscard]] AABB {
 			size(p_size) {
 	}
 };
+
+#ifdef GODOT_SIMD_REAL_F32X4
+// Load the three components without reading beyond either Vector3; lane 3 is zero.
+_FORCE_INLINE_ simd::f32x4 _aabb_position_simd(const AABB &p_aabb) {
+	return simd::load3(&p_aabb.position.x);
+}
+_FORCE_INLINE_ simd::f32x4 _aabb_size_simd(const AABB &p_aabb) {
+	return simd::load3(&p_aabb.size.x);
+}
+_FORCE_INLINE_ simd::f32x4 _aabb_end_simd(const AABB &p_aabb) {
+	return _aabb_position_simd(p_aabb) + _aabb_size_simd(p_aabb);
+}
+#endif
 
 inline bool AABB::intersects(const AABB &p_aabb) const {
 #ifdef MATH_CHECKS
@@ -258,6 +272,34 @@ Vector3 AABB::get_endpoint(int p_point) const {
 }
 
 bool AABB::intersects_convex_shape(const Plane *p_planes, int p_plane_count, const Vector3 *p_points, int p_point_count) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	{
+		using namespace simd;
+		f32x4 half_extents = _aabb_size_simd(*this) * splat4(0.5f);
+		f32x4 ofs = _aabb_position_simd(*this) + half_extents;
+		f32x4 neg_half_extents = -half_extents;
+		for (int i = 0; i < p_plane_count; i++) {
+			// Plane is normal followed by d, so a 4-lane load holds d in lane 3.
+			f32x4 plane = load4(&p_planes[i].normal.x);
+			f32x4 point = select(cmp_gt(plane, zero4()), neg_half_extents, half_extents) + ofs;
+			if (dot3(plane, point) > get_lane<3>(plane)) {
+				return false;
+			}
+		}
+		// Make sure all points in the shape aren't fully separated from the AABB on each axis.
+		f32x4 upper = ofs + half_extents;
+		f32x4 lower = ofs - half_extents;
+		i32x4 bad_positive = zero_i32x4();
+		i32x4 bad_negative = zero_i32x4();
+		for (int i = 0; i < p_point_count; i++) {
+			f32x4 p = load3(&p_points[i].x);
+			bad_positive = count_if(bad_positive, cmp_gt(p, upper));
+			bad_negative = count_if(bad_negative, cmp_lt(p, lower));
+		}
+		mask4 separated = cmp_eq(bad_positive, p_point_count) | cmp_eq(bad_negative, p_point_count);
+		return !any_lane3(separated);
+	}
+#endif
 	Vector3 half_extents = size * 0.5f;
 	Vector3 ofs = position + half_extents;
 
@@ -299,6 +341,22 @@ bool AABB::intersects_convex_shape(const Plane *p_planes, int p_plane_count, con
 }
 
 bool AABB::inside_convex_shape(const Plane *p_planes, int p_plane_count) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	{
+		using namespace simd;
+		f32x4 half_extents = _aabb_size_simd(*this) * splat4(0.5f);
+		f32x4 ofs = _aabb_position_simd(*this) + half_extents;
+		f32x4 neg_half_extents = -half_extents;
+		for (int i = 0; i < p_plane_count; i++) {
+			f32x4 plane = load4(&p_planes[i].normal.x);
+			f32x4 point = select(cmp_lt(plane, zero4()), neg_half_extents, half_extents) + ofs;
+			if (dot3(plane, point) > get_lane<3>(plane)) {
+				return false;
+			}
+		}
+		return true;
+	}
+#endif
 	Vector3 half_extents = size * 0.5f;
 	Vector3 ofs = position + half_extents;
 
@@ -422,6 +480,43 @@ bool AABB::smits_intersect_ray(const Vector3 &p_from, const Vector3 &p_dir, real
 		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
 	}
 #endif
+#ifdef GODOT_SIMD_REAL_F32X4
+	using namespace simd;
+	// The unused lane must have a nonzero divisor to avoid spurious floating-point exceptions.
+	f32x4 dir = insert_lane3(load3(&p_dir.x), splat4(1.0f));
+	f32x4 div = splat4(1.0f) / dir;
+	f32x4 from = load3(&p_from.x);
+	f32x4 ta = (_aabb_position_simd(*this) - from) * div;
+	f32x4 tb = (_aabb_end_simd(*this) - from) * div;
+	mask4 positive = cmp_ge(dir, zero4());
+	f32x4 tmin_v = select(positive, ta, tb);
+	f32x4 tmax_v = select(positive, tb, ta);
+	real_t tmin = get_lane<0>(tmin_v);
+	real_t tmax = get_lane<0>(tmax_v);
+	real_t tymin = get_lane<1>(tmin_v);
+	real_t tymax = get_lane<1>(tmax_v);
+	if ((tmin > tymax) || (tymin > tmax)) {
+		return false;
+	}
+	if (tymin > tmin) {
+		tmin = tymin;
+	}
+	if (tymax < tmax) {
+		tmax = tymax;
+	}
+	real_t tzmin = get_lane<2>(tmin_v);
+	real_t tzmax = get_lane<2>(tmax_v);
+	if ((tmin > tzmax) || (tzmin > tmax)) {
+		return false;
+	}
+	if (tzmin > tmin) {
+		tmin = tzmin;
+	}
+	if (tzmax < tmax) {
+		tmax = tzmax;
+	}
+	return ((tmin < p_t1) && (tmax > p_t0));
+#else
 	real_t divx = 1.0f / p_dir.x;
 	real_t divy = 1.0f / p_dir.y;
 	real_t divz = 1.0f / p_dir.z;
@@ -468,6 +563,7 @@ bool AABB::smits_intersect_ray(const Vector3 &p_from, const Vector3 &p_dir, real
 		tmax = tzmax;
 	}
 	return ((tmin < p_t1) && (tmax > p_t0));
+#endif
 }
 
 void AABB::grow_by(real_t p_amount) {

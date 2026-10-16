@@ -43,8 +43,12 @@
 #include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 #include "core/templates/hash_map.h"
+#include "core/templates/local_vector.h"
 #include "core/variant/dictionary.h"
+
+#include <bit>
 
 const char *Image::format_names[Image::FORMAT_MAX] = {
 	"Lum8",
@@ -475,15 +479,143 @@ int Image::get_mipmap_count() const {
 	}
 }
 
+#ifdef GODOT_SIMD_SSE41
+#define GODOT_IMAGE_SIMD_BYTES
+#endif
+
+#ifdef GODOT_IMAGE_SIMD_BYTES
+// 16 byte lane helpers shared by the byte-oriented image loops below.
+typedef __m128i u8x16_t;
+static _FORCE_INLINE_ u8x16_t _u8x16_load(const uint8_t *p_ptr) {
+	return _mm_loadu_si128((const __m128i *)p_ptr);
+}
+static _FORCE_INLINE_ u8x16_t _u8x16_load_table(const uint8_t *p_table) {
+	return _mm_loadu_si128((const __m128i *)p_table);
+}
+/// Byte table lookup; indices >= 16 (high bit set) produce zero.
+static _FORCE_INLINE_ u8x16_t _u8x16_shuffle(u8x16_t p_v, u8x16_t p_table) {
+	return _mm_shuffle_epi8(p_v, p_table);
+}
+static _FORCE_INLINE_ u8x16_t _u8x16_or(u8x16_t p_a, u8x16_t p_b) {
+	return _mm_or_si128(p_a, p_b);
+}
+static _FORCE_INLINE_ void _u8x16_store(uint8_t *p_ptr, u8x16_t p_v) {
+	_mm_storeu_si128((__m128i *)p_ptr, p_v);
+}
+static _FORCE_INLINE_ void _u8x16_store8(uint8_t *p_ptr, u8x16_t p_v) {
+	_mm_storel_epi64((__m128i *)p_ptr, p_v);
+}
+static _FORCE_INLINE_ void _u8x16_store4(uint8_t *p_ptr, u8x16_t p_v) {
+	uint32_t v = (uint32_t)_mm_cvtsi128_si32(p_v);
+	memcpy(p_ptr, &v, 4);
+}
+static _FORCE_INLINE_ u8x16_t _u8x16_srli8(u8x16_t p_v) {
+	return _mm_srli_si128(p_v, 8);
+}
+
+/// Stores the first p_count (4, 8, 12 or 16) bytes.
+template <uint32_t p_count>
+static _FORCE_INLINE_ void _u8x16_store_n(uint8_t *p_ptr, u8x16_t p_v) {
+	static_assert(p_count == 4 || p_count == 8 || p_count == 12 || p_count == 16);
+	if constexpr (p_count == 16) {
+		_u8x16_store(p_ptr, p_v);
+	} else if constexpr (p_count == 12) {
+		_u8x16_store8(p_ptr, p_v);
+		_u8x16_store4(p_ptr + 8, _u8x16_srli8(p_v));
+	} else if constexpr (p_count == 8) {
+		_u8x16_store8(p_ptr, p_v);
+	} else {
+		_u8x16_store4(p_ptr, p_v);
+	}
+}
+#endif // GODOT_IMAGE_SIMD_BYTES
+
 /// Using template generates perfectly optimized code due to constant expression reduction and unused variable removal present in all compilers.
 template <uint32_t read_bytes, bool read_alpha, uint32_t write_bytes, bool write_alpha, bool read_gray, bool write_gray>
 static void _convert(int p_width, int p_height, const uint8_t *p_src, uint8_t *p_dst) {
 	constexpr uint32_t max_bytes = MAX(read_bytes, write_bytes);
+	constexpr uint32_t read_stride = read_bytes + (read_alpha ? 1 : 0);
+	constexpr uint32_t write_stride = write_bytes + (write_alpha ? 1 : 0);
+	const int64_t pixel_count = (int64_t)p_width * p_height;
+	int64_t p = 0;
 
-	for (int y = 0; y < p_height; y++) {
-		for (int x = 0; x < p_width; x++) {
-			const uint8_t *rofs = &p_src[((y * p_width) + x) * (read_bytes + (read_alpha ? 1 : 0))];
-			uint8_t *wofs = &p_dst[((y * p_width) + x) * (write_bytes + (write_alpha ? 1 : 0))];
+#ifdef GODOT_IMAGE_SIMD_BYTES
+	if constexpr (!write_gray) {
+		// Four pixels per step: every output byte is either a source byte, zero or 255,
+		// so the conversion is one byte table lookup plus a constant OR.
+		uint8_t table[16];
+		uint8_t constant[16];
+		for (uint32_t i = 0; i < 16; i++) {
+			table[i] = 0x80;
+			constant[i] = 0;
+		}
+		for (uint32_t px = 0; px < 4; px++) {
+			for (uint32_t i = 0; i < write_stride; i++) {
+				const uint32_t o = px * write_stride + i;
+				if (i < write_bytes) {
+					if (read_gray) {
+						table[o] = (uint8_t)(px * read_stride);
+					} else if (i < read_bytes) {
+						table[o] = (uint8_t)(px * read_stride + i);
+					}
+				} else if (read_alpha) {
+					table[o] = (uint8_t)(px * read_stride + read_bytes);
+				} else {
+					constant[o] = 255;
+				}
+			}
+		}
+		const u8x16_t vtable = _u8x16_load_table(table);
+		const u8x16_t vconstant = _u8x16_load_table(constant);
+		const int64_t src_bytes = pixel_count * read_stride;
+		while (p + 4 <= pixel_count && p * read_stride + 16 <= src_bytes) {
+			u8x16_t v = _u8x16_load(&p_src[p * read_stride]);
+			v = _u8x16_or(_u8x16_shuffle(v, vtable), vconstant);
+			_u8x16_store_n<write_stride * 4>(&p_dst[p * write_stride], v);
+			p += 4;
+		}
+	} else {
+		// Luminance of four pixels at once in 32-bit lanes (REC.709 integer weights).
+		uint8_t table_r[16], table_g[16], table_b[16], table_a[16];
+		for (uint32_t i = 0; i < 16; i++) {
+			table_r[i] = table_g[i] = table_b[i] = table_a[i] = 0x80;
+		}
+		for (uint32_t px = 0; px < 4; px++) {
+			const uint8_t base = (uint8_t)(px * read_stride);
+			table_r[px * 4] = base;
+			table_g[px * 4] = read_gray ? base : (read_bytes > 1 ? base + 1 : 0x80);
+			table_b[px * 4] = read_gray ? base : (read_bytes > 2 ? base + 2 : 0x80);
+			if (read_alpha) {
+				table_a[px] = base + read_bytes;
+			}
+		}
+		const u8x16_t vtable_r = _u8x16_load_table(table_r);
+		const u8x16_t vtable_g = _u8x16_load_table(table_g);
+		const u8x16_t vtable_b = _u8x16_load_table(table_b);
+		const u8x16_t vtable_a = _u8x16_load_table(table_a);
+		const int64_t src_bytes = pixel_count * read_stride;
+		while (p + 4 <= pixel_count && p * read_stride + 16 <= src_bytes) {
+			u8x16_t v = _u8x16_load(&p_src[p * read_stride]);
+			__m128i lum = _mm_mullo_epi32(_mm_shuffle_epi8(v, vtable_r), _mm_set1_epi32(13938));
+			lum = _mm_add_epi32(lum, _mm_mullo_epi32(_mm_shuffle_epi8(v, vtable_g), _mm_set1_epi32(46869)));
+			lum = _mm_add_epi32(lum, _mm_mullo_epi32(_mm_shuffle_epi8(v, vtable_b), _mm_set1_epi32(4729)));
+			lum = _mm_srli_epi32(_mm_add_epi32(lum, _mm_set1_epi32(32768)), 16);
+			lum = _mm_packus_epi16(_mm_packs_epi32(lum, lum), lum);
+			if constexpr (write_alpha) {
+				__m128i alpha = read_alpha ? _mm_shuffle_epi8(v, vtable_a) : _mm_set1_epi8((char)-1);
+				_u8x16_store8(&p_dst[p * write_stride], _mm_unpacklo_epi8(lum, alpha));
+			} else {
+				_u8x16_store4(&p_dst[p * write_stride], lum);
+			}
+			p += 4;
+		}
+	}
+#endif // GODOT_IMAGE_SIMD_BYTES
+
+	for (; p < pixel_count; p++) {
+		{
+			const uint8_t *rofs = &p_src[p * read_stride];
+			uint8_t *wofs = &p_dst[p * write_stride];
 
 			uint8_t rgba[4] = { 0, 0, 0, 255 };
 
@@ -876,7 +1008,7 @@ static void _scale_cubic(const uint8_t *__restrict p_src, uint8_t *__restrict p_
 }
 
 template <int CC, typename T>
-static void _scale_bilinear(const uint8_t *__restrict p_src, uint8_t *__restrict p_dst, uint32_t p_src_width, uint32_t p_src_height, uint32_t p_dst_width, uint32_t p_dst_height) {
+static _NO_INLINE_ void _scale_bilinear(const uint8_t *__restrict p_src, uint8_t *__restrict p_dst, uint32_t p_src_width, uint32_t p_src_height, uint32_t p_dst_width, uint32_t p_dst_height) {
 	constexpr uint32_t FRAC_BITS = 8;
 	constexpr uint32_t FRAC_LEN = (1 << FRAC_BITS);
 	constexpr uint32_t FRAC_HALF = (FRAC_LEN >> 1);
@@ -910,6 +1042,72 @@ static void _scale_bilinear(const uint8_t *__restrict p_src, uint8_t *__restrict
 
 			src_xofs_left *= CC;
 			src_xofs_right *= CC;
+
+#ifdef GODOT_SIMD_F32X4
+			// All channels of the destination pixel in one register. For 8-bit data this only pays
+			// off with four channels; three-channel pixels are faster with the scalar loop.
+			// 8-bit pays off only with four channels; three-channel 8-bit and every half-float format
+			// are faster scalar, so only uint8 (4 channels) and float take the SIMD path.
+			if constexpr ((CC == 4 && sizeof(T) == 1) || ((CC == 3 || CC == 4) && sizeof(T) == 4)) {
+				using namespace simd;
+				T *dst = ((T *)p_dst) + i * p_dst_width * CC + j * CC;
+				if constexpr (sizeof(T) == 1) {
+#ifdef GODOT_SIMD_SSE41
+					// Unsigned 32-bit wrap arithmetic, same as the scalar expressions.
+					auto load_px = [](const uint8_t *p_ptr) {
+						uint32_t v = 0;
+						memcpy(&v, p_ptr, CC);
+						return _mm_slli_epi32(_mm_cvtepu8_epi32(_mm_cvtsi32_si128((int)v)), FRAC_BITS);
+					};
+					__m128i p00 = load_px(&p_src[y_ofs_up + src_xofs_left]);
+					__m128i p10 = load_px(&p_src[y_ofs_up + src_xofs_right]);
+					__m128i p01 = load_px(&p_src[y_ofs_down + src_xofs_left]);
+					__m128i p11 = load_px(&p_src[y_ofs_down + src_xofs_right]);
+					__m128i xf = _mm_set1_epi32((int)src_xofs_frac);
+					__m128i yf = _mm_set1_epi32((int)src_yofs_frac);
+					__m128i interp_up = _mm_add_epi32(p00, _mm_srli_epi32(_mm_mullo_epi32(_mm_sub_epi32(p10, p00), xf), FRAC_BITS));
+					__m128i interp_down = _mm_add_epi32(p01, _mm_srli_epi32(_mm_mullo_epi32(_mm_sub_epi32(p11, p01), xf), FRAC_BITS));
+					__m128i interp = _mm_add_epi32(interp_up, _mm_srli_epi32(_mm_mullo_epi32(_mm_sub_epi32(interp_down, interp_up), yf), FRAC_BITS));
+					interp = _mm_srli_epi32(interp, FRAC_BITS);
+					// Truncation to uint8 like the scalar cast.
+					interp = _mm_and_si128(interp, _mm_set1_epi32(0xFF));
+					uint32_t out = (uint32_t)_mm_cvtsi128_si32(_mm_packus_epi16(_mm_packs_epi32(interp, interp), interp));
+					memcpy(dst, &out, CC);
+					continue;
+#endif
+				} else {
+					float xofs_frac = float(src_xofs_frac) / (1 << FRAC_BITS);
+					float yofs_frac = float(src_yofs_frac) / (1 << FRAC_BITS);
+					const float *src = (const float *)p_src;
+					f32x4 p00, p10, p01, p11;
+					if constexpr (CC == 4) {
+						p00 = load4(src + y_ofs_up + src_xofs_left);
+						p10 = load4(src + y_ofs_up + src_xofs_right);
+						p01 = load4(src + y_ofs_down + src_xofs_left);
+						p11 = load4(src + y_ofs_down + src_xofs_right);
+					} else {
+						p00 = load3(src + y_ofs_up + src_xofs_left);
+						p10 = load3(src + y_ofs_up + src_xofs_right);
+						p01 = load3(src + y_ofs_down + src_xofs_left);
+						p11 = load3(src + y_ofs_down + src_xofs_right);
+					}
+					f32x4 xf = splat4(xofs_frac);
+					f32x4 yf = splat4(yofs_frac);
+					f32x4 interp_up = p00 + (p10 - p00) * xf;
+					f32x4 interp_down = p01 + (p11 - p01) * xf;
+					f32x4 interp = interp_up + ((interp_down - interp_up) * yf);
+					// A NaN result falls through to the scalar loop below, which selects the same payload.
+					if ((movemask(cmp_neq(interp, interp)) & (CC == 4 ? 0xF : 0x7)) == 0) {
+						if constexpr (CC == 4) {
+							store4((float *)dst, interp);
+						} else {
+							store3((float *)dst, interp);
+						}
+						continue;
+					}
+				}
+			}
+#endif
 
 			for (uint32_t l = 0; l < CC; l++) {
 				if constexpr (sizeof(T) == 1) { //uint8
@@ -1654,18 +1852,19 @@ void Image::flip_y() {
 
 	{
 		uint8_t *w = data.ptrw();
-		uint8_t up[16];
-		uint8_t down[16];
 		uint32_t pixel_size = get_format_pixel_size(format);
-
+		// Whole rows are swapped at once.
+		const size_t row_size = (size_t)width * pixel_size;
+		LocalVector<uint8_t> tmp;
+		if (height > 1) {
+			tmp.resize(row_size);
+		}
 		for (int y = 0; y < height / 2; y++) {
-			for (int x = 0; x < width; x++) {
-				_get_pixelb(x, y, pixel_size, w, up);
-				_get_pixelb(x, height - y - 1, pixel_size, w, down);
-
-				_put_pixelb(x, height - y - 1, pixel_size, w, up);
-				_put_pixelb(x, y, pixel_size, w, down);
-			}
+			uint8_t *row_a = w + (size_t)y * row_size;
+			uint8_t *row_b = w + (size_t)(height - y - 1) * row_size;
+			memcpy(tmp.ptr(), row_a, row_size);
+			memcpy(row_a, row_b, row_size);
+			memcpy(row_b, tmp.ptr(), row_size);
 		}
 	}
 
@@ -1688,8 +1887,39 @@ void Image::flip_x() {
 		uint8_t down[16];
 		uint32_t pixel_size = get_format_pixel_size(format);
 
+		int simd_block = 0;
+#ifdef GODOT_IMAGE_SIMD_BYTES
+		u8x16_t vtable = _mm_setzero_si128();
+		// The reversal table only depends on pixel_size, so build it once. Narrow rows that cannot fit
+		// two whole blocks skip SIMD entirely; otherwise the per-row setup is slower than the scalar swap.
+		if ((pixel_size == 1 || pixel_size == 2 || pixel_size == 4 || pixel_size == 8 || pixel_size == 16) && width >= 2 * (int)(16 / pixel_size)) {
+			simd_block = 16 / pixel_size;
+			uint8_t table[16];
+			for (int b = 0; b < 16; b++) {
+				int px = b / pixel_size;
+				table[b] = (uint8_t)((simd_block - 1 - px) * pixel_size + (b % pixel_size));
+			}
+			vtable = _u8x16_load_table(table);
+		}
+#endif
 		for (int y = 0; y < height; y++) {
-			for (int x = 0; x < width / 2; x++) {
+			int x = 0;
+#ifdef GODOT_IMAGE_SIMD_BYTES
+			if (simd_block) {
+				// Swap 16 byte blocks from both ends, reversing the pixels inside each block.
+				uint8_t *row = w + (size_t)y * width * pixel_size;
+				while (2 * x + 2 * simd_block <= width) {
+					uint8_t *left = row + (size_t)x * pixel_size;
+					uint8_t *right = row + (size_t)(width - x - simd_block) * pixel_size;
+					u8x16_t vl = _u8x16_shuffle(_u8x16_load(left), vtable);
+					u8x16_t vr = _u8x16_shuffle(_u8x16_load(right), vtable);
+					_u8x16_store(left, vr);
+					_u8x16_store(right, vl);
+					x += simd_block;
+				}
+			}
+#endif
+			for (; x < width / 2; x++) {
 				_get_pixelb(x, y, pixel_size, w, up);
 				_get_pixelb(width - x - 1, y, pixel_size, w, down);
 
@@ -1767,6 +1997,139 @@ int64_t Image::_get_dst_image_size(int p_width, int p_height, Format p_format, i
 	return size;
 }
 
+#ifdef GODOT_SIMD_F32X4
+// Box filter of one row pair for 8-bit, float and half components; p_count destination pixels
+// are produced from 2 * p_count source pixels of each row. Returns how many were handled.
+template <int CC>
+static uint32_t _mipmap_row_uint8_simd(const uint8_t *p_up, const uint8_t *p_down, uint8_t *p_dst, uint32_t p_count) {
+	uint32_t done = 0;
+	const __m128i zero = _mm_setzero_si128();
+	const __m128i two16 = _mm_set1_epi16(2);
+	if constexpr (CC == 4) {
+		// 16 source bytes per row = 4 pixels = 2 destination pixels.
+		for (; done + 2 <= p_count; done += 2) {
+			__m128i up = _mm_loadu_si128((const __m128i *)(p_up + done * 8));
+			__m128i down = _mm_loadu_si128((const __m128i *)(p_down + done * 8));
+			__m128i s_lo = _mm_add_epi16(_mm_unpacklo_epi8(up, zero), _mm_unpacklo_epi8(down, zero));
+			__m128i s_hi = _mm_add_epi16(_mm_unpackhi_epi8(up, zero), _mm_unpackhi_epi8(down, zero));
+			// Pixel pairs: lanes 0..3 + lanes 4..7.
+			__m128i s = _mm_unpacklo_epi64(s_lo, s_hi);
+			s = _mm_add_epi16(s, _mm_unpackhi_epi64(s_lo, s_hi));
+			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
+			_mm_storel_epi64((__m128i *)(p_dst + done * 4), _mm_packus_epi16(s, s));
+		}
+	} else if constexpr (CC == 2) {
+		// 16 source bytes per row = 8 pixels = 4 destination pixels.
+		for (; done + 4 <= p_count; done += 4) {
+			__m128i up = _mm_loadu_si128((const __m128i *)(p_up + done * 4));
+			__m128i down = _mm_loadu_si128((const __m128i *)(p_down + done * 4));
+			__m128i s_lo = _mm_add_epi16(_mm_unpacklo_epi8(up, zero), _mm_unpacklo_epi8(down, zero));
+			__m128i s_hi = _mm_add_epi16(_mm_unpackhi_epi8(up, zero), _mm_unpackhi_epi8(down, zero));
+			// Each 32-bit lane is one pixel; pair even and odd pixels in order.
+			__m128i t0 = _mm_shuffle_epi32(s_lo, _MM_SHUFFLE(3, 1, 2, 0));
+			__m128i t1 = _mm_shuffle_epi32(s_hi, _MM_SHUFFLE(3, 1, 2, 0));
+			__m128i s = _mm_add_epi16(_mm_unpacklo_epi64(t0, t1), _mm_unpackhi_epi64(t0, t1));
+			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
+			_mm_storel_epi64((__m128i *)(p_dst + done * 2), _mm_packus_epi16(s, s));
+		}
+	} else if constexpr (CC == 1) {
+		// 16 source bytes per row = 16 pixels = 8 destination pixels.
+		const __m128i ones16 = _mm_set1_epi16(1);
+		for (; done + 8 <= p_count; done += 8) {
+			__m128i up = _mm_loadu_si128((const __m128i *)(p_up + done * 2));
+			__m128i down = _mm_loadu_si128((const __m128i *)(p_down + done * 2));
+			__m128i s_lo = _mm_add_epi16(_mm_unpacklo_epi8(up, zero), _mm_unpacklo_epi8(down, zero));
+			__m128i s_hi = _mm_add_epi16(_mm_unpackhi_epi8(up, zero), _mm_unpackhi_epi8(down, zero));
+			__m128i pairs_lo = _mm_madd_epi16(s_lo, ones16);
+			__m128i pairs_hi = _mm_madd_epi16(s_hi, ones16);
+			__m128i s = _mm_packs_epi32(pairs_lo, pairs_hi);
+			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
+			_mm_storel_epi64((__m128i *)(p_dst + done), _mm_packus_epi16(s, s));
+		}
+	} else if constexpr (CC == 3) {
+#ifdef GODOT_SIMD_SSE41
+		// 12 source bytes per row = 4 pixels = 2 destination pixels, spread to 4-byte slots.
+		const __m128i spread = _mm_setr_epi8(0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1);
+		const __m128i compact = _mm_setr_epi8(0, 1, 2, 4, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+		const uint32_t src_bytes = p_count * 6;
+		for (; done + 2 <= p_count && done * 6 + 16 <= src_bytes; done += 2) {
+			__m128i up = _mm_shuffle_epi8(_mm_loadu_si128((const __m128i *)(p_up + done * 6)), spread);
+			__m128i down = _mm_shuffle_epi8(_mm_loadu_si128((const __m128i *)(p_down + done * 6)), spread);
+			__m128i s_lo = _mm_add_epi16(_mm_unpacklo_epi8(up, zero), _mm_unpacklo_epi8(down, zero));
+			__m128i s_hi = _mm_add_epi16(_mm_unpackhi_epi8(up, zero), _mm_unpackhi_epi8(down, zero));
+			__m128i s = _mm_unpacklo_epi64(s_lo, s_hi);
+			s = _mm_add_epi16(s, _mm_unpackhi_epi64(s_lo, s_hi));
+			s = _mm_srli_epi16(_mm_add_epi16(s, two16), 2);
+			__m128i out = _mm_shuffle_epi8(_mm_packus_epi16(s, s), compact);
+			uint32_t lo = (uint32_t)_mm_cvtsi128_si32(out);
+			uint16_t hi = (uint16_t)_mm_extract_epi16(out, 2);
+			memcpy(p_dst + done * 3, &lo, 4);
+			memcpy(p_dst + done * 3 + 4, &hi, 2);
+		}
+#endif
+	}
+	return done;
+}
+
+// Gathers the two source pixels of a destination pixel (components interleaved) into
+// lanes: r_a = even source pixel, r_b = odd source pixel, for CC = 1 and 2 (4 and 2 dst pixels).
+template <int CC>
+static _FORCE_INLINE_ void _mipmap_split_pairs(const float *p_row, simd::f32x4 &r_a, simd::f32x4 &r_b) {
+	using namespace simd;
+	f32x4 lo = load4(p_row);
+	f32x4 hi = load4(p_row + 4);
+	if constexpr (CC == 1) {
+		r_a = shuffle<0, 2, 0, 2>(lo, hi);
+		r_b = shuffle<1, 3, 1, 3>(lo, hi);
+	} else {
+		r_a = movelh(lo, hi);
+		r_b = movehl(hi, lo);
+	}
+}
+
+template <int CC>
+static uint32_t _mipmap_row_float_simd(const float *p_up, const float *p_down, float *p_dst, uint32_t p_count) {
+	using namespace simd;
+	const f32x4 quarter = splat4(0.25f);
+	uint32_t done = 0;
+	if constexpr (CC == 4) {
+		for (; done < p_count; done++) {
+			const float *up = p_up + done * 8;
+			const float *down = p_down + done * 8;
+			const f32x4 r = (((load4(up) + load4(up + 4)) + load4(down)) + load4(down + 4)) * quarter;
+			if (movemask(cmp_neq(r, r)) != 0) {
+				break;
+			}
+			store4(p_dst + done * 4, r);
+		}
+	} else if constexpr (CC == 3) {
+		for (; done < p_count; done++) {
+			const float *up = p_up + done * 6;
+			const float *down = p_down + done * 6;
+			const f32x4 r = (((load3(up) + load3(up + 3)) + load3(down)) + load3(down + 3)) * quarter;
+			if ((movemask(cmp_neq(r, r)) & 0x7) != 0) {
+				break;
+			}
+			store3(p_dst + done * 3, r);
+		}
+	} else {
+		constexpr uint32_t per_step = 4 / CC;
+		for (; done + per_step <= p_count; done += per_step) {
+			f32x4 a, b, c, d;
+			_mipmap_split_pairs<CC>(p_up + done * CC * 2, a, b);
+			_mipmap_split_pairs<CC>(p_down + done * CC * 2, c, d);
+			const f32x4 r = (((a + b) + c) + d) * quarter;
+			if (movemask(cmp_neq(r, r)) != 0) {
+				break;
+			}
+			store4(p_dst + done * CC, r);
+		}
+	}
+	return done;
+}
+
+#endif // GODOT_SIMD_F32X4
+
 template <typename Component, int CC, bool renormalize,
 		void (*average_func)(Component &, const Component &, const Component &, const Component &, const Component &),
 		void (*renormalize_func)(Component *)>
@@ -1783,6 +2146,27 @@ static void _generate_po2_mipmap(const Component *p_src, Component *p_dst, uint3
 		const Component *rdown_ptr = rup_ptr + down_step;
 		Component *dst_ptr = &p_dst[i * dst_w * CC];
 		uint32_t count = dst_w;
+
+#ifdef GODOT_SIMD_F32X4
+		// Half-float (uint16_t) mipmaps stay scalar: the bit-exact half<->float conversion costs more
+		// than the SIMD averaging saves.
+		if constexpr (!renormalize && (std::is_same_v<Component, uint8_t> || std::is_same_v<Component, float>)) {
+			if (right_step != 0 && down_step != 0) {
+				// The SIMD rows implement Image::average_4_uint8 / average_4_float, the only averaging
+				// functions used with these component types.
+				uint32_t done = 0;
+				if constexpr (std::is_same_v<Component, uint8_t>) {
+					done = _mipmap_row_uint8_simd<CC>(rup_ptr, rdown_ptr, dst_ptr, count);
+				} else {
+					done = _mipmap_row_float_simd<CC>(rup_ptr, rdown_ptr, dst_ptr, count);
+				}
+				count -= done;
+				dst_ptr += done * CC;
+				rup_ptr += done * CC * 2;
+				rdown_ptr += done * CC * 2;
+			}
+		}
+#endif
 
 		while (count) {
 			count--;
@@ -2446,8 +2830,19 @@ bool Image::is_invisible() const {
 		case FORMAT_RGBA8: {
 			const int pixel_count = len / 4;
 			const uint32_t *pixeldata = reinterpret_cast<const uint32_t *>(data.ptr());
-
-			for (int i = 0; i < pixel_count; i++) {
+			int i = 0;
+#ifdef GODOT_SIMD_F32X4
+			// OR the alpha bytes of 16 pixels at a time and test once.
+			for (; i + 16 <= pixel_count; i += 16) {
+				const __m128i *p = reinterpret_cast<const __m128i *>(pixeldata + i);
+				__m128i acc = _mm_or_si128(_mm_or_si128(_mm_loadu_si128(p), _mm_loadu_si128(p + 1)), _mm_or_si128(_mm_loadu_si128(p + 2), _mm_loadu_si128(p + 3)));
+				acc = _mm_and_si128(acc, _mm_set1_epi32(~0x00FFFFFF));
+				if (_mm_movemask_epi8(_mm_cmpeq_epi32(acc, _mm_setzero_si128())) != 0xFFFF) {
+					return false;
+				}
+			}
+#endif
+			for (; i < pixel_count; i++) {
 				if ((pixeldata[i] & 0xFF000000) != 0) {
 					return false;
 				}
@@ -2519,10 +2914,40 @@ Image::AlphaMode Image::detect_alpha() const {
 
 		} break;
 		case FORMAT_RGBA8: {
-			for (int i = 0; i < (len >> 2); i++) {
-				DETECT_ALPHA(data_ptr[(i << 2) + 3])
+			const int64_t pixel_count = len >> 2;
+			int64_t i = 0;
+#ifdef GODOT_IMAGE_SIMD_BYTES
+			{
+				// Alpha bytes of 16 pixels: any value in [2, 253] means blended alpha (early exit),
+				// values below 2 only set the 1-bit flag.
+				static const uint8_t alpha_idx[16] = { 3, 7, 11, 15, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+				const u8x16_t vtable = _u8x16_load_table(alpha_idx);
+				for (; i + 16 <= pixel_count; i += 16) {
+					const uint8_t *p = data_ptr + i * 4;
+					__m128i a0 = _mm_shuffle_epi8(_mm_loadu_si128((const __m128i *)p), vtable);
+					__m128i a1 = _mm_shuffle_epi8(_mm_loadu_si128((const __m128i *)(p + 16)), vtable);
+					__m128i a2 = _mm_shuffle_epi8(_mm_loadu_si128((const __m128i *)(p + 32)), vtable);
+					__m128i a3 = _mm_shuffle_epi8(_mm_loadu_si128((const __m128i *)(p + 48)), vtable);
+					__m128i alpha = _mm_unpacklo_epi64(_mm_unpacklo_epi32(a0, a1), _mm_unpacklo_epi32(a2, a3));
+					// Unsigned v < 2  <=>  max(v, 1) == 1 ; v in [2, 253] <=> (v - 2) as unsigned <= 251.
+					__m128i below = _mm_cmpeq_epi8(_mm_max_epu8(alpha, _mm_set1_epi8(1)), _mm_set1_epi8(1));
+					__m128i shifted = _mm_sub_epi8(alpha, _mm_set1_epi8(2));
+					__m128i blend = _mm_cmpeq_epi8(_mm_min_epu8(shifted, _mm_set1_epi8((char)-5)), shifted);
+					if (_mm_movemask_epi8(blend) != 0) {
+						detected = true;
+						break;
+					}
+					if (_mm_movemask_epi8(below) != 0) {
+						bit = true;
+					}
+				}
 			}
-
+#endif
+			if (!detected) {
+				for (; i < pixel_count; i++) {
+					DETECT_ALPHA(data_ptr[(i << 2) + 3])
+				}
+			}
 		} break;
 		case FORMAT_DXT3:
 		case FORMAT_DXT5: {
@@ -2837,6 +3262,66 @@ Rect2i Image::get_used_rect() const {
 
 	int minx = 0xFFFFFF, miny = 0xFFFFFFF;
 	int maxx = -1, maxy = -1;
+#ifdef GODOT_IMAGE_SIMD_BYTES
+	if (format == FORMAT_RGBA8 || format == FORMAT_LA8) {
+		// Per row: first and last pixel whose alpha byte is non-zero.
+		const uint8_t *ptr = data.ptr();
+		const int pixel_size = format == FORMAT_RGBA8 ? 4 : 2;
+		const int alpha_ofs = pixel_size - 1;
+		const int per_block = 16 / pixel_size;
+		static const uint8_t alpha_idx_rgba[16] = { 3, 7, 11, 15, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+		static const uint8_t alpha_idx_la[16] = { 1, 3, 5, 7, 9, 11, 13, 15, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+		const u8x16_t vtable = _u8x16_load_table(pixel_size == 4 ? alpha_idx_rgba : alpha_idx_la);
+		const uint32_t block_mask = (1u << per_block) - 1;
+		for (int j = 0; j < height; j++) {
+			const uint8_t *row = ptr + (size_t)j * width * pixel_size;
+			int first = -1;
+			int last = -1;
+			int i = 0;
+			for (; i + per_block <= width; i += per_block) {
+				__m128i a = _mm_shuffle_epi8(_mm_loadu_si128((const __m128i *)(row + i * pixel_size)), vtable);
+				uint32_t bits = (uint32_t)_mm_movemask_epi8(_mm_cmpeq_epi8(a, _mm_setzero_si128()));
+				bits = (~bits) & block_mask;
+				if (bits != 0) {
+					int lo = i + std::countr_zero(bits);
+					int hi = i + 31 - std::countl_zero(bits);
+					if (first == -1) {
+						first = lo;
+					}
+					last = hi;
+				}
+			}
+			for (; i < width; i++) {
+				if (row[i * pixel_size + alpha_ofs] != 0) {
+					if (first == -1) {
+						first = i;
+					}
+					last = i;
+				}
+			}
+			if (first == -1) {
+				continue;
+			}
+			if (last > maxx) {
+				maxx = last;
+			}
+			if (j > maxy) {
+				maxy = j;
+			}
+			if (first < minx) {
+				minx = first;
+			}
+			if (j < miny) {
+				miny = j;
+			}
+		}
+		if (maxx == -1) {
+			return Rect2i();
+		} else {
+			return Rect2i(minx, miny, maxx - minx + 1, maxy - miny + 1);
+		}
+	}
+#endif
 	for (int j = 0; j < height; j++) {
 		for (int i = 0; i < width; i++) {
 			if (!(get_pixel(i, j).a > 0)) {
@@ -3926,15 +4411,35 @@ void Image::premultiply_alpha() {
 	}
 
 	uint8_t *data_ptr = data.ptrw();
+	const int64_t pixel_count = (int64_t)width * height;
+	int64_t p = 0;
 
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			uint8_t *ptr = &data_ptr[(i * width + j) * 4];
+#ifdef GODOT_SIMD_F32X4
+	// Four pixels per step in 16-bit lanes: (c * a + 255) >> 8, alpha kept.
+	for (; p + 4 <= pixel_count; p += 4) {
+		uint8_t *ptr = &data_ptr[p * 4];
+		const __m128i zero = _mm_setzero_si128();
+		const __m128i round = _mm_set1_epi16(255);
+		const __m128i alpha_lanes = _mm_set_epi16(-1, 0, 0, 0, -1, 0, 0, 0);
+		__m128i v = _mm_loadu_si128((const __m128i *)ptr);
+		__m128i lo = _mm_unpacklo_epi8(v, zero);
+		__m128i hi = _mm_unpackhi_epi8(v, zero);
+		__m128i alpha_lo = _mm_shufflehi_epi16(_mm_shufflelo_epi16(lo, 0xFF), 0xFF);
+		__m128i alpha_hi = _mm_shufflehi_epi16(_mm_shufflelo_epi16(hi, 0xFF), 0xFF);
+		__m128i mul_lo = _mm_srli_epi16(_mm_add_epi16(_mm_mullo_epi16(lo, alpha_lo), round), 8);
+		__m128i mul_hi = _mm_srli_epi16(_mm_add_epi16(_mm_mullo_epi16(hi, alpha_hi), round), 8);
+		mul_lo = _mm_or_si128(_mm_andnot_si128(alpha_lanes, mul_lo), _mm_and_si128(alpha_lanes, lo));
+		mul_hi = _mm_or_si128(_mm_andnot_si128(alpha_lanes, mul_hi), _mm_and_si128(alpha_lanes, hi));
+		_mm_storeu_si128((__m128i *)ptr, _mm_packus_epi16(mul_lo, mul_hi));
+	}
+#endif
 
-			ptr[0] = (uint16_t(ptr[0]) * uint16_t(ptr[3]) + 255U) >> 8;
-			ptr[1] = (uint16_t(ptr[1]) * uint16_t(ptr[3]) + 255U) >> 8;
-			ptr[2] = (uint16_t(ptr[2]) * uint16_t(ptr[3]) + 255U) >> 8;
-		}
+	for (; p < pixel_count; p++) {
+		uint8_t *ptr = &data_ptr[p * 4];
+
+		ptr[0] = (uint16_t(ptr[0]) * uint16_t(ptr[3]) + 255U) >> 8;
+		ptr[1] = (uint16_t(ptr[1]) * uint16_t(ptr[3]) + 255U) >> 8;
+		ptr[2] = (uint16_t(ptr[2]) * uint16_t(ptr[3]) + 255U) >> 8;
 	}
 }
 

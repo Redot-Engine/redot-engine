@@ -38,6 +38,7 @@
 
 #include "audio_effect_stereo_enhance.h"
 
+#include "core/math/simd.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectStereoEnhanceInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {
@@ -46,7 +47,38 @@ void AudioEffectStereoEnhanceInstance::process(const AudioFrame *p_src_frames, A
 	float surround_amount = base->surround;
 	unsigned int delay_frames = (base->time_pullout / 1000.0) * AudioServer::get_singleton()->get_mix_rate();
 
-	for (int i = 0; i < p_frame_count; i++) {
+	int i = 0;
+#ifdef GODOT_SIMD_F32X4
+	if ((delay_frames & ringbuff_mask) != ringbuff_mask) {
+		// Two frames per iteration; both ring buffer writes happen before the reads, which
+		// is the order the scalar loop observes for any delay shorter than the ring.
+		using namespace simd;
+		const f32x4 two = splat4(2.0f);
+		const f32x4 intensity4 = splat4(intensity);
+		for (; i + 2 <= p_frame_count; i += 2) {
+			f32x4 v = load4(&p_src_frames[i].left);
+			f32x4 center = (v + permute<1, 0, 3, 2>(v)) / two;
+			v = center + (v - center) * intensity4;
+			if (surround_mode) {
+				f32x4 val = (v + permute<1, 0, 3, 2>(v)) / two;
+				delay_ringbuff[ringbuff_pos & ringbuff_mask] = get_lane<0>(val);
+				delay_ringbuff[(ringbuff_pos + 1) & ringbuff_mask] = get_lane<2>(val);
+				float out0 = delay_ringbuff[(ringbuff_pos - delay_frames) & ringbuff_mask] * surround_amount;
+				float out1 = delay_ringbuff[(ringbuff_pos + 1 - delay_frames) & ringbuff_mask] * surround_amount;
+				v = v + set4(out0, -out0, out1, -out1);
+			} else {
+				delay_ringbuff[ringbuff_pos & ringbuff_mask] = get_lane<1>(v);
+				delay_ringbuff[(ringbuff_pos + 1) & ringbuff_mask] = get_lane<3>(v);
+				float r0 = delay_ringbuff[(ringbuff_pos - delay_frames) & ringbuff_mask];
+				float r1 = delay_ringbuff[(ringbuff_pos + 1 - delay_frames) & ringbuff_mask];
+				v = permute<0, 2, 1, 3>(shuffle<0, 2, 0, 1>(v, set4(r0, r1, 0.0f, 0.0f)));
+			}
+			store4(&p_dst_frames[i].left, v);
+			ringbuff_pos += 2;
+		}
+	}
+#endif
+	for (; i < p_frame_count; i++) {
 		float left = p_src_frames[i].left;
 		float right = p_src_frames[i].right;
 

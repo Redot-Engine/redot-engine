@@ -38,6 +38,7 @@
 
 #include "audio_effect_eq.h"
 
+#include "servers/audio/audio_mix_kernels.h"
 #include "servers/audio/audio_server.h"
 
 void AudioEffectEQInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {
@@ -49,23 +50,7 @@ void AudioEffectEQInstance::process(const AudioFrame *p_src_frames, AudioFrame *
 		bgain[i] = Math::db_to_linear(base->gain[i]);
 	}
 
-	for (int i = 0; i < p_frame_count; i++) {
-		AudioFrame src = p_src_frames[i];
-		AudioFrame dst = AudioFrame(0, 0);
-
-		for (int j = 0; j < band_count; j++) {
-			float l = src.left;
-			float r = src.right;
-
-			proc_l[j].process_one(l);
-			proc_r[j].process_one(r);
-
-			dst.left += l * bgain[j];
-			dst.right += r * bgain[j];
-		}
-
-		p_dst_frames[i] = dst;
-	}
+	AudioMixKernels::EQProcess::process(p_src_frames, p_dst_frames, p_frame_count, proc_l, proc_r, bgain, band_count);
 }
 
 Ref<AudioEffectInstance> AudioEffectEQ::instantiate() {
