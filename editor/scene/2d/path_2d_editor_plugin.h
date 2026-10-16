@@ -41,6 +41,8 @@
 #include "editor/plugins/editor_plugin.h"
 #include "scene/2d/path_2d.h"
 #include "scene/gui/box_container.h"
+#include "scene/gui/separator.h"
+#include "scene/resources/style_box_line.h"
 
 class CanvasItemEditor;
 class ConfirmationDialog;
@@ -62,16 +64,31 @@ class Path2DEditor : public HBoxContainer {
 		MODE_DELETE,
 		MODE_CLOSE,
 		MODE_CLEAR_POINTS,
+		MODE_SMOOTH_ALL_POINTS,
+		MODE_RESET_ALL_HANDLES,
 	};
 
 	Mode mode = MODE_EDIT;
 	HBoxContainer *toolbar = nullptr;
-	Button *curve_clear_points = nullptr;
-	Button *curve_close = nullptr;
-	Button *curve_create = nullptr;
-	Button *curve_del = nullptr;
-	Button *curve_edit = nullptr;
+	StyleBoxLine *separator_line_style = nullptr;
+
 	Button *curve_edit_curve = nullptr;
+	Button *curve_create = nullptr;
+	Button *curve_edit = nullptr;
+	Button *curve_del = nullptr;
+	Button *curve_close = nullptr;
+
+	VSeparator *separator_1 = nullptr;
+
+	Button *curve_smooth_points = nullptr;
+	Button *curve_reset_handles = nullptr;
+
+	VSeparator *separator_2 = nullptr;
+
+	Button *curve_clear_points = nullptr;
+
+	VSeparator *separator_3 = nullptr;
+
 	MenuButton *handle_menu = nullptr;
 
 	Button *create_curve_button = nullptr;
@@ -108,6 +125,23 @@ class Path2DEditor : public HBoxContainer {
 	/// 0, 1, or 2.
 	int control_points_in_range = 0;
 
+	/// @name Multi-selection state
+	/// @{
+	HashSet<int> selected_points;
+	HashMap<int, Point2> multi_move_start_positions; ///< Snapshot of positions at drag-start, for group-move.
+
+	bool box_selecting = false;
+	bool box_select_additive = false; ///< Track when holding shift to add to the selection instead of replacing it.
+	Point2 box_select_from;
+	Point2 box_select_to;
+
+	void _select_point(int p_idx, bool p_add_to_selection, bool p_toggle);
+	void _box_select_confirm(bool p_additive);
+	void _delete_selection();
+	void _clear_selection();
+	void _clear_point_selection();
+	/// @}
+
 	void _mode_selected(int p_mode);
 	void _handle_option_pressed(int p_option);
 	void _cancel_current_action();
@@ -131,7 +165,9 @@ class Path2DEditor : public HBoxContainer {
 	LocalVector<Vector2> debug_handle_lines;
 	LocalVector<Transform2D> debug_handle_curve_transforms;
 	LocalVector<Transform2D> debug_handle_sharp_transforms;
+	LocalVector<int> debug_handle_sharp_indices;
 	LocalVector<Transform2D> debug_handle_smooth_transforms;
+	LocalVector<int> debug_handle_smooth_indices;
 
 protected:
 	void _notification(int p_what);
