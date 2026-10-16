@@ -1,0 +1,60 @@
+# PhysX 5.11 module — per-commit integration & torture test suite.
+#
+# Include from your .gitlab-ci.yml:
+#   include:
+#     - local: 'modules/physx/test/gitlab-ci-physx.yml'
+#
+# REQUIREMENTS (one-time worker setup, see modules/physx/test/README.md):
+#   * A GitLab Runner on a Windows machine with a **shell** executor,
+#     tagged `windows` and `physx`.
+#   * Visual Studio 2022 (MSVC), .NET SDK 8+, Python 3.12+ with `scons`
+#     installed (pip install scons).
+#   * A CUDA-capable GPU + Vulkan runtime for the non-blocking flow/gpu
+#     suites (step 5). The blocking tier (step 4) is CPU-only.
+#   * First run builds the engine (~20-40 min); later runs are incremental
+#     and take a few minutes. Enable GitLab runner build caching if you can.
+
+physx-tests:
+  stage: build
+  tags: [windows, physx]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+  timeout: 3h
+  variables:
+    GODOT: bin\redot.windows.editor.x86_64.mono.console.exe
+  script:
+    # 0. Extract the checked (dev) PhysX SDK if this workspace doesn't have it
+    #    yet. The extracted bin/ and lib/ trees are gitignored (*.dll, *.lib,
+    #    bin/), so a fresh checkout only contains the SDK zips and scons cannot
+    #    find the runtime DLLs or import libraries it copies and links.
+    #    The zip is picked by glob so a PhysX version bump re-extracts
+    #    automatically; re-runs on the persistent workspace skip extraction.
+    - $sdkZip = Get-ChildItem 'thirdparty\physx\PhysX-*_dev.zip' | Select-Object -First 1; if (-not $sdkZip) { Write-Host 'ERROR: no thirdparty\physx\PhysX-*_dev.zip found'; exit 1 }; $sdkPath = $sdkZip.FullName; $marker = 'thirdparty\physx\.extracted-' + $sdkZip.Name; if (-not (Test-Path $marker)) { python -c "import zipfile; z=zipfile.ZipFile(r'$sdkPath'); z.extractall(r'thirdparty\physx', [n for n in z.namelist() if n.startswith(('bin/','lib/'))])"; New-Item -Path $marker -ItemType File | Out-Null }
+    # 1. Incremental engine build (mono editor includes the PhysX module).
+    - python misc\scons\scons.py -j8 platform=windows architecture=x86_64 target=editor debug_symbols=no module_mono_enabled=yes warnings=no
+    # 2. C# glue + managed assemblies (regenerated bindings include PhysXServer3D).
+    #    --push-nupkgs-local must point at the local feed used by the test
+    #    project's NuGet.Config (modules/physx/test/project/NuGet.Config). It
+    #    copies the freshly built nupkgs there AND clears the runner's global
+    #    NuGet cache of the previous same-version packages, so restore of
+    #    physx_ci.csproj always picks the new RedotSharp (with the module
+    #    classes) instead of a stale cached RedotSharp.26.2.0.
+    - bin\redot.windows.editor.x86_64.mono.console.exe --headless --generate-mono-glue modules\mono\glue
+    - python modules\mono\build_scripts\build_assemblies.py --godot-output-dir bin --godot-platform=windows --push-nupkgs-local modules\mono\editor\Godot.NET.Sdk\Godot.NET.Sdk\bin\Release
+    # 3. Build the test assembly.
+    - dotnet build modules\physx\test\project\physx_ci.csproj -v q -nologo
+    # 4. Blocking tier: C# + GDScript binding + node smoke + Blast + vehicle
+    #    + async churn suites (the driver's default set). Non-zero exit on any
+    #    test failure, crash, or hang fails the pipeline.
+    - python modules\physx\test\run_suite.py --tier fast --godot $env:GODOT
+    # 5. GPU tier: Flow + CUDA/GPU-object suites. These need a usable
+    #    CUDA/Vulkan runtime, so a test failure here is reported but does NOT
+    #    fail the pipeline (a driver-level error -- exit 2 -- still does).
+    - python modules\physx\test\run_suite.py --tier fast --suite flow --suite gpu --godot $env:GODOT; $gpuTier = $LASTEXITCODE; if ($gpuTier -eq 1) { Write-Host 'WARNING: flow/gpu suites failed (non-blocking GPU tier) -- see test_results artifacts'; exit 0 } else { exit $gpuTier }
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - modules/physx/test/test_results/

@@ -877,6 +877,9 @@ if env.msvc and not methods.using_clang(env):  # MSVC
     if env["werror"]:
         env.AppendUnique(CCFLAGS=["/WX"])
         env.AppendUnique(LINKFLAGS=["/WX"])
+        # The vendored PhysX static libs ship without PDBs; /WX turns the
+        # resulting LNK4099 into LNK1218 and no binary is produced at all.
+        env.AppendUnique(LINKFLAGS=["/IGNORE:4099"])
 
 else:  # GCC, Clang
     common_warnings = []

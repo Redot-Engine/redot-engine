@@ -1,10 +1,16 @@
-# Redot Engine
+# Redot Engine LTS — NVIDIA PhysX Edition
 
 <p align="center">
   <a href="https://redotengine.org/">
     <img src="logo_outlined.png" width="400" alt="Redot Engine logo">
   </a>
 </p>
+
+**This repository is the home of the Redot PhysX project: the Redot Engine
+LTS with the NVIDIA PhysX 5 physics module fully integrated** — GPU
+rigid-body dynamics, GPU particles and fluids (with whitewater foam), cloth,
+gas, vehicles, water, Blast destruction and NVIDIA Flow — for Windows and
+Linux.
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Redot-Engine/redot-engine)
 
@@ -45,8 +51,14 @@ codebase of both through a more genuinely community-driven model than Godot.
 
 ### Binary downloads
 
-Official binaries for the Redot editor and the export templates can be found
-[on the Redot website](https://redotengine.org/download) and on the [GitHub page](https://github.com/Redot-Engine/redot-engine).
+PhysX-enabled editor and export-template builds are published on this
+repository's [Releases page](https://github.com/Vlado-VG/redotplusplus/releases).
+Windows binaries will be code-signed through the
+[SignPath Foundation](https://signpath.org/) in future builds. Checksums for every artifact
+are published alongside the downloads.
+
+Vanilla Redot binaries (without the PhysX module) can be found
+[on the Redot website](https://redotengine.org/download).
 
 ### Compiling from source
 
@@ -65,8 +77,26 @@ This will automatically install all build dependencies and compile Redot if the 
 
 Detailed Nix usage, including passing SCons build flags through `nix run`, forwarding runtime arguments, and manual `nix develop` workflows, is documented in the `Nix usage guide` at `doc/nix.md`.
 
+#### PhysX module build flags
 
-## Community and contributing
+The bundled PhysX module ships with prebuilt SDK libraries and accepts
+the following SCons flags (defaults first):
+
+| Flag | Values | What it controls |
+| --- | --- | --- |
+| `physx_config` | `checked`, `release` | Which prebuilt SDK library set is linked. `checked` (default) pairs with editor and `target=template_debug` builds; `release` pairs with `target=template_release`. |
+| `physx_gpu` | `yes`, `no` | CUDA GPU dynamics (Windows and Linux). With `no`, the engine always simulates on the CPU and never initializes CUDA. |
+| `flow` | `yes`, `no` | NVIDIA Flow sparse-grid fluid simulation (volumetric fire, smoke, and fluids). |
+| `blast` | `yes`, `no` | NVIDIA Blast mesh destruction. The prebuilt Blast libraries are Windows-only; other platforms build without it. |
+
+Example — a Windows release template with the optimized SDK libraries:
+
+```bash
+scons platform=windows target=template_release physx_config=release
+```
+
+
+## Community and Contributing
 
 Redot is not only an engine but an ever-growing community of users and engine
 developers. Please visit our [Discord server](https://discord.gg/redot)!
@@ -75,6 +105,12 @@ To get started contributing to the project, see the [contributing guide](CONTRIB
 This document also includes guidelines for reporting bugs.
 
 Follow [Redot on X/Twitter](https://x.com/Redot_Engine)!
+## Credits
+**Credits** to [**Uno "Wild-ox"**](https://github.com/uno1982) studios for:
+MPM shaders, a lot of fixes and implementations for water, 2W vehicle, boat, foam and more.
+Visit his Godot upstream (4.7+) PhysX module at:
+https://github.com/uno1982/godot/tree/feature/physx5-module
+
 ## Documentation and demos
 
 The class reference is accessible from the Redot editor.

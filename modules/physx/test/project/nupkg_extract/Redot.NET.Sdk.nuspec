@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>Redot.NET.Sdk</id>
+    <version>26.2.0</version>
+    <authors>Redot  Engine contributors</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <projectUrl>https://github.com/godotengine/godot/tree/master/modules/mono/editor/Godot.NET.Sdk</projectUrl>
+    <description>MSBuild .NET Sdk for Redot  projects.</description>
+    <copyright>Copyright (c) Godot Engine contributors</copyright>
+    <tags>MSBuildSdk</tags>
+    <packageTypes>
+      <packageType name="MSBuildSdk" />
+    </packageTypes>
+    <repository type="git" url="https://github.com/godotengine/godot/tree/master/modules/mono/editor/Godot.NET.Sdk" commit="d339b3c8cfbcff4f8c9d7ed287c3d308dcf7ef49" />
+  </metadata>
+</package>

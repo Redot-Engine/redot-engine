@@ -83,6 +83,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          lfs: true
           submodules: recursive
 
       - name: Setup dependencies
@@ -206,7 +207,10 @@ jobs:
           echo "Running --doctool to see if this changes the public API without updating the documentation."
           echo -e "If a diff is shown, it means that your code/doc changes are incomplete and you should update the class reference with --doctool.\n\n"
           ${{ matrix.bin }} --doctool --headless 2>&1 > /dev/null || true
-          git diff --color --exit-code && ! git ls-files --others --exclude-standard | sed -e 's/^/New doc file missing in PR: /' | grep 'xml$'
+          # --diff-filter=d: ignore deletions. Classes gated to other platforms
+          # (Blast/Flow/GPU water register Windows-only) have their doc XML removed
+          # by --doctool on this platform -- expected, not a doc gap.
+          git diff --color --exit-code --diff-filter=d && ! git ls-files --others --exclude-standard | sed -e 's/^/New doc file missing in PR: /' | grep 'xml$'
 
       # Check API backwards compatibility
       - name: Check for GDExtension compatibility

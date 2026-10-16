@@ -66,6 +66,7 @@ skip = [
 ]
 ignore-words-list = [
 	"breaked",
+	"statics",
 	"cancelled",
 	"checkin",
 	"colour",

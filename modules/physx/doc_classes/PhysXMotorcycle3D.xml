@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXMotorcycle3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A PhysX-specific 2-wheel vehicle (motorcycle-style), powered by PxVehicle2 -- the same real per-wheel suspension/tire/drivetrain composition [PhysXVehicle3D] offers for 4 wheels, ported to a 2-wheel layout [PhysXVehicle3D] itself can't represent.
+	</brief_description>
+	<description>
+		PxVehicle2 has no built-in balancing mechanism for a 2-wheel vehicle -- staying upright is left entirely to the caller. This node does not attempt to balance itself; a script (e.g. one attached to this node) is expected to read the orientation/velocity getters below every physics tick and correct [method set_angular_velocity] or apply forces via [method apply_torque_impulse]/[method apply_force_at_local_position] to keep it up, the same way a rider actively balances a real bike.
+		Node structure mirrors [PhysXVehicle3D]: add a [CollisionShape3D] child with a [BoxShape3D] for the chassis, and exactly 2 [PhysXVehicleWheel3D] children -- one with [member PhysXVehicleWheel3D.use_as_steering] enabled (the front) and one with [member PhysXVehicleWheel3D.use_as_traction] enabled (the rear, matching a real motorcycle's rear-wheel-drive convention). Each wheel's own [member Node3D.position] is where it rests under static load, same convention [PhysXVehicle3D]'s wheels use.
+		Drive it every physics tick by setting [member throttle], [member brake], [member steer], and (once actually stopped) [member reverse], using PxVehicleCommandState's own convention ([member throttle]/[member brake] in [code][0, 1][/code], [member steer] in [code][-1, 1][/code]).
+		Only runs in an actual running game, never in the editor -- placing or moving the node in the Inspector does not simulate or fall under gravity.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="apply_force_at_local_position">
+			<return type="void" />
+			<param index="0" name="force" type="Vector3" />
+			<param index="1" name="local_position" type="Vector3" />
+			<description>
+				Applies a continuous world-space [param force] at [param local_position] (in the body's own local/rotated frame, e.g. [member Node3D.position] of a wheel child) -- useful for a script-side balance controller to push at a specific wheel's contact point, such as simulating a rear-wheel slide under hard braking.
+			</description>
+		</method>
+		<method name="apply_torque_impulse">
+			<return type="void" />
+			<param index="0" name="impulse" type="Vector3" />
+			<description>
+				Applies an instantaneous world-space angular impulse -- one of the tools a script-side lean/balance controller can use to correct roll.
+			</description>
+		</method>
+		<method name="get_actor_position" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				The real PhysX actor's own world-space origin -- for comparing against this node's own [member Node3D.global_position] (which tracks the same point) when diagnosing a suspension/placement issue.
+			</description>
+		</method>
+		<method name="get_angular_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Current world-space angular velocity of the chassis -- read this every tick in a balance controller to measure the current roll/pitch/yaw rate.
+			</description>
+		</method>
+		<method name="get_forward" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Current world-space forward direction of the chassis.
+			</description>
+		</method>
+		<method name="get_forward_speed" qualifiers="const">
+			<return type="float" />
+			<description>
+				Current speed along the bike's own forward axis, in m/s. Positive while driving forward, negative while rolling backward -- a simple way to decide when it is safe to switch [member reverse] on (a real gear should only engage once the bike has actually stopped, not while still coasting forward).
+			</description>
+		</method>
+		<method name="get_linear_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Current world-space linear velocity of the chassis.
+			</description>
+		</method>
+		<method name="get_roll_angle" qualifiers="const">
+			<return type="float" />
+			<description>
+				The chassis's current lean/roll angle, in radians, isolating rotation about the forward axis regardless of yaw (exact when pitch is small, the practical case a lean controller cares about).
+			</description>
+		</method>
+		<method name="get_up" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Current world-space up direction of the chassis.
+			</description>
+		</method>
+		<method name="get_wheel_camber_angle" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				Current camber angle of wheel [param wheel], in radians. [param wheel] is the child index among this node's [PhysXVehicleWheel3D] children, in the order they were added.
+			</description>
+		</method>
+		<method name="get_wheel_jounce" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				How compressed wheel [param wheel]'s suspension is right now, from [code]0[/code] (fully extended / max droop) to that wheel's own [member PhysXVehicleWheel3D.suspension_travel] (fully compressed / bottomed out). [param wheel] uses the same child-index convention as [method get_wheel_camber_angle].
+			</description>
+		</method>
+		<method name="get_wheel_lateral_direction" qualifiers="const">
+			<return type="Vector3" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				The world-space direction PxVehicle2's own tire model currently treats as "lateral" (sideways) for wheel [param wheel] -- a ground-truth diagnostic for checking a balance controller's own assumptions against the real tire model.
+			</description>
+		</method>
+		<method name="get_wheel_lateral_force" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				The raw PxVehicle2 tire lateral force PhysX itself computed for wheel [param wheel] this tick, projected onto the chassis's own current right vector.
+			</description>
+		</method>
+		<method name="get_wheel_lateral_force_vector" qualifiers="const">
+			<return type="Vector3" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				Same as [method get_wheel_lateral_force], but as a full world-space vector instead of a scalar projected onto the chassis's right axis.
+			</description>
+		</method>
+		<method name="get_wheel_lateral_speed" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				The sideways (lateral) slip speed of wheel [param wheel]'s contact patch, as PxVehicle2's own tire model computes it.
+			</description>
+		</method>
+		<method name="get_wheel_lateral_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				Same as [method get_wheel_lateral_speed], but as a full world-space velocity vector.
+			</description>
+		</method>
+		<method name="get_wheel_separation" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				[code]0[/code] when wheel [param wheel] can reach the ground within its suspension travel. A negative value means the wheel is penetrating the ground even at full compression -- [member PhysXVehicleWheel3D.suspension_travel] is too short for the current ride height. [param wheel] uses the same child-index convention as [method get_wheel_camber_angle].
+			</description>
+		</method>
+		<method name="is_sleeping" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns whether the underlying PhysX vehicle actor is currently sleeping.
+			</description>
+		</method>
+		<method name="set_angular_velocity">
+			<return type="void" />
+			<param index="0" name="angular_velocity" type="Vector3" />
+			<description>
+				Directly sets the chassis's world-space angular velocity -- the main tool a script-side lean/balance controller uses to correct roll every tick.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="brake" type="float" setter="set_brake" getter="get_brake" default="0.0">
+			Brake pedal input, [code]0[/code] to [code]1[/code]. Scales up to [member max_brake_torque] of braking torque at each wheel. Set every physics tick from script; does not persist on its own the way a real pedal would.
+		</member>
+		<member name="can_sleep" type="bool" setter="set_can_sleep" getter="is_able_to_sleep" default="true">
+			Whether the vehicle is allowed to sleep after remaining below the PhysX space's configured sleep thresholds. The global [code]physics/physx_3d/simulation/allow_sleep[/code] project setting can disable sleeping for all PhysX bodies.
+		</member>
+		<member name="center_of_mass" type="Vector3" setter="set_center_of_mass" getter="get_center_of_mass" default="Vector3(0, 0, 0)">
+			The vehicle center of mass in the vehicle's local coordinates when [member center_of_mass_mode] is [code]Custom[/code]. In [code]Auto[/code] mode, the center of mass follows the chassis [CollisionShape3D] child position.
+		</member>
+		<member name="center_of_mass_mode" type="int" setter="set_center_of_mass_mode" getter="get_center_of_mass_mode" enum="PhysXMotorcycle3D.CenterOfMassMode" default="0">
+			Whether to derive the center of mass from the chassis [CollisionShape3D] position ([code]Auto[/code]) or use [member center_of_mass] directly ([code]Custom[/code]).
+		</member>
+		<member name="collision_layer" type="int" setter="set_collision_layer" getter="get_collision_layer" default="1">
+			Same meaning as [member CollisionObject3D.collision_layer]. Applies to the chassis only -- the wheels do not have their own collision shapes (their ground contact is handled entirely by the suspension, not by a physical wheel shape touching the road).
+		</member>
+		<member name="collision_mask" type="int" setter="set_collision_mask" getter="get_collision_mask" default="1">
+			Same meaning as [member CollisionObject3D.collision_mask]. Applies to the chassis box and to what the wheels' own ground raycasts can rest on: a wheel only hits non-area shapes on a layer in this mask (like a [RayCast3D]), so it never rests on an [Area3D]. See [member collision_layer].
+		</member>
+		<member name="mass" type="float" setter="set_mass" getter="get_mass" default="220.0">
+			Total mass of the motorcycle, in kg.
+		</member>
+		<member name="max_brake_torque" type="float" setter="set_max_brake_torque" getter="get_max_brake_torque" default="1200.0">
+			The braking torque applied to each wheel when [member brake] is [code]1[/code]. Higher values stop the wheel's own rotation faster, but do not by themselves determine whether the tire skids once locked -- see [member PhysXVehicleWheel3D.tire_friction] for that.
+		</member>
+		<member name="max_engine_torque" type="float" setter="set_max_engine_torque" getter="get_max_engine_torque" default="250.0">
+			The drive torque applied to the rear (traction) wheel when [member throttle] is [code]1[/code] -- the drivetrain is fixed rear-only regardless of [member PhysXVehicleWheel3D.use_as_traction]'s value on either wheel; that flag is read only for the front/rear role classification.
+		</member>
+		<member name="max_steer_angle" type="float" setter="set_max_steer_angle" getter="get_max_steer_angle" default="0.5">
+			The steering angle, in radians, applied to the front wheel when [member steer] is [code]1[/code] or [code]-1[/code].
+		</member>
+		<member name="moment_of_inertia" type="Vector3" setter="set_moment_of_inertia" getter="get_moment_of_inertia" default="Vector3(40, 55, 20)">
+			The vehicle's own rotational inertia around its X/Y/Z axes. Higher values resist rotation (pitch/yaw/roll) more -- a real motorcycle's roll inertia is much lower than a car's, so this defaults far smaller than [member PhysXVehicle3D.moment_of_inertia].
+		</member>
+		<member name="physics_material_override" type="PhysicsMaterial" setter="set_physics_material_override" getter="get_physics_material_override">
+			Contact material of the chassis box (the property [RigidBody3D] and [VehicleBody3D] use): its friction, [i]rough[/i], bounce and [i]absorbent[/i] combine with whatever the vehicle touches by the same rule as every PhysX body. Applies to the chassis box only -- tire grip is the wheels' own. Unset, the chassis behaves as it always has (friction [code]1.0[/code], bounce [code]0.0[/code]). Changes -- here or to the assigned material -- apply in place without a rebuild and wake the vehicle.
+		</member>
+		<member name="reverse" type="bool" setter="set_reverse" getter="is_reverse" default="false">
+			Switches the drivetrain's gear between forward and reverse -- a real gear change (PxVehicle2 has no neutral-coast/instant-reverse shortcut), so [member throttle] in reverse gear still needs to first bring the bike to a stop if it was moving forward, same as a real vehicle. Check [method get_forward_speed] before engaging this from a driving script.
+		</member>
+		<member name="steer" type="float" setter="set_steer" getter="get_steer" default="0.0">
+			Steering input, [code]-1[/code] to [code]1[/code]. Scales up to [member max_steer_angle] on the front wheel. Set every physics tick from script.
+		</member>
+		<member name="throttle" type="float" setter="set_throttle" getter="get_throttle" default="0.0">
+			Throttle input, [code]0[/code] to [code]1[/code]. Scales up to [member max_engine_torque] of drive torque at the rear wheel, in whichever direction [member reverse] currently selects. Set every physics tick from script.
+		</member>
+	</members>
+	<constants>
+		<constant name="CENTER_OF_MASS_MODE_AUTO" value="0" enum="CenterOfMassMode">
+		</constant>
+		<constant name="CENTER_OF_MASS_MODE_CUSTOM" value="1" enum="CenterOfMassMode">
+		</constant>
+	</constants>
+</class>
