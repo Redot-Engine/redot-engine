@@ -9,8 +9,12 @@
 // per-vertex normals come from the density gradient. This replaces a CPU march
 // over the whole grid -- the only readback is the emitted geometry.
 
-layout(set = 1, binding = 0, std430) restrict buffer MeshVerts { vec4 mverts[]; };
-layout(set = 1, binding = 1, std430) restrict buffer MeshNorms { vec4 mnorms[]; };
+layout(set = 1, binding = 0, std430) restrict buffer MeshVerts {
+	vec4 mverts[];
+};
+layout(set = 1, binding = 1, std430) restrict buffer MeshNorms {
+	vec4 mnorms[];
+};
 layout(set = 1, binding = 2, std430) restrict buffer MeshCount {
 	uint tri_count;
 	uint tri_budget;

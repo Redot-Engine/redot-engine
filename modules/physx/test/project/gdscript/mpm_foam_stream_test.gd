@@ -38,7 +38,7 @@ func _initialize() -> void:
 	_fluid.emission_rate = 12000.0
 	_fluid.emission_radius = 0.1
 	_fluid.emission_velocity = Vector3(0, -7, 0)
-	_fluid.position = Vector3(0, 2.2, 0) # domain centre; domain spans the stream + floor
+	_fluid.position = Vector3(0, 2.2, 0) # domain center; domain spans the stream + floor
 	_fluid.mpm_domain_size = Vector3(5, 6, 5)
 	_fluid.foam_enabled = true
 	_fluid.foam_particle_count = FOAM_CAP

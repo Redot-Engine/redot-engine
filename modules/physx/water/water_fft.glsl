@@ -23,8 +23,12 @@ layout(set = 0, binding = 0, std140) uniform Params {
 	ivec4 p; // x = N, y = ns, z = horiz (1 or 0), w unused
 };
 
-layout(set = 0, binding = 1, std430) restrict buffer FFTIn { vec2 fft_in[]; };
-layout(set = 0, binding = 2, std430) restrict buffer FFTOut { vec2 fft_out[]; };
+layout(set = 0, binding = 1, std430) restrict buffer FFTIn {
+	vec2 fft_in[];
+};
+layout(set = 0, binding = 2, std430) restrict buffer FFTOut {
+	vec2 fft_out[];
+};
 
 vec2 cmul(vec2 a, vec2 b) {
 	return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);

@@ -68,12 +68,30 @@ void main() {
 	// keep particles inside the domain (walls take a little energy)
 	vec3 lo = bmin.xyz + DX * 1.5;
 	vec3 hi = bmax.xyz - DX * 1.5;
-	if (x.x < lo.x) { x.x = lo.x; new_v.x *= -0.2; }
-	if (x.y < lo.y) { x.y = lo.y; new_v.y *= -0.2; }
-	if (x.z < lo.z) { x.z = lo.z; new_v.z *= -0.2; }
-	if (x.x > hi.x) { x.x = hi.x; new_v.x *= -0.2; }
-	if (x.y > hi.y) { x.y = hi.y; new_v.y *= -0.2; }
-	if (x.z > hi.z) { x.z = hi.z; new_v.z *= -0.2; }
+	if (x.x < lo.x) {
+		x.x = lo.x;
+		new_v.x *= -0.2;
+	}
+	if (x.y < lo.y) {
+		x.y = lo.y;
+		new_v.y *= -0.2;
+	}
+	if (x.z < lo.z) {
+		x.z = lo.z;
+		new_v.z *= -0.2;
+	}
+	if (x.x > hi.x) {
+		x.x = hi.x;
+		new_v.x *= -0.2;
+	}
+	if (x.y > hi.y) {
+		x.y = hi.y;
+		new_v.y *= -0.2;
+	}
+	if (x.z > hi.z) {
+		x.z = hi.z;
+		new_v.z *= -0.2;
+	}
 
 	particles[id].x_d = vec4(x, p.x_d.w);
 	particles[id].v = vec4(new_v, 0.0);

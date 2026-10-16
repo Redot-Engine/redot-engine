@@ -72,7 +72,8 @@ layout(push_constant, std430) uniform Pass {
 	int batch_start;
 	int batch_count;
 	float frac; // substep fraction, for interpolating the animated targets
-} pass;
+}
+pass;
 
 layout(set = 0, binding = 1, std430) restrict readonly buffer Rest {
 	vec4 rest[]; // xyz bind-space position, w max distance (m)

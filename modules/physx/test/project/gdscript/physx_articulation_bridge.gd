@@ -9,7 +9,7 @@
 #   PhysXServer3D.get_singleton().articulation_create()
 extends Object
 # (No class_name: this file is loaded by path and must not depend on the
-# project's global class cache being rescaned.)
+# project's global class cache being rescanned.)
 
 
 func articulation_create() -> RID:

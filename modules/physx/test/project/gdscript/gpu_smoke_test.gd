@@ -1,4 +1,4 @@
-﻿# GPU-simulation smoke test for the PhysX module (headless).
+# GPU-simulation smoke test for the PhysX module (headless).
 #
 # Run:
 #   <binary> --headless --fixed-fps 60 --path modules/physx/test/project --script res://gdscript/gpu_smoke_test.gd
@@ -143,4 +143,3 @@ func _run() -> void:
 			"GPU family: cloth GPU path + CPU fallback, PBD fluid spawn/emit/surface",
 			"pass" if ok else "fail", _checks, _failures)
 	quit(0 if ok else 1)
-

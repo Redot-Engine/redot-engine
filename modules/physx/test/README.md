@@ -48,6 +48,8 @@ modules/physx/test/
                                   (SKIP on flow=no; needs a Vulkan device)
       gpu_smoke_test.gd           GPU suite: cloth GPU/CPU paths + PBD fluid
                                   (needs a CUDA device; opt-in)
+      cloth_cpu_collision_test.gd CPU-fallback cloth drape/no-fall-through
+                                  (behavioral, headless-safe, default tier)
       mpm_foam_test.gd            windowed-only MPM/foam/fluid experiments
       mpm_foam_stream_test.gd     (NOT wired into the driver: MPM needs a
       mpm_tank_containment_test.gd rendering device, i.e. a windowed run)
@@ -67,6 +69,9 @@ modules/physx/test/
 | `blast`   | `blast_smoke_test.gd` | Blast authoring + destructible lifecycle (skips itself on `blast=no` builds) | yes |
 | `vehicle` | `vehicle_server_check.gd`, `vehicle_node_test.gd`, `vehicle_gearbox_test.gd`, `vehicle_direction_test.gd` | Server-RID + node vehicle stacks, engine drive/gearbox, 2W/track direction matrix | yes |
 | `async`   | `async_stress_test.gd` | Mid-flight mutation churn under `async_step` (fetch-guard coverage) | yes |
+| `lifecycle` | `lifecycle_contracts_test.gd` | Overlap exits, joint survival across mode changes, mid-solve frees, area free during dispatch | yes |
+| `runtime` | `runtime_cost_test.gd` | Per-tick runtime cost ceiling of the server API surface | yes |
+| `cloth`   | `cloth_cpu_collision_test.gd` | CPU-fallback cloth behavior: a forced-`SIM_CPU` sheet must drape over a static ball and never fall through the world (rest_info depenetration contract; the GPU cloth path is covered by the `gpu` suite) | yes |
 | `flow`    | `flow_smoke_test.gd` | NVIDIA Flow end-to-end (needs a Vulkan runtime) | opt-in |
 | `gpu`     | `gpu_smoke_test.gd` | CUDA/GPU object family (needs a CUDA runtime) | opt-in |
 

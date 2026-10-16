@@ -143,7 +143,7 @@ void main() {
 
 	// Breaking: a wave can't stand more than a few hull dips high -- past that it
 	// breaks, its height going into foam. The sim is otherwise linear, and a hull
-	// circling at speed focuses its wake onto the circle's centre lap after lap
+	// circling at speed focuses its wake onto the circle's center lap after lap
 	// (a jetski piled a +2 m spike there).
 	float crest_limit = max(dip * 4.0, 0.3);
 	float over = abs(hn) - crest_limit;

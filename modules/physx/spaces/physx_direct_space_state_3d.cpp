@@ -811,13 +811,19 @@ bool PhysXDirectSpaceState3D::rest_info(const ShapeParameters &p_parameters, Sha
 	// points toward the query shape (away from the surface it rests on). The
 	// rest point is on the collider's surface (see collide_shape). When the
 	// pointDistance fallback applies (query center inside the collider, or a
-	// heightfield collider, which pointDistance does not support), approximate
-	// it with the MTD segment around the query center.
+	// heightfield collider, which pointDistance does not support), the surface
+	// point is the MTD exit point: the position where the translated query
+	// shape just separates. A point fabricated short of it (e.g. a
+	// half-penetration midpoint) sits on the query's side of the vertex, and
+	// the sd = (pos - point) . normal plane test every per-vertex
+	// depenetration consumer runs (cloth _collide, soft-body contact refresh)
+	// then reads "in front of the surface" for any penetrating query and
+	// never resolves -- cloths fell straight through the world.
 	r_info->normal = Vector3(best_mtd.x, best_mtd.y, best_mtd.z);
 	physx::PxVec3 rest_pt;
 	const physx::PxReal center_dist = physx::PxGeometryQuery::pointDistance(query_pose.p, best_geom.any(), best_pose, &rest_pt);
 	if (center_dist <= 0.0f) {
-		rest_pt = query_pose.p - best_mtd * (best_depth * 0.5f);
+		rest_pt = query_pose.p + best_mtd * best_depth;
 	}
 	r_info->point = Vector3(rest_pt.x, rest_pt.y, rest_pt.z);
 

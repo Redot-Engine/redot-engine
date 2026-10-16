@@ -19,21 +19,31 @@ layout(set = 0, binding = 0, std140) uniform Params {
 // Ripple state: x=h (height above water_level), y=h_prev, z=foam, w unused.
 // Ping-ponged externally (two buffers, swapped by the caller each step) the
 // same way mpm_fluid's grid buffers are -- not double-buffered in here.
-layout(set = 0, binding = 1, std430) restrict buffer RippleStateIn { vec4 state_in[]; };
-layout(set = 0, binding = 2, std430) restrict buffer RippleStateOut { vec4 state_out[]; };
+layout(set = 0, binding = 1, std430) restrict buffer RippleStateIn {
+	vec4 state_in[];
+};
+layout(set = 0, binding = 2, std430) restrict buffer RippleStateOut {
+	vec4 state_out[];
+};
 
 // Composed final height (world Y), full ripple-grid resolution. Sampled
 // directly by rendering; a separate, coarser readback buffer (added once the
 // CPU-sampling path is built) is what buoyancy actually reads back to the CPU.
-layout(set = 0, binding = 3, std430) restrict buffer HeightOut { float height_out[]; };
+layout(set = 0, binding = 3, std430) restrict buffer HeightOut {
+	float height_out[];
+};
 
 // Body-disturbance sources, submitted by the node once per physics tick from
 // buoyant_body.gd (or similar) via PhysXWaterSurface3D::submit_sphere()/
 // submit_impulse() -- see the plan's "push, not discovery" rationale. The
 // ripple field is 2D (height over XZ), so these pack world XZ, not a full
 // 3D point: x=world_x, y=world_z, z=radius, w=strength (0..1).
-layout(set = 0, binding = 4, std430) restrict buffer Spheres { vec4 spheres[]; };
-layout(set = 0, binding = 5, std430) restrict buffer Impulses { vec4 impulses[]; };
+layout(set = 0, binding = 4, std430) restrict buffer Spheres {
+	vec4 spheres[];
+};
+layout(set = 0, binding = 5, std430) restrict buffer Impulses {
+	vec4 impulses[];
+};
 
 // Still-water depth per ripple cell (R16F, meters); <= 0 is dry land. From
 // the seabed (PhysXWaterSurface3D::seabed_from_floor) and/or the

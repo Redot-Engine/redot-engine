@@ -26,11 +26,21 @@ layout(set = 0, binding = 0, std140) uniform Params {
 	ivec4 res; // x N, yzw unused
 };
 
-layout(set = 0, binding = 1, std430) restrict buffer H0 { vec4 h0[]; };
-layout(set = 0, binding = 2, std430) restrict buffer SpecOut { vec2 spec_out[]; };
-layout(set = 0, binding = 3, std430) restrict buffer SpecDzOut { vec2 spec_dz_out[]; };
-layout(set = 0, binding = 4, std430) restrict buffer SpecCOut { vec2 spec_c_out[]; };
-layout(set = 0, binding = 5, std430) restrict buffer SpecDOut { vec2 spec_d_out[]; };
+layout(set = 0, binding = 1, std430) restrict buffer H0 {
+	vec4 h0[];
+};
+layout(set = 0, binding = 2, std430) restrict buffer SpecOut {
+	vec2 spec_out[];
+};
+layout(set = 0, binding = 3, std430) restrict buffer SpecDzOut {
+	vec2 spec_dz_out[];
+};
+layout(set = 0, binding = 4, std430) restrict buffer SpecCOut {
+	vec2 spec_c_out[];
+};
+layout(set = 0, binding = 5, std430) restrict buffer SpecDOut {
+	vec2 spec_d_out[];
+};
 
 void main() {
 	ivec2 c = ivec2(gl_GlobalInvocationID.xy);

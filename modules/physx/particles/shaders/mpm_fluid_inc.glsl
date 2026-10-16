@@ -9,20 +9,20 @@
 // grid is an integer fixed-point accumulator so it needs only plain atomicAdd on
 // int (no float-atomic extension).
 
-#define FIXED 8388608.0   // 2^23 -- exact in fp32, plenty of per-cell headroom
-#define IMP_FIXED 1024.0  // coarser fixed-point for the collider impulse sum (small values, many adds)
+#define FIXED 8388608.0 // 2^23 -- exact in fp32, plenty of per-cell headroom
+#define IMP_FIXED 1024.0 // coarser fixed-point for the collider impulse sum (small values, many adds)
 #define SURF_FIXED 256.0 // fixed-point for the isosurface density scatter (boosted density can run high)
 #define GROUP 64
-#define GAMMA 7.0         // Tait exponent -- stiff under compression, soft under expansion
+#define GAMMA 7.0 // Tait exponent -- stiff under compression, soft under expansion
 #define MAX_COLLIDERS 32 // keep in sync with mpm_fluid_solver.cpp (loops use the dynamic NCOL, not this)
 
 struct Particle {
 	vec4 x_d; // xyz = position (world), w = last sampled density (debug/readback)
-	vec4 v;   // xyz = velocity, w unused
-	vec4 c0;  // affine velocity matrix C, column 0 (w unused)
+	vec4 v; // xyz = velocity, w unused
+	vec4 c0; // affine velocity matrix C, column 0 (w unused)
 	vec4 c1;
 	vec4 c2;
-	vec4 f0;  // deformation gradient F, column 0 -- granular mode only (identity otherwise)
+	vec4 f0; // deformation gradient F, column 0 -- granular mode only (identity otherwise)
 	vec4 f1;
 	vec4 f2;
 };
@@ -40,26 +40,40 @@ struct Collider {
 };
 
 layout(set = 0, binding = 0, std140) uniform Params {
-	vec4 gravity_dt;  // xyz gravity, w dt
-	vec4 origin_dx;   // xyz grid origin (world), w cell size
-	ivec4 res_count;  // xyz grid resolution (nodes), w particle count
-	vec4 fluid;       // x rest_density, y stiffness, z dynamic_viscosity, w particle_mass
-	vec4 bmin;        // xyz domain min (world), w = surface mass boost
-	vec4 bmax;        // xyz domain max (world), w = granular flag (0 fluid / 1 granular)
-	vec4 extra;       // x collider count, y collider friction, z surface iso density, w surface kernel
-	vec4 gran;        // granular: x = Drucker-Prager alpha (friction), y = cohesion, z = shear modulus mu, w = Lame lambda
-	vec4 foam_a;      // foam: x = spawn scale (master rate multiplier), y = lifetime (s), z = buoyancy (fraction of gravity), w = fluid drag rate
-	vec4 foam_b;      // foam: x = foam capacity (slots), y = frame dt (s; foam runs once per frame, not per substep), z = spray ratio, w = bubble ratio (kind thresholds, see FoamNorm)
-	vec4 foam_c;      // foam: Ihmsen et al. 2012 channel rates -- x = trapped air, y = wave crest, z = vorticity, w = kinetic energy multiplier
+	vec4 gravity_dt; // xyz gravity, w dt
+	vec4 origin_dx; // xyz grid origin (world), w cell size
+	ivec4 res_count; // xyz grid resolution (nodes), w particle count
+	vec4 fluid; // x rest_density, y stiffness, z dynamic_viscosity, w particle_mass
+	vec4 bmin; // xyz domain min (world), w = surface mass boost
+	vec4 bmax; // xyz domain max (world), w = granular flag (0 fluid / 1 granular)
+	vec4 extra; // x collider count, y collider friction, z surface iso density, w surface kernel
+	vec4 gran; // granular: x = Drucker-Prager alpha (friction), y = cohesion, z = shear modulus mu, w = Lame lambda
+	vec4 foam_a; // foam: x = spawn scale (master rate multiplier), y = lifetime (s), z = buoyancy (fraction of gravity), w = fluid drag rate
+	vec4 foam_b; // foam: x = foam capacity (slots), y = frame dt (s; foam runs once per frame, not per substep), z = spray ratio, w = bubble ratio (kind thresholds, see FoamNorm)
+	vec4 foam_c; // foam: Ihmsen et al. 2012 channel rates -- x = trapped air, y = wave crest, z = vorticity, w = kinetic energy multiplier
 };
 
-layout(set = 0, binding = 1, std430) restrict buffer Particles { Particle particles[]; };
-layout(set = 0, binding = 2, std430) restrict buffer GridAcc { int grid_i[]; };  // 4 ints / node: mass, mom.xyz
-layout(set = 0, binding = 3, std430) restrict buffer GridVel { vec4 grid_v[]; }; // xyz velocity, w mass
-layout(set = 0, binding = 4, std430) restrict buffer Colliders { Collider colliders[]; };
-layout(set = 0, binding = 5, std430) restrict buffer ColliderImp { int cimp[]; }; // 4 ints / collider: reaction impulse xyz
-layout(set = 0, binding = 6, std430) restrict buffer MMData { float mm[]; };       // 12 floats / instance: MultiMesh transform rows
-layout(set = 0, binding = 7, std430) restrict buffer SurfaceField { int surf_i[]; }; // 1 int / node: SPH density scatter (SURF_FIXED), for isosurfacing
+layout(set = 0, binding = 1, std430) restrict buffer Particles {
+	Particle particles[];
+};
+layout(set = 0, binding = 2, std430) restrict buffer GridAcc {
+	int grid_i[];
+}; // 4 ints / node: mass, mom.xyz
+layout(set = 0, binding = 3, std430) restrict buffer GridVel {
+	vec4 grid_v[];
+}; // xyz velocity, w mass
+layout(set = 0, binding = 4, std430) restrict buffer Colliders {
+	Collider colliders[];
+};
+layout(set = 0, binding = 5, std430) restrict buffer ColliderImp {
+	int cimp[];
+}; // 4 ints / collider: reaction impulse xyz
+layout(set = 0, binding = 6, std430) restrict buffer MMData {
+	float mm[];
+}; // 12 floats / instance: MultiMesh transform rows
+layout(set = 0, binding = 7, std430) restrict buffer SurfaceField {
+	int surf_i[];
+}; // 1 int / node: SPH density scatter (SURF_FIXED), for isosurfacing
 
 // Diffuse (foam/spray/bubble) particles -- a Vulkan-compute visual layer that
 // never joins the MPM solve. Generation follows Ihmsen et al. 2012, "Unified
@@ -80,37 +94,43 @@ struct FoamParticle {
 	vec4 pos_life; // xyz = position (world), w = lifetime remaining (s); <= 0 = parked
 	vec4 vel_kind; // xyz = velocity, w = kind (0 = spray, 1 = foam, 2 = bubble)
 };
-layout(set = 0, binding = 8, std430) restrict buffer FoamBuf { FoamParticle foam[]; };
-layout(set = 0, binding = 9, std430) restrict buffer FoamMeta { uvec4 foam_meta; };  // x = spawn counter, y = alive count this frame
+layout(set = 0, binding = 8, std430) restrict buffer FoamBuf {
+	FoamParticle foam[];
+};
+layout(set = 0, binding = 9, std430) restrict buffer FoamMeta {
+	uvec4 foam_meta;
+}; // x = spawn counter, y = alive count this frame
 // Running maxima of the four raw potentials (floatBitsToUint-packed -- the
 // ordering trick is valid because potentials are non-negative). Decays a little
 // every spawn frame so a single huge splash doesn't pin the normalization.
-layout(set = 0, binding = 10, std430) restrict buffer FoamNorm { uvec4 foam_norm; };
+layout(set = 0, binding = 10, std430) restrict buffer FoamNorm {
+	uvec4 foam_norm;
+};
 
-#define DT       (gravity_dt.w)
-#define GRAV     (gravity_dt.xyz)
-#define ORIGIN   (origin_dx.xyz)
-#define DX       (origin_dx.w)
-#define RES      (res_count.xyz)
-#define PCOUNT   (res_count.w)
-#define RHO0     (fluid.x)
-#define STIFF    (fluid.y)
-#define VISC     (fluid.z)
-#define PMASS    (fluid.w)
-#define NCOL     (int(extra.x))
-#define CFRIC    (extra.y)
+#define DT (gravity_dt.w)
+#define GRAV (gravity_dt.xyz)
+#define ORIGIN (origin_dx.xyz)
+#define DX (origin_dx.w)
+#define RES (res_count.xyz)
+#define PCOUNT (res_count.w)
+#define RHO0 (fluid.x)
+#define STIFF (fluid.y)
+#define VISC (fluid.z)
+#define PMASS (fluid.w)
+#define NCOL (int(extra.x))
+#define CFRIC (extra.y)
 #define GRANULAR (bmax.w > 0.5)
 #define DP_ALPHA (gran.x)
-#define DP_COH   (gran.y)
-#define GMU      (gran.z)
-#define GLAMBDA  (gran.w)
+#define DP_COH (gran.y)
+#define GMU (gran.z)
+#define GLAMBDA (gran.w)
 #define FOAM_THRESH (foam_a.x) // master spawn scale (expected foam per particle-second at full intensity)
-#define FOAM_LIFE   (foam_a.y)
-#define FOAM_BUOY   (foam_a.z)
-#define FOAM_DRAG   (foam_a.w)
-#define FOAM_CAP    (foam_b.x)
-#define FRAME_DT    (foam_b.y)
-#define FOAM_SPRAY_RATIO  (foam_b.z) // containing cell mostly air  -> spray
+#define FOAM_LIFE (foam_a.y)
+#define FOAM_BUOY (foam_a.z)
+#define FOAM_DRAG (foam_a.w)
+#define FOAM_CAP (foam_b.x)
+#define FRAME_DT (foam_b.y)
+#define FOAM_SPRAY_RATIO (foam_b.z) // containing cell mostly air  -> spray
 #define FOAM_BUBBLE_RATIO (foam_b.w) // containing cell fully fluid  -> bubble
 #define FOAM_K_TA (foam_c.x) // Ihmsen Eq. 2 channel rate
 #define FOAM_K_WC (foam_c.y) // Ihmsen Eq. 4/7 channel rate

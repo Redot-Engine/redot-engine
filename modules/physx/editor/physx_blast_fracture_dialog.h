@@ -30,15 +30,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-//////////////////////////////////////////////////////////////////////////
-/*  physx_blast_fracture_dialog.h                                       */
-//////////////////////////////////////////////////////////////////////////
-/*                         This file is part of:                          */
-/*                             REDOT ENGINE                               */
-/*                        https://redotengine.org                         */
-/* Copyright (c) 2024-present Redot Engine contributors (see AUTHORS.md). */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-
 #pragma once
 
 #ifdef GODOT_PHYSX_BLAST

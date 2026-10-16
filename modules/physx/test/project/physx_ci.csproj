@@ -1,4 +1,4 @@
-<Project Sdk="Redot.NET.Sdk/26.3.0-beta">
+﻿<Project Sdk="Redot.NET.Sdk/26.3.0-beta">
   <!--
     C# test assembly for the PhysX integration suite.
 

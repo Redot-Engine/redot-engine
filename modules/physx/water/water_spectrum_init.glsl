@@ -24,7 +24,9 @@ layout(set = 0, binding = 0, std140) uniform Params {
 	vec4 extra; // x fetch (m), y depth (m), zw unused
 };
 
-layout(set = 0, binding = 1, std430) restrict buffer H0 { vec4 h0[]; };
+layout(set = 0, binding = 1, std430) restrict buffer H0 {
+	vec4 h0[];
+};
 
 uint hash_u32(uint k) {
 	k ^= k >> 16;

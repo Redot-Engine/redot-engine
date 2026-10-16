@@ -102,10 +102,18 @@ float collider_sdf(int ci, vec3 wp) {
 	return distance(wp, ctr) - colliders_c1[ci].x; // sphere: c1.x = radius
 }
 
-layout(set = 0, binding = 1, std430) restrict buffer BHashKey { uint bhash[]; };
-layout(set = 0, binding = 2, std430) restrict buffer BHashVal { uint bhash_val[]; };
-layout(set = 0, binding = 3, std430) restrict buffer BKey { uint bkey[]; };
-layout(set = 0, binding = 4, std430) restrict buffer BCounts { uint bcounts[]; };
+layout(set = 0, binding = 1, std430) restrict buffer BHashKey {
+	uint bhash[];
+};
+layout(set = 0, binding = 2, std430) restrict buffer BHashVal {
+	uint bhash_val[];
+};
+layout(set = 0, binding = 3, std430) restrict buffer BKey {
+	uint bkey[];
+};
+layout(set = 0, binding = 4, std430) restrict buffer BCounts {
+	uint bcounts[];
+};
 // Binding 5/6 swap roles (read/write, or read-for-curl/write-curl-out)
 // between passes -- see each gas_bs_*.glsl for which is which this pass. The
 // uniform set alternates which physical buffer (grid A or B) occupies which
@@ -118,18 +126,30 @@ layout(set = 0, binding = 4, std430) restrict buffer BCounts { uint bcounts[]; }
 // root-caused to this aliasing) -- so both bindings are safely "restrict"
 // again, and GasSolver::step() copies the scratch buffer back into NEW_STATE
 // itself (a plain buffer copy, not a compute dispatch) afterward.
-layout(set = 0, binding = 5, std430) restrict buffer Grid5 { vec4 data5[]; };
-layout(set = 0, binding = 6, std430) restrict buffer Grid6 { vec4 data6[]; };
-layout(set = 0, binding = 7, std430) restrict buffer Curl { vec4 curl_data[]; };
+layout(set = 0, binding = 5, std430) restrict buffer Grid5 {
+	vec4 data5[];
+};
+layout(set = 0, binding = 6, std430) restrict buffer Grid6 {
+	vec4 data6[];
+};
+layout(set = 0, binding = 7, std430) restrict buffer Curl {
+	vec4 curl_data[];
+};
 // Pressure-projection scratch (gas_bs_divergence/gas_bs_jacobi/gas_bs_project
 // only -- every other pass still has to bind these, unused, since they share
 // this one descriptor-set layout). Divergence is computed once/step from the
 // post-step, pre-projection velocity field; pressure5/pressure6 ping-pong
 // across a fixed number of Jacobi iterations solving Laplacian(p) = div,
 // exactly like Grid5/Grid6 but scalar. See gas_bs_jacobi.glsl for the solve.
-layout(set = 0, binding = 8, std430) restrict buffer Divergence { float divergence_data[]; };
-layout(set = 0, binding = 9, std430) restrict buffer Pressure5 { float pressure5[]; };
-layout(set = 0, binding = 10, std430) restrict buffer Pressure6 { float pressure6[]; };
+layout(set = 0, binding = 8, std430) restrict buffer Divergence {
+	float divergence_data[];
+};
+layout(set = 0, binding = 9, std430) restrict buffer Pressure5 {
+	float pressure5[];
+};
+layout(set = 0, binding = 10, std430) restrict buffer Pressure6 {
+	float pressure6[];
+};
 
 #define DT (dt_buoy_vort_diss.x)
 #define BUOY (dt_buoy_vort_diss.y)
