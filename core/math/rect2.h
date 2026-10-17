@@ -39,6 +39,7 @@
  */
 
 #include "core/error/error_macros.h"
+#include "core/math/simd.h"
 #include "core/math/vector2.h"
 
 class String;
@@ -62,6 +63,18 @@ struct [[nodiscard]] Rect2 {
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
 			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a Rect2 with a positive size.");
+		}
+#endif
+#ifdef GODOT_SIMD_REAL_F32X4
+		{
+			// Lanes: (pos.x, pos.y, o.pos.x, o.pos.y) against (o.end.x, o.end.y, end.x, end.y).
+			using namespace simd;
+			f32x4 r = load4(&position.x);
+			f32x4 o = load4(&p_rect.position.x);
+			f32x4 starts = movelh(r, o);
+			f32x4 ends = movelh(o, r) + shuffle<2, 3, 2, 3>(o, r);
+			mask4 m = p_include_borders ? cmp_gt(starts, ends) : cmp_ge(starts, ends);
+			return !any_lane(m);
 		}
 #endif
 		if (p_include_borders) {
@@ -176,13 +189,9 @@ struct [[nodiscard]] Rect2 {
 		}
 #endif
 		Rect2 new_rect;
-
 		new_rect.position = p_rect.position.min(position);
-
 		new_rect.size = (p_rect.position + p_rect.size).max(position + size);
-
 		new_rect.size = new_rect.size - new_rect.position; // Make relative again.
-
 		return new_rect;
 	}
 

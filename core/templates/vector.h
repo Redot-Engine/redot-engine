@@ -39,6 +39,7 @@
  */
 
 #include "core/error/error_macros.h"
+#include "core/math/simd.h"
 #include "core/templates/cowdata.h"
 #include "core/templates/sort_array.h"
 
@@ -242,6 +243,28 @@ public:
 		if (s != p_arr.size()) {
 			return false;
 		}
+		if constexpr (std::is_integral_v<T>) {
+			// Integer equality is bitwise.
+			return s == 0 || memcmp(ptr(), p_arr.ptr(), s * sizeof(T)) == 0;
+		}
+#ifdef GODOT_SIMD_F32X4
+		if constexpr (std::is_same_v<T, float>) {
+			const float *a = ptr();
+			const float *b = p_arr.ptr();
+			Size i = 0;
+			for (; i + 4 <= s; i += 4) {
+				if (!simd::all_lanes(simd::cmp_eq(simd::load4(a + i), simd::load4(b + i)))) {
+					return false;
+				}
+			}
+			for (; i < s; i++) {
+				if (a[i] != b[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
+#endif
 		for (Size i = 0; i < s; i++) {
 			if (operator[](i) != p_arr[i]) {
 				return false;
@@ -251,16 +274,7 @@ public:
 	}
 
 	bool operator!=(const Vector<T> &p_arr) const {
-		Size s = size();
-		if (s != p_arr.size()) {
-			return true;
-		}
-		for (Size i = 0; i < s; i++) {
-			if (operator[](i) != p_arr[i]) {
-				return true;
-			}
-		}
-		return false;
+		return !(*this == p_arr);
 	}
 
 	struct Iterator {

@@ -454,7 +454,51 @@ public:
 		}
 
 		r_min = r_max = p_normal.dot(p_transform.xform(points[0].pos));
-		for (int i = 1; i < point_count; i++) {
+		int i = 1;
+#ifdef GODOT_SIMD_REAL_F32X4
+		{
+			// Two points per step (lanes 0,1 and 2,3). Each Point is {pos, normal}, 16 bytes.
+			using namespace simd;
+			const f32x4 cols = load4(&p_transform.columns[0].x);
+			const f32x4 c0 = movelh(cols, cols); // c00 c01 c00 c01
+			const f32x4 c1 = movehl(cols, cols); // c10 c11 c10 c11
+			const f32x4 origin = load2x2(&p_transform.columns[2].x);
+			const f32x4 normal = load2x2(&p_normal.x);
+			f32x4 vmax = splat4(r_max);
+			f32x4 vmin = vmax;
+			i32x4 imax = zero_i32x4();
+			i32x4 imin = zero_i32x4();
+			i32x4 idx = { _mm_setr_epi32(1, 1, 2, 2) };
+			for (; i + 2 <= point_count; i += 2) {
+				f32x4 pos = movelh(load4(&points[i].pos.x), load4(&points[i + 1].pos.x)); // x0 y0 x1 y1
+				f32x4 xf = (c0 * permute<0, 0, 2, 2>(pos) + c1 * permute<1, 1, 3, 3>(pos)) + origin;
+				f32x4 m = xf * normal; // nx*x0 ny*y0 nx*x1 ny*y1
+				f32x4 d = m + permute<1, 0, 3, 2>(m); // d0 d0 d1 d1
+				mask4 gt = cmp_gt(d, vmax);
+				vmax = select(gt, d, vmax);
+				imax = select(gt, idx, imax);
+				mask4 lt = cmp_lt(d, vmin);
+				vmin = select(lt, d, vmin);
+				imin = select(lt, idx, imin);
+				idx = add(idx, 2);
+			}
+			// Lanes 0 and 2 hold the two running extremes; equal values (+0.0 / -0.0) keep the
+			// lowest point index like the sequential strict comparisons.
+			int32_t lanes_imax[4];
+			int32_t lanes_imin[4];
+			store_i32x4(lanes_imax, imax);
+			store_i32x4(lanes_imin, imin);
+			r_max = get_lane<0>(vmax);
+			r_min = get_lane<0>(vmin);
+			if (get_lane<2>(vmax) > r_max || (get_lane<2>(vmax) == r_max && lanes_imax[2] < lanes_imax[0])) {
+				r_max = get_lane<2>(vmax);
+			}
+			if (get_lane<2>(vmin) < r_min || (get_lane<2>(vmin) == r_min && lanes_imin[2] < lanes_imin[0])) {
+				r_min = get_lane<2>(vmin);
+			}
+		}
+#endif
+		for (; i < point_count; i++) {
 			real_t d = p_normal.dot(p_transform.xform(points[i].pos));
 			if (d > r_max) {
 				r_max = d;

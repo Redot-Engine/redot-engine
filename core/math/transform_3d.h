@@ -187,6 +187,23 @@ constexpr Transform3D Transform3D::operator/(real_t p_val) const {
 	return ret;
 }
 
+#ifdef GODOT_SIMD_REAL_F32X4
+// Transform3D is 12 contiguous floats: 3 basis rows followed by the origin, so every
+// basis row can be loaded with a full 4-lane load without reading past the struct.
+_FORCE_INLINE_ simd::f32x4 _transform3d_origin_simd(const Transform3D &p_t) {
+	return simd::load3(&p_t.origin.x);
+}
+
+_FORCE_INLINE_ simd::f32x4 _transform3d_xform_inv_simd(const Transform3D &p_t, simd::f32x4 p_v) {
+	using namespace simd;
+	f32x4 v = p_v - _transform3d_origin_simd(p_t);
+	f32x4 r0 = load4(&p_t.basis.rows[0].x);
+	f32x4 r1 = load4(&p_t.basis.rows[1].x);
+	f32x4 r2 = load4(&p_t.basis.rows[2].x);
+	return r0 * splat_lane<0>(v) + r1 * splat_lane<1>(v) + r2 * splat_lane<2>(v);
+}
+#endif
+
 _FORCE_INLINE_ Vector3 Transform3D::xform(const Vector3 &p_vector) const {
 	return Vector3(
 			basis[0].dot(p_vector) + origin.x,
@@ -261,11 +278,27 @@ _FORCE_INLINE_ AABB Transform3D::xform_inv(const AABB &p_aabb) const {
 
 	AABB ret;
 
+#ifdef GODOT_SIMD_REAL_F32X4
+	using namespace simd;
+	f32x4 begin = _transform3d_xform_inv_simd(*this, load3(&vertices[0].x));
+	f32x4 size = zero4();
+	for (int i = 1; i < 8; i++) {
+		f32x4 v = _transform3d_xform_inv_simd(*this, load3(&vertices[i].x));
+		// AABB::expand_to recomputes end = position + size on every call.
+		f32x4 end = begin + size;
+		begin = min4(v, begin);
+		end = max4(v, end);
+		size = end - begin;
+	}
+	store3(&ret.position.x, begin);
+	store3(&ret.size.x, size);
+#else
 	ret.position = xform_inv(vertices[0]);
 
 	for (int i = 1; i < 8; i++) {
 		ret.expand_to(xform_inv(vertices[i]));
 	}
+#endif
 
 	return ret;
 }

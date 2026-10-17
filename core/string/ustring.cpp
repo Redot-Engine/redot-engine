@@ -38,6 +38,8 @@
 
 #include "ustring.h"
 
+#include "core/string/ustring_simd.h"
+
 #include "core/crypto/crypto_core.h"
 #include "core/math/color.h"
 #include "core/math/math_funcs.h"
@@ -313,8 +315,18 @@ bool String::operator==(const char *p_str) const {
 
 	const char32_t *dst = get_data();
 
+	int i = 0;
+#ifdef GODOT_STRING_SIMD
+	if (l >= 16) {
+		i = (int)StringSIMD::latin1_equal_blocks(dst, p_str, l);
+		if (i < 0) {
+			return false;
+		}
+	}
+#endif
+
 	// Compare char by char
-	for (int i = 0; i < l; i++) {
+	for (; i < l; i++) {
 		if ((char32_t)p_str[i] != dst[i]) {
 			return false;
 		}
@@ -1390,6 +1402,13 @@ String String::to_upper() const {
 	const char32_t *old_ptr = ptr();
 	char32_t *upper_ptrw = upper.ptrw();
 
+#ifdef GODOT_STRING_SIMD
+	{
+		const int64_t done = StringSIMD::ascii_case_blocks(true, old_ptr, upper_ptrw, length());
+		old_ptr += done;
+		upper_ptrw += done;
+	}
+#endif
 	while (*old_ptr) {
 		*upper_ptrw++ = _find_upper(*old_ptr++);
 	}
@@ -1409,6 +1428,13 @@ String String::to_lower() const {
 	const char32_t *old_ptr = ptr();
 	char32_t *lower_ptrw = lower.ptrw();
 
+#ifdef GODOT_STRING_SIMD
+	{
+		const int64_t done = StringSIMD::ascii_case_blocks(false, old_ptr, lower_ptrw, length());
+		old_ptr += done;
+		lower_ptrw += done;
+	}
+#endif
 	while (*old_ptr) {
 		*lower_ptrw++ = _find_lower(*old_ptr++);
 	}
@@ -1794,6 +1820,18 @@ Error String::append_utf8(const char *p_utf8, int p_len, bool p_skip_cr) {
 	const uint8_t *ptrtmp = (uint8_t *)p_utf8;
 	const uint8_t *ptr_limit = (uint8_t *)p_utf8 + p_len;
 
+#ifdef GODOT_STRING_SIMD
+	// Well-formed text is decoded 16 bytes at a time; the loop below handles errors, NUL and the tail.
+	if (p_len >= 32) {
+		const StringSIMD::DecodedBlocks done = StringSIMD::decode_utf8_blocks(ptrtmp, ptr_limit, dst, p_skip_cr);
+		ptrtmp += done.read;
+		dst += done.written;
+	}
+#if defined(__GNUC__)
+	// Keeps the decode loop below inside one 64-byte line; it otherwise runs ~15% slower when it straddles two.
+	__asm__ volatile(".p2align 6");
+#endif
+#endif
 	while (ptrtmp < ptr_limit && *ptrtmp) {
 		uint8_t c = *ptrtmp;
 
@@ -2791,6 +2829,13 @@ uint32_t String::hash() const {
 
 	const char32_t *chr = get_data();
 	uint32_t hashv = 5381;
+#ifdef GODOT_STRING_SIMD
+	if (length() >= 16) {
+		const StringSIMD::HashBlocks blocks = StringSIMD::hash_blocks(chr, length(), hashv);
+		hashv = blocks.hash;
+		chr += blocks.count;
+	}
+#endif
 	uint32_t c = *chr++;
 
 	while (c) {

@@ -238,6 +238,38 @@ Vector2 Transform2D::xform_inv(const Vector2 &p_vec) const {
 }
 
 Rect2 Transform2D::xform(const Rect2 &p_rect) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	// Same three expand_to steps as the scalar version, with the two corners pos+x and
+	// pos+y handled in one register (lanes 0,1 and 2,3).
+	using namespace simd;
+	f32x4 cols = load4(&columns[0].x); // c00 c01 c10 c11
+	f32x4 xy = cols * shuffle<2, 2, 3, 3>(load4(&p_rect.position.x), load4(&p_rect.position.x)); // x.x x.y y.x y.y
+	f32x4 pos2 = load2x2(&p_rect.position.x);
+	f32x4 pos = movelh(cols, cols) * splat_lane<0>(pos2) + movehl(cols, cols) * splat_lane<1>(pos2) + load2x2(&columns[2].x);
+	pos = movelh(pos, pos);
+	f32x4 corners = pos + xy; // pos+x | pos+y
+	f32x4 corner_xy = movelh(corners, corners) + movehl(xy, xy); // (pos+x)+y
+	// Rect2 starts at pos with zero size; expand_to recomputes end = position + size each step.
+	f32x4 begin = pos;
+	f32x4 end = pos + zero4();
+	f32x4 c = corners;
+	begin = min4(c, begin);
+	end = max4(c, end);
+	f32x4 sz = end - begin;
+	c = movehl(corners, corners);
+	end = begin + sz;
+	begin = min4(c, begin);
+	end = max4(c, end);
+	sz = end - begin;
+	c = corner_xy;
+	end = begin + sz;
+	begin = min4(c, begin);
+	end = max4(c, end);
+	sz = end - begin;
+	Rect2 new_rect;
+	store4(&new_rect.position.x, movelh(begin, sz));
+	return new_rect;
+#else
 	Vector2 x = columns[0] * p_rect.size.x;
 	Vector2 y = columns[1] * p_rect.size.y;
 	Vector2 pos = xform(p_rect.position);
@@ -248,6 +280,7 @@ Rect2 Transform2D::xform(const Rect2 &p_rect) const {
 	new_rect.expand_to(pos + y);
 	new_rect.expand_to(pos + x + y);
 	return new_rect;
+#endif
 }
 
 void Transform2D::set_rotation_and_scale(real_t p_rot, const Size2 &p_scale) {

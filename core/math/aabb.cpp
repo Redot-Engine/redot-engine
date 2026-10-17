@@ -255,6 +255,29 @@ bool AABB::intersects_segment(const Vector3 &p_from, const Vector3 &p_to, Vector
 }
 
 bool AABB::intersects_plane(const Plane &p_plane) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	{
+		// Corners are evaluated 4 at a time with the x coordinate fixed per group; the
+		// distance is (nx*x + ny*y) + nz*z - d, the same order as Plane::distance_to.
+		using namespace simd;
+		f32x4 pos = _aabb_position_simd(*this);
+		f32x4 end = _aabb_end_simd(*this);
+		f32x4 ys = shuffle<1, 1, 1, 1>(pos, end);
+		f32x4 zs = shuffle<2, 2, 2, 2>(pos, end);
+		zs = permute<0, 2, 1, 3>(zs);
+		f32x4 nx = splat4(p_plane.normal.x);
+		f32x4 ny = splat4(p_plane.normal.y);
+		f32x4 nz = splat4(p_plane.normal.z);
+		f32x4 d = splat4(p_plane.d);
+		f32x4 dist_a = ((nx * splat_lane<0>(pos) + ny * ys) + nz * zs) - d;
+		f32x4 dist_b = ((nx * splat_lane<0>(end) + ny * ys) + nz * zs) - d;
+		int over_a = movemask(cmp_gt(dist_a, zero4()));
+		int over_b = movemask(cmp_gt(dist_b, zero4()));
+		bool over = (over_a | over_b) != 0;
+		bool under = over_a != 0xF || over_b != 0xF;
+		return under && over;
+	}
+#endif
 	Vector3 points[8] = {
 		Vector3(position.x, position.y, position.z),
 		Vector3(position.x, position.y, position.z + size.z),

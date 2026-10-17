@@ -39,6 +39,7 @@
 #include "basis.h"
 
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 #include "core/string/ustring.h"
 
 #define cofac(row1, col1, row2, col2) \
@@ -279,6 +280,16 @@ Basis Basis::scaled_local(const Vector3 &p_scale) const {
 }
 
 Vector3 Basis::get_scale_abs() const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	{
+		using namespace simd;
+		f32x4 r0, r1, r2;
+		load_mat3(&rows[0].x, r0, r1, r2);
+		Vector3 ret;
+		store3(&ret.x, sqrt4(r0 * r0 + r1 * r1 + r2 * r2));
+		return ret;
+	}
+#endif
 	return Vector3(
 			Vector3(rows[0][0], rows[1][0], rows[2][0]).length(),
 			Vector3(rows[0][1], rows[1][1], rows[2][1]).length(),
