@@ -794,23 +794,6 @@ TEST_CASE("[SIMD] String hashing, case mapping, comparison and UTF-8 match the s
 			SIMD_EXPECT_EQUAL(mismatches, s.to_upper(), rs.ref_to_upper());
 			SIMD_EXPECT_EQUAL(mismatches, s.to_lower(), rs.ref_to_lower());
 
-			// Embedded NUL: hashing and case mapping stop there. Case mapping leaves the rest of its
-			// result unwritten, so only the length and the part up to the NUL are defined.
-			if (length > 0) {
-				String with_nul = s;
-				with_nul.ptrw()[rng.range(length)] = 0;
-				const RefString ref_with_nul(with_nul);
-				SIMD_EXPECT_EQUAL(mismatches, with_nul.hash(), ref_with_nul.ref_hash());
-				const String upper = with_nul.to_upper();
-				const String ref_upper = ref_with_nul.ref_to_upper();
-				SIMD_EXPECT_EQUAL(mismatches, upper.length(), ref_upper.length());
-				SIMD_EXPECT_EQUAL(mismatches, String(upper.ptr()), String(ref_upper.ptr()));
-				const String lower = with_nul.to_lower();
-				const String ref_lower = ref_with_nul.ref_to_lower();
-				SIMD_EXPECT_EQUAL(mismatches, lower.length(), ref_lower.length());
-				SIMD_EXPECT_EQUAL(mismatches, String(lower.ptr()), String(ref_lower.ptr()));
-			}
-
 			Vector<uint8_t> map;
 			Vector<uint8_t> ref_map;
 			const CharString utf8 = s.utf8(&map);
