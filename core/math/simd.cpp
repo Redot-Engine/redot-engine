@@ -133,7 +133,14 @@ static uint32_t _hardware_features() {
 uint32_t CPUFeatures::_detect() {
 	uint32_t f = _hardware_features();
 	// GODOT_SIMD_LEVEL=sse disables every runtime-dispatched extension, =avx keeps only AVX.
+#if defined(_MSC_VER)
+	// MSVC/clang-cl deprecate getenv under /WX; _dupenv_s is the supported form (frees via the heap).
+	char *level = nullptr;
+	size_t level_size = 0;
+	_dupenv_s(&level, &level_size, "GODOT_SIMD_LEVEL");
+#else
 	const char *level = std::getenv("GODOT_SIMD_LEVEL");
+#endif
 	if (level) {
 		if (strcmp(level, "sse") == 0 || strcmp(level, "baseline") == 0) {
 			f &= ~(AVX | AVX2 | FMA | F16C);
@@ -141,6 +148,9 @@ uint32_t CPUFeatures::_detect() {
 			f &= ~(AVX2 | FMA | F16C);
 		}
 	}
+#if defined(_MSC_VER)
+	free(level);
+#endif
 	return f;
 }
 
