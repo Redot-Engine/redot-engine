@@ -374,20 +374,24 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 		for (int i = 0; i < shape_count; i++) {
 			// Descaled global position of shape center
 			Vector3 shape_center = _shape_get_position(i) / spacing;
+			// Unused shapes are parked at V3_MAX, which is outside the int range. Converting that to int is
+			// undefined behavior and the compiler may drop a later `< FLT_MAX` check, which also fails when
+			// vertex_spacing > 1. So check the range first.
+			const bool shape_placed = Math::abs(shape_center.x) < static_cast<real_t>(INT32_MAX) && Math::abs(shape_center.z) < static_cast<real_t>(INT32_MAX);
 			// Unique key: Top left corner of shape, snapped to grid
-			Vector2i shape_pos = _snap_to_grid(v3v2i(shape_center) - shape_offset);
+			Vector2i shape_pos = shape_placed ? _snap_to_grid(v3v2i(shape_center) - shape_offset) : V2I_ZERO;
 			// Optionally could adjust radius to account for corner (sqrt(_shape_size*2))
-			if (!p_rebuild && (shape_center.x < FLT_MAX && v3v2i(shape_center).distance_squared_to(snapped_pos) <= radius_sqr)) {
+			if (!p_rebuild && (shape_placed && v3v2i(shape_center).distance_squared_to(snapped_pos) <= radius_sqr)) {
 				// Get index into shape array
 				Vector2i grid_loc = (shape_pos - grid_pos) / _shape_size;
 				grid.set(grid_loc.y * grid_width + grid_loc.x, i);
 				_shape_set_disabled(i, false);
-				LOG(EXTREME, "Shape ", i, ": shape_center: ", shape_center.x < FLT_MAX ? shape_center : V3(-999), ", shape_pos: ", shape_pos,
+				LOG(EXTREME, "Shape ", i, ": shape_center: ", shape_placed ? shape_center : V3(-999), ", shape_pos: ", shape_pos,
 						", grid_loc: ", grid_loc, ", index: ", (grid_loc.y * grid_width + grid_loc.x), " active");
 			} else {
 				inactive_shape_ids.push_back(i);
 				_shape_set_disabled(i, true);
-				LOG(EXTREME, "Shape ", i, ": shape_center: ", shape_center.x < FLT_MAX ? shape_center : V3(-999), ", shape_pos: ", shape_pos,
+				LOG(EXTREME, "Shape ", i, ": shape_center: ", shape_placed ? shape_center : V3(-999), ", shape_pos: ", shape_pos,
 						" out of bounds, marking inactive");
 			}
 		}
@@ -407,7 +411,7 @@ void WorldScape3DCollision::update(const bool p_rebuild) {
 				continue;
 			}
 			if (!p_rebuild && grid[i] >= 0) {
-				[[maybe_unused]] Vector2i center_pos = v3v2i(_shape_get_position(i));
+				[[maybe_unused]] Vector2i center_pos = v3v2i(_shape_get_position(grid[i]));
 				LOG(EXTREME, "grid[", i, ":", grid_loc, "] shape_pos : ", shape_pos, " act ", center_pos - shape_offset, " Has active shape id: ", grid[i]);
 				continue;
 			} else {
