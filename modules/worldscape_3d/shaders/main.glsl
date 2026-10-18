@@ -141,6 +141,22 @@ vec3 get_index_uv(const vec2 uv2) {
 	return vec3(uv2 - _region_locations[layer_index], float(layer_index));
 }
 
+// get_index_coord that also finds the region of a vertex or texel at an exact region corner. On a
+// region's outer edge the position belongs to the region on its negative side, which get_index_coord
+// finds by shifting toward -x/-z. At an exact corner that shift is diagonal, so only the diagonal cell
+// is tried and the (max-x, min-z) and (min-x, max-z) corners of a region were discarded (notches).
+// In that case also try the two axis-aligned neighbors. Only applies to background mode none.
+ivec3 get_edge_coord(const vec2 uv, const int search) {
+	ivec3 coord = get_index_coord(uv, search);
+	if (coord.z == -1 && _background_mode == 0u && all(equal(mod(round(uv), vec2(_region_size)), vec2(0.0)))) {
+		coord = get_index_coord(uv - vec2(1.0, 0.0), SKIP_PASS);
+		if (coord.z == -1) {
+			coord = get_index_coord(uv - vec2(0.0, 1.0), SKIP_PASS);
+		}
+	}
+	return coord;
+}
+
 //INSERT: WORLD_NOISE1
 void vertex() {
 	// Get vertex of flat plane in world coordinates and set world UV
@@ -173,7 +189,7 @@ void vertex() {
 	UV2 = fma(UV, vec2(_region_texel_size), vec2(0.5 * _region_texel_size));
 
 	// Discard vertices for Holes. 1 lookup
-	ivec3 v_region = get_index_coord(start_pos, VERTEX_PASS);
+	ivec3 v_region = get_edge_coord(start_pos, VERTEX_PASS);
 	uint control = floatBitsToUint(texelFetch(_control_maps, v_region, 0)).r;
 	bool hole = DECODE_HOLE(control);
 
@@ -183,8 +199,8 @@ void vertex() {
 		v_vertex.x = 0. / 0.;
 	} else {
 		// Set final vertex height & calculate vertex normals. 3 lookups
-		ivec3 coord_a = get_index_coord(start_pos, VERTEX_PASS);
-		ivec3 coord_b = get_index_coord(end_pos, VERTEX_PASS);
+		ivec3 coord_a = get_edge_coord(start_pos, VERTEX_PASS);
+		ivec3 coord_b = get_edge_coord(end_pos, VERTEX_PASS);
 		float h = mix(texelFetch(_height_maps, coord_a, 0).r,texelFetch(_height_maps, coord_b, 0).r,vertex_lerp);
 //INSERT: WORLD_NOISE2
 		v_vertex.y = h;
@@ -365,10 +381,10 @@ void fragment() {
 
 	ivec3 index[4];
 	// control map lookups, used for some normal lookups as well
-	index[0] = get_index_coord(index_id + offsets.xy, FRAGMENT_PASS);
-	index[1] = get_index_coord(index_id + offsets.yy, FRAGMENT_PASS);
-	index[2] = get_index_coord(index_id + offsets.yx, FRAGMENT_PASS);
-	index[3] = get_index_coord(index_id + offsets.xx, FRAGMENT_PASS);
+	index[0] = get_edge_coord(index_id + offsets.xy, FRAGMENT_PASS);
+	index[1] = get_edge_coord(index_id + offsets.yy, FRAGMENT_PASS);
+	index[2] = get_edge_coord(index_id + offsets.yx, FRAGMENT_PASS);
+	index[3] = get_edge_coord(index_id + offsets.xx, FRAGMENT_PASS);
 
 	vec3 base_ddx = dFdxCoarse(v_vertex);
 	vec3 base_ddy = dFdyCoarse(v_vertex);
@@ -426,10 +442,10 @@ void fragment() {
 		// 5 lookups
 		// Fetch the additional required height values for smooth normals
 		h[1] = texelFetch(_height_maps, index[1], 0).r; // 3 (1,1)
-		float h_4 = texelFetch(_height_maps, get_index_coord(index_id + offsets.yz, FRAGMENT_PASS), 0).r; // 4 (1,2)
-		float h_5 = texelFetch(_height_maps, get_index_coord(index_id + offsets.zy, FRAGMENT_PASS), 0).r; // 5 (2,1)
-		float h_6 = texelFetch(_height_maps, get_index_coord(index_id + offsets.zx, FRAGMENT_PASS), 0).r; // 6 (2,0)
-		float h_7 = texelFetch(_height_maps, get_index_coord(index_id + offsets.xz, FRAGMENT_PASS), 0).r; // 7 (0,2)
+		float h_4 = texelFetch(_height_maps, get_edge_coord(index_id + offsets.yz, FRAGMENT_PASS), 0).r; // 4 (1,2)
+		float h_5 = texelFetch(_height_maps, get_edge_coord(index_id + offsets.zy, FRAGMENT_PASS), 0).r; // 5 (2,1)
+		float h_6 = texelFetch(_height_maps, get_edge_coord(index_id + offsets.zx, FRAGMENT_PASS), 0).r; // 6 (2,0)
+		float h_7 = texelFetch(_height_maps, get_edge_coord(index_id + offsets.xz, FRAGMENT_PASS), 0).r; // 7 (0,2)
 
 		// Calculate the normal for the remaining index ids.
 		index_normal[0] = normalize(vec3(h[0] - h[1] + u, _vertex_spacing, h[0] - h_7 + v));
