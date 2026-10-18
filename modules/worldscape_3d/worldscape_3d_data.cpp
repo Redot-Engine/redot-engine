@@ -97,12 +97,16 @@ void WorldScape3DData::initialize(WorldScape3D *p_terrain) {
 	_region_size = _terrain->get_region_size();
 	_region_sizev = Vector2i(_region_size, _region_size);
 	if (!prev_initialized) {
-#ifdef TOOLS_ENABLED
 		if (_terrain->get_data_directory().is_empty()) {
-			select_data_directory();
-			return;
-		}
+#ifdef TOOLS_ENABLED
+			// The editor binary also runs games (Play) without an EditorNode, so only prompt in the editor.
+			if (IS_EDITOR) {
+				select_data_directory();
+				return;
+			}
 #endif
+			LOG(ERROR, "WorldScape3D data directory not set. Terrain will not be loaded");
+		}
 		if (!_terrain->get_data_directory().is_empty()) {
 			load_directory(_terrain->get_data_directory());
 		}
