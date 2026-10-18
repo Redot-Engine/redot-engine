@@ -293,11 +293,11 @@ internal static class SpaceTests
 		try
 		{
 			yield return Wait.Frames(150);
-			float defaultY = PhysicsServer3D.BodyGetState(bodyDefault, PhysicsServer3D.BodyState.Transform).AsTransform3D().Origin.Y;
+			float restY = PhysicsServer3D.BodyGetState(bodyDefault, PhysicsServer3D.BodyState.Transform).AsTransform3D().Origin.Y;
 			float sinkY = PhysicsServer3D.BodyGetState(bodySink, PhysicsServer3D.BodyState.Transform).AsTransform3D().Origin.Y;
-			Assert.ExpectNear(defaultY, 0.5f, 0.1f, $"default penetration: sphere touches the floor (y={defaultY:F3})");
-			Assert.Expect(sinkY > defaultY + 0.35f,
-				$"allowed penetration 0.6 rests the sphere deeper (y={sinkY:F3} vs {defaultY:F3})");
+			Assert.ExpectNear(restY, 0.5f, 0.1f, $"default penetration: sphere touches the floor (y={restY:F3})");
+			Assert.Expect(sinkY > restY + 0.35f,
+				$"allowed penetration 0.6 rests the sphere deeper (y={sinkY:F3} vs {restY:F3})");
 		}
 		finally
 		{
