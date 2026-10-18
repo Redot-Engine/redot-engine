@@ -35,6 +35,7 @@
 #ifdef GODOT_PHYSX_FLOW
 
 #include "core/templates/hash_map.h"
+#include "flow_scatter_rd.h"
 #include "core/templates/local_vector.h"
 #include "scene/resources/compositor.h"
 
@@ -56,6 +57,9 @@ class RenderData;
 // it -- unless it already holds a PhysXFlowRenderEffect. When the world's
 // last flow leaves, all of that is undone.
 class PhysXFlowRenderEffect : public CompositorEffect {
+public:
+	FlowScatterRD &get_scatter() { return scatter; }
+
 	GDCLASS(PhysXFlowRenderEffect, CompositorEffect);
 
 	static LocalVector<PhysXFlowSimulation3D *> flows;
@@ -74,6 +78,7 @@ class PhysXFlowRenderEffect : public CompositorEffect {
 	// Copies Flow's composited result into Godot's color buffer, which
 	// RenderingDevice won't copy into directly (no copy-to usage) but a
 	// compute pass can write.
+	FlowScatterRD scatter; // the light scattering passes (point/spot glow)
 	RID copy_shader;
 	RID copy_pipeline;
 	bool copy_failed = false;

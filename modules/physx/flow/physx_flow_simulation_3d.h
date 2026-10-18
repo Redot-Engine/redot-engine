@@ -34,8 +34,11 @@
 
 #ifdef GODOT_PHYSX_FLOW
 
+#include "flow_scatter_rd.h"
 #include "flow_simulation.h"
-
+#include "core/math/projection.h"
+#include "core/templates/paged_array.h"
+#include "core/os/mutex.h"
 #include "core/object/object_id.h"
 #include "core/templates/local_vector.h"
 #include "core/variant/typed_array.h"
@@ -154,8 +157,29 @@ class PhysXFlowSimulation3D : public Node3D {
 	// Light scattering: the gas is lit and self-shadows toward the scene's
 	// light (scattering_receive_shadows nonzero = shadows sample). Maps the
 	// reference Flow node's light_scattering / scattering_receive_shadows.
+	enum ScatteringShadowFlags {
+		SCATTERING_SHADOW_OMNI = 1,
+		SCATTERING_SHADOW_SPOT = 2,
+	};
 	bool light_scattering = true;
 	int scattering_receive_shadows = 3;
+	float scattering_strength = 1.0f;
+	float scattering_anisotropy = 0.4f; // Henyey-Greenstein g
+	int scattering_resolution = 4; // frame pixels per scattering texel, each way
+	int scattering_max_lights = 4;
+	int scattering_shadow_steps = 4; // toward each point/spot light
+	float scattering_shadow_reach = 4.0f; // meters
+	// The volume/table render() read this frame, for the scattering pass.
+	FlowScatterSource scatter_source;
+	// Point/spot lights gathered for the scattering pass (see _gather_scatter_lights).
+	Mutex scatter_mutex;
+	LocalVector<FlowScatterRD::Light> scatter_lights;
+	LocalVector<ObjectID> scatter_light_ids;
+	int scatter_search_countdown = 0;
+	FlowScatterRD *scatter = nullptr;
+	int stat_scatter_lights = 0;
+	int stat_scatter_passes = 0;
+	int stat_scatter_no_source = 0;
 	bool debug_stats = false;
 
 	// Optional CPU copy of the gas for the query API (get_last_max_smoke,
@@ -172,7 +196,12 @@ class PhysXFlowSimulation3D : public Node3D {
 	// The render effect calls this per view, on the render thread.
 	friend class PhysXFlowRenderEffect;
 	void render_rd(PhysXFlowRenderEffect *p_effect, RenderingDevice *p_rd, const float p_view[16], const float p_projection[16],
-			const Size2i &p_size, const RID &p_depth, const RID &p_color);
+			const Size2i &p_size, const RID &p_depth, const RID &p_color, const Projection &p_inv_view_projection,
+			const Vector3 &p_camera, const PagedArray<RID> *p_lights, const RID &p_shadow_atlas);
+	void _gather_scatter_lights();
+	void _fill_scatter_shadows(LocalVector<FlowScatterRD::Light> &r_lights, const PagedArray<RID> *p_instances, const RID &p_shadow_atlas, uint32_t p_flags) const;
+	FlowScatterRD &get_scatter();
+
 	// Where the gas roughly is (its emitters' middle), for drawing flows
 	// back to front. Written by _step, read on the render thread.
 	Vector3 draw_center;

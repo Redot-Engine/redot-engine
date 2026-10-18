@@ -1140,7 +1140,7 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 // ---- Render (Flow's own ray marcher, RenderingDevice path only) ------------
 
 uint64_t FlowSimulation::render(const float p_view[16], const float p_projection[16], uint32_t p_width, uint32_t p_height,
-		uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid) {
+		uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid, FlowScatterSource *r_scatter) {
 	if (!is_using_rd() || grid == nullptr || runtime == nullptr || p_width == 0 || p_height == 0) {
 		return 0;
 	}
@@ -1205,6 +1205,32 @@ uint64_t FlowSimulation::render(const float p_view[16], const float p_projection
 	gi->render(fc, grid, &params_desc, &view, &projection, &projection,
 			p_width, p_height, p_depth_width, p_depth_height,
 			1.0f, depth, eNvFlowFormat_r16g16b16a16_float, color, &out);
+	if (r_scatter != nullptr) {
+		// The volume the ray march just read (after offscreen(): Flow's shadow
+		// output, its sun light in z), and the table to find blocks in it.
+		*r_scatter = FlowScatterSource();
+		NvFlowGridRenderData data = {};
+		gi->getRenderData(fc, grid, &data);
+		const NvFlowSparseParams &sp = data.sparseParams;
+		if (data.densityTexture != nullptr && data.sparseBuffer != nullptr && sp.levelCount > 0 && sp.layerCount > 0) {
+			static_assert(sizeof(NvFlowSparseLevelParams) == sizeof(r_scatter->level), "NvFlowSparseLevelParams changed size");
+			memcpy(r_scatter->level, &sp.levels[0], sizeof(r_scatter->level)); // density is level 0
+			const NvFlowSparseLayerParams &layer = sp.layers[0];
+			r_scatter->block_size_world[0] = layer.blockSizeWorld.x;
+			r_scatter->block_size_world[1] = layer.blockSizeWorld.y;
+			r_scatter->block_size_world[2] = layer.blockSizeWorld.z;
+			r_scatter->layer_and_level = layer.layerAndLevel;
+			r_scatter->world_min[0] = layer.worldMin.x;
+			r_scatter->world_min[1] = layer.worldMin.y;
+			r_scatter->world_min[2] = layer.worldMin.z;
+			r_scatter->world_max[0] = layer.worldMax.x;
+			r_scatter->world_max[1] = layer.worldMax.y;
+			r_scatter->world_max[2] = layer.worldMax.z;
+			r_scatter->density_rid = FlowContextRD::transient_texture_rid(data.densityTexture);
+			r_scatter->table_rid = FlowContextRD::transient_buffer_rid(data.sparseBuffer);
+			r_scatter->valid = r_scatter->density_rid != 0 && r_scatter->table_rid != 0 && layer.numLocations > 0;
+		}
+	}
 	// The desc stays mapped until the next step (see above).
 	return out != nullptr ? FlowContextRD::transient_texture_rid(out) : 0;
 }

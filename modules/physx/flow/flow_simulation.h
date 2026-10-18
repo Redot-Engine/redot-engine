@@ -114,6 +114,21 @@ struct FlowRenderSettings {
 	float colormap_rgb[COLORMAP_POINTS][3] = {};
 };
 
+// What the light scattering pass (flow_scatter_rd) needs to read the gas Flow
+// just drew: the density atlas (rgba: temperature, -, sun light, smoke) and its
+// sparse table, both RIDs valid until render_finish(), and the table's level
+// parameters (Flow's NvFlowSparseLevelParams, 40 words). Meters.
+struct FlowScatterSource {
+	bool valid = false;
+	uint64_t density_rid = 0;
+	uint64_t table_rid = 0;
+	uint32_t level[40] = {};
+	float block_size_world[3] = {};
+	int layer_and_level = 0;
+	float world_min[3] = {};
+	float world_max[3] = {};
+};
+
 // An injection source (sphere or box) in Godot world space.
 struct FlowEmitterData {
 	uint64_t luid = 0;
@@ -205,9 +220,12 @@ public:
 	// no scaling). Returns the RID id of the composited color texture -- copy
 	// it over the scene color before render_finish() -- or 0.
 	uint64_t render(const float p_view[16], const float p_projection[16], uint32_t p_width, uint32_t p_height,
-			uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid);
+			uint64_t p_depth_rid, uint32_t p_depth_width, uint32_t p_depth_height, uint64_t p_color_rid, FlowScatterSource *r_scatter = nullptr);
 	// Ends the render's Flow frame; call after the result has been copied.
 	void render_finish();
+	// The volume/table the last render() read, for the light scattering pass
+	// (valid until render_finish()).
+	FlowScatterSource scatter_source;
 
 	bool is_using_rd() const { return using_rd && rd_context != nullptr; }
 

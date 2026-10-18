@@ -44,7 +44,8 @@
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"#include "servers/rendering/rendering_server.h"
 #include "servers/rendering/storage/render_data.h"
 
 LocalVector<PhysXFlowSimulation3D *> PhysXFlowRenderEffect::flows;
@@ -273,6 +274,7 @@ PhysXFlowRenderEffect::~PhysXFlowRenderEffect() {
 		if (copy_shader.is_valid()) {
 			rd->free(copy_shader);
 		}
+		scatter.free(rd);
 	}
 }
 
@@ -369,7 +371,14 @@ void PhysXFlowRenderEffect::_render(int p_callback_type, const RenderData *p_ren
 		}
 	}
 	for (PhysXFlowSimulation3D *flow : sorted) {
-		flow->render_rd(this, rd, view_f, projection_f, size, depth, color);
+		// For the light scattering pass: clip space (as the depth buffer has it)
+		// straight back to world meters, plus the frame's lights and shadow
+		// atlas for the scattering pass's shadows.
+		const Projection inv_view_projection = (projection * view).inverse();
+		const RenderDataRD *render_data_rd = dynamic_cast<const RenderDataRD *>(p_render_data);
+		flow->render_rd(this, rd, view_f, projection_f, size, depth, color, inv_view_projection, eye,
+				render_data_rd != nullptr ? render_data_rd->lights : nullptr,
+				render_data_rd != nullptr ? render_data_rd->shadow_atlas : RID());
 	}
 }
 

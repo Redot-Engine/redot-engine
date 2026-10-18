@@ -48,7 +48,7 @@ internal static class EdgeCaseTests
 		PhysicsServer3D.BodySetParam(bad, PhysicsServer3D.BodyParameter.Mass, 1f);
 		_ = PhysicsServer3D.BodyGetState(bad, PhysicsServer3D.BodyState.Transform);
 		PhysicsServer3D.BodyApplyCentralImpulse(bad, Vector3.One);
-		PhysicsServer3D.BodySetAxisLock(bad, PhysicsServer3D.BodyAxis.linearly, true);
+		PhysicsServer3D.BodySetAxisLock(bad, PhysicsServer3D.BodyAxis.LinearY, true);
 		PhysicsServer3D.BodyAddCollisionException(bad, bad);
 		_ = PhysicsServer3D.ShapeGetData(bad);
 		_ = PhysicsServer3D.ShapeGetType(bad);

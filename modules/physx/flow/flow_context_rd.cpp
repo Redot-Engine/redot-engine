@@ -1340,6 +1340,14 @@ uint64_t transient_texture_rid(void *p_transient) {
 	return reinterpret_cast<TextureTransient *>(p_transient)->texture->rid.get_id();
 }
 
+uint64_t transient_buffer_rid(void *p_transient) {
+	if (p_transient == nullptr) {
+		return 0;
+	}
+	const BufferTransient *t = reinterpret_cast<const BufferTransient *>(p_transient);
+	return t->buffer != nullptr ? t->buffer->storage.get_id() : 0;
+}
+
 Stats get_stats(Context *p_context) {
 	Stats s = p_context->stats;
 	return s;

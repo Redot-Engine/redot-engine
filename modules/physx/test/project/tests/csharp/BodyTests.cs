@@ -680,7 +680,7 @@ internal static class BodyTests
 		using var w = new PhysxWorld(false);
 		var axes = new (PhysicsServer3D.BodyAxis axis, Vector3 impulse, char comp, bool angular)[] {
 			(PhysicsServer3D.BodyAxis.LinearX, new Vector3(3, 0, 0), 'x', false),
-			(PhysicsServer3D.BodyAxis.linearly, new Vector3(0, 3, 0), 'y', false),
+			(PhysicsServer3D.BodyAxis.LinearY, new Vector3(0, 3, 0), 'y', false),
 			(PhysicsServer3D.BodyAxis.LinearZ, new Vector3(0, 0, 3), 'z', false),
 			(PhysicsServer3D.BodyAxis.AngularX, new Vector3(2, 0, 0), 'x', true),
 			(PhysicsServer3D.BodyAxis.AngularY, new Vector3(0, 2, 0), 'y', true),
@@ -734,7 +734,7 @@ internal static class BodyTests
 	{
 		using var w = new PhysxWorld(false);
 		var b = w.MakeBody(w.Box(0.5f), new Vector3(1, 15, 2));
-		foreach (var ax in new[] { PhysicsServer3D.BodyAxis.LinearX, PhysicsServer3D.BodyAxis.linearly, PhysicsServer3D.BodyAxis.LinearZ })
+		foreach (var ax in new[] { PhysicsServer3D.BodyAxis.LinearX, PhysicsServer3D.BodyAxis.LinearY, PhysicsServer3D.BodyAxis.LinearZ })
 			PhysicsServer3D.BodySetAxisLock(b, ax, true);
 		yield return Wait.Frames(90);
 		Assert.ExpectVecNear(w.Pos(b).Origin, new Vector3(1, 15, 2), 0.01f, "fully linear-locked body frozen under gravity");
@@ -1246,7 +1246,7 @@ internal static class BodyTests
 		var b = w.MakeBody(w.Box(0.4f), new Vector3(0, 0, 0));
 		var rot = new Basis(new Vector3(0, 0, 1), Mathf.DegToRad(90f));
 		PhysicsServer3D.BodySetState(b, PhysicsServer3D.BodyState.Transform, new Transform3D(rot, new Vector3(0, 0, 0)));
-		PhysicsServer3D.BodySetAxisLock(b, PhysicsServer3D.BodyAxis.linearly, true);
+		PhysicsServer3D.BodySetAxisLock(b, PhysicsServer3D.BodyAxis.LinearY, true);
 		PhysicsServer3D.BodySetParam(b, PhysicsServer3D.BodyParameter.GravityScale, 0f);
 		PhysicsServer3D.BodyApplyCentralImpulse(b, new Vector3(0, 3, 0));
 		yield return Wait.Frames(30);

@@ -48,6 +48,11 @@
 #include "scene/3d/physics/collision_shape_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
+#include "scene/main/window.h"
+#include "scene/3d/camera_3d.h"
+#include "scene/3d/light_3d.h"
+#include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/light_storage.h"
 #include "scene/resources/3d/box_shape_3d.h"
 #include "scene/resources/3d/concave_polygon_shape_3d.h"
 #include "scene/resources/3d/convex_polygon_shape_3d.h"
@@ -672,12 +677,15 @@ void PhysXFlowSimulation3D::_fill_render_settings(FlowRenderSettings &r_settings
 
 void PhysXFlowSimulation3D::render_rd(PhysXFlowRenderEffect *p_effect, RenderingDevice *p_rd,
 		const float p_view[16], const float p_projection[16], const Size2i &p_size,
-		const RID &p_depth, const RID &p_color) {
+		const RID &p_depth, const RID &p_color, const Projection &p_inv_view_projection,
+		const Vector3 &p_camera, const PagedArray<RID> *p_lights, const RID &p_shadow_atlas) {
 	if (simulation == nullptr || !simulation->is_using_rd() || p_rd != rendering_device) {
 		return;
 	}
+	_gather_scatter_lights();
 	const uint64_t out = simulation->render(p_view, p_projection, p_size.x, p_size.y,
-			p_depth.get_id(), p_size.x, p_size.y, p_color.get_id());
+			p_depth.get_id(), p_size.x, p_size.y, p_color.get_id(),
+			(light_scattering && !scatter_lights.is_empty()) ? &scatter_source : nullptr);
 	render_calls++;
 	render_outputs += out != 0 ? 1 : 0;
 	if (out != 0 && out != p_color.get_id()) {
@@ -685,7 +693,185 @@ void PhysXFlowSimulation3D::render_rd(PhysXFlowRenderEffect *p_effect, Rendering
 		// color before the next Flow call borrows that texture.
 		p_effect->copy_texture(p_rd, RID::from_uint64(out), p_color, p_size);
 	}
+	if (out != 0 && (light_scattering && !scatter_lights.is_empty()) && scatter_source.valid) {
+		stat_scatter_passes++;
+		// Before the Flow frame ends: its volume and table are this frame's.
+		FlowScatterRD::Params params;
+		params.inv_view_projection = p_inv_view_projection;
+		params.camera_position = p_camera;
+		params.sigma = fog_density;
+		const Color albedo = smoke_albedo.srgb_to_linear();
+		params.color[0] = albedo.r;
+		params.color[1] = albedo.g;
+		params.color[2] = albedo.b;
+		params.strength = scattering_strength;
+		params.anisotropy = scattering_anisotropy;
+		params.shadow_steps = scattering_shadow_steps;
+		params.shadow_reach = scattering_shadow_reach;
+		params.shadows = scattering_receive_shadows != 0;
+		params.resolution_divisor = scattering_resolution;
+		RID atlas;
+		if (scattering_receive_shadows != 0 && p_shadow_atlas.is_valid() &&
+				RendererRD::LightStorage::get_singleton()->owns_shadow_atlas(p_shadow_atlas)) {
+			atlas = RendererRD::LightStorage::get_singleton()->shadow_atlas_get_texture(p_shadow_atlas);
+		}
+		MutexLock lock(scatter_mutex);
+		get_scatter().run(p_rd, scatter_source, params, scatter_lights.ptr(), (int)scatter_lights.size(), p_depth, p_color, atlas, p_size);
+	}
 	simulation->render_finish();
+}
+
+FlowScatterRD &PhysXFlowSimulation3D::get_scatter() {
+	if (scatter == nullptr) {
+		scatter = memnew(FlowScatterRD);
+	}
+	return *scatter;
+}
+
+// Point/spot lights that can reach the gas, strongest at it first (energy over
+// squared distance to where the gas is, roughly). Ported from the upstream
+// godot_physx module's _gather_scatter_lights.
+void PhysXFlowSimulation3D::_gather_scatter_lights() {
+	LocalVector<FlowScatterRD::Light> picked;
+	if (light_scattering) {
+		if (scatter_search_countdown-- <= 0) {
+			scatter_search_countdown = 60;
+			scatter_light_ids.clear();
+			Node *root = get_tree()->get_edited_scene_root();
+			if (root == nullptr) {
+				root = get_tree()->get_current_scene();
+			}
+			if (root == nullptr) {
+				Node *main_root = get_tree()->get_root(); // a scene built from a script has no current scene
+				root = main_root;
+			}
+			if (root != nullptr) {
+				for (const char *type : { "OmniLight3D", "SpotLight3D" }) {
+					TypedArray<Node> found = root->find_children("*", type, true, false);
+					for (int i = 0; i < found.size(); i++) {
+						scatter_light_ids.push_back(Object::cast_to<Node>(found[i])->get_instance_id());
+					}
+				}
+			}
+		}
+		struct Candidate {
+			FlowScatterRD::Light light;
+			float score = 0.0f;
+		};
+		LocalVector<Candidate> candidates;
+		constexpr float GAS_REACH = 20.0f; // how far gas may have spread from draw_center
+		for (const ObjectID &id : scatter_light_ids) {
+			Light3D *l = Object::cast_to<Light3D>(ObjectDB::get_instance(id));
+			if (l == nullptr || !l->is_inside_tree() || !l->is_visible_in_tree()) {
+				continue;
+			}
+			// Light3D.light_volumetric_fog_energy: the same per-light knob Godot's
+			// volumetric fog uses (0 leaves the gas dark).
+			const float energy = l->get_param(Light3D::PARAM_ENERGY) * l->get_param(Light3D::PARAM_VOLUMETRIC_FOG_ENERGY);
+			const float range = l->get_param(Light3D::PARAM_RANGE);
+			const Transform3D xf = l->get_global_transform();
+			const float d = xf.origin.distance_to(get_draw_center());
+			if (energy <= 0.0f || range <= 0.0f || d > range + GAS_REACH) {
+				continue;
+			}
+			Candidate c;
+			const Color col = l->get_color().srgb_to_linear() * energy;
+			c.light.position_range[0] = xf.origin.x;
+			c.light.position_range[1] = xf.origin.y;
+			c.light.position_range[2] = xf.origin.z;
+			c.light.position_range[3] = range;
+			c.light.color_decay[0] = col.r;
+			c.light.color_decay[1] = col.g;
+			c.light.color_decay[2] = col.b;
+			c.light.color_decay[3] = l->get_param(Light3D::PARAM_ATTENUATION);
+			c.light.direction_cutoff[3] = -2.0f; // omni
+			if (Object::cast_to<SpotLight3D>(l) != nullptr) {
+				// A spot shines along its -Z.
+				const Vector3 dir = -xf.basis.get_column(2).normalized();
+				c.light.direction_cutoff[0] = dir.x;
+				c.light.direction_cutoff[1] = dir.y;
+				c.light.direction_cutoff[2] = dir.z;
+				c.light.direction_cutoff[3] = Math::cos(Math::deg_to_rad(l->get_param(Light3D::PARAM_SPOT_ANGLE)));
+				c.light.spot[0] = l->get_param(Light3D::PARAM_SPOT_ATTENUATION);
+			}
+			c.score = energy / MAX(d * d, 1.0f);
+			candidates.push_back(c);
+		}
+		for (uint32_t i = 1; i < candidates.size(); i++) {
+			for (uint32_t j = i; j > 0 && candidates[j - 1].score < candidates[j].score; j--) {
+				SWAP(candidates[j - 1], candidates[j]);
+			}
+		}
+		for (uint32_t i = 0; i < candidates.size() && (int)i < scattering_max_lights; i++) {
+			picked.push_back(candidates[i].light);
+		}
+	}
+	stat_scatter_lights = (int)picked.size();
+	MutexLock lock(scatter_mutex);
+	scatter_lights = picked;
+}
+
+// Each light's shadow as Godot's renderer filled it for this frame
+// (LightStorage::update_light_buffers), rebuilt from world space: the
+// scattering pass works in world meters, not this view's camera space.
+// Ported from the upstream godot_physx module's _fill_scatter_shadows.
+void PhysXFlowSimulation3D::_fill_scatter_shadows(LocalVector<FlowScatterRD::Light> &r_lights, const PagedArray<RID> *p_instances, const RID &p_shadow_atlas, uint32_t p_flags) const {
+	RendererRD::LightStorage *ls = RendererRD::LightStorage::get_singleton();
+	if (ls == nullptr || p_instances == nullptr || !p_shadow_atlas.is_valid() || !ls->owns_shadow_atlas(p_shadow_atlas)) {
+		return;
+	}
+	for (FlowScatterRD::Light &l : r_lights) {
+		// Light3D keeps its RenderingServer light to itself: find the frame's
+		// instance of it by where it is and what it is.
+		const bool spot = l.direction_cutoff[3] > -1.5f;
+		if (!(p_flags & (spot ? SCATTERING_SHADOW_SPOT : SCATTERING_SHADOW_OMNI))) {
+			continue; // this kind of light's shadows aren't received
+		}
+		const Vector3 at(l.position_range[0], l.position_range[1], l.position_range[2]);
+		RID instance;
+		RID base;
+		for (uint64_t j = 0; j < p_instances->size(); j++) {
+			const RID candidate = (*p_instances)[j];
+			const RID candidate_base = ls->light_instance_get_base_light(candidate);
+			const RS::LightType type = ls->light_get_type(candidate_base);
+			if (type == (spot ? RS::LIGHT_SPOT : RS::LIGHT_OMNI) && ls->light_instance_get_base_transform(candidate).origin.distance_squared_to(at) < 1e-6f) {
+				instance = candidate;
+				base = candidate_base;
+				break;
+			}
+		}
+		if (!instance.is_valid() || !ls->light_has_shadow(base) || !ls->shadow_atlas_owns_light_instance(p_shadow_atlas, instance)) {
+			continue;
+		}
+		Vector2i omni_offset;
+		const Rect2 rect = ls->light_instance_get_shadow_atlas_rect(instance, p_shadow_atlas, omni_offset);
+		const Transform3D light_xf = ls->light_instance_get_base_transform(instance);
+		Projection m;
+		float bias = ls->light_get_param(base, RS::LIGHT_PARAM_SHADOW_BIAS);
+		if (spot) {
+			Projection light_bias;
+			light_bias.set_light_bias();
+			Projection correction;
+			correction.set_depth_correction(false, true, false);
+			m = light_bias * correction * ls->light_instance_get_shadow_camera(instance, 0) * Projection(light_xf.affine_inverse());
+			bias = bias / 100.0f * ls->light_get_param(base, RS::LIGHT_PARAM_SHADOW_BLUR) * RendererSceneRenderRD::get_singleton()->shadows_quality_radius_get();
+		} else {
+			m = Projection(light_xf.affine_inverse());
+			l.shadow[2] = omni_offset.x * rect.size.width;
+			l.shadow[3] = omni_offset.y * rect.size.height;
+		}
+		for (int c = 0; c < 4; c++) {
+			for (int r = 0; r < 4; r++) {
+				l.shadow_matrix[c * 4 + r] = (float)m.columns[c][r];
+			}
+		}
+		l.atlas_rect[0] = rect.position.x;
+		l.atlas_rect[1] = rect.position.y;
+		l.atlas_rect[2] = rect.size.width;
+		l.atlas_rect[3] = rect.size.height;
+		l.shadow[0] = ls->light_get_param(base, RS::LIGHT_PARAM_SHADOW_OPACITY);
+		l.shadow[1] = bias;
+	}
 }
 
 // ---- Render -------------------------------------------------------------------
