@@ -1955,6 +1955,86 @@ TEST_CASE("[Variant] Writer and parser object") {
 	CHECK_EQ(ref_counted->get_meta("test"), Variant(123));
 }
 
+TEST_CASE("[Variant] Parser typed dictionary with objects") {
+	VariantParser::StreamString ss;
+	Variant parsed;
+	String errs;
+	int line;
+
+	SUBCASE("Object values") {
+		const String encoded = "Dictionary[int, RefCounted]({\n1: Object(RefCounted,\"script\":null,\"metadata/test\":123)\n})";
+
+		ss.s = encoded;
+		ERR_PRINT_OFF;
+		Error error = VariantParser::parse(&ss, parsed, errs, line);
+		ERR_PRINT_ON;
+
+		CHECK_EQ(error, ERR_UNAUTHORIZED);
+
+		ss = VariantParser::StreamString();
+		ss.s = encoded;
+		error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK(dict.is_typed());
+		CHECK_EQ(dict.get_typed_value_class_name(), RefCounted::get_class_static());
+		Ref<RefCounted> ref_counted = dict[1];
+		CHECK(ref_counted.is_valid());
+		if (ref_counted.is_valid()) {
+			CHECK_EQ(ref_counted->get_meta("test"), Variant(123));
+		}
+	}
+
+	SUBCASE("Object keys") {
+		const String encoded = "Dictionary[Resource, int]({\nObject(Resource,\"script\":null,\"resource_name\":\"key\"): 1\n})";
+
+		ss.s = encoded;
+		ERR_PRINT_OFF;
+		Error error = VariantParser::parse(&ss, parsed, errs, line);
+		ERR_PRINT_ON;
+
+		CHECK_EQ(error, ERR_UNAUTHORIZED);
+
+		ss = VariantParser::StreamString();
+		ss.s = encoded;
+		error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK_EQ(dict.get_typed_key_class_name(), Resource::get_class_static());
+		CHECK_EQ(dict.size(), 1);
+		if (dict.size() == 1) {
+			Ref<Resource> key = dict.keys()[0];
+			CHECK(key.is_valid());
+			if (key.is_valid()) {
+				CHECK_EQ(key->get_name(), "key");
+				CHECK_EQ(dict[key], Variant(1));
+			}
+		}
+	}
+
+	SUBCASE("Resource key type") {
+		ss.s = "Dictionary[Resource, int]({\n})";
+		Error error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK(dict.get_typed_key_builtin() == Variant::OBJECT);
+		CHECK_EQ(dict.get_typed_key_class_name(), Resource::get_class_static());
+	}
+
+	SUBCASE("Resource value type") {
+		ss.s = "Dictionary[int, Resource]({\n})";
+		Error error = VariantParser::parse(&ss, parsed, errs, line, nullptr, true);
+
+		CHECK_EQ(error, OK);
+		Dictionary dict = parsed;
+		CHECK(dict.get_typed_value_builtin() == Variant::OBJECT);
+		CHECK_EQ(dict.get_typed_value_class_name(), Resource::get_class_static());
+	}
+}
+
 TEST_CASE("[Variant] Basic comparison") {
 	CHECK_EQ(Variant(1), Variant(1));
 	CHECK_FALSE(Variant(1) != Variant(1));
