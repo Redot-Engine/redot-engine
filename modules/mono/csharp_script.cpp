@@ -80,7 +80,9 @@ const Vector<String> ignored_types = {};
 
 #ifdef TOOLS_ENABLED
 static bool _create_project_solution_if_needed() {
-	CRASH_COND(CSharpLanguage::get_singleton()->get_godotsharp_editor() == nullptr);
+	if (!CSharpLanguage::get_singleton()->get_godotsharp_editor()) {
+		return false; // GodotSharpEditor doesn't exist when running without the editor.
+	}
 	return CSharpLanguage::get_singleton()->get_godotsharp_editor()->call("CreateProjectSolutionIfNeeded");
 }
 #endif
@@ -454,6 +456,9 @@ bool CSharpLanguage::handles_global_class_type(const String &p_type) const {
 
 String CSharpLanguage::get_global_class_name(const String &p_path, String *r_base_type, String *r_icon_path, bool *r_is_abstract, bool *r_is_tool) const {
 	String class_name;
+	if (!GDMonoCache::godot_api_cache_updated) {
+		return class_name;
+	}
 	GDMonoCache::managed_callbacks.ScriptManagerBridge_GetGlobalClassName(&p_path, r_base_type, r_icon_path, r_is_abstract, r_is_tool, &class_name);
 	return class_name;
 }
@@ -2348,6 +2353,10 @@ bool CSharpScript::can_instantiate() const {
 	bool extra_cond = true;
 #endif
 
+	if (!GDMonoCache::godot_api_cache_updated) {
+		return false; // .NET failed to initialize, the load error already explains why.
+	}
+
 	/// @todo FIXME Need to think this through better.
 	/// For tool scripts, this will never fire if the class is not found. That's because we
 	/// don't know if it's a tool script if we can't find the class to access the attributes.
@@ -2603,6 +2612,9 @@ Error CSharpScript::reload(bool p_keep_state) {
 	reload_invalidated = false;
 
 	String script_path = get_path();
+
+	ERR_FAIL_COND_V_MSG(!GDMonoCache::godot_api_cache_updated, ERR_UNAVAILABLE,
+			"Cannot load C# script '" + script_path + "' because .NET failed to initialize.");
 
 	valid = GDMonoCache::managed_callbacks.ScriptManagerBridge_AddScriptBridge(this, &script_path);
 

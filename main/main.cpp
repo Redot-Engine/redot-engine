@@ -144,6 +144,7 @@
 
 #if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
 #include "modules/mono/editor/bindings_generator.h"
+#include "modules/mono/mono_gd/gd_mono.h"
 #endif
 
 #ifdef MODULE_GDSCRIPT_ENABLED
@@ -3940,6 +3941,16 @@ int Main::start() {
 	OS::get_singleton()->benchmark_begin_measure("Startup", "Main::Start");
 
 	ERR_FAIL_COND_V(!_start_success, EXIT_FAILURE);
+
+#if defined(MODULE_MONO_ENABLED) && defined(TOOLS_ENABLED)
+	// The .NET build can't work without .NET (see GDMono::initialize()). Quit before anything else runs.
+	if (!GDMono::get_singleton() || !GDMono::get_singleton()->is_initialized()) {
+		if (editor) {
+			OS::get_singleton()->remove_lock_file();
+		}
+		ERR_FAIL_V_MSG(EXIT_FAILURE, ".NET: Redot cannot run without the .NET runtime. Aborting.");
+	}
+#endif
 
 	bool has_icon = false;
 	String positional_arg;

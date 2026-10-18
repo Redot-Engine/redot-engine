@@ -151,14 +151,6 @@ jobs:
           platform: linuxbsd
           target: ${{ matrix.target }}
 
-      - name: Compilation (redot-cpp)
-        uses: ./.github/actions/redot-cpp-build
-        if: matrix.redot-cpp
-        with:
-          bin: ${{ matrix.bin }}
-          scons-flags: target=template_debug dev_build=yes verbose=yes
-          redot-cpp-branch: "master"
-
       - name: Save Godot build cache
         uses: ./.github/actions/godot-cache-save
         with:
@@ -175,6 +167,14 @@ jobs:
         run: |
           dotnet --info
           ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --godot-platform=linuxbsd --werror
+
+      - name: Compilation (redot-cpp)
+        uses: ./.github/actions/redot-cpp-build
+        if: matrix.redot-cpp
+        with:
+          bin: ${{ matrix.bin }}
+          scons-flags: target=template_debug dev_build=yes verbose=yes
+          redot-cpp-branch: "master"
 
       - name: Prepare artifact
         if: matrix.artifact
