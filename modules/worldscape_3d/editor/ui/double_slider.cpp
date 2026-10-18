@@ -174,8 +174,8 @@ void DoubleSlider::_notification(int what) {
 
 		// Draw handles
 		Vector2 handle_pos;
-		handle_pos.x = std::clamp(startx - .05f * handle->get_size().x, -10.f, size.x);
-		handle_pos.y = std::clamp(endx - .05f * handle->get_size().x, 0.f, size.x - 10.f);
+		handle_pos.x = std::clamp(startx - .05f * handle->get_size().x, static_cast<real_t>(-10.f), size.x);
+		handle_pos.y = std::clamp(endx - .05f * handle->get_size().x, static_cast<real_t>(0.f), size.x - 10.f);
 		draw_texture(handle, Vector2{ handle_pos.x, -mid_y - 10.f * (_display_scale - 1.f) });
 		draw_texture(handle, Vector2{ handle_pos.y, -mid_y - 10.f * (_display_scale - 1.f) });
 
