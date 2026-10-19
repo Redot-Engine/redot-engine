@@ -401,8 +401,10 @@ _ALWAYS_INLINE_ void store_i32x4(int32_t *r_ptr, i32x4 p_v) {
 _ALWAYS_INLINE_ f32x4 round4(f32x4 p_a) {
 	const f32x4 half = splat4(0.5f);
 	f32x4 adj = select(cmp_ge(p_a, zero4()), p_a + half, p_a - half);
-	// The integer round trip turns -0.0 into +0.0.
-	f32x4 t = trunc4(adj) + zero4();
+	// trunc4()'s _mm_round_ps keeps -0.0, but Math::round()'s integer cast yields +0.0. Clear the sign
+	// of zero with a bitwise mask; "+ 0.0f" is dropped by some compilers (MSVC), leaving -0.0 behind.
+	f32x4 truncated = trunc4(adj);
+	f32x4 t = cmp_neq(truncated, zero4()) & truncated;
 	const f32x4 limit = splat4(9223372036854775808.0f);
 	// cvttss2si returns 0x8000000000000000 for NaN and anything outside the int64 range.
 	mask4 invalid = cmp_ge(abs4(adj), limit) | cmp_neq(adj, adj);
