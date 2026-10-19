@@ -8,14 +8,20 @@ out/<config>/ -- ready to drop into thirdparty/physx/lib/<platform>/...
 
 Also collected:
   - libPVDRuntime_static_64.a  (linked by the module's Linux SCsub)
-  - the GPU static set (libPhysX*Gpu_static_64.a, libPhysXCudaContextManager*),
-    reported as extras -- the Linux link line does not consume them yet
   - shared GPU runtimes (libPhysXGpu_64.so, libPhysXArticulationGpu_64.so):
     RUNPATH is set to $ORIGIN (the module stages them beside the engine
     binary and preloads the CUDA driver before load)
   - include/ -> out/include (the SDK headers, for thirdparty/physx/include)
 
-Usage: python3 collect_physx_libs.py <linux|macos>
+Deliberately NOT collected:
+  - the GPU solver static archives (libPhysX*Gpu_static_64.a,
+    libPhysXCudaContextManager_static_64.a): the Linux engine never links
+    them -- it resolves its GPU dispatch entry points from the shared
+    libPhysXGpu_64.so, so collecting them only adds ~700 MB of dead weight
+  - a stale libPhysXCooking_static_64.a: PhysX 5.12 removed the cooking
+    library and exports its functions from PhysXCommon
+
+Usage: python3 .github/workflows/scripts/collect_physx_libs.py <linux|macos>
 """
 
 import glob
@@ -37,6 +43,24 @@ EXPECTED = {
     "PVDRuntime_static_64",
 }
 
+# The GPU solver components are built as intermediate static archives on the
+# way to the shared PhysXGpu runtime, but the module never links them: the
+# Linux link resolves its GPU dispatch entry points from the shared
+# libPhysXGpu_64.so. Collecting them added ~700 MB of dead weight per
+# artifact, so they are deliberately left out of the vendor layout. The
+# removed PhysXCooking archive is skipped too (5.11 leftovers in a build
+# tree): 5.12 exports its functions from PhysXCommon.
+GPU_STATIC_SKIP = {
+    "libPhysXArticulationGpu_static_64.a",
+    "libPhysXBroadphaseGpu_static_64.a",
+    "libPhysXCommonGpu_static_64.a",
+    "libPhysXNarrowphaseGpu_static_64.a",
+    "libPhysXSimulationControllerGpu_static_64.a",
+    "libPhysXSolverGpu_static_64.a",
+    "libPhysXCudaContextManager_static_64.a",
+    "libPhysXCooking_static_64.a",
+}
+
 
 def config_of(path):
     parts = path.replace("\\", "/").split("/")
@@ -55,7 +79,10 @@ def collect(groups, patterns):
             # sorts before "physx", so a naive glob could shadow fresh ones).
             if "/obj/" in f or "/engine/" in f or f.startswith("engine/"):
                 continue
-            groups.setdefault((config_of(f), os.path.basename(f)), []).append(f)
+            name = os.path.basename(f)
+            if name in GPU_STATIC_SKIP:
+                continue
+            groups.setdefault((config_of(f), name), []).append(f)
 
 
 def main():

@@ -17,14 +17,12 @@ on:
 #   - the CPU static libs (PhysX/Common/Foundation/Extensions/PvdSDK/
 #     CharacterKinematic/Vehicle_static_64; PhysX 5.12 folded cooking into
 #     PhysXCommon, so there is no separate Cooking lib anymore)
-#   - the GPU static libs (PhysXCommonGpu/BroadphaseGpu/NarrowphaseGpu/
-#     SolverGpu/SimulationControllerGpu/ArticulationGpu_static_64) plus
-#     PhysXCudaContextManager_static_64
 #   - PVDRuntime_static_64 (the Linux link line includes it)
-#   - the shared GPU runtime built from source (libPhysXGpu_64.so and, if the
-#     SDK emits it, libPhysXArticulationGpu_64.so) with RUNPATH=$ORIGIN --
-#     staged next to the engine binary at runtime, replacing the plugins/
-#     archive that the ovphysx release ships for 5.11
+#   - the shared GPU runtime built from source (libPhysXGpu_64.so) with
+#     RUNPATH=$ORIGIN -- staged next to the engine binary at runtime. The
+#     intermediate GPU solver static archives (BroadphaseGpu/SolverGpu/...)
+#     are deliberately NOT collected: the Linux engine never links them, it
+#     resolves its GPU dispatch entry points from the shared runtime.
 #   - include/ (the SDK headers, for the thirdparty/physx/include update)
 #
 # PhysX only: Flow and Blast have their own pipelines and are NOT built here,
@@ -32,16 +30,16 @@ on:
 # locally). macOS: PhysX upstream dropped macOS from its build system
 # entirely; Linux ARM64 is unwired in the module's SCsub. Both absent.
 #
-# Drop-in after downloading the artifact:
-#   out/checked/*.a  -> thirdparty/physx/lib/linux/x86_64/checked/
-#   out/release/*.a  -> thirdparty/physx/lib/linux/x86_64/release/
-#   out/<config>/libPhysX*.so -> thirdparty/physx/bin/linux/x86_64/release/
-#   out/include/     -> thirdparty/physx/include/
-#
 # NOTE on build time: PX_GENERATE_GPU_REDUCED_ARCHITECTURES=False compiles
 # the CUDA kernels for the full SM set -- expect a multi-hour job. Flip that
 # switch to True in the preset below if a faster, reduced-arch build is
 # acceptable.
+#
+# Drop-in after downloading the artifact:
+#   out/checked/*.a  -> thirdparty/physx/lib/linux/x86_64/checked/
+#   out/release/*.a  -> thirdparty/physx/lib/linux/x86_64/release/
+#   out/<config>/libPhysXGpu_64.so -> thirdparty/physx/bin/linux/x86_64/release/
+#   out/include/     -> thirdparty/physx/include/
 
 jobs:
   build-linux-x86_64:
@@ -68,10 +66,11 @@ jobs:
 
       - name: Install CUDA Toolkit 12.9.2 (Update 2)
         run: |
-          # Network-repo equivalent of NVIDIA's local .deb installer flow for
-          # CUDA 12.9.2 (12.9.2-575.57.08): same toolkit, same apt meta package
-          # (cuda-toolkit-12-9), without the multi-GB bundled driver installer
-          # a runner neither needs nor can use.
+          # Required: the GPU projects below cross-compile the CUDA kernels
+          # here (no GPU or driver is needed on the runner). Network-repo
+          # equivalent of NVIDIA's local .deb installer flow for CUDA 12.9.2
+          # (12.9.2-575.57.08): same toolkit, same apt meta package
+          # (cuda-toolkit-12-9).
           wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
           sudo dpkg -i cuda-keyring_1.1-1_all.deb
           sudo apt-get update -qq
@@ -95,9 +94,13 @@ jobs:
           # PX_CMAKE_SUPPRESS_REGENERATION (an MSVC/zero_check-only switch; the
           # Linux make/ninja generators have no zero_check to suppress). The
           # two NV_USE_*_WINCRT switches are Windows-only CRT selections and
-          # are carried verbatim as documented no-ops here. Full SM arch set
-          # (PX_GENERATE_GPU_REDUCED_ARCHITECTURES=False) per the vendor
-          # preset; see the build-time NOTE at the top of this file.
+          # are carried verbatim as documented no-ops here.
+          #
+          # PX_GENERATE_GPU_PROJECTS=True builds the CUDA GPU components and
+          # the shared libPhysXGpu_64.so runtime from source; the intermediate
+          # GPU static archives it also emits are skipped by
+          # collect_physx_libs.py (the Linux engine never links them -- the
+          # shared runtime carries that functionality).
           cat > physx/buildtools/presets/public/linux-clang-rd-gpu.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <preset name="linux-clang-rd-gpu" comment="Linux clang PhysX SDK general settings __ Redot 2026">
@@ -140,7 +143,7 @@ jobs:
 
       - name: Collect libraries, shared runtimes and headers
         run: |
-          python3 engine/collect_physx_libs.py linux
+          python3 engine/.github/workflows/scripts/collect_physx_libs.py linux
 
       - name: Upload SDK artifact
         uses: actions/upload-artifact@v4
