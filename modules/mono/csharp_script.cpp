@@ -2607,14 +2607,14 @@ Error CSharpScript::reload(bool p_keep_state) {
 		return OK;
 	}
 
-	// In the case of C#, reload doesn't really do any script reloading.
-	// That's done separately via domain reloading.
-	reload_invalidated = false;
-
 	String script_path = get_path();
 
 	ERR_FAIL_COND_V_MSG(!GDMonoCache::godot_api_cache_updated, ERR_UNAVAILABLE,
 			"Cannot load C# script '" + script_path + "' because .NET failed to initialize.");
+
+	// In the case of C#, reload doesn't really do any script reloading.
+	// That's done separately via domain reloading.
+	reload_invalidated = false;
 
 	valid = GDMonoCache::managed_callbacks.ScriptManagerBridge_AddScriptBridge(this, &script_path);
 

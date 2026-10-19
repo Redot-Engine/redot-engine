@@ -3948,7 +3948,7 @@ int Main::start() {
 		if (editor) {
 			OS::get_singleton()->remove_lock_file();
 		}
-		ERR_FAIL_V_MSG(EXIT_FAILURE, ".NET: Redot cannot run without the .NET runtime. Aborting.");
+		ERR_FAIL_V_MSG(EXIT_FAILURE, "You need the .NET runtime for Redot to run.");
 	}
 #endif
 
