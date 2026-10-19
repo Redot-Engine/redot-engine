@@ -580,7 +580,8 @@ void WorldScape3DUI::reset_decals() {
 			editor_decal_color.set(i, Color{});
 			editor_decal_visible.set(i, false);
 		}
-		editor_brush_texture_rid = RID{};
+		RenderingServer::get_singleton()->free(editor_brush_texture_rid);
+		editor_brush_texture_rid = RID();
 	}
 }
 
@@ -875,7 +876,9 @@ void WorldScape3DUI::on_setting_changed(const Variant &setting) {
 	}
 
 	_brush_data = _tool_settings->get_brush_data();
-	_brush_data.set("asset_id", _asset_dock->get_current_list()->get_selected_id());
+	if (auto asset_list = _asset_dock->get_current_list(); asset_list) {
+		_brush_data.set("asset_id", asset_list->get_selected_id());
+	}
 	if (auto editor = _plugin->get_editor(); editor) {
 		editor->set_brush_data(_brush_data);
 	}
@@ -914,6 +917,12 @@ void WorldScape3DUI::_notification(int what) {
 		case Node::NOTIFICATION_POST_ENTER_TREE: {
 			if (_asset_dock) {
 				_asset_dock->init();
+			}
+			break;
+		}
+		case Node::NOTIFICATION_PREDELETE: {
+			if (_asset_dock && !_asset_dock->get_parent()) {
+				_asset_dock->queue_free();
 			}
 			break;
 		}
