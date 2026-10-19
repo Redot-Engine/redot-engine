@@ -352,6 +352,7 @@ Array MCPTools::get_tool_definitions() {
 		props["value"] = MCPSchemaBuilder::make_object_property("Used by 'set_setting' (arbitrary value), 'add_input' ({keycode: int|str, deadzone: float}). NOT used by add_autoload.");
 		props["path"] = MCPSchemaBuilder::make_string_property("Used by 'add_autoload' (script path res://), 'list_files', 'read_file_res', 'create_file_res'");
 		props["content"] = MCPSchemaBuilder::make_string_property("Content for 'create_file_res'");
+		props["background"] = MCPSchemaBuilder::make_boolean_property("Used by 'run'. Default true: the game runs muted in an unfocused, off-screen window (screenshots and input still work). Set false to show a normal window with audio.");
 
 		Array required;
 		required.push_back("action");
@@ -983,6 +984,9 @@ MCPTools::ToolResult MCPTools::tool_project_config(const Dictionary &p_args) {
 		args.push_back("--no-header");
 		args.push_back("--mcp-bridge-port");
 		args.push_back(itos(b_port));
+		if (bool(p_args.get("background", true))) {
+			args.push_back("--mcp-background");
+		}
 		Error err = MCPServer::get_singleton()->start_game_process(args, ProjectSettings::get_singleton()->globalize_path(lf));
 		if (err != OK) {
 			result.set_error("Failed to run project: " + itos(err));
