@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
-"""Collect PhysX static libs built by build.sh into the vendor layout.
+"""Collect a built PhysX SDK into the vendor layout.
 
-Scans the PhysX source tree for libPhysX*.a, groups them by SDK config
-(checked / release) and library name, collapses multi-arch duplicates
+Scans the PhysX source tree for the built libraries, groups them by SDK
+config (checked / release) and library name, collapses multi-arch duplicates
 into a universal binary on macOS (lipo), and lays everything out under
 out/<config>/ -- ready to drop into thirdparty/physx/lib/<platform>/...
+
+Also collected:
+  - libPVDRuntime_static_64.a  (linked by the module's Linux SCsub)
+  - the GPU static set (libPhysX*Gpu_static_64.a, libPhysXCudaContextManager*),
+    reported as extras -- the Linux link line does not consume them yet
+  - shared GPU runtimes (libPhysXGpu_64.so, libPhysXArticulationGpu_64.so):
+    RUNPATH is set to $ORIGIN (the module stages them beside the engine
+    binary and preloads the CUDA driver before load)
+  - include/ -> out/include (the SDK headers, for thirdparty/physx/include)
 
 Usage: python3 collect_physx_libs.py <linux|macos>
 """
@@ -24,6 +33,7 @@ EXPECTED = {
     "PhysX_static_64",
     "PhysXCommon_static_64",
     "PhysXFoundation_static_64",
+    "PVDRuntime_static_64",
 }
 
 
@@ -35,16 +45,27 @@ def config_of(path):
     return "unknown"
 
 
+def collect(groups, patterns):
+    for pattern in patterns:
+        for f in glob.glob(pattern, recursive=True):
+            f = f.replace("\\", "/")
+            # Skip intermediates and the checked-out engine repo (it vendors
+            # the PREVIOUS SDK version's libs under the same names -- "engine"
+            # sorts before "physx", so a naive glob could shadow fresh ones).
+            if "/obj/" in f or "/engine/" in f or f.startswith("engine/"):
+                continue
+            groups.setdefault((config_of(f), os.path.basename(f)), []).append(f)
+
+
 def main():
     platform = sys.argv[1] if len(sys.argv) > 1 else "linux"
     groups = {}
-    for f in glob.glob("**/libPhysX*.a", recursive=True):
-        if "/obj/" in f.replace("\\", "/"):
-            continue  # intermediate archives
-        groups.setdefault((config_of(f), os.path.basename(f)), []).append(f)
+    collect(groups, ["**/libPhysX*.a", "**/libPVDRuntime_static_64.a"])
+    shared = {}
+    collect(shared, ["**/libPhysX*.so", "**/libPhysX*.so.*"])
 
     if not groups:
-        sys.exit("ERROR: no libPhysX*.a found -- did build.sh produce output?")
+        sys.exit("ERROR: no libPhysX*.a found -- did the build produce output?")
 
     for (config, name), paths in sorted(groups.items()):
         dest = os.path.join("out", config)
@@ -57,12 +78,42 @@ def main():
             shutil.copy(paths[0], out)
             print(f"copied: {name}  <-  {paths[0]}")
 
+    has_patchelf = shutil.which("patchelf") is not None
+    for (config, name), paths in sorted(shared.items()):
+        dest = os.path.join("out", config)
+        os.makedirs(dest, exist_ok=True)
+        out = os.path.join(dest, name)
+        shutil.copy(paths[0], out)
+        os.chmod(out, 0o755)
+        if has_patchelf:
+            # The module stages these beside the engine binary with a bare
+            # soname lookup; RUNPATH=$ORIGIN is what makes that resolve.
+            subprocess.run(["patchelf", "--set-rpath", "$ORIGIN", out], check=False)
+        print(f"shared: {name}  <-  {paths[0]}" + ("" if has_patchelf else "  (patchelf not found; RUNPATH not set)"))
+
+    if os.path.isdir("include"):
+        dest = os.path.join("out", "include")
+        if os.path.isdir(dest):
+            shutil.rmtree(dest)
+        shutil.copytree("include", dest)
+        print("copied: include/  ->  out/include")
+
     print("\nExpected-library check per config:")
     for config in sorted(os.listdir("out")):
+        if config == "include":
+            continue
         have = set(os.listdir(os.path.join("out", config)))
-        missing = {n + ".a" for n in EXPECTED} - have
-        extra = have - {n + ".a" for n in EXPECTED}
+        missing = {"lib" + n + ".a" for n in EXPECTED} - have
+        extra = have - {"lib" + n + ".a" for n in EXPECTED}
         print(f"  {config}: {len(have)} files; missing={sorted(missing) or 'none'}; extra={sorted(extra) or 'none'}")
+
+    print(
+        "\nDrop-in:\n"
+        "  out/checked/*.a -> thirdparty/physx/lib/linux/x86_64/checked/\n"
+        "  out/release/*.a -> thirdparty/physx/lib/linux/x86_64/release/\n"
+        "  out/<config>/libPhysX*.so -> thirdparty/physx/bin/linux/x86_64/release/\n"
+        "  out/include/    -> thirdparty/physx/include/"
+    )
 
 
 if __name__ == "__main__":

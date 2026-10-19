@@ -4,40 +4,83 @@ on:
   workflow_dispatch:
     inputs:
       physx_ref:
-        description: "PhysX source ref (ovphysx-0.5.11 == PhysX SDK 5.11)"
-        default: "ovphysx-0.5.11"
+        description: "PhysX source ref (ovphysx-0.7.0 == PhysX SDK 5.12)"
+        default: "ovphysx-0.7.0"
         required: false
 
-# Builds the PhysX SDK static libraries for Linux x86_64 with CUDA GPU
-# support, in both SDK configurations:
+# Builds the PhysX SDK for Linux x86_64 with CUDA GPU support, in both SDK
+# configurations, from the ovphysx release tag:
 #   checked  -> linked by editor / template_debug builds (default)
 #   release  -> linked by template_release builds (physx_config=release)
 #
-# The artifact is a superset of a CPU-only build: the eight core static
-# libs plus the GPU set (PhysXCommonGpu/SolverGpu/..._static_64). The
-# closed-source kernel runtime (libPhysXGpu_64.so) is NOT built here --
-# NVIDIA ships it prebuilt inside the ovphysx release archives
-# (plugins/); place that .so beside the engine binary at runtime.
+# Per config the artifact contains:
+#   - the CPU static libs (PhysX/Common/Foundation/Extensions/PvdSDK/Cooking/
+#     CharacterKinematic/Vehicle_static_64)
+#   - the GPU static libs (PhysXCommonGpu/BroadphaseGpu/NarrowphaseGpu/
+#     SolverGpu/SimulationControllerGpu/ArticulationGpu_static_64) plus
+#     PhysXCudaContextManager_static_64
+#   - PVDRuntime_static_64 (the Linux link line includes it)
+#   - the shared GPU runtime built from source (libPhysXGpu_64.so and, if the
+#     SDK emits it, libPhysXArticulationGpu_64.so) with RUNPATH=$ORIGIN --
+#     staged next to the engine binary at runtime, replacing the plugins/
+#     archive that the ovphysx release ships for 5.11
+#   - include/ (the SDK headers, for the thirdparty/physx/include update)
 #
-# The module's SCsub currently links GPU libs on Windows only (its
-# GODOT_PHYSX_GPU gate); the Linux GPU set is drawer stock until that
-# wiring exists. macOS: PhysX 5.11 upstream dropped macOS from its
-# build system entirely (no presets, no Darwin cmake handling), and
-# Linux ARM64 is unwired in the SCsub -- both intentionally absent.
+# PhysX only: Flow and Blast have their own pipelines and are NOT built here,
+# and there is deliberately no Windows job (5.12 Windows libs are produced
+# locally). macOS: PhysX upstream dropped macOS from its build system
+# entirely; Linux ARM64 is unwired in the module's SCsub. Both absent.
 #
-# Feed the downloaded artifact's out/checked and out/release folders
-# into thirdparty/physx/lib/linux/x86_64/...
+# Drop-in after downloading the artifact:
+#   out/checked/*.a  -> thirdparty/physx/lib/linux/x86_64/checked/
+#   out/release/*.a  -> thirdparty/physx/lib/linux/x86_64/release/
+#   out/<config>/libPhysX*.so -> thirdparty/physx/bin/linux/x86_64/release/
+#   out/include/     -> thirdparty/physx/include/
+#
+# NOTE on build time: PX_GENERATE_GPU_REDUCED_ARCHITECTURES=False compiles
+# the CUDA kernels for the full SM set -- expect a multi-hour job. Flip that
+# switch to True in the preset below if a faster, reduced-arch build is
+# acceptable.
 
 jobs:
-  build-linux-x86_64-gpu:
-    runs-on: ubuntu-latest
-    container:
-      image: nvidia/cuda:12.8.1-devel-ubuntu24.04
+  build-linux-x86_64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+
     steps:
-      - name: Install toolchain
+      - name: Free disk space (full-arch CUDA kernels are large)
         run: |
-          apt-get update -qq
-          apt-get install -y -qq clang lld python3 git curl ca-certificates cmake make > /dev/null
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo docker image prune -af > /dev/null 2>&1 || true
+          df -h /
+
+      - name: Install toolchain (clang / GCC / build tools)
+        run: |
+          sudo apt-get update -qq
+          # clang 18 on noble is a supported nvcc 12.9 host compiler; GCC stays
+          # installed as clang's libstdc++/linker backend.
+          sudo apt-get install -y -qq clang lld gcc g++ cmake make python3 \
+            patchelf curl ca-certificates > /dev/null
+          clang --version | head -1
+          gcc --version | head -1
+
+      - name: Install CUDA Toolkit 12.9.2 (Update 2)
+        run: |
+          # Network-repo equivalent of NVIDIA's local .deb installer flow for
+          # CUDA 12.9.2 (12.9.2-575.57.08): same toolkit, same apt meta package
+          # (cuda-toolkit-12-9), without the multi-GB bundled driver installer
+          # a runner neither needs nor can use.
+          wget -q https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
+          sudo dpkg -i cuda-keyring_1.1-1_all.deb
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq cuda-toolkit-12-9
+          echo "/usr/local/cuda/bin" >> "$GITHUB_PATH"
+
+      - name: Verify CUDA toolchain
+        run: |
+          nvcc --version
+          echo "CUDA_PATH=$(dirname "$(dirname "$(command -v nvcc)")")" >> "$GITHUB_ENV"
 
       - name: Checkout PhysX source
         uses: actions/checkout@v4
@@ -47,27 +90,33 @@ jobs:
 
       - name: Write vendor preset
         run: |
-          # CPU-only vendor preset: the GPU archive's cudamanager references the
-          # CUDA driver API directly (cuMemsetD8_v2...), which would make -lcuda
-          # a hard link requirement nobody on CI can satisfy; CPU-only libs are
-          # self-contained.
-          cat > physx/buildtools/presets/public/linux-clang-rd.xml <<'EOF'
+          # Redot vendor preset: the vc17win64-rd preset carried to Linux, minus
+          # PX_CMAKE_SUPPRESS_REGENERATION (an MSVC/zero_check-only switch; the
+          # Linux make/ninja generators have no zero_check to suppress). The
+          # two NV_USE_*_WINCRT switches are Windows-only CRT selections and
+          # are carried verbatim as documented no-ops here. Full SM arch set
+          # (PX_GENERATE_GPU_REDUCED_ARCHITECTURES=False) per the vendor
+          # preset; see the build-time NOTE at the top of this file.
+          cat > physx/buildtools/presets/public/linux-clang-rd-gpu.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
-          <preset name="linux-clang-rd" comment="Linux clang PhysX SDK general settings (CPU only)">
+          <preset name="linux-clang-rd-gpu" comment="Linux clang PhysX SDK general settings __ Redot 2026">
             <platform targetPlatform="linux" compiler="clang" />
             <CMakeSwitches>
               <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="Generate the snippets" />
-              <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="False" comment="Generate the OmniPVD project" />
-              <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />
-              <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="False" comment="Generate the GPU projects" />
+              <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="True" comment="Generate the OmniPVD project" />
+              <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libraries" />
+              <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS" value="True" comment="Generate the GPU projects, if possible." />
               <cmakeSwitch name="PX_GENERATE_GPU_PROJECTS_ONLY" value="False" comment="Generate ONLY the GPU projects, if possible." />
+              <cmakeSwitch name="PX_CUDA_DEVICE_DEBUG" value="False" comment="Build debug CUDA device code with -G for single line stepping" />
+              <cmakeSwitch name="PX_SCALAR_MATH" value="False" comment="Disable SIMD math" />
+              <cmakeSwitch name="NV_USE_STATIC_WINCRT" value="True" comment="Windows-only CRT switch; no-op on Linux" />
+              <cmakeSwitch name="NV_USE_DEBUG_WINCRT" value="False" comment="Windows-only CRT switch; no-op on Linux" />
+              <cmakeSwitch name="PX_FLOAT_POINT_PRECISE_MATH" value="False" comment="Float point precise math" />
               <cmakeSwitch name="PX_GENERATE_GPU_STATIC_LIBRARIES" value="False" comment="Generate PhysXGPU static libraries" />
               <cmakeSwitch name="PX_GENERATE_GPU_REDUCED_ARCHITECTURES" value="False" comment="Generate only a reduced number of GPU architectures for faster compilation" />
-              <cmakeSwitch name="PX_SCALAR_MATH" value="False" comment="Disable SIMD math" />
-              <cmakeSwitch name="PX_FLOAT_POINT_PRECISE_MATH" value="False" comment="Float point precise math" />
             </CMakeSwitches>
             <CMakeParams>
-              <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-clang-rd/PhysX" comment="Install path relative to PhysX SDK root" />
+              <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux-clang-rd-gpu/PhysX" comment="Install path relative to PhysX SDK root" />
             </CMakeParams>
           </preset>
           EOF
@@ -75,20 +124,20 @@ jobs:
       - name: Generate build projects (packman pulls dependencies)
         run: |
           cd physx
-          ./generate_projects.sh linux-clang-rd
+          ./generate_projects.sh linux-clang-rd-gpu
 
       - name: Build checked and release configs
         run: |
           cd physx
-          cmake --build compiler/linux-clang-rd-checked -j"$(nproc)"
-          cmake --build compiler/linux-clang-rd-release -j"$(nproc)"
+          cmake --build compiler/linux-clang-rd-gpu-checked -j"$(nproc)"
+          cmake --build compiler/linux-clang-rd-gpu-release -j"$(nproc)"
 
       - name: Checkout engine repo (collection script)
         uses: actions/checkout@v4
         with:
           path: engine
 
-      - name: Collect static libraries
+      - name: Collect libraries, shared runtimes and headers
         run: |
           python3 engine/collect_physx_libs.py linux
 
