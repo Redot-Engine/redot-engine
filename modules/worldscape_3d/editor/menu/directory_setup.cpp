@@ -144,9 +144,7 @@ void DirectorySetup::directory_setup_popup() {
 	}
 
 	_dialog->set_visible(true);
-
-	// popup
-	EditorInterface::get_singleton()->popup_dialog_centered(_dialog);
+	_dialog->popup_centered();
 }
 
 void DirectorySetup::on_select_file_pressed(EditorFileDialog::FileMode mode) {
