@@ -808,7 +808,7 @@ void ChannelPackerDialog::set_normal_vector(Ref<Image> image, bool quiet) {
 			sum += normal->get_pixel(x, y);
 		}
 	}
-	real_t div = normal->get_width() * normal->get_height();
+	float div = normal->get_width() * normal->get_height();
 	if (div <= 0.f) {
 		return;
 	}
@@ -835,7 +835,7 @@ void ChannelPackerDialog::align_normals(Ref<Image> image, int iteration) {
 			vector_pixel = mat3.xform(vector_pixel);
 			vector_pixel += Vector3{ 1.f, 1.f, 1.f };
 			vector_pixel *= 0.5f;
-			const Color new_pixel{ vector_pixel.x, vector_pixel.y, vector_pixel.z, old_pixel.a };
+			const Color new_pixel(vector_pixel.x, vector_pixel.y, vector_pixel.z, old_pixel.a);
 			image->set_pixel(x, y, new_pixel);
 		}
 	}
