@@ -352,7 +352,7 @@ Array MCPTools::get_tool_definitions() {
 		props["value"] = MCPSchemaBuilder::make_object_property("Used by 'set_setting' (arbitrary value), 'add_input' ({keycode: int|str, deadzone: float}). NOT used by add_autoload.");
 		props["path"] = MCPSchemaBuilder::make_string_property("Used by 'add_autoload' (script path res://), 'list_files', 'read_file_res', 'create_file_res'");
 		props["content"] = MCPSchemaBuilder::make_string_property("Content for 'create_file_res'");
-		props["background"] = MCPSchemaBuilder::make_boolean_property("Used by 'run'. Default true: the game runs muted in an unfocused, off-screen window (screenshots and input still work). Set false to show a normal window with audio.");
+		props["background"] = MCPSchemaBuilder::make_boolean_property("Used by 'run'. Default true: the game runs muted in an unfocused, off-screen window (screenshots and input still work). Set false to show a normal window with audio. On Wayland the window can't be moved off-screen and stays visible.");
 
 		Array required;
 		required.push_back("action");

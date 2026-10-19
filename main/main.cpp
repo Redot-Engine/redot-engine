@@ -3395,7 +3395,8 @@ Error Main::setup2(bool p_show_boot_logo) {
 		if (mcp_background && !init_embed_parent_window_id) {
 			// Move the window past the left edge of the desktop before it's shown.
 			// This can't be the initial position, as that is clamped to a screen.
-			// Platforms that don't support positioning still get the no-focus flag.
+			// Wayland doesn't let clients position or unfocus toplevel windows,
+			// so there the window stays visible and only the audio is muted.
 			Rect2i desktop_rect;
 			for (int i = 0; i < display_server->get_screen_count(); i++) {
 				Rect2i screen_rect(display_server->screen_get_position(i), display_server->screen_get_size(i));
