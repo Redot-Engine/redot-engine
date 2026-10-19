@@ -91,6 +91,9 @@ void ListEntry::init() {
 	add_theme_constant_override("margin_top", 5);
 	add_theme_constant_override("margin_left", 5);
 	add_theme_constant_override("margin_right", 5);
+	if (!_label_rows) {
+		_label_rows = memnew(VBoxContainer);
+	}
 	if (!get_children().has(_label_rows)) {
 		add_child(_label_rows, true);
 	}
@@ -102,31 +105,7 @@ void ListEntry::init() {
 
 ListEntry::ListEntry(const WorldScape3DAssets::AssetType type) {
 	set_name("ListEntry");
-
 	_type = type;
-	_label_rows = memnew(VBoxContainer);
-	_margin = memnew(MarginContainer);
-	_button_row = memnew(FlowContainer);
-	_button_clear = memnew(TextureButton);
-	_button_edit = memnew(TextureButton);
-	_spacer = memnew(Control);
-	_button_enabled = memnew(TextureButton);
-}
-
-ListEntry::~ListEntry() {
-	if (_count_label) {
-		_count_label->queue_free();
-	}
-	if (_name_label) {
-		_name_label->queue_free();
-	}
-	_button_enabled->queue_free();
-	_spacer->queue_free();
-	_button_edit->queue_free();
-	_button_clear->queue_free();
-	_button_row->queue_free();
-	_margin->queue_free();
-	_label_rows->queue_free();
 }
 
 void ListEntry::_bind_methods() {
@@ -234,6 +213,9 @@ void ListEntry::mouse_exit() {
 void ListEntry::setup_buttons() {
 	static constexpr Vector2 icon_size{ 12, 12 };
 
+	if (!_margin) {
+		_margin = memnew(MarginContainer);
+	}
 	_margin->set_mouse_filter(MOUSE_FILTER_PASS);
 	_margin->add_theme_constant_override("margin_top", 5);
 	_margin->add_theme_constant_override("margin_left", 5);
@@ -242,6 +224,9 @@ void ListEntry::setup_buttons() {
 		add_child(_margin);
 	}
 
+	if (!_button_row) {
+		_button_row = memnew(FlowContainer);
+	}
 	_button_row->set_h_size_flags(SIZE_EXPAND_FILL);
 	_button_row->set_alignment(FlowContainer::ALIGNMENT_CENTER);
 	_button_row->set_mouse_filter(Control::MOUSE_FILTER_PASS);
@@ -250,6 +235,9 @@ void ListEntry::setup_buttons() {
 	}
 
 	if (_type == WorldScape3DAssets::TYPE_MESH) {
+		if (!_button_enabled) {
+			_button_enabled = memnew(TextureButton);
+		}
 		_button_enabled->set_texture_normal(_enabled_icon);
 		_button_enabled->set_texture_pressed(_disabled_icon);
 		_button_enabled->set_custom_minimum_size(icon_size);
@@ -267,6 +255,9 @@ void ListEntry::setup_buttons() {
 		}
 	}
 
+	if (!_button_edit) {
+		_button_edit = memnew(TextureButton);
+	}
 	_button_edit->set_texture_normal(_edit_icon);
 	_button_edit->set_custom_minimum_size(icon_size);
 	_button_edit->set_h_size_flags(Control::SIZE_SHRINK_END);
@@ -281,12 +272,18 @@ void ListEntry::setup_buttons() {
 		_button_row->add_child(_button_edit, true);
 	}
 
+	if (!_spacer) {
+		_spacer = memnew(Control);
+	}
 	_spacer->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	_spacer->set_mouse_filter(Control::MOUSE_FILTER_PASS);
 	if (!_button_row->get_children().has(_spacer)) {
 		_button_row->add_child(_spacer, true);
 	}
 
+	if (!_button_clear) {
+		_button_clear = memnew(TextureButton);
+	}
 	_button_clear->set_texture_normal(_clear_icon);
 	_button_clear->set_custom_minimum_size(icon_size);
 	_button_clear->set_h_size_flags(Control::SIZE_SHRINK_END);
