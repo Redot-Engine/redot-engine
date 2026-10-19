@@ -459,10 +459,11 @@ TEST_CASE("[SIMD] Vector2, Vector3 and Vector4 match the scalar reference") {
 			SIMD_EXPECT_SAME_REAL(mismatches, a.floor(), ra.ref_floor());
 			SIMD_EXPECT_SAME_REAL(mismatches, a.ceil(), ra.ref_ceil());
 			// round() routes through (long long); non-finite or out-of-int64-range inputs are UB in the
-			// scalar reference and its result diverges across compilers, so assert only the defined domain.
+			// scalar reference and diverge across compilers, so assert only the defined domain. Plain
+			// float comparisons keep the bound compiler-independent and also exclude NaN.
 			bool round_defined = true;
 			for (int e = 0; e < 4; e++) {
-				round_defined = round_defined && std::isfinite(a[e]) && std::abs(a[e]) < 9223372036854775808.0;
+				round_defined = round_defined && a[e] > -9223372036854775808.0 && a[e] < 9223372036854775808.0;
 			}
 			if (round_defined) {
 				SIMD_EXPECT_SAME_REAL(mismatches, a.round(), ra.ref_round());
@@ -550,15 +551,21 @@ TEST_CASE("[SIMD] Color matches the scalar reference") {
 			const Color hi = rng.color();
 			const float amount = rng.edge_float();
 			const RefColor ra(a);
-			// Packing is checked on both arbitrary and in-range colors.
+			// Packing scales by 255/65535 and casts through (uintN); components outside [0, 1] overflow
+			// that cast, which is UB in the scalar reference and diverges across compilers, so pack only
+			// well-defined colors. Plain comparisons also exclude NaN.
 			const Color packed = rng.chance(2) ? a : Color(rng.range(300) / 255.0f - 0.1f, rng.range(65600) / 65535.0f, rng.unit(), rng.range(256) / 255.0f);
 			const RefColor rp(packed);
-			SIMD_EXPECT_EQUAL(mismatches, packed.to_rgba32(), rp.ref_to_rgba32());
-			SIMD_EXPECT_EQUAL(mismatches, packed.to_argb32(), rp.ref_to_argb32());
-			SIMD_EXPECT_EQUAL(mismatches, packed.to_abgr32(), rp.ref_to_abgr32());
-			SIMD_EXPECT_EQUAL(mismatches, packed.to_rgba64(), rp.ref_to_rgba64());
-			SIMD_EXPECT_EQUAL(mismatches, packed.to_argb64(), rp.ref_to_argb64());
-			SIMD_EXPECT_EQUAL(mismatches, packed.to_abgr64(), rp.ref_to_abgr64());
+			const bool pack_defined = packed.r >= 0.0f && packed.r <= 1.0f && packed.g >= 0.0f && packed.g <= 1.0f &&
+					packed.b >= 0.0f && packed.b <= 1.0f && packed.a >= 0.0f && packed.a <= 1.0f;
+			if (pack_defined) {
+				SIMD_EXPECT_EQUAL(mismatches, packed.to_rgba32(), rp.ref_to_rgba32());
+				SIMD_EXPECT_EQUAL(mismatches, packed.to_argb32(), rp.ref_to_argb32());
+				SIMD_EXPECT_EQUAL(mismatches, packed.to_abgr32(), rp.ref_to_abgr32());
+				SIMD_EXPECT_EQUAL(mismatches, packed.to_rgba64(), rp.ref_to_rgba64());
+				SIMD_EXPECT_EQUAL(mismatches, packed.to_argb64(), rp.ref_to_argb64());
+				SIMD_EXPECT_EQUAL(mismatches, packed.to_abgr64(), rp.ref_to_abgr64());
+			}
 			SIMD_EXPECT_EQUAL(mismatches, a == b, ra.ref_equals(b));
 			SIMD_EXPECT_SAME_FLOAT(mismatches, a.clamp(), ra.ref_clamp());
 			SIMD_EXPECT_SAME_FLOAT(mismatches, a.clamp(lo, hi), ra.ref_clamp(lo, hi));
@@ -1169,6 +1176,11 @@ TEST_CASE("[SIMD] UTF-8 decoding matches the scalar reference across byte and bl
 #endif
 	Mismatches mismatches;
 	for (int offset : offsets) {
+		// Bound offset for the optimizer: writes span bytes[offset - 1 .. offset + 3] into bytes[64].
+		// Without this, GCC's -Wstringop-overflow cannot prove the range-for stays in [1, 60].
+		if (offset < 1 || offset > 60) {
+			continue;
+		}
 		for (int c0 = 0; c0 < 256; c0++) {
 			for (int c1 = 0; c1 < 256; c1 += second_step) {
 				const int iteration = (offset << 16) | (c0 << 8) | c1;
