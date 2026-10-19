@@ -14,8 +14,9 @@ on:
 #   release  -> linked by template_release builds (physx_config=release)
 #
 # Per config the artifact contains:
-#   - the CPU static libs (PhysX/Common/Foundation/Extensions/PvdSDK/Cooking/
-#     CharacterKinematic/Vehicle_static_64)
+#   - the CPU static libs (PhysX/Common/Foundation/Extensions/PvdSDK/
+#     CharacterKinematic/Vehicle_static_64; PhysX 5.12 folded cooking into
+#     PhysXCommon, so there is no separate Cooking lib anymore)
 #   - the GPU static libs (PhysXCommonGpu/BroadphaseGpu/NarrowphaseGpu/
 #     SolverGpu/SimulationControllerGpu/ArticulationGpu_static_64) plus
 #     PhysXCudaContextManager_static_64

@@ -125,12 +125,6 @@ struct PxVisualizationParameter
 		eCONTACT_IMPULSE,
 
 		/**
-		\brief Visualize Contact forces. Will enable contact information.
-		\deprecated Use eCONTACT_IMPULSE instead.
-		*/
-		eCONTACT_FORCE PX_DEPRECATED = eCONTACT_IMPULSE,
-
-		/**
 		\brief  Visualize friction points. Will enable contact information.
 		*/
 		eFRICTION_POINT,

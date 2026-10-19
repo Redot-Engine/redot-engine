@@ -302,7 +302,12 @@ struct PxContactStreamIterator
 
 			response = (patch->internalFlags & PxContactPatch::eFORCE_NO_RESPONSE) == 0;
 		}
-
+		else
+		{
+			patch = NULL;
+			contact = NULL;
+			faceIndice = NULL;
+		}
 
 		mStreamFormat = compressedModify ? eCOMPRESSED_MODIFIABLE_STREAM : modify ? eMODIFIABLE_STREAM : eSIMPLE_STREAM;
 		hasFaceIndices = PxU32(indices);

@@ -289,8 +289,7 @@ struct PxArticulationFlag
 	enum Enum
 	{
 		eFIX_BASE = (1 << 0),				//!< Set articulation base to be fixed.
-		eDRIVE_LIMITS_ARE_FORCES = (1<<1),	//!< Limits for drive effort are forces and torques rather than impulses, see PxArticulationDrive::maxForce.
-		eDISABLE_SELF_COLLISION = (1<<2)	//!< Disable collisions between the articulation's links (note that parent/child collisions are disabled internally in either case).
+		eDISABLE_SELF_COLLISION = (1<<1)	//!< Disable collisions between the articulation's links (note that parent/child collisions are disabled internally in either case).
 	};
 };
 
@@ -357,9 +356,9 @@ struct PxPerformanceEnvelope
 	PxPerformanceEnvelope(const PxEMPTY&){}
 	// ~PX_SERIALIZATION
 
-	PxPerformanceEnvelope(
+	explicit PxPerformanceEnvelope(
         PxReal maxEffort_ = 0.0f,
-        PxReal maxActuatorVelocity_ = 0.0f,
+        PxReal maxActuatorVelocity_ = PX_MAX_F32,
         PxReal velocityDependentResistance_ = 0.0f,
         PxReal speedEffortGradient_ = 0.0f
     ) : maxEffort(maxEffort_),
@@ -371,6 +370,8 @@ struct PxPerformanceEnvelope
     /**
      \brief Max effort the actuator can produce at zero velocity. For linear actuators, effort refers to force; for rotational actuators, effort refers to torque.
      
+    \note A value of zero disables the drive.
+    
     <b>Range:</b> [0, PX_MAX_F32]
     <b>Default:</b> 0.0f
     */
@@ -378,9 +379,11 @@ struct PxPerformanceEnvelope
 
     /**
     \brief The maximum velocity of the actuator at zero effort.
+
+    \note A value of zero prevents the actuator from moving the joint. PX_MAX_F32 disables the velocity limit.
     
     <b>Range:</b> [0, PX_MAX_F32]
-    <b>Default:</b> 0.0f
+    <b>Default:</b> PX_MAX_F32
     */
     PxReal maxActuatorVelocity;
 
@@ -457,16 +460,6 @@ struct PxArticulationDrive
 
 	PxArticulationDrive() {}
 
-	PxArticulationDrive(const PxReal stiffness_, const PxReal damping_, const PxReal maxForce_,
-						PxArticulationDriveType::Enum driveType_ = PxArticulationDriveType::eFORCE)
-	{
-		stiffness = stiffness_;
-		damping = damping_;
-		maxForce = maxForce_;
-		driveType = driveType_;
-		envelope = PxPerformanceEnvelope(0.0f, 0.0f, 0.0f, 0.0f);
-	}
-
 	PxArticulationDrive(const PxReal stiffness_, const PxReal damping_,
 						const PxPerformanceEnvelope envelope_,
 						PxArticulationDriveType::Enum driveType_ = PxArticulationDriveType::eFORCE)
@@ -475,7 +468,6 @@ struct PxArticulationDrive
 		damping = damping_;
 		driveType = driveType_;
 		envelope = envelope_;
-		maxForce = 0.0f;
 	}
 	
 	/**
@@ -505,26 +497,10 @@ struct PxArticulationDrive
 	PxReal damping;
 	
 	/**
-	\deprecated Will be removed in a future version
-	\brief The drive force limit.
-
-	- The limit is enforced regardless of the drive type #PxArticulationDriveType.
-	- The limit corresponds to a force (linear axis) or torque (rotational axis) if PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES is set, and to an impulse (force|torque * dt) otherwise.
-
-	<b>Range:</b> [0, PX_MAX_F32]<br>
-	<b>Default:</b> 0.0f<br>
-
-	\see PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES
-	*/
-	PxReal maxForce;
-
-	/**
 	\brief The performance envelope of a motor.
 	
-	When an envelope with a non-zero maxEffort is explicitly set (via constructor or otherwise), the envelope takes precedence over maxForce.
- 	In such cases, the joint force is clamped according to the performance envelope. If the default envelope (with zero maxEffort) is used,
-	clamping is instead based on the maxForce parameter and the PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES flag.
-
+	The drive effort is clamped to the envelope. With maxEffort at zero the drive applies no effort.
+	
 	\see PxPerformanceEnvelope
 	*/
 	PxPerformanceEnvelope envelope;

@@ -117,7 +117,8 @@ public:
 	/**
 	\brief Sets the self collision filter distance.
 
-	Penetration distance that needs to be exceeded before contacts for self collision are generated.
+	Self collision contacts are suppressed between elements whose distance in the rest pose does not
+	exceed this value. This keeps elements that are neighbors in the undeformed shape from colliding.
 	Will only have an effect if self collisions are enabled.
 	<b>Default:</b> 0.1
 
@@ -300,9 +301,13 @@ public:
 
 	Deformable volumes need a shape with tetrahedron mesh geometry, which can be created with
 	PxPhysics::createShape(const PxGeometry&, const PxDeformableVolumeMaterial& material, bool, PxShapeFlags), or
-	PxPhysics::createShape(const PxGeometry&, PxDeformableVolumeMaterial*const*, PxU16, bool, PxShapeFlags)
+	PxPhysics::createShape(const PxGeometry&, PxDeformableVolumeMaterial*const*, PxU16, bool, PxShapeFlags).
+	The geometry's mesh has to be the collision mesh of a PxDeformableVolumeMesh, see
+	PxDeformableVolumeMesh::getCollisionMesh(). Other meshes are rejected.
 	Deformable volumes additionally need a separate tetrahedron mesh for dynamics, which can be attached using
-	PxDeformbleVolume::attachSimulationMesh.
+	PxDeformableVolume::attachSimulationMesh.
+
+	\note Only allowed while the deformable is not part of a scene.
 
 	\param[in] shape The shape to use for collisions, (and dynamics in case of deformable surfaces)
 
@@ -314,6 +319,8 @@ public:
 	\brief Detaches the shape
 
 	Detaches the shape used for collision detection.
+
+	\note Only allowed while the deformable is not part of a scene.
 
 	\see void PxDeformableVolume.detachSimulationMesh()
 	*/

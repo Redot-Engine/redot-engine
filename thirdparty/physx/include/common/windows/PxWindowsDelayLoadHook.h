@@ -22,9 +22,9 @@ namespace physx
 	PxDelayLoadHook can be sub-classed to provide the custom filenames.
 
 	Once the names are set, the instance must be set for use by PhysX.dll using PxSetPhysXDelayLoadHook(), 
-	PhysXCooking.dll using PxSetPhysXCookingDelayLoadHook()	or by PhysXCommon.dll using PxSetPhysXCommonDelayLoadHook().
+	or by PhysXCommon.dll using PxSetPhysXCommonDelayLoadHook().
 
-	\see PxSetPhysXDelayLoadHook(), PxSetPhysXCookingDelayLoadHook(), PxSetPhysXCommonDelayLoadHook()
+	\see PxSetPhysXDelayLoadHook(), PxSetPhysXCommonDelayLoadHook()
  	*/
 	class PxDelayLoadHook
 	{
@@ -48,15 +48,6 @@ namespace physx
 	\see PxDelayLoadHook
 	*/
 	PX_C_EXPORT PX_PHYSX_CORE_API void PX_CALL_CONV PxSetPhysXDelayLoadHook(const physx::PxDelayLoadHook* hook);
-
-	/**
-	\brief Sets delay load hook instance for PhysXCooking dll.
-
-	\param[in] hook Delay load hook.
-
-	\see PxDelayLoadHook
-	*/
-	PX_C_EXPORT PX_PHYSX_CORE_API void PX_CALL_CONV PxSetPhysXCookingDelayLoadHook(const physx::PxDelayLoadHook* hook);
 
 	/**
 	\brief Sets delay load hook instance for PhysXCommon dll.

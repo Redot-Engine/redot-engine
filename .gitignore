@@ -469,3 +469,6 @@ doc/classes/PhysXBoat3D.xml
 doc/classes/PhysXBuoyancy3D.xml
 doc/classes/PhysXWaterSpray3D.xml
 doc/classes/PhysXWaterWake3D.xml
+
+# Local NuGet package source filled by modules/mono/build_scripts/build_assemblies.py --push-nupkgs-local
+modules/mono/nuget/

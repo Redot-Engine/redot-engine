@@ -577,21 +577,6 @@ namespace physx
 			update(updateData);
 			fetchResults(results);
 		}
-
-		/**
-		\brief Helper for single-threaded updates.
-
-		This short helper function performs a single-theaded update and reports the results in a single call.
-
-		\param	results		[out] The broadphase results
-		\param	updateData	[in] The update data
-		\see	PxBroadPhaseUpdateData PxBroadPhaseResults
-		*/
-		PX_DEPRECATED	PX_FORCE_INLINE	void	update(PxBroadPhaseResults& results, const PxBroadPhaseUpdateData& updateData)
-		{
-			update(updateData);
-			fetchResults(results);
-		}
 	};
 
 	/**
@@ -741,20 +726,6 @@ namespace physx
 		\see	PxBroadPhaseResults
 		*/
 		PX_FORCE_INLINE	void	updateAndFetchResults(PxBroadPhaseResults& results)
-		{
-			update();
-			fetchResults(results);
-		}
-
-		/**
-		\brief Helper for single-threaded updates.
-
-		This short helper function performs a single-theaded update and reports the results in a single call.
-
-		\param	results		[out] The broadphase results
-		\see	PxBroadPhaseResults
-		*/
-		PX_DEPRECATED	PX_FORCE_INLINE	void	update(PxBroadPhaseResults& results)
 		{
 			update();
 			fetchResults(results);

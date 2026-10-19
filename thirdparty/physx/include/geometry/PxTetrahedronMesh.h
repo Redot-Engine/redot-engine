@@ -45,9 +45,9 @@ namespace physx
 	{
 	public:
 		/**
-		\brief Decrements the reference count of a tetrahedron mesh and releases it if the new reference count is zero.
+		\brief Decrements the reference count of the auxiliary data and releases it if the new reference count is zero.
 
-		\see PxPhysics.createTetrahedronMesh()
+		\see PxDeformableVolumeMesh.getDeformableVolumeAuxData()
 		*/
 		virtual void					release() = 0;
 
@@ -188,8 +188,10 @@ namespace physx
 	<h3>Creation</h3>
 
 	To create an instance of this class call PxPhysics::createDeformableVolumeMesh(),
-	and release() to delete it. This is only possible
-	once you have released all of its PxShape instances.
+	and release() to delete it. The collision mesh, the simulation mesh and the auxiliary data are
+	reference counted in their own right, so release() only gives up this object's reference to each:
+	a collision mesh still referenced by a PxShape, or a simulation mesh and auxiliary data still
+	referenced by a PxDeformableVolume, outlive this object.
 
 	*/
 	class PxDeformableVolumeMesh : public PxRefCounted
@@ -239,9 +241,9 @@ namespace physx
 		virtual PxDeformableVolumeAuxData* getDeformableVolumeAuxData() = 0;
 
 		/**
-		\brief Decrements the reference count of a tetrahedron mesh and releases it if the new reference count is zero.
+		\brief Decrements the reference count of a deformable volume mesh and releases it if the new reference count is zero.
 
-		\see PxPhysics.createTetrahedronMesh()
+		\see PxPhysics.createDeformableVolumeMesh()
 		*/
 		virtual void					release() = 0;
 

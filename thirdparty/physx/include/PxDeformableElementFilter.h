@@ -63,7 +63,12 @@ There are two special cases that are supported by the element filter.
 - groupElemCounts[A] entries that are 0, indicate that elements of the corresponding group of actor B are filtered against all elements of actor A.
 - empty groupElemCounts[A], indicates that all groups of actor B are filtered against all elements of actor A. This is always the case if actor A is a rigid.
 
-\see PxDeformableElementFilter, PxPhysics::createDeformableElementFilter()
+A filter has to reference at least one specific element on at least one of the two actors. Likewise, every
+group pair has to reference at least one specific element on at least one of the two actors. To suppress all
+collisions between two actors, use PxShape- or PxActor-level collision filtering with a
+PxSimulationFilterShader instead.
+
+\see PxDeformableElementFilter, PxPhysics::createDeformableElementFilter(), PxSimulationFilterShader
 */
 struct PxDeformableElementFilterData
 {
@@ -77,6 +82,9 @@ struct PxDeformableElementFilterData
 
 	/**
 	\brief Actor 0 and Actor 1. NULL actors are not allowed.
+
+	\note One of the two actors has to be a PxDeformableSurface or a PxDeformableVolume. The other can be a
+	PxDeformableSurface, a PxDeformableVolume or any PxRigidActor.
 	*/
 	PxActor* actor[2];
 
@@ -87,6 +95,10 @@ struct PxDeformableElementFilterData
 
 	/**
 	\brief Element indices for all filter groups, per actor.
+
+	\note An index must be smaller than the number of elements of the mesh it addresses. If an element
+	filter references an element outside that range, in checked builds it is left inactive and an error is
+	issued.
 	*/
 	PxTypedBoundedData<const PxU32> groupElementIndices[2];
 };

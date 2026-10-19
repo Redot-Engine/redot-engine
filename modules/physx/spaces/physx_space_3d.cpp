@@ -191,9 +191,23 @@ void PhysXSpace3D::_initialize_scene() {
 	}
 
 	// GPU dynamics (GODOT_PHYSX_GPU build + usable CUDA device): the whole
-	// scene simulates on the GPU. Capacities sized for tens of thousands of
-	// colliding rigid bodies plus a particle-contact budget; PhysX grows some
-	// on demand but warns when the initial capacity is exceeded.
+	// scene simulates on the GPU.
+	//
+	// GPU memory config: PhysX 5.12's defaults are used as-is. The 5.11-era
+	// overrides this module carried (4M found/lost pairs, 4M contacts, 256 MB
+	// heap and collision stack) predate 5.12's reworked PxGpuDynamicsMemoryConfig
+	// and break on it: 5.12 allocates the pinned-host heap, collision stack and
+	// broadphase mirrors eagerly at those sizes, and a single 256 MB pinned
+	// allocation is refused by Windows (cuMemAllocHost -> CUDA_ERROR_OUT_OF_MEMORY).
+	// Once refused, 5.12 latches the CUDA context into a permanent
+	// out-of-memory state and every later GPU scene in the process aborts.
+	// The defaults keep every pinned allocation at or under 64 MB and grow the
+	// heap and collision stack on demand in increments of their capacity.
+	// The deformable-surface/volume and particle contact budgets below are
+	// the defaults spelled out: non-zero so PxDeformableSurface (cloth) /
+	// PxDeformableVolume (GPU soft bodies) can generate contacts -- either
+	// touching anything with its budget at 0 silently drops the contacts and
+	// the deformable falls through the world.
 	if (server->is_gpu_dynamics_enabled()) {
 		physx::PxCudaContextManager *cuda = server->get_cuda_context();
 		if (cuda) {
@@ -201,19 +215,6 @@ void PhysXSpace3D::_initialize_scene() {
 			scene_desc.flags |= physx::PxSceneFlag::eENABLE_GPU_DYNAMICS;
 			scene_desc.broadPhaseType = physx::PxBroadPhaseType::eGPU;
 			scene_desc.gpuMaxNumPartitions = 8;
-			scene_desc.gpuDynamicsConfig.tempBufferCapacity = 64 * 1024 * 1024;
-			scene_desc.gpuDynamicsConfig.maxRigidContactCount = 4 * 1024 * 1024;
-			scene_desc.gpuDynamicsConfig.maxRigidPatchCount = 1024 * 1024;
-			scene_desc.gpuDynamicsConfig.heapCapacity = 256 * 1024 * 1024;
-			scene_desc.gpuDynamicsConfig.foundLostPairsCapacity = 4 * 1024 * 1024;
-			scene_desc.gpuDynamicsConfig.collisionStackSize = 256 * 1024 * 1024;
-			// Non-zero so PxDeformableSurface (cloth) / PxDeformableVolume (GPU
-			// soft bodies) can generate contacts; either touching anything with
-			// its budget at 0 silently drops the contacts and the deformable
-			// falls through the world.
-			scene_desc.gpuDynamicsConfig.maxDeformableSurfaceContacts = 512 * 1024;
-			scene_desc.gpuDynamicsConfig.maxDeformableVolumeContacts = 1024 * 1024;
-			scene_desc.gpuDynamicsConfig.maxParticleContacts = 1 * 1024 * 1024;
 		}
 	}
 

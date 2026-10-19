@@ -171,7 +171,6 @@ Alternatively, one can instead directly #include a subset of the below files.
 #include "characterkinematic/PxExtended.h"
 
 //Cooking (data preprocessing)
-#include "cooking/Pxc.h"
 #include "cooking/PxConvexMeshDesc.h"
 #include "cooking/PxCooking.h"
 #include "cooking/PxTriangleMeshDesc.h"

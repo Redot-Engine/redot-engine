@@ -1264,15 +1264,6 @@ class PxScene : public PxSceneSQSystem
 	virtual PxReal				getFrictionCorrelationDistance() const = 0;
 
 	/**
-	\brief Return the friction model.
-
-	\deprecated Since only the patch friction model is supported now, the friction type option is obsolete.
-
-	\see PxFrictionType, PxSceneDesc::frictionType
-	*/
-	PX_DEPRECATED virtual PxFrictionType::Enum	getFrictionType() const = 0;
-
-	/**
 	\brief Return the solver model.
 	\see PxSolverType, PxSceneDesc::solverType
 	*/

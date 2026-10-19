@@ -103,15 +103,10 @@ PX_FORCE_INLINE bool allElementsNearEqualVec4V(const Vec4V a, const Vec4V b)
 
 PX_FORCE_INLINE bool isFiniteFloatV(const FloatV a)
 {
+	// FStore would assert in debug builds, because a NaN FloatV fails its lane equality check
 	PxF32 f;
-	FStore(a, &f);
+	_mm_store_ss(&f, a);
 	return PxIsFinite(f);
-	/*
-	const PxU32 badNumber = (_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF);
-	const FloatV vBadNum = FloatV_From_F32((PxF32&)badNumber);
-	const BoolV vMask = BAnd(vBadNum, a);
-	return FiniteTestEq(vMask, BFFFF()) == 1;
-	*/
 }
 
 PX_FORCE_INLINE bool isFiniteVec3V(const Vec3V a)
@@ -119,13 +114,6 @@ PX_FORCE_INLINE bool isFiniteVec3V(const Vec3V a)
 	PX_ALIGN(16, PxF32 f[4]);
 	V4StoreA((Vec4V&)a, f);
 	return PxIsFinite(f[0]) && PxIsFinite(f[1]) && PxIsFinite(f[2]);
-
-	/*
-	const PxU32 badNumber = (_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF);
-	const Vec3V vBadNum = Vec3V_From_F32((PxF32&)badNumber);
-	const BoolV vMask = BAnd(BAnd(vBadNum, a), BTTTF());
-	return FiniteTestEq(vMask, BFFFF()) == 1;
-	*/
 }
 
 PX_FORCE_INLINE bool isFiniteVec4V(const Vec4V a)
@@ -133,14 +121,6 @@ PX_FORCE_INLINE bool isFiniteVec4V(const Vec4V a)
 	PX_ALIGN(16, PxF32 f[4]);
 	V4StoreA(a, f);
 	return PxIsFinite(f[0]) && PxIsFinite(f[1]) && PxIsFinite(f[2]) && PxIsFinite(f[3]);
-
-	/*
-	const PxU32 badNumber = (_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF);
-	const Vec4V vBadNum = Vec4V_From_U32((PxF32&)badNumber);
-	const BoolV vMask = BAnd(vBadNum, a);
-
-	return FiniteTestEq(vMask, BFFFF()) == 1;
-	*/
 }
 
 /////////////////////////////////////////////////////////////////////

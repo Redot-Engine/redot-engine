@@ -339,8 +339,13 @@ void PhysXArticulation3D::set_drive(int p_link_index, int p_axis,
 	// A driven axis must be unlocked; the drive spring then pulls it toward
 	// the target at the requested velocity.
 	joint->setMotion(axis, physx::PxArticulationMotion::eFREE);
+	// PhysX 5.12 replaced the drive's maxJointVelocity with a performance
+	// envelope; PX_MAX_F32 effort + velocity preserves the unlimited 5.11
+	// semantics (maxEffort defaults to 0, which disables the drive).
 	physx::PxArticulationDrive drive(
-			p_stiffness, p_damping, PX_MAX_F32, _map_drive_type(p_drive_type));
+			p_stiffness, p_damping,
+			physx::PxPerformanceEnvelope(PX_MAX_F32, PX_MAX_F32),
+			_map_drive_type(p_drive_type));
 	joint->setDriveParams(axis, drive);
 	joint->setDriveTarget(axis, p_drive_target);
 	joint->setDriveVelocity(axis, p_drive_velocity);

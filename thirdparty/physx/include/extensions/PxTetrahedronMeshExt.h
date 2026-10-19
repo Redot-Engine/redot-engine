@@ -25,20 +25,30 @@ namespace physx
 	public:
 		/** Returns the index of the tetrahedron that contains a point
 
+		The mesh has to be the collision mesh of a PxDeformableVolumeMesh, see PxDeformableVolumeMesh::getCollisionMesh():
+		the query runs on its bounding volume hierarchy. Any other tetrahedron mesh, such as the simulation mesh or one
+		from PxPhysics::createTetrahedronMesh(), has none and is rejected with an error. Use
+		createPointsToTetrahedronMap() for those, which builds a hierarchy of its own.
+
 		\param[in] mesh The tetmesh
 		\param[in] point The point to find the enclosing tetrahedron for
-		\param[in] bary The barycentric coordinates of the point inside the enclosing tetrahedron
-		\param[in] tolerance Tolerance value used classify points as inside if they lie exactly a tetrahedron's surface
-		\return The index of the tetrahedron containing the point, -1 if not tetrahedron contains the opoint
+		\param[out] bary The barycentric coordinates of the point inside the enclosing tetrahedron
+		\param[in] tolerance Tolerance value used to classify points as inside if they lie exactly on a tetrahedron's surface
+		\return The index of the tetrahedron containing the point, -1 if no tetrahedron contains the point or the mesh is rejected
 		*/
 		static PxI32 findTetrahedronContainingPoint(const PxTetrahedronMesh* mesh, const PxVec3& point, PxVec4& bary, PxReal tolerance = 1e-6f);
 
 		/** Returns the index of the tetrahedron closest to a point
 
+		The mesh has to be the collision mesh of a PxDeformableVolumeMesh, see PxDeformableVolumeMesh::getCollisionMesh():
+		the query runs on its bounding volume hierarchy. Any other tetrahedron mesh, such as the simulation mesh or one
+		from PxPhysics::createTetrahedronMesh(), has none and is rejected with an error. Use
+		createPointsToTetrahedronMap() for those, which builds a hierarchy of its own.
+
 		\param[in] mesh The tetmesh
 		\param[in] point The point to find the closest tetrahedron for
 		\param[out] bary The barycentric coordinates of the point in the tetrahedron
-		\return The index of the tetrahedron closest to the point
+		\return The index of the tetrahedron closest to the point, -1 if the mesh is rejected
 		*/
 		static PxI32 findTetrahedronClosestToPoint(const PxTetrahedronMesh* mesh, const PxVec3& point, PxVec4& bary);
 

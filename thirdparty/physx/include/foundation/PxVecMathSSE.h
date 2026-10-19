@@ -117,23 +117,6 @@ PX_FORCE_INLINE PxU32 BAnyTrue3_R(const BoolV a)
 	return PxU32((moveMask & 0x7) != 0x0);
 }
 
-PX_FORCE_INLINE PxU32 FiniteTestEq(const Vec4V a, const Vec4V b)
-{
-	// This is a bit of a bodge.
-	//_mm_comieq_ss returns 1 if either value is nan so we need to re-cast a and b with true encoded as a non-nan
-	// number.
-	// There must be a better way of doing this in sse.
-	const BoolV one = FOne();
-	const BoolV zero = FZero();
-	const BoolV a1 = V4Sel(a, one, zero);
-	const BoolV b1 = V4Sel(b, one, zero);
-	return (PxU32(
-	    _mm_comieq_ss(a1, b1) &&
-	    _mm_comieq_ss(_mm_shuffle_ps(a1, a1, _MM_SHUFFLE(1, 1, 1, 1)), _mm_shuffle_ps(b1, b1, _MM_SHUFFLE(1, 1, 1, 1))) &&
-	    _mm_comieq_ss(_mm_shuffle_ps(a1, a1, _MM_SHUFFLE(2, 2, 2, 2)), _mm_shuffle_ps(b1, b1, _MM_SHUFFLE(2, 2, 2, 2))) &&
-	    _mm_comieq_ss(_mm_shuffle_ps(a1, a1, _MM_SHUFFLE(3, 3, 3, 3)), _mm_shuffle_ps(b1, b1, _MM_SHUFFLE(3, 3, 3, 3)))));
-}
-
 PX_FORCE_INLINE bool hasZeroElementInFloatV(const FloatV a)
 {
 	ASSERT_ISVALIDFLOATV(a);

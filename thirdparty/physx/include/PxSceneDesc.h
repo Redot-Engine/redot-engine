@@ -26,33 +26,6 @@ namespace physx
 	class PxPostSolveCallback;
 
 /**
-\brief Enum for selecting the friction algorithm used for simulation.
-
-\deprecated Since only the patch friction model is supported now, the friction type option is obsolete.
-
-#PxFrictionType::ePATCH is the default friction logic (Couloumb type friction model). Friction gets computed per contact patch.
-Up to two contact points lying in the contact patch area are selected as friction anchors to which friction impulses are applied. If there
-are more than two contact points, to select anchors from, the anchors are selected using a heuristic that tries to maximize the distance
-between the anchors within the contact patch area. For each contact patch, two perpendicular axes of the contact patch plane are selected.
-A 1D-constraint along each of the two axes is used to implement friction at a friction anchor point. Note that the two axes are processed
-separately when the PGS solver type is selected. This can lead to asymmetries when transitioning from dynamic to static friction and vice
-versa in certain edge cases. The TGS solver type, on the other hand, works with the combined impulse along the two axes and as such avoids
-this potential problem, but this is slightly more computationally expensive. Another difference between TGS and PGS is that TGS applies
-friction throughout all position and all velocity iterations, while PGS by default applies friction throughout the last 3 position iterations
-and all velocity iterations (unless #PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION is used).
-
-#PxFrictionType::eFRICTION_COUNT is the total number of friction models supported by the SDK.
-*/
-struct PX_DEPRECATED PxFrictionType
-{
-	enum Enum
-	{
-		ePATCH,				//!< Select default patch-friction model.
-		eFRICTION_COUNT		//!< The total number of friction models supported by the SDK.
-	};
-};
-
-/**
 \brief Enum for selecting the type of solver used for the simulation.
 
 #PxSolverType::ePGS selects the iterative sequential impulse solver. This is the same kind of solver used in PhysX 3.4 and earlier releases.
@@ -259,20 +232,24 @@ struct PxSceneFlag
 		eENABLE_FRICTION_EVERY_ITERATION = (1 << 15),
 
 		/**
-		\brief Controls application of gravity and other external forces per TGS solver position iterations
+		\brief Controls application of gravity and other external forces per TGS solver position iteration
 
-		By default, external forces such as gravity are applied just once at the beginning of each simulate() call. With this
-		flag enabled the same forces are applied in each sub time step (position iteration) of the TGS solver, leading to greater stability and better solver convergence.
-		One consequence is that a body in freefall will move a shorter distance over the entire simulation step if the flag is raised.
+		\deprecated Applying gravity and other external forces in every position iteration is the default, and it will be the only supported
+		behavior of the TGS solver once the flag is removed.
 
-		Note that raising this flag makes the distance traveled under freefall dependent on the number of solver iterations.
-		Since solver iterations are determined per-island, bodies assigned to an island with fewer solver iterations will travel a larger distance than bodies assigned to an island with more iterations.
+		With this flag raised, gravity and other external forces such as those applied with PxRigidBody::addForce() are applied in each sub time step
+		(position iteration) of the TGS solver, leading to greater stability and better solver convergence. With the flag cleared, the same forces
+		are applied just once at the beginning of each simulate() call.
+		One consequence is that a body in freefall moves a shorter distance over the entire simulation step with the flag raised.
 
-		\note This feature is only supported for the TGS solver.
+		Note that with the flag raised, the distance traveled under freefall depends on the number of solver iterations.
+		Since solver iterations are determined per-island, bodies assigned to an island with fewer solver iterations travel a larger distance than bodies assigned to an island with more iterations.
 
-		<b>Default</b> false
+		\note This flag has an effect with the TGS solver only. A scene using PxSolverType::ePGS retains the flag but ignores it.
+
+		<b>Default</b> true
 		*/
-		eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS = (1 << 16),
+		PX_DEPRECATED eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS = (1 << 16),
 
 		/**
 		\brief Enables the direct-GPU API. Raising this flag is only allowed if eENABLE_GPU_DYNAMICS is raised and 
@@ -699,17 +676,6 @@ public:
 	PxSceneLimits	limits;
 
 	/**
-	\brief Selects the friction algorithm to use for simulation.
-
-	\deprecated Since only the patch friction model is supported now, the frictionType parameter is obsolete.
-
-	<b>Default:</b> PxFrictionType::ePATCH
-
-	\see PxFrictionType PxScene.getFrictionType()
-	*/
-	PX_DEPRECATED PxFrictionType::Enum frictionType;
-
-	/**
 	\brief Selects the solver algorithm to use.
 
 	<b>Default:</b> PxSolverType::ePGS
@@ -763,7 +729,7 @@ public:
 	/**
 	\brief Flags used to select scene options.
 
-	<b>Default:</b> PxSceneFlag::eENABLE_PCM
+	<b>Default:</b> PxSceneFlag::eENABLE_PCM | PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS
 
 	\see PxSceneFlag PxSceneFlags PxScene.getFlags() PxScene.setFlag()
 	*/
@@ -1077,13 +1043,12 @@ PX_INLINE PxSceneDesc::PxSceneDesc(const PxTolerancesScale& scale):
 	broadPhaseCallback				(NULL),
 	gpuBroadPhaseDesc				(NULL),
 
-	frictionType					(PxFrictionType::ePATCH),
 	solverType						(PxSolverType::ePGS),
 	bounceThresholdVelocity			(0.2f * scale.speed),
 	frictionOffsetThreshold			(0.04f * scale.length),
 	frictionCorrelationDistance		(0.025f * scale.length),
 
-	flags							(PxSceneFlag::eENABLE_PCM),
+	flags							(PxSceneFlag::eENABLE_PCM | PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS),
 
 	cpuDispatcher					(NULL),
 	cudaContextManager				(NULL),
@@ -1161,9 +1126,6 @@ PX_INLINE bool PxSceneDesc::isValid() const
 		return false;
 
 	if(!sanityBounds.isValid())
-		return false;
-
-	if(solverType == PxSolverType::ePGS && (flags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS))
 		return false;
 
 #if PX_SUPPORT_GPU_PHYSX

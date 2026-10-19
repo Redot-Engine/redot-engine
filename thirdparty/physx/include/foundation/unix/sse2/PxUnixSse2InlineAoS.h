@@ -54,11 +54,6 @@ namespace physx
 namespace aos
 {
 
-#define PX_FPCLASS_SNAN 0x0001 /* signaling NaN */
-#define PX_FPCLASS_QNAN 0x0002 /* quiet NaN */
-#define PX_FPCLASS_NINF 0x0004 /* negative infinity */
-#define PX_FPCLASS_PINF 0x0200 /* positive infinity */
-
 namespace internalSimd
 {
 #if !PX_EMSCRIPTEN
@@ -142,38 +137,24 @@ PX_FORCE_INLINE bool allElementsNearEqualVec4V(const Vec4V a, const Vec4V b)
 
 PX_FORCE_INLINE bool isFiniteFloatV(const FloatV a)
 {
-	PxF32 badNumber =
-	    physx::PxUnionCast<PxF32, PxU32>(PX_FPCLASS_SNAN | PX_FPCLASS_QNAN | PX_FPCLASS_NINF | PX_FPCLASS_PINF);
-	const FloatV vBadNum = FLoad(badNumber);
-	const BoolV vMask = BAnd(vBadNum, a);
-	return internalSimd::FiniteTestEq(vMask, BFFFF()) == 1;
+	// FStore would assert in debug builds, because a NaN FloatV fails its lane equality check
+	PxF32 f;
+	_mm_store_ss(&f, a);
+	return PxIsFinite(f);
 }
 
 PX_FORCE_INLINE bool isFiniteVec3V(const Vec3V a)
 {
-	PxF32 badNumber =
-	    physx::PxUnionCast<PxF32, PxU32>(PX_FPCLASS_SNAN | PX_FPCLASS_QNAN | PX_FPCLASS_NINF | PX_FPCLASS_PINF);
-	const Vec3V vBadNum = V3Load(badNumber);
-	const BoolV vMask = BAnd(BAnd(vBadNum, a), BTTTF());
-	return internalSimd::FiniteTestEq(vMask, BFFFF()) == 1;
+	PX_ALIGN(16, PxF32 f[4]);
+	V4StoreA(a, f);
+	return PxIsFinite(f[0]) && PxIsFinite(f[1]) && PxIsFinite(f[2]);
 }
 
 PX_FORCE_INLINE bool isFiniteVec4V(const Vec4V a)
 {
-	/*Vec4V a;
 	PX_ALIGN(16, PxF32 f[4]);
-	F32Array_Aligned_From_Vec4V(a, f);
-	return PxIsFinite(f[0])
-	        && PxIsFinite(f[1])
-	        && PxIsFinite(f[2])
-	        && PxIsFinite(f[3]);*/
-
-	PxF32 badNumber =
-	    physx::PxUnionCast<PxF32, PxU32>(PX_FPCLASS_SNAN | PX_FPCLASS_QNAN | PX_FPCLASS_NINF | PX_FPCLASS_PINF);
-	const Vec4V vBadNum = V4Load(badNumber);
-	const BoolV vMask = BAnd(vBadNum, a);
-
-	return internalSimd::FiniteTestEq(vMask, BFFFF()) == 1;
+	V4StoreA(a, f);
+	return PxIsFinite(f[0]) && PxIsFinite(f[1]) && PxIsFinite(f[2]) && PxIsFinite(f[3]);
 }
 
 /////////////////////////////////////////////////////////////////////

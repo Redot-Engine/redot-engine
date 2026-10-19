@@ -168,11 +168,15 @@ env.PrependUnique(LIBPATH=[physx_lib_path.abspath])
 # upstream Linux build fix (CPU path verified there).
 physx_libs = [
     # Domain extensions first (depend on the core libs further down).
+    # PhysX 5.12 removed the PhysXCooking library: its cooking functions are
+    # exported from PhysXCommon now, which sits at the end of this list.
     "PhysXVehicle_static_64",
     "PhysXCharacterKinematic_static_64",
-    "PhysXCooking_static_64",
     "PhysXExtensions_static_64",
     "PhysXPvdSDK_static_64",
+    # PhysX 5.12's NpOmniPvd references the OmniPVD writer entry points
+    # (createOmniPvdWriter/destroyOmniPvdWriter), which live in PVDRuntime.
+    "PVDRuntime_static_64",
     # Core.
     "PhysX_static_64",
     # GPU dynamics group (Windows-only: filtered out below elsewhere, see
@@ -205,7 +209,6 @@ if env["platform"] != "windows":
     physx_libs = [
         "PhysXVehicle_static_64",
         "PhysXCharacterKinematic_static_64",
-        "PhysXCooking_static_64",
         "PhysXExtensions_static_64",
         # PhysX's objects reference pvdsdk symbols (NpPvdSceneClient ->
         # PvdUserRenderer), so the PVD SDK must link AFTER PhysX for the

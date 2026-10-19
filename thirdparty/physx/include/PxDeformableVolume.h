@@ -34,6 +34,13 @@ The current limit is 1'048'575.
 #define PX_MAX_NB_DEFORMABLE_VOLUME_TET 0x000fffff
 
 /**
+\brief The maximum number of vertices supported in a deformable volume tetrahedron mesh
+
+The current limit is 1'048'575.
+*/
+#define PX_MAX_NB_DEFORMABLE_VOLUME_VTX 0x000fffff
+
+/**
 \brief The maximum number of deformable volumes supported in a scene
 
 The current limit is 4095.
@@ -285,6 +292,11 @@ public:
 	Attaches the simulation mesh (geometry) and a state containing inverse mass, rest pose
 	etc. required to compute the deformation.
 
+	Both are read for as long as they stay attached, so this takes a reference on each. Their
+	PxDeformableVolumeMesh may therefore be released before or after this deformable volume.
+
+	\note Only allowed while the deformable volume is not part of a scene.
+
 	\param[in] simulationMesh The tetrahedral mesh used to compute the deformable's deformation
 	\param[in] deformableVolumeAuxData A state that contain a mapping from simulation to collision mesh, volume information etc.
 
@@ -296,7 +308,10 @@ public:
 	/**
 	\brief Detaches the simulation mesh
 
-	Detaches the simulation mesh and simulation state used to compute the deformation.
+	Detaches the simulation mesh and simulation state used to compute the deformation, giving up
+	the reference taken on each.
+
+	\note Only allowed while the deformable volume is not part of a scene.
 
 	\see attachSimulationMesh, PxDeformableBody.detachShape
 	*/

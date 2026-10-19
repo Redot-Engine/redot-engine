@@ -76,7 +76,7 @@ public:
 
 	\see PxHeightFormat
 	*/
-	PxStridedData					samples;
+	PxBoundedData					samples;
 
 	/**
 	This threshold is used by the collision detection to determine if a height field edge is convex

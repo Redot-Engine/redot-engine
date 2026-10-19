@@ -99,8 +99,11 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE bool isFinite(float a)
 {
 #if PX_CUDA_COMPILER
 	return !!isfinite(a);
-#else
+#elif defined(__FINITE_MATH_ONLY__) && __FINITE_MATH_ONLY__
+	// clang folds std::isfinite and exponent bit tests to true when finite math is assumed
 	return (0 == ((_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF) & _fpclass(a)));
+#else
+	return (reinterpret_cast<const PxU32&>(a) & 0x7f800000) != 0x7f800000;
 #endif
 }
 
@@ -109,8 +112,10 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE bool isFinite(double a)
 {
 #if PX_CUDA_COMPILER
 	return !!isfinite(a);
-#else
+#elif defined(__FINITE_MATH_ONLY__) && __FINITE_MATH_ONLY__
 	return (0 == ((_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF) & _fpclass(a)));
+#else
+	return (reinterpret_cast<const PxU64&>(a) & 0x7ff0000000000000ULL) != 0x7ff0000000000000ULL;
 #endif
 }
 
@@ -152,4 +157,3 @@ PX_FORCE_INLINE void* memMove(void* dest, const void* src, size_t count)
 #endif
 
 #endif
-

@@ -113,7 +113,9 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE bool isFinite(float a)
 //! \brief platform-specific finiteness check (not INF or NAN)
 PX_CUDA_CALLABLE PX_FORCE_INLINE bool isFinite(double a)
 {
-	return !!isfinite(a);
+    union localU { PxU64 i; double d; } doubleUnion;
+    doubleUnion.d = a;
+    return !((doubleUnion.i & 0x7fffffffffffffffULL) >= 0x7ff0000000000000ULL);
 }
 
 /*!

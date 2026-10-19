@@ -16,37 +16,23 @@
 #error "This file should only be included by Windows builds!!"
 #endif
 
-// Godot patch: MSVC-only pragmas guarded; gcc/clang (MinGW, cross
-// builds) would flood -Wunknown-pragmas on them. The includes stay
-// UNCONDITIONAL -- intrin.h defines __m128 etc. on MinGW/clang too,
-// and swallowing it broke the whole SIMD typedef chain downstream.
-#if defined(_MSC_VER)
 #pragma intrinsic(memcmp)
 #pragma intrinsic(memcpy)
 #pragma intrinsic(memset)
-#endif
 
-#if defined(_MSC_VER)
 #pragma warning(push)
 //'symbol' is not defined as a preprocessor macro, replacing with '0' for 'directives'
 #pragma warning(disable : 4668)
 #if PX_VC == 10
 #pragma warning(disable : 4987) // nonstandard extension used: 'throw (...)'
 #endif
-#endif
 #include <intrin.h>
-#if defined(_MSC_VER)
 #pragma warning(pop)
-#endif
 
-#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4985) // 'symbol name': attributes not present on previous declaration
-#endif
 #include <math.h>
-#if defined(_MSC_VER)
 #pragma warning(pop)
-#endif
 
 #include <float.h>
 // do not include for ARM target
@@ -54,30 +40,31 @@
 #include <mmintrin.h>
 #endif
 
-#if defined(_MSC_VER)
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
-#endif
 
 #if !PX_DOXYGEN
-namespace physx {
+namespace physx
+{
 #endif
 
 /*
- * Implements a memory barrier
- */
-PX_FORCE_INLINE void PxMemoryBarrier() {
+* Implements a memory barrier
+*/
+PX_FORCE_INLINE void PxMemoryBarrier()
+{
 	_ReadWriteBarrier();
 	/* long Barrier;
 	__asm {
-		xchg Barrier, eax
+	    xchg Barrier, eax
 	}*/
 }
 
 /*!
 Returns the index of the highest set bit. Not valid for zero arg.
 */
-PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint64_t v) {
+PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint64_t v)
+{
 	unsigned long retval;
 #ifndef PX_GENERATE_META_DATA
 	_BitScanReverse64(&retval, v);
@@ -88,7 +75,8 @@ PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint64_t v) {
 /*!
 Returns the index of the highest set bit. Not valid for zero arg.
 */
-PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint32_t v) {
+PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint32_t v)
+{
 	unsigned long retval;
 	_BitScanReverse(&retval, v);
 	return retval;
@@ -97,7 +85,8 @@ PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint32_t v) {
 /*!
 Returns the index of the lowest set bit. Undefined for zero arg.
 */
-PX_FORCE_INLINE uint32_t PxLowestSetBitUnsafe(uint64_t v) {
+PX_FORCE_INLINE uint32_t PxLowestSetBitUnsafe(uint64_t v)
+{
 	unsigned long retval;
 #ifndef PX_GENERATE_META_DATA
 	_BitScanForward64(&retval, v);
@@ -108,7 +97,8 @@ PX_FORCE_INLINE uint32_t PxLowestSetBitUnsafe(uint64_t v) {
 /*!
 Returns the index of the lowest set bit. Undefined for zero arg.
 */
-PX_FORCE_INLINE uint32_t PxLowestSetBitUnsafe(uint32_t v) {
+PX_FORCE_INLINE uint32_t PxLowestSetBitUnsafe(uint32_t v)
+{
 	unsigned long retval;
 	_BitScanForward(&retval, v);
 	return retval;
@@ -117,31 +107,35 @@ PX_FORCE_INLINE uint32_t PxLowestSetBitUnsafe(uint32_t v) {
 /*!
 Returns the number of leading zeros in v. Returns 32 for v=0.
 */
-PX_FORCE_INLINE uint32_t PxCountLeadingZeros(uint32_t v) {
-	if (v) {
+PX_FORCE_INLINE uint32_t PxCountLeadingZeros(uint32_t v)
+{
+	if(v)
+	{
 		unsigned long bsr = (unsigned long)-1;
 		_BitScanReverse(&bsr, v);
 		return 31 - bsr;
-	} else {
-		return 32;
 	}
+	else
+		return 32;
 }
 
 /*!
 Prefetch aligned cache size around \c ptr+offset.
 */
 #if !PX_ARM && !PX_A64
-PX_FORCE_INLINE void PxPrefetchLine(const void *ptr, uint32_t offset = 0) {
+PX_FORCE_INLINE void PxPrefetchLine(const void* ptr, uint32_t offset = 0)
+{
 	// cache line on X86/X64 is 64-bytes so a 128-byte prefetch would require 2 prefetches.
 	// However, we can only dispatch a limited number of prefetch instructions so we opt to prefetch just 1 cache line
 	/*_mm_prefetch(((const char*)ptr + offset), _MM_HINT_T0);*/
 	// We get slightly better performance prefetching to non-temporal addresses instead of all cache levels
-	_mm_prefetch(((const char *)ptr + offset), _MM_HINT_NTA);
+	_mm_prefetch(((const char*)ptr + offset), _MM_HINT_NTA);
 }
 #else
-PX_FORCE_INLINE void PxPrefetchLine(const void *ptr, uint32_t offset = 0) {
+PX_FORCE_INLINE void PxPrefetchLine(const void* ptr, uint32_t offset = 0)
+{
 	// arm does have 32b cache line size
-	__prefetch(((const char *)ptr + offset));
+	__prefetch(((const char*)ptr + offset));
 }
 #endif
 
@@ -149,26 +143,30 @@ PX_FORCE_INLINE void PxPrefetchLine(const void *ptr, uint32_t offset = 0) {
 Prefetch \c count bytes starting at \c ptr.
 */
 #if !PX_ARM
-PX_FORCE_INLINE void PxPrefetch(const void *ptr, uint32_t count = 1) {
-	const char *cp = (char *)ptr;
+PX_FORCE_INLINE void PxPrefetch(const void* ptr, uint32_t count = 1)
+{
+	const char* cp = (char*)ptr;
 	uint64_t p = size_t(ptr);
 	uint64_t startLine = p >> 6, endLine = (p + count - 1) >> 6;
 	uint64_t lines = endLine - startLine + 1;
-	do {
+	do
+	{
 		PxPrefetchLine(cp);
 		cp += 64;
-	} while (--lines);
+	} while(--lines);
 }
 #else
-PX_FORCE_INLINE void PxPrefetch(const void *ptr, uint32_t count = 1) {
-	const char *cp = (char *)ptr;
+PX_FORCE_INLINE void PxPrefetch(const void* ptr, uint32_t count = 1)
+{
+	const char* cp = (char*)ptr;
 	uint32_t p = size_t(ptr);
 	uint32_t startLine = p >> 5, endLine = (p + count - 1) >> 5;
 	uint32_t lines = endLine - startLine + 1;
-	do {
+	do
+	{
 		PxPrefetchLine(cp);
 		cp += 32;
-	} while (--lines);
+	} while(--lines);
 }
 #endif
 
@@ -177,3 +175,4 @@ PX_FORCE_INLINE void PxPrefetch(const void *ptr, uint32_t count = 1) {
 #endif
 
 #endif
+

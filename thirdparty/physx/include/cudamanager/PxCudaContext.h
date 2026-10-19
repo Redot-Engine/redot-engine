@@ -155,7 +155,6 @@ namespace physx
 
 		virtual PxCUresult getLastError() = 0;
 
-		PX_DEPRECATED PxDeviceAllocatorCallback* getAllocatorCallback() { return mDeviceAllocatorCallback; }
 		PxDeviceAllocatorCallback* getDeviceAllocatorCallback() { return mDeviceAllocatorCallback; }
 		PxPinnedHostAllocatorCallback* getPinnedHostAllocatorCallback() { return mPinnedHostAllocatorCallback; }
 

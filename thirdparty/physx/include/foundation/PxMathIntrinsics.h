@@ -6,13 +6,13 @@
 #ifndef PX_MATH_INTRINSICS_H
 #define PX_MATH_INTRINSICS_H
 
+#include <string.h>
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxSimpleTypes.h"
-#include <string.h>
 
 #if PX_WINDOWS_FAMILY
 #include "foundation/windows/PxWindowsMathIntrinsics.h"
-#elif (PX_LINUX || PX_APPLE_FAMILY)
+#elif(PX_LINUX || PX_APPLE_FAMILY)
 #include "foundation/unix/PxUnixMathIntrinsics.h"
 #elif PX_SWITCH
 #include "foundation/switch/PxSwitchMathIntrinsics.h"
@@ -23,9 +23,9 @@
 /**
 Platform specific defines
 */
-#if PX_WINDOWS_FAMILY && defined(_MSC_VER) // Godot patch: MSVC-only pragma
+#if PX_WINDOWS_FAMILY
 #pragma intrinsic(abs)
 #pragma intrinsic(labs)
 #endif
 
-#endif
+#endif 

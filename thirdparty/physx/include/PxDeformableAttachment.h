@@ -154,6 +154,8 @@ public:
 	/**
 	\brief Updates the pose of the attachment.
 
+	\note This call is not allowed while the simulation is running.
+
 	\param[in] pose Pose relative to world or rigid actor transform. Valid only for attachment against world or rigid actor.
 	*/
 	virtual void	updatePose(const PxTransform& pose) = 0;

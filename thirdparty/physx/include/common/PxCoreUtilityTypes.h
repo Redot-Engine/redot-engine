@@ -47,8 +47,6 @@ struct PxBoundedData
 	}
 };
 
-typedef PX_DEPRECATED PxBoundedData PxStridedData;
-
 template<typename TDataType>
 struct PxTypedBoundedData
 {
@@ -86,18 +84,6 @@ struct PxTypedBoundedData
 			theStride = sizeof(TDataType);
 		PxU32 offset(theStride * idx);
 		return *(reinterpret_cast<TDataType*>(reinterpret_cast<PxU8*>(data) + offset));
-	}
-};
-
-template<typename TDataType>
-PX_DEPRECATED struct PxTypedStridedData : public PxTypedBoundedData<TDataType>
-{
-	PxTypedStridedData() : PxTypedBoundedData<TDataType>()
-	{
-	}
-
-	PxTypedStridedData(TDataType* data_, PxU32 stride_ = 0) : PxTypedBoundedData<TDataType>(data_, stride_)
-	{
 	}
 };
 

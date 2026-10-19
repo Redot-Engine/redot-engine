@@ -60,17 +60,14 @@
 #define NONLS
 #define NOMSG
 
-#if defined(_MSC_VER) // Godot patch: MSVC-only pragma
 #pragma warning(push)
 #pragma warning(disable : 4668) //'symbol' is not defined as a preprocessor macro, replacing with '0' for 'directives'
-#endif
 #include <windows.h>
-#if defined(_MSC_VER) // Godot patch: MSVC-only pragma
 #pragma warning(pop)
-#endif
 
 #if PX_SSE2
 #include <xmmintrin.h>
 #endif
 
 #endif
+

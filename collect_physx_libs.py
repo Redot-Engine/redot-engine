@@ -27,7 +27,8 @@ import sys
 EXPECTED = {
     "PhysXVehicle_static_64",
     "PhysXCharacterKinematic_static_64",
-    "PhysXCooking_static_64",
+    # PhysX 5.12 removed the PhysXCooking library; its functions are exported
+    # from PhysXCommon now, which the module already links.
     "PhysXExtensions_static_64",
     "PhysXPvdSDK_static_64",
     "PhysX_static_64",
