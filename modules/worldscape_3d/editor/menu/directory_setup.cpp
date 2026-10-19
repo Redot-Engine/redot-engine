@@ -104,18 +104,13 @@ DirectorySetupDialog::DirectorySetupDialog() {
 	ConfirmationDialog::set_visible(true);
 }
 
-DirectorySetupDialog::~DirectorySetupDialog() {
-	_spacer->queue_free();
-	_select_dir_btn->queue_free();
-	_select_dir_le->queue_free();
-	_dir_hbox->queue_free();
-	_dir_label->queue_free();
-	_instructions->queue_free();
-	_vbox->queue_free();
-	_margin->queue_free();
-}
-
 void DirectorySetup::setup_layout() {
+	_dialog->get_dir_button()->connect("pressed", callable_mp(this, &DirectorySetup::on_select_file_pressed).bind(EditorFileDialog::FILE_MODE_OPEN_DIR));
+	_dialog->connect("confirmed", callable_mp(this, &DirectorySetup::on_close_dialog));
+	_dialog->connect("canceled", callable_mp(this, &DirectorySetup::on_close_dialog));
+	_dialog->get_ok_button()->connect("pressed", callable_mp(this, &DirectorySetup::on_ok));
+	add_child(_dialog);
+
 	_file_dialog->set_filters({ "*.res" });
 	_file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
 	_file_dialog->set_access(EditorFileDialog::ACCESS_RESOURCES);
@@ -126,12 +121,7 @@ void DirectorySetup::setup_layout() {
 	_file_dialog->set_exclusive(false);
 	_file_dialog->set_flag(Window::Flags::FLAG_POPUP, true);
 	_file_dialog->connect("dir_selected", callable_mp(this, &DirectorySetup::on_dir_selected));
-	add_child(_file_dialog);
-
-	_dialog->get_dir_button()->connect("pressed", callable_mp(this, &DirectorySetup::on_select_file_pressed).bind(EditorFileDialog::FILE_MODE_OPEN_DIR));
-	_dialog->connect("confirmed", callable_mp(this, &DirectorySetup::on_close_dialog));
-	_dialog->connect("canceled", callable_mp(this, &DirectorySetup::on_close_dialog));
-	_dialog->get_ok_button()->connect("pressed", callable_mp(this, &DirectorySetup::on_ok));
+	_dialog->add_child(_file_dialog);
 
 	auto folder_icon = EditorInterface::get_singleton()->get_base_control()->get_theme_icon("Folder", "EditorIcons");
 	_dialog->get_dir_button()->set_button_icon(folder_icon);
@@ -141,11 +131,6 @@ DirectorySetup::DirectorySetup(WorldScape3DEditorPlugin *plugin) :
 		_plugin{ plugin }, _dialog{ memnew(DirectorySetupDialog) }, _file_dialog{ memnew(EditorFileDialog) } {
 	_dialog->hide();
 	setup_layout();
-}
-
-DirectorySetup::~DirectorySetup() {
-	_file_dialog->queue_free();
-	_dialog->queue_free();
 }
 
 void DirectorySetup::directory_setup_popup() {
