@@ -488,7 +488,7 @@ void DependencyRemoveDialog::_find_setting_owners_of_removed_files(Vector<Remove
 			dep.file = vformat(TTR("Project setting: %s"), setting);
 			dep.file_type = "ClassList";
 			dep.dependency = setting_path;
-			dep.dependency_folder = I->value;
+			dep.dependency_folder = dte->value;
 			p_removed.push_back(dep);
 		}
 	}
