@@ -248,7 +248,6 @@ void BakerLODDialog::setup_layout() {
 }
 
 void BakerLODDialog::init() {
-	set_unparent_when_invisible(true);
 	setup_layout();
 	if (!is_connected("about_to_popup", callable_mp(this, &BakerLODDialog::on_about_to_popup))) {
 		connect("about_to_popup", callable_mp(this, &BakerLODDialog::on_about_to_popup));
@@ -276,15 +275,6 @@ void BakerLODDialog::on_visibility_changed() {
 
 void BakerLODDialog::on_lod_box_value_changed(real_t) {
 	_lod = static_cast<int>(_lodbox->get_value());
-}
-
-BakerLODDialog::~BakerLODDialog() {
-	_description_label->queue_free();
-	_lodbox->queue_free();
-	_label->queue_free();
-	_hbox->queue_free();
-	_vbox->queue_free();
-	_margin->queue_free();
 }
 
 void BakerLODDialog::_notification(int what) {
@@ -562,8 +552,14 @@ Baker::Baker(WorldScape3DEditorPlugin *plugin) :
 }
 
 Baker::~Baker() {
-	_confirm_dlg->queue_free();
-	_bake_lod_dlg->queue_free();
+	if (_confirm_dlg && !_confirm_dlg->get_parent()) {
+		_confirm_dlg->queue_free();
+		_confirm_dlg = nullptr;
+	}
+	if (_bake_lod_dlg && !_bake_lod_dlg->get_parent()) {
+		_bake_lod_dlg->queue_free();
+		_bake_lod_dlg = nullptr;
+	}
 }
 
 Vector<WorldScape3D *> Baker::find_nav_region_terrains(NavigationRegion3D *nav_region) const {
