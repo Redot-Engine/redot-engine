@@ -40,6 +40,12 @@
 class PhysXBlastFractureDialog;
 #endif
 
+class ConfirmationDialog;
+class AcceptDialog;
+class HTTPRequest;
+class ProgressBar;
+class Label;
+
 // Viewport gizmo for PhysXParticleFluid3D: a wireframe box for the spawn region
 // (with drag handles), a ring for the emission radius and an arrow for the
 // emission velocity.
@@ -164,6 +170,40 @@ class PhysXEditorPlugin : public EditorPlugin {
 	// target this one shared dialog instance.
 	PhysXBlastFractureDialog *blast_fracture_dialog = nullptr;
 #endif
+
+	// Shown when the project selects PhysX but the runtime DLLs staged next
+	// to the editor executable are missing; its confirm button starts the
+	// download-and-restart flow (installer stub for now).
+	ConfirmationDialog *runtime_missing_dialog = nullptr;
+
+	// Mirrors physics/3d/physics_engine so the plugin notices mid-session
+	// changes of the selection (the settings editor offers no restart prompt
+	// for it).
+	String physics_engine_cache;
+
+	// Download-and-restart flow: manifest -> bundle -> extract -> restart.
+	enum InstallStep {
+		STEP_MANIFEST,
+		STEP_BUNDLE,
+	};
+	AcceptDialog *install_progress_dialog = nullptr;
+	ProgressBar *install_progress_bar = nullptr;
+	Label *install_status_label = nullptr;
+	HTTPRequest *install_http = nullptr;
+	Dictionary install_bundle;
+	String install_zip_path;
+	int install_step = STEP_MANIFEST;
+	bool install_active = false;
+
+	void _on_project_settings_changed();
+	void _check_runtime_files();
+	void _start_install();
+	void _on_install_request_completed(int p_result, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_body);
+	void _install_failed(const String &p_message);
+	void _poll_install_progress();
+
+protected:
+	virtual void _notification(int p_what);
 
 public:
 	PhysXEditorPlugin();

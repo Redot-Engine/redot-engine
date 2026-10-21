@@ -95,6 +95,7 @@
 #ifdef TOOLS_ENABLED
 #include "editor/physx_cloth_paint_plugin.h"
 #include "editor/physx_editor_plugin.h"
+#include "editor/physx_runtime_manager.h"
 #ifdef GODOT_PHYSX_FLOW
 #include "editor/physx_flow_editor_plugin.h"
 #endif
@@ -185,6 +186,9 @@ void initialize_physx_module(ModuleInitializationLevel p_level) {
 
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		// Script-facing runtime-file detection for the download-and-restart
+		// flow (scripts/tests can query the missing runtime files).
+		ClassDB::register_class<PhysXRuntimeManager>();
 		// Viewport gizmos for the module's scene nodes, plus the Blast
 		// fracture dialog and the skinned-cloth max-distance paint tool.
 		EditorPlugins::add_by_type<PhysXEditorPlugin>();

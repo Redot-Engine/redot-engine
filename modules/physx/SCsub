@@ -388,6 +388,33 @@ if blast_enabled and env["platform"] in ("windows", "linux", "linuxbsd"):
         # Bare .lib names resolve via LIBPATH for MSVC only (see the PhysX block).
         if env.msvc:
             env.Append(LINKFLAGS=[x + ".lib" for x in blast_libs])
+            # The editor binary starts without the PhysX/Blast runtime DLLs so
+            # they can be downloaded on demand (the physx module's editor
+            # plugin detects the missing files and offers the install). The
+            # CRT delay helper resolves the imports on first use; until the
+            # module installs a proper delay hook, a missing DLL only fails
+            # when a GPU/Blast feature is actually exercised.
+            env.Append(
+                LINKFLAGS=[
+                    # NOTE: PhysXGpu_64.dll is deliberately absent here.
+                    # PhysX 5.12's static core dispatches the GPU module
+                    # through a runtime-set function pointer, so the engine
+                    # has no import-table dependency on it at all: the SDK
+                    # loads the DLL itself when GPU dynamics starts and
+                    # reports a missing one through the error callback.
+                    # Same for NvBlastGlobals/NvBlastExtShaders: no direct
+                    # imports from the engine (their consumers are the other
+                    # Blast DLLs), so /DELAYLOAD would warn "no imports
+                    # found" and /WX fails the link. They stay in the
+                    # required-runtime file list because the linked Blast
+                    # DLLs load them as dependencies.
+                    "/DELAYLOAD:NvBlast.dll",
+                    "/DELAYLOAD:NvBlastExtAuthoring.dll",
+                    # Bare name: LIBS entries get $LIBSUFFIX mangled (see the
+                    # PhysX lib block above).
+                    "delayimp.lib",
+                ]
+            )
         else:
             env.Append(LIBS=[blast_lib_path.File(x + ".lib") for x in blast_libs])
         blast_dll_dir = blast_dir.Dir("bin/windows/x86_64/release")

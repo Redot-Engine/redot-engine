@@ -37,6 +37,18 @@
 #include "../nodes/physx_gas_emitter_3d.h"
 #include "../nodes/physx_particle_fluid_3d.h"
 #include "../vehicles/physx_vehicle_wheel_3d.h"
+#include "physx_runtime_manager.h"
+
+#include "core/config/project_settings.h"
+#include "core/io/dir_access.h"
+#include "core/io/file_access.h"
+#include "core/os/os.h"
+#include "scene/gui/dialogs.h"
+#include "scene/gui/label.h"
+#include "scene/gui/progress_bar.h"
+#include "scene/main/http_request.h"
+
+#include "core/config/project_settings.h"
 
 #ifdef GODOT_PHYSX_BLAST
 #include "../blast/physx_destructible_3d.h"
@@ -620,4 +632,157 @@ PhysXEditorPlugin::PhysXEditorPlugin() {
 		EditorNode::get_singleton()->get_editor_theme()->set_icon("PhysXBlastAsset", EditorStringName(EditorIcons), blast_asset_icon);
 	}
 #endif
+
+	physics_engine_cache = GLOBAL_GET("physics/3d/physics_engine");
+	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &PhysXEditorPlugin::_on_project_settings_changed));
+	set_process(true);
+	_check_runtime_files();
+}
+
+void PhysXEditorPlugin::_notification(int p_what) {
+	EditorPlugin::_notification(p_what);
+	if (p_what == NOTIFICATION_PROCESS) {
+		_poll_install_progress();
+	}
+}
+
+void PhysXEditorPlugin::_poll_install_progress() {
+	if (!install_active || install_http == nullptr || install_step != STEP_BUNDLE) {
+		return;
+	}
+	const uint64_t total = install_http->get_body_size();
+	const uint64_t done = install_http->get_downloaded_bytes();
+	if (total > 0) {
+		install_progress_bar->set_value(100.0 * (double)done / (double)total);
+		install_status_label->set_text(vformat(TTR("Downloading PhysX runtime… %d of %d MB"), (int)(done >> 20), (int)(total >> 20)));
+	}
+}
+
+void PhysXEditorPlugin::_on_project_settings_changed() {
+	// The project settings editor offers no restart prompt for the physics
+	// engine selection, so the plugin watches the setting itself and offers
+	// the runtime install the moment the project lands on PhysX mid-session.
+	const String engine = GLOBAL_GET("physics/3d/physics_engine");
+	if (engine == physics_engine_cache) {
+		return;
+	}
+	physics_engine_cache = engine;
+	if (engine == "PhysX") {
+		_check_runtime_files();
+	} else if (runtime_missing_dialog) {
+		runtime_missing_dialog->hide(); // Selection moved away; stop offering.
+	}
+}
+
+void PhysXEditorPlugin::_check_runtime_files() {
+	// Only projects that select this module's physics server need the runtime
+	// files staged next to the editor executable.
+	if (String(GLOBAL_GET("physics/3d/physics_engine")) != "PhysX") {
+		return;
+	}
+	if (runtime_missing_dialog) {
+		return; // Already offered this session.
+	}
+	const PackedStringArray missing = PhysXRuntimeManager::get_missing_runtime_files();
+	if (missing.is_empty()) {
+		return;
+	}
+
+	runtime_missing_dialog = memnew(ConfirmationDialog);
+	runtime_missing_dialog->set_title(TTR("PhysX runtime files missing"));
+	runtime_missing_dialog->set_text(vformat(
+			TTR("This project uses the PhysX physics engine, but its runtime files are not installed next to the editor executable:\n\n%s\n\nDownload them now? The editor restarts afterwards."),
+			String("\n").join(missing)));
+	runtime_missing_dialog->set_ok_button_text(TTR("Download and Restart"));
+	runtime_missing_dialog->set_min_size(Vector2i(520, 0));
+	EditorNode::get_singleton()->get_gui_base()->add_child(runtime_missing_dialog);
+	runtime_missing_dialog->connect("confirmed", callable_mp(this, &PhysXEditorPlugin::_start_install));
+	runtime_missing_dialog->popup_centered();
+	print_line(vformat("PhysX: %d runtime file(s) missing -- offering the download-and-restart flow.", missing.size()));
+}
+
+void PhysXEditorPlugin::_start_install() {
+	if (install_active) {
+		return;
+	}
+	install_active = true;
+	install_step = STEP_MANIFEST;
+
+	install_progress_dialog = memnew(AcceptDialog);
+	install_progress_dialog->set_title(TTR("Installing PhysX runtime"));
+	install_progress_dialog->set_close_on_escape(false);
+	install_progress_dialog->get_ok_button()->hide();
+
+	VBoxContainer *vb = memnew(VBoxContainer);
+	install_progress_dialog->add_child(vb);
+	install_status_label = memnew(Label);
+	install_status_label->set_text(TTR("Fetching manifest…"));
+	vb->add_child(install_status_label);
+	install_progress_bar = memnew(ProgressBar);
+	install_progress_bar->set_custom_minimum_size(Vector2(480, 20));
+	vb->add_child(install_progress_bar);
+
+	EditorNode::get_singleton()->get_gui_base()->add_child(install_progress_dialog);
+
+	install_http = memnew(HTTPRequest);
+	install_http->set_use_threads(true);
+	install_http->set_download_chunk_size(1024 * 1024);
+	EditorNode::get_singleton()->get_gui_base()->add_child(install_http);
+	install_http->connect("request_completed", callable_mp(this, &PhysXEditorPlugin::_on_install_request_completed));
+
+	install_progress_dialog->popup_centered(Vector2i(520, 0));
+	install_http->request(PhysXRuntimeManager::MANIFEST_URL);
+}
+
+void PhysXEditorPlugin::_on_install_request_completed(int p_result, int p_code, const PackedStringArray &p_headers, const PackedByteArray &p_body) {
+	if (p_result != HTTPRequest::RESULT_SUCCESS) {
+		_install_failed(vformat(TTR("Network error %d while downloading."), p_result));
+		return;
+	}
+	if (p_code != 200) {
+		_install_failed(vformat(TTR("Server returned HTTP %d."), p_code));
+		return;
+	}
+
+	if (install_step == STEP_MANIFEST) {
+		install_bundle = PhysXRuntimeManager::parse_manifest(String::utf8((const char *)p_body.ptr(), p_body.size()));
+		if (install_bundle.is_empty()) {
+			_install_failed(TTR("The runtime manifest is missing or malformed."));
+			return;
+		}
+		install_step = STEP_BUNDLE;
+		install_status_label->set_text(TTR("Downloading PhysX runtime…"));
+		install_zip_path = OS::get_singleton()->get_executable_path().get_base_dir().path_join(".physx-runtime-download.zip");
+		install_http->set_download_file(install_zip_path);
+		install_http->request(install_bundle["url"]);
+		return;
+	}
+
+	// STEP_BUNDLE: the zip is on disk -- verify its SHA-256, then extract
+	// beside the editor executable (extract_bundle also verifies each
+	// extracted file against the manifest while writing it).
+	const String got = PhysXRuntimeManager::sha256_file(install_zip_path);
+	if (got.to_lower() != String(install_bundle["sha256"]).to_lower()) {
+		_install_failed(TTR("Downloaded bundle failed its SHA-256 check."));
+		return;
+	}
+	const String exe_dir = OS::get_singleton()->get_executable_path().get_base_dir();
+	const Error err = PhysXRuntimeManager::extract_bundle(install_zip_path, install_bundle, exe_dir);
+	DirAccess::remove_absolute(install_zip_path);
+	if (err != OK) {
+		_install_failed(vformat(TTR("Installation failed (error %d)."), (int)err));
+		return;
+	}
+
+	install_status_label->set_text(TTR("Installed. Restarting…"));
+	EditorNode::get_singleton()->restart_editor();
+}
+
+void PhysXEditorPlugin::_install_failed(const String &p_message) {
+	install_active = false;
+	ERR_PRINT(vformat("PhysX runtime install failed: %s", p_message));
+	install_status_label->set_text(vformat(TTR("Install failed: %s"), p_message));
+	install_progress_bar->hide();
+	install_progress_dialog->get_ok_button()->show();
+	install_progress_dialog->get_ok_button()->set_text(TTR("Close"));
 }
