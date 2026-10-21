@@ -80,9 +80,22 @@ static const char *required_runtime_files[] = {
 };
 #endif
 
+#ifdef __linux__
+// Linux: everything except the GPU runtime is statically linked; the shared
+// PhysXGpu runtime (built by the SDK build workflow) is the only runtime
+// file, loaded by the SDK itself when GPU dynamics starts.
+static const char *required_runtime_files[] = {
+	"libPhysXGpu_64.so",
+};
+#endif
+
 PackedStringArray PhysXRuntimeManager::get_required_runtime_files() {
 	PackedStringArray files;
 #ifdef WINDOWS_ENABLED
+	for (const char *name : required_runtime_files) {
+		files.push_back(String(name));
+	}
+#elif defined(__linux__)
 	for (const char *name : required_runtime_files) {
 		files.push_back(String(name));
 	}
@@ -106,10 +119,9 @@ bool PhysXRuntimeManager::is_runtime_complete() {
 }
 
 Error PhysXRuntimeManager::install_missing_files() {
-	// The download-and-restart flow is not wired up yet. The restart button
-	// already routes here so the real installer can be dropped in without
-	// touching the dialog again.
-	WARN_PRINT("PhysX: runtime download is not implemented yet.");
+	// The editor plugin's dialog drives the real flow (manifest -> download ->
+	// verify -> extract -> restart). This static entry stays for scripts.
+	WARN_PRINT("PhysX: use the editor's 'Download and Restart' flow to install the runtime.");
 	return ERR_UNAVAILABLE;
 }
 
@@ -126,6 +138,21 @@ void PhysXRuntimeManager::_bind_methods() {
 const char *PhysXRuntimeManager::MANIFEST_URL =
 		"https://raw.githubusercontent.com/Vlado-VG/redot-physx-runtime/main/manifest.json";
 
+const char *PhysXRuntimeManager::RELEASES_PAGE_URL =
+		"https://github.com/Vlado-VG/redot-physx-runtime/releases";
+
+// Maps the running OS to the manifest's "platforms" key; empty when the
+// platform has no runtime bundle.
+static String platform_key() {
+#ifdef WINDOWS_ENABLED
+	return "windows";
+#elif defined(__linux__)
+	return "linux";
+#else
+	return String();
+#endif
+}
+
 Dictionary PhysXRuntimeManager::parse_manifest(const String &p_json_text) {
 	JSON json;
 	if (json.parse(p_json_text) != OK) {
@@ -137,8 +164,12 @@ Dictionary PhysXRuntimeManager::parse_manifest(const String &p_json_text) {
 	}
 	Dictionary manifest = parsed;
 	Dictionary platforms = manifest.get("platforms", Dictionary());
-	Dictionary windows = platforms.get("windows", Dictionary());
-	Dictionary bundle = windows.get("bundle", Dictionary());
+	const String key = platform_key();
+	if (key.is_empty()) {
+		return Dictionary();
+	}
+	Dictionary platform = platforms.get(key, Dictionary());
+	Dictionary bundle = platform.get("bundle", Dictionary());
 	if (bundle.is_empty()) {
 		return Dictionary();
 	}

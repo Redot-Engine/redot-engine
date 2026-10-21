@@ -32,14 +32,14 @@
 
 #pragma once
 
-#include "core/object/object.h"
+#include "core/object/class_db.h"
 
 // Tracks the PhysX runtime binaries that must sit next to the editor
-// executable (PhysXGpu_64.dll and the hard-imported NvBlast DLLs on Windows).
-// The editor binary is built with these DLLs delay-loaded, so it starts
-// without them; the module uses this manager to detect the gap and offer the
-// download-and-restart flow. The download itself is not implemented yet --
-// install_missing_files() is a stub.
+// executable (PhysXGpu_64.dll and the Blast DLLs on Windows;
+// libPhysXGpu_64.so on Linux). The editor binary is built with these
+// delay-loaded (Windows) or without a static import (Linux -- the SDK loads
+// the shared object itself), so it starts without them; the module uses this
+// manager to detect the gap and offer the download-and-restart flow.
 class PhysXRuntimeManager : public Object {
 	GDCLASS(PhysXRuntimeManager, Object);
 
@@ -47,6 +47,10 @@ public:
 	// Manifest source for the download-and-restart flow. When the Redot team
 	// adopts the runtime repo, only this URL changes.
 	static const char *MANIFEST_URL;
+
+	// Releases page for manual runtime downloads (fallback when the
+	// automatic install fails).
+	static const char *RELEASES_PAGE_URL;
 
 	// Runtime files that must sit next to the editor executable, per
 	// platform. Names only: the directory is always the executable's.

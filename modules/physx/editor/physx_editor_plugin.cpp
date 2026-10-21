@@ -691,7 +691,7 @@ void PhysXEditorPlugin::_check_runtime_files() {
 	runtime_missing_dialog = memnew(ConfirmationDialog);
 	runtime_missing_dialog->set_title(TTR("PhysX runtime files missing"));
 	runtime_missing_dialog->set_text(vformat(
-			TTR("This project uses the PhysX physics engine, but its runtime files are not installed next to the editor executable:\n\n%s\n\nDownload them now? The editor restarts afterwards."),
+			TTR("This project uses the PhysX physics engine, but its runtime files are not installed next to the editor executable:\n\n%s\n\nDownload them now? The editor restarts afterwards. You can also install them manually later (see the redot-physx-runtime Releases page)."),
 			String("\n").join(missing)));
 	runtime_missing_dialog->set_ok_button_text(TTR("Download and Restart"));
 	runtime_missing_dialog->set_min_size(Vector2i(520, 0));
@@ -781,8 +781,15 @@ void PhysXEditorPlugin::_on_install_request_completed(int p_result, int p_code, 
 void PhysXEditorPlugin::_install_failed(const String &p_message) {
 	install_active = false;
 	ERR_PRINT(vformat("PhysX runtime install failed: %s", p_message));
-	install_status_label->set_text(vformat(TTR("Install failed: %s"), p_message));
+	// Manual fallback: the runtime bundle can always be installed by hand.
+	const String releases_page = PhysXRuntimeManager::RELEASES_PAGE_URL;
+	const String manual = vformat(
+			TTR("You can install the runtime manually: download the bundle for your platform from %s (Releases), unzip it, and place the files into the same folder as the Redot executable, then restart."),
+			releases_page);
+	install_status_label->set_text(vformat(TTR("Install failed: %s\n\n%s"), p_message, manual));
 	install_progress_bar->hide();
 	install_progress_dialog->get_ok_button()->show();
 	install_progress_dialog->get_ok_button()->set_text(TTR("Close"));
+	print_line(vformat("PhysX runtime install failed: %s", p_message));
+	print_line(manual);
 }
