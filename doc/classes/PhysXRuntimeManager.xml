@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXRuntimeManager" inherits="Object" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+		Detects missing PhysX runtime binaries next to the editor executable and supports the runtime download-and-restart flow. Editor-only.
+	</brief_description>
+	<description>
+		The PhysX module ships its GPU runtime (PhysXGpu) and Blast destruction DLLs separately from the editor. When a project selects the PhysX physics engine, these files must sit next to the editor executable; the editor detects their absence and offers to download the bundle published in the redot-physx-runtime repository.
+
+		PhysXRuntimeManager exposes the checks and install helpers behind that flow to scripts: the required-file list per platform, the missing-file query, bundle manifest parsing, bundle extraction with per-file SHA-256 verification, and a fallback installer stub. It is registered at editor initialization level, so it exists only in the editor, not in running games.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="extract_bundle" qualifiers="static">
+			<return type="int" enum="Error" />
+			<param index="0" name="zip_path" type="String" />
+			<param index="1" name="bundle" type="Dictionary" />
+			<param index="2" name="target_dir" type="String" />
+			<description>
+				Extracts the manifest-listed files from the bundle zip at [param zip_path] into [param target_dir], verifying each file's SHA-256 (from [param bundle] [code]files[].sha256[/code]) as it is written. On a mismatch or read failure, the offending file is removed and every file written by this call is rolled back, leaving no half-updated mix of binaries. Returns an [enum Error] code.
+			</description>
+		</method>
+		<method name="get_missing_runtime_files" qualifiers="static">
+			<return type="PackedStringArray" />
+			<description>
+				Returns the names of the required runtime files that are not present in the executable's directory (e.g. [code]PhysXGpu_64.dll[/code] and the Blast DLLs on Windows, [code]libPhysXGpu_64.so[/code] on Linux).
+			</description>
+		</method>
+		<method name="get_required_runtime_files" qualifiers="static">
+			<return type="PackedStringArray" />
+			<description>
+				Returns the runtime file names that must sit next to the editor executable for PhysX and Blast to work, for the current platform.
+			</description>
+		</method>
+		<method name="install_missing_files" qualifiers="static">
+			<return type="int" enum="Error" />
+			<description>
+				Currently a placeholder: the runtime install is driven by the editor plugin's download-and-restart flow instead. Returns [constant ERR_UNAVAILABLE].
+			</description>
+		</method>
+		<method name="is_runtime_complete" qualifiers="static">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when every required runtime file is present in the executable's directory.
+			</description>
+		</method>
+		<method name="parse_manifest" qualifiers="static">
+			<return type="Dictionary" />
+			<param index="0" name="json_text" type="String" />
+			<description>
+				Parses runtime manifest JSON and returns the current platform's bundle dictionary ([code]url[/code], [code]sha256[/code], [code]size_bytes[/code], [code]files[/code]) — an empty [Dictionary] when the manifest is malformed, or when it has no bundle for the running platform.
+			</description>
+		</method>
+		<method name="sha256_file" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Returns the lowercase hexadecimal SHA-256 checksum of the file at [param path], or an empty [String] if the file cannot be read.
+			</description>
+		</method>
+	</methods>
+</class>
