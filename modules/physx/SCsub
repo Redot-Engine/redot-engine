@@ -402,14 +402,18 @@ if blast_enabled and env["platform"] in ("windows", "linux", "linuxbsd"):
                     # has no import-table dependency on it at all: the SDK
                     # loads the DLL itself when GPU dynamics starts and
                     # reports a missing one through the error callback.
-                    # Same for NvBlastGlobals/NvBlastExtShaders: no direct
-                    # imports from the engine (their consumers are the other
-                    # Blast DLLs), so /DELAYLOAD would warn "no imports
-                    # found" and /WX fails the link. They stay in the
-                    # required-runtime file list because the linked Blast
-                    # DLLs load them as dependencies.
+                    # NvBlastGlobals.dll is likewise absent: no engine object
+                    # imports it directly (the other Blast DLLs load it as
+                    # their own dependency), so /DELAYLOAD would warn "no
+                    # imports found" and /WX fails the link.
                     "/DELAYLOAD:NvBlast.dll",
                     "/DELAYLOAD:NvBlastExtAuthoring.dll",
+                    "/DELAYLOAD:NvBlastExtShaders.dll",
+                    # Which DLLs end up with delay imports varies by config:
+                    # template_release's optimized link references NvBlast.dll
+                    # only through the other Blast DLLs, producing a harmless
+                    # LNK4199 ("no imports found") that /WX would fail.
+                    "/IGNORE:4199",
                     # Bare name: LIBS entries get $LIBSUFFIX mangled (see the
                     # PhysX lib block above).
                     "delayimp.lib",
