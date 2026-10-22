@@ -3044,9 +3044,10 @@ void WaylandThread::_poll_events_thread(void *p_data) {
 			// be sure that this and the main thread won't race over stuff, as long as
 			// the main thread locks it too.
 			//
-			// Note that the main thread can still call wl_display_roundtrip as that
-			// method directly handles all events, effectively bypassing this polling
-			// loop and thus the mutex locking, avoiding a deadlock.
+			// The main thread may still call wl_display_roundtrip, which reads and
+			// dispatches events on its own, but it must hold the mutex while doing so.
+			// Otherwise we could dispatch the roundtrip's reply here first, leaving it
+			// waiting forever for a reply that has already been handled.
 			MutexLock mutex_lock(data->mutex);
 
 			if (wl_display_dispatch_pending(data->wl_display) == -1) {
@@ -3067,6 +3068,14 @@ void WaylandThread::_poll_events_thread(void *p_data) {
 			} else {
 				CRASH_NOW_MSG(vformat("Wayland client error code %d.", werror));
 			}
+		}
+
+		// `destroy` may have finished its wake-up roundtrip before we got here, in which
+		// case nothing would wake up the poll below. Since we're now a prepared reader,
+		// any later roundtrip can't read the display without us, so checking here is enough.
+		if (data->thread_done.is_set()) {
+			wl_display_cancel_read(data->wl_display);
+			break;
 		}
 
 		wl_display_flush(data->wl_display);
@@ -3099,6 +3108,8 @@ struct wl_display *WaylandThread::get_wl_display() const {
 }
 
 void WaylandThread::roundtrip() {
+	// See the note in `_poll_events_thread` on why the mutex is needed.
+	MutexLock mutex_lock(mutex);
 	wl_display_roundtrip(wl_display);
 }
 
@@ -3602,7 +3613,7 @@ void WaylandThread::window_create(DisplayServer::WindowID p_window_id, int p_wid
 	// not arrive within a single roundtrip. Loop until it does.
 	const int MAX_CONFIGURE_ROUNDTRIPS = 10;
 	for (int i = 0; i < MAX_CONFIGURE_ROUNDTRIPS && !ws.initial_configure_done; i++) {
-		wl_display_roundtrip(wl_display);
+		roundtrip();
 	}
 	if (!ws.initial_configure_done) {
 		WARN_PRINT("WaylandThread: Surface was not configured after multiple roundtrips. Window may not appear.");
@@ -3689,7 +3700,7 @@ void WaylandThread::window_create_popup(DisplayServer::WindowID p_window_id, Dis
 	wl_surface_commit(ws.wl_surface);
 
 	// Wait for the surface to be configured before continuing.
-	wl_display_roundtrip(wl_display);
+	roundtrip();
 }
 
 void WaylandThread::window_destroy(DisplayServer::WindowID p_window_id) {
@@ -3736,7 +3747,7 @@ void WaylandThread::window_destroy(DisplayServer::WindowID p_window_id) {
 
 	// Before continuing, let's handle any leftover event that might still refer to
 	// this window.
-	wl_display_roundtrip(wl_display);
+	roundtrip();
 
 	// We can already clean up here, we're done.
 	windows.erase(p_window_id);
@@ -4014,7 +4025,7 @@ void WaylandThread::window_try_set_mode(DisplayServer::WindowID p_window_id, Dis
 	}
 
 	// Wait for a configure event and hope that something changed.
-	wl_display_roundtrip(wl_display);
+	roundtrip();
 
 	if (ws.mode != DisplayServer::WINDOW_MODE_WINDOWED) {
 		// The compositor refused our "normalization" request. It'd be useless or
@@ -4355,8 +4366,6 @@ Error WaylandThread::init() {
 
 	thread_data.wl_display = wl_display;
 
-	events_thread.start(_poll_events_thread, &thread_data);
-
 	wl_registry = wl_display_get_registry(wl_display);
 
 	ERR_FAIL_NULL_V_MSG(wl_registry, ERR_UNAVAILABLE, "Can't obtain the Wayland registry global.");
@@ -4366,7 +4375,7 @@ Error WaylandThread::init() {
 	wl_registry_add_listener(wl_registry, &wl_registry_listener, &registry);
 
 	// Wait for registry to get notified from the compositor.
-	wl_display_roundtrip(wl_display);
+	roundtrip();
 
 	ERR_FAIL_NULL_V_MSG(registry.wl_shm, ERR_UNAVAILABLE, "Can't obtain the Wayland shared memory global.");
 	ERR_FAIL_NULL_V_MSG(registry.wl_compositor, ERR_UNAVAILABLE, "Can't obtain the Wayland compositor global.");
@@ -4395,7 +4404,7 @@ Error WaylandThread::init() {
 	}
 
 	// Wait for seat capabilities.
-	wl_display_roundtrip(wl_display);
+	roundtrip();
 
 #ifdef LIBDECOR_ENABLED
 	bool libdecor_found = true;
@@ -4430,6 +4439,11 @@ Error WaylandThread::init() {
 
 	// Update the cursor.
 	cursor_set_shape(DisplayServer::CURSOR_ARROW);
+
+	// Only start polling once everything above is done, as it runs without the mutex and
+	// dispatches events on this thread (see `_poll_events_thread`). Starting last also means
+	// that a failed init never leaves the thread running.
+	events_thread.start(_poll_events_thread, &thread_data);
 
 	initialized = true;
 	return OK;
@@ -4644,7 +4658,7 @@ void WaylandThread::selection_set_text(const String &p_text) {
 
 	// Wait for the message to get to the server before continuing, otherwise the
 	// clipboard update might come with a delay.
-	wl_display_roundtrip(wl_display);
+	roundtrip();
 }
 
 bool WaylandThread::selection_has_mime(const String &p_mime) const {
@@ -4765,7 +4779,7 @@ void WaylandThread::primary_set_text(const String &p_text) {
 
 	// Wait for the message to get to the server before continuing, otherwise the
 	// clipboard update might come with a delay.
-	wl_display_roundtrip(wl_display);
+	roundtrip();
 }
 
 void WaylandThread::commit_surfaces() {
@@ -4796,7 +4810,7 @@ bool WaylandThread::wait_frame_suspend_ms(int p_timeout) {
 	// solution? Let's make sure the mutex is locked (it should) and unblock the
 	// main thread with a roundtrip!
 	MutexLock mutex_lock(mutex);
-	wl_display_roundtrip(wl_display);
+	roundtrip();
 
 	if (is_suspended()) {
 		// All windows are suspended! The compositor is telling us _explicitly_ that
@@ -4921,8 +4935,10 @@ void WaylandThread::destroy() {
 		thread_data.thread_done.set();
 
 		// By sending a roundtrip message we're unblocking the polling thread so that
-		// it can realize that it's done and also handle every event that's left.
-		wl_display_roundtrip(wl_display);
+		// it can realize that it's done. Any events left are dispatched by the
+		// roundtrip itself. `roundtrip` releases the mutex before returning, which
+		// the polling thread needs to be able to finish.
+		roundtrip();
 
 		events_thread.wait_to_finish();
 	}

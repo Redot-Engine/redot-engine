@@ -55,7 +55,7 @@ void WorldScape3DData::_clear() {
 	LOG(DEBUG, "Clearing data");
 	_region_map_dirty = true;
 	_region_map.clear();
-	_region_map.resize(REGION_MAP_SIZE * REGION_MAP_SIZE);
+	_region_map.resize_initialized(REGION_MAP_SIZE * REGION_MAP_SIZE);
 	_regions.clear();
 	_region_locations.clear();
 	_master_height_range = V2_ZERO;
@@ -92,17 +92,21 @@ void WorldScape3DData::initialize(WorldScape3D *p_terrain) {
 	LOG(DEBUG, "Initializing data");
 	bool prev_initialized = _terrain != nullptr;
 	_terrain = p_terrain;
-	_region_map.resize(REGION_MAP_SIZE * REGION_MAP_SIZE);
+	_region_map.resize_initialized(REGION_MAP_SIZE * REGION_MAP_SIZE);
 	_vertex_spacing = _terrain->get_vertex_spacing();
 	_region_size = _terrain->get_region_size();
 	_region_sizev = Vector2i(_region_size, _region_size);
 	if (!prev_initialized) {
-#ifdef TOOLS_ENABLED
 		if (_terrain->get_data_directory().is_empty()) {
-			select_data_directory();
-			return;
-		}
+#ifdef TOOLS_ENABLED
+			// The editor binary also runs games (Play) without an EditorNode, so only prompt in the editor.
+			if (IS_EDITOR) {
+				select_data_directory();
+				return;
+			}
 #endif
+			LOG(ERROR, "WorldScape3D data directory not set. Terrain will not be loaded");
+		}
 		if (!_terrain->get_data_directory().is_empty()) {
 			load_directory(_terrain->get_data_directory());
 		}
@@ -533,7 +537,7 @@ void WorldScape3DData::update_maps(const MapType p_map_type, const bool p_all_re
 	if (_region_map_dirty) {
 		LOG(EXTREME, "Regenerating ", REGION_MAP_VSIZE, " region map array from active regions");
 		_region_map.clear();
-		_region_map.resize(REGION_MAP_SIZE * REGION_MAP_SIZE);
+		_region_map.resize_initialized(REGION_MAP_SIZE * REGION_MAP_SIZE);
 		_region_map_dirty = false;
 		_region_locations = TypedArray<Vector2i>(); // enforce new pointer
 		Array locs = _regions.keys();

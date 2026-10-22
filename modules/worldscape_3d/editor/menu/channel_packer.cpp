@@ -132,11 +132,6 @@ public:
 		add_child(_option);
 	}
 
-	~ChannelSelector() override {
-		_option->queue_free();
-		_label->queue_free();
-	}
-
 	void set_channels(int used_channels) {
 		int channel_count = 4;
 		switch (used_channels) {
@@ -171,8 +166,6 @@ public:
 
 class TexturePackerButton final : public Button {
 	GDCLASS(TexturePackerButton, Button);
-
-	~TexturePackerButton() override = default;
 
 public:
 	static void _bind_methods() {
@@ -235,8 +228,9 @@ class ChannelPanel final : public PanelContainer {
 		set_h_size_flags(SIZE_EXPAND_FILL);
 		set_v_size_flags(SIZE_EXPAND_FILL);
 
-		Ref panel_style = memnew(StyleBoxFlat);
-		panel_style->set_bg_color(Color{ 0.168627, 0.211765, 0.266667, 1 });
+		Ref<StyleBoxFlat> panel_style;
+		panel_style.instantiate();
+		panel_style->set_bg_color(Color{ 0.168627f, 0.211765f, 0.266667f, 1.f });
 		panel_style->set_border_width(Side::SIDE_LEFT, 3);
 		panel_style->set_border_width(Side::SIDE_TOP, 3);
 		panel_style->set_border_width(Side::SIDE_RIGHT, 3);
@@ -293,7 +287,8 @@ class ChannelPanel final : public PanelContainer {
 		_preview_panel->set_custom_minimum_size(Size2{ 110, 110 });
 		_preview_panel->set_h_size_flags(SizeFlags::SIZE_SHRINK_CENTER);
 		_preview_panel->set_v_size_flags(SizeFlags::SIZE_SHRINK_CENTER);
-		Ref preview_style = memnew(StyleBoxFlat);
+		Ref<StyleBoxFlat> preview_style;
+		preview_style.instantiate();
 		preview_style->set_bg_color(Color{ 0.137255, 0.137255, 0.137255, 1 });
 		preview_style->set_border_width(Side::SIDE_LEFT, 3);
 		preview_style->set_border_width(Side::SIDE_TOP, 3);
@@ -313,7 +308,8 @@ class ChannelPanel final : public PanelContainer {
 		_texture_button->set_anchor(Side::SIDE_BOTTOM, 1.f);
 		_texture_button->set_h_grow_direction(GrowDirection::GROW_DIRECTION_END);
 		_texture_button->set_v_grow_direction(GrowDirection::GROW_DIRECTION_END);
-		Ref empty_style = memnew(StyleBoxFlat);
+		Ref<StyleBoxFlat> empty_style;
+		empty_style.instantiate();
 		_texture_button->add_theme_style_override("theme_override_styles/normal", empty_style);
 		_preview_panel->add_child(_texture_button);
 
@@ -420,23 +416,8 @@ public:
 		setup_layout();
 	}
 
-	~ChannelPanel() override {
-		_height_label->queue_free();
-		_width_label->queue_free();
-		_wh_hbox->queue_free();
-		_margin->queue_free();
-		_texture_button->queue_free();
-		_preview->queue_free();
-		_preview_panel->queue_free();
-		_pick_btn->queue_free();
-		_path_edit->queue_free();
-		_label->queue_free();
-		_outer_hbox->queue_free();
-		_vbox->queue_free();
-	}
-
 	void add(Control *control) {
-		if (_vbox2) {
+		if (_vbox2 && !control->get_parent()) {
 			_vbox2->add_child(control);
 		}
 	}
@@ -612,6 +593,9 @@ void ChannelPackerDialog::init_file_dialog() {
 }
 
 void ChannelPackerDialog::init() {
+	set_ok_button_text("Close");
+	setup_layout();
+	init_file_dialog();
 }
 
 void ChannelPackerDialog::generate_height_from_luminance() {
@@ -649,21 +633,6 @@ void ChannelPackerDialog::create_import_file(const String &png_path) const {
 }
 
 ChannelPackerDialog::ChannelPackerDialog() {
-	set_ok_button_text("Close");
-	setup_layout();
-	init_file_dialog();
-}
-
-ChannelPackerDialog::~ChannelPackerDialog() {
-	_general_options_panel->queue_free();
-	_roughness_panel->queue_free();
-	_normal_panel->queue_free();
-	_bottom_hbox->queue_free();
-	_height_panel->queue_free();
-	_albedo_panel->queue_free();
-	_top_hbox->queue_free();
-	_vbox->queue_free();
-	_margin->queue_free();
 }
 
 void ChannelPackerDialog::_notification(const int what) {
@@ -808,7 +777,7 @@ void ChannelPackerDialog::set_normal_vector(Ref<Image> image, bool quiet) {
 			sum += normal->get_pixel(x, y);
 		}
 	}
-	real_t div = normal->get_width() * normal->get_height();
+	float div = normal->get_width() * normal->get_height();
 	if (div <= 0.f) {
 		return;
 	}
@@ -835,7 +804,7 @@ void ChannelPackerDialog::align_normals(Ref<Image> image, int iteration) {
 			vector_pixel = mat3.xform(vector_pixel);
 			vector_pixel += Vector3{ 1.f, 1.f, 1.f };
 			vector_pixel *= 0.5f;
-			const Color new_pixel{ vector_pixel.x, vector_pixel.y, vector_pixel.z, old_pixel.a };
+			const Color new_pixel(vector_pixel.x, vector_pixel.y, vector_pixel.z, old_pixel.a);
 			image->set_pixel(x, y, new_pixel);
 		}
 	}
