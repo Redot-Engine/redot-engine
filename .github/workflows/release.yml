@@ -176,7 +176,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path physx-runtime | Out-Null
           Move-Item bin\PhysXGpu_64.dll physx-runtime\ -Force
           Move-Item bin\NvBlast*.dll physx-runtime\ -Force
-          Move-Item bin\nvflow.dll bin\nvflowext.dll physx-runtime\ -Force
+          Move-Item -Path bin\nvflow*.dll -Destination physx-runtime\ -Force
           Compress-Archive -Path 'physx-runtime/*' -DestinationPath physx-runtime-windows.zip -Force
           Remove-Item physx-runtime -Recurse -Force
 
