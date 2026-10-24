@@ -57,6 +57,13 @@
 				Ensure current selection is visible, adjusting the scroll position as necessary.
 			</description>
 		</method>
+		<method name="find_item_by_text" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="text" type="String" />
+			<description>
+				Returns the index of the item in the list. If none exists, returns -1.
+			</description>
+		</method>
 		<method name="force_update_list_size">
 			<return type="void" />
 			<description>
@@ -415,7 +422,7 @@
 		</member>
 		<member name="max_text_lines" type="int" setter="set_max_text_lines" getter="get_max_text_lines" default="1">
 			Maximum lines of text allowed in each item. Space will be reserved even when there is not enough lines of text to display.
-			[b]Note:[/b] This property takes effect only when [member icon_mode] is [constant ICON_MODE_TOP]. To make the text wrap, [member fixed_column_width] should be greater than zero.
+			[b]Note:[/b] Text wraps when [member max_text_lines] is greater than [code]1[/code] and a width constraint applies to the item, such as [member fixed_column_width] being greater than [code]0[/code], or the item's cell width being smaller than the text. Otherwise text is clipped by [member text_overrun_behavior].
 		</member>
 		<member name="same_column_width" type="bool" setter="set_same_column_width" getter="is_same_column_width" default="false">
 			Whether all columns will have the same width.
@@ -514,7 +521,7 @@
 			The spacing between item's icon and text.
 		</theme_item>
 		<theme_item name="line_separation" data_type="constant" type="int" default="2">
-			The vertical spacing between each line of text.
+			The vertical spacing between each line of text. Only has a visible effect when an item's text wraps to multiple lines (see [member max_text_lines]).
 		</theme_item>
 		<theme_item name="outline_size" data_type="constant" type="int" default="0">
 			The size of the item text outline.
