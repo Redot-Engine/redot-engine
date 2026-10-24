@@ -40,6 +40,10 @@
 
 #include "core/templates/vector.h"
 
+namespace AudioMixKernels {
+struct EQProcess;
+}
+
 class EQ {
 public:
 	enum Preset {
@@ -52,6 +56,7 @@ public:
 
 	class BandProcess {
 		friend class EQ;
+		friend struct AudioMixKernels::EQProcess;
 		float c1, c2, c3;
 		struct History {
 			float a1, a2, a3;

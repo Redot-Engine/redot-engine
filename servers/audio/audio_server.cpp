@@ -48,6 +48,7 @@
 #include "core/templates/pair.h"
 #include "scene/scene_string_names.h"
 #include "servers/audio/audio_driver_dummy.h"
+#include "servers/audio/audio_mix_kernels.h"
 #include "servers/audio/audio_stream.h"
 #include "servers/audio/effects/audio_effect_compressor.h"
 
@@ -307,6 +308,10 @@ void AudioServer::_driver_process(int p_frames, int32_t *p_buffer) {
 #endif // DEBUG_ENABLED
 				const AudioFrame *buf = master->channels[k].buffer.ptr();
 
+				if (cs == 1) {
+					AudioMixKernels::convert_stereo_to_int32(buf + from, dest, to_copy);
+					continue;
+				}
 				for (int j = 0; j < to_copy; j++) {
 					float l = CLAMP(buf[from + j].left, -1.0, 1.0);
 					int32_t vl = l * ((1 << 20) - 1);
@@ -628,18 +633,7 @@ void AudioServer::_mix_step() {
 			}
 
 			// Apply volume and compute peak.
-			for (uint32_t j = 0; j < buffer_size; j++) {
-				buf[j] *= volume;
-
-				float l = Math::abs(buf[j].left);
-				if (l > peak.left) {
-					peak.left = l;
-				}
-				float r = Math::abs(buf[j].right);
-				if (r > peak.right) {
-					peak.right = r;
-				}
-			}
+			AudioMixKernels::apply_volume_and_peak(buf, buffer_size, volume, peak);
 
 			bus->channels.write[k].peak_volume = AudioFrame(Math::linear_to_db(peak.left + AUDIO_PEAK_OFFSET), Math::linear_to_db(peak.right + AUDIO_PEAK_OFFSET));
 
@@ -658,9 +652,7 @@ void AudioServer::_mix_step() {
 				// If not master bus, send.
 				AudioFrame *target_buf = thread_get_channel_mix_buffer(send->index_cache, k);
 
-				for (uint32_t j = 0; j < buffer_size; j++) {
-					target_buf[j] += buf[j];
-				}
+				AudioMixKernels::add_frames(target_buf, buf, buffer_size);
 			}
 		}
 	}
@@ -700,11 +692,8 @@ void AudioServer::_mix_step_for_channel(AudioFrame *p_out_buf, AudioFrame *p_sou
 		}
 
 	} else {
-		for (unsigned int frame_idx = 0; frame_idx < buffer_size; frame_idx++) {
-			/// @todo Make lerp speed buffer-size-invariant if buffer_size ever becomes a project setting to avoid very small buffer sizes causing pops due to too-fast lerps.
-			float lerp_param = (float)frame_idx / buffer_size;
-			p_out_buf[frame_idx] += (p_vol_final * lerp_param + (1 - lerp_param) * p_vol_start) * p_source_buf[frame_idx];
-		}
+		/// @todo Make lerp speed buffer-size-invariant if buffer_size ever becomes a project setting to avoid very small buffer sizes causing pops due to too-fast lerps.
+		AudioMixKernels::mix_ramped(p_out_buf, p_source_buf, p_vol_start, p_vol_final, buffer_size);
 	}
 }
 

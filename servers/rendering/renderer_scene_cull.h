@@ -173,6 +173,36 @@ public:
 		const Plane *planes_ptr;
 		const PlaneSign *plane_signs_ptr;
 		uint32_t plane_count;
+#ifdef GODOT_SIMD_REAL_F32X4
+		// Planes in groups of 4, each group stored as nx[4] ny[4] nz[4] d[4]. Padding planes have a
+		// zero normal and an infinite distance so they can never cull.
+		Vector<float> planes_soa;
+		const float *planes_soa_ptr = nullptr;
+		uint32_t plane_group_count = 0;
+
+		void _build_soa() {
+			plane_group_count = (plane_count + 3) / 4;
+			planes_soa.resize(plane_group_count * 16);
+			float *soa = planes_soa.ptrw();
+			for (uint32_t g = 0; g < plane_group_count; g++) {
+				for (uint32_t l = 0; l < 4; l++) {
+					uint32_t i = g * 4 + l;
+					if (i < plane_count) {
+						soa[g * 16 + l] = planes_ptr[i].normal.x;
+						soa[g * 16 + 4 + l] = planes_ptr[i].normal.y;
+						soa[g * 16 + 8 + l] = planes_ptr[i].normal.z;
+						soa[g * 16 + 12 + l] = planes_ptr[i].d;
+					} else {
+						soa[g * 16 + l] = 0.0f;
+						soa[g * 16 + 4 + l] = 0.0f;
+						soa[g * 16 + 8 + l] = 0.0f;
+						soa[g * 16 + 12 + l] = INFINITY;
+					}
+				}
+			}
+			planes_soa_ptr = planes_soa.ptr();
+		}
+#endif
 
 		_ALWAYS_INLINE_ Frustum() {}
 		_ALWAYS_INLINE_ Frustum(const Frustum &p_frustum) {
@@ -182,6 +212,11 @@ public:
 			planes_ptr = planes.ptr();
 			plane_signs_ptr = plane_signs.ptr();
 			plane_count = p_frustum.plane_count;
+#ifdef GODOT_SIMD_REAL_F32X4
+			planes_soa = p_frustum.planes_soa;
+			planes_soa_ptr = planes_soa.ptr();
+			plane_group_count = p_frustum.plane_group_count;
+#endif
 		}
 		_ALWAYS_INLINE_ void operator=(const Frustum &p_frustum) {
 			planes = p_frustum.planes;
@@ -190,6 +225,11 @@ public:
 			planes_ptr = planes.ptr();
 			plane_signs_ptr = plane_signs.ptr();
 			plane_count = p_frustum.plane_count;
+#ifdef GODOT_SIMD_REAL_F32X4
+			planes_soa = p_frustum.planes_soa;
+			planes_soa_ptr = planes_soa.ptr();
+			plane_group_count = p_frustum.plane_group_count;
+#endif
 		}
 		_ALWAYS_INLINE_ Frustum(const Vector<Plane> &p_planes) {
 			planes = p_planes;
@@ -201,6 +241,9 @@ public:
 			}
 
 			plane_signs_ptr = plane_signs.ptr();
+#ifdef GODOT_SIMD_REAL_F32X4
+			_build_soa();
+#endif
 		}
 	};
 
@@ -224,6 +267,35 @@ public:
 			// This is not a full SAT check and the possibility of false positives exist,
 			// but the tradeoff vs performance is still very good.
 
+#ifdef GODOT_SIMD_REAL_F32X4
+			{
+				// Four planes per step; the corner is picked per lane like PlaneSign does
+				// (min bound for a positive normal component, max otherwise).
+				using namespace simd;
+				const f32x4 zero = zero4();
+				const f32x4 min_x = splat4(bounds[0]);
+				const f32x4 min_y = splat4(bounds[1]);
+				const f32x4 min_z = splat4(bounds[2]);
+				const f32x4 max_x = splat4(bounds[3]);
+				const f32x4 max_y = splat4(bounds[4]);
+				const f32x4 max_z = splat4(bounds[5]);
+				const float *soa = p_frustum.planes_soa_ptr;
+				for (uint32_t g = 0; g < p_frustum.plane_group_count; g++, soa += 16) {
+					f32x4 nx = load4(soa);
+					f32x4 ny = load4(soa + 4);
+					f32x4 nz = load4(soa + 8);
+					f32x4 d = load4(soa + 12);
+					f32x4 vx = select(cmp_gt(nx, zero), min_x, max_x);
+					f32x4 vy = select(cmp_gt(ny, zero), min_y, max_y);
+					f32x4 vz = select(cmp_gt(nz, zero), min_z, max_z);
+					f32x4 dist = ((nx * vx + ny * vy) + nz * vz) - d;
+					if (any_lane(cmp_ge(dist, zero))) {
+						return false;
+					}
+				}
+				return true;
+			}
+#endif
 			for (uint32_t i = 0; i < p_frustum.plane_count; i++) {
 				Vector3 min(
 						bounds[p_frustum.plane_signs_ptr[i].signs[0]],

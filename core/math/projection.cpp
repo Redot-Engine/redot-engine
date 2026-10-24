@@ -38,6 +38,8 @@
 
 #include "projection.h"
 
+#include "core/math/simd.h"
+
 #include "core/math/aabb.h"
 #include "core/math/math_funcs.h"
 #include "core/math/plane.h"
@@ -94,6 +96,18 @@ Vector4 Projection::xform(const Vector4 &p_vec4) const {
 			columns[0][3] * p_vec4.x + columns[1][3] * p_vec4.y + columns[2][3] * p_vec4.z + columns[3][3] * p_vec4.w);
 }
 Vector4 Projection::xform_inv(const Vector4 &p_vec4) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	using namespace simd;
+	f32x4 r0 = load4(columns[0].coord);
+	f32x4 r1 = load4(columns[1].coord);
+	f32x4 r2 = load4(columns[2].coord);
+	f32x4 r3 = load4(columns[3].coord);
+	transpose4(r0, r1, r2, r3);
+	f32x4 v = load4(p_vec4.coord);
+	Vector4 ret;
+	store4(ret.coord, ((r0 * splat_lane<0>(v) + r1 * splat_lane<1>(v)) + r2 * splat_lane<2>(v)) + r3 * splat_lane<3>(v));
+	return ret;
+#endif
 	return Vector4(
 			columns[0][0] * p_vec4.x + columns[0][1] * p_vec4.y + columns[0][2] * p_vec4.z + columns[0][3] * p_vec4.w,
 			columns[1][0] * p_vec4.x + columns[1][1] * p_vec4.y + columns[1][2] * p_vec4.z + columns[1][3] * p_vec4.w,
@@ -251,7 +265,7 @@ Projection Projection::flipped_y() const {
 	return proj;
 }
 
-Projection Projection ::jitter_offseted(const Vector2 &p_offset) const {
+Projection Projection::jitter_offseted(const Vector2 &p_offset) const {
 	Projection proj = *this;
 	proj.add_jitter_offset(p_offset);
 	return proj;
