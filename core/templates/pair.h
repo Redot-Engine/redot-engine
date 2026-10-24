@@ -71,7 +71,8 @@ struct is_zero_constructible<Pair<F, S>> : std::conjunction<is_zero_constructibl
 template <typename K, typename V>
 struct KeyValue {
 	const K key{};
-	V value{};
+	// If V is empty, such as RBEmptyValue, value will not occupy any space.
+	[[no_unique_address]] V value{};
 
 	KeyValue &operator=(const KeyValue &p_kv) = delete;
 	KeyValue &operator=(KeyValue &&p_kv) = delete;
