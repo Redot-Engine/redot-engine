@@ -47,7 +47,6 @@
 #include "core/templates/self_list.h"
 #include "drivers/gles3/shaders/effects/cubemap_filter.glsl.gen.h"
 #include "drivers/gles3/shaders/sky.glsl.gen.h"
-#include "scene/resources/mesh.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_server.h"

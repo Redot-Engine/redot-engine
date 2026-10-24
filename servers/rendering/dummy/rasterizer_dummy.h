@@ -40,7 +40,6 @@
 
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
-#include "scene/resources/mesh.h"
 #include "servers/rendering/dummy/environment/fog.h"
 #include "servers/rendering/dummy/environment/gi.h"
 #include "servers/rendering/dummy/rasterizer_canvas_dummy.h"

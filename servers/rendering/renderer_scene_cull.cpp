@@ -43,11 +43,6 @@
 #include "rendering_light_culler.h"
 #include "rendering_server_default.h"
 
-#if defined(DEBUG_ENABLED) && defined(TOOLS_ENABLED)
-// This is used only to obtain node paths for user-friendly physics interpolation warnings.
-#include "scene/main/node.h"
-#endif
-
 /* HALTON SEQUENCE */
 
 #ifndef _3D_DISABLED
