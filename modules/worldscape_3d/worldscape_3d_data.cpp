@@ -1288,20 +1288,18 @@ void WorldScape3DData::_bind_methods() {
 void WorldScape3DData::select_data_directory() {
 	EditorFileDialog *file_dialog = memnew(EditorFileDialog);
 	file_dialog->set_filters({ "*.res" });
-	file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
 	file_dialog->set_access(EditorFileDialog::ACCESS_RESOURCES);
 	file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_DIR);
+	file_dialog->connect("dir_selected", callable_mp(this, &WorldScape3DData::on_data_dir_selected).bind(file_dialog));
+	file_dialog->connect("canceled", callable_mp(this, &WorldScape3DData::on_data_dir_dialog_closed).bind(file_dialog));
 	file_dialog->set_ok_button_text("Open");
 	file_dialog->set_title("Select the terrain data directory");
 	file_dialog->set_size(Size2i{ 850, 550 });
 	file_dialog->set_transient(false);
 	file_dialog->set_exclusive(true);
 	file_dialog->set_flag(Window::Flags::FLAG_POPUP, true);
-	file_dialog->connect("dir_selected", callable_mp(this, &WorldScape3DData::on_data_dir_selected).bind(file_dialog));
-	file_dialog->connect("canceled", callable_mp(this, &WorldScape3DData::on_data_dir_dialog_closed).bind(file_dialog));
-	file_dialog->set_visible(true);
 	EditorNode::get_singleton()->add_child(file_dialog);
-	file_dialog->move_to_center();
+	file_dialog->popup_centered();
 }
 
 void WorldScape3DData::on_data_dir_selected(const String &path, EditorFileDialog *dialog) {
@@ -1317,6 +1315,5 @@ void WorldScape3DData::on_data_dir_selected(const String &path, EditorFileDialog
 void WorldScape3DData::on_data_dir_dialog_closed(EditorFileDialog *dialog) {
 	dialog->hide();
 	dialog->queue_free();
-	call_deferred("select_data_directory");
 }
 #endif
