@@ -42,6 +42,8 @@
 #include "editor/scene/3d/node_3d_editor_gizmos.h"
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/path_3d.h"
+#include "scene/gui/separator.h"
+#include "scene/resources/style_box_line.h"
 
 class HBoxContainer;
 class MenuButton;
@@ -72,6 +74,11 @@ class Path3DGizmo : public EditorNode3DGizmo {
 	int swapped_control_points_idx = -1;
 	bool control_points_overlapped = false;
 
+	/// Control point currently snapped to a collider while dragging, or -1.
+	int snapped_point_idx = -1;
+
+	Vector3 drag_grab_offset;
+
 	/// Cache information of secondary handles.
 	Vector<HandleInfo> _secondary_handles_info;
 
@@ -80,6 +87,8 @@ class Path3DGizmo : public EditorNode3DGizmo {
 public:
 	virtual String get_handle_name(int p_id, bool p_secondary) const override;
 	virtual Variant get_handle_value(int p_id, bool p_secondary) const override;
+	int get_snapped_point() const { return snapped_point_idx; }
+	void set_snapped_point(int p_idx);
 	virtual void set_handle(int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) override;
 	virtual void commit_handle(int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel = false) override;
 
@@ -93,6 +102,7 @@ class Path3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	/// Locking basis is meant to ensure a predictable behavior during translation of the curve points in "local space transform mode".
 	/// Without the locking, the gizmo/point, in "local space transform mode", wouldn't follow a straight path and would curve and twitch in an unpredictable way.
 	HashMap<int, Basis> transformation_locked_basis;
+	HashMap<int, Vector3> transformation_locked_origins;
 
 protected:
 	Ref<EditorNode3DGizmo> create_gizmo(Node3D *p_spatial) override;
@@ -130,7 +140,25 @@ class Path3DEditorPlugin : public EditorPlugin {
 	Button *curve_edit_tilt = nullptr;
 	Button *curve_del = nullptr;
 	Button *curve_closed = nullptr;
+
+	StyleBoxLine *separator_line_style = nullptr;
+	VSeparator *axis_separator_left = nullptr;
+
+	Button *axis_lock_x = nullptr;
+	Button *axis_lock_y = nullptr;
+	Button *axis_lock_z = nullptr;
+
+	VSeparator *axis_separator_right = nullptr;
+
 	Button *curve_clear_points = nullptr;
+	Button *curve_smooth = nullptr;
+
+	VSeparator *separator_clear_points = nullptr;
+
+	Button *curve_reset_handles = nullptr;
+
+	VSeparator *separator_options_menu = nullptr;
+
 	MenuButton *handle_menu = nullptr;
 
 	Button *create_curve_button = nullptr;
@@ -160,9 +188,16 @@ class Path3DEditorPlugin : public EditorPlugin {
 
 	void _create_curve();
 	void _confirm_clear_points();
+	void _apply_axis_locks(const Vector3 &p_reference_global, Vector3 &r_global_point) const;
+	void _update_axis_lock_icons();
 	void _clear_points();
 	void _clear_curve_points();
 	void _restore_curve_points(const PackedVector3Array &p_points);
+
+	void _smooth_all_points();
+	void _reset_all_points_handles();
+	void _delete_selected_points();
+	void _subgizmo_selection_change();
 
 	enum HandleOption {
 		HANDLE_OPTION_ANGLE,
