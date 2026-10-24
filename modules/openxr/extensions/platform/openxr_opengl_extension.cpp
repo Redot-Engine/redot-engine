@@ -58,8 +58,7 @@
 
 #include "../../openxr_util.h"
 
-#include "drivers/gles3/effects/copy_effects.h"
-#include "drivers/gles3/storage/texture_storage.h"
+#include "platform_gl.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_globals.h"
 
@@ -229,7 +228,7 @@ void OpenXROpenGLExtension::get_usable_depth_formats(Vector<int64_t> &p_usable_d
 }
 
 bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, void **r_swapchain_graphics_data) {
-	GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
+	RendererTextureStorage *texture_storage = RSG::texture_storage;
 	ERR_FAIL_NULL_V(texture_storage, false);
 
 	uint32_t swapchain_length;
@@ -319,7 +318,7 @@ void OpenXROpenGLExtension::cleanup_swapchain_graphics_data(void **p_swapchain_g
 		return;
 	}
 
-	GLES3::TextureStorage *texture_storage = GLES3::TextureStorage::get_singleton();
+	RendererTextureStorage *texture_storage = RSG::texture_storage;
 	ERR_FAIL_NULL(texture_storage);
 
 	SwapchainGraphicsData *data = (SwapchainGraphicsData *)*p_swapchain_graphics_data;
