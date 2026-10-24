@@ -1380,7 +1380,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 				key_type = builtin_types.get(token.value);
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				Variant resource;
-				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser);
+				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 				if (err) {
 					if (token.value == "Resource" && err == ERR_PARSE_ERROR && r_err_str == "Expected '('" && token.type == TK_COMMA) {
 						err = OK;
@@ -1436,7 +1436,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 				value_type = builtin_types.get(token.value);
 			} else if (token.value == "Resource" || token.value == "SubResource" || token.value == "ExtResource") {
 				Variant resource;
-				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser);
+				err = parse_value(token, resource, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 				if (err) {
 					if (token.value == "Resource" && err == ERR_PARSE_ERROR && r_err_str == "Expected '('" && token.type == TK_BRACKET_CLOSE) {
 						err = OK;
@@ -1491,7 +1491,7 @@ Error VariantParser::parse_value(Token &token, Variant &value, Stream *p_stream,
 			}
 
 			Dictionary values;
-			err = _parse_dictionary(values, p_stream, line, r_err_str, p_res_parser);
+			err = _parse_dictionary(values, p_stream, line, r_err_str, p_res_parser, p_allow_objects);
 			if (err) {
 				return err;
 			}

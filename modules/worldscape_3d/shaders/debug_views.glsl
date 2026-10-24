@@ -45,12 +45,11 @@ R"(
 		const vec3 __offsets = vec3(0, 1, 2);
 		vec2 __index_id = floor((INV_VIEW_MATRIX * vec4(VERTEX,1.0)).xz);
 		float __h[6];
-		__h[0] = texelFetch(_height_maps, get_index_coord(__index_id + __offsets.xy, FRAGMENT_PASS), 0).r;
-		__h[1] = texelFetch(_height_maps, get_index_coord(__index_id + __offsets.yy, FRAGMENT_PASS), 0).r;
-		__h[2] = texelFetch(_height_maps, get_index_coord(__index_id + __offsets.yx, FRAGMENT_PASS), 0).r;
-		__h[3] = texelFetch(_height_maps, get_index_coord(__index_id + __offsets.xx, FRAGMENT_PASS), 0).r;
-		__h[4] = texelFetch(_height_maps, get_index_coord(__index_id + __offsets.zx, FRAGMENT_PASS), 0).r;
-		__h[5] = texelFetch(_height_maps, get_index_coord(__index_id + __offsets.xz, FRAGMENT_PASS), 0).r;
+		vec2 __o[6] = vec2[6](__offsets.xy, __offsets.yy, __offsets.yx, __offsets.xx, __offsets.zx, __offsets.xz);
+		for (int __i = 0; __i < 6; __i++) {
+			ivec3 __c = get_index_coord(__index_id + __o[__i], FRAGMENT_PASS);
+			__h[__i] = __c.z < 0 ? 0.0 : texelFetch(_height_maps, __c, 0).r;
+		}
 
 		vec3 __normal[3];
 		__normal[0] = normalize(vec3(__h[0] - __h[1], _vertex_spacing, __h[0] - __h[5]));
@@ -122,7 +121,7 @@ R"(
 		__t_colors[30] = vec3(0.05);
 		__t_colors[31] = vec3(0.0125);
 		ivec3 __uv = get_index_coord(floor(uv), SKIP_PASS);
-		uint __control = floatBitsToUint(texelFetch(_control_maps, __uv, 0).r);
+		uint __control = (__uv.z < 0 ? 0u : floatBitsToUint(texelFetch(_control_maps, __uv, 0).r));
 		vec3 __ctrl_base = __t_colors[int(__control >> 27u & 0x1Fu)];
 		vec3 __ctrl_over = __t_colors[int(__control >> 22u & 0x1Fu)];
 		float __blend = float(__control >> 14u & 0xFFu) * 0.003921568627450; // 1.0/255.0
@@ -138,7 +137,7 @@ R"(
 	// Show control map texture angle
 	{
 		ivec3 __auv = get_index_coord(floor(uv), SKIP_PASS);
-		uint __a_control = floatBitsToUint(texelFetch(_control_maps, __auv, 0)).r;
+		uint __a_control = (__auv.z < 0 ? 0u : floatBitsToUint(texelFetch(_control_maps, __auv, 0).r));
 		uint __angle = (__a_control >>10u & 0xFu);
 		vec3 __a_colors[16] = {
 			vec3(1., .2, .0), vec3(.8, 0., .2), vec3(.6, .0, .4), vec3(.4, .0, .6),
@@ -157,7 +156,7 @@ R"(
 	// Show control map texture scale
 	{
 		ivec3 __suv = get_index_coord(floor(uv), SKIP_PASS);
-		uint __s_control = floatBitsToUint(texelFetch(_control_maps, __suv, 0)).r;
+		uint __s_control = (__suv.z < 0 ? 0u : floatBitsToUint(texelFetch(_control_maps, __suv, 0).r));
 		uint __scale = (__s_control >>7u & 0x7u);
 		vec3 __s_colors[8] = {
 			vec3(.5, .5, .5), vec3(.675, .25, .375), vec3(.75, .125, .25), vec3(.875, .0, .125), vec3(1., 0., 0.),
@@ -174,7 +173,7 @@ R"(
 	// Show control map blend values
 	{
 		ivec3 __uv = get_index_coord(floor(uv), SKIP_PASS);
-        uint __control = floatBitsToUint(texelFetch(_control_maps, __uv, 0).r);
+        uint __control = (__uv.z < 0 ? 0u : floatBitsToUint(texelFetch(_control_maps, __uv, 0).r));
         float __ctrl_blend = float(control[3] >> 14u & 0xFFu) * 0.003921568627450; // 1.0/255.0
         float __auto_blend = 0.;
 		#ifdef AUTO_SHADER
@@ -193,7 +192,7 @@ R"(
 	// Show where autoshader enabled
 	{
 		ivec3 __ruv = get_index_coord(floor(uv), SKIP_PASS);
-		uint __control = floatBitsToUint(texelFetch(_control_maps, __ruv, 0).r);
+		uint __control = (__ruv.z < 0 ? 0u : floatBitsToUint(texelFetch(_control_maps, __ruv, 0).r));
 		float __autoshader = float( bool(__control & 0x1u) || __ruv.z<0 );
 		ALBEDO = vec3(__autoshader);
 		ROUGHNESS = 1.;

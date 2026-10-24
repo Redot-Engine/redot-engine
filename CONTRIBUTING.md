@@ -3,7 +3,7 @@
 This document summarizes the most important points for people interested in
 contributing to Redot, especially via bug reports or pull requests.
 
-The [Redot Documentation](https://docs-stable.redotengine.org/contributing/development) has a dedicated Contributing section
+The [Redot Documentation](https://docs.redotengine.org/en/Contributing/Development/index) has a dedicated Contributing section
 which details these points and more, and is a recommended read.
 
 ## Table of contents
@@ -48,9 +48,9 @@ to suggest features or improvements to the engine.
 
 Please refer to these links for detailed guides on workflow:
 (credit to Godot for these fantastic workflow guides)
--	[Code Style](https://docs.redotengine.org/en/stable/contributing/development/code_style_guidelines.html)
--	[PR Workflow](https://docs.redotengine.org/en/latest/contributing/workflow/pr_workflow.html)
--	[PR Review](https://docs.redotengine.org/en/latest/contributing/workflow/pr_review_guidelines.html)
+-	[Code Style](https://docs.redotengine.org/en/Contributing/Development/code_style_guidelines)
+-	[PR Workflow](https://docs.redotengine.org/en/Contributing/Workflow/pr_workflow)
+-	[PR Review](https://docs.redotengine.org/en/Contributing/Workflow/pr_review_guidelines)
 
 Please also ensure that you have reviewed our [AI Policy](AI_POLICY.md) if you are planning on
 using AI tools when creating your PRs.
@@ -71,7 +71,7 @@ Similar rules can be applied when contributing bug fixes - it's always best to
 discuss the implementation in the bug report first if you are not 100% about
 what would be the best fix.
 
-Read the [Redot Documentation](https://docs-stable.redotengine.org/contributing/development)
+Read the [Redot Documentation](https://docs.redotengine.org/en/Contributing/Development/index)
 for information and guides related to contribution and pull requests.
 
 ### Be mindful of your commits
@@ -148,10 +148,10 @@ scripting APIs, you **must** update the class reference to document those.
 This is to ensure the documentation coverage doesn't decrease as contributions
 are merged.
 
-[Update documentation XML files](https://docs.redotengine.org/en/latest/contributing/documentation/updating_the_class_reference.html)
+[Update documentation XML files](https://docs.redotengine.org/en/Contributing/Documentation/updating_the_class_reference)
 using your compiled binary, then fill in the descriptions.
 Follow the style guide described in the
-[Documentation writing guidelines](https://docs.redotengine.org/en/latest/contributing/documentation/docs_writing_guidelines.html).
+[Documentation writing guidelines](https://docs.redotengine.org/en/Contributing/Documentation/docs_writing_guidelines).
 
 If your pull request modifies parts of the code in a non-obvious way, make sure
 to add comments in the code as well. This helps other people understand the
@@ -177,7 +177,7 @@ applicable.
 Feel free to contribute standalone pull requests to add new tests or improve
 existing tests as well.
 
-See [Unit testing](https://docs.redotengine.org/en/latest/contributing/development/core_and_modules/unit_testing.html)
+See [Unit testing](https://docs.redotengine.org/en/Contributing/Development/core_and_modules/unit_testing)
 for information on writing tests in Redot's C++ codebase.
 
 ## Contributing to Redot translations
@@ -185,7 +185,7 @@ for information on writing tests in Redot's C++ codebase.
 You can contribute to Redot translations by leaving a volunteer application
 on the [Redot Discord](https://discord.gg/redot) for us to review.
 
-Please refer to Redot's [editor and documentation localization guidelines](https://docs.redotengine.org/en/latest/contributing/documentation/editor_and_docs_localization.html)
+Please refer to Redot's [editor and documentation localization guidelines](https://docs.redotengine.org/en/Contributing/Documentation/editor_and_docs_localization)
 for an overview of the translation resources and what they correspond to.
 
 ## Communicating with developers
