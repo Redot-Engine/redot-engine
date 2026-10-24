@@ -300,6 +300,7 @@ bool profile_gpu = false;
 #ifdef MODULE_MCP_ENABLED
 static bool mcp_server_enabled = false;
 static int mcp_bridge_port = 0;
+static bool mcp_background = false;
 static String mcp_run_tests;
 #endif
 
@@ -604,6 +605,7 @@ void Main::print_help(const char *p_binary) {
 
 	print_help_option("--mcp-server", "Start the MCP (Model Context Protocol) server for AI agent integration. Implies --headless.\n", CLI_OPTION_AVAILABILITY_EDITOR);
 	print_help_option("--mcp-bridge-port <port>", "Port for the MCP Bridge connection (internal use).\n", CLI_OPTION_AVAILABILITY_EDITOR);
+	print_help_option("--mcp-background", "Run the game unfocused, off-screen and muted for an MCP agent (internal use).\n", CLI_OPTION_AVAILABILITY_EDITOR);
 	print_help_option("--run-tests <path>", "Run a unit test script headlessly and exit.\n", CLI_OPTION_AVAILABILITY_EDITOR);
 #endif
 	print_help_option("--log-file <file>", "Write output/error log to the specified path instead of the default location defined by the project.\n");
@@ -1398,6 +1400,9 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 				OS::get_singleton()->print("Missing <port> argument for --mcp-bridge-port <port>.\n");
 				goto error;
 			}
+		} else if (arg == "--mcp-background") { // Keep the MCP-driven game out of the user's way.
+			mcp_background = true;
+			audio_driver = NULL_AUDIO_DRIVER;
 		} else if (arg == "--run-tests") { // Run a unit test script headlessly and exit.
 			if (N) {
 				mcp_run_tests = N->get();
@@ -3260,6 +3265,21 @@ Error Main::setup2(bool p_show_boot_logo) {
 			}
 		}
 
+#ifdef MODULE_MCP_ENABLED
+		if (mcp_background && !init_embed_parent_window_id) {
+			// The MCP bridge captures the viewport texture and injects input events,
+			// so the agent doesn't need a visible or focused window. A no-focus window
+			// is shown without activation, so it doesn't steal focus or flash in the taskbar.
+			window_mode = DisplayServer::WINDOW_MODE_WINDOWED;
+			window_flags |= DisplayServer::WINDOW_FLAG_NO_FOCUS_BIT;
+			window_flags &= ~DisplayServer::WINDOW_FLAG_ALWAYS_ON_TOP_BIT;
+			init_windowed = true;
+			init_maximized = false;
+			init_fullscreen = false;
+			init_always_on_top = false;
+		}
+#endif
+
 #ifdef TOOLS_ENABLED
 		if ((project_manager || editor) && init_expand_to_title) {
 			window_flags |= DisplayServer::WINDOW_FLAG_EXTEND_TO_TITLE_BIT;
@@ -3371,6 +3391,22 @@ Error Main::setup2(bool p_show_boot_logo) {
 			}
 		}
 #endif
+#ifdef MODULE_MCP_ENABLED
+		if (mcp_background && !init_embed_parent_window_id) {
+			// Move the window past the left edge of the desktop before it's shown.
+			// This can't be the initial position, as that is clamped to a screen.
+			// Wayland doesn't let clients position or unfocus toplevel windows,
+			// so there the window stays visible and only the audio is muted.
+			Rect2i desktop_rect;
+			for (int i = 0; i < display_server->get_screen_count(); i++) {
+				Rect2i screen_rect(display_server->screen_get_position(i), display_server->screen_get_size(i));
+				desktop_rect = i == 0 ? screen_rect : desktop_rect.merge(screen_rect);
+			}
+			Size2i window_size_with_decorations = display_server->window_get_size_with_decorations(DisplayServer::MAIN_WINDOW_ID);
+			display_server->window_set_position(Point2i(desktop_rect.position.x - window_size_with_decorations.width - 100, desktop_rect.position.y), DisplayServer::MAIN_WINDOW_ID);
+		}
+#endif
+
 		if (display_server->has_feature(DisplayServer::FEATURE_SUBWINDOWS)) {
 			display_server->show_window(DisplayServer::MAIN_WINDOW_ID);
 		}
