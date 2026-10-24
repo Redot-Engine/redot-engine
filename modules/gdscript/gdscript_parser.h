@@ -965,6 +965,7 @@ public:
 		MethodInfo info;
 		LambdaNode *source_lambda = nullptr;
 		const FunctionNode *trait_super_function = nullptr;
+		String source_path; // Set for a trait's function: the trait's script, which a class using it compiles it into.
 		Vector<Variant> default_arg_values;
 #ifdef TOOLS_ENABLED
 		MemberDocData doc_data;
@@ -1580,6 +1581,9 @@ private:
 		if (_is_trait) {
 			if (current_class) {
 				node->trait_origin.append(current_class->fqcn);
+			}
+			if constexpr (std::is_same_v<T, FunctionNode>) {
+				node->source_path = script_path;
 			}
 		}
 

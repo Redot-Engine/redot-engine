@@ -4145,8 +4145,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 		// function, file, line, error, explanation
 		String err_file;
 		bool instance_valid_with_script = p_instance && ObjectDB::get_instance(p_instance->owner_id) != nullptr && p_instance->script->is_valid();
-		if (instance_valid_with_script && !get_script()->path.is_empty()) {
-			err_file = get_script()->path;
+		if (instance_valid_with_script && !String(source).is_empty()) {
+			err_file = source;
 		} else if (script) {
 			err_file = script->path;
 		}

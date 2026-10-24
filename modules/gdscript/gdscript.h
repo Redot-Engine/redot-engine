@@ -586,7 +586,7 @@ public:
 			csi.write[idx].line = *cl->line;
 			if (cl->function) {
 				csi.write[idx].func = cl->function->get_name();
-				csi.write[idx].file = cl->function->get_script()->get_script_path();
+				csi.write[idx].file = cl->function->get_source();
 			}
 			idx++;
 			cl = cl->prev;

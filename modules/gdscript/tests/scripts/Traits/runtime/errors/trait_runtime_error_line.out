@@ -1,0 +1,2 @@
+GDTEST_RUNTIME_ERROR
+>> SCRIPT ERROR at Traits/runtime/errors/trait_runtime_error_line_trait.notest.gd:5 on cause_a_problem(): Invalid call. Nonexistent function 'call_method' in base 'Nil'.
