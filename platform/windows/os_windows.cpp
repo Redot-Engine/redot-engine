@@ -2560,7 +2560,7 @@ String OS_Windows::expand_path(const String &p_path) const {
 		String value = get_environment(var);
 
 		if (!value.is_empty()) {
-			path = path.substr(0, left) + value + path.substr(right + 1);
+			path = path.substr(0, left) + value.replace_char('\\', '/') + path.substr(right + 1);
 			pos = left + value.length();
 		} else {
 			pos = right + 1;
