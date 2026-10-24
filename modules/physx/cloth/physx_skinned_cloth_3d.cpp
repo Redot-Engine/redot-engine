@@ -32,6 +32,9 @@
 
 #include "physx_skinned_cloth_3d.h"
 
+#include "../objects/physx_area_3d.h"
+#include "../physx_server.h"
+#include "../spaces/physx_space_3d.h"
 #include "core/config/engine.h"
 #include "core/object/class_db.h"
 #include "core/templates/hash_map.h"
@@ -43,6 +46,7 @@
 #include "scene/resources/3d/capsule_shape_3d.h"
 #include "scene/resources/3d/skin.h"
 #include "scene/resources/3d/sphere_shape_3d.h"
+#include "scene/resources/3d/world_3d.h"
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/texture_rd.h"
@@ -168,6 +172,13 @@ void PhysXSkinnedCloth3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_collision_radius_scale"), &PhysXSkinnedCloth3D::get_collision_radius_scale);
 	ClassDB::bind_method(D_METHOD("set_simulating", "simulating"), &PhysXSkinnedCloth3D::set_simulating);
 	ClassDB::bind_method(D_METHOD("is_simulating"), &PhysXSkinnedCloth3D::is_simulating);
+	ClassDB::bind_method(D_METHOD("set_use_world_gravity", "enabled"), &PhysXSkinnedCloth3D::set_use_world_gravity);
+	ClassDB::bind_method(D_METHOD("get_use_world_gravity"), &PhysXSkinnedCloth3D::get_use_world_gravity);
+	ClassDB::bind_method(D_METHOD("set_fixed_gravity", "gravity"), &PhysXSkinnedCloth3D::set_fixed_gravity);
+	ClassDB::bind_method(D_METHOD("get_fixed_gravity"), &PhysXSkinnedCloth3D::get_fixed_gravity);
+	ClassDB::bind_method(D_METHOD("set_extra_acceleration", "acceleration"), &PhysXSkinnedCloth3D::set_extra_acceleration);
+	ClassDB::bind_method(D_METHOD("get_extra_acceleration"), &PhysXSkinnedCloth3D::get_extra_acceleration);
+	ClassDB::bind_method(D_METHOD("get_effective_gravity"), &PhysXSkinnedCloth3D::get_effective_gravity);
 	ClassDB::bind_method(D_METHOD("rebuild"), &PhysXSkinnedCloth3D::rebuild);
 	ClassDB::bind_method(D_METHOD("reset"), &PhysXSkinnedCloth3D::reset);
 	ClassDB::bind_method(D_METHOD("get_particle_count"), &PhysXSkinnedCloth3D::get_particle_count);
@@ -187,6 +198,9 @@ void PhysXSkinnedCloth3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "damping", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_damping", "get_damping");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "thickness", PROPERTY_HINT_RANGE, "0,0.1,0.001,suffix:m"), "set_thickness", "get_thickness");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "simulating"), "set_simulating", "is_simulating");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_world_gravity"), "set_use_world_gravity", "get_use_world_gravity");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "fixed_gravity", PROPERTY_HINT_NONE, "suffix:m/s²"), "set_fixed_gravity", "get_fixed_gravity");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "extra_acceleration", PROPERTY_HINT_NONE, "suffix:m/s²"), "set_extra_acceleration", "get_extra_acceleration");
 	ADD_GROUP("Collision", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "collide_with_body"), "set_collide_with_body", "get_collide_with_body");
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "body_mesh_path", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "MeshInstance3D"), "set_body_mesh_path", "get_body_mesh_path");
@@ -212,7 +226,24 @@ void PhysXSkinnedCloth3D::_notification(int p_what) {
 				_try_build();
 			}
 			if (built && simulating) {
-				_step(get_process_delta_time());
+				pending_delta += get_process_delta_time();
+				// The step normally ran in skeleton_updated (the skeleton's
+				// final pose, after any SkeletonModifier3D). A frame without a
+				// skeleton update (a still pose) steps here instead, on the
+				// pose as it reads now; a frame whose update happens later
+				// than this callback defers its second step (_late_step, which
+				// the per-frame guard turns into a no-op when the signal
+				// already stepped).
+				if (!has_capture) {
+					Skeleton3D *skeleton = ObjectDB::get_instance<Skeleton3D>(skeleton_id);
+					if (skeleton != nullptr) {
+						_capture_pose(skeleton);
+						_place_capture(skeleton);
+						_step();
+					}
+				} else {
+					callable_mp(this, &PhysXSkinnedCloth3D::_late_step).call_deferred();
+				}
 			}
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
@@ -222,6 +253,8 @@ void PhysXSkinnedCloth3D::_notification(int p_what) {
 }
 
 void PhysXSkinnedCloth3D::_clear() {
+	_disconnect_skeleton();
+	has_capture = false;
 	MeshInstance3D *ri = ObjectDB::get_instance<MeshInstance3D>(render_instance_id);
 	if (ri != nullptr) {
 		ri->queue_free();
@@ -825,6 +858,7 @@ void PhysXSkinnedCloth3D::_try_build() {
 
 	source_id = source->get_instance_id();
 	skeleton_id = skeleton->get_instance_id();
+	_connect_skeleton(skeleton);
 	prev_capsules.clear();
 	_find_capsules(skeleton);
 	if (!using_physical_bones) {
@@ -833,20 +867,53 @@ void PhysXSkinnedCloth3D::_try_build() {
 	built = true;
 }
 
-void PhysXSkinnedCloth3D::_step(double p_delta) {
+// The skeleton's FINAL pose (after any SkeletonModifier3D) is live only
+// inside its skeleton_updated window, and only there: get_bone_global_pose
+// outside it reads the restored, unmodified pose. Capture the skeleton-local
+// poses here; _place_capture turns them into solver data at the transform the
+// skeleton has when the step runs.
+void PhysXSkinnedCloth3D::_capture_pose(Skeleton3D *p_skeleton) {
+	captured_poses.resize(bind_bones.size());
+	for (int j = 0; j < bind_bones.size(); j++) {
+		const int bone = bind_bones[j];
+		const Transform3D bone_pose = bone >= 0 ? p_skeleton->get_bone_global_pose(bone) : Transform3D();
+		captured_poses[j] = bone_pose * bind_poses[j];
+	}
+	captured_capsule_poses_a.resize(capsules.size());
+	captured_capsule_poses_b.resize(capsules.size());
+	for (int c = 0; c < capsules.size(); c++) {
+		const Capsule &capsule = capsules[c];
+		captured_capsule_poses_a[c] = capsule.bone_a >= 0 ? p_skeleton->get_bone_global_pose(capsule.bone_a) : Transform3D();
+		captured_capsule_poses_b[c] = capsule.bone_b >= 0 ? p_skeleton->get_bone_global_pose(capsule.bone_b) : Transform3D();
+	}
+	has_capture = true;
+}
+
+// Solver data from the last capture, placed where the skeleton is now (a
+// still-pose frame may still move through the world).
+void PhysXSkinnedCloth3D::_place_capture(Skeleton3D *p_skeleton) {
+	const Transform3D skel_xform = p_skeleton->get_global_transform();
+	captured_bones.resize(MAX(captured_poses.size(), 1) * 16);
+	float *bw = captured_bones.ptrw();
+	for (int j = 0; j < captured_poses.size(); j++) {
+		put_mat4(bw + j * 16, skel_xform * captured_poses[j]);
+	}
+}
+
+// One solver step on the pending frame time: capsule ends from the placed
+// capture (blended with the previous frame's across the substeps), settings
+// with the effective gravity, then the render twin follows the source.
+void PhysXSkinnedCloth3D::_step() {
 	Skeleton3D *skeleton = ObjectDB::get_instance<Skeleton3D>(skeleton_id);
 	MeshInstance3D *source = ObjectDB::get_instance<MeshInstance3D>(source_id);
 	if (skeleton == nullptr || source == nullptr || solver == nullptr) {
 		return;
 	}
-	const Transform3D skel_xform = skeleton->get_global_transform();
-	PackedFloat32Array bone_data;
-	bone_data.resize(MAX(bind_bones.size(), 1) * 16);
-	float *bw = bone_data.ptrw();
-	for (int j = 0; j < bind_bones.size(); j++) {
-		const int bone = bind_bones[j];
-		const Transform3D bone_pose = bone >= 0 ? skeleton->get_bone_global_pose(bone) : Transform3D();
-		put_mat4(bw + j * 16, skel_xform * bone_pose * bind_poses[j]);
+	const double delta = pending_delta;
+	pending_delta = 0.0;
+	last_step_frame = Engine::get_singleton()->get_process_frames();
+	if (delta <= 0.0) {
+		return;
 	}
 
 	PackedFloat32Array capsule_data;
@@ -863,13 +930,13 @@ void PhysXSkinnedCloth3D::_step(double p_delta) {
 			float scale = collision_radius_scale;
 			if (capsules[c].from_shape) {
 				// Where the PhysicalBone3D puts its shape: bone pose * body offset.
-				const Transform3D x = skel_xform * skeleton->get_bone_global_pose(capsules[c].bone_a) * capsules[c].shape_local;
+				const Transform3D x = skeleton->get_global_transform() * captured_capsule_poses_a[c] * capsules[c].shape_local;
 				a = x.xform(Vector3(0, -capsules[c].half_length, 0));
 				b = x.xform(Vector3(0, capsules[c].half_length, 0));
 				scale = 1.0f; // authored shapes are used as they are
 			} else {
-				a = skel_xform.xform(skeleton->get_bone_global_pose(capsules[c].bone_a).origin);
-				b = skel_xform.xform(skeleton->get_bone_global_pose(capsules[c].bone_b).origin);
+				a = (skeleton->get_global_transform() * captured_capsule_poses_a[c]).origin;
+				b = (skeleton->get_global_transform() * captured_capsule_poses_b[c]).origin;
 			}
 			cw[c * 8 + 0] = a.x;
 			cw[c * 8 + 1] = a.y;
@@ -898,13 +965,56 @@ void PhysXSkinnedCloth3D::_step(double p_delta) {
 	s.thickness = thickness;
 	s.backstop = backstop;
 	s.animation_drive = animation_drive;
+	s.gravity = get_effective_gravity();
 	s.self_collision_thickness = self_collision ? self_collision_thickness : 0.0f;
 	s.output_xform = source->get_global_transform().affine_inverse();
-	solver->step(bone_data, capsule_data, p_delta, substeps, s);
+	solver->step(captured_bones, capsule_data, delta, substeps, s);
 
 	MeshInstance3D *ri = ObjectDB::get_instance<MeshInstance3D>(render_instance_id);
 	if (ri != nullptr && ri->get_transform() != source->get_transform()) {
 		ri->set_transform(source->get_transform());
+	}
+}
+
+// A frame the skeleton didn't update in (a still pose, possibly still moving
+// through the world): one step on the last capture, placed where the skeleton
+// is now. Deferred so it runs after a skeleton update this frame would have
+// stepped; the per-frame guard keeps the step count at one.
+void PhysXSkinnedCloth3D::_late_step() {
+	if (!built || !simulating || last_step_frame == Engine::get_singleton()->get_process_frames()) {
+		return;
+	}
+	Skeleton3D *skeleton = ObjectDB::get_instance<Skeleton3D>(skeleton_id);
+	if (skeleton != nullptr && has_capture) {
+		_place_capture(skeleton);
+		_step();
+	}
+}
+
+void PhysXSkinnedCloth3D::_on_skeleton_updated() {
+	// The modifiers' pose is live now (and only now): capture it, step on it.
+	Skeleton3D *skeleton = ObjectDB::get_instance<Skeleton3D>(skeleton_id);
+	if (!built || skeleton == nullptr) {
+		return;
+	}
+	_capture_pose(skeleton);
+	_place_capture(skeleton);
+	if (simulating && last_step_frame != Engine::get_singleton()->get_process_frames()) {
+		_step();
+	}
+}
+
+void PhysXSkinnedCloth3D::_connect_skeleton(Skeleton3D *p_skeleton) {
+	_disconnect_skeleton();
+	if (p_skeleton != nullptr) {
+		p_skeleton->connect("skeleton_updated", callable_mp(this, &PhysXSkinnedCloth3D::_on_skeleton_updated));
+	}
+}
+
+void PhysXSkinnedCloth3D::_disconnect_skeleton() {
+	Skeleton3D *skeleton = ObjectDB::get_instance<Skeleton3D>(skeleton_id);
+	if (skeleton != nullptr && skeleton->is_connected("skeleton_updated", callable_mp(this, &PhysXSkinnedCloth3D::_on_skeleton_updated))) {
+		skeleton->disconnect("skeleton_updated", callable_mp(this, &PhysXSkinnedCloth3D::_on_skeleton_updated));
 	}
 }
 
@@ -1018,6 +1128,33 @@ void PhysXSkinnedCloth3D::set_collision_radius_scale(float p_scale) {
 
 void PhysXSkinnedCloth3D::set_simulating(bool p_simulating) {
 	simulating = p_simulating;
+}
+
+void PhysXSkinnedCloth3D::set_use_world_gravity(bool p_enabled) {
+	use_world_gravity = p_enabled;
+}
+
+void PhysXSkinnedCloth3D::set_fixed_gravity(const Vector3 &p_gravity) {
+	fixed_gravity = p_gravity;
+}
+
+void PhysXSkinnedCloth3D::set_extra_acceleration(const Vector3 &p_acceleration) {
+	extra_acceleration = p_acceleration;
+}
+
+Vector3 PhysXSkinnedCloth3D::get_effective_gravity() const {
+	Vector3 g = fixed_gravity;
+	if (use_world_gravity && is_inside_tree()) {
+		const Ref<World3D> world = get_world_3d();
+		if (world.is_valid()) {
+			PhysXServer3D *server = PhysXServer3D::get_singleton();
+			PhysXSpace3D *space = server ? server->get_space(world->get_space()) : nullptr;
+			if (space && space->get_default_area()) {
+				g = physx_area_gravity_at(*space->get_default_area(), get_global_position());
+			}
+		}
+	}
+	return g + extra_acceleration;
 }
 
 PhysXSkinnedCloth3D::PhysXSkinnedCloth3D() {

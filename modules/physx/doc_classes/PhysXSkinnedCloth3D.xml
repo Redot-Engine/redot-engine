@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXSkinnedCloth3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Character cloth on any GPU: replaces one surface of a skinned [MeshInstance3D] with a cloth simulated from the skeleton's final pose, provided by the PhysX module.
+	</brief_description>
+	<description>
+		Point [member mesh_instance_path] at a skinned [MeshInstance3D]: its surface is hidden and redrawn from the cloth simulation, pinned around [member pin_height] with per-vertex [member max_distances], colliding with the skeleton's physical-bone capsules (or capsules fitted to [member body_mesh_path]). The pose is captured in the skeleton's [code]skeleton_updated[/code] window, so the cloth follows the FINAL pose -- after IK, spring bones and any [SkeletonModifier3D].
+		The simulation steps with the world's gravity (the physics space's default gravity, from the project settings) unless [member use_world_gravity] is off, plus [member extra_acceleration] for the game's own force fields and wind; [method get_effective_gravity] reports what it steps with.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_effective_gravity" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				The gravity the cloth steps with right now: the world's default gravity (or [member fixed_gravity] when [member use_world_gravity] is off) plus [member extra_acceleration], in m/s².
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="extra_acceleration" type="Vector3" setter="set_extra_acceleration" getter="get_extra_acceleration" default="Vector3(0, 0, 0)">
+			Extra acceleration (m/s²) added on top of the resolved gravity every step: the game's force fields, wind, updrafts.
+		</member>
+		<member name="fixed_gravity" type="Vector3" setter="set_fixed_gravity" getter="get_fixed_gravity" default="Vector3(0, -9.8, 0)">
+			The gravity used when [member use_world_gravity] is off, in m/s².
+		</member>
+		<member name="use_world_gravity" type="bool" setter="set_use_world_gravity" getter="get_use_world_gravity" default="true">
+			Steps with the physics space's default gravity (the [code]physics/3d/default_gravity[/code] and [code]physics/3d/default_gravity_vector[/code] project settings) instead of [member fixed_gravity].
+		</member>
+	</members>
+	<constants>
+	</constants>
+</class>

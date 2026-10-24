@@ -51,6 +51,7 @@ GPU_SCRIPT = "res://gdscript/gpu_smoke_test.gd"
 WATER_PARITY_SCRIPT = "res://gdscript/water_parity_test.gd"
 SOFT_ATTACH_SCRIPT = "res://gdscript/soft_body_attachment_test.gd"
 CLOTH_CPU_SCRIPT = "res://gdscript/cloth_cpu_collision_test.gd"
+CLOTH_GRAVITY_SCRIPT = "res://gdscript/skinned_cloth_gravity_test.gd"
 JOINT_MOTOR_SCRIPT = "res://gdscript/joint_motor_wake_test.gd"
 DEPEN_SCRIPT = "res://gdscript/depenetration_default_test.gd"
 
@@ -71,7 +72,7 @@ SUITES = {
     "flow": [FLOW_SCRIPT],
     "gpu": [GPU_SCRIPT, SOFT_ATTACH_SCRIPT],
     "water": [WATER_PARITY_SCRIPT],
-    "cloth": [CLOTH_CPU_SCRIPT],
+    "cloth": [CLOTH_CPU_SCRIPT, CLOTH_GRAVITY_SCRIPT],
     "joints": [JOINT_MOTOR_SCRIPT],
     "depenetration": [DEPEN_SCRIPT],
 }

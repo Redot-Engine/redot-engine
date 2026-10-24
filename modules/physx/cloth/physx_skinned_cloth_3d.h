@@ -34,6 +34,7 @@
 
 #include "skinned_cloth_solver.h"
 
+#include "core/templates/local_vector.h"
 #include "scene/3d/node_3d.h"
 
 class MeshInstance3D;
@@ -70,6 +71,12 @@ class PhysXSkinnedCloth3D : public Node3D {
 	float collision_radius_scale = 1.0f;
 	bool collide_with_body = true;
 	bool simulating = true;
+	// Gravity: the world's (this node's physics space default gravity -- the
+	// project setting) unless use_world_gravity is off (then fixed_gravity),
+	// plus extra_acceleration (the game's force fields, wind, on top).
+	bool use_world_gravity = true;
+	Vector3 fixed_gravity = Vector3(0, -9.8f, 0);
+	Vector3 extra_acceleration;
 
 	SkinnedClothSolver *solver = nullptr;
 	MeshInstance3D *render_instance = nullptr;
@@ -104,7 +111,25 @@ class PhysXSkinnedCloth3D : public Node3D {
 	void _find_capsules(Skeleton3D *p_skeleton);
 	bool _find_physical_bone_shapes(Skeleton3D *p_skeleton);
 	void _fit_capsules(Skeleton3D *p_skeleton, MeshInstance3D *p_body);
-	void _step(double p_delta);
+	// The skeleton's FINAL pose (after any SkeletonModifier3D) is only live
+	// inside its skeleton_updated window: capture the poses there and step on
+	// them; a frame without a skeleton update steps late on the last capture
+	// (_late_step), placed where the skeleton is now.
+	LocalVector<Transform3D> captured_poses; // per bind bone, skeleton-local pose * bind pose
+	LocalVector<Transform3D> captured_capsule_poses_a; // per capsule, skeleton-local
+	LocalVector<Transform3D> captured_capsule_poses_b;
+	PackedFloat32Array captured_bones; // placed solver input: world-space bone matrices
+	bool has_capture = false;
+	uint64_t last_step_frame = 0;
+	double pending_delta = 0.0;
+
+	void _connect_skeleton(Skeleton3D *p_skeleton);
+	void _disconnect_skeleton();
+	void _capture_pose(Skeleton3D *p_skeleton);
+	void _place_capture(Skeleton3D *p_skeleton);
+	void _step();
+	void _late_step();
+	void _on_skeleton_updated();
 
 protected:
 	void _notification(int p_what);
@@ -157,6 +182,15 @@ public:
 	float get_collision_radius_scale() const { return collision_radius_scale; }
 	void set_simulating(bool p_simulating);
 	bool is_simulating() const { return simulating; }
+
+	void set_use_world_gravity(bool p_enabled);
+	bool get_use_world_gravity() const { return use_world_gravity; }
+	void set_fixed_gravity(const Vector3 &p_gravity);
+	Vector3 get_fixed_gravity() const { return fixed_gravity; }
+	void set_extra_acceleration(const Vector3 &p_acceleration);
+	Vector3 get_extra_acceleration() const { return extra_acceleration; }
+	// The gravity the cloth steps with right now (world or fixed, + extra_acceleration), m/s^2.
+	Vector3 get_effective_gravity() const;
 
 	void rebuild();
 	void reset();
