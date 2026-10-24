@@ -52,12 +52,13 @@ WATER_PARITY_SCRIPT = "res://gdscript/water_parity_test.gd"
 SOFT_ATTACH_SCRIPT = "res://gdscript/soft_body_attachment_test.gd"
 CLOTH_CPU_SCRIPT = "res://gdscript/cloth_cpu_collision_test.gd"
 JOINT_MOTOR_SCRIPT = "res://gdscript/joint_motor_wake_test.gd"
+DEPEN_SCRIPT = "res://gdscript/depenetration_default_test.gd"
 
 # Suites run by "--suite all" (the default, blocking CI tier): everything
 # deterministic, CPU-only, and headless-safe. "flow" and "gpu" are opt-in —
 # they need a usable CUDA/Vulkan runtime on the machine running them — and
 # the CI job runs them as a separate, non-blocking step.
-DEFAULT_SUITES = ["csharp", "gdscript", "smoke", "blast", "vehicle", "async", "lifecycle", "runtime", "cloth", "joints"]
+DEFAULT_SUITES = ["csharp", "gdscript", "smoke", "blast", "vehicle", "async", "lifecycle", "runtime", "cloth", "joints", "depenetration"]
 SUITES = {
     "csharp": [CSHARP_SCRIPT],
     "gdscript": [GDSCRIPT_SCRIPT],
@@ -72,6 +73,7 @@ SUITES = {
     "water": [WATER_PARITY_SCRIPT],
     "cloth": [CLOTH_CPU_SCRIPT],
     "joints": [JOINT_MOTOR_SCRIPT],
+    "depenetration": [DEPEN_SCRIPT],
 }
 # Suites whose tests carry categories and can run one category per process.
 CATEGORIZABLE_SUITES = ("csharp", "gdscript")

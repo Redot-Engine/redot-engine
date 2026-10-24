@@ -53,8 +53,13 @@ void PhysXProjectSettings::register_settings() {
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/physx_3d/simulation/cpu_worker_threads", PROPERTY_HINT_RANGE, U"0,32,1"), 0);
 	// Depenetration speed cap: bodies spawned overlapping (or pushed into each
 	// other) pop apart at a bounded rate instead of ejecting violently.
-	// 0 = off (unbounded). Applied per rigid body in _apply_surface_params_to_actor.
-	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/physx_3d/simulation/max_depenetration_velocity", PROPERTY_HINT_RANGE, "0,100,0.1,suffix:m/s"), 4.0);
+	// 0 = off, which is the default for Godot parity: godot_physics ejects
+	// embedded bodies positionally with no cap (measured at the same recovery
+	// rate as PhysX's own uncapped default). A cap > 0 is a comfort option
+	// that deviates from that contract (a 4 m/s cap cleared a deep embed 7x
+	// slower than Godot in the parity measurement).
+	// Applied per rigid body in _apply_surface_params_to_actor.
+	GLOBAL_DEF(PropertyInfo(Variant::FLOAT, "physics/physx_3d/simulation/max_depenetration_velocity", PROPERTY_HINT_RANGE, "0,100,0.1,suffix:m/s"), 0.0);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/physx_3d/soft_body/mode", PROPERTY_HINT_ENUM, "Auto,CPU,GPU"), 0);
 	// PVD used to connect unconditionally on every debug build.
 	GLOBAL_DEF(PropertyInfo(Variant::BOOL, "physics/physx_3d/debug/pvd"), false);

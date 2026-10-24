@@ -100,10 +100,12 @@ public:
 	// physics/physx_3d/simulation/max_depenetration_velocity
 	//
 	// Caps how fast a depenetrating body may pop out of an overlap (m/s) —
-	// PxRigidDynamic::setMaxDepenetrationVelocity on every rigid body. Without
-	// the cap, bodies spawned interpenetrating (or grown into each other) can
-	// eject violently. 0 disables the cap (PhysX's unbounded default is 3.4e38).
-	inline static float max_depenetration_velocity = 4.0f;
+	// PxRigidDynamic::setMaxDepenetrationVelocity on every rigid body. The
+	// default is 0 (off) for godot_physics parity: Godot ejects embedded
+	// bodies with no cap, at the same recovery rate as PhysX's own uncapped
+	// default. A cap > 0 is a comfort option for projects that prefer a
+	// gentler, slower pop-out.
+	inline static float max_depenetration_velocity = 0.0f;
 
 	// physics/physx_3d/simulation/async_step
 	//

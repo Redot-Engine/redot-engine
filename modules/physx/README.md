@@ -5,6 +5,16 @@ Native NVIDIA PhysX 5 implementation of Redot's 3D physics backend
 gas/fluids, GPU particle fluids, cloth, soft bodies, vehicles and water. Class
 reference: the `PhysX*` classes in the editor help (doc_classes).
 
+## Simulation settings note
+
+`physics/physx_3d/simulation/max_depenetration_velocity` defaults to **0
+(off) for godot_physics parity**: Godot ejects embedded bodies positionally
+with no cap, at the same recovery rate as PhysX's own uncapped default
+(measured side by side: per-step ejection 1.19 vs 1.19 m/step on a half-embedded
+body, 0.68 vs 0.67 m/step on a deeply embedded one). Set a value > 0 (for
+example 4) as a comfort option for a gentler, slower pop-out — a 4 m/s cap
+cleared a deep embed about 7x slower than Godot in the same measurement.
+
 ## Exporting a game
 
 The downloadable export templates do not contain this module, so export with a
