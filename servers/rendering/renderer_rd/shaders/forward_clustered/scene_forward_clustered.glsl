@@ -1000,10 +1000,14 @@ layout(location = 1) out uvec2 voxel_gi_buffer;
 #endif //MODE_RENDER_NORMAL
 #else // RENDER DEPTH
 
+#ifdef MODE_ALBEDO
+layout(location = 1) out vec4 albedo_buffer;
+#endif
+
 #ifdef MODE_SEPARATE_SPECULAR
 
 layout(location = 0) out vec4 diffuse_buffer; //diffuse (rgb) and roughness
-layout(location = 1) out vec4 specular_buffer; //specular and SSS (subsurface scatter)
+layout(location = 2) out vec4 specular_buffer; //specular and SSS (subsurface scatter)
 #else
 
 layout(location = 0) out vec4 frag_color;
@@ -1012,7 +1016,7 @@ layout(location = 0) out vec4 frag_color;
 #endif // RENDER DEPTH
 
 #ifdef MOTION_VECTORS
-layout(location = 2) out vec2 motion_vector;
+layout(location = 3) out vec2 motion_vector;
 #endif
 
 #include "../scene_forward_aa_inc.glsl"
@@ -2810,6 +2814,10 @@ void fragment_shader(in SceneData scene_data) {
 	//restore fog
 	fog = vec4(unpackHalf2x16(fog_rg), unpackHalf2x16(fog_ba));
 #endif //!FOG_DISABLED
+
+#ifdef MODE_ALBEDO
+	albedo_buffer = vec4(albedo, alpha);
+#endif
 
 #ifdef MODE_SEPARATE_SPECULAR
 
