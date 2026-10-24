@@ -37,6 +37,8 @@
 #include "../nodes/physx_gas_emitter_3d.h"
 #include "../nodes/physx_particle_fluid_3d.h"
 #include "../vehicles/physx_vehicle_wheel_3d.h"
+#include "editor/export/editor_export.h"
+#include "physx_export_plugin.h"
 #include "physx_runtime_manager.h"
 
 #include "core/config/project_settings.h"
@@ -636,6 +638,13 @@ PhysXEditorPlugin::PhysXEditorPlugin() {
 	physics_engine_cache = GLOBAL_GET("physics/3d/physics_engine");
 	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &PhysXEditorPlugin::_on_project_settings_changed));
 	set_process(true);
+
+	// EditorExport's singleton is created earlier in the EditorNode
+	// constructor, so it is available here; the plugin must be registered
+	// before the first export runs, not at module-init level.
+	physx_export_plugin.instantiate();
+	EditorExport::get_singleton()->add_export_plugin(physx_export_plugin);
+
 	// No runtime check here: popups need the tree; NOTIFICATION_READY handles it.
 }
 

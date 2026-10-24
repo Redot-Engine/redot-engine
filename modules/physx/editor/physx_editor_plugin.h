@@ -45,6 +45,7 @@ class AcceptDialog;
 class HTTPRequest;
 class ProgressBar;
 class Label;
+class PhysXExportPlugin;
 
 // Viewport gizmo for PhysXParticleFluid3D: a wireframe box for the spawn region
 // (with drag handles), a ring for the emission radius and an arrow for the
@@ -170,6 +171,10 @@ class PhysXEditorPlugin : public EditorPlugin {
 	// target this one shared dialog instance.
 	PhysXBlastFractureDialog *blast_fracture_dialog = nullptr;
 #endif
+
+	// Registered with EditorExport for the lifetime of this plugin: ships the
+	// module's runtime libraries next to an exported game's executable.
+	Ref<PhysXExportPlugin> physx_export_plugin;
 
 	// Offered when the project selects PhysX but the runtime DLLs staged next
 	// to the editor executable are missing; its confirm button starts the

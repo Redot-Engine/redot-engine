@@ -472,3 +472,6 @@ doc/classes/PhysXWaterWake3D.xml
 
 # Local NuGet package source filled by modules/mono/build_scripts/build_assemblies.py --push-nupkgs-local
 modules/mono/nuget/
+
+# Local development modules (kept out of upstream)
+modules/cache_entity/
