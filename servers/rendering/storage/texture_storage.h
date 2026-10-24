@@ -191,6 +191,10 @@ public:
 	virtual void render_target_set_vrs_texture(RID p_render_target, RID p_texture) = 0;
 	virtual RID render_target_get_vrs_texture(RID p_render_target) const = 0;
 
+	/// The RenderingDevice texture backing a render target's color, for renderers built on RenderingDevice.
+	/// Other renderers return an invalid RID.
+	virtual RID render_target_get_rd_texture(RID p_render_target) { return RID(); }
+
 	// override color, depth and velocity buffers (depth and velocity only for 3D)
 	virtual void render_target_set_override(RID p_render_target, RID p_color_texture, RID p_depth_texture, RID p_velocity_texture, RID p_velocity_depth_texture) = 0;
 	virtual RID render_target_get_override_color(RID p_render_target) const = 0;
