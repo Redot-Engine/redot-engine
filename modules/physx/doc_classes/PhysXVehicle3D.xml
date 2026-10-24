@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXVehicle3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A PhysX-specific 4-wheel vehicle, powered by PxVehicle2 -- an alternative to the stock, backend-agnostic [VehicleBody3D], not a replacement for it.
+	</brief_description>
+	<description>
+		[b]Placement convention:[/b] Redot's own -- the car's nose points toward its local [b]-Z[/b] and the steered axle goes on the more negative Z side; [method get_forward_speed] reads positive while driving nose-first. A model authored facing -Z (the usual Redot case) drops in unchanged.
+		[b]Chassis collision:[/b] exactly one [CollisionShape3D] child with a [BoxShape3D] is used as the real chassis shape (compound shapes are not supported here); the chassis box is a genuine simulation shape, so other bodies collide with the car.
+		[b]Transform contract:[/b] the node's transform follows the chassis every physics tick, but a script write to [member Node3D.global_transform] while live pushes the pose INTO the chassis and zeroes all velocities -- reset/respawn is just setting the transform, RigidBody3D-style.
+		[VehicleBody3D]/[VehicleWheel3D] work on this module already (no PhysX-specific code needed) and stay the right choice for a project that wants to swap physics backends freely. [PhysXVehicle3D] exists for real PxVehicle2 capability that backend-agnostic model structurally can't offer: a real engine torque response, Ackermann steering correction (inner/outer front wheels turn by different angles in a turn), and a real slip-based tire friction curve (grip peaks at a small amount of wheel slip and falls off once the tire is fully sliding/locked, instead of one flat friction number).
+		Node structure mirrors [VehicleBody3D]/[VehicleWheel3D] on purpose: add a [CollisionShape3D] child with a [BoxShape3D] for the chassis, and exactly 4 [PhysXVehicleWheel3D] children for the wheels -- exactly 2 of them need [member PhysXVehicleWheel3D.use_as_steering] enabled (the front axle). Each wheel's own [member Node3D.position] is where it rests under static load (the same convention [VehicleWheel3D] uses), so a [MeshInstance3D] parented under a wheel tracks the real, live suspension/steering motion automatically, and already sits at the right height in the editor before Play.
+		Drive it every physics tick by setting [member throttle], [member brake], [member steer], and (once actually stopped) [member reverse] -- these use PxVehicleCommandState's own convention ([member throttle]/[member brake] in [code][0, 1][/code], [member steer] in [code][-1, 1][/code]), not [VehicleBody3D]'s raw force/angle convention.
+		Only runs in an actual running game, never in the editor -- placing or moving the node in the Inspector does not simulate or fall under gravity.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_actor_position" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				The real PhysX actor's own world-space origin -- for comparing against this node's own [member Node3D.global_position] (which tracks the same point) when diagnosing a suspension/placement issue.
+			</description>
+		</method>
+		<method name="get_clutch" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_engine_gear" qualifiers="const">
+			<return type="int" />
+			<description>
+				Current gearbox state: [code]0[/code] = reverse, [code]1[/code] = neutral, [code]2[/code] and up = first gear onward.
+			</description>
+		</method>
+		<method name="get_engine_rpm" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_forward_speed" qualifiers="const">
+			<return type="float" />
+			<description>
+				Current speed along the car's own forward axis, in m/s. Positive while driving forward, negative while rolling backward -- a simple way to decide when it is safe to switch [member reverse] on (a real gear should only engage once the car has actually stopped, not while still coasting forward).
+			</description>
+		</method>
+		<method name="get_linear_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<description>
+				Current world-space linear velocity of the chassis.
+			</description>
+		</method>
+		<method name="get_wheel_contact" qualifiers="const">
+			<return type="Dictionary" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_wheel_jounce" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				How compressed wheel [param wheel]'s suspension is right now, from [code]0[/code] (fully extended / max droop) to that wheel's own [member PhysXVehicleWheel3D.suspension_travel] (fully compressed / bottomed out). [param wheel] is the child index among this node's [PhysXVehicleWheel3D] children, in the order they were added -- not a fixed front-left/front-right/rear-left/rear-right order. Useful for tuning [member PhysXVehicleWheel3D.suspension_stiffness]: resting jounce well under half of [member PhysXVehicleWheel3D.suspension_travel] leaves real margin before the suspension bottoms out under braking, cornering, or a bump.
+			</description>
+		</method>
+		<method name="get_wheel_rpm" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_wheel_separation" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+				[code]0[/code] when wheel [param wheel] can reach the ground within its suspension travel. A negative value means the wheel is penetrating the ground even at full compression -- [member PhysXVehicleWheel3D.suspension_travel] is too short for the current ride height. [param wheel] uses the same child-index convention as [method get_wheel_jounce].
+			</description>
+		</method>
+		<method name="get_wheel_skid" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_wheel_steer_angle" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="wheel" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="is_sleeping" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns whether the underlying PhysX vehicle actor is currently sleeping.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="ackermann_strength" type="float" setter="set_ackermann_strength" getter="get_ackermann_strength" default="1.0">
+			How much Ackermann steering correction to apply to the front (steering) axle, from [code]0[/code] (both front wheels always turn by the same angle, like [VehicleWheel3D]) to [code]1[/code] (full correction: the inside wheel of a turn steers more sharply than the outside wheel, matching how a real front axle is geometrically linked).
+		</member>
+		<member name="autobox_down_ratio" type="float" setter="set_autobox_down_ratio" getter="get_autobox_down_ratio" default="0.4">
+			Engine omega fraction of [member engine_max_omega] that triggers a downshift.
+		</member>
+		<member name="autobox_latency" type="float" setter="set_autobox_latency" getter="get_autobox_latency" default="0.5">
+			Reaction delay of the automatic gearbox before initiating a shift.
+		</member>
+		<member name="autobox_up_ratio" type="float" setter="set_autobox_up_ratio" getter="get_autobox_up_ratio" default="0.65">
+			Engine omega fraction of [member engine_max_omega] that triggers an upshift.
+		</member>
+		<member name="brake" type="float" setter="set_brake" getter="get_brake" default="0.0">
+			Brake pedal input, [code]0[/code] to [code]1[/code]. Scales up to [member max_brake_torque] of braking torque at each wheel. Set every physics tick from script; does not persist on its own the way a real pedal would.
+		</member>
+		<member name="can_sleep" type="bool" setter="set_can_sleep" getter="is_able_to_sleep" default="true">
+			Whether the vehicle is allowed to sleep after remaining below the PhysX space's configured sleep thresholds. The global [code]physics/physx_3d/simulation/allow_sleep[/code] project setting can disable sleeping for all PhysX bodies.
+		</member>
+		<member name="center_of_mass" type="Vector3" setter="set_center_of_mass" getter="get_center_of_mass" default="Vector3(0, 0, 0)">
+			The vehicle center of mass in the vehicle's local coordinates when [member center_of_mass_mode] is [code]Custom[/code]. Lowering the Y coordinate can make the vehicle more resistant to rollover. In [code]Auto[/code] mode, the center of mass follows the chassis [CollisionShape3D] child position.
+		</member>
+		<member name="center_of_mass_mode" type="int" setter="set_center_of_mass_mode" getter="get_center_of_mass_mode" enum="PhysXVehicle3D.CenterOfMassMode" default="0">
+			Whether to derive the center of mass from the chassis [CollisionShape3D] position ([code]Auto[/code]) or use [member center_of_mass] directly ([code]Custom[/code]).
+		</member>
+		<member name="clutch_strength" type="float" setter="set_clutch_strength" getter="get_clutch_strength" default="40.0">
+		</member>
+		<member name="collision_layer" type="int" setter="set_collision_layer" getter="get_collision_layer" default="1">
+			Same meaning as [member CollisionObject3D.collision_layer]. Applies to the chassis only -- the wheels do not have their own collision shapes (their ground contact is handled entirely by the suspension, not by a physical wheel shape touching the road).
+		</member>
+		<member name="collision_mask" type="int" setter="set_collision_mask" getter="get_collision_mask" default="1">
+			Same meaning as [member CollisionObject3D.collision_mask]. Applies to the chassis box and to what the wheels' own ground raycasts can rest on: a wheel only hits non-area shapes on a layer in this mask (like a [RayCast3D]), so it never rests on an [Area3D]. See [member collision_layer].
+		</member>
+		<member name="engine_idle_omega" type="float" setter="set_engine_idle_omega" getter="get_engine_idle_omega" default="80.0">
+		</member>
+		<member name="engine_max_omega" type="float" setter="set_engine_max_omega" getter="get_engine_max_omega" default="600.0">
+			Engine angular speed (rad/s) at peak power; the automatic gearbox shifts against this scale.
+		</member>
+		<member name="engine_peak_torque" type="float" setter="set_engine_peak_torque" getter="get_engine_peak_torque" default="500.0">
+			Peak engine torque used by the gearbox torque curve (see [member use_gearbox]).
+		</member>
+		<member name="front_anti_roll_stiffness" type="float" setter="set_front_anti_roll_stiffness" getter="get_front_anti_roll_stiffness" default="0.0">
+			Anti-roll bar stiffness connecting the front-left and front-right wheels. A positive value is a real anti-roll bar: it resists the difference in suspension compression between the two wheels, reducing body roll during cornering. A negative value does the opposite -- it amplifies that difference, exaggerating roll instead of resisting it, which is a cheaper and more targeted way to get a more dramatic cornering lean than lowering [member PhysXVehicleWheel3D.suspension_stiffness] further (that also softens straight-line bump absorption; this only affects side-to-side compression difference). [code]0[/code] disables the bar entirely.
+		</member>
+		<member name="gear_final_ratio" type="float" setter="set_gear_final_ratio" getter="get_gear_final_ratio" default="3.5">
+			Final drive multiplier applied after the selected gear's ratio.
+		</member>
+		<member name="gear_ratios" type="PackedFloat32Array" setter="set_gear_ratios" getter="get_gear_ratios" default="PackedFloat32Array(-4, 0, 4, 2, 1.5, 1.1, 0.9)">
+		</member>
+		<member name="gear_switch_time" type="float" setter="set_gear_switch_time" getter="get_gear_switch_time" default="0.5">
+			Seconds a gear change takes (torque interrupted, see [method get_engine_gear]).
+		</member>
+		<member name="handbrake" type="float" setter="set_handbrake" getter="get_handbrake" default="0.0">
+		</member>
+		<member name="handbrake_torque" type="float" setter="set_handbrake_torque" getter="get_handbrake_torque" default="0.0">
+		</member>
+		<member name="mass" type="float" setter="set_mass" getter="get_mass" default="1500.0">
+			Total mass of the vehicle, in kg.
+		</member>
+		<member name="max_brake_torque" type="float" setter="set_max_brake_torque" getter="get_max_brake_torque" default="6000.0">
+			The braking torque applied to each wheel when [member brake] is [code]1[/code]. Higher values stop the wheel's own rotation faster, but do not by themselves determine whether the tire skids once locked -- see [member PhysXVehicleWheel3D.tire_friction] for that.
+		</member>
+		<member name="max_engine_torque" type="float" setter="set_max_engine_torque" getter="get_max_engine_torque" default="700.0">
+			The drive torque applied to every wheel with [member PhysXVehicleWheel3D.use_as_traction] enabled when [member throttle] is [code]1[/code] (a real direct-drive response, unlike [member VehicleBody3D.engine_force] which is a raw force value with no torque curve).
+		</member>
+		<member name="max_steer_angle" type="float" setter="set_max_steer_angle" getter="get_max_steer_angle" default="0.6">
+			The steering angle, in radians, applied to the front axle when [member steer] is [code]1[/code] or [code]-1[/code]. The default (~34°) is a realistic maximum for a real car's front wheels.
+		</member>
+		<member name="moment_of_inertia" type="Vector3" setter="set_moment_of_inertia" getter="get_moment_of_inertia" default="Vector3(2000, 2200, 1000)">
+			The vehicle's own rotational inertia around its X/Y/Z axes. Higher values resist rotation (pitch/yaw/roll) more -- tune the Y (yaw) component if the car turns too eagerly or too sluggishly for its size.
+		</member>
+		<member name="physics_material_override" type="PhysicsMaterial" setter="set_physics_material_override" getter="get_physics_material_override">
+			Contact material of the chassis box (the property [RigidBody3D] and [VehicleBody3D] use): its friction, [i]rough[/i], bounce and [i]absorbent[/i] combine with whatever the vehicle touches by the same rule as every PhysX body. Applies to the chassis box only -- tire grip is the wheels' own. Unset, the chassis behaves as it always has (friction [code]1.0[/code], bounce [code]0.0[/code]). Changes -- here or to the assigned material -- apply in place without a rebuild and wake the vehicle.
+		</member>
+		<member name="rear_anti_roll_stiffness" type="float" setter="set_rear_anti_roll_stiffness" getter="get_rear_anti_roll_stiffness" default="0.0">
+			Same as [member front_anti_roll_stiffness], connecting the rear-left and rear-right wheels instead. Tuning front and rear independently changes handling balance: a stiffer (more positive) front bar relative to the rear tends toward understeer, and vice versa for oversteer -- same real-world relationship a physical anti-roll bar has.
+		</member>
+		<member name="reverse" type="bool" setter="set_reverse" getter="is_reverse" default="false">
+			Switches the drivetrain's gear between forward and reverse -- a real gear change (PxVehicle2 has no neutral-coast/instant-reverse shortcut), so [member throttle] in reverse gear still needs to first bring the car to a stop if it was moving forward, same as a real car. Check [method get_forward_speed] before engaging this from a driving script. In engine-drive mode ([member use_gearbox]) this instead commands the reverse gear ([constant GEAR_REVERSE]).
+		</member>
+		<member name="steer" type="float" setter="set_steer" getter="get_steer" default="0.0">
+			Steering input, [code]-1[/code] to [code]1[/code]. Scales up to [member max_steer_angle] on the front (steering) axle, modified by [member ackermann_strength]. Set every physics tick from script.
+		</member>
+		<member name="target_gear" type="int" setter="set_target_gear" getter="get_target_gear" default="255">
+			The commanded gearbox gear in engine-drive mode ([member use_gearbox]): [constant GEAR_AUTOMATIC] ([code]255[/code], DRIVE -- the autobox picks the forward gears), [constant GEAR_REVERSE] ([code]0[/code]), [constant GEAR_NEUTRAL] ([code]1[/code] -- no drive torque reaches the wheels, the car coasts), or [code]2[/code] and up for a specific forward gear (2 = 1st, 3 = 2nd, ...). Ignored by the direct drivetrain.
+		</member>
+		<member name="throttle" type="float" setter="set_throttle" getter="get_throttle" default="0.0">
+			Throttle input, [code]0[/code] to [code]1[/code]. In direct drive this scales up to [member max_engine_torque] of drive torque at each traction wheel, in whichever direction [member reverse] currently selects; in engine drive it is the engine's accelerator (a magnitude -- the gear picks the direction). Set every physics tick from script.
+		</member>
+		<member name="use_autobox" type="bool" setter="set_use_autobox" getter="get_use_autobox" default="false">
+			Engine-drive only: with [member target_gear] left at [constant GEAR_AUTOMATIC], the autobox shifts up/down by engine speed -- above [member autobox_up_ratio] (as a fraction of engine omega over max omega) it shifts up, below [member autobox_down_ratio] it shifts down, waiting at least [member autobox_latency] seconds between shifts. With it off, [member target_gear] is honored verbatim (manual shifting).
+		</member>
+		<member name="use_gearbox" type="bool" setter="set_use_gearbox" getter="get_use_gearbox" default="false">
+			Switches the vehicle from the direct drivetrain (wheel torque applied straight from [member throttle]) to the PhysX engine drivetrain: an engine (torque curve, [member engine_peak_torque], idle/max omega) driving through a clutch and a gearbox (reverse + neutral + forward ratios, [member gear_final_ratio], [member gear_switch_time], autobox). Forward gears drive the vehicle nose-first (-Z), the reverse gear drives it backward, and neutral coasts. Switching rebuilds the vehicle; the pose is kept.
+		</member>
+	</members>
+	<constants>
+		<constant name="CENTER_OF_MASS_MODE_AUTO" value="0" enum="CenterOfMassMode">
+		</constant>
+		<constant name="CENTER_OF_MASS_MODE_CUSTOM" value="1" enum="CenterOfMassMode">
+		</constant>
+		<constant name="GEAR_REVERSE" value="0">
+			Engine-drive gear index for reverse ([method get_engine_gear] reports it while reversing).
+		</constant>
+		<constant name="GEAR_NEUTRAL" value="1">
+			Engine-drive gear index for neutral: no drive torque reaches the wheels, so the car coasts on its inertia regardless of [member throttle].
+		</constant>
+		<constant name="GEAR_AUTOMATIC" value="255">
+			Special [member target_gear] value for DRIVE: hand the forward gears to the autobox (requires [member use_autobox] for shifting; without it the gearbox just holds its current gear).
+		</constant>
+	</constants>
+</class>

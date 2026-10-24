@@ -21,3 +21,11 @@ misc/msvs/* eol=crlf
 *.png binary
 *.ttf binary
 *.tza binary
+
+# PhysX / Flow / Blast prebuilt binaries (DLLs, PDBs, import/static libs)
+thirdparty/physx/bin/** filter=lfs diff=lfs merge=lfs -text
+thirdparty/physx/lib/** filter=lfs diff=lfs merge=lfs -text
+thirdparty/flow/bin/** filter=lfs diff=lfs merge=lfs -text
+thirdparty/flow/lib/** filter=lfs diff=lfs merge=lfs -text
+thirdparty/blast/bin/** filter=lfs diff=lfs merge=lfs -text
+thirdparty/blast/lib/** filter=lfs diff=lfs merge=lfs -text

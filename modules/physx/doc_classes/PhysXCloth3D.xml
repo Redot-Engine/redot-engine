@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXCloth3D" inherits="GeometryInstance3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		A simulated cloth patch, provided by the PhysX module.
+	</brief_description>
+	<description>
+		Simulates a rectangular grid (or a supplied triangle mesh) as cloth and draws the result as an [ArrayMesh]. The simulation runs on a built-in extended position-based-dynamics (XPBD) solver on the CPU, so it works on any platform; the GPU deformable-surface path is used when the PhysX backend has GPU support available.
+		The cloth collides with the rest of the physics world through [PhysicsDirectSpaceState3D] queries (independent of which 3D physics engine is active) and reacts to the wind of an [Area3D] assigned to [member wind_area]. Fix parts of the cloth in place with [member pin_mode], [member pinned_vertices] or a moving [member anchor_path].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_collision_exception">
+			<return type="void" />
+			<param index="0" name="body" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="get_collision_exceptions" qualifiers="const">
+			<return type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_pinned_positions" qualifiers="const">
+			<return type="PackedVector3Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_vertex_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of simulated vertices.
+			</description>
+		</method>
+		<method name="is_gpu_accelerated" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when the GPU deformable-surface path is in use rather than the CPU XPBD fallback.
+			</description>
+		</method>
+		<method name="remove_collision_exception">
+			<return type="void" />
+			<param index="0" name="body" type="RID" />
+			<description>
+			</description>
+		</method>
+		<method name="reset">
+			<return type="void" />
+			<description>
+				Drops the cloth back to its rest shape at the node's current transform.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="anchor_path" type="NodePath" setter="set_anchor_path" getter="get_anchor_path" default="NodePath(&quot;&quot;)">
+			Optional [Node3D] the pinned vertices follow: as it moves and rotates, so do the pins, so the cloth can hang off an animated object.
+		</member>
+		<member name="bend_stiffness" type="float" setter="set_bend_stiffness" getter="get_bend_stiffness" default="0.1">
+			Resistance to folding, from 0 (limp) to 1 (stiff). Low values give soft, drapey cloth.
+		</member>
+		<member name="collision_enabled" type="bool" setter="set_collision_enabled" getter="is_collision_enabled" default="true">
+			When enabled, each vertex is pushed out of any physics body it overlaps each step.
+		</member>
+		<member name="collision_friction" type="float" setter="set_friction" getter="get_friction" default="0.4">
+			Fraction of a vertex's sideways velocity removed while it is touching a surface, from 0 (frictionless) to 1. Higher values stop the cloth sliding and spinning once it settles.
+		</member>
+		<member name="collision_layer" type="int" setter="set_collision_layer" getter="get_collision_layer" default="1">
+		</member>
+		<member name="collision_mask" type="int" setter="set_collision_mask" getter="get_collision_mask" default="1">
+			Physics layers the cloth collides with.
+		</member>
+		<member name="damping" type="float" setter="set_damping" getter="get_damping" default="0.03">
+			Fraction of velocity removed per second. Raises to settle the cloth faster.
+		</member>
+		<member name="density" type="float" setter="set_density" getter="get_density" default="0.2">
+			Areal mass in kg/m², used to weight the vertices. Heavier cloth swings less in the wind.
+		</member>
+		<member name="drag" type="float" setter="set_drag" getter="get_drag" default="1.0">
+			How hard air pushes on a triangle face-on. Drives the billow.
+		</member>
+		<member name="grid_columns" type="int" setter="set_grid_columns" getter="get_grid_columns" default="24">
+			Vertices across the generated grid. Ignored when [member source_mesh] is set.
+		</member>
+		<member name="grid_rows" type="int" setter="set_grid_rows" getter="get_grid_rows" default="24">
+			Vertices down the generated grid. Ignored when [member source_mesh] is set.
+		</member>
+		<member name="grid_size" type="Vector2" setter="set_grid_size" getter="get_grid_size" default="Vector2(1, 1)">
+			Size of the generated grid in meters, centered on the node in its local XY plane (facing +Z).
+		</member>
+		<member name="lift" type="float" setter="set_lift" getter="get_lift" default="0.2">
+			Sideways push from air flowing across a triangle, which makes slack cloth ripple.
+		</member>
+		<member name="pin_mode" type="int" setter="set_pin_mode" getter="get_pin_mode" enum="PhysXCloth3D.PinMode" default="1">
+			A quick way to fix an edge or the corners of a generated grid in place.
+		</member>
+		<member name="pinned_vertices" type="PackedInt32Array" setter="set_pinned_vertices" getter="get_pinned_vertices" default="PackedInt32Array()">
+			Extra vertices to fix in place, by index, on top of [member pin_mode].
+		</member>
+		<member name="shear_stiffness" type="float" setter="set_shear_stiffness" getter="get_shear_stiffness" default="0.4">
+			Resistance to in-plane skewing, from 0 to 1.
+		</member>
+		<member name="simulating" type="bool" setter="set_simulating" getter="is_simulating" default="true">
+			When [code]false[/code] the cloth freezes in place.
+		</member>
+		<member name="simulation_mode" type="int" setter="set_simulation_mode" getter="get_simulation_mode" enum="PhysXCloth3D.SimulationMode" default="0">
+			Which solver runs the cloth. [constant SIM_AUTO] uses the GPU deformable surface when a CUDA device is available and the built-in CPU solver otherwise. The GPU option is hidden in the inspector on machines without CUDA; a scene saved with it still loads elsewhere and falls back to the CPU solver. See [method is_gpu_accelerated].
+		</member>
+		<member name="source_mesh" type="Mesh" setter="set_source_mesh" getter="get_source_mesh">
+			A triangle mesh to simulate instead of a generated grid. Its first surface is used.
+		</member>
+		<member name="stiffness" type="float" setter="set_stiffness" getter="get_stiffness" default="0.9">
+			Resistance to stretching along the weave, from 0 (elastic) to 1 (inextensible).
+		</member>
+		<member name="substeps" type="int" setter="set_substeps" getter="get_substeps" default="12">
+			Solver substeps per physics tick. More substeps make stiff cloth more stable at some CPU cost.
+		</member>
+		<member name="wind" type="Vector3" setter="set_wind" getter="get_wind" default="Vector3(0, 0, 0)">
+			A constant world-space air velocity, added on top of any [member wind_area].
+		</member>
+		<member name="wind_area" type="NodePath" setter="set_wind_area" getter="get_wind_area" default="NodePath(&quot;&quot;)">
+			An [Area3D] whose wind settings (force, source, attenuation) drive the cloth. The cloth does not need to be a physics body to use this.
+		</member>
+		<member name="wind_enabled" type="bool" setter="set_wind_enabled" getter="is_wind_enabled" default="true">
+			Master switch for all air forces ([member wind], [member wind_area], [member drag], [member lift]).
+		</member>
+		<member name="wind_turbulence" type="float" setter="set_wind_turbulence" getter="get_wind_turbulence" default="0.4">
+			Adds a swirling gust on top of the steady wind, as a fraction of its speed.
+		</member>
+	</members>
+	<constants>
+		<constant name="PIN_NONE" value="0" enum="PinMode">
+			Nothing is pinned; the cloth falls freely.
+		</constant>
+		<constant name="PIN_TOP_EDGE" value="1" enum="PinMode">
+			The top row of a generated grid is fixed.
+		</constant>
+		<constant name="PIN_TOP_CORNERS" value="2" enum="PinMode">
+			Only the two top corners of a generated grid are fixed.
+		</constant>
+		<constant name="PIN_LEFT_EDGE" value="3" enum="PinMode">
+			The left column of a generated grid is fixed.
+		</constant>
+		<constant name="PIN_RIGHT_EDGE" value="4" enum="PinMode">
+			The right column of a generated grid is fixed.
+		</constant>
+		<constant name="SIM_AUTO" value="0" enum="SimulationMode">
+			GPU deformable surface when a CUDA device is present, the CPU solver otherwise.
+		</constant>
+		<constant name="SIM_GPU" value="1" enum="SimulationMode">
+			Force the GPU deformable surface. Falls back to the CPU solver (with a configuration warning) when no CUDA device is available.
+		</constant>
+		<constant name="SIM_CPU" value="2" enum="SimulationMode">
+			Always use the built-in CPU solver, even when a GPU is available.
+		</constant>
+	</constants>
+</class>

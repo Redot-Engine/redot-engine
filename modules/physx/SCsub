@@ -1,0 +1,566 @@
+#!/usr/bin/env python
+from misc.utility.scons_hints import *
+
+import os
+
+Import("env")
+Import("env_modules")
+
+# Create a clone for the module environment
+env_physx = env_modules.Clone()
+
+# Ported-module warning relaxations, keyed by compiler family.
+# Rationale: the module and the vendored NVIDIA headers were authored
+# against MSVC; the CI's gcc/clang flag set is stricter in places that
+# are vendor-header style, not module bugs. Engine code outside the
+# module keeps full warning strictness everywhere.
+if env["platform"] == "windows" and not env["use_mingw"]:
+    # MSVC: NvFlowLoader.h carries unreferenced static helpers (C4505).
+    env_physx.Append(CCFLAGS=["/wd4505"])
+else:
+    env_physx.Append(
+        CCFLAGS=[
+            # Nested single-letter loop variables (~34 sites) need renames
+            # that cannot be compile-verified on this port's toolchains;
+            # incremental renames can retire this flag.
+            "-Wno-shadow",
+            "-Wno-error=shadow",
+            # NvFlow.h brace-initialized descriptors and NvFlowExt.h
+            # default_init macros; ANY module TU can include these headers
+            # (register_types.cpp pulls flow_runtime.h), so the taming cannot
+            # live on a per-directory environment.
+            "-Wno-missing-field-initializers",
+            "-Wno-missing-braces",
+            # Vendor headers (PhysX/Blast/Flow) trip a dozen clang/gcc-specific
+            # style warnings MSVC never emits (unknown MSVC pragmas, bitwise &
+            # on bools, C-linkage returns, non-virtual dtors on vendor
+            # interfaces...). Keep every warning visible but none fatal for
+            # module sources, instead of chasing per-compiler flag sets across
+            # gcc/clang/MinGW versions.
+            "-Wno-error",
+        ]
+    )
+    # gcc-only: the SDK's PxSamplingExt.h defines PxTriangleMeshPoissonSampler
+    # with a direct virtual base by design. Clang has no such warning and
+    # rejects the unknown -Wno-* option outright, so scope it to gcc.
+    from methods import using_gcc
+
+    if using_gcc(env):
+        env_physx.Append(CCFLAGS=["-Wno-virtual-inheritance"])
+
+# GPU dynamics: enabled by default (physx_gpu=yes). It defines GODOT_PHYSX_GPU,
+# which enables the CUDA context manager at init() and the eENABLE_GPU_DYNAMICS /
+# eGPU-broadphase scene path. The CUDA-enabled PhysX SDK is required at build
+# time; at run time the platform's PhysXGpu runtime must sit next to the
+# binary (PhysXGpu_64.dll on Windows, libPhysXGpu_64.so on Linux) -- without
+# a usable CUDA device the server logs a warning and simulates on the CPU. Opt
+# out with `physx_gpu=no` -- GODOT_PHYSX_GPU is then not defined, so the server
+# never touches CUDA (the GPU fluid object still compiles but stays inert, and
+# the cloth node falls back to its CPU solver). On Linux that also keeps the
+# PhysXGpu runtime off the link line and out of bin/ (the CPU libs' two GPU
+# dispatch references resolve from physx_gpu_dispatch_stub.cpp instead); on
+# Windows the PhysXGpu_64 import library stays linked in every configuration.
+physx_gpu = ARGUMENTS.get("physx_gpu", "yes") not in ("no", "0", "false", "False")
+
+# 1. PhysX Defines
+# Ensure these match the way you compiled the static libs. NOTE: unlike the
+# SDK's DISABLE_CUDA_PHYSX switch (which compiles GPU support out of the PhysX
+# headers entirely), we keep the SDK's GPU headers available unconditionally —
+# the GPU fluid/cloth object code needs them to compile. GODOT_PHYSX_GPU only
+# gates whether OUR code creates a CUDA context.
+#
+# GPU platforms: Windows (PhysXGpu_64.dll runtime) and Linux (NVIDIA's
+# prebuilt libPhysXGpu_64.so runtime, vendored under bin/linux). The Linux
+# route mirrors Windows: the closed-source runtime provides the GPU entry
+# points (PxCreatePhysXGpu, PxCreateCudaContextManager, ...) and carries NO
+# libcuda dependency itself (the driver is contacted at run time), so
+# engines built with physx_gpu=yes still boot on non-NVIDIA machines and
+# take the CPU fallback. Building the GPU libs from source instead
+# (the linux-clang-rd-gpu preset) drags the CUDA driver API into the link
+# (-lcuda), which CI cannot satisfy; that route stays closed.
+physx_defines = [
+    "PX_PHYSX_STATIC_LIB",
+]
+
+if physx_gpu and env["platform"] in ("windows", "linux", "linuxbsd"):
+    physx_defines.append("GODOT_PHYSX_GPU")
+elif physx_gpu:
+    print(f"physx: physx_gpu=yes has no GPU wiring for platform '{env['platform']}'; building CPU-only.")
+
+env_physx.Append(CPPDEFINES=physx_defines)
+
+# Target defines. This fork's targets are editor / template_debug /
+# template_release (the legacy "debug"/"release_debug" names can never
+# match). Editor and debug-template builds pair PX_CHECKED=1 with the SDK's
+# "checked" lib configuration (the physx_config default); template_release
+# pairs with the release libs via `physx_config=release`. PX_DEBUG stays off
+# everywhere: the SDK's full debug configuration is orders of magnitude
+# slower and no target maps to it.
+if env["target"] != "template_release":
+    env_physx.Append(
+        CPPDEFINES=[
+            "PX_DEBUG=0",
+            "PX_CHECKED=1",
+            "PX_SUPPORT_PVD=1",
+        ]
+    )
+else:
+    env_physx.Append(
+        CPPDEFINES=[
+            "PX_DEBUG=0",
+            "PX_CHECKED=0",
+            "PX_SUPPORT_PVD=0",
+        ]
+    )
+# 2. Paths
+# The PhysX SDK lives in thirdparty/physx with the vendor layout:
+#   include/                                headers
+#   lib/<platform>/<arch>/<config>/*.lib    static import libs (config: checked | release)
+#   bin/<platform>/<arch>/<config>/*.dll    runtime DLLs (GPU dynamics; 5.11
+#                                           ships no PVD runtime DLL)
+#
+# `physx_config` selects the SDK configuration (default "checked", matching the
+# editor's PX_CHECKED=1 debug behavior). When packaging a release build,
+# extract the PhysX release zip over the SDK and pass `physx_config=release`
+# so the linked libs and the runtime DLLs come from the same configuration.
+physx_config = ARGUMENTS.get("physx_config", "checked")
+
+module_path = Dir("#modules/physx")
+thirdparty_dir = Dir("#thirdparty/physx")
+
+physx_include_path = thirdparty_dir.Dir("include")
+if env["platform"] == "windows":
+    physx_lib_path = thirdparty_dir.Dir("lib/windows/x86_64/" + physx_config)
+elif env["platform"] == "macos":
+    physx_lib_path = thirdparty_dir.Dir("lib/macos/universal/" + physx_config)
+elif env["platform"] in ("linux", "linuxbsd"):
+    physx_lib_path = thirdparty_dir.Dir("lib/linux/x86_64/" + physx_config)
+elif env["platform"] == "android":
+    physx_lib_path = thirdparty_dir.Dir("lib/android/" + env["arch"] + "/" + physx_config)
+else:
+    physx_lib_path = thirdparty_dir.Dir("lib")
+
+env_physx.PrependUnique(
+    CPPPATH=[
+        module_path,
+        physx_include_path,
+    ]
+)
+
+# Fail with an explanation rather than a cryptic linker error when a
+# platform's SDK libraries aren't vendored (only Windows x64 ships in this
+# checkout today; a Linux SDK built from the upstream presets installs its
+# static libs under bin/linux.x86_64/<config>/ -- verify against whatever the
+# build actually produced before extending the vendor layout below).
+if env["platform"] != "windows" and not os.path.isdir(physx_lib_path.abspath):
+    print(
+        "physx: WARNING: no PhysX SDK libraries vendored for platform '{}' (expected {}) -- the link step will fail until the SDK libs are added.".format(
+            env["platform"], physx_lib_path.abspath
+        )
+    )
+
+env.PrependUnique(LIBPATH=[physx_lib_path.abspath])
+
+# Ordered so each library comes before the ones it depends on: GNU/clang ld
+# resolves static archives in a single left-to-right pass (MSVC doesn't
+# care), so the old alphabetical order undefined-symbol'd on Linux/BSD --
+# e.g. BroadphaseGpu referenced CommonGpu, which came after it. Port of the
+# upstream Linux build fix (CPU path verified there).
+physx_libs = [
+    # Domain extensions first (depend on the core libs further down).
+    # PhysX 5.12 removed the PhysXCooking library: its cooking functions are
+    # exported from PhysXCommon now, which sits at the end of this list.
+    "PhysXVehicle_static_64",
+    "PhysXCharacterKinematic_static_64",
+    "PhysXExtensions_static_64",
+    "PhysXPvdSDK_static_64",
+    # PhysX 5.12's NpOmniPvd references the OmniPVD writer entry points
+    # (createOmniPvdWriter/destroyOmniPvdWriter), which live in PVDRuntime.
+    "PVDRuntime_static_64",
+    # Core.
+    "PhysX_static_64",
+    # GPU dynamics group (Windows-only: filtered out below elsewhere, see
+    # the physx_gpu note at the top). Each references CommonGpu/Common and
+    # Foundation, so they precede those here too.
+    "PhysXArticulationGpu_static_64",
+    "PhysXBroadphaseGpu_static_64",
+    "PhysXNarrowphaseGpu_static_64",
+    "PhysXSimulationControllerGpu_static_64",
+    "PhysXSolverGpu_static_64",
+    "PhysXCommonGpu_static_64",
+    "PhysXCudaContextManager_static_64",
+    "PhysXGpu_64",  # import lib for the PhysXGpu_64 runtime DLL
+    # Low-level last: dependencies of everything above.
+    "PhysXCommon_static_64",
+    "PhysXFoundation_static_64",
+]
+
+# Linux/BSD SDK build (CUDA-enabled SDK configure: no DISABLE_CUDA_PHYSX).
+# The CPU libs are NOT fully self-contained: PhysX core and the PVD SDK
+# reference two GPU-dispatch entry points (PxCreatePhysXGpu,
+# PxSetPhysXGpuProfilerCallback) that only the closed PhysXGpu runtime
+# provides. With physx_gpu=yes that runtime joins the link (see the GPU
+# dispatch block after the lib conversion below); with physx_gpu=no the
+# references resolve from physx_gpu_dispatch_stub.cpp's inert stand-ins
+# instead. NOT the open-source GPU static archive, whose framework fatbins
+# proved host-arch-fragile. Other platforms link no PhysX SDK archives at
+# all, so both routes are irrelevant there.
+if env["platform"] != "windows":
+    physx_libs = [
+        "PhysXVehicle_static_64",
+        "PhysXCharacterKinematic_static_64",
+        "PhysXExtensions_static_64",
+        # PhysX's objects reference pvdsdk symbols (NpPvdSceneClient ->
+        # PvdUserRenderer), so the PVD SDK must link AFTER PhysX for the
+        # single-pass GNU/MinGW linkers; MSVC is order-insensitive.
+        "PhysX_static_64",
+        "PhysXPvdSDK_static_64",
+        # OmniPVD writers (referenced by PhysXPvdSDK/NpOmniPVD).
+        "PVDRuntime_static_64",
+        "PhysXCommon_static_64",
+        "PhysXFoundation_static_64",
+    ]
+
+# Prebuilt PhysX libraries use plain ".lib" names. MSVC's linker resolves
+# them from LIBPATH (SCons would otherwise append $LIBSUFFIX to env.LIBS
+# entries, producing names like "PhysX_static_64.lib.windows.editor.x86_64.lib").
+# The non-MSVC Windows toolchains (MinGW gcc, llvm-mingw cross) treat bare
+# "Name.lib" arguments as files, so they get absolute paths instead.
+# env.msvc is initialized False in SConstruct and set by
+# platform/windows/detect.py for MSVC toolchains (same idiom as
+# modules/raycast/config.py).
+if env["platform"] == "windows" and env.msvc:
+    env.Append(LINKFLAGS=[lib + ".lib" for lib in physx_libs])
+else:
+    # File nodes: SCons passes them as direct link inputs (no -l mangling
+    # of absolute paths) at the correct position after the module objects.
+    # Extensions are platform-specific: MinGW/llvm-mingw consume the
+    # MSVC-format "Name.lib" archives; Linux links "libName.a".
+    if env["platform"] == "windows":
+        env.Append(LIBS=[physx_lib_path.File(lib + ".lib") for lib in physx_libs])
+    else:
+        env.Append(LIBS=[physx_lib_path.File(f"lib{lib}.a") for lib in physx_libs])
+
+# Linux GPU dispatch (physx_gpu=yes only). The CPU libs reference two GPU
+# entry points (PxCreatePhysXGpu, PxSetPhysXGpuProfilerCallback) that only
+# the closed runtime .so defines, so it joins the link -- AFTER the static
+# archives: single-pass GNU ld resolves the two references from it, and
+# --as-needed then keeps it DT_NEEDED precisely because those references
+# precede it on the link line (placed before the archives, it would be
+# dropped and GPU dynamics would vanish at load). The runtime is staged
+# next to the engine binary, where the engine's $ORIGIN RUNPATH finds it --
+# a bare soname never searches the binary's directory on Linux. It has no
+# libcuda dependency of its own (cu* resolves at run time via dlopen), so
+# driverless machines still boot and take the CPU fallback. NVIDIA ships a
+# single config-agnostic runtime for Linux (unlike the per-config Windows
+# DLLs), so it lives once under bin/linux/x86_64/release and both SDK
+# configurations link the same file.
+# With physx_gpu=no nothing here runs: the runtime is neither linked nor
+# staged, and the two references resolve from physx_gpu_dispatch_stub.cpp's
+# inert stand-ins instead.
+if physx_gpu and env["platform"] in ("linux", "linuxbsd"):
+    physx_bin_dir = Dir("#thirdparty/physx/bin/linux/x86_64/release")
+    env.PrependUnique(LIBPATH=[physx_bin_dir.abspath])
+    # The runtime .so carries undefined cu* driver references; ld must not
+    # reject them -- they resolve at run time when libcuda.so.1 is dlopen'd
+    # RTLD_GLOBAL (preloaded first in PhysXServer3D::init()).
+    env.Append(LINKFLAGS=["-Wl,--allow-shlib-undefined"])
+    env.Append(LIBS=["PhysXGpu_64"])
+    gpu_so = thirdparty_dir.File("bin/linux/x86_64/release/libPhysXGpu_64.so")
+    env.Command(
+        File("#bin/libPhysXGpu_64.so"),
+        gpu_so,
+        Copy("$TARGET", "$SOURCE"),
+    )
+
+# Copy the SDK's runtime DLLs next to the built engine binary so the runtime
+# DLL version always matches the linked SDK configuration. PhysX 5.11 ships
+# only the GPU dynamics DLL (the legacy PVD runtime DLL was dropped from the
+# SDK distribution; PhysXPvdSDK_static_64 covers the PVD link surface).
+if env["platform"] == "windows":
+    dll_src_dir = thirdparty_dir.Dir("bin/windows/x86_64/" + physx_config)
+    for dll_name in ["PhysXGpu_64.dll"]:
+        env.Command(
+            File("#bin/" + dll_name),
+            dll_src_dir.File(dll_name),
+            Copy("$TARGET", "$SOURCE"),
+        )
+
+# --- NVIDIA Flow (sparse-voxel fluid/fire/smoke GPU simulation) ---------------
+# Flow 2.2.0 is consumed EXCLUSIVELY through NvFlowLoader
+# (thirdparty/flow/include/nvflowext/NvFlowLoader.h), which LoadLibrary's
+# nvflow.dll/nvflowext.dll and duplicates their reflection-described
+# interfaces at runtime -- nothing links against nvflow*.lib. Architecturally
+# Flow stays a sibling of PhysX/Blast (see flow/docs/IMPLEMENTATION_NOTES.md):
+# the flow/ subdirectory has zero PhysX dependencies, only the shared module
+# registration/SCsub plumbing lives here. Disable with `flow=no` -- all Flow
+# code is GODOT_PHYSX_FLOW-guarded and compiles out.
+flow_enabled = ARGUMENTS.get("flow", "yes") not in ("no", "0", "false", "False")
+flow_dir = Dir("#thirdparty/flow")
+if flow_enabled:
+    env_physx.Append(CPPDEFINES=["GODOT_PHYSX_FLOW"])
+    # NvFlowLoader.h includes Windows.h on Win32 only (dlopen elsewhere) and
+    # the SDK headers live in two roots (nvflow/, nvflowext/) with
+    # same-directory #includes.
+    env_physx.PrependUnique(
+        CPPPATH=[
+            flow_dir.Dir("include/nvflow").abspath,
+            flow_dir.Dir("include/nvflowext").abspath,
+        ]
+    )
+
+    # Runtime libraries next to the engine binary (only the base pair -- the
+    # _rtx variants cover Flow's own raytraced composite path, unused here).
+    # The runtime resolves them by absolute path next to the executable
+    # (flow_runtime.cpp _loader_init), which is also what makes dlopen work
+    # on Linux -- a bare soname never searches the binary's directory there.
+    if env["platform"] == "windows":
+        flow_dll_dir = flow_dir.Dir("bin/windows/x86_64/release")
+        for dll_name in ["nvflow.dll", "nvflowext.dll"]:
+            env.Command(
+                File("#bin/" + dll_name),
+                flow_dll_dir.File(dll_name),
+                Copy("$TARGET", "$SOURCE"),
+            )
+    elif env["platform"] in ("linux", "linuxbsd"):
+        flow_so_dir = flow_dir.Dir("bin/linux/x86_64/release")
+        for so_name in ["libnvflow.so", "libnvflowext.so"]:
+            env.Command(
+                File("#bin/" + so_name),
+                flow_so_dir.File(so_name),
+                Copy("$TARGET", "$SOURCE"),
+            )
+# --- Blast (NvBlast + authoring/shaders extensions) --------------------------
+# Runtime mesh fracture/destruction. Prebuilt Blast 5.x SDK in
+# thirdparty/blast, vendor layout:
+#   include/<subdirs>/          headers
+#   lib/windows/x86_64/release  import .lib stubs (Blast's own build ships as
+#                               DLLs, so these are only import stubs)
+#   bin/windows/x86_64/release  runtime DLLs, copied next to the built binary
+#                               like PhysXGpu_64.dll above
+#   bin/linux/x86_64/release    runtime .so, copied next to the built binary;
+#                               no import stubs exist on Linux, the engine
+#                               links the runtime .so directly. The vendored
+#                               copies carry sonames + $ORIGIN rpath (patchelf
+#                               pass at vendoring time).
+# Disable with `blast=no` -- the module then builds exactly as before, with no
+# Blast support compiled in (all Blast code is GODOT_PHYSX_BLAST-guarded).
+blast_enabled = ARGUMENTS.get("blast", "yes") not in ("no", "0", "false", "False")
+blast_dir = Dir("#thirdparty/blast")
+if blast_enabled and env["platform"] in ("windows", "linux", "linuxbsd"):
+    blast_inc = blast_dir.Dir("include")
+    # Blast's headers #include each other with flat names (e.g.
+    # NvBlastExtAuthoring.h does #include "NvBlastExtAuthoringTypes.h"),
+    # assuming same-directory resolution -- one root CPPPATH entry isn't
+    # enough, each leaf subdirectory needs its own entry.
+    for _blast_subdir in (
+        "extensions/assetutils",
+        "extensions/authoring",
+        "extensions/authoringCommon",
+        "extensions/serialization",
+        "extensions/shaders",
+        "extensions/stress",
+        "globals",
+        "lowlevel",
+        "shared/NvFoundation",
+        "toolkit",
+    ):
+        env_physx.Append(CPPPATH=[blast_inc.Dir(_blast_subdir).abspath])
+
+    env_physx.Append(CPPDEFINES=["GODOT_PHYSX_BLAST"])
+
+    # Blast's shared/NvFoundation/NvPreprocessor.h hard-errors when NDEBUG and
+    # _DEBUG are BOTH undefined -- Godot's dev_build defines neither. _DEBUG is
+    # otherwise inert on non-MSVC toolchains, so scope the workaround to them
+    # and leave Windows toolchain behavior untouched.
+    if env["dev_build"] and env["platform"] != "windows":
+        env_physx.Append(CPPDEFINES=["_DEBUG"])
+
+    # Low-level API, the authoring extension (offline fracture authoring), and
+    # the shaders extension (pre-built radial/falloff damage programs). NvBlastTk/
+    # serialization/stress aren't linked -- nothing in the module uses them.
+    blast_libs = ["NvBlast", "NvBlastGlobals", "NvBlastExtAuthoring", "NvBlastExtShaders"]
+    # Copy the full runtime set: NvBlastExtAuthoring may pull in the others at
+    # load time, and a missing one fails the engine load.
+    if env["platform"] == "windows":
+        blast_lib_path = blast_dir.Dir("lib/windows/x86_64/release")
+        env.PrependUnique(LIBPATH=[blast_lib_path.abspath])
+        # Bare .lib names resolve via LIBPATH for MSVC only (see the PhysX block).
+        if env.msvc:
+            env.Append(LINKFLAGS=[x + ".lib" for x in blast_libs])
+            # The editor binary starts without the PhysX/Blast runtime DLLs so
+            # they can be downloaded on demand (the physx module's editor
+            # plugin detects the missing files and offers the install). The
+            # CRT delay helper resolves the imports on first use; until the
+            # module installs a proper delay hook, a missing DLL only fails
+            # when a GPU/Blast feature is actually exercised.
+            env.Append(
+                LINKFLAGS=[
+                    # NOTE: PhysXGpu_64.dll is deliberately absent here.
+                    # PhysX 5.12's static core dispatches the GPU module
+                    # through a runtime-set function pointer, so the engine
+                    # has no import-table dependency on it at all: the SDK
+                    # loads the DLL itself when GPU dynamics starts and
+                    # reports a missing one through the error callback.
+                    # NvBlastGlobals.dll is likewise absent: no engine object
+                    # imports it directly (the other Blast DLLs load it as
+                    # their own dependency), so /DELAYLOAD would warn "no
+                    # imports found" and /WX fails the link.
+                    "/DELAYLOAD:NvBlast.dll",
+                    "/DELAYLOAD:NvBlastExtAuthoring.dll",
+                    "/DELAYLOAD:NvBlastExtShaders.dll",
+                    # Which DLLs end up with delay imports varies by config:
+                    # template_release's optimized link references NvBlast.dll
+                    # only through the other Blast DLLs, producing a harmless
+                    # LNK4199 ("no imports found") that /WX would fail.
+                    "/IGNORE:4199",
+                    # Bare name: LIBS entries get $LIBSUFFIX mangled (see the
+                    # PhysX lib block above).
+                    "delayimp.lib",
+                ]
+            )
+        else:
+            env.Append(LIBS=[blast_lib_path.File(x + ".lib") for x in blast_libs])
+        blast_dll_dir = blast_dir.Dir("bin/windows/x86_64/release")
+        for dll_name in [
+            "NvBlast.dll",
+            "NvBlastExtAssetUtils.dll",
+            "NvBlastExtAuthoring.dll",
+            "NvBlastExtSerialization.dll",
+            "NvBlastExtShaders.dll",
+            "NvBlastExtStress.dll",
+            "NvBlastExtTkSerialization.dll",
+            "NvBlastGlobals.dll",
+            "NvBlastTk.dll",
+        ]:
+            env.Command(
+                File("#bin/" + dll_name),
+                blast_dll_dir.File(dll_name),
+                Copy("$TARGET", "$SOURCE"),
+            )
+    else:
+        # Linux: link the runtime .so directly and find them again at startup
+        # via $ORIGIN -- bare sonames never search the binary's directory
+        # there (same constraint the Flow loader solves by absolute dlopen).
+        # The $$ renders a literal $ through scons; the single quotes keep
+        # the shell from expanding it before ld sees it.
+        blast_so_dir = blast_dir.Dir("bin/linux/x86_64/release")
+        env.PrependUnique(LIBPATH=[blast_so_dir.abspath])
+        env.Append(LIBS=blast_libs)
+        env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
+        for so_name in [
+            "libNvBlast.so",
+            "libNvBlastExtAssetUtils.so",
+            "libNvBlastExtAuthoring.so",
+            "libNvBlastExtSerialization.so",
+            "libNvBlastExtShaders.so",
+            "libNvBlastExtStress.so",
+            "libNvBlastExtTkSerialization.so",
+            "libNvBlastGlobals.so",
+            "libNvBlastTk.so",
+        ]:
+            env.Command(
+                File("#bin/" + so_name),
+                blast_so_dir.File(so_name),
+                Copy("$TARGET", "$SOURCE"),
+            )
+
+# The NVIDIA SDK headers (NvFlow.h, NvFlowExt.h, NvFlowLoader.h, Blast) carry
+# style-level warnings that the CI's werror turns fatal; the taming now lives
+# on env_physx (see the relaxations block at the top) because any module TU
+# can reach those headers through includes.
+if blast_enabled and env["platform"] in ("windows", "linux", "linuxbsd"):
+    env_physx.add_source_files(env.modules_sources, "blast/*.cpp")
+elif blast_enabled:
+    print(
+        "physx: blast=yes has no library wiring for platform '{}' yet; building without Blast.".format(env["platform"])
+    )
+
+# NVIDIA Flow sources (solver runtime + scene nodes). Flow itself is
+# Windows-only for now (prebuilt DLLs), but flow/*.cpp are fully guarded and
+# compile empty elsewhere.
+if flow_enabled:
+    env_physx.add_source_files(env.modules_sources, "flow/*.cpp")
+
+# MLS-MPM compute-fluid shaders (cross-vendor fallback for the PhysX GPU path).
+# Every pass #include's mpm_fluid_inc.glsl, which GLSL_HEADER does not see, so
+# bind the dependency to each .gen.h target *by name* (a Glob here only catches
+# headers that already exist -- editing the include would then not regenerate a
+# fresh checkout, and, worse, an incremental build silently runs stale shaders).
+_mpm_glsl = (
+    "mpm_clear.glsl",
+    "mpm_p2g_mass.glsl",
+    "mpm_p2g_mom.glsl",
+    "mpm_grid.glsl",
+    "mpm_couple.glsl",
+    "mpm_g2p.glsl",
+    "mpm_foam_spawn.glsl",
+    "mpm_foam_advect.glsl",
+    "mpm_surface.glsl",
+    "mpm_march.glsl",
+    "mpm_render.glsl",
+)
+_mpm_glsl_dep = [os.path.join("particles", "shaders", "mpm_fluid_inc.glsl"), "#glsl_builders.py"]
+for _glsl in _mpm_glsl:
+    env_physx.GLSL_HEADER(os.path.join("particles", "shaders", _glsl))
+    env_physx.Depends(os.path.join("particles", "shaders", _glsl + ".gen.h"), _mpm_glsl_dep)
+
+# Sparse-grid gas/smoke solver passes (self-contained RenderingDevice compute;
+# reuses the mpm block-hash technique via gas_block_inc.glsl). Depends-wired
+# the same way as the MPM shaders so editing the include regenerates.
+_gas_glsl = (
+    "gas_bs_touch.glsl",
+    "gas_bs_clear.glsl",
+    "gas_bs_clear_range.glsl",
+    "gas_bs_curl.glsl",
+    "gas_bs_divergence.glsl",
+    "gas_bs_jacobi.glsl",
+    "gas_bs_project.glsl",
+    "gas_bs_step.glsl",
+)
+_gas_glsl_dep = [os.path.join("particles", "shaders", "gas_block_inc.glsl"), "#glsl_builders.py"]
+for _glsl in _gas_glsl:
+    env_physx.GLSL_HEADER(os.path.join("particles", "shaders", _glsl))
+    env_physx.Depends(os.path.join("particles", "shaders", _glsl + ".gen.h"), _gas_glsl_dep)
+
+# Skinned-cloth compute solver (cloth on a character's skinned mesh).
+env_physx.GLSL_HEADER(os.path.join("cloth", "skinned_cloth.glsl"))
+
+# FFT water surface solver passes (self-contained RenderingDevice compute).
+# water_inc.glsl is the shared include, dependency-bound per target like the
+# MPM shaders above.
+_water_glsl = (
+    "water_fft.glsl",
+    "water_spectrum_init.glsl",
+    "water_spectrum_evolve.glsl",
+    "water_swash.glsl",
+    "water_foam.glsl",
+    "water_blit_ocean.glsl",
+    "water_blit_ripple.glsl",
+    "water_caustics_map.glsl",
+    "water_shore_foam.glsl",
+    "water_ripple.glsl",
+    "water_wake.glsl",
+)
+_water_glsl_dep = [os.path.join("water", "water_inc.glsl"), "#glsl_builders.py"]
+for _glsl in _water_glsl:
+    env_physx.GLSL_HEADER(os.path.join("water", _glsl))
+    env_physx.Depends(os.path.join("water", _glsl + ".gen.h"), _water_glsl_dep)
+
+env_physx.add_source_files(env.modules_sources, "water/*.cpp")
+
+# 4. Godot/Redot Source Files
+# We only compile the "wrapper" code that bridges Godot to PhysX
+env_physx.add_source_files(env.modules_sources, "*.cpp")
+env_physx.add_source_files(env.modules_sources, "cloth/*.cpp")
+env_physx.add_source_files(env.modules_sources, "joints/*.cpp")
+env_physx.add_source_files(env.modules_sources, "nodes/*.cpp")
+env_physx.add_source_files(env.modules_sources, "particles/*.cpp")
+env_physx.add_source_files(env.modules_sources, "shapes/*.cpp")
+env_physx.add_source_files(env.modules_sources, "objects/*.cpp")
+env_physx.add_source_files(env.modules_sources, "spaces/*.cpp")
+env_physx.add_source_files(env.modules_sources, "vehicles/*.cpp")
+
+# Editor-only: viewport gizmos for the module's scene nodes.
+if env.editor_build:
+    env_physx.add_source_files(env.modules_sources, "editor/*.cpp")

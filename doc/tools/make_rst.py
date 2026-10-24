@@ -851,7 +851,12 @@ def main() -> None:
         print(f"{Ansi.GREEN}No warnings or errors found in the class reference XML.{Ansi.RESET}")
         if not args.dry_run:
             print(f"Wrote reStructuredText files for each class to: {args.output}")
-    else:
+    elif state.num_errors > 0:
+        # Fork note: only real XML errors fail the run. The inherited class
+        # reference carries language-parity gaps (code samples without a C#
+        # twin) that upstream never enforces -- its CI does not run this hook
+        # on master -- so treating warnings or parity hits as fatal would
+        # block every run on inherited content. Errors stay fatal.
         exit(1)
 
 

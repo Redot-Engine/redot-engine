@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXSkinnedCloth3D" inherits="Node3D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="compute_height_ramp" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_body_capsules" qualifiers="const">
+			<return type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_effective_max_distances" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="get_particle_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="rebuild">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="reset">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="animation_drive" type="float" setter="set_animation_drive" getter="get_animation_drive" default="0.0">
+		</member>
+		<member name="backstop" type="float" setter="set_backstop" getter="get_backstop" default="0.02">
+		</member>
+		<member name="bend_stiffness" type="float" setter="set_bend_stiffness" getter="get_bend_stiffness" default="0.3">
+		</member>
+		<member name="body_mesh_path" type="NodePath" setter="set_body_mesh_path" getter="get_body_mesh_path" default="NodePath(&quot;&quot;)">
+		</member>
+		<member name="collide_with_body" type="bool" setter="set_collide_with_body" getter="get_collide_with_body" default="true">
+		</member>
+		<member name="collision_radius_scale" type="float" setter="set_collision_radius_scale" getter="get_collision_radius_scale" default="1.0">
+		</member>
+		<member name="damping" type="float" setter="set_damping" getter="get_damping" default="0.05">
+		</member>
+		<member name="max_distance" type="float" setter="set_max_distance" getter="get_max_distance" default="0.4">
+		</member>
+		<member name="max_distances" type="PackedFloat32Array" setter="set_max_distances" getter="get_max_distances" default="PackedFloat32Array()">
+		</member>
+		<member name="mesh_instance_path" type="NodePath" setter="set_mesh_instance_path" getter="get_mesh_instance_path" default="NodePath(&quot;&quot;)">
+		</member>
+		<member name="pin_height" type="float" setter="set_pin_height" getter="get_pin_height" default="1.3">
+		</member>
+		<member name="process_priority" type="int" setter="set_process_priority" getter="get_process_priority" overrides="Node" default="100" />
+		<member name="self_collision" type="bool" setter="set_self_collision" getter="get_self_collision" default="false">
+		</member>
+		<member name="self_collision_thickness" type="float" setter="set_self_collision_thickness" getter="get_self_collision_thickness" default="0.02">
+		</member>
+		<member name="simulating" type="bool" setter="set_simulating" getter="is_simulating" default="true">
+		</member>
+		<member name="stiffness" type="float" setter="set_stiffness" getter="get_stiffness" default="0.9">
+		</member>
+		<member name="substeps" type="int" setter="set_substeps" getter="get_substeps" default="8">
+		</member>
+		<member name="surface" type="int" setter="set_surface" getter="get_surface" default="0">
+		</member>
+		<member name="thickness" type="float" setter="set_thickness" getter="get_thickness" default="0.012">
+		</member>
+		<member name="use_vertex_color" type="bool" setter="set_use_vertex_color" getter="get_use_vertex_color" default="false">
+		</member>
+	</members>
+</class>

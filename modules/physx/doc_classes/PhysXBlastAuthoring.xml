@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PhysXBlastAuthoring" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Scripted/offline mesh fracturing for NVIDIA Blast.
+	</brief_description>
+	<description>
+		Cuts a [Mesh] into fracture chunks and returns the result as a ready-to-assign [PhysXBlastAsset]. The editor's right-click [b]Fracture with Blast...[/b] context-menu items (Scene tree and FileSystem docks) use the same code path; prefer them for interactive work. Assign the returned asset to a [PhysXDestructible3D] to instance and simulate it.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="fracture_mesh">
+			<return type="PhysXBlastAsset" />
+			<param index="0" name="mesh" type="Mesh" />
+			<param index="1" name="site_count" type="int" />
+			<param index="2" name="seed" type="int" />
+			<param index="3" name="pattern" type="int" enum="PhysXBlastAuthoring.FracturePattern" default="0" />
+			<param index="4" name="cutout_pattern" type="Texture2D" default="null" />
+			<description>
+				Fractures [param mesh] into up to [param site_count] chunks using [param pattern]. [param seed] makes repeated calls deterministic. With [enum PhysXBlastAuthoring.FracturePattern] [constant PhysXBlastAuthoring.PATTERN_CUTOUT], the texture mask argument limits which regions may be cut. Returns the authored asset, or a valid asset with no chunks on failure.
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="PATTERN_VORONOI" value="0" enum="FracturePattern">
+			Voronoi-site fracturing: organic, rock-like chunks.
+		</constant>
+		<constant name="PATTERN_SLICING" value="1" enum="FracturePattern">
+			Recursive plane slicing: slabs and shards.
+		</constant>
+		<constant name="PATTERN_CUTOUT" value="2" enum="FracturePattern">
+			Cutout fracturing guided by the texture mask argument.
+		</constant>
+	</constants>
+</class>

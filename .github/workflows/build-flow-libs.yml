@@ -1,0 +1,100 @@
+name: 🌊 Build Flow SDK libs (nvflow)
+
+# Builds NVIDIA Flow (nvflow / nvflowext) from the upstream NVIDIA-Omniverse/PhysX
+# monorepo on GitHub runners.
+# - Windows: build.bat needs `CL=/wd4756` (MSVC 14.44 emits C4756 in nvflowext;
+#   the premake projects treat warnings as errors).
+# - Linux: builds only the library targets (nvfloweditor needs GL/GLFW/X11 dev
+#   packages we don't install).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows (nvflow.dll, nvflowext.dll)
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout NVIDIA-Omniverse/PhysX
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA-Omniverse/PhysX
+          ref: main
+          path: physx-sdk
+
+      - name: Build Flow (debug + release)
+        shell: cmd
+        run: |
+          cd physx-sdk\flow
+          set CL=/wd4756
+          build.bat
+
+      - name: Stage binaries
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path stage | Out-Null
+          Get-ChildItem -Recurse physx-sdk/flow -Include `
+            nvflow.dll, nvflowext.dll, nvflow_rtx.dll, nvflowext_rtx.dll,
+            nvflow.pdb, nvflowext.pdb, nvflow_rtx.pdb, nvflowext_rtx.pdb |
+            Where-Object { $_.FullName -match 'release' } |
+            Copy-Item -Destination stage
+          Get-ChildItem stage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-libs-windows-x64
+          path: stage/
+
+  linux:
+    name: Linux (libnvflow.so, libnvflowext.so)
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Install GL/X11 dev headers (safety for SDK projects)
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libx11-dev libxext-dev libxi-dev libxcursor-dev
+
+      - name: Checkout NVIDIA-Omniverse/PhysX
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA-Omniverse/PhysX
+          ref: main
+          path: physx-sdk
+
+      - name: Fetch packman dependencies (includes Linux premake)
+        shell: bash
+        run: |
+          cd physx-sdk/flow
+          chmod +x build.sh generate_projects.sh buildtools/packman/packman
+          ./buildtools/packman/packman pull ./dependencies.xml -p linux-x86_64
+
+      - name: Build Flow library targets (release)
+        shell: bash
+        run: |
+          cd physx-sdk/flow
+          chmod +x external/premake/linux-x86_64/premake5 generate_projects.sh
+          ./generate_projects.sh
+          cd _compiler/gmake2
+          # Library targets only: nvfloweditor needs GL/GLFW/X11 and is not
+          # part of the engine runtime.
+          make config=release_x86_64 nvflow nvflowext nvflowshadertool nvflow_rtx nvflowext_rtx
+
+      - name: Stage binaries
+        shell: bash
+        run: |
+          mkdir -p stage
+          find physx-sdk/flow/_build -name "libnvflow.so" -o \
+               -name "libnvflowext.so" | xargs -I{} cp {} stage/
+          ls -la stage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-libs-linux-x64
+          path: stage/
