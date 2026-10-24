@@ -1377,6 +1377,19 @@ void PhysXBody3D::on_pre_step(float p_step) {
 	const bool is_simulated = (mode != PhysicsServer3D::BODY_MODE_KINEMATIC &&
 			mode != PhysicsServer3D::BODY_MODE_STATIC);
 
+	// A running joint motor keeps this body awake: PhysX drives do not wake a
+	// sleeping body, so a slow motor (a low force limit on a heavy body) let it
+	// rest before it got going. Waking every pre-step resets the wake counter;
+	// once no connected motor reports running, the body sleeps normally.
+	if (is_simulated) {
+		for (PhysXJoint3D *joint : joints) {
+			if (joint->has_running_motor()) {
+				dyn->wakeUp();
+				break;
+			}
+		}
+	}
+
 	// --- Resolve area overrides in priority order (highest first) ---
 	// Sort a lightweight index list ascending by priority; iterate descending.
 	// The index buffer is a member (cleared per call) so a steady-state step
@@ -1504,6 +1517,12 @@ void PhysXBody3D::on_pre_step(float p_step) {
 			// the vehicle chassis / integrator, which apply their own gravity.
 			// Zero in the default case, so no addForce and bodies can
 			// sleep.
+			//
+			// autowake=false: addForce(autowake=true) raises the wake counter
+			// to the reset value on every call, which would keep any body with
+			// a non-zero delta (gravity_scale != 1, area overrides, constant
+			// forces) awake forever. These forces are applied only while the
+			// body is awake and must not reset its sleep accumulation.
 			if (use_native) {
 				// Cached on the space at scene creation (gravity is never
 				// mutated afterward); was a PxScene::getGravity() virtual per
@@ -1512,17 +1531,17 @@ void PhysXBody3D::on_pre_step(float p_step) {
 				const Vector3 delta = (total_gravity * (float)gravity_scale) - scene_gravity;
 				if (!delta.is_zero_approx()) {
 					dyn->addForce(physx::PxVec3((float)delta.x, (float)delta.y, (float)delta.z),
-							physx::PxForceMode::eACCELERATION);
+							physx::PxForceMode::eACCELERATION, false);
 				}
 			}
 
 			if (!constant_force.is_zero_approx()) {
 				dyn->addForce(physx::PxVec3((float)constant_force.x, (float)constant_force.y, (float)constant_force.z),
-						physx::PxForceMode::eFORCE);
+						physx::PxForceMode::eFORCE, false);
 			}
 			if (!constant_torque.is_zero_approx()) {
 				dyn->addTorque(physx::PxVec3((float)constant_torque.x, (float)constant_torque.y, (float)constant_torque.z),
-						physx::PxForceMode::eFORCE);
+						physx::PxForceMode::eFORCE, false);
 			}
 		}
 

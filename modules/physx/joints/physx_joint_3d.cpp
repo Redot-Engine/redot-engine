@@ -413,7 +413,22 @@ void PhysXJoint3D::cache_g6dof_drive_velocity(const physx::PxVec3 &p_lin, const 
 }
 
 void PhysXJoint3D::apply_cached_g6dof_drive_velocity(physx::PxD6Joint *p_d6) {
-	p_d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel);
+	p_d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel, true);
+}
+
+bool PhysXJoint3D::has_running_motor() const {
+	if (kind == JOINT_KIND_HINGE) {
+		return hinge_params.enable_motor && hinge_params.motor_target_velocity != 0.0f;
+	}
+	if (kind == JOINT_KIND_6DOF) {
+		for (int a = 0; a < 3; a++) {
+			if ((g6dof_flags[a].linear_motor && g6dof_params[a].linear_motor_target_velocity != 0.0f) ||
+					(g6dof_flags[a].angular_motor && g6dof_params[a].angular_motor_target_velocity != 0.0f)) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -506,7 +521,7 @@ void PhysXJoint3D::_apply_params() {
 			}
 			revolute->setRevoluteJointFlag(physx::PxRevoluteJointFlag::eDRIVE_ENABLED, hinge_params.enable_motor);
 			if (hinge_params.enable_motor) {
-				revolute->setDriveVelocity(-hinge_params.motor_target_velocity); // runs the other way round too (see _apply_hinge_limit)
+				revolute->setDriveVelocity(-hinge_params.motor_target_velocity, true); // runs the other way round too (see _apply_hinge_limit)
 				revolute->setDriveForceLimit(hinge_params.motor_max_impulse);
 			}
 		} break;
@@ -571,11 +586,11 @@ void PhysXJoint3D::_apply_params() {
 				_apply_g6dof_axis_drive(d6, axis, false);
 				_apply_g6dof_axis_drive(d6, axis, true);
 			}
-			_apply_g6dof_drive_position();
-			// Velocity targets only matter for axes whose resolved drive is a
-			// motor (a spring ignores them); harmless when none.
-			d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel);
-		} break;
+				_apply_g6dof_drive_position();
+				// Velocity targets only matter for axes whose resolved drive is a
+				// motor (a spring ignores them); harmless when none.
+				d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel, true);
+			} break;
 
 		default:
 			break;
@@ -733,7 +748,7 @@ void PhysXJoint3D::_apply_g6dof_drive_position() {
 	// angular measures run opposite to the D6's.
 	const Quaternion q = Quaternion::from_euler(-ang);
 	physx::PxD6Joint *d6 = static_cast<physx::PxD6Joint *>(px_joint);
-	d6->setDrivePosition(physx::PxTransform(godot_to_px(lin), godot_to_px(q)));
+	d6->setDrivePosition(physx::PxTransform(godot_to_px(lin), godot_to_px(q)), true);
 }
 
 void PhysXJoint3D::set_hinge_param(PhysicsServer3D::HingeJointParam p_param, real_t p_value) {
@@ -771,7 +786,7 @@ void PhysXJoint3D::set_hinge_param(PhysicsServer3D::HingeJointParam p_param, rea
 		case PhysicsServer3D::HINGE_JOINT_MOTOR_TARGET_VELOCITY: {
 			hinge_params.motor_target_velocity = (float)p_value;
 			if (px_joint && hinge_params.enable_motor) {
-				static_cast<physx::PxRevoluteJoint *>(px_joint)->setDriveVelocity(-hinge_params.motor_target_velocity); // runs the other way round too (see _apply_hinge_limit)
+				static_cast<physx::PxRevoluteJoint *>(px_joint)->setDriveVelocity(-hinge_params.motor_target_velocity, true); // runs the other way round too (see _apply_hinge_limit)
 			}
 			break;
 		}
@@ -829,7 +844,7 @@ void PhysXJoint3D::set_hinge_flag(PhysicsServer3D::HingeJointFlag p_flag, bool p
 			if (revolute) {
 				revolute->setRevoluteJointFlag(physx::PxRevoluteJointFlag::eDRIVE_ENABLED, p_enabled);
 				if (p_enabled) {
-					revolute->setDriveVelocity(-hinge_params.motor_target_velocity); // runs the other way round too (see _apply_hinge_limit)
+					revolute->setDriveVelocity(-hinge_params.motor_target_velocity, true); // runs the other way round too (see _apply_hinge_limit)
 					revolute->setDriveForceLimit(hinge_params.motor_max_impulse);
 				}
 			}
@@ -1330,7 +1345,7 @@ void PhysXJoint3D::set_g6dof_param(Vector3::Axis p_axis, PhysicsServer3D::G6DOFJ
 		case PhysicsServer3D::G6DOF_JOINT_LINEAR_MOTOR_TARGET_VELOCITY: {
 			cached_g6dof_lin_drive_vel[p_axis] = params.linear_motor_target_velocity;
 			if (!g6dof_flags[p_axis].linear_spring) {
-				d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel);
+				d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel, true);
 			}
 			g6dof_lin_drives[p_axis] = { true, 0.0f, G6DOF_MOTOR_DAMPING, params.linear_motor_force_limit };
 			// Velocity servo: zero stiffness, large damping (see
@@ -1413,7 +1428,7 @@ void PhysXJoint3D::set_g6dof_param(Vector3::Axis p_axis, PhysicsServer3D::G6DOFJ
 			// measures the axis opposite to Godot.
 			cached_g6dof_ang_drive_vel[p_axis] = -params.angular_motor_target_velocity;
 			if (!g6dof_flags[p_axis].angular_spring) {
-				d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel);
+				d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel, true);
 			}
 			g6dof_ang_drives[p_axis] = { true, 0.0f, G6DOF_MOTOR_DAMPING, params.angular_motor_force_limit };
 			// Velocity servo (see G6DOF_MOTOR_DAMPING). Resolved through the
@@ -1559,7 +1574,7 @@ void PhysXJoint3D::set_g6dof_flag(Vector3::Axis p_axis, PhysicsServer3D::G6DOFJo
 				// axis's drive slot (no spring configured -- see
 				// _apply_g6dof_axis_drive).
 				if (!flags.angular_spring) {
-					d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel);
+					d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel, true);
 				}
 				_apply_g6dof_axis_drive(d6, p_axis, true);
 			}
@@ -1575,7 +1590,7 @@ void PhysXJoint3D::set_g6dof_flag(Vector3::Axis p_axis, PhysicsServer3D::G6DOFJo
 				// axis's drive slot (no spring configured -- see
 				// _apply_g6dof_axis_drive).
 				if (!flags.linear_spring) {
-					d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel);
+					d6->setDriveVelocity(cached_g6dof_lin_drive_vel, cached_g6dof_ang_drive_vel, true);
 				}
 				_apply_g6dof_axis_drive(d6, p_axis, false);
 			}

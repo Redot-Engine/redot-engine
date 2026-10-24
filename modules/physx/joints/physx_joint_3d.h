@@ -383,6 +383,11 @@ public:
 	void cache_g6dof_drive_velocity(const physx::PxVec3 &p_lin, const physx::PxVec3 &p_ang);
 	void apply_cached_g6dof_drive_velocity(physx::PxD6Joint *p_d6);
 
+	/// True while a joint motor (enabled, non-zero target) actively drives this
+	/// constraint: PhysX drives do not wake a sleeping body, so the body
+	/// pre-step keeps the connected dynamics awake while this reports true.
+	bool has_running_motor() const;
+
 	// --- Static helpers for joint creation (used by physx_server.cpp) ---
 	static physx::PxTransform compute_joint_frame(const physx::PxVec3 &p_pivot, const physx::PxVec3 &p_axis);
 	static physx::PxTransform to_physx_transform(const Transform3D &p_transform);
