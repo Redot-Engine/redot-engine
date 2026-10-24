@@ -636,11 +636,14 @@ PhysXEditorPlugin::PhysXEditorPlugin() {
 	physics_engine_cache = GLOBAL_GET("physics/3d/physics_engine");
 	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &PhysXEditorPlugin::_on_project_settings_changed));
 	set_process(true);
-	_check_runtime_files();
+	// No runtime check here: popups need the tree; NOTIFICATION_READY handles it.
 }
 
 void PhysXEditorPlugin::_notification(int p_what) {
 	EditorPlugin::_notification(p_what);
+	if (p_what == NOTIFICATION_READY) {
+		_check_runtime_files();
+	}
 	if (p_what == NOTIFICATION_PROCESS) {
 		_poll_install_progress();
 	}
@@ -681,7 +684,16 @@ void PhysXEditorPlugin::_check_runtime_files() {
 		return;
 	}
 	if (runtime_missing_dialog) {
-		return; // Already offered this session.
+		// Offer already built: re-pop it while the files stay missing (the
+		// engine moved away and back, or the user dismissed it earlier). Not
+		// while an install is running.
+		if (!runtime_missing_dialog->is_visible() && !install_active && !PhysXRuntimeManager::is_runtime_complete()) {
+			runtime_missing_dialog->popup_centered();
+		}
+		return;
+	}
+	if (!is_inside_tree()) {
+		return; // popup_centered() aborts out-of-tree; never build the offer unshown.
 	}
 	const PackedStringArray missing = PhysXRuntimeManager::get_missing_runtime_files();
 	if (missing.is_empty()) {
@@ -708,27 +720,32 @@ void PhysXEditorPlugin::_start_install() {
 	install_active = true;
 	install_step = STEP_MANIFEST;
 
-	install_progress_dialog = memnew(AcceptDialog);
-	install_progress_dialog->set_title(TTR("Installing PhysX runtime"));
-	install_progress_dialog->set_close_on_escape(false);
-	install_progress_dialog->get_ok_button()->hide();
+	// Built once; a retry after _install_failed reuses them.
+	if (!install_progress_dialog) {
+		install_progress_dialog = memnew(AcceptDialog);
+		install_progress_dialog->set_title(TTR("Installing PhysX runtime"));
+		install_progress_dialog->set_close_on_escape(false);
+		install_progress_dialog->get_ok_button()->hide();
 
-	VBoxContainer *vb = memnew(VBoxContainer);
-	install_progress_dialog->add_child(vb);
-	install_status_label = memnew(Label);
+		VBoxContainer *vb = memnew(VBoxContainer);
+		install_progress_dialog->add_child(vb);
+		install_status_label = memnew(Label);
+		vb->add_child(install_status_label);
+		install_progress_bar = memnew(ProgressBar);
+		install_progress_bar->set_custom_minimum_size(Vector2(480, 20));
+		vb->add_child(install_progress_bar);
+
+		EditorNode::get_singleton()->get_gui_base()->add_child(install_progress_dialog);
+
+		install_http = memnew(HTTPRequest);
+		install_http->set_use_threads(true);
+		install_http->set_download_chunk_size(1024 * 1024);
+		EditorNode::get_singleton()->get_gui_base()->add_child(install_http);
+		install_http->connect("request_completed", callable_mp(this, &PhysXEditorPlugin::_on_install_request_completed));
+	}
 	install_status_label->set_text(TTR("Fetching manifest…"));
-	vb->add_child(install_status_label);
-	install_progress_bar = memnew(ProgressBar);
-	install_progress_bar->set_custom_minimum_size(Vector2(480, 20));
-	vb->add_child(install_progress_bar);
-
-	EditorNode::get_singleton()->get_gui_base()->add_child(install_progress_dialog);
-
-	install_http = memnew(HTTPRequest);
-	install_http->set_use_threads(true);
-	install_http->set_download_chunk_size(1024 * 1024);
-	EditorNode::get_singleton()->get_gui_base()->add_child(install_http);
-	install_http->connect("request_completed", callable_mp(this, &PhysXEditorPlugin::_on_install_request_completed));
+	install_progress_bar->show();
+	install_progress_dialog->get_ok_button()->hide();
 
 	install_progress_dialog->popup_centered(Vector2i(520, 0));
 	install_http->request(PhysXRuntimeManager::MANIFEST_URL);
@@ -792,4 +809,10 @@ void PhysXEditorPlugin::_install_failed(const String &p_message) {
 	install_progress_dialog->get_ok_button()->set_text(TTR("Close"));
 	print_line(vformat("PhysX runtime install failed: %s", p_message));
 	print_line(manual);
+	// The runtime is still missing: close the error dialog and re-offer the
+	// install so a transient network failure is one click away from a retry.
+	install_progress_dialog->hide();
+	if (runtime_missing_dialog) {
+		runtime_missing_dialog->popup_centered();
+	}
 }

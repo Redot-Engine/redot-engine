@@ -171,9 +171,11 @@ class PhysXEditorPlugin : public EditorPlugin {
 	PhysXBlastFractureDialog *blast_fracture_dialog = nullptr;
 #endif
 
-	// Shown when the project selects PhysX but the runtime DLLs staged next
+	// Offered when the project selects PhysX but the runtime DLLs staged next
 	// to the editor executable are missing; its confirm button starts the
-	// download-and-restart flow (installer stub for now).
+	// download-and-restart flow. Built once and re-popped (never rebuilt) while
+	// files stay missing: dismissed offers return on the next engine-selection
+	// change, failed installs re-offer immediately.
 	ConfirmationDialog *runtime_missing_dialog = nullptr;
 
 	// Mirrors physics/3d/physics_engine so the plugin notices mid-session

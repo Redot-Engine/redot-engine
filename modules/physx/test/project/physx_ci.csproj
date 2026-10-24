@@ -1,4 +1,4 @@
-﻿<Project Sdk="Redot.NET.Sdk/26.3.0">
+﻿<Project Sdk="Redot.NET.Sdk/26.4.0-alpha">
   <!--
     C# test assembly for the PhysX integration suite.
 
@@ -11,8 +11,8 @@
     modules/mono/build_scripts/build_assemblies.py with the push nupkgs
     local option filling the source folder nuget.config points at
     (modules/mono/nuget); keep the SDK version pinned to the version
-    build_assemblies.py produces for the current engine (26.3.0 for the
-    Redot 26.3 line).
+    build_assemblies.py produces for the current engine (26.4.0-alpha for
+    this tree).
   -->
   <PropertyGroup>
     <!-- Must match the RedotSharp assemblies: net8.0 for Redot 26.3 (Godot 4.5 line). -->
