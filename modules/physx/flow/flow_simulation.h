@@ -97,6 +97,14 @@ struct FlowSimSettings {
 
 	float vorticity_force_scale = 0.6f;
 	bool pressure_enabled = true;
+
+	// A FLOOR: with floor_enabled, gas never goes below floor_height -- a
+	// wide solid under it (a solid reserves no blocks, so this costs
+	// nothing). Colliders cannot describe terrain (heightmaps/trimeshes are
+	// not gathered), so without one a blast's or a fire's gas sank into the
+	// ground and spent the grid's block budget there.
+	bool floor_enabled = false;
+	float floor_height = 0.0f;
 };
 
 // Render-path settings: Flow's own ray marcher draws the grid with a

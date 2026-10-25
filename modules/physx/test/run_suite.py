@@ -49,8 +49,10 @@ ASYNC_SCRIPT = "res://gdscript/async_stress_test.gd"
 LIFECYCLE_SCRIPT = "res://gdscript/lifecycle_contracts_test.gd"
 RUNTIME_SCRIPT = "res://gdscript/runtime_cost_test.gd"
 FLOW_SCRIPT = "res://gdscript/flow_smoke_test.gd"
+FLOW_FLOOR_SCRIPT = "res://gdscript/flow_floor_test.gd"
 GPU_SCRIPT = "res://gdscript/gpu_smoke_test.gd"
 WATER_PARITY_SCRIPT = "res://gdscript/water_parity_test.gd"
+WATER_RECENTER_SCRIPT = "res://gdscript/water_recenter_test.gd"
 SOFT_ATTACH_SCRIPT = "res://gdscript/soft_body_attachment_test.gd"
 CLOTH_CPU_SCRIPT = "res://gdscript/cloth_cpu_collision_test.gd"
 CLOTH_GRAVITY_SCRIPT = "res://gdscript/skinned_cloth_gravity_test.gd"
@@ -71,9 +73,9 @@ SUITES = {
     "async": [ASYNC_SCRIPT],
     "lifecycle": [LIFECYCLE_SCRIPT],
     "runtime": [RUNTIME_SCRIPT],
-    "flow": [FLOW_SCRIPT],
+    "flow": [FLOW_SCRIPT, FLOW_FLOOR_SCRIPT],
     "gpu": [GPU_SCRIPT, SOFT_ATTACH_SCRIPT],
-    "water": [WATER_PARITY_SCRIPT],
+    "water": [WATER_PARITY_SCRIPT, WATER_RECENTER_SCRIPT],
     "cloth": [CLOTH_CPU_SCRIPT, CLOTH_GRAVITY_SCRIPT],
     "joints": [JOINT_MOTOR_SCRIPT],
     "depenetration": [DEPEN_SCRIPT],

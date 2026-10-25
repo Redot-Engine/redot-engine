@@ -141,6 +141,10 @@ private:
 	int particle_count = 4096;
 	float particle_size = 0.1;
 	float viscosity = 0.01;
+	// PBD path: live material params (PxPBDMaterial). MPM path: adhesion has
+	// no counterpart; gravity_scale scales the solver gravity on (re)build.
+	float adhesion = 0.0f;
+	float gravity_scale = 1.0f;
 	float surface_tension = 0.006;
 	float cohesion = 0.02;
 	float vorticity = 8.0;
@@ -227,6 +231,11 @@ public:
 	float get_particle_size() const { return particle_size; }
 	void set_viscosity(float p_v);
 	float get_viscosity() const { return viscosity; }
+	void set_adhesion(float p_v);
+	float get_adhesion() const { return adhesion; }
+	void set_gravity_scale(float p_v);
+	float get_gravity_scale() const { return gravity_scale; }
+
 	void set_surface_tension(float p_v);
 	float get_surface_tension() const { return surface_tension; }
 	void set_cohesion(float p_v);

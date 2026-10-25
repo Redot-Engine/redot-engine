@@ -529,6 +529,52 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 		}
 	}
 
+	// --- Floor: one wide solid under the grid ----------------------------
+	if (p_settings.floor_enabled) {
+		// Centered on the emitters (that is where the grid is); a solid
+		// reserves no blocks and holds no gas, so whatever sinks below the
+		// floor is gone -- and its blocks with it.
+		Vector3 center;
+		int centered_on = 0;
+		for (int i = 0; i < p_emitter_count; i++) {
+			if (p_emitters[i].enabled) {
+				center += p_emitters[i].world_xform.origin;
+				centered_on++;
+			}
+		}
+		if (centered_on > 0) {
+			center /= (float)centered_on;
+			constexpr float FLOOR_HALF_W = 4096.0f;
+			constexpr float FLOOR_HALF_T = 64.0f;
+			NvFlowGridEmitterBoxParams p = NvFlowEmitterBoxParams_default;
+			p.luid = 0x464c4f52; // "FLOr"-style stable id; no node stands behind it
+			p.enabled = NV_FLOW_TRUE;
+			p.localToWorld = _to_flow_matrix(Transform3D(Basis(), Vector3(center.x, p_settings.floor_height - FLOOR_HALF_T, center.z)));
+			p.localToWorldVelocity = _to_flow_velocity_matrix(Transform3D(Basis(), Vector3(center.x, p_settings.floor_height - FLOOR_HALF_T, center.z)), Vector3(), Vector3());
+			p.velocityIsWorldSpace = NV_FLOW_TRUE;
+			p.layer = 0;
+			p.level = 0;
+			p.halfSize = { FLOOR_HALF_W, FLOOR_HALF_T, FLOOR_HALF_W };
+			p.velocity = { 0.0f, 0.0f, 0.0f };
+			p.temperature = 0.0f;
+			p.fuel = 0.0f;
+			p.smoke = 0.0f;
+			p.burn = 0.0f;
+			p.divergence = 0.0f;
+			p.coupleRateVelocity = 100.0f;
+			p.coupleRateDivergence = 100.0f;
+			p.coupleRateTemperature = 100.0f;
+			p.coupleRateFuel = 100.0f;
+			p.coupleRateBurn = 100.0f;
+			p.coupleRateSmoke = 100.0f;
+			p.applyPostPressure = NV_FLOW_TRUE;
+			p.allocationScale = 0.0f;
+			p.physicsVelocityScale = 1.0f;
+			p.isPhysicsCollision = NV_FLOW_TRUE;
+			box_params.push_back(p);
+		}
+	}
+
 	for (const NvFlowGridEmitterSphereParams &p : sphere_params) {
 		sphere_ptrs.push_back(const_cast<NvFlowGridEmitterSphereParams *>(&p));
 	}

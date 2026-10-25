@@ -500,6 +500,8 @@ FlowSimSettings PhysXFlowSimulation3D::_build_settings() const {
 	settings.combustion_enabled = combustion_enabled;
 	settings.vorticity_force_scale = vorticity;
 	settings.pressure_enabled = pressure_projection;
+	settings.floor_enabled = floor_enabled;
+	settings.floor_height = floor_height;
 	return settings;
 }
 
@@ -1202,6 +1204,10 @@ void PhysXFlowSimulation3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_vorticity"), &PhysXFlowSimulation3D::get_vorticity);
 	ClassDB::bind_method(D_METHOD("set_pressure_projection", "enabled"), &PhysXFlowSimulation3D::set_pressure_projection);
 	ClassDB::bind_method(D_METHOD("get_pressure_projection"), &PhysXFlowSimulation3D::get_pressure_projection);
+	ClassDB::bind_method(D_METHOD("set_floor_enabled", "enabled"), &PhysXFlowSimulation3D::set_floor_enabled);
+	ClassDB::bind_method(D_METHOD("is_floor_enabled"), &PhysXFlowSimulation3D::is_floor_enabled);
+	ClassDB::bind_method(D_METHOD("set_floor_height", "height"), &PhysXFlowSimulation3D::set_floor_height);
+	ClassDB::bind_method(D_METHOD("get_floor_height"), &PhysXFlowSimulation3D::get_floor_height);
 
 	ClassDB::bind_method(D_METHOD("set_emitters", "paths"), &PhysXFlowSimulation3D::set_emitters);
 	ClassDB::bind_method(D_METHOD("get_emitters"), &PhysXFlowSimulation3D::get_emitters);
@@ -1256,6 +1262,8 @@ void PhysXFlowSimulation3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "fuel_fade", PROPERTY_HINT_RANGE, "0.0,2.0,0.01"), "set_fuel_fade", "get_fuel_fade");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "vorticity", PROPERTY_HINT_RANGE, "0.0,4.0,0.05"), "set_vorticity", "get_vorticity");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "pressure_projection"), "set_pressure_projection", "get_pressure_projection");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "floor_enabled"), "set_floor_enabled", "is_floor_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "floor_height", PROPERTY_HINT_NONE, "suffix:m"), "set_floor_height", "get_floor_height");
 	ADD_GROUP("Emitters", "emitter");
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "emitters", PROPERTY_HINT_ARRAY_TYPE, "NodePath"), "set_emitters", "get_emitters");
 	ADD_GROUP("Colliders", "collider");

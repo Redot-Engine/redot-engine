@@ -156,7 +156,6 @@ void PhysXDestructible3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_debris_freeze", "freeze"), &PhysXDestructible3D::set_debris_freeze);
 	ClassDB::bind_method(D_METHOD("get_debris_freeze"), &PhysXDestructible3D::get_debris_freeze);
 	ClassDB::bind_method(D_METHOD("is_fractured"), &PhysXDestructible3D::is_fractured);
-	ClassDB::bind_method(D_METHOD("get_piece_count"), &PhysXDestructible3D::get_piece_count);
 	ClassDB::bind_method(D_METHOD("get_piece_velocity", "index"), &PhysXDestructible3D::get_piece_velocity);
 	ClassDB::bind_method(D_METHOD("apply_radial_damage", "world_position", "damage", "min_radius", "max_radius"), &PhysXDestructible3D::apply_radial_damage);
 

@@ -162,6 +162,12 @@
 		<member name="pressure_projection" type="bool" setter="set_pressure_projection" getter="get_pressure_projection" default="true">
 			Pressure projection (divergence-free velocity). Off is cheaper but lets emitters push through walls.
 		</member>
+		<member name="floor_enabled" type="bool" setter="set_floor_enabled" getter="is_floor_enabled" default="false">
+			With this on, gas never goes below [member floor_height]: one wide solid under the grid (a solid reserves no blocks, so it costs nothing). Colliders cannot describe terrain, so without a floor a blast's or a fire's gas sinks into the ground and spends the grid's block budget there.
+		</member>
+		<member name="floor_height" type="float" setter="set_floor_height" getter="get_floor_height" default="0.0">
+			The world-space Y the [member floor_enabled] solid's top sits at.
+		</member>
 		<member name="scattering_receive_shadows" type="int" setter="set_scattering_receive_shadows" getter="get_scattering_receive_shadows" default="3">
 		</member>
 		<member name="shadow_steps" type="int" setter="set_shadow_steps" getter="get_shadow_steps" default="48">

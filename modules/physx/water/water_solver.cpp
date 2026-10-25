@@ -587,49 +587,67 @@ void WaterSolverGPU::_rt_build_buffers() {
 
 	// h0 depends only on static settings (wind/domain/amplitude) -- generate
 	// it once here, not every step.
-	{
-		Vector<uint8_t> ib;
-		ib.resize(OCEAN_INIT_PARAMS_BYTES);
-		uint8_t *iw = ib.ptrw();
-		auto put_f = [&](int off, float v) { memcpy(iw + off, &v, sizeof(float)); };
-		auto put_i = [&](int off, int32_t v) { memcpy(iw + off, &v, sizeof(int32_t)); };
-		put_f(0, ocean_domain_size.x);
-		put_f(4, ocean_domain_size.y);
-		put_f(8, _init_wind_speed);
-		put_f(12, _init_wind_direction.x);
-		put_f(16, _init_wind_direction.y);
-		put_f(20, _init_gravity);
-		put_f(24, _init_wave_amplitude * _init_wave_amplitude);
-		put_f(28, 0.0f);
-		put_i(32, on);
-		put_i(36, 0);
-		put_i(40, 0);
-		put_i(44, 0);
-		put_f(48, _init_fetch);
-		put_f(52, _init_depth);
-		put_f(56, 0.0f);
-		put_f(60, 0.0f);
-		rd->buffer_update(buf_ocean_init_params, 0, OCEAN_INIT_PARAMS_BYTES, ib.ptr());
-
-		RD::ComputeListID cl = rd->compute_list_begin();
-		rd->compute_list_bind_compute_pipeline(cl, pipeline_spectrum_init);
-		rd->compute_list_bind_uniform_set(cl, uset_spectrum_init, 0);
-		rd->compute_list_dispatch(cl, groups_for(on), groups_for(on), 1);
-		rd->compute_list_end();
-		if (local) {
-			rd->submit();
-			rd->sync();
-		}
-		// Shared device: this one-time dispatch just gets recorded and rides
-		// along with whatever the render thread submits next (the engine's
-		// own per-frame flush) -- h0 only needs to be ready before the first
-		// rt_step() runs, and rt_build()/rt_step() are always posted to the
-		// render thread in that order, so ordering is already guaranteed.
-	}
+	_rt_dispatch_spectrum_init();
 
 	if (_init_caustics_enabled) {
 		_rt_build_caustics_grid();
 	}
+}
+
+// The h0 spectrum (re)generation: one param upload + one dispatch on the
+// already-built buffers. _rt_build_buffers() calls it once; rt_reinit_spectrum
+// calls it again with new sea-state params -- nothing else is touched.
+void WaterSolverGPU::_rt_dispatch_spectrum_init() {
+	const int on = ocean_grid_resolution;
+	Vector<uint8_t> ib;
+	ib.resize(OCEAN_INIT_PARAMS_BYTES);
+	uint8_t *iw = ib.ptrw();
+	auto put_f = [&](int off, float v) { memcpy(iw + off, &v, sizeof(float)); };
+	auto put_i = [&](int off, int32_t v) { memcpy(iw + off, &v, sizeof(int32_t)); };
+	put_f(0, ocean_domain_size.x);
+	put_f(4, ocean_domain_size.y);
+	put_f(8, _init_wind_speed);
+	put_f(12, _init_wind_direction.x);
+	put_f(16, _init_wind_direction.y);
+	put_f(20, _init_gravity);
+	put_f(24, _init_wave_amplitude * _init_wave_amplitude);
+	put_f(28, 0.0f);
+	put_i(32, on);
+	put_i(36, 0);
+	put_i(40, 0);
+	put_i(44, 0);
+	put_f(48, _init_fetch);
+	put_f(52, _init_depth);
+	put_f(56, 0.0f);
+	put_f(60, 0.0f);
+	rd->buffer_update(buf_ocean_init_params, 0, OCEAN_INIT_PARAMS_BYTES, ib.ptr());
+
+	RD::ComputeListID cl = rd->compute_list_begin();
+	rd->compute_list_bind_compute_pipeline(cl, pipeline_spectrum_init);
+	rd->compute_list_bind_uniform_set(cl, uset_spectrum_init, 0);
+	rd->compute_list_dispatch(cl, groups_for(on), groups_for(on), 1);
+	rd->compute_list_end();
+	if (local) {
+		rd->submit();
+		rd->sync();
+	}
+	// Shared device: this dispatch just gets recorded and rides along with
+	// whatever the render thread submits next (the engine's own per-frame
+	// flush) -- h0 only needs to be ready before the next rt_step() runs,
+	// and this is always posted after it in that order.
+}
+
+void WaterSolverGPU::rt_reinit_spectrum(Ref<WaterSolverGPU> p_self, float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_gravity, float p_fetch, float p_depth) {
+	if (!built.is_set()) {
+		return; // rt_build() stashes its own _init_* values; nothing to reinit yet
+	}
+	_init_wind_speed = MAX(p_wind_speed, 0.01f);
+	_init_wind_direction = p_wind_direction;
+	_init_wave_amplitude = MAX(p_wave_amplitude, 0.0f);
+	_init_gravity = p_gravity;
+	_init_fetch = p_fetch;
+	_init_depth = p_depth;
+	_rt_dispatch_spectrum_init();
 }
 
 void WaterSolverGPU::_rt_build_caustics_grid() {
@@ -1189,6 +1207,23 @@ void WaterSolver::configure(const Settings &p_settings) {
 	pending_impulses.clear();
 	if (!gpu.is_null()) {
 		_dispatch(callable_mp(gpu.ptr(), &WaterSolverGPU::rt_build).bind(gpu, settings.grid_resolution, settings.domain_size, settings.ocean_grid_resolution, settings.ocean_domain_size, settings.wind_speed, settings.wind_direction, settings.wave_amplitude, settings.gravity, settings.caustics_enabled, settings.cell_depth, settings.depth, settings.shallow_fade_depth, settings.fetch));
+	}
+}
+
+void WaterSolver::recenter(const Vector2 &p_grid_center) {
+	// grid_center is CPU-side state: sphere/impulse world positions are made
+	// relative to it at pack time, nothing on the GPU knows it.
+	settings.grid_center = p_grid_center;
+}
+
+void WaterSolver::reinit_spectrum(float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_fetch, float p_depth) {
+	settings.wind_speed = MAX(p_wind_speed, 0.01f);
+	settings.wind_direction = p_wind_direction;
+	settings.wave_amplitude = MAX(p_wave_amplitude, 0.0f);
+	settings.fetch = p_fetch;
+	settings.depth = MAX(p_depth, 0.1f);
+	if (!gpu.is_null()) {
+		_dispatch(callable_mp(gpu.ptr(), &WaterSolverGPU::rt_reinit_spectrum).bind(gpu, settings.wind_speed, settings.wind_direction, settings.wave_amplitude, settings.gravity, settings.fetch, settings.depth));
 	}
 }
 

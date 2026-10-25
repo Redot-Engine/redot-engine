@@ -116,6 +116,18 @@ public:
 	float get_fetch() const { return fetch; }
 	// The fetch actually in use (resolves the 0 = auto case).
 	float get_effective_fetch() const;
+	// Moves the ripple square to p_world_position (its XZ; the node's height
+	// is kept) WITHOUT a rebuild: the mesh, the FFT ocean and every texture
+	// stay bound; the ripples are cleared. A footprint (surface_mesh) or
+	// per-cell seabed depends on where the grid is, so those still rebuild.
+	void recenter(Vector3 p_world_position);
+	// Wind / direction / height / fetch at once -- ONE in-place spectrum
+	// update on a built solver (no rebuild; the waves keep their phases).
+	void set_sea_state(float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_fetch);
+	// Tooling/tests: the solver comes up asynchronously, and recenter()'s
+	// in-place path requires it (the fallback rebuilds).
+	bool is_solver_available() const { return solver.is_available(); }
+	Vector2 get_grid_center() const { return grid_center; }
 	// Tessendorf horizontal displacement: pulls the surface toward the
 	// ocean waves' crests so they sharpen and the troughs flatten. 0 = pure
 	// height field. Where it folds the surface (its Jacobian drops toward
@@ -332,6 +344,8 @@ private:
 	// jolted buoyancy and anything resting on sampled water.
 	static constexpr int REFRESH_EVERY_FRAMES = 1;
 
+	// Sea-state change on a built solver: in-place spectrum regen (no rebuild).
+	void _reinit_spectrum();
 	void _rebuild();
 	// Footprint triangles of surface_mesh in node-local XZ (degenerates dropped).
 	Vector<Vector2> _collect_footprint() const;

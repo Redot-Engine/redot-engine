@@ -95,6 +95,10 @@ class PhysXFlowSimulation3D : public Node3D {
 	float fuel_fade = 0.0f;
 	float vorticity = 0.6f;
 	bool pressure_projection = true;
+	// A FLOOR: with floor_enabled, gas never goes below floor_height (a wide
+	// solid under the grid -- no blocks reserved there; see FlowSimSettings).
+	bool floor_enabled = false;
+	float floor_height = 0.0f;
 
 	bool sim_settings_dirty = true; // max_blocks changes recreate the grid
 	double sim_time_accum = 0.0; // monotonic clock fed to Flow's absoluteSimTime
@@ -305,6 +309,10 @@ public:
 	float get_vorticity() const { return vorticity; }
 	void set_pressure_projection(bool p_enabled);
 	bool get_pressure_projection() const { return pressure_projection; }
+	void set_floor_enabled(bool p_enabled) { floor_enabled = p_enabled; }
+	bool is_floor_enabled() const { return floor_enabled; }
+	void set_floor_height(float p_height) { floor_height = p_height; }
+	float get_floor_height() const { return floor_height; }
 
 	void set_emitters(const TypedArray<NodePath> &p_emitters) { emitters = p_emitters; }
 	TypedArray<NodePath> get_emitters() const { return emitters; }

@@ -574,6 +574,10 @@ void PhysXWaterSurface3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_fetch", "fetch"), &PhysXWaterSurface3D::set_fetch);
 	ClassDB::bind_method(D_METHOD("get_fetch"), &PhysXWaterSurface3D::get_fetch);
 	ClassDB::bind_method(D_METHOD("get_effective_fetch"), &PhysXWaterSurface3D::get_effective_fetch);
+	ClassDB::bind_method(D_METHOD("recenter", "world_position"), &PhysXWaterSurface3D::recenter);
+	ClassDB::bind_method(D_METHOD("set_sea_state", "wind_speed", "wind_direction", "wave_amplitude", "fetch"), &PhysXWaterSurface3D::set_sea_state);
+	ClassDB::bind_method(D_METHOD("is_solver_available"), &PhysXWaterSurface3D::is_solver_available);
+	ClassDB::bind_method(D_METHOD("get_grid_center"), &PhysXWaterSurface3D::get_grid_center);
 	ClassDB::bind_method(D_METHOD("set_choppiness", "choppiness"), &PhysXWaterSurface3D::set_choppiness);
 	ClassDB::bind_method(D_METHOD("get_choppiness"), &PhysXWaterSurface3D::get_choppiness);
 	ClassDB::bind_method(D_METHOD("set_normal_mode", "mode"), &PhysXWaterSurface3D::set_normal_mode);
@@ -724,17 +728,17 @@ void PhysXWaterSurface3D::set_ocean_domain_size(Vector2 p_size) {
 
 void PhysXWaterSurface3D::set_wind_speed(float p_speed) {
 	wind_speed = MAX(p_speed, 0.01f);
-	_rebuild();
+	_reinit_spectrum();
 }
 
 void PhysXWaterSurface3D::set_wind_direction(Vector2 p_dir) {
 	wind_direction = p_dir;
-	_rebuild();
+	_reinit_spectrum();
 }
 
 void PhysXWaterSurface3D::set_wave_amplitude(float p_amp) {
 	wave_amplitude = MAX(p_amp, 0.0f);
-	_rebuild();
+	_reinit_spectrum();
 }
 
 void PhysXWaterSurface3D::set_choppiness(float p_choppiness) {
@@ -794,7 +798,44 @@ void PhysXWaterSurface3D::set_normal_mode(NormalMode p_mode) {
 
 void PhysXWaterSurface3D::set_fetch(float p_fetch) {
 	fetch = MAX(p_fetch, 0.0f);
-	_rebuild();
+	_reinit_spectrum();
+}
+
+void PhysXWaterSurface3D::recenter(Vector3 p_world_position) {
+	Vector3 p = get_global_position();
+	p.x = p_world_position.x;
+	p.z = p_world_position.z;
+	set_global_position(p);
+	// A footprint / per-cell seabed is baked in node-local space, so it dies
+	// with the old grid: rebuild. Same when there is no solver to move.
+	if (!solver.is_available() || surface_mesh.is_valid() || !cell_depth.is_empty()) {
+		_rebuild();
+		return;
+	}
+	grid_center = Vector2(p.x, p.z);
+	if (water_material.is_valid()) {
+		water_material->set_shader_parameter("grid_center", grid_center);
+	}
+	solver.recenter(grid_center);
+	// The old square's heights are not this one's.
+	cached_ripple_height.clear();
+}
+
+void PhysXWaterSurface3D::set_sea_state(float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_fetch) {
+	wind_speed = MAX(p_wind_speed, 0.01f);
+	wind_direction = p_wind_direction;
+	wave_amplitude = MAX(p_wave_amplitude, 0.0f);
+	fetch = MAX(p_fetch, 0.0f);
+	_reinit_spectrum();
+}
+
+// The sea state changed: a built solver regenerates its spectrum IN PLACE
+// (no rebuild -- the waves keep their phases); before a build the values
+// are simply picked up by the next one.
+void PhysXWaterSurface3D::_reinit_spectrum() {
+	if (solver.is_available()) {
+		solver.reinit_spectrum(wind_speed, wind_direction, wave_amplitude, get_effective_fetch(), depth);
+	}
 }
 
 float PhysXWaterSurface3D::get_effective_fetch() const {

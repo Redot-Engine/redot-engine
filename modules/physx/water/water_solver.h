@@ -190,6 +190,11 @@ public:
 	// dry), row-major by Z then X like the ripple grid; empty = p_depth
 	// everywhere.
 	void rt_build(Ref<WaterSolverGPU> p_self, int p_grid_resolution, Vector2 p_domain_size, int p_ocean_grid_resolution, Vector2 p_ocean_domain_size, float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_gravity, bool p_caustics_enabled, PackedFloat32Array p_cell_depth, float p_depth, float p_shallow_fade_depth, float p_fetch);
+	// The sea state changed: regenerates the h0 spectrum IN PLACE -- the
+	// buffers, pipelines and every texture stay bound (a full rt_build()
+	// left the sea undrawn for a frame); the waves keep their phases.
+	// No-op before the first rt_build().
+	void rt_reinit_spectrum(Ref<WaterSolverGPU> p_self, float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_gravity, float p_fetch, float p_depth);
 	// p_spheres/p_impulses: flat, 4 floats/entry (world_x, world_z, radius,
 	// strength), packed on the calling thread into an immutable value-copy
 	// snapshot before dispatch -- same thread-safety pattern
@@ -247,6 +252,7 @@ private:
 	float _init_depth = 3.0f;
 
 	void _rt_free_buffers();
+	void _rt_dispatch_spectrum_init();
 	void _rt_build_buffers();
 	void _rt_build_caustics_grid();
 };
@@ -328,6 +334,14 @@ public:
 	bool is_available() const { return has_device() && gpu->built.is_set(); }
 
 	void configure(const Settings &p_settings);
+	// Moves the ripple/ocean grids to p_grid_center with NO rebuild: the
+	// mesh, FFT ocean and every texture stay bound; the ripples are cleared
+	// (the old square's heights are not the new one's).
+	void recenter(const Vector2 &p_grid_center);
+	// The sea state changed: regenerates the ocean spectrum IN PLACE on a
+	// built solver (no rebuild -- the waves keep their phases); before a
+	// build the values are simply picked up by the next configure().
+	void reinit_spectrum(float p_wind_speed, Vector2 p_wind_direction, float p_wave_amplitude, float p_fetch, float p_depth);
 	void step(double p_delta);
 
 	// Persistent body proxy, world space, keyed by an arbitrary caller-chosen

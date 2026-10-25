@@ -147,6 +147,12 @@
 		<member name="viscosity" type="float" setter="set_viscosity" getter="get_viscosity" default="0.01">
 			Resistance to flow. Higher values make the fluid thicker and slower, like honey.
 		</member>
+		<member name="adhesion" type="float" setter="set_adhesion" getter="get_adhesion" default="0.0">
+			How strongly particles stick to solids (PBD solver; no effect on the MPM solver).
+		</member>
+		<member name="gravity_scale" type="float" setter="set_gravity_scale" getter="get_gravity_scale" default="1.0">
+			Multiplier on gravity: negative values float the fluid up. Live on the PBD solver; on the MPM solver it applies when the fluid is (re)configured.
+		</member>
 		<member name="vorticity" type="float" setter="set_vorticity" getter="get_vorticity" default="8.0">
 			Vorticity confinement. Re-injects swirling motion that the solver would otherwise damp out, keeping the fluid lively.
 		</member>
