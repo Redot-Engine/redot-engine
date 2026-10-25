@@ -18,11 +18,23 @@
 		</method>
 	</methods>
 	<members>
+		<member name="body_mesh_path" type="NodePath" setter="set_body_mesh_path" getter="get_body_mesh_path" default="NodePath(&quot;&quot;)">
+			Optional skinned [MeshInstance3D] whose surface gets collision capsules fitted to it, used when the skeleton has no physical bones to collide the cloth with.
+		</member>
 		<member name="extra_acceleration" type="Vector3" setter="set_extra_acceleration" getter="get_extra_acceleration" default="Vector3(0, 0, 0)">
 			Extra acceleration (m/s²) added on top of the resolved gravity every step: the game's force fields, wind, updrafts.
 		</member>
 		<member name="fixed_gravity" type="Vector3" setter="set_fixed_gravity" getter="get_fixed_gravity" default="Vector3(0, -9.8, 0)">
 			The gravity used when [member use_world_gravity] is off, in m/s².
+		</member>
+		<member name="max_distances" type="PackedFloat32Array" setter="set_max_distances" getter="get_max_distances" default="PackedFloat32Array()">
+			Per-vertex maximum distance (m) each surface vertex may travel from its pinned position; empty = derived automatically from [member pin_height].
+		</member>
+		<member name="mesh_instance_path" type="NodePath" setter="set_mesh_instance_path" getter="get_mesh_instance_path" default="NodePath(&quot;&quot;)">
+			The skinned [MeshInstance3D] whose surface the cloth replaces: that surface is hidden and redrawn from the simulation.
+		</member>
+		<member name="pin_height" type="float" setter="set_pin_height" getter="get_pin_height" default="1.3">
+			Bind-space height (m) at and above which vertices follow the animation instead of the simulation (the pinned region).
 		</member>
 		<member name="use_world_gravity" type="bool" setter="set_use_world_gravity" getter="get_use_world_gravity" default="true">
 			Steps with the physics space's default gravity (the [code]physics/3d/default_gravity[/code] and [code]physics/3d/default_gravity_vector[/code] project settings) instead of [member fixed_gravity].

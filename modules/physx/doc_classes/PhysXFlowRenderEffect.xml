@@ -4,7 +4,7 @@
 		The world compositor [PhysXFlowSimulation3D] installs to draw its gas, provided by the PhysX module.
 	</brief_description>
 	<description>
-		One instance per world, installed by [PhysXFlowSimulation3D] when it draws volumetrically (never instanced from a scene). Scripts reach it through [method PhysXFlowSimulation3D.get_world_compositor] or the static [method get_world_compositor] to inspect which renderer backend the gas draws on.
+		One instance per world, installed by [PhysXFlowSimulation3D] when it draws volumetrically (never instanced from a scene). Scripts reach it through the static [method get_world_compositor] to inspect which renderer backend the gas draws on.
 	</description>
 	<tutorials>
 	</tutorials>
