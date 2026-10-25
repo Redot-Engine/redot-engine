@@ -285,6 +285,22 @@ public:
 	void set_kill_y(float p_y) { kill_y = p_y; }
 	float get_kill_y() const { return kill_y; }
 
+	// Debris clean-up (see the members' own comment): all off by default.
+	// get_piece_velocity: per-piece linear velocity diagnostics (like the
+	// vehicle stack's get_wheel_jounce); index order is stable within a
+	// frame only. Count comes from the existing get_piece_count().
+	Vector3 get_piece_velocity(int p_index) const;
+
+	void set_debris_lifetime(float p_seconds) { debris_lifetime = MAX(p_seconds, 0.0f); }
+	float get_debris_lifetime() const { return debris_lifetime; }
+	void set_debris_shrink(float p_seconds) { debris_shrink = MAX(p_seconds, 0.0f); }
+	float get_debris_shrink() const { return debris_shrink; }
+	void set_debris_freeze(bool p_freeze) { debris_freeze = p_freeze; }
+	bool get_debris_freeze() const { return debris_freeze; }
+	// True once a hit or damage has broken anything off (stays true; agrees
+	// with the chunks_fractured signal).
+	bool is_fractured() const { return fractured; }
+
 	// p_world_position: world-space damage origin (converted to this node's
 	// local space internally, since chunk geometry is authored local-space).
 	// Returns how many new rigid-body pieces this call produced. Each new
@@ -405,6 +421,18 @@ private:
 		RID mesh;
 		RID instance;
 		uint32_t chunk_index = 0; // which authored chunk this piece renders/simulates
+		// The piece's velocity as of the end of the previous physics tick --
+		// i.e. BEFORE the step whose contacts trigger an impact fracture. A
+		// split hands these to its children: the live velocity already holds
+		// that impact's push, which would fling far-away chunks with it.
+		Vector3 last_linear_velocity;
+		Vector3 last_angular_velocity;
+		// Debris lifecycle (debris_lifetime/debris_shrink/debris_freeze): the
+		// piece_clock when the piece spawned, whether it has been frozen
+		// (static) on sleep, and whether it is shrinking toward expiry.
+		double born = 0.0;
+		bool frozen = false;
+		bool shrinking = false;
 		// The live NvBlast actor this piece stands for (the intact placeholder
 		// records live_actors[0]; see _spawn_intact). Lets the kill_y cleanup
 		// retire an actor once none of its chunks has a live piece left (see
@@ -427,6 +455,16 @@ private:
 
 	bool loaded = false;
 	bool fractured = false;
+	// Debris clean-up, all off by default: a piece is removed debris_lifetime
+	// seconds after it spawned (0 = never), shrinking to nothing over the
+	// last debris_shrink seconds of them instead of popping out;
+	// debris_freeze makes a piece static once PhysX has put it to sleep (it
+	// stays, solid, but never moves or wakes again). Advanced in
+	// NOTIFICATION_INTERNAL_PHYSICS_PROCESS; pieces' birth times use it.
+	float debris_lifetime = 0.0f;
+	float debris_shrink = 0.0f;
+	bool debris_freeze = false;
+	double piece_clock = 0.0;
 
 	// PxTransform (a physics body's pose) never carries scale -- confirmed
 	// directly: a real repro with a (20, 10, 1) scaled destructible showed
@@ -497,6 +535,8 @@ private:
 	Vector3 _chunk_centroid_local(uint32_t p_chunk_index) const;
 	void _free_all_pieces();
 	void _sync_transforms();
+	// Each piece's live velocity as its last_* (end of a physics tick).
+	void _record_piece_velocities();
 	// dynamic-only, called every physics tick while still intact: reads the
 	// intact body's reported contacts and auto-triggers apply_radial_damage()
 	// if any single contact's impulse exceeds impact_strength.

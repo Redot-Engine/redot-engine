@@ -149,6 +149,15 @@ void PhysXDestructible3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_impact_radius"), &PhysXDestructible3D::get_impact_radius);
 	ClassDB::bind_method(D_METHOD("set_kill_y", "y"), &PhysXDestructible3D::set_kill_y);
 	ClassDB::bind_method(D_METHOD("get_kill_y"), &PhysXDestructible3D::get_kill_y);
+	ClassDB::bind_method(D_METHOD("set_debris_lifetime", "seconds"), &PhysXDestructible3D::set_debris_lifetime);
+	ClassDB::bind_method(D_METHOD("get_debris_lifetime"), &PhysXDestructible3D::get_debris_lifetime);
+	ClassDB::bind_method(D_METHOD("set_debris_shrink", "seconds"), &PhysXDestructible3D::set_debris_shrink);
+	ClassDB::bind_method(D_METHOD("get_debris_shrink"), &PhysXDestructible3D::get_debris_shrink);
+	ClassDB::bind_method(D_METHOD("set_debris_freeze", "freeze"), &PhysXDestructible3D::set_debris_freeze);
+	ClassDB::bind_method(D_METHOD("get_debris_freeze"), &PhysXDestructible3D::get_debris_freeze);
+	ClassDB::bind_method(D_METHOD("is_fractured"), &PhysXDestructible3D::is_fractured);
+	ClassDB::bind_method(D_METHOD("get_piece_count"), &PhysXDestructible3D::get_piece_count);
+	ClassDB::bind_method(D_METHOD("get_piece_velocity", "index"), &PhysXDestructible3D::get_piece_velocity);
 	ClassDB::bind_method(D_METHOD("apply_radial_damage", "world_position", "damage", "min_radius", "max_radius"), &PhysXDestructible3D::apply_radial_damage);
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "asset_path", PROPERTY_HINT_FILE, "*.asset"), "set_asset_path", "get_asset_path");
@@ -187,6 +196,9 @@ void PhysXDestructible3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "impact_damage_scale", PROPERTY_HINT_RANGE, "0,10,0.01"), "set_impact_damage_scale", "get_impact_damage_scale");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "impact_radius", PROPERTY_HINT_RANGE, "0.1,50,0.1"), "set_impact_radius", "get_impact_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "kill_y", PROPERTY_HINT_RANGE, "-10000,100,1,or_less,or_greater"), "set_kill_y", "get_kill_y");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "debris_lifetime", PROPERTY_HINT_RANGE, "0,600,0.1,or_greater,suffix:s"), "set_debris_lifetime", "get_debris_lifetime");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "debris_shrink", PROPERTY_HINT_RANGE, "0,60,0.1,or_greater,suffix:s"), "set_debris_shrink", "get_debris_shrink");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debris_freeze"), "set_debris_freeze", "get_debris_freeze");
 
 	BIND_ENUM_CONSTANT(GI_MODE_DISABLED);
 	BIND_ENUM_CONSTANT(GI_MODE_STATIC);
@@ -534,6 +546,7 @@ void PhysXDestructible3D::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			if (fractured) {
+				piece_clock += get_physics_process_delta_time();
 				_sync_transforms();
 			} else if (dynamic && pieces.size() == 1) {
 				// Keep the node's own Transform3D following the falling body too
@@ -566,6 +579,7 @@ void PhysXDestructible3D::_notification(int p_what) {
 					}
 				}
 			}
+			_record_piece_velocities();
 		} break;
 	}
 }
@@ -853,6 +867,7 @@ void PhysXDestructible3D::_reload() {
 	total_leaf_volume = 0.0;
 	loaded = false;
 	fractured = false;
+	piece_clock = 0.0;
 
 	if (!is_inside_world()) {
 		// Not in the tree/world yet -- NOTIFICATION_ENTER_WORLD will load and
@@ -983,6 +998,8 @@ void PhysXDestructible3D::_spawn_piece(uint32_t p_chunk_index, const Transform3D
 	piece.instance = instance;
 	piece.chunk_index = p_chunk_index;
 	piece.actor = p_actor;
+	piece.last_linear_velocity = p_linear_velocity;
+	piece.born = piece_clock;
 	pieces.push_back(piece);
 }
 
@@ -1095,6 +1112,33 @@ void PhysXDestructible3D::_free_pieces_of_actor(NvBlastActor *p_actor) {
 	actor_pieces.erase(p_actor);
 }
 
+Vector3 PhysXDestructible3D::get_piece_velocity(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, (int)pieces.size(), Vector3());
+	if (!pieces[p_index].body.is_valid()) {
+		return Vector3();
+	}
+	PhysicsDirectBodyState3D *state = PhysicsServer3D::get_singleton()->body_get_direct_state(pieces[p_index].body);
+	return state ? state->get_linear_velocity() : Vector3();
+}
+
+// Each piece's live velocity as its last_* -- called at the END of the
+// physics tick, so the value a later split inherits is from BEFORE that
+// split's triggering impact (the live velocity at fracture time already
+// holds the impact's own push, which would fling far-away chunks along).
+void PhysXDestructible3D::_record_piece_velocities() {
+	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
+	for (ChunkVisual &piece : pieces) {
+		if (!piece.body.is_valid()) {
+			continue;
+		}
+		PhysicsDirectBodyState3D *state = ps->body_get_direct_state(piece.body);
+		if (state) {
+			piece.last_linear_velocity = state->get_linear_velocity();
+			piece.last_angular_velocity = state->get_angular_velocity();
+		}
+	}
+}
+
 void PhysXDestructible3D::_sync_transforms() {
 	PhysicsServer3D *ps = PhysicsServer3D::get_singleton();
 	RenderingServer *rs = RenderingServer::get_singleton();
@@ -1131,10 +1175,49 @@ void PhysXDestructible3D::_sync_transforms() {
 			}
 			continue;
 		}
+		// Debris lifecycle (all optional, see the members' own comment).
+		const double age = piece_clock - piece.born;
+		if (debris_freeze && !piece.frozen &&
+				(bool)ps->body_get_state(piece.body, PhysicsServer3D::BODY_STATE_SLEEPING)) {
+			// Asleep: freeze it static. Solid forever, but never simulating
+			// or waking again -- a settled pile stops costing solver time.
+			piece.frozen = true;
+			ps->body_set_mode(piece.body, PhysicsServer3D::BODY_MODE_STATIC);
+		}
+		real_t shrink_scale = 1.0;
+		if (debris_lifetime > 0.0f && !piece.frozen) {
+			const double life = (double)debris_lifetime;
+			if (debris_shrink > 0.0f && !piece.shrinking && age >= life - (double)debris_shrink) {
+				// On its way out: static and non-colliding (nothing bumps
+				// into a piece that is disappearing), then shrink to nothing.
+				piece.shrinking = true;
+				ps->body_set_mode(piece.body, PhysicsServer3D::BODY_MODE_STATIC);
+				ps->body_set_collision_layer(piece.body, 0);
+			}
+			if (piece.shrinking) {
+				const double t = debris_shrink > 0.0f
+						? CLAMP((age - (life - (double)debris_shrink)) / (double)debris_shrink, 0.0, 1.0)
+						: 1.0;
+				shrink_scale = 1.0 - (real_t)t;
+			}
+			if (age >= life) {
+				// Lifetime over: same cleanup as the kill floor above.
+				NvBlastActor *removed_actor = piece.actor;
+				ps->free(piece.body);
+				ps->free(piece.shape);
+				rs->free(piece.instance);
+				rs->free(piece.mesh);
+				pieces.remove_at_unordered((uint32_t)i);
+				if (removed_actor && !_actor_has_live_piece(removed_actor)) {
+					_retire_actor(removed_actor);
+				}
+				continue;
+			}
+		}
 		// piece_transform.basis is a pure rotation (see spawn_scale's own note) -- every
 		// piece was authored from the same intact mesh at the same original
 		// scale, so the same spawn_scale applies to all of them here too.
-		piece_transform.basis = piece_transform.basis.scaled_local(spawn_scale);
+		piece_transform.basis = piece_transform.basis.scaled_local(spawn_scale * shrink_scale);
 		rs->instance_set_transform(piece.instance, piece_transform);
 	}
 }
@@ -1254,6 +1337,25 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 			continue;
 		}
 
+		// The predecessor's velocity as of the END of the previous physics
+		// tick -- i.e. BEFORE the step whose contacts triggered this split.
+		// The live velocity already holds that impact's own push; handing
+		// it to every child would fling far-away chunks along with the
+		// impact point (found in the standalone prototype: a rammed wall's
+		// far edge flew off with the ram). Children add their shatter kick
+		// on top of this base.
+		Vector3 base_linear;
+		for (const uint32_t piece_idx : actor_pieces[actor]) {
+			if (piece_idx < pieces.size() && pieces[piece_idx].body.is_valid()) {
+				base_linear = pieces[piece_idx].last_linear_velocity;
+				break;
+			}
+		}
+		if (base_linear.is_zero_approx() && !fractured && !pieces.is_empty() && pieces[0].body.is_valid()) {
+			// The intact placeholder records its velocity every tick too.
+			base_linear = pieces[0].last_linear_velocity;
+		}
+
 		// BLAST-1: this actor's previously-spawned pieces belong to chunks
 		// whose visibility the split just re-assigned — retire them before
 		// the successors spawn their own, or any chunk that stays visible
@@ -1314,6 +1416,9 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 						const real_t falloff = CLAMP(1.0 - dist / (real_t)p_max_radius, 0.0, 1.0);
 						piece_velocity = (dir + Vector3(0, 0.3, 0)).normalized() * shatter_speed * falloff;
 					}
+					// Momentum: the piece leaves with the predecessor's
+					// pre-impact velocity on top of its shatter kick.
+					piece_velocity += base_linear;
 				}
 				const uint32_t before = (uint32_t)pieces.size();
 				_spawn_piece(visible[v], get_global_transform(), piece_velocity, true, new_actor,
