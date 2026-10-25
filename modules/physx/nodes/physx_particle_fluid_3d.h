@@ -60,6 +60,14 @@ public:
 		SOLVER_PBD,
 		SOLVER_MPM,
 	};
+	// How the fluid draws: a sphere per particle (MultiMesh), a marched
+	// isosurface mesh, or a screen-space surface. Screen Space renders the
+	// particle stand-in until the compositor pass lands (module roadmap).
+	enum RenderMode {
+		RENDER_MODE_PARTICLES,
+		RENDER_MODE_ISOSURFACE,
+		RENDER_MODE_SCREEN_SPACE,
+	};
 
 protected:
 	// PhysXGranular3D overrides these to run the material as Drucker-Prager
@@ -144,6 +152,7 @@ private:
 	// PBD path: live material params (PxPBDMaterial). MPM path: adhesion has
 	// no counterpart; gravity_scale scales the solver gravity on (re)build.
 	float adhesion = 0.0f;
+	float surface_friction = 0.2f;
 	float gravity_scale = 1.0f;
 	float surface_tension = 0.006;
 	float cohesion = 0.02;
@@ -159,6 +168,7 @@ private:
 	// When true, PhysX marching-cubes a smooth triangle mesh from the particles
 	// (PxIsosurfaceExtractor) and this node draws it as an ArrayMesh.
 	bool surface_mesh = false;
+	bool screen_space_requested = false;
 	// Opt-in: feed PhysX per-particle anisotropy to the isosurface extractor.
 	// Crisper crests, but it needles fast particles, so keep it off while emitting.
 	bool surface_anisotropy = false;
@@ -207,6 +217,8 @@ private:
 
 protected:
 	void _notification(int p_what);
+	void _validate_property(PropertyInfo &p_property) const;
+	SolverBackend _shown_solver() const;
 	static void _bind_methods();
 
 public:
@@ -233,6 +245,8 @@ public:
 	float get_viscosity() const { return viscosity; }
 	void set_adhesion(float p_v);
 	float get_adhesion() const { return adhesion; }
+	void set_surface_friction(float p_v);
+	float get_surface_friction() const { return surface_friction; }
 	void set_gravity_scale(float p_v);
 	float get_gravity_scale() const { return gravity_scale; }
 
@@ -256,6 +270,10 @@ public:
 	void set_emission_velocity(const Vector3 &p_velocity);
 	Vector3 get_emission_velocity() const { return emission_velocity; }
 
+	void set_render_mode(RenderMode p_mode);
+	RenderMode get_render_mode() const { return screen_space_requested ? RENDER_MODE_SCREEN_SPACE : (surface_mesh ? RENDER_MODE_ISOSURFACE : RENDER_MODE_PARTICLES); }
+	// surface_mesh is the old switch: still loaded (true -> Isosurface), no
+	// longer shown or saved.
 	void set_surface_mesh(bool p_enabled);
 	bool is_surface_mesh() const { return surface_mesh; }
 	void set_surface_anisotropy(bool p_enabled);
@@ -301,3 +319,4 @@ public:
 };
 
 VARIANT_ENUM_CAST(PhysXParticleFluid3D::SolverBackend);
+VARIANT_ENUM_CAST(PhysXParticleFluid3D::RenderMode);

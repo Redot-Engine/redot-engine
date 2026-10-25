@@ -189,6 +189,11 @@ void initialize_physx_module(ModuleInitializationLevel p_level) {
 		// Script-facing runtime-file detection for the download-and-restart
 		// flow (scripts/tests can query the missing runtime files).
 		ClassDB::register_class<PhysXRuntimeManager>();
+#ifdef GODOT_PHYSX_FLOW
+			// World-compositor introspection (get_world_compositor); the
+			// effect installs itself, scripts only read it.
+			ClassDB::register_class<PhysXFlowRenderEffect>();
+#endif
 		// Viewport gizmos for the module's scene nodes, plus the Blast
 		// fracture dialog and the skinned-cloth max-distance paint tool.
 		EditorPlugins::add_by_type<PhysXEditorPlugin>();

@@ -1666,6 +1666,57 @@ void PhysXParticleFluid3D::set_adhesion(float p_v) {
 	_apply_params();
 }
 
+void PhysXParticleFluid3D::set_surface_friction(float p_v) {
+	surface_friction = MAX(p_v, 0.0f);
+	_apply_params();
+}
+
+void PhysXParticleFluid3D::set_render_mode(RenderMode p_mode) {
+	const RenderMode before = get_render_mode();
+	screen_space_requested = (p_mode == RENDER_MODE_SCREEN_SPACE);
+	set_surface_mesh(p_mode == RENDER_MODE_ISOSURFACE);
+	if (get_render_mode() != before) {
+		notify_property_list_changed();
+	}
+}
+
+// The solver whose settings the Inspector shows: the authored one, or what
+// Auto picks on this machine.
+PhysXParticleFluid3D::SolverBackend PhysXParticleFluid3D::_shown_solver() const {
+	if (solver != SOLVER_AUTO) {
+		return solver;
+	}
+	PhysXServer3D *server = PhysXServer3D::get_singleton();
+	const bool gpu_pbd = server && server->is_gpu_dynamics_enabled() && server->particle_fluid_supports_diffuse();
+	return gpu_pbd ? SOLVER_PBD : SOLVER_MPM;
+}
+
+void PhysXParticleFluid3D::_validate_property(PropertyInfo &p_property) const {
+	// The solver dropdown names what Auto picks here.
+	if (p_property.name == StringName("solver")) {
+		p_property.hint_string = _shown_solver() == SOLVER_PBD
+				? "Auto (PBD here),PBD (CUDA),MPM (compute)"
+				: "Auto (MPM here),PBD (CUDA),MPM (compute)";
+		return;
+	}
+	// Each solver's own settings only; hidden values still save.
+	const bool pbd = _shown_solver() == SOLVER_PBD;
+	static const char *pbd_only[] = { "surface_tension", "cohesion", "vorticity", "adhesion", "surface_friction", "surface_anisotropy", "foam_enabled", "foam_size", nullptr };
+	static const char *mpm_only[] = { "mpm_domain_size", "mpm_substeps", "mpm_colliders", nullptr };
+	for (int i = 0; pbd_only[i]; i++) {
+		if (p_property.name == StringName(pbd_only[i]) && !pbd) {
+			p_property.usage = p_property.usage & ~PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
+			return;
+		}
+	}
+	for (int i = 0; mpm_only[i]; i++) {
+		if (p_property.name == StringName(mpm_only[i]) && pbd) {
+			p_property.usage = p_property.usage & ~PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
+			return;
+		}
+	}
+}
+
 void PhysXParticleFluid3D::set_gravity_scale(float p_v) {
 	gravity_scale = p_v;
 	// PBD path: live (material param). MPM path: the solver's gravity is
@@ -1917,6 +1968,10 @@ void PhysXParticleFluid3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_viscosity", "viscosity"), &PhysXParticleFluid3D::set_viscosity);
 	ClassDB::bind_method(D_METHOD("set_adhesion", "v"), &PhysXParticleFluid3D::set_adhesion);
 	ClassDB::bind_method(D_METHOD("get_adhesion"), &PhysXParticleFluid3D::get_adhesion);
+	ClassDB::bind_method(D_METHOD("set_surface_friction", "v"), &PhysXParticleFluid3D::set_surface_friction);
+	ClassDB::bind_method(D_METHOD("get_surface_friction"), &PhysXParticleFluid3D::get_surface_friction);
+	ClassDB::bind_method(D_METHOD("set_render_mode", "mode"), &PhysXParticleFluid3D::set_render_mode);
+	ClassDB::bind_method(D_METHOD("get_render_mode"), &PhysXParticleFluid3D::get_render_mode);
 	ClassDB::bind_method(D_METHOD("set_gravity_scale", "scale"), &PhysXParticleFluid3D::set_gravity_scale);
 	ClassDB::bind_method(D_METHOD("get_gravity_scale"), &PhysXParticleFluid3D::get_gravity_scale);
 	ClassDB::bind_method(D_METHOD("get_viscosity"), &PhysXParticleFluid3D::get_viscosity);
@@ -1960,6 +2015,9 @@ void PhysXParticleFluid3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_foam_positions"), &PhysXParticleFluid3D::get_foam_positions);
 
 	BIND_ENUM_CONSTANT(SOLVER_AUTO);
+	BIND_ENUM_CONSTANT(RENDER_MODE_PARTICLES);
+	BIND_ENUM_CONSTANT(RENDER_MODE_ISOSURFACE);
+	BIND_ENUM_CONSTANT(RENDER_MODE_SCREEN_SPACE);
 	BIND_ENUM_CONSTANT(SOLVER_PBD);
 	BIND_ENUM_CONSTANT(SOLVER_MPM);
 
@@ -1982,7 +2040,8 @@ void PhysXParticleFluid3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "emission_radius", PROPERTY_HINT_RANGE, "0,2,0.001,or_greater,suffix:m"), "set_emission_radius", "get_emission_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "emission_velocity", PROPERTY_HINT_NONE, "suffix:m/s"), "set_emission_velocity", "get_emission_velocity");
 	ADD_GROUP("Rendering", "");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "surface_mesh"), "set_surface_mesh", "is_surface_mesh");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "render_mode", PROPERTY_HINT_ENUM, "Particles,Isosurface,Screen Space"), "set_render_mode", "get_render_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "surface_mesh", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_surface_mesh", "is_surface_mesh");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "surface_anisotropy"), "set_surface_anisotropy", "is_surface_anisotropy");
 	ADD_GROUP("Foam", "foam_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "foam_enabled"), "set_foam_enabled", "is_foam_enabled");
@@ -1996,6 +2055,7 @@ void PhysXParticleFluid3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "adhesion", PROPERTY_HINT_RANGE, "0,5,0.01,or_greater"), "set_adhesion", "get_adhesion");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity_scale", PROPERTY_HINT_RANGE, "-4,4,0.01"), "set_gravity_scale", "get_gravity_scale");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "surface_tension", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater"), "set_surface_tension", "get_surface_tension");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "surface_friction", PROPERTY_HINT_RANGE, "0,2,0.01,or_greater"), "set_surface_friction", "get_surface_friction");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "cohesion", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater"), "set_cohesion", "get_cohesion");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "vorticity", PROPERTY_HINT_RANGE, "0,50,0.01,or_greater"), "set_vorticity", "get_vorticity");
 }

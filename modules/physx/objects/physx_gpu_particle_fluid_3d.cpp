@@ -680,7 +680,7 @@ void PhysXGPUParticleFluid3D::_ensure_system() {
 	ERR_FAIL_NULL(scene);
 
 	px_material = physics->createPBDMaterial(
-			granular ? CLAMP((PxReal)granular_friction, 0.0f, 2.0f) : 0.05f, // friction
+			granular ? CLAMP((PxReal)granular_friction, 0.0f, 2.0f) : (PxReal)MAX(surface_friction, 0.0f), // friction
 			0.0f, // damping
 			granular ? 0.0f : (PxReal)adhesion,
 			granular ? 0.0f : (PxReal)viscosity,
@@ -762,6 +762,7 @@ void PhysXGPUParticleFluid3D::_apply_material() {
 	} else {
 		px_material->setViscosity((PxReal)viscosity);
 		px_material->setSurfaceTension((PxReal)surface_tension);
+		px_material->setFriction((PxReal)MAX(surface_friction, 0.0f));
 		px_material->setCohesion((PxReal)cohesion);
 		px_material->setAdhesion((PxReal)adhesion);
 		px_material->setVorticityConfinement((PxReal)vorticity);
@@ -786,6 +787,9 @@ void PhysXGPUParticleFluid3D::set_param(Param p_param, real_t p_value) {
 			break;
 		case PARAM_SURFACE_TENSION:
 			surface_tension = p_value;
+			break;
+		case PARAM_SURFACE_FRICTION:
+			surface_friction = p_value;
 			break;
 		case PARAM_COHESION:
 			cohesion = p_value;
@@ -815,6 +819,8 @@ real_t PhysXGPUParticleFluid3D::get_param(Param p_param) const {
 			return viscosity;
 		case PARAM_SURFACE_TENSION:
 			return surface_tension;
+		case PARAM_SURFACE_FRICTION:
+			return surface_friction;
 		case PARAM_COHESION:
 			return cohesion;
 		case PARAM_ADHESION:

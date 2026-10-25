@@ -20,6 +20,18 @@
 				Fractures [param mesh] into up to [param site_count] chunks using [param pattern]. [param seed] makes repeated calls deterministic. With [enum PhysXBlastAuthoring.FracturePattern] [constant PhysXBlastAuthoring.PATTERN_CUTOUT], the texture mask argument limits which regions may be cut. Returns the authored asset, or a valid asset with no chunks on failure.
 			</description>
 		</method>
+		<method name="get_last_error" qualifiers="const">
+			<return type="String" />
+			<description>
+				Why the last [method fracture_mesh] call returned null (empty when it succeeded).
+			</description>
+		</method>
+		<method name="get_last_warnings" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>
+				Anything the last [method fracture_mesh] call had to work around in the input: an inside-out mesh that was fractured with its triangles flipped, mesh-cleaner fallbacks, dropped non-solid parts.
+			</description>
+		</method>
 	</methods>
 	<constants>
 		<constant name="PATTERN_VORONOI" value="0" enum="FracturePattern">

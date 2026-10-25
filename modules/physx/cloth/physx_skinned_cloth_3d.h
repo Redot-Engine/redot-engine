@@ -90,14 +90,19 @@ class PhysXSkinnedCloth3D : public Node3D {
 	Vector<Transform3D> bind_poses;
 	struct Capsule {
 		// Automatic: between two bones' heads. From a physical bone: a
-		// capsule (or sphere) shape fixed to one bone.
+		// capsule (or sphere) shape fixed to one bone, or a box (is_box).
 		int bone_a = -1;
 		int bone_b = -1;
 		float radius_a = 0.05f;
 		float radius_b = 0.05f;
 		bool from_shape = false;
+		bool is_box = false;
+		bool active = true;
+		ObjectID shape_id; // the CollisionShape3D a from_shape record re-reads
+		ObjectID body_id; // the PhysicalBone3D carrying it
 		Transform3D shape_local; // bone space: body_offset * shape transform
 		float half_length = 0.0f; // along the shape's local Y
+		Vector3 half_extents; // is_box: the box's half extents
 	};
 	bool using_physical_bones = false;
 	Vector<Capsule> capsules;
@@ -119,6 +124,17 @@ class PhysXSkinnedCloth3D : public Node3D {
 	LocalVector<Transform3D> captured_capsule_poses_a; // per capsule, skeleton-local
 	LocalVector<Transform3D> captured_capsule_poses_b;
 	PackedFloat32Array captured_bones; // placed solver input: world-space bone matrices
+	// The simulated surface is drawn by the render twin; the source's own
+	// copy of it is hidden -- the whole node when the mesh has one surface,
+	// only that surface (an override material that draws nothing) when the
+	// mesh has others. The user's own override goes back when the cloth does.
+	bool hid_source_node = false;
+	int hidden_surface = -1;
+	Ref<Material> saved_surface_override;
+	static Ref<ShaderMaterial> hide_material;
+	void _hide_source(MeshInstance3D *p_source);
+	void _unhide_source();
+
 	bool has_capture = false;
 	uint64_t last_step_frame = 0;
 	double pending_delta = 0.0;
@@ -127,6 +143,10 @@ class PhysXSkinnedCloth3D : public Node3D {
 	void _disconnect_skeleton();
 	void _capture_pose(Skeleton3D *p_skeleton);
 	void _place_capture(Skeleton3D *p_skeleton);
+	// The live size and placement of a physical-bone shape; false (and
+	// inactive) when it is gone, disabled or no longer a shape the cloth
+	// collides with.
+	bool _read_shape(Capsule &r_c);
 	void _step();
 	void _late_step();
 	void _on_skeleton_updated();

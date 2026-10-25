@@ -51,7 +51,7 @@ layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 layout(set = 0, binding = 0, std140) uniform Params {
 	ivec4 counts; // x particles, y self-collision hash size (power of two), z substeps, w unused
-	ivec4 counts2; // x capsules, y texture width, z bones, w unused
+	ivec4 counts2; // x capsules, y texture width, z bones, w boxes
 	vec4 step; // x dt (substep), y damping (velocity kept per substep), z animation drive (fraction pulled to the target per substep), w stiffness
 	vec4 gravity; // xyz gravity (m/s^2), w thickness (m)
 	vec4 limits; // x tether slack (allowed stretch, e.g. 1.03), y tether stiffness, z capsule friction, w backstop distance (m, < 0 = off)
@@ -107,6 +107,9 @@ layout(set = 0, binding = 10, std430) restrict readonly buffer Tethers {
 };
 layout(set = 0, binding = 11, std430) restrict readonly buffer Capsules {
 	vec4 capsules[]; // per capsule: previous frame (a.xyz, ra), (b.xyz, rb), then this frame's
+};
+layout(set = 0, binding = 21, std430) restrict readonly buffer Boxes {
+	vec4 boxes[]; // per box (16 floats): world_to_local basis columns (origin in w), half extents, friction
 };
 layout(set = 0, binding = 12, std430) restrict readonly buffer AdjOffsets {
 	uint adj_offsets[]; // particle -> start in adj_pairs, count = next - this
@@ -192,6 +195,44 @@ vec2 closest_segments(vec3 p1, vec3 q1, vec3 p2, vec3 q2) {
 // crossed a capsule -- carried past a limb by the max-distance limit or by
 // the limb itself moving -- is stopped at the surface on the side it came
 // from, instead of ending up through the limb.
+// Keeps p outside the body boxes (oriented): the axes' lengths carry the
+// shape's scale, so the world_to_local basis already includes it. Per box
+// (4 vec4): world_to_local basis columns (origin components in w), then
+// half extents (xyz) and friction (w).
+void project_boxes(inout vec3 p, vec3 prev_p) {
+	float thickness = gravity.w;
+	for (int b = 0; b < counts2.w; b++) {
+		vec4 c0 = boxes[b * 4];
+		vec4 c1 = boxes[b * 4 + 1];
+		vec4 c2 = boxes[b * 4 + 2];
+		vec4 he = boxes[b * 4 + 3];
+		vec3 origin = vec3(c0.w, c1.w, c2.w);
+		mat3 w2l = mat3(c0.xyz, c1.xyz, c2.xyz);
+		mat3 l2w = transpose(w2l);
+		vec3 local_p = w2l * (p - origin);
+		vec3 local_prev = w2l * (prev_p - origin);
+		vec3 d = abs(local_p) - he.xyz - vec3(thickness);
+		if (d.x < 0.0 && d.y < 0.0 && d.z < 0.0) {
+			// Inside: push out along the least-penetrated face, on the side
+			// of the box the particle is on (its position, not its motion --
+			// an arriving particle's velocity points inward, and picking the
+			// face by it would shove the particle through to the far side).
+			int axis = (d.x > d.y) ? ((d.x > d.z) ? 0 : 2) : ((d.y > d.z) ? 1 : 2);
+			float side = local_p[axis] != 0.0 ? sign(local_p[axis])
+				: (local_prev[axis] != 0.0 ? sign(local_prev[axis]) : 1.0);
+			local_p[axis] = side * (he.xyz[axis] + thickness);
+			vec3 n = vec3(0.0);
+			n[axis] = side;
+			vec3 wn = l2w * n;
+			p = origin + l2w * local_p;
+			// Friction: bleed off tangential motion against the face.
+			vec3 v = p - prev_p;
+			vec3 vt = v - wn * dot(v, wn);
+			p -= vt * he.w;
+		}
+	}
+}
+
 void project_capsules(inout vec3 p, vec3 prev_p, float frac) {
 	float thickness = gravity.w;
 	for (int c = 0; c < counts2.x; c++) {
@@ -439,6 +480,7 @@ void main() {
 		// max distance allows (a leg swinging through a skirt), the cloth goes
 		// past the limit rather than letting the limb show through.
 		project_capsules(q, prev[i].xyz, pass.frac);
+		project_boxes(q, prev[i].xyz);
 		pos[i].xyz = q;
 		return;
 	}

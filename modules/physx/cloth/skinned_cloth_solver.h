@@ -54,10 +54,11 @@ public:
 	SafeFlag built;
 
 	static constexpr int MAX_CAPSULES = 64;
+	static constexpr int MAX_BOXES = 32;
 
 	RID shader, pipeline;
 	RID buf_params, buf_rest, buf_skin_idx, buf_skin_w, buf_bones, buf_target, buf_target_prev;
-	RID buf_pos, buf_prev, buf_constraints, buf_tethers, buf_capsules, buf_adj_offsets, buf_adj_pairs;
+	RID buf_pos, buf_prev, buf_constraints, buf_tethers, buf_capsules, buf_boxes, buf_adj_offsets, buf_adj_pairs;
 	RID tex_pos, tex_nrm;
 	RID buf_rest_normal, buf_target_normal;
 	RID buf_cell_head, buf_cell_next, buf_self_delta;
@@ -75,7 +76,7 @@ public:
 	void rt_build(Ref<SkinnedClothSolverGPU> p_self, PackedFloat32Array p_rest, PackedFloat32Array p_rest_normals, PackedInt32Array p_skin_idx, PackedFloat32Array p_skin_w,
 			PackedFloat32Array p_constraints, PackedInt32Array p_batch_offsets, PackedFloat32Array p_tethers,
 			PackedInt32Array p_adj_offsets, PackedInt32Array p_adj_pairs, int p_bone_count);
-	void rt_step(Ref<SkinnedClothSolverGPU> p_self, PackedFloat32Array p_bones, PackedFloat32Array p_capsules, PackedFloat32Array p_params, int p_substeps);
+	void rt_step(Ref<SkinnedClothSolverGPU> p_self, PackedFloat32Array p_bones, PackedFloat32Array p_capsules, PackedFloat32Array p_boxes, PackedFloat32Array p_params, int p_substeps);
 	void rt_reset(Ref<SkinnedClothSolverGPU> p_self);
 	void rt_free_buffers();
 	void rt_free(Ref<SkinnedClothSolverGPU> p_self);
@@ -115,7 +116,7 @@ public:
 	// p_bones: 16 floats (column-major mat4) per skin bind, world space.
 	// p_capsules: 16 floats per capsule -- previous frame (a.xyz, ra, b.xyz,
 	// rb) then this frame's -- world space, blended across the substeps.
-	void step(const PackedFloat32Array &p_bones, const PackedFloat32Array &p_capsules, double p_delta, int p_substeps, const Settings &p_settings);
+	void step(const PackedFloat32Array &p_bones, const PackedFloat32Array &p_capsules, const PackedFloat32Array &p_boxes, double p_delta, int p_substeps, const Settings &p_settings);
 	void reset();
 
 	RID get_position_texture_rd_rid() const;

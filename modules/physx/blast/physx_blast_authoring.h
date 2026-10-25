@@ -86,6 +86,12 @@ public:
 	};
 
 protected:
+	String last_error;
+	PackedStringArray last_warnings;
+	Ref<PhysXBlastAsset> _fail(const String &p_message);
+	void _error(const String &p_message);
+	void _warn(const String &p_message);
+
 	static void _bind_methods();
 
 public:
@@ -102,6 +108,10 @@ public:
 	// with a null p_mesh). Returns a null Ref on failure (mesh has no
 	// surfaces, cooking failed, etc).
 	Ref<PhysXBlastAsset> fracture_mesh(const Ref<Mesh> &p_mesh, int p_site_count, int p_seed, FracturePattern p_pattern = PATTERN_VORONOI, const Ref<Texture2D> &p_cutout_pattern = Ref<Texture2D>());
+	// The last fracture_mesh call's outcome: why it returned null (empty when
+	// it succeeded), and anything it had to work around in the input.
+	String get_last_error() const { return last_error; }
+	PackedStringArray get_last_warnings() const { return last_warnings; }
 };
 
 VARIANT_ENUM_CAST(PhysXBlastAuthoring::FracturePattern);

@@ -147,6 +147,12 @@
 		<member name="viscosity" type="float" setter="set_viscosity" getter="get_viscosity" default="0.01">
 			Resistance to flow. Higher values make the fluid thicker and slower, like honey.
 		</member>
+		<member name="render_mode" type="int" setter="set_render_mode" getter="get_render_mode" enum="PhysXParticleFluid3D.RenderMode" default="0">
+			How the fluid draws: [constant RENDER_MODE_PARTICLES] (a sphere per particle), [constant RENDER_MODE_ISOSURFACE] (a marched mesh) or [constant RENDER_MODE_SCREEN_SPACE]. [constant RENDER_MODE_SCREEN_SPACE] currently draws the particle stand-in -- the screen-space compositor pass is on the module roadmap.
+		</member>
+		<member name="surface_friction" type="float" setter="set_surface_friction" getter="get_surface_friction" default="0.2">
+			Friction against solids (PBD solver; no effect on the MPM solver).
+		</member>
 		<member name="adhesion" type="float" setter="set_adhesion" getter="get_adhesion" default="0.0">
 			How strongly particles stick to solids (PBD solver; no effect on the MPM solver).
 		</member>
@@ -158,6 +164,15 @@
 		</member>
 	</members>
 	<constants>
+		<constant name="RENDER_MODE_PARTICLES" value="0" enum="RenderMode">
+			A sphere per particle (MultiMesh).
+		</constant>
+		<constant name="RENDER_MODE_ISOSURFACE" value="1" enum="RenderMode">
+			A marched isosurface mesh.
+		</constant>
+		<constant name="RENDER_MODE_SCREEN_SPACE" value="2" enum="RenderMode">
+			A screen-space surface (particle stand-in until the compositor pass lands).
+		</constant>
 		<constant name="SOLVER_AUTO" value="0" enum="SolverBackend">
 			PBD when a CUDA device is available, MPM otherwise.
 		</constant>
