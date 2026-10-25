@@ -1734,8 +1734,10 @@ void PhysXVehicleServer::update(float p_step) {
 	ctx.setToDefault();
 	ctx.physxScene = px_scene;
 	ctx.gravity = px_scene->getGravity();
-	// Godot frame: forward -Z, up +Y (lateral -X for a proper right-handed frame).
-	// TODO: calibrate lateral sign against Godot's conventions.
+	// Godot frame: forward -Z, up +Y (lateral -X for a proper right-handed
+	// frame). Open item (unverifiable by the current suite, which only drives
+	// straight): a positive steer input must curve the chassis toward Godot's
+	// +X; flip latAxis if a curved-drive test ever shows the mirror image.
 	ctx.frame.lngAxis = physx::PxVehicleAxes::eNegZ;
 	ctx.frame.latAxis = physx::PxVehicleAxes::eNegX;
 	ctx.frame.vrtAxis = physx::PxVehicleAxes::ePosY;

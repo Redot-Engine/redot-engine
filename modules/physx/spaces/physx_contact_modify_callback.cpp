@@ -53,10 +53,11 @@ void PhysXContactModifyCallback::onContactModify(physx::PxContactModifyPair *p_p
 		physx::PxContactModifyPair &pair = p_pairs[p];
 
 		// PxContactModifyPair::actor[] can reference deleted actors in an
-		// async pipeline, but this engine steps synchronously (PxScene::simulate
-		// blocks the main thread, and actors are only released from it between
-		// steps), so the actors are guaranteed alive for the whole solve. The
-		// null checks below guard the "no userData attached" case, not deletion.
+		// async pipeline, but releases are deferred there: PhysXSpace3D::
+		// release_actor queues the PxActor::release() until after
+		// fetchResults, so an actor stays alive for the whole solve that
+		// still references it. The null checks below guard the "no userData
+		// attached" case, not deletion.
 		// Recover each side's signed bounce/friction from the actor userData.
 		float bounce[2] = { 0.0f, 0.0f };
 		float friction[2] = { 1.0f, 1.0f };

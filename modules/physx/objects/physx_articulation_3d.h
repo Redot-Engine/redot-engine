@@ -40,10 +40,10 @@
  * links (PxArticulationLink) and the reduced-coordinate joints between them,
  * and is simulated as a single actor inside a PxScene. This skeleton wires
  * the full lifecycle (create / add links / drives / limits / free) plus
- * world-pose readback for rendering. It is NOT a complete feature set:
- * tendons, mimics, aggregates and per-link shape transforms beyond the box
- * placeholder are not exposed yet (marked TODO). Per-link collision
- * filtering and link-level velocity queries ARE exposed (see the API list).
+ * world-pose readback for rendering. Scope limit: tendons, mimics,
+ * aggregates and per-link shape transforms beyond the box placeholder are
+ * not exposed (P4 in the module roadmap). Per-link collision filtering and
+ * link-level velocity queries ARE exposed (see the API list).
  *
  * API surface (via PhysXServer3D, all indices 0-based):
  *   articulation_create()                       -> RID

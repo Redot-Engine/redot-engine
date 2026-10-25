@@ -15,6 +15,28 @@ body, 0.68 vs 0.67 m/step on a deeply embedded one). Set a value > 0 (for
 example 4) as a comfort option for a gentler, slower pop-out — a 4 m/s cap
 cleared a deep embed about 7x slower than Godot in the same measurement.
 
+## Engine parity notes
+
+A few `PhysicsServer3D` observables have no PhysX counterpart and read as
+documented constants or round-trip caches:
+
+- `PhysicsServer3D.get_process_info(INFO_ISLAND_COUNT)` reports **0** — PhysX
+  exposes no island count (`PxSimulationStatistics` carries only pair, body,
+  shape and constraint counters).
+- `SPACE_PARAM_CONTACT_RECYCLE_RADIUS`, `SPACE_PARAM_CONTACT_DEFAULT_BIAS` and
+  `SPACE_PARAM_CONTACT_MAX_SEPARATION` are cached for `space_get_param`
+  round-trips only (PhysX's contact-offset machinery supersedes them; the
+  module warns once when they are set). `SPACE_PARAM_CONTACT_MAX_ALLOWED_PENETRATION`
+  maps onto shape rest offsets, applied only when set explicitly.
+- `physics/physx_3d/simulation/async_step` (default off) overlaps the solve
+  with the rest of the frame. Frames that mutate the scene (actor add/remove,
+  shape/transform writes, joint changes, scene queries) fetch the in-flight
+  solve first and lose the overlap for that frame. With `physics/3d/
+  run_on_separate_thread`, a module-API mutation arriving from a
+  non-simulating thread proceeds against the last fetched state and warns
+  once — keep async stepping off for projects that mutate module objects
+  (vehicles, GPU fluids/cloths, articulations) from scripts.
+
 ## Exporting a game
 
 The downloadable export templates do not contain this module, so export with a
