@@ -72,6 +72,7 @@ modules/physx/test/
 | `lifecycle` | `lifecycle_contracts_test.gd` | Overlap exits, joint survival across mode changes, mid-solve frees, area free during dispatch | yes |
 | `runtime` | `runtime_cost_test.gd` | Per-tick runtime cost ceiling of the server API surface | yes |
 | `cloth`   | `cloth_cpu_collision_test.gd` | CPU-fallback cloth behavior: a forced-`SIM_CPU` sheet must drape over a static ball and never fall through the world (rest_info depenetration contract; the GPU cloth path is covered by the `gpu` suite) | yes |
+| `platform_spin` | `platform_spin_test.gd` | A CharacterBody3D standing on a platform that stopped rotating and sleeps must not be carried | yes |
 | `flow`    | `flow_smoke_test.gd` | NVIDIA Flow end-to-end (needs a Vulkan runtime) | opt-in |
 | `gpu`     | `gpu_smoke_test.gd` | CUDA/GPU object family (needs a CUDA runtime) | opt-in |
 

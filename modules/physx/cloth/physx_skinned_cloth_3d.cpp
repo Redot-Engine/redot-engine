@@ -893,9 +893,9 @@ void PhysXSkinnedCloth3D::_capture_pose(Skeleton3D *p_skeleton) {
 // still-pose frame may still move through the world).
 void PhysXSkinnedCloth3D::_place_capture(Skeleton3D *p_skeleton) {
 	const Transform3D skel_xform = p_skeleton->get_global_transform();
-	captured_bones.resize(MAX(captured_poses.size(), 1) * 16);
+	captured_bones.resize(MAX(captured_poses.size(), 1U) * 16);
 	float *bw = captured_bones.ptrw();
-	for (int j = 0; j < captured_poses.size(); j++) {
+	for (uint32_t j = 0; j < captured_poses.size(); j++) {
 		put_mat4(bw + j * 16, skel_xform * captured_poses[j]);
 	}
 }

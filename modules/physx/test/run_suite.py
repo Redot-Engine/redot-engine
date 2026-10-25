@@ -43,7 +43,7 @@ VEHICLE_SCRIPTS = [
     "res://gdscript/vehicle_node_test.gd",
     "res://gdscript/vehicle_gearbox_test.gd",
     "res://gdscript/vehicle_direction_test.gd",
-	"res://gdscript/vehicle_exception_test.gd",
+    "res://gdscript/vehicle_exception_test.gd",
 ]
 ASYNC_SCRIPT = "res://gdscript/async_stress_test.gd"
 LIFECYCLE_SCRIPT = "res://gdscript/lifecycle_contracts_test.gd"
@@ -58,12 +58,26 @@ CLOTH_CPU_SCRIPT = "res://gdscript/cloth_cpu_collision_test.gd"
 CLOTH_GRAVITY_SCRIPT = "res://gdscript/skinned_cloth_gravity_test.gd"
 JOINT_MOTOR_SCRIPT = "res://gdscript/joint_motor_wake_test.gd"
 DEPEN_SCRIPT = "res://gdscript/depenetration_default_test.gd"
+PLATFORM_SPIN_SCRIPT = "res://gdscript/platform_spin_test.gd"
 
 # Suites run by "--suite all" (the default, blocking CI tier): everything
 # deterministic, CPU-only, and headless-safe. "flow" and "gpu" are opt-in —
 # they need a usable CUDA/Vulkan runtime on the machine running them — and
 # the CI job runs them as a separate, non-blocking step.
-DEFAULT_SUITES = ["csharp", "gdscript", "smoke", "blast", "vehicle", "async", "lifecycle", "runtime", "cloth", "joints", "depenetration"]
+DEFAULT_SUITES = [
+    "csharp",
+    "gdscript",
+    "smoke",
+    "blast",
+    "vehicle",
+    "async",
+    "lifecycle",
+    "runtime",
+    "cloth",
+    "joints",
+    "depenetration",
+    "platform_spin",
+]
 SUITES = {
     "csharp": [CSHARP_SCRIPT],
     "gdscript": [GDSCRIPT_SCRIPT],
@@ -79,6 +93,7 @@ SUITES = {
     "cloth": [CLOTH_CPU_SCRIPT, CLOTH_GRAVITY_SCRIPT],
     "joints": [JOINT_MOTOR_SCRIPT],
     "depenetration": [DEPEN_SCRIPT],
+    "platform_spin": [PLATFORM_SPIN_SCRIPT],
 }
 # Suites whose tests carry categories and can run one category per process.
 CATEGORIZABLE_SUITES = ("csharp", "gdscript")
