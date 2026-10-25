@@ -44,9 +44,16 @@
 // whose collision layer (query filter word0) is in the vehicle's mask. One
 // per vehicle: the query params point at it, so it lives in the vehicle
 // object itself.
+// Collision exceptions (physx_vehicle_exceptions.h): the vehicle's own word2
+// slot is paired in the shared registry with each excepted side's, so a
+// shape whose word2 is so paired is skipped -- a wheel never rides an
+// excepted body or vehicle.
 class PhysXWheelQueryFilter : public physx::PxQueryFilterCallback {
 public:
 	physx::PxU32 collision_mask = 1;
+	// The vehicle's own exception slot (physx_vehicle_exceptions.h), read
+	// through a pointer so a lazily allocated slot is seen without rewiring.
+	const physx::PxU32 *self_exception_slot = nullptr;
 
 	virtual physx::PxQueryHitType::Enum preFilter(
 			const physx::PxFilterData &,
@@ -60,6 +67,12 @@ public:
 		// not hold a wheel up either (see physx_filter_shader.h).
 		if (p_shape->getQueryFilterData().word3 & PHYSX_FILTER_FLAG_IS_AREA) {
 			return physx::PxQueryHitType::eNONE;
+		}
+		if (self_exception_slot != nullptr && *self_exception_slot != 0) {
+			const physx::PxU32 other_slot = p_shape->getQueryFilterData().word2;
+			if (other_slot != 0 && g_physx_soft_exceptions.has(*self_exception_slot, other_slot)) {
+				return physx::PxQueryHitType::eNONE;
+			}
 		}
 		return (p_shape->getQueryFilterData().word0 & collision_mask) ? physx::PxQueryHitType::eBLOCK : physx::PxQueryHitType::eNONE;
 	}

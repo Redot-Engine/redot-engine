@@ -67,6 +67,7 @@ PhysXTank3D::PhysXTank3D() {
 }
 
 PhysXTank3D::~PhysXTank3D() {
+	chassis_exceptions.dispose();
 	_destroy();
 	memdelete(impl);
 }
@@ -185,6 +186,12 @@ bool PhysXTank3D::_build() {
 
 	impl->scene = scene;
 	impl->built = true;
+	// Exceptions kept across rebuilds/world exits re-stamp the fresh hull
+	// shapes and re-wire the wheel filter.
+	if (chassis_exceptions.get_slot() != 0) {
+		chassis_exceptions.get_or_alloc_slot(impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>());
+		impl->vehicle.wheel_query_filter.self_exception_slot = chassis_exceptions.get_slot_ptr();
+	}
 	return true;
 }
 
@@ -486,10 +493,67 @@ void PhysXTank3D::_chassis_material_changed() {
 	}
 }
 
+void PhysXTank3D::_ensure_exception_synced() {
+	if (is_inside_world() && get_world_3d().is_valid()) {
+		PhysXServer3D *server = PhysXServer3D::get_singleton();
+		if (PhysXSpace3D *space = server->get_space(get_world_3d()->get_space())) {
+			space->ensure_synced();
+		}
+	}
+}
+
+void PhysXTank3D::apply_force_at_local_position(const Vector3 &p_force, const Vector3 &p_local_position) {
+	if (!impl->built) {
+		return;
+	}
+	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
+	ERR_FAIL_NULL(dynamic_body);
+	PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force),
+			godot_to_px(p_local_position), PxForceMode::eFORCE);
+}
+
+void PhysXTank3D::apply_torque(const Vector3 &p_torque) {
+	if (!impl->built) {
+		return;
+	}
+	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
+	ERR_FAIL_NULL(dynamic_body);
+	dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE);
+}
+
+void PhysXTank3D::add_collision_exception_with(Node *p_node) {
+	ERR_FAIL_NULL(p_node);
+	_ensure_exception_synced();
+	chassis_exceptions.add(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr, p_node);
+	if (impl->built) {
+		impl->vehicle.wheel_query_filter.self_exception_slot = chassis_exceptions.get_slot_ptr();
+	}
+}
+
+void PhysXTank3D::remove_collision_exception_with(Node *p_node) {
+	ERR_FAIL_NULL(p_node);
+	_ensure_exception_synced();
+	chassis_exceptions.remove(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr, p_node);
+}
+
+Array PhysXTank3D::get_collision_exceptions() const {
+	return chassis_exceptions.get_nodes();
+}
+
+uint32_t PhysXTank3D::vehicle_exception_slot_or_alloc() {
+	_ensure_exception_synced();
+	return chassis_exceptions.get_or_alloc_slot(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr);
+}
+
 void PhysXTank3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_AUTO);
 	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_CUSTOM);
 
+	ClassDB::bind_method(D_METHOD("apply_force_at_local_position", "force", "local_position"), &PhysXTank3D::apply_force_at_local_position);
+	ClassDB::bind_method(D_METHOD("apply_torque", "torque"), &PhysXTank3D::apply_torque);
+	ClassDB::bind_method(D_METHOD("add_collision_exception_with", "node"), &PhysXTank3D::add_collision_exception_with);
+	ClassDB::bind_method(D_METHOD("remove_collision_exception_with", "node"), &PhysXTank3D::remove_collision_exception_with);
+	ClassDB::bind_method(D_METHOD("get_collision_exceptions"), &PhysXTank3D::get_collision_exceptions);
 	ClassDB::bind_method(D_METHOD("set_mass", "mass"), &PhysXTank3D::set_mass);
 	ClassDB::bind_method(D_METHOD("get_mass"), &PhysXTank3D::get_mass);
 	ClassDB::bind_method(D_METHOD("set_moment_of_inertia", "moi"), &PhysXTank3D::set_moment_of_inertia);

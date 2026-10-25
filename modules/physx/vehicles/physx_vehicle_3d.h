@@ -35,6 +35,7 @@
 #include "core/math/vector3.h"
 #include "core/templates/local_vector.h"
 #include "scene/3d/node_3d.h"
+#include "physx_vehicle_exceptions.h"
 #include "scene/resources/physics_material.h"
 
 class PhysXVehicleWheel3D;
@@ -173,6 +174,24 @@ public:
 	Vector3 get_linear_velocity() const;
 	real_t get_forward_speed() const;
 
+	// RigidBody3D-style chassis control for autopilots and assists: a force's
+	// position is an offset from the chassis origin in world axes (off the
+	// center of mass it also turns the car). eFORCE: call every step to keep
+	// pushing. No-op while the vehicle is not built.
+	void apply_force_at_local_position(const Vector3 &p_force, const Vector3 &p_local_position);
+	void apply_torque(const Vector3 &p_torque);
+
+	// Collision exceptions, as PhysicsBody3D's: the car and p_node (a
+	// PhysicsBody3D or another PhysX vehicle node) pass through each other,
+	// wheels included. The chassis has no server identity, so these ride the
+	// shared word2 slot registry (chassis contacts) and the wheel raycast
+	// filter (wheels) -- see physx_vehicle_exceptions.h.
+	void add_collision_exception_with(Node *p_node);
+	void remove_collision_exception_with(Node *p_node);
+	Array get_collision_exceptions() const;
+	// The other side of a vehicle-vs-vehicle exception resolves through this.
+	uint32_t vehicle_exception_slot_or_alloc();
+
 	// Diagnostics -- see PhysXVehicleProbe's own identical methods for
 	// what these mean. wheel index here matches this node's own `wheels`
 	// child-registration order (NOT the FL/FR/RL/RR canonical order the
@@ -260,6 +279,8 @@ private:
 	uint32_t collision_layer = 1;
 	uint32_t collision_mask = 1;
 	Ref<PhysicsMaterial> physics_material_override;
+	void _ensure_exception_synced();
+	PhysXVehicleExceptions chassis_exceptions;
 
 	// Opaque pointer to the real PxVehicle2 composition (kept out of this
 	// header so nothing outside physx_vehicle_3d.cpp needs vehicle/PxVehicleAPI.h).

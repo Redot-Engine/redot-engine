@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "physx_vehicle_exceptions.h"
 #include "core/math/vector3.h"
 #include "core/templates/local_vector.h"
 #include "scene/3d/node_3d.h"
@@ -130,6 +131,21 @@ public:
 	Vector3 get_linear_velocity() const;
 	Vector3 get_angular_velocity() const;
 	real_t get_forward_speed() const;
+
+	// RigidBody3D-style chassis control for autopilots and assists: a force's
+	// position is an offset from the hull origin in world axes. eFORCE: call
+	// every step to keep pushing. No-op while the tank is not built.
+	void apply_force_at_local_position(const Vector3 &p_force, const Vector3 &p_local_position);
+	void apply_torque(const Vector3 &p_torque);
+
+	// Collision exceptions, as PhysicsBody3D's: the tank and p_node (a
+	// PhysicsBody3D or another PhysX vehicle node) pass through each other,
+	// wheels included -- see physx_vehicle_exceptions.h.
+	void add_collision_exception_with(Node *p_node);
+	void remove_collision_exception_with(Node *p_node);
+	Array get_collision_exceptions() const;
+	// The other side of a vehicle-vs-vehicle exception resolves through this.
+	uint32_t vehicle_exception_slot_or_alloc();
 	Vector3 get_up() const;
 	Vector3 get_forward() const;
 
@@ -162,6 +178,8 @@ private:
 	// header so nothing outside physx_tank_3d.cpp needs vehicle/PxVehicleAPI.h).
 	struct Impl;
 	Impl *impl = nullptr;
+	void _ensure_exception_synced();
+	PhysXVehicleExceptions chassis_exceptions;
 
 	// Unlike PhysXVehicle3D/PhysXMotorcycle3D (exactly 4 or 2 wheels
 	// required, so they only ever build once), a tank's wheel count varies

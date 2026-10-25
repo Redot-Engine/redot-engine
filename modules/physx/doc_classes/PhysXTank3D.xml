@@ -12,6 +12,41 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="apply_force_at_local_position">
+			<return type="void" />
+			<param index="0" name="force" type="Vector3" />
+			<param index="1" name="local_position" type="Vector3" />
+			<description>
+				Applies a world-space [param force] at [param local_position] (an offset from the hull origin, in the hull's own frame) for this physics step, as [method RigidBody3D.apply_force] -- off the center of mass it also turns the tank. Call it every step to keep pushing. No-op while the tank is not built.
+			</description>
+		</method>
+		<method name="apply_torque">
+			<return type="void" />
+			<param index="0" name="torque" type="Vector3" />
+			<description>
+				Applies a world-space [param torque] to the hull for this physics step, as [method RigidBody3D.apply_torque]. Call it every step to keep turning. No-op while the tank is not built.
+			</description>
+		</method>
+		<method name="add_collision_exception_with">
+			<return type="void" />
+			<param index="0" name="node" type="Node" />
+			<description>
+				Stops the tank and [param node] (a [PhysicsBody3D] or another PhysX vehicle) colliding: they pass through each other, wheels included, as with [method PhysicsBody3D.add_collision_exception_with].
+			</description>
+		</method>
+		<method name="remove_collision_exception_with">
+			<return type="void" />
+			<param index="0" name="node" type="Node" />
+			<description>
+				Removes an exception added with [method add_collision_exception_with].
+			</description>
+		</method>
+		<method name="get_collision_exceptions" qualifiers="const">
+			<return type="Node[]" />
+			<description>
+				The bodies and vehicles this tank has collision exceptions with.
+			</description>
+		</method>
 		<method name="get_actor_position" qualifiers="const">
 			<return type="Vector3" />
 			<description>

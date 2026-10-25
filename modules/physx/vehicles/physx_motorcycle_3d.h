@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include "physx_vehicle_exceptions.h"
 #include "core/math/vector3.h"
 #include "core/templates/local_vector.h"
 #include "scene/3d/node_3d.h"
@@ -140,6 +141,16 @@ public:
 	// set_angular_velocity() every physics tick to keep the bike upright.
 	void apply_torque_impulse(const Vector3 &p_impulse);
 	void apply_force_at_local_position(const Vector3 &p_force, const Vector3 &p_local_position);
+	void apply_torque(const Vector3 &p_torque);
+
+	// Collision exceptions, as PhysicsBody3D's: the bike and p_node (a
+	// PhysicsBody3D or another PhysX vehicle node) pass through each other,
+	// wheels included -- see physx_vehicle_exceptions.h.
+	void add_collision_exception_with(Node *p_node);
+	void remove_collision_exception_with(Node *p_node);
+	Array get_collision_exceptions() const;
+	// The other side of a vehicle-vs-vehicle exception resolves through this.
+	uint32_t vehicle_exception_slot_or_alloc();
 	void set_angular_velocity(const Vector3 &p_angular_velocity);
 	Vector3 get_angular_velocity() const;
 	Vector3 get_up() const;
@@ -189,6 +200,8 @@ private:
 	// vehicle/PxVehicleAPI.h).
 	struct Impl;
 	Impl *impl = nullptr;
+	void _ensure_exception_synced();
+	PhysXVehicleExceptions chassis_exceptions;
 
 	void _rebuild_if_live();
 	bool _build();

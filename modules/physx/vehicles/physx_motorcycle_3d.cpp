@@ -70,6 +70,7 @@ PhysXMotorcycle3D::PhysXMotorcycle3D() {
 }
 
 PhysXMotorcycle3D::~PhysXMotorcycle3D() {
+	chassis_exceptions.dispose();
 	_destroy();
 	memdelete(impl);
 }
@@ -207,6 +208,12 @@ bool PhysXMotorcycle3D::_build() {
 
 	impl->scene = scene;
 	impl->built = true;
+	// Exceptions kept across rebuilds/world exits re-stamp the fresh chassis
+	// shapes and re-wire the wheel filter.
+	if (chassis_exceptions.get_slot() != 0) {
+		chassis_exceptions.get_or_alloc_slot(impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>());
+		impl->vehicle.wheel_query_filter.self_exception_slot = chassis_exceptions.get_slot_ptr();
+	}
 	return true;
 }
 
@@ -626,10 +633,56 @@ void PhysXMotorcycle3D::_chassis_material_changed() {
 	}
 }
 
+void PhysXMotorcycle3D::_ensure_exception_synced() {
+	if (is_inside_world() && get_world_3d().is_valid()) {
+		PhysXServer3D *server = PhysXServer3D::get_singleton();
+		if (PhysXSpace3D *space = server->get_space(get_world_3d()->get_space())) {
+			space->ensure_synced();
+		}
+	}
+}
+
+void PhysXMotorcycle3D::apply_torque(const Vector3 &p_torque) {
+	if (!impl->built) {
+		return;
+	}
+	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
+	ERR_FAIL_NULL(dynamic_body);
+	dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE);
+}
+
+void PhysXMotorcycle3D::add_collision_exception_with(Node *p_node) {
+	ERR_FAIL_NULL(p_node);
+	_ensure_exception_synced();
+	chassis_exceptions.add(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr, p_node);
+	if (impl->built) {
+		impl->vehicle.wheel_query_filter.self_exception_slot = chassis_exceptions.get_slot_ptr();
+	}
+}
+
+void PhysXMotorcycle3D::remove_collision_exception_with(Node *p_node) {
+	ERR_FAIL_NULL(p_node);
+	_ensure_exception_synced();
+	chassis_exceptions.remove(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr, p_node);
+}
+
+Array PhysXMotorcycle3D::get_collision_exceptions() const {
+	return chassis_exceptions.get_nodes();
+}
+
+uint32_t PhysXMotorcycle3D::vehicle_exception_slot_or_alloc() {
+	_ensure_exception_synced();
+	return chassis_exceptions.get_or_alloc_slot(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr);
+}
+
 void PhysXMotorcycle3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_AUTO);
 	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_CUSTOM);
 
+	ClassDB::bind_method(D_METHOD("apply_torque", "torque"), &PhysXMotorcycle3D::apply_torque);
+	ClassDB::bind_method(D_METHOD("add_collision_exception_with", "node"), &PhysXMotorcycle3D::add_collision_exception_with);
+	ClassDB::bind_method(D_METHOD("remove_collision_exception_with", "node"), &PhysXMotorcycle3D::remove_collision_exception_with);
+	ClassDB::bind_method(D_METHOD("get_collision_exceptions"), &PhysXMotorcycle3D::get_collision_exceptions);
 	ClassDB::bind_method(D_METHOD("set_mass", "mass"), &PhysXMotorcycle3D::set_mass);
 	ClassDB::bind_method(D_METHOD("get_mass"), &PhysXMotorcycle3D::get_mass);
 	ClassDB::bind_method(D_METHOD("set_moment_of_inertia", "moi"), &PhysXMotorcycle3D::set_moment_of_inertia);

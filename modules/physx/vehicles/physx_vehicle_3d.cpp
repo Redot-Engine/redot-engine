@@ -70,6 +70,7 @@ PhysXVehicle3D::PhysXVehicle3D() {
 
 PhysXVehicle3D::~PhysXVehicle3D() {
 	_destroy();
+	chassis_exceptions.dispose();
 	memdelete(impl);
 }
 
@@ -226,10 +227,19 @@ bool PhysXVehicle3D::_build() {
 
 	impl->scene = scene;
 	impl->built = true;
+	// Exceptions added before this build (or kept across a rebuild/world exit)
+	// re-stamp the fresh chassis shapes and re-wire the wheel filter.
+	if (chassis_exceptions.get_slot() != 0) {
+		chassis_exceptions.get_or_alloc_slot(impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>());
+		impl->vehicle.wheel_query_filter.self_exception_slot = chassis_exceptions.get_slot_ptr();
+	}
 	return true;
 }
 
 void PhysXVehicle3D::_destroy() {
+	// chassis_exceptions deliberately survives: exceptions are node config,
+	// and _destroy also runs on rebuilds/world exits (the fresh chassis is
+	// re-stamped by _build when a slot exists).
 	if (impl->built) {
 		if (impl->scene) {
 			impl->scene->removeActor(*impl->vehicle.physxActor.rigidBody);
@@ -791,10 +801,69 @@ void PhysXVehicle3D::_validate_property(PropertyInfo &p_property) const {
 	}
 }
 
+void PhysXVehicle3D::apply_force_at_local_position(const Vector3 &p_force, const Vector3 &p_local_position) {
+	if (!impl->built) {
+		return;
+	}
+	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
+	ERR_FAIL_NULL(dynamic_body);
+	// eFORCE (not eIMPULSE): meant to be applied continuously across ticks
+	// (autopilot steering, docking assists), like RigidBody3D.apply_force.
+	PxRigidBodyExt::addForceAtLocalPos(*dynamic_body, godot_to_px(p_force),
+			godot_to_px(p_local_position), PxForceMode::eFORCE);
+}
+
+void PhysXVehicle3D::apply_torque(const Vector3 &p_torque) {
+	if (!impl->built) {
+		return;
+	}
+	PxRigidDynamic *dynamic_body = impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>();
+	ERR_FAIL_NULL(dynamic_body);
+	dynamic_body->addTorque(godot_to_px(p_torque), PxForceMode::eFORCE);
+}
+
+void PhysXVehicle3D::_ensure_exception_synced() {
+	if (is_inside_world() && get_world_3d().is_valid()) {
+		PhysXServer3D *server = PhysXServer3D::get_singleton();
+		if (PhysXSpace3D *space = server->get_space(get_world_3d()->get_space())) {
+			space->ensure_synced();
+		}
+	}
+}
+
+void PhysXVehicle3D::add_collision_exception_with(Node *p_node) {
+	ERR_FAIL_NULL(p_node);
+	_ensure_exception_synced();
+	chassis_exceptions.add(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr, p_node);
+	if (impl->built) {
+		impl->vehicle.wheel_query_filter.self_exception_slot = chassis_exceptions.get_slot_ptr();
+	}
+}
+
+void PhysXVehicle3D::remove_collision_exception_with(Node *p_node) {
+	ERR_FAIL_NULL(p_node);
+	_ensure_exception_synced();
+	chassis_exceptions.remove(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr, p_node);
+}
+
+Array PhysXVehicle3D::get_collision_exceptions() const {
+	return chassis_exceptions.get_nodes();
+}
+
+uint32_t PhysXVehicle3D::vehicle_exception_slot_or_alloc() {
+	_ensure_exception_synced();
+	return chassis_exceptions.get_or_alloc_slot(impl->built ? impl->vehicle.physxActor.rigidBody->is<PxRigidDynamic>() : nullptr);
+}
+
 void PhysXVehicle3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_AUTO);
 	BIND_ENUM_CONSTANT(CENTER_OF_MASS_MODE_CUSTOM);
 
+	ClassDB::bind_method(D_METHOD("apply_force_at_local_position", "force", "local_position"), &PhysXVehicle3D::apply_force_at_local_position);
+	ClassDB::bind_method(D_METHOD("apply_torque", "torque"), &PhysXVehicle3D::apply_torque);
+	ClassDB::bind_method(D_METHOD("add_collision_exception_with", "node"), &PhysXVehicle3D::add_collision_exception_with);
+	ClassDB::bind_method(D_METHOD("remove_collision_exception_with", "node"), &PhysXVehicle3D::remove_collision_exception_with);
+	ClassDB::bind_method(D_METHOD("get_collision_exceptions"), &PhysXVehicle3D::get_collision_exceptions);
 	ClassDB::bind_method(D_METHOD("set_mass", "mass"), &PhysXVehicle3D::set_mass);
 	ClassDB::bind_method(D_METHOD("get_mass"), &PhysXVehicle3D::get_mass);
 	ClassDB::bind_method(D_METHOD("set_moment_of_inertia", "moi"), &PhysXVehicle3D::set_moment_of_inertia);

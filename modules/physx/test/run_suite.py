@@ -42,6 +42,7 @@ VEHICLE_SCRIPTS = [
     "res://gdscript/vehicle_node_test.gd",
     "res://gdscript/vehicle_gearbox_test.gd",
     "res://gdscript/vehicle_direction_test.gd",
+	"res://gdscript/vehicle_exception_test.gd",
 ]
 ASYNC_SCRIPT = "res://gdscript/async_stress_test.gd"
 LIFECYCLE_SCRIPT = "res://gdscript/lifecycle_contracts_test.gd"
