@@ -202,7 +202,7 @@ void postprocess_nav_mesh(NavigationMesh *nav_mesh) {
 void BakerLODDialog::setup_layout() {
 	set_title("Bake terrain mesh");
 	set_position(Point2i{ 0, 36 });
-	set_size(Size2i{ 430, 155 });
+	set_size(Size2i{ 560, 160 });
 
 	_margin = memnew(MarginContainer);
 	_margin->set_name("MarginContainer");
@@ -241,7 +241,7 @@ void BakerLODDialog::setup_layout() {
 	_description_label = memnew(Label);
 	_description_label->set_name("DescriptionLabel");
 	_description_label->set_unique_name_in_owner(true);
-	_description_label->set_custom_minimum_size(Size2{ 380, 75 }); // needed to avoid a tall dialog https://github.com/godotengine/godot/issues/121601
+	_description_label->set_custom_minimum_size(Size2{ 380, 75 }); // needed to avoid a tall dialog: see https://github.com/godotengine/godot/issues/121601
 	_description_label->set_h_size_flags(Control::SIZE_FILL | Control::SIZE_EXPAND);
 	_description_label->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
 	_vbox->add_child(_description_label);
@@ -299,7 +299,7 @@ void Baker::popup(const String &descr, const Callable &method) {
 	if (auto terrain = _plugin->get_terrain(); terrain) {
 		_bake_method = method;
 		_bake_lod_dlg->set_description(descr);
-		_bake_lod_dlg->popup_centered(Size2i{ 430, 155 });
+		_bake_lod_dlg->popup_centered(Size2i{ 560, 160 });
 	}
 }
 
