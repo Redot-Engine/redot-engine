@@ -56,8 +56,8 @@ struct PhysXRuntimeLibrary {
 
 void PhysXExportPlugin::_export_begin(const HashSet<String> &p_features, bool p_debug, const String &p_path, int p_flags) {
 	const bool windows = p_features.has("windows");
-	const bool linux = p_features.has("linux");
-	if (!windows && !linux) {
+	const bool is_linux = p_features.has("linux");
+	if (!windows && !is_linux) {
 		return; // The module's runtime libraries are only built for Windows and Linux.
 	}
 
