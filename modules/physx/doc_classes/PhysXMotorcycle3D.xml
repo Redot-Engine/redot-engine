@@ -12,31 +12,11 @@
 	<tutorials>
 	</tutorials>
 	<methods>
-		<method name="apply_torque">
-			<return type="void" />
-			<param index="0" name="torque" type="Vector3" />
-			<description>
-				Applies a world-space [param torque] to the chassis for this physics step, as [method RigidBody3D.apply_torque]. Call it every step to keep turning. No-op while the bike is not built.
-			</description>
-		</method>
 		<method name="add_collision_exception_with">
 			<return type="void" />
 			<param index="0" name="node" type="Node" />
 			<description>
 				Stops the bike and [param node] (a [PhysicsBody3D] or another PhysX vehicle) colliding: they pass through each other, wheels included, as with [method PhysicsBody3D.add_collision_exception_with].
-			</description>
-		</method>
-		<method name="remove_collision_exception_with">
-			<return type="void" />
-			<param index="0" name="node" type="Node" />
-			<description>
-				Removes an exception added with [method add_collision_exception_with].
-			</description>
-		</method>
-		<method name="get_collision_exceptions" qualifiers="const">
-			<return type="Node[]" />
-			<description>
-				The bodies and vehicles this bike has collision exceptions with.
 			</description>
 		</method>
 		<method name="apply_force_at_local_position">
@@ -45,6 +25,13 @@
 			<param index="1" name="local_position" type="Vector3" />
 			<description>
 				Applies a continuous world-space [param force] at [param local_position] (in the body's own local/rotated frame, e.g. [member Node3D.position] of a wheel child) -- useful for a script-side balance controller to push at a specific wheel's contact point, such as simulating a rear-wheel slide under hard braking.
+			</description>
+		</method>
+		<method name="apply_torque">
+			<return type="void" />
+			<param index="0" name="torque" type="Vector3" />
+			<description>
+				Applies a world-space [param torque] to the chassis for this physics step, as [method RigidBody3D.apply_torque]. Call it every step to keep turning. No-op while the bike is not built.
 			</description>
 		</method>
 		<method name="apply_torque_impulse">
@@ -64,6 +51,12 @@
 			<return type="Vector3" />
 			<description>
 				Current world-space angular velocity of the chassis -- read this every tick in a balance controller to measure the current roll/pitch/yaw rate.
+			</description>
+		</method>
+		<method name="get_collision_exceptions" qualifiers="const">
+			<return type="Array" />
+			<description>
+				The bodies and vehicles this bike has collision exceptions with.
 			</description>
 		</method>
 		<method name="get_forward" qualifiers="const">
@@ -156,6 +149,13 @@
 			<return type="bool" />
 			<description>
 				Returns whether the underlying PhysX vehicle actor is currently sleeping.
+			</description>
+		</method>
+		<method name="remove_collision_exception_with">
+			<return type="void" />
+			<param index="0" name="node" type="Node" />
+			<description>
+				Removes an exception added with [method add_collision_exception_with].
 			</description>
 		</method>
 		<method name="set_angular_velocity">

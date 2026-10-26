@@ -9,23 +9,6 @@
 	<tutorials>
 	</tutorials>
 	<methods>
-		<method name="recenter">
-			<return type="void" />
-			<param index="0" name="world_position" type="Vector3" />
-			<description>
-				Moves the simulated square to [param world_position] (its XZ; this node's height is kept) [b]without a rebuild[/b]: the mesh, the FFT ocean and every texture stay bound, so a square following the camera never flashes. The ripples are cleared (the old square's heights are not the new one's). A shaped surface ([member surface_mesh]) or per-cell seabed is baked in node-local space, so those still rebuild.
-			</description>
-		</method>
-		<method name="set_sea_state">
-			<return type="void" />
-			<param index="0" name="wind_speed" type="float" />
-			<param index="1" name="wind_direction" type="Vector2" />
-			<param index="2" name="wave_amplitude" type="float" />
-			<param index="3" name="fetch" type="float" />
-			<description>
-				Wind, direction, wave height and fetch at once -- [b]one[/b] in-place spectrum update on a built solver (no rebuild; the waves keep their phases). The individual [member wind_speed] / [member wind_direction] / [member wave_amplitude] / [member fetch] setters share the same in-place path.
-			</description>
-		</method>
 		<method name="clear_sphere">
 			<return type="void" />
 			<param index="0" name="owner" type="int" />
@@ -69,6 +52,16 @@
 				Returns the fetch length actually used by the ocean spectrum (auto-estimated from [member wind_speed] when [member fetch] is [code]0.0[/code]).
 			</description>
 		</method>
+		<method name="get_grid_center" qualifiers="const">
+			<return type="Vector2" />
+			<description>
+			</description>
+		</method>
+		<method name="is_solver_available" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
 		<method name="is_wet" qualifiers="const">
 			<return type="bool" />
 			<param index="0" name="world_pos" type="Vector3" />
@@ -76,11 +69,28 @@
 				Returns [code]true[/code] if [param world_pos] lies inside the wet-sand band (recently washed by swash).
 			</description>
 		</method>
+		<method name="recenter">
+			<return type="void" />
+			<param index="0" name="world_position" type="Vector3" />
+			<description>
+				Moves the simulated square to [param world_position] (its XZ; this node's height is kept) [b]without a rebuild[/b]: the mesh, the FFT ocean and every texture stay bound, so a square following the camera never flashes. The ripples are cleared (the old square's heights are not the new one's). A shaped surface ([member surface_mesh]) or per-cell seabed is baked in node-local space, so those still rebuild.
+			</description>
+		</method>
 		<method name="sample_height" qualifiers="const">
 			<return type="float" />
 			<param index="0" name="world_pos" type="Vector3" />
 			<description>
 				Returns the displaced water height at [param world_pos] including waves and interactive ripples.
+			</description>
+		</method>
+		<method name="set_sea_state">
+			<return type="void" />
+			<param index="0" name="wind_speed" type="float" />
+			<param index="1" name="wind_direction" type="Vector2" />
+			<param index="2" name="wave_amplitude" type="float" />
+			<param index="3" name="fetch" type="float" />
+			<description>
+				Wind, direction, wave height and fetch at once -- [b]one[/b] in-place spectrum update on a built solver (no rebuild; the waves keep their phases). The individual [member wind_speed] / [member wind_direction] / [member wave_amplitude] / [member fetch] setters share the same in-place path.
 			</description>
 		</method>
 		<method name="submit_impulse">
@@ -104,7 +114,7 @@
 		</method>
 	</methods>
 	<members>
-		<member name="caustics_enabled" type="bool" setter="set_caustics_enabled" getter="get_caustics_enabled" default="true">
+		<member name="caustics_enabled" type="bool" setter="set_caustics_enabled" getter="get_caustics_enabled" default="false">
 			Renders refracted-light caustics on the seabed.
 		</member>
 		<member name="caustics_reference_depth" type="float" setter="set_caustics_reference_depth" getter="get_caustics_reference_depth" default="2.5">

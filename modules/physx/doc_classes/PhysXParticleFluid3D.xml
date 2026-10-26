@@ -68,6 +68,9 @@
 		</method>
 	</methods>
 	<members>
+		<member name="adhesion" type="float" setter="set_adhesion" getter="get_adhesion" default="0.0">
+			How strongly particles stick to solids (PBD solver; no effect on the MPM solver).
+		</member>
 		<member name="cohesion" type="float" setter="set_cohesion" getter="get_cohesion" default="0.02">
 			How strongly particles clump together. Higher values give a more gel-like fluid.
 		</member>
@@ -101,6 +104,9 @@
 		<member name="foam_threshold" type="float" setter="set_foam_threshold" getter="get_foam_threshold" default="300.0">
 			How much foam the fluid produces where it is agitated. Lower values produce foam more readily. Only used when [member foam_enabled] is set. The scale is solver-dependent: on the MPM solver this is the master spawn scale — the expected foam particles per fluid particle per second at full agitation — computed over potentials that auto-normalize against the scene's recent splash intensity, so the value holds across scenes (roughly the PBD value divided by 100); on the PBD solver it is NVIDIA's raw diffuse-potential threshold. Re-tune when switching solvers.
 		</member>
+		<member name="gravity_scale" type="float" setter="set_gravity_scale" getter="get_gravity_scale" default="1.0">
+			Multiplier on gravity: negative values float the fluid up. Live on the PBD solver; on the MPM solver it applies when the fluid is (re)configured.
+		</member>
 		<member name="mpm_auto_colliders" type="bool" setter="set_mpm_auto_colliders" getter="is_mpm_auto_colliders" default="false">
 			MPM solver only. When enabled, the fluid also collides with every non-static [PhysicsBody3D] overlapping [member mpm_domain_size] each step — the player, thrown objects, moving platforms — without listing them in [member mpm_colliders], the way the PBD solver collides with the whole space automatically. Static bodies (walls, a floor) are skipped; put those in [member mpm_colliders] once. The nearest bodies are taken up to a shared limit of 32 colliders. Costs one overlap query per step.
 		</member>
@@ -125,6 +131,9 @@
 		<member name="particle_size" type="float" setter="set_particle_size" getter="get_particle_size" default="0.1">
 			Rest distance between neighboring particles, in meters. Also the diameter of the rendered spheres. Drives the fluid's rest density.
 		</member>
+		<member name="render_mode" type="int" setter="set_render_mode" getter="get_render_mode" enum="PhysXParticleFluid3D.RenderMode" default="0">
+			How the fluid draws: [constant RENDER_MODE_PARTICLES] (a sphere per particle), [constant RENDER_MODE_ISOSURFACE] (a marched mesh) or [constant RENDER_MODE_SCREEN_SPACE]. [constant RENDER_MODE_SCREEN_SPACE] currently draws the particle stand-in -- the screen-space compositor pass is on the module roadmap.
+		</member>
 		<member name="solver" type="int" setter="set_solver" getter="get_solver" enum="PhysXParticleFluid3D.SolverBackend" default="0">
 			Which fluid solver simulates the particles. [code]Auto[/code] uses the PBD solver when a CUDA device is present and falls back to the MPM compute solver otherwise. See the class description for the differences.
 		</member>
@@ -138,7 +147,10 @@
 			PBD solver only (ignored by the MPM solver). Only used when [member surface_mesh] is enabled. Anisotropy is PhysX computing a per-particle ellipsoid from each particle's neighbor distribution instead of treating every particle as a sphere: a particle deep in the fluid stays round, while one on the surface or in a thin sheet is flattened and aligned to that surface. Feeding those ellipsoids to the isosurface extractor gives sharper wave crests and thinner splash sheets, so the surface looks less like a cluster of blobs.
 			The trade-off is that a fast-moving or isolated particle gets a strongly stretched ellipsoid that marching cubes can mesh as a thin spike, so this is off by default and best reserved for a settled pool. Leave it disabled while the fluid is actively emitting or splashing.
 		</member>
-		<member name="surface_mesh" type="bool" setter="set_surface_mesh" getter="is_surface_mesh" default="false">
+		<member name="surface_friction" type="float" setter="set_surface_friction" getter="get_surface_friction" default="0.2">
+			Friction against solids (PBD solver; no effect on the MPM solver).
+		</member>
+		<member name="surface_mesh" type="bool" setter="set_surface_mesh" getter="is_surface_mesh">
 			When enabled, PhysX marching-cubes a smooth triangle mesh from the particles on the GPU (position smoothing + [code]PxIsosurfaceExtractor[/code], plus optional [member surface_anisotropy]) and this node draws that instead of the sphere [MultiMesh]. Apply a water look with [member GeometryInstance3D.material_override] (transparency + refraction).
 		</member>
 		<member name="surface_tension" type="float" setter="set_surface_tension" getter="get_surface_tension" default="0.006">
@@ -147,23 +159,14 @@
 		<member name="viscosity" type="float" setter="set_viscosity" getter="get_viscosity" default="0.01">
 			Resistance to flow. Higher values make the fluid thicker and slower, like honey.
 		</member>
-		<member name="render_mode" type="int" setter="set_render_mode" getter="get_render_mode" enum="PhysXParticleFluid3D.RenderMode" default="0">
-			How the fluid draws: [constant RENDER_MODE_PARTICLES] (a sphere per particle), [constant RENDER_MODE_ISOSURFACE] (a marched mesh) or [constant RENDER_MODE_SCREEN_SPACE]. [constant RENDER_MODE_SCREEN_SPACE] currently draws the particle stand-in -- the screen-space compositor pass is on the module roadmap.
-		</member>
-		<member name="surface_friction" type="float" setter="set_surface_friction" getter="get_surface_friction" default="0.2">
-			Friction against solids (PBD solver; no effect on the MPM solver).
-		</member>
-		<member name="adhesion" type="float" setter="set_adhesion" getter="get_adhesion" default="0.0">
-			How strongly particles stick to solids (PBD solver; no effect on the MPM solver).
-		</member>
-		<member name="gravity_scale" type="float" setter="set_gravity_scale" getter="get_gravity_scale" default="1.0">
-			Multiplier on gravity: negative values float the fluid up. Live on the PBD solver; on the MPM solver it applies when the fluid is (re)configured.
-		</member>
 		<member name="vorticity" type="float" setter="set_vorticity" getter="get_vorticity" default="8.0">
 			Vorticity confinement. Re-injects swirling motion that the solver would otherwise damp out, keeping the fluid lively.
 		</member>
 	</members>
 	<constants>
+		<constant name="SOLVER_AUTO" value="0" enum="SolverBackend">
+			PBD when a CUDA device is available, MPM otherwise.
+		</constant>
 		<constant name="RENDER_MODE_PARTICLES" value="0" enum="RenderMode">
 			A sphere per particle (MultiMesh).
 		</constant>
@@ -172,9 +175,6 @@
 		</constant>
 		<constant name="RENDER_MODE_SCREEN_SPACE" value="2" enum="RenderMode">
 			A screen-space surface (particle stand-in until the compositor pass lands).
-		</constant>
-		<constant name="SOLVER_AUTO" value="0" enum="SolverBackend">
-			PBD when a CUDA device is available, MPM otherwise.
 		</constant>
 		<constant name="SOLVER_PBD" value="1" enum="SolverBackend">
 			PhysX 5's position-based fluid. Requires CUDA. Supports foam and the anisotropic surface.

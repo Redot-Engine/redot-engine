@@ -12,6 +12,13 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="add_collision_exception_with">
+			<return type="void" />
+			<param index="0" name="node" type="Node" />
+			<description>
+				Stops the tank and [param node] (a [PhysicsBody3D] or another PhysX vehicle) colliding: they pass through each other, wheels included, as with [method PhysicsBody3D.add_collision_exception_with].
+			</description>
+		</method>
 		<method name="apply_force_at_local_position">
 			<return type="void" />
 			<param index="0" name="force" type="Vector3" />
@@ -27,26 +34,6 @@
 				Applies a world-space [param torque] to the hull for this physics step, as [method RigidBody3D.apply_torque]. Call it every step to keep turning. No-op while the tank is not built.
 			</description>
 		</method>
-		<method name="add_collision_exception_with">
-			<return type="void" />
-			<param index="0" name="node" type="Node" />
-			<description>
-				Stops the tank and [param node] (a [PhysicsBody3D] or another PhysX vehicle) colliding: they pass through each other, wheels included, as with [method PhysicsBody3D.add_collision_exception_with].
-			</description>
-		</method>
-		<method name="remove_collision_exception_with">
-			<return type="void" />
-			<param index="0" name="node" type="Node" />
-			<description>
-				Removes an exception added with [method add_collision_exception_with].
-			</description>
-		</method>
-		<method name="get_collision_exceptions" qualifiers="const">
-			<return type="Node[]" />
-			<description>
-				The bodies and vehicles this tank has collision exceptions with.
-			</description>
-		</method>
 		<method name="get_actor_position" qualifiers="const">
 			<return type="Vector3" />
 			<description>
@@ -57,6 +44,12 @@
 			<return type="Vector3" />
 			<description>
 				Current world-space angular velocity of the hull.
+			</description>
+		</method>
+		<method name="get_collision_exceptions" qualifiers="const">
+			<return type="Array" />
+			<description>
+				The bodies and vehicles this tank has collision exceptions with.
 			</description>
 		</method>
 		<method name="get_forward" qualifiers="const">
@@ -101,6 +94,13 @@
 			<return type="bool" />
 			<description>
 				Returns whether the underlying PhysX vehicle actor is currently sleeping.
+			</description>
+		</method>
+		<method name="remove_collision_exception_with">
+			<return type="void" />
+			<param index="0" name="node" type="Node" />
+			<description>
+				Removes an exception added with [method add_collision_exception_with].
 			</description>
 		</method>
 	</methods>

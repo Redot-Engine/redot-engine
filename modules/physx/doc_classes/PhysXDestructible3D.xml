@@ -39,6 +39,12 @@
 				World transform of piece [param index]'s body; identity for an out-of-range index or an editor (render-only) piece.
 			</description>
 		</method>
+		<method name="get_piece_velocity" qualifiers="const">
+			<return type="Vector3" />
+			<param index="0" name="index" type="int" />
+			<description>
+			</description>
+		</method>
 		<method name="is_fractured" qualifiers="const">
 			<return type="bool" />
 			<description>
@@ -76,6 +82,15 @@
 		<member name="collision_mask" type="int" setter="set_collision_mask" getter="get_collision_mask" default="1">
 			Collision mask of the intact destructible and of detached chunks.
 		</member>
+		<member name="debris_freeze" type="bool" setter="set_debris_freeze" getter="get_debris_freeze" default="false">
+			Makes a detached piece static once PhysX has put it to sleep: it stays, solid, but never moves or wakes again -- a settled pile stops costing solver time. Frozen pieces ignore [member debris_lifetime].
+		</member>
+		<member name="debris_lifetime" type="float" setter="set_debris_lifetime" getter="get_debris_lifetime" default="0.0">
+			A detached piece is removed this many seconds after it spawned (0 = never). In its last [member debris_shrink] seconds it shrinks to nothing instead of popping out. Static anchored pieces and frozen pieces never age.
+		</member>
+		<member name="debris_shrink" type="float" setter="set_debris_shrink" getter="get_debris_shrink" default="0.0">
+			How long a piece's shrink-to-nothing takes, at the end of [member debris_lifetime]. While shrinking it is static and collides with nothing.
+		</member>
 		<member name="dynamic" type="bool" setter="set_dynamic" getter="get_dynamic" default="false">
 			If [code]true[/code], the intact destructible participates in physics; if [code]false[/code] it is static until fractured.
 		</member>
@@ -100,15 +115,6 @@
 		</member>
 		<member name="kill_y" type="float" setter="set_kill_y" getter="get_kill_y" default="-1000.0">
 			World-space Y below which detached chunks are freed (and their Blast actors retired, so a later hit cannot re-spawn them).
-		</member>
-		<member name="debris_freeze" type="bool" setter="set_debris_freeze" getter="get_debris_freeze" default="false">
-			Makes a detached piece static once PhysX has put it to sleep: it stays, solid, but never moves or wakes again -- a settled pile stops costing solver time. Frozen pieces ignore [member debris_lifetime].
-		</member>
-		<member name="debris_lifetime" type="float" setter="set_debris_lifetime" getter="get_debris_lifetime" default="0.0">
-			A detached piece is removed this many seconds after it spawned (0 = never). In its last [member debris_shrink] seconds it shrinks to nothing instead of popping out. Static anchored pieces and frozen pieces never age.
-		</member>
-		<member name="debris_shrink" type="float" setter="set_debris_shrink" getter="get_debris_shrink" default="0.0">
-			How long a piece's shrink-to-nothing takes, at the end of [member debris_lifetime]. While shrinking it is static and collides with nothing.
 		</member>
 		<member name="lod_bias" type="float" setter="set_lod_bias" getter="get_lod_bias" default="1.0">
 		</member>
