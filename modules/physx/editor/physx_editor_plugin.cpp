@@ -649,7 +649,9 @@ PhysXEditorPlugin::PhysXEditorPlugin() {
 }
 
 void PhysXEditorPlugin::_notification(int p_what) {
-	EditorPlugin::_notification(p_what);
+	// EditorPlugin::_notification (the deprecated settings-changed relay) is
+	// invoked by the GDCLASS dispatch chain; calling it here would connect the
+	// relay twice and trip ProjectSettings connect/disconnect checks.
 	if (p_what == NOTIFICATION_READY) {
 		_check_runtime_files();
 	}
