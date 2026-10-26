@@ -1794,7 +1794,7 @@ TileSet::TerrainsPattern TileMapLayer::_get_best_terrain_pattern_for_constraints
 	RBMap<TileSet::TerrainsPattern, int> terrain_pattern_score;
 	RBSet<TileSet::TerrainsPattern> pattern_set = tile_set->get_terrains_pattern_set(p_terrain_set);
 	ERR_FAIL_COND_V(pattern_set.is_empty(), TileSet::TerrainsPattern());
-	for (TileSet::TerrainsPattern &terrain_pattern : pattern_set) {
+	for (const TileSet::TerrainsPattern &terrain_pattern : pattern_set) {
 		int score = 0;
 
 		// Check the center bit constraint.
@@ -2563,7 +2563,7 @@ HashMap<Vector2i, TileSet::TerrainsPattern> TileMapLayer::terrain_fill_pattern(c
 		// Find the adequate neighbor.
 		for (int j = 0; j < TileSet::CELL_NEIGHBOR_MAX; j++) {
 			TileSet::CellNeighbor bit = TileSet::CellNeighbor(j);
-			if (tile_set->is_valid_terrain_peering_bit(p_terrain_set, bit)) {
+			if (tile_set->is_existing_neighbor(bit)) {
 				Vector2i neighbor = tile_set->get_neighbor_cell(coords, bit);
 				if (!can_modify_set.has(neighbor)) {
 					can_modify_list.push_back(neighbor);

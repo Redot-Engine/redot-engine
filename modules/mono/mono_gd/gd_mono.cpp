@@ -57,6 +57,7 @@
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
+#include "main/main.h"
 
 #ifdef UNIX_ENABLED
 #include <dlfcn.h>
@@ -71,6 +72,24 @@
 GDMono *GDMono::singleton = nullptr;
 
 namespace {
+#if defined(TOOLS_ENABLED) || !defined(APPLE_EMBEDDED_ENABLED)
+// Tells the user what happens next. Redot quits when .NET is unavailable (see Main::start()).
+String get_failure_note() {
+#ifdef TOOLS_ENABLED
+	return "\n" + ((Engine::get_singleton()->is_editor_hint() || Main::is_cmdline_tool()) ? TTR("The editor will now close.") : TTR("The project will now close."));
+#else
+	return String();
+#endif
+}
+
+#ifdef TOOLS_ENABLED
+// For failures that don't have their own alert, e.g. the Redot .NET assemblies are missing or broken.
+void alert_generic_failure() {
+	OS::get_singleton()->alert(TTR("Unable to initialize .NET.\nThe Redot .NET assemblies could not be loaded, check the output for details or reinstall Redot.") + get_failure_note(), TTR("Failed to load .NET runtime"));
+}
+#endif // TOOLS_ENABLED
+#endif
+
 hostfxr_initialize_for_dotnet_command_line_fn hostfxr_initialize_for_dotnet_command_line = nullptr;
 hostfxr_initialize_for_runtime_config_fn hostfxr_initialize_for_runtime_config = nullptr;
 hostfxr_get_runtime_delegate_fn hostfxr_get_runtime_delegate = nullptr;
@@ -447,8 +466,8 @@ godot_plugins_initialize_fn initialize_hostfxr_and_godot_plugins(bool &r_runtime
 			initialize_hostfxr_for_config(get_data(config_path));
 
 	if (load_assembly_and_get_function_pointer == nullptr) {
-		// Show a message box to the user to make the problem explicit (and explain a potential crash).
-		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, no compatible version was found.\nAttempting to create/edit a project will lead to a crash.\n\nPlease install the .NET SDK 8.0 or later from https://get.dot.net and restart Redot."), TTR("Failed to load .NET runtime"));
+		// Show a message box to the user to make the problem explicit (and explain why Redot closes).
+		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, no compatible version was found.\n\nPlease install the .NET SDK 8.0 or later from https://get.dot.net and restart Redot.") + get_failure_note(), TTR("Failed to load .NET runtime"));
 		ERR_FAIL_V_MSG(nullptr, ".NET: Failed to load compatible .NET runtime");
 	}
 
@@ -462,7 +481,10 @@ godot_plugins_initialize_fn initialize_hostfxr_and_godot_plugins(bool &r_runtime
 			UNMANAGEDCALLERSONLY_METHOD,
 			nullptr,
 			(void **)&godot_plugins_initialize);
-	ERR_FAIL_COND_V_MSG(rc != 0, nullptr, ".NET: Failed to get GodotPlugins initialization function pointer");
+	if (rc != 0) {
+		alert_generic_failure();
+		ERR_FAIL_V_MSG(nullptr, ".NET: Failed to get GodotPlugins initialization function pointer");
+	}
 
 	return godot_plugins_initialize;
 }
@@ -651,7 +673,7 @@ void GDMono::initialize() {
 #if !defined(APPLE_EMBEDDED_ENABLED)
 	// Check that the .NET assemblies directory exists before trying to use it.
 	if (!DirAccess::exists(GodotSharpDirs::get_api_assemblies_dir())) {
-		OS::get_singleton()->alert(vformat(RTR("Unable to find the .NET assemblies directory.\nMake sure the '%s' directory exists and contains the .NET assemblies."), GodotSharpDirs::get_api_assemblies_dir()), RTR(".NET assemblies not found"));
+		OS::get_singleton()->alert(vformat(RTR("Unable to find the .NET assemblies directory.\nMake sure the '%s' directory exists and contains the .NET assemblies."), GodotSharpDirs::get_api_assemblies_dir()) + get_failure_note(), RTR(".NET assemblies not found"));
 		ERR_FAIL_MSG(".NET: Assemblies not found");
 	}
 #endif
@@ -676,8 +698,8 @@ void GDMono::initialize() {
 		}
 #else
 
-		// Show a message box to the user to make the problem explicit (and explain a potential crash).
-		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, specifically hostfxr.\nAttempting to create/edit a project will lead to a crash.\n\nPlease install the .NET SDK 8.0 or later from https://get.dot.net and restart Redot."), TTR("Failed to load .NET runtime"));
+		// Show a message box to the user to make the problem explicit (and explain why Redot closes).
+		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, specifically hostfxr.\n\nPlease install the .NET SDK 8.0 or later from https://get.dot.net and restart Redot.") + get_failure_note(), TTR("Failed to load .NET runtime"));
 		ERR_FAIL_MSG(".NET: Failed to load hostfxr");
 #endif
 	}
@@ -700,7 +722,10 @@ void GDMono::initialize() {
 			Engine::get_singleton()->is_editor_hint(),
 			&plugin_callbacks_res, &managed_callbacks,
 			interop_funcs, interop_funcs_size);
-	ERR_FAIL_COND_MSG(!init_ok, ".NET: GodotPlugins initialization failed");
+	if (!init_ok) {
+		alert_generic_failure();
+		ERR_FAIL_MSG(".NET: GodotPlugins initialization failed");
+	}
 
 	plugin_callbacks = plugin_callbacks_res;
 #else
@@ -827,7 +852,8 @@ GDMono::GDMono() {
 GDMono::~GDMono() {
 	finalizing_scripts_domain = true;
 
-	if (hostfxr_dll_handle) {
+	// If the runtime failed to initialize, unloading hostfxr crashes the process on exit, so leave it loaded.
+	if (hostfxr_dll_handle && runtime_initialized) {
 		OS::get_singleton()->close_dynamic_library(hostfxr_dll_handle);
 	}
 	if (coreclr_dll_handle) {

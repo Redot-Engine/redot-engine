@@ -107,6 +107,7 @@ Ref<AudioEffectInstance> AudioEffectStereoEnhance::instantiate() {
 	ins->ringbuff_pos = 0;
 
 	ins->delay_ringbuff = memnew_arr(float, ringbuff_size);
+	memset(ins->delay_ringbuff, 0, sizeof(float) * ringbuff_size);
 
 	return ins;
 }
