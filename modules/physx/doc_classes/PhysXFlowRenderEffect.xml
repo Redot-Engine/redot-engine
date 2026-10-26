@@ -9,7 +9,7 @@
 	<tutorials>
 	</tutorials>
 	<methods>
-		<method name="get_world_compositor" qualifiers="static const">
+		<method name="get_world_compositor" qualifiers="static">
 			<return type="Compositor" />
 			<param index="0" name="world" type="World3D" />
 			<description>
@@ -17,6 +17,4 @@
 			</description>
 		</method>
 	</methods>
-	<constants>
-	</constants>
 </class>
