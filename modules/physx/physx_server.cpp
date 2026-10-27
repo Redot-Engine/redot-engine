@@ -1109,6 +1109,10 @@ bool PhysXServer3D::body_is_omitting_force_integration(RID p_body) const {
 }
 
 void PhysXServer3D::body_set_state_sync_callback(RID p_body, const Callable &p_callable) {
+	if (p_body == dispatch_body && dispatch_body.is_valid()) {
+		p_callable.call(); // a run_on_physics_thread() call, now on the physics thread
+		return;
+	}
 	PhysXBody3D *body = body_owner.get_or_null(p_body);
 	ERR_FAIL_NULL(body);
 	body->set_state_sync_callback(p_callable);
@@ -1878,6 +1882,10 @@ RID PhysXServer3D::particle_fluid_create() {
 }
 
 void PhysXServer3D::particle_fluid_set_space(RID p_fluid, RID p_space) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_set_space(p_fluid, p_space); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1886,6 +1894,10 @@ void PhysXServer3D::particle_fluid_set_space(RID p_fluid, RID p_space) {
 }
 
 void PhysXServer3D::particle_fluid_set_param(RID p_fluid, int p_param, real_t p_value) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_set_param(p_fluid, p_param, p_value); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1894,6 +1906,10 @@ void PhysXServer3D::particle_fluid_set_param(RID p_fluid, int p_param, real_t p_
 }
 
 void PhysXServer3D::particle_fluid_set_capacity(RID p_fluid, int p_max) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_set_capacity(p_fluid, p_max); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1901,6 +1917,10 @@ void PhysXServer3D::particle_fluid_set_capacity(RID p_fluid, int p_max) {
 }
 
 void PhysXServer3D::particle_fluid_set_granular(RID p_fluid, bool p_enabled, real_t p_friction) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_set_granular(p_fluid, p_enabled, p_friction); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1908,6 +1928,10 @@ void PhysXServer3D::particle_fluid_set_granular(RID p_fluid, bool p_enabled, rea
 }
 
 void PhysXServer3D::particle_fluid_set_particles(RID p_fluid, const Vector<Vector3> &p_positions, const Vector3 &p_initial_velocity) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_set_particles(p_fluid, p_positions, p_initial_velocity); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1915,6 +1939,10 @@ void PhysXServer3D::particle_fluid_set_particles(RID p_fluid, const Vector<Vecto
 }
 
 void PhysXServer3D::particle_fluid_emit(RID p_fluid, const Vector<Vector3> &p_positions, const Vector3 &p_velocity) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_emit(p_fluid, p_positions, p_velocity); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1922,6 +1950,10 @@ void PhysXServer3D::particle_fluid_emit(RID p_fluid, const Vector<Vector3> &p_po
 }
 
 void PhysXServer3D::particle_fluid_clear(RID p_fluid) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_clear(p_fluid); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1929,6 +1961,10 @@ void PhysXServer3D::particle_fluid_clear(RID p_fluid) {
 }
 
 void PhysXServer3D::particle_fluid_set_foam(RID p_fluid, bool p_enabled, int p_capacity, real_t p_lifetime, real_t p_threshold, real_t p_buoyancy, real_t p_size) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_set_foam(p_fluid, p_enabled, p_capacity, p_lifetime, p_threshold, p_buoyancy, p_size); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1961,6 +1997,10 @@ int PhysXServer3D::particle_fluid_get_foam_count(RID p_fluid) const {
 }
 
 void PhysXServer3D::particle_fluid_set_surface_mesh(RID p_fluid, bool p_enabled) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_set_surface_mesh(p_fluid, p_enabled); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -1975,6 +2015,10 @@ int PhysXServer3D::particle_fluid_get_surface_triangle_count(RID p_fluid) const 
 }
 
 void PhysXServer3D::particle_fluid_set_surface_anisotropy(RID p_fluid, bool p_enabled) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { particle_fluid_set_surface_anisotropy(p_fluid, p_enabled); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUParticleFluid3D *fluid = fluid_owner.get_or_null(p_fluid);
 	ERR_FAIL_NULL(fluid);
@@ -2073,6 +2117,10 @@ RID PhysXServer3D::cloth_create() {
 }
 
 void PhysXServer3D::cloth_set_space(RID p_cloth, RID p_space) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { cloth_set_space(p_cloth, p_space); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUCloth3D *cloth = cloth_owner.get_or_null(p_cloth);
 	ERR_FAIL_NULL(cloth);
@@ -2080,6 +2128,10 @@ void PhysXServer3D::cloth_set_space(RID p_cloth, RID p_space) {
 }
 
 void PhysXServer3D::cloth_set_params(RID p_cloth, real_t p_thickness, real_t p_density, real_t p_stretch, real_t p_bend, real_t p_damping, uint32_t p_collision_mask) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { cloth_set_params(p_cloth, p_thickness, p_density, p_stretch, p_bend, p_damping, p_collision_mask); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUCloth3D *cloth = cloth_owner.get_or_null(p_cloth);
 	ERR_FAIL_NULL(cloth);
@@ -2087,6 +2139,10 @@ void PhysXServer3D::cloth_set_params(RID p_cloth, real_t p_thickness, real_t p_d
 }
 
 void PhysXServer3D::cloth_set_collision_layer_and_mask(RID p_cloth, uint32_t p_layer, uint32_t p_mask) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { cloth_set_collision_layer_and_mask(p_cloth, p_layer, p_mask); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUCloth3D *cloth = cloth_owner.get_or_null(p_cloth);
 	ERR_FAIL_NULL(cloth);
@@ -2097,6 +2153,10 @@ void PhysXServer3D::cloth_set_collision_layer_and_mask(RID p_cloth, uint32_t p_l
 }
 
 void PhysXServer3D::cloth_add_collision_exception(RID p_cloth, RID p_body) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { cloth_add_collision_exception(p_cloth, p_body); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUCloth3D *cloth = cloth_owner.get_or_null(p_cloth);
 	ERR_FAIL_NULL(cloth);
@@ -2112,6 +2172,10 @@ void PhysXServer3D::cloth_add_collision_exception(RID p_cloth, RID p_body) {
 }
 
 void PhysXServer3D::cloth_remove_collision_exception(RID p_cloth, RID p_body) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { cloth_remove_collision_exception(p_cloth, p_body); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUCloth3D *cloth = cloth_owner.get_or_null(p_cloth);
 	ERR_FAIL_NULL(cloth);
@@ -2130,6 +2194,10 @@ void PhysXServer3D::cloth_build(RID p_cloth, const Vector<Vector3> &p_positions,
 }
 
 void PhysXServer3D::cloth_set_pinned(RID p_cloth, const Vector<int32_t> &p_pinned) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { cloth_set_pinned(p_cloth, p_pinned); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUCloth3D *cloth = cloth_owner.get_or_null(p_cloth);
 	ERR_FAIL_NULL(cloth);
@@ -2137,6 +2205,10 @@ void PhysXServer3D::cloth_set_pinned(RID p_cloth, const Vector<int32_t> &p_pinne
 }
 
 void PhysXServer3D::cloth_set_pin_targets(RID p_cloth, const Vector<Vector3> &p_world_targets) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { cloth_set_pin_targets(p_cloth, p_world_targets); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUCloth3D *cloth = cloth_owner.get_or_null(p_cloth);
 	ERR_FAIL_NULL(cloth);
@@ -2144,6 +2216,10 @@ void PhysXServer3D::cloth_set_pin_targets(RID p_cloth, const Vector<Vector3> &p_
 }
 
 void PhysXServer3D::cloth_apply_wind(RID p_cloth, const Vector3 &p_wind, real_t p_drag, real_t p_lift, real_t p_dt) {
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { cloth_apply_wind(p_cloth, p_wind, p_drag, p_lift, p_dt); });
+		return;
+	}
 	MutexLock lock(api_mutex);
 	PhysXGPUCloth3D *cloth = cloth_owner.get_or_null(p_cloth);
 	ERR_FAIL_NULL(cloth);
@@ -2489,6 +2565,15 @@ bool PhysXServer3D::joint_is_disabled_collisions_between_bodies(RID p_joint) con
 // comments below carry each kind's teardown ordering.
 void PhysXServer3D::free(RID p_rid) {
 	MutexLock lock(api_mutex);
+	if (p_rid == dispatch_body && dispatch_body.is_valid()) {
+		// Retired by finish(): the queued carrier has nothing more to run.
+		dispatch_body = RID();
+		return;
+	}
+	if (!can_touch_scene()) {
+		run_on_physics_thread([=]() { free(p_rid); });
+		return;
+	}
 	// Freeing a null/invalid RID is a no-op (standard Godot convention —the
 	// scene tree may free a RID that body_create() returned empty because PhysX
 	// wasn't initialized yet during a fresh-compile editor boot, or a RID that
@@ -2709,6 +2794,7 @@ bool PhysXServer3D::space_is_active(RID p_space) const {
 //    static for that reason);
 //  - PVD must exist before PxCreatePhysics, which takes the pvd pointer.
 void PhysXServer3D::init() {
+	server_thread = Thread::get_caller_id(); // the physics thread with run_on_separate_thread, else the main one
 	// Static so the callbacks outlive px_foundation (PhysX holds raw pointers).
 	static PhysXAllocatorCallback s_allocator;
 	static PhysXErrorCallback s_error;
@@ -2874,10 +2960,16 @@ void PhysXServer3D::init() {
 	// Static/dynamic friction 0.5, restitution 0.1 —conservative defaults.
 	px_default_material = px_physics->createMaterial(0.5f, 0.5f, 0.1f);
 	ERR_FAIL_NULL(px_default_material);
+	dispatch_body = body_create(); // carries run_on_physics_thread() calls through WrapMT's queue
 }
 // Tears down the PhysX SDK in reverse init order; see the ordering comment
 // at the top of the body for why each kind precedes the next.
 void PhysXServer3D::finish() {
+	if (dispatch_body.is_valid()) {
+		RID body = dispatch_body;
+		dispatch_body = RID();
+		free(body);
+	}
 	// Free wrappers before releasing PxPhysics, so their PxActors are removed
 	// from still-valid scenes. Order: joints -> vehicles -> bodies -> areas ->
 	// shapes -> spaces. Vehicles come before bodies because they borrow the
@@ -2993,6 +3085,7 @@ void PhysXServer3D::step(real_t p_step) {
 }
 
 void PhysXServer3D::sync() {
+	syncing = true; // the physics thread is parked until end_sync()
 	MutexLock lock(api_mutex);
 	// The engine calls sync() at the start of every physics tick, before
 	// scripts. In async stepping mode this fetches the solve that step()
@@ -3007,6 +3100,7 @@ void PhysXServer3D::sync() {
 }
 
 void PhysXServer3D::end_sync() {
+	syncing = false;
 	// Marks the sync window closed. The fetch already happened in sync().
 }
 

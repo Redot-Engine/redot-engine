@@ -60,6 +60,7 @@
 #include "servers/physics_3d/physics_server_3d.h"
 
 #include "core/os/mutex.h"
+#include "core/os/thread.h"
 #include "core/templates/local_vector.h"
 #include <PxPhysicsAPI.h>
 #include <core/templates/rid_owner.h>
@@ -82,6 +83,30 @@ class PxPvdTransport;
 class PxDefaultCpuDispatcher;
 class PxCudaContextManager;
 } //namespace physx
+
+// A call queued for the physics thread (PhysXServer3D::run_on_physics_thread).
+template <typename F>
+class GodotPhysXQueuedCall : public CallableCustom {
+	mutable F func;
+
+	static bool _compare_equal(const CallableCustom *p_a, const CallableCustom *p_b) { return p_a == p_b; }
+	static bool _compare_less(const CallableCustom *p_a, const CallableCustom *p_b) { return p_a < p_b; }
+
+public:
+	virtual uint32_t hash() const override { return hash_murmur3_one_64((uint64_t)this); }
+	virtual String get_as_text() const override { return "GodotPhysXQueuedCall"; }
+	virtual CompareEqualFunc get_compare_equal_func() const override { return _compare_equal; }
+	virtual CompareLessFunc get_compare_less_func() const override { return _compare_less; }
+	virtual bool is_valid() const override { return true; }
+	virtual ObjectID get_object() const override { return ObjectID(); }
+	virtual void call(const Variant **p_arguments, int p_argcount, Variant &r_return_value, Callable::CallError &r_call_error) const override {
+		func();
+		r_call_error.error = Callable::CallError::CALL_OK;
+	}
+
+	GodotPhysXQueuedCall(const F &p_func) :
+			func(p_func) {}
+};
 
 class PhysXServer3D : public PhysicsServer3D {
 	GDCLASS(PhysXServer3D, PhysicsServer3D);
@@ -106,6 +131,44 @@ class PhysXServer3D : public PhysicsServer3D {
 	// command_flush_begin/end). Recursive Mutex: step/flush dispatch script
 	// Callables that may legally call back into these APIs on the same thread.
 	mutable Mutex api_mutex;
+
+	// With physics/3d/run_on_separate_thread the server runs on its own
+	// thread; the main thread may touch the scenes only between sync() and
+	// end_sync(), while that thread is parked (physics process).
+	Thread::ID server_thread = Thread::MAIN_ID;
+	bool syncing = false;
+	// Carries run_on_physics_thread()'s calls through PhysicsServer3DWrapMT's
+	// command queue (a body in no space).
+	RID dispatch_body;
+
+	// Whether this thread may touch the PhysX scenes now: the physics thread,
+	// or the main thread while that thread is parked (physics process) or when
+	// physics doesn't run on its own thread. The module's nodes reach PhysX
+	// directly (vehicles, fluids, cloth), so anything they do outside physics
+	// process goes through run_on_physics_thread().
+	static bool can_touch_scene() {
+		return singleton_ptr == nullptr || Thread::get_caller_id() == singleton_ptr->server_thread || (Thread::is_main_thread() && singleton_ptr->syncing);
+	}
+	// Runs p_func where the scenes may be touched: right away if this thread
+	// may (see can_touch_scene()), else queued in order behind the physics
+	// thread's other commands. p_wait waits for it to have run -- a sync with
+	// the physics thread, as any PhysicsServer3D getter called outside
+	// physics process. p_func mustn't touch the scene tree or wait on the
+	// main thread (it may run on the physics thread while the main thread
+	// waits for it).
+	template <typename F>
+	static void run_on_physics_thread(const F &p_func, bool p_wait = false) {
+		if (can_touch_scene() || !singleton_ptr->dispatch_body.is_valid()) {
+			p_func();
+			return;
+		}
+		PhysicsServer3D *wrapper = PhysicsServer3D::get_singleton();
+		wrapper->body_set_state_sync_callback(singleton_ptr->dispatch_body, Callable(memnew(GodotPhysXQueuedCall<F>(p_func))));
+		if (p_wait) {
+			wrapper->body_get_space(singleton_ptr->dispatch_body); // returns once the queue has run up to it
+		}
+	}
+	void _drain_dispatch();
 	// ------------------------------------------------------------------
 	// PhysX SDK singletons (created in init(), released in finish()).
 	// ------------------------------------------------------------------

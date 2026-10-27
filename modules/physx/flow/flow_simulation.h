@@ -41,6 +41,7 @@
 #include "core/math/transform_3d.h"
 #include "core/math/vector3.h"
 #include "core/math/vector3i.h"
+#include "core/os/mutex.h"
 #include "core/templates/local_vector.h"
 
 // One NVIDIA Flow sparse grid ("simulation"): owns an NvFlowGrid on the
@@ -211,9 +212,41 @@ public:
 	// Advances the simulation. delta/absolute time in seconds; emitters and
 	// colliders are read for the duration of the call only (copied into SDK
 	// parameter storage). force_clear resets the sparse grids.
+	void _rt_step(double p_absolute_time, float p_delta, const FlowEmitterData *p_emitters, int p_emitter_count, const FlowColliderData *p_colliders, int p_collider_count, const FlowSimSettings &p_settings, const FlowRenderSettings &p_render, bool p_force_clear, bool p_paused, bool p_want_readback);
+	void _rt_step();
+	void _rt_configure();
+	void _rt_reset();
+	void _rt_destroy_grid();
+	void _destroy_grid_now();
 	void step(double p_absolute_time, float p_delta, const FlowEmitterData *p_emitters, int p_emitter_count,
 			const FlowColliderData *p_colliders, int p_collider_count, const FlowSimSettings &p_settings,
 			const FlowRenderSettings &p_render, bool p_force_clear, bool p_paused, bool p_want_readback);
+
+	// Functors for the render-thread posts (Callable(memnew(GodotPhysXQueuedCall<...>(this)))).
+	struct StepFn {
+		FlowSimulation *o;
+		StepFn(FlowSimulation *p_o) :
+				o(p_o) {}
+		void operator()() const { o->_rt_step(); }
+	};
+	struct CfgFn {
+		FlowSimulation *o;
+		CfgFn(FlowSimulation *p_o) :
+				o(p_o) {}
+		void operator()() const { o->_rt_configure(); }
+	};
+	struct ResetFn {
+		FlowSimulation *o;
+		ResetFn(FlowSimulation *p_o) :
+				o(p_o) {}
+		void operator()() const { o->_rt_reset(); }
+	};
+	struct DestroyFn {
+		FlowSimulation *o;
+		DestroyFn(FlowSimulation *p_o) :
+				o(p_o) {}
+		void operator()() const { o->_rt_destroy_grid(); }
+	};
 
 	void reset();
 
@@ -251,6 +284,25 @@ public:
 private:
 	FlowRuntime *runtime = nullptr; // acquired in configure() (loader always; device only on the fallback path)
 	FlowContextRD::Context *rd_context = nullptr; // RenderingDevice-backed Flow context, null on the fallback path
+	// Separate render thread: the grid's RenderingDevice work runs there; the
+	// node's thread only gathers inputs and reads decoded frames (both under
+	// step_mutex). Detected once from rendering/driver/threads/thread_model.
+	bool separate_render_thread = false;
+	mutable Mutex step_mutex;
+	bool queued_valid = false;
+	double queued_time = 0.0;
+	float queued_delta = 0.0f;
+	bool queued_force_clear = false;
+	bool queued_paused = false;
+	bool queued_want_readback = false;
+	LocalVector<FlowEmitterData> queued_emitters;
+	LocalVector<FlowColliderData> queued_colliders;
+	FlowSimSettings queued_settings;
+	FlowRenderSettings queued_render;
+	LocalVector<FlowReadbackFrame> decoded_frames;
+	void _post(const Callable &p_call);
+	bool _decode_completed();
+
 	bool using_rd = false;
 	NvFlowGrid *grid = nullptr;
 	FlowSimGridConfig grid_config;

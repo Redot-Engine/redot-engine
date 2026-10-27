@@ -47,6 +47,7 @@
 #include "servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server.h"
+#include "core/os/mutex.h"
 #include "servers/rendering/storage/render_data.h"
 
 LocalVector<PhysXFlowSimulation3D *> PhysXFlowRenderEffect::flows;
@@ -55,6 +56,13 @@ HashMap<ObjectID, PhysXFlowRenderEffect::WorldState> PhysXFlowRenderEffect::worl
 namespace {
 
 Ref<PhysXFlowRenderEffect> shared_effect;
+Mutex flows_mutex;
+
+// The last reference let go ON THE RENDER THREAD: the destructor frees
+// RenderingDevice resources, which only that thread may do.
+static void release_shared_on_render_thread() {
+	shared_effect.unref();
+}
 
 const char *COPY_SHADER = R"(
 #[compute]
@@ -92,12 +100,14 @@ void to_flow_matrix(const Projection &p_m, float r_out[16]) {
 } // namespace
 
 void PhysXFlowRenderEffect::register_flow(PhysXFlowSimulation3D *p_flow) {
+	MutexLock lock(flows_mutex);
 	if (flows.find(p_flow) < 0) {
 		flows.push_back(p_flow);
 	}
 }
 
 void PhysXFlowRenderEffect::unregister_flow(PhysXFlowSimulation3D *p_flow) {
+	MutexLock lock(flows_mutex);
 	flows.erase(p_flow);
 }
 
@@ -253,8 +263,15 @@ void PhysXFlowRenderEffect::free_shared() {
 	// Raw node pointers; nothing dereferences them past this point.
 	flows.clear();
 	// Last: drops the last Ref (the compositors above are gone), so the
-	// destructor's RenderingDevice frees happen against a live device.
-	shared_effect.unref();
+	// destructor's RenderingDevice frees happen against a live device. With a
+	// separate render thread the destructor runs there -- RD frees are only
+	// legal on the thread that owns the device.
+	if (shared_effect.is_valid()) {
+		RenderingServer::get_singleton()->call_on_render_thread(callable_mp_static(&release_shared_on_render_thread));
+		RenderingServer::get_singleton()->sync();
+	} else {
+		shared_effect.unref();
+	}
 }
 
 PhysXFlowRenderEffect::PhysXFlowRenderEffect() {
@@ -359,6 +376,7 @@ void PhysXFlowRenderEffect::_render(int p_callback_type, const RenderData *p_ren
 
 	// Each flow composites over what's drawn so far, so far ones go first.
 	const Vector3 eye = scene->get_cam_transform().origin;
+	MutexLock lock(flows_mutex);
 	LocalVector<PhysXFlowSimulation3D *> sorted;
 	LocalVector<real_t> distance;
 	for (PhysXFlowSimulation3D *flow : flows) {

@@ -38,6 +38,8 @@
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/templates/vector.h"
+#include "../physx_server.h"
+#include "core/config/project_settings.h"
 #include "servers/rendering/rendering_server.h"
 
 #include <string.h>
@@ -136,6 +138,23 @@ FlowSimulation::~FlowSimulation() {
 }
 
 void FlowSimulation::_destroy_grid() {
+	// Main-thread teardown (node exit / destructor): the grid's RenderingDevice
+	// resources are freed where the device lives. Render-thread callers (a
+	// rebuild inside _rt_configure) run inline.
+	const bool threaded = separate_render_thread && using_rd && Thread::get_caller_id() == Thread::get_main_id();
+	if (threaded) {
+		RenderingServer::get_singleton()->call_on_render_thread(Callable(memnew(GodotPhysXQueuedCall<DestroyFn>(this))));
+		RenderingServer::get_singleton()->sync();
+		return;
+	}
+	_destroy_grid_now();
+}
+
+void FlowSimulation::_rt_destroy_grid() {
+	_destroy_grid_now();
+}
+
+void FlowSimulation::_destroy_grid_now() {
 	// Readback buffers FIRST: they live in the context, and this function
 	// destroys that context -- releasing them through it afterwards would
 	// hand freed pointers to a dead Context (v1's context outlived them;
@@ -168,19 +187,29 @@ void FlowSimulation::_destroy_grid() {
 }
 
 void FlowSimulation::configure(const FlowSimGridConfig &p_config) {
+	separate_render_thread = (int)GLOBAL_GET("rendering/driver/threads/thread_model") == (int)OS::RENDER_SEPARATE_THREAD;
 	if (runtime == nullptr) {
 		runtime = FlowRuntime::acquire();
 	}
+	const bool threaded = separate_render_thread && RenderingServer::get_singleton()->get_rendering_device() != nullptr;
+	if (threaded) {
+		grid_config = p_config;
+		RenderingServer::get_singleton()->call_on_render_thread(Callable(memnew(GodotPhysXQueuedCall<CfgFn>(this))));
+		// The node reads availability right after this; the grid must exist.
+		RenderingServer::get_singleton()->sync();
+		return;
+	}
+	_rt_configure();
+}
+
+void FlowSimulation::_rt_configure() {
 	// FLOW-2: the availability check must run on EVERY entry, not only when
 	// the runtime was first acquired -- a second configure() after a failed
 	// init skipped the guard and invoked createGrid with a null context.
 	if (!runtime->is_available()) {
 		return;
 	}
-	if (grid != nullptr && grid_config.max_blocks == p_config.max_blocks) {
-		return; // nothing structurally new
-	}
-	grid_config = p_config;
+
 
 	// The grid runs on Godot's own RenderingDevice whenever one exists (the
 	// gas never leaves VRAM; Flow's ray marcher composites it into the scene
@@ -199,7 +228,7 @@ void FlowSimulation::configure(const FlowSimGridConfig &p_config) {
 		return;
 	}
 	NvFlowGridDesc desc = {};
-	desc.maxLocations = MAX(64u, p_config.max_blocks);
+	desc.maxLocations = MAX(64u, grid_config.max_blocks);
 	desc.maxLocationsIsosurface = 0u;
 
 	if (grid != nullptr) {
@@ -237,6 +266,15 @@ void FlowSimulation::configure(const FlowSimGridConfig &p_config) {
 }
 
 void FlowSimulation::reset() {
+	const bool threaded = separate_render_thread && using_rd;
+	if (threaded) {
+		RenderingServer::get_singleton()->call_on_render_thread(Callable(memnew(GodotPhysXQueuedCall<ResetFn>(this))));
+		return;
+	}
+	_rt_reset();
+}
+
+void FlowSimulation::_rt_reset() {
 	if (grid == nullptr || runtime == nullptr || _context() == nullptr) {
 		return;
 	}
@@ -345,7 +383,74 @@ void FlowSimulation::_apply_render_params(const FlowRenderSettings &p_render) {
 	render_ptr = (NvFlowUint8 *)&render_layer_params;
 }
 
+// The node's thread gathers the frame's inputs; the grid's RenderingDevice
+// work runs where the device lives. Single-threaded rendering: right here.
 void FlowSimulation::step(double p_absolute_time, float p_delta,
+		const FlowEmitterData *p_emitters, int p_emitter_count,
+		const FlowColliderData *p_colliders, int p_collider_count,
+		const FlowSimSettings &p_settings, const FlowRenderSettings &p_render,
+		bool p_force_clear, bool p_paused, bool p_want_readback) {
+	const bool threaded = separate_render_thread && using_rd;
+	if (!threaded) {
+		_rt_step(p_absolute_time, p_delta, p_emitters, p_emitter_count, p_colliders, p_collider_count,
+				p_settings, p_render, p_force_clear, p_paused, p_want_readback);
+		return;
+	}
+	{
+		MutexLock lock(step_mutex);
+		queued_time = p_absolute_time;
+		queued_delta = p_delta;
+		queued_emitters.clear();
+		for (int i = 0; i < p_emitter_count; i++) {
+			queued_emitters.push_back(p_emitters[i]);
+		}
+		queued_colliders.clear();
+		for (int i = 0; i < p_collider_count; i++) {
+			queued_colliders.push_back(p_colliders[i]);
+		}
+		queued_settings = p_settings;
+		queued_render = p_render;
+		queued_force_clear = p_force_clear;
+		queued_paused = p_paused;
+		queued_want_readback = p_want_readback;
+		queued_valid = true;
+	}
+	RenderingServer::get_singleton()->call_on_render_thread(Callable(memnew(GodotPhysXQueuedCall<StepFn>(this))));
+}
+
+// The posted step: pops the gathered inputs and runs the grid work where the
+// RenderingDevice lives.
+void FlowSimulation::_rt_step() {
+	double time;
+	float delta;
+	LocalVector<FlowEmitterData> emitters;
+	LocalVector<FlowColliderData> colliders;
+	FlowSimSettings settings;
+	FlowRenderSettings render;
+	bool force_clear;
+	bool paused;
+	bool want_readback;
+	{
+		MutexLock lock(step_mutex);
+		if (!queued_valid) {
+			return;
+		}
+		time = queued_time;
+		delta = queued_delta;
+		emitters = queued_emitters;
+		colliders = queued_colliders;
+		settings = queued_settings;
+		render = queued_render;
+		force_clear = queued_force_clear;
+		paused = queued_paused;
+		want_readback = queued_want_readback;
+		queued_valid = false;
+	}
+	_rt_step(time, delta, emitters.ptr(), (int)emitters.size(), colliders.ptr(), (int)colliders.size(),
+			settings, render, force_clear, paused, want_readback);
+}
+
+void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 		const FlowEmitterData *p_emitters, int p_emitter_count,
 		const FlowColliderData *p_colliders, int p_collider_count,
 		const FlowSimSettings &p_settings, const FlowRenderSettings &p_render,
@@ -764,6 +869,28 @@ void FlowSimulation::step(double p_absolute_time, float p_delta,
 	}
 	timing.last_submit_usec = usec1 - usec0;
 	timing.last_flush_usec = Time::get_singleton()->get_ticks_usec() - usec1;
+
+	// Separate render thread: the decode runs here too (it maps the SDK's
+	// readback buffers, a RenderingDevice-adjacent call), and the main
+	// thread's poll_readback pops the decoded frames. Single-threaded:
+	// poll_readback decodes as before.
+	if (separate_render_thread && using_rd) {
+		const uint64_t completed = _last_frame_completed();
+		for (ReadbackSlot &sl : slots) {
+			if (sl.consumed || sl.inflight.frame_index == 0 || completed < sl.inflight.frame_index) {
+				continue;
+			}
+			FlowReadbackFrame decoded;
+			if (_decode_slot(sl, decoded)) {
+				MutexLock lock(step_mutex);
+				decoded_frames.push_back(decoded);
+				if (decoded_frames.size() > 4) {
+					decoded_frames.remove_at(0);
+				}
+			}
+			sl.consumed = true;
+		}
+	}
 }
 
 // Records texture + sparse-table copies into the persistent readback
@@ -1014,6 +1141,15 @@ static float half_to_float_fast(uint16_t h) {
 bool FlowSimulation::poll_readback(FlowReadbackFrame &r_frame) {
 	if (runtime == nullptr) {
 		return false;
+	}
+	if (separate_render_thread && using_rd) {
+		MutexLock lock(step_mutex);
+		if (decoded_frames.is_empty()) {
+			return false;
+		}
+		r_frame = decoded_frames[0];
+		decoded_frames.remove_at(0);
+		return true;
 	}
 	const uint64_t completed = _last_frame_completed();
 	for (ReadbackSlot &s : slots) {
