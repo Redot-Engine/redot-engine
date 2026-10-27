@@ -1145,6 +1145,33 @@ void PhysXFlowSimulation3D::set_cpu_readback(bool p_enabled) {
 	cpu_readback = p_enabled;
 }
 
+float PhysXFlowSimulation3D::_sample_channel(int p_component, const Vector3 &p_position) const {
+	if (!last_frame.valid) {
+		return -1.0f;
+	}
+	// The dense volume's cell c covers world [world_min + c * cell_size,
+	// world_min + (c + 1) * cell_size) per axis.
+	const Vector3 rel = p_position - last_frame.world_min;
+	const Vector3 scaled = rel / last_frame.cell_size;
+	const Vector3i cell(Math::floor(scaled.x), Math::floor(scaled.y), Math::floor(scaled.z));
+	if (cell.x < 0 || cell.y < 0 || cell.z < 0 ||
+			cell.x >= last_frame.dims.x || cell.y >= last_frame.dims.y || cell.z >= last_frame.dims.z) {
+		return 0.0f;
+	}
+	const int64_t idx = ((int64_t)cell.z * last_frame.dims.y + cell.y) * last_frame.dims.x + cell.x;
+	return Math::half_to_float(last_frame.voxels_rgbaH[idx * 4 + p_component]);
+}
+
+float PhysXFlowSimulation3D::sample_smoke(const Vector3 &p_position) const {
+	// Channel A of the decoded atlas (see FlowReadbackFrame).
+	return _sample_channel(3, p_position);
+}
+
+float PhysXFlowSimulation3D::sample_temperature(const Vector3 &p_position) const {
+	// Channel R, in the emitter's temperature units.
+	return _sample_channel(0, p_position);
+}
+
 void PhysXFlowSimulation3D::set_debug_stats(bool p_enabled) {
 	debug_stats = p_enabled;
 }
@@ -1167,6 +1194,8 @@ void PhysXFlowSimulation3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_active_bounds_size"), &PhysXFlowSimulation3D::get_active_bounds_size);
 	ClassDB::bind_method(D_METHOD("get_last_max_smoke"), &PhysXFlowSimulation3D::get_last_max_smoke);
 	ClassDB::bind_method(D_METHOD("get_last_max_temperature"), &PhysXFlowSimulation3D::get_last_max_temperature);
+	ClassDB::bind_method(D_METHOD("sample_smoke", "position"), &PhysXFlowSimulation3D::sample_smoke);
+	ClassDB::bind_method(D_METHOD("sample_temperature", "position"), &PhysXFlowSimulation3D::sample_temperature);
 
 	ClassDB::bind_method(D_METHOD("set_max_blocks", "blocks"), &PhysXFlowSimulation3D::set_max_blocks);
 	ClassDB::bind_method(D_METHOD("get_max_blocks"), &PhysXFlowSimulation3D::get_max_blocks);

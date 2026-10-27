@@ -496,7 +496,9 @@ void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 			p.luid = e.luid;
 			p.enabled = NV_FLOW_TRUE;
 			p.localToWorld = _to_flow_matrix(e.world_xform);
-			p.localToWorldVelocity = _to_flow_matrix(e.world_xform);
+			// The velocity path transforms DIRECTIONS: the basis only, or the
+			// emitter's world position adds to every injected velocity.
+			p.localToWorldVelocity = _to_flow_matrix(Transform3D(e.world_xform.basis, Vector3()));
 			p.velocityIsWorldSpace = NV_FLOW_FALSE;
 			p.layer = 0;
 			p.level = 0;
@@ -518,7 +520,8 @@ void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 			p.luid = e.luid;
 			p.enabled = NV_FLOW_TRUE;
 			p.localToWorld = _to_flow_matrix(e.world_xform);
-			p.localToWorldVelocity = _to_flow_matrix(e.world_xform);
+			// Directions, not points: no translation (see the box emitter).
+			p.localToWorldVelocity = _to_flow_matrix(Transform3D(e.world_xform.basis, Vector3()));
 			p.velocityIsWorldSpace = NV_FLOW_FALSE;
 			p.position = { 0.0f, 0.0f, 0.0f };
 			p.layer = 0;
@@ -992,10 +995,6 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 		r_slot.inflight.layer = sp.layers[0];
 	}
 	r_slot.inflight.level = level;
-	r_slot.inflight.locations.clear();
-	for (uint32_t i = 0; i < sp.locationCount && i < level.numLocations; i++) {
-		r_slot.inflight.locations.push_back(sp.locations[i]);
-	}
 	r_slot.inflight.texture_format = eNvFlowFormat_r16g16b16a16_float;
 	r_slot.inflight.texture_width = level.dim.x;
 	r_slot.inflight.texture_height = level.dim.y;
@@ -1101,14 +1100,6 @@ void FlowSimulation::_release_readback_buffers() {
 
 // ---- Decode --------------------------------------------------------------
 
-// NvFlowTableValueToIndexRead (NvFlowShader.hlsli) reimplemented on CPU.
-static void table_value_to_real_base(uint32_t p_value, int32_t *r_xyz, bool &r_valid) {
-	r_valid = (p_value >> 31u) != 0u;
-	r_xyz[0] = (int32_t)(((p_value << 1u) | 1u) & 0xFFFu);
-	r_xyz[1] = (int32_t)(((p_value >> 10u) | 1u) & 0x7FFu);
-	r_xyz[2] = (int32_t)(((p_value >> 20u) | 1u) & 0x7FFu);
-}
-
 static float half_to_float_fast(uint16_t h) {
 	// IEEE 754 half -> float (standard bit twiddle).
 	const uint32_t sign = (uint32_t)(h & 0x8000u) << 16;
@@ -1192,19 +1183,26 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 
 	const NvFlowSparseLevelParams &level = r_slot.inflight.level;
 	const NvFlowSparseLayerParams &layer = r_slot.inflight.layer;
-	const uint32_t block_dim = 1u << level.blockDimBits.x; // 4
-	const float cell_size_x = layer.blockSizeWorld.x / (float)block_dim;
-	const float cell_size_y = layer.blockSizeWorld.y / (float)block_dim;
-	const float cell_size_z = layer.blockSizeWorld.z / (float)block_dim;
-	const float cell_size = MAX(cell_size_x, MAX(cell_size_y, cell_size_z));
+	// Blocks are anisotropic (blockDimBits (5,4,4) with blockSizeWorld
+	// (8,4,4) keeps cubic cells): every block-space step uses the per-axis
+	// dim, never blockDimBits.x for all axes.
+	const int32_t block_dim[3] = {
+		1 << level.blockDimBits.x,
+		1 << level.blockDimBits.y,
+		1 << level.blockDimBits.z,
+	};
+	const float cell_size = MAX(layer.blockSizeWorld.x / (float)block_dim[0],
+			MAX(layer.blockSizeWorld.y / (float)block_dim[1],
+					layer.blockSizeWorld.z / (float)block_dim[2]));
 
-	// Dense volume bounds from the sparse layer's location range.
-	int32_t loc_min[3] = { layer.locationMin.x, layer.locationMin.y, layer.locationMin.z };
-	int32_t loc_max[3] = { layer.locationMax.x, layer.locationMax.y, layer.locationMax.z };
-	const float world_origin[3] = {
-		(float)loc_min[0] * layer.blockSizeWorld.x,
-		(float)loc_min[1] * layer.blockSizeWorld.y,
-		(float)loc_min[2] * layer.blockSizeWorld.z,
+	// Dense volume bounds from the sparse layer's location range, anchored at
+	// the layer's worldMin — the same anchor the render path reads.
+	const int32_t loc_min[3] = { layer.locationMin.x, layer.locationMin.y, layer.locationMin.z };
+	const int32_t loc_max[3] = { layer.locationMax.x, layer.locationMax.y, layer.locationMax.z };
+	const int32_t loc_min_cells[3] = {
+		loc_min[0] * block_dim[0],
+		loc_min[1] * block_dim[1],
+		loc_min[2] * block_dim[2],
 	};
 	int32_t span_blocks[3];
 	for (int a = 0; a < 3; a++) {
@@ -1216,7 +1214,7 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 	int stride = 1;
 	const int max_dim = 160;
 	for (int a = 0; a < 3; a++) {
-		dims[a] = span_blocks[a] * (int)block_dim;
+		dims[a] = span_blocks[a] * (int)block_dim[a];
 	}
 	while (MAX(dims[0] / stride, MAX(dims[1] / stride, dims[2] / stride)) > max_dim) {
 		stride <<= 1;
@@ -1231,44 +1229,64 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 		return false;
 	}
 	if (diag_flags & DIAG_READBACK_STATS) {
-		static bool dumped = false;
-		if (!dumped) {
-			dumped = true;
-		}
+		print_line(vformat("[Flow] decode: locMin=(%d,%d,%d) locMax=(%d,%d,%d) worldMin=(%f,%f,%f) blockSize=(%f,%f,%f) blockDim=(%d,%d,%d) dim=(%d,%d,%d) locationOffset=%d blockLevelOffsetGlobal=%d",
+				loc_min[0], loc_min[1], loc_min[2], loc_max[0], loc_max[1], loc_max[2],
+				(float)layer.worldMin.x, (float)layer.worldMin.y, (float)layer.worldMin.z,
+				(float)layer.blockSizeWorld.x, (float)layer.blockSizeWorld.y, (float)layer.blockSizeWorld.z,
+				block_dim[0], block_dim[1], block_dim[2], dims[0], dims[1], dims[2],
+				(int)level.locationOffset, (int)level.blockLevelOffsetGlobal));
 	}
 	r_frame.dims = Vector3i(dims[0], dims[1], dims[2]);
 	r_frame.cell_size = cell_size * stride;
-	r_frame.world_min = Vector3(world_origin[0], world_origin[1], world_origin[2]);
+	r_frame.world_min = Vector3((float)layer.worldMin.x, (float)layer.worldMin.y, (float)layer.worldMin.z);
 	r_frame.world_size = Vector3(dims[0], dims[1], dims[2]) * r_frame.cell_size;
 	r_frame.voxels_rgbaH.resize(dims[0] * dims[1] * dims[2] * 4);
 	memset(r_frame.voxels_rgbaH.ptrw(), 0, r_frame.voxels_rgbaH.size() * sizeof(uint16_t));
 
-	// Decode blocks: per blockIdx -> real texel base; virtual voxel =
-	// (location << blockDimBits) + local; world = virtual * cellSize.
+	// Decode blocks straight from the sparse table — the source the GPU-side
+	// lookups read (NvFlowLocationToBlockIdx + NvFlowTableValueToIndexRead,
+	// NvFlowShader.hlsli): the table lists each block's location at
+	// (blockIdx << 2) + locationOffset and the block's packed atlas base at
+	// blockIdx + blockLevelOffsetGlobal. The exported location array's order
+	// is not the table's, so it must not drive the pairing.
 	uint32_t valid_blocks = 0;
-	for (uint32_t blockIdx = 0; blockIdx < r_slot.inflight.locations.size(); blockIdx++) {
-		const NvFlowInt4 &location = r_slot.inflight.locations[blockIdx];
+	int32_t first_nonzero_cells[3] = { 0, 0, 0 };
+	bool first_nonzero_found = false;
+	const uint32_t table_uints = (uint32_t)(r_slot.inflight.table_bytes / sizeof(uint32_t));
+	const uint32_t num_blocks = MIN(level.numLocations,
+			table_uints > level.locationOffset + 4u ? (table_uints - level.locationOffset) / 4u : 0u);
+	for (uint32_t blockIdx = 0; blockIdx < num_blocks; blockIdx++) {
 		const uint32_t table_value = table[(uint64_t)blockIdx + level.blockLevelOffsetGlobal];
-		int32_t real_base[3];
-		bool valid = false;
-		table_value_to_real_base(table_value, real_base, valid);
+		const bool valid = (table_value >> 31u) != 0u;
+		const int32_t location[3] = {
+			(int32_t)table[((uint64_t)blockIdx << 2u) + level.locationOffset + 0u],
+			(int32_t)table[((uint64_t)blockIdx << 2u) + level.locationOffset + 1u],
+			(int32_t)table[((uint64_t)blockIdx << 2u) + level.locationOffset + 2u],
+		};
+		if (diag_flags & DIAG_READBACK_STATS) {
+			print_line(vformat("[Flow]   block %d: loc=(%d,%d,%d) tableValue=%d valid=%d",
+					(int)blockIdx, location[0], location[1], location[2],
+					table_value, valid ? 1 : 0));
+		}
 		if (!valid) {
 			continue;
 		}
 		valid_blocks++;
 		const int32_t vbase[3] = {
-			location.x << level.blockDimBits.x,
-			location.y << level.blockDimBits.y,
-			location.z << level.blockDimBits.z,
+			location[0] * block_dim[0],
+			location[1] * block_dim[1],
+			location[2] * block_dim[2],
 		};
-		for (uint32_t bz = 0; bz < block_dim; bz++) {
-			for (uint32_t by = 0; by < block_dim; by++) {
-				for (uint32_t bx = 0; bx < block_dim; bx++) {
-					const int32_t rx = real_base[0] + (int32_t)bx;
-					const int32_t ry = real_base[1] + (int32_t)by;
-					const int32_t rz = real_base[2] + (int32_t)bz;
-					if (rx < 0 || ry < 0 || rz < 0 ||
-							(uint32_t)rx >= r_slot.inflight.texture_width ||
+		for (int32_t bz = 0; bz < block_dim[2]; bz++) {
+			for (int32_t by = 0; by < block_dim[1]; by++) {
+				for (int32_t bx = 0; bx < block_dim[0]; bx++) {
+					// Packed atlas base + in-block texel, per
+					// NvFlowTableValueToIndexRead (the sum wraps at the
+					// field width).
+					const int32_t rx = (int32_t)((((table_value << 1u) | 1u) + (uint32_t)bx) & 0xFFFu);
+					const int32_t ry = (int32_t)((((table_value >> 10u) | 1u) + (uint32_t)by) & 0x7FFu);
+					const int32_t rz = (int32_t)((((table_value >> 20u) | 1u) + (uint32_t)bz) & 0x7FFu);
+					if ((uint32_t)rx >= r_slot.inflight.texture_width ||
 							(uint32_t)ry >= r_slot.inflight.texture_height ||
 							(uint32_t)rz >= r_slot.inflight.texture_depth) {
 						continue;
@@ -1285,12 +1303,12 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 					}
 					// Virtual voxel -> dense index (with stride coarsening;
 					// overlapping stride cells keep the max component-wise).
-					const int32_t vx = vbase[0] + (int32_t)bx;
-					const int32_t vy = vbase[1] + (int32_t)by;
-					const int32_t vz = vbase[2] + (int32_t)bz;
-					const int dx = (vx - loc_min[0] * (int32_t)block_dim) / stride;
-					const int dy = (vy - loc_min[1] * (int32_t)block_dim) / stride;
-					const int dz = (vz - loc_min[2] * (int32_t)block_dim) / stride;
+					const int32_t vx = vbase[0] + bx;
+					const int32_t vy = vbase[1] + by;
+					const int32_t vz = vbase[2] + bz;
+					const int dx = (vx - loc_min_cells[0]) / stride;
+					const int dy = (vy - loc_min_cells[1]) / stride;
+					const int dz = (vz - loc_min_cells[2]) / stride;
 					if (dx < 0 || dy < 0 || dz < 0 || dx >= dims[0] || dy >= dims[1] || dz >= dims[2]) {
 						continue;
 					}
@@ -1301,6 +1319,12 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 					dst[3] = rgba[3];
 					r_frame.max_smoke = MAX(r_frame.max_smoke, a);
 					r_frame.max_temperature = MAX(r_frame.max_temperature, r);
+					if (!first_nonzero_found) {
+						first_nonzero_found = true;
+						first_nonzero_cells[0] = vx;
+						first_nonzero_cells[1] = vy;
+						first_nonzero_cells[2] = vz;
+					}
 				}
 			}
 		}
@@ -1313,8 +1337,13 @@ bool FlowSimulation::_decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_fra
 
 	if (diag_flags & DIAG_READBACK_STATS) {
 		print_line(vformat("[Flow] readback frame %d: blocks=%d/%d dims=%d,%d,%d stride=%d cell=%f maxSmoke=%f maxTemp=%f",
-				(int64_t)r_frame.frame_index, (int)valid_blocks, (int)r_slot.inflight.locations.size(),
+				(int64_t)r_frame.frame_index, (int)valid_blocks, (int)num_blocks,
 				dims[0], dims[1], dims[2], stride, r_frame.cell_size, r_frame.max_smoke, r_frame.max_temperature));
+		if (first_nonzero_found) {
+			print_line(vformat("[Flow]   first nonzero voxel: virtual=(%d,%d,%d) world=(%f,%f,%f)",
+					first_nonzero_cells[0], first_nonzero_cells[1], first_nonzero_cells[2],
+					first_nonzero_cells[0] * cell_size, first_nonzero_cells[1] * cell_size, first_nonzero_cells[2] * cell_size));
+		}
 	}
 	return true;
 }

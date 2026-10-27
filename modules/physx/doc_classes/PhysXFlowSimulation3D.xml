@@ -67,6 +67,20 @@
 				Highest temperature in the last decoded frame.
 			</description>
 		</method>
+		<method name="sample_smoke" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="position" type="Vector3" />
+			<description>
+				The smoke at [param position] (world space), from the last CPU readback. Returns [code]-1.0[/code] without one (enable [member cpu_readback], or run where no render path exists -- the readback then always runs); [code]0.0[/code] where the volume holds no gas. The readback lags a few frames behind the simulation.
+			</description>
+		</method>
+		<method name="sample_temperature" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="position" type="Vector3" />
+			<description>
+				The temperature at [param position] (world space), from the last CPU readback, in the same units as [member PhysXFlowEmitter3D.temperature] -- e.g. how much a fire hurts or how hot a sensor reads. Returns [code]-1.0[/code] without a readback (see [method sample_smoke]); [code]0.0[/code] where the volume holds no gas. The readback lags a few frames behind the simulation.
+			</description>
+		</method>
 		<method name="get_stats" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
@@ -122,7 +136,7 @@
 			Exponential temperature cooling rate.
 		</member>
 		<member name="cpu_readback" type="bool" setter="set_cpu_readback" getter="get_cpu_readback" default="false">
-			Copies the gas back to the CPU once every few steps for the query API ([method get_last_max_smoke], bounds). The GPU render path never touches it; only turn this off if you read none of the query values.
+			Copies the gas back to the CPU once every few steps for the query API ([method get_last_max_smoke], [method sample_smoke], [method sample_temperature], bounds). The GPU render path never touches it; only turn this off if you read none of the query values.
 		</member>
 		<member name="debug_stats" type="bool" setter="set_debug_stats" getter="get_debug_stats" default="false">
 			Prints per-step sparse layout and readback statistics to the console (diagnostics only).

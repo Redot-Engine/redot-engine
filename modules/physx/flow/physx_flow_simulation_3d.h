@@ -234,6 +234,7 @@ class PhysXFlowSimulation3D : public Node3D {
 	void _update_render();
 	void _gather_light(Vector3 &r_direction, Color &r_color, Color &r_ambient);
 	void _fill_render_settings(FlowRenderSettings &r_settings);
+	float _sample_channel(int p_component, const Vector3 &p_position) const;
 	uint64_t _luid_for(ObjectID p_id);
 
 	bool _build_server_shape_mesh(const RID &p_shape_rid, CachedShapeMesh &r_cache);
@@ -272,6 +273,12 @@ public:
 	Vector3 get_active_bounds_size() const { return last_frame.world_size; }
 	float get_last_max_smoke() const { return last_frame.max_smoke; }
 	float get_last_max_temperature() const { return last_frame.max_temperature; }
+
+	// Smoke / temperature at a world position, from the last CPU readback:
+	// -1.0 without one (enable cpu_readback, or run on the fallback path),
+	// 0.0 where the volume holds no gas. The readback lags a few frames.
+	float sample_smoke(const Vector3 &p_position) const;
+	float sample_temperature(const Vector3 &p_position) const;
 
 	void set_max_blocks(int p_blocks);
 	int get_max_blocks() const { return max_blocks; }

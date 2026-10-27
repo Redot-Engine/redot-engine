@@ -59,14 +59,16 @@
 // Readback: after simulate()+offscreen(), the grid's sparse density texture
 // and sparse table buffer are copied into persistent readback buffers on the
 // Flow context (public copy passes). Once the device queue reports the frame
-// complete, the sparse layout is decoded on the CPU -- exactly the mapping
-// the SDK's own raymarch performs on the GPU (NvFlowTableValueToIndexRead in
-// NvFlowShader.hlsli): per blockIdx, a packed table value yields the block's
-// real texel base; virtual voxel = real voxel - offset; world position =
-// location * blockSizeWorld + localVoxel * cellSize. The result is a dense
-// RGBA-half volume (R=smoke, G=temperature, B=fuel, A=burn) ready for an
-// ImageTexture3D. This costs one sparse-sized GPU->CPU copy per frame; a
-// future direct GPU interop path is documented as a non-goal for v1.
+// complete, the sparse layout is decoded on the CPU straight from the table
+// -- the same source the SDK's raymarch reads (NvFlowLocationToBlockIdx and
+// NvFlowTableValueToIndexRead in NvFlowShader.hlsli): per blockIdx, the
+// table lists the block's location at (blockIdx << 2) + locationOffset and
+// its packed atlas base at blockIdx + blockLevelOffsetGlobal; virtual voxel
+// = location * blockDim + local texel; world = layer.worldMin + denseCell *
+// cellSize. The result is a dense RGBA-half volume (R=temperature, B=sun
+// light, A=smoke — the scatter shader's channel contract) ready for an
+// ImageTexture3D. This costs one sparse-sized GPU->CPU copy per frame; a future direct GPU interop path
+// is documented as a non-goal for v1.
 
 // Grid capacity / quality knobs (recreating the grid on change).
 struct FlowSimGridConfig {
@@ -373,7 +375,6 @@ private:
 		// Sparse layout snapshot matching the copied frame.
 		NvFlowSparseLayerParams layer = {};
 		NvFlowSparseLevelParams level = {};
-		LocalVector<NvFlowInt4> locations;
 		NvFlowFormat texture_format = eNvFlowFormat_unknown;
 		uint32_t texture_width = 0;
 		uint32_t texture_height = 0;

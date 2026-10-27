@@ -24,6 +24,25 @@ jobs:
           ref: main
           path: physx-sdk
 
+      - name: Checkout engine repo (module SDK patches)
+        uses: actions/checkout@v4
+        with:
+          path: engine
+
+      - name: Apply module SDK patches
+        shell: pwsh
+        run: |
+          # 0004 teaches build.bat the VS 2026 + v143 fallback; a no-op while
+          # the runner image ships VS 2022 (and skipped when already applied
+          # after an upstream change lands it).
+          $patch = "engine/modules/physx/misc/physx_patches/0004-vs2026-v143.patch"
+          if (Select-String -Path physx-sdk/flow/build.bat -Pattern "godot_physx: the vs2022 projects ask" -Quiet) {
+            "0004 already applied"
+          } else {
+            git apply "$patch"
+            "0004 applied"
+          }
+
       - name: Build Flow (debug + release)
         shell: cmd
         run: |
