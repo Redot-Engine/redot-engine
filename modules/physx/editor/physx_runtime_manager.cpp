@@ -65,7 +65,10 @@ extern "C" PfnDliHook __pfnDliFailHook2 = physx_dli_fail_hook;
 // The full set of runtime DLLs staged next to the editor executable (see the
 // SCsub staging lists). The first five are hard-imported by the editor
 // binary (delay-loaded); the rest are load-time dependencies of the Blast
-// DLLs -- all of them must be present for PhysX/Blast to work.
+// DLLs -- all of them must be present for PhysX/Blast to work. The nvflow
+// pair is NVIDIA Flow's closed-source runtime, LoadLibrary'd by the loader:
+// without it every Flow node renders nothing. Keep this list in step with
+// the runtime bundle's manifest "files" (redot-physx-runtime).
 static const char *required_runtime_files[] = {
 	"PhysXGpu_64.dll",
 	"NvBlast.dll",
@@ -77,13 +80,17 @@ static const char *required_runtime_files[] = {
 	"NvBlastExtStress.dll",
 	"NvBlastExtTkSerialization.dll",
 	"NvBlastTk.dll",
+	"nvflow.dll",
+	"nvflowext.dll",
 };
 #endif
 
 #ifdef __linux__
 // Linux: everything except the GPU runtime is statically linked; the shared
 // PhysXGpu runtime (built by the SDK build workflow) is the only runtime
-// file, loaded by the SDK itself when GPU dynamics starts.
+// file, loaded by the SDK itself when GPU dynamics starts. When a Linux
+// bundle ships (the manifest's "linux" is null for now), add the Flow
+// runtime the SCsub stages (libnvflow.so, libnvflowext.so) here too.
 static const char *required_runtime_files[] = {
 	"libPhysXGpu_64.so",
 };
