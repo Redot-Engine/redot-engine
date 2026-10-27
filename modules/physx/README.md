@@ -15,6 +15,16 @@ body, 0.68 vs 0.67 m/step on a deeply embedded one). Set a value > 0 (for
 example 4) as a comfort option for a gentler, slower pop-out — a 4 m/s cap
 cleared a deep embed about 7x slower than Godot in the same measurement.
 
+## Simulation settings note
+
+`physics/physx_3d/simulation/gpu_dynamics` (default on) turns GPU dynamics
+off **without** enhanced determinism: no CUDA context is created at all and
+every scene runs the CPU solver with its full worker pool -- the same path as
+a machine without CUDA. Useful when the GPU is shared with other work, since
+every step waits on it. `physics/physx_3d/simulation/enhanced_determinism`
+instead keeps the CUDA context (soft-body CUDA paths stay available) and only
+forces the CPU simulation.
+
 ## Engine parity notes
 
 A few `PhysicsServer3D` observables have no PhysX counterpart and read as

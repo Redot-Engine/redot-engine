@@ -57,6 +57,15 @@ public:
 	// solver even when a CUDA device is available.
 	inline static bool enhanced_determinism = false;
 
+	// physics/physx_3d/simulation/gpu_dynamics
+	//
+	// Off: no CUDA context is created at all -- every scene runs the CPU
+	// solver with its full worker pool, exactly like a machine without
+	// CUDA. Distinct from enhanced_determinism, which keeps the context
+	// and only forces the CPU simulation path (GPU work like soft-body
+	// CUDA solvers stays available there).
+	inline static bool gpu_dynamics = true;
+
 	// physics/physx_3d/simulation/solver_type
 	//
 	// 0 = PGS (Projected Gauss-Seidel) -- the DEFAULT. PhysX's classic solver
@@ -133,7 +142,8 @@ public:
 	// when the mesh tetrahedralizes and CUDA is available, else the CPU XPBD
 	// solver — decided per body), 1 = CPU, 2 = GPU. A per-body override is
 	// available via the node metadata "physx_soft_mode" = "cpu" / "gpu".
-	// enhanced_determinism forces every soft body to CPU (no CUDA context).
+	// gpu_dynamics=off forces every soft body to CPU (no CUDA context exists;
+	// enhanced_determinism keeps the context and only forces the CPU path).
 	inline static int soft_body_mode = 0;
 
 	// physics/physx_3d/flow/device_api

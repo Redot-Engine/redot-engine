@@ -2748,8 +2748,13 @@ void PhysXServer3D::init() {
 #ifdef GODOT_PHYSX_GPU
 	// GPU dynamics. Never deterministic (GPU solver scheduling varies run to
 	// run), so enhanced_determinism forces the CPU path even when a device is
-	// present. A GPU build without a usable CUDA device falls back to CPU.
-	if (!PhysXProjectSettings::enhanced_determinism) {
+	// present. gpu_dynamics=off goes further: no CUDA context at all -- the
+	// scene runs the CPU solver with its full worker pool, the same path as
+	// a machine without CUDA. A GPU build without a usable CUDA device falls
+	// back to CPU.
+	if (!PhysXProjectSettings::gpu_dynamics) {
+		print_line("PhysX: gpu_dynamics is off -> CPU simulation (no CUDA context).");
+	} else if (!PhysXProjectSettings::enhanced_determinism) {
 #if defined(__linux__)
 		// The GPU runtime is linked into the engine and staged next to it by
 		// the module SCsub (physx_gpu=yes only); this dlopen acquires its

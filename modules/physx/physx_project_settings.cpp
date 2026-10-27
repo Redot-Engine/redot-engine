@@ -41,6 +41,11 @@
 
 void PhysXProjectSettings::register_settings() {
 	GLOBAL_DEF(PropertyInfo(Variant::BOOL, "physics/physx_3d/simulation/enhanced_determinism"), false);
+	// Off: no CUDA context at all -- the CPU solver with its full worker pool,
+	// the same path as a machine without CUDA. Distinct from
+	// enhanced_determinism, which keeps the context for non-simulation CUDA
+	// work (soft-body CUDA paths) and only forces the CPU simulation.
+	GLOBAL_DEF(PropertyInfo(Variant::BOOL, "physics/physx_3d/simulation/gpu_dynamics"), true);
 	GLOBAL_DEF(PropertyInfo(Variant::INT, "physics/physx_3d/simulation/solver_type", PROPERTY_HINT_ENUM, "PGS,TGS"), 0);
 	GLOBAL_DEF(PropertyInfo(Variant::BOOL, "physics/physx_3d/simulation/allow_sleep"), true);
 	GLOBAL_DEF(PropertyInfo(Variant::BOOL, "physics/physx_3d/simulation/stabilization"), false);
@@ -72,6 +77,7 @@ void PhysXProjectSettings::register_settings() {
 
 void PhysXProjectSettings::read_settings() {
 	enhanced_determinism = GLOBAL_GET("physics/physx_3d/simulation/enhanced_determinism");
+	gpu_dynamics = GLOBAL_GET("physics/physx_3d/simulation/gpu_dynamics");
 	solver_type = GLOBAL_GET("physics/physx_3d/simulation/solver_type");
 	allow_sleep = GLOBAL_GET("physics/physx_3d/simulation/allow_sleep");
 	stabilization = GLOBAL_GET("physics/physx_3d/simulation/stabilization");
