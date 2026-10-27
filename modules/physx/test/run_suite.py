@@ -38,6 +38,7 @@ SMOKE_SCRIPT = "res://gdscript/physics_smoke_test.gd"
 BLAST_SCRIPT = "res://gdscript/blast_smoke_test.gd"
 BLAST_PROBE_SCRIPT = "res://gdscript/blast_probe_test.gd"
 BLAST_DEBRIS_SCRIPT = "res://gdscript/blast_debris_test.gd"
+BLAST_VALID_SCRIPT = "res://gdscript/blast_authoring_validation_test.gd"
 VEHICLE_SCRIPTS = [
     "res://gdscript/vehicle_server_check.gd",
     "res://gdscript/vehicle_node_test.gd",
@@ -82,7 +83,7 @@ SUITES = {
     "csharp": [CSHARP_SCRIPT],
     "gdscript": [GDSCRIPT_SCRIPT],
     "smoke": [SMOKE_SCRIPT],
-    "blast": [BLAST_SCRIPT, BLAST_PROBE_SCRIPT, BLAST_DEBRIS_SCRIPT],
+    "blast": [BLAST_SCRIPT, BLAST_PROBE_SCRIPT, BLAST_DEBRIS_SCRIPT, BLAST_VALID_SCRIPT],
     "vehicle": VEHICLE_SCRIPTS,
     "async": [ASYNC_SCRIPT],
     "lifecycle": [LIFECYCLE_SCRIPT],
