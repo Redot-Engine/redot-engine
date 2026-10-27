@@ -2786,6 +2786,8 @@
 		</member>
 		<member name="physics/physx_3d/simulation/enhanced_determinism" type="bool" setter="" getter="" default="false">
 		</member>
+		<member name="physics/physx_3d/simulation/gpu_dynamics" type="bool" setter="" getter="" default="true">
+		</member>
 		<member name="physics/physx_3d/simulation/max_depenetration_velocity" type="float" setter="" getter="" default="0.0">
 		</member>
 		<member name="physics/physx_3d/simulation/solver_type" type="int" setter="" getter="" default="0">

@@ -67,20 +67,6 @@
 				Highest temperature in the last decoded frame.
 			</description>
 		</method>
-		<method name="sample_smoke" qualifiers="const">
-			<return type="float" />
-			<param index="0" name="position" type="Vector3" />
-			<description>
-				The smoke at [param position] (world space), from the last CPU readback. Returns [code]-1.0[/code] without one (enable [member cpu_readback], or run where no render path exists -- the readback then always runs); [code]0.0[/code] where the volume holds no gas. The readback lags a few frames behind the simulation.
-			</description>
-		</method>
-		<method name="sample_temperature" qualifiers="const">
-			<return type="float" />
-			<param index="0" name="position" type="Vector3" />
-			<description>
-				The temperature at [param position] (world space), from the last CPU readback, in the same units as [member PhysXFlowEmitter3D.temperature] -- e.g. how much a fire hurts or how hot a sensor reads. Returns [code]-1.0[/code] without a readback (see [method sample_smoke]); [code]0.0[/code] where the volume holds no gas. The readback lags a few frames behind the simulation.
-			</description>
-		</method>
 		<method name="get_stats" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
@@ -101,6 +87,20 @@
 			<return type="void" />
 			<description>
 				Clears the sparse grid (all allocated blocks, all channels) and restarts the simulation clock. Transient emitters are dropped.
+			</description>
+		</method>
+		<method name="sample_smoke" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="position" type="Vector3" />
+			<description>
+				The smoke at [param position] (world space), from the last CPU readback. Returns [code]-1.0[/code] without one (enable [member cpu_readback], or run where no render path exists -- the readback then always runs); [code]0.0[/code] where the volume holds no gas. The readback lags a few frames behind the simulation.
+			</description>
+		</method>
+		<method name="sample_temperature" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="position" type="Vector3" />
+			<description>
+				The temperature at [param position] (world space), from the last CPU readback, in the same units as [member PhysXFlowEmitter3D.temperature] -- e.g. how much a fire hurts or how hot a sensor reads. Returns [code]-1.0[/code] without a readback (see [method sample_smoke]); [code]0.0[/code] where the volume holds no gas. The readback lags a few frames behind the simulation.
 			</description>
 		</method>
 		<method name="step_once">
