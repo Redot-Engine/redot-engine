@@ -266,6 +266,12 @@ public:
 		return bodies;
 	}
 
+	// Bodies PhysX reported moving in the last completed step (the
+	// eENABLE_ACTIVE_ACTORS snapshot _finish_step leaves in
+	// prev_active_bodies): interpolation/streaming consumers walk this
+	// instead of diffing every body's transform.
+	const LocalVector<PhysXBody3D *> &get_moved_bodies() const { return prev_active_bodies; }
+
 	const LocalVector<PhysXArea3D *> &get_areas() const {
 		return areas;
 	}

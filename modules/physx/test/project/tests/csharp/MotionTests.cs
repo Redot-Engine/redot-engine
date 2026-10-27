@@ -31,6 +31,8 @@ internal static class MotionTests
 		s.Add("PHYSX-MOVE-018", "multi-shape body reports the swept shape's local index", SweepLocalShape);
 		s.Add("PHYSX-MOVE-019", "recovery weights contacts by collision_priority", RecoverPriorityWeighted);
 		s.Add("PHYSX-MOVE-020", "contact collider velocity includes the angular lever arm", SweepColliderContactVelocity);
+		s.Add("PHYSX-MOVE-021", "capsule into a low mesh lip reports a floor-tilted normal (walkable)", SweepMeshLowLip);
+		s.Add("PHYSX-MOVE-022", "capsule into a tall mesh step reports a wall normal (stops)", SweepMeshTallStep);
 	}
 
 	static IEnumerator SweepHitsFloor()
@@ -400,6 +402,56 @@ internal static class MotionTests
 		// omega = (0, 10, 0) -> omega x r = (0, 0, +14).
 		var v = r.GetColliderVelocity(0);
 		Assert.Expect(v.Z > 5f, $"contact velocity includes omega x r (got {v})");
+		yield return Wait.Frame();
+	}
+
+	// Walkable mesh terrain: floor y=0 for x in [-8, 0], a vertical riser at
+	// x=0 of height h, and a flat top y=h for x in [0, 8]. Godot-front
+	// windings (the module swizzles them for PhysX at cook time).
+	static Rid SteppedTerrain(PhysxWorld w, float h) => w.Concave(
+		new Vector3(-8, 0, -8), new Vector3(0, 0, -8), new Vector3(-8, 0, 8),
+		new Vector3(-8, 0, 8), new Vector3(0, 0, -8), new Vector3(0, 0, 8),
+		new Vector3(0, 0, -8), new Vector3(0, h, -8), new Vector3(0, 0, 8),
+		new Vector3(0, 0, 8), new Vector3(0, h, -8), new Vector3(0, h, 8),
+		new Vector3(0, h, -8), new Vector3(8, h, -8), new Vector3(0, h, 8),
+		new Vector3(0, h, 8), new Vector3(8, h, -8), new Vector3(8, h, 8));
+
+	// A walking capsule sweeps into the 10 cm lip. The start pose sits 1 mm
+	// above rest (a resting character ends at the cast's back-off gap; an
+	// exact-tangent start overlaps the floor, and PhysX sweeps then report
+	// only the overlap, never the lip ahead). The contact is the lip's top
+	// edge; the true core normal tilts up as far as the lip is low —
+	// floor-like, so move_and_slide walks up. The facet normal (-1,0,0)
+	// would make the lip a wall.
+	static IEnumerator SweepMeshLowLip()
+	{
+		using var w = new PhysxWorld(false);
+		w.MakeStatic(SteppedTerrain(w, 0.1f), new Vector3(0, 0, 0));
+		var body = w.MakeKinematic(w.Capsule(0.25f, 1.0f), new Vector3(-4, 0.501f, 0));
+		yield return Wait.Frames(3);
+		var (hit, r) = w.TestMotion(body, new Transform3D(Basis.Identity, new Vector3(-4, 0.501f, 0)), new Vector3(8, 0, 0));
+		Assert.Expect(hit, "low lip blocks the sweep");
+		Assert.Expect(r.GetCollisionSafeFraction() > 0.3f && r.GetCollisionSafeFraction() < 0.6f,
+			$"blocked at the lip edge (safe={r.GetCollisionSafeFraction():F3})");
+		Assert.Expect(r.GetCollisionNormal(0).Y > 0.3f,
+			$"floor-tilted contact normal (got {r.GetCollisionNormal(0)})");
+		yield return Wait.Frame();
+	}
+
+	// The 30 cm step's edge sits level with the capsule's cylinder section:
+	// the core normal is horizontal — a wall that stops the travel, where a
+	// low lip's tilted normal would have walked up. Start 1 mm above rest
+	// (see SweepMeshLowLip).
+	static IEnumerator SweepMeshTallStep()
+	{
+		using var w = new PhysxWorld(false);
+		w.MakeStatic(SteppedTerrain(w, 0.3f), new Vector3(0, 0, 0));
+		var body = w.MakeKinematic(w.Capsule(0.25f, 1.0f), new Vector3(-4, 0.501f, 0));
+		yield return Wait.Frames(3);
+		var (hit, r) = w.TestMotion(body, new Transform3D(Basis.Identity, new Vector3(-4, 0.501f, 0)), new Vector3(8, 0, 0));
+		Assert.Expect(hit, "tall step blocks the sweep");
+		Assert.Expect(Mathf.Abs(r.GetCollisionNormal(0).X) > 0.7f && r.GetCollisionNormal(0).Y < 0.3f,
+			$"wall contact normal (got {r.GetCollisionNormal(0)})");
 		yield return Wait.Frame();
 	}
 }

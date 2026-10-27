@@ -999,6 +999,43 @@ static bool _sweep_forward_hit_blocking(const physx::PxSweepHit &p_hit, physx::P
 	return true;
 }
 
+// Mesh/heightfield hits get sweep-specific contact treatment (the true round
+// normal, the face re-derivation): PhysX hands back edge-derived normals on
+// those surfaces.
+static bool _sweep_hit_is_mesh(const physx::PxShape *p_shape) {
+	if (!p_shape) {
+		return false;
+	}
+	const physx::PxGeometryType::Enum geom_type = p_shape->getGeometry().getType();
+	return geom_type == physx::PxGeometryType::eTRIANGLEMESH || geom_type == physx::PxGeometryType::eHEIGHTFIELD;
+}
+
+// True contact normal of a round mover (capsule/sphere) at a sweep touch:
+// from the touch point to the nearest point of the mover's core (the capsule
+// axis segment, or the sphere centre), evaluated at the mover pose advanced
+// to the hit. A mesh's facet normal makes a low lip's vertical face a wall
+// and a tall step's top a floor; the core normal tilts with the lip height
+// instead, so low lips are walked up and tall steps stop the body (as on
+// Godot Physics and Jolt). Falls back to the reported normal when the touch
+// sits on the core itself.
+static physx::PxVec3 _round_sweep_contact_normal(const physx::PxGeometry &p_geom, const physx::PxTransform &p_pose,
+		const physx::PxVec3 &p_dir, float p_distance, const physx::PxVec3 &p_touch, const physx::PxVec3 &p_fallback) {
+	const physx::PxVec3 centre = p_pose.p + p_dir * physx::PxMax(p_distance, 0.0f);
+	physx::PxVec3 a = centre;
+	physx::PxVec3 ab(0.0f, 0.0f, 0.0f);
+	if (p_geom.getType() == physx::PxGeometryType::eCAPSULE) {
+		// PhysX capsules lie along their local X axis.
+		const physx::PxVec3 half = p_pose.q.getBasisVector0() * static_cast<const physx::PxCapsuleGeometry &>(p_geom).halfHeight;
+		a = centre - half;
+		ab = half * 2.0f;
+	}
+	const physx::PxReal len2 = ab.magnitudeSquared();
+	const physx::PxReal t = len2 > 1e-8f ? physx::PxClamp((p_touch - a).dot(ab) / len2, 0.0f, 1.0f) : 0.0f;
+	const physx::PxVec3 to_core = a + ab * t - p_touch;
+	const physx::PxReal dist = to_core.magnitude();
+	return dist > 1e-4f ? to_core / dist : p_fallback;
+}
+
 bool PhysXDirectSpaceState3D::body_test_motion(const PhysXBody3D &p_body, const PhysicsServer3D::MotionParameters &p_parameters, PhysicsServer3D::MotionResult *r_result) const {
 	_ensure_space_synced(space);
 	if (!space) {
@@ -1044,7 +1081,17 @@ bool PhysXDirectSpaceState3D::body_test_motion(const PhysXBody3D &p_body, const 
 	const physx::PxRigidActor *hit_actor = nullptr;
 	const physx::PxShape *hit_shape = nullptr;
 
-	bool hit = _body_motion_cast(p_body, transform, motion, p_parameters.collide_separation_ray, min_contact_depth, _motion_shape_scratch, self_and_excluded, p_parameters.exclude_objects, safe_fraction, unsafe_fraction, hit_position, hit_normal, hit_depth, hit_local_shape, hit_actor, hit_shape);
+	Vector3 mtd_recover;
+	bool hit = _body_motion_cast(p_body, transform, motion, p_parameters.collide_separation_ray, min_contact_depth, effective_margin, _motion_shape_scratch, self_and_excluded, p_parameters.exclude_objects, safe_fraction, unsafe_fraction, hit_position, hit_normal, hit_depth, hit_local_shape, hit_actor, hit_shape, mtd_recover);
+	// Mesh push-outs from the cast phase complete the recovery: the recover
+	// phase cannot depenetrate triangle meshes/height fields (computePenetration
+	// rejects those geometries), so the cast's true-normal push-outs are the
+	// only source. The collide/contact gather runs from the pushed-out pose.
+	if (!mtd_recover.is_zero_approx()) {
+		recovery += mtd_recover;
+		transform.origin += mtd_recover;
+		recovered = true;
+	}
 
 	if (r_result) {
 		// The collision/contact gather runs at the unsafe pose (Godot: ugt =
@@ -1415,14 +1462,15 @@ bool PhysXDirectSpaceState3D::_body_motion_recover(const PhysXBody3D &p_body, co
 // (b) the overlap is deep and the mover's query-pose origin is behind EVERY
 // overlapped triangle (it approached from the back).
 bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const Transform3D &p_transform,
-		const Vector3 &p_motion, bool p_collide_separation_ray, float p_rest_slack, const LocalVector<MotionShapeRef> &p_shapes,
+		const Vector3 &p_motion, bool p_collide_separation_ray, float p_rest_slack, float p_margin, const LocalVector<MotionShapeRef> &p_shapes,
 		const HashSet<RID> &p_self_and_excluded, const HashSet<ObjectID> &p_excluded_objects,
 		real_t &r_safe_fraction, real_t &r_unsafe_fraction, Vector3 &r_hit_position, Vector3 &r_hit_normal, real_t &r_hit_depth, int &r_hit_local_shape,
-		const physx::PxRigidActor *&r_hit_actor, const physx::PxShape *&r_hit_shape) const {
+		const physx::PxRigidActor *&r_hit_actor, const physx::PxShape *&r_hit_shape, Vector3 &r_mtd_recover) const {
 	r_safe_fraction = 1.0;
 	r_unsafe_fraction = 1.0;
 	r_hit_depth = 0.0;
 	r_hit_local_shape = -1;
+	r_mtd_recover = Vector3();
 
 	if (!space || !space->get_px_scene() || p_shapes.is_empty()) {
 		return false;
@@ -1437,6 +1485,7 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 	}
 	dir /= motion_length;
 	physx::PxVec3 px_dir(dir.x, dir.y, dir.z);
+	const physx::PxVec3 px_dir_back(-px_dir.x, -px_dir.y, -px_dir.z);
 
 	// Setup filter callback
 	PhysXQueryFilterCallback filter_cb;
@@ -1459,11 +1508,6 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 
 	bool hit_any = false;
 	float min_hit_distance = motion_length;
-	int min_hit_shape = -1;
-	Vector3 best_position;
-	Vector3 best_normal;
-	const physx::PxRigidActor *best_actor = nullptr;
-	const physx::PxShape *best_shape = nullptr;
 
 	// Godot's stuck semantics (godot_space_3d test_body_motion): when a mover
 	// shape still overlaps an object at the (recovered) start pose, the motion
@@ -1472,8 +1516,34 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 	// behind the overlapped one still bounds the motion.
 	bool stuck = false;
 	real_t deepest_overlap = 0.0f;
-	const physx::PxSweepHit *stuck_hit = nullptr;
+	// Copied by value: the touch lives in the shared sweep scratch, which the
+	// next shape's sweep overwrites.
+	physx::PxSweepHit stuck_hit_data;
+	bool has_stuck_hit = false;
 	int stuck_shape = -1;
+
+	// The contact reported for the motion — a forward hit, or a mesh
+	// press-out recorded by the round-mover path below. Last record wins,
+	// like the single sweep best_hit on the reference implementation.
+	bool has_report = false;
+	Vector3 report_position;
+	Vector3 report_normal;
+	real_t report_depth = 0.0;
+	int report_local_shape = -1;
+	const physx::PxRigidActor *report_actor = nullptr;
+	const physx::PxShape *report_shape = nullptr;
+
+	// Mesh press-outs for a round mover (capsule/sphere) against
+	// triangle-mesh/heightfield terrain — the recover phase cannot
+	// depenetrate those geometries (computePenetration rejects them). The
+	// mover is pushed out along the true contact normal; a push that opposes
+	// the horizontal motion triggers a second sweep from the pushed-out pose
+	// (a sweep from inside reports only the push-out, and following that
+	// sideways along a step's edge lifts the body over steps far too tall to
+	// walk up).
+	Vector3 mtd_recover;
+	bool resweep = false;
+	bool mtd_stop = false;
 
 	// The pose is constant through the cast phase (transform + quaternion).
 	const Quaternion cast_q = p_transform.basis.get_rotation_quaternion();
@@ -1481,101 +1551,215 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 			physx::PxVec3(p_transform.origin.x, p_transform.origin.y, p_transform.origin.z),
 			physx::PxQuat(cast_q.x, cast_q.y, cast_q.z, cast_q.w));
 
-	for (physx::PxU32 s = 0; s < nb_shapes; ++s) {
-		const MotionShapeRef &shape_ref = p_shapes[s];
-		physx::PxShape *shape = shape_ref.shape_instance;
-
-		// Separation rays are not swept as a volume in the cast phase — they
-		// participate only in recover/collide. Godot's contract
-		// (godot_space_3d test_body_motion): they are skipped only when
-		// collide_separation_ray is off AND slide_on_slope is off — with the
-		// flag on, the shape acts like a regular shape so the body can snap to
-		// the ground. When we fall through to the generic sweep we use the
-		// ray's thin-box representation, because a downward raycast distance
-		// is not comparable to a horizontal sweep distance and would
-		// incorrectly clamp horizontal motion.
-		if (shape_ref.shape_blueprint) {
-			const PhysXShape3D *shape_blueprint = shape_ref.shape_blueprint;
-			if (shape_blueprint && shape_blueprint->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
-				const PhysXSeparationRayShape3D *sep_ray = static_cast<const PhysXSeparationRayShape3D *>(shape_blueprint);
-				if (!p_collide_separation_ray && !sep_ray->get_slide_on_slope()) {
-					continue;
-				}
-				// fall through to the generic sweep below
+	// Pass 1 re-sweeps everything from the accumulated press-out pose; every
+	// tracker resets so only the pushed-out findings count.
+	for (int pass = 0; pass < 2; ++pass) {
+		if (pass == 1) {
+			if (!resweep) {
+				break;
 			}
+			hit_any = false;
+			min_hit_distance = motion_length;
+			stuck = false;
+			deepest_overlap = 0.0f;
+			has_stuck_hit = false;
+			stuck_shape = -1;
+			has_report = false;
+			report_position = Vector3();
+			report_normal = Vector3();
+			report_depth = 0.0;
+			report_local_shape = -1;
+			report_actor = nullptr;
+			report_shape = nullptr;
+			mtd_stop = false;
 		}
+		const physx::PxTransform pass_body_pose(
+				body_pose.p + physx::PxVec3(mtd_recover.x, mtd_recover.y, mtd_recover.z), body_pose.q);
 
-		// Regular shapes: touch-capable sweep (see cast_motion for why a
-		// single closest-block sweep cannot express the Godot contract).
-		physx::PxGeometryHolder geom = shape->getGeometry();
-		physx::PxTransform shape_pose = body_pose * shape_ref.local_pose;
+		for (physx::PxU32 s = 0; s < nb_shapes; ++s) {
+			const MotionShapeRef &shape_ref = p_shapes[s];
+			physx::PxShape *shape = shape_ref.shape_instance;
 
-		const physx::PxU32 touch_max = PHYSX_QUERY_MAX_RESULTS;
-		if (_sweep_touch_scratch.size() < touch_max) {
-			_sweep_touch_scratch.resize(touch_max);
-		}
-		physx::PxHitBuffer<physx::PxSweepHit> sweep_hit(_sweep_touch_scratch.ptr(), touch_max);
-		space->get_px_scene()->sweep(geom.any(), shape_pose, px_dir, motion_length, sweep_hit, sweep_hit_flags, filter_data, &filter_cb);
+			// Separation rays are not swept as a volume in the cast phase — they
+			// participate only in recover/collide. Godot's contract
+			// (godot_space_3d test_body_motion): they are skipped only when
+			// collide_separation_ray is off AND slide_on_slope is off — with the
+			// flag on, the shape acts like a regular shape so the body can snap to
+			// the ground. When we fall through to the generic sweep we use the
+			// ray's thin-box representation, because a downward raycast distance
+			// is not comparable to a horizontal sweep distance and would
+			// incorrectly clamp horizontal motion.
+			if (shape_ref.shape_blueprint) {
+				const PhysXShape3D *shape_blueprint = shape_ref.shape_blueprint;
+				if (shape_blueprint && shape_blueprint->get_type() == PhysicsServer3D::SHAPE_SEPARATION_RAY) {
+					const PhysXSeparationRayShape3D *sep_ray = static_cast<const PhysXSeparationRayShape3D *>(shape_blueprint);
+					if (!p_collide_separation_ray && !sep_ray->get_slide_on_slope()) {
+						continue;
+					}
+					// fall through to the generic sweep below
+				}
+			}
 
-		bool shape_overlapped = false;
-		for (physx::PxU32 i = 0; i < sweep_hit.nbTouches; ++i) {
-			const physx::PxSweepHit &touch = sweep_hit.getTouch(i);
+			// Regular shapes: touch-capable sweep (see cast_motion for why a
+			// single closest-block sweep cannot express the Godot contract).
+			physx::PxGeometryHolder geom = shape->getGeometry();
+			const physx::PxGeometryType::Enum mover_type = geom.any().getType();
+			const bool round_mover = mover_type == physx::PxGeometryType::eCAPSULE || mover_type == physx::PxGeometryType::eSPHERE;
+			physx::PxTransform shape_pose = pass_body_pose * shape_ref.local_pose;
 
-			if (touch.hadInitialOverlap()) {
-				// Overlaps within the recovery slack are rest separation (the
-				// recovery floor leaves bodies at this depth on purpose) —
-				// disregard them exactly like godot_physics's post-ejection
-				// state. Deeper survivors mean the ejection failed: the body
-				// is stuck. (godot_physics never reaches this state for
-				// slack-level overlaps because its margin-inflated recovery
-				// ejects to margin separation; see the documented module gap
-				// on query-margin inflation.)
-				// One-sided concave meshes (backface_collision off) are exempt
-				// from the stuck verdict when approached from their back (see
-				// _skip_one_sided_overlap).
-				if (-touch.distance > p_rest_slack && touch.actor && touch.shape &&
-						_skip_one_sided_overlap(shape_ref.shape_blueprint, touch.shape,
-								physx::PxShapeExt::getGlobalPose(*touch.shape, *touch.actor),
-								-touch.distance, touch.normal, px_dir, geom.any(), shape_pose)) {
+			const physx::PxU32 touch_max = PHYSX_QUERY_MAX_RESULTS;
+			if (_sweep_touch_scratch.size() < touch_max) {
+				_sweep_touch_scratch.resize(touch_max);
+			}
+			physx::PxHitBuffer<physx::PxSweepHit> sweep_hit(_sweep_touch_scratch.ptr(), touch_max);
+			space->get_px_scene()->sweep(geom.any(), shape_pose, px_dir, motion_length, sweep_hit, sweep_hit_flags, filter_data, &filter_cb);
+
+			bool shape_overlapped = false;
+			for (physx::PxU32 i = 0; i < sweep_hit.nbTouches; ++i) {
+				const physx::PxSweepHit &touch = sweep_hit.getTouch(i);
+
+				if (touch.hadInitialOverlap()) {
+					// A round mover pressed into mesh/heightfield terrain:
+					// push out along the true contact normal instead of the
+					// stuck verdict — the recover phase was powerless here,
+					// and blocking every motion while pressed would freeze a
+					// walking character.
+					if (round_mover && -touch.distance > p_rest_slack && touch.actor && touch.shape && _sweep_hit_is_mesh(touch.shape)) {
+						const float pen = -touch.distance;
+						const physx::PxVec3 push_normal = _round_sweep_contact_normal(geom.any(), shape_pose, px_dir, touch.distance, touch.position, touch.normal);
+						if (_skip_one_sided_overlap(shape_ref.shape_blueprint, touch.shape,
+									physx::PxShapeExt::getGlobalPose(*touch.shape, *touch.actor),
+									-1.0f, push_normal, px_dir, geom.any(), shape_pose)) {
+							continue;
+						}
+						mtd_recover += Vector3(push_normal.x, push_normal.y, push_normal.z) * (pen + p_margin);
+						// Only a push-out that pushes back against the way the
+						// body moves (sideways) needs the second sweep — an
+						// edge or a step it walks into. Resting on a floor
+						// pushes straight up and is handled with one sweep.
+						const float push_back = -(push_normal.x * px_dir.x + push_normal.z * px_dir.z);
+						if (pass == 0 && push_back > 0.02f) {
+							resweep = true;
+						} else if (!mtd_stop && push_normal.y > 0.3f) {
+							// A floor-like press-out only reports (keeps the
+							// character grounded); it must not clamp the
+							// travel.
+							has_report = true;
+							report_position = Vector3(touch.position.x, touch.position.y, touch.position.z);
+							report_normal = Vector3(push_normal.x, push_normal.y, push_normal.z);
+							report_depth = pen;
+							report_local_shape = (int)s;
+							report_actor = touch.actor;
+							report_shape = touch.shape;
+						} else if (push_normal.dot(px_dir_back) >= 0.001f) {
+							// The press-out is the true contact normal, never
+							// a facet edge: a near-horizontal one is a wall or
+							// a step's face the body is pressed against. It
+							// stops the travel — otherwise the body would sink
+							// into the step a little each frame and be pushed
+							// out over its top.
+							mtd_stop = true;
+							has_report = true;
+							report_position = Vector3(touch.position.x, touch.position.y, touch.position.z);
+							report_normal = Vector3(push_normal.x, push_normal.y, push_normal.z);
+							report_depth = pen;
+							report_local_shape = (int)s;
+							report_actor = touch.actor;
+							report_shape = touch.shape;
+						}
+						continue;
+					}
+					// Overlaps within the recovery slack are rest separation (the
+					// recovery floor leaves bodies at this depth on purpose) —
+					// disregard them exactly like godot_physics's post-ejection
+					// state. Deeper survivors mean the ejection failed: the body
+					// is stuck. (godot_physics never reaches this state for
+					// slack-level overlaps because its margin-inflated recovery
+					// ejects to margin separation; see the documented module gap
+					// on query-margin inflation.)
+					// One-sided concave meshes (backface_collision off) are exempt
+					// from the stuck verdict when approached from their back (see
+					// _skip_one_sided_overlap).
+					if (-touch.distance > p_rest_slack && touch.actor && touch.shape &&
+							_skip_one_sided_overlap(shape_ref.shape_blueprint, touch.shape,
+									physx::PxShapeExt::getGlobalPose(*touch.shape, *touch.actor),
+									-touch.distance, touch.normal, px_dir, geom.any(), shape_pose)) {
+						continue;
+					}
+					if (-touch.distance > p_rest_slack) {
+						shape_overlapped = true;
+						if (!has_stuck_hit || touch.distance < deepest_overlap) {
+							deepest_overlap = touch.distance;
+							stuck_hit_data = touch;
+							has_stuck_hit = true;
+							stuck_shape = (int)s;
+						}
+					}
 					continue;
 				}
-				if (-touch.distance > p_rest_slack) {
-					shape_overlapped = true;
-					if (!stuck_hit || touch.distance < deepest_overlap) {
-						deepest_overlap = touch.distance;
-						stuck_hit = &touch;
-						stuck_shape = (int)s;
+
+				physx::PxVec3 face_normal;
+				physx::PxVec3 contact_normal;
+				const bool mesh_hit = _sweep_hit_is_mesh(touch.shape);
+				if (round_mover && mesh_hit) {
+					// True contact normal from the touch point to the mover's
+					// core: the facet normal makes a low lip's vertical face a
+					// wall and a tall step's top a floor; the core normal
+					// tilts with the lip height instead, so low lips are
+					// walked up and tall steps stop the body.
+					contact_normal = _round_sweep_contact_normal(geom.any(), shape_pose, px_dir, touch.distance, touch.position, touch.normal);
+					// A hit whose true normal faces along (rather than against)
+					// the sweep is a grazing/edge contact from sliding on a
+					// surface.
+					if (contact_normal.dot(px_dir_back) < 0.001f) {
+						continue;
+					}
+					// One-sided concave meshes (backface_collision off): a sweep
+					// hit whose triangle front normal points ALONG the motion is a
+					// hit on the face's BACK (the mover approached from behind) —
+					// Godot's one-sided trimeshes don't block from the back, so
+					// disregard it. Sidedness is the triangle's, not the contact's.
+					if (shape_ref.shape_blueprint &&
+							shape_ref.shape_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
+							!shape_ref.shape_blueprint->has_backface_collision()) {
+						if (!_sweep_hit_face_normal(touch, face_normal)) {
+							face_normal = touch.normal;
+						}
+						if (face_normal.dot(px_dir) > 0.0f) {
+							continue; // back-face hit on a one-sided mesh: not a block
+						}
+					}
+				} else {
+					if (!_sweep_forward_hit_blocking(touch, face_normal)) {
+						continue; // mesh edge artifact: not a forward block
+					}
+					contact_normal = face_normal;
+					// One-sided concave meshes (backface_collision off): a sweep hit
+					// whose triangle front normal points ALONG the motion is a hit on
+					// the face's BACK (the mover approached from behind) — Godot's
+					// one-sided trimeshes don't block from the back, so disregard it.
+					if (shape_ref.shape_blueprint &&
+							shape_ref.shape_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
+							!shape_ref.shape_blueprint->has_backface_collision() &&
+							face_normal.dot(px_dir) > 0.0f) {
+						continue; // back-face hit on a one-sided mesh: not a block
 					}
 				}
-				continue;
-			}
 
-			physx::PxVec3 face_normal;
-			if (!_sweep_forward_hit_blocking(touch, face_normal)) {
-				continue; // mesh edge artifact: not a forward block
+				if (!mtd_stop && touch.distance <= min_hit_distance) {
+					min_hit_distance = touch.distance;
+					hit_any = true;
+					has_report = true;
+					report_position = Vector3(touch.position.x, touch.position.y, touch.position.z);
+					report_normal = Vector3(contact_normal.x, contact_normal.y, contact_normal.z);
+					report_depth = 0.0;
+					report_local_shape = (int)s;
+					report_actor = touch.actor;
+					report_shape = touch.shape;
+				}
 			}
-			// One-sided concave meshes (backface_collision off): a sweep hit
-			// whose triangle front normal points ALONG the motion is a hit on
-			// the face's BACK (the mover approached from behind) — Godot's
-			// one-sided trimeshes don't block from the back, so disregard it.
-			if (shape_ref.shape_blueprint &&
-					shape_ref.shape_blueprint->get_type() == PhysicsServer3D::SHAPE_CONCAVE_POLYGON &&
-					!shape_ref.shape_blueprint->has_backface_collision() &&
-					face_normal.dot(px_dir) > 0.0f) {
-				continue; // back-face hit on a one-sided mesh: not a block
-			}
-
-			if (touch.distance <= min_hit_distance) {
-				min_hit_distance = touch.distance;
-				hit_any = true;
-				min_hit_shape = (int)s;
-				best_position = Vector3(touch.position.x, touch.position.y, touch.position.z);
-				best_normal = Vector3(face_normal.x, face_normal.y, face_normal.z);
-				best_actor = touch.actor;
-				best_shape = touch.shape;
-			}
+			stuck = stuck || shape_overlapped;
 		}
-		stuck = stuck || shape_overlapped;
 	}
 
 	if (stuck) {
@@ -1586,32 +1770,40 @@ bool PhysXDirectSpaceState3D::_body_motion_cast(const PhysXBody3D &p_body, const
 		// rejected trimesh/heightfield contacts from this hit.
 		r_safe_fraction = 0.0;
 		r_unsafe_fraction = 0.0;
-		if (stuck_hit) {
-			r_hit_position = Vector3(stuck_hit->position.x, stuck_hit->position.y, stuck_hit->position.z);
-			r_hit_normal = Vector3(stuck_hit->normal.x, stuck_hit->normal.y, stuck_hit->normal.z);
-			r_hit_depth = MAX(0.0, -(real_t)stuck_hit->distance);
+		if (has_stuck_hit) {
+			r_hit_position = Vector3(stuck_hit_data.position.x, stuck_hit_data.position.y, stuck_hit_data.position.z);
+			r_hit_normal = Vector3(stuck_hit_data.normal.x, stuck_hit_data.normal.y, stuck_hit_data.normal.z);
+			r_hit_depth = MAX(0.0, -(real_t)stuck_hit_data.distance);
 			r_hit_local_shape = stuck_shape;
-			r_hit_actor = stuck_hit->actor;
-			r_hit_shape = stuck_hit->shape;
+			r_hit_actor = stuck_hit_data.actor;
+			r_hit_shape = stuck_hit_data.shape;
 		}
 		return true;
 	}
 
-	if (hit_any) {
+	if (mtd_stop) {
+		// A mesh press-out opposed the motion: the travel stops at the
+		// pushed-out pose (the caller adds mtd_recover to the recovery and
+		// the working transform).
+		r_safe_fraction = 0.0;
+		r_unsafe_fraction = 0.0;
+	} else if (hit_any) {
 		real_t hit_fraction = CLAMP(min_hit_distance / motion_length, 0.0, 1.0);
 
 		r_unsafe_fraction = hit_fraction;
 		// Back off slightly from the exact collision point to prevent starting inside geometry on the next frame
 		r_safe_fraction = MAX(0.0, hit_fraction - (1e-4f / motion_length));
-		r_hit_position = best_position;
-		r_hit_normal = best_normal;
-		r_hit_depth = 0.0;
-		r_hit_local_shape = min_hit_shape;
-		r_hit_actor = best_actor;
-		r_hit_shape = best_shape;
-		return true;
 	}
-	return false;
+	if (!has_report) {
+		return false;
+	}
+	r_hit_position = report_position;
+	r_hit_normal = report_normal;
+	r_hit_depth = report_depth;
+	r_hit_local_shape = report_local_shape;
+	r_hit_actor = report_actor;
+	r_hit_shape = report_shape;
+	return true;
 }
 
 bool PhysXDirectSpaceState3D::_body_motion_collide(const PhysXBody3D &p_body, const Transform3D &p_transform, const Vector3 &p_motion,
