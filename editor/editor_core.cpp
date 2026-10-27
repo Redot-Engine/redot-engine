@@ -36,6 +36,14 @@
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/plugins/editor_plugin_manager.h"
 
+#include "editor/animation/animation_player_editor_plugin.h"
+#include "editor/asset_library/asset_library_editor_plugin.h"
+#include "editor/audio/editor_audio_buses.h"
+#include "editor/run/game_view_plugin.h"
+#include "editor/scene/3d/node_3d_editor_plugin.h"
+#include "editor/script/script_text_editor.h"
+#include "editor/version_control/version_control_editor_plugin.h"
+
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
 #include "core/io/file_access.h"
@@ -68,6 +76,7 @@
 #include "editor/script/editor_script.h"
 #include "editor/script/script_editor_plugin.h"
 #include "editor/settings/editor_command_palette.h"
+#include "editor/settings/editor_feature_profile.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/settings/editor_settings_dialog.h"
 #include "editor/settings/project_settings_editor.h"
@@ -151,11 +160,56 @@ void EditorCore::_initialize_engine() {
 	}
 }
 
+void EditorCore::_create_builtin_plugins() {
+	// Register built-in editor plugins with the plugin manager.
+	// This must happen after editor_plugin_manager is created and before
+	// any code calls get_editor_by_name() or get_spatial_editor().
+
+	// Animation editors
+	editor_plugin_manager->add_editor_plugin(memnew(AnimationPlayerEditorPlugin));
+	editor_plugin_manager->add_editor_plugin(memnew(AnimationTrackKeyEditEditorPlugin));
+	editor_plugin_manager->add_editor_plugin(memnew(AnimationMarkerKeyEditEditorPlugin));
+
+	// Scene editors
+	editor_plugin_manager->add_editor_plugin(memnew(CanvasItemEditorPlugin));
+	editor_plugin_manager->add_editor_plugin(memnew(Node3DEditorPlugin));
+
+	// Script editor
+	editor_plugin_manager->add_editor_plugin(memnew(ScriptEditorPlugin));
+
+	// Game view (not in recovery mode)
+	if (!Engine::get_singleton()->is_recovery_mode_hint()) {
+		editor_plugin_manager->add_editor_plugin(memnew(GameViewPlugin));
+	}
+
+	// Audio buses editor
+	EditorAudioBuses *audio_bus_editor = EditorAudioBuses::register_editor();
+	editor_plugin_manager->add_editor_plugin(memnew(AudioBusesEditorPlugin(audio_bus_editor)));
+
+	// Script text editors
+	ScriptTextEditor::register_editor(); // Register one for text scripts.
+
+	// Asset library
+	if (AssetLibraryEditorPlugin::is_available()) {
+		editor_plugin_manager->add_editor_plugin(memnew(AssetLibraryEditorPlugin));
+	} else {
+		print_verbose("Asset Library not available (due to using Web editor, or SSL support disabled).");
+	}
+
+	// Version control
+	editor_plugin_manager->add_editor_plugin(VersionControlEditorPlugin::get_singleton());
+}
+
 void EditorCore::_initialize_services() {
 	add_child(memnew(EditorPropertyNameProcessor));
 
 	editor_scene_manager = memnew(EditorSceneManager);
 	add_child(editor_scene_manager);
+
+	// Create EditorFeatureProfileManager early - many components
+	// (inspector, create dialogs, docks) call get_singleton() on it.
+	memnew(EditorFeatureProfileManager);
+	add_child(EditorFeatureProfileManager::get_singleton());
 
 	editor_plugin_manager = memnew(EditorPluginManager);
 	editor_plugin_manager->set_core(this);
@@ -163,6 +217,10 @@ void EditorCore::_initialize_services() {
 		editor_plugin_manager->set_shell(shell);
 	}
 	editor_scene_manager->set_plugin_manager(editor_plugin_manager);
+
+	// Create built-in editor plugins before creating any docks or other
+	// components that look them up via get_editor_by_name().
+	_create_builtin_plugins();
 
 	editor_selection = memnew(EditorSelection);
 

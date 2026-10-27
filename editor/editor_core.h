@@ -207,6 +207,12 @@ class EditorCore : public Node {
 	/// Constructs service nodes and unparented dialogs owned by the core.
 	void _initialize_services();
 
+	/// Registers all built-in editor plugins (2D, 3D, animation, script, etc.)
+	/// with the plugin manager. Called by `_initialize_services()`. Must be
+	/// called after `editor_plugin_manager` is created and before any code
+	/// calls `get_editor_by_name()` or `get_spatial_editor()`.
+	void _create_builtin_plugins();
+
 	/// Registers global engine callbacks (print handler, resource save/load,
 	/// file-close error, dependency-error) owned by the core.
 	void _register_global_callbacks();
