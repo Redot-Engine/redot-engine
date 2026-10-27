@@ -712,6 +712,13 @@ if env["arch"] == "x86_64":
         env.Append(CCFLAGS=["/d2archSSE42"])
     else:
         # `-msse2` is implied when compiling for x86_64.
+        # Linux: pin the ISA baseline explicitly with `-march=x86-64`. GCC on
+        # distros that build against a higher default (Ubuntu 26.04 defaults
+        # to x86-64-v3) otherwise defines __AVX__/__AVX2__ behind our back —
+        # silently requiring v3 CPUs and switching on thirdparty ISA paths
+        # that target SSE2 only (Embree's ISA dispatch fails to link).
+        if env["platform"] == "linuxbsd":
+            env.Append(CCFLAGS=["-march=x86-64"])
         env.Append(CCFLAGS=["-msse4.2", "-mpopcnt"])
 elif env["arch"] == "x86_32":
     # Be more conservative with instruction sets on 32-bit x86 to improve compatibility.
