@@ -86,13 +86,26 @@ static const char *required_runtime_files[] = {
 #endif
 
 #ifdef __linux__
-// Linux: everything except the GPU runtime is statically linked; the shared
-// PhysXGpu runtime (built by the SDK build workflow) is the only runtime
-// file, loaded by the SDK itself when GPU dynamics starts. When a Linux
-// bundle ships (the manifest's "linux" is null for now), add the Flow
-// runtime the SCsub stages (libnvflow.so, libnvflowext.so) here too.
+// The full set of runtime .so files staged next to the editor executable (see
+// the SCsub staging lists). The nine Blast libraries are hard-linked into the
+// editor binary ($ORIGIN rpath, no delay-load on Linux): without them the
+// engine cannot start at all, so the download offer can only fire when the
+// Blast set is present but the lazily-loaded PhysXGpu / Flow runtimes are
+// missing -- the bundle otherwise serves manual installs. Keep this list in
+// step with the runtime bundle's manifest "files" (redot-physx-runtime).
 static const char *required_runtime_files[] = {
 	"libPhysXGpu_64.so",
+	"libNvBlast.so",
+	"libNvBlastGlobals.so",
+	"libNvBlastExtAuthoring.so",
+	"libNvBlastExtShaders.so",
+	"libNvBlastExtAssetUtils.so",
+	"libNvBlastExtSerialization.so",
+	"libNvBlastExtStress.so",
+	"libNvBlastExtTkSerialization.so",
+	"libNvBlastTk.so",
+	"libnvflow.so",
+	"libnvflowext.so",
 };
 #endif
 
