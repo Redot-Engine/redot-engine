@@ -105,11 +105,14 @@ To get started contributing to the project, see the [contributing guide](CONTRIB
 This document also includes guidelines for reporting bugs.
 
 Follow [Redot on X/Twitter](https://x.com/Redot_Engine)!
+
 ## Credits
-**Credits** to [**Uno "Wild-ox"**](https://github.com/uno1982) studios for:
-MPM shaders, a lot of fixes and implementations for water, 2W vehicle, boat, foam and more.
-Visit his Godot upstream (4.7+) PhysX module at:
+**Credits** to [**Uno "Wild-ox"**](https://github.com/uno1982) for:
+MPM shaders, a lot of fixes and implementations for water, 2W/4W vehicles, tank, boat, foam, compositor
+and more. Visit his Godot upstream (4.7+) PhysX module at:
 https://github.com/uno1982/godot/tree/feature/physx5-module
+Wild-ox Studios website:
+https://wildoxstudios.com
 
 ## Documentation and demos
 
