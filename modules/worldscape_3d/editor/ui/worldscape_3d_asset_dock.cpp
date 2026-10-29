@@ -499,10 +499,6 @@ ListContainer::ListContainer(WorldScape3DEditorPlugin *plugin) :
 	set_h_size_flags(SIZE_EXPAND_FILL);
 }
 
-ListContainer::~ListContainer() {
-	clear();
-}
-
 void ListContainer::clear() {
 	for (auto *e : _entries) {
 		e->queue_free();
