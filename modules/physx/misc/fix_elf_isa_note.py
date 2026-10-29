@@ -14,7 +14,6 @@ This tool rewrites the ISA bitmap of the X86_ISA_1_NEEDED property in place
 
 import argparse
 import struct
-import sys
 
 NT_GNU_PROPERTY_TYPE_0 = 5
 GNU_PROPERTY_X86_ISA_1_NEEDED = 0xC0000002
@@ -42,7 +41,7 @@ def sections(data):
     for i in range(e_shnum):
         name, offset, size = sh(i)
         base = shstr_off + name
-        n = data[base:data.index(b"\0", base)].decode()
+        n = data[base : data.index(b"\0", base)].decode()
         yield n, offset, size
 
 
@@ -55,17 +54,18 @@ def fix(path, level):
         return False
 
     patched = 0
+    seen = 0
     for name, offset, size in sections(data):
         if name != ".note.gnu.property":
             continue
-        blob = data[offset:offset + size]
+        blob = data[offset : offset + size]
         pos = 0
         while pos + 12 <= len(blob):
             namesz, descsz, ntype = struct.unpack_from("<III", blob, pos)
             pos += 12
-            name = blob[pos:pos + namesz]
+            name = blob[pos : pos + namesz]
             pos += (namesz + 3) & ~3
-            desc = blob[pos:pos + descsz]
+            desc = blob[pos : pos + descsz]
             desc_off = offset + pos
             pos += (descsz + 3) & ~3
             if namesz != 4 or name != b"GNU\x00" or ntype != NT_GNU_PROPERTY_TYPE_0:
@@ -73,6 +73,7 @@ def fix(path, level):
             for j in range(0, descsz - 7, 8):
                 pr_type = struct.unpack_from("<I", desc, j)[0]
                 if pr_type == GNU_PROPERTY_X86_ISA_1_NEEDED:
+                    seen += 1
                     old = struct.unpack_from("<I", desc, j + 4)[0]
                     if old == want:
                         print(f"{path}: ISA_1_NEEDED already {want:#x}")
@@ -83,15 +84,20 @@ def fix(path, level):
     if patched:
         with open(path, "wb") as f:
             f.write(data)
-    else:
+    elif seen == 0:
         print(f"{path}: no X86_ISA_1_NEEDED property found")
     return True
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--level", type=int, default=1, choices=sorted(ISA_LEVEL_BITS),
-                    help="ISA level to declare (default: 1 = baseline x86-64)")
+    ap.add_argument(
+        "--level",
+        type=int,
+        default=1,
+        choices=sorted(ISA_LEVEL_BITS),
+        help="ISA level to declare (default: 1 = baseline x86-64)",
+    )
     ap.add_argument("files", nargs="+", help="ELF objects to fix in place")
     args = ap.parse_args()
     for path in args.files:
