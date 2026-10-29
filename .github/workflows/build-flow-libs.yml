@@ -86,6 +86,11 @@ jobs:
           ref: main
           path: physx-sdk
 
+      - name: Checkout engine repo (module SDK patches)
+        uses: actions/checkout@v4
+        with:
+          path: engine
+
       - name: Fetch packman dependencies (includes Linux premake)
         shell: bash
         run: |
@@ -103,6 +108,15 @@ jobs:
           # Library targets only: nvfloweditor needs GL/GLFW/X11 and is not
           # part of the engine runtime.
           make config=release_x86_64 nvflow nvflowext nvflowshadertool nvflow_rtx nvflowext_rtx
+
+      - name: Clear the spurious x86-64-v3 ISA requirement
+        shell: bash
+        run: |
+          # Flow's premake emits an X86_ISA_1_NEEDED = v3 note (no AVX
+          # instruction in the code); glibc 2.41+ refuses the libraries on
+          # pre-v3 CPUs. Demote the note to baseline (see the tool's doc).
+          find physx-sdk/flow/_build -name "libnvflow*.so" \
+            | xargs python3 engine/modules/physx/misc/fix_elf_isa_note.py --level 1
 
       - name: Stage binaries
         shell: bash

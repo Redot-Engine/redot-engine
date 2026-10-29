@@ -314,6 +314,10 @@ if flow_enabled:
     # The runtime resolves them by absolute path next to the executable
     # (flow_runtime.cpp _loader_init), which is also what makes dlopen work
     # on Linux -- a bare soname never searches the binary's directory there.
+    # The vendored Linux .so pair's ISA note is demoted to baseline with
+    # misc/fix_elf_isa_note.py: Flow's premake emits x86-64-v3 although the
+    # code carries no AVX instruction, and glibc 2.41+ refuses v3-noted
+    # objects on pre-v3 CPUs. Re-run the tool on refreshed libraries.
     if env["platform"] == "windows":
         flow_dll_dir = flow_dir.Dir("bin/windows/x86_64/release")
         for dll_name in ["nvflow.dll", "nvflowext.dll"]:
