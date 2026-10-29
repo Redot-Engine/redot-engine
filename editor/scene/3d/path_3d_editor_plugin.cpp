@@ -46,8 +46,10 @@
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/scene/3d/node_3d_editor_plugin.h"
 #include "editor/settings/editor_settings.h"
+#include "scene/gui/control.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/menu_button.h"
+#include "scene/gui/separator.h"
 #include "scene/resources/curve.h"
 
 String Path3DGizmo::get_handle_name(int p_id, bool p_secondary) const {
@@ -105,6 +107,15 @@ Variant Path3DGizmo::get_handle_value(int p_id, bool p_secondary) const {
 	return ofs;
 }
 
+void Path3DGizmo::set_snapped_point(int p_idx) {
+	if (snapped_point_idx != p_idx) {
+		snapped_point_idx = p_idx;
+		// Only request a redraw on transitions; the point position itself may
+		// not change when the cursor moves onto/off a collider.
+		path->update_gizmos();
+	}
+}
+
 void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
 	Ref<Curve3D> c = path->get_curve();
 	if (c.is_null()) {
@@ -133,17 +144,32 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camera, con
 		}
 		if (Path3DEditorPlugin::singleton->snap_to_collider) {
 			PhysicsDirectSpaceState3D *ss = p_camera->get_world_3d()->get_direct_space_state();
-
 			PhysicsDirectSpaceState3D::RayParameters ray_params;
 			ray_params.from = ray_from;
 			ray_params.to = ray_from + ray_dir * p_camera->get_far();
 			PhysicsDirectSpaceState3D::RayResult result;
 			if (ss->intersect_ray(ray_params, result)) {
-				Vector3 local = gi.xform(result.position);
-				c->set_point_position(idx, local);
-				return;
+				Vector3 snapped = result.position;
+
+				// Constrain the collider hit the same way as the plane path.
+				Path3DEditorPlugin::singleton->_apply_axis_locks(gt.xform(original), snapped);
+
+				// If honoring the lock pulled the point off the surface, treat as a miss
+				// and fall through to the plane intersect below.
+				const float snap_tolerance = Node3DEditor::get_singleton()->is_snap_enabled()
+						? Node3DEditor::get_singleton()->get_translate_snap()
+						: 0.25f; // or a fixed tolerance of your choice
+
+				if (snapped.distance_to(result.position) <= snap_tolerance) {
+					Vector3 local = gi.xform(snapped);
+					c->set_point_position(idx, local);
+					set_snapped_point(idx);
+					return;
+				}
 			}
-			// Will continue and do the plane intersect_ray if doesn't hit anything.
+			set_snapped_point(-1); // Missed, or lock pulled us off the surface.
+		} else {
+			set_snapped_point(-1);
 		}
 		if (p.intersects_ray(ray_from, ray_dir, &inters)) {
 			if (Node3DEditor::get_singleton()->is_snap_enabled()) {
@@ -151,6 +177,7 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camera, con
 				inters.snapf(snap);
 			}
 
+			Path3DEditorPlugin::singleton->_apply_axis_locks(gt.xform(original), inters);
 			Vector3 local = gi.xform(inters);
 			c->set_point_position(idx, local);
 		}
@@ -180,27 +207,28 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camera, con
 					local.snapf(snap);
 				}
 
-				// Determine if control points should be swapped based on delta movement.
-				// Only run on the next update after an overlap is detected, to get proper delta movement.
-				if (control_points_overlapped) {
-					control_points_overlapped = false;
-					Vector3 delta = local - (info.type == HANDLE_TYPE_IN ? c->get_point_in(idx) : c->get_point_out(idx));
-					Vector3 p0 = c->get_point_position(idx - 1) - base;
-					Vector3 p1 = c->get_point_position(idx + 1) - base;
-					HandleType new_type = Math::abs(delta.angle_to(p0)) < Math::abs(delta.angle_to(p1)) ? HANDLE_TYPE_IN : HANDLE_TYPE_OUT;
-					if (info.type != new_type) {
-						swapped_control_points_idx = idx;
+				if (snapped_point_idx < 0) {
+					// Determine if control points should be swapped based on delta movement.
+					// Only run on the next update after an overlap is detected, to get proper delta movement.
+					if (control_points_overlapped) {
+						control_points_overlapped = false;
+						Vector3 delta = local - (info.type == HANDLE_TYPE_IN ? c->get_point_in(idx) : c->get_point_out(idx));
+						Vector3 p0 = c->get_point_position(idx - 1) - base;
+						Vector3 p1 = c->get_point_position(idx + 1) - base;
+						HandleType new_type = Math::abs(delta.angle_to(p0)) < Math::abs(delta.angle_to(p1)) ? HANDLE_TYPE_IN : HANDLE_TYPE_OUT;
+						if (info.type != new_type) {
+							swapped_control_points_idx = idx;
+						}
+					}
+
+					// Detect control points overlap.
+					bool control_points_equal = c->get_point_in(idx).is_equal_approx(c->get_point_out(idx));
+					if (idx > 0 && idx < (c->get_point_count() - 1) && control_points_equal) {
+						control_points_overlapped = true;
 					}
 				}
-
-				// Detect control points overlap.
-				bool control_points_equal = c->get_point_in(idx).is_equal_approx(c->get_point_out(idx));
-				if (idx > 0 && idx < (c->get_point_count() - 1) && control_points_equal) {
-					control_points_overlapped = true;
-				}
-
 				HandleType control_type = info.type;
-				if (swapped_control_points_idx == idx) {
+				if (snapped_point_idx < 0 && swapped_control_points_idx == idx) {
 					control_type = info.type == HANDLE_TYPE_IN ? HANDLE_TYPE_OUT : HANDLE_TYPE_IN;
 				}
 
@@ -247,6 +275,7 @@ void Path3DGizmo::set_handle(int p_id, bool p_secondary, Camera3D *p_camera, con
 void Path3DGizmo::commit_handle(int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
 	swapped_control_points_idx = -1;
 	control_points_overlapped = false;
+	set_snapped_point(-1);
 
 	Ref<Curve3D> c = path->get_curve();
 	if (c.is_null()) {
@@ -337,11 +366,9 @@ void Path3DGizmo::redraw() {
 	Ref<StandardMaterial3D> first_pt_handle_material = gizmo_plugin->get_material("first_pt_handle");
 	Ref<StandardMaterial3D> last_pt_handle_material = gizmo_plugin->get_material("last_pt_handle");
 	Ref<StandardMaterial3D> closed_pt_handle_material = gizmo_plugin->get_material("closed_pt_handle");
+	Ref<StandardMaterial3D> selected_handle_material = gizmo_plugin->get_material("selected_handle", this);
 	Ref<StandardMaterial3D> sec_handles_material = gizmo_plugin->get_material("sec_handles");
-
-	first_pt_handle_material->set_albedo(Color(0.2, 1.0, 0.0));
-	last_pt_handle_material->set_albedo(Color(1.0, 0.2, 0.0));
-	closed_pt_handle_material->set_albedo(Color(1.0, 0.8, 0.0));
+	Ref<StandardMaterial3D> snapped_handle_material = gizmo_plugin->get_material("snapped_handle", this);
 
 	Ref<Curve3D> c = path->get_curve();
 	if (c.is_null()) {
@@ -524,42 +551,83 @@ void Path3DGizmo::redraw() {
 
 		if (!Path3DEditorPlugin::singleton->curve_edit->is_pressed() && primary_handle_points.size()) {
 			// Need to define indices separately.
-			// Point count.
-			const int pc = primary_handle_points.size();
+			// Build ids from the ORIGINAL point count so they stay equal to curve point indices.
+			const int orig_pc = primary_handle_points.size();
 			Vector<int> idx;
-			idx.resize(pc);
+			idx.resize(orig_pc);
 			int *idx_ptr = idx.ptrw();
-			for (int j = 0; j < pc; j++) {
+			for (int j = 0; j < orig_pc; j++) {
 				idx_ptr[j] = j;
 			}
 
-			// Initialize arrays for first point.
-			PackedVector3Array first_pt_handle_point;
-			Vector<int> first_pt_id;
-			first_pt_handle_point.append(primary_handle_points[0]);
-			first_pt_id.append(idx[0]);
-
-			// Initialize arrays and add handle for last point if needed.
-			if (pc > 1) {
-				PackedVector3Array last_pt_handle_point;
-				Vector<int> last_pt_id;
-				last_pt_handle_point.append(primary_handle_points[pc - 1]);
-				last_pt_id.append(idx[pc - 1]);
-				primary_handle_points.remove_at(pc - 1);
-				idx.remove_at(pc - 1);
-				add_handles(last_pt_handle_point, c->is_closed() ? handles_material : last_pt_handle_material, last_pt_id);
+			// Extract the snapped point (if any) BEFORE computing pc / removing
+			// first and last, so it can be drawn with its own material.
+			PackedVector3Array snapped_handle_point;
+			Vector<int> snapped_id;
+			if (snapped_point_idx >= 0 && snapped_point_idx < orig_pc) {
+				snapped_handle_point.append(primary_handle_points[snapped_point_idx]);
+				snapped_id.append(snapped_point_idx);
+				primary_handle_points.remove_at(snapped_point_idx);
+				idx.remove_at(snapped_point_idx);
 			}
 
-			// Add handle for first point.
-			primary_handle_points.remove_at(0);
-			idx.remove_at(0);
-			add_handles(first_pt_handle_point, c->is_closed() ? closed_pt_handle_material : first_pt_handle_material, first_pt_id);
+			// Extract selected points the same way — they get the blue material.
+			// Iterate backwards so remove_at doesn't shift unvisited indices.
+			PackedVector3Array sel_handle_point;
+			Vector<int> sel_id;
+			for (int j = idx.size() - 1; j >= 0; j--) {
+				if (is_subgizmo_selected(idx[j])) {
+					sel_handle_point.append(primary_handle_points[j]);
+					sel_id.append(idx[j]);
+					primary_handle_points.remove_at(j);
+					idx.remove_at(j);
+				}
+			}
 
-			// Add handles for remaining intermediate points.
-			if (!primary_handle_points.is_empty()) {
-				add_handles(primary_handle_points, handles_material, idx);
+			// Point count — computed AFTER the snapped point was removed.
+			const int pc = primary_handle_points.size();
+
+			if (pc > 0) {
+				// Initialize arrays for first point.
+				PackedVector3Array first_pt_handle_point;
+				Vector<int> first_pt_id;
+				first_pt_handle_point.append(primary_handle_points[0]);
+				first_pt_id.append(idx[0]);
+
+				// Initialize arrays and add handle for last point if needed.
+				if (pc > 1) {
+					PackedVector3Array last_pt_handle_point;
+					Vector<int> last_pt_id;
+					last_pt_handle_point.append(primary_handle_points[pc - 1]);
+					last_pt_id.append(idx[pc - 1]);
+					primary_handle_points.remove_at(pc - 1);
+					idx.remove_at(pc - 1);
+					add_handles(last_pt_handle_point, c->is_closed() ? handles_material : last_pt_handle_material, last_pt_id);
+				}
+
+				// Add handle for first point.
+				primary_handle_points.remove_at(0);
+				idx.remove_at(0);
+				add_handles(first_pt_handle_point, c->is_closed() ? closed_pt_handle_material : first_pt_handle_material, first_pt_id);
+
+				// Add handles for remaining intermediate points.
+				if (!primary_handle_points.is_empty()) {
+					add_handles(primary_handle_points, handles_material, idx);
+				}
+			}
+
+			// Add selected and snapped points with their own materials.
+			// These are drawn regardless of pc, so they stay visible even when
+			// every regular point was extracted above (e.g. all points selected,
+			// or the single point of a one-point curve is selected).
+			if (!sel_handle_point.is_empty()) {
+				add_handles(sel_handle_point, selected_handle_material, sel_id);
+			}
+			if (!snapped_handle_point.is_empty()) {
+				add_handles(snapped_handle_point, snapped_handle_material, snapped_id);
 			}
 		}
+
 		if (secondary_handle_points.size()) {
 			add_handles(secondary_handle_points, sec_handles_material, collected_secondary_handle_ids, false, true);
 		}
@@ -602,6 +670,24 @@ EditorPlugin::AfterGUIInput Path3DEditorPlugin::forward_3d_gui_input(Camera3D *p
 
 	static const int click_dist = 10; //should make global
 
+	Ref<InputEventKey> k = p_event;
+	if (k.is_valid() && k->is_pressed() && curve_edit->is_pressed() &&
+			(k->get_keycode() == Key::BACKSPACE || k->get_keycode() == Key::KEY_DELETE)) {
+		// Only consume if we actually have points selected.
+		Ref<EditorNode3DGizmo> gz;
+		for (Ref<Node3DGizmo> g : path->get_gizmos()) {
+			gz = g;
+			if (gz.is_valid()) {
+				break;
+			}
+		}
+		if (gz.is_valid() && !gz->get_subgizmo_selection().is_empty()) {
+			_delete_selected_points();
+			p_camera->get_viewport()->set_input_as_handled();
+			return EditorPlugin::AFTER_GUI_INPUT_STOP;
+		}
+	}
+
 	Ref<InputEventMouseButton> mb = p_event;
 
 	if (mb.is_valid()) {
@@ -622,7 +708,10 @@ EditorPlugin::AfterGUIInput Path3DEditorPlugin::forward_3d_gui_input(Camera3D *p
 			set_handle_clicked(false);
 		}
 
-		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT && (curve_create->is_pressed() || (curve_edit->is_pressed() && mb->is_command_or_control_pressed()))) {
+		// Add point branch
+		if (mb->is_pressed() && mb->get_button_index() == MouseButton::LEFT &&
+				(curve_create->is_pressed() ||
+						((curve_edit->is_pressed()) && mb->is_command_or_control_pressed()))) {
 			//click into curve, break it down
 			Vector<Vector3> v3a = c->tessellate();
 			int rc = v3a.size();
@@ -717,6 +806,10 @@ EditorPlugin::AfterGUIInput Path3DEditorPlugin::forward_3d_gui_input(Camera3D *p
 
 				Vector3 inters;
 				if (p.intersects_ray(ray_from, ray_dir, &inters)) {
+					if (c->get_point_count() > 0) {
+						const Vector3 last_global = gt.xform(c->get_point_position(c->get_point_count() - 1));
+						_apply_axis_locks(last_global, inters);
+					}
 					ur->create_action(TTR("Add Point to Curve"));
 					ur->add_do_method(c.ptr(), "add_point", it.xform(inters), Vector3(), Vector3(), -1);
 					ur->add_undo_method(c.ptr(), "remove_point", c->get_point_count());
@@ -771,6 +864,44 @@ EditorPlugin::AfterGUIInput Path3DEditorPlugin::forward_3d_gui_input(Camera3D *p
 	}
 
 	return EditorPlugin::AFTER_GUI_INPUT_PASS;
+}
+
+void Path3DEditorPlugin::_delete_selected_points() {
+	ERR_FAIL_NULL(path);
+	Ref<Curve3D> c = path->get_curve();
+	ERR_FAIL_COND(c.is_null());
+
+	// Grab the gizmo to read the subgizmo (point) selection.
+	Ref<EditorNode3DGizmo> gizmo;
+	for (Ref<Node3DGizmo> g : path->get_gizmos()) {
+		gizmo = g;
+		if (gizmo.is_valid()) {
+			break;
+		}
+	}
+	ERR_FAIL_COND(gizmo.is_null());
+
+	Vector<int> selection = gizmo->get_subgizmo_selection();
+	if (selection.is_empty()) {
+		return;
+	}
+	selection.sort();
+
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	ur->create_action(TTR("Remove Path Points"), UndoRedo::MERGE_DISABLE, c.ptr());
+	ur->add_do_method(Node3DEditor::get_singleton(), "_clear_subgizmo_selection", path);
+
+	// Do: remove highest index first so lower indices stay valid.
+	for (int i = selection.size() - 1; i >= 0; i--) { // descending for removal
+		ur->add_do_method(c.ptr(), "remove_point", selection[i]);
+	}
+	// Undo: re-add lowest index first.
+	for (int i = 0; i < selection.size(); i++) { // ascending for restore
+		const int idx = selection[i];
+		ur->add_undo_method(c.ptr(), "add_point", c->get_point_position(idx), c->get_point_in(idx), c->get_point_out(idx), idx);
+		ur->add_undo_method(c.ptr(), "set_point_tilt", idx, c->get_point_tilt(idx));
+	}
+	ur->commit_action();
 }
 
 void Path3DEditorPlugin::edit(Object *p_object) {
@@ -839,6 +970,33 @@ void Path3DEditorPlugin::_toggle_closed_curve() {
 	ur->add_do_method(c.ptr(), "set_closed", !c.ptr()->is_closed());
 	ur->add_undo_method(c.ptr(), "set_closed", c.ptr()->is_closed());
 	ur->commit_action();
+}
+
+void Path3DEditorPlugin::_apply_axis_locks(const Vector3 &p_reference_global, Vector3 &r_global_point) const {
+	if (axis_lock_x->is_pressed()) {
+		r_global_point.x = p_reference_global.x;
+	}
+	if (axis_lock_y->is_pressed()) {
+		r_global_point.y = p_reference_global.y;
+	}
+	if (axis_lock_z->is_pressed()) {
+		r_global_point.z = p_reference_global.z;
+	}
+}
+
+void Path3DEditorPlugin::_update_axis_lock_icons() {
+	const StringName axis_names[3] = { SNAME("X_Letter"), SNAME("Y_Letter"), SNAME("Z_Letter") };
+	const StringName lock_names[3] = { SNAME("X_Letter_Locked"), SNAME("Y_Letter_Locked"), SNAME("Z_Letter_Locked") };
+	Button *buttons[3] = { axis_lock_x, axis_lock_y, axis_lock_z };
+
+	// These icons actually use a separate SVG for their toggled state, so we don't want the tint to occur on pressed.
+	// This overrides that.
+	axis_lock_x->add_theme_color_override(SNAME("icon_pressed_color"), Color(1, 1, 1));
+	axis_lock_y->add_theme_color_override(SNAME("icon_pressed_color"), Color(1, 1, 1));
+	axis_lock_z->add_theme_color_override(SNAME("icon_pressed_color"), Color(1, 1, 1));
+	for (int i = 0; i < 3; i++) {
+		buttons[i]->set_button_icon(topmenu_bar->get_editor_theme_icon(buttons[i]->is_pressed() ? lock_names[i] : axis_names[i]));
+	}
 }
 
 void Path3DEditorPlugin::_handle_option_pressed(int p_option) {
@@ -922,6 +1080,34 @@ void Path3DEditorPlugin::_restore_curve_points(const PackedVector3Array &p_point
 	}
 }
 
+void Path3DEditorPlugin::_smooth_all_points() {
+	ERR_FAIL_NULL(path);
+	Ref<Curve3D> c = path->get_curve();
+	ERR_FAIL_COND(c.is_null());
+	if (c->get_point_count() < 3) {
+		return;
+	}
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	ur->create_action(TTR("Smooth All Points"));
+	ur->add_do_method(c.ptr(), "smooth_all_points");
+	ur->add_undo_method(c.ptr(), "_set_data", c->call("_get_data"));
+	ur->commit_action();
+}
+
+void Path3DEditorPlugin::_reset_all_points_handles() {
+	ERR_FAIL_NULL(path);
+	Ref<Curve3D> c = path->get_curve();
+	ERR_FAIL_COND(c.is_null());
+	if (c->get_point_count() == 0) {
+		return;
+	}
+	EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
+	ur->create_action(TTR("Reset All Handles"));
+	ur->add_do_method(c.ptr(), "reset_all_points_handles");
+	ur->add_undo_method(c.ptr(), "_set_data", c->call("_get_data"));
+	ur->commit_action();
+}
+
 void Path3DEditorPlugin::_update_theme() {
 	curve_edit->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveEdit")));
 	curve_edit_curve->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveCurve")));
@@ -930,7 +1116,17 @@ void Path3DEditorPlugin::_update_theme() {
 	curve_del->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveDelete")));
 	curve_closed->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveClose")));
 	curve_clear_points->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("Clear")));
+	curve_smooth->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveInOut")));
+	curve_reset_handles->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("CurveLinear")));
 	create_curve_button->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("Curve3D")));
+
+	axis_lock_x->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("X_Letter")));
+	axis_lock_y->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("Y_Letter")));
+	axis_lock_z->set_button_icon(topmenu_bar->get_editor_theme_icon(SNAME("Z_Letter")));
+
+	separator_line_style->set_color(axis_separator_left->get_theme_color("accent_color", "Editor"));
+
+	_update_axis_lock_icons(); // Buttons have a different icon for locked/not locked
 }
 
 void Path3DEditorPlugin::_update_toolbar() {
@@ -977,15 +1173,21 @@ void Path3DEditorPlugin::_notification(int p_what) {
 					bool hit_something = false;
 					Vector3 inters;
 					if (ss->intersect_ray(ray_params, result)) {
+						// print_line("ray HIT at ", result.position, " collider=", result.collider_id);
 						inters = result.position;
 						hit_something = true;
 					} else {
+						// print_line("ray MISSED, plane fallback");
 						Plane p(_edit.gizmo_camera->get_transform().basis.get_column(2), _edit.origin);
 						if (p.intersects_ray(ray_params.from, _edit.click_ray_dir, &inters)) {
 							hit_something = true;
 						}
 					}
 					if (hit_something) {
+						if (c->get_point_count() > 0) {
+							const Vector3 last_global = gt.xform(c->get_point_position(c->get_point_count() - 1));
+							_apply_axis_locks(last_global, inters);
+						}
 						ur->create_action(TTR("Add Point to Curve"));
 						ur->add_do_method(c.ptr(), "add_point", it.xform(inters), Vector3(), Vector3(), -1);
 						ur->add_undo_method(c.ptr(), "remove_point", c->get_point_count());
@@ -1079,12 +1281,70 @@ Path3DEditorPlugin::Path3DEditorPlugin() {
 	toolbar->add_child(curve_closed);
 	curve_closed->connect(SceneStringName(pressed), callable_mp(this, &Path3DEditorPlugin::_toggle_closed_curve));
 
+	separator_line_style = memnew(StyleBoxLine);
+	separator_line_style->set_thickness(2);
+	separator_line_style->set_vertical(true);
+
+	axis_separator_left = memnew(VSeparator);
+	axis_separator_left->add_theme_style_override("separator", separator_line_style);
+	toolbar->add_child(axis_separator_left);
+
+	axis_lock_x = memnew(Button);
+	axis_lock_x->set_theme_type_variation(SceneStringName(FlatButton));
+	axis_lock_x->set_toggle_mode(true);
+	axis_lock_x->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
+	axis_lock_x->set_tooltip_text(TTR("Lock X Axis") + "\n" + TTR("New points keep the last point's X coordinate"));
+	axis_lock_x->set_accessibility_name(TTRC("Lock X Axis"));
+	toolbar->add_child(axis_lock_x);
+
+	axis_lock_y = memnew(Button);
+	axis_lock_y->set_theme_type_variation(SceneStringName(FlatButton));
+	axis_lock_y->set_toggle_mode(true);
+	axis_lock_y->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
+	axis_lock_y->set_tooltip_text(TTR("Lock Y Axis") + "\n" + TTR("New points keep the last point's Y coordinate"));
+	axis_lock_y->set_accessibility_name(TTRC("Lock Y Axis"));
+	toolbar->add_child(axis_lock_y);
+
+	axis_lock_z = memnew(Button);
+	axis_lock_z->set_theme_type_variation(SceneStringName(FlatButton));
+	axis_lock_z->set_toggle_mode(true);
+	axis_lock_z->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
+	axis_lock_z->set_tooltip_text(TTR("Lock Z Axis") + "\n" + TTR("New points keep the last point's Z coordinate"));
+	axis_lock_z->set_accessibility_name(TTRC("Lock Z Axis"));
+	toolbar->add_child(axis_lock_z);
+
+	axis_separator_right = memnew(VSeparator);
+	axis_separator_right->add_theme_style_override("separator", separator_line_style);
+	toolbar->add_child(axis_separator_right);
+
+	curve_smooth = memnew(Button);
+	curve_smooth->set_theme_type_variation(SceneStringName(FlatButton));
+	curve_smooth->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
+	curve_smooth->set_tooltip_text(TTR("Smooth All Points"));
+	curve_smooth->connect(SceneStringName(pressed), callable_mp(this, &Path3DEditorPlugin::_smooth_all_points));
+	toolbar->add_child(curve_smooth);
+
+	curve_reset_handles = memnew(Button);
+	curve_reset_handles->set_theme_type_variation(SceneStringName(FlatButton));
+	curve_reset_handles->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
+	curve_reset_handles->set_tooltip_text(TTR("Reset All Handles"));
+	curve_reset_handles->connect(SceneStringName(pressed), callable_mp(this, &Path3DEditorPlugin::_reset_all_points_handles));
+	toolbar->add_child(curve_reset_handles);
+
+	separator_clear_points = memnew(VSeparator);
+	separator_clear_points->add_theme_style_override("separator", separator_line_style);
+	toolbar->add_child(separator_clear_points);
+
 	curve_clear_points = memnew(Button);
 	curve_clear_points->set_theme_type_variation(SceneStringName(FlatButton));
 	curve_clear_points->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 	curve_clear_points->set_tooltip_text(TTR("Clear Points"));
 	curve_clear_points->connect(SceneStringName(pressed), callable_mp(this, &Path3DEditorPlugin::_confirm_clear_points));
 	toolbar->add_child(curve_clear_points);
+
+	separator_options_menu = memnew(VSeparator);
+	separator_options_menu->add_theme_style_override("separator", separator_line_style);
+	toolbar->add_child(separator_options_menu);
 
 	clear_points_dialog = memnew(ConfirmationDialog);
 	clear_points_dialog->set_title(TTR("Please Confirm..."));
@@ -1103,6 +1363,10 @@ Path3DEditorPlugin::Path3DEditorPlugin() {
 	create_curve_button->hide();
 	topmenu_bar->add_child(create_curve_button);
 	create_curve_button->connect(SceneStringName(pressed), callable_mp(this, &Path3DEditorPlugin::_create_curve));
+
+	axis_lock_x->connect(SceneStringName(toggled), callable_mp(this, &Path3DEditorPlugin::_update_axis_lock_icons).unbind(1));
+	axis_lock_y->connect(SceneStringName(toggled), callable_mp(this, &Path3DEditorPlugin::_update_axis_lock_icons).unbind(1));
+	axis_lock_z->connect(SceneStringName(toggled), callable_mp(this, &Path3DEditorPlugin::_update_axis_lock_icons).unbind(1));
 
 	PopupMenu *menu = handle_menu->get_popup();
 	menu->add_check_item(TTR("Mirror Handle Angles"));
@@ -1145,57 +1409,44 @@ void Path3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	Ref<Curve3D> curve = path->get_curve();
 
 	Ref<StandardMaterial3D> handle_material = get_material("handles", p_gizmo);
+	Ref<StandardMaterial3D> snapped_handle_material = get_material("snapped_handle", p_gizmo);
+	Ref<StandardMaterial3D> selected_handle_material = get_material("selected_handle", p_gizmo);
 	Ref<StandardMaterial3D> first_pt_handle_material = get_material("first_pt_handle", p_gizmo);
 	Ref<StandardMaterial3D> last_pt_handle_material = get_material("last_pt_handle", p_gizmo);
 	Ref<StandardMaterial3D> closed_pt_handle_material = get_material("closed_pt_handle", p_gizmo);
 
-	first_pt_handle_material->set_albedo(Color(0.2, 1.0, 0.0));
-	last_pt_handle_material->set_albedo(Color(1.0, 0.2, 0.0));
-	closed_pt_handle_material->set_albedo(Color(1.0, 0.8, 0.0));
-
-	PackedVector3Array handles;
+	PackedVector3Array first_pt;
+	PackedVector3Array last_pt;
+	PackedVector3Array mid_pts;
+	PackedVector3Array sel_pts;
 
 	if (Path3DEditorPlugin::singleton->curve_edit->is_pressed()) {
-		for (int idx = 0; idx < curve->get_point_count(); ++idx) {
-			// Collect handles.
+		const int pc = curve->get_point_count();
+		for (int idx = 0; idx < pc; ++idx) {
 			const Vector3 pos = curve->get_point_position(idx);
-
-			handles.append(pos);
+			if (p_gizmo->is_subgizmo_selected(idx)) {
+				sel_pts.append(pos);
+			} else if (idx == 0) {
+				first_pt.append(pos);
+			} else if (idx == pc - 1) {
+				last_pt.append(pos);
+			} else {
+				mid_pts.append(pos);
+			}
 		}
 	}
 
-	if (handles.size()) {
-		// Point count.
-		const int pc = handles.size();
-
-		// Initialize arrays for first point.
-		PackedVector3Array first_pt;
-		first_pt.append(handles[0]);
-
-		// Initialize arrays and add handle for last point if needed.
-		if (pc > 1) {
-			PackedVector3Array last_pt;
-			last_pt.append(handles[handles.size() - 1]);
-			handles.remove_at(handles.size() - 1);
-			if (curve->is_closed()) {
-				p_gizmo->add_vertices(last_pt, handle_material, Mesh::PRIMITIVE_POINTS);
-			} else {
-				p_gizmo->add_vertices(last_pt, last_pt_handle_material, Mesh::PRIMITIVE_POINTS);
-			}
-		}
-
-		// Add handle for first point.
-		handles.remove_at(0);
-		if (curve->is_closed()) {
-			p_gizmo->add_vertices(first_pt, closed_pt_handle_material, Mesh::PRIMITIVE_POINTS);
-		} else {
-			p_gizmo->add_vertices(first_pt, first_pt_handle_material, Mesh::PRIMITIVE_POINTS);
-		}
-
-		// Add handles for remaining intermediate points.
-		if (!handles.is_empty()) {
-			p_gizmo->add_vertices(handles, handle_material, Mesh::PRIMITIVE_POINTS);
-		}
+	if (!last_pt.is_empty()) {
+		p_gizmo->add_vertices(last_pt, curve->is_closed() ? handle_material : last_pt_handle_material, Mesh::PRIMITIVE_POINTS);
+	}
+	if (!first_pt.is_empty()) {
+		p_gizmo->add_vertices(first_pt, curve->is_closed() ? closed_pt_handle_material : first_pt_handle_material, Mesh::PRIMITIVE_POINTS);
+	}
+	if (!mid_pts.is_empty()) {
+		p_gizmo->add_vertices(mid_pts, handle_material, Mesh::PRIMITIVE_POINTS);
+	}
+	if (!sel_pts.is_empty()) {
+		p_gizmo->add_vertices(sel_pts, selected_handle_material, Mesh::PRIMITIVE_POINTS);
 	}
 }
 
@@ -1265,9 +1516,29 @@ void Path3DGizmoPlugin::set_subgizmo_transform(const EditorNode3DGizmo *p_gizmo,
 	ERR_FAIL_COND(curve.is_null());
 	ERR_FAIL_INDEX(p_id, curve->get_point_count());
 
+	const Transform3D gt = path->get_global_transform();
+	const Transform3D gi = gt.affine_inverse();
+
 	if (!transformation_locked_basis.has(p_id)) {
 		transformation_locked_basis[p_id] = Basis(curve->get_point_baked_posture(p_id, true));
 	}
+	if (!transformation_locked_origins.has(p_id)) {
+		// The first set_subgizmo_transform() call happens before the point has moved,
+		// so the current curve position is the drag origin.
+		transformation_locked_origins[p_id] = gt.xform(curve->get_point_position(p_id));
+	}
+
+	Path3DEditorPlugin *editor = Path3DEditorPlugin::singleton;
+	if (editor) {
+		// Apply the axis locks in global space so the locked axis is the global one,
+		// regardless of the Path3D's own rotation. Mirrors set_handle() and
+		// forward_3d_gui_input(), which call _apply_axis_locks() on global-space points.
+		Vector3 locked_global = gt.xform(p_transform.origin);
+		editor->_apply_axis_locks(transformation_locked_origins[p_id], locked_global);
+		curve->set_point_position(p_id, gi.xform(locked_global));
+		return;
+	}
+
 	curve->set_point_position(p_id, p_transform.origin);
 }
 
@@ -1278,6 +1549,7 @@ void Path3DGizmoPlugin::commit_subgizmos(const EditorNode3DGizmo *p_gizmo, const
 	ERR_FAIL_COND(curve.is_null());
 
 	transformation_locked_basis.clear();
+	transformation_locked_origins.clear();
 
 	if (p_cancel) {
 		for (int i = 0; i < p_ids.size(); ++i) {
@@ -1315,4 +1587,14 @@ Path3DGizmoPlugin::Path3DGizmoPlugin() {
 	create_handle_material("last_pt_handle", false, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("EditorPathSmoothHandle"), EditorStringName(EditorIcons)));
 	create_handle_material("closed_pt_handle", false, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("EditorPathSmoothHandle"), EditorStringName(EditorIcons)));
 	create_handle_material("sec_handles", false, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("EditorCurveHandle"), EditorStringName(EditorIcons)));
+	create_handle_material("selected_handle", false, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("EditorPathSmoothHandle"), EditorStringName(EditorIcons)));
+	create_handle_material("snapped_handle", false, EditorNode::get_singleton()->get_editor_theme()->get_icon(SNAME("EditorPathSmoothHandle"), EditorStringName(EditorIcons)));
+
+	// Static handle colors — set once here instead of every redraw().
+	get_material("first_pt_handle")->set_albedo(Color(0.2, 1.0, 0.0));
+	get_material("last_pt_handle")->set_albedo(Color(1.0, 0.2, 0.0));
+	get_material("closed_pt_handle")->set_albedo(Color(1.0, 0.8, 0.0));
+	get_material("sec_handles")->set_albedo(Color(1.0, 0.75, 0.0));
+	get_material("selected_handle")->set_albedo(Color(0.1, 0.6, 1.0));
+	get_material("snapped_handle")->set_albedo(Color(1.0, 0.2, 1.0));
 }
