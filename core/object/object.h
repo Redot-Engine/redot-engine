@@ -596,7 +596,8 @@ public:
 		CONNECT_ONE_SHOT = 4,
 		CONNECT_REFERENCE_COUNTED = 8,
 		CONNECT_APPEND_SOURCE_OBJECT = 16,
-		CONNECT_INHERITED = 32, ///< Used in editor builds.
+		CONNECT_INHERITED = 32, ///<Used in editor builds.
+		CONNECT_NO_EDITOR = 64, //<The signal won't be emitted from nodes in the currently edited scene.
 	};
 
 	struct Connection {
