@@ -82,6 +82,14 @@ private:
 		_FORCE_INLINE_ Vector3 get_center() const { return ((min + max) / 2); }
 		_FORCE_INLINE_ Vector3 get_length() const { return (max - min); }
 
+#ifdef GODOT_SIMD_REAL_F32X4
+		_FORCE_INLINE_ simd::f32x4 _simd_min() const {
+			return simd::load3(&min.x);
+		}
+		_FORCE_INLINE_ simd::f32x4 _simd_max() const {
+			return simd::load3(&max.x);
+		}
+#endif
 		_FORCE_INLINE_ bool contains(const Volume &a) const {
 			return ((min.x <= a.min.x) &&
 					(min.y <= a.min.y) &&
@@ -143,6 +151,33 @@ private:
 		}
 
 		_FORCE_INLINE_ bool intersects_convex(const Plane *p_planes, int p_plane_count, const Vector3 *p_points, int p_point_count) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+			{
+				using namespace simd;
+				// (max - min) * 0.5 with a double literal: the product is evaluated in float.
+				f32x4 half_extents = (_simd_max() - _simd_min()) * splat4(0.5f);
+				f32x4 ofs = _simd_min() + half_extents;
+				f32x4 neg_half_extents = -half_extents;
+				for (int i = 0; i < p_plane_count; i++) {
+					f32x4 plane = load4(&p_planes[i].normal.x);
+					f32x4 point = select(cmp_gt(plane, zero4()), neg_half_extents, half_extents) + ofs;
+					if (dot3(plane, point) > get_lane<3>(plane)) {
+						return false;
+					}
+				}
+				f32x4 upper = ofs + half_extents;
+				f32x4 lower = ofs - half_extents;
+				i32x4 bad_positive = zero_i32x4();
+				i32x4 bad_negative = zero_i32x4();
+				for (int i = 0; i < p_point_count; i++) {
+					f32x4 p = load3(&p_points[i].x);
+					bad_positive = count_if(bad_positive, cmp_gt(p, upper));
+					bad_negative = count_if(bad_negative, cmp_lt(p, lower));
+				}
+				mask4 separated = cmp_eq(bad_positive, p_point_count) | cmp_eq(bad_negative, p_point_count);
+				return !any_lane3(separated);
+			}
+#endif
 			Vector3 half_extents = (max - min) * 0.5;
 			Vector3 ofs = min + half_extents;
 

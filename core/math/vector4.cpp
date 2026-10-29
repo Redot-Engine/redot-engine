@@ -39,6 +39,7 @@
 #include "vector4.h"
 
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 #include "core/math/vector4i.h"
 #include "core/string/ustring.h"
 
@@ -67,6 +68,7 @@ Vector4::Axis Vector4::max_axis_index() const {
 }
 
 bool Vector4::is_equal_approx(const Vector4 &p_vec4) const {
+	// Scalar: a single per-call four-lane compare is not improved by SIMD, so keep the short-circuiting form.
 	return Math::is_equal_approx(x, p_vec4.x) && Math::is_equal_approx(y, p_vec4.y) && Math::is_equal_approx(z, p_vec4.z) && Math::is_equal_approx(w, p_vec4.w);
 }
 
@@ -75,7 +77,11 @@ bool Vector4::is_same(const Vector4 &p_vec4) const {
 }
 
 bool Vector4::is_zero_approx() const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	return simd::all_lanes(simd::is_zero_approx4(simd::load4(coord)));
+#else
 	return Math::is_zero_approx(x) && Math::is_zero_approx(y) && Math::is_zero_approx(z) && Math::is_zero_approx(w);
+#endif
 }
 
 bool Vector4::is_finite() const {
@@ -123,12 +129,23 @@ Vector4 Vector4::direction_to(const Vector4 &p_to) const {
 	return ret;
 }
 
+#ifdef GODOT_SIMD_REAL_F32X4
+#define GODOT_VECTOR4_SIMD_UNARY(m_fn)                       \
+	Vector4 res;                                             \
+	simd::store4(res.coord, simd::m_fn(simd::load4(coord))); \
+	return res;
+#endif
+
 Vector4 Vector4::abs() const {
 	return Vector4(Math::abs(x), Math::abs(y), Math::abs(z), Math::abs(w));
 }
 
 Vector4 Vector4::sign() const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	GODOT_VECTOR4_SIMD_UNARY(sign4)
+#else
 	return Vector4(SIGN(x), SIGN(y), SIGN(z), SIGN(w));
+#endif
 }
 
 Vector4 Vector4::floor() const {
@@ -140,8 +157,14 @@ Vector4 Vector4::ceil() const {
 }
 
 Vector4 Vector4::round() const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	GODOT_VECTOR4_SIMD_UNARY(round4)
+#else
 	return Vector4(Math::round(x), Math::round(y), Math::round(z), Math::round(w));
+#endif
 }
+
+#undef GODOT_VECTOR4_SIMD_UNARY
 
 Vector4 Vector4::lerp(const Vector4 &p_to, real_t p_weight) const {
 	Vector4 res = *this;
@@ -154,6 +177,13 @@ Vector4 Vector4::lerp(const Vector4 &p_to, real_t p_weight) const {
 
 Vector4 Vector4::cubic_interpolate(const Vector4 &p_b, const Vector4 &p_pre_a, const Vector4 &p_post_b, real_t p_weight) const {
 	Vector4 res = *this;
+#ifdef GODOT_SIMD_REAL_F32X4
+	if (simd::has_fused_cubic()) {
+		using namespace simd;
+		store4(res.coord, cubic_interpolate4_fma(load4(coord), load4(p_b.coord), load4(p_pre_a.coord), load4(p_post_b.coord), p_weight));
+		return res;
+	}
+#endif
 	res.x = Math::cubic_interpolate(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight);
 	res.y = Math::cubic_interpolate(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight);
 	res.z = Math::cubic_interpolate(res.z, p_b.z, p_pre_a.z, p_post_b.z, p_weight);
@@ -163,6 +193,13 @@ Vector4 Vector4::cubic_interpolate(const Vector4 &p_b, const Vector4 &p_pre_a, c
 
 Vector4 Vector4::cubic_interpolate_in_time(const Vector4 &p_b, const Vector4 &p_pre_a, const Vector4 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const {
 	Vector4 res = *this;
+#ifdef GODOT_SIMD_REAL_F32X4
+	{
+		using namespace simd;
+		store4(res.coord, cubic_interpolate_in_time4(load4(coord), load4(p_b.coord), load4(p_pre_a.coord), load4(p_post_b.coord), p_weight, p_b_t, p_pre_a_t, p_post_b_t));
+		return res;
+	}
+#endif
 	res.x = Math::cubic_interpolate_in_time(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
 	res.y = Math::cubic_interpolate_in_time(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
 	res.z = Math::cubic_interpolate_in_time(res.z, p_b.z, p_pre_a.z, p_post_b.z, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
@@ -227,19 +264,31 @@ Vector4 Vector4::inverse() const {
 }
 
 Vector4 Vector4::clamp(const Vector4 &p_min, const Vector4 &p_max) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	Vector4 res;
+	simd::store4(res.coord, simd::clamp4(simd::load4(coord), simd::load4(p_min.coord), simd::load4(p_max.coord)));
+	return res;
+#else
 	return Vector4(
 			CLAMP(x, p_min.x, p_max.x),
 			CLAMP(y, p_min.y, p_max.y),
 			CLAMP(z, p_min.z, p_max.z),
 			CLAMP(w, p_min.w, p_max.w));
+#endif
 }
 
 Vector4 Vector4::clampf(real_t p_min, real_t p_max) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+	Vector4 res;
+	simd::store4(res.coord, simd::clamp4(simd::load4(coord), simd::splat4(p_min), simd::splat4(p_max)));
+	return res;
+#else
 	return Vector4(
 			CLAMP(x, p_min, p_max),
 			CLAMP(y, p_min, p_max),
 			CLAMP(z, p_min, p_max),
 			CLAMP(w, p_min, p_max));
+#endif
 }
 
 Vector4::operator String() const {

@@ -202,7 +202,7 @@ void postprocess_nav_mesh(NavigationMesh *nav_mesh) {
 void BakerLODDialog::setup_layout() {
 	set_title("Bake terrain mesh");
 	set_position(Point2i{ 0, 36 });
-	set_size(Size2i{ 400, 155 });
+	set_size(Size2i{ 560, 160 });
 
 	_margin = memnew(MarginContainer);
 	_margin->set_name("MarginContainer");
@@ -241,7 +241,9 @@ void BakerLODDialog::setup_layout() {
 	_description_label = memnew(Label);
 	_description_label->set_name("DescriptionLabel");
 	_description_label->set_unique_name_in_owner(true);
-	_description_label->set_autowrap_mode(TextServer::AUTOWRAP_WORD);
+	_description_label->set_custom_minimum_size(Size2{ 380, 75 }); // needed to avoid a tall dialog: see https://github.com/godotengine/godot/issues/121601
+	_description_label->set_h_size_flags(Control::SIZE_FILL | Control::SIZE_EXPAND);
+	_description_label->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
 	_vbox->add_child(_description_label);
 
 	set_visible(true);
@@ -252,9 +254,6 @@ void BakerLODDialog::init() {
 	if (!is_connected("about_to_popup", callable_mp(this, &BakerLODDialog::on_about_to_popup))) {
 		connect("about_to_popup", callable_mp(this, &BakerLODDialog::on_about_to_popup));
 	}
-	if (!is_connected("visibility_changed", callable_mp(this, &BakerLODDialog::on_visibility_changed))) {
-		connect("visibility_changed", callable_mp(this, &BakerLODDialog::on_visibility_changed));
-	}
 	if (_lodbox && !_lodbox->is_connected("value_changed", callable_mp(this, &BakerLODDialog::on_lod_box_value_changed))) {
 		_lodbox->connect("value_changed", callable_mp(this, &BakerLODDialog::on_lod_box_value_changed));
 	}
@@ -264,17 +263,14 @@ void BakerLODDialog::on_about_to_popup() {
 	_lod = static_cast<int>(_lodbox->get_value());
 }
 
-void BakerLODDialog::on_visibility_changed() {
-	// Change text on the autowrap label only when the popup is visible.
-	// Works around Godot issue #47005:
-	// https://github.com/godotengine/godot/issues/47005
-	if (is_visible()) {
-		_description_label->set_text(_description);
-	}
-}
-
 void BakerLODDialog::on_lod_box_value_changed(real_t) {
 	_lod = static_cast<int>(_lodbox->get_value());
+}
+
+void BakerLODDialog::set_description(const String &description) {
+	if (_description_label) {
+		_description_label->set_text(description);
+	}
 }
 
 void BakerLODDialog::_notification(int what) {
@@ -295,7 +291,7 @@ void Baker::set_up_navigation_popup() {
 	if (auto terrain = _plugin->get_terrain(); terrain) {
 		_bake_method = callable_mp(this, &Baker::set_up_navigation);
 		_confirm_dlg->set_text(SET_UP_NAVIGATION_DESCRIPTION);
-		EditorInterface::get_singleton()->popup_dialog_centered(_confirm_dlg);
+		_confirm_dlg->popup_centered();
 	}
 }
 
@@ -303,7 +299,7 @@ void Baker::popup(const String &descr, const Callable &method) {
 	if (auto terrain = _plugin->get_terrain(); terrain) {
 		_bake_method = method;
 		_bake_lod_dlg->set_description(descr);
-		EditorInterface::get_singleton()->popup_dialog_centered(_bake_lod_dlg);
+		_bake_lod_dlg->popup_centered(Size2i{ 560, 160 });
 	}
 }
 
@@ -543,23 +539,12 @@ Baker::Baker(WorldScape3DEditorPlugin *plugin) :
 	_bake_lod_dlg = memnew(BakerLODDialog);
 	_bake_lod_dlg->hide();
 	_bake_lod_dlg->connect("confirmed", callable_mp(this, &Baker::on_confirm));
-	_bake_lod_dlg->set_unparent_when_invisible(true);
+	add_child(_bake_lod_dlg);
 
 	_confirm_dlg = memnew(ConfirmationDialog);
 	_confirm_dlg->hide();
 	_confirm_dlg->connect("confirmed", callable_mp(this, &Baker::on_confirm));
-	_confirm_dlg->set_unparent_when_invisible(true);
-}
-
-Baker::~Baker() {
-	if (_confirm_dlg && !_confirm_dlg->get_parent()) {
-		_confirm_dlg->queue_free();
-		_confirm_dlg = nullptr;
-	}
-	if (_bake_lod_dlg && !_bake_lod_dlg->get_parent()) {
-		_bake_lod_dlg->queue_free();
-		_bake_lod_dlg = nullptr;
-	}
+	add_child(_confirm_dlg);
 }
 
 Vector<WorldScape3D *> Baker::find_nav_region_terrains(NavigationRegion3D *nav_region) const {

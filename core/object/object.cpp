@@ -1008,6 +1008,7 @@ void Object::set_script(const Variant &p_script) {
 	if (!p_script.is_null()) {
 		ERR_FAIL_COND_MSG(s.is_null(), "Cannot set object script. Parameter should be null or a reference to a valid script.");
 		ERR_FAIL_COND_MSG(s->is_abstract(), vformat("Cannot set object script. Script '%s' should not be abstract.", s->get_path()));
+		ERR_FAIL_COND_MSG(s->is_trait(), vformat("Cannot set object script. Script '%s' is a trait: use it from a script with `uses` instead.", s->get_path()));
 	}
 
 	script = p_script;
@@ -1283,6 +1284,12 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 	for (uint32_t i = 0; i < slot_count; ++i) {
 		const Callable &callable = slot_callables[i];
 		const uint32_t &flags = slot_flags[i];
+
+#ifdef TOOLS_ENABLED
+		if (flags & CONNECT_NO_EDITOR && Engine::get_singleton()->is_editor_hint() && is_class(SNAME("Node")) && call(SNAME("is_part_of_edited_scene"))) {
+			continue;
+		}
+#endif
 
 		if (!callable.is_valid()) {
 			// Target might have been deleted during signal callback, this is expected and OK.

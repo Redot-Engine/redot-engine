@@ -2548,6 +2548,10 @@ GDScriptFunction *GDScriptCompiler::_parse_function(Error &r_error, GDScript *p_
 	}
 
 	GDScriptFunction *gd_function = codegen.generator->write_end();
+	if (p_func && !p_func->source_path.is_empty()) {
+		// Errors and the stack point into the trait's script, where its lines are.
+		gd_function->source = p_func->source_path;
+	}
 
 	if (is_initializer && !p_for_trait_super) {
 		p_script->initializer = gd_function;

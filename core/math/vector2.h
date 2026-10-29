@@ -40,6 +40,7 @@
 
 #include "core/error/error_macros.h"
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 
 class String;
 struct Vector2i;
@@ -286,6 +287,13 @@ Vector2 Vector2::slerp(const Vector2 &p_to, real_t p_weight) const {
 
 Vector2 Vector2::cubic_interpolate(const Vector2 &p_b, const Vector2 &p_pre_a, const Vector2 &p_post_b, real_t p_weight) const {
 	Vector2 res = *this;
+#ifdef GODOT_SIMD_REAL_F32X4
+	if (simd::has_fused_cubic()) {
+		using namespace simd;
+		store2(&res.x, cubic_interpolate4_fma(load2(&x), load2(&p_b.x), load2(&p_pre_a.x), load2(&p_post_b.x), p_weight));
+		return res;
+	}
+#endif
 	res.x = Math::cubic_interpolate(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight);
 	res.y = Math::cubic_interpolate(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight);
 	return res;

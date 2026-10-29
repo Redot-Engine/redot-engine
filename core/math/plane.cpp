@@ -39,6 +39,7 @@
 #include "plane.h"
 
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 #include "core/variant/variant.h"
 
 void Plane::set_normal(const Vector3 &p_normal) {
@@ -86,6 +87,23 @@ bool Plane::intersect_3(const Plane &p_plane1, const Plane &p_plane2, Vector3 *r
 	Vector3 normal1 = p_plane1.normal;
 	Vector3 normal2 = p_plane2.normal;
 
+#ifdef GODOT_SIMD_REAL_F32X4
+	using namespace simd;
+	f32x4 n0 = load3(&normal0.x);
+	f32x4 n1 = load3(&normal1.x);
+	f32x4 n2 = load3(&normal2.x);
+	f32x4 c01 = cross3(n0, n1);
+	real_t denom = dot3(c01, n2);
+
+	if (Math::is_zero_approx(denom)) {
+		return false;
+	}
+
+	if (r_result) {
+		f32x4 r = ((cross3(n1, n2) * splat4(p_plane0.d)) + (cross3(n2, n0) * splat4(p_plane1.d)) + (c01 * splat4(p_plane2.d))) / splat4(denom);
+		store3(&r_result->x, r);
+	}
+#else
 	real_t denom = vec3_cross(normal0, normal1).dot(normal2);
 
 	if (Math::is_zero_approx(denom)) {
@@ -98,6 +116,7 @@ bool Plane::intersect_3(const Plane &p_plane1, const Plane &p_plane2, Vector3 *r
 							(vec3_cross(normal0, normal1) * p_plane2.d)) /
 				denom;
 	}
+#endif
 
 	return true;
 }

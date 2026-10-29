@@ -148,7 +148,6 @@ class ListContainer : public Container {
 
 public:
 	explicit ListContainer(WorldScape3DEditorPlugin *plugin);
-	~ListContainer() override;
 
 	void redraw();
 	void clear();

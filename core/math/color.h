@@ -39,6 +39,7 @@
  */
 
 #include "core/math/math_funcs.h"
+#include "core/math/simd.h"
 #include <bit>
 
 class String;
@@ -118,27 +119,65 @@ struct [[nodiscard]] Color {
 			Color(p_code) { a = p_a; }
 	// NOLINTEND(cppcoreguidelines-pro-type-member-init)
 
+	// The packed forms put the first argument of floats_to_uint32/64 in the most
+	// significant byte, so the lanes are reversed before the little-endian pack.
 	constexpr uint32_t to_rgba32() const noexcept {
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			return pack_trunc_u8x4(permute<3, 2, 1, 0>(round4(load4(components) * splat4(255.0f))));
+		}
+#endif
 		return color_pack::floats_to_uint32(r, g, b, a);
 	}
 
 	constexpr uint32_t to_argb32() const noexcept {
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			return pack_trunc_u8x4(permute<2, 1, 0, 3>(round4(load4(components) * splat4(255.0f))));
+		}
+#endif
 		return color_pack::floats_to_uint32(a, r, g, b);
 	}
 
 	constexpr uint32_t to_abgr32() const noexcept {
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			return pack_trunc_u8x4(round4(load4(components) * splat4(255.0f)));
+		}
+#endif
 		return color_pack::floats_to_uint32(a, b, g, r);
 	}
 
 	constexpr uint64_t to_rgba64() const noexcept {
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			return pack_trunc_u16x4(permute<3, 2, 1, 0>(round4(load4(components) * splat4(65535.0f))));
+		}
+#endif
 		return color_pack::floats_to_uint64(r, g, b, a);
 	}
 
 	constexpr uint64_t to_argb64() const noexcept {
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			return pack_trunc_u16x4(permute<2, 1, 0, 3>(round4(load4(components) * splat4(65535.0f))));
+		}
+#endif
 		return color_pack::floats_to_uint64(a, r, g, b);
 	}
 
 	constexpr uint64_t to_abgr64() const noexcept {
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			return pack_trunc_u16x4(round4(load4(components) * splat4(65535.0f)));
+		}
+#endif
 		return color_pack::floats_to_uint64(a, b, g, r);
 	}
 
@@ -195,6 +234,7 @@ struct [[nodiscard]] Color {
 	}
 
 	constexpr bool operator==(const Color &p_color) const noexcept {
+		// Scalar: a single four-float compare short-circuits and is not improved by SIMD.
 		return r == p_color.r && g == p_color.g && b == p_color.b && a == p_color.a;
 	}
 
@@ -224,6 +264,14 @@ struct [[nodiscard]] Color {
 	}
 
 	constexpr Color clamp(const Color &p_min = { 0, 0, 0, 0 }, const Color &p_max = { 1, 1, 1, 1 }) const noexcept {
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			Color res;
+			store4(res.components, clamp4(load4(components), load4(p_min.components), load4(p_max.components)));
+			return res;
+		}
+#endif
 		return Color{
 			CLAMP(r, p_min.r, p_max.r),
 			CLAMP(g, p_min.g, p_max.g),
@@ -269,6 +317,14 @@ struct [[nodiscard]] Color {
 
 	constexpr Color darkened(const float p_amount) const noexcept {
 		Color res = *this;
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			f32x4 c = load4(components);
+			store4(res.components, insert_lane3(c * splat4(1.0f - p_amount), c));
+			return res;
+		}
+#endif
 		res.r *= 1.0f - p_amount;
 		res.g *= 1.0f - p_amount;
 		res.b *= 1.0f - p_amount;
@@ -277,6 +333,14 @@ struct [[nodiscard]] Color {
 
 	constexpr Color lightened(const float p_amount) const noexcept {
 		Color res = *this;
+#ifdef GODOT_SIMD_F32X4
+		if (!std::is_constant_evaluated()) {
+			using namespace simd;
+			f32x4 c = load4(components);
+			store4(res.components, insert_lane3(c + (splat4(1.0f) - c) * splat4(p_amount), c));
+			return res;
+		}
+#endif
 		res.r += (1.0f - res.r) * p_amount;
 		res.g += (1.0f - res.g) * p_amount;
 		res.b += (1.0f - res.b) * p_amount;

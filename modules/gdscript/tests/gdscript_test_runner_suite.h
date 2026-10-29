@@ -261,6 +261,29 @@ struct Record:
 	CHECK(int(record.get_member(1)) == 4);
 }
 
+TEST_CASE("[Modules][GDScript] A trait can't be set as an object's script") {
+	GDScriptLanguage::get_singleton()->init();
+	Ref<GDScript> script;
+	script.instantiate();
+	script->set_source_code(R"(
+trait_name SetScriptTrait
+extends Node
+
+func _ready() -> void:
+	print("unreachable")
+)");
+	REQUIRE(script->reload() == OK);
+	REQUIRE(script->is_trait());
+
+	Node *node = memnew(Node);
+	ERR_PRINT_OFF;
+	node->set_script(script);
+	ERR_PRINT_ON;
+	CHECK(node->get_script().is_null());
+	CHECK(node->get_script_instance() == nullptr);
+	memdelete(node);
+}
+
 TEST_CASE("[Modules][GDScript] Struct object fields retain script and trait constraints") {
 	GDScriptLanguage::get_singleton()->init();
 	Ref<GDScript> script;

@@ -154,7 +154,7 @@ bool try_get_dotnet_root_from_command_line(String &r_dotnet_root) {
 
 	for (const String &sdk : sdks) {
 		// The format of the SDK lines is:
-		// 8.0.401 [/usr/share/dotnet/sdk]
+		// 10.0.100 [/usr/share/dotnet/sdk]
 		String version_string = sdk.get_slice(" ", 0);
 		String path = sdk.get_slice(" ", 1);
 		path = path.substr(1, path.length() - 2);
@@ -467,7 +467,7 @@ godot_plugins_initialize_fn initialize_hostfxr_and_godot_plugins(bool &r_runtime
 
 	if (load_assembly_and_get_function_pointer == nullptr) {
 		// Show a message box to the user to make the problem explicit (and explain why Redot closes).
-		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, no compatible version was found.\n\nPlease install the .NET SDK 8.0 or later from https://get.dot.net and restart Redot.") + get_failure_note(), TTR("Failed to load .NET runtime"));
+		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, no compatible version was found.\n\nPlease install the .NET SDK 10.0 or later from https://get.dot.net and restart Redot.") + get_failure_note(), TTR("Failed to load .NET runtime"));
 		ERR_FAIL_V_MSG(nullptr, ".NET: Failed to load compatible .NET runtime");
 	}
 
@@ -699,7 +699,7 @@ void GDMono::initialize() {
 #else
 
 		// Show a message box to the user to make the problem explicit (and explain why Redot closes).
-		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, specifically hostfxr.\n\nPlease install the .NET SDK 8.0 or later from https://get.dot.net and restart Redot.") + get_failure_note(), TTR("Failed to load .NET runtime"));
+		OS::get_singleton()->alert(TTR("Unable to load .NET runtime, specifically hostfxr.\n\nPlease install the .NET SDK 10.0 or later from https://get.dot.net and restart Redot.") + get_failure_note(), TTR("Failed to load .NET runtime"));
 		ERR_FAIL_MSG(".NET: Failed to load hostfxr");
 #endif
 	}

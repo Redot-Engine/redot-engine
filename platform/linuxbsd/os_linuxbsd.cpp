@@ -68,9 +68,6 @@
 #include "wayland/rendering_context_driver_vulkan_wayland.h"
 #endif
 #endif
-#if defined(GLES3_ENABLED)
-#include "drivers/gles3/rasterizer_gles3.h"
-#endif
 
 #include <dlfcn.h>
 #include <sys/stat.h>
@@ -1272,7 +1269,6 @@ bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String &p_display_d
 		DetectPrimeEGL::create_context(EGL_PLATFORM_WAYLAND_KHR);
 	}
 #endif
-	RasterizerGLES3::make_current(true);
 #endif
 	return _test_create_rendering_device(p_display_driver);
 }

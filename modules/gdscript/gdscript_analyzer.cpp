@@ -1085,6 +1085,10 @@ void GDScriptAnalyzer::resolve_class_member(GDScriptParser::ClassNode *p_class, 
 	Finally finally([&]() {
 		ensure_cached_external_parser_for_class(member.get_datatype().class_type, p_class, "Trying to resolve datatype of class member", p_source);
 		GDScriptParser::DataType member_type = member.get_datatype();
+		// A struct type's fields are resolved in the script that declares it, which this one may never name itself.
+		if (member_type.struct_type != nullptr) {
+			ensure_cached_external_parser_for_class(member_type.struct_type->outer, p_class, "Trying to resolve struct datatype of class member", p_source);
+		}
 		for (int i = 0; i < member_type.get_container_element_type_count(); ++i) {
 			ensure_cached_external_parser_for_class(member_type.get_container_element_type(i).class_type, p_class, "Trying to resolve datatype of class member", p_source);
 		}

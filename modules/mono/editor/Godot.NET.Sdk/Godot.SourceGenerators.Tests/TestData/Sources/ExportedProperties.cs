@@ -104,7 +104,8 @@ public partial class ExportedProperties : GodotObject
     [Export] private UInt64 PropertyUInt64 { get; set; } = 10;
     [Export] private Single PropertySingle { get; set; } = 10;
     [Export] private Double PropertyDouble { get; set; } = 10;
-    [Export] private String PropertyString { get; set; } = "foo";
+    // C# 14 field-backed property; generated exports should match an auto-property.
+    [Export] private String PropertyString { get; set => field = value; } = "foo";
 
     // Godot structs
     [Export] private Vector2 PropertyVector2 { get; set; } = new(10f, 10f);
