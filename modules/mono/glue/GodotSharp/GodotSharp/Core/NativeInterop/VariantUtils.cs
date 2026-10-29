@@ -249,7 +249,8 @@ namespace Godot.NativeInterop
 
         public static godot_variant CreateFromSystemArrayOfStringName(scoped Span<StringName> from)
         {
-            if (from == null)
+            // Preserve Nil for null-backed spans and Array for empty managed arrays.
+            if (from == Span<StringName>.Empty)
                 return default;
             using var fromGodot = new Collections.Array(from);
             return CreateFromArray((godot_array)fromGodot.NativeValue);
@@ -257,7 +258,8 @@ namespace Godot.NativeInterop
 
         public static godot_variant CreateFromSystemArrayOfNodePath(scoped Span<NodePath> from)
         {
-            if (from == null)
+            // Preserve Nil for null-backed spans and Array for empty managed arrays.
+            if (from == Span<NodePath>.Empty)
                 return default;
             using var fromGodot = new Collections.Array(from);
             return CreateFromArray((godot_array)fromGodot.NativeValue);
@@ -265,7 +267,8 @@ namespace Godot.NativeInterop
 
         public static godot_variant CreateFromSystemArrayOfRid(scoped Span<Rid> from)
         {
-            if (from == null)
+            // Preserve Nil for null-backed spans and Array for empty managed arrays.
+            if (from == Span<Rid>.Empty)
                 return default;
             using var fromGodot = new Collections.Array(from);
             return CreateFromArray((godot_array)fromGodot.NativeValue);
