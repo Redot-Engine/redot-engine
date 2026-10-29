@@ -504,7 +504,13 @@ void PhysXGas3D::_update_volumetric_render() {
 			memcpy(bytes.ptrw(), src, bytes.size());
 			slice_images.write[z] = Image::create_from_data(dims.x, dims.y, false, Image::FORMAT_RF, bytes);
 		} else {
-			memcpy(slice_images.write[z]->get_data().ptrw(), src, slice_floats * sizeof(float));
+			// Image::get_data() returns a copy-by-value Vector: writing through
+			// get_data().ptrw() mutates a temporary, never the Image. Re-set
+			// the whole byte array instead.
+			Vector<uint8_t> bytes;
+			bytes.resize(slice_floats * (int)sizeof(float));
+			memcpy(bytes.ptrw(), src, bytes.size());
+			slice_images.write[z]->set_data(dims.x, dims.y, false, Image::FORMAT_RF, bytes);
 		}
 	}
 
@@ -587,17 +593,19 @@ void PhysXGas3D::_update_point_cloud_render() {
 	float *w = buffer.ptrw();
 	for (int i = 0; i < n; i++) {
 		float *t = w + i * 16;
+		// MULTIMESH_TRANSFORM_3D is row-major: basis row 0 at 0..2, origin.x
+		// at 3; row 1 at 4..6, origin.y at 7; row 2 at 8..10, origin.z at 11.
 		t[0] = 1;
 		t[1] = 0;
 		t[2] = 0;
-		t[3] = 0;
-		t[4] = 1;
-		t[5] = 0;
+		t[3] = positions[i].x;
+		t[4] = 0;
+		t[5] = 1;
 		t[6] = 0;
-		t[7] = 0;
-		t[8] = 1;
-		t[9] = positions[i].x;
-		t[10] = positions[i].y;
+		t[7] = positions[i].y;
+		t[8] = 0;
+		t[9] = 0;
+		t[10] = 1;
 		t[11] = positions[i].z;
 		const float a = CLAMP(density[i], 0.0f, 1.0f);
 		// Dim-blue -> white heat-ish ramp so the density gradient actually

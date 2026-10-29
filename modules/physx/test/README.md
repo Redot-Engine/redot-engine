@@ -111,7 +111,7 @@ python modules/physx/test/run_suite.py --godot <exe> --tier nightly
 
 # Single category / single test / custom seed:
 python modules/physx/test/run_suite.py --godot <exe> --suite csharp --category joints
-python modules/physx/test/run_suite.py --godot <exe> --suite csharp --test PHYSX-CCD-001
+python modules/physx/test/run_suite.py --godot <exe> --suite csharp --test PHYSX-BODY-053
 python modules/physx/test/run_suite.py --godot <exe> --suite csharp --seed 987654321
 
 # Deterministic randomized stress (reproducible; prints seed + op index on failure):
@@ -240,8 +240,8 @@ testing.
 
 ## Known module limitations encoded by tests
 
-* `body_set_collision_priority` — documented no-op in the module (getter
-  always returns 1.0); tested as such.
+* `body_set_collision_priority` — stored and returned by the getter; weights
+  `body_test_motion` recovery contacts (godot_physics parity).
 * Pin joint `BIAS/DAMPING/IMPULSE_CLAMP`, joint solver priority — stored,
   round-tripped, not simulated; tested as storage only.
 * Slider angular limits — stored only; linear limits enforced.

@@ -1,16 +1,16 @@
 extends SceneTree
 
-# Joint motor wake contracts (audit R-03, PHYSX-JOINT-001..003).
+# Joint motor wake contracts (audit R-03, PHYSX-JMW-001..003).
 #
-#   PHYSX-JOINT-001  a hinge motor driving a heavy arm from a SLEEPING start
+#   PHYSX-JMW-001  a hinge motor driving a heavy arm from a SLEEPING start
 #                   spins it up to the target velocity: the body pre-step wakes
 #                   motor-driven bodies every step (PhysX drives do not wake a
 #                   sleeping body, so without the awake-keep the arm never
 #                   moves and this times out).
-#   PHYSX-JOINT-002  switching the motor OFF releases the drive: nothing keeps
+#   PHYSX-JMW-002  switching the motor OFF releases the drive: nothing keeps
 #                   the body awake anymore, damping stops it and it falls
 #                   asleep again.
-#   PHYSX-JOINT-003  a motor flag/param change on a sleeping pair wakes it
+#   PHYSX-JMW-003  a motor flag/param change on a sleeping pair wakes it
 #                   (drive setters autowake) and the motor starts turning it.
 #
 # Run headless:
@@ -113,7 +113,7 @@ func _physics_process(_delta: float) -> bool:
 				var sleeping: bool = state[0]
 				var omega: float = state[1]
 				var ok := not sleeping and omega > 1.5
-				_record("PHYSX-JOINT-001", ok, [] if ok else [
+				_record("PHYSX-JMW-001", ok, [] if ok else [
 						"motor-driven arm did not spin up from sleep: sleeping=%s omega=%.3f" % [sleeping, omega]])
 				# High damping so the released arm decays under the sleep
 				# threshold within the window (a 50 kg arm with mild damping
@@ -124,10 +124,10 @@ func _physics_process(_delta: float) -> bool:
 		P_J002_RELEASE:
 			var state := _arm_state()
 			if state[0]:
-				_record("PHYSX-JOINT-002", true, [])
+				_record("PHYSX-JMW-002", true, [])
 				_enter(P_J003_WAKE_ON_PARAM)
 			elif _ticks > SLEEP_VERIFY_TICKS:
-				_record("PHYSX-JOINT-002", false, [
+				_record("PHYSX-JMW-002", false, [
 						"arm never fell asleep after motor-off (residual drive or wake-keep): omega=%.3f" % state[1]])
 				_enter(P_J003_WAKE_ON_PARAM)
 		P_J003_WAKE_ON_PARAM:
@@ -140,10 +140,10 @@ func _physics_process(_delta: float) -> bool:
 			if not state[0]:
 				_was_awake_since_param = true
 			if _was_awake_since_param and state[1] > 0.2:
-				_record("PHYSX-JOINT-003", true, [])
+				_record("PHYSX-JMW-003", true, [])
 				_enter(P_DONE)
 			elif _ticks > WAKE_VERIFY_TICKS:
-				_record("PHYSX-JOINT-003", false, [
+				_record("PHYSX-JMW-003", false, [
 						"arm stayed asleep or never spun after the motor was re-enabled: sleeping=%s omega=%.3f" % [state[0], state[1]]])
 				_enter(P_DONE)
 		P_DONE:
@@ -153,7 +153,7 @@ func _physics_process(_delta: float) -> bool:
 
 func _finish() -> void:
 	var tests: Array = []
-	for id in ["PHYSX-JOINT-001", "PHYSX-JOINT-002", "PHYSX-JOINT-003"]:
+	for id in ["PHYSX-JMW-001", "PHYSX-JMW-002", "PHYSX-JMW-003"]:
 		tests.append({
 			"id": id,
 			"category": "joints",

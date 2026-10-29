@@ -108,7 +108,8 @@ void PhysXFlowBlastBridge3D::_on_fractured(const Vector3 &p_world_position, int 
 			smoke * intensity,
 			temperature * intensity,
 			fuel * intensity,
-			velocity);
+			velocity,
+			lifetime);
 }
 
 PackedStringArray PhysXFlowBlastBridge3D::get_configuration_warnings() const {

@@ -102,6 +102,9 @@ public:
 	/// Detaches without calling back into the (dying) space and drops the GPU
 	/// volume while the PxScene is still alive.
 	void notify_space_destroyed();
+	/// Re-resolves the solver path now (a solver-mode flip must not wait for
+	/// an unrelated rebuild trigger); no-op without a space or mesh.
+	void request_rebuild();
 
 	// --- Mesh / readiness / bounds ---
 	void set_mesh(RID p_mesh);

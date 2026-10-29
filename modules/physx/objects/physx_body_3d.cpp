@@ -1319,11 +1319,10 @@ void PhysXBody3D::set_shape(int p_shape_idx, PhysXShape3D *p_shape) {
 	ERR_FAIL_INDEX(p_shape_idx, get_shape_count());
 	ERR_FAIL_NULL(p_shape);
 
-	// Godot's body_set_shape keeps the slot's transform and disabled state.
-	// The base remove + append would discard the transform and reorder the
-	// slot, so we capture first, then SWAP the freshly-appended record into
-	// the original index. A PxShape is position-independent (its placement is
-	// dictated by its local pose), so reordering the bookkeeping vector is safe.
+	// Godot's body_set_shape keeps the slot's transform and disabled state
+	// AND the other slots' order: remove_shape shifts everything after the
+	// slot down one, so SWAP would leave them reversed. Move the
+	// freshly-appended record to the original index instead.
 	const Transform3D saved_transform = attached_shapes[p_shape_idx].relative_transform;
 	const bool saved_disabled = attached_shapes[p_shape_idx].disabled;
 
@@ -1332,7 +1331,9 @@ void PhysXBody3D::set_shape(int p_shape_idx, PhysXShape3D *p_shape) {
 
 	const int last_idx = get_shape_count() - 1;
 	if (last_idx != p_shape_idx) {
-		SWAP(attached_shapes[p_shape_idx], attached_shapes[last_idx]);
+		AttachedShape rec = attached_shapes[last_idx];
+		attached_shapes.remove_at(last_idx);
+		attached_shapes.insert(p_shape_idx, rec);
 	}
 }
 

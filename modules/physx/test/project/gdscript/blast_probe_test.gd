@@ -168,7 +168,7 @@ func _run() -> void:
 func _finish() -> void:
 	var ok := not _failed
 	print("BLAST-PROBE ", "PASS" if ok else "FAIL")
-	TestReport.write(TestReport.json_path_from_args(), "blast", "PHYSX-BLAST-002",
+	TestReport.write(TestReport.json_path_from_args(), "blast", "PHYSX-BLAST-004",
 			"pipeline probe: load/corrupt-reject/retry + chunk-emitter parity",
 			"pass" if ok else "fail", _assertions, _messages)
 	quit(0 if ok else 1)

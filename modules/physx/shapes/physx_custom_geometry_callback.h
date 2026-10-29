@@ -137,6 +137,14 @@ protected:
 				return scaled_instances[i].second;
 			}
 		}
+		// A new quantized scale: instances no attached PxShape references
+		// anymore (a scale change left them behind) would otherwise
+		// accumulate for as long as the shape stays attached. The sweep
+		// counts references off the owners' live PxShapes; every caller of
+		// get_physx_geometry that can have dropped a reference
+		// (add/remove_shape, set_shape_transform) runs ensure_synced first,
+		// and a zero-reference instance cannot be part of a solve.
+		_release_unreferenced_instances();
 		CallbackT *cb = _create_callbacks();
 		if (!cb) {
 			return nullptr;
@@ -144,6 +152,27 @@ protected:
 		_apply_scale_to_callbacks(*cb, key);
 		scaled_instances.push_back({ key, cb });
 		return cb;
+	}
+
+	// Deletes every instance no owner's PxShape references (both the
+	// simulation shape and the area detection shape count).
+	void _release_unreferenced_instances() const {
+		for (uint32_t i = 0; i < scaled_instances.size();) {
+			CallbackT *cb = scaled_instances[i].second;
+			int refs = 0;
+			{
+				MutexLock lock(owners_mutex);
+				for (const KeyValue<PhysXShapedObject3D *, int> &E : owners) {
+					refs += E.key->count_shapes_with_callback(cb);
+				}
+			}
+			if (refs == 0) {
+				delete cb;
+				scaled_instances.remove_at(i);
+			} else {
+				i++;
+			}
+		}
 	}
 
 	// Re-push the current data (then each instance's own scale) into every
@@ -179,9 +208,11 @@ protected:
 			owner->detach_shape(this);
 		}
 
-		MutexLock lock(owners_mutex);
-		if (owners.is_empty()) {
-			_release_geometry();
+		{
+			MutexLock lock(owners_mutex);
+			if (owners.is_empty()) {
+				_release_geometry();
+			}
 		}
 	}
 };

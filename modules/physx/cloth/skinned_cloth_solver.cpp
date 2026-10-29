@@ -112,7 +112,7 @@ void SkinnedClothSolverGPU::rt_free_buffers() {
 	}
 	uniform_set = RID();
 	RID *rids[] = { &buf_params, &buf_rest, &buf_skin_idx, &buf_skin_w, &buf_bones, &buf_target, &buf_target_prev,
-		&buf_pos, &buf_prev, &buf_constraints, &buf_tethers, &buf_capsules, &buf_adj_offsets, &buf_adj_pairs, &tex_pos, &tex_nrm,
+		&buf_pos, &buf_prev, &buf_constraints, &buf_tethers, &buf_capsules, &buf_boxes, &buf_adj_offsets, &buf_adj_pairs, &tex_pos, &tex_nrm,
 		&buf_rest_normal, &buf_target_normal, &buf_cell_head, &buf_cell_next, &buf_self_delta };
 	for (RID *r : rids) {
 		if (r->is_valid()) {

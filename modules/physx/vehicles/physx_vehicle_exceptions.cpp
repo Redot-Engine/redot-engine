@@ -45,8 +45,10 @@
 uint32_t PhysXVehicleExceptions::get_or_alloc_slot(physx::PxRigidDynamic *p_chassis) {
 	if (slot == 0) {
 		slot = physx_alloc_soft_exception_slot();
-		_stamp_shapes(p_chassis);
 	}
+	// Always re-stamp: a rebuild replaced the chassis' shapes and their word2
+	// slots are back to 0. The stamp is idempotent.
+	_stamp_shapes(p_chassis);
 	return slot;
 }
 
@@ -74,12 +76,10 @@ void PhysXVehicleExceptions::_stamp_shapes(physx::PxRigidDynamic *p_chassis) {
 
 void PhysXVehicleExceptions::add(physx::PxRigidDynamic *p_chassis, Node *p_other) {
 	ERR_FAIL_NULL(p_other);
-	if (p_chassis == nullptr) {
-		return;
-	}
-	// This vehicle's own space is ensure_synced() by the calling node method;
-	// a body target syncs its own space below.
-
+	// p_chassis may be null while the vehicle is not built yet (a deferred
+	// _build): the entry is recorded, and _build stamps the fresh shapes once
+	// the slot exists. This vehicle's own space is ensure_synced() by the
+	// calling node method; a body target syncs its own space below.
 	uint32_t other_slot = 0;
 	RID body_rid;
 	ObjectID vehicle_id;

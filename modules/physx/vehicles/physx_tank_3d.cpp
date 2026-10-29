@@ -53,6 +53,7 @@ struct PhysXTank3D::Impl {
 	VehicleTrack vehicle;
 	PxVehiclePhysXSimulationContext simulationContext;
 	PxScene *scene = nullptr;
+	PhysXSpace3D *space = nullptr; // for ensure_synced in _destroy
 	PxReal sleep_threshold = 0.0f;
 	PxReal time_before_sleep = 0.0f;
 	bool built = false;
@@ -112,6 +113,9 @@ bool PhysXTank3D::_build() {
 	if (!space) {
 		return false;
 	}
+	// A rebuild or a deferred build can land in the async in-flight window:
+	// the scene add/remove below must not run during a solve.
+	space->ensure_synced();
 	PxPhysics *physics = space->get_px_physics();
 	PxScene *scene = space->get_px_scene();
 	if (!physics || !scene) {
@@ -185,6 +189,7 @@ bool PhysXTank3D::_build() {
 	v.physxActor.rigidBody->userData = &impl->chassis_user_data;
 
 	impl->scene = scene;
+	impl->space = space;
 	impl->built = true;
 	// Exceptions kept across rebuilds/world exits re-stamp the fresh hull
 	// shapes and re-wire the wheel filter.
@@ -197,12 +202,18 @@ bool PhysXTank3D::_build() {
 
 void PhysXTank3D::_destroy() {
 	if (impl->built) {
+		// A queue_free or a deferred rebuild can land in the async in-flight
+		// window: the remove/release below must not run during a solve.
+		if (impl->space) {
+			impl->space->ensure_synced();
+		}
 		if (impl->scene) {
 			impl->scene->removeActor(*impl->vehicle.physxActor.rigidBody);
 		}
 		impl->vehicle.destroy();
 		impl->built = false;
 		impl->scene = nullptr;
+		impl->space = nullptr;
 	}
 }
 

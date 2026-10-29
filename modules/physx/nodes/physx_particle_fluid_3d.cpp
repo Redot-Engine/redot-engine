@@ -438,6 +438,16 @@ void PhysXParticleFluid3D::_mpm_step(double p_delta) {
 		return;
 	}
 
+	// The solver tags async-reaped impulses with the collider id AT SUBMIT
+	// TIME: the ids must be on the colliders before the step.
+	for (uint32_t i = 0; i < (uint32_t)col_src.size() && (int)i < (int)cols.size(); i++) {
+		if (col_src[i].chunk_emitter != nullptr) {
+			cols[i].id = _collider_id_for_chunk(col_src[i].chunk_emitter, col_src[i].chunk_id);
+		} else if (col_src[i].node != nullptr) {
+			cols[i].id = col_src[i].node->get_instance_id();
+		}
+	}
+
 	LocalVector<MPMFluidSolver::ImpulseHit> impulses;
 	// Granular runs async (visuals a frame late, GPU overlapped); fluid syncs so
 	// its coupling reaction stays in phase with the rigid bodies.
@@ -450,10 +460,14 @@ void PhysXParticleFluid3D::_mpm_step(double p_delta) {
 	// Route by id through a source registry that remembers the last two
 	// generations of colliders (async lag = 1 frame; two covers the swap).
 	// Registry pruning: entries not refreshed within 64 frames drop.
+	LocalVector<uint64_t> stale_ids;
 	for (const KeyValue<uint64_t, MPMSourceEntry> &E : _mpm_source_registry) {
 		if (_mpm_frame - E.value.last_seen > 64) {
-			_mpm_source_registry.erase(E.key);
+			stale_ids.push_back(E.key);
 		}
+	}
+	for (const uint64_t stale : stale_ids) {
+		_mpm_source_registry.erase(stale); // erasing while iterating is UB
 	}
 	for (uint32_t i = 0; i < (uint32_t)col_src.size(); i++) {
 		uint64_t id;

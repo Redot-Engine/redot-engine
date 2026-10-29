@@ -96,6 +96,9 @@ public partial class TestMain : SceneTree
 		if (list)
 		{
 			foreach (var s in selected) GD.Print($"  {s.Id,-20} [{s.Category}] tier={s.Tier}  {s.Description}");
+			// The driver reads this report for the category list and treats a
+			// missing final report as a crash.
+			_runner.WriteListReport();
 			_done = true;
 			Quit(0);
 			return;

@@ -1572,7 +1572,7 @@ void PhysXServer3D::soft_body_set_solver_mode(RID p_body, int p_mode) {
 	soft_body->set_solver_mode(p_mode);
 	// Re-resolve the path now: a mode flip on a built body must not wait for
 	// an unrelated rebuild trigger (same contract as set_space/set_mesh).
-	soft_body->set_space(soft_body->get_space());
+	soft_body->request_rebuild();
 }
 
 int PhysXServer3D::soft_body_get_solver_mode(RID p_body) const {

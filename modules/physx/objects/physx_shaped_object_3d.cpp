@@ -394,6 +394,25 @@ void PhysXShapedObject3D::add_shape(PhysXShape3D *p_shape, const Transform3D &p_
 	_on_shape_added();
 }
 
+int PhysXShapedObject3D::count_shapes_with_callback(const void *p_callbacks) const {
+	int count = 0;
+	for (const AttachedShape &record : attached_shapes) {
+		if (record.shape_instance && record.shape_instance->getGeometry().getType() == physx::PxGeometryType::eCUSTOM) {
+			const physx::PxCustomGeometry &geom = static_cast<const physx::PxCustomGeometry &>(record.shape_instance->getGeometry());
+			if (geom.callbacks == p_callbacks) {
+				count++;
+			}
+		}
+		if (record.detection_shape && record.detection_shape->getGeometry().getType() == physx::PxGeometryType::eCUSTOM) {
+			const physx::PxCustomGeometry &geom = static_cast<const physx::PxCustomGeometry &>(record.detection_shape->getGeometry());
+			if (geom.callbacks == p_callbacks) {
+				count++;
+			}
+		}
+	}
+	return count;
+}
+
 void PhysXShapedObject3D::remove_shape(int p_index) {
 	ERR_FAIL_INDEX(p_index, (int)attached_shapes.size());
 

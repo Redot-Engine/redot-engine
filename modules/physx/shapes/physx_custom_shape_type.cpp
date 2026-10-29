@@ -31,11 +31,33 @@
 /**************************************************************************/
 
 #include "physx_custom_shape_type.h"
+
+#include "core/templates/local_vector.h"
 #include "physx_cone_shape_3d.h" // Register new custom shapes here
 
 PhysXCustomShapeType::PhysXCustomShapeType() {}
 
-PhysXCustomShapeType::~PhysXCustomShapeType() {}
+PhysXCustomShapeType::~PhysXCustomShapeType() {
+	// Destructor BODY, not the base destructor: virtual dispatch still reaches
+	// the override here, so owners release their PxShapes while the inner
+	// shape (and its callbacks) are alive.
+	detach_from_owners();
+}
+
+void PhysXCustomShapeType::detach_from_owners() {
+	// Snapshot the owners: detach_shape() calls back into remove_owner(),
+	// which mutates the map being iterated.
+	LocalVector<PhysXShapedObject3D *> snapshot;
+	{
+		MutexLock lock(owners_mutex);
+		for (const KeyValue<PhysXShapedObject3D *, int> &E : owners) {
+			snapshot.push_back(E.key);
+		}
+	}
+	for (PhysXShapedObject3D *owner : snapshot) {
+		owner->detach_shape(this);
+	}
+}
 
 // Define the static registry
 HashMap<StringName, PhysXCustomShapeType::FactoryFunc> PhysXCustomShapeType::shape_factories;

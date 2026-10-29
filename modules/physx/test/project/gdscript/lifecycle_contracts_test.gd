@@ -3,18 +3,18 @@ extends SceneTree
 # Lifecycle-contract regression tests (audit section 3.4, GAP-10 / Phase 8).
 #
 # Four contracts, each with its own report entry:
-#   PHYSX-LIFE-001  body free during overlap -> body_exited still fires
+#   PHYSX-LIFEC-001  body free during overlap -> body_exited still fires
 #                   (deferred monitor dispatch caches event identity at queue
 #                   time; removed-actor trigger pairs are skipped by onTrigger,
 #                   so the exit must come from the module's own bookkeeping).
-#   PHYSX-LIFE-002  static<->dynamic mode flip with a pin joint attached:
+#   PHYSX-LIFEC-002  static<->dynamic mode flip with a pin joint attached:
 #                   the joint wrapper survives the actor recreation, keeps its
 #                   RID and solver priority, and the rebuilt constraint still
 #                   holds the two body origins together while they fall.
-#   PHYSX-LIFE-003  async stepping: freeing an overlapping body inside the
+#   PHYSX-LIFEC-003  async stepping: freeing an overlapping body inside the
 #                   simulate->fetch window queues the actor release until after
 #                   the fetch, and the body_exited event still dispatches.
-#   PHYSX-LIFE-004  a monitor callback that frees its own area during dispatch:
+#   PHYSX-LIFEC-004  a monitor callback that frees its own area during dispatch:
 #                   flush_pending_callbacks() must survive (freed dispatching
 #                   areas are skipped by registration lookup) and the tree must
 #                   keep simulating afterwards.
@@ -178,14 +178,14 @@ func _physics_process(_delta: float) -> bool:
 				_free_all([_monitor_body, _monitor_body_shape])
 				_enter(P_LC001_WAIT_EXIT)
 			elif _timed_out():
-				_record("PHYSX-LIFE-001", false, ["body_entered never fired"])
+				_record("PHYSX-LIFEC-001", false, ["body_entered never fired"])
 				_enter(P_LC002_BUILD)
 		P_LC001_WAIT_EXIT:
 			if _exited:
-				_record("PHYSX-LIFE-001", true, [])
+				_record("PHYSX-LIFEC-001", true, [])
 				_enter(P_LC002_BUILD)
 			elif _timed_out():
-				_record("PHYSX-LIFE-001", false,
+				_record("PHYSX-LIFEC-001", false,
 						["body_exited did not fire after free-during-overlap"])
 				_enter(P_LC002_BUILD)
 		P_LC002_BUILD:
@@ -229,7 +229,7 @@ func _physics_process(_delta: float) -> bool:
 					messages.append("joint did not hold origins together through the mode flip (max distance %f)" % _joint_max_distance)
 				if priority_after != _priority_before:
 					messages.append("solver priority lost across actor recreation")
-				_record("PHYSX-LIFE-002", ok, messages)
+				_record("PHYSX-LIFEC-002", ok, messages)
 				_free_all([_joint, _joint_body_a, _joint_shape_a, _joint_body_b, _joint_shape_b])
 				_enter(P_LC003_SETUP)
 		P_LC003_SETUP:
@@ -247,14 +247,14 @@ func _physics_process(_delta: float) -> bool:
 				# while the solve kicked this tick is still in flight.
 				_enter(P_LC003_FREE_IN_WINDOW)
 			elif _timed_out():
-				_record("PHYSX-LIFE-003", false,
+				_record("PHYSX-LIFEC-003", false,
 						["iteration %d: body_entered never fired" % _async_iteration])
 				_advance_async()
 		P_LC003_WAIT_EXIT:
 			if _exited:
 				_advance_async()
 			elif _timed_out():
-				_record("PHYSX-LIFE-003", false,
+				_record("PHYSX-LIFEC-003", false,
 						["iteration %d: body_exited did not fire after free-mid-solve" % _async_iteration])
 				_advance_async()
 		P_LC004_BUILD:
@@ -275,7 +275,7 @@ func _physics_process(_delta: float) -> bool:
 			# final report as CRASH, so reaching _finish with final:true is
 			# the observable pass condition.
 			if _ticks >= SETTLE_TICKS:
-				_record("PHYSX-LIFE-004", true, [])
+				_record("PHYSX-LIFEC-004", true, [])
 				_enter(P_DONE)
 		P_DONE:
 			pass
@@ -288,7 +288,7 @@ func _advance_async() -> void:
 	_async_iteration += 1
 	_free_all([_monitor_area, _monitor_area_shape])
 	if _async_iteration >= ASYNC_ITERATIONS:
-		_record("PHYSX-LIFE-003", true, [])
+		_record("PHYSX-LIFEC-003", true, [])
 		ProjectSettings.set_setting("physics/physx_3d/simulation/async_step", false)
 		_enter(P_LC004_BUILD)
 	else:
@@ -308,7 +308,7 @@ func _process(_delta: float) -> bool:
 
 func _finish() -> void:
 	var tests: Array = []
-	for id in ["PHYSX-LIFE-001", "PHYSX-LIFE-002", "PHYSX-LIFE-003", "PHYSX-LIFE-004"]:
+	for id in ["PHYSX-LIFEC-001", "PHYSX-LIFEC-002", "PHYSX-LIFEC-003", "PHYSX-LIFEC-004"]:
 		var r: Dictionary = _results.get(id, {"status": "fail", "messages": ["not reached"], "assertions": 1})
 		tests.append({
 			"id": id,

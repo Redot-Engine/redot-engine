@@ -163,6 +163,19 @@ public sealed class TestRunner
 		SeedInfo = seed.ToString();
 	}
 
+	/// Writes the final report for --list mode: one skip entry per selected
+	/// spec, nothing ran. run_suite.py's category listing and its crash
+	/// detector both read this report.
+	public void WriteListReport()
+	{
+		var run = Selector ?? _specs;
+		foreach (var spec in run)
+		{
+			_results.Add(new TestResult { Id = spec.Id, Category = spec.Category, Description = spec.Description, Status = TestStatus.Skip });
+		}
+		WriteJson(true);
+	}
+
 	/// <summary>Selects specs matching CLI filters. Returns specs that were filtered out (reported as intentional non-runs).</summary>
 	public List<TestSpec> Select(HashSet<string> categories, HashSet<string> testIds, TestTier tier) =>
 		_specs.Where(s => (testIds == null || testIds.Count == 0 || testIds.Contains(s.Id))

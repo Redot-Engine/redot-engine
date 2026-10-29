@@ -452,7 +452,7 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 		conf.angle_variations = 0.2f;
 		frac_result = fTool->slicing(0, conf, false, &rng);
 		if (frac_result != 0) {
-			ERR_PRINT(vformat("PhysXBlastAuthoring: slicing failed, code=%d.", frac_result));
+			_error(vformat("PhysXBlastAuthoring: slicing failed, code=%d.", frac_result));
 		}
 	} else if (p_pattern == PATTERN_CUTOUT) {
 		// Unlike Voronoi/Slicing, NvBlast doesn't generate this pattern itself
@@ -460,12 +460,12 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 		// grayscale bitmap (see this class's header for why) and
 		// NvBlastExtAuthoringBuildCutoutSet segments it into per-region loops.
 		if (p_cutout_pattern.is_null()) {
-			ERR_PRINT("PhysXBlastAuthoring: PATTERN_CUTOUT requires a cutout_pattern texture.");
+			_error("PhysXBlastAuthoring: PATTERN_CUTOUT requires a cutout_pattern texture.");
 			frac_result = -1;
 		} else {
 			Ref<Image> pattern_img = p_cutout_pattern->get_image();
 			if (pattern_img.is_null() || pattern_img->is_empty()) {
-				ERR_PRINT("PhysXBlastAuthoring: cutout_pattern texture has no image data.");
+				_error("PhysXBlastAuthoring: cutout_pattern texture has no image data.");
 				frac_result = -1;
 			} else {
 				if (pattern_img->is_compressed()) {
@@ -506,7 +506,7 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 				// be caught from here (it takes the whole process down), so
 				// this has to be ruled out before ever calling cutout().
 				if (cutout_pattern_has_floating_wall_island(gray, pw, ph)) {
-					ERR_PRINT("PhysXBlastAuthoring: cutout_pattern rejected -- it has a crack/wall shape that "
+					_error("PhysXBlastAuthoring: cutout_pattern rejected -- it has a crack/wall shape that "
 							  "doesn't reach the image edge (a 'floating island'). Every crack line needs to "
 							  "reach the pattern's boundary, the same way a real broken pane's cracks do -- "
 							  "otherwise the fill region wraps around it with a hole in the middle, which is "
@@ -526,7 +526,7 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 					// first pass wants without per-mesh sizing math of our own.
 					frac_result = fTool->cutout(0, conf, false, &rng);
 					if (frac_result != 0) {
-						ERR_PRINT(vformat("PhysXBlastAuthoring: cutout failed, code=%d.", frac_result));
+						_error(vformat("PhysXBlastAuthoring: cutout failed, code=%d.", frac_result));
 					}
 					cutout_set->release();
 				}
@@ -539,7 +539,7 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 		const uint32_t site_count = sites_gen->getVoronoiSites(sites);
 		frac_result = fTool->voronoiFracturing(0, site_count, sites, false);
 		if (frac_result != 0) {
-			ERR_PRINT(vformat("PhysXBlastAuthoring: voronoiFracturing failed, code=%d.", frac_result));
+			_error(vformat("PhysXBlastAuthoring: voronoiFracturing failed, code=%d.", frac_result));
 		}
 	}
 
@@ -557,7 +557,7 @@ Ref<PhysXBlastAsset> PhysXBlastAuthoring::fracture_mesh(const Ref<Mesh> &p_mesh,
 
 		Nv::Blast::AuthoringResult *ares = NvBlastExtAuthoringProcessFracture(*fTool, *bond_gen, collision_builder, cparams);
 		if (!ares) {
-			ERR_PRINT("PhysXBlastAuthoring: NvBlastExtAuthoringProcessFracture failed.");
+			_error("PhysXBlastAuthoring: NvBlastExtAuthoringProcessFracture failed.");
 		} else {
 			const uint32_t asset_size = NvBlastAssetGetSize(ares->asset, blast_authoring_log);
 			PackedByteArray asset_bytes;

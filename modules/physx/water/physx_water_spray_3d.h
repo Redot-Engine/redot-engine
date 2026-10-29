@@ -33,6 +33,8 @@
 #pragma once
 
 #include "core/math/random_pcg.h"
+#include "core/object/object_id.h"
+#include "core/templates/hash_map.h"
 #include "scene/3d/node_3d.h"
 
 class GPUParticles3D;
@@ -99,6 +101,13 @@ private:
 		float friction = 0.0f; // its collision friction: how far landed spray skids
 	};
 
+	// The emitter's authored values, captured on first build: later builds
+	// must not read back the ratio/velocities this node itself wrote.
+	struct Authored {
+		float ratio = 1.0f;
+		Ref<ParticleProcessMaterial> material;
+	};
+
 	NodePath water_surface_path; // empty = the sibling PhysXBuoyancy3D's
 	TypedArray<NodePath> bow_emitters;
 	TypedArray<NodePath> stern_emitters;
@@ -120,6 +129,7 @@ private:
 	float spray_foam_offset = 0.4f; // m further out than the spray lands
 
 	Vector<Emitter> emitters;
+	HashMap<ObjectID, Authored> authored_state;
 	GPUParticlesCollisionBox3D *collider = nullptr; // internal child
 	bool have_plane = false; // the collider's top, as last placed
 	Vector3 plane_point;

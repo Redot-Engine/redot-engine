@@ -81,6 +81,11 @@ public:
 	/// margin governs the attached PxShape's contact offset).
 	virtual void set_margin(float p_margin) override;
 
+	/// Releases the owners' PxShapes while the inner shape's callbacks are
+	/// still alive (owners register on the wrapper; their PxShapes embed the
+	/// inner shape's callbacks).
+	virtual void detach_from_owners() override;
+
 	// Backend access to check the exact shape type internally
 	StringName get_custom_type() const { return current_type; }
 };

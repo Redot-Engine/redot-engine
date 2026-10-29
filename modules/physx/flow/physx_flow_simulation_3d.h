@@ -136,6 +136,7 @@ class PhysXFlowSimulation3D : public Node3D {
 	};
 	HashMap<RID, CachedShapeMesh> shape_mesh_cache;
 	HashSet<ObjectID> active_collider_ids; // current-pass collider nodes (FLOW-4 pruning)
+	HashSet<ObjectID> active_emitter_ids; // current-pass emitter nodes (same pruning)
 	int cache_validate_countdown = 60; // 1/sec at 60 Hz
 	uint64_t frame_count = 0;
 

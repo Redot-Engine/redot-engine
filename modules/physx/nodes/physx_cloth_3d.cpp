@@ -59,6 +59,14 @@ void PhysXCloth3D::_apply_solver_settings() {
 	s.lift = MAX(lift, 0.0f);
 	s.density = MAX(density, 1.0e-3f);
 	solver.settings = s;
+	if (gpu_cloth.is_valid()) {
+		// The GPU path has no solver struct: push the same stiffnesses into
+		// its params so live edits apply there too.
+		if (PhysXServer3D *server = PhysXServer3D::get_singleton()) {
+			const float th = MAX(solver.vertex_radius() * 0.5f, 0.004f);
+			server->cloth_set_params(gpu_cloth, th, density, stiffness, bend_stiffness, damping, collision_mask);
+		}
+	}
 }
 
 void PhysXCloth3D::_rebuild() {
@@ -121,6 +129,10 @@ bool PhysXCloth3D::_try_build_gpu() {
 	server->cloth_set_space(gpu_cloth, get_world_3d()->get_space());
 	const float th = MAX(solver.vertex_radius() * 0.5f, 0.004f);
 	server->cloth_set_params(gpu_cloth, th, density, stiffness, bend_stiffness, damping, collision_mask);
+	server->cloth_set_collision_layer_and_mask(gpu_cloth, collision_layer, collision_mask);
+	for (int i = 0; i < collision_exceptions.size(); i++) {
+		server->cloth_add_collision_exception(gpu_cloth, collision_exceptions[i]);
+	}
 
 	// World-space rest mesh + topology from the solver.
 	const LocalVector<Vector3> &wp = solver.get_positions();

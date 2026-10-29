@@ -123,6 +123,10 @@ public:
 	void set_shape_transform(int p_index, const Transform3D &p_transform);
 
 	int get_shape_count() const { return (int)attached_shapes.size(); }
+	/// Attached PxShapes (instance + detection) whose custom geometry holds
+	/// p_callbacks: the reference count a PxCustomGeometry callback instance
+	/// needs before it may be freed.
+	int count_shapes_with_callback(const void *p_callbacks) const;
 	RID get_shape_rid(int p_index) const;
 	Transform3D get_shape_transform(int p_index) const;
 

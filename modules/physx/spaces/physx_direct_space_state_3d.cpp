@@ -288,12 +288,19 @@ bool PhysXDirectSpaceState3D::intersect_ray(const RayParameters &p_parameters, R
 		constexpr float INSIDE_RADIUS = 1e-4f;
 		physx::PxSphereGeometry inside_geo(INSIDE_RADIUS);
 		// multi_hit returns eTOUCH from the pre-filter: overlap queries warn
-		// when the filter returns eBLOCK.
+		// when the filter returns eBLOCK, so the overlap runs without it.
 		filter_cb.multi_hit = true;
+		physx::PxQueryFilterData overlap_filter_data = filter_data;
+		overlap_filter_data.flags &= ~physx::PxQueryFlag::ePOSTFILTER;
 		LocalVector<physx::PxOverlapHit> overlap_storage;
 		overlap_storage.resize(1);
 		physx::PxOverlapBuffer overlap_buf(overlap_storage.ptr(), 1);
-		if (scene->overlap(inside_geo, pose, overlap_buf, filter_data, &filter_cb)) {
+		const bool inside = scene->overlap(inside_geo, pose, overlap_buf, overlap_filter_data, &filter_cb);
+		// The single closest-hit raycast below needs eBLOCK: a filter that
+		// keeps returning eTOUCH hits a zero-capacity buffer and reports a
+		// miss for everything.
+		filter_cb.multi_hit = false;
+		if (inside) {
 			const physx::PxOverlapHit &overlap = overlap_buf.getAnyHit(0);
 
 			// Synthesize the origin hit (distance 0, zero normal) for the

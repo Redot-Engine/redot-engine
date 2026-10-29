@@ -1139,36 +1139,41 @@ func t_soft_body(c: Dictionary) -> bool:
 # marshaling (Transform3D/Vector3/int/float/bool) and round-trips.
 func t_articulation(c: Dictionary) -> bool:
 	var px = PhysXServer3D.get_singleton()
-	var art: RID = reg(px.articulation_create())
-	chk(art.is_valid(), "articulation_create valid RID")
-	px.articulation_set_fix_base(art, true)
-	var base_i: int = px.articulation_add_link(art, -1, Transform3D(), Transform3D(Basis(), Vector3(0, 3, 0)), 0, 1000.0, Vector3(0.1, 0.5, 0.1))
-	chk(base_i == 0, "base link index 0 (got %d)" % base_i)
-	var link_i: int = px.articulation_add_link(art, 0,
-			Transform3D(Basis(), Vector3(0, -0.5, 0)),
-			Transform3D(Basis(), Vector3(0, -0.5, 0)), 2, 1000.0, Vector3(0.1, 0.5, 0.1))
-	chk(link_i == 1, "child link index 1 (got %d)" % link_i)
-	chk(px.articulation_get_link_count(art) == 2, "link count 2")
-	var shape := reg(PhysicsServer3D.box_shape_create())
-	PhysicsServer3D.shape_set_data(shape, Vector3(0.1, 0.5, 0.1))
-	px.articulation_set_link_shape(art, 1, shape, Transform3D())
-	px.articulation_set_link_collision_layer(art, 1, 0x20)
-	px.articulation_set_link_collision_mask(art, 1, 0x40)
-	chk(px.articulation_get_link_collision_layer(art, 1) == 0x20, "link layer round-trip")
-	chk(px.articulation_get_link_collision_mask(art, 1) == 0x40, "link mask round-trip")
-	px.articulation_set_drive(art, 1, 0, 200.0, 20.0, 0.5, 0.0, 1)
-	px.articulation_set_limit(art, 0, 0, -1.0, 1.0)
-	px.articulation_set_space(art, c["space"])
-	px.articulation_wake(art)
-	var xf: Transform3D = px.articulation_get_link_transform(art, 0)
-	chk(xf.origin.distance_to(Vector3(0, 3, 0)) < 0.05, "base link transform at its frame (got %s)" % str(xf.origin))
-	var vel: Dictionary = px.articulation_get_link_velocity(art, 0)
-	chk(vel.has("linear") and vel.has("angular"), "velocity dictionary keys")
-	var t: int = int(c.get("articulation_frame", 0)) + 1
-	c["articulation_frame"] = t
-	if t < 20:
+	if c["frame"] == 1:
+		# Build once, in a real space: re-running the setup every frame would
+		# create one articulation per frame (and repeat its checks).
+		c["space"] = mkspace()
+		var art: RID = reg(px.articulation_create())
+		c["art"] = art
+		chk(art.is_valid(), "articulation_create valid RID")
+		px.articulation_set_fix_base(art, true)
+		var base_i: int = px.articulation_add_link(art, -1, Transform3D(), Transform3D(Basis(), Vector3(0, 3, 0)), 0, 1000.0, Vector3(0.1, 0.5, 0.1))
+		chk(base_i == 0, "base link index 0 (got %d)" % base_i)
+		var link_i: int = px.articulation_add_link(art, 0,
+				Transform3D(Basis(), Vector3(0, -0.5, 0)),
+				Transform3D(Basis(), Vector3(0, -0.5, 0)), 2, 1000.0, Vector3(0.1, 0.5, 0.1))
+		chk(link_i == 1, "child link index 1 (got %d)" % link_i)
+		chk(px.articulation_get_link_count(art) == 2, "link count 2")
+		var shape := reg(PhysicsServer3D.box_shape_create())
+		PhysicsServer3D.shape_set_data(shape, Vector3(0.1, 0.5, 0.1))
+		px.articulation_set_link_shape(art, 1, shape, Transform3D())
+		px.articulation_set_link_collision_layer(art, 1, 0x20)
+		px.articulation_set_link_collision_mask(art, 1, 0x40)
+		chk(px.articulation_get_link_collision_layer(art, 1) == 0x20, "link layer round-trip")
+		chk(px.articulation_get_link_collision_mask(art, 1) == 0x40, "link mask round-trip")
+		px.articulation_set_drive(art, 1, 0, 200.0, 20.0, 0.5, 0.0, 1)
+		px.articulation_set_limit(art, 0, 0, -1.0, 1.0)
+		px.articulation_set_space(art, c["space"])
+		px.articulation_wake(art)
+		var xf: Transform3D = px.articulation_get_link_transform(art, 0)
+		chk(xf.origin.distance_to(Vector3(0, 3, 0)) < 0.05, "base link transform at its frame (got %s)" % str(xf.origin))
+		var vel: Dictionary = px.articulation_get_link_velocity(art, 0)
+		chk(vel.has("linear") and vel.has("angular"), "velocity dictionary keys")
 		return false
-	# After a few steps the fixed base is still at its pose and the chain sleeps or moves coherently.
-	var xf2: Transform3D = px.articulation_get_link_transform(art, 0)
+	if c["frame"] < 20:
+		return false
+	# After simulated steps the fixed base is still at its pose and the chain
+	# sleeps or moves coherently.
+	var xf2: Transform3D = px.articulation_get_link_transform(c["art"], 0)
 	chk(xf2.origin.distance_to(Vector3(0, 3, 0)) < 0.05, "fixed base stays put over steps")
 	return true

@@ -2207,10 +2207,13 @@ void PhysXVehicleServer::set_wheel_steer_angle(int p_idx, float p_angle) {
 }
 
 void PhysXVehicleServer::set_engine_params(const Dictionary &p_params) {
-	if (!v2 || archetype != ARCHETYPE_ENGINE_DRIVE) {
+	if (archetype != ARCHETYPE_ENGINE_DRIVE) {
 		return;
 	}
 	cached_engine_params = p_params;
+	if (!v2) {
+		return; // pre-adopt calls replay from the cache at adopt
+	}
 	if (p_params.has("moi")) {
 		v2->engine_params.moi = (float)(double)p_params["moi"];
 	}
@@ -2245,10 +2248,13 @@ void PhysXVehicleServer::set_engine_params(const Dictionary &p_params) {
 }
 
 void PhysXVehicleServer::set_clutch_params(const Dictionary &p_params) {
-	if (!v2 || archetype != ARCHETYPE_ENGINE_DRIVE) {
+	if (archetype != ARCHETYPE_ENGINE_DRIVE) {
 		return;
 	}
 	cached_clutch_params = p_params;
+	if (!v2) {
+		return; // pre-adopt calls replay from the cache at adopt
+	}
 	if (p_params.has("max_response")) {
 		v2->clutch_response_params.maxResponse = (float)(double)p_params["max_response"];
 	}
@@ -2263,10 +2269,13 @@ void PhysXVehicleServer::set_clutch_params(const Dictionary &p_params) {
 }
 
 void PhysXVehicleServer::set_gearbox_params(const Dictionary &p_params) {
-	if (!v2 || archetype != ARCHETYPE_ENGINE_DRIVE) {
+	if (archetype != ARCHETYPE_ENGINE_DRIVE) {
 		return;
 	}
 	cached_gearbox_params = p_params;
+	if (!v2) {
+		return; // pre-adopt calls replay from the cache at adopt
+	}
 	if (p_params.has("neutral_gear")) {
 		v2->gearbox_params.neutralGear = (int)p_params["neutral_gear"];
 	}
@@ -2292,10 +2301,13 @@ void PhysXVehicleServer::set_gearbox_params(const Dictionary &p_params) {
 }
 
 void PhysXVehicleServer::set_autobox_params(const Dictionary &p_params) {
-	if (!v2 || archetype != ARCHETYPE_ENGINE_DRIVE) {
+	if (archetype != ARCHETYPE_ENGINE_DRIVE) {
 		return;
 	}
 	cached_autobox_params = p_params;
+	if (!v2) {
+		return; // pre-adopt calls replay from the cache at adopt
+	}
 	const int cap = (int)physx::PxVehicleGearboxParams::eMAX_NB_GEARS;
 	if (p_params.has("up_ratio")) {
 		const float up_shift_ratio = (float)(double)p_params["up_ratio"];
@@ -2315,10 +2327,13 @@ void PhysXVehicleServer::set_autobox_params(const Dictionary &p_params) {
 }
 
 void PhysXVehicleServer::set_differential_params(const Dictionary &p_params) {
-	if (!v2 || archetype != ARCHETYPE_ENGINE_DRIVE) {
+	if (archetype != ARCHETYPE_ENGINE_DRIVE) {
 		return;
 	}
 	cached_differential_params = p_params;
+	if (!v2) {
+		return; // pre-adopt calls replay from the cache at adopt
+	}
 	// Optional 4-wheel limited-slip biases/targets (0 = open). The per-wheel
 	// drive split (RWD/FWD/6x4) is handled in _update_response_params() from
 	// WheelFlags.traction, independent of these biases.

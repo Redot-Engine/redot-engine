@@ -605,6 +605,12 @@ void MPMFluidSolver::step(double p_delta, const LocalVector<SphereCollider> &p_c
 	}
 
 	const int ncol = MIN((int)p_colliders.size(), MAX_COLLIDERS);
+	// Remember each submitted slot's id: the async reap tags impulses with it
+	// a frame later (PART-5 routing).
+	_submitted_ids.resize(ncol);
+	for (int i = 0; i < ncol; i++) {
+		_submitted_ids[i] = p_colliders[i].id;
+	}
 	const double frame_dt = p_delta;
 	const double dt = frame_dt / (double)settings.substeps;
 

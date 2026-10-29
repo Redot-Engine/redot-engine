@@ -52,7 +52,7 @@ physx-tests:
     # 5. GPU tier: Flow + CUDA/GPU-object suites. These need a usable
     #    CUDA/Vulkan runtime, so a test failure here is reported but does NOT
     #    fail the pipeline (a driver-level error -- exit 2 -- still does).
-    - python modules\physx\test\run_suite.py --tier fast --suite flow --suite gpu --godot $env:GODOT; $gpuTier = $LASTEXITCODE; if ($gpuTier -eq 1) { Write-Host 'WARNING: flow/gpu suites failed (non-blocking GPU tier) -- see test_results artifacts'; exit 0 } else { exit $gpuTier }
+    - python modules\physx\test\run_suite.py --tier fast --suite flow --suite gpu --out modules\physx\test\test_results\gpu --godot $env:GODOT; $gpuTier = $LASTEXITCODE; if ($gpuTier -eq 1) { Write-Host 'WARNING: flow/gpu suites failed (non-blocking GPU tier) -- see test_results artifacts'; exit 0 } else { exit $gpuTier }
   artifacts:
     when: always
     expire_in: 1 week

@@ -435,9 +435,15 @@ void PhysXGPUCloth3D::set_pin_targets(const Vector<Vector3> &p_world_targets) {
 	if (pin_target.is_empty()) {
 		return;
 	}
-	const int n = MIN(p_world_targets.size(), (int)vertex_count);
+	// Targets are authored in input (pre-cook) vertex space, like set_pinned:
+	// remap each to its cooked slot, or welding duplicates would pin the wrong
+	// vertex.
+	const int n = MIN(p_world_targets.size(), (int)input_to_cooked.size());
 	for (int i = 0; i < n; i++) {
-		pin_target[i] = p_world_targets[i];
+		const int32_t v = input_to_cooked[i];
+		if (v >= 0 && v < (int)vertex_count && !Math::is_nan((float)p_world_targets[i].x)) {
+			pin_target[v] = p_world_targets[i];
+		}
 	}
 }
 

@@ -128,6 +128,7 @@ void PhysXFlowSimulation3D::_ensure_simulation() {
 // ---- Emitters -------------------------------------------------------------
 
 void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_emitters) {
+	active_emitter_ids.clear();
 	bool first_emitter = true;
 	AABB emitter_bounds;
 	for (int i = 0; i < emitters.size(); i++) {
@@ -150,6 +151,7 @@ void PhysXFlowSimulation3D::_resolve_emitters(LocalVector<FlowEmitterData> &r_em
 			}
 			const Transform3D xf = fe->get_global_transform();
 			FlowEmitterData e;
+			active_emitter_ids.insert(fe->get_instance_id());
 			e.luid = _luid_for(fe->get_instance_id());
 			e.enabled = true;
 			e.is_box = fe->shape == PhysXFlowEmitter3D::SHAPE_BOX;
@@ -540,7 +542,7 @@ void PhysXFlowSimulation3D::_step(double p_delta) {
 		}
 		dead_ids.clear();
 		for (HashMap<ObjectID, uint64_t>::Iterator it = node_luids.begin(); it != node_luids.end(); ++it) {
-			if (!current_ids.has(it->key)) {
+			if (!current_ids.has(it->key) && !active_emitter_ids.has(it->key)) {
 				dead_ids.push_back(it->key);
 			}
 		}
@@ -718,6 +720,11 @@ void PhysXFlowSimulation3D::render_rd(PhysXFlowRenderEffect *p_effect, Rendering
 			atlas = RendererRD::LightStorage::get_singleton()->shadow_atlas_get_texture(p_shadow_atlas);
 		}
 		MutexLock lock(scatter_mutex);
+		if (scattering_receive_shadows != 0) {
+			// Fill in each light's shadow atlas entry; without this every
+			// light keeps shadow opacity 0 and the shader skips shadowing.
+			_fill_scatter_shadows(scatter_lights, p_lights, p_shadow_atlas, (uint32_t)scattering_receive_shadows);
+		}
 		get_scatter().run(p_rd, scatter_source, params, scatter_lights.ptr(), (int)scatter_lights.size(), p_depth, p_color, atlas, p_size);
 	}
 	simulation->render_finish();

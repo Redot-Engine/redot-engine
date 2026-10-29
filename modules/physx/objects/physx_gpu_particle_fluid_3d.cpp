@@ -256,8 +256,11 @@ struct PhysXFluidIsosurface : public PxParticleSystemCallback {
 	// reference point). Shared by the inline and deferred extraction paths.
 	// RD-8: the full-host round trip is throttled to every CLAMP_EVERY
 	// extractions (reference solver's CLAMP_EVERY=4) -- skipped cycles run
-	// with no sync at all, reusing the last clamped center. Escaped-particle
-	// sprawl develops over many frames; a 4-frame throttle bounds it.
+	// with no sync at all, reusing the last clamped center WITHOUT clamping
+	// this cycle's positions: generateSmoothedPositions rewrites the buffer
+	// from the raw particles each time, so a clamp does not carry forward.
+	// Escaped-particle sprawl develops over many frames; a 4-frame throttle
+	// bounds how far the surface can stretch between clamps.
 	uint32_t clamp_clock = 0;
 	PxVec3 last_center = PxVec3(0.0f);
 

@@ -820,9 +820,10 @@ void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 	// query API (smoke sampling / bounds).
 	const bool record_readback = p_want_readback && (!p_paused || p_settings.simulate_when_paused);
 	ReadbackSlot &slot = slots[record_slot & 1]; // the flush tail stamps this slot
+	bool recorded = false;
 	if (record_readback) {
 		record_slot++;
-		_record_readback_copies(slot, ci, gi);
+		recorded = _record_readback_copies(slot, ci, gi);
 	}
 
 	gi->offscreen(fc, grid, &params_desc);
@@ -866,7 +867,9 @@ void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 	const uint64_t usec1 = Time::get_singleton()->get_ticks_usec();
 	uint64_t flushed_frame = 0;
 	_flush_frame(&flushed_frame);
-	if (flushed_frame > 0) {
+	// Only a slot this step actually recorded into: stamping the other slot
+	// would re-mark its two-frames-old copies as fresh.
+	if (recorded && flushed_frame > 0) {
 		slot.inflight.frame_index = flushed_frame;
 		slot.consumed = false;
 	}
@@ -898,21 +901,23 @@ void FlowSimulation::_rt_step(double p_absolute_time, float p_delta,
 
 // Records texture + sparse-table copies into the persistent readback
 // buffers, and snapshots the CPU-side sparse layout that matches the frame.
-void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContextInterface *p_ci, NvFlowGridInterface *p_gi) {
+// Returns false when nothing was recorded -- the caller then leaves the slot
+// alone (its buffers still hold the previous record until it is decoded).
+bool FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContextInterface *p_ci, NvFlowGridInterface *p_gi) {
 	NvFlowContext *fc = _context();
 	if (fc == nullptr || p_ci == nullptr) {
-		return;
+		return false;
 	}
 	NvFlowGridRenderData render_data = {};
 	p_gi->getRenderData(fc, grid, &render_data);
 	if (render_data.densityTexture == nullptr || render_data.sparseBuffer == nullptr) {
-		return;
+		return false;
 	}
 
 	// Extract the sparse layout that owns the density texture this frame.
 	const NvFlowSparseParams &sp = render_data.sparseParams;
 	if (sp.levelCount == 0 || sp.levels == nullptr || sp.layerCount == 0 || sp.layers == nullptr) {
-		return; // grid not allocating yet -- nothing to read back
+		return false; // grid not allocating yet -- nothing to read back
 	}
 	// Level 0 = finest (density) level.
 	const NvFlowSparseLevelParams &level = sp.levels[0];
@@ -926,7 +931,7 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 			(uint64_t)level.dim.x * level.dim.y * level.dim.z * bytes_per_pixel;
 
 	if (texture_bytes == 0) {
-		return;
+		return false;
 	}
 	// The copy covers the level's FULL virtual dimension, which grows with
 	// the block budget: past ~512 MB a readback is not a query anymore, it
@@ -940,17 +945,17 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 			WARN_PRINT(vformat("[Flow] readback skipped: the grid's virtual volume is %d MB (limit %d MB). Rendering is unaffected; the CPU query surface (max smoke / bounds) is unavailable at this block budget.",
 					texture_bytes >> 20, READBACK_BYTES_LIMIT >> 20));
 		}
-		return;
+		return false;
 	}
 	_ensure_readback_buffers(r_slot, texture_bytes, 0);
 
 	if (r_slot.texture_buffer == nullptr) {
-		return;
+		return false;
 	}
 
 	NvFlowBufferTransient *dst_tex = p_ci->registerBufferAsTransient(fc, r_slot.texture_buffer);
 	if (dst_tex == nullptr) {
-		return;
+		return false;
 	}
 
 	NvFlowPassCopyTextureToBufferParams copy_tex = {};
@@ -967,22 +972,25 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 	// Sparse table copy: bytes needed = last offset used by the level
 	// (blockLevelOffsetLocal + 32 uints per location, plus slack).
 	const uint64_t table_bytes = (uint64_t)(level.blockLevelOffsetLocal + (level.numLocations << 5) + 64) * sizeof(NvFlowUint);
-	if (table_bytes > 0) {
-		_ensure_readback_buffers(r_slot, texture_bytes, table_bytes);
-		if (r_slot.table_buffer != nullptr) {
-			NvFlowBufferTransient *dst_table = p_ci->registerBufferAsTransient(fc, r_slot.table_buffer);
-			if (dst_table != nullptr) {
-				NvFlowPassCopyBufferParams copy_tbl = {};
-				copy_tbl.src = render_data.sparseBuffer;
-				copy_tbl.dst = dst_table;
-				copy_tbl.srcOffset = 0;
-				copy_tbl.dstOffset = 0;
-				copy_tbl.numBytes = table_bytes;
-				copy_tbl.debugLabel = "godotFlowTableReadback";
-				p_ci->addPassCopyBuffer(fc, &copy_tbl);
-			}
-		}
+	if (table_bytes == 0) {
+		return false;
 	}
+	_ensure_readback_buffers(r_slot, texture_bytes, table_bytes);
+	if (r_slot.table_buffer == nullptr) {
+		return false;
+	}
+	NvFlowBufferTransient *dst_table = p_ci->registerBufferAsTransient(fc, r_slot.table_buffer);
+	if (dst_table == nullptr) {
+		return false;
+	}
+	NvFlowPassCopyBufferParams copy_tbl = {};
+	copy_tbl.src = render_data.sparseBuffer;
+	copy_tbl.dst = dst_table;
+	copy_tbl.srcOffset = 0;
+	copy_tbl.dstOffset = 0;
+	copy_tbl.numBytes = table_bytes;
+	copy_tbl.debugLabel = "godotFlowTableReadback";
+	p_ci->addPassCopyBuffer(fc, &copy_tbl);
 
 	// Snapshot the sparse layout for the decode (CPU-side copies).
 	// FLOW-8: `sim_time` was still the PREVIOUS step's time here (the caller
@@ -1000,6 +1008,7 @@ void FlowSimulation::_record_readback_copies(ReadbackSlot &r_slot, NvFlowContext
 	r_slot.inflight.texture_height = level.dim.y;
 	r_slot.inflight.texture_depth = level.dim.z;
 	r_slot.inflight.table_bytes = table_bytes;
+	return true;
 
 	if (diag_flags & DIAG_SPARSE_LAYOUT) {
 		print_line(vformat("[Flow] sparse layout: dim=%d,%d,%d locations=%d/%d layers=%d blockSize=%f tableBytes=%d texBytes=%d",
@@ -1389,30 +1398,6 @@ uint64_t FlowSimulation::render(const float p_view[16], const float p_projection
 	// offscreen layer), render() raymarches it with the scene depth for
 	// occlusion and composites over the color.
 	gi->offscreen(fc, grid, &params_desc);
-	// Dark-colormap probe (first render only): read back the colormap texture
-	// the update op just wrote. Per-preset ramp values here mean the committed
-	// offscreen params reached the texture; the SDK's default ramp reads as
-	// 2.25-gray (0.9 x colorScale 2.5).
-	if (!cmap_read_done) {
-		cmap_read_done = true;
-		NvFlowGridRenderData rd_probe = {};
-		gi->getRenderData(fc, grid, &rd_probe);
-		uint64_t cmap_rid = rd_probe.colormap != nullptr ? FlowContextRD::transient_texture_rid(rd_probe.colormap) : 0;
-		if (cmap_rid == 0) {
-			print_line("[cdiag] colormap transient has no rid");
-		} else {
-			PackedByteArray bytes = RD::get_singleton()->texture_get_data(RID::from_uint64(cmap_rid), 0);
-			uint32_t mid_u = 16;
-			const uint8_t *mid = bytes.ptr() + mid_u * 8;
-			float r, g, b, a;
-			r = Math::half_to_float(mid[0] | (mid[1] << 8));
-			g = Math::half_to_float(mid[2] | (mid[3] << 8));
-			b = Math::half_to_float(mid[4] | (mid[5] << 8));
-			a = Math::half_to_float(mid[6] | (mid[7] << 8));
-			print_line(vformat("[cdiag] colormap mid-pixel rgba = %f,%f,%f,%f (bytes %d)",
-					r, g, b, a, bytes.size()));
-		}
-	}
 	gi->render(fc, grid, &params_desc, &view, &projection, &projection,
 			p_width, p_height, p_depth_width, p_depth_height,
 			1.0f, depth, eNvFlowFormat_r16g16b16a16_float, color, &out);

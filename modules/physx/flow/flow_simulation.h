@@ -392,8 +392,6 @@ private:
 	ReadbackSlot slots[2];
 	uint32_t record_slot = 0;
 	bool readback_limit_warned = false;
-	bool cmap_read_done = false;
-	mutable bool render_diag_done = false; // TEMP diagnostics // one warn per grid life
 
 	FlowReadbackFrame last_readback;
 	uint64_t frames_simulated = 0;
@@ -405,7 +403,7 @@ private:
 	void _destroy_grid();
 	void _ensure_readback_buffers(ReadbackSlot &r_slot, uint64_t p_texture_bytes, uint64_t p_table_bytes);
 	void _release_readback_buffers();
-	void _record_readback_copies(ReadbackSlot &r_slot, NvFlowContextInterface *p_ci, NvFlowGridInterface *p_gi);
+	bool _record_readback_copies(ReadbackSlot &r_slot, NvFlowContextInterface *p_ci, NvFlowGridInterface *p_gi);
 	bool _decode_slot(ReadbackSlot &r_slot, FlowReadbackFrame &r_frame);
 
 	NvFlowContextInterface *_context_iface() const; // valid while a grid is alive

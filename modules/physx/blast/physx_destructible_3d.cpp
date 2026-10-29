@@ -1344,9 +1344,11 @@ int PhysXDestructible3D::apply_radial_damage(const Vector3 &p_world_position, fl
 		// far edge flew off with the ram). Children add their shatter kick
 		// on top of this base.
 		Vector3 base_linear;
-		for (const uint32_t piece_idx : actor_pieces[actor]) {
-			if (piece_idx < pieces.size() && pieces[piece_idx].body.is_valid()) {
-				base_linear = pieces[piece_idx].last_linear_velocity;
+		for (const ChunkVisual &p : pieces) {
+			// actor_pieces maps actors to CHUNK indices, not pieces: match
+			// pieces by the actor they stand for.
+			if (p.actor == actor && p.body.is_valid()) {
+				base_linear = p.last_linear_velocity;
 				break;
 			}
 		}

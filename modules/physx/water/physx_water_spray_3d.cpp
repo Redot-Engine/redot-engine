@@ -139,10 +139,17 @@ void PhysXWaterSpray3D::_add_emitters(const TypedArray<NodePath> &p_paths, Role 
 		emitter.id = particles->get_instance_id();
 		emitter.role = p_role;
 		emitter.rest = to_body * particles->get_global_transform();
-		emitter.base_ratio = particles->get_amount_ratio();
-		// Our own copy of its process material: its launch speed is scaled
-		// per emitter, and the resource may be shared.
-		Ref<ParticleProcessMaterial> material = particles->get_process_material();
+		// Authored state, captured once: later builds must not read back the
+		// ratio/velocities this node itself wrote.
+		Authored *authored = authored_state.getptr(emitter.id);
+		if (authored == nullptr) {
+			Authored a;
+			a.ratio = particles->get_amount_ratio();
+			a.material = particles->get_process_material();
+			authored = &authored_state.insert(emitter.id, a)->value;
+		}
+		emitter.base_ratio = authored->ratio;
+		Ref<ParticleProcessMaterial> material = authored->material;
 		if (material.is_valid()) {
 			material = material->duplicate();
 			particles->set_process_material(material);

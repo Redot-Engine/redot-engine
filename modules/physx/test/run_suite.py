@@ -272,7 +272,13 @@ def main():
                     args.category if args.category else list_categories(godot, script, user_args, timeout, out_dir)
                 )
                 for cat in categories:
-                    cat_args = [a for a in user_args if not a.startswith("--category=")] + [f"--category={cat}"]
+                    cat_args = [a for a in user_args if not a.startswith("--category=")]
+                    # '*' (and None) are display fallbacks for "no category
+                    # filter", not a category name: passing one to the engine
+                    # selects zero tests, and an empty run must never read as
+                    # a pass.
+                    if cat not in (None, "*"):
+                        cat_args.append(f"--category={cat}")
                     # '*' (and None) are display fallbacks, not legal filename
                     # characters everywhere -- map them to 'all'.
                     cat_tag = "all" if cat in (None, "*") else str(cat)
@@ -315,6 +321,11 @@ def main():
         merged["suites"].append(totals)
         if totals["failed"] > 0 or totals["timeout"] > 0 or totals["status"] in ("crash", "timeout"):
             any_failed = True
+        # A suite that ran ZERO tests (empty report, e.g. a category filter
+        # that selected nothing) is a driver-level failure, not a pass.
+        if totals["total"] == 0 and not args.list:
+            any_failed = True
+            print(f"[driver] {suite + ('/' + cat if cat != '*' else '')}: no tests ran -- failing the run")
     # Only a fully clean run is "final": consumers keying on this flag alone
     # must never mistake a crashed suite run for a completed one.
     merged["final"] = not any_failed

@@ -83,6 +83,12 @@ void PhysXSoftBody3D::set_space(PhysXSpace3D *p_space) {
 	}
 }
 
+void PhysXSoftBody3D::request_rebuild() {
+	if (space && mesh_ready) {
+		_rebuild_from_mesh();
+	}
+}
+
 void PhysXSoftBody3D::notify_space_destroyed() {
 	space = nullptr;
 	if (volume) {

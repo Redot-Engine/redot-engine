@@ -307,24 +307,25 @@ void PhysXArea3D::add_shape(PhysXShape3D *p_shape, const Transform3D &p_transfor
 void PhysXArea3D::set_shape(int p_shape_idx, PhysXShape3D *p_shape) {
 	ERR_FAIL_INDEX(p_shape_idx, get_shape_count());
 
-	// Preserve the original local transform + disabled state across the swap;
-	// Godot expects body/area_set_shape to keep them. The base remove + append
-	// would discard the transform and reorder the slot, so we capture first.
+	// Preserve the original local transform + disabled state across the
+	// replacement; Godot expects area_set_shape to keep them AND the other
+	// slots' order (remove_shape shifts everything after the slot down one,
+	// so SWAP would leave them reversed).
 	const Transform3D saved_transform = attached_shapes[p_shape_idx].relative_transform;
 	const bool saved_disabled = attached_shapes[p_shape_idx].disabled;
 
 	// Detach old shape and remove owner tracking.
 	remove_shape(p_shape_idx);
 
-	// Insert the new shape at the end, then move its AttachedShape record into
-	// the original slot so the index is preserved. The PxShape itself is
-	// position-independent (its placement is dictated by its local pose), so
-	// reordering the bookkeeping vector is safe.
+	// The new shape appends at the end; move its AttachedShape record into
+	// the original slot so every index is preserved.
 	add_shape(p_shape, saved_transform, saved_disabled);
 
 	const int last_idx = get_shape_count() - 1;
 	if (last_idx != p_shape_idx) {
-		SWAP(attached_shapes[p_shape_idx], attached_shapes[last_idx]);
+		AttachedShape rec = attached_shapes[last_idx];
+		attached_shapes.remove_at(last_idx);
+		attached_shapes.insert(p_shape_idx, rec);
 	}
 }
 

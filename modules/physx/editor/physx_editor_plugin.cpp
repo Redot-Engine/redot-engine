@@ -759,6 +759,9 @@ void PhysXEditorPlugin::_start_install() {
 	install_progress_dialog->get_ok_button()->hide();
 
 	install_progress_dialog->popup_centered(Vector2i(520, 0));
+	// A retry reuses this request node: the previous attempt's bundle target
+	// would push the manifest body into the zip file.
+	install_http->set_download_file(String());
 	install_http->request(PhysXRuntimeManager::MANIFEST_URL);
 }
 
@@ -814,16 +817,18 @@ void PhysXEditorPlugin::_install_failed(const String &p_message) {
 	const String manual = vformat(
 			TTR("You can install the runtime manually: download the bundle for your platform from %s (Releases), unzip it, and place the files into the same folder as the Redot executable, then restart."),
 			releases_page);
-	install_status_label->set_text(vformat(TTR("Install failed: %s\n\n%s"), p_message, manual));
-	install_progress_bar->hide();
-	install_progress_dialog->get_ok_button()->show();
-	install_progress_dialog->get_ok_button()->set_text(TTR("Close"));
 	print_line(vformat("PhysX runtime install failed: %s", p_message));
 	print_line(manual);
-	// The runtime is still missing: close the error dialog and re-offer the
-	// install so a transient network failure is one click away from a retry.
+	// The failure goes on the offer dialog itself (the progress dialog is
+	// transient): the reason and the manual fallback stay visible, and the
+	// offer button doubles as the retry.
 	install_progress_dialog->hide();
 	if (runtime_missing_dialog) {
-		runtime_missing_dialog->popup_centered();
+		runtime_missing_dialog->set_text(vformat(
+				TTR("The last runtime install failed: %s\n\n%s\n\nDownload them now? The editor restarts afterwards."),
+				p_message, manual));
+		if (!runtime_missing_dialog->is_visible()) {
+			runtime_missing_dialog->popup_centered();
+		}
 	}
 }
