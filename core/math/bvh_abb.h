@@ -223,8 +223,33 @@ struct BVH_ABB {
 		return true;
 	}
 
+#ifdef GODOT_SIMD_REAL_F32X4
+	// 3D: min and neg_max are 6 contiguous floats; 2D: 4 contiguous floats (min.x min.y neg_max.x neg_max.y).
+	static constexpr bool SIMD_3D = (POINT::AXIS_COUNT == 3) && std::is_same_v<decltype(POINT::x), float>;
+	static constexpr bool SIMD_2D = (POINT::AXIS_COUNT == 2) && std::is_same_v<decltype(POINT::x), float>;
+	_FORCE_INLINE_ simd::f32x4 _simd_min() const {
+		return simd::load3(&min[0]);
+	}
+	_FORCE_INLINE_ simd::f32x4 _simd_neg_max() const {
+		return simd::load3(&neg_max[0]);
+	}
+#endif
+
 	/// @warning Very hot in profiling, make sure optimized
 	bool intersects(const BVH_ABB &p_o) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+		if constexpr (SIMD_3D) {
+			using namespace simd;
+			mask4 m = cmp_gt(p_o._simd_min(), -_simd_neg_max()) | cmp_gt(_simd_min(), -p_o._simd_neg_max());
+			return !any_lane3(m);
+		} else if constexpr (SIMD_2D) {
+			using namespace simd;
+			f32x4 a = load4(&min[0]); // min.x min.y nmax.x nmax.y
+			f32x4 b = load4(&p_o.min[0]);
+			mask4 m = cmp_gt(movelh(b, a), -movehl(b, a));
+			return !any_lane(m);
+		}
+#endif
 		if (_any_morethan(p_o.min, -neg_max)) {
 			return false;
 		}
@@ -233,9 +258,18 @@ struct BVH_ABB {
 		}
 		return true;
 	}
-
 	/// For pre-swizzled tester (this object)
 	bool intersects_swizzled(const BVH_ABB &p_o) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+		if constexpr (SIMD_3D) {
+			using namespace simd;
+			mask4 m = cmp_lt(_simd_min(), p_o._simd_min()) | cmp_lt(_simd_neg_max(), p_o._simd_neg_max());
+			return !any_lane3(m);
+		} else if constexpr (SIMD_2D) {
+			using namespace simd;
+			return !any_lane(cmp_lt(load4(&min[0]), load4(&p_o.min[0])));
+		}
+#endif
 		if (_any_lessthan(min, p_o.min)) {
 			return false;
 		}
@@ -244,8 +278,17 @@ struct BVH_ABB {
 		}
 		return true;
 	}
-
 	bool is_other_within(const BVH_ABB &p_o) const {
+#ifdef GODOT_SIMD_REAL_F32X4
+		if constexpr (SIMD_3D) {
+			using namespace simd;
+			mask4 m = cmp_lt(p_o._simd_neg_max(), _simd_neg_max()) | cmp_lt(p_o._simd_min(), _simd_min());
+			return !any_lane3(m);
+		} else if constexpr (SIMD_2D) {
+			using namespace simd;
+			return !any_lane(cmp_lt(load4(&p_o.min[0]), load4(&min[0])));
+		}
+#endif
 		if (_any_lessthan(p_o.neg_max, neg_max)) {
 			return false;
 		}

@@ -712,6 +712,7 @@ if env["arch"] == "x86_64":
         env.Append(CCFLAGS=["/d2archSSE42"])
     else:
         # `-msse2` is implied when compiling for x86_64.
+        # core/math/simd.h relies on SSE4.1 intrinsics being available on x86_64 (clang-cl included).
         env.Append(CCFLAGS=["-msse4.2", "-mpopcnt"])
 elif env["arch"] == "x86_32":
     # Be more conservative with instruction sets on 32-bit x86 to improve compatibility.
@@ -852,6 +853,7 @@ if env.msvc and not methods.using_clang(env):  # MSVC
         "/wd4245",
         "/wd4267",
         "/wd4305",  # C4305 (truncation): double to float or real_t, too hard to avoid.
+        "/wd4702",  # C4702 (unreachable code): compile-time SIMD/scalar dual paths leave one branch unreachable.
         "/wd4324",  # C4820 (structure was padded due to alignment specifier)
         "/wd4514",  # C4514 (unreferenced inline function has been removed)
         "/wd4714",  # C4714 (function marked as __forceinline not inlined)
