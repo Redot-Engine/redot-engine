@@ -1,6 +1,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -16,11 +17,12 @@ public static class CSharpCodeFixVerifier<TCodeFix, TAnalyzer>
     {
         public Test()
         {
-            ReferenceAssemblies = Constants.Net80;
+            ReferenceAssemblies = Constants.Net100;
             SolutionTransforms.Add((Solution solution, ProjectId projectId) =>
             {
                 Project project = solution.GetProject(projectId)!
-                    .AddMetadataReference(Constants.GodotSharpAssembly.CreateMetadataReference());
+                    .AddMetadataReference(Constants.GodotSharpAssembly.CreateMetadataReference())
+                    .WithParseOptions(new CSharpParseOptions(LanguageVersion.CSharp14));
                 return project.Solution;
             });
         }
